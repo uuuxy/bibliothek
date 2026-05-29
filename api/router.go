@@ -49,7 +49,7 @@ func (s *Server) Routes() http.Handler {
 	_ = os.MkdirAll("uploads", 0755)
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
-	
+
 	// Fail hard if JWT_SECRET is missing during route initialization
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
@@ -75,7 +75,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Public Endpoints
 	mux.HandleFunc("POST /login/barcode", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
-	
+
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"healthy"}`))
@@ -97,7 +97,7 @@ func (s *Server) Routes() http.Handler {
 	})
 
 	// Protected Endpoints (RBAC Middleware checking roles: admin, lehrer, mitarbeiter)
-	
+
 	// Central Omnibox Action Dispatcher
 	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
 	mux.Handle("POST /api/action", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer, auth.RoleMitarbeiter)(actionHandler))

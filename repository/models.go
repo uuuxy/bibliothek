@@ -51,7 +51,7 @@ type BookCopy struct {
 	IstAusleihbar  bool      `json:"ist_ausleihbar"`
 	ErstelltAm     time.Time `json:"erstellt_am"`
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
-	
+
 	// Joined fields from associated BookTitle
 	Titel    string `json:"titel"`
 	Autor    string `json:"autor"`

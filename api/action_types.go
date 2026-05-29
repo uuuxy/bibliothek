@@ -17,15 +17,15 @@ type ActionRequest struct {
 
 // ActionResponse is the polymorphic output payload returned by the Omnibox.
 type ActionResponse struct {
-	Type            string                 `json:"type"`                     // "student", "teacher", "ausleihe", "rueckgabe", "search_results"
-	Student         *repository.Student    `json:"student,omitempty"`        // The active student, or original borrower
-	Teacher         *repository.User       `json:"teacher,omitempty"`        // The active teacher borrower (Handapparat)
-	Book            *repository.BookCopy   `json:"book,omitempty"`           // Book copy details if applicable
-	DueDate         *time.Time             `json:"due_date,omitempty"`       // Return deadline for check-outs
-	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"` // Flag for returns from another student/teacher
-	Vorbesitzer     *repository.Student    `json:"vorbesitzer,omitempty"`    // Original student borrower if foreign return
+	Type            string                 `json:"type"`                       // "student", "teacher", "ausleihe", "rueckgabe", "search_results"
+	Student         *repository.Student    `json:"student,omitempty"`          // The active student, or original borrower
+	Teacher         *repository.User       `json:"teacher,omitempty"`          // The active teacher borrower (Handapparat)
+	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable
+	DueDate         *time.Time             `json:"due_date,omitempty"`         // Return deadline for check-outs
+	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another student/teacher
+	Vorbesitzer     *repository.Student    `json:"vorbesitzer,omitempty"`      // Original student borrower if foreign return
 	VorbesitzerUser *repository.User       `json:"vorbesitzer_user,omitempty"` // Original teacher borrower if foreign return
-	SearchResults   []repository.BookTitle `json:"search_results,omitempty"` // Full-text search list
+	SearchResults   []repository.BookTitle `json:"search_results,omitempty"`   // Full-text search list
 }
 
 // ActionEvent represents the data broadcasted to SSE clients on updates.

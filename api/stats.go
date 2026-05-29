@@ -17,13 +17,13 @@ import (
 
 // ReorderTitle represents a book title that has fallen below its reorder point.
 type ReorderTitle struct {
-	ID               string `json:"id"`
-	Titel            string `json:"titel"`
-	Autor            string `json:"autor"`
-	ISBN             string `json:"isbn"`
-	Verlag           string `json:"verlag"`
-	CoverURL         string `json:"cover_url,omitempty"`
-	Meldebestand     int    `json:"meldebestand"`
+	ID                string `json:"id"`
+	Titel             string `json:"titel"`
+	Autor             string `json:"autor"`
+	ISBN              string `json:"isbn"`
+	Verlag            string `json:"verlag"`
+	CoverURL          string `json:"cover_url,omitempty"`
+	Meldebestand      int    `json:"meldebestand"`
 	VerfuegbarBestand int    `json:"verfuegbarer_bestand"`
 }
 

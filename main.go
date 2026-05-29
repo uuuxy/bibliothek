@@ -23,16 +23,16 @@ import (
 func main() {
 	// 1. Config environment resolution
 	dsn := getEnv("DATABASE_URL", "postgres://postgres:postgrespassword@localhost:5433/bibliothek?sslmode=disable")
-	
+
 	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("FATAL: JWT_SECRET environment variable is required and cannot be empty")
 	}
-	
+
 	// Default port set to 8081 to avoid proxy mismatches with Svelte Vite dev server
 	port := getEnv("PORT", "8081")
-	
+
 	cookieSecure, err := strconv.ParseBool(getEnv("COOKIE_SECURE", "false"))
 	if err != nil {
 		cookieSecure = false

@@ -155,7 +155,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			LIMIT 1
 		`
 		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-		
+
 		startNum := 10001
 		if err == nil {
 			re := regexp.MustCompile(`B-(\d+)`)
@@ -228,7 +228,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			pdf.SetFont("Arial", "B", 8)
 			pdf.SetXY(x+2, y+3)
 			pdf.Cell(colWidth-4, 4, tr(titel))
-			
+
 			pdf.SetFont("Arial", "", 7)
 			pdf.SetXY(x+2, y+7)
 			pdf.Cell(colWidth-4, 4, tr(autor))

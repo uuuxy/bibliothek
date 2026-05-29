@@ -180,14 +180,14 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 
 // AuditLogEntry represents a joined row in the audit log table.
 type AuditLogEntry struct {
-	ID                string    `json:"id"`
-	Tabelle           string    `json:"tabelle"`
-	Aktion            string    `json:"aktion"`
-	DatensatzID       string    `json:"datensatz_id"`
-	Timestamp         time.Time `json:"timestamp"`
-	BearbeiterID      string    `json:"bearbeiter_id"`
-	BearbeiterVorname string    `json:"bearbeiter_vorname"`
-	BearbeiterNachname string   `json:"bearbeiter_nachname"`
+	ID                 string    `json:"id"`
+	Tabelle            string    `json:"tabelle"`
+	Aktion             string    `json:"aktion"`
+	DatensatzID        string    `json:"datensatz_id"`
+	Timestamp          time.Time `json:"timestamp"`
+	BearbeiterID       string    `json:"bearbeiter_id"`
+	BearbeiterVorname  string    `json:"bearbeiter_vorname"`
+	BearbeiterNachname string    `json:"bearbeiter_nachname"`
 }
 
 // GetAuditLogsHandler returns logs of immutable security events.
@@ -251,9 +251,9 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 		defer rows.Close()
 
 		type CopyResponse struct {
-			ID           string `json:"id"`
-			BarcodeID    string `json:"barcode_id"`
-			ZustandNotiz string `json:"zustand_notiz"`
+			ID            string `json:"id"`
+			BarcodeID     string `json:"barcode_id"`
+			ZustandNotiz  string `json:"zustand_notiz"`
 			IstAusleihbar bool   `json:"ist_ausleihbar"`
 		}
 
