@@ -22,7 +22,7 @@ import (
 // mounts middleware-protected routes, and starts the server with graceful shutdown.
 func main() {
 	// 1. Config environment resolution
-	dsn := getEnv("DATABASE_URL", "postgres://postgres:postgrespassword@localhost:5433/bibliothek?sslmode=disable")
+	dsn := getEnv("DATABASE_URL", "postgres://postgres@localhost:5433/bibliothek?sslmode=disable")
 	
 	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
 	jwtSecret := os.Getenv("JWT_SECRET")
