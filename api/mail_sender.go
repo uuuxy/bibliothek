@@ -1,0 +1,97 @@
+package api
+
+import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
+	"mime/multipart"
+	"net/smtp"
+	"net/textproto"
+	"os"
+)
+
+// MailAttachment represents an email attachment.
+type MailAttachment struct {
+	Name        string
+	ContentType string
+	Data        []byte
+}
+
+// MailRequest aggregates email recipient, subject, body, and attachments.
+type MailRequest struct {
+	To          string
+	Subject     string
+	Body        string
+	Attachments []MailAttachment
+}
+
+// SendEmail sends a multipart email (HTML/Text) with attachments using net/smtp.
+// Environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
+func SendEmail(req MailRequest) error {
+	host := os.Getenv("SMTP_HOST")
+	port := os.Getenv("SMTP_PORT")
+	user := os.Getenv("SMTP_USER")
+	pass := os.Getenv("SMTP_PASSWORD")
+	from := os.Getenv("SMTP_FROM")
+
+	if host == "" || port == "" {
+		return fmt.Errorf("SMTP connection parameters missing from environment (SMTP_HOST/SMTP_PORT)")
+	}
+	if from == "" {
+		from = user
+	}
+
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	boundary := writer.Boundary()
+
+	// Write SMTP Headers
+	fmt.Fprintf(&buf, "From: %s\r\n", from)
+	fmt.Fprintf(&buf, "To: %s\r\n", req.To)
+	fmt.Fprintf(&buf, "Subject: %s\r\n", req.Subject)
+	fmt.Fprintf(&buf, "MIME-Version: 1.0\r\n")
+	fmt.Fprintf(&buf, "Content-Type: multipart/mixed; boundary=%s\r\n\r\n", boundary)
+
+	// Body Part
+	bodyHeader := make(textproto.MIMEHeader)
+	bodyHeader.Set("Content-Type", "text/plain; charset=utf-8")
+	part, err := writer.CreatePart(bodyHeader)
+	if err != nil {
+		return fmt.Errorf("failed to create email body part: %w", err)
+	}
+	if _, err := part.Write([]byte(req.Body)); err != nil {
+		return fmt.Errorf("failed to write email body: %w", err)
+	}
+
+	// Attachments
+	for _, att := range req.Attachments {
+		attHeader := make(textproto.MIMEHeader)
+		attHeader.Set("Content-Type", att.ContentType)
+		attHeader.Set("Content-Transfer-Encoding", "base64")
+		attHeader.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, att.Name))
+		part, err := writer.CreatePart(attHeader)
+		if err != nil {
+			return fmt.Errorf("failed to create attachment part for %s: %w", att.Name, err)
+		}
+
+		encoder := base64.NewEncoder(base64.StdEncoding, part)
+		if _, err := encoder.Write(att.Data); err != nil {
+			return fmt.Errorf("failed to write attachment data for %s: %w", att.Name, err)
+		}
+		encoder.Close()
+	}
+
+	writer.Close()
+
+	addr := host + ":" + port
+	var auth smtp.Auth
+	if user != "" && pass != "" {
+		auth = smtp.PlainAuth("", user, pass, host)
+	}
+
+	if err := smtp.SendMail(addr, auth, from, []string{req.To}, buf.Bytes()); err != nil {
+		return fmt.Errorf("SMTP send failed: %w", err)
+	}
+
+	return nil
+}

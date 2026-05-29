@@ -1,0 +1,174 @@
+<script>
+  import { onMount } from "svelte";
+  import StudentProfile from "./StudentProfile.svelte";
+
+  // State Runes (Svelte 5)
+  /** @type {any[]} */
+  let students = $state([]);
+  let loading = $state(false);
+  let searchQuery = $state("");
+  /** @type {any} */
+  let activeStudent = $state(null);
+
+  // Derived filtered students list
+  let filteredStudents = $derived.by(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return students;
+    return students.filter(s => 
+      (s.vorname + " " + s.nachname).toLowerCase().includes(q) ||
+      s.klasse.toLowerCase().includes(q) ||
+      s.barcode_id.toLowerCase().includes(q)
+    );
+  });
+
+  async function loadStudents() {
+    loading = true;
+    try {
+      const res = await fetch("/api/schueler");
+      if (res.ok) {
+        students = await res.json();
+      }
+    } catch (err) {
+      console.error("Fehler beim Laden des Schülerverzeichnisses:", err);
+    } finally {
+      loading = false;
+    }
+  }
+
+  onMount(() => {
+    loadStudents();
+  });
+</script>
+
+<div class="w-full animate-fade-in no-print text-slate-800">
+  
+  {#if activeStudent}
+    <!-- Detail View: Student Profile -->
+    <div class="w-full text-left space-y-4">
+      <button onclick={() => { activeStudent = null; loadStudents(); }} class="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-750 transition-colors py-1 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        <span>Zurück zum Schülerverzeichnis</span>
+      </button>
+      <StudentProfile student={activeStudent} onDeselect={() => { activeStudent = null; loadStudents(); }} />
+    </div>
+  {:else}
+    <!-- Fullscreen Directory List -->
+    <div class="w-full space-y-6">
+      
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 text-left">
+        <div>
+          <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">SaaS-CRM</span>
+          <h2 class="text-2xl font-bold text-slate-800">Schülerverzeichnis</h2>
+          <p class="text-xs text-slate-500 font-medium">Verwalte Schülerdaten, kontrolliere Ausleihen und passe die Profile der Leser an.</p>
+        </div>
+      </div>
+
+      <!-- Action & Search Bar -->
+      <div class="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-xs justify-between">
+        <div class="relative w-full max-w-md">
+          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" placeholder="Nach Name, Klasse oder Barcode filtern..." bind:value={searchQuery} class="w-full pl-10 pr-4 py-2 bg-slate-55 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+        </div>
+        
+        <div class="text-xs font-semibold text-slate-500 font-mono">
+          Einträge: {filteredStudents.length} / {students.length}
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-xs w-full">
+        {#if loading}
+          <div class="py-16 flex justify-center items-center">
+            <div class="w-8 h-8 border-4 border-t-blue-600 border-slate-200 rounded-full animate-spin"></div>
+          </div>
+        {:else if filteredStudents.length === 0}
+          <div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            <span class="text-xs font-semibold">Keine Schüler im Verzeichnis gefunden.</span>
+          </div>
+        {:else}
+          <div class="overflow-x-auto w-full text-left">
+            <table class="w-full text-sm text-slate-700">
+              <thead class="bg-slate-50 border-b border-slate-100 uppercase tracking-wider text-[10px] font-bold text-slate-500 font-sans">
+                <tr>
+                  <th class="px-6 py-4 w-16">Foto</th>
+                  <th class="px-6 py-4">Name</th>
+                  <th class="px-6 py-4 w-24">Klasse</th>
+                  <th class="px-6 py-4 w-44 text-right">Geliehene Bücher</th>
+                  <th class="px-6 py-4 w-36 text-right">Status</th>
+                  <th class="px-6 py-4 w-10"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                {#each filteredStudents as s}
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                  <tr onclick={() => activeStudent = s} class="hover:bg-slate-50/50 cursor-pointer transition-colors group">
+                    <!-- Photo Avatar -->
+                    <td class="px-6 py-3">
+                      <div class="relative w-8 h-8 rounded-full overflow-hidden border border-slate-100/80 bg-slate-50 flex items-center justify-center shrink-0">
+                        {#if s.foto_url}
+                          <img src={s.foto_url} alt="Avatar" class="w-full h-full object-cover" />
+                        {:else}
+                          <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-bold text-xs uppercase">
+                            {s.vorname.charAt(0)}{s.nachname.charAt(0)}
+                          </div>
+                        {/if}
+                      </div>
+                    </td>
+                    
+                    <!-- Name & Barcode ID -->
+                    <td class="px-6 py-3 font-semibold text-slate-800">
+                      {s.vorname} {s.nachname}
+                      <div class="text-[9px] font-mono text-slate-400 font-normal mt-0.5">{s.barcode_id}</div>
+                    </td>
+                    
+                    <!-- Klasse -->
+                    <td class="px-6 py-3 font-medium text-slate-600">
+                      Kl. {s.klasse || 'N/A'}
+                    </td>
+                    
+                    <!-- Books count -->
+                    <td class="px-6 py-3 text-right">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold font-mono {s.ausgeliehen_count > 0 ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}">
+                        {s.ausgeliehen_count || 0}
+                      </span>
+                    </td>
+                    
+                    <!-- Status -->
+                    <td class="px-6 py-3 text-right">
+                      <div class="inline-flex items-center justify-end gap-1.5 py-1">
+                        {#if s.ueberfaellig_count > 0}
+                          <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                          <span class="text-xs font-semibold text-rose-600">Überfällig</span>
+                        {:else if s.ist_gesperrt}
+                          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          <span class="text-xs font-semibold text-amber-600">Gesperrt</span>
+                        {:else}
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <span class="text-xs font-semibold text-emerald-600">Alles ok</span>
+                        {/if}
+                      </div>
+                    </td>
+                    
+                    <!-- Arrow link -->
+                    <td class="px-6 py-3 text-right">
+                      <svg class="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {/if}
+      </div>
+
+    </div>
+  {/if}
+
+</div>

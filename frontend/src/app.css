@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+}
+
+html, body {
+  font-family: "Inter", sans-serif;
+}
+
+/* Card & Label layouts */
+.print-card-box {
+  width: 85.6mm;
+  height: 53.98mm;
+  position: relative;
+  overflow: hidden;
+}
+
+.print-label-box {
+  width: 60mm;
+  height: 35mm;
+  position: relative;
+  overflow: hidden;
+}
+
+@media print {
+  /* Reset margins for printing layout */
+  html, body, main, main > div, main div {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    width: auto !important;
+    display: block !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  header, footer, .no-print {
+    display: none !important;
+  }
+
+  .print-rendered-output {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Target: Standard A4 Sheets */
+  .print-rendered-output.a4_grid .print-cards-grid {
+    display: grid !important;
+    grid-template-columns: 85.6mm 85.6mm !important;
+    grid-column-gap: 15mm !important;
+    grid-row-gap: 10mm !important;
+    justify-content: center !important;
+    padding-top: 15mm !important;
+  }
+  
+  .print-rendered-output.a4_grid .print-card-box {
+    border: 1pt solid #ccc !important;
+    border-radius: 8pt !important;
+    page-break-inside: avoid !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Target: Single Card Printer (ISO 7810 ID-1 Borderless) */
+  .print-rendered-output.card_printer .print-cards-grid {
+    display: block !important;
+  }
+
+  .print-rendered-output.card_printer .print-card-box {
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    page-break-after: always !important;
+  }
+
+  /* Labels Layout inside A4 sheet */
+  .print-rendered-output.a4_grid .print-labels-grid {
+    display: grid !important;
+    grid-template-columns: 60mm 60mm 60mm !important;
+    grid-column-gap: 8mm !important;
+    grid-row-gap: 6mm !important;
+    justify-content: center !important;
+    padding-top: 15mm !important;
+  }
+
+  .print-rendered-output.a4_grid .print-label-box {
+    page-break-inside: avoid !important;
+  }
+}
