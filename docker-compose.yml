@@ -29,7 +29,7 @@ services:
     environment:
       - PORT=8081
       - DATABASE_URL=postgres://postgres:postgrespassword@db:5432/bibliothek?sslmode=disable
-      - JWT_SECRET=super-secret-key-that-is-at-least-32-bytes-long
+      - JWT_SECRET=${JWT_SECRET}
       - COOKIE_SECURE=false
     volumes:
       - bibliothek_uploads:/app/uploads
