@@ -169,18 +169,23 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 
 		// 3. Register copies in DB (marked as not borrowable until delivery)
 		newBarcodes := []string{}
-		qInsert := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar)
-			VALUES ($1, $2, 'Bestellt (Lieferanten-Vorab-Barcode)', false)
-		`
+		var rows [][]interface{}
+
 		for i := 0; i < req.Menge; i++ {
 			barcodeID := fmt.Sprintf("B-%05d", startNum+i)
-			_, err = tx.Exec(ctx, qInsert, req.TitelID, barcodeID)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
 			newBarcodes = append(newBarcodes, barcodeID)
+			rows = append(rows, []interface{}{req.TitelID, barcodeID, "Bestellt (Lieferanten-Vorab-Barcode)", false})
+		}
+
+		_, err = tx.CopyFrom(
+			ctx,
+			pgx.Identifier{"buecher_exemplare"},
+			[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar"},
+			pgx.CopyFromRows(rows),
+		)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		if err := tx.Commit(ctx); err != nil {
