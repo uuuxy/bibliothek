@@ -113,7 +113,20 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 		var updatedCount int
 		lineNum := 1
 
-		// 5. Parse rows and execute Upserts
+		type studentRow struct {
+			LusdID   string
+			Vorname  string
+			Nachname string
+			Klasse   string
+			LineNum  int
+		}
+		var parsedRows []studentRow
+
+		// 5a. Parse rows into memory
+		// We use a map to deduplicate rows by lusd_id, keeping the latest one,
+		// to prevent "ON CONFLICT DO UPDATE command cannot affect row a second time" errors.
+		seenIndex := make(map[string]int)
+
 		for {
 			row, err := reader.Read()
 			if err == io.EOF {
@@ -135,40 +148,93 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				return
 			}
 
-			lusdIDs = append(lusdIDs, lusdID)
+			sRow := studentRow{
+				LusdID:   lusdID,
+				Vorname:  vorname,
+				Nachname: nachname,
+				Klasse:   klasse,
+				LineNum:  lineNum,
+			}
 
-			var dbID string
-			err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
-			if err == nil {
-				// Student exists -> update vorname, nachname, klasse, clear abgänger flag
-				qUpdate := `
-					UPDATE schueler
-					SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
-					WHERE id = $4
-				`
-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
-					return
-				}
-				updatedCount++
+			if idx, exists := seenIndex[lusdID]; exists {
+				// Replace the existing one, don't append to lusdIDs again
+				parsedRows[idx] = sRow
 			} else {
-				// Student does not exist -> insert new student with generated S- barcode
-				barcodeID := fmt.Sprintf("S-%05d", startNum)
-				startNum++
+				seenIndex[lusdID] = len(parsedRows)
+				parsedRows = append(parsedRows, sRow)
+				lusdIDs = append(lusdIDs, lusdID)
+			}
+		}
 
-				defaultAbgaengerJahr := time.Now().Year() + 5
-
-				qInsert := `
-					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
-					VALUES ($1, $2, $3, $4, $5, $6, false)
-				`
-				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
-					return
+		if len(parsedRows) > 0 {
+			// 5b. Find existing LUSD IDs
+			existingSet := make(map[string]bool)
+			rows, err := tx.Query(ctx, "SELECT lusd_id FROM schueler WHERE lusd_id = ANY($1)", lusdIDs)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to query existing students: %w", err))
+				return
+			}
+			for rows.Next() {
+				var id string
+				if err := rows.Scan(&id); err == nil {
+					existingSet[id] = true
 				}
-				newCount++
+			}
+			rows.Close()
+
+			// Prepare arrays for UNNEST
+			var (
+				arrBarcode []string
+				arrVorname []string
+				arrNach    []string
+				arrKlasse  []string
+				arrAbJahr  []int
+				arrLusdID  []string
+			)
+
+			defaultAbgaengerJahr := time.Now().Year() + 5
+
+			for _, p := range parsedRows {
+				if !existingSet[p.LusdID] {
+					// new
+					arrBarcode = append(arrBarcode, fmt.Sprintf("S-%05d", startNum))
+					startNum++
+					newCount++
+				} else {
+					// existing, barcode will be ignored on update but needs a non-null valid dummy
+					// we can just put a blank string here, but to avoid UNIQUE constraint violations
+					// before the ON CONFLICT kicks in, we just use the LUSD ID or a dummy with random/unique part.
+					// Actually, the ON CONFLICT will evaluate before inserting, but it evaluates the index on lusd_id.
+					// We'll just provide a dummy string that is unique per row
+					arrBarcode = append(arrBarcode, fmt.Sprintf("dummy-%s", p.LusdID))
+					updatedCount++
+				}
+				arrVorname = append(arrVorname, p.Vorname)
+				arrNach = append(arrNach, p.Nachname)
+				arrKlasse = append(arrKlasse, p.Klasse)
+				arrAbJahr = append(arrAbJahr, defaultAbgaengerJahr)
+				arrLusdID = append(arrLusdID, p.LusdID)
+			}
+
+			// 5c. Bulk Upsert
+			qUpsert := `
+				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
+				SELECT * FROM UNNEST($1::varchar[], $2::varchar[], $3::varchar[], $4::varchar[], $5::int[], $6::varchar[], $7::boolean[])
+				ON CONFLICT (lusd_id) DO UPDATE
+				SET vorname = EXCLUDED.vorname,
+					nachname = EXCLUDED.nachname,
+					klasse = EXCLUDED.klasse,
+					ist_abgaenger = false,
+					aktualisiert_am = CURRENT_TIMESTAMP
+			`
+
+			// We need a boolean array of false for ist_abgaenger
+			arrIstAbg := make([]bool, len(parsedRows))
+
+			_, err = tx.Exec(ctx, qUpsert, arrBarcode, arrVorname, arrNach, arrKlasse, arrAbJahr, arrLusdID, arrIstAbg)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("bulk upsert failed: %w", err))
+				return
 			}
 		}
 
