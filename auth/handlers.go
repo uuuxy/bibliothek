@@ -84,11 +84,8 @@ func AuthenticateIMAP(serverHostPort, email, password string) (bool, error) {
 	}
 }
 
-// verifyPassword checks a bcrypt password hash or dummy_passwort_hash fallback.
+// verifyPassword checks a bcrypt password hash.
 func verifyPassword(hash, password string) bool {
-	if hash == "dummy_passwort_hash" && password == "admin" {
-		return true
-	}
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
