@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"bibliothek/apierrors"
 )
 
@@ -113,7 +115,16 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 		var updatedCount int
 		lineNum := 1
 
-		// 5. Parse rows and execute Upserts
+		type csvRow struct {
+			lusdID   string
+			vorname  string
+			nachname string
+			klasse   string
+			lineNum  int
+		}
+		var parsedRows []csvRow
+
+		// 5. Parse rows and collect them
 		for {
 			row, err := reader.Read()
 			if err == io.EOF {
@@ -136,39 +147,76 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 			}
 
 			lusdIDs = append(lusdIDs, lusdID)
+			parsedRows = append(parsedRows, csvRow{
+				lusdID:   lusdID,
+				vorname:  vorname,
+				nachname: nachname,
+				klasse:   klasse,
+				lineNum:  lineNum,
+			})
+		}
 
-			var dbID string
-			err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
-			if err == nil {
-				// Student exists -> update vorname, nachname, klasse, clear abgänger flag
-				qUpdate := `
-					UPDATE schueler
-					SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
-					WHERE id = $4
-				`
-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
-					return
+		// 5a. Fetch all existing lusd_ids
+		existingMap := make(map[string]bool)
+		if len(lusdIDs) > 0 {
+			qExisting := `SELECT lusd_id FROM schueler WHERE lusd_id = ANY($1)`
+			rows, err := tx.Query(ctx, qExisting, lusdIDs)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to fetch existing students: %w", err))
+				return
+			}
+			for rows.Next() {
+				var id string
+				if err := rows.Scan(&id); err == nil {
+					existingMap[id] = true
 				}
+			}
+			rows.Close()
+			if err := rows.Err(); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("error iterating existing students: %w", err))
+				return
+			}
+		}
+
+		// 5b. Queue batched updates and inserts
+		batch := &pgx.Batch{}
+		qUpdate := `
+			UPDATE schueler
+			SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
+			WHERE lusd_id = $4
+		`
+		qInsert := `
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
+			VALUES ($1, $2, $3, $4, $5, $6, false)
+		`
+		defaultAbgaengerJahr := time.Now().Year() + 5
+
+		for _, r := range parsedRows {
+			if existingMap[r.lusdID] {
+				batch.Queue(qUpdate, r.vorname, r.nachname, r.klasse, r.lusdID)
 				updatedCount++
 			} else {
-				// Student does not exist -> insert new student with generated S- barcode
 				barcodeID := fmt.Sprintf("S-%05d", startNum)
 				startNum++
+				batch.Queue(qInsert, barcodeID, r.vorname, r.nachname, r.klasse, defaultAbgaengerJahr, r.lusdID)
+				newCount++
+			}
+		}
 
-				defaultAbgaengerJahr := time.Now().Year() + 5
-
-				qInsert := `
-					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
-					VALUES ($1, $2, $3, $4, $5, $6, false)
-				`
-				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
+		if batch.Len() > 0 {
+			br := tx.SendBatch(ctx, batch)
+			for i := 0; i < batch.Len(); i++ {
+				_, err := br.Exec()
 				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+					br.Close()
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("batch execution failed at index %d: %w", i, err))
 					return
 				}
-				newCount++
+			}
+			err = br.Close()
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to close batch: %w", err))
+				return
 			}
 		}
 
