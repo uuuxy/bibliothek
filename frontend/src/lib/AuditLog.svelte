@@ -58,7 +58,7 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase font-mono tracking-wider">
+            <tr class="bg-slate-50 border-b border-slate-100 text-base font-semibold text-slate-500 uppercase font-mono tracking-wider">
               <th class="p-4.5">Zeitstempel</th>
               <th class="p-4.5">Aktion</th>
               <th class="p-4.5">Tabelle</th>
@@ -66,7 +66,7 @@
               <th class="p-4.5">Bearbeiter (Operator)</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
+          <tbody class="divide-y divide-slate-100 text-base text-slate-600">
             {#each logs as log}
               <tr class="hover:bg-slate-50/50 transition-colors">
                 <td class="p-4.5 font-mono text-xs text-slate-500">

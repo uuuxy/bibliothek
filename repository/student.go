@@ -14,6 +14,8 @@ type StudentRepository interface {
 	GetByBarcode(ctx context.Context, barcode string) (*Student, error)
 	// GetByID fetches a student by their primary key UUID. Returns nil if not found.
 	GetByID(ctx context.Context, id string) (*Student, error)
+	// SearchStudentsFuzzy performs a fuzzy search on students.
+	SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error)
 }
 
 type pgStudentRepository struct {
@@ -65,4 +67,38 @@ func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student,
 		return nil, err
 	}
 	return &s, nil
+}
+
+// SearchStudentsFuzzy performs a fuzzy search on student names.
+func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error) {
+	query := `
+		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, erstellt_am, aktualisiert_am
+		FROM schueler
+		WHERE vorname ILIKE '%' || $1 || '%' 
+		   OR nachname ILIKE '%' || $1 || '%'
+		   OR barcode_id ILIKE '%' || $1 || '%'
+		ORDER BY nachname ASC, vorname ASC
+		LIMIT $2
+	`
+	rows, err := r.db.Query(ctx, query, queryText, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []Student
+	for rows.Next() {
+		var s Student
+		err := rows.Scan(
+			&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.ErstelltAm, &s.AktualisiertAm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
 }

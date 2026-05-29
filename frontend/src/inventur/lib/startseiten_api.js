@@ -2,24 +2,13 @@
  * startseiten_api.js
  * 
  * Enthält alle API-Aufrufe und Hilfsfunktionen für die Gast-Startseite.
- * Hierzu gehören: Gast-Login, Bücher laden, Klassen laden,
+ * Hierzu gehören: Bücher laden, Klassen laden,
  * sowie Filterung und Gruppierung der Bücher nach Klassen.
  */
 
-import { loginWithPassword } from "./auth_api.js";
-
-/**
- * Führt den Gast-Login über die API durch.
- * @param {string} passwort - Das eingegebene Schulpasswort
- * @returns {Promise<boolean>} true bei Erfolg
- */
-export async function gastLoginAusfuehren(passwort) {
-    return await loginWithPassword("/api/login/guest", passwort, "Falsches Schulpasswort");
-}
-
 /**
  * Lädt alle Bücher aus der API.
- * @returns {Promise<Array>} Liste der Bücher
+ * @returns {Promise<any[]>} Liste der Bücher
  */
 export async function buecherLaden() {
     const antwort = await fetch("/api/books", {
@@ -36,7 +25,7 @@ export async function buecherLaden() {
 
 /**
  * Lädt die echten Schulklassen (mit zugewiesenen Büchern) aus der API.
- * @returns {Promise<Array>} Liste der Klassengruppen
+ * @returns {Promise<any[]>} Liste der Klassengruppen
  */
 export async function echteKlassenLaden() {
     const antwort = await fetch("/api/class-books", {
@@ -44,7 +33,7 @@ export async function echteKlassenLaden() {
     });
     if (!antwort.ok) return [];
     const daten = (await antwort.json()).data ?? [];
-    return daten.map((klasse) => ({
+    return daten.map((/** @type {any} */ klasse) => ({
         name: klasse.className,
         books: klasse.books,
     }));
@@ -52,8 +41,8 @@ export async function echteKlassenLaden() {
 
 /**
  * Gruppiert ein Array von Büchern in Klassengruppen (z.B. "Klasse 5 G").
- * @param {Array} buecherArray - Alle verfügbaren Bücher
- * @returns {Array} Sortierte Liste von Klasseobjekten
+ * @param {any[]} buecherArray - Alle verfügbaren Bücher
+ * @returns {any[]} Sortierte Liste von Klasseobjekten
  */
 export function buecherNachKlassenGruppieren(buecherArray) {
     const klassenMap = new Map();

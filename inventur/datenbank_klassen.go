@@ -7,7 +7,7 @@ import (
 
 func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, sortOrder string) ([]ClassGroup, error) {
 	query := `
-		SELECT cb.class_name, b.id, b.titel AS title, b.subject, b.track, b.cover_url, b.isbn, b.stock
+		SELECT cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject, COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url, COALESCE(b.isbn, '') AS isbn, b.stock
 		FROM class_books cb
 		JOIN buecher_titel b ON cb.book_id = b.id
 		WHERE ($1 = '' OR cb.class_name ILIKE '%' || $1 || '%')

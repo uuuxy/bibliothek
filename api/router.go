@@ -102,6 +102,10 @@ func (s *Server) Routes() http.Handler {
 	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
 	mux.Handle("POST /api/action", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer, auth.RoleMitarbeiter)(actionHandler))
 
+	// Unified Fuzzy Search (Accessible by Admin, Mitarbeiter, and Lehrer)
+	searchHandler := s.SearchHandler(studentRepo, bookRepo)
+	mux.Handle("GET /api/search", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleLehrer)(searchHandler))
+
 	// LUSD CSV Student Import (Accessible by Admin and Mitarbeiter)
 	importHandler := s.ImportStudentsHandler()
 	mux.Handle("POST /api/import/students", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(importHandler))

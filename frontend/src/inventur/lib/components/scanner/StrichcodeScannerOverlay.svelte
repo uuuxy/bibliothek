@@ -5,6 +5,9 @@
     let { isScanning = $bindable(), onScan } = $props();
     let scanStatus = $state("");
 
+    /**
+     * @param {string} code
+     */
     function handleScan(code) {
         onScan(code);
         isScanning = false;
@@ -13,7 +16,7 @@
 
 {#if isScanning}
     <div
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        class="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
         transition:fade
     >
         <div
@@ -41,8 +44,7 @@
             <h3 class="text-lg font-bold mb-4 text-center">ISBN scannen</h3>
             <KameraScanner
                 onDecode={handleScan}
-                onStatusChange={(s) => (scanStatus = s)}
-                scannerId="drawer-scanner"
+                onStatusChange={(/** @type {string} */ s) => (scanStatus = s)}
             />
             <p class="text-center text-sm text-gray-600 mt-2">{scanStatus}</p>
         </div>

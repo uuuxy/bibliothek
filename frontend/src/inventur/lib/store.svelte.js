@@ -15,7 +15,12 @@ export const toastState = $state({
     type: 'success' // 'success' oder 'error'
 });
 
-let toastTimeout;
+/** @type {ReturnType<typeof setTimeout> | null} */
+let toastTimeout = null;
+/**
+ * @param {string} message
+ * @param {string} type
+ */
 export function showToast(message, type = 'success') {
     console.log(`[Toast] Showing ${type}: ${message}`);
     toastState.message = message;

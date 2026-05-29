@@ -8,6 +8,7 @@
 
     let wirdGescannt = $state(false);
 
+    /** @param {string} code */
     async function handleScan(code) {
         formular.isbn = code;
         if (!formular.title) {
@@ -29,7 +30,7 @@
     }
 </script>
 
-<StrichcodeScannerOverlay bind:wirdGescannt onScan={handleScan} />
+<StrichcodeScannerOverlay bind:isScanning={wirdGescannt} onScan={handleScan} />
 
 <!-- Backdrop -->
 <button

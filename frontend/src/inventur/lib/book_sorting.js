@@ -21,6 +21,10 @@ export const subjectOrder = [
  * @param {Object} b - Second book object
  * @returns {number} Sorting result
  */
+/**
+ * @param {{subject?: string, title: string, gradeLevel?: string|number, track?: string}} a
+ * @param {{subject?: string, title: string, gradeLevel?: string|number, track?: string}} b
+ */
 export function sortBooksBySubjectAndTitle(a, b) {
     let subjA = (a.subject || "").toLowerCase().trim();
     let subjB = (b.subject || "").toLowerCase().trim();

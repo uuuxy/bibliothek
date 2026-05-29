@@ -41,17 +41,18 @@
             }
             const updated = (await res.json()).data;
             books = formular.id
-                ? books.map((b) => (b.id === updated.id ? updated : b))
+                ? books.map((/** @type {any} */ b) => (b.id === updated.id ? updated : b))
                 : [updated, ...books];
             if (isEditMode) {
                 isEditMode = false;
             }
             showToast("Buch erfolgreich gespeichert!", "success");
         } catch (e) {
-            showToast(e.message, "error");
+            showToast(e instanceof Error ? e.message : String(e), "error");
         }
     }
 
+    /** @param {File} file */
     async function compressImageToWebp(file) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -75,7 +76,7 @@
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, width, height);
+                if (ctx) ctx.drawImage(img, 0, 0, width, height);
 
                 canvas.toBlob(
                     (blob) => {
@@ -98,8 +99,10 @@
         });
     }
 
+    /** @param {Event} e */
     export async function handleCoverUpload(e) {
-        let file = e.target.files[0];
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        let file = target.files ? target.files[0] : null;
         if (!file || !formular.id) return;
 
         try {
@@ -111,7 +114,7 @@
         }
 
         const fd = new FormData();
-        fd.append("cover", file);
+        fd.append("cover", /** @type {File} */ (file));
         try {
             const res = await fetch(`/api/books/${formular.id}/cover-upload`, {
                 method: "POST",
@@ -137,14 +140,14 @@
             }
             const json = await res.json();
             formular.coverUrl = json.data.coverUrl;
-            books = books.map((b) =>
+            books = books.map((/** @type {any} */ b) =>
                 b.id === formular.id
                     ? { ...b, coverUrl: json.data.coverUrl }
                     : b,
             );
             showToast("Cover erfolgreich hochgeladen", "success");
         } catch (err) {
-            showToast(err.message, "error");
+            showToast(err instanceof Error ? err.message : String(err), "error");
         }
     }
 </script>

@@ -1,7 +1,9 @@
 <script>
     let { formular = $bindable(), onCoverUpload } = $props();
+    /** @type {HTMLInputElement|null} */
     let fileInput = $state(null);
 
+    /** @param {Event} e */
     function handleFileChange(e) {
         onCoverUpload(e);
     }
@@ -16,9 +18,12 @@
                 src={formular.coverUrl}
                 alt="Cover"
                 class="w-full h-full object-cover"
-                onerror={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                onerror={(/** @type {Event} */ e) => {
+                    const target = /** @type {HTMLImageElement} */ (e.target);
+                    if (target) {
+                        target.onerror = null;
+                        target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                    }
                 }}
             />
         {:else}
@@ -33,7 +38,7 @@
         {#if formular.id}
             <button
                 class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none w-full h-full"
-                onclick={() => fileInput.click()}
+                onclick={() => fileInput?.click()}
                 aria-label="Cover hochladen"
             >
                 <svg
@@ -75,7 +80,7 @@
         />
         <button
             class="text-sm text-emerald-600 font-medium hover:text-emerald-700"
-            onclick={() => fileInput.click()}
+            onclick={() => fileInput?.click()}
         >
             Cover ändern
         </button>

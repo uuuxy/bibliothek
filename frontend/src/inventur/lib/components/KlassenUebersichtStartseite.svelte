@@ -60,6 +60,4 @@
     </section>
 {/each}
 
-<style>
-    @import "./KlassenUebersichtStartseite.css";
-</style>
+

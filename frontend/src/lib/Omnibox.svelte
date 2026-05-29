@@ -7,7 +7,6 @@
   let activeStudent = $state(/** @type {any} */ (null));
   let activeTeacher = $state(/** @type {any} */ (null));
   let queryVal = $state("");
-  let searchResults = $state(/** @type {any[]} */ ([]));
   let scannedBooks = $state(/** @type {any[]} */ ([])); 
   let toast = $state(/** @type {any} */ (null)); 
   let flashBorder = $state(""); 
@@ -15,7 +14,14 @@
   let studentProfileComponent = $state(/** @type {any} */ (null));
   let isShaking = $state(false);
 
-  let isActive = $derived(!!(activeStudent || activeTeacher || searchResults.length > 0));
+  // Search State
+  let debounceTimer = $state(/** @type {any} */ (null));
+  let isDropdownOpen = $state(false);
+  let unifiedSearchResults = $state({ students: /** @type {any[]} */ ([]), books: /** @type {any[]} */ ([]) });
+  let selectedDropdownIndex = $state(-1);
+  let totalDropdownItems = $derived(unifiedSearchResults.students.length + unifiedSearchResults.books.length);
+
+  let isActive = $derived(!!(activeStudent || activeTeacher || isDropdownOpen));
 
   function triggerShake() {
     isShaking = true;
@@ -37,9 +43,8 @@
     return () => source.close();
   });
 
-  // Automatically focus input only when the omnibox is in centered idle state
   $effect(() => {
-    if (!isActive) {
+    if (!isActive && !isDropdownOpen) {
       setTimeout(() => document.getElementById("omnibox-input")?.focus(), 50);
     }
   });
@@ -58,9 +63,9 @@
         queryVal = "";
         activeStudent = null;
         activeTeacher = null;
-        searchResults = [];
         scannedBooks = [];
         lastFremdrueckgabe = null;
+        isDropdownOpen = false;
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -76,14 +81,88 @@
   /** @param {string} color */
   function triggerFlash(color) { flashBorder = color; setTimeout(() => { flashBorder = ""; }, 1000); }
 
+  function handleInput() {
+    clearTimeout(debounceTimer);
+    if (!queryVal.trim()) {
+      isDropdownOpen = false;
+      unifiedSearchResults = { students: [], books: [] };
+      return;
+    }
+    
+    debounceTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(queryVal.trim())}`);
+        if (res.ok) {
+          unifiedSearchResults = await res.json();
+          if (!unifiedSearchResults.students) unifiedSearchResults.students = [];
+          if (!unifiedSearchResults.books) unifiedSearchResults.books = [];
+          
+          isDropdownOpen = unifiedSearchResults.students.length > 0 || unifiedSearchResults.books.length > 0;
+          selectedDropdownIndex = -1;
+        }
+      } catch (err) {
+        console.error("Search failed:", err);
+      }
+    }, 300);
+  }
+
+  /** @param {KeyboardEvent} e */
+  function handleKeydownInput(e) {
+    if (!isDropdownOpen || totalDropdownItems === 0) return;
+    
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      selectedDropdownIndex = (selectedDropdownIndex + 1) % totalDropdownItems;
+      scrollDropdownToSelected();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      selectedDropdownIndex = selectedDropdownIndex <= 0 ? totalDropdownItems - 1 : selectedDropdownIndex - 1;
+      scrollDropdownToSelected();
+    } else if (e.key === "Enter" && selectedDropdownIndex >= 0) {
+      e.preventDefault();
+      selectDropdownItem(selectedDropdownIndex);
+    } else if (e.key === "Escape") {
+      isDropdownOpen = false;
+    }
+  }
+
+  function scrollDropdownToSelected() {
+    setTimeout(() => {
+      const el = document.getElementById(`dropdown-item-${selectedDropdownIndex}`);
+      if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }, 10);
+  }
+
+  /** @param {number} index */
+  function selectDropdownItem(index) {
+    const { students, books } = unifiedSearchResults;
+    if (index < students.length) {
+      const student = students[index];
+      queryVal = student.barcode_id;
+      isDropdownOpen = false;
+      submitAction();
+    } else {
+      const book = books[index - students.length];
+      queryVal = "";
+      isDropdownOpen = false;
+      if (onSelectBook) onSelectBook(book);
+    }
+  }
+
   /** @param {Event} [e] */
   async function submitAction(e) {
     if (e) e.preventDefault();
+    if (isDropdownOpen && selectedDropdownIndex >= 0) {
+      // If user presses Enter while focusing a dropdown item but without ArrowDown handling it (fallback)
+      selectDropdownItem(selectedDropdownIndex);
+      return;
+    }
+
     const q = queryVal.trim();
     if (!q) return;
 
     queryVal = "";
-    searchResults = [];
+    isDropdownOpen = false;
     lastFremdrueckgabe = null;
 
     try {
@@ -137,8 +216,6 @@
           activeTeacher = data.teacher;
           scannedBooks = [];
         }
-      } else if (data.type === "search_results") {
-        searchResults = data.search_results || [];
       }
     } catch (err) {
       const error = /** @type {any} */ (err);
@@ -204,26 +281,83 @@
   </div>
 {/snippet}
 
-{#snippet searchResultRow(/** @type {any} */ book)}
+{#snippet studentDropdownRow(/** @type {any} */ student, /** @type {number} */ index)}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div onclick={() => { if (onSelectBook) onSelectBook(book); }} class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
-    <div class="flex items-center space-x-4">
-      {@render bookCover(book)}
+  <div id="dropdown-item-{index}"
+       class="px-4 py-3 rounded-xl flex items-center justify-between cursor-pointer transition-all {selectedDropdownIndex === index ? 'bg-blue-600 shadow-md text-white' : 'hover:bg-slate-100 text-slate-700'}"
+       onclick={() => selectDropdownItem(index)}>
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold {selectedDropdownIndex === index ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}">
+        {student.vorname.charAt(0)}{student.nachname.charAt(0)}
+      </div>
       <div>
-        <h4 class="font-semibold text-sm text-slate-800">{book.titel}</h4>
-        <p class="text-xs text-slate-400">{book.autor} · {book.verlag} ({book.erscheinungsjahr})</p>
+        <div class="font-bold {selectedDropdownIndex === index ? 'text-white' : 'text-slate-900'}">{student.vorname} {student.nachname}</div>
+        <div class="text-xs {selectedDropdownIndex === index ? 'text-blue-100' : 'text-slate-500'}">{student.klasse} · {student.barcode_id}</div>
       </div>
     </div>
-    <span class="text-[10px] font-mono bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-slate-500">{book.isbn || 'Keine ISBN'}</span>
+  </div>
+{/snippet}
+
+{#snippet bookDropdownRow(/** @type {any} */ book, /** @type {number} */ index)}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div id="dropdown-item-{index}"
+       class="px-4 py-3 rounded-xl flex items-center justify-between cursor-pointer transition-all {selectedDropdownIndex === index ? 'bg-indigo-600 shadow-md text-white' : 'hover:bg-slate-100 text-slate-700'}"
+       onclick={() => selectDropdownItem(index)}>
+    <div class="flex items-center space-x-4">
+      {#if book.cover_url}
+        <img src={book.cover_url} class="w-10 h-14 object-cover rounded shadow-sm border {selectedDropdownIndex === index ? 'border-indigo-400' : 'border-slate-200'}" alt="Cover" />
+      {:else}
+        <div class="w-10 h-14 rounded shadow-sm flex items-center justify-center font-bold text-xs {selectedDropdownIndex === index ? 'bg-indigo-500 text-white border border-indigo-400' : 'bg-slate-100 text-slate-400 border border-slate-200'}">
+          {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
+        </div>
+      {/if}
+      <div>
+        <div class="font-bold line-clamp-1 {selectedDropdownIndex === index ? 'text-white' : 'text-slate-900'}">{book.titel}</div>
+        <div class="text-xs line-clamp-1 {selectedDropdownIndex === index ? 'text-indigo-100' : 'text-slate-500'}">{book.autor} · {book.isbn || 'Keine ISBN'}</div>
+      </div>
+    </div>
   </div>
 {/snippet}
 
 <div class="w-full transition-all duration-500 ease-in-out {isActive ? 'max-w-4xl pt-4 justify-start' : 'max-w-2xl min-h-[60vh] justify-center'} flex flex-col items-center space-y-6">
-  <form onsubmit={submitAction} class="w-full relative bg-white py-5 px-8 rounded-3xl border border-slate-200 shadow-2xl no-print transition-all duration-500 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 {isActive ? 'scale-100' : 'scale-105'} {isShaking ? 'animate-shake border-rose-400' : ''} {flashBorder === 'green' ? 'ring-4 ring-emerald-500/10 border-emerald-400' : flashBorder === 'orange' ? 'ring-4 ring-amber-500/10 border-amber-400' : ''}">
-    <input id="omnibox-input" type="text" autocomplete="off" bind:value={queryVal} class="w-full pl-10 bg-transparent text-slate-800 font-sans text-xl placeholder-slate-400 focus:outline-none tracking-wide" placeholder={activeStudent || activeTeacher ? "Buch-Barcode (B-) scannen..." : "Schüler (S-), Lehrer (L-), Buch (B-) scannen..."} />
-    <div class="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
-  </form>
+  <div class="w-full transition-all duration-500 {isActive ? 'sticky -top-4 z-30 bg-slate-50/95 backdrop-blur-md py-4' : ''}">
+    <form onsubmit={submitAction} class="w-full relative bg-white py-5 px-8 rounded-3xl border border-slate-200 shadow-2xl no-print transition-all duration-500 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 {isActive ? 'scale-100' : 'scale-105'} {isShaking ? 'animate-shake border-rose-400' : ''} {flashBorder === 'green' ? 'ring-4 ring-emerald-500/10 border-emerald-400' : flashBorder === 'orange' ? 'ring-4 ring-amber-500/10 border-amber-400' : ''}">
+      <input id="omnibox-input" type="text" autocomplete="off" bind:value={queryVal} oninput={handleInput} onkeydown={handleKeydownInput} class="w-full pl-10 bg-transparent text-slate-800 font-sans text-xl placeholder-slate-400 focus:outline-none tracking-wide" placeholder={activeStudent || activeTeacher ? "Buch-Barcode (B-) scannen..." : "Schüler (S-), Lehrer (L-), Buch (B-) scannen..."} />
+      <div class="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
+      
+      {#if isDropdownOpen && totalDropdownItems > 0}
+        <div class="absolute top-full left-0 right-0 mt-4 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_12px_40px_rgb(0,0,0,0.12)] rounded-2xl z-50 overflow-hidden flex flex-col max-h-[60vh] animate-slide-up">
+          <div class="overflow-y-auto overscroll-contain flex-1 p-3 space-y-4">
+            
+            {#if unifiedSearchResults.students.length > 0}
+              <div>
+                <div class="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Schüler ({unifiedSearchResults.students.length})</div>
+                <div class="space-y-1">
+                  {#each unifiedSearchResults.students as student, i}
+                    {@render studentDropdownRow(student, i)}
+                  {/each}
+                </div>
+              </div>
+            {/if}
+
+            {#if unifiedSearchResults.books.length > 0}
+              <div>
+                <div class="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bücher ({unifiedSearchResults.books.length})</div>
+                <div class="space-y-1">
+                  {#each unifiedSearchResults.books as book, j}
+                    {@render bookDropdownRow(book, j + unifiedSearchResults.students.length)}
+                  {/each}
+                </div>
+              </div>
+            {/if}
+
+          </div>
+        </div>
+      {/if}
+    </form>
+  </div>
 
   {#if activeStudent}
     {#if lastFremdrueckgabe}
@@ -247,20 +381,9 @@
       </div>
     </div>
   {/if}
-
-  {#if searchResults.length > 0}
-    <div class="w-full rounded-2xl border border-slate-100 bg-white overflow-hidden animate-fade-in shadow-xl">
-      <div class="px-5 py-3 border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider font-mono">Bücherkatalog Treffer</div>
-      <div class="divide-y divide-slate-100 max-h-60 overflow-y-auto">
-        {#each searchResults as book}
-          {@render searchResultRow(book)}
-        {/each}
-      </div>
-    </div>
-  {/if}
 </div>
 
-<div class="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-lg z-40 space-y-3 px-4 pointer-events-none">
+<div class="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 space-y-3 px-4 pointer-events-none">
   {#if toast}
     <div class="p-4 rounded-xl shadow-xl flex items-center space-x-3 backdrop-blur-md animate-slide-down pointer-events-auto border {toast.type === 'success' ? 'bg-emerald-50 border-emerald-100/50 text-emerald-700' : 'bg-rose-50 border-rose-100/50 text-rose-700'}">
       <span class="text-sm font-semibold">{toast.message}</span>

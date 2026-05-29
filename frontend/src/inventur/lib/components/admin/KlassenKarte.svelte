@@ -102,6 +102,4 @@
     </div>
 </div>
 
-<style>
-    @import "./KlassenKarte.css";
-</style>
+

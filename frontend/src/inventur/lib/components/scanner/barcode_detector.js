@@ -1,12 +1,13 @@
 export async function createBarcodeDetector() {
 	if ("BarcodeDetector" in window) {
-		const formats = await window.BarcodeDetector.getSupportedFormats();
+		const BarcodeDetector = /** @type {any} */ (window).BarcodeDetector;
+		const formats = await BarcodeDetector.getSupportedFormats();
 		const neededFormats = ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"];
-		const supportedFormats = neededFormats.filter((format) => formats.includes(format));
+		const supportedFormats = neededFormats.filter((/** @type {string} */ format) => formats.includes(format));
 		if (supportedFormats.length > 0) {
 			return {
 				name: "native",
-				detector: new window.BarcodeDetector({ formats: supportedFormats }),
+				detector: new BarcodeDetector({ formats: supportedFormats }),
 			};
 		}
 	}
@@ -31,17 +32,19 @@ export async function createBarcodeDetector() {
 				Html5QrcodeSupportedFormats.UPC_E,
 				Html5QrcodeSupportedFormats.CODE_128,
 			],
+			verbose: false
 		});
 
 		return {
 			name: "zxing-fallback",
 			detector: {
+				/** @param {HTMLVideoElement | HTMLImageElement} source */
 				async detect(source) {
 					const canvas = document.createElement("canvas");
-					canvas.width = source.videoWidth || source.width;
-					canvas.height = source.videoHeight || source.height;
+					canvas.width = /** @type {any} */ (source).videoWidth || source.width;
+					canvas.height = /** @type {any} */ (source).videoHeight || source.height;
 					const context = canvas.getContext("2d");
-					context.drawImage(source, 0, 0, canvas.width, canvas.height);
+					if (context) context.drawImage(source, 0, 0, canvas.width, canvas.height);
 
 					const blob = await new Promise((resolve) =>
 						canvas.toBlob(resolve, "image/jpeg", 0.85),

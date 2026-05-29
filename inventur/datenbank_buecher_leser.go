@@ -8,7 +8,7 @@ import (
 // ListBooks lists books matching subject, grade level, and text query.
 func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string) ([]Book, error) {
 	query := `
-		SELECT id, isbn, titel AS title, autor AS author, cover_url, subject, grade_level, track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order
 		FROM buecher_titel
 		WHERE ($1 = '' OR subject = $1)
 		  AND ($2::smallint IS NULL OR grade_level = $2)
@@ -57,7 +57,7 @@ func (repo *BookRepository) ListExternalCoverBooks(ctx context.Context, limit in
 	}
 
 	query := `
-		SELECT id, isbn, titel AS title, cover_url
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(cover_url, '') AS cover_url
 		FROM buecher_titel
 		WHERE cover_url LIKE 'http%'
 		ORDER BY id ASC
@@ -91,7 +91,7 @@ func (repo *BookRepository) ListBooksByIDs(ctx context.Context, ids []string) ([
 	}
 
 	query := `
-		SELECT id, isbn, titel AS title, cover_url
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(cover_url, '') AS cover_url
 		FROM buecher_titel
 		WHERE id = ANY($1::uuid[])
 		ORDER BY id ASC`

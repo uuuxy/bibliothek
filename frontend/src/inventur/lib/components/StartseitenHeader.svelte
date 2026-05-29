@@ -30,7 +30,7 @@
     <div class="max-w-5xl mx-auto flex flex-col items-center space-y-8">
         <StartseitenHeaderTabs
             bind:viewMode
-            onWechsel={(modus) => (viewMode = modus)}
+            onWechsel={(/** @type {string} */ modus) => (viewMode = modus)}
         />
 
         <!-- Dynamischer Filterbereich -->

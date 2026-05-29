@@ -1,10 +1,12 @@
 <script>
+	// @ts-ignore
 	import { goto } from "$app/navigation";
 	import { appState } from "$lib/store.svelte.js";
 	import StrichcodeScanner from "$lib/components/StrichcodeScanner.svelte";
 
 	let scannedResult = $state("");
 
+	/** @param {string} decodedText */
 	function onScanSuccess(decodedText) {
 		scannedResult = decodedText;
 		appState.searchQuery = decodedText;

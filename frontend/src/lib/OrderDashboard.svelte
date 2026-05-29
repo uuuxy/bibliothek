@@ -167,7 +167,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-1"><label for="supplier" class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
           <div class="space-y-1 relative">
-            <label for="book" class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={handleSearchInput} placeholder="Buchtitel oder Autor suchen..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/50" />
+            <label for="book" class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={handleSearchInput} placeholder="Buchtitel oder Autor suchen..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50" />
             {#if showDropdown && searchResults.length > 0}
               <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
                 {#each searchResults as b}
@@ -251,29 +251,29 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start overflow-y-auto">
       <div class="bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-4">
         <h2 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Neuer Lieferant</h2>
-        <form onsubmit={addSupplier} class="space-y-4 text-xs">
-          <div class="space-y-1"><label for="n" class="font-bold text-slate-400 uppercase tracking-wide">Name</label><input id="n" type="text" bind:value={newName} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50" /></div>
-          <div class="space-y-1"><label for="e" class="font-bold text-slate-400 uppercase tracking-wide">E-Mail</label><input id="e" type="email" bind:value={newEmail} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50" /></div>
-          <div class="space-y-1"><label for="c" class="font-bold text-slate-400 uppercase tracking-wide">Kundennummer</label><input id="c" type="text" bind:value={newCustNum} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50" /></div>
-          <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg cursor-pointer">💾 Lieferanten speichern</button>
+        <form onsubmit={addSupplier} class="space-y-4 text-base">
+          <div class="space-y-1"><label for="n" class="font-bold text-slate-400 uppercase tracking-wide text-xs">Name</label><input id="n" type="text" bind:value={newName} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
+          <div class="space-y-1"><label for="e" class="font-bold text-slate-400 uppercase tracking-wide text-xs">E-Mail</label><input id="e" type="email" bind:value={newEmail} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
+          <div class="space-y-1"><label for="c" class="font-bold text-slate-400 uppercase tracking-wide text-xs">Kundennummer</label><input id="c" type="text" bind:value={newCustNum} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
+          <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg cursor-pointer text-base">💾 Lieferanten speichern</button>
         </form>
       </div>
 
       <div class="md:col-span-2 bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-4">
         <h2 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Aktive Lieferanten</h2>
         {#if !suppliers.length}
-          <div class="py-12 text-center text-slate-400 text-xs">Keine Lieferanten angelegt.</div>
+          <div class="py-12 text-center text-slate-400 text-base">Keine Lieferanten angelegt.</div>
         {:else}
-          <table class="w-full text-left border-collapse text-xs">
+          <table class="w-full text-left border-collapse text-base">
             <thead>
-              <tr class="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider"><th class="py-2.5">Name</th><th class="py-2.5">E-Mail</th><th class="py-2.5">Kundennummer</th><th class="py-2.5 text-right">Aktion</th></tr>
+              <tr class="border-b border-slate-100 text-sm font-bold text-slate-400 uppercase tracking-wider"><th class="py-2.5">Name</th><th class="py-2.5">E-Mail</th><th class="py-2.5">Kundennummer</th><th class="py-2.5 text-right">Aktion</th></tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
               {#each suppliers as s, idx}
                 <tr class="hover:bg-slate-50/40">
                   <td class="py-3 font-bold text-slate-800">{s.name}</td>
-                  <td class="py-3 text-slate-600">{s.email}</td>
-                  <td class="py-3 font-mono text-slate-600">{s.customerNumber}</td>
+                  <td class="py-3 text-slate-650">{s.email}</td>
+                  <td class="py-3 font-mono text-slate-650">{s.customerNumber}</td>
                   <td class="py-3 text-right"><button onclick={() => removeSupplier(idx)} class="text-slate-450 hover:text-rose-600 cursor-pointer">Löschen</button></td>
                 </tr>
               {/each}

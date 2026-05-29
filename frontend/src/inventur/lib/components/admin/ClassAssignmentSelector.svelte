@@ -1,8 +1,9 @@
-﻿<script>
+<script>
     let { selectedClasses = $bindable([]) } = $props();
 
     const classInput = $state({ value: "" });
 
+    /** @param {string} name */
     function formatClassName(name) {
         let formatted = name.trim().toUpperCase();
         // Adds leading zero if the string starts with a single digit not followed by another digit
@@ -10,6 +11,7 @@
         return formatted;
     }
 
+    /** @param {string} inputString */
     function addClass(inputString) {
         const parts = inputString.split(",");
         let added = false;
@@ -27,10 +29,12 @@
         }
     }
 
+    /** @param {string} name */
     function removeClass(name) {
         selectedClasses = selectedClasses.filter((c) => c !== name);
     }
 
+    /** @param {KeyboardEvent} e */
     function handleKeyDown(e) {
         if (e.key === "Enter" || e.key === ",") {
             e.preventDefault();

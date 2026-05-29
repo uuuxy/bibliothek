@@ -7,7 +7,7 @@ import (
 
 func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, error) {
 	query := `
-		SELECT id, isbn, titel AS title, autor AS author, cover_url, subject, grade_level, stock
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, stock
 		FROM buecher_titel
 		WHERE id = $1::uuid`
 

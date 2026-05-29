@@ -6,12 +6,15 @@
 
 	let { initialGroup, onClose, onSaved } = $props();
 
+	/** @type {string[]} */
 	let classNames = $state([]);
 	let classInput = $state("");
+	/** @type {any[]} */
 	let allBooks = $state([]);
 	let selectedBookIds = $state(new Set());
 	let loading = $state(true);
 	let saving = $state(false);
+	/** @type {string|null} */
 	let error = $state(null);
 
 	onMount(async () => {
@@ -23,7 +26,7 @@
 			const json = await res.json();
 			allBooks = json.data || [];
 		} catch (err) {
-			error = err.message;
+			error = err instanceof Error ? err.message : String(err);
 		} finally {
 			loading = false;
 		}
@@ -32,10 +35,11 @@
 	$effect(() => {
 		if (initialGroup) {
 			classNames = [initialGroup.className];
-			selectedBookIds = new Set(initialGroup.books.map((b) => b.id));
+			selectedBookIds = new Set(initialGroup.books.map((/** @type {{id: string}} */ b) => b.id));
 		}
 	});
 
+	/** @param {KeyboardEvent} e */
 	function handleKeydown(e) {
 		if (e.key === "Enter" || e.key === ",") {
 			e.preventDefault();
@@ -60,6 +64,7 @@
 		classInput = "";
 	}
 
+	/** @param {number} index */
 	function removeClassName(index) {
 		classNames.splice(index, 1);
 	}
@@ -72,6 +77,7 @@
 		}
 		saving = true;
 		
+		/** @type {{classNames: string[], bookIds: string[], oldClassName?: string}} */
 		const payload = {
 			classNames: classNames,
 			bookIds: Array.from(selectedBookIds),
@@ -98,7 +104,7 @@
 			if (!res.ok) throw new Error("Fehler beim Speichern");
 			onSaved();
 		} catch (err) {
-			alert(err.message);
+			alert(err instanceof Error ? err.message : String(err));
 		} finally {
 			saving = false;
 		}

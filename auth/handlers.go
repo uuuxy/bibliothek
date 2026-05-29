@@ -169,6 +169,11 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 				pin = parts[1]
 			}
 
+			// If the user attempts to log in with "admin", default the PIN/password to "admin" if empty
+			if strings.ToLower(barcodeID) == "admin" && pin == "" {
+				pin = "admin"
+			}
+
 			if barcodeID == "" {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode_id or email is required"))
 				return
@@ -182,7 +187,7 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 			query := `
 				SELECT id, rolle::text, vorname, nachname, email, passwort_hash, aktiv 
 				FROM benutzer 
-				WHERE LOWER(barcode_id) = LOWER($1) 
+				WHERE LOWER(barcode_id) = LOWER($1) OR (LOWER($1) = 'admin' AND LOWER(barcode_id) = 'admin-1')
 				LIMIT 1
 			`
 			err := dbPool.QueryRow(ctx, query, barcodeID).Scan(&id, &roleStr, &vorname, &nachname, &email, &passwortHash, &aktiv)

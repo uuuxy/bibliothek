@@ -6,24 +6,19 @@
 <script>
 	import { onMount } from "svelte";
 	import { appState } from "$lib/store.svelte.js";
-	import AdminLoginView from "$lib/components/admin/LoginView.svelte";
 	import BookTable from "$lib/components/admin/BookTable.svelte";
 	import BuchFormular from "$lib/components/admin/BuchFormular.svelte";
 	import StrichcodeScanner from "$lib/components/StrichcodeScanner.svelte";
 	import KlassenUebersicht from "$lib/components/admin/KlassenUebersicht.svelte";
 	import AdminBuchAktionen from "$lib/components/admin/AdminBuchAktionen.svelte";
 	import AdminAnsichtsUmschalter from "$lib/components/admin/AdminAnsichtsUmschalter.svelte";
-	import { holeAuthStatus } from "$lib/auth_api.js";
 	import {
-		loginAdmin,
 		holeBuecherListe,
 		importiereExcel,
 		loescheBuecher,
 		holeExterneCover,
 		retryExterneCover,
 	} from "$lib/admin_api.js";
-
-	let passwort = $state("");
 
 	/** @type {any[]} */
 	let buecher = $state([]);
@@ -59,39 +54,19 @@
 	});
 
 	onMount(() => {
-		initialisiereSeite();
+		aktualisiereBuecher();
 	});
 
-	async function initialisiereSeite() {
-		wirdGeladen = true;
-		try {
-			const status = await holeAuthStatus();
-			if (!status.authenticated || !status.admin) {
-				appState.adminAuthenticated = false;
-				return;
-			}
-			await aktualisiereBuecher();
-		} finally {
-			wirdGeladen = false;
-		}
-	}
-
-	async function loginAktion() {
-		try {
-			await loginAdmin(passwort);
-			aktualisiereBuecher();
-		} catch (fehler) {
-			alert(/** @type {any} */ (fehler).message);
-		}
-	}
-
 	async function aktualisiereBuecher() {
+		wirdGeladen = true;
 		try {
 			const geladene = await holeBuecherListe();
 			buecher = geladene;
 			appState.adminAuthenticated = true;
 		} catch {
 			appState.adminAuthenticated = false;
+		} finally {
+			wirdGeladen = false;
 		}
 	}
 
@@ -173,54 +148,50 @@
 	}
 </script>
 
-{#if !appState.adminAuthenticated}
-	<AdminLoginView onLogin={loginAktion} />
-{:else}
-	<div class="relative min-h-[calc(100vh-8rem)]">
-		<AdminAnsichtsUmschalter
-			{ansichtsModus}
-			onWechsel={(modus) => (ansichtsModus = modus)}
-		/>
+<div class="relative min-h-[calc(100vh-8rem)]">
+	<AdminAnsichtsUmschalter
+		{ansichtsModus}
+		onWechsel={(modus) => (ansichtsModus = modus)}
+	/>
 
-		{#if wirdGescannt}
-			<div
-				class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-			>
-				<StrichcodeScanner
-					onClose={() => (wirdGescannt = false)}
-					onCreated={nachScanAktion}
-				/>
-			</div>
-		{:else if ansichtsModus === "classes"}
-			<KlassenUebersicht />
-		{:else}
-			<BookTable
-				books={buecher}
-				loading={wirdGeladen}
-				onOpenDetail={oeffneDetails}
-				onImportExcel={aktionExcelImport}
-				onCreateNew={neuesBuchErstellen}
-				onScan={() => (wirdGescannt = true)}
-				onDelete={aktionBuecherLoeschen}
-				onRetryCovers={aktionExterneCoverRetry}
+	{#if wirdGescannt}
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+		>
+			<StrichcodeScanner
+				onClose={() => (wirdGescannt = false)}
+				onCreated={nachScanAktion}
 			/>
-		{/if}
+		</div>
+	{:else if ansichtsModus === "classes"}
+		<KlassenUebersicht />
+	{:else}
+		<BookTable
+			books={buecher}
+			loading={wirdGeladen}
+			onOpenDetail={oeffneDetails}
+			onImportExcel={aktionExcelImport}
+			onCreateNew={neuesBuchErstellen}
+			onScan={() => (wirdGescannt = true)}
+			onDelete={aktionBuecherLoeschen}
+			onRetryCovers={aktionExterneCoverRetry}
+		/>
+	{/if}
 
-		<AdminBuchAktionen
-			bind:this={buchAktionen}
-			bind:books={buecher}
-			bind:isEditMode={istBearbeitenModus}
+	<AdminBuchAktionen
+		bind:this={buchAktionen}
+		bind:books={buecher}
+		bind:isEditMode={istBearbeitenModus}
+		bind:formular
+	/>
+
+	{#if istBearbeitenModus}
+		<BuchFormular
 			bind:formular
+			onClose={() => (istBearbeitenModus = false)}
+			onSave={() => buchAktionen.saveChanges()}
+			onCoverUpload={(/** @type {any} */ ereignis) =>
+				buchAktionen.handleCoverUpload(ereignis)}
 		/>
-
-		{#if istBearbeitenModus}
-			<BuchFormular
-				bind:formular
-				onClose={() => (istBearbeitenModus = false)}
-				onSave={() => buchAktionen.saveChanges()}
-				onCoverUpload={(/** @type {any} */ ereignis) =>
-					buchAktionen.handleCoverUpload(ereignis)}
-			/>
-		{/if}
-	</div>
-{/if}
+	{/if}
+</div>

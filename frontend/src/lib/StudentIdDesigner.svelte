@@ -102,6 +102,25 @@
   }
 
   /**
+   * @param {string} key
+   * @returns {any}
+   */
+  function getLayoutEl(key) {
+    switch (key) {
+      case "header": return layout.header;
+      case "photo": return layout.photo;
+      case "name": return layout.name;
+      case "details": return layout.details;
+      case "validity": return layout.validity;
+      case "barcode": return layout.barcode;
+      case "logo": return layout.logo;
+      case "address": return layout.address;
+      default: return {};
+    }
+  }
+
+
+  /**
    * @param {any} e
    * @param {string} elementKey
    */
@@ -114,7 +133,8 @@
     const rect = cardEl.getBoundingClientRect();
     const pxToMm = 85.6 / rect.width;
     const startX = e.clientX, startY = e.clientY;
-    const initialX = layout[elementKey].x, initialY = layout[elementKey].y;
+    const elLayout = getLayoutEl(elementKey);
+    const initialX = elLayout.x, initialY = elLayout.y;
     let hasMoved = false;
     activeElement = elementKey;
 
@@ -123,8 +143,8 @@
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
-      layout[elementKey].x = Math.max(0, Math.min(80, Math.round((initialX + dx * pxToMm) * 10) / 10));
-      layout[elementKey].y = Math.max(0, Math.min(50, Math.round((initialY + dy * pxToMm) * 10) / 10));
+      elLayout.x = Math.max(0, Math.min(80, Math.round((initialX + dx * pxToMm) * 10) / 10));
+      elLayout.y = Math.max(0, Math.min(50, Math.round((initialY + dy * pxToMm) * 10) / 10));
     }
 
     function onPointerUp() {
@@ -259,11 +279,11 @@
                   {el.name}
                 </button>
                 <label class="relative inline-flex items-center cursor-pointer select-none">
-                  <input type="checkbox" bind:checked={layout[el.key].show} class="sr-only peer" />
+                  <input type="checkbox" checked={getLayoutEl(el.key).show} onchange={(e) => { getLayoutEl(el.key).show = e.currentTarget.checked; }} class="sr-only peer" />
                   <div class="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
-              {#if activeElement === el.key && layout[el.key].show}
+              {#if activeElement === el.key && getLayoutEl(el.key).show}
                 <div class="space-y-2 pl-2 border-l-2 border-blue-500 py-1 transition-all">
                   {#if el.key === 'header'}
                     <div class="space-y-1">
@@ -284,23 +304,23 @@
                   <div class="space-y-1">
                     <div class="flex justify-between text-[10px] text-slate-400">
                       <span>X-Position</span>
-                      <span class="font-mono font-bold text-blue-600">{layout[el.key].x} mm</span>
+                      <span class="font-mono font-bold text-blue-600">{getLayoutEl(el.key).x} mm</span>
                     </div>
-                    <input type="range" min="0" max={el.maxX} step="0.5" bind:value={layout[el.key].x} class="w-full accent-blue-600 h-1 bg-slate-150 rounded-lg cursor-pointer" />
+                    <input type="range" min="0" max={el.maxX} step="0.5" value={getLayoutEl(el.key).x} oninput={(e) => { getLayoutEl(el.key).x = parseFloat(e.currentTarget.value); }} class="w-full accent-blue-600 h-1 bg-slate-150 rounded-lg cursor-pointer" />
                   </div>
                   <div class="space-y-1">
                     <div class="flex justify-between text-[10px] text-slate-400">
                       <span>Y-Position</span>
-                      <span class="font-mono font-bold text-blue-600">{layout[el.key].y} mm</span>
+                      <span class="font-mono font-bold text-blue-600">{getLayoutEl(el.key).y} mm</span>
                     </div>
-                    <input type="range" min="0" max={el.maxY} step="0.5" bind:value={layout[el.key].y} class="w-full accent-blue-600 h-1 bg-slate-150 rounded-lg cursor-pointer" />
+                    <input type="range" min="0" max={el.maxY} step="0.5" value={getLayoutEl(el.key).y} oninput={(e) => { getLayoutEl(el.key).y = parseFloat(e.currentTarget.value); }} class="w-full accent-blue-600 h-1 bg-slate-150 rounded-lg cursor-pointer" />
                   </div>
                   <div class="space-y-1">
                     <div class="flex justify-between text-[10px] text-slate-400">
                       <span>Größe</span>
-                      <span class="font-mono font-bold text-blue-600">{layout[el.key].scale.toFixed(2)}x</span>
+                      <span class="font-mono font-bold text-blue-600">{getLayoutEl(el.key).scale.toFixed(2)}x</span>
                     </div>
-                    <input type="range" min="0.4" max="2.2" step="0.05" bind:value={layout[el.key].scale} class="w-full accent-blue-600 h-1 bg-slate-150 rounded-lg cursor-pointer" />
+                    <input type="range" min="0.4" max="2.2" step="0.05" value={getLayoutEl(el.key).scale} oninput={(e) => { getLayoutEl(el.key).scale = parseFloat(e.currentTarget.value); }} class="w-full accent-blue-600 h-1 bg-slate-150 rounded-lg cursor-pointer" />
                   </div>
                 </div>
               {/if}

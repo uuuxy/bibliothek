@@ -15,6 +15,9 @@
         ).sort(sortBooksBySubjectAndTitle)
     );
 
+    /**
+     * @param {string|number} id
+     */
     function toggleBook(id) {
         if (selectedBookIds.has(id)) {
             selectedBookIds.delete(id);
@@ -75,14 +78,17 @@
                     {/if}
                 </div>
                 
-                <div class="w-10 h-14 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-200">
+                <div class="w-10 h-14 bg-gray-100 rounded shrink-0 flex items-center justify-center overflow-hidden border border-gray-200">
                     {#if book.coverUrl || book.isbn}
                         <img 
                             src={book.coverUrl || `https://covers.openlibrary.org/b/isbn/${book.isbn}-S.jpg`} 
                             alt="Cover" 
                             loading="lazy"
                             class="w-full h-full object-cover"
-                            onerror={(e) => e.target.style.display = 'none'}
+                            onerror={(/** @type {Event} */ e) => {
+                                const target = /** @type {HTMLImageElement} */ (e.target);
+                                if (target) target.style.display = 'none';
+                            }}
                         />
                     {:else}
                         <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">

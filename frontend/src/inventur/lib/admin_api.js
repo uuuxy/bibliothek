@@ -1,12 +1,5 @@
 import { appState } from "./store.svelte.js";
 import { csrfHeader } from "./csrf.js";
-import { loginWithPassword } from "./auth_api.js";
-
-export async function loginAdmin(passwort) {
-    await loginWithPassword("/api/login", passwort, "Falsches Passwort");
-    appState.adminAuthenticated = true;
-    return true;
-}
 
 export async function holeBuecherListe() {
     const suchParameter = appState.searchQuery
@@ -26,6 +19,7 @@ export async function holeBuecherListe() {
     return json.data || [];
 }
 
+/** @param {File} datei */
 export async function importiereExcel(datei) {
     const formData = new FormData();
     formData.append("file", datei);
@@ -41,6 +35,7 @@ export async function importiereExcel(datei) {
     return true;
 }
 
+/** @param {string[]} ids */
 export async function loescheBuecher(ids) {
     const res = await fetch("/api/books", {
         method: "DELETE",
@@ -64,6 +59,7 @@ export async function holeExterneCover() {
     return json.data || [];
 }
 
+/** @param {string[]} ids */
 export async function retryExterneCover(ids = []) {
     const res = await fetch("/api/admin/books/retry-covers", {
         method: "POST",

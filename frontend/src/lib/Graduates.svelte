@@ -135,9 +135,9 @@
   {:else}
     <!-- Active list of graduates with dues -->
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm border-collapse">
+      <table class="w-full text-left text-base border-collapse">
         <thead>
-          <tr class="border-b border-slate-100 text-slate-450 text-xs font-mono uppercase">
+          <tr class="border-b border-slate-100 text-slate-450 text-sm font-mono uppercase">
             <th class="py-3 px-4">Klasse</th>
             <th class="py-3 px-4">Name</th>
             <th class="py-3 px-4">Barcode-ID</th>

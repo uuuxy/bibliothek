@@ -4,7 +4,7 @@
   Einen für die API-Abfrage der Metadaten und einen für den Barcode-Scanner.
 -->
 <script>
-    let { formular, wirdGescannt } = $props();
+    let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
     async function aktualisiereMetadaten() {
         if (!formular.isbn) return;

@@ -5,14 +5,14 @@
 
     let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
-    let faecherListe = $state([]);
+    let faecherListe = $state(/** @type {string[]} */ ([]));
 
     onMount(async () => {
         try {
             const antwort = await fetch("/api/subjects");
             if (antwort.ok) {
                 const json = await antwort.json();
-                faecherListe = (json.data || []).map((fach) => fach.name);
+                faecherListe = (json.data || []).map((/** @type {any} */ fach) => fach.name);
             }
         } catch (fehler) {
             console.error("Fehler beim Laden der Fächer", fehler);
@@ -190,7 +190,5 @@
     </div>
 </div>
 
-<style>
-    @import "./BuchEingabefelder.css";
-</style>
+
 

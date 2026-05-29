@@ -71,9 +71,9 @@
           <p class="text-xs text-slate-550 py-6 text-center font-mono bg-white border border-slate-100 rounded-xl">Keine Ausleihen registriert</p>
         {:else}
           <div class="overflow-hidden border border-slate-150 rounded-xl bg-white shadow-xs">
-            <table class="w-full text-left text-xs border-collapse">
+            <table class="w-full text-left text-base border-collapse">
               <thead>
-                <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 font-mono">
+                <tr class="bg-slate-50 border-b border-slate-100 text-sm text-slate-500 font-mono">
                   <th class="py-2.5 px-4 font-semibold">Rang</th>
                   <th class="py-2.5 px-4 font-semibold">Klasse</th>
                   <th class="py-2.5 px-4 font-semibold text-right">Ausleihen</th>
@@ -100,9 +100,9 @@
           <p class="text-xs text-slate-550 py-6 text-center font-mono bg-white border border-slate-100 rounded-xl">Keine Ladenhüter identifiziert</p>
         {:else}
           <div class="overflow-hidden border border-slate-150 rounded-xl bg-white shadow-xs">
-            <table class="w-full text-left text-xs border-collapse">
+            <table class="w-full text-left text-base border-collapse">
               <thead>
-                <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 font-mono">
+                <tr class="bg-slate-50 border-b border-slate-100 text-sm text-slate-500 font-mono">
                   <th class="py-2.5 px-4 font-semibold">Buchtitel</th>
                   <th class="py-2.5 px-4 font-semibold">Autor</th>
                   <th class="py-2.5 px-4 font-semibold text-right">Zuletzt geliehen</th>

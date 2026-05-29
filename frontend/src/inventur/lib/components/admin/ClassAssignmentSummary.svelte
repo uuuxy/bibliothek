@@ -9,8 +9,11 @@
         onsave = () => {},
     } = $props();
 
+    /**
+     * @param {Event} event
+     */
     function handleImageError(event) {
-        const image = event.currentTarget;
+        const image = /** @type {HTMLImageElement} */ (event.currentTarget);
         const fallback = image.dataset.fallback || "";
         const isFallback = image.dataset.isFallback === "1";
         const retryCount = Number(image.dataset.retryCount || "0");
@@ -32,9 +35,13 @@
         }
 
         image.style.display = "none";
-        image.nextElementSibling.style.display = "flex";
+        const nextEl = /** @type {HTMLElement|null} */ (image.nextElementSibling);
+        if (nextEl) nextEl.style.display = "flex";
     }
 
+    /**
+     * @param {string|number|null|undefined} isbn
+     */
     function fallbackCover(isbn) {
         if (!isbn) return "";
         const cleaned = String(isbn).replace(/[^0-9Xx]/g, "");
@@ -86,7 +93,7 @@
 				class="flex items-center gap-3.5 hover:bg-emerald-50 p-2 rounded-xl transition-colors group"
             >
                 <div
-                    class="w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-surface-container shadow-sm bg-white"
+                    class="w-10 h-14 rounded overflow-hidden shrink-0 bg-surface-container shadow-sm bg-white"
                 >
                     {#if coverUrl}
                         <img
@@ -138,7 +145,7 @@
                     {/if}
                 </div>
                 <p
-                    class="font-medium text-gray-800 flex-grow truncate leading-tight"
+                    class="font-medium text-gray-800 grow truncate leading-tight"
                 >
                     {book.title}
                 </p>
@@ -176,7 +183,7 @@
         disabled={selectedClasses.length === 0 ||
             (!isUpdate && selectedBookIds.size === 0) ||
             isSaving}
-        onclick={onsave}
+        onclick={(e) => onsave(e)}
         class="flex items-center justify-center w-full gap-2 p-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-full font-bold text-base shadow-lg hover:shadow-emerald-200 transition-all tracking-wide"
     >
         <svg

@@ -14,6 +14,9 @@ export function leseCsrfToken() {
     return "";
 }
 
+/**
+ * @returns {Record<string, string>}
+ */
 export function csrfHeader() {
     const token = leseCsrfToken();
     if (!token) {

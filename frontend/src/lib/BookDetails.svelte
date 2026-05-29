@@ -50,19 +50,40 @@
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    let html = "<html><head><title>Barcode Label - " + barcode + "</title>";
-    html += "<style>@page { size: 50mm 30mm; margin: 0; } body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: 'Courier New', monospace; font-size: 8px; color: black; background-color: white; } .barcode { font-size: 16px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px; } .label { font-weight: bold; }</style>";
-    html += "</head><body>";
-    html += '<div class="barcode">|||||| | |||| | |</div>';
-    html += '<div class="label">' + barcode + '</div>';
-    html += "<div>" + title.titel + "</div>";
-    html += "<" + "script>";
-    html += "window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };";
-    html += "</" + "script>";
-    html += "</body></html>";
+    printWindow.document.title = "Barcode Label - " + barcode;
+    const body = printWindow.document.body;
+    body.style.margin = "0";
+    body.style.display = "flex";
+    body.style.flexDirection = "column";
+    body.style.alignItems = "center";
+    body.style.justifyContent = "center";
+    body.style.height = "100vh";
+    body.style.fontFamily = "'Courier New', monospace";
+    body.style.fontSize = "8px";
+    body.style.color = "black";
+    body.style.backgroundColor = "white";
 
-    printWindow.document.write(html);
-    printWindow.document.close();
+    const styleEl = printWindow.document.createElement("style");
+    styleEl.textContent = "@page { size: 50mm 30mm; margin: 0; } .barcode { font-size: 16px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px; } .label { font-weight: bold; }";
+    printWindow.document.head.appendChild(styleEl);
+
+    const barcodeDiv = printWindow.document.createElement("div");
+    barcodeDiv.className = "barcode";
+    barcodeDiv.textContent = "|||||| | |||| | |";
+    body.appendChild(barcodeDiv);
+
+    const labelDiv = printWindow.document.createElement("div");
+    labelDiv.className = "label";
+    labelDiv.textContent = barcode;
+    body.appendChild(labelDiv);
+
+    const titleDiv = printWindow.document.createElement("div");
+    titleDiv.textContent = title.titel;
+    body.appendChild(titleDiv);
+
+    const scriptEl = printWindow.document.createElement("script");
+    scriptEl.textContent = "window.print(); setTimeout(function() { window.close(); }, 500);";
+    body.appendChild(scriptEl);
   }
 
   // Update physical condition notes

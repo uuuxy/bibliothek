@@ -264,11 +264,11 @@ ON CONFLICT (name) DO NOTHING;
 -- 6. DEFAULT TEST SEED DATA
 -- -------------------------------------------------------------
 
--- Default Admin User (Barcode: ADMIN-1)
+-- Default Admin User (Barcode: admin)
 INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
 VALUES (
     '00000000-0000-0000-0000-000000000001',
-    'ADMIN-1',
+    'admin',
     'System',
     'Administrator',
     'admin@bibliothek.local',

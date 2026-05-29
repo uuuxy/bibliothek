@@ -20,7 +20,6 @@ export const menuGroups = [
     name: "Verwaltung",
     items: [
       { id: "students_dir", label: "Schülerdatei", icon: "users" },
-      { id: "books", label: "Klassen (LMF)", icon: "book" },
       { id: "inventory", label: "Inventur", icon: "clipboard" },
       { id: "orders", label: "Bestellungen", icon: "shopping-bag" },
       { id: "graduates", label: "Abgänger", icon: "academic-cap" },
