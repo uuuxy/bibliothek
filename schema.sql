@@ -342,7 +342,7 @@ ON CONFLICT (name) DO NOTHING;
 -- 6. DEFAULT TEST SEED DATA
 -- -------------------------------------------------------------
 
--- Default Admin User (Barcode: admin, Password: adminpassword)
+-- Default Admin User (Barcode: admin, Password: admin)
 INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
 VALUES (
     '00000000-0000-0000-0000-000000000001',
@@ -350,12 +350,12 @@ VALUES (
     'System',
     'Administrator',
     'admin@bibliothek.local',
-    '$2a$10$Q3Ye/EgFvABiCJbYCZvxQuyaGhmqr2HFS19P2tYpH5.F0rR7t0Bt6',
+    '$2a$10$S3ZxkHD9TPmJkmemFei2teE/IPDwYebnTPWJx0dOsjUxzP9Plf3ky',
     'admin',
     true
-) ON CONFLICT (email) DO NOTHING;
+) ON CONFLICT (email) DO UPDATE SET passwort_hash = EXCLUDED.passwort_hash;
 
--- Default Teacher User (Barcode: L-999, Password: lehrerpassword)
+-- Default Teacher User (Barcode: L-999, Password: lehrer)
 INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
 VALUES (
     '00000000-0000-0000-0000-000000000002',
@@ -363,10 +363,10 @@ VALUES (
     'Maria',
     'Müller',
     'm.mueller@schule.de',
-    '$2a$10$VpffcZxA/cj32Cqw7RrmUOz8f/jVvK/mRPALfvQAVBhc1t0pgi5.q',
+    '$2a$10$TL2D3tEjq72DYIBje3wiUOCWOgqiJ3OgqbGboZKWKj2a0mc7do0wK',
     'lehrer',
     true
-) ON CONFLICT (email) DO NOTHING;
+) ON CONFLICT (email) DO UPDATE SET passwort_hash = EXCLUDED.passwort_hash;
 
 -- Seed benutzer_rollen
 INSERT INTO benutzer_rollen (benutzer_id, rolle)
