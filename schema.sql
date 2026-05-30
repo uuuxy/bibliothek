@@ -82,6 +82,7 @@ CREATE TABLE buecher_titel (
     stock INTEGER NOT NULL DEFAULT 0,                 -- Integrated from books table
     last_counted DATE,                                -- Integrated from books table
     sort_order SERIAL,                                -- Integrated from books table
+    medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf location, notes)
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -276,7 +277,8 @@ ON CONFLICT (schluessel) DO NOTHING;
 -- MIGRATION: idempotent ALTER TABLE for existing deployments
 -- ============================================================
 ALTER TABLE buecher_titel
-    ADD COLUMN IF NOT EXISTS erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}';
+    ADD COLUMN IF NOT EXISTS erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch';
 
 ALTER TABLE buecher_exemplare
     ADD COLUMN IF NOT EXISTS erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}';
