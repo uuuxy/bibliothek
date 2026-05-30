@@ -96,8 +96,9 @@
     }
   }
 
+  const klassen = $derived(data?.klassen ?? []);
   const totalOverdue = $derived(
-    (data?.klassen ?? []).reduce((sum, k) =>
+    klassen.reduce((sum, k) =>
       sum + k.schueler.reduce((s2, sch) => s2 + sch.medien.length, 0), 0)
   );
 </script>
@@ -144,11 +145,11 @@
         <p class="text-xs text-slate-500 mt-0.5">Überfällige Medien</p>
       </div>
       <div class="bg-white rounded-2xl border border-slate-200 p-4 text-center">
-        <p class="text-2xl font-bold text-slate-800">{data.klassen.length}</p>
+        <p class="text-2xl font-bold text-slate-800">{klassen.length}</p>
         <p class="text-xs text-slate-500 mt-0.5">Betroffene Klassen</p>
       </div>
       <div class="bg-white rounded-2xl border border-slate-200 p-4 text-center">
-        <p class="text-2xl font-bold text-slate-800">{(data.klassen).reduce((s, k) => s + k.schueler.length, 0)}</p>
+        <p class="text-2xl font-bold text-slate-800">{klassen.reduce((s, k) => s + k.schueler.length, 0)}</p>
         <p class="text-xs text-slate-500 mt-0.5">Betroffene Schüler/innen</p>
       </div>
     </div>
@@ -161,14 +162,14 @@
     </div>
   {:else if error}
     <div class="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center text-rose-600 text-sm font-medium">{error}</div>
-  {:else if !data || data.klassen.length === 0}
+  {:else if !data || klassen.length === 0}
     <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-10 text-center">
       <p class="text-emerald-700 font-semibold">Keine überfälligen Ausleihen vorhanden. 🎉</p>
     </div>
   {:else}
     <!-- Class cards -->
     <div class="space-y-4">
-      {#each data.klassen as klasse}
+      {#each klassen as klasse}
         {@const totalMediaInClass = klasse.schueler.reduce((s, sch) => s + sch.medien.length, 0)}
         <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <!-- Class header -->

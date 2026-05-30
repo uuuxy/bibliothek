@@ -29,21 +29,21 @@
   async function loadSuppliers() {
     try {
       const res = await fetch("/api/lieferanten");
-      if (res.ok) suppliers = await res.json();
+      if (res.ok) suppliers = (await res.json()) || [];
     } catch (err) { console.error("Fehler beim Laden der Lieferanten:", err); }
   }
 
   async function loadIncomingShipments() {
     try {
       const res = await fetch("/api/bestellungen/zulauf");
-      if (res.ok) incomingShipments = await res.json();
+      if (res.ok) incomingShipments = (await res.json()) || [];
     } catch (err) { console.error("Fehler beim Laden des Wareneingangs:", err); }
   }
 
   async function fetchRecommendations() {
     try {
       const res = await fetch("/api/bestellungen");
-      if (res.ok) recommendations = await res.json();
+      if (res.ok) recommendations = (await res.json()) || [];
     } catch (err) { console.error(err); }
   }
 
