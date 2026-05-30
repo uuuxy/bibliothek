@@ -5,11 +5,13 @@
   import Graduates from "./lib/Graduates.svelte";
   import StudentIdDesigner from "./lib/StudentIdDesigner.svelte";
   import LabelPrinter from "./lib/LabelPrinter.svelte";
-  import OrderDashboard from "./lib/OrderDashboard.svelte";
+  import BestellWorkspace from "./lib/BestellWorkspace.svelte";
   import UnifiedInventory from "./lib/UnifiedInventory.svelte";
+  import MediaCatalog from "./lib/MediaCatalog.svelte";
   import StatsDashboard from "./lib/StatsDashboard.svelte";
   import AuditLog from "./lib/AuditLog.svelte";
   import StudentDirectory from "./lib/StudentDirectory.svelte";
+  import PermissionManager from "./lib/PermissionManager.svelte";
   import { appState } from "./inventur/lib/store.svelte.js";
   import { menuGroups } from "./lib/menu.js";
 
@@ -202,6 +204,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                           {:else if item.icon === 'printer'}
                             <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          {:else if item.icon === 'catalog'}
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          {:else if item.icon === 'shield'}
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
                           {/if}
                         </svg>
                         {#if !isSidebarCollapsed}
@@ -234,17 +240,19 @@
       <div class="flex-1 flex flex-col min-w-0 bg-slate-50 p-8 w-full">
         <header class="h-16 px-6 bg-white border border-slate-200 rounded-2xl flex items-center justify-between no-print shrink-0 shadow-xs mb-8">
           <div class="flex items-center gap-3">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider font-sans">
               {#if activeTab === "kiosk"}Kiosk / Ausleihe
               {:else if activeTab === "students_dir"}Verwaltung / Schülerdatei
               {:else if activeTab === "books"}Bücher / Details
+              {:else if activeTab === "media_catalog"}Verwaltung / Medienkatalog
               {:else if activeTab === "inventory"}Verwaltung / Inventur
               {:else if activeTab === "orders"}Verwaltung / Bestellungen
               {:else if activeTab === "graduates"}Verwaltung / Abgänger
               {:else if activeTab === "stats"}Verwaltung / Statistiken
               {:else if activeTab === "audit"}Verwaltung / Logbuch
-              {:else if activeTab === "student_ids"}Druck / Schülerausweise
+               {:else if activeTab === "student_ids"}Druck / Schülerausweise
               {:else if activeTab === "labels"}Druck / Buch-Etiketten
+              {:else if activeTab === "permissions"}Verwaltung / Berechtigungen
               {/if}
             </span>
           </div>
@@ -272,7 +280,7 @@
           {:else if activeTab === "graduates"}
             <div class="w-full animate-fade-in"><Graduates /></div>
           {:else if activeTab === "orders"}
-            <div class="w-full animate-fade-in"><OrderDashboard /></div>
+            <div class="w-full animate-fade-in"><BestellWorkspace /></div>
           {:else if activeTab === "stats"}
             <div class="w-full animate-fade-in"><StatsDashboard /></div>
           {:else if activeTab === "audit"}
@@ -281,10 +289,14 @@
             <div class="w-full animate-fade-in"><StudentIdDesigner /></div>
           {:else if activeTab === "labels"}
             <div class="w-full animate-fade-in"><LabelPrinter /></div>
+          {:else if activeTab === "media_catalog"}
+            <div class="w-full animate-fade-in"><MediaCatalog /></div>
           {:else if activeTab === "inventory"}
             <div class="w-full animate-fade-in"><UnifiedInventory /></div>
           {:else if activeTab === "students_dir"}
-            <div class="w-full animate-fade-in"><StudentDirectory /></div>
+            <div class="w-full animate-fade-in"><StudentDirectory role={currentUser?.rolle} /></div>
+          {:else if activeTab === "permissions"}
+            <div class="w-full animate-fade-in"><PermissionManager /></div>
           {/if}
         </main>
       </div>

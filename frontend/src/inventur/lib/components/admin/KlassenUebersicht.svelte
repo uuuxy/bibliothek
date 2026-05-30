@@ -66,13 +66,13 @@
 
 <div class="space-y-10 py-6">
 	<div class="flex justify-between items-center px-2">
-		<h2 class="text-xl font-bold text-zinc-100 font-sans">Klassenübersicht</h2>
+		<h2 class="text-xl font-bold text-slate-800 font-sans">Klassenübersicht</h2>
  
 		<div class="flex gap-4 items-center">
 			<select
 				bind:value={filterBranch}
 				onchange={loadGroups}
-				class="bg-zinc-950 border border-zinc-800 text-zinc-300 py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm cursor-pointer"
+				class="bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm cursor-pointer"
 			>
 				<option value="">Alle anzeigen</option>
 				<option value="G">Nur G-Klassen</option>
@@ -84,7 +84,7 @@
 			<select
 				bind:value={sortOrder}
 				onchange={loadGroups}
-				class="bg-zinc-950 border border-zinc-800 text-zinc-300 py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm cursor-pointer"
+				class="bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm cursor-pointer"
 			>
 				<option value="asc">Aufsteigend 5-10</option>
 				<option value="desc">Absteigend 10-5</option>
@@ -95,7 +95,7 @@
 					managingGroup = null;
 					isManaging = true;
 				}}
-				class="px-4 py-2 bg-emerald-500 text-zinc-950 rounded-lg hover:bg-emerald-400 transition-colors text-sm font-bold flex items-center gap-2 shadow-lg shadow-emerald-955/20 cursor-pointer"
+				class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold flex items-center gap-2 shadow-sm cursor-pointer"
 			>
 				<svg
 					class="w-4 h-4"
@@ -117,22 +117,22 @@
 	{#if loading}
 		<div class="flex justify-center py-12">
 			<div
-				class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"
+				class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"
 			></div>
 		</div>
 	{:else if error}
-		<div class="text-red-400 border border-red-500/20 bg-red-500/10 text-center py-8 rounded-xl">
+		<div class="text-red-650 border border-red-200 bg-red-50 text-center py-8 rounded-xl">
 			{error}
 		</div>
 	{:else if classGroups.length === 0}
 		<div
-			class="text-center py-16 bg-zinc-955/40 rounded-2xl border border-dashed border-zinc-800/80"
+			class="text-center py-16 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200"
 		>
 			<div class="text-4xl mb-4">📚</div>
-			<h3 class="text-lg font-semibold text-zinc-200 mb-2">
+			<h3 class="text-lg font-semibold text-slate-800 mb-2">
 				Noch keine Klassen angelegt
 			</h3>
-			<p class="text-zinc-500 text-sm max-w-md mx-auto">
+			<p class="text-slate-400 text-sm max-w-md mx-auto">
 				Weise Bücher zu Klassen zu, um hier eine Übersicht zu sehen.
 			</p>
 		</div>

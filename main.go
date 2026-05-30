@@ -51,6 +51,16 @@ func main() {
 	defer database.Close()
 	log.Println("Database connection pool successfully initialized.")
 
+	log.Println("Initializing role permissions...")
+	if err := database.InitPermissions(ctx); err != nil {
+		log.Fatalf("Database permission initialization failed: %v", err)
+	}
+
+	log.Println("Initializing suppliers...")
+	if err := database.InitLieferanten(ctx); err != nil {
+		log.Fatalf("Database supplier initialization failed: %v", err)
+	}
+
 	// 3. Authenticator initialization (12 hours token expiration duration)
 	authenticator, err := auth.NewAuthenticator(jwtSecret, 12*time.Hour)
 	if err != nil {

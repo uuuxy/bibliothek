@@ -20,9 +20,9 @@
 
 <div class="class-group">
     <div class="flex justify-between items-center mb-4 px-2">
-        <h2 class="text-2xl font-bold text-zinc-100 flex items-center gap-2 font-sans">
+        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2 font-sans">
             <span
-                class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-sm font-semibold"
+                class="bg-blue-50 border border-blue-105 text-blue-600 px-3 py-1 rounded-lg text-sm font-semibold"
                 >{group.books.length} Bücher</span
             >
             {group.className}
@@ -30,7 +30,7 @@
         <div class="flex gap-2">
             <button
                 onclick={onEdit}
-                class="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 font-bold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
+                class="bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-600 font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
                 title="Klasse bearbeiten"
                 aria-label="Klasse bearbeiten"
             >
@@ -49,7 +49,7 @@
             </button>
             <button
                 onclick={onDelete}
-                class="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors cursor-pointer"
+                class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors cursor-pointer"
                 title="Klasse löschen"
                 aria-label="Klasse löschen"
             >
@@ -73,10 +73,10 @@
     <div class="relative group/admin-carousel carousel-wrapper" data-can-scroll-left="false" data-can-scroll-right="false">
         
         <!-- Left Gradient -->
-        <div class="absolute left-0 top-0 bottom-6 w-24 bg-linear-to-r from-zinc-950 to-transparent pointer-events-none z-30 opacity-0 group-data-[can-scroll-left=true]/admin-carousel:opacity-100 transition-opacity duration-300 rounded-l-2xl"></div>
+        <div class="absolute left-0 top-0 bottom-6 w-24 bg-linear-to-r from-slate-50 to-transparent pointer-events-none z-30 opacity-0 group-data-[can-scroll-left=true]/admin-carousel:opacity-100 transition-opacity duration-300 rounded-l-2xl"></div>
 
         <button
-            class="btn-left absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/30 hover:shadow-emerald-500/10 shadow-2xl transition-all duration-300 z-40 cursor-pointer"
+            class="btn-left absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:shadow-md transition-all z-40 cursor-pointer"
             onclick={(e) => scrollCarousel(e, -1)}
             aria-label="Nach links scrollen"
         >
@@ -90,10 +90,10 @@
         </div>
 
         <!-- Right Gradient -->
-        <div class="absolute right-0 top-0 bottom-6 w-32 bg-linear-to-l from-zinc-950 to-transparent pointer-events-none z-30 opacity-0 group-data-[can-scroll-right=true]/admin-carousel:opacity-100 transition-opacity duration-300 rounded-r-2xl"></div>
+        <div class="absolute right-0 top-0 bottom-6 w-32 bg-linear-to-l from-slate-50 to-transparent pointer-events-none z-30 opacity-0 group-data-[can-scroll-right=true]/admin-carousel:opacity-100 transition-opacity duration-300 rounded-r-2xl"></div>
 
         <button
-            class="btn-right absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/30 hover:shadow-emerald-500/10 shadow-2xl transition-all duration-300 z-40 cursor-pointer"
+            class="btn-right absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:shadow-md transition-all z-40 cursor-pointer"
             onclick={(e) => scrollCarousel(e, 1)}
             aria-label="Nach rechts scrollen"
         >

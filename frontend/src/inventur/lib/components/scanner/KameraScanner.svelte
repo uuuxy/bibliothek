@@ -138,7 +138,7 @@
 </script>
 
 <div
-	class="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/40 min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
+	class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
 >
 	<!-- svelte-ignore element_invalid_self_closing_tag -->
 	<video
@@ -154,7 +154,7 @@
 			class="absolute inset-0 flex items-center justify-center pointer-events-none"
 		>
 			<div
-				class="border-2 border-emerald-500 rounded-lg opacity-60 animate-pulse"
+				class="border-2 border-blue-500 rounded-lg opacity-60 animate-pulse"
 				style="width: 80%; height: 40%;"
 			></div>
 		</div>
@@ -166,13 +166,13 @@
 		<button
 			onclick={startScanner}
 			disabled={scanning}
-			class="rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-bold text-zinc-950 hover:bg-emerald-400 disabled:opacity-60 transition-colors cursor-pointer"
+			class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors cursor-pointer shadow-sm"
 			>Starten</button
 		>
 		<button
 			onclick={stopScanner}
 			disabled={!scanning}
-			class="rounded-full bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-zinc-700 disabled:opacity-60 transition-colors cursor-pointer"
+			class="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-705 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer"
 			>Stoppen</button
 		>
 	</div>

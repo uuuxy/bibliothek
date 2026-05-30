@@ -170,17 +170,17 @@
     }
 </script>
 
-<div class="mt-6 border-t border-zinc-800/80 pt-4">
+<div class="mt-6 border-t border-slate-100 pt-4">
     <span
-        class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2"
+        class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
         >Alternativ: Foto vom Barcode machen</span
     >
     <label
-        class="cursor-pointer w-full rounded-xl border-2 border-dashed border-zinc-800 bg-zinc-950/40 hover:bg-zinc-850/40 transition-colors px-5 py-4 flex flex-col items-center justify-center gap-2 disabled:opacity-60"
+        class="cursor-pointer w-full rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100/70 transition-colors px-5 py-4 flex flex-col items-center justify-center gap-2 disabled:opacity-60"
     >
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-8 w-8 text-emerald-400"
+            class="h-8 w-8 text-blue-500"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -198,7 +198,7 @@
                 d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
             />
         </svg>
-        <span class="text-sm font-semibold text-zinc-300"
+        <span class="text-sm font-semibold text-slate-650"
             >Kamera öffnen / Foto auswählen</span
         >
         <input

@@ -229,7 +229,10 @@ func (s *Server) ReleaseOrdersHandler() http.HandlerFunc {
 			    zustand_notiz = '',
 			    aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE ist_ausleihbar = false 
-			  AND (zustand_notiz = 'bestellt' OR zustand_notiz = 'Bestellt (Lieferanten-Vorab-Barcode)')
+			  AND (zustand_notiz = 'bestellt' 
+			       OR zustand_notiz = 'Bestellt (Lieferanten-Vorab-Barcode)'
+			       OR zustand_notiz = 'Im Zulauf'
+			       OR zustand_notiz LIKE 'Im Zulauf%')
 		`
 		tag, err := s.DB.Pool.Exec(ctx, query)
 		if err != nil {

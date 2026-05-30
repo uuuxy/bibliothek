@@ -62,6 +62,8 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 			search_vector @@ plainto_tsquery('german', $1) 
 			OR titel ILIKE '%' || $1 || '%'
 			OR autor ILIKE '%' || $1 || '%'
+			OR isbn ILIKE '%' || $1 || '%'
+			OR replace(isbn, '-', '') = replace($1, '-', '')
 		ORDER BY ts_rank(search_vector, plainto_tsquery('german', $1)) DESC, titel ASC
 		LIMIT 50
 	`
@@ -97,6 +99,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 		WHERE titel ILIKE '%' || $1 || '%'
 		   OR autor ILIKE '%' || $1 || '%'
 		   OR isbn ILIKE '%' || $1 || '%'
+		   OR replace(isbn, '-', '') = replace($1, '-', '')
 		ORDER BY titel ASC
 		LIMIT $2
 	`

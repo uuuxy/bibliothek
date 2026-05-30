@@ -13,6 +13,8 @@
   /** @type {any} */
   let activeWebcamStudent = $state(null);
   let timestamp = $state(Date.now());
+  let zoom = $state(150);
+  let previewStudent = $derived(previewStudents[0] || mockStudents[0]);
 
   /** @type {Record<string, any>} */
   let layout = $state({
@@ -194,66 +196,79 @@
     </div>
   </div>
 
+  <!-- Zoom Toolbar -->
+  <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 shadow-xs gap-4 text-left">
+    <div class="flex items-center gap-3">
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Zoom</span>
+      <input type="range" min="100" max="300" step="5" bind:value={zoom} class="accent-blue-600 h-1 bg-slate-200 rounded-lg cursor-pointer w-40" />
+      <span class="text-xs font-mono font-bold text-blue-600 w-12 text-right">{zoom}%</span>
+    </div>
+    {#if previewStudent}
+      <span class="text-xs text-slate-500 font-medium">Layout-Vorschau: {previewStudent.vorname} {previewStudent.nachname} (Klasse {previewStudent.klasse})</span>
+    {/if}
+  </div>
+
   <div class="w-full flex flex-col lg:flex-row gap-6 font-sans">
-    <div class="flex-1 flex flex-col items-center justify-start p-6 bg-slate-50/50 border border-dashed border-slate-200 rounded-3xl min-h-[450px]">
-      <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold font-mono mb-4">Live-Arbeitsfläche (Ziehe Elemente per Drag&Drop)</span>
+    <div class="flex-1 flex flex-col items-center justify-center overflow-hidden bg-slate-100 border border-dashed border-slate-200 rounded-3xl min-h-[480px] relative p-6">
       {#if loadingStudents}
-        <div class="grow flex items-center justify-center py-12">
+        <div class="flex items-center justify-center py-12">
           <div class="w-8 h-8 border-4 border-t-blue-600 border-slate-200 rounded-full animate-spin"></div>
         </div>
-      {:else}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 justify-center w-full">
-          {#each previewStudents as student}
-            <div class="card-container shadow-lg relative border border-slate-200 rounded-[8px] overflow-hidden select-none bg-white shrink-0" style="width: 85.6mm; height: 53.98mm;">
-              <div class="w-full h-full relative {cardTheme}">
-                {#if layout.header.show}
-                  <div role="presentation" onpointerdown={(e) => startDrag(e, "header")} class="absolute font-black text-center tracking-tight leading-none truncate text-slate-800 cursor-move p-0.5 rounded-xs {activeElement === 'header' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.header.x}mm; top: {layout.header.y}mm; transform: scale({layout.header.scale}); transform-origin: top left; font-size: 7.5pt; width: {85.6 - layout.header.x * 2}mm;">{layout.header.text}</div>
-                {/if}
-                {#if layout.logo.show}
-                  <button onpointerdown={(e) => startDrag(e, "logo")} class="absolute border border-dashed border-slate-300 bg-slate-50/50 flex items-center justify-center overflow-hidden cursor-move rounded-xs {activeElement === 'logo' ? 'ring-1 ring-blue-500' : 'hover:ring-1 hover:ring-slate-350'}" style="left: {layout.logo.x}mm; top: {layout.logo.y}mm; width: {12 * layout.logo.scale}mm; height: {12 * layout.logo.scale}mm;">
-                    {#if layout.logo.url}
-                      <img src={layout.logo.url} class="w-full h-full object-contain pointer-events-none" alt="Logo" />
-                    {:else}
-                      <span class="text-[5px] text-slate-400 font-bold">LOGO</span>
-                    {/if}
-                  </button>
-                {/if}
-                {#if layout.address.show}
-                  <div role="presentation" onpointerdown={(e) => startDrag(e, "address")} class="absolute font-semibold tracking-tight opacity-75 leading-none text-slate-650 cursor-move p-0.5 rounded-xs {activeElement === 'address' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.address.x}mm; top: {layout.address.y}mm; transform: scale({layout.address.scale}); transform-origin: top left; font-size: 6.5pt; width: {85.6 - layout.address.x - 2}mm; max-height: 12mm; overflow: hidden;">{layout.address.text}</div>
-                {/if}
-                {#if layout.photo.show}
-                  <button onpointerdown={(e) => startDrag(e, "photo")} data-student-id={student.id} class="absolute border border-dashed border-slate-350 bg-slate-50 hover:bg-slate-100 hover:border-blue-550 flex items-center justify-center font-bold text-slate-400 rounded-sm leading-none overflow-hidden group cursor-move transition-all duration-200 {activeElement === 'photo' ? 'ring-1 ring-blue-500' : ''}" style="left: {layout.photo.x}mm; top: {layout.photo.y}mm; width: {22 * layout.photo.scale}mm; height: {28 * layout.photo.scale}mm; font-size: 6pt;">
-                    <img src="/uploads/fotos/{student.barcode_id}.jpg?t={timestamp}" onerror={(e) => { const img = /** @type {any} */ (e.currentTarget); img.style.display = 'none'; const sib = img.nextElementSibling; if (sib) { /** @type {any} */ (sib).style.display = 'flex'; } }} class="w-full h-full object-cover pointer-events-none" alt="Passbild" />
-                    <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-[5px] text-slate-450 group-hover:text-blue-600 transition-colors pointer-events-none" style="display: none;">
-                      <span>KEIN FOTO</span>
-                      <span class="text-[4.5px] text-slate-500 mt-1">📸 NEUES BILD</span>
-                    </div>
-                    <div class="absolute inset-0 bg-slate-900/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      <span class="text-[4px] uppercase tracking-wider font-bold mt-0.5">Ändern</span>
-                    </div>
-                  </button>
-                {/if}
-                {#if layout.name.show}
-                  <div role="presentation" onpointerdown={(e) => startDrag(e, "name")} class="absolute font-extrabold tracking-tight leading-none text-slate-900 cursor-move p-0.5 rounded-xs {activeElement === 'name' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.name.x}mm; top: {layout.name.y}mm; transform: scale({layout.name.scale}); transform-origin: top left; font-size: 9pt;">{student.vorname} {student.nachname}</div>
-                {/if}
-                {#if layout.details.show}
-                  <div role="presentation" onpointerdown={(e) => startDrag(e, "details")} class="absolute font-semibold tracking-tight opacity-75 leading-none text-slate-650 cursor-move p-0.5 rounded-xs {activeElement === 'details' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.details.x}mm; top: {layout.details.y}mm; transform: scale({layout.details.scale}); transform-origin: top left; font-size: 7.5pt;">Klasse: {student.klasse}</div>
-                {/if}
-                {#if layout.validity.show}
-                  <div role="presentation" onpointerdown={(e) => startDrag(e, "validity")} class="absolute font-semibold tracking-tight opacity-75 leading-none text-slate-650 cursor-move p-0.5 rounded-xs {activeElement === 'validity' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.validity.x}mm; top: {layout.validity.y}mm; transform: scale({layout.validity.scale}); transform-origin: top left; font-size: 7pt;">Gültig bis: 31.07.2027</div>
-                {/if}
-                {#if layout.barcode.show}
-                  <div role="presentation" onpointerdown={(e) => startDrag(e, "barcode")} class="absolute flex flex-col items-center leading-none cursor-move p-0.5 rounded-xs {activeElement === 'barcode' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.barcode.x}mm; top: {layout.barcode.y}mm; transform: scale({layout.barcode.scale}); transform-origin: top left;">
-                    <img src="/api/barcode?content={student.barcode_id}&qr={barcodeType === 'qr'}&width={barcodeType === 'qr' ? 80 : 200}&height={barcodeType === 'qr' ? 80 : 50}" class="{barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[8mm]'} object-contain pointer-events-none" alt="Barcode" />
-                    <span class="font-mono font-bold mt-1 text-[6.5pt] tracking-widest text-slate-700 pointer-events-none">{student.barcode_id}</span>
+      {:else if previewStudent}
+        <!-- Scaled Card Wrapper (UI scale only, does not affect print) -->
+        <div style="transform: scale({zoom / 100}); transform-origin: center; transition: transform 0.05s ease-out;" class="shrink-0">
+          <div class="card-container shadow-2xl relative border border-slate-200 rounded-[8px] overflow-hidden select-none bg-white" style="width: 85.6mm; height: 53.98mm;">
+            <div class="w-full h-full relative {cardTheme}">
+              {#if layout.header.show}
+                <div role="presentation" onpointerdown={(e) => startDrag(e, "header")} class="absolute font-black text-center tracking-tight leading-none truncate text-slate-800 cursor-move p-0.5 rounded-xs {activeElement === 'header' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.header.x}mm; top: {layout.header.y}mm; transform: scale({layout.header.scale}); transform-origin: top left; font-size: 7.5pt; width: {85.6 - layout.header.x * 2}mm;">{layout.header.text}</div>
+              {/if}
+              {#if layout.logo.show}
+                <button onpointerdown={(e) => startDrag(e, "logo")} class="absolute border border-dashed border-slate-300 bg-slate-50/50 flex items-center justify-center overflow-hidden cursor-move rounded-xs {activeElement === 'logo' ? 'ring-1 ring-blue-500' : 'hover:ring-1 hover:ring-slate-350'}" style="left: {layout.logo.x}mm; top: {layout.logo.y}mm; width: {12 * layout.logo.scale}mm; height: {12 * layout.logo.scale}mm;">
+                  {#if layout.logo.url}
+                    <img src={layout.logo.url} class="w-full h-full object-contain pointer-events-none" alt="Logo" />
+                  {:else}
+                    <span class="text-[5px] text-slate-400 font-bold">LOGO</span>
+                  {/if}
+                </button>
+              {/if}
+              {#if layout.address.show}
+                <div role="presentation" onpointerdown={(e) => startDrag(e, "address")} class="absolute font-semibold tracking-tight opacity-75 leading-none text-slate-650 cursor-move p-0.5 rounded-xs {activeElement === 'address' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.address.x}mm; top: {layout.address.y}mm; transform: scale({layout.address.scale}); transform-origin: top left; font-size: 6.5pt; width: {85.6 - layout.address.x - 2}mm; max-height: 12mm; overflow: hidden;">{layout.address.text}</div>
+              {/if}
+              {#if layout.photo.show}
+                <button onpointerdown={(e) => startDrag(e, "photo")} data-student-id={previewStudent.id} class="absolute border border-dashed border-slate-350 bg-slate-50 hover:bg-slate-100 hover:border-blue-550 flex items-center justify-center font-bold text-slate-400 rounded-sm leading-none overflow-hidden group cursor-move transition-all duration-200 {activeElement === 'photo' ? 'ring-1 ring-blue-500' : ''}" style="left: {layout.photo.x}mm; top: {layout.photo.y}mm; width: {22 * layout.photo.scale}mm; height: {28 * layout.photo.scale}mm; font-size: 6pt;">
+                  <img src="/uploads/fotos/{previewStudent.barcode_id}.jpg?t={timestamp}" onerror={(e) => { const img = /** @type {any} */ (e.currentTarget); img.style.display = 'none'; const sib = img.nextElementSibling; if (sib) { /** @type {any} */ (sib).style.display = 'flex'; } }} class="w-full h-full object-cover pointer-events-none" alt="Passbild" />
+                  <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-[5px] text-slate-450 group-hover:text-blue-600 transition-colors pointer-events-none" style="display: none;">
+                    <span>KEIN FOTO</span>
+                    <span class="text-[4.5px] text-slate-500 mt-1">📸 NEUES BILD</span>
                   </div>
-                {/if}
-              </div>
+                  <div class="absolute inset-0 bg-slate-900/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span class="text-[4px] uppercase tracking-wider font-bold mt-0.5">Ändern</span>
+                  </div>
+                </button>
+              {/if}
+              {#if layout.name.show}
+                <div role="presentation" onpointerdown={(e) => startDrag(e, "name")} class="absolute font-extrabold tracking-tight leading-none text-slate-900 cursor-move p-0.5 rounded-xs {activeElement === 'name' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.name.x}mm; top: {layout.name.y}mm; transform: scale({layout.name.scale}); transform-origin: top left; font-size: 9pt;">{previewStudent.vorname} {previewStudent.nachname}</div>
+              {/if}
+              {#if layout.details.show}
+                <div role="presentation" onpointerdown={(e) => startDrag(e, "details")} class="absolute font-semibold tracking-tight opacity-75 leading-none text-slate-650 cursor-move p-0.5 rounded-xs {activeElement === 'details' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.details.x}mm; top: {layout.details.y}mm; transform: scale({layout.details.scale}); transform-origin: top left; font-size: 7.5pt;">Klasse: {previewStudent.klasse}</div>
+              {/if}
+              {#if layout.validity.show}
+                <div role="presentation" onpointerdown={(e) => startDrag(e, "validity")} class="absolute font-semibold tracking-tight opacity-75 leading-none text-slate-650 cursor-move p-0.5 rounded-xs {activeElement === 'validity' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.validity.x}mm; top: {layout.validity.y}mm; transform: scale({layout.validity.scale}); transform-origin: top left; font-size: 7pt;">Gültig bis: 31.07.2027</div>
+              {/if}
+              {#if layout.barcode.show}
+                <div role="presentation" onpointerdown={(e) => startDrag(e, "barcode")} class="absolute flex flex-col items-center leading-none cursor-move p-0.5 rounded-xs {activeElement === 'barcode' ? 'ring-1 ring-blue-500 bg-blue-50/20' : 'hover:ring-1 hover:ring-slate-300 hover:ring-dashed'}" style="left: {layout.barcode.x}mm; top: {layout.barcode.y}mm; transform: scale({layout.barcode.scale}); transform-origin: top left;">
+                  <img src="/api/barcode?content={previewStudent.barcode_id}&qr={barcodeType === 'qr'}&width={barcodeType === 'qr' ? 80 : 200}&height={barcodeType === 'qr' ? 80 : 50}" class="{barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[8mm]'} object-contain pointer-events-none" alt="Barcode" />
+                  <span class="font-mono font-bold mt-1 text-[6.5pt] tracking-widest text-slate-700 pointer-events-none">{previewStudent.barcode_id}</span>
+                </div>
+              {/if}
             </div>
-          {/each}
+          </div>
         </div>
       {/if}
+
+      <!-- Hint bottom -->
+      <span class="absolute bottom-4 left-1/2 -translate-x-1/2 text-[9px] uppercase tracking-wider text-slate-400 font-bold font-mono">Live-Arbeitsfläche (Ziehe Elemente per Drag&Drop)</span>
     </div>
 
     <div class="w-full lg:w-80 bg-white border border-slate-100 p-5 rounded-2xl shadow-xl space-y-5 shrink-0 text-left">

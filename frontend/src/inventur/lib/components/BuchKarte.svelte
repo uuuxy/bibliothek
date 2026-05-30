@@ -35,24 +35,24 @@
     }
 
     const subjectColors = {
-        Mathe: "bg-blue-500/10 border border-blue-500/20 text-blue-400",
-        Deutsch: "bg-red-500/10 border border-red-500/20 text-red-400",
-        Englisch: "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400",
-        Französisch: "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400",
-        Geographie: "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400",
-        Geschichte: "bg-amber-500/10 border border-amber-500/20 text-amber-400",
-        Biologie: "bg-green-500/10 border border-green-500/20 text-green-400",
-        Chemie: "bg-yellow-500/10 border border-yellow-500/20 text-yellow-400",
-        Physik: "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400",
-        Musik: "bg-pink-500/10 border border-pink-500/20 text-pink-400",
-        Arbeitslehre: "bg-orange-500/10 border border-orange-500/20 text-orange-400",
-        Politik: "bg-rose-500/10 border border-rose-500/20 text-rose-400",
-        Informatik: "bg-cyan-500/10 border border-cyan-500/20 text-cyan-400",
-        Latein: "bg-sky-500/10 border border-sky-500/20 text-sky-400",
-        Spanisch: "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400",
-        "kath. Religion": "bg-violet-500/10 border border-violet-500/20 text-violet-400",
-        "ev. Religion": "bg-violet-500/10 border border-violet-500/20 text-violet-400",
-        Ethik: "bg-teal-500/10 border border-teal-500/20 text-teal-400",
+        Mathe: "bg-blue-50 border border-blue-200 text-blue-700",
+        Deutsch: "bg-red-50 border border-red-200 text-red-700",
+        Englisch: "bg-indigo-50 border border-indigo-200 text-indigo-700",
+        Französisch: "bg-indigo-50 border border-indigo-200 text-indigo-700",
+        Geographie: "bg-emerald-50 border border-emerald-200 text-emerald-700",
+        Geschichte: "bg-amber-50 border border-amber-200 text-amber-700",
+        Biologie: "bg-green-50 border border-green-200 text-green-700",
+        Chemie: "bg-yellow-50 border border-yellow-200 text-yellow-700",
+        Physik: "bg-emerald-50 border border-emerald-200 text-emerald-700",
+        Musik: "bg-pink-50 border border-pink-200 text-pink-700",
+        Arbeitslehre: "bg-orange-50 border border-orange-200 text-orange-700",
+        Politik: "bg-rose-50 border border-rose-200 text-rose-700",
+        Informatik: "bg-cyan-50 border border-cyan-200 text-cyan-700",
+        Latein: "bg-sky-50 border border-sky-200 text-sky-700",
+        Spanisch: "bg-emerald-50 border border-emerald-200 text-emerald-700",
+        "kath. Religion": "bg-violet-50 border border-violet-200 text-violet-700",
+        "ev. Religion": "bg-violet-50 border border-violet-200 text-violet-700",
+        Ethik: "bg-teal-50 border border-teal-200 text-teal-700",
     };
 
     /**
@@ -63,7 +63,7 @@
         if (subject in subjectColors) {
             return subjectColors[/** @type {keyof typeof subjectColors} */ (subject)];
         }
-        return "bg-zinc-800/40 border border-zinc-700/50 text-zinc-300";
+        return "bg-slate-50 border border-slate-200 text-slate-600";
     }
 
     /**
@@ -72,10 +72,10 @@
      */
     function getStockDotColor(stock) {
         if (stock === 0)
-            return "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]";
+            return "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.4)]";
         if (stock < 5)
-            return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]";
-        return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]";
+            return "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]";
+        return "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]";
     }
 
     /**
@@ -85,27 +85,27 @@
     function getSubjectGradient(subject) {
         const clean = (subject || "").trim().toLowerCase();
         if (clean.includes("math")) {
-            return "bg-linear-to-br from-blue-950 via-indigo-950 to-zinc-950 border-blue-500/20";
+            return "bg-linear-to-br from-blue-600 via-indigo-600 to-blue-700 border-blue-500/30";
         }
         if (clean.includes("deu")) {
-            return "bg-linear-to-br from-red-950 via-rose-950 to-zinc-950 border-red-500/20";
+            return "bg-linear-to-br from-red-600 via-rose-600 to-red-700 border-red-500/30";
         }
         if (clean.includes("eng") || clean.includes("fra") || clean.includes("spa") || clean.includes("lat") || clean.includes("spr")) {
-            return "bg-linear-to-br from-violet-950 via-purple-955 to-zinc-955 border-purple-500/20";
+            return "bg-linear-to-br from-violet-600 via-purple-600 to-violet-700 border-purple-500/30";
         }
         if (clean.includes("bio") || clean.includes("che") || clean.includes("phy") || clean.includes("nat")) {
-            return "bg-linear-to-br from-teal-955 via-emerald-955 to-zinc-955 border-teal-500/20";
+            return "bg-linear-to-br from-teal-600 via-emerald-600 to-teal-700 border-teal-500/30";
         }
         if (clean.includes("ges") || clean.includes("pol") || clean.includes("geo") || clean.includes("erd") || clean.includes("soz")) {
-            return "bg-linear-to-br from-amber-955 via-orange-955 to-zinc-955 border-amber-500/20";
+            return "bg-linear-to-br from-amber-600 via-orange-600 to-amber-700 border-amber-500/30";
         }
         if (clean.includes("mus") || clean.includes("kun")) {
-            return "bg-linear-to-br from-pink-955 via-fuchsia-955 to-zinc-955 border-pink-500/20";
+            return "bg-linear-to-br from-pink-600 via-fuchsia-600 to-pink-700 border-pink-500/30";
         }
         if (clean.includes("inf")) {
-            return "bg-linear-to-br from-slate-900 via-zinc-950 to-black border-emerald-500/20";
+            return "bg-linear-to-br from-slate-600 via-slate-700 to-slate-800 border-emerald-500/30";
         }
-        return "bg-linear-to-br from-zinc-800 via-zinc-900 to-zinc-950 border-zinc-700/20";
+        return "bg-linear-to-br from-slate-500 via-slate-600 to-slate-700 border-slate-400/30";
     }
 
     /**
@@ -114,14 +114,14 @@
      */
     function getSpineGradient(subject) {
         const clean = (subject || "").trim().toLowerCase();
-        if (clean.includes("math")) return "from-blue-400 to-indigo-500";
-        if (clean.includes("deu")) return "from-red-400 to-rose-500";
-        if (clean.includes("eng") || clean.includes("fra") || clean.includes("spa") || clean.includes("lat") || clean.includes("spr")) return "from-violet-400 to-fuchsia-500";
-        if (clean.includes("bio") || clean.includes("che") || clean.includes("phy") || clean.includes("nat")) return "from-teal-400 to-emerald-500";
-        if (clean.includes("ges") || clean.includes("pol") || clean.includes("geo") || clean.includes("erd") || clean.includes("soz")) return "from-amber-400 to-orange-500";
-        if (clean.includes("mus") || clean.includes("kun")) return "from-pink-400 to-fuchsia-500";
-        if (clean.includes("inf")) return "from-emerald-400 to-teal-500";
-        return "from-zinc-500 to-zinc-650";
+        if (clean.includes("math")) return "from-blue-300 to-indigo-400";
+        if (clean.includes("deu")) return "from-red-300 to-rose-400";
+        if (clean.includes("eng") || clean.includes("fra") || clean.includes("spa") || clean.includes("lat") || clean.includes("spr")) return "from-violet-300 to-fuchsia-400";
+        if (clean.includes("bio") || clean.includes("che") || clean.includes("phy") || clean.includes("nat")) return "from-teal-300 to-emerald-400";
+        if (clean.includes("ges") || clean.includes("pol") || clean.includes("geo") || clean.includes("erd") || clean.includes("soz")) return "from-amber-300 to-orange-400";
+        if (clean.includes("mus") || clean.includes("kun")) return "from-pink-300 to-fuchsia-400";
+        if (clean.includes("inf")) return "from-emerald-300 to-teal-400";
+        return "from-slate-400 to-slate-500";
     }
 
     function onCoverError() {
@@ -178,11 +178,11 @@
 </script>
 
 <article
-    class="bg-zinc-900/40 rounded-3xl border border-zinc-800/50 backdrop-blur-xl flex flex-col h-full group overflow-hidden hover:border-emerald-500/20 transition-all duration-300 shadow-2xl"
+    class="bg-white rounded-2xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm"
 >
     {#if coverSrc && !coverFailed}
         <div
-            class="w-full h-56 rounded-t-2xl overflow-hidden bg-zinc-950/20 flex items-center justify-center border-b border-zinc-800/40 relative"
+            class="w-full h-56 rounded-t-2xl overflow-hidden bg-slate-50 flex items-center justify-center border-b border-slate-100 relative"
         >
             <img
                 src={coverSrc}
@@ -196,19 +196,19 @@
     {:else}
         <!-- CSS Styled Book Cover Mockup -->
         <div
-            class="w-full h-56 rounded-t-2xl overflow-hidden {getSubjectGradient(book.subject)} flex flex-col justify-between p-5 relative border-b border-zinc-800/50 shadow-inner"
+            class="w-full h-56 rounded-t-2xl overflow-hidden {getSubjectGradient(book.subject)} flex flex-col justify-between p-5 relative border-b border-slate-100 shadow-inner"
         >
             <!-- Styled Book Spine / Accent Bar -->
             <div class="absolute left-0 top-0 bottom-0 w-3 bg-linear-to-b {getSpineGradient(book.subject)} opacity-90 shadow-md"></div>
             
             <div class="pl-4 pr-1 pt-1 text-left">
-                <span class="text-[9px] uppercase tracking-widest text-emerald-400 font-extrabold font-mono">{book.subject}</span>
-                <h4 class="text-sm font-extrabold text-zinc-100 leading-snug line-clamp-3 mt-1.5">{book.title}</h4>
+                <span class="text-[9px] uppercase tracking-widest text-white/80 font-extrabold font-mono">{book.subject}</span>
+                <h4 class="text-sm font-extrabold text-white leading-snug line-clamp-3 mt-1.5">{book.title}</h4>
             </div>
             
             <div class="pl-4 pr-1 pb-1 text-left">
-                <p class="text-[10px] font-semibold text-zinc-400 truncate">{book.author || "Unbekannter Autor"}</p>
-                <p class="text-[8px] font-mono text-zinc-650 mt-0.5">ISBN: {book.isbn || "-"}</p>
+                <p class="text-[10px] font-semibold text-white/70 truncate">{book.author || "Unbekannter Autor"}</p>
+                <p class="text-[8px] font-mono text-white/50 mt-0.5">ISBN: {book.isbn || "-"}</p>
             </div>
         </div>
     {/if}
@@ -216,13 +216,13 @@
     <div class="grow p-5 pt-4 flex flex-col justify-between">
         <div>
             <h2
-                class="text-base font-bold text-zinc-100 leading-snug mb-1 line-clamp-2"
+                class="text-base font-bold text-slate-900 leading-snug mb-1 line-clamp-2"
                 title={book.title}
             >
                 {book.title}
             </h2>
             <button
-                class="text-[11px] text-zinc-400 mb-4 font-mono tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-emerald-400 cursor-pointer"
+                class="text-[11px] text-slate-400 mb-4 font-mono tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
                 onclick={() => copyIsbn(book.isbn)}
                 title="ISBN kopieren"
                 aria-label="ISBN kopieren"
@@ -230,12 +230,12 @@
                 <span>ISBN: {book.isbn || "-"}</span>
                 {#if book.isbn}
                     {#if copied}
-                        <span class="text-emerald-400 text-[10px] font-sans font-bold"
+                        <span class="text-blue-600 text-[10px] font-sans font-bold"
                             >Kopiert!</span
                         >
                     {:else}
                         <svg
-                            class="w-3.5 h-3.5 text-zinc-600 opacity-0 group-hover/isbn:opacity-100 transition-opacity"
+                            class="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover/isbn:opacity-100 transition-opacity"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -259,13 +259,13 @@
                     {book.subject}
                 </span>
                 <span
-                    class="bg-zinc-850/50 border border-zinc-800 text-zinc-300 text-[10px] font-bold px-2 py-0.5 rounded-md"
+                    class="bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md"
                 >
                     Klasse {book.gradeLevel}
                 </span>
                 {#if book.track}
                     <span
-                        class="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-md"
+                        class="bg-cyan-50 border border-cyan-200 text-cyan-700 text-[10px] font-bold px-2 py-0.5 rounded-md"
                     >
                         {book.track}
                     </span>
@@ -275,10 +275,10 @@
 
         <div class="space-y-4">
             <div
-                class="inline-flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-xl bg-zinc-950/20 border border-zinc-850/40 text-[10px] text-zinc-400 font-medium"
+                class="inline-flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-[10px] text-slate-500 font-medium"
             >
                 <svg
-                    class="w-3.5 h-3.5 text-zinc-500"
+                    class="w-3.5 h-3.5 text-slate-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -297,14 +297,14 @@
             </div>
 
             <div
-                class="pt-3 border-t border-zinc-800/40 flex justify-between items-center"
+                class="pt-3 border-t border-slate-100 flex justify-between items-center"
             >
-                <span class="text-xs font-semibold text-zinc-400">Bestand</span>
+                <span class="text-xs font-semibold text-slate-400">Bestand</span>
                 <div class="flex items-center gap-2">
                     <span
                         class="w-2 h-2 rounded-full {getStockDotColor(book.stock)}"
                     ></span>
-                    <span class="text-lg font-extrabold text-zinc-100 font-mono">{book.stock}</span>
+                    <span class="text-lg font-extrabold text-slate-800 font-mono">{book.stock}</span>
                 </div>
             </div>
         </div>

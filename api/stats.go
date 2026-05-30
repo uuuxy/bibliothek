@@ -179,24 +179,31 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		// 1. Top-Ausleiher (Klassen)
-		topClasses := []any{}
-		qTop := `
-			SELECT s.klasse, COUNT(*) AS count
-			FROM ausleihen a
-			JOIN schueler s ON a.schueler_id = s.id
-			GROUP BY s.klasse
+		// 1. Beliebteste Titel (Die Renner)
+		popularTitles := []any{}
+		qPopular := `
+			SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''), COUNT(a.id) AS count
+			FROM buecher_titel t
+			JOIN buecher_exemplare e ON t.id = e.titel_id
+			JOIN ausleihen a ON e.id = a.exemplar_id
+			GROUP BY t.id, t.titel, t.autor, t.cover_url
 			ORDER BY count DESC
 			LIMIT 5
 		`
-		rows, err := s.DB.Pool.Query(ctx, qTop)
+		rows, err := s.DB.Pool.Query(ctx, qPopular)
 		if err == nil {
 			defer rows.Close()
 			for rows.Next() {
-				var class string
+				var id, title, autor, coverURL string
 				var count int
-				if err := rows.Scan(&class, &count); err == nil {
-					topClasses = append(topClasses, map[string]any{"klasse": class, "count": count})
+				if err := rows.Scan(&id, &title, &autor, &coverURL, &count); err == nil {
+					popularTitles = append(popularTitles, map[string]any{
+						"id":        id,
+						"titel":     title,
+						"autor":     autor,
+						"cover_url": coverURL,
+						"count":     count,
+					})
 				}
 			}
 		}
@@ -243,16 +250,16 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 				(SELECT COUNT(*) FROM buecher_exemplare) AS gesamt,
 				(SELECT COUNT(DISTINCT exemplar_id) FROM schadensfaelle) AS verlorene,
 				CASE 
-					WHEN (SELECT COUNT(*) FROM buecher_exemplare) = 0 THEN 0.0
-					ELSE ROUND(((SELECT COUNT(DISTINCT exemplar_id) FROM schadensfaelle) * 100.0) / (SELECT COUNT(*) FROM buecher_exemplare), 2)
+				    WHEN (SELECT COUNT(*) FROM buecher_exemplare) = 0 THEN 0.0
+				    ELSE ROUND(((SELECT COUNT(DISTINCT exemplar_id) FROM schadensfaelle) * 100.0) / (SELECT COUNT(*) FROM buecher_exemplare), 2)
 				END AS quote
 		`
 		_ = s.DB.Pool.QueryRow(ctx, qLoss).Scan(&gesamtBestand, &verloreneExemplare, &verlustQuote)
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"top_classes":   topClasses,
-			"shelf_warmers": shelfWarmers,
+			"popular_titles": popularTitles,
+			"shelf_warmers":  shelfWarmers,
 			"loss_stats": map[string]any{
 				"gesamt_bestand":      gesamtBestand,
 				"verlorene_exemplare": verloreneExemplare,

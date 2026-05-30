@@ -226,6 +226,15 @@ CREATE TABLE audit_log (
     bearbeiter_id UUID REFERENCES benutzer(id) ON DELETE SET NULL
 );
 
+-- Table: lieferanten (Book suppliers)
+CREATE TABLE lieferanten (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    kundennummer VARCHAR(100) NOT NULL,
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Table: class_books (LMF class to book catalog metadata association)
 CREATE TABLE class_books (
     class_name VARCHAR(50) NOT NULL,

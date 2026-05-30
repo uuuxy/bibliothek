@@ -100,83 +100,122 @@ func (s *Server) Routes() http.Handler {
 	
 	// Central Omnibox Action Dispatcher
 	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
-	mux.Handle("POST /api/action", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer, auth.RoleMitarbeiter)(actionHandler))
+	mux.Handle("POST /api/action", s.RequirePermission("view_students")(actionHandler))
 
 	// Unified Fuzzy Search (Accessible by Admin, Mitarbeiter, and Lehrer)
 	searchHandler := s.SearchHandler(studentRepo, bookRepo)
-	mux.Handle("GET /api/search", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleLehrer)(searchHandler))
+	mux.Handle("GET /api/search", s.RequirePermission("view_students")(searchHandler))
 
 	// LUSD CSV Student Import (Accessible by Admin and Mitarbeiter)
 	importHandler := s.ImportStudentsHandler()
-	mux.Handle("POST /api/import/students", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(importHandler))
+	mux.Handle("POST /api/import/students", s.RequirePermission("import_students")(importHandler))
+
+	// New LUSD Import (Accessible by Admin only)
+	mux.Handle("POST /api/students/import", s.RequirePermission("import_students")(s.ImportStudentsLUSDHandler()))
 
 	// LUSD CSV Sync (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/import/lusd", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.ImportLUSDHandler()))
+	mux.Handle("POST /api/import/lusd", s.RequirePermission("import_students")(s.ImportLUSDHandler()))
 
 	// Upload student webcam passport photo (Accessible by Admin, Mitarbeiter, and Lehrer)
-	mux.Handle("POST /api/schueler/{id}/photo", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleLehrer)(s.UploadStudentPhotoHandler()))
+	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.UploadStudentPhotoHandler()))
 
 	// Get student profile (Accessible by Admin, Mitarbeiter, and Lehrer)
-	mux.Handle("GET /api/schueler/{id}", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleLehrer)(s.GetStudentProfileHandler(studentRepo)))
+	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.GetStudentProfileHandler(studentRepo)))
+
+	// Create student (Accessible by Admin and Mitarbeiter)
+	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
+
+	// Delete student (Accessible by Admin and Mitarbeiter)
+	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler()))
 
 	// List distinct student classes (Accessible by Admin, Mitarbeiter, and Lehrer)
-	mux.Handle("GET /api/klassen", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleLehrer)(s.GetClassesHandler()))
+	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler()))
 
 	// List or search students (Accessible by Admin, Mitarbeiter, and Lehrer)
-	mux.Handle("GET /api/schueler", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleLehrer)(s.ListStudentsHandler()))
+	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.ListStudentsHandler()))
 
 	// Parents damage letters PDF Generator (Accessible by Admin and Mitarbeiter)
 	pdfHandler := s.GenerateDamagePDFHandler()
-	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(pdfHandler))
+	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(pdfHandler))
 
 	// Get copies of a book title (Accessible by Admin, Mitarbeiter, and Lehrer)
-	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleLehrer)(s.GetTitleCopiesHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
 
 	// Update copy damage note (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.UpdateDamageNoteHandler()))
+	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler()))
 
 	// Delete physical copy (Accessible by Admin and Mitarbeiter)
-	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.DeleteCopyHandler()))
+	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler()))
 
 	// Delete book title (Accessible by Admin and Mitarbeiter)
-	mux.Handle("DELETE /api/buecher/titel/{id}", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.DeleteTitleHandler(auditRepo)))
+	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.DeleteTitleHandler(auditRepo)))
 
 	// Delete user (Accessible by Admin)
-	mux.Handle("DELETE /api/benutzer/{id}", s.Auth.RequireRoles(auth.RoleAdmin)(s.DeleteUserHandler(auditRepo)))
+	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.DeleteUserHandler(auditRepo)))
+
+	// List users (Accessible by Admin)
+	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.ListUsersHandler()))
+
+	// Create user (Accessible by Admin)
+	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.CreateUserHandler()))
+
+	// Update user (Accessible by Admin)
+	mux.Handle("PUT /api/benutzer/{id}", s.RequirePermission("manage_users")(s.UpdateUserHandler()))
+
+	// View role permissions settings (Accessible by Admin)
+	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))
+
+	// Update role permission settings (Accessible by Admin)
+	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.UpdatePermissionsHandler()))
 
 	// View audit logs (Accessible by Admin)
-	mux.Handle("GET /api/audit", s.Auth.RequireRoles(auth.RoleAdmin)(s.GetAuditLogsHandler()))
+	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
 
 	// Get graduates live list (Accessible by Admin and Mitarbeiter)
-	mux.Handle("GET /api/abgaenger", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.GetGraduatesHandler()))
+	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
 
 	// Get reorder lists (Accessible by Admin and Mitarbeiter)
-	mux.Handle("GET /api/bestellungen", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.GetReordersHandler()))
+	mux.Handle("GET /api/bestellungen", s.RequirePermission("view_orders")(s.GetReordersHandler()))
 
 	// Export reorder list as PDF (Accessible by Admin and Mitarbeiter)
-	mux.Handle("GET /api/bestellungen/pdf", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.ExportReordersPDFHandler()))
+	mux.Handle("GET /api/bestellungen/pdf", s.RequirePermission("view_orders")(s.ExportReordersPDFHandler()))
 
 	// Scan items during active inventory (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/inventur/scan", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.ScanInventoryHandler()))
+	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
 
 	// Get system statistics (Accessible by Admin and Mitarbeiter)
-	mux.Handle("GET /api/statistiken", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.GetStatisticsHandler()))
+	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
 
 	// Generate PNG/SVG Barcodes (Accessible by all staff roles)
-	mux.Handle("GET /api/barcode", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer, auth.RoleMitarbeiter)(s.BarcodeHandler()))
+	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.BarcodeHandler()))
 
 	// Create supplier order and download vorab-barcode labels PDF (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/lieferanten/bestellen", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.SupplierOrderHandler()))
+	mux.Handle("POST /api/lieferanten/bestellen", s.RequirePermission("create_orders")(s.SupplierOrderHandler()))
 
 	// One-click supplier order sending via email (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/bestellung/senden", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.SendOrderMailHandler()))
+	mux.Handle("POST /api/bestellung/senden", s.RequirePermission("create_orders")(s.SendOrderMailHandler()))
 
 	// Release all pending supplier orders (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/bestellungen/freigeben", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter)(s.ReleaseOrdersHandler()))
+	mux.Handle("POST /api/bestellungen/freigeben", s.RequirePermission("create_orders")(s.ReleaseOrdersHandler()))
+
+	// List suppliers (Accessible by Admin and Mitarbeiter)
+	mux.Handle("GET /api/lieferanten", s.RequirePermission("view_orders")(s.ListSuppliersHandler()))
+
+	// Create supplier (Accessible by Admin and Mitarbeiter)
+	mux.Handle("POST /api/lieferanten", s.RequirePermission("create_orders")(s.CreateSupplierHandler()))
+
+	// Delete supplier (Accessible by Admin and Mitarbeiter)
+	mux.Handle("DELETE /api/lieferanten/{id}", s.RequirePermission("create_orders")(s.DeleteSupplierHandler()))
+
+	// Submit cart order with barcodes and PDF sending (Accessible by Admin and Mitarbeiter)
+	mux.Handle("POST /api/orders", s.RequirePermission("create_orders")(s.SubmitOrderHandler()))
+
+	// Get ordered copies in transit (Accessible by Admin and Mitarbeiter)
+	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
 
 	// Real-time Event Stream (accessible by all authorized staff roles)
 	sseHandler := s.Broker.Handler()
-	mux.Handle("GET /events", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer, auth.RoleMitarbeiter)(sseHandler))
+	mux.Handle("GET /events", s.RequirePermission("view_students")(sseHandler))
 
 	// Demo Admin-only Endpoint
 	adminDashboard := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

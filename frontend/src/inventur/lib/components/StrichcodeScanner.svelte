@@ -127,20 +127,20 @@
 </script>
 
 <div
-	class="relative w-full max-w-xl rounded-3xl bg-zinc-900 border border-zinc-800 p-6 shadow-2xl text-zinc-100"
+	class="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 shadow-2xl text-slate-800"
 >
 	<div class="mb-4 flex items-start justify-between gap-3">
 		<div>
-			<h3 class="text-lg font-bold text-zinc-100">
+			<h3 class="text-lg font-bold text-slate-900">
 				ISBN-Scanner
 			</h3>
-			<p class="mt-1.5 text-sm text-zinc-400 font-medium">
+			<p class="mt-1.5 text-sm text-slate-500 font-medium">
 				{status}
 			</p>
 		</div>
 		<button
 			onclick={manualScannerClose}
-			class="rounded-full bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 transition-colors cursor-pointer"
+			class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-755 hover:bg-slate-200 hover:text-slate-900 transition-colors cursor-pointer"
 			>Schließen</button
 		>
 	</div>
@@ -159,13 +159,13 @@
 		<button
 			onclick={() => cameraCmp?.startScanner()}
 			disabled={scanning || busy || !!lookupData}
-			class="rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-bold text-zinc-950 hover:bg-emerald-400 disabled:opacity-60 transition-colors cursor-pointer"
+			class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors cursor-pointer shadow-sm"
 			>Starten</button
 		>
 		<button
 			onclick={() => cameraCmp?.stopScanner()}
 			disabled={!scanning}
-			class="rounded-full bg-zinc-850 border border-zinc-800 px-5 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-60 transition-colors cursor-pointer"
+			class="rounded-xl bg-slate-100 border border-slate-250 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer"
 			>Stoppen</button
 		>
 	</div>

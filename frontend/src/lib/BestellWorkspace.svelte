@@ -17,18 +17,25 @@
   let incomingShipments = $state([]);
   let isReleasing = $state(false), showGreenFade = $state(false);
 
-  onMount(() => {
-    const rawSuppliers = localStorage.getItem("library_suppliers");
-    suppliers = rawSuppliers ? JSON.parse(rawSuppliers) : [
-      { name: "Klett Verlag", email: "bestellung@klett.de", customerNumber: "K-99281" },
-      { name: "Cornelsen", email: "service@cornelsen.de", customerNumber: "C-88123" },
-      { name: "Westermann", email: "order@westermann.de", customerNumber: "W-77441" }
-    ];
-    if (!rawSuppliers) localStorage.setItem("library_suppliers", JSON.stringify(suppliers));
-    const rawIncoming = localStorage.getItem("library_incoming_shipments");
-    if (rawIncoming) incomingShipments = JSON.parse(rawIncoming);
+  onMount(async () => {
+    await loadSuppliers();
+    await loadIncomingShipments();
     fetchRecommendations();
   });
+
+  async function loadSuppliers() {
+    try {
+      const res = await fetch("/api/lieferanten");
+      if (res.ok) suppliers = await res.json();
+    } catch (err) { console.error("Fehler beim Laden der Lieferanten:", err); }
+  }
+
+  async function loadIncomingShipments() {
+    try {
+      const res = await fetch("/api/bestellungen/zulauf");
+      if (res.ok) incomingShipments = await res.json();
+    } catch (err) { console.error("Fehler beim Laden des Wareneingangs:", err); }
+  }
 
   async function fetchRecommendations() {
     try {
@@ -38,18 +45,38 @@
   }
 
   /** @param {SubmitEvent} e */
-  function addSupplier(e) {
+  async function addSupplier(e) {
     e.preventDefault(); if (!newName || !newEmail || !newCustNum) return;
-    suppliers.push({ name: newName, email: newEmail, customerNumber: newCustNum });
-    localStorage.setItem("library_suppliers", JSON.stringify(suppliers));
-    newName = ""; newEmail = ""; newCustNum = "";
+    try {
+      const res = await fetch("/api/lieferanten", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, email: newEmail, customerNumber: newCustNum })
+      });
+      if (res.ok) {
+        newName = ""; newEmail = ""; newCustNum = "";
+        await loadSuppliers();
+      } else {
+        const txt = await res.text();
+        alert("Fehler beim Erstellen des Lieferanten: " + txt);
+      }
+    } catch (err) { console.error(err); }
   }
 
-  /** @param {number} idx */
-  function removeSupplier(idx) {
-    suppliers.splice(idx, 1);
-    localStorage.setItem("library_suppliers", JSON.stringify(suppliers));
-    selectedSupplierIdx = Math.max(0, Math.min(selectedSupplierIdx, suppliers.length - 1));
+  /** @param {string} id */
+  async function removeSupplier(id) {
+    try {
+      const res = await fetch(`/api/lieferanten/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        await loadSuppliers();
+        selectedSupplierIdx = Math.max(0, Math.min(selectedSupplierIdx, suppliers.length - 1));
+      } else {
+        const txt = await res.text();
+        alert("Fehler beim Löschen des Lieferanten: " + txt);
+      }
+    } catch (err) { console.error(err); }
   }
 
   /** @type {any} */
@@ -57,17 +84,34 @@
   function handleSearchInput() {
     clearTimeout(searchTimeout);
     if (searchQuery.trim().length < 2) { searchResults = []; showDropdown = false; return; }
-    searchTimeout = setTimeout(async () => {
-      const res = await fetch("/api/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.type === "search_results") { searchResults = data.search_results || []; showDropdown = searchResults.length > 0; }
+
+    const cleanQuery = searchQuery.replace(/[\s-]/g, "");
+    const isIsbn13 = /^\d{13}$/.test(cleanQuery);
+
+    const performSearch = async () => {
+      try {
+        const res = await fetch("/api/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: searchQuery })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.type === "search_results") {
+            searchResults = data.search_results || [];
+            showDropdown = searchResults.length > 0;
+          }
+        }
+      } catch (err) {
+        console.error("Fehler bei der Buchsuche:", err);
       }
-    }, 200);
+    };
+
+    if (isIsbn13) {
+      performSearch();
+    } else {
+      searchTimeout = setTimeout(performSearch, 200);
+    }
   }
 
   /** @param {any} book */
@@ -86,24 +130,23 @@
     submittingOrder = true; orderMessage = null;
     const supplier = suppliers[selectedSupplierIdx];
     try {
-      for (const item of orderCart) {
-        const res = await fetch("/api/lieferanten/bestellen", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ titel_id: item.id, menge: item.menge })
-        });
-        if (res.ok) {
-          const blob = await res.blob(), url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url; a.download = `bestellung_barcodes_${item.titel.substring(0, 15).replace(/\s+/g, "_")}.pdf`;
-          a.click();
-        }
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplier_id: supplier.id,
+          items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge }))
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        orderCart = [];
+        orderMessage = { type: "success", text: `Bestellung erfolgreich per E-Mail an ${supplier.name} gesendet. ${data.ordered_qty} Barcodes wurden im System reserviert.` };
+        await loadIncomingShipments();
+        fetchRecommendations();
+      } else {
+        throw new Error(data.message || "Fehler beim Bestellen");
       }
-      incomingShipments = [{ id: Date.now(), supplierName: supplier.name, date: new Date().toLocaleDateString("de-DE"), items: [...orderCart] }, ...incomingShipments];
-      localStorage.setItem("library_incoming_shipments", JSON.stringify(incomingShipments));
-      orderCart = [];
-      orderMessage = { type: "success", text: `Bestellung bei ${supplier.name} ausgelöst! PDF heruntergeladen.` };
-      fetchRecommendations();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       orderMessage = { type: "error", text: "Fehler: " + errMsg };
@@ -114,19 +157,23 @@
     if (!incomingShipments.length) return;
     isReleasing = true;
     try {
-      await fetch("/api/bestellungen/freigeben", { method: "POST" });
-      showGreenFade = true;
-      setTimeout(() => {
-        incomingShipments = [];
-        localStorage.removeItem("library_incoming_shipments");
-        showGreenFade = false;
-        fetchRecommendations();
-      }, 1500);
+      const res = await fetch("/api/bestellungen/freigeben", { method: "POST" });
+      if (res.ok) {
+        showGreenFade = true;
+        setTimeout(async () => {
+          await loadIncomingShipments();
+          showGreenFade = false;
+          fetchRecommendations();
+        }, 1500);
+      } else {
+        const txt = await res.text();
+        alert("Fehler beim Freigeben: " + txt);
+      }
     } catch (err) {
+      console.error(err);
       showGreenFade = true;
-      setTimeout(() => {
-        incomingShipments = [];
-        localStorage.removeItem("library_incoming_shipments");
+      setTimeout(async () => {
+        await loadIncomingShipments();
         showGreenFade = false;
         fetchRecommendations();
       }, 1500);
@@ -143,8 +190,8 @@
     </div>
     <div class="flex items-center gap-3">
       <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-        <button onclick={() => activeTab = "bestellungen"} class="px-4 py-1.5 text-xs font-bold rounded-md cursor-pointer transition-all {activeTab === 'bestellungen' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Bestellungen</button>
-        <button onclick={() => activeTab = "lieferanten"} class="px-4 py-1.5 text-xs font-bold rounded-md cursor-pointer transition-all {activeTab === 'lieferanten' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Lieferanten verwalten</button>
+        <button onclick={() => activeTab = "bestellungen"} class="px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition-all {activeTab === 'bestellungen' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Bestellungen</button>
+        <button onclick={() => activeTab = "lieferanten"} class="px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition-all {activeTab === 'lieferanten' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Lieferanten verwalten</button>
       </div>
       <a href="/api/bestellungen/pdf" download class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold border border-slate-200 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-2xs">🖨️ PDF-Bestellliste</a>
     </div>
@@ -165,15 +212,15 @@
           <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Entwurf</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-1"><label for="supplier" class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
+          <div class="space-y-1"><label for="supplier" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
           <div class="space-y-1 relative">
-            <label for="book" class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={handleSearchInput} placeholder="Buchtitel oder Autor suchen..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50" />
+            <label for="book" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={handleSearchInput} placeholder="Titel, Autor oder ISBN suchen..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50" />
             {#if showDropdown && searchResults.length > 0}
               <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
                 {#each searchResults as b}
-                  <button onclick={() => addToCart(b)} class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center gap-3 text-xs">
-                    {#if b.cover_url}<img src={b.cover_url} class="w-7 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-[9px] uppercase">{b.titel.charAt(0)}</div>{/if}
-                    <div class="min-w-0"><div class="font-bold text-slate-800 truncate">{b.titel}</div><div class="text-[10px] text-slate-400 truncate">{b.autor} · {b.isbn}</div></div>
+                  <button onclick={() => addToCart(b)} class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center gap-3 text-base">
+                    {#if b.cover_url}<img src={b.cover_url} class="w-7 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{b.titel.charAt(0)}</div>{/if}
+                    <div class="min-w-0"><div class="font-bold text-slate-800 truncate">{b.titel}</div><div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div></div>
                   </button>
                 {/each}
               </div>
@@ -182,16 +229,16 @@
         </div>
 
         <div class="space-y-3">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Warenkorb</span>
+          <span class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Warenkorb</span>
           {#if !orderCart.length}
-            <div class="py-10 border border-dashed border-slate-200 rounded-lg text-center text-xs text-slate-400">Der Warenkorb ist leer. Suche nach Büchern zum Hinzufügen.</div>
+            <div class="py-10 border border-dashed border-slate-200 rounded-lg text-center text-base text-slate-400">Der Warenkorb ist leer. Suche nach Büchern zum Hinzufügen.</div>
           {:else}
             <div class="border border-slate-100 rounded-lg overflow-hidden divide-y divide-slate-100">
               {#each orderCart as item, idx}
-                <div class="p-3 bg-slate-50/30 flex items-center justify-between gap-4 text-xs">
+                <div class="p-3 bg-slate-50/30 flex items-center justify-between gap-4 text-base">
                   <div class="flex items-center gap-3 min-w-0">
-                    {#if item.cover_url}<img src={item.cover_url} class="w-8 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-8 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-[10px] uppercase">{item.titel.charAt(0)}</div>{/if}
-                    <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate">{item.titel}</h4><p class="text-[10px] text-slate-400 truncate">ISBN: {item.isbn}</p></div>
+                    {#if item.cover_url}<img src={item.cover_url} class="w-8 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-8 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{item.titel.charAt(0)}</div>{/if}
+                    <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate">{item.titel}</h4><p class="text-sm text-slate-400 truncate">ISBN: {item.isbn}</p></div>
                   </div>
                   <div class="flex items-center gap-4">
                     <div class="flex items-center border border-slate-200 bg-white rounded-md overflow-hidden"><button onclick={() => item.menge = Math.max(1, item.menge - 1)} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">-</button><span class="px-3 font-mono font-bold text-slate-700 min-w-[20px] text-center">{item.menge}</span><button onclick={() => item.menge += 1} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">+</button></div>
@@ -200,7 +247,16 @@
                 </div>
               {/each}
             </div>
-            <div class="flex justify-end"><button onclick={submitOrder} disabled={submittingOrder} class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm cursor-pointer disabled:bg-slate-200 disabled:text-slate-400">📤 Bestellung auslösen ({orderCart.reduce((a, c) => a + c.menge, 0)} Expl.)</button></div>
+            <div class="flex justify-end">
+              <button onclick={submitOrder} disabled={submittingOrder} class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-2">
+                {#if submittingOrder}
+                  <div class="w-4 h-4 border-2 border-t-white border-white/20 rounded-full animate-spin"></div>
+                  Bestellung wird gesendet...
+                {:else}
+                  📤 Bestellung auslösen ({orderCart.reduce((a, c) => a + c.menge, 0)} Expl.)
+                {/if}
+              </button>
+            </div>
           {/if}
         </div>
       </div>
@@ -252,9 +308,9 @@
       <div class="bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-4">
         <h2 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Neuer Lieferant</h2>
         <form onsubmit={addSupplier} class="space-y-4 text-base">
-          <div class="space-y-1"><label for="n" class="font-bold text-slate-400 uppercase tracking-wide text-xs">Name</label><input id="n" type="text" bind:value={newName} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
-          <div class="space-y-1"><label for="e" class="font-bold text-slate-400 uppercase tracking-wide text-xs">E-Mail</label><input id="e" type="email" bind:value={newEmail} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
-          <div class="space-y-1"><label for="c" class="font-bold text-slate-400 uppercase tracking-wide text-xs">Kundennummer</label><input id="c" type="text" bind:value={newCustNum} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
+          <div class="space-y-1"><label for="n" class="font-semibold text-slate-400 uppercase tracking-wide text-sm">Name</label><input id="n" type="text" bind:value={newName} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
+          <div class="space-y-1"><label for="e" class="font-semibold text-slate-400 uppercase tracking-wide text-sm">E-Mail</label><input id="e" type="email" bind:value={newEmail} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
+          <div class="space-y-1"><label for="c" class="font-semibold text-slate-400 uppercase tracking-wide text-sm">Kundennummer</label><input id="c" type="text" bind:value={newCustNum} required class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-base" /></div>
           <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg cursor-pointer text-base">💾 Lieferanten speichern</button>
         </form>
       </div>
@@ -274,7 +330,7 @@
                   <td class="py-3 font-bold text-slate-800">{s.name}</td>
                   <td class="py-3 text-slate-650">{s.email}</td>
                   <td class="py-3 font-mono text-slate-650">{s.customerNumber}</td>
-                  <td class="py-3 text-right"><button onclick={() => removeSupplier(idx)} class="text-slate-450 hover:text-rose-600 cursor-pointer">Löschen</button></td>
+                  <td class="py-3 text-right"><button onclick={() => removeSupplier(s.id)} class="text-slate-450 hover:text-rose-600 cursor-pointer">Löschen</button></td>
                 </tr>
               {/each}
             </tbody>

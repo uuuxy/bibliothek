@@ -10,6 +10,8 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // DamageNoteRequest holds the payload for updating a copy's damage note.
@@ -267,5 +269,293 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(copies)
+	}
+}
+
+type PermissionSetting struct {
+	Role       string `json:"role"`
+	Permission string `json:"permission"`
+	Allowed    bool   `json:"allowed"`
+}
+
+// GetPermissionsHandler returns all permission configurations grouped by role.
+func (s *Server) GetPermissionsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			SELECT role::text, permission, allowed 
+			FROM role_permissions 
+			ORDER BY role, permission
+		`
+		rows, err := s.DB.Pool.Query(ctx, query)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		settings := []PermissionSetting{}
+		for rows.Next() {
+			var s PermissionSetting
+			if err := rows.Scan(&s.Role, &s.Permission, &s.Allowed); err == nil {
+				settings = append(settings, s)
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(settings)
+	}
+}
+
+type UpdatePermissionsRequest struct {
+	Role       string `json:"role"`
+	Permission string `json:"permission"`
+	Allowed    bool   `json:"allowed"`
+}
+
+// UpdatePermissionsHandler updates a specific permission setting.
+func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req UpdatePermissionsRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			UPDATE role_permissions 
+			SET allowed = $1 
+			WHERE role = $2 AND permission = $3
+		`
+		_, err := s.DB.Pool.Exec(ctx, query, req.Allowed, req.Role, req.Permission)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"success"}`))
+	}
+}
+
+// UserResponse holds public user data sent to administrative screens.
+type UserResponse struct {
+	ID        string    `json:"id"`
+	BarcodeID string    `json:"barcode_id"`
+	Vorname   string    `json:"vorname"`
+	Nachname  string    `json:"nachname"`
+	Email     string    `json:"email"`
+	Rolle     string    `json:"rolle"`
+	Aktiv     bool      `json:"aktiv"`
+	ErstelltAm time.Time `json:"erstellt_am"`
+}
+
+// ListUsersHandler returns a list of all system users.
+func (s *Server) ListUsersHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			SELECT id, coalesce(barcode_id, ''), vorname, nachname, email, rolle::text, aktiv, erstellt_am
+			FROM benutzer
+			ORDER BY nachname, vorname
+		`
+		rows, err := s.DB.Pool.Query(ctx, query)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		users := []UserResponse{}
+		for rows.Next() {
+			var u UserResponse
+			err := rows.Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Email, &u.Rolle, &u.Aktiv, &u.ErstelltAm)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			users = append(users, u)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(users)
+	}
+}
+
+// CreateUserRequest holds payload data for user creation.
+type CreateUserRequest struct {
+	BarcodeID string `json:"barcode_id"`
+	Vorname   string `json:"vorname"`
+	Nachname  string `json:"nachname"`
+	Email     string `json:"email"`
+	Rolle     string `json:"rolle"`
+	Password  string `json:"password"`
+}
+
+// CreateUserHandler inserts a new user with bcrypt-hashed credentials.
+func (s *Server) CreateUserHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req CreateUserRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" || req.Password == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		// Validate email uniqueness
+		var exists bool
+		err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE email = $1)", req.Email).Scan(&exists)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if exists {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+			return
+		}
+
+		// Validate barcode uniqueness if provided
+		var barcode *string
+		if req.BarcodeID != "" {
+			barcode = &req.BarcodeID
+			err = s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1)", req.BarcodeID).Scan(&exists)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if exists {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("dieser Barcode wird bereits verwendet"))
+				return
+			}
+		}
+
+		// Encrypt password
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		query := `
+			INSERT INTO benutzer (barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
+			VALUES ($1, $2, $3, $4, $5, $6::benutzer_rolle, true)
+		`
+		_, err = s.DB.Pool.Exec(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, string(hash), req.Rolle)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"success"}`))
+	}
+}
+
+// UpdateUserRequest holds modification inputs for a user.
+type UpdateUserRequest struct {
+	BarcodeID string `json:"barcode_id"`
+	Vorname   string `json:"vorname"`
+	Nachname  string `json:"nachname"`
+	Email     string `json:"email"`
+	Rolle     string `json:"rolle"`
+	Aktiv     bool   `json:"aktiv"`
+	Password  string `json:"password"`
+}
+
+// UpdateUserHandler modifies user properties and dynamically updates details/passwords.
+func (s *Server) UpdateUserHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+			return
+		}
+
+		var req UpdateUserRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname, E-Mail und Rolle sind Pflichtfelder"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		// Validate email uniqueness excluding this user
+		var exists bool
+		err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE email = $1 AND id != $2)", req.Email, id).Scan(&exists)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if exists {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+			return
+		}
+
+		// Validate barcode uniqueness excluding this user
+		var barcode *string
+		if req.BarcodeID != "" {
+			barcode = &req.BarcodeID
+			err = s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1 AND id != $2)", req.BarcodeID, id).Scan(&exists)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if exists {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("dieser Barcode wird bereits von einem anderen Benutzer verwendet"))
+				return
+			}
+		}
+
+		if req.Password != "" {
+			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			query := `
+				UPDATE benutzer
+				SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, passwort_hash = $7, aktualisiert_am = CURRENT_TIMESTAMP
+				WHERE id = $8
+			`
+			_, err = s.DB.Pool.Exec(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, req.Rolle, req.Aktiv, string(hash), id)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+		} else {
+			query := `
+				UPDATE benutzer
+				SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, aktualisiert_am = CURRENT_TIMESTAMP
+				WHERE id = $7
+			`
+			_, err = s.DB.Pool.Exec(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, req.Rolle, req.Aktiv, id)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"success"}`))
 	}
 }

@@ -151,7 +151,7 @@
 	}
 </script>
 
-<div class="w-full text-zinc-100 font-sans">
+<div class="w-full text-slate-800 font-sans">
 	<div class="w-full transition-all duration-300">
 		<StartseitenFilter
 			bind:viewMode
@@ -179,7 +179,7 @@
 					{#if displayLimit < filteredBooks.length}
 						<div class="mt-8 flex justify-center">
 							<button
-								class="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-semibold rounded-full border border-zinc-700/60 shadow-lg transition-all cursor-pointer"
+								class="px-6 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-full border border-slate-300 shadow-sm transition-all cursor-pointer"
 								onclick={() => (displayLimit += 50)}
 							>
 								Mehr laden ({filteredBooks.length -

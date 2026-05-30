@@ -2,12 +2,17 @@ package api
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -231,5 +236,430 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(students)
+	}
+}
+
+// CreateStudentRequest defines the payload for creating a new student.
+type CreateStudentRequest struct {
+	Vorname   string `json:"vorname"`
+	Nachname  string `json:"nachname"`
+	Klasse    string `json:"klasse"`
+	BarcodeID string `json:"barcode_id"`
+}
+
+// CreateStudentHandler inserts a new student record into the database.
+func (s *Server) CreateStudentHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req CreateStudentRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges JSON"))
+			return
+		}
+
+		req.Vorname = strings.TrimSpace(req.Vorname)
+		req.Nachname = strings.TrimSpace(req.Nachname)
+		req.Klasse = strings.TrimSpace(req.Klasse)
+		req.BarcodeID = strings.TrimSpace(req.BarcodeID)
+
+		if req.Vorname == "" || req.Nachname == "" || req.Klasse == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Vorname, Nachname und Klasse sind Pflichtfelder"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		tx, err := s.DB.Pool.Begin(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer tx.Rollback(ctx)
+
+		// 1. Resolve/generate barcode_id if not provided
+		barcodeID := req.BarcodeID
+		if barcodeID == "" {
+			var lastBarcode string
+			qLast := `
+				SELECT barcode_id 
+				FROM schueler 
+				WHERE barcode_id LIKE 'S-%' 
+				ORDER BY barcode_id DESC 
+				LIMIT 1
+				FOR UPDATE
+			`
+			err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
+			startNum := 10001
+			if err == nil {
+				re := regexp.MustCompile(`S-(\d+)`)
+				matches := re.FindStringSubmatch(lastBarcode)
+				if len(matches) > 1 {
+					if parsed, err := strconv.Atoi(matches[1]); err == nil {
+						startNum = parsed + 1
+					}
+				}
+			}
+			barcodeID = fmt.Sprintf("S-%05d", startNum)
+		} else {
+			// Check if barcode_id already exists
+			var exists bool
+			err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1)", barcodeID).Scan(&exists)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if exists {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("Barcode-ID '%s' wird bereits verwendet", barcodeID))
+				return
+			}
+		}
+
+		// 2. Insert student
+		defaultAbgaengerJahr := time.Now().Year() + 5
+		var studentID string
+		qInsert := `
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING id
+		`
+		err = tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, req.Klasse, defaultAbgaengerJahr).Scan(&studentID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status":     "success",
+			"id":         studentID,
+			"barcode_id": barcodeID,
+		})
+	}
+}
+
+// DeleteStudentHandler deletes a student after checking for outstanding loans.
+func (s *Server) DeleteStudentHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		tx, err := s.DB.Pool.Begin(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer tx.Rollback(ctx)
+
+		// 1. Check if the student exists
+		var studentExists bool
+		err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)", id).Scan(&studentExists)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if !studentExists {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Schüler nicht gefunden"))
+			return
+		}
+
+		// 2. Check for active (unreturned) loans
+		var activeLoansCount int
+		qLoans := `
+			SELECT COUNT(*) 
+			FROM ausleihen 
+			WHERE schueler_id = $1 AND rueckgabe_am IS NULL
+		`
+		err = tx.QueryRow(ctx, qLoans, id).Scan(&activeLoansCount)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if activeLoansCount > 0 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Löschen nicht möglich: Schüler hat noch entliehene Bücher"))
+			return
+		}
+
+		// 3. Anonymize/unlink past closed loans
+		qAnonymizeLoans := `
+			UPDATE ausleihen
+			SET schueler_id = NULL
+			WHERE schueler_id = $1
+		`
+		_, err = tx.Exec(ctx, qAnonymizeLoans, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// 4. Delete or unlink damages
+		qDeleteDamages := `
+			DELETE FROM schadensfaelle
+			WHERE schueler_id = $1 AND ist_bezahlt = true
+		`
+		_, err = tx.Exec(ctx, qDeleteDamages, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		qAnonymizeDamages := `
+			UPDATE schadensfaelle
+			SET schueler_id = NULL
+			WHERE schueler_id = $1
+		`
+		_, err = tx.Exec(ctx, qAnonymizeDamages, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// 5. Delete student record
+		qDeleteStudent := `
+			DELETE FROM schueler
+			WHERE id = $1
+		`
+		_, err = tx.Exec(ctx, qDeleteStudent, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status": "success",
+		})
+	}
+}
+
+// ImportStudentsLUSDHandler handles LUSD-compliant CSV uploads for admins.
+func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 1. Parse Multipart Form
+		if err := r.ParseMultipartForm(5 << 20); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		file, _, err := r.FormFile("file")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+		defer file.Close()
+
+		content, err := io.ReadAll(file)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Hessen LUSD standard CSV uses semicolon (;)
+		reader := csv.NewReader(strings.NewReader(string(content)))
+		reader.Comma = ';'
+		reader.LazyQuotes = true
+
+		headers, err := reader.Read()
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("CSV-Header konnte nicht gelesen werden: %w", err))
+			return
+		}
+
+		headerMap := make(map[string]int)
+		for idx, h := range headers {
+			headerMap[strings.ToLower(strings.TrimSpace(h))] = idx
+		}
+
+		// Resolve column indexes
+		getColIdx := func(keys []string) int {
+			for _, k := range keys {
+				if idx, ok := headerMap[k]; ok {
+					return idx
+				}
+			}
+			return -1
+		}
+
+		lusdIDIdx := getColIdx([]string{"lusd_id", "schueler_id", "id", "lusd-id"})
+		vornameIdx := getColIdx([]string{"vorname", "first_name", "firstname"})
+		nachnameIdx := getColIdx([]string{"nachname", "last_name", "lastname", "name"})
+		klasseIdx := getColIdx([]string{"klasse", "class", "jahrgang"})
+		barcodeIdx := getColIdx([]string{"barcode_id", "barcode", "barcode-id"})
+
+		// Validation
+		if vornameIdx == -1 || nachnameIdx == -1 || klasseIdx == -1 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("CSV muss mindestens die Spalten 'Vorname', 'Nachname' und 'Klasse' enthalten"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+		defer cancel()
+
+		tx, err := s.DB.Pool.Begin(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer tx.Rollback(ctx)
+
+		// Get next barcode sequence S-XXXXX helper
+		var lastBarcode string
+		qLast := `
+			SELECT barcode_id 
+			FROM schueler 
+			WHERE barcode_id LIKE 'S-%' 
+			ORDER BY barcode_id DESC 
+			LIMIT 1
+			FOR UPDATE
+		`
+		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
+		startNum := 10001
+		if err == nil {
+			re := regexp.MustCompile(`S-(\d+)`)
+			matches := re.FindStringSubmatch(lastBarcode)
+			if len(matches) > 1 {
+				if parsed, err := strconv.Atoi(matches[1]); err == nil {
+					startNum = parsed + 1
+				}
+			}
+		}
+
+		importedCount := 0
+		lineNum := 1
+
+		for {
+			row, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			lineNum++
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("Fehler in Zeile %d: %w", lineNum, err))
+				return
+			}
+
+			if len(row) <= vornameIdx || len(row) <= nachnameIdx || len(row) <= klasseIdx {
+				continue
+			}
+
+			vorname := strings.TrimSpace(row[vornameIdx])
+			nachname := strings.TrimSpace(row[nachnameIdx])
+			klasse := strings.TrimSpace(row[klasseIdx])
+
+			if vorname == "" || nachname == "" || klasse == "" {
+				continue // Skip invalid rows
+			}
+
+			var lusdID *string
+			if lusdIDIdx != -1 && len(row) > lusdIDIdx {
+				val := strings.TrimSpace(row[lusdIDIdx])
+				if val != "" {
+					lusdID = &val
+				}
+			}
+
+			var barcodeID string
+			if barcodeIdx != -1 && len(row) > barcodeIdx {
+				barcodeID = strings.TrimSpace(row[barcodeIdx])
+			}
+
+			// Try to find student
+			var existingID string
+			found := false
+
+			// 1. Try by lusdID
+			if lusdID != nil {
+				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", *lusdID).Scan(&existingID)
+				if err == nil {
+					found = true
+				}
+			}
+
+			// 2. Try by barcodeID
+			if !found && barcodeID != "" {
+				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE barcode_id = $1 LIMIT 1", barcodeID).Scan(&existingID)
+				if err == nil {
+					found = true
+				}
+			}
+
+			// 3. Try by Name combination
+			if !found {
+				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) LIMIT 1", vorname, nachname).Scan(&existingID)
+				if err == nil {
+					found = true
+				}
+			}
+
+			if found {
+				// Update student's class (Versetzung)
+				qUpdate := `
+					UPDATE schueler 
+					SET klasse = $1, aktualisiert_am = CURRENT_TIMESTAMP
+				`
+				params := []any{klasse}
+				paramCount := 2
+
+				if lusdID != nil {
+					qUpdate += fmt.Sprintf(", lusd_id = $%d", paramCount)
+					params = append(params, *lusdID)
+					paramCount++
+				}
+
+				qUpdate += fmt.Sprintf(" WHERE id = $%d", paramCount)
+				params = append(params, existingID)
+
+				_, err = tx.Exec(ctx, qUpdate, params...)
+				if err != nil {
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+					return
+				}
+			} else {
+				// Generate new barcode if empty
+				if barcodeID == "" {
+					barcodeID = fmt.Sprintf("S-%05d", startNum)
+					startNum++
+				}
+
+				defaultAbgaengerJahr := time.Now().Year() + 5
+				qInsert := `
+					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
+					VALUES ($1, $2, $3, $4, $5, $6)
+				`
+				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
+				if err != nil {
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+					return
+				}
+			}
+			importedCount++
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status":   "success",
+			"imported": importedCount,
+		})
 	}
 }
