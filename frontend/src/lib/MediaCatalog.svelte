@@ -6,13 +6,7 @@
 </script>
 
 <div class="w-full space-y-6">
-  <!-- Page Header -->
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-xl font-bold text-slate-900">Medienkatalog</h1>
-      <p class="text-xs text-slate-500 font-medium mt-0.5">Bücher suchen, filtern und Titel verwalten</p>
-    </div>
-  </div>
+
 
   <!-- Google-style underline Tabs -->
   <div class="border-b border-slate-200">

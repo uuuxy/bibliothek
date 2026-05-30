@@ -11,9 +11,14 @@ import (
 // CreateBook inserts a new book record.
 func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10)
 		RETURNING id`
+
+	medientyp := book.Medientyp
+	if medientyp == "" {
+		medientyp = "Buch"
+	}
 
 	var id string
 	err := repo.db.QueryRow(
@@ -28,6 +33,7 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		book.Track,
 		book.Stock,
 		book.LastCounted,
+		medientyp,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
@@ -51,6 +57,7 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	tracks := make([]string, len(books))
 	stocks := make([]int32, len(books))
 	lastCounteds := make([]*string, len(books))
+	medientypen := make([]string, len(books))
 
 	for i, b := range books {
 		isbns[i] = b.ISBN
@@ -62,13 +69,17 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		tracks[i] = b.Track
 		stocks[i] = int32(b.Stock)
 		lastCounteds[i] = b.LastCounted
+		medientypen[i] = b.Medientyp
+		if medientypen[i] == "" {
+			medientypen[i] = "Buch"
+		}
 	}
 
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, t.stock, NULLIF(t.last_counted_text, '')::date
-		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::int[], $9::text[])
-		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted_text)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp)
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, t.stock, NULLIF(t.last_counted_text, '')::date, t.medientyp
+		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::int[], $9::text[], $10::text[])
+		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted_text, medientyp)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -77,7 +88,8 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 			grade_level = EXCLUDED.grade_level,
 			track = EXCLUDED.track,
 			stock = buecher_titel.stock + EXCLUDED.stock,
-			last_counted = EXCLUDED.last_counted
+			last_counted = EXCLUDED.last_counted,
+			medientyp = EXCLUDED.medientyp
 	`
 
 	cmdTag, err := repo.db.Exec(
@@ -92,6 +104,7 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		tracks,
 		stocks,
 		lastCounteds,
+		medientypen,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("bücher konnten nicht im batch importiert werden: %w", err)
@@ -103,8 +116,8 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 // UpsertBook inserts or updates a book record.
 func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -112,8 +125,14 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 			grade_level = EXCLUDED.grade_level,
 			track = EXCLUDED.track,
 			stock = buecher_titel.stock + EXCLUDED.stock,
-			last_counted = EXCLUDED.last_counted
+			last_counted = EXCLUDED.last_counted,
+			medientyp = EXCLUDED.medientyp
 		RETURNING id`
+
+	medientyp := book.Medientyp
+	if medientyp == "" {
+		medientyp = "Buch"
+	}
 
 	var id string
 	err := repo.db.QueryRow(
@@ -128,6 +147,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		book.Track,
 		book.Stock,
 		book.LastCounted,
+		medientyp,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
@@ -163,8 +183,14 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			grade_level = $6,
 			track = $7,
 			stock = $8,
-			last_counted = NULLIF($9::text, '')::date
-		WHERE id = $10`
+			last_counted = NULLIF($9::text, '')::date,
+			medientyp = $10
+		WHERE id = $11`
+
+	medientyp := book.Medientyp
+	if medientyp == "" {
+		medientyp = "Buch"
+	}
 
 	result, err := repo.db.Exec(
 		ctx,
@@ -178,6 +204,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Track,
 		book.Stock,
 		book.LastCounted,
+		medientyp,
 		id,
 	)
 	if err != nil {

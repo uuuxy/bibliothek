@@ -11,19 +11,20 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jung-kurt/gofpdf"
 )
 
 // ReorderTitle represents a book title that has fallen below its reorder point.
 type ReorderTitle struct {
-	ID               string `json:"id"`
-	Titel            string `json:"titel"`
-	Autor            string `json:"autor"`
-	ISBN             string `json:"isbn"`
-	Verlag           string `json:"verlag"`
-	CoverURL         string `json:"cover_url,omitempty"`
-	Meldebestand     int    `json:"meldebestand"`
+	ID                string `json:"id"`
+	Titel             string `json:"titel"`
+	Autor             string `json:"autor"`
+	ISBN              string `json:"isbn"`
+	Verlag            string `json:"verlag"`
+	CoverURL          string `json:"cover_url,omitempty"`
+	Meldebestand      int    `json:"meldebestand"`
 	VerfuegbarBestand int    `json:"verfuegbarer_bestand"`
 }
 
@@ -174,22 +175,43 @@ func (s *Server) ScanInventoryHandler() http.HandlerFunc {
 }
 
 // GetStatisticsHandler returns analytical metadata details.
+// Optional query parameter ?zeitraum=all|schuljahr|monat filters the loan-based
+// popular_titles ranking by time period. shelf_warmers and loss_stats are global.
 func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		// Resolve time filter for popular_titles query.
+		// Values are server-controlled strings, never user-provided SQL fragments.
+		var ausleihenFilter string
+		switch r.URL.Query().Get("zeitraum") {
+		case "schuljahr":
+			// Current school year starts August 1st.
+			ausleihenFilter = `AND a.ausgeliehen_am >= (
+				CASE WHEN EXTRACT(MONTH FROM CURRENT_DATE) >= 8
+					THEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 8, 1)
+					ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int - 1, 8, 1)
+				END
+			)`
+		case "monat":
+			ausleihenFilter = "AND a.ausgeliehen_am >= CURRENT_DATE - INTERVAL '30 days'"
+		default:
+			ausleihenFilter = ""
+		}
+
 		// 1. Beliebteste Titel (Die Renner)
 		popularTitles := []any{}
-		qPopular := `
+		qPopular := fmt.Sprintf(`
 			SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''), COUNT(a.id) AS count
 			FROM buecher_titel t
 			JOIN buecher_exemplare e ON t.id = e.titel_id
 			JOIN ausleihen a ON e.id = a.exemplar_id
+			WHERE 1=1 %s
 			GROUP BY t.id, t.titel, t.autor, t.cover_url
 			ORDER BY count DESC
 			LIMIT 5
-		`
+		`, ausleihenFilter)
 		rows, err := s.DB.Pool.Query(ctx, qPopular)
 		if err == nil {
 			defer rows.Close()

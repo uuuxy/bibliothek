@@ -6,14 +6,18 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+	_ "bibliothek/docs"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 	"bibliothek/sse"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // Server wraps the core application dependencies: database, auth, and real-time streaming.
@@ -49,7 +53,7 @@ func (s *Server) Routes() http.Handler {
 	_ = os.MkdirAll("uploads", 0755)
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
-	
+
 	// Fail hard if JWT_SECRET is missing during route initialization
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
@@ -75,7 +79,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Public Endpoints
 	mux.HandleFunc("POST /login/barcode", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
-	
+
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"healthy"}`))
@@ -90,14 +94,14 @@ func (s *Server) Routes() http.Handler {
 			Expires:  time.Unix(0, 0),
 			HttpOnly: true,
 			Secure:   s.CookieSecure,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteStrictMode,
 		})
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"message":"erfolgreich abgemeldet"}`))
 	})
 
 	// Protected Endpoints (RBAC Middleware checking roles: admin, lehrer, mitarbeiter)
-	
+
 	// Central Omnibox Action Dispatcher
 	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
 	mux.Handle("POST /api/action", s.RequirePermission("view_students")(actionHandler))
@@ -126,7 +130,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
 
 	// Delete student (Accessible by Admin and Mitarbeiter)
-	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler()))
+	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
 
 	// List distinct student classes (Accessible by Admin, Mitarbeiter, and Lehrer)
 	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler()))
@@ -144,8 +148,20 @@ func (s *Server) Routes() http.Handler {
 	// Update copy damage note (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler()))
 
+	// Mark copy as defective and create Schadensfaelle (Accessible by Admin and Mitarbeiter)
+	mux.Handle("POST /api/buecher/exemplare/{id}/defekt", s.RequirePermission("edit_books")(s.MarkCopyDefektHandler()))
+
+	// Undo a recent loan return within 1 hour (Accessible by Admin and Mitarbeiter)
+	mux.Handle("DELETE /api/ausleihen/{id}/rueckgabe", s.RequirePermission("view_students")(s.UndoReturnHandler()))
+
+	// Get system settings (Accessible by Admin)
+	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_users")(s.GetSettingsHandler()))
+
+	// Update system settings (Accessible by Admin)
+	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_users")(s.UpdateSettingsHandler()))
+
 	// Delete physical copy (Accessible by Admin and Mitarbeiter)
-	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler()))
+	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler(auditRepo)))
 
 	// Delete book title (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.DeleteTitleHandler(auditRepo)))
@@ -210,8 +226,41 @@ func (s *Server) Routes() http.Handler {
 	// Submit cart order with barcodes and PDF sending (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/orders", s.RequirePermission("create_orders")(s.SubmitOrderHandler()))
 
+	// Live ISBN metadata lookup + catalog upsert (Accessible by Admin and Mitarbeiter)
+	mux.Handle("POST /api/buecher/aus-isbn", s.RequirePermission("create_orders")(s.ISBNZuTitelHandler()))
+
 	// Get ordered copies in transit (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
+
+	// Klassen → Klassenlehrer-E-Mail Mapping (Admin only)
+	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_users")(s.GetKlassenMappingHandler()))
+	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_users")(s.UpsertKlassenMappingHandler()))
+	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_users")(s.DeleteKlassenMappingHandler()))
+
+	// Klassensatz Reservierungen (Lehrer submits; Admin/Mitarbeiter manages)
+	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("view_students")(s.CreateKlassensatzReservierungHandler()))
+	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenHandler()))
+	mux.Handle("GET /api/reservierungen/klassensatz/anzahl", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenAnzahlHandler()))
+	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeKlassensatzReservierungHandler()))
+
+	// Mahnwesen – overdue loans, PDF generation, SMTP dispatch
+	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler()))
+	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler()))
+	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler()))
+
+	// Public OPAC catalog search (DSGVO-compliant: no loan data exposed)
+	mux.HandleFunc("GET /api/opac/suche", s.PublicCatalogSearchHandler())
+
+	// Antolin proxy – public, 24-hour in-memory cache
+	mux.HandleFunc("GET /api/antolin", s.AntolinHandler())
+
+	// Digital signage / info monitor data – public
+	mux.HandleFunc("GET /api/monitor/slides", s.GetMonitorSlidesHandler())
+
+	// Vormerkungen (individual book reservations / waitlist)
+	mux.Handle("GET /api/vormerkungen", s.RequirePermission("view_books")(s.ListVormerkungHandler()))
+	mux.Handle("POST /api/vormerkungen", s.RequirePermission("view_books")(s.CreateVormerkungHandler()))
+	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_books")(s.DeleteVormerkungHandler()))
 
 	// Real-time Event Stream (accessible by all authorized staff roles)
 	sseHandler := s.Broker.Handler()
@@ -229,6 +278,14 @@ func (s *Server) Routes() http.Handler {
 	})
 	mux.Handle("GET /teacher/dashboard", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer)(teacherZone))
 
+	// Swagger interactive documentation
+	mux.Handle("GET /swagger/", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+	mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
+	})
+
 	// Serve Svelte frontend static assets from build directory
 	fs := http.FileServer(http.Dir("./frontend/dist"))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -245,13 +302,125 @@ func (s *Server) Routes() http.Handler {
 		fs.ServeHTTP(w, r)
 	})
 
-	// Wrap mux in logging and rate limiting middleware
+	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
+	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
 	rateLimiter := RateLimitMiddleware(50)
-	globalHandler := rateLimiter(mux)
+
+	// Chain: SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> RBACBlock -> Mux
+	globalHandler := SecurityHeadersMiddleware(CORSMiddleware(HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.RBACBlockMiddleware(mux))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
 		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
 		globalHandler.ServeHTTP(w, r)
+	})
+}
+
+// HTTPSRedirectMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
+func HTTPSRedirectMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
+		if !isHTTPS {
+			target := "https://" + r.Host + r.URL.RequestURI()
+			http.Redirect(w, r, target, http.StatusMovedPermanently)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// MaxBodySizeMiddleware limits the request body size to prevent DoS.
+func MaxBodySizeMiddleware(limit int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, limit)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// RBACBlockMiddleware checks roles and enforces path access rules for LEHRER and HELFER roles.
+func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if path == "/health" || path == "/login/barcode" || path == "/api/auth/status" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		cookie, err := r.Cookie("session_token")
+		if err == nil && cookie.Value != "" {
+			claims, err := s.Auth.VerifyToken(cookie.Value)
+			if err == nil {
+				role := strings.ToUpper(string(claims.Rolle))
+				switch role {
+				case "LEHRER":
+					isAllowed := (r.Method == http.MethodGet && (path == "/api/search" || strings.HasPrefix(path, "/api/buecher/titel/") && strings.Contains(path, "/exemplare"))) ||
+						(r.Method == http.MethodPost && path == "/api/auth/logout")
+
+					if !isAllowed {
+						apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("zugriff verweigert für Lehrer"))
+						return
+					}
+				case "HELFER":
+					isAllowed := (r.Method == http.MethodPost && (path == "/api/action" || path == "/api/auth/logout")) ||
+						(r.Method == http.MethodGet && path == "/events")
+
+					if !isAllowed {
+						apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("zugriff verweigert für Helfer"))
+						return
+					}
+				}
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// SecurityHeadersMiddleware sets HSTS, X-Frame-Options, X-Content-Type-Options and
+// Referrer-Policy on every response. HSTS uses a 1-year max-age with includeSubDomains
+// and preload to harden the school domain against protocol-downgrade attacks.
+func SecurityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// HSTS: 1 year, include subdomains, eligible for preload list
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Prevent clickjacking
+		w.Header().Set("X-Frame-Options", "DENY")
+		// Prevent MIME-type sniffing
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		// Restrict referrer information
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		// Basic CSP: allow same-origin resources only (adjust if CDN is added)
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'")
+		next.ServeHTTP(w, r)
+	})
+}
+
+// CORSMiddleware restricts cross-origin requests to the configured school domain.
+// Set ALLOWED_ORIGIN env var to the school's frontend URL (e.g. https://bibliothek.schule.de).
+// Falls back to same-origin only if not configured.
+func CORSMiddleware(next http.Handler) http.Handler {
+	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			// Same-origin request (no Origin header) – always allowed
+			next.ServeHTTP(w, r)
+			return
+		}
+		// Only allow explicitly configured origin; reject everything else
+		if allowedOrigin != "" && origin == allowedOrigin {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Vary", "Origin")
+		}
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }

@@ -37,6 +37,7 @@ type BookTitle struct {
 	Erscheinungsjahr int       `json:"erscheinungsjahr,omitempty"`
 	Beschreibung     string    `json:"beschreibung,omitempty"`
 	CoverURL         string    `json:"cover_url,omitempty"`
+	Medientyp        string    `json:"medientyp,omitempty"`
 	ErstelltAm       time.Time `json:"erstellt_am"`
 	AktualisiertAm   time.Time `json:"aktualisiert_am"`
 }
@@ -53,11 +54,12 @@ type BookCopy struct {
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
 	
 	// Joined fields from associated BookTitle
-	Titel    string `json:"titel"`
-	Autor    string `json:"autor"`
-	Verlag   string `json:"verlag"`
-	ISBN     string `json:"isbn"`
-	CoverURL string `json:"cover_url,omitempty"`
+	Titel     string `json:"titel"`
+	Autor     string `json:"autor"`
+	Verlag    string `json:"verlag"`
+	ISBN      string `json:"isbn"`
+	CoverURL  string `json:"cover_url,omitempty"`
+	Medientyp string `json:"medientyp,omitempty"`
 }
 
 // Loan represents the ausleihen table model for historical and active transactions.

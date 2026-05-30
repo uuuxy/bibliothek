@@ -34,11 +34,7 @@
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print">
-  <div class="flex items-center justify-between">
-    <div>
-      <h2 class="text-xl font-bold text-slate-850 tracking-tight">Enterprise Audit-Logbuch</h2>
-      <p class="text-xs text-slate-500">Unveränderliches Register aller sicherheitsrelevanten Löschungen von Buchtiteln und Benutzern.</p>
-    </div>
+  <div class="flex items-center justify-end">
     <button onclick={fetchLogs} class="px-4 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">
       🔄 Aktualisieren
     </button>

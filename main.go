@@ -14,15 +14,29 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/jobs"
+	"bibliothek/plugins/vorlage"
+	"bibliothek/repository"
 	"bibliothek/sse"
 )
+
+// @title           Schulbibliothek API
+// @version         1.0
+// @description     Backend-API fuer das Schulbibliothek-Verwaltungssystem.
+// @host            localhost:8080
+// @BasePath        /api
 
 // main is the entry point of the school library system backend application.
 // It initializes configs, setups database connection pools, starts the SSE broker,
 // mounts middleware-protected routes, and starts the server with graceful shutdown.
 func main() {
+	// Initialize optional plugins
+	vorlage.Init()
+
 	// 1. Config environment resolution
-	dsn := getEnv("DATABASE_URL", "postgres://postgres:postgrespassword@localhost:5433/bibliothek?sslmode=disable")
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("FATAL: DATABASE_URL environment variable is required and cannot be empty")
+	}
 	
 	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -30,10 +44,12 @@ func main() {
 		log.Fatal("FATAL: JWT_SECRET environment variable is required and cannot be empty")
 	}
 	
-	// Default port set to 8081 to avoid proxy mismatches with Svelte Vite dev server
-	port := getEnv("PORT", "8081")
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("FATAL: PORT environment variable is required and cannot be empty")
+	}
 	
-	cookieSecure, err := strconv.ParseBool(getEnv("COOKIE_SECURE", "false"))
+	cookieSecure, err := strconv.ParseBool(os.Getenv("COOKIE_SECURE"))
 	if err != nil {
 		cookieSecure = false
 	}
@@ -73,7 +89,8 @@ func main() {
 	log.Println("Server-Sent Events (SSE) broker started.")
 
 	// 5. GDPR Cron Scheduler initialization
-	scheduler := jobs.NewScheduler(database.Pool)
+	auditRepo := repository.NewAuditRepository(database.Pool)
+	scheduler := jobs.NewScheduler(database.Pool, auditRepo)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -106,10 +123,3 @@ func main() {
 	log.Println("Server stopped successfully.")
 }
 
-// getEnv retrieves the environment variable for a key, falling back to a default value if unset.
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return fallback
-}

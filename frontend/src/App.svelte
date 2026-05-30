@@ -1,5 +1,8 @@
 <script>
-  import { onMount } from "svelte";
+  import Opac from "./lib/Opac.svelte";
+  import Monitor from "./lib/Monitor.svelte";
+  const _currentPath = window.location.pathname;
+
   import Omnibox from "./lib/Omnibox.svelte";
   import BookDetails from "./lib/BookDetails.svelte";
   import Graduates from "./lib/Graduates.svelte";
@@ -12,8 +15,11 @@
   import AuditLog from "./lib/AuditLog.svelte";
   import StudentDirectory from "./lib/StudentDirectory.svelte";
   import PermissionManager from "./lib/PermissionManager.svelte";
+  import LehrerPortal from "./lib/LehrerPortal.svelte";
+  import Mahnwesen from "./lib/Mahnwesen.svelte";
   import { appState } from "./inventur/lib/store.svelte.js";
-  import { menuGroups } from "./lib/menu.js";
+  import { menuGroups, canSeeItem } from "./lib/menu.js";
+  import { sidebarExtensions } from "./lib/plugins.svelte.js";
 
   let isLoggedIn = $state(false);
   let currentUser = $state(/** @type {any} */ (null));
@@ -26,6 +32,29 @@
   let activeTab = $state("kiosk"); 
   let selectedBook = $state(/** @type {any} */ (null));
   let isSidebarCollapsed = $state(false);
+  let pendingReservierungen = $state(0);
+
+  /** Polls for open class-set reservations (badge for admin/mitarbeiter). */
+  async function fetchPendingReservierungen() {
+    try {
+      const res = await fetch("/api/reservierungen/klassensatz/anzahl");
+      if (res.ok) {
+        const data = await res.json();
+        pendingReservierungen = data.anzahl ?? 0;
+      }
+    } catch { /* ignore */ }
+  }
+
+  $effect(() => {
+    if (!isLoggedIn || !currentUser) {
+      pendingReservierungen = 0;
+      return;
+    }
+    if (currentUser.rolle !== "admin" && currentUser.rolle !== "mitarbeiter") return;
+    fetchPendingReservierungen();
+    const id = setInterval(fetchPendingReservierungen, 30_000);
+    return () => clearInterval(id);
+  });
 
   // Focus login input initially if not logged in
   $effect(() => {
@@ -96,6 +125,7 @@
         appState.guestAuthenticated = true;
       } else if (currentUser && currentUser.rolle === "lehrer") {
         appState.guestAuthenticated = true;
+        activeTab = "lehrer_portal";
       }
     } catch (err) {
       const errorMessage = /** @type {any} */ (err).message || String(err);
@@ -129,6 +159,11 @@
 </script>
 
 <main class="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-slate-200 selection:text-slate-900">
+{#if _currentPath === '/katalog'}
+  <Opac />
+{:else if _currentPath === '/monitor'}
+  <Monitor />
+{:else}
   {#if isLoggedIn && !heartbeatOk}
     <div class="fixed inset-0 bg-white/45 backdrop-blur-lg z-50 flex flex-col items-center justify-center space-y-4">
       <div class="w-12 h-12 border-4 border-t-slate-800 border-slate-200/50 rounded-full animate-spin"></div>
@@ -181,8 +216,8 @@
                     <span class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 animate-fade-in">{group.name}</span>
                   {/if}
                   {#each group.items as item}
-                    {#if !item.adminOnly || (currentUser && currentUser.rolle === 'admin')}
-                      <button onclick={() => { activeTab = item.id; selectedBook = null; }} class="w-full flex items-center rounded-xl text-sm font-semibold transition-all {isSidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2'} {activeTab === item.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50 cursor-pointer'}" title={item.label}>
+                    {#if canSeeItem(item, currentUser?.rolle)}
+                      <button onclick={() => { activeTab = item.id; selectedBook = null; }} class="relative w-full flex items-center rounded-xl text-sm font-semibold transition-all {isSidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2'} {activeTab === item.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50 cursor-pointer'}" title={item.label}>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           {#if item.icon === 'kiosk'}
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -208,16 +243,35 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                           {:else if item.icon === 'shield'}
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                          {:else if item.icon === 'bell'}
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                           {/if}
                         </svg>
                         {#if !isSidebarCollapsed}
-                          <span class="animate-fade-in">{item.label}</span>
+                          <span class="animate-fade-in flex-1 text-left">{item.label}</span>
+                          {#if item.id === 'orders' && pendingReservierungen > 0}
+                            <span class="ml-auto min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-bold px-1">{pendingReservierungen}</span>
+                          {/if}
+                        {:else if item.id === 'orders' && pendingReservierungen > 0}
+                          <span class="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white"></span>
                         {/if}
                       </button>
                     {/if}
                   {/each}
                 </div>
               {/each}
+
+              {#if sidebarExtensions.length > 0}
+                <div class="pt-4 border-t border-slate-100 space-y-1">
+                  {#if !isSidebarCollapsed}
+                    <span class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Erweiterungen</span>
+                  {/if}
+                  {#each sidebarExtensions as ext}
+                    {@const Component = ext.component}
+                    <Component {...ext.props} collapsed={isSidebarCollapsed} />
+                  {/each}
+                </div>
+              {/if}
             </nav>
           </div>
 
@@ -253,6 +307,8 @@
                {:else if activeTab === "student_ids"}Druck / Schülerausweise
               {:else if activeTab === "labels"}Druck / Buch-Etiketten
               {:else if activeTab === "permissions"}Verwaltung / Berechtigungen
+              {:else if activeTab === "mahnwesen"}Verwaltung / Mahnwesen
+              {:else if activeTab === "lehrer_portal"}Lehrer / Mein Portal
               {/if}
             </span>
           </div>
@@ -297,11 +353,16 @@
             <div class="w-full animate-fade-in"><StudentDirectory role={currentUser?.rolle} /></div>
           {:else if activeTab === "permissions"}
             <div class="w-full animate-fade-in"><PermissionManager /></div>
+          {:else if activeTab === "mahnwesen"}
+            <div class="w-full animate-fade-in"><Mahnwesen /></div>
+          {:else if activeTab === "lehrer_portal"}
+            <div class="w-full animate-fade-in"><LehrerPortal user={currentUser} /></div>
           {/if}
         </main>
       </div>
     </div>
   {/if}
+{/if}
 </main>
 
 <style>

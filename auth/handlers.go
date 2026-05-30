@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"bibliothek/apierrors"
@@ -18,6 +19,84 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// loginFailureEntry tracks failed login attempts per IP for brute-force protection.
+type loginFailureEntry struct {
+	count     int
+	windowEnd time.Time
+}
+
+// loginFailureLimiter enforces max N failed logins per IP within a sliding window.
+// This protects the IMAP server from credential-stuffing and brute-force attacks.
+type loginFailureLimiter struct {
+	mu      sync.Mutex
+	entries map[string]*loginFailureEntry
+	maxFail int           // max allowed failures before lockout
+	window  time.Duration // rolling window duration
+}
+
+func newLoginFailureLimiter(maxFail int, window time.Duration) *loginFailureLimiter {
+	return &loginFailureLimiter{
+		entries: make(map[string]*loginFailureEntry),
+		maxFail: maxFail,
+		window:  window,
+	}
+}
+
+// isBlocked returns true if the IP has exceeded the allowed failure count in the window.
+func (l *loginFailureLimiter) isBlocked(ip string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	e, ok := l.entries[ip]
+	if !ok {
+		return false
+	}
+	if time.Now().After(e.windowEnd) {
+		delete(l.entries, ip)
+		return false
+	}
+	return e.count >= l.maxFail
+}
+
+// recordFailure increments the failure counter for an IP; resets the window on first failure.
+func (l *loginFailureLimiter) recordFailure(ip string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	e, ok := l.entries[ip]
+	if !ok || time.Now().After(e.windowEnd) {
+		l.entries[ip] = &loginFailureEntry{count: 1, windowEnd: time.Now().Add(l.window)}
+		return
+	}
+	e.count++
+	// Evict stale entries to prevent unbounded growth (school has limited IPs)
+	if len(l.entries) > 2000 {
+		for k, v := range l.entries {
+			if time.Now().After(v.windowEnd) {
+				delete(l.entries, k)
+			}
+		}
+	}
+}
+
+// globalLoginLimiter: 5 failed attempts per IP within 15 minutes.
+var globalLoginLimiter = newLoginFailureLimiter(5, 15*time.Minute)
+
+// realIP extracts the true client IP, honoring X-Forwarded-For from trusted reverse proxies.
+func realIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.SplitN(xff, ",", 2)
+		return strings.TrimSpace(parts[0])
+	}
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return xri
+	}
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return ip
+}
+
 
 // LoginRequest represents the payload for login.
 type LoginRequest struct {
@@ -84,11 +163,8 @@ func AuthenticateIMAP(serverHostPort, email, password string) (bool, error) {
 	}
 }
 
-// verifyPassword checks a bcrypt password hash or dummy_passwort_hash fallback.
+// verifyPassword checks a bcrypt password hash.
 func verifyPassword(hash, password string) bool {
-	if hash == "dummy_passwort_hash" && password == "admin" {
-		return true
-	}
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
@@ -97,6 +173,14 @@ func verifyPassword(hash, password string) bool {
 // Supports both email/password (with local DB or school IMAP verification) and barcode/PIN login.
 func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Brute-force protection: block IPs that exceeded 5 failed logins in 15 minutes
+		clientIP := realIP(r)
+		if globalLoginLimiter.isBlocked(clientIP) {
+			apierrors.SendHTTPError(w, http.StatusTooManyRequests,
+				errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
+			return
+		}
+
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
@@ -123,9 +207,10 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 
 			// Look up user in DB by email
 			query := `
-				SELECT id, rolle::text, vorname, nachname, passwort_hash, aktiv 
-				FROM benutzer 
-				WHERE LOWER(email) = LOWER($1) 
+				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.passwort_hash, b.aktiv 
+				FROM benutzer b
+				LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
+				WHERE LOWER(b.email) = LOWER($1) 
 				LIMIT 1
 			`
 			err := dbPool.QueryRow(ctx, query, req.Email).Scan(&id, &roleStr, &vorname, &nachname, &passwortHash, &aktiv)
@@ -151,11 +236,12 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 			}
 
 			if !authSuccess {
+				globalLoginLimiter.recordFailure(clientIP)
 				apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 				return
 			}
 		} else {
-			// 2. Barcode login for Kiosk-Helfer
+			// Barcode login for Kiosk-Helfer
 			barcodeID := req.BarcodeID
 			pin := req.PIN
 			if pin == "" {
@@ -169,11 +255,6 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 				pin = parts[1]
 			}
 
-			// If the user attempts to log in with "admin", default the PIN/password to "admin" if empty
-			if strings.ToLower(barcodeID) == "admin" && pin == "" {
-				pin = "admin"
-			}
-
 			if barcodeID == "" {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode_id or email is required"))
 				return
@@ -185,9 +266,10 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 			}
 
 			query := `
-				SELECT id, rolle::text, vorname, nachname, email, passwort_hash, aktiv 
-				FROM benutzer 
-				WHERE LOWER(barcode_id) = LOWER($1) OR (LOWER($1) = 'admin' AND LOWER(barcode_id) = 'admin-1')
+				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.email, b.passwort_hash, b.aktiv 
+				FROM benutzer b
+				LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
+				WHERE LOWER(b.barcode_id) = LOWER($1) OR (LOWER($1) = 'admin' AND LOWER(b.barcode_id) = 'admin-1')
 				LIMIT 1
 			`
 			err := dbPool.QueryRow(ctx, query, barcodeID).Scan(&id, &roleStr, &vorname, &nachname, &email, &passwortHash, &aktiv)
@@ -201,6 +283,7 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 			}
 
 			if !verifyPassword(passwortHash, pin) {
+				globalLoginLimiter.recordFailure(clientIP)
 				apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid PIN"))
 				return
 			}
@@ -226,7 +309,7 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 			Expires:  time.Now().Add(authenticator.tokenDuration),
 			HttpOnly: true,
 			Secure:   cookieSecure,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteStrictMode, // Strict: keine Cross-Site-Requests erlaubt
 		})
 
 		w.Header().Set("Content-Type", "application/json")

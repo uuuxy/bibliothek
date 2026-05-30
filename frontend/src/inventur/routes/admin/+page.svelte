@@ -39,6 +39,7 @@
 		stock: 0,
 		coverUrl: "",
 		lastCounted: "",
+		medientyp: "Buch",
 	});
 
 	/** @type {any} */
@@ -82,6 +83,7 @@
 			stock: 0,
 			coverUrl: "",
 			lastCounted: "",
+			medientyp: "Buch",
 		};
 		istBearbeitenModus = true;
 	}
@@ -89,6 +91,9 @@
 	/** @param {any} buch */
 	function oeffneDetails(buch) {
 		formular = { ...buch };
+		if (!formular.medientyp) {
+			formular.medientyp = "Buch";
+		}
 		if (formular.lastCounted && formular.lastCounted.includes("T")) {
 			formular.lastCounted = formular.lastCounted.split("T")[0];
 		}

@@ -21,11 +21,14 @@ func Connect(ctx context.Context, dsn string) (*Database, error) {
 		return nil, fmt.Errorf("failed to parse database configuration: %w", err)
 	}
 
-	// Configure pool size and connection lifetimes for optimal performance
-	config.MaxConns = 25
-	config.MinConns = 5
+	// Configure pool size and connection lifetimes for 8-PC high-concurrency operation.
+	// 50 max connections provide enough headroom for 8 parallel scanning clients plus
+	// background jobs (mahnwesen, GDPR cron, SSE) under peak load.
+	config.MaxConns = 50
+	config.MinConns = 10
 	config.MaxConnLifetime = 30 * time.Minute
 	config.MaxConnIdleTime = 15 * time.Minute
+	config.HealthCheckPeriod = 1 * time.Minute
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
@@ -48,11 +51,46 @@ func (db *Database) Close() {
 	}
 }
 
-// InitPermissions initializes the role_permissions schema and seeds it with default settings.
+// InitPermissions initializes the role_permissions schema, runs db migrations, and seeds defaults.
 func (db *Database) InitPermissions(ctx context.Context) error {
-	_, err := db.Pool.Exec(ctx, `
+	// 1. Enable pg_trgm extension
+	_, err := db.Pool.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+	if err != nil {
+		return fmt.Errorf("failed to create pg_trgm extension: %w", err)
+	}
+
+	// 2. Create pg_trgm GIN indexes
+	queries := []string{
+		"CREATE INDEX IF NOT EXISTS idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_buecher_isbn_trgm ON buecher_titel USING gin (isbn gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);",
+	}
+	for _, q := range queries {
+		if _, err := db.Pool.Exec(ctx, q); err != nil {
+			return fmt.Errorf("failed to create GIN index: %w", err)
+		}
+	}
+
+	// 3. Migrate role_permissions table role column to VARCHAR(50) if it's enum
+	var dataType string
+	err = db.Pool.QueryRow(ctx, `
+		SELECT data_type 
+		FROM information_schema.columns 
+		WHERE table_name = 'role_permissions' AND column_name = 'role'
+	`).Scan(&dataType)
+	if err == nil && dataType == "USER-DEFINED" {
+		_, err = db.Pool.Exec(ctx, "ALTER TABLE role_permissions ALTER COLUMN role TYPE VARCHAR(50);")
+		if err != nil {
+			return fmt.Errorf("failed to alter role_permissions.role column type: %w", err)
+		}
+	}
+
+	// 4. Create role_permissions table
+	_, err = db.Pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS role_permissions (
-			role benutzer_rolle NOT NULL,
+			role VARCHAR(50) NOT NULL,
 			permission VARCHAR(100) NOT NULL,
 			allowed BOOLEAN NOT NULL DEFAULT false,
 			PRIMARY KEY (role, permission)
@@ -62,61 +100,105 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		return fmt.Errorf("failed to create role_permissions table: %w", err)
 	}
 
+	// 5. Create benutzer_rollen table
+	_, err = db.Pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS benutzer_rollen (
+			benutzer_id UUID PRIMARY KEY REFERENCES benutzer(id) ON DELETE CASCADE,
+			rolle VARCHAR(50) NOT NULL CHECK (rolle IN ('ADMIN', 'MITARBEITER', 'LEHRER', 'HELFER'))
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create benutzer_rollen table: %w", err)
+	}
+
+	// 6. Migrate existing roles from benutzer table to benutzer_rollen if empty
+	var exists int
+	err = db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer_rollen").Scan(&exists)
+	if err == nil && exists == 0 {
+		_, err = db.Pool.Exec(ctx, `
+			INSERT INTO benutzer_rollen (benutzer_id, rolle)
+			SELECT id, UPPER(rolle::text)
+			FROM benutzer
+			ON CONFLICT DO NOTHING
+		`)
+		if err != nil {
+			return fmt.Errorf("failed to migrate existing benutzer roles: %w", err)
+		}
+	}
+
+	// 7. Seed default role permissions with uppercase role names
 	defaults := []struct {
 		Role       string
 		Permission string
 		Allowed    bool
 	}{
 		// Admin defaults
-		{"admin", "view_students", true},
-		{"admin", "create_students", true},
-		{"admin", "delete_students", true},
-		{"admin", "import_students", true},
-		{"admin", "upload_photos", true},
-		{"admin", "view_books", true},
-		{"admin", "edit_books", true},
-		{"admin", "delete_books", true},
-		{"admin", "inventory_scan", true},
-		{"admin", "view_orders", true},
-		{"admin", "create_orders", true},
-		{"admin", "view_graduates", true},
-		{"admin", "view_stats", true},
-		{"admin", "audit_logs", true},
-		{"admin", "manage_users", true},
+		{"ADMIN", "view_students", true},
+		{"ADMIN", "create_students", true},
+		{"ADMIN", "delete_students", true},
+		{"ADMIN", "import_students", true},
+		{"ADMIN", "upload_photos", true},
+		{"ADMIN", "view_books", true},
+		{"ADMIN", "edit_books", true},
+		{"ADMIN", "delete_books", true},
+		{"ADMIN", "inventory_scan", true},
+		{"ADMIN", "view_orders", true},
+		{"ADMIN", "create_orders", true},
+		{"ADMIN", "view_graduates", true},
+		{"ADMIN", "view_stats", true},
+		{"ADMIN", "audit_logs", true},
+		{"ADMIN", "manage_users", true},
 
 		// Mitarbeiter defaults
-		{"mitarbeiter", "view_students", true},
-		{"mitarbeiter", "create_students", true},
-		{"mitarbeiter", "delete_students", true},
-		{"mitarbeiter", "import_students", true},
-		{"mitarbeiter", "upload_photos", true},
-		{"mitarbeiter", "view_books", true},
-		{"mitarbeiter", "edit_books", true},
-		{"mitarbeiter", "delete_books", true},
-		{"mitarbeiter", "inventory_scan", true},
-		{"mitarbeiter", "view_orders", true},
-		{"mitarbeiter", "create_orders", true},
-		{"mitarbeiter", "view_graduates", true},
-		{"mitarbeiter", "view_stats", true},
-		{"mitarbeiter", "audit_logs", false},
-		{"mitarbeiter", "manage_users", false},
+		{"MITARBEITER", "view_students", true},
+		{"MITARBEITER", "create_students", true},
+		{"MITARBEITER", "delete_students", true},
+		{"MITARBEITER", "import_students", true},
+		{"MITARBEITER", "upload_photos", true},
+		{"MITARBEITER", "view_books", true},
+		{"MITARBEITER", "edit_books", true},
+		{"MITARBEITER", "delete_books", true},
+		{"MITARBEITER", "inventory_scan", true},
+		{"MITARBEITER", "view_orders", true},
+		{"MITARBEITER", "create_orders", true},
+		{"MITARBEITER", "view_graduates", true},
+		{"MITARBEITER", "view_stats", true},
+		{"MITARBEITER", "audit_logs", false},
+		{"MITARBEITER", "manage_users", false},
 
 		// Lehrer defaults
-		{"lehrer", "view_students", true},
-		{"lehrer", "create_students", false},
-		{"lehrer", "delete_students", false},
-		{"lehrer", "import_students", false},
-		{"lehrer", "upload_photos", true},
-		{"lehrer", "view_books", true},
-		{"lehrer", "edit_books", false},
-		{"lehrer", "delete_books", false},
-		{"lehrer", "inventory_scan", false},
-		{"lehrer", "view_orders", false},
-		{"lehrer", "create_orders", false},
-		{"lehrer", "view_graduates", false},
-		{"lehrer", "view_stats", false},
-		{"lehrer", "audit_logs", false},
-		{"lehrer", "manage_users", false},
+		{"LEHRER", "view_students", true},
+		{"LEHRER", "create_students", false},
+		{"LEHRER", "delete_students", false},
+		{"LEHRER", "import_students", false},
+		{"LEHRER", "upload_photos", true},
+		{"LEHRER", "view_books", true},
+		{"LEHRER", "edit_books", false},
+		{"LEHRER", "delete_books", false},
+		{"LEHRER", "inventory_scan", false},
+		{"LEHRER", "view_orders", false},
+		{"LEHRER", "create_orders", false},
+		{"LEHRER", "view_graduates", false},
+		{"LEHRER", "view_stats", false},
+		{"LEHRER", "audit_logs", false},
+		{"LEHRER", "manage_users", false},
+
+		// Helfer defaults
+		{"HELFER", "view_students", false},
+		{"HELFER", "create_students", false},
+		{"HELFER", "delete_students", false},
+		{"HELFER", "import_students", false},
+		{"HELFER", "upload_photos", false},
+		{"HELFER", "view_books", false},
+		{"HELFER", "edit_books", false},
+		{"HELFER", "delete_books", false},
+		{"HELFER", "inventory_scan", false},
+		{"HELFER", "view_orders", false},
+		{"HELFER", "create_orders", false},
+		{"HELFER", "view_graduates", false},
+		{"HELFER", "view_stats", false},
+		{"HELFER", "audit_logs", false},
+		{"HELFER", "manage_users", false},
 	}
 
 	for _, d := range defaults {

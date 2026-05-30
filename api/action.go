@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/plugins"
 	"bibliothek/repository"
 )
 
@@ -74,12 +75,23 @@ func (s *Server) ActionHandler(
 			s.broadcastActionEvent(resp)
 		}
 
+		// Check for pending reservations on returned books
+		if resp.Type == "rueckgabe" && resp.Book != nil && resp.Book.TitelID != "" {
+			if v, checkErr := s.checkVormerkung(ctx, resp.Book.TitelID); checkErr == nil && v != nil {
+				resp.HasVormerkung = true
+				resp.VormerkungTitel = v.TitelName
+			}
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
 	}
 }
 
 // handleBookAction processes transactions like checkouts, returns, and foreign transfers.
+// The initial book-copy and loan lookups are cheap read operations (no lock needed yet).
+// The actual mutation is performed inside a Read Committed transaction with row-level locks
+// in the respective flow handlers.
 func (s *Server) handleBookAction(
 	ctx context.Context,
 	query string,
@@ -92,7 +104,7 @@ func (s *Server) handleBookAction(
 	resp *ActionResponse,
 ) error {
 	staffID := claims.UserID
-	// 1. Resolve physical book item
+	// 1. Resolve physical book item (read-only; no lock required at this stage)
 	copy, err := bookRepo.GetCopyByBarcode(ctx, query)
 	if err != nil {
 		return err
@@ -101,45 +113,69 @@ func (s *Server) handleBookAction(
 		return fmt.Errorf("%w: book copy barcode %s not found", errNotFound, query)
 	}
 
-	// 2. Fetch active loan
-	activeLoan, err := loanRepo.GetActiveLoanByCopyID(ctx, copy.ID)
+	// Case: Active Teacher context exists in session (dauerhafter Handapparat).
+	// Pass nil for activeLoan – the flow handler re-reads it inside a locked transaction.
+	if activeTeacherID != nil && *activeTeacherID != "" {
+		return s.handleTeacherCheckoutFlow(ctx, copy, nil, *activeTeacherID, staffID, studentRepo, loanRepo, resp)
+	}
+
+	// Case: Active Student context exists in session.
+	// Pass nil for activeLoan – the flow handler re-reads it inside a locked transaction.
+	if activeStudentID != nil && *activeStudentID != "" {
+		return s.handleStudentCheckoutFlow(ctx, copy, nil, *activeStudentID, staffID, studentRepo, loanRepo, resp)
+	}
+
+	// Case: NO active student/teacher context -> Simple Return (or teacher self-checkout).
+	// Wrap the decision in a Read Committed transaction with SELECT ... FOR UPDATE to prevent
+	// duplicate return events from simultaneous WLAN-lagged scans.
+	tx, err := loanRepo.BeginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	activeLoan, err := loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
 	if err != nil {
 		return err
 	}
 
-	// Case: Active Teacher context exists in session (dauerhafter Handapparat)
-	if activeTeacherID != nil && *activeTeacherID != "" {
-		return s.handleTeacherCheckoutFlow(ctx, copy, activeLoan, *activeTeacherID, staffID, studentRepo, loanRepo, resp)
-	}
-
-	// Case: Active Student context exists in session
-	if activeStudentID != nil && *activeStudentID != "" {
-		return s.handleStudentCheckoutFlow(ctx, copy, activeLoan, *activeStudentID, staffID, studentRepo, loanRepo, resp)
-	}
-
-	// Case: NO active student/teacher context exists -> Simple Return
 	if activeLoan == nil {
 		if claims.Rolle == auth.RoleLehrer {
 			dueTime := time.Now().AddDate(1, 0, 0) // 1 year
-			loan, err := loanRepo.CreateUserLoan(ctx, copy.ID, claims.UserID, claims.UserID, dueTime, true)
+			loan, err := loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, claims.UserID, claims.UserID, dueTime, true)
 			if err != nil {
+				return err
+			}
+			if err := tx.Commit(ctx); err != nil {
 				return err
 			}
 			resp.Type = "ausleihe"
 			resp.Book = copy
-			resp.DueDate = &loan.RueckgabeFrist
+			if loan != nil {
+				resp.DueDate = &loan.RueckgabeFrist
+			}
 			return nil
 		}
 		return fmt.Errorf("%w: book copy is not currently borrowed", errInvalidState)
 	}
 
 	if activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == claims.UserID {
-		err = loanRepo.ReturnLoan(ctx, activeLoan.ID, claims.UserID, false)
-		if err != nil {
+		if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, claims.UserID, false); err != nil {
 			return err
 		}
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
+			CopyID:       copy.ID,
+			BarcodeID:    copy.BarcodeID,
+			Titel:        copy.Titel,
+			SchuelerID:   activeLoan.SchuelerID,
+			BearbeiterID: claims.UserID,
+		})
 		resp.Type = "rueckgabe"
 		resp.Book = copy
+		resp.LoanID = &activeLoan.ID
 		return nil
 	}
 
@@ -151,13 +187,24 @@ func (s *Server) handleBookAction(
 		}
 	}
 
-	err = loanRepo.ReturnLoan(ctx, activeLoan.ID, staffID, false)
-	if err != nil {
+	if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
 		return err
 	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
+		CopyID:       copy.ID,
+		BarcodeID:    copy.BarcodeID,
+		Titel:        copy.Titel,
+		SchuelerID:   activeLoan.SchuelerID,
+		BearbeiterID: staffID,
+	})
 
 	resp.Type = "rueckgabe"
 	resp.Book = copy
 	resp.Student = borrowerStudent
+	resp.LoanID = &activeLoan.ID
 	return nil
 }

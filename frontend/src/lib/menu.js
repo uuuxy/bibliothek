@@ -10,8 +10,27 @@ export const icons = {
   clock: `<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />`,
   identification: `<path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />`,
   printer: `<path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />`,
-  shield: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />`
+  shield: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />`,
+  bell: `<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />`
 };
+
+/**
+ * Determines whether a menu item should be visible for the given role.
+ * - item.roles (string[]): visible only when role is in the list
+ * - item.adminOnly (bool): visible only for 'admin'
+ * - default: visible for all roles except 'lehrer'
+ *
+ * @param {object} item
+ * @param {string} rolle - lowercase role string ('admin', 'mitarbeiter', 'helfer', 'lehrer')
+ * @returns {boolean}
+ */
+export function canSeeItem(item, rolle) {
+  if (!rolle) return false;
+  if (item.roles) return item.roles.includes(rolle);
+  if (item.adminOnly) return rolle === 'admin';
+  // Default: visible to all staff except lehrer
+  return rolle !== 'lehrer';
+}
 
 export const menuGroups = [
   {
@@ -27,6 +46,7 @@ export const menuGroups = [
       { id: "orders", label: "Bestellungen", icon: "shopping-bag" },
       { id: "graduates", label: "Abgänger", icon: "academic-cap" },
       { id: "stats", label: "Statistiken", icon: "chart-bar" },
+      { id: "mahnwesen", label: "Mahnwesen", icon: "bell", roles: ["admin", "mitarbeiter"] },
       { id: "audit", label: "Logbuch", icon: "clock", adminOnly: true },
       { id: "permissions", label: "Berechtigungen", icon: "shield", adminOnly: true }
     ]
@@ -36,6 +56,12 @@ export const menuGroups = [
     items: [
       { id: "student_ids", label: "Schülerausweise", icon: "identification" },
       { id: "labels", label: "Buch-Etiketten", icon: "printer" }
+    ]
+  },
+  {
+    name: "Lehrer",
+    items: [
+      { id: "lehrer_portal", label: "Mein Portal", icon: "book", roles: ["lehrer"] }
     ]
   }
 ];

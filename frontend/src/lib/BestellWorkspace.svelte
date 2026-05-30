@@ -16,6 +16,9 @@
   /** @type {any[]} */
   let incomingShipments = $state([]);
   let isReleasing = $state(false), showGreenFade = $state(false);
+  /** @type {any | null} */
+  let isbnPreview = $state(null);
+  let isbnLoading = $state(false);
 
   onMount(async () => {
     await loadSuppliers();
@@ -83,43 +86,60 @@
   let searchTimeout;
   function handleSearchInput() {
     clearTimeout(searchTimeout);
-    if (searchQuery.trim().length < 2) { searchResults = []; showDropdown = false; return; }
+    const raw = searchQuery.trim();
+    if (raw.length < 2) { searchResults = []; showDropdown = false; isbnPreview = null; return; }
 
-    const cleanQuery = searchQuery.replace(/[\s-]/g, "");
-    const isIsbn13 = /^\d{13}$/.test(cleanQuery);
+    const cleanQuery = raw.replace(/[\s-]/g, "");
+    const isIsbn = /^\d{10,13}$/.test(cleanQuery);
 
-    const performSearch = async () => {
-      try {
-        const res = await fetch("/api/action", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: searchQuery })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.type === "search_results") {
-            searchResults = data.search_results || [];
-            showDropdown = searchResults.length > 0;
+    if (isIsbn) {
+      // ISBN detected: fetch live DNB metadata and upsert catalog entry
+      searchResults = []; showDropdown = false; isbnPreview = null; isbnLoading = true;
+      (async () => {
+        try {
+          const res = await fetch("/api/buecher/aus-isbn", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isbn: cleanQuery })
+          });
+          if (res.ok) {
+            isbnPreview = await res.json();
+          } else {
+            isbnPreview = { error: true };
           }
-        }
-      } catch (err) {
-        console.error("Fehler bei der Buchsuche:", err);
-      }
-    };
-
-    if (isIsbn13) {
-      performSearch();
+        } catch { isbnPreview = { error: true }; }
+        finally { isbnLoading = false; }
+      })();
     } else {
-      searchTimeout = setTimeout(performSearch, 200);
+      isbnPreview = null; isbnLoading = false;
+      const performSearch = async () => {
+        try {
+          const res = await fetch("/api/action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: searchQuery })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.type === "search_results") {
+              searchResults = data.search_results || [];
+              showDropdown = searchResults.length > 0;
+            }
+          }
+        } catch (err) {
+          console.error("Fehler bei der Buchsuche:", err);
+        }
+      };
+      searchTimeout = setTimeout(performSearch, 300);
     }
   }
 
   /** @param {any} book */
   function addToCart(book) {
-    const existing = orderCart.find(item => item.id === book.id);
+    const existing = orderCart.find(item => item.id === book.id || (book.isbn && item.isbn === book.isbn));
     if (existing) { existing.menge += 1; }
-    else { orderCart.push({ id: book.id, titel: book.titel, autor: book.autor, isbn: book.isbn, verlag: book.verlag, cover_url: book.cover_url, menge: 1 }); }
-    searchQuery = ""; searchResults = []; showDropdown = false;
+    else { orderCart.push({ id: book.titel_id ?? book.id, titel: book.titel, autor: book.autor, isbn: book.isbn ?? book.ISBN, verlag: book.verlag ?? "", cover_url: book.cover_url ?? "", menge: 1 }); }
+    searchQuery = ""; searchResults = []; showDropdown = false; isbnPreview = null;
   }
 
   /** @param {number} idx */
@@ -184,10 +204,6 @@
 <div class="w-full h-full p-8 bg-slate-50/50 text-slate-800 font-sans flex flex-col gap-6">
   <!-- Header & Tabs -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 shrink-0">
-    <div>
-      <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Bestellwesen & Wareneingang</span>
-      <h1 class="text-2xl font-bold text-slate-900 mt-1">Bestell-Workspace</h1>
-    </div>
     <div class="flex items-center gap-3">
       <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
         <button onclick={() => activeTab = "bestellungen"} class="px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition-all {activeTab === 'bestellungen' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Bestellungen</button>
@@ -223,6 +239,30 @@
                     <div class="min-w-0"><div class="font-bold text-slate-800 truncate">{b.titel}</div><div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div></div>
                   </button>
                 {/each}
+              </div>
+            {/if}
+            {#if isbnLoading}
+              <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-2 text-sm text-slate-500">
+                <div class="w-4 h-4 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin shrink-0"></div>
+                ISBN wird bei DNB abgerufen...
+              </div>
+            {:else if isbnPreview && !isbnPreview.error}
+              <div class="absolute z-10 w-full mt-1 bg-white border border-blue-200 rounded-lg shadow-lg p-3 flex items-center gap-3">
+                {#if isbnPreview.cover_url}
+                  <img src={isbnPreview.cover_url} class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-slate-100 shrink-0" alt="" />
+                {:else}
+                  <div class="w-10 aspect-3/4 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-xs shrink-0">📖</div>
+                {/if}
+                <div class="min-w-0 flex-1">
+                  <div class="font-bold text-slate-800 truncate text-sm">{isbnPreview.titel}</div>
+                  <div class="text-xs text-slate-500 truncate">{isbnPreview.autor} · ISBN {isbnPreview.isbn}</div>
+                  {#if !isbnPreview.exists}<span class="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-bold">Neu im Katalog</span>{/if}
+                </div>
+                <button onclick={() => addToCart(isbnPreview)} class="shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs cursor-pointer">+ Hinzufügen</button>
+              </div>
+            {:else if isbnPreview && isbnPreview.error}
+              <div class="absolute z-10 w-full mt-1 bg-white border border-rose-200 rounded-lg shadow-lg px-4 py-3 text-sm text-rose-600 font-semibold">
+                ISBN nicht gefunden (DNB, Google Books, OpenLibrary)
               </div>
             {/if}
           </div>
@@ -292,7 +332,14 @@
             <div class="max-h-60 overflow-y-auto space-y-2">
               {#each recommendations as r}
                 <div class="p-2.5 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-between gap-3 text-[11px]">
-                  <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate leading-tight">{r.titel}</h4><p class="text-[9px] text-slate-400 mt-0.5">Bestand: {r.verfuegbarer_bestand} / Melde: {r.meldebestand}</p></div>
+                  <div class="flex items-center gap-2 min-w-0">
+                    {#if r.cover_url}
+                      <img src={r.cover_url} class="w-7 aspect-3/4 object-cover rounded-sm shrink-0" alt="" />
+                    {:else}
+                      <div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center text-slate-400 shrink-0 text-[9px]">📖</div>
+                    {/if}
+                    <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate leading-tight">{r.titel}</h4><p class="text-[9px] text-slate-400 mt-0.5">Bestand: {r.verfuegbarer_bestand} / Melde: {r.meldebestand}</p></div>
+                  </div>
                   <button onclick={() => addToCart(r)} class="shrink-0 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-md text-[9px] cursor-pointer">+ Add</button>
                 </div>
               {/each}

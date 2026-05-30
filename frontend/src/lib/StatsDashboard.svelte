@@ -7,11 +7,18 @@
   let loading = $state(true);
   let selectedTimeframe = $state("all");
 
+  const TIMEFRAMES = [
+    { value: "all",       label: "Alle" },
+    { value: "schuljahr", label: "Schuljahr" },
+    { value: "monat",     label: "Monat" },
+  ];
+
   // Fetch statistics from backend API
   async function fetchStats() {
     loading = true;
     try {
-      const res = await fetch("/api/statistiken");
+      const params = selectedTimeframe !== "all" ? `?zeitraum=${selectedTimeframe}` : "";
+      const res = await fetch(`/api/statistiken${params}`);
       if (!res.ok) throw new Error("Fehler beim Laden");
       stats = await res.json();
     } catch (err) {
@@ -21,33 +28,33 @@
     }
   }
 
-  onMount(() => {
+  // Re-fetch whenever the selected timeframe changes
+  $effect(() => {
+    selectedTimeframe; // track dependency
     fetchStats();
+  });
+
+  onMount(() => {
+    // initial fetch handled by $effect above
   });
 </script>
 
 <div class="w-full space-y-6 text-slate-800">
   
   <!-- Header Info & Period Filter -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-100 pb-5">
-    <div>
-      <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Bestandsanalyse</span>
-      <h2 class="text-2xl font-bold text-slate-900">Bibliotheksstatistiken</h2>
-      <p class="text-xs text-slate-500 font-medium">Schlichte Übersicht zur Optimierung des Bestands und Verlustverfolgung.</p>
-    </div>
+  <div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4 border-b border-slate-100 pb-5">
 
-    <!-- Time Filter Dropdown -->
+    <!-- Time Filter Buttons -->
     <div class="flex items-center gap-2 self-start md:self-center">
-      <label for="timeframe-select" class="text-sm font-semibold text-slate-400 uppercase tracking-wider font-sans">Zeitraum:</label>
-      <select 
-        id="timeframe-select"
-        bind:value={selectedTimeframe} 
-        class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-300 cursor-pointer shadow-2xs transition-all"
-      >
-        <option value="all">Gesamte Zeit</option>
-        <option value="schoolyear">Aktuelles Schuljahr</option>
-        <option value="30days">Letzte 30 Tage</option>
-      </select>
+      <span class="text-sm font-semibold text-slate-400 uppercase tracking-wider font-sans">Zeitraum:</span>
+      <div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+        {#each TIMEFRAMES as tf}
+          <button
+            onclick={() => selectedTimeframe = tf.value}
+            class="px-4 py-1.5 text-sm font-bold rounded-lg cursor-pointer transition-all {selectedTimeframe === tf.value ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'}"
+          >{tf.label}</button>
+        {/each}
+      </div>
     </div>
   </div>
 

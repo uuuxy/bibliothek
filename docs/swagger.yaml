@@ -1,0 +1,749 @@
+basePath: /api
+definitions:
+  api.AuditLogEntry:
+    properties:
+      aktion:
+        type: string
+      bearbeiter_id:
+        type: string
+      bearbeiter_nachname:
+        type: string
+      bearbeiter_vorname:
+        type: string
+      datensatz_id:
+        type: string
+      id:
+        type: string
+      tabelle:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  api.AusleiheDetail:
+    properties:
+      autor:
+        type: string
+      barcode_id:
+        type: string
+      cover_url:
+        type: string
+      frist:
+        type: string
+      titel:
+        type: string
+    type: object
+  api.BorrowedBook:
+    properties:
+      ausgeliehen_am:
+        type: string
+      autor:
+        type: string
+      barcode_id:
+        type: string
+      cover_url:
+        type: string
+      id:
+        type: string
+      rueckgabe_frist:
+        type: string
+      titel:
+        type: string
+    type: object
+  api.CreateStudentRequest:
+    properties:
+      barcode_id:
+        type: string
+      klasse:
+        type: string
+      nachname:
+        type: string
+      vorname:
+        type: string
+    type: object
+  api.CreateUserRequest:
+    properties:
+      barcode_id:
+        type: string
+      email:
+        type: string
+      nachname:
+        type: string
+      password:
+        type: string
+      rolle:
+        type: string
+      vorname:
+        type: string
+    type: object
+  api.DamageNoteRequest:
+    properties:
+      note:
+        type: string
+    type: object
+  api.GraduateDetail:
+    properties:
+      abgaenger_jahr:
+        type: integer
+      ausleihen:
+        items:
+          $ref: '#/definitions/api.AusleiheDetail'
+        type: array
+      barcode_id:
+        type: string
+      id:
+        type: string
+      ist_gesperrt:
+        type: boolean
+      klasse:
+        type: string
+      nachname:
+        type: string
+      vorname:
+        type: string
+    type: object
+  api.PermissionSetting:
+    properties:
+      allowed:
+        type: boolean
+      permission:
+        type: string
+      role:
+        type: string
+    type: object
+  api.StudentProfileResponse:
+    properties:
+      abgaenger_jahr:
+        type: integer
+      barcode_id:
+        type: string
+      entliehene_buecher:
+        items:
+          $ref: '#/definitions/api.BorrowedBook'
+        type: array
+      foto_url:
+        type: string
+      id:
+        type: string
+      ist_gesperrt:
+        type: boolean
+      klasse:
+        type: string
+      nachname:
+        type: string
+      vorname:
+        type: string
+    type: object
+  api.UpdatePermissionsRequest:
+    properties:
+      allowed:
+        type: boolean
+      permission:
+        type: string
+      role:
+        type: string
+    type: object
+  api.UpdateUserRequest:
+    properties:
+      aktiv:
+        type: boolean
+      barcode_id:
+        type: string
+      email:
+        type: string
+      nachname:
+        type: string
+      password:
+        type: string
+      rolle:
+        type: string
+      vorname:
+        type: string
+    type: object
+  api.UserResponse:
+    properties:
+      aktiv:
+        type: boolean
+      barcode_id:
+        type: string
+      email:
+        type: string
+      erstellt_am:
+        type: string
+      id:
+        type: string
+      nachname:
+        type: string
+      rolle:
+        type: string
+      vorname:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Backend-API fuer das Schulbibliothek-Verwaltungssystem.
+  title: Schulbibliothek API
+  version: "1.0"
+paths:
+  /abgaenger:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves former/graduating students who still have unreturned
+        books, optionally including loan details.
+      parameters:
+      - description: True to include loan detail structures
+        in: query
+        name: details
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.GraduateDetail'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get list of graduating students
+      tags:
+      - admin
+  /admin/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves current allowed/denied flags for permissions across all
+        system roles.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.PermissionSetting'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get role permissions
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Enables or disables a specific permission for a user role.
+      parameters:
+      - description: Permission update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdatePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update role permission
+      tags:
+      - admin
+  /audit:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all immutable records in the system's audit trail, including
+        deletions and cancellations.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.AuditLogEntry'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get audit logs
+      tags:
+      - admin
+  /benutzer:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all administrative and staff users registered in the
+        system.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.UserResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List system users
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Registers a new system user (admin, teacher, staff) with hashed
+        password and role assignments.
+      parameters:
+      - description: User registration payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create system user
+      tags:
+      - admin
+  /benutzer/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a system user by their ID and registers the deletion in
+        the audit log.
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete user
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Modifies an existing user's properties, role, active status, or
+        password.
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update system user
+      tags:
+      - admin
+  /buecher/exemplare/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a specific physical book copy by its ID from the library
+        catalog and registers the deletion in the audit trail.
+      parameters:
+      - description: Book copy ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete physical book copy
+      tags:
+      - admin
+  /buecher/exemplare/{id}/schadensnotiz:
+    post:
+      consumes:
+      - application/json
+      description: Updates the custom damage or condition note text of a physical
+        book copy.
+      parameters:
+      - description: Book copy ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Damage note payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.DamageNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update damage note
+      tags:
+      - admin
+  /buecher/titel/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a specific book title and all associated physical copies,
+        registering the deletion in the audit trail.
+      parameters:
+      - description: Book title ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete book title
+      tags:
+      - admin
+  /klassen:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all unique school class names currently assigned to students.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get list of classes
+      tags:
+      - students
+  /schueler:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves students, optionally filtered by a specific school class,
+        along with loan counts.
+      parameters:
+      - description: School class to filter by
+        in: query
+        name: klasse
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List students
+      tags:
+      - students
+    post:
+      consumes:
+      - application/json
+      description: Creates a new student profile in the library database.
+      parameters:
+      - description: Student creation payload
+        in: body
+        name: student
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create student
+      tags:
+      - students
+  /schueler/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Transactionally deletes a student from the system, checks for active
+        loans or unpaid damage fees, anonymizes historical loans, and writes to audit_log.
+      parameters:
+      - description: Student ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete student
+      tags:
+      - students
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the complete profile for a student by their ID, including
+        active loans and avatar photo URL if present.
+      parameters:
+      - description: Student ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StudentProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get student profile details
+      tags:
+      - students
+swagger: "2.0"

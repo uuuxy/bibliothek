@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"bibliothek/apierrors"
 )
@@ -37,7 +38,7 @@ func (a *Authenticator) RequireRoles(allowedRoles ...Role) func(http.Handler) ht
 			// Role-Based Access Control (RBAC) validation
 			roleAllowed := false
 			for _, role := range allowedRoles {
-				if claims.Rolle == role {
+				if strings.EqualFold(string(claims.Rolle), string(role)) {
 					roleAllowed = true
 					break
 				}

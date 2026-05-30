@@ -51,6 +51,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Autor        string  `json:"author"`
 		CoverURL     string  `json:"coverUrl"`
 		ZaehlDatum   *string `json:"lastCounted"`
+		Medientyp    string  `json:"medientyp"`
 	}
 
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
@@ -78,6 +79,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Track:       strings.TrimSpace(eingabe.Schulzweig),
 		Stock:       eingabe.Bestand,
 		LastCounted: eingabe.ZaehlDatum,
+		Medientyp:   strings.TrimSpace(eingabe.Medientyp),
 	}
 	buch.Title = strings.TrimSpace(eingabe.Titel)
 	buch.Author = strings.TrimSpace(eingabe.Autor)

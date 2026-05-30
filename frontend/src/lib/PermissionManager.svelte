@@ -302,12 +302,7 @@
 
 <div class="w-full space-y-6 animate-fade-in no-print pb-12">
   <!-- Header & Tab Navigation -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-      <h2 class="text-xl font-bold text-slate-850 tracking-tight">System & Berechtigungen</h2>
-      <p class="text-xs text-slate-500">Verwalten Sie Rollenberechtigungen und administrieren Sie Systembenutzer.</p>
-    </div>
-    
+  <div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
     <!-- Sub-tabs pills -->
     <div class="inline-flex p-1 bg-slate-100/70 border border-slate-200/50 rounded-xl self-start shrink-0">
       <button 

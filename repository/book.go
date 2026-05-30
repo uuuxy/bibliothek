@@ -32,7 +32,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 	query := `
 		SELECT 
 			e.id, e.titel_id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.erworben_am, e.ist_ausleihbar, e.erstellt_am, e.aktualisiert_am,
-			t.titel, coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, '')
+			t.titel, coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), t.medientyp
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.barcode_id = $1
@@ -41,7 +41,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 	var bc BookCopy
 	err := r.db.QueryRow(ctx, query, barcode).Scan(
 		&bc.ID, &bc.TitelID, &bc.BarcodeID, &bc.ZustandNotiz, &bc.ErworbenAm, &bc.IstAusleihbar, &bc.ErstelltAm, &bc.AktualisiertAm,
-		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL,
+		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL, &bc.Medientyp,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -56,7 +56,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
 	// Fall back to ILIKE substring checks if full text search is insufficient for partial keyword fragments.
 	query := `
-		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), erstellt_am, aktualisiert_am
+		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, erstellt_am, aktualisiert_am
 		FROM buecher_titel
 		WHERE 
 			search_vector @@ plainto_tsquery('german', $1) 
@@ -77,7 +77,7 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 	for rows.Next() {
 		var t BookTitle
 		err := rows.Scan(
-			&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.ErstelltAm, &t.AktualisiertAm,
+			&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.ErstelltAm, &t.AktualisiertAm,
 		)
 		if err != nil {
 			return nil, err
@@ -94,7 +94,7 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 // SearchTitlesFuzzy performs a fuzzy search on book titles, authors, and ISBNs.
 func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error) {
 	query := `
-		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), erstellt_am, aktualisiert_am
+		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, erstellt_am, aktualisiert_am
 		FROM buecher_titel
 		WHERE titel ILIKE '%' || $1 || '%'
 		   OR autor ILIKE '%' || $1 || '%'
@@ -113,7 +113,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 	for rows.Next() {
 		var t BookTitle
 		err := rows.Scan(
-			&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.ErstelltAm, &t.AktualisiertAm,
+			&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.ErstelltAm, &t.AktualisiertAm,
 		)
 		if err != nil {
 			return nil, err

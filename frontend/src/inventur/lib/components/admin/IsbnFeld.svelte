@@ -38,7 +38,7 @@
 
 <div>
     <label for="buch-isbn" class="block text-sm font-medium text-gray-700 mb-1">
-        ISBN
+        {formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
     </label>
     <div class="relative">
         <input

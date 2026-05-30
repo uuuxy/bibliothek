@@ -13,6 +13,7 @@ type Book struct {
 	Stock       int     `json:"stock" db:"stock"`
 	LastCounted *string `json:"lastCounted" db:"last_counted"`
 	SortOrder   int     `json:"sortOrder" db:"sort_order"`
+	Medientyp   string  `json:"medientyp" db:"medientyp"`
 }
 
 // ClassBookAssignment represents a book assigned to a class.

@@ -1,4 +1,6 @@
 <script>
+  import AntolinBadge from './AntolinBadge.svelte';
+
   // Props
   let { title = { id: "1", titel: "LMF-Mathe 9", autor: "Dr. L. Müller", verlag: "Klett", erscheinungsjahr: 2023 } } = $props();
 
@@ -153,7 +155,14 @@
         <div>
           <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Lehrmittelfreiheit (LMF) Klassensatz</span>
           <h2 class="text-2xl font-bold text-slate-900 leading-tight">{title.titel}</h2>
-          <p class="text-xs text-slate-500">{title.autor} · Verlag: {title.verlag} ({title.erscheinungsjahr})</p>
+          <p class="text-xs text-slate-500">
+            {title.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}: {title.autor} · 
+            {title.medientyp === 'CD' || title.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {title.isbn || '-'} · 
+            Verlag: {title.verlag} ({title.erscheinungsjahr})
+          </p>
+          {#if title.isbn && title.medientyp !== 'CD' && title.medientyp !== 'DVD'}
+            <AntolinBadge isbn={title.isbn} />
+          {/if}
         </div>
       </div>
       <div class="text-sm bg-slate-50 border border-slate-100 rounded-2xl py-2 px-4 flex items-center gap-3">

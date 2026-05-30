@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/repository"
 	"github.com/jackc/pgx/v5"
 )
@@ -46,6 +47,17 @@ type StudentProfileResponse struct {
 
 // GetStudentProfileHandler returns a student's master data, passport photo URL (if uploaded),
 // and a list of currently borrowed books with their loan and due dates.
+// @Summary      Get student profile details
+// @Description  Retrieves the complete profile for a student by their ID, including active loans and avatar photo URL if present.
+// @Tags         students
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Student ID (UUID)"
+// @Success      200  {object}  StudentProfileResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /schueler/{id} [get]
 func (s *Server) GetStudentProfileHandler(
 	studentRepo repository.StudentRepository,
 ) http.HandlerFunc {
@@ -144,6 +156,14 @@ func (s *Server) GetStudentProfileHandler(
 }
 
 // GetClassesHandler returns a list of all distinct classes in the database.
+// @Summary      Get list of classes
+// @Description  Retrieves all unique school class names currently assigned to students.
+// @Tags         students
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   string
+// @Failure      500  {object}  map[string]string
+// @Router       /klassen [get]
 func (s *Server) GetClassesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -170,6 +190,15 @@ func (s *Server) GetClassesHandler() http.HandlerFunc {
 }
 
 // ListStudentsHandler returns all students, optionally filtered by klasse.
+// @Summary      List students
+// @Description  Retrieves students, optionally filtered by a specific school class, along with loan counts.
+// @Tags         students
+// @Accept       json
+// @Produce      json
+// @Param        klasse  query     string  false  "School class to filter by"
+// @Success      200     {array}   map[string]any
+// @Failure      500     {object}  map[string]string
+// @Router       /schueler [get]
 func (s *Server) ListStudentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		klasse := r.URL.Query().Get("klasse")
@@ -248,6 +277,17 @@ type CreateStudentRequest struct {
 }
 
 // CreateStudentHandler inserts a new student record into the database.
+// @Summary      Create student
+// @Description  Creates a new student profile in the library database.
+// @Tags         students
+// @Accept       json
+// @Produce      json
+// @Param        student  body      CreateStudentRequest  true  "Student creation payload"
+// @Success      200      {object}  map[string]any
+// @Failure      400      {object}  map[string]string
+// @Failure      401      {object}  map[string]string
+// @Failure      500      {object}  map[string]string
+// @Router       /schueler [post]
 func (s *Server) CreateStudentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateStudentRequest
@@ -343,9 +383,27 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 	}
 }
 
-// DeleteStudentHandler deletes a student after checking for outstanding loans.
-func (s *Server) DeleteStudentHandler() http.HandlerFunc {
+// DeleteStudentHandler deletes a student after checking for outstanding loans and unpaid damage cases, logging it to the audit trail.
+// @Summary      Delete student
+// @Description  Transactionally deletes a student from the system, checks for active loans or unpaid damage fees, anonymizes historical loans, and writes to audit_log.
+// @Tags         students
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Student ID (UUID)"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /schueler/{id} [delete]
+func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := auth.GetClaims(r.Context())
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
@@ -355,16 +413,9 @@ func (s *Server) DeleteStudentHandler() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer tx.Rollback(ctx)
-
-		// 1. Check if the student exists
+		// 1. Check if student exists
 		var studentExists bool
-		err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)", id).Scan(&studentExists)
+		err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)", id).Scan(&studentExists)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -381,7 +432,7 @@ func (s *Server) DeleteStudentHandler() http.HandlerFunc {
 			FROM ausleihen 
 			WHERE schueler_id = $1 AND rueckgabe_am IS NULL
 		`
-		err = tx.QueryRow(ctx, qLoans, id).Scan(&activeLoansCount)
+		err = s.DB.Pool.QueryRow(ctx, qLoans, id).Scan(&activeLoansCount)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -391,52 +442,26 @@ func (s *Server) DeleteStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		// 3. Anonymize/unlink past closed loans
-		qAnonymizeLoans := `
-			UPDATE ausleihen
-			SET schueler_id = NULL
-			WHERE schueler_id = $1
+		// 3. Check for unpaid damage cases (unpaid damages block deletion)
+		var unpaidDamagesCount int
+		qDamages := `
+			SELECT COUNT(*) 
+			FROM schadensfaelle 
+			WHERE schueler_id = $1 AND ist_bezahlt = false
 		`
-		_, err = tx.Exec(ctx, qAnonymizeLoans, id)
+		err = s.DB.Pool.QueryRow(ctx, qDamages, id).Scan(&unpaidDamagesCount)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-
-		// 4. Delete or unlink damages
-		qDeleteDamages := `
-			DELETE FROM schadensfaelle
-			WHERE schueler_id = $1 AND ist_bezahlt = true
-		`
-		_, err = tx.Exec(ctx, qDeleteDamages, id)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		if unpaidDamagesCount > 0 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Löschen nicht möglich: Schüler hat noch unbezahlte Schadensfälle/Gebühren"))
 			return
 		}
 
-		qAnonymizeDamages := `
-			UPDATE schadensfaelle
-			SET schueler_id = NULL
-			WHERE schueler_id = $1
-		`
-		_, err = tx.Exec(ctx, qAnonymizeDamages, id)
+		// 4. Perform transaction delete with audit log
+		err = auditRepo.DeleteStudent(ctx, id, claims.UserID, "Manuelle Löschung")
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 5. Delete student record
-		qDeleteStudent := `
-			DELETE FROM schueler
-			WHERE id = $1
-		`
-		_, err = tx.Exec(ctx, qDeleteStudent, id)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if err := tx.Commit(ctx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -496,10 +521,10 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			return -1
 		}
 
-		lusdIDIdx := getColIdx([]string{"lusd_id", "schueler_id", "id", "lusd-id"})
-		vornameIdx := getColIdx([]string{"vorname", "first_name", "firstname"})
-		nachnameIdx := getColIdx([]string{"nachname", "last_name", "lastname", "name"})
-		klasseIdx := getColIdx([]string{"klasse", "class", "jahrgang"})
+		lusdIDIdx := getColIdx([]string{"lusd_id", "schueler_id", "id", "lusd-id", "schüler-id", "schüler_id", "schuelerid", "schülerid", "lusd id", "schüler id", "schueler id"})
+		vornameIdx := getColIdx([]string{"vorname", "first_name", "firstname", "rufname"})
+		nachnameIdx := getColIdx([]string{"nachname", "last_name", "lastname", "name", "familienname"})
+		klasseIdx := getColIdx([]string{"klasse", "class", "jahrgang", "klassenbezeichnung"})
 		barcodeIdx := getColIdx([]string{"barcode_id", "barcode", "barcode-id"})
 
 		// Validation

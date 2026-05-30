@@ -11,7 +11,8 @@
      *     track: string,
      *     stock: number,
      *     coverUrl: string,
-     *     lastCounted: string
+     *     lastCounted: string,
+     *     medientyp?: string
      *   }
      * }}
      */
@@ -206,9 +207,11 @@
                 <h4 class="text-sm font-extrabold text-white leading-snug line-clamp-3 mt-1.5">{book.title}</h4>
             </div>
             
-            <div class="pl-4 pr-1 pb-1 text-left">
-                <p class="text-[10px] font-semibold text-white/70 truncate">{book.author || "Unbekannter Autor"}</p>
-                <p class="text-[8px] font-mono text-white/50 mt-0.5">ISBN: {book.isbn || "-"}</p>
+            <div class="pl-4 pr-1 pt-1 text-left">
+                <p class="text-[10px] font-semibold text-white/70 truncate">
+                    {book.medientyp === 'DVD' ? (book.author ? 'Regisseur: ' + book.author : 'Unbekannter Regisseur') : (book.author || 'Unbekannter Autor')}
+                </p>
+                <p class="text-[8px] font-mono text-white/50 mt-0.5">{book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {book.isbn || "-"}</p>
             </div>
         </div>
     {/if}
@@ -224,10 +227,10 @@
             <button
                 class="text-[11px] text-slate-400 mb-4 font-mono tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
                 onclick={() => copyIsbn(book.isbn)}
-                title="ISBN kopieren"
-                aria-label="ISBN kopieren"
+                title={(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN') + ' kopieren'}
+                aria-label={(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN') + ' kopieren'}
             >
-                <span>ISBN: {book.isbn || "-"}</span>
+                <span>{book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {book.isbn || "-"}</span>
                 {#if book.isbn}
                     {#if copied}
                         <span class="text-blue-600 text-[10px] font-sans font-bold"

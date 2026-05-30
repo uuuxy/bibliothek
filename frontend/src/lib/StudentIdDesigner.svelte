@@ -14,6 +14,14 @@
   let activeWebcamStudent = $state(null);
   let timestamp = $state(Date.now());
   let zoom = $state(150);
+  /** @type {"card" | "a4"} */
+  let printMode = $state("card");
+
+  const mockStudents = [
+    { id: "s1", barcode_id: "S-10041", vorname: "Maximilian", nachname: "Schmidt", klasse: "9a" },
+    { id: "s2", barcode_id: "S-10042", vorname: "Sophie", nachname: "Fischer", klasse: "9a" }
+  ];
+
   let previewStudent = $derived(previewStudents[0] || mockStudents[0]);
 
   /** @type {Record<string, any>} */
@@ -48,10 +56,7 @@
     { key: "barcode", name: "Barcode", maxX: 80, maxY: 50 }
   ];
 
-  const mockStudents = [
-    { id: "s1", barcode_id: "S-10041", vorname: "Maximilian", nachname: "Schmidt", klasse: "9a" },
-    { id: "s2", barcode_id: "S-10042", vorname: "Sophie", nachname: "Fischer", klasse: "9a" }
-  ];
+
 
   async function loadClasses() {
     try {
@@ -88,6 +93,21 @@
   }
 
   onMount(() => { loadClasses(); });
+
+  function triggerPrint() {
+    const style = document.createElement("style");
+    if (printMode === "a4") {
+      style.textContent = "@media print { @page { size: A4; margin: 0; } }";
+      document.body.setAttribute("data-print-mode", "a4");
+    } else {
+      style.textContent = "@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }";
+      document.body.setAttribute("data-print-mode", "card");
+    }
+    document.head.appendChild(style);
+    window.print();
+    document.head.removeChild(style);
+    document.body.removeAttribute("data-print-mode");
+  }
 
   /** @param {any} e */
   function handleLogoUpload(e) {
@@ -163,13 +183,17 @@
 </script>
 
 <div class="w-full space-y-6 no-print text-slate-800 animate-fade-in font-sans">
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-    <div>
-      <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Ausweis-Designer</span>
-      <h2 class="text-2xl font-bold text-slate-900">Schülerausweise drucken (ID-1)</h2>
-      <p class="text-xs text-slate-500 font-medium">Gestalte das Kartenlayout live und nimm Fotos direkt über die Kamera auf.</p>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-end gap-4 border-b border-slate-100 pb-5">
+    <!-- Print mode toggle -->
+    <div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40 text-xs shrink-0">
+      <button onclick={() => printMode = "card"} class="px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer {printMode === 'card' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-700'}">
+        Kartendrucker
+      </button>
+      <button onclick={() => printMode = "a4"} class="px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer {printMode === 'a4' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-700'}">
+        A4-Bogen
+      </button>
     </div>
-    <button onclick={() => window.print()} class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex items-center gap-2 shadow-xs cursor-pointer">
+    <button onclick={triggerPrint} class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex items-center gap-2 shadow-xs cursor-pointer">
       <span>🖨️ Ausweise drucken</span>
     </button>
   </div>
@@ -347,7 +371,7 @@
   </div>
 </div>
 
-<div class="print-rendered-output hidden print:block">
+<div class="print-rendered-output print-section-card hidden print:block">
   {#each previewStudents as student}
     <div class="print-card-box {cardTheme}">
       {#if layout.header.show}
@@ -385,21 +409,57 @@
   {/each}
 </div>
 
+<!-- A4 sheet mode: 2-column grid with dashed cut marks -->
+<div class="print-rendered-output print-section-a4 a4_sheet hidden print:block">
+  <div class="print-cards-grid">
+    {#each previewStudents as student}
+      <div class="print-card-box {cardTheme}">
+        {#if layout.header.show}
+          <div class="absolute font-black text-center tracking-tight leading-none truncate text-black" style="left: {layout.header.x}mm; top: {layout.header.y}mm; transform: scale({layout.header.scale}); transform-origin: top left; font-size: 7.5pt; width: {85.6 - layout.header.x * 2}mm;">{layout.header.text}</div>
+        {/if}
+        {#if layout.logo.show && layout.logo.url}
+          <div class="absolute overflow-hidden flex items-center justify-center" style="left: {layout.logo.x}mm; top: {layout.logo.y}mm; width: {12 * layout.logo.scale}mm; height: {12 * layout.logo.scale}mm;">
+            <img src={layout.logo.url} class="w-full h-full object-contain" alt="Logo" />
+          </div>
+        {/if}
+        {#if layout.address.show}
+          <div class="absolute font-semibold tracking-tight opacity-75 leading-none text-zinc-800" style="left: {layout.address.x}mm; top: {layout.address.y}mm; transform: scale({layout.address.scale}); transform-origin: top left; font-size: 6.5pt; width: {85.6 - layout.address.x - 2}mm; max-height: 12mm; overflow: hidden;">{layout.address.text}</div>
+        {/if}
+        {#if layout.photo.show}
+          <div class="absolute border border-solid border-zinc-300 bg-zinc-55 flex items-center justify-center overflow-hidden rounded-xs" style="left: {layout.photo.x}mm; top: {layout.photo.y}mm; width: {22 * layout.photo.scale}mm; height: {28 * layout.photo.scale}mm;">
+            <img src="/uploads/fotos/{student.barcode_id}.jpg?t={timestamp}" onerror={(e) => { (/** @type {any} */ (e.currentTarget)).style.display = 'none'; }} class="w-full h-full object-cover" alt="Passbild" />
+          </div>
+        {/if}
+        {#if layout.name.show}
+          <div class="absolute font-extrabold tracking-tight leading-none text-black" style="left: {layout.name.x}mm; top: {layout.name.y}mm; transform: scale({layout.name.scale}); transform-origin: top left; font-size: 9pt;">{student.vorname} {student.nachname}</div>
+        {/if}
+        {#if layout.details.show}
+          <div class="absolute font-semibold tracking-tight opacity-75 leading-none text-zinc-800" style="left: {layout.details.x}mm; top: {layout.details.y}mm; transform: scale({layout.details.scale}); transform-origin: top left; font-size: 7.5pt;">Klasse: {student.klasse}</div>
+        {/if}
+        {#if layout.validity.show}
+          <div class="absolute font-semibold tracking-tight opacity-75 leading-none text-zinc-800" style="left: {layout.validity.x}mm; top: {layout.validity.y}mm; transform: scale({layout.validity.scale}); transform-origin: top left; font-size: 7pt;">Gültig bis: 31.07.2027</div>
+        {/if}
+        {#if layout.barcode.show}
+          <div class="absolute flex flex-col items-center leading-none" style="left: {layout.barcode.x}mm; top: {layout.barcode.y}mm; transform: scale({layout.barcode.scale}); transform-origin: top left;">
+            <img src="/api/barcode?content={student.barcode_id}&qr={barcodeType === 'qr'}&width={barcodeType === 'qr' ? 80 : 200}&height={barcodeType === 'qr' ? 80 : 50}" class="{barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[8mm]'} object-contain" alt="Barcode" />
+            <span class="font-mono font-bold mt-1 text-[6.5pt] tracking-widest text-zinc-800">{student.barcode_id}</span>
+          </div>
+        {/if}
+      </div>
+    {/each}
+  </div>
+</div>
+
 {#if activeWebcamStudent}
   <WebcamCapture studentId={(/** @type {any} */ (activeWebcamStudent)).id} onCapture={() => { timestamp = Date.now(); activeWebcamStudent = null; }} onClose={() => activeWebcamStudent = null} />
 {/if}
 
 <style>
   @media print {
-    @page {
-      size: 85.6mm 53.98mm;
-      margin: 0;
-    }
+    /* @page is injected dynamically by triggerPrint() based on printMode */
     :global(html, body) {
       margin: 0 !important;
       padding: 0 !important;
-      width: 85.6mm !important;
-      height: 53.98mm !important;
       background: white !important;
       overflow: hidden !important;
     }
@@ -407,8 +467,6 @@
       margin: 0 !important;
       padding: 0 !important;
       display: block !important;
-      width: 85.6mm !important;
-      height: 53.98mm !important;
       background: white !important;
       border: none !important;
       box-shadow: none !important;
@@ -416,7 +474,8 @@
     :global(.no-print) {
       display: none !important;
     }
-    .print-rendered-output {
+    /* Card printer mode: fixed-position single card fills the page */
+    body[data-print-mode="card"] .print-section-card {
       display: block !important;
       position: fixed !important;
       left: 0 !important;
@@ -426,7 +485,7 @@
       z-index: 99999 !important;
       background: white !important;
     }
-    .print-card-box {
+    body[data-print-mode="card"] .print-section-card .print-card-box {
       width: 85.6mm !important;
       height: 53.98mm !important;
       page-break-after: always !important;

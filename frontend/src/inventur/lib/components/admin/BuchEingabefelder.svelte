@@ -23,6 +23,39 @@
 <div class="space-y-5">
     <div>
         <label
+            for="buch-medientyp"
+            class="block text-sm font-medium text-gray-700 mb-1">Medientyp</label
+        >
+        <div class="relative">
+            <select
+                id="buch-medientyp"
+                bind:value={formular.medientyp}
+                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none cursor-pointer"
+            >
+                <option value="Buch">Buch</option>
+                <option value="CD">CD</option>
+                <option value="DVD">DVD</option>
+            </select>
+            <div class="absolute right-3 top-3 pointer-events-none">
+                <svg
+                    class="h-4 w-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                    />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <label
             for="buch-titel"
             class="block text-sm font-medium text-gray-700 mb-1">Titel</label
         >
@@ -39,7 +72,7 @@
             <label
                 for="buch-autor"
                 class="block text-sm font-medium text-gray-700 mb-1"
-                >Autor</label
+                >{formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}</label
             >
             <input
                 id="buch-autor"

@@ -16,9 +16,10 @@ html, body {
   overflow: hidden;
 }
 
+/* Zweckform L4760: 63.5 mm × 38.1 mm */
 .print-label-box {
-  width: 60mm;
-  height: 35mm;
+  width: 63.5mm;
+  height: 38.1mm;
   position: relative;
   overflow: hidden;
 }
@@ -76,18 +77,73 @@ html, body {
     page-break-after: always !important;
   }
 
-  /* Labels Layout inside A4 sheet */
+  /* Labels layout – Zweckform L4760: 3 cols × 7 rows, 63.5 × 38.1 mm per label */
   .print-rendered-output.a4_grid .print-labels-grid {
     display: grid !important;
-    grid-template-columns: 60mm 60mm 60mm !important;
-    grid-column-gap: 8mm !important;
-    grid-row-gap: 6mm !important;
-    justify-content: center !important;
-    padding-top: 15mm !important;
+    grid-template-columns: 63.5mm 63.5mm 63.5mm !important;
+    column-gap: 2.5mm !important;
+    row-gap: 0mm !important;
+    padding: 15.15mm 7.25mm 0 !important;
+    box-sizing: border-box !important;
   }
 
   .print-rendered-output.a4_grid .print-label-box {
+    width: 63.5mm !important;
+    height: 38.1mm !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ── Student ID A4 multi-card sheet: 2 cols × 4 rows ── */
+  body[data-print-mode="a4"] .print-section-card {
+    display: none !important;
+  }
+  body[data-print-mode="card"] .print-section-a4,
+  body:not([data-print-mode]) .print-section-a4 {
+    display: none !important;
+  }
+
+  .print-rendered-output.a4_sheet .print-cards-grid {
+    display: grid !important;
+    grid-template-columns: 85.6mm 85.6mm !important;
+    column-gap: 9mm !important;
+    row-gap: 5mm !important;
+    padding: 15mm 15mm !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-rendered-output.a4_sheet .print-card-box {
+    width: 85.6mm !important;
+    height: 53.98mm !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 0.4pt dashed #999 !important;
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── Laufzettel A4 pages (one per graduate) ── */
+  .laufzettel-page {
+    display: block !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    padding: 18mm 20mm 25mm !important;
+    box-sizing: border-box !important;
+    background: white !important;
+    color: black !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .laufzettel-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 }
 

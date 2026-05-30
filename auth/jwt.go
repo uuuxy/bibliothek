@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,12 +15,29 @@ type Role string
 
 const (
 	// RoleAdmin has full permissions for configuration and master-data editing.
-	RoleAdmin Role = "admin"
+	RoleAdmin Role = "ADMIN"
 	// RoleLehrer represents teachers who can borrow books and trigger class plans.
-	RoleLehrer Role = "lehrer"
+	RoleLehrer Role = "LEHRER"
 	// RoleMitarbeiter represents library staff executing daily lending operations.
-	RoleMitarbeiter Role = "mitarbeiter"
+	RoleMitarbeiter Role = "MITARBEITER"
+	// RoleHelfer represents helpers executing kiosk checkouts and quick returns.
+	RoleHelfer Role = "HELFER"
 )
+
+// MarshalJSON converts the uppercase Role constant to a lowercase string for Svelte frontend compatibility.
+func (r Role) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToLower(string(r)))
+}
+
+// UnmarshalJSON parses a lowercase or uppercase string from JSON into the uppercase Role constant.
+func (r *Role) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*r = Role(strings.ToUpper(s))
+	return nil
+}
 
 // Claims represents the structure of the JWT payload.
 type Claims struct {

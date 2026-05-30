@@ -2,8 +2,11 @@ package jobs
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
+
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/robfig/cron/v3"
@@ -11,32 +14,42 @@ import (
 
 // Scheduler manages background automation tasks.
 type Scheduler struct {
-	db   *pgxpool.Pool
-	cron *cron.Cron
+	db        *pgxpool.Pool
+	auditRepo repository.AuditRepository
+	cron      *cron.Cron
 }
 
 // NewScheduler builds and returns a new Scheduler instance.
-func NewScheduler(db *pgxpool.Pool) *Scheduler {
+func NewScheduler(db *pgxpool.Pool, auditRepo repository.AuditRepository) *Scheduler {
 	return &Scheduler{
-		db:   db,
-		cron: cron.New(),
+		db:        db,
+		auditRepo: auditRepo,
+		cron:      cron.New(),
 	}
 }
 
-// Start registers GDPR deletion and anonymization cron schedules.
+// Start registers all GDPR, backup, and data-retention cron schedules.
 func (s *Scheduler) Start() {
-	// Run once daily at midnight
-	_, err := s.cron.AddFunc("0 0 * * *", func() {
+	// Run GDPR anonymization and abgänger-deletion daily at midnight
+	if _, err := s.cron.AddFunc("0 0 * * *", func() {
 		s.RunGDPRAnonymizeLoans()
-		s.RunGDPRDeleteStudents()
-	})
-	if err != nil {
+		s.RunGDPRDeleteAbgaenger()
+	}); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return
 	}
 
+	// Daily encrypted database backup at 02:30 UTC (low-traffic window)
+	backup := &BackupJob{}
+	if _, err := s.cron.AddFunc("30 2 * * *", func() {
+		log.Println("Scheduler Backup: starting scheduled daily database backup...")
+		backup.RunDatabaseBackup()
+	}); err != nil {
+		log.Printf("Scheduler: Failed to register backup job: %v", err)
+	}
+
 	s.cron.Start()
-	log.Println("Scheduler: GDPR background jobs successfully started.")
+	log.Println("Scheduler: GDPR, backup, and retention jobs successfully started.")
 }
 
 // Stop halts the scheduler's cron runner.
@@ -44,7 +57,10 @@ func (s *Scheduler) Stop() {
 	s.cron.Stop()
 }
 
-// RunGDPRAnonymizeLoans nullifies staff operators' IDs for loans closed for more than 14 days.
+// ── GDPR: Ausleihen-Anonymisierung ───────────────────────────────────────────
+
+// RunGDPRAnonymizeLoans nullifies staff operator IDs for loans closed for more than 14 days.
+// This fulfils the DSGVO Datensparsamkeit requirement for operator identity.
 func (s *Scheduler) RunGDPRAnonymizeLoans() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -58,97 +74,133 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 	`
 	tag, err := s.db.Exec(ctx, query)
 	if err != nil {
-		log.Printf("Scheduler GDPR: Error anonymizing historical operator IDs: %v", err)
+		log.Printf("Scheduler GDPR Anonymize: Error anonymizing operator IDs: %v", err)
 		return
 	}
-	log.Printf("Scheduler GDPR: Anonymized %d loans returned >14 days ago", tag.RowsAffected())
+
+	count := tag.RowsAffected()
+	log.Printf("Scheduler GDPR Anonymize: anonymized %d loans (returned > 14 days ago)", count)
+
+	// Write system audit record
+	if count > 0 {
+		_ = s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
+			"GDPR 14-Tage-Anonymisierung der Bearbeiter-IDs",
+			map[string]any{
+				"betroffene_ausleihen": count,
+				"schwellwert_tage":     14,
+				"ausgefuehrt_am":       time.Now().UTC().Format(time.RFC3339),
+			},
+		)
+	}
 }
 
-// RunGDPRDeleteStudents transactionally purges students who graduated/left and have no outstanding dues.
-func (s *Scheduler) RunGDPRDeleteStudents() {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+// ── GDPR: Abgänger-Löschung (30 Tage nach Schuljahresende) ──────────────────
+
+// RunGDPRDeleteAbgaenger performs a DSGVO-compliant hard-delete of former students
+// (ist_abgaenger = true) who:
+//   - left school in a prior year (abgaenger_jahr < current year), AND
+//   - have no unreturned books, AND
+//   - have no unpaid damage fees, AND
+//   - it is at least 30 days past the start of the current calendar year
+//     (approximation for "30 Tage nach Schuljahresende").
+//
+// Each deletion is individually logged in audit_log (SYSTEM actor).
+func (s *Scheduler) RunGDPRDeleteAbgaenger() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		log.Printf("Scheduler GDPR: Failed to open transaction: %v", err)
-		return
+	// 30-day grace period: only delete if it's at least Jan 30 of the year after graduation
+	now := time.Now()
+	cutoffYear := now.Year()
+	cutoffDate := time.Date(cutoffYear, time.January, 30, 0, 0, 0, 0, time.UTC)
+	if now.Before(cutoffDate) {
+		// Before Jan 30: use previous year as cutoff (last year's graduates still in grace period)
+		cutoffYear--
 	}
-	defer tx.Rollback(ctx)
 
-	// Fetch student IDs where graduation year has passed and they have no active loans or unpaid balances
-	queryEligible := `
-		SELECT id 
+	// Fetch eligible student IDs
+	query := `
+		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
 		FROM schueler
-		WHERE abgaenger_jahr < EXTRACT(YEAR FROM CURRENT_DATE)
+		WHERE ist_abgaenger = true
+		  AND abgaenger_jahr < $1
 		  AND NOT EXISTS (
-		      SELECT 1 FROM ausleihen 
+		      SELECT 1 FROM ausleihen
 		      WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL
 		  )
 		  AND NOT EXISTS (
-		      SELECT 1 FROM schadensfaelle 
+		      SELECT 1 FROM schadensfaelle
 		      WHERE schueler_id = schueler.id AND ist_bezahlt = false
 		  )
 	`
-	rows, err := tx.Query(ctx, queryEligible)
+	rows, err := s.db.Query(ctx, query, cutoffYear)
 	if err != nil {
-		log.Printf("Scheduler GDPR: Failed to fetch eligible students: %v", err)
+		log.Printf("Scheduler GDPR Delete: Failed to fetch eligible students: %v", err)
 		return
 	}
-	defer rows.Close()
 
-	var studentIDs []string
+	type eligibleStudent struct {
+		ID            string
+		Vorname       string
+		Nachname      string
+		Klasse        string
+		BarcodeID     string
+		AbgaengerJahr int
+	}
+
+	var students []eligibleStudent
 	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			log.Printf("Scheduler GDPR: Scanning error: %v", err)
+		var s eligibleStudent
+		if err := rows.Scan(&s.ID, &s.Vorname, &s.Nachname, &s.Klasse, &s.BarcodeID, &s.AbgaengerJahr); err != nil {
+			log.Printf("Scheduler GDPR Delete: Scan error: %v", err)
+			rows.Close()
 			return
 		}
-		studentIDs = append(studentIDs, id)
+		students = append(students, s)
 	}
+	rows.Close()
 
-	if len(studentIDs) == 0 {
+	if len(students) == 0 {
+		log.Printf("Scheduler GDPR Delete: no eligible students for deletion (cutoff year: %d)", cutoffYear)
 		return
 	}
 
-	// Unlink student references from past closed loans to preserve statistical reports
-	queryAnonymizeLoans := `
-		UPDATE ausleihen
-		SET schueler_id = NULL
-		WHERE schueler_id = ANY($1)
-	`
-	_, err = tx.Exec(ctx, queryAnonymizeLoans, studentIDs)
-	if err != nil {
-		log.Printf("Scheduler GDPR: Anonymizing loans failed: %v", err)
-		return
+	log.Printf("Scheduler GDPR Delete: %d student(s) eligible for DSGVO deletion (Abgangsjahr < %d)",
+		len(students), cutoffYear)
+
+	deleted := 0
+	var failures []string
+
+	for _, student := range students {
+		grund := fmt.Sprintf("DSGVO-Abgänger-Löschung: Abgangsjahr %d, Löschfrist abgelaufen (30 Tage Karenzzeit)",
+			student.AbgaengerJahr)
+
+		if err := s.auditRepo.DeleteStudent(ctx, student.ID, "", grund); err != nil {
+			log.Printf("Scheduler GDPR Delete: failed to delete student %s %s (ID %s): %v",
+				student.Vorname, student.Nachname, student.ID, err)
+			failures = append(failures, student.ID)
+			continue
+		}
+
+		log.Printf("Scheduler GDPR Delete: deleted %s %s (Klasse %s, Abgang %d)",
+			student.Vorname, student.Nachname, student.Klasse, student.AbgaengerJahr)
+		deleted++
 	}
 
-	// Purge historical paid damage cases linked to these students
-	queryDeleteDamages := `
-		DELETE FROM schadensfaelle
-		WHERE schueler_id = ANY($1) AND ist_bezahlt = true
-	`
-	_, err = tx.Exec(ctx, queryDeleteDamages, studentIDs)
-	if err != nil {
-		log.Printf("Scheduler GDPR: Deleting paid damages failed: %v", err)
-		return
-	}
+	// Write batch summary to audit log
+	_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
+		"DSGVO-Abgänger-Batch-Löschung",
+		map[string]any{
+			"geloescht":    deleted,
+			"fehlschlaege": len(failures),
+			"cutoff_jahr":  cutoffYear,
+			"ausgefuehrt_am": time.Now().UTC().Format(time.RFC3339),
+		},
+	)
 
-	// Delete student records
-	queryDeleteStudents := `
-		DELETE FROM schueler
-		WHERE id = ANY($1)
-	`
-	tag, err := tx.Exec(ctx, queryDeleteStudents, studentIDs)
-	if err != nil {
-		log.Printf("Scheduler GDPR: Purging students failed: %v", err)
-		return
+	if len(failures) > 0 {
+		log.Printf("Scheduler GDPR Delete: completed with %d failure(s): %v", len(failures), failures)
+	} else {
+		log.Printf("Scheduler GDPR Delete: successfully deleted %d student(s)", deleted)
 	}
-
-	if err := tx.Commit(ctx); err != nil {
-		log.Printf("Scheduler GDPR: Transaction commit failed: %v", err)
-		return
-	}
-
-	log.Printf("Scheduler GDPR: Successfully purged %d students and anonymized history", tag.RowsAffected())
 }

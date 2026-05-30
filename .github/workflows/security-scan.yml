@@ -1,0 +1,124 @@
+name: Security – Dependency Vulnerability Scan
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Run every Monday at 07:00 UTC to catch newly published CVEs
+    - cron: "0 7 * * 1"
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: read
+  security-events: write  # Required for uploading SARIF reports
+
+jobs:
+  # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
+  go-vuln-scan:
+    name: Go – govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        # govulncheck exits with code 3 if vulnerabilities are found → fail the build
+        run: govulncheck ./...
+
+  # ── Go: gosec (static security analysis) ─────────────────────────────────
+  go-sec-scan:
+    name: Go – gosec static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run gosec
+        # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
+        run: >
+          gosec
+          -exclude=G304,G401
+          -fmt sarif
+          -out gosec-results.sarif
+          ./... || true
+
+      - name: Upload gosec SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: gosec-results.sarif
+          category: gosec
+
+  # ── npm: audit (Node.js/Svelte frontend dependencies) ────────────────────
+  npm-audit:
+    name: npm – audit (frontend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies (CI mode – no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Run npm audit
+        # --audit-level=high: fail on HIGH and CRITICAL vulnerabilities only
+        # moderate/low are reported but do not block CI in a school context
+        run: npm audit --audit-level=high --omit=dev
+
+  # ── Docker image scan (Trivy) ─────────────────────────────────────────────
+  docker-scan:
+    name: Docker – Trivy image scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image for scanning
+        run: docker build -t bibliothek:scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: bibliothek:scan
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "1"        # Fail CI if HIGH/CRITICAL found in final image
+          ignore-unfixed: true  # Skip CVEs without fix available
+
+      - name: Upload Trivy SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy

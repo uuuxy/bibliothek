@@ -4,6 +4,7 @@
 
 -- Enable pgcrypto or uuid-ossp for UUID generation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- -------------------------------------------------------------
 -- 1. ENUMS AND CUSTOM TYPES
@@ -41,6 +42,12 @@ CREATE TABLE benutzer (
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table: benutzer_rollen (Mapping users to their roles)
+CREATE TABLE benutzer_rollen (
+    benutzer_id UUID PRIMARY KEY REFERENCES benutzer(id) ON DELETE CASCADE,
+    rolle VARCHAR(50) NOT NULL CHECK (rolle IN ('ADMIN', 'MITARBEITER', 'LEHRER', 'HELFER'))
+);
+
 -- Table: schueler (Students borrowing books)
 CREATE TABLE schueler (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -75,6 +82,7 @@ CREATE TABLE buecher_titel (
     stock INTEGER NOT NULL DEFAULT 0,                 -- Integrated from books table
     last_counted DATE,                                -- Integrated from books table
     sort_order SERIAL,                                -- Integrated from books table
+    erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf location, notes)
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
@@ -98,6 +106,7 @@ CREATE TABLE buecher_exemplare (
     erworben_am DATE NOT NULL DEFAULT CURRENT_DATE,
     ist_ausleihbar BOOLEAN NOT NULL DEFAULT true,      -- Switch to block copies from being lent out
     inventur_geprueft_am TIMESTAMP WITH TIME ZONE,    -- Inventory scan check timestamp
+    erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf position, condition details)
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -173,6 +182,13 @@ CREATE INDEX idx_benutzer_barcode ON benutzer (barcode_id) WHERE barcode_id IS N
 CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
 CREATE INDEX idx_buecher_exemplare_barcode ON buecher_exemplare (barcode_id);
 
+-- pg_trgm GIN indexes for rapid search
+CREATE INDEX idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);
+CREATE INDEX idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);
+CREATE INDEX idx_buecher_isbn_trgm ON buecher_titel USING gin (isbn gin_trgm_ops);
+CREATE INDEX idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);
+CREATE INDEX idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);
+
 -- Foreign key indexes (speeds up JOINs and referential integrity checks)
 CREATE INDEX idx_buecher_exemplare_titel ON buecher_exemplare (titel_id);
 CREATE INDEX idx_ausleihen_exemplar ON ausleihen (exemplar_id);
@@ -242,6 +258,59 @@ CREATE TABLE class_books (
     PRIMARY KEY (class_name, book_id)
 );
 
+-- Table: system_einstellungen (Configurable key-value system settings)
+CREATE TABLE system_einstellungen (
+    schluessel VARCHAR(100) PRIMARY KEY,
+    wert TEXT,
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed default system settings
+INSERT INTO system_einstellungen (schluessel, wert) VALUES
+    ('ferien_leseclub_aktiv', 'false'),
+    ('ferien_leseclub_zieldatum', NULL),
+    ('lmf_stichtag', '07-31')
+ON CONFLICT (schluessel) DO NOTHING;
+
+-- ============================================================
+-- MIGRATION: idempotent ALTER TABLE for existing deployments
+-- ============================================================
+ALTER TABLE buecher_titel
+    ADD COLUMN IF NOT EXISTS erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}';
+
+ALTER TABLE buecher_exemplare
+    ADD COLUMN IF NOT EXISTS erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}';
+
+-- Table: klassen_lehrer_mapping (Class → class teacher e-mail for automated reminders)
+CREATE TABLE IF NOT EXISTS klassen_lehrer_mapping (
+    klasse       VARCHAR(50)  PRIMARY KEY,
+    lehrer_email VARCHAR(255) NOT NULL,
+    erstellt_am  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: vormerkungen (Individual book reservations / waitlist)
+CREATE TABLE IF NOT EXISTS vormerkungen (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    titel_id    UUID NOT NULL REFERENCES buecher_titel(id) ON DELETE CASCADE,
+    schueler_id UUID REFERENCES schueler(id) ON DELETE SET NULL,
+    notiz       TEXT,
+    erstellt_am TIMESTAMPTZ NOT NULL DEFAULT now(),
+    benachrichtigt_am TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_vormerkungen_titel_id ON vormerkungen(titel_id);
+
+-- Table: klassensatz_reservierungen (Teacher-submitted class-set reservation requests)
+CREATE TABLE IF NOT EXISTS klassensatz_reservierungen (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    titel_id         UUID NOT NULL REFERENCES buecher_titel(id) ON DELETE CASCADE,
+    klasse           VARCHAR(50) NOT NULL,
+    anzahl           INTEGER NOT NULL DEFAULT 1,
+    notiz            TEXT,
+    angefordert_von  UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    erledigt         BOOLEAN NOT NULL DEFAULT false,
+    erstellt_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Table: subjects (Active subjects for inventory module)
 CREATE TABLE subjects (
     id SERIAL PRIMARY KEY,
@@ -273,7 +342,7 @@ ON CONFLICT (name) DO NOTHING;
 -- 6. DEFAULT TEST SEED DATA
 -- -------------------------------------------------------------
 
--- Default Admin User (Barcode: admin)
+-- Default Admin User (Barcode: admin, Password: adminpassword)
 INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
 VALUES (
     '00000000-0000-0000-0000-000000000001',
@@ -281,12 +350,12 @@ VALUES (
     'System',
     'Administrator',
     'admin@bibliothek.local',
-    'dummy_passwort_hash',
+    '$2a$10$Q3Ye/EgFvABiCJbYCZvxQuyaGhmqr2HFS19P2tYpH5.F0rR7t0Bt6',
     'admin',
     true
 ) ON CONFLICT (email) DO NOTHING;
 
--- Default Teacher User (Barcode: L-999)
+-- Default Teacher User (Barcode: L-999, Password: lehrerpassword)
 INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
 VALUES (
     '00000000-0000-0000-0000-000000000002',
@@ -294,10 +363,17 @@ VALUES (
     'Maria',
     'Müller',
     'm.mueller@schule.de',
-    'dummy_passwort_hash',
+    '$2a$10$VpffcZxA/cj32Cqw7RrmUOz8f/jVvK/mRPALfvQAVBhc1t0pgi5.q',
     'lehrer',
     true
 ) ON CONFLICT (email) DO NOTHING;
+
+-- Seed benutzer_rollen
+INSERT INTO benutzer_rollen (benutzer_id, rolle)
+VALUES 
+    ('00000000-0000-0000-0000-000000000001', 'ADMIN'),
+    ('00000000-0000-0000-0000-000000000002', 'LEHRER')
+ON CONFLICT (benutzer_id) DO NOTHING;
 
 -- Default Student (Barcode: S-100)
 INSERT INTO schueler (id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt)

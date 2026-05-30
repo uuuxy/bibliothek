@@ -20,6 +20,7 @@ type BuchAktualisierenAnfrage struct {
 	Schulzweig   string  `json:"track"`
 	Bestand      int     `json:"stock"`
 	ZaehlDatum   *string `json:"lastCounted"`
+	Medientyp    string  `json:"medientyp"`
 }
 
 // BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch.
@@ -59,6 +60,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Track:       eingabe.Schulzweig,
 		Stock:       eingabe.Bestand,
 		LastCounted: eingabe.ZaehlDatum,
+		Medientyp:   eingabe.Medientyp,
 	}
 
 	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch); fehler != nil {
@@ -88,6 +90,7 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchAktualisierenAnfrage) error {
 	eingabe.CoverURL = strings.TrimSpace(eingabe.CoverURL)
 	eingabe.Fach = strings.TrimSpace(eingabe.Fach)
 	eingabe.Schulzweig = strings.TrimSpace(eingabe.Schulzweig)
+	eingabe.Medientyp = strings.TrimSpace(eingabe.Medientyp)
 
 	if eingabe.ISBN == "" || eingabe.Fach == "" {
 		return errors.New("isbn / subject darf nicht leer sein")

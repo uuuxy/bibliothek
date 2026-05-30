@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -31,7 +32,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 			}
 
 			// Admin role always has all permissions allowed
-			if claims.Rolle == auth.RoleAdmin {
+			if strings.EqualFold(string(claims.Rolle), string(auth.RoleAdmin)) {
 				ctx := context.WithValue(r.Context(), auth.ClaimsContextKey, claims)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -42,9 +43,9 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 			query := `
 				SELECT allowed 
 				FROM role_permissions 
-				WHERE role = $1 AND permission = $2
+				WHERE UPPER(role) = UPPER($1) AND permission = $2
 			`
-			err = s.DB.Pool.QueryRow(r.Context(), query, claims.Rolle, permission).Scan(&allowed)
+			err = s.DB.Pool.QueryRow(r.Context(), query, string(claims.Rolle), permission).Scan(&allowed)
 			if err != nil {
 				// Default to false if not found
 				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
