@@ -475,7 +475,7 @@
       display: none !important;
     }
     /* Card printer mode: fixed-position single card fills the page */
-    body[data-print-mode="card"] .print-section-card {
+    :global(body[data-print-mode="card"]) .print-section-card {
       display: block !important;
       position: fixed !important;
       left: 0 !important;
@@ -485,7 +485,7 @@
       z-index: 99999 !important;
       background: white !important;
     }
-    body[data-print-mode="card"] .print-section-card .print-card-box {
+    :global(body[data-print-mode="card"]) .print-section-card .print-card-box {
       width: 85.6mm !important;
       height: 53.98mm !important;
       page-break-after: always !important;
