@@ -33,6 +33,7 @@
 
   $effect(() => { fetchData(); });
 
+  /** @param {string} klasse */
   function toggleKlasse(klasse) {
     const s = new Set(expandedKlassen);
     if (s.has(klasse)) s.delete(klasse);
@@ -59,6 +60,10 @@
     }
   }
 
+  /**
+   * @param {string} klasse
+   * @param {string|null} [email]
+   */
   function openModal(klasse, email) {
     modalKlasse = klasse;
     modalEmail = email ?? "";
@@ -98,8 +103,8 @@
 
   const klassen = $derived(data?.klassen ?? []);
   const totalOverdue = $derived(
-    klassen.reduce((sum, k) =>
-      sum + k.schueler.reduce((s2, sch) => s2 + sch.medien.length, 0), 0)
+    klassen.reduce((/** @type {number} */ sum, /** @type {any} */ k) =>
+      sum + k.schueler.reduce((/** @type {number} */ s2, /** @type {any} */ sch) => s2 + sch.medien.length, 0), 0)
   );
 </script>
 
@@ -170,7 +175,7 @@
     <!-- Class cards -->
     <div class="space-y-4">
       {#each klassen as klasse}
-        {@const totalMediaInClass = klasse.schueler.reduce((s, sch) => s + sch.medien.length, 0)}
+        {@const totalMediaInClass = klasse.schueler.reduce((/** @type {number} */ s, /** @type {any} */ sch) => s + sch.medien.length, 0)}
         <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <!-- Class header -->
           <div
