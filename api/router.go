@@ -307,7 +307,7 @@ func (s *Server) Routes() http.Handler {
 	rateLimiter := RateLimitMiddleware(50)
 
 	// Chain: SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> RBACBlock -> Mux
-	globalHandler := SecurityHeadersMiddleware(CORSMiddleware(HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.RBACBlockMiddleware(mux))))))
+	globalHandler := SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.RBACBlockMiddleware(mux))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
@@ -317,8 +317,13 @@ func (s *Server) Routes() http.Handler {
 }
 
 // HTTPSRedirectMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
-func HTTPSRedirectMiddleware(next http.Handler) http.Handler {
+func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bypass HTTPS redirection in local/development mode when CookieSecure is disabled
+		if !s.CookieSecure {
+			next.ServeHTTP(w, r)
+			return
+		}
 		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 		if !isHTTPS {
 			target := "https://" + r.Host + r.URL.RequestURI()
