@@ -109,6 +109,33 @@
     }
   }
 
+  let finalizing = $state(false);
+
+  async function finalizeInventory() {
+    if (!fehlbestandListe || fehlbestandListe.length === 0) return;
+    
+    const confirmed = confirm(`Achtung: Es fehlen ${fehlbestandListe.length} Exemplare.\nWenn du fortfährst, werden diese unwiderruflich als 'verloren' (ausgesondert) markiert.\nFortfahren?`);
+    if (!confirmed) return;
+
+    finalizing = true;
+    try {
+      const res = await apiFetch("/api/inventur/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tage: fehlbestandTage })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      alert(`Erfolgreich! ${data.verloren_gemeldet} Bücher wurden als Verlust verbucht.`);
+      await ermittleFehlbestand(); // Reload the list (should be empty now)
+    } catch (err) {
+      const error = /** @type {any} */ (err);
+      alert("Fehler beim Verbuchen: " + error.message);
+    } finally {
+      finalizing = false;
+    }
+  }
+
   /**
    * @param {Date | null | undefined} d
    */
@@ -287,6 +314,15 @@
               </div>
             </div>
           {/each}
+        </div>
+        <div class="bg-rose-50/50 px-4 py-4 border-t border-rose-100 flex justify-end">
+          <button
+            onclick={finalizeInventory}
+            disabled={finalizing}
+            class="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm transition-colors shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {finalizing ? 'Wird verbucht...' : '🚨 Inventur abschließen & Verlust verbuchen'}
+          </button>
         </div>
       </div>
     {/if}

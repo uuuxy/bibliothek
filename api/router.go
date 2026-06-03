@@ -218,6 +218,7 @@ func (s *Server) Routes() http.Handler {
 	// Scan items during active inventory (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
 	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("inventory_scan")(s.GetFehlbestandHandler()))
+	mux.Handle("POST /api/inventur/finalize", s.RequirePermission("inventory_scan")(s.FinalizeInventoryHandler()))
 
 	// Get system statistics (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
