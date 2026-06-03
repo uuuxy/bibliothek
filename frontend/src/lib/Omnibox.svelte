@@ -2,6 +2,13 @@
   import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
   import StudentProfile from "./StudentProfile.svelte";
+  import OfflineQueueBanner from "./OfflineQueueBanner.svelte";
+  import CameraScanner from "./CameraScanner.svelte";
+  import OmniboxDropdown from "./OmniboxDropdown.svelte";
+  import OmniboxScannedList from "./OmniboxScannedList.svelte";
+  import OmniboxTeacherCard from "./OmniboxTeacherCard.svelte";
+  import { playSoundSuccess, playSoundError } from "./audio.js";
+  import { loadQueue, enqueueOfflineScan, flushOfflineQueue } from "./offlineQueue.js";
 
   let { onSelectBook } = $props();
 
@@ -32,54 +39,7 @@
 
   let isActive = $derived(!!(activeStudent || activeTeacher || isDropdownOpen));
 
-  // ── Web Audio API: synthesised sounds (no files needed) ──────
-  /** @type {AudioContext | null} */
-  let _audioCtx = null;
-  function getAudioCtx() {
-    if (!_audioCtx) {
-      _audioCtx = new (window.AudioContext || /** @type {any} */(window).webkitAudioContext)();
-    }
-    return _audioCtx;
-  }
 
-  /** Play a pleasant success "pling" – two sine tones, short attack/decay */
-  function playSoundSuccess() {
-    try {
-      const ctx = getAudioCtx();
-      const notes = [880, 1320]; // A5 + E6 – bright, positive interval
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
-        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.08);
-        gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.08 + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.25);
-        osc.start(ctx.currentTime + i * 0.08);
-        osc.stop(ctx.currentTime + i * 0.08 + 0.28);
-      });
-    } catch (e) { /* AudioContext blocked before user gesture – silently skip */ }
-  }
-
-  /** Play a short low "buzz" error tone */
-  function playSoundError() {
-    try {
-      const ctx = getAudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "square";
-      osc.frequency.setValueAtTime(220, ctx.currentTime);        // A3
-      osc.frequency.setValueAtTime(180, ctx.currentTime + 0.08); // low glide
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.32);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.35);
-    } catch (e) { /* silently skip */ }
-  }
 
   // ── Screen-edge flash (300 ms) ────────────────────────────────
   /** @param {"success"|"error"|"warning"} type */
@@ -96,73 +56,7 @@
   /** @param {string} color */
   function triggerFlash(color) { flashBorder = color; setTimeout(() => { flashBorder = ""; }, 1000); }
 
-  // ── Offline Queue (localStorage) ─────────────────────────────
-  const QUEUE_KEY = "bibliothek_offline_queue";
 
-  function loadQueue() {
-    try {
-      return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
-    } catch { return []; }
-  }
-
-  function saveQueue(/** @type {any[]} */ q) {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
-    offlineQueueCount = q.length;
-  }
-
-  /** Enqueue a failed barcode scan for later retry */
-  function enqueueOffline(/** @type {string} */ barcode, /** @type {string|null} */ studentID, /** @type {string|null} */ teacherID) {
-    const q = loadQueue();
-    // Deduplicate: skip if the exact same barcode+student is already queued
-    const alreadyQueued = q.some(
-      (/** @type {any} */ item) => item.barcode === barcode && item.studentID === studentID && item.teacherID === teacherID
-    );
-    if (!alreadyQueued) {
-      q.push({ barcode, studentID, teacherID, queuedAt: Date.now() });
-      saveQueue(q);
-    }
-    offlineQueueCount = q.length;
-  }
-
-  /** Drain the offline queue: replay all pending scans against the API */
-  async function flushOfflineQueue() {
-    const q = loadQueue();
-    if (q.length === 0) return;
-
-    showToast(`📡 Verbindung wiederhergestellt – ${q.length} Offline-Scan(s) werden nachgesendet…`, "success");
-
-    const remaining = [];
-    for (const item of q) {
-      try {
-        const res = await apiFetch("/api/action", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: item.barcode,
-            active_student_id: item.studentID ?? undefined,
-            active_teacher_id: item.teacherID ?? undefined
-          }),
-          signal: AbortSignal.timeout(8000)
-        });
-        if (!res.ok) {
-          // Business error (e.g., book not found) – drop permanently, don't retry
-          console.warn("[OfflineQueue] Permanent error for", item.barcode, res.status);
-        }
-        // success – item dropped (not pushed to remaining)
-      } catch {
-        // Network still unavailable – keep in queue
-        remaining.push(item);
-      }
-    }
-
-    saveQueue(remaining);
-    if (remaining.length === 0) {
-      showToast(`✅ Alle Offline-Scans erfolgreich nachgesendet.`, "success");
-      playSoundSuccess();
-    } else {
-      showToast(`⚠️ ${remaining.length} Scan(s) konnten noch nicht übertragen werden.`, "warning");
-    }
-  }
 
   onMount(() => {
     // SSE for live reload of student profile
@@ -179,9 +73,9 @@
     });
 
     // Offline / Online detection
-    const handleOnline = () => {
+    const handleOnline = async () => {
       isOffline = false;
-      flushOfflineQueue();
+      offlineQueueCount = await flushOfflineQueue(showToast);
     };
     const handleOffline = () => { isOffline = true; };
     window.addEventListener("online", handleOnline);
@@ -320,7 +214,7 @@
     // Only queue book scans without an active session; student/teacher lookups
     // are read-only and useless to replay offline.
     if (!navigator.onLine && q.startsWith("B-")) {
-      enqueueOffline(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
+      offlineQueueCount = enqueueOfflineScan(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
       triggerScreenFlash("warning");
       playSoundError();
       showToast(`📴 Offline: Barcode „${q}" in Warteschlange gespeichert.`, "warning");
@@ -395,6 +289,15 @@
           activeTeacher = data.teacher;
           scannedBooks = [];
         }
+      } else if (data.type === "info") {
+        triggerScreenFlash("success");
+        playSoundSuccess();
+        triggerFlash("green");
+        showToast(data.message, "success");
+        studentProfileComponent?.reloadProfile();
+      } else if (data.type === "search_results") {
+        triggerShake();
+        showToast("Bitte wähle ein Ergebnis aus der Liste.", "warning");
       }
     } catch (err) {
       const error = /** @type {any} */ (err);
@@ -402,7 +305,7 @@
 
       // WLAN dropout: queue the scan if it was a book barcode
       if (isTimeout && q.startsWith("B-")) {
-        enqueueOffline(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
+        offlineQueueCount = enqueueOfflineScan(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
         triggerScreenFlash("error");
         playSoundError();
         triggerFlash("orange");
@@ -507,23 +410,7 @@
 {/if}
 
 <!-- ── Offline / Queue banner ── -->
-{#if isOffline || offlineQueueCount > 0}
-  <div class="fixed top-4 right-4 z-200 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold shadow-lg border
-    {isOffline ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-amber-50 border-amber-200 text-amber-700'} animate-slide-down">
-    {#if isOffline}
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728M5.636 5.636a9 9 0 000 12.728M12 12h.01"/>
-      </svg>
-      <span>Offline{offlineQueueCount > 0 ? ` · ${offlineQueueCount} Scan(s) ausstehend` : ""}</span>
-    {:else}
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-      </svg>
-      <span>{offlineQueueCount} Offline-Scan(s) ausstehend</span>
-      <button onclick={flushOfflineQueue} class="ml-1 underline hover:no-underline cursor-pointer">Jetzt senden</button>
-    {/if}
-  </div>
-{/if}
+<OfflineQueueBanner {isOffline} {offlineQueueCount} {flushOfflineQueue} />
 
 <div class="w-full transition-all duration-500 ease-in-out {isActive ? 'max-w-4xl pt-4 justify-start' : 'max-w-2xl min-h-[60vh] justify-center'} flex flex-col items-center space-y-6">
   <div class="w-full transition-all duration-500 {isActive ? 'sticky -top-4 z-30 bg-slate-50/95 backdrop-blur-md py-4' : ''}">
@@ -555,45 +442,18 @@
       </button>
 
       {#if isDropdownOpen && totalDropdownItems > 0}
-        <div id="omnibox-dropdown" role="listbox" aria-label="Suchergebnisse" class="absolute top-full left-0 right-0 mt-4 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_12px_40px_rgb(0,0,0,0.12)] rounded-2xl z-50 overflow-hidden flex flex-col max-h-[60vh] animate-slide-up">
-          <div class="overflow-y-auto overscroll-contain flex-1 p-3 space-y-4">
-            {#if unifiedSearchResults.students.length > 0}
-              <div>
-                <div class="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Schüler ({unifiedSearchResults.students.length})</div>
-                <div class="space-y-1">
-                  {#each unifiedSearchResults.students as student, i}
-                    {@render studentDropdownRow(student, i)}
-                  {/each}
-                </div>
-              </div>
-            {/if}
-            {#if unifiedSearchResults.books.length > 0}
-              <div>
-                <div class="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bücher ({unifiedSearchResults.books.length})</div>
-                <div class="space-y-1">
-                  {#each unifiedSearchResults.books as book, j}
-                    {@render bookDropdownRow(book, j + unifiedSearchResults.students.length)}
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          </div>
-        </div>
+        <OmniboxDropdown 
+          {unifiedSearchResults} 
+          {selectedDropdownIndex} 
+          {selectDropdownItem} 
+        />
       {/if}
     </form>
   </div>
 
   <!-- HTML5 Kamera-Scanner (Mobile) -->
   {#if showCamera}
-    <div class="w-full rounded-2xl overflow-hidden border border-blue-200 shadow-lg animate-slide-up bg-black relative">
-      <div class="absolute top-3 right-3 z-10">
-        <button onclick={stopCamera} class="p-1.5 rounded-full bg-white/80 text-slate-700 hover:bg-white shadow transition-colors" title="Kamera schließen">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="px-4 pt-3 pb-1 text-xs text-blue-200 font-semibold text-center">Kamera auf Barcode richten</div>
-      <div id="camera-scan-region" class="w-full min-h-[240px]"></div>
-    </div>
+    <CameraScanner {stopCamera} bind:queryVal={queryVal} {submitAction} />
   {/if}
 
   {#if activeStudent}
@@ -605,19 +465,10 @@
     {/if}
     <StudentProfile bind:this={studentProfileComponent} student={activeStudent} onDeselect={() => { activeStudent = null; scannedBooks = []; lastFremdrueckgabe = null; }} />
   {:else if activeTeacher}
-    {@render teacherCard(activeTeacher)}
+    <OmniboxTeacherCard teacher={activeTeacher} onDeselect={() => { activeTeacher = null; scannedBooks = []; lastFremdrueckgabe = null; }} />
   {/if}
 
-  {#if (activeStudent || activeTeacher) && scannedBooks.length > 0}
-    <div class="w-full max-w-xl rounded-2xl border border-slate-100 bg-white overflow-hidden animate-slide-up shadow-sm">
-      <div class="px-5 py-3 border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider font-mono">Scans in dieser Sitzung</div>
-      <div class="divide-y divide-slate-100 max-h-60 overflow-y-auto">
-        {#each scannedBooks as entry, idx}
-          {@render scannedBookRow(entry, idx)}
-        {/each}
-      </div>
-    </div>
-  {/if}
+  <OmniboxScannedList {scannedBooks} {activeTeacher} {undoReturn} {markDefekt} />
 </div>
 
 <!-- Toast notifications -->
@@ -650,117 +501,8 @@
   </div>
 {/if}
 
-<!-- ── Snippets ── -->
-{#snippet bookCover(/** @type {any} */ book)}
-  {#if book.cover_url}
-    <img src={book.cover_url} class="w-12 h-16 object-cover rounded-md shadow-sm border border-slate-100" alt="Cover" />
-  {:else}
-    <div class="w-12 h-16 rounded-md shadow-sm flex-none flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-600 text-sm border border-indigo-600/10">
-      {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
-    </div>
-  {/if}
-{/snippet}
 
-{#snippet teacherCard(/** @type {any} */ teacher)}
-  <div class="w-full max-w-xl p-5 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-between shadow-sm animate-slide-up">
-    <div class="flex items-center space-x-4">
-      <div class="w-12 h-12 rounded-xl bg-blue-100/50 border border-blue-200/50 flex items-center justify-center text-blue-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg></div>
-      <div>
-        <h3 class="font-bold text-blue-800">{teacher.vorname} {teacher.nachname}</h3>
-        <p class="text-xs text-blue-600/80 font-medium">Handapparat-Modus aktiv · <span class="underline font-semibold">Ausleihe erfolgt als dauerhafter Handapparat</span></p>
-      </div>
-    </div>
-    <div class="flex items-center space-x-3">
-      <span class="text-xs px-2.5 py-1 rounded-full bg-blue-100/80 border border-blue-200 text-blue-700 font-semibold tracking-wide uppercase">Handapparat</span>
-      <button onclick={() => { activeTeacher = null; scannedBooks = []; lastFremdrueckgabe = null; }} class="p-1 text-blue-500 hover:text-blue-700 transition-colors cursor-pointer" title="Lehrer abwählen (ESC)"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-    </div>
-  </div>
-{/snippet}
 
-{#snippet scannedBookRow(/** @type {any} */ entry, /** @type {number} */ idx)}
-  <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors duration-200 {entry.defekt ? 'bg-rose-50/60' : ''}">
-    <div class="flex items-center space-x-4">
-      {@render bookCover(entry.book)}
-      <div>
-        <div class="flex items-center space-x-2 mb-1">
-          <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold border {entry.action === 'ausleihe' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : entry.defekt ? 'bg-rose-100 border-rose-200 text-rose-700' : 'bg-blue-50 border-blue-100 text-blue-700'}">
-            {entry.defekt ? 'Defekt' : entry.action === 'ausleihe' ? 'Ausleihe' : 'Rückgabe'}
-          </span>
-        </div>
-        <h4 class="font-semibold text-sm text-slate-800">{entry.book.titel}</h4>
-        <p class="text-xs text-slate-400">{entry.book.autor} · Barcode: {entry.book.barcode_id}</p>
-      </div>
-    </div>
-    <div class="flex items-center space-x-2">
-      {#if entry.dueDate}
-        <div class="text-right mr-2">
-          <span class="text-[10px] text-slate-400">Frist:</span>
-          <p class="text-xs font-mono text-emerald-600 font-bold">
-            {activeTeacher ? 'Dauerhaft (Handapparat)' : new Date(entry.dueDate).toLocaleDateString("de-DE")}
-          </p>
-        </div>
-      {/if}
-      {#if entry.action === 'rueckgabe' && entry.loanId && !entry.defekt}
-        <button onclick={() => undoReturn(entry.loanId, idx)} title="Rückgabe rückgängig machen"
-          class="px-2 py-1 text-xs font-semibold rounded-lg bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
-          Undo
-        </button>
-        <button onclick={() => markDefekt(entry, idx)} title="Defekt/Schaden melden und Mahngebühr erheben"
-          class="px-2 py-1 text-xs font-semibold rounded-lg bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-          Defekt
-        </button>
-      {/if}
-    </div>
-  </div>
-{/snippet}
-
-{#snippet studentDropdownRow(/** @type {any} */ student, /** @type {number} */ index)}
-  <div id="dropdown-item-{index}"
-       role="option"
-       aria-selected={selectedDropdownIndex === index}
-       aria-label="Schüler: {student.vorname} {student.nachname}, Klasse {student.klasse}, Barcode {student.barcode_id}"
-       tabindex="-1"
-       class="px-4 py-3 rounded-xl flex items-center justify-between cursor-pointer transition-all {selectedDropdownIndex === index ? 'bg-blue-600 shadow-md text-white' : 'hover:bg-slate-100 text-slate-700'}"
-       onclick={() => selectDropdownItem(index)}
-       onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectDropdownItem(index); } }}>
-    <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold {selectedDropdownIndex === index ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}" aria-hidden="true">
-        {student.vorname.charAt(0)}{student.nachname.charAt(0)}
-      </div>
-      <div>
-        <div class="font-bold {selectedDropdownIndex === index ? 'text-white' : 'text-slate-900'}">{student.vorname} {student.nachname}</div>
-        <div class="text-xs {selectedDropdownIndex === index ? 'text-blue-100' : 'text-slate-500'}">{student.klasse} · {student.barcode_id}</div>
-      </div>
-    </div>
-  </div>
-{/snippet}
-
-{#snippet bookDropdownRow(/** @type {any} */ book, /** @type {number} */ index)}
-  <div id="dropdown-item-{index}"
-       role="option"
-       aria-selected={selectedDropdownIndex === index}
-       aria-label="Buch: {book.titel} von {book.autor}, ISBN {book.isbn || 'Keine ISBN'}"
-       tabindex="-1"
-       class="px-4 py-3 rounded-xl flex items-center justify-between cursor-pointer transition-all {selectedDropdownIndex === index ? 'bg-indigo-600 shadow-md text-white' : 'hover:bg-slate-100 text-slate-700'}"
-       onclick={() => selectDropdownItem(index)}
-       onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectDropdownItem(index); } }}>
-    <div class="flex items-center space-x-4">
-      {#if book.cover_url}
-        <img src={book.cover_url} class="w-10 h-14 object-cover rounded shadow-sm border {selectedDropdownIndex === index ? 'border-indigo-400' : 'border-slate-200'}" alt="Cover von {book.titel}" />
-      {:else}
-        <div class="w-10 h-14 rounded shadow-sm flex items-center justify-center font-bold text-xs {selectedDropdownIndex === index ? 'bg-indigo-500 text-white border border-indigo-400' : 'bg-slate-100 text-slate-400 border border-slate-200'}" aria-hidden="true">
-          {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
-        </div>
-      {/if}
-      <div>
-        <div class="font-bold line-clamp-1 {selectedDropdownIndex === index ? 'text-white' : 'text-slate-900'}">{book.titel}</div>
-        <div class="text-xs line-clamp-1 {selectedDropdownIndex === index ? 'text-indigo-100' : 'text-slate-500'}">{book.autor} · {book.isbn || 'Keine ISBN'}</div>
-      </div>
-    </div>
-  </div>
-{/snippet}
 
 <style>
   /* ── Screen-edge flash overlay ─────────────────────────────── */

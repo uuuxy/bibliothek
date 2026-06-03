@@ -1,4 +1,24 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: bibliothek-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   db:
     image: postgres:16-alpine
     container_name: bibliothek-db
@@ -11,13 +31,18 @@ services:
       # Automatically initialize database schema and test seeds on first run
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d bibliothek"]
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   web:
     build:
@@ -25,7 +50,7 @@ services:
       dockerfile: Dockerfile
     container_name: bibliothek-web
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
       - PORT=8081
       - DATABASE_URL=postgres://postgres:postgrespassword@db:5432/bibliothek?sslmode=disable
@@ -43,7 +68,14 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
   bibliothek_uploads:
+  caddy_data:
+  caddy_config:

@@ -223,6 +223,7 @@ CREATE INDEX idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_o
 CREATE INDEX idx_buecher_isbn_trgm ON buecher_titel USING gin (isbn gin_trgm_ops);
 CREATE INDEX idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);
 CREATE INDEX idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);
+CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (vorname, nachname, coalesce(geburtsdatum, '1900-01-01'::DATE));
 
 -- Foreign key indexes (speeds up JOINs and referential integrity checks)
 CREATE INDEX idx_buecher_exemplare_titel ON buecher_exemplare (titel_id);

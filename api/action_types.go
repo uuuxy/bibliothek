@@ -18,7 +18,8 @@ type ActionRequest struct {
 
 // ActionResponse is the polymorphic output payload returned by the Omnibox.
 type ActionResponse struct {
-	Type            string                 `json:"type"`                       // "student", "teacher", "ausleihe", "rueckgabe", "search_results"
+	Type            string                 `json:"type"`                       // "student", "teacher", "ausleihe", "rueckgabe", "search_results", "info"
+	Message         string                 `json:"message,omitempty"`          // Informational message for the frontend
 	Student         *repository.Student    `json:"student,omitempty"`          // The active student, or original borrower
 	Teacher         *repository.User       `json:"teacher,omitempty"`          // The active teacher borrower (Handapparat)
 	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable

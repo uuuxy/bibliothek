@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Database wraps the pgxpool.Pool to provide access to database operations.
@@ -355,5 +356,63 @@ func (db *Database) InitLieferanten(ctx context.Context) error {
 			}
 		}
 	}
+	return nil
+}
+
+// InitAdmin checks if the users table is empty and bootstraps the first admin
+// using INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD environment variables.
+func (db *Database) InitAdmin(ctx context.Context) error {
+	var count int
+	err := db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer").Scan(&count)
+	if err != nil {
+		return fmt.Errorf("failed to query benutzer count: %w", err)
+	}
+
+	if count > 0 {
+		return nil // Users exist, no need to bootstrap
+	}
+
+	email := os.Getenv("INITIAL_ADMIN_EMAIL")
+	password := os.Getenv("INITIAL_ADMIN_PASSWORD")
+
+	if email == "" || password == "" {
+		log.Println("Warnung: Keine Benutzer in der Datenbank und INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD nicht gesetzt. System startet ohne Admin-Zugang.")
+		return nil
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return fmt.Errorf("failed to hash initial admin password: %w", err)
+	}
+
+	tx, err := db.Pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction for initial admin: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var adminID string
+	err = tx.QueryRow(ctx, `
+		INSERT INTO benutzer (barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
+		VALUES ('admin', 'System', 'Administrator', $1, $2, 'ADMIN', true)
+		RETURNING id
+	`, email, string(hash)).Scan(&adminID)
+	if err != nil {
+		return fmt.Errorf("failed to insert initial admin: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, `
+		INSERT INTO benutzer_rollen (benutzer_id, rolle)
+		VALUES ($1, 'ADMIN')
+	`, adminID)
+	if err != nil {
+		return fmt.Errorf("failed to insert initial admin role: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit initial admin transaction: %w", err)
+	}
+
+	log.Printf("Erster Admin-Benutzer (%s) wurde erfolgreich initialisiert.", email)
 	return nil
 }

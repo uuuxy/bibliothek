@@ -1,7 +1,11 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
   import StudentProfile from "./StudentProfile.svelte";
+  import KioskReservationModal from "./KioskReservationModal.svelte";
+  import KioskChecklistModal from "./KioskChecklistModal.svelte";
+  import KioskDamageModal from "./KioskDamageModal.svelte";
   import { onMount, tick } from "svelte";
+  import { playSuccessBeep, playErrorBeep } from "./audio.js";
 
   // ── States ──────────────────────────────────────────────────────────
   /** @type {any} */
@@ -48,6 +52,11 @@
   let isSubmittingChecklist = $state(false);
 
   // ── Derived State ───────────────────────────────────────────────────
+  let systemSettings = $state({ max_ausleihen_schueler: 5 });
+
+  let activeLoansCount = $derived(activeStudent?.active_loans?.length || 0);
+  let isLimitReached = $derived(activeLoansCount >= systemSettings.max_ausleihen_schueler);
+
   // A student is blocked if they have overdue books (active_loans that are overdue)
   let isStudentBlocked = $derived.by(() => {
     if (!activeStudent) return false;
@@ -59,48 +68,7 @@
     }) ?? false;
   });
 
-  // ── Audio Feedback ──────────────────────────────────────────────────
-  /** @type {AudioContext | null} */
-  let _audioCtx = null;
-  function getAudioCtx() {
-    if (!_audioCtx) {
-      _audioCtx = new (window.AudioContext || /** @type {any} */(window).webkitAudioContext)();
-    }
-    return _audioCtx;
-  }
 
-  function playSuccessBeep() {
-    try {
-      const ctx = getAudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch(e) {}
-  }
-
-  function playErrorBeep() {
-    try {
-      const ctx = getAudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(150, ctx.currentTime);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
-    } catch(e) {}
-  }
 
   // ── Logic ───────────────────────────────────────────────────────────
   function triggerFlash(/** @type {"success"|"error"} */ type, msg = "") {
@@ -323,7 +291,15 @@
     }
   }
 
-  onMount(() => focusStudentInput());
+  onMount(async () => {
+    try {
+      const res = await apiFetch("/api/einstellungen");
+      if (res.ok) {
+        systemSettings = await res.json();
+      }
+    } catch(e) {}
+    focusStudentInput();
+  });
 </script>
 
 <!-- Flash Overlay -->
@@ -369,10 +345,18 @@
           <!-- Buch-Scanner Input -->
           <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 {isShaking ? 'animate-shake' : ''}">
             <h3 class="text-lg font-bold text-slate-800 mb-4">Medien scannen</h3>
+            
+            {#if isLimitReached}
+              <div class="mb-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl text-sm flex items-start space-x-2">
+                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span>Limit von {systemSettings.max_ausleihen_schueler} Medien erreicht. Keine weitere Ausleihe möglich!</span>
+              </div>
+            {/if}
+
             <form onsubmit={(e) => { e.preventDefault(); handleBookSubmit(); }}>
-              <input type="text" id="kiosk-book-input" bind:value={bookInputVal} disabled={isScanningBook}
+              <input type="text" id="kiosk-book-input" bind:value={bookInputVal} disabled={isScanningBook || isLimitReached}
                      placeholder="Buch-Barcode hier scannen..." autocomplete="off"
-                     class="w-full bg-slate-50 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all placeholder:text-slate-400" />
+                     class="w-full bg-slate-50 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed" />
             </form>
             
             <button onclick={() => showVormerkenModal = true} class="mt-4 w-full py-3 bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-200 rounded-xl font-semibold transition-colors flex items-center justify-center space-x-2 shadow-sm">
@@ -402,9 +386,9 @@
   {/if}
 </div>
 
-{@render reservationModal()}
-{@render checklistModal()}
-{@render damageModal()}
+<KioskReservationModal bind:showVormerkenModal bind:vormerkenQuery {isSearchingVormerken} {vormerkenResults} {isSubmittingVormerken} {handleVormerkenSearch} {handleVormerkenSubmit} />
+<KioskChecklistModal bind:showChecklistModal bind:pendingGeraet {checklistItems} bind:checkedItems {isSubmittingChecklist} {handleChecklistSubmit} />
+<KioskDamageModal bind:returnedBook bind:showDamageInput bind:damageDescription {isSubmittingDamage} {handleDamageOk} {handleDamageSubmit} />
 
 {#snippet studentScanSection()}
   {#if !activeStudent}
@@ -419,123 +403,6 @@
                placeholder="S-XXXXXX scannen..." autocomplete="off"
                class="w-full bg-slate-50 border-2 border-blue-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all text-center placeholder:text-slate-400" />
       </form>
-    </div>
-  {/if}
-{/snippet}
-
-{#snippet reservationModal()}
-  {#if showVormerkenModal}
-    <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick={() => showVormerkenModal = false}></div>
-      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-xl w-full relative z-10 border border-slate-200 flex flex-col max-h-[80vh]">
-        <h3 class="text-xl font-bold text-slate-800 mb-4">Titel vormerken</h3>
-        <p class="text-sm text-slate-500 mb-4">Suche nach ISBN oder Titel, um das Medium auf die Warteliste zu setzen.</p>
-        
-        <form onsubmit={(e) => { e.preventDefault(); handleVormerkenSearch(); }} class="flex gap-2 mb-6">
-          <input type="text" bind:value={vormerkenQuery} placeholder="Titel oder ISBN eingeben..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all" />
-          <button type="submit" disabled={isSearchingVormerken || !vormerkenQuery} class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-50">Suchen</button>
-        </form>
-
-        <div class="flex-1 overflow-y-auto space-y-2 min-h-0">
-          {#if isSearchingVormerken}
-            <p class="text-center text-slate-500 py-4">Suche läuft...</p>
-          {:else if vormerkenResults.length > 0}
-            {#each vormerkenResults as res}
-              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div class="flex-1 min-w-0 pr-4">
-                  <h4 class="font-bold text-slate-800 truncate">{res.titel}</h4>
-                  {#if res.isbn}<p class="text-sm text-slate-500">ISBN: {res.isbn}</p>{/if}
-                </div>
-                <button onclick={() => handleVormerkenSubmit(res.id)} disabled={isSubmittingVormerken} class="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50">
-                  Vormerken
-                </button>
-              </div>
-            {/each}
-          {:else if vormerkenQuery && !isSearchingVormerken}
-            <p class="text-center text-slate-500 py-4">Keine Titel gefunden.</p>
-          {/if}
-        </div>
-
-        <div class="mt-6 pt-4 border-t border-slate-100 text-right">
-          <button onclick={() => showVormerkenModal = false} class="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition-colors">Schließen</button>
-        </div>
-      </div>
-    </div>
-  {/if}
-{/snippet}
-
-{#snippet checklistModal()}
-  {#if showChecklistModal && pendingGeraet}
-    <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
-      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full relative z-10 border border-slate-200">
-        <div class="mb-4 text-center">
-          <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          </div>
-          <h3 class="text-xl font-bold text-slate-800">Hardware-Checkliste</h3>
-          <p class="text-slate-500 font-medium">{pendingGeraet.modellname}</p>
-        </div>
-
-        <div class="space-y-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-          <p class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">Bitte auf Vollständigkeit prüfen:</p>
-          {#each checklistItems as item}
-            <label class="flex items-center space-x-3 cursor-pointer group">
-              <input type="checkbox" 
-                checked={checkedItems.has(item)}
-                onchange={(e) => {
-                  const target = /** @type {HTMLInputElement} */ (e.target);
-                  if (target && target.checked) checkedItems.add(item);
-                  else checkedItems.delete(item);
-                  checkedItems = new Set(checkedItems);
-                }}
-                class="w-5 h-5 rounded text-amber-600 focus:ring-amber-500 border-slate-300" />
-              <span class="text-slate-700 font-medium group-hover:text-amber-700 transition-colors">{item}</span>
-            </label>
-          {/each}
-        </div>
-
-        <div class="flex space-x-3">
-          <button onclick={() => { showChecklistModal = false; pendingGeraet = null; }}
-            class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">
-            Abbrechen
-          </button>
-          <button onclick={handleChecklistSubmit} disabled={isSubmittingChecklist || checklistItems.length !== checkedItems.size}
-            class="flex-1 py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50 shadow-sm">
-            {isSubmittingChecklist ? "Speichere..." : "Bestätigen & Buchen"}
-          </button>
-        </div>
-      </div>
-    </div>
-  {/if}
-{/snippet}
-
-{#snippet damageModal()}
-  {#if returnedBook}
-    <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none"></div>
-      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full relative z-10 border border-slate-200">
-        <h3 class="text-xl font-bold text-slate-800 mb-2">Zustand in Ordnung?</h3>
-        <p class="text-sm text-slate-500 mb-6">Bitte überprüfe <strong>{returnedBook.titel}</strong> ({returnedBook.barcode_id}) auf Schäden.</p>
-        
-        {#if !showDamageInput}
-          <div class="grid grid-cols-2 gap-4">
-            <button onclick={() => showDamageInput = true} class="py-3 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold transition-colors">Nein, Mangel melden</button>
-            <button onclick={handleDamageOk} class="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 outline-none">Ja, alles okay</button>
-          </div>
-        {:else}
-          <div class="space-y-4">
-            <label for="damage-description" class="block text-sm font-semibold text-slate-700">Art des Mangels (Notiz)</label>
-            <textarea id="damage-description" bind:value={damageDescription} rows="3" placeholder="z.B. Wasserschaden, Seite 15 fehlt..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none resize-none transition-all"></textarea>
-            <div class="flex gap-3 justify-end pt-2">
-              <button onclick={() => showDamageInput = false} disabled={isSubmittingDamage} class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Abbrechen</button>
-              <button onclick={handleDamageSubmit} disabled={isSubmittingDamage || !damageDescription.trim()} class="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">Mangel speichern</button>
-            </div>
-          </div>
-        {/if}
-      </div>
     </div>
   {/if}
 {/snippet}

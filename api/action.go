@@ -119,6 +119,24 @@ func (s *Server) handleBookAction(
 	if copy == nil {
 		return fmt.Errorf("%w: Buchexemplar-Barcode %s wurde nicht gefunden", errNotFound, query)
 	}
+	if !copy.IstAusleihbar || copy.IstAusgesondert {
+		// Recovery check: if the book is not currently loaned out and not reserved, reactivate it!
+		activeLoan, err := loanRepo.GetActiveLoanByCopyID(ctx, copy.ID)
+		if err != nil {
+			return err
+		}
+		
+		if activeLoan == nil && !strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:") {
+			_, err = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, zustand_notiz = '' WHERE id = $1", copy.ID)
+			if err != nil {
+				return err
+			}
+			resp.Type = "info"
+			resp.Message = "Buch reaktiviert"
+			return nil
+		}
+	}
+
 	if copy.IstAusgesondert {
 		return fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", errInvalidState, query)
 	}

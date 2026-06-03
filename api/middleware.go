@@ -6,6 +6,8 @@ package api
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -13,6 +15,19 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 )
+
+// PanicRecoveryMiddleware catches panics during HTTP request handling, logs them, and returns a 500 error.
+func PanicRecoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, r.URL.Path, err)
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
 
 // HTTPSRedirectMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
 func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {

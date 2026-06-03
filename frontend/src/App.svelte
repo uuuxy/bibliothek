@@ -391,8 +391,8 @@
 
         <main class="flex-1 overflow-y-auto flex flex-col w-full">
           {#if activeTab === "kiosk"}
-            <div class="flex-1 flex flex-col items-start justify-start w-full animate-fade-in">
-              <KioskMode />
+            <div class="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto animate-fade-in">
+              <Omnibox onSelectBook={handleSelectBook} />
             </div>
           {:else if activeTab === "books"}
             <div class="w-full animate-fade-in"><BookDetails title={selectedBook || undefined} /></div>

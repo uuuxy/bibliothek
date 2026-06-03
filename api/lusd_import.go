@@ -165,17 +165,37 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				}
 			}
 
-			if lusdID == "" || vorname == "" || nachname == "" || klasse == "" {
+			if vorname == "" || nachname == "" || klasse == "" {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("empty value on row %d", lineNum))
 				return
 			}
 
-			lusdIDs = append(lusdIDs, lusdID)
+			if lusdID != "" {
+				lusdIDs = append(lusdIDs, lusdID)
+			}
 
 			var dbID string
-			err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
-			if err == nil {
+			var found bool
+
+			if lusdID != "" {
+				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
+				if err == nil {
+					found = true
+				}
+			}
+
+			if !found {
+				// Fallback matching by name and birthdate
+				qMatch := "SELECT id FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND coalesce(geburtsdatum, '1900-01-01'::DATE) = coalesce($3::DATE, '1900-01-01'::DATE) LIMIT 1"
+				err = tx.QueryRow(ctx, qMatch, vorname, nachname, geburtsdatum).Scan(&dbID)
+				if err == nil {
+					found = true
+				}
+			}
+
+			if found {
 				// Student exists -> aktualisiere ausschließlich DSGVO-Whitelist-Felder.
+				// Falls wir den Schüler über Fallback gefunden haben und er in der CSV eine LUSD-ID hat, bekommt er sie hier aktualisiert.
 				qUpdate := `
 					UPDATE schueler
 					SET vorname = $1,
@@ -184,11 +204,17 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 					    geburtsdatum = $5,
 					    ist_abgaenger = false,
 					    aktualisiert_am = CURRENT_TIMESTAMP
-					WHERE id = $4
 				`
-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID, geburtsdatum)
+				var insertLusdID *string
+				if lusdID != "" {
+					insertLusdID = &lusdID
+				}
+				// Nur die LUSD-ID updaten, wenn die CSV auch eine geliefert hat (oder explizit NULL erlauben? Nein, Fallback greift ja, also LUSD-ID von CSV übernehmen)
+				qUpdate += `, lusd_id = COALESCE($6, lusd_id) WHERE id = $4`
+				
+				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID, geburtsdatum, insertLusdID)
 				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for row %d: %w", lineNum, err))
 					return
 				}
 				updatedCount++
@@ -198,6 +224,11 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				barcodeID := fmt.Sprintf("S-%05d", startNum)
 				startNum++
 
+				var insertLusdID *string
+				if lusdID != "" {
+					insertLusdID = &lusdID
+				}
+
 				qInsert := `
 					INSERT INTO schueler
 						(barcode_id, vorname, nachname, klasse, geburtsdatum,
@@ -206,9 +237,9 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				`
 				_, err = tx.Exec(ctx, qInsert,
 					barcodeID, vorname, nachname, klasse, geburtsdatum,
-					calculateAbgaengerJahr(klasse), lusdID)
+					calculateAbgaengerJahr(klasse), insertLusdID)
 				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed on row %d: %w", lineNum, err))
 					return
 				}
 				newCount++
