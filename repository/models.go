@@ -22,6 +22,9 @@ type Student struct {
 	Klasse         string    `json:"klasse"`
 	AbgaengerJahr  int       `json:"abgaenger_jahr"`
 	IstGesperrt    bool      `json:"ist_gesperrt"`
+	LusdID         *string   `json:"lusd_id,omitempty"`
+	IstAbgaenger   bool      `json:"ist_abgaenger"`
+	Geburtsdatum   *string   `json:"geburtsdatum,omitempty"` // stored as DATE
 	ErstelltAm     time.Time `json:"erstellt_am"`
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
 }

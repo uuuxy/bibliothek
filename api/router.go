@@ -267,6 +267,10 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler()))
 	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler()))
 
+	// LUSD Import / Schuljahreswechsel
+	mux.Handle("POST /api/lusd/preview", s.RequirePermission("manage_users")(s.PostLusdPreviewHandler()))
+	mux.Handle("POST /api/lusd/import", s.RequirePermission("manage_users")(s.PostLusdImportHandler()))
+
 	// Public OPAC catalog search (DSGVO-compliant: no loan data exposed)
 	mux.HandleFunc("GET /api/opac/suche", s.PublicCatalogSearchHandler())
 

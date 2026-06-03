@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import StudentProfile from "./StudentProfile.svelte";
   import Modal from "./Modal.svelte";
+  import LusdPreviewModal from "./LusdPreviewModal.svelte";
 
   // Props (Svelte 5)
   let { role = "" } = $props();
@@ -31,6 +32,8 @@
   let importErrorMessage = $state("");
   /** @type {HTMLInputElement | null} */
   let fileInputEl = $state(null);
+  let showLusdModal = $state(false);
+  let lusdFile = $state(/** @type {File|null} */ (null));
 
   function triggerImportPicker() {
     importStatusMessage = "";
@@ -39,44 +42,22 @@
   }
 
   /** @param {Event} event */
-  async function handleLUSDImport(event) {
+  function handleLUSDImport(event) {
     const target = /** @type {HTMLInputElement} */ (event.target);
     const file = target.files?.[0];
     if (!file) return;
+    
+    lusdFile = file;
+    showLusdModal = true;
+    target.value = ""; // Reset input so same file can be chosen again
+  }
 
-    isImporting = true;
-    importStatusMessage = "";
-    importErrorMessage = "";
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await apiFetch("/api/students/import", {
-        method: "POST",
-        body: formData
-      });
-      if (res.ok) {
-        const data = await res.json();
-        importStatusMessage = `${data.imported} Schüler erfolgreich importiert/aktualisiert.`;
-        await loadStudents(); // Reload table
-        await loadClasses(); // Reload classes
-      } else {
-        const errText = await res.text();
-        try {
-          const errObj = JSON.parse(errText);
-          importErrorMessage = `${errObj.error || "Fehler beim Verarbeiten der CSV."}`;
-        } catch {
-          importErrorMessage = `${errText || "Unerwarteter Server-Fehler."}`;
-        }
-      }
-    } catch (err) {
-      importErrorMessage = "Netzwerkfehler beim Hochladen der Importdatei.";
-      console.error(err);
-    } finally {
-      isImporting = false;
-      target.value = "";
-    }
+  function onLusdSuccess(/** @type {any} */ data) {
+    showLusdModal = false;
+    lusdFile = null;
+    importStatusMessage = `Import erfolgreich: ${data.new_students} neu, ${data.class_changes} geändert, ${data.graduates} Abgänger bearbeitet.`;
+    loadStudents();
+    loadClasses();
   }
 
   // Derived filtered students list
@@ -403,3 +384,12 @@
     </div>
   {/snippet}
 </Modal>
+
+{#if showLusdModal}
+  <LusdPreviewModal 
+    open={showLusdModal} 
+    file={lusdFile} 
+    onclose={() => { showLusdModal = false; lusdFile = null; }} 
+    onsuccess={onLusdSuccess} 
+  />
+{/if}
