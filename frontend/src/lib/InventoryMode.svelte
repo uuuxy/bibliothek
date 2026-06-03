@@ -1,5 +1,6 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
+  import { playSuccessBeep, playErrorBeep } from "./audio.js";
   // State Runes with JSDoc type annotations
   let barcode = $state("");
   
@@ -64,6 +65,12 @@
           : "Fehl am Platz: Buch sollte eigentlich verliehen sein!"
       };
 
+      if (lastResult.imRegalErwartet) {
+        playSuccessBeep();
+      } else {
+        playErrorBeep();
+      }
+
       scanLog = [lastResult, ...scanLog];
     } catch (err) {
       const error = /** @type {any} */ (err);
@@ -75,7 +82,14 @@
         success: false,
         message: error.message || String(error)
       };
+      playErrorBeep();
       scanLog = [lastResult, ...scanLog];
+    } finally {
+      // Force refocus on the input field
+      const inp = document.getElementById("inventur-input");
+      if (inp) {
+        setTimeout(() => inp.focus(), 10);
+      }
     }
   }
 
