@@ -19,6 +19,7 @@
   let recommendations = $state([]);
   /** @type {any[]} */
   let incomingShipments = $state([]);
+  let isReleasing = $state(false);
   let showGreenFade = $state(false);
   let scanningTitelId = $state(null);
   let scannedBarcode = $state("");
@@ -210,6 +211,41 @@
       setTimeout(() => { scanningTitelId = currentId; scannedBarcode = ""; }, 10);
     }
   }
+
+  async function releaseIncoming() {
+    if (!incomingShipments.length) return;
+    isReleasing = true;
+    printSuggestion = null;
+    try {
+      const res = await apiFetch("/api/bestellungen/freigeben", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        showGreenFade = true;
+        if (data.released_items && data.released_items.length > 0) {
+          const needsPrinting = data.released_items.filter(item => !item.etikett_gedruckt);
+          if (needsPrinting.length > 0) {
+            printSuggestion = needsPrinting;
+          }
+        }
+        setTimeout(async () => {
+          await loadIncomingShipments();
+          showGreenFade = false;
+          fetchRecommendations();
+        }, 1500);
+      } else {
+        const txt = await res.text();
+        alert("Fehler beim Freigeben: " + txt);
+      }
+    } catch (err) {
+      console.error(err);
+      showGreenFade = true;
+      setTimeout(async () => {
+        await loadIncomingShipments();
+        showGreenFade = false;
+        fetchRecommendations();
+      }, 1500);
+    } finally { isReleasing = false; }
+  }
 </script>
 
 <div class="w-full h-full p-8 bg-slate-50/50 text-slate-800 font-sans flex flex-col gap-6">
@@ -374,6 +410,7 @@
                   </div>
                 {/each}
               </div>
+              <button onclick={releaseIncoming} disabled={isReleasing} class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs shadow-sm cursor-pointer disabled:bg-slate-50 transition-colors">📦 Alle übrigen Lieferungen blind freigeben</button>
             </div>
           {/if}
         </div>
