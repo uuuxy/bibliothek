@@ -2,11 +2,14 @@
   import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
   import WebcamCapture from "./WebcamCapture.svelte";
+  import KioskChecklistModal from "./KioskChecklistModal.svelte";
+  import KioskDamageModal from "./KioskDamageModal.svelte";
   import { studentTabExtensions } from "./plugins.svelte.js";
   import { idStore } from "./idLayoutStore.svelte.js";
+  import BorrowedBooksList from "./BorrowedBooksList.svelte";
 
-  /** @type {{ student: any, onDeselect: () => void, role?: string, onReturnClick?: (barcode: string) => void }} */
-  let { student, onDeselect, role = "", onReturnClick = undefined } = $props();
+  /** @type {{ student: any, onDeselect: () => void, role?: string, onReturnClick?: (barcode: string) => void, leftActions?: import('svelte').Snippet, rightTop?: import('svelte').Snippet }} */
+  let { student, onDeselect, role = "", onReturnClick = undefined, leftActions, rightTop } = $props();
 
   /** @type {any} */
   let profile = $state(null);
@@ -161,9 +164,9 @@
     <div class="w-8 h-8 border-4 border-slate-800 border-t-transparent rounded-full animate-spin"></div>
   </div>
 {:else if profile}
-  <div class="w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start text-slate-800 animate-fade-in no-print font-sans">
-    <!-- Left: Profile Card (4 cols) -->
-    <div class="md:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-xl p-8 flex flex-col items-center text-center space-y-6">
+  <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start text-slate-800 animate-fade-in no-print font-sans">
+    <!-- Left: Profile Card (1 col) -->
+    <div class="lg:col-span-1 bg-white rounded-2xl border border-slate-100 shadow-xl p-8 flex flex-col items-center text-center space-y-6">
       <div class="relative group">
         {#if profile.foto_url}
           <img src="{profile.foto_url}?t={timestamp}" alt="Passbild" class="w-40 h-40 object-cover rounded-3xl border border-slate-100 shadow-sm" />
@@ -254,13 +257,17 @@
           {/each}
         </div>
       {/if}
+
+      {@render leftActions?.()}
     </div>
 
-    <!-- Right: Timeline / Loans List (8 cols) -->
-    <div class="md:col-span-8 bg-white rounded-2xl border border-slate-100 shadow-xl p-8 space-y-6">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="text-base font-bold text-slate-500 uppercase tracking-wider">Entliehene Bücher ({profile.entliehene_buecher?.length || 0})</h3>
-      </div>
+    <!-- Right: Timeline / Loans List (2 cols) -->
+    <div class="lg:col-span-2 space-y-6">
+      {@render rightTop?.()}
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-xl p-8">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-6">
+          <h3 class="text-base font-bold text-slate-500 uppercase tracking-wider">Entliehene Bücher ({profile.entliehene_buecher?.length || 0})</h3>
+        </div>
 
       {#if !profile.entliehene_buecher || profile.entliehene_buecher.length === 0}
         <div class="py-16 flex flex-col items-center justify-center text-slate-500 space-y-3">
@@ -268,59 +275,11 @@
           <span class="text-sm font-semibold text-slate-400">Aktuell keine Bücher entliehen.</span>
         </div>
       {:else}
-        <div class="relative border-l-2 border-slate-100 pl-4 ml-2 py-1 space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-          {#each profile.entliehene_buecher as book}
-            {@const isLMF = book.titel.toLowerCase().startsWith("lmf-")}
-            <div class="relative group">
-              <!-- Timeline Dot -->
-              <span class="absolute left-[-21px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border border-white {isLMF ? 'bg-indigo-500 ring-2 ring-indigo-500/30' : 'bg-slate-400 ring-2 ring-slate-200'}"></span>
-              
-              <div class="p-1.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all duration-200 flex flex-row items-center justify-between gap-3">
-                <div class="flex items-center space-x-3 flex-1 min-w-0">
-                  {#if book.cover_url}
-                    <img src={book.cover_url} class="w-6 h-9 object-cover rounded shadow-sm border border-slate-100/50 shrink-0" alt="Cover" />
-                  {:else}
-                    <div class="w-6 h-9 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-650 text-[10px] border border-indigo-600/10">
-                      {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
-                    </div>
-                  {/if}
-                  <div class="flex-1 min-w-0 text-left flex flex-col justify-center leading-tight">
-                    <div class="flex items-center gap-2">
-                      <h4 class="font-bold text-sm text-slate-900 truncate font-sans">{book.titel}</h4>
-                      {#if isLMF}
-                        <span class="shrink-0 px-1 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wide">
-                          LMF
-                        </span>
-                      {/if}
-                    </div>
-                    <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 truncate font-sans">
-                      <span class="truncate max-w-[100px] font-medium" title={book.autor}>{book.autor}</span>
-                      <span class="text-slate-300">•</span>
-                      <span class="font-bold text-slate-700">{book.barcode_id}</span>
-                      <span class="text-slate-300 hidden md:inline">•</span>
-                      <span class="hidden md:inline">{new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="text-right shrink-0 flex items-center gap-3">
-                  <div class="flex flex-col items-end justify-center">
-                    <span class="text-[9px] text-slate-400 block font-bold uppercase leading-none mb-0.5 font-sans">Frist</span>
-                    <span class="{isLMF ? 'text-indigo-600' : 'text-slate-700'} font-black text-xs font-sans">
-                      {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
-                    </span>
-                  </div>
-                  {#if onReturnClick}
-                    <button onclick={() => onReturnClick(book.barcode_id)} class="p-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-colors cursor-pointer" title="Buch zurückgeben">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
-                    </button>
-                  {/if}
-                </div>
-              </div>
-            </div>
-          {/each}
+        <div class="relative border-l-2 border-slate-100 pl-4 ml-2 py-1">
+          <BorrowedBooksList books={profile.entliehene_buecher} {onReturnClick} mode="loans" />
         </div>
       {/if}
+      </div>
     </div>
   </div>
 {/if}

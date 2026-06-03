@@ -4,6 +4,7 @@
   import KioskReservationModal from "./KioskReservationModal.svelte";
   import KioskChecklistModal from "./KioskChecklistModal.svelte";
   import KioskDamageModal from "./KioskDamageModal.svelte";
+  import BorrowedBooksList from "./BorrowedBooksList.svelte";
   import { onMount, tick } from "svelte";
   import { playSuccessBeep, playErrorBeep } from "./audio.js";
 
@@ -322,23 +323,23 @@
 
   <!-- 2. Profil & 3. Buch-Scan (Nur wenn Schüler aktiv) -->
   {#if activeStudent}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <StudentProfile 
-          student={activeStudent} 
-          onDeselect={clearSession} 
-          onReturnClick={(barcode) => {
-            bookInputVal = barcode;
-            handleBookSubmit();
-          }} 
-        />
+    <StudentProfile 
+      student={activeStudent} 
+      onDeselect={clearSession} 
+      onReturnClick={(barcode) => {
+        bookInputVal = barcode;
+        handleBookSubmit();
+      }} 
+    >
+      {#snippet leftActions()}
         <button class="mt-4 w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
                 onclick={clearSession}>
           Sitzung beenden (Anderen Schüler scannen)
         </button>
-      </div>
+      {/snippet}
 
-      <div class="space-y-6">
+      {#snippet rightTop()}
+        <div class="space-y-6 mb-6">
         <!-- Ausleih-Sperre Meldung -->
         {#if isStudentBlocked}
           <div class="bg-rose-100 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-start space-x-3">
@@ -376,35 +377,13 @@
           {#if scannedBooks.length > 0}
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
               <h4 class="font-semibold text-slate-600 text-sm uppercase tracking-wider mb-3">Scans in dieser Sitzung</h4>
-              <div class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                {#each scannedBooks as book (book.id)}
-                  <div class="p-1.5 rounded-xl border border-emerald-100 bg-emerald-50/50 flex flex-row items-center justify-between gap-3">
-                    <div class="flex items-center space-x-3 flex-1 min-w-0">
-                      {#if book.cover_url}
-                        <img src={book.cover_url} class="w-6 h-9 object-cover rounded shadow-sm border border-emerald-100/50 shrink-0" alt="Cover" />
-                      {:else}
-                        <div class="w-6 h-9 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-emerald-400 to-teal-500 text-[10px] border border-emerald-500/20">
-                          {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
-                        </div>
-                      {/if}
-                      <div class="flex-1 min-w-0 text-left flex flex-col justify-center leading-tight">
-                        <div class="flex items-center gap-2">
-                          <h4 class="font-bold text-sm text-slate-900 truncate font-sans">{book.titel}</h4>
-                        </div>
-                        <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 truncate font-sans">
-                          <span class="font-bold text-slate-700">{book.barcode_id}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                  </div>
-                {/each}
-              </div>
+              <BorrowedBooksList books={scannedBooks} mode="scans" />
             </div>
           {/if}
         {/if}
-      </div>
-    </div>
+        </div>
+      {/snippet}
+    </StudentProfile>
   {/if}
 </div>
 
