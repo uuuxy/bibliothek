@@ -5,8 +5,8 @@
   import { studentTabExtensions } from "./plugins.svelte.js";
   import { idStore } from "./idLayoutStore.svelte.js";
 
-  /** @type {{ student: any, onDeselect: () => void, role?: string }} */
-  let { student, onDeselect, role = "" } = $props();
+  /** @type {{ student: any, onDeselect: () => void, role?: string, onReturnClick?: (barcode: string) => void }} */
+  let { student, onDeselect, role = "", onReturnClick = undefined } = $props();
 
   /** @type {any} */
   let profile = $state(null);
@@ -161,7 +161,7 @@
     <div class="w-8 h-8 border-4 border-slate-800 border-t-transparent rounded-full animate-spin"></div>
   </div>
 {:else if profile}
-  <div class="w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start text-slate-800 animate-fade-in no-print">
+  <div class="w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start text-slate-800 animate-fade-in no-print font-sans">
     <!-- Left: Profile Card (4 cols) -->
     <div class="md:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-xl p-8 flex flex-col items-center text-center space-y-6">
       <div class="relative group">
@@ -178,7 +178,7 @@
       </div>
 
       <div class="space-y-2">
-        <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
+        <h3 class="text-2xl md:text-3xl font-extrabold font-sans text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
         <p class="text-base md:text-lg text-slate-700 font-bold">Klasse {profile.klasse}</p>
         <!-- Abgangsjahr: inline editable -->
         {#if editingAbgang}
@@ -275,26 +275,26 @@
               <!-- Timeline Dot -->
               <span class="absolute left-[-21px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border border-white {isLMF ? 'bg-indigo-500 ring-2 ring-indigo-500/30' : 'bg-slate-400 ring-2 ring-slate-200'}"></span>
               
-              <div class="p-2 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all duration-200 flex flex-row items-center justify-between gap-4">
+              <div class="p-1.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all duration-200 flex flex-row items-center justify-between gap-3">
                 <div class="flex items-center space-x-3 flex-1 min-w-0">
                   {#if book.cover_url}
-                    <img src={book.cover_url} class="w-8 h-12 object-cover rounded shadow-sm border border-slate-100/50 shrink-0" alt="Cover" />
+                    <img src={book.cover_url} class="w-6 h-9 object-cover rounded shadow-sm border border-slate-100/50 shrink-0" alt="Cover" />
                   {:else}
-                    <div class="w-8 h-12 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-650 text-xs border border-indigo-600/10">
+                    <div class="w-6 h-9 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-650 text-[10px] border border-indigo-600/10">
                       {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
                     </div>
                   {/if}
                   <div class="flex-1 min-w-0 text-left flex flex-col justify-center leading-tight">
                     <div class="flex items-center gap-2">
-                      <h4 class="font-bold text-sm text-slate-900 truncate">{book.titel}</h4>
+                      <h4 class="font-bold text-sm text-slate-900 truncate font-sans">{book.titel}</h4>
                       {#if isLMF}
-                        <span class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wide">
+                        <span class="shrink-0 px-1 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wide">
                           LMF
                         </span>
                       {/if}
                     </div>
-                    <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5 truncate">
-                      <span class="truncate max-w-[120px] font-medium" title={book.autor}>{book.autor}</span>
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 truncate font-sans">
+                      <span class="truncate max-w-[100px] font-medium" title={book.autor}>{book.autor}</span>
                       <span class="text-slate-300">•</span>
                       <span class="font-bold text-slate-700">{book.barcode_id}</span>
                       <span class="text-slate-300 hidden md:inline">•</span>
@@ -303,11 +303,18 @@
                   </div>
                 </div>
 
-                <div class="text-right shrink-0">
-                  <span class="text-[10px] text-slate-400 block font-bold uppercase leading-none mb-0.5">Frist</span>
-                  <span class="{isLMF ? 'text-indigo-600' : 'text-slate-700'} font-black text-sm">
-                    {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
-                  </span>
+                <div class="text-right shrink-0 flex items-center gap-3">
+                  <div class="flex flex-col items-end justify-center">
+                    <span class="text-[9px] text-slate-400 block font-bold uppercase leading-none mb-0.5 font-sans">Frist</span>
+                    <span class="{isLMF ? 'text-indigo-600' : 'text-slate-700'} font-black text-xs font-sans">
+                      {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
+                    </span>
+                  </div>
+                  {#if onReturnClick}
+                    <button onclick={() => onReturnClick(book.barcode_id)} class="p-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-colors cursor-pointer" title="Buch zurückgeben">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    </button>
+                  {/if}
                 </div>
               </div>
             </div>

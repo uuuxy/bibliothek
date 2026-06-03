@@ -324,7 +324,14 @@
   {#if activeStudent}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <StudentProfile student={activeStudent} onDeselect={clearSession} />
+        <StudentProfile 
+          student={activeStudent} 
+          onDeselect={clearSession} 
+          onReturnClick={(barcode) => {
+            bookInputVal = barcode;
+            handleBookSubmit();
+          }} 
+        />
         <button class="mt-4 w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
                 onclick={clearSession}>
           Sitzung beenden (Anderen Schüler scannen)
@@ -371,20 +378,20 @@
               <h4 class="font-semibold text-slate-600 text-sm uppercase tracking-wider mb-3">Scans in dieser Sitzung</h4>
               <div class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                 {#each scannedBooks as book (book.id)}
-                  <div class="p-2 rounded-xl border border-emerald-100 bg-emerald-50/50 flex flex-row items-center justify-between gap-4">
+                  <div class="p-1.5 rounded-xl border border-emerald-100 bg-emerald-50/50 flex flex-row items-center justify-between gap-3">
                     <div class="flex items-center space-x-3 flex-1 min-w-0">
                       {#if book.cover_url}
-                        <img src={book.cover_url} class="w-8 h-12 object-cover rounded shadow-sm border border-emerald-100/50 shrink-0" alt="Cover" />
+                        <img src={book.cover_url} class="w-6 h-9 object-cover rounded shadow-sm border border-emerald-100/50 shrink-0" alt="Cover" />
                       {:else}
-                        <div class="w-8 h-12 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-emerald-400 to-teal-500 text-xs border border-emerald-500/20">
+                        <div class="w-6 h-9 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-emerald-400 to-teal-500 text-[10px] border border-emerald-500/20">
                           {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
                         </div>
                       {/if}
                       <div class="flex-1 min-w-0 text-left flex flex-col justify-center leading-tight">
                         <div class="flex items-center gap-2">
-                          <h4 class="font-bold text-sm text-slate-900 truncate">{book.titel}</h4>
+                          <h4 class="font-bold text-sm text-slate-900 truncate font-sans">{book.titel}</h4>
                         </div>
-                        <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5 truncate">
+                        <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 truncate font-sans">
                           <span class="font-bold text-slate-700">{book.barcode_id}</span>
                         </div>
                       </div>
