@@ -24,9 +24,9 @@ func withSecurityHeaders(next http.Handler) http.Handler {
 		writer.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
 				"script-src 'self'; "+
-				"style-src 'self' 'unsafe-inline'; "+
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "+
 				"img-src 'self' https://covers.openlibrary.org https://portal.dnb.de https://books.google.com data:; "+
-				"font-src 'self'; "+
+				"font-src 'self' https://fonts.gstatic.com; "+
 				"connect-src 'self'; "+
 				"frame-ancestors 'none'")
 

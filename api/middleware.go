@@ -95,7 +95,7 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		// Restrict referrer information
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		// Basic CSP: allow same-origin resources only (adjust if CDN is added)
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'")
 		next.ServeHTTP(w, r)
 	})
 }
