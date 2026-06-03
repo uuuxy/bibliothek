@@ -18,6 +18,7 @@
   import LehrerPortal from "./lib/LehrerPortal.svelte";
   import Mahnwesen from "./lib/Mahnwesen.svelte";
   import SystemSettings from "./lib/SystemSettings.svelte";
+  import KioskMode from "./lib/KioskMode.svelte";
   import { appState } from "./inventur/lib/store.svelte.js";
   import { menuGroups, canSeeItem } from "./lib/menu.js";
   import { sidebarExtensions } from "./lib/plugins.svelte.js";
@@ -122,10 +123,10 @@
     }
   });
 
-  // Focus the omnibox input if we switch back to kiosk tab and it is idle
+  // Focus the kiosk student input if we switch back to kiosk tab and it is idle
   $effect(() => {
     if (isLoggedIn && activeTab === "kiosk") {
-      setTimeout(() => document.getElementById("omnibox-input")?.focus(), 50);
+      setTimeout(() => document.getElementById("kiosk-student-input")?.focus(), 50);
     }
   });
 
@@ -386,8 +387,8 @@
 
         <main class="flex-1 overflow-y-auto flex flex-col w-full">
           {#if activeTab === "kiosk"}
-            <div class="flex-1 flex flex-col items-center justify-start w-full max-w-4xl mx-auto animate-fade-in">
-              <Omnibox onSelectBook={handleSelectBook} />
+            <div class="flex-1 flex flex-col items-start justify-start w-full animate-fade-in">
+              <KioskMode />
             </div>
           {:else if activeTab === "books"}
             <div class="w-full animate-fade-in"><BookDetails title={selectedBook || undefined} /></div>
