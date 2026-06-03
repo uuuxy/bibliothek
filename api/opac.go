@@ -43,7 +43,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			SELECT bt.id, bt.titel, COALESCE(bt.autor, ''), COALESCE(bt.isbn, ''),
 			       COALESCE(bt.cover_url, ''),
 			       COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
-			       COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false) AS gesamt
+			       COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt
 			FROM buecher_titel bt
 			LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 			LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
@@ -52,6 +52,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			   OR bt.autor ILIKE '%' || $1 || '%'
 			   OR bt.isbn ILIKE '%' || $1 || '%'
 			GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url
+			HAVING COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') > 0
 			ORDER BY bt.titel
 			LIMIT 50
 		`, q)

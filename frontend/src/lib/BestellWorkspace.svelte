@@ -10,6 +10,7 @@
   let searchResults = $state([]);
   /** @type {any[]} */
   let orderCart = $state([]);
+  let orderTotal = $derived(orderCart.reduce((sum, item) => sum + (item.menge * (Number(item.preis) || 0)), 0));
   let submittingOrder = $state(false);
   /** @type {any} */
   let orderMessage = $state(null);
@@ -142,7 +143,7 @@
   function addToCart(book) {
     const existing = orderCart.find(item => item.id === book.id || (book.isbn && item.isbn === book.isbn));
     if (existing) { existing.menge += 1; }
-    else { orderCart.push({ id: book.titel_id ?? book.id, titel: book.titel, autor: book.autor, isbn: book.isbn ?? book.ISBN, verlag: book.verlag ?? "", cover_url: book.cover_url ?? "", menge: 1 }); }
+    else { orderCart.push({ id: book.titel_id ?? book.id, titel: book.titel, autor: book.autor, isbn: book.isbn ?? book.ISBN, verlag: book.verlag ?? "", cover_url: book.cover_url ?? "", menge: 1, preis: 0.00 }); }
     searchQuery = ""; searchResults = []; showDropdown = false; isbnPreview = null;
   }
 
@@ -159,7 +160,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           supplier_id: supplier.id,
-          items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge }))
+          items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge, preis: Number(item.preis) || 0 }))
         })
       });
       const data = await res.json();
@@ -293,13 +294,20 @@
                     <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate">{item.titel}</h4><p class="text-sm text-slate-400 truncate">ISBN: {item.isbn}</p></div>
                   </div>
                   <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-semibold text-slate-400">€</span>
+                      <input type="number" step="0.01" bind:value={item.preis} class="w-20 px-2 py-1 border border-slate-200 rounded-md text-right font-semibold text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+                    </div>
                     <div class="flex items-center border border-slate-200 bg-white rounded-md overflow-hidden"><button onclick={() => item.menge = Math.max(1, item.menge - 1)} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">-</button><span class="px-3 font-bold text-slate-700 min-w-[20px] text-center">{item.menge}</span><button onclick={() => item.menge += 1} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">+</button></div>
                     <button onclick={() => removeFromCart(idx)} class="text-slate-400 hover:text-rose-500 cursor-pointer">Löschen</button>
                   </div>
                 </div>
               {/each}
             </div>
-            <div class="flex justify-end">
+            <div class="flex items-center justify-between mt-4">
+              <div class="text-lg font-bold text-slate-800">
+                Gesamtsumme: {orderTotal.toFixed(2).replace('.', ',')} €
+              </div>
               <button onclick={submitOrder} disabled={submittingOrder} class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-2">
                 {#if submittingOrder}
                   <div class="w-4 h-4 border-2 border-t-white border-white/20 rounded-full animate-spin"></div>

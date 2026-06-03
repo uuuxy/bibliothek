@@ -20,8 +20,9 @@ import (
 
 // OrderItemRequest represents a single item to order from the cart
 type OrderItemRequest struct {
-	TitelID string `json:"titel_id"`
-	Menge   int    `json:"menge"`
+	TitelID string  `json:"titel_id"`
+	Menge   int     `json:"menge"`
+	Preis   float64 `json:"preis"`
 }
 
 // SubmitOrderRequest represents the payload for POST /api/orders
@@ -103,8 +104,8 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 		isNaacher := strings.Contains(strings.ToLower(supplierName), "naacher")
 
 		qInsert := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt)
-			VALUES ($1, $2, $3, false, $4)
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt, einkaufspreis)
+			VALUES ($1, $2, $3, false, $4, $5)
 		`
 
 		for _, item := range req.Items {
@@ -136,7 +137,7 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 			for i := 0; i < item.Menge; i++ {
 				barcodeID := fmt.Sprintf("B-%05d", currentBarcodeIndex)
 				statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
-				_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, isNaacher)
+				_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, isNaacher, item.Preis)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 					return

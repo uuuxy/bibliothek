@@ -319,7 +319,8 @@ ALTER TABLE buecher_titel
     ADD COLUMN IF NOT EXISTS medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch';
 
 ALTER TABLE buecher_exemplare
-    ADD COLUMN IF NOT EXISTS erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}';
+    ADD COLUMN IF NOT EXISTS erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS einkaufspreis DECIMAL(10,2) NOT NULL DEFAULT 0.00;
 
 -- Table: klassen_lehrer_mapping (Class → class teacher e-mail for automated reminders)
 CREATE TABLE IF NOT EXISTS klassen_lehrer_mapping (
