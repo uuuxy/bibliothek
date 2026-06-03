@@ -94,14 +94,14 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchAktualisierenAnfrage) error {
 	eingabe.Schulzweig = strings.TrimSpace(eingabe.Schulzweig)
 	eingabe.Medientyp = strings.TrimSpace(eingabe.Medientyp)
 
-	if eingabe.ISBN == "" || eingabe.Fach == "" {
-		return errors.New("isbn / subject darf nicht leer sein")
+	if eingabe.ISBN == "" {
+		return errors.New("isbn darf nicht leer sein")
 	}
 	if !validiereISBN(eingabe.ISBN) {
 		return errors.New("ungültiges ISBN-Format")
 	}
-	if eingabe.KlassenStufe < 5 || eingabe.KlassenStufe > 13 {
-		return errors.New("gradeLevel muss zwischen 5 und 13 sein")
+	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
+		return errors.New("gradeLevel muss zwischen 0 und 13 sein")
 	}
 	if eingabe.Bestand < 0 {
 		return errors.New("stock muss >= 0 sein")

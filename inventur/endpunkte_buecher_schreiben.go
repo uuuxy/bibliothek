@@ -60,16 +60,16 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		return
 	}
 
-	if eingabe.ISBN == "" || eingabe.Fach == "" || eingabe.KlassenStufe == 0 {
-		writeError(antwort, http.StatusBadRequest, "isbn, subject und gradeLevel sind erforderlich")
+	if eingabe.ISBN == "" {
+		writeError(antwort, http.StatusBadRequest, "isbn ist erforderlich")
 		return
 	}
 	if !validiereISBN(eingabe.ISBN) {
 		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
 		return
 	}
-	if eingabe.KlassenStufe < 5 || eingabe.KlassenStufe > 13 {
-		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 5 und 13 sein")
+	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
+		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
 		return
 	}
 
