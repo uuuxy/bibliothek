@@ -42,13 +42,15 @@ func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
 
 	reader := csv.NewReader(file)
 	reader.Comma = ';' // Typical for German CSVs, fallback to ',' below if needed
+	reader.LazyQuotes = true
 	// Read header
 	header, err := reader.Read()
-	if err != nil {
-		// Try comma if semicolon failed to produce multiple columns
-		file.Seek(0, 0)
+	// Try comma if semicolon failed to produce multiple columns
+	if err != nil || len(header) < 3 {
+		file.Seek(0, io.SeekStart)
 		reader = csv.NewReader(file)
 		reader.Comma = ','
+		reader.LazyQuotes = true
 		header, err = reader.Read()
 		if err != nil {
 			return nil, fmt.Errorf("Fehler beim Lesen der CSV-Kopfzeile: %w", err)
