@@ -37,6 +37,7 @@
 
   // ── Geraete Checklist Modal State ─────────────────────────────────────
   let showChecklistModal = $state(false);
+  /** @type {any} */
   let pendingGeraet = $state(null);
   let pendingGeraetQuery = $state("");
   let checklistItems = $derived.by(() => {
@@ -485,7 +486,8 @@
               <input type="checkbox" 
                 checked={checkedItems.has(item)}
                 onchange={(e) => {
-                  if (e.target.checked) checkedItems.add(item);
+                  const target = /** @type {HTMLInputElement} */ (e.target);
+                  if (target && target.checked) checkedItems.add(item);
                   else checkedItems.delete(item);
                   checkedItems = new Set(checkedItems);
                 }}
