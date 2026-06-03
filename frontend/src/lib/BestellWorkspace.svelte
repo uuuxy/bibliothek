@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { appState } from "../inventur/lib/store.svelte.js";
   import { apiFetch } from "./apiFetch.js";
+  import { playSuccessBeep, playErrorBeep } from "./audio.js";
   let activeTab = $state("bestellungen"), newName = $state(""), newEmail = $state(""), newCustNum = $state("");
   /** @type {any[]} */
   let suppliers = $state([]);
@@ -18,7 +19,9 @@
   let recommendations = $state([]);
   /** @type {any[]} */
   let incomingShipments = $state([]);
-  let isReleasing = $state(false), showGreenFade = $state(false);
+  let showGreenFade = $state(false);
+  let scanningTitelId = $state(null);
+  let scannedBarcode = $state("");
   /** @type {any[] | null} */
   let printSuggestion = $state(null);
   /** @type {any | null} */
@@ -178,39 +181,34 @@
     } finally { submittingOrder = false; }
   }
 
-  async function releaseIncoming() {
-    if (!incomingShipments.length) return;
-    isReleasing = true;
-    printSuggestion = null;
+  async function receiveItem(titelId) {
+    if (!scannedBarcode) return;
     try {
-      const res = await apiFetch("/api/bestellungen/freigeben", { method: "POST" });
+      const res = await apiFetch("/api/orders/receive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titel_id: titelId, barcode: scannedBarcode })
+      });
       if (res.ok) {
-        const data = await res.json();
+        playSuccessBeep();
         showGreenFade = true;
-        if (data.released_items && data.released_items.length > 0) {
-          const needsPrinting = data.released_items.filter(item => !item.etikett_gedruckt);
-          if (needsPrinting.length > 0) {
-            printSuggestion = needsPrinting;
-          }
-        }
-        setTimeout(async () => {
-          await loadIncomingShipments();
-          showGreenFade = false;
-          fetchRecommendations();
-        }, 1500);
+        scannedBarcode = "";
+        scanningTitelId = null;
+        await loadIncomingShipments();
+        setTimeout(() => { showGreenFade = false; fetchRecommendations(); }, 1500);
       } else {
         const txt = await res.text();
-        alert("Fehler beim Freigeben: " + txt);
+        throw new Error(txt);
       }
     } catch (err) {
-      console.error(err);
-      showGreenFade = true;
-      setTimeout(async () => {
-        await loadIncomingShipments();
-        showGreenFade = false;
-        fetchRecommendations();
-      }, 1500);
-    } finally { isReleasing = false; }
+      playErrorBeep();
+      const msg = err instanceof Error ? err.message : String(err);
+      alert("Fehler beim Scannen: " + msg);
+      // Keep focus on input by resetting scanning state
+      const currentId = scanningTitelId;
+      scanningTitelId = null;
+      setTimeout(() => { scanningTitelId = currentId; scannedBarcode = ""; }, 10);
+    }
   }
 </script>
 
@@ -350,13 +348,32 @@
             <div class="space-y-4">
               <div class="max-h-60 overflow-y-auto space-y-2 {showGreenFade ? 'animate-green-fade' : ''}">
                 {#each incomingShipments as s}
-                  <div class="p-3 border border-slate-100 rounded-lg bg-slate-50/50 text-[11px] space-y-1.5">
+                  <div class="p-3 border border-slate-100 rounded-lg bg-slate-50/50 text-[11px] space-y-2">
                     <div class="flex justify-between font-bold text-slate-700"><span>{s.supplierName}</span><span class="text-slate-400 font-medium">{s.date}</span></div>
-                    {#each s.items as item}<div class="flex justify-between text-slate-600"><span class="truncate">{item.titel}</span><span class="font-bold">{item.menge}x</span></div>{/each}
+                    {#each s.items as item}
+                      <div class="flex flex-col gap-2 p-2 bg-white rounded border border-slate-100 shadow-sm">
+                        <div class="flex justify-between items-center text-slate-600">
+                          <span class="truncate font-medium">{item.titel}</span>
+                          <div class="flex items-center gap-3">
+                            <span class="font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{item.menge}x</span>
+                            {#if scanningTitelId !== item.titel_id}
+                              <button onclick={() => { scanningTitelId = item.titel_id; scannedBarcode = ""; }} class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded text-xs cursor-pointer">Scannen</button>
+                            {/if}
+                          </div>
+                        </div>
+                        {#if scanningTitelId === item.titel_id}
+                          <form onsubmit={(e) => { e.preventDefault(); receiveItem(item.titel_id); }} class="flex gap-2 mt-1">
+                            <!-- svelte-ignore a11y_autofocus -->
+                            <input type="text" bind:value={scannedBarcode} placeholder="Barcode scannen..." autofocus class="flex-1 px-2 py-1 text-xs border border-slate-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                            <button type="submit" disabled={!scannedBarcode} class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded text-xs cursor-pointer">OK</button>
+                            <button type="button" onclick={() => scanningTitelId = null} class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold rounded text-xs cursor-pointer">Abbrechen</button>
+                          </form>
+                        {/if}
+                      </div>
+                    {/each}
                   </div>
                 {/each}
               </div>
-              <button onclick={releaseIncoming} disabled={isReleasing} class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-sm cursor-pointer disabled:bg-slate-200">📥 Lieferung vollständig freigeben</button>
             </div>
           {/if}
         </div>

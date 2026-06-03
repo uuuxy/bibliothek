@@ -238,8 +238,9 @@ type ShipmentGroup struct {
 }
 
 type GroupedItem struct {
-	Titel string `json:"titel"`
-	Menge int    `json:"menge"`
+	TitelID string `json:"titel_id"`
+	Titel   string `json:"titel"`
+	Menge   int    `json:"menge"`
 }
 
 // GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,
@@ -250,7 +251,7 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 		defer cancel()
 
 		query := `
-			SELECT e.erstellt_am, e.zustand_notiz, t.titel
+			SELECT e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON e.titel_id = t.id
 			WHERE e.ist_ausleihbar = false 
@@ -269,9 +270,9 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 		groupsMap := make(map[string]*ShipmentGroup)
 
 		for rows.Next() {
+			var titelID, zustandNotiz, titel string
 			var erstelltAm time.Time
-			var zustandNotiz, titel string
-			if err := rows.Scan(&erstelltAm, &zustandNotiz, &titel); err != nil {
+			if err := rows.Scan(&titelID, &erstelltAm, &zustandNotiz, &titel); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -315,8 +316,9 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 				itemFound.Menge++
 			} else {
 				group.Items = append(group.Items, &GroupedItem{
-					Titel: titel,
-					Menge: 1,
+					TitelID: titelID,
+					Titel:   titel,
+					Menge:   1,
 				})
 			}
 		}
@@ -333,5 +335,60 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(groups)
+	}
+}
+
+type ReceiveItemRequest struct {
+	TitelID string `json:"titel_id"`
+	Barcode string `json:"barcode"`
+}
+
+func (s *Server) ReceiveItemHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ReceiveItemRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		if req.TitelID == "" || req.Barcode == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id and barcode are required"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		// Overwrite exactly ONE placeholder
+		query := `
+			UPDATE buecher_exemplare
+			SET barcode_id = $1, ist_ausleihbar = true, zustand_notiz = ''
+			WHERE id = (
+				SELECT id 
+				FROM buecher_exemplare 
+				WHERE titel_id = $2 
+				  AND ist_ausleihbar = false 
+				  AND (zustand_notiz LIKE 'Im Zulauf%' OR zustand_notiz = 'bestellt' OR zustand_notiz LIKE 'Bestellt%')
+				LIMIT 1
+				FOR UPDATE SKIP LOCKED
+			)
+			RETURNING id
+		`
+		var updatedID string
+		err := s.DB.Pool.QueryRow(ctx, query, req.Barcode, req.TitelID).Scan(&updatedID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Kein offenes (bestelltes) Exemplar für diesen Titel gefunden."))
+				return
+			}
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"status":  "success",
+			"message": "Exemplar erfolgreich freigegeben.",
+		})
 	}
 }
