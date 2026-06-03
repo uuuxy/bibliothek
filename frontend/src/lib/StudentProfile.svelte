@@ -268,44 +268,46 @@
           <span class="text-sm font-semibold text-slate-400">Aktuell keine Bücher entliehen.</span>
         </div>
       {:else}
-        <div class="relative border-l border-slate-100 pl-8 ml-4 py-2 space-y-6">
+        <div class="relative border-l-2 border-slate-100 pl-4 ml-2 py-1 space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
           {#each profile.entliehene_buecher as book}
             {@const isLMF = book.titel.toLowerCase().startsWith("lmf-")}
             <div class="relative group">
               <!-- Timeline Dot -->
-              <span class="absolute left-[-39px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white {isLMF ? 'bg-indigo-500 ring-4 ring-indigo-55/50' : 'bg-slate-400 ring-4 ring-slate-100'}"></span>
+              <span class="absolute left-[-21px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border border-white {isLMF ? 'bg-indigo-500 ring-2 ring-indigo-500/30' : 'bg-slate-400 ring-2 ring-slate-200'}"></span>
               
-              <div class="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div class="flex items-center space-x-5">
+              <div class="p-2 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all duration-200 flex flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3 flex-1 min-w-0">
                   {#if book.cover_url}
-                    <img src={book.cover_url} class="w-16 aspect-3/4 object-cover rounded-xl shadow-md border border-slate-100/50 shrink-0" alt="Cover" />
+                    <img src={book.cover_url} class="w-8 h-12 object-cover rounded shadow-sm border border-slate-100/50 shrink-0" alt="Cover" />
                   {:else}
-                    <div class="w-16 aspect-3/4 rounded-xl shadow-md shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-650 text-xl border border-indigo-600/10">
+                    <div class="w-8 h-12 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-650 text-xs border border-indigo-600/10">
                       {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
                     </div>
                   {/if}
-                  <div class="space-y-1.5 text-left">
-                    <div class="flex items-center gap-3 flex-wrap">
-                      <h4 class="font-extrabold text-xl md:text-2xl text-slate-900 leading-tight">{book.titel}</h4>
+                  <div class="flex-1 min-w-0 text-left flex flex-col justify-center leading-tight">
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-bold text-sm text-slate-900 truncate">{book.titel}</h4>
                       {#if isLMF}
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wide">
-                          LMF-Jahresleihe
+                        <span class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wide">
+                          LMF
                         </span>
                       {/if}
                     </div>
-                    <p class="text-base md:text-lg text-slate-650 font-semibold">{book.autor}</p>
-                    <p class="text-sm text-slate-500 font-semibold">Signatur: <span class="text-sm font-bold text-slate-700">{book.barcode_id}</span></p>
-                    <p class="text-sm text-slate-500 font-semibold">Ausgeliehen am: <span class="font-bold text-slate-700">{new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</span></p>
+                    <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5 truncate">
+                      <span class="truncate max-w-[120px] font-medium" title={book.autor}>{book.autor}</span>
+                      <span class="text-slate-300">•</span>
+                      <span class="font-bold text-slate-700">{book.barcode_id}</span>
+                      <span class="text-slate-300 hidden md:inline">•</span>
+                      <span class="hidden md:inline">{new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-5 text-sm font-semibold">
-                  <div class="text-left sm:text-right">
-                    <span class="text-xs text-slate-400 block font-bold uppercase leading-none">Frist</span>
-                    <span class="{isLMF ? 'text-indigo-600' : 'text-slate-700'} font-black text-lg md:text-xl">
-                      {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
-                    </span>
-                  </div>
+                <div class="text-right shrink-0">
+                  <span class="text-[10px] text-slate-400 block font-bold uppercase leading-none mb-0.5">Frist</span>
+                  <span class="{isLMF ? 'text-indigo-600' : 'text-slate-700'} font-black text-sm">
+                    {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
+                  </span>
                 </div>
               </div>
             </div>

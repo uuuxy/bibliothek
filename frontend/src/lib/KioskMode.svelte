@@ -316,7 +316,7 @@
   </div>
 {/if}
 
-<div class="max-w-4xl mx-auto w-full space-y-8 relative">
+<div class="max-w-4xl mx-auto w-full space-y-8 relative font-sans">
   <!-- 1. Schülerausweis Scan-Bereich -->
   {@render studentScanSection()}
 
@@ -367,17 +367,32 @@
           
           <!-- Scanned Books List -->
           {#if scannedBooks.length > 0}
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-              <h4 class="font-semibold text-slate-600 text-sm uppercase tracking-wider">Aktuell verbucht</h4>
-              {#each scannedBooks as book (book.id)}
-                <div class="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                  <div class="flex-1 min-w-0">
-                    <p class="font-medium text-slate-800 truncate">{book.titel}</p>
-                    <p class="text-sm text-slate-500">{book.barcode_id}</p>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+              <h4 class="font-semibold text-slate-600 text-sm uppercase tracking-wider mb-3">Scans in dieser Sitzung</h4>
+              <div class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                {#each scannedBooks as book (book.id)}
+                  <div class="p-2 rounded-xl border border-emerald-100 bg-emerald-50/50 flex flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3 flex-1 min-w-0">
+                      {#if book.cover_url}
+                        <img src={book.cover_url} class="w-8 h-12 object-cover rounded shadow-sm border border-emerald-100/50 shrink-0" alt="Cover" />
+                      {:else}
+                        <div class="w-8 h-12 rounded shadow-sm shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br from-emerald-400 to-teal-500 text-xs border border-emerald-500/20">
+                          {book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
+                        </div>
+                      {/if}
+                      <div class="flex-1 min-w-0 text-left flex flex-col justify-center leading-tight">
+                        <div class="flex items-center gap-2">
+                          <h4 class="font-bold text-sm text-slate-900 truncate">{book.titel}</h4>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5 truncate">
+                          <span class="font-bold text-slate-700">{book.barcode_id}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                   </div>
-                  <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                </div>
-              {/each}
+                {/each}
+              </div>
             </div>
           {/if}
         {/if}
