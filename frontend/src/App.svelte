@@ -35,6 +35,7 @@
   let selectedBook = $state(/** @type {any} */ (null));
   let isSidebarCollapsed = $state(false);
   let pendingReservierungen = $state(0);
+  let isInitialRouteMatched = false;
 
   /** Polls for open class-set reservations (badge for admin/mitarbeiter). */
   async function fetchPendingReservierungen() {
@@ -102,14 +103,17 @@
         };
 
         // Initiales Mapping des Pfads beim ersten Login/Seitenaufruf
-        if (path !== "/" && activeTab === "kiosk") {
+        if (!isInitialRouteMatched && path !== "/") {
           const matchedTab = Object.keys(tabToPath).find(key => tabToPath[key] === path);
           if (matchedTab) activeTab = matchedTab;
+          isInitialRouteMatched = true;
+        } else if (!isInitialRouteMatched) {
+          isInitialRouteMatched = true;
         }
 
         // Synchronisiert die URL-Anzeige im Browser bei Klick-Navigationen
         const targetPath = tabToPath[activeTab];
-        if (targetPath && path !== targetPath) {
+        if (targetPath && path !== targetPath && isInitialRouteMatched) {
           window.history.pushState(null, "", targetPath);
         }
       }
