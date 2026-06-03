@@ -69,7 +69,6 @@ EXPOSE 8081
 # Environment variables defaults
 ENV PORT=8081
 ENV DATABASE_URL=""
-ENV JWT_SECRET="super-secret-key-that-is-at-least-32-bytes-long"
 ENV COOKIE_SECURE="false"
 
 # Run the single-binary application
