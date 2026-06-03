@@ -124,7 +124,7 @@ func AuthenticateIMAP(serverHostPort, email, password string) (bool, error) {
 		Timeout: 5 * time.Second,
 	}
 	conn, err := tls.DialWithDialer(dialer, "tcp", serverHostPort, &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 	})
 	if err != nil {
 		return false, fmt.Errorf("IMAP connection failed: %w", err)
