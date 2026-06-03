@@ -19,6 +19,14 @@
   let isScanningStudent = $state(false);
   let isScanningBook = $state(false);
 
+  // ── Damage Modal State ──────────────────────────────────────────────
+  /** @type {any} */
+  let returnedBook = $state(null);
+  let returnedLoanId = $state("");
+  let showDamageInput = $state(false);
+  let damageDescription = $state("");
+  let isSubmittingDamage = $state(false);
+
   // ── Derived State ───────────────────────────────────────────────────
   // A student is blocked if they have overdue books (active_loans that are overdue)
   let isStudentBlocked = $derived.by(() => {
@@ -155,15 +163,53 @@
       if (data.type === "ausleihe") {
         scannedBooks = [data.book, ...scannedBooks];
         triggerFlash("success");
+        if (data.book.zustand_notiz) {
+          toast = { type: "error", message: `Achtung: Bekannter Mangel: ${data.book.zustand_notiz}` };
+        }
       } else if (data.type === "rueckgabe") {
-        triggerFlash("success", "Buch zurückgegeben!");
+        returnedBook = data.book;
+        returnedLoanId = data.loan_id || (data.loanID ? data.loanID : "");
+        showDamageInput = false;
+        damageDescription = "";
+        playSuccessBeep();
       } else {
         throw new Error("Unerwartete Antwort vom Server.");
       }
     } catch (e) {
       triggerFlash("error", e instanceof Error ? e.message : "Fehler beim Buchen.");
+      focusBookInput();
     } finally {
       isScanningBook = false;
+    }
+  }
+
+  function handleDamageOk() {
+    returnedBook = null;
+    triggerFlash("success", "Buch zurückgegeben!");
+    focusBookInput();
+  }
+
+  async function handleDamageSubmit() {
+    if (!damageDescription.trim() || !returnedBook) return;
+    isSubmittingDamage = true;
+    try {
+      const res = await apiFetch(`/api/buecher/exemplare/${returnedBook.id}/defekt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          loan_id: returnedLoanId || undefined, 
+          schueler_id: activeStudent?.id || undefined,
+          betrag: 0,
+          beschreibung: damageDescription.trim()
+        })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      triggerFlash("success", "Mangel gespeichert! Exemplar gesperrt.");
+      returnedBook = null;
+    } catch(e) {
+      triggerFlash("error", e instanceof Error ? e.message : "Fehler beim Speichern des Mangels");
+    } finally {
+      isSubmittingDamage = false;
       focusBookInput();
     }
   }
@@ -242,6 +288,8 @@
   {/if}
 </div>
 
+{@render damageModal()}
+
 {#snippet studentScanSection()}
   {#if !activeStudent}
     <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center max-w-xl mx-auto {isShaking ? 'animate-shake' : ''}">
@@ -255,6 +303,34 @@
                placeholder="S-XXXXXX scannen..." autocomplete="off"
                class="w-full bg-slate-50 border-2 border-blue-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all text-center placeholder:text-slate-400" />
       </form>
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet damageModal()}
+  {#if returnedBook}
+    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none"></div>
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full relative z-10 border border-slate-200">
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Zustand in Ordnung?</h3>
+        <p class="text-sm text-slate-500 mb-6">Bitte überprüfe <strong>{returnedBook.titel}</strong> ({returnedBook.barcode_id}) auf Schäden.</p>
+        
+        {#if !showDamageInput}
+          <div class="grid grid-cols-2 gap-4">
+            <button onclick={() => showDamageInput = true} class="py-3 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold transition-colors">Nein, Mangel melden</button>
+            <button onclick={handleDamageOk} class="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 outline-none">Ja, alles okay</button>
+          </div>
+        {:else}
+          <div class="space-y-4">
+            <label class="block text-sm font-semibold text-slate-700">Art des Mangels (Notiz)</label>
+            <textarea bind:value={damageDescription} rows="3" placeholder="z.B. Wasserschaden, Seite 15 fehlt..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none resize-none transition-all"></textarea>
+            <div class="flex gap-3 justify-end pt-2">
+              <button onclick={() => showDamageInput = false} disabled={isSubmittingDamage} class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Abbrechen</button>
+              <button onclick={handleDamageSubmit} disabled={isSubmittingDamage || !damageDescription.trim()} class="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">Mangel speichern</button>
+            </div>
+          </div>
+        {/if}
+      </div>
     </div>
   {/if}
 {/snippet}
