@@ -55,6 +55,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Initialize Inventur sub-module handlers
 	_ = os.MkdirAll("uploads", 0755)
+	_ = os.MkdirAll("uploads/fotos", 0755)
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
 
