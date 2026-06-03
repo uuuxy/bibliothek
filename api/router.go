@@ -272,7 +272,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("POST /api/lusd/import", s.RequirePermission("manage_users")(s.PostLusdImportHandler()))
 
 	// Public OPAC catalog search (DSGVO-compliant: no loan data exposed)
-	mux.HandleFunc("GET /api/opac/suche", s.PublicCatalogSearchHandler())
+	mux.HandleFunc("GET /api/public/opac/suche", s.PublicCatalogSearchHandler())
 
 	// Antolin proxy – public, 24-hour in-memory cache
 	mux.HandleFunc("GET /api/antolin", s.AntolinHandler())

@@ -1,5 +1,5 @@
 <script>
-  import Opac from "./lib/Opac.svelte";
+  import OpacSearch from "./lib/OpacSearch.svelte";
   import Monitor from "./lib/Monitor.svelte";
   const _currentPath = window.location.pathname;
 
@@ -224,7 +224,7 @@
 
 <main class="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-slate-200 selection:text-slate-900">
 {#if _currentPath === '/katalog'}
-  <Opac />
+  <OpacSearch />
 {:else if _currentPath === '/monitor'}
   <Monitor />
 {:else}

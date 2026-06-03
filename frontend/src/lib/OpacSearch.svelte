@@ -4,7 +4,7 @@
 
   let query = $state('');
   /** @type {any[]} */
-  let results = $state([]);
+  let results = $state.raw([]);
   let loading = $state(false);
   let searched = $state(false);
   /** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -16,7 +16,7 @@
     loading = true;
     searched = true;
     try {
-      const res = await apiFetch(`/api/opac/suche?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/public/opac/suche?q=${encodeURIComponent(q)}`);
       if (res.ok) results = await res.json();
       else results = [];
     } catch {
