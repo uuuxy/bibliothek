@@ -373,7 +373,9 @@
 {#snippet reservationModal()}
   {#if showVormerkenModal}
     <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none" onclick={() => showVormerkenModal = false}></div>
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick={() => showVormerkenModal = false}></div>
       <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-xl w-full relative z-10 border border-slate-200 flex flex-col max-h-[80vh]">
         <h3 class="text-xl font-bold text-slate-800 mb-4">Titel vormerken</h3>
         <p class="text-sm text-slate-500 mb-4">Suche nach ISBN oder Titel, um das Medium auf die Warteliste zu setzen.</p>
