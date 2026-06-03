@@ -27,6 +27,14 @@
   let damageDescription = $state("");
   let isSubmittingDamage = $state(false);
 
+  // ── Vormerken Modal State ───────────────────────────────────────────
+  let showVormerkenModal = $state(false);
+  let vormerkenQuery = $state("");
+  /** @type {any[]} */
+  let vormerkenResults = $state([]);
+  let isSearchingVormerken = $state(false);
+  let isSubmittingVormerken = $state(false);
+
   // ── Derived State ───────────────────────────────────────────────────
   // A student is blocked if they have overdue books (active_loans that are overdue)
   let isStudentBlocked = $derived.by(() => {
@@ -167,11 +175,20 @@
           toast = { type: "error", message: `Achtung: Bekannter Mangel: ${data.book.zustand_notiz}` };
         }
       } else if (data.type === "rueckgabe") {
-        returnedBook = data.book;
-        returnedLoanId = data.loan_id || (data.loanID ? data.loanID : "");
-        showDamageInput = false;
-        damageDescription = "";
-        playSuccessBeep();
+        if (data.has_vormerkung) {
+          triggerFlash("error");
+          toast = { type: "error", message: `ACHTUNG: Reserviert für ${data.vormerkung_user || 'eine/n Schüler/in'}! Bitte gesondert zurücklegen.` };
+          // Play loud beep twice
+          playErrorBeep();
+          setTimeout(playErrorBeep, 400);
+          returnedBook = null; // Don't show damage modal if reserved
+        } else {
+          returnedBook = data.book;
+          returnedLoanId = data.loan_id || (data.loanID ? data.loanID : "");
+          showDamageInput = false;
+          damageDescription = "";
+          playSuccessBeep();
+        }
       } else {
         throw new Error("Unerwartete Antwort vom Server.");
       }
@@ -211,6 +228,46 @@
     } finally {
       isSubmittingDamage = false;
       focusBookInput();
+    }
+  }
+
+  async function handleVormerkenSearch() {
+    if (!vormerkenQuery.trim()) return;
+    isSearchingVormerken = true;
+    try {
+      const res = await apiFetch("/api/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: vormerkenQuery })
+      });
+      if (!res.ok) throw new Error("Fehler bei der Suche");
+      const data = await res.json();
+      vormerkenResults = data.search_results || [];
+    } catch(e) {
+      triggerFlash("error", "Suche fehlgeschlagen");
+    } finally {
+      isSearchingVormerken = false;
+    }
+  }
+
+  async function handleVormerkenSubmit(/** @type {string} */ titelId) {
+    if (!activeStudent) return;
+    isSubmittingVormerken = true;
+    try {
+      const res = await apiFetch("/api/vormerkungen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titel_id: titelId, schueler_id: activeStudent.id, notiz: "Vorgemerkt im Kiosk" })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      triggerFlash("success", "Erfolgreich vorgemerkt!");
+      showVormerkenModal = false;
+      vormerkenQuery = "";
+      vormerkenResults = [];
+    } catch(e) {
+      triggerFlash("error", "Fehler beim Vormerken");
+    } finally {
+      isSubmittingVormerken = false;
     }
   }
 
@@ -265,6 +322,11 @@
                      placeholder="Buch-Barcode hier scannen..." autocomplete="off"
                      class="w-full bg-slate-50 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all placeholder:text-slate-400" />
             </form>
+            
+            <button onclick={() => showVormerkenModal = true} class="mt-4 w-full py-3 bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-200 rounded-xl font-semibold transition-colors flex items-center justify-center space-x-2 shadow-sm">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Medium vormerken (Warteliste)</span>
+            </button>
           </div>
           
           <!-- Scanned Books List -->
@@ -288,6 +350,7 @@
   {/if}
 </div>
 
+{@render reservationModal()}
 {@render damageModal()}
 
 {#snippet studentScanSection()}
@@ -303,6 +366,47 @@
                placeholder="S-XXXXXX scannen..." autocomplete="off"
                class="w-full bg-slate-50 border-2 border-blue-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all text-center placeholder:text-slate-400" />
       </form>
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet reservationModal()}
+  {#if showVormerkenModal}
+    <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none" onclick={() => showVormerkenModal = false}></div>
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-xl w-full relative z-10 border border-slate-200 flex flex-col max-h-[80vh]">
+        <h3 class="text-xl font-bold text-slate-800 mb-4">Titel vormerken</h3>
+        <p class="text-sm text-slate-500 mb-4">Suche nach ISBN oder Titel, um das Medium auf die Warteliste zu setzen.</p>
+        
+        <form onsubmit={(e) => { e.preventDefault(); handleVormerkenSearch(); }} class="flex gap-2 mb-6">
+          <input type="text" bind:value={vormerkenQuery} placeholder="Titel oder ISBN eingeben..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all" />
+          <button type="submit" disabled={isSearchingVormerken || !vormerkenQuery} class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-50">Suchen</button>
+        </form>
+
+        <div class="flex-1 overflow-y-auto space-y-2 min-h-0">
+          {#if isSearchingVormerken}
+            <p class="text-center text-slate-500 py-4">Suche läuft...</p>
+          {:else if vormerkenResults.length > 0}
+            {#each vormerkenResults as res}
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <div class="flex-1 min-w-0 pr-4">
+                  <h4 class="font-bold text-slate-800 truncate">{res.titel}</h4>
+                  {#if res.isbn}<p class="text-sm text-slate-500">ISBN: {res.isbn}</p>{/if}
+                </div>
+                <button onclick={() => handleVormerkenSubmit(res.id)} disabled={isSubmittingVormerken} class="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50">
+                  Vormerken
+                </button>
+              </div>
+            {/each}
+          {:else if vormerkenQuery && !isSearchingVormerken}
+            <p class="text-center text-slate-500 py-4">Keine Titel gefunden.</p>
+          {/if}
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 text-right">
+          <button onclick={() => showVormerkenModal = false} class="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition-colors">Schließen</button>
+        </div>
+      </div>
     </div>
   {/if}
 {/snippet}

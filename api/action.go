@@ -80,6 +80,11 @@ func (s *Server) ActionHandler(
 			if v, checkErr := s.checkVormerkung(ctx, resp.Book.TitelID); checkErr == nil && v != nil {
 				resp.HasVormerkung = true
 				resp.VormerkungTitel = v.TitelName
+				resp.VormerkungUser = v.SchuelerName
+				
+				// Set book copy to reserved note and not lendable by others
+				_, _ = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2", 
+					"Reserviert für: " + v.SchuelerName, resp.Book.ID)
 			}
 		}
 

@@ -29,6 +29,7 @@ type ActionResponse struct {
 	SearchResults   []repository.BookTitle `json:"search_results,omitempty"`   // Full-text search list
 	HasVormerkung   bool                   `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
 	VormerkungTitel string                 `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
+	VormerkungUser  string                 `json:"vormerkung_user,omitempty"`  // Reserved for: student name & class
 }
 
 // ActionEvent represents the data broadcasted to SSE clients on updates.
