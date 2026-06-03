@@ -71,7 +71,8 @@ type BookCopy struct {
 // Loan represents the ausleihen table model for historical and active transactions.
 type Loan struct {
 	ID                    string     `json:"id"`
-	ExemplarID            string     `json:"exemplar_id"`
+	ExemplarID            *string    `json:"exemplar_id,omitempty"`
+	GeraetID              *string    `json:"geraet_id,omitempty"`
 	SchuelerID            *string    `json:"schueler_id,omitempty"`
 	AusleiherBenutzerID   *string    `json:"ausleiher_benutzer_id,omitempty"`
 	AusgeliehenAm         time.Time  `json:"ausgeliehen_am"`
@@ -81,4 +82,18 @@ type Loan struct {
 	RueckgabeBearbeiterID *string    `json:"rueckgabe_bearbeiter_id,omitempty"`
 	IstFremdrueckgabe     bool       `json:"ist_fremdrueckgabe"`
 	IstHandapparat        bool       `json:"ist_handapparat"`
+}
+
+// Geraet represents the hardware devices table model.
+type Geraet struct {
+	ID              string    `json:"id"`
+	Modellname      string    `json:"modellname"`
+	Seriennummer    *string   `json:"seriennummer,omitempty"`
+	BarcodeID       string    `json:"barcode_id"`
+	Zubehoer        string    `json:"zubehoer"`
+	IstAusleihbar   bool      `json:"ist_ausleihbar"`
+	IstAusgesondert bool      `json:"ist_ausgesondert"`
+	ZustandNotiz    *string   `json:"zustand_notiz,omitempty"`
+	ErstelltAm      time.Time `json:"erstellt_am"`
+	AktualisiertAm  time.Time `json:"aktualisiert_am"`
 }

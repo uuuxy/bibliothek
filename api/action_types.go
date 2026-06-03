@@ -11,8 +11,9 @@ import (
 // ActionRequest holds the parameters for the Omnibox dispatcher.
 type ActionRequest struct {
 	Query           string  `json:"query"`
-	ActiveStudentID *string `json:"active_student_id,omitempty"`
-	ActiveTeacherID *string `json:"active_teacher_id,omitempty"`
+	ActiveStudentID    *string `json:"active_student_id,omitempty"`
+	ActiveTeacherID    *string `json:"active_teacher_id,omitempty"`
+	ConfirmedChecklist bool    `json:"confirmed_checklist,omitempty"`
 }
 
 // ActionResponse is the polymorphic output payload returned by the Omnibox.
@@ -21,6 +22,7 @@ type ActionResponse struct {
 	Student         *repository.Student    `json:"student,omitempty"`          // The active student, or original borrower
 	Teacher         *repository.User       `json:"teacher,omitempty"`          // The active teacher borrower (Handapparat)
 	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable
+	Geraet          *repository.Geraet     `json:"geraet,omitempty"`           // Hardware details if applicable
 	DueDate         *time.Time             `json:"due_date,omitempty"`         // Return deadline for check-outs
 	LoanID          *string                `json:"loan_id,omitempty"`          // Loan UUID (for Undo support on returns)
 	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another student/teacher
@@ -37,7 +39,8 @@ type ActionEvent struct {
 	Event     string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
 	StudentID string `json:"student_id,omitempty"`
 	TeacherID string `json:"teacher_id,omitempty"`
-	CopyID    string `json:"copy_id"`
+	CopyID    string `json:"copy_id,omitempty"`
+	GeraetID  string `json:"geraet_id,omitempty"`
 	BarcodeID string `json:"barcode_id"`
 	Titel     string `json:"titel"`
 	Timestamp int64  `json:"timestamp"`

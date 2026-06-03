@@ -118,10 +118,25 @@ CREATE TABLE buecher_exemplare (
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table: geraete (Hardware devices like iPads, Laptops)
+CREATE TABLE geraete (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    modellname VARCHAR(255) NOT NULL,
+    seriennummer VARCHAR(255) UNIQUE,
+    barcode_id VARCHAR(100) UNIQUE NOT NULL,
+    zubehoer TEXT NOT NULL DEFAULT '', -- Comma separated checklist items
+    ist_ausleihbar BOOLEAN NOT NULL DEFAULT true,
+    ist_ausgesondert BOOLEAN NOT NULL DEFAULT false,
+    zustand_notiz TEXT,
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Table: ausleihen (Tracking loans/transactions)
 CREATE TABLE ausleihen (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    exemplar_id UUID NOT NULL REFERENCES buecher_exemplare(id) ON DELETE RESTRICT,
+    exemplar_id UUID REFERENCES buecher_exemplare(id) ON DELETE RESTRICT,
+    geraet_id UUID REFERENCES geraete(id) ON DELETE RESTRICT,
     
     -- Polymorphic borrower association (loan to student OR user/staff)
     schueler_id UUID REFERENCES schueler(id) ON DELETE RESTRICT,
@@ -144,6 +159,12 @@ CREATE TABLE ausleihen (
         (schueler_id IS NULL AND ausleiher_benutzer_id IS NULL)
     ),
     
+    -- Constraint: Exactly one item must be borrowed (book or device)
+    CONSTRAINT check_loan_item CHECK (
+        (exemplar_id IS NOT NULL AND geraet_id IS NULL) OR
+        (exemplar_id IS NULL AND geraet_id IS NOT NULL)
+    ),
+    
     -- Constraint: Return timestamp cannot precede the loan timestamp
     CONSTRAINT check_return_date CHECK (
         rueckgabe_am IS NULL OR rueckgabe_am >= ausgeliehen_am
@@ -153,7 +174,8 @@ CREATE TABLE ausleihen (
 -- Table: schadensfaelle (Incidents concerning damaged or lost books)
 CREATE TABLE schadensfaelle (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    exemplar_id UUID NOT NULL REFERENCES buecher_exemplare(id) ON DELETE RESTRICT,
+    exemplar_id UUID REFERENCES buecher_exemplare(id) ON DELETE RESTRICT,
+    geraet_id UUID REFERENCES geraete(id) ON DELETE RESTRICT,
     ausleihe_id UUID REFERENCES ausleihen(id) ON DELETE SET NULL, -- Optional link to corresponding checkout
     
     -- Target person responsible (either student OR user/staff)
@@ -174,6 +196,12 @@ CREATE TABLE schadensfaelle (
         (schueler_id IS NOT NULL AND benutzer_id IS NULL) OR
         (schueler_id IS NULL AND benutzer_id IS NOT NULL) OR
         (schueler_id IS NULL AND benutzer_id IS NULL)
+    ),
+    
+    -- Constraint: Exactly one item must be associated
+    CONSTRAINT check_damage_item CHECK (
+        (exemplar_id IS NOT NULL AND geraet_id IS NULL) OR
+        (exemplar_id IS NULL AND geraet_id IS NOT NULL)
     )
 );
 

@@ -54,6 +54,8 @@ func (s *Server) ActionHandler(
 			err = s.handleTeacherAction(ctx, req.Query, &resp)
 		} else if strings.HasPrefix(req.Query, "B-") {
 			err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
+		} else if strings.HasPrefix(req.Query, "G-") {
+			err = s.handleGeraetAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, studentRepo, loanRepo, &resp)
 		} else {
 			err = s.handleSearchAction(ctx, req.Query, bookRepo, &resp)
 		}

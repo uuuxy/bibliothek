@@ -35,6 +35,17 @@
   let isSearchingVormerken = $state(false);
   let isSubmittingVormerken = $state(false);
 
+  // ── Geraete Checklist Modal State ─────────────────────────────────────
+  let showChecklistModal = $state(false);
+  let pendingGeraet = $state(null);
+  let pendingGeraetQuery = $state("");
+  let checklistItems = $derived.by(() => {
+    if (!pendingGeraet || !pendingGeraet.zubehoer) return [];
+    return pendingGeraet.zubehoer.split(",").map(i => i.trim()).filter(Boolean);
+  });
+  let checkedItems = $state(new Set());
+  let isSubmittingChecklist = $state(false);
+
   // ── Derived State ───────────────────────────────────────────────────
   // A student is blocked if they have overdue books (active_loans that are overdue)
   let isStudentBlocked = $derived.by(() => {
@@ -178,17 +189,21 @@
         if (data.has_vormerkung) {
           triggerFlash("error");
           toast = { type: "error", message: `ACHTUNG: Reserviert für ${data.vormerkung_user || 'eine/n Schüler/in'}! Bitte gesondert zurücklegen.` };
-          // Play loud beep twice
           playErrorBeep();
           setTimeout(playErrorBeep, 400);
-          returnedBook = null; // Don't show damage modal if reserved
+          returnedBook = null;
         } else {
-          returnedBook = data.book;
+          returnedBook = data.book || data.geraet;
           returnedLoanId = data.loan_id || (data.loanID ? data.loanID : "");
           showDamageInput = false;
           damageDescription = "";
           playSuccessBeep();
         }
+      } else if (data.type === "geraet_check") {
+        pendingGeraet = data.geraet;
+        pendingGeraetQuery = val;
+        checkedItems = new Set();
+        showChecklistModal = true;
       } else {
         throw new Error("Unerwartete Antwort vom Server.");
       }
@@ -268,6 +283,42 @@
       triggerFlash("error", "Fehler beim Vormerken");
     } finally {
       isSubmittingVormerken = false;
+    }
+  }
+
+  async function handleChecklistSubmit() {
+    if (!pendingGeraet || !activeStudent || checklistItems.length !== checkedItems.size) return;
+    isSubmittingChecklist = true;
+    try {
+      const res = await apiFetch("/api/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          query: pendingGeraetQuery, 
+          active_student_id: activeStudent.id,
+          confirmed_checklist: true
+        })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      
+      if (data.type === "ausleihe") {
+        scannedBooks = [data.geraet, ...scannedBooks];
+        triggerFlash("success");
+      } else if (data.type === "rueckgabe") {
+        returnedBook = data.geraet;
+        returnedLoanId = data.loan_id || (data.loanID ? data.loanID : "");
+        showDamageInput = false;
+        damageDescription = "";
+        playSuccessBeep();
+      }
+      showChecklistModal = false;
+      pendingGeraet = null;
+    } catch (e) {
+      triggerFlash("error", e instanceof Error ? e.message : "Fehler beim Buchen des Geräts.");
+    } finally {
+      isSubmittingChecklist = false;
+      focusBookInput();
     }
   }
 
@@ -351,6 +402,7 @@
 </div>
 
 {@render reservationModal()}
+{@render checklistModal()}
 {@render damageModal()}
 
 {#snippet studentScanSection()}
@@ -407,6 +459,51 @@
 
         <div class="mt-6 pt-4 border-t border-slate-100 text-right">
           <button onclick={() => showVormerkenModal = false} class="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition-colors">Schließen</button>
+        </div>
+      </div>
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet checklistModal()}
+  {#if showChecklistModal && pendingGeraet}
+    <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full relative z-10 border border-slate-200">
+        <div class="mb-4 text-center">
+          <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">Hardware-Checkliste</h3>
+          <p class="text-slate-500 font-medium">{pendingGeraet.modellname}</p>
+        </div>
+
+        <div class="space-y-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <p class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">Bitte auf Vollständigkeit prüfen:</p>
+          {#each checklistItems as item}
+            <label class="flex items-center space-x-3 cursor-pointer group">
+              <input type="checkbox" 
+                checked={checkedItems.has(item)}
+                onchange={(e) => {
+                  if (e.target.checked) checkedItems.add(item);
+                  else checkedItems.delete(item);
+                  checkedItems = new Set(checkedItems);
+                }}
+                class="w-5 h-5 rounded text-amber-600 focus:ring-amber-500 border-slate-300" />
+              <span class="text-slate-700 font-medium group-hover:text-amber-700 transition-colors">{item}</span>
+            </label>
+          {/each}
+        </div>
+
+        <div class="flex space-x-3">
+          <button onclick={() => { showChecklistModal = false; pendingGeraet = null; }}
+            class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">
+            Abbrechen
+          </button>
+          <button onclick={handleChecklistSubmit} disabled={isSubmittingChecklist || checklistItems.length !== checkedItems.size}
+            class="flex-1 py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50 shadow-sm">
+            {isSubmittingChecklist ? "Speichere..." : "Bestätigen & Buchen"}
+          </button>
         </div>
       </div>
     </div>
