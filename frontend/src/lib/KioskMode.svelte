@@ -309,7 +309,7 @@
 
 {#snippet damageModal()}
   {#if returnedBook}
-    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none"></div>
       <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full relative z-10 border border-slate-200">
         <h3 class="text-xl font-bold text-slate-800 mb-2">Zustand in Ordnung?</h3>
@@ -322,8 +322,8 @@
           </div>
         {:else}
           <div class="space-y-4">
-            <label class="block text-sm font-semibold text-slate-700">Art des Mangels (Notiz)</label>
-            <textarea bind:value={damageDescription} rows="3" placeholder="z.B. Wasserschaden, Seite 15 fehlt..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none resize-none transition-all"></textarea>
+            <label for="damage-description" class="block text-sm font-semibold text-slate-700">Art des Mangels (Notiz)</label>
+            <textarea id="damage-description" bind:value={damageDescription} rows="3" placeholder="z.B. Wasserschaden, Seite 15 fehlt..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none resize-none transition-all"></textarea>
             <div class="flex gap-3 justify-end pt-2">
               <button onclick={() => showDamageInput = false} disabled={isSubmittingDamage} class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Abbrechen</button>
               <button onclick={handleDamageSubmit} disabled={isSubmittingDamage || !damageDescription.trim()} class="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">Mangel speichern</button>
