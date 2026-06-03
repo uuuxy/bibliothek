@@ -41,9 +41,6 @@
   /** Print-mode selector value — card printer vs A4 sheet. */
   let printMode = $state(/** @type {"card"|"a4"} */ ("card"));
 
-  /** Which card side will be sent to the printer. */
-  let printSide = $state(/** @type {"front"|"back"} */ ("front"));
-
   /** Canvas zoom percentage (80–300). */
   let zoom = $state(150);
 
@@ -130,7 +127,7 @@
       style.textContent = "@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }";
       document.body.setAttribute("data-print-mode", "card");
     }
-    document.body.setAttribute("data-print-side", printSide);
+    document.body.setAttribute("data-print-side", side);
     document.head.appendChild(style);
     window.print();
     document.head.removeChild(style);
@@ -145,7 +142,6 @@
     {zoom}           onZoom={(v) => { zoom = v; }}
     {side}           onSide={(s) => { side = s; selectedId = null; }}
     {printMode}      onPrintMode={(m) => { printMode = m; }}
-    {printSide}      onPrintSide={(s) => { printSide = s; }}
     onPrint={triggerPrint}
     {classesList}
     {selectedKlasse} onKlasse={(k) => { selectedKlasse = k; loadStudents(k); }}

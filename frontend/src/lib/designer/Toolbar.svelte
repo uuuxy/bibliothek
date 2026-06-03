@@ -19,7 +19,6 @@
    *   zoom: number, onZoom: (v: number) => void,
    *   side: 'front'|'back', onSide: (s: 'front'|'back') => void,
    *   printMode: 'card'|'a4', onPrintMode: (m: 'card'|'a4') => void,
-   *   printSide: 'front'|'back', onPrintSide: (s: 'front'|'back') => void,
    *   onPrint: () => void,
    *   classesList: string[], selectedKlasse: string, onKlasse: (k: string) => void,
    *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
@@ -31,7 +30,6 @@
     zoom, onZoom,
     side, onSide,
     printMode, onPrintMode,
-    printSide, onPrintSide,
     onPrint,
     classesList, selectedKlasse, onKlasse,
     barcodeType, onBarcodeType,
@@ -85,16 +83,11 @@
       printMode,
       (v) => onPrintMode(/** @type {'card'|'a4'} */ (v))
     )}
-    {@render toggleGroup(
-      [{ value: 'front', label: '🪪 Vorderseite' }, { value: 'back', label: '↩ Rückseite' }],
-      printSide,
-      (v) => onPrintSide(/** @type {'front'|'back'} */ (v))
-    )}
     <button
       onclick={onPrint}
       class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex items-center gap-2 shadow-xs cursor-pointer text-xs"
     >
-      🖨️ {printSide === 'back' ? 'Rückseiten drucken' : 'Ausweise drucken'}
+      🖨️ {side === 'back' ? 'Rückseiten drucken' : 'Vorderseiten drucken'}
     </button>
   </div>
 
