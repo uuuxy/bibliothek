@@ -306,7 +306,9 @@ INSERT INTO system_einstellungen (schluessel, wert) VALUES
     ('ferien_leseclub_aktiv', 'false'),
     ('ferien_leseclub_zieldatum', NULL),
     ('lmf_stichtag', '07-31'),
-    ('max_ausleihen_schueler', '5')
+    ('max_ausleihen_schueler', '5'),
+    ('frist_buch_tage', '21'),
+    ('frist_medien_tage', '7')
 ON CONFLICT (schluessel) DO NOTHING;
 
 -- ============================================================

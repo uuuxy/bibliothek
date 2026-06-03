@@ -1,0 +1,1637 @@
+PR 1
+diff --git a/inventur/isbn_validierung_test.go b/inventur/isbn_validierung_test.go
+new file mode 100644
+index 0000000..01a3283
+--- /dev/null
++++ b/inventur/isbn_validierung_test.go
+@@ -0,0 +1,45 @@
++package inventur
++
++import (
++	"testing"
++)
++
++func TestValidiereISBN(t *testing.T) {
++	tests := []struct {
++		name     string
++		isbn     string
++		expected bool
++	}{
++		// Valid ISBN-10
++		{"Valid ISBN-10", "123456789X", true},
++		{"Valid ISBN-10 with hyphens", "1-234-56789-X", true},
++		{"Valid ISBN-10 lowercase x", "123456789x", true},
++		{"Valid ISBN-10 numeric check digit", "1234567890", true},
++
++		// Valid ISBN-13
++		{"Valid ISBN-13", "9781234567890", true},
++		{"Valid ISBN-13 with hyphens", "978-1-234-56789-0", true},
++		{"Valid ISBN-13 with spaces", "978 1 234 56789 0", true},
++		{"Valid ISBN-13 with trailing X (valid per regex)", "978123456789X", true},
++
++		// Invalid formats
++		{"Empty string", "", false},
++		{"Too short", "123456789", false},
++		{"Too long", "97812345678901", false},
++		{"Invalid characters", "12345a7890", false},
++		{"Only hyphens", "---", false},
++
++		// Edge cases with spaces
++		{"Leading and trailing spaces", "  123456789X  ", true},
++		{"Only spaces", "     ", false},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			result := validiereISBN(tt.isbn)
++			if result != tt.expected {
++				t.Errorf("validiereISBN(%q) = %v; expected %v", tt.isbn, result, tt.expected)
++			}
++		})
++	}
++}
+=================
+PR 2
+diff --git a/inventur/import_verarbeitung_test.go b/inventur/import_verarbeitung_test.go
+index b232d31..27103fb 100644
+--- a/inventur/import_verarbeitung_test.go
++++ b/inventur/import_verarbeitung_test.go
+@@ -35,3 +35,32 @@ func TestInferGradeLevelFromTitle(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestInferSubjectFromTitle(t *testing.T) {
++	tests := []struct {
++		name     string
++		title    string
++		expected string
++	}{
++		{"Exact match", "Deutsch", "Deutsch"},
++		{"Case insensitive", "maThe", "Mathematik"},
++		{"Whitespace trimming", "  Physik  ", "Physik"},
++		{"Substring match", "Chemiebuch für Anfänger", "Chemie"},
++		{"Another substring match", "Einführung in die Biologie", "Biologie"},
++		{"Umlaut handling", "Französisch 1", "Französisch"},
++		{"Alternative spelling", "Franzoesisch 2", "Französisch"},
++		{"Multiple words keyword", "Natur und Technik 5", "Naturwissenschaften"},
++		{"No match", "Sport und Spiel", ""},
++		{"Multiple matches (returns first rule matched)", "Deutsch und Englisch", "Deutsch"}, // Deutsch is before Englisch in rules
++		{"Empty string", "", ""},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			result := inferSubjectFromTitle(tt.title)
++			if result != tt.expected {
++				t.Errorf("inferSubjectFromTitle(%q) = %q; want %q", tt.title, result, tt.expected)
++			}
++		})
++	}
++}
+=================
+PR 3
+diff --git a/Dockerfile b/Dockerfile
+index 34d6523..9035a94 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -63,7 +63,6 @@ EXPOSE 8081
+ # Environment variables defaults
+ ENV PORT=8081
+ ENV DATABASE_URL=""
+-ENV JWT_SECRET="super-secret-key-that-is-at-least-32-bytes-long"
+ ENV COOKIE_SECURE="false"
+ 
+ # Run the single-binary application
+=================
+PR 4
+diff --git a/inventur/import_verarbeitung_zeilen_test.go b/inventur/import_verarbeitung_zeilen_test.go
+new file mode 100644
+index 0000000..6694fb7
+--- /dev/null
++++ b/inventur/import_verarbeitung_zeilen_test.go
+@@ -0,0 +1,37 @@
++package inventur
++
++import (
++	"testing"
++)
++
++func TestParseKlassenStufe(t *testing.T) {
++	tests := []struct {
++		name     string
++		gradeStr string
++		title    string
++		expected int
++	}{
++		{"Valid grade string inside bounds", "7", "Any Title", 7},
++		{"Valid grade string lower bound", "5", "Any Title", 5},
++		{"Valid grade string upper bound", "10", "Any Title", 10},
++		{"Valid grade string below bounds", "4", "Any Title", 5},
++		{"Valid grade string above bounds", "11", "Any Title", 5},
++		{"Invalid grade string, title has valid grade", "abc", "Math 8", 8},
++		{"Invalid grade string, title has no grade", "abc", "Random Title", 5},
++		{"Invalid grade string, title grade below bounds", "abc", "Level 4", 5},
++		{"Invalid grade string, title grade above bounds", "abc", "Level 11", 5},
++		{"Grade string is zero, title has valid grade", "0", "English 9", 9},
++		{"Grade string is zero, title has no grade", "0", "Another Title", 5},
++		{"Grade string is empty, title has valid grade", "", "Science 6", 6},
++		{"Grade string is empty, title has no grade", "", "Science", 5},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			result := parseKlassenStufe(tt.gradeStr, tt.title)
++			if result != tt.expected {
++				t.Errorf("parseKlassenStufe(%q, %q) = %d; want %d", tt.gradeStr, tt.title, result, tt.expected)
++			}
++		})
++	}
++}
+=================
+PR 5
+diff --git a/inventur/class_books_handler_test.go b/inventur/class_books_handler_test.go
+new file mode 100644
+index 0000000..cec33b4
+--- /dev/null
++++ b/inventur/class_books_handler_test.go
+@@ -0,0 +1,91 @@
++package inventur
++
++import "testing"
++
++func TestFormatClassName(t *testing.T) {
++	tests := []struct {
++		name     string
++		input    string
++		expected string
++	}{
++		{
++			name:     "Empty string",
++			input:    "",
++			expected: "",
++		},
++		{
++			name:     "Single digit",
++			input:    "1",
++			expected: "01",
++		},
++		{
++			name:     "Single digit 9",
++			input:    "9",
++			expected: "09",
++		},
++		{
++			name:     "Two digits",
++			input:    "10",
++			expected: "10",
++		},
++		{
++			name:     "Two digits 11",
++			input:    "11",
++			expected: "11",
++		},
++		{
++			name:     "Starting with 0",
++			input:    "05",
++			expected: "05",
++		},
++		{
++			name:     "Starting with 0 single digit",
++			input:    "0",
++			expected: "0",
++		},
++		{
++			name:     "Digit and letter",
++			input:    "5A",
++			expected: "05A",
++		},
++		{
++			name:     "Two digits and letter",
++			input:    "10B",
++			expected: "10B",
++		},
++		{
++			name:     "With spaces single digit",
++			input:    " 5 C ",
++			expected: "05C",
++		},
++		{
++			name:     "With spaces two digits",
++			input:    " 10 B ",
++			expected: "10B",
++		},
++		{
++			name:     "Just letters",
++			input:    "A",
++			expected: "A",
++		},
++		{
++			name:     "Letters and spaces",
++			input:    " A B ",
++			expected: "AB",
++		},
++		{
++			name:     "Lowercase letters with digit",
++			input:    "5 b",
++			expected: "05b",
++		},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			result := formatClassName(tt.input)
++			if result != tt.expected {
++				t.Errorf("formatClassName(%q) = %q, want %q", tt.input, result, tt.expected)
++			}
++		})
++	}
++}
+=================
+PR 6
+diff --git a/auth/handlers.go b/auth/handlers.go
+index df4a607..899ec66 100644
+--- a/auth/handlers.go
++++ b/auth/handlers.go
+@@ -84,11 +84,8 @@ func AuthenticateIMAP(serverHostPort, email, password string) (bool, error) {
+ 	}
+ }
+ 
+-// verifyPassword checks a bcrypt password hash or dummy_passwort_hash fallback.
++// verifyPassword checks a bcrypt password hash.
+ func verifyPassword(hash, password string) bool {
+-	if hash == "dummy_passwort_hash" && password == "admin" {
+-		return true
+-	}
+ 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+ 	return err == nil
+ }
+diff --git a/auth/handlers_test.go b/auth/handlers_test.go
+new file mode 100644
+index 0000000..2522c68
+--- /dev/null
++++ b/auth/handlers_test.go
+@@ -0,0 +1,31 @@
++package auth
++
++import (
++	"testing"
++
++	"golang.org/x/crypto/bcrypt"
++)
++
++func TestVerifyPassword(t *testing.T) {
++	// 1. Ensure the dummy backdoor is removed
++	if verifyPassword("dummy_passwort_hash", "admin") {
++		t.Errorf("Expected verifyPassword with backdoor credentials to return false, got true")
++	}
++
++	// 2. Test valid bcrypt
++	password := "my_secure_password"
++	hashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
++	if err != nil {
++		t.Fatalf("Failed to generate bcrypt hash: %v", err)
++	}
++	hash := string(hashBytes)
++
++	if !verifyPassword(hash, password) {
++		t.Errorf("Expected verifyPassword to return true for correct password")
++	}
++
++	// 3. Test invalid bcrypt
++	if verifyPassword(hash, "wrong_password") {
++		t.Errorf("Expected verifyPassword to return false for incorrect password")
++	}
++}
+diff --git a/go.work b/go.work
+deleted file mode 100644
+index 50cb456..0000000
+--- a/go.work
++++ /dev/null
+@@ -1,6 +0,0 @@
+-go 1.26.1
+-
+-use (
+-	.
+-	../Inventur
+-)
+diff --git a/go.work.sum b/go.work.sum
+deleted file mode 100644
+index b52e25d..0000000
+--- a/go.work.sum
++++ /dev/null
+@@ -1,185 +0,0 @@
+-cel.dev/expr v0.24.0/go.mod h1:hLPLo1W4QUmuYdA72RBX06QTs6MXw941piREPl3Yfiw=
+-cloud.google.com/go v0.121.6/go.mod h1:coChdst4Ea5vUpiALcYKXEpR1S9ZgXbhEzzMcMR66vI=
+-cloud.google.com/go/auth v0.16.4/go.mod h1:j10ncYwjX/g3cdX7GpEzsdM+d+ZNsXAbb6qXA7p1Y5M=
+-cloud.google.com/go/auth/oauth2adapt v0.2.8/go.mod h1:XQ9y31RkqZCcwJWNSx2Xvric3RrU88hAYYbjDWYDL+c=
+-cloud.google.com/go/compute/metadata v0.8.0/go.mod h1:sYOGTp851OV9bOFJ9CH7elVvyzopvWQFNNghtDQ/Biw=
+-cloud.google.com/go/iam v1.5.2/go.mod h1:SE1vg0N81zQqLzQEwxL2WI6yhetBdbNQuTvIKCSkUHE=
+-cloud.google.com/go/longrunning v0.6.7/go.mod h1:EAFV3IZAKmM56TyiE6VAP3VoTzhZzySwI/YI1s/nRsY=
+-cloud.google.com/go/monitoring v1.24.2/go.mod h1:x7yzPWcgDRnPEv3sI+jJGBkwl5qINf+6qY4eq0I9B4U=
+-cloud.google.com/go/spanner v1.85.0/go.mod h1:9zhmtOEoYV06nE4Orbin0dc/ugHzZW9yXuvaM61rpxs=
+-cloud.google.com/go/storage v1.56.0/go.mod h1:Tpuj6t4NweCLzlNbw9Z9iwxEkrSem20AetIeH/shgVU=
+-github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4/go.mod h1:hN7oaIRCjzsZ2dE+yG5k+rsdt3qcwykqK6HVGcKwsw4=
+-github.com/99designs/keyring v1.2.1/go.mod h1:fc+wB5KTk9wQ9sDx0kFXB3A0MaeGHM9AwRStKOQ5vOA=
+-github.com/Azure/azure-sdk-for-go/sdk/azcore v1.4.0/go.mod h1:ON4tFdPTwRcgWEaVDrN3584Ef+b7GgSJaXxe5fW9t4M=
+-github.com/Azure/azure-sdk-for-go/sdk/internal v1.1.2/go.mod h1:eWRD7oawr1Mu1sLCawqVc0CUiF43ia3qQMxLscsKQ9w=
+-github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0/go.mod h1:2e8rMJtl2+2j+HXbTBwnyGpm5Nou7KhvSfxOq8JpTag=
+-github.com/Azure/go-autorest v14.2.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
+-github.com/Azure/go-autorest/autorest/adal v0.9.16/go.mod h1:tGMin8I49Yij6AQ+rvV+Xa/zwxYQB5hmsd6DkfAx2+A=
+-github.com/Azure/go-autorest/autorest/date v0.3.0/go.mod h1:BI0uouVdmngYNUzGWeSYnokU+TrmwEsOqdt8Y6sso74=
+-github.com/Azure/go-autorest/logger v0.2.1/go.mod h1:T9E3cAhj2VqvPOtCYAvby9aBXkZmbF5NWuPV8+WeEW8=
+-github.com/Azure/go-autorest/tracing v0.6.0/go.mod h1:+vhtPC754Xsa23ID7GlGsrdKBpUA79WCAKPPZVC2DeU=
+-github.com/ClickHouse/clickhouse-go v1.4.3/go.mod h1:EaI/sW7Azgz9UATzd5ZdZHRUhHgv5+JMS9NSr2smCJI=
+-github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.3/go.mod h1:dppbR7CwXD4pgtV9t3wD1812RaLDcBjtblcDF5f1vI0=
+-github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.27.0/go.mod h1:yAZHSGnqScoU556rBOVkwLze6WP5N+U11RHuWaGVxwY=
+-github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.53.0/go.mod h1:ZPpqegjbE99EPKsu3iUWV22A04wzGPcAY/ziSIQEEgs=
+-github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.53.0/go.mod h1:cSgYe11MCNYunTnRXrKiR/tHc0eoKjICUuWpNZoVCOo=
+-github.com/andybalholm/brotli v1.0.4/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
+-github.com/apache/arrow/go/v10 v10.0.1/go.mod h1:YvhnlEePVnBS4+0z3fhPfUy7W1Ikj0Ih0vcRo/gZ1M0=
+-github.com/apache/thrift v0.16.0/go.mod h1:PHK3hniurgQaNMZYaCLEqXKsYK8upmhPbmdP2FXSqgU=
+-github.com/aws/aws-sdk-go v1.49.6/go.mod h1:LF8svs817+Nz+DmiMQKTO3ubZ/6IaTpq3TjupRn3Eqk=
+-github.com/aws/aws-sdk-go-v2 v1.16.16/go.mod h1:SwiyXi/1zTUZ6KIAmLK5V5ll8SiURNUYOqTerZPaF9k=
+-github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.8/go.mod h1:JTnlBSot91steJeti4ryyu/tLd4Sk84O5W22L7O2EQU=
+-github.com/aws/aws-sdk-go-v2/credentials v1.12.20/go.mod h1:UKY5HyIux08bbNA7Blv4PcXQ8cTkGh7ghHMFklaviR4=
+-github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.33/go.mod h1:84XgODVR8uRhmOnUkKGUZKqIMxmjmLOR8Uyp7G/TPwc=
+-github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.23/go.mod h1:2DFxAQ9pfIRy0imBCJv+vZ2X6RKxves6fbnEuSry6b4=
+-github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.17/go.mod h1:pRwaTYCJemADaqCbUAxltMoHKata7hmB5PjEXeu0kfg=
+-github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.14/go.mod h1:AyGgqiKv9ECM6IZeNQtdT8NnMvUb3/2wokeq2Fgryto=
+-github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.9.9/go.mod h1:a9j48l6yL5XINLHLcOKInjdvknN+vWqPBxqeIDw7ktw=
+-github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.18/go.mod h1:NS55eQ4YixUJPTC+INxi2/jCqe1y2Uw3rnh9wEOVJxY=
+-github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.17/go.mod h1:4nYOrY41Lrbk2170/BGkcJKBhws9Pfn8MG3aGqjjeFI=
+-github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.13.17/go.mod h1:YqMdV+gEKCQ59NrB7rzrJdALeBIsYiVi8Inj3+KcqHI=
+-github.com/aws/aws-sdk-go-v2/service/s3 v1.27.11/go.mod h1:fmgDANqTUCxciViKl9hb/zD5LFbvPINFRgWhDbR+vZo=
+-github.com/aws/smithy-go v1.13.3/go.mod h1:Tg+OJXh4MB2R/uN61Ko2f6hTZwB/ZYGOtib8J3gBHzA=
+-github.com/cenkalti/backoff/v4 v4.1.2/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
+-github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
+-github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58/go.mod h1:EOBUe0h4xcZ5GoxqC5SDxFQ8gwyZPKQoEzownBlhI80=
+-github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443/go.mod h1:W+zGtBO5Y1IgJhy4+A9GOqVhqLpfZi+vwmdNXUehLA8=
+-github.com/cockroachdb/cockroach-go/v2 v2.1.1/go.mod h1:7NtUnP6eK+l6k483WSYNrq3Kb23bWV10IRV1TyeSpwM=
+-github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
+-github.com/cznic/mathutil v0.0.0-20180504122225-ca4c9f2c1369/go.mod h1:e6NPNENfs9mPDVNRekM7lKScauxd5kXTr1Mfyig6TDM=
+-github.com/danieljoos/wincred v1.1.2/go.mod h1:GijpziifJoIBfYh+S7BbkdUTU4LfM+QnGqR5Vl2tAx0=
+-github.com/dvsekhvalnov/jose2go v1.7.0/go.mod h1:QsHjhyTlD/lAVqn/NSbVZmSCGeDehTB/mPZadG+mhXU=
+-github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
+-github.com/envoyproxy/go-control-plane/envoy v1.32.4/go.mod h1:Gzjc5k8JcJswLjAx1Zm+wSYE20UrLtt7JZMWiWQXQEw=
+-github.com/envoyproxy/protoc-gen-validate v1.2.1/go.mod h1:d/C80l/jxXLdfEIhX1W2TmLfsJ31lvEjwamM4DxlWXU=
+-github.com/form3tech-oss/jwt-go v3.2.5+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
+-github.com/fsouza/fake-gcs-server v1.17.0/go.mod h1:D1rTE4YCyHFNa99oyJJ5HyclvN/0uQR+pM/VdlL83bw=
+-github.com/gabriel-vasile/mimetype v1.4.1/go.mod h1:05Vi0w3Y9c/lNvJOdmIwvrrAhX3rYhfQQCaf9VJcv7M=
+-github.com/go-jose/go-jose/v4 v4.0.5/go.mod h1:s3P1lRrkT8igV8D9OjyL4WRyHvjB6a4JSllnOrmmBOA=
+-github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
+-github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
+-github.com/gobuffalo/here v0.6.0/go.mod h1:wAG085dHOYqUpf+Ap+WOdrPTp5IYcDAs/x7PLa8Y5fM=
+-github.com/goccy/go-json v0.9.11/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
+-github.com/gocql/gocql v0.0.0-20210515062232-b7ef815b4556/go.mod h1:DL0ekTmBSTdlNF25Orwt/JMzqIq3EJ4MVa/J/uK64OY=
+-github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2/go.mod h1:bBOAhwG1umN6/6ZUMtDFBMQR8jRg9O75tm9K00oMsK4=
+-github.com/golang-jwt/jwt/v4 v4.5.2/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=
+-github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe/go.mod h1:8vg3r2VgvsThLBIFL93Qb5yWzgyZWhEmBwUJWevAkK0=
+-github.com/golang-sql/sqlexp v0.1.0/go.mod h1:J4ad9Vo8ZCWQ2GMrC4UCQy1JpCbwU9m3EOqtpKwwwHI=
+-github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
+-github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
+-github.com/google/flatbuffers v2.0.8+incompatible/go.mod h1:1AeVuKshWv4vARoZatz6mlQ0JxURH0Kv5+zNeJKJCa8=
+-github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+-github.com/google/go-github/v39 v39.2.0/go.mod h1:C1s8C5aCC9L+JXIYpJM5GYytdX52vC1bLvHEF1IhBrE=
+-github.com/google/go-querystring v1.1.0/go.mod h1:Kcdr2DB4koayq7X8pmAG4sNG59So17icRSOU623lUBU=
+-github.com/google/s2a-go v0.1.9/go.mod h1:YA0Ei2ZQL3acow2O62kdp9UlnvMmU7kA6Eutn0dXayM=
+-github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+-github.com/googleapis/enterprise-certificate-proxy v0.3.6/go.mod h1:MkHOF77EYAE7qfSuSS9PU6g4Nt4e11cnsDUowfwewLA=
+-github.com/googleapis/gax-go/v2 v2.15.0/go.mod h1:zVVkkxAQHa1RQpg9z2AUCMnKhi0Qld9rcmyfL1OZhoc=
+-github.com/gorilla/handlers v1.4.2/go.mod h1:Qkdc/uu4tH4g6mTK6auzZ766c4CA0Ng8+o/OAirnOIQ=
+-github.com/gorilla/mux v1.7.4/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
+-github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c/go.mod h1:NMPJylDgVpX0MLRlPy15sqSwOFv/U1GZ2m21JhFfek0=
+-github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed/go.mod h1:tMWxXQ9wFIaZeTI9F+hmhFiGpFmhOHzyShyFUhRm0H4=
+-github.com/jackc/chunkreader/v2 v2.0.1/go.mod h1:odVSm741yZoC3dpHEUXIqA9tQRhFrgOHwnPIn9lDKlk=
+-github.com/jackc/pgconn v1.14.3/go.mod h1:RZbme4uasqzybK2RK5c65VsHxoyaml09lx3tXOcO/VM=
+-github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa/go.mod h1:a/s9Lp5W7n/DD0VrVoyJ00FbP2ytTPDVOivvn2bMlds=
+-github.com/jackc/pgio v1.0.0/go.mod h1:oP+2QK2wFfUWgr+gxjoBH9KGBb31Eio69xUb0w5bYf8=
+-github.com/jackc/pgproto3/v2 v2.3.3/go.mod h1:WfJCnwN3HIg9Ish/j3sgWXnAfK8A9Y0bwXYU5xKaEdA=
+-github.com/jackc/pgtype v1.14.0/go.mod h1:LUMuVrfsFfdKGLw+AFFVv6KtHOFMwRgDDzBt76IqCA4=
+-github.com/jackc/pgx/v4 v4.18.2/go.mod h1:Ey4Oru5tH5sB6tV7hDmfWFahwF15Eb7DNXlRKx2CkVw=
+-github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
+-github.com/k0kubun/pp v2.3.0+incompatible/go.mod h1:GWse8YhT0p8pT4ir3ZgBbfZild3tgzSScAn6HmfYukg=
+-github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0/go.mod h1:1NbS8ALrpOvjt0rHPNLyCIeMtbizbir8U//inJ+zuB8=
+-github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51/go.mod h1:CzGEWj7cYgsdH8dAjBGEr58BoE7ScuLd+fwFZ44+/x8=
+-github.com/klauspost/asmfmt v1.3.2/go.mod h1:AG8TuvYojzulgDAMCnYn50l/5QV3Bs/tp6j0HLHbNSE=
+-github.com/klauspost/compress v1.15.11/go.mod h1:QPwzmACJjUTFsnSHH934V6woptycfrDDJnH7hvFVbGM=
+-github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
+-github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
+-github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
+-github.com/kr/pretty v0.3.0/go.mod h1:640gp4NfQd8pI5XOwp5fnNeVWj67G7CFk/SaSQn7NBk=
+-github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
+-github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+-github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
+-github.com/ktrysmt/go-bitbucket v0.6.4/go.mod h1:9u0v3hsd2rqCHRIpbir1oP7F58uo5dq19sBYvuMoyQ4=
+-github.com/markbates/pkger v0.15.1/go.mod h1:0JoVlrol20BSywW79rN3kdFFsE5xYM+rSCQDXbLhiuI=
+-github.com/mattn/go-colorable v0.1.6/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=
+-github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
+-github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
+-github.com/microsoft/go-mssqldb v1.0.0/go.mod h1:+4wZTUnz/SV6nffv+RRRB/ss8jPng5Sho2SmM1l2ts4=
+-github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8/go.mod h1:mC1jAcsrzbxHt8iiaC+zU4b1ylILSosueou12R++wfY=
+-github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3/go.mod h1:RagcQ7I8IeTMnF8JTXieKnO4Z6JCsikNEzj0DwauVzE=
+-github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
+-github.com/moby/sys/sequential v0.6.0/go.mod h1:uyv8EUTrca5PnDsdMGXhZe6CCe8U/UiTWd+lL+7b/Ko=
+-github.com/mtibben/percent v0.2.1/go.mod h1:KG9uO+SZkUp+VkRHsCdYQV3XSZrrSpR3O9ibNBTZrns=
+-github.com/mutecomm/go-sqlcipher/v4 v4.4.0/go.mod h1:PyN04SaWalavxRGH9E8ZftG6Ju7rsPrGmQRjrEaVpiY=
+-github.com/nakagami/firebirdsql v0.0.0-20190310045651-3c02a58cfed8/go.mod h1:86wM1zFnC6/uDBfZGNwB65O+pR2OFi5q/YQaEUid1qA=
+-github.com/neo4j/neo4j-go-driver v1.8.1-0.20200803113522-b626aa943eba/go.mod h1:ncO5VaFWh0Nrt+4KT4mOZboaczBZcLuHrG+/sUeP8gI=
+-github.com/onsi/ginkgo v1.16.4/go.mod h1:dX+/inL/fNMqNlz0e9LfyB9TswhZpCVdJM/Z6Vvnwo0=
+-github.com/onsi/gomega v1.15.0/go.mod h1:cIuvLEne0aoVhAgh/O6ac0Op8WWw9H6eYCriF+tEHG0=
+-github.com/pierrec/lz4/v4 v4.1.16/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
+-github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8/go.mod h1:HKlIX3XHQyzLZPlr7++PzdhaXEj94dEiJgZDTsxEqUI=
+-github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6gQbtLq5NM3loB8=
+-github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
+-github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
+-github.com/rqlite/gorqlite v0.0.0-20230708021416-2acd02b70b79/go.mod h1:xF/KoXmrRyahPfo5L7Szb5cAAUl53dMWBh9cMruGEZg=
+-github.com/shopspring/decimal v1.2.0/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
+-github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
+-github.com/snowflakedb/gosnowflake v1.6.19/go.mod h1:FM1+PWUdwB9udFDsXdfD58NONC0m+MlOSmQRvimobSM=
+-github.com/spiffe/go-spiffe/v2 v2.5.0/go.mod h1:P+NxobPc6wXhVtINNtFjNWGBTreew1GBUCwT2wPmb7g=
+-github.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=
+-github.com/xanzy/go-gitlab v0.15.0/go.mod h1:8zdQa/ri1dfn8eS3Ir1SyfvOKlw7WBJ8DVThkpGiXrs=
+-github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
+-github.com/xdg-go/scram v1.1.1/go.mod h1:RaEWvsqvNKKvBPvcKeFjrG2cJqOkHTiyTpzz23ni57g=
+-github.com/xdg-go/stringprep v1.0.3/go.mod h1:W3f5j4i+9rC0kuIEJL0ky1VpHXQU3ocBgklLGvcBnW8=
+-github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7JulP+udvsHwJoVG1YGAP6VLg4y9I5dyZdqmA=
+-github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+-github.com/zeebo/errs v1.4.0/go.mod h1:sgbWHsvVuTPHcqJJGQ1WhI5KbWlHYz+2+2C/LSEtCw4=
+-github.com/zeebo/xxh3 v1.0.2/go.mod h1:5NWz9Sef7zIDm2JHfFlcQvNekmcEl9ekUZQQKCYaDcA=
+-gitlab.com/nyarla/go-crypt v0.0.0-20160106005555-d9a5dc2b789b/go.mod h1:T3BPAOm2cqquPa0MKWeNkmOM5RQsRhkrwMWonFMN7fE=
+-go.mongodb.org/mongo-driver v1.7.5/go.mod h1:VXEWRZ6URJIkUq2SCAyapmhH0ZLRBP+FT4xhp5Zvxng=
+-go.opencensus.io v0.24.0/go.mod h1:vNK8G9p7aAivkbmorf4v+7Hgx+Zs0yY+0fOtgBfjQKo=
+-go.opentelemetry.io/contrib/detectors/gcp v1.36.0/go.mod h1:IbBN8uAIIx734PTonTPxAxnjc2pQTxWNkwfstZ+6H2k=
+-go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0/go.mod h1:snMWehoOh2wsEwnvvwtDyFCxVeDAODenXHtn5vzrKjo=
+-go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.29.0/go.mod h1:jlRVBe7+Z1wyxFSUs48L6OBQZ5JwH2Hg/Vbl+t9rAgI=
+-go.opentelemetry.io/otel/sdk v1.36.0/go.mod h1:+lC+mTgD+MUWfjJubi2vvXWcVxyr9rmlshZni72pXeY=
+-go.opentelemetry.io/otel/sdk/metric v1.36.0/go.mod h1:qTNOhFDfKRwX0yXOqJYegL5WRaW376QbB7P4Pb0qva4=
+-go.opentelemetry.io/proto/otlp v1.3.1/go.mod h1:0X1WI4de4ZsLrrJNLAQbFeLCm3T7yBkR0XqQ7niQU+8=
+-golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
+-golang.org/x/mod v0.32.0/go.mod h1:SgipZ/3h2Ci89DlEtEXWUk/HteuRin+HHhN+WbNhguU=
+-golang.org/x/oauth2 v0.30.0/go.mod h1:B++QgG3ZKulg6sRPGD/mqlHQs5rB3Ml9erfeDY7xKlU=
+-golang.org/x/sync v0.17.0/go.mod h1:9KTHXmSnoGruLpwFjVSX0lNNA75CykiMECbovNTZqGI=
+-golang.org/x/telemetry v0.0.0-20260109210033-bd525da824e2/go.mod h1:b7fPSJ0pKZ3ccUh8gnTONJxhn3c/PS6tyzQvyqw4iA8=
+-golang.org/x/term v0.40.0/go.mod h1:w2P8uVp06p2iyKKuvXIm7N/y0UCRt3UfJTfZ7oOpglM=
+-golang.org/x/text v0.29.0/go.mod h1:7MhJOA9CD2qZyOKYazxdYMF85OwPdEr9jTtBpO7ydH4=
+-golang.org/x/tools v0.41.0/go.mod h1:XSY6eDqxVNiYgezAVqqCeihT4j1U2CCsqvH3WhQpnlg=
+-golang.org/x/tools/godoc v0.1.0-deprecated/go.mod h1:qM63CriJ961IHWmnWa9CjZnBndniPt4a3CK0PVB9bIg=
+-golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028/go.mod h1:NDW/Ps6MPRej6fsCIbMTohpP40sJ/P/vI1MoTEGwX90=
+-google.golang.org/api v0.247.0/go.mod h1:r1qZOPmxXffXg6xS5uhx16Fa/UFY8QU/K4bfKrnvovM=
+-google.golang.org/genproto v0.0.0-20250603155806-513f23925822/go.mod h1:HubltRL7rMh0LfnQPkMH4NPDFEWp0jw3vixw7jEM53s=
+-google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c/go.mod h1:ea2MjsO70ssTfCjiwHgI0ZFqcw45Ksuk2ckf9G468GA=
+-google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c/go.mod h1:gw1tLEfykwDz2ET4a12jcXt4couGAm7IwsVaTy0Sflo=
+-google.golang.org/grpc v1.74.2/go.mod h1:CtQ+BGjaAIXHs/5YS3i473GqwBBa1zGQNevxdeBEXrM=
+-google.golang.org/protobuf v1.36.7/go.mod h1:jduwjTPXsFjZGTmRluh+L6NjiWu7pchiJ2/5YcXBHnY=
+-gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+-gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=
+-gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
+-gopkg.in/inf.v0 v0.9.1/go.mod h1:cWUDdTG/fYaXco+Dcufb5Vnc6Gp2YChqWtbxRZE0mXw=
+-lukechampine.com/uint128 v1.2.0/go.mod h1:c4eWIwlEGaxC/+H1VguhU4PHXNWDCDMUlWdIWl2j1gk=
+-modernc.org/b v1.0.0/go.mod h1:uZWcZfRj1BpYzfN9JTerzlNUnnPsV9O2ZA8JsRcubNg=
+-modernc.org/cc/v3 v3.36.3/go.mod h1:NFUHyPn4ekoC/JHeZFfZurN6ixxawE1BnVonP/oahEI=
+-modernc.org/ccgo/v3 v3.16.9/go.mod h1:zNMzC9A9xeNUepy6KuZBbugn3c0Mc9TeiJO4lgvkJDo=
+-modernc.org/db v1.0.0/go.mod h1:kYD/cO29L/29RM0hXYl4i3+Q5VojL31kTUVpVJDw0s8=
+-modernc.org/file v1.0.0/go.mod h1:uqEokAEn1u6e+J45e54dsEA/pw4o7zLrA2GwyntZzjw=
+-modernc.org/fileutil v1.0.0/go.mod h1:JHsWpkrk/CnVV1H/eGlFf85BEpfkrp56ro8nojIq9Q8=
+-modernc.org/golex v1.0.0/go.mod h1:b/QX9oBD/LhixY6NDh+IdGv17hgB+51fET1i2kPSmvk=
+-modernc.org/internal v1.0.0/go.mod h1:VUD/+JAkhCpvkUitlEOnhpVxCgsBI90oTzSCRcqQVSM=
+-modernc.org/libc v1.17.1/go.mod h1:FZ23b+8LjxZs7XtFMbSzL/EhPxNbfZbErxEHc7cbD9s=
+-modernc.org/lldb v1.0.0/go.mod h1:jcRvJGWfCGodDZz8BPwiKMJxGJngQ/5DrRapkQnLob8=
+-modernc.org/mathutil v1.5.0/go.mod h1:mZW8CKdRPY1v87qxC/wUdX5O1qDzXMP5TH3wjfpga6E=
+-modernc.org/memory v1.2.1/go.mod h1:PkUhL0Mugw21sHPeskwZW4D6VscE/GQJOnIpCnW6pSU=
+-modernc.org/opt v0.1.3/go.mod h1:WdSiB5evDcignE70guQKxYUl14mgWtbClRi5wmkkTX0=
+-modernc.org/ql v1.0.0/go.mod h1:xGVyrLIatPcO2C1JvI/Co8c0sr6y91HKFNy4pt9JXEY=
+-modernc.org/sortutil v1.1.0/go.mod h1:ZyL98OQHJgH9IEfN71VsamvJgrtRX9Dj2gX+vH86L1k=
+-modernc.org/sqlite v1.18.1/go.mod h1:6ho+Gow7oX5V+OiOQ6Tr4xeqbx13UZ6t+Fw9IRUG4d4=
+-modernc.org/strutil v1.1.3/go.mod h1:MEHNA7PdEnEwLvspRMtWTNnp2nnyvMfkimT1NKNAGbw=
+-modernc.org/token v1.0.0/go.mod h1:UGzOrNV1mAFSEB63lOFHIpNRUVMvYTc6yu1SMY/XTDM=
+-modernc.org/zappy v1.0.0/go.mod h1:hHe+oGahLVII/aTTyWK/b53VDHMAGCBYYeZ9sn83HC4=
+=================
+PR 7
+diff --git a/docker-compose.yml b/docker-compose.yml
+index ba5cd9b..b83e2d4 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -29,7 +29,7 @@ services:
+     environment:
+       - PORT=8081
+       - DATABASE_URL=postgres://postgres:postgrespassword@db:5432/bibliothek?sslmode=disable
+-      - JWT_SECRET=super-secret-key-that-is-at-least-32-bytes-long
++      - JWT_SECRET=${JWT_SECRET}
+       - COOKIE_SECURE=false
+     volumes:
+       - bibliothek_uploads:/app/uploads
+=================
+PR 8
+diff --git a/main.go b/main.go
+index 73e4e39..c107081 100644
+--- a/main.go
++++ b/main.go
+@@ -22,7 +22,7 @@ import (
+ // mounts middleware-protected routes, and starts the server with graceful shutdown.
+ func main() {
+ 	// 1. Config environment resolution
+-	dsn := getEnv("DATABASE_URL", "postgres://postgres:postgrespassword@localhost:5433/bibliothek?sslmode=disable")
++	dsn := getEnv("DATABASE_URL", "postgres://postgres@localhost:5433/bibliothek?sslmode=disable")
+ 	
+ 	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
+ 	jwtSecret := os.Getenv("JWT_SECRET")
+=================
+PR 9
+diff --git a/inventur/import_verarbeitung_test.go b/inventur/import_verarbeitung_test.go
+index b232d31..46f57ab 100644
+--- a/inventur/import_verarbeitung_test.go
++++ b/inventur/import_verarbeitung_test.go
+@@ -24,6 +24,16 @@ func TestInferGradeLevelFromTitle(t *testing.T) {
+ 		{"Number out of bounds", "Math 101", 0},
+ 		{"Digit at start", "9 Math", 9},
+ 		{"Multiple valid digits (finds first)", "Math 7 and 8", 7},
++		{"Year before grade", "2023 Edition Grade 8", 8},
++		{"Year after grade", "Grade 8 (2023)", 8},
++		{"Grade with slash", "Grade 5/6", 5},
++		{"Grade with dash", "Klasse 7-8", 7},
++		{"Grade list with comma", "Grade 1,2,3", 1},
++		{"Ordinal format", "10. Klasse", 10},
++		{"Leading zero ignored", "Grade 08", 0},
++		{"Volume or Band", "Band 5", 5},
++		{"Language level A1", "English A1", 1},
++		{"Language level B2", "French B2", 2},
+ 	}
+ 
+ 	for _, tt := range tests {
+=================
+PR 10
+diff --git a/inventur/response_test.go b/inventur/response_test.go
+new file mode 100644
+index 0000000..c57d422
+--- /dev/null
++++ b/inventur/response_test.go
+@@ -0,0 +1,64 @@
++package inventur
++
++import (
++	"encoding/json"
++	"net/http"
++	"net/http/httptest"
++	"testing"
++)
++
++func TestWriteJSON(t *testing.T) {
++	t.Run("ValidPayload", func(t *testing.T) {
++		recorder := httptest.NewRecorder()
++		payload := map[string]string{"message": "success"}
++
++		writeJSON(recorder, http.StatusOK, payload)
++
++		if recorder.Code != http.StatusOK {
++			t.Errorf("expected status %d, got %d", http.StatusOK, recorder.Code)
++		}
++
++		contentType := recorder.Header().Get("Content-Type")
++		expectedContentType := "application/json; charset=utf-8"
++		if contentType != expectedContentType {
++			t.Errorf("expected Content-Type %q, got %q", expectedContentType, contentType)
++		}
++
++		var response map[string]string
++		if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
++			t.Fatalf("failed to parse JSON response: %v", err)
++		}
++
++		if response["message"] != "success" {
++			t.Errorf("expected message 'success', got %v", response["message"])
++		}
++	})
++
++	t.Run("NilPayload", func(t *testing.T) {
++		recorder := httptest.NewRecorder()
++
++		writeJSON(recorder, http.StatusNoContent, nil)
++
++		if recorder.Code != http.StatusNoContent {
++			t.Errorf("expected status %d, got %d", http.StatusNoContent, recorder.Code)
++		}
++
++		if recorder.Body.String() != "null\n" {
++			t.Errorf("expected body 'null\\n', got %q", recorder.Body.String())
++		}
++	})
++
++	t.Run("UnencodablePayload", func(t *testing.T) {
++		recorder := httptest.NewRecorder()
++
++		// A channel cannot be encoded to JSON
++		payload := make(chan int)
++
++		// This should not panic
++		writeJSON(recorder, http.StatusInternalServerError, payload)
++
++		if recorder.Code != http.StatusInternalServerError {
++			t.Errorf("expected status %d, got %d", http.StatusInternalServerError, recorder.Code)
++		}
++	})
++}
+=================
+PR 11
+diff --git a/api/action_types.go b/api/action_types.go
+index c02baef..0966081 100644
+--- a/api/action_types.go
++++ b/api/action_types.go
+@@ -17,15 +17,15 @@ type ActionRequest struct {
+ 
+ // ActionResponse is the polymorphic output payload returned by the Omnibox.
+ type ActionResponse struct {
+-	Type            string                 `json:"type"`                     // "student", "teacher", "ausleihe", "rueckgabe", "search_results"
+-	Student         *repository.Student    `json:"student,omitempty"`        // The active student, or original borrower
+-	Teacher         *repository.User       `json:"teacher,omitempty"`        // The active teacher borrower (Handapparat)
+-	Book            *repository.BookCopy   `json:"book,omitempty"`           // Book copy details if applicable
+-	DueDate         *time.Time             `json:"due_date,omitempty"`       // Return deadline for check-outs
+-	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"` // Flag for returns from another student/teacher
+-	Vorbesitzer     *repository.Student    `json:"vorbesitzer,omitempty"`    // Original student borrower if foreign return
++	Type            string                 `json:"type"`                       // "student", "teacher", "ausleihe", "rueckgabe", "search_results"
++	Student         *repository.Student    `json:"student,omitempty"`          // The active student, or original borrower
++	Teacher         *repository.User       `json:"teacher,omitempty"`          // The active teacher borrower (Handapparat)
++	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable
++	DueDate         *time.Time             `json:"due_date,omitempty"`         // Return deadline for check-outs
++	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another student/teacher
++	Vorbesitzer     *repository.Student    `json:"vorbesitzer,omitempty"`      // Original student borrower if foreign return
+ 	VorbesitzerUser *repository.User       `json:"vorbesitzer_user,omitempty"` // Original teacher borrower if foreign return
+-	SearchResults   []repository.BookTitle `json:"search_results,omitempty"` // Full-text search list
++	SearchResults   []repository.BookTitle `json:"search_results,omitempty"`   // Full-text search list
+ }
+ 
+ // ActionEvent represents the data broadcasted to SSE clients on updates.
+diff --git a/api/admin.go b/api/admin.go
+index 3f1187c..0d3c441 100644
+--- a/api/admin.go
++++ b/api/admin.go
+@@ -180,14 +180,14 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
+ 
+ // AuditLogEntry represents a joined row in the audit log table.
+ type AuditLogEntry struct {
+-	ID                string    `json:"id"`
+-	Tabelle           string    `json:"tabelle"`
+-	Aktion            string    `json:"aktion"`
+-	DatensatzID       string    `json:"datensatz_id"`
+-	Timestamp         time.Time `json:"timestamp"`
+-	BearbeiterID      string    `json:"bearbeiter_id"`
+-	BearbeiterVorname string    `json:"bearbeiter_vorname"`
+-	BearbeiterNachname string   `json:"bearbeiter_nachname"`
++	ID                 string    `json:"id"`
++	Tabelle            string    `json:"tabelle"`
++	Aktion             string    `json:"aktion"`
++	DatensatzID        string    `json:"datensatz_id"`
++	Timestamp          time.Time `json:"timestamp"`
++	BearbeiterID       string    `json:"bearbeiter_id"`
++	BearbeiterVorname  string    `json:"bearbeiter_vorname"`
++	BearbeiterNachname string    `json:"bearbeiter_nachname"`
+ }
+ 
+ // GetAuditLogsHandler returns logs of immutable security events.
+@@ -251,9 +251,9 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
+ 		defer rows.Close()
+ 
+ 		type CopyResponse struct {
+-			ID           string `json:"id"`
+-			BarcodeID    string `json:"barcode_id"`
+-			ZustandNotiz string `json:"zustand_notiz"`
++			ID            string `json:"id"`
++			BarcodeID     string `json:"barcode_id"`
++			ZustandNotiz  string `json:"zustand_notiz"`
+ 			IstAusleihbar bool   `json:"ist_ausleihbar"`
+ 		}
+ 
+diff --git a/api/barcode.go b/api/barcode.go
+index 85f678e..90bd52b 100644
+--- a/api/barcode.go
++++ b/api/barcode.go
+@@ -155,7 +155,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
+ 			LIMIT 1
+ 		`
+ 		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
+-		
++
+ 		startNum := 10001
+ 		if err == nil {
+ 			re := regexp.MustCompile(`B-(\d+)`)
+@@ -228,7 +228,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
+ 			pdf.SetFont("Arial", "B", 8)
+ 			pdf.SetXY(x+2, y+3)
+ 			pdf.Cell(colWidth-4, 4, tr(titel))
+-			
++
+ 			pdf.SetFont("Arial", "", 7)
+ 			pdf.SetXY(x+2, y+7)
+ 			pdf.Cell(colWidth-4, 4, tr(autor))
+diff --git a/api/order_pdf.go b/api/order_pdf.go
+index 24a73da..81861c5 100644
+--- a/api/order_pdf.go
++++ b/api/order_pdf.go
+@@ -134,7 +134,7 @@ func GenerateBarcodeSheetPDF(labels []BarcodeLabelDetail) ([]byte, error) {
+ 		pdf.SetFont("Arial", "B", 8)
+ 		pdf.SetXY(x+2, y+3)
+ 		pdf.Cell(colWidth-4, 4, tr(label.Titel))
+-		
++
+ 		pdf.SetFont("Arial", "", 7)
+ 		pdf.SetXY(x+2, y+7)
+ 		pdf.Cell(colWidth-4, 4, tr(label.Autor))
+diff --git a/api/pdf.go b/api/pdf.go
+index 84c9211..d7717a2 100644
+--- a/api/pdf.go
++++ b/api/pdf.go
+@@ -145,7 +145,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
+ 		// Stream the generated PDF
+ 		w.Header().Set("Content-Type", "application/pdf")
+ 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=elternbrief_%s.pdf", sNachname))
+-		
++
+ 		if err := pdf.Output(w); err != nil {
+ 			log.Printf("PDF Generator: Output error: %v", err)
+ 			return
+diff --git a/api/router.go b/api/router.go
+index 8bc5a03..6d9bbbc 100644
+--- a/api/router.go
++++ b/api/router.go
+@@ -49,7 +49,7 @@ func (s *Server) Routes() http.Handler {
+ 	_ = os.MkdirAll("uploads", 0755)
+ 	invRepo := inventur.NewBookRepository(s.DB.Pool)
+ 	invMeta := inventur.NeuerMetadatenClient()
+-	
++
+ 	// Fail hard if JWT_SECRET is missing during route initialization
+ 	jwtSecret := os.Getenv("JWT_SECRET")
+ 	if jwtSecret == "" {
+@@ -75,7 +75,7 @@ func (s *Server) Routes() http.Handler {
+ 
+ 	// Public Endpoints
+ 	mux.HandleFunc("POST /login/barcode", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
+-	
++
+ 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+ 		w.Header().Set("Content-Type", "application/json")
+ 		_, _ = w.Write([]byte(`{"status":"healthy"}`))
+@@ -97,7 +97,7 @@ func (s *Server) Routes() http.Handler {
+ 	})
+ 
+ 	// Protected Endpoints (RBAC Middleware checking roles: admin, lehrer, mitarbeiter)
+-	
++
+ 	// Central Omnibox Action Dispatcher
+ 	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
+ 	mux.Handle("POST /api/action", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer, auth.RoleMitarbeiter)(actionHandler))
+diff --git a/api/stats.go b/api/stats.go
+index 1cbfa57..a1449a5 100644
+--- a/api/stats.go
++++ b/api/stats.go
+@@ -17,13 +17,13 @@ import (
+ 
+ // ReorderTitle represents a book title that has fallen below its reorder point.
+ type ReorderTitle struct {
+-	ID               string `json:"id"`
+-	Titel            string `json:"titel"`
+-	Autor            string `json:"autor"`
+-	ISBN             string `json:"isbn"`
+-	Verlag           string `json:"verlag"`
+-	CoverURL         string `json:"cover_url,omitempty"`
+-	Meldebestand     int    `json:"meldebestand"`
++	ID                string `json:"id"`
++	Titel             string `json:"titel"`
++	Autor             string `json:"autor"`
++	ISBN              string `json:"isbn"`
++	Verlag            string `json:"verlag"`
++	CoverURL          string `json:"cover_url,omitempty"`
++	Meldebestand      int    `json:"meldebestand"`
+ 	VerfuegbarBestand int    `json:"verfuegbarer_bestand"`
+ }
+ 
+diff --git a/auth/handlers.go b/auth/handlers.go
+index df4a607..eba846c 100644
+--- a/auth/handlers.go
++++ b/auth/handlers.go
+@@ -45,7 +45,7 @@ func AuthenticateIMAP(serverHostPort, email, password string) (bool, error) {
+ 		Timeout: 5 * time.Second,
+ 	}
+ 	conn, err := tls.DialWithDialer(dialer, "tcp", serverHostPort, &tls.Config{
+-		InsecureSkipVerify: true,
++		InsecureSkipVerify: false,
+ 	})
+ 	if err != nil {
+ 		return false, fmt.Errorf("IMAP connection failed: %w", err)
+@@ -161,7 +161,7 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
+ 			if pin == "" {
+ 				pin = req.Password
+ 			}
+-			
++
+ 			// Support barcode:pin combined scanners
+ 			if pin == "" && strings.Contains(barcodeID, ":") {
+ 				parts := strings.SplitN(barcodeID, ":", 2)
+diff --git a/inventur/api_routen_test.go b/inventur/api_routen_test.go
+index 3045b42..b277d53 100644
+--- a/inventur/api_routen_test.go
++++ b/inventur/api_routen_test.go
+@@ -147,7 +147,7 @@ func TestRequireAuth(t *testing.T) {
+ 		}
+ 	})
+ 
+-    t.Run("ValidAdminToken_GET", func(t *testing.T) {
++	t.Run("ValidAdminToken_GET", func(t *testing.T) {
+ 		token, _ := handler.issueToken(true)
+ 		req := httptest.NewRequest(http.MethodGet, "/api/books", nil)
+ 		req.AddCookie(&http.Cookie{Name: handler.adminCookie, Value: token})
+diff --git a/inventur/metadaten_helfer_test.go b/inventur/metadaten_helfer_test.go
+index 79507d0..5d08489 100644
+--- a/inventur/metadaten_helfer_test.go
++++ b/inventur/metadaten_helfer_test.go
+@@ -111,11 +111,11 @@ func TestKonvertiereISBN10zu13(t *testing.T) {
+ 			isbn: "978-3-86680-192-9",
+ 			want: "9783866801929",
+ 		},
+-        {
+-            name: "Invalid ISBN-10 length",
+-            isbn: "123",
+-            want: "123",
+-        },
++		{
++			name: "Invalid ISBN-10 length",
++			isbn: "123",
++			want: "123",
++		},
+ 	}
+ 
+ 	for _, tt := range tests {
+diff --git a/main.go b/main.go
+index 73e4e39..e52edc8 100644
+--- a/main.go
++++ b/main.go
+@@ -23,16 +23,16 @@ import (
+ func main() {
+ 	// 1. Config environment resolution
+ 	dsn := getEnv("DATABASE_URL", "postgres://postgres:postgrespassword@localhost:5433/bibliothek?sslmode=disable")
+-	
++
+ 	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
+ 	jwtSecret := os.Getenv("JWT_SECRET")
+ 	if jwtSecret == "" {
+ 		log.Fatal("FATAL: JWT_SECRET environment variable is required and cannot be empty")
+ 	}
+-	
++
+ 	// Default port set to 8081 to avoid proxy mismatches with Svelte Vite dev server
+ 	port := getEnv("PORT", "8081")
+-	
++
+ 	cookieSecure, err := strconv.ParseBool(getEnv("COOKIE_SECURE", "false"))
+ 	if err != nil {
+ 		cookieSecure = false
+diff --git a/repository/models.go b/repository/models.go
+index e537436..4aae5d9 100644
+--- a/repository/models.go
++++ b/repository/models.go
+@@ -51,7 +51,7 @@ type BookCopy struct {
+ 	IstAusleihbar  bool      `json:"ist_ausleihbar"`
+ 	ErstelltAm     time.Time `json:"erstellt_am"`
+ 	AktualisiertAm time.Time `json:"aktualisiert_am"`
+-	
++
+ 	// Joined fields from associated BookTitle
+ 	Titel    string `json:"titel"`
+ 	Autor    string `json:"autor"`
+=================
+PR 12
+diff --git a/api/barcode.go b/api/barcode.go
+index 85f678e..d59a479 100644
+--- a/api/barcode.go
++++ b/api/barcode.go
+@@ -155,7 +155,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
+ 			LIMIT 1
+ 		`
+ 		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
+-		
++
+ 		startNum := 10001
+ 		if err == nil {
+ 			re := regexp.MustCompile(`B-(\d+)`)
+@@ -209,6 +209,9 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
+ 		cols := 3
+ 		margin := 10.0
+ 
++		trTitel := tr(titel)
++		trAutor := tr(autor)
++
+ 		for idx, barcodeID := range newBarcodes {
+ 			colIdx := idx % cols
+ 			rowIdx := (idx / cols) % 7 // 7 rows per page
+@@ -227,11 +230,11 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
+ 			// Print metadata inside label
+ 			pdf.SetFont("Arial", "B", 8)
+ 			pdf.SetXY(x+2, y+3)
+-			pdf.Cell(colWidth-4, 4, tr(titel))
+-			
++			pdf.Cell(colWidth-4, 4, trTitel)
++
+ 			pdf.SetFont("Arial", "", 7)
+ 			pdf.SetXY(x+2, y+7)
+-			pdf.Cell(colWidth-4, 4, tr(autor))
++			pdf.Cell(colWidth-4, 4, trAutor)
+ 
+ 			// Generate and register barcode PNG from memory
+ 			barcodeImg, err := GenerateBarcodePNG(barcodeID, false, 250, 70)
+diff --git a/go.work b/go.work
+index 50cb456..2b00edf 100644
+--- a/go.work
++++ b/go.work
+@@ -2,5 +2,4 @@ go 1.26.1
+ 
+ use (
+ 	.
+-	../Inventur
+ )
+=================
+PR 13
+diff --git a/api/lusd_import.go b/api/lusd_import.go
+index 47aaa29..198f20c 100644
+--- a/api/lusd_import.go
++++ b/api/lusd_import.go
+@@ -12,6 +12,8 @@ import (
+ 	"strings"
+ 	"time"
+ 
++	"github.com/jackc/pgx/v5"
++
+ 	"bibliothek/apierrors"
+ )
+ 
+@@ -113,7 +115,16 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+ 		var updatedCount int
+ 		lineNum := 1
+ 
+-		// 5. Parse rows and execute Upserts
++		type csvRow struct {
++			lusdID   string
++			vorname  string
++			nachname string
++			klasse   string
++			lineNum  int
++		}
++		var parsedRows []csvRow
++
++		// 5. Parse rows and collect them
+ 		for {
+ 			row, err := reader.Read()
+ 			if err == io.EOF {
+@@ -136,39 +147,76 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+ 			}
+ 
+ 			lusdIDs = append(lusdIDs, lusdID)
++			parsedRows = append(parsedRows, csvRow{
++				lusdID:   lusdID,
++				vorname:  vorname,
++				nachname: nachname,
++				klasse:   klasse,
++				lineNum:  lineNum,
++			})
++		}
+ 
+-			var dbID string
+-			err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
+-			if err == nil {
+-				// Student exists -> update vorname, nachname, klasse, clear abgänger flag
+-				qUpdate := `
+-					UPDATE schueler
+-					SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
+-					WHERE id = $4
+-				`
+-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID)
+-				if err != nil {
+-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+-					return
++		// 5a. Fetch all existing lusd_ids
++		existingMap := make(map[string]bool)
++		if len(lusdIDs) > 0 {
++			qExisting := `SELECT lusd_id FROM schueler WHERE lusd_id = ANY($1)`
++			rows, err := tx.Query(ctx, qExisting, lusdIDs)
++			if err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to fetch existing students: %w", err))
++				return
++			}
++			for rows.Next() {
++				var id string
++				if err := rows.Scan(&id); err == nil {
++					existingMap[id] = true
+ 				}
++			}
++			rows.Close()
++			if err := rows.Err(); err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("error iterating existing students: %w", err))
++				return
++			}
++		}
++
++		// 5b. Queue batched updates and inserts
++		batch := &pgx.Batch{}
++		qUpdate := `
++			UPDATE schueler
++			SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
++			WHERE lusd_id = $4
++		`
++		qInsert := `
++			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
++			VALUES ($1, $2, $3, $4, $5, $6, false)
++		`
++		defaultAbgaengerJahr := time.Now().Year() + 5
++
++		for _, r := range parsedRows {
++			if existingMap[r.lusdID] {
++				batch.Queue(qUpdate, r.vorname, r.nachname, r.klasse, r.lusdID)
+ 				updatedCount++
+ 			} else {
+-				// Student does not exist -> insert new student with generated S- barcode
+ 				barcodeID := fmt.Sprintf("S-%05d", startNum)
+ 				startNum++
++				batch.Queue(qInsert, barcodeID, r.vorname, r.nachname, r.klasse, defaultAbgaengerJahr, r.lusdID)
++				newCount++
++			}
++		}
+ 
+-				defaultAbgaengerJahr := time.Now().Year() + 5
+-
+-				qInsert := `
+-					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
+-					VALUES ($1, $2, $3, $4, $5, $6, false)
+-				`
+-				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
++		if batch.Len() > 0 {
++			br := tx.SendBatch(ctx, batch)
++			for i := 0; i < batch.Len(); i++ {
++				_, err := br.Exec()
+ 				if err != nil {
+-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
++					br.Close()
++					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("batch execution failed at index %d: %w", i, err))
+ 					return
+ 				}
+-				newCount++
++			}
++			err = br.Close()
++			if err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to close batch: %w", err))
++				return
+ 			}
+ 		}
+ 
+diff --git a/api/lusd_import_bench_test.go b/api/lusd_import_bench_test.go
+new file mode 100644
+index 0000000..762361e
+--- /dev/null
++++ b/api/lusd_import_bench_test.go
+@@ -0,0 +1,81 @@
++package api
++
++import (
++	"bytes"
++	"context"
++	"fmt"
++	"io"
++	"mime/multipart"
++	"net/http"
++	"net/http/httptest"
++	"os"
++	"testing"
++
++	"bibliothek/db"
++)
++
++func createBenchCSVBytes(numRows int) []byte {
++	var b bytes.Buffer
++	b.WriteString("lusd_id,vorname,nachname,klasse\n")
++	for i := 0; i < numRows; i++ {
++		b.WriteString(fmt.Sprintf("ID-%05d,Vorname%d,Nachname%d,10A\n", i, i, i))
++	}
++	return b.Bytes()
++}
++
++func BenchmarkImportLUSDHandler(b *testing.B) {
++	databaseURL := os.Getenv("DATABASE_URL")
++	if databaseURL == "" {
++		databaseURL = "postgres://postgres:postgres@localhost:5432/bibliothek_test?sslmode=disable"
++	}
++
++	database, err := db.Connect(context.Background(), databaseURL)
++	if err != nil {
++		b.Fatalf("Failed to connect to db: %v", err)
++	}
++
++	server := &Server{DB: database}
++	handler := server.ImportLUSDHandler()
++
++	csvData := createBenchCSVBytes(1000)
++
++	b.ResetTimer()
++	for i := 0; i < b.N; i++ {
++		b.StopTimer()
++
++		// Clean table before each run
++		_, err := database.Pool.Exec(context.Background(), "TRUNCATE TABLE schueler CASCADE;")
++		if err != nil {
++			b.Fatalf("Failed to truncate table: %v", err)
++		}
++
++		body := new(bytes.Buffer)
++		writer := multipart.NewWriter(body)
++		part, err := writer.CreateFormFile("file", "test.csv")
++		if err != nil {
++			b.Fatalf("CreateFormFile failed: %v", err)
++		}
++
++		_, err = io.Copy(part, bytes.NewReader(csvData))
++		if err != nil {
++			b.Fatalf("Copy failed: %v", err)
++		}
++
++		err = writer.Close()
++		if err != nil {
++			b.Fatalf("Close failed: %v", err)
++		}
++
++		req := httptest.NewRequest("POST", "/import", body)
++		req.Header.Set("Content-Type", writer.FormDataContentType())
++		rr := httptest.NewRecorder()
++
++		b.StartTimer()
++		handler.ServeHTTP(rr, req)
++		b.StopTimer()
++
++		if rr.Code != http.StatusOK {
++			b.Fatalf("Handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
++		}
++	}
++}
+diff --git a/go.work b/go.work
+index 50cb456..2b00edf 100644
+--- a/go.work
++++ b/go.work
+@@ -2,5 +2,4 @@ go 1.26.1
+ 
+ use (
+ 	.
+-	../Inventur
+ )
+diff --git a/go.work.sum b/go.work.sum
+index b52e25d..15b53ff 100644
+--- a/go.work.sum
++++ b/go.work.sum
+@@ -95,6 +95,7 @@ github.com/klauspost/compress v1.15.11/go.mod h1:QPwzmACJjUTFsnSHH934V6woptycfrD
+ github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
+ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
+ github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
++github.com/kr/pretty v0.3.0 h1:WgNl7dwNpEZ6jJ9k1snq4pZsg7DOEN8hP9Xw0Tsjwk0=
+ github.com/kr/pretty v0.3.0/go.mod h1:640gp4NfQd8pI5XOwp5fnNeVWj67G7CFk/SaSQn7NBk=
+ github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
+ github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+@@ -115,16 +116,20 @@ github.com/nakagami/firebirdsql v0.0.0-20190310045651-3c02a58cfed8/go.mod h1:86w
+ github.com/neo4j/neo4j-go-driver v1.8.1-0.20200803113522-b626aa943eba/go.mod h1:ncO5VaFWh0Nrt+4KT4mOZboaczBZcLuHrG+/sUeP8gI=
+ github.com/onsi/ginkgo v1.16.4/go.mod h1:dX+/inL/fNMqNlz0e9LfyB9TswhZpCVdJM/Z6Vvnwo0=
+ github.com/onsi/gomega v1.15.0/go.mod h1:cIuvLEne0aoVhAgh/O6ac0Op8WWw9H6eYCriF+tEHG0=
++github.com/phpdave11/gofpdi v1.0.7 h1:k2oy4yhkQopCK+qW8KjCla0iU2RpDow+QUDmH9DDt44=
+ github.com/pierrec/lz4/v4 v4.1.16/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
+ github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8/go.mod h1:HKlIX3XHQyzLZPlr7++PzdhaXEj94dEiJgZDTsxEqUI=
++github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
+ github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6gQbtLq5NM3loB8=
+ github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
+ github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
+ github.com/rqlite/gorqlite v0.0.0-20230708021416-2acd02b70b79/go.mod h1:xF/KoXmrRyahPfo5L7Szb5cAAUl53dMWBh9cMruGEZg=
++github.com/ruudk/golang-pdf417 v0.0.0-20181029194003-1af4ab5afa58 h1:nlG4Wa5+minh3S9LVFtNoY+GVRiudA2e3EVfcCi3RCA=
+ github.com/shopspring/decimal v1.2.0/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
+ github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
+ github.com/snowflakedb/gosnowflake v1.6.19/go.mod h1:FM1+PWUdwB9udFDsXdfD58NONC0m+MlOSmQRvimobSM=
+ github.com/spiffe/go-spiffe/v2 v2.5.0/go.mod h1:P+NxobPc6wXhVtINNtFjNWGBTreew1GBUCwT2wPmb7g=
++github.com/stretchr/objx v0.1.0 h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=
+ github.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=
+ github.com/xanzy/go-gitlab v0.15.0/go.mod h1:8zdQa/ri1dfn8eS3Ir1SyfvOKlw7WBJ8DVThkpGiXrs=
+ github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
+@@ -144,12 +149,17 @@ go.opentelemetry.io/otel/sdk v1.36.0/go.mod h1:+lC+mTgD+MUWfjJubi2vvXWcVxyr9rmls
+ go.opentelemetry.io/otel/sdk/metric v1.36.0/go.mod h1:qTNOhFDfKRwX0yXOqJYegL5WRaW376QbB7P4Pb0qva4=
+ go.opentelemetry.io/proto/otlp v1.3.1/go.mod h1:0X1WI4de4ZsLrrJNLAQbFeLCm3T7yBkR0XqQ7niQU+8=
+ golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
++golang.org/x/mod v0.32.0 h1:9F4d3PHLljb6x//jOyokMv3eX+YDeepZSEo3mFJy93c=
+ golang.org/x/mod v0.32.0/go.mod h1:SgipZ/3h2Ci89DlEtEXWUk/HteuRin+HHhN+WbNhguU=
+ golang.org/x/oauth2 v0.30.0/go.mod h1:B++QgG3ZKulg6sRPGD/mqlHQs5rB3Ml9erfeDY7xKlU=
+ golang.org/x/sync v0.17.0/go.mod h1:9KTHXmSnoGruLpwFjVSX0lNNA75CykiMECbovNTZqGI=
++golang.org/x/sys v0.41.0 h1:Ivj+2Cp/ylzLiEU89QhWblYnOE9zerudt9Ftecq2C6k=
++golang.org/x/sys v0.41.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
+ golang.org/x/telemetry v0.0.0-20260109210033-bd525da824e2/go.mod h1:b7fPSJ0pKZ3ccUh8gnTONJxhn3c/PS6tyzQvyqw4iA8=
++golang.org/x/term v0.40.0 h1:36e4zGLqU4yhjlmxEaagx2KuYbJq3EwY8K943ZsHcvg=
+ golang.org/x/term v0.40.0/go.mod h1:w2P8uVp06p2iyKKuvXIm7N/y0UCRt3UfJTfZ7oOpglM=
+ golang.org/x/text v0.29.0/go.mod h1:7MhJOA9CD2qZyOKYazxdYMF85OwPdEr9jTtBpO7ydH4=
++golang.org/x/tools v0.41.0 h1:a9b8iMweWG+S0OBnlU36rzLp20z1Rp10w+IY2czHTQc=
+ golang.org/x/tools v0.41.0/go.mod h1:XSY6eDqxVNiYgezAVqqCeihT4j1U2CCsqvH3WhQpnlg=
+ golang.org/x/tools/godoc v0.1.0-deprecated/go.mod h1:qM63CriJ961IHWmnWa9CjZnBndniPt4a3CK0PVB9bIg=
+ golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028/go.mod h1:NDW/Ps6MPRej6fsCIbMTohpP40sJ/P/vI1MoTEGwX90=
+@@ -160,6 +170,7 @@ google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c/go.
+ google.golang.org/grpc v1.74.2/go.mod h1:CtQ+BGjaAIXHs/5YS3i473GqwBBa1zGQNevxdeBEXrM=
+ google.golang.org/protobuf v1.36.7/go.mod h1:jduwjTPXsFjZGTmRluh+L6NjiWu7pchiJ2/5YcXBHnY=
+ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
++gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
+ gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=
+ gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
+ gopkg.in/inf.v0 v0.9.1/go.mod h1:cWUDdTG/fYaXco+Dcufb5Vnc6Gp2YChqWtbxRZE0mXw=
+=================
+PR 14
+diff --git a/api/lusd_import.go b/api/lusd_import.go
+index 47aaa29..3e8ed3d 100644
+--- a/api/lusd_import.go
++++ b/api/lusd_import.go
+@@ -13,6 +13,7 @@ import (
+ 	"time"
+ 
+ 	"bibliothek/apierrors"
++	"github.com/jackc/pgx/v5"
+ )
+ 
+ // LUSDImportResponse matches the required JSON response structure.
+@@ -108,6 +109,14 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+ 			}
+ 		}
+ 
++		type studentRow struct {
++			LusdID   string
++			Vorname  string
++			Nachname string
++			Klasse   string
++			LineNum  int
++		}
++		var parsedRows []studentRow
+ 		var lusdIDs []string
+ 		var newCount int
+ 		var updatedCount int
+@@ -136,24 +145,52 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+ 			}
+ 
+ 			lusdIDs = append(lusdIDs, lusdID)
++			parsedRows = append(parsedRows, studentRow{
++				LusdID:   lusdID,
++				Vorname:  vorname,
++				Nachname: nachname,
++				Klasse:   klasse,
++				LineNum:  lineNum,
++			})
++		}
++
++		// Pre-fetch all existing students
++		existingStudents := make(map[string]string)
++		if len(lusdIDs) > 0 {
++			qSelect := `SELECT id, lusd_id FROM schueler WHERE lusd_id = ANY($1)`
++			rows, err := tx.Query(ctx, qSelect, lusdIDs)
++			if err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to fetch existing students: %w", err))
++				return
++			}
++			defer rows.Close()
+ 
+-			var dbID string
+-			err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
+-			if err == nil {
+-				// Student exists -> update vorname, nachname, klasse, clear abgänger flag
++			for rows.Next() {
++				var id, lusdID string
++				if err := rows.Scan(&id, &lusdID); err != nil {
++					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to scan student row: %w", err))
++					return
++				}
++				existingStudents[lusdID] = id
++			}
++			if err := rows.Err(); err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("error iterating existing students: %w", err))
++				return
++			}
++		}
++
++		batch := &pgx.Batch{}
++
++		for _, row := range parsedRows {
++			if dbID, exists := existingStudents[row.LusdID]; exists {
+ 				qUpdate := `
+ 					UPDATE schueler
+ 					SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
+ 					WHERE id = $4
+ 				`
+-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID)
+-				if err != nil {
+-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+-					return
+-				}
++				batch.Queue(qUpdate, row.Vorname, row.Nachname, row.Klasse, dbID)
+ 				updatedCount++
+ 			} else {
+-				// Student does not exist -> insert new student with generated S- barcode
+ 				barcodeID := fmt.Sprintf("S-%05d", startNum)
+ 				startNum++
+ 
+@@ -163,15 +200,20 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+ 					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
+ 					VALUES ($1, $2, $3, $4, $5, $6, false)
+ 				`
+-				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
+-				if err != nil {
+-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+-					return
+-				}
++				batch.Queue(qInsert, barcodeID, row.Vorname, row.Nachname, row.Klasse, defaultAbgaengerJahr, row.LusdID)
+ 				newCount++
+ 			}
+ 		}
+ 
++		if batch.Len() > 0 {
++			br := tx.SendBatch(ctx, batch)
++			err = br.Close()
++			if err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("batch upsert failed: %w", err))
++				return
++			}
++		}
++
+ 		// 6. Diffing: Set ist_abgaenger = true for students not present in CSV
+ 		qMarkAbgaenger := `
+ 			UPDATE schueler
+diff --git a/go.work b/go.work
+index 50cb456..ecf8cc6 100644
+--- a/go.work
++++ b/go.work
+@@ -2,5 +2,5 @@ go 1.26.1
+ 
+ use (
+ 	.
+-	../Inventur
++
+ )
+=================
+PR 15
+diff --git a/api/barcode.go b/api/barcode.go
+index 85f678e..101a393 100644
+--- a/api/barcode.go
++++ b/api/barcode.go
+@@ -169,18 +169,23 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
+ 
+ 		// 3. Register copies in DB (marked as not borrowable until delivery)
+ 		newBarcodes := []string{}
+-		qInsert := `
+-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar)
+-			VALUES ($1, $2, 'Bestellt (Lieferanten-Vorab-Barcode)', false)
+-		`
++		var rows [][]interface{}
++
+ 		for i := 0; i < req.Menge; i++ {
+ 			barcodeID := fmt.Sprintf("B-%05d", startNum+i)
+-			_, err = tx.Exec(ctx, qInsert, req.TitelID, barcodeID)
+-			if err != nil {
+-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+-				return
+-			}
+ 			newBarcodes = append(newBarcodes, barcodeID)
++			rows = append(rows, []interface{}{req.TitelID, barcodeID, "Bestellt (Lieferanten-Vorab-Barcode)", false})
++		}
++
++		_, err = tx.CopyFrom(
++			ctx,
++			pgx.Identifier{"buecher_exemplare"},
++			[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar"},
++			pgx.CopyFromRows(rows),
++		)
++		if err != nil {
++			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
++			return
+ 		}
+ 
+ 		if err := tx.Commit(ctx); err != nil {
+diff --git a/go.work b/go.work
+deleted file mode 100644
+index 50cb456..0000000
+--- a/go.work
++++ /dev/null
+@@ -1,6 +0,0 @@
+-go 1.26.1
+-
+-use (
+-	.
+-	../Inventur
+-)
+=================
+PR 16
+diff --git a/api/lusd_import.go b/api/lusd_import.go
+index 47aaa29..0ad53e4 100644
+--- a/api/lusd_import.go
++++ b/api/lusd_import.go
+@@ -113,7 +113,20 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+ 		var updatedCount int
+ 		lineNum := 1
+ 
+-		// 5. Parse rows and execute Upserts
++		type studentRow struct {
++			LusdID   string
++			Vorname  string
++			Nachname string
++			Klasse   string
++			LineNum  int
++		}
++		var parsedRows []studentRow
++
++		// 5a. Parse rows into memory
++		// We use a map to deduplicate rows by lusd_id, keeping the latest one,
++		// to prevent "ON CONFLICT DO UPDATE command cannot affect row a second time" errors.
++		seenIndex := make(map[string]int)
++
+ 		for {
+ 			row, err := reader.Read()
+ 			if err == io.EOF {
+@@ -135,40 +148,93 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+ 				return
+ 			}
+ 
+-			lusdIDs = append(lusdIDs, lusdID)
+-
+-			var dbID string
+-			err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
+-			if err == nil {
+-				// Student exists -> update vorname, nachname, klasse, clear abgänger flag
+-				qUpdate := `
+-					UPDATE schueler
+-					SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
+-					WHERE id = $4
+-				`
+-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID)
+-				if err != nil {
+-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+-					return
+-				}
+-				updatedCount++
++			sRow := studentRow{
++				LusdID:   lusdID,
++				Vorname:  vorname,
++				Nachname: nachname,
++				Klasse:   klasse,
++				LineNum:  lineNum,
++			}
++
++			if idx, exists := seenIndex[lusdID]; exists {
++				// Replace the existing one, don't append to lusdIDs again
++				parsedRows[idx] = sRow
+ 			} else {
+-				// Student does not exist -> insert new student with generated S- barcode
+-				barcodeID := fmt.Sprintf("S-%05d", startNum)
+-				startNum++
+-
+-				defaultAbgaengerJahr := time.Now().Year() + 5
+-
+-				qInsert := `
+-					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
+-					VALUES ($1, $2, $3, $4, $5, $6, false)
+-				`
+-				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
+-				if err != nil {
+-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
+-					return
++				seenIndex[lusdID] = len(parsedRows)
++				parsedRows = append(parsedRows, sRow)
++				lusdIDs = append(lusdIDs, lusdID)
++			}
++		}
++
++		if len(parsedRows) > 0 {
++			// 5b. Find existing LUSD IDs
++			existingSet := make(map[string]bool)
++			rows, err := tx.Query(ctx, "SELECT lusd_id FROM schueler WHERE lusd_id = ANY($1)", lusdIDs)
++			if err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to query existing students: %w", err))
++				return
++			}
++			for rows.Next() {
++				var id string
++				if err := rows.Scan(&id); err == nil {
++					existingSet[id] = true
+ 				}
+-				newCount++
++			}
++			rows.Close()
++
++			// Prepare arrays for UNNEST
++			var (
++				arrBarcode []string
++				arrVorname []string
++				arrNach    []string
++				arrKlasse  []string
++				arrAbJahr  []int
++				arrLusdID  []string
++			)
++
++			defaultAbgaengerJahr := time.Now().Year() + 5
++
++			for _, p := range parsedRows {
++				if !existingSet[p.LusdID] {
++					// new
++					arrBarcode = append(arrBarcode, fmt.Sprintf("S-%05d", startNum))
++					startNum++
++					newCount++
++				} else {
++					// existing, barcode will be ignored on update but needs a non-null valid dummy
++					// we can just put a blank string here, but to avoid UNIQUE constraint violations
++					// before the ON CONFLICT kicks in, we just use the LUSD ID or a dummy with random/unique part.
++					// Actually, the ON CONFLICT will evaluate before inserting, but it evaluates the index on lusd_id.
++					// We'll just provide a dummy string that is unique per row
++					arrBarcode = append(arrBarcode, fmt.Sprintf("dummy-%s", p.LusdID))
++					updatedCount++
++				}
++				arrVorname = append(arrVorname, p.Vorname)
++				arrNach = append(arrNach, p.Nachname)
++				arrKlasse = append(arrKlasse, p.Klasse)
++				arrAbJahr = append(arrAbJahr, defaultAbgaengerJahr)
++				arrLusdID = append(arrLusdID, p.LusdID)
++			}
++
++			// 5c. Bulk Upsert
++			qUpsert := `
++				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
++				SELECT * FROM UNNEST($1::varchar[], $2::varchar[], $3::varchar[], $4::varchar[], $5::int[], $6::varchar[], $7::boolean[])
++				ON CONFLICT (lusd_id) DO UPDATE
++				SET vorname = EXCLUDED.vorname,
++					nachname = EXCLUDED.nachname,
++					klasse = EXCLUDED.klasse,
++					ist_abgaenger = false,
++					aktualisiert_am = CURRENT_TIMESTAMP
++			`
++
++			// We need a boolean array of false for ist_abgaenger
++			arrIstAbg := make([]bool, len(parsedRows))
++
++			_, err = tx.Exec(ctx, qUpsert, arrBarcode, arrVorname, arrNach, arrKlasse, arrAbJahr, arrLusdID, arrIstAbg)
++			if err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("bulk upsert failed: %w", err))
++				return
+ 			}
+ 		}
+ 
+=================
+PR 17
+diff --git a/api/order_handler.go b/api/order_handler.go
+index 5022a9f..4fd79fe 100644
+--- a/api/order_handler.go
++++ b/api/order_handler.go
+@@ -12,6 +12,8 @@ import (
+ 	"time"
+ 
+ 	"bibliothek/apierrors"
++
++	"github.com/jackc/pgx/v5"
+ )
+ 
+ // SendOrderMailRequest specifies the recipient email payload.
+@@ -127,10 +129,8 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
+ 		var labels []BarcodeLabelDetail
+ 		var orderSummaryItems []OrderedItem
+ 		currentBarcodeIndex := startNum
+-		qInsert := `
+-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar)
+-			VALUES ($1, $2, 'bestellt', false)
+-		`
++
++		var copyRows [][]any
+ 
+ 		for _, item := range itemsToOrder {
+ 			orderSummaryItems = append(orderSummaryItems, OrderedItem{
+@@ -143,11 +143,8 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
+ 
+ 			for i := 0; i < item.OrderQty; i++ {
+ 				barcodeID := fmt.Sprintf("B-%05d", currentBarcodeIndex)
+-				_, err = tx.Exec(ctx, qInsert, item.ID, barcodeID)
+-				if err != nil {
+-					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+-					return
+-				}
++				copyRows = append(copyRows, []any{item.ID, barcodeID, "bestellt", false})
++
+ 				labels = append(labels, BarcodeLabelDetail{
+ 					BarcodeID: barcodeID,
+ 					Titel:     item.Titel,
+@@ -157,6 +154,20 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
+ 			}
+ 		}
+ 
++		// Bulk insert all new copies using pgx.CopyFrom
++		if len(copyRows) > 0 {
++			_, err = tx.CopyFrom(
++				ctx,
++				pgx.Identifier{"buecher_exemplare"},
++				[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar"},
++				pgx.CopyFromRows(copyRows),
++			)
++			if err != nil {
++				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
++				return
++			}
++		}
++
+ 		// Commit DB updates
+ 		if err := tx.Commit(ctx); err != nil {
+ 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+=================

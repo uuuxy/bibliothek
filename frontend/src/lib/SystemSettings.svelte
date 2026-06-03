@@ -11,6 +11,8 @@
   let ferienLeseclubZieldatum = $state('');
   let lmfStichtag = $state('07-31');
   let maxAusleihenSchueler = $state(5);
+  let fristBuchTage = $state(21);
+  let fristMedienTage = $state(7);
 
   // Klassenlehrer-Mapping
   /** @type {{klasse: string, lehrer_email: string}[]} */
@@ -38,6 +40,8 @@
         ferienLeseclubZieldatum = data.ferien_leseclub_zieldatum ?? '';
         lmfStichtag = data.lmf_stichtag ?? '07-31';
         maxAusleihenSchueler = data.max_ausleihen_schueler ?? 5;
+        fristBuchTage = data.frist_buch_tage ?? 21;
+        fristMedienTage = data.frist_medien_tage ?? 7;
       }
     } catch { /* use defaults */ }
   }
@@ -68,7 +72,9 @@
           ferien_leseclub_aktiv: ferienLeseclubAktiv,
           ferien_leseclub_zieldatum: ferienLeseclubZieldatum || null,
           lmf_stichtag: lmfStichtag || '07-31',
-          max_ausleihen_schueler: maxAusleihenSchueler
+          max_ausleihen_schueler: maxAusleihenSchueler,
+          frist_buch_tage: fristBuchTage,
+          frist_medien_tage: fristMedienTage
         })
       });
       if (res.ok) {
@@ -122,7 +128,7 @@
   }
 </script>
 
-<div class="w-full space-y-6 text-slate-800">
+<div class="w-full space-y-6 text-slate-800 font-sans antialiased">
 
   <!-- Page Header -->
   <div class="border-b border-slate-100 pb-5">
@@ -209,13 +215,13 @@
     <div class="p-6 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-4">
       <h3 class="text-base font-bold text-slate-900">Standardfristen (Übersicht)</h3>
       <div class="grid grid-cols-3 gap-3">
-        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-center">
-          <div class="text-2xl font-bold text-slate-700">21</div>
-          <div class="text-xs text-slate-500 mt-1 font-medium">Tage · Buch</div>
+        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4 flex flex-col items-center justify-center">
+          <input type="number" bind:value={fristBuchTage} min="1" max="365" class="w-16 bg-white border border-slate-200 rounded-xl px-2 py-1 text-xl font-bold text-slate-700 text-center focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none" />
+          <div class="text-xs text-slate-500 mt-2 font-medium">Tage · Buch</div>
         </div>
-        <div class="rounded-2xl bg-amber-50 border border-amber-100 p-4 text-center">
-          <div class="text-2xl font-bold text-amber-600">7</div>
-          <div class="text-xs text-amber-500 mt-1 font-medium">Tage · CD / DVD</div>
+        <div class="rounded-2xl bg-amber-50 border border-amber-100 p-4 flex flex-col items-center justify-center">
+          <input type="number" bind:value={fristMedienTage} min="1" max="365" class="w-16 bg-white border border-amber-200 rounded-xl px-2 py-1 text-xl font-bold text-amber-600 text-center focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:outline-none" />
+          <div class="text-xs text-amber-500 mt-2 font-medium">Tage · CD / DVD</div>
         </div>
         <div class="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-center">
           <div class="text-sm font-bold text-blue-600 font-mono">{lmfStichtag || '07-31'}</div>

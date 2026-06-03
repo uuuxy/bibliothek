@@ -16,17 +16,19 @@ type SystemEinstellungen struct {
 	FerienLeseclubZieldatum *string `json:"ferien_leseclub_zieldatum"` // ISO date string "YYYY-MM-DD" or null
 	LmfStichtag             string  `json:"lmf_stichtag"`              // "MM-DD" format, e.g. "07-31"
 	MaxAusleihenSchueler    int     `json:"max_ausleihen_schueler"`
+	FristBuchTage           int     `json:"frist_buch_tage"`
+	FristMedienTage         int     `json:"frist_medien_tage"`
 }
 
 // querySettings reads system settings from the database, returning safe defaults on error.
 func (s *Server) querySettings(ctx context.Context) (*SystemEinstellungen, error) {
 	rows, err := s.DB.Pool.Query(ctx, `SELECT schluessel, wert FROM system_einstellungen`)
 	if err != nil {
-		return &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5}, nil
+		return &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7}, nil
 	}
 	defer rows.Close()
 
-	settings := &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5}
+	settings := &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7}
 	for rows.Next() {
 		var key string
 		var val *string
@@ -49,6 +51,18 @@ func (s *Server) querySettings(ctx context.Context) (*SystemEinstellungen, error
 			if val != nil && *val != "" {
 				if v, err := strconv.Atoi(*val); err == nil {
 					settings.MaxAusleihenSchueler = v
+				}
+			}
+		case "frist_buch_tage":
+			if val != nil && *val != "" {
+				if v, err := strconv.Atoi(*val); err == nil {
+					settings.FristBuchTage = v
+				}
+			}
+		case "frist_medien_tage":
+			if val != nil && *val != "" {
+				if v, err := strconv.Atoi(*val); err == nil {
+					settings.FristMedienTage = v
 				}
 			}
 		}
@@ -107,12 +121,22 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 		if req.MaxAusleihenSchueler > 0 {
 			maxAusleihen = strconv.Itoa(req.MaxAusleihenSchueler)
 		}
+		fristBuch := "21"
+		if req.FristBuchTage > 0 {
+			fristBuch = strconv.Itoa(req.FristBuchTage)
+		}
+		fristMedien := "7"
+		if req.FristMedienTage > 0 {
+			fristMedien = strconv.Itoa(req.FristMedienTage)
+		}
 
 		pairs := [][2]string{
 			{"ferien_leseclub_aktiv", aktiv},
 			{"lmf_stichtag", stichtag},
 			{"ferien_leseclub_zieldatum", zieldatum},
 			{"max_ausleihen_schueler", maxAusleihen},
+			{"frist_buch_tage", fristBuch},
+			{"frist_medien_tage", fristMedien},
 		}
 		for _, p := range pairs {
 			if _, err := s.DB.Pool.Exec(ctx, upsert, p[0], p[1]); err != nil {

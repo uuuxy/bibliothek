@@ -368,9 +368,9 @@ func (s *Server) handleStudentCheckoutFlow(
 
 // calculateDueDate calculates the return deadline based on media type and title prefix.
 // - Titles prefixed with "lmf-" (case-insensitive) return the end of the school year (lmfStichtag, MM-DD format).
-// - Media of type CD, DVD, or Audio get 7 days.
-// - All other media default to 21 days.
-func calculateDueDate(titel, medientyp, lmfStichtag string) time.Time {
+// - Media of type CD, DVD, or Audio get fristMedienTage days.
+// - All other media default to fristBuchTage days.
+func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage int) time.Time {
 	now := time.Now()
 	if strings.HasPrefix(strings.ToLower(titel), "lmf-") {
 		year := now.Year()
@@ -392,9 +392,9 @@ func calculateDueDate(titel, medientyp, lmfStichtag string) time.Time {
 	}
 	lower := strings.ToLower(medientyp)
 	if strings.Contains(lower, "cd") || strings.Contains(lower, "dvd") || strings.Contains(lower, "audio") {
-		return now.AddDate(0, 0, 7)
+		return now.AddDate(0, 0, fristMedienTage)
 	}
-	return now.AddDate(0, 0, 21)
+	return now.AddDate(0, 0, fristBuchTage)
 }
 
 // resolveCheckoutDueDate calculates the due date for a student checkout, honouring the
@@ -403,7 +403,7 @@ func (s *Server) resolveCheckoutDueDate(ctx context.Context, copy *repository.Bo
 	settings, err := s.querySettings(ctx)
 	if err != nil {
 		// Fall back to default calculation rather than blocking every checkout.
-		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31"), nil
+		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31", 21, 7), nil
 	}
 	isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
 	if !isLMF && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
@@ -413,5 +413,5 @@ func (s *Server) resolveCheckoutDueDate(ctx context.Context, copy *repository.Bo
 			return end, nil
 		}
 	}
-	return calculateDueDate(copy.Titel, copy.Medientyp, settings.LmfStichtag), nil
+	return calculateDueDate(copy.Titel, copy.Medientyp, settings.LmfStichtag, settings.FristBuchTage, settings.FristMedienTage), nil
 }
