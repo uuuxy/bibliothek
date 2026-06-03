@@ -1,6 +1,6 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
-  let data = $state(/** @type {{ klassen: any[] } | null} */ (null));
+  let data = $state.raw(/** @type {{ klassen: any[] } | null} */ (null));
   let loading = $state(true);
   let error = $state(/** @type {string|null} */ (null));
 
