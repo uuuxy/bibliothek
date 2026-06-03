@@ -1,4 +1,5 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import AntolinBadge from './AntolinBadge.svelte';
 
   // Props
@@ -6,7 +7,7 @@
 
   // State Runes
   /** @type {any[]} */
-  let copies = $state([]);
+  let copies = $state.raw([]);
   let loadingCopies = $state(false);
   let showModal = $state(false);
   /** @type {any} */
@@ -26,7 +27,7 @@
 
     loadingCopies = true;
     try {
-      const res = await fetch(`/api/buecher/titel/${title.id}/exemplare`);
+      const res = await apiFetch(`/api/buecher/titel/${title.id}/exemplare`);
       if (res.ok) {
         copies = await res.json();
       } else {
@@ -92,7 +93,7 @@
   async function updateNote() {
     if (!activeCopy) return;
     try {
-      const res = await fetch(`/api/buecher/exemplare/${activeCopy.id}/schadensnotiz`, {
+      const res = await apiFetch(`/api/buecher/exemplare/${activeCopy.id}/schadensnotiz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note: newNote })
@@ -120,13 +121,36 @@
   async function deleteCopy(copyId) {
     if (!confirm("Möchtest du dieses Buchexemplar wirklich unwiderruflich aus dem Bestand löschen?")) return;
     try {
-      const res = await fetch(`/api/buecher/exemplare/${copyId}`, {
+      const res = await apiFetch(`/api/buecher/exemplare/${copyId}`, {
         method: "DELETE"
       });
       if (!res.ok) throw new Error("Fehler beim Löschen");
       
       // Update local state
       copies = copies.filter(c => c.id !== copyId);
+    } catch (err) {
+      const error = /** @type {any} */ (err);
+      alert(error.message);
+    }
+  }
+
+  // Mark physical copy as decommissioned (ausgesondert)
+  /**
+   * @param {string} copyId
+   */
+  async function aussondernCopy(copyId) {
+    if (!confirm("Möchtest du dieses Exemplar aussondern (Makulatur)? Es bleibt für Statistiken in der Datenbank, wird aber aus Katalog, Kiosk und Inventur ausgeblendet.")) return;
+    try {
+      const res = await apiFetch(`/api/buecher/exemplare/${copyId}/aussondern`, {
+        method: "POST"
+      });
+      if (!res.ok) throw new Error("Fehler beim Aussondern");
+
+      // Update local state to reflect decommissioned status
+      const idx = copies.findIndex(c => c.id === copyId);
+      if (idx !== -1) {
+        copies[idx] = { ...copies[idx], ist_ausgesondert: true, ist_ausleihbar: false };
+      }
     } catch (err) {
       const error = /** @type {any} */ (err);
       alert(error.message);
@@ -163,10 +187,17 @@
           {#if title.isbn && title.medientyp !== 'CD' && title.medientyp !== 'DVD'}
             <AntolinBadge isbn={title.isbn} />
           {/if}
+          {#if title.erweiterteEigenschaften?.standort}
+            <div class="mt-1.5">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-100">
+                📍 Standort: {title.erweiterteEigenschaften.standort}
+              </span>
+            </div>
+          {/if}
         </div>
       </div>
       <div class="text-sm bg-slate-50 border border-slate-100 rounded-2xl py-2 px-4 flex items-center gap-3">
-        <span class="text-slate-400 font-mono">Exemplare:</span>
+        <span class="text-slate-400">Exemplare:</span>
         <span class="font-bold text-slate-700">{copies.length} im Bestand</span>
       </div>
     </div>
@@ -177,30 +208,44 @@
         <div class="w-8 h-8 border-4 border-slate-800 border-t-transparent rounded-full animate-spin"></div>
       </div>
     {:else if copies.length === 0}
-      <div class="py-12 flex flex-col items-center justify-center text-slate-400 space-y-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-350" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-        <span class="text-xs font-semibold">Keine Exemplare im Bestand gefunden.</span>
+      <div class="py-12 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4">
+        <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-250 flex items-center justify-center text-amber-650 shadow-xs">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <p class="text-sm font-semibold text-slate-700 leading-relaxed">
+          Titel vorhanden, aber noch keine physischen Exemplare mit Barcodes angelegt. Bitte im Medienkatalog Exemplare hinzufügen.
+        </p>
       </div>
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {#each copies as copy}
-          <div class="p-4 rounded-2xl bg-slate-50/50 border border-slate-100 flex flex-col justify-between hover:border-slate-200 transition-all duration-300">
+          <div class="p-4 rounded-2xl {copy.ist_ausgesondert ? 'bg-slate-100/60 border border-slate-200 opacity-60' : 'bg-slate-50/50 border border-slate-100 hover:border-slate-200'} flex flex-col justify-between transition-all duration-300">
             <div class="flex items-start justify-between">
               <div class="space-y-1">
-                <span class="text-xs font-mono font-bold text-blue-700 bg-blue-50 border border-blue-100/50 px-2 py-0.5 rounded">
+                <span class="text-xs font-bold {copy.ist_ausgesondert ? 'text-slate-400 bg-slate-100 border-slate-200' : 'text-blue-700 bg-blue-50 border-blue-100/50'} border px-2 py-0.5 rounded">
                   {copy.barcode_id}
                 </span>
+                {#if copy.ist_ausgesondert}
+                  <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-0.5">⛔ Ausgesondert</span>
+                {/if}
                 <p class="text-xs text-slate-650 pt-1.5"><strong class="text-slate-500 font-medium">Zustand:</strong> {copy.zustand_notiz || 'Neuwertig'}</p>
               </div>
               
               <!-- Copy quick Actions -->
               <div class="flex space-x-1">
-                <button onclick={() => printLabel(copy.barcode_id)} class="p-1.5 text-slate-450 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Schnelldruck Barcode-Etikett">
-                  🖨️
-                </button>
-                <button onclick={() => { activeCopy = copy; newNote = copy.zustand_notiz; showModal = true; }} class="p-1.5 text-slate-450 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer" title="Schadensnotiz bearbeiten">
-                  ✏️
-                </button>
+                {#if !copy.ist_ausgesondert}
+                  <button onclick={() => printLabel(copy.barcode_id)} class="p-1.5 text-slate-450 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Schnelldruck Barcode-Etikett">
+                    🖨️
+                  </button>
+                  <button onclick={() => { activeCopy = copy; newNote = copy.zustand_notiz; showModal = true; }} class="p-1.5 text-slate-450 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer" title="Schadensnotiz bearbeiten">
+                    ✏️
+                  </button>
+                  <button onclick={() => aussondernCopy(copy.id)} class="p-1.5 text-slate-450 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer" title="Exemplar aussondern (Makulatur)">
+                    ⛔
+                  </button>
+                {/if}
                 <button onclick={() => deleteCopy(copy.id)} class="p-1.5 text-slate-450 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="Exemplar löschen">
                   🗑️
                 </button>

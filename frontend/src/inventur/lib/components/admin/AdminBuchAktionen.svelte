@@ -13,6 +13,17 @@
             showToast("Titel und ISBN sind Pflichtfelder", "error");
             return;
         }
+
+        if (formular.id) {
+            const originalBook = books.find((/** @type {any} */ b) => b.id === formular.id);
+            if (originalBook && Number(formular.stock) < Number(originalBook.stock)) {
+                const proceed = confirm(
+                    "Achtung: Du verringerst den Gesamtbestand manuell. Das System wird die entsprechende Anzahl an Exemplaren im Hintergrund als verloren markieren. Möchtest du fortfahren?"
+                );
+                if (!proceed) return;
+            }
+        }
+
         try {
             const url = formular.id
                 ? `/api/books/${formular.id}`

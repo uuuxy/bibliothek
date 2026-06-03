@@ -12,10 +12,11 @@
 	 *     stock: number,
 	 *     coverUrl: string
 	 *   },
-	 *   getStockColor: (stock: number) => string
+	 *   getStockColor: (stock: number) => string,
+	 *   onclick?: () => void
 	 * }}
 	 */
-	let { book, getStockColor } = $props();
+	let { book, getStockColor, onclick } = $props();
 
 	/** @type {string[]} */
 	let coverCandidates = $state([]);
@@ -103,8 +104,11 @@
 	}
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="snap-start shrink-0 w-40 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-2xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between"
+	onclick={onclick}
 >
 	<div
 		class="w-full aspect-2/3 rounded-xl overflow-hidden shadow-sm mb-3 relative bg-slate-50"
@@ -126,7 +130,7 @@
 				<div class="absolute left-0 top-0 bottom-0 w-2 bg-linear-to-b {getSpineGradient(book.subject)} opacity-90 shadow-sm rounded-l-xl"></div>
 				
 				<div class="pl-1.5 pr-0.5 pt-0.5 text-left">
-					<span class="text-[7px] uppercase tracking-widest text-white/80 font-extrabold font-mono">{book.subject}</span>
+					<span class="text-[7px] uppercase tracking-widest text-white/80 font-extrabold">{book.subject}</span>
 					<h4 class="text-[9px] font-extrabold text-white leading-snug line-clamp-4 mt-1">{book.title}</h4>
 				</div>
 				
@@ -153,7 +157,7 @@
 		>
 			{book.title}
 		</h3>
-		<p class="text-[9px] text-slate-400 font-mono mb-2 truncate">
+		<p class="text-[9px] text-slate-400 mb-2 truncate">
 			{book.isbn || "-"}
 		</p>
 		<div class="flex items-center gap-1.5">

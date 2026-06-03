@@ -63,13 +63,31 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 			return
 		}
 
+		// DSGVO Art. 5 Abs. 1 lit. c – Datensparsamkeit:
+		// Ausschließlich die folgenden fünf Felder werden aus der CSV gelesen und
+		// verarbeitet. Alle weiteren Spalten (Adress-, Kontakt- und sonstige
+		// personenbezogene Daten) werden nie indiziert und sofort verworfen.
+		const (
+			colLUSDID       = "lusd_id"
+			colVorname      = "vorname"
+			colNachname     = "nachname"
+			colKlasse       = "klasse"
+			colGeburtsdatum = "geburtsdatum" // optional
+		)
+
 		headerMap := make(map[string]int)
 		for idx, h := range headers {
-			headerMap[strings.ToLower(strings.TrimSpace(h))] = idx
+			norm := strings.ToLower(strings.TrimSpace(h))
+			// Whitelist: nur erlaubte Spalten werden im Index registriert.
+			switch norm {
+			case colLUSDID, colVorname, colNachname, colKlasse, colGeburtsdatum:
+				headerMap[norm] = idx
+				// Alle anderen Spalten werden bewusst ignoriert (DSGVO-Whitelist).
+			}
 		}
 
 		// Validate required headers
-		requiredCols := []string{"lusd_id", "vorname", "nachname", "klasse"}
+		requiredCols := []string{colLUSDID, colVorname, colNachname, colKlasse}
 		for _, col := range requiredCols {
 			if _, exists := headerMap[col]; !exists {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("missing required column '%s'", col))
@@ -125,10 +143,27 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				return
 			}
 
-			lusdID := strings.TrimSpace(row[headerMap["lusd_id"]])
-			vorname := strings.TrimSpace(row[headerMap["vorname"]])
-			nachname := strings.TrimSpace(row[headerMap["nachname"]])
-			klasse := strings.TrimSpace(row[headerMap["klasse"]])
+			// Whitelist: Nur die fünf erlaubten LUSD-Felder werden extrahiert.
+			lusdID := strings.TrimSpace(row[headerMap[colLUSDID]])
+			vorname := strings.TrimSpace(row[headerMap[colVorname]])
+			nachname := strings.TrimSpace(row[headerMap[colNachname]])
+			klasse := strings.TrimSpace(row[headerMap[colKlasse]])
+
+			// geburtsdatum ist optional; nicht alle LUSD-Exporte enthalten es.
+			var geburtsdatum *time.Time
+			if idx, ok := headerMap[colGeburtsdatum]; ok && idx < len(row) {
+				if raw := strings.TrimSpace(row[idx]); raw != "" {
+					for _, layout := range []string{"02.01.2006", "2006-01-02", "01/02/2006"} {
+						if t, parseErr := time.ParseInLocation(layout, raw, time.UTC); parseErr == nil {
+							t2 := t
+							geburtsdatum = &t2
+							break
+						}
+					}
+					// Nicht parsbare Werte werden als NULL behandelt und nicht protokolliert
+					// (enthält ggf. personenbezogene Daten – DSGVO-Datensparsamkeit).
+				}
+			}
 
 			if lusdID == "" || vorname == "" || nachname == "" || klasse == "" {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("empty value on row %d", lineNum))
@@ -140,30 +175,38 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 			var dbID string
 			err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
 			if err == nil {
-				// Student exists -> update vorname, nachname, klasse, clear abgänger flag
+				// Student exists -> aktualisiere ausschließlich DSGVO-Whitelist-Felder.
 				qUpdate := `
 					UPDATE schueler
-					SET vorname = $1, nachname = $2, klasse = $3, ist_abgaenger = false, aktualisiert_am = CURRENT_TIMESTAMP
+					SET vorname = $1,
+					    nachname = $2,
+					    klasse = $3,
+					    geburtsdatum = $5,
+					    ist_abgaenger = false,
+					    aktualisiert_am = CURRENT_TIMESTAMP
 					WHERE id = $4
 				`
-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID)
+				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID, geburtsdatum)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
 					return
 				}
 				updatedCount++
 			} else {
-				// Student does not exist -> insert new student with generated S- barcode
+				// Student does not exist -> insert new student with generated S- barcode.
+				// Nur Whitelist-Felder werden gespeichert (DSGVO Art. 5 Abs. 1 lit. c).
 				barcodeID := fmt.Sprintf("S-%05d", startNum)
 				startNum++
 
-				defaultAbgaengerJahr := time.Now().Year() + 5
-
 				qInsert := `
-					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, ist_abgaenger)
-					VALUES ($1, $2, $3, $4, $5, $6, false)
+					INSERT INTO schueler
+						(barcode_id, vorname, nachname, klasse, geburtsdatum,
+						 abgaenger_jahr, lusd_id, ist_abgaenger)
+					VALUES ($1, $2, $3, $4, $5, $6, $7, false)
 				`
-				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
+				_, err = tx.Exec(ctx, qInsert,
+					barcodeID, vorname, nachname, klasse, geburtsdatum,
+					calculateAbgaengerJahr(klasse), lusdID)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed for LUSD_ID %s on row %d: %w", lusdID, lineNum, err))
 					return

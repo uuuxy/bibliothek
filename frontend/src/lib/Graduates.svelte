@@ -1,14 +1,15 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
 
   // State Runes
   /** @type {any[]} */
-  let graduates = $state([]);
+  let graduates = $state.raw([]);
   let loading = $state(true);
 
   // Laufzettel print state
   /** @type {any[]} */
-  let detailStudents = $state([]);
+  let detailStudents = $state.raw([]);
   let loadingLaufzettel = $state(false);
   let printDate = $state("");
 
@@ -16,7 +17,7 @@
     loadingLaufzettel = true;
     printDate = new Date().toLocaleDateString("de-DE");
     try {
-      const res = await fetch("/api/abgaenger?details=true");
+      const res = await apiFetch("/api/abgaenger?details=true");
       if (res.ok) detailStudents = await res.json();
     } catch (err) {
       console.error("Laufzettel load error:", err);
@@ -40,7 +41,7 @@
   // Fetch graduates list from backend api
   async function fetchGraduates() {
     try {
-      const res = await fetch("/api/abgaenger");
+      const res = await apiFetch("/api/abgaenger");
       if (!res.ok) throw new Error("Fehler beim Laden");
       graduates = await res.json();
     } catch (err) {
@@ -70,7 +71,7 @@
     formData.append("file", selectedFile);
 
     try {
-      const res = await fetch("/api/import/lusd", {
+      const res = await apiFetch("/api/import/lusd", {
         method: "POST",
         body: formData
       });
@@ -165,7 +166,7 @@
     <div class="overflow-x-auto">
       <table class="w-full text-left text-base border-collapse">
         <thead>
-          <tr class="border-b border-slate-100 text-slate-450 text-sm font-mono uppercase">
+          <tr class="border-b border-slate-100 text-slate-450 text-sm uppercase">
             <th class="py-3 px-4">Klasse</th>
             <th class="py-3 px-4">Name</th>
             <th class="py-3 px-4">Barcode-ID</th>
@@ -175,9 +176,9 @@
         <tbody class="divide-y divide-slate-50">
           {#each graduates as student (student.id)}
             <tr class="hover:bg-slate-50/85 transition-colors animate-slide-up">
-              <td class="py-3.5 px-4 font-mono font-bold text-blue-600">{student.klasse}</td>
+              <td class="py-3.5 px-4 font-bold text-blue-600">{student.klasse}</td>
               <td class="py-3.5 px-4 text-slate-700 font-semibold">{student.vorname} {student.nachname}</td>
-              <td class="py-3.5 px-4 text-slate-400 font-mono text-xs">{student.barcode_id}</td>
+              <td class="py-3.5 px-4 text-slate-400 text-xs">{student.barcode_id}</td>
               <td class="py-3.5 px-4">
                 {#if student.ist_gesperrt}
                   <span class="text-[10px] px-2 py-0.5 rounded bg-rose-50 border border-rose-100 text-rose-600 font-semibold">Sperre aktiv</span>
@@ -213,16 +214,16 @@
 
           <div class="grid grid-cols-3 gap-3 text-center">
             <div class="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
-              <span class="text-[10px] uppercase font-bold text-slate-400 font-mono block">Neu</span>
-              <span class="text-xl font-black text-slate-800 font-mono">{importResult.neu}</span>
+              <span class="text-[10px] uppercase font-bold text-slate-400 block">Neu</span>
+              <span class="text-xl font-black text-slate-800">{importResult.neu}</span>
             </div>
             <div class="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
-              <span class="text-[10px] uppercase font-bold text-slate-400 font-mono block">Aktualisiert</span>
-              <span class="text-xl font-black text-slate-800 font-mono">{importResult.aktualisiert}</span>
+              <span class="text-[10px] uppercase font-bold text-slate-400 block">Aktualisiert</span>
+              <span class="text-xl font-black text-slate-800">{importResult.aktualisiert}</span>
             </div>
             <div class="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
-              <span class="text-[10px] uppercase font-bold text-slate-400 font-mono block">Abgänger</span>
-              <span class="text-xl font-black text-rose-600 font-mono">{importResult.abgaenger_mit_offenen_buechern}</span>
+              <span class="text-[10px] uppercase font-bold text-slate-400 block">Abgänger</span>
+              <span class="text-xl font-black text-rose-600">{importResult.abgaenger_mit_offenen_buechern}</span>
             </div>
           </div>
           <p class="text-[11px] text-slate-450 text-center font-medium leading-relaxed">
@@ -260,7 +261,7 @@
               {#if selectedFile}
                 <div class="space-y-1">
                   <p class="text-xs font-bold text-slate-700 max-w-[280px] truncate">{selectedFile.name}</p>
-                  <p class="text-[10px] text-slate-400 font-mono">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  <p class="text-[10px] text-slate-400">{(selectedFile.size / 1024).toFixed(1)} KB</p>
                 </div>
               {:else}
                 <div class="space-y-1">

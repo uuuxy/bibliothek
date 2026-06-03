@@ -1,12 +1,14 @@
 // src/lib/store.svelte.js
 import { csrfHeader } from './csrf.js';
 
+/** @type {{ searchQuery: string, selectedBook: any, isSidebarOpen: boolean, adminAuthenticated: boolean, guestAuthenticated: boolean, pendingPrintCopies: any[] | null }} */
 export const appState = $state({
     searchQuery: '',
     selectedBook: null,
     isSidebarOpen: true,
     adminAuthenticated: false,
-    guestAuthenticated: false
+    guestAuthenticated: false,
+    pendingPrintCopies: null
 });
 
 export const toastState = $state({
@@ -22,7 +24,6 @@ let toastTimeout = null;
  * @param {string} type
  */
 export function showToast(message, type = 'success') {
-    console.log(`[Toast] Showing ${type}: ${message}`);
     toastState.message = message;
     toastState.type = type;
     toastState.visible = true;

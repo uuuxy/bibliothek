@@ -18,6 +18,7 @@
 		buecherNachKlassenGruppieren,
 		bestandsFarbe,
 	} from "$lib/startseiten_api.js";
+	import KatalogBuchDetailsModal from "$lib/components/KatalogBuchDetailsModal.svelte";
 
 	// --- Zustandsvariablen ---
 	let viewMode = $state("suche");
@@ -27,12 +28,12 @@
 	let klasseSearchQuery = $state("");
 	let selectedKlasse = $state("");
 	let isKlasseDropdownOpen = $state(false);
+	let selectedBook = $state(/** @type {any} */ (null));
 
 	/** @type {any[]} */
-	let books = $state([]);
-	/** @type {any[]} */
-	let realClasses = $state([]);
-
+		let books = $state.raw([]);
+		/** @type {any[]} */
+		let realClasses = $state.raw([]);
 	// --- Abgeleitete Werte ---
 	let classes = $derived(buecherNachKlassenGruppieren(books));
 	let klassenList = $derived(
@@ -127,6 +128,18 @@
 		}
 	});
 
+	// Synchronize appState.selectedBook with local selectedBook
+	$effect(() => {
+		if (appState.selectedBook) {
+			selectedBook = appState.selectedBook;
+		}
+	});
+	$effect(() => {
+		if (selectedBook === null) {
+			appState.selectedBook = null;
+		}
+	});
+
 	// Wenn exakt eine Klasse getippt wurde, die existiert, diese auch selektieren
 	$effect(() => {
 		if (klasseSearchQuery !== "" && selectedKlasse === "") {
@@ -175,6 +188,7 @@
 				>
 					<BuchRasterStartseite
 						filteredBooks={paginatedBooks}
+						onBookClick={(book) => (selectedBook = book)}
 					/>
 					{#if displayLimit < filteredBooks.length}
 						<div class="mt-8 flex justify-center">
@@ -200,6 +214,7 @@
 					<KlassenUebersichtStartseite
 						{filteredClasses}
 						getStockColor={bestandsFarbe}
+						onBookClick={(book) => (selectedBook = book)}
 					/>
 				</div>
 			{:else}
@@ -215,6 +230,7 @@
 						<KlassenUebersichtStartseite
 							filteredClasses={filteredRealClasses}
 							getStockColor={bestandsFarbe}
+							onBookClick={(book) => (selectedBook = book)}
 						/>
 					{/key}
 				</div>
@@ -222,3 +238,7 @@
 		</main>
 	</div>
 </div>
+
+{#if selectedBook}
+	<KatalogBuchDetailsModal book={selectedBook} onClose={() => (selectedBook = null)} />
+{/if}

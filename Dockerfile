@@ -33,6 +33,7 @@ COPY auth/ ./auth/
 COPY db/ ./db/
 COPY inventur/ ./inventur/
 COPY jobs/ ./jobs/
+COPY migrations/ ./migrations/
 COPY repository/ ./repository/
 COPY sse/ ./sse/
 COPY docs/ ./docs/
@@ -50,8 +51,11 @@ WORKDIR /app
 # Install ca-certificates for secure outgoing connections (e.g. cover APIs)
 RUN apk --no-cache add ca-certificates tzdata
 
-# Copy database schema file (for migrations / reference)
+# Copy database schema file (for reference / first-run init)
 COPY schema.sql ./
+
+# Copy SQL migration files
+COPY migrations/ ./migrations/
 
 # Copy compiled Go binary
 COPY --from=backend-builder /app/main .

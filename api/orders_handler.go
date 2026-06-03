@@ -100,9 +100,11 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 		var labels []BarcodeLabelDetail
 		var orderSummaryItems []OrderedItem
 		currentBarcodeIndex := startNum
+		isNaacher := strings.Contains(strings.ToLower(supplierName), "naacher")
+
 		qInsert := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar)
-			VALUES ($1, $2, $3, false)
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt)
+			VALUES ($1, $2, $3, false, $4)
 		`
 
 		for _, item := range req.Items {
@@ -134,7 +136,7 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 			for i := 0; i < item.Menge; i++ {
 				barcodeID := fmt.Sprintf("B-%05d", currentBarcodeIndex)
 				statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
-				_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText)
+				_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, isNaacher)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 					return
@@ -176,22 +178,26 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 			len(labels),
 		)
 
-		mailReq := MailRequest{
-			To:      supplierEmail,
-			Subject: fmt.Sprintf("Buchbestellung Schulbibliothek - %s (Kundennummer %s)", time.Now().Format("02.01.2006"), customerNumber),
-			Body:    emailBody,
-			Attachments: []MailAttachment{
-				{
-					Name:        fmt.Sprintf("bestellanschreiben_%s.pdf", time.Now().Format("2006-01-02")),
-					ContentType: "application/pdf",
-					Data:        summaryPDF,
-				},
-				{
-					Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format("2006-01-02")),
-					ContentType: "application/pdf",
-					Data:        barcodePDF,
-				},
+		attachments := []MailAttachment{
+			{
+				Name:        fmt.Sprintf("bestellanschreiben_%s.pdf", time.Now().Format("2006-01-02")),
+				ContentType: "application/pdf",
+				Data:        summaryPDF,
 			},
+		}
+		if isNaacher {
+			attachments = append(attachments, MailAttachment{
+				Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format("2006-01-02")),
+				ContentType: "application/pdf",
+				Data:        barcodePDF,
+			})
+		}
+
+		mailReq := MailRequest{
+			To:          supplierEmail,
+			Subject:     fmt.Sprintf("Buchbestellung Schulbibliothek - %s (Kundennummer %s)", time.Now().Format("02.01.2006"), customerNumber),
+			Body:        emailBody,
+			Attachments: attachments,
 		}
 
 		// Fallback for missing SMTP configuration during local development

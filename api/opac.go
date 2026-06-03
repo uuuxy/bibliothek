@@ -42,8 +42,8 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		rows, err := s.DB.Pool.Query(ctx, `
 			SELECT bt.id, bt.titel, COALESCE(bt.autor, ''), COALESCE(bt.isbn, ''),
 			       COALESCE(bt.cover_url, ''),
-			       COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND a.id IS NULL) AS verfuegbar,
-			       COUNT(e.id) AS gesamt
+			       COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+			       COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false) AS gesamt
 			FROM buecher_titel bt
 			LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 			LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL

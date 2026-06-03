@@ -1,4 +1,5 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
 
   /** @type {{ studentId: string, onCapture: (url: string) => void, onClose: () => void }} */
@@ -59,7 +60,7 @@
         const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
 
         // Upload to backend
-        const res = await fetch(`/api/schueler/${studentId}/photo`, {
+        const res = await apiFetch(`/api/schueler/${studentId}/photo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ photo_data: dataUrl })
@@ -119,13 +120,13 @@
         <div class="absolute inset-0 pointer-events-none flex items-center justify-center bg-zinc-950/20">
           <div class="w-[50%] h-[90%] border-2 border-dashed border-emerald-400 rounded-[20px] flex items-center justify-center relative">
             <div class="w-[85%] h-[80%] border border-dashed border-emerald-400/40 rounded-full"></div>
-            <span class="absolute bottom-2 text-[8px] bg-zinc-950/90 px-2 py-0.5 text-emerald-400 rounded-full font-mono font-bold tracking-wider">Gesichtsrahmen</span>
+            <span class="absolute bottom-2 text-[8px] bg-zinc-950/90 px-2 py-0.5 text-emerald-400 rounded-full font-bold tracking-wider">Gesichtsrahmen</span>
           </div>
         </div>
       </div>
 
       <div class="flex items-center justify-between pt-2">
-        <span class="text-[10px] text-zinc-500 font-mono">1080p Stream · Automatischer 3:4 Zuschnitt</span>
+        <span class="text-[10px] text-zinc-500">1080p Stream · Automatischer 3:4 Zuschnitt</span>
         <button onclick={capturePhoto} disabled={isCapturing} class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 text-zinc-950 disabled:text-zinc-500 font-bold text-xs rounded-xl shadow-lg cursor-pointer transition-all flex items-center gap-1.5">
           {#if isCapturing}
             <span class="w-3.5 h-3.5 border-2 border-t-zinc-950 border-zinc-950/20 rounded-full animate-spin"></span>

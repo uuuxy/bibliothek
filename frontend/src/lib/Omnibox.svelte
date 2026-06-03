@@ -1,4 +1,5 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
   import StudentProfile from "./StudentProfile.svelte";
 
@@ -133,7 +134,7 @@
     const remaining = [];
     for (const item of q) {
       try {
-        const res = await fetch("/api/action", {
+        const res = await apiFetch("/api/action", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -241,7 +242,7 @@
     }
     debounceTimer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(queryVal.trim())}`);
+        const res = await apiFetch(`/api/search?q=${encodeURIComponent(queryVal.trim())}`);
         if (res.ok) {
           unifiedSearchResults = await res.json();
           if (!unifiedSearchResults.students) unifiedSearchResults.students = [];
@@ -328,7 +329,7 @@
     }
 
     try {
-      const res = await fetch("/api/action", {
+      const res = await apiFetch("/api/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -427,7 +428,7 @@
   async function undoReturn(loanId, entryIndex) {
     if (!loanId) return;
     try {
-      const res = await fetch(`/api/ausleihen/${loanId}/rueckgabe`, { method: "DELETE" });
+      const res = await apiFetch(`/api/ausleihen/${loanId}/rueckgabe`, { method: "DELETE" });
       if (!res.ok) {
         const msg = await res.text();
         showToast(msg || "Undo fehlgeschlagen", "error");
@@ -448,7 +449,7 @@
     const betrag = parseFloat(prompt("Schadensgebühr (€):", "10.00") ?? "0");
     if (isNaN(betrag) || betrag < 0) { showToast("Ungültiger Betrag", "error"); return; }
     try {
-      const res = await fetch(`/api/buecher/exemplare/${entry.book.id}/defekt`, {
+      const res = await apiFetch(`/api/buecher/exemplare/${entry.book.id}/defekt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

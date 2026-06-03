@@ -49,12 +49,16 @@ CREATE TABLE benutzer_rollen (
 );
 
 -- Table: schueler (Students borrowing books)
+-- DSGVO Art. 5 Abs. 1 lit. c – Datensparsamkeit:
+-- Erlaubte Felder (ausschließlich aus LUSD-Import): vorname, nachname, klasse,
+-- geburtsdatum, lusd_id. Adress- und Kontaktdaten dürfen NICHT gespeichert werden.
 CREATE TABLE schueler (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     barcode_id VARCHAR(100) UNIQUE NOT NULL,          -- Barcode ID on student ID card
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
     klasse VARCHAR(20) NOT NULL,                      -- e.g., '5a', '10b', 'Q2'
+    geburtsdatum DATE DEFAULT NULL,                   -- LUSD-Feld; NULL für Altdatensätze
     abgaenger_jahr INTEGER NOT NULL,                  -- Graduation/leaving year (useful for batch archiving)
     ist_gesperrt BOOLEAN NOT NULL DEFAULT false,      -- Flag to suspend borrowing privileges
     lusd_id VARCHAR(64) UNIQUE,                       -- Integrated LUSD ID
@@ -107,6 +111,8 @@ CREATE TABLE buecher_exemplare (
     erworben_am DATE NOT NULL DEFAULT CURRENT_DATE,
     ist_ausleihbar BOOLEAN NOT NULL DEFAULT true,      -- Switch to block copies from being lent out
     inventur_geprueft_am TIMESTAMP WITH TIME ZONE,    -- Inventory scan check timestamp
+    ist_ausgesondert BOOLEAN NOT NULL DEFAULT false,   -- Decommissioned copies: hidden from catalog/kiosk/inventory, kept for statistics
+    etikett_gedruckt BOOLEAN NOT NULL DEFAULT false,   -- True if barcode label has been printed
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf position, condition details)
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -270,7 +276,8 @@ CREATE TABLE system_einstellungen (
 INSERT INTO system_einstellungen (schluessel, wert) VALUES
     ('ferien_leseclub_aktiv', 'false'),
     ('ferien_leseclub_zieldatum', NULL),
-    ('lmf_stichtag', '07-31')
+    ('lmf_stichtag', '07-31'),
+    ('max_ausleihen_schueler', '5')
 ON CONFLICT (schluessel) DO NOTHING;
 
 -- ============================================================

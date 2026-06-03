@@ -11,13 +11,18 @@ import (
 // CreateBook inserts a new book record.
 func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, erweiterte_eigenschaften)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11)
 		RETURNING id`
 
 	medientyp := book.Medientyp
 	if medientyp == "" {
 		medientyp = "Buch"
+	}
+
+	properties := book.ErweiterteEigenschaften
+	if properties == nil {
+		properties = make(map[string]any)
 	}
 
 	var id string
@@ -34,6 +39,7 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		book.Stock,
 		book.LastCounted,
 		medientyp,
+		properties,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
@@ -184,12 +190,18 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			track = $7,
 			stock = $8,
 			last_counted = NULLIF($9::text, '')::date,
-			medientyp = $10
-		WHERE id = $11`
+			medientyp = $10,
+			erweiterte_eigenschaften = $11
+		WHERE id = $12`
 
 	medientyp := book.Medientyp
 	if medientyp == "" {
 		medientyp = "Buch"
+	}
+
+	properties := book.ErweiterteEigenschaften
+	if properties == nil {
+		properties = make(map[string]any)
 	}
 
 	result, err := repo.db.Exec(
@@ -205,6 +217,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Stock,
 		book.LastCounted,
 		medientyp,
+		properties,
 		id,
 	)
 	if err != nil {

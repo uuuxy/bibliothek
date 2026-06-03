@@ -51,6 +51,7 @@ type Claims struct {
 type Authenticator struct {
 	secretKey     []byte
 	tokenDuration time.Duration
+	Blacklist     *TokenBlacklist
 }
 
 // NewAuthenticator creates a new JWT Authenticator instance with the given secret and duration.
@@ -61,6 +62,7 @@ func NewAuthenticator(secret string, duration time.Duration) (*Authenticator, er
 	return &Authenticator{
 		secretKey:     []byte(secret),
 		tokenDuration: duration,
+		Blacklist:     NewTokenBlacklist(),
 	}, nil
 }
 
@@ -88,7 +90,12 @@ func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (stri
 }
 
 // VerifyToken parses and validates the provided JWT string and returns its claims.
+// It also checks if the token has been revoked in the server-side blacklist.
 func (a *Authenticator) VerifyToken(tokenString string) (*Claims, error) {
+	if a.Blacklist.IsBlacklisted(tokenString) {
+		return nil, errors.New("token has been revoked (logged out)")
+	}
+
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])

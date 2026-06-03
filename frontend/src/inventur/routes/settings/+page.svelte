@@ -16,6 +16,10 @@
 	let newMappingEmail = $state('');
 	let mappingSaving = $state(false);
 
+	/**
+	 * @param {string} msg
+	 * @param {string} [type]
+	 */
 	function showToast(msg, type = 'success') {
 		toast = { msg, type };
 		setTimeout(() => { toast = null; }, 3500);
@@ -55,6 +59,9 @@
 		}
 	}
 
+	/**
+	 * @param {string} klasse
+	 */
 	async function deleteMapping(klasse) {
 		try {
 			const res = await fetch(`/api/klassen-mapping/${encodeURIComponent(klasse)}`, { method: 'DELETE' });
@@ -126,7 +133,8 @@
 					onclick={() => (ferienLeseclubAktiv = !ferienLeseclubAktiv)}
 					class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none {ferienLeseclubAktiv ? 'bg-emerald-500' : 'bg-gray-200'}"
 					role="switch"
-					aria-checked={ferienLeseclubAktiv}>
+					aria-checked={ferienLeseclubAktiv}
+					aria-label="Ferien-Leseclub aktivieren">
 					<span class="pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow transition-transform duration-200 {ferienLeseclubAktiv ? 'translate-x-5' : 'translate-x-0'}"></span>
 				</button>
 			</div>
@@ -161,7 +169,7 @@
 					placeholder="07-31"
 					pattern="\d{2}-\d{2}"
 					maxlength="5"
-					class="mt-1 block w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none" />
+					class="mt-1 block w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none" />
 				<p class="text-xs text-gray-400 mt-1">Format: MM-TT (z. B. <code>07-31</code> für 31. Juli)</p>
 			</label>
 		</div>
@@ -209,7 +217,7 @@
 						<tbody class="divide-y divide-gray-100">
 							{#each mappingRows as row (row.klasse)}
 								<tr class="hover:bg-gray-50 transition-colors">
-									<td class="px-4 py-2.5 font-mono font-semibold text-slate-700">{row.klasse}</td>
+									<td class="px-4 py-2.5 font-semibold text-slate-700">{row.klasse}</td>
 									<td class="px-4 py-2.5 text-slate-600">{row.lehrer_email}</td>
 									<td class="px-4 py-2.5 text-right">
 										<button
@@ -232,17 +240,19 @@
 			<!-- Add new mapping -->
 			<div class="flex gap-3 items-end pt-2 border-t border-gray-100">
 				<div class="w-28">
-					<label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Klasse</label>
+					<label for="new-mapping-klasse" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Klasse</label>
 					<input
+						id="new-mapping-klasse"
 						type="text"
 						bind:value={newMappingKlasse}
 						placeholder="z. B. 8b"
-						class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none font-mono"
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
 					/>
 				</div>
 				<div class="flex-1">
-					<label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">E-Mail</label>
+					<label for="new-mapping-email" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">E-Mail</label>
 					<input
+						id="new-mapping-email"
 						type="email"
 						bind:value={newMappingEmail}
 						placeholder="klassenlehrer@schule.de"

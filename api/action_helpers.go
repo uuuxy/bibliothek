@@ -21,7 +21,7 @@ func (s *Server) handleStudentAction(ctx context.Context, query string, repo rep
 		return err
 	}
 	if student == nil {
-		return fmt.Errorf("%w: student barcode %s not registered", errNotFound, query)
+		return fmt.Errorf("%w: Schüler-Barcode %s ist nicht registriert", errNotFound, query)
 	}
 	resp.Type = "student"
 	resp.Student = student
@@ -52,7 +52,7 @@ func (s *Server) handleTeacherAction(ctx context.Context, query string, resp *Ac
 	err := s.DB.Pool.QueryRow(ctx, q, query).Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Rolle)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("%w: teacher barcode %s not registered or active", errNotFound, query)
+			return fmt.Errorf("%w: Lehrer-Barcode %s ist nicht registriert oder inaktiv", errNotFound, query)
 		}
 		return err
 	}
@@ -83,7 +83,11 @@ func (s *Server) handleTeacherCheckoutFlow(
 		LIMIT 1
 	`, teacherID).Scan(&teacher.ID, &teacher.BarcodeID, &teacher.Vorname, &teacher.Nachname, &teacher.Rolle)
 	if err != nil {
-		return fmt.Errorf("%w: active teacher profile not found", errNotFound)
+		return fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", errNotFound)
+	}
+
+	if !copy.IstAusleihbar {
+		return fmt.Errorf("%w: dieses Buchexemplar ist nicht ausleihbar", errInvalidState)
 	}
 
 	// Open a Read Committed transaction for the entire checkout/return decision.
@@ -209,10 +213,14 @@ func (s *Server) handleStudentCheckoutFlow(
 		return err
 	}
 	if student == nil {
-		return fmt.Errorf("%w: active student profile not found", errNotFound)
+		return fmt.Errorf("%w: Aktives Schülerprofil nicht gefunden", errNotFound)
 	}
 	if student.IstGesperrt {
-		return fmt.Errorf("%w: borrowing suspended for this student", errBlocked)
+		return fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", errBlocked)
+	}
+
+	if !copy.IstAusleihbar {
+		return fmt.Errorf("%w: Dieses Buchexemplar ist nicht ausleihbar", errInvalidState)
 	}
 
 	// Open a Read Committed transaction for the entire checkout/return decision.
@@ -224,14 +232,38 @@ func (s *Server) handleStudentCheckoutFlow(
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
+	// Lock this student's row for the duration of the transaction.
+	// With up to 8 concurrent PCs, two simultaneous checkouts for the same student
+	// could both read an identical loan count before either commits, silently
+	// exceeding the limit. The FOR UPDATE serializes all checkout/return decisions
+	// for this student across all connections.
+	if _, err = tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", student.ID); err != nil {
+		return err
+	}
+
 	// Re-read the active loan with a row-level lock inside the transaction.
 	activeLoan, err := loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
 	if err != nil {
 		return err
 	}
 
+	// Fetch system settings to check loan limit
+	settings, err := s.querySettings(ctx)
+	if err != nil {
+		return err
+	}
+
+	var activeLoansCount int
+	err = tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", student.ID).Scan(&activeLoansCount)
+	if err != nil {
+		return err
+	}
+
 	// Subcase A: Book is available -> Checkout
 	if activeLoan == nil {
+		if activeLoansCount >= settings.MaxAusleihenSchueler {
+			return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell ausgeliehen: %d)", errBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
+		}
 		dueTime, err := s.resolveCheckoutDueDate(ctx, copy)
 		if err != nil {
 			return err
@@ -274,68 +306,64 @@ func (s *Server) handleStudentCheckoutFlow(
 		return nil
 	}
 
-	// Subcase C: Book borrowed by a DIFFERENT student -> Fremdrückgabe & Checkout
-	if activeLoan.SchuelerID != nil && *activeLoan.SchuelerID != student.ID {
-		prevStudent, err := studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
-		if err != nil {
-			return err
-		}
-
-		if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, true); err != nil {
-			return err
-		}
-
-		dueTime, err := s.resolveCheckoutDueDate(ctx, copy)
-		if err != nil {
-			return err
-		}
-		loan, err := loanRepo.CreateLoanTx(ctx, tx, copy.ID, student.ID, staffID, dueTime)
-		if err != nil {
-			return err
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
-		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-			CopyID:       copy.ID,
-			BarcodeID:    copy.BarcodeID,
-			Titel:        copy.Titel,
-			SchuelerID:   activeLoan.SchuelerID,
-			BearbeiterID: staffID,
-		})
-
-		resp.Type = "ausleihe"
-		resp.Book = copy
-		resp.Student = student
-		if loan != nil {
-			resp.DueDate = &loan.RueckgabeFrist
-		}
-		resp.Fremdrueckgabe = true
-		resp.Vorbesitzer = prevStudent
-		return nil
+	// Subcase C: Book borrowed by a DIFFERENT borrower (another student or teacher) -> Fremdrückgabe & Checkout
+	if activeLoansCount >= settings.MaxAusleihenSchueler {
+		return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell ausgeliehen: %d)", errBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
 	}
 
-	if activeLoan.SchuelerID == nil && activeLoan.AusleiherBenutzerID != nil {
-		if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+	var prevStudent *repository.Student
+	var prevTeacher *repository.User
+
+	if activeLoan.SchuelerID != nil {
+		prevStudent, err = studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
+		if err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
-		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-			CopyID:       copy.ID,
-			BarcodeID:    copy.BarcodeID,
-			Titel:        copy.Titel,
-			SchuelerID:   activeLoan.SchuelerID,
-			BearbeiterID: staffID,
-		})
-		resp.Type = "rueckgabe"
-		resp.Book = copy
-		return nil
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		prevTeacher = &repository.User{}
+		_ = tx.QueryRow(ctx, `
+			SELECT b.id, b.barcode_id, b.vorname, b.nachname, COALESCE(br.rolle, 'HELFER') 
+			FROM benutzer b 
+			LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id 
+			WHERE b.id = $1 
+			LIMIT 1
+		`, *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.BarcodeID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
 	}
 
-	return fmt.Errorf("%w: book is currently borrowed by a staff member", errInvalidState)
+	if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, true); err != nil {
+		return err
+	}
+
+	dueTime, err := s.resolveCheckoutDueDate(ctx, copy)
+	if err != nil {
+		return err
+	}
+	loan, err := loanRepo.CreateLoanTx(ctx, tx, copy.ID, student.ID, staffID, dueTime)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
+		CopyID:       copy.ID,
+		BarcodeID:    copy.BarcodeID,
+		Titel:        copy.Titel,
+		SchuelerID:   activeLoan.SchuelerID,
+		BearbeiterID: staffID,
+	})
+
+	resp.Type = "ausleihe"
+	resp.Book = copy
+	resp.Student = student
+	if loan != nil {
+		resp.DueDate = &loan.RueckgabeFrist
+	}
+	resp.Fremdrueckgabe = true
+	resp.Vorbesitzer = prevStudent
+	resp.VorbesitzerUser = prevTeacher
+	return nil
 }
 
 // calculateDueDate calculates the return deadline based on media type and title prefix.
@@ -377,7 +405,8 @@ func (s *Server) resolveCheckoutDueDate(ctx context.Context, copy *repository.Bo
 		// Fall back to default calculation rather than blocking every checkout.
 		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31"), nil
 	}
-	if settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
+	isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
+	if !isLMF && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
 		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
 		if parseErr == nil {
 			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local)

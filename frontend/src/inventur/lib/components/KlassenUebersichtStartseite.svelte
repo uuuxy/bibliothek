@@ -6,10 +6,11 @@
     /**
      * @type {{
      *   filteredClasses: any[],
-     *   getStockColor: (stock: number) => string
+     *   getStockColor: (stock: number) => string,
+     *   onBookClick: (book: any) => void
      * }}
      */
-    let { filteredClasses, getStockColor } = $props();
+    let { filteredClasses, getStockColor, onBookClick } = $props();
 
     /**
      * @param {any[]} books
@@ -44,7 +45,7 @@
             <!-- Carousel Container -->
             <div use:scrollHandler class="carousel-container flex overflow-x-auto gap-4 pb-4 pt-2 px-2 snap-x snap-mandatory hide-scrollbar scroll-smooth">
                 {#each sortBooks(cls.books) as book (book.id)}
-                    <KlassenBuchKachelStartseite {book} {getStockColor} />
+                    <KlassenBuchKachelStartseite {book} {getStockColor} onclick={() => onBookClick(book)} />
                 {/each}
             </div>
 

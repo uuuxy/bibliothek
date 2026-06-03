@@ -1,9 +1,10 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   /** @type {{ user: any }} */
   let { user } = $props();
 
   let searchQuery = $state("");
-  let searchResults = $state(/** @type {any[]} */ ([]));
+  let searchResults = $state.raw(/** @type {any[]} */ ([]));
   let isSearching = $state(false);
 
   // Per-book form state
@@ -16,12 +17,12 @@
     clearTimeout(searchTimeout);
     if (q.trim().length < 2) {
       searchResults = [];
-      return;
+      return () => clearTimeout(searchTimeout);
     }
     searchTimeout = setTimeout(async () => {
       isSearching = true;
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=books`);
+        const res = await apiFetch(`/api/search?q=${encodeURIComponent(q)}&type=books`);
         if (res.ok) {
           const data = await res.json();
           searchResults = data.books ?? data ?? [];
@@ -30,8 +31,12 @@
         isSearching = false;
       }
     }, 300);
+    return () => clearTimeout(searchTimeout);
   });
 
+  /**
+   * @param {string} titelId
+   */
   function getForm(titelId) {
     if (!reservierungForms[titelId]) {
       reservierungForms[titelId] = {
@@ -47,6 +52,9 @@
     return reservierungForms[titelId];
   }
 
+  /**
+   * @param {string} titelId
+   */
   function toggleForm(titelId) {
     const f = getForm(titelId);
     f.open = !f.open;
@@ -54,6 +62,9 @@
     f.error = null;
   }
 
+  /**
+   * @param {string} titelId
+   */
   async function submitReservierung(titelId) {
     const f = getForm(titelId);
     if (!f.klasse.trim()) { f.error = "Bitte Klasse angeben."; return; }
@@ -61,7 +72,7 @@
     f.error = null;
     f.success = null;
     try {
-      const res = await fetch("/api/reservierungen/klassensatz", {
+      const res = await apiFetch("/api/reservierungen/klassensatz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ titel_id: titelId, klasse: f.klasse, anzahl: f.anzahl, notiz: f.notiz }),
@@ -128,7 +139,7 @@
               <h3 class="font-semibold text-slate-800 text-sm leading-tight truncate">{book.titel ?? book.title ?? "Unbekannter Titel"}</h3>
               <p class="text-xs text-slate-500 mt-0.5">{book.autor ?? book.author ?? ""}</p>
               {#if book.isbn}
-                <p class="text-[10px] text-slate-400 font-mono mt-1">ISBN {book.isbn}</p>
+                <p class="text-[10px] text-slate-400 mt-1">ISBN {book.isbn}</p>
               {/if}
               {#if book.verfuegbare_exemplare != null}
                 <p class="text-xs mt-1.5">

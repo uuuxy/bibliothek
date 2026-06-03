@@ -18,8 +18,64 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
+
+// calculateAbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers
+// anhand der Klassenbezeichnung (z. B. "5a", "9h", "10r", "11", "13").
+//
+// Regeln:
+//   - Hauptschule (Suffix "h"): Abschluss nach Klasse 9
+//   - Oberstufe (Klassenstufe >= 11): Abschluss nach Klasse 13
+//   - Alle übrigen (Realschule "r", Gymnasium "g", unmarkiert): Abschluss nach Klasse 10
+//
+// Das Schuljahr endet im Juli; ab August läuft das neue Schuljahr, daher wird
+// das Basisjahr um 1 erhöht, wenn wir uns ab August befinden.
+func calculateAbgaengerJahr(klasse string) int {
+	klasse = strings.ToLower(strings.TrimSpace(klasse))
+
+	// Führende Ziffern extrahieren
+	gradeStr := ""
+	suffix := ""
+	for i, c := range klasse {
+		if c >= '0' && c <= '9' {
+			gradeStr += string(c)
+		} else {
+			suffix = klasse[i:]
+			break
+		}
+	}
+
+	grade, err := strconv.Atoi(gradeStr)
+	if err != nil || grade < 1 {
+		return time.Now().Year() + 5 // Fallback
+	}
+
+	var maxGrade int
+	switch {
+	case strings.HasPrefix(suffix, "h"):
+		maxGrade = 9 // Hauptschule → endet mit Klasse 9h
+	case grade >= 11:
+		maxGrade = 13 // Oberstufe → endet mit Klasse 13
+	default:
+		maxGrade = 10 // Gymnasium / Realschule → endet mit Klasse 10
+	}
+
+	yearsLeft := maxGrade - grade
+	if yearsLeft < 0 {
+		yearsLeft = 0
+	}
+
+	// Basisjahr: Schuljahresende liegt im Juli.
+	// Ab August läuft das neue Schuljahr → aktueller Schüler schließt erst nächsten Sommer ab.
+	now := time.Now()
+	baseYear := now.Year()
+	if now.Month() >= time.August {
+		baseYear++
+	}
+	return baseYear + yearsLeft
+}
 
 // BorrowedBook represents a currently checked out book copy detail for the student.
 type BorrowedBook struct {
@@ -355,14 +411,14 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		}
 
 		// 2. Insert student
-		defaultAbgaengerJahr := time.Now().Year() + 5
+		abgaengerJahr := calculateAbgaengerJahr(req.Klasse)
 		var studentID string
 		qInsert := `
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 			VALUES ($1, $2, $3, $4, $5)
 			RETURNING id
 		`
-		err = tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, req.Klasse, defaultAbgaengerJahr).Scan(&studentID)
+		err = tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, req.Klasse, abgaengerJahr).Scan(&studentID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -469,6 +525,80 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"status": "success",
+		})
+	}
+}
+
+// PatchStudentHandler aktualisiert editierbare Felder eines Schülers (klasse, abgaenger_jahr).
+// Wird für den manuellen Override des Abgangsjahrs und für Klassenänderungen verwendet.
+func (s *Server) PatchStudentHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+			return
+		}
+
+		var req struct {
+			Klasse        *string `json:"klasse"`
+			AbgaengerJahr *int    `json:"abgaenger_jahr"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiger Request-Body: %w", err))
+			return
+		}
+		if req.Klasse == nil && req.AbgaengerJahr == nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("mindestens ein Feld (klasse oder abgaenger_jahr) muss angegeben werden"))
+			return
+		}
+		if req.AbgaengerJahr != nil && (*req.AbgaengerJahr < 2000 || *req.AbgaengerJahr > 2100) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("abgaenger_jahr muss zwischen 2000 und 2100 liegen"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		// Resolve new abgaenger_jahr: explicit override takes precedence, else recalculate from class
+		var newJahr int
+		if req.AbgaengerJahr != nil {
+			newJahr = *req.AbgaengerJahr
+		} else {
+			newJahr = calculateAbgaengerJahr(*req.Klasse)
+		}
+
+		if req.Klasse != nil {
+			// Update both klasse and abgaenger_jahr
+			tag, err := s.DB.Pool.Exec(ctx,
+				`UPDATE schueler SET klasse = $1, abgaenger_jahr = $2, aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $3`,
+				*req.Klasse, newJahr, id)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if tag.RowsAffected() == 0 {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Schüler nicht gefunden"))
+				return
+			}
+		} else {
+			// Only update abgaenger_jahr
+			tag, err := s.DB.Pool.Exec(ctx,
+				`UPDATE schueler SET abgaenger_jahr = $1, aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $2`,
+				newJahr, id)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if tag.RowsAffected() == 0 {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Schüler nicht gefunden"))
+				return
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status":         "success",
+			"abgaenger_jahr": newJahr,
 		})
 	}
 }

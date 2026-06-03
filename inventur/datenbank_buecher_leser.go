@@ -8,7 +8,7 @@ import (
 // ListBooks lists books matching subject, grade level, and text query.
 func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string) ([]Book, error) {
 	query := `
-		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp, erweiterte_eigenschaften
 		FROM buecher_titel
 		WHERE ($1 = '' OR subject = $1)
 		  AND ($2::smallint IS NULL OR grade_level = $2)
@@ -37,6 +37,7 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 			&book.LastCounted,
 			&book.SortOrder,
 			&book.Medientyp,
+			&book.ErweiterteEigenschaften,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)

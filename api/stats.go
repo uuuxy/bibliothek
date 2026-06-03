@@ -1,9 +1,11 @@
 package api
 
+// stats.go — Handlers for library statistics, reorder reporting and PDF export.
+// Inventory scanning and Fehlbestand (missing copies) live in inventory.go.
+
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,7 +14,6 @@ import (
 
 	"bibliothek/apierrors"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jung-kurt/gofpdf"
 )
 
@@ -26,20 +27,6 @@ type ReorderTitle struct {
 	CoverURL          string `json:"cover_url,omitempty"`
 	Meldebestand      int    `json:"meldebestand"`
 	VerfuegbarBestand int    `json:"verfuegbarer_bestand"`
-}
-
-// InventoryScanRequest is the payload for checking in an item during inventory.
-type InventoryScanRequest struct {
-	BarcodeID string `json:"barcode_id"`
-}
-
-// InventoryScanResponse yields the inventory status of the physical copy.
-type InventoryScanResponse struct {
-	BarcodeID       string `json:"barcode_id"`
-	Titel           string `json:"titel"`
-	CoverURL        string `json:"cover_url,omitempty"`
-	ImRegalErwartet bool   `json:"im_regal_erwartet"`
-	Status          string `json:"status"` // "Geprüft"
 }
 
 // GetReordersHandler lists all book titles below their reorder threshold.
@@ -111,66 +98,6 @@ func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 		if err := pdf.Output(w); err != nil {
 			log.Printf("Stats: PDF stream output failed: %v", err)
 		}
-	}
-}
-
-// ScanInventoryHandler registers copy scans in active inventory lists.
-func (s *Server) ScanInventoryHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req InventoryScanRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		var copyID, title, coverURL string
-		var isLent bool
-
-		// Check copy metadata and current loan status
-		query := `
-			SELECT e.id, t.titel, coalesce(t.cover_url, ''), EXISTS (
-				SELECT 1 FROM ausleihen a 
-				WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
-			) AS is_lent
-			FROM buecher_exemplare e
-			JOIN buecher_titel t ON e.titel_id = t.id
-			WHERE e.barcode_id = $1
-			LIMIT 1
-		`
-		err := s.DB.Pool.QueryRow(ctx, query, req.BarcodeID).Scan(&copyID, &title, &coverURL, &isLent)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// Update inventory audit timestamp on copy
-		updateQuery := `
-			UPDATE buecher_exemplare
-			SET inventur_geprueft_am = CURRENT_TIMESTAMP,
-			    aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $1
-		`
-		_, err = s.DB.Pool.Exec(ctx, updateQuery, copyID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(InventoryScanResponse{
-			BarcodeID:       req.BarcodeID,
-			Titel:           title,
-			CoverURL:        coverURL,
-			ImRegalErwartet: !isLent, // Should be on shelf if not currently checked out
-			Status:          "Geprüft",
-		})
 	}
 }
 
@@ -296,13 +223,13 @@ func (s *Server) queryReorders(ctx context.Context) ([]ReorderTitle, error) {
 	query := `
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), coalesce(t.cover_url, ''), t.meldebestand,
 			(SELECT COUNT(*) FROM buecher_exemplare e 
-			 WHERE e.titel_id = t.id AND e.ist_ausleihbar = true 
+			 WHERE e.titel_id = t.id AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
 			   AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
 			) AS verfuegbar
 		FROM buecher_titel t
 		WHERE (
 			SELECT COUNT(*) FROM buecher_exemplare e 
-			WHERE e.titel_id = t.id AND e.ist_ausleihbar = true 
+			WHERE e.titel_id = t.id AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
 			  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
 		) < t.meldebestand
 		ORDER BY t.titel

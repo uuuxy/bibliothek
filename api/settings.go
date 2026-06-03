@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"bibliothek/apierrors"
@@ -14,17 +15,18 @@ type SystemEinstellungen struct {
 	FerienLeseclubAktiv     bool    `json:"ferien_leseclub_aktiv"`
 	FerienLeseclubZieldatum *string `json:"ferien_leseclub_zieldatum"` // ISO date string "YYYY-MM-DD" or null
 	LmfStichtag             string  `json:"lmf_stichtag"`              // "MM-DD" format, e.g. "07-31"
+	MaxAusleihenSchueler    int     `json:"max_ausleihen_schueler"`
 }
 
 // querySettings reads system settings from the database, returning safe defaults on error.
 func (s *Server) querySettings(ctx context.Context) (*SystemEinstellungen, error) {
 	rows, err := s.DB.Pool.Query(ctx, `SELECT schluessel, wert FROM system_einstellungen`)
 	if err != nil {
-		return &SystemEinstellungen{LmfStichtag: "07-31"}, nil
+		return &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5}, nil
 	}
 	defer rows.Close()
 
-	settings := &SystemEinstellungen{LmfStichtag: "07-31"}
+	settings := &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5}
 	for rows.Next() {
 		var key string
 		var val *string
@@ -42,6 +44,12 @@ func (s *Server) querySettings(ctx context.Context) (*SystemEinstellungen, error
 		case "lmf_stichtag":
 			if val != nil && *val != "" {
 				settings.LmfStichtag = *val
+			}
+		case "max_ausleihen_schueler":
+			if val != nil && *val != "" {
+				if v, err := strconv.Atoi(*val); err == nil {
+					settings.MaxAusleihenSchueler = v
+				}
 			}
 		}
 	}
@@ -95,11 +103,16 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 		if req.FerienLeseclubZieldatum != nil {
 			zieldatum = *req.FerienLeseclubZieldatum
 		}
+		maxAusleihen := "5"
+		if req.MaxAusleihenSchueler > 0 {
+			maxAusleihen = strconv.Itoa(req.MaxAusleihenSchueler)
+		}
 
 		pairs := [][2]string{
 			{"ferien_leseclub_aktiv", aktiv},
 			{"lmf_stichtag", stichtag},
 			{"ferien_leseclub_zieldatum", zieldatum},
+			{"max_ausleihen_schueler", maxAusleihen},
 		}
 		for _, p := range pairs {
 			if _, err := s.DB.Pool.Exec(ctx, upsert, p[0], p[1]); err != nil {

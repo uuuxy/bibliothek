@@ -28,38 +28,41 @@ type Student struct {
 
 // BookTitle represents the buecher_titel table metadata.
 type BookTitle struct {
-	ID               string    `json:"id"`
-	Titel            string    `json:"titel"`
-	Untertitel       string    `json:"untertitel,omitempty"`
-	Autor            string    `json:"autor,omitempty"`
-	ISBN             string    `json:"isbn,omitempty"`
-	Verlag           string    `json:"verlag,omitempty"`
-	Erscheinungsjahr int       `json:"erscheinungsjahr,omitempty"`
-	Beschreibung     string    `json:"beschreibung,omitempty"`
-	CoverURL         string    `json:"cover_url,omitempty"`
-	Medientyp        string    `json:"medientyp,omitempty"`
-	ErstelltAm       time.Time `json:"erstellt_am"`
-	AktualisiertAm   time.Time `json:"aktualisiert_am"`
+	ID                      string         `json:"id"`
+	Titel                   string         `json:"titel"`
+	Untertitel              string         `json:"untertitel,omitempty"`
+	Autor                   string         `json:"autor,omitempty"`
+	ISBN                    string         `json:"isbn,omitempty"`
+	Verlag                  string         `json:"verlag,omitempty"`
+	Erscheinungsjahr        int            `json:"erscheinungsjahr,omitempty"`
+	Beschreibung            string         `json:"beschreibung,omitempty"`
+	CoverURL                string         `json:"cover_url,omitempty"`
+	Medientyp               string         `json:"medientyp,omitempty"`
+	ErstelltAm              time.Time      `json:"erstellt_am"`
+	AktualisiertAm          time.Time      `json:"aktualisiert_am"`
+	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
 }
 
 // BookCopy represents the buecher_exemplare physical item model, combined with title details.
 type BookCopy struct {
-	ID             string    `json:"id"`
-	TitelID        string    `json:"titel_id"`
-	BarcodeID      string    `json:"barcode_id"`
-	ZustandNotiz   string    `json:"zustand_notiz"`
-	ErworbenAm     time.Time `json:"erworben_am"`
-	IstAusleihbar  bool      `json:"ist_ausleihbar"`
-	ErstelltAm     time.Time `json:"erstellt_am"`
-	AktualisiertAm time.Time `json:"aktualisiert_am"`
-	
+	ID              string    `json:"id"`
+	TitelID         string    `json:"titel_id"`
+	BarcodeID       string    `json:"barcode_id"`
+	ZustandNotiz    string    `json:"zustand_notiz"`
+	ErworbenAm      time.Time `json:"erworben_am"`
+	IstAusleihbar   bool      `json:"ist_ausleihbar"`
+	IstAusgesondert bool      `json:"ist_ausgesondert"`
+	ErstelltAm      time.Time `json:"erstellt_am"`
+	AktualisiertAm  time.Time `json:"aktualisiert_am"`
+
 	// Joined fields from associated BookTitle
-	Titel     string `json:"titel"`
-	Autor     string `json:"autor"`
-	Verlag    string `json:"verlag"`
-	ISBN      string `json:"isbn"`
-	CoverURL  string `json:"cover_url,omitempty"`
-	Medientyp string `json:"medientyp,omitempty"`
+	Titel                   string         `json:"titel"`
+	Autor                   string         `json:"autor"`
+	Verlag                  string         `json:"verlag"`
+	ISBN                    string         `json:"isbn"`
+	CoverURL                string         `json:"cover_url,omitempty"`
+	Medientyp               string         `json:"medientyp,omitempty"`
+	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
 }
 
 // Loan represents the ausleihen table model for historical and active transactions.

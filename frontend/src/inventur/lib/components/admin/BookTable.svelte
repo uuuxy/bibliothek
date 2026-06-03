@@ -186,6 +186,7 @@
 					<th class="px-6 py-4">Fach</th>
 					<th class="px-6 py-4">Klasse</th>
 					<th class="px-6 py-4">Zweig</th>
+					<th class="px-6 py-4">Standort</th>
 					<th class="px-6 py-4 text-right">Zuletzt geprüft</th>
 					<th class="px-6 py-4 text-right">Bestand</th>
 					<th class="px-6 py-4 w-10"></th>
@@ -211,7 +212,7 @@
 
 				{#if books.length === 0 && !loading}
 					<tr>
-						<td colspan="9" class="px-6 py-12 text-center text-slate-400 font-medium">
+						<td colspan="10" class="px-6 py-12 text-center text-slate-400 font-medium">
 							Keine Bücher gefunden.
 						</td>
 					</tr>

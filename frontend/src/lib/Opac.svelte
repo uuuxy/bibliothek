@@ -1,4 +1,5 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import AntolinBadge from './AntolinBadge.svelte';
 
   let query = $state('');
@@ -15,7 +16,7 @@
     loading = true;
     searched = true;
     try {
-      const res = await fetch(`/api/opac/suche?q=${encodeURIComponent(q)}`);
+      const res = await apiFetch(`/api/opac/suche?q=${encodeURIComponent(q)}`);
       if (res.ok) results = await res.json();
       else results = [];
     } catch {

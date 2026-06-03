@@ -138,7 +138,7 @@
 				<div class="absolute left-0 top-0 bottom-0 w-2 bg-linear-to-b {getSpineGradient(book.subject)} opacity-90 shadow-sm rounded-l-xl"></div>
 				
 				<div class="pl-1.5 pr-0.5 pt-0.5 text-left">
-					<span class="text-[7px] uppercase tracking-widest text-white/80 font-extrabold font-mono">{book.subject}</span>
+					<span class="text-[7px] uppercase tracking-widest text-white/80 font-extrabold">{book.subject}</span>
 					<h4 class="text-[9px] font-extrabold text-white leading-snug line-clamp-4 mt-1">{book.title}</h4>
 				</div>
 				

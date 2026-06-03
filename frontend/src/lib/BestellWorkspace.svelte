@@ -1,5 +1,7 @@
 <script>
   import { onMount } from "svelte";
+  import { appState } from "../inventur/lib/store.svelte.js";
+  import { apiFetch } from "./apiFetch.js";
   let activeTab = $state("bestellungen"), newName = $state(""), newEmail = $state(""), newCustNum = $state("");
   /** @type {any[]} */
   let suppliers = $state([]);
@@ -16,6 +18,8 @@
   /** @type {any[]} */
   let incomingShipments = $state([]);
   let isReleasing = $state(false), showGreenFade = $state(false);
+  /** @type {any[] | null} */
+  let printSuggestion = $state(null);
   /** @type {any | null} */
   let isbnPreview = $state(null);
   let isbnLoading = $state(false);
@@ -28,21 +32,21 @@
 
   async function loadSuppliers() {
     try {
-      const res = await fetch("/api/lieferanten");
+      const res = await apiFetch("/api/lieferanten");
       if (res.ok) suppliers = (await res.json()) || [];
     } catch (err) { console.error("Fehler beim Laden der Lieferanten:", err); }
   }
 
   async function loadIncomingShipments() {
     try {
-      const res = await fetch("/api/bestellungen/zulauf");
+      const res = await apiFetch("/api/bestellungen/zulauf");
       if (res.ok) incomingShipments = (await res.json()) || [];
     } catch (err) { console.error("Fehler beim Laden des Wareneingangs:", err); }
   }
 
   async function fetchRecommendations() {
     try {
-      const res = await fetch("/api/bestellungen");
+      const res = await apiFetch("/api/bestellungen");
       if (res.ok) recommendations = (await res.json()) || [];
     } catch (err) { console.error(err); }
   }
@@ -51,7 +55,7 @@
   async function addSupplier(e) {
     e.preventDefault(); if (!newName || !newEmail || !newCustNum) return;
     try {
-      const res = await fetch("/api/lieferanten", {
+      const res = await apiFetch("/api/lieferanten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName, email: newEmail, customerNumber: newCustNum })
@@ -69,7 +73,7 @@
   /** @param {string} id */
   async function removeSupplier(id) {
     try {
-      const res = await fetch(`/api/lieferanten/${id}`, {
+      const res = await apiFetch(`/api/lieferanten/${id}`, {
         method: "DELETE"
       });
       if (res.ok) {
@@ -97,7 +101,7 @@
       searchResults = []; showDropdown = false; isbnPreview = null; isbnLoading = true;
       (async () => {
         try {
-          const res = await fetch("/api/buecher/aus-isbn", {
+          const res = await apiFetch("/api/buecher/aus-isbn", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ isbn: cleanQuery })
@@ -114,7 +118,7 @@
       isbnPreview = null; isbnLoading = false;
       const performSearch = async () => {
         try {
-          const res = await fetch("/api/action", {
+          const res = await apiFetch("/api/action", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ query: searchQuery })
@@ -150,7 +154,7 @@
     submittingOrder = true; orderMessage = null;
     const supplier = suppliers[selectedSupplierIdx];
     try {
-      const res = await fetch("/api/orders", {
+      const res = await apiFetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -176,10 +180,18 @@
   async function releaseIncoming() {
     if (!incomingShipments.length) return;
     isReleasing = true;
+    printSuggestion = null;
     try {
-      const res = await fetch("/api/bestellungen/freigeben", { method: "POST" });
+      const res = await apiFetch("/api/bestellungen/freigeben", { method: "POST" });
       if (res.ok) {
+        const data = await res.json();
         showGreenFade = true;
+        if (data.released_items && data.released_items.length > 0) {
+          const needsPrinting = data.released_items.filter(item => !item.etikett_gedruckt);
+          if (needsPrinting.length > 0) {
+            printSuggestion = needsPrinting;
+          }
+        }
         setTimeout(async () => {
           await loadIncomingShipments();
           showGreenFade = false;
@@ -281,7 +293,7 @@
                     <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate">{item.titel}</h4><p class="text-sm text-slate-400 truncate">ISBN: {item.isbn}</p></div>
                   </div>
                   <div class="flex items-center gap-4">
-                    <div class="flex items-center border border-slate-200 bg-white rounded-md overflow-hidden"><button onclick={() => item.menge = Math.max(1, item.menge - 1)} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">-</button><span class="px-3 font-mono font-bold text-slate-700 min-w-[20px] text-center">{item.menge}</span><button onclick={() => item.menge += 1} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">+</button></div>
+                    <div class="flex items-center border border-slate-200 bg-white rounded-md overflow-hidden"><button onclick={() => item.menge = Math.max(1, item.menge - 1)} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">-</button><span class="px-3 font-bold text-slate-700 min-w-[20px] text-center">{item.menge}</span><button onclick={() => item.menge += 1} class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">+</button></div>
                     <button onclick={() => removeFromCart(idx)} class="text-slate-400 hover:text-rose-500 cursor-pointer">Löschen</button>
                   </div>
                 </div>
@@ -303,6 +315,24 @@
 
       <!-- Sidebar Status & Mindestbestellungen -->
       <div class="lg:col-span-4 space-y-6">
+        {#if printSuggestion}
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-2xs space-y-3.5 text-left animate-fade-in no-print">
+            <div class="flex items-start gap-2.5">
+              <span class="text-xl">⚠️</span>
+              <div>
+                <h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider">Etikettendruck erforderlich</h3>
+                <p class="text-xs text-amber-700 font-medium leading-relaxed mt-1">Es gibt {printSuggestion.length} Exemplare in dieser freigegebenen Lieferung, für die noch keine Barcode-Etiketten gedruckt wurden (z.B. Amazon-Bestellung).</p>
+              </div>
+            </div>
+            <button onclick={() => {
+              appState.pendingPrintCopies = printSuggestion;
+              printSuggestion = null;
+            }} class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm cursor-pointer transition-all active:scale-95">
+              🖨️ Etiketten für diese Lieferung drucken
+            </button>
+          </div>
+        {/if}
+
         <!-- Wareneingang (Freigabe) -->
         <div class="bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3"><h2 class="text-sm font-bold text-slate-800">Wareneingang</h2><span class="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold uppercase">Im Zulauf</span></div>
@@ -313,8 +343,8 @@
               <div class="max-h-60 overflow-y-auto space-y-2 {showGreenFade ? 'animate-green-fade' : ''}">
                 {#each incomingShipments as s}
                   <div class="p-3 border border-slate-100 rounded-lg bg-slate-50/50 text-[11px] space-y-1.5">
-                    <div class="flex justify-between font-bold text-slate-700"><span>{s.supplierName}</span><span class="text-slate-400 font-mono font-medium">{s.date}</span></div>
-                    {#each s.items as item}<div class="flex justify-between text-slate-600"><span class="truncate">{item.titel}</span><span class="font-mono font-bold">{item.menge}x</span></div>{/each}
+                    <div class="flex justify-between font-bold text-slate-700"><span>{s.supplierName}</span><span class="text-slate-400 font-medium">{s.date}</span></div>
+                    {#each s.items as item}<div class="flex justify-between text-slate-600"><span class="truncate">{item.titel}</span><span class="font-bold">{item.menge}x</span></div>{/each}
                   </div>
                 {/each}
               </div>
@@ -338,7 +368,7 @@
                     {:else}
                       <div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center text-slate-400 shrink-0 text-[9px]">📖</div>
                     {/if}
-                    <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate leading-tight">{r.titel}</h4><p class="text-[9px] text-slate-400 mt-0.5">Bestand: {r.verfuegbarer_bestand} / Melde: {r.meldebestand}</p></div>
+                    <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate leading-tight">{r.titel}</h4><p class="text-sm text-slate-600 mt-0.5">Bestand: <span class="font-semibold">{r.verfuegbarer_bestand}</span> / Melde: <span class="font-semibold">{r.meldebestand}</span></p></div>
                   </div>
                   <button onclick={() => addToCart(r)} class="shrink-0 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-md text-[9px] cursor-pointer">+ Add</button>
                 </div>
@@ -376,7 +406,7 @@
                 <tr class="hover:bg-slate-50/40">
                   <td class="py-3 font-bold text-slate-800">{s.name}</td>
                   <td class="py-3 text-slate-650">{s.email}</td>
-                  <td class="py-3 font-mono text-slate-650">{s.customerNumber}</td>
+                  <td class="py-3 text-slate-650">{s.customerNumber}</td>
                   <td class="py-3 text-right"><button onclick={() => removeSupplier(s.id)} class="text-slate-450 hover:text-rose-600 cursor-pointer">Löschen</button></td>
                 </tr>
               {/each}

@@ -25,7 +25,7 @@ func (s *Server) ActionHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
 			return
 		}
 
@@ -37,7 +37,7 @@ func (s *Server) ActionHandler(
 
 		req.Query = strings.TrimSpace(req.Query)
 		if req.Query == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("search/barcode query is empty"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Such- oder Barcode-Abfrage ist leer"))
 			return
 		}
 
@@ -110,7 +110,10 @@ func (s *Server) handleBookAction(
 		return err
 	}
 	if copy == nil {
-		return fmt.Errorf("%w: book copy barcode %s not found", errNotFound, query)
+		return fmt.Errorf("%w: Buchexemplar-Barcode %s wurde nicht gefunden", errNotFound, query)
+	}
+	if copy.IstAusgesondert {
+		return fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", errInvalidState, query)
 	}
 
 	// Case: Active Teacher context exists in session (dauerhafter Handapparat).
@@ -156,7 +159,7 @@ func (s *Server) handleBookAction(
 			}
 			return nil
 		}
-		return fmt.Errorf("%w: book copy is not currently borrowed", errInvalidState)
+		return fmt.Errorf("%w: Dieses Buchexemplar ist aktuell nicht ausgeliehen", errInvalidState)
 	}
 
 	if activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == claims.UserID {

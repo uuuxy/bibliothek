@@ -13,10 +13,11 @@
      *     coverUrl: string,
      *     lastCounted: string,
      *     medientyp?: string
-     *   }
+     *   },
+     *   onclick?: () => void
      * }}
      */
-    let { book } = $props();
+    let { book, onclick } = $props();
 
     /** @type {string[]} */
     let coverCandidates = $state([]);
@@ -178,8 +179,11 @@
     }
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <article
-    class="bg-white rounded-2xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm"
+    class="bg-white rounded-2xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm cursor-pointer"
+    onclick={onclick}
 >
     {#if coverSrc && !coverFailed}
         <div
@@ -203,7 +207,7 @@
             <div class="absolute left-0 top-0 bottom-0 w-3 bg-linear-to-b {getSpineGradient(book.subject)} opacity-90 shadow-md"></div>
             
             <div class="pl-4 pr-1 pt-1 text-left">
-                <span class="text-[9px] uppercase tracking-widest text-white/80 font-extrabold font-mono">{book.subject}</span>
+                <span class="text-[9px] uppercase tracking-widest text-white/80 font-extrabold">{book.subject}</span>
                 <h4 class="text-sm font-extrabold text-white leading-snug line-clamp-3 mt-1.5">{book.title}</h4>
             </div>
             
@@ -211,7 +215,7 @@
                 <p class="text-[10px] font-semibold text-white/70 truncate">
                     {book.medientyp === 'DVD' ? (book.author ? 'Regisseur: ' + book.author : 'Unbekannter Regisseur') : (book.author || 'Unbekannter Autor')}
                 </p>
-                <p class="text-[8px] font-mono text-white/50 mt-0.5">{book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {book.isbn || "-"}</p>
+                <p class="text-[8px] text-white/50 mt-0.5">{book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {book.isbn || "-"}</p>
             </div>
         </div>
     {/if}
@@ -225,8 +229,8 @@
                 {book.title}
             </h2>
             <button
-                class="text-[11px] text-slate-400 mb-4 font-mono tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
-                onclick={() => copyIsbn(book.isbn)}
+                class="text-[11px] text-slate-400 mb-4 tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
+                onclick={(e) => { e.stopPropagation(); copyIsbn(book.isbn); }}
                 title={(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN') + ' kopieren'}
                 aria-label={(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN') + ' kopieren'}
             >
@@ -307,7 +311,7 @@
                     <span
                         class="w-2 h-2 rounded-full {getStockDotColor(book.stock)}"
                     ></span>
-                    <span class="text-lg font-extrabold text-slate-800 font-mono">{book.stock}</span>
+                    <span class="text-lg font-extrabold text-slate-800">{book.stock}</span>
                 </div>
             </div>
         </div>

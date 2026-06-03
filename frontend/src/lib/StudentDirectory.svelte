@@ -1,20 +1,22 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
   import StudentProfile from "./StudentProfile.svelte";
+  import Modal from "./Modal.svelte";
 
   // Props (Svelte 5)
   let { role = "" } = $props();
 
   // State Runes (Svelte 5)
   /** @type {any[]} */
-  let students = $state([]);
+  let students = $state.raw([]);
   let loading = $state(false);
   let searchQuery = $state("");
   /** @type {any} */
   let activeStudent = $state(null);
 
   /** @type {string[]} */
-  let existingClasses = $state([]);
+  let existingClasses = $state.raw([]);
   let showCreateModal = $state(false);
   let newVorname = $state("");
   let newNachname = $state("");
@@ -50,7 +52,7 @@
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/students/import", {
+      const res = await apiFetch("/api/students/import", {
         method: "POST",
         body: formData
       });
@@ -91,7 +93,7 @@
   async function loadStudents() {
     loading = true;
     try {
-      const res = await fetch("/api/schueler");
+      const res = await apiFetch("/api/schueler");
       if (res.ok) {
         students = await res.json();
       }
@@ -104,7 +106,7 @@
 
   async function loadClasses() {
     try {
-      const res = await fetch("/api/klassen");
+      const res = await apiFetch("/api/klassen");
       if (res.ok) {
         existingClasses = await res.json();
       }
@@ -121,7 +123,7 @@
     }
     isSaving = true;
     try {
-      const res = await fetch("/api/schueler", {
+      const res = await apiFetch("/api/schueler", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -163,20 +165,23 @@
   });
 </script>
 
-<div class="w-full animate-fade-in no-print text-slate-800">
+<div class="w-full animate-fade-in text-slate-800">
   
   {#if activeStudent}
     <!-- Detail View: Student Profile -->
+    <!-- Back button is no-print; profile's print section must not be inside no-print -->
     <div class="w-full text-left space-y-4">
-      <button onclick={() => { activeStudent = null; loadStudents(); }} class="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-750 transition-colors py-1 cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-        <span>Zurück zum Schülerverzeichnis</span>
-      </button>
+      <div class="no-print">
+        <button onclick={() => { activeStudent = null; loadStudents(); }} class="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-750 transition-colors py-1 cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          <span>Zurück zum Schülerverzeichnis</span>
+        </button>
+      </div>
       <StudentProfile student={activeStudent} onDeselect={() => { activeStudent = null; loadStudents(); }} role={role} />
     </div>
   {:else}
     <!-- Fullscreen Directory List -->
-    <div class="w-full space-y-6">
+    <div class="w-full space-y-6 no-print">
       <!-- Action & Search Bar -->
       <div class="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-xs justify-between">
         <div class="flex flex-1 items-center gap-4">
@@ -207,7 +212,7 @@
           {/if}
         </div>
         
-        <div class="text-xs font-semibold text-slate-500 font-mono">
+        <div class="text-xs font-semibold text-slate-500">
           Einträge: {filteredStudents.length} / {students.length}
         </div>
       </div>
@@ -309,7 +314,7 @@
                     <!-- Name & Barcode ID -->
                     <td class="px-6 py-3 font-semibold text-slate-800">
                       {s.vorname} {s.nachname}
-                      <div class="text-[9px] font-mono text-slate-400 font-normal mt-0.5">{s.barcode_id}</div>
+                      <div class="text-[9px] text-slate-400 font-normal mt-0.5">{s.barcode_id}</div>
                     </td>
                     
                     <!-- Klasse -->
@@ -319,7 +324,7 @@
                     
                     <!-- Books count -->
                     <td class="px-6 py-3 text-right">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold font-mono {s.ausgeliehen_count > 0 ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold {s.ausgeliehen_count > 0 ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}">
                         {s.ausgeliehen_count || 0}
                       </span>
                     </td>
@@ -346,56 +351,55 @@
   {/if}
 </div>
 
-{#if showCreateModal}
-  <div class="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
-    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800 text-left">
-      <h3 class="text-lg font-bold text-slate-900 mb-4">Neuen Schüler anlegen</h3>
-      
+<Modal open={showCreateModal} onclose={() => { showCreateModal = false; createError = ""; }} size="md">
+  {#snippet header()}
+    <h3 class="text-sm font-bold text-slate-800">Neuen Schüler anlegen</h3>
+  {/snippet}
+  {#snippet children()}
+    <div class="p-6 space-y-4">
       {#if createError}
-        <div class="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-semibold text-rose-600">
+        <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-semibold text-rose-600">
           {createError}
         </div>
       {/if}
 
-      <div class="space-y-4">
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Vorname *
-          <input type="text" bind:value={newVorname} placeholder="z.B. Max" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
-        </label>
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Vorname *
+        <input type="text" bind:value={newVorname} placeholder="z.B. Max" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
+      </label>
 
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Nachname *
-          <input type="text" bind:value={newNachname} placeholder="z.B. Mustermann" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
-        </label>
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Nachname *
+        <input type="text" bind:value={newNachname} placeholder="z.B. Mustermann" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
+      </label>
 
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Klasse *
-          <div class="mt-1.5 flex gap-2">
-            {#if !customKlasseInput}
-              <select bind:value={newKlasse} onchange={(e) => { const sel = /** @type {HTMLSelectElement} */ (e.target); if (sel && sel.value === "__custom__") { customKlasseInput = true; newKlasse = ""; } }} class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer font-sans">
-                <option value="">-- Klasse auswählen --</option>
-                {#each existingClasses as k}
-                  <option value={k}>{k}</option>
-                {/each}
-                <option value="__custom__">Neue Klasse eingeben...</option>
-              </select>
-            {:else}
-              <div class="relative w-full">
-                <input type="text" bind:value={newKlasse} placeholder="z.B. 10b" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
-                <button type="button" onclick={() => { customKlasseInput = false; newKlasse = ""; }} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 hover:text-blue-750 transition-colors bg-transparent border-none cursor-pointer">Auswahl</button>
-              </div>
-            {/if}
-          </div>
-        </label>
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Klasse *
+        <div class="mt-1.5 flex gap-2">
+          {#if !customKlasseInput}
+            <select bind:value={newKlasse} onchange={(e) => { const sel = /** @type {HTMLSelectElement} */ (e.target); if (sel && sel.value === "__custom__") { customKlasseInput = true; newKlasse = ""; } }} class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer font-sans">
+              <option value="">-- Klasse auswählen --</option>
+              {#each existingClasses as k}
+                <option value={k}>{k}</option>
+              {/each}
+              <option value="__custom__">Neue Klasse eingeben...</option>
+            </select>
+          {:else}
+            <div class="relative w-full">
+              <input type="text" bind:value={newKlasse} placeholder="z.B. 10b" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
+              <button type="button" onclick={() => { customKlasseInput = false; newKlasse = ""; }} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 hover:text-blue-750 transition-colors bg-transparent border-none cursor-pointer">Auswahl</button>
+            </div>
+          {/if}
+        </div>
+      </label>
 
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Barcode-ID (optional)
-          <input type="text" bind:value={newBarcode} placeholder="Wird automatisch generiert, wenn leer" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono" />
-        </label>
-      </div>
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Barcode-ID (optional)
+        <input type="text" bind:value={newBarcode} placeholder="Wird automatisch generiert, wenn leer" class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+      </label>
 
-      <div class="mt-6 flex justify-end gap-3">
+      <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
         <button onclick={() => { showCreateModal = false; createError = ""; }} disabled={isSaving} class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer font-sans">Abbrechen</button>
         <button onclick={createStudent} disabled={isSaving} class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-750 disabled:opacity-60 transition-colors cursor-pointer font-sans">
           {#if isSaving}Speichern...{:else}Speichern{/if}
         </button>
       </div>
     </div>
-  </div>
-{/if}
+  {/snippet}
+</Modal>

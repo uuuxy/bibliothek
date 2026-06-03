@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -127,9 +128,11 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 		var labels []BarcodeLabelDetail
 		var orderSummaryItems []OrderedItem
 		currentBarcodeIndex := startNum
+		isNaacher := strings.Contains(strings.ToLower(toEmail), "naacher")
+
 		qInsert := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar)
-			VALUES ($1, $2, 'bestellt', false)
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt)
+			VALUES ($1, $2, 'bestellt', false, $3)
 		`
 
 		for _, item := range itemsToOrder {
@@ -143,7 +146,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 
 			for i := 0; i < item.OrderQty; i++ {
 				barcodeID := fmt.Sprintf("B-%05d", currentBarcodeIndex)
-				_, err = tx.Exec(ctx, qInsert, item.ID, barcodeID)
+				_, err = tx.Exec(ctx, qInsert, item.ID, barcodeID, isNaacher)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 					return
@@ -184,22 +187,26 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			len(labels),
 		)
 
-		mailReq := MailRequest{
-			To:      toEmail,
-			Subject: fmt.Sprintf("Buchbestellung Schulbibliothek - %s", time.Now().Format("02.01.2006")),
-			Body:    emailBody,
-			Attachments: []MailAttachment{
-				{
-					Name:        fmt.Sprintf("bestelluebersicht_%s.pdf", time.Now().Format("2006-01-02")),
-					ContentType: "application/pdf",
-					Data:        summaryPDF,
-				},
-				{
-					Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format("2006-01-02")),
-					ContentType: "application/pdf",
-					Data:        barcodePDF,
-				},
+		attachments := []MailAttachment{
+			{
+				Name:        fmt.Sprintf("bestelluebersicht_%s.pdf", time.Now().Format("2006-01-02")),
+				ContentType: "application/pdf",
+				Data:        summaryPDF,
 			},
+		}
+		if isNaacher {
+			attachments = append(attachments, MailAttachment{
+				Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format("2006-01-02")),
+				ContentType: "application/pdf",
+				Data:        barcodePDF,
+			})
+		}
+
+		mailReq := MailRequest{
+			To:          toEmail,
+			Subject:     fmt.Sprintf("Buchbestellung Schulbibliothek - %s", time.Now().Format("02.01.2006")),
+			Body:        emailBody,
+			Attachments: attachments,
 		}
 
 		if err := SendEmail(mailReq); err != nil {
@@ -224,29 +231,49 @@ func (s *Server) ReleaseOrdersHandler() http.HandlerFunc {
 		defer cancel()
 
 		query := `
-			UPDATE buecher_exemplare
+			UPDATE buecher_exemplare e
 			SET ist_ausleihbar = true,
 			    zustand_notiz = '',
 			    aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE ist_ausleihbar = false 
-			  AND (zustand_notiz = 'bestellt' 
-			       OR zustand_notiz = 'Bestellt (Lieferanten-Vorab-Barcode)'
-			       OR zustand_notiz = 'Im Zulauf'
-			       OR zustand_notiz LIKE 'Im Zulauf%')
+			FROM buecher_titel t
+			WHERE e.titel_id = t.id
+			  AND e.ist_ausleihbar = false 
+			  AND (e.zustand_notiz = 'bestellt' 
+			       OR e.zustand_notiz = 'Bestellt (Lieferanten-Vorab-Barcode)'
+			       OR e.zustand_notiz = 'Im Zulauf'
+			       OR e.zustand_notiz LIKE 'Im Zulauf%')
+			RETURNING e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, e.etikett_gedruckt
 		`
-		tag, err := s.DB.Pool.Exec(ctx, query)
+		rows, err := s.DB.Pool.Query(ctx, query)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
+		defer rows.Close()
 
-		rowsAffected := tag.RowsAffected()
+		type ReleasedItem struct {
+			BarcodeID       string `json:"barcode_id"`
+			Titel           string `json:"titel"`
+			Autor           string `json:"autor"`
+			EtikettGedruckt bool   `json:"etikett_gedruckt"`
+		}
+
+		var items []ReleasedItem
+		for rows.Next() {
+			var item ReleasedItem
+			if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.EtikettGedruckt); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			items = append(items, item)
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"status":         "success",
-			"message":        fmt.Sprintf("Lieferung vollständig freigegeben. %d Exemplare im Bestand aktiv.", rowsAffected),
-			"released_count": rowsAffected,
+			"message":        fmt.Sprintf("Lieferung vollständig freigegeben. %d Exemplare im Bestand aktiv.", len(items)),
+			"released_count": len(items),
+			"released_items": items,
 		})
 	}
 }

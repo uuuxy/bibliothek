@@ -1,4 +1,5 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount, onDestroy } from 'svelte';
 
   /** @type {{buch_des_monats: any, neu_eingetroffen: any[], beliebt: any[]} | null} */
@@ -14,7 +15,7 @@
 
   async function fetchSlides() {
     try {
-      const res = await fetch('/api/monitor/slides');
+      const res = await apiFetch('/api/monitor/slides');
       if (res.ok) slides = await res.json();
     } catch { /* network unavailable, keep old data */ }
   }

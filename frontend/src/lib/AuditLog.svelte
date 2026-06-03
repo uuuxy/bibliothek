@@ -1,9 +1,10 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
 
   // State Runes
   /** @type {any[]} */
-  let logs = $state([]);
+  let logs = $state.raw([]);
   /** @type {string|null} */
   let error = $state(null);
   let loading = $state(true);
@@ -12,7 +13,7 @@
     loading = true;
     error = null;
     try {
-      const res = await fetch("/api/audit");
+      const res = await apiFetch("/api/audit");
       if (!res.ok) {
         if (res.status === 403) {
           throw new Error("Zugriff verweigert: Nur für System-Administratoren.");
@@ -54,7 +55,7 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-100 text-base font-semibold text-slate-500 uppercase font-mono tracking-wider">
+            <tr class="bg-slate-50 border-b border-slate-100 text-base font-semibold text-slate-500 uppercase tracking-wider">
               <th class="p-4.5">Zeitstempel</th>
               <th class="p-4.5">Aktion</th>
               <th class="p-4.5">Tabelle</th>
@@ -65,23 +66,23 @@
           <tbody class="divide-y divide-slate-100 text-base text-slate-600">
             {#each logs as log}
               <tr class="hover:bg-slate-50/50 transition-colors">
-                <td class="p-4.5 font-mono text-xs text-slate-500">
+                <td class="p-4.5 text-xs text-slate-500">
                   {new Date(log.timestamp).toLocaleString("de-DE")}
                 </td>
                 <td class="p-4.5">
-                  <span class="inline-flex px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-rose-50 border border-rose-100 text-rose-600">
+                  <span class="inline-flex px-2 py-0.5 rounded-md text-xs font-bold bg-rose-50 border border-rose-100 text-rose-600">
                     {log.aktion}
                   </span>
                 </td>
-                <td class="p-4.5 font-mono text-xs text-emerald-600">
+                <td class="p-4.5 text-xs text-emerald-600">
                   {log.tabelle}
                 </td>
-                <td class="p-4.5 font-mono text-xs text-slate-400">
+                <td class="p-4.5 text-xs text-slate-400">
                   {log.datensatz_id}
                 </td>
                 <td class="p-4.5">
                   <span class="font-medium text-slate-700">{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span>
-                  <span class="block text-[10px] text-slate-400 font-mono">{log.bearbeiter_id}</span>
+                  <span class="block text-[10px] text-slate-400">{log.bearbeiter_id}</span>
                 </td>
               </tr>
             {/each}

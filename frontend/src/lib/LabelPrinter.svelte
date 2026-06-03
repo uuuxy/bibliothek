@@ -1,17 +1,19 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
+  import { appState } from "../inventur/lib/store.svelte.js";
 
   // State Runes (Svelte 5)
   let searchVal = $state("");
   /** @type {any[]} */
-  let searchResults = $state([]);
+  let searchResults = $state.raw([]);
   let isSearching = $state(false);
 
   /** @type {any[]} */
-  let classGroups = $state([]);
+  let classGroups = $state.raw([]);
   let selectedClass = $state("");
   /** @type {any[]} */
-  let classBooks = $state([]);
+  let classBooks = $state.raw([]);
 
   /** @type {any} */
   let selectedTitle = $state(null);
@@ -30,6 +32,20 @@
   // Derived printable labels list
   /** @type {any[]} */
   let finalLabels = $derived.by(() => {
+    if ((appState.pendingPrintCopies?.length ?? 0) > 0) {
+      const copies = /** @type {any[]} */ (appState.pendingPrintCopies);
+      const rawList = copies.map(c => ({
+        barcode_id: c.barcode_id,
+        titel: c.titel,
+        autor: c.autor || ""
+      }));
+      const offsetCount = Math.max(0, startPosition - 1);
+      const offsetLabels = Array.from({ length: offsetCount }, () => ({
+        isBlank: true
+      }));
+      return [...offsetLabels, ...rawList];
+    }
+
     if (!selectedTitle) return [];
 
     let rawList = [];
@@ -61,7 +77,7 @@
   // Load class groups on mount
   async function loadClassGroups() {
     try {
-      const res = await fetch("/api/class-books");
+      const res = await apiFetch("/api/class-books");
       if (res.ok) {
         const body = await res.json();
         if (body && body.data) {
@@ -97,7 +113,7 @@
     isSearching = true;
     searchTimeout = setTimeout(async () => {
       try {
-        const res = await fetch("/api/action", {
+        const res = await apiFetch("/api/action", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: searchVal.trim() })
@@ -132,7 +148,7 @@
     if (!selectedTitle) return;
     loadingCopies = true;
     try {
-      const res = await fetch(`/api/buecher/titel/${selectedTitle.id}/exemplare`);
+      const res = await apiFetch(`/api/buecher/titel/${selectedTitle.id}/exemplare`);
       if (res.ok) {
         const data = await res.json();
         existingCopies = (data || []).map((/** @type {any} */ c) => ({
@@ -163,7 +179,7 @@
   
   <!-- Header Info -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-end gap-4 border-b border-slate-100 pb-5">
-    <button onclick={triggerPrint} disabled={!selectedTitle || finalLabels.length === 0} class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold transition-all flex items-center gap-2 shadow-xs cursor-pointer">
+    <button onclick={triggerPrint} disabled={finalLabels.filter(lbl => !lbl.isBlank).length === 0} class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold transition-all flex items-center gap-2 shadow-xs cursor-pointer">
       <span>🖨️ A4-Bogen drucken</span>
     </button>
   </div>
@@ -173,15 +189,29 @@
     <!-- Left Configuration Panel (5 cols) -->
     <div class="lg:col-span-5 space-y-6 text-left">
       
-      <!-- Step 1: Selection -->
-      <div class="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
-        <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-mono font-bold">1. Titel / Klassensatz wählen</h3>
+      {#if (appState.pendingPrintCopies?.length ?? 0) > 0}
+        <div class="p-5 rounded-2xl bg-blue-50 border border-blue-100 shadow-sm space-y-4 text-left animate-fade-in">
+          <div class="flex items-start gap-2.5">
+            <span class="text-lg">🖨️</span>
+            <div>
+              <h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider">Aktiver Druckauftrag</h3>
+              <p class="text-xs text-blue-700 font-medium leading-relaxed mt-1">Es werden {appState.pendingPrintCopies?.length ?? 0} Etiketten aus der freigegebenen Lieferung geladen.</p>
+            </div>
+          </div>
+          <button onclick={() => appState.pendingPrintCopies = null} class="w-full py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer">
+            Auswahl zurücksetzen / Anderes Buch wählen
+          </button>
+        </div>
+      {:else}
+        <!-- Step 1: Selection -->
+        <div class="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
+        <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">1. Titel / Klassensatz wählen</h3>
         
         <!-- Tab selector for search vs class set -->
         <div class="space-y-3">
           <!-- Autocomplete search -->
           <div class="space-y-1.5">
-            <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Buchtitel im Katalog suchen</span>
+            <span class="text-[10px] uppercase font-bold text-slate-450 block">Buchtitel im Katalog suchen</span>
             <div class="relative">
               <input type="text" bind:value={searchVal} oninput={handleSearchInput} placeholder="Titel, Autor oder ISBN eingeben..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
               {#if isSearching}
@@ -208,14 +238,14 @@
           <!-- Divider -->
           <div class="relative flex py-1 items-center">
             <div class="grow border-t border-slate-100"></div>
-            <span class="shrink mx-3 text-[9px] uppercase tracking-wider font-mono text-slate-400 font-bold">ODER</span>
+            <span class="shrink mx-3 text-[9px] uppercase tracking-wider text-slate-400 font-bold">ODER</span>
             <div class="grow border-t border-slate-100"></div>
           </div>
 
           <!-- Class Selection -->
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-1.5">
-              <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Aus Klasse laden</span>
+              <span class="text-[10px] uppercase font-bold text-slate-450 block">Aus Klasse laden</span>
               <select bind:value={selectedClass} onchange={handleClassChange} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550">
                 <option value="">-- Klasse wählen --</option>
                 {#each classGroups as group}
@@ -225,7 +255,7 @@
             </div>
 
             <div class="space-y-1.5">
-              <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Buch aus Klasse</span>
+              <span class="text-[10px] uppercase font-bold text-slate-450 block">Buch aus Klasse</span>
               <select disabled={!selectedClass} onchange={(e) => {
                 const bookId = /** @type {any} */ (e.target).value;
                 const book = classBooks.find(b => String(b.id) === bookId);
@@ -250,7 +280,7 @@
       <!-- Step 2: Barcodes & Mode -->
       {#if selectedTitle}
         <div class="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
-          <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-mono font-bold">2. Barcodes generieren</h3>
+          <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">2. Barcodes generieren</h3>
 
           <!-- Selection mode -->
           <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/40 text-xs">
@@ -260,7 +290,7 @@
 
           {#if generationMode === "existing"}
             <div class="space-y-2">
-              <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Exemplare auswählen ({existingCopies.length} gefunden)</span>
+              <span class="text-[10px] uppercase font-bold text-slate-450 block">Exemplare auswählen ({existingCopies.length} gefunden)</span>
               {#if loadingCopies}
                 <div class="flex items-center justify-center py-4">
                   <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -272,7 +302,7 @@
                   {#each existingCopies as copy}
                     <label class="flex items-center space-x-3 text-xs text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg">
                       <input type="checkbox" bind:checked={copy.checked} class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white" />
-                      <span class="font-mono font-bold text-slate-800">{copy.barcode_id}</span>
+                    <span class="font-bold text-slate-800">{copy.barcode_id}</span>
                       <span class="text-[10px] text-slate-450 font-sans">({copy.zustand_notiz || 'Neuwertig'})</span>
                     </label>
                   {/each}
@@ -283,25 +313,26 @@
             <!-- Generating new sequential labels -->
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1.5">
-                <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Menge</span>
+                <span class="text-[10px] uppercase font-bold text-slate-450 block">Menge</span>
                 <input type="number" min="1" max="100" bind:value={newQuantity} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550" />
               </div>
               <div class="space-y-1.5">
-                <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Start-Ziffer (B-)</span>
+                <span class="text-[10px] uppercase font-bold text-slate-450 block">Start-Ziffer (B-)</span>
                 <input type="number" min="1" bind:value={newStartNum} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550" />
               </div>
             </div>
           {/if}
         </div>
       {/if}
+      {/if}
 
       <!-- Step 3: Print Layout settings -->
       <div class="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
-        <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-mono font-bold">3. Layout-Optionen</h3>
+        <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">3. Layout-Optionen</h3>
 
         <div class="space-y-3.5">
           <div class="space-y-1.5">
-            <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Startposition auf dem A4-Bogen</span>
+            <span class="text-[10px] uppercase font-bold text-slate-450 block">Startposition auf dem A4-Bogen</span>
             <select bind:value={startPosition} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550">
               {#each Array.from({ length: 21 }, (_, i) => i + 1) as pos}
                 <option value={pos}>Etikett Position {pos} {pos === 1 ? '(Ganz oben links)' : ''}</option>
@@ -311,7 +342,7 @@
           </div>
 
           <div class="space-y-1.5">
-            <span class="text-[10px] uppercase font-bold text-slate-450 font-mono block">Barcode-Ausgabe</span>
+            <span class="text-[10px] uppercase font-bold text-slate-450 block">Barcode-Ausgabe</span>
             <select bind:value={barcodeType} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none">
               <option value="code39">Code39 (1D Standard)</option>
               <option value="qr">QR-Code (2D)</option>
@@ -329,9 +360,9 @@
 
     <!-- Right Preview Panel (7 cols) -->
     <div class="lg:col-span-7 flex flex-col items-center justify-start p-6 bg-slate-50 border border-dashed border-slate-200 rounded-3xl min-h-[500px]">
-      <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold font-mono mb-4">A4 Etiketten-Vorschau · Zweckform L4760 (3 × 7 = 21 Etiketten)</span>
+      <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-4">A4 Etiketten-Vorschau · Zweckform L4760 (3 × 7 = 21 Etiketten)</span>
       
-      {#if !selectedTitle}
+      {#if !selectedTitle && (appState.pendingPrintCopies?.length ?? 0) === 0}
         <div class="grow flex flex-col items-center justify-center text-slate-400 py-12">
           <span>Kein Buch ausgewählt</span>
           <span class="text-[10px] mt-1 text-slate-450">Suche einen Titel links, um die Live-Vorschau zu aktivieren.</span>
@@ -349,15 +380,15 @@
               {#if lbl.isBlank}
                 <!-- Blank Label placeholder representation -->
                 <div class="border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center" style="width: 42.3mm; height: 25.4mm;">
-                  <span class="text-[6px] text-slate-350 tracking-wider font-mono font-bold">LEER</span>
+                  <span class="text-[6px] text-slate-350 tracking-wider font-bold">LEER</span>
                 </div>
               {:else}
                 <div class="bg-white text-slate-800 text-left overflow-hidden flex flex-col justify-between {labelBorder ? 'border border-slate-300' : ''}" style="width: 42.3mm; height: 25.4mm; padding: 1.5mm; font-size: 5px; box-sizing: border-box;">
-                  <div class="font-extrabold text-slate-900 truncate tracking-tight" style="font-size: 5.5px;">{lbl.titel}</div>
-                  <div class="text-slate-550 truncate" style="font-size: 5px;">{lbl.autor || 'Unbekannt'}</div>
+                  <div class="font-extrabold text-slate-900 title-clamp tracking-tight mb-0.5" style="font-size: 5.5px; line-height: 1.1;">{lbl.titel}</div>
+                  <div class="text-slate-550 author-clamp" style="font-size: 5px; line-height: 1.1;">{lbl.autor || 'Unbekannt'}</div>
                   <div class="flex flex-col items-center justify-center grow pt-0.5">
                     <img src="/api/barcode?content={lbl.barcode_id}&qr={barcodeType === 'qr'}&width=150&height=50" class="{barcodeType === 'qr' ? 'h-6 w-6' : 'h-4 w-full'} object-contain" alt="Barcode" />
-                    <span class="font-mono mt-0.5 font-bold tracking-widest text-slate-600" style="font-size: 4.5px;">{lbl.barcode_id}</span>
+                    <span class="mt-0.5 font-bold tracking-widest text-slate-600" style="font-size: 4.5px;">{lbl.barcode_id}</span>
                   </div>
                 </div>
               {/if}
@@ -379,14 +410,40 @@
         <div class="print-label-box border-none opacity-0"></div>
       {:else}
         <div class="print-label-box {labelBorder ? 'border border-black' : ''} p-2 text-black bg-white flex flex-col justify-between">
-          <div class="font-extrabold text-zinc-950 truncate leading-none text-[8pt]">{lbl.titel}</div>
-          <div class="text-zinc-700 font-medium leading-none text-[7pt] mt-0.5">{lbl.autor}</div>
+          <div class="font-extrabold text-zinc-950 title-clamp leading-tight text-[8pt]">{lbl.titel}</div>
+          <div class="text-zinc-700 font-medium author-clamp leading-tight text-[7pt] mt-0.5">{lbl.autor || 'Unbekannt'}</div>
           <div class="flex flex-col items-center justify-center grow pt-1">
             <img src="/api/barcode?content={lbl.barcode_id}&qr={barcodeType === 'qr'}&width=220&height=70" class="{barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[7mm]'} object-contain" alt="Barcode" />
-            <span class="font-mono font-bold mt-1 text-[6.5pt] tracking-widest text-zinc-800">{lbl.barcode_id}</span>
+            <span class="font-bold mt-1 text-[6.5pt] tracking-widest text-zinc-800">{lbl.barcode_id}</span>
           </div>
         </div>
       {/if}
     {/each}
   </div>
 </div>
+
+<style>
+  /* 
+    LINE-CLAMPING LOGIK FÜR EXTREM LANGE BUCHTITEL & AUTOREN:
+    - title-clamp: Begrenzt lange Buchtitel auf maximal 2 Zeilen.
+      Schneidet den Text mit '...' ab, um den Barcode/QR-Code nicht zu verschieben.
+    - author-clamp: Begrenzt Autorennamen auf maximal 1 Zeile.
+  */
+  .title-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Maximal 2 Zeilen anzeigen */
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+  }
+
+  .author-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 1; /* Maximal 1 Zeile anzeigen */
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+  }
+</style>

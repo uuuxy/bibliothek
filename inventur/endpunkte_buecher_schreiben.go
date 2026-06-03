@@ -42,16 +42,17 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 // über den MetadataClient via OpenLibrary-API im Hintergrund ergänzt, um Arbeit zu sparen.
 func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, anfrage *http.Request) {
 	var eingabe struct {
-		ISBN         string  `json:"isbn"`
-		Fach         string  `json:"subject"`
-		KlassenStufe int16   `json:"gradeLevel"`
-		Schulzweig   string  `json:"track"`
-		Bestand      int     `json:"stock"`
-		Titel        string  `json:"title"`
-		Autor        string  `json:"author"`
-		CoverURL     string  `json:"coverUrl"`
-		ZaehlDatum   *string `json:"lastCounted"`
-		Medientyp    string  `json:"medientyp"`
+		ISBN                   string         `json:"isbn"`
+		Fach                   string         `json:"subject"`
+		KlassenStufe           int16          `json:"gradeLevel"`
+		Schulzweig             string         `json:"track"`
+		Bestand                int            `json:"stock"`
+		Titel                  string         `json:"title"`
+		Autor                  string         `json:"author"`
+		CoverURL               string         `json:"coverUrl"`
+		ZaehlDatum             *string        `json:"lastCounted"`
+		Medientyp              string         `json:"medientyp"`
+		ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 	}
 
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
@@ -73,13 +74,14 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	}
 
 	buch := Book{
-		ISBN:        strings.TrimSpace(eingabe.ISBN),
-		Subject:     strings.TrimSpace(eingabe.Fach),
-		GradeLevel:  eingabe.KlassenStufe,
-		Track:       strings.TrimSpace(eingabe.Schulzweig),
-		Stock:       eingabe.Bestand,
-		LastCounted: eingabe.ZaehlDatum,
-		Medientyp:   strings.TrimSpace(eingabe.Medientyp),
+		ISBN:                    strings.TrimSpace(eingabe.ISBN),
+		Subject:                 strings.TrimSpace(eingabe.Fach),
+		GradeLevel:              eingabe.KlassenStufe,
+		Track:                   strings.TrimSpace(eingabe.Schulzweig),
+		Stock:                   eingabe.Bestand,
+		LastCounted:             eingabe.ZaehlDatum,
+		Medientyp:               strings.TrimSpace(eingabe.Medientyp),
+		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 	}
 	buch.Title = strings.TrimSpace(eingabe.Titel)
 	buch.Author = strings.TrimSpace(eingabe.Autor)

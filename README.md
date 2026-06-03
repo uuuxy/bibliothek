@@ -53,6 +53,15 @@ Der Kiosk-Ausleihtresen ist für schnellen Durchsatz (z. B. während kurzer Paus
 ### 6. Ferien-Leseclub
 * **Saisonale Ausleihregeln**: Über die Systemeinstellungen lässt sich ein Leseclub mit festem Zieldatum aktivieren. Alle in diesem Zeitraum getätigten Ausleihen werden automatisch auf den letzten Ferientag terminiert.
 
+### 7. Datenmigration aus älteren Systemen
+* **Isoliertes Migrationsskript**: Das Tool unter [cmd/migrate/main.go](cmd/migrate/main.go) übernimmt Bestände aus einer älteren MySQL-Datenbank in das aktuelle PostgreSQL-Schema.
+* **Daten-Mapping**: Freitextfelder wie Standort, Regal und Notizen werden in `erweiterte_eigenschaften` als JSONB gespeichert.
+* **Exemplar-Generierung**: Aus dem alten Mengenfeld `anzahl` werden automatisch einzelne Exemplare mit fortlaufenden Barcodes erzeugt.
+* **Validierung & Logging**: Ungültige ISBNs, doppelte ISBNs und fehlerhafte Barcodes werden in `migration_errors.log` protokolliert, ohne den kompletten Lauf abzubrechen.
+* **Betrieb**: Die Verbindungen werden ausschließlich über `MYSQL_DSN` und `PG_DSN` konfiguriert; ein Probelauf ist per `--dry-run` möglich.
+
+Mehr Details stehen in [docs/MYSQL_TO_POSTGRES_MIGRATION.md](docs/MYSQL_TO_POSTGRES_MIGRATION.md).
+
 ---
 
 ## 🛡️ DSGVO-Konzept (Datenschutz & Anonymisierung)

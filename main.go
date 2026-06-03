@@ -37,18 +37,18 @@ func main() {
 	if dsn == "" {
 		log.Fatal("FATAL: DATABASE_URL environment variable is required and cannot be empty")
 	}
-	
+
 	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("FATAL: JWT_SECRET environment variable is required and cannot be empty")
 	}
-	
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("FATAL: PORT environment variable is required and cannot be empty")
 	}
-	
+
 	cookieSecure, err := strconv.ParseBool(os.Getenv("COOKIE_SECURE"))
 	if err != nil {
 		cookieSecure = false
@@ -66,6 +66,12 @@ func main() {
 	}
 	defer database.Close()
 	log.Println("Database connection pool successfully initialized.")
+
+	// 2a. Run pending SQL migrations
+	log.Println("Running database migrations...")
+	if err := database.RunMigrations(ctx, "migrations"); err != nil {
+		log.Fatalf("Database migration failed: %v", err)
+	}
 
 	log.Println("Initializing role permissions...")
 	if err := database.InitPermissions(ctx); err != nil {
@@ -122,4 +128,3 @@ func main() {
 	}
 	log.Println("Server stopped successfully.")
 }
-

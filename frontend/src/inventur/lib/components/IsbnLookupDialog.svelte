@@ -83,7 +83,7 @@
 				<div>
 					<p class="font-bold text-slate-900">{data.title || 'Unbekannter Titel'}</p>
 					<p class="text-sm text-slate-500 mt-0.5">{data.author || 'Unbekannter Autor'}</p>
-					<p class="mt-2 text-xs text-slate-400 font-mono">ISBN: {data.isbn}</p>
+					<p class="mt-2 text-xs text-slate-400">ISBN: {data.isbn}</p>
 				</div>
 			</div>
 

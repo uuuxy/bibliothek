@@ -1,7 +1,9 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
   import WebcamCapture from "./WebcamCapture.svelte";
   import { studentTabExtensions } from "./plugins.svelte.js";
+  import { idStore } from "./idLayoutStore.svelte.js";
 
   /** @type {{ student: any, onDeselect: () => void, role?: string }} */
   let { student, onDeselect, role = "" } = $props();
@@ -20,7 +22,7 @@
     if (!student) return;
     loading = true;
     try {
-      const res = await fetch(`/api/schueler/${student.id}`);
+      const res = await apiFetch(`/api/schueler/${student.id}`);
       if (res.ok) {
         profile = await res.json();
       }
@@ -40,7 +42,7 @@
     deleteError = "";
     isDeleting = true;
     try {
-      const res = await fetch(`/api/schueler/${profile.id}`, {
+      const res = await apiFetch(`/api/schueler/${profile.id}`, {
         method: "DELETE"
       });
       if (res.ok) {
@@ -70,6 +72,64 @@
     }
   });
 
+  // ── Abgangsjahr inline editing ────────────────────────────────────────────
+  let editingAbgang = $state(false);
+  let abgangInput = $state(0);
+  let abgangSaving = $state(false);
+  let abgangError = $state("");
+
+  function startEditAbgang() {
+    abgangInput = profile.abgaenger_jahr;
+    abgangError = "";
+    editingAbgang = true;
+  }
+
+  /** Calculates the expected graduation year from a class string (mirrors backend logic) */
+  function calcAbgangFromKlasse(klasse) {
+    const kl = (klasse || "").toLowerCase().trim();
+    const m = kl.match(/^(\d+)(.*)/);
+    if (!m) return new Date().getFullYear() + 5;
+    const grade = parseInt(m[1], 10);
+    const suffix = m[2] || "";
+    let maxGrade;
+    if (suffix.startsWith("h")) maxGrade = 9;
+    else if (grade >= 11) maxGrade = 13;
+    else maxGrade = 10;
+    const yearsLeft = Math.max(0, maxGrade - grade);
+    const now = new Date();
+    const base = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
+    return base + yearsLeft;
+  }
+
+  async function saveAbgang() {
+    const year = parseInt(String(abgangInput), 10);
+    if (isNaN(year) || year < 2000 || year > 2100) {
+      abgangError = "Bitte ein gültiges Jahr eingeben (2000–2100)";
+      return;
+    }
+    abgangSaving = true;
+    abgangError = "";
+    try {
+      const res = await apiFetch(`/api/schueler/${profile.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ abgaenger_jahr: year })
+      });
+      if (res.ok) {
+        profile.abgaenger_jahr = year;
+        editingAbgang = false;
+      } else {
+        const d = await res.json().catch(() => ({}));
+        abgangError = d.error || "Fehler beim Speichern";
+      }
+    } catch {
+      abgangError = "Netzwerkfehler";
+    } finally {
+      abgangSaving = false;
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   // Public reload method
   export function reloadProfile() {
     fetchProfile();
@@ -80,6 +140,20 @@
     showWebcam = false;
     fetchProfile();
   }
+
+  // ── Single-card print ─────────────────────────────────────────────────────
+  // Always uses Scheckkarte ID-1 format (85.60 mm × 53.98 mm) without prompting.
+  function printCard() {
+    const styleEl = document.createElement("style");
+    // ID-1 / ISO 7810 borderless card page — never substitute A4 here
+    styleEl.textContent = "@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }";
+    document.head.appendChild(styleEl);
+    document.body.setAttribute("data-print-mode", "card-single");
+    window.print();
+    document.head.removeChild(styleEl);
+    document.body.removeAttribute("data-print-mode");
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 </script>
 
 {#if loading}
@@ -105,8 +179,38 @@
 
       <div class="space-y-2">
         <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
-        <p class="text-base md:text-lg text-slate-700 font-bold">Klasse {profile.klasse} · Abgang {profile.abgaenger_jahr}</p>
-        <p class="text-xs font-mono text-slate-400 tracking-wider mt-1">{profile.barcode_id}</p>
+        <p class="text-base md:text-lg text-slate-700 font-bold">Klasse {profile.klasse}</p>
+        <!-- Abgangsjahr: inline editable -->
+        {#if editingAbgang}
+          <div class="flex items-center gap-2 justify-center flex-wrap">
+            <input
+              type="number"
+              min="2000" max="2100"
+              bind:value={abgangInput}
+              class="w-24 px-2 py-1 text-sm border border-blue-400 rounded-xl text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+            <button
+              onclick={() => { abgangInput = calcAbgangFromKlasse(profile.klasse); }}
+              class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl font-semibold text-slate-600 cursor-pointer"
+              title="Automatisch aus Klasse berechnen">↺ Neu berechnen</button>
+            <button
+              onclick={saveAbgang}
+              disabled={abgangSaving}
+              class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer disabled:opacity-50">
+              {abgangSaving ? '…' : 'Speichern'}
+            </button>
+            <button onclick={() => editingAbgang = false} class="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer">✕</button>
+          </div>
+          {#if abgangError}<p class="text-xs text-rose-500 mt-1">{abgangError}</p>{/if}
+        {:else}
+          <button
+            onclick={startEditAbgang}
+            class="text-sm text-slate-500 font-semibold hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+            title="Abgangsjahr bearbeiten">
+            Abgang {profile.abgaenger_jahr} ✎
+          </button>
+        {/if}
+        <p class="text-xs text-slate-400 tracking-wider mt-1">{profile.barcode_id}</p>
       </div>
 
       <div class="flex flex-col items-center gap-2 pt-2 w-full">
@@ -123,7 +227,13 @@
         {/if}
       </div>
 
-      <button onclick={onDeselect} class="w-full mt-4 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-2xl text-sm font-bold transition-all cursor-pointer">
+      <!-- Print button: uses the layout currently set in the Ausweis-Designer -->
+      <button onclick={printCard} class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+        Ausweis drucken
+      </button>
+
+      <button onclick={onDeselect} class="w-full mt-2 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-2xl text-sm font-bold transition-all cursor-pointer">
         Schüler schließen (ESC)
       </button>
 
@@ -149,7 +259,7 @@
     <!-- Right: Timeline / Loans List (8 cols) -->
     <div class="md:col-span-8 bg-white rounded-2xl border border-slate-100 shadow-xl p-8 space-y-6">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="text-base font-bold text-slate-500 uppercase tracking-wider font-mono">Entliehene Bücher ({profile.entliehene_buecher?.length || 0})</h3>
+        <h3 class="text-base font-bold text-slate-500 uppercase tracking-wider">Entliehene Bücher ({profile.entliehene_buecher?.length || 0})</h3>
       </div>
 
       {#if !profile.entliehene_buecher || profile.entliehene_buecher.length === 0}
@@ -184,14 +294,14 @@
                       {/if}
                     </div>
                     <p class="text-base md:text-lg text-slate-650 font-semibold">{book.autor}</p>
-                    <p class="text-sm text-slate-500 font-semibold">Signatur: <span class="font-mono text-sm font-bold text-slate-700">{book.barcode_id}</span></p>
+                    <p class="text-sm text-slate-500 font-semibold">Signatur: <span class="text-sm font-bold text-slate-700">{book.barcode_id}</span></p>
                     <p class="text-sm text-slate-500 font-semibold">Ausgeliehen am: <span class="font-bold text-slate-700">{new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</span></p>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-5 text-sm font-semibold">
                   <div class="text-left sm:text-right">
-                    <span class="text-xs text-slate-400 block font-bold uppercase font-mono leading-none">Frist</span>
+                    <span class="text-xs text-slate-400 block font-bold uppercase leading-none">Frist</span>
                     <span class="{isLMF ? 'text-indigo-600' : 'text-slate-700'} font-black text-lg md:text-xl">
                       {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
                     </span>
@@ -208,6 +318,72 @@
 
 {#if showWebcam}
   <WebcamCapture studentId={profile.id} onCapture={handlePhotoCaptured} onClose={() => showWebcam = false} />
+{/if}
+
+<!--
+  Single-card print section.
+  Hidden on screen (display:none inline), shown via @media print when
+  body[data-print-mode="card-single"] is set by printCard().
+  Rendered outside the .no-print wrapper so it survives print suppression.
+  Uses idStore so it always reflects the latest Ausweis-Designer settings.
+-->
+{#if profile}
+<div class="single-card-print-section" style="display:none" aria-hidden="true">
+  <div class="print-card-box {idStore.cardTheme}">
+    {#if idStore.layout?.header?.show}
+      <div class="absolute font-black text-center tracking-tight leading-none truncate text-black"
+        style="left: {idStore.layout.header.x}mm; top: {idStore.layout.header.y}mm; transform: scale({idStore.layout.header.scale}); transform-origin: top left; font-size: 7.5pt; width: {85.6 - idStore.layout.header.x * 2}mm;">
+        {idStore.layout.header.text}
+      </div>
+    {/if}
+    {#if idStore.layout?.logo?.show && idStore.layout.logo.url}
+      <div class="absolute overflow-hidden flex items-center justify-center"
+        style="left: {idStore.layout.logo.x}mm; top: {idStore.layout.logo.y}mm; width: {12 * idStore.layout.logo.scale}mm; height: {12 * idStore.layout.logo.scale}mm;">
+        <img src={idStore.layout.logo.url} class="w-full h-full object-contain" alt="Logo" />
+      </div>
+    {/if}
+    {#if idStore.layout?.address?.show}
+      <div class="absolute font-semibold tracking-tight opacity-75 leading-none text-zinc-800"
+        style="left: {idStore.layout.address.x}mm; top: {idStore.layout.address.y}mm; transform: scale({idStore.layout.address.scale}); transform-origin: top left; font-size: 6.5pt; width: {85.6 - idStore.layout.address.x - 2}mm; max-height: 12mm; overflow: hidden;">
+        {idStore.layout.address.text}
+      </div>
+    {/if}
+    {#if idStore.layout?.photo?.show}
+      <div class="absolute border border-solid border-zinc-300 bg-zinc-50 flex items-center justify-center overflow-hidden rounded-sm"
+        style="left: {idStore.layout.photo.x}mm; top: {idStore.layout.photo.y}mm; width: {22 * idStore.layout.photo.scale}mm; height: {28 * idStore.layout.photo.scale}mm;">
+        <img src="/uploads/fotos/{profile.barcode_id}.jpg?t={timestamp}"
+          onerror={(e) => { (/** @type {any} */ (e.currentTarget)).style.display = 'none'; }}
+          class="w-full h-full object-cover" alt="Passbild" />
+      </div>
+    {/if}
+    {#if idStore.layout?.name?.show}
+      <div class="absolute font-extrabold tracking-tight leading-none text-black"
+        style="left: {idStore.layout.name.x}mm; top: {idStore.layout.name.y}mm; transform: scale({idStore.layout.name.scale}); transform-origin: top left; font-size: 9pt;">
+        {profile.vorname} {profile.nachname}
+      </div>
+    {/if}
+    {#if idStore.layout?.details?.show}
+      <div class="absolute font-semibold tracking-tight opacity-75 leading-none text-zinc-800"
+        style="left: {idStore.layout.details.x}mm; top: {idStore.layout.details.y}mm; transform: scale({idStore.layout.details.scale}); transform-origin: top left; font-size: 7.5pt;">
+        Klasse: {profile.klasse}
+      </div>
+    {/if}
+    {#if idStore.layout?.validity?.show}
+      <div class="absolute font-semibold tracking-tight opacity-75 leading-none text-zinc-800"
+        style="left: {idStore.layout.validity.x}mm; top: {idStore.layout.validity.y}mm; transform: scale({idStore.layout.validity.scale}); transform-origin: top left; font-size: 7pt;">
+        Gültig bis: 31.07.{profile.abgaenger_jahr ?? '–'}
+      </div>
+    {/if}
+    {#if idStore.layout?.barcode?.show}
+      <div class="absolute flex flex-col items-center leading-none"
+        style="left: {idStore.layout.barcode.x}mm; top: {idStore.layout.barcode.y}mm; transform: scale({idStore.layout.barcode.scale}); transform-origin: top left;">
+        <img src="/api/barcode?content={profile.barcode_id}&qr={idStore.barcodeType === 'qr'}&width={idStore.barcodeType === 'qr' ? 80 : 200}&height={idStore.barcodeType === 'qr' ? 80 : 50}"
+          class="{idStore.barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[8mm]'} object-contain" alt="Barcode" />
+        <span class="font-bold mt-1 text-[6.5pt] tracking-widest text-zinc-800">{profile.barcode_id}</span>
+      </div>
+    {/if}
+  </div>
+</div>
 {/if}
 
 {#if showDeleteConfirm}

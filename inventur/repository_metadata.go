@@ -7,7 +7,7 @@ import (
 
 func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, error) {
 	query := `
-		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, stock
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp, erweiterte_eigenschaften
 		FROM buecher_titel
 		WHERE id = $1::uuid`
 
@@ -20,7 +20,12 @@ func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, 
 		&book.CoverURL,
 		&book.Subject,
 		&book.GradeLevel,
+		&book.Track,
 		&book.Stock,
+		&book.LastCounted,
+		&book.SortOrder,
+		&book.Medientyp,
+		&book.ErweiterteEigenschaften,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("buch nicht gefunden")

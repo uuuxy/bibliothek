@@ -1,6 +1,5 @@
 <script>
-  import { onMount } from "svelte";
-
+  import { apiFetch } from "./apiFetch.js";
   // State Runes (Svelte 5)
   /** @type {any} */
   let stats = $state(null);
@@ -18,7 +17,7 @@
     loading = true;
     try {
       const params = selectedTimeframe !== "all" ? `?zeitraum=${selectedTimeframe}` : "";
-      const res = await fetch(`/api/statistiken${params}`);
+      const res = await apiFetch(`/api/statistiken${params}`);
       if (!res.ok) throw new Error("Fehler beim Laden");
       stats = await res.json();
     } catch (err) {
@@ -34,9 +33,6 @@
     fetchStats();
   });
 
-  onMount(() => {
-    // initial fetch handled by $effect above
-  });
 </script>
 
 <div class="w-full space-y-6 text-slate-800">
@@ -67,19 +63,19 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 flex flex-col justify-between space-y-2 text-left hover:border-slate-300 transition-all">
         <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Gesamtbestand</span>
-        <span class="text-4xl font-extrabold text-slate-900 font-mono leading-none py-1">{stats.loss_stats.gesamt_bestand}</span>
+        <span class="text-4xl font-extrabold text-slate-900 leading-none py-1">{stats.loss_stats.gesamt_bestand}</span>
         <span class="text-sm text-slate-500 font-medium">Physische Buchkopien im System</span>
       </div>
       
       <div class="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 flex flex-col justify-between space-y-2 text-left hover:border-slate-300 transition-all">
         <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Verlorene / Defekte Bücher</span>
-        <span class="text-4xl font-extrabold text-rose-600 font-mono leading-none py-1">{stats.loss_stats.verlorene_exemplare}</span>
+        <span class="text-4xl font-extrabold text-rose-600 leading-none py-1">{stats.loss_stats.verlorene_exemplare}</span>
         <span class="text-sm text-slate-500 font-medium">Exemplare mit Schadensfällen</span>
       </div>
-
+ 
       <div class="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 flex flex-col justify-between space-y-2 text-left hover:border-slate-300 transition-all">
         <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Verlustquote</span>
-        <span class="text-4xl font-extrabold text-amber-600 font-mono leading-none py-1">{stats.loss_stats.verlust_quote}%</span>
+        <span class="text-4xl font-extrabold text-amber-600 leading-none py-1">{stats.loss_stats.verlust_quote}%</span>
         <span class="text-sm text-slate-500 font-medium">Prozentsatz verlorener Lehrmittel</span>
       </div>
     </div>
@@ -130,7 +126,7 @@
                         <span class="text-slate-450 text-xs block font-medium truncate" title={book.autor}>{book.autor}</span>
                       </div>
                     </td>
-                    <td class="py-3 px-4 text-slate-900 font-mono font-bold text-right shrink-0">
+                    <td class="py-3 px-4 text-slate-900 font-bold text-right shrink-0">
                       {book.count}x geliehen
                     </td>
                   </tr>
@@ -167,7 +163,7 @@
                   <tr class="hover:bg-slate-50/50 transition-colors">
                     <td class="py-3.5 px-4 text-slate-800 font-bold truncate max-w-[160px]" title={book.titel}>{book.titel}</td>
                     <td class="py-3.5 px-4 text-slate-500 truncate max-w-[120px]" title={book.autor}>{book.autor}</td>
-                    <td class="py-3.5 px-4 text-amber-600 font-mono font-bold text-right">{book.letzte_aus}</td>
+                    <td class="py-3.5 px-4 text-amber-600 font-bold text-right">{book.letzte_aus}</td>
                   </tr>
                 {/each}
               {/if}

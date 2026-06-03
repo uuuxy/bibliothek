@@ -1,4 +1,5 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
   let data = $state(/** @type {{ klassen: any[] } | null} */ (null));
   let loading = $state(true);
   let error = $state(/** @type {string|null} */ (null));
@@ -20,7 +21,7 @@
     loading = true;
     error = null;
     try {
-      const res = await fetch("/api/mahnwesen");
+      const res = await apiFetch("/api/mahnwesen");
       if (!res.ok) throw new Error(await res.text() || "Fehler beim Laden");
       const json = await res.json();
       data = json;
@@ -31,7 +32,8 @@
     }
   }
 
-  $effect(() => { fetchData(); });
+  import { onMount } from "svelte";
+  onMount(fetchData);
 
   /** @param {string} klasse */
   function toggleKlasse(klasse) {
@@ -44,7 +46,7 @@
   async function downloadPDF() {
     pdfLoading = true;
     try {
-      const res = await fetch("/api/mahnwesen/pdf");
+      const res = await apiFetch("/api/mahnwesen/pdf");
       if (!res.ok) throw new Error("PDF-Erzeugung fehlgeschlagen");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -83,7 +85,7 @@
     modalSending = true;
     modalMsg = null;
     try {
-      const res = await fetch("/api/mahnwesen/senden", {
+      const res = await apiFetch("/api/mahnwesen/senden", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ klasse: modalKlasse, email: modalEmail }),

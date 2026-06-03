@@ -11,16 +11,17 @@ import (
 
 // BuchAktualisierenAnfrage repräsentiert die erwartete JSON-Struktur für das Aktualisieren eines Buches.
 type BuchAktualisierenAnfrage struct {
-	ISBN         string  `json:"isbn"`
-	Titel        string  `json:"title"`
-	Autor        string  `json:"author"`
-	CoverURL     string  `json:"coverUrl"`
-	Fach         string  `json:"subject"`
-	KlassenStufe int16   `json:"gradeLevel"`
-	Schulzweig   string  `json:"track"`
-	Bestand      int     `json:"stock"`
-	ZaehlDatum   *string `json:"lastCounted"`
-	Medientyp    string  `json:"medientyp"`
+	ISBN                   string         `json:"isbn"`
+	Titel                  string         `json:"title"`
+	Autor                  string         `json:"author"`
+	CoverURL               string         `json:"coverUrl"`
+	Fach                   string         `json:"subject"`
+	KlassenStufe           int16          `json:"gradeLevel"`
+	Schulzweig             string         `json:"track"`
+	Bestand                int            `json:"stock"`
+	ZaehlDatum             *string        `json:"lastCounted"`
+	Medientyp              string         `json:"medientyp"`
+	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 }
 
 // BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch.
@@ -51,16 +52,17 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 	ergaenzeFehlendeMetadatenFuerAktualisierung(anfrage.Context(), handler, &eingabe)
 
 	buch := Book{
-		ISBN:        eingabe.ISBN,
-		Title:       eingabe.Titel,
-		Author:      eingabe.Autor,
-		CoverURL:    eingabe.CoverURL,
-		Subject:     eingabe.Fach,
-		GradeLevel:  eingabe.KlassenStufe,
-		Track:       eingabe.Schulzweig,
-		Stock:       eingabe.Bestand,
-		LastCounted: eingabe.ZaehlDatum,
-		Medientyp:   eingabe.Medientyp,
+		ISBN:                    eingabe.ISBN,
+		Title:                   eingabe.Titel,
+		Author:                  eingabe.Autor,
+		CoverURL:                eingabe.CoverURL,
+		Subject:                 eingabe.Fach,
+		GradeLevel:              eingabe.KlassenStufe,
+		Track:                   eingabe.Schulzweig,
+		Stock:                   eingabe.Bestand,
+		LastCounted:             eingabe.ZaehlDatum,
+		Medientyp:               eingabe.Medientyp,
+		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 	}
 
 	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch); fehler != nil {

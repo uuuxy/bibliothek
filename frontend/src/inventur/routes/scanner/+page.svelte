@@ -28,7 +28,7 @@
 			<div
 				class="p-4 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100"
 			>
-				Zuletzt gescannt: <span class="font-mono font-bold"
+				Zuletzt gescannt: <span class="font-bold"
 					>{scannedResult}</span
 				>
 			</div>

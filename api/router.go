@@ -1,12 +1,16 @@
 package api
 
+// router.go — HTTP route registration.
+// All middleware functions live in middleware.go.
+// Handler functions live in their respective domain files (copy_admin.go,
+// user_admin.go, graduates.go, audit_handler.go, inventory.go, etc.).
+
 import (
 	"errors"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -86,7 +90,17 @@ func (s *Server) Routes() http.Handler {
 	})
 
 	// Logout Endpoint: server-side JWT-Cookie invalidation with expiration in the past
+	// Now also adds the current JWT to the in-memory Token Blacklist to prevent replay attacks.
 	mux.HandleFunc("POST /api/auth/logout", func(w http.ResponseWriter, r *http.Request) {
+		// 1. Extract and blacklist the current token
+		if cookie, err := r.Cookie("session_token"); err == nil && cookie.Value != "" {
+			claims, err := s.Auth.VerifyToken(cookie.Value)
+			if err == nil {
+				s.Auth.Blacklist.Add(cookie.Value, claims.ExpiresAt.Time)
+			}
+		}
+
+		// 2. Clear the cookie in the browser
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    "",
@@ -128,6 +142,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Create student (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
+	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("create_students")(s.PatchStudentHandler()))
 
 	// Delete student (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
@@ -150,6 +165,9 @@ func (s *Server) Routes() http.Handler {
 
 	// Mark copy as defective and create Schadensfaelle (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/defekt", s.RequirePermission("edit_books")(s.MarkCopyDefektHandler()))
+
+	// Decommission (aussondern) a copy: hides it from catalog/kiosk/inventory (Accessible by Admin)
+	mux.Handle("POST /api/buecher/exemplare/{id}/aussondern", s.RequirePermission("edit_books")(s.AussondernCopyHandler()))
 
 	// Undo a recent loan return within 1 hour (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/ausleihen/{id}/rueckgabe", s.RequirePermission("view_students")(s.UndoReturnHandler()))
@@ -198,6 +216,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Scan items during active inventory (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
+	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("inventory_scan")(s.GetFehlbestandHandler()))
 
 	// Get system statistics (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
@@ -306,126 +325,12 @@ func (s *Server) Routes() http.Handler {
 	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
 	rateLimiter := RateLimitMiddleware(50)
 
-	// Chain: SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> RBACBlock -> Mux
-	globalHandler := SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.RBACBlockMiddleware(mux))))))
+	// Chain: SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> Mux
+	globalHandler := SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(mux)))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
 		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
 		globalHandler.ServeHTTP(w, r)
-	})
-}
-
-// HTTPSRedirectMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
-func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Bypass HTTPS redirection in local/development mode when CookieSecure is disabled
-		if !s.CookieSecure {
-			next.ServeHTTP(w, r)
-			return
-		}
-		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
-		if !isHTTPS {
-			target := "https://" + r.Host + r.URL.RequestURI()
-			http.Redirect(w, r, target, http.StatusMovedPermanently)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// MaxBodySizeMiddleware limits the request body size to prevent DoS.
-func MaxBodySizeMiddleware(limit int64) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.Body = http.MaxBytesReader(w, r.Body, limit)
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-// RBACBlockMiddleware checks roles and enforces path access rules for LEHRER and HELFER roles.
-func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		if path == "/health" || path == "/login/barcode" || path == "/api/auth/status" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		cookie, err := r.Cookie("session_token")
-		if err == nil && cookie.Value != "" {
-			claims, err := s.Auth.VerifyToken(cookie.Value)
-			if err == nil {
-				role := strings.ToUpper(string(claims.Rolle))
-				switch role {
-				case "LEHRER":
-					isAllowed := (r.Method == http.MethodGet && (path == "/api/search" || strings.HasPrefix(path, "/api/buecher/titel/") && strings.Contains(path, "/exemplare"))) ||
-						(r.Method == http.MethodPost && path == "/api/auth/logout")
-
-					if !isAllowed {
-						apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("zugriff verweigert für Lehrer"))
-						return
-					}
-				case "HELFER":
-					isAllowed := (r.Method == http.MethodPost && (path == "/api/action" || path == "/api/auth/logout")) ||
-						(r.Method == http.MethodGet && path == "/events")
-
-					if !isAllowed {
-						apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("zugriff verweigert für Helfer"))
-						return
-					}
-				}
-			}
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// SecurityHeadersMiddleware sets HSTS, X-Frame-Options, X-Content-Type-Options and
-// Referrer-Policy on every response. HSTS uses a 1-year max-age with includeSubDomains
-// and preload to harden the school domain against protocol-downgrade attacks.
-func SecurityHeadersMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// HSTS: 1 year, include subdomains, eligible for preload list
-		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
-		// Prevent clickjacking
-		w.Header().Set("X-Frame-Options", "DENY")
-		// Prevent MIME-type sniffing
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		// Restrict referrer information
-		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		// Basic CSP: allow same-origin resources only (adjust if CDN is added)
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'")
-		next.ServeHTTP(w, r)
-	})
-}
-
-// CORSMiddleware restricts cross-origin requests to the configured school domain.
-// Set ALLOWED_ORIGIN env var to the school's frontend URL (e.g. https://bibliothek.schule.de).
-// Falls back to same-origin only if not configured.
-func CORSMiddleware(next http.Handler) http.Handler {
-	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		if origin == "" {
-			// Same-origin request (no Origin header) – always allowed
-			next.ServeHTTP(w, r)
-			return
-		}
-		// Only allow explicitly configured origin; reject everything else
-		if allowedOrigin != "" && origin == allowedOrigin {
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Vary", "Origin")
-		}
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
 	})
 }

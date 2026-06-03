@@ -24,6 +24,7 @@
      * Disable this if you'd like to use dynamic types.
      */
     "checkJs": true,
+    "noImplicitAny": false,
     "baseUrl": ".",
     "paths": {
       "$lib/*": ["src/inventur/lib/*"]

@@ -11,8 +11,18 @@ export const icons = {
   identification: `<path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />`,
   printer: `<path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />`,
   shield: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />`,
-  bell: `<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />`
+  bell: `<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />`,
+  cog: `<path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />`
 };
+
+/**
+ * @typedef {Object} MenuItem
+ * @property {string} id
+ * @property {string} label
+ * @property {string} icon
+ * @property {string[]} [roles]
+ * @property {boolean} [adminOnly]
+ */
 
 /**
  * Determines whether a menu item should be visible for the given role.
@@ -20,16 +30,20 @@ export const icons = {
  * - item.adminOnly (bool): visible only for 'admin'
  * - default: visible for all roles except 'lehrer'
  *
- * @param {object} item
+ * @param {MenuItem} item
  * @param {string} rolle - lowercase role string ('admin', 'mitarbeiter', 'helfer', 'lehrer')
  * @returns {boolean}
  */
 export function canSeeItem(item, rolle) {
   if (!rolle) return false;
-  if (item.roles) return item.roles.includes(rolle);
-  if (item.adminOnly) return rolle === 'admin';
+  const r = rolle.toLowerCase();
+  if (r === 'helfer') {
+    return item.id === 'kiosk' || item.id === 'media_catalog';
+  }
+  if (item.roles) return item.roles.includes(r);
+  if (item.adminOnly) return r === 'admin';
   // Default: visible to all staff except lehrer
-  return rolle !== 'lehrer';
+  return r !== 'lehrer';
 }
 
 export const menuGroups = [
@@ -48,7 +62,8 @@ export const menuGroups = [
       { id: "stats", label: "Statistiken", icon: "chart-bar" },
       { id: "mahnwesen", label: "Mahnwesen", icon: "bell", roles: ["admin", "mitarbeiter"] },
       { id: "audit", label: "Logbuch", icon: "clock", adminOnly: true },
-      { id: "permissions", label: "Berechtigungen", icon: "shield", adminOnly: true }
+      { id: "permissions", label: "Berechtigungen", icon: "shield", adminOnly: true },
+      { id: "settings", label: "Einstellungen", icon: "cog", adminOnly: true }
     ]
   },
   {

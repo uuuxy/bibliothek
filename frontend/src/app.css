@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", sans-serif;
+  --font-sans: "Inter", "Roboto", "system-ui", sans-serif;
 }
 
-html, body {
-  font-family: "Inter", sans-serif;
+body {
+  @apply font-sans;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Card & Label layouts */
@@ -102,6 +104,56 @@ html, body {
   body[data-print-mode="card"] .print-section-a4,
   body:not([data-print-mode]) .print-section-a4 {
     display: none !important;
+  }
+
+  /* Always hide back-side sections when not explicitly printing the back side.
+     Required because the global 'main div { display: block !important }' reset
+     above overrides Tailwind's 'hidden' class on these elements. */
+  body:not([data-print-side="back"]) .print-section-back-card,
+  body:not([data-print-side="back"]) .print-section-back-a4 {
+    display: none !important;
+  }
+
+  /* Batch card-printer mode: each card on its own card-sized page */
+  body[data-print-mode="card"] .print-section-card .print-card-box {
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body[data-print-mode="card"] .print-section-card .print-card-box:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Back side card-printer: each card on its own page */
+  body[data-print-mode="card"][data-print-side="back"] .print-section-back-card .print-card-box {
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body[data-print-mode="card"][data-print-side="back"] .print-section-back-card .print-card-box:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Single-card print (triggered from student profile) */
+  body[data-print-mode="card-single"] .single-card-print-section {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body[data-print-mode="card-single"] .single-card-print-section .print-card-box {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .print-rendered-output.a4_sheet .print-cards-grid {

@@ -26,6 +26,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false
       },
+      '/uploads': {
+        target: 'http://127.0.0.1:8081',
+        changeOrigin: true,
+        secure: false
+      },
       '/events': {
         target: 'http://127.0.0.1:8081',
         changeOrigin: true,

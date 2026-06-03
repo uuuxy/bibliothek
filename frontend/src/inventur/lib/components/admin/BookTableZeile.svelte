@@ -11,7 +11,8 @@
 	 *     track: string,
 	 *     stock: number,
 	 *     coverUrl: string,
-	 *     lastCounted: string
+	 *     lastCounted: string,
+	 *     erweiterteEigenschaften?: { standort?: string }
 	 *   },
 	 *   index: number,
 	 *   dragOverIndex: number|null,
@@ -155,6 +156,18 @@
 				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-50 text-cyan-700 border border-cyan-100"
 			>
 				{book.track}
+			</span>
+		{:else}
+			<span class="text-slate-350 text-xs">-</span>
+		{/if}
+	</td>
+
+	<td class="px-6 py-3">
+		{#if book.erweiterteEigenschaften?.standort}
+			<span
+				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100"
+			>
+				{book.erweiterteEigenschaften.standort}
 			</span>
 		{:else}
 			<span class="text-slate-350 text-xs">-</span>
