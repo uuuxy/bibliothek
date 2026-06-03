@@ -4,14 +4,19 @@ export function leseCsrfToken() {
     }
 
     const cookieEintraege = document.cookie ? document.cookie.split("; ") : [];
+    let inventurToken = "";
+    let mainToken = "";
+    
     for (const eintrag of cookieEintraege) {
         if (eintrag.startsWith("inventur_csrf=")) {
-            const wert = eintrag.slice("inventur_csrf=".length);
-            return decodeURIComponent(wert);
+            inventurToken = decodeURIComponent(eintrag.slice("inventur_csrf=".length));
+        }
+        if (eintrag.startsWith("csrf_token=")) {
+            mainToken = decodeURIComponent(eintrag.slice("csrf_token=".length));
         }
     }
 
-    return "";
+    return inventurToken || mainToken;
 }
 
 /**

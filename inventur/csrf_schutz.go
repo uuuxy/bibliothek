@@ -64,7 +64,11 @@ func (handler *APIHandler) validateCSRF(request *http.Request) error {
 	}
 	csrfCookie, err := request.Cookie(handler.csrfCookie)
 	if err != nil {
-		return errors.New("missing csrf cookie")
+		// Fallback to main app's csrf_token if inventur_csrf is not present
+		csrfCookie, err = request.Cookie("csrf_token")
+		if err != nil {
+			return errors.New("missing csrf cookie")
+		}
 	}
 	cookieToken := strings.TrimSpace(csrfCookie.Value)
 	headerToken := strings.TrimSpace(request.Header.Get(handler.csrfHeader))
