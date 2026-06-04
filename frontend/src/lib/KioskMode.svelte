@@ -321,8 +321,41 @@
   <!-- 1. Schülerausweis Scan-Bereich -->
   {@render studentScanSection()}
 
-  <!-- 2. Profil & 3. Buch-Scan (Nur wenn Schüler aktiv) -->
+  <!-- 2. Buch-Scan (Großes Suchfeld oben) -->
+  {#if activeStudent && !isStudentBlocked}
+    <div class="relative w-full mb-8 {isShaking ? 'animate-shake' : ''}">
+      <form onsubmit={(e) => { e.preventDefault(); handleBookSubmit(); }} class="relative w-full">
+        <svg class="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+        <input type="text" id="kiosk-book-input" bind:value={bookInputVal} disabled={isScanningBook || isLimitReached}
+               placeholder="Buch-Barcode (B-) scannen..." autocomplete="off"
+               class="w-full bg-white shadow-xl border-0 ring-1 ring-slate-200 focus:ring-4 focus:ring-emerald-500/20 rounded-full pl-14 pr-16 py-5 text-xl font-medium outline-none transition-all placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed" />
+        <button type="button" onclick={() => showVormerkenModal = true} class="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors cursor-pointer" title="Medium vormerken">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </button>
+      </form>
+      
+      {#if isLimitReached}
+        <div class="mt-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl text-sm flex items-start space-x-2">
+          <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Limit von {systemSettings.max_ausleihen_schueler} Medien erreicht. Keine weitere Ausleihe möglich!</span>
+        </div>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- 3. Profil -->
   {#if activeStudent}
+    <!-- Ausleih-Sperre Meldung -->
+    {#if isStudentBlocked}
+      <div class="bg-rose-100 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-start space-x-3 mb-8">
+        <svg class="w-6 h-6 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+          <h3 class="font-bold">Ausleihsperre aktiv</h3>
+          <p class="text-sm">Dieser Schüler hat noch überfällige Mahnungen offen und darf keine neuen Medien ausleihen.</p>
+        </div>
+      </div>
+    {/if}
+
     <StudentProfile 
       student={activeStudent} 
       onDeselect={clearSession} 
@@ -332,56 +365,22 @@
       }} 
     >
       {#snippet leftActions()}
-        <button class="mt-4 w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
+        <button class="mt-4 w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-2xl font-bold transition-colors cursor-pointer"
                 onclick={clearSession}>
           Sitzung beenden (Anderen Schüler scannen)
         </button>
       {/snippet}
 
       {#snippet rightTop()}
-        <div class="space-y-6 mb-6">
-        <!-- Ausleih-Sperre Meldung -->
-        {#if isStudentBlocked}
-          <div class="bg-rose-100 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-start space-x-3">
-            <svg class="w-6 h-6 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            <div>
-              <h3 class="font-bold">Ausleihsperre aktiv</h3>
-              <p class="text-sm">Dieser Schüler hat noch überfällige Mahnungen offen und darf keine neuen Medien ausleihen.</p>
-            </div>
-          </div>
-        {:else}
-          <!-- Buch-Scanner Input -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 {isShaking ? 'animate-shake' : ''}">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">Medien scannen</h3>
-            
-            {#if isLimitReached}
-              <div class="mb-4 bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl text-sm flex items-start space-x-2">
-                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                <span>Limit von {systemSettings.max_ausleihen_schueler} Medien erreicht. Keine weitere Ausleihe möglich!</span>
-              </div>
-            {/if}
-
-            <form onsubmit={(e) => { e.preventDefault(); handleBookSubmit(); }}>
-              <input type="text" id="kiosk-book-input" bind:value={bookInputVal} disabled={isScanningBook || isLimitReached}
-                     placeholder="Buch-Barcode hier scannen..." autocomplete="off"
-                     class="w-full bg-slate-50 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed" />
-            </form>
-            
-            <button onclick={() => showVormerkenModal = true} class="mt-4 w-full py-3 bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-200 rounded-xl font-semibold transition-colors flex items-center justify-center space-x-2 shadow-sm">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span>Medium vormerken (Warteliste)</span>
-            </button>
-          </div>
-          
-          <!-- Scanned Books List -->
-          {#if scannedBooks.length > 0}
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-              <h4 class="font-semibold text-slate-600 text-sm uppercase tracking-wider mb-3">Scans in dieser Sitzung</h4>
+        {#if !isStudentBlocked && scannedBooks.length > 0}
+          <div class="space-y-6 mb-6">
+            <!-- Scanned Books List -->
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+              <h4 class="font-bold text-slate-500 text-sm uppercase tracking-wider mb-4">Scans in dieser Sitzung</h4>
               <BorrowedBooksList books={scannedBooks} mode="scans" />
             </div>
-          {/if}
+          </div>
         {/if}
-        </div>
       {/snippet}
     </StudentProfile>
   {/if}
