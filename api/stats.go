@@ -240,7 +240,7 @@ func (s *Server) queryReorders(ctx context.Context) ([]ReorderTitle, error) {
 	}
 	defer rows.Close()
 
-	var results []ReorderTitle
+	results := make([]ReorderTitle, 0)
 	for rows.Next() {
 		var r ReorderTitle
 		err := rows.Scan(&r.ID, &r.Titel, &r.Autor, &r.ISBN, &r.Verlag, &r.CoverURL, &r.Meldebestand, &r.VerfuegbarBestand)

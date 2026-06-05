@@ -107,7 +107,7 @@ func (s *Server) GetStudentProfileHandler(
 		}
 		defer rows.Close()
 
-		var borrowedBooks []BorrowedBook
+		borrowedBooks := make([]BorrowedBook, 0)
 		for rows.Next() {
 			var b BorrowedBook
 			err := rows.Scan(

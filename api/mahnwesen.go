@@ -78,7 +78,7 @@ func (s *Server) queryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter 
 	// Build nested structure: klasse → schueler → medien
 	klassenMap := map[string]*MahnwesenKlasse{}
 	schuelerMap := map[string]*UeberfaelligerSchueler{}
-	var klassen []MahnwesenKlasse // preserve insertion order
+	klassen := make([]MahnwesenKlasse, 0) // preserve insertion order
 
 	for rows.Next() {
 		var schuelerID, name, klasse string

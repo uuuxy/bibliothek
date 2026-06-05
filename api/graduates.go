@@ -114,7 +114,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 		defer rows.Close()
 
 		studMap := map[string]*GraduateDetail{}
-		var studOrder []string
+		studOrder := make([]string, 0)
 		for rows.Next() {
 			var id, barcode, vorname, nachname, klasse string
 			var abgaengerJahr int

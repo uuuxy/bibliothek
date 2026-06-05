@@ -62,7 +62,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 
-		var result []OpacTitel
+		result := make([]OpacTitel, 0)
 		for rows.Next() {
 			var t OpacTitel
 			if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.CoverURL, &t.Verfuegbar, &t.Gesamt); err != nil {

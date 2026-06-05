@@ -65,7 +65,7 @@ func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 
-		var result []Vormerkung
+		result := make([]Vormerkung, 0)
 		for rows.Next() {
 			var v Vormerkung
 			if err := rows.Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName); err != nil {

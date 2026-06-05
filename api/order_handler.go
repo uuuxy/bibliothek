@@ -125,8 +125,8 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 		}
 
 		// 3. Register copies in DB & collect barcode label details
-		var labels []BarcodeLabelDetail
-		var orderSummaryItems []OrderedItem
+		labels := make([]BarcodeLabelDetail, 0)
+		orderSummaryItems := make([]OrderedItem, 0)
 		currentBarcodeIndex := startNum
 		isNaacher := strings.Contains(strings.ToLower(toEmail), "naacher")
 
@@ -258,7 +258,7 @@ func (s *Server) ReleaseOrdersHandler() http.HandlerFunc {
 			EtikettGedruckt bool   `json:"etikett_gedruckt"`
 		}
 
-		var items []ReleasedItem
+		items := make([]ReleasedItem, 0)
 		for rows.Next() {
 			var item ReleasedItem
 			if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.EtikettGedruckt); err != nil {

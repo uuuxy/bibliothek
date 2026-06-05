@@ -78,7 +78,7 @@ func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
 		return nil, errors.New("Fehlende Pflichtspalten in der CSV. Benötigt: ID, Vorname, Name")
 	}
 
-	var records []lusdRecord
+	records := make([]lusdRecord, 0)
 	for {
 		row, err := reader.Read()
 		if err == io.EOF {

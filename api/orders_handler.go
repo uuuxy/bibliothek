@@ -98,8 +98,8 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 		}
 
 		// 3. Register copies in DB & collect details for PDFs
-		var labels []BarcodeLabelDetail
-		var orderSummaryItems []OrderedItem
+		labels := make([]BarcodeLabelDetail, 0)
+		orderSummaryItems := make([]OrderedItem, 0)
 		currentBarcodeIndex := startNum
 		isNaacher := strings.Contains(strings.ToLower(supplierName), "naacher")
 
@@ -324,7 +324,7 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 		}
 
 		// Sort groups by timestamp descending
-		var groups []*ShipmentGroup
+		groups := make([]*ShipmentGroup, 0)
 		for _, g := range groupsMap {
 			groups = append(groups, g)
 		}

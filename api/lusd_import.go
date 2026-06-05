@@ -126,7 +126,7 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 			}
 		}
 
-		var lusdIDs []string
+		lusdIDs := make([]string, 0)
 		var newCount int
 		var updatedCount int
 		lineNum := 1
