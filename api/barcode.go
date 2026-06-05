@@ -24,6 +24,42 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
+// GetNextBarcodeSequence retrieves the next numerical sequence for a given barcode prefix.
+func GetNextBarcodeSequence(ctx context.Context, tx pgx.Tx, table, prefix string, forUpdate bool) (int, error) {
+	var lastBarcode string
+
+	pgRegex := fmt.Sprintf("^%s\\d{5,}$", prefix)
+
+	query := fmt.Sprintf(`
+		SELECT barcode_id
+		FROM %s
+		WHERE barcode_id ~ $1
+		ORDER BY CAST(SUBSTRING(barcode_id FROM %d) AS INTEGER) DESC
+		LIMIT 1`, table, len(prefix)+1)
+
+	if forUpdate {
+		query += "\nFOR UPDATE"
+	}
+
+	err := tx.QueryRow(ctx, query, pgRegex).Scan(&lastBarcode)
+
+	startNum := 10001
+	if err == nil {
+		goRegex := fmt.Sprintf(`^%s(\d{5,})$`, regexp.QuoteMeta(prefix))
+		re := regexp.MustCompile(goRegex)
+		matches := re.FindStringSubmatch(lastBarcode)
+		if len(matches) > 1 {
+			if parsed, parseErr := strconv.Atoi(matches[1]); parseErr == nil {
+				startNum = parsed + 1
+			}
+		}
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return startNum, err
+	}
+
+	return startNum, nil
+}
+
 // OrderRequest holds the input parameters for generating a new supplier order.
 type OrderRequest struct {
 	TitelID string `json:"titel_id"`
@@ -145,26 +181,11 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			return
 		}
 
-		// 2. Fetch the highest B-XXXXX barcode in the system to calculate the next sequence
-		var lastBarcode string
-		qLast := `
-			SELECT barcode_id 
-			FROM buecher_exemplare 
-			WHERE barcode_id LIKE 'B-%' 
-			ORDER BY barcode_id DESC 
-			LIMIT 1
-		`
-		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-
-		startNum := 10001
-		if err == nil {
-			re := regexp.MustCompile(`B-(\d+)`)
-			matches := re.FindStringSubmatch(lastBarcode)
-			if len(matches) > 1 {
-				if parsed, err := strconv.Atoi(matches[1]); err == nil {
-					startNum = parsed + 1
-				}
-			}
+		// 2. Fetch the highest B-00000 barcode in the system to calculate the next sequence
+		startNum, err := GetNextBarcodeSequence(ctx, tx, "buecher_exemplare", "B-", false)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		// 3. Register copies in DB (marked as not borrowable until delivery)

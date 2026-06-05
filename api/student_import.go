@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -86,26 +84,11 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 		}
 		defer tx.Rollback(ctx)
 
-		// Get next barcode sequence S-XXXXX helper
-		var lastBarcode string
-		qLast := `
-			SELECT barcode_id 
-			FROM schueler 
-			WHERE barcode_id LIKE 'S-%' 
-			ORDER BY barcode_id DESC 
-			LIMIT 1
-			FOR UPDATE
-		`
-		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-		startNum := 10001
-		if err == nil {
-			re := regexp.MustCompile(`S-(\d+)`)
-			matches := re.FindStringSubmatch(lastBarcode)
-			if len(matches) > 1 {
-				if parsed, err := strconv.Atoi(matches[1]); err == nil {
-					startNum = parsed + 1
-				}
-			}
+		// Get next barcode sequence S-00000 helper
+		startNum, err := GetNextBarcodeSequence(ctx, tx, "schueler", "S-", true)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		importedCount := 0
