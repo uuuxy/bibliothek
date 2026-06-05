@@ -359,14 +359,16 @@ func (db *Database) InitLieferanten(ctx context.Context) error {
 			{"Westermann", "order@westermann.de", "W-77441"},
 		}
 
-		for _, d := range defaults {
-			_, err = db.Pool.Exec(ctx, `
-				INSERT INTO lieferanten (name, email, kundennummer)
-				VALUES ($1, $2, $3)
-			`, d.Name, d.Email, d.Kundennummer)
-			if err != nil {
-				return fmt.Errorf("failed to seed supplier default (%s): %w", d.Name, err)
-			}
+		_, err = db.Pool.Exec(ctx, `
+			INSERT INTO lieferanten (name, email, kundennummer)
+			VALUES ($1, $2, $3), ($4, $5, $6), ($7, $8, $9)
+		`,
+			defaults[0].Name, defaults[0].Email, defaults[0].Kundennummer,
+			defaults[1].Name, defaults[1].Email, defaults[1].Kundennummer,
+			defaults[2].Name, defaults[2].Email, defaults[2].Kundennummer,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to seed supplier defaults: %w", err)
 		}
 	}
 	return nil
