@@ -18,3 +18,8 @@ frontend/*.local
 # OS Metadata
 .DS_Store
 Thumbs.db
+
+# Database Backups & Archives
+*.sql
+!schema.sql
+*.zip
