@@ -27,6 +27,9 @@ func TestUpsertBooksBatch(t *testing.T) {
 	defer pool.Close()
 	ctx := context.Background()
 
+	// Clean up database after all tests
+	defer pool.Exec(ctx, "TRUNCATE buecher_titel CASCADE")
+
 	t.Run("EmptyBatch", func(t *testing.T) {
 		affected, err := repo.UpsertBooksBatch(ctx, []Book{})
 		if err != nil {
@@ -124,7 +127,4 @@ func TestUpsertBooksBatch(t *testing.T) {
 			t.Errorf("expected 1 book for Book 3 in database, found %d", count)
 		}
 	})
-
-	// Clean up database after
-	defer pool.Exec(ctx, "TRUNCATE buecher_titel CASCADE")
 }
