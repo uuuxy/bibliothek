@@ -145,7 +145,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			return
 		}
 
-		// 2. Fetch the highest B-XXXXX barcode in the system to calculate the next sequence
+		// 2. Fetch the highest B-[number] barcode in the system to calculate the next sequence
 		var lastBarcode string
 		qLast := `
 			SELECT barcode_id 

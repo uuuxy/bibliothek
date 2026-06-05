@@ -60,7 +60,7 @@ Die Migration schreibt in die Zieltabellen `buecher_titel` und `buecher_exemplar
 ### Exemplare
 
 - Das Feld `anzahl` bestimmt die Anzahl der physisch angelegten Exemplare.
-- Für jedes Exemplar wird ein neuer Barcode im Format `B-XXXXX` erzeugt.
+- Für jedes Exemplar wird ein neuer Barcode im Format `B-[number]` erzeugt.
 - Die Barcodes laufen sequenziell ab dem höchsten vorhandenen Barcode in PostgreSQL weiter.
 
 ## Validierung

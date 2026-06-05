@@ -103,7 +103,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			return
 		}
 
-		// 2. Fetch the highest B-XXXXX barcode in the system
+		// 2. Fetch the highest B-[number] barcode in the system
 		var lastBarcode string
 		qLast := `
 			SELECT barcode_id 
