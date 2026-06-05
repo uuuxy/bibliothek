@@ -177,6 +177,9 @@ func (s *Server) handleBookAction(
 			if err := tx.Commit(ctx); err != nil {
 				return err
 			}
+			auditRepo := repository.NewAuditRepository(s.DB.Pool)
+			_ = auditRepo.LogAusleihe(ctx, copy.ID, "", claims.UserID, claims.UserID)
+
 			resp.Type = "ausleihe"
 			resp.Book = copy
 			if loan != nil {
@@ -194,6 +197,9 @@ func (s *Server) handleBookAction(
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
+		auditRepo := repository.NewAuditRepository(s.DB.Pool)
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, claims.UserID)
+
 		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
 			CopyID:       copy.ID,
 			BarcodeID:    copy.BarcodeID,
@@ -220,6 +226,13 @@ func (s *Server) handleBookAction(
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return err
+	}
+
+	auditRepo := repository.NewAuditRepository(s.DB.Pool)
+	if activeLoan.SchuelerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
 	}
 
 	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{

@@ -130,6 +130,13 @@ func (s *Server) handleGeraetAction(
 			return err
 		}
 
+		auditRepo := repository.NewAuditRepository(s.DB.Pool)
+		if student != nil {
+			_ = auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", claims.UserID)
+		} else {
+			_ = auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, claims.UserID)
+		}
+
 		resp.Type = "ausleihe"
 		resp.Geraet = &g
 		resp.DueDate = &dueTime
@@ -170,6 +177,13 @@ func (s *Server) handleGeraetAction(
 
 	if err := tx.Commit(ctx); err != nil {
 		return err
+	}
+
+	auditRepo := repository.NewAuditRepository(s.DB.Pool)
+	if activeLoan.SchuelerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, g.ID, *activeLoan.SchuelerID, "", claims.UserID)
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, g.ID, "", *activeLoan.AusleiherBenutzerID, claims.UserID)
 	}
 
 	resp.Type = "rueckgabe"

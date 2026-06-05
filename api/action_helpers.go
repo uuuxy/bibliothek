@@ -115,6 +115,9 @@ func (s *Server) handleTeacherCheckoutFlow(
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
+		auditRepo := repository.NewAuditRepository(s.DB.Pool)
+		_ = auditRepo.LogAusleihe(ctx, copy.ID, "", teacher.ID, staffID)
+
 		resp.Type = "ausleihe"
 		resp.Book = copy
 		resp.Teacher = &teacher
@@ -132,6 +135,9 @@ func (s *Server) handleTeacherCheckoutFlow(
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
+		auditRepo := repository.NewAuditRepository(s.DB.Pool)
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", teacher.ID, staffID)
+
 		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
 			CopyID:       copy.ID,
 			BarcodeID:    copy.BarcodeID,
@@ -175,6 +181,15 @@ func (s *Server) handleTeacherCheckoutFlow(
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	auditRepo := repository.NewAuditRepository(s.DB.Pool)
+	if activeLoan.SchuelerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
+	}
+	_ = auditRepo.LogAusleihe(ctx, copy.ID, "", teacher.ID, staffID)
+
 	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
 		CopyID:       copy.ID,
 		BarcodeID:    copy.BarcodeID,
@@ -275,6 +290,9 @@ func (s *Server) handleStudentCheckoutFlow(
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
+		auditRepo := repository.NewAuditRepository(s.DB.Pool)
+		_ = auditRepo.LogAusleihe(ctx, copy.ID, student.ID, "", staffID)
+
 		resp.Type = "ausleihe"
 		resp.Book = copy
 		resp.Student = student
@@ -292,6 +310,9 @@ func (s *Server) handleStudentCheckoutFlow(
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
+		auditRepo := repository.NewAuditRepository(s.DB.Pool)
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, student.ID, "", staffID)
+
 		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
 			CopyID:       copy.ID,
 			BarcodeID:    copy.BarcodeID,
@@ -346,6 +367,15 @@ func (s *Server) handleStudentCheckoutFlow(
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+
+	auditRepo := repository.NewAuditRepository(s.DB.Pool)
+	if activeLoan.SchuelerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
+	}
+	_ = auditRepo.LogAusleihe(ctx, copy.ID, student.ID, "", staffID)
+
 	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
 		CopyID:       copy.ID,
 		BarcodeID:    copy.BarcodeID,

@@ -87,15 +87,17 @@ func (s *Server) GetRecentTransactionsHandler() http.HandlerFunc {
 		query := `
 			SELECT 
 				a.aktion,
-				COALESCE(s.vorname, 'Unbekannt'),
-				COALESCE(s.nachname, 'Unbekannt'),
-				COALESCE(s.barcode_id, ''),
-				COALESCE(t.titel, 'Unbekanntes Buch'),
+				COALESCE(s.vorname, b.vorname, 'Unbekannt'),
+				COALESCE(s.nachname, b.nachname, 'Unbekannt'),
+				COALESCE(s.barcode_id, b.barcode_id, ''),
+				COALESCE(t.titel, g.modellname, 'Unbekanntes Buch'),
 				a.timestamp
 			FROM audit_log a
-			LEFT JOIN schueler s ON s.id = (a.details->>'schueler_id')::uuid
-			LEFT JOIN buecher_exemplare e ON e.id = (a.details->>'exemplar_id')::uuid
+			LEFT JOIN schueler s ON (a.details->>'schueler_id') IS NOT NULL AND (a.details->>'schueler_id') != '' AND s.id = (a.details->>'schueler_id')::uuid
+			LEFT JOIN benutzer b ON (a.details->>'benutzer_id') IS NOT NULL AND (a.details->>'benutzer_id') != '' AND b.id = (a.details->>'benutzer_id')::uuid
+			LEFT JOIN buecher_exemplare e ON (a.details->>'exemplar_id') IS NOT NULL AND (a.details->>'exemplar_id') != '' AND e.id = (a.details->>'exemplar_id')::uuid
 			LEFT JOIN buecher_titel t ON t.id = e.titel_id
+			LEFT JOIN geraete g ON (a.details->>'exemplar_id') IS NOT NULL AND (a.details->>'exemplar_id') != '' AND g.id = (a.details->>'exemplar_id')::uuid
 			WHERE a.tabelle = 'ausleihen' AND a.aktion IN ('CHECKOUT', 'RETURN')
 			ORDER BY a.timestamp DESC
 			LIMIT 15

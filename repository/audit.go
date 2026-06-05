@@ -24,8 +24,8 @@ type AuditRepository interface {
 	StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, betrag float64, grund string) error
 
 	// Loan checkout/return audit (append-only event log)
-	LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, bearbeiterID string) error
-	LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, bearbeiterID string) error
+	LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
+	LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
 
 	// System-triggered batch audit (no user actor)
 	LogSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error
@@ -298,16 +298,16 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 
 // LogAusleihe writes an immutable checkout event to the audit log.
 // This is NOT called from within a larger transaction – it creates its own.
-func (r *pgAuditRepository) LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, bearbeiterID string) error {
-	return r.logLoanEvent(ctx, "ausleihen", "CHECKOUT", exemplarID, schuelerID, bearbeiterID)
+func (r *pgAuditRepository) LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+	return r.logLoanEvent(ctx, "ausleihen", "CHECKOUT", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
 // LogRueckgabe writes an immutable return event to the audit log.
-func (r *pgAuditRepository) LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, bearbeiterID string) error {
-	return r.logLoanEvent(ctx, "ausleihen", "RETURN", exemplarID, schuelerID, bearbeiterID)
+func (r *pgAuditRepository) LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+	return r.logLoanEvent(ctx, "ausleihen", "RETURN", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
-func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, exemplarID, schuelerID, bearbeiterID string) error {
+func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, exemplarID, schuelerID, benutzerID, bearbeiterID string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -319,13 +319,20 @@ func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, e
 		bearbeiterPtr = &bearbeiterID
 	}
 
+	details := map[string]any{
+		"exemplar_id": exemplarID,
+		"zeitpunkt":   time.Now().UTC().Format(time.RFC3339),
+	}
+	if schuelerID != "" {
+		details["schueler_id"] = schuelerID
+	}
+	if benutzerID != "" {
+		details["benutzer_id"] = benutzerID
+	}
+
 	if err = r.insertAuditLog(ctx, tx, tabelle, aktion, exemplarID,
 		bearbeiterPtr, "USER", nil,
-		map[string]any{
-			"exemplar_id": exemplarID,
-			"schueler_id": schuelerID,
-			"zeitpunkt":   time.Now().UTC().Format(time.RFC3339),
-		},
+		details,
 	); err != nil {
 		return err
 	}
