@@ -12,7 +12,8 @@ on:
 
 permissions:
   contents: read
-  security-events: write  # Required for uploading SARIF reports
+  security-events: write
+  actions: read
 
 jobs:
   # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
@@ -63,7 +64,7 @@ jobs:
           ./... || true
 
       - name: Upload gosec SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: gosec-results.sarif
@@ -117,7 +118,7 @@ jobs:
           ignore-unfixed: true  # Skip CVEs without fix available
 
       - name: Upload Trivy SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
