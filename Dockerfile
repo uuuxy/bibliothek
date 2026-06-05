@@ -46,7 +46,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main main.go
 # ==============================================================================
 # Stage 3: Runner container
 # ==============================================================================
-FROM alpine:3.19
+FROM alpine:3.21
 WORKDIR /app
 
 # Install ca-certificates for secure outgoing connections (e.g. cover APIs)
