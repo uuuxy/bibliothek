@@ -11,6 +11,7 @@ on:
   workflow_dispatch: # Allow manual trigger
 
 permissions:
+  actions: read           # Required for upload-sarif@v4 to access workflow run data
   contents: read
   security-events: write  # Required for uploading SARIF reports
 
