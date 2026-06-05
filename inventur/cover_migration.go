@@ -1,19 +1,18 @@
 package inventur
 
 import (
+	"bibliothek/db"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // RunCoverMigration lädt alle Cover, die noch als externe HTTP-Links (z.B. OpenLibrary) in der DB stehen,
 // einzeln herunter und aktualisiert die Datenbank auf den lokalen "/uploads/..." Pfad.
-func RunCoverMigration(db *pgxpool.Pool) {
+func RunCoverMigration(db db.PgxPoolIface) {
 	log.Println("=== Starte automatische Cover-Migration ===")
 	ctx := context.Background()
 

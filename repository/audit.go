@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	
 )
 
 // AuditRepository manages immutable logs and auditable resource deletions.
@@ -33,11 +34,11 @@ type AuditRepository interface {
 }
 
 type pgAuditRepository struct {
-	db *pgxpool.Pool
+	db db.PgxPoolIface
 }
 
 // NewAuditRepository instantiates a pgAuditRepository.
-func NewAuditRepository(db *pgxpool.Pool) AuditRepository {
+func NewAuditRepository(db db.PgxPoolIface) AuditRepository {
 	return &pgAuditRepository{db: db}
 }
 
@@ -99,7 +100,6 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("failed to snapshot title for audit: %w", err)
 	}
 
-
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID); err != nil {
 		return err
 	}
@@ -136,7 +136,6 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 		return fmt.Errorf("failed to snapshot copy for audit: %w", err)
 	}
 
-
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE id = $1", copyID); err != nil {
 		return err
 	}
@@ -170,7 +169,6 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to snapshot user for audit: %w", err)
 	}
-
 
 	if _, err = tx.Exec(ctx, "DELETE FROM benutzer WHERE id = $1", userID); err != nil {
 		return err
@@ -210,7 +208,6 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to snapshot student for audit: %w", err)
 	}
-
 
 	// Anonymize closed loans: set schueler_id = NULL for all returned loans
 	if _, err = tx.Exec(ctx,

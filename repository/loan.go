@@ -1,13 +1,14 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"database/sql"
 	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	
 )
 
 // LoanRepository handles the transactional check-out and check-in database procedures.
@@ -37,11 +38,11 @@ type LoanRepository interface {
 }
 
 type pgLoanRepository struct {
-	db *pgxpool.Pool
+	db db.PgxPoolIface
 }
 
 // NewLoanRepository constructs a PostgreSQL-backed LoanRepository.
-func NewLoanRepository(db *pgxpool.Pool) LoanRepository {
+func NewLoanRepository(db db.PgxPoolIface) LoanRepository {
 	return &pgLoanRepository{db: db}
 }
 

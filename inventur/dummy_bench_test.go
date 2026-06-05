@@ -1,16 +1,15 @@
 package inventur
 
 import (
+	"bibliothek/db"
 	"context"
 	"fmt"
 	"os"
 	"testing"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // setupBenchDB returns a connected pgxpool.Pool and the BookRepository.
-func setupBenchDB(b *testing.B) (*pgxpool.Pool, *BookRepository) {
+func setupBenchDB(b *testing.B) (db.PgxPoolIface, *BookRepository) {
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
 		b.Skip("DATABASE_URL not set")

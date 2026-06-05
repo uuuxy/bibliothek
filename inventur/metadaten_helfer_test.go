@@ -111,11 +111,11 @@ func TestKonvertiereISBN10zu13(t *testing.T) {
 			isbn: "978-3-86680-192-9",
 			want: "9783866801929",
 		},
-        {
-            name: "Invalid ISBN-10 length",
-            isbn: "123",
-            want: "123",
-        },
+		{
+			name: "Invalid ISBN-10 length",
+			isbn: "123",
+			want: "123",
+		},
 	}
 
 	for _, tt := range tests {

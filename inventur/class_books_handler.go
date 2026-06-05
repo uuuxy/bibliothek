@@ -8,11 +8,11 @@ import (
 )
 
 type ClassBook struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Subject  string `json:"subject"`
-	Track    string `json:"track"`
-	CoverURL string `json:"coverUrl"`
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Subject    string `json:"subject"`
+	Track      string `json:"track"`
+	CoverURL   string `json:"coverUrl"`
 	ISBN       string `json:"isbn"`
 	Stock      int    `json:"stock"`
 	Verfuegbar int    `json:"verfuegbar"`

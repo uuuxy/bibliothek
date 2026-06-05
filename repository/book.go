@@ -1,11 +1,12 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	
 )
 
 // BookRepository defines operations for physical copies and book metadata search.
@@ -19,11 +20,11 @@ type BookRepository interface {
 }
 
 type pgBookRepository struct {
-	db *pgxpool.Pool
+	db db.PgxPoolIface
 }
 
 // NewBookRepository builds a PostgreSQL-backed BookRepository.
-func NewBookRepository(db *pgxpool.Pool) BookRepository {
+func NewBookRepository(db db.PgxPoolIface) BookRepository {
 	return &pgBookRepository{db: db}
 }
 

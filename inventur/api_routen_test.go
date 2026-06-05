@@ -147,7 +147,7 @@ func TestRequireAuth(t *testing.T) {
 		}
 	})
 
-    t.Run("ValidAdminToken_GET", func(t *testing.T) {
+	t.Run("ValidAdminToken_GET", func(t *testing.T) {
 		token, _ := handler.issueToken(true)
 		req := httptest.NewRequest(http.MethodGet, "/api/books", nil)
 		req.AddCookie(&http.Cookie{Name: handler.adminCookie, Value: token})

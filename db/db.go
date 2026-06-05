@@ -11,13 +11,26 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Database wraps the pgxpool.Pool to provide access to database operations.
+// PgxPoolIface defines the set of methods used from pgxpool.Pool to allow for mocking.
+type PgxPoolIface interface {
+	Close()
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
+	Ping(ctx context.Context) error
+}
+
+// Database wraps the PgxPoolIface to provide access to database operations.
 type Database struct {
-	Pool *pgxpool.Pool
+	Pool PgxPoolIface
 }
 
 // Connect establishes a connection pool to the PostgreSQL database using the provided DSN.

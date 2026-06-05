@@ -1,11 +1,12 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	
 )
 
 // StudentRepository defines operations for fetching student records from the database.
@@ -19,11 +20,11 @@ type StudentRepository interface {
 }
 
 type pgStudentRepository struct {
-	db *pgxpool.Pool
+	db db.PgxPoolIface
 }
 
 // NewStudentRepository builds a PostgreSQL-backed StudentRepository.
-func NewStudentRepository(db *pgxpool.Pool) StudentRepository {
+func NewStudentRepository(db db.PgxPoolIface) StudentRepository {
 	return &pgStudentRepository{db: db}
 }
 

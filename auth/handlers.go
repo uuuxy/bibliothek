@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bibliothek/db"
 	"bufio"
 	"context"
 	"crypto/tls"
@@ -16,7 +17,7 @@ import (
 
 	"bibliothek/apierrors"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -97,7 +98,6 @@ func realIP(r *http.Request) string {
 	return ip
 }
 
-
 // LoginRequest represents the payload for login.
 type LoginRequest struct {
 	BarcodeID string `json:"barcode_id,omitempty"`
@@ -171,7 +171,7 @@ func verifyPassword(hash, password string) bool {
 
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
 // Supports both email/password (with local DB or school IMAP verification) and barcode/PIN login.
-func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
+func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Brute-force protection: block IPs that exceeded 5 failed logins in 15 minutes
 		clientIP := realIP(r)
@@ -247,7 +247,7 @@ func LoginHandler(dbPool *pgxpool.Pool, authenticator *Authenticator, cookieSecu
 			if pin == "" {
 				pin = req.Password
 			}
-			
+
 			// Support barcode:pin combined scanners
 			if pin == "" && strings.Contains(barcodeID, ":") {
 				parts := strings.SplitN(barcodeID, ":", 2)

@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/db"
 	"context"
 	"fmt"
 	"time"
@@ -9,7 +10,7 @@ import (
 )
 
 // NewDB erstellt einen Pool für PostgreSQL und prüft die Verbindung per Ping.
-func NewDB(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+func NewDB(ctx context.Context, databaseURL string) (db.PgxPoolIface, error) {
 	if databaseURL == "" {
 		return nil, fmt.Errorf("database URL darf nicht leer sein")
 	}

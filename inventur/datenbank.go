@@ -1,14 +1,14 @@
 package inventur
 
 import (
+	"bibliothek/db"
 	"errors"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type BookRepository struct {
-	db *pgxpool.Pool
+	db db.PgxPoolIface
 }
 
 var (
@@ -16,7 +16,7 @@ var (
 	ErrDuplicateISBN = errors.New("ein buch mit dieser ISBN existiert bereits")
 )
 
-func NewBookRepository(db *pgxpool.Pool) *BookRepository {
+func NewBookRepository(db db.PgxPoolIface) *BookRepository {
 	return &BookRepository{db: db}
 }
 

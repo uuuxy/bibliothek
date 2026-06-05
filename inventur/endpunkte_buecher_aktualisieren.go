@@ -11,16 +11,16 @@ import (
 
 // BuchAktualisierenAnfrage repräsentiert die erwartete JSON-Struktur für das Aktualisieren eines Buches.
 type BuchAktualisierenAnfrage struct {
-	ISBN                   string         `json:"isbn"`
-	Titel                  string         `json:"title"`
-	Autor                  string         `json:"author"`
-	CoverURL               string         `json:"coverUrl"`
-	Fach                   string         `json:"subject"`
-	KlassenStufe           int16          `json:"gradeLevel"`
-	Schulzweig             string         `json:"track"`
-	Bestand                int            `json:"stock"`
-	ZaehlDatum             *string        `json:"lastCounted"`
-	Medientyp              string         `json:"medientyp"`
+	ISBN                    string         `json:"isbn"`
+	Titel                   string         `json:"title"`
+	Autor                   string         `json:"author"`
+	CoverURL                string         `json:"coverUrl"`
+	Fach                    string         `json:"subject"`
+	KlassenStufe            int16          `json:"gradeLevel"`
+	Schulzweig              string         `json:"track"`
+	Bestand                 int            `json:"stock"`
+	ZaehlDatum              *string        `json:"lastCounted"`
+	Medientyp               string         `json:"medientyp"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 }
 
