@@ -15,7 +15,7 @@ RUN npm run build
 # ==============================================================================
 # Stage 2: Build the Go backend
 # ==============================================================================
-FROM golang:alpine AS backend-builder
+FROM golang:1.25.11-alpine AS backend-builder
 WORKDIR /app
 
 # Disable Go workspace mode to build using root go.mod directly
@@ -45,7 +45,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main main.go
 # ==============================================================================
 # Stage 3: Runner container
 # ==============================================================================
-FROM alpine:3.19
+FROM alpine:3.21
 WORKDIR /app
 
 # Install ca-certificates for secure outgoing connections (e.g. cover APIs)
