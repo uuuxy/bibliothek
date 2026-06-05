@@ -10,6 +10,8 @@
      *     gradeLevel: number,
      *     track: string,
      *     stock: number,
+     *     verfuegbar?: number,
+     *     gesamt?: number,
      *     coverUrl: string,
      *     lastCounted: string,
      *     medientyp?: string
@@ -69,13 +71,13 @@
     }
 
     /**
-     * @param {number} stock
+     * @param {number} verfuegbar
      * @returns {string}
      */
-    function getStockDotColor(stock) {
-        if (stock === 0)
+    function getStockDotColor(verfuegbar) {
+        if (verfuegbar === 0)
             return "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.4)]";
-        if (stock < 5)
+        if (verfuegbar < 5)
             return "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]";
         return "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]";
     }
@@ -306,12 +308,15 @@
             <div
                 class="pt-3 border-t border-slate-100 flex justify-between items-center"
             >
-                <span class="text-xs font-semibold text-slate-400">Bestand</span>
+                <span class="text-xs font-semibold text-slate-400">Verfügbar</span>
                 <div class="flex items-center gap-2">
                     <span
-                        class="w-2 h-2 rounded-full {getStockDotColor(book.stock)}"
+                        class="w-2 h-2 rounded-full {getStockDotColor(book.verfuegbar ?? book.stock)}"
                     ></span>
-                    <span class="text-lg font-extrabold text-slate-800">{book.stock}</span>
+                    <span class="text-lg font-extrabold text-slate-800">{book.verfuegbar ?? book.stock}</span>
+                    {#if book.gesamt !== undefined}
+                        <span class="text-xs text-slate-500 font-medium">/ {book.gesamt}</span>
+                    {/if}
                 </div>
             </div>
         </div>

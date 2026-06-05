@@ -230,8 +230,8 @@
                         <span class="font-semibold text-slate-850">{book.isbn || "-"}</span>
                     </div>
                     <div>
-                        <span class="text-slate-400 font-medium text-xs block uppercase tracking-wider mb-0.5">Bestand</span>
-                        <span class="font-semibold text-slate-800">{book.stock} Stück</span>
+                        <span class="text-slate-400 font-medium text-xs block uppercase tracking-wider mb-0.5">Bestand (Verfügbar/Gesamt)</span>
+                        <span class="font-semibold text-slate-800">{book.verfuegbar ?? book.stock} / {book.gesamt ?? book.stock}</span>
                     </div>
                     <div>
                         <span class="text-slate-400 font-medium text-xs block uppercase tracking-wider mb-0.5">Standort / Regal</span>

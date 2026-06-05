@@ -11,6 +11,8 @@ type Book struct {
 	GradeLevel  int16   `json:"gradeLevel" db:"grade_level"`
 	Track       string  `json:"track" db:"track"`
 	Stock       int     `json:"stock" db:"stock"`
+	Verfuegbar  int     `json:"verfuegbar"`
+	Gesamt      int     `json:"gesamt"`
 	LastCounted *string `json:"lastCounted" db:"last_counted"`
 	SortOrder   int            `json:"sortOrder" db:"sort_order"`
 	Medientyp   string         `json:"medientyp" db:"medientyp"`

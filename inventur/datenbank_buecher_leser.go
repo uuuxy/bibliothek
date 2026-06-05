@@ -8,12 +8,22 @@ import (
 // ListBooks lists books matching subject, grade level, and text query.
 func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string) ([]Book, error) {
 	query := `
-		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp, erweiterte_eigenschaften
-		FROM buecher_titel
-		WHERE ($1 = '' OR subject = $1)
-		  AND ($2::smallint IS NULL OR grade_level = $2)
-		  AND ($3 = '' OR titel ILIKE '%' || $3 || '%' OR autor ILIKE '%' || $3 || '%' OR isbn ILIKE '%' || $3 || '%' OR subject ILIKE '%' || $3 || '%' OR CAST(id AS TEXT) ILIKE '%' || $3 || '%')
-		ORDER BY sort_order ASC, titel ASC`
+		SELECT 
+			bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author, 
+			COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject, 
+			COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track, 
+			bt.stock, 
+			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt,
+			TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp, bt.erweiterte_eigenschaften
+		FROM buecher_titel bt
+		LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
+		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
+		WHERE ($1 = '' OR bt.subject = $1)
+		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
+		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR bt.isbn ILIKE '%' || $3 || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
+		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.stock, bt.last_counted, bt.sort_order, bt.medientyp, bt.erweiterte_eigenschaften
+		ORDER BY bt.sort_order ASC, bt.titel ASC`
 
 	rows, err := repo.db.Query(ctx, query, subject, grade, searchQuery)
 	if err != nil {
@@ -34,6 +44,8 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 			&book.GradeLevel,
 			&book.Track,
 			&book.Stock,
+			&book.Verfuegbar,
+			&book.Gesamt,
 			&book.LastCounted,
 			&book.SortOrder,
 			&book.Medientyp,

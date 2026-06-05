@@ -7,10 +7,18 @@ import (
 
 func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, sortOrder string) ([]ClassGroup, error) {
 	query := `
-		SELECT cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject, COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url, COALESCE(b.isbn, '') AS isbn, b.stock
+		SELECT 
+			cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject, 
+			COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url, 
+			COALESCE(b.isbn, '') AS isbn, b.stock,
+			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt
 		FROM class_books cb
 		JOIN buecher_titel b ON cb.book_id = b.id
+		LEFT JOIN buecher_exemplare e ON e.titel_id = b.id
+		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 		WHERE ($1 = '' OR cb.class_name ILIKE '%' || $1 || '%')
+		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn, b.stock
 		ORDER BY `
 
 	if branch == "" {
@@ -46,7 +54,7 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 	for rows.Next() {
 		var className string
 		var book ClassBook
-		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Stock)
+		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Stock, &book.Verfuegbar, &book.Gesamt)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
 		}

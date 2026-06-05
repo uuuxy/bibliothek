@@ -10,6 +10,8 @@
 	 *     gradeLevel: number,
 	 *     track: string,
 	 *     stock: number,
+	 *     verfuegbar?: number,
+	 *     gesamt?: number,
 	 *     coverUrl: string
 	 *   },
 	 *   getStockColor: (stock: number) => string,
@@ -161,10 +163,10 @@
 			{book.isbn || "-"}
 		</p>
 		<div class="flex items-center gap-1.5">
-			<span class="w-2 h-2 rounded-full {getStockColor(book.stock)}"
+			<span class="w-2 h-2 rounded-full {getStockColor(book.verfuegbar ?? book.stock)}"
 			></span>
 			<span class="text-[10px] font-bold text-slate-500"
-				>{book.stock} Stück</span
+				>{book.verfuegbar ?? book.stock}{#if book.gesamt !== undefined}/{book.gesamt}{/if} Stück</span
 			>
 		</div>
 	</div>
