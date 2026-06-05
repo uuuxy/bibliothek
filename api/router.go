@@ -10,7 +10,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -255,7 +257,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Get ordered copies in transit (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
-	
+
 	// Receive single item via scan
 	mux.Handle("POST /api/orders/receive", s.RequirePermission("create_orders")(s.ReceiveItemHandler()))
 
@@ -324,8 +326,12 @@ func (s *Server) Routes() http.Handler {
 			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 			return
 		}
-		path := filepath.Join("./frontend/dist", r.URL.Path)
-		info, err := os.Stat(path)
+
+		cleanPath := path.Clean("/" + r.URL.Path)
+		cleanPath = strings.TrimPrefix(cleanPath, "/")
+		localPath := filepath.Join("./frontend/dist", filepath.FromSlash(cleanPath))
+
+		info, err := os.Stat(localPath)
 		if err != nil || info.IsDir() {
 			http.ServeFile(w, r, "./frontend/dist/index.html")
 			return
