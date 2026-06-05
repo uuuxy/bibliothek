@@ -150,8 +150,8 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 		qLast := `
 			SELECT barcode_id 
 			FROM buecher_exemplare 
-			WHERE barcode_id LIKE 'B-%' 
-			ORDER BY barcode_id DESC 
+			WHERE barcode_id ~ '^B-\d+$'
+			ORDER BY CAST(SUBSTRING(barcode_id FROM 3) AS INTEGER) DESC
 			LIMIT 1
 		`
 		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
