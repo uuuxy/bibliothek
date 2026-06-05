@@ -230,10 +230,10 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 
 // ShipmentGroup helps structure the incoming shipments response.
 type ShipmentGroup struct {
-	ID           string        `json:"id"`
-	SupplierName string        `json:"supplierName"`
-	Date         string        `json:"date"`
-	Timestamp    time.Time     `json:"-"`
+	ID           string         `json:"id"`
+	SupplierName string         `json:"supplierName"`
+	Date         string         `json:"date"`
+	Timestamp    time.Time      `json:"-"`
 	Items        []*GroupedItem `json:"items"`
 }
 

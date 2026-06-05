@@ -215,7 +215,7 @@ func (s *Server) FinalizeInventoryHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		
+
 		tage := req.Tage
 		if tage < 1 || tage > 3650 {
 			tage = 30 // default fallback

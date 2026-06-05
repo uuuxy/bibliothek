@@ -131,6 +131,17 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 		var updatedCount int
 		lineNum := 1
 
+		type newStudent struct {
+			barcodeID     string
+			vorname       string
+			nachname      string
+			klasse        string
+			geburtsdatum  *time.Time
+			abgaengerJahr int
+			lusdID        *string
+		}
+		var studentsToInsert []newStudent
+
 		// 5. Parse rows and execute Upserts
 		for {
 			row, err := reader.Read()
@@ -211,7 +222,7 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				}
 				// Nur die LUSD-ID updaten, wenn die CSV auch eine geliefert hat (oder explizit NULL erlauben? Nein, Fallback greift ja, also LUSD-ID von CSV übernehmen)
 				qUpdate += `, lusd_id = COALESCE($6, lusd_id) WHERE id = $4`
-				
+
 				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID, geburtsdatum, insertLusdID)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for row %d: %w", lineNum, err))
@@ -229,21 +240,52 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 					insertLusdID = &lusdID
 				}
 
-				qInsert := `
-					INSERT INTO schueler
-						(barcode_id, vorname, nachname, klasse, geburtsdatum,
-						 abgaenger_jahr, lusd_id, ist_abgaenger)
-					VALUES ($1, $2, $3, $4, $5, $6, $7, false)
-				`
-				_, err = tx.Exec(ctx, qInsert,
-					barcodeID, vorname, nachname, klasse, geburtsdatum,
-					calculateAbgaengerJahr(klasse), insertLusdID)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed on row %d: %w", lineNum, err))
-					return
-				}
-				newCount++
+				studentsToInsert = append(studentsToInsert, newStudent{
+					barcodeID:     barcodeID,
+					vorname:       vorname,
+					nachname:      nachname,
+					klasse:        klasse,
+					geburtsdatum:  geburtsdatum,
+					abgaengerJahr: calculateAbgaengerJahr(klasse),
+					lusdID:        insertLusdID,
+				})
 			}
+		}
+
+		if len(studentsToInsert) > 0 {
+			barcodes := make([]string, len(studentsToInsert))
+			vornamen := make([]string, len(studentsToInsert))
+			nachnamen := make([]string, len(studentsToInsert))
+			klassen := make([]string, len(studentsToInsert))
+			geburtsdaten := make([]*time.Time, len(studentsToInsert))
+			abgaengerJahre := make([]int, len(studentsToInsert))
+			lusdIDsInsert := make([]*string, len(studentsToInsert))
+
+			for i, s := range studentsToInsert {
+				barcodes[i] = s.barcodeID
+				vornamen[i] = s.vorname
+				nachnamen[i] = s.nachname
+				klassen[i] = s.klasse
+				geburtsdaten[i] = s.geburtsdatum
+				abgaengerJahre[i] = s.abgaengerJahr
+				lusdIDsInsert[i] = s.lusdID
+			}
+
+			qInsertBatch := `
+				INSERT INTO schueler
+					(barcode_id, vorname, nachname, klasse, geburtsdatum,
+					 abgaenger_jahr, lusd_id, ist_abgaenger)
+				SELECT t.barcode_id, t.vorname, t.nachname, t.klasse, t.geburtsdatum, t.abgaenger_jahr, t.lusd_id, false
+				FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::date[], $6::int[], $7::text[])
+				AS t(barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr, lusd_id)
+			`
+			cmdTag, err := tx.Exec(ctx, qInsertBatch,
+				barcodes, vornamen, nachnamen, klassen, geburtsdaten, abgaengerJahre, lusdIDsInsert)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("batch insert failed: %w", err))
+				return
+			}
+			newCount += int(cmdTag.RowsAffected())
 		}
 
 		// 6. Diffing: Set ist_abgaenger = true for students not present in CSV

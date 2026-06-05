@@ -69,12 +69,12 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 
 // RecentTransaction represents a recent checkout or return.
 type RecentTransaction struct {
-	Aktion          string    `json:"aktion"`
-	SchuelerVorname string    `json:"schueler_vorname"`
-	SchuelerNachname string   `json:"schueler_nachname"`
-	SchuelerBarcode string    `json:"schueler_barcode"`
-	Buchtitel       string    `json:"buchtitel"`
-	Timestamp       time.Time `json:"timestamp"`
+	Aktion           string    `json:"aktion"`
+	SchuelerVorname  string    `json:"schueler_vorname"`
+	SchuelerNachname string    `json:"schueler_nachname"`
+	SchuelerBarcode  string    `json:"schueler_barcode"`
+	Buchtitel        string    `json:"buchtitel"`
+	Timestamp        time.Time `json:"timestamp"`
 }
 
 // GetRecentTransactionsHandler returns the 15 most recent checkouts/returns.
