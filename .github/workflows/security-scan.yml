@@ -10,6 +10,9 @@ on:
     - cron: "0 7 * * 1"
   workflow_dispatch: # Allow manual trigger
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions:
   contents: read
   security-events: write  # Required for uploading SARIF reports
@@ -63,7 +66,7 @@ jobs:
           ./... || true
 
       - name: Upload gosec SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: gosec-results.sarif
@@ -117,7 +120,7 @@ jobs:
           ignore-unfixed: true  # Skip CVEs without fix available
 
       - name: Upload Trivy SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
