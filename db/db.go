@@ -314,16 +314,26 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		{"HELFER", "manage_users", false},
 	}
 
-	for _, d := range defaults {
-		_, err = db.Pool.Exec(ctx, `
+	if len(defaults) > 0 {
+		valueStrings := make([]string, 0, len(defaults))
+		valueArgs := make([]interface{}, 0, len(defaults)*3)
+		for i, d := range defaults {
+			valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3))
+			valueArgs = append(valueArgs, d.Role, d.Permission, d.Allowed)
+		}
+
+		stmt := fmt.Sprintf(`
 			INSERT INTO role_permissions (role, permission, allowed)
-			VALUES ($1, $2, $3)
+			VALUES %s
 			ON CONFLICT (role, permission) DO NOTHING
-		`, d.Role, d.Permission, d.Allowed)
+		`, strings.Join(valueStrings, ","))
+
+		_, err = db.Pool.Exec(ctx, stmt, valueArgs...)
 		if err != nil {
-			return fmt.Errorf("failed to seed permission default (%s, %s): %w", d.Role, d.Permission, err)
+			return fmt.Errorf("failed to seed permission defaults: %w", err)
 		}
 	}
+
 	return nil
 }
 
