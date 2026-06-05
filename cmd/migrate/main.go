@@ -187,7 +187,7 @@ func validateISBN(raw string) (string, bool) {
 // Barcode helpers
 // ---------------------------------------------------------------------------
 
-var reBarcodeNum = regexp.MustCompile(`^B-(\d+)$`)
+var reBarcodeNum = regexp.MustCompile(`^B-(\d{5,})$`)
 
 // highestBarcodeSeq reads the current highest B-XXXXXX sequence number from PostgreSQL.
 func highestBarcodeSeq(ctx context.Context, pool *pgxpool.Pool) (int, error) {

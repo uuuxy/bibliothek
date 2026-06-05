@@ -99,7 +99,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
 		startNum := 10001
 		if err == nil {
-			re := regexp.MustCompile(`S-(\d+)`)
+			re := regexp.MustCompile(`^S-(\d{5,})$`)
 			matches := re.FindStringSubmatch(lastBarcode)
 			if len(matches) > 1 {
 				if parsed, err := strconv.Atoi(matches[1]); err == nil {
