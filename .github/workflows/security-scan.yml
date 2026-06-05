@@ -24,9 +24,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Set up Go
         uses: actions/setup-go@v5
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
           go-version-file: go.mod
           cache: true
@@ -45,9 +49,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Set up Go
         uses: actions/setup-go@v5
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
           go-version-file: go.mod
           cache: true
@@ -81,6 +89,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -104,12 +114,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Build Docker image for scanning
         run: docker build -t bibliothek:scan .
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: bibliothek:scan
           format: sarif
