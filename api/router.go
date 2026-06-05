@@ -255,7 +255,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Get ordered copies in transit (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
-	
+
 	// Receive single item via scan
 	mux.Handle("POST /api/orders/receive", s.RequirePermission("create_orders")(s.ReceiveItemHandler()))
 

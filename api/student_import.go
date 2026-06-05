@@ -177,21 +177,24 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 
 			if found {
 				// Update student's class (Versetzung)
-				qUpdate := `
-					UPDATE schueler 
-					SET klasse = $1, aktualisiert_am = CURRENT_TIMESTAMP
-				`
-				params := []any{klasse}
-				paramCount := 2
+				var qUpdate string
+				var params []any
 
 				if lusdID != nil {
-					qUpdate += fmt.Sprintf(", lusd_id = $%d", paramCount)
-					params = append(params, *lusdID)
-					paramCount++
+					qUpdate = `
+						UPDATE schueler
+						SET klasse = $1, lusd_id = $2, aktualisiert_am = CURRENT_TIMESTAMP
+						WHERE id = $3
+					`
+					params = []any{klasse, *lusdID, existingID}
+				} else {
+					qUpdate = `
+						UPDATE schueler
+						SET klasse = $1, aktualisiert_am = CURRENT_TIMESTAMP
+						WHERE id = $2
+					`
+					params = []any{klasse, existingID}
 				}
-
-				qUpdate += fmt.Sprintf(" WHERE id = $%d", paramCount)
-				params = append(params, existingID)
 
 				_, err = tx.Exec(ctx, qUpdate, params...)
 				if err != nil {
