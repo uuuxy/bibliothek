@@ -16,6 +16,7 @@ env:
 permissions:
   contents: read
   security-events: write  # Required for uploading SARIF reports
+  actions: read           # Required for codeql-action/upload-sarif@v4 telemetry
 
 jobs:
   # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
