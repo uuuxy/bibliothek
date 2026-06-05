@@ -8,13 +8,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"bibliothek/apierrors"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -77,24 +77,10 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 		defer tx.Rollback(ctx)
 
 		// 2. Fetch the highest B-XXXXX barcode in the system to calculate the next sequence
-		var lastBarcode string
-		qLast := `
-			SELECT barcode_id 
-			FROM buecher_exemplare 
-			WHERE barcode_id LIKE 'B-%' 
-			ORDER BY barcode_id DESC 
-			LIMIT 1
-		`
-		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-		startNum := 10001
-		if err == nil {
-			re := regexp.MustCompile(`B-(\d+)`)
-			matches := re.FindStringSubmatch(lastBarcode)
-			if len(matches) > 1 {
-				if parsed, err := strconv.Atoi(matches[1]); err == nil {
-					startNum = parsed + 1
-				}
-			}
+		startNum, err := GetNextBarcodeSequence(ctx, tx, "buecher_exemplare", "B", false)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		// 3. Register copies in DB & collect details for PDFs
@@ -230,10 +216,10 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 
 // ShipmentGroup helps structure the incoming shipments response.
 type ShipmentGroup struct {
-	ID           string        `json:"id"`
-	SupplierName string        `json:"supplierName"`
-	Date         string        `json:"date"`
-	Timestamp    time.Time     `json:"-"`
+	ID           string         `json:"id"`
+	SupplierName string         `json:"supplierName"`
+	Date         string         `json:"date"`
+	Timestamp    time.Time      `json:"-"`
 	Items        []*GroupedItem `json:"items"`
 }
 

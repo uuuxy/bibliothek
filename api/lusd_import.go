@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -104,26 +102,11 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 			return
 		}
 		defer tx.Rollback(ctx)
-
 		// 4. Determine next sequential barcode index for S-XXXXX barcodes
-		var lastBarcode string
-		qLast := `
-			SELECT barcode_id 
-			FROM schueler 
-			WHERE barcode_id LIKE 'S-%' 
-			ORDER BY barcode_id DESC 
-			LIMIT 1
-		`
-		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-		startNum := 10001
-		if err == nil {
-			re := regexp.MustCompile(`S-(\d+)`)
-			matches := re.FindStringSubmatch(lastBarcode)
-			if len(matches) > 1 {
-				if parsed, err := strconv.Atoi(matches[1]); err == nil {
-					startNum = parsed + 1
-				}
-			}
+		startNum, err := GetNextBarcodeSequence(ctx, tx, "schueler", "S", false)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		lusdIDs := make([]string, 0)
@@ -211,7 +194,7 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				}
 				// Nur die LUSD-ID updaten, wenn die CSV auch eine geliefert hat (oder explizit NULL erlauben? Nein, Fallback greift ja, also LUSD-ID von CSV übernehmen)
 				qUpdate += `, lusd_id = COALESCE($6, lusd_id) WHERE id = $4`
-				
+
 				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID, geburtsdatum, insertLusdID)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for row %d: %w", lineNum, err))

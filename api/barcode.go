@@ -66,6 +66,38 @@ func GenerateBarcodePNG(content string, isQR bool, width, height int) ([]byte, e
 	return buf.Bytes(), nil
 }
 
+// GetNextBarcodeSequence calculates the next sequence number for a given barcode prefix (e.g., S-XXXXX or B-XXXXX).
+func GetNextBarcodeSequence(ctx context.Context, tx pgx.Tx, tableName, prefix string, forUpdate bool) (int, error) {
+	var lastBarcode string
+	qLast := fmt.Sprintf(`
+		SELECT barcode_id
+		FROM %s
+		WHERE barcode_id LIKE '%s-%%'
+		ORDER BY barcode_id DESC
+		LIMIT 1`, tableName, prefix)
+
+	if forUpdate {
+		qLast += " FOR UPDATE"
+	}
+
+	err := tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
+
+	startNum := 10001
+	if err == nil {
+		re := regexp.MustCompile(fmt.Sprintf(`%s-(\d+)`, prefix))
+		matches := re.FindStringSubmatch(lastBarcode)
+		if len(matches) > 1 {
+			if parsed, err := strconv.Atoi(matches[1]); err == nil {
+				startNum = parsed + 1
+			}
+		}
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return startNum, err
+	}
+
+	return startNum, nil
+}
+
 // BarcodeHandler handles on-demand PNG barcode and QR code generation.
 func (s *Server) BarcodeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -144,27 +176,11 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-
 		// 2. Fetch the highest B-XXXXX barcode in the system to calculate the next sequence
-		var lastBarcode string
-		qLast := `
-			SELECT barcode_id 
-			FROM buecher_exemplare 
-			WHERE barcode_id LIKE 'B-%' 
-			ORDER BY barcode_id DESC 
-			LIMIT 1
-		`
-		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-
-		startNum := 10001
-		if err == nil {
-			re := regexp.MustCompile(`B-(\d+)`)
-			matches := re.FindStringSubmatch(lastBarcode)
-			if len(matches) > 1 {
-				if parsed, err := strconv.Atoi(matches[1]); err == nil {
-					startNum = parsed + 1
-				}
-			}
+		startNum, err := GetNextBarcodeSequence(ctx, tx, "buecher_exemplare", "B", false)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		// 3. Register copies in DB (marked as not borrowable until delivery)

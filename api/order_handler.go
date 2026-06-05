@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -102,26 +100,11 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			})
 			return
 		}
-
 		// 2. Fetch the highest B-XXXXX barcode in the system
-		var lastBarcode string
-		qLast := `
-			SELECT barcode_id 
-			FROM buecher_exemplare 
-			WHERE barcode_id LIKE 'B-%' 
-			ORDER BY barcode_id DESC 
-			LIMIT 1
-		`
-		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-		startNum := 10001
-		if err == nil {
-			re := regexp.MustCompile(`B-(\d+)`)
-			matches := re.FindStringSubmatch(lastBarcode)
-			if len(matches) > 1 {
-				if parsed, err := strconv.Atoi(matches[1]); err == nil {
-					startNum = parsed + 1
-				}
-			}
+		startNum, err := GetNextBarcodeSequence(ctx, tx, "buecher_exemplare", "B", false)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		// 3. Register copies in DB & collect barcode label details
