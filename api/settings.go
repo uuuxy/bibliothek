@@ -100,7 +100,7 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 
 		upsert := `
 			INSERT INTO system_einstellungen (schluessel, wert)
-			VALUES ($1, $2)
+			VALUES ($1, $2), ($3, $4), ($5, $6), ($7, $8), ($9, $10), ($11, $12)
 			ON CONFLICT (schluessel) DO UPDATE
 			  SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP
 		`
@@ -130,19 +130,16 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 			fristMedien = strconv.Itoa(req.FristMedienTage)
 		}
 
-		pairs := [][2]string{
-			{"ferien_leseclub_aktiv", aktiv},
-			{"lmf_stichtag", stichtag},
-			{"ferien_leseclub_zieldatum", zieldatum},
-			{"max_ausleihen_schueler", maxAusleihen},
-			{"frist_buch_tage", fristBuch},
-			{"frist_medien_tage", fristMedien},
-		}
-		for _, p := range pairs {
-			if _, err := s.DB.Pool.Exec(ctx, upsert, p[0], p[1]); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
+		if _, err := s.DB.Pool.Exec(ctx, upsert,
+			"ferien_leseclub_aktiv", aktiv,
+			"lmf_stichtag", stichtag,
+			"ferien_leseclub_zieldatum", zieldatum,
+			"max_ausleihen_schueler", maxAusleihen,
+			"frist_buch_tage", fristBuch,
+			"frist_medien_tage", fristMedien,
+		); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
