@@ -22,4 +22,5 @@ Thumbs.db
 # Database Backups & Archives
 *.sql
 !schema.sql
+!migrations/
 *.zip
