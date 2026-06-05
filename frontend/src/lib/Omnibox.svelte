@@ -56,6 +56,16 @@
   /** @param {string} color */
   function triggerFlash(color) { flashBorder = color; setTimeout(() => { flashBorder = ""; }, 1000); }
 
+  import { appState } from "../inventur/lib/store.svelte.js";
+
+  $effect(() => {
+    if (appState.triggerStudentScan) {
+      queryVal = appState.triggerStudentScan;
+      appState.triggerStudentScan = "";
+      submitAction();
+    }
+  });
+
 
 
   onMount(() => {
@@ -463,7 +473,7 @@
         <span><strong>Fremdrückgabe:</strong> Buch wurde von <strong>{lastFremdrueckgabe.vorbesitzerName}</strong> zurückgegeben und für {activeStudent.vorname} verbucht.</span>
       </div>
     {/if}
-    <StudentProfile bind:this={studentProfileComponent} student={activeStudent} onDeselect={() => { activeStudent = null; scannedBooks = []; lastFremdrueckgabe = null; }} />
+    <StudentProfile bind:this={studentProfileComponent} student={activeStudent} onDeselect={() => { activeStudent = null; scannedBooks = []; lastFremdrueckgabe = null; }} onReturnClick={(barcode) => { queryVal = barcode; submitAction(); }} />
   {:else if activeTeacher}
     <OmniboxTeacherCard teacher={activeTeacher} onDeselect={() => { activeTeacher = null; scannedBooks = []; lastFremdrueckgabe = null; }} />
   {/if}

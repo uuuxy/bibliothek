@@ -1,14 +1,15 @@
 // src/lib/store.svelte.js
 import { csrfHeader } from './csrf.js';
 
-/** @type {{ searchQuery: string, selectedBook: any, isSidebarOpen: boolean, adminAuthenticated: boolean, guestAuthenticated: boolean, pendingPrintCopies: any[] | null }} */
+/** @type {{ searchQuery: string, selectedBook: any, isSidebarOpen: boolean, adminAuthenticated: boolean, guestAuthenticated: boolean, pendingPrintCopies: any[] | null, triggerStudentScan: string }} */
 export const appState = $state({
     searchQuery: '',
     selectedBook: null,
     isSidebarOpen: true,
     adminAuthenticated: false,
     guestAuthenticated: false,
-    pendingPrintCopies: null
+    pendingPrintCopies: null,
+    triggerStudentScan: ''
 });
 
 export const toastState = $state({

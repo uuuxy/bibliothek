@@ -160,6 +160,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Get copies of a book title (Accessible by Admin, Mitarbeiter, and Lehrer)
 	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_books")(s.GetTitleBorrowersHandler()))
 
 	// Update copy damage note (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler()))
@@ -205,6 +206,7 @@ func (s *Server) Routes() http.Handler {
 
 	// View audit logs (Accessible by Admin)
 	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
+	mux.Handle("GET /api/transactions/recent", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleHelfer)(s.GetRecentTransactionsHandler()))
 
 	// Get graduates live list (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))

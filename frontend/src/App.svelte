@@ -19,6 +19,7 @@
   import Mahnwesen from "./lib/Mahnwesen.svelte";
   import SystemSettings from "./lib/SystemSettings.svelte";
   import KioskMode from "./lib/KioskMode.svelte";
+  import RecentTransactions from "./lib/RecentTransactions.svelte";
   import { appState } from "./inventur/lib/store.svelte.js";
   import { menuGroups, canSeeItem } from "./lib/menu.js";
   import { sidebarExtensions } from "./lib/plugins.svelte.js";
@@ -62,6 +63,12 @@
   $effect(() => {
     if (appState.pendingPrintCopies) {
       activeTab = "labels";
+    }
+  });
+
+  $effect(() => {
+    if (appState.triggerStudentScan && activeTab !== "kiosk") {
+      activeTab = "kiosk";
     }
   });
 
@@ -232,6 +239,10 @@
 {:else if _currentPath === '/monitor'}
   <Monitor />
 {:else}
+  {#if isLoggedIn}
+    <RecentTransactions />
+  {/if}
+
   {#if isLoggedIn && !heartbeatOk}
     <div class="fixed inset-0 bg-white/45 backdrop-blur-lg z-50 flex flex-col items-center justify-center space-y-4">
       <div class="w-12 h-12 border-4 border-t-slate-800 border-slate-200/50 rounded-full animate-spin"></div>

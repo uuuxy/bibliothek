@@ -66,3 +66,58 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(logs)
 	}
 }
+
+// RecentTransaction represents a recent checkout or return.
+type RecentTransaction struct {
+	Aktion          string    `json:"aktion"`
+	SchuelerVorname string    `json:"schueler_vorname"`
+	SchuelerNachname string   `json:"schueler_nachname"`
+	SchuelerBarcode string    `json:"schueler_barcode"`
+	Buchtitel       string    `json:"buchtitel"`
+	Timestamp       time.Time `json:"timestamp"`
+}
+
+// GetRecentTransactionsHandler returns the 15 most recent checkouts/returns.
+// @Router       /transactions/recent [get]
+func (s *Server) GetRecentTransactionsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			SELECT 
+				a.aktion,
+				COALESCE(s.vorname, 'Unbekannt'),
+				COALESCE(s.nachname, 'Unbekannt'),
+				COALESCE(s.barcode_id, ''),
+				COALESCE(t.titel, 'Unbekanntes Buch'),
+				a.timestamp
+			FROM audit_log a
+			LEFT JOIN schueler s ON s.id = (a.details->>'schueler_id')::uuid
+			LEFT JOIN buecher_exemplare e ON e.id = (a.details->>'exemplar_id')::uuid
+			LEFT JOIN buecher_titel t ON t.id = e.titel_id
+			WHERE a.tabelle = 'ausleihen' AND a.aktion IN ('CHECKOUT', 'RETURN')
+			ORDER BY a.timestamp DESC
+			LIMIT 15
+		`
+		rows, err := s.DB.Pool.Query(ctx, query)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		txs := []RecentTransaction{}
+		for rows.Next() {
+			var tx RecentTransaction
+			if err := rows.Scan(&tx.Aktion, &tx.SchuelerVorname, &tx.SchuelerNachname, &tx.SchuelerBarcode, &tx.Buchtitel, &tx.Timestamp); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			txs = append(txs, tx)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(txs)
+	}
+}

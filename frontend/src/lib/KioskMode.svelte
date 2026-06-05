@@ -7,6 +7,7 @@
   import BorrowedBooksList from "./BorrowedBooksList.svelte";
   import { onMount, tick } from "svelte";
   import { playSuccessBeep, playErrorBeep } from "./audio.js";
+  import { appState } from "../inventur/lib/store.svelte.js";
 
   // ── States ──────────────────────────────────────────────────────────
   /** @type {any} */
@@ -57,6 +58,14 @@
 
   let activeLoansCount = $derived(activeStudent?.active_loans?.length || 0);
   let isLimitReached = $derived(activeLoansCount >= systemSettings.max_ausleihen_schueler);
+
+  $effect(() => {
+    if (appState.triggerStudentScan) {
+      studentInputVal = appState.triggerStudentScan;
+      appState.triggerStudentScan = "";
+      handleStudentSubmit();
+    }
+  });
 
   // A student is blocked if they have overdue books (active_loans that are overdue)
   let isStudentBlocked = $derived.by(() => {

@@ -241,3 +241,56 @@ func (s *Server) AussondernCopyHandler() http.HandlerFunc {
 		_, _ = w.Write([]byte(`{"status":"success"}`))
 	}
 }
+
+// TitleBorrower represents a student who is currently borrowing a copy of a title.
+type TitleBorrower struct {
+	Vorname         string     `json:"schueler_name"`
+	Nachname        string     `json:"schueler_nachname"`
+	Klasse          string     `json:"klasse"`
+	SchuelerBarcode string     `json:"schueler_barcode"`
+	ExemplarBarcode string     `json:"exemplar_barcode"`
+	RueckgabeFrist  time.Time  `json:"rueckgabe_frist"`
+}
+
+// GetTitleBorrowersHandler lists all active borrowers for a book title.
+// @Router       /buecher/titel/{id}/ausleiher [get]
+func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			SELECT s.vorname, s.nachname, s.klasse, s.barcode_id, e.barcode_id, a.rueckgabe_frist
+			FROM ausleihen a
+			JOIN buecher_exemplare e ON a.exemplar_id = e.id
+			JOIN schueler s ON a.schueler_id = s.id
+			WHERE e.titel_id = $1 AND a.rueckgabe_am IS NULL
+			ORDER BY a.rueckgabe_frist ASC
+		`
+		rows, err := s.DB.Pool.Query(ctx, query, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		borrowers := []TitleBorrower{}
+		for rows.Next() {
+			var b TitleBorrower
+			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.RueckgabeFrist); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			borrowers = append(borrowers, b)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(borrowers)
+	}
+}
