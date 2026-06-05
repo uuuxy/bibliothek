@@ -1,6 +1,6 @@
 module bibliothek
 
-go 1.26.1
+go 1.26.4
 
 require (
 	github.com/boombuler/barcode v1.1.0
@@ -14,7 +14,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/xuri/excelize/v2 v2.10.1
 	golang.org/x/crypto v0.50.0
-	golang.org/x/image v0.25.0
+	golang.org/x/image v0.39.0
 	golang.org/x/time v0.15.0
 )
 
