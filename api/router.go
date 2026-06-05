@@ -53,6 +53,55 @@ func (s *Server) Routes() http.Handler {
 	loanRepo := repository.NewLoanRepository(s.DB.Pool)
 	auditRepo := repository.NewAuditRepository(s.DB.Pool)
 
+	// Mount Sub-Routers
+	s.mountInventurRoutes(mux)
+	s.mountAuthRoutes(mux)
+	s.mountPublicRoutes(mux)
+	s.mountStudentRoutes(mux, studentRepo, bookRepo, loanRepo, auditRepo)
+	s.mountBookRoutes(mux, auditRepo)
+	s.mountOrderRoutes(mux)
+	s.mountAdminRoutes(mux, auditRepo)
+	s.mountMiscRoutes(mux)
+
+	// Swagger interactive documentation
+	mux.Handle("GET /swagger/", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+	mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
+	})
+
+	// Serve Svelte frontend static assets from build directory
+	fs := http.FileServer(http.Dir("./frontend/dist"))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+			return
+		}
+		path := filepath.Join("./frontend/dist", r.URL.Path)
+		info, err := os.Stat(path)
+		if err != nil || info.IsDir() {
+			http.ServeFile(w, r, "./frontend/dist/index.html")
+			return
+		}
+		fs.ServeHTTP(w, r)
+	})
+
+	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
+	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
+	rateLimiter := RateLimitMiddleware(50)
+
+	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> Mux
+	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(mux))))))))
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
+		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
+		globalHandler.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) mountInventurRoutes(mux *http.ServeMux) {
 	// Initialize Inventur sub-module handlers
 	_ = os.MkdirAll("uploads", 0755)
 	_ = os.MkdirAll("uploads/fotos", 0755)
@@ -81,14 +130,11 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("/api/admin/", invHandler)
 	mux.Handle("/uploads/", invHandler)
 	mux.Handle("/api/auth/status", invHandler)
+}
 
+func (s *Server) mountAuthRoutes(mux *http.ServeMux) {
 	// Public Endpoints
 	mux.HandleFunc("POST /login/barcode", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
-
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"healthy"}`))
-	})
 
 	// Logout Endpoint: server-side JWT-Cookie invalidation with expiration in the past
 	// Now also adds the current JWT to the in-memory Token Blacklist to prevent replay attacks.
@@ -114,7 +160,25 @@ func (s *Server) Routes() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"message":"erfolgreich abgemeldet"}`))
 	})
+}
 
+func (s *Server) mountPublicRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"healthy"}`))
+	})
+
+	// Public OPAC catalog search (DSGVO-compliant: no loan data exposed)
+	mux.HandleFunc("GET /api/public/opac/suche", s.PublicCatalogSearchHandler())
+
+	// Antolin proxy – public, 24-hour in-memory cache
+	mux.HandleFunc("GET /api/antolin", s.AntolinHandler())
+
+	// Digital signage / info monitor data – public
+	mux.HandleFunc("GET /api/monitor/slides", s.GetMonitorSlidesHandler())
+}
+
+func (s *Server) mountStudentRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.LoanRepository, auditRepo repository.AuditRepository) {
 	// Protected Endpoints (RBAC Middleware checking roles: admin, lehrer, mitarbeiter)
 
 	// Central Omnibox Action Dispatcher
@@ -158,6 +222,19 @@ func (s *Server) Routes() http.Handler {
 	pdfHandler := s.GenerateDamagePDFHandler()
 	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(pdfHandler))
 
+	// Undo a recent loan return within 1 hour (Accessible by Admin and Mitarbeiter)
+	mux.Handle("DELETE /api/ausleihen/{id}/rueckgabe", s.RequirePermission("view_students")(s.UndoReturnHandler()))
+
+	// Mahnwesen – overdue loans, PDF generation, SMTP dispatch
+	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler()))
+	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler()))
+	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler()))
+
+	// Get graduates live list (Accessible by Admin and Mitarbeiter)
+	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
+}
+
+func (s *Server) mountBookRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository) {
 	// Get copies of a book title (Accessible by Admin, Mitarbeiter, and Lehrer)
 	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
 	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_books")(s.GetTitleBorrowersHandler()))
@@ -172,62 +249,27 @@ func (s *Server) Routes() http.Handler {
 	// Decommission (aussondern) a copy: hides it from catalog/kiosk/inventory (Accessible by Admin)
 	mux.Handle("POST /api/buecher/exemplare/{id}/aussondern", s.RequirePermission("edit_books")(s.AussondernCopyHandler()))
 
-	// Undo a recent loan return within 1 hour (Accessible by Admin and Mitarbeiter)
-	mux.Handle("DELETE /api/ausleihen/{id}/rueckgabe", s.RequirePermission("view_students")(s.UndoReturnHandler()))
-
-	// Get system settings (Accessible by Admin)
-	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_users")(s.GetSettingsHandler()))
-
-	// Update system settings (Accessible by Admin)
-	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_users")(s.UpdateSettingsHandler()))
-
 	// Delete physical copy (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler(auditRepo)))
 
 	// Delete book title (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.DeleteTitleHandler(auditRepo)))
 
-	// Delete user (Accessible by Admin)
-	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.DeleteUserHandler(auditRepo)))
+	// Vormerkungen (individual book reservations / waitlist)
+	mux.Handle("GET /api/vormerkungen", s.RequirePermission("view_books")(s.ListVormerkungHandler()))
+	mux.Handle("POST /api/vormerkungen", s.RequirePermission("view_books")(s.CreateVormerkungHandler()))
+	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_books")(s.DeleteVormerkungHandler()))
 
-	// List users (Accessible by Admin)
-	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.ListUsersHandler()))
+	// Generate PNG/SVG Barcodes (Accessible by all staff roles)
+	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.BarcodeHandler()))
+}
 
-	// Create user (Accessible by Admin)
-	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.CreateUserHandler()))
-
-	// Update user (Accessible by Admin)
-	mux.Handle("PUT /api/benutzer/{id}", s.RequirePermission("manage_users")(s.UpdateUserHandler()))
-
-	// View role permissions settings (Accessible by Admin)
-	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))
-
-	// Update role permission settings (Accessible by Admin)
-	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.UpdatePermissionsHandler()))
-
-	// View audit logs (Accessible by Admin)
-	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
-	mux.Handle("GET /api/transactions/recent", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleHelfer)(s.GetRecentTransactionsHandler()))
-
-	// Get graduates live list (Accessible by Admin and Mitarbeiter)
-	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
-
+func (s *Server) mountOrderRoutes(mux *http.ServeMux) {
 	// Get reorder lists (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen", s.RequirePermission("view_orders")(s.GetReordersHandler()))
 
 	// Export reorder list as PDF (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen/pdf", s.RequirePermission("view_orders")(s.ExportReordersPDFHandler()))
-
-	// Scan items during active inventory (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
-	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("inventory_scan")(s.GetFehlbestandHandler()))
-	mux.Handle("POST /api/inventur/finalize", s.RequirePermission("inventory_scan")(s.FinalizeInventoryHandler()))
-
-	// Get system statistics (Accessible by Admin and Mitarbeiter)
-	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
-
-	// Generate PNG/SVG Barcodes (Accessible by all staff roles)
-	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.BarcodeHandler()))
 
 	// Create supplier order and download vorab-barcode labels PDF (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/lieferanten/bestellen", s.RequirePermission("create_orders")(s.SupplierOrderHandler()))
@@ -255,47 +297,54 @@ func (s *Server) Routes() http.Handler {
 
 	// Get ordered copies in transit (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
-	
+
 	// Receive single item via scan
 	mux.Handle("POST /api/orders/receive", s.RequirePermission("create_orders")(s.ReceiveItemHandler()))
-
-	// Klassen → Klassenlehrer-E-Mail Mapping (Admin only)
-	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_users")(s.GetKlassenMappingHandler()))
-	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_users")(s.UpsertKlassenMappingHandler()))
-	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_users")(s.DeleteKlassenMappingHandler()))
 
 	// Klassensatz Reservierungen (Lehrer submits; Admin/Mitarbeiter manages)
 	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("view_students")(s.CreateKlassensatzReservierungHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz/anzahl", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenAnzahlHandler()))
 	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeKlassensatzReservierungHandler()))
+}
 
-	// Mahnwesen – overdue loans, PDF generation, SMTP dispatch
-	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler()))
-	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler()))
-	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler()))
+func (s *Server) mountAdminRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository) {
+	// Get system settings (Accessible by Admin)
+	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_users")(s.GetSettingsHandler()))
+
+	// Update system settings (Accessible by Admin)
+	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_users")(s.UpdateSettingsHandler()))
+
+	// Delete user (Accessible by Admin)
+	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.DeleteUserHandler(auditRepo)))
+
+	// List users (Accessible by Admin)
+	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.ListUsersHandler()))
+
+	// Create user (Accessible by Admin)
+	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.CreateUserHandler()))
+
+	// Update user (Accessible by Admin)
+	mux.Handle("PUT /api/benutzer/{id}", s.RequirePermission("manage_users")(s.UpdateUserHandler()))
+
+	// View role permissions settings (Accessible by Admin)
+	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))
+
+	// Update role permission settings (Accessible by Admin)
+	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.UpdatePermissionsHandler()))
+
+	// View audit logs (Accessible by Admin)
+	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
+	mux.Handle("GET /api/transactions/recent", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleHelfer)(s.GetRecentTransactionsHandler()))
+
+	// Klassen → Klassenlehrer-E-Mail Mapping (Admin only)
+	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_users")(s.GetKlassenMappingHandler()))
+	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_users")(s.UpsertKlassenMappingHandler()))
+	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_users")(s.DeleteKlassenMappingHandler()))
 
 	// LUSD Import / Schuljahreswechsel
 	mux.Handle("POST /api/lusd/preview", s.RequirePermission("manage_users")(s.PostLusdPreviewHandler()))
 	mux.Handle("POST /api/lusd/import", s.RequirePermission("manage_users")(s.PostLusdImportHandler()))
-
-	// Public OPAC catalog search (DSGVO-compliant: no loan data exposed)
-	mux.HandleFunc("GET /api/public/opac/suche", s.PublicCatalogSearchHandler())
-
-	// Antolin proxy – public, 24-hour in-memory cache
-	mux.HandleFunc("GET /api/antolin", s.AntolinHandler())
-
-	// Digital signage / info monitor data – public
-	mux.HandleFunc("GET /api/monitor/slides", s.GetMonitorSlidesHandler())
-
-	// Vormerkungen (individual book reservations / waitlist)
-	mux.Handle("GET /api/vormerkungen", s.RequirePermission("view_books")(s.ListVormerkungHandler()))
-	mux.Handle("POST /api/vormerkungen", s.RequirePermission("view_books")(s.CreateVormerkungHandler()))
-	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_books")(s.DeleteVormerkungHandler()))
-
-	// Real-time Event Stream (accessible by all authorized staff roles)
-	sseHandler := s.Broker.Handler()
-	mux.Handle("GET /events", s.RequirePermission("view_students")(sseHandler))
 
 	// Demo Admin-only Endpoint
 	adminDashboard := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -308,41 +357,18 @@ func (s *Server) Routes() http.Handler {
 		w.Write([]byte("Access granted: Welcome to the Teacher Zone."))
 	})
 	mux.Handle("GET /teacher/dashboard", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer)(teacherZone))
+}
 
-	// Swagger interactive documentation
-	mux.Handle("GET /swagger/", httpSwagger.Handler(
-		httpSwagger.URL("/swagger/doc.json"),
-	))
-	mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
-	})
+func (s *Server) mountMiscRoutes(mux *http.ServeMux) {
+	// Scan items during active inventory (Accessible by Admin and Mitarbeiter)
+	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
+	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("inventory_scan")(s.GetFehlbestandHandler()))
+	mux.Handle("POST /api/inventur/finalize", s.RequirePermission("inventory_scan")(s.FinalizeInventoryHandler()))
 
-	// Serve Svelte frontend static assets from build directory
-	fs := http.FileServer(http.Dir("./frontend/dist"))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
-			return
-		}
-		path := filepath.Join("./frontend/dist", r.URL.Path)
-		info, err := os.Stat(path)
-		if err != nil || info.IsDir() {
-			http.ServeFile(w, r, "./frontend/dist/index.html")
-			return
-		}
-		fs.ServeHTTP(w, r)
-	})
+	// Get system statistics (Accessible by Admin and Mitarbeiter)
+	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
 
-	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
-	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
-	rateLimiter := RateLimitMiddleware(50)
-
-	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> Mux
-	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(mux))))))))
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
-		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
-		globalHandler.ServeHTTP(w, r)
-	})
+	// Real-time Event Stream (accessible by all authorized staff roles)
+	sseHandler := s.Broker.Handler()
+	mux.Handle("GET /events", s.RequirePermission("view_students")(sseHandler))
 }
