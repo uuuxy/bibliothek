@@ -1,5 +1,5 @@
 <script>
-    import { csrfHeader } from "$lib/csrf.js";
+	import { apiFetch } from '../../../../lib/apiFetch.js';
     import { showToast } from "$lib/store.svelte.js";
 
     let {
@@ -28,12 +28,11 @@
             const url = formular.id
                 ? `/api/books/${formular.id}`
                 : `/api/books`;
-            const res = await fetch(url, {
+            const res = await apiFetch(url, {
                 method: formular.id ? "PUT" : "POST",
                 credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    ...csrfHeader(),
                 },
                 body: JSON.stringify({
                     ...formular,
@@ -127,11 +126,10 @@
         const fd = new FormData();
         fd.append("cover", /** @type {File} */ (file));
         try {
-            const res = await fetch(`/api/books/${formular.id}/cover-upload`, {
+            const res = await apiFetch(`/api/books/${formular.id}/cover-upload`, {
                 method: "POST",
                 credentials: "include",
                 headers: {
-                    ...csrfHeader(),
                 },
                 body: fd,
             });

@@ -232,7 +232,7 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 		}
 
 		// Encrypt password with bcrypt cost factor 10
-		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -349,7 +349,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 		}
 
 		if req.Password != "" {
-			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return

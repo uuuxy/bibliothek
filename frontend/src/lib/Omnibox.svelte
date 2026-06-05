@@ -4,7 +4,8 @@
   import StudentProfile from "./StudentProfile.svelte";
   import OfflineQueueBanner from "./OfflineQueueBanner.svelte";
   import CameraScanner from "./CameraScanner.svelte";
-  import OmniboxDropdown from "./OmniboxDropdown.svelte";
+  import OmniboxInput from "./components/omnibox/OmniboxInput.svelte";
+  import OmniboxResults from "./components/omnibox/OmniboxResults.svelte";
   import OmniboxScannedList from "./OmniboxScannedList.svelte";
   import OmniboxTeacherCard from "./OmniboxTeacherCard.svelte";
   import { playSoundSuccess, playSoundError } from "./audio.js";
@@ -92,7 +93,7 @@
     window.addEventListener("offline", handleOffline);
 
     // Initialise queue count badge
-    offlineQueueCount = loadQueue().length;
+    loadQueue().then(q => { offlineQueueCount = q.length; });
 
     return () => {
       source.close();
@@ -160,31 +161,7 @@
     }, 300);
   }
 
-  /** @param {KeyboardEvent} e */
-  function handleKeydownInput(e) {
-    if (!isDropdownOpen || totalDropdownItems === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      selectedDropdownIndex = (selectedDropdownIndex + 1) % totalDropdownItems;
-      scrollDropdownToSelected();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      selectedDropdownIndex = selectedDropdownIndex <= 0 ? totalDropdownItems - 1 : selectedDropdownIndex - 1;
-      scrollDropdownToSelected();
-    } else if (e.key === "Enter" && selectedDropdownIndex >= 0) {
-      e.preventDefault();
-      selectDropdownItem(selectedDropdownIndex);
-    } else if (e.key === "Escape") {
-      isDropdownOpen = false;
-    }
-  }
 
-  function scrollDropdownToSelected() {
-    setTimeout(() => {
-      const el = document.getElementById(`dropdown-item-${selectedDropdownIndex}`);
-      if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }, 10);
-  }
 
   /** @param {number} index */
   function selectDropdownItem(index) {
@@ -224,10 +201,10 @@
     // Only queue book scans without an active session; student/teacher lookups
     // are read-only and useless to replay offline.
     if (!navigator.onLine && q.startsWith("B-")) {
-      offlineQueueCount = enqueueOfflineScan(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
+      offlineQueueCount = await enqueueOfflineScan(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
       triggerScreenFlash("warning");
       playSoundError();
-      showToast(`📴 Offline: Barcode „${q}" in Warteschlange gespeichert.`, "warning");
+      showToast(`📴 Offline: Barcode „${q}“ in Warteschlange gespeichert.`, "warning");
       triggerFlash("orange");
       return;
     }
@@ -315,11 +292,11 @@
 
       // WLAN dropout: queue the scan if it was a book barcode
       if (isTimeout && q.startsWith("B-")) {
-        offlineQueueCount = enqueueOfflineScan(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
+        offlineQueueCount = await enqueueOfflineScan(q, activeStudent?.id ?? null, activeTeacher?.id ?? null);
         triggerScreenFlash("error");
         playSoundError();
         triggerFlash("orange");
-        showToast(`📴 Zeitüberschreitung – Barcode „${q}" offline gespeichert (${offlineQueueCount} ausstehend).`, "warning");
+        showToast(`📴 Zeitüberschreitung – Barcode „${q}“ offline gespeichert (${offlineQueueCount} ausstehend).`, "warning");
         return;
       }
 
@@ -420,42 +397,33 @@
 {/if}
 
 <!-- ── Offline / Queue banner ── -->
-<OfflineQueueBanner {isOffline} {offlineQueueCount} {flushOfflineQueue} />
+<OfflineQueueBanner 
+  {isOffline} 
+  {offlineQueueCount} 
+  flushOfflineQueue={async () => { offlineQueueCount = await flushOfflineQueue(showToast); }} 
+/>
 
 <div class="w-full transition-all duration-500 ease-in-out {isActive ? 'max-w-4xl pt-4 justify-start' : 'max-w-2xl min-h-[60vh] justify-center'} flex flex-col items-center space-y-6">
   <div class="w-full transition-all duration-500 {isActive ? 'sticky -top-4 z-30 bg-slate-50/95 backdrop-blur-md py-4' : ''}">
     <form onsubmit={submitAction} class="w-full relative bg-white py-5 px-8 rounded-3xl border border-slate-200 shadow-2xl no-print transition-all duration-500 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 {isActive ? 'scale-100' : 'scale-105'} {isShaking ? 'animate-shake border-rose-400' : ''} {flashBorder === 'green' ? 'ring-4 ring-emerald-500/10 border-emerald-400' : flashBorder === 'orange' ? 'ring-4 ring-amber-500/10 border-amber-400' : ''}">
-      <input 
-        id="omnibox-input" 
-        type="text" 
-        role="combobox"
-        autocomplete="off" 
-        aria-expanded={isDropdownOpen}
-        aria-autocomplete="list"
-        aria-controls="omnibox-dropdown"
-        bind:value={queryVal} 
-        oninput={handleInput} 
-        onkeydown={handleKeydownInput} 
-        class="w-full pl-10 pr-12 bg-transparent text-slate-800 font-sans text-xl placeholder-slate-400 focus:outline-none tracking-wide" 
-        placeholder={activeStudent || activeTeacher ? "Buch-Barcode (B-) scannen..." : "Schüler (S-), Lehrer (L-), Buch (B-) scannen..."} 
+      <OmniboxInput 
+        bind:queryVal
+        {isDropdownOpen}
+        {totalDropdownItems}
+        {isActive}
+        {showCamera}
+        onInput={handleInput}
+        onSelect={selectDropdownItem}
+        onIndexChange={(idx) => selectedDropdownIndex = idx}
+        onEscape={() => isDropdownOpen = false}
+        onToggleCamera={showCamera ? stopCamera : startCamera}
       />
-      <div class="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
-      <!-- Mobile camera button -->
-      <button type="button" onclick={showCamera ? stopCamera : startCamera}
-        title="Kamera-Scanner (Mobilgerät)"
-        aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
-        class="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl transition-colors {showCamera ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      </button>
 
       {#if isDropdownOpen && totalDropdownItems > 0}
-        <OmniboxDropdown 
+        <OmniboxResults 
           {unifiedSearchResults} 
           {selectedDropdownIndex} 
-          {selectDropdownItem} 
+          onSelect={selectDropdownItem} 
         />
       {/if}
     </form>

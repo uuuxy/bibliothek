@@ -160,3 +160,26 @@ func sortiereBuecherNatuerlich(buecher []Book) {
 	}
 	copy(buecher, result)
 }
+
+// BearbeiteBuchLesen verarbeitet GET-Anfragen für ein einzelnes Buch.
+func (handler *APIHandler) BearbeiteBuchLesen(antwort http.ResponseWriter, anfrage *http.Request) {
+	id := anfrage.PathValue("id")
+	if id == "" {
+		writeError(antwort, http.StatusBadRequest, "ID fehlt")
+		return
+	}
+
+	buecher, fehler := handler.repo.ListBooksByIDs(anfrage.Context(), []string{id})
+	if fehler != nil {
+		log.Printf("Fehler beim Laden des Buches: %v", fehler)
+		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+		return
+	}
+
+	if len(buecher) == 0 {
+		writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
+		return
+	}
+
+	writeJSON(antwort, http.StatusOK, buecher[0])
+}

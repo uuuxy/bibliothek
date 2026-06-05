@@ -1,9 +1,9 @@
 <script>
+	import { apiFetch } from '../../../lib/apiFetch.js';
 	import IsbnLookupDialog from "$lib/components/IsbnLookupDialog.svelte";
 	import KameraScanner from "$lib/components/scanner/KameraScanner.svelte";
 	import ManualInput from "$lib/components/scanner/ManualInput.svelte";
 	import FileUploader from "$lib/components/scanner/FileUploader.svelte";
-	import { csrfHeader } from "$lib/csrf.js";
 
 	let {
 		subject = "Mathe",
@@ -50,7 +50,7 @@
 		if (cameraCmp) await cameraCmp.stopScanner();
 
 		try {
-			const res = await fetch(`/api/lookup/${isbn}`);
+			const res = await apiFetch(`/api/lookup/${isbn}`);
 			if (!res.ok) throw new Error();
 			const payload = await res.json();
 			lookupData = payload.data;
@@ -76,12 +76,11 @@
 	async function saveBook(payload) {
 		busy = true;
 		try {
-			const res = await fetch("/api/books", {
+			const res = await apiFetch("/api/books", {
 				method: "POST",
 				credentials: "include",
 				headers: /** @type {HeadersInit} */ ({
 					"Content-Type": "application/json",
-					...csrfHeader(),
 				}),
 				body: JSON.stringify(payload),
 			});

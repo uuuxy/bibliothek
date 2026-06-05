@@ -4,12 +4,13 @@
   Einen für die API-Abfrage der Metadaten und einen für den Barcode-Scanner.
 -->
 <script>
+	import { apiFetch } from '../../../../lib/apiFetch.js';
     let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
     async function aktualisiereMetadaten() {
         if (!formular.isbn) return;
         try {
-            const antwort = await fetch(`/api/lookup/${formular.isbn}`);
+            const antwort = await apiFetch(`/api/lookup/${formular.isbn}`);
             if (antwort.ok) {
                 const json = await antwort.json();
                 const daten = json.data;

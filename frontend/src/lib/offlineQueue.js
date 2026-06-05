@@ -1,38 +1,74 @@
+import { openDB } from "idb";
 import { apiFetch } from "./apiFetch.js";
 import { playSoundSuccess, playSoundError } from "./audio.js";
 
-const QUEUE_KEY = "bibliothek_offline_queue";
+const DB_NAME = "bibliothek-offline-db";
+const STORE_NAME = "scans";
 
-export function loadQueue() {
+async function getDB() {
+  return openDB(DB_NAME, 1, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+      }
+    }
+  });
+}
+
+/**
+ * Loads the current offline queue from IndexedDB.
+ * @returns {Promise<any[]>}
+ */
+export async function loadQueue() {
   try {
-    return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
-  } catch { return []; }
-}
-
-export function saveQueue(/** @type {any[]} */ q) {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
-  return q.length;
-}
-
-export function enqueueOfflineScan(/** @type {string} */ barcode, /** @type {string|null} */ studentID, /** @type {string|null} */ teacherID) {
-  const q = loadQueue();
-  const alreadyQueued = q.some(
-    (/** @type {any} */ item) => item.barcode === barcode && item.studentID === studentID && item.teacherID === teacherID
-  );
-  if (!alreadyQueued) {
-    q.push({ barcode, studentID, teacherID, queuedAt: Date.now() });
-    return saveQueue(q);
+    const db = await getDB();
+    return await db.getAll(STORE_NAME);
+  } catch (err) {
+    console.error("Failed to load offline queue from IndexedDB:", err);
+    return [];
   }
-  return q.length;
 }
 
-export async function flushOfflineQueue(/** @type {function(string, string): void} */ showToast) {
-  const q = loadQueue();
+/**
+ * Enqueues a new scan to the offline queue in IndexedDB.
+ * @param {string} barcode
+ * @param {string|null} studentID
+ * @param {string|null} teacherID
+ * @returns {Promise<number>} Number of items in the queue
+ */
+export async function enqueueOfflineScan(barcode, studentID, teacherID) {
+  try {
+    const db = await getDB();
+    const q = await db.getAll(STORE_NAME);
+    const alreadyQueued = q.some(
+      (/** @type {any} */ item) => item.barcode === barcode && item.studentID === studentID && item.teacherID === teacherID
+    );
+    if (!alreadyQueued) {
+      await db.add(STORE_NAME, { barcode, studentID, teacherID, queuedAt: Date.now() });
+    }
+    const updated = await db.getAll(STORE_NAME);
+    return updated.length;
+  } catch (err) {
+    console.error("Failed to enqueue offline scan to IndexedDB:", err);
+    return 0;
+  }
+}
+
+/**
+ * Flushes the offline queue by sending all scans to the server.
+ * @param {function(string, string): void} [showToast]
+ * @returns {Promise<number>} Number of items remaining in the queue
+ */
+export async function flushOfflineQueue(showToast) {
+  const toast = typeof showToast === "function" ? showToast : () => {};
+  const q = await loadQueue();
   if (q.length === 0) return 0;
 
-  showToast(`📡 Verbindung wiederhergestellt – ${q.length} Offline-Scan(s) werden nachgesendet…`, "success");
+  toast(`📡 Verbindung wiederhergestellt – ${q.length} Offline-Scan(s) werden nachgesendet…`, "success");
 
-  const remaining = [];
+  const db = await getDB();
+  const remainingIds = [];
+
   for (const item of q) {
     try {
       const res = await apiFetch("/api/action", {
@@ -48,17 +84,20 @@ export async function flushOfflineQueue(/** @type {function(string, string): voi
       if (!res.ok) {
         console.warn("[OfflineQueue] Permanent error for", item.barcode, res.status);
       }
-    } catch {
-      remaining.push(item);
+      // Successfully processed or permanent error: remove from IndexedDB
+      await db.delete(STORE_NAME, item.id);
+    } catch (err) {
+      console.error("[OfflineQueue] Network error while flushing scan:", err);
+      remainingIds.push(item.id);
     }
   }
 
-  saveQueue(remaining);
-  if (remaining.length === 0) {
-    showToast(`✅ Alle Offline-Scans erfolgreich nachgesendet.`, "success");
+  const remainingCount = remainingIds.length;
+  if (remainingCount === 0) {
+    toast(`✅ Alle Offline-Scans erfolgreich nachgesendet.`, "success");
     playSoundSuccess();
   } else {
-    showToast(`⚠️ ${remaining.length} Scan(s) konnten noch nicht übertragen werden.`, "warning");
+    toast(`⚠️ ${remainingCount} Scan(s) konnten noch nicht übertragen werden.`, "warning");
   }
-  return remaining.length;
+  return remainingCount;
 }

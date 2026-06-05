@@ -1,10 +1,10 @@
 <script>
+	import { apiFetch } from '../../../../lib/apiFetch.js';
     import { onMount } from "svelte";
 
     import ClassAssignmentSelector from "./ClassAssignmentSelector.svelte";
     import ClassAssignmentBookGrid from "./ClassAssignmentBookGrid.svelte";
     import ClassAssignmentSummary from "./ClassAssignmentSummary.svelte";
-    import { csrfHeader } from "../../csrf.js";
 
     /**
      * @type {{
@@ -39,7 +39,7 @@
         }
 
         try {
-            const res = await fetch("/api/books");
+            const res = await apiFetch("/api/books");
             if (res.ok) {
                 const json = await res.json();
                 if (json.data) books = json.data;
@@ -83,10 +83,9 @@
 
             const headers = /** @type {Record<string, string>} */ ({
                 "Content-Type": "application/json",
-                ...csrfHeader(),
             });
 
-            const res = await fetch(endpoint, {
+            const res = await apiFetch(endpoint, {
                 method: "POST",
                 headers,
                 body: JSON.stringify(payload),

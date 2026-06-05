@@ -1,5 +1,5 @@
 <script>
-  import { appState } from "../inventur/lib/store.svelte.js";
+  import { appState, showToast } from "../inventur/lib/store.svelte.js";
 
   /** @type {{ bookId: string | null, onBack: () => void }} */
   let { bookId, onBack } = $props();
@@ -37,6 +37,126 @@
   let currentCandidateIndex = $state(0);
   let coverSrc = $derived(coverCandidates[currentCandidateIndex] || "");
   let coverFailed = $state(false);
+
+  /** @type {string | null} */
+  let editingExemplarId = $state(null);
+  let editBarcodeValue = $state("");
+  let barcodeError = $state("");
+
+  /** @type {string | null} */
+  let editingStatusId = $state(null);
+  let editStatusType = $state("Verfügbar");
+  let editStatusNote = $state("");
+  let statusError = $state("");
+
+  /** @param {any} ex */
+  async function saveBarcode(ex) {
+    if (!editBarcodeValue.trim()) return;
+    if (editBarcodeValue.trim() === ex.barcode_id) {
+      editingExemplarId = null;
+      return;
+    }
+    barcodeError = "";
+    try {
+      const res = await fetch(`/api/buecher/exemplare/${ex.id}/barcode`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barcode: editBarcodeValue.trim() })
+      });
+      if (res.ok) {
+        ex.barcode_id = editBarcodeValue.trim();
+        editingExemplarId = null;
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        barcodeError = errorData.error || "Fehler beim Speichern";
+      }
+    } catch (e) {
+      barcodeError = "Netzwerkfehler";
+    }
+  }
+
+  /** @param {any} ex */
+  function openStatusEdit(ex) {
+    editingStatusId = ex.id;
+    if (ex.ist_ausleihbar) {
+      editStatusType = "Verfügbar";
+    } else if (ex.ist_ausgesondert || (ex.zustand_notiz && ex.zustand_notiz.toLowerCase().includes("defekt"))) {
+      editStatusType = "Defekt";
+    } else {
+      editStatusType = "Gesperrt";
+    }
+    editStatusNote = ex.zustand_notiz || "";
+    statusError = "";
+  }
+
+  /** @param {any} ex */
+  async function saveStatus(ex) {
+    statusError = "";
+    try {
+      const isAusleihbar = editStatusType === "Verfügbar";
+      const isAusgesondert = editStatusType === "Defekt" ? true : (ex.ist_ausgesondert || false);
+      const res = await fetch(`/api/buecher/exemplare/${ex.id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          ist_ausleihbar: isAusleihbar,
+          ist_ausgesondert: isAusgesondert,
+          zustand_notiz: editStatusNote.trim()
+        })
+      });
+      if (res.ok) {
+        ex.ist_ausleihbar = isAusleihbar;
+        ex.ist_ausgesondert = isAusgesondert;
+        ex.zustand_notiz = editStatusNote.trim();
+        editingStatusId = null;
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        statusError = errData.error || "Fehler beim Speichern";
+      }
+    } catch (e) {
+      statusError = "Netzwerkfehler";
+    }
+  }
+
+  /** @param {any} ex */
+  async function deleteCopy(ex) {
+    if (!confirm(`Möchtest du das Exemplar ${ex.barcode_id} wirklich unwiderruflich löschen?`)) return;
+    try {
+      const res = await fetch(`/api/buecher/exemplare/${ex.id}`, { method: "DELETE", credentials: "include" });
+      if (res.ok) {
+        exemplare = exemplare.filter((e) => e.id !== ex.id);
+        if (book) {
+          book.gesamt = Math.max(0, (book.gesamt || book.stock || 0) - 1);
+          if (ex.ist_verfuegbar) {
+             book.verfuegbar = Math.max(0, (book.verfuegbar || book.stock || 0) - 1);
+          }
+        }
+        showToast("Exemplar erfolgreich gelöscht", "success");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Fehler beim Löschen des Exemplars.");
+      }
+    } catch (e) {
+      alert("Netzwerkfehler beim Löschen.");
+    }
+  }
+
+  async function deleteTitle() {
+    if (!book) return;
+    if (!confirm(`Achtung: Dies löscht diesen Titel und ALLE ${exemplare.length} zugehörigen Exemplare unwiderruflich. Fortfahren?`)) return;
+    try {
+      const res = await fetch(`/api/buecher/titel/${book.id}`, { method: "DELETE", credentials: "include" });
+      if (res.ok) {
+        showToast("Titel erfolgreich gelöscht", "success");
+        onBack();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Fehler beim Löschen des Titels.");
+      }
+    } catch (e) {
+      alert("Netzwerkfehler beim Löschen des Titels.");
+    }
+  }
 
   $effect(() => {
     if (!bookId) return;
@@ -128,18 +248,29 @@
 
 <div class="w-full max-w-6xl mx-auto space-y-6 animate-fade-in">
   <!-- Back Button + Breadcrumb -->
-  <div class="flex items-center gap-3">
-    <button
-      onclick={onBack}
-      class="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all text-sm font-semibold cursor-pointer"
-    >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-      Zurück zum Katalog
-    </button>
-    <span class="text-slate-300">/</span>
-    <span class="text-slate-500 text-sm truncate max-w-xs">{book?.title ?? "Lade..."}</span>
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button
+        onclick={onBack}
+        class="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all text-sm font-semibold cursor-pointer"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Zurück zum Katalog
+      </button>
+      <span class="text-slate-300">/</span>
+      <span class="text-slate-500 text-sm truncate max-w-xs">{book?.title ?? "Lade..."}</span>
+    </div>
+    {#if !isLoading && book}
+      <button
+        onclick={deleteTitle}
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-all text-xs font-semibold cursor-pointer border border-rose-200"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        Gesamten Titel löschen
+      </button>
+    {/if}
   </div>
 
   {#if isLoading}
@@ -151,7 +282,7 @@
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div class="flex flex-col sm:flex-row gap-0">
         <!-- Cover / Spine -->
-        <div class="w-full sm:w-48 shrink-0 bg-linear-to-br {getGradient(book.subject)} flex items-center justify-center min-h-[14rem] relative">
+        <div class="w-full sm:w-48 shrink-0 bg-linear-to-br {getGradient(book.subject)} flex items-center justify-center min-h-56 relative">
           {#if coverSrc && !coverFailed}
             <img
               src={coverSrc}
@@ -307,12 +438,72 @@
             {#each exemplare as ex}
               <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:border-slate-300 transition-colors">
                 <div class="flex items-start justify-between mb-3">
-                  <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded font-mono">{ex.barcode_id}</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar ? 'bg-rose-50 text-rose-700 border border-rose-100' : !ex.ist_verfuegbar ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">
-                    {!ex.ist_ausleihbar ? "Gesperrt" : !ex.ist_verfuegbar ? "Ausgeliehen" : "Verfügbar"}
-                  </span>
+                  {#if editingExemplarId === ex.id}
+                    <div class="flex-1 mr-2 relative">
+                      <!-- svelte-ignore a11y_autofocus -->
+                      <input
+                        type="text"
+                        bind:value={editBarcodeValue}
+                        autofocus
+                        class="w-full px-2 py-1 text-xs font-mono border {barcodeError ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-blue-300'} rounded focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                        onkeydown={(e) => {
+                          if (e.key === 'Enter') saveBarcode(ex);
+                          if (e.key === 'Escape') { editingExemplarId = null; barcodeError = ""; }
+                        }}
+                      />
+                      {#if barcodeError}
+                        <p class="text-[10px] text-rose-600 mt-1 absolute -bottom-4 left-0 truncate w-full" title={barcodeError}>{barcodeError}</p>
+                      {/if}
+                    </div>
+                  {:else}
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded font-mono">{ex.barcode_id}</span>
+                      <button
+                        title="Barcode zuweisen/ändern"
+                        class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                        onclick={() => { editingExemplarId = ex.id; editBarcodeValue = ex.barcode_id; barcodeError = ""; }}
+                      >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                    </div>
+                  {/if}
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar ? 'bg-rose-50 text-rose-700 border border-rose-100' : !ex.ist_verfuegbar ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">
+                      {!ex.ist_ausleihbar ? "Gesperrt" : !ex.ist_verfuegbar ? "Ausgeliehen" : "Verfügbar"}
+                    </span>
+                    {#if editingStatusId !== ex.id}
+                      <button title="Status ändern" class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer" onclick={() => openStatusEdit(ex)}>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button title="Exemplar löschen" class="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer" onclick={() => deleteCopy(ex)}>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    {/if}
+                  </div>
                 </div>
-                {#if ex.zustand_notiz}
+                {#if editingStatusId === ex.id}
+                  <div class="mt-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div class="flex items-center gap-2 mb-2">
+                      <select bind:value={editStatusType} class="text-xs border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <option value="Verfügbar">Verfügbar</option>
+                        <option value="Gesperrt">Gesperrt</option>
+                        <option value="Defekt">Defekt</option>
+                      </select>
+                    </div>
+                    {#if editStatusType !== "Verfügbar"}
+                      <div class="mb-2">
+                        <input type="text" bind:value={editStatusNote} placeholder="Notiz (optional)" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30" onkeydown={(e) => { if (e.key === 'Enter') saveStatus(ex); if (e.key === 'Escape') { editingStatusId = null; statusError = ''; } }} />
+                      </div>
+                    {/if}
+                    <div class="flex items-center justify-between">
+                      <button onclick={() => { editingStatusId = null; statusError = ''; }} class="text-[10px] text-slate-500 hover:text-slate-700 font-semibold cursor-pointer">Abbrechen</button>
+                      <button onclick={() => saveStatus(ex)} class="text-[10px] bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold cursor-pointer">Speichern</button>
+                    </div>
+                    {#if statusError}
+                      <p class="text-[10px] text-rose-600 mt-1">{statusError}</p>
+                    {/if}
+                  </div>
+                {:else if ex.zustand_notiz}
                   <p class="text-xs text-slate-500"><span class="font-semibold text-slate-400">Zustand:</span> {ex.zustand_notiz}</p>
                 {/if}
               </div>

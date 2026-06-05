@@ -1,7 +1,7 @@
 <script>
+	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import BookTableToolbar from "$lib/components/admin/BookTableToolbar.svelte";
 	import BookTableZeile from "$lib/components/admin/BookTableZeile.svelte";
-	import { csrfHeader } from "$lib/csrf.js";
 
 	/**
 	 * @type {{
@@ -135,12 +135,11 @@
 
 		try {
 			const bookIds = books.map((book) => book.id);
-			const response = await fetch("/api/admin/books/reorder", {
+			const response = await apiFetch("/api/admin/books/reorder", {
 				method: "PUT",
 				credentials: "include",
 				headers: /** @type {HeadersInit} */ ({
 					"Content-Type": "application/json",
-					...csrfHeader(),
 				}),
 				body: JSON.stringify({ bookIds }),
 			});

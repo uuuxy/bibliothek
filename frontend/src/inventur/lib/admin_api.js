@@ -1,11 +1,11 @@
+import { apiFetch } from '../../lib/apiFetch.js';
 import { appState } from "./store.svelte.js";
-import { csrfHeader } from "./csrf.js";
 
 export async function holeBuecherListe() {
     const suchParameter = appState.searchQuery
         ? `?q=${encodeURIComponent(appState.searchQuery)}`
         : "";
-    const res = await fetch(`/api/books${suchParameter}`, {
+    const res = await apiFetch(`/api/books${suchParameter}`, {
         credentials: "include",
     });
     if (!res.ok) {
@@ -23,11 +23,10 @@ export async function holeBuecherListe() {
 export async function importiereExcel(datei) {
     const formData = new FormData();
     formData.append("file", datei);
-    const res = await fetch("/api/books/import", {
+    const res = await apiFetch("/api/books/import", {
         method: "POST",
         credentials: "include",
         headers: {
-            ...csrfHeader(),
         },
         body: formData,
     });
@@ -37,12 +36,11 @@ export async function importiereExcel(datei) {
 
 /** @param {string[]} ids */
 export async function loescheBuecher(ids) {
-    const res = await fetch("/api/books", {
+    const res = await apiFetch("/api/books", {
         method: "DELETE",
         credentials: "include",
         headers: {
             "Content-Type": "application/json",
-            ...csrfHeader(),
         },
         body: JSON.stringify({ ids }),
     });
@@ -51,7 +49,7 @@ export async function loescheBuecher(ids) {
 }
 
 export async function holeExterneCover() {
-    const res = await fetch("/api/admin/books/external-covers", {
+    const res = await apiFetch("/api/admin/books/external-covers", {
         credentials: "include",
     });
     if (!res.ok) throw new Error("Externe Cover konnten nicht geladen werden");
@@ -61,12 +59,11 @@ export async function holeExterneCover() {
 
 /** @param {string[]} ids */
 export async function retryExterneCover(ids = []) {
-    const res = await fetch("/api/admin/books/retry-covers", {
+    const res = await apiFetch("/api/admin/books/retry-covers", {
         method: "POST",
         credentials: "include",
         headers: {
             "Content-Type": "application/json",
-            ...csrfHeader(),
         },
         body: JSON.stringify({ ids, limit: 300 }),
     });

@@ -1,4 +1,5 @@
 <script>
+	import { apiFetch } from '../../../../lib/apiFetch.js';
     import { fly, fade } from "svelte/transition";
     import StrichcodeScannerOverlay from "$lib/components/scanner/StrichcodeScannerOverlay.svelte";
     import BuchCoverUpload from "./BuchCoverUpload.svelte";
@@ -13,7 +14,7 @@
         formular.isbn = code;
         if (!formular.title) {
             try {
-                const res = await fetch(`/api/lookup/${code}`);
+                const res = await apiFetch(`/api/lookup/${code}`);
                 if (res.ok) {
                     const json = await res.json();
                     const data = json.data;

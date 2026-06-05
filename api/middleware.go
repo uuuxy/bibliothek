@@ -14,6 +14,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"regexp"
 )
 
 // PanicRecoveryMiddleware catches panics during HTTP request handling, logs them, and returns a 500 error.
@@ -152,3 +153,19 @@ func (s *Server) requireAuth(w http.ResponseWriter, r *http.Request) (*auth.Clai
 	}
 	return claims, ok
 }
+
+var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// ValidateUUIDParamsMiddleware intercepts requests and validates {id} path parameters
+// against a standard UUID format before they hit the database.
+func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id != "" && !uuidRegex.MatchString(id) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges UUID Format im Pfadparameter"))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+

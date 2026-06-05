@@ -100,6 +100,34 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("failed to snapshot title for audit: %w", err)
 	}
 
+	// Loan protection: Check if any copy of this title is currently on loan
+	var activeLoans []string
+	rows, err := tx.Query(ctx, `
+		SELECT e.barcode_id 
+		FROM ausleihen a 
+		JOIN buecher_exemplare e ON a.exemplar_id = e.id 
+		WHERE e.titel_id = $1 AND a.rueckgabe_am IS NULL
+	`, titleID)
+	if err != nil {
+		return fmt.Errorf("failed to check active loans for title: %w", err)
+	}
+	defer rows.Close()
+	
+	for rows.Next() {
+		var barcode string
+		if err := rows.Scan(&barcode); err == nil {
+			activeLoans = append(activeLoans, barcode)
+		}
+	}
+	if len(activeLoans) > 0 {
+		return fmt.Errorf("Löschen fehlgeschlagen: Folgende Exemplare sind noch verliehen: %v", activeLoans)
+	}
+
+	// Delete all associated copies first
+	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE titel_id = $1", titleID); err != nil {
+		return fmt.Errorf("failed to delete associated copies: %w", err)
+	}
+
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID); err != nil {
 		return err
 	}
@@ -134,6 +162,16 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	).Scan(&barcode, &zustandNotiz, &titelID, &titel)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to snapshot copy for audit: %w", err)
+	}
+
+	// Loan protection: Check if the copy is currently on loan
+	var activeLoanCount int
+	err = tx.QueryRow(ctx, "SELECT count(*) FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL", copyID).Scan(&activeLoanCount)
+	if err != nil {
+		return fmt.Errorf("failed to check active loans for copy: %w", err)
+	}
+	if activeLoanCount > 0 {
+		return errors.New("Exemplar ist aktuell noch verliehen!")
 	}
 
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE id = $1", copyID); err != nil {

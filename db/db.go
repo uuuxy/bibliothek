@@ -393,7 +393,7 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 		return nil
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return fmt.Errorf("failed to hash initial admin password: %w", err)
 	}

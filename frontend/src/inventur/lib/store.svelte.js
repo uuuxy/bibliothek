@@ -1,5 +1,5 @@
+import { apiFetch } from '../../lib/apiFetch.js';
 // src/lib/store.svelte.js
-import { csrfHeader } from './csrf.js';
 
 /** @type {{ searchQuery: string, selectedBook: any, activeBookId: string | null, isSidebarOpen: boolean, adminAuthenticated: boolean, guestAuthenticated: boolean, pendingPrintCopies: any[] | null, triggerStudentScan: string }} */
 export const appState = $state({
@@ -42,12 +42,8 @@ export async function logout() {
     appState.guestAuthenticated = false;
 
     try {
-        await fetch('/api/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                ...csrfHeader(),
-            },
+        await apiFetch('/api/auth/logout', {
+            method: 'POST'
         });
     } catch {
         // UI-State wurde bereits zurückgesetzt

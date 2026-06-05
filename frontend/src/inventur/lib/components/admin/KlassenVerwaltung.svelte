@@ -1,8 +1,8 @@
 <script>
+	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { onMount } from "svelte";
 	import BuchAuswahlListe from "$lib/components/admin/BuchAuswahlListe.svelte";
 	import KlassenNamenEditor from "$lib/components/admin/KlassenNamenEditor.svelte";
-	import { csrfHeader } from "$lib/csrf.js";
 
 	let { initialGroup, onClose, onSaved } = $props();
 
@@ -19,7 +19,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch("/api/books", {
+			const res = await apiFetch("/api/books", {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error("Fehler beim Laden der Bücher");
@@ -92,12 +92,11 @@
 		}
 
 		try {
-			const res = await fetch("/api/admin/class-books", {
+			const res = await apiFetch("/api/admin/class-books", {
 				method: "POST",
 				credentials: "include",
 				headers: {
 					"Content-Type": "application/json",
-					...csrfHeader(),
 				},
 				body: JSON.stringify(payload),
 			});

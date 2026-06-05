@@ -1,8 +1,8 @@
 <script>
+	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { onMount } from "svelte";
         import ClassAssignmentDialog from "./ClassAssignmentDialog.svelte";
 	import KlassenKarte from "./KlassenKarte.svelte";
-	import { csrfHeader } from "$lib/csrf.js";
 
 	/** @type {any[]} */
 	let classGroups = $state([]);
@@ -21,7 +21,7 @@
 				branch: filterBranch,
 				sort: sortOrder,
 			});
-			const res = await fetch(
+			const res = await apiFetch(
 				`/api/admin/class-books?${query.toString()}`,
 				{
 					credentials: "include",
@@ -46,13 +46,12 @@
 	async function deleteGroup(className) {
 		if (!confirm(`Klasse ${className} wirklich löschen?`)) return;
 		try {
-			const res = await fetch(
+			const res = await apiFetch(
 				`/api/admin/class-books?className=${encodeURIComponent(className)}`,
 				{
 					method: "DELETE",
 					credentials: "include",
 					headers: /** @type {HeadersInit} */ ({
-						...csrfHeader(),
 					}),
 				},
 			);

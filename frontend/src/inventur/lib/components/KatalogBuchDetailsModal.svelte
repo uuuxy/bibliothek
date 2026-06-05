@@ -1,4 +1,5 @@
 <script>
+	import { apiFetch } from '../../../lib/apiFetch.js';
     import { fade, fly } from "svelte/transition";
     import { appState } from "../store.svelte.js";
 
@@ -68,7 +69,7 @@
         if (!book || !book.id) return;
         wirdGeladen = true;
         try {
-            const res = await fetch(`/api/buecher/titel/${book.id}/exemplare`);
+            const res = await apiFetch(`/api/buecher/titel/${book.id}/exemplare`);
             if (res.ok) {
                 exemplare = await res.json();
             } else {
@@ -88,7 +89,7 @@
             return;
         }
         try {
-            const res = await fetch(`/api/buecher/titel/${book.id}/ausleiher`);
+            const res = await apiFetch(`/api/buecher/titel/${book.id}/ausleiher`);
             if (res.ok) {
                 borrowers = await res.json() || [];
             } else {

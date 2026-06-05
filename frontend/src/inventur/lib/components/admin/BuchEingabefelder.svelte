@@ -1,4 +1,5 @@
 <script>
+	import { apiFetch } from '../../../../lib/apiFetch.js';
     import { onMount } from "svelte";
     import IsbnFeld from "./IsbnFeld.svelte";
     import { klassenStufen, schulZweige } from "$lib/components/admin/buch_form_optionen.js";
@@ -9,7 +10,7 @@
 
     onMount(async () => {
         try {
-            const antwort = await fetch("/api/subjects");
+            const antwort = await apiFetch("/api/subjects");
             if (antwort.ok) {
                 const json = await antwort.json();
                 faecherListe = (json.data || []).map((/** @type {any} */ fach) => fach.name);

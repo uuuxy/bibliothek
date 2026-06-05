@@ -66,9 +66,10 @@ func (s *Server) Routes() http.Handler {
 	}
 
 	invHandler := inventur.NewAPIHandler(inventur.APIHandlerConfig{
-		Repo:      invRepo,
-		Metadaten: invMeta,
-		JWTSecret: jwtSecret,
+		Repo:             invRepo,
+		Metadaten:        invMeta,
+		RequireAuth:      s.RequirePermission("view_books"),
+		RequireAdminAuth: s.RequirePermission("edit_books"),
 	})
 
 	// Mount Inventur routes
@@ -80,7 +81,6 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("/api/admin", invHandler)
 	mux.Handle("/api/admin/", invHandler)
 	mux.Handle("/uploads/", invHandler)
-	mux.Handle("/api/auth/status", invHandler)
 
 	// Public Endpoints
 	mux.HandleFunc("POST /login/barcode", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
@@ -165,6 +165,13 @@ func (s *Server) Routes() http.Handler {
 
 	// Update copy damage note (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler()))
+
+	// Update copy barcode (Accessible by Admin and Mitarbeiter)
+	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.RequirePermission("edit_books")(s.UpdateCopyBarcodeHandler()))
+
+	// Update copy status (Accessible by Admin and Mitarbeiter)
+	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.UpdateCopyStatusHandler()))
+
 
 	// Mark copy as defective and create Schadensfaelle (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/defekt", s.RequirePermission("edit_books")(s.MarkCopyDefektHandler()))
@@ -337,8 +344,8 @@ func (s *Server) Routes() http.Handler {
 	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
 	rateLimiter := RateLimitMiddleware(50)
 
-	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> Mux
-	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(mux))))))))
+	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
+	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

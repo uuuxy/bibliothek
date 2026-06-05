@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/apiFetch.js';
 /**
  * startseiten_api.js
  * 
@@ -11,7 +12,7 @@
  * @returns {Promise<any[]>} Liste der Bücher
  */
 export async function buecherLaden() {
-    const antwort = await fetch("/api/books", {
+    const antwort = await apiFetch("/api/books", {
         credentials: "include",
     });
     if (!antwort.ok) {
@@ -28,7 +29,7 @@ export async function buecherLaden() {
  * @returns {Promise<any[]>} Liste der Klassengruppen
  */
 export async function echteKlassenLaden() {
-    const antwort = await fetch("/api/class-books", {
+    const antwort = await apiFetch("/api/class-books", {
         credentials: "include",
     });
     if (!antwort.ok) return [];

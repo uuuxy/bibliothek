@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -66,6 +67,118 @@ func (s *Server) UpdateDamageNoteHandler() http.HandlerFunc {
 	}
 }
 
+// UpdateBarcodeRequest holds the payload for updating a copy's barcode.
+type UpdateBarcodeRequest struct {
+	Barcode string `json:"barcode"`
+}
+
+// UpdateCopyBarcodeHandler updates the barcode of a physical book copy.
+// @Summary      Update copy barcode
+// @Description  Updates the barcode of a physical book copy, replacing placeholders like AUTO-.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                true  "Book copy ID (UUID)"
+// @Param        body  body      UpdateBarcodeRequest  true  "New barcode payload"
+// @Success      200   {object}  map[string]string
+// @Failure      400   {object}  map[string]string
+// @Failure      409   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /buecher/exemplare/{id}/barcode [put]
+func (s *Server) UpdateCopyBarcodeHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+			return
+		}
+
+		var req UpdateBarcodeRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		if req.Barcode == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode cannot be empty"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			UPDATE buecher_exemplare
+			SET barcode_id = $1, aktualisiert_am = CURRENT_TIMESTAMP
+			WHERE id = $2
+		`
+		_, err := s.DB.Pool.Exec(ctx, query, req.Barcode, id)
+		if err != nil {
+			if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
+				apierrors.SendHTTPError(w, http.StatusConflict, errors.New("Dieser Barcode wird bereits von einem anderen Exemplar verwendet."))
+				return
+			}
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"success"}`))
+	}
+}
+
+// UpdateStatusRequest holds the payload for updating a copy's status.
+type UpdateStatusRequest struct {
+	IstAusleihbar bool   `json:"ist_ausleihbar"`
+	IstAusgesondert bool `json:"ist_ausgesondert"`
+	ZustandNotiz  string `json:"zustand_notiz"`
+}
+
+// UpdateCopyStatusHandler updates the status of a physical book copy.
+// @Summary      Update copy status
+// @Description  Updates the status (ist_ausleihbar, ist_ausgesondert) and the condition note of a physical book copy.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                true  "Book copy ID (UUID)"
+// @Param        body  body      UpdateStatusRequest   true  "New status payload"
+// @Success      200   {object}  map[string]string
+// @Failure      400   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /buecher/exemplare/{id}/status [put]
+func (s *Server) UpdateCopyStatusHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+			return
+		}
+
+		var req UpdateStatusRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			UPDATE buecher_exemplare
+			SET ist_ausleihbar = $1, ist_ausgesondert = $2, zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP
+			WHERE id = $4
+		`
+		_, err := s.DB.Pool.Exec(ctx, query, req.IstAusleihbar, req.IstAusgesondert, req.ZustandNotiz, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"success"}`))
+	}
+}
+
 // DeleteCopyHandler removes a physical copy from circulation.
 // @Summary      Delete physical book copy
 // @Description  Deletes a specific physical book copy by its ID from the library catalog and registers the deletion in the audit trail.
@@ -97,7 +210,11 @@ func (s *Server) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 
 		err := auditRepo.DeleteCopy(ctx, id, claims.UserID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			if err.Error() == "Exemplar ist aktuell noch verliehen!" {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			} else {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			}
 			return
 		}
 
@@ -136,7 +253,11 @@ func (s *Server) DeleteTitleHandler(auditRepo repository.AuditRepository) http.H
 
 		err := auditRepo.DeleteTitle(ctx, id, claims.UserID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			if len(err.Error()) > 21 && err.Error()[:22] == "Löschen fehlgeschlagen:" {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			} else {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			}
 			return
 		}
 

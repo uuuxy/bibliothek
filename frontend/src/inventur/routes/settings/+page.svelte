@@ -1,4 +1,5 @@
 <script>
+	import { apiFetch } from '../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
 
 	let loading = $state(true);
@@ -28,7 +29,7 @@
 	async function fetchMapping() {
 		mappingLoading = true;
 		try {
-			const res = await fetch('/api/klassen-mapping');
+			const res = await apiFetch('/api/klassen-mapping');
 			if (res.ok) mappingRows = await res.json();
 		} catch { /* ignore */ } finally {
 			mappingLoading = false;
@@ -39,7 +40,7 @@
 		if (!newMappingKlasse.trim() || !newMappingEmail.trim()) return;
 		mappingSaving = true;
 		try {
-			const res = await fetch('/api/klassen-mapping', {
+			const res = await apiFetch('/api/klassen-mapping', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ klasse: newMappingKlasse.trim(), lehrer_email: newMappingEmail.trim() })
@@ -64,7 +65,7 @@
 	 */
 	async function deleteMapping(klasse) {
 		try {
-			const res = await fetch(`/api/klassen-mapping/${encodeURIComponent(klasse)}`, { method: 'DELETE' });
+			const res = await apiFetch(`/api/klassen-mapping/${encodeURIComponent(klasse)}`, { method: 'DELETE' });
 			if (res.ok || res.status === 204) {
 				await fetchMapping();
 				showToast(`Mapping für ${klasse} gelöscht.`);
@@ -78,7 +79,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch('/api/einstellungen');
+			const res = await apiFetch('/api/einstellungen');
 			if (res.ok) {
 				const data = await res.json();
 				ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;
@@ -93,7 +94,7 @@
 	async function saveSettings() {
 		saving = true;
 		try {
-			const res = await fetch('/api/einstellungen', {
+			const res = await apiFetch('/api/einstellungen', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

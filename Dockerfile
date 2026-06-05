@@ -63,6 +63,14 @@ COPY --from=backend-builder /app/main .
 # Copy built Svelte static files
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
+# Create non-privileged user, create uploads dir to inherit permissions, and give ownership
+RUN adduser -D appuser && \
+    mkdir -p /app/uploads/fotos && \
+    chown -R appuser:appuser /app
+
+# Switch context
+USER appuser
+
 # Expose port (matched with default PORT in environment)
 EXPOSE 8081
 

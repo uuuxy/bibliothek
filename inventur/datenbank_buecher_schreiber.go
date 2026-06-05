@@ -45,6 +45,14 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
 	}
 
+	// Bestand synchronisieren
+	if book.Stock > 0 {
+		if syncErr := repo.syncBookStock(ctx, id, book.Stock); syncErr != nil {
+			// Log error, but don't fail the creation
+			fmt.Printf("Warnung: Konnte Exemplare nach Erstellung nicht synchronisieren: %v\n", syncErr)
+		}
+	}
+
 	return id, nil
 }
 
@@ -228,6 +236,12 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		return ErrBookNotFound
 	}
 
+	// Bestand synchronisieren
+	if syncErr := repo.syncBookStock(ctx, id, book.Stock); syncErr != nil {
+		// Log error, but don't fail the update entirely
+		fmt.Printf("Warnung: Konnte Exemplare nach Aktualisierung nicht synchronisieren: %v\n", syncErr)
+	}
+
 	return nil
 }
 
@@ -273,6 +287,69 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 			continue
 		}
 		_ = os.Remove(filepath.Join("uploads", name))
+	}
+
+	return nil
+}
+
+// syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
+func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, expectedStock int) error {
+	var currentStock int
+	err := repo.db.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare WHERE titel_id = $1 AND ist_ausgesondert = false`, titelID).Scan(&currentStock)
+	if err != nil {
+		return fmt.Errorf("fehler beim ermitteln des aktuellen bestands: %w", err)
+	}
+
+	if expectedStock > currentStock {
+		numToCreate := expectedStock - currentStock
+		for i := 0; i < numToCreate; i++ {
+			_, err := repo.db.Exec(ctx, `
+				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
+				VALUES ($1, 'AUTO-' || upper(substr(gen_random_uuid()::text, 1, 8)), true, 'Automatisch generiert')
+			`, titelID)
+			if err != nil {
+				return fmt.Errorf("fehler beim generieren von exemplaren: %w", err)
+			}
+		}
+	} else if expectedStock < currentStock {
+		numToRetire := currentStock - expectedStock
+		
+		// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
+		query := `
+			UPDATE buecher_exemplare
+			SET ist_ausgesondert = true, zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert'
+			WHERE id IN (
+				SELECT e.id
+				FROM buecher_exemplare e
+				LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
+				WHERE e.titel_id = $1 AND e.ist_ausgesondert = false AND a.id IS NULL
+				LIMIT $2
+			)
+		`
+		result, err := repo.db.Exec(ctx, query, titelID, numToRetire)
+		if err != nil {
+			return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
+		}
+		
+		retired := result.RowsAffected()
+		if retired < int64(numToRetire) {
+			// 2. Fallback: Auch ausgeliehene Exemplare aussondern, falls nötig
+			remainingToRetire := int64(numToRetire) - retired
+			fallbackQuery := `
+				UPDATE buecher_exemplare
+				SET ist_ausgesondert = true, zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
+				WHERE id IN (
+					SELECT e.id
+					FROM buecher_exemplare e
+					WHERE e.titel_id = $1 AND e.ist_ausgesondert = false
+					LIMIT $2
+				)
+			`
+			_, err = repo.db.Exec(ctx, fallbackQuery, titelID, remainingToRetire)
+			if err != nil {
+				return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
+			}
+		}
 	}
 
 	return nil
