@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
 // LoanRepository handles the transactional check-out and check-in database procedures.

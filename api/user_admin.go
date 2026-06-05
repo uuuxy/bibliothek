@@ -87,8 +87,7 @@ type UpdatePermissionsRequest struct {
 func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req UpdatePermissionsRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 
@@ -191,8 +190,7 @@ type CreateUserRequest struct {
 func (s *Server) CreateUserHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateUserRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 
@@ -303,8 +301,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 		}
 
 		var req UpdateUserRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 

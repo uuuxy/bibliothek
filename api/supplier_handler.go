@@ -58,8 +58,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateSupplierRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 

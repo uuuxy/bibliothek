@@ -25,7 +25,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SendOrderMailRequest
 		// Optional custom email parsing (don't error if not sent, fallback will be used)
-		_ = json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req) // Decodes without error check to allow fallback
 
 		toEmail := req.Email
 		if toEmail == "" {

@@ -1,10 +1,11 @@
 package inventur
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
+
+	"bibliothek/apierrors"
 )
 
 func (handler *APIHandler) handleListExternalCovers(writer http.ResponseWriter, request *http.Request) {
@@ -23,8 +24,7 @@ func (handler *APIHandler) handleRetryExternalCovers(writer http.ResponseWriter,
 		IDs   []string `json:"ids"`
 		Limit int      `json:"limit"`
 	}
-	if err := json.NewDecoder(request.Body).Decode(&eingabe); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(writer, request, &eingabe) {
 		return
 	}
 

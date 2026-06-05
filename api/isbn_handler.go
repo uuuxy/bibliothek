@@ -38,8 +38,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		var req struct {
 			ISBN string `json:"isbn"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 		// Normalise: strip dashes and spaces

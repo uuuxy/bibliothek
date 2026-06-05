@@ -1,11 +1,12 @@
 package inventur
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
+
+	"bibliothek/apierrors"
 )
 
 // BearbeiteBuecherLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
@@ -14,8 +15,7 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 	var eingabe struct {
 		IDs []string `json:"ids"`
 	}
-	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, "ungültiges request body")
+	if !apierrors.DecodeJSONRequest(antwort, anfrage, &eingabe) {
 		return
 	}
 
@@ -55,8 +55,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 	}
 
-	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(antwort, anfrage, &eingabe) {
 		return
 	}
 

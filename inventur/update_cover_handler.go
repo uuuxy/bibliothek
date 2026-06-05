@@ -1,10 +1,11 @@
 package inventur
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
+
+	"bibliothek/apierrors"
 )
 
 func (handler *APIHandler) handleUpdateCover(writer http.ResponseWriter, request *http.Request) {
@@ -23,8 +24,7 @@ func (handler *APIHandler) handleUpdateCover(writer http.ResponseWriter, request
 	var input struct {
 		CoverURL string `json:"coverUrl"`
 	}
-	if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(writer, request, &input) {
 		return
 	}
 

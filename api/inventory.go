@@ -48,8 +48,7 @@ type InventoryScanResponse struct {
 func (s *Server) ScanInventoryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventoryScanRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 
@@ -211,11 +210,10 @@ type FinalizeInventoryResponse struct {
 func (s *Server) FinalizeInventoryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req FinalizeInventoryRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
-		
+
 		tage := req.Tage
 		if tage < 1 || tage > 3650 {
 			tage = 30 // default fallback

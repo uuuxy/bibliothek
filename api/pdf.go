@@ -145,7 +145,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		// Stream the generated PDF
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=elternbrief_%s.pdf", sNachname))
-		
+
 		if err := pdf.Output(w); err != nil {
 			log.Printf("PDF Generator: Output error: %v", err)
 			return

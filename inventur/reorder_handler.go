@@ -1,9 +1,10 @@
 package inventur
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"bibliothek/apierrors"
 )
 
 // ReorderRequest beschreibt die Eingabe für die Neuordnung von Büchern.
@@ -15,8 +16,7 @@ type ReorderRequest struct {
 // Die Sortierung wird als Batch-Update durchgeführt (kein N+1 Query).
 func (handler *APIHandler) handleReorderBooks(writer http.ResponseWriter, request *http.Request) {
 	var input ReorderRequest
-	if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges json")
+	if !apierrors.DecodeJSONRequest(writer, request, &input) {
 		return
 	}
 

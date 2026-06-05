@@ -1,10 +1,11 @@
 package inventur
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
+
+	"bibliothek/apierrors"
 )
 
 type LoginRequestPayload struct {
@@ -18,8 +19,7 @@ func (handler *APIHandler) handleLogin(writer http.ResponseWriter, request *http
 		return
 	}
 	var payload LoginRequestPayload
-	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(writer, request, &payload) {
 		return
 	}
 
@@ -57,8 +57,7 @@ func (handler *APIHandler) handleLoginGuest(writer http.ResponseWriter, request 
 		return
 	}
 	var payload LoginRequestPayload
-	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(writer, request, &payload) {
 		return
 	}
 

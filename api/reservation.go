@@ -40,8 +40,7 @@ type KlassensatzReservierung struct {
 func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req KlassensatzReservierungRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 		if req.TitelID == "" || req.Klasse == "" {

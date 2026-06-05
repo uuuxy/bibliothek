@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -117,8 +116,7 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			Klasse        *string `json:"klasse"`
 			AbgaengerJahr *int    `json:"abgaenger_jahr"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiger Request-Body: %w", err))
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 		if req.Klasse == nil && req.AbgaengerJahr == nil {

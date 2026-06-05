@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
 // AuditRepository manages immutable logs and auditable resource deletions.

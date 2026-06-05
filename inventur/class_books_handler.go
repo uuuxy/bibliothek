@@ -1,10 +1,11 @@
 package inventur
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
+
+	"bibliothek/apierrors"
 )
 
 type ClassBook struct {
@@ -49,8 +50,7 @@ func (handler *APIHandler) handleUpdateClassBooks(writer http.ResponseWriter, re
 		BookIDs      []string `json:"bookIds"`
 	}
 
-	if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(writer, request, &input) {
 		return
 	}
 
@@ -128,8 +128,7 @@ func (handler *APIHandler) handleAddClassBooks(writer http.ResponseWriter, reque
 		BookIDs    []string `json:"bookIds"`
 	}
 
-	if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
-		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(writer, request, &input) {
 		return
 	}
 

@@ -42,8 +42,7 @@ func (s *Server) UpdateDamageNoteHandler() http.HandlerFunc {
 		}
 
 		var req DamageNoteRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 
@@ -244,12 +243,12 @@ func (s *Server) AussondernCopyHandler() http.HandlerFunc {
 
 // TitleBorrower represents a student who is currently borrowing a copy of a title.
 type TitleBorrower struct {
-	Vorname         string     `json:"schueler_name"`
-	Nachname        string     `json:"schueler_nachname"`
-	Klasse          string     `json:"klasse"`
-	SchuelerBarcode string     `json:"schueler_barcode"`
-	ExemplarBarcode string     `json:"exemplar_barcode"`
-	RueckgabeFrist  time.Time  `json:"rueckgabe_frist"`
+	Vorname         string    `json:"schueler_name"`
+	Nachname        string    `json:"schueler_nachname"`
+	Klasse          string    `json:"klasse"`
+	SchuelerBarcode string    `json:"schueler_barcode"`
+	ExemplarBarcode string    `json:"exemplar_barcode"`
+	RueckgabeFrist  time.Time `json:"rueckgabe_frist"`
 }
 
 // GetTitleBorrowersHandler lists all active borrowers for a book title.

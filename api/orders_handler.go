@@ -36,8 +36,7 @@ type SubmitOrderRequest struct {
 func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SubmitOrderRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 
@@ -230,10 +229,10 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 
 // ShipmentGroup helps structure the incoming shipments response.
 type ShipmentGroup struct {
-	ID           string        `json:"id"`
-	SupplierName string        `json:"supplierName"`
-	Date         string        `json:"date"`
-	Timestamp    time.Time     `json:"-"`
+	ID           string         `json:"id"`
+	SupplierName string         `json:"supplierName"`
+	Date         string         `json:"date"`
+	Timestamp    time.Time      `json:"-"`
 	Items        []*GroupedItem `json:"items"`
 }
 
@@ -346,8 +345,7 @@ type ReceiveItemRequest struct {
 func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReceiveItemRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 

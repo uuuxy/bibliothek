@@ -30,8 +30,7 @@ func (s *Server) ActionHandler(
 		}
 
 		var req ActionRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 
@@ -83,10 +82,10 @@ func (s *Server) ActionHandler(
 				resp.HasVormerkung = true
 				resp.VormerkungTitel = v.TitelName
 				resp.VormerkungUser = v.SchuelerName
-				
+
 				// Set book copy to reserved note and not lendable by others
-				_, _ = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2", 
-					"Reserviert für: " + v.SchuelerName, resp.Book.ID)
+				_, _ = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2",
+					"Reserviert für: "+v.SchuelerName, resp.Book.ID)
 			}
 		}
 
@@ -125,7 +124,7 @@ func (s *Server) handleBookAction(
 		if err != nil {
 			return err
 		}
-		
+
 		if activeLoan == nil && !strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:") {
 			_, err = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, zustand_notiz = '' WHERE id = $1", copy.ID)
 			if err != nil {

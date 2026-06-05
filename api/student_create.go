@@ -93,8 +93,7 @@ type CreateStudentRequest struct {
 func (s *Server) CreateStudentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateStudentRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges JSON"))
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 

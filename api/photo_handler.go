@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,8 +30,7 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 		}
 
 		var req UploadPhotoRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 

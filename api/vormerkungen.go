@@ -87,7 +87,10 @@ func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 func (s *Server) CreateVormerkungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateVormerkungRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TitelID == "" {
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
+			return
+		}
+		if req.TitelID == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id ist erforderlich"))
 			return
 		}

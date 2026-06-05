@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
 // StudentRepository defines operations for fetching student records from the database.

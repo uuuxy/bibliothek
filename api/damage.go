@@ -43,8 +43,7 @@ func (s *Server) MarkCopyDefektHandler() http.HandlerFunc {
 		}
 
 		var req DefektRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !apierrors.DecodeJSONRequest(w, r, &req) {
 			return
 		}
 		if req.Betrag < 0 {

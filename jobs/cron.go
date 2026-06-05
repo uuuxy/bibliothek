@@ -191,9 +191,9 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
 		"DSGVO-Abgänger-Batch-Löschung",
 		map[string]any{
-			"geloescht":    deleted,
-			"fehlschlaege": len(failures),
-			"cutoff_jahr":  cutoffYear,
+			"geloescht":      deleted,
+			"fehlschlaege":   len(failures),
+			"cutoff_jahr":    cutoffYear,
 			"ausgefuehrt_am": time.Now().UTC().Format(time.RFC3339),
 		},
 	)

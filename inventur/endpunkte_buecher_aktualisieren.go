@@ -2,11 +2,12 @@ package inventur
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
+
+	"bibliothek/apierrors"
 )
 
 // BuchAktualisierenAnfrage repräsentiert die erwartete JSON-Struktur für das Aktualisieren eines Buches.
@@ -39,8 +40,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 	}
 
 	var eingabe BuchAktualisierenAnfrage
-	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-		writeError(antwort, http.StatusBadRequest, "ungültiges JSON")
+	if !apierrors.DecodeJSONRequest(antwort, anfrage, &eingabe) {
 		return
 	}
 

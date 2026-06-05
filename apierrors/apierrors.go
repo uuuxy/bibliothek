@@ -64,3 +64,14 @@ func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
+
+// DecodeJSONRequest decodes a JSON request body into a target struct.
+// It returns true if successful. If an error occurs, it sends an appropriate
+// HTTP error response (400 Bad Request) and returns false.
+func DecodeJSONRequest(w http.ResponseWriter, r *http.Request, dst interface{}) bool {
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
+		SendHTTPError(w, http.StatusBadRequest, err)
+		return false
+	}
+	return true
+}
