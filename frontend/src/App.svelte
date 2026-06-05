@@ -290,13 +290,13 @@
 
             <nav class="py-6 px-3 space-y-6">
               {#each menuGroups as group}
-                {#if group.items.some(item => canSeeItem(item, currentUser?.rolle))}
+                {#if group.items.some(item => canSeeItem(item, currentUser))}
                   <div class="space-y-1">
                     {#if !isSidebarCollapsed}
                       <span class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 animate-fade-in">{group.name}</span>
                     {/if}
                     {#each group.items as item}
-                      {#if canSeeItem(item, currentUser?.rolle)}
+                      {#if canSeeItem(item, currentUser)}
                         <button onclick={() => { activeTab = item.id; selectedBook = null; }} class="relative w-full flex items-center rounded-xl text-sm font-semibold transition-all {isSidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2'} {activeTab === item.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50 cursor-pointer'}" title={item.label}>
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             {#if item.icon === 'kiosk'}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // setupBenchDB returns a connected pgxpool.Pool and the BookRepository.

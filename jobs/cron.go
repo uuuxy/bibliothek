@@ -6,21 +6,21 @@ import (
 	"log"
 	"time"
 
+	"bibliothek/db"
 	"bibliothek/repository"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/robfig/cron/v3"
 )
 
 // Scheduler manages background automation tasks.
 type Scheduler struct {
-	db        *pgxpool.Pool
+	db        db.PgxPoolIface
 	auditRepo repository.AuditRepository
 	cron      *cron.Cron
 }
 
 // NewScheduler builds and returns a new Scheduler instance.
-func NewScheduler(db *pgxpool.Pool, auditRepo repository.AuditRepository) *Scheduler {
+func NewScheduler(db db.PgxPoolIface, auditRepo repository.AuditRepository) *Scheduler {
 	return &Scheduler{
 		db:        db,
 		auditRepo: auditRepo,

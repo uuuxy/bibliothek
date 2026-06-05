@@ -108,10 +108,11 @@ type LoginRequest struct {
 
 // LoginResponse represents the response containing user information upon successful authentication.
 type LoginResponse struct {
-	UserID   string `json:"user_id"`
-	Rolle    Role   `json:"rolle"`
-	Vorname  string `json:"vorname"`
-	Nachname string `json:"nachname"`
+	UserID      string   `json:"user_id"`
+	Rolle       Role     `json:"rolle"`
+	Vorname     string   `json:"vorname"`
+	Nachname    string   `json:"nachname"`
+	Permissions []string `json:"permissions"`
 }
 
 // AuthenticateIMAP verifies the email and password against the configured IMAP server.
@@ -312,12 +313,29 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			SameSite: http.SameSiteStrictMode, // Strict: keine Cross-Site-Requests erlaubt
 		})
 
+		var permissions []string
+		if role == RoleAdmin {
+			permissions = []string{"*"}
+		} else {
+			rows, err := dbPool.Query(ctx, "SELECT permission FROM role_permissions WHERE UPPER(role) = UPPER($1) AND allowed = true", string(role))
+			if err == nil {
+				for rows.Next() {
+					var p string
+					if err := rows.Scan(&p); err == nil {
+						permissions = append(permissions, p)
+					}
+				}
+				rows.Close()
+			}
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(LoginResponse{
-			UserID:   id,
-			Rolle:    role,
-			Vorname:  vorname,
-			Nachname: nachname,
+			UserID:      id,
+			Rolle:       role,
+			Vorname:     vorname,
+			Nachname:    nachname,
+			Permissions: permissions,
 		})
 	}
 }

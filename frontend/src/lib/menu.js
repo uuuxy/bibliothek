@@ -20,57 +20,79 @@ export const icons = {
  * @property {string} id
  * @property {string} label
  * @property {string} icon
+ * @property {string} [permission]
  * @property {string[]} [roles]
- * @property {boolean} [adminOnly]
  */
 
 /**
- * Determines whether a menu item should be visible for the given role.
- * - item.roles (string[]): visible only when role is in the list
- * - item.adminOnly (bool): visible only for 'admin'
- * - default: visible for all roles except 'lehrer'
+ * Determines whether a menu item should be visible for the given user.
  *
  * @param {MenuItem} item
- * @param {string} rolle - lowercase role string ('admin', 'mitarbeiter', 'helfer', 'lehrer')
+ * @param {any} currentUser
  * @returns {boolean}
  */
-export function canSeeItem(item, rolle) {
-  if (!rolle) return false;
-  const r = rolle.toLowerCase();
-  if (r === 'helfer') {
-    return item.id === 'kiosk' || item.id === 'media_catalog';
+export function canSeeItem(item, currentUser) {
+  if (!currentUser) return false;
+  
+  const r = (currentUser.rolle || '').toLowerCase();
+  
+  // Lehrer portal is strictly for lehrer
+  if (item.id === 'lehrer_portal') {
+    return r === 'lehrer';
   }
-  if (item.roles) return item.roles.includes(r);
-  if (item.adminOnly) return r === 'admin';
-  // Default: visible to all staff except lehrer
-  return r !== 'lehrer';
+  
+  // Lehrer generally sees nothing else but the portal and media_catalog
+  if (r === 'lehrer' && item.id !== 'media_catalog') {
+    return false;
+  }
+
+  // Admin sees everything (except strictly lehrer stuff handled above)
+  if (r === 'admin') return true;
+
+  // No specific permission required? Check roles fallback if provided, otherwise true
+  if (!item.permission) {
+    if (item.roles) return item.roles.includes(r);
+    return true; // e.g. Kiosk, Catalog are public for staff
+  }
+
+  // Feature Flag / Permission check
+  const perms = currentUser.permissions || [];
+  if (perms.includes('*')) return true;
+  return perms.includes(item.permission);
 }
 
 export const menuGroups = [
   {
     name: "Kiosk",
-    items: [{ id: "kiosk", label: "Ausleihe (Kiosk)", icon: "kiosk" }]
-  },
-  {
-    name: "Verwaltung",
     items: [
-      { id: "students_dir", label: "Schülerdatei", icon: "users" },
-      { id: "media_catalog", label: "Medienkatalog", icon: "catalog" },
-      { id: "inventory", label: "Inventur", icon: "clipboard" },
-      { id: "orders", label: "Bestellungen", icon: "shopping-bag" },
-      { id: "graduates", label: "Abgänger", icon: "academic-cap" },
-      { id: "stats", label: "Statistiken", icon: "chart-bar" },
-      { id: "mahnwesen", label: "Mahnwesen", icon: "bell", roles: ["admin", "mitarbeiter"] },
-      { id: "audit", label: "Logbuch", icon: "clock", adminOnly: true },
-      { id: "permissions", label: "Berechtigungen", icon: "shield", adminOnly: true },
-      { id: "settings", label: "Einstellungen", icon: "cog", adminOnly: true }
+      { id: "kiosk", label: "Ausleihe", icon: "kiosk" }
     ]
   },
   {
-    name: "Druck",
+    name: "Bibliothek",
     items: [
-      { id: "student_ids", label: "Schülerausweise", icon: "identification" },
-      { id: "labels", label: "Buch-Etiketten", icon: "printer" }
+      { id: "media_catalog", label: "Medienkatalog", icon: "catalog", permission: "view_books" },
+      { id: "orders", label: "Bestellungen", icon: "shopping-bag", permission: "view_orders" },
+      { id: "inventory", label: "Inventur", icon: "clipboard", permission: "inventory_scan" }
+    ]
+  },
+  {
+    name: "Personen",
+    items: [
+      { id: "students_dir", label: "Schülerdatei", icon: "users", permission: "view_students" },
+      { id: "graduates", label: "Abgänger", icon: "academic-cap", permission: "view_graduates" },
+      { id: "mahnwesen", label: "Mahnwesen", icon: "bell", permission: "manage_users" }
+    ]
+  },
+  {
+    name: "Werkzeuge & System",
+    items: [
+      { id: "stats", label: "Statistiken", icon: "chart-bar", permission: "view_stats" },
+      { id: "student_ids", label: "Schülerausweise", icon: "identification", permission: "upload_photos" },
+      { id: "labels", label: "Buch-Etiketten", icon: "printer", permission: "edit_books" },
+      { id: "audit", label: "Logbuch", icon: "clock", permission: "audit_logs" },
+      { id: "permissions", label: "Berechtigungen", icon: "shield", permission: "manage_users" },
+      { id: "settings", label: "Einstellungen", icon: "cog", permission: "manage_users" }
     ]
   },
   {
