@@ -25,7 +25,7 @@
 //	  beschreibung, medientyp, standort, regal, notizen, anzahl, erstellt_am
 //
 // Each row with anzahl > 1 generates that many rows in buecher_exemplare,
-// each with a unique sequential B-XXXXXX barcode.
+// each with a unique sequential B-000000 barcode.
 //
 // If your source schema differs, adjust the mysqlMedium struct and the SELECT
 // query in readMySQLTitles() accordingly.
@@ -189,7 +189,7 @@ func validateISBN(raw string) (string, bool) {
 
 var reBarcodeNum = regexp.MustCompile(`^B-(\d+)$`)
 
-// highestBarcodeSeq reads the current highest B-XXXXXX sequence number from PostgreSQL.
+// highestBarcodeSeq reads the current highest B-000000 sequence number from PostgreSQL.
 func highestBarcodeSeq(ctx context.Context, pool *pgxpool.Pool) (int, error) {
 	var raw sql.NullString
 	err := pool.QueryRow(ctx,
@@ -215,7 +215,7 @@ func nextBarcodes(seq, count int) []string {
 	return codes
 }
 
-// validateBarcode ensures a barcode matches the expected B-XXXXX pattern.
+// validateBarcode ensures a barcode matches the expected B-00000 pattern.
 func validateBarcode(bc string) bool {
 	return reBarcodeNum.MatchString(bc)
 }
