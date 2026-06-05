@@ -72,15 +72,15 @@ func GetNextBarcodeSequence(ctx context.Context, tx pgx.Tx, tableName, prefix st
 	qLast := fmt.Sprintf(`
 		SELECT barcode_id
 		FROM %s
-		WHERE barcode_id LIKE '%s-%%'
+		WHERE barcode_id LIKE $1
 		ORDER BY barcode_id DESC
-		LIMIT 1`, tableName, prefix)
+		LIMIT 1`, pgx.Identifier{tableName}.Sanitize())
 
 	if forUpdate {
 		qLast += " FOR UPDATE"
 	}
 
-	err := tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
+	err := tx.QueryRow(ctx, qLast, prefix+"-%").Scan(&lastBarcode)
 
 	startNum := 10001
 	if err == nil {
