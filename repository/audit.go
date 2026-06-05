@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -90,10 +91,14 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 
 	// Snapshot: capture title metadata before deletion for the audit trail
 	var titel, autor, isbn string
-	_ = tx.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		`SELECT coalesce(titel,''), coalesce(autor,''), coalesce(isbn,'') FROM buecher_titel WHERE id = $1`,
 		titleID,
 	).Scan(&titel, &autor, &isbn)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("failed to snapshot title for audit: %w", err)
+	}
+
 
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID); err != nil {
 		return err
@@ -120,13 +125,17 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	// Snapshot: capture copy details before deletion for the audit trail
 	var barcode, zustandNotiz, titel string
 	var titelID string
-	_ = tx.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		`SELECT e.barcode_id, coalesce(e.zustand_notiz,''), e.titel_id, t.titel
 		 FROM buecher_exemplare e
 		 JOIN buecher_titel t ON e.titel_id = t.id
 		 WHERE e.id = $1`,
 		copyID,
 	).Scan(&barcode, &zustandNotiz, &titelID, &titel)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("failed to snapshot copy for audit: %w", err)
+	}
+
 
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE id = $1", copyID); err != nil {
 		return err
@@ -153,11 +162,15 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 
 	// Snapshot before deletion
 	var vorname, nachname, email, rolle string
-	_ = tx.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		`SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(email,''), coalesce(rolle::text,'')
 		 FROM benutzer WHERE id = $1`,
 		userID,
 	).Scan(&vorname, &nachname, &email, &rolle)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("failed to snapshot user for audit: %w", err)
+	}
+
 
 	if _, err = tx.Exec(ctx, "DELETE FROM benutzer WHERE id = $1", userID); err != nil {
 		return err
@@ -188,12 +201,16 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	// Snapshot before deletion (DSGVO-konforme Protokollierung)
 	var vorname, nachname, klasse, barcodeID string
 	var abgaengerJahr int
-	_ = tx.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		`SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(klasse,''),
 		        coalesce(barcode_id,''), coalesce(abgaenger_jahr, 0)
 		 FROM schueler WHERE id = $1`,
 		studentID,
 	).Scan(&vorname, &nachname, &klasse, &barcodeID, &abgaengerJahr)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("failed to snapshot student for audit: %w", err)
+	}
+
 
 	// Anonymize closed loans: set schueler_id = NULL for all returned loans
 	if _, err = tx.Exec(ctx,

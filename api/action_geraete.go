@@ -153,14 +153,24 @@ func (s *Server) handleGeraetAction(
 		if student == nil || *activeLoan.SchuelerID != student.ID {
 			isFremd = true
 			var vorbesitzer repository.Student
-			_ = s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname, klasse FROM schueler WHERE id = $1", *activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
+			err = s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname, klasse FROM schueler WHERE id = $1", *activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				return err
+			} else if errors.Is(err, pgx.ErrNoRows) {
+				// Continue with empty struct
+			}
 			resp.Vorbesitzer = &vorbesitzer
 		}
 	} else if activeLoan.AusleiherBenutzerID != nil {
 		if teacher == nil || *activeLoan.AusleiherBenutzerID != teacher.ID {
 			isFremd = true
 			var vorbesitzerUser repository.User
-			_ = s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname FROM benutzer WHERE id = $1", *activeLoan.AusleiherBenutzerID).Scan(&vorbesitzerUser.Vorname, &vorbesitzerUser.Nachname)
+			err = s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname FROM benutzer WHERE id = $1", *activeLoan.AusleiherBenutzerID).Scan(&vorbesitzerUser.Vorname, &vorbesitzerUser.Nachname)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				return err
+			} else if errors.Is(err, pgx.ErrNoRows) {
+				// Continue with empty struct
+			}
 			resp.VorbesitzerUser = &vorbesitzerUser
 		}
 	}

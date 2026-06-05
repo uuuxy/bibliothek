@@ -159,13 +159,18 @@ func (s *Server) handleTeacherCheckoutFlow(
 		prevStudent, _ = studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
 	} else if activeLoan.AusleiherBenutzerID != nil {
 		prevTeacher = &repository.User{}
-		_ = tx.QueryRow(ctx, `
+		err = tx.QueryRow(ctx, `
 			SELECT b.id, b.barcode_id, b.vorname, b.nachname, COALESCE(br.rolle, 'HELFER') 
 			FROM benutzer b 
 			LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id 
 			WHERE b.id = $1 
 			LIMIT 1
 		`, *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.BarcodeID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		} else if errors.Is(err, pgx.ErrNoRows) {
+			prevTeacher = nil
+		}
 	}
 
 	if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, true); err != nil {
@@ -342,13 +347,18 @@ func (s *Server) handleStudentCheckoutFlow(
 		}
 	} else if activeLoan.AusleiherBenutzerID != nil {
 		prevTeacher = &repository.User{}
-		_ = tx.QueryRow(ctx, `
+		err = tx.QueryRow(ctx, `
 			SELECT b.id, b.barcode_id, b.vorname, b.nachname, COALESCE(br.rolle, 'HELFER') 
 			FROM benutzer b 
 			LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id 
 			WHERE b.id = $1 
 			LIMIT 1
 		`, *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.BarcodeID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		} else if errors.Is(err, pgx.ErrNoRows) {
+			prevTeacher = nil
+		}
 	}
 
 	if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, true); err != nil {
