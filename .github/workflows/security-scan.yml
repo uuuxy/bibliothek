@@ -66,12 +66,12 @@ jobs:
           -out gosec-results.sarif
           ./... || true
 
-      - name: Upload gosec SARIF results
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: gosec-results.sarif
-          category: gosec
+      - name: Fail CI if gosec found vulnerabilities
+        run: |
+          if grep -q '"level": "error"' gosec-results.sarif || grep -q '"level": "warning"' gosec-results.sarif; then
+            echo "gosec found vulnerabilities. Please check gosec-results.sarif."
+            exit 1
+          fi
 
   # ── npm: audit (Node.js/Svelte frontend dependencies) ────────────────────
   npm-audit:
@@ -124,9 +124,3 @@ jobs:
           exit-code: "1"        # Fail CI if HIGH/CRITICAL found in final image
           ignore-unfixed: true  # Skip CVEs without fix available
 
-      - name: Upload Trivy SARIF results
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
-          category: trivy
