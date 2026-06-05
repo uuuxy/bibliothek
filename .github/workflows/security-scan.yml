@@ -16,6 +16,7 @@ env:
 permissions:
   contents: read
   security-events: write  # Required for uploading SARIF reports
+  actions: read
 
 jobs:
   # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
