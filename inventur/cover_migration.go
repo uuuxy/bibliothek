@@ -47,6 +47,9 @@ func RunCoverMigration(db db.PgxPoolIface) {
 	erfolgreich := 0
 	fehlerhaft := 0
 
+	var updatedIDs []string
+	var updatedURLs []string
+
 	for i, b := range books {
 		log.Printf("[%d/%d] Bearbeite Buch ID %s '%s' (ISBN: %s)", i+1, len(books), b.ID, b.Title, b.ISBN)
 
@@ -86,18 +89,28 @@ func RunCoverMigration(db db.PgxPoolIface) {
 			continue
 		}
 
-		// Update in der Datenbank
-		_, err := db.Exec(ctx, "UPDATE buecher_titel SET cover_url = $1 WHERE id = $2", lokalerPfad, b.ID)
-		if err != nil {
-			log.Printf("  -> Fehler beim Speichern des neuen Pfades in der DB: %v", err)
-			fehlerhaft++
-		} else {
-			log.Printf("  -> Erfolgreich gespeichert als: %s", lokalerPfad)
-			erfolgreich++
-		}
+		updatedIDs = append(updatedIDs, b.ID)
+		updatedURLs = append(updatedURLs, lokalerPfad)
+		log.Printf("  -> Erfolgreich heruntergeladen als: %s", lokalerPfad)
 
 		// Wir pausieren ganz kurz, um die Server von OpenLibrary/DNB nicht zu überlasten (Rate Limiting)
 		time.Sleep(300 * time.Millisecond)
+	}
+
+	if len(updatedIDs) > 0 {
+		query := `
+			UPDATE buecher_titel
+			SET cover_url = data.cover_url
+			FROM (SELECT UNNEST($1::text[])::uuid AS id, UNNEST($2::text[]) AS cover_url) AS data
+			WHERE buecher_titel.id = data.id
+		`
+		_, err := db.Exec(ctx, query, updatedIDs, updatedURLs)
+		if err != nil {
+			log.Printf("Fehler beim Batch-Speichern der neuen Pfade in der DB: %v", err)
+			fehlerhaft += len(updatedIDs)
+		} else {
+			erfolgreich += len(updatedIDs)
+		}
 	}
 
 	log.Println("=== Cover-Migration abgeschlossen ===")

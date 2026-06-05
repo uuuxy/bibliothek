@@ -211,7 +211,7 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				}
 				// Nur die LUSD-ID updaten, wenn die CSV auch eine geliefert hat (oder explizit NULL erlauben? Nein, Fallback greift ja, also LUSD-ID von CSV übernehmen)
 				qUpdate += `, lusd_id = COALESCE($6, lusd_id) WHERE id = $4`
-				
+
 				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID, geburtsdatum, insertLusdID)
 				if err != nil {
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for row %d: %w", lineNum, err))
