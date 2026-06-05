@@ -28,7 +28,17 @@
 	let klasseSearchQuery = $state("");
 	let selectedKlasse = $state("");
 	let isKlasseDropdownOpen = $state(false);
-	let selectedBook = $state(/** @type {any} */ (null));
+	let selectedBook = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
+
+	/** Navigate to the full-page book detail view */
+	/** @param {any} book */
+	function navigateToDetail(book) {
+		appState.activeBookId = book.id;
+		appState.selectedBook = book;
+		window.history.pushState(null, "", `/katalog/buch/${book.id}`);
+		// Signal App.svelte to switch to book_detail tab via popstate trick
+		window.dispatchEvent(new PopStateEvent('popstate'));
+	}
 
 	/** @type {any[]} */
 		let books = $state.raw([]);
@@ -187,9 +197,10 @@
 					aria-labelledby="tab-suche"
 				>
 					<BuchRasterStartseite
-						filteredBooks={paginatedBooks}
-						onBookClick={(book) => (selectedBook = book)}
-					/>
+					filteredBooks={paginatedBooks}
+					onBookClick={(book) => navigateToDetail(book)}
+					onEditClick={(book) => (selectedBook = book)}
+				/>
 					{#if displayLimit < filteredBooks.length}
 						<div class="mt-8 flex justify-center">
 							<button

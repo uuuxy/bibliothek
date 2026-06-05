@@ -294,3 +294,57 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(borrowers)
 	}
 }
+
+// TitleHistory represents a historical loan for a copy of a title.
+type TitleHistory struct {
+	Vorname         string     `json:"schueler_name"`
+	Nachname        string     `json:"schueler_nachname"`
+	Klasse          string     `json:"klasse"`
+	ExemplarBarcode string     `json:"exemplar_barcode"`
+	AusgeliehenAm   time.Time  `json:"ausgeliehen_am"`
+	RueckgabeAm     *time.Time `json:"rueckgabe_am"` // Can be null if still borrowed
+}
+
+// GetTitleHistoryHandler lists all historical loans for a book title.
+// @Router       /buecher/titel/{id}/historie [get]
+func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `
+			SELECT s.vorname, s.nachname, s.klasse, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am
+			FROM ausleihen a
+			JOIN buecher_exemplare e ON a.exemplar_id = e.id
+			JOIN schueler s ON a.schueler_id = s.id
+			WHERE e.titel_id = $1
+			ORDER BY a.ausgeliehen_am DESC
+			LIMIT 200
+		`
+		rows, err := s.DB.Pool.Query(ctx, query, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		history := []TitleHistory{}
+		for rows.Next() {
+			var h TitleHistory
+			if err := rows.Scan(&h.Vorname, &h.Nachname, &h.Klasse, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			history = append(history, h)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(history)
+	}
+}

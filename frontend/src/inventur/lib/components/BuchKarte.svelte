@@ -16,10 +16,11 @@
      *     lastCounted: string,
      *     medientyp?: string
      *   },
-     *   onclick?: () => void
+     *   onclick?: () => void,
+     *   onEditClick?: () => void
      * }}
      */
-    let { book, onclick } = $props();
+    let { book, onclick, onEditClick } = $props();
 
     /** @type {string[]} */
     let coverCandidates = $state([]);
@@ -184,9 +185,22 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <article
-    class="bg-white rounded-2xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm cursor-pointer"
+    class="bg-white rounded-2xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm cursor-pointer relative"
     onclick={onclick}
 >
+    <!-- Quick-Edit Stift-Icon (sichtbar beim Hover) -->
+    {#if onEditClick}
+        <button
+            class="absolute top-2 right-2 z-10 p-1.5 rounded-lg bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm cursor-pointer"
+            onclick={(e) => { e.stopPropagation(); onEditClick(); }}
+            title="Schnell bearbeiten"
+            aria-label="Buch schnell bearbeiten"
+        >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+        </button>
+    {/if}
     {#if coverSrc && !coverFailed}
         <div
             class="w-full h-56 rounded-t-2xl overflow-hidden bg-slate-50 flex items-center justify-center border-b border-slate-100 relative"

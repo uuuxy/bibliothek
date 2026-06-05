@@ -5,6 +5,7 @@
 
   import Omnibox from "./lib/Omnibox.svelte";
   import BookDetails from "./lib/BookDetails.svelte";
+  import BookAkte from "./lib/BookAkte.svelte";
   import Graduates from "./lib/Graduates.svelte";
   import StudentIdDesigner from "./lib/StudentIdDesigner.svelte";
   import LabelPrinter from "./lib/LabelPrinter.svelte";
@@ -111,15 +112,24 @@
 
         // Initiales Mapping des Pfads beim ersten Login/Seitenaufruf
         if (!isInitialRouteMatched && path !== "/") {
-          const matchedTab = Object.keys(tabToPath).find(key => tabToPath[key] === path);
-          if (matchedTab) activeTab = matchedTab;
+          if (path.startsWith("/katalog/buch/")) {
+            activeTab = "book_detail";
+            appState.activeBookId = path.replace("/katalog/buch/", "");
+          } else {
+            const matchedTab = Object.keys(tabToPath).find(key => tabToPath[key] === path);
+            if (matchedTab) activeTab = matchedTab;
+          }
           isInitialRouteMatched = true;
         } else if (!isInitialRouteMatched) {
           isInitialRouteMatched = true;
         }
 
         // Synchronisiert die URL-Anzeige im Browser bei Klick-Navigationen
-        const targetPath = tabToPath[activeTab];
+        let targetPath = tabToPath[activeTab];
+        if (activeTab === "book_detail" && appState.activeBookId) {
+          targetPath = `/katalog/buch/${appState.activeBookId}`;
+        }
+        
         if (targetPath && path !== targetPath && isInitialRouteMatched) {
           window.history.pushState(null, "", targetPath);
         }
@@ -148,8 +158,31 @@
         activeTab = "kiosk";
       }
     }
+    /** Handle popstate for SPA routing (back/forward + programmatic pushState) */
+    function handlePopState() {
+      const path = window.location.pathname;
+      if (path.startsWith("/katalog/buch/")) {
+        activeTab = "book_detail";
+        appState.activeBookId = path.replace("/katalog/buch/", "");
+      } else {
+        const tabToPath = {
+          settings: "/einstellungen", inventory: "/inventur",
+          students_dir: "/schuelerdatei", orders: "/bestellungen",
+          media_catalog: "/katalog", graduates: "/abgaenger",
+          stats: "/statistiken", mahnwesen: "/mahnwesen",
+          audit: "/logbuch", permissions: "/berechtigungen",
+          student_ids: "/ausweise", labels: "/etiketten", kiosk: "/kiosk"
+        };
+        const matchedTab = Object.keys(tabToPath).find(key => /** @type {any} */ (tabToPath)[key] === path);
+        if (matchedTab) activeTab = matchedTab;
+      }
+    }
     window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+      window.removeEventListener("popstate", handlePopState);
+    };
   });
 
   $effect(() => {
@@ -433,6 +466,8 @@
             <div class="w-full animate-fade-in"><LehrerPortal user={currentUser} /></div>
           {:else if activeTab === "settings"}
             <div class="w-full animate-fade-in"><SystemSettings /></div>
+          {:else if activeTab === "book_detail"}
+            <div class="w-full animate-fade-in"><BookAkte bookId={appState.activeBookId} onBack={() => { activeTab = 'media_catalog'; appState.activeBookId = null; }} /></div>
           {/if}
         </main>
       </div>
