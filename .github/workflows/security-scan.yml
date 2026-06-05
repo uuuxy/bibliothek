@@ -19,6 +19,8 @@ jobs:
   go-vuln-scan:
     name: Go – govulncheck
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,7 +32,7 @@ jobs:
           cache: true
 
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        run: GOTOOLCHAIN=go1.26.4 go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run govulncheck
         # govulncheck exits with code 3 if vulnerabilities are found → fail the build
@@ -40,6 +42,8 @@ jobs:
   go-sec-scan:
     name: Go – gosec static analysis
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,7 +67,7 @@ jobs:
           ./... || true
 
       - name: Upload gosec SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: gosec-results.sarif
@@ -73,6 +77,8 @@ jobs:
   npm-audit:
     name: npm – audit (frontend)
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     defaults:
       run:
         working-directory: frontend
@@ -99,6 +105,8 @@ jobs:
   docker-scan:
     name: Docker – Trivy image scan
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -117,7 +125,7 @@ jobs:
           ignore-unfixed: true  # Skip CVEs without fix available
 
       - name: Upload Trivy SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
