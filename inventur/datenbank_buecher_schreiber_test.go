@@ -27,9 +27,6 @@ func TestUpsertBooksBatch(t *testing.T) {
 	defer pool.Close()
 	ctx := context.Background()
 
-	// Clean up database after all tests
-	defer pool.Exec(ctx, "TRUNCATE buecher_titel CASCADE")
-
 	t.Run("EmptyBatch", func(t *testing.T) {
 		affected, err := repo.UpsertBooksBatch(ctx, []Book{})
 		if err != nil {
@@ -41,16 +38,12 @@ func TestUpsertBooksBatch(t *testing.T) {
 	})
 
 	t.Run("InsertNewBooks", func(t *testing.T) {
-		// Clean up database before
-		_, err := pool.Exec(ctx, "TRUNCATE buecher_titel CASCADE")
-		if err != nil {
-			t.Fatalf("failed to truncate table: %v", err)
-		}
-
 		books := []Book{
 			{ISBN: "978-1-1111-1111-1", Title: "Book 1", Author: "Author 1", Subject: "Math", GradeLevel: 5, Track: "A", Stock: 2, Medientyp: "Buch"},
 			{ISBN: "978-2-2222-2222-2", Title: "Book 2", Author: "Author 2", Subject: "Biology", GradeLevel: 8, Track: "B", Stock: 5, Medientyp: "Buch"},
 		}
+
+		defer pool.Exec(ctx, "DELETE FROM buecher_titel WHERE isbn IN ('978-1-1111-1111-1', '978-2-2222-2222-2')")
 
 		affected, err := repo.UpsertBooksBatch(ctx, books)
 		if err != nil {
@@ -74,17 +67,13 @@ func TestUpsertBooksBatch(t *testing.T) {
 	})
 
 	t.Run("UpdateExistingBooks", func(t *testing.T) {
-		// Clean up database before
-		_, err := pool.Exec(ctx, "TRUNCATE buecher_titel CASCADE")
-		if err != nil {
-			t.Fatalf("failed to truncate table: %v", err)
-		}
+		defer pool.Exec(ctx, "DELETE FROM buecher_titel WHERE isbn IN ('978-1-1111-1111-1', '978-3-3333-3333-3')")
 
 		// Setup initial state: Insert Book 1 with stock 2
 		initialBooks := []Book{
 			{ISBN: "978-1-1111-1111-1", Title: "Book 1", Author: "Author 1", Subject: "Math", GradeLevel: 5, Track: "A", Stock: 2, Medientyp: "Buch"},
 		}
-		_, err = repo.UpsertBooksBatch(ctx, initialBooks)
+		_, err := repo.UpsertBooksBatch(ctx, initialBooks)
 		if err != nil {
 			t.Fatalf("Initial UpsertBooksBatch failed: %v", err)
 		}
@@ -100,8 +89,6 @@ func TestUpsertBooksBatch(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpsertBooksBatch failed: %v", err)
 		}
-
-		// Affected rows could be different on upsert in Postgres (insert + update = 3 rows affected sometimes, but lets just check it didn't fail)
 
 		// Verify Book 1 was updated
 		var title string
