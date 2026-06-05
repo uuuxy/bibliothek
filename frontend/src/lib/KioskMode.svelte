@@ -409,7 +409,7 @@
       <p class="text-slate-500 mb-8">Scanne zuerst den Schülerausweis, um das Profil aufzurufen.</p>
       <form onsubmit={(e) => { e.preventDefault(); handleStudentSubmit(); }}>
         <input type="text" id="kiosk-student-input" bind:value={studentInputVal} disabled={isScanningStudent}
-               placeholder="S-XXXXXX scannen..." autocomplete="off"
+               placeholder="S-XXXXX scannen..." autocomplete="off"
                class="w-full bg-slate-50 border-2 border-blue-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all text-center placeholder:text-slate-400" />
       </form>
     </div>
