@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+var sendMail = smtp.SendMail
+
 // EmailMessage kapselt die Daten einer zu versendenden E-Mail.
 type EmailMessage struct {
 	From       string
@@ -99,7 +101,7 @@ func SendBackupEmail(config *BackupEmailConfig, backupPath string) error {
 	auth := smtp.PlainAuth("", config.User, config.Password, config.Host)
 	addr := config.Host + ":" + config.Port
 
-	if err := smtp.SendMail(addr, auth, config.User, []string{config.To}, msg); err != nil {
+	if err := sendMail(addr, auth, config.User, []string{config.To}, msg); err != nil {
 		return fmt.Errorf("E-Mail-Versand fehlgeschlagen: %w", err)
 	}
 
