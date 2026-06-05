@@ -35,6 +35,8 @@ jobs:
       - name: Run govulncheck
         # govulncheck exits with code 3 if vulnerabilities are found → fail the build
         run: govulncheck ./...
+        env:
+          GOWORK: off
 
   # ── Go: gosec (static security analysis) ─────────────────────────────────
   go-sec-scan:
@@ -52,6 +54,8 @@ jobs:
 
       - name: Install gosec
         run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+        env:
+          GOWORK: off
 
       - name: Run gosec
         # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
@@ -61,6 +65,8 @@ jobs:
           -fmt sarif
           -out gosec-results.sarif
           ./... || true
+        env:
+          GOWORK: off
 
       - name: Upload gosec SARIF results
         uses: github/codeql-action/upload-sarif@v4
