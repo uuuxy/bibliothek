@@ -30,11 +30,11 @@ jobs:
           cache: true
 
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        # run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run govulncheck
         # govulncheck exits with code 3 if vulnerabilities are found → fail the build
-        run: govulncheck ./...
+        run: GOWORK=off GOTOOLCHAIN=go1.26.4 go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   # ── Go: gosec (static security analysis) ─────────────────────────────────
   go-sec-scan:
@@ -56,7 +56,7 @@ jobs:
       - name: Run gosec
         # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
         run: >
-          gosec
+          GOWORK=off gosec
           -exclude=G304,G401
           -fmt sarif
           -out gosec-results.sarif
