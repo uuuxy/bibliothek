@@ -149,6 +149,9 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 	res := &LusdPreviewResult{TotalCsvRecords: len(records)}
 	csvLusdIDs := make(map[string]bool)
 
+	var updateIDs []string
+	var updateClasses []string
+
 	// Process CSV records (Updates and Inserts)
 	for _, rec := range records {
 		csvLusdIDs[rec.LusdID] = true
@@ -156,17 +159,15 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 			if dbRec.Klasse != rec.Klasse {
 				res.ClassChanges++
 				if apply {
-					_, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID)
-					if err != nil {
-						return nil, err
-					}
+					updateIDs = append(updateIDs, dbRec.ID)
+					updateClasses = append(updateClasses, rec.Klasse)
 				}
 			}
 		} else {
 			res.NewStudents++
 			if apply {
 				barcode := fmt.Sprintf("S-%05d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000) // Temporary unique short barcode
-				year := time.Now().Year() + 5                             // Default abgang
+				year := time.Now().Year() + 5                                                                 // Default abgang
 				geb := interface{}(rec.Geburtsdatum)
 				if rec.Geburtsdatum == "" {
 					geb = nil
@@ -178,6 +179,19 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 					return nil, err
 				}
 			}
+		}
+	}
+
+	if apply && len(updateIDs) > 0 {
+		query := `
+			UPDATE schueler
+			SET klasse = data.klasse, aktualisiert_am = NOW()
+			FROM (SELECT unnest($1::uuid[]) AS id, unnest($2::varchar[]) AS klasse) AS data
+			WHERE schueler.id = data.id
+		`
+		_, err := tx.Exec(ctx, query, updateIDs, updateClasses)
+		if err != nil {
+			return nil, err
 		}
 	}
 
