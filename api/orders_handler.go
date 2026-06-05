@@ -82,7 +82,7 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 			SELECT barcode_id 
 			FROM buecher_exemplare 
 			WHERE barcode_id LIKE 'B-%' 
-			ORDER BY barcode_id DESC 
+			ORDER BY LENGTH(barcode_id) DESC, barcode_id DESC
 			LIMIT 1
 		`
 		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)

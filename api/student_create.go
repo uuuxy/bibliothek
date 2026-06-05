@@ -149,7 +149,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 				SELECT barcode_id 
 				FROM schueler 
 				WHERE barcode_id LIKE 'S-%' 
-				ORDER BY barcode_id DESC 
+				ORDER BY LENGTH(barcode_id) DESC, barcode_id DESC
 				LIMIT 1
 				FOR UPDATE
 			`

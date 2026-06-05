@@ -193,10 +193,16 @@ var reBarcodeNum = regexp.MustCompile(`^B-(\d+)$`)
 func highestBarcodeSeq(ctx context.Context, pool *pgxpool.Pool) (int, error) {
 	var raw sql.NullString
 	err := pool.QueryRow(ctx,
-		`SELECT MAX(barcode_id) FROM buecher_exemplare WHERE barcode_id LIKE 'B-%'`,
+		`SELECT barcode_id FROM buecher_exemplare WHERE barcode_id LIKE 'B-%' ORDER BY LENGTH(barcode_id) DESC, barcode_id DESC LIMIT 1`,
 	).Scan(&raw)
-	if err != nil || !raw.Valid {
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return 0, nil
+		}
 		return 0, err
+	}
+	if !raw.Valid {
+		return 0, nil
 	}
 	m := reBarcodeNum.FindStringSubmatch(raw.String)
 	if len(m) < 2 {
