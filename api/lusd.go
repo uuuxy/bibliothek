@@ -166,7 +166,7 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 			res.NewStudents++
 			if apply {
 				barcode := fmt.Sprintf("S-%05d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000) // Temporary unique short barcode
-				year := time.Now().Year() + 5                             // Default abgang
+				year := time.Now().Year() + 5                                                                 // Default abgang
 				geb := interface{}(rec.Geburtsdatum)
 				if rec.Geburtsdatum == "" {
 					geb = nil

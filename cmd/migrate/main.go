@@ -49,6 +49,7 @@ import (
 	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
+	"bibliothek/utils"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -189,21 +190,18 @@ func validateISBN(raw string) (string, bool) {
 
 var reBarcodeNum = regexp.MustCompile(`^B-(\d+)$`)
 
-// highestBarcodeSeq reads the current highest B-XXXXXX sequence number from PostgreSQL.
+// highestBarcodeSeq uses GetNextBarcodeSequence internally
 func highestBarcodeSeq(ctx context.Context, pool *pgxpool.Pool) (int, error) {
-	var raw sql.NullString
-	err := pool.QueryRow(ctx,
-		`SELECT MAX(barcode_id) FROM buecher_exemplare WHERE barcode_id LIKE 'B-%'`,
-	).Scan(&raw)
-	if err != nil || !raw.Valid {
-		return 0, err
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return 10000, err
 	}
-	m := reBarcodeNum.FindStringSubmatch(raw.String)
-	if len(m) < 2 {
-		return 0, nil
+	defer tx.Rollback(ctx)
+	startNum, err := utils.GetNextBarcodeSequence(ctx, tx, "buecher_exemplare", "B", false)
+	if err != nil {
+		return 10000, err
 	}
-	n, _ := strconv.Atoi(m[1])
-	return n, nil
+	return startNum - 1, nil
 }
 
 // nextBarcodes returns `count` sequential barcodes starting after `seq`.
