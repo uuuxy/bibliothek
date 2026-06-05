@@ -59,6 +59,7 @@ jobs:
 
       - name: Run gosec
         # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
+        # We use || true because we don't want the raw gosec command to fail the CI step yet.
         run: >
           gosec
           -exclude=G304,G401
@@ -68,10 +69,22 @@ jobs:
 
       - name: Fail CI if gosec found vulnerabilities
         run: |
-          if grep -q '"level": "error"' gosec-results.sarif || grep -q '"level": "warning"' gosec-results.sarif; then
-            echo "gosec found vulnerabilities. Please check gosec-results.sarif."
-            exit 1
-          fi
+          python3 -c '
+          import json, sys
+          try:
+              with open("gosec-results.sarif") as f:
+                  data = json.load(f)
+              for run in data.get("runs", []):
+                  for result in run.get("results", []):
+                      if result.get("level") == "error":
+                          print("gosec found error-level vulnerabilities!")
+                          sys.exit(1)
+              print("No error-level vulnerabilities found by gosec.")
+              sys.exit(0)
+          except Exception as e:
+              print(f"Error parsing SARIF: {e}")
+              sys.exit(1)
+          ' || exit 1
 
   # ── npm: audit (Node.js/Svelte frontend dependencies) ────────────────────
   npm-audit:
