@@ -1,6 +1,6 @@
 module bibliothek
 
-go 1.26.1
+go 1.26.4
 
 require (
 	github.com/boombuler/barcode v1.1.0
