@@ -149,7 +149,7 @@ log_step "Schritt 4: Warte auf Gesundheitsprüfung"
 
 log_info "Warte bis der Web-Container healthy ist (max. 60 Sekunden)..."
 WAIT=0
-until docker inspect --format='{{.State.Health.Status}}' bibliothek-web 2>/dev/null | grep -q "healthy"; do
+until docker inspect --format='{{.State.Health.Status}}' bibliothek-backend 2>/dev/null | grep -q "healthy"; do
     sleep 3
     WAIT=$((WAIT + 3))
     if [ ${WAIT} -ge 60 ]; then
