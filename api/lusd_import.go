@@ -132,7 +132,21 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 		var updatedCount int
 		lineNum := 1
 
-		// 5. Parse rows and execute Upserts
+		type studentRow struct {
+			LusdID   string
+			Vorname  string
+			Nachname string
+			Klasse   string
+			GebDatum *time.Time
+			LineNum  int
+		}
+		var parsedRows []studentRow
+
+		// 5a. Parse rows into memory
+		// We use a map to deduplicate rows by lusd_id, keeping the latest one,
+		// to prevent "ON CONFLICT DO UPDATE command cannot affect row a second time" errors.
+		seenIndex := make(map[string]int)
+
 		for {
 			row, err := reader.Read()
 			if err == io.EOF {
@@ -162,7 +176,6 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 						}
 					}
 					// Nicht parsbare Werte werden als NULL behandelt und nicht protokolliert
-					// (enthält ggf. personenbezogene Daten – DSGVO-Datensparsamkeit).
 				}
 			}
 
@@ -171,79 +184,162 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 				return
 			}
 
+			sRow := studentRow{
+				LusdID:   lusdID,
+				Vorname:  vorname,
+				Nachname: nachname,
+				Klasse:   klasse,
+				GebDatum: geburtsdatum,
+				LineNum:  lineNum,
+			}
+
 			if lusdID != "" {
+				if idx, exists := seenIndex[lusdID]; exists {
+					// Replace the existing one
+					parsedRows[idx] = sRow
+					continue
+				}
+				seenIndex[lusdID] = len(parsedRows)
 				lusdIDs = append(lusdIDs, lusdID)
 			}
+			parsedRows = append(parsedRows, sRow)
+		}
 
-			var dbID string
-			var found bool
+		if len(parsedRows) > 0 {
+			// Fast resolution of existing students in memory
+			type existingStudent struct {
+				ID            string
+				LusdID        *string
+				VornameLower  string
+				NachnameLower string
+				GebDatum      string
+			}
+			
+			dbStudents := make([]existingStudent, 0)
+			rows, err := tx.Query(ctx, "SELECT id, lusd_id, lower(vorname), lower(nachname), coalesce(geburtsdatum, '1900-01-01'::DATE) FROM schueler")
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to load existing students: %w", err))
+				return
+			}
+			for rows.Next() {
+				var s existingStudent
+				var geb time.Time
+				if err := rows.Scan(&s.ID, &s.LusdID, &s.VornameLower, &s.NachnameLower, &geb); err == nil {
+					s.GebDatum = geb.Format("2006-01-02")
+					dbStudents = append(dbStudents, s)
+				}
+			}
+			rows.Close()
 
-			if lusdID != "" {
-				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", lusdID).Scan(&dbID)
-				if err == nil {
-					found = true
+			mapLusd := make(map[string]string)
+			mapFallback := make(map[string]string)
+			for _, s := range dbStudents {
+				if s.LusdID != nil && *s.LusdID != "" {
+					mapLusd[*s.LusdID] = s.ID
+				}
+				key := s.VornameLower + "|" + s.NachnameLower + "|" + s.GebDatum
+				mapFallback[key] = s.ID
+			}
+
+			var (
+				updID      []string
+				updVorname []string
+				updNach    []string
+				updKlasse  []string
+				updGeb     []*time.Time
+				updLusd    []*string
+
+				insBarcode []string
+				insVorname []string
+				insNach    []string
+				insKlasse  []string
+				insGeb     []*time.Time
+				insAbJahr  []int
+				insLusd    []*string
+			)
+
+			for _, p := range parsedRows {
+				var dbID string
+				if p.LusdID != "" {
+					dbID = mapLusd[p.LusdID]
+				}
+				if dbID == "" {
+					gebStr := "1900-01-01"
+					if p.GebDatum != nil {
+						gebStr = p.GebDatum.Format("2006-01-02")
+					}
+					key := strings.ToLower(p.Vorname) + "|" + strings.ToLower(p.Nachname) + "|" + gebStr
+					dbID = mapFallback[key]
+				}
+
+				var ptrLusd *string
+				if p.LusdID != "" {
+					lusd := p.LusdID
+					ptrLusd = &lusd
+				}
+
+				if dbID != "" && dbID != "processing" {
+					updID = append(updID, dbID)
+					updVorname = append(updVorname, p.Vorname)
+					updNach = append(updNach, p.Nachname)
+					updKlasse = append(updKlasse, p.Klasse)
+					updGeb = append(updGeb, p.GebDatum)
+					updLusd = append(updLusd, ptrLusd)
+					updatedCount++
+				} else {
+					barcode := fmt.Sprintf("S-%05d", startNum)
+					startNum++
+					insBarcode = append(insBarcode, barcode)
+					insVorname = append(insVorname, p.Vorname)
+					insNach = append(insNach, p.Nachname)
+					insKlasse = append(insKlasse, p.Klasse)
+					insGeb = append(insGeb, p.GebDatum)
+					insAbJahr = append(insAbJahr, calculateAbgaengerJahr(p.Klasse))
+					insLusd = append(insLusd, ptrLusd)
+					newCount++
+					
+					if p.LusdID != "" {
+						mapLusd[p.LusdID] = "processing"
+					}
 				}
 			}
 
-			if !found {
-				// Fallback matching by name and birthdate
-				qMatch := "SELECT id FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND coalesce(geburtsdatum, '1900-01-01'::DATE) = coalesce($3::DATE, '1900-01-01'::DATE) LIMIT 1"
-				err = tx.QueryRow(ctx, qMatch, vorname, nachname, geburtsdatum).Scan(&dbID)
-				if err == nil {
-					found = true
-				}
-			}
-
-			if found {
-				// Student exists -> aktualisiere ausschließlich DSGVO-Whitelist-Felder.
-				// Falls wir den Schüler über Fallback gefunden haben und er in der CSV eine LUSD-ID hat, bekommt er sie hier aktualisiert.
+			// Bulk UPDATE
+			if len(updID) > 0 {
 				qUpdate := `
-					UPDATE schueler
-					SET vorname = $1,
-					    nachname = $2,
-					    klasse = $3,
-					    geburtsdatum = $5,
-					    ist_abgaenger = false,
-					    aktualisiert_am = CURRENT_TIMESTAMP
+					UPDATE schueler s
+					SET vorname = d.vorname,
+						nachname = d.nachname,
+						klasse = d.klasse,
+						geburtsdatum = d.geburtsdatum,
+						ist_abgaenger = false,
+						aktualisiert_am = CURRENT_TIMESTAMP,
+						lusd_id = COALESCE(d.lusd_id, s.lusd_id)
+					FROM (
+						SELECT * FROM UNNEST($1::uuid[], $2::varchar[], $3::varchar[], $4::varchar[], $5::date[], $6::varchar[])
+						AS u(id, vorname, nachname, klasse, geburtsdatum, lusd_id)
+					) d
+					WHERE s.id = d.id
 				`
-				var insertLusdID *string
-				if lusdID != "" {
-					insertLusdID = &lusdID
-				}
-				// Nur die LUSD-ID updaten, wenn die CSV auch eine geliefert hat (oder explizit NULL erlauben? Nein, Fallback greift ja, also LUSD-ID von CSV übernehmen)
-				qUpdate += `, lusd_id = COALESCE($6, lusd_id) WHERE id = $4`
-				
-				_, err = tx.Exec(ctx, qUpdate, vorname, nachname, klasse, dbID, geburtsdatum, insertLusdID)
+				_, err = tx.Exec(ctx, qUpdate, updID, updVorname, updNach, updKlasse, updGeb, updLusd)
 				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("update failed for row %d: %w", lineNum, err))
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("bulk update failed: %w", err))
 					return
 				}
-				updatedCount++
-			} else {
-				// Student does not exist -> insert new student with generated S- barcode.
-				// Nur Whitelist-Felder werden gespeichert (DSGVO Art. 5 Abs. 1 lit. c).
-				barcodeID := fmt.Sprintf("S-%05d", startNum)
-				startNum++
+			}
 
-				var insertLusdID *string
-				if lusdID != "" {
-					insertLusdID = &lusdID
-				}
-
+			// Bulk INSERT
+			if len(insBarcode) > 0 {
 				qInsert := `
-					INSERT INTO schueler
-						(barcode_id, vorname, nachname, klasse, geburtsdatum,
-						 abgaenger_jahr, lusd_id, ist_abgaenger)
-					VALUES ($1, $2, $3, $4, $5, $6, $7, false)
+					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr, lusd_id, ist_abgaenger)
+					SELECT * FROM UNNEST($1::varchar[], $2::varchar[], $3::varchar[], $4::varchar[], $5::date[], $6::int[], $7::varchar[], $8::boolean[])
 				`
-				_, err = tx.Exec(ctx, qInsert,
-					barcodeID, vorname, nachname, klasse, geburtsdatum,
-					calculateAbgaengerJahr(klasse), insertLusdID)
+				arrIstAbg := make([]bool, len(insBarcode))
+				_, err = tx.Exec(ctx, qInsert, insBarcode, insVorname, insNach, insKlasse, insGeb, insAbJahr, insLusd, arrIstAbg)
 				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("insert failed on row %d: %w", lineNum, err))
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("bulk insert failed: %w", err))
 					return
 				}
-				newCount++
 			}
 		}
 
