@@ -10,8 +10,8 @@
      *     gradeLevel: number,
      *     track: string,
      *     stock: number,
-     *     verfuegbar?: number,
-     *     gesamt?: number,
+     *     verfuegbar: number,
+     *     gesamt: number,
      *     coverUrl: string,
      *     lastCounted: string,
      *     medientyp?: string
@@ -325,9 +325,9 @@
                 <span class="text-xs font-semibold text-slate-400">Verfügbar</span>
                 <div class="flex items-center gap-2">
                     <span
-                        class="w-2 h-2 rounded-full {getStockDotColor(book.verfuegbar ?? book.stock)}"
+                        class="w-2 h-2 rounded-full {getStockDotColor(book.verfuegbar || 0)}"
                     ></span>
-                    <span class="text-lg font-extrabold text-slate-800">{book.verfuegbar ?? book.stock}</span>
+                    <span class="text-lg font-extrabold text-slate-800">{book.verfuegbar || 0}</span>
                     {#if book.gesamt !== undefined}
                         <span class="text-xs text-slate-500 font-medium">/ {book.gesamt}</span>
                     {/if}

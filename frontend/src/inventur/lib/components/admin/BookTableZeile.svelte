@@ -10,6 +10,8 @@
 	 *     gradeLevel: number,
 	 *     track: string,
 	 *     stock: number,
+	 *     verfuegbar: number,
+	 *     gesamt: number,
 	 *     coverUrl: string,
 	 *     lastCounted: string,
 	 *     erweiterteEigenschaften?: { standort?: string }
@@ -188,11 +190,11 @@
 
 	<td class="px-6 py-3 text-right">
 		<span
-			class="{book.stock < 5
+			class="{book.gesamt < 5
 				? 'bg-rose-50 border border-rose-100 text-rose-600'
 				: 'bg-emerald-50 border border-emerald-100/50 text-emerald-700'} px-2.5 py-1 rounded-full text-xs font-bold"
 		>
-			{book.stock}
+			{book.gesamt}
 		</span>
 	</td>
 

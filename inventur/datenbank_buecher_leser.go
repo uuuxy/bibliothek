@@ -12,7 +12,6 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 			bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author, 
 			COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject, 
 			COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track, 
-			bt.stock, 
 			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt,
 			TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp, 
@@ -23,7 +22,7 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 		WHERE ($1 = '' OR bt.subject = $1)
 		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
 		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR bt.isbn ILIKE '%' || $3 || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
-		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.stock, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.erweiterte_eigenschaften
+		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.erweiterte_eigenschaften
 		ORDER BY bt.sort_order ASC, bt.titel ASC`
 
 	rows, err := repo.db.Query(ctx, query, subject, grade, searchQuery)
@@ -44,7 +43,6 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 			&book.Subject,
 			&book.GradeLevel,
 			&book.Track,
-			&book.Stock,
 			&book.Verfuegbar,
 			&book.Gesamt,
 			&book.LastCounted,
@@ -57,6 +55,7 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
 		}
+		book.Stock = book.Gesamt
 		books = append(books, book)
 	}
 

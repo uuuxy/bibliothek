@@ -130,9 +130,9 @@
       if (res.ok) {
         exemplare = exemplare.filter((e) => e.id !== ex.id);
         if (book) {
-          book.gesamt = Math.max(0, (book.gesamt || book.stock || 0) - 1);
-          if (ex.ist_verfuegbar) {
-             book.verfuegbar = Math.max(0, (book.verfuegbar || book.stock || 0) - 1);
+          book.gesamt = Math.max(0, (book.gesamt || 0) - 1);
+          if (book.verfuegbar !== undefined && ex.ist_ausleihbar) {
+             book.verfuegbar = Math.max(0, (book.verfuegbar || 0) - 1);
           }
         }
         showToast("Exemplar erfolgreich gelöscht", "success");
@@ -417,9 +417,9 @@
             <!-- Stock -->
             <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
               <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Verfügbar</p>
-              <p class="text-2xl font-extrabold {(book.verfuegbar ?? book.stock) === 0 ? 'text-rose-600' : (book.verfuegbar ?? book.stock) < 5 ? 'text-amber-600' : 'text-emerald-600'}">
-                {book.verfuegbar ?? book.stock}
-                <span class="text-sm font-medium text-slate-400">/ {book.gesamt ?? book.stock}</span>
+              <p class="text-2xl font-extrabold {(book.verfuegbar) === 0 ? 'text-rose-600' : (book.verfuegbar) < 5 ? 'text-amber-600' : 'text-emerald-600'}">
+                {book.verfuegbar}
+                <span class="text-sm font-medium text-slate-400">/ {book.gesamt}</span>
               </p>
             </div>
             <!-- Ausleiher -->
