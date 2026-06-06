@@ -1,82 +1,48 @@
-services:
-  caddy:
-    image: caddy:2-alpine
-    container_name: bibliothek-caddy
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      web:
-        condition: service_healthy
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+version: '3.8'
 
-  db:
-    image: postgres:16-alpine
+services:
+  postgres-db:
+    image: postgres:15-alpine
     container_name: bibliothek-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: bibliothek
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-geheim}
+      - POSTGRES_DB=${POSTGRES_DB:-bibliothek}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Automatically initialize database schema and test seeds on first run
-      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     ports:
-      - "127.0.0.1:5433:5432"
-    restart: always
+      - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d bibliothek"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bibliothek}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: bibliothek-web
+  backend:
+    build: ./backend
+    container_name: bibliothek-backend
     ports:
-      - "127.0.0.1:8081:8081"
+      - "8083:8083"
     environment:
-      - PORT=8081
-      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/bibliothek?sslmode=disable
-      - JWT_SECRET=${JWT_SECRET}
+      - PORT=8083
+      - DB_HOST=postgres-db
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
+      - JWT_SECRET=${JWT_SECRET:-supergeheim}
       - COOKIE_SECURE=false
     volumes:
       - bibliothek_uploads:/app/uploads
     depends_on:
-      db:
+      postgres-db:
         condition: service_healthy
-    restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+
+  frontend:
+    build: ./frontend
+    container_name: bibliothek-frontend
+    ports:
+      - "3003:3000"
+    environment:
+      - VITE_API_URL=http://<DEINE_HETZNER_IP>:8083
 
 volumes:
   postgres_data:
   bibliothek_uploads:
-  caddy_data:
-  caddy_config:
