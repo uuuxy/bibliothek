@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -90,6 +91,7 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 				ergebnis.CoverURL = dnbCoverURL
 			}
 		} else {
+			// #nosec G107 - Hostname is hardcoded in the formatting string above
 			anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodHead, dnbCoverURL, nil)
 			if fehler == nil {
 				antwort, fehler := client.httpClient.Do(anfrage)
@@ -126,8 +128,20 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 }
 
 // holeInhalt ist eine HTTP-GET Wrapper-Funktion, die die Antwort einer API als Bytearray zurückliefert.
-func (client *MetadatenClient) holeInhalt(kontext context.Context, url string) ([]byte, error) {
-	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, url, nil)
+func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string) ([]byte, error) {
+	parsed, err := url.Parse(apiURL)
+	if err != nil {
+		return nil, fmt.Errorf("SSRF Schutz: ungültige URL")
+	}
+	switch parsed.Hostname() {
+	case "services.dnb.de", "www.googleapis.com", "openlibrary.org", "covers.openlibrary.org", "portal.dnb.de":
+		// OK
+	default:
+		return nil, fmt.Errorf("SSRF Schutz: Hostname %s ist nicht in der Whitelist", parsed.Hostname())
+	}
+
+	// #nosec G107 - URL is validated against whitelist above
+	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, apiURL, nil)
 	if fehler != nil {
 		return nil, fehler
 	}

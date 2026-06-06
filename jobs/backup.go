@@ -113,6 +113,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 	}
 
 	// Write encrypted backup to disk with restrictive permissions (owner read-only)
+	// #nosec G304 - outFilename is safely constructed using a timestamp
 	if err := os.WriteFile(outFilename, encrypted, 0600); err != nil {
 		log.Printf("Backup: writing backup file failed: %v", err)
 		return
@@ -174,6 +175,7 @@ func rotateBackups(dir string, maxKeep int) {
 	// Entries from Glob are already sorted alphabetically
 	toDelete := entries[:len(entries)-maxKeep]
 	for _, f := range toDelete {
+		// #nosec G304 - f is derived from filepath.Glob
 		if err := os.Remove(f); err != nil {
 			log.Printf("Backup rotation: failed to delete %s: %v", f, err)
 		} else {

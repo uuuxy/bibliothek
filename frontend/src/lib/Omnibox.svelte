@@ -146,6 +146,7 @@
       return;
     }
     debounceTimer = setTimeout(async () => {
+      if (!queryVal.trim()) return;
       try {
         const res = await apiFetch(`/api/search?q=${encodeURIComponent(queryVal.trim())}`);
         if (res.ok) {

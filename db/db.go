@@ -125,6 +125,7 @@ func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) erro
 		}
 
 		// Read SQL content
+		// #nosec G304 - path comes from filepath.WalkDir of a trusted directory
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("migrations: failed to read %q: %w", version, err)

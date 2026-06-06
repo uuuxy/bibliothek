@@ -63,6 +63,7 @@ func RunCoverMigration(db db.PgxPoolIface) {
 		// Wenn kein Cover vorhanden ist ODER der Link zu einem kleinen OpenLibrary-Thumbnail zeigt, probieren wir DNB
 		if b.CoverURL == "" || strings.HasPrefix(b.CoverURL, "http") {
 			// Wir checken zuerst unverbindlich, ob die DNB das Bild überhaupt hat, bevor wir herunterladen
+			// #nosec G107 - Hostname is hardcoded in dnbCoverURL
 			testReq, err := http.NewRequestWithContext(ctx, http.MethodHead, dnbCoverURL, nil)
 			if err == nil {
 				testReq.Header.Set("User-Agent", "Mozilla/5.0 (Inventur/1.0)")

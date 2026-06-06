@@ -303,6 +303,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
+		// #nosec G124 - Secure flag is dynamically configured via cookieSecure
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    token,

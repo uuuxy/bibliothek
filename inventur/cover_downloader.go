@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -25,6 +26,20 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		return ""
 	}
 
+	parsed, urlErr := url.Parse(coverURL)
+	if urlErr != nil {
+		log.Printf("Ungültige Cover-URL: %s", coverURL)
+		return ""
+	}
+	switch parsed.Hostname() {
+	case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org":
+		// Erlaubte Hosts
+	default:
+		log.Printf("SSRF Schutz: Cover-URL Hostname %s ist nicht in der Whitelist", parsed.Hostname())
+		return ""
+	}
+
+	// #nosec G107 - URL validated against whitelist
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)
 	if err != nil {
 		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", coverURL, err)

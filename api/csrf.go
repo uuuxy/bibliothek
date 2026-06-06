@@ -65,6 +65,7 @@ func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 			if existingToken == "" {
 				token, err := generateGlobalCSRFToken()
 				if err == nil {
+					// #nosec G124 - HttpOnly must be false for CSRF double submit, Secure is dynamic
 					http.SetCookie(w, &http.Cookie{
 						Name:     "csrf_token",
 						Value:    token,

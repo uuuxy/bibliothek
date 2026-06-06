@@ -11,8 +11,8 @@ import (
 // CreateBook inserts a new book record.
 func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, erweiterte_eigenschaften)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12, $13)
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -40,6 +40,8 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		book.LastCounted,
 		medientyp,
 		properties,
+		book.JahrgangVon,
+		book.JahrgangBis,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
@@ -72,6 +74,8 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	stocks := make([]int32, len(books))
 	lastCounteds := make([]*string, len(books))
 	medientypen := make([]string, len(books))
+	jahrgaengeVon := make([]int, len(books))
+	jahrgaengeBis := make([]int, len(books))
 
 	for i, b := range books {
 		isbns[i] = b.ISBN
@@ -81,19 +85,22 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		subjects[i] = b.Subject
 		grades[i] = b.GradeLevel
 		tracks[i] = b.Track
+		// #nosec G115 - Stock is a physical book count, fits easily in int32
 		stocks[i] = int32(b.Stock)
 		lastCounteds[i] = b.LastCounted
 		medientypen[i] = b.Medientyp
 		if medientypen[i] == "" {
 			medientypen[i] = "Buch"
 		}
+		jahrgaengeVon[i] = b.JahrgangVon
+		jahrgaengeBis[i] = b.JahrgangBis
 	}
 
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, t.stock, NULLIF(t.last_counted_text, '')::date, t.medientyp
-		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::int[], $9::text[], $10::text[])
-		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted_text, medientyp)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis)
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, t.stock, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis
+		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::int[], $9::text[], $10::text[], $11::int[], $12::int[])
+		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted_text, medientyp, jahrgang_von, jahrgang_bis)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -103,7 +110,9 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 			track = EXCLUDED.track,
 			stock = buecher_titel.stock + EXCLUDED.stock,
 			last_counted = EXCLUDED.last_counted,
-			medientyp = EXCLUDED.medientyp
+			medientyp = EXCLUDED.medientyp,
+			jahrgang_von = EXCLUDED.jahrgang_von,
+			jahrgang_bis = EXCLUDED.jahrgang_bis
 	`
 
 	cmdTag, err := repo.db.Exec(
@@ -119,6 +128,8 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		stocks,
 		lastCounteds,
 		medientypen,
+		jahrgaengeVon,
+		jahrgaengeBis,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("bücher konnten nicht im batch importiert werden: %w", err)
@@ -130,8 +141,8 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 // UpsertBook inserts or updates a book record.
 func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -140,7 +151,9 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 			track = EXCLUDED.track,
 			stock = buecher_titel.stock + EXCLUDED.stock,
 			last_counted = EXCLUDED.last_counted,
-			medientyp = EXCLUDED.medientyp
+			medientyp = EXCLUDED.medientyp,
+			jahrgang_von = EXCLUDED.jahrgang_von,
+			jahrgang_bis = EXCLUDED.jahrgang_bis
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -162,6 +175,8 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		book.Stock,
 		book.LastCounted,
 		medientyp,
+		book.JahrgangVon,
+		book.JahrgangBis,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
@@ -199,8 +214,10 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			stock = $8,
 			last_counted = NULLIF($9::text, '')::date,
 			medientyp = $10,
-			erweiterte_eigenschaften = $11
-		WHERE id = $12`
+			erweiterte_eigenschaften = $11,
+			jahrgang_von = $12,
+			jahrgang_bis = $13
+		WHERE id = $14`
 
 	medientyp := book.Medientyp
 	if medientyp == "" {
@@ -226,6 +243,8 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.LastCounted,
 		medientyp,
 		properties,
+		book.JahrgangVon,
+		book.JahrgangBis,
 		id,
 	)
 	if err != nil {
@@ -251,6 +270,19 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return nil
 	}
 
+	var activeLoans int
+	err := repo.db.QueryRow(ctx, `
+		SELECT COUNT(*) 
+		FROM ausleihen a 
+		JOIN buecher_exemplare e ON a.exemplar_id = e.id 
+		WHERE e.titel_id = ANY($1::uuid[]) AND a.rueckgabe_am IS NULL`, ids).Scan(&activeLoans)
+	if err != nil {
+		return fmt.Errorf("fehler bei der prüfung auf aktive ausleihen: %w", err)
+	}
+	if activeLoans > 0 {
+		return fmt.Errorf("Löschen abgebrochen: Mindestens ein Exemplar dieser Titel ist aktuell verliehen")
+	}
+
 	coverRows, err := repo.db.Query(ctx, "SELECT cover_url FROM buecher_titel WHERE id = ANY($1::uuid[]) AND cover_url LIKE '/uploads/%'", ids)
 	if err != nil {
 		return fmt.Errorf("cover-dateien konnten nicht ermittelt werden: %w", err)
@@ -267,6 +299,14 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	coverRows.Close()
 	if rowsErr := coverRows.Err(); rowsErr != nil {
 		return fmt.Errorf("cover-pfade konnten nicht iteriert werden: %w", rowsErr)
+	}
+
+	// Clean up related records for ALL copies of these titles to prevent ON DELETE RESTRICT errors
+	if _, err = repo.db.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
+		return fmt.Errorf("failed to delete damage records for titles: %w", err)
+	}
+	if _, err = repo.db.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[])) AND rueckgabe_am IS NOT NULL", ids); err != nil {
+		return fmt.Errorf("failed to delete past loans for titles: %w", err)
 	}
 
 	query := `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`
@@ -286,6 +326,7 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		if name == "" || name == "." || name == "/" {
 			continue
 		}
+		// #nosec G304 - name is sanitized using filepath.Base
 		_ = os.Remove(filepath.Join("uploads", name))
 	}
 
@@ -302,13 +343,16 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 
 	if expectedStock > currentStock {
 		numToCreate := expectedStock - currentStock
-		for i := 0; i < numToCreate; i++ {
-			_, err := repo.db.Exec(ctx, `
-				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
-				VALUES ($1, 'AUTO-' || upper(substr(gen_random_uuid()::text, 1, 8)), true, 'Automatisch generiert')
-			`, titelID)
-			if err != nil {
-				return fmt.Errorf("fehler beim generieren von exemplaren: %w", err)
+		if numToCreate > 0 {
+			_, _ = repo.db.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`)
+			for i := 0; i < numToCreate; i++ {
+				_, err := repo.db.Exec(ctx, `
+					INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
+					VALUES ($1, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert')
+				`, titelID)
+				if err != nil {
+					return fmt.Errorf("fehler beim generieren von exemplaren: %w", err)
+				}
 			}
 		}
 	} else if expectedStock < currentStock {

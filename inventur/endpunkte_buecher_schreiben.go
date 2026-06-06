@@ -29,6 +29,10 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 			writeError(antwort, http.StatusNotFound, "keines der ausgewählten bücher wurde gefunden")
 			return
 		}
+		if strings.Contains(fehler.Error(), "Löschen abgebrochen") {
+			writeError(antwort, http.StatusBadRequest, fehler.Error())
+			return
+		}
 		log.Printf("Fehler beim Löschen von Büchern: %v", fehler)
 		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher")
 		return

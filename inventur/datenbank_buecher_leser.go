@@ -15,14 +15,15 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 			bt.stock, 
 			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt,
-			TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp, bt.erweiterte_eigenschaften
+			TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp, 
+			COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis, bt.erweiterte_eigenschaften
 		FROM buecher_titel bt
 		LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 		WHERE ($1 = '' OR bt.subject = $1)
 		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
 		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR bt.isbn ILIKE '%' || $3 || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
-		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.stock, bt.last_counted, bt.sort_order, bt.medientyp, bt.erweiterte_eigenschaften
+		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.stock, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.erweiterte_eigenschaften
 		ORDER BY bt.sort_order ASC, bt.titel ASC`
 
 	rows, err := repo.db.Query(ctx, query, subject, grade, searchQuery)
@@ -49,6 +50,8 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 			&book.LastCounted,
 			&book.SortOrder,
 			&book.Medientyp,
+			&book.JahrgangVon,
+			&book.JahrgangBis,
 			&book.ErweiterteEigenschaften,
 		)
 		if err != nil {

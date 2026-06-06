@@ -1,5 +1,6 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
+  import { enqueueOfflineScan, flushOfflineQueue } from "./offlineQueue.js";
   import StudentProfile from "./StudentProfile.svelte";
   import KioskReservationModal from "./KioskReservationModal.svelte";
   import KioskChecklistModal from "./KioskChecklistModal.svelte";
@@ -20,7 +21,7 @@
 
   /** @type {any} */
   let toast = $state(null);
-  let screenFlash = $state(""); // "success" | "error" | ""
+  let screenFlash = $state(""); // "success" | "error" | "warning" | ""
   let isShaking = $state(false);
   let isScanningStudent = $state(false);
   let isScanningBook = $state(false);
@@ -81,7 +82,7 @@
 
 
   // ── Logic ───────────────────────────────────────────────────────────
-  function triggerFlash(/** @type {"success"|"error"} */ type, msg = "") {
+  function triggerFlash(/** @type {"success"|"error"|"warning"} */ type, msg = "") {
     screenFlash = type;
     if (type === "error") {
       isShaking = true;
@@ -101,6 +102,56 @@
     studentInputVal = "";
     bookInputVal = "";
     focusStudentInput();
+  }
+
+  // ── Svelte Action: Autofocus-Lock ───────────────────────────────────
+  function keepFocus(node, options) {
+    let active = options.active;
+
+    function enforceFocus() {
+      if (active && !node.disabled) {
+        node.focus();
+      }
+    }
+
+    // Try to focus immediately
+    requestAnimationFrame(enforceFocus);
+
+    function onWindowClick(e) {
+      if (!active || node.disabled) return;
+      // Prevent focus stealing if clicking non-interactive elements
+      const isInteractive = e.target.closest('button, a, input, select, textarea, [role="button"], dialog, .modal');
+      if (!isInteractive) {
+        enforceFocus();
+      }
+    }
+
+    function onBlur(e) {
+      if (!active || node.disabled) return;
+      setTimeout(() => {
+        // If focus was lost to the body (e.g. clicking empty space) or nothing, pull it back
+        if (active && !node.disabled && (document.activeElement === document.body || document.activeElement === null)) {
+          enforceFocus();
+        }
+      }, 50);
+    }
+
+    window.addEventListener('click', onWindowClick, { capture: true });
+    node.addEventListener('blur', onBlur);
+
+    return {
+      update(newOptions) {
+        active = newOptions.active;
+        if (active) {
+          // Re-evaluate focus if it just became active (e.g. after a scan finishes)
+          requestAnimationFrame(enforceFocus);
+        }
+      },
+      destroy() {
+        window.removeEventListener('click', onWindowClick, { capture: true });
+        node.removeEventListener('blur', onBlur);
+      }
+    };
   }
 
   function focusStudentInput() {
@@ -187,7 +238,12 @@
         throw new Error("Unerwartete Antwort vom Server.");
       }
     } catch (e) {
-      triggerFlash("error", e instanceof Error ? e.message : "Fehler beim Buchen.");
+      if (e instanceof TypeError && (e.message.includes("Failed to fetch") || e.message.includes("NetworkError"))) {
+        await enqueueOfflineScan(val, activeStudent.id, null);
+        triggerFlash("warning", "Offline: Scan gespeichert. Wird synchronisiert, sobald das Netzwerk wieder da ist.");
+      } else {
+        triggerFlash("error", e instanceof Error ? e.message : "Fehler beim Buchen.");
+      }
       focusBookInput();
     } finally {
       isScanningBook = false;
@@ -301,27 +357,35 @@
     }
   }
 
-  onMount(async () => {
-    try {
-      const res = await apiFetch("/api/einstellungen");
-      if (res.ok) {
-        systemSettings = await res.json();
-      }
-    } catch(e) {}
+  onMount(() => {
+    (async () => {
+      try {
+        const res = await apiFetch("/api/einstellungen");
+        if (res.ok) {
+          systemSettings = await res.json();
+        }
+      } catch(e) {}
+    })();
     focusStudentInput();
+    
+    const onlineHandler = async () => {
+      await flushOfflineQueue((msg, type) => triggerFlash(/** @type {"success"|"error"|"warning"} */ (type), msg));
+    };
+    window.addEventListener("online", onlineHandler);
+    return () => window.removeEventListener("online", onlineHandler);
   });
 </script>
 
 <!-- Flash Overlay -->
 {#if screenFlash}
   <div class="fixed inset-0 z-50 pointer-events-none transition-colors duration-300
-    {screenFlash === 'success' ? 'bg-emerald-500/20' : 'bg-rose-500/30'}"></div>
+    {screenFlash === 'success' ? 'bg-emerald-500/20' : screenFlash === 'warning' ? 'bg-amber-500/20' : 'bg-rose-500/30'}"></div>
 {/if}
 
 <!-- Toast -->
 {#if toast}
   <div class="fixed top-8 left-1/2 -translate-x-1/2 z-50 p-4 rounded-xl shadow-xl text-white font-medium
-    {toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}">
+    {toast.type === 'error' ? 'bg-rose-600' : toast.type === 'warning' ? 'bg-amber-500' : 'bg-emerald-600'}">
     {toast.message}
   </div>
 {/if}
@@ -336,6 +400,7 @@
       <form onsubmit={(e) => { e.preventDefault(); handleBookSubmit(); }} class="relative w-full">
         <svg class="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
         <input type="text" id="kiosk-book-input" bind:value={bookInputVal} disabled={isScanningBook || isLimitReached}
+               use:keepFocus={{ active: !isScanningBook && !isLimitReached && !showVormerkenModal && !showChecklistModal && !showDamageInput }}
                placeholder="Buch-Barcode (B-) scannen..." autocomplete="off"
                class="w-full bg-white shadow-xl border-0 ring-1 ring-slate-200 focus:ring-4 focus:ring-emerald-500/20 rounded-full pl-14 pr-16 py-5 text-xl font-medium outline-none transition-all placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed" />
         <button type="button" onclick={() => showVormerkenModal = true} class="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors cursor-pointer" title="Medium vormerken">
@@ -409,6 +474,7 @@
       <p class="text-slate-500 mb-8">Scanne zuerst den Schülerausweis, um das Profil aufzurufen.</p>
       <form onsubmit={(e) => { e.preventDefault(); handleStudentSubmit(); }}>
         <input type="text" id="kiosk-student-input" bind:value={studentInputVal} disabled={isScanningStudent}
+               use:keepFocus={{ active: !isScanningStudent }}
                placeholder="S-XXXXXX scannen..." autocomplete="off"
                class="w-full bg-slate-50 border-2 border-blue-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl px-5 py-4 text-xl font-medium outline-none transition-all text-center placeholder:text-slate-400" />
       </form>

@@ -26,6 +26,10 @@
         } else if (typeof formular.erweiterteEigenschaften.standort !== "string") {
             formular.erweiterteEigenschaften.standort = "";
         }
+        
+        // Defaults for Jahrgang
+        if (formular.jahrgangVon === undefined) formular.jahrgangVon = 5;
+        if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
     });
 </script>
 
@@ -160,6 +164,39 @@
                     </svg>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label
+                for="buch-jahrgang-von"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Verwendbar von Klasse</label
+            >
+            <input
+                id="buch-jahrgang-von"
+                type="number"
+                min="1"
+                max="13"
+                bind:value={formular.jahrgangVon}
+                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+            />
+        </div>
+        <div>
+            <label
+                for="buch-jahrgang-bis"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >bis Klasse</label
+            >
+            <input
+                id="buch-jahrgang-bis"
+                type="number"
+                min="1"
+                max="13"
+                bind:value={formular.jahrgangBis}
+                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+            />
         </div>
     </div>
 

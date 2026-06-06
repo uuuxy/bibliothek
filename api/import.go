@@ -19,6 +19,7 @@ import (
 func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Limit post request size to max 5MB
+		r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
 		if err := r.ParseMultipartForm(5 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return

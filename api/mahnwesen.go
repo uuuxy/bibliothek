@@ -429,3 +429,109 @@ func (s *Server) SendMahnwesenHandler() http.HandlerFunc {
 		})
 	}
 }
+
+// queryUeberfaelligeNachJahrgang returns overdue loans grouped by class → student based on grade level.
+func (s *Server) queryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
+	q := `
+		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
+		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
+		       a.ausgeliehen_am,
+		       t.jahrgang_bis,
+		       NULLIF(regexp_replace(s.klasse, '\D', '', 'g'), '')::int AS schueler_jahrgang,
+			   s.ist_abgaenger
+		FROM ausleihen a
+		JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		JOIN buecher_titel t    ON e.titel_id = t.id
+		JOIN schueler s         ON a.schueler_id = s.id
+		WHERE a.rueckgabe_am IS NULL
+		  AND (
+		      (NULLIF(regexp_replace(s.klasse, '\D', '', 'g'), '')::int > t.jahrgang_bis)
+		      OR s.ist_abgaenger = true
+		  )
+	`
+	args := []any{}
+	if klasseFilter != "" {
+		q += " AND s.klasse = $1"
+		args = append(args, klasseFilter)
+	}
+	q += " ORDER BY s.klasse, s.nachname, s.vorname, t.titel"
+
+	rows, err := s.DB.Pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	klassenMap := map[string]*MahnwesenKlasse{}
+	schuelerMap := map[string]*UeberfaelligerSchueler{}
+	klassen := make([]MahnwesenKlasse, 0)
+
+	for rows.Next() {
+		var schuelerID, name, klasse string
+		var titel, autor, isbn, coverURL string
+		var ausgeliehenAm time.Time
+		var jahrgangBis int
+		var schuelerJahrgang *int
+		var istAbgaenger bool
+
+		if err := rows.Scan(&schuelerID, &name, &klasse,
+			&titel, &autor, &isbn, &coverURL,
+			&ausgeliehenAm, &jahrgangBis, &schuelerJahrgang, &istAbgaenger); err != nil {
+			continue
+		}
+
+		if _, ok := klassenMap[klasse]; !ok {
+			klassen = append(klassen, MahnwesenKlasse{Klasse: klasse})
+			klassenMap[klasse] = &klassen[len(klassen)-1]
+		}
+
+		schuelerKey := klasse + "|" + schuelerID
+		if _, ok := schuelerMap[schuelerKey]; !ok {
+			sch := UeberfaelligerSchueler{
+				SchuelerID: schuelerID,
+				Name:       name,
+				Klasse:     klasse,
+			}
+			k := klassenMap[klasse]
+			k.Schueler = append(k.Schueler, sch)
+			schuelerMap[schuelerKey] = &k.Schueler[len(k.Schueler)-1]
+		}
+
+		ueberschreitung := 0
+		if schuelerJahrgang != nil {
+			ueberschreitung = *schuelerJahrgang - jahrgangBis
+		}
+
+		schuelerMap[schuelerKey].Medien = append(schuelerMap[schuelerKey].Medien, UeberfaelligesMedium{
+			Titel:            titel,
+			Autor:            autor,
+			ISBN:             isbn,
+			CoverURL:         coverURL,
+			FaelligAm:        fmt.Sprintf("bis Kl. %d", jahrgangBis),
+			TageUeberfaellig: ueberschreitung, // Missbrauchen wir für die Jahre der Überschreitung
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return klassen, nil
+}
+
+// GetMahnwesenJahrgangHandler returns overdue loans based on grade level logic.
+// GET /api/mahnwesen/ueberfaellig_jahrgang
+func (s *Server) GetMahnwesenJahrgangHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		defer cancel()
+
+		klassen, err := s.queryUeberfaelligeNachJahrgang(ctx, "")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"klassen": klassen})
+	}
+}

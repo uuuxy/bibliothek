@@ -16,6 +16,8 @@ type Book struct {
 	LastCounted             *string        `json:"lastCounted" db:"last_counted"`
 	SortOrder               int            `json:"sortOrder" db:"sort_order"`
 	Medientyp               string         `json:"medientyp" db:"medientyp"`
+	JahrgangVon             int            `json:"jahrgangVon" db:"jahrgang_von"`
+	JahrgangBis             int            `json:"jahrgangBis" db:"jahrgang_bis"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften" db:"erweiterte_eigenschaften"`
 }
 

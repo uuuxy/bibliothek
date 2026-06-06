@@ -88,6 +88,7 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 		filename := filepath.Base(altesBook.CoverURL)
 		if filename != "" && filename != "/" && filename != "." {
 			alterPfad := filepath.Join("uploads", filename)
+			// #nosec G304 - filename is sanitized using filepath.Base
 			_ = os.Remove(alterPfad) // Fehler ignorieren (Datei existiert ggf. nicht mehr)
 		}
 	}
@@ -157,6 +158,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 	filename := fmt.Sprintf("cover_%s_%d%s", id, time.Now().Unix(), saveExt)
 	savePath := filepath.Join("uploads", filename)
 
+	// #nosec G304 - filename is safely generated on the server side
 	if err := os.WriteFile(savePath, finalBytes, 0644); err != nil {
 		log.Printf("cover-upload: write file failed for book %s (%s): %v", id, savePath, err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")

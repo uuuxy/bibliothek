@@ -54,6 +54,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	passFile.Close()
 
 	dumpFile := filepath.Join(backupPath, "db_dump.sql")
+	// #nosec G304 - dumpFile is safely constructed inside the backup directory
 	outFile, err := os.Create(dumpFile)
 	if err != nil {
 		return fmt.Errorf("konnte Dump-Datei nicht erstellen: %w", err)
@@ -131,6 +132,7 @@ func (bm *BackupManager) rotateBackups() {
 	toDelete := dirs[:len(dirs)-bm.maxBackups]
 	for _, d := range toDelete {
 		path := filepath.Join(bm.backupDir, d.Name())
+		// #nosec G304 - path is derived from safe directory entries
 		if err := os.RemoveAll(path); err != nil {
 			log.Printf("Backup WARNUNG: Konnte altes Backup nicht löschen: %s: %v", path, err)
 		} else {
@@ -168,12 +170,14 @@ func copyDir(src, dst string) error {
 }
 
 func copyFile(src, dst string) error {
+	// #nosec G304 - src is derived from safe directory entries
 	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer in.Close()
 
+	// #nosec G304 - dst is safely constructed
 	out, err := os.Create(dst)
 	if err != nil {
 		return err

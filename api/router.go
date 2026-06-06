@@ -102,6 +102,7 @@ func (s *Server) Routes() http.Handler {
 		}
 
 		// 2. Clear the cookie in the browser
+		// #nosec G124 - Secure flag is dynamically configured via s.CookieSecure
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    "",
@@ -162,6 +163,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
 	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_books")(s.GetTitleBorrowersHandler()))
 	mux.Handle("GET /api/buecher/titel/{id}/historie", s.RequirePermission("view_books")(s.GetTitleHistoryHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.LabelsHandler()))
 
 	// Update copy damage note (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler()))
@@ -229,6 +231,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
 	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("inventory_scan")(s.GetFehlbestandHandler()))
 	mux.Handle("POST /api/inventur/finalize", s.RequirePermission("inventory_scan")(s.FinalizeInventoryHandler()))
+	mux.Handle("POST /api/inventur/titel/{id}/verlust-batch", s.RequirePermission("inventory_scan")(s.TitleVerlustBatchHandler()))
 
 	// Get system statistics (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
@@ -279,6 +282,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Mahnwesen – overdue loans, PDF generation, SMTP dispatch
 	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler()))
+	mux.Handle("GET /api/mahnwesen/ueberfaellig_jahrgang", s.RequirePermission("view_students")(s.GetMahnwesenJahrgangHandler()))
 	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler()))
 	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler()))
 

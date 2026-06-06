@@ -218,6 +218,7 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 // PostLusdPreviewHandler parses the CSV and returns a preview of changes.
 func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -240,6 +241,7 @@ func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
 // PostLusdImportHandler parses the CSV and applies the changes transactionally.
 func (s *Server) PostLusdImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return

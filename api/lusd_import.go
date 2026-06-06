@@ -27,6 +27,7 @@ type LUSDImportResponse struct {
 func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Limit multipart form size to max 5MB
+		r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
 		if err := r.ParseMultipartForm(5 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return

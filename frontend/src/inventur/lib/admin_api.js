@@ -44,7 +44,10 @@ export async function loescheBuecher(ids) {
         },
         body: JSON.stringify({ ids }),
     });
-    if (!res.ok) throw new Error("Löschen fehlgeschlagen");
+    if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Löschen fehlgeschlagen");
+    }
     return true;
 }
 

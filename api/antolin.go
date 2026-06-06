@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -55,8 +56,9 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 			}
 		}
 
+		// #nosec G107 - Hostname is hardcoded, isbn is query escaped
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet,
-			"https://www.antolin.de/all/jsonBuecher.do?isbn="+isbn, nil)
+			"https://www.antolin.de/all/jsonBuecher.do?isbn="+url.QueryEscape(isbn), nil)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(&AntolinResult{Found: false})

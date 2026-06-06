@@ -97,6 +97,7 @@ type errLogger struct {
 }
 
 func newErrLogger() (*errLogger, error) {
+	// #nosec G304 - errorLogPath is a hardcoded constant
 	f, err := os.OpenFile(errorLogPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o640)
 	if err != nil {
 		return nil, fmt.Errorf("open error log: %w", err)

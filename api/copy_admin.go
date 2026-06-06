@@ -163,6 +163,12 @@ func (s *Server) UpdateCopyStatusHandler() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		// Wenn ein Buch manuell auf "Verfügbar" gesetzt wird, zwingend Notizen und Ausgesondert-Flag löschen
+		if req.IstAusleihbar {
+			req.ZustandNotiz = ""
+			req.IstAusgesondert = false
+		}
+
 		query := `
 			UPDATE buecher_exemplare
 			SET ist_ausleihbar = $1, ist_ausgesondert = $2, zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP
@@ -370,6 +376,7 @@ type TitleBorrower struct {
 	Klasse          string     `json:"klasse"`
 	SchuelerBarcode string     `json:"schueler_barcode"`
 	ExemplarBarcode string     `json:"exemplar_barcode"`
+	AusgeliehenAm   time.Time  `json:"ausgeliehen_am"`
 	RueckgabeFrist  time.Time  `json:"rueckgabe_frist"`
 }
 
@@ -387,7 +394,7 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 		defer cancel()
 
 		query := `
-			SELECT s.vorname, s.nachname, s.klasse, s.barcode_id, e.barcode_id, a.rueckgabe_frist
+			SELECT s.vorname, s.nachname, s.klasse, s.barcode_id, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
 			JOIN schueler s ON a.schueler_id = s.id
@@ -404,7 +411,7 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 		borrowers := []TitleBorrower{}
 		for rows.Next() {
 			var b TitleBorrower
-			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.RueckgabeFrist); err != nil {
+			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.AusgeliehenAm, &b.RueckgabeFrist); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}

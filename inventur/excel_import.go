@@ -13,7 +13,8 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func extractExcelRows(request *http.Request) ([][]string, error) {
+func extractExcelRows(w http.ResponseWriter, request *http.Request) ([][]string, error) {
+	request.Body = http.MaxBytesReader(w, request.Body, 10<<20)
 	err := request.ParseMultipartForm(10 << 20) // 10 MB
 	if err != nil {
 		return nil, errors.New("datei zu groß oder ungültig")
@@ -129,7 +130,7 @@ func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request
 		return
 	}
 
-	rows, err := extractExcelRows(request)
+	rows, err := extractExcelRows(writer, request)
 	if err != nil {
 		writeError(writer, http.StatusBadRequest, err.Error())
 		return
@@ -172,9 +173,11 @@ func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request
 				}
 			}
 		} else {
+			// #nosec G115 - count is bounded by maxImportRows (5000)
 			imported += int32(count)
 			if imported == 0 {
 				// Falls count 0 ist wegen z.B. nur Updates in manchen DB Versionen
+				// #nosec G115 - len is bounded by maxImportRows (5000)
 				imported = int32(len(booksToUpsert))
 			}
 		}

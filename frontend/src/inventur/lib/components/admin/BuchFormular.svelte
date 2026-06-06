@@ -4,6 +4,7 @@
     import StrichcodeScannerOverlay from "$lib/components/scanner/StrichcodeScannerOverlay.svelte";
     import BuchCoverUpload from "./BuchCoverUpload.svelte";
     import BuchEingabefelder from "./BuchEingabefelder.svelte";
+    import BuchExemplareListe from "./BuchExemplareListe.svelte";
 
     let { formular = $bindable(), onClose, onSave, onCoverUpload } = $props();
 
@@ -78,6 +79,9 @@
     <div class="p-6 space-y-8 flex-1">
         <BuchCoverUpload bind:formular {onCoverUpload} />
         <BuchEingabefelder bind:formular bind:wirdGescannt />
+        {#if formular.id}
+            <BuchExemplareListe bind:formular />
+        {/if}
     </div>
 
     <!-- Drawer Footer -->

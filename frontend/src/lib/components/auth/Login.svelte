@@ -13,7 +13,7 @@
       <h2 class="text-base font-bold text-slate-800">Scanner-Login erforderlich</h2>
       <p class="text-xs text-slate-400 font-medium">Scanne deine Barcode-Karte, um die Kiosk-Station freizuschalten.</p>
     </div>
-    <input id="login-input" type="password" bind:value={authStore.loginBarcode} class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-center tracking-widest text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-300 transition-all" placeholder="••••••••••••" />
+    <input id="login-input" type="password" autocomplete="new-password" bind:value={authStore.loginBarcode} class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-center tracking-widest text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-300 transition-all" placeholder="••••••••••••" />
     {#if authStore.loginError}
       <p class="text-xs text-rose-500 font-semibold animate-slide-up">{authStore.loginError}</p>
     {/if}

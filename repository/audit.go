@@ -123,6 +123,14 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("Löschen fehlgeschlagen: Folgende Exemplare sind noch verliehen: %v", activeLoans)
 	}
 
+	// Clean up related records for ALL copies of this title to prevent ON DELETE RESTRICT errors
+	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
+		return fmt.Errorf("failed to delete damage records for title: %w", err)
+	}
+	if _, err = tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1) AND rueckgabe_am IS NOT NULL", titleID); err != nil {
+		return fmt.Errorf("failed to delete past loans for title: %w", err)
+	}
+
 	// Delete all associated copies first
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE titel_id = $1", titleID); err != nil {
 		return fmt.Errorf("failed to delete associated copies: %w", err)
@@ -172,6 +180,14 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	}
 	if activeLoanCount > 0 {
 		return errors.New("Exemplar ist aktuell noch verliehen!")
+	}
+
+	// Clean up related records (damage reports and past loans) before deleting the copy
+	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id = $1", copyID); err != nil {
+		return fmt.Errorf("failed to delete damage records: %w", err)
+	}
+	if _, err = tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NOT NULL", copyID); err != nil {
+		return fmt.Errorf("failed to delete past loans: %w", err)
 	}
 
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE id = $1", copyID); err != nil {
@@ -255,6 +271,15 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("anonymizing returned loans: %w", err)
 	}
 
+	// Anonymize any past audit logs for this student to remove PII
+	if _, err = tx.Exec(ctx, `
+		UPDATE audit_log
+		SET details = details || '{"vorname":"Anonymisiert", "nachname":"Anonymisiert", "klasse":"Anonymisiert"}'::jsonb
+		WHERE (datensatz_id = $1 OR (details->>'schueler_id') = $2) AND details ? 'vorname'
+	`, studentID, studentID); err != nil {
+		return fmt.Errorf("anonymizing past audit_logs: %w", err)
+	}
+
 	// Delete paid damage cases (unpaid ones block deletion – enforced by caller)
 	if _, err = tx.Exec(ctx,
 		`DELETE FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = true`,
@@ -287,9 +312,9 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	if err = r.insertAuditLog(ctx, tx, "schueler", "DELETE", studentID,
 		bearbeiterPtr, akteur, &kontext,
 		map[string]any{
-			"vorname":        vorname,
-			"nachname":       nachname,
-			"klasse":         klasse,
+			"vorname":        "Anonymisiert",
+			"nachname":       "Anonymisiert",
+			"klasse":         "Anonymisiert",
 			"barcode_id":     barcodeID,
 			"abgaenger_jahr": abgaengerJahr,
 			"grund":          grund,

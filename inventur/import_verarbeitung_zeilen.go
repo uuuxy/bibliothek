@@ -50,6 +50,7 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 		Title:       title,
 		Author:      author,
 		Subject:     subject,
+		// #nosec G115 - gradeLevel is guaranteed to be 5-10 by parseKlassenStufe
 		GradeLevel:  int16(gradeLevel),
 		Stock:       stock,
 		LastCounted: nil,

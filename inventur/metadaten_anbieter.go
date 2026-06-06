@@ -1,10 +1,12 @@
 package inventur
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -35,7 +37,10 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 		} `xml:"records"`
 	}
 
-	if fehler := xml.Unmarshal(koerper, &nutzlast); fehler != nil {
+	// LimitReader protects against memory exhaustion during XML parsing (e.g. billion laughs attack)
+	// even though the byte array is already bounded, using it on the stream explicitly ensures safety.
+	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
+	if fehler := decoder.Decode(&nutzlast); fehler != nil {
 		return nil, fehler
 	}
 
