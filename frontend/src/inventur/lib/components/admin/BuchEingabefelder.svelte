@@ -20,16 +20,45 @@
         }
     });
 
+    let lastAutoSignatur = "";
+
     $effect(() => {
         if (!formular.erweiterteEigenschaften) {
-            formular.erweiterteEigenschaften = { standort: "" };
-        } else if (typeof formular.erweiterteEigenschaften.standort !== "string") {
-            formular.erweiterteEigenschaften.standort = "";
+            formular.erweiterteEigenschaften = { standort: "", signatur: "" };
+        } else {
+            if (typeof formular.erweiterteEigenschaften.standort !== "string") {
+                formular.erweiterteEigenschaften.standort = "";
+            }
+            if (typeof formular.erweiterteEigenschaften.signatur !== "string") {
+                formular.erweiterteEigenschaften.signatur = "";
+            }
         }
         
         // Defaults for Jahrgang
         if (formular.jahrgangVon === undefined) formular.jahrgangVon = 5;
         if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
+
+        // Auto-Generate Signatur
+        const isLmfTrack = ["Gymnasium", "Realschule", "Hauptschule", "Förderstufe", "Oberstufe"].includes(formular.track);
+        const isBib = formular.track === "Bibliothek";
+        let autoSig = "";
+
+        if (formular.subject) {
+            const sys = systematikListe.find(s => s.bezeichnung === formular.subject);
+            const kuerzel = sys ? sys.kuerzel : "";
+            if (isLmfTrack) {
+                autoSig = kuerzel ? `LMF ${kuerzel}` : "LMF";
+            } else if (isBib) {
+                autoSig = kuerzel ? `BIB ${kuerzel}` : "BIB";
+            }
+        }
+
+        if (autoSig) {
+            if (!formular.erweiterteEigenschaften.signatur || formular.erweiterteEigenschaften.signatur === lastAutoSignatur) {
+                formular.erweiterteEigenschaften.signatur = autoSig;
+                lastAutoSignatur = autoSig;
+            }
+        }
     });
 </script>
 
@@ -172,7 +201,8 @@
                 <select
                     id="buch-klasse"
                     bind:value={formular.gradeLevel}
-                    class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none cursor-pointer"
+                    disabled={formular.track === 'Bibliothek'}
+                    class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none {formular.track === 'Bibliothek' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}"
                 >
                     {#each klassenStufen as klasse (klasse)}
                         <option value={klasse}>{klasse}</option>
@@ -210,7 +240,8 @@
                 min="1"
                 max="13"
                 bind:value={formular.jahrgangVon}
-                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                disabled={formular.track === 'Bibliothek'}
+                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition {formular.track === 'Bibliothek' ? 'opacity-50 cursor-not-allowed' : ''}"
             />
         </div>
         <div>
@@ -225,7 +256,8 @@
                 min="1"
                 max="13"
                 bind:value={formular.jahrgangBis}
-                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                disabled={formular.track === 'Bibliothek'}
+                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition {formular.track === 'Bibliothek' ? 'opacity-50 cursor-not-allowed' : ''}"
             />
         </div>
     </div>
@@ -299,19 +331,27 @@
     </div>
 
     {#if formular.erweiterteEigenschaften}
-        <div>
-            <label
-                for="buch-standort"
-                class="block text-sm font-medium text-gray-700 mb-1"
-                >Standort / Regal</label
-            >
-            <input
-                id="buch-standort"
-                type="text"
-                bind:value={formular.erweiterteEigenschaften.standort}
-                placeholder="z. B. Krimi-Ecke oder Regal 3B"
-                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-            />
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="buch-signatur" class="block text-sm font-medium text-gray-700 mb-1">Signatur</label>
+                <input
+                    id="buch-signatur"
+                    type="text"
+                    bind:value={formular.erweiterteEigenschaften.signatur}
+                    placeholder="z.B. LMF M"
+                    class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                />
+            </div>
+            <div>
+                <label for="buch-standort" class="block text-sm font-medium text-gray-700 mb-1">Standort / Regal</label>
+                <input
+                    id="buch-standort"
+                    type="text"
+                    bind:value={formular.erweiterteEigenschaften.standort}
+                    placeholder="z. B. Krimi-Ecke oder Regal 3B"
+                    class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                />
+            </div>
         </div>
     {/if}
 </div>

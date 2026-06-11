@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
   import LitteraImportWidget from './LitteraImportWidget.svelte';
+  import GlobalLMFExtendWidget from './GlobalLMFExtendWidget.svelte';
 
   let loading = $state(true);
   let saving = $state(false);
@@ -319,6 +320,9 @@
 
     <!-- Mail Templates Component -->
     <MailTemplates />
+
+    <!-- Global LMF Extend Widget -->
+    <GlobalLMFExtendWidget />
 
     <!-- Littera Import Component -->
     <div class="pt-6">

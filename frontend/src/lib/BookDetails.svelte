@@ -229,11 +229,18 @@
           {#if title.isbn && title.medientyp !== 'CD' && title.medientyp !== 'DVD'}
             <AntolinBadge isbn={title.isbn} />
           {/if}
-          {#if title.erweiterteEigenschaften?.standort}
-            <div class="mt-1.5">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-100">
-                📍 Standort: {title.erweiterteEigenschaften.standort}
-              </span>
+          {#if title.erweiterteEigenschaften?.standort || title.erweiterteEigenschaften?.signatur}
+            <div class="mt-1.5 flex flex-wrap gap-2">
+              {#if title.erweiterteEigenschaften?.standort}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-100">
+                  📍 Standort: {title.erweiterteEigenschaften.standort}
+                </span>
+              {/if}
+              {#if title.erweiterteEigenschaften?.signatur}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-100">
+                  📚 Signatur: {title.erweiterteEigenschaften.signatur}
+                </span>
+              {/if}
             </div>
           {/if}
         </div>

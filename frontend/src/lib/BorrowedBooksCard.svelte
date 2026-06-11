@@ -5,7 +5,7 @@
   let { books = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
 </script>
 
-<div class="bg-white rounded-2xl border border-slate-100 shadow-xl p-8 w-full h-full">
+<div class="w-full h-full pt-2">
   <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-6">
     <h3 class="text-base font-bold text-slate-500 uppercase tracking-wider">Entliehene Bücher ({books?.length || 0})</h3>
   </div>

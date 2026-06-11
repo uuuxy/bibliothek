@@ -59,8 +59,8 @@ export function canSeeItem(item, currentUser) {
   const perms = currentUser.permissions || [];
   const hasPerm = perms.includes('*') || perms.includes(item.permission);
 
-  // Hardcode-Block für eingeschränkte Mitarbeiter-Rolle als Fallback
-  if (r === 'mitarbeiter') {
+  // Hardcode-Block für eingeschränkte Rollen (Mitarbeiter & Helfer) als Fallback
+  if (r === 'mitarbeiter' || r === 'helfer') {
     const adminOnlyItems = ['students_dir', 'graduates', 'mahnwesen', 'stats', 'permissions', 'settings'];
     if (adminOnlyItems.includes(item.id)) return false;
   }

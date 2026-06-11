@@ -36,22 +36,14 @@
 
 <StrichcodeScannerOverlay bind:isScanning={wirdGescannt} onScan={handleScan} />
 
-<!-- Backdrop -->
-<button
-    class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity border-none cursor-default w-full h-full block"
-    transition:fade={{ duration: 200 }}
-    onclick={onClose}
-    aria-label="Close modal"
-></button>
-
-<!-- Drawer -->
+<!-- Full width block -->
 <div
-    class="fixed top-0 right-0 bottom-0 w-full md:w-[480px] bg-white shadow-2xl z-50 overflow-y-auto flex flex-col"
-    transition:fly={{ x: 400, duration: 300, opacity: 1 }}
+    class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col w-full my-4"
+    transition:fade={{ duration: 200 }}
 >
     <!-- Drawer Header -->
     <div
-        class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10"
+        class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10 rounded-t-2xl"
     >
         <h2 class="text-xl font-bold text-gray-900">
             {formular.id ? "Buch bearbeiten" : "Neues Buch"}
@@ -88,8 +80,19 @@
 
     <!-- Drawer Footer -->
     <div
-        class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 sticky bottom-0"
+        class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 sticky bottom-0 rounded-b-2xl"
     >
+        {#if formular.id}
+            <button
+                onclick={() => window.open(`/api/buecher/titel/${formular.id}/etiketten`, '_blank')}
+                class="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors mr-auto flex items-center gap-2"
+                title="A4 Zweckform Etikettenbogen für dieses Buch generieren"
+            >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                Barcodes drucken
+            </button>
+        {/if}
+
         <button
             onclick={onClose}
             class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-200 transition-colors"

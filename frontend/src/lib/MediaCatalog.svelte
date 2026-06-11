@@ -1,8 +1,16 @@
 <script>
   import InventurCatalog from "../inventur/routes/+page.svelte";
   import InventurAdmin from "../inventur/routes/admin/+page.svelte";
+  import { appState } from "../inventur/lib/store.svelte.js";
 
   let activeView = $state("catalog"); // "catalog" | "admin"
+
+  $effect(() => {
+    if (appState.requestAdminView) {
+      activeView = "admin";
+      appState.requestAdminView = false;
+    }
+  });
 </script>
 
 <div class="w-full space-y-6">

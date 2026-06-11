@@ -114,6 +114,34 @@
     }
   }
 
+  let selectedKlasse = $state("");
+  let klassePdfLoading = $state(false);
+
+  async function downloadKlassePDF() {
+    if (!selectedKlasse) return;
+    klassePdfLoading = true;
+    globalErrorToast = null;
+    try {
+      const res = await apiFetch(`/api/print/mahnung/klasse/${selectedKlasse}`);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Keine überfälligen Ausleihen gefunden");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Mahnliste_Klasse_${selectedKlasse}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      globalErrorToast = String(e);
+      setTimeout(() => globalErrorToast = null, 4000);
+    } finally {
+      klassePdfLoading = false;
+    }
+  }
+
   /**
    * @param {string} klasse
    * @param {string|null} [email]
@@ -242,6 +270,30 @@
         {/if}
         Mahnlauf starten (PDF)
       </button>
+
+      <div class="flex items-center gap-1 bg-slate-100 rounded-xl px-2 py-1">
+        <select bind:value={selectedKlasse} class="bg-transparent text-xs font-bold text-slate-700 py-1 focus:outline-none">
+          <option value="">Klasse wählen...</option>
+          {#each klassen as k}
+            <option value={k.klasse}>{k.klasse}</option>
+          {/each}
+        </select>
+        <button
+          onclick={downloadKlassePDF}
+          disabled={klassePdfLoading || !selectedKlasse}
+          class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-1"
+        >
+          {#if klassePdfLoading}
+            <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+          {:else}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          {/if}
+          Drucken
+        </button>
+      </div>
+
     </div>
   </div>
 

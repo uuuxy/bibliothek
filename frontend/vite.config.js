@@ -42,22 +42,22 @@ export default defineConfig({
   server: {
     proxy: {
       '/login': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8083',
         changeOrigin: true,
         secure: false
       },
       '/api': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8083',
         changeOrigin: true,
         secure: false
       },
       '/uploads': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8083',
         changeOrigin: true,
         secure: false
       },
       '/events': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8083',
         changeOrigin: true,
         secure: false,
         ws: true

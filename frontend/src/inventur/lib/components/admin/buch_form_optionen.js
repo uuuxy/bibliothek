@@ -5,4 +5,6 @@ export const schulZweige = [
 	"Realschule",
 	"Hauptschule",
 	"Förderstufe",
+	"Oberstufe",
+	"Bibliothek",
 ];

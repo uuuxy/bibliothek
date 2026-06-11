@@ -58,6 +58,18 @@
 		aktualisiereBuecher();
 	});
 
+	$effect(() => {
+		if (appState.bookToEdit && !wirdGeladen) {
+			const found = buecher.find(b => b.id === appState.bookToEdit.id);
+			if (found) {
+				oeffneDetails(found);
+			} else {
+				oeffneDetails(appState.bookToEdit);
+			}
+			appState.bookToEdit = null;
+		}
+	});
+
 	async function aktualisiereBuecher() {
 		wirdGeladen = true;
 		try {
@@ -168,6 +180,14 @@
 				onCreated={nachScanAktion}
 			/>
 		</div>
+	{:else if istBearbeitenModus}
+		<BuchFormular
+			bind:formular
+			onClose={() => (istBearbeitenModus = false)}
+			onSave={() => buchAktionen.saveChanges()}
+			onCoverUpload={(/** @type {any} */ ereignis) =>
+				buchAktionen.handleCoverUpload(ereignis)}
+		/>
 	{:else if ansichtsModus === "classes"}
 		<KlassenUebersicht />
 	{:else}
@@ -189,14 +209,4 @@
 		bind:isEditMode={istBearbeitenModus}
 		bind:formular
 	/>
-
-	{#if istBearbeitenModus}
-		<BuchFormular
-			bind:formular
-			onClose={() => (istBearbeitenModus = false)}
-			onSave={() => buchAktionen.saveChanges()}
-			onCoverUpload={(/** @type {any} */ ereignis) =>
-				buchAktionen.handleCoverUpload(ereignis)}
-		/>
-	{/if}
 </div>

@@ -18,7 +18,7 @@
 		buecherNachKlassenGruppieren,
 		bestandsFarbe,
 	} from "$lib/startseiten_api.js";
-	import KatalogBuchDetailsModal from "$lib/components/KatalogBuchDetailsModal.svelte";
+
 
 	// --- Zustandsvariablen ---
 	let viewMode = $state("suche");
@@ -199,7 +199,14 @@
 					<BuchRasterStartseite
 					filteredBooks={paginatedBooks}
 					onBookClick={(book) => navigateToDetail(book)}
-					onEditClick={(book) => (selectedBook = book)}
+					onEditClick={(book) => {
+						if (appState.adminAuthenticated) {
+							appState.bookToEdit = book;
+							appState.requestAdminView = true;
+						} else {
+							navigateToDetail(book);
+						}
+					}}
 				/>
 					{#if displayLimit < filteredBooks.length}
 						<div class="mt-8 flex justify-center">
@@ -225,7 +232,7 @@
 					<KlassenUebersichtStartseite
 						{filteredClasses}
 						getStockColor={bestandsFarbe}
-						onBookClick={(book) => (selectedBook = book)}
+						onBookClick={(book) => navigateToDetail(book)}
 					/>
 				</div>
 			{:else}
@@ -241,7 +248,7 @@
 						<KlassenUebersichtStartseite
 							filteredClasses={filteredRealClasses}
 							getStockColor={bestandsFarbe}
-							onBookClick={(book) => (selectedBook = book)}
+							onBookClick={(book) => navigateToDetail(book)}
 						/>
 					{/key}
 				</div>
@@ -249,7 +256,3 @@
 		</main>
 	</div>
 </div>
-
-{#if selectedBook}
-	<KatalogBuchDetailsModal book={selectedBook} onClose={() => (selectedBook = null)} />
-{/if}

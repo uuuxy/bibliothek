@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"bibliothek/mailservice"
 )
@@ -42,7 +43,7 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 			JOIN buecher_titel bt ON be.titel_id = bt.id
 			WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < NOW()
 		`, schuelerID)
-		
+
 		if err != nil {
 			http.Error(w, "Fehler beim Laden der Ausleihen", http.StatusInternalServerError)
 			return
@@ -130,7 +131,7 @@ func (s *Server) PostSendNotificationHandler() http.HandlerFunc {
 			JOIN buecher_titel bt ON be.titel_id = bt.id
 			WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL
 		`, schuelerID)
-		
+
 		if err != nil {
 			http.Error(w, "Fehler beim Laden der Ausleihen", http.StatusInternalServerError)
 			return
@@ -251,5 +252,69 @@ func (s *Server) PostSendBulkOverdueHandler() http.HandlerFunc {
 			"fehler":     fehler,
 			"ohne_email": ohneEmail,
 		})
+	}
+}
+
+// GetMailTemplatesHandler gibt alle Mail-Vorlagen zurück
+func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		rows, err := s.DB.Pool.Query(ctx, "SELECT id, typ, betreff, text_body, updated_at FROM mail_vorlagen ORDER BY typ ASC")
+		if err != nil {
+			http.Error(w, "Fehler beim Laden der Vorlagen", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		type MailTemplate struct {
+			ID        string `json:"id"`
+			Typ       string `json:"typ"`
+			Betreff   string `json:"betreff"`
+			TextBody  string `json:"text_body"`
+			UpdatedAt string `json:"updated_at"`
+		}
+
+		var templates []MailTemplate
+		for rows.Next() {
+			var t MailTemplate
+			var ts time.Time
+			if err := rows.Scan(&t.ID, &t.Typ, &t.Betreff, &t.TextBody, &ts); err == nil {
+				t.UpdatedAt = ts.Format(time.RFC3339)
+				templates = append(templates, t)
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(templates)
+	}
+}
+
+// UpdateMailTemplateHandler aktualisiert eine Mail-Vorlage
+func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "ID fehlt", http.StatusBadRequest)
+			return
+		}
+
+		var req struct {
+			Betreff  string `json:"betreff"`
+			TextBody string `json:"text_body"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "ungültiger Body", http.StatusBadRequest)
+			return
+		}
+
+		ctx := r.Context()
+		_, err := s.DB.Pool.Exec(ctx, "UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE id = $3", req.Betreff, req.TextBody, id)
+		if err != nil {
+			http.Error(w, "Fehler beim Aktualisieren der Vorlage", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Erfolgreich gespeichert"})
 	}
 }
