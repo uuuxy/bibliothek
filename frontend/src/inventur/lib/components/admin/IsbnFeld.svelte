@@ -7,8 +7,11 @@
 	import { apiFetch } from '../../../../lib/apiFetch.js';
     let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
+    let isLookupActive = $state(false);
+
     async function aktualisiereMetadaten() {
         if (!formular.isbn) return;
+        isLookupActive = true;
         try {
             const antwort = await apiFetch(`/api/lookup/${formular.isbn}`);
             if (antwort.ok) {
@@ -16,6 +19,8 @@
                 const daten = json.data;
                 if (daten.title) formular.title = daten.title;
                 if (daten.author) formular.author = daten.author;
+                if (daten.verlag) formular.verlag = daten.verlag;
+                if (daten.jahr) formular.erscheinungsjahr = parseInt(daten.jahr) || formular.erscheinungsjahr;
                 if (daten.coverUrl) formular.coverUrl = daten.coverUrl;
                 if (daten.subject) formular.subject = daten.subject;
                 if (daten.grade) {
@@ -27,6 +32,8 @@
             }
         } catch (fehler) {
             console.error("Fehler beim Nachschlagen der ISBN", fehler);
+        } finally {
+            isLookupActive = false;
         }
     }
 
@@ -52,23 +59,28 @@
         <button
             type="button"
             onclick={aktualisiereMetadaten}
-            class="absolute right-10 top-2 text-gray-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-gray-200 transition-colors"
+            disabled={isLookupActive}
+            class="absolute right-10 top-2 text-gray-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
             title="Daten aus dem Internet aktualisieren"
             aria-label="Daten aus dem Internet aktualisieren"
         >
-            <svg
-                class="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-            </svg>
+            {#if isLookupActive}
+                <div class="w-5 h-5 border-2 border-gray-300 border-t-emerald-600 rounded-full animate-spin"></div>
+            {:else}
+                <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                </svg>
+            {/if}
         </button>
         <button
             type="button"

@@ -1,24 +1,18 @@
 package auth
 
 import (
+	"bibliothek/apierrors"
 	"bibliothek/db"
-	"bufio"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"bibliothek/apierrors"
 	"github.com/jackc/pgx/v5"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 // loginFailureEntry tracks failed login attempts per IP for brute-force protection.
@@ -114,62 +108,6 @@ type LoginResponse struct {
 	Nachname    string   `json:"nachname"`
 	Permissions []string `json:"permissions"`
 }
-
-// AuthenticateIMAP verifies the email and password against the configured IMAP server.
-func AuthenticateIMAP(serverHostPort, email, password string) (bool, error) {
-	if serverHostPort == "" {
-		return false, errors.New("IMAP server host:port not configured")
-	}
-
-	dialer := &net.Dialer{
-		Timeout: 5 * time.Second,
-	}
-	conn, err := tls.DialWithDialer(dialer, "tcp", serverHostPort, &tls.Config{
-		InsecureSkipVerify: false,
-	})
-	if err != nil {
-		return false, fmt.Errorf("IMAP connection failed: %w", err)
-	}
-	defer conn.Close()
-
-	_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
-	reader := bufio.NewReader(conn)
-
-	_, err = reader.ReadString('\n')
-	if err != nil {
-		return false, fmt.Errorf("failed to read greeting: %w", err)
-	}
-
-	escapedEmail := strings.ReplaceAll(email, "\"", "\\\"")
-	escapedPassword := strings.ReplaceAll(password, "\"", "\\\"")
-
-	loginCmd := fmt.Sprintf("a001 LOGIN \"%s\" \"%s\"\r\n", escapedEmail, escapedPassword)
-	_, err = conn.Write([]byte(loginCmd))
-	if err != nil {
-		return false, fmt.Errorf("failed to send login command: %w", err)
-	}
-
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			return false, fmt.Errorf("failed to read response: %w", err)
-		}
-		line = strings.ToLower(line)
-		if strings.HasPrefix(line, "a001 ") {
-			if strings.Contains(line, " ok ") || strings.Contains(line, "ok ") {
-				return true, nil
-			}
-			return false, nil
-		}
-	}
-}
-
-// verifyPassword checks a bcrypt password hash.
-func verifyPassword(hash, password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
 // Supports both email/password (with local DB or school IMAP verification) and barcode/PIN login.
 func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
@@ -191,7 +129,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		var id, roleStr, vorname, nachname, email, passwortHash string
+		var id, roleStr, vorname, nachname, email string
 		var aktiv bool
 		var authSuccess bool
 
@@ -206,33 +144,19 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 				return
 			}
 
-			// Look up user in DB by email
-			query := `
-				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.passwort_hash, b.aktiv 
-				FROM benutzer b
-				LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
-				WHERE LOWER(b.email) = LOWER($1) 
-				LIMIT 1
-			`
-			err := dbPool.QueryRow(ctx, query, req.Email).Scan(&id, &roleStr, &vorname, &nachname, &passwortHash, &aktiv)
-			if err == nil {
-				// Try local DB verification first
-				if verifyPassword(passwortHash, password) {
+			// ONLY perform IMAP verification (Roundcube SSO)
+			if imapErr := AuthenticateIMAP(req.Email, password); imapErr == nil {
+				// IMAP succeeded, check if the user is registered in our local DB
+				query := `
+					SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.aktiv 
+					FROM benutzer b
+					LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
+					WHERE LOWER(b.email) = LOWER($1) 
+					LIMIT 1
+				`
+				err := dbPool.QueryRow(ctx, query, req.Email).Scan(&id, &roleStr, &vorname, &nachname, &aktiv)
+				if err == nil {
 					authSuccess = true
-				}
-			}
-
-			// Try IMAP verification if local DB failed or user not found locally
-			if !authSuccess {
-				imapServer := os.Getenv("IMAP_SERVER")
-				if imapServer != "" {
-					ok, imapErr := AuthenticateIMAP(imapServer, req.Email, password)
-					if imapErr == nil && ok {
-						// If user exists in DB, login succeeds
-						if err == nil {
-							authSuccess = true
-						}
-					}
 				}
 			}
 
@@ -267,13 +191,13 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			}
 
 			query := `
-				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.email, b.passwort_hash, b.aktiv 
+				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.email, b.aktiv 
 				FROM benutzer b
 				LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
 				WHERE LOWER(b.barcode_id) = LOWER($1) OR (LOWER($1) = 'admin' AND LOWER(b.barcode_id) = 'admin-1')
 				LIMIT 1
 			`
-			err := dbPool.QueryRow(ctx, query, barcodeID).Scan(&id, &roleStr, &vorname, &nachname, &email, &passwortHash, &aktiv)
+			err := dbPool.QueryRow(ctx, query, barcodeID).Scan(&id, &roleStr, &vorname, &nachname, &email, &aktiv)
 			if err != nil {
 				if errors.Is(err, pgx.ErrNoRows) {
 					apierrors.SendHTTPError(w, http.StatusUnauthorized, err)
@@ -283,11 +207,8 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 				return
 			}
 
-			if !verifyPassword(passwortHash, pin) {
-				globalLoginLimiter.recordFailure(clientIP)
-				apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid PIN"))
-				return
-			}
+			// Password/PIN checks are removed since local passwords are gone.
+			// Barcode scan is assumed to be authorized physically for the Kiosk-Helfer.
 			authSuccess = true
 		}
 

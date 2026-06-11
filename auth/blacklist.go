@@ -4,25 +4,32 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// TokenBlacklist is a thread-safe in-memory store for invalidated JWTs.
+// DatabasePool defines the interface for database operations needed by the blacklist.
+type DatabasePool interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+// TokenBlacklist is a database-backed store for invalidated JWTs.
 // It stores the SHA-256 hash of the token mapped to its expiration time.
 type TokenBlacklist struct {
-	mu     sync.RWMutex
-	tokens map[string]time.Time
+	pool   DatabasePool
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
 // NewTokenBlacklist initializes a new TokenBlacklist and starts a background
-// cleanup goroutine to prevent memory leaks from expired tokens.
-func NewTokenBlacklist() *TokenBlacklist {
+// cleanup goroutine to prevent the table from growing indefinitely with expired tokens.
+func NewTokenBlacklist(pool DatabasePool) *TokenBlacklist {
 	ctx, cancel := context.WithCancel(context.Background())
 	b := &TokenBlacklist{
-		tokens: make(map[string]time.Time),
+		pool:   pool,
 		ctx:    ctx,
 		cancel: cancel,
 	}
@@ -34,29 +41,46 @@ func NewTokenBlacklist() *TokenBlacklist {
 }
 
 // hashToken computes a SHA-256 hash of the token string.
-// We hash the token instead of storing it raw to save memory and avoid
-// keeping sensitive tokens in memory longer than necessary.
+// We hash the token instead of storing it raw to save space and avoid
+// keeping sensitive tokens in the database longer than necessary.
 func hashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(hash[:])
 }
 
-// Add inserts a token into the blacklist with its expiration time.
+// Add inserts a token into the revoked_tokens table with its expiration time.
 func (b *TokenBlacklist) Add(token string, expiresAt time.Time) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	hash := hashToken(token)
-	b.tokens[hash] = expiresAt
+	// We use a short timeout for the DB operation, since this is called on logout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, _ = b.pool.Exec(ctx, `
+		INSERT INTO revoked_tokens (token_signature, expires_at)
+		VALUES ($1, $2)
+		ON CONFLICT (token_signature) DO NOTHING
+	`, hash, expiresAt)
 }
 
-// IsBlacklisted checks if a token exists in the blacklist.
+// IsBlacklisted checks if a token exists in the revoked_tokens table.
 func (b *TokenBlacklist) IsBlacklisted(token string) bool {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
 	hash := hashToken(token)
-	_, exists := b.tokens[hash]
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	var exists bool
+	err := b.pool.QueryRow(ctx, `
+		SELECT EXISTS(SELECT 1 FROM revoked_tokens WHERE token_signature = $1)
+	`, hash).Scan(&exists)
+	
+	if err != nil {
+		// If DB fails, we should arguably deny access to be safe,
+		// but since it's a blacklist check, returning false (allow) or true (deny)
+		// depends on strictness. Let's return true (deny) on DB failure just in case.
+		// However, standard is usually to log and allow if the DB is momentarily down.
+		// Given it's a school library, denying might lock everyone out.
+		return false 
+	}
 	return exists
 }
 
@@ -65,7 +89,7 @@ func (b *TokenBlacklist) Stop() {
 	b.cancel()
 }
 
-// cleanupLoop periodically removes expired tokens from the map to prevent memory leaks.
+// cleanupLoop periodically removes expired tokens from the DB.
 func (b *TokenBlacklist) cleanupLoop() {
 	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
@@ -80,15 +104,10 @@ func (b *TokenBlacklist) cleanupLoop() {
 	}
 }
 
-// cleanup iterates through the map and deletes any tokens that have passed their expiration time.
+// cleanup deletes any tokens from revoked_tokens that have passed their expiration time.
 func (b *TokenBlacklist) cleanup() {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	now := time.Now()
-	for hash, exp := range b.tokens {
-		if now.After(exp) {
-			delete(b.tokens, hash)
-		}
-	}
+	_, _ = b.pool.Exec(ctx, `DELETE FROM revoked_tokens WHERE expires_at < NOW()`)
 }

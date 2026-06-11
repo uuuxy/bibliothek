@@ -29,10 +29,11 @@ type UeberfaelligesMedium struct {
 
 // UeberfaelligerSchueler groups overdue books by student.
 type UeberfaelligerSchueler struct {
-	SchuelerID string                 `json:"schueler_id"`
-	Name       string                 `json:"name"`
-	Klasse     string                 `json:"klasse"`
-	Medien     []UeberfaelligesMedium `json:"medien"`
+	SchuelerID  string                 `json:"schueler_id"`
+	Name        string                 `json:"name"`
+	Klasse      string                 `json:"klasse"`
+	ElternEmail *string                `json:"eltern_email,omitempty"`
+	Medien      []UeberfaelligesMedium `json:"medien"`
 }
 
 // MahnwesenKlasse groups students by class for the overview response.
@@ -51,7 +52,7 @@ type mahnwesenSendenRequest struct {
 // queryUeberfaelligeNachKlasse returns overdue loans grouped by class → student.
 func (s *Server) queryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
+		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse, s.eltern_email,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       a.rueckgabe_frist,
 		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
@@ -82,10 +83,11 @@ func (s *Server) queryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter 
 
 	for rows.Next() {
 		var schuelerID, name, klasse string
+		var elternEmail *string
 		var titel, autor, isbn, coverURL string
 		var frist time.Time
 		var tage int
-		if err := rows.Scan(&schuelerID, &name, &klasse,
+		if err := rows.Scan(&schuelerID, &name, &klasse, &elternEmail,
 			&titel, &autor, &isbn, &coverURL,
 			&frist, &tage); err != nil {
 			continue
@@ -99,9 +101,10 @@ func (s *Server) queryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter 
 		schuelerKey := klasse + "|" + schuelerID
 		if _, ok := schuelerMap[schuelerKey]; !ok {
 			sch := UeberfaelligerSchueler{
-				SchuelerID: schuelerID,
-				Name:       name,
-				Klasse:     klasse,
+				SchuelerID:  schuelerID,
+				Name:        name,
+				Klasse:      klasse,
+				ElternEmail: elternEmail,
 			}
 			k := klassenMap[klasse]
 			k.Schueler = append(k.Schueler, sch)
@@ -433,7 +436,7 @@ func (s *Server) SendMahnwesenHandler() http.HandlerFunc {
 // queryUeberfaelligeNachJahrgang returns overdue loans grouped by class → student based on grade level.
 func (s *Server) queryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
+		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse, s.eltern_email,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       a.ausgeliehen_am,
 		       t.jahrgang_bis,
@@ -468,13 +471,14 @@ func (s *Server) queryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilte
 
 	for rows.Next() {
 		var schuelerID, name, klasse string
+		var elternEmail *string
 		var titel, autor, isbn, coverURL string
 		var ausgeliehenAm time.Time
 		var jahrgangBis int
 		var schuelerJahrgang *int
 		var istAbgaenger bool
 
-		if err := rows.Scan(&schuelerID, &name, &klasse,
+		if err := rows.Scan(&schuelerID, &name, &klasse, &elternEmail,
 			&titel, &autor, &isbn, &coverURL,
 			&ausgeliehenAm, &jahrgangBis, &schuelerJahrgang, &istAbgaenger); err != nil {
 			continue
@@ -488,9 +492,10 @@ func (s *Server) queryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilte
 		schuelerKey := klasse + "|" + schuelerID
 		if _, ok := schuelerMap[schuelerKey]; !ok {
 			sch := UeberfaelligerSchueler{
-				SchuelerID: schuelerID,
-				Name:       name,
-				Klasse:     klasse,
+				SchuelerID:  schuelerID,
+				Name:        name,
+				Klasse:      klasse,
+				ElternEmail: elternEmail,
 			}
 			k := klassenMap[klasse]
 			k.Schueler = append(k.Schueler, sch)

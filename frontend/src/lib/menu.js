@@ -57,8 +57,15 @@ export function canSeeItem(item, currentUser) {
 
   // Feature Flag / Permission check
   const perms = currentUser.permissions || [];
-  if (perms.includes('*')) return true;
-  return perms.includes(item.permission);
+  const hasPerm = perms.includes('*') || perms.includes(item.permission);
+
+  // Hardcode-Block für eingeschränkte Mitarbeiter-Rolle als Fallback
+  if (r === 'mitarbeiter') {
+    const adminOnlyItems = ['students_dir', 'graduates', 'mahnwesen', 'stats', 'permissions', 'settings'];
+    if (adminOnlyItems.includes(item.id)) return false;
+  }
+
+  return hasPerm;
 }
 
 export const menuGroups = [

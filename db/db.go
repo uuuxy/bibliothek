@@ -248,6 +248,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	}{
 		// Admin defaults
 		{"ADMIN", "view_students", true},
+		{"ADMIN", "edit_students", true},
 		{"ADMIN", "create_students", true},
 		{"ADMIN", "delete_students", true},
 		{"ADMIN", "import_students", true},
@@ -265,6 +266,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 
 		// Mitarbeiter defaults
 		{"MITARBEITER", "view_students", true},
+		{"MITARBEITER", "edit_students", true},
 		{"MITARBEITER", "create_students", true},
 		{"MITARBEITER", "delete_students", true},
 		{"MITARBEITER", "import_students", true},
@@ -282,6 +284,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 
 		// Lehrer defaults
 		{"LEHRER", "view_students", true},
+		{"LEHRER", "edit_students", false},
 		{"LEHRER", "create_students", false},
 		{"LEHRER", "delete_students", false},
 		{"LEHRER", "import_students", false},
@@ -299,6 +302,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 
 		// Helfer defaults
 		{"HELFER", "view_students", false},
+		{"HELFER", "edit_students", false},
 		{"HELFER", "create_students", false},
 		{"HELFER", "delete_students", false},
 		{"HELFER", "import_students", false},

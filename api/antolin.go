@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -60,23 +61,33 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet,
 			"https://www.antolin.de/all/jsonBuecher.do?isbn="+url.QueryEscape(isbn), nil)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(&AntolinResult{Found: false})
+			log.Printf("Antolin Request Creation Error: %v", err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to create request"))
 			return
 		}
 		req.Header.Set("User-Agent", "Schulbibliothek/1.0")
 
 		result := &AntolinResult{cachedAt: time.Now()}
 		resp, err := client.Do(req)
-		if err == nil {
-			defer resp.Body.Close()
-			var apiResp antolinAPIResp
-			if json.NewDecoder(resp.Body).Decode(&apiResp) == nil && len(apiResp.Antwort) > 0 {
-				b := apiResp.Antwort[0]
-				result.Found = true
-				result.Stufen = b.Klassen
-				result.Punkte = b.Punkte
-			}
+		if err != nil {
+			log.Printf("Antolin API Error: %v", err)
+			apierrors.SendHTTPError(w, http.StatusBadGateway, fmt.Errorf("antolin service unavailable"))
+			return
+		}
+		defer resp.Body.Close()
+
+		var apiResp antolinAPIResp
+		if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+			log.Printf("Antolin JSON Decode Error: %v", err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to parse antolin response"))
+			return
+		}
+
+		if len(apiResp.Antwort) > 0 {
+			b := apiResp.Antwort[0]
+			result.Found = true
+			result.Stufen = b.Klassen
+			result.Punkte = b.Punkte
 		}
 
 		antolinCache.Store(isbn, result)

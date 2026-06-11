@@ -21,6 +21,8 @@
                     const data = json.data;
                     if (data.title) formular.title = data.title;
                     if (data.author) formular.author = data.author;
+                    if (data.verlag) formular.verlag = data.verlag;
+                    if (data.jahr) formular.erscheinungsjahr = parseInt(data.jahr) || formular.erscheinungsjahr;
                     if (data.coverUrl) formular.coverUrl = data.coverUrl;
                     if (data.subject) formular.subject = data.subject;
                     if (data.grade) formular.gradeLevel = parseInt(data.grade) || formular.gradeLevel;

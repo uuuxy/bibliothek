@@ -148,3 +148,79 @@ func (s *Server) UndoReturnHandler() http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	}
 }
+
+// ReportDamageHandler handles POST /api/damage/report
+// Sets ist_ausgesondert = true, inserts into schadensfaelle, and ends the loan.
+func (s *Server) ReportDamageHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := auth.GetClaims(r.Context())
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			return
+		}
+
+		var req struct {
+			LoanID       string  `json:"loan_id"`
+			SchuelerID   string  `json:"schueler_id"`
+			CopyID       string  `json:"copy_id"`
+			Beschreibung string  `json:"beschreibung"`
+			Betrag       float64 `json:"betrag"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		tx, err := s.DB.Pool.Begin(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer tx.Rollback(ctx)
+
+		// 1. Mark copy as decommissioned
+		_, err = tx.Exec(ctx, `
+			UPDATE buecher_exemplare
+			SET ist_ausgesondert = true, ist_ausleihbar = false, zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
+			WHERE id = $2
+		`, req.Beschreibung, req.CopyID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// 2. Create Schadensfall
+		var schadensID string
+		err = tx.QueryRow(ctx, `
+			INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING id
+		`, req.CopyID, req.LoanID, req.SchuelerID, req.Beschreibung, req.Betrag).Scan(&schadensID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// 3. End loan
+		_, err = tx.Exec(ctx, `
+			UPDATE ausleihen
+			SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = $1
+			WHERE id = $2
+		`, claims.UserID, req.LoanID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "schadens_id": schadensID})
+	}
+}

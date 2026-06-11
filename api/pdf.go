@@ -36,6 +36,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 			SELECT 
 				sf.beschreibung, sf.betrag, sf.erstellt_am,
 				s.vorname, s.nachname, s.klasse,
+				coalesce(s.strasse, ''), coalesce(s.hausnummer, ''), coalesce(s.plz, ''), coalesce(s.ort, ''),
 				t.titel, e.barcode_id
 			FROM schadensfaelle sf
 			JOIN schueler s ON sf.schueler_id = s.id
@@ -44,9 +45,11 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 			WHERE sf.id = $1
 		`
 
+		var sStrasse, sHausnummer, sPlz, sOrt string
 		err := s.DB.Pool.QueryRow(ctx, query, id).Scan(
 			&beschreibung, &betrag, &erstelltAm,
 			&sVorname, &sNachname, &sKlasse,
+			&sStrasse, &sHausnummer, &sPlz, &sOrt,
 			&tTitel, &eBarcode,
 		)
 		if err != nil {
@@ -74,22 +77,35 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		pdf.SetTextColor(100, 100, 100)
 		pdf.Cell(0, 4, tr("Schulbibliothek · Lindenallee 4 · 12345 Musterstadt"))
 		pdf.SetTextColor(0, 0, 0)
-		pdf.Ln(15)
-
+		
 		// Date line (Right-aligned)
+		pdf.SetY(40)
 		pdf.SetFont("Arial", "", 10)
 		pdf.CellFormat(0, 6, fmt.Sprintf("Musterstadt, den %s", time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
-		pdf.Ln(12)
-
-		// Recipient Address Block
+		
+		// DIN 5008 Address Window (approx. 45mm from top)
+		pdf.SetXY(20, 45)
 		pdf.SetFont("Arial", "B", 9)
 		pdf.Cell(0, 4, tr("An die Erziehungsberechtigten von:"))
 		pdf.Ln(5)
+		pdf.SetX(20)
 		pdf.SetFont("Arial", "", 11)
 		pdf.Cell(0, 6, tr(fmt.Sprintf("%s %s", sVorname, sNachname)))
 		pdf.Ln(5)
-		pdf.Cell(0, 6, tr(fmt.Sprintf("Klasse %s", sKlasse)))
-		pdf.Ln(25)
+		pdf.SetX(20)
+		if sStrasse != "" {
+			pdf.Cell(0, 6, tr(fmt.Sprintf("%s %s", sStrasse, sHausnummer)))
+		} else {
+			pdf.Cell(0, 6, tr("_________________________"))
+		}
+		pdf.Ln(5)
+		pdf.SetX(20)
+		if sPlz != "" {
+			pdf.Cell(0, 6, tr(fmt.Sprintf("%s %s", sPlz, sOrt)))
+		} else {
+			pdf.Cell(0, 6, tr("_________________________"))
+		}
+		pdf.Ln(30)
 
 		// Letter Subject
 		pdf.SetFont("Arial", "B", 12)
@@ -100,7 +116,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		pdf.SetFont("Arial", "", 10)
 		introText := fmt.Sprintf("Sehr geehrte Erziehungsberechtigte,\n\n"+
 			"bei der Rückgabe bzw. Überprüfung des von Ihrem Kind ausgeliehenen Schulbuches "+
-			"\"%s\" (Barcode: %s) wurde am %s folgende Beschädigung festgestellt:\n\n",
+			"\"%s\" (Barcode: %s) wurde am %s folgende Beschädigung oder Verlust festgestellt:\n\n",
 			tTitel, eBarcode, erstelltAm.Format("02.01.2006"))
 		pdf.MultiCell(0, 5, tr(introText), "", "L", false)
 
@@ -114,12 +130,16 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		pdf.SetFont("Arial", "", 10)
 		dueTime := time.Now().AddDate(0, 0, 14).Format("02.01.2006")
 		instructions := fmt.Sprintf("Gemäß der Schulbibliotheksordnung bitten wir Sie, für den entstandenen Schaden "+
-			"einen Ersatzbetrag von %.2f EUR bis spätestens zum %s im Schulsekretariat bar zu entrichten "+
-			"oder auf das Schulkonto zu überweisen.\n\n"+
+			"einen Ersatzbetrag von %.2f EUR bis spätestens zum %s zu begleichen.\n\n"+
+			"Bitte überweisen Sie den Betrag auf folgendes Konto der Schule:\n"+
+			"Kontoinhaber: Stadtkasse Musterstadt\n"+
+			"IBAN: DE12 3456 7890 1234 5678 90\n"+
+			"BIC: MUSDEDED1XXX\n"+
+			"Verwendungszweck: Bibliothek Schadensfall %s\n\n"+
 			"Sollten Sie Fragen zum Schadensfall haben, können Sie sich gerne zu den Öffnungszeiten "+
 			"an das Bibliotheksteam wenden.\n\n"+
 			"Vielen Dank für Ihr Verständnis und Ihre Kooperation.",
-			betrag, dueTime)
+			betrag, dueTime, id)
 		pdf.MultiCell(0, 5, tr(instructions), "", "L", false)
 		pdf.Ln(15)
 

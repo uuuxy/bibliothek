@@ -78,17 +78,30 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		}
 
 		// 3. Insert new title; use ON CONFLICT as safety net for concurrent inserts.
-		var newID, newTitel, newAutor, newCoverURL string
+		var newID, newTitel, newAutor, newVerlag, newCoverURL string
+		
+		// Parse jahr as integer if possible
+		var jahrInt *int
+		if meta.Jahr != "" {
+			var j int
+			_, _ = fmt.Sscanf(meta.Jahr, "%d", &j)
+			if j > 1000 && j < 2100 {
+				jahrInt = &j
+			}
+		}
+
 		err = s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO buecher_titel (titel, autor, isbn, cover_url)
-			VALUES ($1, $2, $3, $4)
+			INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url)
+			VALUES ($1, $2, $3, $4, $5, $6)
 			ON CONFLICT (isbn) DO UPDATE
 				SET titel      = EXCLUDED.titel,
 				    autor      = EXCLUDED.autor,
+				    verlag     = EXCLUDED.verlag,
+				    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
 				    cover_url  = EXCLUDED.cover_url,
 				    aktualisiert_am = CURRENT_TIMESTAMP
-			RETURNING id, titel, coalesce(autor,''), coalesce(cover_url,'')
-		`, meta.Titel, meta.Autor, req.ISBN, meta.CoverURL).Scan(&newID, &newTitel, &newAutor, &newCoverURL)
+			RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,'')
+		`, meta.Titel, meta.Autor, req.ISBN, meta.Verlag, jahrInt, meta.CoverURL).Scan(&newID, &newTitel, &newAutor, &newVerlag, &newCoverURL)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -98,6 +111,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		resp.TitelID = newID
 		resp.Titel = newTitel
 		resp.Autor = newAutor
+		resp.Verlag = newVerlag
 		resp.CoverURL = newCoverURL
 
 		w.Header().Set("Content-Type", "application/json")

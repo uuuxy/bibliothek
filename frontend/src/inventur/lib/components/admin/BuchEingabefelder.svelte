@@ -6,17 +6,17 @@
 
     let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
-    let faecherListe = $state(/** @type {string[]} */ ([]));
+    /** @type {any[]} */
+    let systematikListe = $state([]);
 
     onMount(async () => {
         try {
-            const antwort = await apiFetch("/api/subjects");
+            const antwort = await apiFetch("/api/systematics");
             if (antwort.ok) {
-                const json = await antwort.json();
-                faecherListe = (json.data || []).map((/** @type {any} */ fach) => fach.name);
+                systematikListe = await antwort.json() || [];
             }
         } catch (fehler) {
-            console.error("Fehler beim Laden der Fächer", fehler);
+            console.error("Fehler beim Laden der Systematik", fehler);
         }
     });
 
@@ -102,6 +102,35 @@
     <div class="grid grid-cols-2 gap-4">
         <div>
             <label
+                for="buch-verlag"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Verlag</label
+            >
+            <input
+                id="buch-verlag"
+                type="text"
+                bind:value={formular.verlag}
+                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+            />
+        </div>
+        <div>
+            <label
+                for="buch-jahr"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Erscheinungsjahr</label
+            >
+            <input
+                id="buch-jahr"
+                type="number"
+                bind:value={formular.erscheinungsjahr}
+                class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+            />
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label
                 for="buch-fach"
                 class="block text-sm font-medium text-gray-700 mb-1">Fach</label
             >
@@ -111,8 +140,9 @@
                     bind:value={formular.subject}
                     class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none cursor-pointer"
                 >
-                    {#each faecherListe as fach (fach)}
-                        <option value={fach}>{fach}</option>
+                    <option value="">-- Fach auswählen --</option>
+                    {#each systematikListe as sys (sys.id)}
+                        <option value={sys.bezeichnung}>{sys.kuerzel} - {sys.bezeichnung}</option>
                     {/each}
                 </select>
                 <div class="absolute right-3 top-3 pointer-events-none">

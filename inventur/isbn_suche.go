@@ -40,6 +40,8 @@ func (handler *APIHandler) handleLookup(writer http.ResponseWriter, request *htt
 			"coverUrl": result.CoverURL,
 			"subject":  result.Fach,
 			"grade":    result.KlassenStufe,
+			"verlag":   result.Verlag,
+			"jahr":     result.Jahr,
 		},
 	})
 }

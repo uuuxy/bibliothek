@@ -51,6 +51,8 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	var titelTeile []string
 	var hauptAutor string
 	var extrahierteAutoren []string
+	var verlag string
+	var jahr string
 
 	for _, datenFeld := range nutzlast.Records.Record[0].RecordData.Record.Datafield {
 		if datenFeld.Tag == "245" {
@@ -83,6 +85,19 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 				}
 			}
 		}
+		if datenFeld.Tag == "260" || datenFeld.Tag == "264" {
+			for _, unterFeld := range datenFeld.Subfield {
+				if unterFeld.Code == "b" && verlag == "" {
+					verlag = strings.TrimSpace(strings.TrimRight(unterFeld.Value, ",;/ "))
+				}
+				if unterFeld.Code == "c" && jahr == "" {
+					// DNB year might have brackets like [2021] or 2021.
+					jahrStr := strings.TrimSpace(unterFeld.Value)
+					jahrStr = strings.Trim(jahrStr, "[]().,;")
+					jahr = jahrStr
+				}
+			}
+		}
 	}
 
 	titel := strings.Join(titelTeile, " ")
@@ -102,9 +117,11 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	}
 
 	return &MetadatenErgebnis{
-		ISBN:  isbn,
-		Titel: titel,
-		Autor: finalerAutor,
+		ISBN:   isbn,
+		Titel:  titel,
+		Autor:  finalerAutor,
+		Verlag: verlag,
+		Jahr:   jahr,
 	}, nil
 }
 

@@ -1,5 +1,7 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
+  import OverdueWidget from "./OverdueWidget.svelte";
+  
   // State Runes (Svelte 5)
   /** @type {any} */
   let stats = $state(null);
@@ -81,8 +83,12 @@
     </div>
 
     <!-- Stats Tables Layout -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6">
       
+      <!-- Overdue Widget -->
+      <div class="space-y-3 text-left h-full">
+        <OverdueWidget />
+      </div>
       <!-- Top Borrowed Books Section ("Die Renner") -->
       <div class="space-y-3 text-left">
         <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans border-b border-slate-100 pb-2">Beliebteste Titel (Die Renner)</h3>

@@ -28,6 +28,8 @@ type MetadatenErgebnis struct {
 	CoverURL     string `json:"coverUrl"`
 	Fach         string `json:"subject"`
 	KlassenStufe string `json:"grade"`
+	Verlag       string `json:"verlag"`
+	Jahr         string `json:"jahr"`
 }
 
 // NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,

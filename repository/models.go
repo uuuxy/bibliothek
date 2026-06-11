@@ -25,6 +25,11 @@ type Student struct {
 	LusdID         *string   `json:"lusd_id,omitempty"`
 	IstAbgaenger   bool      `json:"ist_abgaenger"`
 	Geburtsdatum   *string   `json:"geburtsdatum,omitempty"` // stored as DATE
+	Strasse        *string   `json:"strasse,omitempty"`
+	Hausnummer     *string   `json:"hausnummer,omitempty"`
+	Plz            *string   `json:"plz,omitempty"`
+	Ort            *string   `json:"ort,omitempty"`
+	ElternEmail    *string   `json:"eltern_email,omitempty"`
 	ErstelltAm     time.Time `json:"erstellt_am"`
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
 }
@@ -96,4 +101,31 @@ type Geraet struct {
 	ZustandNotiz    *string   `json:"zustand_notiz,omitempty"`
 	ErstelltAm      time.Time `json:"erstellt_am"`
 	AktualisiertAm  time.Time `json:"aktualisiert_am"`
+}
+
+// SystematikKategorie represents the systematik_kategorien table model.
+type SystematikKategorie struct {
+	ID             string    `json:"id"`
+	Kuerzel        string    `json:"kuerzel"`
+	Bezeichnung    string    `json:"bezeichnung"`
+	ErstelltAm     time.Time `json:"erstellt_am"`
+	AktualisiertAm time.Time `json:"aktualisiert_am"`
+}
+
+// Lesergruppe represents the lesergruppen table model.
+type Lesergruppe struct {
+	ID             string    `json:"id"`
+	Kuerzel        string    `json:"kuerzel"`
+	Bezeichnung    string    `json:"bezeichnung"`
+	ErstelltAm     time.Time `json:"erstellt_am"`
+	AktualisiertAm time.Time `json:"aktualisiert_am"`
+}
+
+// MailVorlage represents the mail_vorlagen table model.
+type MailVorlage struct {
+	ID        string    `json:"id"`
+	Typ       string    `json:"typ"`
+	Betreff   string    `json:"betreff"`
+	TextBody  string    `json:"text_body"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

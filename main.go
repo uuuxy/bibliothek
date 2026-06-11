@@ -89,7 +89,7 @@ func main() {
 	}
 
 	// 3. Authenticator initialization (12 hours token expiration duration)
-	authenticator, err := auth.NewAuthenticator(jwtSecret, 12*time.Hour)
+	authenticator, err := auth.NewAuthenticator(jwtSecret, database.Pool, 12*time.Hour)
 	if err != nil {
 		log.Fatalf("Failed to initialize authenticator: %v", err)
 	}
@@ -99,11 +99,33 @@ func main() {
 	go broker.Start(ctx)
 	log.Println("Server-Sent Events (SSE) broker started.")
 
-	// 5. GDPR Cron Scheduler initialization
+	// 5. Background Jobs & Scheduler
 	auditRepo := repository.NewAuditRepository(database.Pool)
 	scheduler := jobs.NewScheduler(database.Pool, auditRepo)
 	scheduler.Start()
 	defer scheduler.Stop()
+
+	// Native async background worker for GDPR cleanup (runs on startup + every 24h)
+	go func() {
+		log.Println("Background Worker: Running initial GDPR cleanup on startup...")
+		scheduler.RunGDPRAnonymizeLoans()
+		scheduler.RunGDPRDeleteAbgaenger()
+
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				log.Println("Background Worker: Running scheduled 24h GDPR cleanup...")
+				scheduler.RunGDPRAnonymizeLoans()
+				scheduler.RunGDPRDeleteAbgaenger()
+			case <-ctx.Done():
+				log.Println("Background Worker: GDPR worker gracefully stopped.")
+				return
+			}
+		}
+	}()
 
 	// 6. Initialize API Server and routing
 	server := api.NewServer(database, authenticator, broker, cookieSecure)

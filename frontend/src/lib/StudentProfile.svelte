@@ -4,6 +4,7 @@
   import WebcamCapture from "./WebcamCapture.svelte";
   import KioskChecklistModal from "./KioskChecklistModal.svelte";
   import KioskDamageModal from "./KioskDamageModal.svelte";
+  import DamageReportModal from "./DamageReportModal.svelte";
   import { studentTabExtensions } from "./plugins.svelte.js";
   import { idStore } from "./idLayoutStore.svelte.js";
   import BorrowedBooksCard from "./BorrowedBooksCard.svelte";
@@ -20,6 +21,49 @@
   let showDeleteConfirm = $state(false);
   let deleteError = $state("");
   let isDeleting = $state(false);
+
+  // Damage Report State
+  let showDamageModal = $state(false);
+  /** @type {any} */
+  let damageBook = $state(null);
+  let isSubmittingDamage = $state(false);
+
+  function openDamageModal(book) {
+    damageBook = book;
+    showDamageModal = true;
+  }
+
+  async function submitDamageReport(reason, amount) {
+    if (!damageBook) return;
+    isSubmittingDamage = true;
+    try {
+      const res = await apiFetch(`/api/damage/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          loan_id: /** @type {any} */ (damageBook).ausleihe_id,
+          schueler_id: student.id,
+          copy_id: /** @type {any} */ (damageBook).exemplar_id,
+          beschreibung: reason,
+          betrag: amount
+        })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const damageSuccessId = json.schadens_id;
+        window.open(`/api/schadensfaelle/${damageSuccessId}/pdf`, '_blank');
+        showDamageModal = false;
+        fetchProfile(); // reload data
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Fehler beim Melden.");
+      }
+    } catch (e) {
+      alert("Netzwerkfehler.");
+    } finally {
+      isSubmittingDamage = false;
+    }
+  }
 
   async function fetchProfile() {
     if (!student) return;
@@ -183,35 +227,41 @@
       <div class="space-y-2">
         <h3 class="text-2xl md:text-3xl font-extrabold font-sans text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
         <p class="text-base md:text-lg text-slate-700 font-bold">Klasse {profile.klasse}</p>
-        <!-- Abgangsjahr: inline editable -->
-        {#if editingAbgang}
-          <div class="flex items-center gap-2 justify-center flex-wrap">
-            <input
-              type="number"
-              min="2000" max="2100"
-              bind:value={abgangInput}
-              class="w-24 px-2 py-1 text-sm border border-blue-400 rounded-xl text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
-            />
+        <!-- Abgangsjahr: inline editable (Nur Admin) -->
+        {#if role === 'admin'}
+          {#if editingAbgang}
+            <div class="flex items-center gap-2 justify-center flex-wrap">
+              <input
+                type="number"
+                min="2000" max="2100"
+                bind:value={abgangInput}
+                class="w-24 px-2 py-1 text-sm border border-blue-400 rounded-xl text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+              <button
+                onclick={() => { abgangInput = calcAbgangFromKlasse(profile.klasse); }}
+                class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl font-semibold text-slate-600 cursor-pointer"
+                title="Automatisch aus Klasse berechnen">↺ Neu berechnen</button>
+              <button
+                onclick={saveAbgang}
+                disabled={abgangSaving}
+                class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer disabled:opacity-50">
+                {abgangSaving ? '…' : 'Speichern'}
+              </button>
+              <button onclick={() => editingAbgang = false} class="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer">✕</button>
+            </div>
+            {#if abgangError}<p class="text-xs text-rose-500 mt-1">{abgangError}</p>{/if}
+          {:else}
             <button
-              onclick={() => { abgangInput = calcAbgangFromKlasse(profile.klasse); }}
-              class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl font-semibold text-slate-600 cursor-pointer"
-              title="Automatisch aus Klasse berechnen">↺ Neu berechnen</button>
-            <button
-              onclick={saveAbgang}
-              disabled={abgangSaving}
-              class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer disabled:opacity-50">
-              {abgangSaving ? '…' : 'Speichern'}
+              onclick={startEditAbgang}
+              class="text-sm text-slate-500 font-semibold hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+              title="Abgangsjahr bearbeiten">
+              Abgang {profile.abgaenger_jahr} ✎
             </button>
-            <button onclick={() => editingAbgang = false} class="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer">✕</button>
-          </div>
-          {#if abgangError}<p class="text-xs text-rose-500 mt-1">{abgangError}</p>{/if}
+          {/if}
         {:else}
-          <button
-            onclick={startEditAbgang}
-            class="text-sm text-slate-500 font-semibold hover:text-blue-600 hover:underline cursor-pointer transition-colors"
-            title="Abgangsjahr bearbeiten">
-            Abgang {profile.abgaenger_jahr} ✎
-          </button>
+          <p class="text-sm text-slate-500 font-semibold cursor-default">
+            Abgang {profile.abgaenger_jahr}
+          </p>
         {/if}
         <p class="text-xs text-slate-400 tracking-wider mt-1">{profile.barcode_id}</p>
       </div>
@@ -240,7 +290,7 @@
         Schüler schließen (ESC)
       </button>
 
-      {#if role === 'admin' || role === 'mitarbeiter'}
+      {#if role === 'admin'}
         <button onclick={() => showDeleteConfirm = true} class="w-full py-3 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 text-rose-600 rounded-2xl text-sm font-bold transition-all cursor-pointer">
           Schüler löschen
         </button>
@@ -264,7 +314,13 @@
     <!-- Right: Timeline / Loans List (2 cols) -->
     <div class="lg:col-span-2 space-y-6">
       {@render rightTop?.()}
-      <BorrowedBooksCard books={profile.entliehene_buecher} {onReturnClick} />
+      <div class="col-span-1 md:col-span-1 relative flex flex-col h-full min-h-[400px]">
+        <BorrowedBooksCard 
+          books={profile.entliehene_buecher || []} 
+          {onReturnClick} 
+          onDamageClick={role === 'admin' || role === 'mitarbeiter' ? openDamageModal : undefined}
+        />
+      </div>
     </div>
   </div>
 {/if}
@@ -376,4 +432,13 @@
       {/if}
     </div>
   </div>
+{/if}
+
+{#if showDamageModal && damageBook}
+  <DamageReportModal
+    book={damageBook}
+    isSubmitting={isSubmittingDamage}
+    onCancel={() => showDamageModal = false}
+    onSubmit={submitDamageReport}
+  />
 {/if}

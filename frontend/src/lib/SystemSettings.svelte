@@ -1,6 +1,8 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
   import { onMount } from 'svelte';
+  import MailTemplates from './MailTemplates.svelte';
+  import LitteraImportWidget from './LitteraImportWidget.svelte';
 
   let loading = $state(true);
   let saving = $state(false);
@@ -313,6 +315,14 @@
         class="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-2xl transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
         {saving ? 'Wird gespeichert...' : 'Einstellungen speichern'}
       </button>
+    </div>
+
+    <!-- Mail Templates Component -->
+    <MailTemplates />
+
+    <!-- Littera Import Component -->
+    <div class="pt-6">
+      <LitteraImportWidget />
     </div>
   {/if}
 </div>

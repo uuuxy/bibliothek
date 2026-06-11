@@ -35,7 +35,7 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 		var err error
 		if klasse != "" {
 			rows, err = s.DB.Pool.Query(ctx, `
-				SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
+				SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, strasse, hausnummer, plz, ort, eltern_email,
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL) as ausgeliehen_anzahl,
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
 				FROM schueler 
@@ -44,7 +44,7 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 			`, klasse)
 		} else {
 			rows, err = s.DB.Pool.Query(ctx, `
-				SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
+				SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, strasse, hausnummer, plz, ort, eltern_email,
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL) as ausgeliehen_anzahl,
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
 				FROM schueler 
@@ -62,10 +62,11 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 		students := []map[string]any{}
 		for rows.Next() {
 			var id, barcode, vorname, nachname, kl string
+			var strasse, hausnr, plz, ort, email *string
 			var abgaengerJahr int
 			var gesperrt bool
 			var ausgeliehenAnzahl, ueberfaelligAnzahl int
-			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &ausgeliehenAnzahl, &ueberfaelligAnzahl); err == nil {
+			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &strasse, &hausnr, &plz, &ort, &email, &ausgeliehenAnzahl, &ueberfaelligAnzahl); err == nil {
 				fotoURL := ""
 				if barcode != "" {
 					filePath := filepath.Join("uploads", "fotos", fmt.Sprintf("%s.jpg", barcode))
@@ -81,6 +82,11 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 					"klasse":             kl,
 					"abgaenger_jahr":     abgaengerJahr,
 					"ist_gesperrt":       gesperrt,
+					"strasse":            strasse,
+					"hausnummer":         hausnr,
+					"plz":                plz,
+					"ort":                ort,
+					"eltern_email":       email,
 					"ausgeliehen_count":  ausgeliehenAnzahl,
 					"ueberfaellig_count": ueberfaelligAnzahl,
 					"foto_url":           fotoURL,

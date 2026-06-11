@@ -16,8 +16,8 @@
   /** @type {any} */
   let activeStudent = $state(null);
 
-  /** @type {string[]} */
-  let existingClasses = $state.raw([]);
+  /** @type {any[]} */
+  let readerGroups = $state.raw([]);
   let showCreateModal = $state(false);
   let newVorname = $state("");
   let newNachname = $state("");
@@ -89,12 +89,12 @@
 
   async function loadClasses() {
     try {
-      const res = await apiFetch("/api/klassen");
+      const res = await apiFetch("/api/readergroups");
       if (res.ok) {
-        existingClasses = await res.json();
+        readerGroups = await res.json() || [];
       }
     } catch (err) {
-      console.error("Fehler beim Laden der Klassen:", err);
+      console.error("Fehler beim Laden der Lesergruppen:", err);
     }
   }
 
@@ -379,11 +379,11 @@
         <div class="mt-1.5 flex gap-2">
           {#if !customKlasseInput}
             <select bind:value={newKlasse} onchange={(e) => { const sel = /** @type {HTMLSelectElement} */ (e.target); if (sel && sel.value === "__custom__") { customKlasseInput = true; newKlasse = ""; } }} class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer font-sans">
-              <option value="">-- Klasse auswählen --</option>
-              {#each existingClasses as k}
-                <option value={k}>{k}</option>
+              <option value="">-- Lesergruppe / Klasse auswählen --</option>
+              {#each readerGroups as g}
+                <option value={g.kuerzel}>{g.kuerzel} ({g.bezeichnung})</option>
               {/each}
-              <option value="__custom__">Neue Klasse eingeben...</option>
+              <option value="__custom__">Manuell eingeben...</option>
             </select>
           {:else}
             <div class="relative w-full">

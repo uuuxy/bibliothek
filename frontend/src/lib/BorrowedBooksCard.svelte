@@ -1,8 +1,8 @@
 <script>
   import BorrowedBooksList from "./BorrowedBooksList.svelte";
 
-  /** @type {{ books: any[], onReturnClick?: (barcode: string) => void }} */
-  let { books = [], onReturnClick = undefined } = $props();
+  /** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
+  let { books = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
 </script>
 
 <div class="bg-white rounded-2xl border border-slate-100 shadow-xl p-8 w-full h-full">
@@ -17,7 +17,7 @@
     </div>
   {:else}
     <div class="relative border-l-2 border-slate-100 pl-4 ml-2 py-1">
-      <BorrowedBooksList {books} {onReturnClick} mode="loans" />
+      <BorrowedBooksList {books} {onReturnClick} {onDamageClick} mode="loans" />
     </div>
   {/if}
 </div>

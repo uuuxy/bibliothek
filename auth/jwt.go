@@ -55,14 +55,14 @@ type Authenticator struct {
 }
 
 // NewAuthenticator creates a new JWT Authenticator instance with the given secret and duration.
-func NewAuthenticator(secret string, duration time.Duration) (*Authenticator, error) {
+func NewAuthenticator(secret string, pool DatabasePool, duration time.Duration) (*Authenticator, error) {
 	if len(secret) < 32 {
 		return nil, errors.New("JWT secret must be at least 32 bytes for security")
 	}
 	return &Authenticator{
 		secretKey:     []byte(secret),
 		tokenDuration: duration,
-		Blacklist:     NewTokenBlacklist(),
+		Blacklist:     NewTokenBlacklist(pool),
 	}, nil
 }
 

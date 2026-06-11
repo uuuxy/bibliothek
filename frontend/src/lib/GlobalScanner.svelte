@@ -57,30 +57,13 @@
 
   // ── Hilfsfunktionen ─────────────────────────────────────────────────────────
 
-  /**
-   * Prüft, ob der aktuelle Fokus in einem Texteingabe-Element liegt.
-   * In diesem Fall soll der globale Listener nicht eingreifen, damit
-   * der Nutzer normal tippen kann (z. B. Suche im Katalog).
-   * @returns {boolean}
-   */
   function isFocusedOnTextInput() {
     const el = document.activeElement;
     if (!el) return false;
     const tag = el.tagName.toLowerCase();
     if (tag === "input" || tag === "textarea") {
-      // Ausnahme: Login-Input und Kiosk-Inputs sollen globale Scans DURCHLASSEN,
-      // weil sie für Scanner-Eingaben gebaut sind.
-      const allowedIds = [
-        "login-input",
-        "kiosk-student-input",
-        "kiosk-book-input",
-        "omnibox-input",
-      ];
-      if (el.id && allowedIds.includes(el.id)) return false;
-      // Alle anderen Inputs (z.B. Suchfelder im Katalog) blockieren den Listener
       return true;
     }
-    // ContentEditable-Elemente (z. B. Markdown-Editoren) auch blockieren
     if (/** @type {HTMLElement} */ (el).isContentEditable) return true;
     return false;
   }

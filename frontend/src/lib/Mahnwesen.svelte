@@ -13,12 +13,36 @@
 
   // PDF download loading
   let pdfLoading = $state(false);
+  let elternPdfLoading = $state(false);
+  let globalErrorToast = $state(/** @type {string|null} */ (null));
 
   // Expanded classes
   let expandedKlassen = $state(/** @type {Set<string>} */ (new Set()));
 
   // Mode: "datum" or "jahrgang"
   let mahnMode = $state("datum");
+
+  // Per-student mail state
+  let sendingStudentId = $state(/** @type {string|null} */ (null));
+  let studentMessages = $state(/** @type {Record<string, {type: 'success'|'error', text: string} | null>} */ ({}));
+
+  async function sendStudentMahnung(/** @type {string} */ schuelerId) {
+    sendingStudentId = schuelerId;
+    studentMessages[schuelerId] = null; // reset
+    try {
+      const res = await apiFetch(`/api/mail/send-overdue-notification/${schuelerId}`, { method: "POST" });
+      const json = await res.json();
+      if (res.ok) {
+        studentMessages[schuelerId] = { type: 'success', text: json.message || "Gesendet" };
+      } else {
+        studentMessages[schuelerId] = { type: 'error', text: json.error || json.message || "Fehler" };
+      }
+    } catch (e) {
+      studentMessages[schuelerId] = { type: 'error', text: String(e) };
+    } finally {
+      sendingStudentId = null;
+    }
+  }
 
   async function fetchData() {
     loading = true;
@@ -66,6 +90,27 @@
       alert("Fehler: " + String(e));
     } finally {
       pdfLoading = false;
+    }
+  }
+
+  async function downloadElternPDF() {
+    elternPdfLoading = true;
+    globalErrorToast = null;
+    try {
+      const res = await apiFetch("/api/reports/overdue-pdf");
+      if (!res.ok) throw new Error(await res.text() || "PDF-Erzeugung fehlgeschlagen");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mahnbriefe_${new Date().toISOString().slice(0,10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      globalErrorToast = "Fehler: " + String(e);
+      setTimeout(() => globalErrorToast = null, 4000);
+    } finally {
+      elternPdfLoading = false;
     }
   }
 
@@ -117,6 +162,15 @@
   );
 </script>
 
+{#if globalErrorToast}
+  <div class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-rose-600 text-white flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0v-4zm1-3a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
+    </svg>
+    {globalErrorToast}
+  </div>
+{/if}
+
 <div class="max-w-5xl mx-auto space-y-6">
   <!-- Header -->
   <div class="flex items-center justify-between">
@@ -142,6 +196,7 @@
     <div class="flex items-center gap-2 print:hidden">
       <button
         onclick={fetchData}
+        aria-label="Daten neu laden"
         class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-semibold transition-all flex items-center gap-1.5"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -160,6 +215,7 @@
       <button
         onclick={downloadPDF}
         disabled={pdfLoading}
+        aria-label="Mahnliste gesamt als PDF herunterladen"
         class="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-1.5"
       >
         {#if pdfLoading}
@@ -170,6 +226,21 @@
           </svg>
         {/if}
         Mahnliste (gesamt) als PDF
+      </button>
+      <button
+        onclick={downloadElternPDF}
+        disabled={elternPdfLoading}
+        aria-label="Mahnlauf starten (PDF)"
+        class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+      >
+        {#if elternPdfLoading}
+          <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+        {:else}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        {/if}
+        Mahnlauf starten (PDF)
       </button>
     </div>
   </div>
@@ -249,6 +320,32 @@
                       <p class="font-semibold text-sm text-slate-800">{schueler.name}</p>
                       <p class="text-xs text-slate-400">{schueler.medien.length} {schueler.medien.length === 1 ? 'Medium' : 'Medien'} überfällig</p>
                     </div>
+                    
+                    {#if schueler.eltern_email}
+                      <div class="flex items-center gap-2">
+                        {#if studentMessages[schueler.schueler_id]}
+                          <span class="text-xs font-semibold px-2 py-1 rounded-md {studentMessages[schueler.schueler_id]?.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">
+                            {studentMessages[schueler.schueler_id]?.text}
+                          </span>
+                        {/if}
+                        <button
+                          onclick={() => sendStudentMahnung(schueler.schueler_id)}
+                          disabled={sendingStudentId === schueler.schueler_id || studentMessages[schueler.schueler_id]?.type === 'success'}
+                          class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                          title="Mahnung an Eltern senden"
+                        >
+                          {#if sendingStudentId === schueler.schueler_id}
+                            <div class="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                          {:else}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                          {/if}
+                        </button>
+                      </div>
+                    {:else}
+                      <span class="text-[10px] px-2 py-1 bg-slate-100 text-slate-400 rounded-md font-semibold">Keine Eltern-E-Mail</span>
+                    {/if}
                   </div>
                   <!-- Media list -->
                   <div class="space-y-2 ml-2">

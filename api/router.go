@@ -136,6 +136,9 @@ func (s *Server) Routes() http.Handler {
 	// LUSD CSV Sync (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/import/lusd", s.RequirePermission("import_students")(s.ImportLUSDHandler()))
 
+	// LITTERA CSV Import (Accessible by Admin)
+	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.LitteraImportHandler()))
+
 	// Upload student webcam passport photo (Accessible by Admin, Mitarbeiter, and Lehrer)
 	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.UploadStudentPhotoHandler()))
 
@@ -145,6 +148,8 @@ func (s *Server) Routes() http.Handler {
 	// Create student (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
 	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("create_students")(s.PatchStudentHandler()))
+
+	mux.Handle("POST /api/damage/report", s.RequirePermission("edit_students")(s.ReportDamageHandler()))
 
 	// Delete student (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
@@ -286,12 +291,28 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler()))
 	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler()))
 
+	// PDF Reports
+	mux.Handle("GET /api/reports/overdue-pdf", s.RequirePermission("view_students")(s.GetOverdueReportsPDFHandler()))
+
+	// Dashboard Reporting
+	mux.Handle("GET /api/dashboard/summary", s.RequirePermission("view_students")(s.GetDashboardSummaryHandler()))
+
+	// Meta Lookups
+	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
+	mux.Handle("GET /api/readergroups", s.RequirePermission("view_students")(s.GetReaderGroupsHandler()))
+
 	// LUSD Import / Schuljahreswechsel
 	mux.Handle("POST /api/lusd/preview", s.RequirePermission("manage_users")(s.PostLusdPreviewHandler()))
 	mux.Handle("POST /api/lusd/import", s.RequirePermission("manage_users")(s.PostLusdImportHandler()))
+	mux.Handle("POST /api/schueler/import-lusd", s.RequirePermission("manage_users")(s.PostSchuelerImportLusdHandler()))
 
 	// Public OPAC catalog search (DSGVO-compliant: no loan data exposed)
 	mux.HandleFunc("GET /api/public/opac/suche", s.PublicCatalogSearchHandler())
+
+	// Mail Services
+	mux.Handle("POST /api/mail/send-overdue-notification/{schuelerID}", s.RequirePermission("manage_users")(s.PostSendOverdueNotificationHandler()))
+	mux.Handle("POST /api/mail/send-notification/{schuelerID}", s.RequirePermission("manage_users")(s.PostSendNotificationHandler()))
+	mux.Handle("POST /api/mail/send-bulk-overdue", s.RequirePermission("manage_users")(s.PostSendBulkOverdueHandler()))
 
 	// Antolin proxy – public, 24-hour in-memory cache
 	mux.HandleFunc("GET /api/antolin", s.AntolinHandler())
