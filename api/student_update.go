@@ -116,17 +116,12 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		var req struct {
 			Klasse        *string `json:"klasse"`
 			AbgaengerJahr *int    `json:"abgaenger_jahr"`
-			Strasse       *string `json:"strasse"`
-			Hausnummer    *string `json:"hausnummer"`
-			Plz           *string `json:"plz"`
-			Ort           *string `json:"ort"`
-			ElternEmail   *string `json:"eltern_email"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiger Request-Body: %w", err))
 			return
 		}
-		if req.Klasse == nil && req.AbgaengerJahr == nil && req.Strasse == nil && req.Hausnummer == nil && req.Plz == nil && req.Ort == nil && req.ElternEmail == nil {
+		if req.Klasse == nil && req.AbgaengerJahr == nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("mindestens ein Feld muss angegeben werden"))
 			return
 		}
@@ -157,31 +152,6 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		if req.AbgaengerJahr != nil {
 			query += fmt.Sprintf(", abgaenger_jahr = $%d", argId)
 			args = append(args, *req.AbgaengerJahr)
-			argId++
-		}
-		if req.Strasse != nil {
-			query += fmt.Sprintf(", strasse = $%d", argId)
-			args = append(args, *req.Strasse)
-			argId++
-		}
-		if req.Hausnummer != nil {
-			query += fmt.Sprintf(", hausnummer = $%d", argId)
-			args = append(args, *req.Hausnummer)
-			argId++
-		}
-		if req.Plz != nil {
-			query += fmt.Sprintf(", plz = $%d", argId)
-			args = append(args, *req.Plz)
-			argId++
-		}
-		if req.Ort != nil {
-			query += fmt.Sprintf(", ort = $%d", argId)
-			args = append(args, *req.Ort)
-			argId++
-		}
-		if req.ElternEmail != nil {
-			query += fmt.Sprintf(", eltern_email = $%d", argId)
-			args = append(args, *req.ElternEmail)
 			argId++
 		}
 

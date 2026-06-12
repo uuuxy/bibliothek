@@ -112,8 +112,8 @@
                     <input
                         type="text"
                         bind:value={searchQuery}
-                        aria-label="Suchen nach Titel, ISBN oder Autor"
-                        placeholder="Titel, ISBN oder Autor suchen..."
+                        aria-label="Suchen nach Titel, Fach, Klasse oder Autor"
+                        placeholder="Suchen nach Titel, Fach, Klasse (z.B. 'Mathe 5' oder 'Gymnasium')..."
                         class="block w-full pl-14 pr-6 py-3.5 bg-white border border-slate-300 rounded-xl text-slate-800 shadow-sm hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-200 text-sm placeholder-slate-400"
                     />
                 </div>

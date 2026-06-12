@@ -18,6 +18,7 @@ import (
 // BorrowedBook represents a currently checked out book copy detail for the student.
 type BorrowedBook struct {
 	ID             string    `json:"id"`
+	AusleiheID     string    `json:"ausleihe_id"`
 	BarcodeID      string    `json:"barcode_id"`
 	Titel          string    `json:"titel"`
 	Autor          string    `json:"autor"`
@@ -97,6 +98,7 @@ func (s *Server) GetStudentProfileHandler(
 		query := `
 			SELECT 
 				e.id, 
+				a.id AS ausleihe_id,
 				e.barcode_id, 
 				t.titel, 
 				coalesce(t.autor, ''), 
@@ -121,6 +123,7 @@ func (s *Server) GetStudentProfileHandler(
 			var b BorrowedBook
 			err := rows.Scan(
 				&b.ID,
+				&b.AusleiheID,
 				&b.BarcodeID,
 				&b.Titel,
 				&b.Autor,

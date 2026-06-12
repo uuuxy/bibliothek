@@ -71,16 +71,45 @@
 	let filteredBooks = $derived(
 		(Array.isArray(books) ? books : []).filter((/** @type {any} */ b) => {
 			let q = searchQuery.toLowerCase().trim();
-			if (suchSynonyme.has(q)) {
-				q = suchSynonyme.get(q) || "";
+			if (q === "") return true;
+
+			// Split search into terms and resolve synonyms
+			let terms = q.split(/\s+/).map((term) => suchSynonyme.get(term) || term);
+
+			// If query has a number, ignore words like "klasse", "kl" to prevent filtering out books
+			// that don't have the word "klasse" in their title/metadata but do match the grade.
+			const hasNumber = terms.some((t) => !isNaN(parseInt(t, 10)));
+			if (hasNumber) {
+				terms = terms.filter(
+					(t) => !["klasse", "kl", "kl.", "jahrgang", "jg", "jg."].includes(t),
+				);
 			}
-			return (
-				q === "" ||
-				(b.title && b.title.toLowerCase().includes(q)) ||
-				(b.isbn && b.isbn.toLowerCase().includes(q)) ||
-				(b.author && b.author.toLowerCase().includes(q)) ||
-				(b.subject && b.subject.toLowerCase().includes(q))
-			);
+
+			// EVERY term must match AT LEAST ONE field in the book
+			return terms.every((term) => {
+				if (b.title && b.title.toLowerCase().includes(term)) return true;
+				if (b.isbn && b.isbn.toLowerCase().includes(term)) return true;
+				if (b.author && b.author.toLowerCase().includes(term)) return true;
+				if (b.subject && b.subject.toLowerCase().includes(term)) return true;
+				if (b.track && b.track.toLowerCase().includes(term)) return true;
+
+				// Grade Level Matching (e.g. term "5" matches gradeLevel 5)
+				if (b.gradeLevel && b.gradeLevel.toString() === term) return true;
+
+				// Grade Range Matching (e.g. term "6" matches range 5-10)
+				const num = parseInt(term, 10);
+				if (
+					!isNaN(num) &&
+					b.jahrgangVon &&
+					b.jahrgangBis &&
+					num >= b.jahrgangVon &&
+					num <= b.jahrgangBis
+				) {
+					return true;
+				}
+
+				return false;
+			});
 		}),
 	);
 

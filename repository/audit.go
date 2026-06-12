@@ -179,25 +179,19 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 		return fmt.Errorf("failed to check active loans for copy: %w", err)
 	}
 	if activeLoanCount > 0 {
-		return errors.New("exemplar ist aktuell noch verliehen")
+		return errors.New("Exemplar ist aktuell noch verliehen!")
 	}
 
-	// Clean up related records (damage reports and past loans) before deleting the copy
-	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id = $1", copyID); err != nil {
-		return fmt.Errorf("failed to delete damage records: %w", err)
-	}
-	if _, err = tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NOT NULL", copyID); err != nil {
-		return fmt.Errorf("failed to delete past loans: %w", err)
-	}
-
-	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE id = $1", copyID); err != nil {
+	// Soft-Delete: We mark the copy as decommissioned instead of hard-deleting it.
+	// We DO NOT delete from 'ausleihen' and 'schadensfaelle' to preserve history.
+	if _, err = tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, zustand_notiz = 'Systematisch gelöscht' WHERE id = $1", copyID); err != nil {
 		return err
 	}
 
-	kontext := "Buch ausgebuchen"
-	if err = r.insertAuditLog(ctx, tx, "buecher_exemplare", "DELETE", copyID,
+	kontext := "Buch ausgebuchen (Soft-Delete)"
+	if err = r.insertAuditLog(ctx, tx, "buecher_exemplare", "UPDATE", copyID,
 		&bearbeiterID, "USER", &kontext,
-		map[string]any{"barcode_id": barcode, "zustand_notiz": zustandNotiz, "titel_id": titelID, "titel": titel},
+		map[string]any{"barcode_id": barcode, "zustand_notiz": zustandNotiz, "titel_id": titelID, "titel": titel, "action": "soft_delete"},
 	); err != nil {
 		return err
 	}
