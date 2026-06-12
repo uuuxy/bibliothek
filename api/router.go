@@ -83,7 +83,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("/uploads/", invHandler)
 
 	// Public Endpoints
-	mux.HandleFunc("POST /login/barcode", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
+	mux.HandleFunc("POST /login", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

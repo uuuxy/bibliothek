@@ -14,7 +14,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // PgxPoolIface defines the set of methods used from pgxpool.Pool to allow for mocking.
@@ -398,11 +397,6 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 		return nil
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
-	if err != nil {
-		return fmt.Errorf("failed to hash initial admin password: %w", err)
-	}
-
 	tx, err := db.Pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction for initial admin: %w", err)
@@ -411,10 +405,10 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 
 	var adminID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
-		VALUES ('admin', 'System', 'Administrator', $1, $2, 'ADMIN', true)
+		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
+		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
 		RETURNING id
-	`, email, string(hash)).Scan(&adminID)
+	`, email).Scan(&adminID)
 	if err != nil {
 		return fmt.Errorf("failed to insert initial admin: %w", err)
 	}

@@ -5,7 +5,8 @@ class AuthStore {
     currentUser = $state(/** @type {any} */ (null));
     heartbeatOk = $state(true);
     lastHeartbeatTime = $state(Date.now());
-    loginBarcode = $state("");
+    loginEmail = $state("");
+    loginPassword = $state("");
     sseSource = $state(/** @type {any} */ (null));
     loginError = $state(/** @type {string | null} */ (null));
 
@@ -28,14 +29,14 @@ class AuthStore {
      */
     async handleLogin(e, onRoleCallback) {
         if (e) e.preventDefault();
-        if (!this.loginBarcode.trim()) return;
+        if (!this.loginEmail.trim() || !this.loginPassword) return;
         this.loginError = null;
 
         try {
-            const res = await fetch("/login/barcode", {
+            const res = await fetch("/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ barcode_id: this.loginBarcode })
+                body: JSON.stringify({ email: this.loginEmail, password: this.loginPassword })
             });
             if (!res.ok) {
                 let msg = "Login fehlgeschlagen";
@@ -44,7 +45,8 @@ class AuthStore {
             }
             this.currentUser = await res.json();
             this.isLoggedIn = true;
-            this.loginBarcode = "";
+            this.loginEmail = "";
+            this.loginPassword = "";
             this.connectSSE();
 
             if (this.currentUser && (this.currentUser.rolle === "admin" || this.currentUser.rolle === "mitarbeiter")) {
@@ -60,7 +62,7 @@ class AuthStore {
         } catch (err) {
             const errorMessage = /** @type {any} */ (err).message || String(err);
             this.loginError = errorMessage;
-            this.loginBarcode = "";
+            this.loginPassword = "";
             setTimeout(() => { this.loginError = null; }, 4000);
         }
     }
@@ -68,7 +70,8 @@ class AuthStore {
     handleLogout(onLogoutCallback) {
         this.isLoggedIn = false;
         this.currentUser = null;
-        this.loginBarcode = "";
+        this.loginEmail = "";
+        this.loginPassword = "";
         this.loginError = null;
         appState.adminAuthenticated = false;
         appState.guestAuthenticated = false;

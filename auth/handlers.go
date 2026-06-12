@@ -11,8 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // loginFailureEntry tracks failed login attempts per IP for brute-force protection.
@@ -129,87 +127,42 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		var id, roleStr, vorname, nachname, email string
+		var id, roleStr, vorname, nachname string
 		var aktiv bool
 		var authSuccess bool
 
 		// 1. Check if it's an email-based login
-		if req.Email != "" {
-			password := req.Password
-			if password == "" {
-				password = req.PIN
-			}
-			if password == "" {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("password is required"))
-				return
-			}
+		if req.Email == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("email is required"))
+			return
+		}
 
-			// ONLY perform IMAP verification (Roundcube SSO)
-			if imapErr := AuthenticateIMAP(req.Email, password); imapErr == nil {
-				// IMAP succeeded, check if the user is registered in our local DB
-				query := `
-					SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.aktiv 
-					FROM benutzer b
-					LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
-					WHERE LOWER(b.email) = LOWER($1) 
-					LIMIT 1
-				`
-				err := dbPool.QueryRow(ctx, query, req.Email).Scan(&id, &roleStr, &vorname, &nachname, &aktiv)
-				if err == nil {
-					authSuccess = true
-				}
-			}
+		password := req.Password
+		if password == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("password is required"))
+			return
+		}
 
-			if !authSuccess {
-				globalLoginLimiter.recordFailure(clientIP)
-				apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
-				return
-			}
-		} else {
-			// Barcode login for Kiosk-Helfer
-			barcodeID := req.BarcodeID
-			pin := req.PIN
-			if pin == "" {
-				pin = req.Password
-			}
-
-			// Support barcode:pin combined scanners
-			if pin == "" && strings.Contains(barcodeID, ":") {
-				parts := strings.SplitN(barcodeID, ":", 2)
-				barcodeID = parts[0]
-				pin = parts[1]
-			}
-
-			if barcodeID == "" {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode_id or email is required"))
-				return
-			}
-
-			if pin == "" {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("PIN or password is required"))
-				return
-			}
-
+		// ONLY perform IMAP verification (Roundcube SSO)
+		if imapErr := AuthenticateIMAP(req.Email, password); imapErr == nil {
+			// IMAP succeeded, check if the user is registered in our local DB
 			query := `
-				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.email, b.aktiv 
+				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.aktiv 
 				FROM benutzer b
 				LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
-				WHERE LOWER(b.barcode_id) = LOWER($1) OR (LOWER($1) = 'admin' AND LOWER(b.barcode_id) = 'admin-1')
+				WHERE LOWER(b.email) = LOWER($1) 
 				LIMIT 1
 			`
-			err := dbPool.QueryRow(ctx, query, barcodeID).Scan(&id, &roleStr, &vorname, &nachname, &email, &aktiv)
-			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					apierrors.SendHTTPError(w, http.StatusUnauthorized, err)
-					return
-				}
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
+			err := dbPool.QueryRow(ctx, query, req.Email).Scan(&id, &roleStr, &vorname, &nachname, &aktiv)
+			if err == nil {
+				authSuccess = true
 			}
+		}
 
-			// Password/PIN checks are removed since local passwords are gone.
-			// Barcode scan is assumed to be authorized physically for the Kiosk-Helfer.
-			authSuccess = true
+		if !authSuccess {
+			globalLoginLimiter.recordFailure(clientIP)
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+			return
 		}
 
 		if !aktiv {
