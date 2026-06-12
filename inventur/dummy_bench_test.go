@@ -65,7 +65,7 @@ func BenchmarkImportSequential(b *testing.B) {
 			GradeLevel: 5,
 			Stock:      1,
 		}
-		repo.UpsertBook(ctx, book)
+		_, _ = repo.UpsertBook(ctx, book)
 	}
 }
 

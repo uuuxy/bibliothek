@@ -2,12 +2,15 @@
   import { apiFetch } from "./apiFetch.js";
   import StudentEditModal from "./StudentEditModal.svelte";
 
-  let students = $state([]);
+  let students = $state.raw([]);
   let loading = $state(true);
   let errorMsg = $state("");
   let searchQuery = $state("");
   let selectedStudent = $state(null);
   let showToast = $state(false);
+  
+  // Performance: Begrenzung der gerenderten DOM-Elemente
+  let maxVisible = $state(50);
 
   async function fetchStudents() {
     loading = true;
@@ -32,6 +35,12 @@
       return fullName.includes(q) || s.klasse.toLowerCase().includes(q);
     })
   );
+
+  // Reset maxVisible when search changes
+  $effect(() => {
+    searchQuery;
+    maxVisible = 50;
+  });
 
   let sendingMailId = $state(null);
   let mailStatus = $state({});
@@ -116,7 +125,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-slate-600 font-medium">
-            {#each filteredStudents as schueler}
+            {#each filteredStudents.slice(0, maxVisible) as schueler}
               <tr 
                 class="hover:bg-blue-50/50 cursor-pointer transition-colors"
                 onclick={() => selectedStudent = schueler}
@@ -169,6 +178,17 @@
             {/if}
           </tbody>
         </table>
+        
+        {#if filteredStudents.length > maxVisible}
+          <div class="p-4 flex justify-center bg-slate-50 border-t border-slate-100">
+            <button 
+              class="px-6 py-2 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+              onclick={() => maxVisible += 50}
+            >
+              Weitere Schüler laden ({filteredStudents.length - maxVisible} verbleibend)
+            </button>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}

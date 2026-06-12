@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
-	"bibliothek/auth"
 	"regexp"
 )
 
@@ -146,6 +145,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 
 // requireAuth is an internal helper that extracts valid JWT claims from the request cookie.
 // Returns claims and true on success; writes 401 and returns false on failure.
+/*
 func (s *Server) requireAuth(w http.ResponseWriter, r *http.Request) (*auth.Claims, bool) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
@@ -153,6 +153,7 @@ func (s *Server) requireAuth(w http.ResponseWriter, r *http.Request) (*auth.Clai
 	}
 	return claims, ok
 }
+*/
 
 var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 

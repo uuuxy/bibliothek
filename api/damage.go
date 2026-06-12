@@ -63,7 +63,7 @@ func (s *Server) MarkCopyDefektHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 1. Mark copy as not lendable and record damage note.
 		res, err := tx.Exec(ctx, `
@@ -140,7 +140,7 @@ func (s *Server) UndoReturnHandler() http.HandlerFunc {
 		}
 		if res.RowsAffected() == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound,
-				errors.New("Ausleihe nicht gefunden, nicht zurückgegeben oder Zeitfenster überschritten (max. 1 Stunde)"))
+				errors.New("ausleihe nicht gefunden, nicht zurückgegeben oder Zeitfenster überschritten (max. 1 Stunde)"))
 			return
 		}
 
@@ -179,7 +179,7 @@ func (s *Server) ReportDamageHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 1. Mark copy as decommissioned
 		_, err = tx.Exec(ctx, `

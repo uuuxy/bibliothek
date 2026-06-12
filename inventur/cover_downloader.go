@@ -39,7 +39,7 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		return ""
 	}
 
-	// #nosec G107 - URL validated against whitelist
+	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)
 	if err != nil {
 		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", coverURL, err)
@@ -54,7 +54,7 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		log.Printf("Cover-Download fehlgeschlagen für %s: %v", coverURL, err)
 		return coverURL
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return coverURL
@@ -88,7 +88,7 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	filename := fmt.Sprintf("cover_auto_%s_%d%s", isbn, time.Now().Unix(), saveExt)
 	savePath := filepath.Join("uploads", filename)
 
-	if err := os.WriteFile(savePath, finalBytes, 0644); err != nil {
+	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
 		log.Printf("Fehler beim lokalen Speichern von %s: %v", savePath, err)
 		return coverURL // Fallback auf Remote URL
 	}

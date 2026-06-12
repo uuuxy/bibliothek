@@ -115,7 +115,7 @@ func (s *Server) UpdateCopyBarcodeHandler() http.HandlerFunc {
 		_, err := s.DB.Pool.Exec(ctx, query, req.Barcode, id)
 		if err != nil {
 			if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
-				apierrors.SendHTTPError(w, http.StatusConflict, errors.New("Dieser Barcode wird bereits von einem anderen Exemplar verwendet."))
+				apierrors.SendHTTPError(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

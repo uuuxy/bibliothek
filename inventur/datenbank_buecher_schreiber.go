@@ -280,7 +280,7 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return fmt.Errorf("fehler bei der prüfung auf aktive ausleihen: %w", err)
 	}
 	if activeLoans > 0 {
-		return fmt.Errorf("Löschen abgebrochen: Mindestens ein Exemplar dieser Titel ist aktuell verliehen")
+		return fmt.Errorf("löschen abgebrochen: Mindestens ein Exemplar dieser Titel ist aktuell verliehen")
 	}
 
 	coverRows, err := repo.db.Query(ctx, "SELECT cover_url FROM buecher_titel WHERE id = ANY($1::uuid[]) AND cover_url LIKE '/uploads/%'", ids)

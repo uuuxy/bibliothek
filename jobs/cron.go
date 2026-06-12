@@ -176,14 +176,14 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 			student.AbgaengerJahr)
 
 		if err := s.auditRepo.DeleteStudent(ctx, student.ID, "", grund); err != nil {
-			log.Printf("Scheduler GDPR Delete: failed to delete student %s %s (ID %s): %v",
-				student.Vorname, student.Nachname, student.ID, err)
+			log.Printf("Scheduler GDPR Delete: failed to delete student ID %s: %v",
+				student.ID, err)
 			failures = append(failures, student.ID)
 			continue
 		}
 
-		log.Printf("Scheduler GDPR Delete: deleted %s %s (Klasse %s, Abgang %d)",
-			student.Vorname, student.Nachname, student.Klasse, student.AbgaengerJahr)
+		log.Printf("Scheduler GDPR Delete: deleted student ID %s (Klasse %s, Abgang %d)",
+			student.ID, student.Klasse, student.AbgaengerJahr)
 		deleted++
 	}
 

@@ -38,7 +38,7 @@ func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
 	if err != nil {
 		return nil, fmt.Errorf("CSV-Datei fehlt: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := csv.NewReader(file)
 	reader.Comma = ';' // Typical for German CSVs, fallback to ',' below if needed
@@ -47,13 +47,13 @@ func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
 	header, err := reader.Read()
 	// Try comma if semicolon failed to produce multiple columns
 	if err != nil || len(header) < 3 {
-		file.Seek(0, io.SeekStart)
+		_, _ = file.Seek(0, io.SeekStart)
 		reader = csv.NewReader(file)
 		reader.Comma = ','
 		reader.LazyQuotes = true
 		header, err = reader.Read()
 		if err != nil {
-			return nil, fmt.Errorf("Fehler beim Lesen der CSV-Kopfzeile: %w", err)
+			return nil, fmt.Errorf("fehler beim Lesen der CSV-Kopfzeile: %w", err)
 		}
 	}
 
@@ -75,7 +75,7 @@ func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
 	}
 
 	if colIdx["id"] == -1 || colIdx["vorname"] == -1 || colIdx["nachname"] == -1 {
-		return nil, errors.New("Fehlende Pflichtspalten in der CSV. Benötigt: ID, Vorname, Name")
+		return nil, errors.New("fehlende Pflichtspalten in der CSV. Benötigt: ID, Vorname, Name")
 	}
 
 	records := make([]lusdRecord, 0)
@@ -118,7 +118,7 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 		return nil, err
 	}
 	// Always rollback on panic or early return. If we apply, we commit at the very end.
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Read all current students
 	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse FROM schueler WHERE ist_abgaenger = false")

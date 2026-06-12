@@ -31,8 +31,9 @@ describe('authStore', () => {
             };
         });
 
-        // Set login barcode
-        authStore.loginBarcode = 'L-123';
+        // Set login credentials
+        authStore.loginEmail = 'test@example.com';
+        authStore.loginPassword = 'password123';
         
         // Trigger login
         await authStore.handleLogin(null);
@@ -40,6 +41,7 @@ describe('authStore', () => {
         // Assertions
         expect(authStore.isLoggedIn).toBe(true);
         expect(authStore.currentUser).toEqual({ id: 1, rolle: 'mitarbeiter', vorname: 'Test' });
-        expect(authStore.loginBarcode).toBe('');
+        expect(authStore.loginEmail).toBe('');
+        expect(authStore.loginPassword).toBe('');
     });
 });

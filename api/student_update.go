@@ -51,7 +51,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 			return
 		}
 		if !studentExists {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Schüler nicht gefunden"))
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return
 		}
 
@@ -68,7 +68,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 			return
 		}
 		if activeLoansCount > 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Löschen nicht möglich: Schüler hat noch entliehene Bücher"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("löschen nicht möglich: Schüler hat noch entliehene Bücher"))
 			return
 		}
 
@@ -85,7 +85,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 			return
 		}
 		if unpaidDamagesCount > 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Löschen nicht möglich: Schüler hat noch unbezahlte Schadensfälle/Gebühren"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("löschen nicht möglich: Schüler hat noch unbezahlte Schadensfälle/Gebühren"))
 			return
 		}
 
@@ -194,7 +194,7 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			return
 		}
 		if tag.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Schüler nicht gefunden"))
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return
 		}
 

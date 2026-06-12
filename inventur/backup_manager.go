@@ -91,7 +91,7 @@ func (bm *BackupManager) runBackup() {
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
 	backupPath := bm.backupDir + "/" + timestamp
 
-	if err := os.MkdirAll(backupPath, 0755); err != nil {
+	if err := os.MkdirAll(backupPath, 0750); err != nil {
 		log.Printf("Backup FEHLER: Verzeichnis konnte nicht erstellt werden: %v", err)
 		return
 	}
@@ -100,7 +100,7 @@ func (bm *BackupManager) runBackup() {
 
 	if err := bm.dumpDatabase(backupPath); err != nil {
 		log.Printf("Backup FEHLER: Datenbank-Dump fehlgeschlagen: %v", err)
-		os.RemoveAll(backupPath)
+		_ = os.RemoveAll(backupPath)
 		return
 	}
 

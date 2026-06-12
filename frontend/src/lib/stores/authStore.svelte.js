@@ -20,7 +20,13 @@ class AuthStore {
             this.lastHeartbeatTime = Date.now();
             this.heartbeatOk = true;
         });
-        source.onerror = () => { this.heartbeatOk = false; };
+        source.onerror = () => { 
+            this.heartbeatOk = false; 
+            // Automatisch neu verbinden nach Verbindungsabbruch (z.B. durch Druckdialog oder Sleep)
+            setTimeout(() => {
+                if (this.isLoggedIn) this.connectSSE();
+            }, 2000);
+        };
     }
 
     /** 

@@ -84,7 +84,7 @@ func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn strin
 func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) *MetadatenErgebnis {
 	if ergebnis.CoverURL == "" {
 		isbn13 := konvertiereISBN10zu13(isbn)
-		dnbCoverURL := fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", isbn13)
+		dnbCoverURL := fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(isbn13))
 
 		// Prüfen, ob das Cover-Ergebnis für diese ISBN bereits gecacht ist
 		cachedErgebnis, found := client.coverCache.Load(isbn13)
@@ -93,12 +93,12 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 				ergebnis.CoverURL = dnbCoverURL
 			}
 		} else {
-			// #nosec G107 - Hostname is hardcoded in the formatting string above
+			// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
 			anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodHead, dnbCoverURL, nil)
 			if fehler == nil {
 				antwort, fehler := client.httpClient.Do(anfrage)
 				if fehler == nil {
-					defer antwort.Body.Close()
+					defer func() { _ = antwort.Body.Close() }()
 
 					hasCover := antwort.StatusCode == http.StatusOK
 					client.coverCache.Store(isbn13, hasCover)
@@ -142,7 +142,7 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 		return nil, fmt.Errorf("SSRF Schutz: Hostname %s ist nicht in der Whitelist", parsed.Hostname())
 	}
 
-	// #nosec G107 - URL is validated against whitelist above
+	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
 	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, apiURL, nil)
 	if fehler != nil {
 		return nil, fehler
@@ -151,7 +151,7 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	if fehler != nil {
 		return nil, fehler
 	}
-	defer antwort.Body.Close()
+	defer func() { _ = antwort.Body.Close() }()
 	if antwort.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("status %d", antwort.StatusCode)
 	}

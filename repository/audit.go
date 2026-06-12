@@ -88,7 +88,7 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Snapshot: capture title metadata before deletion for the audit trail
 	var titel, autor, isbn string
@@ -120,7 +120,7 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		}
 	}
 	if len(activeLoans) > 0 {
-		return fmt.Errorf("Löschen fehlgeschlagen: Folgende Exemplare sind noch verliehen: %v", activeLoans)
+		return fmt.Errorf("löschen fehlgeschlagen: Folgende Exemplare sind noch verliehen: %v", activeLoans)
 	}
 
 	// Clean up related records for ALL copies of this title to prevent ON DELETE RESTRICT errors
@@ -156,7 +156,7 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Snapshot: capture copy details before deletion for the audit trail
 	var barcode, zustandNotiz, titel string
@@ -179,7 +179,7 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 		return fmt.Errorf("failed to check active loans for copy: %w", err)
 	}
 	if activeLoanCount > 0 {
-		return errors.New("Exemplar ist aktuell noch verliehen!")
+		return errors.New("exemplar ist aktuell noch verliehen")
 	}
 
 	// Clean up related records (damage reports and past loans) before deleting the copy
@@ -211,7 +211,7 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Snapshot before deletion
 	var vorname, nachname, email, rolle string
@@ -248,7 +248,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Snapshot before deletion (DSGVO-konforme Protokollierung)
 	var vorname, nachname, klasse, barcodeID string
@@ -298,7 +298,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	}
 
 	// Determine actor type
-	akteur := "USER"
+	var akteur string
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
 		akteur = "USER"
@@ -336,7 +336,7 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Mark as cancelled in schadensfaelle
 	tag, err := tx.Exec(ctx, `
@@ -352,7 +352,7 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 		return fmt.Errorf("stornierung schadensfaelle: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("Schadensfall %s nicht gefunden oder bereits bezahlt/storniert", schadensfallID)
+		return fmt.Errorf("schadensfall %s nicht gefunden oder bereits bezahlt/storniert", schadensfallID)
 	}
 
 	kontext := "Gebühr storniert"
@@ -389,7 +389,7 @@ func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, e
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
@@ -426,7 +426,7 @@ func (r *pgAuditRepository) LogSystemAktion(ctx context.Context, tabelle string,
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// System actions use a sentinel UUID-shaped kontext key, not a real record ID.
 	// We use a canonical SYSTEM ID for datensatz_id.

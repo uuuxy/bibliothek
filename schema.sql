@@ -383,5 +383,15 @@ INSERT INTO schema_migrations (version) VALUES
 ('003_dsgvo_lusd_datensparsamkeit.sql'),
 ('004_aussonderung.sql'),
 ('005_add_etikett_gedruckt.sql'),
-('006_create_geraete.sql')
+('006_create_geraete.sql'),
+('007_performance_indexes.sql')
 ON CONFLICT DO NOTHING;
+
+-- -------------------------------------------------------------
+-- 5. PERFORMANCE INDEXES
+-- -------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_ausleihen_geraet ON ausleihen (geraet_id) WHERE geraet_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_schadensfaelle_ausleihe ON schadensfaelle (ausleihe_id) WHERE ausleihe_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_vormerkungen_schueler ON vormerkungen(schueler_id) WHERE schueler_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_klassensatz_titel ON klassensatz_reservierungen(titel_id);
+CREATE INDEX IF NOT EXISTS idx_class_books_klasse ON class_books(class_name);

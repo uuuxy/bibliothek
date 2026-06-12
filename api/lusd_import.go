@@ -38,7 +38,7 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -104,7 +104,7 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 4. Determine next sequential barcode index for S-XXXXX barcodes
 		var lastBarcode string

@@ -92,7 +92,7 @@ func (b *Broker) Handler() http.HandlerFunc {
 		}()
 
 		// Send handshake acknowledgment
-		fmt.Fprintf(w, "event: connected\ndata: {\"status\":\"ok\"}\n\n")
+		_, _ = fmt.Fprintf(w, "event: connected\ndata: {\"status\":\"ok\"}\n\n")
 		flusher.Flush()
 
 		// Heartbeat ticker for dead-man-switch detection
@@ -105,13 +105,13 @@ func (b *Broker) Handler() http.HandlerFunc {
 				return
 			case <-ticker.C:
 				// Write heartbeat ping
-				fmt.Fprintf(w, "event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
+				_, _ = fmt.Fprintf(w, "event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
 				flusher.Flush()
 			case msg, ok := <-clientChan:
 				if !ok {
 					return
 				}
-				fmt.Fprint(w, msg)
+				_, _ = fmt.Fprint(w, msg)
 				flusher.Flush()
 			}
 		}

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -78,9 +79,17 @@ func (s *Server) GetStudentProfileHandler(
 		// 2. Resolve photo URL if the webcam snapshot exists on disk
 		fotoURL := ""
 		if student.BarcodeID != "" {
-			filePath := filepath.Join("uploads", "fotos", fmt.Sprintf("%s.jpg", student.BarcodeID))
-			if _, err := os.Stat(filePath); err == nil {
-				fotoURL = fmt.Sprintf("/uploads/fotos/%s.jpg", student.BarcodeID)
+			safeBarcodeID := filepath.Base(student.BarcodeID)
+			filePath := filepath.Join("uploads", "fotos", fmt.Sprintf("%s.jpg", safeBarcodeID))
+
+			fotoBytes, err := os.ReadFile(filePath)
+			if err == nil {
+				// Base64 encoden
+				encoded := base64.StdEncoding.EncodeToString(fotoBytes)
+				fotoURL = fmt.Sprintf("data:image/jpeg;base64,%s", encoded)
+			} else {
+				// Fallback auf den URL-Pfad (der Client lädt das Bild dann selbst)
+				fotoURL = fmt.Sprintf("/uploads/fotos/%s.jpg", safeBarcodeID)
 			}
 		}
 

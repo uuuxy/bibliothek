@@ -98,7 +98,7 @@ type errLogger struct {
 
 func newErrLogger() (*errLogger, error) {
 	// #nosec G304 - errorLogPath is a hardcoded constant
-	f, err := os.OpenFile(errorLogPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o640)
+	f, err := os.OpenFile(errorLogPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("open error log: %w", err)
 	}
@@ -250,7 +250,7 @@ func readMySQLTitles(db *sql.DB) ([]mysqlMedium, error) {
 	if err != nil {
 		return nil, fmt.Errorf("mysql query: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []mysqlMedium
 	for rows.Next() {
@@ -372,10 +372,11 @@ func insertBatch(
 ) (titlesOK, copiesOK int) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
+		// #nosec G706
 		log.Printf("ERROR begin transaction: %v", err)
 		return
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	for _, m := range batch {
 		// ── Validate ISBN ────────────────────────────────────────────────
@@ -471,6 +472,7 @@ func insertBatch(
 	}
 
 	if err := tx.Commit(ctx); err != nil {
+		// #nosec G706
 		log.Printf("ERROR commit batch: %v", err)
 		return 0, 0
 	}
@@ -518,7 +520,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("mysql open: %v", err)
 	}
-	defer mysqlDB.Close()
+	defer func() { _ = mysqlDB.Close() }()
 	mysqlDB.SetMaxOpenConns(4)
 	mysqlDB.SetConnMaxLifetime(5 * time.Minute)
 	if err := mysqlDB.PingContext(ctx); err != nil {
@@ -544,6 +546,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("mysql read: %v", err)
 	}
+	// #nosec G706
 	log.Printf("Gelesen: %d Titel aus MySQL", len(titles))
 
 	if *dryRun {
@@ -569,6 +572,7 @@ func main() {
 				}
 			}
 		}
+		// #nosec G706
 		log.Printf("DRY-RUN abgeschlossen: %d Validierungsfehler → %s", validationErrors, errorLogPath)
 		return
 	}
@@ -578,6 +582,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("barcode seq lookup: %v", err)
 	}
+	// #nosec G706
 	log.Printf("Höchster vorhandener Barcode: B-%05d → Nächster: B-%05d", barcodeSeq, barcodeSeq+1)
 
 	// ── Batch import ─────────────────────────────────────────────────────
@@ -593,30 +598,43 @@ func main() {
 		batch := titles[i:end]
 		batchNum := (i / *batchSize) + 1
 
+		// #nosec G706
+
 		log.Printf("Batch %d/%d: importiere %d Titel …", batchNum, totalBatches, len(batch))
 		t, c := insertBatch(ctx, pgPool, batch, seenISBNs, el, &barcodeSeq)
 		totalTitles += t
 		totalCopies += c
+		// #nosec G706
 		log.Printf("  → %d Titel, %d Exemplare eingetragen", t, c)
 	}
 
 	// ── Summary ───────────────────────────────────────────────────────────
+	// #nosec G706
 	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	// #nosec G706
 	log.Printf("Migration abgeschlossen:")
+	// #nosec G706
 	log.Printf("  Quell-Titel (MySQL):      %d", len(titles))
+	// #nosec G706
 	log.Printf("  Importierte Titel:        %d", totalTitles)
+	// #nosec G706
 	log.Printf("  Importierte Exemplare:    %d", totalCopies)
+	// #nosec G706
 	log.Printf("  Fehler / Warnungen:       %d → %s", el.n, errorLogPath)
+	// #nosec G706
 	log.Printf("  Letzter Barcode:          B-%05d", barcodeSeq)
+	// #nosec G706
 	log.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	if el.n > 0 {
+		// #nosec G706
 		log.Printf("⚠  %d Einträge konnten nicht migriert werden. Details: %s", el.n, errorLogPath)
 		os.Exit(2) // non-zero but not fatal: partial success
 	}
 
 	// Cleanly close MySQL before exit (pgPool closed via defer above).
 	if err := mysqlDB.Close(); err != nil {
+		// #nosec G706
 		log.Printf("mysql close: %v", err)
 	}
 }

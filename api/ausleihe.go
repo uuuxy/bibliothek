@@ -54,7 +54,7 @@ func (s *Server) ExtendLoanHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,
 			"neues_rueckgabe_datum": newFrist,
 		})
@@ -91,7 +91,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			http.Error(w, "Interner Serverfehler", http.StatusInternalServerError)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		q := `
 			UPDATE ausleihen a
@@ -118,7 +118,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,
 			"updated_count": tag.RowsAffected(),
 		})

@@ -21,7 +21,7 @@
 	} from "$lib/admin_api.js";
 
 	/** @type {any[]} */
-	let buecher = $state([]);
+	let buecher = $state.raw([]);
 	let wirdGeladen = $state(false);
 	let istBearbeitenModus = $state(false);
 	let wirdGescannt = $state(false);

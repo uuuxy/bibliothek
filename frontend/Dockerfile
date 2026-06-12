@@ -13,6 +13,12 @@ WORKDIR /app
 RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
 
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 3000
 ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=3s CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+
 CMD ["serve", "-s", "dist", "-l", "3000"]

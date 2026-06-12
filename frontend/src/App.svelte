@@ -39,8 +39,9 @@
   $effect(() => {
     if (!authStore.isLoggedIn) return;
     const checker = setInterval(() => {
-      if (Date.now() - authStore.lastHeartbeatTime > 2000) authStore.heartbeatOk = false;
-    }, 500);
+      // Timeout auf 10 Sekunden erhöht, da der Druckdialog (window.print) den JS-Thread pausiert
+      if (Date.now() - authStore.lastHeartbeatTime > 10000) authStore.heartbeatOk = false;
+    }, 1000);
     return () => clearInterval(checker);
   });
 </script>

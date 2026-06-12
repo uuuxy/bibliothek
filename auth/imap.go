@@ -24,7 +24,7 @@ func AuthenticateIMAP(email, password string) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to IMAP server: %w", err)
 	}
-	defer c.Logout()
+	defer func() { _ = c.Logout() }()
 
 	if err := c.StartTLS(nil); err != nil {
 		return fmt.Errorf("failed to start TLS on IMAP connection: %w", err)

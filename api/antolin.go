@@ -57,7 +57,7 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 			}
 		}
 
-		// #nosec G107 - Hostname is hardcoded, isbn is query escaped
+		// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet,
 			"https://www.antolin.de/all/jsonBuecher.do?isbn="+url.QueryEscape(isbn), nil)
 		if err != nil {
@@ -74,7 +74,7 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadGateway, fmt.Errorf("antolin service unavailable"))
 			return
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		var apiResp antolinAPIResp
 		if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {

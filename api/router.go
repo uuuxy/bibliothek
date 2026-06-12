@@ -54,8 +54,8 @@ func (s *Server) Routes() http.Handler {
 	auditRepo := repository.NewAuditRepository(s.DB.Pool)
 
 	// Initialize Inventur sub-module handlers
-	_ = os.MkdirAll("uploads", 0755)
-	_ = os.MkdirAll("uploads/fotos", 0755)
+	_ = os.MkdirAll("uploads", 0750)
+	_ = os.MkdirAll("uploads/fotos", 0750)
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
 
@@ -342,13 +342,13 @@ func (s *Server) Routes() http.Handler {
 
 	// Demo Admin-only Endpoint
 	adminDashboard := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Access granted: Welcome to the Admin Dashboard."))
+		_, _ = w.Write([]byte("Access granted: Welcome to the Admin Dashboard."))
 	})
 	mux.Handle("GET /admin/dashboard", s.Auth.RequireRoles(auth.RoleAdmin)(adminDashboard))
 
 	// Demo Teacher/Admin Endpoint
 	teacherZone := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Access granted: Welcome to the Teacher Zone."))
+		_, _ = w.Write([]byte("Access granted: Welcome to the Teacher Zone."))
 	})
 	mux.Handle("GET /teacher/dashboard", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer)(teacherZone))
 
@@ -390,6 +390,7 @@ func (s *Server) Routes() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
+		// #nosec G706
 		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
 		globalHandler.ServeHTTP(w, r)
 	})

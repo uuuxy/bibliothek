@@ -24,13 +24,13 @@ func extractExcelRows(w http.ResponseWriter, request *http.Request) ([][]string,
 	if err != nil {
 		return nil, errors.New("keine datei gefunden")
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	f, err := excelize.OpenReader(file)
 	if err != nil {
 		return nil, errors.New("ungültige excel-datei")
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	sheets := f.GetSheetList()
 	if len(sheets) == 0 {

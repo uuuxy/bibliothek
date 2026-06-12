@@ -48,9 +48,9 @@ type ActionEvent struct {
 }
 
 var (
-	errNotFound     = errors.New("Eintrag nicht gefunden")
-	errBlocked      = errors.New("Ausleihe für diese/n Schüler/in ist gesperrt")
-	errInvalidState = errors.New("Ungültiger Transaktionszustand")
+	errNotFound     = errors.New("eintrag nicht gefunden")
+	errBlocked      = errors.New("ausleihe für diese/n Schüler/in ist gesperrt")
+	errInvalidState = errors.New("ungültiger Transaktionszustand")
 )
 
 // broadcastActionEvent broadcasts the action event as JSON via SSE stream.

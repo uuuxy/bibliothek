@@ -37,7 +37,7 @@ func (s *Server) ActionHandler(
 
 		req.Query = strings.TrimSpace(req.Query)
 		if req.Query == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Such- oder Barcode-Abfrage ist leer"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("such- oder Barcode-Abfrage ist leer"))
 			return
 		}
 

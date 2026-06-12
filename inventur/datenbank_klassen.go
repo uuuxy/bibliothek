@@ -82,7 +82,7 @@ func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName s
 	if err != nil {
 		return fmt.Errorf("transaktion konnte nicht gestartet werden: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// If there's an old class name, delete it.
 	if oldClassName != "" {
@@ -140,7 +140,7 @@ func (repo *BookRepository) NormalizeAllClasses(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("transaktion konnte nicht gestartet werden: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Step 1: Bereinigung von Leerzeichen.
 	// Lösche Duplikate, die entstehen würden, wenn wir die Leerzeichen entfernen.

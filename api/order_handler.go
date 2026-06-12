@@ -47,7 +47,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 1. Fetch titles below reorder point
 		reorderQuery := `

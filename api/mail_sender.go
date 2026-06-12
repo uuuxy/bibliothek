@@ -8,6 +8,7 @@ import (
 	"net/smtp"
 	"net/textproto"
 	"os"
+	"strings"
 )
 
 // MailAttachment represents an email attachment.
@@ -45,6 +46,9 @@ func SendEmail(req MailRequest) error {
 	writer := multipart.NewWriter(&buf)
 	boundary := writer.Boundary()
 
+	req.To = strings.ReplaceAll(req.To, "\r", "")
+	req.To = strings.ReplaceAll(req.To, "\n", "")
+
 	// Write SMTP Headers
 	fmt.Fprintf(&buf, "From: %s\r\n", from)
 	fmt.Fprintf(&buf, "To: %s\r\n", req.To)
@@ -78,10 +82,10 @@ func SendEmail(req MailRequest) error {
 		if _, err := encoder.Write(att.Data); err != nil {
 			return fmt.Errorf("failed to write attachment data for %s: %w", att.Name, err)
 		}
-		encoder.Close()
+		_ = encoder.Close()
 	}
 
-	writer.Close()
+	_ = writer.Close()
 
 	addr := host + ":" + port
 	var auth smtp.Auth

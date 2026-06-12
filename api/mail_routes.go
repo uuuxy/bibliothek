@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -75,13 +77,14 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 		// 4. Mail über das mailservice Package versenden
 		err = mailservice.SendTemplateMail(ctx, s.DB.Pool, *elternEmail, "MAHNUNG_ELTERN", data)
 		if err != nil {
-			http.Error(w, "Fehler beim E-Mail-Versand: "+err.Error(), http.StatusInternalServerError)
+			log.Printf("Fehler beim E-Mail-Versand (Schüler %s): %v", schuelerID, err)
+			http.Error(w, "Fehler beim E-Mail-Versand", http.StatusInternalServerError)
 			return
 		}
 
 		// 5. Erfolgreiche Antwort
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"message": "Mail an Eltern wurde verschickt",
 		})
 	}
@@ -160,12 +163,13 @@ func (s *Server) PostSendNotificationHandler() http.HandlerFunc {
 
 		err = mailservice.SendTemplateMail(ctx, s.DB.Pool, *elternEmail, req.TemplateType, data)
 		if err != nil {
-			http.Error(w, "Fehler beim E-Mail-Versand: "+err.Error(), http.StatusInternalServerError)
+			log.Printf("Fehler beim E-Mail-Versand (Schüler %s): %v", schuelerID, err)
+			http.Error(w, "Fehler beim E-Mail-Versand", http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"message": "Mail erfolgreich versendet",
 		})
 	}
@@ -218,38 +222,38 @@ func (s *Server) PostSendBulkOverdueHandler() http.HandlerFunc {
 			}
 		}
 
-		gesendet := 0
-		fehler := 0
 		ohneEmail := 0
 
-		// Schleifen-Logik 2: Iteriere über alle Schüler mit Überfälligkeiten und versende Mails
+		// Error-Handling / Edge-Case: Schüler ohne E-Mail separat zählen, um sie synchron zurückzugeben
 		for _, data := range overdues {
-			// Error-Handling / Edge-Case: Schüler ohne E-Mail überspringen und separat zählen
 			if data.ElternEmail == nil || strings.TrimSpace(*data.ElternEmail) == "" {
 				ohneEmail++
-				continue
-			}
-
-			buecherString := "- " + strings.Join(data.Buecher, "\n- ")
-			tmplData := map[string]interface{}{
-				"Name":      fmt.Sprintf("%s %s", data.Vorname, data.Nachname),
-				"Vorname":   data.Vorname,
-				"BuchListe": buecherString,
-			}
-
-			// Mail synchron versenden (bei sehr vielen Schülern besser in Go-Routinen oder Background-Jobs)
-			err = mailservice.SendTemplateMail(ctx, s.DB.Pool, *data.ElternEmail, "MAHNUNG_ELTERN", tmplData)
-			if err != nil {
-				fehler++
-			} else {
-				gesendet++
 			}
 		}
 
+		// Asynchroner Massenversand im Hintergrund
+		go func(tasks map[string]*studentOverdue) {
+			bgCtx := context.Background() // Eigener Context, der nicht mit dem HTTP Request abbricht
+			for _, data := range tasks {
+				if data.ElternEmail == nil || strings.TrimSpace(*data.ElternEmail) == "" {
+					continue
+				}
+
+				buecherString := "- " + strings.Join(data.Buecher, "\n- ")
+				tmplData := map[string]interface{}{
+					"Name":      fmt.Sprintf("%s %s", data.Vorname, data.Nachname),
+					"Vorname":   data.Vorname,
+					"BuchListe": buecherString,
+				}
+
+				_ = mailservice.SendTemplateMail(bgCtx, s.DB.Pool, *data.ElternEmail, "MAHNUNG_ELTERN", tmplData)
+				time.Sleep(100 * time.Millisecond) // Kleines Delay zur Schonung des SMTP-Servers
+			}
+		}(overdues)
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]int{
-			"gesendet":   gesendet,
-			"fehler":     fehler,
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"message":    "Massen-Versand wurde im Hintergrund gestartet",
 			"ohne_email": ohneEmail,
 		})
 	}
@@ -285,7 +289,7 @@ func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(templates)
+		_ = json.NewEncoder(w).Encode(templates)
 	}
 }
 
@@ -315,6 +319,6 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"message": "Erfolgreich gespeichert"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Erfolgreich gespeichert"})
 	}
 }

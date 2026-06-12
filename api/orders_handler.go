@@ -74,7 +74,7 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 2. Fetch the highest B-XXXXX barcode in the system to calculate the next sequence
 		var lastBarcode string
@@ -378,7 +378,7 @@ func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 		err := s.DB.Pool.QueryRow(ctx, query, req.Barcode, req.TitelID).Scan(&updatedID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Kein offenes (bestelltes) Exemplar für diesen Titel gefunden."))
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein offenes (bestelltes) Exemplar für diesen Titel gefunden"))
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

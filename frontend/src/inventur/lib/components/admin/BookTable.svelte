@@ -32,6 +32,9 @@
 	let draggedIndex = $state(null);
 	/** @type {number|null} */
 	let dragOverIndex = $state(null);
+	
+	// Performance: Begrenzung der gerenderten DOM-Elemente
+	let maxVisible = $state(50);
 
 	/**
 	 * @param {{ type: string, message: string }} param0
@@ -193,7 +196,7 @@
 			</thead>
 
 			<tbody class="divide-y divide-slate-100">
-				{#each books as book, index (book.id)}
+				{#each books.slice(0, maxVisible) as book, index (book.id)}
 					<BookTableZeile
 						{book}
 						{index}
@@ -218,6 +221,17 @@
 				{/if}
 			</tbody>
 		</table>
+
+		{#if books.length > maxVisible}
+			<div class="p-4 flex justify-center bg-slate-50 border-t border-slate-100">
+				<button 
+					class="px-6 py-2 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+					onclick={() => maxVisible += 50}
+				>
+					Weitere Bücher laden ({books.length - maxVisible} verbleibend)
+				</button>
+			</div>
+		{/if}
 	</div>
 </div>
 

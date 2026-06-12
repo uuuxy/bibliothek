@@ -3,7 +3,6 @@ package inventur
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -128,6 +127,7 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 // sucheLobid fragt das nordrhein-westfälische Bibliotheksnetzwerk ab.
 // Aktuell wird diese Methode faktisch intern übersprungen (ausgeklammert im Router),
 // aber bleibt als Backup bestehen.
+/*
 func (client *MetadatenClient) sucheLobid(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
 	url := fmt.Sprintf("https://lobid.org/resources/search?q=isbn:%s&format=json", isbn)
 	koerper, fehler := client.holeInhalt(kontext, url)
@@ -166,3 +166,4 @@ func (client *MetadatenClient) sucheLobid(kontext context.Context, isbn string) 
 		Autor: autor,
 	}, nil
 }
+*/

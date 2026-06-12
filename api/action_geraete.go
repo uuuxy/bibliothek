@@ -67,7 +67,7 @@ func (s *Server) handleGeraetAction(
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Fetch active loan for this Geraet with row-level lock
 	var activeLoan repository.Loan
@@ -156,8 +156,6 @@ func (s *Server) handleGeraetAction(
 			err = s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname, klasse FROM schueler WHERE id = $1", *activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return err
-			} else if errors.Is(err, pgx.ErrNoRows) {
-				// Continue with empty struct
 			}
 			resp.Vorbesitzer = &vorbesitzer
 		}
@@ -168,8 +166,6 @@ func (s *Server) handleGeraetAction(
 			err = s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname FROM benutzer WHERE id = $1", *activeLoan.AusleiherBenutzerID).Scan(&vorbesitzerUser.Vorname, &vorbesitzerUser.Nachname)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return err
-			} else if errors.Is(err, pgx.ErrNoRows) {
-				// Continue with empty struct
 			}
 			resp.VorbesitzerUser = &vorbesitzerUser
 		}

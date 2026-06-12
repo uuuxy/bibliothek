@@ -59,6 +59,14 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 
+		// Pre-load photo directory to avoid N+1 I/O
+		fotoMap := make(map[string]bool)
+		if entries, err := os.ReadDir(filepath.Join("uploads", "fotos")); err == nil {
+			for _, e := range entries {
+				fotoMap[e.Name()] = true
+			}
+		}
+
 		students := []map[string]any{}
 		for rows.Next() {
 			var id, barcode, vorname, nachname, kl string
@@ -69,9 +77,9 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &strasse, &hausnr, &plz, &ort, &email, &ausgeliehenAnzahl, &ueberfaelligAnzahl); err == nil {
 				fotoURL := ""
 				if barcode != "" {
-					filePath := filepath.Join("uploads", "fotos", fmt.Sprintf("%s.jpg", barcode))
-					if _, err := os.Stat(filePath); err == nil {
-						fotoURL = fmt.Sprintf("/uploads/fotos/%s.jpg", barcode)
+					fileName := fmt.Sprintf("%s.jpg", barcode)
+					if fotoMap[fileName] {
+						fotoURL = fmt.Sprintf("/uploads/fotos/%s", fileName)
 					}
 				}
 				students = append(students, map[string]any{

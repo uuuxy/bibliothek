@@ -131,7 +131,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 1. Resolve master title details
 		var titel, autor string

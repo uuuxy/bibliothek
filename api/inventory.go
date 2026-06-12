@@ -81,7 +81,7 @@ func (s *Server) ScanInventoryHandler() http.HandlerFunc {
 		}
 
 		if isAusgesondert {
-			apierrors.SendHTTPError(w, http.StatusConflict, fmt.Errorf("Exemplar %s ist ausgesondert und wird nicht inventarisiert", req.BarcodeID))
+			apierrors.SendHTTPError(w, http.StatusConflict, fmt.Errorf("exemplar %s ist ausgesondert und wird nicht inventarisiert", req.BarcodeID))
 			return
 		}
 
@@ -302,7 +302,7 @@ func (s *Server) TitleVerlustBatchHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// Create the array of IDs
 		ids := make([]any, len(req.ExemplarIDs))
@@ -327,9 +327,7 @@ func (s *Server) TitleVerlustBatchHandler() http.HandlerFunc {
 		}
 
 		// Update total verfuegbar count for this title
-		if _, err := tx.Exec(ctx, "SELECT update_verfuegbar_count($1)", titelID); err != nil {
-			// ignore function not found, fall back or it might be trigger-based
-		}
+		_, _ = tx.Exec(ctx, "SELECT update_verfuegbar_count($1)", titelID)
 
 		if err := tx.Commit(ctx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

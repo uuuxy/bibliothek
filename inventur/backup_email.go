@@ -142,7 +142,7 @@ func createZip(srcDir string) ([]byte, error) {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		_, err = io.Copy(writer, file)
 		return err
@@ -181,7 +181,7 @@ func buildEmailWithAttachment(msg EmailMessage) ([]byte, error) {
 
 	// Neu: multipart writer mit gleichem boundary
 	writer2 := multipart.NewWriter(&buf)
-	writer2.SetBoundary(boundary)
+	_ = writer2.SetBoundary(boundary)
 
 	// Text-Teil
 	textHeader := make(textproto.MIMEHeader)
@@ -190,7 +190,7 @@ func buildEmailWithAttachment(msg EmailMessage) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	textPart.Write([]byte(msg.Body))
+	_, _ = textPart.Write([]byte(msg.Body))
 
 	// ZIP-Anhang
 	attachHeader := make(textproto.MIMEHeader)
@@ -209,10 +209,10 @@ func buildEmailWithAttachment(msg EmailMessage) ([]byte, error) {
 		if end > len(encoded) {
 			end = len(encoded)
 		}
-		attachPart.Write([]byte(encoded[i:end] + "\r\n"))
+		_, _ = attachPart.Write([]byte(encoded[i:end] + "\r\n"))
 	}
 
-	writer2.Close()
+	_ = writer2.Close()
 
 	return buf.Bytes(), nil
 }

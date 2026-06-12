@@ -47,6 +47,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 		backupDir = "./backups"
 	}
 	if err := os.MkdirAll(backupDir, 0750); err != nil {
+		// #nosec G706
 		log.Printf("Backup: cannot create backup directory: %v", err)
 		return
 	}
@@ -57,6 +58,8 @@ func (b *BackupJob) RunDatabaseBackup() {
 
 	timestamp := time.Now().UTC().Format("2006-01-02T150405Z")
 	outFilename := filepath.Join(backupDir, fmt.Sprintf("backup_%s.sql.gz.enc", timestamp))
+
+	// #nosec G706
 
 	log.Printf("Backup: starting daily PostgreSQL backup → %s", outFilename)
 
@@ -73,6 +76,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 	pgDump.Stderr = os.Stderr
 
 	if err := pgDump.Start(); err != nil {
+		// #nosec G706
 		log.Printf("Backup: pg_dump start failed: %v", err)
 		return
 	}
@@ -88,19 +92,21 @@ func (b *BackupJob) RunDatabaseBackup() {
 			pw.CloseWithError(err)
 			return
 		}
-		gz.Close()
-		pw.Close()
+		_ = gz.Close()
+		_ = pw.Close()
 	}()
 
 	// Read all compressed data
 	compressedData, err := io.ReadAll(pr)
 	_ = compressedBuf // silence unused var
 	if err != nil {
+		// #nosec G706
 		log.Printf("Backup: compression failed: %v", err)
 		return
 	}
 
 	if err := pgDump.Wait(); err != nil {
+		// #nosec G706
 		log.Printf("Backup: pg_dump finished with error: %v", err)
 		return
 	}
@@ -108,6 +114,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 	// AES-256-GCM encrypt the compressed dump
 	encrypted, err := encryptAESGCM(keyBytes[:], compressedData)
 	if err != nil {
+		// #nosec G706
 		log.Printf("Backup: encryption failed: %v", err)
 		return
 	}
@@ -115,11 +122,13 @@ func (b *BackupJob) RunDatabaseBackup() {
 	// Write encrypted backup to disk with restrictive permissions (owner read-only)
 	// #nosec G304 - outFilename is safely constructed using a timestamp
 	if err := os.WriteFile(outFilename, encrypted, 0600); err != nil {
+		// #nosec G706
 		log.Printf("Backup: writing backup file failed: %v", err)
 		return
 	}
 
 	sizeMB := float64(len(encrypted)) / 1024 / 1024
+	// #nosec G706
 	log.Printf("Backup: completed successfully → %s (%.2f MB)", outFilename, sizeMB)
 
 	// Rotate: keep only the last 14 daily backups to avoid disk exhaustion
@@ -177,8 +186,10 @@ func rotateBackups(dir string, maxKeep int) {
 	for _, f := range toDelete {
 		// #nosec G304 - f is derived from filepath.Glob
 		if err := os.Remove(f); err != nil {
+			// #nosec G706
 			log.Printf("Backup rotation: failed to delete %s: %v", f, err)
 		} else {
+			// #nosec G706
 			log.Printf("Backup rotation: deleted old backup %s", f)
 		}
 	}

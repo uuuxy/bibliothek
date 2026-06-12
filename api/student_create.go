@@ -104,7 +104,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		req.BarcodeID = strings.TrimSpace(req.BarcodeID)
 
 		if req.Vorname == "" || req.Nachname == "" || req.Klasse == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Vorname, Nachname und Klasse sind Pflichtfelder"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname und Klasse sind Pflichtfelder"))
 			return
 		}
 
@@ -115,7 +115,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		if req.Geburtsdatum != nil && *req.Geburtsdatum != "" {
 			t, err := time.Parse("2006-01-02", *req.Geburtsdatum)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
+				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
 				return
 			}
 			parsedGebdatum = &t
@@ -126,7 +126,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 1. Notfall-Wachhund: Duplikatsprüfung (Vorname, Nachname, Geburtsdatum)
 		var isDuplicate bool
@@ -137,7 +137,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			return
 		}
 		if isDuplicate {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("Achtung: Ein Schüler mit diesem Namen und Geburtsdatum existiert bereits im System."))
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("achtung: Ein Schüler mit diesem Namen und Geburtsdatum existiert bereits im System"))
 			return
 		}
 

@@ -66,13 +66,13 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 
 		// 3. Save to disk folder uploads/fotos/{barcodeID}.jpg
 		dir := filepath.Join("uploads", "fotos")
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		fileName := filepath.Join(dir, fmt.Sprintf("%s.jpg", barcodeID))
-		if err := os.WriteFile(fileName, imgBytes, 0644); err != nil {
+		if err := os.WriteFile(fileName, imgBytes, 0600); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

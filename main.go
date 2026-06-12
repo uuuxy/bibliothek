@@ -130,8 +130,9 @@ func main() {
 	// 6. Initialize API Server and routing
 	server := api.NewServer(database, authenticator, broker, cookieSecure)
 	httpServer := &http.Server{
-		Addr:    ":" + port,
-		Handler: server.Routes(),
+		Addr:              ":" + port,
+		Handler:           server.Routes(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	// Start server asynchronously

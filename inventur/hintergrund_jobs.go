@@ -105,7 +105,7 @@ func aktualisiereEinzelnesBuch(ctx context.Context, repo *BookRepository, client
 		newGrade := b.GradeLevel
 		if b.GradeLevel == 0 && nachschlagen.KlassenStufe != "" {
 			var parsedGrade int
-			fmt.Sscanf(nachschlagen.KlassenStufe, "%d", &parsedGrade)
+			_, _ = fmt.Sscanf(nachschlagen.KlassenStufe, "%d", &parsedGrade)
 			if parsedGrade >= 5 && parsedGrade <= 13 {
 				newGrade = int16(parsedGrade)
 			}

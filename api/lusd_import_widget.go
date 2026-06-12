@@ -32,7 +32,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 			http.Error(w, "Keine Datei hochgeladen", http.StatusBadRequest)
 			return
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		// 2. Setup CSV Parser
 		reader := csv.NewReader(file)
@@ -83,7 +83,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 			http.Error(w, "Datenbankfehler", http.StatusInternalServerError)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// 3. Process Rows and Upsert
 		for {
@@ -188,6 +188,6 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(result)
 	}
 }

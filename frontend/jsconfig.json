@@ -25,9 +25,8 @@
      */
     "checkJs": true,
     "noImplicitAny": false,
-    "baseUrl": ".",
     "paths": {
-      "$lib/*": ["src/inventur/lib/*"]
+      "$lib/*": ["./src/inventur/lib/*"]
     }
   },
   /**

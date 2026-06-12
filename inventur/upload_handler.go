@@ -39,7 +39,7 @@ func processUploadedImage(fileBytes []byte, id string) ([]byte, string, error) {
 	bounds := img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
 
-	var finalBytes []byte = fileBytes
+	finalBytes := fileBytes
 	saveExt := ""
 	switch format {
 	case "jpeg":
@@ -101,8 +101,8 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 		return
 	}
 
-	id := parts[2]
-	if id == "" {
+	id := filepath.Base(parts[2])
+	if id == "" || id == "." || id == "/" {
 		writeError(writer, http.StatusBadRequest, "id darf nicht leer sein")
 		return
 	}
@@ -120,7 +120,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 		writeError(writer, http.StatusBadRequest, "kein bild gefunden")
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
@@ -159,7 +159,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 	savePath := filepath.Join("uploads", filename)
 
 	// #nosec G304 - filename is safely generated on the server side
-	if err := os.WriteFile(savePath, finalBytes, 0644); err != nil {
+	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
 		log.Printf("cover-upload: write file failed for book %s (%s): %v", id, savePath, err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
 		return

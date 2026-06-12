@@ -31,7 +31,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -85,7 +85,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer tx.Rollback(ctx)
+		defer func() { _ = tx.Rollback(ctx) }()
 
 		// Get next barcode sequence S-XXXXX helper
 		var lastBarcode string
@@ -119,7 +119,8 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			}
 			lineNum++
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("Fehler in Zeile %d: %w", lineNum, err))
+				_ = tx.Rollback(ctx)
+				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("fehler in Zeile %d: %w", lineNum, err))
 				return
 			}
 

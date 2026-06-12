@@ -38,7 +38,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	if err != nil {
 		return fmt.Errorf("konnte pgpass-Datei nicht erstellen: %w", err)
 	}
-	defer os.Remove(passFile.Name())
+	defer func() { _ = os.Remove(passFile.Name()) }()
 
 	pgPassLine := fmt.Sprintf("%s:%s:%s:%s:%s\n",
 		escapePgPass(host),
@@ -48,10 +48,10 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 		escapePgPass(password),
 	)
 	if _, err := passFile.WriteString(pgPassLine); err != nil {
-		passFile.Close()
+		_ = passFile.Close()
 		return fmt.Errorf("konnte in pgpass-Datei nicht schreiben: %w", err)
 	}
-	passFile.Close()
+	_ = passFile.Close()
 
 	dumpFile := filepath.Join(backupPath, "db_dump.sql")
 	// #nosec G304 - dumpFile is safely constructed inside the backup directory
@@ -59,7 +59,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	if err != nil {
 		return fmt.Errorf("konnte Dump-Datei nicht erstellen: %w", err)
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	cmd := exec.Command("pg_dump",
 		"-h", host,
@@ -142,7 +142,7 @@ func (bm *BackupManager) rotateBackups() {
 }
 
 func copyDir(src, dst string) error {
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0750); err != nil {
 		return err
 	}
 
@@ -175,14 +175,14 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	// #nosec G304 - dst is safely constructed
 	out, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	if _, err := io.Copy(out, in); err != nil {
 		return err
