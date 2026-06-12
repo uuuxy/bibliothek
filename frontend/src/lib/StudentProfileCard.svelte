@@ -73,7 +73,7 @@
   }
 </script>
 
-<div class="lg:col-span-1 bg-white rounded-2xl border border-slate-100 shadow-xl p-8 flex flex-col items-center text-center space-y-6">
+<div class="lg:col-span-1 bg-white rounded-3xl border border-slate-100 shadow-lg p-8 flex flex-col items-center text-center space-y-6">
   <div class="relative group">
     {#if profile.foto_url && !imageFailed}
       <img 
@@ -134,32 +134,32 @@
     <p class="text-xs text-slate-400 tracking-wider mt-1">{profile.barcode_id}</p>
   </div>
 
-  <div class="flex flex-col items-center gap-2 pt-2 w-full">
+  <div class="flex flex-col items-center gap-3 pt-2 w-full">
     {#if profile.ist_gesperrt}
-      <span class="inline-flex items-center px-4 py-2 rounded-2xl text-sm font-bold bg-rose-50 border border-rose-100 text-rose-600 w-full justify-center">
-        <span class="w-2 h-2 rounded-full bg-rose-500 mr-2 animate-pulse"></span>
+      <span class="inline-flex items-center px-5 py-2.5 rounded-full text-sm font-bold bg-rose-50 border border-rose-100 text-rose-600 w-full justify-center shadow-sm">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2 animate-pulse"></span>
         Gesperrt
       </span>
     {:else}
-      <span class="inline-flex items-center px-4 py-2 rounded-2xl text-sm font-bold bg-emerald-50 border border-emerald-100 text-emerald-600 w-full justify-center">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+      <span class="inline-flex items-center px-5 py-2.5 rounded-full text-sm font-bold bg-emerald-50 border border-emerald-100 text-emerald-600 w-full justify-center shadow-sm">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span>
         Aktiv
       </span>
     {/if}
   </div>
 
-  <div class="w-full pt-2 flex flex-col gap-2">
-    <button onclick={onPrint} class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+  <div class="w-full pt-4 flex flex-col gap-3">
+    <button onclick={onPrint} class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
       Ausweis drucken
     </button>
 
-    <button onclick={onDeselect} class="w-full py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-2xl text-sm font-bold transition-all cursor-pointer">
+    <button onclick={onDeselect} class="w-full py-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-full text-sm font-bold transition-all cursor-pointer shadow-sm hover:shadow">
       Schüler schließen (ESC)
     </button>
 
     {#if role === 'admin'}
-      <button onclick={() => showDeleteConfirm = true} class="w-full py-3 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 text-rose-600 rounded-2xl text-sm font-bold transition-all cursor-pointer">
+      <button onclick={() => showDeleteConfirm = true} class="w-full py-3.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-full text-sm font-bold transition-all cursor-pointer shadow-sm hover:shadow">
         Schüler löschen
       </button>
     {/if}

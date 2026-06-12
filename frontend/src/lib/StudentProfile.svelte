@@ -251,11 +251,11 @@
     <!-- Right: Timeline / Loans List / Stammdaten (2 cols) -->
     <div class="lg:col-span-2 space-y-6 flex flex-col h-full">
       <!-- Tabs -->
-      <div class="flex gap-4 border-b border-slate-200 px-2 pt-2">
-        <button onclick={() => activeTab = "ausleihen"} class="pb-3 px-2 text-sm font-bold transition-all border-b-2 {activeTab === 'ausleihen' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+      <div class="flex gap-2 bg-slate-100/50 p-1.5 rounded-full border border-slate-200">
+        <button onclick={() => activeTab = "ausleihen"} class="flex-1 py-2.5 px-4 text-sm font-bold rounded-full transition-all {activeTab === 'ausleihen' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}">
           Ausleihen & Historie
         </button>
-        <button onclick={() => activeTab = "stammdaten"} class="pb-3 px-2 text-sm font-bold transition-all border-b-2 {activeTab === 'stammdaten' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+        <button onclick={() => activeTab = "stammdaten"} class="flex-1 py-2.5 px-4 text-sm font-bold rounded-full transition-all {activeTab === 'stammdaten' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}">
           Stammdaten & Adresse
         </button>
       </div>
@@ -266,7 +266,7 @@
           
           <div class="flex justify-end mb-2">
             {#if (role === 'admin' || role === 'mitarbeiter') && profile.entliehene_buecher?.length > 0}
-              <button onclick={downloadKontoauszugPDF} disabled={kontoauszugPdfLoading} class="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-2">
+              <button onclick={downloadKontoauszugPDF} disabled={kontoauszugPdfLoading} class="px-5 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
                 {#if kontoauszugPdfLoading}
                   <div class="w-4 h-4 border-2 border-blue-400 border-t-blue-700 rounded-full animate-spin"></div>
                 {:else}
@@ -283,6 +283,45 @@
               {onReturnClick} 
               onDamageClick={role === 'admin' || role === 'mitarbeiter' ? openDamageModal : undefined}
             />
+            
+            <div class="mt-8">
+              <h3 class="text-lg font-bold text-slate-800 mb-4">Ausleihhistorie</h3>
+              <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      <th class="py-3 px-4">Titel & Autor</th>
+                      <th class="py-3 px-4">Barcode</th>
+                      <th class="py-3 px-4">Ausgeliehen am</th>
+                      <th class="py-3 px-4">Zurückgegeben am</th>
+                      <th class="py-3 px-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    {#each profile.historie as item}
+                      <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 px-4">
+                          <div class="font-bold text-sm text-slate-900">{item.titel}</div>
+                          <div class="text-xs text-slate-500">{item.autor || '-'}</div>
+                        </td>
+                        <td class="py-3 px-4 text-sm font-semibold text-slate-700">{item.barcode_id || '-'}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">{new Date(item.ausgeliehen_am).toLocaleDateString("de-DE")}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">{new Date(item.zurueckgegeben_am).toLocaleDateString("de-DE")}</td>
+                        <td class="py-3 px-4">
+                          {#if item.status === 'defekt'}
+                            <span class="px-2 py-1 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full border border-rose-100 uppercase tracking-wider">Defekt gemeldet</span>
+                          {:else if item.status === 'verlust'}
+                            <span class="px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100 uppercase tracking-wider">Verloren</span>
+                          {:else}
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full border border-slate-200 uppercase tracking-wider">Abgeschlossen</span>
+                          {/if}
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         {:else if activeTab === "stammdaten"}
           <div class="w-full pt-2 animate-fade-in space-y-8">
@@ -293,17 +332,17 @@
               </h3>
               <div class="flex items-center gap-2">
                 {#if role === 'admin' || role === 'mitarbeiter'}
-                  <button onclick={downloadRechnungPDF} disabled={rechnungPdfLoading} class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-2">
+                  <button onclick={downloadRechnungPDF} disabled={rechnungPdfLoading} class="px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
                     {#if rechnungPdfLoading}
                       <div class="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin"></div>
                     {:else}
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     {/if}
-                    Ersatzforderung drucken (PDF)
+                    Ersatzforderung drucken
                   </button>
                 {/if}
                 {#if role === 'admin'}
-                  <button onclick={() => showEditModal = true} class="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-2">
+                  <button onclick={() => showEditModal = true} class="px-5 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Bearbeiten
                   </button>

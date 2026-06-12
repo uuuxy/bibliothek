@@ -19,19 +19,6 @@ services:
       timeout: 5s
       retries: 5
 
-  caddy:
-    image: caddy:2-alpine
-    container_name: bibliothek-caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./certs:/etc/caddy/certs
-    depends_on:
-      - backend
-
   backend:
     build:
       context: .
@@ -52,9 +39,15 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
+    networks:
+      - default
+      - caddy_global_net
 
 volumes:
   postgres_data_local:
   bibliothek_uploads_local:
 
-# Kein 'external: true' Netzwerk hier definiert. Docker erstellt automatisch ein lokales Brücken-Netzwerk.
+networks:
+  default: {}
+  caddy_global_net:
+    external: true

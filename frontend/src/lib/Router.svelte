@@ -119,7 +119,7 @@
 
 <main class="flex-1 overflow-y-auto flex flex-col w-full">
   {#if uiStore.activeTab === "kiosk"}
-    <div class="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto animate-fade-in">
+    <div class="flex-1 flex flex-col w-full animate-fade-in">
       <Omnibox onSelectBook={handleSelectBook} />
     </div>
   {:else if uiStore.activeTab === "books"}

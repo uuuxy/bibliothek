@@ -1,3 +1,5 @@
+import { apiFetch } from "../apiFetch.js";
+
 class UIStore {
     activeTab = $state("kiosk");
     selectedBook = $state(/** @type {any} */ (null));
@@ -7,7 +9,7 @@ class UIStore {
 
     async fetchPendingReservierungen() {
         try {
-            const res = await fetch("/api/reservierungen/klassensatz/anzahl");
+            const res = await apiFetch("/api/reservierungen/klassensatz/anzahl");
             if (res.ok) {
                 const data = await res.json();
                 this.pendingReservierungen = data.anzahl ?? 0;

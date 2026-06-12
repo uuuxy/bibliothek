@@ -360,6 +360,11 @@ func (s *Server) Routes() http.Handler {
 		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
 	})
 
+	// Intercept missing favicon.ico to prevent fallback to index.html and 404 errors
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	// Serve Svelte frontend static assets from build directory
 	fs := http.FileServer(http.Dir("./frontend/dist"))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

@@ -390,7 +390,7 @@
   </div>
 {/if}
 
-<div class="max-w-4xl mx-auto w-full space-y-8 relative font-sans">
+<div class="w-full space-y-8 relative font-sans">
   <!-- 1. Schülerausweis Scan-Bereich -->
   {@render studentScanSection()}
 

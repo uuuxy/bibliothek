@@ -135,7 +135,7 @@
           <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-650 cursor-default" title="{authStore.currentUser?.vorname} {authStore.currentUser?.nachname} ({authStore.currentUser?.rolle})">
             {authStore.currentUser ? (authStore.currentUser.vorname[0] + (authStore.currentUser.nachname ? authStore.currentUser.nachname[0] : '')) : 'U'}
           </div>
-          <button onclick={handleLogout} class="p-2 bg-rose-50 hover:bg-rose-100/60 border border-rose-100 text-rose-600 hover:text-rose-700 rounded-xl transition-all cursor-pointer" title="Abmelden">
+          <button onclick={handleLogout} class="w-8 h-8 flex items-center justify-center bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 hover:text-rose-700 rounded-full transition-colors cursor-pointer" title="Abmelden">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
           </button>
         </div>
