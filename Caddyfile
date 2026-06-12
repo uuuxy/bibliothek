@@ -1,3 +1,4 @@
-{$DOMAIN:localhost} {
-	reverse_proxy web:8081
+flasch3.herzog-dupont.de {
+	tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+	reverse_proxy bibliothek-backend-local:8083
 }

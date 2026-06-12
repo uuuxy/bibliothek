@@ -24,3 +24,5 @@ Thumbs.db
 !schema.sql
 !migrations/
 *.zip
+
+certs/
