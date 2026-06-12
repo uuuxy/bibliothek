@@ -1,7 +1,6 @@
 <script>
   import OpacSearch from "./lib/OpacSearch.svelte";
   import Monitor from "./lib/Monitor.svelte";
-  import RecentTransactions from "./lib/RecentTransactions.svelte";
   
   import { authStore } from "./lib/stores/authStore.svelte.js";
   import { uiStore } from "./lib/stores/uiStore.svelte.js";
@@ -52,9 +51,6 @@
 {:else if _currentPath === '/monitor'}
   <Monitor />
 {:else}
-  {#if authStore.isLoggedIn}
-    <RecentTransactions />
-  {/if}
 
   {#if authStore.isLoggedIn && !authStore.heartbeatOk}
     <div class="fixed inset-0 bg-white/45 backdrop-blur-lg z-50 flex flex-col items-center justify-center space-y-4">

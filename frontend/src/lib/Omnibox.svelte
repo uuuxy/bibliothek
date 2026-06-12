@@ -16,7 +16,7 @@
   let activeStudent = $state(/** @type {any} */ (null));
   let activeTeacher = $state(/** @type {any} */ (null));
   let queryVal = $state("");
-  let scannedBooks = $state(/** @type {any[]} */ ([]));
+
   let toast = $state(/** @type {any} */ (null));
   let flashBorder = $state(""); 
   let screenFlash = $state(""); // "success" | "error" | ""
@@ -122,7 +122,6 @@
         queryVal = "";
         activeStudent = null;
         activeTeacher = null;
-        scannedBooks = [];
         lastFremdrueckgabe = null;
         isDropdownOpen = false;
         if (showCamera) stopCamera();
@@ -228,20 +227,18 @@
       if (data.type === "student") {
         activeStudent = data.student;
         activeTeacher = null;
-        scannedBooks = [];
         triggerScreenFlash("success");
         playSoundSuccess();
         triggerFlash("green");
       } else if (data.type === "teacher") {
         activeTeacher = data.teacher;
         activeStudent = null;
-        scannedBooks = [];
         triggerScreenFlash("success");
         playSoundSuccess();
         triggerFlash("green");
         showToast(`📋 Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`);
       } else if (data.type === "ausleihe") {
-        scannedBooks = [{ book: data.book, action: "ausleihe", date: new Date(), dueDate: data.due_date, loanId: data.loan_id, schuelerID: data.student?.id ?? activeStudent?.id }, ...scannedBooks];
+
 
         if (data.fremdrueckgabe) {
           triggerScreenFlash("warning");
@@ -263,7 +260,7 @@
         triggerScreenFlash("success");
         playSoundSuccess();
         triggerFlash("green");
-        scannedBooks = [{ book: data.book, action: "rueckgabe", date: new Date(), loanId: data.loan_id, schuelerID: data.student?.id }, ...scannedBooks];
+
         showToast(`📥 „${data.book.titel}" erfolgreich zurückgegeben.`);
         if (data.has_vormerkung) {
           vormerkungAlert = { titel: data.vormerkung_titel || data.book?.titel };
@@ -272,10 +269,8 @@
 
         if (data.student && !activeStudent && !activeTeacher) {
           activeStudent = data.student;
-          scannedBooks = [];
         } else if (data.teacher && !activeStudent && !activeTeacher) {
           activeTeacher = data.teacher;
-          scannedBooks = [];
         }
       } else if (data.type === "info") {
         triggerScreenFlash("success");
@@ -325,7 +320,7 @@
         showToast(msg || "Undo fehlgeschlagen", "error");
         return;
       }
-      scannedBooks = scannedBooks.filter((_, i) => i !== entryIndex);
+
       showToast("↩️ Rückgabe rückgängig gemacht.", "success");
       studentProfileComponent?.reloadProfile();
     } catch {
@@ -351,7 +346,7 @@
         })
       });
       if (!res.ok) { showToast(await res.text() || "Fehler", "error"); return; }
-      scannedBooks = scannedBooks.map((e, i) => i === entryIndex ? { ...e, defekt: true } : e);
+
       showToast(`🔴 „${entry.book.titel}" als defekt markiert. Schadensfaelle erstellt.`, "warning");
     } catch {
       showToast("Fehler beim Melden des Schadens", "error");
@@ -442,12 +437,10 @@
         <span><strong>Fremdrückgabe:</strong> Buch wurde von <strong>{lastFremdrueckgabe.vorbesitzerName}</strong> zurückgegeben und für {activeStudent.vorname} verbucht.</span>
       </div>
     {/if}
-    <StudentProfile bind:this={studentProfileComponent} student={activeStudent} onDeselect={() => { activeStudent = null; scannedBooks = []; lastFremdrueckgabe = null; }} onReturnClick={(barcode) => { queryVal = barcode; submitAction(); }} />
+    <StudentProfile bind:this={studentProfileComponent} student={activeStudent} onDeselect={() => { activeStudent = null; lastFremdrueckgabe = null; }} onReturnClick={(barcode) => { queryVal = barcode; submitAction(); }} />
   {:else if activeTeacher}
-    <OmniboxTeacherCard teacher={activeTeacher} onDeselect={() => { activeTeacher = null; scannedBooks = []; lastFremdrueckgabe = null; }} />
+    <OmniboxTeacherCard teacher={activeTeacher} onDeselect={() => { activeTeacher = null; lastFremdrueckgabe = null; }} />
   {/if}
-
-  <OmniboxScannedList {scannedBooks} {activeTeacher} {undoReturn} {markDefekt} />
 </div>
 
 <!-- Toast notifications -->

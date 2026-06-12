@@ -251,11 +251,11 @@
     <!-- Right: Timeline / Loans List / Stammdaten (2 cols) -->
     <div class="lg:col-span-2 space-y-6 flex flex-col h-full">
       <!-- Tabs -->
-      <div class="flex gap-2 bg-slate-100/50 p-1.5 rounded-full border border-slate-200">
-        <button onclick={() => activeTab = "ausleihen"} class="flex-1 py-2.5 px-4 text-sm font-bold rounded-full transition-all {activeTab === 'ausleihen' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}">
+      <div class="flex gap-6 border-b border-slate-200">
+        <button onclick={() => activeTab = "ausleihen"} class="pb-2 text-sm font-bold transition-all border-b-2 {activeTab === 'ausleihen' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-800'}">
           Ausleihen & Historie
         </button>
-        <button onclick={() => activeTab = "stammdaten"} class="flex-1 py-2.5 px-4 text-sm font-bold rounded-full transition-all {activeTab === 'stammdaten' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}">
+        <button onclick={() => activeTab = "stammdaten"} class="pb-2 text-sm font-bold transition-all border-b-2 {activeTab === 'stammdaten' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-800'}">
           Stammdaten & Adresse
         </button>
       </div>
@@ -284,44 +284,7 @@
               onDamageClick={role === 'admin' || role === 'mitarbeiter' ? openDamageModal : undefined}
             />
             
-            <div class="mt-8">
-              <h3 class="text-lg font-bold text-slate-800 mb-4">Ausleihhistorie</h3>
-              <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      <th class="py-3 px-4">Titel & Autor</th>
-                      <th class="py-3 px-4">Barcode</th>
-                      <th class="py-3 px-4">Ausgeliehen am</th>
-                      <th class="py-3 px-4">Zurückgegeben am</th>
-                      <th class="py-3 px-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    {#each profile.historie as item}
-                      <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="py-3 px-4">
-                          <div class="font-bold text-sm text-slate-900">{item.titel}</div>
-                          <div class="text-xs text-slate-500">{item.autor || '-'}</div>
-                        </td>
-                        <td class="py-3 px-4 text-sm font-semibold text-slate-700">{item.barcode_id || '-'}</td>
-                        <td class="py-3 px-4 text-sm text-slate-600">{new Date(item.ausgeliehen_am).toLocaleDateString("de-DE")}</td>
-                        <td class="py-3 px-4 text-sm text-slate-600">{new Date(item.zurueckgegeben_am).toLocaleDateString("de-DE")}</td>
-                        <td class="py-3 px-4">
-                          {#if item.status === 'defekt'}
-                            <span class="px-2 py-1 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full border border-rose-100 uppercase tracking-wider">Defekt gemeldet</span>
-                          {:else if item.status === 'verlust'}
-                            <span class="px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100 uppercase tracking-wider">Verloren</span>
-                          {:else}
-                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full border border-slate-200 uppercase tracking-wider">Abgeschlossen</span>
-                          {/if}
-                        </td>
-                      </tr>
-                    {/each}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+
           </div>
         {:else if activeTab === "stammdaten"}
           <div class="w-full pt-2 animate-fade-in space-y-8">
@@ -353,35 +316,35 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="space-y-6">
                 <div>
-                  <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Geburtsdatum</p>
+                  <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Geburtsdatum</p>
                   <p class="text-slate-800 font-semibold">{formatDate(profile.geburtsdatum)}</p>
                 </div>
                 <div>
-                  <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">LUSD ID</p>
+                  <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">LUSD ID</p>
                   <p class="text-slate-800 font-semibold">{profile.lusd_id || 'Keine Angabe'}</p>
                 </div>
                 <div>
-                  <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">System-ID</p>
-                  <p class="text-slate-500 font-mono text-xs">{profile.id}</p>
+                  <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">System-ID</p>
+                  <p class="text-slate-600 font-mono text-xs">{profile.id}</p>
                 </div>
               </div>
 
               <div class="space-y-6">
                 <div>
-                  <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Postanschrift</p>
+                  <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Postanschrift</p>
                   {#if profile.strasse}
                     <p class="text-slate-800 font-semibold">{profile.strasse} {profile.hausnummer}</p>
                     <p class="text-slate-800 font-semibold">{profile.plz} {profile.ort}</p>
                   {:else}
-                    <p class="text-slate-400 italic text-sm">Keine Adresse hinterlegt</p>
+                    <p class="text-slate-600 italic text-sm">Keine Adresse hinterlegt</p>
                   {/if}
                 </div>
                 <div>
-                  <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Eltern E-Mail</p>
+                  <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Eltern E-Mail</p>
                   {#if profile.eltern_email}
                     <a href="mailto:{profile.eltern_email}" class="text-blue-600 hover:underline font-semibold">{profile.eltern_email}</a>
                   {:else}
-                    <p class="text-slate-400 italic text-sm">Keine E-Mail hinterlegt</p>
+                    <p class="text-slate-600 italic text-sm">Keine E-Mail hinterlegt</p>
                   {/if}
                 </div>
               </div>

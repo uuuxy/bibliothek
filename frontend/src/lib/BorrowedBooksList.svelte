@@ -1,4 +1,6 @@
 <script>
+  import { apiFetch } from "./apiFetch.js";
+
   /** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void, mode?: "loans" | "scans" }} */
   let { books = [], onReturnClick = undefined, onDamageClick = undefined, mode = "loans" } = $props();
 
@@ -13,7 +15,7 @@
     extendingIds = next;
     
     try {
-      const response = await fetch(`/api/ausleihen/${id}/verlaengern`, { method: "POST" });
+      const response = await apiFetch(`/api/ausleihen/${id}/verlaengern`, { method: "POST" });
       if (response.ok) {
         const data = await response.json();
         book.rueckgabe_frist = data.neues_rueckgabe_datum;
@@ -34,7 +36,7 @@
 <div class="max-h-64 overflow-y-auto pr-2 custom-scrollbar">
   <table class="w-full text-left border-collapse">
     <thead>
-      <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+      <tr class="border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
         <th class="py-3 px-4">Titel & Autor</th>
         <th class="py-3 px-4">Barcode</th>
         {#if mode === "loans"}
@@ -66,7 +68,7 @@
                   {/if}
                 </div>
                 {#if mode === "loans"}
-                  <div class="text-xs text-slate-500 truncate mt-0.5">{book.autor}</div>
+                  <div class="text-xs text-slate-600 truncate mt-0.5">{book.autor}</div>
                 {/if}
               </div>
             </div>
@@ -75,7 +77,7 @@
           {#if mode === "loans"}
             <td class="py-3 px-4 text-sm font-semibold text-slate-700">
               {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
-              <div class="text-xs font-normal text-slate-400 mt-0.5">Geliehen: {new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</div>
+              <div class="text-xs font-normal text-slate-600 mt-0.5">Geliehen: {new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</div>
             </td>
             <td class="py-3 px-4">
               {#if isOverdue}
@@ -88,7 +90,7 @@
           <td class="py-3 px-4 text-right">
             <div class="flex items-center justify-end gap-2">
               {#if mode === "loans"}
-                <button onclick={() => handleExtend(book)} disabled={extendingIds.has(book.ausleihe_id || book.id)} class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 disabled:opacity-50 rounded-lg transition-colors cursor-pointer" title="Verlängern">
+                <button onclick={() => handleExtend(book)} disabled={extendingIds.has(book.ausleihe_id || book.id)} class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 disabled:opacity-50 rounded-full transition-colors cursor-pointer" title="Verlängern">
                   {#if extendingIds.has(book.ausleihe_id || book.id)}
                     <svg class="w-4 h-4 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                   {:else}
@@ -96,12 +98,12 @@
                   {/if}
                 </button>
                 {#if onDamageClick}
-                  <button onclick={() => onDamageClick(book)} class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition-colors cursor-pointer" title="Verlust/Schaden melden">
+                  <button onclick={() => onDamageClick(book)} class="p-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-full transition-colors cursor-pointer" title="Verlust/Schaden melden">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                   </button>
                 {/if}
                 {#if onReturnClick}
-                  <button onclick={() => onReturnClick(book.barcode_id)} class="p-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-colors cursor-pointer" title="Buch zurückgeben">
+                  <button onclick={() => onReturnClick(book.barcode_id)} class="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-full transition-colors cursor-pointer" title="Buch zurückgeben">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                   </button>
                 {/if}
