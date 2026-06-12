@@ -33,6 +33,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-supergeheim_lokal}
       - COOKIE_SECURE=false
       - INITIAL_ADMIN_EMAIL=pflasch@philipp-reis-schule.de
+      - IMAP_HOST=mock
     volumes:
       - bibliothek_uploads_local:/app/uploads
     depends_on:

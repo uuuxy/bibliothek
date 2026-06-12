@@ -390,10 +390,9 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 	}
 
 	email := os.Getenv("INITIAL_ADMIN_EMAIL")
-	password := os.Getenv("INITIAL_ADMIN_PASSWORD")
 
-	if email == "" || password == "" {
-		log.Println("Warnung: Keine Benutzer in der Datenbank und INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD nicht gesetzt. System startet ohne Admin-Zugang.")
+	if email == "" {
+		log.Println("Warnung: Keine Benutzer in der Datenbank und INITIAL_ADMIN_EMAIL nicht gesetzt. System startet ohne Admin-Zugang.")
 		return nil
 	}
 

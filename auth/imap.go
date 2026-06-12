@@ -15,6 +15,11 @@ func AuthenticateIMAP(email, password string) error {
 		host = "imap.philipp-reis-schule.de:143"
 	}
 
+	// MOCK-MODUS für lokale Entwicklung (wie in schul-orga)
+	if host == "mock" {
+		return nil
+	}
+
 	c, err := client.Dial(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect to IMAP server: %w", err)
