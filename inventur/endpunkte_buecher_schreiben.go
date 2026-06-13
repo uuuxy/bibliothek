@@ -6,7 +6,41 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"slices"
 )
+
+var ErlaubteLMFFaecher = []string{
+	"M", "E", "D", "Powie", "Erd", "Bio", "Che", "Phy", "Ges", "Spo",
+	"Kun", "Mus", "Rel", "Eth", "Info", "Spa", "Fra", "Lat",
+}
+
+var ErlaubteBibKategorien = []string{
+	"Krimi", "Fantasy", "Sachbuch", "Jugendbuch", "Kinderbuch",
+	"Comic", "Manga", "Sci-Fi", "Historisch", "Biografie",
+}
+
+func validiereSignatur(signatur string, track string) bool {
+	if signatur == "" {
+		return true // Optional
+	}
+	
+	isLMF := track == "Gymnasium" || track == "Realschule" || track == "Hauptschule" || track == "Förderstufe" || track == "Oberstufe"
+	isBib := track == "Bibliothek"
+
+	if isLMF {
+		if !strings.HasPrefix(signatur, "LMF ") {
+			return false
+		}
+		fach := strings.TrimPrefix(signatur, "LMF ")
+		return slices.Contains(ErlaubteLMFFaecher, fach)
+	} else if isBib {
+		if strings.HasPrefix(signatur, "BIB ") {
+			return slices.Contains(ErlaubteBibKategorien, strings.TrimPrefix(signatur, "BIB "))
+		}
+		return slices.Contains(ErlaubteBibKategorien, signatur)
+	}
+	return true
+}
 
 // BearbeiteBuecherLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
 // Es erwartet ein JSON-Array mit IDs und löscht diese sicher über das Repository.
@@ -75,6 +109,14 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
 		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
 		return
+	}
+	
+	// Validiere Signatur
+	if sig, ok := eingabe.ErweiterteEigenschaften["signatur"].(string); ok && sig != "" {
+		if !validiereSignatur(sig, strings.TrimSpace(eingabe.Schulzweig)) {
+			writeError(antwort, http.StatusBadRequest, "ungültiges Format für Signatur/Systematik")
+			return
+		}
 	}
 
 	buch := Book{

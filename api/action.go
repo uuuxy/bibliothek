@@ -57,7 +57,13 @@ func (s *Server) ActionHandler(
 		} else if strings.HasPrefix(req.Query, "G-") {
 			err = s.handleGeraetAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, studentRepo, loanRepo, &resp)
 		} else {
-			err = s.handleSearchAction(ctx, req.Query, bookRepo, &resp)
+			// Fallback for Littera barcodes (which lack the "B-" prefix).
+			// If the query exactly matches a book barcode in the database, treat it as a book action.
+			if copy, _ := bookRepo.GetCopyByBarcode(ctx, req.Query); copy != nil {
+				err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
+			} else {
+				err = s.handleSearchAction(ctx, req.Query, bookRepo, &resp)
+			}
 		}
 
 		if err != nil {

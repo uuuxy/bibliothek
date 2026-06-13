@@ -20,7 +20,16 @@
         }
     });
 
+    import { lmfFaecher, bibKategorien } from "./signatur_optionen.js";
+
     let lastAutoSignatur = "";
+    
+    // Computed states for the template
+    let isLmfTrack = $derived(["Gymnasium", "Realschule", "Hauptschule", "Förderstufe", "Oberstufe"].includes(formular.track));
+    let isBibTrack = $derived(formular.track === "Bibliothek");
+
+    // Local state to hold the selected dropdown value independently of the full signature string
+    let localSelectedSignatur = $state("");
 
     $effect(() => {
         if (!formular.erweiterteEigenschaften) {
@@ -39,8 +48,6 @@
         if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
 
         // Auto-Generate Signatur
-        const isLmfTrack = ["Gymnasium", "Realschule", "Hauptschule", "Förderstufe", "Oberstufe"].includes(formular.track);
-        const isBib = formular.track === "Bibliothek";
         let autoSig = "";
 
         if (formular.subject) {
@@ -48,7 +55,7 @@
             const kuerzel = sys ? sys.kuerzel : "";
             if (isLmfTrack) {
                 autoSig = kuerzel ? `LMF ${kuerzel}` : "LMF";
-            } else if (isBib) {
+            } else if (isBibTrack) {
                 autoSig = kuerzel ? `BIB ${kuerzel}` : "BIB";
             }
         }
@@ -59,7 +66,36 @@
                 lastAutoSignatur = autoSig;
             }
         }
+
+        // Keep local select state in sync with the actual signatur
+        if (formular.erweiterteEigenschaften.signatur) {
+            if (isLmfTrack && formular.erweiterteEigenschaften.signatur.startsWith("LMF ")) {
+                localSelectedSignatur = formular.erweiterteEigenschaften.signatur.substring(4);
+            } else if (isBibTrack && formular.erweiterteEigenschaften.signatur.startsWith("BIB ")) {
+                localSelectedSignatur = formular.erweiterteEigenschaften.signatur.substring(4);
+            } else if (isBibTrack && bibKategorien.includes(formular.erweiterteEigenschaften.signatur)) {
+                localSelectedSignatur = formular.erweiterteEigenschaften.signatur;
+            } else {
+                localSelectedSignatur = formular.erweiterteEigenschaften.signatur; // Fallback
+            }
+        } else {
+            localSelectedSignatur = "";
+        }
     });
+
+    function updateSignatur() {
+        if (!localSelectedSignatur) {
+            formular.erweiterteEigenschaften.signatur = "";
+            return;
+        }
+        if (isLmfTrack) {
+            formular.erweiterteEigenschaften.signatur = `LMF ${localSelectedSignatur}`;
+        } else if (isBibTrack) {
+            formular.erweiterteEigenschaften.signatur = localSelectedSignatur; // Or `BIB ${localSelectedSignatur}` based on preference
+        } else {
+            formular.erweiterteEigenschaften.signatur = localSelectedSignatur;
+        }
+    }
 </script>
 
 <div class="space-y-5">
@@ -334,13 +370,32 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label for="buch-signatur" class="block text-sm font-medium text-gray-700 mb-1">Signatur</label>
-                <input
-                    id="buch-signatur"
-                    type="text"
-                    bind:value={formular.erweiterteEigenschaften.signatur}
-                    placeholder="z.B. LMF M"
-                    class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-                />
+                <div class="relative">
+                    <select
+                        id="buch-signatur"
+                        bind:value={localSelectedSignatur}
+                        onchange={updateSignatur}
+                        class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none cursor-pointer"
+                    >
+                        <option value="">-- Signatur wählen --</option>
+                        {#if isLmfTrack}
+                            {#each lmfFaecher as fach}
+                                <option value={fach}>LMF {fach}</option>
+                            {/each}
+                        {:else if isBibTrack}
+                            {#each bibKategorien as kat}
+                                <option value={kat}>{kat}</option>
+                            {/each}
+                        {:else}
+                            <option value={formular.erweiterteEigenschaften.signatur}>{formular.erweiterteEigenschaften.signatur}</option>
+                        {/if}
+                    </select>
+                    <div class="absolute right-3 top-3 pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
             </div>
             <div>
                 <label for="buch-standort" class="block text-sm font-medium text-gray-700 mb-1">Standort / Regal</label>
