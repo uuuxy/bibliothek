@@ -81,7 +81,7 @@ ENV PORT=8081
 ENV DATABASE_URL=""
 ENV COOKIE_SECURE="false"
 
-HEALTHCHECK --interval=30s --timeout=3s CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/health || exit 1
 
 # Run the single-binary application
 CMD ["./main"]
