@@ -3,8 +3,8 @@
   import StudentProfile from "./StudentProfile.svelte";
   import OfflineQueueBanner from "./OfflineQueueBanner.svelte";
   import CameraScanner from "./CameraScanner.svelte";
-  import OmniboxInput from "./components/omnibox/OmniboxInput.svelte";
-  import OmniboxResults from "./components/omnibox/OmniboxResults.svelte";
+  import OmniboxInput from "./components/OmniboxInput.svelte";
+  import OmniboxResults from "./components/OmniboxResults.svelte";
   import OmniboxTeacherCard from "./OmniboxTeacherCard.svelte";
   import { loadQueue, flushOfflineQueue } from "./offlineQueue.js";
   import { omniboxStore } from "./stores/omnibox.svelte.js";
