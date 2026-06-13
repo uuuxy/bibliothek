@@ -96,6 +96,7 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 			// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
 			anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodHead, dnbCoverURL, nil)
 			if fehler == nil {
+				anfrage.Header.Set("User-Agent", "Bibliothek-Inventur/1.0 (Schulbibliothek)")
 				antwort, fehler := client.httpClient.Do(anfrage)
 				if fehler == nil {
 					defer func() { _ = antwort.Body.Close() }()
@@ -147,6 +148,7 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	if fehler != nil {
 		return nil, fehler
 	}
+	anfrage.Header.Set("User-Agent", "Bibliothek-Inventur/1.0 (Schulbibliothek)")
 	antwort, fehler := client.httpClient.Do(anfrage)
 	if fehler != nil {
 		return nil, fehler
