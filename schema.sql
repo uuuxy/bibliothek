@@ -395,3 +395,18 @@ CREATE INDEX IF NOT EXISTS idx_schadensfaelle_ausleihe ON schadensfaelle (auslei
 CREATE INDEX IF NOT EXISTS idx_vormerkungen_schueler ON vormerkungen(schueler_id) WHERE schueler_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_klassensatz_titel ON klassensatz_reservierungen(titel_id);
 CREATE INDEX IF NOT EXISTS idx_class_books_klasse ON class_books(class_name);
+
+-- -------------------------------------------------------------
+-- 6. VIEWS
+-- -------------------------------------------------------------
+CREATE OR REPLACE VIEW view_buecher_bestand AS
+SELECT 
+    bt.id AS titel_id,
+    bt.titel,
+    COUNT(be.id) FILTER (WHERE be.ist_ausgesondert = false) AS gesamtbestand,
+    COUNT(be.id) FILTER (WHERE a.id IS NULL AND be.ist_ausgesondert = false) AS verfuegbar
+FROM buecher_titel bt
+LEFT JOIN buecher_exemplare be ON bt.id = be.titel_id
+LEFT JOIN ausleihen a ON be.id = a.exemplar_id AND a.rueckgabe_am IS NULL
+GROUP BY bt.id, bt.titel;
+

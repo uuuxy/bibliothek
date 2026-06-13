@@ -5,9 +5,7 @@
   /** @type {any} */
   let summary = $state(null);
   let loading = $state(true);
-  let isSendingBulk = $state(false);
-  /** @type {any} */
-  let bulkResult = $state(null);
+
 
   async function fetchSummary() {
     try {
@@ -26,26 +24,7 @@
     fetchSummary();
   });
 
-  async function handleBulkSend() {
-    if (!confirm(`Möchten Sie wirklich Mahnungen an alle Eltern (bei denen eine E-Mail hinterlegt ist) versenden?`)) {
-      return;
-    }
 
-    isSendingBulk = true;
-    bulkResult = null;
-    try {
-      const res = await apiFetch("/api/mail/send-bulk-overdue", { method: "POST" });
-      if (!res.ok) throw new Error("Fehler beim Massenversand");
-      const data = await res.json();
-      bulkResult = { type: 'success', data };
-      setTimeout(() => bulkResult = null, 8000);
-    } catch (e) {
-      bulkResult = { type: 'error', text: String(e) };
-      setTimeout(() => bulkResult = null, 5000);
-    } finally {
-      isSendingBulk = false;
-    }
-  }
 </script>
 
 {#if loading}
@@ -66,7 +45,7 @@
     </div>
     
     <!-- Top 5 List -->
-    <div class="p-4 flex-1">
+    <div class="p-4 flex-1 pb-6">
       <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Am längsten überfällig (Härtefälle)</h4>
       {#if summary.top_overdue && summary.top_overdue.length > 0}
         <ul class="space-y-3">
@@ -85,43 +64,6 @@
       {:else}
         <p class="text-sm text-slate-500 italic py-2">Keine überfälligen Bücher. Alles im Lot!</p>
       {/if}
-    </div>
-
-    <!-- Action Button -->
-    <div class="p-4 bg-slate-50 border-t border-slate-100 space-y-3">
-      {#if bulkResult}
-        {#if bulkResult.type === 'success'}
-          <div class="p-3 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200">
-            ✅ {bulkResult.data.gesendet} Mails erfolgreich versendet.<br>
-            {#if bulkResult.data.ohne_email > 0}⚠️ {bulkResult.data.ohne_email} Schüler ohne E-Mail-Adresse.<br>{/if}
-            {#if bulkResult.data.fehler > 0}❌ {bulkResult.data.fehler} Fehler beim Versand.{/if}
-          </div>
-        {:else}
-          <div class="p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200">
-            {bulkResult.text}
-          </div>
-        {/if}
-      {/if}
-
-      <div class="flex gap-2">
-        <a href="#/mahnwesen" class="flex-1 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-sm text-center rounded-xl transition-colors shadow-sm">
-          Übersicht / Drucken
-        </a>
-        {#if authStore.currentUser?.rolle === 'admin'}
-          <button 
-            onclick={handleBulkSend} 
-            disabled={isSendingBulk || summary.total_overdue === 0}
-            class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white font-bold text-sm text-center rounded-xl transition-colors shadow-sm flex justify-center items-center gap-2"
-          >
-            {#if isSendingBulk}
-              <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              Sende...
-            {:else}
-              Alle per E-Mail mahnen
-            {/if}
-          </button>
-        {/if}
-      </div>
     </div>
   </div>
 {/if}

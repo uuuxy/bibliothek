@@ -23,6 +23,8 @@
   let lastFremdrueckgabe = $state(/** @type {any} */ (null));
   let studentProfileComponent = $state(/** @type {any} */ (null));
   let isShaking = $state(false);
+  let scanError = $state(false);
+  let errorMessage = $state("");
   let vormerkungAlert = $state(/** @type {{titel?: string} | null} */ (null));
   let isOffline = $state(!navigator.onLine);
   let offlineQueueCount = $state(0);
@@ -193,6 +195,8 @@
     queryVal = "";
     isDropdownOpen = false;
     lastFremdrueckgabe = null;
+    errorMessage = ""; // Clear previous error
+
 
     // Re-focus immediately so USB scanner next scan is captured without delay
     setTimeout(() => document.getElementById("omnibox-input")?.focus(), 30);
@@ -307,13 +311,18 @@
       playSoundError();
 
       if (q.startsWith("B-") && !activeStudent && !activeTeacher) {
-        triggerShake();
-        showToast("Bitte zuerst Schüler scannen", "warning");
+        errorMessage = "Bitte zuerst Schüler scannen";
       } else {
-        triggerShake();
-        showToast(error.message || String(error), "error");
-        triggerFlash("red");
+        errorMessage = error.message || String(error);
       }
+
+      scanError = true;
+      setTimeout(() => { scanError = false; }, 500);
+
+      // We still trigger the toast fallback if desired, or we rely on the inline error message.
+      // The prompt asks to show it below the box OR via global toast. We'll do both or just the inline one as requested.
+      showToast(errorMessage, "error");
+      triggerFlash("red");
     }
   }
 
@@ -409,7 +418,7 @@
 
 <div class="w-full mx-auto transition-all duration-500 ease-in-out {isActive ? 'w-full pt-4 justify-start' : 'max-w-2xl min-h-[60vh] justify-center'} flex flex-col items-center space-y-6">
   <div class="w-full transition-all duration-500 {isActive ? 'sticky -top-4 z-30 bg-slate-50/95 backdrop-blur-md py-4' : ''}">
-    <form onsubmit={submitAction} class="w-full relative bg-white py-5 px-8 rounded-3xl border border-slate-200 shadow-2xl no-print transition-all duration-500 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 {isActive ? 'scale-100' : 'scale-105'} {isShaking ? 'animate-shake border-red-500' : ''} {flashBorder === 'green' ? 'ring-4 ring-emerald-500/10 border-emerald-400' : flashBorder === 'orange' ? 'ring-4 ring-amber-500/10 border-amber-400' : flashBorder === 'red' ? 'ring-4 ring-red-500/30 border-red-500' : ''}">
+    <form onsubmit={submitAction} class="w-full relative py-5 px-8 rounded-3xl border shadow-2xl no-print transition-all duration-500 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 {isActive ? 'scale-100' : 'scale-105'} {(isShaking || scanError) ? 'animate-shake' : ''} {scanError ? 'ring-2 ring-red-500 bg-red-50 border-red-500' : 'bg-white border-slate-200'} {flashBorder === 'green' ? 'ring-4 ring-emerald-500/10 border-emerald-400' : flashBorder === 'orange' ? 'ring-4 ring-amber-500/10 border-amber-400' : flashBorder === 'red' && !scanError ? 'ring-4 ring-red-500/30 border-red-500' : ''}">
       <OmniboxInput 
         bind:queryVal
         {isDropdownOpen}
@@ -431,6 +440,12 @@
         />
       {/if}
     </form>
+
+    {#if errorMessage}
+      <div class="mt-3 p-3 bg-red-600 text-white font-bold rounded-xl shadow-lg text-center animate-slide-down">
+        {errorMessage}
+      </div>
+    {/if}
   </div>
 
   <!-- HTML5 Kamera-Scanner (Mobile) -->
