@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -58,6 +59,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 
 			if found && time.Now().Before(entry.ExpiresAt) {
 				if !entry.Allowed {
+					log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, permission)
 					apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
 					return
 				}
@@ -84,6 +86,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 			permCacheMu.Unlock()
 
 			if err != nil || !allowed {
+				log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v, err: %v", claims.Rolle, permission, allowed, err)
 				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
 				return
 			}

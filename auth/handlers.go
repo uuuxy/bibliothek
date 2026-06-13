@@ -147,10 +147,9 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		if imapErr := AuthenticateIMAP(req.Email, password); imapErr == nil {
 			// IMAP succeeded, check if the user is registered in our local DB
 			query := `
-				SELECT b.id, COALESCE(br.rolle, 'HELFER'), b.vorname, b.nachname, b.aktiv 
-				FROM benutzer b
-				LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
-				WHERE LOWER(b.email) = LOWER($1) 
+				SELECT id, rolle, vorname, nachname, aktiv 
+				FROM benutzer 
+				WHERE LOWER(email) = LOWER($1) 
 				LIMIT 1
 			`
 			err := dbPool.QueryRow(ctx, query, req.Email).Scan(&id, &roleStr, &vorname, &nachname, &aktiv)

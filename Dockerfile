@@ -40,6 +40,7 @@ COPY docs/ ./docs/
 COPY plugins/ ./plugins/
 COPY mailservice/ ./mailservice/
 COPY pdf/ ./pdf/
+COPY internal/ ./internal/
 
 # Compile static Go binary
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main main.go

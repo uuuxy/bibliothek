@@ -61,6 +61,13 @@ func MaxBodySizeMiddleware(limit int64) func(http.Handler) http.Handler {
 func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
+		
+		// Skip non-API paths (static frontend assets, /login, etc.)
+		if !strings.HasPrefix(path, "/api/") && path != "/events" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		if path == "/health" || path == "/login/barcode" || path == "/api/auth/status" {
 			next.ServeHTTP(w, r)
 			return
@@ -73,7 +80,7 @@ func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 				role := strings.ToUpper(string(claims.Rolle))
 				switch role {
 				case "LEHRER":
-					isAllowed := (r.Method == http.MethodGet && (path == "/api/search" || strings.HasPrefix(path, "/api/buecher/titel/") && strings.Contains(path, "/exemplare"))) ||
+					isAllowed := (r.Method == http.MethodGet && (path == "/events" || path == "/api/search" || strings.HasPrefix(path, "/api/buecher/titel/") && strings.Contains(path, "/exemplare"))) ||
 						(r.Method == http.MethodPost && path == "/api/auth/logout")
 
 					if !isAllowed {

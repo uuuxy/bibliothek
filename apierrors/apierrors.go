@@ -10,7 +10,7 @@ import (
 // SendHTTPError logs the detailed internal error to the server console and returns a sanitized JSON error to the client.
 func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 	if internalErr != nil {
-		log.Printf("API Error [HTTP %d]: %v", status, internalErr)
+		log.Printf("API Error [HTTP %d]: %v (path: %s)", status, internalErr, "unknown")
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
