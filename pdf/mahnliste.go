@@ -15,6 +15,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/props"
 )
 
+// MahnungSchueler represents a student in the overdue notice.
 type MahnungSchueler struct {
 	Vorname  string
 	Nachname string
@@ -22,6 +23,7 @@ type MahnungSchueler struct {
 	Buecher  []MahnungBuch
 }
 
+// MahnungBuch represents a book in the overdue notice.
 type MahnungBuch struct {
 	Titel       string
 	Barcode     string

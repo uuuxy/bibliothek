@@ -13,6 +13,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/props"
 )
 
+// Schueler represents a student on an invoice.
 type Schueler struct {
 	Vorname    string
 	Nachname   string
@@ -22,6 +23,7 @@ type Schueler struct {
 	Ort        string
 }
 
+// RechnungItem represents a line item on an invoice.
 type RechnungItem struct {
 	Titel        string
 	Barcode      string

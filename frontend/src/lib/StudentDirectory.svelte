@@ -1,9 +1,9 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
-  import StudentProfile from "./StudentProfile.svelte";
   import Modal from "./Modal.svelte";
   import LusdPreviewModal from "./LusdPreviewModal.svelte";
+  import StudentDetailModal from "./StudentDetailModal.svelte";
 
   // Props (Svelte 5)
   let { role = "" } = $props();
@@ -157,19 +157,14 @@
 
 <div class="w-full animate-fade-in text-slate-800">
   
-  {#if activeStudent}
-    <!-- Detail View: Student Profile -->
-    <!-- Back button is no-print; profile's print section must not be inside no-print -->
-    <div class="w-full text-left space-y-8 relative font-sans">
-      <div class="no-print">
-        <button onclick={() => { activeStudent = null; loadStudents(); }} class="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-750 transition-colors py-1 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-          <span>Zurück zum Schülerverzeichnis</span>
-        </button>
-      </div>
-      <StudentProfile student={activeStudent} onDeselect={() => { activeStudent = null; loadStudents(); }} role={role} />
-    </div>
-  {:else}
+  <StudentDetailModal 
+    open={!!activeStudent} 
+    student={activeStudent} 
+    role={role} 
+    onclose={() => { activeStudent = null; loadStudents(); }} 
+  />
+
+  {#if !activeStudent}
     <!-- Fullscreen Directory List -->
     <div class="w-full space-y-6 no-print">
       <!-- Action & Search Bar -->

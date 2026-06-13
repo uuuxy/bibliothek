@@ -52,6 +52,10 @@ func (s *Server) Routes() http.Handler {
 	bookRepo := repository.NewBookRepository(s.DB.Pool)
 	loanRepo := repository.NewLoanRepository(s.DB.Pool)
 	auditRepo := repository.NewAuditRepository(s.DB.Pool)
+	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
+
+	orderSvc := NewOrderService(s.DB)
+	pdfSvc := NewPDFService()
 
 	// Initialize Inventur sub-module handlers
 	_ = os.MkdirAll("uploads", 0750)
@@ -174,20 +178,20 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.LabelsHandler()))
 
 	// Update copy damage note (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler()))
+	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler(bookRepo)))
 
 	// Update copy barcode (Accessible by Admin and Mitarbeiter)
-	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.RequirePermission("edit_books")(s.UpdateCopyBarcodeHandler()))
+	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.RequirePermission("edit_books")(s.UpdateCopyBarcodeHandler(bookRepo)))
 
 	// Update copy status (Accessible by Admin and Mitarbeiter)
-	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.UpdateCopyStatusHandler()))
+	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.UpdateCopyStatusHandler(bookRepo)))
 
 
 	// Mark copy as defective and create Schadensfaelle (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/defekt", s.RequirePermission("edit_books")(s.MarkCopyDefektHandler()))
 
 	// Decommission (aussondern) a copy: hides it from catalog/kiosk/inventory (Accessible by Admin)
-	mux.Handle("POST /api/buecher/exemplare/{id}/aussondern", s.RequirePermission("edit_books")(s.AussondernCopyHandler()))
+	mux.Handle("POST /api/buecher/exemplare/{id}/aussondern", s.RequirePermission("edit_books")(s.AussondernCopyHandler(bookRepo)))
 
 	// Undo a recent loan return within 1 hour (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/ausleihen/{id}/rueckgabe", s.RequirePermission("view_students")(s.UndoReturnHandler()))
@@ -273,7 +277,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("DELETE /api/lieferanten/{id}", s.RequirePermission("create_orders")(s.DeleteSupplierHandler()))
 
 	// Submit cart order with barcodes and PDF sending (Accessible by Admin and Mitarbeiter)
-	mux.Handle("POST /api/orders", s.RequirePermission("create_orders")(s.SubmitOrderHandler()))
+	mux.Handle("POST /api/orders", s.RequirePermission("create_orders")(s.SubmitOrderHandler(orderSvc, pdfSvc)))
 
 	// Live ISBN metadata lookup + catalog upsert (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/aus-isbn", s.RequirePermission("create_orders")(s.ISBNZuTitelHandler()))
@@ -296,10 +300,10 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeKlassensatzReservierungHandler()))
 
 	// Mahnwesen – overdue loans, PDF generation, SMTP dispatch
-	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler()))
-	mux.Handle("GET /api/mahnwesen/ueberfaellig_jahrgang", s.RequirePermission("view_students")(s.GetMahnwesenJahrgangHandler()))
-	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler()))
-	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler()))
+	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler(mahnRepo)))
+	mux.Handle("GET /api/mahnwesen/ueberfaellig_jahrgang", s.RequirePermission("view_students")(s.GetMahnwesenJahrgangHandler(mahnRepo)))
+	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler(mahnRepo)))
+	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler(mahnRepo)))
 
 	// PDF Reports
 	mux.Handle("GET /api/reports/overdue-pdf", s.RequirePermission("view_students")(s.GetOverdueReportsPDFHandler()))

@@ -9,6 +9,7 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
+// OverdueBook represents a single overdue book in the report.
 type OverdueBook struct {
 	Titel         string
 	BarcodeID     string
@@ -17,6 +18,7 @@ type OverdueBook struct {
 	DaysOverdue   int
 }
 
+// OverdueStudent groups overdue books for a specific student.
 type OverdueStudent struct {
 	ID          string
 	Vorname     string

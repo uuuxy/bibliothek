@@ -17,6 +17,12 @@ type BookRepository interface {
 	SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error)
 	// SearchTitlesFuzzy performs a fuzzy search using ILIKE.
 	SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error)
+
+	// Admin Updates
+	UpdateCopyDamageNote(ctx context.Context, id string, note string) error
+	UpdateCopyBarcode(ctx context.Context, id string, barcode string) error
+	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error
+	DecommissionCopy(ctx context.Context, id string) error
 }
 
 type pgBookRepository struct {
@@ -126,4 +132,48 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 	}
 
 	return results, nil
+}
+
+// UpdateCopyDamageNote updates the damage note of a physical book copy.
+func (r *pgBookRepository) UpdateCopyDamageNote(ctx context.Context, id string, note string) error {
+	query := `
+		UPDATE buecher_exemplare
+		SET zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`
+	_, err := r.db.Exec(ctx, query, note, id)
+	return err
+}
+
+// UpdateCopyBarcode updates the barcode of a physical book copy.
+func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, barcode string) error {
+	query := `
+		UPDATE buecher_exemplare
+		SET barcode_id = $1, aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`
+	_, err := r.db.Exec(ctx, query, barcode, id)
+	return err
+}
+
+// UpdateCopyStatus updates the circulation status of a physical book copy.
+func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error {
+	query := `
+		UPDATE buecher_exemplare
+		SET ist_ausleihbar = $1, ist_ausgesondert = $2, zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $4
+	`
+	_, err := r.db.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id)
+	return err
+}
+
+// DecommissionCopy marks a physical copy as decommissioned.
+func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) error {
+	query := `
+		UPDATE buecher_exemplare
+		SET ist_ausgesondert = true, ist_ausleihbar = false, aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`
+	_, err := r.db.Exec(ctx, query, id)
+	return err
 }

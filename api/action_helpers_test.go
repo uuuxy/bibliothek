@@ -40,29 +40,35 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now()))
 
-	// Mock tx begin
-	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
-
-	// Mock lock
-	mock.ExpectExec("SELECT id FROM schueler WHERE id = \\$1 FOR UPDATE").
-		WithArgs(studentID).
-		WillReturnResult(pgxmock.NewResult("SELECT", 1))
-
-	// Mock GetActiveLoanByCopyIDTx (returns 0 rows -> no active loan)
-	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
-		WithArgs(copy.ID).
-		WillReturnRows(pgxmock.NewRows([]string{}))
-
-	// Mock querySettings
+	// 2. querySettings inside resolveCheckoutDueDate
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", "5").
 			AddRow("standard_ausleihfrist_tage", "14"))
 
-	// Mock count active loans
+	// 3. Mock tx begin
+	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
+
+	// 4. Mock lock on schueler
+	mock.ExpectExec("SELECT id FROM schueler WHERE id = \\$1 FOR UPDATE").
+		WithArgs(studentID).
+		WillReturnResult(pgxmock.NewResult("SELECT", 1))
+
+	// 5. Mock count active loans
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen WHERE schueler_id = \\$1 AND rueckgabe_am IS NULL").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+
+	// 6. Mock GetActiveLoanByCopyIDTx (returns 0 rows -> no active loan)
+	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
+		WithArgs(copy.ID).
+		WillReturnRows(pgxmock.NewRows([]string{}))
+
+	// 7. querySettings inside early limit check
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
+			AddRow("max_ausleihen_schueler", "5").
+			AddRow("standard_ausleihfrist_tage", "14"))
 
 	// Mock CreateLoanTx
 	mock.ExpectQuery("INSERT INTO ausleihen \\(exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\) ON CONFLICT DO NOTHING RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat").
@@ -81,7 +87,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	mock.ExpectCommit()
 
 	var resp ActionResponse
-	err = server.handleStudentCheckoutFlow(context.Background(), copy, nil, studentID, staffID, studentRepo, loanRepo, &resp)
+	err = server.handleUnifiedCheckoutFlow(context.Background(), copy, &studentID, nil, staffID, studentRepo, loanRepo, &resp)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

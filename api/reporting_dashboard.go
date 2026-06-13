@@ -7,11 +7,13 @@ import (
 	"time"
 )
 
+// DashboardSummary holds key metrics for the library reporting dashboard.
 type DashboardSummary struct {
 	TotalOverdue int              `json:"total_overdue"`
 	TopOverdue   []OverdueSummary `json:"top_overdue"`
 }
 
+// OverdueSummary groups overdue loans by delay categories.
 type OverdueSummary struct {
 	SchuelerName string `json:"schueler_name"`
 	Klasse       string `json:"klasse"`

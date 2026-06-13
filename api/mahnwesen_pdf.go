@@ -2,10 +2,15 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -13,7 +18,7 @@ import (
 // generateMahnPDF creates an A4 PDF reminder list.
 // Layout: exactly one page per student (page break after every student).
 // Each page shows: student name, class, and a table of their overdue media with covers.
-func generateMahnPDF(klassen []MahnwesenKlasse) ([]byte, error) {
+func generateMahnPDF(klassen []repository.MahnwesenKlasse) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(18, 18, 18)
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
@@ -160,4 +165,30 @@ func pluralMedium(n int) string {
 		return "Medium"
 	}
 	return "Medien"
+}
+
+// GetMahnwesenPDFHandler generates and streams the full overdue PDF.
+// GET /api/mahnwesen/pdf
+func (s *Server) GetMahnwesenPDFHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+		defer cancel()
+
+		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		pdfBytes, err := generateMahnPDF(klassen)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition",
+			fmt.Sprintf("attachment; filename=mahnliste_%s.pdf", time.Now().Format("2006-01-02")))
+		_, _ = w.Write(pdfBytes)
+	}
 }

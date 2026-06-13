@@ -147,16 +147,10 @@ func (s *Server) handleBookAction(
 		return fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", errInvalidState, query)
 	}
 
-	// Case: Active Teacher context exists in session (dauerhafter Handapparat).
+	// Case: Active Teacher or Student context exists in session.
 	// Pass nil for activeLoan – the flow handler re-reads it inside a locked transaction.
-	if activeTeacherID != nil && *activeTeacherID != "" {
-		return s.handleTeacherCheckoutFlow(ctx, copy, nil, *activeTeacherID, staffID, studentRepo, loanRepo, resp)
-	}
-
-	// Case: Active Student context exists in session.
-	// Pass nil for activeLoan – the flow handler re-reads it inside a locked transaction.
-	if activeStudentID != nil && *activeStudentID != "" {
-		return s.handleStudentCheckoutFlow(ctx, copy, nil, *activeStudentID, staffID, studentRepo, loanRepo, resp)
+	if (activeTeacherID != nil && *activeTeacherID != "") || (activeStudentID != nil && *activeStudentID != "") {
+		return s.handleUnifiedCheckoutFlow(ctx, copy, activeStudentID, activeTeacherID, staffID, studentRepo, loanRepo, resp)
 	}
 
 	// Case: NO active student/teacher context -> Simple Return (or teacher self-checkout).

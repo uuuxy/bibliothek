@@ -1,0 +1,249 @@
+package api
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"bibliothek/plugins"
+	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// handleUnifiedCheckoutFlow handles checkout/return/fremdrueckgabe flows.
+// Every path is wrapped in a Read Committed transaction with SELECT ... FOR UPDATE on the loan
+// row to serialise concurrent scans of the same book copy.
+func (s *Server) handleUnifiedCheckoutFlow(
+	ctx context.Context,
+	copy *repository.BookCopy,
+	activeStudentID *string,
+	activeTeacherID *string,
+	staffID string,
+	studentRepo repository.StudentRepository,
+	loanRepo repository.LoanRepository,
+	resp *ActionResponse,
+) error {
+	if !copy.IstAusleihbar {
+		return fmt.Errorf("%w: dieses Buchexemplar ist nicht ausleihbar", errInvalidState)
+	}
+
+	var borrowerID string
+	var borrowerType string
+	var student *repository.Student
+	var teacher *repository.User
+	var dueTime time.Time
+
+	// 1. Resolve active borrower and validate limits
+	if activeStudentID != nil && *activeStudentID != "" {
+		borrowerType = "student"
+		borrowerID = *activeStudentID
+		sObj, err := studentRepo.GetByID(ctx, borrowerID)
+		if err != nil {
+			return err
+		}
+		if sObj == nil {
+			return fmt.Errorf("%w: Aktives Schülerprofil nicht gefunden", errNotFound)
+		}
+		if sObj.IstGesperrt {
+			return fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", errBlocked)
+		}
+		student = sObj
+		dt, err := s.resolveCheckoutDueDate(ctx, copy)
+		if err != nil {
+			return err
+		}
+		dueTime = dt
+	} else if activeTeacherID != nil && *activeTeacherID != "" {
+		borrowerType = "teacher"
+		borrowerID = *activeTeacherID
+		teacher = &repository.User{}
+		err := s.DB.Pool.QueryRow(ctx, `
+			SELECT b.id, b.barcode_id, b.vorname, b.nachname, br.rolle 
+			FROM benutzer b JOIN benutzer_rollen br ON b.id = br.benutzer_id
+			WHERE b.id = $1 AND br.rolle = 'LEHRER' AND b.aktiv = true LIMIT 1
+		`, borrowerID).Scan(&teacher.ID, &teacher.BarcodeID, &teacher.Vorname, &teacher.Nachname, &teacher.Rolle)
+		if err != nil {
+			return fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", errNotFound)
+		}
+		dueTime = time.Now().AddDate(1, 0, 0)
+	} else {
+		return fmt.Errorf("%w: Weder Schüler noch Lehrer aktiv", errInvalidState)
+	}
+
+	// 2. Open Transaction
+	tx, err := loanRepo.BeginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// If student, lock row to prevent concurrent limit bypass
+	var activeLoansCount int
+	if borrowerType == "student" {
+		if _, err = tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", borrowerID); err != nil {
+			return err
+		}
+		err = tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", borrowerID).Scan(&activeLoansCount)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 3. Get Active Loan (FOR UPDATE)
+	activeLoan, err := loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
+	if err != nil {
+		return err
+	}
+
+	isReturningThis := false
+	if activeLoan != nil {
+		if borrowerType == "student" && activeLoan.SchuelerID != nil && *activeLoan.SchuelerID == borrowerID {
+			isReturningThis = true
+		} else if borrowerType == "teacher" && activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == borrowerID {
+			isReturningThis = true
+		}
+	}
+
+	// Check limit early for students
+	if borrowerType == "student" {
+		settings, err := s.querySettings(ctx)
+		if err != nil {
+			return err
+		}
+		if activeLoansCount >= settings.MaxAusleihenSchueler {
+			// Only allow return if they already borrowed THIS book
+			if !isReturningThis {
+				return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell: %d)", errBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
+			}
+		}
+	}
+
+	auditRepo := repository.NewAuditRepository(s.DB.Pool)
+
+	// Subcase A: Available -> Checkout
+	if activeLoan == nil {
+		var loan *repository.Loan
+		if borrowerType == "student" {
+			loan, err = loanRepo.CreateLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime)
+		} else {
+			loan, err = loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime, true)
+		}
+		if err != nil {
+			return err
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+		
+		if borrowerType == "student" {
+			_ = auditRepo.LogAusleihe(ctx, copy.ID, borrowerID, "", staffID)
+			resp.Student = student
+		} else {
+			_ = auditRepo.LogAusleihe(ctx, copy.ID, "", borrowerID, staffID)
+			resp.Teacher = teacher
+		}
+		
+		resp.Type = "ausleihe"
+		resp.Book = copy
+		if loan != nil {
+			resp.DueDate = &loan.RueckgabeFrist
+		}
+		return nil
+	}
+
+	// Subcase B: Borrowed by THIS user -> Return
+	if isReturningThis {
+		if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+			return err
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+		
+		if borrowerType == "student" {
+			_ = auditRepo.LogRueckgabe(ctx, copy.ID, borrowerID, "", staffID)
+			resp.Student = student
+		} else {
+			_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", borrowerID, staffID)
+			resp.Teacher = teacher
+		}
+
+		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
+			CopyID:       copy.ID,
+			BarcodeID:    copy.BarcodeID,
+			Titel:        copy.Titel,
+			SchuelerID:   activeLoan.SchuelerID,
+			BearbeiterID: staffID,
+		})
+		resp.Type = "rueckgabe"
+		resp.Book = copy
+		resp.LoanID = &activeLoan.ID
+		return nil
+	}
+
+	// Subcase C: Borrowed by DIFFERENT user -> Fremdrückgabe & Checkout
+	var prevStudent *repository.Student
+	var prevTeacher *repository.User
+
+	if activeLoan.SchuelerID != nil {
+		prevStudent, _ = studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		prevTeacher = &repository.User{}
+		err = tx.QueryRow(ctx, "SELECT b.id, b.vorname, b.nachname, COALESCE(br.rolle, 'HELFER') FROM benutzer b LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id WHERE b.id = $1 LIMIT 1", *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
+		if errors.Is(err, pgx.ErrNoRows) {
+			prevTeacher = nil
+		}
+	}
+
+	if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, true); err != nil {
+		return err
+	}
+
+	var loan *repository.Loan
+	if borrowerType == "student" {
+		loan, err = loanRepo.CreateLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime)
+	} else {
+		loan, err = loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime, true)
+	}
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	if activeLoan.SchuelerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
+	}
+
+	if borrowerType == "student" {
+		_ = auditRepo.LogAusleihe(ctx, copy.ID, borrowerID, "", staffID)
+		resp.Student = student
+	} else {
+		_ = auditRepo.LogAusleihe(ctx, copy.ID, "", borrowerID, staffID)
+		resp.Teacher = teacher
+	}
+
+	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
+		CopyID:       copy.ID,
+		BarcodeID:    copy.BarcodeID,
+		Titel:        copy.Titel,
+		SchuelerID:   activeLoan.SchuelerID,
+		BearbeiterID: staffID,
+	})
+
+	resp.Type = "ausleihe"
+	resp.Book = copy
+	if loan != nil {
+		resp.DueDate = &loan.RueckgabeFrist
+	}
+	resp.Fremdrueckgabe = true
+	resp.Vorbesitzer = prevStudent
+	resp.VorbesitzerUser = prevTeacher
+	return nil
+}

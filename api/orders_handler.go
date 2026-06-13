@@ -31,13 +31,11 @@ type SubmitOrderRequest struct {
 	GenerateBarcodes bool               `json:"generate_barcodes"`
 }
 
-// SubmitOrderHandler processes a full cart order, allocates barcodes,
-// generates the order PDF, and sends it to the supplier via SMTP.
-func (s *Server) SubmitOrderHandler() http.HandlerFunc {
+// SubmitOrderHandler processes a full cart order via the OrderService and dispatches PDFs via PDFService.
+func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SubmitOrderRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -53,186 +51,42 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		// 1. Fetch supplier details
-		var supplierName, supplierEmail, customerNumber string
-		err := s.DB.Pool.QueryRow(ctx, `
-			SELECT name, email, kundennummer 
-			FROM lieferanten 
-			WHERE id = $1
-		`, req.SupplierID).Scan(&supplierName, &supplierEmail, &customerNumber)
+		res, err := orderSvc.ProcessOrder(ctx, req)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
-				return
+			status := http.StatusInternalServerError
+			if err.Error() == "supplier not found" {
+				status = http.StatusNotFound
+			} else if strings.HasPrefix(err.Error(), "invalid quantity") {
+				status = http.StatusBadRequest
 			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			apierrors.SendHTTPError(w, status, err)
 			return
 		}
 
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer func() { _ = tx.Rollback(ctx) }()
-
-		// DB sequence is used to fetch barcode IDs atomically.
-
-
-		// 3. Register copies in DB & collect details for PDFs
-		labels := make([]BarcodeLabelDetail, 0)
-		orderSummaryItems := make([]OrderedItem, 0)
-
-		qInsert := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt, einkaufspreis)
-			VALUES ($1, $2, $3, false, $4, $5)
-		`
-
-		for _, item := range req.Items {
-			if item.Menge <= 0 || item.Menge > 200 {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("invalid quantity %d for title %s", item.Menge, item.TitelID))
-				return
-			}
-
-			// Resolve book details
-			var titel, autor, isbn, verlag string
-			err = tx.QueryRow(ctx, "SELECT titel, coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, '') FROM buecher_titel WHERE id = $1", item.TitelID).Scan(&titel, &autor, &isbn, &verlag)
-			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("book title %s not found", item.TitelID))
-					return
-				}
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-
-			orderSummaryItems = append(orderSummaryItems, OrderedItem{
-				Titel:  titel,
-				Autor:  autor,
-				ISBN:   isbn,
-				Verlag: verlag,
-				Menge:  item.Menge,
-			})
-
-			if req.GenerateBarcodes {
-				for i := 0; i < item.Menge; i++ {
-					var barcodeID string
-					err = tx.QueryRow(ctx, "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0')").Scan(&barcodeID)
-					if err != nil {
-						apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("sequence error: %w", err))
-						return
-					}
-
-					statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
-					_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, false, item.Preis)
-					if err != nil {
-						apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-						return
-					}
-					labels = append(labels, BarcodeLabelDetail{
-						BarcodeID: barcodeID,
-						Titel:     titel,
-						Autor:     autor,
-						ISBN:      isbn,
-					})
-				}
-			}
-		}
-
-		// Commit DB updates
-		if err := tx.Commit(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 4. Generate PDFs in memory
-		summaryPDF, err := GenerateOrderSummaryPDF(orderSummaryItems)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		var barcodePDF []byte
-		var barcodeCSV []byte
-		if req.GenerateBarcodes && len(labels) > 0 {
-			barcodePDF, err = GenerateBarcodeSheetPDF(labels)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			barcodeCSV, err = GenerateBarcodeCSV(labels)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-		}
-
-		// 5. Send SMTP Email with PDF Attachments
-		emailBody := fmt.Sprintf(
-			"Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom %s (Kundennummer: %s) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nBestellte Titel: %d\nGesamtanzahl Exemplare: %d\n\nMit freundlichen Grüßen,\nSchulbibliothek",
-			time.Now().Format("02.01.2006"),
-			customerNumber,
-			len(orderSummaryItems),
-			len(labels),
-		)
-
-		attachments := []MailAttachment{
-			{
-				Name:        fmt.Sprintf("bestellanschreiben_%s.pdf", time.Now().Format("2006-01-02")),
-				ContentType: "application/pdf",
-				Data:        summaryPDF,
-			},
-		}
-
-		if req.GenerateBarcodes && len(labels) > 0 {
-			attachments = append(attachments, MailAttachment{
-				Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format("2006-01-02")),
-				ContentType: "application/pdf",
-				Data:        barcodePDF,
-			})
-			attachments = append(attachments, MailAttachment{
-				Name:        fmt.Sprintf("barcode_mapping_%s.csv", time.Now().Format("2006-01-02")),
-				ContentType: "text/csv",
-				Data:        barcodeCSV,
-			})
-		}
-
-		mailReq := MailRequest{
-			To:          supplierEmail,
-			Subject:     fmt.Sprintf("Buchbestellung Schulbibliothek - %s (Kundennummer %s)", time.Now().Format("02.01.2006"), customerNumber),
-			Body:        emailBody,
-			Attachments: attachments,
-		}
-
-		// Fallback for missing SMTP configuration during local development
 		host := os.Getenv("SMTP_HOST")
 		if host == "" {
 			log.Println("WARNING: SMTP_HOST environment variable not set. Email dispatch skipped. Order has been saved locally.")
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]any{
+			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "success",
-				"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", supplierName),
-				"ordered_qty": len(labels),
+				"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
+				"ordered_qty": len(res.Labels),
 			})
 			return
 		}
 
-		if err := SendEmail(mailReq); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{
+		if err := pdfSvc.DispatchOrderEmail(res.SupplierName, res.SupplierEmail, res.CustomerNumber, res.SummaryItems, res.Labels, req.GenerateBarcodes); err != nil {
+			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
-				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen. Bitte klären Sie den Versand manuell.", supplierEmail),
-				"ordered_qty": len(labels),
+				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
+				"ordered_qty": len(res.Labels),
 			})
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
-			"message":     fmt.Sprintf("Bestellung erfolgreich per E-Mail an %s gesendet.", supplierName),
-			"ordered_qty": len(labels),
+			"message":     fmt.Sprintf("Bestellung erfolgreich per E-Mail an %s gesendet.", res.SupplierName),
+			"ordered_qty": len(res.Labels),
 		})
 	}
 }
@@ -246,6 +100,7 @@ type ShipmentGroup struct {
 	Items        []*GroupedItem `json:"items"`
 }
 
+// GroupedItem represents an item within a ShipmentGroup.
 type GroupedItem struct {
 	TitelID string `json:"titel_id"`
 	Titel   string `json:"titel"`
@@ -347,11 +202,13 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 	}
 }
 
+// ReceiveItemRequest represents the payload for receiving an ordered item.
 type ReceiveItemRequest struct {
 	TitelID string `json:"titel_id"`
 	Barcode string `json:"barcode"`
 }
 
+// ReceiveItemHandler handles the reception of a single ordered item via barcode scan.
 func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReceiveItemRequest

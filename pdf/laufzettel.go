@@ -14,12 +14,14 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/props"
 )
 
+// LaufzettelAusleihe represents a loan in the clearance certificate.
 type LaufzettelAusleihe struct {
 	Titel     string
 	BarcodeID string
 	Frist     string
 }
 
+// LaufzettelStudent represents a student in the clearance certificate.
 type LaufzettelStudent struct {
 	Vorname   string
 	Nachname  string

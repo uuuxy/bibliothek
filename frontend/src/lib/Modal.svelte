@@ -11,18 +11,22 @@
    * Props:
    *   open     — controls visibility
    *   onclose  — optional; if provided, an × button is rendered in the header bar
-   *   size     — "sm" | "md" | "lg" (default: "md")
+   *   size     — "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" (default: "md")
    *   header   — optional snippet: rendered inside the top bar (title area)
    *   children — required snippet: the modal body content
    */
 
-  /** @type {{ open: boolean, onclose?: () => void, size?: 'sm' | 'md' | 'lg', header?: import('svelte').Snippet, children: import('svelte').Snippet }} */
+  /** @type {{ open: boolean, onclose?: () => void, size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl', header?: import('svelte').Snippet, children: import('svelte').Snippet }} */
   let { open, onclose, size = "md", header, children } = $props();
 
   const sizeClass = $derived({
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
+    xl: "max-w-xl",
+    "2xl": "max-w-2xl",
+    "3xl": "max-w-3xl",
+    "4xl": "max-w-4xl",
   }[size] ?? "max-w-md");
 </script>
 

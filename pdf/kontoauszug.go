@@ -13,12 +13,14 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/props"
 )
 
+// KontoauszugSchueler represents a student in the account statement.
 type KontoauszugSchueler struct {
 	Vorname  string
 	Nachname string
 	Klasse   string
 }
 
+// KontoauszugBuch represents a book in the account statement.
 type KontoauszugBuch struct {
 	Titel          string
 	Barcode        string
