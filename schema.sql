@@ -131,6 +131,18 @@ BEFORE UPDATE ON schueler
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
 
+-- Table: schueler_fotos (Encrypted student photos)
+CREATE TABLE schueler_fotos (
+    schueler_id UUID PRIMARY KEY REFERENCES schueler(id) ON DELETE CASCADE,
+    foto_encrypted BYTEA NOT NULL,
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER trg_schueler_fotos_aktualisiert_am
+BEFORE UPDATE ON schueler_fotos
+FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+
+
 -- Table: klassen_lehrer_mapping (Class → class teacher e-mail for automated reminders)
 CREATE TABLE klassen_lehrer_mapping (
     klasse       VARCHAR(50)  PRIMARY KEY,
@@ -384,7 +396,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('004_aussonderung.sql'),
 ('005_add_etikett_gedruckt.sql'),
 ('006_create_geraete.sql'),
-('007_performance_indexes.sql')
+('007_performance_indexes.sql'),
+('008_schueler_fotos_bytea.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

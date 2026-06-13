@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"bibliothek/apierrors"
@@ -37,7 +35,8 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 			rows, err = s.DB.Pool.Query(ctx, `
 				SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL) as ausgeliehen_anzahl,
-					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
+					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl,
+					EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
 				FROM schueler 
 				WHERE klasse = $1 
 				ORDER BY nachname, vorname
@@ -46,7 +45,8 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 			rows, err = s.DB.Pool.Query(ctx, `
 				SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL) as ausgeliehen_anzahl,
-					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
+					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl,
+					EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
 				FROM schueler 
 				ORDER BY klasse, nachname, vorname 
 				LIMIT 500
@@ -59,27 +59,16 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 
-		// Pre-load photo directory to avoid N+1 I/O
-		fotoMap := make(map[string]bool)
-		if entries, err := os.ReadDir(filepath.Join("uploads", "fotos")); err == nil {
-			for _, e := range entries {
-				fotoMap[e.Name()] = true
-			}
-		}
-
 		students := []map[string]any{}
 		for rows.Next() {
 			var id, barcode, vorname, nachname, kl string
 			var abgaengerJahr int
-			var gesperrt bool
+			var gesperrt, hasFoto bool
 			var ausgeliehenAnzahl, ueberfaelligAnzahl int
-			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &ausgeliehenAnzahl, &ueberfaelligAnzahl); err == nil {
+			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &ausgeliehenAnzahl, &ueberfaelligAnzahl, &hasFoto); err == nil {
 				fotoURL := ""
-				if barcode != "" {
-					fileName := fmt.Sprintf("%s.jpg", barcode)
-					if fotoMap[fileName] {
-						fotoURL = fmt.Sprintf("/uploads/fotos/%s", fileName)
-					}
+				if barcode != "" && hasFoto {
+					fotoURL = fmt.Sprintf("/api/schueler/%s/photo", barcode)
 				}
 				students = append(students, map[string]any{
 					"id":                 id,

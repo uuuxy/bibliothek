@@ -142,6 +142,9 @@ func (s *Server) Routes() http.Handler {
 	// Upload student webcam passport photo (Accessible by Admin, Mitarbeiter, and Lehrer)
 	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.UploadStudentPhotoHandler()))
 
+	// Serve encrypted student photo (Accessible by Admin, Mitarbeiter, and Lehrer)
+	mux.Handle("GET /api/schueler/{id}/photo", s.RequirePermission("view_students")(s.ServeStudentPhotoHandler()))
+
 	// Get student profile (Accessible by Admin, Mitarbeiter, and Lehrer)
 	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.GetStudentProfileHandler(studentRepo)))
 

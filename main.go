@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,24 +29,33 @@ import (
 // It initializes configs, setups database connection pools, starts the SSE broker,
 // mounts middleware-protected routes, and starts the server with graceful shutdown.
 func main() {
+	// 0. Setup strukturiertes JSON-Logging
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
+
 	// Initialize optional plugins
 	vorlage.Init()
 
 	// 1. Config environment resolution
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Fatal("FATAL: DATABASE_URL environment variable is required and cannot be empty")
+		slog.Error("FATAL: DATABASE_URL environment variable is required and cannot be empty")
+		os.Exit(1)
 	}
 
 	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		log.Fatal("FATAL: JWT_SECRET environment variable is required and cannot be empty")
+		slog.Error("FATAL: JWT_SECRET environment variable is required and cannot be empty")
+		os.Exit(1)
 	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatal("FATAL: PORT environment variable is required and cannot be empty")
+		slog.Error("FATAL: PORT environment variable is required and cannot be empty")
+		os.Exit(1)
 	}
 
 	cookieSecure, err := strconv.ParseBool(os.Getenv("COOKIE_SECURE"))
@@ -59,45 +68,51 @@ func main() {
 	defer stop()
 
 	// 2. Database Connection pool setup
-	log.Println("Establishing database connection pool...")
+	slog.Info("Establishing database connection pool...")
 	database, err := db.Connect(ctx, dsn)
 	if err != nil {
-		log.Fatalf("Database connection pool failed: %v", err)
+		slog.Error("Database connection pool failed", "error", err)
+		os.Exit(1)
 	}
 	defer database.Close()
-	log.Println("Database connection pool successfully initialized.")
+	slog.Info("Database connection pool successfully initialized.")
 
 	// 2a. Run pending SQL migrations
-	log.Println("Running database migrations...")
+	slog.Info("Running database migrations...")
 	if err := database.RunMigrations(ctx, "migrations"); err != nil {
-		log.Fatalf("Database migration failed: %v", err)
+		slog.Error("Database migration failed", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Initializing role permissions...")
+	slog.Info("Initializing role permissions...")
 	if err := database.InitPermissions(ctx); err != nil {
-		log.Fatalf("Database permission initialization failed: %v", err)
+		slog.Error("Database permission initialization failed", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Initializing suppliers...")
+	slog.Info("Initializing suppliers...")
 	if err := database.InitLieferanten(ctx); err != nil {
-		log.Fatalf("Database supplier initialization failed: %v", err)
+		slog.Error("Database supplier initialization failed", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Bootstrapping initial admin (if database is empty)...")
+	slog.Info("Bootstrapping initial admin (if database is empty)...")
 	if err := database.InitAdmin(ctx); err != nil {
-		log.Fatalf("Admin bootstrapping failed: %v", err)
+		slog.Error("Admin bootstrapping failed", "error", err)
+		os.Exit(1)
 	}
 
 	// 3. Authenticator initialization (12 hours token expiration duration)
 	authenticator, err := auth.NewAuthenticator(jwtSecret, database.Pool, 12*time.Hour)
 	if err != nil {
-		log.Fatalf("Failed to initialize authenticator: %v", err)
+		slog.Error("Failed to initialize authenticator", "error", err)
+		os.Exit(1)
 	}
 
 	// 4. Server-Sent Events broker initialization
 	broker := sse.NewBroker()
 	go broker.Start(ctx)
-	log.Println("Server-Sent Events (SSE) broker started.")
+	slog.Info("Server-Sent Events (SSE) broker started.")
 
 	// 5. Background Jobs & Scheduler
 	auditRepo := repository.NewAuditRepository(database.Pool)
@@ -107,7 +122,7 @@ func main() {
 
 	// Native async background worker for GDPR cleanup (runs on startup + every 24h)
 	go func() {
-		log.Println("Background Worker: Running initial GDPR cleanup on startup...")
+		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
 		scheduler.RunGDPRAnonymizeLoans()
 		scheduler.RunGDPRDeleteAbgaenger()
 
@@ -117,11 +132,11 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				log.Println("Background Worker: Running scheduled 24h GDPR cleanup...")
+				slog.Info("Background Worker: Running scheduled 24h GDPR cleanup...")
 				scheduler.RunGDPRAnonymizeLoans()
 				scheduler.RunGDPRDeleteAbgaenger()
 			case <-ctx.Done():
-				log.Println("Background Worker: GDPR worker gracefully stopped.")
+				slog.Info("Background Worker: GDPR worker gracefully stopped.")
 				return
 			}
 		}
@@ -137,22 +152,24 @@ func main() {
 
 	// Start server asynchronously
 	go func() {
-		log.Printf("Server listening on http://localhost:%s/", port)
+		slog.Info("Server listening", "url", "http://localhost:"+port)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			slog.Error("Server error", "error", err)
+			os.Exit(1)
 		}
 	}()
 
 	// Block until signal is received
 	<-ctx.Done()
-	log.Println("Shutdown signal received. Commencing graceful stop...")
+	slog.Info("Shutdown signal received. Commencing graceful stop...")
 
 	// Timeout context for pending connections to finish
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("Graceful shutdown failed: %v", err)
+		slog.Error("Graceful shutdown failed", "error", err)
+		os.Exit(1)
 	}
-	log.Println("Server stopped successfully.")
+	slog.Info("Server stopped successfully.")
 }

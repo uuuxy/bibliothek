@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/internal/crypto"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -64,20 +64,29 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 			return
 		}
 
-		// 3. Save to disk folder uploads/fotos/{barcodeID}.jpg
-		dir := filepath.Join("uploads", "fotos")
-		if err := os.MkdirAll(dir, 0750); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		// 3. Verschlüsseln der Foto-Bytes
+		encryptedData, err := crypto.Encrypt(imgBytes)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der fotostrukturierung: %v", err))
 			return
 		}
 
-		fileName := filepath.Join(dir, fmt.Sprintf("%s.jpg", barcodeID))
-		if err := os.WriteFile(fileName, imgBytes, 0600); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		// 4. In der Datenbank abspeichern (Upsert in schueler_fotos)
+		query := `
+			INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
+			VALUES ($1, $2)
+			ON CONFLICT (schueler_id) DO UPDATE SET 
+				foto_encrypted = EXCLUDED.foto_encrypted,
+				aktualisiert_am = CURRENT_TIMESTAMP
+		`
+		_, err = s.DB.Pool.Exec(ctx, query, id, encryptedData)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim speichern des fotos in der db: %v", err))
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"success","url":"/uploads/fotos/` + barcodeID + `.jpg"}`))
+		photoURL := fmt.Sprintf("/api/schueler/%s/photo", barcodeID)
+		_, _ = w.Write([]byte(`{"status":"success","url":"` + photoURL + `"}`))
 	}
 }

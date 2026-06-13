@@ -3,14 +3,10 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
-
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -77,20 +73,13 @@ func (s *Server) GetStudentProfileHandler(
 			return
 		}
 
-		// 2. Resolve photo URL if the webcam snapshot exists on disk
+		// 2. Resolve photo URL if an encrypted photo exists in the DB
 		fotoURL := ""
 		if student.BarcodeID != "" {
-			safeBarcodeID := filepath.Base(student.BarcodeID)
-			filePath := filepath.Join("uploads", "fotos", fmt.Sprintf("%s.jpg", safeBarcodeID))
-
-			fotoBytes, err := os.ReadFile(filePath)
-			if err == nil {
-				// Base64 encoden
-				encoded := base64.StdEncoding.EncodeToString(fotoBytes)
-				fotoURL = fmt.Sprintf("data:image/jpeg;base64,%s", encoded)
-			} else {
-				// Fallback auf den URL-Pfad (der Client lädt das Bild dann selbst)
-				fotoURL = fmt.Sprintf("/uploads/fotos/%s.jpg", safeBarcodeID)
+			var hasPhoto bool
+			err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)", student.ID).Scan(&hasPhoto)
+			if err == nil && hasPhoto {
+				fotoURL = fmt.Sprintf("/api/schueler/%s/photo", student.BarcodeID)
 			}
 		}
 
