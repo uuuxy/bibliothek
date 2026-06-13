@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/csv"
 	"fmt"
 	"time"
 
@@ -22,6 +23,7 @@ type BarcodeLabelDetail struct {
 	BarcodeID string
 	Titel     string
 	Autor     string
+	ISBN      string
 }
 
 // GenerateOrderSummaryPDF generates a PDF cover letter ("Bestellanschreiben") containing the table of ordered book titles.
@@ -160,4 +162,24 @@ func GenerateBarcodeSheetPDF(labels []BarcodeLabelDetail) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// GenerateBarcodeCSV creates a CSV containing the barcode to ISBN mapping for the supplier.
+func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+	writer.Comma = ';' // European CSV format
+
+	// Header
+	if err := writer.Write([]string{"ISBN", "Titel", "Autor", "Barcode"}); err != nil {
+		return nil, err
+	}
+
+	for _, l := range labels {
+		if err := writer.Write([]string{l.ISBN, l.Titel, l.Autor, l.BarcodeID}); err != nil {
+			return nil, err
+		}
+	}
+	writer.Flush()
+	return buf.Bytes(), writer.Error()
 }

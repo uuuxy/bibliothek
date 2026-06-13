@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,8 +26,9 @@ type OrderItemRequest struct {
 
 // SubmitOrderRequest represents the payload for POST /api/orders
 type SubmitOrderRequest struct {
-	SupplierID string             `json:"supplier_id"`
-	Items      []OrderItemRequest `json:"items"`
+	SupplierID       string             `json:"supplier_id"`
+	Items            []OrderItemRequest `json:"items"`
+	GenerateBarcodes bool               `json:"generate_barcodes"`
 }
 
 // SubmitOrderHandler processes a full cart order, allocates barcodes,
@@ -76,32 +76,12 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 		}
 		defer func() { _ = tx.Rollback(ctx) }()
 
-		// 2. Fetch the highest B-XXXXX barcode in the system to calculate the next sequence
-		var lastBarcode string
-		qLast := `
-			SELECT barcode_id 
-			FROM buecher_exemplare 
-			WHERE barcode_id ~ '^B-[0-9]+$' 
-			ORDER BY CAST(SUBSTRING(barcode_id FROM '^B-([0-9]+)$') AS INTEGER) DESC 
-			LIMIT 1
-		`
-		err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-		startNum := 10001
-		if err == nil {
-			re := regexp.MustCompile(`B-(\d+)`)
-			matches := re.FindStringSubmatch(lastBarcode)
-			if len(matches) > 1 {
-				if parsed, err := strconv.Atoi(matches[1]); err == nil {
-					startNum = parsed + 1
-				}
-			}
-		}
+		// DB sequence is used to fetch barcode IDs atomically.
+
 
 		// 3. Register copies in DB & collect details for PDFs
 		labels := make([]BarcodeLabelDetail, 0)
 		orderSummaryItems := make([]OrderedItem, 0)
-		currentBarcodeIndex := startNum
-		isNaacher := strings.Contains(strings.ToLower(supplierName), "naacher")
 
 		qInsert := `
 			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt, einkaufspreis)
@@ -134,20 +114,28 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 				Menge:  item.Menge,
 			})
 
-			for i := 0; i < item.Menge; i++ {
-				barcodeID := fmt.Sprintf("B-%05d", currentBarcodeIndex)
-				statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
-				_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, isNaacher, item.Preis)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-					return
+			if req.GenerateBarcodes {
+				for i := 0; i < item.Menge; i++ {
+					var barcodeID string
+					err = tx.QueryRow(ctx, "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0')").Scan(&barcodeID)
+					if err != nil {
+						apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("sequence error: %w", err))
+						return
+					}
+
+					statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+					_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, false, item.Preis)
+					if err != nil {
+						apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+						return
+					}
+					labels = append(labels, BarcodeLabelDetail{
+						BarcodeID: barcodeID,
+						Titel:     titel,
+						Autor:     autor,
+						ISBN:      isbn,
+					})
 				}
-				labels = append(labels, BarcodeLabelDetail{
-					BarcodeID: barcodeID,
-					Titel:     titel,
-					Autor:     autor,
-				})
-				currentBarcodeIndex++
 			}
 		}
 
@@ -164,10 +152,19 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 			return
 		}
 
-		barcodePDF, err := GenerateBarcodeSheetPDF(labels)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		var barcodePDF []byte
+		var barcodeCSV []byte
+		if req.GenerateBarcodes && len(labels) > 0 {
+			barcodePDF, err = GenerateBarcodeSheetPDF(labels)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			barcodeCSV, err = GenerateBarcodeCSV(labels)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
 		}
 
 		// 5. Send SMTP Email with PDF Attachments
@@ -186,11 +183,17 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 				Data:        summaryPDF,
 			},
 		}
-		if isNaacher {
+
+		if req.GenerateBarcodes && len(labels) > 0 {
 			attachments = append(attachments, MailAttachment{
 				Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format("2006-01-02")),
 				ContentType: "application/pdf",
 				Data:        barcodePDF,
+			})
+			attachments = append(attachments, MailAttachment{
+				Name:        fmt.Sprintf("barcode_mapping_%s.csv", time.Now().Format("2006-01-02")),
+				ContentType: "text/csv",
+				Data:        barcodeCSV,
 			})
 		}
 
@@ -215,7 +218,13 @@ func (s *Server) SubmitOrderHandler() http.HandlerFunc {
 		}
 
 		if err := SendEmail(mailReq); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadGateway, fmt.Errorf("email delivery failed: %w", err))
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"status":      "warning",
+				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen. Bitte klären Sie den Versand manuell.", supplierEmail),
+				"ordered_qty": len(labels),
+			})
 			return
 		}
 

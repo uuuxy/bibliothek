@@ -21,6 +21,7 @@
   let orderCart = $state([]);
   let orderTotal = $derived(orderCart.reduce((sum, item) => sum + (item.menge * (Number(item.preis) || 0)), 0));
   let submittingOrder = $state(false);
+  let generateBarcodes = $state(false);
   /** @type {any} */
   let orderMessage = $state(null);
   /** @type {any[]} */
@@ -172,7 +173,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           supplier_id: supplier.id,
-          items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge, preis: Number(item.preis) || 0 }))
+          items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge, preis: Number(item.preis) || 0 })),
+          generate_barcodes: generateBarcodes
         })
       });
       const data = await res.json();
@@ -292,6 +294,7 @@
         bind:showDropdown
         bind:isbnPreview
         bind:isbnLoading
+        bind:generateBarcodes
         onSearchInput={handleSearchInput}
         onAddToCart={addToCart}
         onRemoveFromCart={removeFromCart}

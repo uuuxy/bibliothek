@@ -15,6 +15,19 @@
   let fehlbestandLoading = $state(false);
   /** @type {any[] | null} */
   let fehlbestandListe = $state(null);
+  let fehlbestandTotalCount = $state(0);
+  let fehlbestandPage = $state(1);
+  let fehlbestandLimit = $state(50);
+  
+  let fehlbestandTotalPages = $derived(Math.ceil(fehlbestandTotalCount / fehlbestandLimit));
+
+  $effect(() => {
+    // If the list is already loaded, reacting to page changes
+    if (fehlbestandListe !== null) {
+      // Re-fetch when page changes
+      ermittleFehlbestand(fehlbestandPage);
+    }
+  });
 
   // Kiosk aggressive focus: Keeps text cursor focused in the inventory input field at all times
   $effect(() => {
@@ -93,16 +106,22 @@
     }
   }
 
-  async function ermittleFehlbestand() {
+  /**
+   * @param {number} page
+   */
+  async function ermittleFehlbestand(page = 1) {
     fehlbestandLoading = true;
-    fehlbestandListe = null;
     try {
-      const res = await apiFetch(`/api/inventur/fehlbestand?tage=${fehlbestandTage}`);
+      const res = await apiFetch(`/api/inventur/fehlbestand?tage=${fehlbestandTage}&page=${page}&limit=${fehlbestandLimit}`);
       if (!res.ok) throw new Error(await res.text());
-      fehlbestandListe = await res.json();
+      const data = await res.json();
+      fehlbestandListe = data.data || [];
+      fehlbestandTotalCount = data.total_count || 0;
+      fehlbestandPage = data.page || 1;
     } catch (err) {
       const error = /** @type {any} */ (err);
       fehlbestandListe = [];
+      fehlbestandTotalCount = 0;
       console.error("Fehlbestand-Fehler:", error.message);
     } finally {
       fehlbestandLoading = false;
@@ -270,7 +289,7 @@
       />
       <span class="text-xs font-semibold text-slate-500">Tage</span>
       <button
-        onclick={ermittleFehlbestand}
+        onclick={() => { fehlbestandListe = null; fehlbestandPage = 1; ermittleFehlbestand(1); }}
         disabled={fehlbestandLoading}
         class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
       >
@@ -315,7 +334,28 @@
             </div>
           {/each}
         </div>
-        <div class="bg-rose-50/50 px-4 py-4 border-t border-rose-100 flex justify-end">
+        <div class="bg-rose-50/50 px-4 py-4 border-t border-rose-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <!-- Pagination Controls -->
+          <div class="flex items-center gap-3">
+            <button 
+              disabled={fehlbestandPage <= 1 || fehlbestandLoading} 
+              onclick={() => { fehlbestandListe = null; fehlbestandPage--; }}
+              class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg font-bold text-slate-700 text-sm transition-colors"
+            >
+              &larr; Zurück
+            </button>
+            <span class="text-xs font-bold text-slate-600">
+              Seite {fehlbestandPage} von {fehlbestandTotalPages || 1} <span class="font-medium">({fehlbestandTotalCount} gesamt)</span>
+            </span>
+            <button 
+              disabled={fehlbestandPage >= fehlbestandTotalPages || fehlbestandLoading} 
+              onclick={() => { fehlbestandListe = null; fehlbestandPage++; }}
+              class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg font-bold text-slate-700 text-sm transition-colors"
+            >
+              Weiter &rarr;
+            </button>
+          </div>
+
           <button
             onclick={finalizeInventory}
             disabled={finalizing}

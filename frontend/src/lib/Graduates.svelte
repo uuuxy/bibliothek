@@ -15,18 +15,26 @@
 
   async function printLaufzettel() {
     loadingLaufzettel = true;
-    printDate = new Date().toLocaleDateString("de-DE");
     try {
-      const res = await apiFetch("/api/abgaenger?details=true");
-      if (res.ok) detailStudents = await res.json();
+      const response = await apiFetch('/api/abgaenger/pdf');
+      if (!response.ok) {
+        throw new Error("Failed to load PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "Laufzettel.pdf";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
     } catch (err) {
       console.error("Laufzettel load error:", err);
     } finally {
       loadingLaufzettel = false;
     }
-    // Allow Svelte to flush the reactive update before printing
-    await new Promise(r => setTimeout(r, 150));
-    window.print();
   }
   
   let showImportModal = $state(false);
@@ -286,92 +294,4 @@
   </div>
 {/if}
 
-<!-- ═══════════════════════════════════════════════════════════════
-     PRINT OUTPUT — Laufzettel (one A4 page per graduate, hidden on screen)
-     ═══════════════════════════════════════════════════════════════ -->
-<div class="hidden print:block">
-  {#each detailStudents as student (student.id)}
-    <div class="laufzettel-page">
 
-      <!-- Page header ──────────────────────────────────────── -->
-      <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2pt solid #111; padding-bottom:6mm; margin-bottom:7mm;">
-        <div>
-          <div style="font-size:18pt; font-weight:900; letter-spacing:-0.3mm; line-height:1; color:#111;">Entlassungslaufzettel</div>
-          <div style="font-size:9pt; color:#555; margin-top:2mm; font-weight:600;">Schulbibliothek</div>
-        </div>
-        <div style="text-align:right; font-size:8.5pt; color:#777;">
-          <div>Erstellt am: {printDate}</div>
-        </div>
-      </div>
-
-      <!-- Student info box ──────────────────────────────────── -->
-      <div style="background:#f3f4f6; border:1pt solid #d1d5db; border-radius:4pt; padding:5mm 7mm; margin-bottom:7mm; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div style="font-size:15pt; font-weight:900; color:#111; line-height:1.2;">{student.vorname} {student.nachname}</div>
-          <div style="font-size:9.5pt; color:#444; margin-top:1.5mm; font-weight:600;">Klasse: <span style="color:#1d4ed8;">{student.klasse}</span></div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:7.5pt; color:#777; text-transform:uppercase; letter-spacing:0.4mm; font-weight:700;">Schüler-ID</div>
-          <div style="font-size:10pt; font-family:monospace; font-weight:900; color:#111; margin-top:1mm;">{student.barcode_id}</div>
-        </div>
-      </div>
-
-      <!-- Unreturned media table ────────────────────────────── -->
-      <div style="font-size:8.5pt; font-weight:800; text-transform:uppercase; letter-spacing:0.5mm; color:#374151; margin-bottom:3mm;">
-        Ausstehende Medien ({(student.ausleihen ?? []).length})
-      </div>
-      <table style="width:100%; border-collapse:collapse; margin-bottom:10mm; font-size:8pt;">
-        <thead>
-          <tr style="background:#e5e7eb; color:#374151;">
-            <th style="width:14mm; padding:1.5mm 2mm;"></th>
-            <th style="text-align:left; padding:2mm 3mm; font-weight:700; font-size:7.5pt; text-transform:uppercase; letter-spacing:0.3mm;">Titel</th>
-            <th style="text-align:left; padding:2mm 3mm; font-weight:700; font-size:7.5pt; text-transform:uppercase; letter-spacing:0.3mm;">Autor</th>
-            <th style="text-align:left; padding:2mm 3mm; font-weight:700; font-size:7.5pt; text-transform:uppercase; letter-spacing:0.3mm;">Barcode</th>
-            <th style="text-align:left; padding:2mm 3mm; font-weight:700; font-size:7.5pt; text-transform:uppercase; letter-spacing:0.3mm;">Fällig am</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each (student.ausleihen ?? []) as loan, i}
-            <tr style="border-bottom:0.5pt solid #e5e7eb; background:{i % 2 === 0 ? 'white' : '#f9fafb'};">
-              <td style="padding:2mm 3mm; vertical-align:middle;">
-                {#if loan.cover_url}
-                  <img src={loan.cover_url} style="width:10mm; height:14mm; object-fit:cover; border-radius:1pt; border:0.5pt solid #e5e7eb; display:block;" alt="" />
-                {:else}
-                  <div style="width:10mm; height:14mm; background:#e5e7eb; border-radius:1pt; display:flex; align-items:center; justify-content:center;">
-                    <span style="font-size:6pt; color:#9ca3af;">–</span>
-                  </div>
-                {/if}
-              </td>
-              <td style="padding:2mm 3mm; font-weight:600; color:#111; vertical-align:middle;">{loan.titel}</td>
-              <td style="padding:2mm 3mm; color:#555; vertical-align:middle;">{loan.autor || '—'}</td>
-              <td style="padding:2mm 3mm; font-family:monospace; font-size:7.5pt; color:#374151; vertical-align:middle;">{loan.barcode_id}</td>
-              <td style="padding:2mm 3mm; color:{loan.frist ? '#111' : '#9ca3af'}; vertical-align:middle;">{loan.frist || '—'}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-
-      <!-- Signature section ────────────────────────────────── -->
-      <div style="border-top:1pt solid #d1d5db; padding-top:6mm; margin-top:auto;">
-        <div style="font-size:8.5pt; color:#374151; margin-bottom:8mm; line-height:1.5;">
-          Ich bestätige die vollständige und ordnungsgemäße Rückgabe aller ausgeliehenen Bibliotheksmedien.
-        </div>
-        <div style="display:flex; gap:8mm;">
-          <div style="flex:1; min-width:0;">
-            <div style="border-bottom:1pt solid #111; height:9mm; margin-bottom:2mm;"></div>
-            <div style="font-size:7pt; color:#6b7280; font-weight:600;">Datum</div>
-          </div>
-          <div style="flex:2; min-width:0;">
-            <div style="border-bottom:1pt solid #111; height:9mm; margin-bottom:2mm;"></div>
-            <div style="font-size:7pt; color:#6b7280; font-weight:600;">Unterschrift Schüler/in</div>
-          </div>
-          <div style="flex:2; min-width:0;">
-            <div style="border-bottom:1pt solid #111; height:9mm; margin-bottom:2mm;"></div>
-            <div style="font-size:7pt; color:#6b7280; font-weight:600;">Unterschrift Schulbibliothek</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  {/each}
-</div>

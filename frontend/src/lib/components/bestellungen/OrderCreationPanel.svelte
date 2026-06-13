@@ -10,11 +10,23 @@
     showDropdown = $bindable(),
     isbnPreview = $bindable(),
     isbnLoading = $bindable(),
+    generateBarcodes = $bindable(),
     onSearchInput,
     onAddToCart,
     onRemoveFromCart,
     onSubmitOrder
   } = $props();
+
+  function handleSupplierChange() {
+    if (suppliers && suppliers.length > 0) {
+      const supplier = suppliers[selectedSupplierIdx];
+      if (supplier && supplier.name.toLowerCase().includes('naacher')) {
+        generateBarcodes = true;
+      } else {
+        generateBarcodes = false;
+      }
+    }
+  }
 </script>
 
 <div class="lg:col-span-8 bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-5">
@@ -23,7 +35,26 @@
     <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Entwurf</span>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="space-y-1"><label for="supplier" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
+    <div class="space-y-4">
+      <div class="space-y-1"><label for="supplier" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} onchange={handleSupplierChange} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
+      
+      <div class="flex items-center space-x-3 bg-slate-50/50 p-3 rounded-lg border border-slate-200 shadow-sm">
+        <input 
+          type="checkbox" 
+          id="generateBarcodes" 
+          bind:checked={generateBarcodes} 
+          class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer transition-all"
+        />
+        <div class="flex flex-col">
+          <label for="generateBarcodes" class="text-sm font-semibold text-slate-700 cursor-pointer">
+            Barcodes vorab reservieren (Pre-Allocation)
+          </label>
+          <p class="text-xs text-slate-500">
+            Generiert Exemplare und fügt QR-Codes für den Lieferanten hinzu.
+          </p>
+        </div>
+      </div>
+    </div>
     <div class="space-y-1 relative">
       <label for="book" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={onSearchInput} placeholder="Titel, Autor oder ISBN suchen..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50" />
       {#if showDropdown && searchResults.length > 0}

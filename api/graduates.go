@@ -4,12 +4,14 @@ package api
 // Used by the administration view to generate Laufzettel PDFs for outgoing classes.
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
 )
 
 // AusleiheDetail holds book-loan info for one physical copy.
@@ -154,5 +156,93 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(result)
+	}
+}
+
+// GetGraduatesPDFHandler generates the Laufzettel PDF for graduating students.
+// @Summary      Get Laufzettel PDF
+// @Description  Generates a printable PDF for former/graduating students with their unreturned books.
+// @Tags         admin
+// @Produce      application/pdf
+// @Router       /abgaenger/pdf [get]
+func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		detailQuery := `
+			SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
+			       t.titel,
+			       coalesce(t.autor, '') AS autor,
+			       coalesce(t.cover_url, '') AS cover_url,
+			       e.barcode_id AS ex_barcode,
+			       coalesce(to_char(a.rueckgabe_frist, 'DD.MM.YYYY'), '') AS frist
+			FROM schueler s
+			LEFT JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
+			LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
+			LEFT JOIN buecher_titel t ON e.titel_id = t.id
+			WHERE s.klasse IN ('9h', '10r', '13')
+			ORDER BY s.klasse, s.nachname, t.titel
+		`
+		rows, err := s.DB.Pool.Query(ctx, detailQuery)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		studMap := map[string]*pdf.LaufzettelStudent{}
+		studOrder := make([]string, 0)
+		for rows.Next() {
+			var id, barcode, vorname, nachname, klasse string
+			var abgaengerJahr int
+			var gesperrt bool
+			var titel, autor, coverURL, exBarcode, frist *string
+
+			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &klasse,
+				&abgaengerJahr, &gesperrt, &titel, &autor, &coverURL, &exBarcode, &frist); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			if _, ok := studMap[id]; !ok {
+				studMap[id] = &pdf.LaufzettelStudent{
+					Vorname:   vorname,
+					Nachname:  nachname,
+					Klasse:    klasse,
+					Ausleihen: []pdf.LaufzettelAusleihe{},
+				}
+				studOrder = append(studOrder, id)
+			}
+			
+			if titel != nil {
+				studMap[id].Ausleihen = append(studMap[id].Ausleihen, pdf.LaufzettelAusleihe{
+					Titel:     *titel,
+					BarcodeID: *exBarcode,
+					Frist:     *frist,
+				})
+			}
+		}
+
+		result := make([]pdf.LaufzettelStudent, 0, len(studOrder))
+		for _, id := range studOrder {
+			result = append(result, *studMap[id])
+		}
+
+		if len(result) == 0 {
+			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no graduates found"))
+			return
+		}
+
+		pdfBytes, err := pdf.GenerateLaufzettel(result)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", `attachment; filename="Laufzettel.pdf"`)
+		w.Header().Set("Content-Length", fmt.Sprint(len(pdfBytes)))
+		http.ServeContent(w, r, "Laufzettel.pdf", time.Now(), bytes.NewReader(pdfBytes))
 	}
 }

@@ -3,6 +3,8 @@
   import AntolinBadge from './AntolinBadge.svelte';
 
   let query = $state('');
+  let antolinOnly = $state(false);
+  let antolinKlasse = $state('');
   /** @type {any[]} */
   let results = $state.raw([]);
   let loading = $state(false);
@@ -12,11 +14,15 @@
 
   async function search() {
     const q = query.trim();
-    if (!q) { results = []; searched = false; return; }
+    if (!q && !antolinOnly) { results = []; searched = false; return; }
     loading = true;
     searched = true;
     try {
-      const res = await fetch(`/api/public/opac/suche?q=${encodeURIComponent(q)}`);
+      let url = `/api/public/opac/suche?q=${encodeURIComponent(q)}`;
+      if (antolinOnly) url += `&antolin_only=true`;
+      if (antolinKlasse) url += `&antolin_klasse=${encodeURIComponent(antolinKlasse)}`;
+      
+      const res = await fetch(url);
       if (res.ok) results = await res.json();
       else results = [];
     } catch {
@@ -48,7 +54,7 @@
   </header>
 
   <!-- Search bar -->
-  <div class="w-full max-w-4xl mx-auto px-6 pt-10 pb-6">
+  <div class="w-full max-w-4xl mx-auto px-6 pt-10 pb-6 space-y-4">
     <div class="relative">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -64,6 +70,31 @@
       />
       {#if loading}
         <div class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin pointer-events-none"></div>
+      {/if}
+    </div>
+
+    <!-- Antolin Filters -->
+    <div class="flex flex-wrap items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm text-sm transition-all duration-200" class:ring-1={antolinOnly} class:ring-emerald-200={antolinOnly}>
+      <label class="flex items-center gap-2 cursor-pointer text-slate-700 font-semibold select-none">
+        <input type="checkbox" bind:checked={antolinOnly} onchange={onInput} class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 transition-colors" />
+        🐦 Nur Antolin-Bücher anzeigen
+      </label>
+
+      {#if antolinOnly}
+        <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+        <select bind:value={antolinKlasse} onchange={onInput} class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-shadow">
+          <option value="">Alle Klassen</option>
+          <option value="1">Klasse 1</option>
+          <option value="2">Klasse 2</option>
+          <option value="3">Klasse 3</option>
+          <option value="4">Klasse 4</option>
+          <option value="5">Klasse 5</option>
+          <option value="6">Klasse 6</option>
+          <option value="7">Klasse 7</option>
+          <option value="8">Klasse 8</option>
+          <option value="9">Klasse 9</option>
+          <option value="10">Klasse 10</option>
+        </select>
       {/if}
     </div>
   </div>

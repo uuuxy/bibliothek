@@ -48,8 +48,15 @@ func (s *Scheduler) Start() {
 		log.Printf("Scheduler: Failed to register backup job: %v", err)
 	}
 
+	// Daily Antolin Sync at 03:00
+	if _, err := s.cron.AddFunc("0 3 * * *", func() {
+		s.RunAntolinSync()
+	}); err != nil {
+		log.Printf("Scheduler: Failed to register Antolin sync job: %v", err)
+	}
+
 	s.cron.Start()
-	log.Println("Scheduler: GDPR, backup, and retention jobs successfully started.")
+	log.Println("Scheduler: GDPR, backup, retention, and Antolin sync jobs successfully started.")
 }
 
 // Stop halts the scheduler's cron runner.

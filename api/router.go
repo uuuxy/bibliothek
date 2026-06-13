@@ -229,8 +229,9 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
 	mux.Handle("GET /api/transactions/recent", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleHelfer)(s.GetRecentTransactionsHandler()))
 
-	// Get graduates live list (Accessible by Admin and Mitarbeiter)
+	// Graduates / Laufzettel (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
+	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.GetGraduatesPDFHandler()))
 
 	// Get reorder lists (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen", s.RequirePermission("view_orders")(s.GetReordersHandler()))
@@ -314,6 +315,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("POST /api/lusd/preview", s.RequirePermission("manage_users")(s.PostLusdPreviewHandler()))
 	mux.Handle("POST /api/lusd/import", s.RequirePermission("manage_users")(s.PostLusdImportHandler()))
 	mux.Handle("POST /api/schueler/import-lusd", s.RequirePermission("manage_users")(s.PostSchuelerImportLusdHandler()))
+	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_users")(s.PromoteStudentsHandler()))
 
 	// Public OPAC catalog search (DSGVO-compliant: no loan data exposed)
 	mux.HandleFunc("GET /api/public/opac/suche", s.PublicCatalogSearchHandler())

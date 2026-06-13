@@ -109,6 +109,14 @@ func (s *Server) ScanInventoryHandler() http.HandlerFunc {
 	}
 }
 
+// FehlbestandResponse encapsulates the data with pagination metadata.
+type FehlbestandResponse struct {
+	Data       []FehlbestandEntry `json:"data"`
+	TotalCount int                `json:"total_count"`
+	Page       int                `json:"page"`
+	Limit      int                `json:"limit"`
+}
+
 // FehlbestandEntry represents one copy missing from the expected shelf position.
 type FehlbestandEntry struct {
 	ID                 string     `json:"id"`
@@ -142,12 +150,25 @@ func (s *Server) GetFehlbestandHandler() http.HandlerFunc {
 			}
 		}
 
+		page := 1
+		if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p >= 1 {
+			page = p
+		}
+		
+		limit := 50
+		if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l >= 1 && l <= 500 {
+			limit = l
+		}
+		
+		offset := (page - 1) * limit
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		rows, err := s.DB.Pool.Query(ctx, `
 			SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.inventur_geprueft_am,
-			       t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''), coalesce(t.isbn, '')
+			       t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''), coalesce(t.isbn, ''),
+			       COUNT(*) OVER() AS total_count
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON e.titel_id = t.id
 			WHERE e.ist_ausgesondert = false
@@ -161,7 +182,8 @@ func (s *Server) GetFehlbestandHandler() http.HandlerFunc {
 			      OR e.inventur_geprueft_am < CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')
 			  )
 			ORDER BY e.inventur_geprueft_am ASC NULLS FIRST, t.titel ASC
-		`, tage)
+			LIMIT $2 OFFSET $3
+		`, tage, limit, offset)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -169,10 +191,15 @@ func (s *Server) GetFehlbestandHandler() http.HandlerFunc {
 		defer rows.Close()
 
 		results := []FehlbestandEntry{}
+		totalCount := 0
+
 		for rows.Next() {
 			var e FehlbestandEntry
-			if err := rows.Scan(&e.ID, &e.BarcodeID, &e.ZustandNotiz, &e.InventurGeprueftAm,
-				&e.Titel, &e.Autor, &e.CoverURL, &e.ISBN); err != nil {
+			if err := rows.Scan(
+				&e.ID, &e.BarcodeID, &e.ZustandNotiz, &e.InventurGeprueftAm,
+				&e.Titel, &e.Autor, &e.CoverURL, &e.ISBN,
+				&totalCount,
+			); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -183,8 +210,15 @@ func (s *Server) GetFehlbestandHandler() http.HandlerFunc {
 			return
 		}
 
+		response := FehlbestandResponse{
+			Data:       results,
+			TotalCount: totalCount,
+			Page:       page,
+			Limit:      limit,
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(results)
+		_ = json.NewEncoder(w).Encode(response)
 	}
 }
 
