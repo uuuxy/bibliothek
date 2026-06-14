@@ -11,6 +11,17 @@ import (
 	"strings"
 )
 
+const (
+	createSchemaMigrationsTableSQL = `
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+			version     VARCHAR(255) PRIMARY KEY,
+			applied_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)
+	`
+	checkMigrationExistsSQL = "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = $1)"
+	insertMigrationSQL      = "INSERT INTO schema_migrations (version) VALUES ($1)"
+)
+
 // RunMigrations applies all pending SQL migration files from the given directory.
 // It creates a `schema_migrations` tracking table on first run and executes each
 // *.sql file exactly once, in filename order (lexicographic = numeric prefix order).
@@ -18,12 +29,7 @@ import (
 // the error is returned — the database is left in its last-successfully-migrated state.
 func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) error {
 	// 1. Ensure the tracking table exists (idempotent)
-	_, err := d.Pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS schema_migrations (
-			version     VARCHAR(255) PRIMARY KEY,
-			applied_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
+	_, err := d.Pool.Exec(ctx, createSchemaMigrationsTableSQL)
 	if err != nil {
 		return fmt.Errorf("migrations: failed to create schema_migrations table: %w", err)
 	}
@@ -54,9 +60,7 @@ func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) erro
 		version := filepath.Base(path)
 
 		var exists bool
-		err = d.Pool.QueryRow(ctx,
-			"SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = $1)", version,
-		).Scan(&exists)
+		err = d.Pool.QueryRow(ctx, checkMigrationExistsSQL, version).Scan(&exists)
 		if err != nil {
 			return fmt.Errorf("migrations: failed to check version %q: %w", version, err)
 		}
@@ -82,9 +86,7 @@ func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) erro
 			return fmt.Errorf("migrations: failed to apply %q: %w", version, err)
 		}
 
-		if _, err = tx.Exec(ctx,
-			"INSERT INTO schema_migrations (version) VALUES ($1)", version,
-		); err != nil {
+		if _, err = tx.Exec(ctx, insertMigrationSQL, version); err != nil {
 			_ = tx.Rollback(ctx)
 			return fmt.Errorf("migrations: failed to record version %q: %w", version, err)
 		}
