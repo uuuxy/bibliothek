@@ -44,60 +44,119 @@ func (s *Server) ActionHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		var resp ActionResponse
-		var err error
-
-		// Route based on command pattern prefixes
-		if strings.HasPrefix(req.Query, "S-") {
-			err = s.handleStudentAction(ctx, req.Query, studentRepo, &resp)
-		} else if strings.HasPrefix(req.Query, "L-") {
-			err = s.handleTeacherAction(ctx, req.Query, &resp)
-		} else if strings.HasPrefix(req.Query, "B-") {
-			err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
-		} else if strings.HasPrefix(req.Query, "G-") {
-			err = s.handleGeraetAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, studentRepo, loanRepo, &resp)
-		} else {
-			// Fallback for Littera barcodes (which lack the "B-" prefix).
-			// If the query exactly matches a book barcode in the database, treat it as a book action.
-			if copy, _ := bookRepo.GetCopyByBarcode(ctx, req.Query); copy != nil {
-				err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
-			} else {
-				err = s.handleSearchAction(ctx, req.Query, bookRepo, &resp)
-			}
-		}
-
+		resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo)
 		if err != nil {
-			status := http.StatusInternalServerError
-			switch {
-			case errors.Is(err, errNotFound):
-				status = http.StatusNotFound
-			case errors.Is(err, errBlocked), errors.Is(err, errInvalidState):
-				status = http.StatusBadRequest
-			}
 			apierrors.SendHTTPError(w, status, err)
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+	}
+}
+
+// processActionRequest contains the core routing logic for an individual action request.
+func (s *Server) processActionRequest(
+	ctx context.Context,
+	req ActionRequest,
+	claims *auth.Claims,
+	studentRepo repository.StudentRepository,
+	bookRepo repository.BookRepository,
+	loanRepo repository.LoanRepository,
+) (*ActionResponse, int, error) {
+	var resp ActionResponse
+	var err error
+
+	// Route based on command pattern prefixes
+	if strings.HasPrefix(req.Query, "S-") {
+		err = s.handleStudentAction(ctx, req.Query, studentRepo, &resp)
+	} else if strings.HasPrefix(req.Query, "L-") {
+		err = s.handleTeacherAction(ctx, req.Query, &resp)
+	} else if strings.HasPrefix(req.Query, "B-") {
+		err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
+	} else if strings.HasPrefix(req.Query, "G-") {
+		err = s.handleGeraetAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, studentRepo, loanRepo, &resp)
+	} else {
+		// Fallback for Littera barcodes (which lack the "B-" prefix).
+		if copy, _ := bookRepo.GetCopyByBarcode(ctx, req.Query); copy != nil {
+			err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
+		} else {
+			err = s.handleSearchAction(ctx, req.Query, bookRepo, &resp)
+		}
+	}
+
+	if err != nil {
+		status := http.StatusInternalServerError
+		switch {
+		case errors.Is(err, errNotFound):
+			status = http.StatusNotFound
+		case errors.Is(err, errBlocked), errors.Is(err, errInvalidState):
+			status = http.StatusBadRequest
+		}
+		return nil, status, err
+	}
+
 		// Broadcast updates to all monitoring dashboards (SSE)
-		if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
-			s.broadcastActionEvent(resp)
+	if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
+		s.broadcastActionEvent(resp)
+	}
+
+	return &resp, http.StatusOK, nil
+}
+
+// ActionBatchHandler processes a batch of Omnibox requests.
+func (s *Server) ActionBatchHandler(
+	studentRepo repository.StudentRepository,
+	bookRepo repository.BookRepository,
+	loanRepo repository.LoanRepository,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := auth.GetClaims(r.Context())
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+			return
 		}
 
-		// Check for pending reservations on returned books
-		if resp.Type == "rueckgabe" && resp.Book != nil && resp.Book.TitelID != "" {
-			if v, checkErr := s.checkVormerkung(ctx, resp.Book.TitelID); checkErr == nil && v != nil {
-				resp.HasVormerkung = true
-				resp.VormerkungTitel = v.TitelName
-				resp.VormerkungUser = v.SchuelerName
-				
-				// Set book copy to reserved note and not lendable by others
-				_, _ = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2", 
-					"Reserviert für: " + v.SchuelerName, resp.Book.ID)
+		var batchReq ActionBatchRequest
+		if err := json.NewDecoder(r.Body).Decode(&batchReq); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		defer cancel()
+
+		var batchResp ActionBatchResponse
+
+		for i, req := range batchReq {
+			req.Query = strings.TrimSpace(req.Query)
+			if req.Query == "" {
+				batchResp.Results = append(batchResp.Results, ActionBatchResponseItem{
+					Index:   i,
+					Success: false,
+					Status:  http.StatusBadRequest,
+					Error:   "Query ist leer",
+				})
+				continue
 			}
+
+			resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo)
+			
+			item := ActionBatchResponseItem{
+				Index:   i,
+				Status:  status,
+				Success: err == nil,
+			}
+			if err != nil {
+				item.Error = err.Error()
+			} else {
+				item.Data = resp
+			}
+			batchResp.Results = append(batchResp.Results, item)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(batchResp)
 	}
 }
 
@@ -132,19 +191,38 @@ func (s *Server) handleBookAction(
 			return err
 		}
 		
-		if activeLoan == nil && !strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:") {
+		isReserved := strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:")
+		reservedForThisStudent := false
+
+		if isReserved && activeStudentID != nil && *activeStudentID != "" {
+			// Check if this student is the one it's reserved for
+			v, checkErr := s.checkVormerkung(ctx, copy.TitelID)
+			if checkErr == nil && v != nil && v.SchuelerID == *activeStudentID {
+				reservedForThisStudent = true
+			}
+		}
+		
+		if activeLoan == nil && (!isReserved || reservedForThisStudent) {
 			_, err = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, zustand_notiz = '' WHERE id = $1", copy.ID)
 			if err != nil {
 				return err
 			}
-			resp.Type = "info"
-			resp.Message = "Buch reaktiviert"
-			return nil
-		}
-	}
+			copy.IstAusleihbar = true
+			copy.ZustandNotiz = ""
 
-	if copy.IstAusgesondert {
-		return fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", errInvalidState, query)
+			// If it was reserved for this student, do NOT return an info response, just continue to checkout
+			if !reservedForThisStudent {
+				resp.Type = "info"
+				resp.Message = "Buch reaktiviert"
+				return nil
+			}
+		} else if isReserved && !reservedForThisStudent {
+			return fmt.Errorf("%w: Dieses Buchexemplar ist %s", errBlocked, copy.ZustandNotiz)
+		} else if copy.IstAusgesondert {
+			return fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", errInvalidState, query)
+		} else {
+			return fmt.Errorf("%w: Buchexemplar ist nicht ausleihbar", errInvalidState)
+		}
 	}
 
 	// Case: Active Teacher or Student context exists in session.
@@ -207,6 +285,9 @@ func (s *Server) handleBookAction(
 			SchuelerID:   activeLoan.SchuelerID,
 			BearbeiterID: claims.UserID,
 		})
+
+		s.processReturnVormerkungTx(ctx, tx, copy, resp)
+
 		resp.Type = "rueckgabe"
 		resp.Book = copy
 		resp.LoanID = &activeLoan.ID
@@ -242,6 +323,8 @@ func (s *Server) handleBookAction(
 		SchuelerID:   activeLoan.SchuelerID,
 		BearbeiterID: staffID,
 	})
+
+	s.processReturnVormerkungTx(ctx, tx, copy, resp)
 
 	resp.Type = "rueckgabe"
 	resp.Book = copy

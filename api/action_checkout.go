@@ -133,10 +133,14 @@ func (s *Server) handleUnifiedCheckoutFlow(
 		if err != nil {
 			return err
 		}
+		if borrowerType == "student" {
+			_, _ = tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, borrowerID)
+		}
+		
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
-		
+
 		if borrowerType == "student" {
 			_ = auditRepo.LogAusleihe(ctx, copy.ID, borrowerID, "", staffID)
 			resp.Student = student
@@ -177,6 +181,9 @@ func (s *Server) handleUnifiedCheckoutFlow(
 			SchuelerID:   activeLoan.SchuelerID,
 			BearbeiterID: staffID,
 		})
+
+		s.processReturnVormerkungTx(ctx, tx, copy, resp)
+
 		resp.Type = "rueckgabe"
 		resp.Book = copy
 		resp.LoanID = &activeLoan.ID
@@ -209,6 +216,10 @@ func (s *Server) handleUnifiedCheckoutFlow(
 	}
 	if err != nil {
 		return err
+	}
+
+	if borrowerType == "student" {
+		_, _ = tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, borrowerID)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -246,4 +257,32 @@ func (s *Server) handleUnifiedCheckoutFlow(
 	resp.Vorbesitzer = prevStudent
 	resp.VorbesitzerUser = prevTeacher
 	return nil
+}
+
+// processReturnVormerkungTx checks if there's a pending reservation for the returned book copy.
+// If so, it updates the reservation, sets the book as reserved, and populates the response.
+func (s *Server) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *ActionResponse) {
+	var vID, sVorname, sNachname, sKlasse string
+	err := tx.QueryRow(ctx, `
+		SELECT v.id, s.vorname, s.nachname, COALESCE(s.klasse, '')
+		FROM vormerkungen v
+		JOIN schueler s ON v.schueler_id = s.id
+		WHERE v.titel_id = $1 AND v.status = 'wartend'
+		ORDER BY v.erstellt_am ASC LIMIT 1
+		FOR UPDATE
+	`, copy.TitelID).Scan(&vID, &sVorname, &sNachname, &sKlasse)
+
+	if err == nil {
+		schuelerName := sVorname + " " + sNachname
+		if sKlasse != "" {
+			schuelerName += ", " + sKlasse
+		}
+
+		_, _ = tx.Exec(ctx, "UPDATE vormerkungen SET status = 'bereitgestellt', bereitgestellt_exemplar_id = $1 WHERE id = $2", copy.ID, vID)
+		_, _ = tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2", "Reserviert für: "+schuelerName, copy.ID)
+
+		resp.HasVormerkung = true
+		resp.VormerkungTitel = copy.Titel
+		resp.VormerkungUser = schuelerName
+	}
 }

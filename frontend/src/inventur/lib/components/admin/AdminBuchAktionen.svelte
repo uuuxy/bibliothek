@@ -1,6 +1,6 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
-    import { showToast } from "$lib/store.svelte.js";
+    import { appState, showToast } from "$lib/store.svelte.js";
 
     let {
         books = $bindable(),
@@ -53,6 +53,12 @@
             books = formular.id
                 ? books.map((/** @type {any} */ b) => (b.id === updated.id ? updated : b))
                 : [updated, ...books];
+            
+            // Sync with appState so Omnibox/Catalog update immediately
+            if (appState.selectedBook && appState.selectedBook.id === updated.id) {
+                appState.selectedBook = updated;
+            }
+
             if (isEditMode) {
                 isEditMode = false;
             }

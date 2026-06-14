@@ -12,14 +12,14 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-// Scheduler manages background automation tasks.
+// Scheduler verwaltet Hintergrund-Automatisierungsaufgaben.
 type Scheduler struct {
 	db        db.PgxPoolIface
 	auditRepo repository.AuditRepository
 	cron      *cron.Cron
 }
 
-// NewScheduler builds and returns a new Scheduler instance.
+// NewScheduler erstellt und gibt eine neue Scheduler-Instanz zurück.
 func NewScheduler(db db.PgxPoolIface, auditRepo repository.AuditRepository) *Scheduler {
 	return &Scheduler{
 		db:        db,
@@ -28,9 +28,9 @@ func NewScheduler(db db.PgxPoolIface, auditRepo repository.AuditRepository) *Sch
 	}
 }
 
-// Start registers all GDPR, backup, and data-retention cron schedules.
+// Start registriert alle Cronjobs für DSGVO, Backup und Vorhaltefristen.
 func (s *Scheduler) Start() {
-	// Run GDPR anonymization and abgänger-deletion daily at midnight
+	// Tägliche DSGVO-Anonymisierung und Abgänger-Löschung um Mitternacht
 	if _, err := s.cron.AddFunc("0 0 * * *", func() {
 		s.RunGDPRAnonymizeLoans()
 		s.RunGDPRDeleteAbgaenger()
@@ -39,7 +39,7 @@ func (s *Scheduler) Start() {
 		return
 	}
 
-	// Daily encrypted database backup at 02:30 UTC (low-traffic window)
+	// Tägliches verschlüsseltes Datenbank-Backup um 02:30 UTC (Zeitraum mit wenig Traffic)
 	backup := &BackupJob{}
 	if _, err := s.cron.AddFunc("30 2 * * *", func() {
 		log.Println("Scheduler Backup: starting scheduled daily database backup...")
@@ -48,7 +48,7 @@ func (s *Scheduler) Start() {
 		log.Printf("Scheduler: Failed to register backup job: %v", err)
 	}
 
-	// Daily Antolin Sync at 03:00
+	// Täglicher Antolin-Sync um 03:00 Uhr
 	if _, err := s.cron.AddFunc("0 3 * * *", func() {
 		s.RunAntolinSync()
 	}); err != nil {
@@ -59,15 +59,15 @@ func (s *Scheduler) Start() {
 	log.Println("Scheduler: GDPR, backup, retention, and Antolin sync jobs successfully started.")
 }
 
-// Stop halts the scheduler's cron runner.
+// Stop hält den Cron-Runner des Schedulers an.
 func (s *Scheduler) Stop() {
 	s.cron.Stop()
 }
 
 // ── GDPR: Ausleihen-Anonymisierung ───────────────────────────────────────────
 
-// RunGDPRAnonymizeLoans nullifies staff operator IDs for loans closed for more than 14 days.
-// This fulfils the DSGVO Datensparsamkeit requirement for operator identity.
+// RunGDPRAnonymizeLoans annulliert die Mitarbeiter-Operator-IDs für Ausleihen, die länger als 14 Tage abgeschlossen sind.
+// Dies erfüllt die DSGVO-Anforderung der Datensparsamkeit für die Operator-Identität.
 func (s *Scheduler) RunGDPRAnonymizeLoans() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -88,7 +88,7 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 	count := tag.RowsAffected()
 	log.Printf("Scheduler GDPR Anonymize: anonymized %d loans (returned > 14 days ago)", count)
 
-	// Write system audit record
+	// System-Audit-Eintrag schreiben
 	if count > 0 {
 		_ = s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
 			"GDPR 14-Tage-Anonymisierung der Bearbeiter-IDs",
@@ -103,29 +103,29 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 
 // ── GDPR: Abgänger-Löschung (30 Tage nach Schuljahresende) ──────────────────
 
-// RunGDPRDeleteAbgaenger performs a DSGVO-compliant hard-delete of former students
-// (ist_abgaenger = true) who:
-//   - left school in a prior year (abgaenger_jahr < current year), AND
-//   - have no unreturned books, AND
-//   - have no unpaid damage fees, AND
-//   - it is at least 30 days past the start of the current calendar year
-//     (approximation for "30 Tage nach Schuljahresende").
+// RunGDPRDeleteAbgaenger führt eine DSGVO-konforme harte Löschung ehemaliger Schüler durch
+// (ist_abgaenger = true), die:
+//   - die Schule in einem vergangenen Jahr verlassen haben (abgaenger_jahr < aktuelles Jahr), UND
+//   - keine unzurückgegebenen Bücher haben, UND
+//   - keine unbezahlten Schadensgebühren haben, UND
+//   - mindestens 30 Tage seit Beginn des aktuellen Kalenderjahres vergangen sind
+//     (Näherungswert für "30 Tage nach Schuljahresende").
 //
-// Each deletion is individually logged in audit_log (SYSTEM actor).
+// Jede Löschung wird einzeln im audit_log protokolliert (Akteur: SYSTEM).
 func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	// 30-day grace period: only delete if it's at least Jan 30 of the year after graduation
+	// 30-tägige Karenzzeit: nur löschen, wenn es mindestens der 30. Januar des Jahres nach dem Abgang ist
 	now := time.Now()
 	cutoffYear := now.Year()
 	cutoffDate := time.Date(cutoffYear, time.January, 30, 0, 0, 0, 0, time.UTC)
 	if now.Before(cutoffDate) {
-		// Before Jan 30: use previous year as cutoff (last year's graduates still in grace period)
+		// Vor dem 30. Januar: vorheriges Jahr als Stichtag verwenden (Abgänger des letzten Jahres noch in Karenzzeit)
 		cutoffYear--
 	}
 
-	// Fetch eligible student IDs
+	// Berechtigte Schüler-IDs abrufen
 	query := `
 		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
 		FROM schueler
@@ -194,7 +194,7 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 		deleted++
 	}
 
-	// Write batch summary to audit log
+	// Batch-Zusammenfassung ins Audit-Log schreiben
 	_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
 		"DSGVO-Abgänger-Batch-Löschung",
 		map[string]any{

@@ -23,6 +23,16 @@ Thumbs.db
 *.sql
 !schema.sql
 !migrations/
+!migrations/*.sql
 *.zip
 
 certs/
+
+# Temp build, logs, and diffs
+*build.log
+test.log
+tmp_build
+*.diff
+frontend_build.log
+build.log
+

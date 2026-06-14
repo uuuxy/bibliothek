@@ -6,17 +6,19 @@ import (
 	"fmt"
 	
 	"bibliothek/db"
+	"bibliothek/repository"
 	"github.com/jackc/pgx/v5"
 )
 
 // OrderService verarbeitet die Geschäftslogik zum Erstellen und Verarbeiten von Bestellungen.
 type OrderService struct {
-	db *db.Database
+	db       *db.Database
+	bookRepo repository.BookRepository
 }
 
 // NewOrderService erstellt eine neue OrderService-Instanz.
-func NewOrderService(database *db.Database) *OrderService {
-	return &OrderService{db: database}
+func NewOrderService(database *db.Database, bookRepo repository.BookRepository) *OrderService {
+	return &OrderService{db: database, bookRepo: bookRepo}
 }
 
 // OrderResult enthält das Ergebnis einer verarbeiteten Bestellung, einschließlich der generierten Barcodes.
@@ -53,10 +55,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	labels := make([]BarcodeLabelDetail, 0)
 	orderSummaryItems := make([]OrderedItem, 0)
 
-	qInsert := `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt, einkaufspreis)
-		VALUES ($1, $2, $3, false, $4, $5)
-	`
+	var copyInserts []repository.BookCopyInsert
 
 	for _, item := range req.Items {
 		if item.Menge <= 0 || item.Menge > 200 {
@@ -81,18 +80,24 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		})
 
 		if req.GenerateBarcodes {
-			for i := 0; i < item.Menge; i++ {
-				var barcodeID string
-				err = tx.QueryRow(ctx, "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0')").Scan(&barcodeID)
-				if err != nil {
-					return nil, fmt.Errorf("sequence error: %w", err)
-				}
+			barcodes, err := s.bookRepo.GenerateBarcodes(ctx, item.Menge)
+			if err != nil {
+				return nil, fmt.Errorf("sequence error: %w", err)
+			}
 
-				statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
-				_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, false, item.Preis)
-				if err != nil {
-					return nil, err
-				}
+			statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+
+			for i := 0; i < item.Menge; i++ {
+				barcodeID := barcodes[i]
+				copyInserts = append(copyInserts, repository.BookCopyInsert{
+					TitelID:         item.TitelID,
+					BarcodeID:       barcodeID,
+					ZustandNotiz:    statusText,
+					IstAusleihbar:   false,
+					EtikettGedruckt: false,
+					Einkaufspreis:   item.Preis,
+				})
+
 				labels = append(labels, BarcodeLabelDetail{
 					BarcodeID: barcodeID,
 					Titel:     titel,
@@ -101,6 +106,10 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 				})
 			}
 		}
+	}
+
+	if err := s.bookRepo.BulkInsertCopies(ctx, copyInserts); err != nil {
+		return nil, fmt.Errorf("bulk insert error: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

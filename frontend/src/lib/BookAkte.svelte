@@ -5,6 +5,7 @@
   import BookBorrowersTab from "./BookBorrowersTab.svelte";
   import BookExemplareTab from "./BookExemplareTab.svelte";
   import BookHistoryTab from "./BookHistoryTab.svelte";
+  import BookVormerkungenTab from "./BookVormerkungenTab.svelte";
 
   /** @type {{ bookId: string | null, onBack: () => void }} */
   let { bookId, onBack } = $props();
@@ -17,6 +18,8 @@
   let exemplare = $state([]);
   /** @type {any[]} */
   let history = $state([]);
+  /** @type {any[]} */
+  let vormerkungen = $state([]);
 
   let activeTab = $state("ausleiher");
   let isLoading = $state(true);
@@ -84,15 +87,17 @@
     coverFailed = candidates.length === 0;
 
     // Parallel-fetch all detail data
-    const [bRes, eRes, hRes] = await Promise.allSettled([
+    const [bRes, eRes, hRes, vRes] = await Promise.allSettled([
       apiFetch(`/api/buecher/titel/${id}/ausleiher`, { credentials: "include" }),
       apiFetch(`/api/buecher/titel/${id}/exemplare`, { credentials: "include" }),
       apiFetch(`/api/buecher/titel/${id}/historie`, { credentials: "include" }),
+      apiFetch(`/api/vormerkungen?titel_id=${id}`, { credentials: "include" }),
     ]);
 
     borrowers = bRes.status === "fulfilled" && bRes.value.ok ? await bRes.value.json() : [];
     exemplare = eRes.status === "fulfilled" && eRes.value.ok ? await eRes.value.json() : [];
     history   = hRes.status === "fulfilled" && hRes.value.ok ? await hRes.value.json() : [];
+    vormerkungen = vRes.status === "fulfilled" && vRes.value.ok ? await vRes.value.json() : [];
     isLoading = false;
   }
 
@@ -252,8 +257,13 @@
 
     <!-- Tabs -->
     <div class="border-b border-slate-200">
-      <nav class="flex gap-6" aria-label="Buch-Akte Tabs">
-        {#each [["ausleiher", `Ausleiher (${borrowers.length})`], ["exemplare", `Exemplare (${exemplare.length})`], ["historie", "Historie"]] as [id, label]}
+      <nav class="flex gap-6 overflow-x-auto no-scrollbar" aria-label="Buch-Akte Tabs">
+        {#each [
+          ["ausleiher", `Ausleiher (${borrowers.length})`], 
+          ["exemplare", `Exemplare (${exemplare.length})`], 
+          ["vormerkungen", `Vormerkungen (${vormerkungen.length})`],
+          ["historie", "Historie"]
+        ] as [id, label]}
           <button
             onclick={() => activeTab = id}
             class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {activeTab === id ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}"
@@ -277,6 +287,8 @@
         <BookExemplareTab bind:exemplare {book} {loadAll} />
       {:else if activeTab === "historie"}
         <BookHistoryTab {history} />
+      {:else if activeTab === "vormerkungen"}
+        <BookVormerkungenTab bind:vormerkungen {book} />
       {/if}
     </div>
   {:else}

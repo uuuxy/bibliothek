@@ -18,17 +18,17 @@ import (
 	"time"
 )
 
-// BackupJob performs daily encrypted PostgreSQL database backups.
-// It calls pg_dump (must be on PATH), compresses with gzip, and
-// encrypts with AES-256-GCM using a key derived from BACKUP_ENCRYPTION_KEY.
+// BackupJob führt tägliche verschlüsselte PostgreSQL-Datenbank-Backups durch.
+// Es ruft pg_dump auf (muss im PATH sein), komprimiert mit gzip und
+// verschlüsselt mit AES-256-GCM unter Verwendung eines Schlüssels, der aus BACKUP_ENCRYPTION_KEY abgeleitet wird.
 //
-// Required environment variables:
-//   - DATABASE_URL          – PostgreSQL DSN (already set in production)
-//   - BACKUP_ENCRYPTION_KEY – 32+ character passphrase for AES-256 key derivation
-//   - BACKUP_DIR            – destination directory (default: ./backups)
+// Erforderliche Umgebungsvariablen:
+//   - DATABASE_URL          – PostgreSQL DSN (im Produktivbetrieb bereits gesetzt)
+//   - BACKUP_ENCRYPTION_KEY – 32+ Zeichen Passphrase zur AES-256 Schlüsselableitung
+//   - BACKUP_DIR            – Zielverzeichnis (Standard: ./backups)
 type BackupJob struct{}
 
-// RunDatabaseBackup executes the full backup pipeline: dump → gzip → AES-256-GCM encrypt.
+// RunDatabaseBackup führt die komplette Backup-Pipeline aus: Dump → gzip → AES-256-GCM Verschlüsselung.
 func (b *BackupJob) RunDatabaseBackup() {
 	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
 	if encKey == "" {
@@ -52,8 +52,8 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// Derive a stable 32-byte AES key via SHA-256 of the passphrase.
-	// In production, replace with a proper KDF (argon2id/scrypt) if key rotation is needed.
+	// Leitet einen stabilen 32-Byte AES-Schlüssel via SHA-256 aus der Passphrase ab.
+	// In der Produktion durch eine saubere KDF (argon2id/scrypt) ersetzen, falls Schlüsselrotation nötig ist.
 	keyBytes := sha256.Sum256([]byte(encKey))
 
 	timestamp := time.Now().UTC().Format("2006-01-02T150405Z")
@@ -66,8 +66,8 @@ func (b *BackupJob) RunDatabaseBackup() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	// pg_dump writes SQL to stdout; we pipe it through gzip → AES-GCM encryption.
-	// Parse the DSN to extract connection parameters for pg_dump.
+	// pg_dump schreibt SQL nach stdout; wir pipen es durch gzip → AES-GCM Verschlüsselung.
+	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
 	pgDumpArgs := dsnToPgDumpArgs(dsn)
 	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
 
@@ -81,11 +81,11 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// Pipeline: gzip compress the SQL stream
+	// Pipeline: Gzip-Komprimierung des SQL-Streams
 	var compressedBuf strings.Builder
 	pr, pw := io.Pipe()
 
-	// Goroutine: gzip-compress the pg_dump output
+	// Goroutine: Gzip-Komprimierung der pg_dump-Ausgabe
 	go func() {
 		gz := gzip.NewWriter(pw)
 		if _, err := io.Copy(gz, sqlReader); err != nil {
@@ -96,7 +96,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 		_ = pw.Close()
 	}()
 
-	// Read all compressed data
+	// Alle komprimierten Daten lesen
 	compressedData, err := io.ReadAll(pr)
 	_ = compressedBuf // silence unused var
 	if err != nil {
@@ -111,7 +111,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// AES-256-GCM encrypt the compressed dump
+	// AES-256-GCM Verschlüsselung des komprimierten Dumps
 	encrypted, err := encryptAESGCM(keyBytes[:], compressedData)
 	if err != nil {
 		// #nosec G706
@@ -119,7 +119,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// Write encrypted backup to disk with restrictive permissions (owner read-only)
+	// Verschlüsseltes Backup mit restriktiven Berechtigungen auf die Festplatte schreiben (Eigentümer nur lesen)
 	// #nosec G304 - outFilename is safely constructed using a timestamp
 	if err := os.WriteFile(outFilename, encrypted, 0600); err != nil {
 		// #nosec G706
@@ -131,12 +131,12 @@ func (b *BackupJob) RunDatabaseBackup() {
 	// #nosec G706
 	log.Printf("Backup: completed successfully → %s (%.2f MB)", outFilename, sizeMB)
 
-	// Rotate: keep only the last 14 daily backups to avoid disk exhaustion
+	// Rotation: Nur die letzten 14 täglichen Backups behalten, um Speicherplatzmangel zu vermeiden
 	rotateBackups(backupDir, 14)
 }
 
-// encryptAESGCM encrypts plaintext using AES-256-GCM.
-// Output format: [12-byte nonce][ciphertext+tag].
+// encryptAESGCM verschlüsselt Klartext mit AES-256-GCM.
+// Ausgabeformat: [12-Byte Nonce][Ciphertext+Tag].
 func encryptAESGCM(key, plaintext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -154,8 +154,8 @@ func encryptAESGCM(key, plaintext []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// DecryptBackup is a utility function for disaster-recovery restore operations.
-// Usage: read the .enc file, call DecryptBackup(key, data), gunzip, restore via psql.
+// DecryptBackup ist eine Hilfsfunktion für Disaster-Recovery-Wiederherstellungen.
+// Verwendung: .enc Datei lesen, DecryptBackup(key, data) aufrufen, gunzip, Wiederherstellung über psql.
 func DecryptBackup(encKey string, ciphertext []byte) ([]byte, error) {
 	keyBytes := sha256.Sum256([]byte(encKey))
 	block, err := aes.NewCipher(keyBytes[:])
@@ -174,14 +174,14 @@ func DecryptBackup(encKey string, ciphertext []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ct, nil)
 }
 
-// rotateBackups deletes the oldest backup files if there are more than maxKeep.
+// rotateBackups löscht die ältesten Backup-Dateien, wenn es mehr als maxKeep gibt.
 func rotateBackups(dir string, maxKeep int) {
 	entries, err := filepath.Glob(filepath.Join(dir, "backup_*.sql.gz.enc"))
 	if err != nil || len(entries) <= maxKeep {
 		return
 	}
-	// Files are named with timestamps; lexicographic sort = chronological sort
-	// Entries from Glob are already sorted alphabetically
+	// Dateien sind nach Zeitstempel benannt; lexikographische Sortierung = chronologische Sortierung
+	// Einträge aus Glob sind bereits alphabetisch sortiert
 	toDelete := entries[:len(entries)-maxKeep]
 	for _, f := range toDelete {
 		// #nosec G304 - f is derived from filepath.Glob
@@ -195,11 +195,11 @@ func rotateBackups(dir string, maxKeep int) {
 	}
 }
 
-// dsnToPgDumpArgs converts a PostgreSQL DSN/connection string to pg_dump CLI arguments.
-// Supports both postgres:// URL format and key=value format.
+// dsnToPgDumpArgs konvertiert einen PostgreSQL-DSN/Verbindungsstring in CLI-Argumente für pg_dump.
+// Unterstützt sowohl das postgres:// URL-Format als auch das key=value-Format.
 func dsnToPgDumpArgs(dsn string) []string {
-	// Pass the DSN directly via PGPASSWORD env is set separately.
-	// pg_dump accepts --dbname with a full connection URI.
+	// DSN direkt über PGPASSWORD ENV übergeben, separat gesetzt.
+	// pg_dump akzeptiert --dbname mit einer vollständigen Verbindungs-URI.
 	return []string{
 		"--dbname=" + dsn,
 		"--no-password",
@@ -209,8 +209,8 @@ func dsnToPgDumpArgs(dsn string) []string {
 	}
 }
 
-// BackupKeyFingerprint returns a short hex fingerprint of the encryption key for logging/audit.
-// NEVER logs the actual key – only a SHA-256 fingerprint of it.
+// BackupKeyFingerprint gibt einen kurzen Hex-Fingerabdruck des Verschlüsselungsschlüssels für Protokollierungs-/Audit-Zwecke zurück.
+// Protokolliert NIEMALS den tatsächlichen Schlüssel – nur einen SHA-256-Fingerabdruck davon.
 func BackupKeyFingerprint(encKey string) string {
 	h := sha256.Sum256([]byte(encKey))
 	return hex.EncodeToString(h[:4]) // 8 hex chars = 32 bits, sufficient for audit identity

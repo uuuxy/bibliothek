@@ -12,19 +12,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"bibliothek/apierrors"
 )
 
-// SendOrderMailRequest specifies the recipient email payload.
 type SendOrderMailRequest struct {
 	Email string `json:"email"`
 }
 
-// SendOrderMailHandler handles the entire automated one-click ordering pipeline.
 func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SendOrderMailRequest
-		// Optional custom email parsing (don't error if not sent, fallback will be used)
 		_ = json.NewDecoder(r.Body).Decode(&req)
 
 		toEmail := req.Email
@@ -49,7 +47,6 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 		}
 		defer func() { _ = tx.Rollback(ctx) }()
 
-		// 1. Fetch titles below reorder point
 		reorderQuery := `
 			SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), t.meldebestand,
 				(SELECT COUNT(*) FROM buecher_exemplare e 
@@ -92,7 +89,6 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 		}
 		rows.Close()
 
-		// If no items need ordering, respond immediately
 		if len(itemsToOrder) == 0 {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -103,7 +99,6 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			return
 		}
 
-		// 2. Fetch the highest B-XXXXX barcode in the system
 		var lastBarcode string
 		qLast := `
 			SELECT barcode_id 
@@ -124,16 +119,12 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			}
 		}
 
-		// 3. Register copies in DB & collect barcode label details
 		labels := make([]BarcodeLabelDetail, 0)
 		orderSummaryItems := make([]OrderedItem, 0)
 		currentBarcodeIndex := startNum
 		isNaacher := strings.Contains(strings.ToLower(toEmail), "naacher")
 
-		qInsert := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt)
-			VALUES ($1, $2, 'bestellt', false, $3)
-		`
+		var copyRows [][]any
 
 		for _, item := range itemsToOrder {
 			orderSummaryItems = append(orderSummaryItems, OrderedItem{
@@ -146,11 +137,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 
 			for i := 0; i < item.OrderQty; i++ {
 				barcodeID := fmt.Sprintf("B-%05d", currentBarcodeIndex)
-				_, err = tx.Exec(ctx, qInsert, item.ID, barcodeID, isNaacher)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-					return
-				}
+				copyRows = append(copyRows, []any{item.ID, barcodeID, "bestellt", false, isNaacher})
 				labels = append(labels, BarcodeLabelDetail{
 					BarcodeID: barcodeID,
 					Titel:     item.Titel,
@@ -160,13 +147,23 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			}
 		}
 
-		// Commit DB updates
+		// PR 90: Use pgx.CopyFromRows for massive performance gains in order inserts
+		_, err = tx.CopyFrom(
+			ctx,
+			pgx.Identifier{"buecher_exemplare"},
+			[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt"},
+			pgx.CopyFromRows(copyRows),
+		)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
 		if err := tx.Commit(ctx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		// 4. Generate PDFs in memory
 		summaryPDF, err := GenerateOrderSummaryPDF(orderSummaryItems)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -179,7 +176,6 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			return
 		}
 
-		// 5. Send SMTP Email with PDF Attachments
 		emailBody := fmt.Sprintf(
 			"Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom %s sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nBestellte Titel: %d\nGesamtanzahl Exemplare: %d\n\nMit freundlichen Grüßen,\nSchulbibliothek",
 			time.Now().Format("02.01.2006"),
@@ -224,7 +220,6 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 	}
 }
 
-// ReleaseOrdersHandler releases all pending ordered copies, activating them in inventory.
 func (s *Server) ReleaseOrdersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)

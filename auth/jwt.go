@@ -10,26 +10,26 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Role defines the authorization levels/roles in the library system.
+// Role definiert die Berechtigungsstufen/Rollen im Bibliothekssystem.
 type Role string
 
 const (
-	// RoleAdmin has full permissions for configuration and master-data editing.
+	// RoleAdmin hat volle Berechtigungen für Konfiguration und Stammdaten-Bearbeitung.
 	RoleAdmin Role = "ADMIN"
-	// RoleLehrer represents teachers who can borrow books and trigger class plans.
+	// RoleLehrer repräsentiert Lehrer, die Bücher ausleihen und Klassenpläne auslösen können.
 	RoleLehrer Role = "LEHRER"
-	// RoleMitarbeiter represents library staff executing daily lending operations.
+	// RoleMitarbeiter repräsentiert Bibliotheksmitarbeiter, die das tägliche Ausleihgeschäft durchführen.
 	RoleMitarbeiter Role = "MITARBEITER"
-	// RoleHelfer represents helpers executing kiosk checkouts and quick returns.
+	// RoleHelfer repräsentiert Helfer, die Kiosk-Ausleihen und schnelle Rückgaben durchführen.
 	RoleHelfer Role = "HELFER"
 )
 
-// MarshalJSON converts the uppercase Role constant to a lowercase string for Svelte frontend compatibility.
+// MarshalJSON konvertiert die großgeschriebene Role-Konstante in einen kleingeschriebenen String für Svelte-Frontend-Kompatibilität.
 func (r Role) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strings.ToLower(string(r)))
 }
 
-// UnmarshalJSON parses a lowercase or uppercase string from JSON into the uppercase Role constant.
+// UnmarshalJSON parst einen klein- oder großgeschriebenen String aus JSON in die großgeschriebene Role-Konstante.
 func (r *Role) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -39,7 +39,7 @@ func (r *Role) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Claims represents the structure of the JWT payload.
+// Claims repräsentiert die Struktur des JWT-Payloads.
 type Claims struct {
 	UserID    string `json:"user_id"`
 	BarcodeID string `json:"barcode_id"`
@@ -47,14 +47,14 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// Authenticator handles creation and parsing of session JSON Web Tokens.
+// Authenticator verarbeitet die Erstellung und das Parsen von Session-JSON Web Tokens.
 type Authenticator struct {
 	secretKey     []byte
 	tokenDuration time.Duration
 	Blacklist     *TokenBlacklist
 }
 
-// NewAuthenticator creates a new JWT Authenticator instance with the given secret and duration.
+// NewAuthenticator erstellt eine neue JWT-Authenticator-Instanz mit dem angegebenen Secret und der Dauer.
 func NewAuthenticator(secret string, pool DatabasePool, duration time.Duration) (*Authenticator, error) {
 	if len(secret) < 32 {
 		return nil, errors.New("JWT secret must be at least 32 bytes for security")
@@ -66,7 +66,7 @@ func NewAuthenticator(secret string, pool DatabasePool, duration time.Duration) 
 	}, nil
 }
 
-// GenerateToken generates a signed JWT containing user identity and role.
+// GenerateToken generiert ein signiertes JWT, das Benutzeridentität und Rolle enthält.
 func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (string, error) {
 	claims := Claims{
 		UserID:    userID,
@@ -89,8 +89,8 @@ func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (stri
 	return signedToken, nil
 }
 
-// VerifyToken parses and validates the provided JWT string and returns its claims.
-// It also checks if the token has been revoked in the server-side blacklist.
+// VerifyToken parst und validiert den bereitgestellten JWT-String und gibt dessen Claims zurück.
+// Es prüft außerdem, ob das Token in der serverseitigen Blacklist widerrufen wurde.
 func (a *Authenticator) VerifyToken(tokenString string) (*Claims, error) {
 	if a.Blacklist.IsBlacklisted(tokenString) {
 		return nil, errors.New("token has been revoked (logged out)")

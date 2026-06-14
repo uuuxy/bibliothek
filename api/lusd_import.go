@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // LUSDImportResponse matches the required JSON response structure.
@@ -19,7 +20,7 @@ type LUSDImportResponse struct {
 
 // ImportLUSDHandler parses LUSD school-year changeover CSVs, upserting student records,
 // flagging students not in the CSV as graduates, and returning active loan counts for graduates.
-func (s *Server) ImportLUSDHandler() http.HandlerFunc {
+func (s *Server) ImportLUSDHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
 		if err := r.ParseMultipartForm(5 << 20); err != nil {
@@ -49,7 +50,7 @@ func (s *Server) ImportLUSDHandler() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
 		defer cancel()
 
-		response, err := syncLUSDData(ctx, s.DB.Pool, parsedRows, lusdIDs)
+		response, err := syncLUSDData(ctx, studentRepo, parsedRows, lusdIDs)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

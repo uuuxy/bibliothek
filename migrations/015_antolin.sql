@@ -1,0 +1,3 @@
+ALTER TABLE buecher_titel ADD COLUMN IF NOT EXISTS antolin_stufen VARCHAR(50);
+ALTER TABLE buecher_titel ADD COLUMN IF NOT EXISTS antolin_punkte INTEGER;
+ALTER TABLE buecher_titel ADD COLUMN IF NOT EXISTS antolin_geprueft_am TIMESTAMP WITH TIME ZONE;

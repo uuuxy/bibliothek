@@ -41,6 +41,16 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if isFerien {
+			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("Mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
+			return
+		}
+
 		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, req.Klasse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

@@ -17,7 +17,7 @@ export function createOmniboxStore() {
   let isShaking = $state(false);
   let scanError = $state(false);
   let errorMessage = $state("");
-  let vormerkungAlert = $state(/** @type {{titel?: string} | null} */ (null));
+  let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
   let isOffline = $state(
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
@@ -214,6 +214,7 @@ export function createOmniboxStore() {
         if (data.has_vormerkung) {
           vormerkungAlert = {
             titel: data.vormerkung_titel || data.book?.titel,
+            user: data.vormerkung_user
           };
         }
         if (reloadProfileCb) reloadProfileCb();

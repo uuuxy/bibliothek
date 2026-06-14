@@ -228,7 +228,9 @@
               ? 'bg-blue-50 text-blue-700 border border-blue-100'
               : user.rolle === 'lehrer'
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                : 'bg-amber-50 text-amber-700 border border-amber-100'}
+                : user.rolle === 'helfer'
+                  ? 'bg-purple-50 text-purple-700 border border-purple-100'
+                  : 'bg-amber-50 text-amber-700 border border-amber-100'}
             <tr class="hover:bg-slate-50/50 transition-colors">
               <td class="p-4"><span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span></td>
               <td class="p-4 text-slate-500 text-xs">{user.email}</td>
@@ -299,6 +301,7 @@
           <option value="mitarbeiter">Mitarbeiter</option>
           <option value="lehrer">Lehrer</option>
           <option value="admin">Administrator</option>
+          <option value="helfer">Helfer</option>
         </select>
       </div>
       {@render inputField("password", isEditingUser ? "Passwort ändern" : "Passwort", "password", userForm.password, (/** @type {any} */ v) => userForm.password = v, !isEditingUser, isEditingUser ? "Unverändert lassen..." : "••••••••")}

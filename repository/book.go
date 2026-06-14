@@ -23,6 +23,19 @@ type BookRepository interface {
 	UpdateCopyBarcode(ctx context.Context, id string, barcode string) error
 	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error
 	DecommissionCopy(ctx context.Context, id string) error
+
+	// Bulk Operations
+	GenerateBarcodes(ctx context.Context, count int) ([]string, error)
+	BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error
+}
+
+type BookCopyInsert struct {
+	TitelID         string
+	BarcodeID       string
+	ZustandNotiz    string
+	IstAusleihbar   bool
+	EtikettGedruckt bool
+	Einkaufspreis   float64
 }
 
 type pgBookRepository struct {
@@ -175,5 +188,53 @@ func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) erro
 		WHERE id = $1
 	`
 	_, err := r.db.Exec(ctx, query, id)
+	return err
+}
+
+// GenerateBarcodes generates a batch of next sequential barcodes.
+func (r *pgBookRepository) GenerateBarcodes(ctx context.Context, count int) ([]string, error) {
+	query := "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0') FROM generate_series(1, $1)"
+	rows, err := r.db.Query(ctx, query, count)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var barcodes []string
+	for rows.Next() {
+		var barcodeID string
+		if err := rows.Scan(&barcodeID); err != nil {
+			return nil, err
+		}
+		barcodes = append(barcodes, barcodeID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(barcodes) != count {
+		return nil, errors.New("barcode sequence generation count mismatch")
+	}
+	return barcodes, nil
+}
+
+// BulkInsertCopies inserts multiple book copies efficiently using pgx.CopyFromRows.
+func (r *pgBookRepository) BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error {
+	if len(copies) == 0 {
+		return nil
+	}
+
+	var copyRows [][]any
+	for _, c := range copies {
+		copyRows = append(copyRows, []any{
+			c.TitelID, c.BarcodeID, c.ZustandNotiz, c.IstAusleihbar, c.EtikettGedruckt, c.Einkaufspreis,
+		})
+	}
+
+	_, err := r.db.CopyFrom(
+		ctx,
+		pgx.Identifier{"buecher_exemplare"},
+		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis"},
+		pgx.CopyFromRows(copyRows),
+	)
 	return err
 }

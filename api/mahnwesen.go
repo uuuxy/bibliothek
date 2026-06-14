@@ -17,6 +17,12 @@ func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) h
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 
+		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
 		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -24,7 +30,11 @@ func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) h
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"klassen": klassen})
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"klassen": klassen,
+			"ferien_aktiv": isFerien,
+			"ferien_bezeichnung": ferienName,
+		})
 	}
 }
 
@@ -35,6 +45,12 @@ func (s *Server) GetMahnwesenJahrgangHandler(mahnRepo *repository.MahnwesenRepos
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 
+		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
 		klassen, err := mahnRepo.QueryUeberfaelligeNachJahrgang(ctx, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -42,6 +58,10 @@ func (s *Server) GetMahnwesenJahrgangHandler(mahnRepo *repository.MahnwesenRepos
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"klassen": klassen})
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"klassen": klassen,
+			"ferien_aktiv": isFerien,
+			"ferien_bezeichnung": ferienName,
+		})
 	}
 }

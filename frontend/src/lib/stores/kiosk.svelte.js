@@ -14,8 +14,9 @@ export function createKioskStore() {
     let scannedBooks = $state(/** @type {any[]} */ ([]));
 
     // ── UI / Feedback ─────────────────────────────────────────────────
-    let toast = $state(/** @type {any} */ (null));
+    let toast = $state(/** @type {{type: string, message: string} | null} */ (null));
     let screenFlash = $state(""); // "success" | "error" | "warning" | ""
+    let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
     let isShaking = $state(false);
     let isScanningStudent = $state(false);
     let isScanningBook = $state(false);
@@ -160,7 +161,10 @@ export function createKioskStore() {
             } else if (data.type === "rueckgabe") {
                 if (data.has_vormerkung) {
                     triggerFlash("error");
-                    toast = { type: "error", message: `ACHTUNG: Reserviert für ${data.vormerkung_user || 'eine/n Schüler/in'}! Bitte gesondert zurücklegen.` };
+                    vormerkungAlert = {
+                        titel: data.vormerkung_titel || data.book?.titel,
+                        user: data.vormerkung_user
+                    };
                     playErrorBeep();
                     setTimeout(playErrorBeep, 400);
                     returnedBook = null;
@@ -310,6 +314,9 @@ export function createKioskStore() {
         set bookInputVal(v) { bookInputVal = v; },
         get scannedBooks() { return scannedBooks; },
         get toast() { return toast; },
+        set toast(v) { toast = v; },
+        get vormerkungAlert() { return vormerkungAlert; },
+        set vormerkungAlert(v) { vormerkungAlert = v; },
         get screenFlash() { return screenFlash; },
         get isShaking() { return isShaking; },
         get isScanningStudent() { return isScanningStudent; },

@@ -37,6 +37,8 @@ func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 		defer cancel()
 
 		titelID := r.URL.Query().Get("titel_id")
+		schuelerID := r.URL.Query().Get("schueler_id")
+		
 		var rows pgx.Rows
 		var err error
 		if titelID != "" {
@@ -49,6 +51,16 @@ func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 				WHERE v.titel_id = $1
 				ORDER BY v.erstellt_am ASC
 			`, titelID)
+		} else if schuelerID != "" {
+			rows, err = s.DB.Pool.Query(ctx, `
+				SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
+				       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
+				FROM vormerkungen v
+				JOIN buecher_titel bt ON bt.id = v.titel_id
+				LEFT JOIN schueler s ON s.id = v.schueler_id
+				WHERE v.schueler_id = $1
+				ORDER BY v.erstellt_am ASC
+			`, schuelerID)
 		} else {
 			rows, err = s.DB.Pool.Query(ctx, `
 				SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
@@ -143,7 +155,7 @@ func (s *Server) checkVormerkung(ctx context.Context, titelID string) (*Vormerku
 		FROM vormerkungen v
 		JOIN buecher_titel bt ON bt.id = v.titel_id
 		LEFT JOIN schueler s ON s.id = v.schueler_id
-		WHERE v.titel_id = $1
+		WHERE v.titel_id = $1 AND v.status = 'wartend'
 		ORDER BY v.erstellt_am ASC
 		LIMIT 1
 	`, titelID).Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName)

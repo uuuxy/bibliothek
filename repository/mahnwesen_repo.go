@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"bibliothek/db"
@@ -224,4 +225,23 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 	}
 
 	return klassen, nil
+}
+
+// CheckFerienAktiv checks if today is within any holiday/closure period.
+func (repo *MahnwesenRepository) CheckFerienAktiv(ctx context.Context) (bool, string, error) {
+	q := `
+		SELECT bezeichnung 
+		FROM ferien_schliesszeiten 
+		WHERE CURRENT_DATE >= start_datum AND CURRENT_DATE <= end_datum 
+		LIMIT 1
+	`
+	var bezeichnung string
+	err := repo.db.QueryRow(ctx, q).Scan(&bezeichnung)
+	if err != nil {
+		if err.Error() == "no rows in result set" || strings.Contains(err.Error(), "no rows") {
+			return false, "", nil
+		}
+		return false, "", err
+	}
+	return true, bezeichnung, nil
 }

@@ -67,37 +67,59 @@ export async function flushOfflineQueue(showToast) {
   toast(`📡 Verbindung wiederhergestellt – ${q.length} Offline-Scan(s) werden nachgesendet…`, "success");
 
   const db = await getDB();
-  const remainingIds = [];
 
-  for (const item of q) {
-    try {
-      const res = await apiFetch("/api/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: item.barcode,
-          active_student_id: item.studentID ?? undefined,
-          active_teacher_id: item.teacherID ?? undefined
-        }),
-        signal: AbortSignal.timeout(8000)
-      });
-      if (!res.ok) {
-        console.warn("[OfflineQueue] Permanent error for", item.barcode, res.status);
-      }
-      // Successfully processed or permanent error: remove from IndexedDB
-      await db.delete(STORE_NAME, item.id);
-    } catch (err) {
-      console.error("[OfflineQueue] Network error while flushing scan:", err);
-      remainingIds.push(item.id);
+  // Prepare payload for the batch API
+  const batchPayload = q.map(item => ({
+    query: item.barcode,
+    active_student_id: item.studentID ?? undefined,
+    active_teacher_id: item.teacherID ?? undefined
+  }));
+
+  try {
+    const res = await apiFetch("/api/action/batch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(batchPayload),
+      signal: AbortSignal.timeout(15000) // Slightly longer timeout for batch
+    });
+
+    if (!res.ok) {
+      console.error("[OfflineQueue] Batch API returned error status:", res.status);
+      toast(`⚠️ Fehler beim Übertragen der Offline-Scans (Status ${res.status}).`, "error");
+      return q.length;
     }
-  }
 
-  const remainingCount = remainingIds.length;
-  if (remainingCount === 0) {
-    toast(`✅ Alle Offline-Scans erfolgreich nachgesendet.`, "success");
-    playSoundSuccess();
-  } else {
-    toast(`⚠️ ${remainingCount} Scan(s) konnten noch nicht übertragen werden.`, "warning");
+    const { results } = await res.json();
+    let remainingCount = 0;
+
+    // Process the batch results
+    for (let i = 0; i < q.length; i++) {
+      const item = q[i];
+      const result = results.find((/** @type {any} */ r) => r.index === i);
+
+      if (result) {
+        if (!result.success) {
+          console.warn("[OfflineQueue] Permanent error for", item.barcode, result.status, result.error);
+        }
+        // Either successful or permanent business error: remove from queue
+        await db.delete(STORE_NAME, item.id);
+      } else {
+        // Missing in response, keep in queue
+        remainingCount++;
+      }
+    }
+
+    if (remainingCount === 0) {
+      toast(`✅ Alle Offline-Scans erfolgreich nachgesendet.`, "success");
+      playSoundSuccess();
+    } else {
+      toast(`⚠️ ${remainingCount} Scan(s) konnten noch nicht übertragen werden.`, "warning");
+    }
+    return remainingCount;
+
+  } catch (err) {
+    console.error("[OfflineQueue] Network error while flushing batch:", err);
+    toast(`⚠️ Netzwerkfehler beim Nachsenden der Scans.`, "warning");
+    return q.length;
   }
-  return remainingCount;
 }

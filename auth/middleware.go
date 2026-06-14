@@ -11,11 +11,11 @@ import (
 
 type contextKey string
 
-// ClaimsContextKey is the key used to store and retrieve authentication claims from the request context.
+// ClaimsContextKey ist der Schlüssel, der verwendet wird, um Authentifizierungs-Claims im Request-Kontext zu speichern und abzurufen.
 const ClaimsContextKey contextKey = "auth_claims"
 
-// RequireRoles returns a middleware that validates the session cookie and verifies
-// if the authenticated user has one of the allowed roles.
+// RequireRoles gibt eine Middleware zurück, die das Session-Cookie validiert und prüft,
+// ob der authentifizierte Benutzer eine der erlaubten Rollen besitzt.
 func (a *Authenticator) RequireRoles(allowedRoles ...Role) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,7 @@ func (a *Authenticator) RequireRoles(allowedRoles ...Role) func(http.Handler) ht
 				return
 			}
 
-			// Role-Based Access Control (RBAC) validation
+			// Role-Based Access Control (RBAC) Validierung
 			roleAllowed := false
 			for _, role := range allowedRoles {
 				if strings.EqualFold(string(claims.Rolle), string(role)) {
@@ -49,15 +49,15 @@ func (a *Authenticator) RequireRoles(allowedRoles ...Role) func(http.Handler) ht
 				return
 			}
 
-			// Inject user claims into request context for downstream handlers
+			// Benutzer-Claims für nachgelagerte Handler in den Request-Kontext injizieren
 			ctx := context.WithValue(r.Context(), ClaimsContextKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-// GetClaims retrieves auth claims from the request context.
-// Returns the claims and a boolean indicating whether the claims were present.
+// GetClaims ruft Authentifizierungs-Claims aus dem Request-Kontext ab.
+// Gibt die Claims und einen booleschen Wert zurück, der angibt, ob die Claims vorhanden waren.
 func GetClaims(ctx context.Context) (*Claims, bool) {
 	claims, ok := ctx.Value(ClaimsContextKey).(*Claims)
 	return claims, ok

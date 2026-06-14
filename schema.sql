@@ -35,6 +35,15 @@ CREATE TABLE system_einstellungen (
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table: ferien_schliesszeiten (Pausierung des Mahnwesens)
+CREATE TABLE ferien_schliesszeiten (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bezeichnung VARCHAR(255) NOT NULL,
+    start_datum DATE NOT NULL,
+    end_datum DATE NOT NULL,
+    erstellt_am TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Seed default system settings
 INSERT INTO system_einstellungen (schluessel, wert) VALUES
     ('ferien_leseclub_aktiv', 'false'),
@@ -359,10 +368,13 @@ CREATE TABLE lieferanten (
 CREATE TABLE vormerkungen (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     titel_id    UUID NOT NULL REFERENCES buecher_titel(id) ON DELETE CASCADE,
-    schueler_id UUID REFERENCES schueler(id) ON DELETE SET NULL,
+    schueler_id UUID REFERENCES schueler(id) ON DELETE CASCADE,
     notiz       TEXT,
     erstellt_am TIMESTAMPTZ NOT NULL DEFAULT now(),
-    benachrichtigt_am TIMESTAMPTZ
+    status      VARCHAR(50) DEFAULT 'wartend' NOT NULL,
+    bereitgestellt_exemplar_id UUID REFERENCES buecher_exemplare(id) ON DELETE SET NULL,
+    
+    UNIQUE(titel_id, schueler_id)
 );
 
 CREATE INDEX idx_vormerkungen_titel_id ON vormerkungen(titel_id);

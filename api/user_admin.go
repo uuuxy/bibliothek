@@ -147,7 +147,7 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 		}
 
 		dbEnumRole := strings.ToLower(req.Rolle)
-		if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" {
+		if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" && dbEnumRole != "helfer" {
 			dbEnumRole = "mitarbeiter"
 		}
 
@@ -252,7 +252,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 		}
 
 		dbEnumRole := strings.ToLower(req.Rolle)
-		if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" {
+		if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" && dbEnumRole != "helfer" {
 			dbEnumRole = "mitarbeiter"
 		}
 

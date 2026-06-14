@@ -16,15 +16,15 @@ type antolinAPIResp struct {
 	} `json:"result"`
 }
 
-// RunAntolinSync fetches Antolin data for books with ISBNs and stores it in the database.
+// RunAntolinSync ruft Antolin-Daten für Bücher mit ISBNs ab und speichert sie in der Datenbank.
 func (s *Scheduler) RunAntolinSync() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
 	defer cancel()
 
-	log.Println("Scheduler Antolin Sync: starting background sync...")
+	log.Println("Scheduler Antolin Sync: starte Hintergrund-Sync...")
 
-	// Find all titles with an ISBN where antolin data hasn't been checked in the last 30 days
-	// Or antolin_geprueft_am IS NULL.
+	// Suche alle Titel mit einer ISBN, bei denen die Antolin-Daten in den letzten 30 Tagen nicht geprüft wurden
+	// Oder antolin_geprueft_am ist NULL.
 	query := `
 		SELECT id, isbn
 		FROM buecher_titel
@@ -68,7 +68,7 @@ func (s *Scheduler) RunAntolinSync() {
 			break
 		}
 
-		time.Sleep(500 * time.Millisecond) // CRITICAL: Rate limiting delay
+		time.Sleep(500 * time.Millisecond) // KRITISCH: Verzögerung für Rate Limiting
 
 		apiURL := "https://www.antolin.de/all/jsonBuecher.do?isbn=" + url.QueryEscape(target.ISBN)
 		req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
@@ -90,7 +90,7 @@ func (s *Scheduler) RunAntolinSync() {
 		}
 		resp.Body.Close()
 
-		// Prepare update
+		// Vorbereitung des Updates
 		var stufen *string
 		var punkte *int
 

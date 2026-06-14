@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,16 +15,13 @@ import (
 	"bibliothek/apierrors"
 )
 
-// LitteraImportResponse matches the JSON response structure.
 type LitteraImportResponse struct {
 	NewTitles      int `json:"new_titles_count"`
 	ImportedCopies int `json:"imported_copies_count"`
 }
 
-// LitteraImportHandler parses LITTERA CSV exports and upserts books and copies.
 func (s *Server) LitteraImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 1. Limit multipart form size to max 10MB
 		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
@@ -45,7 +41,6 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		// 2. Detect CSV delimiter (semicolon vs comma)
 		delimiter := ','
 		contentStr := string(content)
 		if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
@@ -62,11 +57,9 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		// Map LITTERA columns flexibly
 		headerMap := make(map[string]int)
 		for idx, h := range headers {
 			norm := strings.ToLower(strings.TrimSpace(h))
-			// Handle common LITTERA header aliases
 			switch {
 			case strings.Contains(norm, "titel") || norm == "titelliste":
 				headerMap["titel"] = idx
@@ -104,10 +97,44 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		}
 		defer func() { _ = tx.Rollback(ctx) }()
 
-		var newTitlesCount int
-		var importedCopiesCount int
-		lineNum := 1
+		// Preload existing titles for fast mapping
+		rows, err := tx.Query(ctx, "SELECT id, coalesce(isbn, ''), titel FROM buecher_titel")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		isbnToID := make(map[string]string)
+		titelToID := make(map[string]string)
+		for rows.Next() {
+			var id, isbn, titel string
+			if err := rows.Scan(&id, &isbn, &titel); err == nil {
+				if isbn != "" {
+					isbnToID[isbn] = id
+				}
+				titelToID[titel] = id
+			}
+		}
+		rows.Close()
 
+		type NewTitle struct {
+			Titel     string
+			Autor     string
+			Verlag    string
+			ISBN      string
+			Jahr      int
+			Kategorie string
+		}
+
+		type CopyData struct {
+			TitelID string
+			Barcode string
+		}
+
+		var copiesToInsert []CopyData
+		newTitlesMap := make(map[string]*NewTitle) // key: isbn or titel
+		var newTitlesOrder []string
+
+		lineNum := 1
 		for {
 			row, err := reader.Read()
 			if err == io.EOF {
@@ -119,7 +146,6 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				return
 			}
 
-			// Helper to safely get column by key
 			getCol := func(key string) string {
 				if idx, ok := headerMap[key]; ok && idx < len(row) {
 					return strings.TrimSpace(row[idx])
@@ -130,70 +156,143 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			titel := getCol("titel")
 			barcode := getCol("barcode")
 			if titel == "" || barcode == "" {
-				continue // Skip empty rows
+				continue
 			}
 
-			autor := getCol("autor")
-			verlag := getCol("verlag")
 			isbn := strings.ReplaceAll(getCol("isbn"), "-", "")
-			jahrStr := getCol("jahr")
-			kategorie := getCol("kategorie")
-
-			var jahr int
-			if j, err := strconv.Atoi(jahrStr); err == nil {
-				jahr = j
+			
+			titelID := ""
+			if isbn != "" && isbnToID[isbn] != "" {
+				titelID = isbnToID[isbn]
+			} else if titelToID[titel] != "" {
+				titelID = titelToID[titel]
 			}
 
-			// 1. Resolve Title ID (By ISBN or exact Title)
-			var titelID string
-			qFindTitel := `
-				SELECT id FROM buecher_titel
-				WHERE (isbn = $1 AND $1 != '') OR (titel = $2)
-				LIMIT 1
-			`
-			err = tx.QueryRow(ctx, qFindTitel, isbn, titel).Scan(&titelID)
-
-			// 2. Insert if not exists
-			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					qInsertTitel := `
-						INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-						VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
-						RETURNING id
-					`
-					// We use NULLIF because ISBN might violate unique constraint if empty string
-					err = tx.QueryRow(ctx, qInsertTitel, titel, autor, verlag, isbn, jahr, kategorie).Scan(&titelID)
-					if err != nil {
-						apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to insert title '%s' on line %d: %w", titel, lineNum, err))
-						return
+			if titelID != "" {
+				copiesToInsert = append(copiesToInsert, CopyData{TitelID: titelID, Barcode: barcode})
+			} else {
+				// Needs new title
+				cacheKey := isbn
+				if cacheKey == "" {
+					cacheKey = titel
+				}
+				if _, exists := newTitlesMap[cacheKey]; !exists {
+					var jahr int
+					if j, err := strconv.Atoi(getCol("jahr")); err == nil {
+						jahr = j
 					}
-					newTitlesCount++
-				} else {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to query title: %w", err))
+					newTitlesMap[cacheKey] = &NewTitle{
+						Titel:     titel,
+						Autor:     getCol("autor"),
+						Verlag:    getCol("verlag"),
+						ISBN:      isbn,
+						Jahr:      jahr,
+						Kategorie: getCol("kategorie"),
+					}
+					newTitlesOrder = append(newTitlesOrder, cacheKey)
+				}
+				// We can't assign TitelID yet, store barcode in the struct?
+				// Better: Just store pending copies
+			}
+		}
+
+		var newTitlesCount int
+		// Insert new titles using batch
+		if len(newTitlesOrder) > 0 {
+			batch := &pgx.Batch{}
+			qInsertTitel := `
+				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+				VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
+				RETURNING id
+			`
+			for _, key := range newTitlesOrder {
+				t := newTitlesMap[key]
+				batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, t.Kategorie)
+			}
+			
+			br := tx.SendBatch(ctx, batch)
+			for _, key := range newTitlesOrder {
+				var insertedID string
+				err := br.QueryRow().Scan(&insertedID)
+				if err != nil {
+					br.Close()
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to insert title batch: %w", err))
 					return
 				}
+				t := newTitlesMap[key]
+				if t.ISBN != "" {
+					isbnToID[t.ISBN] = insertedID
+				}
+				titelToID[t.Titel] = insertedID
+				newTitlesCount++
+			}
+			br.Close()
+		}
+
+		// Second pass: Now all titles have IDs, collect all copies again
+		reader = csv.NewReader(strings.NewReader(contentStr))
+		reader.Comma = delimiter
+		reader.LazyQuotes = true
+		_, _ = reader.Read() // skip header
+		copiesToInsert = nil
+
+		for {
+			row, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				continue
+			}
+			getCol := func(key string) string {
+				if idx, ok := headerMap[key]; ok && idx < len(row) {
+					return strings.TrimSpace(row[idx])
+				}
+				return ""
+			}
+			titel := getCol("titel")
+			barcode := getCol("barcode")
+			if titel == "" || barcode == "" {
+				continue
+			}
+			isbn := strings.ReplaceAll(getCol("isbn"), "-", "")
+			
+			titelID := ""
+			if isbn != "" && isbnToID[isbn] != "" {
+				titelID = isbnToID[isbn]
+			} else if titelToID[titel] != "" {
+				titelID = titelToID[titel]
 			}
 
-			// 3. Insert Copy (Exemplar)
-			// wir nutzen ON CONFLICT DO NOTHING, falls der Barcode schon existiert (doppelter Import-Schutz)
+			if titelID != "" {
+				copiesToInsert = append(copiesToInsert, CopyData{TitelID: titelID, Barcode: barcode})
+			}
+		}
+
+		var importedCopiesCount int
+		// Insert copies using batch ON CONFLICT DO NOTHING
+		if len(copiesToInsert) > 0 {
+			batchCopies := &pgx.Batch{}
 			qInsertExemplar := `
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am)
 				VALUES ($1, $2, CURRENT_DATE)
 				ON CONFLICT (barcode_id) DO NOTHING
 				RETURNING id
 			`
-			var exemplarID string
-			err = tx.QueryRow(ctx, qInsertExemplar, titelID, barcode).Scan(&exemplarID)
-			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					// Duplicate barcode ignored gracefully
-				} else {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to insert copy for barcode '%s' on line %d: %w", barcode, lineNum, err))
-					return
-				}
-			} else {
-				importedCopiesCount++
+			for _, c := range copiesToInsert {
+				batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode)
 			}
+			
+			bcr := tx.SendBatch(ctx, batchCopies)
+			for i := 0; i < len(copiesToInsert); i++ {
+				var id string
+				err := bcr.QueryRow().Scan(&id)
+				if err == nil {
+					importedCopiesCount++
+				}
+				// pgx.ErrNoRows happens if ON CONFLICT DO NOTHING triggers
+			}
+			bcr.Close()
 		}
 
 		if err := tx.Commit(ctx); err != nil {

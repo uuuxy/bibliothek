@@ -107,12 +107,6 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchAktualisierenAnfrage) error {
 		return errors.New("stock muss >= 0 sein")
 	}
 
-	if sig, ok := eingabe.ErweiterteEigenschaften["signatur"].(string); ok && sig != "" {
-		if !validiereSignatur(sig, eingabe.Schulzweig) {
-			return errors.New("ungültiges Format für Signatur/Systematik")
-		}
-	}
-
 	return nil
 }
 

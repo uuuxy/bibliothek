@@ -9,6 +9,10 @@ export function createMahnwesenStore() {
     let error = $state(/** @type {string|null} */ (null));
     let globalErrorToast = $state(/** @type {string|null} */ (null));
 
+    // Ferien-Logik
+    let ferienAktiv = $state(false);
+    let ferienBezeichnung = $state("");
+
     // Modal-Status
     let modalOpen = $state(false);
     let modalKlasse = $state("");
@@ -47,6 +51,8 @@ export function createMahnwesenStore() {
             if (!res.ok) throw new Error(await res.text() || "Fehler beim Laden");
             const json = await res.json();
             data = json;
+            ferienAktiv = json.ferien_aktiv || false;
+            ferienBezeichnung = json.ferien_bezeichnung || "";
         } catch (e) {
             error = String(e);
         } finally {
@@ -210,6 +216,8 @@ export function createMahnwesenStore() {
         get studentMessages() { return studentMessages; },
         get klassen() { return klassen; },
         get totalOverdue() { return totalOverdue; },
+        get ferienAktiv() { return ferienAktiv; },
+        get ferienBezeichnung() { return ferienBezeichnung; },
 
         fetchData,
         sendStudentMahnung,

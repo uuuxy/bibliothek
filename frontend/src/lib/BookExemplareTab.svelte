@@ -117,15 +117,22 @@
     if (!confirm(`Möchtest du die ${selectedExemplare.size} ausgewählten Exemplare unwiderruflich löschen?`)) return;
     
     let successCount = 0;
-    for (const id of selectedExemplare) {
-      try {
+
+    const results = await Promise.allSettled(
+      Array.from(selectedExemplare).map(async (id) => {
         const res = await apiFetch(`/api/buecher/exemplare/${id}`, { method: "DELETE", credentials: "include" });
-        if (res.ok) {
-          exemplare = exemplare.filter((e) => e.id !== id);
-          successCount++;
-        }
-      } catch (e) {
-        console.error("Fehler beim Löschen:", e);
+        if (!res.ok) throw new Error("not ok");
+        return id;
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const id = result.value;
+        exemplare = exemplare.filter((e) => e.id !== id);
+        successCount++;
+      } else {
+        console.error("Fehler beim Löschen:", result.reason);
       }
     }
     selectedExemplare.clear();

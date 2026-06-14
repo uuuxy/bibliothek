@@ -7,10 +7,69 @@ import (
 	"os"
 )
 
+const (
+	createPgTrgmExtensionSQL = "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+
+	createRolePermissionsTableSQL = `
+		CREATE TABLE IF NOT EXISTS role_permissions (
+			role VARCHAR(50) NOT NULL,
+			permission VARCHAR(100) NOT NULL,
+			allowed BOOLEAN NOT NULL DEFAULT false,
+			PRIMARY KEY (role, permission)
+		)
+	`
+
+	createBenutzerRollenTableSQL = `
+		CREATE TABLE IF NOT EXISTS benutzer_rollen (
+			benutzer_id UUID PRIMARY KEY REFERENCES benutzer(id) ON DELETE CASCADE,
+			rolle VARCHAR(50) NOT NULL CHECK (rolle IN ('ADMIN', 'MITARBEITER', 'LEHRER', 'HELFER'))
+		)
+	`
+
+	migrateBenutzerRollenSQL = `
+		INSERT INTO benutzer_rollen (benutzer_id, rolle)
+		SELECT id, UPPER(rolle::text)
+		FROM benutzer
+		ON CONFLICT DO NOTHING
+	`
+
+	seedRolePermissionSQL = `
+		INSERT INTO role_permissions (role, permission, allowed)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (role, permission) DO NOTHING
+	`
+
+	createLieferantenTableSQL = `
+		CREATE TABLE IF NOT EXISTS lieferanten (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			name VARCHAR(255) NOT NULL,
+			email VARCHAR(255) NOT NULL,
+			kundennummer VARCHAR(100) NOT NULL,
+			erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)
+	`
+
+	seedLieferantenSQL = `
+		INSERT INTO lieferanten (name, email, kundennummer)
+		VALUES ($1, $2, $3)
+	`
+
+	insertInitialAdminSQL = `
+		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
+		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
+		RETURNING id
+	`
+
+	insertInitialAdminRoleSQL = `
+		INSERT INTO benutzer_rollen (benutzer_id, rolle)
+		VALUES ($1, 'ADMIN')
+	`
+)
+
 // InitPermissions initializes the role_permissions schema, runs db migrations, and seeds defaults.
 func (db *Database) InitPermissions(ctx context.Context) error {
 	// 1. Enable pg_trgm extension
-	_, err := db.Pool.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+	_, err := db.Pool.Exec(ctx, createPgTrgmExtensionSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create pg_trgm extension: %w", err)
 	}
@@ -44,25 +103,13 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	}
 
 	// 4. Create role_permissions table
-	_, err = db.Pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS role_permissions (
-			role VARCHAR(50) NOT NULL,
-			permission VARCHAR(100) NOT NULL,
-			allowed BOOLEAN NOT NULL DEFAULT false,
-			PRIMARY KEY (role, permission)
-		)
-	`)
+	_, err = db.Pool.Exec(ctx, createRolePermissionsTableSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create role_permissions table: %w", err)
 	}
 
 	// 5. Create benutzer_rollen table
-	_, err = db.Pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS benutzer_rollen (
-			benutzer_id UUID PRIMARY KEY REFERENCES benutzer(id) ON DELETE CASCADE,
-			rolle VARCHAR(50) NOT NULL CHECK (rolle IN ('ADMIN', 'MITARBEITER', 'LEHRER', 'HELFER'))
-		)
-	`)
+	_, err = db.Pool.Exec(ctx, createBenutzerRollenTableSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create benutzer_rollen table: %w", err)
 	}
@@ -71,12 +118,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	var exists int
 	err = db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer_rollen").Scan(&exists)
 	if err == nil && exists == 0 {
-		_, err = db.Pool.Exec(ctx, `
-			INSERT INTO benutzer_rollen (benutzer_id, rolle)
-			SELECT id, UPPER(rolle::text)
-			FROM benutzer
-			ON CONFLICT DO NOTHING
-		`)
+		_, err = db.Pool.Exec(ctx, migrateBenutzerRollenSQL)
 		if err != nil {
 			return fmt.Errorf("failed to migrate existing benutzer roles: %w", err)
 		}
@@ -162,11 +204,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	}
 
 	for _, d := range defaults {
-		_, err = db.Pool.Exec(ctx, `
-			INSERT INTO role_permissions (role, permission, allowed)
-			VALUES ($1, $2, $3)
-			ON CONFLICT (role, permission) DO NOTHING
-		`, d.Role, d.Permission, d.Allowed)
+		_, err = db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
 		if err != nil {
 			return fmt.Errorf("failed to seed permission default (%s, %s): %w", d.Role, d.Permission, err)
 		}
@@ -176,15 +214,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 
 // InitLieferanten initializes the lieferanten table and seeds it with default values.
 func (db *Database) InitLieferanten(ctx context.Context) error {
-	_, err := db.Pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS lieferanten (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			name VARCHAR(255) NOT NULL,
-			email VARCHAR(255) NOT NULL,
-			kundennummer VARCHAR(100) NOT NULL,
-			erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
+	_, err := db.Pool.Exec(ctx, createLieferantenTableSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create lieferanten table: %w", err)
 	}
@@ -207,10 +237,7 @@ func (db *Database) InitLieferanten(ctx context.Context) error {
 		}
 
 		for _, d := range defaults {
-			_, err = db.Pool.Exec(ctx, `
-				INSERT INTO lieferanten (name, email, kundennummer)
-				VALUES ($1, $2, $3)
-			`, d.Name, d.Email, d.Kundennummer)
+			_, err = db.Pool.Exec(ctx, seedLieferantenSQL, d.Name, d.Email, d.Kundennummer)
 			if err != nil {
 				return fmt.Errorf("failed to seed supplier default (%s): %w", d.Name, err)
 			}
@@ -246,19 +273,12 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	var adminID string
-	err = tx.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
-		RETURNING id
-	`, email).Scan(&adminID)
+	err = tx.QueryRow(ctx, insertInitialAdminSQL, email).Scan(&adminID)
 	if err != nil {
 		return fmt.Errorf("failed to insert initial admin: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, `
-		INSERT INTO benutzer_rollen (benutzer_id, rolle)
-		VALUES ($1, 'ADMIN')
-	`, adminID)
+	_, err = tx.Exec(ctx, insertInitialAdminRoleSQL, adminID)
 	if err != nil {
 		return fmt.Errorf("failed to insert initial admin role: %w", err)
 	}

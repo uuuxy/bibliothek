@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// PgxPoolIface defines the set of methods used from pgxpool.Pool to allow for mocking.
+// PgxPoolIface definiert die Methoden aus pgxpool.Pool, um Mocking zu ermöglichen.
 type PgxPoolIface interface {
 	Close()
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
@@ -19,24 +19,25 @@ type PgxPoolIface interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 	Ping(ctx context.Context) error
+	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 }
 
-// Database wraps the PgxPoolIface to provide access to database operations.
+// Database kapselt das PgxPoolIface, um Zugriff auf Datenbankoperationen bereitzustellen.
 type Database struct {
 	Pool PgxPoolIface
 }
 
-// Connect establishes a connection pool to the PostgreSQL database using the provided DSN.
-// It configures connection pool limits and performs a ping check to verify connectivity.
+// Connect stellt einen Verbindungspool zur PostgreSQL-Datenbank über den bereitgestellten DSN her.
+// Es konfiguriert die Limits des Verbindungspools und führt einen Ping-Check durch, um die Konnektivität zu überprüfen.
 func Connect(ctx context.Context, dsn string) (*Database, error) {
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse database configuration: %w", err)
 	}
 
-	// Configure pool size and connection lifetimes for 8-PC high-concurrency operation.
-	// 50 max connections provide enough headroom for 8 parallel scanning clients plus
-	// background jobs (mahnwesen, GDPR cron, SSE) under peak load.
+	// Pool-Größe und Verbindungslebensdauer für hohen Nebenläufigkeitsbetrieb (8-PC) konfigurieren.
+	// 50 maximale Verbindungen bieten genug Spielraum für 8 parallele Scanner-Clients plus
+	// Hintergrundjobs (Mahnwesen, DSGVO-Cron, SSE) unter Spitzenlast.
 	config.MaxConns = 50
 	config.MinConns = 10
 	config.MaxConnLifetime = 30 * time.Minute
@@ -48,7 +49,7 @@ func Connect(ctx context.Context, dsn string) (*Database, error) {
 		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}
 
-	// Ping database to verify active connection
+	// Datenbank anpingen, um aktive Verbindung zu verifizieren
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
@@ -57,7 +58,7 @@ func Connect(ctx context.Context, dsn string) (*Database, error) {
 	return &Database{Pool: pool}, nil
 }
 
-// Close gracefully closes all connections in the pool.
+// Close schließt ordnungsgemäß alle Verbindungen im Pool.
 func (db *Database) Close() {
 	if db.Pool != nil {
 		db.Pool.Close()
