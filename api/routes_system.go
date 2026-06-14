@@ -1,9 +1,9 @@
 package api
 
 import (
-	"net/http"
 	"bibliothek/auth"
 	"bibliothek/repository"
+	"net/http"
 )
 
 func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository) {
@@ -40,7 +40,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// Dashboard
 	mux.Handle("GET /api/dashboard/summary", s.RequirePermission("view_students")(s.GetDashboardSummaryHandler()))
-	
+
 	// Real-time Events
 	sseHandler := s.Broker.Handler()
 	mux.Handle("GET /events", s.RequirePermission("view_students")(sseHandler))

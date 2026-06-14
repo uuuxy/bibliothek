@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bibliothek/apierrors"
+	"errors"
+
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -23,13 +25,13 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 
 		// 1. Parse multipart file (max 10 MB)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
-			http.Error(w, "Fehler beim Parsen der Formulardaten", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehler beim Parsen der Formulardaten"))
 			return
 		}
 
 		file, _, err := r.FormFile("file")
 		if err != nil {
-			http.Error(w, "Keine Datei hochgeladen", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Keine Datei hochgeladen"))
 			return
 		}
 		defer func() { _ = file.Close() }()
@@ -41,7 +43,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 
 		header, err := reader.Read()
 		if err != nil {
-			http.Error(w, "Fehler beim Lesen der Kopfzeile", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehler beim Lesen der Kopfzeile"))
 			return
 		}
 
@@ -73,14 +75,14 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		colOrt := getCol("ort")
 
 		if colID == -1 || colVorname == -1 || colNachname == -1 {
-			http.Error(w, "Pflichtspalten (ID, Vorname, Nachname) fehlen in CSV", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Pflichtspalten (ID, Vorname, Nachname) fehlen in CSV"))
 			return
 		}
 
 		var result LusdWidgetResult
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {
-			http.Error(w, "Datenbankfehler", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Datenbankfehler"))
 			return
 		}
 		defer func() { _ = tx.Rollback(ctx) }()
@@ -147,12 +149,12 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 
 			var wasInserted bool
 			err = tx.QueryRow(ctx, upsertQuery, id, barcode, vorname, nachname, klasse, strasse, hausnr, plz, ort, abgang).Scan(&wasInserted)
-			
+
 			if err != nil {
 				// Fallback: Manuelles Upsert für Systeme ohne UNIQUE Constraint auf lusd_id
 				var dbID string
 				chkErr := tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", id).Scan(&dbID)
-				
+
 				if chkErr == nil {
 					// Datensatz existiert -> UPDATE
 					updQuery := `UPDATE schueler SET vorname=$1, nachname=$2, klasse=COALESCE($3, klasse), strasse=$4, hausnummer=$5, plz=$6, ort=$7, aktualisiert_am=NOW() WHERE id=$8`
@@ -170,7 +172,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 						continue
 					}
 				}
-				
+
 				result.Skipped++ // Wenn beides fehlschlägt
 				continue
 			}
@@ -183,11 +185,10 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		}
 
 		if err := tx.Commit(ctx); err != nil {
-			http.Error(w, "Fehler beim Speichern der Transaktion", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Speichern der Transaktion"))
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(result)
+		RespondJSON(w, http.StatusOK, result)
 	}
 }

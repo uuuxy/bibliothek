@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import Modal from "./Modal.svelte";
 
   let { open = false, file = null, onclose, onsuccess } = $props();

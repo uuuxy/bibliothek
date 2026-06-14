@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { playSuccessBeep, playErrorBeep } from "./audio.js";
   // State Runes with JSDoc type annotations
   let barcode = $state("");
@@ -55,11 +55,7 @@
     lastResult = null;
 
     try {
-      const res = await apiFetch("/api/inventur/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ barcode_id: b })
-      });
+      const res = await apiClient.post("/api/inventur/scan", { barcode_id: b });
 
       if (!res.ok) {
         const text = await res.text();
@@ -138,11 +134,7 @@
 
     finalizing = true;
     try {
-      const res = await apiFetch("/api/inventur/finalize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tage: fehlbestandTage })
-      });
+      const res = await apiClient.post("/api/inventur/finalize", { tage: fehlbestandTage });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       alert(`Erfolgreich! ${data.verloren_gemeldet} Bücher wurden als Verlust verbucht.`);

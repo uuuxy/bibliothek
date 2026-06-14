@@ -105,7 +105,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 			// Encode PNG to buffer
 			var buf bytes.Buffer
 			_ = png.Encode(&buf, bcScaled)
-			
+
 			// Register Image
 			imgName := fmt.Sprintf("bc_%s", bcText)
 			opt := gofpdf.ImageOptions{ImageType: "PNG", ReadDpi: true}

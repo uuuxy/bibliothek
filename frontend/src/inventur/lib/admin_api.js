@@ -1,4 +1,4 @@
-import { apiFetch } from '../../lib/apiFetch.js';
+import { apiFetch, apiClient } from "../../lib/apiFetch.js";
 import { appState } from "./store.svelte.js";
 
 export async function holeBuecherListe() {

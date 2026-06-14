@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -93,10 +93,10 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 
 // ShipmentGroup helps structure the incoming shipments response.
 type ShipmentGroup struct {
-	ID           string        `json:"id"`
-	SupplierName string        `json:"supplierName"`
-	Date         string        `json:"date"`
-	Timestamp    time.Time     `json:"-"`
+	ID           string         `json:"id"`
+	SupplierName string         `json:"supplierName"`
+	Date         string         `json:"date"`
+	Timestamp    time.Time      `json:"-"`
 	Items        []*GroupedItem `json:"items"`
 }
 
@@ -197,8 +197,7 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 			return groups[i].Timestamp.After(groups[j].Timestamp)
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(groups)
+		RespondJSON(w, http.StatusOK, groups)
 	}
 }
 
@@ -212,8 +211,7 @@ type ReceiveItemRequest struct {
 func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReceiveItemRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -251,8 +249,7 @@ func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{
+		RespondJSON(w, http.StatusOK, map[string]string{
 			"status":  "success",
 			"message": "Exemplar erfolgreich freigegeben.",
 		})

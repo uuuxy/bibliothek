@@ -409,7 +409,18 @@ INSERT INTO schema_migrations (version) VALUES
 ('005_add_etikett_gedruckt.sql'),
 ('006_create_geraete.sql'),
 ('007_performance_indexes.sql'),
-('008_schueler_fotos_bytea.sql')
+('008_schueler_fotos_bytea.sql'),
+('009_erweiterte_verwaltung.sql'),
+('010_jwt_blacklist.sql'),
+('011_performance_indexes.sql'),
+('012_remove_passwords.sql'),
+('013_view_buecher_bestand.sql'),
+('014_barcode_sequence.sql'),
+('015_antolin.sql'),
+('016_fix_ghost_vormerkungen.sql'),
+('017_ferien_schliesszeiten.sql'),
+('018_vormerkungen_status.sql'),
+('019_performance_indexe.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -420,6 +431,8 @@ CREATE INDEX IF NOT EXISTS idx_schadensfaelle_ausleihe ON schadensfaelle (auslei
 CREATE INDEX IF NOT EXISTS idx_vormerkungen_schueler ON vormerkungen(schueler_id) WHERE schueler_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_klassensatz_titel ON klassensatz_reservierungen(titel_id);
 CREATE INDEX IF NOT EXISTS idx_class_books_klasse ON class_books(class_name);
+CREATE INDEX IF NOT EXISTS idx_schueler_klasse ON schueler(klasse);
+CREATE INDEX IF NOT EXISTS idx_vormerkungen_status ON vormerkungen(status);
 
 -- -------------------------------------------------------------
 -- 6. VIEWS

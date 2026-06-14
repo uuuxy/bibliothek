@@ -1,9 +1,10 @@
 // stores/omnibox.svelte.js
 // Status- und Logikverwaltung für die Omnibox (Svelte 5 Runes)
 
-import { apiFetch } from "../apiFetch.js";
+import { apiFetch, apiClient } from "../apiFetch.js";
 import { playSoundSuccess, playSoundError } from "../audio.js";
-import { enqueueOfflineScan } from "../offlineQueue.js";
+import { enqueueOfflineAction } from "../offlineQueue.js";
+import { offlineSync } from "./offlineSync.svelte.js";
 
 export function createOmniboxStore() {
   let activeStudent = $state(/** @type {any} */ (null));
@@ -129,33 +130,11 @@ export function createOmniboxStore() {
 
     setTimeout(() => document.getElementById("omnibox-input")?.focus(), 30);
 
-    // Offline-Modus für Rückgaben
-    if (isOffline && q.startsWith("B-")) {
-      offlineQueueCount = await enqueueOfflineScan(
-        q,
-        activeStudent?.id ?? null,
-        activeTeacher?.id ?? null,
-      );
-      triggerScreenFlash("warning");
-      playSoundError();
-      showToast(
-        `📴 Offline: Barcode „${q}“ in Warteschlange gespeichert.`,
-        "warning",
-      );
-      triggerFlash("orange");
-      return;
-    }
-
     try {
-      const res = await apiFetch("/api/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: q,
-          active_student_id: activeStudent?.id,
-          active_teacher_id: activeTeacher?.id,
-        }),
-        signal: AbortSignal.timeout(8000),
+      const res = await apiClient.post("/api/action", {
+        query: q,
+        active_student_id: activeStudent?.id,
+        active_teacher_id: activeTeacher?.id,
       });
 
       if (!res.ok) {
@@ -234,41 +213,22 @@ export function createOmniboxStore() {
         triggerShake();
         showToast("Bitte wähle ein Ergebnis aus der Liste.", "warning");
       }
-    } catch (err) {
-      const error = /** @type {any} */ (err);
-      const isTimeout =
-        error?.name === "TimeoutError" || error?.name === "AbortError";
-
-      if (isTimeout && q.startsWith("B-")) {
-        offlineQueueCount = await enqueueOfflineScan(
-          q,
-          activeStudent?.id ?? null,
-          activeTeacher?.id ?? null,
-        );
-        triggerScreenFlash("error");
-        playSoundError();
-        triggerFlash("orange");
-        showToast(
-          `📴 Zeitüberschreitung – Barcode „${q}“ offline gespeichert (${offlineQueueCount} ausstehend).`,
-          "warning",
-        );
-        return;
-      }
-
-      triggerScreenFlash("error");
-      playSoundError();
-
-      if (q.startsWith("B-") && !activeStudent && !activeTeacher) {
-        errorMessage = "Bitte zuerst Schüler scannen";
+    } catch (e) {
+      if (e instanceof TypeError || !window.navigator.onLine) {
+         if (q.startsWith("B-")) {
+            await enqueueOfflineAction("checkin", q, activeStudent?.id ?? null);
+            offlineSync.updateCount();
+            triggerScreenFlash("warning");
+            playSoundSuccess();
+            showToast(`📴 Offline: Aktion für „${q}“ gespeichert.`, "warning");
+         } else {
+            showToast("⚠️ Netzwerkfehler", "error");
+         }
       } else {
-        errorMessage = error.message || String(error);
+        errorMessage = String(e);
+        showToast(`⚠️ Netzwerkfehler: ${e instanceof Error ? e.message : String(e)}`, "error");
       }
-
-      scanError = true;
-      setTimeout(() => {
-        scanError = false;
-      }, 500);
-      showToast(errorMessage, "error");
+    } finally {
       triggerFlash("red");
     }
   }

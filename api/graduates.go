@@ -6,7 +6,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -88,8 +87,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 					"ist_gesperrt":   gesperrt,
 				})
 			}
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(students)
+			RespondJSON(w, http.StatusOK, students)
 			return
 		}
 
@@ -155,8 +153,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 			result = append(result, studMap[id])
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(result)
+		RespondJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -215,7 +212,7 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 				}
 				studOrder = append(studOrder, id)
 			}
-			
+
 			if titel != nil {
 				studMap[id].Ausleihen = append(studMap[id].Ausleihen, pdf.LaufzettelAusleihe{
 					Titel:     *titel,

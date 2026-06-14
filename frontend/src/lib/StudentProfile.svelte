@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import WebcamCapture from "./WebcamCapture.svelte";
   import DamageReportModal from "./DamageReportModal.svelte";
   import BorrowedBooksCard from "./BorrowedBooksCard.svelte";
@@ -174,17 +174,13 @@
     if (!damageBook) return;
     isSubmittingDamage = true;
     try {
-      const res = await apiFetch(`/api/damage/report`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const res = await apiClient.post(`/api/damage/report`, {
           loan_id: /** @type {any} */ (damageBook).ausleihe_id,
           schueler_id: student.id,
           copy_id: /** @type {any} */ (damageBook).exemplar_id,
           beschreibung: reason,
           betrag: amount
-        })
-      });
+        });
       if (res.ok) {
         const json = await res.json();
         window.open(`/api/schadensfaelle/${json.schadens_id}/pdf`, '_blank');

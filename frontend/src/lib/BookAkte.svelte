@@ -1,7 +1,7 @@
 <script>
   import { appState, showToast } from "../inventur/lib/store.svelte.js";
   import { uiStore } from "./stores/uiStore.svelte.js";
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import BookBorrowersTab from "./BookBorrowersTab.svelte";
   import BookExemplareTab from "./BookExemplareTab.svelte";
   import BookHistoryTab from "./BookHistoryTab.svelte";

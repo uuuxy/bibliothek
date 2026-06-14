@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -30,8 +29,7 @@ func (s *Server) ActionHandler(
 		}
 
 		var req ActionRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -50,8 +48,7 @@ func (s *Server) ActionHandler(
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(resp)
+		RespondJSON(w, http.StatusOK, resp)
 	}
 }
 
@@ -96,7 +93,7 @@ func (s *Server) processActionRequest(
 		return nil, status, err
 	}
 
-		// Broadcast updates to all monitoring dashboards (SSE)
+	// Broadcast updates to all monitoring dashboards (SSE)
 	if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
 		s.broadcastActionEvent(resp)
 	}
@@ -118,8 +115,7 @@ func (s *Server) ActionBatchHandler(
 		}
 
 		var batchReq ActionBatchRequest
-		if err := json.NewDecoder(r.Body).Decode(&batchReq); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &batchReq) {
 			return
 		}
 
@@ -141,7 +137,7 @@ func (s *Server) ActionBatchHandler(
 			}
 
 			resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo)
-			
+
 			item := ActionBatchResponseItem{
 				Index:   i,
 				Status:  status,
@@ -155,8 +151,7 @@ func (s *Server) ActionBatchHandler(
 			batchResp.Results = append(batchResp.Results, item)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(batchResp)
+		RespondJSON(w, http.StatusOK, batchResp)
 	}
 }
 
@@ -190,7 +185,7 @@ func (s *Server) handleBookAction(
 		if err != nil {
 			return err
 		}
-		
+
 		isReserved := strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:")
 		reservedForThisStudent := false
 
@@ -201,7 +196,7 @@ func (s *Server) handleBookAction(
 				reservedForThisStudent = true
 			}
 		}
-		
+
 		if activeLoan == nil && (!isReserved || reservedForThisStudent) {
 			_, err = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, zustand_notiz = '' WHERE id = $1", copy.ID)
 			if err != nil {

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -226,8 +225,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":   "success",
 			"imported": importedCount,
 		})

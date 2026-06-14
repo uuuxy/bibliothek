@@ -1,8 +1,8 @@
 package api
 
 import (
-	"net/http"
 	"bibliothek/repository"
+	"net/http"
 )
 
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {

@@ -2,14 +2,14 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"bibliothek/apierrors"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // MonitorTitel is a slim book model for the public info monitor.
@@ -51,7 +51,7 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 			ORDER BY COUNT(*) DESC
 			LIMIT 1
 		`).Scan(&bm.ID, &bm.Titel, &bm.Autor, &bm.CoverURL)
-		
+
 		if err == nil {
 			slides.BuchDesMonats = &bm
 		} else if err != pgx.ErrNoRows {
@@ -59,7 +59,7 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 			return
 		}
-		
+
 		// Fallback: the most recently added title with a cover.
 		if slides.BuchDesMonats == nil {
 			var fb MonitorTitel
@@ -69,7 +69,7 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 				WHERE cover_url IS NOT NULL AND cover_url <> ''
 				ORDER BY erstellt_am DESC LIMIT 1
 			`).Scan(&fb.ID, &fb.Titel, &fb.Autor, &fb.CoverURL)
-			
+
 			if err == nil {
 				slides.BuchDesMonats = &fb
 			} else if err != pgx.ErrNoRows {
@@ -130,7 +130,6 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 			slides.Beliebt = append(slides.Beliebt, t)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(slides)
+		RespondJSON(w, http.StatusOK, slides)
 	}
 }

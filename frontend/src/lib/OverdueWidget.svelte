@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { authStore } from "./stores/authStore.svelte.js";
 
   /** @type {any} */

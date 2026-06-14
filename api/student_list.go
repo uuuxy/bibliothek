@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -85,7 +84,6 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(students)
+		RespondJSON(w, http.StatusOK, students)
 	}
 }

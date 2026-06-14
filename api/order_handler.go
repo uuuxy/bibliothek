@@ -12,8 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"bibliothek/apierrors"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type SendOrderMailRequest struct {
@@ -90,8 +91,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 		rows.Close()
 
 		if len(itemsToOrder) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]any{
+			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":  "success",
 				"message": "Alle Bestände ausreichend. Keine Bestellung notwendig.",
 				"ordered": 0,
@@ -210,8 +210,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung erfolgreich an %s gesendet.", toEmail),
 			"ordered_qty": len(labels),
@@ -263,8 +262,7 @@ func (s *Server) ReleaseOrdersHandler() http.HandlerFunc {
 			items = append(items, item)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":         "success",
 			"message":        fmt.Sprintf("Lieferung vollständig freigegeben. %d Exemplare im Bestand aktiv.", len(items)),
 			"released_count": len(items),

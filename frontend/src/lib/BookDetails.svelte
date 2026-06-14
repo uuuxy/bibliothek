@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import AntolinBadge from './AntolinBadge.svelte';
   import { appState } from "../inventur/lib/store.svelte.js";
 
@@ -135,11 +135,7 @@
   async function updateNote() {
     if (!activeCopy) return;
     try {
-      const res = await apiFetch(`/api/buecher/exemplare/${activeCopy.id}/schadensnotiz`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: newNote })
-      });
+      const res = await apiClient.post(`/api/buecher/exemplare/${activeCopy.id}/schadensnotiz`, { note: newNote });
       if (!res.ok) throw new Error("Fehler beim Speichern der Notiz");
       
       // Update local state

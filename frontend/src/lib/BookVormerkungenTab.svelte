@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { showToast } from "../inventur/lib/store.svelte.js";
 
   /** @type {{ vormerkungen: any[], book: any }} */
@@ -7,7 +7,7 @@
 
   let isAdding = $state(false);
   let searchVal = $state("");
-  let searchResults = $state(/** @type {any[]} */ ([]));
+  let searchResults = $state.raw(/** @type {any[]} */ ([]));
   let isSearching = $state(false);
   let notiz = $state("");
 
@@ -34,11 +34,7 @@
     }
     isSearching = true;
     try {
-      const res = await apiFetch("/api/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchVal })
-      });
+      const res = await apiClient.post("/api/action", { query: searchVal });
       if (res.ok) {
         const data = await res.json();
         searchResults = data.search_results?.filter(r => r.type === "student") || [];
@@ -54,11 +50,7 @@
 
   async function addVormerkung(studentId) {
     try {
-      const res = await apiFetch("/api/vormerkungen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titel_id: book.id, schueler_id: studentId, notiz })
-      });
+      const res = await apiClient.post("/api/vormerkungen", { titel_id: book.id, schueler_id: studentId, notiz });
       if (res.ok) {
         showToast("Erfolgreich vorgemerkt", "success");
         isAdding = false;

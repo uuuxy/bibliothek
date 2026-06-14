@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, apiClient } from "./apiFetch.js";
 
 	let files: FileList | null = $state(null);
 	let loading = $state(false);

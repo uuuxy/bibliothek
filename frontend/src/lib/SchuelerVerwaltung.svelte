@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import StudentEditModal from "./StudentEditModal.svelte";
 
   let students = $state.raw([]);
@@ -16,7 +16,7 @@
     loading = true;
     errorMsg = "";
     try {
-      const res = await apiFetch("/api/schueler");
+      const res = await apiClient.post("/api/schueler");
       if (!res.ok) throw new Error("Fehler beim Laden der Schüler");
       students = await res.json();
     } catch (e) {
@@ -49,10 +49,7 @@
     sendingMailId = schuelerId;
     mailStatus[schuelerId] = null;
     try {
-      const res = await apiFetch(`/api/mail/send-notification/${schuelerId}`, {
-        method: "POST",
-        body: JSON.stringify({ templateType: "MAHNUNG_ELTERN" })
-      });
+      const res = await apiClient.post(`/api/mail/send-notification/${schuelerId}`, { templateType: "MAHNUNG_ELTERN" });
       const data = await res.json();
       if (res.ok) {
         mailStatus[schuelerId] = { type: 'success', text: "Mail erfolgreich versendet" };

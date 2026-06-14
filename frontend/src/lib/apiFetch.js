@@ -8,7 +8,7 @@
  *   3. Provides a consistent API surface across all components.
  *
  * Usage:
- *   import { apiFetch } from "$lib/../lib/apiFetch.js";
+ *   import { apiFetch, apiClient } from "$lib/../lib/apiFetch.js";
  *   const res = await apiFetch("/api/benutzer", {
  *     method: "POST",
  *     headers: { "Content-Type": "application/json" },
@@ -61,3 +61,38 @@ export function apiFetch(url, options = {}) {
 
   return fetch(url, options);
 }
+
+/**
+ * apiClient provides convenience methods for common API operations.
+ * It automatically serializes objects to JSON and sets the Content-Type header.
+ */
+export const apiClient = {
+  get(url, options = {}) {
+    return apiFetch(url, { ...options, method: "GET" });
+  },
+  post(url, data, options = {}) {
+    return apiFetch(url, {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      body: JSON.stringify(data),
+    });
+  },
+  put(url, data, options = {}) {
+    return apiFetch(url, {
+      ...options,
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      body: JSON.stringify(data),
+    });
+  },
+  delete(url, options = {}) {
+    return apiFetch(url, { ...options, method: "DELETE" });
+  },
+};

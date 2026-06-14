@@ -1,8 +1,7 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { appState } from "../inventur/lib/store.svelte.js";
   import { kioskStore } from "./stores/kiosk.svelte.js";
-  import { flushOfflineQueue } from "./offlineQueue.js";
   import KioskReservationModal from "./KioskReservationModal.svelte";
   import KioskChecklistModal from "./KioskChecklistModal.svelte";
   import KioskDamageModal from "./KioskDamageModal.svelte";
@@ -20,12 +19,6 @@
   onMount(() => {
     kioskStore.fetchSettings();
     kioskStore.focusStudentInput();
-    
-    const onlineHandler = async () => {
-      await flushOfflineQueue((msg, type) => kioskStore.triggerFlash(/** @type {"success"|"error"|"warning"} */ (type), msg));
-    };
-    window.addEventListener("online", onlineHandler);
-    return () => window.removeEventListener("online", onlineHandler);
   });
 </script>
 

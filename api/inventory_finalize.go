@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -32,11 +31,10 @@ type FinalizeInventoryResponse struct {
 func (s *Server) FinalizeInventoryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req FinalizeInventoryRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
-		
+
 		tage := req.Tage
 		if tage < 1 || tage > 3650 {
 			tage = 30 // default fallback
@@ -77,8 +75,7 @@ func (s *Server) FinalizeInventoryHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(FinalizeInventoryResponse{
+		RespondJSON(w, http.StatusOK, FinalizeInventoryResponse{
 			VerlorenGemeldet: count,
 		})
 	}

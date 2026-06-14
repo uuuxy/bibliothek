@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"time"
@@ -56,7 +55,6 @@ func (s *Server) ImportLUSDHandler(studentRepo repository.StudentRepository) htt
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
+		RespondJSON(w, http.StatusOK, response)
 	}
 }

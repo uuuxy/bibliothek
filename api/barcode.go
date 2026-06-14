@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -17,6 +16,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/code39"
 	"github.com/boombuler/barcode/qr"
@@ -113,8 +113,7 @@ func (s *Server) BarcodeHandler() http.HandlerFunc {
 func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req OrderRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 

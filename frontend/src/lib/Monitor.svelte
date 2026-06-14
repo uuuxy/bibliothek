@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { onMount, onDestroy } from 'svelte';
 
   /** @type {{buch_des_monats: any, neu_eingetroffen: any[], beliebt: any[]} | null} */

@@ -198,9 +198,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusCreated, map[string]any{
 			"status":     "success",
 			"id":         studentID,
 			"barcode_id": barcodeID,

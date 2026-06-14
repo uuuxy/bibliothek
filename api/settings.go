@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -81,8 +80,7 @@ func (s *Server) GetSettingsHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(settings)
+		RespondJSON(w, http.StatusOK, settings)
 	}
 }
 
@@ -90,8 +88,7 @@ func (s *Server) GetSettingsHandler() http.HandlerFunc {
 func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SystemEinstellungen
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -145,7 +142,6 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }

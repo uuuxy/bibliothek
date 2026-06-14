@@ -1,8 +1,8 @@
 package api
 
 import (
-	"net/http"
 	"bibliothek/repository"
+	"net/http"
 )
 
 func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, mahnRepo *repository.MahnwesenRepository, auditRepo repository.AuditRepository) {

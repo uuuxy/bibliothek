@@ -6,7 +6,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -70,8 +69,7 @@ func (s *Server) ListUsersHandler() http.HandlerFunc {
 			users = append(users, u)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(users)
+		RespondJSON(w, http.StatusOK, users)
 	}
 }
 
@@ -99,8 +97,7 @@ type CreateUserRequest struct {
 func (s *Server) CreateUserHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateUserRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -211,8 +208,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 		}
 
 		var req UpdateUserRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 

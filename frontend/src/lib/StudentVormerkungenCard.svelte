@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { showToast } from "../inventur/lib/store.svelte.js";
 
   /** @type {{ vormerkungen: any[] }} */

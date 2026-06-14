@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { playSuccessBeep, playErrorBeep } from "./audio.js";
 
   /** @type {any} */
@@ -103,11 +103,7 @@
     const missingIds = missingCopies.map(c => c.id);
 
     try {
-      const res = await apiFetch(`/api/inventur/titel/${selectedTitle.id}/verlust-batch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exemplar_ids: missingIds })
-      });
+      const res = await apiClient.post(`/api/inventur/titel/${selectedTitle.id}/verlust-batch`, { exemplar_ids: missingIds });
       
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();

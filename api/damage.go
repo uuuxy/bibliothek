@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -43,8 +42,7 @@ func (s *Server) MarkCopyDefektHandler() http.HandlerFunc {
 		}
 
 		var req DefektRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 		if req.Betrag < 0 {
@@ -110,8 +108,7 @@ func (s *Server) MarkCopyDefektHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(DefektResponse{Status: "ok", SchadensID: schadensID})
+		RespondJSON(w, http.StatusOK, DefektResponse{Status: "ok", SchadensID: schadensID})
 	}
 }
 
@@ -144,8 +141,7 @@ func (s *Server) UndoReturnHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 
@@ -166,8 +162,7 @@ func (s *Server) ReportDamageHandler() http.HandlerFunc {
 			Beschreibung string  `json:"beschreibung"`
 			Betrag       float64 `json:"betrag"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -220,7 +215,6 @@ func (s *Server) ReportDamageHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "schadens_id": schadensID})
+		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok", "schadens_id": schadensID})
 	}
 }

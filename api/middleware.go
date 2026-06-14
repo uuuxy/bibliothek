@@ -61,7 +61,7 @@ func MaxBodySizeMiddleware(limit int64) func(http.Handler) http.Handler {
 func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		
+
 		// Skip non-API paths (static frontend assets, /login, etc.)
 		if !strings.HasPrefix(path, "/api/") && path != "/events" {
 			next.ServeHTTP(w, r)
@@ -176,4 +176,3 @@ func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-

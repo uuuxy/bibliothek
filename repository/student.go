@@ -11,6 +11,11 @@ import (
 	
 )
 
+// Scanner defines an interface for both pgx.Row and pgx.Rows to enable shared scan helpers.
+type Scanner interface {
+	Scan(dest ...any) error
+}
+
 // StudentRepository defines operations for fetching student records from the database.
 type StudentRepository interface {
 	// GetByBarcode fetches a student by their unique barcode identifier. Returns nil if not found.
@@ -56,6 +61,17 @@ func NewStudentRepository(db db.PgxPoolIface) StudentRepository {
 	return &pgStudentRepository{db: db}
 }
 
+func scanStudent(row Scanner) (*Student, error) {
+	var s Student
+	err := row.Scan(
+		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
 // GetByBarcode fetches a student by barcode.
 func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) (*Student, error) {
 	query := `
@@ -64,17 +80,14 @@ func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) 
 		WHERE barcode_id = $1
 		LIMIT 1
 	`
-	var s Student
-	err := r.db.QueryRow(ctx, query, barcode).Scan(
-		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm,
-	)
+	s, err := scanStudent(r.db.QueryRow(ctx, query, barcode))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &s, nil
+	return s, nil
 }
 
 // GetByID fetches a student by ID.
@@ -85,17 +98,14 @@ func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student,
 		WHERE id = $1
 		LIMIT 1
 	`
-	var s Student
-	err := r.db.QueryRow(ctx, query, id).Scan(
-		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm,
-	)
+	s, err := scanStudent(r.db.QueryRow(ctx, query, id))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &s, nil
+	return s, nil
 }
 
 // SearchStudentsFuzzy performs a fuzzy search on student names.
@@ -117,14 +127,11 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 
 	var results []Student
 	for rows.Next() {
-		var s Student
-		err := rows.Scan(
-			&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm,
-		)
+		s, err := scanStudent(rows)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, s)
+		results = append(results, *s)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

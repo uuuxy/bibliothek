@@ -76,7 +76,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 				WHERE UPPER(role) = UPPER($1) AND permission = $2
 			`
 			err = s.DB.Pool.QueryRow(r.Context(), query, string(claims.Rolle), permission).Scan(&allowed)
-			
+
 			// Update Cache
 			permCacheMu.Lock()
 			permCache[cacheKey] = cacheEntry{

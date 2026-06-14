@@ -1,8 +1,8 @@
 package api
 
 import (
-	"net/http"
 	"bibliothek/repository"
+	"net/http"
 )
 
 func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.BookRepository, auditRepo repository.AuditRepository) {
@@ -36,7 +36,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("GET /api/vormerkungen", s.RequirePermission("view_books")(s.ListVormerkungHandler()))
 	mux.Handle("POST /api/vormerkungen", s.RequirePermission("view_books")(s.CreateVormerkungHandler()))
 	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_books")(s.DeleteVormerkungHandler()))
-	
+
 	// Klassensatz Reservierungen
 	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("view_students")(s.CreateKlassensatzReservierungHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenHandler()))

@@ -1,6 +1,9 @@
 package api
 
 import (
+	"bibliothek/apierrors"
+	"errors"
+
 	"fmt"
 	"net/http"
 	"strings"
@@ -67,7 +70,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Pool.Query(ctx, query)
 		if err != nil {
-			http.Error(w, "Fehler beim Abrufen der Datenbank", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Abrufen der Datenbank"))
 			return
 		}
 		defer rows.Close()
@@ -104,7 +107,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 		}
 
 		if len(studentOrder) == 0 {
-			http.Error(w, "Keine überfälligen Ausleihen gefunden", http.StatusNotFound)
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Keine überfälligen Ausleihen gefunden"))
 			return
 		}
 
@@ -133,11 +136,11 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 			pdf.SetFont("Arial", "", 11)
 			pdf.SetXY(20, 52)
-			
+
 			// Address block
 			pdf.CellFormat(85, 5, tr(fmt.Sprintf("Eltern von %s %s", student.Vorname, student.Nachname)), "", 1, "L", false, 0, "")
 			pdf.SetX(20)
-			
+
 			addrLine1 := "Adresse unbekannt"
 			addrLine2 := ""
 			if student.Strasse != "" {
@@ -156,7 +159,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			// --- Subject ---
 			pdf.SetFont("Arial", "B", 12)
 			pdf.SetXY(20, 100)
-			
+
 			parsedBetreff := strings.ReplaceAll(betreff, "{{.Vorname}}", student.Vorname)
 			parsedBetreff = strings.ReplaceAll(parsedBetreff, "{{.Nachname}}", student.Nachname)
 			pdf.Cell(0, 5, tr(parsedBetreff))
@@ -164,14 +167,14 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			// --- Body Text ---
 			pdf.SetFont("Arial", "", 11)
 			pdf.SetXY(20, 115)
-			
+
 			parsedText := strings.ReplaceAll(textBody, "{{.Vorname}}", student.Vorname)
 			parsedText = strings.ReplaceAll(parsedText, "{{.Nachname}}", student.Nachname)
 			parsedText = strings.ReplaceAll(parsedText, "{{.Frist}}", time.Now().Format("02.01.2006"))
 
 			// Split by the book list placeholder
 			parts := strings.Split(parsedText, "{{.BuchListe}}")
-			
+
 			// Print text before book list
 			pdf.MultiCell(170, 6, tr(parts[0]), "", "L", false)
 			pdf.Ln(5)
@@ -188,7 +191,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			pdf.SetFont("Arial", "", 10)
 			for _, b := range student.Books {
 				pdf.SetX(20)
-				
+
 				tTitle := b.Titel
 				if len(tTitle) > 38 {
 					tTitle = tTitle[:35] + "..."

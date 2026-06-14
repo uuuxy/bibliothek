@@ -1,5 +1,6 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiClient } from "./apiFetch.js";
+  import Modal from "./Modal.svelte";
 
   /** @type {{ student: any, onClose: () => void, onSave: () => void }} */
   let { student, onClose, onSave } = $props();
@@ -17,11 +18,13 @@
   });
 
   $effect(() => {
-    formData.strasse = student.strasse || "";
-    formData.hausnummer = student.hausnummer || "";
-    formData.plz = student.plz || "";
-    formData.ort = student.ort || "";
-    formData.eltern_email = student.eltern_email || "";
+    if (student) {
+      formData.strasse = student.strasse || "";
+      formData.hausnummer = student.hausnummer || "";
+      formData.plz = student.plz || "";
+      formData.ort = student.ort || "";
+      formData.eltern_email = student.eltern_email || "";
+    }
   });
 
   async function save() {
@@ -36,10 +39,7 @@
         eltern_email: formData.eltern_email || null,
       };
 
-      const res = await apiFetch(`/api/schueler/${student.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload)
-      });
+      const res = await apiClient.patch(`/api/schueler/${student.id}`, payload);
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Speichern fehlgeschlagen");
@@ -53,15 +53,11 @@
   }
 </script>
 
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-      <h2 class="text-lg font-bold text-slate-800">Schüler bearbeiten</h2>
-      <button onclick={onClose} aria-label="Schließen" class="text-slate-400 hover:text-slate-600 transition-colors">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-
+<Modal open={true} onclose={onClose} size="md">
+  {#snippet header()}
+    <h3 class="text-sm font-bold text-slate-800">Schüler bearbeiten</h3>
+  {/snippet}
+  {#snippet children()}
     <div class="p-6 overflow-y-auto">
       <div class="mb-6">
         <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Stammdaten (LUSD)</h3>
@@ -110,12 +106,12 @@
       </div>
     </div>
 
-    <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
-      <button onclick={onClose} class="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors">Abbrechen</button>
-      <button onclick={save} disabled={loading} class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center gap-2">
+    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-2">
+      <button onclick={onClose} disabled={loading} class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer font-sans">Abbrechen</button>
+      <button onclick={save} disabled={loading} class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-750 disabled:opacity-60 transition-colors cursor-pointer font-sans flex items-center gap-2">
         {#if loading}<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>{/if}
         Speichern
       </button>
     </div>
-  </div>
-</div>
+  {/snippet}
+</Modal>

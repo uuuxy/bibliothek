@@ -9,6 +9,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/plugins"
 	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -30,7 +31,7 @@ func (s *Server) handleGeraetAction(
 		FROM geraete
 		WHERE barcode_id = $1
 	`, query).Scan(&g.ID, &g.Modellname, &g.Seriennummer, &g.BarcodeID, &g.Zubehoer, &g.IstAusleihbar, &g.IstAusgesondert, &g.ZustandNotiz)
-	
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("%w: Gerät mit Barcode %s nicht gefunden", errNotFound, query)
@@ -121,7 +122,7 @@ func (s *Server) handleGeraetAction(
 			`, g.ID, teacher.ID, dueTime, claims.UserID).Scan(&newLoanID)
 			resp.Teacher = teacher
 		}
-		
+
 		if err != nil {
 			return err
 		}
@@ -146,7 +147,7 @@ func (s *Server) handleGeraetAction(
 	}
 
 	// Subcase B: Geraet is currently borrowed -> Return
-	
+
 	// Determine if Fremdrueckgabe
 	isFremd := false
 	if activeLoan.SchuelerID != nil {

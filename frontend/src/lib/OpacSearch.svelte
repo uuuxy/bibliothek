@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import AntolinBadge from './AntolinBadge.svelte';
 
   let query = $state('');

@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bibliothek/apierrors"
+	"errors"
+
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -35,7 +37,7 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 			WHERE rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP
 		`).Scan(&summary.TotalOverdue)
 		if err != nil {
-			http.Error(w, "Fehler beim Laden der Gesamtanzahl", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Gesamtanzahl"))
 			return
 		}
 
@@ -54,7 +56,7 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 			LIMIT 5
 		`)
 		if err != nil {
-			http.Error(w, "Fehler beim Laden der Top 5", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Top 5"))
 			return
 		}
 		defer rows.Close()
@@ -67,7 +69,6 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(summary)
+		RespondJSON(w, http.StatusOK, summary)
 	}
 }

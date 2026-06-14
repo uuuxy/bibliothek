@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
 
   /** @type {string} */
   let klasse = $state('');
@@ -19,14 +19,10 @@
 
     isExtending = true;
     try {
-      const res = await apiFetch('/api/ausleihen/global-extend-lmf', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const res = await apiClient.post('/api/ausleihen/global-extend-lmf', {
           klasse: klasse.trim(),
           neues_rueckgabe_datum: neuesDatum
-        })
-      });
+        });
 
       if (res.ok) {
         const data = await res.json();

@@ -1,7 +1,7 @@
 // stores/mahnwesen.svelte.js
 // Status- und Logikverwaltung für das Mahnwesen (Svelte 5 Runes)
 
-import { apiFetch } from "../apiFetch.js";
+import { apiFetch, apiClient } from "../apiFetch.js";
 
 export function createMahnwesenStore() {
     let data = $state(/** @type {{ klassen: any[] } | null} */ (null));

@@ -1,6 +1,6 @@
 <script>
   import Modal from "./Modal.svelte";
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
 
   let { open = false, readerGroups = [], onclose, onsuccess } = $props();
 
@@ -37,17 +37,13 @@
     }
     isSaving = true;
     try {
-      const res = await apiFetch("/api/schueler", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const res = await apiClient.post("/api/schueler", {
           vorname: newVorname.trim(),
           nachname: newNachname.trim(),
           klasse: newKlasse.trim(),
           barcode_id: newBarcode.trim(),
           geburtsdatum: newGeburtsdatum.trim() || null
-        })
-      });
+        });
       if (res.ok) {
         onsuccess?.();
       } else {

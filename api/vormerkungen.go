@@ -38,7 +38,7 @@ func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 
 		titelID := r.URL.Query().Get("titel_id")
 		schuelerID := r.URL.Query().Get("schueler_id")
-		
+
 		var rows pgx.Rows
 		var err error
 		if titelID != "" {
@@ -90,8 +90,7 @@ func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 			result = []Vormerkung{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(result)
+		RespondJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -118,9 +117,7 @@ func (s *Server) CreateVormerkungHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]string{"id": id})
+		RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
 	}
 }
 

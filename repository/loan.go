@@ -46,6 +46,17 @@ func NewLoanRepository(db db.PgxPoolIface) LoanRepository {
 	return &pgLoanRepository{db: db}
 }
 
+func scanLoan(row Scanner) (*Loan, error) {
+	var l Loan
+	err := row.Scan(
+		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &l, nil
+}
+
 // BeginTx starts a new READ COMMITTED transaction.
 // Read Committed is the correct isolation level for library operations:
 // it prevents dirty reads while allowing concurrent scanner throughput.
@@ -65,17 +76,14 @@ func (r *pgLoanRepository) GetActiveLoanByCopyID(ctx context.Context, copyID str
 		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL
 		LIMIT 1
 	`
-	var l Loan
-	err := r.db.QueryRow(ctx, query, copyID).Scan(
-		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
-	)
+	l, err := scanLoan(r.db.QueryRow(ctx, query, copyID))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &l, nil
+	return l, nil
 }
 
 // GetActiveLoanByCopyIDTx gets the active loan within a transaction using SELECT ... FOR UPDATE.
@@ -89,17 +97,14 @@ func (r *pgLoanRepository) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.T
 		LIMIT 1
 		FOR UPDATE
 	`
-	var l Loan
-	err := tx.QueryRow(ctx, query, copyID).Scan(
-		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
-	)
+	l, err := scanLoan(tx.QueryRow(ctx, query, copyID))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &l, nil
+	return l, nil
 }
 
 // CreateLoan inserts a new loan.
@@ -112,10 +117,7 @@ func (r *pgLoanRepository) CreateLoan(ctx context.Context, exemplarID, schuelerI
 		ON CONFLICT DO NOTHING
 		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
-	var l Loan
-	err := r.db.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID).Scan(
-		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
-	)
+	l, err := scanLoan(r.db.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
 			// ON CONFLICT DO NOTHING: duplicate scan suppressed, idempotent success
@@ -123,7 +125,7 @@ func (r *pgLoanRepository) CreateLoan(ctx context.Context, exemplarID, schuelerI
 		}
 		return nil, err
 	}
-	return &l, nil
+	return l, nil
 }
 
 // CreateLoanTx inserts a new loan inside a transaction.
@@ -134,17 +136,14 @@ func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplar
 		ON CONFLICT DO NOTHING
 		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
-	var l Loan
-	err := tx.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID).Scan(
-		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
-	)
+	l, err := scanLoan(tx.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &l, nil
+	return l, nil
 }
 
 // CreateUserLoan inserts a new user loan.
@@ -155,17 +154,14 @@ func (r *pgLoanRepository) CreateUserLoan(ctx context.Context, exemplarID, ausle
 		ON CONFLICT DO NOTHING
 		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
-	var l Loan
-	err := r.db.QueryRow(ctx, query, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat).Scan(
-		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
-	)
+	l, err := scanLoan(r.db.QueryRow(ctx, query, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &l, nil
+	return l, nil
 }
 
 // CreateUserLoanTx inserts a new user loan inside a transaction.
@@ -176,17 +172,14 @@ func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exem
 		ON CONFLICT DO NOTHING
 		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
-	var l Loan
-	err := tx.QueryRow(ctx, query, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat).Scan(
-		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
-	)
+	l, err := scanLoan(tx.QueryRow(ctx, query, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &l, nil
+	return l, nil
 }
 
 // ReturnLoan sets return fields.

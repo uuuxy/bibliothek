@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -55,12 +54,12 @@ func (s *Server) GetFehlbestandHandler() http.HandlerFunc {
 		if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p >= 1 {
 			page = p
 		}
-		
+
 		limit := 50
 		if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l >= 1 && l <= 500 {
 			limit = l
 		}
-		
+
 		offset := (page - 1) * limit
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -118,7 +117,6 @@ func (s *Server) GetFehlbestandHandler() http.HandlerFunc {
 			Limit:      limit,
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
+		RespondJSON(w, http.StatusOK, response)
 	}
 }

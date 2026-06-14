@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -38,8 +37,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		var req struct {
 			ISBN string `json:"isbn"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 		// Normalise: strip dashes and spaces
@@ -61,8 +59,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		`, req.ISBN).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL)
 		if err == nil {
 			resp.Exists = true
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(resp)
+			RespondJSON(w, http.StatusOK, resp)
 			return
 		}
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -79,7 +76,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 
 		// 3. Insert new title; use ON CONFLICT as safety net for concurrent inserts.
 		var newID, newTitel, newAutor, newVerlag, newCoverURL string
-		
+
 		// Parse jahr as integer if possible
 		var jahrInt *int
 		if meta.Jahr != "" {
@@ -114,7 +111,6 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		resp.Verlag = newVerlag
 		resp.CoverURL = newCoverURL
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(resp)
+		RespondJSON(w, http.StatusOK, resp)
 	}
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -44,9 +43,9 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		// The LEFT JOIN on ausleihen is filtered to active loans (rueckgabe_am IS NULL)
 		// only to determine availability — no ausleihe column values are returned.
 		args := []any{}
-		
+
 		var searchConditions []string
-		
+
 		if q != "" {
 			args = append(args, q)
 			searchConditions = append(searchConditions, `(bt.search_vector @@ plainto_tsquery('german', $1)
@@ -103,7 +102,6 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			result = []OpacTitel{}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(result)
+		RespondJSON(w, http.StatusOK, result)
 	}
 }

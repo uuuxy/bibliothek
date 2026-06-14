@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -49,8 +48,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 			suppliers = append(suppliers, sup)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(suppliers)
+		RespondJSON(w, http.StatusOK, suppliers)
 	}
 }
 
@@ -58,8 +56,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateSupplierRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -83,9 +80,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(SupplierResponse{
+		RespondJSON(w, http.StatusCreated, SupplierResponse{
 			ID:             newID,
 			Name:           req.Name,
 			Email:          req.Email,

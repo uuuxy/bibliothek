@@ -5,7 +5,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,8 +40,7 @@ func (s *Server) GetReordersHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(reorders)
+		RespondJSON(w, http.StatusOK, reorders)
 	}
 }
 
@@ -205,8 +203,7 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 		`
 		_ = s.DB.Pool.QueryRow(ctx, qLoss).Scan(&gesamtBestand, &verloreneExemplare, &verlustQuote)
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"popular_titles": popularTitles,
 			"shelf_warmers":  shelfWarmers,
 			"loss_stats": map[string]any{

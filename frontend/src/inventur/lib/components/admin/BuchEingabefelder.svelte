@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, apiClient } from "../../../../lib/apiFetch.js";
     import { onMount } from "svelte";
     import IsbnFeld from "./IsbnFeld.svelte";
     import { klassenStufen, schulZweige } from "$lib/components/admin/buch_form_optionen.js";

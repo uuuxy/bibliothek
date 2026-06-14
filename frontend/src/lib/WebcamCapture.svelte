@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { onMount } from "svelte";
 
   /** @type {{ studentId: string, onCapture: (url: string) => void, onClose: () => void }} */
@@ -60,11 +60,7 @@
         const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
 
         // Upload to backend
-        const res = await apiFetch(`/api/schueler/${studentId}/photo`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ photo_data: dataUrl })
-        });
+        const res = await apiClient.post(`/api/schueler/${studentId}/photo`, { photo_data: dataUrl });
 
         if (!res.ok) {
           throw new Error(await res.text() || "Upload fehlgeschlagen");

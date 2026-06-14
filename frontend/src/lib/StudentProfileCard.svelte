@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { studentTabExtensions } from "./plugins.svelte.js";
 
   /** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, onPrint: () => void, leftActions?: import('svelte').Snippet }} */
@@ -53,11 +53,7 @@
     abgangSaving = true;
     abgangError = "";
     try {
-      const res = await apiFetch(`/api/schueler/${profile.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ abgaenger_jahr: year })
-      });
+      const res = await apiClient.patch(`/api/schueler/${profile.id}`, { abgaenger_jahr: year });
       if (res.ok) {
         profile.abgaenger_jahr = year;
         editingAbgang = false;

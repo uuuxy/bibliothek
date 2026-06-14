@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
   import LitteraImportWidget from './LitteraImportWidget.svelte';
@@ -36,7 +36,7 @@
 
   async function loadSettings() {
     try {
-      const res = await apiFetch('/api/einstellungen');
+      const res = await apiClient.put('/api/einstellungen');
       if (res.ok) {
         const data = await res.json();
         ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;
@@ -68,18 +68,14 @@
   async function saveSettings() {
     saving = true;
     try {
-      const res = await apiFetch('/api/einstellungen', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const res = await apiClient.post('/api/einstellungen', {
           ferien_leseclub_aktiv: ferienLeseclubAktiv,
           ferien_leseclub_zieldatum: ferienLeseclubZieldatum || null,
           lmf_stichtag: lmfStichtag || '07-31',
           max_ausleihen_schueler: maxAusleihenSchueler,
           frist_buch_tage: fristBuchTage,
           frist_medien_tage: fristMedienTage
-        })
-      });
+        });
       if (res.ok) {
         showToast('Einstellungen gespeichert.');
       } else {
@@ -95,10 +91,7 @@
     if (!newMappingKlasse.trim() || !newMappingEmail.trim()) return;
     mappingSaving = true;
     try {
-      const res = await apiFetch('/api/klassen-mapping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ klasse: newMappingKlasse.trim(), lehrer_email: newMappingEmail.trim() })
+      const res = await apiClient.post('/api/klassen-mapping', { klasse: newMappingKlasse.trim(), lehrer_email: newMappingEmail.trim()
       });
       if (res.ok) {
         newMappingKlasse = '';

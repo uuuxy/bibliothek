@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -166,7 +165,7 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 			res.NewStudents++
 			if apply {
 				barcode := fmt.Sprintf("S-%05d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000) // Temporary unique short barcode
-				year := time.Now().Year() + 5                             // Default abgang
+				year := time.Now().Year() + 5                                                                 // Default abgang
 				geb := interface{}(rec.Geburtsdatum)
 				if rec.Geburtsdatum == "" {
 					geb = nil
@@ -233,8 +232,7 @@ func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(res)
+		RespondJSON(w, http.StatusOK, res)
 	}
 }
 
@@ -256,7 +254,6 @@ func (s *Server) PostLusdImportHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(res)
+		RespondJSON(w, http.StatusOK, res)
 	}
 }

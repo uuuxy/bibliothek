@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -89,8 +88,7 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(PromoteStudentsResponse{
+		RespondJSON(w, http.StatusOK, PromoteStudentsResponse{
 			VersetzteSchueler: versetzt,
 			NeueAbgaenger:     abgaenger,
 		})

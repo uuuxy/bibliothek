@@ -5,7 +5,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -62,19 +61,18 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 			logs = append(logs, l)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(logs)
+		RespondJSON(w, http.StatusOK, logs)
 	}
 }
 
 // RecentTransaction represents a recent checkout or return.
 type RecentTransaction struct {
-	Aktion          string    `json:"aktion"`
-	SchuelerVorname string    `json:"schueler_vorname"`
-	SchuelerNachname string   `json:"schueler_nachname"`
-	SchuelerBarcode string    `json:"schueler_barcode"`
-	Buchtitel       string    `json:"buchtitel"`
-	Timestamp       time.Time `json:"timestamp"`
+	Aktion           string    `json:"aktion"`
+	SchuelerVorname  string    `json:"schueler_vorname"`
+	SchuelerNachname string    `json:"schueler_nachname"`
+	SchuelerBarcode  string    `json:"schueler_barcode"`
+	Buchtitel        string    `json:"buchtitel"`
+	Timestamp        time.Time `json:"timestamp"`
 }
 
 // GetRecentTransactionsHandler returns the 15 most recent checkouts/returns.
@@ -119,7 +117,6 @@ func (s *Server) GetRecentTransactionsHandler() http.HandlerFunc {
 			txs = append(txs, tx)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(txs)
+		RespondJSON(w, http.StatusOK, txs)
 	}
 }

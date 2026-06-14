@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -29,10 +28,9 @@ func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) h
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"klassen": klassen,
-			"ferien_aktiv": isFerien,
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"klassen":            klassen,
+			"ferien_aktiv":       isFerien,
 			"ferien_bezeichnung": ferienName,
 		})
 	}
@@ -57,10 +55,9 @@ func (s *Server) GetMahnwesenJahrgangHandler(mahnRepo *repository.MahnwesenRepos
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"klassen": klassen,
-			"ferien_aktiv": isFerien,
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"klassen":            klassen,
+			"ferien_aktiv":       isFerien,
 			"ferien_bezeichnung": ferienName,
 		})
 	}

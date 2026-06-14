@@ -1,5 +1,5 @@
 <script>
-    import { apiFetch } from '../../../../lib/apiFetch.js';
+    import { apiFetch, apiClient } from "../../../../lib/apiFetch.js";
     import { showToast } from "$lib/store.svelte.js";
     import { onMount } from "svelte";
 

@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../lib/apiFetch.js';
+	import { apiFetch, apiClient } from "../../../lib/apiFetch.js";
 	import { onMount } from 'svelte';
 
 	let loading = $state(true);
@@ -29,7 +29,7 @@
 	async function fetchMapping() {
 		mappingLoading = true;
 		try {
-			const res = await apiFetch('/api/klassen-mapping');
+			const res = await apiClient.post('/api/klassen-mapping');
 			if (res.ok) mappingRows = await res.json();
 		} catch { /* ignore */ } finally {
 			mappingLoading = false;
@@ -40,10 +40,7 @@
 		if (!newMappingKlasse.trim() || !newMappingEmail.trim()) return;
 		mappingSaving = true;
 		try {
-			const res = await apiFetch('/api/klassen-mapping', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ klasse: newMappingKlasse.trim(), lehrer_email: newMappingEmail.trim() })
+			const res = await apiClient.post('/api/klassen-mapping', { klasse: newMappingKlasse.trim(), lehrer_email: newMappingEmail.trim()
 			});
 			if (res.ok) {
 				newMappingKlasse = '';
@@ -79,7 +76,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await apiFetch('/api/einstellungen');
+			const res = await apiClient.put('/api/einstellungen');
 			if (res.ok) {
 				const data = await res.json();
 				ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;
@@ -94,15 +91,11 @@
 	async function saveSettings() {
 		saving = true;
 		try {
-			const res = await apiFetch('/api/einstellungen', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
+			const res = await apiClient.post('/api/einstellungen', {
 					ferien_leseclub_aktiv: ferienLeseclubAktiv,
 					ferien_leseclub_zieldatum: ferienLeseclubZieldatum || null,
 					lmf_stichtag: lmfStichtag || '07-31'
-				})
-			});
+				});
 			if (res.ok) {
 				showToast('Einstellungen gespeichert.');
 			} else {

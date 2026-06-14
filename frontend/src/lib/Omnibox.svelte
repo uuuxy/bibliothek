@@ -6,7 +6,7 @@
   import OmniboxInput from "./components/OmniboxInput.svelte";
   import OmniboxResults from "./components/OmniboxResults.svelte";
   import OmniboxTeacherCard from "./OmniboxTeacherCard.svelte";
-  import { loadQueue, flushOfflineQueue } from "./offlineQueue.js";
+  import { loadQueue } from "./offlineQueue.js";
   import { omniboxStore } from "./stores/omnibox.svelte.js";
   import { appState } from "../inventur/lib/store.svelte.js";
 
@@ -36,22 +36,10 @@
       }
     });
 
-    // Offline / Online Erkennung
-    const handleOnline = async () => {
-      omniboxStore.isOffline = false;
-      omniboxStore.offlineQueueCount = await flushOfflineQueue(omniboxStore.showToast);
-    };
-    const handleOffline = () => { omniboxStore.isOffline = true; };
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    // Initialisiere Warteschlangen-Anzahl
-    loadQueue().then(q => { omniboxStore.offlineQueueCount = q.length; });
+    // Offline / Online Erkennung is now handled globally in offlineSync.svelte.js
 
     return () => {
       source.close();
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
     };
   });
 
@@ -124,12 +112,7 @@
   <div class="screen-flash screen-flash--{omniboxStore.screenFlash}" aria-hidden="true"></div>
 {/if}
 
-<!-- ── Offline / Queue banner ── -->
-<OfflineQueueBanner 
-  isOffline={omniboxStore.isOffline} 
-  offlineQueueCount={omniboxStore.offlineQueueCount} 
-  flushOfflineQueue={async () => { omniboxStore.offlineQueueCount = await flushOfflineQueue(omniboxStore.showToast); }} 
-/>
+<!-- ── Offline / Queue banner was replaced by global OfflineIndicator ── -->
 
 <div class="w-full mx-auto transition-all duration-500 ease-in-out {omniboxStore.isActive ? 'w-full pt-4 justify-start' : 'max-w-2xl min-h-[60vh] justify-center'} flex flex-col items-center space-y-6">
   <div class="w-full transition-all duration-500 {omniboxStore.isActive ? 'sticky -top-4 z-30 bg-slate-50/95 backdrop-blur-md py-4' : ''}">

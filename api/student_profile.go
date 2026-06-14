@@ -1,14 +1,13 @@
 package api
 
 import (
+	"bibliothek/apierrors"
+	"bibliothek/repository"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
-	"bibliothek/apierrors"
-	"bibliothek/repository"
 )
 
 // BorrowedBook represents a currently checked out book copy detail for the student.
@@ -144,8 +143,7 @@ func (s *Server) GetStudentProfileHandler(
 			EntlieheneBuecher: borrowedBooks,
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(resp)
+		RespondJSON(w, http.StatusOK, resp)
 	}
 }
 
@@ -178,7 +176,6 @@ func (s *Server) GetClassesHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(classes)
+		RespondJSON(w, http.StatusOK, classes)
 	}
 }

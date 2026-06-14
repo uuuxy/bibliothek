@@ -51,8 +51,7 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 		if cached, ok := antolinCache.Load(isbn); ok {
 			entry := cached.(*AntolinResult)
 			if time.Since(entry.cachedAt) < antolinCacheTTL {
-				w.Header().Set("Content-Type", "application/json")
-				_ = json.NewEncoder(w).Encode(entry)
+				RespondJSON(w, http.StatusOK, entry)
 				return
 			}
 		}
@@ -91,7 +90,6 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 		}
 
 		antolinCache.Store(isbn, result)
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(result)
+		RespondJSON(w, http.StatusOK, result)
 	}
 }

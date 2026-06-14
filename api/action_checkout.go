@@ -136,7 +136,7 @@ func (s *Server) handleUnifiedCheckoutFlow(
 		if borrowerType == "student" {
 			_, _ = tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, borrowerID)
 		}
-		
+
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
@@ -148,7 +148,7 @@ func (s *Server) handleUnifiedCheckoutFlow(
 			_ = auditRepo.LogAusleihe(ctx, copy.ID, "", borrowerID, staffID)
 			resp.Teacher = teacher
 		}
-		
+
 		resp.Type = "ausleihe"
 		resp.Book = copy
 		if loan != nil {
@@ -165,7 +165,7 @@ func (s *Server) handleUnifiedCheckoutFlow(
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
-		
+
 		if borrowerType == "student" {
 			_ = auditRepo.LogRueckgabe(ctx, copy.ID, borrowerID, "", staffID)
 			resp.Student = student

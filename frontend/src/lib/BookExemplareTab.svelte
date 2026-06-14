@@ -1,6 +1,6 @@
 <script>
   import { appState, showToast } from "../inventur/lib/store.svelte.js";
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
 
   /** @type {{ exemplare: any[], book: any, loadAll: (id: string) => void }} */
   let { exemplare = $bindable([]), book, loadAll } = $props();
@@ -27,10 +27,7 @@
     }
     barcodeError = "";
     try {
-      const res = await apiFetch(`/api/buecher/exemplare/${ex.id}/barcode`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ barcode: editBarcodeValue.trim() })
+      const res = await apiClient.put(`/api/buecher/exemplare/${ex.id}/barcode`, { barcode: editBarcodeValue.trim()
       });
       if (res.ok) {
         ex.barcode_id = editBarcodeValue.trim();
@@ -65,15 +62,11 @@
       const isAusleihbar = editStatusType === "Verfügbar";
       const isAusgesondert = editStatusType === "Verloren" ? true : false;
       const notiz = isAusleihbar ? "" : editStatusNote.trim();
-      const res = await apiFetch(`/api/buecher/exemplare/${ex.id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+      const res = await apiClient.put(`/api/buecher/exemplare/${ex.id}/status`, { 
           ist_ausleihbar: isAusleihbar,
           ist_ausgesondert: isAusgesondert,
           zustand_notiz: notiz
-        })
-      });
+        });
       if (res.ok) {
         ex.ist_ausleihbar = isAusleihbar;
         ex.ist_ausgesondert = isAusgesondert;

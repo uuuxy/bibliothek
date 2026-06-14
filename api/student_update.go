@@ -96,8 +96,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"status": "success",
 		})
 	}

@@ -16,7 +16,7 @@ import (
 func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		
+
 		// extract schueler_id from the URL path: /api/print/rechnung/{id}
 		idStr := r.PathValue("schueler_id")
 		schuelerID, err := uuid.Parse(idStr)
@@ -73,7 +73,7 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", `inline; filename="Rechnung.pdf"`)
 		w.Header().Set("Content-Length", fmt.Sprint(len(pdfBytes)))
-		
+
 		http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfBytes))
 	}
 }
@@ -82,7 +82,7 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 func PrintMahnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		
+
 		klasse := r.PathValue("klasse")
 		if klasse == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("klasse is required"))
@@ -158,7 +158,7 @@ func PrintMahnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 		w.Header().Set("Content-Length", fmt.Sprint(len(pdfBytes)))
-		
+
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}
 }
@@ -167,7 +167,7 @@ func PrintMahnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		
+
 		idStr := r.PathValue("schueler_id")
 		schuelerID, err := uuid.Parse(idStr)
 		if err != nil {
@@ -225,8 +225,7 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, filename))
 		w.Header().Set("Content-Length", fmt.Sprint(len(pdfBytes)))
-		
+
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}
 }
-

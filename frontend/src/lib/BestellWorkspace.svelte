@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { appState } from "../inventur/lib/store.svelte.js";
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { playSuccessBeep, playErrorBeep } from "./audio.js";
 
   import OrderCreationPanel from "./components/bestellungen/OrderCreationPanel.svelte";
@@ -73,11 +73,7 @@
   async function addSupplier(name, email, customerNumber) {
     if (!name || !email || !customerNumber) return;
     try {
-      const res = await apiFetch("/api/lieferanten", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, customerNumber })
-      });
+      const res = await apiClient.post("/api/lieferanten", { name, email, customerNumber });
       if (res.ok) {
         await loadSuppliers();
       } else {
@@ -115,11 +111,7 @@
       searchResults = []; showDropdown = false; isbnPreview = null; isbnLoading = true;
       (async () => {
         try {
-          const res = await apiFetch("/api/buecher/aus-isbn", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isbn: cleanQuery })
-          });
+          const res = await apiClient.post("/api/buecher/aus-isbn", { isbn: cleanQuery });
           if (res.ok) {
             isbnPreview = await res.json();
           } else {
@@ -132,11 +124,7 @@
       isbnPreview = null; isbnLoading = false;
       const performSearch = async () => {
         try {
-          const res = await apiFetch("/api/action", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: searchQuery })
-          });
+          const res = await apiClient.post("/api/action", { query: searchQuery });
           if (res.ok) {
             const data = await res.json();
             if (data.type === "search_results") {
@@ -168,15 +156,11 @@
     submittingOrder = true; orderMessage = null;
     const supplier = suppliers[selectedSupplierIdx];
     try {
-      const res = await apiFetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const res = await apiClient.post("/api/orders", {
           supplier_id: supplier.id,
           items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge, preis: Number(item.preis) || 0 })),
           generate_barcodes: generateBarcodes
-        })
-      });
+        });
       const data = await res.json();
       if (res.ok) {
         orderCart = [];
@@ -196,11 +180,7 @@
   async function receiveItem(titelId) {
     if (!scannedBarcode) return;
     try {
-      const res = await apiFetch("/api/orders/receive", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titel_id: titelId, barcode: scannedBarcode })
-      });
+      const res = await apiClient.post("/api/orders/receive", { titel_id: titelId, barcode: scannedBarcode });
       if (res.ok) {
         playSuccessBeep();
         showGreenFade = true;

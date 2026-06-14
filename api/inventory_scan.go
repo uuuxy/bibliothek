@@ -43,8 +43,7 @@ type InventoryScanResponse struct {
 func (s *Server) ScanInventoryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventoryScanRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
@@ -93,8 +92,7 @@ func (s *Server) ScanInventoryHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(InventoryScanResponse{
+		RespondJSON(w, http.StatusOK, InventoryScanResponse{
 			BarcodeID:       req.BarcodeID,
 			Titel:           title,
 			CoverURL:        coverURL,
@@ -130,8 +128,7 @@ func (s *Server) TitleVerlustBatchHandler() http.HandlerFunc {
 		}
 
 		if len(req.ExemplarIDs) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]any{"updated": 0})
+			RespondJSON(w, http.StatusOK, map[string]any{"updated": 0})
 			return
 		}
 
@@ -160,7 +157,7 @@ func (s *Server) TitleVerlustBatchHandler() http.HandlerFunc {
 			    inventur_geprueft_am = CURRENT_TIMESTAMP
 			WHERE titel_id = $1 AND id = ANY($2::uuid[])
 		`
-		
+
 		tag, err := tx.Exec(ctx, query, titelID, req.ExemplarIDs)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -175,8 +172,7 @@ func (s *Server) TitleVerlustBatchHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"updated": tag.RowsAffected(),
 		})
 	}

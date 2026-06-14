@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import { onMount } from "svelte";
   import UserManagement from "./UserManagement.svelte";
 
@@ -102,11 +102,7 @@
     const newVal = !currentVal;
 
     try {
-      const res = await apiFetch("/api/admin/permissions", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, permission, allowed: newVal })
-      });
+      const res = await apiClient.put("/api/admin/permissions", { role, permission, allowed: newVal });
 
       if (!res.ok) throw new Error("Fehler beim Speichern der Berechtigung.");
       permissionsState[role][permission] = newVal;

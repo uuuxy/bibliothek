@@ -1,5 +1,5 @@
 <script>
-    import { apiFetch } from './apiFetch.js';
+    import { apiFetch, apiClient } from "./apiFetch.js";
 
     /** @type {any[]} */
     let templates = $state([]);
@@ -16,7 +16,7 @@
 
     async function loadTemplates() {
         try {
-            const res = await apiFetch('/api/mail-templates');
+            const res = await apiClient.put('/api/mail-templates');
             if (res.ok) {
                 templates = await res.json() || [];
                 if (templates.length > 0 && !selectedTemplateId) {
@@ -38,14 +38,10 @@
         errorMessage = '';
 
         try {
-            const res = await apiFetch(`/api/mail-templates/${selectedTemplate.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            const res = await apiClient.put(`/api/mail-templates/${selectedTemplate.id}`, {
                     betreff: selectedTemplate.betreff,
                     text_body: selectedTemplate.text_body
-                })
-            });
+                });
 
             if (res.ok) {
                 saveSuccess = true;

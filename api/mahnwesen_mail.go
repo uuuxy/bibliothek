@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -25,8 +24,7 @@ type mahnwesenSendenRequest struct {
 func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req mahnwesenSendenRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 		if req.Klasse == "" {
@@ -100,8 +98,7 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 
 		if os.Getenv("SMTP_HOST") == "" {
 			log.Printf("MAHNWESEN: SMTP_HOST not set – skipping email dispatch for class %s", req.Klasse)
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{
+			RespondJSON(w, http.StatusOK, map[string]string{
 				"status":  "pdf_only",
 				"message": "SMTP nicht konfiguriert – E-Mail wurde nicht gesendet",
 			})
@@ -113,8 +110,7 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{
+		RespondJSON(w, http.StatusOK, map[string]string{
 			"status":  "sent",
 			"message": fmt.Sprintf("Mahnliste für Klasse %s an %s gesendet.", req.Klasse, req.Email),
 		})

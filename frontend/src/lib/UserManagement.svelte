@@ -14,7 +14,7 @@
    */
   import { onMount } from "svelte";
   import Modal from "./Modal.svelte";
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
 
   /** @type {any[]} */
   let users = $state.raw([]);

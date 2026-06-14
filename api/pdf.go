@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jung-kurt/gofpdf"
 )
@@ -77,12 +78,12 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		pdf.SetTextColor(100, 100, 100)
 		pdf.Cell(0, 4, tr("Schulbibliothek · Lindenallee 4 · 12345 Musterstadt"))
 		pdf.SetTextColor(0, 0, 0)
-		
+
 		// Date line (Right-aligned)
 		pdf.SetY(40)
 		pdf.SetFont("Arial", "", 10)
 		pdf.CellFormat(0, 6, fmt.Sprintf("Musterstadt, den %s", time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
-		
+
 		// DIN 5008 Address Window (approx. 45mm from top)
 		pdf.SetXY(20, 45)
 		pdf.SetFont("Arial", "B", 9)
@@ -165,7 +166,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		// Stream the generated PDF
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=elternbrief_%s.pdf", sNachname))
-		
+
 		if err := pdf.Output(w); err != nil {
 			log.Printf("PDF Generator: Output error: %v", err)
 			return

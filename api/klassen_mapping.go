@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -43,8 +42,7 @@ func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
 			mappings = append(mappings, m)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(mappings)
+		RespondJSON(w, http.StatusOK, mappings)
 	}
 }
 
@@ -53,8 +51,7 @@ func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
 func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req KlassenLehrerMapping
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 		if req.Klasse == "" || req.LehrerEmail == "" {
@@ -75,9 +72,7 @@ func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 

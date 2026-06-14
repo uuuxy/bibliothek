@@ -1,5 +1,5 @@
 <script>
-  import { apiFetch } from "./apiFetch.js";
+  import { apiFetch, apiClient } from "./apiFetch.js";
   import OverdueWidget from "./OverdueWidget.svelte";
   
   // State Runes (Svelte 5)

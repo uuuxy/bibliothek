@@ -21,9 +21,7 @@ func DecodeJSON[T any](w http.ResponseWriter, r *http.Request, target *T) bool {
 // RespondJSON encodes the payload as JSON and sends it with the given HTTP status code.
 // It sets the Content-Type header to application/json.
 func RespondJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
+	RespondJSON(w, status, payload)
 }
 
 // RespondSuccess is a convenience function that sends a {"status": "success"} JSON response.

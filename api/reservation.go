@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -40,8 +39,7 @@ type KlassensatzReservierung struct {
 func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req KlassensatzReservierungRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 		if req.TitelID == "" || req.Klasse == "" {
@@ -88,9 +86,7 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]string{"id": newID, "status": "erstellt"})
+		RespondJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": "erstellt"})
 	}
 }
 
@@ -128,8 +124,7 @@ func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 			result = append(result, res)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(result)
+		RespondJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -145,8 +140,7 @@ func (s *Server) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 			`SELECT COUNT(*) FROM klassensatz_reservierungen WHERE erledigt = false`,
 		).Scan(&count)
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]int{"anzahl": count})
+		RespondJSON(w, http.StatusOK, map[string]int{"anzahl": count})
 	}
 }
 

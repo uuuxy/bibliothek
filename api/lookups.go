@@ -1,7 +1,9 @@
 package api
 
 import (
-	"encoding/json"
+	"bibliothek/apierrors"
+	"errors"
+
 	"net/http"
 )
 
@@ -11,7 +13,7 @@ func (s *Server) GetSystematicsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		rows, err := s.DB.Pool.Query(ctx, "SELECT id, kuerzel, bezeichnung FROM systematik_kategorien ORDER BY bezeichnung ASC")
 		if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Database error"))
 			return
 		}
 		defer rows.Close()
@@ -30,8 +32,7 @@ func (s *Server) GetSystematicsHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(results)
+		RespondJSON(w, http.StatusOK, results)
 	}
 }
 
@@ -41,7 +42,7 @@ func (s *Server) GetReaderGroupsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		rows, err := s.DB.Pool.Query(ctx, "SELECT id, kuerzel, bezeichnung FROM lesergruppen ORDER BY bezeichnung ASC")
 		if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Database error"))
 			return
 		}
 		defer rows.Close()
@@ -60,7 +61,6 @@ func (s *Server) GetReaderGroupsHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(results)
+		RespondJSON(w, http.StatusOK, results)
 	}
 }

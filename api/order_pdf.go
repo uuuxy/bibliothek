@@ -136,7 +136,7 @@ func GenerateBarcodeSheetPDF(labels []BarcodeLabelDetail) ([]byte, error) {
 		pdf.SetFont("Arial", "B", 8)
 		pdf.SetXY(x+2, y+3)
 		pdf.Cell(colWidth-4, 4, tr(label.Titel))
-		
+
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(x+2, y+7)
 		pdf.Cell(colWidth-4, 4, tr(label.Autor))

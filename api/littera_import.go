@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,8 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"bibliothek/apierrors"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type LitteraImportResponse struct {
@@ -160,7 +160,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			}
 
 			isbn := strings.ReplaceAll(getCol("isbn"), "-", "")
-			
+
 			titelID := ""
 			if isbn != "" && isbnToID[isbn] != "" {
 				titelID = isbnToID[isbn]
@@ -209,7 +209,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				t := newTitlesMap[key]
 				batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, t.Kategorie)
 			}
-			
+
 			br := tx.SendBatch(ctx, batch)
 			for _, key := range newTitlesOrder {
 				var insertedID string
@@ -256,7 +256,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				continue
 			}
 			isbn := strings.ReplaceAll(getCol("isbn"), "-", "")
-			
+
 			titelID := ""
 			if isbn != "" && isbnToID[isbn] != "" {
 				titelID = isbnToID[isbn]
@@ -282,7 +282,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			for _, c := range copiesToInsert {
 				batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode)
 			}
-			
+
 			bcr := tx.SendBatch(ctx, batchCopies)
 			for i := 0; i < len(copiesToInsert); i++ {
 				var id string
@@ -300,8 +300,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(LitteraImportResponse{
+		RespondJSON(w, http.StatusOK, LitteraImportResponse{
 			NewTitles:      newTitlesCount,
 			ImportedCopies: importedCopiesCount,
 		})

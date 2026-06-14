@@ -1,17 +1,17 @@
 // stores/labels.svelte.js
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
-import { apiFetch } from "../apiFetch.js";
+import { apiFetch, apiClient } from "../apiFetch.js";
 import { appState } from "../../inventur/lib/store.svelte.js";
 
 export function createLabelStore() {
     let searchVal = $state("");
-    let searchResults = $state(/** @type {any[]} */ ([]));
+    let searchResults = $state.raw(/** @type {any[]} */ ([]));
     let isSearching = $state(false);
 
-    let classGroups = $state(/** @type {any[]} */ ([]));
+    let classGroups = $state.raw(/** @type {any[]} */ ([]));
     let selectedClass = $state("");
-    let classBooks = $state(/** @type {any[]} */ ([]));
+    let classBooks = $state.raw(/** @type {any[]} */ ([]));
 
     let selectedTitle = $state(/** @type {any} */ (null));
     let barcodeType = $state("code39"); // "code39" | "qr"
@@ -19,7 +19,7 @@ export function createLabelStore() {
     let startPosition = $state(1); // 1 to 21
 
     let generationMode = $state("existing");
-    let existingCopies = $state(/** @type {any[]} */ ([]));
+    let existingCopies = $state.raw(/** @type {any[]} */ ([]));
     let loadingCopies = $state(false);
     let newQuantity = $state(9);
     let newStartNum = $state(20060);
@@ -99,10 +99,7 @@ export function createLabelStore() {
         isSearching = true;
         searchTimeout = setTimeout(async () => {
             try {
-                const res = await apiFetch("/api/action", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ query: searchVal.trim() })
+                const res = await apiClient.post("/api/action", { query: searchVal.trim()
                 });
                 if (res.ok) {
                     const body = await res.json();
@@ -176,6 +173,7 @@ export function createLabelStore() {
         get generationMode() { return generationMode; },
         set generationMode(v) { generationMode = v; },
         get existingCopies() { return existingCopies; },
+        set existingCopies(v) { existingCopies = v; },
         get loadingCopies() { return loadingCopies; },
         get newQuantity() { return newQuantity; },
         set newQuantity(v) { newQuantity = v; },

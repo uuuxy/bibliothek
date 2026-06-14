@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, apiClient } from "../../../../lib/apiFetch.js";
 	import { onMount } from "svelte";
         import ClassAssignmentDialog from "./ClassAssignmentDialog.svelte";
 	import KlassenKarte from "./KlassenKarte.svelte";

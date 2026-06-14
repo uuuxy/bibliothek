@@ -47,6 +47,29 @@ func NewBookRepository(db db.PgxPoolIface) BookRepository {
 	return &pgBookRepository{db: db}
 }
 
+func scanBookCopy(row Scanner) (*BookCopy, error) {
+	var bc BookCopy
+	err := row.Scan(
+		&bc.ID, &bc.TitelID, &bc.BarcodeID, &bc.ZustandNotiz, &bc.ErworbenAm, &bc.IstAusleihbar, &bc.IstAusgesondert, &bc.ErstelltAm, &bc.AktualisiertAm,
+		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL, &bc.Medientyp, &bc.ErweiterteEigenschaften,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &bc, nil
+}
+
+func scanBookTitle(row Scanner) (*BookTitle, error) {
+	var t BookTitle
+	err := row.Scan(
+		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
 // GetCopyByBarcode resolves physical book copy by barcode.
 func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string) (*BookCopy, error) {
 	query := `
@@ -58,18 +81,14 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 		WHERE e.barcode_id = $1
 		LIMIT 1
 	`
-	var bc BookCopy
-	err := r.db.QueryRow(ctx, query, barcode).Scan(
-		&bc.ID, &bc.TitelID, &bc.BarcodeID, &bc.ZustandNotiz, &bc.ErworbenAm, &bc.IstAusleihbar, &bc.IstAusgesondert, &bc.ErstelltAm, &bc.AktualisiertAm,
-		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL, &bc.Medientyp, &bc.ErweiterteEigenschaften,
-	)
+	bc, err := scanBookCopy(r.db.QueryRow(ctx, query, barcode))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &bc, nil
+	return bc, nil
 }
 
 // SearchTitles performs full-text query matching on book titles and authors.
@@ -95,14 +114,11 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 
 	var results []BookTitle
 	for rows.Next() {
-		var t BookTitle
-		err := rows.Scan(
-			&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
-		)
+		t, err := scanBookTitle(rows)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, t)
+		results = append(results, *t)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -131,14 +147,11 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 
 	var results []BookTitle
 	for rows.Next() {
-		var t BookTitle
-		err := rows.Scan(
-			&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
-		)
+		t, err := scanBookTitle(rows)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, t)
+		results = append(results, *t)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

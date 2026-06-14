@@ -1,8 +1,9 @@
 // stores/kiosk.svelte.js
 // Status- und Logikverwaltung für den Kiosk-Modus (Svelte 5 Runes)
 
-import { apiFetch } from "../apiFetch.js";
-import { enqueueOfflineScan } from "../offlineQueue.js";
+import { apiFetch, apiClient } from "../apiFetch.js";
+import { enqueueOfflineAction } from "../offlineQueue.js";
+import { offlineSync } from "./offlineSync.svelte.js";
 import { playSuccessBeep, playErrorBeep } from "../audio.js";
 import { tick } from "svelte";
 
@@ -97,7 +98,7 @@ export function createKioskStore() {
     // ── Daten laden ───────────────────────────────────────────────────
     async function fetchSettings() {
         try {
-            const res = await apiFetch("/api/einstellungen");
+            const res = await apiClient.post("/api/einstellungen");
             if (res.ok) {
                 systemSettings = await res.json();
             }
@@ -110,11 +111,7 @@ export function createKioskStore() {
         if (!val) return;
         isScanningStudent = true;
         try {
-            const res = await apiFetch("/api/action", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: val })
-            });
+            const res = await apiClient.post("/api/action", { query: val });
             if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
             if (data.type === "student") {
@@ -130,7 +127,16 @@ export function createKioskStore() {
                 throw new Error("Barcode ist kein Schülerausweis.");
             }
         } catch (e) {
-            triggerFlash("error", e instanceof Error ? e.message : "Schüler nicht gefunden.");
+            if (e instanceof TypeError || !window.navigator.onLine) {
+                // We don't enqueue student-only scans if we just want a session, 
+                // but since the original logic did, let's enqueue as 'checkin' temporarily or ignore.
+                // Wait, if it's just a student scan, it's not a checkout or checkin. 
+                // We should NOT enqueue a student scan, we just error out. 
+                // The offline queue is for checkout/checkin.
+                triggerFlash("warning", "Offline: Schüler kann nicht geladen werden.");
+            } else {
+                triggerFlash("error", e instanceof Error ? e.message : "Schüler nicht gefunden.");
+            }
             studentInputVal = "";
             focusStudentInput();
         } finally {
@@ -145,11 +151,7 @@ export function createKioskStore() {
         
         isScanningBook = true;
         try {
-            const res = await apiFetch("/api/action", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: val, active_student_id: activeStudent.id })
-            });
+            const res = await apiClient.post("/api/action", { query: val, active_student_id: activeStudent.id });
             if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
             if (data.type === "ausleihe") {
@@ -185,13 +187,15 @@ export function createKioskStore() {
             }
         } catch (err) {
             const e = /** @type {any} */ (err);
-            if (e instanceof TypeError && (e.message.includes("Failed to fetch") || e.message.includes("NetworkError"))) {
-                await enqueueOfflineScan(val, activeStudent.id, null);
-                triggerFlash("warning", "Offline: Scan gespeichert. Wird synchronisiert, sobald das Netzwerk wieder da ist.");
+            if (e instanceof TypeError || !window.navigator.onLine) {
+                await enqueueOfflineAction("checkout", val, activeStudent.id);
+                offlineSync.updateCount();
+                scannedBooks = [{ barcode: val, titel: "Offline Ausleihe", autor: "Bitte synchronisieren" }, ...scannedBooks];
+                triggerFlash("warning", "Offline: Ausleihe gespeichert. Wird synchronisiert, sobald das Netzwerk wieder da ist.");
             } else {
-                triggerFlash("error", e instanceof Error ? e.message : "Fehler beim Buchen.");
+                triggerFlash("error", e instanceof Error ? e.message : "Fehler beim Scannen.");
+                playErrorBeep();
             }
-            focusBookInput();
         } finally {
             isScanningBook = false;
         }
@@ -207,15 +211,11 @@ export function createKioskStore() {
         if (!damageDescription.trim() || !returnedBook) return;
         isSubmittingDamage = true;
         try {
-            const res = await apiFetch(`/api/buecher/exemplare/${returnedBook.id}/defekt`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
+            const res = await apiClient.post(`/api/buecher/exemplare/${returnedBook.id}/defekt`, { 
                     loan_id: returnedLoanId || undefined, 
                     schueler_id: activeStudent?.id || undefined,
                     betrag: 0,
                     beschreibung: damageDescription.trim()
-                })
             });
             if (!res.ok) throw new Error(await res.text());
             triggerFlash("success", "Mangel gespeichert! Exemplar gesperrt.");
@@ -232,11 +232,7 @@ export function createKioskStore() {
         if (!vormerkenQuery.trim()) return;
         isSearchingVormerken = true;
         try {
-            const res = await apiFetch("/api/action", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: vormerkenQuery })
-            });
+            const res = await apiClient.post("/api/action", { query: vormerkenQuery });
             if (!res.ok) throw new Error("Fehler bei der Suche");
             const data = await res.json();
             vormerkenResults = data.search_results || [];
@@ -252,11 +248,7 @@ export function createKioskStore() {
         if (!activeStudent) return;
         isSubmittingVormerken = true;
         try {
-            const res = await apiFetch("/api/vormerkungen", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ titel_id: titelId, schueler_id: activeStudent.id, notiz: "Vorgemerkt im Kiosk" })
-            });
+            const res = await apiClient.post("/api/vormerkungen", { titel_id: titelId, schueler_id: activeStudent.id, notiz: "Vorgemerkt im Kiosk" });
             if (!res.ok) throw new Error(await res.text());
             triggerFlash("success", "Erfolgreich vorgemerkt!");
             showVormerkenModal = false;
@@ -273,15 +265,11 @@ export function createKioskStore() {
         if (!pendingGeraet || !activeStudent || checklistItems.length !== checkedItems.size) return;
         isSubmittingChecklist = true;
         try {
-            const res = await apiFetch("/api/action", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
+            const res = await apiClient.post("/api/action", { 
                     query: pendingGeraetQuery, 
                     active_student_id: activeStudent.id,
                     confirmed_checklist: true
-                })
-            });
+                });
             if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
             

@@ -1,15 +1,18 @@
 import { openDB } from "idb";
-import { apiFetch } from "./apiFetch.js";
-import { playSoundSuccess, playSoundError } from "./audio.js";
 
 const DB_NAME = "bibliothek-offline-db";
-const STORE_NAME = "scans";
+const STORE_NAME = "offline_actions";
 
 async function getDB() {
-  return openDB(DB_NAME, 1, {
-    upgrade(db) {
+  return openDB(DB_NAME, 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 2) {
+        if (db.objectStoreNames.contains("scans")) {
+          db.deleteObjectStore("scans");
+        }
+      }
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+        db.createObjectStore(STORE_NAME, { keyPath: "id" });
       }
     }
   });
@@ -30,96 +33,59 @@ export async function loadQueue() {
 }
 
 /**
- * Enqueues a new scan to the offline queue in IndexedDB.
- * @param {string} barcode
- * @param {string|null} studentID
- * @param {string|null} teacherID
- * @returns {Promise<number>} Number of items in the queue
+ * Enqueues a new action to the offline queue in IndexedDB.
+ * @param {'checkout' | 'checkin'} action_type
+ * @param {string} barcode_id
+ * @param {string|null} schueler_id
+ * @returns {Promise<void>}
  */
-export async function enqueueOfflineScan(barcode, studentID, teacherID) {
+export async function enqueueOfflineAction(action_type, barcode_id, schueler_id = null) {
   try {
     const db = await getDB();
-    const q = await db.getAll(STORE_NAME);
-    const alreadyQueued = q.some(
-      (/** @type {any} */ item) => item.barcode === barcode && item.studentID === studentID && item.teacherID === teacherID
-    );
-    if (!alreadyQueued) {
-      await db.add(STORE_NAME, { barcode, studentID, teacherID, queuedAt: Date.now() });
-    }
-    const updated = await db.getAll(STORE_NAME);
-    return updated.length;
+    const id = crypto.randomUUID();
+    await db.add(STORE_NAME, {
+      id,
+      action_type,
+      barcode_id,
+      schueler_id,
+      timestamp: Date.now()
+    });
   } catch (err) {
-    console.error("Failed to enqueue offline scan to IndexedDB:", err);
-    return 0;
+    console.error("Failed to enqueue offline action to IndexedDB:", err);
   }
 }
 
 /**
- * Flushes the offline queue by sending all scans to the server.
- * @param {function(string, string): void} [showToast]
- * @returns {Promise<number>} Number of items remaining in the queue
+ * Retrieves the oldest action from the queue.
+ * @returns {Promise<any | null>}
  */
-export async function flushOfflineQueue(showToast) {
-  const toast = typeof showToast === "function" ? showToast : () => {};
-  const q = await loadQueue();
-  if (q.length === 0) return 0;
-
-  toast(`📡 Verbindung wiederhergestellt – ${q.length} Offline-Scan(s) werden nachgesendet…`, "success");
-
-  const db = await getDB();
-
-  // Prepare payload for the batch API
-  const batchPayload = q.map(item => ({
-    query: item.barcode,
-    active_student_id: item.studentID ?? undefined,
-    active_teacher_id: item.teacherID ?? undefined
-  }));
-
+export async function peekOfflineAction() {
   try {
-    const res = await apiFetch("/api/action/batch", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(batchPayload),
-      signal: AbortSignal.timeout(15000) // Slightly longer timeout for batch
-    });
-
-    if (!res.ok) {
-      console.error("[OfflineQueue] Batch API returned error status:", res.status);
-      toast(`⚠️ Fehler beim Übertragen der Offline-Scans (Status ${res.status}).`, "error");
-      return q.length;
-    }
-
-    const { results } = await res.json();
-    let remainingCount = 0;
-
-    // Process the batch results
-    for (let i = 0; i < q.length; i++) {
-      const item = q[i];
-      const result = results.find((/** @type {any} */ r) => r.index === i);
-
-      if (result) {
-        if (!result.success) {
-          console.warn("[OfflineQueue] Permanent error for", item.barcode, result.status, result.error);
-        }
-        // Either successful or permanent business error: remove from queue
-        await db.delete(STORE_NAME, item.id);
-      } else {
-        // Missing in response, keep in queue
-        remainingCount++;
-      }
-    }
-
-    if (remainingCount === 0) {
-      toast(`✅ Alle Offline-Scans erfolgreich nachgesendet.`, "success");
-      playSoundSuccess();
-    } else {
-      toast(`⚠️ ${remainingCount} Scan(s) konnten noch nicht übertragen werden.`, "warning");
-    }
-    return remainingCount;
-
+    const db = await getDB();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    // Use cursor to get the first one (they are ordered by ID but we should sort by timestamp if possible)
+    // For simplicity, getAll and then sort by timestamp is fine since queue is usually small.
+    const all = await store.getAll();
+    if (all.length === 0) return null;
+    all.sort((a, b) => a.timestamp - b.timestamp);
+    return all[0];
   } catch (err) {
-    console.error("[OfflineQueue] Network error while flushing batch:", err);
-    toast(`⚠️ Netzwerkfehler beim Nachsenden der Scans.`, "warning");
-    return q.length;
+    console.error("Failed to peek offline queue:", err);
+    return null;
+  }
+}
+
+/**
+ * Deletes an action from the queue.
+ * @param {string} id
+ * @returns {Promise<void>}
+ */
+export async function dequeueOfflineAction(id) {
+  try {
+    const db = await getDB();
+    await db.delete(STORE_NAME, id);
+  } catch (err) {
+    console.error(`Failed to dequeue offline action ${id}:`, err);
   }
 }

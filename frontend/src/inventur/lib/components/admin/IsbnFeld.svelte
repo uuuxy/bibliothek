@@ -4,7 +4,7 @@
   Einen für die API-Abfrage der Metadaten und einen für den Barcode-Scanner.
 -->
 <script>
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, apiClient } from "../../../../lib/apiFetch.js";
     let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
     let isLookupActive = $state(false);

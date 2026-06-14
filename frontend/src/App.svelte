@@ -4,11 +4,13 @@
   
   import { authStore } from "./lib/stores/authStore.svelte.js";
   import { uiStore } from "./lib/stores/uiStore.svelte.js";
+  import { offlineSync } from "./lib/stores/offlineSync.svelte.js";
   import { appState } from "./inventur/lib/store.svelte.js";
   
   import Login from "./lib/components/auth/Login.svelte";
   import Sidebar from "./lib/components/layout/Sidebar.svelte";
   import Router from "./lib/Router.svelte";
+  import OfflineIndicator from "./lib/components/OfflineIndicator.svelte";
 
   const _currentPath = window.location.pathname;
 
@@ -19,6 +21,7 @@
     }
     if (authStore.currentUser.rolle !== "admin" && authStore.currentUser.rolle !== "mitarbeiter") return;
     uiStore.fetchPendingReservierungen();
+    offlineSync.init();
     const id = setInterval(() => uiStore.fetchPendingReservierungen(), 30_000);
     return () => clearInterval(id);
   });
@@ -71,6 +74,7 @@
     </div>
   {/if}
 {/if}
+<OfflineIndicator />
 </main>
 
 <style>

@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../lib/apiFetch.js';
+	import { apiFetch, apiClient } from "../../../lib/apiFetch.js";
 	import IsbnLookupDialog from "$lib/components/IsbnLookupDialog.svelte";
 	import KameraScanner from "$lib/components/scanner/KameraScanner.svelte";
 	import ManualInput from "$lib/components/scanner/ManualInput.svelte";

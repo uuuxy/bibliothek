@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, apiClient } from "../../../../lib/apiFetch.js";
 	import { onMount } from "svelte";
 	import BuchAuswahlListe from "$lib/components/admin/BuchAuswahlListe.svelte";
 	import KlassenNamenEditor from "$lib/components/admin/KlassenNamenEditor.svelte";

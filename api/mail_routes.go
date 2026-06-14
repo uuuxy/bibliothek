@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bibliothek/apierrors"
+	"errors"
+
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,7 +19,7 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		schuelerID := r.PathValue("schuelerID")
 		if schuelerID == "" {
-			http.Error(w, "schuelerID fehlt", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("schuelerID fehlt"))
 			return
 		}
 
@@ -28,12 +30,12 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 		var elternEmail *string
 		err := s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname, eltern_email FROM schueler WHERE id = $1", schuelerID).Scan(&vorname, &nachname, &elternEmail)
 		if err != nil {
-			http.Error(w, "Schüler nicht gefunden", http.StatusNotFound)
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Schüler nicht gefunden"))
 			return
 		}
 
 		if elternEmail == nil || strings.TrimSpace(*elternEmail) == "" {
-			http.Error(w, "Keine Eltern-E-Mail hinterlegt", http.StatusUnprocessableEntity)
+			apierrors.SendHTTPError(w, http.StatusUnprocessableEntity, errors.New("Keine Eltern-E-Mail hinterlegt"))
 			return
 		}
 
@@ -47,7 +49,7 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 		`, schuelerID)
 
 		if err != nil {
-			http.Error(w, "Fehler beim Laden der Ausleihen", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Ausleihen"))
 			return
 		}
 		defer rows.Close()
@@ -61,7 +63,7 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 		}
 
 		if len(buecherListe) == 0 {
-			http.Error(w, "Keine überfälligen Bücher für diesen Schüler", http.StatusUnprocessableEntity)
+			apierrors.SendHTTPError(w, http.StatusUnprocessableEntity, errors.New("Keine überfälligen Bücher für diesen Schüler"))
 			return
 		}
 
@@ -78,13 +80,12 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 		err = mailservice.SendTemplateMail(ctx, s.DB.Pool, *elternEmail, "MAHNUNG_ELTERN", data)
 		if err != nil {
 			log.Printf("Fehler beim E-Mail-Versand (Schüler %s): %v", schuelerID, err)
-			http.Error(w, "Fehler beim E-Mail-Versand", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim E-Mail-Versand"))
 			return
 		}
 
 		// 5. Erfolgreiche Antwort
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{
+		RespondJSON(w, http.StatusOK, map[string]string{
 			"message": "Mail an Eltern wurde verschickt",
 		})
 	}
@@ -95,19 +96,18 @@ func (s *Server) PostSendNotificationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		schuelerID := r.PathValue("schuelerID")
 		if schuelerID == "" {
-			http.Error(w, "schuelerID fehlt", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("schuelerID fehlt"))
 			return
 		}
 
 		var req struct {
 			TemplateType string `json:"templateType"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "ungültiger Body", http.StatusBadRequest)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 		if req.TemplateType == "" {
-			http.Error(w, "templateType fehlt", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("templateType fehlt"))
 			return
 		}
 
@@ -117,12 +117,12 @@ func (s *Server) PostSendNotificationHandler() http.HandlerFunc {
 		var elternEmail *string
 		err := s.DB.Pool.QueryRow(ctx, "SELECT vorname, nachname, eltern_email FROM schueler WHERE id = $1", schuelerID).Scan(&vorname, &nachname, &elternEmail)
 		if err != nil {
-			http.Error(w, "Schüler nicht gefunden", http.StatusNotFound)
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Schüler nicht gefunden"))
 			return
 		}
 
 		if elternEmail == nil || strings.TrimSpace(*elternEmail) == "" {
-			http.Error(w, "Keine Eltern-E-Mail hinterlegt", http.StatusUnprocessableEntity)
+			apierrors.SendHTTPError(w, http.StatusUnprocessableEntity, errors.New("Keine Eltern-E-Mail hinterlegt"))
 			return
 		}
 
@@ -136,7 +136,7 @@ func (s *Server) PostSendNotificationHandler() http.HandlerFunc {
 		`, schuelerID)
 
 		if err != nil {
-			http.Error(w, "Fehler beim Laden der Ausleihen", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Ausleihen"))
 			return
 		}
 		defer rows.Close()
@@ -164,12 +164,11 @@ func (s *Server) PostSendNotificationHandler() http.HandlerFunc {
 		err = mailservice.SendTemplateMail(ctx, s.DB.Pool, *elternEmail, req.TemplateType, data)
 		if err != nil {
 			log.Printf("Fehler beim E-Mail-Versand (Schüler %s): %v", schuelerID, err)
-			http.Error(w, "Fehler beim E-Mail-Versand", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim E-Mail-Versand"))
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{
+		RespondJSON(w, http.StatusOK, map[string]string{
 			"message": "Mail erfolgreich versendet",
 		})
 	}
@@ -191,7 +190,7 @@ func (s *Server) PostSendBulkOverdueHandler() http.HandlerFunc {
 			ORDER BY s.id
 		`)
 		if err != nil {
-			http.Error(w, "Fehler beim Laden der überfälligen Ausleihen", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der überfälligen Ausleihen"))
 			return
 		}
 		defer rows.Close()
@@ -251,8 +250,7 @@ func (s *Server) PostSendBulkOverdueHandler() http.HandlerFunc {
 			}
 		}(overdues)
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		RespondJSON(w, http.StatusOK, map[string]any{
 			"message":    "Massen-Versand wurde im Hintergrund gestartet",
 			"ohne_email": ohneEmail,
 		})
@@ -265,7 +263,7 @@ func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 		ctx := r.Context()
 		rows, err := s.DB.Pool.Query(ctx, "SELECT id, typ, betreff, text_body, updated_at FROM mail_vorlagen ORDER BY typ ASC")
 		if err != nil {
-			http.Error(w, "Fehler beim Laden der Vorlagen", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Vorlagen"))
 			return
 		}
 		defer rows.Close()
@@ -288,8 +286,7 @@ func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(templates)
+		RespondJSON(w, http.StatusOK, templates)
 	}
 }
 
@@ -298,7 +295,7 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "ID fehlt", http.StatusBadRequest)
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ID fehlt"))
 			return
 		}
 
@@ -306,19 +303,17 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 			Betreff  string `json:"betreff"`
 			TextBody string `json:"text_body"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "ungültiger Body", http.StatusBadRequest)
+		if !DecodeJSON(w, r, &req) {
 			return
 		}
 
 		ctx := r.Context()
 		_, err := s.DB.Pool.Exec(ctx, "UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE id = $3", req.Betreff, req.TextBody, id)
 		if err != nil {
-			http.Error(w, "Fehler beim Aktualisieren der Vorlage", http.StatusInternalServerError)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Aktualisieren der Vorlage"))
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Erfolgreich gespeichert"})
+		RespondJSON(w, http.StatusOK, map[string]string{"message": "Erfolgreich gespeichert"})
 	}
 }
