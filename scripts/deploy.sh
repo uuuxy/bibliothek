@@ -30,7 +30,7 @@ $DOMAIN {
     
     # Routen zum Frontend SvelteKit Server
     handle /* {
-        reverse_proxy localhost:3000
+        reverse_proxy localhost:3001
     }
 }
 EOF
@@ -44,7 +44,7 @@ else
     cat << EOF
 $DOMAIN {
     handle /api/* { reverse_proxy localhost:8083 }
-    handle /* { reverse_proxy localhost:3000 }
+    handle /* { reverse_proxy localhost:3001 }
 }
 EOF
 fi
