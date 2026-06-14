@@ -47,25 +47,7 @@ func (s *Server) ActionHandler(
 		var resp ActionResponse
 		var err error
 
-		// Route based on command pattern prefixes
-		if strings.HasPrefix(req.Query, "S-") {
-			err = s.handleStudentAction(ctx, req.Query, studentRepo, &resp)
-		} else if strings.HasPrefix(req.Query, "L-") {
-			err = s.handleTeacherAction(ctx, req.Query, &resp)
-		} else if strings.HasPrefix(req.Query, "B-") {
-			err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
-		} else if strings.HasPrefix(req.Query, "G-") {
-			err = s.handleGeraetAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, studentRepo, loanRepo, &resp)
-		} else {
-			// Fallback for Littera barcodes (which lack the "B-" prefix).
-			// If the query exactly matches a book barcode in the database, treat it as a book action.
-			if copy, _ := bookRepo.GetCopyByBarcode(ctx, req.Query); copy != nil {
-				err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
-			} else {
-				err = s.handleSearchAction(ctx, req.Query, bookRepo, &resp)
-			}
-		}
-
+		err = s.routeAction(ctx, &req, claims, studentRepo, bookRepo, loanRepo, &resp)
 		if err != nil {
 			status := http.StatusInternalServerError
 			switch {
@@ -83,21 +65,54 @@ func (s *Server) ActionHandler(
 			s.broadcastActionEvent(resp)
 		}
 
-		// Check for pending reservations on returned books
-		if resp.Type == "rueckgabe" && resp.Book != nil && resp.Book.TitelID != "" {
-			if v, checkErr := s.checkVormerkung(ctx, resp.Book.TitelID); checkErr == nil && v != nil {
-				resp.HasVormerkung = true
-				resp.VormerkungTitel = v.TitelName
-				resp.VormerkungUser = v.SchuelerName
-				
-				// Set book copy to reserved note and not lendable by others
-				_, _ = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2", 
-					"Reserviert für: " + v.SchuelerName, resp.Book.ID)
-			}
-		}
+		s.processPendingReservations(ctx, &resp)
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
+	}
+}
+
+// processPendingReservations checks for pending reservations on returned books and updates the response and database.
+func (s *Server) processPendingReservations(ctx context.Context, resp *ActionResponse) {
+	if resp.Type == "rueckgabe" && resp.Book != nil && resp.Book.TitelID != "" {
+		if v, checkErr := s.checkVormerkung(ctx, resp.Book.TitelID); checkErr == nil && v != nil {
+			resp.HasVormerkung = true
+			resp.VormerkungTitel = v.TitelName
+			resp.VormerkungUser = v.SchuelerName
+
+			// Set book copy to reserved note and not lendable by others
+			_, _ = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2",
+				"Reserviert für: "+v.SchuelerName, resp.Book.ID)
+		}
+	}
+}
+
+// routeAction determines which specific action handler to invoke based on the query prefix.
+func (s *Server) routeAction(
+	ctx context.Context,
+	req *ActionRequest,
+	claims *auth.Claims,
+	studentRepo repository.StudentRepository,
+	bookRepo repository.BookRepository,
+	loanRepo repository.LoanRepository,
+	resp *ActionResponse,
+) error {
+	if strings.HasPrefix(req.Query, "S-") {
+		return s.handleStudentAction(ctx, req.Query, studentRepo, resp)
+	} else if strings.HasPrefix(req.Query, "L-") {
+		return s.handleTeacherAction(ctx, req.Query, resp)
+	} else if strings.HasPrefix(req.Query, "B-") {
+		return s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, resp)
+	} else if strings.HasPrefix(req.Query, "G-") {
+		return s.handleGeraetAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, studentRepo, loanRepo, resp)
+	} else {
+		// Fallback for Littera barcodes (which lack the "B-" prefix).
+		// If the query exactly matches a book barcode in the database, treat it as a book action.
+		if copy, _ := bookRepo.GetCopyByBarcode(ctx, req.Query); copy != nil {
+			return s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, resp)
+		} else {
+			return s.handleSearchAction(ctx, req.Query, bookRepo, resp)
+		}
 	}
 }
 
@@ -131,7 +146,7 @@ func (s *Server) handleBookAction(
 		if err != nil {
 			return err
 		}
-		
+
 		if activeLoan == nil && !strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:") {
 			_, err = s.DB.Pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, zustand_notiz = '' WHERE id = $1", copy.ID)
 			if err != nil {
