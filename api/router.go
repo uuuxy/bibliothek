@@ -86,6 +86,31 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("/api/admin/", invHandler)
 	mux.Handle("/uploads/", invHandler)
 
+	s.registerPublicRoutes(mux, studentRepo, bookRepo, loanRepo, auditRepo)
+	s.registerAdminRoutes(mux, auditRepo)
+	s.registerOrdersRoutes(mux)
+	s.registerInventoryRoutes(mux)
+	s.registerMiscRoutes(mux, orderSvc, pdfSvc)
+	s.registerMailAndReportsRoutes(mux, mahnRepo)
+	s.registerLUSDRoutes(mux)
+	s.registerSwaggerAndStaticRoutes(mux)
+
+	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
+	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
+	rateLimiter := RateLimitMiddleware(50)
+
+	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
+	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
+		// #nosec G706
+		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
+		globalHandler.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) registerPublicRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.LoanRepository, auditRepo repository.AuditRepository) {
 	// Public Endpoints
 	mux.HandleFunc("POST /login", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
 
@@ -186,7 +211,6 @@ func (s *Server) Routes() http.Handler {
 	// Update copy status (Accessible by Admin and Mitarbeiter)
 	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.UpdateCopyStatusHandler(bookRepo)))
 
-
 	// Mark copy as defective and create Schadensfaelle (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/buecher/exemplare/{id}/defekt", s.RequirePermission("edit_books")(s.MarkCopyDefektHandler()))
 
@@ -213,7 +237,9 @@ func (s *Server) Routes() http.Handler {
 
 	// Delete book title (Accessible by Admin and Mitarbeiter)
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.DeleteTitleHandler(auditRepo)))
+}
 
+func (s *Server) registerAdminRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository) {
 	// Delete user (Accessible by Admin)
 	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.DeleteUserHandler(auditRepo)))
 
@@ -239,19 +265,25 @@ func (s *Server) Routes() http.Handler {
 	// Graduates / Laufzettel (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
 	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.GetGraduatesPDFHandler()))
+}
 
+func (s *Server) registerOrdersRoutes(mux *http.ServeMux) {
 	// Get reorder lists (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen", s.RequirePermission("view_orders")(s.GetReordersHandler()))
 
 	// Export reorder list as PDF (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen/pdf", s.RequirePermission("view_orders")(s.ExportReordersPDFHandler()))
+}
 
+func (s *Server) registerInventoryRoutes(mux *http.ServeMux) {
 	// Scan items during active inventory (Accessible by Admin and Mitarbeiter)
 	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
 	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("inventory_scan")(s.GetFehlbestandHandler()))
 	mux.Handle("POST /api/inventur/finalize", s.RequirePermission("inventory_scan")(s.FinalizeInventoryHandler()))
 	mux.Handle("POST /api/inventur/titel/{id}/verlust-batch", s.RequirePermission("inventory_scan")(s.TitleVerlustBatchHandler()))
+}
 
+func (s *Server) registerMiscRoutes(mux *http.ServeMux, orderSvc *OrderService, pdfSvc *PDFService) {
 	// Get system statistics (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
 
@@ -284,7 +316,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Get ordered copies in transit (Accessible by Admin and Mitarbeiter)
 	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
-	
+
 	// Receive single item via scan
 	mux.Handle("POST /api/orders/receive", s.RequirePermission("create_orders")(s.ReceiveItemHandler()))
 
@@ -298,7 +330,9 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz/anzahl", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenAnzahlHandler()))
 	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeKlassensatzReservierungHandler()))
+}
 
+func (s *Server) registerMailAndReportsRoutes(mux *http.ServeMux, mahnRepo *repository.MahnwesenRepository) {
 	// Mahnwesen – overdue loans, PDF generation, SMTP dispatch
 	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler(mahnRepo)))
 	mux.Handle("GET /api/mahnwesen/ueberfaellig_jahrgang", s.RequirePermission("view_students")(s.GetMahnwesenJahrgangHandler(mahnRepo)))
@@ -317,7 +351,9 @@ func (s *Server) Routes() http.Handler {
 	// Meta Lookups
 	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
 	mux.Handle("GET /api/readergroups", s.RequirePermission("view_students")(s.GetReaderGroupsHandler()))
+}
 
+func (s *Server) registerLUSDRoutes(mux *http.ServeMux) {
 	// LUSD Import / Schuljahreswechsel
 	mux.Handle("POST /api/lusd/preview", s.RequirePermission("manage_users")(s.PostLusdPreviewHandler()))
 	mux.Handle("POST /api/lusd/import", s.RequirePermission("manage_users")(s.PostLusdImportHandler()))
@@ -360,7 +396,9 @@ func (s *Server) Routes() http.Handler {
 		_, _ = w.Write([]byte("Access granted: Welcome to the Teacher Zone."))
 	})
 	mux.Handle("GET /teacher/dashboard", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleLehrer)(teacherZone))
+}
 
+func (s *Server) registerSwaggerAndStaticRoutes(mux *http.ServeMux) {
 	// Swagger interactive documentation
 	mux.Handle("GET /swagger/", httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
@@ -388,19 +426,5 @@ func (s *Server) Routes() http.Handler {
 			return
 		}
 		fs.ServeHTTP(w, r)
-	})
-
-	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
-	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
-	rateLimiter := RateLimitMiddleware(50)
-
-	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
-	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
-		// #nosec G706
-		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
-		globalHandler.ServeHTTP(w, r)
 	})
 }
