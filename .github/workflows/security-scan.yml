@@ -14,6 +14,9 @@ permissions:
   contents: read
   security-events: write  # Required for uploading SARIF reports
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
   go-vuln-scan:
