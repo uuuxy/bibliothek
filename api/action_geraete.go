@@ -30,7 +30,7 @@ func (s *Server) handleGeraetAction(
 		FROM geraete
 		WHERE barcode_id = $1
 	`, query).Scan(&g.ID, &g.Modellname, &g.Seriennummer, &g.BarcodeID, &g.Zubehoer, &g.IstAusleihbar, &g.IstAusgesondert, &g.ZustandNotiz)
-	
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("%w: Gerät mit Barcode %s nicht gefunden", errNotFound, query)
@@ -100,55 +100,81 @@ func (s *Server) handleGeraetAction(
 
 	// Subcase A: Geraet is not borrowed -> Checkout
 	if !hasActiveLoan {
-		if student == nil && teacher == nil {
-			return fmt.Errorf("%w: Bitte scannen Sie zuerst einen Schüler- oder Lehrerausweis", errInvalidState)
-		}
-
-		dueTime := time.Now().AddDate(0, 0, 14) // Standard hardware loan is 14 days
-		var newLoanID string
-		if student != nil {
-			err = tx.QueryRow(ctx, `
-				INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id)
-				VALUES ($1, $2, $3, $4)
-				RETURNING id
-			`, g.ID, student.ID, dueTime, claims.UserID).Scan(&newLoanID)
-			resp.Student = student
-		} else {
-			err = tx.QueryRow(ctx, `
-				INSERT INTO ausleihen (geraet_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
-				VALUES ($1, $2, $3, $4, true)
-				RETURNING id
-			`, g.ID, teacher.ID, dueTime, claims.UserID).Scan(&newLoanID)
-			resp.Teacher = teacher
-		}
-		
-		if err != nil {
-			return err
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
-
-		auditRepo := repository.NewAuditRepository(s.DB.Pool)
-		if student != nil {
-			_ = auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", claims.UserID)
-		} else {
-			_ = auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, claims.UserID)
-		}
-
-		resp.Type = "ausleihe"
-		resp.Geraet = &g
-		resp.DueDate = &dueTime
-		resp.LoanID = &newLoanID
-
-		return nil
+		return s.handleGeraetCheckout(ctx, tx, &g, student, teacher, claims, resp)
 	}
 
 	// Subcase B: Geraet is currently borrowed -> Return
-	
+	return s.handleGeraetReturn(ctx, tx, &g, activeLoan, student, teacher, claims, resp)
+}
+
+func (s *Server) handleGeraetCheckout(
+	ctx context.Context,
+	tx pgx.Tx,
+	g *repository.Geraet,
+	student *repository.Student,
+	teacher *repository.User,
+	claims *auth.Claims,
+	resp *ActionResponse,
+) error {
+	if student == nil && teacher == nil {
+		return fmt.Errorf("%w: Bitte scannen Sie zuerst einen Schüler- oder Lehrerausweis", errInvalidState)
+	}
+
+	dueTime := time.Now().AddDate(0, 0, 14) // Standard hardware loan is 14 days
+	var newLoanID string
+	var err error
+	if student != nil {
+		err = tx.QueryRow(ctx, `
+			INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id
+		`, g.ID, student.ID, dueTime, claims.UserID).Scan(&newLoanID)
+		resp.Student = student
+	} else {
+		err = tx.QueryRow(ctx, `
+			INSERT INTO ausleihen (geraet_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
+			VALUES ($1, $2, $3, $4, true)
+			RETURNING id
+		`, g.ID, teacher.ID, dueTime, claims.UserID).Scan(&newLoanID)
+		resp.Teacher = teacher
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	auditRepo := repository.NewAuditRepository(s.DB.Pool)
+	if student != nil {
+		_ = auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", claims.UserID)
+	} else {
+		_ = auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, claims.UserID)
+	}
+
+	resp.Type = "ausleihe"
+	resp.Geraet = g
+	resp.DueDate = &dueTime
+	resp.LoanID = &newLoanID
+
+	return nil
+}
+
+func (s *Server) handleGeraetReturn(
+	ctx context.Context,
+	tx pgx.Tx,
+	g *repository.Geraet,
+	activeLoan repository.Loan,
+	student *repository.Student,
+	teacher *repository.User,
+	claims *auth.Claims,
+	resp *ActionResponse,
+) error {
 	// Determine if Fremdrueckgabe
 	isFremd := false
+	var err error
 	if activeLoan.SchuelerID != nil {
 		if student == nil || *activeLoan.SchuelerID != student.ID {
 			isFremd = true
@@ -193,7 +219,7 @@ func (s *Server) handleGeraetAction(
 	}
 
 	resp.Type = "rueckgabe"
-	resp.Geraet = &g
+	resp.Geraet = g
 	resp.LoanID = &activeLoan.ID
 	resp.Fremdrueckgabe = isFremd
 
