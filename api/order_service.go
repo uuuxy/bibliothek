@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	
+
 	"bibliothek/db"
 	"github.com/jackc/pgx/v5"
 )
@@ -53,10 +53,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	labels := make([]BarcodeLabelDetail, 0)
 	orderSummaryItems := make([]OrderedItem, 0)
 
-	qInsert := `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt, einkaufspreis)
-		VALUES ($1, $2, $3, false, $4, $5)
-	`
+	var copyRows [][]any
 
 	for _, item := range req.Items {
 		if item.Menge <= 0 || item.Menge > 200 {
@@ -81,18 +78,31 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		})
 
 		if req.GenerateBarcodes {
-			for i := 0; i < item.Menge; i++ {
+			rows, err := tx.Query(ctx, "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0') FROM generate_series(1, $1)", item.Menge)
+			if err != nil {
+				return nil, fmt.Errorf("sequence fetch error: %w", err)
+			}
+			var barcodes []string
+			for rows.Next() {
 				var barcodeID string
-				err = tx.QueryRow(ctx, "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0')").Scan(&barcodeID)
-				if err != nil {
-					return nil, fmt.Errorf("sequence error: %w", err)
+				if err := rows.Scan(&barcodeID); err != nil {
+					rows.Close()
+					return nil, fmt.Errorf("sequence scan error: %w", err)
 				}
+				barcodes = append(barcodes, barcodeID)
+			}
+			rows.Close()
 
-				statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
-				_, err = tx.Exec(ctx, qInsert, item.TitelID, barcodeID, statusText, false, item.Preis)
-				if err != nil {
-					return nil, err
-				}
+			if len(barcodes) != item.Menge {
+				return nil, fmt.Errorf("expected %d sequences, got %d", item.Menge, len(barcodes))
+			}
+
+			statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+
+			for i := 0; i < item.Menge; i++ {
+				barcodeID := barcodes[i]
+				copyRows = append(copyRows, []any{item.TitelID, barcodeID, statusText, false, false, item.Preis})
+
 				labels = append(labels, BarcodeLabelDetail{
 					BarcodeID: barcodeID,
 					Titel:     titel,
@@ -100,6 +110,18 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 					ISBN:      isbn,
 				})
 			}
+		}
+	}
+
+	if len(copyRows) > 0 {
+		_, err = tx.CopyFrom(
+			ctx,
+			pgx.Identifier{"buecher_exemplare"},
+			[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis"},
+			pgx.CopyFromRows(copyRows),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("bulk insert error: %w", err)
 		}
 	}
 

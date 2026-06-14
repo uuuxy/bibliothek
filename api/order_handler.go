@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"github.com/jackc/pgx/v5"
 )
 
 // SendOrderMailRequest specifies the recipient email payload.
@@ -130,10 +131,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 		currentBarcodeIndex := startNum
 		isNaacher := strings.Contains(strings.ToLower(toEmail), "naacher")
 
-		qInsert := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar, etikett_gedruckt)
-			VALUES ($1, $2, 'bestellt', false, $3)
-		`
+		var copyRows [][]any
 
 		for _, item := range itemsToOrder {
 			orderSummaryItems = append(orderSummaryItems, OrderedItem{
@@ -146,17 +144,28 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 
 			for i := 0; i < item.OrderQty; i++ {
 				barcodeID := fmt.Sprintf("B-%05d", currentBarcodeIndex)
-				_, err = tx.Exec(ctx, qInsert, item.ID, barcodeID, isNaacher)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-					return
-				}
+				copyRows = append(copyRows, []any{item.ID, barcodeID, "bestellt", false, isNaacher})
+
 				labels = append(labels, BarcodeLabelDetail{
 					BarcodeID: barcodeID,
 					Titel:     item.Titel,
 					Autor:     item.Autor,
 				})
 				currentBarcodeIndex++
+			}
+		}
+
+		// Bulk insert all new copies
+		if len(copyRows) > 0 {
+			_, err = tx.CopyFrom(
+				ctx,
+				pgx.Identifier{"buecher_exemplare"},
+				[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt"},
+				pgx.CopyFromRows(copyRows),
+			)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
 			}
 		}
 
