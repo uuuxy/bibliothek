@@ -25,12 +25,12 @@ if [ -f "$CADDYFILE" ]; then
 $DOMAIN {
     # Routen zur Go Backend-API
     handle /api/* {
-        reverse_proxy localhost:8083
+        reverse_proxy bibliothek-backend:8083
     }
     
     # Routen zum Frontend SvelteKit Server
     handle /* {
-        reverse_proxy localhost:3001
+        reverse_proxy bibliothek-frontend:3000
     }
 }
 EOF
@@ -43,8 +43,8 @@ else
     echo "Bitte ergänze dein Caddyfile manuell um diesen Block:"
     cat << EOF
 $DOMAIN {
-    handle /api/* { reverse_proxy localhost:8083 }
-    handle /* { reverse_proxy localhost:3001 }
+    handle /api/* { reverse_proxy bibliothek-backend:8083 }
+    handle /* { reverse_proxy bibliothek-frontend:3000 }
 }
 EOF
 fi
