@@ -101,11 +101,7 @@ func (s *Server) Routes() http.Handler {
 	s.registerSystemRoutes(mux, auditRepo)
 	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
 
-	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
-	mux.Handle("POST /api/action", s.RequirePermission("view_students")(actionHandler))
 
-	actionBatchHandler := s.ActionBatchHandler(studentRepo, bookRepo, loanRepo)
-	mux.Handle("POST /api/action/batch", s.RequirePermission("view_students")(actionBatchHandler))
 
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.LitteraImportHandler()))
