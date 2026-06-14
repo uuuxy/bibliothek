@@ -96,19 +96,18 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 		numToCreate := expectedStock - currentStock
 		if numToCreate > 0 {
 			_, _ = repo.db.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`)
-			for i := 0; i < numToCreate; i++ {
-				_, err := repo.db.Exec(ctx, `
-					INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
-					VALUES ($1, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert')
-				`, titelID)
-				if err != nil {
-					return fmt.Errorf("fehler beim generieren von exemplaren: %w", err)
-				}
+			_, err := repo.db.Exec(ctx, `
+				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
+				SELECT $1, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert'
+				FROM generate_series(1, $2)
+			`, titelID, numToCreate)
+			if err != nil {
+				return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
 			}
 		}
 	} else if expectedStock < currentStock {
 		numToRetire := currentStock - expectedStock
-		
+
 		// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
 		query := `
 			UPDATE buecher_exemplare
@@ -125,7 +124,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 		if err != nil {
 			return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
 		}
-		
+
 		retired := result.RowsAffected()
 		if retired < int64(numToRetire) {
 			// 2. Fallback: Auch ausgeliehene Exemplare aussondern, falls nötig
