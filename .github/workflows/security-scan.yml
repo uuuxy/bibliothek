@@ -11,8 +11,12 @@ on:
   workflow_dispatch: # Allow manual trigger
 
 permissions:
+  actions: read
   contents: read
   security-events: write  # Required for uploading SARIF reports
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
@@ -30,7 +34,7 @@ jobs:
           cache: true
 
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        run: GOTOOLCHAIN=go1.26.4 go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run govulncheck
         # govulncheck exits with code 3 if vulnerabilities are found → fail the build
@@ -63,7 +67,7 @@ jobs:
           ./... || true
 
       - name: Upload gosec SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: gosec-results.sarif
@@ -117,7 +121,7 @@ jobs:
           ignore-unfixed: true  # Skip CVEs without fix available
 
       - name: Upload Trivy SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
