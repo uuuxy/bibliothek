@@ -21,6 +21,10 @@ type BuchAktualisierenAnfrage struct {
 	Bestand                 int            `json:"stock"`
 	ZaehlDatum              *string        `json:"lastCounted"`
 	Medientyp               string         `json:"medientyp"`
+	Untertitel              string         `json:"untertitel"`
+	Verlag                  string         `json:"verlag"`
+	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
+	Beschreibung            string         `json:"beschreibung"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 }
 
@@ -62,6 +66,10 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Stock:                   eingabe.Bestand,
 		LastCounted:             eingabe.ZaehlDatum,
 		Medientyp:               eingabe.Medientyp,
+		Untertitel:              eingabe.Untertitel,
+		Verlag:                  eingabe.Verlag,
+		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
+		Beschreibung:            eingabe.Beschreibung,
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 	}
 
@@ -93,6 +101,9 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchAktualisierenAnfrage) error {
 	eingabe.Fach = strings.TrimSpace(eingabe.Fach)
 	eingabe.Schulzweig = strings.TrimSpace(eingabe.Schulzweig)
 	eingabe.Medientyp = strings.TrimSpace(eingabe.Medientyp)
+	eingabe.Untertitel = strings.TrimSpace(eingabe.Untertitel)
+	eingabe.Verlag = strings.TrimSpace(eingabe.Verlag)
+	eingabe.Beschreibung = strings.TrimSpace(eingabe.Beschreibung)
 
 	if eingabe.ISBN == "" {
 		return errors.New("isbn darf nicht leer sein")

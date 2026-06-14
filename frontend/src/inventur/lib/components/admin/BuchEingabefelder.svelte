@@ -113,6 +113,19 @@
         />
     </div>
 
+    <div>
+        <label
+            for="buch-untertitel"
+            class="block text-sm font-medium text-gray-700 mb-1">Untertitel</label
+        >
+        <input
+            id="buch-untertitel"
+            type="text"
+            bind:value={formular.untertitel}
+            class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+        />
+    </div>
+
     <div class="grid grid-cols-2 gap-4">
         <div>
             <label
@@ -332,6 +345,19 @@
                 class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
             />
         </div>
+    </div>
+
+    <div>
+        <label
+            for="buch-beschreibung"
+            class="block text-sm font-medium text-gray-700 mb-1">Beschreibung / Klappentext</label
+        >
+        <textarea
+            id="buch-beschreibung"
+            rows="3"
+            bind:value={formular.beschreibung}
+            class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+        ></textarea>
     </div>
 
     {#if formular.erweiterteEigenschaften}

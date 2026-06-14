@@ -36,8 +36,12 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			medientyp = $10,
 			erweiterte_eigenschaften = $11,
 			jahrgang_von = $12,
-			jahrgang_bis = $13
-		WHERE id = $14`
+			jahrgang_bis = $13,
+			untertitel = $14,
+			verlag = $15,
+			erscheinungsjahr = $16,
+			beschreibung = $17
+		WHERE id = $18`
 
 	medientyp := book.Medientyp
 	if medientyp == "" {
@@ -65,6 +69,10 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		properties,
 		book.JahrgangVon,
 		book.JahrgangBis,
+		book.Untertitel,
+		book.Verlag,
+		book.Erscheinungsjahr,
+		book.Beschreibung,
 		id,
 	)
 	if err != nil {

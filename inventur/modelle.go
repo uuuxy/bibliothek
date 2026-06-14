@@ -18,6 +18,10 @@ type Book struct {
 	Medientyp               string         `json:"medientyp" db:"medientyp"`
 	JahrgangVon             int            `json:"jahrgangVon" db:"jahrgang_von"`
 	JahrgangBis             int            `json:"jahrgangBis" db:"jahrgang_bis"`
+	Untertitel              string         `json:"untertitel" db:"untertitel"`
+	Verlag                  string         `json:"verlag" db:"verlag"`
+	Erscheinungsjahr        int            `json:"erscheinungsjahr" db:"erscheinungsjahr"`
+	Beschreibung            string         `json:"beschreibung" db:"beschreibung"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften" db:"erweiterte_eigenschaften"`
 }
 

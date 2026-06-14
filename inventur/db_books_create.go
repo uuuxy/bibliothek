@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"encoding/json"
 	"context"
 	"fmt"
 )
@@ -8,8 +9,8 @@ import (
 // CreateBook inserts a new book record.
 func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12, $13)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12, $13, $14, $15, $16, $17)
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -39,6 +40,10 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		properties,
 		book.JahrgangVon,
 		book.JahrgangBis,
+		book.Untertitel,
+		book.Verlag,
+		book.Erscheinungsjahr,
+		book.Beschreibung,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
@@ -73,6 +78,12 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	medientypen := make([]string, len(books))
 	jahrgaengeVon := make([]int, len(books))
 	jahrgaengeBis := make([]int, len(books))
+	untertitel := make([]string, len(books))
+	verlage := make([]string, len(books))
+	erscheinungsjahre := make([]int, len(books))
+	beschreibungen := make([]string, len(books))
+	// Wir speichern die JSONB-Daten als []byte
+	erweiterteEigenschaften := make([][]byte, len(books))
 
 	for i, b := range books {
 		isbns[i] = b.ISBN
@@ -91,13 +102,25 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		}
 		jahrgaengeVon[i] = b.JahrgangVon
 		jahrgaengeBis[i] = b.JahrgangBis
+		untertitel[i] = b.Untertitel
+		verlage[i] = b.Verlag
+		erscheinungsjahre[i] = b.Erscheinungsjahr
+		beschreibungen[i] = b.Beschreibung
+
+		props := b.ErweiterteEigenschaften
+		if props == nil {
+			props = make(map[string]any)
+		}
+		// In JSON umwandeln für pgx JSONB-Array Kompatibilität
+		jsonProps, _ := json.Marshal(props)
+		erweiterteEigenschaften[i] = jsonProps
 	}
 
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, t.stock, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis
-		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::int[], $9::text[], $10::text[], $11::int[], $12::int[])
-		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted_text, medientyp, jahrgang_von, jahrgang_bis)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften)
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, t.stock, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften
+		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::int[], $9::text[], $10::text[], $11::int[], $12::int[], $13::text[], $14::text[], $15::int[], $16::text[], $17::jsonb[])
+		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -109,7 +132,12 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 			last_counted = EXCLUDED.last_counted,
 			medientyp = EXCLUDED.medientyp,
 			jahrgang_von = EXCLUDED.jahrgang_von,
-			jahrgang_bis = EXCLUDED.jahrgang_bis
+			jahrgang_bis = EXCLUDED.jahrgang_bis,
+			untertitel = EXCLUDED.untertitel,
+			verlag = EXCLUDED.verlag,
+			erscheinungsjahr = EXCLUDED.erscheinungsjahr,
+			beschreibung = EXCLUDED.beschreibung,
+			erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften
 	`
 
 	cmdTag, err := repo.db.Exec(
@@ -127,6 +155,11 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		medientypen,
 		jahrgaengeVon,
 		jahrgaengeBis,
+		untertitel,
+		verlage,
+		erscheinungsjahre,
+		beschreibungen,
+		erweiterteEigenschaften,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("bücher konnten nicht im batch importiert werden: %w", err)
@@ -138,8 +171,8 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 // UpsertBook inserts or updates a book record.
 func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12, $13, $14, $15, $16, $17)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -150,12 +183,22 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 			last_counted = EXCLUDED.last_counted,
 			medientyp = EXCLUDED.medientyp,
 			jahrgang_von = EXCLUDED.jahrgang_von,
-			jahrgang_bis = EXCLUDED.jahrgang_bis
+			jahrgang_bis = EXCLUDED.jahrgang_bis,
+			untertitel = EXCLUDED.untertitel,
+			verlag = EXCLUDED.verlag,
+			erscheinungsjahr = EXCLUDED.erscheinungsjahr,
+			beschreibung = EXCLUDED.beschreibung,
+			erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften
 		RETURNING id`
 
 	medientyp := book.Medientyp
 	if medientyp == "" {
 		medientyp = "Buch"
+	}
+	
+	properties := book.ErweiterteEigenschaften
+	if properties == nil {
+		properties = make(map[string]any)
 	}
 
 	var id string
@@ -174,6 +217,11 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		medientyp,
 		book.JahrgangVon,
 		book.JahrgangBis,
+		book.Untertitel,
+		book.Verlag,
+		book.Erscheinungsjahr,
+		book.Beschreibung,
+		properties,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
