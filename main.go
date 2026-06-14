@@ -28,56 +28,58 @@ import (
 // main is the entry point of the school library system backend application.
 // It initializes configs, setups database connection pools, starts the SSE broker,
 // mounts middleware-protected routes, and starts the server with graceful shutdown.
-func main() {
-	// 0. Setup strukturiertes JSON-Logging
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
-	slog.SetDefault(logger)
 
-	// Initialize optional plugins
-	vorlage.Init()
-
-	// 1. Config environment resolution
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		slog.Error("FATAL: DATABASE_URL environment variable is required and cannot be empty")
-		os.Exit(1)
+func startServer(port string, server *api.Server) *http.Server {
+	httpServer := &http.Server{
+		Addr:              ":" + port,
+		Handler:           server.Routes(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	// Zero Hardcoded Secrets: Fail hard if JWT_SECRET is not set
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		slog.Error("FATAL: JWT_SECRET environment variable is required and cannot be empty")
-		os.Exit(1)
-	}
+	// Start server asynchronously
+	go func() {
+		slog.Info("Server listening", "url", "http://localhost:"+port)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("Server error", "error", err)
+			os.Exit(1)
+		}
+	}()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		slog.Error("FATAL: PORT environment variable is required and cannot be empty")
-		os.Exit(1)
-	}
+	return httpServer
+}
 
-	cookieSecure, err := strconv.ParseBool(os.Getenv("COOKIE_SECURE"))
-	if err != nil {
-		cookieSecure = false
-	}
+func startGDPRWorker(ctx context.Context, scheduler *jobs.Scheduler) {
+	go func() {
+		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
+		scheduler.RunGDPRAnonymizeLoans()
+		scheduler.RunGDPRDeleteAbgaenger()
 
-	// Capture interrupt and termination signals for graceful shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
 
-	// 2. Database Connection pool setup
+		for {
+			select {
+			case <-ticker.C:
+				slog.Info("Background Worker: Running scheduled 24h GDPR cleanup...")
+				scheduler.RunGDPRAnonymizeLoans()
+				scheduler.RunGDPRDeleteAbgaenger()
+			case <-ctx.Done():
+				slog.Info("Background Worker: GDPR worker gracefully stopped.")
+				return
+			}
+		}
+	}()
+}
+
+func setupDatabase(ctx context.Context, dsn string) *db.Database {
 	slog.Info("Establishing database connection pool...")
 	database, err := db.Connect(ctx, dsn)
 	if err != nil {
 		slog.Error("Database connection pool failed", "error", err)
 		os.Exit(1)
 	}
-	defer database.Close()
 	slog.Info("Database connection pool successfully initialized.")
 
-	// 2a. Run pending SQL migrations
 	slog.Info("Running database migrations...")
 	if err := database.RunMigrations(ctx, "migrations"); err != nil {
 		slog.Error("Database migration failed", "error", err)
@@ -102,6 +104,57 @@ func main() {
 		os.Exit(1)
 	}
 
+	return database
+}
+
+func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
+	dsn = os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		slog.Error("FATAL: DATABASE_URL environment variable is required and cannot be empty")
+		os.Exit(1)
+	}
+
+	jwtSecret = os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		slog.Error("FATAL: JWT_SECRET environment variable is required and cannot be empty")
+		os.Exit(1)
+	}
+
+	port = os.Getenv("PORT")
+	if port == "" {
+		slog.Error("FATAL: PORT environment variable is required and cannot be empty")
+		os.Exit(1)
+	}
+
+	var err error
+	cookieSecure, err = strconv.ParseBool(os.Getenv("COOKIE_SECURE"))
+	if err != nil {
+		cookieSecure = false
+	}
+	return
+}
+
+func main() {
+	// 0. Setup strukturiertes JSON-Logging
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
+
+	// Initialize optional plugins
+	vorlage.Init()
+
+	// 1. Config environment resolution
+	dsn, jwtSecret, port, cookieSecure := loadConfig()
+
+	// Capture interrupt and termination signals for graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// 2. Database Connection pool setup
+	database := setupDatabase(ctx, dsn)
+	defer database.Close()
+
 	// 3. Authenticator initialization (12 hours token expiration duration)
 	authenticator, err := auth.NewAuthenticator(jwtSecret, database.Pool, 12*time.Hour)
 	if err != nil {
@@ -121,43 +174,11 @@ func main() {
 	defer scheduler.Stop()
 
 	// Native async background worker for GDPR cleanup (runs on startup + every 24h)
-	go func() {
-		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
-		scheduler.RunGDPRAnonymizeLoans()
-		scheduler.RunGDPRDeleteAbgaenger()
-
-		ticker := time.NewTicker(24 * time.Hour)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				slog.Info("Background Worker: Running scheduled 24h GDPR cleanup...")
-				scheduler.RunGDPRAnonymizeLoans()
-				scheduler.RunGDPRDeleteAbgaenger()
-			case <-ctx.Done():
-				slog.Info("Background Worker: GDPR worker gracefully stopped.")
-				return
-			}
-		}
-	}()
+	startGDPRWorker(ctx, scheduler)
 
 	// 6. Initialize API Server and routing
 	server := api.NewServer(database, authenticator, broker, cookieSecure)
-	httpServer := &http.Server{
-		Addr:              ":" + port,
-		Handler:           server.Routes(),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-
-	// Start server asynchronously
-	go func() {
-		slog.Info("Server listening", "url", "http://localhost:"+port)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Server error", "error", err)
-			os.Exit(1)
-		}
-	}()
+	httpServer := startServer(port, server)
 
 	// Block until signal is received
 	<-ctx.Done()
