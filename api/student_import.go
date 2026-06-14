@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"github.com/jackc/pgx/v5"
 )
 
 // ImportStudentsLUSDHandler handles LUSD-compliant CSV uploads for admins.
@@ -87,6 +88,43 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 		}
 		defer func() { _ = tx.Rollback(ctx) }()
 
+		// Fetch all existing students into maps to prevent N+1 queries
+		type existingStudent struct {
+			ID        string
+			LusdID    *string
+			BarcodeID string
+			Vorname   string
+			Nachname  string
+		}
+
+		rows, err := tx.Query(ctx, "SELECT id, lusd_id, barcode_id, vorname, nachname FROM schueler")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		lusdMap := make(map[string]string)
+		barcodeMap := make(map[string]string)
+		nameMap := make(map[string]string)
+
+		for rows.Next() {
+			var s existingStudent
+			if err := rows.Scan(&s.ID, &s.LusdID, &s.BarcodeID, &s.Vorname, &s.Nachname); err != nil {
+				rows.Close()
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if s.LusdID != nil {
+				lusdMap[*s.LusdID] = s.ID
+			}
+			if s.BarcodeID != "" {
+				barcodeMap[s.BarcodeID] = s.ID
+			}
+			nameKey := strings.ToLower(s.Vorname) + "|" + strings.ToLower(s.Nachname)
+			nameMap[nameKey] = s.ID
+		}
+		rows.Close()
+
 		// Get next barcode sequence S-XXXXX helper
 		var lastBarcode string
 		qLast := `
@@ -111,6 +149,24 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 
 		importedCount := 0
 		lineNum := 1
+
+		type updateData struct {
+			ID     string
+			Klasse string
+			LusdID *string
+		}
+
+		type insertData struct {
+			BarcodeID      string
+			Vorname        string
+			Nachname       string
+			Klasse         string
+			AbgaengerJahr  int
+			LusdID         *string
+		}
+
+		var updates []updateData
+		var inserts []insertData
 
 		for {
 			row, err := reader.Read()
@@ -155,51 +211,35 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 
 			// 1. Try by lusdID
 			if lusdID != nil {
-				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", *lusdID).Scan(&existingID)
-				if err == nil {
+				if id, ok := lusdMap[*lusdID]; ok {
+					existingID = id
 					found = true
 				}
 			}
 
 			// 2. Try by barcodeID
 			if !found && barcodeID != "" {
-				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE barcode_id = $1 LIMIT 1", barcodeID).Scan(&existingID)
-				if err == nil {
+				if id, ok := barcodeMap[barcodeID]; ok {
+					existingID = id
 					found = true
 				}
 			}
 
 			// 3. Try by Name combination
 			if !found {
-				err = tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) LIMIT 1", vorname, nachname).Scan(&existingID)
-				if err == nil {
+				nameKey := strings.ToLower(vorname) + "|" + strings.ToLower(nachname)
+				if id, ok := nameMap[nameKey]; ok {
+					existingID = id
 					found = true
 				}
 			}
 
 			if found {
-				// Update student's class (Versetzung)
-				qUpdate := `
-					UPDATE schueler 
-					SET klasse = $1, aktualisiert_am = CURRENT_TIMESTAMP
-				`
-				params := []any{klasse}
-				paramCount := 2
-
-				if lusdID != nil {
-					qUpdate += fmt.Sprintf(", lusd_id = $%d", paramCount)
-					params = append(params, *lusdID)
-					paramCount++
-				}
-
-				qUpdate += fmt.Sprintf(" WHERE id = $%d", paramCount)
-				params = append(params, existingID)
-
-				_, err = tx.Exec(ctx, qUpdate, params...)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-					return
-				}
+				updates = append(updates, updateData{
+					ID:     existingID,
+					Klasse: klasse,
+					LusdID: lusdID,
+				})
 			} else {
 				// Generate new barcode if empty
 				if barcodeID == "" {
@@ -208,17 +248,64 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 				}
 
 				defaultAbgaengerJahr := time.Now().Year() + 5
-				qInsert := `
-					INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
-					VALUES ($1, $2, $3, $4, $5, $6)
-				`
-				_, err = tx.Exec(ctx, qInsert, barcodeID, vorname, nachname, klasse, defaultAbgaengerJahr, lusdID)
-				if err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-					return
-				}
+				inserts = append(inserts, insertData{
+					BarcodeID:     barcodeID,
+					Vorname:       vorname,
+					Nachname:      nachname,
+					Klasse:        klasse,
+					AbgaengerJahr: defaultAbgaengerJahr,
+					LusdID:        lusdID,
+				})
 			}
 			importedCount++
+		}
+
+		if len(updates) > 0 {
+			var ids []string
+			var klassen []string
+			var lusdIDs []*string
+			for _, u := range updates {
+				ids = append(ids, u.ID)
+				klassen = append(klassen, u.Klasse)
+				lusdIDs = append(lusdIDs, u.LusdID)
+			}
+
+			qUpdate := `
+				UPDATE schueler s
+				SET klasse = data.klasse,
+					lusd_id = COALESCE(data.lusd_id, s.lusd_id),
+					aktualisiert_am = CURRENT_TIMESTAMP
+				FROM (
+					SELECT unnest($1::uuid[]) AS id,
+						   unnest($2::text[]) AS klasse,
+						   unnest($3::text[]) AS lusd_id
+				) AS data
+				WHERE s.id = data.id
+			`
+			_, err = tx.Exec(ctx, qUpdate, ids, klassen, lusdIDs)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim Aktualisieren: %w", err))
+				return
+			}
+		}
+
+		if len(inserts) > 0 {
+			var copyRows [][]any
+			for _, i := range inserts {
+				copyRows = append(copyRows, []any{
+					i.BarcodeID, i.Vorname, i.Nachname, i.Klasse, i.AbgaengerJahr, i.LusdID,
+				})
+			}
+			_, err = tx.CopyFrom(
+				ctx,
+				pgx.Identifier{"schueler"},
+				[]string{"barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "lusd_id"},
+				pgx.CopyFromRows(copyRows),
+			)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim Einfügen: %w", err))
+				return
+			}
 		}
 
 		if err := tx.Commit(ctx); err != nil {
