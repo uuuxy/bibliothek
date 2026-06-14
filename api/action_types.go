@@ -16,6 +16,23 @@ type ActionRequest struct {
 	ConfirmedChecklist bool    `json:"confirmed_checklist,omitempty"`
 }
 
+// ActionBatchRequest holds the parameters for a batch of Omnibox actions.
+type ActionBatchRequest []ActionRequest
+
+// ActionBatchResponseItem represents a single result in a batch operation.
+type ActionBatchResponseItem struct {
+	Index   int             `json:"index"`
+	Success bool            `json:"success"`
+	Status  int             `json:"status"`
+	Error   string          `json:"error,omitempty"`
+	Data    *ActionResponse `json:"data,omitempty"`
+}
+
+// ActionBatchResponse is the payload returned by the batch Omnibox endpoint.
+type ActionBatchResponse struct {
+	Results []ActionBatchResponseItem `json:"results"`
+}
+
 // ActionResponse is the polymorphic output payload returned by the Omnibox.
 type ActionResponse struct {
 	Type            string                 `json:"type"`                       // "student", "teacher", "ausleihe", "rueckgabe", "search_results", "info"

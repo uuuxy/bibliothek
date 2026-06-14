@@ -88,7 +88,7 @@ func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 						return
 					}
 				case "HELFER":
-					isAllowed := (r.Method == http.MethodPost && (path == "/api/action" || path == "/api/auth/logout")) ||
+					isAllowed := (r.Method == http.MethodPost && (path == "/api/action" || path == "/api/action/batch" || path == "/api/auth/logout")) ||
 						(r.Method == http.MethodGet && path == "/events")
 
 					if !isAllowed {

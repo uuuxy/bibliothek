@@ -126,6 +126,9 @@ func (s *Server) Routes() http.Handler {
 	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
 	mux.Handle("POST /api/action", s.RequirePermission("view_students")(actionHandler))
 
+	actionBatchHandler := s.ActionBatchHandler(studentRepo, bookRepo, loanRepo)
+	mux.Handle("POST /api/action/batch", s.RequirePermission("view_students")(actionBatchHandler))
+
 	// Unified Fuzzy Search (Accessible by Admin, Mitarbeiter, and Lehrer)
 	searchHandler := s.SearchHandler(studentRepo, bookRepo)
 	mux.Handle("GET /api/search", s.RequirePermission("view_students")(searchHandler))
