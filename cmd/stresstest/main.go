@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -75,9 +76,17 @@ type ActionRequest struct {
 }
 
 func main() {
+	portFlag := flag.String("port", "", "Port to run the stress test against (overrides .env)")
+	flag.Parse()
+
 	cfg := loadConfig()
+	port := cfg.Port
+	if *portFlag != "" {
+		port = *portFlag
+	}
+
 	token := generateAdminToken(cfg.JWTSecret)
-	baseURL := fmt.Sprintf("http://localhost:%s/api/action", cfg.Port)
+	baseURL := fmt.Sprintf("http://localhost:%s/api/action", port)
 
 	// Hardcoded test data from seed.sql
 	studentID := "00000000-0000-0000-0000-000000000003" // Max Mustermann
