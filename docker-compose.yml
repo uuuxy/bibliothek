@@ -45,7 +45,7 @@ services:
     ports:
       - "3001:3000" # Localhost-Binding für globalen Caddy Reverse Proxy
     environment:
-      - VITE_API_URL=http://<DEINE_HETZNER_IP>:8083
+      - VITE_API_URL=https://flasch3.herzog-dupont.de/api
 
 volumes:
   postgres_data:
