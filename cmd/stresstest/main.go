@@ -86,7 +86,7 @@ func main() {
 	}
 
 	token := generateAdminToken(cfg.JWTSecret)
-	baseURL := fmt.Sprintf("http://localhost:%s/api/action", port)
+	baseURL := fmt.Sprintf("http://127.0.0.1:%s/api/action", port)
 
 	// Hardcoded test data from seed.sql
 	studentID := "00000000-0000-0000-0000-000000000003" // Max Mustermann

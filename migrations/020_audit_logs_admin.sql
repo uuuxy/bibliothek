@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     zeitstempel TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO schema_migrations (version) VALUES ('020_audit_logs_admin.sql') ON CONFLICT DO NOTHING;
+

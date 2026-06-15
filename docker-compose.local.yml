@@ -25,15 +25,15 @@ services:
       dockerfile: Dockerfile
     container_name: bibliothek-backend-local
     ports:
-      - "8083:8083" # Lokaler Zugriff unter http://localhost:8083
+      - "8084:8084" # Lokaler Zugriff unter http://localhost:8084
     environment:
-      - PORT=8083
+      - PORT=8084
       - DB_HOST=postgres-db
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-supergeheim_lokal}
+      - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - COOKIE_SECURE=false
       - INITIAL_ADMIN_EMAIL=pflasch@philipp-reis-schule.de
-      - IMAP_HOST=mock
     volumes:
       - bibliothek_uploads_local:/app/uploads
     depends_on:
