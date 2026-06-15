@@ -25,8 +25,8 @@ type LitteraImportResponse struct {
 
 func (s *Server) LitteraImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
-		if err := r.ParseMultipartForm(10 << 20); err != nil {
+		r.Body = http.MaxBytesReader(w, r.Body, 50<<20) // 50 MB limit
+		if err := r.ParseMultipartForm(50 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
