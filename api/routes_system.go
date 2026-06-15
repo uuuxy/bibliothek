@@ -46,6 +46,13 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
 	mux.Handle("GET /api/readergroups", s.RequirePermission("view_students")(s.GetReaderGroupsHandler()))
 
+	// Audit Logs
+	mux.Handle("GET /api/admin/auditlog", s.RequirePermission("manage_users")(s.GetAdminAuditLogsHandler()))
+
+	// Barcodes & Etiketten
+	mux.Handle("GET /api/barcode/next", s.RequirePermission("view_books")(s.NextBarcodeHandler()))
+	mux.Handle("GET /api/print/etikett/{id}", s.RequirePermission("view_books")(s.PrintErsatzEtikettHandler()))
+
 	// Real-time Events
 	sseHandler := s.Broker.Handler()
 	mux.Handle("GET /events", s.RequirePermission("view_students")(sseHandler))

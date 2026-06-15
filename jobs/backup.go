@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/aes"
@@ -16,6 +17,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 // BackupJob führt tägliche verschlüsselte PostgreSQL-Datenbank-Backups durch.
@@ -130,6 +134,43 @@ func (b *BackupJob) RunDatabaseBackup() {
 	sizeMB := float64(len(encrypted)) / 1024 / 1024
 	// #nosec G706
 	log.Printf("Backup: completed successfully → %s (%.2f MB)", outFilename, sizeMB)
+
+	// S3 Offsite Upload
+	s3Endpoint := os.Getenv("S3_ENDPOINT")
+	s3AccessKey := os.Getenv("S3_ACCESS_KEY")
+	s3SecretKey := os.Getenv("S3_SECRET_KEY")
+	s3Bucket := os.Getenv("S3_BUCKET")
+	s3UseSSL := os.Getenv("S3_USE_SSL") != "false" // Default to true
+
+	if s3Endpoint != "" && s3AccessKey != "" && s3SecretKey != "" && s3Bucket != "" {
+		minioClient, err := minio.New(s3Endpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(s3AccessKey, s3SecretKey, ""),
+			Secure: s3UseSSL,
+		})
+		if err != nil {
+			log.Printf("Backup: Failed to initialize S3 client: %v", err)
+		} else {
+			objectName := filepath.Base(outFilename)
+			reader := bytes.NewReader(encrypted)
+			
+			// Optional: Make bucket if not exists
+			exists, errBucketExists := minioClient.BucketExists(ctx, s3Bucket)
+			if errBucketExists == nil && !exists {
+				_ = minioClient.MakeBucket(ctx, s3Bucket, minio.MakeBucketOptions{})
+			}
+
+			_, err = minioClient.PutObject(ctx, s3Bucket, objectName, reader, int64(len(encrypted)), minio.PutObjectOptions{
+				ContentType: "application/octet-stream",
+			})
+			if err != nil {
+				log.Printf("Backup: S3 upload failed for %s: %v", objectName, err)
+			} else {
+				log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
+			}
+		}
+	} else {
+		log.Println("Backup: S3 credentials not fully configured – skipping offsite upload")
+	}
 
 	// Rotation: Nur die letzten 14 täglichen Backups behalten, um Speicherplatzmangel zu vermeiden
 	rotateBackups(backupDir, 14)

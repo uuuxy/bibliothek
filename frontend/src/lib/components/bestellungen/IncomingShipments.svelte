@@ -6,7 +6,8 @@
     scanningTitelId = $bindable(), 
     scannedBarcode = $bindable(), 
     onReceiveItem, 
-    onReleaseAll 
+    onReleaseAll,
+    onReleaseNaacher
   } = $props();
 </script>
 
@@ -44,7 +45,10 @@
           </div>
         {/each}
       </div>
-      <button onclick={onReleaseAll} disabled={isReleasing} class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs shadow-sm cursor-pointer disabled:bg-slate-50 transition-colors">📦 Alle übrigen Lieferungen blind freigeben</button>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <button onclick={onReleaseNaacher} disabled={isReleasing} class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm cursor-pointer disabled:bg-blue-300 transition-colors">🚀 Lieferung freigeben (Naacher)</button>
+        <button onclick={onReleaseAll} disabled={isReleasing} class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs shadow-sm cursor-pointer disabled:bg-slate-50 transition-colors">📦 Blind freigeben</button>
+      </div>
     </div>
   {/if}
 </div>

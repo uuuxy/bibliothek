@@ -353,6 +353,16 @@ CREATE TABLE audit_log (
     bearbeiter_id UUID REFERENCES benutzer(id) ON DELETE SET NULL
 );
 
+-- Table: audit_logs (Admin-spezifische Eingriffe)
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    admin_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    aktion VARCHAR(255) NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}',
+    ip_adresse VARCHAR(45),
+    zeitstempel TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- Table: lieferanten (Book suppliers)
 CREATE TABLE lieferanten (

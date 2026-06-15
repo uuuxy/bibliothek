@@ -62,11 +62,7 @@ func (s *Server) Routes() http.Handler {
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
 
-	// Fail hard if JWT_SECRET is missing during route initialization
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		log.Fatal("FATAL: JWT_SECRET environment variable is required and cannot be empty")
-	}
+
 
 	invHandler := inventur.NewAPIHandler(inventur.APIHandlerConfig{
 		Repo:             invRepo,
@@ -86,7 +82,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("/uploads/", invHandler)
 
 	// Public Endpoints
-	mux.HandleFunc("POST /login", auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))
+	mux.Handle("POST /login", AuthRateLimitMiddleware(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))))
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

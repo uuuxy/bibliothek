@@ -2,11 +2,13 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 )
 
 // SystemEinstellungen holds configurable system-wide settings.
@@ -140,6 +142,12 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
+		}
+
+		// Admin audit log
+		if claims, ok := auth.GetClaims(r.Context()); ok {
+			detailsBytes, _ := json.Marshal(req)
+			_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes), r.RemoteAddr)
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})

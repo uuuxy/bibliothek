@@ -14,4 +14,5 @@ func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService,
 	mux.Handle("POST /api/orders", s.RequirePermission("create_orders")(s.SubmitOrderHandler(orderSvc, pdfSvc)))
 	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
 	mux.Handle("POST /api/orders/receive", s.RequirePermission("create_orders")(s.ReceiveItemHandler()))
+	mux.Handle("POST /api/orders/release", s.RequirePermission("create_orders")(s.ReleaseOrdersHandler()))
 }

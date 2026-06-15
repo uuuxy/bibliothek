@@ -183,3 +183,47 @@ func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
 	writer.Flush()
 	return buf.Bytes(), writer.Error()
 }
+
+// GenerateSingleLabelPDFA6 generates a single A6 PDF label for an exemplar.
+func GenerateSingleLabelPDFA6(label BarcodeLabelDetail) ([]byte, error) {
+	pdf := gofpdf.New("P", "mm", "A6", "")
+	pdf.AddPage()
+	pdf.SetMargins(10, 10, 10)
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.SetFont("Arial", "B", 14)
+	pdf.CellFormat(0, 10, tr("Ersatz-Etikett"), "", 1, "C", false, 0, "")
+	pdf.Ln(5)
+
+	// Draw border box
+	pdf.Rect(10, 25, 85, 110, "D")
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.SetXY(12, 28)
+	pdf.MultiCell(81, 6, tr(label.Titel), "", "C", false)
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.SetXY(12, 45)
+	pdf.MultiCell(81, 5, tr(label.Autor), "", "C", false)
+
+	// Generate QR code
+	barcodeImg, err := GenerateBarcodePNG(label.BarcodeID, true, 300, 300)
+	if err == nil {
+		imgReader := bytes.NewReader(barcodeImg)
+		pdf.RegisterImageOptionsReader(label.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, imgReader)
+		qrSize := 40.0
+		qrX := 10.0 + (85.0-qrSize)/2.0
+		qrY := 60.0
+		pdf.Image(label.BarcodeID, qrX, qrY, qrSize, qrSize, false, "", 0, "")
+	}
+
+	pdf.SetFont("Arial", "B", 14)
+	pdf.SetXY(12, 105)
+	pdf.CellFormat(81, 6, tr(label.BarcodeID), "", 0, "C", false, 0, "")
+
+	var buf bytes.Buffer
+	if err := pdf.Output(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}

@@ -41,6 +41,20 @@
     }
   }
 
+  async function generateInternalId(ex) {
+    try {
+      const res = await apiFetch("/api/barcode/next");
+      if (res.ok) {
+        const data = await res.json();
+        editBarcodeValue = data.next_barcode;
+      } else {
+        barcodeError = "Fehler beim Generieren der ID";
+      }
+    } catch(e) {
+      barcodeError = "Netzwerkfehler";
+    }
+  }
+
   /** @param {any} ex */
   function openStatusEdit(ex) {
     editingStatusId = ex.id;
@@ -180,6 +194,10 @@
                   if (e.key === 'Escape') { editingExemplarId = null; barcodeError = ""; }
                 }}
               />
+              <div class="mt-1 flex gap-2">
+                <button onclick={() => generateInternalId(ex)} class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-semibold cursor-pointer">Interne ID generieren</button>
+                <button onclick={() => saveBarcode(ex)} class="text-[10px] bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded font-semibold cursor-pointer">Speichern</button>
+              </div>
               {#if barcodeError}
                 <p class="text-[10px] text-rose-600 mt-1 absolute -bottom-4 left-0 truncate w-full" title={barcodeError}>{barcodeError}</p>
               {/if}
@@ -197,6 +215,11 @@
                   {ex.barcode_id}
                 </span>
                 {#if appState.adminAuthenticated}
+                  {#if ex.barcode_id.startsWith('B-')}
+                    <a href={`/api/print/etikett/${ex.id}`} target="_blank" title="Ersatz-Etikett drucken" class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1" onclick={(e) => e.stopPropagation()}>
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    </a>
+                  {/if}
                   {#if ex.barcode_id.startsWith('AUTO-') || ex.barcode_id.startsWith('SYS-')}
                     <button
                       class="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded shadow-sm transition-colors cursor-pointer flex items-center gap-1"

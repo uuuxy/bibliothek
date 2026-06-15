@@ -237,6 +237,26 @@
     } finally { isReleasing = false; }
   }
 
+  async function releaseNaacher() {
+    if (!incomingShipments.length) return;
+    isReleasing = true;
+    try {
+      const res = await apiClient.post("/api/orders/release");
+      if (res.ok) {
+        const data = await res.json();
+        showGreenFade = true;
+        orderMessage = { type: "success", text: `Lieferung freigegeben. ${data.released_count} Exemplare sind nun im aktiven Bestand.` };
+        await loadIncomingShipments();
+        setTimeout(() => { showGreenFade = false; fetchRecommendations(); }, 1500);
+      } else {
+        const txt = await res.text();
+        alert("Fehler beim Freigeben (Naacher): " + txt);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally { isReleasing = false; }
+  }
+
   function handlePrintSuggestion() {
     appState.pendingPrintCopies = printSuggestion;
     printSuggestion = null;
@@ -295,6 +315,7 @@
           bind:scannedBarcode
           onReceiveItem={receiveItem}
           onReleaseAll={releaseIncoming}
+          onReleaseNaacher={releaseNaacher}
         />
 
         <OrderRecommendations 

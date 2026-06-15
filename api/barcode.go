@@ -259,3 +259,83 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 		}
 	}
 }
+
+// NextBarcodeHandler returns the next available internal B-XXXXX barcode as JSON.
+func (s *Server) NextBarcodeHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var lastBarcode string
+		qLast := `
+			SELECT barcode_id 
+			FROM buecher_exemplare 
+			WHERE barcode_id LIKE 'B-%' 
+			ORDER BY barcode_id DESC 
+			LIMIT 1
+		`
+		err := s.DB.Pool.QueryRow(ctx, qLast).Scan(&lastBarcode)
+
+		startNum := 10001
+		if err == nil {
+			re := regexp.MustCompile(`B-(\d+)`)
+			matches := re.FindStringSubmatch(lastBarcode)
+			if len(matches) > 1 {
+				if parsed, err := strconv.Atoi(matches[1]); err == nil {
+					startNum = parsed + 1
+				}
+			}
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		nextBarcode := fmt.Sprintf("B-%05d", startNum)
+
+		RespondJSON(w, http.StatusOK, map[string]string{
+			"next_barcode": nextBarcode,
+		})
+	}
+}
+
+// PrintErsatzEtikettHandler generates an A6 PDF label for a single given exemplar.
+func (s *Server) PrintErsatzEtikettHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing exemplar ID parameter"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		var label BarcodeLabelDetail
+		query := `
+			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, '')
+			FROM buecher_exemplare e
+			JOIN buecher_titel t ON e.titel_id = t.id
+			WHERE e.id = $1
+		`
+		err := s.DB.Pool.QueryRow(ctx, query, id).Scan(&label.BarcodeID, &label.Titel, &label.Autor, &label.ISBN)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("exemplar nicht gefunden"))
+				return
+			}
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		pdfBytes, err := GenerateSingleLabelPDFA6(label)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		filename := fmt.Sprintf("Ersatz_Etikett_%s.pdf", label.BarcodeID)
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, filename))
+		_, _ = w.Write(pdfBytes)
+	}
+}

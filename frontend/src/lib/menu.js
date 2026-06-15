@@ -98,6 +98,7 @@ export const menuGroups = [
       { id: "student_ids", label: "Schülerausweise", icon: "identification", permission: "upload_photos" },
       { id: "labels", label: "Buch-Etiketten", icon: "printer", permission: "edit_books" },
       { id: "audit", label: "Logbuch", icon: "clock", permission: "audit_logs" },
+      { id: "admin_audit", label: "Admin-Logbuch", icon: "shield", permission: "manage_users" },
       { id: "permissions", label: "Berechtigungen", icon: "shield", permission: "manage_users" },
       { id: "settings", label: "Einstellungen", icon: "cog", permission: "manage_users" }
     ]

@@ -14,6 +14,7 @@
   import MediaCatalog from "./MediaCatalog.svelte";
   import StatsDashboard from "./StatsDashboard.svelte";
   import AuditLog from "./AuditLog.svelte";
+  import AdminAuditLog from "./AdminAuditLog.svelte";
   import StudentDirectory from "./StudentDirectory.svelte";
   import PermissionManager from "./PermissionManager.svelte";
   import LehrerPortal from "./LehrerPortal.svelte";
@@ -51,6 +52,7 @@
           stats: "/statistiken",
           mahnwesen: "/mahnwesen",
           audit: "/logbuch",
+          admin_audit: "/admin/auditlog",
           permissions: "/berechtigungen",
           student_ids: "/ausweise",
           labels: "/etiketten",
@@ -101,7 +103,8 @@
           students_dir: "/schuelerdatei", orders: "/bestellungen",
           media_catalog: "/katalog", graduates: "/abgaenger",
           stats: "/statistiken", mahnwesen: "/mahnwesen",
-          audit: "/logbuch", permissions: "/berechtigungen",
+          audit: "/logbuch", admin_audit: "/admin/auditlog",
+          permissions: "/berechtigungen",
           student_ids: "/ausweise", labels: "/etiketten", kiosk: "/kiosk"
         };
         const matchedTab = Object.keys(tabToPath).find(key => tabToPath[key] === path);
@@ -132,6 +135,8 @@
     <div class="w-full animate-fade-in"><StatsDashboard /></div>
   {:else if uiStore.activeTab === "audit"}
     <div class="w-full animate-fade-in"><AuditLog /></div>
+  {:else if uiStore.activeTab === "admin_audit"}
+    <div class="w-full animate-fade-in"><AdminAuditLog /></div>
   {:else if uiStore.activeTab === "student_ids"}
     <div class="w-full animate-fade-in"><StudentIdDesigner /></div>
   {:else if uiStore.activeTab === "labels"}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -110,20 +111,22 @@ func setupDatabase(ctx context.Context, dsn string) *db.Database {
 func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	dsn = os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		slog.Error("FATAL: DATABASE_URL environment variable is required and cannot be empty")
-		os.Exit(1)
+		log.Fatalf("FATAL: DATABASE_URL environment variable is required and cannot be empty")
 	}
 
 	jwtSecret = os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		slog.Error("FATAL: JWT_SECRET environment variable is required and cannot be empty")
-		os.Exit(1)
+	if len(jwtSecret) < 32 {
+		log.Fatalf("FATAL: JWT_SECRET environment variable must be at least 32 characters long for security")
+	}
+
+	aesKey := os.Getenv("APP_ENCRYPTION_KEY")
+	if len(aesKey) != 32 && len(aesKey) != 64 {
+		log.Fatalf("FATAL: APP_ENCRYPTION_KEY must be exactly 32 bytes (or 64 hex characters) long")
 	}
 
 	port = os.Getenv("PORT")
 	if port == "" {
-		slog.Error("FATAL: PORT environment variable is required and cannot be empty")
-		os.Exit(1)
+		log.Fatalf("FATAL: PORT environment variable is required and cannot be empty")
 	}
 
 	var err error

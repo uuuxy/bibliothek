@@ -96,6 +96,10 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 			return
 		}
 
+		// Admin audit log
+		details := fmt.Sprintf(`{"student_id":"%s"}`, id)
+		_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "DELETE_STUDENT", details, r.RemoteAddr)
+
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status": "success",
 		})

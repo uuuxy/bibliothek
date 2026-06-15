@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -293,6 +294,12 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				// pgx.ErrNoRows happens if ON CONFLICT DO NOTHING triggers
 			}
 			bcr.Close()
+		}
+
+		// Admin audit log
+		if claims, ok := auth.GetClaims(r.Context()); ok {
+			details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount)
+			_, _ = tx.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, r.RemoteAddr)
 		}
 
 		if err := tx.Commit(ctx); err != nil {
