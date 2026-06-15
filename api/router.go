@@ -133,7 +133,7 @@ func (s *Server) Routes() http.Handler {
 	})
 
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
-	bodyLimiter := MaxBodySizeMiddleware(5 * 1024 * 1024) // 5MB limit
+	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024) // 100MB limit
 	rateLimiter := RateLimitMiddleware(50)
 
 	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
