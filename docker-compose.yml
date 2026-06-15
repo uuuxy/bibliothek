@@ -29,7 +29,7 @@ services:
       - PORT=8083
       - DB_HOST=postgres-db
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
-      - JWT_SECRET=${JWT_SECRET:-supergeheim}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-default-key-at-least-32-bytes}
       - COOKIE_SECURE=false
       - IMAP_HOST=${IMAP_HOST:-mock}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
