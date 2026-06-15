@@ -19,3 +19,10 @@ Dieses Hilfsprogramm migriert bestehende unverschlüsselte Bilddateien aus dem D
 
 Ein Shell-Skript zur Erzeugung periodischer Datenbank-Backups.
 - **Funktionsweise:** Es nutzt das Programm `pg_dump`, um den Zustand der Datenbank zu exportieren. Das Skript wird idealerweise über einen System-Cronjob oder den internen Scheduler aufgerufen.
+
+## 4. Concurrency & Load Testing (`cmd/stresstest`)
+
+Ein isoliertes Go-Skript zur Durchführung von parallelen Lasttests und zur Simulation von Race-Conditions.
+- **Funktionsweise:** Es feuert mithilfe von `sync.Cond` und Go-Routinen in derselben Millisekunde dutzende gleichzeitige Requests gegen den Ausleih-Endpunkt (`/api/action`).
+- **Verwendung:** `go run cmd/stresstest/main.go -port 8084` (der Port kann an die lokale Ziel-Umgebung angepasst werden).
+- **Zweck:** Sicherstellung der Transaktionssicherheit (ACID) der PostgreSQL-Datenbank und der Mutex-Locks im Backend bei zeitgleichem Scannen desselben Barcodes.
