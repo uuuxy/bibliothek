@@ -35,7 +35,7 @@ else
     echo "Bitte ergänze dein Caddyfile manuell um diesen Block:"
     cat << EOF
 $DOMAIN {
-    reverse_proxy localhost:8083
+    reverse_proxy bibliothek-backend:8083
 }
 EOF
 fi
