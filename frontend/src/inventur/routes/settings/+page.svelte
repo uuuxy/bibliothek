@@ -29,7 +29,7 @@
 	async function fetchMapping() {
 		mappingLoading = true;
 		try {
-			const res = await apiClient.post('/api/klassen-mapping');
+			const res = await apiClient.get('/api/klassen-mapping');
 			if (res.ok) mappingRows = await res.json();
 		} catch { /* ignore */ } finally {
 			mappingLoading = false;
@@ -76,7 +76,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await apiClient.put('/api/einstellungen');
+			const res = await apiClient.get('/api/einstellungen');
 			if (res.ok) {
 				const data = await res.json();
 				ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;

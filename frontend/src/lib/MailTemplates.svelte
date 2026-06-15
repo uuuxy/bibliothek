@@ -16,7 +16,7 @@
 
     async function loadTemplates() {
         try {
-            const res = await apiClient.put('/api/mail-templates');
+            const res = await apiClient.get('/api/mail-templates');
             if (res.ok) {
                 templates = await res.json() || [];
                 if (templates.length > 0 && !selectedTemplateId) {

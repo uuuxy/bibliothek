@@ -36,7 +36,7 @@
 
   async function loadSettings() {
     try {
-      const res = await apiClient.put('/api/einstellungen');
+      const res = await apiClient.get('/api/einstellungen');
       if (res.ok) {
         const data = await res.json();
         ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;
