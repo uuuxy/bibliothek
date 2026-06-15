@@ -17,8 +17,10 @@ import (
 )
 
 type LitteraImportResponse struct {
-	NewTitles      int `json:"new_titles_count"`
-	ImportedCopies int `json:"imported_copies_count"`
+	NewTitles      int    `json:"new_titles_count,omitempty"`
+	ImportedCopies int    `json:"imported_copies_count,omitempty"`
+	UpdatedTitles  int    `json:"updated_titles_count,omitempty"`
+	Type           string `json:"type"` // "csv" or "xml"
 }
 
 func (s *Server) LitteraImportHandler() http.HandlerFunc {
@@ -29,7 +31,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		file, _, err := r.FormFile("file")
+		file, fileHeader, err := r.FormFile("file")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -42,8 +44,15 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		delimiter := ','
 		contentStr := string(content)
+		isXML := strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xml") || strings.Contains(contentStr, "<?xml") || strings.Contains(contentStr, "<katalogisat")
+
+		if isXML {
+			s.handleLitteraXMLImport(w, r, content)
+			return
+		}
+
+		delimiter := ','
 		if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
 			delimiter = ';'
 		}
@@ -310,6 +319,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusOK, LitteraImportResponse{
 			NewTitles:      newTitlesCount,
 			ImportedCopies: importedCopiesCount,
+			Type:           "csv",
 		})
 	}
 }

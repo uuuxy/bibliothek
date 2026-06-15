@@ -26,9 +26,16 @@
 				throw new Error(data.error || 'Upload fehlgeschlagen');
 			}
 
+			let successMsg = "";
+			if (data.type === "xml") {
+				successMsg = `XML-Import erfolgreich! ${data.updated_titles_count} bestehende Titel wurden aktualisiert.`;
+			} else {
+				successMsg = `CSV-Import erfolgreich! ${data.new_titles_count} neue Titel und ${data.imported_copies_count} Exemplare wurden angelegt.`;
+			}
+
 			importResult = {
 				type: 'success',
-				message: `Import erfolgreich! ${data.new_titles_count} neue Titel und ${data.imported_copies_count} Exemplare wurden angelegt.`
+				message: successMsg
 			};
 			files = null; // reset input
 		} catch (err: any) {
@@ -45,14 +52,14 @@
 <div class="p-6 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-4">
 	<div>
 		<h3 class="text-base font-bold text-slate-900">Katalog-Import (Littera)</h3>
-		<p class="text-xs text-slate-500 mt-1">Lade hier die katalogisat.xml hoch, um den Buchbestand per Bulk-Insert einzulesen.</p>
+		<p class="text-xs text-slate-500 mt-1">Lade hier die <strong>katalogisat.xml</strong> hoch (um bestehende Buch-Metadaten zu aktualisieren) oder eine <strong>CSV-Datei</strong> (um neue Bücher/Exemplare per Bulk-Insert anzulegen).</p>
 	</div>
 
 	<div class="flex items-center gap-4">
 		<label class="relative {isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
 			<input 
 				type="file" 
-				accept=".xml" 
+				accept=".xml,.csv" 
 				bind:files 
 				disabled={isImporting}
 				class="sr-only"
