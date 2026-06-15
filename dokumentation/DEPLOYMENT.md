@@ -24,15 +24,7 @@ Falls nicht, wird folgender Block sicher **ans Ende** der Datei angehängt:
 
 ```caddyfile
 flasch3.herzog-dupont.de {
-    # Routen zur Go Backend-API
-    handle /api/* {
-        reverse_proxy localhost:8083
-    }
-    
-    # Routen zum Frontend SvelteKit Server
-    handle /* {
-        reverse_proxy localhost:3000
-    }
+    reverse_proxy localhost:8083
 }
 ```
 
