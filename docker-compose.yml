@@ -39,13 +39,6 @@ services:
       postgres-db:
         condition: service_healthy
 
-  frontend:
-    build: ./frontend
-    container_name: bibliothek-frontend
-    ports:
-      - "3001:3000" # Localhost-Binding für globalen Caddy Reverse Proxy
-    environment:
-      - VITE_API_URL=https://flasch3.herzog-dupont.de/api
 
 volumes:
   postgres_data:
