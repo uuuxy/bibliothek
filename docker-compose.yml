@@ -31,6 +31,7 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-super-secret-default-key-at-least-32-bytes}
       - COOKIE_SECURE=false
+      - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY}
       - IMAP_HOST=${IMAP_HOST:-mock}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
     volumes:
