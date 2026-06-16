@@ -2,8 +2,10 @@ package inventur
 
 import (
 	"context"
+	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,18 +15,41 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func extractExcelRows(w http.ResponseWriter, request *http.Request) ([][]string, error) {
+func extractImportRows(w http.ResponseWriter, request *http.Request) ([][]string, error) {
 	request.Body = http.MaxBytesReader(w, request.Body, 100<<20)
 	err := request.ParseMultipartForm(100 << 20) // 100 MB
 	if err != nil {
 		return nil, errors.New("datei zu groß oder ungültig")
 	}
 
-	file, _, err := request.FormFile("file")
+	file, fileHeader, err := request.FormFile("file")
 	if err != nil {
 		return nil, errors.New("keine datei gefunden")
 	}
 	defer func() { _ = file.Close() }()
+
+	if strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
+		content, err := io.ReadAll(file)
+		if err != nil {
+			return nil, errors.New("fehler beim lesen der csv-datei")
+		}
+		contentStr := string(content)
+		delimiter := ','
+		if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
+			delimiter = ';'
+		}
+		reader := csv.NewReader(strings.NewReader(contentStr))
+		reader.Comma = delimiter
+		reader.LazyQuotes = true
+		rows, err := reader.ReadAll()
+		if err != nil {
+			return nil, errors.New("ungültige csv-datei")
+		}
+		if len(rows) == 0 {
+			return nil, errors.New("datei ist leer")
+		}
+		return rows, nil
+	}
 
 	f, err := excelize.OpenReader(file)
 	if err != nil {
@@ -130,7 +155,7 @@ func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request
 		return
 	}
 
-	rows, err := extractExcelRows(writer, request)
+	rows, err := extractImportRows(writer, request)
 	if err != nil {
 		writeError(writer, http.StatusBadRequest, err.Error())
 		return
@@ -139,7 +164,7 @@ func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request
 	colIdx, hasHeader := determineColumnIndices(rows[0])
 
 	if colIdx["isbn"] == -1 {
-		writeError(writer, http.StatusBadRequest, "spalte 'isbn' konnte nicht gefunden werden")
+		writeError(writer, http.StatusBadRequest, "spalte 'isbn' fehlt in der datei. bitte stellen sie sicher, dass eine isbn-spalte vorhanden ist.")
 		return
 	}
 

@@ -20,7 +20,7 @@ export async function holeBuecherListe() {
 }
 
 /** @param {File} datei */
-export async function importiereExcel(datei) {
+export async function importiereListe(datei) {
     const formData = new FormData();
     formData.append("file", datei);
     const res = await apiFetch("/api/books/import", {

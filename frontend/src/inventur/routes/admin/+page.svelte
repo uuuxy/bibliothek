@@ -14,7 +14,7 @@
 	import AdminAnsichtsUmschalter from "$lib/components/admin/AdminAnsichtsUmschalter.svelte";
 	import {
 		holeBuecherListe,
-		importiereExcel,
+		importiereListe,
 		loescheBuecher,
 		holeExterneCover,
 		retryExterneCover,
@@ -118,7 +118,7 @@
 		if (!datei) return;
 		wirdGeladen = true;
 		try {
-			await importiereExcel(datei);
+			await importiereListe(datei);
 			await aktualisiereBuecher();
 			alert("Import erfolgreich!");
 		} catch (fehler) {
