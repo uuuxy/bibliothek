@@ -30,7 +30,10 @@ export async function importiereExcel(datei) {
         },
         body: formData,
     });
-    if (!res.ok) throw new Error("Import fehlgeschlagen");
+    if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || errJson.message || "Import fehlgeschlagen");
+    }
     return true;
 }
 

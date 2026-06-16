@@ -14,8 +14,8 @@ import (
 )
 
 func extractExcelRows(w http.ResponseWriter, request *http.Request) ([][]string, error) {
-	request.Body = http.MaxBytesReader(w, request.Body, 10<<20)
-	err := request.ParseMultipartForm(10 << 20) // 10 MB
+	request.Body = http.MaxBytesReader(w, request.Body, 100<<20)
+	err := request.ParseMultipartForm(100 << 20) // 100 MB
 	if err != nil {
 		return nil, errors.New("datei zu groß oder ungültig")
 	}
@@ -148,7 +148,7 @@ func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request
 		dataRows = rows[1:]
 	}
 
-	const maxImportRows = 5000
+	const maxImportRows = 100000
 	if len(dataRows) > maxImportRows {
 		writeError(writer, http.StatusBadRequest, fmt.Sprintf("zu viele zeilen (%d), maximal %d erlaubt", len(dataRows), maxImportRows))
 		return
