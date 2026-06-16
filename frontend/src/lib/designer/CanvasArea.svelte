@@ -177,10 +177,10 @@
 
 {#snippet canvasElement(el)}
   {@const isSelected = selectedId === el.id}
-  {@const isText = ['header','address','name','details','validity','text'].includes(el.type)}
-  {@const isImage = el.type === 'image' || el.type === 'logo'}
-  {@const isPhoto = el.type === 'photo'}
-  {@const isBarcode = el.type === 'barcode'}
+  {@const isBarcode = el.type === 'barcode' || (typeof el.content === 'string' && el.content.includes('{{barcode}}'))}
+  {@const isText = !isBarcode && ['header','address','name','details','validity','text'].includes(el.type)}
+  {@const isImage = !isBarcode && (el.type === 'image' || el.type === 'logo')}
+  {@const isPhoto = !isBarcode && el.type === 'photo'}
 
   <div
     role="presentation"
