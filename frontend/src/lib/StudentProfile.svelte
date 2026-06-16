@@ -3,7 +3,7 @@
   import WebcamCapture from "./WebcamCapture.svelte";
   import DamageReportModal from "./DamageReportModal.svelte";
   import BorrowedBooksCard from "./BorrowedBooksCard.svelte";
-  import StudentEditModal from "./StudentEditModal.svelte";
+  import StudentEditSheet from './StudentEditSheet.svelte';
   import StudentProfileCard from "./StudentProfileCard.svelte";
   import StudentPrintCard from "./StudentPrintCard.svelte";
   import StudentProfileDeleteModal from "./StudentProfileDeleteModal.svelte";
@@ -297,5 +297,5 @@
 {/if}
 
 {#if showEditModal}
-  <StudentEditModal student={profile} onClose={() => showEditModal = false} onSave={handleSaveEdit} />
+  <StudentEditSheet student={profile} {role} onClose={() => showEditModal = false} onSave={handleSaveEdit} />
 {/if}
