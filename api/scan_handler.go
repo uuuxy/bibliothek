@@ -63,14 +63,17 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 		}
 		var currentStudentID *string
 
+		var currentStudentBarcode *string
+
 		err = s.DB.Pool.QueryRow(ctx, `
 			SELECT e.id, e.titel_id, e.barcode_id, t.titel, COALESCE(t.autor, ''),
-			       (SELECT schueler_id FROM ausleihen WHERE exemplar_id = e.id AND rueckgabe_am IS NULL LIMIT 1) as current_student_id
+			       (SELECT schueler_id FROM ausleihen WHERE exemplar_id = e.id AND rueckgabe_am IS NULL LIMIT 1) as current_student_id,
+			       (SELECT s.barcode_id FROM ausleihen a JOIN schueler s ON a.schueler_id = s.id WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL LIMIT 1) as current_student_barcode
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON e.titel_id = t.id
 			WHERE e.barcode_id = $1
 			LIMIT 1
-		`, barcode).Scan(&book.ID, &book.TitelID, &book.BarcodeID, &book.Titel, &book.Autor, &currentStudentID)
+		`, barcode).Scan(&book.ID, &book.TitelID, &book.BarcodeID, &book.Titel, &book.Autor, &currentStudentID, &currentStudentBarcode)
 
 		if err == nil {
 			// Book found
@@ -83,6 +86,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 				"book":               book,
 				"status":             status,
 				"current_student_id": currentStudentID,
+				"current_student_barcode": currentStudentBarcode,
 			})
 			return
 		} else if err != pgx.ErrNoRows {

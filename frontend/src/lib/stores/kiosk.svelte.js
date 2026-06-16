@@ -296,6 +296,7 @@ export function createKioskStore() {
     return {
         // Getter
         get activeStudent() { return activeStudent; },
+        set activeStudent(v) { activeStudent = v; },
         get studentInputVal() { return studentInputVal; },
         set studentInputVal(v) { studentInputVal = v; },
         get bookInputVal() { return bookInputVal; },

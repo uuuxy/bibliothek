@@ -10,11 +10,48 @@
 
   $effect(() => {
     if (appState.triggerStudentScan) {
-      kioskStore.studentInputVal = appState.triggerStudentScan;
+      const barcode = appState.triggerStudentScan;
       appState.triggerStudentScan = "";
-      kioskStore.handleStudentSubmit();
+      handleSmartScan(barcode);
     }
   });
+
+  async function handleSmartScan(barcode) {
+    try {
+      const res = await fetch(`/api/scan?barcode=${encodeURIComponent(barcode)}`);
+      if (!res.ok) {
+        kioskStore.triggerFlash("error", "Barcode im System nicht gefunden");
+        return;
+      }
+      const data = await res.json();
+
+      if (data.type === "student") {
+        // Fall A: Schüler Profil laden
+        kioskStore.studentInputVal = barcode;
+        await kioskStore.handleStudentSubmit();
+      } else if (data.type === "book") {
+        if (data.status === "lent") {
+          // Fall B: Rückgabe Workflow
+          if (data.current_student_barcode) {
+             kioskStore.studentInputVal = data.current_student_barcode;
+             await kioskStore.handleStudentSubmit();
+          }
+          kioskStore.bookInputVal = barcode;
+          await kioskStore.handleBookSubmit();
+        } else if (data.status === "available") {
+          // Fall C: Ausleihe Workflow
+          if (!kioskStore.activeStudent) {
+             kioskStore.triggerFlash("error", "Bitte zuerst einen Schülerausweis scannen!");
+             return;
+          }
+          kioskStore.bookInputVal = barcode;
+          await kioskStore.handleBookSubmit();
+        }
+      }
+    } catch (e) {
+      kioskStore.triggerFlash("error", "Fehler beim Smart-Scan.");
+    }
+  }
 
   onMount(() => {
     kioskStore.fetchSettings();
