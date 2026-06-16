@@ -262,7 +262,9 @@
               onDamageClick={role === 'admin' || role === 'mitarbeiter' ? openDamageModal : undefined}
             />
             
-            <StudentVormerkungenCard bind:vormerkungen />
+            {#if vormerkungen.length > 0}
+              <StudentVormerkungenCard bind:vormerkungen />
+            {/if}
           </div>
         {:else if activeTab === "stammdaten"}
           <StudentProfileStammdaten 
