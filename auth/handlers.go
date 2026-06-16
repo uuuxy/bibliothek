@@ -188,19 +188,17 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		})
 
 		var permissions []string
-		if role == RoleAdmin {
-			permissions = []string{"*"}
-		} else {
-			rows, err := dbPool.Query(ctx, "SELECT permission FROM role_permissions WHERE UPPER(role) = UPPER($1) AND allowed = true", string(role))
-			if err == nil {
-				for rows.Next() {
-					var p string
-					if err := rows.Scan(&p); err == nil {
-						permissions = append(permissions, p)
-					}
-				}
-				rows.Close()
-			}
+		switch roleStr {
+		case "admin":
+			permissions = []string{"manage_users", "manage_settings", "print_classes", "manage_inventory"}
+		case "mitarbeiter":
+			permissions = []string{"print_classes", "manage_inventory"}
+		case "lehrer":
+			permissions = []string{"view_media"}
+		case "helfer":
+			permissions = []string{}
+		default:
+			permissions = []string{}
 		}
 
 		w.Header().Set("Content-Type", "application/json")

@@ -6,11 +6,14 @@ import (
 
 // User represents a system administrator, teacher, or library staff member.
 type User struct {
-	ID        string `json:"id"`
-	BarcodeID string `json:"barcode_id"`
-	Vorname   string `json:"vorname"`
-	Nachname  string `json:"nachname"`
-	Rolle     string `json:"rolle"`
+	ID          string   `json:"id"`
+	BarcodeID   string   `json:"barcode_id"`
+	Vorname     string   `json:"vorname"`
+	Nachname    string   `json:"nachname"`
+	Rolle       string   `json:"rolle"`
+	Email       *string  `json:"email"`
+	Aktiv       bool     `json:"aktiv"`
+	Permissions []string `json:"permissions"`
 }
 
 // Student represents the schueler table model in PostgreSQL.
