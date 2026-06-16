@@ -105,7 +105,7 @@
 ></div>
 
 <!-- Side Sheet -->
-<aside
+<div
   class="fixed top-0 right-0 z-50 h-full w-11/12 max-w-7xl
          flex flex-col
          bg-white shadow-2xl
@@ -118,7 +118,7 @@
   <header class="shrink-0 flex items-center justify-between gap-4 px-8 py-5 border-b border-slate-100 bg-white">
     <div class="flex items-center gap-4 min-w-0">
       <!-- Avatar / Initials -->
-      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-base shrink-0 shadow-md">
+      <div class="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-base shrink-0 shadow-md">
         {(student?.vorname?.[0] ?? '') + (student?.nachname?.[0] ?? '')}
       </div>
       <div class="min-w-0">
@@ -452,7 +452,7 @@
       </button>
     </div>
   </footer>
-</aside>
+</div>
 
 <style>
   @keyframes slide-in-right {
