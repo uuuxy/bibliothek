@@ -16,8 +16,8 @@
   import { onDestroy } from 'svelte';
   import { idStore } from './idDesignerStore.svelte.js';
 
-  /** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string, timestamp: number, onWebcam: (student: any)=>void }} */
-  const { side, selectedId, onSelect, student, zoom, barcodeType, timestamp, onWebcam } = $props();
+  /** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string, timestamp: number }} */
+  const { side, selectedId, onSelect, student, zoom, barcodeType, timestamp } = $props();
 
   /** Elements for the active side, sorted ascending by zIndex so higher layers render on top. */
   const elements = $derived(
@@ -75,8 +75,7 @@
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup',   onUp);
       activeDragCleanup = null;
-      // Photo tap (no movement): open webcam
-      if (!hasMoved && el.type === 'photo' && student) onWebcam(student);
+      // removed photo tap
     }
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup',   onUp);
@@ -228,8 +227,9 @@
       <div class="w-full h-full border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden rounded-sm group">
         {#if student && student.foto_url}
           <img src="{student.foto_url}?t={timestamp}" onerror={(e) => { /** @type {any} */ (e.currentTarget).style.display='none'; }} class="w-full h-full object-cover pointer-events-none" alt="Passbild" />
+        {:else}
+          <span class="text-[5px] text-slate-400 font-bold pointer-events-none">FOTO</span>
         {/if}
-        <div class="absolute inset-0 bg-slate-900/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-[5px] font-bold tracking-wider uppercase">📸 Ändern</div>
       </div>
     {:else if isBarcode}
       <div class="w-full h-full flex flex-col items-center justify-center">
