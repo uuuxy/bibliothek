@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import Modal from "./Modal.svelte";
   import LusdPreviewModal from "./LusdPreviewModal.svelte";
-  import StudentDetailModal from "./StudentDetailModal.svelte";
+  import StudentProfile from "./StudentProfile.svelte";
   import StudentCreateModal from "./StudentCreateModal.svelte";
 
   // Props (Svelte 5)
@@ -104,12 +104,13 @@
 
 <div class="w-full animate-fade-in text-slate-800">
   
-  <StudentDetailModal 
-    open={!!activeStudent} 
-    student={activeStudent} 
-    role={role} 
-    onclose={() => { activeStudent = null; loadStudents(); }} 
-  />
+  {#if activeStudent}
+    <StudentProfile 
+      student={activeStudent} 
+      {role} 
+      onDeselect={() => { activeStudent = null; loadStudents(); }} 
+    />
+  {/if}
 
   {#if !activeStudent}
     <!-- Fullscreen Directory List -->
