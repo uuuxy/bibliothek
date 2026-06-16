@@ -1,6 +1,7 @@
 <script>
   import { apiFetch, apiClient } from "./apiFetch.js";
   import { onMount } from "svelte";
+  import { authStore } from "./stores/authStore.svelte.js";
   import LusdPreviewModal from "./LusdPreviewModal.svelte";
   import StudentProfile from "./StudentProfile.svelte";
   import ClassPrintStation from "./ClassPrintStation.svelte";
@@ -149,7 +150,7 @@
             </button>
           {/if}
 
-          {#if role === 'admin' || role === 'mitarbeiter'}
+          {#if authStore.currentUser?.rolle === 'admin' || authStore.currentUser?.rolle === 'mitarbeiter'}
             <button onclick={() => showPrintStation = true} aria-label="Klassensatz drucken" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-sm cursor-pointer shrink-0 border border-slate-200">
               <span aria-hidden="true">🖨️</span>
               <span>Klassensatz drucken</span>

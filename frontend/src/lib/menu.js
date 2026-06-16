@@ -100,7 +100,7 @@ export const menuGroups = [
       { id: "audit", label: "Logbuch", icon: "clock", permission: "audit_logs" },
       { id: "admin_audit", label: "Admin-Logbuch", icon: "shield", permission: "manage_users" },
       { id: "permissions", label: "Berechtigungen", icon: "shield", permission: "manage_users" },
-      { id: "settings", label: "Einstellungen", icon: "cog", permission: "manage_users" }
+      { id: "settings", label: "Einstellungen", icon: "cog", permission: "manage_users", roles: ["admin"] }
     ]
   },
   {
