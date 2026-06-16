@@ -105,7 +105,7 @@
 
 <!-- Toast -->
 {#if toast}
-  <div class="fixed top-6 right-6 z-[200] px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in flex items-center gap-2
+  <div class="fixed top-6 right-6 z-200 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in flex items-center gap-2
     {toast.type === 'error' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}">
     {#if toast.type === 'error'}
       <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -118,7 +118,7 @@
 
 <!-- Delete Confirm Dialog -->
 {#if deleteConfirmId !== null}
-  <div class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+  <div class="fixed inset-0 z-150 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
     <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm mx-4 space-y-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
@@ -143,7 +143,7 @@
 
 <!-- Create/Edit Modal -->
 {#if modalOpen}
-  <div class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+  <div class="fixed inset-0 z-150 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
     <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md mx-4 space-y-5">
       <div class="flex items-center justify-between">
         <h4 class="text-base font-bold text-slate-900">
