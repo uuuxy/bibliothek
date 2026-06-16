@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"fmt"
@@ -14,13 +15,14 @@ import (
 	"bibliothek/auth"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/xuri/excelize/v2"
 )
 
 type LitteraImportResponse struct {
 	NewTitles      int    `json:"new_titles_count,omitempty"`
 	ImportedCopies int    `json:"imported_copies_count,omitempty"`
 	UpdatedTitles  int    `json:"updated_titles_count,omitempty"`
-	Type           string `json:"type"` // "csv" or "xml"
+	Type           string `json:"type"` // "csv", "xml" or "xlsx"
 }
 
 func (s *Server) LitteraImportHandler() http.HandlerFunc {
@@ -52,21 +54,43 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		delimiter := ','
-		if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
-			delimiter = ';'
+		var rows [][]string
+		var isXLSX bool
+		if strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
+			isXLSX = true
+			f, err := excelize.OpenReader(bytes.NewReader(content))
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to open excel file: %w", err))
+				return
+			}
+			defer f.Close()
+			sheetName := f.GetSheetName(f.GetActiveSheetIndex())
+			rows, err = f.GetRows(sheetName)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to get excel rows: %w", err))
+				return
+			}
+		} else {
+			delimiter := ','
+			if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
+				delimiter = ';'
+			}
+			reader := csv.NewReader(strings.NewReader(contentStr))
+			reader.Comma = delimiter
+			reader.LazyQuotes = true
+			rows, err = reader.ReadAll()
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to read csv content: %w", err))
+				return
+			}
 		}
 
-		reader := csv.NewReader(strings.NewReader(contentStr))
-		reader.Comma = delimiter
-		reader.LazyQuotes = true
-
-		headers, err := reader.Read()
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		if len(rows) < 1 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("empty file"))
 			return
 		}
 
+		headers := rows[0]
 		headerMap := make(map[string]int)
 		for idx, h := range headers {
 			norm := strings.ToLower(strings.TrimSpace(h))
@@ -108,23 +132,23 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		defer func() { _ = tx.Rollback(ctx) }()
 
 		// Preload existing titles for fast mapping
-		rows, err := tx.Query(ctx, "SELECT id, coalesce(isbn, ''), titel FROM buecher_titel")
+		dbRows, err := tx.Query(ctx, "SELECT id, coalesce(isbn, ''), titel FROM buecher_titel")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		isbnToID := make(map[string]string)
 		titelToID := make(map[string]string)
-		for rows.Next() {
+		for dbRows.Next() {
 			var id, isbn, titel string
-			if err := rows.Scan(&id, &isbn, &titel); err == nil {
+			if err := dbRows.Scan(&id, &isbn, &titel); err == nil {
 				if isbn != "" {
 					isbnToID[isbn] = id
 				}
 				titelToID[titel] = id
 			}
 		}
-		rows.Close()
+		dbRows.Close()
 
 		type NewTitle struct {
 			Titel     string
@@ -144,18 +168,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		newTitlesMap := make(map[string]*NewTitle) // key: isbn or titel
 		var newTitlesOrder []string
 
-		lineNum := 1
-		for {
-			row, err := reader.Read()
-			if err == io.EOF {
-				break
-			}
-			lineNum++
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("error parsing row %d: %w", lineNum, err))
-				return
-			}
-
+		for _, row := range rows[1:] {
 			getCol := func(key string) string {
 				if idx, ok := headerMap[key]; ok && idx < len(row) {
 					return strings.TrimSpace(row[idx])
@@ -201,8 +214,6 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 					}
 					newTitlesOrder = append(newTitlesOrder, cacheKey)
 				}
-				// We can't assign TitelID yet, store barcode in the struct?
-				// Better: Just store pending copies
 			}
 		}
 
@@ -240,20 +251,9 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		}
 
 		// Second pass: Now all titles have IDs, collect all copies again
-		reader = csv.NewReader(strings.NewReader(contentStr))
-		reader.Comma = delimiter
-		reader.LazyQuotes = true
-		_, _ = reader.Read() // skip header
 		copiesToInsert = nil
 
-		for {
-			row, err := reader.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				continue
-			}
+		for _, row := range rows[1:] {
 			getCol := func(key string) string {
 				if idx, ok := headerMap[key]; ok && idx < len(row) {
 					return strings.TrimSpace(row[idx])
@@ -300,7 +300,6 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				if err == nil {
 					importedCopiesCount++
 				}
-				// pgx.ErrNoRows happens if ON CONFLICT DO NOTHING triggers
 			}
 			bcr.Close()
 		}
@@ -316,10 +315,17 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
+		var importType string
+		if isXLSX {
+			importType = "xlsx"
+		} else {
+			importType = "csv"
+		}
+
 		RespondJSON(w, http.StatusOK, LitteraImportResponse{
 			NewTitles:      newTitlesCount,
 			ImportedCopies: importedCopiesCount,
-			Type:           "csv",
+			Type:           importType,
 		})
 	}
 }
