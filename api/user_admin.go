@@ -25,9 +25,10 @@ type UserResponse struct {
 	Vorname    string    `json:"vorname"`
 	Nachname   string    `json:"nachname"`
 	Email      string    `json:"email"`
-	Rolle      string    `json:"rolle"`
-	Aktiv      bool      `json:"aktiv"`
-	ErstelltAm time.Time `json:"erstellt_am"`
+	Rolle       string    `json:"rolle"`
+	Aktiv       bool      `json:"aktiv"`
+	ErstelltAm  time.Time `json:"erstellt_am"`
+	Permissions []string  `json:"permissions"`
 }
 
 // ListUsersHandler returns a list of all system users.
@@ -66,6 +67,19 @@ func (s *Server) ListUsersHandler() http.HandlerFunc {
 				return
 			}
 			u.Rolle = strings.ToLower(u.Rolle) // Normalize for frontend
+			
+			// Permissions analog zum Login statisch mappen
+			switch u.Rolle {
+			case "admin":
+				u.Permissions = []string{"manage_users", "manage_settings", "print_classes", "manage_inventory"}
+			case "mitarbeiter":
+				u.Permissions = []string{"print_classes", "manage_inventory"}
+			case "lehrer":
+				u.Permissions = []string{"view_media"}
+			default:
+				u.Permissions = []string{}
+			}
+
 			users = append(users, u)
 		}
 
