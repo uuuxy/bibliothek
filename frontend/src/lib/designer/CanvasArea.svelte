@@ -224,12 +224,11 @@
         {/if}
       </div>
     {:else if isPhoto}
-      <div class="w-full h-full border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden rounded-sm group">
-        {#if student && student.foto_url}
-          <img src="{student.foto_url}?t={timestamp}" onerror={(e) => { /** @type {any} */ (e.currentTarget).style.display='none'; }} class="w-full h-full object-cover pointer-events-none" alt="Passbild" />
-        {:else}
-          <span class="text-[5px] text-slate-400 font-bold pointer-events-none">FOTO</span>
-        {/if}
+      <div class="w-full h-full border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center overflow-hidden rounded-sm text-slate-400">
+        <svg class="w-1/2 h-1/2 max-h-12 max-w-12 mb-1 opacity-40 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        <span class="text-[5px] font-bold tracking-widest pointer-events-none uppercase">PASSBILD</span>
       </div>
     {:else if isBarcode}
       <div class="w-full h-full flex flex-col items-center justify-center">
