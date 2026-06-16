@@ -24,6 +24,9 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	// Inventory
 	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.ScanInventoryHandler()))
 
+	// Smart Scanner (Tresen-Weiche)
+	mux.Handle("GET /api/scan", s.RequirePermission("view_students")(s.SmartScanHandler()))
+
 	// Demo Dashboards
 	adminDashboard := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Access granted: Welcome to the Admin Dashboard."))
