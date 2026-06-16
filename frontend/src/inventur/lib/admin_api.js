@@ -77,3 +77,22 @@ export async function retryExterneCover(ids = []) {
     const json = await res.json();
     return json.data;
 }
+
+export async function exportiereCSV() {
+	const res = await apiFetch("/api/admin/books/export", {
+		method: "GET",
+		credentials: "include",
+	});
+	if (!res.ok) {
+		throw new Error("Export fehlgeschlagen");
+	}
+	const blob = await res.blob();
+	const url = window.URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = `bestand_export_${new Date().toISOString().split('T')[0]}.csv`;
+	document.body.appendChild(a);
+	a.click();
+	window.URL.revokeObjectURL(url);
+	document.body.removeChild(a);
+}

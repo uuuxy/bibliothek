@@ -28,6 +28,8 @@ func (handler *APIHandler) handleAdminBooks(writer http.ResponseWriter, request 
 			handler.handleClassBooks(w, request)
 		case "/api/admin/books/external-covers":
 			handler.handleListExternalCovers(w, request)
+		case "/api/admin/books/export":
+			handler.handleExportCSV(w, request)
 		default:
 			writeError(w, http.StatusNotFound, "route nicht gefunden")
 		}

@@ -8,11 +8,12 @@
 	 *   onDelete: () => void,
 	 *   onScan: () => void,
 	 *   onImportExcel: (event: Event) => void,
+	 *   onExportCSV: () => void,
 	 *   onCreateNew: () => void,
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let { booksLength, selectedCount, onDelete, onScan, onImportExcel, onCreateNew, onRetryCovers } =
+	let { booksLength, selectedCount, onDelete, onScan, onImportExcel, onExportCSV, onCreateNew, onRetryCovers } =
 		$props();
 
 	/** @type {HTMLInputElement|null} */
@@ -131,6 +132,21 @@
 				/>
 			</svg>
 			Liste Importieren (CSV/XLSX)
+		</button>
+
+		<button
+			onclick={onExportCSV}
+			class="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-slate-650 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+		>
+			<svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+				/>
+			</svg>
+			Als CSV Exportieren
 		</button>
 
 		<button

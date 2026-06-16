@@ -132,7 +132,7 @@
       style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
     >
       <img
-        src="/uploads/fotos/{student.barcode_id}.jpg?t={timestamp}"
+        src="/api/schueler/{student.barcode_id}/photo?t={timestamp}"
         onerror={(e) => { /** @type {any} */ (e.currentTarget).style.display = 'none'; }}
         class="w-full h-full object-cover"
         alt="Passbild"

@@ -15,6 +15,7 @@
 	import {
 		holeBuecherListe,
 		importiereListe,
+		exportiereCSV,
 		loescheBuecher,
 		holeExterneCover,
 		retryExterneCover,
@@ -112,7 +113,6 @@
 		istBearbeitenModus = true;
 	}
 
-	/** @param {any} ereignis */
 	async function aktionExcelImport(ereignis) {
 		const datei = ereignis.target.files[0];
 		if (!datei) return;
@@ -125,6 +125,14 @@
 			alert(/** @type {any} */ (fehler).message);
 		} finally {
 			wirdGeladen = false;
+		}
+	}
+
+	async function aktionExportCSV() {
+		try {
+			await exportiereCSV();
+		} catch (fehler) {
+			alert(/** @type {any} */ (fehler).message);
 		}
 	}
 
@@ -196,6 +204,7 @@
 			loading={wirdGeladen}
 			onOpenDetail={oeffneDetails}
 			onImportExcel={aktionExcelImport}
+			onExportCSV={aktionExportCSV}
 			onCreateNew={neuesBuchErstellen}
 			onScan={() => (wirdGescannt = true)}
 			onDelete={aktionBuecherLoeschen}

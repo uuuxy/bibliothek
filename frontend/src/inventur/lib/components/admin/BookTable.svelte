@@ -9,6 +9,7 @@
 	 *   loading: boolean,
 	 *   onOpenDetail: (book: any) => void,
 	 *   onImportExcel: (event: Event) => void,
+	 *   onExportCSV: () => void,
 	 *   onCreateNew: () => void,
 	 *   onScan: () => void,
 	 *   onDelete: (ids: string[]) => void,
@@ -20,6 +21,7 @@
 		loading,
 		onOpenDetail,
 		onImportExcel,
+		onExportCSV,
 		onCreateNew,
 		onScan,
 		onDelete,
@@ -165,6 +167,7 @@
 		onDelete={handleDelete}
 		onScan={onScan}
 		onImportExcel={onImportExcel}
+		onExportCSV={onExportCSV}
 		onCreateNew={onCreateNew}
 		onRetryCovers={onRetryCovers}
 	/>
