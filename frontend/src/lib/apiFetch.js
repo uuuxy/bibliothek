@@ -95,4 +95,15 @@ export const apiClient = {
   delete(url, options = {}) {
     return apiFetch(url, { ...options, method: "DELETE" });
   },
+  patch(url, data, options = {}) {
+    return apiFetch(url, {
+      ...options,
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      body: JSON.stringify(data),
+    });
+  },
 };
