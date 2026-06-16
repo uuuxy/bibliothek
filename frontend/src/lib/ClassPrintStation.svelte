@@ -3,6 +3,8 @@
   import { apiFetch } from "./apiFetch.js";
   import StudentPrintCard from "./StudentPrintCard.svelte";
 
+  let { onBack } = $props();
+
   let classes = $state([]);
   let selectedClass = $state("");
   let students = $state([]);
@@ -100,9 +102,20 @@
 
 <div class="w-full max-w-4xl mx-auto p-6 space-y-6">
   <!-- UI: Print hidden -->
-  <div class="print:hidden space-y-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-    <div>
-      <h2 class="text-xl font-bold text-slate-800 mb-1">Massendruck für Klassen</h2>
+  <div class="print:hidden space-y-6">
+    <button 
+      onclick={onBack}
+      class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+    >
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+      </svg>
+      Zurück zur Schülerliste
+    </button>
+
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div>
+        <h2 class="text-xl font-bold text-slate-800 mb-1">Massendruck für Klassen</h2>
       <p class="text-sm text-slate-500">Wähle eine Klasse, um alle zugehörigen Ausweise zu laden und an den Kartendrucker zu senden.</p>
     </div>
 
@@ -140,6 +153,7 @@
           Druckvorgang an Kartendrucker senden
         </button>
       {/if}
+    </div>
     </div>
   </div>
 
