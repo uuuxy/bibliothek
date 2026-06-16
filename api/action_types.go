@@ -67,6 +67,7 @@ type ActionEvent struct {
 var (
 	errNotFound     = errors.New("eintrag nicht gefunden")
 	errBlocked      = errors.New("ausleihe für diese/n Schüler/in ist gesperrt")
+	errConflict     = errors.New("conflict")
 	errInvalidState = errors.New("ungültiger Transaktionszustand")
 )
 

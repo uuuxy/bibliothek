@@ -120,6 +120,28 @@ func (s *Server) handleUnifiedCheckoutFlow(
 		}
 	}
 
+	// 4. Reservation Blocker (Checkout only)
+	if !isReturningThis {
+		var reservedSchuelerID string
+		var resVorname, resNachname string
+		err = tx.QueryRow(ctx, `
+			SELECT v.schueler_id, s.vorname, s.nachname
+			FROM vormerkungen v
+			JOIN schueler s ON v.schueler_id = s.id
+			WHERE v.bereitgestellt_exemplar_id = $1 
+			  AND v.status = 'abholbereit' 
+			  AND v.bereitgestellt_bis > CURRENT_TIMESTAMP
+		`, copy.ID).Scan(&reservedSchuelerID, &resVorname, &resNachname)
+
+		if err == nil { // Found an active reservation for this copy
+			if borrowerType != "student" || borrowerID != reservedSchuelerID {
+				return fmt.Errorf("%w: Achtung: Dieses Exemplar ist noch für %s %s reserviert!", errConflict, resVorname, resNachname)
+			}
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+	}
+
 	auditRepo := repository.NewAuditRepository(s.DB.Pool)
 
 	// Subcase A: Available -> Checkout
@@ -278,8 +300,7 @@ func (s *Server) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy 
 			schuelerName += ", " + sKlasse
 		}
 
-		_, _ = tx.Exec(ctx, "UPDATE vormerkungen SET status = 'bereitgestellt', bereitgestellt_exemplar_id = $1 WHERE id = $2", copy.ID, vID)
-		_, _ = tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = false, zustand_notiz = $1 WHERE id = $2", "Reserviert für: "+schuelerName, copy.ID)
+		_, _ = tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days' WHERE id = $2", copy.ID, vID)
 
 		resp.HasVormerkung = true
 		resp.VormerkungTitel = copy.Titel

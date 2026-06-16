@@ -89,6 +89,8 @@ func (s *Server) processActionRequest(
 			status = http.StatusNotFound
 		case errors.Is(err, errBlocked), errors.Is(err, errInvalidState):
 			status = http.StatusBadRequest
+		case errors.Is(err, errConflict):
+			status = http.StatusConflict
 		}
 		return nil, status, err
 	}
