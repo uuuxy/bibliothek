@@ -87,7 +87,7 @@
 <!-- Snackbar (floating, self-dismissing, layout-neutral) -->
 {#if snackbar}
   <div
-    class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200]
+    class="fixed bottom-8 left-1/2 -translate-x-1/2 z-200
            flex items-center gap-3 px-5 py-3.5
            rounded-2xl shadow-2xl
            text-sm font-semibold
@@ -171,13 +171,13 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Vorname</label>
+          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Vorname</p>
           <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
             {student?.vorname || '—'}
           </div>
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nachname</label>
+          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nachname</p>
           <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
             {student?.nachname || '—'}
           </div>
@@ -195,7 +195,7 @@
           />
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">LUSD-ID</label>
+          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">LUSD-ID</p>
           <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-mono text-slate-500 select-text">
             {student?.lusd_id || '—'}
           </div>
@@ -216,25 +216,25 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Klasse</label>
+          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Klasse</p>
           <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
             {student?.klasse || '—'}
           </div>
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Schüler-ID / Barcode</label>
+          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Schüler-ID / Barcode</p>
           <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-mono text-slate-500 select-text">
             {student?.barcode_id || '—'}
           </div>
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Abgangsjahr</label>
+          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Abgangsjahr</p>
           <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
             {student?.abgaenger_jahr || '—'}
           </div>
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Status</label>
+          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Status</p>
           <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-2">
             <span class="w-2 h-2 rounded-full shrink-0 {student?.status === 'aktiv' ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
             <span class="text-sm font-semibold text-slate-600">
