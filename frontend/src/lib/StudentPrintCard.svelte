@@ -35,9 +35,11 @@
     {#if idStore.layout?.photo?.show}
       <div class="absolute border border-solid border-zinc-300 bg-zinc-50 flex items-center justify-center overflow-hidden rounded-sm"
         style="left: {idStore.layout.photo.x}mm; top: {idStore.layout.photo.y}mm; width: {22 * idStore.layout.photo.scale}mm; height: {28 * idStore.layout.photo.scale}mm;">
-        <img src="/api/schueler/{profile.barcode_id}/photo?t={timestamp}"
-          onerror={(e) => { (/** @type {any} */ (e.currentTarget)).style.display = 'none'; }}
-          class="w-full h-full object-cover" alt="Passbild" />
+        {#if profile.foto_url}
+          <img src="{profile.foto_url}?t={timestamp}"
+            onerror={(e) => { (/** @type {any} */ (e.currentTarget)).style.display = 'none'; }}
+            class="w-full h-full object-cover" alt="Passbild" />
+        {/if}
       </div>
     {/if}
     {#if idStore.layout?.name?.show}

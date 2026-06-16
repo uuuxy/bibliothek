@@ -131,12 +131,14 @@
       class="absolute overflow-hidden flex items-center justify-center"
       style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
     >
-      <img
-        src="/api/schueler/{student.barcode_id}/photo?t={timestamp}"
-        onerror={(e) => { /** @type {any} */ (e.currentTarget).style.display = 'none'; }}
-        class="w-full h-full object-cover"
-        alt="Passbild"
-      />
+      {#if student.foto_url}
+        <img
+          src="{student.foto_url}?t={timestamp}"
+          onerror={(e) => { /** @type {any} */ (e.currentTarget).style.display = 'none'; }}
+          class="w-full h-full object-cover"
+          alt="Passbild"
+        />
+      {/if}
     </div>
   {:else if isBarcode && student}
     <div

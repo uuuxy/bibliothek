@@ -226,8 +226,8 @@
       </div>
     {:else if isPhoto}
       <div class="w-full h-full border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden rounded-sm group">
-        {#if student}
-          <img src="/api/schueler/{student.barcode_id}/photo?t={timestamp}" onerror={(e) => { /** @type {any} */ (e.currentTarget).style.display='none'; }} class="w-full h-full object-cover pointer-events-none" alt="Passbild" />
+        {#if student && student.foto_url}
+          <img src="{student.foto_url}?t={timestamp}" onerror={(e) => { /** @type {any} */ (e.currentTarget).style.display='none'; }} class="w-full h-full object-cover pointer-events-none" alt="Passbild" />
         {/if}
         <div class="absolute inset-0 bg-slate-900/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-[5px] font-bold tracking-wider uppercase">📸 Ändern</div>
       </div>
