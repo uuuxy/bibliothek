@@ -4,6 +4,7 @@
   import MailTemplates from './MailTemplates.svelte';
   import LitteraImportWidget from './LitteraImportWidget.svelte';
   import GlobalLMFExtendWidget from './GlobalLMFExtendWidget.svelte';
+  import SignatureManager from './SignatureManager.svelte';
 
   let loading = $state(true);
   let saving = $state(false);
@@ -316,6 +317,9 @@
 
     <!-- Global LMF Extend Widget -->
     <GlobalLMFExtendWidget />
+
+    <!-- Signaturen Master Data Management -->
+    <SignatureManager />
 
     <!-- Littera Import Component -->
     <div class="pt-6">

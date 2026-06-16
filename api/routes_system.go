@@ -53,6 +53,12 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/barcode/next", s.RequirePermission("view_books")(s.NextBarcodeHandler()))
 	mux.Handle("GET /api/print/etikett/{id}", s.RequirePermission("view_books")(s.PrintErsatzEtikettHandler()))
 
+	// Signaturen (Master Data Management)
+	mux.Handle("GET /api/signatures", s.RequirePermission("view_books")(s.GetSignaturesHandler()))
+	mux.Handle("POST /api/signatures", s.RequirePermission("manage_users")(s.CreateSignatureHandler()))
+	mux.Handle("PUT /api/signatures/{id}", s.RequirePermission("manage_users")(s.UpdateSignatureHandler()))
+	mux.Handle("DELETE /api/signatures/{id}", s.RequirePermission("manage_users")(s.DeleteSignatureHandler()))
+
 	// Real-time Events
 	sseHandler := s.Broker.Handler()
 	mux.Handle("GET /events", s.RequirePermission("view_students")(sseHandler))
