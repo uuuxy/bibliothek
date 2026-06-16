@@ -156,9 +156,29 @@ export function createKioskStore() {
             const data = await res.json();
             if (data.type === "ausleihe") {
                 scannedBooks = [data.book, ...scannedBooks];
-                triggerFlash("success");
+                
+                if (data.fremdrueckgabe) {
+                    const owner = data.vorbesitzer 
+                        ? `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`
+                        : (data.vorbesitzer_user ? `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}` : "einem anderen Nutzer");
+
+                    screenFlash = "warning";
+                    playErrorBeep(); 
+                    toast = { 
+                        type: "warning", 
+                        message: `Info: Buch wurde automatisch bei ${owner} ausgebucht!` 
+                    };
+                    
+                    setTimeout(() => { screenFlash = ""; }, 500);
+                    setTimeout(() => { if (toast?.message?.includes(owner)) toast = null; }, 6000);
+                } else {
+                    triggerFlash("success");
+                }
+
                 if (data.book.zustand_notiz) {
-                    toast = { type: "error", message: `Achtung: Bekannter Mangel: ${data.book.zustand_notiz}` };
+                    setTimeout(() => {
+                        toast = { type: "error", message: `Achtung: Bekannter Mangel: ${data.book.zustand_notiz}` };
+                    }, data.fremdrueckgabe ? 6000 : 0);
                 }
             } else if (data.type === "rueckgabe") {
                 if (data.has_vormerkung) {
