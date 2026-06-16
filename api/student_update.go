@@ -107,7 +107,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 }
 
 // PatchStudentHandler aktualisiert editierbare Felder eines Schülers (klasse, abgaenger_jahr).
-// Wird für den manuellen Override des Abgangsjahrs und für Klassenänderungen verwendet.
+// Wird nun auch für das Bearbeiten aller Stammdaten in der UI genutzt.
 func (s *Server) PatchStudentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -117,19 +117,22 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		}
 
 		var req struct {
+			Vorname       *string `json:"vorname"`
+			Nachname      *string `json:"nachname"`
 			Klasse        *string `json:"klasse"`
+			LusdID        *string `json:"lusd_id"`
+			BarcodeID     *string `json:"barcode_id"`
+			Status        *string `json:"status"`
 			AbgaengerJahr *int    `json:"abgaenger_jahr"`
+			Strasse       *string `json:"strasse"`
+			Hausnummer    *string `json:"hausnummer"`
+			Plz           *string `json:"plz"`
+			Ort           *string `json:"ort"`
+			ElternEmail   *string `json:"eltern_email"`
+			Geburtsdatum  *string `json:"geburtsdatum"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiger Request-Body: %w", err))
-			return
-		}
-		if req.Klasse == nil && req.AbgaengerJahr == nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("mindestens ein Feld muss angegeben werden"))
-			return
-		}
-		if req.AbgaengerJahr != nil && (*req.AbgaengerJahr < 2000 || *req.AbgaengerJahr > 2100) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("abgaenger_jahr muss zwischen 2000 und 2100 liegen"))
 			return
 		}
 
@@ -140,6 +143,31 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		args := []interface{}{}
 		argId := 1
 
+		if req.Vorname != nil {
+			query += fmt.Sprintf(", vorname = $%d", argId)
+			args = append(args, *req.Vorname)
+			argId++
+		}
+		if req.Nachname != nil {
+			query += fmt.Sprintf(", nachname = $%d", argId)
+			args = append(args, *req.Nachname)
+			argId++
+		}
+		if req.LusdID != nil {
+			query += fmt.Sprintf(", lusd_id = $%d", argId)
+			args = append(args, *req.LusdID)
+			argId++
+		}
+		if req.BarcodeID != nil {
+			query += fmt.Sprintf(", barcode_id = $%d", argId)
+			args = append(args, *req.BarcodeID)
+			argId++
+		}
+		if req.Status != nil {
+			query += fmt.Sprintf(", status = $%d", argId)
+			args = append(args, *req.Status)
+			argId++
+		}
 		if req.Klasse != nil {
 			query += fmt.Sprintf(", klasse = $%d", argId)
 			args = append(args, *req.Klasse)
@@ -155,6 +183,44 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		if req.AbgaengerJahr != nil {
 			query += fmt.Sprintf(", abgaenger_jahr = $%d", argId)
 			args = append(args, *req.AbgaengerJahr)
+			argId++
+		}
+
+		if req.Strasse != nil {
+			query += fmt.Sprintf(", strasse = $%d", argId)
+			args = append(args, *req.Strasse)
+			argId++
+		}
+		if req.Hausnummer != nil {
+			query += fmt.Sprintf(", hausnummer = $%d", argId)
+			args = append(args, *req.Hausnummer)
+			argId++
+		}
+		if req.Plz != nil {
+			query += fmt.Sprintf(", plz = $%d", argId)
+			args = append(args, *req.Plz)
+			argId++
+		}
+		if req.Ort != nil {
+			query += fmt.Sprintf(", ort = $%d", argId)
+			args = append(args, *req.Ort)
+			argId++
+		}
+		if req.ElternEmail != nil {
+			query += fmt.Sprintf(", eltern_email = $%d", argId)
+			args = append(args, *req.ElternEmail)
+			argId++
+		}
+		if req.Geburtsdatum != nil {
+			var parsedDate *time.Time
+			if *req.Geburtsdatum != "" {
+				t, err := time.Parse("2006-01-02", *req.Geburtsdatum)
+				if err == nil {
+					parsedDate = &t
+				}
+			}
+			query += fmt.Sprintf(", geburtsdatum = $%d", argId)
+			args = append(args, parsedDate)
 			argId++
 		}
 

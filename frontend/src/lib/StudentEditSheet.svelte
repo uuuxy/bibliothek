@@ -19,24 +19,36 @@
   let snackbarTimer = null;
 
   let formData = $state({
+    vorname: '',
+    nachname: '',
+    geburtsdatum: '',
+    lusd_id: '',
+    klasse: '',
+    barcode_id: '',
+    abgaenger_jahr: '',
+    status: '',
     strasse: '',
     hausnummer: '',
     plz: '',
     ort: '',
     eltern_email: '',
-    geburtsdatum: '',
   });
 
   $effect(() => {
     if (student) {
+      formData.vorname      = student.vorname       || '';
+      formData.nachname     = student.nachname      || '';
+      formData.geburtsdatum = student.geburtsdatum  ? student.geburtsdatum.slice(0, 10) : '';
+      formData.lusd_id      = student.lusd_id       || '';
+      formData.klasse       = student.klasse        || '';
+      formData.barcode_id   = student.barcode_id    || '';
+      formData.abgaenger_jahr = student.abgaenger_jahr?.toString() || '';
+      formData.status       = student.status        || '';
       formData.strasse      = student.strasse       || '';
       formData.hausnummer   = student.hausnummer    || '';
       formData.plz          = student.plz           || '';
       formData.ort          = student.ort           || '';
       formData.eltern_email = student.eltern_email  || '';
-      formData.geburtsdatum = student.geburtsdatum
-        ? student.geburtsdatum.slice(0, 10)
-        : '';
     }
   });
 
@@ -55,12 +67,19 @@
     saving = true;
     try {
       const payload = {
-        strasse:      formData.strasse      || null,
-        hausnummer:   formData.hausnummer   || null,
-        plz:          formData.plz          || null,
-        ort:          formData.ort          || null,
-        eltern_email: formData.eltern_email || null,
-        geburtsdatum: formData.geburtsdatum || null,
+        vorname:        formData.vorname        || null,
+        nachname:       formData.nachname       || null,
+        geburtsdatum:   formData.geburtsdatum   || null,
+        lusd_id:        formData.lusd_id        || null,
+        klasse:         formData.klasse         || null,
+        barcode_id:     formData.barcode_id     || null,
+        abgaenger_jahr: formData.abgaenger_jahr ? parseInt(formData.abgaenger_jahr, 10) : null,
+        status:         formData.status         || null,
+        strasse:        formData.strasse        || null,
+        hausnummer:     formData.hausnummer     || null,
+        plz:            formData.plz            || null,
+        ort:            formData.ort            || null,
+        eltern_email:   formData.eltern_email   || null,
       };
       const res = await apiClient.patch(`/api/schueler/${student.id}`, payload);
       if (!res.ok) {
@@ -75,14 +94,7 @@
       saving = false;
     }
   }
-
-  /** @param {KeyboardEvent} e */
-  function handleKey(e) {
-    if (e.key === 'Escape') onClose();
-  }
 </script>
-
-<svelte:window onkeydown={handleKey} />
 
 <!-- Snackbar (floating, self-dismissing, layout-neutral) -->
 {#if snackbar}
@@ -109,256 +121,35 @@
   </div>
 {/if}
 
-<!-- Scrim -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] animate-fade-in"
-  onclick={onClose}
-  aria-hidden="true"
-></div>
-
-<!-- Side Sheet -->
-<div
-  class="fixed top-0 right-0 z-50 h-full w-11/12 max-w-5xl
-         flex flex-col bg-white shadow-2xl animate-slide-in-right"
-  role="dialog"
-  aria-modal="true"
-  aria-label="Schüler bearbeiten"
->
+<!-- Full Page View (Replaces the side sheet) -->
+<div class="w-full h-full bg-white flex flex-col animate-fade-in">
 
   <!-- ── Header ─────────────────────────────────────────────────────────── -->
-  <header class="shrink-0 flex items-center justify-between gap-4 px-10 py-6 border-b border-slate-100">
+  <header class="shrink-0 flex items-center justify-between gap-4 px-8 py-5 border-b border-slate-100">
     <div class="flex items-center gap-4 min-w-0">
-      <!-- Avatar -->
-      <div class="w-11 h-11 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600
-                  flex items-center justify-center text-white font-black text-sm shrink-0 shadow-md">
-        {(student?.vorname?.[0] ?? '') + (student?.nachname?.[0] ?? '')}
-      </div>
+      <!-- Back Button -->
+      <button
+        onclick={onClose}
+        aria-label="Zurück"
+        class="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-slate-50
+               text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+      >
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+
       <div class="min-w-0">
-        <h2 class="text-lg font-black text-slate-900 leading-tight">
-          {student?.vorname} {student?.nachname}
+        <h2 class="text-xl font-black text-slate-900 leading-tight">
+          Schüler bearbeiten
         </h2>
-        <p class="text-xs text-slate-400 font-semibold mt-0.5 flex items-center gap-1.5">
-          <span class="font-mono">{student?.barcode_id}</span>
-          <span class="text-slate-200">·</span>
-          Klasse {student?.klasse}
+        <p class="text-xs text-slate-500 font-medium mt-0.5">
+          {student?.vorname} {student?.nachname} · {student?.barcode_id}
         </p>
       </div>
     </div>
-    <button
-      onclick={onClose}
-      aria-label="Schließen"
-      class="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl
-             text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-    >
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
-    </button>
-  </header>
-
-  <!-- ── Scrollable Body ────────────────────────────────────────────────── -->
-  <div class="flex-1 overflow-y-auto px-10 py-8 space-y-10">
-
-    <!-- ── Persönliche Daten (read-only) ──────────────────────────────── -->
-    <section>
-      <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.12em] mb-5 flex items-center gap-2">
-        <div class="w-3.5 h-0.5 rounded-full bg-slate-300"></div>
-        Persönliche Daten
-        <span class="text-slate-300 normal-case font-medium tracking-normal text-[9px]">(aus LUSD – schreibgeschützt)</span>
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-        <div>
-          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Vorname</p>
-          <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
-            {student?.vorname || '—'}
-          </div>
-        </div>
-        <div>
-          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nachname</p>
-          <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
-            {student?.nachname || '—'}
-          </div>
-        </div>
-        <div>
-          <label for="sheet-geburtsdatum" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Geburtsdatum
-          </label>
-          <input
-            id="sheet-geburtsdatum"
-            type="date"
-            bind:value={formData.geburtsdatum}
-            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-          />
-        </div>
-        <div>
-          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">LUSD-ID</p>
-          <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-mono text-slate-500 select-text">
-            {student?.lusd_id || '—'}
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Divider -->
-    <div class="border-t border-slate-100"></div>
-
-    <!-- ── Schuldaten (read-only) ─────────────────────────────────────── -->
-    <section>
-      <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.12em] mb-5 flex items-center gap-2">
-        <div class="w-3.5 h-0.5 rounded-full bg-slate-300"></div>
-        Schuldaten
-        <span class="text-slate-300 normal-case font-medium tracking-normal text-[9px]">(aus LUSD – schreibgeschützt)</span>
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-        <div>
-          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Klasse</p>
-          <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
-            {student?.klasse || '—'}
-          </div>
-        </div>
-        <div>
-          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Schüler-ID / Barcode</p>
-          <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-mono text-slate-500 select-text">
-            {student?.barcode_id || '—'}
-          </div>
-        </div>
-        <div>
-          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Abgangsjahr</p>
-          <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-600 select-text">
-            {student?.abgaenger_jahr || '—'}
-          </div>
-        </div>
-        <div>
-          <p class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Status</p>
-          <div class="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full shrink-0 {student?.status === 'aktiv' ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
-            <span class="text-sm font-semibold text-slate-600">
-              {student?.status === 'aktiv' ? 'Aktiv' : student?.status || 'Unbekannt'}
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Divider -->
-    <div class="border-t border-slate-100"></div>
-
-    <!-- ── Kontaktdaten (editable) ────────────────────────────────────── -->
-    <section>
-      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-5 flex items-center gap-2">
-        <div class="w-3.5 h-0.5 rounded-full bg-blue-400"></div>
-        Kontaktdaten
-        <span class="text-slate-300 normal-case font-medium tracking-normal text-[9px]">(bearbeitbar)</span>
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-
-        <!-- Straße + Hausnummer -->
-        <div class="md:col-span-2 grid grid-cols-3 gap-4">
-          <div class="col-span-2">
-            <label for="sheet-strasse" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-              Straße
-            </label>
-            <input
-              id="sheet-strasse"
-              type="text"
-              bind:value={formData.strasse}
-              placeholder="Musterstraße"
-              class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800
-                     placeholder:text-slate-300
-                     focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-            />
-          </div>
-          <div>
-            <label for="sheet-hausnummer" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-              Hausnr.
-            </label>
-            <input
-              id="sheet-hausnummer"
-              type="text"
-              bind:value={formData.hausnummer}
-              placeholder="12a"
-              class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800
-                     placeholder:text-slate-300
-                     focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-            />
-          </div>
-        </div>
-
-        <!-- PLZ + Ort -->
-        <div>
-          <label for="sheet-plz" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            PLZ
-          </label>
-          <input
-            id="sheet-plz"
-            type="text"
-            bind:value={formData.plz}
-            placeholder="12345"
-            maxlength="5"
-            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800
-                   font-mono placeholder:text-slate-300
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-          />
-        </div>
-        <div>
-          <label for="sheet-ort" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Ort
-          </label>
-          <input
-            id="sheet-ort"
-            type="text"
-            bind:value={formData.ort}
-            placeholder="Musterstadt"
-            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800
-                   placeholder:text-slate-300
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-          />
-        </div>
-
-        <!-- E-Mail -->
-        <div class="md:col-span-2">
-          <label for="sheet-email" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Eltern E-Mail
-          </label>
-          <input
-            id="sheet-email"
-            type="email"
-            bind:value={formData.eltern_email}
-            placeholder="eltern@schule.de"
-            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800
-                   placeholder:text-slate-300
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-          />
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Bottom spacing so footer shadow doesn't cut off content -->
-    <div class="h-2"></div>
-  </div>
-
-  <!-- ── Footer ─────────────────────────────────────────────────────────── -->
-  <footer class="shrink-0 flex items-center justify-between gap-4 px-10 py-5 border-t border-slate-100 bg-white">
-    <p class="text-xs text-slate-400 font-medium leading-relaxed max-w-sm">
-      Nur <span class="text-slate-600 font-semibold">Kontaktdaten</span> und <span class="text-slate-600 font-semibold">Geburtsdatum</span>
-      können hier gespeichert werden. Alle anderen Felder werden über LUSD synchronisiert.
-    </p>
+    
     <div class="flex items-center gap-3 shrink-0">
-      <button
-        onclick={onClose}
-        disabled={saving}
-        class="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200
-               rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-      >
-        Abbrechen
-      </button>
       <button
         onclick={save}
         disabled={saving}
@@ -377,15 +168,189 @@
         {/if}
       </button>
     </div>
-  </footer>
-</div>
+  </header>
 
-<style>
-  @keyframes slide-in-right {
-    from { transform: translateX(100%); opacity: 0.5; }
-    to   { transform: translateX(0);    opacity: 1; }
-  }
-  .animate-slide-in-right {
-    animation: slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-</style>
+  <!-- ── Scrollable Body ────────────────────────────────────────────────── -->
+  <div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+
+    <!-- ── Persönliche Daten ──────────────────────────────── -->
+    <section>
+      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
+        Persönliche Daten
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label for="vorname" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Vorname</label>
+          <input
+            id="vorname"
+            type="text"
+            bind:value={formData.vorname}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+        <div>
+          <label for="nachname" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nachname</label>
+          <input
+            id="nachname"
+            type="text"
+            bind:value={formData.nachname}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+        <div>
+          <label for="geburtsdatum" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Geburtsdatum</label>
+          <input
+            id="geburtsdatum"
+            type="date"
+            bind:value={formData.geburtsdatum}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+        <div>
+          <label for="lusd_id" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">LUSD-ID</label>
+          <input
+            id="lusd_id"
+            type="text"
+            bind:value={formData.lusd_id}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Schuldaten ─────────────────────────────────────── -->
+    <section>
+      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
+        Schuldaten
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label for="klasse" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Klasse</label>
+          <input
+            id="klasse"
+            type="text"
+            bind:value={formData.klasse}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+        <div>
+          <label for="barcode" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Schüler-ID / Barcode</label>
+          <input
+            id="barcode"
+            type="text"
+            bind:value={formData.barcode_id}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+        <div>
+          <label for="abgangsjahr" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Abgangsjahr</label>
+          <input
+            id="abgangsjahr"
+            type="number"
+            bind:value={formData.abgaenger_jahr}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+        <div>
+          <label for="status" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+          <select
+            id="status"
+            bind:value={formData.status}
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          >
+            <option value="aktiv">Aktiv</option>
+            <option value="inaktiv">Inaktiv</option>
+            <option value="abgaenger">Abgänger</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Kontaktdaten ────────────────────────────────────── -->
+    <section>
+      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-blue-400"></div>
+        Kontaktdaten
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="lg:col-span-2 grid grid-cols-4 gap-4">
+          <div class="col-span-3">
+            <label for="strasse" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Straße</label>
+            <input
+              id="strasse"
+              type="text"
+              bind:value={formData.strasse}
+              placeholder="Musterstraße"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
+                     focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+          </div>
+          <div class="col-span-1">
+            <label for="hausnummer" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nr.</label>
+            <input
+              id="hausnummer"
+              type="text"
+              bind:value={formData.hausnummer}
+              placeholder="12a"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
+                     focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label for="plz" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">PLZ</label>
+          <input
+            id="plz"
+            type="text"
+            bind:value={formData.plz}
+            placeholder="12345"
+            maxlength="5"
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-mono
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+        
+        <div>
+          <label for="ort" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ort</label>
+          <input
+            id="ort"
+            type="text"
+            bind:value={formData.ort}
+            placeholder="Musterstadt"
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+
+        <div class="lg:col-span-2">
+          <label for="email" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Eltern E-Mail</label>
+          <input
+            id="email"
+            type="email"
+            bind:value={formData.eltern_email}
+            placeholder="eltern@schule.de"
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
+                   focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom spacing -->
+    <div class="h-4"></div>
+  </div>
+</div>

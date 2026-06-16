@@ -212,6 +212,7 @@
     </div>
   {/if}
 
+  {#if !showEditModal}
   <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start text-slate-800 animate-fade-in no-print font-sans">
     <!-- Left Column Profile Card -->
     <StudentProfileCard 
@@ -275,6 +276,9 @@
       </div>
     </div>
   </div>
+  {:else}
+    <StudentEditSheet student={profile} {role} onClose={() => showEditModal = false} onSave={handleSaveEdit} />
+  {/if}
 {/if}
 
 {#if showWebcam}
@@ -296,6 +300,3 @@
   <DamageReportModal book={damageBook} isSubmitting={isSubmittingDamage} onCancel={() => showDamageModal = false} onSubmit={submitDamageReport} />
 {/if}
 
-{#if showEditModal}
-  <StudentEditSheet student={profile} {role} onClose={() => showEditModal = false} onSave={handleSaveEdit} />
-{/if}
