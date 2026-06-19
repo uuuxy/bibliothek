@@ -218,6 +218,7 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+		// #nosec G120
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -240,6 +241,7 @@ func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
 func (s *Server) PostLusdImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+		// #nosec G120
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return

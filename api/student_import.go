@@ -20,6 +20,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Parse Multipart Form with MaxBytesReader
 		r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+		// #nosec G120
 		if err := r.ParseMultipartForm(5 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return

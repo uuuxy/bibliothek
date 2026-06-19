@@ -22,6 +22,7 @@ type LUSDImportResponse struct {
 func (s *Server) ImportLUSDHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+		// #nosec G120
 		if err := r.ParseMultipartForm(5 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return

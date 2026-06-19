@@ -24,6 +24,8 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		// 1. Parse multipart file (max 10 MB)
+		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+		// #nosec G120
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehler beim Parsen der Formulardaten"))
 			return
