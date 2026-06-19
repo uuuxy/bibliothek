@@ -167,19 +167,34 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 		}
 
 		// 3. Register copies in DB (marked as not borrowable until delivery)
-		newBarcodes := []string{}
-		qInsert := `
+		newBarcodes := make([]string, 0, req.Menge)
+
+		// Use CASE to prevent LPAD truncation for values >= 100000
+		qInsertBulk := `
 			INSERT INTO buecher_exemplare (titel_id, barcode_id, zustand_notiz, ist_ausleihbar)
-			VALUES ($1, $2, 'Bestellt (Lieferanten-Vorab-Barcode)', false)
+			SELECT $1, 'B-' || CASE WHEN gen.seq < 100000 THEN LPAD(gen.seq::text, 5, '0') ELSE gen.seq::text END, 'Bestellt (Lieferanten-Vorab-Barcode)', false
+			FROM generate_series($2::int, $3::int) as gen(seq)
+			RETURNING barcode_id
 		`
-		for i := 0; i < req.Menge; i++ {
-			barcodeID := fmt.Sprintf("B-%05d", startNum+i)
-			_, err = tx.Exec(ctx, qInsert, req.TitelID, barcodeID)
-			if err != nil {
+		rows, err := tx.Query(ctx, qInsertBulk, req.TitelID, startNum, startNum+req.Menge-1)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var barcodeID string
+			if err := rows.Scan(&barcodeID); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
 			newBarcodes = append(newBarcodes, barcodeID)
+		}
+
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		if err := tx.Commit(ctx); err != nil {
