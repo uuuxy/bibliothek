@@ -232,7 +232,7 @@ func (s *Server) PostSendBulkOverdueHandler() http.HandlerFunc {
 
 		// Asynchroner Massenversand im Hintergrund
 		go func(tasks map[string]*studentOverdue) {
-			bgCtx := context.Background() // Eigener Context, der nicht mit dem HTTP Request abbricht
+			bgCtx := context.WithoutCancel(ctx) // Eigener Context, der nicht mit dem HTTP Request abbricht, aber request-scoped values beibehält
 			for _, data := range tasks {
 				if data.ElternEmail == nil || strings.TrimSpace(*data.ElternEmail) == "" {
 					continue
