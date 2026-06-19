@@ -78,6 +78,10 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WithArgs(copy.ID).
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}))
 
+	mock.ExpectQuery("SELECT v.schueler_id, s.vorname, s.nachname FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id WHERE v.bereitgestellt_exemplar_id = \\$1 AND v.status = 'abholbereit' AND v.bereitgestellt_bis > CURRENT_TIMESTAMP").
+		WithArgs(copy.ID).
+		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}))
+
 	// Mock CreateLoanTx
 	mock.ExpectQuery("INSERT INTO ausleihen \\(exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\) ON CONFLICT DO NOTHING RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat").
 		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID).
