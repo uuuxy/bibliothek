@@ -24,7 +24,7 @@ func main() {
 	colTitle := flag.Int("col-title", 0, "Index der Spalte mit dem Buchtitel (0-basiert)")
 	colIsbn := flag.Int("col-isbn", 1, "Index der Spalte mit der ISBN (0-basiert)")
 	hasHeader := flag.Bool("header", true, "Gibt an, ob die erste Zeile eine Kopfzeile ist und übersprungen werden soll")
-	
+
 	flag.Parse()
 
 	// 2. Datenbankverbindung herstellen
@@ -44,7 +44,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Fehler beim Öffnen der CSV-Datei '%s': %v", *csvFilePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Printf("Warnung: Fehler beim Schließen der Datei: %v", cerr)
+		}
+	}()
 
 	// 4. CSV-Reader konfigurieren
 	reader := csv.NewReader(file)
@@ -101,7 +105,7 @@ func main() {
 		if *colIsbn > maxRequiredIndex {
 			maxRequiredIndex = *colIsbn
 		}
-		
+
 		if len(record) <= maxRequiredIndex {
 			// Zeile hat zu wenige Spalten, um Titel und ISBN sicher auszulesen
 			countFehler++
