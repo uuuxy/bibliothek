@@ -45,7 +45,7 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			return
 		}
 		if isFerien {
-			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("Mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
+			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
 			return
 		}
 
