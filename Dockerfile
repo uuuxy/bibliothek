@@ -15,7 +15,7 @@ RUN npm run build
 # ==============================================================================
 # Stage 2: Build the Go backend
 # ==============================================================================
-FROM golang:alpine AS backend-builder
+FROM golang:1.26-alpine AS backend-builder
 WORKDIR /app
 
 # Disable Go workspace mode to build using root go.mod directly

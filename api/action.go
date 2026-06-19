@@ -269,6 +269,10 @@ func (s *Server) handleBookAction(
 		if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, claims.UserID, false); err != nil {
 			return err
 		}
+
+		// Process reservation BEFORE commit so the tx statements take effect
+		s.processReturnVormerkungTx(ctx, tx, copy, resp)
+
 		if err := tx.Commit(ctx); err != nil {
 			return err
 		}
@@ -282,8 +286,6 @@ func (s *Server) handleBookAction(
 			SchuelerID:   activeLoan.SchuelerID,
 			BearbeiterID: claims.UserID,
 		})
-
-		s.processReturnVormerkungTx(ctx, tx, copy, resp)
 
 		resp.Type = "rueckgabe"
 		resp.Book = copy
@@ -302,6 +304,10 @@ func (s *Server) handleBookAction(
 	if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
 		return err
 	}
+
+	// Process reservation BEFORE commit so the tx statements take effect
+	s.processReturnVormerkungTx(ctx, tx, copy, resp)
+
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
@@ -320,8 +326,6 @@ func (s *Server) handleBookAction(
 		SchuelerID:   activeLoan.SchuelerID,
 		BearbeiterID: staffID,
 	})
-
-	s.processReturnVormerkungTx(ctx, tx, copy, resp)
 
 	resp.Type = "rueckgabe"
 	resp.Book = copy

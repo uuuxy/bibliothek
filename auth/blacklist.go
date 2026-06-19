@@ -74,12 +74,9 @@ func (b *TokenBlacklist) IsBlacklisted(token string) bool {
 	`, hash).Scan(&exists)
 	
 	if err != nil {
-		// If DB fails, we should arguably deny access to be safe,
-		// but since it's a blacklist check, returning false (allow) or true (deny)
-		// depends on strictness. Let's return true (deny) on DB failure just in case.
-		// However, standard is usually to log and allow if the DB is momentarily down.
-		// Given it's a school library, denying might lock everyone out.
-		return false 
+		// Fail-closed: if the DB is down and we can't verify the token isn't revoked,
+		// deny access. This is the safer security posture for a school system.
+		return true
 	}
 	return exists
 }

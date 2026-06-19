@@ -164,10 +164,10 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			Barcode string
 		}
 
-		var copiesToInsert []CopyData
 		newTitlesMap := make(map[string]*NewTitle) // key: isbn or titel
 		var newTitlesOrder []string
 
+		// First pass: identify titles that need to be created
 		for _, row := range rows[1:] {
 			getCol := func(key string) string {
 				if idx, ok := headerMap[key]; ok && idx < len(row) {
@@ -191,9 +191,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				titelID = titelToID[titel]
 			}
 
-			if titelID != "" {
-				copiesToInsert = append(copiesToInsert, CopyData{TitelID: titelID, Barcode: barcode})
-			} else {
+			if titelID == "" {
 				// Needs new title
 				cacheKey := isbn
 				if cacheKey == "" {
@@ -251,7 +249,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		}
 
 		// Second pass: Now all titles have IDs, collect all copies again
-		copiesToInsert = nil
+		var copiesToInsert []CopyData
 
 		for _, row := range rows[1:] {
 			getCol := func(key string) string {

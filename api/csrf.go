@@ -85,9 +85,10 @@ func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 			r.Method == http.MethodPatch ||
 			r.Method == http.MethodDelete
 
-		// Exempt: login endpoint (no cookie yet), logout, and inventur paths
+		// Exempt: login endpoint (no cookie yet), logout, refresh, and inventur paths
 		isExempt := path == "/login/barcode" ||
 			path == "/api/auth/logout" ||
+			path == "/api/auth/refresh" ||
 			isInventurPath ||
 			!isAPIPath
 

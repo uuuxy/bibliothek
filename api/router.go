@@ -84,8 +84,19 @@ func (s *Server) Routes() http.Handler {
 	// Public Endpoints
 	mux.Handle("POST /login", AuthRateLimitMiddleware(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))))
 
+	// Token refresh (sliding window) — exempt from CSRF via middleware config
+	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.CookieSecure))
+
+	// Logout — blacklists the current token and clears the session cookie
+	mux.HandleFunc("POST /api/auth/logout", s.logoutHandler())
+
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if err := s.DB.Pool.Ping(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"unhealthy","error":"database unreachable"}`))
+			return
+		}
 		_, _ = w.Write([]byte(`{"status":"healthy"}`))
 	})
 

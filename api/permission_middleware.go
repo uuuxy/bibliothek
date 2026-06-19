@@ -23,6 +23,15 @@ type cacheEntry struct {
 	ExpiresAt time.Time
 }
 
+// InvalidatePermissionCache clears all cached permission entries.
+// Call this whenever roles or permissions are changed (e.g. UpdateUser, UpdatePermissions)
+// to prevent stale cache entries from granting/denying access incorrectly.
+func InvalidatePermissionCache() {
+	permCacheMu.Lock()
+	permCache = make(map[string]cacheEntry)
+	permCacheMu.Unlock()
+}
+
 // RequirePermission returns a middleware that validates if the authenticated user
 // has the required permission dynamically defined in the database.
 func (s *Server) RequirePermission(permission string) func(http.Handler) http.Handler {

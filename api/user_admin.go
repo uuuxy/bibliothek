@@ -45,11 +45,11 @@ func (s *Server) ListUsersHandler() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		// benutzer.rolle (PostgreSQL-Enum) ist die einzige kanonische Rollenquelle
 		query := `
-			SELECT b.id, coalesce(b.barcode_id, ''), b.vorname, b.nachname, b.email, coalesce(br.rolle, 'HELFER'), b.aktiv, b.erstellt_am
-			FROM benutzer b
-			LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id
-			ORDER BY b.nachname, b.vorname
+			SELECT id, coalesce(barcode_id, ''), vorname, nachname, email, rolle, aktiv, erstellt_am
+			FROM benutzer
+			ORDER BY nachname, vorname
 		`
 		rows, err := s.DB.Pool.Query(ctx, query)
 		if err != nil {
@@ -174,16 +174,8 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 			return
 		}
 
-		// Persist the actual role to benutzer_rollen (used for RBAC checks)
-		_, err = s.DB.Pool.Exec(ctx, `
-			INSERT INTO benutzer_rollen (benutzer_id, rolle)
-			VALUES ($1, $2)
-			ON CONFLICT (benutzer_id) DO UPDATE SET rolle = EXCLUDED.rolle
-		`, userID, strings.ToUpper(req.Rolle))
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
+		// NOTE: benutzer.rolle (Enum) ist die kanonische Quelle.
+		// benutzer_rollen wird nicht mehr separat geschrieben.
 
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"success"}`))
@@ -229,6 +221,19 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname, E-Mail und Rolle sind Pflichtfelder"))
 			return
+		}
+
+		// Prevent admin self-demotion or self-deactivation
+		claims, ok := auth.GetClaims(r.Context())
+		if ok && claims.UserID == id {
+			if strings.ToUpper(req.Rolle) != "ADMIN" {
+				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigene Admin-Rolle kann nicht herabgestuft werden"))
+				return
+			}
+			if !req.Aktiv {
+				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
+				return
+			}
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -295,16 +300,11 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 			}
 		}
 
-		// Update role in benutzer_rollen (used for RBAC checks)
-		_, err = s.DB.Pool.Exec(ctx, `
-			INSERT INTO benutzer_rollen (benutzer_id, rolle)
-			VALUES ($1, $2)
-			ON CONFLICT (benutzer_id) DO UPDATE SET rolle = EXCLUDED.rolle
-		`, id, strings.ToUpper(req.Rolle))
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
+		// NOTE: benutzer.rolle (Enum) ist die kanonische Quelle.
+		// benutzer_rollen wird nicht mehr separat geschrieben.
+
+		// Invalidate permission cache so role changes take effect immediately
+		InvalidatePermissionCache()
 
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"success"}`))
@@ -333,6 +333,12 @@ func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository) http.Ha
 		id := r.PathValue("id")
 		if id == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+			return
+		}
+
+		// Prevent self-deletion
+		if id == claims.UserID {
+			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
 			return
 		}
 

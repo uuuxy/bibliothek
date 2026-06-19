@@ -63,7 +63,7 @@ func connectIMAP(ctx context.Context, addr string, tlsConfig *tls.Config) (*clie
 	return c, conn, nil
 }
 
-func loginIMAP(ctx context.Context, c *client.Client, email, password string) error {
+func loginIMAP(ctx context.Context, c *client.Client, conn net.Conn, email, password string) error {
 	loginDone := make(chan error, 1)
 	go func() {
 		loginDone <- c.Login(email, password)
@@ -73,8 +73,11 @@ func loginIMAP(ctx context.Context, c *client.Client, email, password string) er
 	case err := <-loginDone:
 		return err
 	case <-ctx.Done():
-		return fmt.Errorf("timeout beim login-vorgang")
-	case <-time.After(5 * time.Second):
+		// Force-close the connection to unblock the goroutine stuck in c.Login()
+		// This prevents a goroutine leak on every timeout.
+		conn.Close()
+		// Drain the result so the goroutine can exit
+		<-loginDone
 		return fmt.Errorf("zeitüberschreitung beim login")
 	}
 }
@@ -89,6 +92,7 @@ func AuthenticateIMAP(email, password string) error {
 
 	// MOCK-MODUS für lokale Entwicklung
 	if host == "mock" {
+		slog.Warn("⚠️  IMAP MOCK-MODUS AKTIV: Jedes Passwort wird akzeptiert! NUR für lokale Entwicklung verwenden!")
 		return nil
 	}
 
@@ -141,7 +145,7 @@ func AuthenticateIMAP(email, password string) error {
 		}
 	}()
 
-	if err := loginIMAP(ctx, c, email, password); err != nil {
+	if err := loginIMAP(ctx, c, conn, email, password); err != nil {
 		slog.Warn("IMAP Login failed", "error", err)
 		conn.Close()
 		return fmt.Errorf("anmeldung fehlgeschlagen")

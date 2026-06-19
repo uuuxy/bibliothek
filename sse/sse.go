@@ -81,7 +81,7 @@ func (b *Broker) Handler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// CORS is handled by the global CORSMiddleware — do NOT set Access-Control-Allow-Origin here
 
 		clientChan := make(chan string, 10)
 		b.register <- clientChan
@@ -95,8 +95,8 @@ func (b *Broker) Handler() http.HandlerFunc {
 		_, _ = fmt.Fprintf(w, "event: connected\ndata: {\"status\":\"ok\"}\n\n")
 		flusher.Flush()
 
-		// Heartbeat ticker for dead-man-switch detection
-		ticker := time.NewTicker(1 * time.Second)
+		// Heartbeat ticker for dead-man-switch detection (15s is sufficient for library use)
+		ticker := time.NewTicker(15 * time.Second)
 		defer ticker.Stop()
 
 		for {

@@ -74,20 +74,25 @@ func (l *loginFailureLimiter) recordFailure(ip string) {
 // globalLoginLimiter: 5 failed attempts per IP within 15 minutes.
 var globalLoginLimiter = newLoginFailureLimiter(5, 15*time.Minute)
 
-// realIP extracts the true client IP, honoring X-Forwarded-For from trusted reverse proxies.
+// realIP extracts the true client IP.
+// X-Forwarded-For and X-Real-IP are only trusted when the direct connection
+// comes from a loopback address (i.e. behind the Caddy reverse proxy).
 func realIP(r *http.Request) string {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.SplitN(xff, ",", 2)
-		return strings.TrimSpace(parts[0])
+	remoteIP, _, _ := net.SplitHostPort(r.RemoteAddr)
+	if remoteIP != "" {
+		parsed := net.ParseIP(remoteIP)
+		if parsed != nil && parsed.IsLoopback() {
+			if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+				parts := strings.SplitN(xff, ",", 2)
+				return strings.TrimSpace(parts[0])
+			}
+			if xri := r.Header.Get("X-Real-IP"); xri != "" {
+				return xri
+			}
+		}
+		return remoteIP
 	}
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return xri
-	}
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return ip
+	return r.RemoteAddr
 }
 
 // LoginRequest represents the payload for login.
@@ -188,14 +193,14 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		})
 
 		var permissions []string
-		switch roleStr {
-		case "admin":
+		switch strings.ToUpper(roleStr) {
+		case "ADMIN":
 			permissions = []string{"manage_users", "manage_settings", "print_classes", "manage_inventory"}
-		case "mitarbeiter":
+		case "MITARBEITER":
 			permissions = []string{"print_classes", "manage_inventory"}
-		case "lehrer":
+		case "LEHRER":
 			permissions = []string{"view_media"}
-		case "helfer":
+		case "HELFER":
 			permissions = []string{}
 		default:
 			permissions = []string{}

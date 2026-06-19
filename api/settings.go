@@ -144,10 +144,10 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 			}
 		}
 
-		// Admin audit log
+		// Admin audit log (IP-Adresse wird gemäß DSGVO nicht gespeichert)
 		if claims, ok := auth.GetClaims(r.Context()); ok {
 			detailsBytes, _ := json.Marshal(req)
-			_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes), r.RemoteAddr)
+			_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes))
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
