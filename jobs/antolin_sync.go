@@ -83,12 +83,14 @@ func (s *Scheduler) RunAntolinSync() {
 			log.Printf("Scheduler Antolin Sync: request failed for ISBN %s: %v", target.ISBN, err)
 			continue
 		}
-		
+
 		var apiData antolinAPIResp
 		if resp.StatusCode == http.StatusOK {
 			_ = json.NewDecoder(resp.Body).Decode(&apiData)
 		}
-		resp.Body.Close()
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Scheduler Antolin Sync: failed to close response body for ISBN %s: %v", target.ISBN, err)
+		}
 
 		// Vorbereitung des Updates
 		var stufen *string
