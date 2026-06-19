@@ -54,7 +54,11 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	_ = passFile.Close()
 
 	dumpFile := filepath.Join(backupPath, "db_dump.sql")
-	// #nosec G304 - dumpFile is safely constructed inside the backup directory
+	rel, err := filepath.Rel(bm.backupDir, dumpFile)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("ungültiger Pfad für Dump-Datei: %s", dumpFile)
+	}
+
 	outFile, err := os.Create(dumpFile)
 	if err != nil {
 		return fmt.Errorf("konnte Dump-Datei nicht erstellen: %w", err)
@@ -132,7 +136,12 @@ func (bm *BackupManager) rotateBackups() {
 	toDelete := dirs[:len(dirs)-bm.maxBackups]
 	for _, d := range toDelete {
 		path := filepath.Join(bm.backupDir, d.Name())
-		// #nosec G304 - path is derived from safe directory entries
+		rel, err := filepath.Rel(bm.backupDir, path)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			log.Printf("Backup WARNUNG: Ungültiger Backup-Pfad: %s", path)
+			continue
+		}
+
 		if err := os.RemoveAll(path); err != nil {
 			log.Printf("Backup WARNUNG: Konnte altes Backup nicht löschen: %s: %v", path, err)
 		} else {
@@ -154,6 +163,11 @@ func copyDir(src, dst string) error {
 	for _, entry := range entries {
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
+
+		rel, err := filepath.Rel(dst, dstPath)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return fmt.Errorf("ungültiger Zielpfad: %s", dstPath)
+		}
 
 		if entry.IsDir() {
 			if err := copyDir(srcPath, dstPath); err != nil {
