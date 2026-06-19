@@ -278,6 +278,7 @@ CREATE TABLE buecher_exemplare (
     erworben_am DATE NOT NULL DEFAULT CURRENT_DATE,
     ist_ausleihbar BOOLEAN NOT NULL DEFAULT true,      -- Switch to block copies from being lent out
     inventur_geprueft_am TIMESTAMP WITH TIME ZONE,    -- Inventory scan check timestamp
+    inventur_status VARCHAR(20) DEFAULT NULL,         -- 'ausstehend' or 'erfasst' during inventory
     ist_ausgesondert BOOLEAN NOT NULL DEFAULT false,   -- Decommissioned copies: hidden from catalog/kiosk/inventory, kept for statistics
     etikett_gedruckt BOOLEAN NOT NULL DEFAULT false,   -- True if barcode label has been printed
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf position, condition details)
