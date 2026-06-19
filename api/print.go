@@ -27,9 +27,13 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 
 		var s pdf.Schueler
 		err = dbPool.QueryRow(ctx, `
-			SELECT vorname, nachname, COALESCE(strasse, ''), COALESCE(hausnummer, ''), COALESCE(plz, ''), COALESCE(ort, '')
+			SELECT vorname, nachname
 			FROM schueler WHERE id = $1
-		`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Strasse, &s.Hausnummer, &s.PLZ, &s.Ort)
+		`, schuelerID).Scan(&s.Vorname, &s.Nachname)
+		s.Strasse = ""
+		s.Hausnummer = ""
+		s.PLZ = ""
+		s.Ort = ""
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusNotFound, err)
 			return

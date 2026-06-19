@@ -88,13 +88,11 @@ func (s *Server) ListUsersHandler() http.HandlerFunc {
 }
 
 // CreateUserRequest holds payload data for user creation.
-type CreateUserRequest struct {
 	BarcodeID string `json:"barcode_id"`
 	Vorname   string `json:"vorname"`
 	Nachname  string `json:"nachname"`
 	Email     string `json:"email"`
 	Rolle     string `json:"rolle"`
-	Password  string `json:"password"`
 }
 
 // CreateUserHandler inserts a new user with bcrypt-hashed credentials.
@@ -115,7 +113,7 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 			return
 		}
 
-		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" || req.Password == "" {
+		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
 			return
 		}
@@ -150,13 +148,6 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 			}
 		}
 
-		// Encrypt password with bcrypt cost factor 10
-		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
 		dbEnumRole := strings.ToLower(req.Rolle)
 		if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" && dbEnumRole != "helfer" {
 			dbEnumRole = "mitarbeiter"
@@ -164,11 +155,11 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 
 		var userID string
 		query := `
-			INSERT INTO benutzer (barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
-			VALUES ($1, $2, $3, $4, $5, $6::benutzer_rolle, true)
+			INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
+			VALUES ($1, $2, $3, $4, $5::benutzer_rolle, true)
 			RETURNING id
 		`
-		err = s.DB.Pool.QueryRow(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, string(hash), dbEnumRole).Scan(&userID)
+		err = s.DB.Pool.QueryRow(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole).Scan(&userID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -198,7 +189,6 @@ type UpdateUserRequest struct {
 	Email     string `json:"email"`
 	Rolle     string `json:"rolle"`
 	Aktiv     bool   `json:"aktiv"`
-	Password  string `json:"password"`
 }
 
 // UpdateUserHandler modifies user properties and dynamically updates details/passwords.
@@ -266,33 +256,15 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 			dbEnumRole = "mitarbeiter"
 		}
 
-		if req.Password != "" {
-			hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			query := `
-				UPDATE benutzer
-				SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, passwort_hash = $7, aktualisiert_am = CURRENT_TIMESTAMP
-				WHERE id = $8
-			`
-			_, err = s.DB.Pool.Exec(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv, string(hash), id)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-		} else {
-			query := `
-				UPDATE benutzer
-				SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, aktualisiert_am = CURRENT_TIMESTAMP
-				WHERE id = $7
-			`
-			_, err = s.DB.Pool.Exec(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv, id)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
+		query := `
+			UPDATE benutzer
+			SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, aktualisiert_am = CURRENT_TIMESTAMP
+			WHERE id = $7
+		`
+		_, err = s.DB.Pool.Exec(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv, id)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		// Update role in benutzer_rollen (used for RBAC checks)
