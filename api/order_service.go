@@ -58,27 +58,59 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 
 	var copyInserts []repository.BookCopyInsert
 
+	// Vorab alle Titel abfragen, um das N+1 Query Problem zu beheben
+	titelIDs := make([]string, 0, len(req.Items))
 	for _, item := range req.Items {
 		if item.Menge <= 0 || item.Menge > 200 {
 			return nil, fmt.Errorf("invalid quantity %d for title %s", item.Menge, item.TitelID)
 		}
+		titelIDs = append(titelIDs, item.TitelID)
+	}
 
-		var titel, autor, isbn, verlag string
-		err = tx.QueryRow(ctx, "SELECT titel, coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, '') FROM buecher_titel WHERE id = $1", item.TitelID).Scan(&titel, &autor, &isbn, &verlag)
+	type titelInfo struct {
+		Titel  string
+		Autor  string
+		ISBN   string
+		Verlag string
+	}
+
+	titelMap := make(map[string]titelInfo, len(titelIDs))
+	if len(titelIDs) > 0 {
+		rows, err := tx.Query(ctx, "SELECT id, titel, coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, '') FROM buecher_titel WHERE id = ANY($1)", titelIDs)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return nil, fmt.Errorf("book title %s not found", item.TitelID)
+			return nil, fmt.Errorf("failed to fetch book titles: %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var id, titel, autor, isbn, verlag string
+			if err := rows.Scan(&id, &titel, &autor, &isbn, &verlag); err != nil {
+				return nil, fmt.Errorf("failed to scan book title: %w", err)
 			}
-			return nil, err
+			titelMap[id] = titelInfo{Titel: titel, Autor: autor, ISBN: isbn, Verlag: verlag}
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("error iterating book titles: %w", err)
+		}
+	}
+
+	for _, item := range req.Items {
+		info, ok := titelMap[item.TitelID]
+		if !ok {
+			return nil, fmt.Errorf("book title %s not found", item.TitelID)
 		}
 
 		orderSummaryItems = append(orderSummaryItems, OrderedItem{
-			Titel:  titel,
-			Autor:  autor,
-			ISBN:   isbn,
-			Verlag: verlag,
+			Titel:  info.Titel,
+			Autor:  info.Autor,
+			ISBN:   info.ISBN,
+			Verlag: info.Verlag,
 			Menge:  item.Menge,
 		})
+
+		titel := info.Titel
+		autor := info.Autor
+		isbn := info.ISBN
 
 		if req.GenerateBarcodes {
 			barcodes, err := s.bookRepo.GenerateBarcodes(ctx, item.Menge)
