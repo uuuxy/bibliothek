@@ -20,7 +20,8 @@
   import LehrerPortal from "./LehrerPortal.svelte";
   import Mahnwesen from "./Mahnwesen.svelte";
   import SystemSettings from "./SystemSettings.svelte";
-
+  import SignatureManager from "./SignatureManager.svelte";
+  import GlobalLMFExtendWidget from "./GlobalLMFExtendWidget.svelte";
   function handleSelectBook(book) {
     appState.selectedBook = book;
     uiStore.activeTab = "media_catalog";
@@ -53,7 +54,8 @@
           mahnwesen: "/mahnwesen",
           audit: "/logbuch",
           admin_audit: "/admin/auditlog",
-          permissions: "/berechtigungen",
+          signatures: "/signaturen",
+          lmf_actions: "/lmf-aktionen",
           student_ids: "/ausweise",
           labels: "/etiketten",
           kiosk: "/kiosk"
@@ -104,7 +106,7 @@
           media_catalog: "/katalog", graduates: "/abgaenger",
           stats: "/statistiken", mahnwesen: "/mahnwesen",
           audit: "/logbuch", admin_audit: "/admin/auditlog",
-          permissions: "/berechtigungen",
+          signatures: "/signaturen", lmf_actions: "/lmf-aktionen",
           student_ids: "/ausweise", labels: "/etiketten", kiosk: "/kiosk"
         };
         const matchedTab = Object.keys(tabToPath).find(key => tabToPath[key] === path);
@@ -143,16 +145,24 @@
     <div class="w-full animate-fade-in"><LabelPrinter /></div>
   {:else if uiStore.activeTab === "media_catalog"}
     <div class="w-full animate-fade-in"><MediaCatalog /></div>
+  {:else if uiStore.activeTab === "signatures"}
+    <div class="w-full animate-fade-in p-8 max-w-6xl mx-auto space-y-6">
+      <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Signaturen & Master Data</h2>
+      <SignatureManager />
+    </div>
   {:else if uiStore.activeTab === "inventory"}
     <div class="w-full animate-fade-in"><UnifiedInventory /></div>
   {:else if uiStore.activeTab === "students_dir"}
     <div class="w-full animate-fade-in"><StudentDirectory role={authStore.currentUser?.rolle} /></div>
-  {:else if uiStore.activeTab === "permissions"}
-    <div class="w-full animate-fade-in"><PermissionManager /></div>
   {:else if uiStore.activeTab === "mahnwesen"}
     <div class="w-full animate-fade-in"><Mahnwesen /></div>
   {:else if uiStore.activeTab === "lehrer_portal"}
     <div class="w-full animate-fade-in"><LehrerPortal user={authStore.currentUser} /></div>
+  {:else if uiStore.activeTab === "lmf_actions"}
+    <div class="w-full animate-fade-in p-8 max-w-6xl mx-auto space-y-6">
+      <h2 class="text-3xl font-bold text-slate-900 tracking-tight">LMF-Aktionen (Jahreswechsel)</h2>
+      <GlobalLMFExtendWidget />
+    </div>
   {:else if uiStore.activeTab === "settings"}
     <div class="w-full animate-fade-in"><SystemSettings /></div>
   {:else if uiStore.activeTab === "book_detail"}

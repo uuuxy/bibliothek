@@ -3,8 +3,6 @@
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
   import LitteraImportWidget from './LitteraImportWidget.svelte';
-  import GlobalLMFExtendWidget from './GlobalLMFExtendWidget.svelte';
-  import SignatureManager from './SignatureManager.svelte';
 
   // --- STATE ---
   let loading = $state(true);
@@ -261,13 +259,7 @@
 
             </div>
           </div>
-          
-          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-            <h3 class="text-base font-bold text-slate-900 mb-3">LMF Fristen Verlängerung</h3>
-            <GlobalLMFExtendWidget />
-          </div>
 
-          <!-- Save Button für globale Settings -->
           <div class="flex justify-end pt-4 pb-4">
             <button
               onclick={saveSettings}
@@ -396,11 +388,6 @@
           <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
             <h3 class="text-xl font-bold text-slate-900 mb-6">Mail-Templates</h3>
             <MailTemplates />
-          </div>
-
-          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-            <h3 class="text-xl font-bold text-slate-900 mb-6">Signaturen & Master Data</h3>
-            <SignatureManager />
           </div>
 
         </div>
