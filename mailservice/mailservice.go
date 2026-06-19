@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/mail"
 	"net/smtp"
 	"os"
 	"strings"
@@ -50,8 +51,15 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 		sender = "noreply@bibliothek-schule.de"
 	}
 
-	to = strings.ReplaceAll(to, "\r", "")
-	to = strings.ReplaceAll(to, "\n", "")
+	// validate recipient
+	parsedTo, err := mail.ParseAddress(to)
+	if err != nil {
+		return fmt.Errorf("ungültige E-Mail-Adresse: %w", err)
+	}
+	to = parsedTo.Address
+
+	betreff = strings.ReplaceAll(betreff, "\r", "")
+	betreff = strings.ReplaceAll(betreff, "\n", "")
 
 	// Nachricht nach RFC 822 formatieren
 	// Für echte HTML-Mails muss der Content-Type auf text/html gesetzt werden
