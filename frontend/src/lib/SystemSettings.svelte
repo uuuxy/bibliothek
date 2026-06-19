@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
   import LitteraImportWidget from './LitteraImportWidget.svelte';
+  import PermissionManager from './PermissionManager.svelte';
 
   // --- STATE ---
   let loading = $state(true);
@@ -11,7 +12,7 @@
   let toast = $state(null);
 
   // Tabs
-  const tabs = ["Allgemein", "Nutzerverwaltung", "Daten-Import", "System"];
+  const tabs = ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "Daten-Import", "System"];
   let activeTab = $state("Allgemein");
   
   // Progressive Disclosure
@@ -25,7 +26,7 @@
   let fristBuchTage = $state(21);
   let fristMedienTage = $state(7);
 
-  // Klassenlehrer-Mapping (Nutzerverwaltung)
+  // Klassenlehrer-Mapping (Mahnwesen-Routing)
   /** @type {{klasse: string, lehrer_email: string}[]} */
   let mappingRows = $state([]);
   let mappingLoading = $state(false);
@@ -270,15 +271,24 @@
           </div>
         </div>
 
-      <!-- TAB: NUTZERVERWALTUNG -->
-      {:else if activeTab === 'Nutzerverwaltung'}
+      <!-- TAB: TEAM & RECHTE -->
+      {:else if activeTab === 'Team & Rechte'}
+        <div class="space-y-6">
+          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
+            <h3 class="text-xl font-bold text-slate-900 mb-6">Account- und Rollenverwaltung</h3>
+            <PermissionManager />
+          </div>
+        </div>
+
+      <!-- TAB: MAHNWESEN-ROUTING -->
+      {:else if activeTab === 'Mahnwesen-Routing'}
         <div class="space-y-6">
           
           <!-- Klassenlehrer-Mapping Card -->
           <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
             <div class="mb-6">
-              <h3 class="text-xl font-bold text-slate-900">Klassenlehrer-Mapping</h3>
-              <p class="text-sm text-slate-500 mt-1">Ordnet jeder Klasse eine E-Mail-Adresse zu. Wird im Mahnwesen als Empfänger vorausgefüllt.</p>
+              <h3 class="text-xl font-bold text-slate-900">E-Mail Routing für Mahnungen</h3>
+              <p class="text-sm text-slate-500 mt-1">Ordnet jeder Klasse eine E-Mail-Adresse zu. Wird im Mahnwesen als Empfänger für Benachrichtigungen vorausgefüllt.</p>
             </div>
 
             {#if mappingLoading}
