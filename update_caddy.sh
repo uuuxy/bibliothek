@@ -64,6 +64,8 @@ flasch2.herzog-dupont.de {
 # Bibliothek
 # =============================================================================
 flasch3.herzog-dupont.de {
+    tls /etc/caddy/certs/flasch3.crt /etc/caddy/certs/flasch3.key
+
     handle /* {
         reverse_proxy bibliothek-backend:8083 {
             transport http {
