@@ -24,7 +24,7 @@ func main() {
 	colTitle := flag.Int("col-title", 0, "Index der Spalte mit dem Buchtitel (0-basiert)")
 	colIsbn := flag.Int("col-isbn", 1, "Index der Spalte mit der ISBN (0-basiert)")
 	hasHeader := flag.Bool("header", true, "Gibt an, ob die erste Zeile eine Kopfzeile ist und übersprungen werden soll")
-	
+
 	flag.Parse()
 
 	// 2. Datenbankverbindung herstellen
@@ -32,7 +32,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Fehler beim Öffnen der DB: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("Fehler beim Schließen der Datenbankverbindung: %v", err)
+		}
+	}()
 
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Keine Verbindung zur DB. Prüfe den Connection-String: %v", err)
@@ -44,7 +48,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Fehler beim Öffnen der CSV-Datei '%s': %v", *csvFilePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Fehler beim Schließen der Datei: %v", err)
+		}
+	}()
 
 	// 4. CSV-Reader konfigurieren
 	reader := csv.NewReader(file)
@@ -80,7 +88,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Fehler beim Vorbereiten des SQL-Statements: %v", err)
 	}
-	defer stmt.Close()
+	defer func() {
+		if err := stmt.Close(); err != nil {
+			log.Printf("Fehler beim Schließen des Statements: %v", err)
+		}
+	}()
 
 	log.Println("Starte ISBN-Import... (dies kann einen Moment dauern)")
 
@@ -101,7 +113,7 @@ func main() {
 		if *colIsbn > maxRequiredIndex {
 			maxRequiredIndex = *colIsbn
 		}
-		
+
 		if len(record) <= maxRequiredIndex {
 			// Zeile hat zu wenige Spalten, um Titel und ISBN sicher auszulesen
 			countFehler++
