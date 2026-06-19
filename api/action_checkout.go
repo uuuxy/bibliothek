@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"bibliothek/plugins"
@@ -77,7 +78,12 @@ func (s *Server) handleUnifiedCheckoutFlow(
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			slog.Error("Failed to rollback checkout transaction", "error", err)
+		}
+	}()
 
 	// If student, lock row to prevent concurrent limit bypass
 	var activeLoansCount int
