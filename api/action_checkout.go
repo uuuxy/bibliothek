@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"bibliothek/plugins"
@@ -85,7 +86,15 @@ func (s *Server) handleUnifiedCheckoutFlow(
 		if _, err = tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", borrowerID); err != nil {
 			return err
 		}
-		err = tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", borrowerID).Scan(&activeLoansCount)
+		err = tx.QueryRow(ctx, `
+			SELECT COUNT(*) 
+			FROM ausleihen a
+			JOIN buecher_exemplare be ON a.exemplar_id = be.id
+			JOIN buecher_titel bt ON be.titel_id = bt.id
+			WHERE a.schueler_id = $1 
+			  AND a.rueckgabe_am IS NULL
+			  AND LOWER(bt.titel) NOT LIKE 'lmf-%'
+		`, borrowerID).Scan(&activeLoansCount)
 		if err != nil {
 			return err
 		}
@@ -112,10 +121,13 @@ func (s *Server) handleUnifiedCheckoutFlow(
 		if err != nil {
 			return err
 		}
-		if activeLoansCount >= settings.MaxAusleihenSchueler {
+		
+		isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
+		
+		if !isLMF && activeLoansCount >= settings.MaxAusleihenSchueler {
 			// Only allow return if they already borrowed THIS book
 			if !isReturningThis {
-				return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell: %d)", errBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
+				return fmt.Errorf("%w: Ausleihlimit von %d Bibliotheks-Büchern überschritten (aktuell: %d)", errBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
 			}
 		}
 	}

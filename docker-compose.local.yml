@@ -34,6 +34,7 @@ services:
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - COOKIE_SECURE=false
       - INITIAL_ADMIN_EMAIL=pflasch@philipp-reis-schule.de
+      - IMAP_HOST=mock
     volumes:
       - bibliothek_uploads_local:/app/uploads
     depends_on:
