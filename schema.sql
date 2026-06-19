@@ -126,6 +126,11 @@ CREATE TABLE schueler (
     ist_gesperrt BOOLEAN NOT NULL DEFAULT false,      -- Flag to suspend borrowing privileges
     lusd_id VARCHAR(64) UNIQUE,                       -- Integrated LUSD ID
     ist_abgaenger BOOLEAN NOT NULL DEFAULT false,     -- Integrated ist_abgaenger
+    strasse VARCHAR(255),
+    hausnummer VARCHAR(50),
+    plz VARCHAR(20),
+    ort VARCHAR(255),
+    eltern_email VARCHAR(255),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -160,6 +165,62 @@ CREATE TABLE klassen_lehrer_mapping (
 );
 
 
+-- Table: systematik_kategorien
+CREATE TABLE systematik_kategorien (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    kuerzel VARCHAR(50) UNIQUE NOT NULL,
+    bezeichnung VARCHAR(255) NOT NULL,
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER trg_systematik_kategorien_aktualisiert_am
+BEFORE UPDATE ON systematik_kategorien
+FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+
+-- Table: lesergruppen
+CREATE TABLE lesergruppen (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    kuerzel VARCHAR(50) UNIQUE NOT NULL,
+    bezeichnung VARCHAR(255) NOT NULL,
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER trg_lesergruppen_aktualisiert_am
+BEFORE UPDATE ON lesergruppen
+FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+
+-- Table: mail_vorlagen
+CREATE TABLE mail_vorlagen (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    typ VARCHAR(100) UNIQUE NOT NULL,
+    betreff VARCHAR(255) NOT NULL,
+    text_body TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_mail_vorlagen_updated_at
+BEFORE UPDATE ON mail_vorlagen
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Table: revoked_tokens
+CREATE TABLE revoked_tokens (
+    token_signature VARCHAR(255) PRIMARY KEY,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE INDEX idx_revoked_tokens_expires_at ON revoked_tokens(expires_at);
+
+
 -- Table: buecher_titel (Master book catalog metadata)
 -- Under the strict rule: metadata is separated from physical copies
 CREATE TABLE buecher_titel (
@@ -181,6 +242,9 @@ CREATE TABLE buecher_titel (
     sort_order SERIAL,                                -- Integrated from books table
     medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf location, notes)
+    antolin_stufen VARCHAR(50),
+    antolin_punkte INTEGER,
+    antolin_geprueft_am TIMESTAMP WITH TIME ZONE,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
@@ -318,6 +382,9 @@ CREATE TABLE schadensfaelle (
     
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    storniert_am TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    storniert_von UUID REFERENCES benutzer(id) ON DELETE SET NULL DEFAULT NULL,
+    stornierungsgrund TEXT DEFAULT NULL,
     
     -- Constraint: Exactly one responsible person must be associated, or both NULL when anonymized/deleted
     CONSTRAINT check_damage_responsible CHECK (
@@ -350,7 +417,10 @@ CREATE TABLE audit_log (
     aktion VARCHAR(20) NOT NULL,
     datensatz_id UUID NOT NULL,
     timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    bearbeiter_id UUID REFERENCES benutzer(id) ON DELETE SET NULL
+    bearbeiter_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    details JSONB DEFAULT NULL,
+    akteur VARCHAR(10) NOT NULL DEFAULT 'USER' CHECK (akteur IN ('USER', 'SYSTEM')),
+    kontext TEXT DEFAULT NULL
 );
 
 -- Table: audit_logs (Admin-spezifische Eingriffe)
