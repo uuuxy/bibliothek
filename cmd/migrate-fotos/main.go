@@ -62,17 +62,25 @@ func main() {
 		processed++
 		
 		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
-		path := filepath.Join(uploadDir, entry.Name())
 		
-		imgBytes, err := os.ReadFile(path)
+		cleanUploadDir := filepath.Clean(uploadDir)
+		path := filepath.Join(cleanUploadDir, filepath.Base(entry.Name()))
+		cleanPath := filepath.Clean(path)
+
+		if !strings.HasPrefix(cleanPath, cleanUploadDir+string(os.PathSeparator)) {
+			slog.Error("Ungültiger Dateipfad erkannt", "file", entry.Name())
+			continue
+		}
+
+		imgBytes, err := os.ReadFile(cleanPath)
 		if err != nil {
-			slog.Error("Konnte Bild nicht lesen", "file", path, "error", err)
+			slog.Error("Konnte Bild nicht lesen", "file", cleanPath, "error", err)
 			continue
 		}
 
 		encryptedData, err := crypto.Encrypt(imgBytes)
 		if err != nil {
-			slog.Error("Konnte Bild nicht verschlüsseln", "file", path, "error", err)
+			slog.Error("Konnte Bild nicht verschlüsseln", "file", cleanPath, "error", err)
 			continue
 		}
 
