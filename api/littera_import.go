@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -236,7 +237,9 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				var insertedID string
 				err := br.QueryRow().Scan(&insertedID)
 				if err != nil {
-					br.Close()
+					if closeErr := br.Close(); closeErr != nil {
+						slog.Error("Fehler beim Schließen des Batch-Results", "error", closeErr)
+					}
 					apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to insert title batch: %w", err))
 					return
 				}
@@ -247,7 +250,10 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				titelToID[t.Titel] = insertedID
 				newTitlesCount++
 			}
-			br.Close()
+			if err := br.Close(); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to close title batch: %w", err))
+				return
+			}
 		}
 
 		// Second pass: Now all titles have IDs, collect all copies again
@@ -301,7 +307,10 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 					importedCopiesCount++
 				}
 			}
-			bcr.Close()
+			if err := bcr.Close(); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("failed to close copies batch: %w", err))
+				return
+			}
 		}
 
 		// Admin audit log
