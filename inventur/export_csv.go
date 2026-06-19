@@ -27,7 +27,7 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 
 	writer := csv.NewWriter(w)
 	writer.Comma = ';' // German Excel standard
-	
+
 	err = writer.WriteAll(rows)
 	if err != nil {
 		// Cannot write error response since headers are already sent

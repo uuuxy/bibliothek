@@ -62,8 +62,6 @@ func (s *Server) Routes() http.Handler {
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
 
-
-
 	invHandler := inventur.NewAPIHandler(inventur.APIHandlerConfig{
 		Repo:             invRepo,
 		Metadaten:        invMeta,
@@ -97,11 +95,8 @@ func (s *Server) Routes() http.Handler {
 	s.registerSystemRoutes(mux, auditRepo)
 	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
 
-
-
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.LitteraImportHandler()))
-
 
 	// Swagger interactive documentation
 	mux.Handle("GET /swagger/", httpSwagger.Handler(

@@ -1,8 +1,8 @@
 package inventur
 
 import (
-	"encoding/json"
 	"context"
+	"encoding/json"
 	"fmt"
 )
 
@@ -195,7 +195,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	if medientyp == "" {
 		medientyp = "Buch"
 	}
-	
+
 	properties := book.ErweiterteEigenschaften
 	if properties == nil {
 		properties = make(map[string]any)

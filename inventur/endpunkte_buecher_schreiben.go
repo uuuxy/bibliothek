@@ -76,7 +76,6 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
 		return
 	}
-	
 
 	buch := Book{
 		ISBN:                    strings.TrimSpace(eingabe.ISBN),

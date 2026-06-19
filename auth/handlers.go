@@ -106,6 +106,7 @@ type LoginResponse struct {
 	Nachname    string   `json:"nachname"`
 	Permissions []string `json:"permissions"`
 }
+
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
 // Supports both email/password (with local DB or school IMAP verification) and barcode/PIN login.
 func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {

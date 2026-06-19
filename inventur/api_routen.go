@@ -69,7 +69,7 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 
 	// Admin Protected (edit_books)
 	adminH := config.RequireAdminAuth(http.HandlerFunc(handler.handleAdminBooks))
-	
+
 	handler.mux.Handle("GET /api/admin/", adminH)
 	handler.mux.Handle("POST /api/admin/", adminH)
 	handler.mux.Handle("PUT /api/admin/", adminH)

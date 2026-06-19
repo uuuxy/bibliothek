@@ -10,7 +10,7 @@ import (
 )
 
 // EncryptUpload liest einen hochgeladenen File-Stream komplett in den RAM
-// und verschlüsselt die Daten mit AES-256-GCM. Das Ergebnis kann als BYTEA 
+// und verschlüsselt die Daten mit AES-256-GCM. Das Ergebnis kann als BYTEA
 // in einer PostgreSQL-Datenbank abgelegt werden.
 func EncryptUpload(file multipart.File) ([]byte, error) {
 	if file == nil {
@@ -26,8 +26,8 @@ func EncryptUpload(file multipart.File) ([]byte, error) {
 	return Encrypt(plaintext)
 }
 
-// DecryptAndServe nimmt verschlüsselte BYTEA-Daten aus der Datenbank, 
-// entschlüsselt sie im Arbeitsspeicher und streamt sie mit dem passenden 
+// DecryptAndServe nimmt verschlüsselte BYTEA-Daten aus der Datenbank,
+// entschlüsselt sie im Arbeitsspeicher und streamt sie mit dem passenden
 // Content-Type sicher zum Client. Dies fungiert als Output-Middleware/Handler.
 func DecryptAndServe(w http.ResponseWriter, ciphertext []byte, contentType string) error {
 	if len(ciphertext) == 0 {

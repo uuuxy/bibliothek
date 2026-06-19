@@ -20,11 +20,11 @@ import (
 
 // UserResponse holds public user data sent to administrative screens.
 type UserResponse struct {
-	ID         string    `json:"id"`
-	BarcodeID  string    `json:"barcode_id"`
-	Vorname    string    `json:"vorname"`
-	Nachname   string    `json:"nachname"`
-	Email      string    `json:"email"`
+	ID          string    `json:"id"`
+	BarcodeID   string    `json:"barcode_id"`
+	Vorname     string    `json:"vorname"`
+	Nachname    string    `json:"nachname"`
+	Email       string    `json:"email"`
 	Rolle       string    `json:"rolle"`
 	Aktiv       bool      `json:"aktiv"`
 	ErstelltAm  time.Time `json:"erstellt_am"`
@@ -67,7 +67,7 @@ func (s *Server) ListUsersHandler() http.HandlerFunc {
 				return
 			}
 			u.Rolle = strings.ToLower(u.Rolle) // Normalize for frontend
-			
+
 			// Permissions analog zum Login statisch mappen
 			switch u.Rolle {
 			case "admin":

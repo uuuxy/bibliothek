@@ -9,12 +9,12 @@ import (
 )
 
 type AdminAuditLogEntry struct {
-	ID         string    `json:"id"`
-	AdminID    *string   `json:"admin_id"`
-	AdminName  string    `json:"admin_name"`
-	Aktion     string    `json:"aktion"`
-	Details    any       `json:"details"`
-	IpAdresse  string    `json:"ip_adresse"`
+	ID          string    `json:"id"`
+	AdminID     *string   `json:"admin_id"`
+	AdminName   string    `json:"admin_name"`
+	Aktion      string    `json:"aktion"`
+	Details     any       `json:"details"`
+	IpAdresse   string    `json:"ip_adresse"`
 	Zeitstempel time.Time `json:"zeitstempel"`
 }
 

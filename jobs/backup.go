@@ -152,7 +152,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 		} else {
 			objectName := filepath.Base(outFilename)
 			reader := bytes.NewReader(encrypted)
-			
+
 			// Optional: Make bucket if not exists
 			exists, errBucketExists := minioClient.BucketExists(ctx, s3Bucket)
 			if errBucketExists == nil && !exists {

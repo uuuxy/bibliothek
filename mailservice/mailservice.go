@@ -15,7 +15,7 @@ import (
 // SendTemplateMail lädt eine Vorlage aus der Datenbank, ersetzt Platzhalter (z.B. {{.Name}}) und versendet die E-Mail.
 func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, templateType string, data map[string]interface{}) error {
 	var betreff, textBody string
-	
+
 	// Vorlage aus der DB laden
 	err := dbPool.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = $1", templateType).Scan(&betreff, &textBody)
 	if err != nil {
@@ -63,7 +63,7 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 
 	// SMTP-Verbindung aufbauen und E-Mail versenden
 	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
-	
+
 	var auth smtp.Auth
 	if smtpUser != "" && smtpPass != "" {
 		auth = smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)

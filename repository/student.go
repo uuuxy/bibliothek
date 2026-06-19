@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
 // Scanner defines an interface for both pgx.Row and pgx.Rows to enable shared scan helpers.

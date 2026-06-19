@@ -82,14 +82,19 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 
 		upsertQuery := `
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, $2, $3, $4, $5)
+			SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::int[])
 			ON CONFLICT (barcode_id) DO UPDATE
 			SET klasse = EXCLUDED.klasse,
 			    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
 			    aktualisiert_am = CURRENT_TIMESTAMP
 		`
 
-		count := 0
+		var barcodeIDs []string
+		var vornamen []string
+		var nachnamen []string
+		var klassen []string
+		var abgaengerJahre []int
+
 		lineNum := 1
 
 		for {
@@ -120,13 +125,21 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 				return
 			}
 
-			_, err = tx.Exec(ctx, upsertQuery, barcodeID, vorname, nachname, klasse, abgaengerJahr)
+			barcodeIDs = append(barcodeIDs, barcodeID)
+			vornamen = append(vornamen, vorname)
+			nachnamen = append(nachnamen, nachname)
+			klassen = append(klassen, klasse)
+			abgaengerJahre = append(abgaengerJahre, abgaengerJahr)
+		}
+
+		if len(barcodeIDs) > 0 {
+			_, err = tx.Exec(ctx, upsertQuery, barcodeIDs, vornamen, nachnamen, klassen, abgaengerJahre)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error on row %d: %w", lineNum, err))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error during bulk insert: %w", err))
 				return
 			}
-			count++
 		}
+		count := len(barcodeIDs)
 
 		if err := tx.Commit(ctx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

@@ -82,10 +82,10 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 				status = "lent"
 			}
 			json.NewEncoder(w).Encode(map[string]any{
-				"type":               "book",
-				"book":               book,
-				"status":             status,
-				"current_student_id": currentStudentID,
+				"type":                    "book",
+				"book":                    book,
+				"status":                  status,
+				"current_student_id":      currentStudentID,
 				"current_student_barcode": currentStudentBarcode,
 			})
 			return

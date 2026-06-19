@@ -1,8 +1,8 @@
 package api
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"encoding/xml"
 	"fmt"
 	"net/http"

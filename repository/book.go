@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
 // BookRepository defines operations for physical copies and book metadata search.

@@ -93,7 +93,7 @@ func GenerateLaufzettel(schuelerListe []LaufzettelStudent) ([]byte, error) {
 
 		// Signature block
 		p.Add(row.New(40).Add(col.New(12))) // Spacer
-		
+
 		p.Add(row.New(10).Add(
 			col.New(12).Add(text.New("_________________________________________________________", props.Text{Size: 10})),
 		))

@@ -46,10 +46,10 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 	}
 
 	book := Book{
-		ISBN:        isbn,
-		Title:       title,
-		Author:      author,
-		Subject:     subject,
+		ISBN:    isbn,
+		Title:   title,
+		Author:  author,
+		Subject: subject,
 		// #nosec G115 - gradeLevel is guaranteed to be 5-10 by parseKlassenStufe
 		GradeLevel:  int16(gradeLevel),
 		Stock:       stock,

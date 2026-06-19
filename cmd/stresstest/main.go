@@ -138,11 +138,11 @@ func main() {
 			}
 
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			// Dummy CSRF Token protection bypass
 			csrfToken := "dummy-csrf-token-12345"
 			req.Header.Set("X-CSRF-Token", csrfToken)
-			
+
 			// Session cookie
 			req.AddCookie(&http.Cookie{
 				Name:  "session_token",
@@ -169,7 +169,7 @@ func main() {
 			statusCode := 0
 			if err != nil {
 				statusCode = 0 // network error
-				
+
 				// Log the first error for debugging
 				resultsMu.Lock()
 				if len(statusCounts) == 0 {
@@ -182,7 +182,7 @@ func main() {
 				statusCode = resp.StatusCode
 				io.Copy(io.Discard, resp.Body)
 				resp.Body.Close()
-				
+
 				resultsMu.Lock()
 				statusCounts[statusCode]++
 				resultsMu.Unlock()

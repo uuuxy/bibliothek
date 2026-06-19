@@ -60,7 +60,7 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem) ([]byte, error) {
 		fmt.Sprintf("%s %s", schueler.Strasse, schueler.Hausnummer),
 		fmt.Sprintf("%s %s", schueler.PLZ, schueler.Ort),
 	}
-	
+
 	for _, line := range addressLines {
 		m.AddRow(5,
 			col.New(12).Add(
