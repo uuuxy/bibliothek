@@ -21,7 +21,6 @@ import (
 	"github.com/boombuler/barcode/code39"
 	"github.com/boombuler/barcode/qr"
 	"github.com/jackc/pgx/v5"
-	"github.com/jung-kurt/gofpdf"
 )
 
 // OrderRequest holds the input parameters for generating a new supplier order.
@@ -187,69 +186,21 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			return
 		}
 
+		var labelItems []BarcodeLabelDetail
+		for _, bc := range newBarcodes {
+			labelItems = append(labelItems, BarcodeLabelDetail{
+				BarcodeID: bc,
+				Titel:     titel,
+				Autor:     autor,
+				ISBN:      "", // not used for barcode sheet
+			})
+		}
+
 		// 4. Generate printable PDF label sheets
-		pdf := gofpdf.New("P", "mm", "A4", "")
-		pdf.AddPage()
-		pdf.SetMargins(10, 15, 10)
-		tr := pdf.UnicodeTranslatorFromDescriptor("")
-
-		pdf.SetFont("Arial", "B", 14)
-		pdf.Cell(0, 10, tr("Barcode-Aufkleber für Buchlieferant (Vorab-Beklebung)"))
-		pdf.Ln(6)
-		pdf.SetFont("Arial", "", 9)
-		pdf.SetTextColor(100, 100, 100)
-		pdf.Cell(0, 4, tr(fmt.Sprintf("Bestellung: %d x \"%s\" · Generiert am %s", req.Menge, titel, time.Now().Format("02.01.2006"))))
-		pdf.SetTextColor(0, 0, 0)
-		pdf.Ln(10)
-
-		// Define label grid metrics (A4 sheet spacing)
-		colWidth := 60.0
-		rowHeight := 35.0
-		cols := 3
-		margin := 10.0
-
-		trTitel := tr(titel)
-		trAutor := tr(autor)
-
-		for idx, barcodeID := range newBarcodes {
-			colIdx := idx % cols
-			rowIdx := (idx / cols) % 7 // 7 rows per page
-
-			// Add page if row overflows
-			if idx > 0 && colIdx == 0 && idx%21 == 0 {
-				pdf.AddPage()
-			}
-
-			x := margin + float64(colIdx)*(colWidth+5)
-			y := 25.0 + float64(rowIdx)*(rowHeight+5)
-
-			// Draw border box around each label
-			pdf.Rect(x, y, colWidth, rowHeight, "D")
-
-			// Print metadata inside label
-			pdf.SetFont("Arial", "B", 8)
-			pdf.SetXY(x+2, y+3)
-			pdf.Cell(colWidth-4, 4, trTitel)
-
-			pdf.SetFont("Arial", "", 7)
-			pdf.SetXY(x+2, y+7)
-			pdf.Cell(colWidth-4, 4, trAutor)
-
-			// Generate and register barcode PNG from memory
-			barcodeImg, err := GenerateBarcodePNG(barcodeID, false, 250, 70)
-			if err == nil {
-				imgReader := bytes.NewReader(barcodeImg)
-				imgInfo := pdf.RegisterImageOptionsReader(barcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, imgReader)
-				if imgInfo != nil {
-					// Embed barcode graphic
-					pdf.Image(barcodeID, x+5, y+12, colWidth-10, 13, false, "", 0, "")
-				}
-			}
-
-			// Render barcode ID string underneath image
-			pdf.SetFont("Arial", "B", 8)
-			pdf.SetXY(x+2, y+27)
-			pdf.CellFormat(colWidth-4, 4, tr(barcodeID), "", 0, "C", false, 0, "")
+		pdf, err := GenerateLabelsPDF("zweckform_l4760", 1, true, labelItems)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/pdf")

@@ -147,13 +147,21 @@
 
     <div class="space-y-3.5">
       <div class="space-y-1.5">
-        <span class="text-[10px] uppercase font-bold text-slate-450 block">Startposition auf dem A4-Bogen</span>
-        <select bind:value={labelStore.startPosition} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550">
-          {#each Array.from({ length: 21 }, (_, i) => i + 1) as pos}
-            <option value={pos}>Etikett Position {pos} {pos === 1 ? '(Ganz oben links)' : ''}</option>
-          {/each}
+        <span class="text-[10px] uppercase font-bold text-slate-450 block">Etikettenformat</span>
+        <select bind:value={labelStore.formatId} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550">
+          <option value="zweckform_l4760">Zweckform L4760 (3x7, 21 Etiketten)</option>
+          <option value="avery_3475">Avery 3475 (3x8, 24 Etiketten)</option>
+          <option value="standard_52">Kleine Barcodes (4x13, 52 Etiketten)</option>
         </select>
-        <p class="text-[10px] text-slate-400">Verhindert Verschnitt bei bereits genutzten Etikettenbögen.</p>
+      </div>
+
+      <div class="space-y-1.5">
+        <span class="text-[10px] uppercase font-bold text-slate-450 block">Startposition auf dem A4-Bogen</span>
+        <div class="flex items-center gap-2">
+          <input type="number" min="1" max={labelStore.maxPositions} bind:value={labelStore.startPosition} class="w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550" />
+          <span class="text-[10px] text-slate-400">max. {labelStore.maxPositions}</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">Für angebrochene Bögen: Gibt an, auf welchem Feld der Druck starten soll.</p>
       </div>
 
       <div class="space-y-1.5">

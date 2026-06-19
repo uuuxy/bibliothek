@@ -24,26 +24,6 @@
   </div>
 </div>
 
-<!-- Print Output (Invisible on screen, visible on print) -->
-<div class="print-rendered-output a4_grid">
-  <div class="print-labels-grid">
-    {#each labelStore.finalLabels as lbl}
-      {#if lbl.isBlank}
-        <!-- Hidden blank box keeping grid positions correct -->
-        <div class="print-label-box border-none opacity-0"></div>
-      {:else}
-        <div class="print-label-box {labelStore.labelBorder ? 'border border-black' : ''} p-2 text-black bg-white flex flex-col justify-between">
-          <div class="font-extrabold text-zinc-950 title-clamp leading-tight text-[8pt]">{lbl.titel}</div>
-          <div class="text-zinc-700 font-medium author-clamp leading-tight text-[7pt] mt-0.5">{lbl.autor || 'Unbekannt'}</div>
-          <div class="flex flex-col items-center justify-center grow pt-1">
-            <img src="/api/barcode?content={lbl.barcode_id}&qr={labelStore.barcodeType === 'qr'}&width=220&height=70" class="{labelStore.barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[7mm]'} object-contain" alt="Barcode" />
-            <span class="font-bold mt-1 text-[6.5pt] tracking-widest text-zinc-800">{lbl.barcode_id}</span>
-          </div>
-        </div>
-      {/if}
-    {/each}
-  </div>
-</div>
 
 <style>
   /* 

@@ -18,6 +18,8 @@ export function createLabelStore() {
     let labelBorder = $state(true);
     let startPosition = $state(1); // 1 to 21
 
+    let formatId = $state("avery_3475"); // Default format
+    let maxPositions = $derived(formatId === "standard_52" ? 52 : formatId === "avery_3475" ? 24 : 21);
     let generationMode = $state("existing");
     let existingCopies = $state.raw(/** @type {any[]} */ ([]));
     let loadingCopies = $state(false);
@@ -147,8 +149,38 @@ export function createLabelStore() {
         }
     }
 
-    function triggerPrint() {
-        window.print();
+    async function triggerPrint() {
+        const itemsToPrint = finalLabels.filter(l => !l.isBlank);
+        if (itemsToPrint.length === 0) return;
+
+        try {
+            const res = await apiFetch("/api/print/labels", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    formatId: formatId,
+                    startPosition: startPosition,
+                    isQR: barcodeType === "qr",
+                    items: itemsToPrint.map(l => ({
+                        BarcodeID: l.barcode_id,
+                        Titel: l.titel,
+                        Autor: l.autor
+                    }))
+                })
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+            } else {
+                console.error("Fehler beim Erstellen des PDFs");
+                alert("Fehler beim Erstellen des PDFs");
+            }
+        } catch (err) {
+            console.error("Netzwerkfehler beim Drucken", err);
+            alert("Fehler beim Senden der Daten");
+        }
     }
 
     return {
@@ -167,6 +199,8 @@ export function createLabelStore() {
         set barcodeType(v) { barcodeType = v; },
         get labelBorder() { return labelBorder; },
         set labelBorder(v) { labelBorder = v; },
+        get formatId() { return formatId; },
+        set formatId(v) { formatId = v; },
         get startPosition() { return startPosition; },
         set startPosition(v) { startPosition = v; },
         
@@ -181,6 +215,7 @@ export function createLabelStore() {
         set newStartNum(v) { newStartNum = v; },
         
         get finalLabels() { return finalLabels; },
+        get maxPositions() { return maxPositions; },
 
         loadClassGroups,
         handleClassChange,

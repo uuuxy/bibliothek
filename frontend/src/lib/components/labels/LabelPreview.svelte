@@ -5,7 +5,7 @@
 
 <!-- Right Preview Panel (7 cols) -->
 <div class="lg:col-span-7 flex flex-col items-center justify-start p-6 bg-slate-50 border border-dashed border-slate-200 rounded-3xl min-h-[500px]">
-  <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-4">A4 Etiketten-Vorschau · Zweckform L4760 (3 × 7 = 21 Etiketten)</span>
+  <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-4">A4 Etiketten-Vorschau · {labelStore.formatId === 'standard_52' ? 'Standard 52' : labelStore.formatId === 'avery_3475' ? 'Avery 3475' : 'Zweckform L4760'}</span>
   
   {#if !labelStore.selectedTitle && (appState.pendingPrintCopies?.length ?? 0) === 0}
     <div class="grow flex flex-col items-center justify-center text-slate-400 py-12">
