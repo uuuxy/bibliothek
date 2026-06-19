@@ -46,7 +46,7 @@ func (s *Server) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 
 		err := auditRepo.DeleteCopy(ctx, id, claims.UserID)
 		if err != nil {
-			if err.Error() == "Exemplar ist aktuell noch verliehen!" {
+			if err.Error() == "exemplar ist aktuell noch verliehen" {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			} else {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

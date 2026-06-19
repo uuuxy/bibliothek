@@ -106,7 +106,7 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 		return fmt.Errorf("failed to check active loans for copy: %w", err)
 	}
 	if activeLoanCount > 0 {
-		return errors.New("Exemplar ist aktuell noch verliehen!")
+		return errors.New("exemplar ist aktuell noch verliehen")
 	}
 
 	// Soft-Delete: We mark the copy as decommissioned instead of hard-deleting it.
