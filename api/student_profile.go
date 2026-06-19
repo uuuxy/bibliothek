@@ -32,11 +32,6 @@ type StudentProfileResponse struct {
 	AbgaengerJahr     int            `json:"abgaenger_jahr"`
 	IstGesperrt       bool           `json:"ist_gesperrt"`
 	FotoURL           string         `json:"foto_url"`
-	Strasse           *string        `json:"strasse,omitempty"`
-	Hausnummer        *string        `json:"hausnummer,omitempty"`
-	Plz               *string        `json:"plz,omitempty"`
-	Ort               *string        `json:"ort,omitempty"`
-	ElternEmail       *string        `json:"eltern_email,omitempty"`
 	Geburtsdatum      *string        `json:"geburtsdatum,omitempty"`
 	LusdID            *string        `json:"lusd_id,omitempty"`
 	Status            string         `json:"status,omitempty"`
@@ -156,11 +151,6 @@ func (s *Server) GetStudentProfileHandler(
 			AbgaengerJahr:     student.AbgaengerJahr,
 			IstGesperrt:       student.IstGesperrt,
 			FotoURL:           fotoURL,
-			Strasse:           student.Strasse,
-			Hausnummer:        student.Hausnummer,
-			Plz:               student.Plz,
-			Ort:               student.Ort,
-			ElternEmail:       student.ElternEmail,
 			Geburtsdatum:      student.Geburtsdatum,
 			LusdID:            student.LusdID,
 			Status:            statusStr,

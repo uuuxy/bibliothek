@@ -37,7 +37,6 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 			SELECT 
 				sf.beschreibung, sf.betrag, sf.erstellt_am,
 				s.vorname, s.nachname, s.klasse,
-				coalesce(s.strasse, ''), coalesce(s.hausnummer, ''), coalesce(s.plz, ''), coalesce(s.ort, ''),
 				t.titel, e.barcode_id
 			FROM schadensfaelle sf
 			JOIN schueler s ON sf.schueler_id = s.id
@@ -46,11 +45,9 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 			WHERE sf.id = $1
 		`
 
-		var sStrasse, sHausnummer, sPlz, sOrt string
 		err := s.DB.Pool.QueryRow(ctx, query, id).Scan(
 			&beschreibung, &betrag, &erstelltAm,
 			&sVorname, &sNachname, &sKlasse,
-			&sStrasse, &sHausnummer, &sPlz, &sOrt,
 			&tTitel, &eBarcode,
 		)
 		if err != nil {
@@ -94,18 +91,10 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		pdf.Cell(0, 6, tr(fmt.Sprintf("%s %s", sVorname, sNachname)))
 		pdf.Ln(5)
 		pdf.SetX(20)
-		if sStrasse != "" {
-			pdf.Cell(0, 6, tr(fmt.Sprintf("%s %s", sStrasse, sHausnummer)))
-		} else {
-			pdf.Cell(0, 6, tr("_________________________"))
-		}
+		pdf.Cell(0, 6, tr("_________________________"))
 		pdf.Ln(5)
 		pdf.SetX(20)
-		if sPlz != "" {
-			pdf.Cell(0, 6, tr(fmt.Sprintf("%s %s", sPlz, sOrt)))
-		} else {
-			pdf.Cell(0, 6, tr("_________________________"))
-		}
+		pdf.Cell(0, 6, tr("_________________________"))
 		pdf.Ln(30)
 
 		// Letter Subject

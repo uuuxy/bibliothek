@@ -69,10 +69,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		colVorname := getCol("vorname")
 		colNachname := getCol("name", "nachname")
 		colKlasse := getCol("klasse", "gruppe", "jahrgang")
-		colStrasse := getCol("strasse")
-		colHausnr := getCol("haus", "nr")
-		colPlz := getCol("plz", "post")
-		colOrt := getCol("ort")
+
 
 		if colID == -1 || colVorname == -1 || colNachname == -1 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Pflichtspalten (ID, Vorname, Nachname) fehlen in CSV"))
@@ -103,27 +100,11 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 				continue
 			}
 
-			var klasse, strasse, hausnr, plz, ort *string
+			var klasse *string
 
 			if colKlasse != -1 && len(row) > colKlasse {
 				v := strings.TrimSpace(row[colKlasse])
 				klasse = &v
-			}
-			if colStrasse != -1 && len(row) > colStrasse {
-				v := strings.TrimSpace(row[colStrasse])
-				strasse = &v
-			}
-			if colHausnr != -1 && len(row) > colHausnr {
-				v := strings.TrimSpace(row[colHausnr])
-				hausnr = &v
-			}
-			if colPlz != -1 && len(row) > colPlz {
-				v := strings.TrimSpace(row[colPlz])
-				plz = &v
-			}
-			if colOrt != -1 && len(row) > colOrt {
-				v := strings.TrimSpace(row[colOrt])
-				ort = &v
 			}
 
 			barcode := fmt.Sprintf("S-%05d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000)
@@ -133,22 +114,18 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 			// Wir verwenden zuerst einen direkten ON CONFLICT. Wenn lusd_id keinen UNIQUE Index hat,
 			// fangen wir den Fehler ab und machen es in 2 Schritten (SELECT -> UPDATE / INSERT).
 			upsertQuery := `
-				INSERT INTO schueler (lusd_id, barcode_id, vorname, nachname, klasse, strasse, hausnummer, plz, ort, abgaenger_jahr)
-				VALUES ($1, $2, $3, $4, COALESCE($5, 'Unbekannt'), $6, $7, $8, $9, $10)
+				INSERT INTO schueler (lusd_id, barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+				VALUES ($1, $2, $3, $4, COALESCE($5, 'Unbekannt'), $6)
 				ON CONFLICT (lusd_id) DO UPDATE SET
 					vorname = EXCLUDED.vorname,
 					nachname = EXCLUDED.nachname,
 					klasse = EXCLUDED.klasse,
-					strasse = EXCLUDED.strasse,
-					hausnummer = EXCLUDED.hausnummer,
-					plz = EXCLUDED.plz,
-					ort = EXCLUDED.ort,
 					aktualisiert_am = NOW()
 				RETURNING (xmax = 0) AS inserted;
 			`
 
 			var wasInserted bool
-			err = tx.QueryRow(ctx, upsertQuery, id, barcode, vorname, nachname, klasse, strasse, hausnr, plz, ort, abgang).Scan(&wasInserted)
+			err = tx.QueryRow(ctx, upsertQuery, id, barcode, vorname, nachname, klasse, abgang).Scan(&wasInserted)
 
 			if err != nil {
 				// Fallback: Manuelles Upsert für Systeme ohne UNIQUE Constraint auf lusd_id
@@ -157,16 +134,16 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 
 				if chkErr == nil {
 					// Datensatz existiert -> UPDATE
-					updQuery := `UPDATE schueler SET vorname=$1, nachname=$2, klasse=COALESCE($3, klasse), strasse=$4, hausnummer=$5, plz=$6, ort=$7, aktualisiert_am=NOW() WHERE id=$8`
-					_, e2 := tx.Exec(ctx, updQuery, vorname, nachname, klasse, strasse, hausnr, plz, ort, dbID)
+					updQuery := `UPDATE schueler SET vorname=$1, nachname=$2, klasse=COALESCE($3, klasse), aktualisiert_am=NOW() WHERE id=$4`
+					_, e2 := tx.Exec(ctx, updQuery, vorname, nachname, klasse, dbID)
 					if e2 == nil {
 						result.Updated++
 						continue
 					}
 				} else {
 					// Datensatz fehlt -> INSERT
-					insQuery := `INSERT INTO schueler (lusd_id, barcode_id, vorname, nachname, klasse, strasse, hausnummer, plz, ort, abgaenger_jahr) VALUES ($1, $2, $3, $4, COALESCE($5, 'Unbekannt'), $6, $7, $8, $9, $10)`
-					_, e2 := tx.Exec(ctx, insQuery, id, barcode, vorname, nachname, klasse, strasse, hausnr, plz, ort, abgang)
+					insQuery := `INSERT INTO schueler (lusd_id, barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, $2, $3, $4, COALESCE($5, 'Unbekannt'), $6)`
+					_, e2 := tx.Exec(ctx, insQuery, id, barcode, vorname, nachname, klasse, abgang)
 					if e2 == nil {
 						result.Inserted++
 						continue

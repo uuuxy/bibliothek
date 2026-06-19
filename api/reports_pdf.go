@@ -26,10 +26,6 @@ type OverdueStudent struct {
 	ID          string
 	Vorname     string
 	Nachname    string
-	Strasse     string
-	Hausnummer  string
-	Plz         string
-	Ort         string
 	ElternEmail string
 	Books       []OverdueBook
 }
@@ -53,8 +49,6 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 		query := `
 			SELECT 
 				s.id, s.vorname, s.nachname, 
-				COALESCE(s.strasse, ''), COALESCE(s.hausnummer, ''), 
-				COALESCE(s.plz, ''), COALESCE(s.ort, ''), COALESCE(s.eltern_email, ''),
 				a.ausgeliehen_am, a.rueckgabe_frist,
 				FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))/86400) AS days_overdue,
 				t.titel, e.barcode_id
@@ -79,11 +73,11 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 		var studentOrder []string
 
 		for rows.Next() {
-			var id, vorname, nachname, strasse, hausnummer, plz, ort, email, titel, barcode string
+			var id, vorname, nachname, titel, barcode string
 			var ausgeliehenAm, frist time.Time
 			var days float64 // EXTRACT returns numeric/float
 
-			if err := rows.Scan(&id, &vorname, &nachname, &strasse, &hausnummer, &plz, &ort, &email, &ausgeliehenAm, &frist, &days, &titel, &barcode); err != nil {
+			if err := rows.Scan(&id, &vorname, &nachname, &ausgeliehenAm, &frist, &days, &titel, &barcode); err != nil {
 				fmt.Printf("Scan error: %v\n", err)
 				continue
 			}
@@ -91,8 +85,6 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			if _, exists := studentMap[id]; !exists {
 				studentMap[id] = &OverdueStudent{
 					ID: id, Vorname: vorname, Nachname: nachname,
-					Strasse: strasse, Hausnummer: hausnummer,
-					Plz: plz, Ort: ort, ElternEmail: email,
 				}
 				studentOrder = append(studentOrder, id)
 			}
@@ -143,10 +135,6 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 			addrLine1 := "Adresse unbekannt"
 			addrLine2 := ""
-			if student.Strasse != "" {
-				addrLine1 = student.Strasse + " " + student.Hausnummer
-				addrLine2 = student.Plz + " " + student.Ort
-			}
 			pdf.CellFormat(85, 5, tr(addrLine1), "", 1, "L", false, 0, "")
 			pdf.SetX(20)
 			pdf.CellFormat(85, 5, tr(addrLine2), "", 1, "L", false, 0, "")

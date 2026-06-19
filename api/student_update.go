@@ -124,11 +124,6 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			BarcodeID     *string `json:"barcode_id"`
 			Status        *string `json:"status"`
 			AbgaengerJahr *int    `json:"abgaenger_jahr"`
-			Strasse       *string `json:"strasse"`
-			Hausnummer    *string `json:"hausnummer"`
-			Plz           *string `json:"plz"`
-			Ort           *string `json:"ort"`
-			ElternEmail   *string `json:"eltern_email"`
 			Geburtsdatum  *string `json:"geburtsdatum"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -186,31 +181,6 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			argId++
 		}
 
-		if req.Strasse != nil {
-			query += fmt.Sprintf(", strasse = $%d", argId)
-			args = append(args, *req.Strasse)
-			argId++
-		}
-		if req.Hausnummer != nil {
-			query += fmt.Sprintf(", hausnummer = $%d", argId)
-			args = append(args, *req.Hausnummer)
-			argId++
-		}
-		if req.Plz != nil {
-			query += fmt.Sprintf(", plz = $%d", argId)
-			args = append(args, *req.Plz)
-			argId++
-		}
-		if req.Ort != nil {
-			query += fmt.Sprintf(", ort = $%d", argId)
-			args = append(args, *req.Ort)
-			argId++
-		}
-		if req.ElternEmail != nil {
-			query += fmt.Sprintf(", eltern_email = $%d", argId)
-			args = append(args, *req.ElternEmail)
-			argId++
-		}
 		if req.Geburtsdatum != nil {
 			var parsedDate *time.Time
 			if *req.Geburtsdatum != "" {

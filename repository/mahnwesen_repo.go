@@ -24,7 +24,6 @@ type UeberfaelligerSchueler struct {
 	SchuelerID  string                 `json:"schueler_id"`
 	Name        string                 `json:"name"`
 	Klasse      string                 `json:"klasse"`
-	ElternEmail *string                `json:"eltern_email,omitempty"`
 	Medien      []UeberfaelligesMedium `json:"medien"`
 }
 
@@ -46,7 +45,7 @@ func NewMahnwesenRepository(pool db.PgxPoolIface) *MahnwesenRepository {
 // QueryUeberfaelligeNachKlasse returns overdue loans grouped by class → student.
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse, s.eltern_email,
+		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       a.rueckgabe_frist,
 		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
@@ -76,11 +75,10 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 
 	for rows.Next() {
 		var schuelerID, name, klasse string
-		var elternEmail *string
 		var titel, autor, isbn, coverURL string
 		var frist time.Time
 		var tage int
-		if err := rows.Scan(&schuelerID, &name, &klasse, &elternEmail,
+		if err := rows.Scan(&schuelerID, &name, &klasse,
 			&titel, &autor, &isbn, &coverURL,
 			&frist, &tage); err != nil {
 			continue
@@ -97,7 +95,6 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 				SchuelerID:  schuelerID,
 				Name:        name,
 				Klasse:      klasse,
-				ElternEmail: elternEmail,
 			}
 			k := klassenMap[klasse]
 			k.Schueler = append(k.Schueler, sch)
@@ -140,7 +137,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 // QueryUeberfaelligeNachJahrgang returns overdue loans grouped by class → student based on grade level.
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse, s.eltern_email,
+		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       a.ausgeliehen_am,
 		       t.jahrgang_bis,
@@ -175,14 +172,13 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 
 	for rows.Next() {
 		var schuelerID, name, klasse string
-		var elternEmail *string
 		var titel, autor, isbn, coverURL string
 		var ausgeliehenAm time.Time
 		var jahrgangBis int
 		var schuelerJahrgang *int
 		var istAbgaenger bool
 
-		if err := rows.Scan(&schuelerID, &name, &klasse, &elternEmail,
+		if err := rows.Scan(&schuelerID, &name, &klasse,
 			&titel, &autor, &isbn, &coverURL,
 			&ausgeliehenAm, &jahrgangBis, &schuelerJahrgang, &istAbgaenger); err != nil {
 			continue
@@ -199,7 +195,6 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 				SchuelerID:  schuelerID,
 				Name:        name,
 				Klasse:      klasse,
-				ElternEmail: elternEmail,
 			}
 			k := klassenMap[klasse]
 			k.Schueler = append(k.Schueler, sch)

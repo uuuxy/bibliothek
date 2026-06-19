@@ -28,11 +28,6 @@ type Student struct {
 	LusdID         *string   `json:"lusd_id,omitempty"`
 	IstAbgaenger   bool      `json:"ist_abgaenger"`
 	Geburtsdatum   *string   `json:"geburtsdatum,omitempty"` // stored as DATE
-	Strasse        *string   `json:"strasse,omitempty"`
-	Hausnummer     *string   `json:"hausnummer,omitempty"`
-	Plz            *string   `json:"plz,omitempty"`
-	Ort            *string   `json:"ort,omitempty"`
-	ElternEmail    *string   `json:"eltern_email,omitempty"`
 	ErstelltAm     time.Time `json:"erstellt_am"`
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
 }
