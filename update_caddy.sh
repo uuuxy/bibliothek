@@ -1,12 +1,79 @@
 #!/bin/bash
-cat /root/caddy/Caddyfile | sed '/flasch3.herzog-dupont.de {/,/}/d' > /root/caddy/Caddyfile.new
-cat << 'INNER_EOF' >> /root/caddy/Caddyfile.new
-flasch3.herzog-dupont.de {
+cat << 'EOF' > /root/caddy/Caddyfile
+{
+    # Global options
+    email admin@philipp-reis-schule.de
 
-    handle /* {
-        reverse_proxy bibliothek-backend:8083
+    # Admin-API nur auf localhost binden (nicht im Container-Netzwerk erreichbar)
+    admin 127.0.0.1:2019
+
+    # Caddy speichert LE-Zertifikate und ACME-Account-Keys in /data.
+    # Dieses Verzeichnis wird auf das externe Volume schul-orga_caddy_data
+    # gemountet → Zertifikate überleben Container-Neustarts und Rebuilds.
+}
+
+# =============================================================================
+# Schul-Orga (Go-Backend + Svelte-Frontend, alles in einem Container)
+# =============================================================================
+flasch.herzog-dupont.de {
+    reverse_proxy school-calendar-app:8080 {
+        # Timeouts für 150+ Nutzer mit SSE-Verbindungen
+        transport http {
+            response_header_timeout 300s
+            read_timeout 600s
+            write_timeout 600s
+        }
+    }
+
+    # Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
     }
 }
-INNER_EOF
-mv /root/caddy/Caddyfile.new /root/caddy/Caddyfile
+
+# =============================================================================
+# Inventur-Programm (Bücherverwaltung)
+# =============================================================================
+flasch2.herzog-dupont.de {
+    # API-Anfragen an das Go-Backend
+    handle /api/* {
+        reverse_proxy inventur-backend-1:8080
+    }
+
+    # Statische Upload-Dateien (Buchcover etc.) vom Backend
+    handle /uploads/* {
+        reverse_proxy inventur-backend-1:8080
+    }
+
+    # Alles andere: Svelte-Frontend (SvelteKit Node-Server)
+    handle {
+        reverse_proxy inventur-frontend-1:3000
+    }
+
+    # Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+    }
+}
+
+# =============================================================================
+# Bibliothek
+# =============================================================================
+flasch3.herzog-dupont.de {
+    handle /* {
+        reverse_proxy bibliothek-backend:8083 {
+            transport http {
+                response_header_timeout 300s
+                read_timeout 600s
+                write_timeout 600s
+            }
+        }
+    }
+}
+EOF
+
 docker restart caddy
