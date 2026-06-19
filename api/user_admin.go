@@ -14,8 +14,6 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 // UserResponse holds public user data sent to administrative screens.
@@ -88,6 +86,7 @@ func (s *Server) ListUsersHandler() http.HandlerFunc {
 }
 
 // CreateUserRequest holds payload data for user creation.
+type CreateUserRequest struct {
 	BarcodeID string `json:"barcode_id"`
 	Vorname   string `json:"vorname"`
 	Nachname  string `json:"nachname"`
