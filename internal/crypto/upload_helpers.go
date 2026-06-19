@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -16,7 +17,11 @@ func EncryptUpload(file multipart.File) ([]byte, error) {
 	if file == nil {
 		return nil, fmt.Errorf("leere Datei übergeben")
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			slog.Warn("Fehler beim Schließen der Upload-Datei", "error", err)
+		}
+	}()
 
 	plaintext, err := io.ReadAll(file)
 	if err != nil {
