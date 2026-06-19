@@ -36,10 +36,10 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock StudentRepo.GetByID
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am FROM schueler WHERE id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), strasse, hausnummer, plz, ort, eltern_email, erstellt_am, aktualisiert_am FROM schueler WHERE id = \\$1 LIMIT 1").
 		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am"}).
-			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now()))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "strasse", "hausnummer", "plz", "ort", "eltern_email", "erstellt_am", "aktualisiert_am"}).
+			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, nil, nil, nil, nil, nil, time.Now(), time.Now()))
 
 	// 2. querySettings inside resolveCheckoutDueDate
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
@@ -70,6 +70,11 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", "5").
 			AddRow("standard_ausleihfrist_tage", "14"))
+
+	// Vormerkungen check before checkout
+	mock.ExpectQuery("SELECT v.schueler_id, s.vorname, s.nachname FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id WHERE v.bereitgestellt_exemplar_id = \\$1 AND v.status = 'abholbereit' AND v.bereitgestellt_bis > CURRENT_TIMESTAMP").
+		WithArgs(copy.ID).
+		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}))
 
 	// Mock CreateLoanTx
 	mock.ExpectQuery("INSERT INTO ausleihen \\(exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\) ON CONFLICT DO NOTHING RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat").
@@ -138,10 +143,10 @@ func TestHandleBookReturn(t *testing.T) {
 			AddRow(activeLoanID, &copyID, &studentID, nil, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, staffID, nil, false, false))
 
 	// Student lookup fallback
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am FROM schueler WHERE id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), strasse, hausnummer, plz, ort, eltern_email, erstellt_am, aktualisiert_am FROM schueler WHERE id = \\$1 LIMIT 1").
 		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am"}).
-			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now()))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "strasse", "hausnummer", "plz", "ort", "eltern_email", "erstellt_am", "aktualisiert_am"}).
+			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, nil, nil, nil, nil, nil, time.Now(), time.Now()))
 
 	// ReturnLoanTx
 	mock.ExpectExec("UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = \\$1, ist_fremdrueckgabe = \\$2 WHERE id = \\$3 AND rueckgabe_am IS NULL").

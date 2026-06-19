@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // LusdPreviewResult contains the statistics for the frontend preview.
@@ -148,6 +150,10 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 	res := &LusdPreviewResult{TotalCsvRecords: len(records)}
 	csvLusdIDs := make(map[string]bool)
 
+	var updateIDs []string
+	var updateClasses []string
+	var insertRows [][]any
+
 	// Process CSV records (Updates and Inserts)
 	for _, rec := range records {
 		csvLusdIDs[rec.LusdID] = true
@@ -155,52 +161,111 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 			if dbRec.Klasse != rec.Klasse {
 				res.ClassChanges++
 				if apply {
-					_, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID)
-					if err != nil {
-						return nil, err
-					}
+					updateIDs = append(updateIDs, dbRec.ID)
+					updateClasses = append(updateClasses, rec.Klasse)
 				}
 			}
 		} else {
 			res.NewStudents++
 			if apply {
-				barcode := fmt.Sprintf("S-%05d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000) // Temporary unique short barcode
-				year := time.Now().Year() + 5                                                                 // Default abgang
+				// Temporary unique short barcode - added loop counter to ensure uniqueness in rapid execution
+				barcode := fmt.Sprintf("S-%05d%04d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000, res.NewStudents)
+				year := time.Now().Year() + 5 // Default abgang
 				geb := interface{}(rec.Geburtsdatum)
 				if rec.Geburtsdatum == "" {
 					geb = nil
 				}
-				_, err := tx.Exec(ctx,
-					"INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-					barcode, rec.Vorname, rec.Nachname, rec.Klasse, year, rec.LusdID, geb)
-				if err != nil {
-					return nil, err
-				}
+				insertRows = append(insertRows, []any{
+					barcode, rec.Vorname, rec.Nachname, rec.Klasse, year, rec.LusdID, geb,
+				})
 			}
 		}
 	}
+
+	if apply {
+		// Bulk update classes
+		if len(updateIDs) > 0 {
+			_, err := tx.Exec(ctx, `
+				UPDATE schueler
+				SET klasse = data.klasse, aktualisiert_am = NOW()
+				FROM (
+					SELECT unnest($1::uuid[]) AS id, unnest($2::text[]) AS klasse
+				) AS data
+				WHERE schueler.id = data.id
+			`, updateIDs, updateClasses)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Bulk insert new students
+		if len(insertRows) > 0 {
+			_, err := tx.CopyFrom(ctx,
+				pgx.Identifier{"schueler"},
+				[]string{"barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "lusd_id", "geburtsdatum"},
+				pgx.CopyFromRows(insertRows),
+			)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	var missingIDs []string
 
 	// Process missing records (Abgänger)
 	for lusdID, dbRec := range dbStudents {
 		if !csvLusdIDs[lusdID] {
 			res.Graduates++
 			if apply {
-				// Check if they have active loans
-				var pending int
-				err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", dbRec.ID).Scan(&pending)
-				if err != nil {
-					return nil, err
-				}
-				if pending > 0 {
-					// Mark as inactive/abgänger
-					_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
-				} else {
-					// DSGVO compliant anonymization
-					_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = 'Anonymisiert', klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
-				}
-				if err != nil {
-					return nil, err
-				}
+				missingIDs = append(missingIDs, dbRec.ID)
+			}
+		}
+	}
+
+	if apply && len(missingIDs) > 0 {
+		// Bulk select pending loans
+		rows, err := tx.Query(ctx, "SELECT schueler_id, COUNT(*) FROM ausleihen WHERE schueler_id = ANY($1::uuid[]) AND rueckgabe_am IS NULL GROUP BY schueler_id", missingIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		pendingCounts := make(map[string]int)
+		for rows.Next() {
+			var sID string
+			var count int
+			if err := rows.Scan(&sID, &count); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			pendingCounts[sID] = count
+		}
+		rows.Close()
+
+		var idsWithLoans []string
+		var idsWithoutLoans []string
+
+		for _, id := range missingIDs {
+			if pendingCounts[id] > 0 {
+				idsWithLoans = append(idsWithLoans, id)
+			} else {
+				idsWithoutLoans = append(idsWithoutLoans, id)
+			}
+		}
+
+		if len(idsWithLoans) > 0 {
+			// Mark as inactive/abgänger
+			_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = ANY($1::uuid[])", idsWithLoans)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if len(idsWithoutLoans) > 0 {
+			// DSGVO compliant anonymization
+			_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = 'Anonymisiert', klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = ANY($1::uuid[])", idsWithoutLoans)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
