@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"mime/multipart"
+	"net/mail"
 	"net/smtp"
 	"net/textproto"
 	"os"
-	"strings"
 )
 
 // MailAttachment represents an email attachment.
@@ -46,8 +46,11 @@ func SendEmail(req MailRequest) error {
 	writer := multipart.NewWriter(&buf)
 	boundary := writer.Boundary()
 
-	req.To = strings.ReplaceAll(req.To, "\r", "")
-	req.To = strings.ReplaceAll(req.To, "\n", "")
+	parsedTo, err := mail.ParseAddress(req.To)
+	if err != nil {
+		return fmt.Errorf("invalid recipient email address: %w", err)
+	}
+	req.To = parsedTo.Address
 
 	// Write SMTP Headers
 	fmt.Fprintf(&buf, "From: %s\r\n", from)
