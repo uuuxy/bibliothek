@@ -72,8 +72,13 @@ func (b *BackupJob) RunDatabaseBackup() {
 
 	// pg_dump schreibt SQL nach stdout; wir pipen es durch gzip → AES-GCM Verschlüsselung.
 	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
-	pgDumpArgs := dsnToPgDumpArgs(dsn)
-	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
+	pgDump := exec.CommandContext(ctx, "pg_dump", //nolint:gosec
+		"--dbname="+dsn,
+		"--no-password",
+		"--format=plain",
+		"--encoding=UTF8",
+		"--verbose",
+	)
 
 	sqlReader, sqlWriter := io.Pipe()
 	pgDump.Stdout = sqlWriter
@@ -152,7 +157,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 		} else {
 			objectName := filepath.Base(outFilename)
 			reader := bytes.NewReader(encrypted)
-			
+
 			// Optional: Make bucket if not exists
 			exists, errBucketExists := minioClient.BucketExists(ctx, s3Bucket)
 			if errBucketExists == nil && !exists {
@@ -233,20 +238,6 @@ func rotateBackups(dir string, maxKeep int) {
 			// #nosec G706
 			log.Printf("Backup rotation: deleted old backup %s", f)
 		}
-	}
-}
-
-// dsnToPgDumpArgs konvertiert einen PostgreSQL-DSN/Verbindungsstring in CLI-Argumente für pg_dump.
-// Unterstützt sowohl das postgres:// URL-Format als auch das key=value-Format.
-func dsnToPgDumpArgs(dsn string) []string {
-	// DSN direkt über PGPASSWORD ENV übergeben, separat gesetzt.
-	// pg_dump akzeptiert --dbname mit einer vollständigen Verbindungs-URI.
-	return []string{
-		"--dbname=" + dsn,
-		"--no-password",
-		"--format=plain",
-		"--encoding=UTF8",
-		"--verbose",
 	}
 }
 
