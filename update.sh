@@ -183,5 +183,5 @@ log_ok "════════════════════════
 log_ok "  UPDATE ERFOLGREICH ABGESCHLOSSEN"
 log_ok "══════════════════════════════════════════════════"
 echo ""
-log_info "Anwendung läuft unter: http://$(hostname -I | awk '{print $1}'):8081"
+log_info "Anwendung läuft lokal auf Port 8083 und ist erreichbar unter: https://flasch3.herzog-dupont.de"
 echo ""
