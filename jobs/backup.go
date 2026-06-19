@@ -20,6 +20,8 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // BackupJob führt tägliche verschlüsselte PostgreSQL-Datenbank-Backups durch.
@@ -72,8 +74,13 @@ func (b *BackupJob) RunDatabaseBackup() {
 
 	// pg_dump schreibt SQL nach stdout; wir pipen es durch gzip → AES-GCM Verschlüsselung.
 	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
-	pgDumpArgs := dsnToPgDumpArgs(dsn)
+	pgDumpArgs, envs, err := dsnToPgDumpArgs(dsn)
+	if err != nil {
+		log.Printf("Backup: failed to parse DSN: %v", err)
+		return
+	}
 	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
+	pgDump.Env = envs
 
 	sqlReader, sqlWriter := io.Pipe()
 	pgDump.Stdout = sqlWriter
@@ -238,16 +245,29 @@ func rotateBackups(dir string, maxKeep int) {
 
 // dsnToPgDumpArgs konvertiert einen PostgreSQL-DSN/Verbindungsstring in CLI-Argumente für pg_dump.
 // Unterstützt sowohl das postgres:// URL-Format als auch das key=value-Format.
-func dsnToPgDumpArgs(dsn string) []string {
-	// DSN direkt über PGPASSWORD ENV übergeben, separat gesetzt.
-	// pg_dump akzeptiert --dbname mit einer vollständigen Verbindungs-URI.
-	return []string{
-		"--dbname=" + dsn,
+func dsnToPgDumpArgs(dsn string) ([]string, []string, error) {
+	config, err := pgconn.ParseConfig(dsn)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid DSN: %w", err)
+	}
+
+	args := []string{
+		"--host=" + config.Host,
+		"--port=" + fmt.Sprintf("%d", config.Port),
+		"--username=" + config.User,
+		"--dbname=" + config.Database,
 		"--no-password",
 		"--format=plain",
 		"--encoding=UTF8",
 		"--verbose",
 	}
+
+	envs := os.Environ()
+	if config.Password != "" {
+		envs = append(envs, "PGPASSWORD="+config.Password)
+	}
+
+	return args, envs, nil
 }
 
 // BackupKeyFingerprint gibt einen kurzen Hex-Fingerabdruck des Verschlüsselungsschlüssels für Protokollierungs-/Audit-Zwecke zurück.
