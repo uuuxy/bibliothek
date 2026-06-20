@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -20,11 +21,12 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	}
 	defer mock.Close()
 
-	server := &Server{
-		DB: &db.Database{Pool: mock},
-	}
+
 	studentRepo := repository.NewStudentRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
+	auditRepo := repository.NewAuditRepository(mock)
+	bookRepo := repository.NewBookRepository(mock)
+	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	copy := &repository.BookCopy{
 		ID:            "copy-1",
@@ -96,14 +98,12 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	var resp ActionResponse
-	err = server.handleUnifiedCheckoutFlow(context.Background(), copy, &studentID, nil, staffID, studentRepo, loanRepo, &resp)
+	lr, err := loanSvc.HandleUnifiedCheckout(context.Background(), copy, &studentID, nil, staffID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
-	if resp.Type != "ausleihe" {
-		t.Errorf("expected response type 'ausleihe', got '%s'", resp.Type)
+	if lr.Student == nil || lr.Student.ID != studentID {
+		t.Errorf("expected student to be populated")
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -122,8 +122,10 @@ func TestHandleBookReturn(t *testing.T) {
 		DB: &db.Database{Pool: mock},
 	}
 	studentRepo := repository.NewStudentRepository(mock)
-	bookRepo := repository.NewBookRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
+	auditRepo := repository.NewAuditRepository(mock)
+	bookRepo := repository.NewBookRepository(mock)
+	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	copyID := "copy-1"
 	barcode := "B-9999"
@@ -169,7 +171,7 @@ func TestHandleBookReturn(t *testing.T) {
 	var resp ActionResponse
 	claims := &auth.Claims{UserID: staffID, Rolle: auth.RoleMitarbeiter}
 
-	err = server.handleBookAction(context.Background(), barcode, claims, nil, nil, studentRepo, bookRepo, loanRepo, &resp)
+	err = server.handleBookAction(context.Background(), barcode, claims, nil, nil, bookRepo, loanRepo, loanSvc, &resp)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

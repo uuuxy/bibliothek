@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
-	"bibliothek/plugins"
+	"bibliothek/internal/service"
 	"bibliothek/repository"
 )
 
@@ -20,6 +19,7 @@ func (s *Server) ActionHandler(
 	studentRepo repository.StudentRepository,
 	bookRepo repository.BookRepository,
 	loanRepo repository.LoanRepository,
+	loanSvc service.LoanService,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
@@ -41,7 +41,7 @@ func (s *Server) ActionHandler(
 
 		ctx := r.Context()
 
-		resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo)
+		resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo, loanSvc)
 		if err != nil {
 			apierrors.SendHTTPError(w, status, err)
 			return
@@ -59,6 +59,7 @@ func (s *Server) processActionRequest(
 	studentRepo repository.StudentRepository,
 	bookRepo repository.BookRepository,
 	loanRepo repository.LoanRepository,
+	loanSvc service.LoanService,
 ) (*ActionResponse, int, error) {
 	var resp ActionResponse
 	var err error
@@ -69,13 +70,13 @@ func (s *Server) processActionRequest(
 	} else if strings.HasPrefix(req.Query, "L-") {
 		err = s.handleTeacherAction(ctx, req.Query, &resp)
 	} else if strings.HasPrefix(req.Query, "B-") {
-		err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
+		err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, bookRepo, loanRepo, loanSvc, &resp)
 	} else if strings.HasPrefix(req.Query, "G-") {
 		err = s.handleGeraetAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, studentRepo, loanRepo, &resp)
 	} else {
 		// Fallback for Littera barcodes (which lack the "B-" prefix).
 		if copy, _ := bookRepo.GetCopyByBarcode(ctx, req.Query); copy != nil {
-			err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, studentRepo, bookRepo, loanRepo, &resp)
+			err = s.handleBookAction(ctx, req.Query, claims, req.ActiveStudentID, req.ActiveTeacherID, bookRepo, loanRepo, loanSvc, &resp)
 		} else {
 			err = s.handleSearchAction(ctx, req.Query, bookRepo, &resp)
 		}
@@ -107,6 +108,7 @@ func (s *Server) ActionBatchHandler(
 	studentRepo repository.StudentRepository,
 	bookRepo repository.BookRepository,
 	loanRepo repository.LoanRepository,
+	loanSvc service.LoanService,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
@@ -136,7 +138,7 @@ func (s *Server) ActionBatchHandler(
 				continue
 			}
 
-			resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo)
+			resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo, loanSvc)
 
 			item := ActionBatchResponseItem{
 				Index:   i,
@@ -165,9 +167,10 @@ func (s *Server) handleBookAction(
 	claims *auth.Claims,
 	activeStudentID *string,
 	activeTeacherID *string,
-	studentRepo repository.StudentRepository,
+
 	bookRepo repository.BookRepository,
 	loanRepo repository.LoanRepository,
+	loanSvc service.LoanService,
 	resp *ActionResponse,
 ) error {
 	staffID := claims.UserID
@@ -221,113 +224,42 @@ func (s *Server) handleBookAction(
 	}
 
 	// Case: Active Teacher or Student context exists in session.
-	// Pass nil for activeLoan – the flow handler re-reads it inside a locked transaction.
 	if (activeTeacherID != nil && *activeTeacherID != "") || (activeStudentID != nil && *activeStudentID != "") {
-		return s.handleUnifiedCheckoutFlow(ctx, copy, activeStudentID, activeTeacherID, staffID, studentRepo, loanRepo, resp)
-	}
-
-	// Case: NO active student/teacher context -> Simple Return (or teacher self-checkout).
-	// Wrap the decision in a Read Committed transaction with SELECT ... FOR UPDATE to prevent
-	// duplicate return events from simultaneous WLAN-lagged scans.
-	tx, err := loanRepo.BeginTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx) //nolint:errcheck
-
-	activeLoan, err := loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
-	if err != nil {
-		return err
-	}
-
-	if activeLoan == nil {
-		if claims.Rolle == auth.RoleLehrer {
-			dueTime := time.Now().AddDate(1, 0, 0) // 1 year
-			loan, err := loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, claims.UserID, claims.UserID, dueTime, true)
-			if err != nil {
-				return err
-			}
-			if err := tx.Commit(ctx); err != nil {
-				return err
-			}
-			auditRepo := repository.NewAuditRepository(s.DB.Pool)
-			_ = auditRepo.LogAusleihe(ctx, copy.ID, "", claims.UserID, claims.UserID)
-
-			resp.Type = "ausleihe"
-			resp.Book = copy
-			if loan != nil {
-				resp.DueDate = &loan.RueckgabeFrist
-			}
-			return nil
-		}
-		return fmt.Errorf("%w: Dieses Buchexemplar ist aktuell nicht ausgeliehen", errInvalidState)
-	}
-
-	if activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == claims.UserID {
-		if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, claims.UserID, false); err != nil {
-			return err
-		}
-
-		// Process reservation BEFORE commit so the tx statements take effect
-		s.processReturnVormerkungTx(ctx, tx, copy, resp)
-
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
-		auditRepo := repository.NewAuditRepository(s.DB.Pool)
-		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, claims.UserID)
-
-		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-			CopyID:       copy.ID,
-			BarcodeID:    copy.BarcodeID,
-			Titel:        copy.Titel,
-			SchuelerID:   activeLoan.SchuelerID,
-			BearbeiterID: claims.UserID,
-		})
-
-		resp.Type = "rueckgabe"
-		resp.Book = copy
-		resp.LoanID = &activeLoan.ID
-		return nil
-	}
-
-	var borrowerStudent *repository.Student
-	if activeLoan.SchuelerID != nil {
-		borrowerStudent, err = studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
+		lr, err := loanSvc.HandleUnifiedCheckout(ctx, copy, activeStudentID, activeTeacherID, staffID)
 		if err != nil {
 			return err
 		}
+		resp.Type = lr.Type
+		resp.Book = lr.Book
+		resp.Student = lr.Student
+		resp.Teacher = lr.Teacher
+		resp.DueDate = lr.DueDate
+		resp.LoanID = lr.LoanID
+		resp.Fremdrueckgabe = lr.Fremdrueckgabe
+		resp.Vorbesitzer = lr.Vorbesitzer
+		resp.VorbesitzerUser = lr.VorbesitzerUser
+		resp.HasVormerkung = lr.HasVormerkung
+		resp.VormerkungTitel = lr.VormerkungTitel
+		resp.VormerkungUser = lr.VormerkungUser
+		return nil
 	}
 
-	if err = loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+	// Case: NO active student/teacher context -> Simple Return (or teacher self-checkout).
+	lr, err := loanSvc.HandleSimpleReturn(ctx, copy, staffID, string(claims.Rolle))
+	if err != nil {
 		return err
 	}
-
-	// Process reservation BEFORE commit so the tx statements take effect
-	s.processReturnVormerkungTx(ctx, tx, copy, resp)
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	auditRepo := repository.NewAuditRepository(s.DB.Pool)
-	if activeLoan.SchuelerID != nil {
-		_ = auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
-	} else if activeLoan.AusleiherBenutzerID != nil {
-		_ = auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
-	}
-
-	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-		CopyID:       copy.ID,
-		BarcodeID:    copy.BarcodeID,
-		Titel:        copy.Titel,
-		SchuelerID:   activeLoan.SchuelerID,
-		BearbeiterID: staffID,
-	})
-
-	resp.Type = "rueckgabe"
-	resp.Book = copy
-	resp.Student = borrowerStudent
-	resp.LoanID = &activeLoan.ID
+	resp.Type = lr.Type
+	resp.Book = lr.Book
+	resp.Student = lr.Student
+	resp.Teacher = lr.Teacher
+	resp.DueDate = lr.DueDate
+	resp.LoanID = lr.LoanID
+	resp.Fremdrueckgabe = lr.Fremdrueckgabe
+	resp.Vorbesitzer = lr.Vorbesitzer
+	resp.VorbesitzerUser = lr.VorbesitzerUser
+	resp.HasVormerkung = lr.HasVormerkung
+	resp.VormerkungTitel = lr.VormerkungTitel
+	resp.VormerkungUser = lr.VormerkungUser
 	return nil
 }

@@ -3,6 +3,8 @@ package api
 import (
 	"bibliothek/repository"
 	"net/http"
+
+	"bibliothek/internal/service"
 )
 
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
@@ -12,10 +14,11 @@ func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/monitor/slides", s.GetMonitorSlidesHandler())
 }
 
-func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.LoanRepository) {
+func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.LoanRepository, loanSvc service.LoanService) {
 	// Central Omnibox Action Dispatcher
-	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo)
+	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo, loanSvc)
 	mux.Handle("POST /api/action", s.RequirePermission("view_students")(actionHandler))
+	mux.Handle("POST /api/action/batch", s.RequirePermission("view_students")(s.ActionBatchHandler(studentRepo, bookRepo, loanRepo, loanSvc)))
 
 	// Unified Fuzzy Search
 	searchHandler := s.SearchHandler(studentRepo, bookRepo)

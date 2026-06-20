@@ -17,6 +17,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	_ "bibliothek/docs"
+	"bibliothek/internal/service"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 	"bibliothek/sse"
@@ -54,6 +55,8 @@ func (s *Server) Routes() http.Handler {
 	auditRepo := repository.NewAuditRepository(s.DB.Pool)
 	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
 	userRepo := repository.NewUserRepository(s.DB.Pool)
+
+	loanSvc := service.NewLoanService(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	orderSvc := NewOrderService(s.DB, bookRepo)
 	pdfSvc := NewPDFService()
@@ -102,7 +105,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Delegate to domain-specific routers
 	s.registerPublicRoutes(mux)
-	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, loanRepo)
+	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, loanRepo, loanSvc)
 	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
 	s.registerBookRoutes(mux, bookRepo, auditRepo)
 	s.registerSystemRoutes(mux, auditRepo, userRepo)
