@@ -41,6 +41,9 @@ type BookRepository interface {
 
 	// BulkInsertCopies fügt mehrere Buchexemplare performant per Massen-Insert (CopyFrom) in die Datenbank ein.
 	BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error
+	
+	// BulkInsertCopiesTx führt BulkInsertCopies innerhalb einer expliziten SQL-Transaktion aus.
+	BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, copies []BookCopyInsert) error
 }
 
 // BookCopyInsert beschreibt die Datenstruktur für das Einfügen neuer Buchexemplare im Bulk-Verfahren.
@@ -269,6 +272,28 @@ func (r *pgBookRepository) BulkInsertCopies(ctx context.Context, copies []BookCo
 	}
 
 	_, err := r.db.CopyFrom(
+		ctx,
+		pgx.Identifier{"buecher_exemplare"},
+		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis"},
+		pgx.CopyFromRows(copyRows),
+	)
+	return err
+}
+
+// BulkInsertCopiesTx fügt Exemplare im Bulk innerhalb einer Transaktion ein.
+func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, copies []BookCopyInsert) error {
+	if len(copies) == 0 {
+		return nil
+	}
+
+	var copyRows [][]any
+	for _, c := range copies {
+		copyRows = append(copyRows, []any{
+			c.TitelID, c.BarcodeID, c.ZustandNotiz, c.IstAusleihbar, c.EtikettGedruckt, c.Einkaufspreis,
+		})
+	}
+
+	_, err := tx.CopyFrom(
 		ctx,
 		pgx.Identifier{"buecher_exemplare"},
 		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis"},

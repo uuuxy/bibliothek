@@ -62,12 +62,16 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		}
 
 		host := os.Getenv("SMTP_HOST")
-		if host == "" {
+		pass := os.Getenv("SMTP_PASS")
+		
+		isPlaceholder := host == "" || host == "Ihr SMTP-Host" || strings.Contains(pass, "Passwort") || pass == "secret"
+
+		if isPlaceholder {
 			log.Println("WARNING: SMTP_HOST environment variable not set. Email dispatch skipped. Order has been saved locally.")
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "success",
 				"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
-				"ordered_qty": len(res.Labels),
+				"ordered_qty": res.TotalAllocated,
 			})
 			return
 		}
@@ -85,7 +89,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
 				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
-				"ordered_qty": len(res.Labels),
+				"ordered_qty": res.TotalAllocated,
 			})
 			return
 		}
@@ -93,7 +97,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung erfolgreich per E-Mail an %s gesendet.", res.SupplierName),
-			"ordered_qty": len(res.Labels),
+			"ordered_qty": res.TotalAllocated,
 		})
 	}
 }
@@ -403,6 +407,11 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 				continue
 			}
 			updatedIDs = append(updatedIDs, id)
+		}
+
+		if len(updatedIDs) == 0 {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)"))
+			return
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{

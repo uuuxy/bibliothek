@@ -29,6 +29,7 @@ type OrderResult struct {
 	CustomerNumber string
 	Labels         []BarcodeLabelDetail
 	SummaryItems   []OrderedItem
+	TotalAllocated int
 }
 
 // ProcessOrder verarbeitet eine eingehende SubmitOrderRequest innerhalb einer Transaktion, generiert Barcodes und gibt das OrderResult zurück.
@@ -55,6 +56,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 
 	labels := make([]BarcodeLabelDetail, 0)
 	orderSummaryItems := make([]OrderedItem, 0)
+	var totalAllocated int
 
 	var copyInserts []repository.BookCopyInsert
 
@@ -80,25 +82,30 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 			Menge:  item.Menge,
 		})
 
-		if item.GenerateBarcodes {
-			barcodes, err := s.bookRepo.GenerateBarcodes(ctx, item.Menge)
-			if err != nil {
-				return nil, fmt.Errorf("sequence error: %w", err)
-			}
+		// ALWAYS pre-allocate barcodes in the database
+		barcodes, err := s.bookRepo.GenerateBarcodes(ctx, item.Menge)
+		if err != nil {
+			return nil, fmt.Errorf("sequence error: %w", err)
+		}
 
-			statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+		statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+		if !item.GenerateBarcodes {
+			statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", supplierName)
+		}
 
-			for i := 0; i < item.Menge; i++ {
-				barcodeID := barcodes[i]
-				copyInserts = append(copyInserts, repository.BookCopyInsert{
-					TitelID:         item.TitelID,
-					BarcodeID:       barcodeID,
-					ZustandNotiz:    statusText,
-					IstAusleihbar:   false,
-					EtikettGedruckt: false,
-					Einkaufspreis:   item.Preis,
-				})
+		for i := 0; i < item.Menge; i++ {
+			barcodeID := barcodes[i]
+			copyInserts = append(copyInserts, repository.BookCopyInsert{
+				TitelID:         item.TitelID,
+				BarcodeID:       barcodeID,
+				ZustandNotiz:    statusText,
+				IstAusleihbar:   false,
+				EtikettGedruckt: false,
+				Einkaufspreis:   item.Preis,
+			})
 
+			// Only add to labels for the supplier PDF if requested
+			if item.GenerateBarcodes {
 				labels = append(labels, BarcodeLabelDetail{
 					BarcodeID: barcodeID,
 					Titel:     titel,
@@ -107,9 +114,10 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 				})
 			}
 		}
+		totalAllocated += item.Menge
 	}
 
-	if err := s.bookRepo.BulkInsertCopies(ctx, copyInserts); err != nil {
+	if err := s.bookRepo.BulkInsertCopiesTx(ctx, tx, copyInserts); err != nil {
 		return nil, fmt.Errorf("bulk insert error: %w", err)
 	}
 
