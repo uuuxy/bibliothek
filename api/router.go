@@ -22,6 +22,7 @@ import (
 	"bibliothek/repository"
 	"bibliothek/sse"
 
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -149,8 +150,9 @@ func (s *Server) Routes() http.Handler {
 	rateLimiter := RateLimitMiddleware(50)
 	timeoutLimiter := TimeoutMiddleware(15 * time.Second)
 
-	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
-	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux))))))))))
+	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
+	sentryMiddleware := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

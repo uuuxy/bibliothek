@@ -18,6 +18,8 @@ import (
 	"bibliothek/plugins/vorlage"
 	"bibliothek/repository"
 	"bibliothek/sse"
+
+	"github.com/getsentry/sentry-go"
 )
 
 // @title           Schulbibliothek API
@@ -143,6 +145,20 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 	slog.SetDefault(logger)
+
+	// Initialize Sentry
+	sentryDsn := os.Getenv("SENTRY_DSN")
+	if sentryDsn != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn: sentryDsn,
+		})
+		if err != nil {
+			slog.Error("sentry.Init failed", "error", err)
+		} else {
+			defer sentry.Flush(2 * time.Second)
+			slog.Info("Sentry initialized successfully.")
+		}
+	}
 
 	// Initialize optional plugins
 	vorlage.Init()

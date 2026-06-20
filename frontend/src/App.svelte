@@ -12,8 +12,22 @@
   import Router from "./lib/Router.svelte";
   import OfflineIndicator from "./lib/components/OfflineIndicator.svelte";
   import ToastContainer from "./lib/ToastContainer.svelte";
+  import * as Sentry from "@sentry/svelte";
 
   const _currentPath = window.location.pathname;
+
+  $effect(() => {
+    const handleError = (event) => Sentry.captureException(event.error || event);
+    const handleRejection = (event) => Sentry.captureException(event.reason);
+
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleRejection);
+
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleRejection);
+    };
+  });
 
   $effect(() => {
     if (!authStore.isLoggedIn || !authStore.currentUser) {
