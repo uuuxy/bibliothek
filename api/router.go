@@ -53,6 +53,7 @@ func (s *Server) Routes() http.Handler {
 	loanRepo := repository.NewLoanRepository(s.DB.Pool)
 	auditRepo := repository.NewAuditRepository(s.DB.Pool)
 	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
+	userRepo := repository.NewUserRepository(s.DB.Pool)
 
 	orderSvc := NewOrderService(s.DB, bookRepo)
 	pdfSvc := NewPDFService()
@@ -104,7 +105,7 @@ func (s *Server) Routes() http.Handler {
 	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, loanRepo)
 	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
 	s.registerBookRoutes(mux, bookRepo, auditRepo)
-	s.registerSystemRoutes(mux, auditRepo)
+	s.registerSystemRoutes(mux, auditRepo, userRepo)
 	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
 
 	// LITTERA CSV Import (Accessible by Admin)

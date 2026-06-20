@@ -37,49 +37,45 @@ type UserResponse struct {
 // @Success      200  {array}   UserResponse
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer [get]
-func (s *Server) ListUsersHandler() http.HandlerFunc {
+func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// benutzer.rolle (PostgreSQL-Enum) ist die einzige kanonische Rollenquelle
-		query := `
-			SELECT id, coalesce(barcode_id, ''), vorname, nachname, email, rolle, aktiv, erstellt_am
-			FROM benutzer
-			ORDER BY nachname, vorname
-		`
-		rows, err := s.DB.Pool.Query(ctx, query)
+		users, err := userRepo.GetUsers(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
-		users := []UserResponse{}
-		for rows.Next() {
-			var u UserResponse
-			err := rows.Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Email, &u.Rolle, &u.Aktiv, &u.ErstelltAm)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
+		responseUsers := []UserResponse{}
+		for _, u := range users {
+			ur := UserResponse{
+				ID:         u.ID,
+				BarcodeID:  u.BarcodeID,
+				Vorname:    u.Vorname,
+				Nachname:   u.Nachname,
+				Email:      u.Email,
+				Rolle:      strings.ToLower(u.Rolle),
+				Aktiv:      u.Aktiv,
+				ErstelltAm: u.ErstelltAm,
 			}
-			u.Rolle = strings.ToLower(u.Rolle) // Normalize for frontend
 
 			// Permissions analog zum Login statisch mappen
-			switch u.Rolle {
+			switch ur.Rolle {
 			case "admin":
-				u.Permissions = []string{"manage_users", "manage_settings", "print_classes", "manage_inventory"}
+				ur.Permissions = []string{"manage_users", "manage_settings", "print_classes", "manage_inventory"}
 			case "mitarbeiter":
-				u.Permissions = []string{"print_classes", "manage_inventory"}
+				ur.Permissions = []string{"print_classes", "manage_inventory"}
 			case "lehrer":
-				u.Permissions = []string{"view_media"}
+				ur.Permissions = []string{"view_media"}
 			default:
-				u.Permissions = []string{}
+				ur.Permissions = []string{}
 			}
 
-			users = append(users, u)
+			responseUsers = append(responseUsers, ur)
 		}
 
-		RespondJSON(w, http.StatusOK, users)
+		RespondJSON(w, http.StatusOK, responseUsers)
 	}
 }
 
@@ -103,7 +99,7 @@ type CreateUserRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer [post]
-func (s *Server) CreateUserHandler() http.HandlerFunc {
+func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateUserRequest
 		if !DecodeJSON(w, r, &req) {
@@ -118,8 +114,7 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		// Validate email uniqueness
-		var exists bool
-		err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE email = $1)", req.Email).Scan(&exists)
+		exists, err := userRepo.CheckEmailExists(ctx, req.Email, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -133,7 +128,7 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 		var barcode *string
 		if req.BarcodeID != "" {
 			barcode = &req.BarcodeID
-			err = s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1)", req.BarcodeID).Scan(&exists)
+			exists, err = userRepo.CheckBarcodeExists(ctx, req.BarcodeID, "")
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
@@ -149,13 +144,7 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 			dbEnumRole = "mitarbeiter"
 		}
 
-		var userID string
-		query := `
-			INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-			VALUES ($1, $2, $3, $4, $5::benutzer_rolle, true)
-			RETURNING id
-		`
-		err = s.DB.Pool.QueryRow(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole).Scan(&userID)
+		_, err = userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -191,7 +180,7 @@ type UpdateUserRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer/{id} [put]
-func (s *Server) UpdateUserHandler() http.HandlerFunc {
+func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -225,8 +214,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		// Validate email uniqueness excluding this user
-		var exists bool
-		err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE email = $1 AND id != $2)", req.Email, id).Scan(&exists)
+		exists, err := userRepo.CheckEmailExists(ctx, req.Email, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -240,7 +228,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 		var barcode *string
 		if req.BarcodeID != "" {
 			barcode = &req.BarcodeID
-			err = s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1 AND id != $2)", req.BarcodeID, id).Scan(&exists)
+			exists, err = userRepo.CheckBarcodeExists(ctx, req.BarcodeID, id)
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
@@ -256,12 +244,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 			dbEnumRole = "mitarbeiter"
 		}
 
-		query := `
-			UPDATE benutzer
-			SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $7
-		`
-		_, err = s.DB.Pool.Exec(ctx, query, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv, id)
+		err = userRepo.UpdateUser(ctx, id, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
