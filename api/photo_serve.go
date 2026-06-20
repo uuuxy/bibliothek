@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/internal/crypto"
@@ -15,8 +13,7 @@ import (
 // Datenbank, entschlüsselt es im Arbeitsspeicher und liefert es sicher an den Client aus.
 func (s *Server) ServeStudentPhotoHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		barcodeID := strings.TrimSpace(r.PathValue("id"))
 		if barcodeID == "" {

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,8 +39,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// 1. Check if student exists
 		var studentExists bool
@@ -131,8 +129,7 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := "UPDATE schueler SET aktualisiert_am = CURRENT_TIMESTAMP"
 		args := []interface{}{}

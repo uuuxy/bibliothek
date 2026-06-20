@@ -31,8 +31,7 @@ type ReorderTitle struct {
 // GetReordersHandler lists all book titles below their reorder threshold.
 func (s *Server) GetReordersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		reorders, err := s.queryReorders(ctx)
 		if err != nil {
@@ -47,8 +46,7 @@ func (s *Server) GetReordersHandler() http.HandlerFunc {
 // ExportReordersPDFHandler exports the reorder list as a PDF.
 func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		reorders, err := s.queryReorders(ctx)
 		if err != nil {
@@ -104,8 +102,7 @@ func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 // popular_titles ranking by time period. shelf_warmers and loss_stats are global.
 func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Resolve time filter for popular_titles query.
 		// Values are server-controlled strings, never user-provided SQL fragments.

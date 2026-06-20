@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -20,8 +19,7 @@ type KlassenLehrerMapping struct {
 // GET /api/klassen-mapping
 func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		rows, err := s.DB.Pool.Query(ctx,
 			`SELECT klasse, lehrer_email, erstellt_am FROM klassen_lehrer_mapping ORDER BY klasse`)
@@ -59,8 +57,7 @@ func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		_, err := s.DB.Pool.Exec(ctx, `
 			INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email)
@@ -86,8 +83,7 @@ func (s *Server) DeleteKlassenMappingHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		_, err := s.DB.Pool.Exec(ctx,
 			`DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, klasse)

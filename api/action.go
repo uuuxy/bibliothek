@@ -39,8 +39,7 @@ func (s *Server) ActionHandler(
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		resp, status, err := s.processActionRequest(ctx, req, claims, studentRepo, bookRepo, loanRepo)
 		if err != nil {
@@ -121,8 +120,7 @@ func (s *Server) ActionBatchHandler(
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var batchResp ActionBatchResponse
 

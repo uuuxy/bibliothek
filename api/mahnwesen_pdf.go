@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -171,8 +170,7 @@ func pluralMedium(n int) string {
 // GET /api/mahnwesen/pdf
 func (s *Server) GetMahnwesenPDFHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
 		if err != nil {

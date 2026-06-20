@@ -1,10 +1,8 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -53,8 +51,7 @@ func (s *Server) MarkCopyDefektHandler() http.HandlerFunc {
 			req.Beschreibung = "Defekt/Schaden bei Rückgabe gemeldet"
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {
@@ -121,8 +118,7 @@ func (s *Server) UndoReturnHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		res, err := s.DB.Pool.Exec(ctx, `
 			UPDATE ausleihen
@@ -166,8 +162,7 @@ func (s *Server) ReportDamageHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {

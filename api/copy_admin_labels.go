@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -47,8 +45,7 @@ func (s *Server) UpdateCopyBarcodeHandler(bookRepo repository.BookRepository) ht
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		if err := bookRepo.UpdateCopyBarcode(ctx, id, req.Barcode); err != nil {
 			if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {

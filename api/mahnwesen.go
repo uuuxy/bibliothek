@@ -1,9 +1,7 @@
 package api
 
 import (
-	"context"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -13,8 +11,7 @@ import (
 // GET /api/mahnwesen
 func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
 		if err != nil {
@@ -40,8 +37,7 @@ func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) h
 // GET /api/mahnwesen/ueberfaellig_jahrgang
 func (s *Server) GetMahnwesenJahrgangHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
 		if err != nil {

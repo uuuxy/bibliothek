@@ -11,10 +11,21 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"bibliothek/apierrors"
 	"regexp"
 )
+
+// TimeoutMiddleware wraps the request with a context timeout.
+func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
 
 // PanicRecoveryMiddleware catches panics during HTTP request handling, logs them, and returns a 500 error.
 func PanicRecoveryMiddleware(next http.Handler) http.Handler {

@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 
@@ -50,8 +48,7 @@ func (s *Server) InventurStartHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {
@@ -121,11 +118,11 @@ type InventurScanRequest struct {
 }
 
 type InventurScanResponse struct {
-	BarcodeID       string   `json:"barcode_id"`
-	Titel           string   `json:"titel"`
-	CoverURL        string   `json:"cover_url,omitempty"`
-	Status          string   `json:"status"` // e.g. "erfasst"
-	Warnungen       []string `json:"warnungen,omitempty"`
+	BarcodeID string   `json:"barcode_id"`
+	Titel     string   `json:"titel"`
+	CoverURL  string   `json:"cover_url,omitempty"`
+	Status    string   `json:"status"` // e.g. "erfasst"
+	Warnungen []string `json:"warnungen,omitempty"`
 }
 
 // InventurScanHandler registers copy scans in the active inventory list.
@@ -148,8 +145,7 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var copyID, title, coverURL string
 		var isAusgesondert, isLent bool
@@ -225,8 +221,7 @@ type InventurFinishResponse struct {
 // @Router       /inventur/finish [post]
 func (s *Server) InventurFinishHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {
@@ -253,7 +248,7 @@ func (s *Server) InventurFinishHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		
+
 		titelIDs := make(map[string]bool)
 		count := 0
 		for rows.Next() {

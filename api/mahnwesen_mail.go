@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -36,8 +35,7 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
 		if err != nil {

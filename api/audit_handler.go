@@ -4,7 +4,6 @@ package api
 // The audit trail records all sensitive delete/cancel operations performed by staff.
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -34,8 +33,7 @@ type AuditLogEntry struct {
 // @Router       /audit [get]
 func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp, l.bearbeiter_id, b.vorname, b.nachname
@@ -79,8 +77,7 @@ type RecentTransaction struct {
 // @Router       /transactions/recent [get]
 func (s *Server) GetRecentTransactionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT 

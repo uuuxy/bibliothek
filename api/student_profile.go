@@ -3,7 +3,6 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/repository"
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -61,8 +60,7 @@ func (s *Server) GetStudentProfileHandler(
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// 1. Resolve student details from DB
 		student, err := studentRepo.GetByID(ctx, id)
@@ -172,8 +170,7 @@ func (s *Server) GetStudentProfileHandler(
 // @Router       /klassen [get]
 func (s *Server) GetClassesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		rows, err := s.DB.Pool.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' ORDER BY klasse")
 		if err != nil {

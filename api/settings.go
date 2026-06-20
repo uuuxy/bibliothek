@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -74,8 +73,7 @@ func (s *Server) querySettings(ctx context.Context) (*SystemEinstellungen, error
 // GetSettingsHandler returns all system settings.
 func (s *Server) GetSettingsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		settings, err := s.querySettings(ctx)
 		if err != nil {
@@ -94,8 +92,7 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		upsert := `
 			INSERT INTO system_einstellungen (schluessel, wert)

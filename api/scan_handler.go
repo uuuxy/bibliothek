@@ -1,10 +1,8 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -19,8 +17,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		w.Header().Set("Content-Type", "application/json")
 
@@ -82,10 +79,10 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 				status = "lent"
 			}
 			json.NewEncoder(w).Encode(map[string]any{
-				"type":               "book",
-				"book":               book,
-				"status":             status,
-				"current_student_id": currentStudentID,
+				"type":                    "book",
+				"book":                    book,
+				"status":                  status,
+				"current_student_id":      currentStudentID,
 				"current_student_barcode": currentStudentBarcode,
 			})
 			return

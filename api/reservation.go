@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -60,8 +59,7 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Verify the title exists.
 		var exists bool
@@ -94,8 +92,7 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 // GET /api/reservierungen/klassensatz
 func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		rows, err := s.DB.Pool.Query(ctx, `
 			SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
@@ -132,8 +129,7 @@ func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 // GET /api/reservierungen/klassensatz/anzahl
 func (s *Server) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var count int
 		_ = s.DB.Pool.QueryRow(ctx,
@@ -154,8 +150,7 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tag, err := s.DB.Pool.Exec(ctx,
 			`UPDATE klassensatz_reservierungen SET erledigt = true WHERE id = $1`, id)

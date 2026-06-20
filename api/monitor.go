@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 
@@ -30,8 +28,7 @@ type MonitorSlides struct {
 // GetMonitorSlidesHandler handles GET /api/monitor/slides (public, no auth).
 func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		slides := MonitorSlides{
 			NeuEingetroffen: []MonitorTitel{},

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -24,8 +23,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var beschreibung string
 		var betrag float64

@@ -4,9 +4,7 @@ import (
 	"bibliothek/apierrors"
 	"errors"
 
-	"context"
 	"net/http"
-	"time"
 )
 
 // DashboardSummary holds key metrics for the library reporting dashboard.
@@ -26,8 +24,7 @@ type OverdueSummary struct {
 // GetDashboardSummaryHandler gibt aggregierte Daten für das Dashboard zurück (z.B. Mahnungen).
 func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var summary DashboardSummary
 

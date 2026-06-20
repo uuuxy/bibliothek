@@ -1,12 +1,10 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 )
@@ -22,8 +20,7 @@ type Signature struct {
 // GET /api/signatures
 func (s *Server) GetSignaturesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		rows, err := s.DB.Pool.Query(ctx,
 			`SELECT id, name, COALESCE(description, '') FROM signatures ORDER BY name ASC`)
@@ -63,8 +60,7 @@ func (s *Server) CreateSignatureHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var newID int
 		err := s.DB.Pool.QueryRow(ctx,
@@ -108,8 +104,7 @@ func (s *Server) UpdateSignatureHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		res, err := s.DB.Pool.Exec(ctx,
 			`UPDATE signatures SET name = $1, description = $2 WHERE id = $3`,
@@ -144,8 +139,7 @@ func (s *Server) DeleteSignatureHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		res, err := s.DB.Pool.Exec(ctx, `DELETE FROM signatures WHERE id = $1`, id)
 		if err != nil {

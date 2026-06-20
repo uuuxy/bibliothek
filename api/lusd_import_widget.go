@@ -70,7 +70,6 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		colNachname := getCol("name", "nachname")
 		colKlasse := getCol("klasse", "gruppe", "jahrgang")
 
-
 		if colID == -1 || colVorname == -1 || colNachname == -1 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Pflichtspalten (ID, Vorname, Nachname) fehlen in CSV"))
 			return

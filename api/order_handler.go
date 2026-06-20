@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -38,8 +37,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {
@@ -221,8 +219,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 
 func (s *Server) ReleaseOrdersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			UPDATE buecher_exemplare e

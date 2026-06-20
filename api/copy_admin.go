@@ -5,7 +5,6 @@ package api
 // Part of the admin layer; authentication/authorization is enforced in router.go.
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -41,8 +40,7 @@ func (s *Server) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		err := auditRepo.DeleteCopy(ctx, id, claims.UserID)
 		if err != nil {
@@ -83,8 +81,7 @@ func (s *Server) DeleteTitleHandler(auditRepo repository.AuditRepository) http.H
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		err := auditRepo.DeleteTitle(ctx, id, claims.UserID)
 		if err != nil {
@@ -119,8 +116,7 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
@@ -179,8 +175,7 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT s.vorname, s.nachname, s.klasse, s.barcode_id, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
@@ -231,8 +226,7 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT s.vorname, s.nachname, s.klasse, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am

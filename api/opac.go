@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 )
@@ -36,8 +34,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Join only buecher_titel and buecher_exemplare.
 		// The LEFT JOIN on ausleihen is filtered to active loans (rueckgabe_am IS NULL)

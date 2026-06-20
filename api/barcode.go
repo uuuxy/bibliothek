@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -13,7 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 
@@ -121,8 +119,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {
@@ -214,8 +211,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 // NextBarcodeHandler returns the next available internal B-XXXXX barcode as JSON.
 func (s *Server) NextBarcodeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var lastBarcode string
 		qLast := `
@@ -258,8 +254,7 @@ func (s *Server) PrintErsatzEtikettHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var label BarcodeLabelDetail
 		query := `

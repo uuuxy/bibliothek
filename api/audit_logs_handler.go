@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -9,20 +8,19 @@ import (
 )
 
 type AdminAuditLogEntry struct {
-	ID         string    `json:"id"`
-	AdminID    *string   `json:"admin_id"`
-	AdminName  string    `json:"admin_name"`
-	Aktion     string    `json:"aktion"`
-	Details    any       `json:"details"`
-	IpAdresse  string    `json:"ip_adresse"`
+	ID          string    `json:"id"`
+	AdminID     *string   `json:"admin_id"`
+	AdminName   string    `json:"admin_name"`
+	Aktion      string    `json:"aktion"`
+	Details     any       `json:"details"`
+	IpAdresse   string    `json:"ip_adresse"`
 	Zeitstempel time.Time `json:"zeitstempel"`
 }
 
 // GetAdminAuditLogsHandler fetches the latest 1000 admin audit logs in descending order.
 func (s *Server) GetAdminAuditLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT 

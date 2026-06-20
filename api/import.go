@@ -1,14 +1,12 @@
 package api
 
 import (
-	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 )
@@ -70,8 +68,7 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {

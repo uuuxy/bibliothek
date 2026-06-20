@@ -1,13 +1,11 @@
 package api
 
 import (
-	"context"
 	"bytes"
 	"encoding/xml"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"bibliothek/auth"
@@ -90,8 +88,7 @@ func limitString(s string, limit int) string {
 }
 
 func (s *Server) handleLitteraXMLImport(w http.ResponseWriter, r *http.Request, content []byte) {
-	ctx, cancel := context.WithTimeout(r.Context(), 180*time.Second)
-	defer cancel()
+	ctx := r.Context()
 
 	decoder := xml.NewDecoder(bytes.NewReader(content))
 	decoder.CharsetReader = charset.NewReaderLabel

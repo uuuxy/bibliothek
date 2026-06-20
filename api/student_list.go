@@ -1,10 +1,8 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 
@@ -25,8 +23,7 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		klasse := r.URL.Query().Get("klasse")
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var rows pgx.Rows
 		var err error

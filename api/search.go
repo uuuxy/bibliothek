@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -26,8 +24,7 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		limit := 10
 

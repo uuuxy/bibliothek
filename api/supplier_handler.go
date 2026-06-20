@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -28,8 +27,7 @@ type CreateSupplierRequest struct {
 // ListSuppliersHandler returns a list of all suppliers.
 func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		rows, err := s.DB.Pool.Query(ctx, "SELECT id, name, email, kundennummer, erstellt_am FROM lieferanten ORDER BY name ASC")
 		if err != nil {
@@ -65,8 +63,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var newID string
 		var erstelltAm time.Time
@@ -100,8 +97,7 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tag, err := s.DB.Pool.Exec(ctx, "DELETE FROM lieferanten WHERE id = $1", id)
 		if err != nil {

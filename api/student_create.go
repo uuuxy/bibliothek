@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -108,8 +107,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var parsedGebdatum *time.Time
 		if req.Geburtsdatum != nil && *req.Geburtsdatum != "" {

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -62,8 +63,6 @@ func (s *Server) Routes() http.Handler {
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
 
-
-
 	invHandler := inventur.NewAPIHandler(inventur.APIHandlerConfig{
 		Repo:             invRepo,
 		Metadaten:        invMeta,
@@ -108,11 +107,8 @@ func (s *Server) Routes() http.Handler {
 	s.registerSystemRoutes(mux, auditRepo)
 	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
 
-
-
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.LitteraImportHandler()))
-
 
 	// Swagger interactive documentation
 	mux.Handle("GET /swagger/", httpSwagger.Handler(
@@ -146,9 +142,10 @@ func (s *Server) Routes() http.Handler {
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
 	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024) // 100MB limit
 	rateLimiter := RateLimitMiddleware(50)
+	timeoutLimiter := TimeoutMiddleware(15 * time.Second)
 
-	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
-	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))
+	// Chain: PanicRecovery -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
+	globalHandler := PanicRecoveryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

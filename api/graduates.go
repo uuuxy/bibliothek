@@ -5,7 +5,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -48,8 +47,7 @@ type GraduateDetail struct {
 // @Router       /abgaenger [get]
 func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		if r.URL.Query().Get("details") != "true" {
 			// Basic list: one row per student
@@ -165,8 +163,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 // @Router       /abgaenger/pdf [get]
 func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		detailQuery := `
 			SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,

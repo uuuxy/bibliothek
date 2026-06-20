@@ -1,12 +1,10 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/inventur"
@@ -47,8 +45,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// 1. Check whether the title is already in the local catalog.
 		var resp ISBNLookupResponse

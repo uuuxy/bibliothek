@@ -1,10 +1,8 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -40,8 +38,7 @@ func (s *Server) UpdateDamageNoteHandler(bookRepo repository.BookRepository) htt
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		if err := bookRepo.UpdateCopyDamageNote(ctx, id, req.Note); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -84,8 +81,7 @@ func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository) htt
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Wenn ein Buch manuell auf "Verfügbar" gesetzt wird, zwingend Notizen und Ausgesondert-Flag löschen
 		if req.IstAusleihbar {
@@ -122,8 +118,7 @@ func (s *Server) AussondernCopyHandler(bookRepo repository.BookRepository) http.
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		if err := bookRepo.DecommissionCopy(ctx, id); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

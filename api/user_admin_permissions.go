@@ -1,10 +1,8 @@
 package api
 
 import (
-	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 )
@@ -27,8 +25,7 @@ type PermissionSetting struct {
 // @Router       /admin/permissions [get]
 func (s *Server) GetPermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT role::text, permission, allowed 
@@ -80,8 +77,7 @@ func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			UPDATE role_permissions 

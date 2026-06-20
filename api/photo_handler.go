@@ -1,13 +1,11 @@
 package api
 
 import (
-	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/internal/crypto"
@@ -39,8 +37,7 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// 1. Resolve student's barcode ID from database
 		var barcodeID string

@@ -2,14 +2,12 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -121,8 +119,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 180*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {

@@ -33,8 +33,7 @@ type CreateVormerkungRequest struct {
 // ListVormerkungHandler handles GET /api/vormerkungen?titel_id=...
 func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		titelID := r.URL.Query().Get("titel_id")
 		schuelerID := r.URL.Query().Get("schueler_id")
@@ -103,8 +102,7 @@ func (s *Server) CreateVormerkungHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		var id string
 		err := s.DB.Pool.QueryRow(ctx, `
@@ -130,8 +128,7 @@ func (s *Server) DeleteVormerkungHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		if _, err := s.DB.Pool.Exec(ctx, `DELETE FROM vormerkungen WHERE id = $1`, id); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

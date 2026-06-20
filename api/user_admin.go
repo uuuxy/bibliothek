@@ -5,7 +5,6 @@ package api
 // the role_permissions table.
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -18,11 +17,11 @@ import (
 
 // UserResponse holds public user data sent to administrative screens.
 type UserResponse struct {
-	ID         string    `json:"id"`
-	BarcodeID  string    `json:"barcode_id"`
-	Vorname    string    `json:"vorname"`
-	Nachname   string    `json:"nachname"`
-	Email      string    `json:"email"`
+	ID          string    `json:"id"`
+	BarcodeID   string    `json:"barcode_id"`
+	Vorname     string    `json:"vorname"`
+	Nachname    string    `json:"nachname"`
+	Email       string    `json:"email"`
 	Rolle       string    `json:"rolle"`
 	Aktiv       bool      `json:"aktiv"`
 	ErstelltAm  time.Time `json:"erstellt_am"`
@@ -40,8 +39,7 @@ type UserResponse struct {
 // @Router       /benutzer [get]
 func (s *Server) ListUsersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// benutzer.rolle (PostgreSQL-Enum) ist die einzige kanonische Rollenquelle
 		query := `
@@ -65,7 +63,7 @@ func (s *Server) ListUsersHandler() http.HandlerFunc {
 				return
 			}
 			u.Rolle = strings.ToLower(u.Rolle) // Normalize for frontend
-			
+
 			// Permissions analog zum Login statisch mappen
 			switch u.Rolle {
 			case "admin":
@@ -117,8 +115,7 @@ func (s *Server) CreateUserHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Validate email uniqueness
 		var exists bool
@@ -225,8 +222,7 @@ func (s *Server) UpdateUserHandler() http.HandlerFunc {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Validate email uniqueness excluding this user
 		var exists bool
@@ -313,8 +309,7 @@ func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository) http.Ha
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		err := auditRepo.DeleteUser(ctx, id, claims.UserID)
 		if err != nil {

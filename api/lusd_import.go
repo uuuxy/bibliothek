@@ -1,10 +1,8 @@
 package api
 
 import (
-	"context"
 	"io"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -46,8 +44,7 @@ func (s *Server) ImportLUSDHandler(studentRepo repository.StudentRepository) htt
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		response, err := syncLUSDData(ctx, studentRepo, parsedRows, lusdIDs)
 		if err != nil {

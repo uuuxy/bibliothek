@@ -121,9 +121,9 @@ func (s *Server) handleUnifiedCheckoutFlow(
 		if err != nil {
 			return err
 		}
-		
+
 		isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
-		
+
 		if !isLMF && activeLoansCount >= settings.MaxAusleihenSchueler {
 			// Only allow return if they already borrowed THIS book
 			if !isReturningThis {

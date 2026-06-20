@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -48,8 +47,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		res, err := orderSvc.ProcessOrder(ctx, req)
 		if err != nil {
@@ -111,8 +109,7 @@ type GroupedItem struct {
 // grouped by creation date and supplier.
 func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		query := `
 			SELECT e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel
@@ -220,8 +217,7 @@ func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Overwrite exactly ONE placeholder
 		query := `

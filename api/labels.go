@@ -1,12 +1,10 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"bibliothek/apierrors"
 )
@@ -21,22 +19,21 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		ctx := r.Context()
 
 		// Extract format and start position from query params
 		formatId := r.URL.Query().Get("format")
 		if formatId == "" {
 			formatId = "avery_3475" // default as before
 		}
-		
+
 		startPos := 1
 		if startParam := r.URL.Query().Get("start"); startParam != "" {
 			if parsed, err := strconv.Atoi(startParam); err == nil && parsed > 0 {
 				startPos = parsed
 			}
 		}
-		
+
 		isQR := r.URL.Query().Get("qr") == "true"
 
 		// Fetch all barcodes with title and author
