@@ -6,11 +6,14 @@
   import StudentProfile from "./StudentProfile.svelte";
   import ClassPrintStation from "./ClassPrintStation.svelte";
   import StudentCreateModal from "./StudentCreateModal.svelte";
+  import Graduates from "./Graduates.svelte";
 
   // Props (Svelte 5)
   let { role = "" } = $props();
 
   // State Runes (Svelte 5)
+  let activeTab = $state("active");
+  
   /** @type {any[]} */
   let students = $state.raw([]);
   let loading = $state(false);
@@ -104,23 +107,52 @@
   });
 </script>
 
-<div class="w-full animate-fade-in text-slate-800">
+<div class="w-full h-full flex flex-col text-slate-800 bg-slate-50">
   
   {#if activeStudent}
-    <StudentProfile 
-      student={activeStudent} 
-      {role} 
-      onDeselect={() => { activeStudent = null; loadStudents(); }} 
-    />
-  {/if}
-
-  {#if showPrintStation}
-    <div class="animate-fade-in w-full">
+    <div class="animate-fade-in flex-1 overflow-y-auto">
+      <StudentProfile 
+        student={activeStudent} 
+        {role} 
+        onDeselect={() => { activeStudent = null; loadStudents(); }} 
+      />
+    </div>
+  {:else if showPrintStation}
+    <div class="animate-fade-in w-full flex-1 overflow-y-auto">
       <ClassPrintStation onBack={() => showPrintStation = false} />
     </div>
-  {:else if !activeStudent}
-    <!-- Fullscreen Directory List -->
-    <div class="w-full space-y-6 no-print">
+  {:else}
+    <!-- Tab Navigation Header -->
+    <div class="px-8 pt-8 pb-0 border-b border-slate-200 bg-white flex-shrink-0 shadow-sm z-10">
+      <div class="max-w-6xl mx-auto flex items-end justify-between">
+        <div>
+          <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Schülerdatei</h2>
+          <p class="text-slate-500 mt-1">Verwalte Schüler, Klassen und LUSD-Importe.</p>
+        </div>
+      </div>
+      
+      <div class="max-w-6xl mx-auto mt-6 flex gap-6">
+        <button 
+          onclick={() => activeTab = "active"}
+          class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'active' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}"
+        >
+          Aktive Schüler
+        </button>
+        <button 
+          onclick={() => activeTab = "graduates"}
+          class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'graduates' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}"
+        >
+          Abgänger / Archiv
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="flex-1 overflow-y-auto p-8 w-full">
+      <div class="max-w-6xl mx-auto w-full">
+        {#if activeTab === "active"}
+          <!-- Fullscreen Directory List -->
+          <div class="w-full space-y-6 no-print animate-fade-in">
       <!-- Action & Search Bar -->
       <div class="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-xs justify-between">
         <div class="flex flex-1 items-center gap-4">
@@ -290,6 +322,13 @@
                 {/each}
               </tbody>
             </table>
+          </div>
+        {/if}
+          </div>
+        </div>
+        {:else}
+          <div class="w-full animate-fade-in">
+            <Graduates />
           </div>
         {/if}
       </div>
