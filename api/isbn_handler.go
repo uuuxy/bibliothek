@@ -52,7 +52,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		resp.ISBN = req.ISBN
 		err := s.DB.Pool.QueryRow(ctx, `
 			SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,'')
-			FROM buecher_titel WHERE isbn = $1 LIMIT 1
+			FROM buecher_titel WHERE replace(isbn, '-', '') = $1 LIMIT 1
 		`, req.ISBN).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL)
 		if err == nil {
 			resp.Exists = true

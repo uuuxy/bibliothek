@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/inventur"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -251,3 +252,97 @@ func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 		})
 	}
 }
+
+type OrderSearchItem struct {
+	ID           string `json:"id,omitempty"`
+	Titel        string `json:"titel"`
+	Autor        string `json:"autor"`
+	ISBN         string `json:"isbn"`
+	Verlag       string `json:"verlag,omitempty"`
+	CoverURL     string `json:"cover_url,omitempty"`
+	Source       string `json:"source"` // "local" or "dnb"
+	CurrentStock int    `json:"current_stock,omitempty"`
+	IsDuplicate  bool   `json:"is_duplicate,omitempty"`
+}
+
+type OrderSearchRequest struct {
+	Query string `json:"query"`
+}
+
+func (s *Server) SearchOrdersHandler() http.HandlerFunc {
+	metaClient := inventur.NeuerMetadatenClient()
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req OrderSearchRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return
+		}
+
+		query := strings.TrimSpace(req.Query)
+		if query == "" {
+			RespondJSON(w, http.StatusOK, []OrderSearchItem{})
+			return
+		}
+
+		ctx := r.Context()
+		var results []OrderSearchItem
+
+		// 1. Search local DB
+		localQuery := `
+			SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), coalesce(t.cover_url, ''),
+			       (SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = t.id AND e.ist_ausgesondert = false) AS current_stock
+			FROM buecher_titel t
+			WHERE 
+				t.search_vector @@ plainto_tsquery('german', $1) 
+				OR t.titel ILIKE '%' || $1 || '%'
+				OR t.autor ILIKE '%' || $1 || '%'
+				OR t.isbn ILIKE '%' || $1 || '%'
+				OR replace(t.isbn, '-', '') = replace($1, '-', '')
+			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
+			LIMIT 50
+		`
+		rows, err := s.DB.Pool.Query(ctx, localQuery, query)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var item OrderSearchItem
+				item.Source = "local"
+				if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.CurrentStock); errScan == nil {
+					results = append(results, item)
+				}
+			}
+		}
+
+		// 2. Search DNB
+		dnbResults, errDNB := metaClient.SucheTextDNB(ctx, query)
+		if errDNB == nil {
+			for _, dr := range dnbResults {
+				coverURL := dr.CoverURL
+				if coverURL == "" && dr.ISBN != "" {
+					coverURL = fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", dr.ISBN)
+				}
+
+				existsLocally := false
+				if dr.ISBN != "" {
+					var count int
+					_ = s.DB.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM buecher_titel WHERE replace(isbn, '-', '') = $1", dr.ISBN).Scan(&count)
+					if count > 0 {
+						existsLocally = true
+					}
+				}
+
+				results = append(results, OrderSearchItem{
+					Titel:       dr.Titel,
+					Autor:       dr.Autor,
+					ISBN:        dr.ISBN,
+					Verlag:      dr.Verlag,
+					CoverURL:    coverURL,
+					Source:      "dnb",
+					IsDuplicate: existsLocally,
+				})
+			}
+		}
+
+		RespondJSON(w, http.StatusOK, results)
+	}
+}
+

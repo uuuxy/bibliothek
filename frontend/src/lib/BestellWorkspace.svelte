@@ -89,32 +89,21 @@
     const raw = searchQuery.trim();
     if (raw.length < 2) { searchResults = []; showDropdown = false; isbnPreview = null; return; }
 
-    const cleanQuery = raw.replace(/[\s-]/g, "");
-    const isIsbn = /^\d{10,13}$/.test(cleanQuery);
-
-    if (isIsbn) {
-      searchResults = []; showDropdown = false; isbnPreview = null; isbnLoading = true;
-      (async () => {
-        try {
-          isbnPreview = await apiPost("/api/buecher/aus-isbn", { isbn: cleanQuery });
-        } catch { isbnPreview = { error: true }; }
-        finally { isbnLoading = false; }
-      })();
-    } else {
-      isbnPreview = null; isbnLoading = false;
-      const performSearch = async () => {
-        try {
-          const data = await apiPost("/api/action", { query: searchQuery });
-          if (data && data.type === "search_results") {
-            searchResults = data.search_results || [];
-            showDropdown = searchResults.length > 0;
-          }
-        } catch {
-          // toast handles error
-        }
-      };
-      searchTimeout = setTimeout(performSearch, 300);
-    }
+    isbnPreview = null;
+    const performSearch = async () => {
+      isbnLoading = true;
+      try {
+        const data = await apiPost("/api/bestellungen/suche", { query: raw });
+        searchResults = data || [];
+        showDropdown = searchResults.length > 0;
+      } catch {
+        searchResults = [];
+        showDropdown = false;
+      } finally {
+        isbnLoading = false;
+      }
+    };
+    searchTimeout = setTimeout(performSearch, 300);
   }
 
   /** @param {any} book */

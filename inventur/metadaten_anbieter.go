@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 )
 
@@ -167,3 +168,144 @@ func (client *MetadatenClient) sucheLobid(kontext context.Context, isbn string) 
 	}, nil
 }
 */
+
+func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
+	trimmed := strings.TrimSpace(query)
+	if trimmed == "" {
+		return nil, nil
+	}
+
+	cleanQuery := strings.ReplaceAll(trimmed, "-", "")
+	cleanQuery = strings.ReplaceAll(cleanQuery, " ", "")
+	var sruQuery string
+	if validiereISBN(cleanQuery) {
+		sruQuery = "NUM=" + cleanQuery
+	} else {
+		sruQuery = "any=" + url.QueryEscape(trimmed)
+	}
+
+	apiURL := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=%s&recordSchema=MARC21-xml&maximumRecords=10", sruQuery)
+	koerper, fehler := client.holeInhalt(kontext, apiURL)
+	if fehler != nil {
+		return nil, fehler
+	}
+
+	var nutzlast struct {
+		Records struct {
+			Record []struct {
+				RecordData struct {
+					Record struct {
+						Datafield []struct {
+							Tag      string `xml:"tag,attr"`
+							Subfield []struct {
+								Code  string `xml:"code,attr"`
+								Value string `xml:",chardata"`
+							} `xml:"subfield"`
+						} `xml:"datafield"`
+					} `xml:"record"`
+				} `xml:"recordData"`
+			} `xml:"record"`
+		} `xml:"records"`
+	}
+
+	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
+	if fehler := decoder.Decode(&nutzlast); fehler != nil {
+		return nil, fehler
+	}
+
+	var ergebnisse []MetadatenErgebnis
+
+	for _, rec := range nutzlast.Records.Record {
+		var titelTeile []string
+		var hauptAutor string
+		var extrahierteAutoren []string
+		var verlag string
+		var jahr string
+		var isbn string
+
+		for _, datenFeld := range rec.RecordData.Record.Datafield {
+			if datenFeld.Tag == "020" {
+				for _, unterFeld := range datenFeld.Subfield {
+					if unterFeld.Code == "a" {
+						parts := strings.Fields(unterFeld.Value)
+						if len(parts) > 0 {
+							clean := ""
+							for _, char := range parts[0] {
+								if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
+									clean += string(char)
+								}
+							}
+							if len(clean) == 10 || len(clean) == 13 {
+								isbn = clean
+							}
+						}
+					}
+				}
+			}
+			if datenFeld.Tag == "245" {
+				for _, unterFeld := range datenFeld.Subfield {
+					if unterFeld.Code == "a" || unterFeld.Code == "b" || unterFeld.Code == "n" || unterFeld.Code == "p" || unterFeld.Code == "c" {
+						wert := strings.TrimSpace(unterFeld.Value)
+						if idx := strings.Index(wert, " / "); idx != -1 {
+							autorInfo := strings.TrimSpace(wert[idx+3:])
+							if autorInfo != "" {
+								extrahierteAutoren = append(extrahierteAutoren, autorInfo)
+							}
+							wert = strings.TrimSpace(wert[:idx])
+						}
+						if wert != "" {
+							titelTeile = append(titelTeile, wert)
+						}
+					}
+				}
+			}
+			if datenFeld.Tag == "100" || datenFeld.Tag == "700" {
+				if hauptAutor == "" {
+					for _, unterFeld := range datenFeld.Subfield {
+						if unterFeld.Code == "a" {
+							hauptAutor = strings.TrimSpace(unterFeld.Value)
+							break
+						}
+					}
+				}
+			}
+			if datenFeld.Tag == "260" || datenFeld.Tag == "264" {
+				for _, unterFeld := range datenFeld.Subfield {
+					if unterFeld.Code == "b" && verlag == "" {
+						verlag = strings.TrimSpace(strings.TrimRight(unterFeld.Value, ",;/ "))
+					}
+					if unterFeld.Code == "c" && jahr == "" {
+						jahrStr := strings.TrimSpace(unterFeld.Value)
+						jahrStr = strings.Trim(jahrStr, "[]().,;")
+						jahr = jahrStr
+					}
+				}
+			}
+		}
+
+		titel := strings.Join(titelTeile, " ")
+		finalerAutor := hauptAutor
+		if len(extrahierteAutoren) > 0 {
+			if hauptAutor == "" {
+				finalerAutor = strings.Join(extrahierteAutoren, " ; ")
+			} else {
+				finalerAutor = hauptAutor + " (" + strings.Join(extrahierteAutoren, " ; ") + ")"
+			}
+		}
+
+		if titel == "" && finalerAutor == "" {
+			continue
+		}
+
+		ergebnisse = append(ergebnisse, MetadatenErgebnis{
+			ISBN:   isbn,
+			Titel:  titel,
+			Autor:  finalerAutor,
+			Verlag: verlag,
+			Jahr:   jahr,
+		})
+	}
+
+	return ergebnisse, nil
+}
+
