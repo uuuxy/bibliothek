@@ -42,8 +42,11 @@ COPY mailservice/ ./mailservice/
 COPY pdf/ ./pdf/
 COPY internal/ ./internal/
 
-# Compile static Go binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main main.go
+# Install build-base for WebP CGO compilation
+RUN apk add --no-cache build-base
+
+# Compile static Go binary with CGO enabled
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main main.go
 
 # ==============================================================================
 # Stage 3: Runner container
