@@ -111,6 +111,7 @@ type LoginResponse struct {
 	Nachname    string   `json:"nachname"`
 	Permissions []string `json:"permissions"`
 }
+
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
 // Supports both email/password (with local DB or school IMAP verification) and barcode/PIN login.
 func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
@@ -216,6 +217,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		})
 	}
 }
+
 // RefreshTokenHandler returns a handler that silently refreshes an active, valid session.
 // If the existing JWT is still valid and has not been revoked, a new JWT is issued with
 // a fresh expiry window (sliding window). The old token is NOT blacklisted to avoid race

@@ -110,7 +110,7 @@ func (s *Server) BarcodeHandler() http.HandlerFunc {
 func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req OrderRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

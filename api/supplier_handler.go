@@ -54,7 +54,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateSupplierRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

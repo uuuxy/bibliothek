@@ -8,44 +8,55 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
-// LoanRepository handles the transactional check-out and check-in database procedures.
+// LoanRepository verwaltet alle Datenbank-Interaktionen für Ausleihen und Rückgaben (Bücher und Geräte).
 type LoanRepository interface {
-	// GetActiveLoanByCopyID returns the current unreturned loan for a physical book copy. Returns nil if not borrowed.
+	// GetActiveLoanByCopyID sucht die aktuell aktive (nicht zurückgegebene) Ausleihe für ein Buchexemplar.
+	// Gibt nil zurück, wenn das Exemplar aktuell nicht verliehen ist.
 	GetActiveLoanByCopyID(ctx context.Context, copyID string) (*Loan, error)
-	// GetActiveLoanByCopyIDTx returns the current unreturned loan for a physical book copy within a transaction,
-	// using SELECT ... FOR UPDATE to prevent concurrent modifications (race conditions with parallel scanners).
+
+	// GetActiveLoanByCopyIDTx sucht die aktive Ausleihe innerhalb einer Transaktion und setzt
+	// einen Row-Level-Lock (SELECT ... FOR UPDATE). Dies verhindert Race Conditions bei zeitgleichen Scans.
 	GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.Tx, copyID string) (*Loan, error)
-	// BeginTx starts a new Read Committed transaction on the underlying pool.
-	// Callers must defer tx.Rollback(ctx) and call tx.Commit(ctx) on success.
+
+	// BeginTx startet eine neue Datenbanktransaktion mit dem Isolationslevel 'Read Committed'.
+	// Aufrufer müssen defer tx.Rollback(ctx) aufrufen und bei Erfolg tx.Commit(ctx) ausführen.
 	BeginTx(ctx context.Context) (pgx.Tx, error)
-	// CreateLoan creates a new loan record.
+
+	// CreateLoan legt einen neuen Ausleihdatensatz für einen Schüler an.
 	CreateLoan(ctx context.Context, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error)
-	// CreateLoanTx performs CreateLoan inside a transaction context.
+
+	// CreateLoanTx legt einen neuen Ausleihdatensatz für einen Schüler innerhalb einer laufenden Transaktion an.
 	CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error)
-	// CreateUserLoan creates a new loan record for a system user (e.g. teacher/handapparat).
+
+	// CreateUserLoan legt einen neuen Ausleihdatensatz für einen Systembenutzer (z. B. Lehrer) an.
 	CreateUserLoan(ctx context.Context, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error)
-	// CreateUserLoanTx performs CreateUserLoan inside a transaction context.
+
+	// CreateUserLoanTx legt einen neuen Ausleihdatensatz für einen Systembenutzer innerhalb einer Transaktion an.
 	CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error)
-	// ReturnLoan flags an active loan as returned.
+
+	// ReturnLoan markiert eine aktive Ausleihe als zurückgegeben.
 	ReturnLoan(ctx context.Context, loanID, bearbeiterID string, isFremdrueckgabe bool) error
-	// ReturnLoanTx flags an active loan as returned inside a transaction context.
+
+	// ReturnLoanTx markiert eine aktive Ausleihe als zurückgegeben innerhalb einer Transaktion.
 	ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool) error
-	// UndoReturn reverses a return (within 1 hour) by nullifying rueckgabe_am.
+
+	// UndoReturn macht eine irrtümliche Rückgabe innerhalb eines Fensters von einer Stunde rückgängig.
 	UndoReturn(ctx context.Context, loanID string) error
 }
 
+// pgLoanRepository implementiert das LoanRepository für PostgreSQL.
 type pgLoanRepository struct {
 	db db.PgxPoolIface
 }
 
-// NewLoanRepository constructs a PostgreSQL-backed LoanRepository.
+// NewLoanRepository erstellt eine neue Instanz des PostgreSQL-basierten Loan-Repositorys.
 func NewLoanRepository(db db.PgxPoolIface) LoanRepository {
 	return &pgLoanRepository{db: db}
 }
 
+// scanLoan liest eine Tabellenzeile in ein Loan-Modellobjekt ein.
 func scanLoan(row Scanner) (*Loan, error) {
 	var l Loan
 	err := row.Scan(
@@ -57,10 +68,9 @@ func scanLoan(row Scanner) (*Loan, error) {
 	return &l, nil
 }
 
-// BeginTx starts a new READ COMMITTED transaction.
-// Read Committed is the correct isolation level for library operations:
-// it prevents dirty reads while allowing concurrent scanner throughput.
-// Callers MUST defer tx.Rollback(ctx) immediately after calling BeginTx.
+// BeginTx startet eine Transaktion mit dem Isolationslevel 'Read Committed'.
+// Dieses Level ist ideal für das Ausleihsystem, da es Schmutzdaten (Dirty Reads) verhindert,
+// gleichzeitig aber hohen Durchsatz bei parallelen Scanner-Anfragen ermöglicht.
 func (r *pgLoanRepository) BeginTx(ctx context.Context) (pgx.Tx, error) {
 	return r.db.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel:   pgx.ReadCommitted,
@@ -68,7 +78,7 @@ func (r *pgLoanRepository) BeginTx(ctx context.Context) (pgx.Tx, error) {
 	})
 }
 
-// GetActiveLoanByCopyID gets the active loan without locking (read-only lookup).
+// GetActiveLoanByCopyID ruft die aktive Ausleihe ohne Sperre (schreibgeschützt) ab.
 func (r *pgLoanRepository) GetActiveLoanByCopyID(ctx context.Context, copyID string) (*Loan, error) {
 	query := `
 		SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
@@ -86,9 +96,9 @@ func (r *pgLoanRepository) GetActiveLoanByCopyID(ctx context.Context, copyID str
 	return l, nil
 }
 
-// GetActiveLoanByCopyIDTx gets the active loan within a transaction using SELECT ... FOR UPDATE.
-// This row-level lock prevents concurrent scanners from double-processing the same book copy
-// within the same millisecond window (e.g., WLAN lag causing duplicate scan events).
+// GetActiveLoanByCopyIDTx ruft die aktive Ausleihe innerhalb einer Transaktion mit 'SELECT ... FOR UPDATE' ab.
+// Diese Zeilensperrung (Row-Level-Lock) verhindert, dass parallele Scanner-Anfragen
+// dasselbe Exemplar innerhalb desselben Millisekundenfensters doppelt verarbeiten.
 func (r *pgLoanRepository) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.Tx, copyID string) (*Loan, error) {
 	query := `
 		SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
@@ -107,9 +117,9 @@ func (r *pgLoanRepository) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.T
 	return l, nil
 }
 
-// CreateLoan inserts a new loan.
-// ON CONFLICT DO NOTHING on the unique index (exemplar_id, rueckgabe_am IS NULL) prevents
-// duplicate checkout records from WLAN-lag-induced double-scans; returns nil if already exists.
+// CreateLoan erzeugt einen neuen Ausleiheintrag.
+// Durch 'ON CONFLICT DO NOTHING' auf dem eindeutigen Index (exemplar_id, rueckgabe_am IS NULL)
+// werden Duplikate verhindert, die durch WLAN-Verzögerungen oder doppeltes Scannen entstehen.
 func (r *pgLoanRepository) CreateLoan(ctx context.Context, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error) {
 	query := `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id)
@@ -120,7 +130,6 @@ func (r *pgLoanRepository) CreateLoan(ctx context.Context, exemplarID, schuelerI
 	l, err := scanLoan(r.db.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
-			// ON CONFLICT DO NOTHING: duplicate scan suppressed, idempotent success
 			return nil, nil
 		}
 		return nil, err
@@ -128,7 +137,7 @@ func (r *pgLoanRepository) CreateLoan(ctx context.Context, exemplarID, schuelerI
 	return l, nil
 }
 
-// CreateLoanTx inserts a new loan inside a transaction.
+// CreateLoanTx erzeugt einen neuen Ausleiheintrag innerhalb einer Transaktion.
 func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error) {
 	query := `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id)
@@ -146,7 +155,7 @@ func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplar
 	return l, nil
 }
 
-// CreateUserLoan inserts a new user loan.
+// CreateUserLoan erzeugt einen neuen Ausleiheintrag für einen Systembenutzer (Lehrkraft).
 func (r *pgLoanRepository) CreateUserLoan(ctx context.Context, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error) {
 	query := `
 		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
@@ -164,7 +173,7 @@ func (r *pgLoanRepository) CreateUserLoan(ctx context.Context, exemplarID, ausle
 	return l, nil
 }
 
-// CreateUserLoanTx inserts a new user loan inside a transaction.
+// CreateUserLoanTx erzeugt einen neuen Ausleiheintrag für einen Systembenutzer innerhalb einer Transaktion.
 func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error) {
 	query := `
 		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
@@ -182,7 +191,7 @@ func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exem
 	return l, nil
 }
 
-// ReturnLoan sets return fields.
+// ReturnLoan bucht ein ausgeliehenes Buch zurück.
 func (r *pgLoanRepository) ReturnLoan(ctx context.Context, loanID, bearbeiterID string, isFremdrueckgabe bool) error {
 	query := `
 		UPDATE ausleihen
@@ -199,7 +208,7 @@ func (r *pgLoanRepository) ReturnLoan(ctx context.Context, loanID, bearbeiterID 
 	return nil
 }
 
-// ReturnLoanTx sets return fields inside a transaction.
+// ReturnLoanTx bucht ein ausgeliehenes Buch innerhalb einer Transaktion zurück.
 func (r *pgLoanRepository) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool) error {
 	query := `
 		UPDATE ausleihen
@@ -216,7 +225,7 @@ func (r *pgLoanRepository) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, 
 	return nil
 }
 
-// UndoReturn reverses a recent return (within 1 hour) by nullifying rueckgabe_am.
+// UndoReturn macht eine Buchrückgabe rückgängig, sofern die Rückgabe vor weniger als einer Stunde durchgeführt wurde.
 func (r *pgLoanRepository) UndoReturn(ctx context.Context, loanID string) error {
 	tag, err := r.db.Exec(ctx, `
 		UPDATE ausleihen

@@ -23,7 +23,7 @@ type mahnwesenSendenRequest struct {
 func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req mahnwesenSendenRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 		if req.Klasse == "" {

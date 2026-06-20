@@ -60,10 +60,10 @@ func main() {
 			continue
 		}
 		processed++
-		
+
 		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
 		path := filepath.Join(uploadDir, entry.Name())
-		
+
 		imgBytes, err := os.ReadFile(path)
 		if err != nil {
 			slog.Error("Konnte Bild nicht lesen", "file", path, "error", err)
@@ -99,7 +99,7 @@ func main() {
 			slog.Error("Fehler beim Einfügen in die Datenbank", "student_id", studentID, "error", err)
 			continue
 		}
-		
+
 		slog.Info("Foto erfolgreich migriert", "barcode", barcodeID)
 		migrated++
 	}

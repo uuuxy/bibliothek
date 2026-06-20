@@ -10,7 +10,7 @@ import (
 
 // ActionRequest holds the parameters for the Omnibox dispatcher.
 type ActionRequest struct {
-	Query              string  `json:"query"`
+	Query              string  `json:"query" validate:"required"`
 	ActiveStudentID    *string `json:"active_student_id,omitempty"`
 	ActiveTeacherID    *string `json:"active_teacher_id,omitempty"`
 	ConfirmedChecklist bool    `json:"confirmed_checklist,omitempty"`

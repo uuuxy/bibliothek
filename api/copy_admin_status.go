@@ -34,7 +34,7 @@ func (s *Server) UpdateDamageNoteHandler(bookRepo repository.BookRepository) htt
 		}
 
 		var req DamageNoteRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -77,7 +77,7 @@ func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository) htt
 		}
 
 		var req UpdateStatusRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

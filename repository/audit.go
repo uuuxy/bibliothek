@@ -9,38 +9,45 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// AuditRepository manages immutable logs and auditable resource deletions.
+// AuditRepository verwaltet revisionssichere Protokollierungen (Audit-Logs)
+// sowie administrative Löschungen von Systemressourcen unter Einhaltung von Datenschutzvorgaben (DSGVO).
+// Alle Log-Einträge sind schreibgeschützt (Append-Only), um Manipulationen auszuschließen.
 type AuditRepository interface {
-	// Manual administrative deletions
+	// DeleteTitle protokolliert die administrative Löschung eines Buchtitels.
 	DeleteTitle(ctx context.Context, titleID string, bearbeiterID string) error
+	// DeleteCopy protokolliert die administrative Löschung eines konkreten Buchexemplars.
 	DeleteCopy(ctx context.Context, copyID string, bearbeiterID string) error
+	// DeleteUser protokolliert die administrative Löschung eines Systembenutzers.
 	DeleteUser(ctx context.Context, userID string, bearbeiterID string) error
 
-	// Student hard-delete with audit trail (called by API and GDPR Cronjob)
+	// DeleteStudent löscht einen Schüler unwiderruflich aus der Datenbank (zur Einhaltung der DSGVO / Datenschutz)
+	// und hinterlässt einen anonymisierten Löscheintrag im Audit-Log zur Nachverfolgbarkeit.
 	DeleteStudent(ctx context.Context, studentID string, bearbeiterID string, grund string) error
 
-	// Fee cancellation audit
+	// StornierungGebuehr protokolliert den Erlass oder die Stornierung einer ausstehenden Gebühr mit Begründung.
 	StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, betrag float64, grund string) error
 
-	// Loan checkout/return audit (append-only event log)
+	// LogAusleihe protokolliert die erfolgreiche Ausleihe eines Exemplars an einen Schüler oder Lehrer.
 	LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
+	// LogRueckgabe protokolliert die Rückgabe eines Exemplars inklusive des bearbeitenden Mitarbeiters.
 	LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
 
-	// System-triggered batch audit (no user actor)
+	// LogSystemAktion protokolliert systemgesteuerte Batch-Prozesse (z. B. automatische Sperrungen oder Bereinigungen).
 	LogSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error
 }
 
+// pgAuditRepository implementiert das AuditRepository für PostgreSQL.
 type pgAuditRepository struct {
 	db db.PgxPoolIface
 }
 
-// NewAuditRepository instantiates a pgAuditRepository.
+// NewAuditRepository erzeugt eine neue Instanz des PostgreSQL-basierten Audit-Repositorys.
 func NewAuditRepository(db db.PgxPoolIface) AuditRepository {
 	return &pgAuditRepository{db: db}
 }
 
-// insertAuditLog is the single internal helper that writes to audit_log.
-// All writes go through here to ensure consistency and append-only semantics.
+// insertAuditLog ist die zentrale Hilfsfunktion, die alle Logeinträge in die Tabelle `audit_log` schreibt.
+// Durch die Kapselung in einer Funktion wird ein konsistentes Datenbankschema und eine Append-Only-Semantik erzwungen.
 func (r *pgAuditRepository) insertAuditLog(
 	ctx context.Context,
 	tx pgx.Tx,

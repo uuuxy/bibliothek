@@ -34,7 +34,7 @@ type SubmitOrderRequest struct {
 func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SubmitOrderRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -208,7 +208,7 @@ type ReceiveItemRequest struct {
 func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ReceiveItemRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

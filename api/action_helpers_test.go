@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"bibliothek/auth"
-	"bibliothek/db"
 	"bibliothek/internal/service"
 	"bibliothek/repository"
 
@@ -20,7 +19,6 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		t.Fatalf("failed to create pgxmock: %v", err)
 	}
 	defer mock.Close()
-
 
 	studentRepo := repository.NewStudentRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
@@ -118,14 +116,13 @@ func TestHandleBookReturn(t *testing.T) {
 	}
 	defer mock.Close()
 
-	server := &Server{
-		DB: &db.Database{Pool: mock},
-	}
 	studentRepo := repository.NewStudentRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
 	auditRepo := repository.NewAuditRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
+	deviceSvc := service.NewDeviceService(mock, studentRepo, loanRepo, auditRepo)
+	omniboxSvc := service.NewOmniboxService(mock, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 
 	copyID := "copy-1"
 	barcode := "B-9999"
@@ -168,10 +165,13 @@ func TestHandleBookReturn(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	var resp ActionResponse
 	claims := &auth.Claims{UserID: staffID, Rolle: auth.RoleMitarbeiter}
 
-	err = server.handleBookAction(context.Background(), barcode, claims, nil, nil, bookRepo, loanRepo, loanSvc, &resp)
+	res, err := omniboxSvc.ProcessQuery(context.Background(), barcode, nil, nil, false, claims.UserID, string(claims.Rolle))
+	var resp ActionResponse
+	if res != nil {
+		resp = *mapOmniboxResultToActionResponse(res)
+	}
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -74,7 +74,7 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 			Betreff  string `json:"betreff"`
 			TextBody string `json:"text_body"`
 		}
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

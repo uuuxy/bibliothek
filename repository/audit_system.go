@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// StornierungGebuehr marks a damage case as cancelled (storniert) and writes an
-// immutable audit record. This replaces hard-deletes of Schadensfälle.
+// StornierungGebuehr markiert eine ausstehende Gebühr (Schadensfall) als storniert und schreibt einen
+// revisionssicheren Audit-Eintrag. Dies ersetzt das physische Löschen von Schadensfällen, um die Historie zu wahren.
 func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, betrag float64, grund string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -15,7 +15,7 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	// Mark as cancelled in schadensfaelle
+	// Schadensfall als bezahlt/storniert markieren und Metadaten eintragen
 	tag, err := tx.Exec(ctx, `
 		UPDATE schadensfaelle
 		SET ist_bezahlt = true,
@@ -48,8 +48,8 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 	return tx.Commit(ctx)
 }
 
-// LogSystemAktion writes a SYSTEM-actor audit record (no bearbeiter_id).
-// Used by Cronjobs (GDPR anonymization, backup, etc.).
+// LogSystemAktion schreibt einen Audit-Eintrag für eine rein systemgesteuerte Aktion (ohne Bearbeiter-ID).
+// Dies wird typischerweise von Cronjobs, DSGVO-Routinebereinigungen oder Datensicherungen verwendet.
 func (r *pgAuditRepository) LogSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -57,8 +57,7 @@ func (r *pgAuditRepository) LogSystemAktion(ctx context.Context, tabelle string,
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	// System actions use a sentinel UUID-shaped kontext key, not a real record ID.
-	// We use a canonical SYSTEM ID for datensatz_id.
+	// Systemaktionen verwenden eine Standard-Null-UUID als Datensatz-ID
 	const systemSentinelID = "00000000-0000-0000-0000-000000000000"
 
 	if err = r.insertAuditLog(ctx, tx, tabelle, aktion, systemSentinelID,

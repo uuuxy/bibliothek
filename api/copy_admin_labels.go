@@ -36,7 +36,7 @@ func (s *Server) UpdateCopyBarcodeHandler(bookRepo repository.BookRepository) ht
 		}
 
 		var req UpdateBarcodeRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

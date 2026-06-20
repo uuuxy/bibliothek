@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// DeleteUser purges a system user and records the deletion in audit_log.
+// DeleteUser löscht einen Systembenutzer endgültig aus der Datenbank und erfasst die Löschung im Audit-Log.
 func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearbeiterID string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -17,7 +17,7 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	// Snapshot before deletion
+	// Snapshot erstellen: Benutzerdaten vor dem Löschen sichern
 	var vorname, nachname, email, rolle string
 	err = tx.QueryRow(ctx,
 		`SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(email,''), coalesce(rolle::text,'')
@@ -42,11 +42,12 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 	return tx.Commit(ctx)
 }
 
-// ── DSGVO: Student hard-delete ────────────────────────────────────────────────
-
-// DeleteStudent transactionally hard-deletes a student record and writes an immutable
-// audit trail. Safe to call from both the HTTP API (bearbeiterID = user UUID) and
-// the GDPR Cronjob (bearbeiterID = "" → SYSTEM actor).
+// DeleteStudent löscht einen Schüler-Datensatz transaktionssicher und datenschutzkonform (DSGVO-konforme Hard-Delete).
+// Der Aufruf ist sowohl über die HTTP-API (bearbeiterID = Benutzer-UUID) als auch über den DSGVO-Cronjob (bearbeiterID = "" → SYSTEM) möglich.
+// Um personenbezogene Daten (PII) vollständig zu löschen, werden:
+//   - Alle historischen Ausleihen anonymisiert (schueler_id = NULL gesetzt).
+//   - Alle älteren Audit-Logs dieses Schülers anonymisiert (Details-Felder überschrieben).
+//   - Bezahlte Schadensfälle gelöscht (unbezahlte Schadensfälle blockieren die Löschung).
 func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string, bearbeiterID string, grund string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -54,7 +55,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	// Snapshot before deletion (DSGVO-konforme Protokollierung)
+	// Snapshot erstellen: Daten für das Audit-Log vor dem Löschen sichern
 	var vorname, nachname, klasse, barcodeID string
 	var abgaengerJahr int
 	err = tx.QueryRow(ctx,
@@ -67,7 +68,8 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("failed to snapshot student for audit: %w", err)
 	}
 
-	// Anonymize closed loans: set schueler_id = NULL for all returned loans
+	// 1. Ausleihen anonymisieren: Setze die schueler_id bei allen zurückgegebenen Ausleihen auf NULL.
+	// Das sorgt dafür, dass Statistiken erhalten bleiben, aber kein Personenbezug mehr existiert.
 	if _, err = tx.Exec(ctx,
 		`UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1 AND rueckgabe_am IS NOT NULL`,
 		studentID,
@@ -75,7 +77,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("anonymizing returned loans: %w", err)
 	}
 
-	// Anonymize any past audit logs for this student to remove PII
+	// 2. Audit-Logs anonymisieren: Überschreibe personenbezogene Felder in alten Log-Einträgen.
 	if _, err = tx.Exec(ctx, `
 		UPDATE audit_log
 		SET details = details || '{"vorname":"Anonymisiert", "nachname":"Anonymisiert", "klasse":"Anonymisiert"}'::jsonb
@@ -84,7 +86,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("anonymizing past audit_logs: %w", err)
 	}
 
-	// Delete paid damage cases (unpaid ones block deletion – enforced by caller)
+	// 3. Schadensfälle bereinigen: Bezahlte Fälle werden gelöscht. Offene Fälle verhindern das Löschen.
 	if _, err = tx.Exec(ctx,
 		`DELETE FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = true`,
 		studentID,
@@ -92,7 +94,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("deleting paid damages: %w", err)
 	}
 
-	// Hard-delete the student record
+	// 4. Schüler-Datensatz physisch löschen
 	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, studentID)
 	if err != nil {
 		return fmt.Errorf("deleting student: %w", err)
@@ -101,7 +103,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("student %s not found", studentID)
 	}
 
-	// Determine actor type
+	// Akteur ermitteln (entweder manueller Admin-User oder automatische System-Bereinigung)
 	var akteur string
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
@@ -113,6 +115,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 
 	kontext := "DSGVO-Löschroutine"
 
+	// Protokolleintrag schreiben – hierbei werden keine echten Namen, sondern "Anonymisiert"-Werte gespeichert.
 	if err = r.insertAuditLog(ctx, tx, "schueler", "DELETE", studentID,
 		bearbeiterPtr, akteur, &kontext,
 		map[string]any{

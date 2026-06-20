@@ -51,7 +51,7 @@ func (s *Server) CreateSignatureHandler() http.HandlerFunc {
 			Name        string `json:"name"`
 			Description string `json:"description"`
 		}
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 		req.Name = strings.TrimSpace(req.Name)
@@ -95,7 +95,7 @@ func (s *Server) UpdateSignatureHandler() http.HandlerFunc {
 			Name        string `json:"name"`
 			Description string `json:"description"`
 		}
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 		req.Name = strings.TrimSpace(req.Name)

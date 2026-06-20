@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -25,7 +24,7 @@ type Vormerkung struct {
 
 // CreateVormerkungRequest is the body for POST /api/vormerkungen.
 type CreateVormerkungRequest struct {
-	TitelID    string `json:"titel_id"`
+	TitelID    string `json:"titel_id" validate:"required"`
 	Notiz      string `json:"notiz,omitempty"`
 	SchuelerID string `json:"schueler_id,omitempty"`
 }
@@ -97,8 +96,7 @@ func (s *Server) ListVormerkungHandler() http.HandlerFunc {
 func (s *Server) CreateVormerkungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateVormerkungRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TitelID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id ist erforderlich"))
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

@@ -8,30 +8,41 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
-// Scanner defines an interface for both pgx.Row and pgx.Rows to enable shared scan helpers.
+// Scanner kapselt die Scan-Schnittstelle von pgx.Row und pgx.Rows,
+// um gemeinsame Helferfunktionen zum Einlesen von Zeilen zu ermöglichen.
 type Scanner interface {
 	Scan(dest ...any) error
 }
 
-// StudentRepository defines operations for fetching student records from the database.
+// StudentRepository definiert die Operationen zur Abfrage und zum Abgleich von Schülern in der Datenbank.
 type StudentRepository interface {
-	// GetByBarcode fetches a student by their unique barcode identifier. Returns nil if not found.
+	// GetByBarcode sucht einen Schüler anhand seiner Barcode-ID (Schülerausweis).
+	// Liefert nil zurück, wenn kein Schüler gefunden wurde.
 	GetByBarcode(ctx context.Context, barcode string) (*Student, error)
-	// GetByID fetches a student by their primary key UUID. Returns nil if not found.
+
+	// GetByID sucht einen Schüler anhand seiner UUID (Primärschlüssel).
+	// Liefert nil zurück, wenn kein Schüler gefunden wurde.
 	GetByID(ctx context.Context, id string) (*Student, error)
-	// SearchStudentsFuzzy performs a fuzzy search on students.
+
+	// SearchStudentsFuzzy führt eine Teilstring-Suche über Vorname, Nachname und Barcode-ID aus.
 	SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error)
-	// GetNextSequence gets the next student barcode sequence number.
+
+	// GetNextSequence ermittelt die nächste freie Barcode-Nummer für neue Schülerausweise (Format: "S-1xxxx").
 	GetNextSequence(ctx context.Context) (int, error)
-	// GetAllLUSDStudents fetches essential data for LUSD diffing.
+
+	// GetAllLUSDStudents lädt alle Schüler-IDs, LUSD-IDs, Namen und Geburtsdaten zur Vorbereitung eines LUSD-Abgleichs.
 	GetAllLUSDStudents(ctx context.Context) ([]Student, error)
-	// BulkSyncLUSD performs the mass update/insert and marks graduates.
+
+	// BulkSyncLUSD führt den LUSD-Datenabgleich (Massen-Update und Massen-Insert) in einer Transaktion durch.
+	// Schueler, die nicht mehr im LUSD-Datenbestand gelistet sind, werden automatisch als Schulabgänger (ist_abgaenger = true) markiert
+	// und deren Vormerkungen gelöscht.
+	// Gibt die Anzahl der Abgänger zurück, die noch offene Ausleihen haben.
 	BulkSyncLUSD(ctx context.Context, updates []StudentUpdate, inserts []StudentInsert, allLusdIDs []string) (int, error)
 }
 
+// StudentUpdate definiert die Datenstruktur für Aktualisierungen eines Schülers während des LUSD-Imports.
 type StudentUpdate struct {
 	ID           string
 	Vorname      string
@@ -41,6 +52,7 @@ type StudentUpdate struct {
 	LusdID       *string
 }
 
+// StudentInsert definiert die Datenstruktur für neu anzulegende Schüler während des LUSD-Imports.
 type StudentInsert struct {
 	BarcodeID     string
 	Vorname       string
@@ -52,15 +64,17 @@ type StudentInsert struct {
 	IstAbgaenger  bool
 }
 
+// pgStudentRepository implementiert das StudentRepository für PostgreSQL.
 type pgStudentRepository struct {
 	db db.PgxPoolIface
 }
 
-// NewStudentRepository builds a PostgreSQL-backed StudentRepository.
+// NewStudentRepository erzeugt eine neue Instanz des PostgreSQL-basierten StudentRepositorys.
 func NewStudentRepository(db db.PgxPoolIface) StudentRepository {
 	return &pgStudentRepository{db: db}
 }
 
+// scanStudent ist eine Hilfsfunktion zum Einlesen einer Datenbankzeile in das Student-Modell.
 func scanStudent(row Scanner) (*Student, error) {
 	var s Student
 	err := row.Scan(
@@ -72,7 +86,7 @@ func scanStudent(row Scanner) (*Student, error) {
 	return &s, nil
 }
 
-// GetByBarcode fetches a student by barcode.
+// GetByBarcode liest einen Schüler anhand seiner Barcode-ID aus.
 func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) (*Student, error) {
 	query := `
 		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am
@@ -90,7 +104,7 @@ func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) 
 	return s, nil
 }
 
-// GetByID fetches a student by ID.
+// GetByID liest einen Schüler anhand seiner UUID aus.
 func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student, error) {
 	query := `
 		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am
@@ -108,7 +122,7 @@ func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student,
 	return s, nil
 }
 
-// SearchStudentsFuzzy performs a fuzzy search on student names.
+// SearchStudentsFuzzy durchsucht die Schülerschaft nach Namen oder Barcodes.
 func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error) {
 	query := `
 		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am
@@ -139,7 +153,7 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 	return results, nil
 }
 
-// GetNextSequence retrieves the next barcode sequence integer.
+// GetNextSequence ermittelt die fortlaufende Barcode-Sequenz für Schüler (z. B. "S-10005").
 func (r *pgStudentRepository) GetNextSequence(ctx context.Context) (int, error) {
 	var lastBarcode string
 	qLast := `
@@ -159,7 +173,7 @@ func (r *pgStudentRepository) GetNextSequence(ctx context.Context) (int, error) 
 	return startNum, nil
 }
 
-// GetAllLUSDStudents fetches essential fields for diffing.
+// GetAllLUSDStudents liest alle LUSD-relevanten Felder aus der Datenbank aus.
 func (r *pgStudentRepository) GetAllLUSDStudents(ctx context.Context) ([]Student, error) {
 	rows, err := r.db.Query(ctx, "SELECT id, lusd_id, lower(vorname), lower(nachname), coalesce(geburtsdatum, '1900-01-01'::DATE) FROM schueler")
 	if err != nil {
@@ -180,7 +194,9 @@ func (r *pgStudentRepository) GetAllLUSDStudents(ctx context.Context) ([]Student
 	return results, rows.Err()
 }
 
-// BulkSyncLUSD performs the batch operations in a single transaction.
+// BulkSyncLUSD synchronisiert Schülerdaten aus dem hessischen LUSD-Import.
+// Diese Methode verwendet Massentransaktions-Methoden (UNNEST für Massen-Updates und CopyFrom für Massen-Inserts)
+// zur Optimierung der Performance auf Produktionsdatenbanken.
 func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []StudentUpdate, inserts []StudentInsert, allLusdIDs []string) (int, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -188,6 +204,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
+	// 1. Massen-Update mit pgx und UNNEST durchführen (reduziert Roundtrips drastisch)
 	if len(updates) > 0 {
 		var updID, updVorname, updNach, updKlasse []string
 		var updGeb, updLusd []*string
@@ -222,6 +239,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 		}
 	}
 
+	// 2. Massen-Insert per CopyFrom durchführen
 	if len(inserts) > 0 {
 		var copyRows [][]any
 		for _, i := range inserts {
@@ -233,7 +251,6 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 				i.BarcodeID, i.Vorname, i.Nachname, i.Klasse, geb, i.AbgaengerJahr, i.LusdID, i.IstAbgaenger,
 			})
 		}
-		// PR 89: Use pgx.CopyFromRows for massive performance gains in inserts
 		_, err = tx.CopyFrom(
 			ctx,
 			pgx.Identifier{"schueler"},
@@ -245,6 +262,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 		}
 	}
 
+	// 3. Alle Schüler als Abgänger markieren, die eine LUSD-ID besitzen, aber nicht mehr in der aktuellen Importdatei enthalten sind
 	qMarkAbgaenger := `
 		UPDATE schueler
 		SET ist_abgaenger = true, 
@@ -257,6 +275,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 		return 0, err
 	}
 
+	// 4. Reservierungen (Vormerkungen) von Abgängern automatisch löschen
 	qDeleteVormerkungen := `
 		DELETE FROM vormerkungen 
 		WHERE schueler_id IN (
@@ -268,6 +287,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 		return 0, err
 	}
 
+	// 5. Zählen, wie viele der neuen Abgänger noch Bücher zu Hause haben, damit Administratoren benachrichtigt werden können
 	var abgaengerOpenCount int
 	qCountLoans := `
 		SELECT COUNT(DISTINCT schueler_id)

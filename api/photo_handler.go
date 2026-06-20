@@ -28,7 +28,7 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 		}
 
 		var req UploadPhotoRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

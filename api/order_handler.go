@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -23,7 +22,9 @@ type SendOrderMailRequest struct {
 func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SendOrderMailRequest
-		_ = json.NewDecoder(r.Body).Decode(&req)
+		if !DecodeAndValidate(w, r, &req) {
+			return
+		}
 
 		toEmail := req.Email
 		if toEmail == "" {

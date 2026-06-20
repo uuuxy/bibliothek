@@ -40,7 +40,7 @@ func (s *Server) MarkCopyDefektHandler() http.HandlerFunc {
 		}
 
 		var req DefektRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 		if req.Betrag < 0 {
@@ -158,7 +158,7 @@ func (s *Server) ReportDamageHandler() http.HandlerFunc {
 			Beschreibung string  `json:"beschreibung"`
 			Betrag       float64 `json:"betrag"`
 		}
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

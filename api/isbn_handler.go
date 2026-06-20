@@ -35,7 +35,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		var req struct {
 			ISBN string `json:"isbn"`
 		}
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 		// Normalise: strip dashes and spaces

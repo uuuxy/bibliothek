@@ -49,7 +49,7 @@ func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
 func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req KlassenLehrerMapping
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 		if req.Klasse == "" || req.LehrerEmail == "" {

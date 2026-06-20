@@ -90,7 +90,7 @@ func toUTF8(s string) string {
 	}, s)
 }
 
-// limitString schneidet Strings ab, berücksichtigt dabei aber Multibyte-Runen, 
+// limitString schneidet Strings ab, berücksichtigt dabei aber Multibyte-Runen,
 // sodass keine "invalid byte sequence for encoding UTF8" entsteht.
 func limitString(s string, limit int) string {
 	runes := []rune(s)

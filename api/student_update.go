@@ -124,8 +124,7 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			AbgaengerJahr *int    `json:"abgaenger_jahr"`
 			Geburtsdatum  *string `json:"geburtsdatum"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiger Request-Body: %w", err))
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

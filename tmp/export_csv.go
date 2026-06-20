@@ -4,16 +4,16 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
-	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
 	dbUrl := "postgres://peterflasch@127.0.0.1:5432/bibliothek?sslmode=disable"
-	
+
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dbUrl)
 	if err != nil {

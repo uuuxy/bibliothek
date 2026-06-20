@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -70,9 +69,9 @@ func calculateAbgaengerJahr(klasse string) int {
 
 // CreateStudentRequest defines the payload for creating a new student.
 type CreateStudentRequest struct {
-	Vorname      string  `json:"vorname"`
-	Nachname     string  `json:"nachname"`
-	Klasse       string  `json:"klasse"`
+	Vorname      string  `json:"vorname" validate:"required"`
+	Nachname     string  `json:"nachname" validate:"required"`
+	Klasse       string  `json:"klasse" validate:"required"`
 	BarcodeID    string  `json:"barcode_id"`
 	Geburtsdatum *string `json:"geburtsdatum"` // Format: YYYY-MM-DD
 }
@@ -92,8 +91,7 @@ type CreateStudentRequest struct {
 func (s *Server) CreateStudentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateStudentRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges JSON"))
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -101,11 +99,6 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		req.Nachname = strings.TrimSpace(req.Nachname)
 		req.Klasse = strings.TrimSpace(req.Klasse)
 		req.BarcodeID = strings.TrimSpace(req.BarcodeID)
-
-		if req.Vorname == "" || req.Nachname == "" || req.Klasse == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname und Klasse sind Pflichtfelder"))
-			return
-		}
 
 		ctx := r.Context()
 

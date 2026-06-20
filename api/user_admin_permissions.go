@@ -73,7 +73,7 @@ type UpdatePermissionsRequest struct {
 func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req UpdatePermissionsRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

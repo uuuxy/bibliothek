@@ -88,7 +88,7 @@ func (s *Server) GetSettingsHandler() http.HandlerFunc {
 func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SystemEinstellungen
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

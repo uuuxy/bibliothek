@@ -57,7 +57,8 @@ func (s *Server) Routes() http.Handler {
 	userRepo := repository.NewUserRepository(s.DB.Pool)
 
 	loanSvc := service.NewLoanService(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
-
+	deviceSvc := service.NewDeviceService(s.DB.Pool, studentRepo, loanRepo, auditRepo)
+	omniboxSvc := service.NewOmniboxService(s.DB.Pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
 	orderSvc := NewOrderService(s.DB, bookRepo)
 	pdfSvc := NewPDFService()
 
@@ -105,7 +106,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Delegate to domain-specific routers
 	s.registerPublicRoutes(mux)
-	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, loanRepo, loanSvc)
+	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, omniboxSvc)
 	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
 	s.registerBookRoutes(mux, bookRepo, auditRepo)
 	s.registerSystemRoutes(mux, auditRepo, userRepo)

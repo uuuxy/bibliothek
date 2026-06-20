@@ -14,11 +14,11 @@ func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/monitor/slides", s.GetMonitorSlidesHandler())
 }
 
-func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.LoanRepository, loanSvc service.LoanService) {
+func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, omniboxSvc service.OmniboxService) {
 	// Central Omnibox Action Dispatcher
-	actionHandler := s.ActionHandler(studentRepo, bookRepo, loanRepo, loanSvc)
+	actionHandler := s.ActionHandler(omniboxSvc)
 	mux.Handle("POST /api/action", s.RequirePermission("view_students")(actionHandler))
-	mux.Handle("POST /api/action/batch", s.RequirePermission("view_students")(s.ActionBatchHandler(studentRepo, bookRepo, loanRepo, loanSvc)))
+	mux.Handle("POST /api/action/batch", s.RequirePermission("view_students")(s.ActionBatchHandler(omniboxSvc)))
 
 	// Unified Fuzzy Search
 	searchHandler := s.SearchHandler(studentRepo, bookRepo)

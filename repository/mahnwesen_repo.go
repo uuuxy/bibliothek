@@ -9,40 +9,56 @@ import (
 	"bibliothek/db"
 )
 
-// UeberfaelligesMedium holds data for one overdue book copy belonging to a student.
+// UeberfaelligesMedium repräsentiert ein einzelnes Buch- oder Medienexemplar, das die Rückgabefrist überschritten hat.
 type UeberfaelligesMedium struct {
-	Titel            string `json:"titel"`
-	Autor            string `json:"autor"`
-	ISBN             string `json:"isbn"`
-	CoverURL         string `json:"cover_url,omitempty"`
-	FaelligAm        string `json:"faellig_am"`
-	TageUeberfaellig int    `json:"tage_ueberfaellig"`
+	// Titel ist der Haupttitel des überfälligen Mediums.
+	Titel string `json:"titel"`
+	// Autor ist der Autor des Werks.
+	Autor string `json:"autor"`
+	// ISBN ist die ISBN des Buchs.
+	ISBN string `json:"isbn"`
+	// CoverURL verweist optional auf das Coverbild des Buchs.
+	CoverURL string `json:"cover_url,omitempty"`
+	// FaelligAm ist das formatierte Fälligkeitsdatum (z. B. "20.06.2026").
+	FaelligAm string `json:"faellig_am"`
+	// TageUeberfaellig speichert die Anzahl der Tage, die das Medium bereits überfällig ist.
+	TageUeberfaellig int `json:"tage_ueberfaellig"`
 }
 
-// UeberfaelligerSchueler groups overdue books by student.
+// UeberfaelligerSchueler fasst alle überfälligen Medien eines konkreten Schülers zusammen.
 type UeberfaelligerSchueler struct {
-	SchuelerID  string                 `json:"schueler_id"`
-	Name        string                 `json:"name"`
-	Klasse      string                 `json:"klasse"`
-	Medien      []UeberfaelligesMedium `json:"medien"`
+	// SchuelerID ist die UUID des betroffenen Schülers.
+	SchuelerID string `json:"schueler_id"`
+	// Name ist der vollständige Name des Schülers.
+	Name string `json:"name"`
+	// Klasse ist die aktuelle Schulklasse des Schülers.
+	Klasse string `json:"klasse"`
+	// Medien listet alle überfälligen Buchexemplare auf, die auf diesen Schüler entfallen.
+	Medien []UeberfaelligesMedium `json:"medien"`
 }
 
-// MahnwesenKlasse groups students by class for the overview response.
+// MahnwesenKlasse gruppiert überfällige Schüler und Ausleihen nach ihren Schulklassen für die Mahnwesen-Übersicht.
 type MahnwesenKlasse struct {
-	Klasse      string                   `json:"klasse"`
-	LehrerEmail string                   `json:"lehrer_email"` // autofill from mapping; may be empty
-	Schueler    []UeberfaelligerSchueler `json:"schueler"`
+	// Klasse ist das Klassenkürzel (z. B. "09A").
+	Klasse string `json:"klasse"`
+	// LehrerEmail ist die E-Mail-Adresse der Klassenleitung (für automatische Benachrichtigungen).
+	LehrerEmail string `json:"lehrer_email"`
+	// Schueler enthält die Liste aller Schüler dieser Klasse mit überfälligen Büchern.
+	Schueler []UeberfaelligerSchueler `json:"schueler"`
 }
 
+// MahnwesenRepository stellt Abfragemethoden zur Auswertung von Fristüberschreitungen und Mahnstufen zur Verfügung.
 type MahnwesenRepository struct {
 	db db.PgxPoolIface
 }
 
+// NewMahnwesenRepository erzeugt eine neue Instanz des MahnwesenRepositorys.
 func NewMahnwesenRepository(pool db.PgxPoolIface) *MahnwesenRepository {
 	return &MahnwesenRepository{db: pool}
 }
 
-// QueryUeberfaelligeNachKlasse returns overdue loans grouped by class → student.
+// QueryUeberfaelligeNachKlasse ermittelt alle Ausleihen, deren Frist überschritten ist,
+// gruppiert nach Klasse und Schüler. Ein optionaler Filter schränkt die Abfrage auf eine Klasse ein.
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
 		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
@@ -92,9 +108,9 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		schuelerKey := klasse + "|" + schuelerID
 		if _, ok := schuelerMap[schuelerKey]; !ok {
 			sch := UeberfaelligerSchueler{
-				SchuelerID:  schuelerID,
-				Name:        name,
-				Klasse:      klasse,
+				SchuelerID: schuelerID,
+				Name:       name,
+				Klasse:     klasse,
 			}
 			k := klassenMap[klasse]
 			k.Schueler = append(k.Schueler, sch)
@@ -114,6 +130,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		return nil, err
 	}
 
+	// Falls Klassen existieren, ordnen wir ihnen die Lehrer-E-Mails aus dem Mapping zu
 	if len(klassen) > 0 {
 		mRows, err := repo.db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
 		if err == nil {
@@ -134,7 +151,9 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	return klassen, nil
 }
 
-// QueryUeberfaelligeNachJahrgang returns overdue loans grouped by class → student based on grade level.
+// QueryUeberfaelligeNachJahrgang ermittelt Bücher, die über die Jahrgangsstufe hinaus ausgeliehen wurden
+// (z. B. wenn ein Buch nur bis Klasse 6 gedacht ist, der Schüler nun aber in Klasse 7 ist) oder die
+// von Schülern behalten wurden, die die Schule bereits verlassen haben (Abgänger).
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
 		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
@@ -192,9 +211,9 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 		schuelerKey := klasse + "|" + schuelerID
 		if _, ok := schuelerMap[schuelerKey]; !ok {
 			sch := UeberfaelligerSchueler{
-				SchuelerID:  schuelerID,
-				Name:        name,
-				Klasse:      klasse,
+				SchuelerID: schuelerID,
+				Name:       name,
+				Klasse:     klasse,
 			}
 			k := klassenMap[klasse]
 			k.Schueler = append(k.Schueler, sch)
@@ -222,7 +241,8 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 	return klassen, nil
 }
 
-// CheckFerienAktiv checks if today is within any holiday/closure period.
+// CheckFerienAktiv prüft, ob das heutige Datum in einen eingetragenen Ferien- oder Schließzeitraum fällt.
+// Ist dies der Fall, können automatische Mahnungen systemseitig pausiert werden.
 func (repo *MahnwesenRepository) CheckFerienAktiv(ctx context.Context) (bool, string, error) {
 	q := `
 		SELECT bezeichnung 
@@ -233,6 +253,7 @@ func (repo *MahnwesenRepository) CheckFerienAktiv(ctx context.Context) (bool, st
 	var bezeichnung string
 	err := repo.db.QueryRow(ctx, q).Scan(&bezeichnung)
 	if err != nil {
+		// pgx bzw. Standardfehler abfangen, wenn kein Zeitraum aktiv ist
 		if err.Error() == "no rows in result set" || strings.Contains(err.Error(), "no rows") {
 			return false, "", nil
 		}

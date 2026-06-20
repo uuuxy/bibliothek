@@ -34,7 +34,7 @@ type InventurStartResponse struct {
 func (s *Server) InventurStartHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurStartRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -141,7 +141,7 @@ type InventurScanResponse struct {
 func (s *Server) InventurScanHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurScanRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

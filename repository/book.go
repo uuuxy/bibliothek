@@ -6,47 +6,70 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	
 )
 
-// BookRepository defines operations for physical copies and book metadata search.
+// BookRepository definiert alle Datenbank-Operationen für physische Buchexemplare
+// und die Suche nach Buchtiteln im Katalog.
 type BookRepository interface {
-	// GetCopyByBarcode resolves a physical book copy by barcode, joining its title metadata. Returns nil if not found.
+	// GetCopyByBarcode sucht ein physisches Buchexemplar anhand seines Barcodes.
+	// Liefert die Exemplardaten inklusive der Metadaten des verknüpften Buchtitels zurück.
+	// Gibt nil zurück, wenn kein Exemplar gefunden wurde.
 	GetCopyByBarcode(ctx context.Context, barcode string) (*BookCopy, error)
-	// SearchTitles performs full-text query matching on book titles and authors, ranking results.
+
+	// SearchTitles führt eine Volltextsuche (german tsvector) über Titel, Autoren und ISBNs aus
+	// und sortiert die Ergebnisse nach ihrer Relevanz (ts_rank).
 	SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error)
-	// SearchTitlesFuzzy performs a fuzzy search using ILIKE.
+
+	// SearchTitlesFuzzy führt eine performante Fuzzy-Suche (Teilstring-Suche mittels ILIKE)
+	// über Titel, Autor und ISBN mit einer Ergebnismengenbegrenzung aus.
 	SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error)
 
-	// Admin Updates
+	// UpdateCopyDamageNote aktualisiert die Zustandsnotiz (z. B. Beschädigungen) eines Buchexemplars.
 	UpdateCopyDamageNote(ctx context.Context, id string, note string) error
+
+	// UpdateCopyBarcode ändert den zugewiesenen Barcode eines physischen Exemplars.
 	UpdateCopyBarcode(ctx context.Context, id string, barcode string) error
+
+	// UpdateCopyStatus ändert den Ausleih- und Aussonderungsstatus eines Exemplars.
 	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error
+
+	// DecommissionCopy kennzeichnet ein Exemplar als dauerhaft ausgesondert und sperrt die Ausleihe.
 	DecommissionCopy(ctx context.Context, id string) error
 
-	// Bulk Operations
+	// GenerateBarcodes erzeugt eine Serie fortlaufender Buch-Barcodes (Präfix "B-") über eine DB-Sequence.
 	GenerateBarcodes(ctx context.Context, count int) ([]string, error)
+
+	// BulkInsertCopies fügt mehrere Buchexemplare performant per Massen-Insert (CopyFrom) in die Datenbank ein.
 	BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error
 }
 
+// BookCopyInsert beschreibt die Datenstruktur für das Einfügen neuer Buchexemplare im Bulk-Verfahren.
 type BookCopyInsert struct {
-	TitelID         string
-	BarcodeID       string
-	ZustandNotiz    string
-	IstAusleihbar   bool
+	// TitelID verweist auf die Metadaten des Buchtitels.
+	TitelID string
+	// BarcodeID ist der eindeutige Barcode des neuen Exemplars.
+	BarcodeID string
+	// ZustandNotiz dokumentiert den Initialzustand des Buchs (optional).
+	ZustandNotiz string
+	// IstAusleihbar gibt an, ob das Buch direkt verliehen werden darf.
+	IstAusleihbar bool
+	// EtikettGedruckt speichert, ob das Barcode-Etikett bereits gedruckt wurde.
 	EtikettGedruckt bool
-	Einkaufspreis   float64
+	// Einkaufspreis speichert den Netto-Anschaffungspreis des Exemplars.
+	Einkaufspreis float64
 }
 
+// pgBookRepository implementiert das BookRepository für PostgreSQL.
 type pgBookRepository struct {
 	db db.PgxPoolIface
 }
 
-// NewBookRepository builds a PostgreSQL-backed BookRepository.
+// NewBookRepository erstellt eine neue Instanz des PostgreSQL-basierten Book-Repositorys.
 func NewBookRepository(db db.PgxPoolIface) BookRepository {
 	return &pgBookRepository{db: db}
 }
 
+// scanBookCopy ist eine Hilfsfunktion zum Einlesen einer Zeile in ein BookCopy-Objekt.
 func scanBookCopy(row Scanner) (*BookCopy, error) {
 	var bc BookCopy
 	err := row.Scan(
@@ -59,6 +82,7 @@ func scanBookCopy(row Scanner) (*BookCopy, error) {
 	return &bc, nil
 }
 
+// scanBookTitle ist eine Hilfsfunktion zum Einlesen einer Zeile in ein BookTitle-Objekt.
 func scanBookTitle(row Scanner) (*BookTitle, error) {
 	var t BookTitle
 	err := row.Scan(
@@ -70,7 +94,7 @@ func scanBookTitle(row Scanner) (*BookTitle, error) {
 	return &t, nil
 }
 
-// GetCopyByBarcode resolves physical book copy by barcode.
+// GetCopyByBarcode löst einen Buch-Barcode auf.
 func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string) (*BookCopy, error) {
 	query := `
 		SELECT 
@@ -91,9 +115,10 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 	return bc, nil
 }
 
-// SearchTitles performs full-text query matching on book titles and authors.
+// SearchTitles führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch.
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
-	// Fall back to ILIKE substring checks if full text search is insufficient for partial keyword fragments.
+	// Nutzen von plainto_tsquery mit deutschem Wörterbuch für intelligente Stammwortsuche.
+	// Falls die Volltextsuche bei unvollständigen Suchbegriffen fehlschlägt, greift der ILIKE-Vergleich.
 	query := `
 		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, erstellt_am, aktualisiert_am, erweiterte_eigenschaften
 		FROM buecher_titel
@@ -127,7 +152,7 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 	return results, nil
 }
 
-// SearchTitlesFuzzy performs a fuzzy search on book titles, authors, and ISBNs.
+// SearchTitlesFuzzy führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus.
 func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error) {
 	query := `
 		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, erstellt_am, aktualisiert_am, erweiterte_eigenschaften
@@ -160,7 +185,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 	return results, nil
 }
 
-// UpdateCopyDamageNote updates the damage note of a physical book copy.
+// UpdateCopyDamageNote setzt den Zustandstext eines Exemplars.
 func (r *pgBookRepository) UpdateCopyDamageNote(ctx context.Context, id string, note string) error {
 	query := `
 		UPDATE buecher_exemplare
@@ -171,7 +196,7 @@ func (r *pgBookRepository) UpdateCopyDamageNote(ctx context.Context, id string, 
 	return err
 }
 
-// UpdateCopyBarcode updates the barcode of a physical book copy.
+// UpdateCopyBarcode ändert die Barcode-Zuordnung eines Exemplars.
 func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, barcode string) error {
 	query := `
 		UPDATE buecher_exemplare
@@ -182,7 +207,7 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 	return err
 }
 
-// UpdateCopyStatus updates the circulation status of a physical book copy.
+// UpdateCopyStatus ändert den Verleihstatus und Zustand eines Exemplars.
 func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error {
 	query := `
 		UPDATE buecher_exemplare
@@ -193,7 +218,7 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 	return err
 }
 
-// DecommissionCopy marks a physical copy as decommissioned.
+// DecommissionCopy sortiert ein Buch aus und sperrt es dauerhaft.
 func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) error {
 	query := `
 		UPDATE buecher_exemplare
@@ -204,7 +229,7 @@ func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) erro
 	return err
 }
 
-// GenerateBarcodes generates a batch of next sequential barcodes.
+// GenerateBarcodes erzeugt ein Array von count fortlaufenden Barcodes.
 func (r *pgBookRepository) GenerateBarcodes(ctx context.Context, count int) ([]string, error) {
 	query := "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0') FROM generate_series(1, $1)"
 	rows, err := r.db.Query(ctx, query, count)
@@ -230,7 +255,7 @@ func (r *pgBookRepository) GenerateBarcodes(ctx context.Context, count int) ([]s
 	return barcodes, nil
 }
 
-// BulkInsertCopies inserts multiple book copies efficiently using pgx.CopyFromRows.
+// BulkInsertCopies fügt Exemplare im Bulk in die Datenbank ein.
 func (r *pgBookRepository) BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error {
 	if len(copies) == 0 {
 		return nil

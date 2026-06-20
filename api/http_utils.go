@@ -5,13 +5,19 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+
+	"github.com/go-playground/validator/v10"
 )
 
-// DecodeJSON decodes the JSON request body into the provided target struct.
-// It returns true if decoding was successful. If an error occurs, it automatically
-// responds with a 400 Bad Request HTTP error and returns false.
-func DecodeJSON[T any](w http.ResponseWriter, r *http.Request, target *T) bool {
+var Validate = validator.New()
+
+// DecodeAndValidate decodes the JSON request body and validates the struct.
+func DecodeAndValidate[T any](w http.ResponseWriter, r *http.Request, target *T) bool {
 	if err := json.NewDecoder(r.Body).Decode(target); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return false
+	}
+	if err := Validate.Struct(target); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return false
 	}

@@ -82,10 +82,10 @@ func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.Handl
 // CreateUserRequest holds payload data for user creation.
 type CreateUserRequest struct {
 	BarcodeID string `json:"barcode_id"`
-	Vorname   string `json:"vorname"`
-	Nachname  string `json:"nachname"`
-	Email     string `json:"email"`
-	Rolle     string `json:"rolle"`
+	Vorname   string `json:"vorname" validate:"required"`
+	Nachname  string `json:"nachname" validate:"required"`
+	Email     string `json:"email" validate:"required,email"`
+	Rolle     string `json:"rolle" validate:"required"`
 }
 
 // CreateUserHandler inserts a new user with bcrypt-hashed credentials.
@@ -102,7 +102,7 @@ type CreateUserRequest struct {
 func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateUserRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -158,13 +158,13 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 	}
 }
 
-// UpdateUserRequest holds modification inputs for a user.
 type UpdateUserRequest struct {
 	BarcodeID string `json:"barcode_id"`
-	Vorname   string `json:"vorname"`
-	Nachname  string `json:"nachname"`
-	Email     string `json:"email"`
-	Rolle     string `json:"rolle"`
+	Vorname   string `json:"vorname" validate:"required"`
+	Nachname  string `json:"nachname" validate:"required"`
+	Email     string `json:"email" validate:"required,email"`
+	Rolle     string `json:"rolle" validate:"required"`
+	Password  string `json:"password,omitempty"` // nur gehasht, wenn nicht leer
 	Aktiv     bool   `json:"aktiv"`
 }
 
@@ -189,7 +189,7 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 		}
 
 		var req UpdateUserRequest
-		if !DecodeJSON(w, r, &req) {
+		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 

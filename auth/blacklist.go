@@ -72,7 +72,7 @@ func (b *TokenBlacklist) IsBlacklisted(token string) bool {
 	err := b.pool.QueryRow(ctx, `
 		SELECT EXISTS(SELECT 1 FROM revoked_tokens WHERE token_signature = $1)
 	`, hash).Scan(&exists)
-	
+
 	if err != nil {
 		// Fail-closed: if the DB is down and we can't verify the token isn't revoked,
 		// deny access. This is the safer security posture for a school system.
