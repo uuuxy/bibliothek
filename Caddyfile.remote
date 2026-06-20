@@ -65,6 +65,12 @@ flasch3.herzog-dupont.de {
 
     # Go-Backend serves both API and static Svelte SPA frontend
     handle /* {
-        reverse_proxy bibliothek-backend:8083
+        reverse_proxy bibliothek-backend:8083 {
+            transport http {
+                response_header_timeout 300s
+                read_timeout 600s
+                write_timeout 600s
+            }
+        }
     }
 }
