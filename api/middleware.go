@@ -5,6 +5,7 @@ package api
 // beyond the Server struct. Middleware is registered in router.go.
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -21,7 +22,12 @@ import (
 func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
+			if strings.Contains(r.URL.Path, "/events") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), timeout)
+			defer cancel()
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
