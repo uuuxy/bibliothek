@@ -6,22 +6,19 @@
   import Omnibox from "./Omnibox.svelte";
   import BookDetails from "./BookDetails.svelte";
   import BookAkte from "./BookAkte.svelte";
-  import Graduates from "./Graduates.svelte";
-  import StudentIdDesigner from "./StudentIdDesigner.svelte";
-  import LabelPrinter from "./LabelPrinter.svelte";
   import BestellWorkspace from "./BestellWorkspace.svelte";
   import UnifiedInventory from "./UnifiedInventory.svelte";
   import MediaCatalog from "./MediaCatalog.svelte";
   import StatsDashboard from "./StatsDashboard.svelte";
-  import AuditLog from "./AuditLog.svelte";
-  import AdminAuditLog from "./AdminAuditLog.svelte";
   import StudentDirectory from "./StudentDirectory.svelte";
   import PermissionManager from "./PermissionManager.svelte";
   import LehrerPortal from "./LehrerPortal.svelte";
   import Mahnwesen from "./Mahnwesen.svelte";
   import SystemSettings from "./SystemSettings.svelte";
-  import SignatureManager from "./SignatureManager.svelte";
   import GlobalLMFExtendWidget from "./GlobalLMFExtendWidget.svelte";
+  import DruckCenter from "./DruckCenter.svelte";
+  import SystemLogs from "./SystemLogs.svelte";
+  
   function handleSelectBook(book) {
     appState.selectedBook = book;
     uiStore.activeTab = "media_catalog";
@@ -49,15 +46,11 @@
           students_dir: "/schuelerdatei",
           orders: "/bestellungen",
           media_catalog: "/katalog",
-          graduates: "/abgaenger",
           stats: "/statistiken",
           mahnwesen: "/mahnwesen",
-          audit: "/logbuch",
-          admin_audit: "/admin/auditlog",
-          signatures: "/signaturen",
+          "system-logs": "/system-logs",
           lmf_actions: "/lmf-aktionen",
-          student_ids: "/ausweise",
-          labels: "/etiketten",
+          "druck-center": "/druck-center",
           kiosk: "/kiosk"
         };
 
@@ -103,11 +96,10 @@
         const tabToPath = {
           settings: "/einstellungen", inventory: "/inventur",
           students_dir: "/schuelerdatei", orders: "/bestellungen",
-          media_catalog: "/katalog", graduates: "/abgaenger",
+          media_catalog: "/katalog",
           stats: "/statistiken", mahnwesen: "/mahnwesen",
-          audit: "/logbuch", admin_audit: "/admin/auditlog",
-          signatures: "/signaturen", lmf_actions: "/lmf-aktionen",
-          student_ids: "/ausweise", labels: "/etiketten", kiosk: "/kiosk"
+          "system-logs": "/system-logs", lmf_actions: "/lmf-aktionen",
+          "druck-center": "/druck-center", kiosk: "/kiosk"
         };
         const matchedTab = Object.keys(tabToPath).find(key => tabToPath[key] === path);
         if (matchedTab) uiStore.activeTab = matchedTab;
@@ -129,27 +121,16 @@
     </div>
   {:else if uiStore.activeTab === "books"}
     <div class="w-full animate-fade-in"><BookDetails title={uiStore.selectedBook || undefined} /></div>
-  {:else if uiStore.activeTab === "graduates"}
-    <div class="w-full animate-fade-in"><Graduates /></div>
   {:else if uiStore.activeTab === "orders"}
     <div class="w-full animate-fade-in"><BestellWorkspace /></div>
   {:else if uiStore.activeTab === "stats"}
     <div class="w-full animate-fade-in"><StatsDashboard /></div>
-  {:else if uiStore.activeTab === "audit"}
-    <div class="w-full animate-fade-in"><AuditLog /></div>
-  {:else if uiStore.activeTab === "admin_audit"}
-    <div class="w-full animate-fade-in"><AdminAuditLog /></div>
-  {:else if uiStore.activeTab === "student_ids"}
-    <div class="w-full animate-fade-in"><StudentIdDesigner /></div>
-  {:else if uiStore.activeTab === "labels"}
-    <div class="w-full animate-fade-in"><LabelPrinter /></div>
+  {:else if uiStore.activeTab === "system-logs"}
+    <div class="w-full animate-fade-in h-full"><SystemLogs /></div>
+  {:else if uiStore.activeTab === "druck-center"}
+    <div class="w-full animate-fade-in h-full"><DruckCenter /></div>
   {:else if uiStore.activeTab === "media_catalog"}
     <div class="w-full animate-fade-in"><MediaCatalog /></div>
-  {:else if uiStore.activeTab === "signatures"}
-    <div class="w-full animate-fade-in p-8 max-w-6xl mx-auto space-y-6">
-      <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Signaturen & Master Data</h2>
-      <SignatureManager />
-    </div>
   {:else if uiStore.activeTab === "inventory"}
     <div class="w-full animate-fade-in"><UnifiedInventory /></div>
   {:else if uiStore.activeTab === "students_dir"}

@@ -79,7 +79,6 @@ export const menuGroups = [
     name: "Bibliothek",
     items: [
       { id: "media_catalog", label: "Medienkatalog", icon: "catalog", permission: "view_books" },
-      { id: "signatures", label: "Signaturen", icon: "book", permission: "edit_books" },
       { id: "orders", label: "Bestellungen", icon: "shopping-bag", permission: "view_orders" },
       { id: "inventory", label: "Inventur", icon: "clipboard", permission: "inventory_scan" }
     ]
@@ -88,7 +87,6 @@ export const menuGroups = [
     name: "Personen",
     items: [
       { id: "students_dir", label: "Schülerdatei", icon: "users", permission: "view_students" },
-      { id: "graduates", label: "Abgänger", icon: "academic-cap", permission: "view_graduates" },
       { id: "mahnwesen", label: "Mahnwesen", icon: "bell", permission: "manage_users" }
     ]
   },
@@ -97,10 +95,8 @@ export const menuGroups = [
     items: [
       { id: "lmf_actions", label: "LMF-Aktionen", icon: "clock", permission: "manage_inventory" },
       { id: "stats", label: "Statistiken", icon: "chart-bar", permission: "view_stats" },
-      { id: "student_ids", label: "Schülerausweise", icon: "identification", permission: "upload_photos" },
-      { id: "labels", label: "Buch-Etiketten", icon: "printer", permission: "edit_books" },
-      { id: "audit", label: "Logbuch", icon: "clock", permission: "audit_logs" },
-      { id: "admin_audit", label: "Admin-Logbuch", icon: "shield", permission: "manage_users" },
+      { id: "druck-center", label: "Druck-Center", icon: "printer", permission: "edit_books" },
+      { id: "system-logs", label: "System-Logs", icon: "shield", permission: "audit_logs" },
       { id: "settings", label: "Einstellungen", icon: "cog", permission: "manage_users", roles: ["admin"] }
     ]
   },
