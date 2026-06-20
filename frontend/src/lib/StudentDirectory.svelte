@@ -123,7 +123,7 @@
     </div>
   {:else}
     <!-- Tab Navigation Header -->
-    <div class="px-8 pt-8 pb-0 border-b border-slate-200 bg-white flex-shrink-0 shadow-sm z-10">
+    <div class="px-8 pt-8 pb-0 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
       <div class="max-w-6xl mx-auto flex items-end justify-between">
         <div>
           <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Schülerdatei</h2>

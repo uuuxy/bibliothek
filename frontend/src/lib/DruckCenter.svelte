@@ -5,7 +5,7 @@
 </script>
 
 <div class="w-full flex flex-col h-full bg-slate-50">
-  <div class="px-8 pt-8 pb-4 border-b border-slate-200 bg-white shadow-sm flex-shrink-0">
+  <div class="px-8 pt-8 pb-4 border-b border-slate-200 bg-white shadow-sm shrink-0">
     <div class="max-w-6xl mx-auto flex items-end justify-between">
       <div>
         <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Druck-Center</h2>
