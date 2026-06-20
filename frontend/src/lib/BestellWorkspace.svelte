@@ -7,7 +7,7 @@
 
   import OrderCreationPanel from "./components/bestellungen/OrderCreationPanel.svelte";
   import IncomingShipments from "./components/bestellungen/IncomingShipments.svelte";
-  import IncomingShipmentsModal from "./components/bestellungen/IncomingShipmentsModal.svelte";
+  import ShipmentDetailView from "./components/bestellungen/ShipmentDetailView.svelte";
   import OrderRecommendations from "./components/bestellungen/OrderRecommendations.svelte";
   import SupplierManager from "./components/bestellungen/SupplierManager.svelte";
   import PrintSuggestion from "./components/bestellungen/PrintSuggestion.svelte";
@@ -217,42 +217,50 @@
   </div>
 
   {#if activeTab === "bestellungen"}
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start overflow-y-auto">
-      <OrderCreationPanel
-        {suppliers}
-        {orderCart}
-        {orderTotal}
-        {submittingOrder}
-        bind:selectedSupplierIdx
-        bind:searchQuery
-        bind:searchResults
-        bind:showDropdown
-        bind:isbnPreview
-        bind:isbnLoading
-        onSearchInput={handleSearchInput}
-        onAddToCart={addToCart}
-        onRemoveFromCart={removeFromCart}
-        onSubmitOrder={submitOrder}
+    {#if selectedShipment}
+      <ShipmentDetailView 
+        shipment={selectedShipment}
+        onBack={() => selectedShipment = null}
+        onReceived={handleShipmentReceived}
       />
-
-      <div class="lg:col-span-4 space-y-6">
-        <PrintSuggestion 
-          {printSuggestion} 
-          onPrint={handlePrintSuggestion} 
-        />
-
-        <IncomingShipments 
-          {incomingShipments}
-          {showGreenFade}
-          onSelectShipment={handleSelectShipment}
-        />
-
-        <OrderRecommendations 
-          {recommendations}
+    {:else}
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start overflow-y-auto">
+        <OrderCreationPanel
+          {suppliers}
+          {orderCart}
+          {orderTotal}
+          {submittingOrder}
+          bind:selectedSupplierIdx
+          bind:searchQuery
+          bind:searchResults
+          bind:showDropdown
+          bind:isbnPreview
+          bind:isbnLoading
+          onSearchInput={handleSearchInput}
           onAddToCart={addToCart}
+          onRemoveFromCart={removeFromCart}
+          onSubmitOrder={submitOrder}
         />
+
+        <div class="lg:col-span-4 space-y-6">
+          <PrintSuggestion 
+            {printSuggestion} 
+            onPrint={handlePrintSuggestion} 
+          />
+
+          <IncomingShipments 
+            {incomingShipments}
+            {showGreenFade}
+            onSelectShipment={handleSelectShipment}
+          />
+
+          <OrderRecommendations 
+            {recommendations}
+            onAddToCart={addToCart}
+          />
+        </div>
       </div>
-    </div>
+    {/if}
   {/if}
 
   {#if activeTab === "lieferanten"}
@@ -263,11 +271,3 @@
     />
   {/if}
 </div>
-
-{#if selectedShipment}
-  <IncomingShipmentsModal 
-    shipment={selectedShipment}
-    onClose={() => selectedShipment = null}
-    onReceived={handleShipmentReceived}
-  />
-{/if}
