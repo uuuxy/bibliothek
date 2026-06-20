@@ -159,6 +159,7 @@
                 class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {ferienLeseclubAktiv ? 'bg-emerald-500' : 'bg-slate-200'}"
                 role="switch"
                 aria-checked={ferienLeseclubAktiv}
+                aria-label="Ferien-Leseclub umschalten"
               >
                 <span class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {ferienLeseclubAktiv ? 'translate-x-6' : 'translate-x-0'}"></span>
               </button>
@@ -340,15 +341,15 @@
                 <div class="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-6 animate-fade-in">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Zeichensatz (Encoding)</label>
-                      <select class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all cursor-pointer">
+                      <label for="littera-encoding" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Zeichensatz (Encoding)</label>
+                      <select id="littera-encoding" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all cursor-pointer">
                         <option>UTF-8 (Empfohlen)</option>
                         <option>ISO-8859-1 (Windows-Standard)</option>
                       </select>
                     </div>
                     <div>
-                      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">CSV Trennzeichen</label>
-                      <input type="text" value=";" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono" />
+                      <label for="littera-csv-delimiter" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">CSV Trennzeichen</label>
+                      <input id="littera-csv-delimiter" type="text" value=";" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono" />
                     </div>
                   </div>
                 </div>
