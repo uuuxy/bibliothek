@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { fade, slide } from 'svelte/transition';
+  import { apiFetch } from './apiFetch.js';
   
   let state = $state({
     status: 'idle', // 'idle', 'active'
@@ -44,7 +45,7 @@
 
   onMount(async () => {
     try {
-      const res = await fetch('/api/signatures');
+      const res = await apiFetch('/api/signatures');
       if (res.ok) {
         state.signatures = await res.json();
       }
@@ -65,7 +66,7 @@
     }
 
     try {
-      const res = await fetch('/api/inventur/start', {
+      const res = await apiFetch('/api/inventur/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -94,7 +95,7 @@
     state.barcodeInput = '';
     
     try {
-      const res = await fetch('/api/inventur/scan', {
+      const res = await apiFetch('/api/inventur/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ barcode_id: barcode })
@@ -133,7 +134,7 @@
 
   async function finishInventory() {
     try {
-      const res = await fetch('/api/inventur/finish', { method: 'POST' });
+      const res = await apiFetch('/api/inventur/finish', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         alert(`Inventur abgeschlossen! ${data.verloren_gemeldet} Bücher wurden als verloren markiert.`);

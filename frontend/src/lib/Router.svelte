@@ -18,6 +18,7 @@
   import GlobalLMFExtendWidget from "./GlobalLMFExtendWidget.svelte";
   import DruckCenter from "./DruckCenter.svelte";
   import SystemLogs from "./SystemLogs.svelte";
+  import Graduates from "./Graduates.svelte";
   
   function handleSelectBook(book) {
     appState.selectedBook = book;
@@ -46,6 +47,7 @@
           students_dir: "/schuelerdatei",
           orders: "/bestellungen",
           media_catalog: "/katalog",
+          graduates: "/abgaenger",
           stats: "/statistiken",
           mahnwesen: "/mahnwesen",
           "system-logs": "/system-logs",
@@ -96,7 +98,7 @@
         const tabToPath = {
           settings: "/einstellungen", inventory: "/inventur",
           students_dir: "/schuelerdatei", orders: "/bestellungen",
-          media_catalog: "/katalog",
+          media_catalog: "/katalog", graduates: "/abgaenger",
           stats: "/statistiken", mahnwesen: "/mahnwesen",
           "system-logs": "/system-logs", lmf_actions: "/lmf-aktionen",
           "druck-center": "/druck-center", kiosk: "/kiosk"
@@ -135,6 +137,8 @@
     <div class="w-full animate-fade-in"><UnifiedInventory /></div>
   {:else if uiStore.activeTab === "students_dir"}
     <div class="w-full animate-fade-in"><StudentDirectory role={authStore.currentUser?.rolle} /></div>
+  {:else if uiStore.activeTab === "graduates"}
+    <div class="w-full animate-fade-in"><Graduates /></div>
   {:else if uiStore.activeTab === "mahnwesen"}
     <div class="w-full animate-fade-in"><Mahnwesen /></div>
   {:else if uiStore.activeTab === "lehrer_portal"}
