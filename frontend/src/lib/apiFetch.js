@@ -107,3 +107,52 @@ export const apiClient = {
     });
   },
 };
+
+import { toastStore } from "./stores/toastStore.svelte.js";
+
+async function handleSmartResponse(res) {
+  if (res.ok) {
+    if (res.status === 204) return null;
+    const text = await res.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  } else {
+    const errorText = (await res.text()) || `Fehler ${res.status}`;
+    toastStore.addToast(errorText, "error");
+    throw new Error(errorText);
+  }
+}
+
+export async function apiGet(url, options = {}) {
+  const res = await apiFetch(url, { ...options, method: "GET" });
+  return handleSmartResponse(res);
+}
+
+export async function apiPost(url, data, options = {}) {
+  const res = await apiFetch(url, {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options.headers },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  return handleSmartResponse(res);
+}
+
+export async function apiPut(url, data, options = {}) {
+  const res = await apiFetch(url, {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options.headers },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  return handleSmartResponse(res);
+}
+
+export async function apiDelete(url, options = {}) {
+  const res = await apiFetch(url, { ...options, method: "DELETE" });
+  return handleSmartResponse(res);
+}

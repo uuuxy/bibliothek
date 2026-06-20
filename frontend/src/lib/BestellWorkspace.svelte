@@ -1,7 +1,8 @@
 <script>
   import { onMount } from "svelte";
   import { appState } from "../inventur/lib/store.svelte.js";
-  import { apiFetch, apiClient } from "./apiFetch.js";
+  import { apiGet, apiPost, apiDelete } from "./apiFetch.js";
+  import { toastStore } from "./stores/toastStore.svelte.js";
   import { playSuccessBeep, playErrorBeep } from "./audio.js";
 
   import OrderCreationPanel from "./components/bestellungen/OrderCreationPanel.svelte";
@@ -22,8 +23,6 @@
   let orderTotal = $derived(orderCart.reduce((sum, item) => sum + (item.menge * (Number(item.preis) || 0)), 0));
   let submittingOrder = $state(false);
   let generateBarcodes = $state(false);
-  /** @type {any} */
-  let orderMessage = $state(null);
   /** @type {any[]} */
   let recommendations = $state([]);
   /** @type {any[]} */
@@ -46,23 +45,20 @@
 
   async function loadSuppliers() {
     try {
-      const res = await apiFetch("/api/lieferanten");
-      if (res.ok) suppliers = (await res.json()) || [];
-    } catch (err) { console.error("Fehler beim Laden der Lieferanten:", err); }
+      suppliers = await apiGet("/api/lieferanten") || [];
+    } catch { /* toast handles error */ }
   }
 
   async function loadIncomingShipments() {
     try {
-      const res = await apiFetch("/api/bestellungen/zulauf");
-      if (res.ok) incomingShipments = (await res.json()) || [];
-    } catch (err) { console.error("Fehler beim Laden des Wareneingangs:", err); }
+      incomingShipments = await apiGet("/api/bestellungen/zulauf") || [];
+    } catch { /* toast handles error */ }
   }
 
   async function fetchRecommendations() {
     try {
-      const res = await apiFetch("/api/bestellungen");
-      if (res.ok) recommendations = (await res.json()) || [];
-    } catch (err) { console.error(err); }
+      recommendations = await apiGet("/api/bestellungen") || [];
+    } catch { /* toast handles error */ }
   }
 
   /**
@@ -73,28 +69,18 @@
   async function addSupplier(name, email, customerNumber) {
     if (!name || !email || !customerNumber) return;
     try {
-      const res = await apiClient.post("/api/lieferanten", { name, email, customerNumber });
-      if (res.ok) {
-        await loadSuppliers();
-      } else {
-        const txt = await res.text();
-        alert("Fehler beim Erstellen des Lieferanten: " + txt);
-      }
-    } catch (err) { console.error(err); }
+      await apiPost("/api/lieferanten", { name, email, customerNumber });
+      await loadSuppliers();
+    } catch { /* toast handles error */ }
   }
 
   /** @param {string} id */
   async function removeSupplier(id) {
     try {
-      const res = await apiFetch(`/api/lieferanten/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        await loadSuppliers();
-        selectedSupplierIdx = Math.max(0, Math.min(selectedSupplierIdx, suppliers.length - 1));
-      } else {
-        const txt = await res.text();
-        alert("Fehler beim Löschen des Lieferanten: " + txt);
-      }
-    } catch (err) { console.error(err); }
+      await apiDelete(`/api/lieferanten/${id}`);
+      await loadSuppliers();
+      selectedSupplierIdx = Math.max(0, Math.min(selectedSupplierIdx, suppliers.length - 1));
+    } catch { /* toast handles error */ }
   }
 
   /** @type {any} */
@@ -111,12 +97,7 @@
       searchResults = []; showDropdown = false; isbnPreview = null; isbnLoading = true;
       (async () => {
         try {
-          const res = await apiClient.post("/api/buecher/aus-isbn", { isbn: cleanQuery });
-          if (res.ok) {
-            isbnPreview = await res.json();
-          } else {
-            isbnPreview = { error: true };
-          }
+          isbnPreview = await apiPost("/api/buecher/aus-isbn", { isbn: cleanQuery });
         } catch { isbnPreview = { error: true }; }
         finally { isbnLoading = false; }
       })();
@@ -124,16 +105,13 @@
       isbnPreview = null; isbnLoading = false;
       const performSearch = async () => {
         try {
-          const res = await apiClient.post("/api/action", { query: searchQuery });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.type === "search_results") {
-              searchResults = data.search_results || [];
-              showDropdown = searchResults.length > 0;
-            }
+          const data = await apiPost("/api/action", { query: searchQuery });
+          if (data && data.type === "search_results") {
+            searchResults = data.search_results || [];
+            showDropdown = searchResults.length > 0;
           }
-        } catch (err) {
-          console.error("Fehler bei der Buchsuche:", err);
+        } catch {
+          // toast handles error
         }
       };
       searchTimeout = setTimeout(performSearch, 300);
@@ -153,26 +131,20 @@
 
   async function submitOrder() {
     if (!orderCart.length || !suppliers.length) return;
-    submittingOrder = true; orderMessage = null;
+    submittingOrder = true;
     const supplier = suppliers[selectedSupplierIdx];
     try {
-      const res = await apiClient.post("/api/orders", {
+      const data = await apiPost("/api/orders", {
           supplier_id: supplier.id,
           items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge, preis: Number(item.preis) || 0 })),
           generate_barcodes: generateBarcodes
-        });
-      const data = await res.json();
-      if (res.ok) {
-        orderCart = [];
-        orderMessage = { type: "success", text: `Bestellung erfolgreich per E-Mail an ${supplier.name} gesendet. ${data.ordered_qty} Barcodes wurden im System reserviert.` };
-        await loadIncomingShipments();
-        fetchRecommendations();
-      } else {
-        throw new Error(data.message || "Fehler beim Bestellen");
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      orderMessage = { type: "error", text: "Fehler: " + errMsg };
+      });
+      orderCart = [];
+      toastStore.addToast(`Bestellung erfolgreich per E-Mail an ${supplier.name} gesendet. ${data.ordered_qty} Barcodes reserviert.`, "success");
+      await loadIncomingShipments();
+      fetchRecommendations();
+    } catch {
+      // toast handles error
     } finally { submittingOrder = false; }
   }
 
@@ -180,22 +152,15 @@
   async function receiveItem(titelId) {
     if (!scannedBarcode) return;
     try {
-      const res = await apiClient.post("/api/orders/receive", { titel_id: titelId, barcode: scannedBarcode });
-      if (res.ok) {
-        playSuccessBeep();
-        showGreenFade = true;
-        scannedBarcode = "";
-        scanningTitelId = null;
-        await loadIncomingShipments();
-        setTimeout(() => { showGreenFade = false; fetchRecommendations(); }, 1500);
-      } else {
-        const txt = await res.text();
-        throw new Error(txt);
-      }
-    } catch (err) {
+      await apiPost("/api/orders/receive", { titel_id: titelId, barcode: scannedBarcode });
+      playSuccessBeep();
+      showGreenFade = true;
+      scannedBarcode = "";
+      scanningTitelId = null;
+      await loadIncomingShipments();
+      setTimeout(() => { showGreenFade = false; fetchRecommendations(); }, 1500);
+    } catch {
       playErrorBeep();
-      const msg = err instanceof Error ? err.message : String(err);
-      alert("Fehler beim Scannen: " + msg);
       const currentId = scanningTitelId;
       scanningTitelId = null;
       setTimeout(() => { scanningTitelId = currentId; scannedBarcode = ""; }, 10);
@@ -207,27 +172,20 @@
     isReleasing = true;
     printSuggestion = null;
     try {
-      const res = await apiFetch("/api/bestellungen/freigeben", { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        showGreenFade = true;
-        if (data.released_items && data.released_items.length > 0) {
-          const needsPrinting = data.released_items.filter(/** @type {any} */ item => !item.etikett_gedruckt);
-          if (needsPrinting.length > 0) {
-            printSuggestion = needsPrinting;
-          }
+      const data = await apiPost("/api/bestellungen/freigeben");
+      showGreenFade = true;
+      if (data && data.released_items && data.released_items.length > 0) {
+        const needsPrinting = data.released_items.filter(/** @type {any} */ item => !item.etikett_gedruckt);
+        if (needsPrinting.length > 0) {
+          printSuggestion = needsPrinting;
         }
-        setTimeout(async () => {
-          await loadIncomingShipments();
-          showGreenFade = false;
-          fetchRecommendations();
-        }, 1500);
-      } else {
-        const txt = await res.text();
-        alert("Fehler beim Freigeben: " + txt);
       }
-    } catch (err) {
-      console.error(err);
+      setTimeout(async () => {
+        await loadIncomingShipments();
+        showGreenFade = false;
+        fetchRecommendations();
+      }, 1500);
+    } catch {
       showGreenFade = true;
       setTimeout(async () => {
         await loadIncomingShipments();
@@ -241,19 +199,13 @@
     if (!incomingShipments.length) return;
     isReleasing = true;
     try {
-      const res = await apiClient.post("/api/orders/release");
-      if (res.ok) {
-        const data = await res.json();
-        showGreenFade = true;
-        orderMessage = { type: "success", text: `Lieferung freigegeben. ${data.released_count} Exemplare sind nun im aktiven Bestand.` };
-        await loadIncomingShipments();
-        setTimeout(() => { showGreenFade = false; fetchRecommendations(); }, 1500);
-      } else {
-        const txt = await res.text();
-        alert("Fehler beim Freigeben (Naacher): " + txt);
-      }
-    } catch (err) {
-      console.error(err);
+      const data = await apiPost("/api/orders/release");
+      showGreenFade = true;
+      toastStore.addToast(`Lieferung freigegeben. ${data.released_count} Exemplare sind nun im aktiven Bestand.`, "success");
+      await loadIncomingShipments();
+      setTimeout(() => { showGreenFade = false; fetchRecommendations(); }, 1500);
+    } catch {
+      // error toast shown
     } finally { isReleasing = false; }
   }
 
@@ -274,12 +226,6 @@
       <a href="/api/bestellungen/pdf" download class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold border border-slate-200 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-2xs">🖨️ PDF-Bestellliste</a>
     </div>
   </div>
-
-  {#if orderMessage}
-    <div class="p-3 rounded-lg border text-xs font-semibold flex justify-between items-center {orderMessage.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'}">
-      <span>{orderMessage.type === 'success' ? '✅' : '❌'} {orderMessage.text}</span><button onclick={() => orderMessage = null} class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
-    </div>
-  {/if}
 
   {#if activeTab === "bestellungen"}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start overflow-y-auto">

@@ -1,15 +1,14 @@
 <script>
-  import { apiFetch, apiClient } from "./apiFetch.js";
+  import { apiGet, apiPost, apiDelete } from "./apiFetch.js";
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
   import LitteraImportWidget from './LitteraImportWidget.svelte';
   import PermissionManager from './PermissionManager.svelte';
+  import { toastStore } from "./stores/toastStore.svelte.js";
 
   // --- STATE ---
   let loading = $state(true);
   let saving = $state(false);
-  /** @type {{msg: string, type: string} | null} */
-  let toast = $state(null);
 
   // Tabs
   const tabs = ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "Daten-Import", "System"];
@@ -35,35 +34,23 @@
   let mappingSaving = $state(false);
 
   // --- LOGIC ---
-  /**
-   * @param {string} msg
-   * @param {string} [type]
-   */
-  function showToast(msg, type = 'success') {
-    toast = { msg, type };
-    setTimeout(() => { toast = null; }, 3500);
-  }
 
   async function loadSettings() {
     try {
-      const res = await apiClient.get('/api/einstellungen');
-      if (res.ok) {
-        const data = await res.json();
-        ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;
-        ferienLeseclubZieldatum = data.ferien_leseclub_zieldatum ?? '';
-        lmfStichtag = data.lmf_stichtag ?? '07-31';
-        maxAusleihenSchueler = data.max_ausleihen_schueler ?? 5;
-        fristBuchTage = data.frist_buch_tage ?? 21;
-        fristMedienTage = data.frist_medien_tage ?? 7;
-      }
+      const data = await apiGet('/api/einstellungen');
+      ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;
+      ferienLeseclubZieldatum = data.ferien_leseclub_zieldatum ?? '';
+      lmfStichtag = data.lmf_stichtag ?? '07-31';
+      maxAusleihenSchueler = data.max_ausleihen_schueler ?? 5;
+      fristBuchTage = data.frist_buch_tage ?? 21;
+      fristMedienTage = data.frist_medien_tage ?? 7;
     } catch { /* use defaults */ }
   }
 
   async function fetchMapping() {
     mappingLoading = true;
     try {
-      const res = await apiFetch('/api/klassen-mapping');
-      if (res.ok) mappingRows = await res.json();
+      mappingRows = await apiGet('/api/klassen-mapping') || [];
     } catch { /* ignore */ } finally {
       mappingLoading = false;
     }
@@ -78,21 +65,17 @@
   async function saveSettings() {
     saving = true;
     try {
-      const res = await apiClient.post('/api/einstellungen', {
+      await apiPost('/api/einstellungen', {
           ferien_leseclub_aktiv: ferienLeseclubAktiv,
           ferien_leseclub_zieldatum: ferienLeseclubZieldatum || null,
           lmf_stichtag: lmfStichtag || '07-31',
           max_ausleihen_schueler: maxAusleihenSchueler,
           frist_buch_tage: fristBuchTage,
           frist_medien_tage: fristMedienTage
-        });
-      if (res.ok) {
-        showToast('Einstellungen gespeichert.');
-      } else {
-        showToast((await res.text()) || 'Fehler beim Speichern', 'error');
-      }
+      });
+      toastStore.addToast('Einstellungen gespeichert.', 'success');
     } catch {
-      showToast('Netzwerkfehler', 'error');
+      // Toast already shown by apiPost
     }
     saving = false;
   }
@@ -101,18 +84,13 @@
     if (!newMappingKlasse.trim() || !newMappingEmail.trim()) return;
     mappingSaving = true;
     try {
-      const res = await apiClient.post('/api/klassen-mapping', { klasse: newMappingKlasse.trim(), lehrer_email: newMappingEmail.trim()
-      });
-      if (res.ok) {
-        newMappingKlasse = '';
-        newMappingEmail = '';
-        await fetchMapping();
-        showToast('Mapping gespeichert.');
-      } else {
-        showToast((await res.text()) || 'Fehler beim Speichern', 'error');
-      }
+      await apiPost('/api/klassen-mapping', { klasse: newMappingKlasse.trim(), lehrer_email: newMappingEmail.trim() });
+      newMappingKlasse = '';
+      newMappingEmail = '';
+      await fetchMapping();
+      toastStore.addToast('Mapping gespeichert.', 'success');
     } catch {
-      showToast('Netzwerkfehler', 'error');
+      // Toast already shown by apiPost
     } finally {
       mappingSaving = false;
     }
@@ -121,15 +99,11 @@
   /** @param {string} klasse */
   async function deleteMapping(klasse) {
     try {
-      const res = await apiFetch(`/api/klassen-mapping/${encodeURIComponent(klasse)}`, { method: 'DELETE' });
-      if (res.ok || res.status === 204) {
-        await fetchMapping();
-        showToast(`Mapping für ${klasse} gelöscht.`);
-      } else {
-        showToast('Fehler beim Löschen', 'error');
-      }
+      await apiDelete(`/api/klassen-mapping/${encodeURIComponent(klasse)}`);
+      await fetchMapping();
+      toastStore.addToast(`Mapping für ${klasse} gelöscht.`, 'success');
     } catch {
-      showToast('Netzwerkfehler', 'error');
+      // Toast already shown by apiDelete
     }
   }
 </script>
@@ -165,14 +139,6 @@
     </div>
   {:else}
     
-    <!-- Toasts -->
-    {#if toast}
-      <div class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in
-        {toast.type === 'error' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}">
-        {toast.msg}
-      </div>
-    {/if}
-
     <!-- Tab Content -->
     <div class="pt-2 animate-fade-in">
       

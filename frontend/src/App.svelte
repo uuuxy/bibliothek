@@ -11,6 +11,7 @@
   import Sidebar from "./lib/components/layout/Sidebar.svelte";
   import Router from "./lib/Router.svelte";
   import OfflineIndicator from "./lib/components/OfflineIndicator.svelte";
+  import ToastContainer from "./lib/ToastContainer.svelte";
 
   const _currentPath = window.location.pathname;
 
@@ -75,6 +76,7 @@
   {/if}
 {/if}
 <OfflineIndicator />
+<ToastContainer />
 </main>
 
 <style>
