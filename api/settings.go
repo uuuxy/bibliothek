@@ -18,17 +18,19 @@ type SystemEinstellungen struct {
 	MaxAusleihenSchueler    int     `json:"max_ausleihen_schueler"`
 	FristBuchTage           int     `json:"frist_buch_tage"`
 	FristMedienTage         int     `json:"frist_medien_tage"`
+	MaxOverdueDays          int     `json:"max_overdue_days"`
+	MaxOverdueItems         int     `json:"max_overdue_items"`
 }
 
 // querySettings reads system settings from the database, returning safe defaults on error.
 func (s *Server) querySettings(ctx context.Context) (*SystemEinstellungen, error) {
 	rows, err := s.DB.Pool.Query(ctx, `SELECT schluessel, wert FROM system_einstellungen`)
 	if err != nil {
-		return &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7}, nil
+		return &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7, MaxOverdueDays: 14, MaxOverdueItems: 1}, nil
 	}
 	defer rows.Close()
 
-	settings := &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7}
+	settings := &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7, MaxOverdueDays: 14, MaxOverdueItems: 1}
 	for rows.Next() {
 		var key string
 		var val *string
@@ -63,6 +65,18 @@ func (s *Server) querySettings(ctx context.Context) (*SystemEinstellungen, error
 			if val != nil && *val != "" {
 				if v, err := strconv.Atoi(*val); err == nil {
 					settings.FristMedienTage = v
+				}
+			}
+		case "max_overdue_days":
+			if val != nil && *val != "" {
+				if v, err := strconv.Atoi(*val); err == nil {
+					settings.MaxOverdueDays = v
+				}
+			}
+		case "max_overdue_items":
+			if val != nil && *val != "" {
+				if v, err := strconv.Atoi(*val); err == nil {
+					settings.MaxOverdueItems = v
 				}
 			}
 		}
@@ -125,6 +139,14 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 		if req.FristMedienTage > 0 {
 			fristMedien = strconv.Itoa(req.FristMedienTage)
 		}
+		maxOverdueDays := "14"
+		if req.MaxOverdueDays >= 0 {
+			maxOverdueDays = strconv.Itoa(req.MaxOverdueDays)
+		}
+		maxOverdueItems := "1"
+		if req.MaxOverdueItems > 0 {
+			maxOverdueItems = strconv.Itoa(req.MaxOverdueItems)
+		}
 
 		pairs := [][2]string{
 			{"ferien_leseclub_aktiv", aktiv},
@@ -133,6 +155,8 @@ func (s *Server) UpdateSettingsHandler() http.HandlerFunc {
 			{"max_ausleihen_schueler", maxAusleihen},
 			{"frist_buch_tage", fristBuch},
 			{"frist_medien_tage", fristMedien},
+			{"max_overdue_days", maxOverdueDays},
+			{"max_overdue_items", maxOverdueItems},
 		}
 		for _, p := range pairs {
 			if _, err := s.DB.Pool.Exec(ctx, upsert, p[0], p[1]); err != nil {

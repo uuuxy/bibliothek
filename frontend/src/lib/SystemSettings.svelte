@@ -24,6 +24,8 @@
   let maxAusleihenSchueler = $state(5);
   let fristBuchTage = $state(21);
   let fristMedienTage = $state(7);
+  let maxOverdueDays = $state(14);
+  let maxOverdueItems = $state(1);
 
   // Klassenlehrer-Mapping (Mahnwesen-Routing)
   /** @type {{klasse: string, lehrer_email: string}[]} */
@@ -44,6 +46,8 @@
       maxAusleihenSchueler = data.max_ausleihen_schueler ?? 5;
       fristBuchTage = data.frist_buch_tage ?? 21;
       fristMedienTage = data.frist_medien_tage ?? 7;
+      maxOverdueDays = data.max_overdue_days ?? 14;
+      maxOverdueItems = data.max_overdue_items ?? 1;
     } catch { /* use defaults */ }
   }
 
@@ -71,7 +75,9 @@
           lmf_stichtag: lmfStichtag || '07-31',
           max_ausleihen_schueler: maxAusleihenSchueler,
           frist_buch_tage: fristBuchTage,
-          frist_medien_tage: fristMedienTage
+          frist_medien_tage: fristMedienTage,
+          max_overdue_days: maxOverdueDays,
+          max_overdue_items: maxOverdueItems
       });
       toastStore.addToast('Einstellungen gespeichert.', 'success');
     } catch {
@@ -225,6 +231,26 @@
                 <div class="text-xs text-purple-500 mt-3 font-semibold uppercase tracking-wider">Max Ausleihen</div>
               </div>
 
+            </div>
+          </div>
+
+          <!-- Sperr-Automatik Card -->
+          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
+            <h3 class="text-base font-bold text-slate-900 mb-2">Sperr-Automatik (Mahnwesen)</h3>
+            <p class="text-xs text-slate-500 mb-5 leading-relaxed">Automatische Ausleihsperre am Kiosk für Schüler mit überfälligen Medien. Ausgenommen sind Geräte/Dauerleihen (z.B. Laptops).</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Toleranz-Tage -->
+              <div class="rounded-2xl bg-rose-50 border border-rose-100 p-5 flex flex-col items-center justify-center">
+                <input type="number" bind:value={maxOverdueDays} min="0" max="365" class="w-20 bg-white border border-rose-200 rounded-xl px-2 py-2 text-xl font-bold text-rose-600 text-center focus:border-rose-400 focus:ring-2 focus:ring-rose-100 focus:outline-none transition-all" />
+                <div class="text-xs text-rose-500 mt-3 font-semibold uppercase tracking-wider">Tage bis Sperre</div>
+              </div>
+
+              <!-- Toleranz-Items -->
+              <div class="rounded-2xl bg-rose-50 border border-rose-100 p-5 flex flex-col items-center justify-center">
+                <input type="number" bind:value={maxOverdueItems} min="1" max="50" class="w-20 bg-white border border-rose-200 rounded-xl px-2 py-2 text-xl font-bold text-rose-600 text-center focus:border-rose-400 focus:ring-2 focus:ring-rose-100 focus:outline-none transition-all" />
+                <div class="text-xs text-rose-500 mt-3 font-semibold uppercase tracking-wider">Ab x Medien sperren</div>
+              </div>
             </div>
           </div>
 

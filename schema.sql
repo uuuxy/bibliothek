@@ -51,7 +51,9 @@ INSERT INTO system_einstellungen (schluessel, wert) VALUES
     ('lmf_stichtag', '07-31'),
     ('max_ausleihen_schueler', '5'),
     ('frist_buch_tage', '21'),
-    ('frist_medien_tage', '7')
+    ('frist_medien_tage', '7'),
+    ('max_overdue_days', '14'),
+    ('max_overdue_items', '1')
 ON CONFLICT (schluessel) DO NOTHING;
 
 
@@ -132,7 +134,9 @@ CREATE TABLE schueler (
     ort VARCHAR(255),
     eltern_email VARCHAR(255),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_manually_blocked BOOLEAN DEFAULT false,
+    block_reason TEXT
 );
 
 CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);

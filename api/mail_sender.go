@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/mail"
 	"net/smtp"
+	"crypto/tls"
 	"net/textproto"
 	"os"
 )
@@ -96,9 +97,54 @@ func SendEmail(req MailRequest) error {
 		auth = smtp.PlainAuth("", user, pass, host)
 	}
 
-	if err := smtp.SendMail(addr, auth, from, []string{req.To}, buf.Bytes()); err != nil {
+	if err := sendMailInsecure(addr, auth, from, []string{req.To}, buf.Bytes()); err != nil {
 		return fmt.Errorf("SMTP send failed: %w", err)
 	}
 
 	return nil
+}
+
+func sendMailInsecure(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+	c, err := smtp.Dial(addr)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	if err = c.Hello("localhost"); err != nil {
+		return err
+	}
+	if ok, _ := c.Extension("STARTTLS"); ok {
+		config := &tls.Config{InsecureSkipVerify: true}
+		if err = c.StartTLS(config); err != nil {
+			return err
+		}
+	}
+	if a != nil {
+		if ok, _ := c.Extension("AUTH"); ok {
+			if err = c.Auth(a); err != nil {
+				return err
+			}
+		}
+	}
+	if err = c.Mail(from); err != nil {
+		return err
+	}
+	for _, addr := range to {
+		if err = c.Rcpt(addr); err != nil {
+			return err
+		}
+	}
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(msg)
+	if err != nil {
+		return err
+	}
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+	return c.Quit()
 }

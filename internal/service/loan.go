@@ -53,7 +53,7 @@ type LoanService interface {
 	// HandleUnifiedCheckout wickelt die Ausleihe eines Buchexemplars an einen Schüler oder Lehrer ab.
 	// Falls das Exemplar bereits von jemand anderem ausgeliehen war, wird dieses zuerst automatisch zurückgegeben
 	// (Fremdrückgabe) und danach für den neuen Ausleiher verbucht.
-	HandleUnifiedCheckout(ctx context.Context, copy *repository.BookCopy, activeStudentID *string, activeTeacherID *string, staffID string) (*LoanResult, error)
+	HandleUnifiedCheckout(ctx context.Context, copy *repository.BookCopy, activeStudentID *string, activeTeacherID *string, staffID string, overrideBlock bool) (*LoanResult, error)
 
 	// HandleSimpleReturn wickelt die direkte Rückgabe eines Buchexemplars ab (ohne dass ein neuer Ausleiher aktiv ist).
 	// Wenn eine Lehrkraft das Buch scannt und es frei ist, wird eine Ausleihe an diese Lehrkraft als Handapparat initiiert.

@@ -67,6 +67,17 @@
       abgangSaving = false;
     }
   }
+
+  async function handleBlockChange() {
+    try {
+      await apiClient.patch(`/api/schueler/${profile.id}`, { 
+        is_manually_blocked: profile.is_manually_blocked,
+        block_reason: profile.block_reason || ""
+      });
+    } catch (e) {
+      console.error("Fehler beim Speichern der manuellen Sperre", e);
+    }
+  }
 </script>
 
 <div class="lg:col-span-1 relative bg-white rounded-3xl border border-slate-100 shadow-lg p-8 flex flex-col items-center text-center space-y-6">
@@ -147,6 +158,23 @@
       </span>
     {/if}
   </div>
+
+  {#if role === 'admin' || role === 'mitarbeiter'}
+  <div class="w-full flex flex-col gap-3 pt-4 border-t border-slate-100 text-left">
+    <label class="flex items-center justify-between cursor-pointer group">
+      <span class="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Manuelle Ausleihsperre</span>
+      <div class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-rose-500 {profile.is_manually_blocked ? 'bg-rose-500' : 'bg-slate-300'}">
+        <input type="checkbox" class="peer sr-only" bind:checked={profile.is_manually_blocked} onchange={handleBlockChange}>
+        <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ease-in-out ml-1 {profile.is_manually_blocked ? 'translate-x-5' : 'translate-x-0'}"></span>
+      </div>
+    </label>
+    {#if profile.is_manually_blocked}
+      <div class="flex flex-col gap-2 mt-1 animate-fade-in">
+        <textarea bind:value={profile.block_reason} onchange={handleBlockChange} class="w-full border border-rose-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 bg-rose-50 text-rose-900 placeholder-rose-300" rows="2" placeholder="Begründung eingeben..."></textarea>
+      </div>
+    {/if}
+  </div>
+  {/if}
 
   <div class="w-full pt-4 flex flex-col gap-3">
     <button onclick={onPrint} class="w-full py-3.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-full text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2">

@@ -21,6 +21,7 @@ export function createKioskStore() {
     let isShaking = $state(false);
     let isScanningStudent = $state(false);
     let isScanningBook = $state(false);
+    let overrideBlock = $state(false);
 
     // ── Damage Modal State ────────────────────────────────────────────
     let returnedBook = $state(/** @type {any} */ (null));
@@ -55,6 +56,7 @@ export function createKioskStore() {
 
     let isStudentBlocked = $derived.by(() => {
         if (!activeStudent) return false;
+        if (activeStudent.is_manually_blocked) return true;
         const now = new Date().getTime();
         return activeStudent.active_loans?.some((/** @type {any} */ loan) => {
             if (!loan.rueckgabe_frist) return false;
@@ -84,6 +86,7 @@ export function createKioskStore() {
         scannedBooks = [];
         studentInputVal = "";
         bookInputVal = "";
+        overrideBlock = false;
         focusStudentInput();
     }
 
@@ -151,7 +154,12 @@ export function createKioskStore() {
         
         isScanningBook = true;
         try {
-            const res = await apiClient.post("/api/action", { query: val, active_student_id: activeStudent.id });
+            const payload = { 
+                query: val, 
+                active_student_id: activeStudent.id,
+                override_block: overrideBlock
+            };
+            const res = await apiClient.post("/api/action", payload);
             if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
             if (data.type === "ausleihe") {
@@ -356,6 +364,8 @@ export function createKioskStore() {
         get systemSettings() { return systemSettings; },
         get isLimitReached() { return isLimitReached; },
         get isStudentBlocked() { return isStudentBlocked; },
+        get overrideBlock() { return overrideBlock; },
+        set overrideBlock(v) { overrideBlock = v; },
         
         // Methoden
         triggerFlash,
@@ -369,7 +379,20 @@ export function createKioskStore() {
         handleDamageSubmit,
         handleVormerkenSearch,
         handleVormerkenSubmit,
-        handleChecklistSubmit
+        handleChecklistSubmit,
+        clearManualBlock: async () => {
+            if (!activeStudent || !activeStudent.is_manually_blocked) return;
+            try {
+                const res = await apiClient.patch(`/api/schueler/${activeStudent.id}`, { is_manually_blocked: false, block_reason: "" });
+                if (res.ok) {
+                    activeStudent.is_manually_blocked = false;
+                    activeStudent.block_reason = "";
+                    triggerFlash("success", "Sperre dauerhaft aufgehoben!");
+                }
+            } catch (e) {
+                triggerFlash("error", "Fehler beim Aufheben der Sperre.");
+            }
+        }
     };
 }
 

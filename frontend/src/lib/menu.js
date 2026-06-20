@@ -88,6 +88,7 @@ export const menuGroups = [
     name: "Verwaltung",
     items: [
       { id: "students_dir", label: "Schülerdatei", icon: "users", permission: "view_students" },
+      { id: "graduates", label: "Abgänger", icon: "academic-cap", permission: "view_graduates" },
       { id: "orders", label: "Bestellungen", icon: "shopping-bag", permission: "view_orders" },
       { id: "inventory", label: "Inventur", icon: "clipboard", permission: "inventory_scan" }
     ]

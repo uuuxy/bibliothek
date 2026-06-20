@@ -19,16 +19,15 @@ import (
 
 // OrderItemRequest represents a single item to order from the cart
 type OrderItemRequest struct {
-	TitelID string  `json:"titel_id"`
-	Menge   int     `json:"menge"`
-	Preis   float64 `json:"preis"`
+	TitelID          string  `json:"titel_id"`
+	Menge            int     `json:"menge"`
+	Preis            float64 `json:"preis"`
+	GenerateBarcodes bool    `json:"generate_barcodes"`
 }
 
-// SubmitOrderRequest represents the payload for POST /api/orders
 type SubmitOrderRequest struct {
 	SupplierID       string             `json:"supplier_id"`
 	Items            []OrderItemRequest `json:"items"`
-	GenerateBarcodes bool               `json:"generate_barcodes"`
 }
 
 // SubmitOrderHandler processes a full cart order via the OrderService and dispatches PDFs via PDFService.
@@ -73,7 +72,16 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			return
 		}
 
-		if err := pdfSvc.DispatchOrderEmail(res.SupplierName, res.SupplierEmail, res.CustomerNumber, res.SummaryItems, res.Labels, req.GenerateBarcodes); err != nil {
+		// Sum up how many items have generate_barcodes to pass to pdfSvc
+		anyBarcodesGenerated := false
+		for _, item := range req.Items {
+			if item.GenerateBarcodes {
+				anyBarcodesGenerated = true
+				break
+			}
+		}
+
+		if err := pdfSvc.DispatchOrderEmail(res.SupplierName, res.SupplierEmail, res.CustomerNumber, res.SummaryItems, res.Labels, anyBarcodesGenerated); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
 				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
@@ -346,3 +354,60 @@ func (s *Server) SearchOrdersHandler() http.HandlerFunc {
 	}
 }
 
+// BulkReceiveRequest represents the payload for bulk receiving an order.
+type BulkReceiveRequest struct {
+	SupplierName string `json:"supplier_name"`
+	Date         string `json:"date"`
+}
+
+// BulkReceiveOrderHandler marks all pre-allocated items for a specific order group as received.
+func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req BulkReceiveRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return
+		}
+
+		if req.SupplierName == "" || req.Date == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("supplier_name and date are required"))
+			return
+		}
+
+		ctx := r.Context()
+
+		query := `
+			UPDATE buecher_exemplare
+			SET ist_ausleihbar = true, zustand_notiz = ''
+			WHERE ist_ausleihbar = false
+			  AND (
+				zustand_notiz = 'Im Zulauf - ' || $1 OR
+				($1 = 'Vorab-Barcode Bestellung' AND zustand_notiz = 'Bestellt (Lieferanten-Vorab-Barcode)') OR
+				($1 = 'Automatische Nachbestellung' AND zustand_notiz = 'bestellt')
+			  )
+			  AND TO_CHAR(erstellt_am, 'DD.MM.YYYY') = $2
+			  AND barcode_id IS NOT NULL
+			RETURNING id
+		`
+
+		rows, err := s.DB.Pool.Query(ctx, query, req.SupplierName, req.Date)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer rows.Close()
+
+		var updatedIDs []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				continue
+			}
+			updatedIDs = append(updatedIDs, id)
+		}
+
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"status": "success",
+			"received_count": len(updatedIDs),
+		})
+	}
+}

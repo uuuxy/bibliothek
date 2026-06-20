@@ -53,6 +53,10 @@ type Student struct {
 	ErstelltAm time.Time `json:"erstellt_am"`
 	// AktualisiertAm ist der Zeitpunkt der letzten Aktualisierung.
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
+	// IsManuallyBlocked zeigt an, ob der Schüler manuell (Hard-Block) gesperrt wurde.
+	IsManuallyBlocked bool `json:"is_manually_blocked"`
+	// BlockReason enthält die Begründung für die manuelle Sperre.
+	BlockReason *string `json:"block_reason,omitempty"`
 }
 
 // BookTitle repräsentiert die beschreibenden Metadaten eines Buchtitels oder Werks (Tabelle `buecher_titel`).

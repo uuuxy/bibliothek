@@ -120,9 +120,11 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			Klasse        *string `json:"klasse"`
 			LusdID        *string `json:"lusd_id"`
 			BarcodeID     *string `json:"barcode_id"`
-			Status        *string `json:"status"`
-			AbgaengerJahr *int    `json:"abgaenger_jahr"`
-			Geburtsdatum  *string `json:"geburtsdatum"`
+			Status            *string `json:"status"`
+			AbgaengerJahr     *int    `json:"abgaenger_jahr"`
+			Geburtsdatum      *string `json:"geburtsdatum"`
+			IsManuallyBlocked *bool   `json:"is_manually_blocked"`
+			BlockReason       *string `json:"block_reason"`
 		}
 		if !DecodeAndValidate(w, r, &req) {
 			return
@@ -187,6 +189,18 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			}
 			query += fmt.Sprintf(", geburtsdatum = $%d", argId)
 			args = append(args, parsedDate)
+			argId++
+		}
+
+		if req.IsManuallyBlocked != nil {
+			query += fmt.Sprintf(", is_manually_blocked = $%d", argId)
+			args = append(args, *req.IsManuallyBlocked)
+			argId++
+		}
+
+		if req.BlockReason != nil {
+			query += fmt.Sprintf(", block_reason = $%d", argId)
+			args = append(args, *req.BlockReason)
 			argId++
 		}
 

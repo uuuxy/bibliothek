@@ -36,10 +36,23 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock StudentRepo.GetByID
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am FROM schueler WHERE id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 LIMIT 1").
 		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am"}).
-			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now()))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason"}).
+			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil))
+
+	// 1. Settings query for auto-block
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
+			AddRow("max_ausleihen_schueler", "5").
+			AddRow("standard_ausleihfrist_tage", "14").
+			AddRow("max_overdue_days", "14").
+			AddRow("max_overdue_items", "1"))
+
+	// Overdue check mock
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen WHERE schueler_id = \\$1 AND rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP - \\(INTERVAL '1 day' \\* \\$2\\) AND ist_handapparat = false AND geraet_id IS NULL").
+		WithArgs(studentID, 14).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 2. querySettings inside resolveCheckoutDueDate
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
@@ -96,7 +109,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	lr, err := loanSvc.HandleUnifiedCheckout(context.Background(), copy, &studentID, nil, staffID)
+	lr, err := loanSvc.HandleUnifiedCheckout(context.Background(), copy, &studentID, nil, staffID, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -146,10 +159,10 @@ func TestHandleBookReturn(t *testing.T) {
 			AddRow(activeLoanID, &copyID, &studentID, nil, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, staffID, nil, false, false))
 
 	// Student lookup fallback
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am FROM schueler WHERE id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 LIMIT 1").
 		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am"}).
-			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now()))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason"}).
+			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil))
 
 	// ReturnLoanTx
 	mock.ExpectExec("UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = \\$1, ist_fremdrueckgabe = \\$2 WHERE id = \\$3 AND rueckgabe_am IS NULL").
@@ -167,7 +180,7 @@ func TestHandleBookReturn(t *testing.T) {
 
 	claims := &auth.Claims{UserID: staffID, Rolle: auth.RoleMitarbeiter}
 
-	res, err := omniboxSvc.ProcessQuery(context.Background(), barcode, nil, nil, false, claims.UserID, string(claims.Rolle))
+	res, err := omniboxSvc.ProcessQuery(context.Background(), barcode, nil, nil, false, claims.UserID, string(claims.Rolle), false)
 	var resp ActionResponse
 	if res != nil {
 		resp = *mapOmniboxResultToActionResponse(res)

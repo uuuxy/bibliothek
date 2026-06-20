@@ -78,7 +78,7 @@ func NewStudentRepository(db db.PgxPoolIface) StudentRepository {
 func scanStudent(row Scanner) (*Student, error) {
 	var s Student
 	err := row.Scan(
-		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm,
+		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm, &s.IsManuallyBlocked, &s.BlockReason,
 	)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func scanStudent(row Scanner) (*Student, error) {
 // GetByBarcode liest einen Schüler anhand seiner Barcode-ID aus.
 func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) (*Student, error) {
 	query := `
-		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am
+		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason
 		FROM schueler
 		WHERE barcode_id = $1
 		LIMIT 1
@@ -107,7 +107,7 @@ func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) 
 // GetByID liest einen Schüler anhand seiner UUID aus.
 func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student, error) {
 	query := `
-		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am
+		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason
 		FROM schueler
 		WHERE id = $1
 		LIMIT 1
@@ -125,7 +125,7 @@ func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student,
 // SearchStudentsFuzzy durchsucht die Schülerschaft nach Namen oder Barcodes.
 func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error) {
 	query := `
-		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am
+		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason
 		FROM schueler
 		WHERE vorname ILIKE '%' || $1 || '%' 
 		   OR nachname ILIKE '%' || $1 || '%'

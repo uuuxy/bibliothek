@@ -80,7 +80,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 			Menge:  item.Menge,
 		})
 
-		if req.GenerateBarcodes {
+		if item.GenerateBarcodes {
 			barcodes, err := s.bookRepo.GenerateBarcodes(ctx, item.Menge)
 			if err != nil {
 				return nil, fmt.Errorf("sequence error: %w", err)

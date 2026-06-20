@@ -24,6 +24,10 @@ type SystemEinstellungen struct {
 	FerienLeseclubAktiv bool
 	// FerienLeseclubZieldatum definiert das feste Rückgabedatum für alle Leseclub-Ausleihen.
 	FerienLeseclubZieldatum *string
+	// MaxOverdueDays: Anzahl der Toleranztage bevor ein Schüler blockiert wird.
+	MaxOverdueDays int
+	// MaxOverdueItems: Anzahl der überfälligen Medien ab denen blockiert wird.
+	MaxOverdueItems int
 }
 
 // querySettings liest die aktuellen Einstellungen aus der Datenbank aus und liefert
@@ -42,6 +46,8 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 		MaxAusleihenSchueler: 5,
 		LmfStichtag:          "07-31",
 		FerienLeseclubAktiv:  false,
+		MaxOverdueDays:       14,
+		MaxOverdueItems:      1,
 	}
 
 	for rows.Next() {
@@ -70,6 +76,14 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 			if value != "" {
 				val := value
 				settings.FerienLeseclubZieldatum = &val
+			}
+		case "max_overdue_days":
+			if v, err := strconv.Atoi(value); err == nil {
+				settings.MaxOverdueDays = v
+			}
+		case "max_overdue_items":
+			if v, err := strconv.Atoi(value); err == nil {
+				settings.MaxOverdueItems = v
 			}
 		}
 	}

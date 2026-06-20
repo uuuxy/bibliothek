@@ -22,6 +22,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	activeStudentID *string,
 	activeTeacherID *string,
 	staffID string,
+	overrideBlock bool,
 ) (*LoanResult, error) {
 	resp := &LoanResult{}
 
@@ -47,10 +48,43 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		if sObj == nil {
 			return nil, fmt.Errorf("%w: Aktives Schülerprofil nicht gefunden", ErrNotFound)
 		}
-		// Wenn der Schüler gesperrt ist (z. B. wegen Mahnungen), darf er nichts ausleihen
-		if sObj.IstGesperrt {
-			return nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
+		// Wenn der Schüler gesperrt ist, darf er nichts ausleihen - es sei denn, overrideBlock ist gesetzt.
+		if !overrideBlock {
+			if sObj.IstGesperrt {
+				return nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
+			}
+			if sObj.IsManuallyBlocked {
+				reason := "ohne Grund"
+				if sObj.BlockReason != nil && *sObj.BlockReason != "" {
+					reason = *sObj.BlockReason
+				}
+				return nil, fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
+			}
+
+			settings, err := s.querySettings(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			var overdueCount int
+			errOverdue := s.pool.QueryRow(ctx, `
+				SELECT COUNT(*) 
+				FROM ausleihen 
+				WHERE schueler_id = $1 
+				  AND rueckgabe_am IS NULL 
+				  AND rueckgabe_frist < CURRENT_TIMESTAMP - (INTERVAL '1 day' * $2)
+				  AND ist_handapparat = false
+				  AND geraet_id IS NULL
+			`, borrowerID, settings.MaxOverdueDays).Scan(&overdueCount)
+			
+			if errOverdue != nil {
+				return nil, errOverdue
+			}
+			if overdueCount >= settings.MaxOverdueItems {
+				return nil, fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdueCount)
+			}
 		}
+
 		student = sObj
 
 		// Fälligkeitsdatum anhand der Ausleihregeln ermitteln (berücksichtigt Medienart, LMF und Leseclub)

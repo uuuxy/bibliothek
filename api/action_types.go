@@ -14,6 +14,7 @@ type ActionRequest struct {
 	ActiveStudentID    *string `json:"active_student_id,omitempty"`
 	ActiveTeacherID    *string `json:"active_teacher_id,omitempty"`
 	ConfirmedChecklist bool    `json:"confirmed_checklist,omitempty"`
+	OverrideBlock      bool    `json:"override_block,omitempty"`
 }
 
 // ActionBatchRequest holds the parameters for a batch of Omnibox actions.

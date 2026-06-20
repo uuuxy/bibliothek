@@ -32,13 +32,15 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 
 		ctx := r.Context()
 
-		res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle))
+		res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
 		if err != nil {
 			status := http.StatusInternalServerError
 			switch {
 			case errors.Is(err, service.ErrNotFound):
 				status = http.StatusNotFound
-			case errors.Is(err, service.ErrBlocked), errors.Is(err, service.ErrInvalidState):
+			case errors.Is(err, service.ErrBlocked):
+				status = http.StatusForbidden
+			case errors.Is(err, service.ErrInvalidState):
 				status = http.StatusBadRequest
 			case errors.Is(err, service.ErrConflict):
 				status = http.StatusConflict
@@ -111,7 +113,7 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 				continue
 			}
 
-			res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle))
+			res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
 
 			status := http.StatusOK
 			if err != nil {
@@ -119,7 +121,9 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 				switch {
 				case errors.Is(err, service.ErrNotFound):
 					status = http.StatusNotFound
-				case errors.Is(err, service.ErrBlocked), errors.Is(err, service.ErrInvalidState):
+				case errors.Is(err, service.ErrBlocked):
+					status = http.StatusForbidden
+				case errors.Is(err, service.ErrInvalidState):
 					status = http.StatusBadRequest
 				case errors.Is(err, service.ErrConflict):
 					status = http.StatusConflict

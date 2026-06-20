@@ -47,7 +47,7 @@ type OmniboxResult struct {
 // OmniboxService verarbeitet alle Eingaben aus der zentralen Suche/Scan-Leiste (Omnibox).
 type OmniboxService interface {
 	// ProcessQuery wertet eine Eingabe (Eingabestring) aus und steuert die passende Domänen-Aktion an.
-	ProcessQuery(ctx context.Context, query string, activeStudentID *string, activeTeacherID *string, confirmedChecklist bool, staffID string, staffRole string) (*OmniboxResult, error)
+	ProcessQuery(ctx context.Context, query string, activeStudentID *string, activeTeacherID *string, confirmedChecklist bool, staffID string, staffRole string, overrideBlock bool) (*OmniboxResult, error)
 }
 
 // defaultOmniboxService ist die Standard-Implementierung des OmniboxService.
@@ -88,6 +88,7 @@ func (s *defaultOmniboxService) ProcessQuery(
 	confirmedChecklist bool,
 	staffID string,
 	staffRole string,
+	overrideBlock bool,
 ) (*OmniboxResult, error) {
 	resp := &OmniboxResult{}
 	var err error
@@ -102,7 +103,7 @@ func (s *defaultOmniboxService) ProcessQuery(
 	} else if strings.HasPrefix(query, "L-") {
 		err = s.handleTeacherAction(ctx, query, resp)
 	} else if strings.HasPrefix(query, "B-") {
-		err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, resp)
+		err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
 	} else if strings.HasPrefix(query, "G-") {
 		dr, err := s.deviceSvc.HandleDeviceAction(ctx, query, activeStudentID, activeTeacherID, confirmedChecklist, staffID)
 		if err == nil {
@@ -113,7 +114,7 @@ func (s *defaultOmniboxService) ProcessQuery(
 		// Fallback: Wenn kein Präfix vorhanden ist, prüfen wir zuerst, ob die Eingabe ein registrierter Buch-Barcode ist.
 		// Ist dies der Fall, verarbeiten wir es als Buch-Aktion. Andernfalls führen wir eine Volltext-Titelsuche aus.
 		if copy, _ := s.bookRepo.GetCopyByBarcode(ctx, query); copy != nil {
-			err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, resp)
+			err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
 		} else {
 			err = s.handleSearchAction(ctx, query, resp)
 		}
@@ -206,6 +207,7 @@ func (s *defaultOmniboxService) handleBookAction(
 	activeTeacherID *string,
 	staffID string,
 	staffRole string,
+	overrideBlock bool,
 	resp *OmniboxResult,
 ) error {
 	copy, err := s.bookRepo.GetCopyByBarcode(ctx, query)
@@ -261,7 +263,7 @@ func (s *defaultOmniboxService) handleBookAction(
 
 	// Ausleihe durchführen, falls ein aktiver Ausleiher vorhanden ist
 	if (activeTeacherID != nil && *activeTeacherID != "") || (activeStudentID != nil && *activeStudentID != "") {
-		lr, err := s.loanSvc.HandleUnifiedCheckout(ctx, copy, activeStudentID, activeTeacherID, staffID)
+		lr, err := s.loanSvc.HandleUnifiedCheckout(ctx, copy, activeStudentID, activeTeacherID, staffID, overrideBlock)
 		if err != nil {
 			return err
 		}

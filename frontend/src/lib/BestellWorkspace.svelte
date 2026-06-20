@@ -7,6 +7,7 @@
 
   import OrderCreationPanel from "./components/bestellungen/OrderCreationPanel.svelte";
   import IncomingShipments from "./components/bestellungen/IncomingShipments.svelte";
+  import IncomingShipmentsModal from "./components/bestellungen/IncomingShipmentsModal.svelte";
   import OrderRecommendations from "./components/bestellungen/OrderRecommendations.svelte";
   import SupplierManager from "./components/bestellungen/SupplierManager.svelte";
   import PrintSuggestion from "./components/bestellungen/PrintSuggestion.svelte";
@@ -28,8 +29,7 @@
   let incomingShipments = $state([]);
   let isReleasing = $state(false);
   let showGreenFade = $state(false);
-  let scanningTitelId = $state(null);
-  let scannedBarcode = $state("");
+  let selectedShipment = $state(null);
   /** @type {any[] | null} */
   let printSuggestion = $state(null);
   /** @type {any | null} */
@@ -135,7 +135,8 @@
           }))
       });
       orderCart = [];
-      toastStore.addToast(`Bestellung erfolgreich per E-Mail an ${supplier.name} gesendet. ${data.ordered_qty} Barcodes reserviert.`, "success");
+      const toastType = data.status === "warning" ? "error" : "success";
+      toastStore.addToast(data.message + ` (${data.ordered_qty} Barcodes reserviert.)`, toastType);
       await loadIncomingShipments();
       fetchRecommendations();
     } catch {
@@ -143,23 +144,16 @@
     } finally { submittingOrder = false; }
   }
 
-  /** @param {string} titelId */
-  async function receiveItem(titelId) {
-    if (!scannedBarcode) return;
-    try {
-      await apiPost("/api/orders/receive", { titel_id: titelId, barcode: scannedBarcode });
-      playSuccessBeep();
-      showGreenFade = true;
-      scannedBarcode = "";
-      scanningTitelId = null;
-      await loadIncomingShipments();
-      setTimeout(() => { showGreenFade = false; fetchRecommendations(); }, 1500);
-    } catch {
-      playErrorBeep();
-      const currentId = scanningTitelId;
-      scanningTitelId = null;
-      setTimeout(() => { scanningTitelId = currentId; scannedBarcode = ""; }, 10);
-    }
+  function handleSelectShipment(shipment) {
+    selectedShipment = shipment;
+  }
+
+  async function handleShipmentReceived() {
+    selectedShipment = null;
+    showGreenFade = true;
+    await loadIncomingShipments();
+    fetchRecommendations();
+    setTimeout(() => { showGreenFade = false; }, 1500);
   }
 
   async function releaseIncoming() {
@@ -250,12 +244,7 @@
         <IncomingShipments 
           {incomingShipments}
           {showGreenFade}
-          {isReleasing}
-          bind:scanningTitelId
-          bind:scannedBarcode
-          onReceiveItem={receiveItem}
-          onReleaseAll={releaseIncoming}
-          onReleaseNaacher={releaseNaacher}
+          onSelectShipment={handleSelectShipment}
         />
 
         <OrderRecommendations 
@@ -274,3 +263,11 @@
     />
   {/if}
 </div>
+
+{#if selectedShipment}
+  <IncomingShipmentsModal 
+    shipment={selectedShipment}
+    onClose={() => selectedShipment = null}
+    onReceived={handleShipmentReceived}
+  />
+{/if}

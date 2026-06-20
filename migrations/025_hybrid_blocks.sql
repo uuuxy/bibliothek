@@ -1,0 +1,2 @@
+ALTER TABLE schueler ADD COLUMN IF NOT EXISTS is_manually_blocked BOOLEAN DEFAULT false;
+ALTER TABLE schueler ADD COLUMN IF NOT EXISTS block_reason TEXT;
