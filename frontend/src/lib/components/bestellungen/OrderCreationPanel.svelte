@@ -10,22 +10,32 @@
     showDropdown = $bindable(),
     isbnPreview = $bindable(),
     isbnLoading = $bindable(),
-    generateBarcodes = $bindable(),
     onSearchInput,
     onAddToCart,
     onRemoveFromCart,
     onSubmitOrder
   } = $props();
 
-  function handleSupplierChange() {
-    if (suppliers && suppliers.length > 0) {
-      const supplier = suppliers[selectedSupplierIdx];
-      if (supplier && supplier.name.toLowerCase().includes('naacher')) {
-        generateBarcodes = true;
-      } else {
-        generateBarcodes = false;
-      }
-    }
+  let stagedBook = $state(null);
+  let stagedMenge = $state(1);
+  let stagedGenerateBarcodes = $state(true);
+
+  function openStaging(book) {
+    stagedBook = book;
+    stagedMenge = 1;
+    stagedGenerateBarcodes = true;
+    showDropdown = false;
+    isbnPreview = null;
+    searchQuery = "";
+  }
+
+  function confirmAddToCart() {
+    onAddToCart(stagedBook, stagedMenge, stagedGenerateBarcodes);
+    stagedBook = null;
+  }
+
+  function cancelAddToCart() {
+    stagedBook = null;
   }
 </script>
 
@@ -35,32 +45,13 @@
     <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Entwurf</span>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="space-y-4">
-      <div class="space-y-1"><label for="supplier" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} onchange={handleSupplierChange} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
-      
-      <div class="flex items-center space-x-3 bg-slate-50/50 p-3 rounded-lg border border-slate-200 shadow-sm">
-        <input 
-          type="checkbox" 
-          id="generateBarcodes" 
-          bind:checked={generateBarcodes} 
-          class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer transition-all"
-        />
-        <div class="flex flex-col">
-          <label for="generateBarcodes" class="text-sm font-semibold text-slate-700 cursor-pointer">
-            Barcodes vorab reservieren (Pre-Allocation)
-          </label>
-          <p class="text-xs text-slate-500">
-            Generiert Exemplare und fügt QR-Codes für den Lieferanten hinzu.
-          </p>
-        </div>
-      </div>
-    </div>
+    <div class="space-y-1"><label for="supplier" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
     <div class="space-y-1 relative">
       <label for="book" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={onSearchInput} placeholder="Titel, Autor oder ISBN suchen..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50" />
       {#if showDropdown && searchResults.length > 0}
         <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
           {#each searchResults as b}
-            <button onclick={() => onAddToCart(b)} class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center gap-3 text-base">
+            <button onclick={() => openStaging(b)} class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center gap-3 text-base">
               {#if b.cover_url}<img src={b.cover_url} class="w-7 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{b.titel.charAt(0)}</div>{/if}
               <div class="min-w-0"><div class="font-bold text-slate-800 truncate">{b.titel}</div><div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div></div>
             </button>
@@ -84,7 +75,7 @@
             <div class="text-xs text-slate-500 truncate">{isbnPreview.autor} · ISBN {isbnPreview.isbn}</div>
             {#if !isbnPreview.exists}<span class="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-bold">Neu im Katalog</span>{/if}
           </div>
-          <button onclick={() => onAddToCart(isbnPreview)} class="shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs cursor-pointer">+ Hinzufügen</button>
+          <button onclick={() => openStaging(isbnPreview)} class="shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs cursor-pointer">+ Hinzufügen</button>
         </div>
       {:else if isbnPreview && isbnPreview.error}
         <div class="absolute z-10 w-full mt-1 bg-white border border-rose-200 rounded-lg shadow-lg px-4 py-3 text-sm text-rose-600 font-semibold">
@@ -93,6 +84,39 @@
       {/if}
     </div>
   </div>
+
+  {#if stagedBook}
+    <div class="p-4 border border-blue-200 bg-blue-50/50 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in shadow-sm">
+      <div class="flex items-center gap-3 min-w-0">
+        {#if stagedBook.cover_url}
+          <img src={stagedBook.cover_url} class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-slate-100 shrink-0" alt="" />
+        {:else}
+          <div class="w-10 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase shrink-0">{stagedBook.titel.charAt(0)}</div>
+        {/if}
+        <div class="min-w-0">
+          <div class="font-bold text-slate-800 truncate">{stagedBook.titel}</div>
+          <div class="text-xs text-slate-500 truncate">{stagedBook.autor}</div>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap items-center gap-4 shrink-0">
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-bold text-slate-500 uppercase">Menge:</label>
+          <input type="number" min="1" bind:value={stagedMenge} class="w-16 px-2 py-1.5 border border-slate-200 bg-white rounded-md text-center font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+        </div>
+        
+        <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 border border-slate-200 rounded-md">
+          <input type="checkbox" bind:checked={stagedGenerateBarcodes} class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+          <span class="text-sm font-semibold text-slate-700">Barcodes generieren</span>
+        </label>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick={cancelAddToCart} class="px-3 py-1.5 text-sm font-bold text-slate-500 hover:text-slate-700 cursor-pointer">Abbrechen</button>
+          <button onclick={confirmAddToCart} class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow-sm cursor-pointer whitespace-nowrap">In den Warenkorb</button>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   <div class="space-y-3">
     <span class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Warenkorb</span>
@@ -104,7 +128,15 @@
           <div class="p-3 bg-slate-50/30 flex items-center justify-between gap-4 text-base">
             <div class="flex items-center gap-3 min-w-0">
               {#if item.cover_url}<img src={item.cover_url} class="w-8 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-8 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{item.titel.charAt(0)}</div>{/if}
-              <div class="min-w-0"><h4 class="font-bold text-slate-800 truncate">{item.titel}</h4><p class="text-sm text-slate-400 truncate">ISBN: {item.isbn}</p></div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-slate-800 truncate">{item.titel}</h4>
+                <p class="text-sm text-slate-400 truncate">ISBN: {item.isbn}</p>
+                {#if item.generate_barcodes}
+                  <div class="text-[10px] font-bold text-blue-600 mt-1 flex items-center gap-1 bg-blue-50 w-fit px-1.5 py-0.5 rounded-md">
+                    🔖 {item.menge} {item.menge === 1 ? 'Barcode' : 'Barcodes'} reserviert
+                  </div>
+                {/if}
+              </div>
             </div>
             <div class="flex items-center gap-4">
               <div class="flex items-center gap-2">

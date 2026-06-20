@@ -22,7 +22,6 @@
   let orderCart = $state([]);
   let orderTotal = $derived(orderCart.reduce((sum, item) => sum + (item.menge * (Number(item.preis) || 0)), 0));
   let submittingOrder = $state(false);
-  let generateBarcodes = $state(false);
   /** @type {any[]} */
   let recommendations = $state([]);
   /** @type {any[]} */
@@ -119,10 +118,13 @@
   }
 
   /** @param {any} book */
-  function addToCart(book) {
+  function addToCart(book, menge = 1, generateBarcodes = false) {
     const existing = orderCart.find(item => item.id === book.id || (book.isbn && item.isbn === book.isbn));
-    if (existing) { existing.menge += 1; }
-    else { orderCart.push({ id: book.titel_id ?? book.id, titel: book.titel, autor: book.autor, isbn: book.isbn ?? book.ISBN, verlag: book.verlag ?? "", cover_url: book.cover_url ?? "", menge: 1, preis: 0.00 }); }
+    if (existing) { 
+        existing.menge += menge;
+        if (generateBarcodes) existing.generate_barcodes = true;
+    }
+    else { orderCart.push({ id: book.titel_id ?? book.id, titel: book.titel, autor: book.autor, isbn: book.isbn ?? book.ISBN, verlag: book.verlag ?? "", cover_url: book.cover_url ?? "", menge: menge, preis: 0.00, generate_barcodes: generateBarcodes }); }
     searchQuery = ""; searchResults = []; showDropdown = false; isbnPreview = null;
   }
 
@@ -136,8 +138,12 @@
     try {
       const data = await apiPost("/api/orders", {
           supplier_id: supplier.id,
-          items: orderCart.map(item => ({ titel_id: item.id, menge: item.menge, preis: Number(item.preis) || 0 })),
-          generate_barcodes: generateBarcodes
+          items: orderCart.map(item => ({ 
+              titel_id: item.id, 
+              menge: item.menge, 
+              preis: Number(item.preis) || 0,
+              generate_barcodes: item.generate_barcodes
+          }))
       });
       orderCart = [];
       toastStore.addToast(`Bestellung erfolgreich per E-Mail an ${supplier.name} gesendet. ${data.ordered_qty} Barcodes reserviert.`, "success");
@@ -240,7 +246,6 @@
         bind:showDropdown
         bind:isbnPreview
         bind:isbnLoading
-        bind:generateBarcodes
         onSearchInput={handleSearchInput}
         onAddToCart={addToCart}
         onRemoveFromCart={removeFromCart}

@@ -72,30 +72,30 @@ export const menuGroups = [
   {
     name: "Kiosk",
     items: [
-      { id: "kiosk", label: "Ausleihe", icon: "kiosk" }
+      { id: "kiosk", label: "Ausleihe", icon: "kiosk" },
+      { id: "mahnwesen", label: "Mahnwesen", icon: "bell", permission: "manage_users" }
     ]
   },
   {
     name: "Bibliothek",
     items: [
       { id: "media_catalog", label: "Medienkatalog", icon: "catalog", permission: "view_books" },
+      { id: "lmf_actions", label: "LMF-Aktionen", icon: "clock", permission: "manage_inventory" },
+      { id: "druck-center", label: "Druck-Center", icon: "printer", permission: "edit_books" }
+    ]
+  },
+  {
+    name: "Verwaltung",
+    items: [
+      { id: "students_dir", label: "Schülerdatei", icon: "users", permission: "view_students" },
       { id: "orders", label: "Bestellungen", icon: "shopping-bag", permission: "view_orders" },
       { id: "inventory", label: "Inventur", icon: "clipboard", permission: "inventory_scan" }
     ]
   },
   {
-    name: "Personen",
+    name: "System",
     items: [
-      { id: "students_dir", label: "Schülerdatei", icon: "users", permission: "view_students" },
-      { id: "mahnwesen", label: "Mahnwesen", icon: "bell", permission: "manage_users" }
-    ]
-  },
-  {
-    name: "Werkzeuge & System",
-    items: [
-      { id: "lmf_actions", label: "LMF-Aktionen", icon: "clock", permission: "manage_inventory" },
       { id: "stats", label: "Statistiken", icon: "chart-bar", permission: "view_stats" },
-      { id: "druck-center", label: "Druck-Center", icon: "printer", permission: "edit_books" },
       { id: "system-logs", label: "System-Logs", icon: "shield", permission: "audit_logs" },
       { id: "settings", label: "Einstellungen", icon: "cog", permission: "manage_users", roles: ["admin"] }
     ]

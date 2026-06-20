@@ -213,7 +213,7 @@
   {/if}
 
   {#if !showEditModal}
-  <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start text-slate-800 animate-fade-in no-print font-sans">
+  <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start text-slate-800 animate-fade-in no-print print:hidden font-sans">
     <!-- Left Column Profile Card -->
     <StudentProfileCard 
       bind:profile={profile}
@@ -242,7 +242,13 @@
         {#if activeTab === "ausleihen"}
           {@render rightTop?.()}
           
-          <div class="flex justify-end mb-2">
+          <div class="flex justify-end gap-3 mb-2">
+            {#if profile.entliehene_buecher?.length > 0}
+              <button onclick={() => window.print()} class="px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-full text-sm font-bold transition-all shadow-sm cursor-pointer flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Offene Ausleihen drucken
+              </button>
+            {/if}
             {#if (role === 'admin' || role === 'mitarbeiter') && profile.entliehene_buecher?.length > 0}
               <button onclick={downloadKontoauszugPDF} disabled={kontoauszugPdfLoading} class="px-5 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
                 {#if kontoauszugPdfLoading}
@@ -302,3 +308,65 @@
   <DamageReportModal book={damageBook} isSubmitting={isSubmittingDamage} onCancel={() => showDamageModal = false} onSubmit={submitDamageReport} />
 {/if}
 
+{#if profile}
+  <!-- Print Container für Ausleihen -->
+  <div class="hidden print:block print:absolute print:top-0 print:left-0 print:w-full print:bg-white print:text-black print:p-8">
+    <div class="text-center mb-8 border-b border-slate-300 pb-4">
+      <h1 class="text-2xl font-bold">Ausleih-Quittung</h1>
+      <h2 class="text-lg text-slate-600">Schulbibliothek</h2>
+    </div>
+    
+    <div class="flex justify-between mb-8">
+      <div>
+        <p class="text-sm text-slate-500">Schüler/in</p>
+        <p class="font-bold text-lg">{profile.vorname} {profile.nachname}</p>
+        <p class="text-sm">{profile.klasse || ''}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-sm text-slate-500">Datum</p>
+        <p class="font-bold">{new Date().toLocaleDateString('de-DE')}</p>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-bold text-lg mb-2 border-b border-slate-300 pb-2">Offene Ausleihen</h3>
+      {#if profile.entliehene_buecher && profile.entliehene_buecher.length > 0}
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-slate-300">
+              <th class="py-2 px-2 font-semibold w-12">Cover</th>
+              <th class="py-2 px-2 font-semibold">Titel</th>
+              <th class="py-2 px-2 font-semibold text-center">Barcode/Signatur</th>
+              <th class="py-2 px-2 font-semibold text-center">Ausgeliehen am</th>
+              <th class="py-2 px-2 font-semibold text-right">Rückgabe bis</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {#each profile.entliehene_buecher as book}
+              <tr>
+                <td class="py-3 px-2">
+                  {#if book.cover_url}
+                    <img src={book.cover_url} alt="Cover" class="w-8 h-12 object-cover rounded shadow-sm" />
+                  {:else}
+                    <div class="w-8 h-12 bg-slate-100 rounded flex items-center justify-center text-xs text-slate-400">📖</div>
+                  {/if}
+                </td>
+                <td class="py-3 px-2">
+                  <div class="font-bold">{book.titel}</div>
+                  <div class="text-xs text-slate-500">{book.autor}</div>
+                </td>
+                <td class="py-3 px-2 text-center font-mono text-xs">{book.barcode || book.signatur || '-'}</td>
+                <td class="py-3 px-2 text-center">{formatDate(book.ausleih_datum)}</td>
+                <td class="py-3 px-2 text-right font-bold {new Date(book.rueckgabe_datum) < new Date() ? 'text-red-600' : ''}">
+                  {formatDate(book.rueckgabe_datum)}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {:else}
+        <p class="text-slate-500 italic">Keine offenen Ausleihen.</p>
+      {/if}
+    </div>
+  </div>
+{/if}

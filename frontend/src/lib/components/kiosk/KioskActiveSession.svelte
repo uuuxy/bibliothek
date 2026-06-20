@@ -51,7 +51,7 @@
 </script>
 
 {#if !kioskStore.isStudentBlocked}
-  <div class="relative w-full mb-8 {kioskStore.isShaking ? 'animate-shake' : ''}">
+  <div class="relative w-full mb-8 print:hidden {kioskStore.isShaking ? 'animate-shake' : ''}">
     <form onsubmit={(e) => { e.preventDefault(); kioskStore.handleBookSubmit(); }} class="relative w-full">
       <svg class="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
       <input type="text" id="kiosk-book-input" bind:value={kioskStore.bookInputVal} disabled={kioskStore.isScanningBook}
@@ -67,7 +67,7 @@
 
 <!-- Ausleih-Sperre Meldung -->
 {#if kioskStore.isStudentBlocked}
-  <div class="bg-rose-100 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-start space-x-3 mb-8">
+  <div class="bg-rose-100 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-start space-x-3 mb-8 print:hidden">
     <svg class="w-6 h-6 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
     <div>
       <h3 class="font-bold">Ausleihsperre aktiv</h3>
