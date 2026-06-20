@@ -4,12 +4,12 @@
 
   // State Runes
   /** @type {any[]} */
-  let graduates = $state.raw([]);
+  let graduates = $state([]);
   let loading = $state(true);
 
   // Laufzettel print state
   /** @type {any[]} */
-  let detailStudents = $state.raw([]);
+  let detailStudents = $state([]);
   let loadingLaufzettel = $state(false);
   let printDate = $state("");
 

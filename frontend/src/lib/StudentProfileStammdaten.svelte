@@ -1,6 +1,9 @@
 <script>
   let { profile, role, rechnungPdfLoading, onDownloadRechnung, onEdit } = $props();
 
+  import { apiClient } from "./apiFetch.js";
+  let isUpdatingBlock = $state(false);
+
   function formatDate(dateString) {
     if (!dateString) return "Keine Angabe";
     try {
@@ -8,6 +11,25 @@
       return d.toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch {
       return dateString;
+    }
+  }
+
+  async function toggleManualBlock() {
+    if (!profile) return;
+    isUpdatingBlock = true;
+    try {
+      const newVal = !profile.is_manually_blocked;
+      const res = await apiClient.post(`/api/schueler/${profile.id}/update`, {
+        is_manually_blocked: newVal,
+        block_reason: newVal ? "Manuell gesperrt" : ""
+      });
+      if (res.ok) {
+        profile.is_manually_blocked = newVal;
+      }
+    } catch (e) {
+      console.error("Failed to toggle block", e);
+    } finally {
+      isUpdatingBlock = false;
     }
   }
 </script>
@@ -72,6 +94,27 @@
           <p class="text-slate-600 italic text-sm">Keine E-Mail hinterlegt</p>
         {/if}
       </div>
+      {#if role === 'admin' || role === 'mitarbeiter'}
+        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl mt-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-bold text-slate-900">Manuelle Ausleihsperre</p>
+              <p class="text-xs text-slate-500 mt-1">Schüler blockieren (z.B. wegen ausstehender Zahlungen)</p>
+            </div>
+            <button
+              type="button"
+              onclick={toggleManualBlock}
+              disabled={isUpdatingBlock}
+              aria-label="Manuelle Ausleihsperre umschalten"
+              class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {profile.is_manually_blocked ? 'bg-red-500' : 'bg-slate-300'} {isUpdatingBlock ? 'opacity-50' : ''}"
+              role="switch"
+              aria-checked={profile.is_manually_blocked}
+            >
+              <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {profile.is_manually_blocked ? 'translate-x-5' : 'translate-x-0'}"></span>
+            </button>
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
 </div>

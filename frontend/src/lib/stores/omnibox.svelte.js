@@ -19,6 +19,7 @@ export function createOmniboxStore() {
   let scanError = $state(false);
   let errorMessage = $state("");
   let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
+  let blockAlert = $state(/** @type {{message: string, query: string} | null} */ (null));
   let isOffline = $state(
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
@@ -113,7 +114,7 @@ export function createOmniboxStore() {
   }
 
   // Haupt-Scan-Aktion
-  async function submitAction(e, reloadProfileCb) {
+  async function submitAction(e, reloadProfileCb, overrideBlock = false) {
     if (e) e.preventDefault();
     if (isDropdownOpen && selectedDropdownIndex >= 0) {
       selectDropdownItem(selectedDropdownIndex, null);
@@ -135,6 +136,7 @@ export function createOmniboxStore() {
         query: q,
         active_student_id: activeStudent?.id,
         active_teacher_id: activeTeacher?.id,
+        override_block: overrideBlock
       });
 
       if (!res.ok) {
@@ -143,6 +145,12 @@ export function createOmniboxStore() {
           const errData = JSON.parse(errStr);
           if (errData.error) errStr = errData.error;
         } catch (e) {}
+        
+        if (res.status === 403 && (errStr.includes("Sperre") || errStr.includes("Sperr-Automatik") || errStr.includes("überfällig"))) {
+          blockAlert = { message: errStr, query: q };
+          throw new Error("BLOCK_ALERT");
+        }
+
         throw new Error(errStr || "Aktion fehlgeschlagen");
       }
       const data = await res.json();
@@ -214,6 +222,11 @@ export function createOmniboxStore() {
         showToast("Bitte wähle ein Ergebnis aus der Liste.", "warning");
       }
     } catch (e) {
+      if (e instanceof Error && e.message === "BLOCK_ALERT") {
+        triggerScreenFlash("error");
+        playSoundError();
+        return;
+      }
       if (e instanceof TypeError || !window.navigator.onLine) {
          if (q.startsWith("B-")) {
             await enqueueOfflineAction("checkin", q, activeStudent?.id ?? null);
@@ -226,7 +239,7 @@ export function createOmniboxStore() {
          }
       } else {
         errorMessage = String(e);
-        showToast(`⚠️ Netzwerkfehler: ${e instanceof Error ? e.message : String(e)}`, "error");
+        showToast(`⚠️ Fehler: ${e instanceof Error ? e.message : String(e)}`, "error");
       }
     } finally {
       triggerFlash("red");
@@ -299,6 +312,12 @@ export function createOmniboxStore() {
     },
     set vormerkungAlert(v) {
       vormerkungAlert = v;
+    },
+    get blockAlert() {
+      return blockAlert;
+    },
+    set blockAlert(v) {
+      blockAlert = v;
     },
     get isOffline() {
       return isOffline;

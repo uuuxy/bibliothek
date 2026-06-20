@@ -7,7 +7,7 @@
 
   import OrderCreationPanel from "./components/bestellungen/OrderCreationPanel.svelte";
   import IncomingShipments from "./components/bestellungen/IncomingShipments.svelte";
-  import ShipmentDetailView from "./components/bestellungen/ShipmentDetailView.svelte";
+  import WareneingangView from "./components/bestellungen/WareneingangView.svelte";
   import OrderRecommendations from "./components/bestellungen/OrderRecommendations.svelte";
   import SupplierManager from "./components/bestellungen/SupplierManager.svelte";
   import PrintSuggestion from "./components/bestellungen/PrintSuggestion.svelte";
@@ -29,7 +29,7 @@
   let incomingShipments = $state([]);
   let isReleasing = $state(false);
   let showGreenFade = $state(false);
-  let selectedShipment = $state(null);
+  let showWareneingang = $state(false);
   /** @type {any[] | null} */
   let printSuggestion = $state(null);
   /** @type {any | null} */
@@ -144,12 +144,12 @@
     } finally { submittingOrder = false; }
   }
 
-  function handleSelectShipment(shipment) {
-    selectedShipment = shipment;
+  function handleOpenWareneingang() {
+    showWareneingang = true;
   }
 
   async function handleShipmentReceived() {
-    selectedShipment = null;
+    showWareneingang = false;
     showGreenFade = true;
     await loadIncomingShipments();
     fetchRecommendations();
@@ -217,10 +217,10 @@
   </div>
 
   {#if activeTab === "bestellungen"}
-    {#if selectedShipment}
-      <ShipmentDetailView 
-        shipment={selectedShipment}
-        onBack={() => selectedShipment = null}
+    {#if showWareneingang}
+      <WareneingangView 
+        {incomingShipments}
+        onBack={() => showWareneingang = false}
         onReceived={handleShipmentReceived}
       />
     {:else}
@@ -251,7 +251,7 @@
           <IncomingShipments 
             {incomingShipments}
             {showGreenFade}
-            onSelectShipment={handleSelectShipment}
+            onOpenWareneingang={handleOpenWareneingang}
           />
 
           <OrderRecommendations 

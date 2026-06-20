@@ -109,9 +109,12 @@ type ShipmentGroup struct {
 
 // GroupedItem represents an item within a ShipmentGroup.
 type GroupedItem struct {
-	TitelID string `json:"titel_id"`
-	Titel   string `json:"titel"`
-	Menge   int    `json:"menge"`
+	TitelID     string   `json:"titel_id"`
+	Titel       string   `json:"titel"`
+	ISBN        string   `json:"isbn"`
+	CoverURL    string   `json:"cover_url"`
+	Menge       int      `json:"menge"`
+	ExemplarIDs []string `json:"exemplar_ids"`
 }
 
 // GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,
@@ -121,7 +124,7 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		query := `
-			SELECT e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel
+			SELECT e.id, e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel, COALESCE(t.isbn, ''), COALESCE(t.cover_url, '')
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON e.titel_id = t.id
 			WHERE e.ist_ausleihbar = false 
@@ -140,9 +143,9 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 		groupsMap := make(map[string]*ShipmentGroup)
 
 		for rows.Next() {
-			var titelID, zustandNotiz, titel string
+			var exemplarID, titelID, zustandNotiz, titel, isbn, coverURL string
 			var erstelltAm time.Time
-			if err := rows.Scan(&titelID, &erstelltAm, &zustandNotiz, &titel); err != nil {
+			if err := rows.Scan(&exemplarID, &titelID, &erstelltAm, &zustandNotiz, &titel, &isbn, &coverURL); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -184,11 +187,15 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 
 			if itemFound != nil {
 				itemFound.Menge++
+				itemFound.ExemplarIDs = append(itemFound.ExemplarIDs, exemplarID)
 			} else {
 				group.Items = append(group.Items, &GroupedItem{
-					TitelID: titelID,
-					Titel:   titel,
-					Menge:   1,
+					TitelID:     titelID,
+					Titel:       titel,
+					ISBN:        isbn,
+					CoverURL:    coverURL,
+					Menge:       1,
+					ExemplarIDs: []string{exemplarID},
 				})
 			}
 		}
@@ -356,8 +363,7 @@ func (s *Server) SearchOrdersHandler() http.HandlerFunc {
 
 // BulkReceiveRequest represents the payload for bulk receiving an order.
 type BulkReceiveRequest struct {
-	SupplierName string `json:"supplier_name"`
-	Date         string `json:"date"`
+	ExemplarIDs []string `json:"exemplar_ids"`
 }
 
 // BulkReceiveOrderHandler marks all pre-allocated items for a specific order group as received.
@@ -368,8 +374,8 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 			return
 		}
 
-		if req.SupplierName == "" || req.Date == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("supplier_name and date are required"))
+		if len(req.ExemplarIDs) == 0 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("no exemplar_ids provided"))
 			return
 		}
 
@@ -379,17 +385,11 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 			UPDATE buecher_exemplare
 			SET ist_ausleihbar = true, zustand_notiz = ''
 			WHERE ist_ausleihbar = false
-			  AND (
-				zustand_notiz = 'Im Zulauf - ' || $1 OR
-				($1 = 'Vorab-Barcode Bestellung' AND zustand_notiz = 'Bestellt (Lieferanten-Vorab-Barcode)') OR
-				($1 = 'Automatische Nachbestellung' AND zustand_notiz = 'bestellt')
-			  )
-			  AND TO_CHAR(erstellt_am, 'DD.MM.YYYY') = $2
-			  AND barcode_id IS NOT NULL
+			  AND id = ANY($1)
 			RETURNING id
 		`
 
-		rows, err := s.DB.Pool.Query(ctx, query, req.SupplierName, req.Date)
+		rows, err := s.DB.Pool.Query(ctx, query, req.ExemplarIDs)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

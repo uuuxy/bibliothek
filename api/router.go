@@ -89,6 +89,9 @@ func (s *Server) Routes() http.Handler {
 	// Public Endpoints
 	mux.Handle("POST /login", AuthRateLimitMiddleware(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))))
 
+	// Image Caching (Public)
+	mux.HandleFunc("GET /api/images/cover", s.ServeCoverImageHandler())
+
 	// Token refresh (sliding window) — exempt from CSRF via middleware config
 	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.CookieSecure))
 

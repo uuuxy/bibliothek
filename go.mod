@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/boombuler/barcode v1.1.0
+	github.com/chai2010/webp v1.4.0
 	github.com/emersion/go-imap v1.2.1
 	github.com/getsentry/sentry-go v0.47.0
 	github.com/go-playground/validator/v10 v10.30.3
