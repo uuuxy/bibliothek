@@ -144,8 +144,7 @@
   {:else if uiStore.activeTab === "lehrer_portal"}
     <div class="w-full animate-fade-in"><LehrerPortal user={authStore.currentUser} /></div>
   {:else if uiStore.activeTab === "lmf_actions"}
-    <div class="w-full animate-fade-in p-8 max-w-6xl mx-auto space-y-6">
-      <h2 class="text-3xl font-bold text-slate-900 tracking-tight">LMF-Aktionen (Jahreswechsel)</h2>
+    <div class="w-full animate-fade-in p-6 max-w-6xl mx-auto">
       <GlobalLMFExtendWidget />
     </div>
   {:else if uiStore.activeTab === "settings"}

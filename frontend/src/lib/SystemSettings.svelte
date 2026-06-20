@@ -114,14 +114,10 @@
   }
 </script>
 
-<div class="max-w-6xl mx-auto w-full space-y-8 text-slate-800 font-sans antialiased pb-20">
+<div class="max-w-6xl mx-auto w-full space-y-6 text-slate-800 font-sans antialiased pb-20 pt-6">
 
   <!-- Header -->
   <div class="space-y-6">
-    <div>
-      <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Einstellungen</h2>
-      <p class="text-sm text-slate-500 mt-2">Globale Systemparameter, Nutzerverwaltung und Datenimporte.</p>
-    </div>
 
     <!-- Tabs -->
     <div class="flex gap-4 border-b border-slate-200">

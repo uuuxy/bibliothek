@@ -123,15 +123,8 @@
     </div>
   {:else}
     <!-- Tab Navigation Header -->
-    <div class="px-8 pt-8 pb-0 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
-      <div class="max-w-6xl mx-auto flex items-end justify-between">
-        <div>
-          <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Schülerdatei</h2>
-          <p class="text-slate-500 mt-1">Verwalte Schüler, Klassen und LUSD-Importe.</p>
-        </div>
-      </div>
-      
-      <div class="max-w-6xl mx-auto mt-6 flex gap-6">
+    <div class="px-8 pt-6 pb-0 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
+      <div class="max-w-6xl mx-auto flex gap-6">
         <button 
           onclick={() => activeTab = "active"}
           class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'active' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}"

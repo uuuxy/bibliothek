@@ -156,14 +156,7 @@
   }
 </script>
 
-<div class="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-8 animate-fade-in">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Inventur & Bestandsprüfung</h1>
-      <p class="text-slate-500 mt-2">Prüfe den Bestand physisch per Barcode-Scanner ab.</p>
-    </div>
-  </div>
-
+<div class="max-w-4xl mx-auto w-full p-4 md:p-6 space-y-6 animate-fade-in">
   {#if state.status === 'idle'}
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center justify-center space-y-6">
       <div class="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center">
