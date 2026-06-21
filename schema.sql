@@ -240,6 +240,7 @@ CREATE TABLE buecher_titel (
     meldebestand INTEGER NOT NULL DEFAULT 5,          -- Reorder threshold point
     cover_url VARCHAR(512),                           -- Integrated cover URL
     cover_status VARCHAR(50) DEFAULT 'PENDING',       -- Added for async cover fetching
+    signatur VARCHAR(255),                            -- Signature (e.g. from MAB 700)
     subject VARCHAR(100),                             -- Integrated from books table
     grade_level SMALLINT,                             -- Integrated from books table
     track VARCHAR(100),                               -- Integrated from books table

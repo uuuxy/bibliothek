@@ -80,7 +80,7 @@ func scanBookCopy(row Scanner) (*BookCopy, error) {
 	var bc BookCopy
 	err := row.Scan(
 		&bc.ID, &bc.TitelID, &bc.BarcodeID, &bc.ZustandNotiz, &bc.ErworbenAm, &bc.IstAusleihbar, &bc.IstAusgesondert, &bc.ErstelltAm, &bc.AktualisiertAm,
-		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL, &bc.Medientyp, &bc.ErweiterteEigenschaften,
+		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL, &bc.Medientyp, &bc.Signatur, &bc.ErweiterteEigenschaften,
 	)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func scanBookCopy(row Scanner) (*BookCopy, error) {
 func scanBookTitle(row Scanner) (*BookTitle, error) {
 	var t BookTitle
 	err := row.Scan(
-		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
+		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.Signatur, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
 	)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 	query := `
 		SELECT 
 			e.id, e.titel_id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.erworben_am, e.ist_ausleihbar, e.ist_ausgesondert, e.erstellt_am, e.aktualisiert_am,
-			t.titel, coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), t.medientyp, t.erweiterte_eigenschaften
+			t.titel, coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), t.medientyp, coalesce(t.signatur, ''), t.erweiterte_eigenschaften
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.barcode_id = $1
@@ -123,10 +123,9 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 
 // SearchTitles führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch.
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
-	// Nutzen von plainto_tsquery mit deutschem Wörterbuch für intelligente Stammwortsuche.
-	// Falls die Volltextsuche bei unvollständigen Suchbegriffen fehlschlägt, greift der ILIKE-Vergleich.
 	query := `
-		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, erstellt_am, aktualisiert_am, erweiterte_eigenschaften
+		SELECT 
+			id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, coalesce(signatur, ''), erstellt_am, aktualisiert_am, erweiterte_eigenschaften
 		FROM buecher_titel
 		WHERE 
 			search_vector @@ plainto_tsquery('german', $1) 
@@ -161,7 +160,8 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 // SearchTitlesFuzzy führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus.
 func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error) {
 	query := `
-		SELECT id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, erstellt_am, aktualisiert_am, erweiterte_eigenschaften
+		SELECT 
+			id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, coalesce(signatur, ''), erstellt_am, aktualisiert_am, erweiterte_eigenschaften
 		FROM buecher_titel
 		WHERE titel ILIKE '%' || $1 || '%'
 		   OR autor ILIKE '%' || $1 || '%'
@@ -308,15 +308,16 @@ func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, co
 // UpsertBookTitle speichert oder aktualisiert ein Buchtitel-Objekt.
 func (r *pgBookRepository) UpsertBookTitle(ctx context.Context, t BookTitle) error {
 	query := `
-		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, aktualisiert_am)
-		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), CURRENT_TIMESTAMP)
+		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur, aktualisiert_am)
+		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), $6, CURRENT_TIMESTAMP)
 		ON CONFLICT (isbn) DO UPDATE 
 		SET titel = EXCLUDED.titel,
 		    autor = EXCLUDED.autor,
 		    verlag = EXCLUDED.verlag,
 		    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
+		    signatur = EXCLUDED.signatur,
 		    aktualisiert_am = CURRENT_TIMESTAMP
 	`
-	_, err := r.db.Exec(ctx, query, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr)
+	_, err := r.db.Exec(ctx, query, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur)
 	return err
 }

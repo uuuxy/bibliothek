@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"image"
+	_ "image/gif"
+	_ "image/jpeg"
 	_ "image/png"
 	"io"
 	"log"
@@ -33,7 +35,7 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		return ""
 	}
 	switch parsed.Hostname() {
-	case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org":
+	case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org", "books.google.com", "books.google.de":
 		// Erlaubte Hosts
 	default:
 		log.Printf("SSRF Schutz: Cover-URL Hostname %s ist nicht in der Whitelist", parsed.Hostname())

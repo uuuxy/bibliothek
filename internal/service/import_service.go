@@ -29,8 +29,9 @@ type Katalogisat struct {
 
 // Feld repräsentiert ein einzelnes XML-Feld aus Littera mit MAB-Code und Wert.
 type Feld struct {
-	MAB   string `xml:"MAB,attr"`
-	Value string `xml:",chardata"`
+	MAB     string `xml:"MAB,attr"`
+	Reihung string `xml:"Reihung,attr"`
+	Value   string `xml:",chardata"`
 }
 
 // ImportService stellt Geschäftslogik für Datenimporte bereit.
@@ -57,7 +58,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 	importedCount := 0
 
 	for _, kat := range root.Items {
-		var autor, titel, ort, verlag, isbn, jahrStr string
+		var autor, titel, ort, verlag, isbn, jahrStr, signatur string
 
 		// Parsing-Logik & Mapping
 		for _, feld := range kat.Felder {
@@ -78,6 +79,10 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 				jahrStr = val
 			case "540":
 				isbn = val
+			case "700 ":
+				if feld.Reihung == "1" {
+					signatur = val
+				}
 			}
 		}
 
@@ -106,6 +111,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 			ISBN:             isbn,
 			Verlag:           verlag,
 			Erscheinungsjahr: erscheinungsjahr,
+			Signatur:         signatur,
 		}
 
 		// Speichere die bereinigten Buch-Objekte über unser Repository

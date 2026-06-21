@@ -75,6 +75,8 @@ type BookTitle struct {
 	Verlag string `json:"verlag,omitempty"`
 	// Erscheinungsjahr ist das Publikationsjahr.
 	Erscheinungsjahr int `json:"erscheinungsjahr,omitempty"`
+	// Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).
+	Signatur string `json:"signatur,omitempty"`
 	// Beschreibung enthält eine Inhaltsangabe oder Notizen zum Buch.
 	Beschreibung string `json:"beschreibung,omitempty"`
 	// CoverURL verweist auf das Bild des Buchumschlags.
@@ -125,6 +127,8 @@ type BookCopy struct {
 	CoverURL string `json:"cover_url,omitempty"`
 	// Medientyp ist die Medienart (z. B. "Buch").
 	Medientyp string `json:"medientyp,omitempty"`
+	// Signatur speichert die Bibliothekssignatur.
+	Signatur string `json:"signatur,omitempty"`
 	// ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
 }
