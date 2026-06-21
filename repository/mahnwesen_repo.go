@@ -339,3 +339,14 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 
 	return klassen, nil
 }
+
+// CountReturnsToday queries the database for loans successfully returned today.
+func (repo *MahnwesenRepository) CountReturnsToday(ctx context.Context) (int, error) {
+	var count int
+	err := repo.db.QueryRow(ctx, `
+		SELECT count(*) FROM ausleihen
+		WHERE rueckgabe_am IS NOT NULL
+		  AND DATE(rueckgabe_am) = CURRENT_DATE
+	`).Scan(&count)
+	return count, err
+}

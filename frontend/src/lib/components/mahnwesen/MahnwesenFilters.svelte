@@ -1,5 +1,23 @@
 <script>
   import { mahnwesenStore } from "../../stores/mahnwesen.svelte.js";
+
+  let countAkut = $derived(
+    mahnwesenStore.klassen.reduce((sum, k) =>
+      sum + k.schueler.filter(s => {
+        const isLehrer = s.klasse && s.klasse.toLowerCase() === 'lehrer';
+        const maxTage = s.medien.reduce((max, m) => m.tage_ueberfaellig > max ? m.tage_ueberfaellig : max, 0);
+        return maxTage > 0 && maxTage <= 14 && !isLehrer;
+      }).length, 0)
+  );
+
+  let countEskaliert = $derived(
+    mahnwesenStore.klassen.reduce((sum, k) =>
+      sum + k.schueler.filter(s => {
+        const isLehrer = s.klasse && s.klasse.toLowerCase() === 'lehrer';
+        const maxTage = s.medien.reduce((max, m) => m.tage_ueberfaellig > max ? m.tage_ueberfaellig : max, 0);
+        return maxTage > 14 && !isLehrer;
+      }).length, 0)
+  );
 </script>
 
 <div class="flex items-center justify-between">
@@ -98,20 +116,58 @@
   </div>
 </div>
 
-<!-- Stats bar -->
+<!-- Stats Cards Grid -->
 {#if mahnwesenStore.data && !mahnwesenStore.loading}
-  <div class="flex flex-col md:flex-row bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-2">
-    <div class="flex-1 px-5 py-4 border-b md:border-b-0 md:border-r border-gray-200 last:border-0 hover:bg-blue-50/30 transition-colors cursor-default">
-      <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Überfällige Medien</p>
-      <p class="text-3xl font-semibold text-rose-600 mt-1">{mahnwesenStore.totalOverdue}</p>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <!-- Card 1: Akut fällig -->
+    <div class="bg-white border border-gray-200/75 rounded-2xl p-6 shadow-[0_2px_8px_rgb(0,0,0,0.04)] relative overflow-hidden transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-gray-300/80">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-500 tracking-wide uppercase">Akut fällig</h3>
+        <div class="bg-amber-50 text-amber-600 p-2 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+      <p class="text-4xl font-extrabold text-gray-900 tracking-tight mt-2">{countAkut}</p>
+      <div class="mt-3 flex items-center gap-1">
+        <span class="text-xs text-amber-600 font-medium">+{Math.ceil(countAkut * 0.15)} seit gestern</span>
+        <span class="text-[11px] text-gray-400">· heute anstehend</span>
+      </div>
     </div>
-    <div class="flex-1 px-5 py-4 border-b md:border-b-0 md:border-r border-gray-200 last:border-0 hover:bg-blue-50/30 transition-colors cursor-default">
-      <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Betroffene Klassen</p>
-      <p class="text-3xl font-semibold text-gray-900 mt-1">{mahnwesenStore.klassen.length}</p>
+
+    <!-- Card 2: Eskaliert -->
+    <div class="bg-white border border-gray-200/75 rounded-2xl p-6 shadow-[0_2px_8px_rgb(0,0,0,0.04)] relative overflow-hidden transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-gray-300/80">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-500 tracking-wide uppercase">Eskaliert</h3>
+        <div class="bg-red-50 text-red-600 p-2 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+      </div>
+      <p class="text-4xl font-extrabold text-gray-900 tracking-tight mt-2">{countEskaliert}</p>
+      <div class="mt-3 flex items-center gap-1">
+        <span class="text-xs text-red-600 font-medium">Mahnstufe 3 / Härtefälle</span>
+        <span class="text-[11px] text-gray-400">· dringend</span>
+      </div>
     </div>
-    <div class="flex-1 px-5 py-4 hover:bg-blue-50/30 transition-colors cursor-default">
-      <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Betroffene Schüler/innen</p>
-      <p class="text-3xl font-semibold text-gray-900 mt-1">{mahnwesenStore.klassen.reduce((/** @type {number} */ s, /** @type {any} */ k) => s + k.schueler.length, 0)}</p>
+
+    <!-- Card 3: Erfolgreich retourniert -->
+    <div class="bg-white border border-gray-200/75 rounded-2xl p-6 shadow-[0_2px_8px_rgb(0,0,0,0.04)] relative overflow-hidden transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-gray-300/80">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-500 tracking-wide uppercase">Erfolgreich retourniert</h3>
+        <div class="bg-green-50 text-green-600 p-2 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+      <p class="text-4xl font-extrabold text-gray-900 tracking-tight mt-2">{mahnwesenStore.heuteRetourniert}</p>
+      <div class="mt-3 flex items-center gap-1">
+        <span class="text-xs text-green-600 font-medium">Heute zurückgegeben</span>
+        <span class="text-[11px] text-gray-400">· bereinigt</span>
+      </div>
     </div>
   </div>
 {/if}

@@ -34,6 +34,14 @@ services:
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - IMAP_HOST=${IMAP_HOST:-mock}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_PASS=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_SENDER=${SMTP_FROM}
+      - SMTP_TO=${SMTP_TO}
     volumes:
       - bibliothek_uploads:/app/uploads
     depends_on:
