@@ -58,6 +58,19 @@ const docTemplate = `{
                 }
             }
         },
+        "/abgaenger/pdf": {
+            "get": {
+                "description": "Generates a printable PDF for former/graduating students with their unreturned books.",
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get Laufzettel PDF",
+                "responses": {}
+            }
+        },
         "/admin/permissions": {
             "get": {
                 "description": "Retrieves current allowed/denied flags for permissions across all system roles.",
@@ -453,6 +466,130 @@ const docTemplate = `{
                 }
             }
         },
+        "/buecher/exemplare/{id}/aussondern": {
+            "post": {
+                "description": "Marks a physical copy as decommissioned: sets ist_ausgesondert=true and ist_ausleihbar=false.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Decommission a book copy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Book copy ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/buecher/exemplare/{id}/barcode": {
+            "put": {
+                "description": "Updates the barcode of a physical book copy, replacing placeholders like AUTO-.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update copy barcode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Book copy ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New barcode payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateBarcodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/buecher/exemplare/{id}/schadensnotiz": {
             "post": {
                 "description": "Updates the custom damage or condition note text of a physical book copy.",
@@ -481,6 +618,68 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/api.DamageNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/buecher/exemplare/{id}/status": {
+            "put": {
+                "description": "Updates the status (ist_ausleihbar, ist_ausgesondert) and the condition note of a physical book copy.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update copy status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Book copy ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New status payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateStatusRequest"
                         }
                     }
                 ],
@@ -558,6 +757,220 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/buecher/titel/{id}/ausleiher": {
+            "get": {
+                "responses": {}
+            }
+        },
+        "/buecher/titel/{id}/exemplare": {
+            "get": {
+                "description": "Retrieves all physical book copies associated with a given title ID, including availability status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List copies for a title",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Book title ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/buecher/titel/{id}/historie": {
+            "get": {
+                "responses": {}
+            }
+        },
+        "/inventur/finish": {
+            "post": {
+                "description": "Marks all 'ausstehend' books as 'verloren' and resets inventory states.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Finalize inventory",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InventurFinishResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inventur/scan": {
+            "post": {
+                "description": "Records that a physical copy was physically present during a stock-take.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Scan a copy during inventory",
+                "parameters": [
+                    {
+                        "description": "Barcode to check in",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.InventurScanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InventurScanResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inventur/start": {
+            "post": {
+                "description": "Resets old inventory states and sets 'ausstehend' for the chosen scope.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Start an inventory session",
+                "parameters": [
+                    {
+                        "description": "Scope configuration",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.InventurStartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InventurStartResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -843,6 +1256,43 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/students/promote": {
+            "post": {
+                "description": "Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H, 10R, 13) automatisch als Abgänger.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schueler"
+                ],
+                "summary": "Automatische Versetzung (Schuljahreswechsel)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.PromoteStudentsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/recent": {
+            "get": {
+                "responses": {}
+            }
         }
     },
     "definitions": {
@@ -901,6 +1351,9 @@ const docTemplate = `{
                 "ausgeliehen_am": {
                     "type": "string"
                 },
+                "ausleihe_id": {
+                    "type": "string"
+                },
                 "autor": {
                     "type": "string"
                 },
@@ -923,8 +1376,17 @@ const docTemplate = `{
         },
         "api.CreateStudentRequest": {
             "type": "object",
+            "required": [
+                "klasse",
+                "nachname",
+                "vorname"
+            ],
             "properties": {
                 "barcode_id": {
+                    "type": "string"
+                },
+                "geburtsdatum": {
+                    "description": "Format: YYYY-MM-DD",
                     "type": "string"
                 },
                 "klasse": {
@@ -940,6 +1402,12 @@ const docTemplate = `{
         },
         "api.CreateUserRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "nachname",
+                "rolle",
+                "vorname"
+            ],
             "properties": {
                 "barcode_id": {
                     "type": "string"
@@ -948,9 +1416,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "nachname": {
-                    "type": "string"
-                },
-                "password": {
                     "type": "string"
                 },
                 "rolle": {
@@ -1001,6 +1466,69 @@ const docTemplate = `{
                 }
             }
         },
+        "api.InventurFinishResponse": {
+            "type": "object",
+            "properties": {
+                "verloren_gemeldet": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.InventurScanRequest": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.InventurScanResponse": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "e.g. \"erfasst\"",
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "warnungen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.InventurStartRequest": {
+            "type": "object",
+            "properties": {
+                "signature_id": {
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "\"global\" or \"signature\"",
+                    "type": "string"
+                }
+            }
+        },
+        "api.InventurStartResponse": {
+            "type": "object",
+            "properties": {
+                "erwartet": {
+                    "type": "integer"
+                },
+                "scope": {
+                    "type": "string"
+                }
+            }
+        },
         "api.PermissionSetting": {
             "type": "object",
             "properties": {
@@ -1012,6 +1540,17 @@ const docTemplate = `{
                 },
                 "role": {
                     "type": "string"
+                }
+            }
+        },
+        "api.PromoteStudentsResponse": {
+            "type": "object",
+            "properties": {
+                "neue_abgaenger": {
+                    "type": "integer"
+                },
+                "versetzte_schueler": {
+                    "type": "integer"
                 }
             }
         },
@@ -1033,6 +1572,9 @@ const docTemplate = `{
                 "foto_url": {
                     "type": "string"
                 },
+                "geburtsdatum": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1042,10 +1584,24 @@ const docTemplate = `{
                 "klasse": {
                     "type": "string"
                 },
+                "lusd_id": {
+                    "type": "string"
+                },
                 "nachname": {
                     "type": "string"
                 },
+                "status": {
+                    "type": "string"
+                },
                 "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.UpdateBarcodeRequest": {
+            "type": "object",
+            "properties": {
+                "barcode": {
                     "type": "string"
                 }
             }
@@ -1064,8 +1620,28 @@ const docTemplate = `{
                 }
             }
         },
+        "api.UpdateStatusRequest": {
+            "type": "object",
+            "properties": {
+                "ist_ausgesondert": {
+                    "type": "boolean"
+                },
+                "ist_ausleihbar": {
+                    "type": "boolean"
+                },
+                "zustand_notiz": {
+                    "type": "string"
+                }
+            }
+        },
         "api.UpdateUserRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "nachname",
+                "rolle",
+                "vorname"
+            ],
             "properties": {
                 "aktiv": {
                     "type": "boolean"
@@ -1080,6 +1656,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
+                    "description": "nur gehasht, wenn nicht leer",
                     "type": "string"
                 },
                 "rolle": {
@@ -1110,6 +1687,12 @@ const docTemplate = `{
                 },
                 "nachname": {
                     "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "rolle": {
                     "type": "string"

@@ -40,7 +40,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 
 		if err == nil {
 			// Student found
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"type":    "student",
 				"student": student,
 			})
@@ -78,7 +78,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 			if currentStudentID != nil {
 				status = "lent"
 			}
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"type":                    "book",
 				"book":                    book,
 				"status":                  status,
@@ -93,7 +93,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 
 		// 3. Fallback: Not found
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": "Barcode im System nicht gefunden",
 		})
 	}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/logger"
 	"bibliothek/repository"
 
 	"github.com/robfig/cron/v3"
@@ -186,13 +187,13 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 
 		if err := s.auditRepo.DeleteStudent(ctx, student.ID, "", grund); err != nil {
 			log.Printf("Scheduler GDPR Delete: failed to delete student ID %s: %v",
-				student.ID, err)
+				logger.SanitizeLog(student.ID), err)
 			failures = append(failures, student.ID)
 			continue
 		}
 
 		log.Printf("Scheduler GDPR Delete: deleted student ID %s (Klasse %s, Abgang %d)",
-			student.ID, student.Klasse, student.AbgaengerJahr)
+			logger.SanitizeLog(student.ID), logger.SanitizeLog(student.Klasse), student.AbgaengerJahr)
 		deleted++
 	}
 
@@ -240,7 +241,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		      (ist_abgaenger = true AND abgaenger_jahr <= EXTRACT(YEAR FROM NOW() - INTERVAL '360 days'))
 		  )
 	`
-	
+
 	tag, err := s.db.Exec(ctx, query)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: Error anonymizing old students: %v", err)

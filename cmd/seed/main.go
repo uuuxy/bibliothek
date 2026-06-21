@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"time"
+
+	"bibliothek/auth"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -25,6 +28,30 @@ func main() {
 
 	fmt.Println("Starte massiven Daten-Import für den Stresstest...")
 	startTime := time.Now()
+
+	// 1.1 Test-Admin für Security-Scans generieren
+	adminID := uuid.New()
+	adminBarcode := "ADMIN-SCANNER-TEST"
+	_, err = pool.Exec(ctx, `
+		INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv) 
+		VALUES ($1, $2, 'Scanner', 'TestAdmin', 'scanner@test.local', 'dummy', 'admin', true)
+		ON CONFLICT (email) DO NOTHING
+	`, adminID, adminBarcode)
+	if err != nil {
+		log.Printf("Warnung: Konnte Test-Admin nicht anlegen: %v\n", err)
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "supersecretkeydaslanggenugistfuertests" // Default fallback für Tests
+	}
+	authenticator, err := auth.NewAuthenticator(jwtSecret, pool, 8760*time.Hour) // 1 Jahr gültig
+	if err == nil {
+		token, _ := authenticator.GenerateToken(adminID.String(), adminBarcode, auth.RoleAdmin)
+		fmt.Printf("\n========================================================\n")
+		fmt.Printf("🛡️ DAST/SAST Scanner JWT (1 Jahr gültig):\n%s\n", token)
+		fmt.Printf("========================================================\n\n")
+	}
 
 	// 2. 2.000 Dummy-Schüler generieren
 	studentBatch := &pgx.Batch{}

@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	"bibliothek/apierrors"
@@ -65,14 +66,14 @@ func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 			if existingToken == "" {
 				token, err := generateGlobalCSRFToken()
 				if err == nil {
-					// #nosec G124 - HttpOnly must be false for CSRF double submit, Secure is dynamic
+					// #nosec G124 - Secure flag is dynamically configured
 					http.SetCookie(w, &http.Cookie{
 						Name:     "csrf_token",
 						Value:    token,
 						Path:     "/",
 						HttpOnly: false, // Must be readable by frontend JS
-						Secure:   s.CookieSecure,
-						SameSite: http.SameSiteLaxMode,
+						Secure:   os.Getenv("APP_ENV") != "local",
+						SameSite: http.SameSiteStrictMode,
 						MaxAge:   86400, // 24 hours
 					})
 				}

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -182,14 +183,13 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		// #nosec G124 - Secure flag is dynamically configured via cookieSecure
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(authenticator.tokenDuration),
 			HttpOnly: true,
-			Secure:   cookieSecure,
+			Secure:   os.Getenv("APP_ENV") != "local",
 			SameSite: http.SameSiteStrictMode, // Strict: keine Cross-Site-Requests erlaubt
 		})
 
@@ -264,14 +264,13 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 		}
 
 		// Set the new session cookie
-		// #nosec G124 - Secure flag is dynamically configured via cookieSecure
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    newToken,
 			Path:     "/",
 			Expires:  time.Now().Add(authenticator.tokenDuration),
 			HttpOnly: true,
-			Secure:   cookieSecure,
+			Secure:   os.Getenv("APP_ENV") != "local",
 			SameSite: http.SameSiteStrictMode,
 		})
 

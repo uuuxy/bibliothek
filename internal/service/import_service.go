@@ -177,7 +177,10 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
 				SELECT id, $7, CURRENT_DATE, $8, $9
 				FROM final_titel
-				ON CONFLICT (barcode_id) DO NOTHING
+				ON CONFLICT (barcode_id) DO UPDATE SET 
+					zustand_notiz = EXCLUDED.zustand_notiz, 
+					ist_ausleihbar = EXCLUDED.ist_ausleihbar, 
+					aktualisiert_am = CURRENT_TIMESTAMP
 				RETURNING id
 			)
 			SELECT 

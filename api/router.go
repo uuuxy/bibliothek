@@ -122,13 +122,15 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.BestandImportHandler)))
 	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(SyncCoversHandler(s.DB.Pool)))
 
-	// Swagger interactive documentation
-	mux.Handle("GET /swagger/", httpSwagger.Handler(
-		httpSwagger.URL("/swagger/doc.json"),
-	))
-	mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
-	})
+	// Swagger interactive documentation (Only accessible in local/development mode)
+	if os.Getenv("APP_ENV") == "local" || os.Getenv("APP_ENV") == "development" {
+		mux.Handle("GET /swagger/", httpSwagger.Handler(
+			httpSwagger.URL("/swagger/doc.json"),
+		))
+		mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
+		})
+	}
 
 	// Intercept missing favicon.ico to prevent fallback to index.html and 404 errors
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +160,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
 	sentryMiddleware := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))))
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

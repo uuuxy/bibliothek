@@ -14,6 +14,7 @@ import (
 	"bibliothek/api"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/jobs"
 	"bibliothek/plugins/vorlage"
 	"bibliothek/repository"
@@ -198,6 +199,9 @@ func main() {
 	// 6. Initialize API Server and routing
 	server := api.NewServer(database, authenticator, broker, cookieSecure)
 	httpServer := startServer(port, server)
+
+	// 7. Autostart: Resume downloading missing covers
+	go service.NewCoverService(database.Pool).SyncMissingCoversAsync()
 
 	// Block until signal is received
 	<-ctx.Done()

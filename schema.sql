@@ -239,6 +239,7 @@ CREATE TABLE buecher_titel (
     beschreibung TEXT,
     meldebestand INTEGER NOT NULL DEFAULT 5,          -- Reorder threshold point
     cover_url VARCHAR(512),                           -- Integrated cover URL
+    cover_status VARCHAR(50) DEFAULT 'PENDING',       -- Added for async cover fetching
     subject VARCHAR(100),                             -- Integrated from books table
     grade_level SMALLINT,                             -- Integrated from books table
     track VARCHAR(100),                               -- Integrated from books table
@@ -508,7 +509,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('018_vormerkungen_status.sql'),
 ('019_performance_indexe.sql'),
 ('020_audit_logs_admin.sql'),
-('021_soft_delete_schueler.sql')
+('021_soft_delete_schueler.sql'),
+('026_cover_status.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

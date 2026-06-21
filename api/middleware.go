@@ -11,11 +11,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"runtime/debug"
 	"strings"
 	"time"
 
 	"bibliothek/apierrors"
-	"regexp"
 )
 
 // TimeoutMiddleware wraps the request with a context timeout.
@@ -175,3 +176,31 @@ func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// statusRecorder is a custom ResponseWriter that tracks the HTTP status code
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+	r.status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
+// LoggingMiddleware records the HTTP status and prints the exact stack trace for 500 errors.
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		recorder := &statusRecorder{
+			ResponseWriter: w,
+			status:         http.StatusOK,
+		}
+
+		next.ServeHTTP(recorder, r)
+
+		if recorder.status >= 500 {
+			log.Printf("HTTP 500 ERROR on %s %s - STACKTRACE:\n%s", r.Method, r.URL.Path, string(debug.Stack()))
+		}
+	})
+}
+

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chai2010/webp"
 )
@@ -24,7 +25,13 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		dir := "uploads/covers"
 		_ = os.MkdirAll(dir, 0755)
-		localPath := filepath.Join(dir, isbn+".webp")
+		cleanDir := filepath.Clean(dir)
+		localPath := filepath.Clean(filepath.Join(cleanDir, isbn+".webp"))
+
+		if !strings.HasPrefix(localPath, cleanDir+string(filepath.Separator)) {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
 
 		// Serve cached version if it exists
 		if _, err := os.Stat(localPath); err == nil {
@@ -40,7 +47,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 			http.Error(w, "failed to create request", http.StatusInternalServerError)
 			return
 		}
-		
+
 		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
 		resp, err := http.DefaultClient.Do(req)
@@ -48,7 +55,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 			http.Error(w, "failed to fetch external image", http.StatusBadGateway)
 			return
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Decode original image
 		img, _, err := image.Decode(resp.Body)
@@ -61,9 +68,9 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		out, err := os.Create(localPath)
 		if err == nil {
 			err = webp.Encode(out, img, &webp.Options{Lossless: false, Quality: 80})
-			out.Close()
+			_ = out.Close()
 			if err != nil {
-				os.Remove(localPath) // cleanup if encoding fails
+				_ = os.Remove(localPath) // cleanup if encoding fails
 			}
 		}
 

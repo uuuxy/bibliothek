@@ -26,8 +26,8 @@ func NewCoverService(dbPool db.PgxPoolIface) *CoverService {
 func (s *CoverService) SyncMissingCoversAsync() {
 	ctx := context.Background()
 
-	// Hole alle Titel, die kein Cover haben, aber eine ISBN besitzen
-	query := `SELECT id, isbn FROM buecher_titel WHERE (cover_url IS NULL OR cover_url = '') AND isbn IS NOT NULL AND isbn != ''`
+	// Hole alle Titel, die kein Cover haben, aber eine ISBN besitzen und deren Status PENDING ist
+	query := `SELECT id, isbn FROM buecher_titel WHERE cover_status = 'PENDING' AND (cover_url IS NULL OR cover_url = '') AND isbn IS NOT NULL AND isbn != ''`
 	rows, err := s.db.Query(ctx, query)
 	if err != nil {
 		log.Printf("Cover Sync: Fehler beim Abrufen der fehlenden Cover: %v", err)
@@ -65,14 +65,20 @@ func (s *CoverService) SyncMissingCoversAsync() {
 
 		if err != nil {
 			log.Printf("Cover Sync: Fehler bei ISBN %s: %v", mc.ISBN, err)
+			updateQuery := `UPDATE buecher_titel SET cover_status = 'NOT_FOUND' WHERE id = $1`
+			_, _ = s.db.Exec(ctx, updateQuery, mc.ID)
 		} else if res.CoverURL != "" {
 			// Update DB
-			updateQuery := `UPDATE buecher_titel SET cover_url = $1 WHERE id = $2`
+			updateQuery := `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2`
 			if _, err := s.db.Exec(ctx, updateQuery, res.CoverURL, mc.ID); err != nil {
 				log.Printf("Cover Sync: DB-Update für Titel %s fehlgeschlagen: %v", mc.ID, err)
 			} else {
 				log.Printf("Cover Sync: Cover für ISBN %s aktualisiert.", mc.ISBN)
 			}
+		} else {
+			// Kein Fehler, aber auch keine URL gefunden
+			updateQuery := `UPDATE buecher_titel SET cover_status = 'NOT_FOUND' WHERE id = $1`
+			_, _ = s.db.Exec(ctx, updateQuery, mc.ID)
 		}
 
 		// Zwingendes Rate-Limiting

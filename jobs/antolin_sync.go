@@ -88,7 +88,7 @@ func (s *Scheduler) RunAntolinSync() {
 		if resp.StatusCode == http.StatusOK {
 			_ = json.NewDecoder(resp.Body).Decode(&apiData)
 		}
-		resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Vorbereitung des Updates
 		var stufen *string

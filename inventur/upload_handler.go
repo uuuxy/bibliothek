@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/logger"
 	"bytes"
 	"context"
 	"errors"
@@ -72,7 +73,7 @@ func processUploadedImage(fileBytes []byte, id string) ([]byte, string, error) {
 		var buf bytes.Buffer
 		err = jpeg.Encode(&buf, dst, &jpeg.Options{Quality: coverJPEGQuality})
 		if err != nil {
-			log.Printf("cover-upload: jpeg encode failed for book %s: %v", id, err)
+			log.Printf("cover-upload: jpeg encode failed for book %s: %v", logger.SanitizeLog(id), err)
 			return nil, "", fmt.Errorf("fehler bei der bildverarbeitung: %w", err)
 		}
 		finalBytes = buf.Bytes()
@@ -87,9 +88,11 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 	if abfrageErr == nil && altesBook != nil && strings.HasPrefix(altesBook.CoverURL, "/uploads/") {
 		filename := filepath.Base(altesBook.CoverURL)
 		if filename != "" && filename != "/" && filename != "." {
-			alterPfad := filepath.Join("uploads", filename)
-			// #nosec G304 - filename is sanitized using filepath.Base
-			_ = os.Remove(alterPfad) // Fehler ignorieren (Datei existiert ggf. nicht mehr)
+			cleanDir := filepath.Clean("uploads")
+			alterPfad := filepath.Clean(filepath.Join(cleanDir, filename))
+			if strings.HasPrefix(alterPfad, cleanDir+string(filepath.Separator)) {
+				_ = os.Remove(alterPfad) // Fehler ignorieren (Datei existiert ggf. nicht mehr)
+			}
 		}
 	}
 }
@@ -110,7 +113,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 	request.Body = http.MaxBytesReader(writer, request.Body, maxCoverUploadBytes)
 	err := request.ParseMultipartForm(maxCoverUploadBytes)
 	if err != nil {
-		log.Printf("cover-upload: multipart parse failed for book %s: %v", id, err)
+		log.Printf("cover-upload: multipart parse failed for book %s: %v", logger.SanitizeLog(id), err)
 		writeError(writer, http.StatusBadRequest, "datei zu groß oder ungültig (max. 10 MB)")
 		return
 	}
@@ -124,7 +127,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		log.Printf("cover-upload: read failed for book %s: %v", id, err)
+		log.Printf("cover-upload: read failed for book %s: %v", logger.SanitizeLog(id), err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim lesen der datei")
 		return
 	}
@@ -150,17 +153,23 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 	}
 
 	if err := os.MkdirAll("uploads", 0750); err != nil {
-		log.Printf("cover-upload: mkdir uploads failed for book %s: %v", id, err)
+		log.Printf("cover-upload: mkdir uploads failed for book %s: %v", logger.SanitizeLog(id), err)
 		writeError(writer, http.StatusInternalServerError, "uploads-verzeichnis konnte nicht erstellt werden")
 		return
 	}
 
-	filename := fmt.Sprintf("cover_%s_%d%s", id, time.Now().Unix(), saveExt)
-	savePath := filepath.Join("uploads", filename)
+	cleanDir := filepath.Clean("uploads")
+	filename := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), saveExt)
+	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
+
+	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
+		writeError(writer, http.StatusBadRequest, "invalid file path")
+		return
+	}
 
 	// #nosec G304 - filename is safely generated on the server side
 	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
-		log.Printf("cover-upload: write file failed for book %s (%s): %v", id, savePath, err)
+		log.Printf("cover-upload: write file failed for book %s (%s): %v", logger.SanitizeLog(id), logger.SanitizeLog(savePath), err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
 		return
 	}
@@ -175,7 +184,7 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 			writeError(writer, http.StatusNotFound, "buch nicht gefunden")
 			return
 		}
-		log.Printf("cover-upload: metadata update failed for book %s: %v", id, err)
+		log.Printf("cover-upload: metadata update failed for book %s: %v", logger.SanitizeLog(id), err)
 		writeError(writer, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden")
 		return
 	}

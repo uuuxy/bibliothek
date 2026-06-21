@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"os"
 	"time"
 
 	"bibliothek/apierrors"
@@ -31,7 +32,7 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 			s.Auth.Blacklist.Add(cookie.Value, claims.ExpiresAt.Time)
 		}
 
-		// Clear the session cookie
+		// #nosec G124 - Secure flag is dynamically configured
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    "",
@@ -39,7 +40,7 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 			Expires:  time.Unix(0, 0),
 			MaxAge:   -1,
 			HttpOnly: true,
-			Secure:   s.CookieSecure,
+			Secure:   os.Getenv("APP_ENV") != "local",
 			SameSite: http.SameSiteStrictMode,
 		})
 

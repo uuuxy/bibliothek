@@ -36,6 +36,8 @@ definitions:
     properties:
       ausgeliehen_am:
         type: string
+      ausleihe_id:
+        type: string
       autor:
         type: string
       barcode_id:
@@ -53,12 +55,19 @@ definitions:
     properties:
       barcode_id:
         type: string
+      geburtsdatum:
+        description: 'Format: YYYY-MM-DD'
+        type: string
       klasse:
         type: string
       nachname:
         type: string
       vorname:
         type: string
+    required:
+    - klasse
+    - nachname
+    - vorname
     type: object
   api.CreateUserRequest:
     properties:
@@ -68,12 +77,15 @@ definitions:
         type: string
       nachname:
         type: string
-      password:
-        type: string
       rolle:
         type: string
       vorname:
         type: string
+    required:
+    - email
+    - nachname
+    - rolle
+    - vorname
     type: object
   api.DamageNoteRequest:
     properties:
@@ -101,6 +113,47 @@ definitions:
       vorname:
         type: string
     type: object
+  api.InventurFinishResponse:
+    properties:
+      verloren_gemeldet:
+        type: integer
+    type: object
+  api.InventurScanRequest:
+    properties:
+      barcode_id:
+        type: string
+    type: object
+  api.InventurScanResponse:
+    properties:
+      barcode_id:
+        type: string
+      cover_url:
+        type: string
+      status:
+        description: e.g. "erfasst"
+        type: string
+      titel:
+        type: string
+      warnungen:
+        items:
+          type: string
+        type: array
+    type: object
+  api.InventurStartRequest:
+    properties:
+      signature_id:
+        type: integer
+      type:
+        description: '"global" or "signature"'
+        type: string
+    type: object
+  api.InventurStartResponse:
+    properties:
+      erwartet:
+        type: integer
+      scope:
+        type: string
+    type: object
   api.PermissionSetting:
     properties:
       allowed:
@@ -109,6 +162,13 @@ definitions:
         type: string
       role:
         type: string
+    type: object
+  api.PromoteStudentsResponse:
+    properties:
+      neue_abgaenger:
+        type: integer
+      versetzte_schueler:
+        type: integer
     type: object
   api.StudentProfileResponse:
     properties:
@@ -122,15 +182,26 @@ definitions:
         type: array
       foto_url:
         type: string
+      geburtsdatum:
+        type: string
       id:
         type: string
       ist_gesperrt:
         type: boolean
       klasse:
         type: string
+      lusd_id:
+        type: string
       nachname:
         type: string
+      status:
+        type: string
       vorname:
+        type: string
+    type: object
+  api.UpdateBarcodeRequest:
+    properties:
+      barcode:
         type: string
     type: object
   api.UpdatePermissionsRequest:
@@ -140,6 +211,15 @@ definitions:
       permission:
         type: string
       role:
+        type: string
+    type: object
+  api.UpdateStatusRequest:
+    properties:
+      ist_ausgesondert:
+        type: boolean
+      ist_ausleihbar:
+        type: boolean
+      zustand_notiz:
         type: string
     type: object
   api.UpdateUserRequest:
@@ -153,11 +233,17 @@ definitions:
       nachname:
         type: string
       password:
+        description: nur gehasht, wenn nicht leer
         type: string
       rolle:
         type: string
       vorname:
         type: string
+    required:
+    - email
+    - nachname
+    - rolle
+    - vorname
     type: object
   api.UserResponse:
     properties:
@@ -173,6 +259,10 @@ definitions:
         type: string
       nachname:
         type: string
+      permissions:
+        items:
+          type: string
+        type: array
       rolle:
         type: string
       vorname:
@@ -212,6 +302,16 @@ paths:
               type: string
             type: object
       summary: Get list of graduating students
+      tags:
+      - admin
+  /abgaenger/pdf:
+    get:
+      description: Generates a printable PDF for former/graduating students with their
+        unreturned books.
+      produces:
+      - application/pdf
+      responses: {}
+      summary: Get Laufzettel PDF
       tags:
       - admin
   /admin/permissions:
@@ -482,6 +582,90 @@ paths:
       summary: Delete physical book copy
       tags:
       - admin
+  /buecher/exemplare/{id}/aussondern:
+    post:
+      consumes:
+      - application/json
+      description: 'Marks a physical copy as decommissioned: sets ist_ausgesondert=true
+        and ist_ausleihbar=false.'
+      parameters:
+      - description: Book copy ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Decommission a book copy
+      tags:
+      - admin
+  /buecher/exemplare/{id}/barcode:
+    put:
+      consumes:
+      - application/json
+      description: Updates the barcode of a physical book copy, replacing placeholders
+        like AUTO-.
+      parameters:
+      - description: Book copy ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New barcode payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateBarcodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update copy barcode
+      tags:
+      - admin
   /buecher/exemplare/{id}/schadensnotiz:
     post:
       consumes:
@@ -522,6 +706,48 @@ paths:
               type: string
             type: object
       summary: Update damage note
+      tags:
+      - admin
+  /buecher/exemplare/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Updates the status (ist_ausleihbar, ist_ausgesondert) and the condition
+        note of a physical book copy.
+      parameters:
+      - description: Book copy ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New status payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update copy status
       tags:
       - admin
   /buecher/titel/{id}:
@@ -566,6 +792,149 @@ paths:
       summary: Delete book title
       tags:
       - admin
+  /buecher/titel/{id}/ausleiher:
+    get:
+      responses: {}
+  /buecher/titel/{id}/exemplare:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all physical book copies associated with a given title
+        ID, including availability status.
+      parameters:
+      - description: Book title ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List copies for a title
+      tags:
+      - admin
+  /buecher/titel/{id}/historie:
+    get:
+      responses: {}
+  /inventur/finish:
+    post:
+      description: Marks all 'ausstehend' books as 'verloren' and resets inventory
+        states.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InventurFinishResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Finalize inventory
+      tags:
+      - inventory
+  /inventur/scan:
+    post:
+      consumes:
+      - application/json
+      description: Records that a physical copy was physically present during a stock-take.
+      parameters:
+      - description: Barcode to check in
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.InventurScanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InventurScanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Scan a copy during inventory
+      tags:
+      - inventory
+  /inventur/start:
+    post:
+      consumes:
+      - application/json
+      description: Resets old inventory states and sets 'ausstehend' for the chosen
+        scope.
+      parameters:
+      - description: Scope configuration
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.InventurStartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InventurStartResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Start an inventory session
+      tags:
+      - inventory
   /klassen:
     get:
       consumes:
@@ -746,4 +1115,29 @@ paths:
       summary: Get student profile details
       tags:
       - students
+  /students/promote:
+    post:
+      consumes:
+      - application/json
+      description: Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen
+        (9H, 10R, 13) automatisch als Abgänger.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.PromoteStudentsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Automatische Versetzung (Schuljahreswechsel)
+      tags:
+      - schueler
+  /transactions/recent:
+    get:
+      responses: {}
 swagger: "2.0"

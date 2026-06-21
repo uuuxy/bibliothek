@@ -1,0 +1,286 @@
+{
+	"Golang errors": {},
+	"Issues": [
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "78",
+				"url": "https://cwe.mitre.org/data/definitions/78.html"
+			},
+			"rule_id": "G204",
+			"details": "Subprocess launched with variable",
+			"file": "/Users/peterflasch/Developer/Bibliothek/jobs/backup.go",
+			"code": "81: \t}\n82: \tpgDump := exec.CommandContext(ctx, \"pg_dump\", pgDumpArgs...) //nolint:gosec\n83: \tpgDump.Env = envs\n",
+			"line": "82",
+			"column": "12",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "78",
+				"url": "https://cwe.mitre.org/data/definitions/78.html"
+			},
+			"rule_id": "G204",
+			"details": "Subprocess launched with variable",
+			"file": "/Users/peterflasch/Developer/Bibliothek/inventur/backup_dateioperationen.go",
+			"code": "63: \n64: \tcmd := exec.Command(\"pg_dump\",\n65: \t\t\"-h\", host,\n66: \t\t\"-p\", port,\n67: \t\t\"-U\", user,\n68: \t\t\"-d\", dbName,\n69: \t\t\"--clean\",\n70: \t\t\"--if-exists\",\n71: \t)\n72: \tcmd.Env = append(os.Environ(), \"PGPASSFILE=\"+passFile.Name())\n",
+			"line": "64-71",
+			"column": "9",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/Users/peterflasch/Developer/Bibliothek/inventur/backup_email.go",
+			"code": "140: \n141: \t\tfile, err := os.Open(path)\n142: \t\tif err != nil {\n",
+			"line": "141",
+			"column": "16",
+			"nosec": false,
+			"suppressions": null,
+			"autofix": "Consider using os.Root to scope file access under a fixed root (Go \u003e=1.24). Prefer root.Open/root.Stat over os.Open/os.Stat to prevent directory traversal."
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/image_caching.go",
+			"code": "60: \t\t// Write to local file as WebP\n61: \t\tout, err := os.Create(localPath)\n62: \t\tif err == nil {\n",
+			"line": "61",
+			"column": "15",
+			"nosec": false,
+			"suppressions": null,
+			"autofix": "Consider using os.Root to scope file access under a fixed root (Go \u003e=1.24). Prefer root.Open/root.Stat over os.Open/os.Stat to prevent directory traversal."
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/jobs/antolin_sync.go",
+			"code": "90: \t\t}\n91: \t\tresp.Body.Close()\n92: \n",
+			"line": "91",
+			"column": "3",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/auth/imap.go",
+			"code": "149: \t\tslog.Warn(\"IMAP Login failed\", \"error\", err)\n150: \t\tconn.Close()\n151: \t\treturn fmt.Errorf(\"anmeldung fehlgeschlagen\")\n",
+			"line": "150",
+			"column": "3",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/auth/imap.go",
+			"code": "77: \t\t// This prevents a goroutine leak on every timeout.\n78: \t\tconn.Close()\n79: \t\t// Drain the result so the goroutine can exit\n",
+			"line": "78",
+			"column": "3",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/auth/imap.go",
+			"code": "52: \tif err != nil {\n53: \t\tconn.Close()\n54: \t\tif ctx.Err() == context.DeadlineExceeded {\n",
+			"line": "53",
+			"column": "3",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/auth/imap.go",
+			"code": "45: \t\tcase \u003c-ctx.Done():\n46: \t\t\tconn.Close()\n47: \t\tcase \u003c-done:\n",
+			"line": "46",
+			"column": "4",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/scan_handler.go",
+			"code": "95: \t\tw.WriteHeader(http.StatusNotFound)\n96: \t\tjson.NewEncoder(w).Encode(map[string]string{\n97: \t\t\t\"error\": \"Barcode im System nicht gefunden\",\n98: \t\t})\n99: \t}\n",
+			"line": "96-98",
+			"column": "3",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/scan_handler.go",
+			"code": "80: \t\t\t}\n81: \t\t\tjson.NewEncoder(w).Encode(map[string]any{\n82: \t\t\t\t\"type\":                    \"book\",\n83: \t\t\t\t\"book\":                    book,\n84: \t\t\t\t\"status\":                  status,\n85: \t\t\t\t\"current_student_id\":      currentStudentID,\n86: \t\t\t\t\"current_student_barcode\": currentStudentBarcode,\n87: \t\t\t})\n88: \t\t\treturn\n",
+			"line": "81-87",
+			"column": "4",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/scan_handler.go",
+			"code": "42: \t\t\t// Student found\n43: \t\t\tjson.NewEncoder(w).Encode(map[string]any{\n44: \t\t\t\t\"type\":    \"student\",\n45: \t\t\t\t\"student\": student,\n46: \t\t\t})\n47: \t\t\treturn\n",
+			"line": "43-46",
+			"column": "4",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/littera_import.go",
+			"code": "319: \t\t\t}\n320: \t\t\tbcr.Close()\n321: \t\t}\n",
+			"line": "320",
+			"column": "4",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/littera_import.go",
+			"code": "265: \t\t\t}\n266: \t\t\tbr.Close()\n267: \t\t}\n",
+			"line": "266",
+			"column": "4",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/littera_import.go",
+			"code": "254: \t\t\t\tif err != nil {\n255: \t\t\t\t\tbr.Close()\n256: \t\t\t\t\tapierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf(\"failed to insert title batch: %w\", err))\n",
+			"line": "255",
+			"column": "6",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/image_caching.go",
+			"code": "65: \t\t\tif err != nil {\n66: \t\t\t\tos.Remove(localPath) // cleanup if encoding fails\n67: \t\t\t}\n",
+			"line": "66",
+			"column": "5",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "LOW",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "703",
+				"url": "https://cwe.mitre.org/data/definitions/703.html"
+			},
+			"rule_id": "G104",
+			"details": "Errors unhandled",
+			"file": "/Users/peterflasch/Developer/Bibliothek/api/image_caching.go",
+			"code": "63: \t\t\terr = webp.Encode(out, img, \u0026webp.Options{Lossless: false, Quality: 80})\n64: \t\t\tout.Close()\n65: \t\t\tif err != nil {\n",
+			"line": "64",
+			"column": "4",
+			"nosec": false,
+			"suppressions": null
+		}
+	],
+	"Stats": {
+		"files": 124,
+		"lines": 16464,
+		"nosec": 32,
+		"found": 17
+	},
+	"GosecVersion": "dev"
+}

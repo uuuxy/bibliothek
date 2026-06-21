@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	_ "golang.org/x/image/webp"
@@ -85,8 +86,14 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	}
 
 	_ = os.MkdirAll("uploads", 0750)
-	filename := fmt.Sprintf("cover_auto_%s_%d%s", isbn, time.Now().Unix(), saveExt)
-	savePath := filepath.Join("uploads", filename)
+	cleanDir := filepath.Clean("uploads")
+	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
+	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
+
+	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
+		log.Printf("Path traversal attempt in cover downloader: %s", isbn)
+		return coverURL
+	}
 
 	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
 		log.Printf("Fehler beim lokalen Speichern von %s: %v", savePath, err)

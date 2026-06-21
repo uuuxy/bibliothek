@@ -60,7 +60,7 @@ func (handler *APIHandler) handleRetryExternalCovers(writer http.ResponseWriter,
 			failed++
 			continue
 		}
-		if strings.HasPrefix(lookup.CoverURL, "http") || lookup.CoverURL == book.CoverURL {
+		if !strings.HasPrefix(lookup.CoverURL, "http") || lookup.CoverURL == book.CoverURL {
 			skipped++
 			continue
 		}
