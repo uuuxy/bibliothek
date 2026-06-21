@@ -143,15 +143,46 @@ export function createMahnwesenStore() {
 
     async function printSelectedMahnungen() {
         if (selectedIds.size === 0) return;
-        const ids = Array.from(selectedIds);
-        console.log("Drucke Mahnungen für IDs:", ids);
-        // FIXME: API Endpunkt muss im Backend noch ergänzt werden für Bulk-Print,
-        // vorerst simulieren wir den Ladezustand.
+        
         pdfLoading = true;
         try {
-            await new Promise(r => setTimeout(r, 1000));
-            alert(ids.length + " Mahnungen generiert (Simulation).");
+            // Sammle alle Ausleih-IDs der selektierten Schüler
+            const currentList = filteredSchueler();
+            const ausleihIds = [];
+            for (const schuelerId of selectedIds) {
+                const s = currentList.find((/** @type {any} */ x) => x.schueler_id === schuelerId);
+                if (s && s.medien) {
+                    for (const m of s.medien) {
+                        if (m.ausleihe_id) {
+                            ausleihIds.push(m.ausleihe_id);
+                        }
+                    }
+                }
+            }
+
+            if (ausleihIds.length === 0) {
+                alert("Keine überfälligen Medien für die ausgewählten Schüler gefunden.");
+                pdfLoading = false;
+                return;
+            }
+
+            const res = await apiFetch("/api/admin/mahnungen/bulk-print", {
+                method: "POST",
+                body: JSON.stringify({ ausleih_ids: ausleihIds })
+            });
+
+            if (!res.ok) throw new Error("Bulk-PDF-Erzeugung fehlgeschlagen: " + (await res.text() || res.statusText));
+            
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Mahnliste_Bulk_${new Date().toISOString().slice(0,10)}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+
             selectedIds.clear();
+            await fetchData(); // Liste neu laden, um die aktualisierten Mahnstufen zu sehen
         } catch (e) {
             alert("Fehler: " + String(e));
         } finally {

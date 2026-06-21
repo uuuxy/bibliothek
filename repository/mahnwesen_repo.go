@@ -11,6 +11,8 @@ import (
 
 // UeberfaelligesMedium repräsentiert ein einzelnes Buch- oder Medienexemplar, das die Rückgabefrist überschritten hat.
 type UeberfaelligesMedium struct {
+	// AusleiheID ist die UUID des Ausleihvorgangs.
+	AusleiheID string `json:"ausleihe_id"`
 	// Titel ist der Haupttitel des überfälligen Mediums.
 	Titel string `json:"titel"`
 	// Autor ist der Autor des Werks.
@@ -61,7 +63,7 @@ func NewMahnwesenRepository(pool db.PgxPoolIface) *MahnwesenRepository {
 // gruppiert nach Klasse und Schüler. Ein optionaler Filter schränkt die Abfrage auf eine Klasse ein.
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
+		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       a.rueckgabe_frist,
 		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
@@ -90,11 +92,11 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	klassen := make([]MahnwesenKlasse, 0)
 
 	for rows.Next() {
-		var schuelerID, name, klasse string
+		var ausleiheID, schuelerID, name, klasse string
 		var titel, autor, isbn, coverURL string
 		var frist time.Time
 		var tage int
-		if err := rows.Scan(&schuelerID, &name, &klasse,
+		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
 			&titel, &autor, &isbn, &coverURL,
 			&frist, &tage); err != nil {
 			continue
@@ -118,6 +120,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		}
 
 		schuelerMap[schuelerKey].Medien = append(schuelerMap[schuelerKey].Medien, UeberfaelligesMedium{
+			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,
 			ISBN:             isbn,
@@ -156,7 +159,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 // von Schülern behalten wurden, die die Schule bereits verlassen haben (Abgänger).
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT s.id, s.vorname || ' ' || s.nachname, s.klasse,
+		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       a.ausgeliehen_am,
 		       t.jahrgang_bis,
@@ -190,14 +193,14 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 	klassen := make([]MahnwesenKlasse, 0)
 
 	for rows.Next() {
-		var schuelerID, name, klasse string
+		var ausleiheID, schuelerID, name, klasse string
 		var titel, autor, isbn, coverURL string
 		var ausgeliehenAm time.Time
 		var jahrgangBis int
 		var schuelerJahrgang *int
 		var istAbgaenger bool
 
-		if err := rows.Scan(&schuelerID, &name, &klasse,
+		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
 			&titel, &autor, &isbn, &coverURL,
 			&ausgeliehenAm, &jahrgangBis, &schuelerJahrgang, &istAbgaenger); err != nil {
 			continue
@@ -226,6 +229,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 		}
 
 		schuelerMap[schuelerKey].Medien = append(schuelerMap[schuelerKey].Medien, UeberfaelligesMedium{
+			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,
 			ISBN:             isbn,
@@ -260,4 +264,78 @@ func (repo *MahnwesenRepository) CheckFerienAktiv(ctx context.Context) (bool, st
 		return false, "", err
 	}
 	return true, bezeichnung, nil
+}
+
+// QueryUeberfaelligeByAusleiheIDs ermittelt spezifische überfällige Ausleihen für den Bulk-Print.
+func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Context, ids []string) ([]MahnwesenKlasse, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	
+	q := `
+		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
+		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
+		       a.rueckgabe_frist,
+		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
+		FROM ausleihen a
+		JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		JOIN buecher_titel t    ON e.titel_id = t.id
+		JOIN schueler s         ON a.schueler_id = s.id
+		WHERE a.id = ANY($1)
+		ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist
+	`
+
+	rows, err := repo.db.Query(ctx, q, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	klassenMap := map[string]*MahnwesenKlasse{}
+	schuelerMap := map[string]*UeberfaelligerSchueler{}
+	klassen := make([]MahnwesenKlasse, 0)
+
+	for rows.Next() {
+		var ausleiheID, schuelerID, name, klasse string
+		var titel, autor, isbn, coverURL string
+		var frist time.Time
+		var tage int
+		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
+			&titel, &autor, &isbn, &coverURL,
+			&frist, &tage); err != nil {
+			continue
+		}
+
+		if _, ok := klassenMap[klasse]; !ok {
+			klassen = append(klassen, MahnwesenKlasse{Klasse: klasse})
+			klassenMap[klasse] = &klassen[len(klassen)-1]
+		}
+
+		schuelerKey := klasse + "|" + schuelerID
+		if _, ok := schuelerMap[schuelerKey]; !ok {
+			sch := UeberfaelligerSchueler{
+				SchuelerID: schuelerID,
+				Name:       name,
+				Klasse:     klasse,
+			}
+			k := klassenMap[klasse]
+			k.Schueler = append(k.Schueler, sch)
+			schuelerMap[schuelerKey] = &k.Schueler[len(k.Schueler)-1]
+		}
+
+		schuelerMap[schuelerKey].Medien = append(schuelerMap[schuelerKey].Medien, UeberfaelligesMedium{
+			AusleiheID:       ausleiheID,
+			Titel:            titel,
+			Autor:            autor,
+			ISBN:             isbn,
+			CoverURL:         coverURL,
+			FaelligAm:        frist.Format("02.01.2006"),
+			TageUeberfaellig: tage,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return klassen, nil
 }

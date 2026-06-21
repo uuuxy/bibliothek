@@ -100,18 +100,18 @@
 
 <!-- Stats bar -->
 {#if mahnwesenStore.data && !mahnwesenStore.loading}
-  <div class="grid grid-cols-3 gap-4">
-    <div class="bg-white rounded-2xl border border-slate-200 p-4 text-center">
-      <p class="text-2xl font-bold text-rose-600">{mahnwesenStore.totalOverdue}</p>
-      <p class="text-xs text-slate-500 mt-0.5">Überfällige Medien</p>
+  <div class="flex flex-col md:flex-row bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-2">
+    <div class="flex-1 px-5 py-4 border-b md:border-b-0 md:border-r border-gray-200 last:border-0 hover:bg-blue-50/30 transition-colors cursor-default">
+      <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Überfällige Medien</p>
+      <p class="text-3xl font-semibold text-rose-600 mt-1">{mahnwesenStore.totalOverdue}</p>
     </div>
-    <div class="bg-white rounded-2xl border border-slate-200 p-4 text-center">
-      <p class="text-2xl font-bold text-slate-800">{mahnwesenStore.klassen.length}</p>
-      <p class="text-xs text-slate-500 mt-0.5">Betroffene Klassen</p>
+    <div class="flex-1 px-5 py-4 border-b md:border-b-0 md:border-r border-gray-200 last:border-0 hover:bg-blue-50/30 transition-colors cursor-default">
+      <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Betroffene Klassen</p>
+      <p class="text-3xl font-semibold text-gray-900 mt-1">{mahnwesenStore.klassen.length}</p>
     </div>
-    <div class="bg-white rounded-2xl border border-slate-200 p-4 text-center">
-      <p class="text-2xl font-bold text-slate-800">{mahnwesenStore.klassen.reduce((/** @type {number} */ s, /** @type {any} */ k) => s + k.schueler.length, 0)}</p>
-      <p class="text-xs text-slate-500 mt-0.5">Betroffene Schüler/innen</p>
+    <div class="flex-1 px-5 py-4 hover:bg-blue-50/30 transition-colors cursor-default">
+      <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Betroffene Schüler/innen</p>
+      <p class="text-3xl font-semibold text-gray-900 mt-1">{mahnwesenStore.klassen.reduce((/** @type {number} */ s, /** @type {any} */ k) => s + k.schueler.length, 0)}</p>
     </div>
   </div>
 {/if}
