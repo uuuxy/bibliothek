@@ -5,5 +5,5 @@ ALTER TABLE schueler ADD COLUMN IF NOT EXISTS anonymized_at TIMESTAMP;
 
 -- +goose Down
 -- +goose StatementBegin
-ALTER TABLE schueler DROP COLUMN IF NOT EXISTS anonymized_at;
+ALTER TABLE schueler DROP COLUMN IF EXISTS anonymized_at;
 -- +goose StatementEnd

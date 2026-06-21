@@ -120,24 +120,6 @@ func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// SecurityHeadersMiddleware sets HSTS, X-Frame-Options, X-Content-Type-Options and
-// Referrer-Policy on every response. HSTS uses a 1-year max-age with includeSubDomains
-// and preload to harden the school domain against protocol-downgrade attacks.
-func SecurityHeadersMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// HSTS: 1 year, include subdomains, eligible for preload list
-		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
-		// Prevent clickjacking
-		w.Header().Set("X-Frame-Options", "DENY")
-		// Prevent MIME-type sniffing
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		// Restrict referrer information
-		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		// Basic CSP: allow same-origin resources only (adjust if CDN is added)
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; form-action 'self';")
-		next.ServeHTTP(w, r)
-	})
-}
 
 // CORSMiddleware restricts cross-origin requests to the configured school domain.
 // Set ALLOWED_ORIGIN env var to the school's frontend URL (e.g. https://bibliothek.schule.de).

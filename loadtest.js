@@ -1,36 +1,54 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
-// Hier definieren wir das Szenario
 export const options = {
-  vus: 11,           // Exakt 11 parallele virtuelle Rechner
-  duration: '10s',   // Wir feuern 10 Sekunden lang
+  vus: 11,
+  duration: '10s',
 };
 
-export default function () {
-  // Passe die URL an die Route deines Go-Backends an (z. B. der Bulk-Import)
-  const url = 'http://localhost:8080/api/orders/bulk'; 
+// Setup wird einmalig vor allen VUs ausgeführt
+export function setup() {
+  const loginRes = http.post('http://localhost:8084/login', JSON.stringify({
+    email: 'pflasch@philipp-reis-schule.de',
+    password: 'peterfxy23'
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  if (loginRes.status !== 200) {
+    console.error(`Login failed: ${loginRes.status} ${loginRes.body}`);
+  }
+
+  // k6 speichert Cookies im Cookie-Jar, wir können sie auch manuell extrahieren
+  let cookies = {};
+  if (loginRes.cookies) {
+    for (const name of Object.keys(loginRes.cookies)) {
+      cookies[name] = loginRes.cookies[name][0].value;
+    }
+  }
+
+  return { cookies };
+}
+
+export default function (data) {
+  const url = 'http://localhost:8084/api/orders/bulk-receive'; 
   
-  // Wir simulieren einen Offline-Batch von 5 Scans
   const payload = JSON.stringify({
-    exemplar_ids: [1001, 1002, 1003, 1004, 1005] 
+    exemplar_ids: ['1001', '1002', '1003', '1004', '1005'] 
   });
 
   const params = {
     headers: {
       'Content-Type': 'application/json',
+      'X-CSRF-Token': data.cookies['csrf_token'] || '',
     },
+    cookies: data.cookies,
   };
 
-  // Feuer frei: Request an den Server schicken
   const res = http.post(url, payload, params);
 
-  // Wir prüfen knallhart, ob der Server einknickt
   check(res, {
     'ist Status 200 (Erfolg)': (r) => r.status === 200,
     'Server nicht abgestürzt (kein 500)': (r) => r.status !== 500,
   });
-
-  // Eine minimale Pause (300ms), um den Jitter der echten Rechner zu simulieren
-  sleep(0.3);
 }

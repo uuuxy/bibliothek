@@ -17,6 +17,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	_ "bibliothek/docs"
+	"bibliothek/internal/middleware"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
 	"bibliothek/repository"
@@ -155,7 +156,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
 	sentryMiddleware := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))))
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
