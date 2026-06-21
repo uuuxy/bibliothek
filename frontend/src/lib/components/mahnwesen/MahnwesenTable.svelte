@@ -32,24 +32,9 @@
     <p class="text-emerald-700 font-semibold">Keine überfälligen Ausleihen vorhanden. 🎉</p>
   </div>
 {:else}
-  <!-- Filter Chips -->
-  <div class="flex flex-wrap items-center gap-2 mb-6">
-    {#each filters as f}
-      <button
-        class="px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200
-               {mahnwesenStore.activeFilter === f 
-                 ? 'bg-blue-100 border-blue-200 text-blue-800 shadow-sm' 
-                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}"
-        onclick={() => mahnwesenStore.activeFilter = f}
-      >
-        {f}
-      </button>
-    {/each}
-  </div>
-
   <!-- MD3 Table -->
   <div class="bg-white w-full pb-16">
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto w-full">
       <table class="w-full text-left text-sm whitespace-nowrap">
         <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
           <tr>

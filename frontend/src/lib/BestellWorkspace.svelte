@@ -204,7 +204,7 @@
   }
 </script>
 
-<div class="w-full h-full p-8 bg-slate-50/50 text-slate-800 font-sans flex flex-col gap-6">
+<div class="w-full h-full text-slate-800 font-sans flex flex-col gap-6">
   <!-- Header & Tabs -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 shrink-0">
     <div class="flex items-center gap-3">

@@ -58,7 +58,7 @@
     {/if}
   </div>
   
-  <div class="flex-1 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/30 flex flex-col">
+  <div class="flex-1 bg-slate-50/30 flex flex-col">
     <div class="overflow-y-auto max-h-[50vh] sm:max-h-[60vh] custom-scrollbar">
       {#if incomingShipments.length === 0}
         <div class="py-12 text-center text-sm font-medium text-slate-400">Keine Positionen im Zulauf.</div>
