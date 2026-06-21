@@ -55,7 +55,8 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 				SELECT DISTINCT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt
 				FROM schueler s
 				JOIN ausleihen a ON s.id = a.schueler_id
-				WHERE s.klasse IN ('9h', '10r', '13')
+				WHERE s.deleted_at IS NULL
+				  AND s.klasse IN ('9h', '10r', '13')
 				  AND a.rueckgabe_am IS NULL
 				ORDER BY s.klasse, s.nachname
 			`
@@ -101,7 +102,8 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 			JOIN ausleihen a ON s.id = a.schueler_id
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
 			JOIN buecher_titel t ON e.titel_id = t.id
-			WHERE s.klasse IN ('9h', '10r', '13')
+			WHERE s.deleted_at IS NULL
+			  AND s.klasse IN ('9h', '10r', '13')
 			  AND a.rueckgabe_am IS NULL
 			ORDER BY s.klasse, s.nachname, t.titel
 		`
@@ -176,7 +178,7 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 			LEFT JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
 			LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
 			LEFT JOIN buecher_titel t ON e.titel_id = t.id
-			WHERE s.klasse IN ('9h', '10r', '13')
+			WHERE s.deleted_at IS NULL AND s.klasse IN ('9h', '10r', '13')
 			ORDER BY s.klasse, s.nachname, t.titel
 		`
 		rows, err := s.DB.Pool.Query(ctx, detailQuery)

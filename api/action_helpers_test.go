@@ -36,7 +36,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock StudentRepo.GetByID
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil))
@@ -159,7 +159,7 @@ func TestHandleBookReturn(t *testing.T) {
 			AddRow(activeLoanID, &copyID, &studentID, nil, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, staffID, nil, false, false))
 
 	// Student lookup fallback
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil))

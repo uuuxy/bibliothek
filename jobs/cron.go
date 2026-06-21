@@ -34,6 +34,7 @@ func (s *Scheduler) Start() {
 	if _, err := s.cron.AddFunc("0 0 * * *", func() {
 		s.RunGDPRAnonymizeLoans()
 		s.RunGDPRDeleteAbgaenger()
+		s.RunGDPRAnonymizeOldData()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return
@@ -130,6 +131,7 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
 		FROM schueler
 		WHERE ist_abgaenger = true
+		  AND deleted_at IS NULL
 		  AND abgaenger_jahr < $1
 		  AND NOT EXISTS (
 		      SELECT 1 FROM ausleihen
@@ -209,5 +211,53 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 		log.Printf("Scheduler GDPR Delete: completed with %d failure(s): %v", len(failures), failures)
 	} else {
 		log.Printf("Scheduler GDPR Delete: successfully deleted %d student(s)", deleted)
+	}
+}
+
+// ── GDPR: Anonymisierung alter Datensätze (180 Tage nach Soft-Delete / 360 Tage Abgänger) ──
+
+// RunGDPRAnonymizeOldData anonymisiert Schüler, die entweder:
+// - seit mehr als 180 Tagen weichgelöscht sind (deleted_at < NOW - 180 Tage)
+// - seit mehr als 360 Tagen als Abgänger markiert sind (aktualisiert_am < NOW - 360 Tage UND ist_abgaenger = true)
+// Es werden Vorname, Nachname und Klasse geleert oder gehasht und anonymized_at gesetzt.
+func (s *Scheduler) RunGDPRAnonymizeOldData() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	query := `
+		UPDATE schueler
+		SET vorname = left(md5(random()::text), 8),
+		    nachname = 'Anonym',
+		    klasse = '',
+		    barcode_id = NULL,
+		    foto_url = NULL,
+		    anonymized_at = NOW(),
+		    aktualisiert_am = NOW()
+		WHERE anonymized_at IS NULL
+		  AND (
+		      (deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '180 days')
+		      OR
+		      (ist_abgaenger = true AND abgaenger_jahr <= EXTRACT(YEAR FROM NOW() - INTERVAL '360 days'))
+		  )
+	`
+	
+	tag, err := s.db.Exec(ctx, query)
+	if err != nil {
+		log.Printf("Scheduler GDPR Anonymize: Error anonymizing old students: %v", err)
+		return
+	}
+
+	count := tag.RowsAffected()
+	if count > 0 {
+		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)
+		_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
+			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > 360T)",
+			map[string]any{
+				"betroffene_schueler": count,
+				"ausgefuehrt_am":      time.Now().UTC().Format(time.RFC3339),
+			},
+		)
+	} else {
+		log.Printf("Scheduler GDPR Anonymize: no old students found to anonymize.")
 	}
 }

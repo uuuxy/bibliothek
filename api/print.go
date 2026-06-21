@@ -28,7 +28,7 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		var s pdf.Schueler
 		err = dbPool.QueryRow(ctx, `
 			SELECT vorname, nachname
-			FROM schueler WHERE id = $1
+			FROM schueler WHERE id = $1 AND deleted_at IS NULL
 		`, schuelerID).Scan(&s.Vorname, &s.Nachname)
 		s.Strasse = ""
 		s.Hausnummer = ""
@@ -100,6 +100,7 @@ func PrintMahnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
 			JOIN buecher_titel t ON e.titel_id = t.id
 			WHERE LOWER(s.klasse) = LOWER($1)
+			  AND s.deleted_at IS NULL
 			  AND a.rueckgabe_am IS NULL
 			  AND a.rueckgabe_frist < CURRENT_DATE
 			ORDER BY s.nachname, s.vorname, a.ausgeliehen_am
@@ -182,7 +183,7 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		var s pdf.KontoauszugSchueler
 		err = dbPool.QueryRow(ctx, `
 			SELECT vorname, nachname, klasse
-			FROM schueler WHERE id = $1
+			FROM schueler WHERE id = $1 AND deleted_at IS NULL
 		`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Klasse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusNotFound, err)

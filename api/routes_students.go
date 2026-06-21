@@ -13,6 +13,10 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("create_students")(s.PatchStudentHandler()))
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
 
+	// Papierkorb
+	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.GetDeletedStudentsHandler()))
+	mux.Handle("POST /api/schueler/{id}/restore", s.RequirePermission("delete_students")(s.RestoreStudentHandler()))
+
 	// Photos
 	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.UploadStudentPhotoHandler()))
 	mux.Handle("GET /api/schueler/{id}/photo", s.RequirePermission("view_students")(s.ServeStudentPhotoHandler()))

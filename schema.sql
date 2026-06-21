@@ -136,7 +136,8 @@ CREATE TABLE schueler (
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_manually_blocked BOOLEAN DEFAULT false,
-    block_reason TEXT
+    block_reason TEXT,
+    deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
 CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
@@ -505,7 +506,9 @@ INSERT INTO schema_migrations (version) VALUES
 ('016_fix_ghost_vormerkungen.sql'),
 ('017_ferien_schliesszeiten.sql'),
 ('018_vormerkungen_status.sql'),
-('019_performance_indexe.sql')
+('019_performance_indexe.sql'),
+('020_audit_logs_admin.sql'),
+('021_soft_delete_schueler.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

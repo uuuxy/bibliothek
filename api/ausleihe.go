@@ -101,6 +101,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			  AND a.exemplar_id = e.id
 			  AND e.titel_id = t.id
 			  AND a.rueckgabe_am IS NULL
+			  AND s.deleted_at IS NULL
 			  AND s.klasse = $2
 			  AND t.titel ILIKE 'LMF-%'
 		`

@@ -38,7 +38,7 @@ func (s *Server) ServeStudentPhotoHandler() http.HandlerFunc {
 		}
 
 		// Foto on the fly entschlüsseln und mit Sicherheits-Headern streamen
-		if err := crypto.DecryptAndServe(w, ciphertext, "image/jpeg"); err != nil {
+		if err := crypto.DecryptAndServe(w, ciphertext, "image/webp"); err != nil {
 			// DecryptAndServe sendet bereits einen HTTP Error, wenn es hier fehlschlägt
 			return
 		}

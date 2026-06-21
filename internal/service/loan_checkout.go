@@ -49,39 +49,49 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 			return nil, fmt.Errorf("%w: Aktives Schülerprofil nicht gefunden", ErrNotFound)
 		}
 		// Wenn der Schüler gesperrt ist, darf er nichts ausleihen - es sei denn, overrideBlock ist gesetzt.
-		if !overrideBlock {
-			if sObj.IstGesperrt {
+		if sObj.IstGesperrt {
+			if !overrideBlock {
 				return nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
+			} else {
+				_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{"schueler_id": borrowerID, "reason": "Ausleihsperre manuell ignoriert (IstGesperrt)"})
 			}
-			if sObj.IsManuallyBlocked {
-				reason := "ohne Grund"
-				if sObj.BlockReason != nil && *sObj.BlockReason != "" {
-					reason = *sObj.BlockReason
-				}
+		}
+		if sObj.IsManuallyBlocked {
+			reason := "ohne Grund"
+			if sObj.BlockReason != nil && *sObj.BlockReason != "" {
+				reason = *sObj.BlockReason
+			}
+			if !overrideBlock {
 				return nil, fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
+			} else {
+				_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{"schueler_id": borrowerID, "reason": "Ausleihsperre manuell ignoriert (Manuelle Sperre: " + reason + ")"})
 			}
+		}
 
-			settings, err := s.querySettings(ctx)
-			if err != nil {
-				return nil, err
-			}
+		settings, err := s.querySettings(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-			var overdueCount int
-			errOverdue := s.pool.QueryRow(ctx, `
-				SELECT COUNT(*) 
-				FROM ausleihen 
-				WHERE schueler_id = $1 
-				  AND rueckgabe_am IS NULL 
-				  AND rueckgabe_frist < CURRENT_TIMESTAMP - (INTERVAL '1 day' * $2)
-				  AND ist_handapparat = false
-				  AND geraet_id IS NULL
-			`, borrowerID, settings.MaxOverdueDays).Scan(&overdueCount)
-			
-			if errOverdue != nil {
-				return nil, errOverdue
-			}
-			if overdueCount >= settings.MaxOverdueItems {
+		var overdueCount int
+		errOverdue := s.pool.QueryRow(ctx, `
+			SELECT COUNT(*) 
+			FROM ausleihen 
+			WHERE schueler_id = $1 
+			  AND rueckgabe_am IS NULL 
+			  AND rueckgabe_frist < CURRENT_TIMESTAMP - (INTERVAL '1 day' * $2)
+			  AND ist_handapparat = false
+			  AND geraet_id IS NULL
+		`, borrowerID, settings.MaxOverdueDays).Scan(&overdueCount)
+		
+		if errOverdue != nil {
+			return nil, errOverdue
+		}
+		if overdueCount >= settings.MaxOverdueItems {
+			if !overrideBlock {
 				return nil, fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdueCount)
+			} else {
+				_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{"schueler_id": borrowerID, "reason": fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", overdueCount)})
 			}
 		}
 

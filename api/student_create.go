@@ -121,7 +121,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 
 		// 1. Notfall-Wachhund: Duplikatsprüfung (Vorname, Nachname, Geburtsdatum)
 		var isDuplicate bool
-		qDup := `SELECT EXISTS(SELECT 1 FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND coalesce(geburtsdatum, '1900-01-01'::DATE) = coalesce($3::DATE, '1900-01-01'::DATE))`
+		qDup := `SELECT EXISTS(SELECT 1 FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND coalesce(geburtsdatum, '1900-01-01'::DATE) = coalesce($3::DATE, '1900-01-01'::DATE) AND deleted_at IS NULL)`
 		err = tx.QueryRow(ctx, qDup, req.Vorname, req.Nachname, parsedGebdatum).Scan(&isDuplicate)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

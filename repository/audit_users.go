@@ -68,36 +68,10 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("failed to snapshot student for audit: %w", err)
 	}
 
-	// 1. Ausleihen anonymisieren: Setze die schueler_id bei allen zurückgegebenen Ausleihen auf NULL.
-	// Das sorgt dafür, dass Statistiken erhalten bleiben, aber kein Personenbezug mehr existiert.
-	if _, err = tx.Exec(ctx,
-		`UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1 AND rueckgabe_am IS NOT NULL`,
-		studentID,
-	); err != nil {
-		return fmt.Errorf("anonymizing returned loans: %w", err)
-	}
-
-	// 2. Audit-Logs anonymisieren: Überschreibe personenbezogene Felder in alten Log-Einträgen.
-	if _, err = tx.Exec(ctx, `
-		UPDATE audit_log
-		SET details = details || '{"vorname":"Anonymisiert", "nachname":"Anonymisiert", "klasse":"Anonymisiert"}'::jsonb
-		WHERE (datensatz_id = $1 OR (details->>'schueler_id') = $2) AND details ? 'vorname'
-	`, studentID, studentID); err != nil {
-		return fmt.Errorf("anonymizing past audit_logs: %w", err)
-	}
-
-	// 3. Schadensfälle bereinigen: Bezahlte Fälle werden gelöscht. Offene Fälle verhindern das Löschen.
-	if _, err = tx.Exec(ctx,
-		`DELETE FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = true`,
-		studentID,
-	); err != nil {
-		return fmt.Errorf("deleting paid damages: %w", err)
-	}
-
-	// 4. Schüler-Datensatz physisch löschen
-	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, studentID)
+	// Soft-Delete durchführen anstatt physisch zu löschen
+	tag, err := tx.Exec(ctx, `UPDATE schueler SET deleted_at = CURRENT_TIMESTAMP, ist_gesperrt = true, block_reason = 'Systematisch gelöscht' WHERE id = $1`, studentID)
 	if err != nil {
-		return fmt.Errorf("deleting student: %w", err)
+		return fmt.Errorf("soft-deleting student: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("student %s not found", studentID)
@@ -113,19 +87,20 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		akteur = "SYSTEM"
 	}
 
-	kontext := "DSGVO-Löschroutine"
+	kontext := "Soft-Delete Routine"
 
-	// Protokolleintrag schreiben – hierbei werden keine echten Namen, sondern "Anonymisiert"-Werte gespeichert.
-	if err = r.insertAuditLog(ctx, tx, "schueler", "DELETE", studentID,
+	// Protokolleintrag schreiben
+	if err = r.insertAuditLog(ctx, tx, "schueler", "UPDATE", studentID,
 		bearbeiterPtr, akteur, &kontext,
 		map[string]any{
-			"vorname":        "Anonymisiert",
-			"nachname":       "Anonymisiert",
-			"klasse":         "Anonymisiert",
+			"vorname":        vorname,
+			"nachname":       nachname,
+			"klasse":         klasse,
 			"barcode_id":     barcodeID,
 			"abgaenger_jahr": abgaengerJahr,
 			"grund":          grund,
 			"geloescht_am":   time.Now().UTC().Format(time.RFC3339),
+			"action":         "soft_delete",
 		},
 	); err != nil {
 		return fmt.Errorf("writing audit log: %w", err)

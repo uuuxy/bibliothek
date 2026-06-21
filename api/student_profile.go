@@ -172,7 +172,7 @@ func (s *Server) GetClassesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		rows, err := s.DB.Pool.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' ORDER BY klasse")
+		rows, err := s.DB.Pool.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

@@ -34,7 +34,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 		err := s.DB.Pool.QueryRow(ctx, `
 			SELECT id, barcode_id, vorname, nachname, klasse 
 			FROM schueler 
-			WHERE barcode_id = $1 OR lusd_id = $1 
+			WHERE (barcode_id = $1 OR lusd_id = $1) AND deleted_at IS NULL AND ist_abgaenger = false
 			LIMIT 1
 		`, barcode).Scan(&student.ID, &student.BarcodeID, &student.Vorname, &student.Nachname, &student.Klasse)
 
@@ -65,7 +65,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 		err = s.DB.Pool.QueryRow(ctx, `
 			SELECT e.id, e.titel_id, e.barcode_id, t.titel, COALESCE(t.autor, ''),
 			       (SELECT schueler_id FROM ausleihen WHERE exemplar_id = e.id AND rueckgabe_am IS NULL LIMIT 1) as current_student_id,
-			       (SELECT s.barcode_id FROM ausleihen a JOIN schueler s ON a.schueler_id = s.id WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL LIMIT 1) as current_student_barcode
+			       (SELECT s.barcode_id FROM ausleihen a JOIN schueler s ON a.schueler_id = s.id WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL AND s.deleted_at IS NULL LIMIT 1) as current_student_barcode
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON e.titel_id = t.id
 			WHERE e.barcode_id = $1

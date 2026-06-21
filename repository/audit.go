@@ -34,6 +34,9 @@ type AuditRepository interface {
 
 	// LogSystemAktion protokolliert systemgesteuerte Batch-Prozesse (z. B. automatische Sperrungen oder Bereinigungen).
 	LogSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error
+
+	// LogAdminAktion protokolliert kritische Admin-Eingriffe in der Tabelle audit_logs.
+	LogAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error
 }
 
 // pgAuditRepository implementiert das AuditRepository für PostgreSQL.
@@ -81,5 +84,35 @@ func (r *pgAuditRepository) insertAuditLog(
 			return string(detailsJSON)
 		}(),
 	)
+	return err
+}
+
+// LogAdminAktion schreibt einen Eintrag in die Tabelle audit_logs für systemweite oder kritische Admin-Eingriffe.
+func (r *pgAuditRepository) LogAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
+	var detailsJSON []byte
+	if details != nil {
+		var err error
+		detailsJSON, err = json.Marshal(details)
+		if err != nil {
+			detailsJSON = []byte("{}")
+		}
+	} else {
+		detailsJSON = []byte("{}")
+	}
+
+	query := `
+		INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse, zeitstempel) 
+		VALUES ($1, $2, $3::jsonb, $4, CURRENT_TIMESTAMP)
+	`
+	var adminPtr *string
+	if adminID != "" {
+		adminPtr = &adminID
+	}
+	var ipPtr *string
+	if ip != "" {
+		ipPtr = &ip
+	}
+
+	_, err := r.db.Exec(ctx, query, adminPtr, aktion, string(detailsJSON), ipPtr)
 	return err
 }

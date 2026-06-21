@@ -34,7 +34,7 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl,
 					EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
 				FROM schueler 
-				WHERE klasse = $1 
+				WHERE klasse = $1 AND deleted_at IS NULL
 				ORDER BY nachname, vorname
 			`, klasse)
 		} else {
@@ -44,6 +44,7 @@ func (s *Server) ListStudentsHandler() http.HandlerFunc {
 					(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl,
 					EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
 				FROM schueler 
+				WHERE deleted_at IS NULL
 				ORDER BY klasse, nachname, vorname 
 				LIMIT 500
 			`)

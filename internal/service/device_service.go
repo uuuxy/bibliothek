@@ -211,7 +211,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 		if student == nil || *activeLoan.SchuelerID != student.ID {
 			isFremd = true
 			var vorbesitzer repository.Student
-			err = s.pool.QueryRow(ctx, "SELECT vorname, nachname, klasse FROM schueler WHERE id = $1", *activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
+			err = s.pool.QueryRow(ctx, "SELECT vorname, nachname, klasse FROM schueler WHERE id = $1 AND deleted_at IS NULL", *activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return nil, err
 			}

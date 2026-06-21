@@ -91,7 +91,7 @@ func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) 
 	query := `
 		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason
 		FROM schueler
-		WHERE barcode_id = $1
+		WHERE barcode_id = $1 AND deleted_at IS NULL
 		LIMIT 1
 	`
 	s, err := scanStudent(r.db.QueryRow(ctx, query, barcode))
@@ -109,7 +109,7 @@ func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student,
 	query := `
 		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason
 		FROM schueler
-		WHERE id = $1
+		WHERE id = $1 AND deleted_at IS NULL
 		LIMIT 1
 	`
 	s, err := scanStudent(r.db.QueryRow(ctx, query, id))
@@ -127,9 +127,10 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 	query := `
 		SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason
 		FROM schueler
-		WHERE vorname ILIKE '%' || $1 || '%' 
+		WHERE (vorname ILIKE '%' || $1 || '%' 
 		   OR nachname ILIKE '%' || $1 || '%'
-		   OR barcode_id ILIKE '%' || $1 || '%'
+		   OR barcode_id ILIKE '%' || $1 || '%')
+		  AND deleted_at IS NULL
 		ORDER BY nachname ASC, vorname ASC
 		LIMIT $2
 	`
@@ -159,7 +160,7 @@ func (r *pgStudentRepository) GetNextSequence(ctx context.Context) (int, error) 
 	qLast := `
 		SELECT barcode_id 
 		FROM schueler 
-		WHERE barcode_id LIKE 'S-%' 
+		WHERE barcode_id LIKE 'S-%' AND deleted_at IS NULL
 		ORDER BY barcode_id DESC 
 		LIMIT 1
 	`
@@ -175,7 +176,7 @@ func (r *pgStudentRepository) GetNextSequence(ctx context.Context) (int, error) 
 
 // GetAllLUSDStudents liest alle LUSD-relevanten Felder aus der Datenbank aus.
 func (r *pgStudentRepository) GetAllLUSDStudents(ctx context.Context) ([]Student, error) {
-	rows, err := r.db.Query(ctx, "SELECT id, lusd_id, lower(vorname), lower(nachname), coalesce(geburtsdatum, '1900-01-01'::DATE) FROM schueler")
+	rows, err := r.db.Query(ctx, "SELECT id, lusd_id, lower(vorname), lower(nachname), coalesce(geburtsdatum, '1900-01-01'::DATE) FROM schueler WHERE deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +280,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 	qDeleteVormerkungen := `
 		DELETE FROM vormerkungen 
 		WHERE schueler_id IN (
-			SELECT id FROM schueler WHERE ist_abgaenger = true
+			SELECT id FROM schueler WHERE ist_abgaenger = true AND deleted_at IS NULL
 		)
 	`
 	_, err = tx.Exec(ctx, qDeleteVormerkungen)
@@ -294,7 +295,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 		FROM ausleihen
 		WHERE rueckgabe_am IS NULL 
 		  AND schueler_id IN (
-			  SELECT id FROM schueler WHERE ist_abgaenger = true
+			  SELECT id FROM schueler WHERE ist_abgaenger = true AND deleted_at IS NULL
 		  )
 	`
 	err = tx.QueryRow(ctx, qCountLoans).Scan(&abgaengerOpenCount)
