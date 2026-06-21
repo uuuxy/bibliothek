@@ -1,6 +1,10 @@
 <script>
   import { mahnwesenStore } from "../../stores/mahnwesen.svelte.js";
 
+  let countAlle = $derived(
+    mahnwesenStore.klassen.reduce((sum, k) => sum + k.schueler.length, 0)
+  );
+
   let countAkut = $derived(
     mahnwesenStore.klassen.reduce((sum, k) =>
       sum + k.schueler.filter(s => {
@@ -17,6 +21,11 @@
         const maxTage = s.medien.reduce((max, m) => m.tage_ueberfaellig > max ? m.tage_ueberfaellig : max, 0);
         return maxTage > 14 && !isLehrer;
       }).length, 0)
+  );
+
+  let countKollegium = $derived(
+    mahnwesenStore.klassen.reduce((sum, k) =>
+      sum + k.schueler.filter(s => s.klasse && s.klasse.toLowerCase() === 'lehrer').length, 0)
   );
 </script>
 
@@ -116,58 +125,51 @@
   </div>
 </div>
 
-<!-- Stats Cards Grid -->
+<!-- Tabs Navigation -->
 {#if mahnwesenStore.data && !mahnwesenStore.loading}
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <!-- Card 1: Akut fällig -->
-    <div class="bg-white border border-gray-200/75 rounded-2xl p-6 shadow-[0_2px_8px_rgb(0,0,0,0.04)] relative overflow-hidden transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-gray-300/80">
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-gray-500 tracking-wide uppercase">Akut fällig</h3>
-        <div class="bg-amber-50 text-amber-600 p-2 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      </div>
-      <p class="text-4xl font-extrabold text-gray-900 tracking-tight mt-2">{countAkut}</p>
-      <div class="mt-3 flex items-center gap-1">
-        <span class="text-xs text-amber-600 font-medium">+{Math.ceil(countAkut * 0.15)} seit gestern</span>
-        <span class="text-[11px] text-gray-400">· heute anstehend</span>
-      </div>
-    </div>
+  <div class="flex space-x-1 border-b border-gray-200 mt-6 print:hidden">
+    <!-- Alle Tab -->
+    <button
+      class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter === 'Alle' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+      onclick={() => mahnwesenStore.activeFilter = 'Alle'}
+    >
+      Alle
+      <span class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter === 'Alle' && countAlle > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}">
+        {countAlle}
+      </span>
+    </button>
 
-    <!-- Card 2: Eskaliert -->
-    <div class="bg-white border border-gray-200/75 rounded-2xl p-6 shadow-[0_2px_8px_rgb(0,0,0,0.04)] relative overflow-hidden transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-gray-300/80">
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-gray-500 tracking-wide uppercase">Eskaliert</h3>
-        <div class="bg-red-50 text-red-600 p-2 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-      </div>
-      <p class="text-4xl font-extrabold text-gray-900 tracking-tight mt-2">{countEskaliert}</p>
-      <div class="mt-3 flex items-center gap-1">
-        <span class="text-xs text-red-600 font-medium">Mahnstufe 3 / Härtefälle</span>
-        <span class="text-[11px] text-gray-400">· dringend</span>
-      </div>
-    </div>
+    <!-- Akut fällig Tab -->
+    <button
+      class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter === '1. Erinnerung' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+      onclick={() => mahnwesenStore.activeFilter = '1. Erinnerung'}
+    >
+      Akut fällig
+      <span class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter === '1. Erinnerung' && countAkut > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}">
+        {countAkut}
+      </span>
+    </button>
 
-    <!-- Card 3: Erfolgreich retourniert -->
-    <div class="bg-white border border-gray-200/75 rounded-2xl p-6 shadow-[0_2px_8px_rgb(0,0,0,0.04)] relative overflow-hidden transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-gray-300/80">
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-gray-500 tracking-wide uppercase">Erfolgreich retourniert</h3>
-        <div class="bg-green-50 text-green-600 p-2 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      </div>
-      <p class="text-4xl font-extrabold text-gray-900 tracking-tight mt-2">{mahnwesenStore.heuteRetourniert}</p>
-      <div class="mt-3 flex items-center gap-1">
-        <span class="text-xs text-green-600 font-medium">Heute zurückgegeben</span>
-        <span class="text-[11px] text-gray-400">· bereinigt</span>
-      </div>
-    </div>
+    <!-- Eskaliert Tab -->
+    <button
+      class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter === 'Mahnung' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+      onclick={() => mahnwesenStore.activeFilter = 'Mahnung'}
+    >
+      Eskaliert
+      <span class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter === 'Mahnung' && countEskaliert > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}">
+        {countEskaliert}
+      </span>
+    </button>
+
+    <!-- Kollegium Tab -->
+    <button
+      class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter === 'Lehrerkollegium' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+      onclick={() => mahnwesenStore.activeFilter = 'Lehrerkollegium'}
+    >
+      Kollegium
+      <span class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter === 'Lehrerkollegium' && countKollegium > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}">
+        {countKollegium}
+      </span>
+    </button>
   </div>
 {/if}
