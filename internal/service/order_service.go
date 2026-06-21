@@ -38,7 +38,8 @@ type GroupedItem struct {
 // GetIncomingShipments returns a list of ordered copies that are currently in transit.
 func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*ShipmentGroup, error) {
 	query := `
-		SELECT e.id, e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel, COALESCE(t.isbn, ''), COALESCE(t.cover_url, '')
+		SELECT e.id, e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel, COALESCE(t.isbn, ''), 
+		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.ist_ausleihbar = false 
@@ -171,7 +172,8 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 	var results []OrderSearchItem
 
 	localQuery := `
-		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), coalesce(t.cover_url, ''),
+		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), 
+		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
 		       (SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = t.id AND e.ist_ausgesondert = false) AS current_stock
 		FROM buecher_titel t
 		WHERE 

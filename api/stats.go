@@ -215,7 +215,9 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 // queryReorders retrieves book titles below the reorder point.
 func (s *Server) queryReorders(ctx context.Context) ([]ReorderTitle, error) {
 	query := `
-		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), coalesce(t.cover_url, ''), t.meldebestand,
+		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), 
+		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
+		       t.meldebestand,
 			(SELECT COUNT(*) FROM buecher_exemplare e 
 			 WHERE e.titel_id = t.id AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
 			   AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
