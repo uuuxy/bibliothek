@@ -12,7 +12,7 @@
         <div class="p-2.5 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-between gap-3 text-[11px]">
           <div class="flex items-center gap-2 min-w-0">
             {#if r.cover_url}
-              <img src={r.cover_url} class="w-7 aspect-3/4 object-cover rounded-sm shrink-0" alt="" />
+              <img src="/api/images/cover?isbn={r.isbn || ''}&url={encodeURIComponent(r.cover_url)}" class="w-7 aspect-3/4 object-cover rounded-sm shrink-0" alt="" />
             {:else}
               <div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center text-slate-400 shrink-0 text-[9px]">📖</div>
             {/if}

@@ -90,7 +90,7 @@
             </div>
             {#each localResults as b}
               <button onclick={() => openStaging(b)} class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center gap-3 text-base">
-                {#if b.cover_url}<img src={b.cover_url} class="w-7 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{b.titel.charAt(0)}</div>{/if}
+                {#if b.cover_url}<img src="/api/images/cover?isbn={b.isbn || ''}&url={encodeURIComponent(b.cover_url)}" class="w-7 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{b.titel.charAt(0)}</div>{/if}
                 <div class="min-w-0 flex-1">
                   <div class="font-bold text-slate-800 truncate">{b.titel}</div>
                   <div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div>
@@ -113,7 +113,7 @@
                 disabled={isDuplicate}
                 class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base border-b border-slate-100 last:border-0 {isDuplicate ? 'opacity-50 cursor-not-allowed bg-slate-50/30' : 'hover:bg-slate-50'}"
               >
-                {#if b.cover_url}<img src={b.cover_url} class="w-7 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{b.titel.charAt(0)}</div>{/if}
+                {#if b.cover_url}<img src="/api/images/cover?isbn={b.isbn || ''}&url={encodeURIComponent(b.cover_url)}" class="w-7 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{b.titel.charAt(0)}</div>{/if}
                 <div class="min-w-0 flex-1">
                   <div class="font-bold text-slate-800 truncate">{b.titel}</div>
                   <div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div>
@@ -150,7 +150,7 @@
     <div class="p-4 border border-blue-200 bg-blue-50/50 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in shadow-sm">
       <div class="flex items-center gap-3 min-w-0">
         {#if stagedBook.cover_url}
-          <img src={stagedBook.cover_url} class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-slate-100 shrink-0" alt="" />
+          <img src="/api/images/cover?isbn={stagedBook.isbn || ''}&url={encodeURIComponent(stagedBook.cover_url)}" class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-slate-100 shrink-0" alt="" />
         {:else}
           <div class="w-10 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase shrink-0">{stagedBook.titel.charAt(0)}</div>
         {/if}
@@ -188,7 +188,7 @@
         {#each orderCart as item, idx}
           <div class="p-3 bg-slate-50/30 flex items-center justify-between gap-4 text-base">
             <div class="flex items-center gap-3 min-w-0">
-              {#if item.cover_url}<img src={item.cover_url} class="w-8 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-8 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{item.titel.charAt(0)}</div>{/if}
+              {#if item.cover_url}<img src="/api/images/cover?isbn={item.isbn || ''}&url={encodeURIComponent(item.cover_url)}" class="w-8 aspect-3/4 object-cover rounded-sm" alt="" />{:else}<div class="w-8 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase">{item.titel.charAt(0)}</div>{/if}
               <div class="min-w-0">
                 <h4 class="font-bold text-slate-800 truncate">{item.titel}</h4>
                 <p class="text-sm text-slate-400 truncate">ISBN: {item.isbn}</p>

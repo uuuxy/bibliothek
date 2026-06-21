@@ -44,6 +44,9 @@ type BookRepository interface {
 	
 	// BulkInsertCopiesTx führt BulkInsertCopies innerhalb einer expliziten SQL-Transaktion aus.
 	BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, copies []BookCopyInsert) error
+
+	// UpsertBookTitle speichert oder aktualisiert ein Buchtitel-Objekt in der Datenbank.
+	UpsertBookTitle(ctx context.Context, title BookTitle) error
 }
 
 // BookCopyInsert beschreibt die Datenstruktur für das Einfügen neuer Buchexemplare im Bulk-Verfahren.
@@ -299,5 +302,21 @@ func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, co
 		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis"},
 		pgx.CopyFromRows(copyRows),
 	)
+	return err
+}
+
+// UpsertBookTitle speichert oder aktualisiert ein Buchtitel-Objekt.
+func (r *pgBookRepository) UpsertBookTitle(ctx context.Context, t BookTitle) error {
+	query := `
+		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, aktualisiert_am)
+		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), CURRENT_TIMESTAMP)
+		ON CONFLICT (isbn) DO UPDATE 
+		SET titel = EXCLUDED.titel,
+		    autor = EXCLUDED.autor,
+		    verlag = EXCLUDED.verlag,
+		    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
+		    aktualisiert_am = CURRENT_TIMESTAMP
+	`
+	_, err := r.db.Exec(ctx, query, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr)
 	return err
 }
