@@ -78,7 +78,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 			case "425":
 				jahrStr = val
 			case "540":
-				isbn = val
+				isbn = strings.ReplaceAll(strings.ReplaceAll(val, "-", ""), " ", "")
 			case "700 ":
 				if feld.Reihung == "1" {
 					signatur = val
@@ -202,7 +202,7 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 		titel := strings.TrimSpace(row[0])
 		autor := strings.TrimSpace(row[1])
 		verlag := strings.TrimSpace(row[2])
-		isbn := strings.TrimSpace(row[3])
+		isbn := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(row[3]), "-", ""), " ", "")
 		jahrStr := strings.TrimSpace(row[4])
 		kategorie := strings.TrimSpace(row[5])
 		barcode := strings.TrimSpace(row[6])

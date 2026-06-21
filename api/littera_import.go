@@ -202,7 +202,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				continue
 			}
 
-			isbn := strings.ReplaceAll(getCol("isbn"), "-", "")
+			isbn := strings.ReplaceAll(strings.ReplaceAll(getCol("isbn"), "-", ""), " ", "")
 
 			titelID := ""
 			if isbn != "" && isbnToID[isbn] != "" {
@@ -283,7 +283,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			if titel == "" || barcode == "" {
 				continue
 			}
-			isbn := strings.ReplaceAll(getCol("isbn"), "-", "")
+			isbn := strings.ReplaceAll(strings.ReplaceAll(getCol("isbn"), "-", ""), " ", "")
 
 			titelID := ""
 			if isbn != "" && isbnToID[isbn] != "" {

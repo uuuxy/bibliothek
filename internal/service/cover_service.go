@@ -64,8 +64,8 @@ func (s *CoverService) SyncMissingCoversAsync() {
 		cancel()
 
 		if err != nil {
-			log.Printf("Cover Sync: Fehler bei ISBN %s: %v", mc.ISBN, err)
-			updateQuery := `UPDATE buecher_titel SET cover_status = 'NOT_FOUND' WHERE id = $1`
+			log.Printf("Cover Sync: FEHLSCHLAG bei ISBN %s - Grund: %v", mc.ISBN, err)
+			updateQuery := `UPDATE buecher_titel SET cover_status = 'FAILED' WHERE id = $1`
 			_, _ = s.db.Exec(ctx, updateQuery, mc.ID)
 		} else if res.CoverURL != "" {
 			// Update DB
@@ -77,6 +77,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 			}
 		} else {
 			// Kein Fehler, aber auch keine URL gefunden
+			log.Printf("Cover Sync: NICHT GEFUNDEN für ISBN %s - APIs lieferten kein Cover.", mc.ISBN)
 			updateQuery := `UPDATE buecher_titel SET cover_status = 'NOT_FOUND' WHERE id = $1`
 			_, _ = s.db.Exec(ctx, updateQuery, mc.ID)
 		}
