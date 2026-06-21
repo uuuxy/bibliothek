@@ -34,12 +34,42 @@ export function createMahnwesenStore() {
     let sendingStudentId = $state(/** @type {string|null} */ (null));
     let studentMessages = $state(/** @type {Record<string, {type: 'success'|'error', text: string} | null>} */ ({}));
 
+    // MD3 Filter & Bulk Actions
+    let activeFilter = $state("Alle"); // "Alle", "1. Erinnerung fällig", "2. Mahnung fällig", "Erledigt"
+    let selectedIds = $state(/** @type {Set<string>} */ (new Set()));
+
     // Abgeleitete Werte
     let klassen = $derived(data?.klassen ?? []);
     let totalOverdue = $derived(
         klassen.reduce((/** @type {number} */ sum, /** @type {any} */ k) =>
             sum + k.schueler.reduce((/** @type {number} */ s2, /** @type {any} */ sch) => s2 + sch.medien.length, 0), 0)
     );
+
+    // Flache Liste für MD3 Table
+    let flatSchueler = $derived(() => {
+        let list = [];
+        for (const k of klassen) {
+            for (const s of k.schueler) {
+                let maxTage = 0;
+                for (const m of s.medien) {
+                    if (m.tage_ueberfaellig > maxTage) maxTage = m.tage_ueberfaellig;
+                }
+                
+                let mahnstufe = "Erledigt";
+                if (maxTage > 14) mahnstufe = "2. Mahnung fällig";
+                else if (maxTage > 0) mahnstufe = "1. Erinnerung fällig";
+                
+                list.push({ ...s, maxTage, mahnstufe, lehrer_email: k.lehrer_email });
+            }
+        }
+        return list;
+    });
+
+    let filteredSchueler = $derived(() => {
+        const list = flatSchueler();
+        if (activeFilter === "Alle") return list;
+        return list.filter(s => s.mahnstufe === activeFilter);
+    });
 
     // Methoden
     async function fetchData() {
@@ -53,6 +83,7 @@ export function createMahnwesenStore() {
             data = json;
             ferienAktiv = json.ferien_aktiv || false;
             ferienBezeichnung = json.ferien_bezeichnung || "";
+            selectedIds.clear(); // Reset selection on new data
         } catch (e) {
             error = String(e);
         } finally {
@@ -85,6 +116,42 @@ export function createMahnwesenStore() {
         if (s.has(klasse)) s.delete(klasse);
         else s.add(klasse);
         expandedKlassen = s;
+    }
+
+    /** @param {string} id */
+    function toggleSelect(id) {
+        const s = new Set(selectedIds);
+        if (s.has(id)) s.delete(id);
+        else s.add(id);
+        selectedIds = s;
+    }
+
+    /** @param {boolean} selectAll */
+    function toggleSelectAll(selectAll) {
+        if (!selectAll) {
+            selectedIds = new Set();
+        } else {
+            const currentList = filteredSchueler();
+            selectedIds = new Set(currentList.map((/** @type {any} */ s) => s.schueler_id));
+        }
+    }
+
+    async function printSelectedMahnungen() {
+        if (selectedIds.size === 0) return;
+        const ids = Array.from(selectedIds);
+        console.log("Drucke Mahnungen für IDs:", ids);
+        // FIXME: API Endpunkt muss im Backend noch ergänzt werden für Bulk-Print,
+        // vorerst simulieren wir den Ladezustand.
+        pdfLoading = true;
+        try {
+            await new Promise(r => setTimeout(r, 1000));
+            alert(ids.length + " Mahnungen generiert (Simulation).");
+            selectedIds.clear();
+        } catch (e) {
+            alert("Fehler: " + String(e));
+        } finally {
+            pdfLoading = false;
+        }
     }
 
     async function downloadPDF() {
@@ -218,10 +285,17 @@ export function createMahnwesenStore() {
         get totalOverdue() { return totalOverdue; },
         get ferienAktiv() { return ferienAktiv; },
         get ferienBezeichnung() { return ferienBezeichnung; },
+        get activeFilter() { return activeFilter; },
+        set activeFilter(v) { activeFilter = v; selectedIds.clear(); },
+        get selectedIds() { return selectedIds; },
+        get filteredSchueler() { return filteredSchueler(); },
 
         fetchData,
         sendStudentMahnung,
         toggleKlasse,
+        toggleSelect,
+        toggleSelectAll,
+        printSelectedMahnungen,
         downloadPDF,
         downloadElternPDF,
         downloadKlassePDF,

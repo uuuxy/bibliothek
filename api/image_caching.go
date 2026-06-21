@@ -2,9 +2,11 @@ package api
 
 import (
 	"image"
+	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +22,20 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		if isbn == "" || urlStr == "" {
 			http.Error(w, "missing isbn or url", http.StatusBadRequest)
+			return
+		}
+
+		// SSRF Schutz für externe URLs
+		parsed, err := url.Parse(urlStr)
+		if err != nil {
+			http.Error(w, "invalid url", http.StatusBadRequest)
+			return
+		}
+		switch parsed.Hostname() {
+		case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org", "books.google.com", "books.google.de":
+			// Erlaubte Hosts
+		default:
+			http.Error(w, "ssrf protection: host not allowed", http.StatusForbidden)
 			return
 		}
 
@@ -48,7 +64,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 			return
 		}
 
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+		req.Header.Set("User-Agent", "Inventur/1.0")
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil || resp.StatusCode != http.StatusOK {

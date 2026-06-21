@@ -49,8 +49,10 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		return coverURL
 	}
 
-	// Viele APIs (z.B. Google, DNB) blocken reine Skripte ohne legitimen User-Agent
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Inventur/1.0)")
+	// Viele APIs (z.B. Google, DNB) blocken reine Skripte ohne legitimen User-Agent.
+	// DNB blockiert jedoch neuerdings "Mozilla/5.0"-Header ohne JS-Support über eine Bot-Protection.
+	// Daher verwenden wir hier einen spezifischen Client-Namen, der von DNB akzeptiert wird.
+	req.Header.Set("User-Agent", "Inventur/1.0")
 
 	resp, err := client.Do(req)
 	if err != nil {

@@ -1,5 +1,24 @@
 <script>
   import { mahnwesenStore } from "../../stores/mahnwesen.svelte.js";
+  import { slide } from "svelte/transition";
+
+  const filters = ["Alle", "1. Erinnerung fällig", "2. Mahnung fällig", "Erledigt"];
+  
+  // Derived state for 'Select All' checkbox
+  let allSelected = $derived(
+    mahnwesenStore.filteredSchueler.length > 0 && 
+    mahnwesenStore.selectedIds.size === mahnwesenStore.filteredSchueler.length
+  );
+  
+  let indeterminate = $derived(
+    mahnwesenStore.selectedIds.size > 0 && 
+    mahnwesenStore.selectedIds.size < mahnwesenStore.filteredSchueler.length
+  );
+  
+  // Toggle all
+  function toggleAll() {
+    mahnwesenStore.toggleSelectAll(!allSelected);
+  }
 </script>
 
 {#if mahnwesenStore.loading}
@@ -13,118 +32,147 @@
     <p class="text-emerald-700 font-semibold">Keine überfälligen Ausleihen vorhanden. 🎉</p>
   </div>
 {:else}
-  <!-- Class cards -->
-  <div class="space-y-4">
-    {#each mahnwesenStore.klassen as klasse}
-      {@const totalMediaInClass = klasse.schueler.reduce((/** @type {number} */ s, /** @type {any} */ sch) => s + sch.medien.length, 0)}
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <!-- Class header -->
-        <div
-          role="button"
-          tabindex="0"
-          onclick={() => mahnwesenStore.toggleKlasse(klasse.klasse)}
-          onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); mahnwesenStore.toggleKlasse(klasse.klasse); } }}
-          class="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
-        >
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-              <span class="text-rose-600 font-bold text-sm">{klasse.klasse}</span>
-            </div>
-            <div>
-              <p class="font-semibold text-slate-800">{klasse.klasse}</p>
-              <p class="text-xs text-slate-400">{klasse.schueler.length} Schüler/innen · {totalMediaInClass} Medien überfällig</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 print:hidden">
-            <button
-              onclick={(e) => { e.stopPropagation(); mahnwesenStore.openModal(klasse.klasse, klasse.lehrer_email); }}
-              class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all"
-            >
-              Per E-Mail senden
-            </button>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 transition-transform {mahnwesenStore.expandedKlassen.has(klasse.klasse) ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
+  <!-- Filter Chips -->
+  <div class="flex flex-wrap items-center gap-2 mb-6">
+    {#each filters as f}
+      <button
+        class="px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200
+               {mahnwesenStore.activeFilter === f 
+                 ? 'bg-blue-100 border-blue-200 text-blue-800 shadow-sm' 
+                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}"
+        onclick={() => mahnwesenStore.activeFilter = f}
+      >
+        {f}
+      </button>
+    {/each}
+  </div>
 
-        <!-- Students -->
-        {#if mahnwesenStore.expandedKlassen.has(klasse.klasse)}
-          <div class="border-t border-slate-100 divide-y divide-slate-50">
-            {#each klasse.schueler as schueler}
-              <div class="px-5 py-4">
-                <div class="flex items-center justify-between mb-3">
-                  <div>
-                    <p class="font-semibold text-sm text-slate-800">{schueler.name}</p>
-                    <p class="text-xs text-slate-400">{schueler.medien.length} {schueler.medien.length === 1 ? 'Medium' : 'Medien'} überfällig</p>
-                  </div>
-                  
-                  {#if schueler.eltern_email}
-                    <div class="flex items-center gap-2">
-                      {#if mahnwesenStore.studentMessages[schueler.schueler_id]}
-                        <span class="text-xs font-semibold px-2 py-1 rounded-md {mahnwesenStore.studentMessages[schueler.schueler_id]?.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}">
-                          {mahnwesenStore.studentMessages[schueler.schueler_id]?.text}
-                        </span>
-                      {/if}
-                      <button
-                        onclick={() => mahnwesenStore.sendStudentMahnung(schueler.schueler_id)}
-                        disabled={mahnwesenStore.sendingStudentId === schueler.schueler_id || mahnwesenStore.studentMessages[schueler.schueler_id]?.type === 'success'}
-                        class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors"
-                        title="Mahnung an Eltern senden"
-                      >
-                        {#if mahnwesenStore.sendingStudentId === schueler.schueler_id}
-                          <div class="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                        {:else}
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                        {/if}
-                      </button>
+  <!-- MD3 Table -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden pb-16">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm whitespace-nowrap">
+        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
+          <tr>
+            <th class="w-12 px-4 py-3 text-center">
+              <input 
+                type="checkbox" 
+                class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
+                checked={allSelected}
+                indeterminate={indeterminate}
+                onclick={toggleAll}
+              />
+            </th>
+            <th class="px-4 py-3">Schüler/in</th>
+            <th class="px-4 py-3">Klasse</th>
+            <th class="px-4 py-3">Medien</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3 text-right">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {#each mahnwesenStore.filteredSchueler as schueler}
+            <tr class="hover:bg-slate-50 transition-colors {mahnwesenStore.selectedIds.has(schueler.schueler_id) ? 'bg-blue-50/50' : ''}">
+              <td class="w-12 px-4 py-3 text-center">
+                <input 
+                  type="checkbox" 
+                  class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
+                  checked={mahnwesenStore.selectedIds.has(schueler.schueler_id)}
+                  onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
+                />
+              </td>
+              <td class="px-4 py-3">
+                <p class="font-semibold text-slate-800">{schueler.name}</p>
+                {#if !schueler.eltern_email}
+                  <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Keine Eltern-E-Mail</span>
+                {/if}
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-700 font-bold text-xs">
+                  {schueler.klasse}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex -space-x-2">
+                  {#each schueler.medien.slice(0, 3) as medium}
+                    {#if medium.cover_url}
+                      <img src={medium.cover_url} alt="Cover" class="w-8 h-10 rounded-md border-2 border-white object-cover shadow-sm" loading="lazy" title={medium.titel} />
+                    {:else}
+                      <div class="w-8 h-10 rounded-md border-2 border-white bg-slate-200 shadow-sm flex items-center justify-center text-[8px] text-slate-500 font-bold" title={medium.titel}>?</div>
+                    {/if}
+                  {/each}
+                  {#if schueler.medien.length > 3}
+                    <div class="w-8 h-10 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 shadow-sm z-10">
+                      +{schueler.medien.length - 3}
                     </div>
-                  {:else}
-                    <span class="text-[10px] px-2 py-1 bg-slate-100 text-slate-400 rounded-md font-semibold">Keine Eltern-E-Mail</span>
                   {/if}
                 </div>
-                <!-- Media list -->
-                <div class="space-y-2 ml-2">
-                  {#each schueler.medien as medium}
-                    <div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                      {#if medium.cover_url}
-                        <img src={medium.cover_url} alt="Cover" class="w-9 h-11 object-cover rounded-lg border border-slate-200 shrink-0" loading="lazy" />
-                      {:else}
-                        <div class="w-9 h-11 rounded-lg bg-slate-200 border border-slate-300 shrink-0"></div>
-                      {/if}
-                      <div class="flex-1 min-w-0">
-                        <p class="text-xs font-semibold text-slate-800 truncate">{medium.titel}</p>
-                        <p class="text-[10px] text-slate-500">{medium.autor}</p>
-                      </div>
-                      <div class="text-right shrink-0">
-                        <p class="text-[10px] text-slate-500">Fällig {medium.faellig_am}</p>
-                        {#if mahnwesenStore.mahnMode === 'datum'}
-                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {medium.tage_ueberfaellig > 14 ? 'bg-rose-100 text-rose-700' : 'bg-amber-50 text-amber-700'}">
-                            {medium.tage_ueberfaellig} Tage
-                          </span>
-                        {:else}
-                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {medium.tage_ueberfaellig > 0 ? 'bg-rose-100 text-rose-700' : 'bg-amber-50 text-amber-700'}">
-                            +{medium.tage_ueberfaellig} Jahre
-                          </span>
-                        {/if}
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    {/each}
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold
+                  {schueler.mahnstufe === '2. Mahnung fällig' ? 'bg-rose-100 text-rose-700' : 
+                   schueler.mahnstufe === '1. Erinnerung fällig' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}">
+                  {schueler.mahnstufe}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                {#if schueler.eltern_email}
+                  <button
+                    onclick={() => mahnwesenStore.sendStudentMahnung(schueler.schueler_id)}
+                    disabled={mahnwesenStore.sendingStudentId === schueler.schueler_id}
+                    class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors inline-flex"
+                    title="Mahnung an Eltern senden"
+                  >
+                    {#if mahnwesenStore.sendingStudentId === schueler.schueler_id}
+                      <div class="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                    {:else}
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    {/if}
+                  </button>
+                {/if}
+              </td>
+            </tr>
+          {/each}
+          {#if mahnwesenStore.filteredSchueler.length === 0}
+            <tr>
+              <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                Keine Einträge für den Filter "{mahnwesenStore.activeFilter}" gefunden.
+              </td>
+            </tr>
+          {/if}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{/if}
+
+<!-- Contextual Action Bar -->
+{#if mahnwesenStore.selectedIds.size > 0}
+  <div 
+    transition:slide={{ axis: 'y', duration: 250 }}
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-6 py-3 rounded-full shadow-xl shadow-slate-900/20 flex items-center gap-4"
+  >
+    <div class="flex items-center gap-2">
+      <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-xs font-bold">{mahnwesenStore.selectedIds.size}</span>
+      <span class="text-sm font-medium">ausgewählt</span>
+    </div>
+    <div class="w-px h-6 bg-slate-600"></div>
+    <button
+      onclick={mahnwesenStore.printSelectedMahnungen}
+      class="flex items-center gap-2 text-sm font-bold bg-white text-slate-900 px-4 py-1.5 rounded-full hover:bg-blue-50 transition-colors"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+      </svg>
+      {mahnwesenStore.selectedIds.size} {mahnwesenStore.selectedIds.size === 1 ? 'Mahnung' : 'Mahnungen'} drucken
+    </button>
   </div>
 {/if}
 
 <!-- E-Mail Modal -->
 {#if mahnwesenStore.modalOpen}
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 z-60 flex items-center justify-center p-4">
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="absolute inset-0 bg-black/20 backdrop-blur-sm" onclick={mahnwesenStore.closeModal} aria-hidden="true"></div>
     <div class="relative bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-5">
