@@ -10,6 +10,7 @@
   import ActiveStudentList from "./components/students/ActiveStudentList.svelte";
   import DeletedStudentList from "./components/students/DeletedStudentList.svelte";
   import StudentDirectoryToolbar from "./components/students/StudentDirectoryToolbar.svelte";
+  import PageContainer from "./components/layout/PageContainer.svelte";
 
   // Props (Svelte 5)
   let { role = "" } = $props();
@@ -132,8 +133,8 @@
     </div>
 
     <!-- Tab Content -->
-    <div class="flex-1 overflow-y-auto p-8 w-full">
-      <div class="max-w-6xl mx-auto w-full">
+    <div class="flex-1 overflow-y-auto py-8 w-full">
+      <PageContainer>
         {#if activeTab === "active"}
           <!-- Fullscreen Directory List -->
           <div class="w-full space-y-6 no-print animate-fade-in">
@@ -201,7 +202,7 @@
             />
           </div>
         {/if}
-      </div>
+      </PageContainer>
     </div>
   {/if}
 </div>

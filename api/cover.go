@@ -5,7 +5,10 @@ import (
 	"log"
 	"strings"
 	"time"
+	"net/http"
 
+	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/inventur"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -43,4 +46,17 @@ func FetchAndSaveCoverURL(db *pgxpool.Pool, titleID string, isbn string) {
 			log.Printf("Cover Fetch: Successfully updated cover_url for title ID %s to %s", titleID, res.CoverURL)
 		}
 	}()
+}
+
+// SyncCoversHandler is the HTTP handler that triggers the asynchronous cover download.
+func SyncCoversHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		coverSvc := service.NewCoverService(dbPool)
+		go coverSvc.SyncMissingCoversAsync()
+
+		RespondJSON(w, http.StatusOK, map[string]string{
+			"status": "success",
+			"message": "Der Hintergrund-Job zum Herunterladen fehlender Cover wurde gestartet.",
+		})
+	}
 }

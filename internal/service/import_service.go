@@ -12,6 +12,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Katalogisate repräsentiert die Wurzel des MAB2 XML-Exports
@@ -149,6 +151,40 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 	newTitlesCount := 0
 	importedCopiesCount := 0
 
+		batch := &pgx.Batch{}
+
+		qCombined := `
+			WITH t AS (
+				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+				VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
+				ON CONFLICT (isbn) DO UPDATE SET 
+					titel = EXCLUDED.titel, autor = EXCLUDED.autor, 
+					verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, 
+					subject = EXCLUDED.subject
+				RETURNING id, (xmax = 0) AS is_new_titel
+			), fb_sel AS (
+				SELECT id, false AS is_new_titel FROM buecher_titel 
+				WHERE titel = $1 AND (isbn IS NULL OR isbn = '') 
+				AND NOT EXISTS (SELECT 1 FROM t)
+			), fb_ins AS (
+				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+				SELECT $1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6
+				WHERE NOT EXISTS (SELECT 1 FROM t) AND NOT EXISTS (SELECT 1 FROM fb_sel)
+				RETURNING id, true AS is_new_titel
+			), final_titel AS (
+				SELECT id, is_new_titel FROM t UNION ALL SELECT id, is_new_titel FROM fb_sel UNION ALL SELECT id, is_new_titel FROM fb_ins
+			), ex_ins AS (
+				INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
+				SELECT id, $7, CURRENT_DATE, $8, $9
+				FROM final_titel
+				ON CONFLICT (barcode_id) DO NOTHING
+				RETURNING id
+			)
+			SELECT 
+				COALESCE((SELECT is_new_titel FROM final_titel LIMIT 1), false) AS titel_inserted,
+				EXISTS(SELECT 1 FROM ex_ins) AS exemplar_inserted
+		`
+
 	for _, row := range rows[1:] {
 		if len(row) < 8 {
 			continue // Zeile ignorieren, wenn zu kurz
@@ -169,58 +205,30 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 
 		jahr, _ := strconv.Atoi(jahrStr)
 
-		// Titel in buecher_titel (Upsert)
-		qInsertTitel := `
-			INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-			VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
-			ON CONFLICT (isbn) DO UPDATE 
-			SET titel = EXCLUDED.titel, autor = EXCLUDED.autor, verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, subject = EXCLUDED.subject
-			RETURNING id, (xmax = 0) AS inserted
-		`
-		var titelID string
-		var inserted bool
-		err = tx.QueryRow(ctx, qInsertTitel, titel, autor, verlag, isbn, jahr, kategorie).Scan(&titelID, &inserted)
-		if err != nil {
-			// Falls ISBN conflict ohne constraint greift, via Titel suchen
-			if strings.Contains(err.Error(), "duplicate key value") || isbn == "" {
-				err = tx.QueryRow(ctx, "SELECT id FROM buecher_titel WHERE titel = $1 AND (isbn IS NULL OR isbn = '') LIMIT 1", titel).Scan(&titelID)
-				if err != nil {
-					// Fallback: Neu anlegen
-					err = tx.QueryRow(ctx, `
-						INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-						VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
-						RETURNING id
-					`, titel, autor, verlag, isbn, jahr, kategorie).Scan(&titelID)
-					inserted = true
-				}
-			}
-			if err != nil {
-				continue // Skip row
-			}
-		}
-
-		if inserted {
-			newTitlesCount++
-		}
-
 		// Zustand mappen (verfuegbar oder verliehen etc.)
 		istAusleihbar := true
 		if strings.ToLower(zustandCSV) == "verliehen" {
 			istAusleihbar = false
 		}
 
-		// Exemplar einfügen
-		qInsertExemplar := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
-			VALUES ($1, $2, CURRENT_DATE, $3, $4)
-			ON CONFLICT (barcode_id) DO NOTHING
-			RETURNING id
-		`
-		var exemplarID string
-		err = tx.QueryRow(ctx, qInsertExemplar, titelID, barcode, istAusleihbar, zustandCSV).Scan(&exemplarID)
+		batch.Queue(qCombined, titel, autor, verlag, isbn, jahr, kategorie, barcode, istAusleihbar, zustandCSV)
+	}
+
+	br := tx.SendBatch(ctx, batch)
+	for i := 0; i < batch.Len(); i++ {
+		var titelInserted, exemplarInserted bool
+		err := br.QueryRow().Scan(&titelInserted, &exemplarInserted)
 		if err == nil {
-			importedCopiesCount++
+			if titelInserted {
+				newTitlesCount++
+			}
+			if exemplarInserted {
+				importedCopiesCount++
+			}
 		}
+	}
+	if err := br.Close(); err != nil {
+		return 0, 0, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
