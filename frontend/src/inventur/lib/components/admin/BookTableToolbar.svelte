@@ -7,25 +7,12 @@
 	 *   selectedCount: number,
 	 *   onDelete: () => void,
 	 *   onScan: () => void,
-	 *   onImportExcel: (event: Event) => void,
-	 *   onExportCSV: () => void,
 	 *   onCreateNew: () => void,
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let { booksLength, selectedCount, onDelete, onScan, onImportExcel, onExportCSV, onCreateNew, onRetryCovers } =
+	let { booksLength, selectedCount, onDelete, onScan, onCreateNew, onRetryCovers } =
 		$props();
-
-	/** @type {HTMLInputElement|null} */
-	let excelInput = $state(null);
-
-	/**
-	 * @param {any} event
-	 */
-	function handleImport(event) {
-		onImportExcel(event);
-		event.target.value = "";
-	}
 </script>
 
 <div
@@ -111,44 +98,6 @@
 			Scanner
 		</button>
 
-		<input
-			id="excel-upload"
-			type="file"
-			hidden
-			bind:this={excelInput}
-			onchange={handleImport}
-			accept=".xlsx, .xls, .csv"
-		/>
-		<button
-			onclick={() => excelInput?.click()}
-			class="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-slate-650 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-		>
-			<svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-				/>
-			</svg>
-			Liste Importieren (CSV/XLSX)
-		</button>
-
-		<button
-			onclick={onExportCSV}
-			class="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-slate-650 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-		>
-			<svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-				/>
-			</svg>
-			Als CSV Exportieren
-		</button>
-
 		<button
 			onclick={onCreateNew}
 			class="w-full sm:w-auto mt-2 sm:mt-0 justify-center flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
@@ -165,4 +114,3 @@
 		</button>
 	</div>
 </div>
-

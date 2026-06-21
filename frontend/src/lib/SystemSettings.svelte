@@ -2,20 +2,24 @@
   import { apiGet, apiPost, apiDelete } from "./apiFetch.js";
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
-  import LitteraImportWidget from './LitteraImportWidget.svelte';
+  import DataManagement from './components/admin/DataManagement.svelte';
   import PermissionManager from './PermissionManager.svelte';
   import { toastStore } from "./stores/toastStore.svelte.js";
+  import { authStore } from "./stores/authStore.svelte.js";
 
   // --- STATE ---
   let loading = $state(true);
   let saving = $state(false);
 
+  const isAdmin = $derived(authStore.currentUser?.rolle === 'admin');
+
   // Tabs
-  const tabs = ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "Daten-Import", "System"];
+  const tabs = $derived(
+    isAdmin
+      ? ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "Datenverwaltung", "System"]
+      : ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "System"]
+  );
   let activeTab = $state("Allgemein");
-  
-  // Progressive Disclosure
-  let showAdvancedImport = $state(false);
 
   // Global Settings (Allgemein)
   let ferienLeseclubAktiv = $state(false);
@@ -331,54 +335,11 @@
               </button>
             </div>
           </div>
-
         </div>
 
-      <!-- TAB: DATEN-IMPORT -->
-      {:else if activeTab === 'Daten-Import'}
-        
-        <!-- Littera Import Card -->
-        <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-          <div class="mb-8">
-            <h3 class="text-xl font-bold text-slate-900">Littera CSV-Import</h3>
-            <p class="text-sm text-slate-500 mt-1">Importiere oder aktualisiere Schüler- und Buchdaten aus einer bestehenden Littera-Installation.</p>
-          </div>
-
-          <div class="grid grid-cols-1 gap-8">
-            <div class="col-span-1">
-              <LitteraImportWidget />
-            </div>
-
-            <!-- Progressive Disclosure -->
-            <div class="pt-6 border-t border-slate-100">
-              <button 
-                class="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer w-full text-left focus:outline-none"
-                onclick={() => (showAdvancedImport = !showAdvancedImport)}
-              >
-                <svg class="w-5 h-5 transition-transform duration-200 {showAdvancedImport ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                Erweiterte Experten-Einstellungen anzeigen
-              </button>
-
-              {#if showAdvancedImport}
-                <div class="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-6 animate-fade-in">
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label for="littera-encoding" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Zeichensatz (Encoding)</label>
-                      <select id="littera-encoding" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all cursor-pointer">
-                        <option>UTF-8 (Empfohlen)</option>
-                        <option>ISO-8859-1 (Windows-Standard)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label for="littera-csv-delimiter" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">CSV Trennzeichen</label>
-                      <input id="littera-csv-delimiter" type="text" value=";" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono" />
-                    </div>
-                  </div>
-                </div>
-              {/if}
-            </div>
-          </div>
-        </div>
+      <!-- TAB: DATENVERWALTUNG -->
+      {:else if activeTab === 'Datenverwaltung' && isAdmin}
+        <DataManagement />
 
       <!-- TAB: SYSTEM -->
       {:else if activeTab === 'System'}

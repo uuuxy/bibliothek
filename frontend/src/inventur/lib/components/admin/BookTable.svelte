@@ -8,8 +8,6 @@
 	 *   books: any[],
 	 *   loading: boolean,
 	 *   onOpenDetail: (book: any) => void,
-	 *   onImportExcel: (event: Event) => void,
-	 *   onExportCSV: () => void,
 	 *   onCreateNew: () => void,
 	 *   onScan: () => void,
 	 *   onDelete: (ids: string[]) => void,
@@ -20,8 +18,6 @@
 		books,
 		loading,
 		onOpenDetail,
-		onImportExcel,
-		onExportCSV,
 		onCreateNew,
 		onScan,
 		onDelete,
@@ -166,8 +162,6 @@
 		selectedCount={selectedIds.length}
 		onDelete={handleDelete}
 		onScan={onScan}
-		onImportExcel={onImportExcel}
-		onExportCSV={onExportCSV}
 		onCreateNew={onCreateNew}
 		onRetryCovers={onRetryCovers}
 	/>

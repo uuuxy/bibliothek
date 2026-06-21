@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/internal/service"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/xuri/excelize/v2"
@@ -48,7 +50,24 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		isXML := strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xml") || strings.Contains(contentStr, "<?xml") || strings.Contains(contentStr, "<katalogisat")
 
 		if isXML {
-			s.handleLitteraXMLImport(w, r, content)
+			bookRepo := repository.NewBookRepository(s.DB.Pool)
+			importSvc := service.NewImportService(bookRepo)
+
+			importedCount, err := importSvc.ParseLitteraXML(r.Context(), bytes.NewReader(content))
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			if claims, ok := auth.GetClaims(r.Context()); ok {
+				details := fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount)
+				_, _ = s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, r.RemoteAddr)
+			}
+
+			RespondJSON(w, http.StatusOK, LitteraImportResponse{
+				UpdatedTitles: importedCount,
+				Type:          "xml",
+			})
 			return
 		}
 
