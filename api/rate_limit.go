@@ -104,11 +104,16 @@ func isLoopback(ip string) bool {
 	return parsed.IsLoopback()
 }
 
-// RateLimitMiddleware returns a middleware checking the request rate limit for each client IP.
 func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 	limiter := newIPRateLimiter(limit)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Bilder und Uploads vom Rate-Limiter ausschließen, da ein Seitenaufruf oft dutzende Bilder gleichzeitig lädt
+			if strings.HasPrefix(r.URL.Path, "/api/images/cover") || strings.HasPrefix(r.URL.Path, "/uploads/") {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			ip := getIP(r)
 			if !limiter.allow(ip) {
 				apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
