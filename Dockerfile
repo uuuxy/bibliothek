@@ -41,6 +41,7 @@ COPY plugins/ ./plugins/
 COPY mailservice/ ./mailservice/
 COPY pdf/ ./pdf/
 COPY internal/ ./internal/
+COPY pkg/ ./pkg/
 
 # Install build-base for WebP CGO compilation
 RUN apk add --no-cache build-base
