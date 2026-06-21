@@ -35,7 +35,7 @@ export function createMahnwesenStore() {
     let studentMessages = $state(/** @type {Record<string, {type: 'success'|'error', text: string} | null>} */ ({}));
 
     // MD3 Filter & Bulk Actions
-    let activeFilter = $state("Alle"); // "Alle", "1. Erinnerung fällig", "2. Mahnung fällig", "Erledigt"
+    let activeFilter = $state("Alle"); // "Alle", "1. Erinnerung", "Mahnung", "Lehrerkollegium"
     let selectedIds = $state(/** @type {Set<string>} */ (new Set()));
 
     // Abgeleitete Werte
@@ -56,8 +56,13 @@ export function createMahnwesenStore() {
                 }
                 
                 let mahnstufe = "Erledigt";
-                if (maxTage > 14) mahnstufe = "2. Mahnung fällig";
-                else if (maxTage > 0) mahnstufe = "1. Erinnerung fällig";
+                if (s.klasse && s.klasse.toLowerCase() === "lehrer") {
+                    mahnstufe = "Lehrerkollegium";
+                } else if (maxTage > 14) {
+                    mahnstufe = "Mahnung";
+                } else if (maxTage > 0) {
+                    mahnstufe = "1. Erinnerung";
+                }
                 
                 list.push({ ...s, maxTage, mahnstufe, lehrer_email: k.lehrer_email });
             }

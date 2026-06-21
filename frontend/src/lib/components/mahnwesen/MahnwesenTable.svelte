@@ -2,7 +2,7 @@
   import { mahnwesenStore } from "../../stores/mahnwesen.svelte.js";
   import { slide } from "svelte/transition";
 
-  const filters = ["Alle", "1. Erinnerung fällig", "2. Mahnung fällig", "Erledigt"];
+  const filters = ["Alle", "1. Erinnerung", "Mahnung", "Lehrerkollegium"];
   
   // Derived state for 'Select All' checkbox
   let allSelected = $derived(
@@ -109,8 +109,9 @@
               </td>
               <td class="px-4 py-3">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold
-                  {schueler.mahnstufe === '2. Mahnung fällig' ? 'bg-rose-100 text-rose-700' : 
-                   schueler.mahnstufe === '1. Erinnerung fällig' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}">
+                  {schueler.mahnstufe === 'Mahnung' ? 'bg-rose-100 text-rose-700' : 
+                   schueler.mahnstufe === '1. Erinnerung' ? 'bg-amber-100 text-amber-800' : 
+                   schueler.mahnstufe === 'Lehrerkollegium' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-50 text-emerald-700'}">
                   {schueler.mahnstufe}
                 </span>
               </td>
@@ -165,7 +166,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
       </svg>
-      {mahnwesenStore.selectedIds.size} {mahnwesenStore.selectedIds.size === 1 ? 'Mahnung' : 'Mahnungen'} drucken
+      Ausgewählte Mahnungen drucken
     </button>
   </div>
 {/if}

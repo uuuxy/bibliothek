@@ -64,13 +64,13 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 		for _, feld := range kat.Felder {
 			mab := strings.TrimSpace(feld.MAB)
 			val := strings.TrimSpace(feld.Value)
+			val = strings.ReplaceAll(val, "¬", "")
 
 			switch mab {
 			case "100":
 				autor = val
 			case "310":
-				// Sortierzeichen '¬' entfernen
-				titel = strings.ReplaceAll(val, "¬", "")
+				titel = val
 			case "410":
 				ort = val
 			case "412":
