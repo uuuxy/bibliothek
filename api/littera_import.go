@@ -65,8 +65,10 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			}
 
 			response := map[string]interface{}{
-				"imported_count": importedCount,
-				"message":        "MAB2-XML Katalogisat erfolgreich importiert",
+				"imported_count":       importedCount,
+				"updated_titles_count": importedCount,
+				"type":                 "xml",
+				"message":              "MAB2-XML Katalogisat erfolgreich importiert",
 			}
 
 			RespondJSON(w, http.StatusOK, response)

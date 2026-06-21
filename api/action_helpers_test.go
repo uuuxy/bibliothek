@@ -142,10 +142,10 @@ func TestHandleBookReturn(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock GetCopyByBarcode
-	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, e\\.barcode_id, coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, e\\.ist_ausleihbar, e\\.ist_ausgesondert, e\\.erstellt_am, e\\.aktualisiert_am, t\\.titel, coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), t\\.medientyp, t\\.erweiterte_eigenschaften FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, e\\.barcode_id, coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, e\\.ist_ausleihbar, e\\.ist_ausgesondert, e\\.erstellt_am, e\\.aktualisiert_am, t\\.titel, coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), t\\.medientyp, coalesce\\(t\\.signatur, ''\\), t\\.erweiterte_eigenschaften FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
 		WithArgs(barcode).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "erweiterte_eigenschaften"}).
-			AddRow(copyID, "titel-1", barcode, "", time.Now(), true, false, time.Now(), time.Now(), "Testbuch", "", "", "", "", "", map[string]any{}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "signatur", "erweiterte_eigenschaften"}).
+			AddRow(copyID, "titel-1", barcode, "", time.Now(), true, false, time.Now(), time.Now(), "Testbuch", "", "", "", "", "", "", map[string]any{}))
 
 	// Mock Tx
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
