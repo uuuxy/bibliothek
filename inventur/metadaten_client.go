@@ -96,7 +96,7 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 			// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
 			anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodHead, dnbCoverURL, nil)
 			if fehler == nil {
-				anfrage.Header.Set("User-Agent", "Bibliothek-Inventur/1.0 (Schulbibliothek)")
+				anfrage.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 				antwort, fehler := client.httpClient.Do(anfrage)
 				if fehler == nil {
 					defer func() { _ = antwort.Body.Close() }()
@@ -108,6 +108,13 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 						ergebnis.CoverURL = dnbCoverURL
 					}
 				}
+			}
+		}
+
+		if ergebnis.CoverURL == "" {
+			// Try Google Books just for the cover
+			if gbResult, err := client.sucheGoogleBooks(kontext, isbn); err == nil && gbResult != nil && gbResult.CoverURL != "" {
+				ergebnis.CoverURL = gbResult.CoverURL
 			}
 		}
 
@@ -148,7 +155,7 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	if fehler != nil {
 		return nil, fehler
 	}
-	anfrage.Header.Set("User-Agent", "Bibliothek-Inventur/1.0 (Schulbibliothek)")
+	anfrage.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 	antwort, fehler := client.httpClient.Do(anfrage)
 	if fehler != nil {
 		return nil, fehler

@@ -47,7 +47,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		}
 
 		contentStr := string(content)
-		isXML := strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xml") || strings.Contains(contentStr, "<?xml") || strings.Contains(contentStr, "<katalogisat")
+		isXML := strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xml") || strings.Contains(strings.ToLower(contentStr), "<?xml") || strings.Contains(strings.ToLower(contentStr), "<katalogisat")
 
 		if isXML {
 			bookRepo := repository.NewBookRepository(s.DB.Pool)
