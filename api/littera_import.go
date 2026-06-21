@@ -51,7 +51,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 
 		if isXML {
 			bookRepo := repository.NewBookRepository(s.DB.Pool)
-			importSvc := service.NewImportService(bookRepo)
+			importSvc := service.NewImportService(bookRepo, s.DB.Pool)
 
 			importedCount, err := importSvc.ParseLitteraXML(r.Context(), bytes.NewReader(content))
 			if err != nil {
@@ -64,10 +64,12 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				_, _ = s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, r.RemoteAddr)
 			}
 
-			RespondJSON(w, http.StatusOK, LitteraImportResponse{
-				UpdatedTitles: importedCount,
-				Type:          "xml",
-			})
+			response := map[string]interface{}{
+				"imported_count": importedCount,
+				"message":        "MAB2-XML Katalogisat erfolgreich importiert",
+			}
+
+			RespondJSON(w, http.StatusOK, response)
 			return
 		}
 
@@ -342,4 +344,42 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			Type:           importType,
 		})
 	}
+}
+
+// BestandImportHandler verarbeitet den Upload der finalen Bestands-CSV (Semikolon-separiert).
+func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse Multipart Form mit 20MB Limit
+	if err := r.ParseMultipartForm(20 << 20); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	file, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine Datei hochgeladen"))
+		return
+	}
+	defer file.Close()
+
+	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("es werden nur CSV-Dateien akzeptiert"))
+		return
+	}
+
+	bookRepo := repository.NewBookRepository(s.DB.Pool)
+	importSvc := service.NewImportService(bookRepo, s.DB.Pool)
+
+	newTitles, importedCopies, err := importSvc.ImportLitteraBestand(r.Context(), file)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response := map[string]interface{}{
+		"new_titles_count":      newTitles,
+		"imported_copies_count": importedCopies,
+		"message":               "Bestands-CSV erfolgreich importiert",
+	}
+
+	RespondJSON(w, http.StatusOK, response)
 }

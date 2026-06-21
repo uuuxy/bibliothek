@@ -119,6 +119,7 @@ func (s *Server) Routes() http.Handler {
 
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.LitteraImportHandler()))
+	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.BestandImportHandler)))
 
 	// Swagger interactive documentation
 	mux.Handle("GET /swagger/", httpSwagger.Handler(

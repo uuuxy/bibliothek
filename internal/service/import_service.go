@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/xml"
+	"errors"
 	"io"
 	"log"
 	"strconv"
 	"strings"
 
+	"bibliothek/db"
 	"bibliothek/repository"
 )
 
@@ -31,11 +34,12 @@ type Feld struct {
 // ImportService stellt Geschäftslogik für Datenimporte bereit.
 type ImportService struct {
 	bookRepo repository.BookRepository
+	db       db.PgxPoolIface
 }
 
 // NewImportService erstellt einen neuen ImportService.
-func NewImportService(bookRepo repository.BookRepository) *ImportService {
-	return &ImportService{bookRepo: bookRepo}
+func NewImportService(bookRepo repository.BookRepository, dbPool db.PgxPoolIface) *ImportService {
+	return &ImportService{bookRepo: bookRepo, db: dbPool}
 }
 
 // ParseLitteraXML liest die MAB2-XML-Datei ein und speichert die Bücher in der Datenbank.
@@ -113,3 +117,116 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 
 	return importedCount, nil
 }
+
+// ImportLitteraBestand liest eine finale Bestands-CSV (Trennzeichen ';') und importiert
+// Titel sowie Exemplare über eine einzige SQL-Transaktion.
+// Spalten: Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand
+func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Reader) (int, int, error) {
+	reader := csv.NewReader(csvData)
+	reader.Comma = ';'
+	reader.LazyQuotes = true
+
+	rows, err := reader.ReadAll()
+	if err != nil {
+		return 0, 0, err
+	}
+	if len(rows) < 2 {
+		return 0, 0, nil // Leer oder nur Header
+	}
+
+	// Kopfzeile prüfen (Index 0 bis 7)
+	header := rows[0]
+	if len(header) < 8 {
+		return 0, 0, errors.New("CSV hat nicht die benötigten 8 Spalten")
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	newTitlesCount := 0
+	importedCopiesCount := 0
+
+	for _, row := range rows[1:] {
+		if len(row) < 8 {
+			continue // Zeile ignorieren, wenn zu kurz
+		}
+
+		titel := strings.TrimSpace(row[0])
+		autor := strings.TrimSpace(row[1])
+		verlag := strings.TrimSpace(row[2])
+		isbn := strings.TrimSpace(row[3])
+		jahrStr := strings.TrimSpace(row[4])
+		kategorie := strings.TrimSpace(row[5])
+		barcode := strings.TrimSpace(row[6])
+		zustandCSV := strings.TrimSpace(row[7])
+
+		if titel == "" || barcode == "" {
+			continue
+		}
+
+		jahr, _ := strconv.Atoi(jahrStr)
+
+		// Titel in buecher_titel (Upsert)
+		qInsertTitel := `
+			INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+			VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
+			ON CONFLICT (isbn) DO UPDATE 
+			SET titel = EXCLUDED.titel, autor = EXCLUDED.autor, verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, subject = EXCLUDED.subject
+			RETURNING id, (xmax = 0) AS inserted
+		`
+		var titelID string
+		var inserted bool
+		err = tx.QueryRow(ctx, qInsertTitel, titel, autor, verlag, isbn, jahr, kategorie).Scan(&titelID, &inserted)
+		if err != nil {
+			// Falls ISBN conflict ohne constraint greift, via Titel suchen
+			if strings.Contains(err.Error(), "duplicate key value") || isbn == "" {
+				err = tx.QueryRow(ctx, "SELECT id FROM buecher_titel WHERE titel = $1 AND (isbn IS NULL OR isbn = '') LIMIT 1", titel).Scan(&titelID)
+				if err != nil {
+					// Fallback: Neu anlegen
+					err = tx.QueryRow(ctx, `
+						INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+						VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
+						RETURNING id
+					`, titel, autor, verlag, isbn, jahr, kategorie).Scan(&titelID)
+					inserted = true
+				}
+			}
+			if err != nil {
+				continue // Skip row
+			}
+		}
+
+		if inserted {
+			newTitlesCount++
+		}
+
+		// Zustand mappen (verfuegbar oder verliehen etc.)
+		istAusleihbar := true
+		if strings.ToLower(zustandCSV) == "verliehen" {
+			istAusleihbar = false
+		}
+
+		// Exemplar einfügen
+		qInsertExemplar := `
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
+			VALUES ($1, $2, CURRENT_DATE, $3, $4)
+			ON CONFLICT (barcode_id) DO NOTHING
+			RETURNING id
+		`
+		var exemplarID string
+		err = tx.QueryRow(ctx, qInsertExemplar, titelID, barcode, istAusleihbar, zustandCSV).Scan(&exemplarID)
+		if err == nil {
+			importedCopiesCount++
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, 0, err
+	}
+
+	return newTitlesCount, importedCopiesCount, nil
+}
+

@@ -21,6 +21,45 @@
 			isExporting = false;
 		}
 	}
+
+	let files: FileList | null = $state(null);
+	let isImportingCsv = $state(false);
+	let importCsvResult: { type: 'success' | 'error', message: string } | null = $state(null);
+
+	async function handleBestandUpload() {
+		if (!files || files.length === 0) return;
+		isImportingCsv = true;
+		importCsvResult = null;
+
+		const formData = new FormData();
+		formData.append('file', files[0]);
+
+		try {
+			// Using native fetch to preserve automatic multipart/form-data with boundaries
+			const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('csrf_token='))?.split('=')[1] : '';
+			const res = await fetch('/api/admin/import-bestand', {
+				method: 'POST',
+				body: formData,
+				credentials: 'include',
+				headers: token ? { 'X-CSRF-Token': decodeURIComponent(token) } : {}
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.error || 'Bestands-Import fehlgeschlagen');
+
+			importCsvResult = {
+				type: 'success',
+				message: `Kombi-Import erfolgreich! ${data.new_titles_count || 0} neue Titel und ${data.imported_copies_count || 0} Exemplare wurden verarbeitet.`
+			};
+			files = null;
+		} catch (err: any) {
+			importCsvResult = {
+				type: 'error',
+				message: err.message || 'Ein unerwarteter Fehler ist aufgetreten.'
+			};
+		} finally {
+			isImportingCsv = false;
+		}
+	}
 </script>
 
 {#snippet adminCard(title: string, description: string, iconPath: string, contentSnippet: any)}
@@ -61,7 +100,42 @@
 {/snippet}
 
 {#snippet importContent()}
-	<LitteraImportWidget />
+	<div class="flex flex-col gap-8">
+		<LitteraImportWidget />
+
+		<div class="pt-6 border-t border-slate-100">
+			<h4 class="text-sm font-bold text-slate-900 mb-1">Finaler Bestands-Import (Kombi-CSV)</h4>
+			<p class="text-xs text-slate-500 mb-4">Laden Sie die finale Semikolon-separierte CSV hoch (Spalten: Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand).</p>
+			
+			<div class="flex items-center gap-4">
+				<label class="relative {isImportingCsv ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
+					<input type="file" accept=".csv" bind:files disabled={isImportingCsv} class="sr-only" />
+					<div class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition-colors border border-slate-200 inline-block">
+						{files && files.length > 0 ? files[0].name : 'CSV-Datei auswählen...'}
+					</div>
+				</label>
+				
+				<button 
+					onclick={handleBestandUpload} 
+					disabled={isImportingCsv || !files || files.length === 0}
+					class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+				>
+					{#if isImportingCsv}
+						<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+						<span>Importiere Bestand...</span>
+					{:else}
+						<span>Import Starten</span>
+					{/if}
+				</button>
+			</div>
+
+			{#if importCsvResult}
+				<div class="mt-4 p-4 rounded-xl text-sm font-semibold {importCsvResult.type === 'error' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">
+					{importCsvResult.message}
+				</div>
+			{/if}
+		</div>
+	</div>
 {/snippet}
 
 {#snippet exportContent()}
@@ -83,7 +157,7 @@
 	</div>
 {/snippet}
 
-<div class="space-y-8 max-w-4xl">
+<div class="space-y-8 w-full">
 	<div>
 		<h2 class="text-xl font-bold text-slate-950">Datenverwaltung</h2>
 		<p class="text-xs text-slate-500 mt-1">Hier können Sie den gesamten Medienbestand exportieren oder neue Daten importieren.</p>
