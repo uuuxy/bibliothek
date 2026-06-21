@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"net/textproto"
 	"os"
+	"strings"
 )
 
 // MailAttachment represents an email attachment.
@@ -43,6 +44,12 @@ func SendEmail(req MailRequest) error {
 		from = user
 	}
 
+	parsedFrom, err := mail.ParseAddress(from)
+	if err != nil {
+		return fmt.Errorf("invalid sender email address: %w", err)
+	}
+	from = parsedFrom.Address
+
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 	boundary := writer.Boundary()
@@ -52,6 +59,9 @@ func SendEmail(req MailRequest) error {
 		return fmt.Errorf("invalid recipient email address: %w", err)
 	}
 	req.To = parsedTo.Address
+
+	req.Subject = strings.ReplaceAll(req.Subject, "\r", "")
+	req.Subject = strings.ReplaceAll(req.Subject, "\n", "")
 
 	// Write SMTP Headers
 	fmt.Fprintf(&buf, "From: %s\r\n", from)

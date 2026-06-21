@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
+	"net/mail"
 	"net/smtp"
 	"net/textproto"
 	"os"
@@ -81,10 +82,25 @@ func SendBackupEmail(config *BackupEmailConfig, backupPath string) error {
 		len(zipData)/1024,
 	)
 
+	parsedUser, err := mail.ParseAddress(config.User)
+	if err != nil {
+		return fmt.Errorf("ungültige Sender-Adresse (User): %w", err)
+	}
+	cleanUser := parsedUser.Address
+
+	parsedTo, err := mail.ParseAddress(config.To)
+	if err != nil {
+		return fmt.Errorf("ungültige Empfänger-Adresse (To): %w", err)
+	}
+	cleanTo := parsedTo.Address
+
+	cleanSubject := strings.ReplaceAll(subject, "\r", "")
+	cleanSubject = strings.ReplaceAll(cleanSubject, "\n", "")
+
 	emailMsg := EmailMessage{
-		From:       config.User,
-		To:         config.To,
-		Subject:    subject,
+		From:       cleanUser,
+		To:         cleanTo,
+		Subject:    cleanSubject,
 		Body:       body,
 		AttachName: fmt.Sprintf("backup_%s.zip", backupName),
 		AttachData: zipData,
