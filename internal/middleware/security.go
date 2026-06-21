@@ -16,15 +16,17 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		
 		// Set CSP strictly to 'self' where possible
 		// font-src: now only self (Google Fonts removed)
-		// img-src: self and data: (removed wildcard https:)
-		// script-src/style-src: self (removed unsafe-inline)
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self';")
+		// img-src: self, data:, blob:, and https: (for external covers and blob URLs)
+		// script-src: self
+		// style-src: self and unsafe-inline (needed for Svelte inline style bindings)
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors 'none'; form-action 'self';")
 		
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		
 		// Feature-Policy is deprecated, using Permissions-Policy
-		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+		// Allow camera for barcode scanning
+		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=(self)")
 
 		next.ServeHTTP(w, r)
 	})
