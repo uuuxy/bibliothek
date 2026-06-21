@@ -22,7 +22,7 @@
 {/if}
 
 {#if mahnwesenStore.ferienAktiv}
-  <div class="max-w-5xl mx-auto mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-fade-in">
+  <div class="w-full mb-6 p-4 bg-amber-50 border-b border-amber-200 flex items-start gap-3 animate-fade-in">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
     </svg>
@@ -33,7 +33,7 @@
   </div>
 {/if}
 
-<div class="max-w-5xl mx-auto space-y-6">
+<div class="w-full h-full flex flex-col">
   {#if offlineSync.pendingCount > 0}
     <div class="p-6 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-4 animate-fade-in shadow-sm">
       <div class="bg-rose-100 p-3 rounded-full shrink-0">
@@ -52,12 +52,14 @@
       </div>
     </div>
   {:else}
-    <div class="animate-fade-in space-y-6">
+    <div class="animate-fade-in flex-1 flex flex-col w-full">
       <!-- Header und Filter -->
       <MahnwesenFilters />
 
       <!-- Tabellen und Modals -->
-      <MahnwesenTable />
+      <div class="w-full">
+        <MahnwesenTable />
+      </div>
     </div>
   {/if}
 </div>
