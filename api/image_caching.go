@@ -15,27 +15,43 @@ import (
 )
 
 // ServeCoverImageHandler serves a locally cached WebP image by ISBN, or downloads and converts it from URL if missing.
+// On errors (invalid host, download failure), it serves a transparent 1x1 GIF to prevent browser console spam.
 func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
+	var transparent1x1 = []byte{
+		0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
+		0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21,
+		0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00,
+		0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44,
+		0x01, 0x00, 0x3b,
+	}
+
+	serveFallback := func(w http.ResponseWriter) {
+		w.Header().Set("Content-Type", "image/gif")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		w.WriteHeader(http.StatusOK)
+		w.Write(transparent1x1)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		isbn := r.URL.Query().Get("isbn")
 		urlStr := r.URL.Query().Get("url")
 
 		if isbn == "" || urlStr == "" {
-			http.Error(w, "missing isbn or url", http.StatusBadRequest)
+			serveFallback(w)
 			return
 		}
 
 		// SSRF Schutz für externe URLs
 		parsed, err := url.Parse(urlStr)
 		if err != nil {
-			http.Error(w, "invalid url", http.StatusBadRequest)
+			serveFallback(w)
 			return
 		}
 		switch parsed.Hostname() {
 		case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org", "books.google.com", "books.google.de":
 			// Erlaubte Hosts
 		default:
-			http.Error(w, "ssrf protection: host not allowed", http.StatusForbidden)
+			serveFallback(w)
 			return
 		}
 
@@ -45,7 +61,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		localPath := filepath.Clean(filepath.Join(cleanDir, isbn+".webp"))
 
 		if !strings.HasPrefix(localPath, cleanDir+string(filepath.Separator)) {
-			http.Error(w, "invalid path", http.StatusBadRequest)
+			serveFallback(w)
 			return
 		}
 
@@ -60,7 +76,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		// Download if missing
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, urlStr, nil)
 		if err != nil {
-			http.Error(w, "failed to create request", http.StatusInternalServerError)
+			serveFallback(w)
 			return
 		}
 
@@ -68,7 +84,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil || resp.StatusCode != http.StatusOK {
-			http.Error(w, "failed to fetch external image", http.StatusBadGateway)
+			serveFallback(w)
 			return
 		}
 		defer func() { _ = resp.Body.Close() }()
@@ -76,7 +92,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		// Decode original image
 		img, _, err := image.Decode(resp.Body)
 		if err != nil {
-			http.Error(w, "failed to decode image", http.StatusInternalServerError)
+			serveFallback(w)
 			return
 		}
 
@@ -96,7 +112,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 			w.Header().Set("Content-Type", "image/webp")
 			http.ServeFile(w, r, localPath)
 		} else {
-			http.Error(w, "failed to serve converted image", http.StatusInternalServerError)
+			serveFallback(w)
 		}
 	}
 }
