@@ -131,5 +131,6 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		CustomerNumber: customerNumber,
 		Labels:         labels,
 		SummaryItems:   orderSummaryItems,
+		TotalAllocated: totalAllocated,
 	}, nil
 }
