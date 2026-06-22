@@ -345,9 +345,7 @@
       <!-- TAB: MAIL-SERVER -->
       {:else if activeTab === 'Mail-Server' && isAdmin}
         <div class="space-y-6">
-          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-            <MailConfig />
-          </div>
+          <MailConfig />
         </div>
 
       <!-- TAB: SYSTEM -->
