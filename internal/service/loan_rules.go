@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -92,7 +93,7 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 
 // calculateDueDate berechnet das Rückgabedatum auf Basis von Titel, Medientyp und
 // den definierten Standardfristen.
-func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage int) time.Time {
+func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage, additionalYears int) time.Time {
 	now := time.Now()
 
 	// 1. Fall: Lernmittelfreiheit (Schulbücher)
@@ -105,6 +106,10 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 		if now.Month() >= time.August {
 			year++
 		}
+		
+		// Mehrjährige Ausleihen
+		year += additionalYears
+
 		month := time.July
 		day := 31
 
@@ -135,13 +140,44 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 	return now.AddDate(0, 0, fristBuchTage)
 }
 
+// parseGrade extrahiert den Jahrgang aus dem Klassen-String.
+func parseGrade(klasse string) int {
+	upper := strings.ToUpper(strings.TrimSpace(klasse))
+	if strings.HasPrefix(upper, "E") || upper == "EF" {
+		return 11
+	}
+	if strings.HasPrefix(upper, "Q1") || strings.HasPrefix(upper, "Q2") {
+		return 12
+	}
+	if strings.HasPrefix(upper, "Q3") || strings.HasPrefix(upper, "Q4") {
+		return 13
+	}
+	// Fallback auf Extraktion der ersten Zahl
+	re := regexp.MustCompile(`\d+`)
+	match := re.FindString(upper)
+	if match != "" {
+		val, _ := strconv.Atoi(match)
+		return val
+	}
+	return 0
+}
+
 // resolveCheckoutDueDate ermittelt das Fälligkeitsdatum für eine neue Buchausleihe.
 // Hierbei werden Sonderaktionen wie der Ferien-Leseclub ausgewertet, um reguläre Leihfristen zu überschreiben.
-func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *repository.BookCopy) (time.Time, error) {
+func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
+	
+	additionalYears := 0
+	if copy.ZielJahrgang > 0 && borrowerKlasse != "" {
+		currentGrade := parseGrade(borrowerKlasse)
+		if currentGrade > 0 && copy.ZielJahrgang >= currentGrade {
+			additionalYears = copy.ZielJahrgang - currentGrade
+		}
+	}
+
 	if err != nil {
 		// Bei einem Datenbankfehler greifen wir auf feste Notfall-Standardwerte zurück
-		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31", 21, 7), nil
+		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31", 21, 7, additionalYears), nil
 	}
 
 	isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
@@ -157,5 +193,5 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 	}
 
 	// Reguläre Fristenberechnung
-	return calculateDueDate(copy.Titel, copy.Medientyp, settings.LmfStichtag, settings.FristBuchTage, settings.FristMedienTage), nil
+	return calculateDueDate(copy.Titel, copy.Medientyp, settings.LmfStichtag, settings.FristBuchTage, settings.FristMedienTage, additionalYears), nil
 }

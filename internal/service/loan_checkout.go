@@ -98,7 +98,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		student = sObj
 
 		// Fälligkeitsdatum anhand der Ausleihregeln ermitteln (berücksichtigt Medienart, LMF und Leseclub)
-		dt, err := s.resolveCheckoutDueDate(ctx, copy)
+		dt, err := s.resolveCheckoutDueDate(ctx, copy, student.Klasse)
 		if err != nil {
 			return nil, err
 		}

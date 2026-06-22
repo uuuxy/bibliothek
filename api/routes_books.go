@@ -29,6 +29,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("DELETE /api/ausleihen/{id}/rueckgabe", s.RequirePermission("view_students")(s.UndoReturnHandler()))
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.ExtendLoanHandler()))
 	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.GlobalExtendLMFHandler()))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.OverrideDueDateHandler()))
 
 	// Live ISBN Lookup
 	mux.Handle("POST /api/buecher/aus-isbn", s.RequirePermission("create_orders")(s.ISBNZuTitelHandler()))

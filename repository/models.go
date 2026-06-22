@@ -77,6 +77,8 @@ type BookTitle struct {
 	Erscheinungsjahr int `json:"erscheinungsjahr,omitempty"`
 	// Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).
 	Signatur string `json:"signatur,omitempty"`
+	// ZielJahrgang definiert, bis zu welcher Klasse ein Exemplar dieses Titels bei Schülern bleibt (Default 0 = 1 Jahr).
+	ZielJahrgang int `json:"ziel_jahrgang"`
 	// Beschreibung enthält eine Inhaltsangabe oder Notizen zum Buch.
 	Beschreibung string `json:"beschreibung,omitempty"`
 	// CoverURL verweist auf das Bild des Buchumschlags.
@@ -129,6 +131,8 @@ type BookCopy struct {
 	Medientyp string `json:"medientyp,omitempty"`
 	// Signatur speichert die Bibliothekssignatur.
 	Signatur string `json:"signatur,omitempty"`
+	// ZielJahrgang definiert die Zielklasse für die Fristberechnung.
+	ZielJahrgang int `json:"ziel_jahrgang"`
 	// ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
 }

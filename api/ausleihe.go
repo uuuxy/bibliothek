@@ -17,6 +17,11 @@ type GlobalExtendLMFRequest struct {
 	NeuesRueckgabeDatum string `json:"neues_rueckgabe_datum"` // Expected format "2006-01-02"
 }
 
+// OverrideDueDateRequest holds the JSON payload for manually overriding a due date.
+type OverrideDueDateRequest struct {
+	FaelligAm string `json:"faellig_am" validate:"required"` // ISO 8601 or YYYY-MM-DD
+}
+
 // ExtendLoanHandler extends the due date of a single loan by the standard book interval (e.g. 28 days).
 func (s *Server) ExtendLoanHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +63,59 @@ func (s *Server) ExtendLoanHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusOK, map[string]interface{}{
 			"success":               true,
 			"neues_rueckgabe_datum": newFrist,
+		})
+	}
+}
+
+// OverrideDueDateHandler manually overrides the due date of an active loan.
+func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ausleiheID := r.PathValue("id")
+		if ausleiheID == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehlende Ausleihe-ID"))
+			return
+		}
+
+		var req OverrideDueDateRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return
+		}
+
+		newDate, err := time.Parse(time.RFC3339, req.FaelligAm)
+		if err != nil {
+			// Fallback auf einfaches Datum YYYY-MM-DD
+			newDate, err = time.Parse("2006-01-02", req.FaelligAm)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)"))
+				return
+			}
+			newDate = time.Date(newDate.Year(), newDate.Month(), newDate.Day(), 23, 59, 59, 0, newDate.Location())
+		}
+
+		ctx := r.Context()
+		q := `
+			UPDATE ausleihen 
+			SET rueckgabe_frist = $1
+			WHERE id = $2 AND rueckgabe_am IS NULL
+			RETURNING id, rueckgabe_frist
+		`
+
+		var id string
+		var newFrist time.Time
+		err = s.DB.Pool.QueryRow(ctx, q, newDate, ausleiheID).Scan(&id, &newFrist)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Ausleihe nicht gefunden oder bereits zurückgegeben"))
+				return
+			}
+			log.Printf("Fehler bei manueller Frist-Überschreibung: %v", err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Interner Serverfehler"))
+			return
+		}
+
+		RespondJSON(w, http.StatusOK, map[string]interface{}{
+			"success":   true,
+			"faellig_am": newFrist,
 		})
 	}
 }

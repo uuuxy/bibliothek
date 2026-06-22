@@ -5,6 +5,35 @@
   let { books = [], onReturnClick = undefined, onDamageClick = undefined, mode = "loans" } = $props();
 
   let extendingIds = $state(new Set());
+  
+  let editingId = $state(null);
+  let editingDate = $state("");
+  let isSavingDate = $state(false);
+
+  async function handleSaveDate(book) {
+    const id = book.ausleihe_id || book.id;
+    if (!id || !editingDate) return;
+    
+    isSavingDate = true;
+    try {
+      const response = await apiFetch(`/api/admin/ausleihen/${id}/faelligkeit`, { 
+        method: "PATCH",
+        body: JSON.stringify({ faellig_am: editingDate })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        book.rueckgabe_frist = data.faellig_am;
+        editingId = null;
+      } else {
+        alert("Fehler beim Speichern des Datums");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Netzwerkfehler");
+    } finally {
+      isSavingDate = false;
+    }
+  }
 
   async function handleExtend(book) {
     const id = book.ausleihe_id || book.id;
@@ -76,8 +105,25 @@
           <td class="py-3 px-4 text-sm font-semibold text-slate-700">{book.barcode_id}</td>
           {#if mode === "loans"}
             <td class="py-3 px-4 text-sm font-semibold text-slate-700">
-              {new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}
-              <div class="text-xs font-normal text-slate-600 mt-0.5">Geliehen: {new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</div>
+              {#if editingId === (book.ausleihe_id || book.id)}
+                <div class="flex items-center gap-1.5">
+                  <input type="date" bind:value={editingDate} class="border border-slate-300 rounded px-1.5 py-0.5 text-xs bg-white text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow disabled:opacity-50" disabled={isSavingDate} />
+                  <button onclick={() => handleSaveDate(book)} disabled={isSavingDate} class="p-1 text-emerald-600 hover:bg-emerald-50 rounded disabled:opacity-50 transition-colors cursor-pointer" title="Speichern">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </button>
+                  <button onclick={() => editingId = null} disabled={isSavingDate} class="p-1 text-rose-600 hover:bg-rose-50 rounded disabled:opacity-50 transition-colors cursor-pointer" title="Abbrechen">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              {:else}
+                <div class="flex items-center gap-2 group">
+                  <span>{new Date(book.rueckgabe_frist).toLocaleDateString("de-DE")}</span>
+                  <button onclick={() => { editingId = book.ausleihe_id || book.id; editingDate = book.rueckgabe_frist.split('T')[0]; }} class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-blue-600 transition-opacity cursor-pointer" title="Datum bearbeiten">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  </button>
+                </div>
+                <div class="text-xs font-normal text-slate-600 mt-0.5">Geliehen: {new Date(book.ausgeliehen_am).toLocaleDateString("de-DE")}</div>
+              {/if}
             </td>
             <td class="py-3 px-4">
               {#if isOverdue}
