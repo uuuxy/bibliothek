@@ -3,10 +3,10 @@ package api
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -17,20 +17,6 @@ type KlassensatzReservierungRequest struct {
 	Klasse  string `json:"klasse"`
 	Anzahl  int    `json:"anzahl"`
 	Notiz   string `json:"notiz,omitempty"`
-}
-
-// KlassensatzReservierung represents a pending class-set reservation.
-type KlassensatzReservierung struct {
-	ID             string  `json:"id"`
-	TitelID        string  `json:"titel_id"`
-	TitelName      string  `json:"titel_name"`
-	CoverURL       string  `json:"cover_url,omitempty"`
-	Klasse         string  `json:"klasse"`
-	Anzahl         int     `json:"anzahl"`
-	Notiz          *string `json:"notiz,omitempty"`
-	AngefordertVon *string `json:"angefordert_von,omitempty"`
-	Erledigt       bool    `json:"erledigt"`
-	ErstelltAm     string  `json:"erstellt_am"`
 }
 
 // CreateKlassensatzReservierungHandler lets a LEHRER submit a class-set reservation.
@@ -60,25 +46,16 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		repo := repository.NewReservationRepository(s.DB.Pool)
 
 		// Verify the title exists.
-		var exists bool
-		if err := s.DB.Pool.QueryRow(ctx,
-			`SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE id = $1)`, req.TitelID,
-		).Scan(&exists); err != nil || !exists {
+		exists, err := repo.CheckTitleExists(ctx, req.TitelID)
+		if err != nil || !exists {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
 			return
 		}
 
-		var newID string
-		err := s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO klassensatz_reservierungen
-				(titel_id, klasse, anzahl, notiz, angefordert_von)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id
-		`, req.TitelID, req.Klasse, req.Anzahl,
-			nullableString(req.Notiz), claims.UserID,
-		).Scan(&newID)
+		newID, err := repo.CreateKlassensatzReservierung(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -92,33 +69,16 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 // GET /api/reservierungen/klassensatz
 func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		rows, err := s.DB.Pool.Query(ctx, `
-			SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
-			       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am
-			FROM klassensatz_reservierungen r
-			JOIN buecher_titel t ON r.titel_id = t.id
-			ORDER BY r.erledigt ASC, r.erstellt_am DESC
-		`)
+		repo := repository.NewReservationRepository(s.DB.Pool)
+		result, err := repo.GetKlassensatzReservierungen(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
-
-		result := []KlassensatzReservierung{}
-		for rows.Next() {
-			var res KlassensatzReservierung
-			var t time.Time
-			if err := rows.Scan(
-				&res.ID, &res.TitelID, &res.TitelName, &res.CoverURL,
-				&res.Klasse, &res.Anzahl, &res.Notiz, &res.Erledigt, &t,
-			); err != nil {
-				continue
-			}
-			res.ErstelltAm = t.Format("02.01.2006")
-			result = append(result, res)
+		
+		// Ensure we don't return null for empty slices
+		if result == nil {
+			result = []repository.KlassensatzReservierung{}
 		}
 
 		RespondJSON(w, http.StatusOK, result)
@@ -129,12 +89,12 @@ func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 // GET /api/reservierungen/klassensatz/anzahl
 func (s *Server) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		var count int
-		_ = s.DB.Pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM klassensatz_reservierungen WHERE erledigt = false`,
-		).Scan(&count)
+		repo := repository.NewReservationRepository(s.DB.Pool)
+		count, err := repo.GetKlassensatzReservierungenAnzahl(r.Context())
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, map[string]int{"anzahl": count})
 	}
@@ -150,15 +110,14 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-
-		tag, err := s.DB.Pool.Exec(ctx,
-			`UPDATE klassensatz_reservierungen SET erledigt = true WHERE id = $1`, id)
+		repo := repository.NewReservationRepository(s.DB.Pool)
+		rowsAffected, err := repo.ErledigeKlassensatzReservierung(r.Context(), id)
+		
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if tag.RowsAffected() == 0 {
+		if rowsAffected == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, pgx.ErrNoRows)
 			return
 		}

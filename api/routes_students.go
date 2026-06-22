@@ -7,10 +7,11 @@ import (
 
 func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, mahnRepo *repository.MahnwesenRepository, auditRepo repository.AuditRepository) {
 	// ── SCHUELER (Students) ──
-	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.ListStudentsHandler()))
+	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.ListStudentsHandler(studentRepo)))
 	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.GetStudentProfileHandler(studentRepo)))
 	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
 	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("create_students")(s.PatchStudentHandler()))
+	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("create_students")(s.LockStudentHandler()))
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
 
 	// Papierkorb
@@ -22,7 +23,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/schueler/{id}/photo", s.RequirePermission("view_students")(s.ServeStudentPhotoHandler()))
 
 	// Klassen
-	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler()))
+	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler(studentRepo)))
 	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_users")(s.GetKlassenMappingHandler()))
 	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_users")(s.UpsertKlassenMappingHandler()))
 	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_users")(s.DeleteKlassenMappingHandler()))
@@ -42,8 +43,9 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
 	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.GetGraduatesPDFHandler()))
 
-	// Damage Reports
-	mux.Handle("POST /api/damage/report", s.RequirePermission("edit_students")(s.ReportDamageHandler()))
+	// Kiosk / Damage
+	damageRepo := repository.NewDamageRepository(s.DB.Pool)
+	mux.Handle("POST /api/damage/report", s.RequirePermission("edit_students")(s.ReportDamageHandler(damageRepo)))
 	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(s.GenerateDamagePDFHandler()))
 
 	// Mahnwesen

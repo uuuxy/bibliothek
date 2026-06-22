@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"strconv"
@@ -194,7 +195,10 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 				EXISTS(SELECT 1 FROM ex_ins) AS exemplar_inserted
 		`
 
-	for _, row := range rows[1:] {
+	var queuedBarcodes []string
+	var queuedTitles []string
+
+	for i, row := range rows[1:] {
 		if len(row) < 8 {
 			continue // Zeile ignorieren, wenn zu kurz
 		}
@@ -205,10 +209,20 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 		isbn := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(row[3]), "-", ""), " ", "")
 		jahrStr := strings.TrimSpace(row[4])
 		kategorie := strings.TrimSpace(row[5])
-		barcode := strings.TrimSpace(row[6])
+		
+		// 1. String-Bereinigung & 2. Datentyp-Sicherheit (Bleibt konsequent String)
+		// Entfernt Whitespaces, Zeilenumbrüche und unsichtbare Steuerzeichen (BOM, Zero-Width Space, Null-Bytes)
+		barcode := strings.TrimSpace(strings.Trim(row[6], "\uFEFF\u200B\x00\r\n\t"))
 		zustandCSV := strings.TrimSpace(row[7])
 
-		if titel == "" || barcode == "" {
+		if titel == "" {
+			continue
+		}
+		
+		// 3. Robustes Logging & Fehlerabfang
+		if barcode == "" {
+			id := fmt.Sprintf("Zeile %d", i+2)
+			log.Printf("Warnung: Exemplar ID %s hat keinen Barcode", id)
 			continue
 		}
 
@@ -220,6 +234,8 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 			istAusleihbar = false
 		}
 
+		queuedBarcodes = append(queuedBarcodes, barcode)
+		queuedTitles = append(queuedTitles, titel)
 		batch.Queue(qCombined, titel, autor, verlag, isbn, jahr, kategorie, barcode, istAusleihbar, zustandCSV)
 	}
 
@@ -234,6 +250,10 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 			if exemplarInserted {
 				importedCopiesCount++
 			}
+		} else if errors.Is(err, pgx.ErrNoRows) {
+			log.Printf("Warnung: Exemplar mit Barcode '%s' (Titel: %s) wurde übersprungen (bereits vorhanden)", queuedBarcodes[i], queuedTitles[i])
+		} else {
+			log.Printf("❌ Fehler beim Insert von Barcode '%s' (Titel: %s): %v", queuedBarcodes[i], queuedTitles[i], err)
 		}
 	}
 	if err := br.Close(); err != nil {

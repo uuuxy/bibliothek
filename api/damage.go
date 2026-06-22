@@ -1,11 +1,12 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/repository"
+	"github.com/jackc/pgx/v5"
 )
 
 // DefektRequest is the payload for marking a book copy as defective.
@@ -25,130 +26,70 @@ type DefektResponse struct {
 // MarkCopyDefektHandler marks a book copy as defective:
 //  1. Sets ist_ausleihbar = false and records a damage note on the copy.
 //  2. Creates a Schadensfaelle entry linked to the responsible student (if provided).
-func (s *Server) MarkCopyDefektHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) MarkCopyDefektHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		copyID := r.PathValue("id")
 		if copyID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
-			return
+			return apierrors.BadRequest("missing copy ID parameter", nil)
 		}
 
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
-			return
+			return apierrors.Unauthorized("missing session information", nil)
 		}
 
 		var req DefektRequest
 		if !DecodeAndValidate(w, r, &req) {
-			return
+			return nil
 		}
 		if req.Betrag < 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("betrag darf nicht negativ sein"))
-			return
+			return apierrors.BadRequest("betrag darf nicht negativ sein", nil)
 		}
 		if req.Beschreibung == "" {
 			req.Beschreibung = "Defekt/Schaden bei Rückgabe gemeldet"
 		}
 
-		ctx := r.Context()
-
-		tx, err := s.DB.Pool.Begin(ctx)
+		schadensID, err := damageRepo.MarkCopyDefekt(r.Context(), copyID, req.LoanID, req.SchuelerID, claims.UserID, req.Betrag, req.Beschreibung)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer func() { _ = tx.Rollback(ctx) }()
-
-		// 1. Mark copy as not lendable and record damage note.
-		res, err := tx.Exec(ctx, `
-			UPDATE buecher_exemplare
-			SET ist_ausleihbar = false,
-			    zustand_notiz = $1,
-			    aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $2
-		`, req.Beschreibung, copyID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if res.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("book copy not found"))
-			return
-		}
-
-		// 2. Create Schadensfaelle entry.
-		var schadensID string
-		if req.SchuelerID != nil && *req.SchuelerID != "" {
-			err = tx.QueryRow(ctx, `
-				INSERT INTO schadensfaelle
-				    (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag)
-				VALUES ($1, $2, $3, $4, $5)
-				RETURNING id
-			`, copyID, req.LoanID, req.SchuelerID, req.Beschreibung, req.Betrag).Scan(&schadensID)
-		} else {
-			// No identified student: associate with the acting staff member.
-			err = tx.QueryRow(ctx, `
-				INSERT INTO schadensfaelle
-				    (exemplar_id, ausleihe_id, benutzer_id, beschreibung, betrag)
-				VALUES ($1, $2, $3, $4, $5)
-				RETURNING id
-			`, copyID, req.LoanID, claims.UserID, req.Beschreibung, req.Betrag).Scan(&schadensID)
-		}
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+			if err == pgx.ErrNoRows {
+				return apierrors.NotFound("book copy not found", nil)
+			}
+			return apierrors.Internal("Fehler beim Markieren des Defekts", err)
 		}
 
 		RespondJSON(w, http.StatusOK, DefektResponse{Status: "ok", SchadensID: schadensID})
-	}
+		return nil
+	})
 }
 
 // UndoReturnHandler reverses a recent return (within 1 hour) by nullifying rueckgabe_am.
-func (s *Server) UndoReturnHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) UndoReturnHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		loanID := r.PathValue("id")
 		if loanID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing loan ID parameter"))
-			return
+			return apierrors.BadRequest("missing loan ID parameter", nil)
 		}
 
-		ctx := r.Context()
-
-		res, err := s.DB.Pool.Exec(ctx, `
-			UPDATE ausleihen
-			SET rueckgabe_am = NULL, rueckgabe_bearbeiter_id = NULL
-			WHERE id = $1
-			  AND rueckgabe_am IS NOT NULL
-			  AND rueckgabe_am > CURRENT_TIMESTAMP - INTERVAL '1 hour'
-		`, loanID)
+		rowsAffected, err := damageRepo.UndoReturn(r.Context(), loanID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+			return apierrors.Internal("Fehler beim Rückgängigmachen der Rückgabe", err)
 		}
-		if res.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound,
-				errors.New("ausleihe nicht gefunden, nicht zurückgegeben oder Zeitfenster überschritten (max. 1 Stunde)"))
-			return
+		if rowsAffected == 0 {
+			return apierrors.NotFound("Ausleihe nicht gefunden, nicht zurückgegeben oder Zeitfenster überschritten (max. 1 Stunde)", nil)
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-	}
+		return nil
+	})
 }
 
 // ReportDamageHandler handles POST /api/damage/report
 // Sets ist_ausgesondert = true, inserts into schadensfaelle, and ends the loan.
-func (s *Server) ReportDamageHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
-			return
+			return apierrors.Unauthorized("missing session information", nil)
 		}
 
 		var req struct {
@@ -159,57 +100,15 @@ func (s *Server) ReportDamageHandler() http.HandlerFunc {
 			Betrag       float64 `json:"betrag"`
 		}
 		if !DecodeAndValidate(w, r, &req) {
-			return
+			return nil
 		}
 
-		ctx := r.Context()
-
-		tx, err := s.DB.Pool.Begin(ctx)
+		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, req.SchuelerID, claims.UserID, req.Beschreibung, req.Betrag)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer func() { _ = tx.Rollback(ctx) }()
-
-		// 1. Mark copy as decommissioned
-		_, err = tx.Exec(ctx, `
-			UPDATE buecher_exemplare
-			SET ist_ausgesondert = true, ist_ausleihbar = false, zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $2
-		`, req.Beschreibung, req.CopyID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 2. Create Schadensfall
-		var schadensID string
-		err = tx.QueryRow(ctx, `
-			INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id
-		`, req.CopyID, req.LoanID, req.SchuelerID, req.Beschreibung, req.Betrag).Scan(&schadensID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 3. End loan
-		_, err = tx.Exec(ctx, `
-			UPDATE ausleihen
-			SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = $1
-			WHERE id = $2
-		`, claims.UserID, req.LoanID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+			return apierrors.Internal("Fehler beim Melden des Schadens", err)
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok", "schadens_id": schadensID})
-	}
+		return nil
+	})
 }

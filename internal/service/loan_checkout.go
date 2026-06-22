@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
-	"bibliothek/plugins"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -31,95 +29,10 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		return nil, fmt.Errorf("%w: dieses Buchexemplar ist nicht ausleihbar", ErrInvalidState)
 	}
 
-	var borrowerID string
-	var borrowerType string
-	var student *repository.Student
-	var teacher *repository.User
-	var dueTime time.Time
-
-	// 1. Ermitteln, wer das Buch ausleihen möchte (Schüler oder Lehrkraft)
-	if activeStudentID != nil && *activeStudentID != "" {
-		borrowerType = "student"
-		borrowerID = *activeStudentID
-		sObj, err := s.studentRepo.GetByID(ctx, borrowerID)
-		if err != nil {
-			return nil, err
-		}
-		if sObj == nil {
-			return nil, fmt.Errorf("%w: Aktives Schülerprofil nicht gefunden", ErrNotFound)
-		}
-		// Wenn der Schüler gesperrt ist, darf er nichts ausleihen - es sei denn, overrideBlock ist gesetzt.
-		if sObj.IstGesperrt {
-			if !overrideBlock {
-				return nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
-			} else {
-				_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{"schueler_id": borrowerID, "reason": "Ausleihsperre manuell ignoriert (IstGesperrt)"})
-			}
-		}
-		if sObj.IsManuallyBlocked {
-			reason := "ohne Grund"
-			if sObj.BlockReason != nil && *sObj.BlockReason != "" {
-				reason = *sObj.BlockReason
-			}
-			if !overrideBlock {
-				return nil, fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
-			} else {
-				_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{"schueler_id": borrowerID, "reason": "Ausleihsperre manuell ignoriert (Manuelle Sperre: " + reason + ")"})
-			}
-		}
-
-		settings, err := s.querySettings(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		var overdueCount int
-		errOverdue := s.pool.QueryRow(ctx, `
-			SELECT COUNT(*) 
-			FROM ausleihen 
-			WHERE schueler_id = $1 
-			  AND rueckgabe_am IS NULL 
-			  AND rueckgabe_frist < CURRENT_TIMESTAMP - (INTERVAL '1 day' * $2)
-			  AND ist_handapparat = false
-			  AND geraet_id IS NULL
-		`, borrowerID, settings.MaxOverdueDays).Scan(&overdueCount)
-		
-		if errOverdue != nil {
-			return nil, errOverdue
-		}
-		if overdueCount >= settings.MaxOverdueItems {
-			if !overrideBlock {
-				return nil, fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdueCount)
-			} else {
-				_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{"schueler_id": borrowerID, "reason": fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", overdueCount)})
-			}
-		}
-
-		student = sObj
-
-		// Fälligkeitsdatum anhand der Ausleihregeln ermitteln (berücksichtigt Medienart, LMF und Leseclub)
-		dt, err := s.resolveCheckoutDueDate(ctx, copy, student.Klasse)
-		if err != nil {
-			return nil, err
-		}
-		dueTime = dt
-	} else if activeTeacherID != nil && *activeTeacherID != "" {
-		borrowerType = "teacher"
-		borrowerID = *activeTeacherID
-		teacher = &repository.User{}
-		// Verifizieren, ob die Lehrkraft existiert und aktiv ist
-		err := s.pool.QueryRow(ctx, `
-			SELECT b.id, b.barcode_id, b.vorname, b.nachname, br.rolle 
-			FROM benutzer b JOIN benutzer_rollen br ON b.id = br.benutzer_id
-			WHERE b.id = $1 AND br.rolle = 'LEHRER' AND b.aktiv = true LIMIT 1
-		`, borrowerID).Scan(&teacher.ID, &teacher.BarcodeID, &teacher.Vorname, &teacher.Nachname, &teacher.Rolle)
-		if err != nil {
-			return nil, fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", ErrNotFound)
-		}
-		// Für Lehrkräfte gilt standardmäßig eine Leihfrist von 1 Jahr (Dauerleihgabe / Handapparat)
-		dueTime = time.Now().AddDate(1, 0, 0)
-	} else {
-		return nil, fmt.Errorf("%w: Weder Schüler noch Lehrer aktiv", ErrInvalidState)
+	// 1. Borrower-Validation auslagern in loan_checkout_validation.go
+	chkCtx, err := s.resolveBorrowerAndDueTime(ctx, copy, activeStudentID, activeTeacherID, staffID, overrideBlock)
+	if err != nil {
+		return nil, err
 	}
 
 	// 2. Datenbanktransaktion starten, um Nebenläufigkeitsfehler (Race Conditions) zu verhindern
@@ -130,13 +43,13 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	defer tx.Rollback(ctx)
 
 	var activeLoansCount int
-	if borrowerType == "student" {
+	if chkCtx.borrowerType == "student" {
 		// Row-Level Lock auf den Schülereintrag setzen (`FOR UPDATE`), um zeitgleiche Ausleihen
 		// auf denselben Schüler im parallelen Request zu synchronisieren.
-		if _, err = tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", borrowerID); err != nil {
+		if _, err = tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", chkCtx.borrowerID); err != nil {
 			return nil, err
 		}
-		// Ermitteln, wie viele reguläre Bücher (ausgenommen Lernmittelfreiheit 'lmf-') der Schüler aktuell besitzt
+		// Ermitteln, wie viele reguläre Bücher der Schüler aktuell besitzt
 		err = tx.QueryRow(ctx, `
 			SELECT COUNT(*) 
 			FROM ausleihen a
@@ -145,7 +58,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 			WHERE a.schueler_id = $1 
 			  AND a.rueckgabe_am IS NULL
 			  AND LOWER(bt.titel) NOT LIKE 'lmf-%'
-		`, borrowerID).Scan(&activeLoansCount)
+		`, chkCtx.borrowerID).Scan(&activeLoansCount)
 		if err != nil {
 			return nil, err
 		}
@@ -157,37 +70,30 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		return nil, err
 	}
 
-	// Prüfen, ob der aktive Ausleiher das Buch bereits ausgeliehen hat (dann ist es eine Rückgabe)
 	isReturningThis := false
 	if activeLoan != nil {
-		if borrowerType == "student" && activeLoan.SchuelerID != nil && *activeLoan.SchuelerID == borrowerID {
+		if chkCtx.borrowerType == "student" && activeLoan.SchuelerID != nil && *activeLoan.SchuelerID == chkCtx.borrowerID {
 			isReturningThis = true
-		} else if borrowerType == "teacher" && activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == borrowerID {
+		} else if chkCtx.borrowerType == "teacher" && activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == chkCtx.borrowerID {
 			isReturningThis = true
 		}
 	}
 
 	// 3. Ausleihlimit für Schüler prüfen
-	if borrowerType == "student" {
+	if chkCtx.borrowerType == "student" {
 		settings, err := s.querySettings(ctx)
 		if err != nil {
 			return nil, err
 		}
-
 		isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
-
-		// Ausleihlimit (meist max 5 Bücher) greift nur bei regulärem Bestand (kein LMF-Schulbuch)
-		// und nur, wenn der Schüler das Buch nicht gerade zurückgibt.
 		if !isLMF && activeLoansCount >= settings.MaxAusleihenSchueler {
 			if !isReturningThis {
-				return nil, fmt.Errorf("%w: Ausleihlimit von %d Bibliotheks-Büchern überschritten (aktuell: %d)", ErrBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
+				return nil, fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell: %d)", ErrBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
 			}
 		}
 	}
 
 	// 4. Reservierungsprüfung (Vormerkung)
-	// Falls das Buch für einen anderen Schüler zur Abholung bereitgestellt wurde und die Frist
-	// noch läuft, blockieren wir die Ausleihe für Dritte.
 	if !isReturningThis {
 		var reservedSchuelerID string
 		var resVorname, resNachname string
@@ -201,7 +107,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		`, copy.ID).Scan(&reservedSchuelerID, &resVorname, &resNachname)
 
 		if err == nil {
-			if borrowerType != "student" || borrowerID != reservedSchuelerID {
+			if chkCtx.borrowerType != "student" || chkCtx.borrowerID != reservedSchuelerID {
 				return nil, fmt.Errorf("%w: Achtung: Dieses Exemplar ist noch für %s %s reserviert!", ErrConflict, resVorname, resNachname)
 			}
 		} else if !errors.Is(err, pgx.ErrNoRows) {
@@ -209,156 +115,14 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		}
 	}
 
-	// Fall A: Buch ist frei -> Neue Ausleihe anlegen
+	// 5. Entsprechende Transaction-Fall-Logik ausführen (in loan_checkout_cases.go)
 	if activeLoan == nil {
-		var loan *repository.Loan
-		if borrowerType == "student" {
-			loan, err = s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime)
-		} else {
-			// Für Lehrer wird die Ausleihe als Handapparat (ist_handapparat = true) markiert
-			loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime, true)
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		// Falls der Schüler eine Vormerkung auf diesen Titel hatte, löschen wir diese nun
-		if borrowerType == "student" {
-			_, _ = tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, borrowerID)
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			return nil, err
-		}
-
-		// Revisionssicheres Audit-Log schreiben
-		if borrowerType == "student" {
-			_ = s.auditRepo.LogAusleihe(ctx, copy.ID, borrowerID, "", staffID)
-			resp.Student = student
-		} else {
-			_ = s.auditRepo.LogAusleihe(ctx, copy.ID, "", borrowerID, staffID)
-			resp.Teacher = teacher
-		}
-
-		resp.Type = "ausleihe"
-		resp.Book = copy
-		if loan != nil {
-			resp.DueDate = &loan.RueckgabeFrist
-		}
-		return resp, nil
+		return s.handleNewLoan(ctx, tx, copy, chkCtx, staffID, resp)
 	}
 
-	// Fall B: Der aktuelle Ausleiher scannt das Buch erneut -> Rückgabe durchführen
 	if isReturningThis {
-		if err = s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
-			return nil, err
-		}
-
-		// Prüfen, ob eine Vormerkung für dieses Buch vorliegt und diese ggf. aktivieren
-		s.processReturnVormerkungTx(ctx, tx, copy, resp)
-
-		if err := tx.Commit(ctx); err != nil {
-			return nil, err
-		}
-
-		// Revisionssicheres Audit-Log schreiben
-		if borrowerType == "student" {
-			_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, borrowerID, "", staffID)
-			resp.Student = student
-		} else {
-			_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, "", borrowerID, staffID)
-			resp.Teacher = teacher
-		}
-
-		// Event für Plugins triggern
-		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-			CopyID:       copy.ID,
-			BarcodeID:    copy.BarcodeID,
-			Titel:        copy.Titel,
-			SchuelerID:   activeLoan.SchuelerID,
-			BearbeiterID: staffID,
-		})
-
-		resp.Type = "rueckgabe"
-		resp.Book = copy
-		resp.LoanID = &activeLoan.ID
-		return resp, nil
+		return s.handleReturn(ctx, tx, copy, chkCtx, activeLoan, staffID, resp)
 	}
 
-	// Fall C: Fremdrückgabe (Buch ist bei Person A ausgeliehen, wird aber für Person B gescannt).
-	// Zuerst wird das Buch für Person A zurückgebucht (ist_fremdrueckgabe = true),
-	// danach wird es direkt für Person B ausgeliehen.
-	var prevStudent *repository.Student
-	var prevTeacher *repository.User
-
-	// Infos über den Vorbesitzer (Person A) für die Rückmeldung ermitteln
-	if activeLoan.SchuelerID != nil {
-		prevStudent, _ = s.studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
-	} else if activeLoan.AusleiherBenutzerID != nil {
-		prevTeacher = &repository.User{}
-		err = tx.QueryRow(ctx, "SELECT b.id, b.vorname, b.nachname, COALESCE(br.rolle, 'HELFER') FROM benutzer b LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id WHERE b.id = $1 LIMIT 1", *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
-		if errors.Is(err, pgx.ErrNoRows) {
-			prevTeacher = nil
-		}
-	}
-
-	// Buch für den Vorbesitzer zurückbuchen (ist_fremdrueckgabe = true)
-	if err = s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, true); err != nil {
-		return nil, err
-	}
-
-	// Direkt neue Ausleihe für den neuen aktiven Benutzer (Person B) anlegen
-	var loan *repository.Loan
-	if borrowerType == "student" {
-		loan, err = s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime)
-	} else {
-		loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, borrowerID, staffID, dueTime, true)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// Vormerkungen für den neuen Ausleiher löschen
-	if borrowerType == "student" {
-		_, _ = tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, borrowerID)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-
-	// Audit-Log für die automatische Rückgabe schreiben
-	if activeLoan.SchuelerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
-	} else if activeLoan.AusleiherBenutzerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
-	}
-
-	// Audit-Log für die neue Ausleihe schreiben
-	if borrowerType == "student" {
-		_ = s.auditRepo.LogAusleihe(ctx, copy.ID, borrowerID, "", staffID)
-		resp.Student = student
-	} else {
-		_ = s.auditRepo.LogAusleihe(ctx, copy.ID, "", borrowerID, staffID)
-		resp.Teacher = teacher
-	}
-
-	// Event für Plugins triggern (Buch zurückgegeben)
-	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-		CopyID:       copy.ID,
-		BarcodeID:    copy.BarcodeID,
-		Titel:        copy.Titel,
-		SchuelerID:   activeLoan.SchuelerID,
-		BearbeiterID: staffID,
-	})
-
-	resp.Type = "ausleihe"
-	resp.Book = copy
-	if loan != nil {
-		resp.DueDate = &loan.RueckgabeFrist
-	}
-	resp.Fremdrueckgabe = true
-	resp.Vorbesitzer = prevStudent
-	resp.VorbesitzerUser = prevTeacher
-	return resp, nil
+	return s.handleForeignReturn(ctx, tx, copy, chkCtx, activeLoan, staffID, resp)
 }

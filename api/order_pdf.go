@@ -107,7 +107,7 @@ func GenerateBarcodeSheetPDF(labels []BarcodeLabelDetail) ([]byte, error) {
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFont("Arial", "B", 14)
-	pdf.Cell(0, 10, tr("QR-Code-Aufkleber für Buchlieferung (Vorab-Beklebung)"))
+	pdf.Cell(0, 10, tr("Barcode-Aufkleber für Buchlieferung (Vorab-Beklebung)"))
 	pdf.Ln(6)
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(100, 100, 100)
@@ -141,18 +141,19 @@ func GenerateBarcodeSheetPDF(labels []BarcodeLabelDetail) ([]byte, error) {
 		pdf.SetXY(x+2, y+7)
 		pdf.Cell(colWidth-4, 4, tr(label.Autor))
 
-		// Generate dynamic QR code PNG in memory
-		barcodeImg, err := GenerateBarcodePNG(label.BarcodeID, true, 200, 200)
+		// Generate dynamic 1D Code39 barcode PNG
+		barcodeImg, err := GenerateBarcodePNG(label.BarcodeID, false, 250, 70)
 		if err == nil {
 			imgReader := bytes.NewReader(barcodeImg)
 			pdf.RegisterImageOptionsReader(label.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, imgReader)
-			qrSize := 16.0
-			qrX := x + (colWidth-qrSize)/2
-			qrY := y + 11.0
-			pdf.Image(label.BarcodeID, qrX, qrY, qrSize, qrSize, false, "", 0, "")
+			bcWidth := 40.0
+			bcHeight := 10.0
+			bcX := x + (colWidth-bcWidth)/2
+			bcY := y + 14.0
+			pdf.Image(label.BarcodeID, bcX, bcY, bcWidth, bcHeight, false, "", 0, "")
 		}
 
-		pdf.SetFont("Arial", "B", 8)
+		pdf.SetFont("Courier", "B", 10)
 		pdf.SetXY(x+2, y+27)
 		pdf.CellFormat(colWidth-4, 4, tr(label.BarcodeID), "", 0, "C", false, 0, "")
 	}
@@ -206,15 +207,16 @@ func GenerateSingleLabelPDFA6(label BarcodeLabelDetail) ([]byte, error) {
 	pdf.SetXY(12, 45)
 	pdf.MultiCell(81, 5, tr(label.Autor), "", "C", false)
 
-	// Generate QR code
-	barcodeImg, err := GenerateBarcodePNG(label.BarcodeID, true, 300, 300)
+	// Generate 1D Code39 barcode
+	barcodeImg, err := GenerateBarcodePNG(label.BarcodeID, false, 250, 70)
 	if err == nil {
 		imgReader := bytes.NewReader(barcodeImg)
 		pdf.RegisterImageOptionsReader(label.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, imgReader)
-		qrSize := 40.0
-		qrX := 10.0 + (85.0-qrSize)/2.0
-		qrY := 60.0
-		pdf.Image(label.BarcodeID, qrX, qrY, qrSize, qrSize, false, "", 0, "")
+		bcWidth := 70.0
+		bcHeight := 18.0
+		bcX := 10.0 + (85.0-bcWidth)/2.0
+		bcY := 60.0
+		pdf.Image(label.BarcodeID, bcX, bcY, bcWidth, bcHeight, false, "", 0, "")
 	}
 
 	pdf.SetFont("Arial", "B", 14)

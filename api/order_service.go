@@ -13,13 +13,18 @@ import (
 
 // OrderService verarbeitet die Geschäftslogik zum Erstellen und Verarbeiten von Bestellungen.
 type OrderService struct {
-	db       *db.Database
-	bookRepo repository.BookRepository
+	db           *db.Database
+	bookRepo     repository.BookRepository
+	supplierRepo repository.SupplierRepository
 }
 
 // NewOrderService erstellt eine neue OrderService-Instanz.
 func NewOrderService(database *db.Database, bookRepo repository.BookRepository) *OrderService {
-	return &OrderService{db: database, bookRepo: bookRepo}
+	return &OrderService{
+		db:           database,
+		bookRepo:     bookRepo,
+		supplierRepo: repository.NewSupplierRepository(database.Pool),
+	}
 }
 
 // OrderResult enthält das Ergebnis einer verarbeiteten Bestellung, einschließlich der generierten Barcodes.
@@ -35,12 +40,7 @@ type OrderResult struct {
 // ProcessOrder verarbeitet eine eingehende SubmitOrderRequest innerhalb einer Transaktion, generiert Barcodes und gibt das OrderResult zurück.
 func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest) (*OrderResult, error) {
 	// 1. Lieferantendetails abrufen
-	var supplierName, supplierEmail, customerNumber string
-	err := s.db.Pool.QueryRow(ctx, `
-		SELECT name, email, kundennummer 
-		FROM lieferanten 
-		WHERE id = $1
-	`, req.SupplierID).Scan(&supplierName, &supplierEmail, &customerNumber)
+	supplier, err := s.supplierRepo.GetSupplierByID(ctx, req.SupplierID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors.New("supplier not found")
@@ -65,8 +65,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 			return nil, fmt.Errorf("invalid quantity %d for title %s", item.Menge, item.TitelID)
 		}
 
-		var titel, autor, isbn, verlag string
-		err = tx.QueryRow(ctx, "SELECT titel, coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, '') FROM buecher_titel WHERE id = $1", item.TitelID).Scan(&titel, &autor, &isbn, &verlag)
+		title, err := s.bookRepo.GetTitleByIDTx(ctx, tx, item.TitelID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil, fmt.Errorf("book title %s not found", item.TitelID)
@@ -75,10 +74,10 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		}
 
 		orderSummaryItems = append(orderSummaryItems, OrderedItem{
-			Titel:  titel,
-			Autor:  autor,
-			ISBN:   isbn,
-			Verlag: verlag,
+			Titel:  title.Titel,
+			Autor:  title.Autor,
+			ISBN:   title.ISBN,
+			Verlag: title.Verlag,
 			Menge:  item.Menge,
 		})
 
@@ -88,9 +87,9 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 			return nil, fmt.Errorf("sequence error: %w", err)
 		}
 
-		statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+		statusText := fmt.Sprintf("Im Zulauf - %s", supplier.Name)
 		if !item.GenerateBarcodes {
-			statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", supplierName)
+			statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", supplier.Name)
 		}
 
 		for i := 0; i < item.Menge; i++ {
@@ -108,9 +107,9 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 			if item.GenerateBarcodes {
 				labels = append(labels, BarcodeLabelDetail{
 					BarcodeID: barcodeID,
-					Titel:     titel,
-					Autor:     autor,
-					ISBN:      isbn,
+					Titel:     title.Titel,
+					Autor:     title.Autor,
+					ISBN:      title.ISBN,
 				})
 			}
 		}
@@ -126,9 +125,9 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	}
 
 	return &OrderResult{
-		SupplierName:   supplierName,
-		SupplierEmail:  supplierEmail,
-		CustomerNumber: customerNumber,
+		SupplierName:   supplier.Name,
+		SupplierEmail:  supplier.Email,
+		CustomerNumber: supplier.Kundennummer,
 		Labels:         labels,
 		SummaryItems:   orderSummaryItems,
 		TotalAllocated: totalAllocated,

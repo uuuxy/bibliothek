@@ -2,10 +2,94 @@ package apierrors
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
 )
+
+// APIError is a structured error for the HTTP API that implements the error interface.
+type APIError struct {
+	StatusCode int    `json:"-"`
+	Message    string `json:"error"`
+	Err        error  `json:"-"` // Internal error for logging
+}
+
+// Error implements the error interface.
+func (e *APIError) Error() string {
+	if e.Err != nil {
+		return e.Message + ": " + e.Err.Error()
+	}
+	return e.Message
+}
+
+// Unwrap allows unwrapping the internal error.
+func (e *APIError) Unwrap() error {
+	return e.Err
+}
+
+// New creates a new APIError.
+func New(statusCode int, message string, err error) *APIError {
+	return &APIError{
+		StatusCode: statusCode,
+		Message:    message,
+		Err:        err,
+	}
+}
+
+// Common error constructors
+func NotFound(message string, err error) *APIError {
+	if message == "" {
+		message = "Ressource nicht gefunden"
+	}
+	return New(http.StatusNotFound, message, err)
+}
+
+func BadRequest(message string, err error) *APIError {
+	if message == "" {
+		message = "Ungültige Anfrage"
+	}
+	return New(http.StatusBadRequest, message, err)
+}
+
+func Internal(message string, err error) *APIError {
+	if message == "" {
+		message = "Ein interner Serverfehler ist aufgetreten"
+	}
+	return New(http.StatusInternalServerError, message, err)
+}
+
+func Unauthorized(message string, err error) *APIError {
+	if message == "" {
+		message = "Nicht autorisiert"
+	}
+	return New(http.StatusUnauthorized, message, err)
+}
+
+// APIHandler is a signature for HTTP handlers that return an error.
+type APIHandler func(w http.ResponseWriter, r *http.Request) error
+
+// Wrap converts an APIHandler into a standard http.HandlerFunc.
+// If the handler returns an error, it is properly formatted and sent to the client.
+func Wrap(h APIHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := h(w, r)
+		if err != nil {
+			var apiErr *APIError
+			if errors.As(err, &apiErr) {
+				if apiErr.StatusCode >= 500 {
+					log.Printf("API Error [HTTP %d]: %v", apiErr.StatusCode, apiErr.Err)
+				}
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(apiErr.StatusCode)
+				_ = json.NewEncoder(w).Encode(apiErr)
+			} else {
+				// Fallback to the existing SendHTTPError logic for generic errors
+				SendHTTPError(w, http.StatusInternalServerError, err)
+			}
+		}
+	}
+}
 
 // SendHTTPError logs the detailed internal error to the server console and returns a sanitized JSON error to the client.
 func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {

@@ -2,25 +2,11 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
-
-	"github.com/jackc/pgx/v5"
+	"bibliothek/repository"
 )
-
-// Vormerkung represents a pending book reservation entry.
-type Vormerkung struct {
-	ID           string    `json:"id"`
-	TitelID      string    `json:"titel_id"`
-	TitelName    string    `json:"titel"`
-	Notiz        string    `json:"notiz,omitempty"`
-	ErstelltAm   time.Time `json:"erstellt_am"`
-	SchuelerID   string    `json:"schueler_id,omitempty"`
-	SchuelerName string    `json:"schueler_name,omitempty"`
-}
 
 // CreateVormerkungRequest is the body for POST /api/vormerkungen.
 type CreateVormerkungRequest struct {
@@ -30,129 +16,72 @@ type CreateVormerkungRequest struct {
 }
 
 // ListVormerkungHandler handles GET /api/vormerkungen?titel_id=...
-func (s *Server) ListVormerkungHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ListVormerkungHandler(vormerkungRepo repository.VormerkungRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
 		titelID := r.URL.Query().Get("titel_id")
 		schuelerID := r.URL.Query().Get("schueler_id")
 
-		var rows pgx.Rows
-		var err error
-		if titelID != "" {
-			rows, err = s.DB.Pool.Query(ctx, `
-				SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-				       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
-				FROM vormerkungen v
-				JOIN buecher_titel bt ON bt.id = v.titel_id
-				LEFT JOIN schueler s ON s.id = v.schueler_id
-				WHERE v.titel_id = $1
-				ORDER BY v.erstellt_am ASC
-			`, titelID)
-		} else if schuelerID != "" {
-			rows, err = s.DB.Pool.Query(ctx, `
-				SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-				       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
-				FROM vormerkungen v
-				JOIN buecher_titel bt ON bt.id = v.titel_id
-				LEFT JOIN schueler s ON s.id = v.schueler_id
-				WHERE v.schueler_id = $1
-				ORDER BY v.erstellt_am ASC
-			`, schuelerID)
-		} else {
-			rows, err = s.DB.Pool.Query(ctx, `
-				SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-				       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
-				FROM vormerkungen v
-				JOIN buecher_titel bt ON bt.id = v.titel_id
-				LEFT JOIN schueler s ON s.id = v.schueler_id
-				ORDER BY v.erstellt_am ASC
-			`)
-		}
+		result, err := vormerkungRepo.List(ctx, titelID, schuelerID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer rows.Close()
-
-		result := make([]Vormerkung, 0)
-		for rows.Next() {
-			var v Vormerkung
-			if err := rows.Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			result = append(result, v)
+			return apierrors.Internal("Fehler beim Abrufen der Vormerkungen", err)
 		}
 		if result == nil {
-			result = []Vormerkung{}
+			result = []repository.Vormerkung{}
 		}
 
 		RespondJSON(w, http.StatusOK, result)
-	}
+		return nil
+	})
 }
 
 // CreateVormerkungHandler handles POST /api/vormerkungen.
-func (s *Server) CreateVormerkungHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) CreateVormerkungHandler(vormerkungRepo repository.VormerkungRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req CreateVormerkungRequest
 		if !DecodeAndValidate(w, r, &req) {
-			return
+			return nil
 		}
 
 		ctx := r.Context()
 
-		var id string
-		err := s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO vormerkungen (titel_id, notiz, schueler_id)
-			VALUES ($1, NULLIF($2, ''), NULLIF($3, '')::uuid)
-			RETURNING id
-		`, req.TitelID, req.Notiz, req.SchuelerID).Scan(&id)
+		id, err := vormerkungRepo.Create(ctx, req.TitelID, req.Notiz, req.SchuelerID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+			return apierrors.Internal("Fehler beim Erstellen der Vormerkung", err)
 		}
 
 		RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
-	}
+		return nil
+	})
 }
 
 // DeleteVormerkungHandler handles DELETE /api/vormerkungen/{id}.
-func (s *Server) DeleteVormerkungHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) DeleteVormerkungHandler(vormerkungRepo repository.VormerkungRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ID fehlt"))
-			return
+			return apierrors.BadRequest("ID fehlt", nil)
 		}
 
 		ctx := r.Context()
 
-		if _, err := s.DB.Pool.Exec(ctx, `DELETE FROM vormerkungen WHERE id = $1`, id); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		if err := vormerkungRepo.Delete(ctx, id); err != nil {
+			return apierrors.Internal("Fehler beim Löschen der Vormerkung", err)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"gelöscht"}`))
-	}
+		return nil
+	})
 }
 
 // checkVormerkung returns the earliest pending reservation for a given titel_id, or nil if none.
-func (s *Server) checkVormerkung(ctx context.Context, titelID string) (*Vormerkung, error) {
-	var v Vormerkung
-	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-		       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
-		FROM vormerkungen v
-		JOIN buecher_titel bt ON bt.id = v.titel_id
-		LEFT JOIN schueler s ON s.id = v.schueler_id
-		WHERE v.titel_id = $1 AND v.status = 'wartend'
-		ORDER BY v.erstellt_am ASC
-		LIMIT 1
-	`, titelID).Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	return &v, err
+// Since it's used internally by Server, we pass the context and the repo.
+// Note: Some places in api/ might call s.checkVormerkung(ctx, titelID), which we now must refactor slightly,
+// but since we are doing dependency injection, it's safer to just let the repo handle it.
+func (s *Server) checkVormerkung(ctx context.Context, titelID string) (*repository.Vormerkung, error) {
+	// Temporarily create a repository instance here if called internally where repo is not injected.
+	repo := repository.NewVormerkungRepository(s.DB.Pool)
+	return repo.GetEarliestPending(ctx, titelID)
 }

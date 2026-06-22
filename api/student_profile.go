@@ -3,39 +3,25 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/repository"
-	"errors"
 	"fmt"
 	"net/http"
-	"time"
 )
-
-// BorrowedBook represents a currently checked out book copy detail for the student.
-type BorrowedBook struct {
-	ID             string    `json:"id"`
-	AusleiheID     string    `json:"ausleihe_id"`
-	BarcodeID      string    `json:"barcode_id"`
-	Titel          string    `json:"titel"`
-	Autor          string    `json:"autor"`
-	CoverURL       string    `json:"cover_url,omitempty"`
-	AusgeliehenAm  time.Time `json:"ausgeliehen_am"`
-	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
-}
 
 // StudentProfileResponse returns master data (with photo_url) and currently borrowed books.
 type StudentProfileResponse struct {
-	ID                string         `json:"id"`
-	BarcodeID         string         `json:"barcode_id"`
-	Vorname           string         `json:"vorname"`
-	Nachname          string         `json:"nachname"`
-	Klasse            string         `json:"klasse"`
-	AbgaengerJahr     int            `json:"abgaenger_jahr"`
-	IstGesperrt       bool           `json:"ist_gesperrt"`
-	FotoURL           string         `json:"foto_url"`
-	Geburtsdatum      *string        `json:"geburtsdatum,omitempty"`
-	LusdID            *string        `json:"lusd_id,omitempty"`
-	Status            string         `json:"status,omitempty"`
-	HasOpenDamages    bool           `json:"has_open_damages"`
-	EntlieheneBuecher []BorrowedBook `json:"entliehene_buecher"`
+	ID                string                    `json:"id"`
+	BarcodeID         string                    `json:"barcode_id"`
+	Vorname           string                    `json:"vorname"`
+	Nachname          string                    `json:"nachname"`
+	Klasse            string                    `json:"klasse"`
+	AbgaengerJahr     int                       `json:"abgaenger_jahr"`
+	IstGesperrt       bool                      `json:"ist_gesperrt"`
+	FotoURL           string                    `json:"foto_url"`
+	Geburtsdatum      *string                   `json:"geburtsdatum,omitempty"`
+	LusdID            *string                   `json:"lusd_id,omitempty"`
+	Status            string                    `json:"status,omitempty"`
+	HasOpenDamages    bool                      `json:"has_open_damages"`
+	EntlieheneBuecher []repository.BorrowedBook `json:"entliehene_buecher"`
 }
 
 // GetStudentProfileHandler returns a student's master data, passport photo URL (if uploaded),
@@ -54,11 +40,10 @@ type StudentProfileResponse struct {
 func (s *Server) GetStudentProfileHandler(
 	studentRepo repository.StudentRepository,
 ) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing student ID parameter"))
-			return
+			return apierrors.BadRequest("missing student ID parameter", nil)
 		}
 
 		ctx := r.Context()
@@ -66,70 +51,28 @@ func (s *Server) GetStudentProfileHandler(
 		// 1. Resolve student details from DB
 		student, err := studentRepo.GetByID(ctx, id)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+			return apierrors.Internal("Fehler beim Laden des Schülers", err)
 		}
 		if student == nil {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("student record not found"))
-			return
+			return apierrors.NotFound("student record not found", nil)
 		}
 
 		// 2. Resolve photo URL if an encrypted photo exists in the DB
 		fotoURL := ""
 		if student.BarcodeID != "" {
-			var hasPhoto bool
-			err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)", student.ID).Scan(&hasPhoto)
+			hasPhoto, err := studentRepo.HasPhoto(ctx, student.ID)
 			if err == nil && hasPhoto {
 				fotoURL = fmt.Sprintf("/api/schueler/%s/photo", student.BarcodeID)
 			}
 		}
 
 		// 3. Retrieve currently active loans for this student
-		query := `
-			SELECT 
-				e.id, 
-				a.id AS ausleihe_id,
-				e.barcode_id, 
-				t.titel, 
-				coalesce(t.autor, ''), 
-				coalesce(t.cover_url, ''),
-				a.ausgeliehen_am, 
-				a.rueckgabe_frist
-			FROM ausleihen a
-			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			JOIN buecher_titel t ON e.titel_id = t.id
-			WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL
-			ORDER BY a.ausgeliehen_am DESC
-		`
-		rows, err := s.DB.Pool.Query(ctx, query, id)
+		borrowedBooks, err := studentRepo.GetActiveBorrowedBooks(ctx, id)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+			return apierrors.Internal("Fehler beim Laden der ausgeliehenen Bücher", err)
 		}
-		defer rows.Close()
-
-		borrowedBooks := make([]BorrowedBook, 0)
-		for rows.Next() {
-			var b BorrowedBook
-			err := rows.Scan(
-				&b.ID,
-				&b.AusleiheID,
-				&b.BarcodeID,
-				&b.Titel,
-				&b.Autor,
-				&b.CoverURL,
-				&b.AusgeliehenAm,
-				&b.RueckgabeFrist,
-			)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			borrowedBooks = append(borrowedBooks, b)
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		if borrowedBooks == nil {
+			borrowedBooks = []repository.BorrowedBook{}
 		}
 
 		statusStr := "aktiv"
@@ -141,8 +84,7 @@ func (s *Server) GetStudentProfileHandler(
 		}
 
 		// 3.5 Check for open damages
-		var hasOpenDamages bool
-		_ = s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)", student.ID).Scan(&hasOpenDamages)
+		hasOpenDamages, _ := studentRepo.HasOpenDamages(ctx, student.ID)
 
 		// 4. Construct response and stream as JSON
 		resp := StudentProfileResponse{
@@ -162,7 +104,8 @@ func (s *Server) GetStudentProfileHandler(
 		}
 
 		RespondJSON(w, http.StatusOK, resp)
-	}
+		return nil
+	})
 }
 
 // GetClassesHandler returns a list of all distinct classes in the database.
@@ -174,25 +117,14 @@ func (s *Server) GetStudentProfileHandler(
 // @Success      200  {array}   string
 // @Failure      500  {object}  map[string]string
 // @Router       /klassen [get]
-func (s *Server) GetClassesHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		rows, err := s.DB.Pool.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
+func (s *Server) GetClassesHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		classes, err := studentRepo.GetDistinctClasses(r.Context())
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer rows.Close()
-
-		classes := []string{}
-		for rows.Next() {
-			var k string
-			if err := rows.Scan(&k); err == nil {
-				classes = append(classes, k)
-			}
+			return apierrors.Internal("Fehler beim Laden der Klassen", err)
 		}
 
 		RespondJSON(w, http.StatusOK, classes)
-	}
+		return nil
+	})
 }

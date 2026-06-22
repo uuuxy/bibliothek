@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // calculateAbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers
@@ -135,25 +135,13 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		// 2. Resolve/generate barcode_id if not provided
 		barcodeID := req.BarcodeID
 		if barcodeID == "" {
-			var lastBarcode string
-			qLast := `
-				SELECT barcode_id 
-				FROM schueler 
-				WHERE barcode_id LIKE 'S-%' 
-				ORDER BY barcode_id DESC 
-				LIMIT 1
-				FOR UPDATE
-			`
-			err = tx.QueryRow(ctx, qLast).Scan(&lastBarcode)
-			startNum := 10001
-			if err == nil {
-				re := regexp.MustCompile(`S-(\d+)`)
-				matches := re.FindStringSubmatch(lastBarcode)
-				if len(matches) > 1 {
-					if parsed, err := strconv.Atoi(matches[1]); err == nil {
-						startNum = parsed + 1
-					}
-				}
+			// Use central repository for sequence generation
+			seqRepo := repository.NewSequenceRepository(tx)
+			startNum, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "S-")
+			if err != nil {
+				tx.Rollback(ctx)
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
 			}
 			barcodeID = fmt.Sprintf("S-%05d", startNum)
 		} else {

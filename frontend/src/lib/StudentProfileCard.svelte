@@ -108,7 +108,15 @@
   </div>
 
   <div class="space-y-2">
-    <h3 class="text-2xl md:text-3xl font-extrabold font-sans text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
+    <div class="flex flex-col items-center gap-1.5">
+      <h3 class="text-2xl md:text-3xl font-extrabold font-sans text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
+      {#if profile.ist_gesperrt}
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold bg-rose-100 text-rose-700 shadow-sm border border-rose-200">
+          <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          Ausleihe gesperrt
+        </span>
+      {/if}
+    </div>
     <p class="text-base md:text-lg text-slate-700 font-bold">Klasse {profile.klasse}</p>
     
     {#if role === 'admin'}
@@ -164,23 +172,6 @@
         </span>
       {/if}
     </div>
-    
-    {#if role === 'admin' || role === 'mitarbeiter'}
-    <div class="pt-2 border-t border-slate-200">
-      <label class="flex items-center justify-between cursor-pointer group">
-        <span class="text-xs font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">Sperre erzwingen</span>
-        <div class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-300 focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-rose-500 {profile.is_manually_blocked ? 'bg-rose-500' : 'bg-slate-300'}">
-          <input type="checkbox" class="peer sr-only" bind:checked={profile.is_manually_blocked} onchange={handleBlockChange}>
-          <span class="inline-block w-3.5 h-3.5 transform bg-white rounded-full transition-transform duration-300 ease-in-out ml-[2px] {profile.is_manually_blocked ? 'translate-x-4' : 'translate-x-0'}"></span>
-        </div>
-      </label>
-      {#if profile.is_manually_blocked}
-        <div class="mt-2 animate-fade-in">
-          <textarea bind:value={profile.block_reason} onchange={handleBlockChange} class="w-full border border-rose-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-200 bg-white text-rose-900 placeholder-rose-300" rows="2" placeholder="Sperrgrund (z.B. Mahngebühr)..."></textarea>
-        </div>
-      {/if}
-    </div>
-    {/if}
   </div>
 
   <div class="w-full pt-4 flex flex-col gap-3">

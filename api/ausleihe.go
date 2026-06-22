@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/repository"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -23,7 +24,7 @@ type OverrideDueDateRequest struct {
 }
 
 // ExtendLoanHandler extends the due date of a single loan by the standard book interval (e.g. 28 days).
-func (s *Server) ExtendLoanHandler() http.HandlerFunc {
+func (s *Server) ExtendLoanHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ausleiheID := r.PathValue("ausleihe_id")
 		if ausleiheID == "" {
@@ -34,7 +35,7 @@ func (s *Server) ExtendLoanHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		// Retrieve standard extension interval
-		settings, err := s.querySettings(ctx)
+		settings, err := settingsRepo.GetSettings(ctx)
 		extensionDays := 28 // Default if not configured
 		if err == nil && settings.FristBuchTage > 0 {
 			extensionDays = settings.FristBuchTage

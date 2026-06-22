@@ -13,7 +13,9 @@
    *   $derived filteredUsers — search-filtered view of users
    */
   import { onMount } from "svelte";
-  import Modal from "./Modal.svelte";
+  import UserManagementTable from "./UserManagementTable.svelte";
+  import UserManagementEditModal from "./UserManagementEditModal.svelte";
+  import UserManagementDeleteModal from "./UserManagementDeleteModal.svelte";
   import { apiFetch, apiClient } from "./apiFetch.js";
 
   /** @type {any[]} */
@@ -201,164 +203,29 @@
 </div>
 
 <!-- User Table -->
-{#if loadingUsers}
-  <div class="p-12 text-center text-slate-400 font-medium animate-pulse">Lade Systembenutzer...</div>
-{:else if filteredUsers.length === 0}
-  <div class="p-12 rounded-3xl border border-dashed border-slate-200 bg-white text-center text-slate-400">
-    <span class="text-2xl block mb-2">👥</span>
-    Keine Systembenutzer gefunden.
-  </div>
-{:else}
-  <div class="border border-slate-100 bg-white rounded-3xl overflow-hidden shadow-xs">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-            <th class="p-4">Name</th>
-            <th class="p-4">E-Mail</th>
-            <th class="p-4">Barcode</th>
-            <th class="p-4">Rolle</th>
-            <th class="p-4">Status</th>
-            <th class="p-4 text-right">Aktionen</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 text-sm text-slate-600 font-medium">
-          {#each filteredUsers as user}
-            {@const roleBadge = user.rolle === 'admin'
-              ? 'bg-blue-50 text-blue-700 border border-blue-100'
-              : user.rolle === 'lehrer'
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                : user.rolle === 'helfer'
-                  ? 'bg-purple-50 text-purple-700 border border-purple-100'
-                  : 'bg-amber-50 text-amber-700 border border-amber-100'}
-            <tr class="hover:bg-slate-50/50 transition-colors">
-              <td class="p-4"><span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span></td>
-              <td class="p-4 text-slate-500 text-xs">{user.email}</td>
-              <td class="p-4">
-                {#if user.barcode_id}
-                  <span class="text-xs bg-slate-50 border border-slate-200/60 text-slate-600 py-0.5 px-2 rounded-md">{user.barcode_id}</span>
-                {:else}
-                  <span class="text-xs text-slate-400 italic">Keine</span>
-                {/if}
-              </td>
-              <td class="p-4">
-                <span class="inline-flex px-2 py-0.5 rounded-md font-bold text-xs uppercase tracking-wide {roleBadge}">
-                  {user.rolle}
-                </span>
-              </td>
-              <td class="p-4">
-                {#if user.aktiv}
-                  <span class="inline-flex items-center gap-1.5 text-xs text-emerald-600">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktiv
-                  </span>
-                {:else}
-                  <span class="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                    <span class="w-1.5 h-1.5 rounded-full bg-slate-350"></span> Inaktiv
-                  </span>
-                {/if}
-              </td>
-              <td class="p-4 text-right space-x-2 shrink-0">
-                <button
-                  onclick={() => openEditUserModal(user)}
-                  class="px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
-                >
-                  Bearbeiten
-                </button>
-                <button
-                  onclick={() => openDeleteConfirm(user)}
-                  class="px-2.5 py-1 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-colors cursor-pointer"
-                >
-                  Löschen
-                </button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  </div>
-{/if}
+<UserManagementTable 
+  {loadingUsers} 
+  {filteredUsers} 
+  {openEditUserModal} 
+  {openDeleteConfirm} 
+/>
 
 <!-- Modal: Create / Edit User -->
-<Modal open={showUserModal} onclose={() => showUserModal = false} size="md">
-  {#snippet header()}
-    <h3 class="font-bold text-slate-800 text-sm">{isEditingUser ? "Benutzer bearbeiten" : "Neuen Benutzer anlegen"}</h3>
-  {/snippet}
-  {#snippet children()}
-    <form onsubmit={handleSaveUser} class="p-6 space-y-4">
-      {#if error}
-        <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold leading-relaxed animate-slide-up">⚠️ {error}</div>
-      {/if}
-      <div class="grid grid-cols-2 gap-4">
-        {@render inputField("vorname", "Vorname", "text", userForm.vorname, (/** @type {any} */ v) => userForm.vorname = v, true)}
-        {@render inputField("nachname", "Nachname", "text", userForm.nachname, (/** @type {any} */ v) => userForm.nachname = v, true)}
-      </div>
-      {@render inputField("email", "E-Mail Adresse", "email", userForm.email, (/** @type {any} */ v) => userForm.email = v, true)}
-      {@render inputField("barcode_id", "Barcode (Anmelde-ID)", "text", userForm.barcode_id, (/** @type {any} */ v) => userForm.barcode_id = v, false, "Z. B. L-001, MA-04 (optional)")}
-      <div class="space-y-1.5">
-        <label for="rolle" class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Benutzer-Rolle</label>
-        <select id="rolle" bind:value={userForm.rolle} class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-300 transition-all font-medium text-slate-800">
-          <option value="mitarbeiter">Mitarbeiter</option>
-          <option value="lehrer">Lehrer</option>
-          <option value="admin">Administrator</option>
-          <option value="helfer">Helfer</option>
-        </select>
-      </div>
-      {#if userForm.rolle === 'helfer'}
-        {@render inputField("password", isEditingUser ? "Passwort ändern" : "Passwort", "password", userForm.password, (/** @type {any} */ v) => userForm.password = v, !isEditingUser, isEditingUser ? "Unverändert lassen..." : "••••••••")}
-      {/if}      {#if isEditingUser}
-        <div class="flex items-center gap-3 py-1.5">
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" bind:checked={userForm.aktiv} class="sr-only peer" />
-            <div class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-          <span class="text-xs font-bold text-slate-650">Benutzerkonto ist aktiv</span>
-        </div>
-      {/if}
-      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-        <button type="button" onclick={() => showUserModal = false} class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer">Abbrechen</button>
-        <button type="submit" disabled={submittingUser} class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors flex items-center justify-center cursor-pointer disabled:opacity-60">
-          {#if submittingUser}<div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>{/if}
-          Speichern
-        </button>
-      </div>
-    </form>
-  {/snippet}
-</Modal>
+<UserManagementEditModal 
+  open={showUserModal} 
+  onclose={() => showUserModal = false} 
+  {isEditingUser} 
+  bind:userForm={userForm} 
+  {submittingUser} 
+  {error} 
+  {handleSaveUser} 
+/>
 
 <!-- Modal: Delete Confirmation -->
-<Modal open={showDeleteConfirm && !!userToDelete} onclose={() => showDeleteConfirm = false} size="sm">
-  {#snippet children()}
-    <div class="p-6 space-y-4">
-      <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-150 text-rose-600 flex items-center justify-center text-xl mx-auto">⚠️</div>
-      <div class="text-center space-y-1.5">
-        <h3 class="font-bold text-slate-800 text-sm">Benutzer unwiderruflich löschen?</h3>
-        <p class="text-xs text-slate-450 leading-relaxed font-medium">
-          Sind Sie sicher, dass Sie den Benutzer <strong>{userToDelete?.vorname} {userToDelete?.nachname}</strong> löschen möchten? Diese Aktion wird im Logbuch vermerkt.
-        </p>
-      </div>
-      <div class="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
-        <button onclick={() => showDeleteConfirm = false} disabled={deletingUser} class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer">Abbrechen</button>
-        <button onclick={confirmDeleteUser} disabled={deletingUser} class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition-colors flex items-center justify-center cursor-pointer">
-          {#if deletingUser}<div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>{/if}
-          Löschen
-        </button>
-      </div>
-    </div>
-  {/snippet}
-</Modal>
-
-{#snippet inputField(id, label, type, value, onInput, required, placeholder)}
-  <div class="space-y-1.5">
-    <label for={id} class="block text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</label>
-    <input
-      {id}
-      {type}
-      value={value}
-      oninput={e => onInput(e.currentTarget.value)}
-      required={required}
-      placeholder={placeholder ?? ""}
-      class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-300 transition-all font-medium text-slate-800"
-    />
-  </div>
-{/snippet}
+<UserManagementDeleteModal 
+  open={showDeleteConfirm && !!userToDelete} 
+  onclose={() => showDeleteConfirm = false} 
+  {userToDelete} 
+  {deletingUser} 
+  {confirmDeleteUser} 
+/>
