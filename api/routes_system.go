@@ -3,10 +3,11 @@ package api
 import (
 	"bibliothek/auth"
 	"bibliothek/repository"
+	"bibliothek/db"
 	"net/http"
 )
 
-func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository, userRepo repository.UserRepository) {
+func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository, userRepo repository.UserRepository, dbPool db.PgxPoolIface) {
 	// ── BENUTZER (Users) ──
 	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.ListUsersHandler(userRepo)))
 	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.CreateUserHandler(userRepo)))
@@ -16,6 +17,11 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// ── EINSTELLUNGEN (Settings) ──
 	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_users")(s.GetSettingsHandler()))
 	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_users")(s.UpdateSettingsHandler()))
+
+	mailRepo := repository.NewMailSettingsRepository(dbPool)
+	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_users")(s.GetMailSettingsHandler(mailRepo)))
+	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_users")(s.UpdateMailSettingsHandler(mailRepo)))
+	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_users")(s.PostTestMailSettingsHandler()))
 
 	// Permissions
 	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))

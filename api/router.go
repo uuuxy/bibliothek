@@ -114,7 +114,7 @@ func (s *Server) Routes() http.Handler {
 	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, omniboxSvc)
 	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
 	s.registerBookRoutes(mux, bookRepo, auditRepo)
-	s.registerSystemRoutes(mux, auditRepo, userRepo)
+	s.registerSystemRoutes(mux, auditRepo, userRepo, s.DB.Pool)
 	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
 
 	// LITTERA CSV Import (Accessible by Admin)

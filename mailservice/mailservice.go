@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/mail"
 	"net/smtp"
-	"os"
 	"strings"
 	"text/template"
 
 	"bibliothek/db"
+	"bibliothek/internal/crypto"
 )
 
 // SendTemplateMail lädt eine Vorlage aus der Datenbank, ersetzt Platzhalter (z.B. {{.Name}}) und versendet die E-Mail.
@@ -35,18 +35,35 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 		return fmt.Errorf("fehler beim anwenden der Daten auf Vorlage: %w", err)
 	}
 
-	// SMTP-Konfiguration aus ENV-Variablen
-	smtpHost := os.Getenv("SMTP_HOST")
+	// SMTP-Konfiguration aus der Datenbank laden
+	var smtpHost, smtpPort, smtpUser, sender string
+	var smtpPassEncrypted []byte
+	
+	err = dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
+		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
+	
+	if err != nil {
+		// Fallback, falls die Tabelle leer ist oder noch nicht migriert wurde
+		smtpHost = "localhost"
+		smtpPort = "1025"
+		sender = "noreply@bibliothek-schule.de"
+	}
+
+	var smtpPass string
+	if len(smtpPassEncrypted) > 0 {
+		decrypted, err := crypto.Decrypt(smtpPassEncrypted)
+		if err != nil {
+			return fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts: %w", err)
+		}
+		smtpPass = string(decrypted)
+	}
+
 	if smtpHost == "" {
 		smtpHost = "localhost"
 	}
-	smtpPort := os.Getenv("SMTP_PORT")
 	if smtpPort == "" {
-		smtpPort = "1025" // Fallback für lokales MailHog/Mailpit
+		smtpPort = "1025"
 	}
-	smtpUser := os.Getenv("SMTP_USER")
-	smtpPass := os.Getenv("SMTP_PASS")
-	sender := os.Getenv("SMTP_SENDER")
 	if sender == "" {
 		sender = "noreply@bibliothek-schule.de"
 	}
@@ -78,6 +95,68 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 	}
 
 	err = smtp.SendMail(addr, auth, sender, []string{to}, msg)
+	if err != nil {
+		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
+	}
+
+	return nil
+}
+
+// SendTestMail versendet eine einfache Testnachricht, um die SMTP-Konfiguration zu validieren.
+func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error {
+	// SMTP-Konfiguration aus der Datenbank laden
+	var smtpHost, smtpPort, smtpUser, sender string
+	var smtpPassEncrypted []byte
+	
+	err := dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
+		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
+	
+	if err != nil {
+		return fmt.Errorf("mail-konfiguration nicht gefunden: %w", err)
+	}
+
+	var smtpPass string
+	if len(smtpPassEncrypted) > 0 {
+		decrypted, err := crypto.Decrypt(smtpPassEncrypted)
+		if err != nil {
+			return fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts: %w", err)
+		}
+		smtpPass = string(decrypted)
+	}
+
+	if smtpHost == "" {
+		smtpHost = "localhost"
+	}
+	if smtpPort == "" {
+		smtpPort = "1025"
+	}
+	if sender == "" {
+		sender = "noreply@bibliothek-schule.de"
+	}
+
+	parsedTo, err := mail.ParseAddress(to)
+	if err != nil {
+		return fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err)
+	}
+	to = parsedTo.Address
+
+	betreff := "Test-E-Mail der Schulbibliothek"
+	bodyText := "Dies ist eine automatisch generierte Test-E-Mail zur Überprüfung der SMTP-Konfiguration."
+
+	msg := []byte(fmt.Sprintf("To: %s\r\n"+
+		"Subject: %s\r\n"+
+		"Content-Type: text/plain; charset=UTF-8\r\n"+
+		"\r\n"+
+		"%s\r\n", to, betreff, bodyText))
+
+	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
+
+	var smtpAuth smtp.Auth
+	if smtpUser != "" && smtpPass != "" {
+		smtpAuth = smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+	}
+
+	err = smtp.SendMail(addr, smtpAuth, sender, []string{to}, msg)
 	if err != nil {
 		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
 	}

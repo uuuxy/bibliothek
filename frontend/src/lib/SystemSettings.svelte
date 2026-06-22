@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
   import DataManagement from './components/admin/DataManagement.svelte';
+  import MailConfig from './components/admin/MailConfig.svelte';
   import PermissionManager from './PermissionManager.svelte';
   import { toastStore } from "./stores/toastStore.svelte.js";
   import { authStore } from "./stores/authStore.svelte.js";
@@ -16,7 +17,7 @@
   // Tabs
   const tabs = $derived(
     isAdmin
-      ? ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "Datenverwaltung", "System"]
+      ? ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "Datenverwaltung", "Mail-Server", "System"]
       : ["Allgemein", "Team & Rechte", "Mahnwesen-Routing", "System"]
   );
   let activeTab = $state("Allgemein");
@@ -340,6 +341,14 @@
       <!-- TAB: DATENVERWALTUNG -->
       {:else if activeTab === 'Datenverwaltung' && isAdmin}
         <DataManagement />
+
+      <!-- TAB: MAIL-SERVER -->
+      {:else if activeTab === 'Mail-Server' && isAdmin}
+        <div class="space-y-6">
+          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
+            <MailConfig />
+          </div>
+        </div>
 
       <!-- TAB: SYSTEM -->
       {:else if activeTab === 'System'}

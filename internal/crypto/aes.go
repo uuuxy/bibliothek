@@ -11,12 +11,15 @@ import (
 	"os"
 )
 
-// GetMasterKey lädt den 32-Byte Master-Schlüssel aus der Umgebungsvariable APP_ENCRYPTION_KEY.
+// GetMasterKey lädt den 32-Byte Master-Schlüssel aus der Umgebungsvariable ENCRYPTION_KEY oder APP_ENCRYPTION_KEY.
 // Unterstützt sowohl 32-stellige Klartext-Strings als auch 64-stellige Hex-kodierte Strings.
 func GetMasterKey() ([]byte, error) {
-	keyStr := os.Getenv("APP_ENCRYPTION_KEY")
+	keyStr := os.Getenv("ENCRYPTION_KEY")
 	if keyStr == "" {
-		return nil, errors.New("APP_ENCRYPTION_KEY ist nicht gesetzt")
+		keyStr = os.Getenv("APP_ENCRYPTION_KEY")
+	}
+	if keyStr == "" {
+		return nil, errors.New("ENCRYPTION_KEY (oder APP_ENCRYPTION_KEY) ist nicht gesetzt")
 	}
 
 	if len(keyStr) == 64 {
@@ -32,7 +35,7 @@ func GetMasterKey() ([]byte, error) {
 		return []byte(keyStr), nil
 	}
 
-	return nil, errors.New("APP_ENCRYPTION_KEY muss genau 32 Zeichen (oder 64 Hex-Zeichen) lang sein für AES-256")
+	return nil, errors.New("ENCRYPTION_KEY muss genau 32 Zeichen (oder 64 Hex-Zeichen) lang sein für AES-256")
 }
 
 // Encrypt verschlüsselt den übergebenen Plaintext mit AES-256-GCM.
