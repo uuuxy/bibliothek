@@ -49,9 +49,9 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 	query := `
 		SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, ''), coalesce(abgaenger_jahr, 0), coalesce(ist_gesperrt, false), lusd_id, coalesce(ist_abgaenger, false), TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, coalesce(is_manually_blocked, false), block_reason
 		FROM schueler
-		WHERE (vorname ILIKE '%' || $1 || '%' 
-		   OR nachname ILIKE '%' || $1 || '%'
-		   OR barcode_id ILIKE '%' || $1 || '%')
+		WHERE (vorname ILIKE '%' || $1::text || '%' 
+		   OR nachname ILIKE '%' || $1::text || '%'
+		   OR barcode_id ILIKE '%' || $1::text || '%')
 		  AND deleted_at IS NULL
 		ORDER BY nachname ASC, vorname ASC
 		LIMIT $2

@@ -35,12 +35,12 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_titel
 		WHERE 
-			search_vector @@ plainto_tsquery('german', $1) 
-			OR titel ILIKE '%' || $1 || '%'
-			OR autor ILIKE '%' || $1 || '%'
-			OR isbn ILIKE '%' || $1 || '%'
-			OR replace(isbn, '-', '') = replace($1, '-', '')
-		ORDER BY ts_rank(search_vector, plainto_tsquery('german', $1)) DESC, titel ASC
+			search_vector @@ plainto_tsquery('german', $1::text) 
+			OR titel ILIKE '%' || $1::text || '%'
+			OR autor ILIKE '%' || $1::text || '%'
+			OR isbn ILIKE '%' || $1::text || '%'
+			OR replace(isbn, '-', '') = replace($1::text, '-', '')
+		ORDER BY ts_rank(search_vector, plainto_tsquery('german', $1::text)) DESC, titel ASC
 		LIMIT 50
 	`
 	rows, err := r.db.Query(ctx, query, queryText)
@@ -70,10 +70,10 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 		SELECT 
 			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_titel
-		WHERE titel ILIKE '%' || $1 || '%'
-		   OR autor ILIKE '%' || $1 || '%'
-		   OR isbn ILIKE '%' || $1 || '%'
-		   OR replace(isbn, '-', '') = replace($1, '-', '')
+		WHERE titel ILIKE '%' || $1::text || '%'
+		   OR autor ILIKE '%' || $1::text || '%'
+		   OR isbn ILIKE '%' || $1::text || '%'
+		   OR replace(isbn, '-', '') = replace($1::text, '-', '')
 		ORDER BY titel ASC
 		LIMIT $2
 	`
