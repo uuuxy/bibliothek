@@ -31,7 +31,7 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 			SET is_manually_blocked = $1, 
 			    aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE id = $2
-			RETURNING id, vorname, nachname, klasse, status, is_manually_blocked
+			RETURNING id, vorname, nachname, klasse, is_manually_blocked
 		`
 		
 		var student struct {
@@ -39,13 +39,12 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 			Vorname           string `json:"vorname"`
 			Nachname          string `json:"nachname"`
 			Klasse            string `json:"klasse"`
-			Status            string `json:"status"`
 			IsManuallyBlocked bool   `json:"is_manually_blocked"`
 		}
 		
 		err := s.DB.Pool.QueryRow(ctx, query, req.IsLocked, id).Scan(
 			&student.ID, &student.Vorname, &student.Nachname, 
-			&student.Klasse, &student.Status, &student.IsManuallyBlocked,
+			&student.Klasse, &student.IsManuallyBlocked,
 		)
 		if err != nil {
 			if err.Error() == "no rows in result set" {

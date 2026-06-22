@@ -119,8 +119,7 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			Nachname      *string `json:"nachname"`
 			Klasse        *string `json:"klasse"`
 			LusdID        *string `json:"lusd_id"`
-			BarcodeID     *string `json:"barcode_id"`
-			Status            *string `json:"status"`
+			BarcodeID         *string `json:"barcode_id"`
 			AbgaengerJahr     *int    `json:"abgaenger_jahr"`
 			Geburtsdatum      *string `json:"geburtsdatum"`
 			IsManuallyBlocked *bool   `json:"is_manually_blocked"`
@@ -154,11 +153,6 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		if req.BarcodeID != nil {
 			query += fmt.Sprintf(", barcode_id = $%d", argId)
 			args = append(args, *req.BarcodeID)
-			argId++
-		}
-		if req.Status != nil {
-			query += fmt.Sprintf(", status = $%d", argId)
-			args = append(args, *req.Status)
 			argId++
 		}
 		if req.Klasse != nil {
