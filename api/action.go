@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -32,9 +33,30 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 
 		ctx := r.Context()
 
+		if req.IdempotencyKey != "" {
+			var cachedRespJSON []byte
+			var cachedStatus int
+			err := s.DB.Pool.QueryRow(ctx, "SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1", req.IdempotencyKey).Scan(&cachedRespJSON, &cachedStatus)
+			if err == nil {
+				// Cache Hit
+				if cachedStatus >= 400 {
+					var errData map[string]string
+					json.Unmarshal(cachedRespJSON, &errData)
+					apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
+					return
+				}
+				var cachedResp ActionResponse
+				json.Unmarshal(cachedRespJSON, &cachedResp)
+				RespondJSON(w, cachedStatus, cachedResp)
+				return
+			}
+		}
+
 		res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
+		
+		status := http.StatusOK
 		if err != nil {
-			status := http.StatusInternalServerError
+			status = http.StatusInternalServerError
 			switch {
 			case errors.Is(err, service.ErrNotFound):
 				status = http.StatusNotFound
@@ -45,12 +67,23 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			case errors.Is(err, service.ErrConflict):
 				status = http.StatusConflict
 			}
+			
+			if req.IdempotencyKey != "" {
+				errData, _ := json.Marshal(map[string]string{"error": err.Error()})
+				_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status)
+			}
+			
 			apierrors.SendHTTPError(w, status, err)
 			return
 		}
 
 		// Map to API response
 		resp := mapOmniboxResultToActionResponse(res)
+
+		if req.IdempotencyKey != "" {
+			respData, _ := json.Marshal(resp)
+			_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status)
+		}
 
 		// Broadcast updates to all monitoring dashboards (SSE)
 		if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
@@ -113,6 +146,30 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 				continue
 			}
 
+			if req.IdempotencyKey != "" {
+				var cachedRespJSON []byte
+				var cachedStatus int
+				err := s.DB.Pool.QueryRow(ctx, "SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1", req.IdempotencyKey).Scan(&cachedRespJSON, &cachedStatus)
+				if err == nil {
+					item := ActionBatchResponseItem{
+						Index:   i,
+						Status:  cachedStatus,
+						Success: cachedStatus >= 200 && cachedStatus < 300,
+					}
+					if item.Success {
+						var data ActionResponse
+						json.Unmarshal(cachedRespJSON, &data)
+						item.Data = &data
+					} else {
+						var errData map[string]string
+						json.Unmarshal(cachedRespJSON, &errData)
+						item.Error = errData["error"]
+					}
+					batchResp.Results = append(batchResp.Results, item)
+					continue
+				}
+			}
+
 			res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
 
 			status := http.StatusOK
@@ -137,8 +194,16 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 			}
 			if err != nil {
 				item.Error = err.Error()
+				if req.IdempotencyKey != "" {
+					errData, _ := json.Marshal(map[string]string{"error": err.Error()})
+					_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status)
+				}
 			} else {
 				item.Data = mapOmniboxResultToActionResponse(res)
+				if req.IdempotencyKey != "" {
+					respData, _ := json.Marshal(item.Data)
+					_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status)
+				}
 				// Broadcast updates
 				if item.Data.Type == "ausleihe" || item.Data.Type == "rueckgabe" {
 					s.broadcastActionEvent(*item.Data)

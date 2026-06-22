@@ -23,6 +23,7 @@
   let orderCart = $state([]);
   let orderTotal = $derived(orderCart.reduce((sum, item) => sum + (item.menge * (Number(item.preis) || 0)), 0));
   let submittingOrder = $state(false);
+  let generateBarcodes = $state(true);
   /** @type {any[]} */
   let recommendations = $state([]);
   /** @type {any[]} */
@@ -131,7 +132,7 @@
               titel_id: item.id, 
               menge: item.menge, 
               preis: Number(item.preis) || 0,
-              generate_barcodes: item.generate_barcodes
+              generate_barcodes: generateBarcodes ? item.generate_barcodes : false
           }))
       });
       orderCart = [];
@@ -236,6 +237,7 @@
           bind:showDropdown
           bind:isbnPreview
           bind:isbnLoading
+          bind:globalGenerateBarcodes={generateBarcodes}
           onSearchInput={handleSearchInput}
           onAddToCart={addToCart}
           onRemoveFromCart={removeFromCart}

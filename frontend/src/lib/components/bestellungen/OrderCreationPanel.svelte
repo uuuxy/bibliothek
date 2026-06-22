@@ -16,7 +16,8 @@
     onSearchInput,
     onAddToCart,
     onRemoveFromCart,
-    onSubmitOrder
+    onSubmitOrder,
+    globalGenerateBarcodes = $bindable(true)
   } = $props();
 
   /** @type {any} */
@@ -210,18 +211,24 @@
           </div>
         {/each}
       </div>
-      <div class="flex items-center justify-between mt-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
         <div class="text-lg font-bold text-slate-800">
           Gesamtsumme: {orderTotal.toFixed(2).replace('.', ',')} €
         </div>
-        <button onclick={onSubmitOrder} disabled={submittingOrder} class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-2">
-          {#if submittingOrder}
-            <div class="w-4 h-4 border-2 border-t-white border-white/20 rounded-full animate-spin"></div>
-            Bestellung wird gesendet...
-          {:else}
-            📤 Bestellung auslösen ({orderCart.reduce((a, c) => a + c.menge, 0)} Expl.)
-          {/if}
-        </button>
+        <div class="flex flex-col sm:flex-row items-end sm:items-center gap-4">
+          <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 border border-slate-200 rounded-lg shadow-sm">
+            <input type="checkbox" bind:checked={globalGenerateBarcodes} class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+            <span class="text-sm font-bold text-slate-700">Barcodes mitschicken</span>
+          </label>
+          <button onclick={onSubmitOrder} disabled={submittingOrder} class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-2">
+            {#if submittingOrder}
+              <div class="w-4 h-4 border-2 border-t-white border-white/20 rounded-full animate-spin"></div>
+              Bestellung wird gesendet...
+            {:else}
+              📤 Bestellung auslösen ({orderCart.reduce((a, c) => a + c.menge, 0)} Expl.)
+            {/if}
+          </button>
+        </div>
       </div>
     {/if}
   </div>

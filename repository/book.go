@@ -104,8 +104,8 @@ func scanBookTitle(row Scanner) (*BookTitle, error) {
 func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string) (*BookCopy, error) {
 	query := `
 		SELECT 
-			e.id, e.titel_id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.erworben_am, e.ist_ausleihbar, e.ist_ausgesondert, e.erstellt_am, e.aktualisiert_am,
-			t.titel, coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), t.medientyp, coalesce(t.signatur, ''), t.erweiterte_eigenschaften
+			e.id, e.titel_id, coalesce(e.barcode_id, ''), coalesce(e.zustand_notiz, ''), e.erworben_am, coalesce(e.ist_ausleihbar, false), coalesce(e.ist_ausgesondert, false), e.erstellt_am, e.aktualisiert_am,
+			coalesce(t.titel, ''), coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), coalesce(t.medientyp, ''), coalesce(t.signatur, ''), coalesce(t.erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.barcode_id = $1
@@ -125,7 +125,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
 	query := `
 		SELECT 
-			id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, coalesce(signatur, ''), erstellt_am, aktualisiert_am, erweiterte_eigenschaften
+			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_titel
 		WHERE 
 			search_vector @@ plainto_tsquery('german', $1) 
@@ -161,7 +161,7 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error) {
 	query := `
 		SELECT 
-			id, titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), medientyp, coalesce(signatur, ''), erstellt_am, aktualisiert_am, erweiterte_eigenschaften
+			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_titel
 		WHERE titel ILIKE '%' || $1 || '%'
 		   OR autor ILIKE '%' || $1 || '%'

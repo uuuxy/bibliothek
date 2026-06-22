@@ -2,7 +2,6 @@
   let { profile, role, rechnungPdfLoading, onDownloadRechnung, onEdit } = $props();
 
   import { apiClient } from "./apiFetch.js";
-  let isUpdatingBlock = $state(false);
 
   function formatDate(dateString) {
     if (!dateString) return "Keine Angabe";
@@ -14,24 +13,7 @@
     }
   }
 
-  async function toggleManualBlock() {
-    if (!profile) return;
-    isUpdatingBlock = true;
-    try {
-      const newVal = !profile.is_manually_blocked;
-      const res = await apiClient.post(`/api/schueler/${profile.id}/update`, {
-        is_manually_blocked: newVal,
-        block_reason: newVal ? "Manuell gesperrt" : ""
-      });
-      if (res.ok) {
-        profile.is_manually_blocked = newVal;
-      }
-    } catch (e) {
-      console.error("Failed to toggle block", e);
-    } finally {
-      isUpdatingBlock = false;
-    }
-  }
+
 </script>
 
 <div class="w-full pt-2 animate-fade-in space-y-8">
@@ -41,16 +23,6 @@
       Stammdaten & Adresse
     </h3>
     <div class="flex items-center gap-2">
-      {#if role === 'admin' || role === 'mitarbeiter'}
-        <button onclick={onDownloadRechnung} disabled={rechnungPdfLoading} class="px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
-          {#if rechnungPdfLoading}
-            <div class="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin"></div>
-          {:else}
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          {/if}
-          Ersatzforderung drucken
-        </button>
-      {/if}
       {#if role === 'admin'}
         <button onclick={onEdit} class="px-5 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -94,27 +66,6 @@
           <p class="text-slate-600 italic text-sm">Keine E-Mail hinterlegt</p>
         {/if}
       </div>
-      {#if role === 'admin' || role === 'mitarbeiter'}
-        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl mt-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-bold text-slate-900">Manuelle Ausleihsperre</p>
-              <p class="text-xs text-slate-500 mt-1">Schüler blockieren (z.B. wegen ausstehender Zahlungen)</p>
-            </div>
-            <button
-              type="button"
-              onclick={toggleManualBlock}
-              disabled={isUpdatingBlock}
-              aria-label="Manuelle Ausleihsperre umschalten"
-              class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {profile.is_manually_blocked ? 'bg-red-500' : 'bg-slate-300'} {isUpdatingBlock ? 'opacity-50' : ''}"
-              role="switch"
-              aria-checked={profile.is_manually_blocked}
-            >
-              <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {profile.is_manually_blocked ? 'translate-x-5' : 'translate-x-0'}"></span>
-            </button>
-          </div>
-        </div>
-      {/if}
     </div>
   </div>
 </div>

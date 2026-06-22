@@ -20,9 +20,7 @@ export function createOmniboxStore() {
   let errorMessage = $state("");
   let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
   let blockAlert = $state(/** @type {{message: string, query: string} | null} */ (null));
-  let isOffline = $state(
-    typeof navigator !== "undefined" ? !navigator.onLine : false,
-  );
+  // isOffline is now handled globally via offlineSync
   let offlineQueueCount = $state(0);
 
   // Kamerascanner-Status
@@ -129,14 +127,19 @@ export function createOmniboxStore() {
     lastFremdrueckgabe = null;
     errorMessage = "";
 
-    setTimeout(() => document.getElementById("omnibox-input")?.focus(), 30);
+    // Disable input while processing
+    document.getElementById("omnibox-input")?.blur();
+
+    const idempotencyKey = crypto.randomUUID();
 
     try {
       const res = await apiClient.post("/api/action", {
         query: q,
         active_student_id: activeStudent?.id,
         active_teacher_id: activeTeacher?.id,
-        override_block: overrideBlock
+        confirmed_checklist: currentChecklist ? currentChecklist.every(c => c.checked) : false,
+        override_block: overrideBlock,
+        idempotency_key: idempotencyKey
       });
 
       if (!res.ok) {
@@ -227,9 +230,9 @@ export function createOmniboxStore() {
         playSoundError();
         return;
       }
-      if (e instanceof TypeError || !window.navigator.onLine) {
+      if (e instanceof TypeError || !window.navigator.onLine || offlineSync.isOffline || (e instanceof Error && e.message.includes("Timeout"))) {
          if (q.startsWith("B-")) {
-            await enqueueOfflineAction("checkin", q, activeStudent?.id ?? null);
+            await enqueueOfflineAction("checkin", q, activeStudent?.id ?? null, idempotencyKey);
             offlineSync.updateCount();
             triggerScreenFlash("warning");
             playSoundSuccess();
@@ -319,12 +322,7 @@ export function createOmniboxStore() {
     set blockAlert(v) {
       blockAlert = v;
     },
-    get isOffline() {
-      return isOffline;
-    },
-    set isOffline(v) {
-      isOffline = v;
-    },
+    // isOffline handled globally
     get offlineQueueCount() {
       return offlineQueueCount;
     },

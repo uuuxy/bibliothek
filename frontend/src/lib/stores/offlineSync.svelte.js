@@ -5,6 +5,7 @@ import { playSoundSuccess } from "../audio.js";
 function createOfflineSyncStore() {
   let pendingCount = $state(0);
   let isSyncing = $state(false);
+  let isOffline = $state(typeof navigator !== 'undefined' ? !navigator.onLine : false);
 
   async function updateCount() {
     const q = await loadQueue();
@@ -26,7 +27,10 @@ function createOfflineSyncStore() {
       
       const batchItems = q.slice(0, 50);
       const payload = batchItems.map(item => {
-        const req = { query: item.barcode_id };
+        const req = { 
+          query: item.barcode_id,
+          idempotency_key: item.id
+        };
         if (item.action_type === 'checkout' && item.schueler_id) {
           req.active_student_id = item.schueler_id;
         }
@@ -122,17 +126,28 @@ function createOfflineSyncStore() {
 
   function init() {
     if (typeof window !== 'undefined') {
+      isOffline = !navigator.onLine;
       updateCount();
-      window.addEventListener('online', startSync);
+      
+      window.addEventListener('online', () => {
+        isOffline = false;
+        startSync();
+      });
+      
+      window.addEventListener('offline', () => {
+        isOffline = true;
+      });
+      
       window.addEventListener('beforeunload', handleBeforeUnload);
       // Periodic check every 30s just in case online event missed or transient 5xx errors
       setInterval(() => {
-        if (pendingCount > 0) startSync();
+        if (pendingCount > 0 && !isOffline) startSync();
       }, 30000);
     }
   }
 
   return {
+    get isOffline() { return isOffline; },
     get pendingCount() { return pendingCount; },
     get isSyncing() { return isSyncing; },
     updateCount,

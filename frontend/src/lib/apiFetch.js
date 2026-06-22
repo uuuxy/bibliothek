@@ -42,7 +42,7 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * @param {RequestInit} [options] - Standard fetch options
  * @returns {Promise<Response>}
  */
-export function apiFetch(url, options = {}) {
+export async function apiFetch(url, options = {}) {
   // Always include credentials (cookies)
   options.credentials = "include";
 
@@ -59,7 +59,26 @@ export function apiFetch(url, options = {}) {
     }
   }
 
-  return fetch(url, options);
+  // Set up AbortController for network timeouts
+  const timeoutMs = MUTATION_METHODS.has(method) ? 10000 : 15000;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  // If the user already provided a signal, link them (simplified handling: we just overwrite with our timeout, 
+  // or if they passed one we could use `AbortSignal.any` but standard AbortController is enough for our use-case)
+  options.signal = controller.signal;
+
+  try {
+    const response = await fetch(url, options);
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') {
+      throw new Error("Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.");
+    }
+    throw error;
+  }
 }
 
 /**

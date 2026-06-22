@@ -34,6 +34,7 @@ type StudentProfileResponse struct {
 	Geburtsdatum      *string        `json:"geburtsdatum,omitempty"`
 	LusdID            *string        `json:"lusd_id,omitempty"`
 	Status            string         `json:"status,omitempty"`
+	HasOpenDamages    bool           `json:"has_open_damages"`
 	EntlieheneBuecher []BorrowedBook `json:"entliehene_buecher"`
 }
 
@@ -139,6 +140,10 @@ func (s *Server) GetStudentProfileHandler(
 			statusStr = "abgaenger"
 		}
 
+		// 3.5 Check for open damages
+		var hasOpenDamages bool
+		_ = s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)", student.ID).Scan(&hasOpenDamages)
+
 		// 4. Construct response and stream as JSON
 		resp := StudentProfileResponse{
 			ID:                student.ID,
@@ -152,6 +157,7 @@ func (s *Server) GetStudentProfileHandler(
 			Geburtsdatum:      student.Geburtsdatum,
 			LusdID:            student.LusdID,
 			Status:            statusStr,
+			HasOpenDamages:    hasOpenDamages,
 			EntlieheneBuecher: borrowedBooks,
 		}
 

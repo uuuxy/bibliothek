@@ -70,10 +70,14 @@
 
   async function handleBlockChange() {
     try {
-      await apiClient.patch(`/api/schueler/${profile.id}`, { 
+      const res = await apiClient.patch(`/api/schueler/${profile.id}`, { 
         is_manually_blocked: profile.is_manually_blocked,
         block_reason: profile.block_reason || ""
       });
+      if (res.ok) {
+        // Lokales Update des abgeleiteten Status "Gesperrt" für sofortiges Feedback
+        profile.ist_gesperrt = profile.is_manually_blocked || profile.has_open_damages;
+      }
     } catch (e) {
       console.error("Fehler beim Speichern der manuellen Sperre", e);
     }
@@ -145,49 +149,45 @@
     <p class="text-xs text-slate-400 tracking-wider mt-1">{profile.barcode_id}</p>
   </div>
 
-  <div class="flex flex-col items-center gap-3 pt-2 w-full">
-    {#if profile.ist_gesperrt}
-      <span class="inline-flex items-center px-5 py-2.5 rounded-full text-sm font-bold bg-rose-50 border border-rose-100 text-rose-600 w-full justify-center shadow-sm">
-        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2 animate-pulse"></span>
-        Gesperrt
-      </span>
-    {:else}
-      <span class="inline-flex items-center px-5 py-2.5 rounded-full text-sm font-bold bg-emerald-50 border border-emerald-100 text-emerald-600 w-full justify-center shadow-sm">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span>
-        Aktiv
-      </span>
+  <div class="w-full mt-2 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-3 text-left">
+    <div class="flex items-center justify-between">
+      <span class="text-sm font-bold text-slate-800">Konto-Status</span>
+      {#if profile.ist_gesperrt}
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700">
+          <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 animate-pulse"></span>
+          Gesperrt
+        </span>
+      {:else}
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+          Aktiv
+        </span>
+      {/if}
+    </div>
+    
+    {#if role === 'admin' || role === 'mitarbeiter'}
+    <div class="pt-2 border-t border-slate-200">
+      <label class="flex items-center justify-between cursor-pointer group">
+        <span class="text-xs font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">Sperre erzwingen</span>
+        <div class="relative inline-flex items-center h-5 rounded-full w-9 transition-colors duration-300 focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-rose-500 {profile.is_manually_blocked ? 'bg-rose-500' : 'bg-slate-300'}">
+          <input type="checkbox" class="peer sr-only" bind:checked={profile.is_manually_blocked} onchange={handleBlockChange}>
+          <span class="inline-block w-3.5 h-3.5 transform bg-white rounded-full transition-transform duration-300 ease-in-out ml-[2px] {profile.is_manually_blocked ? 'translate-x-4' : 'translate-x-0'}"></span>
+        </div>
+      </label>
+      {#if profile.is_manually_blocked}
+        <div class="mt-2 animate-fade-in">
+          <textarea bind:value={profile.block_reason} onchange={handleBlockChange} class="w-full border border-rose-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-200 bg-white text-rose-900 placeholder-rose-300" rows="2" placeholder="Sperrgrund (z.B. Mahngebühr)..."></textarea>
+        </div>
+      {/if}
+    </div>
     {/if}
   </div>
-
-  {#if role === 'admin' || role === 'mitarbeiter'}
-  <div class="w-full flex flex-col gap-3 pt-4 border-t border-slate-100 text-left">
-    <label class="flex items-center justify-between cursor-pointer group">
-      <span class="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Manuelle Ausleihsperre</span>
-      <div class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-rose-500 {profile.is_manually_blocked ? 'bg-rose-500' : 'bg-slate-300'}">
-        <input type="checkbox" class="peer sr-only" bind:checked={profile.is_manually_blocked} onchange={handleBlockChange}>
-        <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ease-in-out ml-1 {profile.is_manually_blocked ? 'translate-x-5' : 'translate-x-0'}"></span>
-      </div>
-    </label>
-    {#if profile.is_manually_blocked}
-      <div class="flex flex-col gap-2 mt-1 animate-fade-in">
-        <textarea bind:value={profile.block_reason} onchange={handleBlockChange} class="w-full border border-rose-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 bg-rose-50 text-rose-900 placeholder-rose-300" rows="2" placeholder="Begründung eingeben..."></textarea>
-      </div>
-    {/if}
-  </div>
-  {/if}
 
   <div class="w-full pt-4 flex flex-col gap-3">
     <button onclick={onPrint} class="w-full py-3.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-full text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
       Ausweis drucken
     </button>
-
-
-    {#if role === 'admin'}
-      <button onclick={() => showDeleteConfirm = true} class="w-full py-3.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-full text-sm font-bold transition-all cursor-pointer shadow-sm hover:shadow">
-        Schüler löschen
-      </button>
-    {/if}
   </div>
 
   {#if studentTabExtensions.length > 0}

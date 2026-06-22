@@ -3,17 +3,7 @@
   import { CloudOff, Download, Upload } from "lucide-svelte";
   import { toastStore } from "../stores/toastStore.svelte.js";
 
-  let isOffline = $state(typeof navigator !== 'undefined' ? !navigator.onLine : false);
-
-  $effect(() => {
-    const updateOnlineStatus = () => { isOffline = !navigator.onLine; };
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-    };
-  });
+  // isOffline and global events are now handled centrally in offlineSync.svelte.js
 
   async function handleBackup() {
     await offlineSync.exportQueueAsJSON();
@@ -35,7 +25,7 @@
   }
 </script>
 
-{#if offlineSync.pendingCount > 0 || isOffline}
+{#if offlineSync.pendingCount > 0 || offlineSync.isOffline}
   <div class="fixed top-0 left-0 right-0 z-9999 bg-rose-600 text-white shadow-2xl border-b-4 border-rose-800 animate-slide-down">
     <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-4">
@@ -50,7 +40,7 @@
             {offlineSync.pendingCount} ausstehende Aktion{offlineSync.pendingCount === 1 ? '' : 'en'} in der lokalen Warteschlange. 
             {#if offlineSync.isSyncing}
               <span class="animate-pulse ml-2">(Wird gerade synchronisiert...)</span>
-            {:else if isOffline}
+            {:else if offlineSync.isOffline}
               (Wartet auf Internetverbindung...)
             {/if}
           </p>

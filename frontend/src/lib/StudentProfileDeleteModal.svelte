@@ -5,11 +5,16 @@
 
   let deleteError = $state("");
   let isDeleting = $state(false);
+  let confirmText = $state("");
+
+  let expectedConfirmText = $derived(profile ? `${profile.vorname} ${profile.nachname}` : "");
+  let isConfirmed = $derived(confirmText === expectedConfirmText);
 
   $effect(() => {
     if (open) {
       deleteError = "";
       isDeleting = false;
+      confirmText = "";
     }
   });
 
@@ -62,17 +67,32 @@
         </div>
       {:else}
         <p class="mt-4 text-sm text-slate-600 leading-relaxed font-sans">
-          Sind Sie sicher, dass Sie den Schüler <strong>{profile.vorname} {profile.nachname}</strong> unwiderruflich aus der Datenbank löschen möchten? Alle historischen Ausleihen werden anonymisiert.
+          Sind Sie sicher, dass Sie das Profil von <strong>{profile.vorname} {profile.nachname}</strong> löschen/archivieren möchten? Alle historischen Ausleihen werden anonymisiert. Dieser Vorgang kann in der regulären Oberfläche nicht rückgängig gemacht werden.
         </p>
+
+        <div class="mt-5">
+          <label class="block text-xs font-bold text-slate-700 mb-1.5" for="confirm-name">
+            Bitte tippen Sie den Namen zur Bestätigung ein: <span class="font-mono text-rose-600 select-none bg-rose-50 px-1 py-0.5 rounded">{expectedConfirmText}</span>
+          </label>
+          <input 
+            id="confirm-name"
+            type="text" 
+            bind:value={confirmText} 
+            placeholder={expectedConfirmText}
+            autocomplete="off"
+            class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 focus:outline-none transition-all"
+          />
+        </div>
+
         {#if deleteError}
           <div class="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-semibold text-rose-600">
             {deleteError}
           </div>
         {/if}
-        <div class="mt-6 flex justify-end gap-3">
-          <button onclick={handleClose} disabled={isDeleting} class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer">Abbrechen</button>
-          <button onclick={deleteStudent} disabled={isDeleting} class="rounded-xl bg-red-650 px-4 py-2 text-sm font-bold text-white hover:bg-red-750 disabled:opacity-60 transition-colors cursor-pointer">
-            {#if isDeleting}Löschen...{:else}Unwiderruflich löschen{/if}
+        <div class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <button onclick={handleClose} disabled={isDeleting} class="w-full sm:w-auto rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer">Abbrechen</button>
+          <button onclick={deleteStudent} disabled={isDeleting || !isConfirmed} class="w-full sm:w-auto rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-sm">
+            {#if isDeleting}Wird verarbeitet...{:else}Endgültig archivieren/löschen{/if}
           </button>
         </div>
       {/if}

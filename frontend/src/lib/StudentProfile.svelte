@@ -228,6 +228,41 @@
 
     <!-- Right: Timeline / Loans List / Stammdaten (2 cols) -->
     <div class="lg:col-span-2 space-y-6 flex flex-col h-full">
+
+      {#if role === 'admin' || role === 'mitarbeiter'}
+      <!-- Aktionen / Dokumente -->
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          Dokumente & Aktionen
+        </h4>
+        <div class="flex flex-wrap gap-3 items-center">
+          <button onclick={downloadKontoauszugPDF} disabled={kontoauszugPdfLoading || !(profile.entliehene_buecher?.length > 0)} class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
+            {#if kontoauszugPdfLoading}
+              <div class="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin"></div>
+            {:else}
+              <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            {/if}
+            Kontoauszug
+          </button>
+          
+          <button onclick={downloadRechnungPDF} disabled={rechnungPdfLoading || !profile.has_open_damages} title={!profile.has_open_damages ? 'Keine offenen Forderungen' : 'Ersatzforderung drucken'} class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
+            {#if rechnungPdfLoading}
+              <div class="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin"></div>
+            {:else}
+              <svg class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            {/if}
+            Ersatzforderung
+          </button>
+
+          <button onclick={() => window.print()} disabled={!(profile.entliehene_buecher?.length > 0)} title={!(profile.entliehene_buecher?.length > 0) ? 'Keine offenen Ausleihen' : 'Druckansicht der Ausleihen'} class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Ausleihen-Liste
+          </button>
+        </div>
+      </div>
+      {/if}
+
       <!-- Tabs -->
       <div class="flex gap-6 border-b border-slate-200">
         <button onclick={() => activeTab = "ausleihen"} class="pb-2 text-sm font-bold transition-all border-b-2 {activeTab === 'ausleihen' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-800'}">
@@ -241,27 +276,7 @@
       <div class="flex-1 relative">
         {#if activeTab === "ausleihen"}
           {@render rightTop?.()}
-          
-          <div class="flex justify-end gap-3 mb-2">
-            {#if profile.entliehene_buecher?.length > 0}
-              <button onclick={() => window.print()} class="px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-full text-sm font-bold transition-all shadow-sm cursor-pointer flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                Offene Ausleihen drucken
-              </button>
-            {/if}
-            {#if (role === 'admin' || role === 'mitarbeiter') && profile.entliehene_buecher?.length > 0}
-              <button onclick={downloadKontoauszugPDF} disabled={kontoauszugPdfLoading} class="px-5 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2">
-                {#if kontoauszugPdfLoading}
-                  <div class="w-4 h-4 border-2 border-blue-400 border-t-blue-700 rounded-full animate-spin"></div>
-                {:else}
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                {/if}
-                Kontoauszug drucken
-              </button>
-            {/if}
-          </div>
-
-          <div class="col-span-1 md:col-span-1 relative flex flex-col gap-6 h-full min-h-[400px] animate-fade-in">
+          <div class="col-span-1 md:col-span-1 relative flex flex-col gap-6 h-full min-h-[400px] animate-fade-in mt-4">
             <BorrowedBooksCard 
               books={profile.entliehene_buecher || []} 
               {onReturnClick} 
@@ -282,6 +297,23 @@
           />
         {/if}
       </div>
+
+      {#if role === 'admin'}
+        <div class="mt-8 border-2 border-rose-100 bg-rose-50/50 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-center justify-between shadow-sm">
+          <div>
+            <h3 class="text-rose-700 font-bold text-lg flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+              Gefahrenzone
+            </h3>
+            <p class="text-rose-600/80 text-sm mt-1 max-w-xl">
+              Das Löschen dieses Schülerprofils entfernt die Person aus dem regulären System. Offene Ausleihen oder Forderungen müssen vorher beglichen werden.
+            </p>
+          </div>
+          <button onclick={() => showDeleteConfirm = true} class="shrink-0 px-6 py-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer">
+            Schüler archivieren / löschen
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
   {:else}

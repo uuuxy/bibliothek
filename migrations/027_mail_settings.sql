@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS mail_settings_config (
 );
 
 -- Ensure there's only one active configuration by restricting the ID to 1
-CREATE UNIQUE INDEX IF NOT EXISTS mail_settings_config_single_row_idx ON mail_settings_config ((1));
+ALTER TABLE mail_settings_config ADD CONSTRAINT mail_settings_config_single_row_chk CHECK (id = 1);
 
 -- Insert the default row if it does not exist
 INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;

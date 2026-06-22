@@ -1,7 +1,6 @@
 <script>
   import { onMount } from "svelte";
   import StudentProfile from "./StudentProfile.svelte";
-  import OfflineQueueBanner from "./OfflineQueueBanner.svelte";
   import CameraScanner from "./CameraScanner.svelte";
   import OmniboxInput from "./components/OmniboxInput.svelte";
   import OmniboxResults from "./components/OmniboxResults.svelte";

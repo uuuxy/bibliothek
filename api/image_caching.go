@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/chai2010/webp"
 )
@@ -57,19 +56,28 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		dir := "uploads/covers"
 		_ = os.MkdirAll(dir, 0755)
-		cleanDir := filepath.Clean(dir)
-		localPath := filepath.Clean(filepath.Join(cleanDir, isbn+".webp"))
 
-		if !strings.HasPrefix(localPath, cleanDir+string(filepath.Separator)) {
+		root, err := os.OpenRoot(dir)
+		if err != nil {
+			serveFallback(w)
+			return
+		}
+		defer root.Close()
+
+		// Sanity check to avoid unnecessary download/processing steps for obvious path traversals
+		// even though root.OpenFile would safely block them later.
+		if filepath.Base(isbn) != isbn {
 			serveFallback(w)
 			return
 		}
 
+		fileName := isbn + ".webp"
+
 		// Serve cached version if it exists
-		if _, err := os.Stat(localPath); err == nil {
+		if _, err := root.Stat(fileName); err == nil {
 			w.Header().Set("Cache-Control", "public, max-age=31536000")
 			w.Header().Set("Content-Type", "image/webp")
-			http.ServeFile(w, r, localPath)
+			http.ServeFileFS(w, r, root.FS(), fileName)
 			return
 		}
 
@@ -97,20 +105,20 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		}
 
 		// Write to local file as WebP
-		out, err := os.Create(localPath)
+		out, err := root.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 		if err == nil {
 			err = webp.Encode(out, img, &webp.Options{Lossless: false, Quality: 80})
 			_ = out.Close()
 			if err != nil {
-				_ = os.Remove(localPath) // cleanup if encoding fails
+				_ = root.Remove(fileName) // cleanup if encoding fails
 			}
 		}
 
 		// Serve the newly converted file if it exists
-		if _, err := os.Stat(localPath); err == nil {
+		if _, err := root.Stat(fileName); err == nil {
 			w.Header().Set("Cache-Control", "public, max-age=31536000")
 			w.Header().Set("Content-Type", "image/webp")
-			http.ServeFile(w, r, localPath)
+			http.ServeFileFS(w, r, root.FS(), fileName)
 		} else {
 			serveFallback(w)
 		}

@@ -39,10 +39,10 @@ export async function loadQueue() {
  * @param {string|null} schueler_id
  * @returns {Promise<void>}
  */
-export async function enqueueOfflineAction(action_type, barcode_id, schueler_id = null) {
+export async function enqueueOfflineAction(action_type, barcode_id, schueler_id = null, idempotencyKey = null) {
   try {
     const db = await getDB();
-    const id = crypto.randomUUID();
+    const id = idempotencyKey || crypto.randomUUID();
     await db.add(STORE_NAME, {
       id,
       action_type,
