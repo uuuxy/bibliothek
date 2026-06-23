@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -45,7 +46,7 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		reorderQuery := `
 			SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), t.meldebestand,

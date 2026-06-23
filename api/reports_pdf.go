@@ -64,7 +64,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Pool.Query(ctx, query)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Abrufen der Datenbank"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Abrufen der Datenbank"))
 			return
 		}
 		defer rows.Close()
@@ -99,7 +99,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 		}
 
 		if len(studentOrder) == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Keine überfälligen Ausleihen gefunden"))
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine überfälligen Ausleihen gefunden"))
 			return
 		}
 

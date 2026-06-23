@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"time"
 
 	"bibliothek/repository"
@@ -65,13 +64,6 @@ type ActionEvent struct {
 	Titel     string `json:"titel"`
 	Timestamp int64  `json:"timestamp"`
 }
-
-var (
-	errNotFound     = errors.New("eintrag nicht gefunden")
-	errBlocked      = errors.New("ausleihe für diese/n Schüler/in ist gesperrt")
-	errConflict     = errors.New("conflict")
-	errInvalidState = errors.New("ungültiger Transaktionszustand")
-)
 
 // broadcastActionEvent broadcasts the action event as JSON via SSE stream.
 func (s *Server) broadcastActionEvent(resp ActionResponse) {

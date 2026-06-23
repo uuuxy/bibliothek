@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +18,7 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Snapshot erstellen: Metadaten vor dem Löschen für das Audit-Log sichern
 	var titel, autor, isbn string
@@ -89,7 +90,7 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Snapshot erstellen: Exemplardaten vor dem Aussondern für das Audit-Log sichern
 	var barcode, zustandNotiz, titel string
@@ -112,7 +113,7 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 		return fmt.Errorf("failed to check active loans for copy: %w", err)
 	}
 	if activeLoanCount > 0 {
-		return errors.New("Exemplar ist aktuell noch verliehen!")
+		return errors.New("exemplar ist aktuell noch verliehen")
 	}
 
 	// Soft-Delete durchführen: Exemplar sperren und Zustand auf "Systematisch gelöscht" setzen
@@ -147,7 +148,7 @@ func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, e
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {

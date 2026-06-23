@@ -103,8 +103,13 @@ func (b *BackupJob) RunDatabaseBackup() {
 			pw.CloseWithError(err)
 			return
 		}
-		_ = gz.Close()
-		_ = pw.Close()
+		// gz.Close flushes the gzip footer; propagate a failure to the reader so it
+		// does not consume a truncated, invalid archive.
+		if err := gz.Close(); err != nil {
+			pw.CloseWithError(err)
+			return
+		}
+		pw.CloseWithError(nil) // signals clean EOF to the reading side
 	}()
 
 	// Alle komprimierten Daten lesen
@@ -163,7 +168,9 @@ func (b *BackupJob) RunDatabaseBackup() {
 			// Optional: Make bucket if not exists
 			exists, errBucketExists := minioClient.BucketExists(ctx, s3Bucket)
 			if errBucketExists == nil && !exists {
-				_ = minioClient.MakeBucket(ctx, s3Bucket, minio.MakeBucketOptions{})
+				if err := minioClient.MakeBucket(ctx, s3Bucket, minio.MakeBucketOptions{}); err != nil {
+					log.Printf("Backup: S3-Bucket %q konnte nicht angelegt werden: %v", s3Bucket, err)
+				}
 			}
 
 			_, err = minioClient.PutObject(ctx, s3Bucket, objectName, reader, int64(len(encrypted)), minio.PutObjectOptions{

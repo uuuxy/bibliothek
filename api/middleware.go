@@ -98,7 +98,11 @@ func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 				role := strings.ToUpper(string(claims.Rolle))
 				switch role {
 				case "LEHRER":
-					isAllowed := (r.Method == http.MethodGet && (path == "/events" || path == "/api/search" || strings.HasPrefix(path, "/api/buecher/titel/") && strings.Contains(path, "/exemplare"))) ||
+					// && binds tighter than ||; parentheses make the grouping explicit.
+					isAllowed := (r.Method == http.MethodGet &&
+						(path == "/events" ||
+							path == "/api/search" ||
+							(strings.HasPrefix(path, "/api/buecher/titel/") && strings.Contains(path, "/exemplare")))) ||
 						(r.Method == http.MethodPost && path == "/api/auth/logout")
 
 					if !isAllowed {
@@ -120,7 +124,6 @@ func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
 
 // CORSMiddleware restricts cross-origin requests to the configured school domain.
 // Set ALLOWED_ORIGIN env var to the school's frontend URL (e.g. https://bibliothek.schule.de).
@@ -188,6 +191,12 @@ func (r *statusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
+// Unwrap returns the underlying ResponseWriter so that http.NewResponseController
+// can traverse the middleware chain (e.g. to call SetWriteDeadline for SSE).
+func (r *statusRecorder) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
+}
+
 // Flush implements http.Flusher to support Server-Sent Events (SSE)
 func (r *statusRecorder) Flush() {
 	if f, ok := r.ResponseWriter.(http.Flusher); ok {
@@ -210,4 +219,3 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		}
 	})
 }
-

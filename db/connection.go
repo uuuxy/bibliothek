@@ -2,7 +2,9 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -62,5 +64,14 @@ func Connect(ctx context.Context, dsn string) (*Database, error) {
 func (db *Database) Close() {
 	if db.Pool != nil {
 		db.Pool.Close()
+	}
+}
+
+// SafeRollback rollt eine Transaktion zurück und ignoriert das harmlose pgx.ErrTxClosed,
+// das auftritt, wenn die Transaktion bereits committet (oder zurückgerollt) wurde.
+// Unerwartete Fehler werden geloggt. Gedacht für den Einsatz als `defer db.SafeRollback(ctx, tx)`.
+func SafeRollback(ctx context.Context, tx pgx.Tx) {
+	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+		log.Printf("db: transaction rollback failed: %v", err)
 	}
 }

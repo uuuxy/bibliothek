@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -146,11 +147,11 @@ func ReceiveItem(ctx context.Context, pool db.PgxPoolIface, auditRepo repository
 		return err
 	}
 
-	_ = auditRepo.LogAdminAktion(ctx, adminID, "RECEIVE_ITEM", ipAddr, map[string]any{
+	logAuditErr("wareneingang", auditRepo.LogAdminAktion(ctx, adminID, "RECEIVE_ITEM", ipAddr, map[string]any{
 		"titel_id": titelID,
 		"barcode":  barcode,
 		"message":  "Wareneingang gebucht (Einzel-Scan)",
-	})
+	}))
 
 	return nil
 }
@@ -208,8 +209,9 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 			existsLocally := false
 			if dr.ISBN != "" {
 				var count int
-				_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM buecher_titel WHERE replace(isbn, '-', '') = $1", dr.ISBN).Scan(&count)
-				if count > 0 {
+				if err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM buecher_titel WHERE replace(isbn, '-', '') = $1", dr.ISBN).Scan(&count); err != nil {
+					log.Printf("order-service: ISBN-Existenzprüfung fehlgeschlagen: %v", err)
+				} else if count > 0 {
 					existsLocally = true
 				}
 			}
@@ -258,10 +260,10 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 		return 0, errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
 	}
 
-	_ = auditRepo.LogAdminAktion(ctx, adminID, "BULK_RECEIVE_ITEMS", ipAddr, map[string]any{
+	logAuditErr("wareneingang-bulk", auditRepo.LogAdminAktion(ctx, adminID, "BULK_RECEIVE_ITEMS", ipAddr, map[string]any{
 		"received_count": len(updatedIDs),
 		"message":        "Wareneingang gebucht (Massen-Freigabe)",
-	})
+	}))
 
 	return len(updatedIDs), nil
 }

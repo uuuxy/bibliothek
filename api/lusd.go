@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
+	"bibliothek/pkg/closeutil"
 )
 
 // LusdPreviewResult contains the statistics for the frontend preview.
@@ -37,7 +39,7 @@ func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
 	if err != nil {
 		return nil, fmt.Errorf("CSV-Datei fehlt: %w", err)
 	}
-	defer func() { _ = file.Close() }()
+	defer closeutil.LogClose(file, "lusd upload")
 
 	reader := csv.NewReader(file)
 	reader.Comma = ';' // Typical for German CSVs, fallback to ',' below if needed
@@ -46,7 +48,9 @@ func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
 	header, err := reader.Read()
 	// Try comma if semicolon failed to produce multiple columns
 	if err != nil || len(header) < 3 {
-		_, _ = file.Seek(0, io.SeekStart)
+		if _, serr := file.Seek(0, io.SeekStart); serr != nil {
+			return nil, fmt.Errorf("CSV konnte für erneutes Einlesen nicht zurückgespult werden: %w", serr)
+		}
 		reader = csv.NewReader(file)
 		reader.Comma = ','
 		reader.LazyQuotes = true
@@ -117,7 +121,7 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 		return nil, err
 	}
 	// Always rollback on panic or early return. If we apply, we commit at the very end.
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Read all current students
 	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse FROM schueler WHERE ist_abgaenger = false")

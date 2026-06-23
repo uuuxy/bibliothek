@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 )
 
 // PermissionSetting holds a single role-permission flag returned by the API.
@@ -94,6 +95,6 @@ func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 		InvalidatePermissionCache()
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"success"}`))
+		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
 }

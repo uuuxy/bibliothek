@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/closeutil"
 )
 
 // AntolinResult holds a single Antolin lookup result and its cache timestamp.
@@ -49,8 +50,7 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 
 		// Cache hit
 		if cached, ok := antolinCache.Load(isbn); ok {
-			entry := cached.(*AntolinResult)
-			if time.Since(entry.cachedAt) < antolinCacheTTL {
+			if entry, isResult := cached.(*AntolinResult); isResult && time.Since(entry.cachedAt) < antolinCacheTTL {
 				RespondJSON(w, http.StatusOK, entry)
 				return
 			}
@@ -73,7 +73,7 @@ func (s *Server) AntolinHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadGateway, fmt.Errorf("antolin service unavailable"))
 			return
 		}
-		defer func() { _ = resp.Body.Close() }()
+		defer closeutil.LogClose(resp.Body, "antolin response body")
 
 		var apiResp antolinAPIResp
 		if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {

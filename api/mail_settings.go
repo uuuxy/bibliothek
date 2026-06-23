@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"bibliothek/apierrors"
@@ -71,14 +72,18 @@ func (s *Server) UpdateMailSettingsHandler(mailRepo *repository.MailSettingsRepo
 
 		// Admin audit log
 		if claims, ok := auth.GetClaims(r.Context()); ok {
-			detailsBytes, _ := json.Marshal(map[string]interface{}{
-				"smtp_host": req.SMTPHost,
-				"smtp_port": req.SMTPPort,
-				"smtp_user": req.SMTPUser,
-				"sender_email": req.SenderEmail,
+			detailsBytes, merr := json.Marshal(map[string]interface{}{
+				"smtp_host":        req.SMTPHost,
+				"smtp_port":        req.SMTPPort,
+				"smtp_user":        req.SMTPUser,
+				"sender_email":     req.SenderEmail,
 				"password_changed": req.SMTPPassword != "",
 			})
-			_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_MAIL_SETTINGS", string(detailsBytes))
+			if merr != nil {
+				log.Printf("audit: Mail-Settings-Details konnten nicht serialisiert werden: %v", merr)
+			} else {
+				logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_MAIL_SETTINGS", string(detailsBytes)))
+			}
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})

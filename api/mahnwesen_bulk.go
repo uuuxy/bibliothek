@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 	"bibliothek/repository"
 )
 
@@ -52,7 +53,7 @@ func (s *Server) BulkPrintMahnungenHandler() http.HandlerFunc {
 			return
 		}
 		// Rollback-Defer, welches wirksam wird, falls tx.Commit() nicht erreicht wird
-		defer tx.Rollback(ctx)
+		defer db.SafeRollback(ctx, tx)
 
 		// 3. Bulk Update der Mahnstufe und des Mahndatums für alle ausgewählten IDs
 		updateQuery := `

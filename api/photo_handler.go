@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/internal/service"
+	"bibliothek/pkg/httpresp"
 )
 
 // UploadPhotoRequest holds the base64 encoded photo payload.
@@ -46,6 +47,6 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"success","url":"` + photoURL + `"}`))
+		httpresp.Write(w, []byte(`{"status":"success","url":"`+photoURL+`"}`))
 	}
 }

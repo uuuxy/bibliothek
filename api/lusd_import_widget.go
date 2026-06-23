@@ -2,6 +2,8 @@ package api
 
 import (
 	"bibliothek/apierrors"
+	"bibliothek/db"
+	"bibliothek/pkg/closeutil"
 	"errors"
 
 	"encoding/csv"
@@ -25,16 +27,16 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 
 		// 1. Parse multipart file (max 10 MB)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehler beim Parsen der Formulardaten"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehler beim Parsen der Formulardaten"))
 			return
 		}
 
 		file, _, err := r.FormFile("file")
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Keine Datei hochgeladen"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine Datei hochgeladen"))
 			return
 		}
-		defer func() { _ = file.Close() }()
+		defer closeutil.LogClose(file, "lusd import widget upload")
 
 		// 2. Setup CSV Parser
 		reader := csv.NewReader(file)
@@ -43,7 +45,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 
 		header, err := reader.Read()
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehler beim Lesen der Kopfzeile"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehler beim Lesen der Kopfzeile"))
 			return
 		}
 
@@ -71,7 +73,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		colKlasse := getCol("klasse", "gruppe", "jahrgang")
 
 		if colID == -1 || colVorname == -1 || colNachname == -1 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Pflichtspalten (ID, Vorname, Nachname) fehlen in CSV"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("pflichtspalten (ID, Vorname, Nachname) fehlen in CSV"))
 			return
 		}
 
@@ -81,7 +83,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Datenbankfehler"))
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		// 3. Process Rows and Upsert
 		for {
@@ -161,7 +163,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 		}
 
 		if err := tx.Commit(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Speichern der Transaktion"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Speichern der Transaktion"))
 			return
 		}
 

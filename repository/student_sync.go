@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"time"
 
@@ -36,7 +37,7 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 	if err != nil {
 		return 0, err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// 1. Massen-Update mit pgx und UNNEST durchführen (reduziert Roundtrips drastisch)
 	if len(updates) > 0 {

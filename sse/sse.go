@@ -2,14 +2,12 @@ package sse
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sync"
 	"time"
-
-	"bibliothek/apierrors"
 )
 
 // Broker manages active client connections and broadcasts messages.
@@ -72,16 +70,21 @@ func (b *Broker) Broadcast(event, data string) {
 // Sets necessary streaming headers and handles the 1-second ping (heartbeat/dead-man-switch).
 func (b *Broker) Handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		flusher, ok := w.(http.Flusher)
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("streaming unsupported"))
-			return
+		rc := http.NewResponseController(w)
+		// Disable read/write deadlines so the long-lived SSE stream is not terminated by the
+		// server's Read-/WriteTimeout. Best-effort: not all transports support deadlines.
+		if err := rc.SetReadDeadline(time.Time{}); err != nil {
+			log.Printf("SSE: could not clear read deadline: %v", err)
+		}
+		if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+			log.Printf("SSE: could not clear write deadline: %v", err)
 		}
 
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Connection", "keep-alive")
-		// CORS is handled by the global CORSMiddleware — do NOT set Access-Control-Allow-Origin here
+		// Note: "Connection: keep-alive" is forbidden in HTTP/2 (RFC 9113 §8.2.2) and causes
+		// ERR_HTTP2_PROTOCOL_ERROR. SSE streams work natively over both HTTP/1.1 and HTTP/2
+		// without this header. CORS is handled by the global CORSMiddleware.
 
 		clientChan := make(chan string, 10)
 		b.register <- clientChan
@@ -91,9 +94,19 @@ func (b *Broker) Handler() http.HandlerFunc {
 			b.unregister <- clientChan
 		}()
 
+		// writeAndFlush sends one SSE chunk and flushes it. A non-nil error means the
+		// client has disconnected, so the caller must terminate the handler.
+		writeAndFlush := func(chunk string) error {
+			if _, err := io.WriteString(w, chunk); err != nil {
+				return err
+			}
+			return rc.Flush()
+		}
+
 		// Send handshake acknowledgment
-		_, _ = fmt.Fprintf(w, "event: connected\ndata: {\"status\":\"ok\"}\n\n")
-		flusher.Flush()
+		if err := writeAndFlush("event: connected\ndata: {\"status\":\"ok\"}\n\n"); err != nil {
+			return
+		}
 
 		// Heartbeat ticker for dead-man-switch detection (15s is sufficient for library use)
 		ticker := time.NewTicker(15 * time.Second)
@@ -104,15 +117,17 @@ func (b *Broker) Handler() http.HandlerFunc {
 			case <-r.Context().Done():
 				return
 			case <-ticker.C:
-				// Write heartbeat ping
-				_, _ = fmt.Fprintf(w, "event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
-				flusher.Flush()
+				ping := fmt.Sprintf("event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
+				if err := writeAndFlush(ping); err != nil {
+					return
+				}
 			case msg, ok := <-clientChan:
 				if !ok {
 					return
 				}
-				_, _ = fmt.Fprint(w, msg)
-				flusher.Flush()
+				if err := writeAndFlush(msg); err != nil {
+					return
+				}
 			}
 		}
 	}

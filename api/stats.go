@@ -198,7 +198,9 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 				    ELSE ROUND(((SELECT COUNT(DISTINCT exemplar_id) FROM schadensfaelle) * 100.0) / (SELECT COUNT(*) FROM buecher_exemplare), 2)
 				END AS quote
 		`
-		_ = s.DB.Pool.QueryRow(ctx, qLoss).Scan(&gesamtBestand, &verloreneExemplare, &verlustQuote)
+		if err := s.DB.Pool.QueryRow(ctx, qLoss).Scan(&gesamtBestand, &verloreneExemplare, &verlustQuote); err != nil {
+			log.Printf("stats: Verlustquote konnte nicht ermittelt werden: %v", err)
+		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"popular_titles": popularTitles,

@@ -36,7 +36,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock StudentRepo.GetByID
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
+	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil))
@@ -142,10 +142,10 @@ func TestHandleBookReturn(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock GetCopyByBarcode
-	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, e\\.barcode_id, coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, e\\.ist_ausleihbar, e\\.ist_ausgesondert, e\\.erstellt_am, e\\.aktualisiert_am, t\\.titel, coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), t\\.medientyp, coalesce\\(t\\.signatur, ''\\), t\\.erweiterte_eigenschaften FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, coalesce\\(e\\.barcode_id, ''\\), coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, coalesce\\(e\\.ist_ausleihbar, false\\), coalesce\\(e\\.ist_ausgesondert, false\\), e\\.erstellt_am, e\\.aktualisiert_am, coalesce\\(t\\.titel, ''\\), coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), coalesce\\(t\\.medientyp, ''\\), coalesce\\(t\\.signatur, ''\\), coalesce\\(t\\.ziel_jahrgang, 0\\), coalesce\\(t\\.erweiterte_eigenschaften, '\\{\\}'::jsonb\\) FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
 		WithArgs(barcode).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "signatur", "erweiterte_eigenschaften"}).
-			AddRow(copyID, "titel-1", barcode, "", time.Now(), true, false, time.Now(), time.Now(), "Testbuch", "", "", "", "", "", "", map[string]any{}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "signatur", "ziel_jahrgang", "erweiterte_eigenschaften"}).
+			AddRow(copyID, "titel-1", barcode, "", time.Now(), true, false, time.Now(), time.Now(), "Testbuch", "", "", "", "", "", "", 0, map[string]any{}))
 
 	// Mock Tx
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
@@ -159,7 +159,7 @@ func TestHandleBookReturn(t *testing.T) {
 			AddRow(activeLoanID, &copyID, &studentID, nil, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, staffID, nil, false, false))
 
 	// Student lookup fallback
-	mock.ExpectQuery("SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, lusd_id, ist_abgaenger, TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, is_manually_blocked, block_reason FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
+	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil))

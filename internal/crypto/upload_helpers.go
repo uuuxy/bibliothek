@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"bibliothek/pkg/closeutil"
 	"bytes"
 	"fmt"
 	"io"
@@ -16,7 +17,7 @@ func EncryptUpload(file multipart.File) ([]byte, error) {
 	if file == nil {
 		return nil, fmt.Errorf("leere Datei übergeben")
 	}
-	defer file.Close()
+	defer closeutil.LogClose(file, "upload temp file")
 
 	plaintext, err := io.ReadAll(file)
 	if err != nil {

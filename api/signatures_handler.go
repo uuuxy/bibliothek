@@ -119,7 +119,7 @@ func (s *Server) UpdateSignatureHandler() http.HandlerFunc {
 			return
 		}
 		if res.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Signatur nicht gefunden"))
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("signatur nicht gefunden"))
 			return
 		}
 
@@ -146,14 +146,14 @@ func (s *Server) DeleteSignatureHandler() http.HandlerFunc {
 			errStr := err.Error()
 			if strings.Contains(errStr, "violates foreign key constraint") || strings.Contains(errStr, "23503") {
 				apierrors.SendHTTPError(w, http.StatusConflict,
-					errors.New("Signatur kann nicht gelöscht werden, da ihr noch Bücher zugeordnet sind"))
+					errors.New("signatur kann nicht gelöscht werden, da ihr noch Bücher zugeordnet sind"))
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		if res.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Signatur nicht gefunden"))
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("signatur nicht gefunden"))
 			return
 		}
 

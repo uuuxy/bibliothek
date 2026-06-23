@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 	"bibliothek/repository"
 )
 
@@ -117,7 +118,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		// 1. Notfall-Wachhund: Duplikatsprüfung (Vorname, Nachname, Geburtsdatum)
 		var isDuplicate bool
@@ -139,7 +140,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			seqRepo := repository.NewSequenceRepository(tx)
 			startNum, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "S-")
 			if err != nil {
-				tx.Rollback(ctx)
+				db.SafeRollback(ctx, tx)
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}

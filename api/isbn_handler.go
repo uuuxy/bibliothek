@@ -78,8 +78,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		var jahrInt *int
 		if meta.Jahr != "" {
 			var j int
-			_, _ = fmt.Sscanf(meta.Jahr, "%d", &j)
-			if j > 1000 && j < 2100 {
+			if _, err := fmt.Sscanf(meta.Jahr, "%d", &j); err == nil && j > 1000 && j < 2100 {
 				jahrInt = &j
 			}
 		}

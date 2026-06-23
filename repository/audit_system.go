@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"fmt"
 	"time"
@@ -13,7 +14,7 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Schadensfall als bezahlt/storniert markieren und Metadaten eintragen
 	tag, err := tx.Exec(ctx, `
@@ -55,7 +56,7 @@ func (r *pgAuditRepository) LogSystemAktion(ctx context.Context, tabelle string,
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Systemaktionen verwenden eine Standard-Null-UUID als Datensatz-ID
 	const systemSentinelID = "00000000-0000-0000-0000-000000000000"

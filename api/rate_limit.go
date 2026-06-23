@@ -77,7 +77,11 @@ func (l *ipRateLimiter) allow(ip string) bool {
 // X-Forwarded-For and X-Real-IP are only trusted when the direct connection
 // comes from a loopback address (i.e. behind Caddy reverse proxy).
 func getIP(r *http.Request) string {
-	remoteIP, _, _ := net.SplitHostPort(r.RemoteAddr)
+	remoteIP, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		// RemoteAddr ohne Port (z. B. Unix-Socket): unverändert übernehmen
+		remoteIP = r.RemoteAddr
+	}
 	if isLoopback(remoteIP) {
 		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 			parts := strings.Split(xff, ",")

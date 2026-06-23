@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 	"bibliothek/repository"
 )
 
@@ -30,7 +31,7 @@ func (s *Server) InventurFinishHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		invRepo := repository.NewInventoryRepository(tx)
 

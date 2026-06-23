@@ -119,7 +119,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Aktive Ausleihe für dieses Gerät abfragen und sperren (Row-Level-Lock via FOR UPDATE).
 	// Dies verhindert, dass zwei parallele Requests gleichzeitig dieselbe Ausleihe manipulieren.
@@ -188,9 +188,9 @@ func (s *defaultDeviceService) HandleDeviceAction(
 
 		// Revisionssicheres Audit-Log schreiben
 		if student != nil {
-			_ = s.auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", staffID)
+			logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", staffID))
 		} else {
-			_ = s.auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, staffID)
+			logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, staffID))
 		}
 
 		resp.Type = "ausleihe"
@@ -245,9 +245,9 @@ func (s *defaultDeviceService) HandleDeviceAction(
 
 	// Revisionssicheres Audit-Log für die Rückgabe schreiben
 	if activeLoan.SchuelerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, g.ID, *activeLoan.SchuelerID, "", staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, g.ID, *activeLoan.SchuelerID, "", staffID))
 	} else if activeLoan.AusleiherBenutzerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, g.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, g.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 	}
 
 	resp.Type = "rueckgabe"

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/db"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +16,7 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Snapshot erstellen: Benutzerdaten vor dem Löschen sichern
 	var vorname, nachname, email, rolle string
@@ -53,7 +54,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Snapshot erstellen: Daten für das Audit-Log vor dem Löschen sichern
 	var vorname, nachname, klasse, barcodeID string

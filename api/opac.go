@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 )
 
 // OpacTitel is a DSGVO-compliant book view for the public catalog.
@@ -30,7 +31,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 
 		if q == "" && !antolinOnly {
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte("[]"))
+			httpresp.Write(w, []byte("[]"))
 			return
 		}
 

@@ -272,7 +272,7 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction for initial admin: %w", err)
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer SafeRollback(ctx, tx)
 
 	var adminID string
 	err = tx.QueryRow(ctx, insertInitialAdminSQL, email).Scan(&adminID)

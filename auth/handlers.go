@@ -3,6 +3,7 @@ package auth
 import (
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/pkg/httpresp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -79,7 +80,11 @@ var globalLoginLimiter = newLoginFailureLimiter(5, 15*time.Minute)
 // X-Forwarded-For and X-Real-IP are only trusted when the direct connection
 // comes from a loopback address (i.e. behind the Caddy reverse proxy).
 func realIP(r *http.Request) string {
-	remoteIP, _, _ := net.SplitHostPort(r.RemoteAddr)
+	remoteIP, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		// RemoteAddr ohne Port: unverändert als IP behandeln
+		remoteIP = r.RemoteAddr
+	}
 	if remoteIP != "" {
 		parsed := net.ParseIP(remoteIP)
 		if parsed != nil && parsed.IsLoopback() {
@@ -208,7 +213,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(LoginResponse{
+		httpresp.Encode(w, LoginResponse{
 			UserID:      id,
 			Rolle:       role,
 			Vorname:     vorname,
@@ -251,7 +256,7 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			if remaining > authenticator.tokenDuration/2 {
 				// Token is still fresh enough, return current session info
 				w.Header().Set("Content-Type", "application/json")
-				_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "refresh": "skipped"})
+				httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
 				return
 			}
 		}
@@ -275,6 +280,6 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 		})
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "refresh": "renewed"})
+		httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "renewed"})
 	}
 }

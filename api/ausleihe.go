@@ -2,6 +2,7 @@ package api
 
 import (
 	"bibliothek/apierrors"
+	"bibliothek/db"
 	"errors"
 
 	"log"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -28,7 +30,7 @@ func (s *Server) ExtendLoanHandler(settingsRepo repository.SystemSettingsReposit
 	return func(w http.ResponseWriter, r *http.Request) {
 		ausleiheID := r.PathValue("ausleihe_id")
 		if ausleiheID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehlende ausleihe_id"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
 			return
 		}
 
@@ -53,11 +55,11 @@ func (s *Server) ExtendLoanHandler(settingsRepo repository.SystemSettingsReposit
 		err = s.DB.Pool.QueryRow(ctx, q, ausleiheID, extensionDays).Scan(&id, &newFrist)
 		if err != nil {
 			if err == pgx.ErrNoRows {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Ausleihe nicht gefunden oder bereits zurückgegeben"))
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 				return
 			}
 			log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Interner Serverfehler"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
 
@@ -73,7 +75,7 @@ func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ausleiheID := r.PathValue("id")
 		if ausleiheID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Fehlende Ausleihe-ID"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Ausleihe-ID"))
 			return
 		}
 
@@ -87,7 +89,7 @@ func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
 			// Fallback auf einfaches Datum YYYY-MM-DD
 			newDate, err = time.Parse("2006-01-02", req.FaelligAm)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)"))
+				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)"))
 				return
 			}
 			newDate = time.Date(newDate.Year(), newDate.Month(), newDate.Day(), 23, 59, 59, 0, newDate.Location())
@@ -106,16 +108,16 @@ func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
 		err = s.DB.Pool.QueryRow(ctx, q, newDate, ausleiheID).Scan(&id, &newFrist)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("Ausleihe nicht gefunden oder bereits zurückgegeben"))
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 				return
 			}
 			log.Printf("Fehler bei manueller Frist-Überschreibung: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Interner Serverfehler"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]interface{}{
-			"success":   true,
+			"success":    true,
 			"faellig_am": newFrist,
 		})
 	}
@@ -137,7 +139,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 
 		newDate, err := time.Parse("2006-01-02", req.NeuesRueckgabeDatum)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("Ungültiges Datumsformat (erwartet YYYY-MM-DD)"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet YYYY-MM-DD)"))
 			return
 		}
 		// Set to the end of the day
@@ -147,10 +149,10 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 		tx, err := s.DB.Pool.Begin(ctx)
 		if err != nil {
 			log.Printf("Fehler beim Starten der Transaktion: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Interner Serverfehler"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		q := `
 			UPDATE ausleihen a
@@ -167,13 +169,13 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 		tag, err := tx.Exec(ctx, q, newDate, req.Klasse)
 		if err != nil {
 			log.Printf("Fehler beim globalen Verlängern: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Ausführen des Updates"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Ausführen des Updates"))
 			return
 		}
 
 		if err := tx.Commit(ctx); err != nil {
 			log.Printf("Fehler beim Commit der Transaktion: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Interner Serverfehler"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
 

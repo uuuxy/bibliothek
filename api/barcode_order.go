@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -41,7 +42,7 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		// 1. Resolve master title details
 		var titel, autor string

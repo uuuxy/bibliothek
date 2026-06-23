@@ -92,14 +92,16 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 
 	// System-Audit-Eintrag schreiben
 	if count > 0 {
-		_ = s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
+		if err := s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
 			"GDPR 14-Tage-Anonymisierung der Bearbeiter-IDs",
 			map[string]any{
 				"betroffene_ausleihen": count,
 				"schwellwert_tage":     14,
 				"ausgefuehrt_am":       time.Now().UTC().Format(time.RFC3339),
 			},
-		)
+		); err != nil {
+			log.Printf("audit: ANONYMIZE konnte nicht protokolliert werden: %v", err)
+		}
 	}
 }
 
@@ -198,7 +200,7 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	}
 
 	// Batch-Zusammenfassung ins Audit-Log schreiben
-	_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
+	if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
 		"DSGVO-Abgänger-Batch-Löschung",
 		map[string]any{
 			"geloescht":      deleted,
@@ -206,7 +208,9 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 			"cutoff_jahr":    cutoffYear,
 			"ausgefuehrt_am": time.Now().UTC().Format(time.RFC3339),
 		},
-	)
+	); err != nil {
+		log.Printf("audit: BATCH_DELETE konnte nicht protokolliert werden: %v", err)
+	}
 
 	if len(failures) > 0 {
 		log.Printf("Scheduler GDPR Delete: completed with %d failure(s): %v", len(failures), failures)
@@ -251,13 +255,15 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	count := tag.RowsAffected()
 	if count > 0 {
 		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)
-		_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
+		if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
 			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > 360T)",
 			map[string]any{
 				"betroffene_schueler": count,
 				"ausgefuehrt_am":      time.Now().UTC().Format(time.RFC3339),
 			},
-		)
+		); err != nil {
+			log.Printf("audit: ANONYMIZE konnte nicht protokolliert werden: %v", err)
+		}
 	} else {
 		log.Printf("Scheduler GDPR Anonymize: no old students found to anonymize.")
 	}

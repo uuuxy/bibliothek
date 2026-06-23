@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -48,6 +49,6 @@ func (s *Server) PrintErsatzEtikettHandler() http.HandlerFunc {
 		filename := fmt.Sprintf("Ersatz_Etikett_%s.pdf", label.BarcodeID)
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, filename))
-		_, _ = w.Write(pdfBytes)
+		httpresp.Write(w, pdfBytes)
 	}
 }

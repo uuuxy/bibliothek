@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
 )
 
@@ -30,7 +31,7 @@ func (s *Server) ImportLUSDHandler(studentRepo repository.StudentRepository) htt
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		defer func() { _ = file.Close() }()
+		defer closeutil.LogClose(file, "lusd import upload")
 
 		content, err := io.ReadAll(file)
 		if err != nil {
