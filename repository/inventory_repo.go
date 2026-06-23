@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 )
 
 // InventoryRepository handles all database interactions required during a physical
@@ -106,7 +107,7 @@ func (r *InventoryRepository) MarkExemplarScanned(ctx context.Context, copyID st
 }
 
 // MarkRemainingAsLostAndReset marks all remaining 'ausstehend' items as discarded/lost
-// due to inventory. It updates the available count for affected titles, resets the global 
+// due to inventory. It updates the available count for affected titles, resets the global
 // inventory status to NULL, and returns the total number of books declared lost.
 func (r *InventoryRepository) MarkRemainingAsLostAndReset(ctx context.Context) (int, error) {
 	query := `
@@ -139,7 +140,9 @@ func (r *InventoryRepository) MarkRemainingAsLostAndReset(ctx context.Context) (
 
 	// Update total verfuegbar count for affected titles
 	for tID := range titelIDs {
-		_, _ = r.db.Exec(ctx, "SELECT update_verfuegbar_count($1)", tID)
+		if _, err := r.db.Exec(ctx, "SELECT update_verfuegbar_count($1)", tID); err != nil {
+			log.Printf("inventur: Verfügbarkeitszähler für Titel %s konnte nicht aktualisiert werden: %v", tID, err)
+		}
 	}
 
 	// Reset all inventur_status to NULL globally

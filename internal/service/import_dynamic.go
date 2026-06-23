@@ -1,6 +1,8 @@
 package service
 
 import (
+	"bibliothek/db"
+	"bibliothek/pkg/closeutil"
 	"context"
 	"errors"
 	"fmt"
@@ -18,7 +20,7 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	// Preload existing titles for fast mapping
 	dbRows, err := tx.Query(ctx, "SELECT id, coalesce(isbn, ''), titel FROM buecher_titel")
@@ -122,7 +124,7 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			var insertedID string
 			err := br.QueryRow().Scan(&insertedID)
 			if err != nil {
-				_ = br.Close()
+				closeutil.LogClose(br, "title insert batch")
 				return 0, 0, fmt.Errorf("failed to insert title batch: %w", err)
 			}
 			t := newTitlesMap[key]
@@ -132,7 +134,9 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			titelToID[t.Titel] = insertedID
 			newTitlesCount++
 		}
-		_ = br.Close()
+		if err := br.Close(); err != nil {
+			return 0, 0, fmt.Errorf("failed to close title insert batch: %w", err)
+		}
 	}
 
 	// Second pass: Now all titles have IDs, collect all copies again
@@ -146,7 +150,7 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			return ""
 		}
 		titel := getCol("titel")
-		
+
 		// 1. String-Bereinigung & 2. Datentyp-Sicherheit
 		barcodeRaw := ""
 		if idx, ok := headerMap["barcode"]; ok && idx < len(row) {
@@ -157,14 +161,14 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 		if titel == "" {
 			continue
 		}
-		
+
 		// 3. Robustes Logging & Fehlerabfang
 		if barcode == "" {
 			id := fmt.Sprintf("Zeile %d", i+2)
 			log.Printf("Warnung: Exemplar ID %s hat keinen Barcode", id)
 			continue
 		}
-		
+
 		isbn := strings.ReplaceAll(strings.ReplaceAll(getCol("isbn"), "-", ""), " ", "")
 
 		titelID := ""
@@ -206,7 +210,9 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 				log.Printf("❌ Fehler beim Insert von Barcode '%s' (Titel-ID: %s): %v", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID, err)
 			}
 		}
-		_ = bcr.Close()
+		if err := bcr.Close(); err != nil {
+			return 0, 0, fmt.Errorf("failed to close copy insert batch: %w", err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

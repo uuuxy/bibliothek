@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 )
 
 // logoutHandler blacklists the current JWT and clears the session cookie.
@@ -18,7 +19,7 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 			if errors.Is(err, http.ErrNoCookie) {
 				// Already logged out — idempotent
 				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(`{"status":"ok"}`))
+				httpresp.Write(w, []byte(`{"status":"ok"}`))
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
@@ -45,6 +46,6 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 		})
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
+		httpresp.Write(w, []byte(`{"status":"ok"}`))
 	}
 }

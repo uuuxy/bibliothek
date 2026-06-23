@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
+	"bibliothek/db"
 	"bibliothek/plugins"
 	"bibliothek/repository"
 
@@ -33,7 +35,9 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 		}
 
 		// Status der Vormerkung auf 'abholbereit' setzen. Das Buch wird für 3 Tage für diesen Schüler reserviert.
-		_, _ = tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days' WHERE id = $2", copy.ID, vID)
+		if _, err := tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days' WHERE id = $2", copy.ID, vID); err != nil {
+			log.Printf("rückgabe: Vormerkung %s konnte nicht auf 'abholbereit' gesetzt werden: %v", vID, err)
+		}
 
 		resp.HasVormerkung = true
 		resp.VormerkungTitel = copy.Titel
@@ -57,7 +61,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer db.SafeRollback(ctx, tx)
 
 	// Aktive Ausleihe für das Buchexemplar laden
 	activeLoan, err := s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
@@ -77,7 +81,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 			if err := tx.Commit(ctx); err != nil {
 				return nil, err
 			}
-			_ = s.auditRepo.LogAusleihe(ctx, copy.ID, "", staffID, staffID)
+			logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, "", staffID, staffID))
 
 			resp.Type = "ausleihe"
 			resp.Book = copy
@@ -101,7 +105,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 		if err := tx.Commit(ctx); err != nil {
 			return nil, err
 		}
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 
 		// Event für Plugins triggern (Rückgabe registriert)
 		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
@@ -141,9 +145,9 @@ func (s *defaultLoanService) HandleSimpleReturn(
 
 	// Revisionssicheres Audit-Log schreiben
 	if activeLoan.SchuelerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID))
 	} else if activeLoan.AusleiherBenutzerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 	}
 
 	// Event für Plugins triggern (Rückgabe registriert)

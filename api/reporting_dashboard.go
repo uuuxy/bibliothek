@@ -34,7 +34,7 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 			WHERE rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP
 		`).Scan(&summary.TotalOverdue)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Gesamtanzahl"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Gesamtanzahl"))
 			return
 		}
 
@@ -53,7 +53,7 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 			LIMIT 5
 		`)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Top 5"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Top 5"))
 			return
 		}
 		defer rows.Close()

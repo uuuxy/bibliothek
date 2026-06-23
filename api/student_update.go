@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
 
@@ -96,7 +96,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 
 		// Admin audit log
 		details := fmt.Sprintf(`{"student_id":"%s"}`, id)
-		_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "DELETE_STUDENT", details, r.RemoteAddr)
+		logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "DELETE_STUDENT", details, getIP(r)))
 
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status": "success",
@@ -115,10 +115,10 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		}
 
 		var req struct {
-			Vorname       *string `json:"vorname"`
-			Nachname      *string `json:"nachname"`
-			Klasse        *string `json:"klasse"`
-			LusdID        *string `json:"lusd_id"`
+			Vorname           *string `json:"vorname"`
+			Nachname          *string `json:"nachname"`
+			Klasse            *string `json:"klasse"`
+			LusdID            *string `json:"lusd_id"`
 			BarcodeID         *string `json:"barcode_id"`
 			AbgaengerJahr     *int    `json:"abgaenger_jahr"`
 			Geburtsdatum      *string `json:"geburtsdatum"`
@@ -177,9 +177,11 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			var parsedDate *time.Time
 			if *req.Geburtsdatum != "" {
 				t, err := time.Parse("2006-01-02", *req.Geburtsdatum)
-				if err == nil {
-					parsedDate = &t
+				if err != nil {
+					apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiges Datumsformat für Geburtsdatum: %q — erwartet YYYY-MM-DD", *req.Geburtsdatum))
+					return
 				}
+				parsedDate = &t
 			}
 			query += fmt.Sprintf(", geburtsdatum = $%d", argId)
 			args = append(args, parsedDate)
@@ -196,6 +198,13 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			query += fmt.Sprintf(", block_reason = $%d", argId)
 			args = append(args, *req.BlockReason)
 			argId++
+		}
+
+		// Empty PATCH (no updatable field provided): reject as 400 instead of running a
+		// no-op UPDATE whose RowsAffected==0 would be misreported as 404 for an existing student.
+		if argId == 1 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
+			return
 		}
 
 		query += fmt.Sprintf(" WHERE id = $%d", argId)
@@ -216,6 +225,6 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		if req.AbgaengerJahr != nil {
 			response["abgaenger_jahr"] = *req.AbgaengerJahr
 		}
-		_ = json.NewEncoder(w).Encode(response)
+		httpresp.Encode(w, response)
 	}
 }

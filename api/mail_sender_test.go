@@ -1,26 +1,19 @@
 package api
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSendEmail_InvalidRecipient(t *testing.T) {
-	// Setup required env variables to pass the first validation step
-	os.Setenv("SMTP_HOST", "localhost")
-	os.Setenv("SMTP_PORT", "2525")
-	os.Setenv("SMTP_USER", "test")
-	os.Setenv("SMTP_PASSWORD", "test")
-	os.Setenv("SMTP_FROM", "test@example.com")
-	defer func() {
-		os.Unsetenv("SMTP_HOST")
-		os.Unsetenv("SMTP_PORT")
-		os.Unsetenv("SMTP_USER")
-		os.Unsetenv("SMTP_PASSWORD")
-		os.Unsetenv("SMTP_FROM")
-	}()
+	// Setup required env variables to pass the first validation step.
+	// t.Setenv restores the previous value automatically when the test ends.
+	t.Setenv("SMTP_HOST", "localhost")
+	t.Setenv("SMTP_PORT", "2525")
+	t.Setenv("SMTP_USER", "test")
+	t.Setenv("SMTP_PASSWORD", "test")
+	t.Setenv("SMTP_FROM", "test@example.com")
 
 	tests := []struct {
 		name    string

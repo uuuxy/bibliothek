@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"bibliothek/db"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // OmniboxResult beschreibt die Antwortstruktur der Omnibox nach Verarbeitung einer Eingabe (Scan oder Suche).
@@ -113,7 +116,13 @@ func (s *defaultOmniboxService) ProcessQuery(
 	} else {
 		// Fallback: Wenn kein Präfix vorhanden ist, prüfen wir zuerst, ob die Eingabe ein registrierter Buch-Barcode ist.
 		// Ist dies der Fall, verarbeiten wir es als Buch-Aktion. Andernfalls führen wir eine Volltext-Titelsuche aus.
-		if copy, _ := s.bookRepo.GetCopyByBarcode(ctx, query); copy != nil {
+		// GetCopyByBarcode liefert bei nicht gefundenem Barcode (nil, nil); ein non-nil Fehler ist daher
+		// ein echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als "kein Buch" zu verschlucken.
+		copy, lookupErr := s.bookRepo.GetCopyByBarcode(ctx, query)
+		if lookupErr != nil {
+			return resp, fmt.Errorf("datenbankfehler bei Barcode-Auflösung: %w", lookupErr)
+		}
+		if copy != nil {
 			err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
 		} else {
 			err = s.handleSearchAction(ctx, query, resp)
@@ -159,7 +168,11 @@ func (s *defaultOmniboxService) handleTeacherAction(ctx context.Context, query s
 	err := s.pool.QueryRow(ctx, "SELECT id, barcode_id, vorname, nachname, rolle FROM benutzer WHERE barcode_id = $1 AND rolle = 'LEHRER' AND aktiv = true LIMIT 1", query).
 		Scan(&teacher.ID, &teacher.BarcodeID, &teacher.Vorname, &teacher.Nachname, &teacher.Rolle)
 	if err != nil {
-		return fmt.Errorf("%w: Lehrer-Barcode %s nicht gefunden", ErrNotFound, query)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: Lehrer-Barcode %s nicht gefunden", ErrNotFound, query)
+		}
+		// Propagate real DB errors (timeout, connection loss, etc.) as-is → becomes HTTP 500
+		return fmt.Errorf("datenbankfehler beim Laden des Lehrers: %w", err)
 	}
 	resp.Type = "teacher"
 	resp.Teacher = &teacher

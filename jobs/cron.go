@@ -57,13 +57,38 @@ func (s *Scheduler) Start() {
 		log.Printf("Scheduler: Failed to register Antolin sync job: %v", err)
 	}
 
+	// Stündliche Bereinigung abgelaufener Idempotenz-Schlüssel, damit die Tabelle nicht
+	// unbegrenzt wächst. 24h Retention reicht weit über die Lebensdauer eines Scan-Retrys hinaus.
+	if _, err := s.cron.AddFunc("17 * * * *", func() {
+		s.RunIdempotencyCleanup()
+	}); err != nil {
+		log.Printf("Scheduler: Failed to register idempotency cleanup job: %v", err)
+	}
+
 	s.cron.Start()
-	log.Println("Scheduler: GDPR, backup, retention, and Antolin sync jobs successfully started.")
+	log.Println("Scheduler: GDPR, backup, retention, Antolin sync, and idempotency cleanup jobs successfully started.")
 }
 
 // Stop hält den Cron-Runner des Schedulers an.
 func (s *Scheduler) Stop() {
 	s.cron.Stop()
+}
+
+// RunIdempotencyCleanup entfernt abgelaufene Idempotenz-Schlüssel (> 24h), damit die Tabelle
+// nicht unbegrenzt wächst. Die Lebensdauer eines Scanner-Retrys liegt im Sekunden-/Minutenbereich,
+// daher ist 24h Retention großzügig.
+func (s *Scheduler) RunIdempotencyCleanup() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tag, err := s.db.Exec(ctx, "DELETE FROM idempotency_keys WHERE created_at < NOW() - INTERVAL '24 hours'")
+	if err != nil {
+		log.Printf("Scheduler Idempotency Cleanup: Fehler beim Löschen abgelaufener Schlüssel: %v", err)
+		return
+	}
+	if n := tag.RowsAffected(); n > 0 {
+		log.Printf("Scheduler Idempotency Cleanup: %d abgelaufene Idempotenz-Schlüssel entfernt.", n)
+	}
 }
 
 // ── GDPR: Ausleihen-Anonymisierung ───────────────────────────────────────────
@@ -92,14 +117,16 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 
 	// System-Audit-Eintrag schreiben
 	if count > 0 {
-		_ = s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
+		if err := s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
 			"GDPR 14-Tage-Anonymisierung der Bearbeiter-IDs",
 			map[string]any{
 				"betroffene_ausleihen": count,
 				"schwellwert_tage":     14,
 				"ausgefuehrt_am":       time.Now().UTC().Format(time.RFC3339),
 			},
-		)
+		); err != nil {
+			log.Printf("audit: ANONYMIZE konnte nicht protokolliert werden: %v", err)
+		}
 	}
 }
 
@@ -198,7 +225,7 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	}
 
 	// Batch-Zusammenfassung ins Audit-Log schreiben
-	_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
+	if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
 		"DSGVO-Abgänger-Batch-Löschung",
 		map[string]any{
 			"geloescht":      deleted,
@@ -206,7 +233,9 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 			"cutoff_jahr":    cutoffYear,
 			"ausgefuehrt_am": time.Now().UTC().Format(time.RFC3339),
 		},
-	)
+	); err != nil {
+		log.Printf("audit: BATCH_DELETE konnte nicht protokolliert werden: %v", err)
+	}
 
 	if len(failures) > 0 {
 		log.Printf("Scheduler GDPR Delete: completed with %d failure(s): %v", len(failures), failures)
@@ -251,13 +280,15 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	count := tag.RowsAffected()
 	if count > 0 {
 		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)
-		_ = s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
+		if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
 			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > 360T)",
 			map[string]any{
 				"betroffene_schueler": count,
 				"ausgefuehrt_am":      time.Now().UTC().Format(time.RFC3339),
 			},
-		)
+		); err != nil {
+			log.Printf("audit: ANONYMIZE konnte nicht protokolliert werden: %v", err)
+		}
 	} else {
 		log.Printf("Scheduler GDPR Anonymize: no old students found to anonymize.")
 	}

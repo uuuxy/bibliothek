@@ -1,13 +1,14 @@
 package api
 
 import (
+	"bibliothek/pkg/closeutil"
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"mime/multipart"
 	"net/mail"
 	"net/smtp"
-	"crypto/tls"
 	"net/textproto"
 	"os"
 	"strings"
@@ -91,10 +92,16 @@ func SendEmail(req MailRequest) error {
 		if _, err := encoder.Write(att.Data); err != nil {
 			return fmt.Errorf("failed to write attachment data for %s: %w", att.Name, err)
 		}
-		_ = encoder.Close()
+		// Close flushes the final base64 bytes; a failure here corrupts the attachment.
+		if err := encoder.Close(); err != nil {
+			return fmt.Errorf("failed to finalize attachment encoding for %s: %w", att.Name, err)
+		}
 	}
 
-	_ = writer.Close()
+	// Close writes the closing MIME boundary; a failure leaves the message malformed.
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("failed to finalize multipart message: %w", err)
+	}
 
 	addr := host + ":" + port
 	var auth smtp.Auth
@@ -114,7 +121,7 @@ func sendMailInsecure(addr string, a smtp.Auth, from string, to []string, msg []
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer closeutil.LogClose(c, "smtp client")
 	if err = c.Hello("localhost"); err != nil {
 		return err
 	}

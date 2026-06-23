@@ -120,7 +120,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 			log.Printf("Fehler beim Speichern des Buches %q (ISBN: %s): %v", titel, isbn, err)
 			continue
 		}
-		
+
 		importedCount++
 	}
 
@@ -153,14 +153,14 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	newTitlesCount := 0
 	importedCopiesCount := 0
 
-		batch := &pgx.Batch{}
+	batch := &pgx.Batch{}
 
-		qCombined := `
+	qCombined := `
 			WITH t AS (
 				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
 				VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
@@ -209,7 +209,7 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 		isbn := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(row[3]), "-", ""), " ", "")
 		jahrStr := strings.TrimSpace(row[4])
 		kategorie := strings.TrimSpace(row[5])
-		
+
 		// 1. String-Bereinigung & 2. Datentyp-Sicherheit (Bleibt konsequent String)
 		// Entfernt Whitespaces, Zeilenumbrüche und unsichtbare Steuerzeichen (BOM, Zero-Width Space, Null-Bytes)
 		barcode := strings.TrimSpace(strings.Trim(row[6], "\uFEFF\u200B\x00\r\n\t"))
@@ -218,7 +218,7 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 		if titel == "" {
 			continue
 		}
-		
+
 		// 3. Robustes Logging & Fehlerabfang
 		if barcode == "" {
 			id := fmt.Sprintf("Zeile %d", i+2)
@@ -226,7 +226,10 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 			continue
 		}
 
-		jahr, _ := strconv.Atoi(jahrStr)
+		jahr, convErr := strconv.Atoi(jahrStr)
+		if convErr != nil {
+			jahr = 0 // ungültiges/leeres Jahr → 0 (wird per NULLIF zu NULL)
+		}
 
 		// Zustand mappen (verfuegbar oder verliehen etc.)
 		istAusleihbar := true
@@ -266,4 +269,3 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 
 	return newTitlesCount, importedCopiesCount, nil
 }
-

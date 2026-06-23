@@ -106,7 +106,7 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 		if now.Month() >= time.August {
 			year++
 		}
-		
+
 		// Mehrjährige Ausleihen
 		year += additionalYears
 
@@ -156,8 +156,9 @@ func parseGrade(klasse string) int {
 	re := regexp.MustCompile(`\d+`)
 	match := re.FindString(upper)
 	if match != "" {
-		val, _ := strconv.Atoi(match)
-		return val
+		if val, err := strconv.Atoi(match); err == nil {
+			return val
+		}
 	}
 	return 0
 }
@@ -166,7 +167,7 @@ func parseGrade(klasse string) int {
 // Hierbei werden Sonderaktionen wie der Ferien-Leseclub ausgewertet, um reguläre Leihfristen zu überschreiben.
 func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
-	
+
 	additionalYears := 0
 	if copy.ZielJahrgang > 0 && borrowerKlasse != "" {
 		currentGrade := parseGrade(borrowerKlasse)

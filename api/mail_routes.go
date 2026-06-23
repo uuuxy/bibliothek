@@ -34,7 +34,7 @@ func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 		ctx := r.Context()
 		rows, err := s.DB.Pool.Query(ctx, "SELECT id, typ, betreff, text_body, updated_at FROM mail_vorlagen ORDER BY typ ASC")
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Laden der Vorlagen"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
 			return
 		}
 		defer rows.Close()
@@ -81,7 +81,7 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 		ctx := r.Context()
 		_, err := s.DB.Pool.Exec(ctx, "UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE id = $3", req.Betreff, req.TextBody, id)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Fehler beim Aktualisieren der Vorlage"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
 			return
 		}
 

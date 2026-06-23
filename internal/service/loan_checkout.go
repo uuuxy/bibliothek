@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"bibliothek/db"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -40,7 +41,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer db.SafeRollback(ctx, tx)
 
 	var activeLoansCount int
 	if chkCtx.borrowerType == "student" {
@@ -108,7 +109,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 
 		if err == nil {
 			if chkCtx.borrowerType != "student" || chkCtx.borrowerID != reservedSchuelerID {
-				return nil, fmt.Errorf("%w: Achtung: Dieses Exemplar ist noch für %s %s reserviert!", ErrConflict, resVorname, resNachname)
+				return nil, fmt.Errorf("%w: Achtung: dieses Exemplar ist noch für %s %s reserviert", ErrConflict, resVorname, resNachname)
 			}
 		} else if !errors.Is(err, pgx.ErrNoRows) {
 			return nil, err

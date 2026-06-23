@@ -9,6 +9,9 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
+	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/httpresp"
 )
 
 // ImportStudentsHandler handles CSV file uploads for importing student records.
@@ -28,7 +31,7 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		defer func() { _ = file.Close() }()
+		defer closeutil.LogClose(file, "import upload")
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -75,7 +78,7 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		upsertQuery := `
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -131,6 +134,6 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprintf(w, `{"status":"success","processed":%d}`, count)
+		httpresp.Write(w, []byte(fmt.Sprintf(`{"status":"success","processed":%d}`, count)))
 	}
 }

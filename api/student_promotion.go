@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 )
 
 // PromoteStudentsResponse liefert die Statistik des Schuljahreswechsels zurück.
@@ -30,7 +31,7 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		query := `
 			WITH parsed AS (

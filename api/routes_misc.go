@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 	"net/http"
 
@@ -34,12 +35,12 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 
 	// Demo Dashboards
 	adminDashboard := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("Access granted: Welcome to the Admin Dashboard."))
+		httpresp.Write(w, []byte("Access granted: Welcome to the Admin Dashboard."))
 	})
 	mux.Handle("GET /admin/dashboard", s.Auth.RequireRoles("admin")(adminDashboard))
 
 	teacherZone := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("Access granted: Welcome to the Teacher Zone."))
+		httpresp.Write(w, []byte("Access granted: Welcome to the Teacher Zone."))
 	})
 	mux.Handle("GET /teacher/dashboard", s.Auth.RequireRoles("admin", "lehrer")(teacherZone))
 }

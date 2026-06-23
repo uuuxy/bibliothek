@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"bibliothek/pkg/httpresp"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -40,7 +40,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 
 		if err == nil {
 			// Student found
-			_ = json.NewEncoder(w).Encode(map[string]any{
+			httpresp.Encode(w, map[string]any{
 				"type":    "student",
 				"student": student,
 			})
@@ -78,7 +78,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 			if currentStudentID != nil {
 				status = "lent"
 			}
-			_ = json.NewEncoder(w).Encode(map[string]any{
+			httpresp.Encode(w, map[string]any{
 				"type":                    "book",
 				"book":                    book,
 				"status":                  status,
@@ -93,7 +93,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 
 		// 3. Fallback: Not found
 		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(map[string]string{
+		httpresp.Encode(w, map[string]string{
 			"error": "Barcode im System nicht gefunden",
 		})
 	}

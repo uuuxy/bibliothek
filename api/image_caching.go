@@ -1,10 +1,13 @@
 package api
 
 import (
+	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/httpresp"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -28,7 +31,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "image/gif")
 		w.Header().Set("Cache-Control", "public, max-age=86400")
 		w.WriteHeader(http.StatusOK)
-		w.Write(transparent1x1)
+		httpresp.Write(w, transparent1x1)
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -55,14 +58,17 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		}
 
 		dir := "uploads/covers"
-		_ = os.MkdirAll(dir, 0755)
+		if err := os.MkdirAll(dir, 0750); err != nil {
+			serveFallback(w)
+			return
+		}
 
 		root, err := os.OpenRoot(dir)
 		if err != nil {
 			serveFallback(w)
 			return
 		}
-		defer root.Close()
+		defer closeutil.LogClose(root, "cover cache dir")
 
 		// Sanity check to avoid unnecessary download/processing steps for obvious path traversals
 		// even though root.OpenFile would safely block them later.
@@ -95,7 +101,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 			serveFallback(w)
 			return
 		}
-		defer func() { _ = resp.Body.Close() }()
+		defer closeutil.LogClose(resp.Body, "cover download")
 
 		// Decode original image
 		img, _, err := image.Decode(resp.Body)
@@ -108,9 +114,14 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		out, err := root.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 		if err == nil {
 			err = webp.Encode(out, img, &webp.Options{Lossless: false, Quality: 80})
-			_ = out.Close()
+			// A failed Close can leave a truncated cache file, so treat it like an encode error.
+			if cerr := out.Close(); cerr != nil && err == nil {
+				err = cerr
+			}
 			if err != nil {
-				_ = root.Remove(fileName) // cleanup if encoding fails
+				if rerr := root.Remove(fileName); rerr != nil { // cleanup if encoding/close fails
+					log.Printf("cover cache: cleanup of %s failed: %v", fileName, rerr)
+				}
 			}
 		}
 

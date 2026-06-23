@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"bibliothek/pkg/closeutil"
 	"context"
 	"encoding/json"
 	"log"
@@ -83,12 +84,15 @@ func (s *Scheduler) RunAntolinSync() {
 			log.Printf("Scheduler Antolin Sync: request failed for ISBN %s: %v", target.ISBN, err)
 			continue
 		}
+		defer closeutil.LogClose(resp.Body, "antolin sync response body")
 
 		var apiData antolinAPIResp
 		if resp.StatusCode == http.StatusOK {
-			_ = json.NewDecoder(resp.Body).Decode(&apiData)
+			if err := json.NewDecoder(resp.Body).Decode(&apiData); err != nil {
+				log.Printf("Antolin-Sync: Antwort für ISBN %s konnte nicht dekodiert werden: %v", target.ISBN, err)
+				continue
+			}
 		}
-		defer func() { _ = resp.Body.Close() }()
 
 		// Vorbereitung des Updates
 		var stufen *string

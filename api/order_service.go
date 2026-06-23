@@ -52,7 +52,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	labels := make([]BarcodeLabelDetail, 0)
 	orderSummaryItems := make([]OrderedItem, 0)

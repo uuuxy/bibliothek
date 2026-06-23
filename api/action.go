@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -41,19 +42,26 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 				// Cache Hit
 				if cachedStatus >= 400 {
 					var errData map[string]string
-					json.Unmarshal(cachedRespJSON, &errData)
-					apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
-					return
+					if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
+						log.Printf("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
+					} else {
+						apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
+						return
+					}
+				} else {
+					var cachedResp ActionResponse
+					if uerr := json.Unmarshal(cachedRespJSON, &cachedResp); uerr != nil {
+						log.Printf("idempotenz: beschädigte Antwort im Cache, wird neu berechnet: %v", uerr)
+					} else {
+						RespondJSON(w, cachedStatus, cachedResp)
+						return
+					}
 				}
-				var cachedResp ActionResponse
-				json.Unmarshal(cachedRespJSON, &cachedResp)
-				RespondJSON(w, cachedStatus, cachedResp)
-				return
 			}
 		}
 
 		res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
-		
+
 		status := http.StatusOK
 		if err != nil {
 			status = http.StatusInternalServerError
@@ -67,12 +75,18 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			case errors.Is(err, service.ErrConflict):
 				status = http.StatusConflict
 			}
-			
-			if req.IdempotencyKey != "" {
-				errData, _ := json.Marshal(map[string]string{"error": err.Error()})
-				_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status)
+
+			// 5xx sind typischerweise transient (DB-Timeout o. ä.) und werden NICHT gecacht,
+			// damit ein Retry neu berechnet statt den alten Fehler zurückzuliefern. Deterministische
+			// Client-Fehler (4xx) werden gecacht, um die Idempotenz-Semantik zu wahren.
+			if req.IdempotencyKey != "" && status < 500 {
+				if errData, merr := json.Marshal(map[string]string{"error": err.Error()}); merr == nil {
+					logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status))
+				} else {
+					log.Printf("idempotenz: Fehler-Antwort konnte nicht serialisiert werden: %v", merr)
+				}
 			}
-			
+
 			apierrors.SendHTTPError(w, status, err)
 			return
 		}
@@ -81,8 +95,11 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 		resp := mapOmniboxResultToActionResponse(res)
 
 		if req.IdempotencyKey != "" {
-			respData, _ := json.Marshal(resp)
-			_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status)
+			if respData, merr := json.Marshal(resp); merr == nil {
+				logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status))
+			} else {
+				log.Printf("idempotenz: Antwort konnte nicht serialisiert werden: %v", merr)
+			}
 		}
 
 		// Broadcast updates to all monitoring dashboards (SSE)
@@ -156,17 +173,28 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 						Status:  cachedStatus,
 						Success: cachedStatus >= 200 && cachedStatus < 300,
 					}
+					decodeOK := true
 					if item.Success {
 						var data ActionResponse
-						json.Unmarshal(cachedRespJSON, &data)
-						item.Data = &data
+						if uerr := json.Unmarshal(cachedRespJSON, &data); uerr != nil {
+							log.Printf("idempotenz: beschädigte Batch-Antwort im Cache, wird neu berechnet: %v", uerr)
+							decodeOK = false
+						} else {
+							item.Data = &data
+						}
 					} else {
 						var errData map[string]string
-						json.Unmarshal(cachedRespJSON, &errData)
-						item.Error = errData["error"]
+						if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
+							log.Printf("idempotenz: beschädigte Batch-Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
+							decodeOK = false
+						} else {
+							item.Error = errData["error"]
+						}
 					}
-					batchResp.Results = append(batchResp.Results, item)
-					continue
+					if decodeOK {
+						batchResp.Results = append(batchResp.Results, item)
+						continue
+					}
 				}
 			}
 
@@ -194,15 +222,22 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 			}
 			if err != nil {
 				item.Error = err.Error()
-				if req.IdempotencyKey != "" {
-					errData, _ := json.Marshal(map[string]string{"error": err.Error()})
-					_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status)
+				// Transiente 5xx nicht cachen (siehe Einzel-Handler), nur deterministische 4xx.
+				if req.IdempotencyKey != "" && status < 500 {
+					if errData, merr := json.Marshal(map[string]string{"error": err.Error()}); merr == nil {
+						logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status))
+					} else {
+						log.Printf("idempotenz: Batch-Fehler-Antwort konnte nicht serialisiert werden: %v", merr)
+					}
 				}
 			} else {
 				item.Data = mapOmniboxResultToActionResponse(res)
 				if req.IdempotencyKey != "" {
-					respData, _ := json.Marshal(item.Data)
-					_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status)
+					if respData, merr := json.Marshal(item.Data); merr == nil {
+						logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status))
+					} else {
+						log.Printf("idempotenz: Batch-Antwort konnte nicht serialisiert werden: %v", merr)
+					}
 				}
 				// Broadcast updates
 				if item.Data.Type == "ausleihe" || item.Data.Type == "rueckgabe" {

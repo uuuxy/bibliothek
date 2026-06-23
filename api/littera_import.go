@@ -11,6 +11,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
+	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
 
 	"github.com/xuri/excelize/v2"
@@ -36,7 +37,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		defer func() { _ = file.Close() }()
+		defer closeutil.LogClose(file, "littera import file")
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -59,7 +60,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 
 			if claims, ok := auth.GetClaims(r.Context()); ok {
 				details := fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount)
-				_, _ = s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, r.RemoteAddr)
+				logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, getIP(r)))
 			}
 
 			response := map[string]interface{}{
@@ -82,7 +83,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to open excel file: %w", err))
 				return
 			}
-			defer func() { _ = f.Close() }()
+			defer closeutil.LogClose(f, "littera import file")
 			sheetName := f.GetSheetName(f.GetActiveSheetIndex())
 			rows, err = f.GetRows(sheetName, excelize.Options{RawCellValue: true})
 			if err != nil {
@@ -149,7 +150,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		// Admin audit log
 		if claims, ok := auth.GetClaims(r.Context()); ok {
 			details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount)
-			_, _ = s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, r.RemoteAddr)
+			logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, getIP(r)))
 		}
 
 		var importType string
@@ -180,7 +181,7 @@ func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine Datei hochgeladen"))
 		return
 	}
-	defer func() { _ = file.Close() }()
+	defer closeutil.LogClose(file, "littera import file")
 
 	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("es werden nur CSV-Dateien akzeptiert"))

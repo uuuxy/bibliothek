@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/code39"
@@ -92,6 +93,6 @@ func (s *Server) BarcodeHandler() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "image/png")
 		w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
-		_, _ = w.Write(pngBytes)
+		httpresp.Write(w, pngBytes)
 	}
 }

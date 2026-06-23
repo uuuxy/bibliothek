@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
+	"bibliothek/pkg/closeutil"
 )
 
 // ImportStudentsLUSDHandler handles LUSD-compliant CSV uploads for admins.
@@ -29,7 +31,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		defer func() { _ = file.Close() }()
+		defer closeutil.LogClose(file, "student import upload")
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -82,7 +84,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer func() { _ = tx.Rollback(ctx) }()
+		defer db.SafeRollback(ctx, tx)
 
 		// Get next barcode sequence S-XXXXX helper
 		var lastBarcode string
@@ -116,7 +118,7 @@ func (s *Server) ImportStudentsLUSDHandler() http.HandlerFunc {
 			}
 			lineNum++
 			if err != nil {
-				_ = tx.Rollback(ctx)
+				db.SafeRollback(ctx, tx)
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("fehler in Zeile %d: %w", lineNum, err))
 				return
 			}

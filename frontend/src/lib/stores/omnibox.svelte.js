@@ -137,7 +137,7 @@ export function createOmniboxStore() {
         query: q,
         active_student_id: activeStudent?.id,
         active_teacher_id: activeTeacher?.id,
-        confirmed_checklist: currentChecklist ? currentChecklist.every(c => c.checked) : false,
+        confirmed_checklist: false,
         override_block: overrideBlock,
         idempotency_key: idempotencyKey
       });

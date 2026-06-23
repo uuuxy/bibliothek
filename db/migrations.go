@@ -78,14 +78,14 @@ func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) erro
 		}
 
 		if _, err = tx.Exec(ctx, string(content)); err != nil {
-			_ = tx.Rollback(ctx)
+			SafeRollback(ctx, tx)
 			return fmt.Errorf("migrations: failed to apply %q: %w", version, err)
 		}
 
 		if _, err = tx.Exec(ctx,
 			"INSERT INTO schema_migrations (version) VALUES ($1)", version,
 		); err != nil {
-			_ = tx.Rollback(ctx)
+			SafeRollback(ctx, tx)
 			return fmt.Errorf("migrations: failed to record version %q: %w", version, err)
 		}
 

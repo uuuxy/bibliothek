@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
@@ -178,7 +179,7 @@ func (s *Server) GetMahnwesenPDFHandler(mahnRepo *repository.MahnwesenRepository
 			return
 		}
 		if isFerien {
-			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("Mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
+			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
 			return
 		}
 
@@ -197,6 +198,6 @@ func (s *Server) GetMahnwesenPDFHandler(mahnRepo *repository.MahnwesenRepository
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition",
 			fmt.Sprintf("attachment; filename=mahnliste_%s.pdf", time.Now().Format("2006-01-02")))
-		_, _ = w.Write(pdfBytes)
+		httpresp.Write(w, pdfBytes)
 	}
 }

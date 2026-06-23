@@ -43,10 +43,10 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 			if !overrideBlock {
 				return nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
 			}
-			_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
-				"schueler_id": result.borrowerID, 
-				"reason": "Ausleihsperre manuell ignoriert (IstGesperrt)",
-			})
+			logAuditErr("override-block", s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+				"schueler_id": result.borrowerID,
+				"reason":      "Ausleihsperre manuell ignoriert (IstGesperrt)",
+			}))
 		}
 
 		if sObj.IsManuallyBlocked {
@@ -57,10 +57,10 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 			if !overrideBlock {
 				return nil, fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
 			}
-			_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
-				"schueler_id": result.borrowerID, 
-				"reason": "Ausleihsperre manuell ignoriert (Manuelle Sperre: " + reason + ")",
-			})
+			logAuditErr("override-block", s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+				"schueler_id": result.borrowerID,
+				"reason":      "Ausleihsperre manuell ignoriert (Manuelle Sperre: " + reason + ")",
+			}))
 		}
 
 		settings, err := s.querySettings(ctx)
@@ -78,7 +78,7 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 			  AND ist_handapparat = false
 			  AND geraet_id IS NULL
 		`, result.borrowerID, settings.MaxOverdueDays).Scan(&overdueCount)
-		
+
 		if errOverdue != nil {
 			return nil, errOverdue
 		}
@@ -86,10 +86,10 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 			if !overrideBlock {
 				return nil, fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdueCount)
 			}
-			_ = s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
-				"schueler_id": result.borrowerID, 
-				"reason": fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", overdueCount),
-			})
+			logAuditErr("override-block", s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+				"schueler_id": result.borrowerID,
+				"reason":      fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", overdueCount),
+			}))
 		}
 
 		result.student = sObj
@@ -103,7 +103,7 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 		result.borrowerType = "teacher"
 		result.borrowerID = *activeTeacherID
 		result.teacher = &repository.User{}
-		
+
 		err := s.pool.QueryRow(ctx, `
 			SELECT b.id, b.barcode_id, b.vorname, b.nachname, br.rolle 
 			FROM benutzer b JOIN benutzer_rollen br ON b.id = br.benutzer_id

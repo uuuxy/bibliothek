@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -55,11 +56,14 @@ func (b *TokenBlacklist) Add(token string, expiresAt time.Time) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, _ = b.pool.Exec(ctx, `
+	if _, err := b.pool.Exec(ctx, `
 		INSERT INTO revoked_tokens (token_signature, expires_at)
 		VALUES ($1, $2)
 		ON CONFLICT (token_signature) DO NOTHING
-	`, hash, expiresAt)
+	`, hash, expiresAt); err != nil {
+		// Security-relevant: a failed revocation means the token stays valid until expiry.
+		log.Printf("token-blacklist: WARN Token konnte nicht widerrufen werden: %v", err)
+	}
 }
 
 // IsBlacklisted checks if a token exists in the revoked_tokens table.
@@ -106,5 +110,7 @@ func (b *TokenBlacklist) cleanup() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, _ = b.pool.Exec(ctx, `DELETE FROM revoked_tokens WHERE expires_at < NOW()`)
+	if _, err := b.pool.Exec(ctx, `DELETE FROM revoked_tokens WHERE expires_at < NOW()`); err != nil {
+		log.Printf("token-blacklist: Aufräumen abgelaufener Tokens fehlgeschlagen: %v", err)
+	}
 }

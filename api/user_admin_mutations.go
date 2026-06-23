@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
 
@@ -82,7 +83,7 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"success"}`))
+		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
 }
 
@@ -181,7 +182,7 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 		InvalidatePermissionCache()
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"success"}`))
+		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
 }
 
@@ -225,6 +226,6 @@ func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository) http.Ha
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"success"}`))
+		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
 }

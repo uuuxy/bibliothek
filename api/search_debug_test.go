@@ -12,15 +12,21 @@ import (
 )
 
 func TestSearchMax(t *testing.T) {
+	// Integration test: requires a live Postgres instance. Skipped automatically
+	// when the database is unreachable (e.g. CI unit-test runs) or under -short.
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
 	dsn := "postgres://postgres:postgrespassword@127.0.0.1:5434/bibliothek?sslmode=disable"
-	
+
 	// Create a background context with a timeout so it doesn't hang if db isn't there
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	database, err := db.Connect(ctx, dsn)
 	if err != nil {
-		t.Fatalf("db connection failed: %v", err)
+		t.Skipf("skipping: database unavailable (%v)", err)
 	}
 	defer database.Close()
 

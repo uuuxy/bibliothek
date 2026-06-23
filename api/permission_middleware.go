@@ -88,9 +88,18 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 
 			// Update Cache
 			permCacheMu.Lock()
+			// Abgelaufene Einträge beim Miss-Write opportunistisch entfernen, damit der Cache
+			// nicht unbegrenzt wächst. Der Keyspace (Rolle × Permission) ist klein, daher ist
+			// ein vollständiger Sweep hier günstig und kommt ohne Hintergrund-Goroutine aus.
+			now := time.Now()
+			for k, v := range permCache {
+				if now.After(v.ExpiresAt) {
+					delete(permCache, k)
+				}
+			}
 			permCache[cacheKey] = cacheEntry{
 				Allowed:   err == nil && allowed,
-				ExpiresAt: time.Now().Add(60 * time.Second),
+				ExpiresAt: now.Add(60 * time.Second),
 			}
 			permCacheMu.Unlock()
 

@@ -1,0 +1,16 @@
+# golangci-lint v2 configuration (schema version 2).
+# Hinweis: In v2 ist gosimple in staticcheck integriert; ein separater Eintrag
+# entfällt. "disable-all: true" heißt jetzt "default: none".
+version: "2"
+linters:
+  default: none
+  enable:
+    - errcheck    # Findet ignorierte Fehler (wie das fehlende Fehler-Handling bei tx.Rollback)
+    - govet       # Findet Bugs und verdächtige Konstrukte (z.B. falsche Operator-Präzedenz)
+    - ineffassign # Findet Zuweisungen, die nie genutzt werden
+    - staticcheck # Der Standard-Linter (inkl. der ehemaligen gosimple-Checks, z.B. SA4010)
+    - unused      # Findet ungenutzte Variablen, Konstanten und Funktionen
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true

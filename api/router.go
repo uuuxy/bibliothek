@@ -20,6 +20,7 @@ import (
 	"bibliothek/internal/middleware"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
+	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -65,8 +66,12 @@ func (s *Server) Routes() http.Handler {
 	pdfSvc := NewPDFService()
 
 	// Initialize Inventur sub-module handlers
-	_ = os.MkdirAll("uploads", 0750)
-	_ = os.MkdirAll("uploads/fotos", 0750)
+	if err := os.MkdirAll("uploads", 0750); err != nil {
+		log.Printf("router: Upload-Verzeichnis konnte nicht angelegt werden: %v", err)
+	}
+	if err := os.MkdirAll("uploads/fotos", 0750); err != nil {
+		log.Printf("router: Foto-Verzeichnis konnte nicht angelegt werden: %v", err)
+	}
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
 
@@ -93,6 +98,9 @@ func (s *Server) Routes() http.Handler {
 	// Image Caching (Public)
 	mux.HandleFunc("GET /api/images/cover", s.ServeCoverImageHandler())
 
+	// CSRF token bootstrap (public): lets API clients obtain a token + cookie before any mutation
+	mux.HandleFunc("GET /api/csrf-token", s.CSRFTokenHandler())
+
 	// Token refresh (sliding window) — exempt from CSRF via middleware config
 	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.CookieSecure))
 
@@ -103,10 +111,10 @@ func (s *Server) Routes() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if err := s.DB.Pool.Ping(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte(`{"status":"unhealthy","error":"database unreachable"}`))
+			httpresp.Write(w, []byte(`{"status":"unhealthy","error":"database unreachable"}`))
 			return
 		}
-		_, _ = w.Write([]byte(`{"status":"healthy"}`))
+		httpresp.Write(w, []byte(`{"status":"healthy"}`))
 	})
 
 	// Delegate to domain-specific routers

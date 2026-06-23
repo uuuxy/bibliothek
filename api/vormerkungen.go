@@ -1,10 +1,10 @@
 package api
 
 import (
-	"context"
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
 
@@ -71,17 +71,7 @@ func (s *Server) DeleteVormerkungHandler(vormerkungRepo repository.VormerkungRep
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"gelöscht"}`))
+		httpresp.Write(w, []byte(`{"status":"gelöscht"}`))
 		return nil
 	})
-}
-
-// checkVormerkung returns the earliest pending reservation for a given titel_id, or nil if none.
-// Since it's used internally by Server, we pass the context and the repo.
-// Note: Some places in api/ might call s.checkVormerkung(ctx, titelID), which we now must refactor slightly,
-// but since we are doing dependency injection, it's safer to just let the repo handle it.
-func (s *Server) checkVormerkung(ctx context.Context, titelID string) (*repository.Vormerkung, error) {
-	// Temporarily create a repository instance here if called internally where repo is not injected.
-	repo := repository.NewVormerkungRepository(s.DB.Pool)
-	return repo.GetEarliestPending(ctx, titelID)
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -29,7 +30,7 @@ func DecodeAndValidate[T any](w http.ResponseWriter, r *http.Request, target *T)
 func RespondJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
+	httpresp.Encode(w, payload)
 }
 
 // RespondSuccess is a convenience function that sends a {"status": "success"} JSON response.

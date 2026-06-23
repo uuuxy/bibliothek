@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bibliothek/db"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -29,7 +30,7 @@ func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, 
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	res, err := tx.Exec(ctx, `
 		UPDATE buecher_exemplare
@@ -92,7 +93,7 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer db.SafeRollback(ctx, tx)
 
 	_, err = tx.Exec(ctx, `
 		UPDATE buecher_exemplare

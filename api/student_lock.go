@@ -1,10 +1,10 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/httpresp"
 )
 
 // LockStudentHandler provides a dedicated secure endpoint to block or unblock a student's checkouts.
@@ -25,7 +25,7 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		
+
 		query := `
 			UPDATE schueler 
 			SET is_manually_blocked = $1, 
@@ -33,7 +33,7 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 			WHERE id = $2
 			RETURNING id, vorname, nachname, klasse, is_manually_blocked
 		`
-		
+
 		var student struct {
 			ID                string `json:"id"`
 			Vorname           string `json:"vorname"`
@@ -41,9 +41,9 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 			Klasse            string `json:"klasse"`
 			IsManuallyBlocked bool   `json:"is_manually_blocked"`
 		}
-		
+
 		err := s.DB.Pool.QueryRow(ctx, query, req.IsLocked, id).Scan(
-			&student.ID, &student.Vorname, &student.Nachname, 
+			&student.ID, &student.Vorname, &student.Nachname,
 			&student.Klasse, &student.IsManuallyBlocked,
 		)
 		if err != nil {
@@ -54,7 +54,7 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(student)
+		httpresp.Encode(w, student)
 		return nil
 	})
 }

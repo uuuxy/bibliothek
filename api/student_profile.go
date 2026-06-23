@@ -4,6 +4,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -84,7 +85,10 @@ func (s *Server) GetStudentProfileHandler(
 		}
 
 		// 3.5 Check for open damages
-		hasOpenDamages, _ := studentRepo.HasOpenDamages(ctx, student.ID)
+		hasOpenDamages, err := studentRepo.HasOpenDamages(ctx, student.ID)
+		if err != nil {
+			log.Printf("student-profile: Prüfung auf offene Schadensfälle fehlgeschlagen: %v", err)
+		}
 
 		// 4. Construct response and stream as JSON
 		resp := StudentProfileResponse{

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 
 	"bibliothek/plugins"
 	"bibliothek/repository"
@@ -32,7 +33,9 @@ func (s *defaultLoanService) handleNewLoan(
 	}
 
 	if chkCtx.borrowerType == "student" {
-		_, _ = tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, chkCtx.borrowerID)
+		if _, err := tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, chkCtx.borrowerID); err != nil {
+			log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -40,10 +43,10 @@ func (s *defaultLoanService) handleNewLoan(
 	}
 
 	if chkCtx.borrowerType == "student" {
-		_ = s.auditRepo.LogAusleihe(ctx, copy.ID, chkCtx.borrowerID, "", staffID)
+		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
 		resp.Student = chkCtx.student
 	} else {
-		_ = s.auditRepo.LogAusleihe(ctx, copy.ID, "", chkCtx.borrowerID, staffID)
+		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
 		resp.Teacher = chkCtx.teacher
 	}
 
@@ -76,10 +79,10 @@ func (s *defaultLoanService) handleReturn(
 	}
 
 	if chkCtx.borrowerType == "student" {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, chkCtx.borrowerID, "", staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
 		resp.Student = chkCtx.student
 	} else {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, "", chkCtx.borrowerID, staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
 		resp.Teacher = chkCtx.teacher
 	}
 
@@ -112,7 +115,10 @@ func (s *defaultLoanService) handleForeignReturn(
 	var err error
 
 	if activeLoan.SchuelerID != nil {
-		prevStudent, _ = s.studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
+		prevStudent, err = s.studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
+		if err != nil {
+			log.Printf("fremdrückgabe: Vorbesitzer (Schüler) konnte nicht geladen werden: %v", err)
+		}
 	} else if activeLoan.AusleiherBenutzerID != nil {
 		prevTeacher = &repository.User{}
 		err = tx.QueryRow(ctx, "SELECT b.id, b.vorname, b.nachname, COALESCE(br.rolle, 'HELFER') FROM benutzer b LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id WHERE b.id = $1 LIMIT 1", *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
@@ -136,7 +142,9 @@ func (s *defaultLoanService) handleForeignReturn(
 	}
 
 	if chkCtx.borrowerType == "student" {
-		_, _ = tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, chkCtx.borrowerID)
+		if _, err := tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, chkCtx.borrowerID); err != nil {
+			log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -144,16 +152,16 @@ func (s *defaultLoanService) handleForeignReturn(
 	}
 
 	if activeLoan.SchuelerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID))
 	} else if activeLoan.AusleiherBenutzerID != nil {
-		_ = s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID)
+		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 	}
 
 	if chkCtx.borrowerType == "student" {
-		_ = s.auditRepo.LogAusleihe(ctx, copy.ID, chkCtx.borrowerID, "", staffID)
+		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
 		resp.Student = chkCtx.student
 	} else {
-		_ = s.auditRepo.LogAusleihe(ctx, copy.ID, "", chkCtx.borrowerID, staffID)
+		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
 		resp.Teacher = chkCtx.teacher
 	}
 

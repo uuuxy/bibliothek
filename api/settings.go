@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"bibliothek/apierrors"
@@ -56,8 +57,11 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 
 		// Admin audit log (IP-Adresse wird gemäß DSGVO nicht gespeichert)
 		if claims, ok := auth.GetClaims(r.Context()); ok {
-			detailsBytes, _ := json.Marshal(req)
-			_, _ = s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes))
+			if detailsBytes, merr := json.Marshal(req); merr != nil {
+				log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
+			} else {
+				logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes)))
+			}
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})

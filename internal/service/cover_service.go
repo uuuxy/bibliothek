@@ -66,7 +66,9 @@ func (s *CoverService) SyncMissingCoversAsync() {
 		if err != nil {
 			log.Printf("Cover Sync: FEHLSCHLAG bei ISBN %s - Grund: %v", mc.ISBN, err)
 			updateQuery := `UPDATE buecher_titel SET cover_status = 'FAILED' WHERE id = $1`
-			_, _ = s.db.Exec(ctx, updateQuery, mc.ID)
+			if _, err := s.db.Exec(ctx, updateQuery, mc.ID); err != nil {
+				log.Printf("Cover Sync: Status 'FAILED' für Titel %s konnte nicht gesetzt werden: %v", mc.ID, err)
+			}
 		} else if res.CoverURL != "" {
 			// Update DB
 			updateQuery := `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2`
@@ -79,7 +81,9 @@ func (s *CoverService) SyncMissingCoversAsync() {
 			// Kein Fehler, aber auch keine URL gefunden
 			log.Printf("Cover Sync: NICHT GEFUNDEN für ISBN %s - APIs lieferten kein Cover.", mc.ISBN)
 			updateQuery := `UPDATE buecher_titel SET cover_status = 'NOT_FOUND' WHERE id = $1`
-			_, _ = s.db.Exec(ctx, updateQuery, mc.ID)
+			if _, err := s.db.Exec(ctx, updateQuery, mc.ID); err != nil {
+				log.Printf("Cover Sync: Status 'NOT_FOUND' für Titel %s konnte nicht gesetzt werden: %v", mc.ID, err)
+			}
 		}
 
 		// Zwingendes Rate-Limiting
