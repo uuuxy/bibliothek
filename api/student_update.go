@@ -200,6 +200,13 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			argId++
 		}
 
+		// Empty PATCH (no updatable field provided): reject as 400 instead of running a
+		// no-op UPDATE whose RowsAffected==0 would be misreported as 404 for an existing student.
+		if argId == 1 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
+			return
+		}
+
 		query += fmt.Sprintf(" WHERE id = $%d", argId)
 		args = append(args, id)
 

@@ -57,13 +57,38 @@ func (s *Scheduler) Start() {
 		log.Printf("Scheduler: Failed to register Antolin sync job: %v", err)
 	}
 
+	// Stündliche Bereinigung abgelaufener Idempotenz-Schlüssel, damit die Tabelle nicht
+	// unbegrenzt wächst. 24h Retention reicht weit über die Lebensdauer eines Scan-Retrys hinaus.
+	if _, err := s.cron.AddFunc("17 * * * *", func() {
+		s.RunIdempotencyCleanup()
+	}); err != nil {
+		log.Printf("Scheduler: Failed to register idempotency cleanup job: %v", err)
+	}
+
 	s.cron.Start()
-	log.Println("Scheduler: GDPR, backup, retention, and Antolin sync jobs successfully started.")
+	log.Println("Scheduler: GDPR, backup, retention, Antolin sync, and idempotency cleanup jobs successfully started.")
 }
 
 // Stop hält den Cron-Runner des Schedulers an.
 func (s *Scheduler) Stop() {
 	s.cron.Stop()
+}
+
+// RunIdempotencyCleanup entfernt abgelaufene Idempotenz-Schlüssel (> 24h), damit die Tabelle
+// nicht unbegrenzt wächst. Die Lebensdauer eines Scanner-Retrys liegt im Sekunden-/Minutenbereich,
+// daher ist 24h Retention großzügig.
+func (s *Scheduler) RunIdempotencyCleanup() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tag, err := s.db.Exec(ctx, "DELETE FROM idempotency_keys WHERE created_at < NOW() - INTERVAL '24 hours'")
+	if err != nil {
+		log.Printf("Scheduler Idempotency Cleanup: Fehler beim Löschen abgelaufener Schlüssel: %v", err)
+		return
+	}
+	if n := tag.RowsAffected(); n > 0 {
+		log.Printf("Scheduler Idempotency Cleanup: %d abgelaufene Idempotenz-Schlüssel entfernt.", n)
+	}
 }
 
 // ── GDPR: Ausleihen-Anonymisierung ───────────────────────────────────────────

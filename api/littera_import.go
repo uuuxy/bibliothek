@@ -60,7 +60,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 
 			if claims, ok := auth.GetClaims(r.Context()); ok {
 				details := fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount)
-				logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, r.RemoteAddr))
+				logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, getIP(r)))
 			}
 
 			response := map[string]interface{}{
@@ -150,7 +150,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 		// Admin audit log
 		if claims, ok := auth.GetClaims(r.Context()); ok {
 			details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount)
-			logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, r.RemoteAddr))
+			logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, getIP(r)))
 		}
 
 		var importType string

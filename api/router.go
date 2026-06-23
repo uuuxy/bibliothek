@@ -98,6 +98,9 @@ func (s *Server) Routes() http.Handler {
 	// Image Caching (Public)
 	mux.HandleFunc("GET /api/images/cover", s.ServeCoverImageHandler())
 
+	// CSRF token bootstrap (public): lets API clients obtain a token + cookie before any mutation
+	mux.HandleFunc("GET /api/csrf-token", s.CSRFTokenHandler())
+
 	// Token refresh (sliding window) — exempt from CSRF via middleware config
 	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.CookieSecure))
 

@@ -58,7 +58,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		}
 
 		dir := "uploads/covers"
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			serveFallback(w)
 			return
 		}

@@ -34,6 +34,39 @@ func generateGlobalCSRFToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
+// CSRFTokenHandler is an idempotent bootstrap endpoint (GET /api/csrf-token) that
+// guarantees a csrf_token cookie is set and returns the token in the body. It lets
+// non-browser API clients obtain a token deterministically — without first triggering
+// a 403 on a mutating request that has no prior cookie. Browsers get the cookie via the
+// CSRFMiddleware on any GET, but a direct POST without a preceding GET would otherwise fail.
+func (s *Server) CSRFTokenHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := ""
+		if cookie, err := r.Cookie("csrf_token"); err == nil {
+			token = strings.TrimSpace(cookie.Value)
+		}
+		if token == "" {
+			generated, err := generateGlobalCSRFToken()
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("CSRF-Token konnte nicht erzeugt werden"))
+				return
+			}
+			token = generated
+			// #nosec G124 - Secure flag is dynamically configured
+			http.SetCookie(w, &http.Cookie{
+				Name:     "csrf_token",
+				Value:    token,
+				Path:     "/",
+				HttpOnly: false, // Must be readable by frontend JS
+				Secure:   os.Getenv("APP_ENV") != "local",
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   86400, // 24 hours
+			})
+		}
+		RespondJSON(w, http.StatusOK, map[string]string{"csrf_token": token})
+	}
+}
+
 // CSRFMiddleware returns an HTTP middleware that enforces the Double-Submit
 // Cookie CSRF pattern on all mutating API requests.
 //
@@ -56,8 +89,10 @@ func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 			strings.HasPrefix(path, "/api/auth/status") ||
 			strings.HasPrefix(path, "/uploads/")
 
-		// Always set/refresh the CSRF cookie so the frontend can read it
-		if isAPIPath && !isInventurPath {
+		// Always set/refresh the CSRF cookie so the frontend can read it.
+		// The dedicated bootstrap endpoint manages its own cookie, so skip it here to avoid
+		// emitting two conflicting Set-Cookie headers for csrf_token in one response.
+		if isAPIPath && !isInventurPath && path != "/api/csrf-token" {
 			existingToken := ""
 			if cookie, err := r.Cookie("csrf_token"); err == nil {
 				existingToken = cookie.Value

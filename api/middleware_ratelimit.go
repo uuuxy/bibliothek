@@ -21,21 +21,15 @@ var (
 	failedLoginsMutex sync.Mutex
 )
 
-// init starts a background goroutine to clean up expired failed login records from memory.
-func init() {
-	go func() {
-		for {
-			time.Sleep(15 * time.Minute)
-			now := time.Now()
-			failedLoginsMutex.Lock()
-			for ip, attempt := range failedLogins {
-				if now.Sub(attempt.firstFail) > 15*time.Minute {
-					delete(failedLogins, ip)
-				}
-			}
-			failedLoginsMutex.Unlock()
+// evictExpiredLogins entfernt abgelaufene Login-Versuche. Aufrufer muss failedLoginsMutex halten.
+// Wird beim Anlegen neuer Einträge ab einer Schwelle aufgerufen — das hält die Map ohne eine
+// dauerhaft laufende Hintergrund-Goroutine beschränkt (verhindert Goroutine-Leaks in Tests).
+func evictExpiredLogins(now time.Time) {
+	for ip, attempt := range failedLogins {
+		if now.Sub(attempt.firstFail) > 15*time.Minute {
+			delete(failedLogins, ip)
 		}
-	}()
+	}
 }
 
 // statusWriter intercepts the HTTP status code written by the wrapped handler.
@@ -74,6 +68,11 @@ func AuthRateLimitMiddleware(next http.Handler) http.Handler {
 				return
 			}
 		} else {
+			// Vor dem Einfügen ab einer Schwelle abgelaufene Einträge entfernen, um die Map
+			// ohne Dauer-Goroutine beschränkt zu halten (analog zum IP-Rate-Limiter).
+			if len(failedLogins) > 5000 {
+				evictExpiredLogins(now)
+			}
 			attempt = &failedAttempt{
 				count:     0,
 				firstFail: now,

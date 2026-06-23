@@ -76,7 +76,10 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 				status = http.StatusConflict
 			}
 
-			if req.IdempotencyKey != "" {
+			// 5xx sind typischerweise transient (DB-Timeout o. ä.) und werden NICHT gecacht,
+			// damit ein Retry neu berechnet statt den alten Fehler zurückzuliefern. Deterministische
+			// Client-Fehler (4xx) werden gecacht, um die Idempotenz-Semantik zu wahren.
+			if req.IdempotencyKey != "" && status < 500 {
 				if errData, merr := json.Marshal(map[string]string{"error": err.Error()}); merr == nil {
 					logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status))
 				} else {
@@ -219,7 +222,8 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 			}
 			if err != nil {
 				item.Error = err.Error()
-				if req.IdempotencyKey != "" {
+				// Transiente 5xx nicht cachen (siehe Einzel-Handler), nur deterministische 4xx.
+				if req.IdempotencyKey != "" && status < 500 {
 					if errData, merr := json.Marshal(map[string]string{"error": err.Error()}); merr == nil {
 						logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status))
 					} else {

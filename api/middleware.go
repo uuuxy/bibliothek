@@ -86,7 +86,7 @@ func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if path == "/health" || path == "/login/barcode" || path == "/api/auth/status" {
+		if path == "/health" || path == "/login/barcode" || path == "/api/auth/status" || path == "/api/csrf-token" {
 			next.ServeHTTP(w, r)
 			return
 		}

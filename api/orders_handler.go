@@ -24,8 +24,8 @@ type OrderItemRequest struct {
 }
 
 type SubmitOrderRequest struct {
-	SupplierID       string             `json:"supplier_id"`
-	Items            []OrderItemRequest `json:"items"`
+	SupplierID string             `json:"supplier_id"`
+	Items      []OrderItemRequest `json:"items"`
 }
 
 // SubmitOrderHandler processes a full cart order via the OrderService and dispatches PDFs via PDFService.
@@ -61,7 +61,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 
 		host := os.Getenv("SMTP_HOST")
 		pass := os.Getenv("SMTP_PASS")
-		
+
 		isPlaceholder := host == "" || host == "Ihr SMTP-Host" || strings.Contains(pass, "Passwort") || pass == "secret"
 
 		if isPlaceholder {
@@ -140,7 +140,7 @@ func (s *Server) ReceiveItemHandler() http.HandlerFunc {
 		}
 
 		auditRepo := repository.NewAuditRepository(s.DB.Pool)
-		err := service.ReceiveItem(ctx, s.DB.Pool, auditRepo, req.TitelID, req.Barcode, adminID, r.RemoteAddr)
+		err := service.ReceiveItem(ctx, s.DB.Pool, auditRepo, req.TitelID, req.Barcode, adminID, getIP(r))
 		if err != nil {
 			if err.Error() == "kein offenes (bestelltes) Exemplar für diesen Titel gefunden" {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
@@ -221,10 +221,10 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 		if claims, ok := auth.GetClaims(ctx); ok {
 			adminID = claims.UserID
 		}
-		
+
 		auditRepo := repository.NewAuditRepository(s.DB.Pool)
 
-		receivedCount, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, req.ExemplarIDs, adminID, r.RemoteAddr)
+		receivedCount, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, req.ExemplarIDs, adminID, getIP(r))
 		if err != nil {
 			if err.Error() == "keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)" {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
@@ -235,7 +235,7 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{
-			"status": "success",
+			"status":         "success",
 			"received_count": receivedCount,
 		})
 	}
