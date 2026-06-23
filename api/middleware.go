@@ -57,13 +57,23 @@ func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
 		}
 		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 		if !isHTTPS {
-			// Validate r.Host to prevent HTTP Response Splitting / Host Header Injection
-			if strings.ContainsAny(r.Host, "\r\n\t") {
-				http.Error(w, "Bad Request", http.StatusBadRequest)
-				return
+			allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+			var targetHost string
+
+			if allowedOrigin != "" {
+				// Use trusted configuration to prevent Open Redirect / Host Header Injection
+				targetHost = strings.TrimPrefix(allowedOrigin, "https://")
+				targetHost = strings.TrimPrefix(targetHost, "http://")
+			} else {
+				// Fallback to r.Host for multi-domain support if not strictly configured
+				targetHost = r.Host
+				if strings.ContainsAny(targetHost, "\r\n\t") {
+					http.Error(w, "Bad Request", http.StatusBadRequest)
+					return
+				}
 			}
 
-			target := "https://" + r.Host + r.URL.RequestURI()
+			target := "https://" + targetHost + r.URL.RequestURI()
 			http.Redirect(w, r, target, http.StatusMovedPermanently) // #nosec G710
 			return
 		}
