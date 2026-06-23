@@ -57,8 +57,14 @@ func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
 		}
 		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 		if !isHTTPS {
+			// Validate r.Host to prevent HTTP Response Splitting / Host Header Injection
+			if strings.ContainsAny(r.Host, "\r\n\t") {
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+				return
+			}
+
 			target := "https://" + r.Host + r.URL.RequestURI()
-			http.Redirect(w, r, target, http.StatusMovedPermanently)
+			http.Redirect(w, r, target, http.StatusMovedPermanently) // #nosec G710
 			return
 		}
 		next.ServeHTTP(w, r)
