@@ -85,6 +85,9 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 		}
 		result = append(result, v)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 

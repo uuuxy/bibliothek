@@ -49,6 +49,11 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 			activeLoans = append(activeLoans, barcode)
 		}
 	}
+	// Bricht die Iteration durch einen Verbindungsfehler vorzeitig ab, dürfen wir NICHT
+	// von "keine aktiven Ausleihen" ausgehen und den Titel löschen.
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("failed to read active loans for title: %w", err)
+	}
 	if len(activeLoans) > 0 {
 		return fmt.Errorf("löschen fehlgeschlagen: Folgende Exemplare sind noch verliehen: %v", activeLoans)
 	}

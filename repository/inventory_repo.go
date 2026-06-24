@@ -136,6 +136,10 @@ func (r *InventoryRepository) MarkRemainingAsLostAndReset(ctx context.Context) (
 			count++
 		}
 	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return 0, fmt.Errorf("failed to read affected titles: %w", err)
+	}
 	rows.Close()
 
 	// Update total verfuegbar count for affected titles

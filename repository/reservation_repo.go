@@ -81,6 +81,9 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 		res.ErstelltAm = t.Format("02.01.2006")
 		result = append(result, res)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
