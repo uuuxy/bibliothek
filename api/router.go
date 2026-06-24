@@ -166,9 +166,13 @@ func (s *Server) Routes() http.Handler {
 	rateLimiter := RateLimitMiddleware(50)
 	timeoutLimiter := TimeoutMiddleware(15 * time.Second)
 
-	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> RBACBlock -> ValidateUUIDParams -> Mux
+	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> ValidateUUIDParams -> Mux
+	// Hinweis: Die frühere RBACBlockMiddleware (hartkodierte Pfad-Allowlist für LEHRER/HELFER)
+	// wurde entfernt. Sie überstimmte das konfigurierbare role_permissions-System und sorgte dafür,
+	// dass z. B. ein LEHRER seine im PermissionManager gewährten Rechte (view_students etc.) nicht
+	// nutzen konnte. Autorisierung erfolgt nun einheitlich über RequirePermission/RequireRoles.
 	sentryMiddleware := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(s.RBACBlockMiddleware(ValidateUUIDParamsMiddleware(mux))))))))))))
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

@@ -44,12 +44,8 @@
           <option value="mitarbeiter">Mitarbeiter</option>
           <option value="lehrer">Lehrer</option>
           <option value="admin">Administrator</option>
-          <option value="helfer">Helfer</option>
         </select>
       </div>
-      {#if userForm.rolle === 'helfer'}
-        {@render inputField("password", isEditingUser ? "Passwort ändern" : "Passwort", "password", userForm.password, (/** @type {any} */ v) => userForm.password = v, !isEditingUser, isEditingUser ? "Unverändert lassen..." : "••••••••")}
-      {/if}      
       {#if isEditingUser}
         <div class="flex items-center gap-3 py-1.5">
           <label class="relative inline-flex items-center cursor-pointer">

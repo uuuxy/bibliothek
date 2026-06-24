@@ -91,55 +91,10 @@ func MaxBodySizeMiddleware(limit int64) func(http.Handler) http.Handler {
 	}
 }
 
-// RBACBlockMiddleware checks roles and enforces path access rules for LEHRER and HELFER roles.
-func (s *Server) RBACBlockMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-
-		// Skip non-API paths (static frontend assets, /login, etc.)
-		if !strings.HasPrefix(path, "/api/") && path != "/events" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		if path == "/health" || path == "/login/barcode" || path == "/api/auth/status" || path == "/api/csrf-token" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		cookie, err := r.Cookie("session_token")
-		if err == nil && cookie.Value != "" {
-			claims, err := s.Auth.VerifyToken(cookie.Value)
-			if err == nil {
-				role := strings.ToUpper(string(claims.Rolle))
-				switch role {
-				case "LEHRER":
-					// && binds tighter than ||; parentheses make the grouping explicit.
-					isAllowed := (r.Method == http.MethodGet &&
-						(path == "/events" ||
-							path == "/api/search" ||
-							(strings.HasPrefix(path, "/api/buecher/titel/") && strings.Contains(path, "/exemplare")))) ||
-						(r.Method == http.MethodPost && path == "/api/auth/logout")
-
-					if !isAllowed {
-						apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("zugriff verweigert für Lehrer"))
-						return
-					}
-				case "HELFER":
-					isAllowed := (r.Method == http.MethodPost && (path == "/api/action" || path == "/api/auth/logout")) ||
-						(r.Method == http.MethodGet && path == "/events")
-
-					if !isAllowed {
-						apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("zugriff verweigert für Helfer"))
-						return
-					}
-				}
-			}
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
+// Hinweis: Die frühere RBACBlockMiddleware wurde entfernt. Sie erzwang eine hartkodierte
+// Pfad-Allowlist für LEHRER/HELFER, die das konfigurierbare role_permissions-System überstimmte
+// (ein LEHRER konnte seine im PermissionManager gewährten Rechte nicht nutzen). Autorisierung
+// erfolgt jetzt einheitlich pro Route über RequirePermission bzw. RequireRoles.
 
 // CORSMiddleware restricts cross-origin requests to the configured school domain.
 // Set ALLOWED_ORIGIN env var to the school's frontend URL (e.g. https://bibliothek.schule.de).
