@@ -79,10 +79,14 @@ func SendEmail(req MailRequest) error {
 
 	// Attachments
 	for _, att := range req.Attachments {
+		// Dateinamen gegen Header-Injection absichern: CRLF und Anführungszeichen
+		// entfernen, damit kein Caller (z. B. aus Nutzer-/Importdaten abgeleiteter Name)
+		// zusätzliche MIME-Header einschleusen kann.
+		safeName := strings.NewReplacer("\r", "", "\n", "", `"`, "").Replace(att.Name)
 		attHeader := make(textproto.MIMEHeader)
 		attHeader.Set("Content-Type", att.ContentType)
 		attHeader.Set("Content-Transfer-Encoding", "base64")
-		attHeader.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, att.Name))
+		attHeader.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
 		part, err := writer.CreatePart(attHeader)
 		if err != nil {
 			return fmt.Errorf("failed to create attachment part for %s: %w", att.Name, err)
@@ -109,14 +113,14 @@ func SendEmail(req MailRequest) error {
 		auth = smtp.PlainAuth("", user, pass, host)
 	}
 
-	if err := sendMailInsecure(addr, auth, from, []string{req.To}, buf.Bytes()); err != nil {
+	if err := sendMailViaSMTP(addr, host, auth, from, []string{req.To}, buf.Bytes()); err != nil {
 		return fmt.Errorf("SMTP send failed: %w", err)
 	}
 
 	return nil
 }
 
-func sendMailInsecure(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+func sendMailViaSMTP(addr, host string, a smtp.Auth, from string, to []string, msg []byte) error {
 	c, err := smtp.Dial(addr)
 	if err != nil {
 		return err
@@ -126,7 +130,16 @@ func sendMailInsecure(addr string, a smtp.Auth, from string, to []string, msg []
 		return err
 	}
 	if ok, _ := c.Extension("STARTTLS"); ok {
-		config := &tls.Config{InsecureSkipVerify: true}
+		// Zertifikat gegen den konfigurierten Host VERIFIZIEREN. Ohne Verifikation
+		// (früher InsecureSkipVerify=true) kann ein MITM beim STARTTLS-Upgrade ein
+		// beliebiges Zertifikat vorlegen und sowohl die SMTP-AUTH-Zugangsdaten als
+		// auch den Mailinhalt (Schülernamen, Mahndaten, Elternadressen) mitlesen.
+		// Escape-Hatch nur für Legacy-Server mit Self-Signed-Zertifikat via Env.
+		config := &tls.Config{
+			ServerName:         host,
+			MinVersion:         tls.VersionTLS12,
+			InsecureSkipVerify: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true", // #nosec G402 - bewusst per Env, Default sicher
+		}
 		if err = c.StartTLS(config); err != nil {
 			return err
 		}
