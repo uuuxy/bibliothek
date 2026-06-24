@@ -249,6 +249,7 @@ CREATE TABLE buecher_titel (
     sort_order SERIAL,                                -- Integrated from books table
     medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf location, notes)
+    ziel_jahrgang INTEGER NOT NULL DEFAULT 0,          -- Target grade level for loan duration calculation (0 = 1 year default)
     antolin_stufen VARCHAR(50),
     antolin_punkte INTEGER,
     antolin_geprueft_am TIMESTAMP WITH TIME ZONE,
