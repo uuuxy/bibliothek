@@ -1,3 +1,4 @@
 ## 2026-06-23 - Added missing ARIA labels in BookBorrowersTab
 **Learning:** Found that custom filter dropdowns and text inputs in `BookBorrowersTab.svelte` were lacking `aria-label` attributes for screen readers, and decorative SVG icons needed `aria-hidden="true"`.
 **Action:** Added `aria-label` to `<select>` and `<input>` elements, and `aria-hidden="true"` to the decorative search SVG icon to improve screen reader accessibility.
+## 2026-06-24 - Added ARIA labels to MahnwesenTable Checkboxes\n**Learning:** When adding checkboxes to tables in Svelte without visible text labels (like a 'Select All' in the header, or row selectors), it's critical to add `aria-label` attributes to explain their purpose to screen readers. This ensures visually impaired users know exactly what action the checkbox performs.\n**Action:** Always check form elements, particularly icon-only buttons and bare checkboxes, for appropriate ARIA labels during development.

@@ -3,18 +3,18 @@
   import { slide } from "svelte/transition";
 
   const filters = ["Alle", "1. Erinnerung", "Mahnung", "Lehrerkollegium"];
-  
+
   // Derived state for 'Select All' checkbox
   let allSelected = $derived(
-    mahnwesenStore.filteredSchueler.length > 0 && 
+    mahnwesenStore.filteredSchueler.length > 0 &&
     mahnwesenStore.selectedIds.size === mahnwesenStore.filteredSchueler.length
   );
-  
+
   let indeterminate = $derived(
-    mahnwesenStore.selectedIds.size > 0 && 
+    mahnwesenStore.selectedIds.size > 0 &&
     mahnwesenStore.selectedIds.size < mahnwesenStore.filteredSchueler.length
   );
-  
+
   // Toggle all
   function toggleAll() {
     mahnwesenStore.toggleSelectAll(!allSelected);
@@ -39,13 +39,12 @@
         <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
           <tr>
             <th class="w-12 px-4 py-3 text-center">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
                 checked={allSelected}
                 indeterminate={indeterminate}
                 onclick={toggleAll}
-                aria-label="Alle Schüler auswählen"
               />
             </th>
             <th class="px-4 py-3">Schüler/in</th>
@@ -59,12 +58,11 @@
           {#each mahnwesenStore.filteredSchueler as schueler}
             <tr class="hover:bg-slate-50 transition-colors {mahnwesenStore.selectedIds.has(schueler.schueler_id) ? 'bg-blue-50/50' : ''}">
               <td class="w-12 px-4 py-3 text-center">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
                   checked={mahnwesenStore.selectedIds.has(schueler.schueler_id)}
                   onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
-                  aria-label="{schueler.name} auswählen"
                 />
               </td>
               <td class="px-4 py-3">
@@ -96,8 +94,8 @@
               </td>
               <td class="px-4 py-3">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold
-                  {schueler.mahnstufe === 'Mahnung' ? 'bg-rose-100 text-rose-700' : 
-                   schueler.mahnstufe === '1. Erinnerung' ? 'bg-amber-100 text-amber-800' : 
+                  {schueler.mahnstufe === 'Mahnung' ? 'bg-rose-100 text-rose-700' :
+                   schueler.mahnstufe === '1. Erinnerung' ? 'bg-amber-100 text-amber-800' :
                    schueler.mahnstufe === 'Lehrerkollegium' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-50 text-emerald-700'}">
                   {schueler.mahnstufe}
                 </span>
@@ -137,7 +135,7 @@
 
 <!-- Contextual Action Bar -->
 {#if mahnwesenStore.selectedIds.size > 0}
-  <div 
+  <div
     transition:slide={{ axis: 'y', duration: 250 }}
     class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-6 py-3 rounded-full shadow-xl shadow-slate-900/20 flex items-center gap-4"
   >
