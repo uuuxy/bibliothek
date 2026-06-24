@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"mime/multipart"
 	"net/smtp"
@@ -112,33 +113,33 @@ func createZip(srcDir string) ([]byte, error) {
 	var buf bytes.Buffer
 	zipWriter := zip.NewWriter(&buf)
 
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	root, err := os.OpenRoot(srcDir)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+
+	err = fs.WalkDir(root.FS(), ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Relativen Pfad berechnen
-		relPath, err := filepath.Rel(srcDir, path)
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
+		if d.IsDir() {
 			// Ordner-Einträge brauchen einen trailing slash
-			if relPath != "." {
-				_, err := zipWriter.Create(relPath + "/")
+			if path != "." {
+				_, err := zipWriter.Create(path + "/")
 				return err
 			}
 			return nil
 		}
 
 		// Datei zum ZIP hinzufügen
-		writer, err := zipWriter.Create(relPath)
+		writer, err := zipWriter.Create(path)
 		if err != nil {
 			return err
 		}
 
-		file, err := os.Open(path)
+		file, err := root.Open(path)
 		if err != nil {
 			return err
 		}
