@@ -92,7 +92,7 @@ CREATE TABLE benutzer (
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    passwort_hash VARCHAR(255) NOT NULL,
+    -- Passwörter wurden mit Migration 012 entfernt (Barcode-basierte Anmeldung).
     rolle benutzer_rolle NOT NULL,
     aktiv BOOLEAN NOT NULL DEFAULT true,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

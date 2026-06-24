@@ -55,8 +55,8 @@ const (
 	`
 
 	insertInitialAdminSQL = `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv)
-		VALUES ('admin', 'System', 'Administrator', $1, '$2a$10$W65tT30cE2t3e0l25QJ0rO0wE64q.O3v6fQ20K7Y0R2h25n8aUvF6', 'admin', true)
+		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
+		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
 		RETURNING id
 	`
 

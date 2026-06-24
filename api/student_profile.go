@@ -22,6 +22,11 @@ type StudentProfileResponse struct {
 	LusdID            *string                   `json:"lusd_id,omitempty"`
 	Status            string                    `json:"status,omitempty"`
 	HasOpenDamages    bool                      `json:"has_open_damages"`
+	Strasse           string                    `json:"strasse"`
+	Hausnummer        string                    `json:"hausnummer"`
+	Plz               string                    `json:"plz"`
+	Ort               string                    `json:"ort"`
+	ElternEmail       string                    `json:"eltern_email"`
 	EntlieheneBuecher []repository.BorrowedBook `json:"entliehene_buecher"`
 }
 
@@ -104,6 +109,11 @@ func (s *Server) GetStudentProfileHandler(
 			LusdID:            student.LusdID,
 			Status:            statusStr,
 			HasOpenDamages:    hasOpenDamages,
+			Strasse:           student.Strasse,
+			Hausnummer:        student.Hausnummer,
+			Plz:               student.Plz,
+			Ort:               student.Ort,
+			ElternEmail:       student.ElternEmail,
 			EntlieheneBuecher: borrowedBooks,
 		}
 

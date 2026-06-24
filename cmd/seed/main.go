@@ -33,8 +33,8 @@ func main() {
 	adminID := uuid.New()
 	adminBarcode := "ADMIN-SCANNER-TEST"
 	_, err = pool.Exec(ctx, `
-		INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, passwort_hash, rolle, aktiv) 
-		VALUES ($1, $2, 'Scanner', 'TestAdmin', 'scanner@test.local', 'dummy', 'admin', true)
+		INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, rolle, aktiv)
+		VALUES ($1, $2, 'Scanner', 'TestAdmin', 'scanner@test.local', 'admin', true)
 		ON CONFLICT (email) DO NOTHING
 	`, adminID, adminBarcode)
 	if err != nil {

@@ -118,6 +118,7 @@ func scanStudent(row Scanner) (*Student, error) {
 	var s Student
 	err := row.Scan(
 		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm, &s.IsManuallyBlocked, &s.BlockReason,
+		&s.Strasse, &s.Hausnummer, &s.Plz, &s.Ort, &s.ElternEmail,
 	)
 	if err != nil {
 		return nil, err

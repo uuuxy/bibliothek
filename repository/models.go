@@ -57,6 +57,16 @@ type Student struct {
 	IsManuallyBlocked bool `json:"is_manually_blocked"`
 	// BlockReason enthält die Begründung für die manuelle Sperre.
 	BlockReason *string `json:"block_reason,omitempty"`
+	// Strasse ist der Straßenname der Postanschrift (optionale Stammdaten).
+	Strasse string `json:"strasse"`
+	// Hausnummer ergänzt die Straße der Postanschrift.
+	Hausnummer string `json:"hausnummer"`
+	// Plz ist die Postleitzahl der Postanschrift.
+	Plz string `json:"plz"`
+	// Ort ist der Wohnort der Postanschrift.
+	Ort string `json:"ort"`
+	// ElternEmail ist die Kontakt-E-Mail der Erziehungsberechtigten.
+	ElternEmail string `json:"eltern_email"`
 }
 
 // BookTitle repräsentiert die beschreibenden Metadaten eines Buchtitels oder Werks (Tabelle `buecher_titel`).

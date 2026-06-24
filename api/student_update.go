@@ -124,6 +124,11 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			Geburtsdatum      *string `json:"geburtsdatum"`
 			IsManuallyBlocked *bool   `json:"is_manually_blocked"`
 			BlockReason       *string `json:"block_reason"`
+			Strasse           *string `json:"strasse"`
+			Hausnummer        *string `json:"hausnummer"`
+			Plz               *string `json:"plz"`
+			Ort               *string `json:"ort"`
+			ElternEmail       *string `json:"eltern_email"`
 		}
 		if !DecodeAndValidate(w, r, &req) {
 			return
@@ -197,6 +202,34 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		if req.BlockReason != nil {
 			query += fmt.Sprintf(", block_reason = $%d", argId)
 			args = append(args, *req.BlockReason)
+			argId++
+		}
+
+		// Postanschrift & Elternkontakt (Stammdaten): nur aktualisieren, wenn das Feld
+		// im Payload vorhanden ist (nil = nicht mitgeschickt → unverändert lassen).
+		if req.Strasse != nil {
+			query += fmt.Sprintf(", strasse = $%d", argId)
+			args = append(args, *req.Strasse)
+			argId++
+		}
+		if req.Hausnummer != nil {
+			query += fmt.Sprintf(", hausnummer = $%d", argId)
+			args = append(args, *req.Hausnummer)
+			argId++
+		}
+		if req.Plz != nil {
+			query += fmt.Sprintf(", plz = $%d", argId)
+			args = append(args, *req.Plz)
+			argId++
+		}
+		if req.Ort != nil {
+			query += fmt.Sprintf(", ort = $%d", argId)
+			args = append(args, *req.Ort)
+			argId++
+		}
+		if req.ElternEmail != nil {
+			query += fmt.Sprintf(", eltern_email = $%d", argId)
+			args = append(args, *req.ElternEmail)
 			argId++
 		}
 
