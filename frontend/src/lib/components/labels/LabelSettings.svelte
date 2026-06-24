@@ -5,7 +5,7 @@
 
 <div class="lg:col-span-5 space-y-6 text-left">
   {#if (appState.pendingPrintCopies?.length ?? 0) > 0}
-    <div class="p-5 rounded-2xl bg-blue-50 border border-blue-100 shadow-sm space-y-4 text-left animate-fade-in">
+    <div class="p-4 border-l-2 border-blue-300 bg-blue-50/50 space-y-4 text-left animate-fade-in">
       <div class="flex items-start gap-2.5">
         <span class="text-lg">🖨️</span>
         <div>
@@ -19,7 +19,7 @@
     </div>
   {:else}
     <!-- Step 1: Selection -->
-    <div class="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
+    <div class="py-5 space-y-4 border-b border-gray-200">
     <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">1. Titel / Klassensatz wählen</h3>
     
     <!-- Tab selector for search vs class set -->
@@ -94,7 +94,7 @@
 
   <!-- Step 2: Barcodes & Mode -->
   {#if labelStore.selectedTitle}
-    <div class="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
+    <div class="py-5 space-y-4 border-b border-gray-200">
       <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">2. Barcodes generieren</h3>
 
       <!-- Selection mode -->
@@ -142,7 +142,7 @@
   {/if}
 
   <!-- Step 3: Print Layout settings -->
-  <div class="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm space-y-4">
+  <div class="py-5 space-y-4 border-b border-gray-200">
     <h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">3. Layout-Optionen</h3>
 
     <div class="space-y-3.5">

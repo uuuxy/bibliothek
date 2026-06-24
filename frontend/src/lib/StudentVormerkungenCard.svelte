@@ -35,7 +35,7 @@
   {:else}
     <div class="space-y-4">
       {#each vormerkungen as v}
-        <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-start justify-between shadow-sm hover:shadow-md transition-shadow">
+        <div class="border-b border-gray-200 py-4 flex items-start justify-between">
           <div class="flex flex-col gap-1">
             <h4 class="font-bold text-slate-800">{v.titel_name || "Unbekannter Titel"}</h4>
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">

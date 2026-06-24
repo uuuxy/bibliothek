@@ -63,19 +63,19 @@
   {:else if stats}
     <!-- Inventory Metrics & Loss Rate Card Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 flex flex-col justify-between space-y-2 text-left hover:border-slate-300 transition-all">
+      <div class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0">
         <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Gesamtbestand</span>
         <span class="text-4xl font-extrabold text-slate-900 leading-none py-1">{stats.loss_stats.gesamt_bestand}</span>
         <span class="text-sm text-slate-500 font-medium">Physische Buchkopien im System</span>
       </div>
       
-      <div class="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 flex flex-col justify-between space-y-2 text-left hover:border-slate-300 transition-all">
+      <div class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0">
         <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Verlorene / Defekte Bücher</span>
         <span class="text-4xl font-extrabold text-rose-600 leading-none py-1">{stats.loss_stats.verlorene_exemplare}</span>
         <span class="text-sm text-slate-500 font-medium">Exemplare mit Schadensfällen</span>
       </div>
  
-      <div class="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 flex flex-col justify-between space-y-2 text-left hover:border-slate-300 transition-all">
+      <div class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0">
         <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Verlustquote</span>
         <span class="text-4xl font-extrabold text-amber-600 leading-none py-1">{stats.loss_stats.verlust_quote}%</span>
         <span class="text-sm text-slate-500 font-medium">Prozentsatz verlorener Lehrmittel</span>
@@ -93,7 +93,7 @@
       <div class="space-y-3 text-left">
         <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans border-b border-slate-100 pb-2">Beliebteste Titel (Die Renner)</h3>
         
-        <div class="overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-xs">
+        <div class="w-full">
           <table class="w-full text-left text-base border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-100 text-sm font-bold text-slate-400 font-sans uppercase tracking-wider">
@@ -147,7 +147,7 @@
       <div class="space-y-3 text-left">
         <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans border-b border-slate-100 pb-2">Ladenhüter</h3>
         
-        <div class="overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-xs">
+        <div class="w-full">
           <table class="w-full text-left text-base border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-100 text-sm font-bold text-slate-400 font-sans uppercase tracking-wider">

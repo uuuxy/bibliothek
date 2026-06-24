@@ -113,7 +113,7 @@
       Zurück zur Schülerliste
     </button>
 
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div class="p-6">
       <div>
         <h2 class="text-xl font-bold text-slate-800 mb-1">Massendruck für Klassen</h2>
       <p class="text-sm text-slate-500">Wähle eine Klasse, um alle zugehörigen Ausweise zu laden und an den Kartendrucker zu senden.</p>

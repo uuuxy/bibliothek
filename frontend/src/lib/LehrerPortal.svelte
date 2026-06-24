@@ -121,7 +121,7 @@
       {#each searchResults as book (book.id ?? book.titel_id)}
         {@const titelId = book.id ?? book.titel_id}
         {@const form = getForm(titelId)}
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="w-full">
           <div class="flex gap-4 p-4">
             <!-- Cover -->
             <div class="w-16 h-20 rounded-xl bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center">
