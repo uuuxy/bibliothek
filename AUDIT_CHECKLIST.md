@@ -22,7 +22,7 @@
 ## 🔴 Priorität 1 — Sicherheits-/datenkritisch
 
 - [ ] **File-Uploads (Foto/Cover)** — Path-Traversal im Pfadbau, Größenlimits, MIME-/Magic-Byte-Validierung, Speicherort-Rechte, Resize-DoS (große Bilder)
-- [ ] **DSGVO-Konflikt Migration 003 ↔ Adressfeature** — `003_dsgvo_lusd_datensparsamkeit.sql` wirft Exception bei Adressspalten, schema.sql/Feature legen sie an → Rechtskonflikt + Bruch bei Neuinstallation. Rechtsgrundlage für Adressspeicherung klären
+- [x] **DSGVO-Konflikt Migration 003 ↔ Adressfeature** — verbietender RAISE-Wächter entfernt; Adressspalten bleiben erhalten (fachlich essenziell), `geburtsdatum` bleibt; Fresh-Deploy läuft ohne Abbruch. Verifiziert gegen echte DB.
 - [ ] **Import-Pfade (LUSD / Littera / Excel)** — Injection über CSV/Excel-Inhalte, Teilfehler-Verhalten, Transaktionsgrenzen, Speicher bei ~20k Zeilen, Encoding/BOM
 - [ ] **PDF-Erzeugung (Mahnwesen / Abgänger / Schäden)** — Template-Injection, Ressourcen bei großen Listen, ungültige/fehlende Daten, Timeouts
 - [ ] **IMAP/SMTP** (`auth/imap.go`, `inventur/backup_email.go`) — Credential-Handling, TLS-Erzwingung, Timeouts, Header-/CRLF-Injection in Mail
