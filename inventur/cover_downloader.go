@@ -21,11 +21,15 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// coverFetchUserAgent identifiziert uns gegenüber DNB/Google/OpenLibrary als echtes
-// Programm. DNB hat eine Bot-Protection: derselbe realistische Browser-User-Agent muss
-// für den Verfügbarkeits-Check (HEAD) UND den eigentlichen Bild-Download verwendet werden,
-// sonst besteht der HEAD-Check, aber der Download wird blockiert.
-const coverFetchUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+// coverFetchUserAgent identifiziert uns gegenüber DNB/Google/OpenLibrary als ehrliches
+// Programm. WICHTIG (verifiziert 2026-06-24): Die DNB-MVB-Cover-Schnittstelle
+// (portal.dnb.de/opac/mvb/cover) liegt hinter der Bot-Schranke "Anubis". Diese triggert
+// gerade auf BROWSER-ähnliche User-Agents ("Mozilla/5.0 … Chrome …"): solche Requests
+// erhalten HTTP 200 mit einer HTML-Proof-of-Work-Challenge STATT des Bildes — das Cover
+// schlägt dann beim Dekodieren fehl. Ein schlichter, nicht-browserartiger Programm-UA wird
+// von Anubis als legitimer API-Client durchgelassen und liefert das echte Bild (bzw. ein
+// sauberes 404, wenn kein Cover existiert). Daher NICHT auf einen Chrome-UA „aufrüsten".
+const coverFetchUserAgent = "Inventur/1.0"
 
 // downloadAndSaveCoverLocally lädt ein Bild von einer externen URL herunter,
 // verkleinert es falls nötig, speichert es auf dem Server im Verzeichnis "uploads/"
@@ -69,6 +73,14 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	defer closeutil.LogClose(resp.Body, "cover download")
 
 	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	// Nicht-Bild-Antworten sofort verwerfen. Bot-Schranken (z. B. DNB/Anubis) liefern bei
+	// einem falschen User-Agent HTTP 200 mit einer HTML-Challenge — das ist kein Cover.
+	// So fällt der Aufrufer sauber auf die nächste Quelle zurück, statt HTML zu dekodieren.
+	if ct := resp.Header.Get("Content-Type"); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
+		log.Printf("Cover-Download: Nicht-Bild-Antwort (%s) für %s — übersprungen", ct, coverURL)
 		return ""
 	}
 

@@ -2,6 +2,22 @@
 
 ---
 
+## 2026-06-24 — Cover-Download repariert (DNB-Bot-Schranke)
+
+**Symptom:** Cover wurden flächendeckend nicht mehr gezogen/gespeichert (nur vereinzelt). Selbst der manuelle ISBN-Refresh in „Titel bearbeiten" lieferte korrekte Metadaten, aber kein Cover.
+
+**Root-Cause 1 — falscher User-Agent triggert DNB-Bot-Schranke (Anubis):**
+Die DNB-MVB-Cover-Schnittstelle (`portal.dnb.de/opac/mvb/cover`) liegt hinter der Bot-Schranke „Anubis". Diese triggert ausgerechnet auf **browser-ähnliche** User-Agents (`Mozilla/5.0 … Chrome …`) und antwortet dann mit **HTTP 200 + HTML-Challenge** statt des Bildes. Der Code war zuvor auf genau so einen Chrome-UA „aufgerüstet" worden. Verifiziert: mit dem schlichten Programm-UA `Inventur/1.0` liefert DNB das echte JPEG (bzw. ein sauberes 404). Fix: `coverFetchUserAgent` zurück auf `Inventur/1.0`.
+
+**Root-Cause 2 — HEAD-Heuristik blockierte Fallbacks + Download-Fehler löschte URL:**
+`beendeSuche` prüfte die Cover-Verfügbarkeit per HEAD. Da Anubis HTTP 200 liefert, galt das Cover fälschlich als „vorhanden" → Google/OpenLibrary-Fallbacks wurden übersprungen → der echte Download bekam HTML → `image.Decode` scheiterte → `CoverURL` wurde unbedingt mit `""` überschrieben (valide URL ging verloren).
+
+**Fix:** `beendeSuche` → neue `aufloeseCover`: keine HEAD-Heuristik mehr. Stattdessen werden Cover-Quellen in Prioritätsreihenfolge (DNB primär → Google → OpenLibrary mit `?default=false`) **real heruntergeladen**; die erste dekodierbare Quelle gewinnt. Zusätzlich Content-Type-Guard im Downloader (verwirft `text/html`/`json`-Antworten sofort). Betrifft sowohl den manuellen ISBN-Refresh als auch den Bulk-Hintergrund-Sync (beide laufen über `SucheNachISBN`).
+
+Dateien: `inventur/cover_downloader.go`, `inventur/metadaten_client.go`
+
+---
+
 ## 2026-06-24 — Tiefen-Audit, UI-Redesign & Docker-Härtung
 
 Diese Session umfasste einen vollständigen statischen Code-Audit aller 46 Dateien, ein globales UI-Redesign (153 Svelte-Komponenten) sowie eine Produktions-Härtung der Deployment-Infrastruktur.

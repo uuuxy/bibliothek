@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -15,7 +14,6 @@ import (
 // über externe APIs (DNB, Google Books, OpenLibrary etc.).
 type MetadatenClient struct {
 	httpClient *http.Client
-	coverCache sync.Map
 }
 
 // MetadatenErgebnis bündelt die gefundenen Metadaten eines Buches in einer
@@ -78,63 +76,55 @@ func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn strin
 	return nil, fmt.Errorf("keine metadaten für ISBN gefunden")
 }
 
-// beendeSuche füllt das MetadatenErgebnis mit fehlenden Informationen auf.
-// Primär geht es darum, bei jedem gefundenen Buch die automatische Kategorisierung
-// (Fach + Klasse) durchzuführen sowie CoverURLs als Fallback vorzugeben.
+// beendeSuche füllt das MetadatenErgebnis mit fehlenden Informationen auf:
+// automatische Kategorisierung (Fach + Klasse) sowie das lokal gespeicherte Cover.
 func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) *MetadatenErgebnis {
-	if ergebnis.CoverURL == "" {
-		isbn13 := konvertiereISBN10zu13(isbn)
-		dnbCoverURL := fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(isbn13))
-
-		// Prüfen, ob das Cover-Ergebnis für diese ISBN bereits gecacht ist
-		cachedErgebnis, found := client.coverCache.Load(isbn13)
-		if found {
-			if cachedErgebnis.(bool) {
-				ergebnis.CoverURL = dnbCoverURL
-			}
-		} else {
-			// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
-			anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodHead, dnbCoverURL, nil)
-			if fehler == nil {
-				anfrage.Header.Set("User-Agent", coverFetchUserAgent)
-				antwort, fehler := client.httpClient.Do(anfrage)
-				if fehler == nil {
-					defer func() { _ = antwort.Body.Close() }()
-
-					hasCover := antwort.StatusCode == http.StatusOK
-					client.coverCache.Store(isbn13, hasCover)
-
-					if hasCover {
-						ergebnis.CoverURL = dnbCoverURL
-					}
-				}
-			}
-		}
-
-		if ergebnis.CoverURL == "" {
-			// Try Google Books just for the cover
-			if gbResult, err := client.sucheGoogleBooks(kontext, isbn); err == nil && gbResult != nil && gbResult.CoverURL != "" {
-				ergebnis.CoverURL = gbResult.CoverURL
-			}
-		}
-
-		if ergebnis.CoverURL == "" {
-			// Fallback: OpenLibrary gibt immerhin ein leeres Platzhalter-Bild statt 404 zurück
-			ergebnis.CoverURL = fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg", isbn13)
-		}
-	}
-
-	// Falls wir jetzt (oder durch den API-Call) ein Cover gefunden haben,
-	// laden wir dieses direkt auf den Server herunter, um es stabil für unsere
-	// Nutzer lokal und ohne Tracking/Rate-Limit der APIs auszuliefern.
-	if ergebnis.CoverURL != "" && strings.HasPrefix(ergebnis.CoverURL, "http") {
-		ergebnis.CoverURL = downloadAndSaveCoverLocally(kontext, client.httpClient, ergebnis.CoverURL, isbn)
-	}
+	ergebnis.CoverURL = client.aufloeseCover(kontext, ergebnis, isbn)
 
 	fach, klassenStufe := automatischeKategorisierung(ergebnis.Titel, ergebnis.Untertitel)
 	ergebnis.Fach = fach
 	ergebnis.KlassenStufe = klassenStufe
 	return ergebnis
+}
+
+// aufloeseCover probiert mehrere Cover-Quellen der Reihe nach durch und gibt den lokalen
+// /uploads/-Pfad der ERSTEN Quelle zurück, die tatsächlich ein dekodierbares Bild liefert.
+// Schlägt jede Quelle fehl, wird "" zurückgegeben (= „kein Cover", der Titel bleibt erhalten).
+//
+// Wir verlassen uns bewusst NICHT mehr auf einen HEAD-Verfügbarkeits-Check: Eine Bot-Schranke
+// kann mit HTTP 200 + HTML antworten (siehe coverFetchUserAgent), wodurch ein HEAD-200
+// fälschlich „Cover vorhanden" bedeutete, die Fallback-Quellen blockierte und am Ende eine
+// HTML-Seite statt eines Bildes lieferte. Stattdessen laden wir jeden Kandidaten echt herunter;
+// downloadAndSaveCoverLocally akzeptiert nur dekodierbare Bilder ausreichender Größe. Ein
+// fehlgeschlagener Download verwirft hier NICHT mehr ein bereits gefundenes Cover.
+func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) string {
+	isbn13 := konvertiereISBN10zu13(isbn)
+
+	// Kandidaten in Prioritätsreihenfolge: DNB primär (beste Quelle für deutsche Schulbücher).
+	kandidaten := make([]string, 0, 4)
+
+	// 1. Bereits aus der Metadatensuche (Google/OpenLibrary) bekanntes Cover.
+	if ergebnis.CoverURL != "" && strings.HasPrefix(ergebnis.CoverURL, "http") {
+		kandidaten = append(kandidaten, ergebnis.CoverURL)
+	}
+
+	// 2. DNB MVB Cover (primär).
+	kandidaten = append(kandidaten, fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(isbn13)))
+
+	// 3. Google Books — separat abfragen, falls die Metadaten von DNB kamen (DNB liefert keine Cover-URL im Datensatz).
+	if gb, err := client.sucheGoogleBooks(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
+		kandidaten = append(kandidaten, gb.CoverURL)
+	}
+
+	// 4. OpenLibrary — default=false erzwingt ein echtes 404 statt eines 1×1-Platzhalters.
+	kandidaten = append(kandidaten, fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", isbn13))
+
+	for _, kandidat := range kandidaten {
+		if lokal := downloadAndSaveCoverLocally(kontext, client.httpClient, kandidat, isbn); lokal != "" {
+			return lokal
+		}
+	}
+	return ""
 }
 
 // holeInhalt ist eine HTTP-GET Wrapper-Funktion, die die Antwort einer API als Bytearray zurückliefert.
