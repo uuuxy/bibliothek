@@ -1,3 +1,9 @@
+//go:build odbc
+
+// Dieses Einmal-Migrationstool liest aus Litteras ODBC-/Access-Quelle und benötigt
+// daher CGO + unixODBC-Header (sql.h). Es ist hinter dem Build-Tag "odbc" versteckt,
+// damit der Standard-Build (go build ./..., CI, Linter) ohne unixODBC funktioniert.
+// Bauen bei Bedarf mit:  go build -tags odbc ./cmd/littera_migration
 package main
 
 import (

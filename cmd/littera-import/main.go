@@ -49,7 +49,7 @@ func parseYear(y string) int {
 	for i := 0; i <= len(y)-4; i++ {
 		if y[i] >= '0' && y[i] <= '9' && y[i+1] >= '0' && y[i+1] <= '9' && y[i+2] >= '0' && y[i+2] <= '9' && y[i+3] >= '0' && y[i+3] <= '9' {
 			var year int
-			fmt.Sscanf(y[i:i+4], "%d", &year)
+			_, _ = fmt.Sscanf(y[i:i+4], "%d", &year)
 			return year
 		}
 	}
@@ -131,7 +131,7 @@ func main() {
 		slog.Error("Konnte XML-Datei nicht öffnen", "error", err)
 		os.Exit(1)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel

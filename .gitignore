@@ -36,3 +36,4 @@ tmp_build
 frontend_build.log
 build.log
 
+tmp/

@@ -54,20 +54,20 @@
 
 ## 🔵 Priorität 4 — Frontend (153 Komponenten)
 
-- [ ] **Routen-/View-Guards** — nicht nur Menü: lassen sich Views direkt aufrufen (z. B. via State-Manipulation)? Backend schützt → aber UX/Leak prüfen
-- [ ] **XSS** — alle `{@html}`-Stellen, ungesäuberte Server-/Nutzerdaten
-- [ ] **Offline-Queue (PWA)** — Konsistenz, Doppel-Scans, Sync-Konflikte, Service-Worker-Cache-Invalidierung
-- [ ] **API-Fehlerbehandlung** — flächendeckend Toasts/Feedback (kein stilles Scheitern wie früher bei Adresse/ISBN)
-- [ ] **Svelte-5-Stores** — Race/Stale-State in Runes, SSE-Reconnect-Logik
+- [x] **Routen-/View-Guards** — Views werden client-seitig per `activeTab` umgeschaltet, aber JEDE Datenabfrage ist backend-seitig permission-gated (`RequirePermission`). Eine erzwungene View zeigt ohne Recht nur 403 — kein Datenleck. Backend ist die Autorität (korrekt).
+- [x] **XSS** — KEIN `{@html}`, kein `innerHTML`/`eval` im gesamten Frontend; Svelte escaped alle Interpolationen automatisch. SVG-Icons sind hartkodierte Konstanten. Kein XSS-Sink.
+- [x] **Offline-Queue (PWA)** — robust: Items nur bei Erfolg/permanentem 4xx (außer 429) entfernt, bei 5xx/Netzfehler erhalten + späterer Retry; Idempotenz-Key (`item.id`) wird mitgesendet → Backend-Dedup beim Replay (Doppelausführung verhindert, datenseitig zusätzlich durch Migration 033 abgesichert); `beforeunload`-Warnung. Minor-Nit: Failsafe entfernt Item bei fehlendem Batch-Index — Backend liefert aber stets alle Indizes.
+- [x] **API-Fehlerbehandlung** — zentral via `apiFetch`/`handleSmartResponse` (Toasts bei Fehler); frühere stille Fehler (Adresse/ISBN) bereits behoben.
+- [x] **Svelte-5-Stores** — Runes laufen single-threaded (JS-Eventloop) → keine klassischen Data-Races; SSE-Reconnect mit Guards (`isLoggedIn`, Timeout). Unauffällig.
 
 ---
 
 ## ⚪ Priorität 5 — Qualität / Infrastruktur
 
-- [ ] **Testabdeckung** — viele Pakete ohne Tests (`db`, `repository`, `auth`); kritische Pfade (Loan, RBAC, Import) absichern
-- [ ] **golangci-lint vollständig** — über gesamtes Repo, nicht nur Teilpakete
-- [ ] **ODBC-Abhängigkeit** (`alexbrainman/odbc`, Buildfehler `sql.h`) — wird sie überhaupt gebraucht? Sonst entfernen
-- [ ] **Dockerfile/Compose** — Secrets-Handling, Healthchecks, Restart-Policy, `schema.sql`-Init vs. Migrationen bei Volume-Reuse
+- [~] **Testabdeckung** — weiterhin Lücken (db/repository/auth ohne Tests); diese Session ergänzt: `pkg/csvutil`, `pkg/imageutil` (Bomb-Schutz). Kritische Pfade (Loan, RBAC, Import) bräuchten noch Tests — offen als Daueraufgabe.
+- [x] **golangci-lint vollständig** — **0 issues** über das ganze Repo (vorher 11). Behoben: 2 eigene ST1005 (Fehlertexte klein), 3× `os.Setenv` (Test), `fmt.Sscanf`/`file.Close`/`io.Copy`/`resp.Body.Close` (Tools), 1 ineffassign; stray `tmp/export_csv.go` entfernt + `tmp/` ge-gitignored.
+- [x] **ODBC-Abhängigkeit** — nur vom Einmal-Tool `cmd/littera_migration` genutzt (Littera-ODBC-Quelle), nicht vom Server. Hinter Build-Tag `//go:build odbc` versteckt → `go build ./...`/CI/Lint laufen jetzt ohne unixODBC; Tool bei Bedarf `-tags odbc`.
+- [~] **Dockerfile/Compose** — Build kopiert migrations/+schema.sql, CGO für WebP, Postgres-Healthcheck. Offene OPERATIVE Härtung (bewusst nicht auto-geändert, deployment-abhängig): Container läuft als root (kein `USER`); compose-Default-Fallback-Secrets müssen in Prod via echte Env-Vars überschrieben werden; kein Backend-Healthcheck.
 
 ---
 

@@ -11,7 +11,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 	s := &Server{CookieSecure: true}
 
 	t.Run("no ALLOWED_ORIGIN fallback to valid r.Host", func(t *testing.T) {
-		os.Setenv("ALLOWED_ORIGIN", "")
+		_ = os.Setenv("ALLOWED_ORIGIN", "")
 		req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", nil)
 		rr := httptest.NewRecorder()
 
@@ -31,7 +31,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 	})
 
 	t.Run("no ALLOWED_ORIGIN fallback to invalid r.Host rejects", func(t *testing.T) {
-		os.Setenv("ALLOWED_ORIGIN", "")
+		_ = os.Setenv("ALLOWED_ORIGIN", "")
 		req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", nil)
 		req.Host = "example.com\r\n"
 		rr := httptest.NewRecorder()
@@ -47,7 +47,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 	})
 
 	t.Run("with ALLOWED_ORIGIN overrides r.Host", func(t *testing.T) {
-		os.Setenv("ALLOWED_ORIGIN", "https://bibliothek.schule.de")
+		_ = os.Setenv("ALLOWED_ORIGIN", "https://bibliothek.schule.de")
 		req := httptest.NewRequest(http.MethodGet, "http://attacker.com/foo", nil)
 		rr := httptest.NewRecorder()
 
@@ -67,7 +67,7 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 	})
 
 	t.Run("https skips redirect", func(t *testing.T) {
-		os.Setenv("ALLOWED_ORIGIN", "https://bibliothek.schule.de")
+		_ = os.Setenv("ALLOWED_ORIGIN", "https://bibliothek.schule.de")
 		req := httptest.NewRequest(http.MethodGet, "https://bibliothek.schule.de/foo", nil)
 		rr := httptest.NewRecorder()
 

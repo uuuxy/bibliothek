@@ -217,7 +217,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 				WHERE UPPER(role) = UPPER($1) AND allowed = true
 			`, roleStr)
 			if permErr != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Berechtigungen konnten nicht geladen werden"))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
 				return
 			}
 			defer permRows.Close()

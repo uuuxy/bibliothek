@@ -95,7 +95,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 			// und ist eine stabile, cachebare Negativ-Entscheidung.
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				log.Printf("Permission check DB error for role '%s' permission '%s': %v", claims.Rolle, permission, err)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Berechtigung konnte nicht geprüft werden"))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigung konnte nicht geprüft werden"))
 				return
 			}
 

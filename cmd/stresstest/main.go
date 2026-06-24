@@ -168,7 +168,7 @@ func main() {
 			resp, err := client.Do(req)
 			statusCode := 0
 			if err != nil {
-				statusCode = 0 // network error
+				// network error → statusCode bleibt 0
 
 				// Log the first error for debugging
 				resultsMu.Lock()
@@ -180,8 +180,8 @@ func main() {
 				return
 			} else {
 				statusCode = resp.StatusCode
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 
 				resultsMu.Lock()
 				statusCounts[statusCode]++
