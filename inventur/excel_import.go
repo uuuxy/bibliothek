@@ -118,9 +118,13 @@ func (handler *APIHandler) processImportRows(ctx context.Context, dataRows [][]s
 
 	for _, row := range dataRows {
 		wg.Add(1)
+		// Semaphore VOR dem Start der Goroutine belegen, damit die Schleife blockiert und
+		// nicht für jede Zeile sofort eine Goroutine erzeugt. Bei großen Importen (z. B. 20k
+		// Zeilen) entstünden sonst zehntausende gleichzeitig lebende Goroutinen, die alle nur
+		// auf einen Semaphor-Slot warten — unnötiger Speicher- und Scheduler-Druck.
+		sem <- struct{}{}
 		go func(row []string) {
 			defer wg.Done()
-			sem <- struct{}{}
 			defer func() { <-sem }()
 
 			book, err := verarbeiteImportZeile(ImportConfig{

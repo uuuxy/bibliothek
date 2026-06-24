@@ -11,6 +11,8 @@ import (
 	"bibliothek/auth"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -80,13 +82,27 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 			// Check role permissions in DB (Cache miss)
 			var allowed bool
 			query := `
-				SELECT allowed 
-				FROM role_permissions 
+				SELECT allowed
+				FROM role_permissions
 				WHERE UPPER(role) = UPPER($1) AND permission = $2
 			`
 			err = s.DB.Pool.QueryRow(r.Context(), query, string(claims.Rolle), permission).Scan(&allowed)
 
-			// Update Cache
+			// Transiente DB-Fehler (Timeout, Pool erschöpft, Verbindungsabriss) dürfen NICHT
+			// als Entscheidung gecacht werden: sonst würde ein kurzer DB-Aussetzer für berechtigte
+			// Nutzer 60 s lang ein 403 zementieren. Ein echter Fehler ist zudem ein Server- (500),
+			// kein Berechtigungsproblem (403). pgx.ErrNoRows hingegen bedeutet "Recht nicht gewährt"
+			// und ist eine stabile, cachebare Negativ-Entscheidung.
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				log.Printf("Permission check DB error for role '%s' permission '%s': %v", claims.Rolle, permission, err)
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Berechtigung konnte nicht geprüft werden"))
+				return
+			}
+
+			notFound := errors.Is(err, pgx.ErrNoRows)
+			finalAllowed := err == nil && allowed
+
+			// Update Cache (nur stabile Entscheidungen: gewährt, oder explizit nicht gewährt)
 			permCacheMu.Lock()
 			// Abgelaufene Einträge beim Miss-Write opportunistisch entfernen, damit der Cache
 			// nicht unbegrenzt wächst. Der Keyspace (Rolle × Permission) ist klein, daher ist
@@ -98,13 +114,13 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 				}
 			}
 			permCache[cacheKey] = cacheEntry{
-				Allowed:   err == nil && allowed,
+				Allowed:   finalAllowed,
 				ExpiresAt: now.Add(60 * time.Second),
 			}
 			permCacheMu.Unlock()
 
-			if err != nil || !allowed {
-				log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v, err: %v", claims.Rolle, permission, allowed, err)
+			if notFound || !finalAllowed {
+				log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v", claims.Rolle, permission, finalAllowed)
 				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
 				return
 			}
