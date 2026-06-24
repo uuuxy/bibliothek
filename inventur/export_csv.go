@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"bibliothek/pkg/csvutil"
 )
 
 // handleExportCSV handles the GET /api/admin/books/export route
@@ -28,7 +30,9 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 	writer := csv.NewWriter(w)
 	writer.Comma = ';' // German Excel standard
 
-	err = writer.WriteAll(rows)
+	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
+	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen.
+	err = writer.WriteAll(csvutil.SanitizeRows(rows))
 	if err != nil {
 		// Cannot write error response since headers are already sent
 		return

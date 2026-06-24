@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"bibliothek/pkg/csvutil"
+
 	"github.com/jung-kurt/gofpdf"
 )
 
@@ -177,7 +179,8 @@ func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
 	}
 
 	for _, l := range labels {
-		if err := writer.Write([]string{l.ISBN, l.Titel, l.Autor, l.BarcodeID}); err != nil {
+		// Schutz vor Formel-Injection (CWE-1236): Titel/Autor stammen aus Katalog-Importen.
+		if err := writer.Write(csvutil.SanitizeRow([]string{l.ISBN, l.Titel, l.Autor, l.BarcodeID})); err != nil {
 			return nil, err
 		}
 	}
