@@ -32,8 +32,8 @@
 
 ## 🟠 Priorität 2 — Korrektheit / Geschäftslogik
 
-- [ ] **Loan-Service komplett** (`loan_checkout*.go`, `loan_return.go`, `loan_rules.go`) — Fristenberechnung (`ziel_jahrgang`), Fremdrückgabe, Vormerkungs-Übergabe, Sperren/Reaktivierung, Race bei gleichzeitigem Scan
-- [ ] **Device-Service** (`device_service.go`) — Geräte-Ausleihe, Checklisten-Pflicht, Zustandsübergänge
+- [x] **Loan-Service komplett** — sauber & hochwertig: Fristen inkl. `ziel_jahrgang`-Mehrjahres-LMF mit sicheren Defaults; `FOR UPDATE` auf Schüler (Limit-Race) UND auf älteste wartende Vormerkung (keine Doppelzuteilung); Neuausleihe/Rückgabe/Fremdrückgabe atomar in einer Tx, Audit nach Commit; `staffRole`-Vergleich nutzt korrekt Uppercase-JWT-Rolle. Keine Korrektheitsfehler.
+- [x] **Device-Service** — sauber: Verfügbarkeits-/Sperr-/Aussonderungs-Checks, `FOR UPDATE`-Lock auf aktive Geräte-Ausleihe, Checklisten-Gate für Zubehör, transaktionaler Commit. Gleiche Qualität wie Loan-Service.
 - [ ] **Order-/Reorder-Service** — Mengen-/Schwellenlogik (`meldebestand`), Doppelbestellungen
 - [ ] **Idempotency-Keys** (`028`, Migration) — tatsächliche Wirksamkeit, Race, TTL/Cleanup
 - [ ] **Mahnwesen-Bulk** — asymmetrisches Begin=1/Commit=2/Rollback=3 verifizieren (mehrere Commit-Pfade)
