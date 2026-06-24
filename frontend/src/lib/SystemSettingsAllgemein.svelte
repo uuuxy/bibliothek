@@ -51,13 +51,13 @@
 </script>
 
 <!-- Flach & edge-to-edge: logische Blöcke per Abstand + feiner Trennlinie statt Kacheln -->
-<div class="space-y-10 max-w-3xl">
+<div class="space-y-12 max-w-5xl">
 
   {#snippet sectionHeader(title, description)}
     <div>
-      <h3 class="text-base font-bold text-slate-900">{title}</h3>
+      <h3 class="text-lg font-bold text-slate-900">{title}</h3>
       {#if description}
-        <p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">{description}</p>
+        <p class="text-sm text-gray-600 mt-1.5 leading-relaxed max-w-2xl">{description}</p>
       {/if}
     </div>
   {/snippet}
@@ -93,7 +93,7 @@
   <!-- Rückgabefristen & Ausleih-Limits -->
   <section class="border-b border-slate-200 pb-8">
     {@render sectionHeader('Rückgabefristen & Ausleih-Limits', '')}
-    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+    <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-10">
       <SettingField bind:value={fristBuchTage} label="Tage / Buch" min={1} max={365} />
       <SettingField bind:value={fristMedienTage} label="Tage / Medien" min={1} max={365} />
       <SettingField bind:value={lmfStichtag} label="LMF (MM-TT)" type="text" placeholder="07-31" pattern={'\\d{2}-\\d{2}'} maxlength={5} />
@@ -104,7 +104,7 @@
   <!-- Sperr-Automatik -->
   <section class="border-b border-slate-200 pb-8">
     {@render sectionHeader('Sperr-Automatik (Mahnwesen)', 'Automatische Ausleihsperre am Kiosk für Schüler mit überfälligen Medien. Ausgenommen sind Geräte/Dauerleihen (z.B. Laptops).')}
-    <div class="mt-6 grid grid-cols-2 gap-x-8 gap-y-6 max-w-md">
+    <div class="mt-8 grid grid-cols-2 gap-x-12 gap-y-10 max-w-xl">
       <SettingField bind:value={maxOverdueDays} label="Tage bis Sperre" min={0} max={365} />
       <SettingField bind:value={maxOverdueItems} label="Ab x Medien sperren" min={1} max={50} />
     </div>

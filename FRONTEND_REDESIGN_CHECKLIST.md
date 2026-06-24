@@ -58,6 +58,13 @@ Modals: `DamageReportModal`, `KioskChecklistModal`, `KioskDamageModal`, `KioskRe
 - `OpacSearch` — öffentliche Cover-Galerie (Trefferraster bleibt; Galerie-Flachlegung ist separate UX-Entscheidung).
 - Galerie-Kacheln: `BuchKarte`, `KlassenBuchKachel(Startseite)`, `KlassenUebersichtStartseite`.
 
+## ✅ Einstellungs-Tabs — Typografie & Breite (Batch 7)
+- [x] `SystemSettings` — Tabs „Team & Rechte" und „System" nicht mehr auf max-w-3xl eingeengt → w-full (Container ist max-w-6xl).
+- [x] `SystemSettingsAllgemein` — max-w-3xl → max-w-5xl; Grid-Abstände gap-x-8/gap-y-6 → gap-x-12/gap-y-10; Sektions-Beschreibungen text-xs → text-sm.
+- [x] `SettingField` (DRY-Quelle aller Felder) — Label text-xs uppercase → text-sm font-medium text-gray-600; Input → text-lg; Hint text-[11px] → text-sm.
+- [x] `PermissionManager` (Team & Rechte) — weißer Kachel-Container um die Toggles entfernt → edge-to-edge mit divide-y divide-gray-200; Toggle-Reihen py-5→py-6 (touch-freundlicher); Item-Labels größer.
+- [x] **DRY + ≤200 Zeilen**: Mitarbeiter/Lehrer-Toggle als `{#snippet}` in neuer `PermissionsEditor.svelte` (74 Z.); Daten nach `permissionMetadata.js` (43 Z.) ausgelagert → PermissionManager 263→150 Z. Alle Settings-Dateien ≤200.
+
 ## Hinweis 200-Zeilen-Regel
 Visueller Sweep priorisiert. Verbleibende >200-Zeilen-Dateien (Omnibox, Graduates,
 BookExemplareTab, settings/+page, BestellWorkspace, PermissionManager …) für

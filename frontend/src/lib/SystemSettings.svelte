@@ -101,8 +101,8 @@
 
       <!-- TAB: TEAM & RECHTE -->
       {:else if activeTab === 'Team & Rechte'}
-        <section class="max-w-3xl">
-          <h3 class="text-base font-bold text-slate-900 mb-6">Account- und Rollenverwaltung</h3>
+        <section class="w-full">
+          <h3 class="text-lg font-bold text-slate-900 mb-6">Account- und Rollenverwaltung</h3>
           <PermissionManager />
         </section>
 
@@ -120,8 +120,8 @@
 
       <!-- TAB: SYSTEM -->
       {:else if activeTab === 'System'}
-        <section class="max-w-3xl">
-          <h3 class="text-base font-bold text-slate-900 mb-6">Mail-Templates</h3>
+        <section class="w-full">
+          <h3 class="text-lg font-bold text-slate-900 mb-6">Mail-Templates</h3>
           <MailTemplates />
         </section>
       {/if}

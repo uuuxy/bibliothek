@@ -22,17 +22,17 @@
   /** @type {{ value: string|number, label: string, type?: 'number'|'text'|'email'|'date', hint?: string, min?: number, max?: number, placeholder?: string, pattern?: string, maxlength?: number }} */
   let { value = $bindable(), label, type = 'number', hint = '', min, max, placeholder = '', pattern, maxlength } = $props();
 
-  const inputClass = "bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full";
+  const inputClass = "bg-transparent border-b border-slate-200 py-2.5 text-lg font-medium text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full";
 </script>
 
 <label class="flex flex-col">
-  <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{label}</span>
+  <span class="text-sm font-medium text-gray-600 mb-2">{label}</span>
   {#if type === 'number'}
     <input type="number" {min} {max} {placeholder} bind:value class={inputClass} />
   {:else}
     <input {type} {placeholder} {pattern} {maxlength} bind:value class={inputClass} />
   {/if}
   {#if hint}
-    <span class="text-[11px] text-slate-500 mt-2">{hint}</span>
+    <span class="text-sm text-gray-500 mt-2">{hint}</span>
   {/if}
 </label>

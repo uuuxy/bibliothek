@@ -2,49 +2,8 @@
   import { apiFetch, apiClient } from "./apiFetch.js";
   import { onMount } from "svelte";
   import UserManagement from "./UserManagement.svelte";
-
-  // Categories and their mapped permissions
-  const permissionsMetadata = [
-    {
-      category: "Schülerverwaltung",
-      icon: "👤",
-      items: [
-        { key: "view_students", label: "Schülerdatei anzeigen", desc: "Erlaubt das Suchen und Einsehen von Schülerdaten und Klassen" },
-        { key: "create_students", label: "Schüler hinzufügen", desc: "Ermöglicht das manuelle Anlegen neuer Schüler" },
-        { key: "delete_students", label: "Schüler löschen", desc: "Erlaubt das Entfernen von Schülern aus der Datenbank" },
-        { key: "import_students", label: "LUSD / CSV Import", desc: "Ermöglicht den Import von Schülerdaten per CSV-Datei" },
-        { key: "upload_photos", label: "Ausweisfotos hochladen", desc: "Erlaubt die Aufnahme und Zuweisung von Ausweisfotos per Webcam" }
-      ]
-    },
-    {
-      category: "Medien & Inventar",
-      icon: "📚",
-      items: [
-        { key: "view_books", label: "Medienkatalog anzeigen", desc: "Erlaubt das Suchen und Anzeigen von Buchtiteln und Exemplaren" },
-        { key: "edit_books", label: "Bücher / Notizen bearbeiten", desc: "Ermöglicht das Hinzufügen von Schadensnotizen an Exemplaren" },
-        { key: "delete_books", label: "Bücher & Exemplare löschen", desc: "Erlaubt das Löschen von Exemplaren und Buchtiteln" },
-        { key: "inventory_scan", label: "Inventur durchführen", desc: "Ermöglicht das Einscannen von Büchern während einer aktiven Inventur" }
-      ]
-    },
-    {
-      category: "Bestellungen & Kiosk",
-      icon: "🛒",
-      items: [
-        { key: "view_orders", label: "Bestellungen anzeigen", desc: "Erlaubt das Einsehen von Buchbestellungen und Lieferanten-Order" },
-        { key: "create_orders", label: "Bestellungen verwalten", desc: "Ermöglicht das Bestellen neuer Bücher und Freigeben von Lieferungen" },
-        { key: "view_graduates", label: "Abgängerliste einsehen", desc: "Erlaubt das Einsehen von Schulabgängern mit ausstehenden Büchern" }
-      ]
-    },
-    {
-      category: "Administration & System",
-      icon: "⚙️",
-      items: [
-        { key: "view_stats", label: "Statistiken anzeigen", desc: "Zeigt Systemstatistiken und Ausleih-Auswertungen" },
-        { key: "audit_logs", label: "Sicherheits-Logbuch einsehen", desc: "Ermöglicht den Zugriff auf das Enterprise Audit-Logbuch" },
-        { key: "manage_users", label: "Benutzer & Rechte verwalten", desc: "Ermöglicht die Verwaltung von Benutzern und Berechtigungen" }
-      ]
-    }
-  ];
+  import PermissionsEditor from "./PermissionsEditor.svelte";
+  import { permissionsMetadata } from "./permissionMetadata.js";
 
   // State Runes (Svelte 5)
   let activeSubTab = $state("permissions"); // "permissions" | "users"
@@ -173,79 +132,7 @@
     {#if loadingPermissions}
       <div class="p-12 text-center text-slate-400 font-medium animate-pulse">Lade Rechtekonfiguration...</div>
     {:else}
-      <div class="space-y-8">
-        {#each permissionsMetadata as cat}
-          <div class="border border-slate-100 bg-white rounded-3xl overflow-hidden shadow-xs">
-            <div class="p-5 bg-slate-50/70 border-b border-slate-100 flex items-center gap-3">
-              <span class="text-xl">{cat.icon}</span>
-              <h3 class="font-bold text-slate-800 text-sm tracking-tight">{cat.category}</h3>
-            </div>
-            
-            <div class="divide-y divide-slate-100">
-              {#each cat.items as item}
-                {@const isLUpdate = updatingKeys[`lehrer-${item.key}`]}
-                {@const isMUpdate = updatingKeys[`mitarbeiter-${item.key}`]}
-                
-                <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/30 transition-colors">
-                  <div class="max-w-md space-y-1">
-                    <span class="font-semibold text-slate-850 text-sm tracking-tight">{item.label}</span>
-                    <p class="text-xs text-slate-450 leading-relaxed font-medium">{item.desc}</p>
-                  </div>
-                  
-                  <div class="flex items-center gap-8 md:gap-12 shrink-0">
-                    <!-- Admin (Read-only status display) -->
-                    <div class="flex items-center gap-3">
-                      <span class="text-[10px] font-bold text-slate-400 tracking-wider w-16 text-right">ADMIN</span>
-                      <label class="relative inline-flex items-center opacity-60 cursor-not-allowed">
-                        <input type="checkbox" checked disabled class="sr-only peer" />
-                        <div class="w-10 h-6 bg-blue-100 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    <!-- Mitarbeiter -->
-                    <div class="flex items-center gap-3">
-                      <span class="text-[10px] font-bold text-slate-500 tracking-wider w-16 text-right">MITARBEITER</span>
-                      <button 
-                        onclick={() => togglePermission("mitarbeiter", item.key, permissionsState.mitarbeiter?.[item.key] ?? false)}
-                        disabled={isMUpdate}
-                        class="relative inline-flex items-center cursor-pointer group focus:outline-none"
-                        aria-label="Mitarbeiter Rechte umschalten"
-                      >
-                        <input type="checkbox" checked={permissionsState.mitarbeiter?.[item.key] ?? false} class="sr-only peer" readonly />
-                        <div class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500/20"></div>
-                        {#if isMUpdate}
-                          <div class="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
-                            <div class="w-3.5 h-3.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div>
-                          </div>
-                        {/if}
-                      </button>
-                    </div>
-
-                    <!-- Lehrer -->
-                    <div class="flex items-center gap-3">
-                      <span class="text-[10px] font-bold text-slate-500 tracking-wider w-16 text-right">LEHRER</span>
-                      <button 
-                        onclick={() => togglePermission("lehrer", item.key, permissionsState.lehrer?.[item.key] ?? false)}
-                        disabled={isLUpdate}
-                        class="relative inline-flex items-center cursor-pointer group focus:outline-none"
-                        aria-label="Lehrer Rechte umschalten"
-                      >
-                        <input type="checkbox" checked={permissionsState.lehrer?.[item.key] ?? false} class="sr-only peer" readonly />
-                        <div class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500/20"></div>
-                        {#if isLUpdate}
-                          <div class="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
-                            <div class="w-3.5 h-3.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div>
-                          </div>
-                        {/if}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          </div>
-        {/each}
-      </div>
+      <PermissionsEditor metadata={permissionsMetadata} {permissionsState} {updatingKeys} onToggle={togglePermission} />
     {/if}
   {/if}
 
