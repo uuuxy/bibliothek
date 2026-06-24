@@ -36,7 +36,7 @@
   </div>
 {/snippet}
 
-<div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-xs w-full">
+<div class="w-full">
   {#if loading}
     <div class="py-16 flex justify-center items-center">
       <div class="w-8 h-8 border-4 border-t-blue-600 border-slate-200 rounded-full animate-spin" aria-hidden="true"></div>
@@ -49,7 +49,7 @@
   {:else}
     <div class="overflow-x-auto w-full text-left">
       <table class="w-full text-base text-slate-700">
-        <thead class="bg-slate-50 border-b border-slate-100 uppercase tracking-wider text-sm font-bold text-slate-500 font-sans">
+        <thead class="border-b border-gray-200 text-sm font-semibold text-gray-500 font-sans">
           <tr>
             <th class="px-6 py-4 w-16">Foto</th>
             <th class="px-6 py-4">Name</th>

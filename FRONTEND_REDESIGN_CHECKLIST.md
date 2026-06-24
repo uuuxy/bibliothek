@@ -25,8 +25,13 @@ Modals: `DamageReportModal`, `KioskChecklistModal`, `KioskDamageModal`, `KioskRe
 - [x] `SupplierManager` — beide Karten flach, Labels + Tabellenkopf entkapitalisiert.
 - [x] `BestellWorkspace` — war auf Layout-Ebene bereits flach (Tableiste/PDF-Button = Controls, bleiben).
 
+## ✅ Schüler-Listen & Audit — erledigt (Batch 3)
+- [x] `ActiveStudentList` — Tabellen-Karte → flach; Tabellenkopf entkapitalisiert.
+- [x] `DeletedStudentList` — Karte → flach mit rosa Links-Akzent (Papierkorb-Identität); Header/Kopf entkapitalisiert.
+- [x] `AuditLog`, `AdminAuditLog` — Tabellen-Karten → flach; Köpfe entkapitalisiert.
+- [x] `MahnwesenTable` — Tabelle war bereits flach; nur Modal (bleibt Karte).
+
 ## ⏳ Offen — Layout-Karten (nach Bereich gebündelt, für Konsistenz batchweise)
-**Schüler-Listen:** `components/students/ActiveStudentList`, `DeletedStudentList`
 **Buch-Akte Tabs:** `BookAkteMeta`, `BookExemplareTab`, `BookHistoryTab`, `BookVormerkungenTab`, `BookBorrowersTab`, `BookBorrowersList`
 **Mahnwesen/Audit:** `components/mahnwesen/MahnwesenTable`, `AuditLog`, `AdminAuditLog`
 **Dashboards/Portale:** `StatsDashboard`, `LehrerPortal`, `UnifiedInventory`, `components/kiosk/KioskIdle`, `KioskActiveSession`

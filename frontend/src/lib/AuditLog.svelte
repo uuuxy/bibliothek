@@ -51,11 +51,11 @@
       Keine Audit-Einträge vorhanden.
     </div>
   {:else}
-    <div class="border border-slate-100 bg-white rounded-2xl overflow-hidden shadow-sm">
+    <div class="w-full">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-100 text-base font-semibold text-slate-500 uppercase tracking-wider">
+            <tr class="border-b border-gray-200 text-sm font-semibold text-gray-500">
               <th class="p-4.5">Zeitstempel</th>
               <th class="p-4.5">Aktion</th>
               <th class="p-4.5">Tabelle</th>
