@@ -10,7 +10,7 @@
   import { appState } from "../inventur/lib/store.svelte.js";
   import { apiClient } from "./apiFetch.js";
 
-  let { onSelectBook } = $props();
+  let { onSelectBook, role = "" } = $props();
 
   let studentProfileComponent = $state(/** @type {any} */ (null));
 
@@ -158,7 +158,7 @@
         <span><strong>Fremdrückgabe:</strong> Buch wurde von <strong>{omniboxStore.lastFremdrueckgabe.vorbesitzerName}</strong> zurückgegeben und für {omniboxStore.activeStudent.vorname} verbucht.</span>
       </div>
     {/if}
-    <StudentProfile bind:this={studentProfileComponent} student={omniboxStore.activeStudent} onDeselect={() => { omniboxStore.activeStudent = null; omniboxStore.lastFremdrueckgabe = null; }} onReturnClick={(barcode) => { omniboxStore.queryVal = barcode; omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile()); }} />
+    <StudentProfile bind:this={studentProfileComponent} student={omniboxStore.activeStudent} {role} onDeselect={() => { omniboxStore.activeStudent = null; omniboxStore.lastFremdrueckgabe = null; }} onReturnClick={(barcode) => { omniboxStore.queryVal = barcode; omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile()); }} />
   {:else if omniboxStore.activeTeacher}
     <OmniboxTeacherCard teacher={omniboxStore.activeTeacher} onDeselect={() => { omniboxStore.activeTeacher = null; omniboxStore.lastFremdrueckgabe = null; }} />
   {/if}

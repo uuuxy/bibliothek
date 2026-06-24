@@ -119,7 +119,7 @@
 <main class="flex-1 overflow-y-auto flex flex-col w-full">
   {#if uiStore.activeTab === "kiosk"}
     <div class="flex-1 flex flex-col w-full animate-fade-in">
-      <Omnibox onSelectBook={handleSelectBook} />
+      <Omnibox onSelectBook={handleSelectBook} role={authStore.currentUser?.rolle} />
     </div>
   {:else if uiStore.activeTab === "books"}
     <div class="w-full animate-fade-in"><BookDetails title={uiStore.selectedBook || undefined} /></div>
