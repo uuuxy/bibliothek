@@ -29,8 +29,10 @@ services:
     environment:
       - PORT=8084
       - DB_HOST=postgres-db
+      # Lokaler Entwicklungsmodus: Default-Secrets sind hier bewusst erlaubt (APP_ENV=local).
+      - APP_ENV=local
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
-      - JWT_SECRET=${JWT_SECRET:-supergeheim_lokal}
+      - JWT_SECRET=${JWT_SECRET:-local-dev-jwt-secret-min-32-characters}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - COOKIE_SECURE=false
       - INITIAL_ADMIN_EMAIL=pflasch@philipp-reis-schule.de
