@@ -489,7 +489,13 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
     applied_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO schema_migrations (version) VALUES 
+-- WICHTIG: Diese Liste MUSS exakt allen Dateien in migrations/*.sql entsprechen.
+-- schema.sql baut bei einer Neuinstallation bereits das vollständige, aktuelle Schema auf.
+-- Damit der Migrations-Runner (db/migrations.go) beim Start NICHT versucht, dieselben
+-- Migrationen erneut anzuwenden (→ "column already exists"-Fehler → os.Exit(1)), werden
+-- hier ALLE Migrationsversionen als bereits angewendet markiert. Fehlt hier eine Datei,
+-- läuft sie beim Start gegen das fertige Schema und bricht den Serverstart ab.
+INSERT INTO schema_migrations (version) VALUES
 ('001_initial_baseline.sql'),
 ('002_dsgvo_audit_hardening.sql'),
 ('003_audit_log_append_only.sql'),
@@ -497,7 +503,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('004_aussonderung.sql'),
 ('005_add_etikett_gedruckt.sql'),
 ('006_create_geraete.sql'),
-('007_performance_indexes.sql'),
+('007_audit_log_missing_columns.sql'),
+('008_jahrgaenge.sql'),
 ('008_schueler_fotos_bytea.sql'),
 ('009_erweiterte_verwaltung.sql'),
 ('010_jwt_blacklist.sql'),
@@ -511,8 +518,20 @@ INSERT INTO schema_migrations (version) VALUES
 ('018_vormerkungen_status.sql'),
 ('019_performance_indexe.sql'),
 ('020_audit_logs_admin.sql'),
+('021_signatures_mdm.sql'),
 ('021_soft_delete_schueler.sql'),
-('026_cover_status.sql')
+('022_dsgvo_anonymize_schueler.sql'),
+('022_vormerkungen_ablauf.sql'),
+('023_seed_mail_vorlagen.sql'),
+('024_inventur_status.sql'),
+('025_hybrid_blocks.sql'),
+('026_cover_status.sql'),
+('027_mail_settings.sql'),
+('028_idempotency_keys.sql'),
+('029_nutzungsdauer_jahre.sql'),
+('030_ziel_jahrgang.sql'),
+('031_inventur_geprueft_am.sql'),
+('032_reconcile_titel_columns.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
