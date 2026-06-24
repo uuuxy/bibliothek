@@ -369,6 +369,9 @@ CREATE INDEX idx_ausleihen_exemplar ON ausleihen (exemplar_id);
 CREATE INDEX idx_ausleihen_schueler ON ausleihen (schueler_id) WHERE schueler_id IS NOT NULL;
 CREATE INDEX idx_ausleihen_benutzer ON ausleihen (ausleiher_benutzer_id) WHERE ausleiher_benutzer_id IS NOT NULL;
 CREATE INDEX idx_ausleihen_aktive ON ausleihen (rueckgabe_am) WHERE rueckgabe_am IS NULL; -- Highly active lookup for current loans
+-- Datenintegrität: höchstens EINE aktive Ausleihe je Exemplar bzw. Gerät (siehe Migration 033).
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_exemplar ON ausleihen (exemplar_id) WHERE rueckgabe_am IS NULL AND exemplar_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_geraet ON ausleihen (geraet_id) WHERE rueckgabe_am IS NULL AND geraet_id IS NOT NULL;
 CREATE INDEX idx_ausleihen_rueckgabe_frist ON ausleihen (rueckgabe_frist);
 
 
@@ -531,7 +534,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('029_nutzungsdauer_jahre.sql'),
 ('030_ziel_jahrgang.sql'),
 ('031_inventur_geprueft_am.sql'),
-('032_reconcile_titel_columns.sql')
+('032_reconcile_titel_columns.sql'),
+('033_unique_active_loan.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

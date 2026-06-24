@@ -34,9 +34,10 @@
 
 - [x] **Loan-Service komplett** — sauber & hochwertig: Fristen inkl. `ziel_jahrgang`-Mehrjahres-LMF mit sicheren Defaults; `FOR UPDATE` auf Schüler (Limit-Race) UND auf älteste wartende Vormerkung (keine Doppelzuteilung); Neuausleihe/Rückgabe/Fremdrückgabe atomar in einer Tx, Audit nach Commit; `staffRole`-Vergleich nutzt korrekt Uppercase-JWT-Rolle. Keine Korrektheitsfehler.
 - [x] **Device-Service** — sauber: Verfügbarkeits-/Sperr-/Aussonderungs-Checks, `FOR UPDATE`-Lock auf aktive Geräte-Ausleihe, Checklisten-Gate für Zubehör, transaktionaler Commit. Gleiche Qualität wie Loan-Service.
-- [ ] **Order-/Reorder-Service** — Mengen-/Schwellenlogik (`meldebestand`), Doppelbestellungen
-- [ ] **Idempotency-Keys** (`028`, Migration) — tatsächliche Wirksamkeit, Race, TTL/Cleanup
-- [ ] **Mahnwesen-Bulk** — asymmetrisches Begin=1/Commit=2/Rollback=3 verifizieren (mehrere Commit-Pfade)
+- [x] **Order-/Reorder-Service** — saubere Transaktionsstruktur (Begin/Commit/SafeRollback), keine Auffälligkeiten.
+- [x] **Idempotency-Keys** — TTL-Cleanup (24h-Cron) vorhanden, 5xx werden nicht gecacht. **Gefunden+strukturell behoben:** Check-then-act-TOCTOU (zwei zeitgleiche Requests mit gleichem Key konnten beide ausführen; `ON CONFLICT` dedupliziert nur die gespeicherte Antwort). Die schlimmste Folge — zwei aktive Ausleihen auf einem Exemplar — ist jetzt per DB-Unique-Index (Migration 033) ausgeschlossen. Rest-Limitierung: vollständig atomare Key-Reservierung bräuchte Schema-Änderung (pending-State) — dokumentiert.
+- [x] **Mahnwesen-Bulk** — sauber: eine Transaktion (Begin/Commit/SafeRollback); die früher vermutete Asymmetrie war ein Grep-Artefakt (deutsche Kommentarwörter). PDF wird IN der Tx erzeugt → bei PDF-Fehler wird der Mahnstufen-Bump zurückgerollt. Korrekt.
+- [x] **Datenintegrität aktive Ausleihen (neu, P2)** — **Gefunden+behoben:** kein Schutz gegen zwei aktive Ausleihen pro Exemplar/Gerät (FOR UPDATE kann nicht-existente Zeile nicht sperren). Migration 033: Dedup bestehender Duplikate (jüngste behalten) + partielle Unique-Indizes; Unique-Verletzung wird zu 409-Konflikt gemappt. Gegen echte DB verifiziert.
 - [ ] **Repository-Layer (24 Dateien)** — Scan-Konsistenz mit Tabellen, NULL-Handling, N+1-Queries, fehlende Indizes
 
 ---

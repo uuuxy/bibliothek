@@ -3,13 +3,26 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"bibliothek/plugins"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// mapLoanCreateErr übersetzt eine Unique-Verletzung (Migration 033: höchstens eine aktive
+// Ausleihe je Exemplar/Gerät) in einen sauberen Konflikt. Das tritt auf, wenn ein zweiter
+// zeitgleicher Checkout dasselbe Exemplar greifen will — dann ist 409 (statt 500) korrekt.
+func mapLoanCreateErr(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return fmt.Errorf("%w: dieses Exemplar wurde soeben bereits ausgeliehen", ErrConflict)
+	}
+	return err
+}
 
 // handleNewLoan handles the case where the book is currently available (not checked out).
 func (s *defaultLoanService) handleNewLoan(
@@ -29,7 +42,7 @@ func (s *defaultLoanService) handleNewLoan(
 		loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, true)
 	}
 	if err != nil {
-		return nil, err
+		return nil, mapLoanCreateErr(err)
 	}
 
 	if chkCtx.borrowerType == "student" {
@@ -138,7 +151,7 @@ func (s *defaultLoanService) handleForeignReturn(
 		loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, true)
 	}
 	if err != nil {
-		return nil, err
+		return nil, mapLoanCreateErr(err)
 	}
 
 	if chkCtx.borrowerType == "student" {
