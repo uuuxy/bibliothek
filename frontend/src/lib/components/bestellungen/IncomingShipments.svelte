@@ -9,9 +9,9 @@
   let totalShipments = $derived(incomingShipments.length);
 </script>
 
-<div class="bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-4 {showGreenFade ? 'animate-green-fade' : ''}">
-  <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-    <h2 class="text-sm font-bold text-slate-800">Wareneingang</h2>
+<div class="space-y-4 {showGreenFade ? 'animate-green-fade' : ''}">
+  <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+    <h2 class="text-base font-bold text-slate-800">Wareneingang</h2>
     <span class="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold uppercase">Im Zulauf</span>
   </div>
   

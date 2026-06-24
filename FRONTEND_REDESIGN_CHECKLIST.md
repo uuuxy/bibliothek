@@ -19,8 +19,13 @@
 ## 🔒 Bewahren (bewusst NICHT angefasst)
 Modals: `DamageReportModal`, `KioskChecklistModal`, `KioskDamageModal`, `KioskReservationModal`, `StrichcodeScannerOverlay` · Toasts/Indikatoren: `OfflineIndicator` · Cover-Galerien/Kacheln (Design-Frage offen): `BuchKarte`, `KlassenBuchKachel(Startseite)`, `KlassenUebersicht(Startseite)`, `OpacSearch`-Trefferraster.
 
+## ✅ Bestellungen — erledigt (Batch 2)
+- [x] `OrderCreationPanel` — Panel-Karte → flach, Labels uppercase→text-sm/medium, Felder bg-white, Titel text-lg, Staging-Block → Links-Akzent ohne Schatten.
+- [x] `OrderRecommendations`, `IncomingShipments` — Panel-Karten → flach, Header via border-b.
+- [x] `SupplierManager` — beide Karten flach, Labels + Tabellenkopf entkapitalisiert.
+- [x] `BestellWorkspace` — war auf Layout-Ebene bereits flach (Tableiste/PDF-Button = Controls, bleiben).
+
 ## ⏳ Offen — Layout-Karten (nach Bereich gebündelt, für Konsistenz batchweise)
-**Bestellungen:** `BestellWorkspace`, `components/bestellungen/OrderCreationPanel`, `OrderRecommendations`, `IncomingShipments`, `SupplierManager`
 **Schüler-Listen:** `components/students/ActiveStudentList`, `DeletedStudentList`
 **Buch-Akte Tabs:** `BookAkteMeta`, `BookExemplareTab`, `BookHistoryTab`, `BookVormerkungenTab`, `BookBorrowersTab`, `BookBorrowersList`
 **Mahnwesen/Audit:** `components/mahnwesen/MahnwesenTable`, `AuditLog`, `AdminAuditLog`

@@ -2,8 +2,8 @@
   let { recommendations, onAddToCart } = $props();
 </script>
 
-<div class="bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-4">
-  <div class="border-b border-slate-100 pb-3"><h2 class="text-sm font-bold text-slate-800">Bestellbedarf</h2></div>
+<div class="space-y-4">
+  <div class="border-b border-gray-200 pb-3"><h2 class="text-base font-bold text-slate-800">Bestellbedarf</h2></div>
   {#if !recommendations.length}
     <p class="text-xs text-slate-400 text-center py-4">Bestände ausreichend.</p>
   {:else}

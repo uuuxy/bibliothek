@@ -74,15 +74,15 @@
   }
 </script>
 
-<div class="lg:col-span-8 bg-white border border-slate-200/80 rounded-xl p-6 shadow-2xs space-y-5">
-  <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
-    <h2 class="text-sm font-bold text-slate-800">Neue Buchbestellung erstellen</h2>
+<div class="lg:col-span-8 space-y-6">
+  <div class="border-b border-gray-200 pb-3 flex items-center justify-between">
+    <h2 class="text-lg font-bold text-slate-800">Neue Buchbestellung erstellen</h2>
     <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Entwurf</span>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="space-y-1"><label for="supplier" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
-    <div class="space-y-1 relative">
-      <label for="book" class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={onSearchInput} placeholder="Titel, Autor oder ISBN suchen..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-base bg-slate-50/50" />
+    <div class="space-y-1.5"><label for="supplier" class="block text-sm font-medium text-gray-600">Lieferant</label><select id="supplier" bind:value={selectedSupplierIdx} class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-base bg-white">{#each suppliers as s, idx}<option value={idx}>{s.name} ({s.customerNumber})</option>{/each}</select></div>
+    <div class="space-y-1.5 relative">
+      <label for="book" class="block text-sm font-medium text-gray-600">Buchtitel hinzufügen</label><input id="book" type="text" bind:value={searchQuery} oninput={onSearchInput} placeholder="Titel, Autor oder ISBN suchen..." class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-base bg-white" />
       {#if showDropdown && (localResults.length > 0 || dnbResults.length > 0)}
         <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-y-auto divide-y divide-slate-100">
           {#if localResults.length > 0}
@@ -148,7 +148,7 @@
   </div>
 
   {#if stagedBook}
-    <div class="p-4 border border-blue-200 bg-blue-50/50 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in shadow-sm">
+    <div class="p-4 border-l-2 border-blue-400 bg-blue-50/50 flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in">
       <div class="flex items-center gap-3 min-w-0">
         {#if stagedBook.cover_url}
           <img src="/api/images/cover?isbn={stagedBook.isbn || ''}&url={encodeURIComponent(stagedBook.cover_url)}" class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-slate-100 shrink-0" alt="" />
@@ -181,7 +181,7 @@
   {/if}
 
   <div class="space-y-3">
-    <span class="text-sm font-semibold text-slate-400 uppercase tracking-wide">Warenkorb</span>
+    <span class="text-sm font-medium text-gray-600">Warenkorb</span>
     {#if !orderCart.length}
       <div class="py-10 border border-dashed border-slate-200 rounded-lg text-center text-base text-slate-400">Der Warenkorb ist leer. Suche nach Büchern zum Hinzufügen.</div>
     {:else}
