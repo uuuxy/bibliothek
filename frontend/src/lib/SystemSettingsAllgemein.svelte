@@ -1,6 +1,7 @@
 <script>
   import { apiPost } from "./apiFetch.js";
   import { toastStore } from "./stores/toastStore.svelte.js";
+  import SettingField from "./components/settings/SettingField.svelte";
 
   /**
    * @typedef {Object} Props
@@ -49,14 +50,22 @@
   }
 </script>
 
-<div class="space-y-6">
-  <!-- Ferien-Leseclub Card -->
-  <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
+<!-- Flach & edge-to-edge: logische Blöcke per Abstand + feiner Trennlinie statt Kacheln -->
+<div class="space-y-10 max-w-3xl">
+
+  {#snippet sectionHeader(title, description)}
+    <div>
+      <h3 class="text-base font-bold text-slate-900">{title}</h3>
+      {#if description}
+        <p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">{description}</p>
+      {/if}
+    </div>
+  {/snippet}
+
+  <!-- Ferien-Leseclub -->
+  <section class="border-b border-slate-200 pb-8">
     <div class="flex items-start justify-between gap-4">
-      <div>
-        <h3 class="text-base font-bold text-slate-900">Ferien-Leseclub</h3>
-        <p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">Wenn aktiv, erhalten alle neuen Ausleihen pauschal das unten definierte Ferienende als Rückgabefrist. Die Standardfristen werden überschrieben.</p>
-      </div>
+      {@render sectionHeader('Ferien-Leseclub', 'Wenn aktiv, erhalten alle neuen Ausleihen pauschal das unten definierte Ferienende als Rückgabefrist. Die Standardfristen werden überschrieben.')}
       <button
         type="button"
         onclick={() => (ferienLeseclubAktiv = !ferienLeseclubAktiv)}
@@ -70,93 +79,42 @@
     </div>
 
     {#if ferienLeseclubAktiv}
-      <div class="mt-5 p-5 rounded-2xl bg-emerald-50 border border-emerald-100 space-y-3">
-        <p class="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-          Ferien-Leseclub ist aktiv
-        </p>
-        <div>
-          <label for="ferienZieldatum" class="text-xs font-semibold text-slate-600 block mb-1">Ferienende (Rückgabezieldatum)</label>
-          <input
-            id="ferienZieldatum"
-            type="date"
-            bind:value={ferienLeseclubZieldatum}
-            class="w-48 bg-white border border-emerald-200 rounded-xl px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none text-slate-800 transition-all" />
-          <p class="text-[10px] text-slate-500 mt-1.5">Alle Ausleihen erhalten dieses Datum als Rückgabefrist.</p>
-        </div>
+      <div class="mt-6 max-w-xs">
+        <SettingField
+          bind:value={ferienLeseclubZieldatum}
+          label="Ferienende (Rückgabezieldatum)"
+          type="date"
+          hint="Alle Ausleihen erhalten dieses Datum als Rückgabefrist."
+        />
       </div>
     {/if}
-  </div>
+  </section>
 
-  <!-- Standardfristen & LMF Card -->
-  <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-    <h3 class="text-base font-bold text-slate-900 mb-5">Rückgabefristen & Ausleih-Limits</h3>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      
-      <!-- Buch Frist -->
-      <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5 flex flex-col items-center justify-center">
-        <input type="number" bind:value={fristBuchTage} min="1" max="365" class="w-20 bg-white border border-slate-200 rounded-xl px-2 py-2 text-xl font-bold text-slate-700 text-center focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all" />
-        <div class="text-xs text-slate-500 mt-3 font-semibold uppercase tracking-wider">Tage / Buch</div>
-      </div>
-
-      <!-- Medien Frist -->
-      <div class="rounded-2xl bg-amber-50 border border-amber-100 p-5 flex flex-col items-center justify-center">
-        <input type="number" bind:value={fristMedienTage} min="1" max="365" class="w-20 bg-white border border-amber-200 rounded-xl px-2 py-2 text-xl font-bold text-amber-600 text-center focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:outline-none transition-all" />
-        <div class="text-xs text-amber-500 mt-3 font-semibold uppercase tracking-wider">Tage / Medien</div>
-      </div>
-
-      <!-- LMF Stichtag -->
-      <div class="rounded-2xl bg-blue-50 border border-blue-100 p-5 flex flex-col items-center justify-center">
-        <input
-          type="text"
-          bind:value={lmfStichtag}
-          placeholder="07-31"
-          pattern="\d{2}-\d{2}"
-          maxlength="5"
-          class="w-20 bg-white border border-blue-200 rounded-xl px-2 py-2 text-lg font-bold text-blue-600 font-mono text-center focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all" />
-        <div class="text-xs text-blue-500 mt-3 font-semibold uppercase tracking-wider">LMF (MM-TT)</div>
-      </div>
-
-      <!-- Max Ausleihen -->
-      <div class="rounded-2xl bg-purple-50 border border-purple-100 p-5 flex flex-col items-center justify-center">
-        <input
-          type="number"
-          min="1"
-          max="50"
-          bind:value={maxAusleihenSchueler}
-          class="w-20 bg-white border border-purple-200 rounded-xl px-2 py-2 text-xl font-bold text-purple-600 text-center focus:border-purple-400 focus:ring-2 focus:ring-purple-100 focus:outline-none transition-all" />
-        <div class="text-xs text-purple-500 mt-3 font-semibold uppercase tracking-wider">Max Ausleihen</div>
-      </div>
-
+  <!-- Rückgabefristen & Ausleih-Limits -->
+  <section class="border-b border-slate-200 pb-8">
+    {@render sectionHeader('Rückgabefristen & Ausleih-Limits', '')}
+    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+      <SettingField bind:value={fristBuchTage} label="Tage / Buch" min={1} max={365} />
+      <SettingField bind:value={fristMedienTage} label="Tage / Medien" min={1} max={365} />
+      <SettingField bind:value={lmfStichtag} label="LMF (MM-TT)" type="text" placeholder="07-31" pattern={'\\d{2}-\\d{2}'} maxlength={5} />
+      <SettingField bind:value={maxAusleihenSchueler} label="Max Ausleihen" min={1} max={50} />
     </div>
-  </div>
+  </section>
 
-  <!-- Sperr-Automatik Card -->
-  <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-    <h3 class="text-base font-bold text-slate-900 mb-2">Sperr-Automatik (Mahnwesen)</h3>
-    <p class="text-xs text-slate-500 mb-5 leading-relaxed">Automatische Ausleihsperre am Kiosk für Schüler mit überfälligen Medien. Ausgenommen sind Geräte/Dauerleihen (z.B. Laptops).</p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Toleranz-Tage -->
-      <div class="rounded-2xl bg-rose-50 border border-rose-100 p-5 flex flex-col items-center justify-center">
-        <input type="number" bind:value={maxOverdueDays} min="0" max="365" class="w-20 bg-white border border-rose-200 rounded-xl px-2 py-2 text-xl font-bold text-rose-600 text-center focus:border-rose-400 focus:ring-2 focus:ring-rose-100 focus:outline-none transition-all" />
-        <div class="text-xs text-rose-500 mt-3 font-semibold uppercase tracking-wider">Tage bis Sperre</div>
-      </div>
-
-      <!-- Toleranz-Items -->
-      <div class="rounded-2xl bg-rose-50 border border-rose-100 p-5 flex flex-col items-center justify-center">
-        <input type="number" bind:value={maxOverdueItems} min="1" max="50" class="w-20 bg-white border border-rose-200 rounded-xl px-2 py-2 text-xl font-bold text-rose-600 text-center focus:border-rose-400 focus:ring-2 focus:ring-rose-100 focus:outline-none transition-all" />
-        <div class="text-xs text-rose-500 mt-3 font-semibold uppercase tracking-wider">Ab x Medien sperren</div>
-      </div>
+  <!-- Sperr-Automatik -->
+  <section class="border-b border-slate-200 pb-8">
+    {@render sectionHeader('Sperr-Automatik (Mahnwesen)', 'Automatische Ausleihsperre am Kiosk für Schüler mit überfälligen Medien. Ausgenommen sind Geräte/Dauerleihen (z.B. Laptops).')}
+    <div class="mt-6 grid grid-cols-2 gap-x-8 gap-y-6 max-w-md">
+      <SettingField bind:value={maxOverdueDays} label="Tage bis Sperre" min={0} max={365} />
+      <SettingField bind:value={maxOverdueItems} label="Ab x Medien sperren" min={1} max={50} />
     </div>
-  </div>
+  </section>
 
-  <div class="flex justify-end pt-4 pb-4">
+  <div class="flex justify-end">
     <button
       onclick={saveSettings}
       disabled={saving}
-      class="px-8 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-2xl transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-md">
+      class="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-full transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
       {saving ? 'Wird gespeichert...' : 'Globale Einstellungen speichern'}
     </button>
   </div>

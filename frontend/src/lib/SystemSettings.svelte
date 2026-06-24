@@ -1,5 +1,5 @@
 <script>
-  import { apiGet, apiPost, apiDelete } from "./apiFetch.js";
+  import { apiGet } from "./apiFetch.js";
   import { onMount } from 'svelte';
   import MailTemplates from './MailTemplates.svelte';
   import DataManagement from './components/admin/DataManagement.svelte';
@@ -11,7 +11,6 @@
 
   // --- STATE ---
   let loading = $state(true);
-  let saving = $state(false);
 
   const isAdmin = $derived(authStore.currentUser?.rolle === 'admin');
 
@@ -102,12 +101,10 @@
 
       <!-- TAB: TEAM & RECHTE -->
       {:else if activeTab === 'Team & Rechte'}
-        <div class="space-y-6">
-          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-            <h3 class="text-xl font-bold text-slate-900 mb-6">Account- und Rollenverwaltung</h3>
-            <PermissionManager />
-          </div>
-        </div>
+        <section class="max-w-3xl">
+          <h3 class="text-base font-bold text-slate-900 mb-6">Account- und Rollenverwaltung</h3>
+          <PermissionManager />
+        </section>
 
       <!-- TAB: MAHNWESEN-ROUTING -->
       {:else if activeTab === 'Mahnwesen-Routing'}
@@ -119,20 +116,14 @@
 
       <!-- TAB: MAIL-SERVER -->
       {:else if activeTab === 'Mail-Server' && isAdmin}
-        <div class="space-y-6">
-          <MailConfig />
-        </div>
+        <MailConfig />
 
       <!-- TAB: SYSTEM -->
       {:else if activeTab === 'System'}
-        <div class="space-y-6">
-          
-          <div class="bg-white rounded-[24px] p-8 shadow-sm border border-slate-200/70">
-            <h3 class="text-xl font-bold text-slate-900 mb-6">Mail-Templates</h3>
-            <MailTemplates />
-          </div>
-
-        </div>
+        <section class="max-w-3xl">
+          <h3 class="text-base font-bold text-slate-900 mb-6">Mail-Templates</h3>
+          <MailTemplates />
+        </section>
       {/if}
       
     </div>
