@@ -4,34 +4,51 @@
   Einen für die API-Abfrage der Metadaten und einen für den Barcode-Scanner.
 -->
 <script>
-	import { apiFetch, apiClient } from "../../../../lib/apiFetch.js";
+	import { apiFetch } from "../../../../lib/apiFetch.js";
+    import { showToast } from "$lib/store.svelte.js";
     let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
     let isLookupActive = $state(false);
 
     async function aktualisiereMetadaten() {
-        if (!formular.isbn) return;
+        if (!formular.isbn) {
+            showToast("Bitte zuerst eine ISBN eingeben.", "error");
+            return;
+        }
         isLookupActive = true;
         try {
             const antwort = await apiFetch(`/api/lookup/${formular.isbn}`);
-            if (antwort.ok) {
-                const json = await antwort.json();
-                const daten = json.data;
-                if (daten.title) formular.title = daten.title;
-                if (daten.author) formular.author = daten.author;
-                if (daten.verlag) formular.verlag = daten.verlag;
-                if (daten.jahr) formular.erscheinungsjahr = parseInt(daten.jahr) || formular.erscheinungsjahr;
-                if (daten.coverUrl) formular.coverUrl = daten.coverUrl;
-                if (daten.subject) formular.subject = daten.subject;
-                if (daten.grade) {
-                    const parsedGrade = parseInt(daten.grade);
-                    if (!Number.isNaN(parsedGrade)) {
-                        formular.gradeLevel = parsedGrade;
-                    }
+            if (!antwort.ok) {
+                showToast(
+                    antwort.status === 404
+                        ? "Keine Metadaten zu dieser ISBN gefunden."
+                        : "Metadaten-Abruf fehlgeschlagen (Server).",
+                    "error",
+                );
+                return;
+            }
+            const json = await antwort.json();
+            const daten = json.data ?? {};
+            if (daten.title) formular.title = daten.title;
+            if (daten.author) formular.author = daten.author;
+            if (daten.verlag) formular.verlag = daten.verlag;
+            if (daten.jahr) formular.erscheinungsjahr = parseInt(daten.jahr) || formular.erscheinungsjahr;
+            if (daten.coverUrl) formular.coverUrl = daten.coverUrl;
+            if (daten.subject) formular.subject = daten.subject;
+            if (daten.grade) {
+                const parsedGrade = parseInt(daten.grade);
+                if (!Number.isNaN(parsedGrade)) {
+                    formular.gradeLevel = parsedGrade;
                 }
             }
+            // Klares Feedback statt stillem "nichts passiert"
+            showToast(
+                daten.title ? `Metadaten übernommen: ${daten.title}` : "Keine verwertbaren Metadaten gefunden.",
+                daten.title ? "success" : "error",
+            );
         } catch (fehler) {
             console.error("Fehler beim Nachschlagen der ISBN", fehler);
+            showToast("Netzwerkfehler beim ISBN-Nachschlagen.", "error");
         } finally {
             isLookupActive = false;
         }
