@@ -1,28 +1,86 @@
-# Kommandozeilen-Skripte und Migrationen
+# Kommandozeilen-Skripte und Werkzeuge
 
-Diese Dokumentation listet die in der Applikation verfügbaren Kommandozeilen-Werkzeuge auf. Diese befinden sich primär in den Verzeichnissen `cmd/` und `scripts/`.
+---
 
-## 1. LITTERA-Import (`cmd/littera-import`)
+## 1. LITTERA-Import (`cmd/littera_migration`)
 
-Das Tool migriert Altbestände aus LITTERA-Exporten in die neue Datenbankstruktur.
-- **Funktionsweise:** Es verarbeitet CSV-Dumps der LITTERA-Software, parst Titelinformationen sowie die Barcodes physischer Exemplare.
-- **Verwendung:** Die Ausführung erfolgt über das dedizierte Go-Binary, wobei die CSV-Dateien als Argument oder über Standard-Eingabe (stdin) bereitgestellt werden.
-- **Architektur:** Der Import ist transaktional. Buchtitel (`buecher_titel`) und ihre assoziierten Exemplare (`buecher_exemplare`) werden kohärent angelegt.
+Migriert Altbestände aus LITTERA-Exporten in die neue Datenbankstruktur.
+
+- **Funktionsweise:** Verarbeitet CSV-Dumps der LITTERA-Software (Titelinformationen + Barcodes physischer Exemplare).
+- **Build-Tag:** Benötigt `unixODBC`. Standard-Build schließt dieses Tool aus — kein ODBC auf dem Server nötig:
+  ```bash
+  go build -tags odbc ./cmd/littera_migration/...
+  ```
+- **Architektur:** Transaktionaler Import — Buchtitel (`buecher_titel`) und Exemplare (`buecher_exemplare`) werden atomar angelegt.
+
+---
 
 ## 2. Foto-Migration (`cmd/migrate-fotos`)
 
-Dieses Hilfsprogramm migriert bestehende unverschlüsselte Bilddateien aus dem Dateisystem in die relationale PostgreSQL-Datenbank.
-- **Funktionsweise:** Es iteriert über ein Zielverzeichnis mit Schülerfotos, validiert diese und wandelt sie in einen Bytestrom (`BYTEA`) um.
-- **Speicherung:** Die Bilder werden anschließend direkt in die Tabelle `schueler_fotos` injiziert. Dies dient der Konsolidierung der Infrastruktur und der Steigerung der Datensicherheit.
+Migriert unverschlüsselte Bilddateien vom Dateisystem in die Datenbank.
 
-## 3. Datenbank-Backup (`scripts/backup.sh`)
+- **Funktionsweise:** Iteriert über ein Verzeichnis mit Schülerfotos, validiert und verschlüsselt diese (AES-256-GCM), speichert sie als `BYTEA` in `schueler_fotos`.
+- **Zweck:** Konsolidierung der Infrastruktur (kein separates Foto-Verzeichnis) + Datensicherheit.
 
-Ein Shell-Skript zur Erzeugung periodischer Datenbank-Backups.
-- **Funktionsweise:** Es nutzt das Programm `pg_dump`, um den Zustand der Datenbank zu exportieren. Das Skript wird idealerweise über einen System-Cronjob oder den internen Scheduler aufgerufen.
+---
 
-## 4. Concurrency & Load Testing (`cmd/stresstest`)
+## 3. Datenbank-Backup (`scripts/backup.sh` / `jobs/backup.go`)
 
-Ein isoliertes Go-Skript zur Durchführung von parallelen Lasttests und zur Simulation von Race-Conditions.
-- **Funktionsweise:** Es feuert mithilfe von `sync.Cond` und Go-Routinen in derselben Millisekunde dutzende gleichzeitige Requests gegen den Ausleih-Endpunkt (`/api/action`).
-- **Verwendung:** `go run cmd/stresstest/main.go -port 8084` (der Port kann an die lokale Ziel-Umgebung angepasst werden).
-- **Zweck:** Sicherstellung der Transaktionssicherheit (ACID) der PostgreSQL-Datenbank und der Mutex-Locks im Backend bei zeitgleichem Scannen desselben Barcodes.
+Periodische Datenbank-Backups.
+
+- **Manuell:** `./scripts/backup.sh`
+- **Automatisch:** Täglich 02:30 Uhr via internem Scheduler (`jobs/cron.go`)
+- **Pipeline:** `pg_dump → gzip → AES-GCM-Verschlüsselung (Zufalls-Nonce) → 0600 auf Disk`
+- **Rotation:** Älteste Dateien werden nach Ablauf des Aufbewahrungsfensters gelöscht.
+
+---
+
+## 4. Deployment (`scripts/deploy.sh`)
+
+Automatisiert das Produktions-Deployment auf dem Hetzner-Server.
+
+```bash
+./scripts/deploy.sh
+```
+
+Führt aus:
+1. `git pull` (aktuellsten Stand ziehen)
+2. `docker compose up -d --build` (Container neu bauen, Zero-Downtime für andere Dienste)
+3. Prüft ob Caddy-Konfiguration den Domain-Block enthält, hängt ihn ggf. an
+
+---
+
+## 5. Concurrency-Lasttest (`cmd/stresstest`)
+
+Simuliert Race Conditions für parallele Barcode-Scans.
+
+```bash
+go run cmd/stresstest/main.go -port 8084
+```
+
+- Feuert via `sync.Cond` + Goroutinen zeitgleich Dutzende Requests gegen `/api/action`
+- Zweck: Verifikation der Transaktionssicherheit (FOR UPDATE + Unique Partial Index)
+
+---
+
+## 6. Paket-Utilities (`pkg/`)
+
+### `pkg/csvutil`
+CSV-Formel-Injection-Schutz (OWASP CWE-1236):
+```go
+import "bibliothek/pkg/csvutil"
+
+safeRow := csvutil.SanitizeRow([]string{titel, autor, ...})
+```
+Setzt Apostroph-Präfix bei Zellen die mit `= + - @ \t \r \n` beginnen.
+
+### `pkg/imageutil`
+Decompression-Bomb-Guard:
+```go
+import "bibliothek/pkg/imageutil"
+
+if err := imageutil.GuardImageDimensions(r.Body, 50_000_000); err != nil {
+    // Bild zu groß oder ungültig
+}
+```
+Liest nur den Bild-Header (`image.DecodeConfig`) — ohne volle RAM-Allokation. Limit: 50 Megapixel.

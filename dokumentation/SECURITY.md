@@ -2,60 +2,141 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
+> Zuletzt aktualisiert: 2026-06-24 (Session-Audit: alle 46 Dateien tief gescannt)
+
 ---
 
-## 🛡️ Technische Sicherheitsmaßnahmen
+## 🛡️ Authentifizierung & Session-Management
 
-### 1. Schutz vor SQL-Injection (SQLi)
-*   **Mechanismus:** Alle Interaktionen mit der PostgreSQL-Datenbank erfolgen ausschließlich über parametrisierte SQL-Abfragen unter Verwendung des `jackc/pgx/v5` Datenbank-Treibers.
-*   **Umsetzung:** Es werden keine SQL-Strings durch String-Konkatenation dynamisch zusammengebaut. Benutzereingaben werden als Query-Parameter ($1, $2, etc.) an Prepared Statements übergeben, wodurch SQL-Injection-Vektoren auf Datenbankebene vollständig eliminiert sind.
+### JWT (JSON Web Tokens)
+- **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
+- **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 500), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen.
+- **Lebensdauer:** 12 Stunden; danach ist eine erneute Anmeldung erforderlich.
+- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Lax`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`).
 
-### 2. Zentrale Eingabevalidierung (Input Validation)
-*   **Mechanismus:** Eingehende API-Payloads (JSON-Requests) werden vor der Verarbeitung im Backend strikt typisiert und validiert.
-*   **Umsetzung:** 
-    *   Verwendung des Industriestandard-Pakets `github.com/go-playground/validator/v10`.
-    *   Alle Request-Structs sind mit deklarativen Validierungs-Tags (z. B. `validate:"required"`, `validate:"email"`, `validate:"min=1"`) versehen.
-    *   Der HTTP-Transport-Layer nutzt eine generische Hilfsfunktion `DecodeAndValidate(r *http.Request, dst interface{}) error` in `api/validation.go`, die nicht-konforme Anfragen direkt mit einem `400 Bad Request` abweist, bevor sie die Geschäftslogik erreichen.
+### Brute-Force-Schutz (Login)
+- **Schlüssel:** `lower(email)|ip` — sperrt ein Konto für eine IP-Adresse (5 Fehlversuche / 15 min).
+- **Warum nicht nur IP?** An einer Schulnetzwerk-NAT sind alle Geräte hinter einer IP. Würde nur die IP gesperrt, würde ein einziger Fehlversuch die gesamte Schule aussperren. Der Composite-Key (`email|ip`) isoliert das betroffene Konto auf dieser IP und schützt trotzdem gegen gezielte Account-Angriffe.
+- **Globaler Rate-Limiter:** Zusätzlich 50 Requests/s/IP über alle Endpunkte (Map+Mutex, kein externer Cache nötig).
 
-### 3. Authentifizierung, Autorisierung und Endpunktsicherung (RBAC)
-*   **Mechanismus:** Die Absicherung kritischer Schnittstellen erfolgt im Backend über JWT-basierte Authentifizierungs- und Autorisierungs-Middlewares.
-*   **Umsetzung:**
-    *   **JWT-Authentifizierung:** Das System nutzt eine zustandslose Authentifizierung via JSON Web Tokens (JWT). Bei erfolgreichem Login wird ein signiertes JWT ausgestellt und als `HttpOnly`-Cookie (mit `SameSite=Lax` oder `Strict` und `Secure` in Produktion) im Browser persistiert, um das Auslesen durch bösartige Clientscripts zu verhindern (Schutz vor Session-Hijacking).
-    *   **RBAC-Middleware:** Routen werden im Router (`api/router.go`) durch spezifische Middlewares (z. B. `RequireRole("ADMIN")`) geschützt. Benutzer besitzen Rollen (Admin, Lehrer, Helfer), die granulare Berechtigungen (`permissions`) implizieren.
+---
 
-### 4. Schutz vor Cross-Site Scripting (XSS)
-*   **Mechanismus:** Das UI-Framework schützt standardmäßig vor Script-Injections im Browser.
-*   **Umsetzung:**
-    *   **Auto-Escaping:** Svelte 5 (Runes) führt standardmäßig ein automatisches HTML-Escaping für alle im Template gerenderten Variablen durch.
-    *   **Geringe Angriffsfläche:** Der Einsatz der `@html`-Direktive (die ungefilterten HTML-Code rendert) wird in der gesamten Svelte-Codebasis konsequent vermieden bzw. auf statische Systemtexte beschränkt. Benutzereingaben werden niemals unmaskiert via `@html` ausgegeben.
+## 🔒 Autorisierung (RBAC)
+
+### RequirePermission-Middleware
+- Alle schützenswerten Endpunkte sind über `RequirePermission` bzw. `RequireRoles` abgesichert.
+- **Keine transiente 403-Cacheung:** Ist die Datenbank bei der Berechtigungsprüfung nicht erreichbar (Netzwerkfehler, Timeout), wird HTTP 500 zurückgegeben und **nicht** in den Permission-Cache geschrieben. Ein vorübergehender DB-Ausfall führt also nicht dazu, dass legitime Benutzer für 60 Sekunden ausgesperrt bleiben.
+- **Stabile Verweigerung:** Nur `pgx.ErrNoRows` (Berechtigung definitiv nicht vorhanden) wird gecacht und als 403 gewertet.
+
+### Rollenkonzept
+- `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
+- `lehrer`: Granulare Rechte — jede Berechtigung muss explizit durch einen Admin freigeschaltet werden.
+- `mitarbeiter`: Grundrechte für den Tresen-Betrieb.
+- Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `lehrer`, `mitarbeiter`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
+
+---
+
+## 🛡️ Schutz vor Injection-Angriffen
+
+### SQL-Injection
+- Alle Datenbankinteraktionen erfolgen ausschließlich über parametrisierte Queries (`$1`, `$2`, …) mit `jackc/pgx/v5`. String-Konkatenation in SQL-Statements existiert nicht.
+
+### CSV-Formel-Injection (CWE-1236)
+- **Angriffsvektor:** Buchtitel oder Autornamen, die mit `=`, `+`, `-`, `@`, `\t`, `\r`, `\n` beginnen, können in CSV-Dateien als Formeln interpretiert werden (Excel/LibreOffice führt diese bei Öffnen aus).
+- **Schutz:** `pkg/csvutil.SanitizeRow()` setzt einen Apostroph-Präfix vor alle Zellen, die mit einem dieser Zeichen beginnen (OWASP-Empfehlung). Wird bei allen CSV-Exporten verwendet (`inventur/export_csv.go`, Bestellexporte).
+
+### XSS (Cross-Site Scripting)
+- Svelte 5 escaped alle Template-Variablen automatisch.
+- `{@html}` wird im gesamten Frontend nicht eingesetzt.
+- SVG-Icons sind hartcodierte Konstanten, keine benutzerkontrollierten Werte.
+
+---
+
+## 📁 Datei-Uploads
+
+### Foto-Uploads (Schülerfotos)
+- **Decompression-Bomb-Schutz:** `pkg/imageutil.GuardImageDimensions()` liest per `image.DecodeConfig` nur den Bild-Header (ohne volle Dekodierung). Bilder über 50 Megapixel werden abgelehnt, bevor `image.Decode` die vollständige Pixelmatrix allokiert (Schutz gegen RAM-Erschöpfung durch präparierte Bilder).
+- **MIME-Prüfung:** Über echte Dekodierung, nicht nur Dateiendung.
+- **Verschlüsselung:** Fotos werden AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank gespeichert — kein Klarpfad auf dem Dateisystem.
+- **Path-Traversal:** Alle Pfadoperationen nutzen `filepath.Base` + `filepath.Clean` + Prefix-Guard.
+
+### Cover-Uploads
+- 10 MB Body-Limit, 0600 Dateiberechtigungen.
+- Ebenfalls `GuardImageDimensions` vor dem vollständigen Decode.
+
+---
+
+## 📧 E-Mail-Sicherheit (SMTP/IMAP)
+
+### SMTP STARTTLS
+- **Zertifikatsprüfung aktiv:** `ServerName` wird gesetzt, `MinVersion: TLS 1.2` erzwungen. `InsecureSkipVerify` war zuvor auf `true` gesetzt — ein MITM-Angreifer konnte dadurch SMTP-Credentials und den gesamten E-Mail-Inhalt (inkl. Personendaten für Mahnwesen) mitlesen. **Behoben.**
+- **Opt-out für interne/Legacy-Server:** Umgebungsvariable `SMTP_ALLOW_INSECURE_TLS=true` erlaubt das Abschalten der Zertifikatsprüfung bei Bedarf (mit expliziter Warnung im Log).
+- **Header-Injection:** Attachment-Dateinamen werden gegen CRLF-Injection bereinigt.
+
+### IMAP
+- Implizites TLS (Port 993), `MinVersion: TLS 1.2`, ServerName-Verifikation, Timeouts.
+
+---
+
+## 🔏 CSRF-Schutz
+
+- **Methode:** Double-Submit Cookie mit Constant-Time-Vergleich.
+- **Achtung (behoben):** `sync-covers` und `import-bestand` sind global registrierte Endpunkte unter `/api/admin/…`. Durch eine zu breite Ausnahme-Regel für `/api/admin/*` waren diese temporär ohne CSRF-Schutz. Die Ausnahme wurde entfernt — beide Endpunkte durchlaufen jetzt die globale CSRF-Prüfung. Das Frontend sendet den Token bereits korrekt (keine Frontend-Änderung nötig).
+
+---
+
+## 🐳 Produktions-Absicherung (Secret Guard)
+
+### Problem
+Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
+
+### Lösung (`main.go/loadConfig`)
+Der Server **verweigert den Start** außerhalb von `APP_ENV=local`, wenn bekannte Default-Secrets erkannt werden:
+```go
+knownDefaultSecrets := map[string]bool{
+    "super-secret-default-key-at-least-32-bytes": true,
+    "super-secure-aes-key-32-chars-ok":           true,
+    "supergeheim_lokal":                          true,
+}
+```
+Im lokalen Entwicklungsmodus (`APP_ENV=local` oder `APP_ENV=development`) sind die Defaults weiterhin erlaubt.
+
+### Mindestanforderungen
+- `JWT_SECRET`: ≥ 32 Zeichen
+- `APP_ENCRYPTION_KEY`: genau 32 Bytes (oder 64 Hex-Zeichen)
+- In Produktion: `docker-compose.yml` erzwingt per `${VAR:?Fehlermeldung}`, dass alle Secrets gesetzt sind
 
 ---
 
 ## 🔒 Datenschutz und DSGVO-Konformität
 
-### 1. Automatisierte Löschroutinen
-Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch, um das Prinzip der Datensparsamkeit sowie rechtliche Löschfristen durchzusetzen. Diese Jobs operieren strikt getrennt von der primären Geschäftslogik.
+### Automatisierte Löschroutinen
+Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
-*   **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** 
-    Dieser Cronjob entfernt die `bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden. Die Identität des ausleihenden Operators wird damit unwiederbringlich gelöscht.
-*   **Abgänger-Löschung (`RunGDPRDeleteAbgaenger`):** 
-    Dieser Job führt täglich ein Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) durch. Voraussetzungen für eine automatische Löschung sind:
-    1. Das Abgangsjahr liegt in der Vergangenheit.
-    2. Die Karenzzeit von 30 Tagen im neuen Schuljahr ist abgelaufen.
-    3. Es existieren keine offenen Buchausleihen.
-    4. Es existieren keine unbezahlten Schadensfälle.
-    Bei einer Löschung werden historische Ausleihdaten anonymisiert (`schueler_id = NULL`), um Statistiken zu wahren.
+- **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** Entfernt `bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden.
+- **Abgänger-Löschung (`RunGDPRDeleteAbgaenger`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) nach Karenzzeit (30 Tage im neuen Schuljahr), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
 
-### 2. Datenverschlüsselung
-Persönliche Bilder von Schülern (`schueler_fotos`) unterliegen besonderen Schutzanforderungen.
-*   **Speicherung:** Fotos werden in der Datenbank nicht als Dateipfad oder im Klartext, sondern als verschlüsselter Bytestrom (`foto_encrypted BYTEA`) gespeichert.
-*   **Zugriff:** Der Zugriff erfolgt ausschließlich über autorisierte API-Endpoints, die den Bytestrom in-memory verarbeiten (AES-256) und an berechtigte Clients ausliefern.
+### Datenverschlüsselung
+- Schülerfotos: AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank. Kein Klartext auf dem Dateisystem.
+- DB-Backups: `pg_dump → gzip → AES-GCM` (Zufalls-Nonce), 0600 Dateiberechtigungen, Rotation.
+
+### Adressdaten (DSGVO vs. Mahnwesen)
+Adressspalten (`strasse`, `plz`, `ort`) werden für das Mahnwesen (Briefversand) benötigt und sind **bewusst vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der Adressspalten blockiert hätte — dieser wurde entfernt, da die Daten fachlich essenziell sind.
 
 ---
 
-## 🛡️ Netzwerksicherheit & Security Header
+## 🛡️ Netzwerksicherheit & Security-Header
 
-Die Applikation wird regelmäßig mit Tools wie OWASP ZAP auf Schwachstellen getestet. Um Angriffsvektoren proaktiv zu begegnen, setzt das Go-Backend (`api/middleware.go`) restriktive Sicherheits-Header:
-*   `frame-ancestors 'none';` in der Content-Security-Policy (CSP) verhindert, dass die Applikation in iFrames eingebettet wird (Clickjacking-Schutz).
-*   `form-action 'self';` stellt sicher, dass Formulare nur an denselben Origin (unsere eigene API) abgesendet werden können.
-*   Eingeschränkte Ausführung von Skripten (`script-src 'self'`) und Laden von Ressourcen (Bilder, Schriften) nur von vertrauenswürdigen Quellen.
+Restriktive HTTP-Header in `api/middleware.go`:
+- `frame-ancestors 'none'` — verhindert Clickjacking via iFrame
+- `form-action 'self'` — Formulare nur an eigene API
+- `script-src 'self'` — kein externes Script-Loading
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+
+---
+
+## 📋 Audit-Trail
+
+- Alle administrativen Aktionen und Buchbewegungen werden in `audit_logs` protokolliert (Append-Only).
+- Auditierung erfolgt **nach** dem Transaktions-Commit (kein Rollback-Risiko).

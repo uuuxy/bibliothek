@@ -4,88 +4,107 @@ Eine moderne, webbasierte Verwaltungssoftware für Schulbibliotheken. Das System
 
 ---
 
-## 🛠️ Tech-Stack & Systemübersicht
+## 🛠️ Tech-Stack
 
-Das System besteht aus zwei Hauptkomponenten und einer relationalen Datenbank:
-
-*   **Go Backend:** Robuste, hochperformante Service-Architektur (Go 1.22+), kompiliert als binäres Executable.
-*   **Svelte 5 Frontend:** Moderne Single-Page-Application (SPA), kompiliert als statisches Web-Asset unter Verwendung von Tailwind CSS für das UI-Design und Svelte-Runes für reaktives State-Management.
-*   **PostgreSQL:** Relationale Datenbank zur sicheren, transaktionsbasierten Datenhaltung.
-*   **SSE (Server-Sent Events):** Echtzeit-Übertragung von Scan-Events und Statusänderungen an den Client.
-
----
-
-## ✨ Hauptfunktionen (Features)
-
-*   **Zentrale Omnibox (Scanner-Dispatcher):** Ein einziges Eingabefeld verarbeitet alle Barcode-Scans. Das System erkennt anhand von Präfixen vollautomatisch, ob es sich um einen Schüler (`S-`), eine Lehrkraft (`L-`), ein Buch (`B-`) oder ein Hardware-Gerät (`G-`) handelt und führt die entsprechende Aktion (Ausleihe, Rückgabe, Profilaufruf) aus.
-*   **Automatische Fristenberechnung:**
-    *   Spezielle Leihfristen für Schulbücher der Lernmittelfreiheit (**LMF-Bücher**) mit jährlichem Stichtag (31. Juli).
-    *   Verkürzte Ausleihfristen für Sonderbestände wie audiovisuelle Medien (CDs, DVDs, Hörbücher).
-    *   Flexible Überschreibung für Sonderaktionen wie den **Ferien-Leseclub**.
-*   **Revisionssicherer Audit-Trail & DSGVO:**
-    *   Append-Only-Ereignisprotokollierung für administrative Aktionen und Buchbewegungen.
-    *   Datenschutzkonforme Löschroutinen für Schulabgänger unter automatischer Anonymisierung der historischen Ausleihdaten.
-*   **LUSD-Schnittstelle:** Automatisierter Abgleich und Import von Schülerdaten aus dem hessischen LUSD-System zur Pflege von Klassenlisten und Erkennung von Schulabgängern.
-*   **Hardware- und Geräteverwaltung:** Ausleihe von Laptops, Tablets und Zubehör mit interaktiven Zubehör-Checklisten vor der Übergabe.
-*   **Druck-Center:** Einfache Generierung und Druck von Barcode-Etiketten für Bücher sowie Schülerausweisen.
-*   **Feingranulares Rechtesystem (RBAC):** Rollenbasierte Zugriffskontrolle mit separaten Berechtigungen für Administratoren, Lehrkräfte und Helfer.
+| Komponente | Technologie |
+|---|---|
+| Backend | Go 1.22+, `net/http`, `pgx/v5` |
+| Frontend | Svelte 5 (Runes), Tailwind CSS, Vite |
+| Datenbank | PostgreSQL 15/16 |
+| Echtzeit | Server-Sent Events (SSE) |
+| Deployment | Docker Compose, Caddy (Reverse Proxy) |
 
 ---
 
-## 🏛️ Systemarchitektur
+## ✨ Hauptfunktionen
 
-### 1. Go Backend Architektur
-Die Backend-Architektur folgt dem Pattern der sauberen Schichtentrennung (Layered Architecture):
-
-*   **Router/Handler (`api/`):** Verantwortlich für das HTTP-Routing, Parsen von Requests, Validierung von Parametern und Rückgabe von JSON-Antworten. Beinhaltet die Middleware-Kette (RBAC, Rate Limiting, CSRF, Security Headers).
-*   **Service (`internal/service/`):** Beinhaltet die fachliche Geschäftslogik. Die Services orchestrieren Aufrufe an mehrere Repositories und steuern systemübergreifende Prozesse (z. B. PDF-Generierung, E-Mail-Versand, Event-Dispatching).
-*   **Repository (`repository/`):** Die Datenzugriffsschicht. Hier befinden sich ausschließlich SQL-Statements (PostgreSQL) und Mapping-Logiken von Datenbankzeilen auf Go-Structs. Genutzt wird `pgx` für typsicheres und performantes Connection Pooling.
-
-### 2. Svelte 5 Frontend Konzept
-*   **State Management (Runes):** Die Zustandsverwaltung erfolgt lokal über Svelte 5 Runes (`$state`, `$derived`, `$effect`). Auf globale State-Container (wie Redux) wird verzichtet.
-*   **Trennung von UI und State:** Komplexe Ansichten werden in separate Komponenten zerlegt (z. B. Modale, Tabellen, Formulare). Daten werden über Props übergeben, während Events von Kind- an Elternkomponenten delegiert werden.
-
-### 3. Datenbankarchitektur (PostgreSQL)
-Die relationale PostgreSQL-Datenbank normalisiert Entitäten. Das primäre Strukturprinzip unterscheidet strikt zwischen Katalogdaten und physischen Beständen:
-*   **`buecher_titel`:** Speichert Metadaten auf Katalogebene (ISBN, Titel, Autor, Verlag).
-*   **`buecher_exemplare`:** Speichert spezifische physische Instanzen, referenziert einen `buecher_titel` via `titel_id`. Beinhaltet Felder für `barcode_id`, `zustand_notiz` und `ist_ausleihbar`.
-*   **`schueler_fotos`:** Profilbilder werden aus Datenschutzgründen als verschlüsselter Bytestrom (`BYTEA`) gespeichert.
+- **Zentrale Omnibox (Scanner-Dispatcher):** Ein einziges Eingabefeld verarbeitet alle Barcode-Scans. Das System erkennt anhand von Präfixen (`S-` Schüler, `L-` Lehrer, `B-` Buch, `G-` Gerät) vollautomatisch die richtige Aktion.
+- **Automatische Fristenberechnung:** LMF-Bücher (jährlicher Stichtag 31. Juli), Sonderbestände (CDs, DVDs, Hörbücher), Ferien-Leseclub.
+- **Revisionssicherer Audit-Trail:** Append-Only-Ereignisprotokollierung für alle administrativen Aktionen.
+- **DSGVO-Compliance:** Automatisierte Löschroutinen für Schulabgänger, AES-256-verschlüsselte Schülerfotos.
+- **LUSD-Schnittstelle:** Import von Schülerdaten aus dem hessischen LUSD-System.
+- **Hardware-Verwaltung:** Ausleihe von Laptops/Tablets mit Zubehör-Checklisten.
+- **Druck-Center:** Barcode-Etiketten und Schülerausweise.
+- **Feingranulares RBAC:** Admin / Lehrer (konfigurierbare Rechte) / Mitarbeiter.
 
 ---
 
-## 💻 Lokales Setup
+## 📚 Dokumentation
+
+| Dokument | Inhalt |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Schichtenarchitektur, Concurrency-Modell, Datenbankdesign, Frontend |
+| [SECURITY.md](SECURITY.md) | Sicherheitskonzept, DSGVO, alle Schutzmaßnahmen |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups |
+| [INSTALL.md](INSTALL.md) | Lokales Setup |
+| [SCRIPTS.md](SCRIPTS.md) | CLI-Werkzeuge und Migrationen |
+| [CHANGELOG.md](CHANGELOG.md) | Änderungshistorie |
+| [MYSQL_TO_POSTGRES_MIGRATION.md](MYSQL_TO_POSTGRES_MIGRATION.md) | Altdaten-Migration von MySQL |
+
+---
+
+## 💻 Schnellstart (lokal)
 
 ### Voraussetzungen
-*   **Go** (Version 1.22 oder neuer)
-*   **Node.js** (inklusive `npm`)
-*   **PostgreSQL** (lokal oder via Docker)
+- Go 1.22+
+- Node.js (npm)
+- PostgreSQL (lokal oder via Docker)
 
-### 1. Umgebungsvariablen einrichten
-Kopiere die `.env.example` im Hauptverzeichnis nach `.env` und passe die Werte an deine lokale Umgebung an (insbesondere die Datenbankverbindung und den Verschlüsselungsschlüssel):
+### Mit Docker (empfohlen)
+```bash
+docker compose -f docker-compose.local.yml up -d
+```
+Backend: `http://localhost:8084` · DB: `localhost:5434`
 
+### Manuell
+
+**1. Umgebungsvariablen**
 ```bash
 cp .env.example .env
+# DATABASE_URL, JWT_SECRET (≥32 Zeichen), APP_ENCRYPTION_KEY (32 Bytes) anpassen
 ```
 
-*Hinweis: Der `APP_ENCRYPTION_KEY` muss genau 32 Zeichen (oder 64 Hex-Zeichen) lang sein.*
-
-### 2. Backend starten
-Das Go-Backend führt beim Start automatisch alle ausstehenden Datenbank-Migrations aus und legt bei einer leeren Datenbank einen Standard-Admin-Benutzer an.
-
+**2. Backend starten**
 ```bash
-# Im Hauptverzeichnis ausführen:
 go run main.go
+# Führt Datenbank-Migrationen automatisch aus
 ```
 
-Das API-Backend läuft standardmäßig unter `http://localhost:8081` (bzw. dem in der `.env` konfigurierten Port).
-
-### 3. Frontend starten
-Navigiere in den Frontend-Ordner, installiere die Node-Pakete und starte den Entwicklungsserver:
-
+**3. Frontend starten**
 ```bash
 cd frontend
 npm install
 npm run dev
+# → http://localhost:5173
 ```
 
-Die Benutzeroberfläche ist anschließend im Browser unter `http://localhost:5173` (bzw. dem von Vite ausgegebenen Port) erreichbar.
+---
+
+## 🏛️ Systemarchitektur (Kurzübersicht)
+
+```
+Middleware (Rate-Limit → Auth → CSRF → RBAC)
+        │
+        ▼
+Handler (api/) → Service (internal/service/) → Repository (repository/)
+        │                                               │
+        ▼                                               ▼
+SSE Broker (Echtzeit)                         PostgreSQL (pgx/v5)
+```
+
+Details: [ARCHITECTURE.md](ARCHITECTURE.md)
+
+---
+
+## 🔒 Sicherheit
+
+- JWT HMAC-only (kein `alg=none`)
+- Brute-Force-Schutz: `email|ip`-Composite-Key
+- CSRF: Double-Submit Cookie
+- AES-256-GCM für Schülerfotos
+- SMTP mit TLS-Zertifikatsprüfung
+- CSV-Formel-Injection-Schutz (OWASP CWE-1236)
+- Decompression-Bomb-Guard bei Bild-Uploads
+- Produktions-Secret-Guard (Server startet nicht mit Default-Secrets)
+
+Details: [SECURITY.md](SECURITY.md)
