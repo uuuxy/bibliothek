@@ -53,4 +53,6 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/mahnwesen/ueberfaellig_jahrgang", s.RequirePermission("view_students")(s.GetMahnwesenJahrgangHandler(mahnRepo)))
 	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler(mahnRepo)))
 	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler(mahnRepo)))
+	// Alias für das Frontend (downloadElternPDF ruft /api/reports/overdue-pdf auf)
+	mux.Handle("GET /api/reports/overdue-pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler(mahnRepo)))
 }
