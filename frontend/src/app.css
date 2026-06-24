@@ -143,6 +143,14 @@ body {
     break-after: avoid !important;
   }
 
+  /* Die Ausleih-Quittung wird über einen eigenen Button mit reinem window.print()
+     (OHNE data-print-mode) gedruckt. Sobald ein Karten-Druckmodus aktiv ist
+     (z. B. "Ausweis drucken" → card-single), muss sie ausgeblendet werden — sonst
+     erscheint sie zusätzlich zum Ausweis auf dem Ausdruck. */
+  body[data-print-mode] .print-receipt-section {
+    display: none !important;
+  }
+
   /* Single-card print (triggered from student profile) */
   body[data-print-mode="card-single"] .single-card-print-section {
     display: block !important;
