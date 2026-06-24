@@ -15,9 +15,9 @@
     <p class="font-semibold text-sm">Noch keine Ausleihen in der Datenbank vorhanden.</p>
   </div>
 {:else}
-  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-    <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-      <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Letzte {history.length} Ausleihen</p>
+  <div class="w-full">
+    <div class="px-1 py-3 border-b border-gray-200 flex items-center justify-between">
+      <p class="text-sm font-medium text-gray-600">Letzte {history.length} Ausleihen</p>
     </div>
     <ul class="divide-y divide-slate-50">
       {#each history as h}

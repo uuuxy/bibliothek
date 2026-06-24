@@ -16,7 +16,7 @@
   let { book, borrowers, exemplare, coverSrc, coverFailed, onCoverError, onCoverLoad } = $props();
 </script>
 
-<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+<div class="overflow-hidden rounded-2xl">
   <div class="flex flex-col sm:flex-row gap-0">
     <!-- Cover / Spine -->
     <div class="w-full sm:w-48 shrink-0 bg-linear-to-br {getSubjectGradient(book.subject)} flex items-center justify-center min-h-56 relative">
@@ -65,7 +65,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <!-- Stock -->
         <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Verfügbar</p>
+          <p class="text-[10px] font-bold text-slate-400 mb-1">Verfügbar</p>
           <p class="text-2xl font-extrabold {(book.verfuegbar) === 0 ? 'text-rose-600' : (book.verfuegbar) < 5 ? 'text-amber-600' : 'text-emerald-600'}">
             {book.verfuegbar}
             <span class="text-sm font-medium text-slate-400">/ {book.gesamt}</span>
@@ -73,17 +73,17 @@
         </div>
         <!-- Ausleiher -->
         <div class="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-1">Ausleiher</p>
+          <p class="text-[10px] font-bold text-indigo-400 mb-1">Ausleiher</p>
           <p class="text-2xl font-extrabold text-indigo-700">{borrowers.length}</p>
         </div>
         <!-- Exemplare -->
         <div class="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1">Exemplare</p>
+          <p class="text-[10px] font-bold text-emerald-400 mb-1">Exemplare</p>
           <p class="text-2xl font-extrabold text-emerald-700">{exemplare.length}</p>
         </div>
         <!-- ISBN -->
         <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">ISBN / EAN</p>
+          <p class="text-[10px] font-bold text-slate-400 mb-1">ISBN / EAN</p>
           <p class="text-sm font-mono font-semibold text-slate-700 break-all">{book.isbn || "–"}</p>
         </div>
       </div>

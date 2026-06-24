@@ -124,7 +124,7 @@
   </div>
 
   <!-- List -->
-  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="w-full">
     <ul class="divide-y divide-slate-50">
       {#each filteredBorrowers as b}
         <li class="px-5 py-3.5 hover:bg-slate-50 transition-colors flex items-center justify-between group">
@@ -145,13 +145,13 @@
           </div>
           <div class="text-right shrink-0 ml-4 flex gap-6 items-center">
             <div class="text-right hidden sm:block">
-              <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Ausgeliehen</p>
+              <p class="text-[10px] font-medium text-slate-400">Ausgeliehen</p>
               <p class="text-sm font-semibold text-slate-600">
                 {fmtDate(b.ausgeliehen_am)}
               </p>
             </div>
             <div class="text-right">
-              <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Rückgabe bis</p>
+              <p class="text-[10px] font-medium text-slate-400">Rückgabe bis</p>
               <p class="text-sm font-bold {new Date(b.rueckgabe_frist) < new Date() ? 'text-rose-600' : 'text-slate-700'}">
                 {fmtDate(b.rueckgabe_frist)}
               </p>

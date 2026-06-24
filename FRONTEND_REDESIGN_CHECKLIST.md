@@ -31,8 +31,13 @@ Modals: `DamageReportModal`, `KioskChecklistModal`, `KioskDamageModal`, `KioskRe
 - [x] `AuditLog`, `AdminAuditLog` — Tabellen-Karten → flach; Köpfe entkapitalisiert.
 - [x] `MahnwesenTable` — Tabelle war bereits flach; nur Modal (bleibt Karte).
 
+## ✅ Buch-Akte-Tabs — erledigt (Batch 4)
+- [x] `BookAkteMeta` — Karten-Chrome (bg-white border shadow) entfernt; Stat-Eyebrows entkapitalisiert. (Stat-Chips bg-slate-50 bewusst belassen = Metrik-Chips, keine Layout-Karte.)
+- [x] `BookHistoryTab`, `BookBorrowersTab`, `BookBorrowersList` — Tabellen-/Panel-Karten → flach; Köpfe/Labels entkapitalisiert.
+- [x] `BookVormerkungenTab` — Eingabe-Labels uppercase → text-sm font-medium text-gray-600.
+- [~] `BookExemplareTab` — Exemplar-Auswahl-Kacheln sind interaktive Auswahl-Items (kein Layout-Block); nur Schatten reduzierbar. >200 Zeilen (296) → Split offen.
+
 ## ⏳ Offen — Layout-Karten (nach Bereich gebündelt, für Konsistenz batchweise)
-**Buch-Akte Tabs:** `BookAkteMeta`, `BookExemplareTab`, `BookHistoryTab`, `BookVormerkungenTab`, `BookBorrowersTab`, `BookBorrowersList`
 **Mahnwesen/Audit:** `components/mahnwesen/MahnwesenTable`, `AuditLog`, `AdminAuditLog`
 **Dashboards/Portale:** `StatsDashboard`, `LehrerPortal`, `UnifiedInventory`, `components/kiosk/KioskIdle`, `KioskActiveSession`
 **Sonstiges:** `OpacSearch` (nur Filterbar/Breite), `StudentVormerkungenCard`, `ClassPrintStation`, `MailTemplates`✓, `components/labels/LabelSettings`, `designer/PropertiesPanel`
