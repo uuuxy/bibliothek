@@ -122,13 +122,7 @@ type LoginResponse struct {
 // Supports both email/password (with local DB or school IMAP verification) and barcode/PIN login.
 func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Brute-force protection: block IPs that exceeded 5 failed logins in 15 minutes
 		clientIP := realIP(r)
-		if globalLoginLimiter.isBlocked(clientIP) {
-			apierrors.SendHTTPError(w, http.StatusTooManyRequests,
-				errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
-			return
-		}
 
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -155,6 +149,17 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
+		// Brute-Force-Schutz: pro (E-Mail|IP) drosseln — NICHT rein pro IP. Sonst würde in einer
+		// Schule, in der alle Geräte hinter EINER NAT-IP hängen, ein einziger Nutzer mit 5
+		// Fehlversuchen die GESAMTE Schule für 15 Minuten am Login hindern. Der zusammengesetzte
+		// Schlüssel sperrt nur das betroffene Konto auf dieser IP.
+		bruteForceKey := strings.ToLower(strings.TrimSpace(req.Email)) + "|" + clientIP
+		if globalLoginLimiter.isBlocked(bruteForceKey) {
+			apierrors.SendHTTPError(w, http.StatusTooManyRequests,
+				errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
+			return
+		}
+
 		// ONLY perform IMAP verification (Roundcube SSO)
 		if imapErr := AuthenticateIMAP(req.Email, password); imapErr == nil {
 			// IMAP succeeded, check if the user is registered in our local DB
@@ -171,7 +176,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		}
 
 		if !authSuccess {
-			globalLoginLimiter.recordFailure(clientIP)
+			globalLoginLimiter.recordFailure(bruteForceKey)
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 			return
 		}

@@ -44,11 +44,11 @@
 
 ## 🟡 Priorität 3 — Robustheit / Betrieb
 
-- [ ] **SSE-Broker** (`sse/`) — Goroutine-/Channel-Leaks bei Client-Disconnect, Backpressure, langsame Clients
-- [ ] **Background-Jobs** (`jobs/backup.go`, `antolin_sync.go`, `cron.go`) — Fehlerbehandlung, Überlappungsschutz, Retry, Backup-Integrität
-- [ ] **Cover-Sync unter Last** — 20k Titel: Rate-Limits DNB/Google/OpenLibrary, Worker-Pool-Verhalten, FAILED-Retry-Schleifen
-- [ ] **Migrations-Hygiene** — doppelte Präfixe (`003_`, `008_`, `021_`, `022_` je 2×) → fragile Reihenfolge; Idempotenz aller ADD-COLUMN-Migrationen
-- [ ] **Rate-Limit/Brute-Force-Tuning** — Schwellen, Verhalten hinter Caddy, Shared-IP (Schul-NAT)
+- [x] **SSE-Broker** (`sse/`) — sauber: zentraler Event-Loop, `RLock`/`Lock` verhindern send-on-closed, **non-blocking** Broadcast (langsamer Client blockiert andere nicht), gepufferter Channel, Heartbeat + Context-Abbruch. Nur benigne Schwäche: bei Server-Shutdown können `register`/`unregister`-Sends blockieren, nachdem `Start` via ctx endet — Prozess terminiert aber ohnehin. Kein Runtime-Leak.
+- [x] **Background-Jobs** (`backup.go`, `cron.go`) — Backup: pg_dump→gzip→AES-GCM (Zufalls-Nonce)→0600, Fehler je Stufe behandelt, Rotation. GDPR-Jobs konservativ & auditiert (Löschung nur ohne offene Ausleihen/Schäden, 30-Tage-Karenz; Fehler löscht eher zu wenige). Notiz (nicht-kritisch): Backup hält Dump komplett im RAM (2:30 Uhr ok); Cron ohne globales SkipIfStillRunning, aber kritischer Cover-Sync hat atomaren Re-Entrancy-Guard.
+- [x] **Cover-Sync unter Last** — bereits in früherer Session überarbeitet: Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry, lokale WebP-Speicherung. Provider-Rate-Limits werden über FAILED-Status + Retry abgefedert.
+- [x] **Migrations-Hygiene** — doppelte Präfixe (003/008/021/022 je 2×) sortieren deterministisch und sind inhaltlich unabhängig (keine Reihenfolge-Abhängigkeit). Der eigentliche Bug (schema_migrations-Seed-Mismatch) ist in `1c79b2c` behoben. Verbleibt: Stil-Smell (künftige Migrationen mit eindeutigem Sequenz-Präfix).
+- [x] **Rate-Limit/Brute-Force-Tuning** — **Gefunden+behoben:** der Login-Brute-Force-Limiter schlüsselte rein auf die IP (5 Fehlversuche/15 min). Bei Schul-NAT (alle Geräte hinter einer IP) hätten 5 Fehlversuche eines Nutzers die ganze Schule ausgesperrt. Schlüssel auf `email|ip` umgestellt (Check nach E-Mail-Extraktion) → sperrt nur das betroffene Konto auf dieser IP, schützt weiter gegen Account-Brute-Force. Globaler Request-Limiter (50/s/IP) unverändert.
 
 ---
 
