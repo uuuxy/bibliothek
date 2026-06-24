@@ -28,25 +28,26 @@
 </script>
 
 {#if loading}
-  <div class="p-6 bg-white border border-rose-200 rounded-2xl shadow-xs flex justify-center h-full items-center">
+  <div class="flex justify-center h-full items-center py-10">
     <div class="w-6 h-6 border-2 border-t-rose-500 border-rose-500/20 rounded-full animate-spin"></div>
   </div>
 {:else if summary}
-  <div class="bg-white border-2 border-rose-400 rounded-2xl shadow-xs overflow-hidden flex flex-col h-full">
+  <!-- Flaches Alert mit Links-Akzent statt umschließender Karte -->
+  <div class="border-l-4 border-rose-500 pl-5 flex flex-col h-full">
     <!-- Header -->
-    <div class="bg-rose-50 p-4 border-b border-rose-200 flex justify-between items-center">
+    <div class="flex justify-between items-center pb-4 border-b border-gray-200">
       <div>
-        <h3 class="text-rose-700 font-bold uppercase tracking-wider text-sm">Dringend: Mahnungen</h3>
-        <p class="text-rose-600/80 text-xs font-semibold mt-0.5">Überfällige Ausleihen gesamt</p>
+        <h3 class="text-rose-700 font-bold text-base">Dringend: Mahnungen</h3>
+        <p class="text-sm text-gray-600 mt-0.5">Überfällige Ausleihen gesamt</p>
       </div>
-      <div class="bg-rose-600 text-white font-extrabold text-2xl px-4 py-1.5 rounded-xl shadow-sm">
+      <div class="text-rose-600 font-extrabold text-4xl tabular-nums">
         {summary.total_overdue}
       </div>
     </div>
-    
+
     <!-- Top 5 List -->
-    <div class="p-4 flex-1 pb-6">
-      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Am längsten überfällig (Härtefälle)</h4>
+    <div class="pt-4 flex-1 pb-6">
+      <h4 class="text-sm font-medium text-gray-600 mb-3">Am längsten überfällig (Härtefälle)</h4>
       {#if summary.top_overdue && summary.top_overdue.length > 0}
         <ul class="space-y-3">
           {#each summary.top_overdue as item}
