@@ -21,7 +21,7 @@
 
 ## 🔴 Priorität 1 — Sicherheits-/datenkritisch
 
-- [ ] **File-Uploads (Foto/Cover)** — Path-Traversal im Pfadbau, Größenlimits, MIME-/Magic-Byte-Validierung, Speicherort-Rechte, Resize-DoS (große Bilder)
+- [x] **File-Uploads (Foto/Cover)** — Path-Traversal überall sicher (`http.Dir` + `filepath.Base` + Clean/Prefix-Guard); MIME via echtem Decode; Fotos AES-verschlüsselt in DB (kein FS); Cover 10 MB-Limit, 0600. **Gefunden+behoben:** Decompression-Bomb-DoS (image.Decode allokiert Pixelmatrix vor Dimensionsprüfung) → zentraler `GuardImageDimensions` (Header-only, 50 MP-Limit) in Foto- und Cover-Pfad. Rest-Hinweis: `DecodeAndValidate` (Foto-Upload) hat kein eigenes Body-Limit (nur global 100 MB) — optional verschärfen.
 - [x] **DSGVO-Konflikt Migration 003 ↔ Adressfeature** — verbietender RAISE-Wächter entfernt; Adressspalten bleiben erhalten (fachlich essenziell), `geburtsdatum` bleibt; Fresh-Deploy läuft ohne Abbruch. Verifiziert gegen echte DB.
 - [ ] **Import-Pfade (LUSD / Littera / Excel)** — Injection über CSV/Excel-Inhalte, Teilfehler-Verhalten, Transaktionsgrenzen, Speicher bei ~20k Zeilen, Encoding/BOM
 - [ ] **PDF-Erzeugung (Mahnwesen / Abgänger / Schäden)** — Template-Injection, Ressourcen bei großen Listen, ungültige/fehlende Daten, Timeouts
