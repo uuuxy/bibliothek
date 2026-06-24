@@ -21,8 +21,12 @@
   import Graduates from "./Graduates.svelte";
   
   function handleSelectBook(book) {
-    appState.selectedBook = book;
-    uiStore.activeTab = "media_catalog";
+    // Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
+    // öffnen (book_detail → BookAkte via bookId, inkl. Deep-Link /katalog/buch/{id}) —
+    // NICHT den allgemeinen Medienkatalog.
+    if (!book?.id) return;
+    appState.activeBookId = book.id;
+    uiStore.activeTab = "book_detail";
   }
 
   // Routing effects
