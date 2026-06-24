@@ -42,10 +42,6 @@
         <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">LUSD ID</p>
         <p class="text-slate-800 font-semibold">{profile.lusd_id || 'Keine Angabe'}</p>
       </div>
-      <div>
-        <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">System-ID</p>
-        <p class="text-slate-600 font-mono text-xs">{profile.id}</p>
-      </div>
     </div>
 
     <div class="space-y-6">

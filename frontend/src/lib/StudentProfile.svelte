@@ -7,6 +7,7 @@
   import StudentProfileCard from "./StudentProfileCard.svelte";
   import StudentPrintCard from "./StudentPrintCard.svelte";
   import StudentProfileDeleteModal from "./StudentProfileDeleteModal.svelte";
+  import StudentDangerZone from "./StudentDangerZone.svelte";
   import StudentProfileStammdaten from "./StudentProfileStammdaten.svelte";
   import StudentVormerkungenCard from "./StudentVormerkungenCard.svelte";
   import StudentProfileActions from "./StudentProfileActions.svelte";
@@ -114,32 +115,20 @@
             {/if}
           </div>
         {:else if st.activeTab === "stammdaten"}
-          <StudentProfileStammdaten 
-            profile={st.profile} 
-            {role} 
-            rechnungPdfLoading={st.rechnungPdfLoading} 
-            onDownloadRechnung={st.downloadRechnungPDF} 
-            onEdit={() => st.showEditModal = true} 
+          <StudentProfileStammdaten
+            profile={st.profile}
+            {role}
+            rechnungPdfLoading={st.rechnungPdfLoading}
+            onDownloadRechnung={st.downloadRechnungPDF}
+            onEdit={() => st.showEditModal = true}
           />
+
+          <!-- Gefahrenzone: ausschließlich am unteren Ende des Stammdaten-Reiters, nur für Admins -->
+          {#if role === 'admin'}
+            <StudentDangerZone onDelete={() => st.showDeleteConfirm = true} />
+          {/if}
         {/if}
       </div>
-
-      {#if role === 'admin'}
-        <div class="mt-8 border-2 border-rose-100 bg-rose-50/50 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-center justify-between shadow-sm">
-          <div>
-            <h3 class="text-rose-700 font-bold text-lg flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-              Gefahrenzone
-            </h3>
-            <p class="text-rose-600/80 text-sm mt-1 max-w-xl">
-              Das Löschen dieses Schülerprofils entfernt die Person aus dem regulären System. Offene Ausleihen oder Forderungen müssen vorher beglichen werden.
-            </p>
-          </div>
-          <button onclick={() => st.showDeleteConfirm = true} class="shrink-0 px-6 py-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer">
-            Schüler archivieren / löschen
-          </button>
-        </div>
-      {/if}
     </div>
   </div>
   {:else}
