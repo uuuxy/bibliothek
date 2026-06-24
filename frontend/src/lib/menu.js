@@ -33,39 +33,32 @@ export const icons = {
  */
 export function canSeeItem(item, currentUser) {
   if (!currentUser) return false;
-  
+
   const r = (currentUser.rolle || '').toLowerCase();
-  
-  // Lehrer portal is strictly for lehrer
+
+  // Das Lehrer-Portal ist ausschließlich für Lehrer bestimmt.
   if (item.id === 'lehrer_portal') {
     return r === 'lehrer';
   }
-  
-  // Lehrer generally sees nothing else but the portal and media_catalog
-  if (r === 'lehrer' && item.id !== 'media_catalog') {
-    return false;
-  }
 
-  // Admin sees everything (except strictly lehrer stuff handled above)
+  // Admin hat implizit alle Rechte.
   if (r === 'admin') return true;
 
-  // No specific permission required? Check roles fallback if provided, otherwise true
+  // Sichtbarkeit richtet sich strikt nach den im PermissionManager freigeschalteten
+  // Rechten. currentUser.permissions stammt direkt aus der role_permissions-Tabelle
+  // (siehe LoginHandler) — der Admin steuert damit pro Rolle exakt, was sichtbar ist.
+  const perms = currentUser.permissions || [];
+
+  // Punkte ohne Permission-Anforderung sind allgemeine Theken-Werkzeuge (z. B. Kiosk).
   if (!item.permission) {
     if (item.roles) return item.roles.includes(r);
-    return true; // e.g. Kiosk, Catalog are public for staff
+    // Lehrer sehen nur ihr Portal + ausdrücklich freigeschaltete Rechte, keine
+    // allgemeinen Werkzeuge ohne Rechtebezug.
+    if (r === 'lehrer') return false;
+    return true;
   }
 
-  // Feature Flag / Permission check
-  const perms = currentUser.permissions || [];
-  const hasPerm = perms.includes('*') || perms.includes(item.permission);
-
-  // Hardcode-Block für eingeschränkte Rollen (Mitarbeiter & Helfer) als Fallback
-  if (r === 'mitarbeiter' || r === 'helfer') {
-    const adminOnlyItems = ['students_dir', 'graduates', 'mahnwesen', 'stats', 'permissions', 'settings'];
-    if (adminOnlyItems.includes(item.id)) return false;
-  }
-
-  return hasPerm;
+  return perms.includes('*') || perms.includes(item.permission);
 }
 
 export const menuGroups = [

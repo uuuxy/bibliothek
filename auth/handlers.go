@@ -198,18 +198,36 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			SameSite: http.SameSiteStrictMode, // Strict: keine Cross-Site-Requests erlaubt
 		})
 
-		var permissions []string
-		switch strings.ToUpper(roleStr) {
-		case "ADMIN":
-			permissions = []string{"manage_users", "manage_settings", "print_classes", "manage_inventory"}
-		case "MITARBEITER":
-			permissions = []string{"print_classes", "manage_inventory"}
-		case "LEHRER":
-			permissions = []string{"view_media"}
-		case "HELFER":
-			permissions = []string{}
-		default:
-			permissions = []string{}
+		// Effektive Rechte aus der konfigurierbaren role_permissions-Tabelle laden, damit das
+		// Frontend exakt das anzeigt, was der Admin im PermissionManager freigeschaltet hat
+		// (statt einer hartkodierten, vom echten System entkoppelten Liste). Admin hat implizit
+		// alle Rechte ("*"), analog zum Bypass in der RequirePermission-Middleware.
+		permissions := []string{}
+		if strings.EqualFold(roleStr, string(RoleAdmin)) {
+			permissions = []string{"*"}
+		} else {
+			permRows, permErr := dbPool.Query(ctx, `
+				SELECT permission
+				FROM role_permissions
+				WHERE UPPER(role) = UPPER($1) AND allowed = true
+			`, roleStr)
+			if permErr != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Berechtigungen konnten nicht geladen werden"))
+				return
+			}
+			defer permRows.Close()
+			for permRows.Next() {
+				var p string
+				if scanErr := permRows.Scan(&p); scanErr != nil {
+					apierrors.SendHTTPError(w, http.StatusInternalServerError, scanErr)
+					return
+				}
+				permissions = append(permissions, p)
+			}
+			if rowsErr := permRows.Err(); rowsErr != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, rowsErr)
+				return
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
