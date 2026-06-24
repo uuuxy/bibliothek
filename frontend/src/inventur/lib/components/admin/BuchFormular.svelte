@@ -38,7 +38,7 @@
 
 <!-- Full width block -->
 <div
-    class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col w-full my-4"
+    class="flex flex-col w-full my-4"
     transition:fade={{ duration: 200 }}
 >
     <!-- Drawer Header -->

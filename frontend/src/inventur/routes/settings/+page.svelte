@@ -115,7 +115,7 @@
 		<div class="text-gray-400 text-sm py-8 text-center">Lade Einstellungen…</div>
 	{:else}
 		<!-- ── Ferien-Leseclub ── -->
-		<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-5">
+		<div class="py-6 border-b border-gray-200 space-y-5">
 			<div class="flex items-center justify-between">
 				<div>
 					<h3 class="text-lg font-semibold text-gray-900">Ferien-Leseclub</h3>
@@ -152,7 +152,7 @@
 		</div>
 
 		<!-- ── LMF-Stichtag ── -->
-		<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+		<div class="py-6 border-b border-gray-200 space-y-4">
 			<h3 class="text-lg font-semibold text-gray-900">LMF-Stichtag</h3>
 			<p class="text-sm text-gray-500">Bücher, deren Titel mit <code class="bg-gray-100 px-1 rounded">lmf-</code> beginnen, erhalten dieses Datum als Rückgabefrist (Schuljahresende).</p>
 			<label class="block">
@@ -169,7 +169,7 @@
 		</div>
 
 		<!-- ── Fristen-Übersicht ── -->
-		<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+		<div class="py-6 border-b border-gray-200">
 			<h3 class="text-lg font-semibold text-gray-900 mb-3">Standardfristen</h3>
 			<div class="grid grid-cols-3 gap-3">
 				<div class="rounded-xl bg-slate-50 border border-slate-100 p-4 text-center">
@@ -188,7 +188,7 @@
 		</div>
 
 		<!-- ── Klassenlehrer-Mapping ── -->
-		<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+		<div class="py-6 border-b border-gray-200 space-y-4">
 			<div>
 				<h3 class="text-lg font-semibold text-gray-900">Klassenlehrer-Mapping</h3>
 				<p class="text-sm text-gray-500 mt-0.5">Weist jeder Klasse die E-Mail-Adresse der Klassenlehrerin / des Klassenlehrers zu. Diese Adresse wird im Mahnwesen vorausgefüllt.</p>
@@ -268,7 +268,7 @@
 		</div>
 
 		<!-- ── System ── -->
-		<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+		<div class="py-6 border-b border-gray-200 space-y-4">
 			<h3 class="text-lg font-semibold text-gray-900">System</h3>
 			<p class="text-gray-500 text-sm">Version 1.0.0</p>
 			<div class="pt-2 border-t border-gray-100">

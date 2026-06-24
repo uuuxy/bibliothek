@@ -17,7 +17,7 @@
 <div class="max-w-4xl mx-auto">
 	<h1 class="text-2xl font-bold text-gray-900 mb-6">Scanner-Modus</h1>
 
-	<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+	<div class="py-6 border-b border-gray-200">
 		<div
 			class="aspect-video bg-black rounded-lg overflow-hidden mb-6 relative"
 		>

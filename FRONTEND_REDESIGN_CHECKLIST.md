@@ -46,10 +46,23 @@ Modals: `DamageReportModal`, `KioskChecklistModal`, `KioskDamageModal`, `KioskRe
 - [x] `LabelSettings` — Info-Panel → Links-Akzent; weiße Panels → flach (Dropdown bleibt).
 - [~] `KioskIdle`/`KioskActiveSession` — bewusst belassen: Self-Service-Vollbild-Fokuselement (anderer Kontext, wie der Ausweis-Render).
 
-## ⏳ Offen — verbleibend
-**Inventur-Modul:** `inventur/routes/settings/+page`, `inventur/routes/scanner/+page`, `inventur/lib/components/StartseitenFilter`, `StartseitenHeaderJahrgaenge`, `StartseitenHeaderKlassen`, `admin/BookTable`, `admin/BuchFormular`, `admin/KlassenUebersicht`
-**Designer:** `designer/PropertiesPanel`
-**Optional/Breite:** `OpacSearch` (öffentlicher OPAC — nur Filterbar/Breite, Galerie bleibt)
+## ✅ Inventur-Modul — erledigt (Batch 6)
+- [x] `routes/settings/+page` — 3 Panel-Karten → flache Sektionen (border-b).
+- [x] `routes/scanner/+page` — Panel-Karte → flach.
+- [x] `admin/BookTable` — Tabellen-Karte → flach.
+- [x] `admin/BuchFormular` — Container-Karte → flach.
+- [~] `StartseitenFilter`, `StartseitenHeaderJahrgaenge/Klassen`, `admin/KlassenUebersicht` — Treffer sind **Selects/Inputs/Dropdowns** (Form-Controls, kein Layout-Block) → bewahrt.
+
+## 🔒 Bewahrt (bewusst, kein Layout-Anti-Pattern)
+- `designer/PropertiesPanel` — schwebendes Inspector-Panel (shadow-xl, max-h, scroll) wie ein Modal.
+- `OpacSearch` — öffentliche Cover-Galerie (Trefferraster bleibt; Galerie-Flachlegung ist separate UX-Entscheidung).
+- Galerie-Kacheln: `BuchKarte`, `KlassenBuchKachel(Startseite)`, `KlassenUebersichtStartseite`.
+
+## Hinweis 200-Zeilen-Regel
+Visueller Sweep priorisiert. Verbleibende >200-Zeilen-Dateien (Omnibox, Graduates,
+BookExemplareTab, settings/+page, BestellWorkspace, PermissionManager …) für
+separate Split-Refactorings vorgemerkt — Logiknähe macht Aufteilung riskant, daher
+nicht im selben Schritt wie die rein-visuelle Umstellung.
 
 ## 📏 Zusätzlich: Dateien > 200 Zeilen (Split nötig)
 `inventur/routes/settings/+page` (304), `Omnibox` (299), `Graduates` (297), `BookExemplareTab` (296), `inventur/routes/+page` (287), `BestellWorkspace` (275), `PermissionManager` (263), u. a. — beim jeweiligen Bereichs-Batch mit Snippets/Subkomponenten aufteilen.

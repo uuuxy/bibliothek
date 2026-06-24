@@ -157,7 +157,7 @@
 	}
 </script>
 
-<div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-xs">
+<div class="w-full">
 	<BookTableToolbar
 		booksLength={books.length}
 		selectedCount={selectedIds.length}
