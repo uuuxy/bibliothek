@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/closeutil"
 	"bytes"
 	"context"
 	"fmt"
@@ -19,6 +20,12 @@ import (
 
 	_ "golang.org/x/image/webp"
 )
+
+// coverFetchUserAgent identifiziert uns gegenüber DNB/Google/OpenLibrary als echtes
+// Programm. DNB hat eine Bot-Protection: derselbe realistische Browser-User-Agent muss
+// für den Verfügbarkeits-Check (HEAD) UND den eigentlichen Bild-Download verwendet werden,
+// sonst besteht der HEAD-Check, aber der Download wird blockiert.
+const coverFetchUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 // downloadAndSaveCoverLocally lädt ein Bild von einer externen URL herunter,
 // verkleinert es falls nötig, speichert es auf dem Server im Verzeichnis "uploads/"
@@ -46,34 +53,34 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)
 	if err != nil {
 		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", coverURL, err)
-		return coverURL
+		return ""
 	}
 
-	// Viele APIs (z.B. Google, DNB) blocken reine Skripte ohne legitimen User-Agent.
-	// DNB blockiert jedoch neuerdings "Mozilla/5.0"-Header ohne JS-Support über eine Bot-Protection.
-	// Daher verwenden wir hier einen spezifischen Client-Namen, der von DNB akzeptiert wird.
-	req.Header.Set("User-Agent", "Inventur/1.0")
+	// Identische Programm-Identifikation wie beim DNB-HEAD-Check, sonst blockt die
+	// DNB-Bot-Protection den Download (obwohl der Verfügbarkeits-Check bestand).
+	req.Header.Set("User-Agent", coverFetchUserAgent)
+	req.Header.Set("Accept", "image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8")
 
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Cover-Download fehlgeschlagen für %s: %v", coverURL, err)
-		return coverURL
+		return ""
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer closeutil.LogClose(resp.Body, "cover download")
 
 	if resp.StatusCode != http.StatusOK {
-		return coverURL
+		return ""
 	}
 
 	fileBytes, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20)) // max. 10 MB
 	if err != nil || len(fileBytes) == 0 {
-		return coverURL
+		return ""
 	}
 
 	// Sicherheit: Bild direkt decodieren
-	img, format, err := image.Decode(bytes.NewReader(fileBytes))
+	img, _, err := image.Decode(bytes.NewReader(fileBytes))
 	if err != nil {
-		return coverURL
+		return ""
 	}
 
 	bounds := img.Bounds()
@@ -84,24 +91,27 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		return ""
 	}
 
-	finalBytes, saveExt, err := prepareImageForStorage(fileBytes, img, format, 600, 900, 82)
+	finalBytes, saveExt, err := prepareImageForStorage(img, 600, 900, 80)
 	if err != nil {
-		return coverURL
+		return ""
 	}
 
-	_ = os.MkdirAll("uploads", 0750)
+	if err := os.MkdirAll("uploads", 0750); err != nil {
+		log.Printf("Cover-Download: uploads-Verzeichnis konnte nicht angelegt werden: %v", err)
+		return ""
+	}
 	cleanDir := filepath.Clean("uploads")
 	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
 	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
 
 	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
 		log.Printf("Path traversal attempt in cover downloader: %s", isbn)
-		return coverURL
+		return ""
 	}
 
 	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
 		log.Printf("Fehler beim lokalen Speichern von %s: %v", savePath, err)
-		return coverURL // Fallback auf Remote URL
+		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
 	}
 
 	// Erfolg! Das Bild liegt lokal.

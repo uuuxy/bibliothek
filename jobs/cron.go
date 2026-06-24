@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/pkg/logger"
 	"bibliothek/repository"
 
@@ -63,6 +64,15 @@ func (s *Scheduler) Start() {
 		s.RunIdempotencyCleanup()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register idempotency cleanup job: %v", err)
+	}
+
+	// Alle 6 Stunden fehlende/fehlgeschlagene Buchcover nachladen (neu importierte Titel
+	// und transiente FAILED-Fälle). Der Re-Entrancy-Guard verhindert Überlappung mit dem
+	// Start-Lauf. Lokales WebP wird dabei erzeugt.
+	if _, err := s.cron.AddFunc("0 */6 * * *", func() {
+		service.NewCoverService(s.db).SyncMissingCoversAsync()
+	}); err != nil {
+		log.Printf("Scheduler: Failed to register cover resync job: %v", err)
 	}
 
 	s.cron.Start()

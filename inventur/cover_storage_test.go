@@ -3,100 +3,60 @@ package inventur
 import (
 	"bytes"
 	"image"
-	"image/jpeg"
 	"testing"
 )
 
-func TestPrepareImageForStorageKeepsSmallWebP(t *testing.T) {
-	img := image.NewRGBA(image.Rect(0, 0, 300, 400))
-	orig := []byte("webp-bytes")
+// decodeStored dekodiert die gespeicherten Cover-Bytes wieder zu einem Bild.
+func decodeStored(t *testing.T, b []byte) image.Image {
+	t.Helper()
+	img, _, err := image.Decode(bytes.NewReader(b))
+	if err != nil {
+		t.Fatalf("gespeichertes Cover ist kein dekodierbares Bild: %v", err)
+	}
+	return img
+}
 
-	stored, ext, err := prepareImageForStorage(orig, img, "webp", 600, 900, 82)
+func TestPrepareImageForStorageAlwaysWebP(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 300, 400))
+
+	stored, ext, err := prepareImageForStorage(img, 600, 900, 80)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if ext != ".webp" {
 		t.Fatalf("expected .webp extension, got %s", ext)
 	}
-	if !bytes.Equal(stored, orig) {
-		t.Fatalf("expected original bytes to be kept for small webp")
+	dec := decodeStored(t, stored)
+	if dec.Bounds().Dx() != 300 || dec.Bounds().Dy() != 400 {
+		t.Fatalf("expected 300x400 preserved, got %dx%d", dec.Bounds().Dx(), dec.Bounds().Dy())
 	}
 }
 
-func TestPrepareImageForStorageResizesOversizedToJPEG(t *testing.T) {
+func TestPrepareImageForStorageResizesOversized(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 1200, 1800))
-	orig := []byte("placeholder")
 
-	stored, ext, err := prepareImageForStorage(orig, img, "webp", 600, 900, 82)
+	stored, ext, err := prepareImageForStorage(img, 600, 900, 80)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if ext != ".jpg" {
-		t.Fatalf("expected .jpg extension after resize, got %s", ext)
+	if ext != ".webp" {
+		t.Fatalf("expected .webp extension after resize, got %s", ext)
 	}
-
-	decoded, err := jpeg.Decode(bytes.NewReader(stored))
-	if err != nil {
-		t.Fatalf("expected resized bytes to be valid jpeg: %v", err)
-	}
-	if decoded.Bounds().Dx() > 600 || decoded.Bounds().Dy() > 900 {
-		t.Fatalf("expected resized image within 600x900, got %dx%d", decoded.Bounds().Dx(), decoded.Bounds().Dy())
-	}
-}
-
-func TestPrepareImageForStorageKeepsSmallJPEG(t *testing.T) {
-	img := image.NewRGBA(image.Rect(0, 0, 300, 400))
-	orig := []byte("jpeg-bytes")
-
-	stored, ext, err := prepareImageForStorage(orig, img, "jpeg", 600, 900, 82)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if ext != ".jpg" {
-		t.Fatalf("expected .jpg extension, got %s", ext)
-	}
-	if !bytes.Equal(stored, orig) {
-		t.Fatalf("expected original bytes to be kept for small jpeg")
-	}
-}
-
-func TestPrepareImageForStorageKeepsSmallPNG(t *testing.T) {
-	img := image.NewRGBA(image.Rect(0, 0, 300, 400))
-	orig := []byte("png-bytes")
-
-	stored, ext, err := prepareImageForStorage(orig, img, "png", 600, 900, 82)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if ext != ".png" {
-		t.Fatalf("expected .png extension, got %s", ext)
-	}
-	if !bytes.Equal(stored, orig) {
-		t.Fatalf("expected original bytes to be kept for small png")
+	dec := decodeStored(t, stored)
+	if dec.Bounds().Dx() > 600 || dec.Bounds().Dy() > 900 {
+		t.Fatalf("expected resized image within 600x900, got %dx%d", dec.Bounds().Dx(), dec.Bounds().Dy())
 	}
 }
 
 func TestPrepareImageForStorageResizesTallImage(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 1000, 5000))
-	orig := []byte("placeholder")
 
-	stored, ext, err := prepareImageForStorage(orig, img, "webp", 600, 900, 82)
+	stored, _, err := prepareImageForStorage(img, 600, 900, 80)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if ext != ".jpg" {
-		t.Fatalf("expected .jpg extension after resize, got %s", ext)
-	}
-
-	decoded, err := jpeg.Decode(bytes.NewReader(stored))
-	if err != nil {
-		t.Fatalf("expected resized bytes to be valid jpeg: %v", err)
-	}
-	// newWidth should be 180, newHeight 900 based on the math
-	if decoded.Bounds().Dx() > 600 || decoded.Bounds().Dy() > 900 {
-		t.Fatalf("expected resized image within 600x900, got %dx%d", decoded.Bounds().Dx(), decoded.Bounds().Dy())
-	}
-	if decoded.Bounds().Dy() != 900 {
-		t.Fatalf("expected resized image height to be exactly 900, got %d", decoded.Bounds().Dy())
+	dec := decodeStored(t, stored)
+	if dec.Bounds().Dy() != 900 {
+		t.Fatalf("expected resized image height to be exactly 900, got %d", dec.Bounds().Dy())
 	}
 }
