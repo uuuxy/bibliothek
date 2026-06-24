@@ -165,7 +165,9 @@ func (s *defaultOmniboxService) handleStudentAction(ctx context.Context, query s
 // handleTeacherAction lädt die Lehrerdaten bei Scan eines Lehrer-Barcodes.
 func (s *defaultOmniboxService) handleTeacherAction(ctx context.Context, query string, resp *OmniboxResult) error {
 	var teacher repository.User
-	err := s.pool.QueryRow(ctx, "SELECT id, barcode_id, vorname, nachname, rolle FROM benutzer WHERE barcode_id = $1 AND rolle = 'LEHRER' AND aktiv = true LIMIT 1", query).
+	// benutzer.rolle ist das ENUM benutzer_rolle ('admin','lehrer','mitarbeiter') — kleingeschrieben.
+	// rolle::text vergleicht cast-sicher und vermeidet "invalid input value for enum" bei Großschreibung.
+	err := s.pool.QueryRow(ctx, "SELECT id, barcode_id, vorname, nachname, rolle FROM benutzer WHERE barcode_id = $1 AND LOWER(rolle::text) = 'lehrer' AND aktiv = true LIMIT 1", query).
 		Scan(&teacher.ID, &teacher.BarcodeID, &teacher.Vorname, &teacher.Nachname, &teacher.Rolle)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
