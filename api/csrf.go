@@ -80,14 +80,21 @@ func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 		isAPIPath := strings.HasPrefix(path, "/api/") ||
 			path == "/login/barcode"
 
+		// Diese Admin-Mutationen werden NICHT vom Inventur-Modul behandelt, sondern direkt
+		// im globalen Router registriert (router.go). Sie müssen daher der globalen
+		// CSRF-Prüfung unterliegen und dürfen nicht über den /api/admin-Präfix ausgenommen
+		// werden — sonst gäbe es für sie gar keinen CSRF-Schutz. Das Frontend sendet für
+		// beide bereits den X-CSRF-Token-Header.
+		globalAdminMutation := path == "/api/admin/sync-covers" || path == "/api/admin/import-bestand"
+
 		// Skip paths handled by the inventur module's own CSRF system
-		isInventurPath := strings.HasPrefix(path, "/api/books") ||
+		isInventurPath := !globalAdminMutation && (strings.HasPrefix(path, "/api/books") ||
 			strings.HasPrefix(path, "/api/class-books") ||
 			strings.HasPrefix(path, "/api/lookup/") ||
 			strings.HasPrefix(path, "/api/subjects") ||
 			strings.HasPrefix(path, "/api/admin") ||
 			strings.HasPrefix(path, "/api/auth/status") ||
-			strings.HasPrefix(path, "/uploads/")
+			strings.HasPrefix(path, "/uploads/"))
 
 		// Always set/refresh the CSRF cookie so the frontend can read it.
 		// The dedicated bootstrap endpoint manages its own cookie, so skip it here to avoid

@@ -26,7 +26,7 @@
 - [x] **Import-Pfade (LUSD / Littera / Excel)** — Import-SQL voll parametrisiert ($1..$N); ImportDynamic atomar (eine Transaktion, kein Teil-Import); XML via Go-`encoding/xml` (kein XXE); Body-Limits gesetzt. **Gefunden+behoben:** CSV-Formel-Injection (CWE-1236) beim EXPORT (`inventur/export_csv.go`, `api/order_pdf.go` schrieben Titel/Autor verbatim) → neues `pkg/csvutil.SanitizeRow` (Apostroph-Präfix bei `= + - @`/Steuerzeichen) in beiden Exporten.
 - [x] **PDF-Erzeugung (Mahnwesen / Abgänger / Schäden)** — sauber: gofpdf programmatisch (keine Template-Injection), `pdf.Output`-Fehler überall behandelt, `UnicodeTranslator` für Umlaute (kein Crash bei Sonderzeichen), Daten permission-gated. Nicht-kritisch: PDFs werden vollständig im RAM gepuffert (bei Schuldatenmengen unbedenklich).
 - [x] **IMAP/SMTP** — IMAP sauber (implizit-TLS/993, MinVersion 1.2, ServerName-Verifikation, Timeouts, kein Goroutine-Leak). Mail: To via `mail.ParseAddress`, Subject CRLF-bereinigt. **Gefunden+behoben:** SMTP-STARTTLS lief mit `InsecureSkipVerify: true` (MITM konnte AUTH-Credentials + Mailinhalt/Personendaten mitlesen) → jetzt Zertifikatsprüfung gegen Host (Default sicher, Env-Opt-out `SMTP_ALLOW_INSECURE_TLS`); Attachment-Dateiname gegen Header-Injection bereinigt.
-- [ ] **CSRF-Lücke `/api/admin/*`** — `sync-covers` & `import-bestand` laufen an beiden CSRF-Systemen vorbei (SameSite-mitigiert, aber DiD schließen)
+- [x] **CSRF-Lücke `/api/admin/*`** — `sync-covers` & `import-bestand` (global registriert, nicht im Inventur-Modul) waren über den `/api/admin`-Präfix von der globalen CSRF-Prüfung ausgenommen → kein CSRF-Schutz. Ausnahme für diese beiden Pfade entfernt; globale Prüfung greift jetzt. Frontend sendet den Token bereits (keine FE-Änderung nötig).
 
 ---
 
