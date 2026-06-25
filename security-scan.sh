@@ -17,7 +17,8 @@ trivy fs --scanners vuln,config .
 echo -e "\n---> 3. Führe OWASP ZAP API-Scan aus..."
 
 # Trage hier den Token ein, den dir das Seed-Skript im Terminal ausgegeben hat
-ADMIN_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZmZlOThlZDEtYzQ0Ni00ZGE0LWEwMmEtYmQ4ZGQ4ZjI0MGRhIiwiYmFyY29kZV9pZCI6IkFETUlOLVNDQU5ORVItVEVTVCIsInJvbGxlIjoiYWRtaW4iLCJpc3MiOiJiaWJsaW90aGVrLXN5c3RlbSIsImV4cCI6MTgxMzU3OTY3NCwibmJmIjoxNzgyMDQzNjc0LCJpYXQiOjE3ODIwNDM2NzR9.g76Sft-XCzoXlmmFzn7rBfG7WKQ5bQ4Ojz48dlaOX74"
+# Token über Umgebungsvariable setzen: export ADMIN_TOKEN="dein-jwt-token"
+ADMIN_TOKEN="${ADMIN_TOKEN:-DEIN_ADMIN_TOKEN_HIER_EINTRAGEN}"
 
 # ZAP holt sich die Endpunkte direkt aus deiner neuen Swagger.json
 docker run -v $(pwd):/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py \
