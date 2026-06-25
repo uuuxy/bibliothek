@@ -80,18 +80,13 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 		}
 		defer db.SafeRollback(ctx, tx)
 
-		upsertQuery := `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, $2, $3, $4, $5)
-			ON CONFLICT (barcode_id) DO UPDATE
-			SET klasse = EXCLUDED.klasse,
-			    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
-			    aktualisiert_am = CURRENT_TIMESTAMP
-		`
+		var barcodes []string
+		var vornamen []string
+		var nachnamen []string
+		var klassen []string
+		var abgaengerJahre []int32
 
-		count := 0
 		lineNum := 1
-
 		for {
 			row, err := reader.Read()
 			if err == io.EOF {
@@ -120,13 +115,31 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 				return
 			}
 
-			_, err = tx.Exec(ctx, upsertQuery, barcodeID, vorname, nachname, klasse, abgaengerJahr)
+			barcodes = append(barcodes, barcodeID)
+			vornamen = append(vornamen, vorname)
+			nachnamen = append(nachnamen, nachname)
+			klassen = append(klassen, klasse)
+			abgaengerJahre = append(abgaengerJahre, int32(abgaengerJahr))
+		}
+
+		if len(barcodes) > 0 {
+			upsertQuery := `
+				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+				SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::int[])
+				ON CONFLICT (barcode_id) DO UPDATE
+				SET klasse = EXCLUDED.klasse,
+					abgaenger_jahr = EXCLUDED.abgaenger_jahr,
+					aktualisiert_am = CURRENT_TIMESTAMP
+			`
+
+			_, err = tx.Exec(ctx, upsertQuery, barcodes, vornamen, nachnamen, klassen, abgaengerJahre)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error on row %d: %w", lineNum, err))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error during bulk insert: %w", err))
 				return
 			}
-			count++
 		}
+
+		count := len(barcodes)
 
 		if err := tx.Commit(ctx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

@@ -1,3 +1,6 @@
 ## 2026-06-22 - [Refactoring N+1 Query in SupplierOrderHandler]
 **Learning:** Found an N+1 issue in `SupplierOrderHandler` (inside `api/barcode.go`) where multiple database inserts were performed in a loop (`tx.Exec`) for each generated barcode when ordering copies. Refactored this to use a single bulk insert operation via `tx.CopyFrom` combined with `pgx.CopyFromRows`.
 **Action:** Always prefer `pgx.CopyFromRows` for batch database creation or insertion. This drastically reduces database round-trips when processing larger quantities (like bulk ordering of books).
+## 2026-06-23 - [Refactoring N+1 Query in Student Import]
+**Learning:** Found an N+1 issue in `api/import.go` during CSV processing where multiple database upserts were performed in a loop (`tx.Exec`) for each student row. Because `pgx.CopyFromRows` only supports the insert-only `COPY` protocol and cannot execute `ON CONFLICT DO UPDATE`, refactored this to use an `UNNEST` array bulk upsert strategy.
+**Action:** Always prefer array aggregation and `UNNEST()` for bulk database operations that require UPSERT (`ON CONFLICT DO UPDATE`) semantics, as `pgx.CopyFromRows` cannot be used in those scenarios. Ensure matching Go integer sizes (like `[]int32`) when mapping to PostgreSQL's `int[]`.
