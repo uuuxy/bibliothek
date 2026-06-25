@@ -5,10 +5,33 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"bibliothek/repository"
 )
+
+var (
+	schoolLoc     *time.Location
+	schoolLocOnce sync.Once
+)
+
+// schoolLocation liefert die feste Zeitzone der Schule (Europe/Berlin).
+// Fristen wie der LMF-Stichtag oder das Leseclub-Zieldatum sind Kalendertage
+// ("Ende des 31.07.") und müssen in der Schul-Zeitzone berechnet werden —
+// sonst hängt das tatsächliche Ablaufdatum davon ab, in welcher Zeitzone der
+// Server/Container läuft (im Docker-Image standardmäßig UTC). Fällt das Laden
+// fehl (fehlende tzdata), wird sicher auf UTC zurückgegriffen.
+func schoolLocation() *time.Location {
+	schoolLocOnce.Do(func() {
+		loc, err := time.LoadLocation("Europe/Berlin")
+		if err != nil {
+			loc = time.UTC
+		}
+		schoolLoc = loc
+	})
+	return schoolLoc
+}
 
 // SystemEinstellungen repräsentiert die Konfigurationsparameter des Ausleihsystems,
 // die in der Datenbanktabelle `system_einstellungen` verwaltet werden.
@@ -100,7 +123,10 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 // calculateDueDate berechnet das Rückgabedatum auf Basis von Titel, Medientyp und
 // den definierten Standardfristen.
 func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage, additionalYears int) time.Time {
-	now := time.Now()
+	// In Schul-Zeitzone rechnen, damit sowohl der Jahreswechsel-Stichtag (August)
+	// als auch das "Ende des Tages" (23:59:59) deterministisch sind — unabhängig
+	// von der Server-Zeitzone. now.Location() ist dadurch schoolLocation().
+	now := time.Now().In(schoolLocation())
 
 	// 1. Fall: Lernmittelfreiheit (Schulbücher)
 	// Schulbücher (erkennbar am Präfix "lmf-" oder "LMF-") werden für das gesamte Schuljahr ausgeliehen.
@@ -194,7 +220,7 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 	if !isLMF && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
 		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
 		if parseErr == nil {
-			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local)
+			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schoolLocation())
 			return end, nil
 		}
 	}

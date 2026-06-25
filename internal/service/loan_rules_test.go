@@ -81,13 +81,21 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 		}
 
 		// Jahr: laufendes Schuljahr, ab August rollt es ins nächste Kalenderjahr.
-		now := time.Now()
+		// In Schul-Zeitzone rechnen, konsistent mit calculateDueDate (sonst flaky
+		// am Monatswechsel nahe Mitternacht).
+		now := time.Now().In(schoolLocation())
 		wantYear := now.Year()
 		if now.Month() >= time.August {
 			wantYear++
 		}
 		if got.Year() != wantYear {
 			t.Errorf("LMF %q: Stichtagsjahr got %d, want %d", titel, got.Year(), wantYear)
+		}
+
+		// Der Stichtag muss in der Schul-Zeitzone liegen, nicht in der Server-Zeitzone.
+		if got.Location().String() != schoolLocation().String() {
+			t.Errorf("LMF %q: Stichtag soll in %s liegen, war in %s",
+				titel, schoolLocation(), got.Location())
 		}
 	}
 }
