@@ -4,6 +4,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/pdf"
+	"bibliothek/repository"
 	"bytes"
 	"fmt"
 	"net/http"
@@ -72,7 +73,16 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			return
 		}
 
-		pdfBytes, err := pdf.GenerateRechnung(s, items)
+		settingsRepo := repository.NewSystemSettingsRepository(dbPool)
+		settings, _ := settingsRepo.GetSettings(ctx)
+		schule := pdf.SchuleInfo{
+			Name:    settings.SchuleName,
+			Strasse: settings.SchuleStrasse,
+			PLZ:     settings.SchulePLZ,
+			Ort:     settings.SchuleOrt,
+		}
+
+		pdfBytes, err := pdf.GenerateRechnung(s, items, schule)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

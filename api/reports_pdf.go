@@ -2,6 +2,8 @@ package api
 
 import (
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
+	"bibliothek/repository"
 	"errors"
 
 	"fmt"
@@ -107,6 +109,15 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			return
 		}
 
+		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
+		settings, _ := settingsRepo.GetSettings(ctx)
+		schule := pdf.SchuleInfo{
+			Name:    settings.SchuleName,
+			Strasse: settings.SchuleStrasse,
+			PLZ:     settings.SchulePLZ,
+			Ort:     settings.SchuleOrt,
+		}
+
 		// 3. Generate PDF Document
 		pdf := gofpdf.New("P", "mm", "A4", "")
 		tr := pdf.UnicodeTranslatorFromDescriptor("") // To correctly render German umlauts in standard fonts
@@ -128,7 +139,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			// Start Y: 45mm, X: 20mm (Formblatt A)
 			pdf.SetFont("Arial", "U", 7)
 			pdf.SetXY(20, 45)
-			pdf.Cell(85, 5, tr("Schulbibliothek - Musterstr. 1 - 12345 Musterstadt")) // Adjust sender later
+			pdf.Cell(85, 5, tr(schule.Absenderzeile()))
 
 			pdf.SetFont("Arial", "", 11)
 			pdf.SetXY(20, 52)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
 
 	"github.com/jung-kurt/gofpdf"
@@ -29,73 +30,73 @@ type BarcodeLabelDetail struct {
 }
 
 // GenerateOrderSummaryPDF generates a PDF cover letter ("Bestellanschreiben") containing the table of ordered book titles.
-func GenerateOrderSummaryPDF(items []OrderedItem) ([]byte, error) {
-	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.AddPage()
-	pdf.SetMargins(20, 20, 20)
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo) ([]byte, error) {
+	p := gofpdf.New("P", "mm", "A4", "")
+	p.AddPage()
+	p.SetMargins(20, 20, 20)
+	tr := p.UnicodeTranslatorFromDescriptor("")
 
 	// Letter Header / Sender info
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(0, 8, tr("Städtisches Gymnasium Musterstadt - Schulbibliothek"))
-	pdf.Ln(5)
-	pdf.SetFont("Arial", "", 8)
-	pdf.SetTextColor(100, 100, 100)
-	pdf.Cell(0, 4, tr("Schulbibliothek · Lindenallee 4 · 12345 Musterstadt"))
-	pdf.SetTextColor(0, 0, 0)
-	pdf.Ln(15)
+	p.SetFont("Arial", "B", 12)
+	p.Cell(0, 8, tr(schule.Name))
+	p.Ln(5)
+	p.SetFont("Arial", "", 8)
+	p.SetTextColor(100, 100, 100)
+	p.Cell(0, 4, tr(schule.Absenderzeile()))
+	p.SetTextColor(0, 0, 0)
+	p.Ln(15)
 
 	// Date (Right-aligned)
-	pdf.SetFont("Arial", "", 10)
-	pdf.CellFormat(0, 6, fmt.Sprintf("Musterstadt, den %s", time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
-	pdf.Ln(10)
+	p.SetFont("Arial", "", 10)
+	p.CellFormat(0, 6, schule.OrtDatum(time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
+	p.Ln(10)
 
 	// Recipient Block
-	pdf.SetFont("Arial", "B", 9)
-	pdf.Cell(0, 4, tr("An den Buchlieferanten"))
-	pdf.Ln(20)
+	p.SetFont("Arial", "B", 9)
+	p.Cell(0, 4, tr("An den Buchlieferanten"))
+	p.Ln(20)
 
 	// Subject
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(0, 8, tr("Buchbestellung für die Schulbibliothek"))
-	pdf.Ln(10)
+	p.SetFont("Arial", "B", 12)
+	p.Cell(0, 8, tr("Buchbestellung für die Schulbibliothek"))
+	p.Ln(10)
 
 	// Letter Body Text
-	pdf.SetFont("Arial", "", 10)
+	p.SetFont("Arial", "", 10)
 	bodyText := "Sehr geehrte Damen und Herren,\n\n" +
 		"hiermit bestellen wir für unsere Schulbibliothek die nachfolgend aufgeführten Buchtitel zur Lieferung.\n" +
 		"Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode/QR-Code-Aufklebern aus dem beigefügten Bogen.\n" +
 		"Die Rechnung senden Sie bitte an die oben angegebene Anschrift.\n\n" +
 		"Bestellte Titel:"
-	pdf.MultiCell(0, 5, tr(bodyText), "", "L", false)
-	pdf.Ln(6)
+	p.MultiCell(0, 5, tr(bodyText), "", "L", false)
+	p.Ln(6)
 
 	// Table headers
-	pdf.SetFont("Arial", "B", 9)
-	pdf.SetFillColor(230, 230, 230)
-	pdf.CellFormat(75, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(40, 8, tr("Autor"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(35, 8, tr("ISBN"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(20, 8, tr("Menge"), "1", 1, "C", true, 0, "")
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(230, 230, 230)
+	p.CellFormat(75, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
+	p.CellFormat(40, 8, tr("Autor"), "1", 0, "L", true, 0, "")
+	p.CellFormat(35, 8, tr("ISBN"), "1", 0, "L", true, 0, "")
+	p.CellFormat(20, 8, tr("Menge"), "1", 1, "C", true, 0, "")
 
-	pdf.SetFont("Arial", "", 9)
+	p.SetFont("Arial", "", 9)
 	for _, item := range items {
-		pdf.CellFormat(75, 7, tr(item.Titel), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(40, 7, tr(item.Autor), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(35, 7, tr(item.ISBN), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(20, 7, fmt.Sprintf("%d", item.Menge), "1", 1, "C", false, 0, "")
+		p.CellFormat(75, 7, tr(item.Titel), "1", 0, "L", false, 0, "")
+		p.CellFormat(40, 7, tr(item.Autor), "1", 0, "L", false, 0, "")
+		p.CellFormat(35, 7, tr(item.ISBN), "1", 0, "L", false, 0, "")
+		p.CellFormat(20, 7, fmt.Sprintf("%d", item.Menge), "1", 1, "C", false, 0, "")
 	}
-	pdf.Ln(15)
+	p.Ln(15)
 
 	// Sign-off
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(0, 6, tr("Mit freundlichen Grüßen,"))
-	pdf.Ln(12)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(0, 6, tr("Das Bibliotheksteam"))
+	p.SetFont("Arial", "", 10)
+	p.Cell(0, 6, tr("Mit freundlichen Grüßen,"))
+	p.Ln(12)
+	p.SetFont("Arial", "B", 10)
+	p.Cell(0, 6, tr("Das Bibliotheksteam"))
 
 	var buf bytes.Buffer
-	if err := pdf.Output(&buf); err != nil {
+	if err := p.Output(&buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

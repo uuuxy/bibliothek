@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jung-kurt/gofpdf"
@@ -57,6 +59,15 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 			return
 		}
 
+		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
+		settings, _ := settingsRepo.GetSettings(ctx)
+		schule := pdf.SchuleInfo{
+			Name:    settings.SchuleName,
+			Strasse: settings.SchuleStrasse,
+			PLZ:     settings.SchulePLZ,
+			Ort:     settings.SchuleOrt,
+		}
+
 		// Create new A4 PDF page in portrait mode
 		pdf := gofpdf.New("P", "mm", "A4", "")
 		pdf.AddPage()
@@ -67,17 +78,17 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 
 		// Letter Header
 		pdf.SetFont("Arial", "B", 14)
-		pdf.Cell(0, 10, tr("Städtisches Gymnasium Musterstadt - Schulbibliothek"))
+		pdf.Cell(0, 10, tr(schule.Name))
 		pdf.Ln(6)
 		pdf.SetFont("Arial", "", 8)
 		pdf.SetTextColor(100, 100, 100)
-		pdf.Cell(0, 4, tr("Schulbibliothek · Lindenallee 4 · 12345 Musterstadt"))
+		pdf.Cell(0, 4, tr(schule.Absenderzeile()))
 		pdf.SetTextColor(0, 0, 0)
 
 		// Date line (Right-aligned)
 		pdf.SetY(40)
 		pdf.SetFont("Arial", "", 10)
-		pdf.CellFormat(0, 6, fmt.Sprintf("Musterstadt, den %s", time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
+		pdf.CellFormat(0, 6, schule.OrtDatum(time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
 
 		// DIN 5008 Address Window (approx. 45mm from top)
 		pdf.SetXY(20, 45)
@@ -119,15 +130,11 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		dueTime := time.Now().AddDate(0, 0, 14).Format("02.01.2006")
 		instructions := fmt.Sprintf("Gemäß der Schulbibliotheksordnung bitten wir Sie, für den entstandenen Schaden "+
 			"einen Ersatzbetrag von %.2f EUR bis spätestens zum %s zu begleichen.\n\n"+
-			"Bitte überweisen Sie den Betrag auf folgendes Konto der Schule:\n"+
-			"Kontoinhaber: Stadtkasse Musterstadt\n"+
-			"IBAN: DE12 3456 7890 1234 5678 90\n"+
-			"BIC: MUSDEDED1XXX\n"+
-			"Verwendungszweck: Bibliothek Schadensfall %s\n\n"+
+			"Bitte bezahlen Sie den Betrag bar in der Bibliothek zu den Öffnungszeiten.\n\n"+
 			"Sollten Sie Fragen zum Schadensfall haben, können Sie sich gerne zu den Öffnungszeiten "+
 			"an das Bibliotheksteam wenden.\n\n"+
 			"Vielen Dank für Ihr Verständnis und Ihre Kooperation.",
-			betrag, dueTime, id)
+			betrag, dueTime)
 		pdf.MultiCell(0, 5, tr(instructions), "", "L", false)
 		pdf.Ln(15)
 

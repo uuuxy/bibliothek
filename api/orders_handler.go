@@ -12,6 +12,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
+	"bibliothek/pdf"
 	"bibliothek/repository"
 )
 
@@ -83,7 +84,16 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			}
 		}
 
-		if err := pdfSvc.DispatchOrderEmail(res.SupplierName, res.SupplierEmail, res.CustomerNumber, res.SummaryItems, res.Labels, anyBarcodesGenerated); err != nil {
+		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
+		settings, _ := settingsRepo.GetSettings(ctx)
+		schule := pdf.SchuleInfo{
+			Name:    settings.SchuleName,
+			Strasse: settings.SchuleStrasse,
+			PLZ:     settings.SchulePLZ,
+			Ort:     settings.SchuleOrt,
+		}
+
+		if err := pdfSvc.DispatchOrderEmail(res.SupplierName, res.SupplierEmail, res.CustomerNumber, res.SummaryItems, res.Labels, anyBarcodesGenerated, schule); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
 				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),

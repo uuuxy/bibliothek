@@ -16,6 +16,11 @@ type SystemEinstellungen struct {
 	FristMedienTage         int     `json:"frist_medien_tage"`
 	MaxOverdueDays          int     `json:"max_overdue_days"`
 	MaxOverdueItems         int     `json:"max_overdue_items"`
+	// School identity — used in PDF letter headers (set once via settings UI).
+	SchuleName    string `json:"schule_name"`
+	SchuleStrasse string `json:"schule_strasse"`
+	SchulePLZ     string `json:"schule_plz"`
+	SchuleOrt     string `json:"schule_ort"`
 }
 
 // SystemSettingsRepository defines operations for managing global system settings.
@@ -90,6 +95,22 @@ func (repo *pgSystemSettingsRepository) GetSettings(ctx context.Context) (*Syste
 					settings.MaxOverdueItems = v
 				}
 			}
+		case "schule_name":
+			if val != nil {
+				settings.SchuleName = *val
+			}
+		case "schule_strasse":
+			if val != nil {
+				settings.SchuleStrasse = *val
+			}
+		case "schule_plz":
+			if val != nil {
+				settings.SchulePLZ = *val
+			}
+		case "schule_ort":
+			if val != nil {
+				settings.SchuleOrt = *val
+			}
 		}
 	}
 	return settings, rows.Err()
@@ -146,6 +167,10 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 		{"frist_medien_tage", fristMedien},
 		{"max_overdue_days", maxOverdueDays},
 		{"max_overdue_items", maxOverdueItems},
+		{"schule_name", req.SchuleName},
+		{"schule_strasse", req.SchuleStrasse},
+		{"schule_plz", req.SchulePLZ},
+		{"schule_ort", req.SchuleOrt},
 	}
 	for _, p := range pairs {
 		if _, err := repo.db.Exec(ctx, upsert, p[0], p[1]); err != nil {

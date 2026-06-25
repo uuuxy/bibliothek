@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"bibliothek/pdf"
 )
 
 // PDFService handles the generation of PDF documents and email dispatch.
@@ -20,8 +22,9 @@ func (s *PDFService) DispatchOrderEmail(
 	summaryItems []OrderedItem,
 	labels []BarcodeLabelDetail,
 	generateBarcodes bool,
+	schule pdf.SchuleInfo,
 ) error {
-	summaryPDF, err := GenerateOrderSummaryPDF(summaryItems)
+	summaryPDF, err := GenerateOrderSummaryPDF(summaryItems, schule)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,8 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/pdf"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -169,7 +171,16 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			return
 		}
 
-		summaryPDF, err := GenerateOrderSummaryPDF(orderSummaryItems)
+		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
+		orderSettings, _ := settingsRepo.GetSettings(ctx)
+		schule := pdf.SchuleInfo{
+			Name:    orderSettings.SchuleName,
+			Strasse: orderSettings.SchuleStrasse,
+			PLZ:     orderSettings.SchulePLZ,
+			Ort:     orderSettings.SchuleOrt,
+		}
+
+		summaryPDF, err := GenerateOrderSummaryPDF(orderSummaryItems, schule)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

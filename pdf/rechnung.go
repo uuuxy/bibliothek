@@ -33,7 +33,7 @@ type RechnungItem struct {
 }
 
 // GenerateRechnung creates a DIN 5008 compliant invoice PDF.
-func GenerateRechnung(schueler Schueler, items []RechnungItem) ([]byte, error) {
+func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo) ([]byte, error) {
 	cfg := config.NewBuilder().
 		WithPageSize("A4").
 		WithLeftMargin(25). // Left margin 25mm for DIN 5008 A/B
@@ -47,7 +47,7 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem) ([]byte, error) {
 	// Absender (Sender line above address)
 	m.AddRow(15,
 		col.New(12).Add(
-			text.New("Schulbibliothek Musterstadt, Musterweg 1, 12345 Musterstadt", props.Text{
+			text.New(schule.Absenderzeile(), props.Text{
 				Size:  8,
 				Style: fontstyle.Bold,
 				Align: align.Left,
@@ -139,11 +139,11 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem) ([]byte, error) {
 		col.New(2).Add(text.New(fmt.Sprintf("%.2f EUR", total), props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
 
-	// Footer with Bank details
-	m.AddRow(40, col.New(12)) // push footer down somewhat
+	// Footer: cash-payment note
+	m.AddRow(40, col.New(12))
 	m.AddRow(10,
 		col.New(12).Add(
-			text.New("Bankverbindung: Schulbibliothek Musterstadt | IBAN: DE12 3456 7890 1234 5678 90 | BIC: MUSTERDE", props.Text{
+			text.New("Bitte begleichen Sie den Betrag bar in der Bibliothek zu den Öffnungszeiten.", props.Text{
 				Size:  8,
 				Align: align.Center,
 			}),

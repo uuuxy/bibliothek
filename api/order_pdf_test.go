@@ -2,6 +2,8 @@ package api
 
 import (
 	"testing"
+
+	"bibliothek/pdf"
 )
 
 func TestPDFGeneration(t *testing.T) {
@@ -10,7 +12,7 @@ func TestPDFGeneration(t *testing.T) {
 		{Titel: "Test Buch 2", Autor: "Autor 2", ISBN: "789-012", Menge: 2},
 	}
 
-	summaryPDF, err := GenerateOrderSummaryPDF(items)
+	summaryPDF, err := GenerateOrderSummaryPDF(items, pdf.SchuleInfo{Name: "Testbibliothek"})
 	if err != nil {
 		t.Fatalf("Failed to generate summary PDF: %v", err)
 	}

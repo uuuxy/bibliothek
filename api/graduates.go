@@ -56,7 +56,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 				FROM schueler s
 				JOIN ausleihen a ON s.id = a.schueler_id
 				WHERE s.deleted_at IS NULL
-				  AND s.klasse IN ('9h', '10r', '13')
+				  AND s.ist_abgaenger = true
 				  AND a.rueckgabe_am IS NULL
 				ORDER BY s.klasse, s.nachname
 			`
@@ -107,7 +107,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
 			JOIN buecher_titel t ON e.titel_id = t.id
 			WHERE s.deleted_at IS NULL
-			  AND s.klasse IN ('9h', '10r', '13')
+			  AND s.ist_abgaenger = true
 			  AND a.rueckgabe_am IS NULL
 			ORDER BY s.klasse, s.nachname, t.titel
 		`

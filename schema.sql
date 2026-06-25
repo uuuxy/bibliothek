@@ -53,7 +53,11 @@ INSERT INTO system_einstellungen (schluessel, wert) VALUES
     ('frist_buch_tage', '21'),
     ('frist_medien_tage', '7'),
     ('max_overdue_days', '14'),
-    ('max_overdue_items', '1')
+    ('max_overdue_items', '1'),
+    ('schule_name', ''),
+    ('schule_strasse', ''),
+    ('schule_plz', ''),
+    ('schule_ort', '')
 ON CONFLICT (schluessel) DO NOTHING;
 
 
@@ -537,7 +541,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('032_reconcile_titel_columns.sql'),
 ('033_unique_active_loan.sql'),
 ('034_drop_antolin.sql'),
-('035_lusd_id_partial_unique.sql')
+('035_lusd_id_partial_unique.sql'),
+('036_schule_einstellungen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
