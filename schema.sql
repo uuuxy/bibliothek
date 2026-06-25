@@ -126,7 +126,7 @@ CREATE TABLE schueler (
     geburtsdatum DATE DEFAULT NULL,                   -- LUSD-Feld; NULL für Altdatensätze
     abgaenger_jahr INTEGER NOT NULL,                  -- Graduation/leaving year (useful for batch archiving)
     ist_gesperrt BOOLEAN NOT NULL DEFAULT false,      -- Flag to suspend borrowing privileges
-    lusd_id VARCHAR(64) UNIQUE,                       -- Integrated LUSD ID
+    lusd_id VARCHAR(64),                              -- Integrated LUSD ID (Eindeutigkeit: partieller Index uniq_schueler_lusd_id_active, nur aktive Zeilen)
     ist_abgaenger BOOLEAN NOT NULL DEFAULT false,     -- Integrated ist_abgaenger
     strasse VARCHAR(255),
     hausnummer VARCHAR(50),
@@ -144,6 +144,9 @@ CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
 CREATE INDEX idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);
 CREATE INDEX idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);
 CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (vorname, nachname, coalesce(geburtsdatum, '1900-01-01'::DATE));
+-- lusd_id ist nur unter AKTIVEN Schülern eindeutig; eine soft-gelöschte lusd_id
+-- darf bei Wiederanmeldung neu vergeben werden (siehe Migration 035).
+CREATE UNIQUE INDEX uniq_schueler_lusd_id_active ON schueler (lusd_id) WHERE deleted_at IS NULL AND lusd_id IS NOT NULL;
 
 CREATE TRIGGER trg_schueler_aktualisiert_am
 BEFORE UPDATE ON schueler
@@ -533,7 +536,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('031_inventur_geprueft_am.sql'),
 ('032_reconcile_titel_columns.sql'),
 ('033_unique_active_loan.sql'),
-('034_drop_antolin.sql')
+('034_drop_antolin.sql'),
+('035_lusd_id_partial_unique.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

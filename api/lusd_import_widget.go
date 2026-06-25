@@ -114,10 +114,13 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 			// Upsert-Logik
 			// Wir verwenden zuerst einen direkten ON CONFLICT. Wenn lusd_id keinen UNIQUE Index hat,
 			// fangen wir den Fehler ab und machen es in 2 Schritten (SELECT -> UPDATE / INSERT).
+			// Conflict-Target muss zum partiellen Unique-Index passen (nur aktive Zeilen,
+			// Migration 035): eine soft-gelöschte lusd_id kollidiert NICHT und führt korrekt
+			// zur Neuanlage eines frischen aktiven Datensatzes.
 			upsertQuery := `
 				INSERT INTO schueler (lusd_id, barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 				VALUES ($1, $2, $3, $4, COALESCE($5, 'Unbekannt'), $6)
-				ON CONFLICT (lusd_id) DO UPDATE SET
+				ON CONFLICT (lusd_id) WHERE deleted_at IS NULL DO UPDATE SET
 					vorname = EXCLUDED.vorname,
 					nachname = EXCLUDED.nachname,
 					klasse = EXCLUDED.klasse,
@@ -131,7 +134,7 @@ func (s *Server) PostSchuelerImportLusdHandler() http.HandlerFunc {
 			if err != nil {
 				// Fallback: Manuelles Upsert für Systeme ohne UNIQUE Constraint auf lusd_id
 				var dbID string
-				chkErr := tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 LIMIT 1", id).Scan(&dbID)
+				chkErr := tx.QueryRow(ctx, "SELECT id FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL LIMIT 1", id).Scan(&dbID)
 
 				if chkErr == nil {
 					// Datensatz existiert -> UPDATE

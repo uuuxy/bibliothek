@@ -123,8 +123,11 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 	// Always rollback on panic or early return. If we apply, we commit at the very end.
 	defer db.SafeRollback(ctx, tx)
 
-	// Read all current students
-	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse FROM schueler WHERE ist_abgaenger = false")
+	// Read all current students. deleted_at IS NULL ist zwingend: sonst „matcht"
+	// eine soft-gelöschte, aber noch auf der LUSD-Liste stehende Zeile, der aktive
+	// Schüler würde nie neu angelegt und bliebe unsichtbar. Re-Insert einer zuvor
+	// gelöschten lusd_id ist dank partiellem Unique-Index (Migration 035) sicher.
+	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse FROM schueler WHERE ist_abgaenger = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
