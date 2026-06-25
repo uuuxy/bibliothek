@@ -11,7 +11,6 @@ import (
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	// ── PUBLIC ENDPOINTS ──
 	mux.HandleFunc("GET /api/public/opac/suche", s.PublicCatalogSearchHandler())
-	mux.HandleFunc("GET /api/antolin", s.AntolinHandler())
 	mux.HandleFunc("GET /api/monitor/slides", s.GetMonitorSlidesHandler())
 }
 

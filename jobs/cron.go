@@ -51,13 +51,6 @@ func (s *Scheduler) Start() {
 		log.Printf("Scheduler: Failed to register backup job: %v", err)
 	}
 
-	// Täglicher Antolin-Sync um 03:00 Uhr
-	if _, err := s.cron.AddFunc("0 3 * * *", func() {
-		s.RunAntolinSync()
-	}); err != nil {
-		log.Printf("Scheduler: Failed to register Antolin sync job: %v", err)
-	}
-
 	// Stündliche Bereinigung abgelaufener Idempotenz-Schlüssel, damit die Tabelle nicht
 	// unbegrenzt wächst. 24h Retention reicht weit über die Lebensdauer eines Scan-Retrys hinaus.
 	if _, err := s.cron.AddFunc("17 * * * *", func() {
@@ -76,7 +69,7 @@ func (s *Scheduler) Start() {
 	}
 
 	s.cron.Start()
-	log.Println("Scheduler: GDPR, backup, retention, Antolin sync, and idempotency cleanup jobs successfully started.")
+	log.Println("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
 }
 
 // Stop hält den Cron-Runner des Schedulers an.

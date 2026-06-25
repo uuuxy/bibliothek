@@ -1,6 +1,5 @@
 <script>
   import { apiFetch, apiClient } from "./apiFetch.js";
-  import AntolinBadge from './AntolinBadge.svelte';
   import BookBorrowersList from './BookBorrowersList.svelte';
   import BookCopiesManager from './BookCopiesManager.svelte';
   import { appState } from "../inventur/lib/store.svelte.js";
@@ -97,9 +96,6 @@
             {title.medientyp === 'CD' || title.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {title.isbn || '-'} · 
             Verlag: {title.verlag} ({title.erscheinungsjahr})
           </p>
-          {#if title.isbn && title.medientyp !== 'CD' && title.medientyp !== 'DVD'}
-            <AntolinBadge isbn={title.isbn} />
-          {/if}
           {#if title.erweiterteEigenschaften?.standort || title.erweiterteEigenschaften?.signatur}
             <div class="mt-1.5 flex flex-wrap gap-2">
               {#if title.erweiterteEigenschaften?.standort}

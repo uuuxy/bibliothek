@@ -101,7 +101,7 @@ Jeder Scan-Request trägt einen `item.id`-basierten Idempotenz-Key:
 - **`ausleihen`** — aktive und historische Ausleihen (verknüpft mit Exemplar + Schüler)
 
 ### JSONB-Erweiterbarkeit
-Haupttabellen haben `erweiterte_eigenschaften JSONB DEFAULT '{}'` für ad-hoc-Attribute (Regalposition, Antolin-Punkte, externe IDs) ohne Schema-Migration:
+Haupttabellen haben `erweiterte_eigenschaften JSONB DEFAULT '{}'` für ad-hoc-Attribute (Regalposition, Signatur, externe IDs) ohne Schema-Migration:
 - `buecher_titel.erweiterte_eigenschaften`
 - `buecher_exemplare.erweiterte_eigenschaften`
 - `audit_logs.details`

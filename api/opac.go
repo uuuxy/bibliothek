@@ -26,10 +26,8 @@ type OpacTitel struct {
 func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
-		antolinOnly := r.URL.Query().Get("antolin_only") == "true"
-		antolinKlasse := r.URL.Query().Get("antolin_klasse")
 
-		if q == "" && !antolinOnly {
+		if q == "" {
 			w.Header().Set("Content-Type", "application/json")
 			httpresp.Write(w, []byte("[]"))
 			return
@@ -50,14 +48,6 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			   OR bt.titel ILIKE '%' || $1 || '%'
 			   OR bt.autor ILIKE '%' || $1 || '%'
 			   OR bt.isbn ILIKE '%' || $1 || '%')`)
-		}
-
-		if antolinOnly {
-			searchConditions = append(searchConditions, "bt.antolin_stufen IS NOT NULL")
-			if antolinKlasse != "" {
-				args = append(args, "%"+antolinKlasse+"%")
-				searchConditions = append(searchConditions, fmt.Sprintf("bt.antolin_stufen LIKE $%d", len(args)))
-			}
 		}
 
 		whereClause := ""
