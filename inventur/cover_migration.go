@@ -39,6 +39,11 @@ func RunCoverMigration(db db.PgxPoolIface) {
 		}
 		books = append(books, b)
 	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		log.Printf("Cover-Migration: Fehler beim Lesen der Buchliste: %v", err)
+		return
+	}
 	rows.Close() // Explizit schließen bevor wir andere Queries machen
 
 	log.Printf("Es wurden %d Bücher mit externen Covern gefunden. Starte Download...", len(books))

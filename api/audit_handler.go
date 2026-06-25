@@ -58,6 +58,10 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 			}
 			logs = append(logs, l)
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, logs)
 	}
@@ -112,6 +116,10 @@ func (s *Server) GetRecentTransactionsHandler() http.HandlerFunc {
 				return
 			}
 			txs = append(txs, tx)
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		RespondJSON(w, http.StatusOK, txs)

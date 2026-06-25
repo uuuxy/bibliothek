@@ -150,6 +150,11 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 					})
 				}
 			}
+			// Bei einem Abbruch mitten in der Iteration keine irreführende Teil-Top-Liste
+			// zeigen (best-effort-Sektion, daher verwerfen statt 500).
+			if err := rows.Err(); err != nil {
+				popularTitles = []any{}
+			}
 		}
 
 		// 2. Ladenhüter (No checkouts since 2 years or never)
@@ -187,6 +192,11 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 		}
 
 		// 3. Verlustquote
+		// Bei Iterationsabbruch keine irreführende Teil-Ladenhüterliste zeigen.
+		if err := rowsW.Err(); err != nil {
+			shelfWarmers = []any{}
+		}
+
 		var gesamtBestand, verloreneExemplare int
 		var verlustQuote float64
 		qLoss := `
@@ -246,6 +256,9 @@ func (s *Server) queryReorders(ctx context.Context) ([]ReorderTitle, error) {
 			return nil, err
 		}
 		results = append(results, r)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return results, nil
 }

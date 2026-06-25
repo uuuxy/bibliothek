@@ -97,6 +97,10 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 				DaysOverdue:   int(days),
 			})
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		if len(studentOrder) == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine überfälligen Ausleihen gefunden"))

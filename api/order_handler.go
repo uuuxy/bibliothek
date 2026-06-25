@@ -88,6 +88,11 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 				}
 			}
 		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 		rows.Close()
 
 		if len(itemsToOrder) == 0 {
@@ -259,6 +264,10 @@ func (s *Server) ReleaseOrdersHandler() http.HandlerFunc {
 				return
 			}
 			items = append(items, item)
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{

@@ -39,6 +39,10 @@ func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
 			m.ErstelltAm = t.Format("2006-01-02")
 			mappings = append(mappings, m)
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, mappings)
 	}

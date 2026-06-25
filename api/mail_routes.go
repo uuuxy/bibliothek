@@ -56,6 +56,10 @@ func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 				templates = append(templates, t)
 			}
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, templates)
 	}

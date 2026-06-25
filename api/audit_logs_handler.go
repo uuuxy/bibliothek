@@ -46,6 +46,10 @@ func (s *Server) GetAdminAuditLogsHandler() http.HandlerFunc {
 			}
 			logs = append(logs, l)
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		if logs == nil {
 			logs = []AdminAuditLogEntry{}

@@ -109,6 +109,9 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 			})
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	groups := make([]*ShipmentGroup, 0)
 	for _, g := range groupsMap {
@@ -196,6 +199,11 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 				results = append(results, item)
 			}
 		}
+		// Bei Abbruch mitten in der Iteration lokale Teiltreffer verwerfen; die
+		// DNB-Ergebnisse werden anschließend ohnehin separat angehängt.
+		if err := rows.Err(); err != nil {
+			results = nil
+		}
 	}
 
 	dnbResults, errDNB := metaClient.SucheTextDNB(ctx, query)
@@ -254,6 +262,9 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 			continue
 		}
 		updatedIDs = append(updatedIDs, id)
+	}
+	if err := rows.Err(); err != nil {
+		return 0, err
 	}
 
 	if len(updatedIDs) == 0 {

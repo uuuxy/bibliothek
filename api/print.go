@@ -62,6 +62,10 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			}
 			items = append(items, item)
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		if len(items) == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no open damage records found for student"))
@@ -141,6 +145,10 @@ func PrintMahnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 				FaelligSeit: ausleihdatum, // The prompt requested "FaelligSeit" but we can use ausleihdatum or calculate frist. We use ausleihdatum as requested ("inkl. Barcode und Rückgabedatum/Ausleihdatum").
 			})
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		if len(schuelerOrder) == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine überfälligen Ausleihen für Klasse %s gefunden", klasse))
@@ -212,6 +220,10 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 				continue
 			}
 			buecher = append(buecher, b)
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		if len(buecher) == 0 {

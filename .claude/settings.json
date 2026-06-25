@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -iE \"insert|exec|\\\\\\\\$|values|set \")",
+      "Bash(docker version *)",
+      "Bash(golangci-lint help *)",
+      "Bash(awk 'NR>=40 && NR<=69 && /^func/' internal/service/cover_service.go)"
+    ]
+  }
+}

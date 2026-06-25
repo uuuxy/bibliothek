@@ -150,6 +150,10 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 			}{id, klasse}
 		}
 	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
 	rows.Close()
 
 	res := &LusdPreviewResult{TotalCsvRecords: len(records)}

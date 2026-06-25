@@ -65,6 +65,9 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 		}
 		groupsMap[className] = append(groupsMap[className], book)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("klassen-bücher konnten nicht vollständig gelesen werden: %w", err)
+	}
 
 	var result []ClassGroup
 	for _, name := range classNames {

@@ -198,6 +198,11 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 		}
 		students = append(students, s)
 	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		log.Printf("Scheduler GDPR Delete: Iterationsfehler: %v", err)
+		return
+	}
 	rows.Close()
 
 	if len(students) == 0 {

@@ -149,6 +149,10 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 				copies = append(copies, cp)
 			}
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, copies)
 	}
@@ -201,6 +205,10 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 			}
 			borrowers = append(borrowers, b)
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, borrowers)
 	}
@@ -252,6 +260,10 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 				return
 			}
 			history = append(history, h)
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		RespondJSON(w, http.StatusOK, history)

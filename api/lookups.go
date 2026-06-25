@@ -31,6 +31,10 @@ func (s *Server) GetSystematicsHandler() http.HandlerFunc {
 				results = append(results, sys)
 			}
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, results)
 	}
@@ -59,6 +63,10 @@ func (s *Server) GetReaderGroupsHandler() http.HandlerFunc {
 			if err := rows.Scan(&rg.ID, &rg.Kuerzel, &rg.Bezeichnung); err == nil {
 				results = append(results, rg)
 			}
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
+			return
 		}
 
 		RespondJSON(w, http.StatusOK, results)

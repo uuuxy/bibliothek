@@ -21,5 +21,8 @@ func (repo *BookRepository) GetActiveSubjects(ctx context.Context) ([]Subject, e
 		}
 		subjects = append(subjects, s)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("fehler beim lesen der fächer: %w", err)
+	}
 	return subjects, nil
 }

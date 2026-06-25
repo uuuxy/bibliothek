@@ -48,6 +48,10 @@ func (s *Server) GetPermissionsHandler() http.HandlerFunc {
 				settings = append(settings, ps)
 			}
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, settings)
 	}

@@ -72,6 +72,11 @@ func (s *CoverService) SyncMissingCoversAsync() {
 			missing = append(missing, mc)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		log.Printf("Cover Sync: Fehler beim Lesen der fehlenden Cover: %v", err)
+		return
+	}
 	rows.Close()
 
 	if len(missing) == 0 {

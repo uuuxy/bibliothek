@@ -38,6 +38,10 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			titelToID[titel] = id
 		}
 	}
+	if err := dbRows.Err(); err != nil {
+		dbRows.Close()
+		return 0, 0, err
+	}
 	dbRows.Close()
 
 	type NewTitle struct {

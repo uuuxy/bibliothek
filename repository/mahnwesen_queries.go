@@ -92,6 +92,9 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 					emailMap[k] = e
 				}
 			}
+			if err := mRows.Err(); err != nil {
+				emailMap = map[string]string{} // Teil-Mapping verwerfen (best-effort-Anreicherung)
+			}
 			for i := range klassen {
 				klassen[i].LehrerEmail = emailMap[klassen[i].Klasse]
 			}

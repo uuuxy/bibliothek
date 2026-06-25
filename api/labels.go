@@ -58,6 +58,10 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 				items = append(items, item)
 			}
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("datenbankfehler: %w", err))
+			return
+		}
 
 		if len(items) == 0 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine exemplare für diesen titel vorhanden"))

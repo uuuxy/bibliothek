@@ -45,6 +45,10 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 				})
 			}
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, students)
 	}

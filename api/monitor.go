@@ -99,6 +99,11 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 			}
 			slides.NeuEingetroffen = append(slides.NeuEingetroffen, t)
 		}
+		if err := rows.Err(); err != nil {
+			log.Printf("DB Error in Monitor (Iteration Neu eingetroffen): %v", err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+			return
+		}
 
 		// Beliebt: top 5 titles by loan count in the last 7 days.
 		rows2, err := s.DB.Pool.Query(ctx, `
@@ -125,6 +130,11 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 				return
 			}
 			slides.Beliebt = append(slides.Beliebt, t)
+		}
+		if err := rows2.Err(); err != nil {
+			log.Printf("DB Error in Monitor (Iteration Beliebt): %v", err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+			return
 		}
 
 		RespondJSON(w, http.StatusOK, slides)

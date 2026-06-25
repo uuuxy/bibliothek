@@ -38,6 +38,10 @@ func (s *Server) GetSignaturesHandler() http.HandlerFunc {
 			}
 			result = append(result, sig)
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, result)
 	}

@@ -65,6 +65,10 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 				summary.TopOverdue = append(summary.TopOverdue, o)
 			}
 		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		RespondJSON(w, http.StatusOK, summary)
 	}

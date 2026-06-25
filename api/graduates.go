@@ -86,6 +86,10 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 					"ist_gesperrt":   gesperrt,
 				})
 			}
+			if err := rows.Err(); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
 			RespondJSON(w, http.StatusOK, students)
 			return
 		}
@@ -146,6 +150,10 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 				BarcodeID: exBarcode,
 				Frist:     frist,
 			})
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		result := make([]*GraduateDetail, 0, len(studOrder))
@@ -219,6 +227,10 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 					Frist:     *frist,
 				})
 			}
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		result := make([]pdf.LaufzettelStudent, 0, len(studOrder))
