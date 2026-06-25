@@ -91,6 +91,47 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 	}
 }
 
+// UpdateSupplierHandler updates name, email and customer number of an existing supplier.
+func (s *Server) UpdateSupplierHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing supplier ID"))
+			return
+		}
+
+		var req CreateSupplierRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return
+		}
+		if req.Name == "" || req.Email == "" || req.CustomerNumber == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
+			return
+		}
+
+		ctx := r.Context()
+		tag, err := s.DB.Pool.Exec(ctx,
+			`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3 WHERE id = $4`,
+			req.Name, req.Email, req.CustomerNumber, id,
+		)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if tag.RowsAffected() == 0 {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
+			return
+		}
+
+		RespondJSON(w, http.StatusOK, SupplierResponse{
+			ID:             id,
+			Name:           req.Name,
+			Email:          req.Email,
+			CustomerNumber: req.CustomerNumber,
+		})
+	}
+}
+
 // DeleteSupplierHandler removes a supplier.
 func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

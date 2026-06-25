@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { appState } from "../inventur/lib/store.svelte.js";
-  import { apiGet, apiPost, apiDelete } from "./apiFetch.js";
+  import { apiGet, apiPost, apiPut, apiDelete } from "./apiFetch.js";
   import { toastStore } from "./stores/toastStore.svelte.js";
   import { playSuccessBeep, playErrorBeep } from "./audio.js";
 
@@ -75,6 +75,14 @@
   }
 
   /** @param {string} id */
+  async function editSupplier(id, name, email, customerNumber) {
+    try {
+      await apiPut(`/api/lieferanten/${id}`, { name, email, customerNumber });
+      await loadSuppliers();
+      toastStore.addToast("Lieferant aktualisiert.", "success");
+    } catch { /* apiPut already shows error toast */ }
+  }
+
   async function removeSupplier(id) {
     try {
       await apiDelete(`/api/lieferanten/${id}`);
@@ -266,9 +274,10 @@
   {/if}
 
   {#if activeTab === "lieferanten"}
-    <SupplierManager 
+    <SupplierManager
       {suppliers}
       onAddSupplier={addSupplier}
+      onEditSupplier={editSupplier}
       onRemoveSupplier={removeSupplier}
     />
   {/if}
