@@ -7,6 +7,12 @@ dist/
 frontend/dist/
 frontend/dist-ssr/
 
+# Kompilierte Go-Binaries im Repo-Root (root-verankert, damit cmd/-Pakete unberührt bleiben)
+/bibliothek
+/migrate
+/migrate_photos
+/restore-backup
+
 # User uploads & data
 uploads/
 
