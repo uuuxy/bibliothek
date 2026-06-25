@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/johnfercher/maroto/v2"
@@ -127,6 +128,10 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem) ([]byte, error) {
 		)
 		total += item.Ersatzpreis
 	}
+	// Geldbeträge liegen in der DB exakt als NUMERIC(10,2); in Go werden sie als
+	// float64 geführt. Bei der einzigen Akkumulation hier die Summe explizit auf
+	// Cent runden, damit theoretische Float-Drift nie in den Rechnungsbetrag leckt.
+	total = math.Round(total*100) / 100
 
 	// Total Row
 	m.AddRow(15,
