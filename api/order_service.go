@@ -37,6 +37,14 @@ type OrderResult struct {
 	TotalAllocated int
 }
 
+type bestellungPosition struct {
+	titelID   string
+	titelName string
+	isbn      string
+	menge     int
+	preis     float64
+}
+
 // ProcessOrder verarbeitet eine eingehende SubmitOrderRequest innerhalb einer Transaktion, generiert Barcodes und gibt das OrderResult zurück.
 func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest) (*OrderResult, error) {
 	// 1. Lieferantendetails abrufen
@@ -57,8 +65,10 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	labels := make([]BarcodeLabelDetail, 0)
 	orderSummaryItems := make([]OrderedItem, 0)
 	var totalAllocated int
+	var gesamtbetrag float64
 
 	var copyInserts []repository.BookCopyInsert
+	var positionen []bestellungPosition
 
 	for _, item := range req.Items {
 		if item.Menge <= 0 || item.Menge > 200 {
@@ -80,6 +90,15 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 			Verlag: title.Verlag,
 			Menge:  item.Menge,
 		})
+
+		positionen = append(positionen, bestellungPosition{
+			titelID:   item.TitelID,
+			titelName: title.Titel,
+			isbn:      title.ISBN,
+			menge:     item.Menge,
+			preis:     item.Preis,
+		})
+		gesamtbetrag += float64(item.Menge) * item.Preis
 
 		// ALWAYS pre-allocate barcodes in the database
 		barcodes, err := s.bookRepo.GenerateBarcodes(ctx, item.Menge)
@@ -118,6 +137,31 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 
 	if err := s.bookRepo.BulkInsertCopiesTx(ctx, tx, copyInserts); err != nil {
 		return nil, fmt.Errorf("bulk insert error: %w", err)
+	}
+
+	// Bestellverlauf in derselben Transaktion mitschreiben
+	var bestellungID string
+	err = tx.QueryRow(ctx, `
+		INSERT INTO bestellungen_verlauf
+			(lieferant_id, lieferant_name, lieferant_email, kundennummer, gesamtbetrag, anzahl_exemplare)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id`,
+		req.SupplierID, supplier.Name, supplier.Email, supplier.Kundennummer,
+		gesamtbetrag, totalAllocated,
+	).Scan(&bestellungID)
+	if err != nil {
+		return nil, fmt.Errorf("bestellverlauf insert: %w", err)
+	}
+
+	for _, pos := range positionen {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO bestellungen_positionen
+				(bestellung_id, titel_id, titel_name, isbn, menge, einzelpreis)
+			VALUES ($1, $2, $3, $4, $5, $6)`,
+			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
+		); err != nil {
+			return nil, fmt.Errorf("position insert: %w", err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

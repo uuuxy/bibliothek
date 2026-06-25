@@ -460,6 +460,32 @@ CREATE TABLE lieferanten (
 );
 
 
+-- Table: bestellungen_verlauf (Order history — one record per submitted order)
+CREATE TABLE bestellungen_verlauf (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lieferant_id     UUID REFERENCES lieferanten(id) ON DELETE SET NULL,
+    lieferant_name   TEXT NOT NULL,
+    lieferant_email  TEXT NOT NULL,
+    kundennummer     TEXT NOT NULL DEFAULT '',
+    bestelldatum     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    gesamtbetrag     DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    anzahl_exemplare INTEGER NOT NULL DEFAULT 0
+);
+
+-- Table: bestellungen_positionen (Line items per order)
+CREATE TABLE bestellungen_positionen (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bestellung_id UUID NOT NULL REFERENCES bestellungen_verlauf(id) ON DELETE CASCADE,
+    titel_id      UUID REFERENCES buecher_titel(id) ON DELETE SET NULL,
+    titel_name    TEXT NOT NULL,
+    isbn          TEXT NOT NULL DEFAULT '',
+    menge         INTEGER NOT NULL,
+    einzelpreis   DECIMAL(10,2) NOT NULL DEFAULT 0.00
+);
+
+CREATE INDEX idx_bestellpositionen_bestellung ON bestellungen_positionen(bestellung_id);
+
+
 -- Table: vormerkungen (Individual book reservations / waitlist)
 CREATE TABLE vormerkungen (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -542,7 +568,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('033_unique_active_loan.sql'),
 ('034_drop_antolin.sql'),
 ('035_lusd_id_partial_unique.sql'),
-('036_schule_einstellungen.sql')
+('036_schule_einstellungen.sql'),
+('037_bestellungen_verlauf.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
