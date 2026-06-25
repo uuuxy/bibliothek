@@ -10,7 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -145,20 +145,41 @@ func (s *Server) Routes() http.Handler {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	// Serve Svelte frontend static assets from build directory
-	fs := http.FileServer(http.Dir("./frontend/dist"))
+	// Initialize bounded root context for serving static frontend assets to prevent Path Traversal
+	frontendRoot, err := os.OpenRoot("./frontend/dist")
+	if err != nil {
+		// Log warning, but do not crash. Frontend might not be built in dev env.
+		log.Printf("Warning: Could not open frontend/dist root: %v", err)
+	}
+
+	// Serve Svelte frontend static assets from build directory using bounded os.OpenRoot
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 			return
 		}
-		path := filepath.Join("./frontend/dist", r.URL.Path)
-		info, err := os.Stat(path)
-		if err != nil || info.IsDir() {
-			http.ServeFile(w, r, "./frontend/dist/index.html")
+
+		if frontendRoot == nil {
+			http.NotFound(w, r)
 			return
 		}
-		fs.ServeHTTP(w, r)
+
+		cleanPath := strings.TrimPrefix(r.URL.Path, "/")
+		if cleanPath == "" {
+			cleanPath = "index.html"
+		}
+
+		f, err := frontendRoot.Open(cleanPath)
+		if err == nil {
+			info, err := f.Stat()
+			f.Close()
+			if err == nil && !info.IsDir() {
+				http.ServeFileFS(w, r, frontendRoot.FS(), cleanPath)
+				return
+			}
+		}
+
+		http.ServeFileFS(w, r, frontendRoot.FS(), "index.html")
 	})
 
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
