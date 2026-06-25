@@ -1,5 +1,0 @@
-api/littera_import.go:172:22: this result of append is never used, except maybe in other appends (SA4010)
-api/mahnwesen_mail.go:50:53: error strings should not be capitalized (ST1005)
-api/mahnwesen_pdf.go:183:53: error strings should not be capitalized (ST1005)
-repository/audit_books.go:109:10: error strings should not be capitalized (ST1005)
-repository/audit_books.go:109:10: error strings should not end with punctuation or newlines (ST1005)

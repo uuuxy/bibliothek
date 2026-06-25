@@ -1,4 +1,0 @@
-Loading svelte-check in workspace: /Users/peterflasch/Developer/Bibliothek/frontend
-Getting Svelte diagnostics...
-
-svelte-check found 0 errors and 0 warnings
