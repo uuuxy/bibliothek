@@ -37,3 +37,8 @@ frontend_build.log
 build.log
 
 tmp/
+
+# Generierte Security-/Lint-Scan-Reports im Repo-Root (security-scan.sh etc.).
+# Kuratierte Audit-Belege unter docs/security/ bleiben bewusst versioniert.
+/*_report.txt
+/*_report.html
