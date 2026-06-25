@@ -40,8 +40,9 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 					   (substring(klasse from '^\d+')::int + 1) AS new_grade,
 					   substring(klasse from '^\d+(.*)$') AS new_suffix
 				FROM schueler
-				WHERE ist_abgaenger = false 
-				  AND klasse ~ '^\d+' 
+				WHERE ist_abgaenger = false
+				  AND deleted_at IS NULL
+				  AND klasse ~ '^\d+'
 			),
 			calculated AS (
 				SELECT id,
