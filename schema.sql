@@ -250,9 +250,6 @@ CREATE TABLE buecher_titel (
     medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf location, notes)
     ziel_jahrgang INTEGER NOT NULL DEFAULT 0,          -- Target grade level for loan duration calculation (0 = 1 year default)
-    antolin_stufen VARCHAR(50),
-    antolin_punkte INTEGER,
-    antolin_geprueft_am TIMESTAMP WITH TIME ZONE,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
@@ -535,7 +532,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('030_ziel_jahrgang.sql'),
 ('031_inventur_geprueft_am.sql'),
 ('032_reconcile_titel_columns.sql'),
-('033_unique_active_loan.sql')
+('033_unique_active_loan.sql'),
+('034_drop_antolin.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
