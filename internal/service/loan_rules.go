@@ -88,6 +88,12 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 			}
 		}
 	}
+	// Ein mittendrin abgebrochener Query würde sonst stillschweigend die Defaults
+	// liefern, statt den Fehler sichtbar zu machen — heikel, weil die Werte direkt
+	// die Leihfristen und Sperr-Schwellen bestimmen.
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return settings, nil
 }
 

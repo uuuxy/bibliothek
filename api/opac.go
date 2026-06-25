@@ -86,6 +86,13 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			}
 			result = append(result, t)
 		}
+		// rows.Next() liefert auch bei einem mittendrin abgebrochenen Query false —
+		// ohne rows.Err() würde der öffentliche Katalog stillschweigend Teildaten als
+		// vollständig (200 OK) ausliefern.
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 		if result == nil {
 			result = []OpacTitel{}
 		}
