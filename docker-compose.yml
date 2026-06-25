@@ -6,7 +6,7 @@ services:
     container_name: bibliothek-db
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-geheim}
       - POSTGRES_DB=${POSTGRES_DB:-bibliothek}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -28,15 +28,24 @@ services:
     environment:
       - PORT=8083
       - DB_HOST=postgres-db
-      # WICHTIG (Produktion): JWT_SECRET und APP_ENCRYPTION_KEY MÜSSEN als echte,
-      # geheime Werte gesetzt werden (z. B. via .env). Der Server verweigert sonst
-      # außerhalb von APP_ENV=local den Start (bekannte Default-Secrets sind gesperrt).
-      # Hinter TLS-Proxy (Caddy) zusätzlich COOKIE_SECURE=true setzen.
+      # ── Sicherheit / Secrets ────────────────────────────────────────────────
+      # Test-/Pilotphase (Standard): Der Stack startet auch mit den Default-Secrets.
+      #
+      # VOR DEM ECHTEN PROD-DEPLOY in der .env setzen und damit die harte
+      # Absicherung scharf schalten:
+      #   ENFORCE_PROD_SECRETS=true
+      #   JWT_SECRET=<zufällig, >=32 Zeichen>
+      #   APP_ENCRYPTION_KEY=<exakt 32 Byte>
+      #   POSTGRES_PASSWORD=<eigenes Passwort>
+      #   COOKIE_SECURE=true   # hinter Caddy-HTTPS
+      # Mit ENFORCE_PROD_SECRETS=true verweigert der Server den Start, falls noch
+      # ein bekannter Default-Wert für JWT_SECRET/APP_ENCRYPTION_KEY aktiv ist.
       - APP_ENV=${APP_ENV:-production}
-      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET muss gesetzt sein (>=32 Zeichen, geheim)}
+      - ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-false}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
+      - JWT_SECRET=${JWT_SECRET:-super-secret-default-key-at-least-32-bytes}
       - COOKIE_SECURE=${COOKIE_SECURE:-false}
-      - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY muss gesetzt sein (32 Byte)}
+      - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - IMAP_HOST=${IMAP_HOST:-mock}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
       - SMTP_HOST=${SMTP_HOST}

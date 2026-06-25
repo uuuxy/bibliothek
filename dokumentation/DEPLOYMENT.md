@@ -23,7 +23,8 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `DATABASE_URL` | PostgreSQL-DSN | Pflicht |
 | `JWT_SECRET` | HMAC-Signatur-Schlüssel | Pflicht, ≥ 32 Zeichen |
 | `APP_ENCRYPTION_KEY` | AES-256-Schlüssel für Schülerfotos | Pflicht, genau 32 Bytes |
-| `APP_ENV` | Umgebung (`production` / `local`) | Standard: `production` |
+| `APP_ENV` | Umgebung (`production` / `local`) — steuert Cookie-Secure & Swagger | Standard: `production` |
+| `ENFORCE_PROD_SECRETS` | Harte Start-Verweigerung bei Default-Secrets | Standard: `false` (Testphase) |
 | `COOKIE_SECURE` | `true` hinter TLS-Proxy (Caddy) | Standard: `false` |
 | `PORT` | HTTP-Port des Backends | Pflicht |
 | `SMTP_HOST` | SMTP-Server | Optional (Mahnwesen) |
@@ -49,6 +50,7 @@ POSTGRES_PASSWORD=<sicheres-passwort>
 JWT_SECRET=<mindestens-32-zeichen-geheimes-jwt-secret>
 APP_ENCRYPTION_KEY=<genau-32-bytes-aes-schluessel>
 APP_ENV=production
+ENFORCE_PROD_SECRETS=true   # erst beim echten Prod-Deploy scharf schalten
 COOKIE_SECURE=true
 SMTP_HOST=smtp.example.com
 SMTP_USER=user@example.com
@@ -56,13 +58,24 @@ SMTP_PASSWORD=<smtp-passwort>
 SMTP_FROM=bibliothek@schule.de
 ```
 
-### 2.2 Secret Guard
+### 2.2 Secret Guard (per Schalter einschaltbar)
 
-Der Server **verweigert den Start** in Produktion (`APP_ENV != local`), wenn bekannte Default-Secrets aus dem Repository verwendet werden. Fehlermeldung:
+Die harte Start-Verweigerung ist von `APP_ENV` **entkoppelt** und wird über den dedizierten Schalter `ENFORCE_PROD_SECRETS` gesteuert:
+
+| Phase | `ENFORCE_PROD_SECRETS` | Verhalten |
+|---|---|---|
+| Test-/Pilotbetrieb | `false` (Standard) | Stack startet auch mit Default-Secrets — bequemes Testen |
+| Echter Prod-Deploy | `true` | Server **verweigert den Start**, wenn ein bekannter Default für `JWT_SECRET` oder `APP_ENCRYPTION_KEY` aktiv ist |
+
+> **Warum entkoppelt von `APP_ENV`?** `APP_ENV=local` würde gleichzeitig das Cookie-`Secure`-Flag deaktivieren und die Swagger-Docs öffentlich freischalten — auf einem über das Internet erreichbaren Test-Server unerwünscht. Mit `ENFORCE_PROD_SECRETS` bleibt `APP_ENV=production` (sichere Cookies, kein Swagger), während die Secret-Härtung unabhängig davon ein-/ausgeschaltet wird.
+
+Fehlermeldung bei `ENFORCE_PROD_SECRETS=true` + Default-Secret:
 ```
-FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze im Produktionsbetrieb
-ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder APP_ENV=local für die Entwicklung.
+FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes
+JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.
 ```
+
+**Checkliste vor dem ersten echten Prod-Deploy:** `ENFORCE_PROD_SECRETS=true` setzen und dazu echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS).
 
 ### 2.3 Docker Compose starten
 
@@ -71,7 +84,7 @@ cd /pfad/zur/bibliothek
 docker compose --env-file .env up -d --build
 ```
 
-`docker-compose.yml` erzwingt per `${VAR:?Fehlermeldung}`, dass alle Pflicht-Secrets gesetzt sind — Docker-Compose bricht mit einer sprechenden Fehlermeldung ab, wenn eine Variable fehlt.
+`docker-compose.yml` liefert für alle Secrets bequeme Defaults (`${VAR:-…}`), damit der Stack in der Testphase ohne weitere Konfiguration startet. Die Produktions-Absicherung übernimmt der Code-Guard (`ENFORCE_PROD_SECRETS=true`), nicht die Compose-Datei.
 
 ### 2.4 Deployment-Skript
 

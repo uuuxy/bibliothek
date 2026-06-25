@@ -128,23 +128,27 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 		log.Fatalf("FATAL: APP_ENCRYPTION_KEY must be exactly 32 bytes (or 64 hex characters) long")
 	}
 
-	// Sicherheit: Im Produktionsbetrieb dürfen NICHT die im Repo committeten Default-Secrets
-	// verwendet werden. Sonst könnte jeder mit Repo-Zugriff Admin-JWTs fälschen (JWT_SECRET)
+	// Sicherheit: Die im Repo committeten Default-Secrets dürfen im echten Produktionsbetrieb
+	// NICHT verwendet werden. Sonst könnte jeder mit Repo-Zugriff Admin-JWTs fälschen (JWT_SECRET)
 	// bzw. die AES-verschlüsselten Schülerfotos entschlüsseln (APP_ENCRYPTION_KEY).
-	// Im local/development-Modus (APP_ENV) bleiben die Defaults für die Entwicklung erlaubt.
-	appEnv := strings.ToLower(os.Getenv("APP_ENV"))
-	isLocal := appEnv == "local" || appEnv == "development"
-	if !isLocal {
+	//
+	// Diese harte Start-Verweigerung ist bewusst per dediziertem Schalter EINSCHALTBAR und von
+	// APP_ENV entkoppelt (APP_ENV steuert weiterhin Cookie-Secure & Swagger-Sichtbarkeit). Während
+	// der Test-/Pilotphase bleibt sie aus (ENFORCE_PROD_SECRETS ungesetzt/false); vor dem echten
+	// Prod-Deploy einfach ENFORCE_PROD_SECRETS=true setzen — dann verweigert der Server den Start
+	// mit den bekannten Default-Werten.
+	enforceProdSecrets := strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true"
+	if enforceProdSecrets {
 		knownDefaultSecrets := map[string]bool{
 			"super-secret-default-key-at-least-32-bytes": true, // Default aus docker-compose.yml (JWT)
 			"super-secure-aes-key-32-chars-ok":           true, // Default aus docker-compose.yml (AES)
 			"supergeheim_lokal":                          true,
 		}
 		if knownDefaultSecrets[jwtSecret] {
-			log.Fatalf("FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze im Produktionsbetrieb ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder APP_ENV=local für die Entwicklung.")
+			log.Fatalf("FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
 		if knownDefaultSecrets[aesKey] {
-			log.Fatalf("FATAL: APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze im Produktionsbetrieb einen eigenen 32-Byte-Schlüssel — oder APP_ENV=local für die Entwicklung.")
+			log.Fatalf("FATAL: APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze einen eigenen 32-Byte-Schlüssel — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
 	}
 

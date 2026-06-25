@@ -2,6 +2,29 @@
 
 ---
 
+## 2026-06-25 — Secret-Guard per Schalter (Testbetrieb entsperrt)
+
+**Wunsch:** Die harte Start-Verweigerung soll während der Test-/Pilotphase aus sein und erst zum echten Prod-Deploy „bei Bedarf" eingeschaltet werden.
+
+**Problem mit dem bisherigen Ansatz:** Der Guard war an `APP_ENV` gekoppelt (`APP_ENV=local` deaktivierte ihn). Das hätte aber auf dem Test-Server unerwünschte Nebenwirkungen, denn `APP_ENV=local` deaktiviert zusätzlich das Cookie-`Secure`-Flag (auth/handlers.go, csrf.go, logout_handler.go) und schaltet die Swagger-Docs öffentlich frei (router.go). Außerdem blockierte `docker-compose.yml` per `${VAR:?}` den Start, bevor die App überhaupt lief.
+
+**Lösung — Entkopplung über dedizierten Schalter `ENFORCE_PROD_SECRETS`:**
+- `main.go/loadConfig`: Guard prüft jetzt `ENFORCE_PROD_SECRETS=true` statt `APP_ENV`. `APP_ENV` bleibt auf `production` (sichere Cookies, kein Swagger), unabhängig von der Secret-Härtung.
+- `docker-compose.yml`: `${VAR:?}` → bequeme `${VAR:-…}`-Defaults; neuer Pass-Through `ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-false}`. Stack startet in der Testphase ohne Konfiguration.
+- `.env.example`: `APP_ENV` + `ENFORCE_PROD_SECRETS` dokumentiert.
+
+**Vor dem echten Prod-Deploy** in der `.env`: `ENFORCE_PROD_SECRETS=true` + echte `JWT_SECRET` (≥32 Z.), `APP_ENCRYPTION_KEY` (32 Byte), `POSTGRES_PASSWORD`, `COOKIE_SECURE=true`.
+
+Dateien: `main.go`, `docker-compose.yml`, `.env.example`
+
+---
+
+## 2026-06-25 — Klassensatz-Druck wieder verknüpft
+
+`ClassPrintStation.svelte` (Massendruck aller Ausweise einer Klasse) existierte, war aber seit einem Toolbar-Refactoring verwaist (nirgends importiert). Verknüpfung wiederhergestellt: Button „Klassensatz drucken" in `StudentDirectoryToolbar.svelte` (neuer `onprintclass`-Callback) + Render-Verzweigung in `StudentDirectory.svelte`. Commit: `6e16e7e`
+
+---
+
 ## 2026-06-24 — Cover-Download repariert (DNB-Bot-Schranke)
 
 **Symptom:** Cover wurden flächendeckend nicht mehr gezogen/gespeichert (nur vereinzelt). Selbst der manuelle ISBN-Refresh in „Titel bearbeiten" lieferte korrekte Metadaten, aber kein Cover.

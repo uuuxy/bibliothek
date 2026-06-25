@@ -91,15 +91,24 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
 
 ### Lösung (`main.go/loadConfig`)
-Der Server **verweigert den Start** außerhalb von `APP_ENV=local`, wenn bekannte Default-Secrets erkannt werden:
+Der Server **verweigert den Start**, wenn der Schalter `ENFORCE_PROD_SECRETS=true` gesetzt ist und bekannte Default-Secrets erkannt werden:
 ```go
-knownDefaultSecrets := map[string]bool{
-    "super-secret-default-key-at-least-32-bytes": true,
-    "super-secure-aes-key-32-chars-ok":           true,
-    "supergeheim_lokal":                          true,
+enforceProdSecrets := strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true"
+if enforceProdSecrets {
+    knownDefaultSecrets := map[string]bool{
+        "super-secret-default-key-at-least-32-bytes": true,
+        "super-secure-aes-key-32-chars-ok":           true,
+        "supergeheim_lokal":                          true,
+    }
+    // … log.Fatalf bei Treffer
 }
 ```
-Im lokalen Entwicklungsmodus (`APP_ENV=local` oder `APP_ENV=development`) sind die Defaults weiterhin erlaubt.
+
+**Bewusst per Schalter einschaltbar (entkoppelt von `APP_ENV`):**
+- Test-/Pilotphase: `ENFORCE_PROD_SECRETS=false` (Standard) → Stack startet auch mit Defaults.
+- Echter Prod-Deploy: `ENFORCE_PROD_SECRETS=true` → harte Start-Verweigerung bei Default-Secrets.
+
+Die Entkopplung von `APP_ENV` ist Absicht: `APP_ENV=local` würde sonst gleichzeitig das Cookie-`Secure`-Flag deaktivieren und Swagger öffentlich freischalten. So bleibt `APP_ENV=production` (sichere Cookies, kein Swagger), während die Secret-Härtung separat geschaltet wird.
 
 ### Mindestanforderungen
 - `JWT_SECRET`: ≥ 32 Zeichen
