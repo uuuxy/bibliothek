@@ -75,7 +75,7 @@ func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		
+
 		// Ensure we don't return null for empty slices
 		if result == nil {
 			result = []repository.KlassensatzReservierung{}
@@ -112,7 +112,7 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 
 		repo := repository.NewReservationRepository(s.DB.Pool)
 		rowsAffected, err := repo.ErledigeKlassensatzReservierung(r.Context(), id)
-		
+
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
