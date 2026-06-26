@@ -144,9 +144,19 @@ body {
   }
 
   /* Die Ausleih-Quittung wird über einen eigenen Button mit reinem window.print()
-     (OHNE data-print-mode) gedruckt. Sobald ein Karten-Druckmodus aktiv ist
-     (z. B. "Ausweis drucken" → card-single), muss sie ausgeblendet werden — sonst
-     erscheint sie zusätzlich zum Ausweis auf dem Ausdruck. */
+     (OHNE data-print-mode) gedruckt. Tailwind-Klassen werden hier NICHT verwendet,
+     da @layer utilities in Tailwind v4 !important-Regeln in unlayered CSS überschreibt.
+     Sichtbarkeit wird komplett über diese reinen CSS-Regeln gesteuert. */
+  body:not([data-print-mode]) .print-receipt-section {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: white !important;
+    color: black !important;
+    padding: 2rem !important;
+  }
   body[data-print-mode] .print-receipt-section {
     display: none !important;
   }

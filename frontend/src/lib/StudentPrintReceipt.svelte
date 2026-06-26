@@ -18,7 +18,7 @@
 </script>
 
 <!-- Print Container für Ausleihen -->
-<div class="print-receipt-section hidden print:block print:absolute print:top-0 print:left-0 print:w-full print:bg-white print:text-black print:p-8">
+<div class="print-receipt-section" style="display:none">
   <div class="text-center mb-8 border-b border-slate-300 pb-4">
     <h1 class="text-2xl font-bold">Ausleih-Quittung</h1>
     <h2 class="text-lg text-slate-600">Schulbibliothek</h2>
