@@ -9,6 +9,7 @@ func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService,
 	mux.Handle("GET /api/bestellungen", s.RequirePermission("view_orders")(s.GetReordersHandler()))
 	mux.Handle("GET /api/bestellungen/pdf", s.RequirePermission("view_orders")(s.ExportReordersPDFHandler()))
 	mux.Handle("GET /api/bestellhistorie", s.RequirePermission("view_orders")(s.GetBestellhistorieHandler()))
+	mux.Handle("GET /api/bestellhistorie/bericht", s.RequirePermission("view_orders")(s.GetBestellBerichtPDFHandler()))
 	mux.Handle("GET /api/lieferanten", s.RequirePermission("view_orders")(s.ListSuppliersHandler()))
 	mux.Handle("POST /api/lieferanten", s.RequirePermission("create_orders")(s.CreateSupplierHandler()))
 	mux.Handle("PUT /api/lieferanten/{id}", s.RequirePermission("create_orders")(s.UpdateSupplierHandler()))

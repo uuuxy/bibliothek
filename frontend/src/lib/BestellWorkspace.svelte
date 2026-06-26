@@ -11,6 +11,7 @@
   import OrderRecommendations from "./components/bestellungen/OrderRecommendations.svelte";
   import SupplierManager from "./components/bestellungen/SupplierManager.svelte";
   import BestellHistorie from "./components/bestellungen/BestellHistorie.svelte";
+  import BestellBerichte from "./components/bestellungen/BestellBerichte.svelte";
   import PrintSuggestion from "./components/bestellungen/PrintSuggestion.svelte";
 
   let activeTab = $state("bestellungen");
@@ -222,6 +223,7 @@
         <button onclick={() => activeTab = "bestellungen"} class="px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition-all {activeTab === 'bestellungen' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Bestellungen</button>
         <button onclick={() => activeTab = "lieferanten"} class="px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition-all {activeTab === 'lieferanten' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Lieferanten verwalten</button>
         <button onclick={() => activeTab = "historie"} class="px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition-all {activeTab === 'historie' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Bestellhistorie</button>
+        <button onclick={() => activeTab = "berichte"} class="px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition-all {activeTab === 'berichte' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">Berichte</button>
       </div>
       <a href="/api/bestellungen/pdf" download class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold border border-slate-200 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-2xs">🖨️ PDF-Bestellliste</a>
     </div>
@@ -286,5 +288,9 @@
 
   {#if activeTab === "historie"}
     <BestellHistorie />
+  {/if}
+
+  {#if activeTab === "berichte"}
+    <BestellBerichte {suppliers} />
   {/if}
 </div>
