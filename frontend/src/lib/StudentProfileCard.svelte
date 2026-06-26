@@ -84,58 +84,60 @@
   }
 </script>
 
-<div class="lg:col-span-1 relative bg-white rounded-3xl border border-slate-100 shadow-lg p-8 flex flex-col items-center text-center space-y-6">
-  <button onclick={onDeselect} class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer" title="Schüler schließen (ESC)">
+<div class="lg:col-span-1 relative bg-slate-50/60 border-r border-slate-200 px-7 pt-8 pb-6 flex flex-col items-start text-left gap-6">
+  <!-- Schließen -->
+  <button onclick={onDeselect} class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-full transition-colors cursor-pointer" title="Schüler schließen (ESC)">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
   </button>
 
+  <!-- Foto -->
   <div class="relative group">
     {#if profile.foto_url && !imageFailed}
-      <img 
-        src="{profile.foto_url.startsWith('data:') ? profile.foto_url : profile.foto_url + '?t=' + timestamp}" 
-        alt="Passbild" 
-        class="w-40 h-40 object-cover rounded-3xl border border-slate-100 shadow-sm" 
+      <img
+        src="{profile.foto_url.startsWith('data:') ? profile.foto_url : profile.foto_url + '?t=' + timestamp}"
+        alt="Passbild"
+        class="w-28 h-28 object-cover rounded-2xl border border-slate-200"
         onerror={() => imageFailed = true}
       />
     {:else}
-      <div class="w-40 h-40 rounded-3xl bg-linear-to-br from-slate-50 to-slate-100 border border-slate-100 flex items-center justify-center text-slate-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+      <div class="w-28 h-28 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
       </div>
     {/if}
-    <button onclick={() => showWebcam = true} aria-label="Passbild mit Webcam aufnehmen" class="absolute bottom-1 right-1 p-2.5 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white backdrop-blur-md transition-all shadow-md cursor-pointer border border-white/20" title="Passbild aufnehmen">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+    <button onclick={() => showWebcam = true} aria-label="Passbild mit Webcam aufnehmen" class="absolute bottom-1 right-1 p-2 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white backdrop-blur-md transition-all cursor-pointer border border-white/20" title="Passbild aufnehmen">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
     </button>
   </div>
 
-  <div class="space-y-2">
-    <div class="flex flex-col items-center gap-1.5">
-      <h3 class="text-2xl md:text-3xl font-extrabold font-sans text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
-      {#if profile.ist_gesperrt}
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold bg-rose-100 text-rose-700 shadow-sm border border-rose-200">
-          <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          Ausleihe gesperrt
-        </span>
-      {/if}
-    </div>
-    <p class="text-base md:text-lg text-slate-700 font-bold">Klasse {profile.klasse}</p>
-    
+  <!-- Name & Metadaten -->
+  <div class="w-full space-y-2">
+    {#if profile.ist_gesperrt}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-bold bg-rose-100 text-rose-700 border border-rose-200 mb-1">
+        <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        Ausleihe gesperrt
+      </span>
+    {/if}
+
+    <h3 class="text-3xl font-bold text-slate-900 leading-tight">{profile.vorname} {profile.nachname}</h3>
+    <p class="text-lg font-bold text-slate-700">Klasse {profile.klasse}</p>
+
     {#if role === 'admin'}
       {#if editingAbgang}
-        <div class="flex items-center gap-2 justify-center flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap">
           <input
             type="number"
             min="2000" max="2100"
             bind:value={abgangInput}
-            class="w-24 px-2 py-1 text-sm border border-blue-400 rounded-xl text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
+            class="w-24 px-2 py-1 text-sm border border-blue-400 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
           <button
             onclick={() => { abgangInput = calcAbgangFromKlasse(profile.klasse); }}
-            class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl font-semibold text-slate-600 cursor-pointer"
+            class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg font-semibold text-slate-600 cursor-pointer"
             title="Automatisch aus Klasse berechnen">↺ Neu berechnen</button>
           <button
             onclick={saveAbgang}
             disabled={abgangSaving}
-            class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer disabled:opacity-50">
+            class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold cursor-pointer disabled:opacity-50">
             {abgangSaving ? '…' : 'Speichern'}
           </button>
           <button onclick={() => editingAbgang = false} class="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer">✕</button>
@@ -144,48 +146,40 @@
       {:else}
         <button
           onclick={startEditAbgang}
-          class="text-sm text-slate-500 font-semibold hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+          class="text-base text-slate-500 font-semibold hover:text-blue-600 hover:underline cursor-pointer transition-colors"
           title="Abgangsjahr bearbeiten">
           Abgang {profile.abgaenger_jahr} ✎
         </button>
       {/if}
     {:else}
-      <p class="text-sm text-slate-500 font-semibold cursor-default">
-        Abgang {profile.abgaenger_jahr}
-      </p>
+      <p class="text-base text-slate-500 font-semibold">Abgang {profile.abgaenger_jahr}</p>
     {/if}
-    <p class="text-xs text-slate-400 tracking-wider mt-1">{profile.barcode_id}</p>
+
+    <p class="text-sm text-slate-400 font-mono tracking-widest">{profile.barcode_id}</p>
   </div>
 
-  <div class="w-full mt-2 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-3 text-left">
-    <div class="flex items-center justify-between">
-      <span class="text-sm font-bold text-slate-800">Konto-Status</span>
-      {#if profile.ist_gesperrt}
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700">
-          <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 animate-pulse"></span>
-          Gesperrt
-        </span>
-      {:else}
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
-          Aktiv
-        </span>
-      {/if}
-    </div>
+  <!-- Konto-Status (flach, kein Sub-Card) -->
+  <div class="w-full flex items-center justify-between border-t border-b border-slate-200 py-3">
+    <span class="text-base font-bold text-slate-700">Konto-Status</span>
+    {#if profile.ist_gesperrt}
+      <span class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-bold bg-rose-100 text-rose-700">
+        <span class="w-2 h-2 rounded-full bg-rose-500 mr-2 animate-pulse"></span>
+        Gesperrt
+      </span>
+    {:else}
+      <span class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-bold bg-emerald-100 text-emerald-700">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+        Aktiv
+      </span>
+    {/if}
   </div>
 
-  <div class="w-full pt-4 flex flex-col gap-3">
-    <button onclick={onPrint} class="w-full py-3.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-full text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-      Ausweis drucken
-    </button>
-  </div>
-
+  <!-- Plugin-Erweiterungen -->
   {#if studentTabExtensions.length > 0}
-    <div class="w-full pt-4 border-t border-slate-100 flex flex-col gap-3">
+    <div class="w-full flex flex-col gap-3">
       {#each studentTabExtensions as ext}
         {@const Component = ext.component}
-        <div class="text-left w-full">
+        <div class="w-full">
           <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">{ext.name}</span>
           <Component student={profile} {...ext.props} />
         </div>
@@ -193,5 +187,14 @@
     </div>
   {/if}
 
+  <!-- Linke Aktionen (z. B. "Sitzung beenden" im Kiosk) -->
   {@render leftActions?.()}
+
+  <!-- Ausweis drucken — ganz unten, volle Breite -->
+  <div class="w-full mt-auto pt-4">
+    <button onclick={onPrint} class="w-full py-3 bg-white hover:bg-blue-50 border border-blue-500 text-blue-600 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 text-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+      Ausweis drucken
+    </button>
+  </div>
 </div>
