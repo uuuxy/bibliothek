@@ -3,7 +3,6 @@
   import { onMount } from "svelte";
   import StudentProfile from "./StudentProfile.svelte";
   import StudentCreateModal from "./StudentCreateModal.svelte";
-  import ClassPrintStation from "./ClassPrintStation.svelte";
   import Graduates from "./Graduates.svelte";
   import ActiveStudentList from "./components/students/ActiveStudentList.svelte";
   import DeletedStudentList from "./components/students/DeletedStudentList.svelte";
@@ -26,7 +25,6 @@
   /** @type {any[]} */
   let readerGroups = $state.raw([]);
   let showCreateModal = $state(false);
-  let showPrintStation = $state(false);
 
   // Derived: client-seitig gefilterte Schülerliste
   let filteredStudents = $derived.by(() => {
@@ -78,11 +76,7 @@
 
 <div class="w-full h-full flex flex-col text-slate-800 bg-slate-50">
 
-  {#if showPrintStation}
-    <div class="animate-fade-in flex-1 overflow-y-auto">
-      <ClassPrintStation onBack={() => showPrintStation = false} />
-    </div>
-  {:else if activeStudent}
+  {#if activeStudent}
     <div class="animate-fade-in flex-1 overflow-y-auto">
       <StudentProfile
         student={activeStudent}
@@ -122,7 +116,6 @@
               totalCount={students.length}
               filteredCount={filteredStudents.length}
               oncreate={() => showCreateModal = true}
-              onprintclass={() => showPrintStation = true}
             />
 
             <div class="mt-6">

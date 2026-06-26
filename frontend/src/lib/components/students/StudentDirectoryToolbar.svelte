@@ -1,28 +1,14 @@
 <script>
-  import { Search, Plus, Printer } from "lucide-svelte";
+  import { Search, Plus } from "lucide-svelte";
   import Button from "../ui/Button.svelte";
 
-  /**
-   * @component StudentDirectoryToolbar
-   * Flache, vollflächige Aktionsleiste des Schülerverzeichnisses. Fokus liegt auf der
-   * Suche (primäre Interaktion); einziger prominenter Button ist "Neuer Schüler".
-   *
-   * @prop {string} searchQuery - Der aktuelle Suchbegriff (bindable).
-   * @prop {string} role - Die Rolle des aktuellen Nutzers (z.B. 'admin', 'mitarbeiter').
-   * @prop {number} totalCount - Gesamtanzahl der Schüler.
-   * @prop {number} filteredCount - Anzahl der gefilterten Schüler.
-   * @prop {() => void} oncreate - Callback wenn "Neuer Schüler" geklickt wird.
-   * @prop {() => void} onprintclass - Callback wenn "Klassensatz drucken" geklickt wird.
-   */
-
-  /** @type {{ searchQuery?: string, role?: string, totalCount?: number, filteredCount?: number, oncreate?: () => void, onprintclass?: () => void }} */
+  /** @type {{ searchQuery?: string, role?: string, totalCount?: number, filteredCount?: number, oncreate?: () => void }} */
   let {
     searchQuery = $bindable(""),
     role = "",
     totalCount = 0,
     filteredCount = 0,
     oncreate,
-    onprintclass
   } = $props();
 </script>
 
@@ -40,10 +26,6 @@
   </div>
 
   {#if role === 'admin' || role === 'mitarbeiter'}
-    <Button variant="secondary" onclick={onprintclass} aria-label="Klassensatz drucken">
-      <Printer class="w-4 h-4" />
-      Klassensatz drucken
-    </Button>
     <Button variant="primary" onclick={oncreate} aria-label="Neuen Schüler anlegen">
       <Plus class="w-4 h-4" />
       Neuer Schüler
