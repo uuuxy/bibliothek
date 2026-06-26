@@ -68,6 +68,13 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 		sender = "noreply@bibliothek-schule.de"
 	}
 
+	// validate sender
+	parsedSender, err := mail.ParseAddress(sender)
+	if err != nil {
+		return fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err)
+	}
+	sender = parsedSender.Address
+
 	// validate recipient
 	parsedTo, err := mail.ParseAddress(to)
 	if err != nil {
@@ -80,11 +87,12 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 
 	// Nachricht nach RFC 822 formatieren
 	// Für echte HTML-Mails muss der Content-Type auf text/html gesetzt werden
-	msg := []byte(fmt.Sprintf("To: %s\r\n"+
+	msg := []byte(fmt.Sprintf("From: %s\r\n"+
+		"To: %s\r\n"+
 		"Subject: %s\r\n"+
 		"Content-Type: text/plain; charset=UTF-8\r\n"+
 		"\r\n"+
-		"%s\r\n", to, betreff, bodyBuf.String()))
+		"%s\r\n", sender, to, betreff, bodyBuf.String()))
 
 	// SMTP-Verbindung aufbauen und E-Mail versenden
 	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
@@ -134,6 +142,12 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 		sender = "noreply@bibliothek-schule.de"
 	}
 
+	parsedSender, err := mail.ParseAddress(sender)
+	if err != nil {
+		return fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err)
+	}
+	sender = parsedSender.Address
+
 	parsedTo, err := mail.ParseAddress(to)
 	if err != nil {
 		return fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err)
@@ -143,11 +157,12 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 	betreff := "Test-E-Mail der Schulbibliothek"
 	bodyText := "Dies ist eine automatisch generierte Test-E-Mail zur Überprüfung der SMTP-Konfiguration."
 
-	msg := []byte(fmt.Sprintf("To: %s\r\n"+
+	msg := []byte(fmt.Sprintf("From: %s\r\n"+
+		"To: %s\r\n"+
 		"Subject: %s\r\n"+
 		"Content-Type: text/plain; charset=UTF-8\r\n"+
 		"\r\n"+
-		"%s\r\n", to, betreff, bodyText))
+		"%s\r\n", sender, to, betreff, bodyText))
 
 	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
 
