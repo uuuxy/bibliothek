@@ -106,11 +106,11 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-	class="snap-start shrink-0 w-40 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-2xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between"
+<button
+	type="button"
+	class="snap-start shrink-0 w-40 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-2xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500"
 	onclick={onclick}
+	aria-label="Buch auswählen: {book.title}"
 >
 	<div
 		class="w-full aspect-2/3 rounded-xl overflow-hidden shadow-sm mb-3 relative bg-slate-50"
@@ -170,4 +170,4 @@
 			>
 		</div>
 	</div>
-</div>
+</button>
