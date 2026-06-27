@@ -29,7 +29,7 @@
     lg: 'px-6 py-3 text-base'
   };
 
-  const baseClasses = 'inline-flex items-center justify-center gap-2 font-bold transition-all border rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:shadow';
+  const baseClasses = 'inline-flex items-center justify-center gap-2 font-bold transition-all border rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
 </script>
 
 <button class="{baseClasses} {sizes[size]} {variants[variant]} {className}" {...rest}>
