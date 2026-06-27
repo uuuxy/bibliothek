@@ -112,7 +112,14 @@ func createZip(srcDir string) ([]byte, error) {
 	var buf bytes.Buffer
 	zipWriter := zip.NewWriter(&buf)
 
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	// Bounded directory access context to mitigate path traversal (G304)
+	root, err := os.OpenRoot(srcDir)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+
+	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -138,7 +145,8 @@ func createZip(srcDir string) ([]byte, error) {
 			return err
 		}
 
-		file, err := os.Open(path)
+		// Sicheres Öffnen der Datei innerhalb des root-Kontextes
+		file, err := root.Open(relPath)
 		if err != nil {
 			return err
 		}

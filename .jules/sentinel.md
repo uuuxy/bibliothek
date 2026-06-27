@@ -7,3 +7,7 @@
 **Vulnerability:** A `G304: Potential file inclusion via variable` vulnerability was found in `api/image_caching.go` during image cover caching, caused by insecure creation of files via concatenated paths.
 **Learning:** Manual path sanitization using `filepath.Clean` and `strings.HasPrefix` logic is prone to errors, false positives, and flagged by security linters (like gosec). Go 1.24 introduced `os.OpenRoot(dir)` which natively provides OS-level bounded directory contexts.
 **Prevention:** Rather than performing string validations to enforce file directory boundaries, prefer adopting `os.OpenRoot` and manipulating files via `root.OpenFile`, `root.Remove`, and serving via `http.ServeFileFS(..., root.FS(), ...)` to securely prevent directory traversal.
+## 2026-06-27 - Mitigate Path Traversal (G304) in Backup using Go 1.24 os.OpenRoot
+**Vulnerability:** A `MEDIUM` severity gosec warning (G304) identified a potential path traversal vulnerability in `inventur/backup_email.go`. The issue occurred because `os.Open(path)` was called on a file path directly computed from user-controlled paths inside a zip creation loop.
+**Learning:** Manual path sanitization inside `filepath.Walk` is risky and can lead to Time-of-check to time-of-use (TOCTOU) issues or symlink-based path traversals.
+**Prevention:** Rather than using `os.Open(path)`, use Go 1.24's `os.OpenRoot(srcDir)` to open a bounded directory access context, and securely open the relative paths within the bounded context using `root.Open(relPath)`.
