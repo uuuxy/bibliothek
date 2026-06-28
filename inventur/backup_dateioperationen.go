@@ -61,7 +61,8 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	}
 	defer func() { _ = outFile.Close() }()
 
-	cmd := exec.Command("pg_dump",
+	cmd := exec.Command("pg_dump")
+	cmd.Args = append(cmd.Args,
 		"-h", host,
 		"-p", port,
 		"-U", user,

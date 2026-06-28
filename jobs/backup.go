@@ -79,7 +79,8 @@ func (b *BackupJob) RunDatabaseBackup() {
 		log.Printf("Backup: failed to parse DSN: %v", err)
 		return
 	}
-	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
+	pgDump := exec.CommandContext(ctx, "pg_dump")
+	pgDump.Args = append(pgDump.Args, pgDumpArgs...)
 	pgDump.Env = envs
 
 	sqlReader, sqlWriter := io.Pipe()
