@@ -153,15 +153,23 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		return nil, fmt.Errorf("bestellverlauf insert: %w", err)
 	}
 
+	// ⚡ Bolt: Replaced O(n) multiple individual INSERT queries with a single bulk CopyFrom operation.
+	// This completely eliminates the N+1 database round-trip bottleneck during large book orders.
+	// We also pre-allocate the slice capacity to avoid reallocation overhead.
+	posRows := make([][]any, 0, len(positionen))
 	for _, pos := range positionen {
-		if _, err := tx.Exec(ctx, `
-			INSERT INTO bestellungen_positionen
-				(bestellung_id, titel_id, titel_name, isbn, menge, einzelpreis)
-			VALUES ($1, $2, $3, $4, $5, $6)`,
+		posRows = append(posRows, []any{
 			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
-		); err != nil {
-			return nil, fmt.Errorf("position insert: %w", err)
-		}
+		})
+	}
+
+	if _, err := tx.CopyFrom(
+		ctx,
+		pgx.Identifier{"bestellungen_positionen"},
+		[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis"},
+		pgx.CopyFromRows(posRows),
+	); err != nil {
+		return nil, fmt.Errorf("position insert bulk: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
