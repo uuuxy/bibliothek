@@ -153,14 +153,22 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		return nil, fmt.Errorf("bestellverlauf insert: %w", err)
 	}
 
-	for _, pos := range positionen {
-		if _, err := tx.Exec(ctx, `
-			INSERT INTO bestellungen_positionen
-				(bestellung_id, titel_id, titel_name, isbn, menge, einzelpreis)
-			VALUES ($1, $2, $3, $4, $5, $6)`,
-			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
-		); err != nil {
-			return nil, fmt.Errorf("position insert: %w", err)
+	// ⚡ Bolt: Use CopyFrom for bulk inserting order items to avoid N+1 queries
+	if len(positionen) > 0 {
+		var copyRows [][]any
+		for _, pos := range positionen {
+			copyRows = append(copyRows, []any{
+				bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
+			})
+		}
+
+		_, err = tx.CopyFrom(ctx,
+			pgx.Identifier{"bestellungen_positionen"},
+			[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis"},
+			pgx.CopyFromRows(copyRows),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("bulk position insert: %w", err)
 		}
 	}
 

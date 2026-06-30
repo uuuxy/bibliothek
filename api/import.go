@@ -80,17 +80,11 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 		}
 		defer db.SafeRollback(ctx, tx)
 
-		upsertQuery := `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, $2, $3, $4, $5)
-			ON CONFLICT (barcode_id) DO UPDATE
-			SET klasse = EXCLUDED.klasse,
-			    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
-			    aktualisiert_am = CURRENT_TIMESTAMP
-		`
-
 		count := 0
 		lineNum := 1
+
+		var barcodes, vornamen, nachnamen, klassen []string
+		var abgaengerJahre []int32
 
 		for {
 			row, err := reader.Read()
@@ -120,12 +114,30 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 				return
 			}
 
-			_, err = tx.Exec(ctx, upsertQuery, barcodeID, vorname, nachname, klasse, abgaengerJahr)
+			barcodes = append(barcodes, barcodeID)
+			vornamen = append(vornamen, vorname)
+			nachnamen = append(nachnamen, nachname)
+			klassen = append(klassen, klasse)
+			abgaengerJahre = append(abgaengerJahre, int32(abgaengerJahr))
+
+			count++
+		}
+
+		if count > 0 {
+			// ⚡ Bolt: Bulk upsert students using UNNEST to avoid N+1 query performance issues in loop
+			bulkUpsertQuery := `
+				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+				SELECT * FROM UNNEST($1::varchar[], $2::varchar[], $3::varchar[], $4::varchar[], $5::int[])
+				ON CONFLICT (barcode_id) DO UPDATE
+				SET klasse = EXCLUDED.klasse,
+					abgaenger_jahr = EXCLUDED.abgaenger_jahr,
+					aktualisiert_am = CURRENT_TIMESTAMP
+			`
+			_, err = tx.Exec(ctx, bulkUpsertQuery, barcodes, vornamen, nachnamen, klassen, abgaengerJahre)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error on row %d: %w", lineNum, err))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("bulk upsert database error: %w", err))
 				return
 			}
-			count++
 		}
 
 		if err := tx.Commit(ctx); err != nil {
