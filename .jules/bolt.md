@@ -1,3 +1,6 @@
 ## 2026-06-22 - [Refactoring N+1 Query in SupplierOrderHandler]
 **Learning:** Found an N+1 issue in `SupplierOrderHandler` (inside `api/barcode.go`) where multiple database inserts were performed in a loop (`tx.Exec`) for each generated barcode when ordering copies. Refactored this to use a single bulk insert operation via `tx.CopyFrom` combined with `pgx.CopyFromRows`.
 **Action:** Always prefer `pgx.CopyFromRows` for batch database creation or insertion. This drastically reduces database round-trips when processing larger quantities (like bulk ordering of books).
+## 2026-06-22 - [Refactoring N+1 Query in Order Service Bulk Insert]
+**Learning:** Found another N+1 issue in `ProcessOrder` (inside `api/order_service.go`) where multiple inserts to the `bestellungen_positionen` table were executed inside a loop using `tx.Exec`. This caused unnecessary round-trips to the DB.
+**Action:** When inserting multiple rows as a batch, use `tx.CopyFrom` in combination with `pgx.CopyFromRows`. To implement this cleanly, aggregate the values in a 2D slice (`[][]any`) within the loop and perform a single `tx.CopyFrom` operation afterward. Ensure the expected inline comment is added referencing the Bolt optimization.
