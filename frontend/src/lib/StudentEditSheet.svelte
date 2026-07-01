@@ -29,10 +29,14 @@
     snackbarTimer = setTimeout(() => { snackbar = null; }, 3000);
   }
 
-  const { formData, saving, syncData, save } = useStudentEditForm({ student, onSave, showSnackbar });
+  const form = useStudentEditForm({
+    get student() { return student; },
+    get onSave() { return onSave; },
+    showSnackbar
+  });
 
   $effect(() => {
-    syncData();
+    form.syncData();
   });
 </script>
 
@@ -69,13 +73,13 @@
     
     <div class="flex items-center gap-3 shrink-0">
       <button
-        onclick={save}
-        disabled={saving}
+        onclick={() => form.save()}
+        disabled={form.saving}
         class="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700
                rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50
                flex items-center gap-2.5"
       >
-        {#if saving}
+        {#if form.saving}
           <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
           Speichert…
         {:else}
@@ -99,10 +103,10 @@
       </h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <InputField id="vorname" label="Vorname" bind:value={formData.vorname} extraClasses="font-semibold" />
-        <InputField id="nachname" label="Nachname" bind:value={formData.nachname} extraClasses="font-semibold" />
-        <InputField id="geburtsdatum" label="Geburtsdatum" type="date" bind:value={formData.geburtsdatum} />
-        <InputField id="lusd_id" label="LUSD-ID" bind:value={formData.lusd_id} extraClasses="font-mono" />
+        <InputField id="vorname" label="Vorname" bind:value={form.formData.vorname} extraClasses="font-semibold" />
+        <InputField id="nachname" label="Nachname" bind:value={form.formData.nachname} extraClasses="font-semibold" />
+        <InputField id="geburtsdatum" label="Geburtsdatum" type="date" bind:value={form.formData.geburtsdatum} />
+        <InputField id="lusd_id" label="LUSD-ID" bind:value={form.formData.lusd_id} extraClasses="font-mono" />
       </div>
     </section>
 
@@ -114,15 +118,15 @@
       </h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <InputField id="klasse" label="Klasse" bind:value={formData.klasse} extraClasses="font-semibold" />
-        <InputField id="barcode" label="Schüler-ID / Barcode" bind:value={formData.barcode_id} extraClasses="font-mono" />
-        <InputField id="abgangsjahr" label="Abgangsjahr" type="number" bind:value={formData.abgaenger_jahr} extraClasses="font-semibold" />
+        <InputField id="klasse" label="Klasse" bind:value={form.formData.klasse} extraClasses="font-semibold" />
+        <InputField id="barcode" label="Schüler-ID / Barcode" bind:value={form.formData.barcode_id} extraClasses="font-mono" />
+        <InputField id="abgangsjahr" label="Abgangsjahr" type="number" bind:value={form.formData.abgaenger_jahr} extraClasses="font-semibold" />
         
         <div>
           <label for="status" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
           <select
             id="status"
-            bind:value={formData.status}
+            bind:value={form.formData.status}
             class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
           >
             <option value="aktiv">Aktiv</option>
@@ -143,18 +147,18 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="lg:col-span-2 grid grid-cols-4 gap-4">
           <div class="col-span-3">
-            <InputField id="strasse" label="Straße" bind:value={formData.strasse} placeholder="Musterstraße" />
+            <InputField id="strasse" label="Straße" bind:value={form.formData.strasse} placeholder="Musterstraße" />
           </div>
           <div class="col-span-1">
-            <InputField id="hausnummer" label="Nr." bind:value={formData.hausnummer} placeholder="12a" />
+            <InputField id="hausnummer" label="Nr." bind:value={form.formData.hausnummer} placeholder="12a" />
           </div>
         </div>
         
-        <InputField id="plz" label="PLZ" bind:value={formData.plz} placeholder="12345" maxlength="5" extraClasses="font-mono" />
-        <InputField id="ort" label="Ort" bind:value={formData.ort} placeholder="Musterstadt" />
+        <InputField id="plz" label="PLZ" bind:value={form.formData.plz} placeholder="12345" maxlength="5" extraClasses="font-mono" />
+        <InputField id="ort" label="Ort" bind:value={form.formData.ort} placeholder="Musterstadt" />
 
         <div class="lg:col-span-2">
-          <InputField id="email" label="Eltern E-Mail" type="email" bind:value={formData.eltern_email} placeholder="eltern@schule.de" />
+          <InputField id="email" label="Eltern E-Mail" type="email" bind:value={form.formData.eltern_email} placeholder="eltern@schule.de" />
         </div>
       </div>
     </section>

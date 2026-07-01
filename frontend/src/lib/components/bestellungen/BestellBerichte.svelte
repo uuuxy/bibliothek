@@ -14,7 +14,7 @@
   let jahr = $state(String(now.getFullYear()));
 
   // Lieferantenabrechnung
-  let lieferantId = $state(suppliers[0]?.id ?? "");
+  let lieferantId = $state("");
   let vonDatum = $state(firstOfMonth(now));
   let bisDatum = $state(today());
 
