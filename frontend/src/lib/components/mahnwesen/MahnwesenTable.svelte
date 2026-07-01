@@ -40,7 +40,8 @@
           <tr>
             <th class="w-12 px-4 py-3 text-center">
               <input 
-                type="checkbox" 
+                type="checkbox"
+                aria-label="Alle Schüler auswählen"
                 class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
                 checked={allSelected}
                 indeterminate={indeterminate}
@@ -59,7 +60,8 @@
             <tr class="hover:bg-slate-50 transition-colors {mahnwesenStore.selectedIds.has(schueler.schueler_id) ? 'bg-blue-50/50' : ''}">
               <td class="w-12 px-4 py-3 text-center">
                 <input 
-                  type="checkbox" 
+                  type="checkbox"
+                  aria-label="{schueler.name} auswählen"
                   class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
                   checked={mahnwesenStore.selectedIds.has(schueler.schueler_id)}
                   onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
@@ -107,6 +109,7 @@
                     disabled={mahnwesenStore.sendingStudentId === schueler.schueler_id}
                     class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors inline-flex"
                     title="Mahnung an Eltern senden"
+                    aria-label="Mahnung an {schueler.name} senden"
                   >
                     {#if mahnwesenStore.sendingStudentId === schueler.schueler_id}
                       <div class="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
