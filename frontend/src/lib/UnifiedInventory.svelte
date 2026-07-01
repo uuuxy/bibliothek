@@ -7,9 +7,9 @@
   
   const inventoryState = useUnifiedInventory();
 
-  let startDialog = $state();
-  let finishDialog = $state();
-  let barcodeInputEl = $state();
+  let startDialog;
+  let finishDialog;
+  let barcodeInputEl;
 
   $effect(() => {
     if (inventoryState.showStartModal && startDialog) {

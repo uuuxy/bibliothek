@@ -153,22 +153,15 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		return nil, fmt.Errorf("bestellverlauf insert: %w", err)
 	}
 
-	// ⚡ Bolt: Bulk insert positions using pgx.CopyFromRows to eliminate N+1 queries.
-	// This drastically reduces database round-trips and improves performance significantly.
-	var posRows [][]any
 	for _, pos := range positionen {
-		posRows = append(posRows, []any{
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO bestellungen_positionen
+				(bestellung_id, titel_id, titel_name, isbn, menge, einzelpreis)
+			VALUES ($1, $2, $3, $4, $5, $6)`,
 			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
-		})
-	}
-
-	if _, err := tx.CopyFrom(
-		ctx,
-		pgx.Identifier{"bestellungen_positionen"},
-		[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis"},
-		pgx.CopyFromRows(posRows),
-	); err != nil {
-		return nil, fmt.Errorf("position bulk insert: %w", err)
+		); err != nil {
+			return nil, fmt.Errorf("position insert: %w", err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
