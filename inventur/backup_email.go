@@ -112,7 +112,15 @@ func createZip(srcDir string) ([]byte, error) {
 	var buf bytes.Buffer
 	zipWriter := zip.NewWriter(&buf)
 
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	// Create a safe root for file access to mitigate G304 (Potential file inclusion via variable)
+	// and prevent TOCTOU/symlink path traversals while walking the directory.
+	root, err := os.OpenRoot(srcDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open root directory %q: %w", srcDir, err)
+	}
+	defer func() { _ = root.Close() }()
+
+	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -138,7 +146,8 @@ func createZip(srcDir string) ([]byte, error) {
 			return err
 		}
 
-		file, err := os.Open(path)
+		// Open file relative to the secure root descriptor
+		file, err := root.Open(relPath)
 		if err != nil {
 			return err
 		}
