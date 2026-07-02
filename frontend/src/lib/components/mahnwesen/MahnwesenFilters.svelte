@@ -61,9 +61,10 @@
     </button>
     <button
       onclick={() => window.print()}
+      aria-label="Seite drucken"
       class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 print:hidden"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
       </svg>
       Drucken
@@ -100,7 +101,7 @@
     </button>
 
     <div class="flex items-center gap-1 bg-slate-100 rounded-xl px-2 py-1">
-      <select bind:value={mahnwesenStore.selectedKlasse} class="bg-transparent text-xs font-bold text-slate-700 py-1 focus:outline-none">
+      <select bind:value={mahnwesenStore.selectedKlasse} aria-label="Klasse wählen" class="bg-transparent text-xs font-bold text-slate-700 py-1 focus:outline-none">
         <option value="">Klasse wählen...</option>
         {#each mahnwesenStore.klassen as k}
           <option value={k.klasse}>{k.klasse}</option>
@@ -109,12 +110,13 @@
       <button
         onclick={mahnwesenStore.downloadKlassePDF}
         disabled={mahnwesenStore.klassePdfLoading || !mahnwesenStore.selectedKlasse}
+        aria-label="Mahnliste der ausgewählten Klasse als PDF herunterladen"
         class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-1"
       >
         {#if mahnwesenStore.klassePdfLoading}
           <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
         {:else}
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
         {/if}
