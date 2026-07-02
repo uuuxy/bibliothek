@@ -34,8 +34,10 @@ func (m *mockStudentRepo) GetAllLUSDStudents(ctx context.Context) ([]repository.
 func (m *mockStudentRepo) BulkSyncLUSD(ctx context.Context, u []repository.StudentUpdate, i []repository.StudentInsert, ids []string) (int, error) {
 	return 0, nil
 }
-func (m *mockStudentRepo) HasPhoto(ctx context.Context, id string) (bool, error)       { return false, nil }
-func (m *mockStudentRepo) HasOpenDamages(ctx context.Context, id string) (bool, error) { return false, nil }
+func (m *mockStudentRepo) HasPhoto(ctx context.Context, id string) (bool, error) { return false, nil }
+func (m *mockStudentRepo) HasOpenDamages(ctx context.Context, id string) (bool, error) {
+	return false, nil
+}
 func (m *mockStudentRepo) GetActiveBorrowedBooks(ctx context.Context, id string) ([]repository.BorrowedBook, error) {
 	return nil, nil
 }
@@ -52,10 +54,10 @@ func (m *mockAuditRepo) LogAdminAktion(ctx context.Context, adminID, aktion, ip 
 	m.adminAktionCalls++
 	return nil
 }
-func (m *mockAuditRepo) DeleteTitle(ctx context.Context, t, b string) error          { return nil }
-func (m *mockAuditRepo) DeleteCopy(ctx context.Context, c, b string) error           { return nil }
-func (m *mockAuditRepo) DeleteUser(ctx context.Context, u, b string) error           { return nil }
-func (m *mockAuditRepo) DeleteStudent(ctx context.Context, s, b, g string) error     { return nil }
+func (m *mockAuditRepo) DeleteTitle(ctx context.Context, t, b string) error      { return nil }
+func (m *mockAuditRepo) DeleteCopy(ctx context.Context, c, b string) error       { return nil }
+func (m *mockAuditRepo) DeleteUser(ctx context.Context, u, b string) error       { return nil }
+func (m *mockAuditRepo) DeleteStudent(ctx context.Context, s, b, g string) error { return nil }
 func (m *mockAuditRepo) StornierungGebuehr(ctx context.Context, s, b string, betrag float64, g string) error {
 	return nil
 }

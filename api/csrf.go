@@ -19,7 +19,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 
 	"bibliothek/apierrors"
@@ -58,7 +57,7 @@ func (s *Server) CSRFTokenHandler() http.HandlerFunc {
 				Value:    token,
 				Path:     "/",
 				HttpOnly: false, // Must be readable by frontend JS
-				Secure:   os.Getenv("APP_ENV") != "local",
+				Secure:   s.CookieSecure,
 				SameSite: http.SameSiteStrictMode,
 				MaxAge:   86400, // 24 hours
 			})
@@ -114,7 +113,7 @@ func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 						Value:    token,
 						Path:     "/",
 						HttpOnly: false, // Must be readable by frontend JS
-						Secure:   os.Getenv("APP_ENV") != "local",
+						Secure:   s.CookieSecure,
 						SameSite: http.SameSiteStrictMode,
 						MaxAge:   86400, // 24 hours
 					})

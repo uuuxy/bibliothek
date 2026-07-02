@@ -19,7 +19,7 @@ func main() {
 	// 1. Datenbankverbindung aufbauen
 	dsn := "postgres://postgres:postgrespassword@localhost:5434/bibliothek?sslmode=disable"
 	ctx := context.Background()
-	
+
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		log.Fatalf("Fehler beim Verbinden mit der Datenbank: %v\n", err)
@@ -61,7 +61,7 @@ func main() {
 		nachname := fmt.Sprintf("Nachname%d", i)
 		klasse := fmt.Sprintf("%d%s", rand.Intn(8)+5, string(rune('A'+rand.Intn(4)))) // z.B. 7B
 		abgaengerJahr := time.Now().Year() + rand.Intn(5) + 1
-		
+
 		studentBatch.Queue(`
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt) 
 			VALUES ($1, $2, $3, $4, $5, false)
@@ -82,7 +82,7 @@ func main() {
 		titleIDs[i] = uuid.New()
 		titelName := fmt.Sprintf("Titel %d", i+1)
 		isbn := fmt.Sprintf("ISBN-%010d", i+1)
-		
+
 		titleBatch.Queue(`
 			INSERT INTO buecher_titel (id, titel, isbn) 
 			VALUES ($1, $2, $3)
@@ -104,7 +104,7 @@ func main() {
 		for j := 1; j <= chunkSize; j++ {
 			barcode := fmt.Sprintf("B%07d", i+j) // Generiert Barcodes wie B0000001
 			titelID := titleIDs[rand.Intn(5000)] // Wähle zufälligen Titel
-			
+
 			bookBatch.Queue(`
 				INSERT INTO buecher_exemplare (barcode_id, titel_id, ist_ausleihbar) 
 				VALUES ($1, $2, true)

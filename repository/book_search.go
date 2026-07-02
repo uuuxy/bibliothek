@@ -101,7 +101,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 // GetTitleByIDTx sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.
 func (r *pgBookRepository) GetTitleByIDTx(ctx context.Context, tx pgx.Tx, id string) (*BookTitle, error) {
 	query := "SELECT id, coalesce(titel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, '') FROM buecher_titel WHERE id = $1"
-	
+
 	var t BookTitle
 	err := tx.QueryRow(ctx, query, id).Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.Verlag)
 	if err != nil {

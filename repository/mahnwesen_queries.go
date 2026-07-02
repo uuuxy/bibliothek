@@ -200,7 +200,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	
+
 	q := `
 		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),

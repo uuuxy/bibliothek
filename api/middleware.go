@@ -49,6 +49,10 @@ func PanicRecoveryMiddleware(next http.Handler) http.Handler {
 
 // HTTPSRedirectMiddleware automatically redirects unencrypted HTTP requests to HTTPS.
 func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
+	// Performance optimization: Read ALLOWED_ORIGIN once during startup
+	// to avoid os.Getenv lock contention on every HTTP request.
+	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Bypass HTTPS redirection in local/development mode when CookieSecure is disabled
 		if !s.CookieSecure {
@@ -57,7 +61,6 @@ func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
 		}
 		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 		if !isHTTPS {
-			allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
 			var targetHost string
 
 			if allowedOrigin != "" {
