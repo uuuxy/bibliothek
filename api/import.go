@@ -82,7 +82,7 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 
 		upsertQuery := `
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, $2, $3, $4, $5)
+			SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::int[])
 			ON CONFLICT (barcode_id) DO UPDATE
 			SET klasse = EXCLUDED.klasse,
 			    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
@@ -91,6 +91,10 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 
 		count := 0
 		lineNum := 1
+
+		var barcodeIDs, vornamen, nachnamen, klassen []string
+		var abgaengerJahre []int32
+		seenBarcodes := make(map[string]struct{})
 
 		for {
 			row, err := reader.Read()
@@ -120,12 +124,24 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 				return
 			}
 
-			_, err = tx.Exec(ctx, upsertQuery, barcodeID, vorname, nachname, klasse, abgaengerJahr)
+			if _, exists := seenBarcodes[barcodeID]; !exists {
+				seenBarcodes[barcodeID] = struct{}{}
+				barcodeIDs = append(barcodeIDs, barcodeID)
+				vornamen = append(vornamen, vorname)
+				nachnamen = append(nachnamen, nachname)
+				klassen = append(klassen, klasse)
+				abgaengerJahre = append(abgaengerJahre, int32(abgaengerJahr))
+
+				count++
+			}
+		}
+
+		if len(barcodeIDs) > 0 {
+			_, err = tx.Exec(ctx, upsertQuery, barcodeIDs, vornamen, nachnamen, klassen, abgaengerJahre)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error on row %d: %w", lineNum, err))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database bulk upsert error: %w", err))
 				return
 			}
-			count++
 		}
 
 		if err := tx.Commit(ctx); err != nil {
