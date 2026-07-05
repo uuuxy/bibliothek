@@ -74,10 +74,13 @@ func (b *BackupJob) RunDatabaseBackup() {
 
 	// pg_dump schreibt SQL nach stdout; wir pipen es durch gzip → AES-GCM Verschlüsselung.
 	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
-	pgDumpArgs, envs, err := dsnToPgDumpArgs(dsn)
+	pgDumpArgs, envs, cleanup, err := dsnToPgDumpArgs(dsn)
 	if err != nil {
 		log.Printf("Backup: failed to parse DSN: %v", err)
 		return
+	}
+	if cleanup != nil {
+		defer cleanup()
 	}
 	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
 	pgDump.Env = envs
@@ -250,12 +253,19 @@ func rotateBackups(dir string, maxKeep int) {
 	}
 }
 
+// escapePgPass escapes backslashes and colons as required by PostgreSQL .pgpass format.
+func escapePgPass(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	return strings.ReplaceAll(s, ":", "\\:")
+}
+
 // dsnToPgDumpArgs konvertiert einen PostgreSQL-DSN/Verbindungsstring in CLI-Argumente für pg_dump.
 // Unterstützt sowohl das postgres:// URL-Format als auch das key=value-Format.
-func dsnToPgDumpArgs(dsn string) ([]string, []string, error) {
+// Erzeugt eine temporäre .pgpass-Datei, um das Passwort sicher an pg_dump zu übergeben.
+func dsnToPgDumpArgs(dsn string) ([]string, []string, func(), error) {
 	config, err := pgconn.ParseConfig(dsn)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid DSN: %w", err)
+		return nil, nil, nil, fmt.Errorf("invalid DSN: %w", err)
 	}
 
 	args := []string{
@@ -270,11 +280,44 @@ func dsnToPgDumpArgs(dsn string) ([]string, []string, error) {
 	}
 
 	envs := os.Environ()
+	cleanup := func() {}
+
 	if config.Password != "" {
-		envs = append(envs, "PGPASSWORD="+config.Password)
+		passFile, err := os.CreateTemp("", "pgpass-*")
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("konnte pgpass-Datei nicht erstellen: %w", err)
+		}
+
+		cleanup = func() {
+			_ = os.Remove(passFile.Name())
+		}
+
+		host := config.Host
+		if host == "" {
+			host = "localhost"
+		}
+
+		port := fmt.Sprintf("%d", config.Port)
+
+		pgPassLine := fmt.Sprintf("%s:%s:%s:%s:%s\n",
+			escapePgPass(host),
+			escapePgPass(port),
+			escapePgPass(config.Database),
+			escapePgPass(config.User),
+			escapePgPass(config.Password),
+		)
+
+		if _, err := passFile.WriteString(pgPassLine); err != nil {
+			_ = passFile.Close()
+			cleanup()
+			return nil, nil, nil, fmt.Errorf("konnte in pgpass-Datei nicht schreiben: %w", err)
+		}
+		_ = passFile.Close()
+
+		envs = append(envs, "PGPASSFILE="+passFile.Name())
 	}
 
-	return args, envs, nil
+	return args, envs, cleanup, nil
 }
 
 // BackupKeyFingerprint gibt einen kurzen Hex-Fingerabdruck des Verschlüsselungsschlüssels für Protokollierungs-/Audit-Zwecke zurück.
