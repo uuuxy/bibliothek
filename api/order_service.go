@@ -153,14 +153,24 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		return nil, fmt.Errorf("bestellverlauf insert: %w", err)
 	}
 
-	for _, pos := range positionen {
-		if _, err := tx.Exec(ctx, `
-			INSERT INTO bestellungen_positionen
-				(bestellung_id, titel_id, titel_name, isbn, menge, einzelpreis)
-			VALUES ($1, $2, $3, $4, $5, $6)`,
-			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
+	// ⚡ Bolt: Replace loop of tx.Exec with a single bulk insert using tx.CopyFrom.
+	// This eliminates N+1 queries when inserting multiple order positions, drastically
+	// reducing database round-trips. Benchmarks on similar changes show massive latency drops.
+	if len(positionen) > 0 {
+		copyRows := make([][]any, len(positionen))
+		for i, pos := range positionen {
+			copyRows[i] = []any{
+				bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
+			}
+		}
+
+		if _, err := tx.CopyFrom(
+			ctx,
+			pgx.Identifier{"bestellungen_positionen"},
+			[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis"},
+			pgx.CopyFromRows(copyRows),
 		); err != nil {
-			return nil, fmt.Errorf("position insert: %w", err)
+			return nil, fmt.Errorf("position bulk insert: %w", err)
 		}
 	}
 
