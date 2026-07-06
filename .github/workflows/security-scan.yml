@@ -60,7 +60,7 @@ jobs:
           cache: true
 
       - name: Install gosec
-        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b /usr/local/bin latest
 
       - name: Run gosec
         # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
