@@ -1,3 +1,6 @@
 ## 2026-06-22 - [Refactoring N+1 Query in SupplierOrderHandler]
 **Learning:** Found an N+1 issue in `SupplierOrderHandler` (inside `api/barcode.go`) where multiple database inserts were performed in a loop (`tx.Exec`) for each generated barcode when ordering copies. Refactored this to use a single bulk insert operation via `tx.CopyFrom` combined with `pgx.CopyFromRows`.
 **Action:** Always prefer `pgx.CopyFromRows` for batch database creation or insertion. This drastically reduces database round-trips when processing larger quantities (like bulk ordering of books).
+## 2026-06-22 - [Refactoring N+1 Query in Student Import]
+**Learning:** Fixed an N+1 issue in `ImportStudentsHandler` where `tx.Exec` was used in a loop to UPSERT students row by row. Switched to using PostgreSQL `UNNEST` combined with `ON CONFLICT DO UPDATE`. When doing this, it's critical to deduplicate the batch in-memory (using a Go map) before unrolling, as PostgreSQL will reject multiple rows updating the same target within a single statement. Also ensured that the arrays match the PostgreSQL types, e.g., passing `[]int32` for `int[]`.
+**Action:** When performing bulk UPSERTs in PostgreSQL via pgx, accumulate records into slices and use `UNNEST` with a single `tx.Exec` instead of loops. Always deduplicate batch inputs by unique key prior to execution to avoid runtime constraint errors.

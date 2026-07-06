@@ -80,16 +80,14 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 		}
 		defer db.SafeRollback(ctx, tx)
 
-		upsertQuery := `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, $2, $3, $4, $5)
-			ON CONFLICT (barcode_id) DO UPDATE
-			SET klasse = EXCLUDED.klasse,
-			    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
-			    aktualisiert_am = CURRENT_TIMESTAMP
-		`
+		type studentRecord struct {
+			Vorname       string
+			Nachname      string
+			Klasse        string
+			AbgaengerJahr int32
+		}
 
-		count := 0
+		dedupMap := make(map[string]studentRecord)
 		lineNum := 1
 
 		for {
@@ -120,12 +118,43 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 				return
 			}
 
-			_, err = tx.Exec(ctx, upsertQuery, barcodeID, vorname, nachname, klasse, abgaengerJahr)
+			dedupMap[barcodeID] = studentRecord{
+				Vorname:       vorname,
+				Nachname:      nachname,
+				Klasse:        klasse,
+				AbgaengerJahr: int32(abgaengerJahr),
+			}
+		}
+
+		var barcodeIDs []string
+		var vornamen []string
+		var nachnamen []string
+		var klassen []string
+		var abgaengerJahre []int32
+
+		for barcodeID, rec := range dedupMap {
+			barcodeIDs = append(barcodeIDs, barcodeID)
+			vornamen = append(vornamen, rec.Vorname)
+			nachnamen = append(nachnamen, rec.Nachname)
+			klassen = append(klassen, rec.Klasse)
+			abgaengerJahre = append(abgaengerJahre, rec.AbgaengerJahr)
+		}
+
+		count := len(barcodeIDs)
+		if count > 0 {
+			upsertQuery := `
+				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+				SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::int[])
+				ON CONFLICT (barcode_id) DO UPDATE
+				SET klasse = EXCLUDED.klasse,
+				    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
+				    aktualisiert_am = CURRENT_TIMESTAMP
+			`
+			_, err = tx.Exec(ctx, upsertQuery, barcodeIDs, vornamen, nachnamen, klassen, abgaengerJahre)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error on row %d: %w", lineNum, err))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error during bulk import: %w", err))
 				return
 			}
-			count++
 		}
 
 		if err := tx.Commit(ctx); err != nil {
