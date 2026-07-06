@@ -60,7 +60,7 @@ jobs:
           cache: true
 
       - name: Install gosec
-        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.21.2
+        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
 
       - name: Run gosec
         # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
@@ -120,7 +120,7 @@ jobs:
         run: docker build -t bibliothek:scan .
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.29.0
         with:
           image-ref: bibliothek:scan
           format: sarif
