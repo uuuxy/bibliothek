@@ -9,6 +9,7 @@ class AuthStore {
     loginPassword = $state("");
     sseSource = $state(/** @type {any} */ (null));
     loginError = $state(/** @type {string | null} */ (null));
+    isLoggingIn = $state(false);
 
     connectSSE() {
         if (this.sseSource) this.sseSource.close();
@@ -37,6 +38,7 @@ class AuthStore {
         if (e) e.preventDefault();
         if (!this.loginEmail.trim() || !this.loginPassword) return;
         this.loginError = null;
+        this.isLoggingIn = true;
 
         try {
             const res = await fetch("/login", {
@@ -70,6 +72,8 @@ class AuthStore {
             this.loginError = errorMessage;
             this.loginPassword = "";
             setTimeout(() => { this.loginError = null; }, 4000);
+        } finally {
+            this.isLoggingIn = false;
         }
     }
 

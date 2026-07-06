@@ -17,8 +17,13 @@
       <input id="login-email" type="email" autocomplete="email" bind:value={authStore.loginEmail} class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all" placeholder="name@philipp-reis-schule.de" />
       <input id="login-password" type="password" autocomplete="current-password" bind:value={authStore.loginPassword} class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all" placeholder="Passwort" />
     </div>
-    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-      Anmelden
+    <button type="submit" disabled={authStore.isLoggingIn} class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+      {#if authStore.isLoggingIn}
+        <div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+        Anmelden...
+      {:else}
+        Anmelden
+      {/if}
     </button>
     {#if authStore.loginError}
       <p class="text-xs text-rose-500 font-semibold animate-slide-up">{authStore.loginError}</p>
