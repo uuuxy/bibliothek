@@ -21,6 +21,7 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Limit post request size to max 5MB
 		r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+		// #nosec G120 -- Request body is bounded by http.MaxBytesReader above
 		if err := r.ParseMultipartForm(5 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -112,7 +113,7 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 				return
 			}
 
-			abgaengerJahr, err := strconv.Atoi(abgaengerJahrStr)
+			abgaengerJahr, err := strconv.ParseInt(abgaengerJahrStr, 10, 32)
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("invalid graduation year '%s' on row %d: %w", abgaengerJahrStr, lineNum, err))
 				return
