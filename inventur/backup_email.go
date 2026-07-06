@@ -112,7 +112,13 @@ func createZip(srcDir string) ([]byte, error) {
 	var buf bytes.Buffer
 	zipWriter := zip.NewWriter(&buf)
 
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	root, err := os.OpenRoot(srcDir)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+
+	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -138,7 +144,8 @@ func createZip(srcDir string) ([]byte, error) {
 			return err
 		}
 
-		file, err := os.Open(path)
+		// Safe file open within root
+		file, err := root.Open(relPath)
 		if err != nil {
 			return err
 		}
