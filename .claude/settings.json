@@ -4,7 +4,26 @@
       "Bash(grep -iE \"insert|exec|\\\\\\\\$|values|set \")",
       "Bash(docker version *)",
       "Bash(golangci-lint help *)",
-      "Bash(awk 'NR>=40 && NR<=69 && /^func/' internal/service/cover_service.go)"
+      "Bash(awk 'NR>=40 && NR<=69 && /^func/' internal/service/cover_service.go)",
+      "Bash(echo \"exit=$?\")",
+      "Read(//Users/peterflasch/Developer/**)",
+      "Bash(echo \"handler-exit=$?\")",
+      "Bash(grep -rhoE '\\(/api/[A-Za-z0-9_/${}.?=&-]*\\)' frontend/src --include=\"*.js\" --include=\"*.svelte\")",
+      "Bash(grep -rln '^\\\\s*\\\\$:' frontend/src --include=\"*.svelte\")",
+      "Bash(grep -rn '\\\\$:' frontend/src --include=\"*.svelte\")",
+      "Bash(perl -ni -e 'print unless m{/api/bestellungen/receive}' api/routes_orders.go)",
+      "Bash(perl -ni -e 'print unless m{/api/ausleihen/\\\\{id\\\\}/rueckgabe}' api/routes_books.go)",
+      "Bash(perl -ni -e 'print unless m{/api/import/students\"|/api/students/import\"|/api/schueler/import-lusd}' api/routes_students.go)",
+      "Bash(perl -ni -e 'print unless m{/api/transactions/recent|/api/mail/send-notification|/api/mail/send-bulk-overdue|PUT /api/signatures/\\\\{id\\\\}|DELETE /api/signatures/\\\\{id\\\\}}' api/routes_system.go)",
+      "Bash(perl -0pi -e 's/\\\\t\"bibliothek\\\\/auth\"\\\\n//' api/routes_system.go)",
+      "Bash(perl -0pi -e 's/\\\\t\"strconv\"\\\\n//' api/signatures_handler.go)",
+      "Bash(goimports -w internal/service/order_service.go api/audit_handler.go repository/loan.go repository/damage.go)",
+      "Bash(gofmt -w internal/service/order_service.go)",
+      "Bash(chmod +x scripts/api_inventar.sh)",
+      "Bash(./scripts/api_inventar.sh)",
+      "Bash(perl -pi -e 's/RequireAuth\\\\b/RequireViewBooks/g; s/RequireAdminAuth\\\\b/RequireEditBooks/g' inventur/api_routen.go api/router.go)",
+      "Bash(perl -0pi -e 's/\\\\t\\\\/\\\\/ Protected GETs \\\\\\(view_books \\\\/ view_inventur\\\\\\)/\\\\t\\\\/\\\\/ Lesend: RBAC-Permission view_books \\(injiziert aus api\\\\/router.go\\)/; s/\\\\t\\\\/\\\\/ Admin Protected \\\\\\(edit_books\\\\\\)/\\\\t\\\\/\\\\/ Schreibend: RBAC-Permission edit_books \\(injiziert aus api\\\\/router.go\\)/' inventur/api_routen.go)",
+      "Bash(gofmt -w inventur/api_routen.go api/router.go)"
     ]
   }
 }
