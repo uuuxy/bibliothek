@@ -86,17 +86,18 @@ Reihenfolge nach Risiko × Änderungsfrequenz:
 
 **T2 — Bestellberichte-Datumsgrenzen:** Regressionstest für den Zeitzonen-Fix (Monatsletzter!) plus Go-Test, dass `von`/`bis` im Berichts-SQL inklusiv sind. Falsche Abrechnungssummen sind Vertrauenskiller Nr. 1.
 
-**T3 — Auth-Lebenszyklus:** Login → Refresh → Logout → Heartbeat-Timeout (Handler-Ebene; die Middleware ist getestet, der Flow nicht).
+**T3 — Auth-Lebenszyklus: ✅ erledigt 2026-07-07.** Refresh-Loop im `authStore` verdrahtet (30-min-Tick, Server-Sliding-Window ab <50% Restlaufzeit; 401 → Logout, Netzfehler ≠ Logout). 5 Go-Tests für `RefreshTokenHandler` (skipped/renewed/blacklisted/no-cookie/invalid), 3 Vitest-Tests. Offen aus T3: Login-Handler-Tests (IMAP-Abhängigkeit mocken) — klein, bei Gelegenheit.
 
-**T4 — Mahnwesen:** `GET /api/mahnwesen/pdf` und `POST /api/mahnwesen/senden` — hier fließt Geld (`float64`-Summen!) und es geht Post an Eltern raus.
+**T4 — Mahnwesen: ✅ erledigt 2026-07-07 — und der Test fand sofort einen echten Bug:** Alle drei Mahnlisten-Queries gruppierten über Pointer in Slice-Elemente; `append`-Reallokationen machten sie ungültig → bei zwei gleichnamigen Schülern verlor die Mahnliste still Medien. Fix: gemeinsamer index-basierter `klassenGrouper`, Scan-Fehler werden nicht mehr verschluckt. Tests decken den verzahnten Namens-Fall explizit ab.
 
-**T5 — E2E-Gerüst (Playwright), genau 3 Smoke-Flows, nicht mehr:**
+**T5 — E2E-Gerüst (Playwright), genau 3 Smoke-Flows, nicht mehr — ⏳ NÄCHSTER SCHRITT.**
+Braucht eine laufende Umgebung (Backend auf :8084 + Postgres via `docker-compose.local.yml`) — in der Dev-Umgebung ohne Docker nicht lauffähig, daher bewusst keine ungetesteten Specs eingecheckt. Vorgehen: `npm i -D @playwright/test`, Config mit `baseURL: http://localhost:8084`, Login-Fixture (Session-Cookie), dann:
 1. Omnibox: Schüler scannen → Buch ausleihen → zurückgeben
 2. Bestellung anlegen → Wareneingang einbuchen → Druckempfehlung erscheint → Etiketten laden
 3. Schüler anlegen → sperren → Sperre aufheben (deckt den Vorab-Bugfix ab)
 
-**T6 — Rechte-Angleichung Inventur-Modul (Tech-Debt mit Sicherheitsbezug):**
-Das `inventur/`-Modul fährt ein eigenes Rechtemodell: `RequireAuth` (= *jeder* eingeloggte Benutzer, auch Helfer) für `GET /api/books` & Co., `RequireAdminAuth` (Rolle statt Permission) für Schreibzugriffe. Das Haupt-API nutzt überall `RequirePermission`-RBAC. Angleichen: `view_books` für Lesen, `edit_books` für Schreiben — und einen Permission-Middleware-Test dafür. (`GET /uploads/` ist unauthentifiziert, enthält aber ausschließlich Buchcover-WebPs — dokumentieren, nicht ändern.)
+**T6 — Rechte-Angleichung Inventur-Modul: ✅ erledigt 2026-07-07 (war ein Benennungs-Fehlalarm).**
+`api/router.go` injizierte längst `RequirePermission("view_books")`/`("edit_books")` — nur die Felder hießen irreführend `RequireAuth`/`RequireAdminAuth` und täuschten ein schwächeres Rechtemodell vor. Umbenannt zu `RequireViewBooks`/`RequireEditBooks`. (`GET /uploads/` bleibt unauthentifiziert — enthält ausschließlich Buchcover-WebPs, dokumentiert.)
 
 **T7 — Betriebs-Pflichten aus dem Go-Live-Plan (kein Code, aber Teil der Festung):**
 Migration 035 (`lusd_id`-Unique-Index) real dry-runnen + LUSD-Re-Import testen; einmalige Restore-Probe gegen Wegwerf-DB; Prod-Secrets-Checkliste (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuft **kein** Backup).
