@@ -28,9 +28,8 @@
         {#if omniboxStore.activeStudent?.is_manually_blocked}
           <button onclick={async () => {
             try {
-              const res = await apiClient.post(`/api/schueler/${omniboxStore.activeStudent.id}/update`, {
-                is_manually_blocked: false,
-                block_reason: ""
+              const res = await apiClient.patch(`/api/admin/students/${omniboxStore.activeStudent.id}/lock`, {
+                is_locked: false
               });
               if (res.ok) {
                 const q = omniboxStore.blockAlert?.query;
