@@ -21,12 +21,12 @@
     
     isSubmitting = true;
     try {
-      const data = await apiPost("/api/orders/bulk-receive", { 
+      const data = await apiPost("/api/bestellungen/bulk-receive", {
         exemplar_ids: selectedExemplarIds
       });
       toastStore.addToast(`${data.received_count} Exemplare erfolgreich eingebucht!`, "success");
       selectedExemplarIds = [];
-      onReceived();
+      onReceived(data.received_items ?? []);
     } catch {
       // API handler shows error toast
     } finally {

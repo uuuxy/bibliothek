@@ -31,7 +31,7 @@ export function setup() {
 }
 
 export default function (data) {
-  const url = 'http://localhost:8084/api/orders/bulk-receive'; 
+  const url = 'http://localhost:8084/api/bestellungen/bulk-receive'; 
   
   const payload = JSON.stringify({
     exemplar_ids: ['1001', '1002', '1003', '1004', '1005'] 

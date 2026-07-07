@@ -1,7 +1,7 @@
 import { apiFetch, apiClient } from "../../lib/apiFetch.js";
 // src/lib/store.svelte.js
 
-/** @type {{ searchQuery: string, selectedBook: any, activeBookId: string | null, isSidebarOpen: boolean, adminAuthenticated: boolean, guestAuthenticated: boolean, pendingPrintCopies: any[] | null, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
+/** @type {{ searchQuery: string, selectedBook: any, activeBookId: string | null, isSidebarOpen: boolean, adminAuthenticated: boolean, guestAuthenticated: boolean, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
 export const appState = $state({
     searchQuery: '',
     selectedBook: null,
@@ -9,7 +9,6 @@ export const appState = $state({
     isSidebarOpen: true,
     adminAuthenticated: false,
     guestAuthenticated: false,
-    pendingPrintCopies: null,
     triggerStudentScan: '',
     bookToEdit: null,
     requestAdminView: false

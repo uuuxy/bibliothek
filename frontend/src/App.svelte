@@ -6,6 +6,7 @@
   import { uiStore } from "./lib/stores/uiStore.svelte.js";
   import { offlineSync } from "./lib/stores/offlineSync.svelte.js";
   import { appState } from "./inventur/lib/store.svelte.js";
+  import { printQueue } from "./lib/stores/printQueue.svelte.js";
   
   import Login from "./lib/components/auth/Login.svelte";
   import Sidebar from "./lib/components/layout/Sidebar.svelte";
@@ -42,7 +43,7 @@
   });
 
   $effect(() => {
-    if (appState.pendingPrintCopies) {
+    if (printQueue.copies) {
       uiStore.activeTab = "labels";
     }
   });

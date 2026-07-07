@@ -234,7 +234,7 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 
 		auditRepo := repository.NewAuditRepository(s.DB.Pool)
 
-		receivedCount, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, req.ExemplarIDs, adminID, getIP(r))
+		receivedItems, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, req.ExemplarIDs, adminID, getIP(r))
 		if err != nil {
 			if err.Error() == "keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)" {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
@@ -246,7 +246,8 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":         "success",
-			"received_count": receivedCount,
+			"received_count": len(receivedItems),
+			"received_items": receivedItems,
 		})
 	}
 }

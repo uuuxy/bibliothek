@@ -239,42 +239,53 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 	return results, nil
 }
 
+// ReceivedItem describes a received exemplar, including whether its
+// barcode label still needs printing (drives the print suggestion in the UI).
+type ReceivedItem struct {
+	BarcodeID       string `json:"barcode_id"`
+	Titel           string `json:"titel"`
+	Autor           string `json:"autor"`
+	EtikettGedruckt bool   `json:"etikett_gedruckt"`
+}
+
 // BulkReceiveOrder marks all pre-allocated items as received.
-func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, exemplarIDs []string, adminID, ipAddr string) (int, error) {
+func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, exemplarIDs []string, adminID, ipAddr string) ([]ReceivedItem, error) {
 	query := `
-		UPDATE buecher_exemplare
+		UPDATE buecher_exemplare e
 		SET ist_ausleihbar = true, zustand_notiz = ''
-		WHERE ist_ausleihbar = false
-		  AND id = ANY($1)
-		RETURNING id
+		FROM buecher_titel t
+		WHERE e.titel_id = t.id
+		  AND e.ist_ausleihbar = false
+		  AND e.id = ANY($1)
+		RETURNING e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, e.etikett_gedruckt
 	`
 
 	rows, err := pool.Query(ctx, query, exemplarIDs)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer rows.Close()
 
-	var updatedIDs []string
+	items := make([]ReceivedItem, 0)
 	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			continue
+		var item ReceivedItem
+		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.EtikettGedruckt); err != nil {
+			return nil, err
 		}
-		updatedIDs = append(updatedIDs, id)
+		items = append(items, item)
 	}
 	if err := rows.Err(); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	if len(updatedIDs) == 0 {
-		return 0, errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
+	if len(items) == 0 {
+		return nil, errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
 	}
 
 	logAuditErr("wareneingang-bulk", auditRepo.LogAdminAktion(ctx, adminID, "BULK_RECEIVE_ITEMS", ipAddr, map[string]any{
-		"received_count": len(updatedIDs),
+		"received_count": len(items),
 		"message":        "Wareneingang gebucht (Massen-Freigabe)",
 	}))
 
-	return len(updatedIDs), nil
+	return items, nil
 }

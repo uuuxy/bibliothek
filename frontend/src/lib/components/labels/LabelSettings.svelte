@@ -1,16 +1,16 @@
 <script>
   import { labelStore } from "../../stores/labels.svelte.js";
-  import { appState } from "../../../inventur/lib/store.svelte.js";
+  import { printQueue } from "../../stores/printQueue.svelte.js";
 </script>
 
 <div class="lg:col-span-5 space-y-6 text-left">
-  {#if (appState.pendingPrintCopies?.length ?? 0) > 0}
+  {#if (printQueue.copies?.length ?? 0) > 0}
     <div class="p-4 border-l-2 border-blue-300 bg-blue-50/50 space-y-4 text-left animate-fade-in">
       <div class="flex items-start gap-2.5">
         <span class="text-lg">🖨️</span>
         <div>
           <h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider">Aktiver Druckauftrag</h3>
-          <p class="text-xs text-blue-700 font-medium leading-relaxed mt-1">Es werden {appState.pendingPrintCopies?.length ?? 0} Etiketten aus der freigegebenen Lieferung geladen.</p>
+          <p class="text-xs text-blue-700 font-medium leading-relaxed mt-1">Es werden {printQueue.copies?.length ?? 0} Etiketten aus der freigegebenen Lieferung geladen.</p>
         </div>
       </div>
       <button onclick={labelStore.resetPendingCopies} class="w-full py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer">

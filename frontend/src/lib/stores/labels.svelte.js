@@ -2,7 +2,7 @@
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
 import { apiFetch, apiClient } from "../apiFetch.js";
-import { appState } from "../../inventur/lib/store.svelte.js";
+import { printQueue, clearPrintQueue } from "./printQueue.svelte.js";
 
 export function createLabelStore() {
     let searchVal = $state("");
@@ -30,8 +30,8 @@ export function createLabelStore() {
 
     /** @type {Array<{isBlank?: boolean, barcode_id?: string, titel?: string, autor?: string}>} */
     let finalLabels = $derived.by(() => {
-        if ((appState.pendingPrintCopies?.length ?? 0) > 0) {
-            const copies = /** @type {any[]} */ (appState.pendingPrintCopies);
+        if ((printQueue.copies?.length ?? 0) > 0) {
+            const copies = /** @type {any[]} */ (printQueue.copies);
             const rawList = copies.map(c => ({
                 barcode_id: c.barcode_id,
                 titel: c.titel,
@@ -224,7 +224,7 @@ export function createLabelStore() {
         triggerPrint,
 
         resetPendingCopies() {
-            appState.pendingPrintCopies = null;
+            clearPrintQueue();
         }
     };
 }
