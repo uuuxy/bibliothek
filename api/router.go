@@ -78,8 +78,8 @@ func (s *Server) Routes() http.Handler {
 	invHandler := inventur.NewAPIHandler(inventur.APIHandlerConfig{
 		Repo:             invRepo,
 		Metadaten:        invMeta,
-		RequireAuth:      s.RequirePermission("view_books"),
-		RequireAdminAuth: s.RequirePermission("edit_books"),
+		RequireViewBooks: s.RequirePermission("view_books"),
+		RequireEditBooks: s.RequirePermission("edit_books"),
 	})
 
 	// Mount Inventur routes

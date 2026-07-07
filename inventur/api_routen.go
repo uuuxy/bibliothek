@@ -39,8 +39,8 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 type APIHandlerConfig struct {
 	Repo             *BookRepository
 	Metadaten        *MetadatenClient
-	RequireAuth      func(http.Handler) http.Handler
-	RequireAdminAuth func(http.Handler) http.Handler
+	RequireViewBooks func(http.Handler) http.Handler
+	RequireEditBooks func(http.Handler) http.Handler
 }
 
 type APIHandler struct {
@@ -60,15 +60,15 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	// Unprotected Uploads (oder durch parent geschützt)
 	handler.mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(neuteredFileSystem{http.Dir("uploads")})))
 
-	// Protected GETs (view_books / view_inventur)
-	handler.mux.Handle("GET /api/books", config.RequireAuth(http.HandlerFunc(handler.BearbeiteBuecherListe)))
-	handler.mux.Handle("GET /api/books/{id}", config.RequireAuth(http.HandlerFunc(handler.BearbeiteBuchLesen)))
-	handler.mux.Handle("GET /api/class-books", config.RequireAuth(http.HandlerFunc(handler.handleClassBooks)))
-	handler.mux.Handle("GET /api/lookup/", config.RequireAuth(http.HandlerFunc(handler.handleLookup)))
-	handler.mux.Handle("GET /api/subjects", config.RequireAuth(http.HandlerFunc(handler.handleGetSubjects)))
+	// Lesend: RBAC-Permission view_books (injiziert aus api/router.go)
+	handler.mux.Handle("GET /api/books", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuecherListe)))
+	handler.mux.Handle("GET /api/books/{id}", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuchLesen)))
+	handler.mux.Handle("GET /api/class-books", config.RequireViewBooks(http.HandlerFunc(handler.handleClassBooks)))
+	handler.mux.Handle("GET /api/lookup/", config.RequireViewBooks(http.HandlerFunc(handler.handleLookup)))
+	handler.mux.Handle("GET /api/subjects", config.RequireViewBooks(http.HandlerFunc(handler.handleGetSubjects)))
 
-	// Admin Protected (edit_books)
-	adminH := config.RequireAdminAuth(http.HandlerFunc(handler.handleAdminBooks))
+	// Schreibend: RBAC-Permission edit_books (injiziert aus api/router.go)
+	adminH := config.RequireEditBooks(http.HandlerFunc(handler.handleAdminBooks))
 
 	handler.mux.Handle("GET /api/admin/", adminH)
 	handler.mux.Handle("POST /api/admin/", adminH)
