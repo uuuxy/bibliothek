@@ -6,6 +6,46 @@ import (
 	"time"
 )
 
+// klassenGrouper sammelt Zeilen zu Klassen→Schüler→Medien. Bewusst index-basiert:
+// Pointer in Slice-Elemente werden bei append-Reallokationen ungültig und haben
+// Medien gleichnamiger Schüler still verschluckt.
+type klassenGrouper struct {
+	klassen     []MahnwesenKlasse
+	klassenIdx  map[string]int
+	schuelerIdx map[string]int
+}
+
+func newKlassenGrouper() *klassenGrouper {
+	return &klassenGrouper{
+		klassen:     make([]MahnwesenKlasse, 0),
+		klassenIdx:  map[string]int{},
+		schuelerIdx: map[string]int{},
+	}
+}
+
+func (g *klassenGrouper) add(klasse, schuelerID, name string, medium UeberfaelligesMedium) {
+	ki, ok := g.klassenIdx[klasse]
+	if !ok {
+		g.klassen = append(g.klassen, MahnwesenKlasse{Klasse: klasse})
+		ki = len(g.klassen) - 1
+		g.klassenIdx[klasse] = ki
+	}
+
+	schuelerKey := klasse + "|" + schuelerID
+	si, ok := g.schuelerIdx[schuelerKey]
+	if !ok {
+		g.klassen[ki].Schueler = append(g.klassen[ki].Schueler, UeberfaelligerSchueler{
+			SchuelerID: schuelerID,
+			Name:       name,
+			Klasse:     klasse,
+		})
+		si = len(g.klassen[ki].Schueler) - 1
+		g.schuelerIdx[schuelerKey] = si
+	}
+
+	g.klassen[ki].Schueler[si].Medien = append(g.klassen[ki].Schueler[si].Medien, medium)
+}
+
 // QueryUeberfaelligeNachKlasse ermittelt alle Ausleihen, deren Frist überschritten ist,
 // gruppiert nach Klasse und Schüler. Ein optionaler Filter schränkt die Abfrage auf eine Klasse ein.
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
@@ -34,9 +74,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	}
 	defer rows.Close()
 
-	klassenMap := map[string]*MahnwesenKlasse{}
-	schuelerMap := map[string]*UeberfaelligerSchueler{}
-	klassen := make([]MahnwesenKlasse, 0)
+	g := newKlassenGrouper()
 
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
@@ -46,27 +84,10 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
 			&titel, &autor, &isbn, &coverURL,
 			&frist, &tage); err != nil {
-			continue
+			return nil, err
 		}
 
-		if _, ok := klassenMap[klasse]; !ok {
-			klassen = append(klassen, MahnwesenKlasse{Klasse: klasse})
-			klassenMap[klasse] = &klassen[len(klassen)-1]
-		}
-
-		schuelerKey := klasse + "|" + schuelerID
-		if _, ok := schuelerMap[schuelerKey]; !ok {
-			sch := UeberfaelligerSchueler{
-				SchuelerID: schuelerID,
-				Name:       name,
-				Klasse:     klasse,
-			}
-			k := klassenMap[klasse]
-			k.Schueler = append(k.Schueler, sch)
-			schuelerMap[schuelerKey] = &k.Schueler[len(k.Schueler)-1]
-		}
-
-		schuelerMap[schuelerKey].Medien = append(schuelerMap[schuelerKey].Medien, UeberfaelligesMedium{
+		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
 			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,
@@ -79,6 +100,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	klassen := g.klassen
 
 	// Falls Klassen existieren, ordnen wir ihnen die Lehrer-E-Mails aus dem Mapping zu
 	if len(klassen) > 0 {
@@ -138,9 +160,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 	}
 	defer rows.Close()
 
-	klassenMap := map[string]*MahnwesenKlasse{}
-	schuelerMap := map[string]*UeberfaelligerSchueler{}
-	klassen := make([]MahnwesenKlasse, 0)
+	g := newKlassenGrouper()
 
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
@@ -153,24 +173,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
 			&titel, &autor, &isbn, &coverURL,
 			&ausgeliehenAm, &jahrgangBis, &schuelerJahrgang, &istAbgaenger); err != nil {
-			continue
-		}
-
-		if _, ok := klassenMap[klasse]; !ok {
-			klassen = append(klassen, MahnwesenKlasse{Klasse: klasse})
-			klassenMap[klasse] = &klassen[len(klassen)-1]
-		}
-
-		schuelerKey := klasse + "|" + schuelerID
-		if _, ok := schuelerMap[schuelerKey]; !ok {
-			sch := UeberfaelligerSchueler{
-				SchuelerID: schuelerID,
-				Name:       name,
-				Klasse:     klasse,
-			}
-			k := klassenMap[klasse]
-			k.Schueler = append(k.Schueler, sch)
-			schuelerMap[schuelerKey] = &k.Schueler[len(k.Schueler)-1]
+			return nil, err
 		}
 
 		ueberschreitung := 0
@@ -178,7 +181,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 			ueberschreitung = *schuelerJahrgang - jahrgangBis
 		}
 
-		schuelerMap[schuelerKey].Medien = append(schuelerMap[schuelerKey].Medien, UeberfaelligesMedium{
+		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
 			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,
@@ -192,7 +195,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 		return nil, err
 	}
 
-	return klassen, nil
+	return g.klassen, nil
 }
 
 // QueryUeberfaelligeByAusleiheIDs ermittelt spezifische überfällige Ausleihen für den Bulk-Print.
@@ -220,9 +223,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 	}
 	defer rows.Close()
 
-	klassenMap := map[string]*MahnwesenKlasse{}
-	schuelerMap := map[string]*UeberfaelligerSchueler{}
-	klassen := make([]MahnwesenKlasse, 0)
+	g := newKlassenGrouper()
 
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
@@ -232,27 +233,10 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
 			&titel, &autor, &isbn, &coverURL,
 			&frist, &tage); err != nil {
-			continue
+			return nil, err
 		}
 
-		if _, ok := klassenMap[klasse]; !ok {
-			klassen = append(klassen, MahnwesenKlasse{Klasse: klasse})
-			klassenMap[klasse] = &klassen[len(klassen)-1]
-		}
-
-		schuelerKey := klasse + "|" + schuelerID
-		if _, ok := schuelerMap[schuelerKey]; !ok {
-			sch := UeberfaelligerSchueler{
-				SchuelerID: schuelerID,
-				Name:       name,
-				Klasse:     klasse,
-			}
-			k := klassenMap[klasse]
-			k.Schueler = append(k.Schueler, sch)
-			schuelerMap[schuelerKey] = &k.Schueler[len(k.Schueler)-1]
-		}
-
-		schuelerMap[schuelerKey].Medien = append(schuelerMap[schuelerKey].Medien, UeberfaelligesMedium{
+		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
 			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,
@@ -266,5 +250,5 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 		return nil, err
 	}
 
-	return klassen, nil
+	return g.klassen, nil
 }
