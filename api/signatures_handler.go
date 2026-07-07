@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"bibliothek/apierrors"
@@ -84,83 +83,3 @@ func (s *Server) CreateSignatureHandler() http.HandlerFunc {
 	}
 }
 
-// UpdateSignatureHandler updates name and description of an existing signature.
-// PUT /api/signatures/{id}
-func (s *Server) UpdateSignatureHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.PathValue("id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id <= 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültige ID"))
-			return
-		}
-
-		var req struct {
-			Name        string `json:"name"`
-			Description string `json:"description"`
-		}
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-		req.Name = strings.TrimSpace(req.Name)
-		if req.Name == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name ist erforderlich"))
-			return
-		}
-
-		ctx := r.Context()
-
-		res, err := s.DB.Pool.Exec(ctx,
-			`UPDATE signatures SET name = $1, description = $2 WHERE id = $3`,
-			req.Name, req.Description, id,
-		)
-		if err != nil {
-			if strings.Contains(err.Error(), "unique") || strings.Contains(err.Error(), "23505") {
-				apierrors.SendHTTPError(w, http.StatusConflict, errors.New("eine Signatur mit diesem Namen existiert bereits"))
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if res.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("signatur nicht gefunden"))
-			return
-		}
-
-		RespondJSON(w, http.StatusOK, Signature{ID: id, Name: req.Name, Description: req.Description})
-	}
-}
-
-// DeleteSignatureHandler deletes a signature.
-// Returns 409 Conflict if books are still assigned to this signature.
-// DELETE /api/signatures/{id}
-func (s *Server) DeleteSignatureHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.PathValue("id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id <= 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültige ID"))
-			return
-		}
-
-		ctx := r.Context()
-
-		res, err := s.DB.Pool.Exec(ctx, `DELETE FROM signatures WHERE id = $1`, id)
-		if err != nil {
-			errStr := err.Error()
-			if strings.Contains(errStr, "violates foreign key constraint") || strings.Contains(errStr, "23503") {
-				apierrors.SendHTTPError(w, http.StatusConflict,
-					errors.New("signatur kann nicht gelöscht werden, da ihr noch Bücher zugeordnet sind"))
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if res.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("signatur nicht gefunden"))
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
-	}
-}

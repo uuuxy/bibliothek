@@ -13,8 +13,6 @@ import (
 	"bibliothek/db"
 	"bibliothek/inventur"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // ShipmentGroup helps structure the incoming shipments response.
@@ -123,40 +121,6 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 	})
 
 	return groups, nil
-}
-
-// ReceiveItem handles the reception of a single ordered item via barcode scan.
-func ReceiveItem(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, titelID, barcode, adminID, ipAddr string) error {
-	query := `
-		UPDATE buecher_exemplare
-		SET barcode_id = $1, ist_ausleihbar = true, zustand_notiz = ''
-		WHERE id = (
-			SELECT id 
-			FROM buecher_exemplare 
-			WHERE titel_id = $2 
-			  AND ist_ausleihbar = false 
-			  AND (zustand_notiz LIKE 'Im Zulauf%' OR zustand_notiz = 'bestellt' OR zustand_notiz LIKE 'Bestellt%')
-			LIMIT 1
-			FOR UPDATE SKIP LOCKED
-		)
-		RETURNING id
-	`
-	var updatedID string
-	err := pool.QueryRow(ctx, query, barcode, titelID).Scan(&updatedID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return errors.New("kein offenes (bestelltes) Exemplar für diesen Titel gefunden")
-		}
-		return err
-	}
-
-	logAuditErr("wareneingang", auditRepo.LogAdminAktion(ctx, adminID, "RECEIVE_ITEM", ipAddr, map[string]any{
-		"titel_id": titelID,
-		"barcode":  barcode,
-		"message":  "Wareneingang gebucht (Einzel-Scan)",
-	}))
-
-	return nil
 }
 
 type OrderSearchItem struct {

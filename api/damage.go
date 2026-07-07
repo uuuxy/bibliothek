@@ -62,27 +62,6 @@ func (s *Server) MarkCopyDefektHandler(damageRepo repository.DamageRepository) h
 	})
 }
 
-// UndoReturnHandler reverses a recent return (within 1 hour) by nullifying rueckgabe_am.
-func (s *Server) UndoReturnHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		loanID := r.PathValue("id")
-		if loanID == "" {
-			return apierrors.BadRequest("missing loan ID parameter", nil)
-		}
-
-		rowsAffected, err := damageRepo.UndoReturn(r.Context(), loanID)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Rückgängigmachen der Rückgabe", err)
-		}
-		if rowsAffected == 0 {
-			return apierrors.NotFound("Ausleihe nicht gefunden, nicht zurückgegeben oder Zeitfenster überschritten (max. 1 Stunde)", nil)
-		}
-
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-		return nil
-	})
-}
-
 // ReportDamageHandler handles POST /api/damage/report
 // Sets ist_ausgesondert = true, inserts into schadensfaelle, and ends the loan.
 func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) http.HandlerFunc {

@@ -124,49 +124,6 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 	}
 }
 
-// ReceiveItemRequest represents the payload for receiving an ordered item.
-type ReceiveItemRequest struct {
-	TitelID string `json:"titel_id"`
-	Barcode string `json:"barcode"`
-}
-
-// ReceiveItemHandler handles the reception of a single ordered item via barcode scan.
-func (s *Server) ReceiveItemHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req ReceiveItemRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		if req.TitelID == "" || req.Barcode == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id and barcode are required"))
-			return
-		}
-
-		ctx := r.Context()
-		var adminID string
-		if claims, ok := auth.GetClaims(ctx); ok {
-			adminID = claims.UserID
-		}
-
-		auditRepo := repository.NewAuditRepository(s.DB.Pool)
-		err := service.ReceiveItem(ctx, s.DB.Pool, auditRepo, req.TitelID, req.Barcode, adminID, getIP(r))
-		if err != nil {
-			if err.Error() == "kein offenes (bestelltes) Exemplar für diesen Titel gefunden" {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		RespondJSON(w, http.StatusOK, map[string]string{
-			"status":  "success",
-			"message": "Exemplar erfolgreich freigegeben.",
-		})
-	}
-}
-
 type OrderSearchItem struct {
 	ID           string `json:"id,omitempty"`
 	Titel        string `json:"titel"`

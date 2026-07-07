@@ -28,7 +28,6 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 
 	// ── AUSLEIHEN (Loans) ──
 	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-	mux.Handle("DELETE /api/ausleihen/{id}/rueckgabe", s.RequirePermission("view_students")(s.UndoReturnHandler(damageRepo)))
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.ExtendLoanHandler(settingsRepo)))
 	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.GlobalExtendLMFHandler()))
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.OverrideDueDateHandler()))

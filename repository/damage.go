@@ -11,7 +11,6 @@ import (
 // DamageRepository defines operations for managing book damages and related loan actions.
 type DamageRepository interface {
 	MarkCopyDefekt(ctx context.Context, copyID string, loanID, schuelerID *string, benutzerID string, betrag float64, beschreibung string) (string, error)
-	UndoReturn(ctx context.Context, loanID string) (int64, error)
 	ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, betrag float64) (string, error)
 }
 
@@ -70,21 +69,6 @@ func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, 
 		return "", err
 	}
 	return schadensID, nil
-}
-
-// UndoReturn reverses a recent return (within 1 hour) by nullifying rueckgabe_am.
-func (r *pgDamageRepository) UndoReturn(ctx context.Context, loanID string) (int64, error) {
-	res, err := r.db.Exec(ctx, `
-		UPDATE ausleihen
-		SET rueckgabe_am = NULL, rueckgabe_bearbeiter_id = NULL
-		WHERE id = $1
-		  AND rueckgabe_am IS NOT NULL
-		  AND rueckgabe_am > CURRENT_TIMESTAMP - INTERVAL '1 hour'
-	`, loanID)
-	if err != nil {
-		return 0, err
-	}
-	return res.RowsAffected(), nil
 }
 
 // ReportDamage sets ist_ausgesondert = true, inserts a damage record, and ends the loan.

@@ -14,20 +14,6 @@ func (s *Server) PostSendOverdueNotificationHandler() http.HandlerFunc {
 	}
 }
 
-// PostSendNotificationHandler versendet eine E-Mail an die Eltern, basierend auf dem im Body übergebenen templateType
-func (s *Server) PostSendNotificationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		apierrors.SendHTTPError(w, http.StatusNotImplemented, errors.New("E-Mail-Versand aus Datenschutzgründen deaktiviert (keine Eltern-E-Mails mehr gespeichert)"))
-	}
-}
-
-// PostSendBulkOverdueHandler versendet Massen-Mahnungen an alle Schüler mit überfälligen Büchern.
-func (s *Server) PostSendBulkOverdueHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		apierrors.SendHTTPError(w, http.StatusNotImplemented, errors.New("E-Mail-Versand aus Datenschutzgründen deaktiviert (keine Eltern-E-Mails mehr gespeichert)"))
-	}
-}
-
 // GetMailTemplatesHandler gibt alle Mail-Vorlagen zurück
 func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

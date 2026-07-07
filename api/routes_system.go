@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bibliothek/auth"
 	"bibliothek/repository"
 	"bibliothek/db"
 	"net/http"
@@ -30,14 +29,11 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// Audit & Transactions
 	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
-	mux.Handle("GET /api/transactions/recent", s.Auth.RequireRoles(auth.RoleAdmin, auth.RoleMitarbeiter, auth.RoleHelfer)(s.GetRecentTransactionsHandler()))
 
 	// Mail Templates
 	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_users")(s.GetMailTemplatesHandler()))
 	mux.Handle("PUT /api/mail-templates/{id}", s.RequirePermission("manage_users")(s.UpdateMailTemplateHandler()))
 	mux.Handle("POST /api/mail/send-overdue-notification/{schuelerID}", s.RequirePermission("manage_users")(s.PostSendOverdueNotificationHandler()))
-	mux.Handle("POST /api/mail/send-notification/{schuelerID}", s.RequirePermission("manage_users")(s.PostSendNotificationHandler()))
-	mux.Handle("POST /api/mail/send-bulk-overdue", s.RequirePermission("manage_users")(s.PostSendBulkOverdueHandler()))
 
 	// Print / Reports
 	mux.Handle("GET /api/reports/overdue-pdf", s.RequirePermission("view_students")(s.GetOverdueReportsPDFHandler()))
@@ -65,8 +61,6 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// Signaturen (Master Data Management)
 	mux.Handle("GET /api/signatures", s.RequirePermission("view_books")(s.GetSignaturesHandler()))
 	mux.Handle("POST /api/signatures", s.RequirePermission("manage_users")(s.CreateSignatureHandler()))
-	mux.Handle("PUT /api/signatures/{id}", s.RequirePermission("manage_users")(s.UpdateSignatureHandler()))
-	mux.Handle("DELETE /api/signatures/{id}", s.RequirePermission("manage_users")(s.DeleteSignatureHandler()))
 
 	// Real-time Events
 	sseHandler := s.Broker.Handler()

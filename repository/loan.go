@@ -42,8 +42,6 @@ type LoanRepository interface {
 	// ReturnLoanTx markiert eine aktive Ausleihe als zurückgegeben innerhalb einer Transaktion.
 	ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool) error
 
-	// UndoReturn macht eine irrtümliche Rückgabe innerhalb eines Fensters von einer Stunde rückgängig.
-	UndoReturn(ctx context.Context, loanID string) error
 }
 
 // pgLoanRepository implementiert das LoanRepository für PostgreSQL.
@@ -225,20 +223,3 @@ func (r *pgLoanRepository) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, 
 	return nil
 }
 
-// UndoReturn macht eine Buchrückgabe rückgängig, sofern die Rückgabe vor weniger als einer Stunde durchgeführt wurde.
-func (r *pgLoanRepository) UndoReturn(ctx context.Context, loanID string) error {
-	tag, err := r.db.Exec(ctx, `
-		UPDATE ausleihen
-		SET rueckgabe_am = NULL, rueckgabe_bearbeiter_id = NULL
-		WHERE id = $1
-		  AND rueckgabe_am IS NOT NULL
-		  AND rueckgabe_am > CURRENT_TIMESTAMP - INTERVAL '1 hour'
-	`, loanID)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return errors.New("loan not found, not yet returned, or return window exceeded")
-	}
-	return nil
-}
