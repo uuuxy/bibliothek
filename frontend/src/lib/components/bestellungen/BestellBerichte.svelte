@@ -1,4 +1,6 @@
 <script>
+  import { localISO, lastOfMonth } from "../../utils/dates.js";
+
   /** @type {{ suppliers?: { id: string, name: string }[] }} */
   let { suppliers = [] } = $props();
 
@@ -17,20 +19,6 @@
   let lieferantId = $derived(suppliers[0]?.id ?? "");
   let vonDatum = $state(localISO(new Date(now.getFullYear(), now.getMonth(), 1)));
   let bisDatum = $state(localISO(now));
-
-  /**
-   * Lokales Datum als YYYY-MM-DD — nie über toISOString(), das kippt
-   * in UTC+x auf den Vortag.
-   * @param {Date} d
-   */
-  function localISO(d) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }
-  /** @param {string} yyyyMM */
-  function lastOfMonth(yyyyMM) {
-    const [y, m] = yyyyMM.split("-").map(Number);
-    return localISO(new Date(y, m, 0));
-  }
 
   const monthLabels = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 
