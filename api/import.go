@@ -80,17 +80,16 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 		}
 		defer db.SafeRollback(ctx, tx)
 
-		upsertQuery := `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, $2, $3, $4, $5)
-			ON CONFLICT (barcode_id) DO UPDATE
-			SET klasse = EXCLUDED.klasse,
-			    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
-			    aktualisiert_am = CURRENT_TIMESTAMP
-		`
-
 		count := 0
 		lineNum := 1
+
+		// ⚡ Bolt: Accumulate rows to prevent N+1 queries. Deduplicate by barcode_id to avoid ON CONFLICT errors in a single batch.
+		var barcodeIDs []string
+		var vornames []string
+		var nachnames []string
+		var klassen []string
+		var abgaengerJahre []int32
+		seenBarcodes := make(map[string]bool)
 
 		for {
 			row, err := reader.Read()
@@ -120,12 +119,44 @@ func (s *Server) ImportStudentsHandler() http.HandlerFunc {
 				return
 			}
 
-			_, err = tx.Exec(ctx, upsertQuery, barcodeID, vorname, nachname, klasse, abgaengerJahr)
+			// Deduplicate rows with the same barcode_id by keeping only the last occurrence (simulating the sequential UPSERT behavior)
+			if !seenBarcodes[barcodeID] {
+				barcodeIDs = append(barcodeIDs, barcodeID)
+				vornames = append(vornames, vorname)
+				nachnames = append(nachnames, nachname)
+				klassen = append(klassen, klasse)
+				abgaengerJahre = append(abgaengerJahre, int32(abgaengerJahr))
+				seenBarcodes[barcodeID] = true
+				count++
+			} else {
+				// Update existing entry in the slices
+				for i, b := range barcodeIDs {
+					if b == barcodeID {
+						vornames[i] = vorname
+						nachnames[i] = nachname
+						klassen[i] = klasse
+						abgaengerJahre[i] = int32(abgaengerJahr)
+						break
+					}
+				}
+			}
+		}
+
+		if len(barcodeIDs) > 0 {
+			// ⚡ Bolt: Execute a single bulk UPSERT using PostgreSQL's UNNEST to replace the N+1 tx.Exec loop
+			upsertQuery := `
+				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+				SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::int[])
+				ON CONFLICT (barcode_id) DO UPDATE
+				SET klasse = EXCLUDED.klasse,
+				    abgaenger_jahr = EXCLUDED.abgaenger_jahr,
+				    aktualisiert_am = CURRENT_TIMESTAMP
+			`
+			_, err = tx.Exec(ctx, upsertQuery, barcodeIDs, vornames, nachnames, klassen, abgaengerJahre)
 			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("database error on row %d: %w", lineNum, err))
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("bulk database error: %w", err))
 				return
 			}
-			count++
 		}
 
 		if err := tx.Commit(ctx); err != nil {
