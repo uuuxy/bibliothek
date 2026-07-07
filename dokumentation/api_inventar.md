@@ -1,0 +1,158 @@
+# API-Inventar (generiert)
+
+> Generiert von `scripts/api_inventar.sh` am 2026-07-07. Nicht von Hand editieren.
+
+## Go-Routen ohne Frontend-Aufrufer
+
+(SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
+
+- `POST /api/auth/refresh`
+- `POST /api/lusd/import`
+- `POST /api/lusd/preview`
+- `POST /api/students/promote`
+- `PUT /api/reservierungen/klassensatz/{id}/erledigen`
+
+## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
+
+
+## Alle registrierten Routen (139)
+
+- `/`
+- `/api/admin`
+- `/api/admin/`
+- `/api/books`
+- `/api/books/`
+- `/api/class-books`
+- `/api/lookup/`
+- `/api/subjects`
+- `/favicon.ico`
+- `/uploads/`
+- `DELETE /api/admin/`
+- `DELETE /api/benutzer/{id}`
+- `DELETE /api/books`
+- `DELETE /api/buecher/exemplare/{id}`
+- `DELETE /api/buecher/titel/{id}`
+- `DELETE /api/klassen-mapping/{klasse}`
+- `DELETE /api/lieferanten/{id}`
+- `DELETE /api/schueler/{id}`
+- `DELETE /api/vormerkungen/{id}`
+- `GET /admin/dashboard`
+- `GET /api/abgaenger`
+- `GET /api/abgaenger/pdf`
+- `GET /api/admin/`
+- `GET /api/admin/auditlog`
+- `GET /api/admin/permissions`
+- `GET /api/admin/settings/mail`
+- `GET /api/audit`
+- `GET /api/barcode`
+- `GET /api/barcode/next`
+- `GET /api/benutzer`
+- `GET /api/bestellhistorie`
+- `GET /api/bestellhistorie/bericht`
+- `GET /api/bestellungen`
+- `GET /api/bestellungen/pdf`
+- `GET /api/bestellungen/zulauf`
+- `GET /api/books`
+- `GET /api/books/{id}`
+- `GET /api/buecher/titel/{id}/ausleiher`
+- `GET /api/buecher/titel/{id}/etiketten`
+- `GET /api/buecher/titel/{id}/exemplare`
+- `GET /api/buecher/titel/{id}/historie`
+- `GET /api/class-books`
+- `GET /api/csrf-token`
+- `GET /api/dashboard/summary`
+- `GET /api/einstellungen`
+- `GET /api/images/cover`
+- `GET /api/klassen`
+- `GET /api/klassen-mapping`
+- `GET /api/lieferanten`
+- `GET /api/lookup/`
+- `GET /api/mahnwesen`
+- `GET /api/mahnwesen/pdf`
+- `GET /api/mahnwesen/ueberfaellig_jahrgang`
+- `GET /api/mail-templates`
+- `GET /api/monitor/slides`
+- `GET /api/print/etikett/{id}`
+- `GET /api/print/kontoauszug/{schueler_id}`
+- `GET /api/print/mahnung/klasse/{klasse}`
+- `GET /api/print/rechnung/{schueler_id}`
+- `GET /api/public/opac/suche`
+- `GET /api/readergroups`
+- `GET /api/reports/overdue-pdf`
+- `GET /api/reservierungen/klassensatz`
+- `GET /api/reservierungen/klassensatz/anzahl`
+- `GET /api/scan`
+- `GET /api/schadensfaelle/{id}/pdf`
+- `GET /api/schueler`
+- `GET /api/schueler/deleted`
+- `GET /api/schueler/{id}`
+- `GET /api/schueler/{id}/photo`
+- `GET /api/search`
+- `GET /api/signatures`
+- `GET /api/statistiken`
+- `GET /api/subjects`
+- `GET /api/systematics`
+- `GET /api/vormerkungen`
+- `GET /events`
+- `GET /health`
+- `GET /swagger`
+- `GET /swagger/`
+- `GET /teacher/dashboard`
+- `GET /uploads/`
+- `PATCH /api/admin/ausleihen/{id}/faelligkeit`
+- `PATCH /api/admin/students/{id}/lock`
+- `PATCH /api/schueler/{id}`
+- `POST /api/action`
+- `POST /api/action/batch`
+- `POST /api/admin/`
+- `POST /api/admin/import-bestand`
+- `POST /api/admin/mahnungen/bulk-print`
+- `POST /api/admin/settings/mail/test`
+- `POST /api/admin/sync-covers`
+- `POST /api/ausleihen/global-extend-lmf`
+- `POST /api/ausleihen/{ausleihe_id}/verlaengern`
+- `POST /api/auth/logout`
+- `POST /api/auth/refresh`
+- `POST /api/benutzer`
+- `POST /api/bestellungen`
+- `POST /api/bestellungen/bulk-receive`
+- `POST /api/bestellungen/suche`
+- `POST /api/books`
+- `POST /api/books/`
+- `POST /api/books/import`
+- `POST /api/buecher/aus-isbn`
+- `POST /api/buecher/exemplare/{id}/aussondern`
+- `POST /api/buecher/exemplare/{id}/defekt`
+- `POST /api/buecher/exemplare/{id}/schadensnotiz`
+- `POST /api/damage/report`
+- `POST /api/import/littera`
+- `POST /api/import/lusd`
+- `POST /api/inventur/finish`
+- `POST /api/inventur/scan`
+- `POST /api/inventur/start`
+- `POST /api/klassen-mapping`
+- `POST /api/lieferanten`
+- `POST /api/lusd/import`
+- `POST /api/lusd/preview`
+- `POST /api/mahnwesen/senden`
+- `POST /api/mail/send-overdue-notification/{schuelerID}`
+- `POST /api/print/labels`
+- `POST /api/reservierungen/klassensatz`
+- `POST /api/schueler`
+- `POST /api/schueler/{id}/photo`
+- `POST /api/schueler/{id}/restore`
+- `POST /api/signatures`
+- `POST /api/students/promote`
+- `POST /api/vormerkungen`
+- `POST /login`
+- `PUT /api/admin/`
+- `PUT /api/admin/permissions`
+- `PUT /api/admin/settings/mail`
+- `PUT /api/benutzer/{id}`
+- `PUT /api/books/`
+- `PUT /api/buecher/exemplare/{id}/barcode`
+- `PUT /api/buecher/exemplare/{id}/status`
+- `PUT /api/einstellungen`
+- `PUT /api/lieferanten/{id}`
+- `PUT /api/mail-templates/{id}`
+- `PUT /api/reservierungen/klassensatz/{id}/erledigen`

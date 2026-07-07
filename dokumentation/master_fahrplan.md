@@ -105,9 +105,14 @@ Migration 035 (`lusd_id`-Unique-Index) real dry-runnen + LUSD-Re-Import testen; 
 
 # 🚀 Phase 3: Zukünftige Features (erst wenn Phase 1 & 2 grün sind)
 
+> Neuer Befund aus dem Inventar (2026-07-07): `POST /api/auth/refresh` hat keinen
+> Frontend-Aufrufer — die SPA erneuert Tokens nie, Sessions laufen einfach ab.
+> Entweder in `apiFetch` bei 401 einen Refresh-Versuch einbauen oder das bewusst
+> so dokumentieren (Kiosk-Betrieb mit Heartbeat). Gehört zu T3 (Auth-Lebenszyklus).
+
 In dieser Reihenfolge:
 
-1. **LUSD-Import-Konsolidierung:** Auch nach dem Löschen der drei toten Import-Handler bleiben drei aktive Routen (`/api/import/lusd`, `/api/lusd/preview`, `/api/lusd/import`) — auf einen einzigen Preview→Commit-Flow eindampfen
+1. **LUSD-Import-Konsolidierung:** Nach Phase 1 ist nur noch `/api/import/lusd` (LusdImportModal) aktiv. `/api/lusd/preview` + `/api/lusd/import` (api/lusd.go) sind durch die Löschung des toten `LusdPreviewModal` verwaist — aber das ist der *getestete* Preview→Commit-Flow (`lusd_parser_test.go`). Entscheidung: den besseren Flow wieder anbinden und den einfachen Import ablösen, oder umgekehrt. Bis dahin bleibt api/lusd.go bewusst stehen
 2. **Klassensatz-Reservierung „erledigen"** — die in 1b identifizierte UI-Lücke schließen
 3. **Schuljahres-Versetzung** (`students/promote`): UI bauen oder Handler endgültig streichen — Deadline ist der Schuljahreswechsel
 4. **API-Versionierung `/api/v1` + Rest-Sprachvereinheitlichung** — ein einziges großes, gut getestetes Migrations-Paket (wie die orders→bestellungen-Migration, jetzt mit E2E-Netz)
