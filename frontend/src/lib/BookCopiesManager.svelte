@@ -157,18 +157,18 @@
           <!-- Copy quick Actions -->
           <div class="flex space-x-1">
             {#if !copy.ist_ausgesondert}
-              <button onclick={() => printLabel(copy.barcode_id)} class="p-1.5 text-slate-450 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Schnelldruck Barcode-Etikett">
-                🖨️
+              <button onclick={() => printLabel(copy.barcode_id)} aria-label="Schnelldruck Barcode-Etikett" class="p-1.5 text-slate-450 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Schnelldruck Barcode-Etikett">
+                <span aria-hidden="true">🖨️</span>
               </button>
-              <button onclick={() => { activeCopy = copy; newNote = copy.zustand_notiz; showModal = true; }} class="p-1.5 text-slate-450 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer" title="Schadensnotiz bearbeiten">
-                ✏️
+              <button onclick={() => { activeCopy = copy; newNote = copy.zustand_notiz; showModal = true; }} aria-label="Schadensnotiz bearbeiten" class="p-1.5 text-slate-450 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer" title="Schadensnotiz bearbeiten">
+                <span aria-hidden="true">✏️</span>
               </button>
-              <button onclick={() => aussondernCopy(copy.id)} class="p-1.5 text-slate-450 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer" title="Exemplar aussondern (Makulatur)">
-                ⛔
+              <button onclick={() => aussondernCopy(copy.id)} aria-label="Exemplar aussondern (Makulatur)" class="p-1.5 text-slate-450 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer" title="Exemplar aussondern (Makulatur)">
+                <span aria-hidden="true">⛔</span>
               </button>
             {/if}
-            <button onclick={() => deleteCopy(copy.id)} class="p-1.5 text-slate-450 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="Exemplar löschen">
-              🗑️
+            <button onclick={() => deleteCopy(copy.id)} aria-label="Exemplar löschen" class="p-1.5 text-slate-450 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="Exemplar löschen">
+              <span aria-hidden="true">🗑️</span>
             </button>
           </div>
         </div>
