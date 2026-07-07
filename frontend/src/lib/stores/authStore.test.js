@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { authStore } from './authStore.svelte.js';
 
 describe('authStore', () => {
@@ -43,5 +43,70 @@ describe('authStore', () => {
         expect(authStore.currentUser).toEqual({ id: 1, rolle: 'mitarbeiter', vorname: 'Test' });
         expect(authStore.loginEmail).toBe('');
         expect(authStore.loginPassword).toBe('');
+    });
+});
+
+describe('authStore Session-Refresh', () => {
+    beforeEach(() => {
+        authStore.handleLogout();
+        vi.clearAllMocks();
+        vi.useFakeTimers();
+        // @ts-ignore
+        global.EventSource = vi.fn(function() {
+            return { addEventListener: vi.fn(), close: vi.fn() };
+        });
+    });
+    afterEach(() => {
+        authStore.stopSessionRefresh();
+        vi.useRealTimers();
+    });
+
+    it('ruft nach dem Login alle 30 Minuten /api/auth/refresh auf', async () => {
+        // @ts-ignore
+        global.fetch = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => '' }));
+        authStore.loginEmail = 'test@example.com';
+        authStore.loginPassword = 'pw';
+        await authStore.handleLogin(null);
+        // @ts-ignore
+        global.fetch.mockClear();
+
+        await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/refresh', { method: 'POST' });
+
+        await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('loggt aus, wenn der Refresh 401 liefert (Session serverseitig tot)', async () => {
+        // @ts-ignore
+        global.fetch = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => '' }));
+        authStore.loginEmail = 'test@example.com';
+        authStore.loginPassword = 'pw';
+        await authStore.handleLogin(null);
+
+        // @ts-ignore
+        global.fetch = vi.fn(async () => ({ ok: false, status: 401 }));
+        await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+
+        expect(authStore.isLoggedIn).toBe(false);
+        // Nach dem Logout darf kein weiterer Refresh mehr feuern
+        // @ts-ignore
+        global.fetch.mockClear();
+        await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('überlebt Netzwerkfehler ohne Logout (offline ≠ abgemeldet)', async () => {
+        // @ts-ignore
+        global.fetch = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => '' }));
+        authStore.loginEmail = 'test@example.com';
+        authStore.loginPassword = 'pw';
+        await authStore.handleLogin(null);
+
+        // @ts-ignore
+        global.fetch = vi.fn(async () => { throw new TypeError('Failed to fetch'); });
+        await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+
+        expect(authStore.isLoggedIn).toBe(true);
     });
 });

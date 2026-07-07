@@ -10,6 +10,29 @@ class AuthStore {
     sseSource = $state(/** @type {any} */ (null));
     loginError = $state(/** @type {string | null} */ (null));
 
+    /** @type {ReturnType<typeof setInterval> | null} */
+    #refreshTimer = null;
+
+    // Sliding Session: Der Server erneuert das Cookie erst bei <50% Restlaufzeit
+    // (12h-Token → Erneuerung frühestens nach 6h). Der 30-Minuten-Tick ist also
+    // fast immer ein billiges "skipped" — hält aber Kiosk-Tabs über Nacht am Leben.
+    startSessionRefresh() {
+        this.stopSessionRefresh();
+        this.#refreshTimer = setInterval(async () => {
+            try {
+                const res = await fetch("/api/auth/refresh", { method: "POST" });
+                if (res.status === 401) this.handleLogout();
+            } catch { /* offline — der SSE-Heartbeat meldet das bereits */ }
+        }, 30 * 60 * 1000);
+    }
+
+    stopSessionRefresh() {
+        if (this.#refreshTimer) {
+            clearInterval(this.#refreshTimer);
+            this.#refreshTimer = null;
+        }
+    }
+
     connectSSE() {
         if (this.sseSource) this.sseSource.close();
         const source = new EventSource("/events");
@@ -54,6 +77,7 @@ class AuthStore {
             this.loginEmail = "";
             this.loginPassword = "";
             this.connectSSE();
+            this.startSessionRefresh();
 
             if (this.currentUser && (this.currentUser.rolle === "admin" || this.currentUser.rolle === "mitarbeiter")) {
                 appState.adminAuthenticated = true;
@@ -81,6 +105,7 @@ class AuthStore {
         this.loginError = null;
         appState.adminAuthenticated = false;
         appState.guestAuthenticated = false;
+        this.stopSessionRefresh();
         if (this.sseSource) {
             this.sseSource.close();
             this.sseSource = null;
