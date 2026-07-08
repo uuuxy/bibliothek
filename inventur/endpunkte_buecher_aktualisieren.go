@@ -30,13 +30,12 @@ type BuchAktualisierenAnfrage struct {
 
 // BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch.
 func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWriter, anfrage *http.Request) {
-	teile := strings.Split(strings.Trim(anfrage.URL.Path, "/"), "/")
-	if len(teile) != 3 || teile[0] != "api" || teile[1] != "books" {
+	id, ok := extractPathID(anfrage.URL.Path, 3, "api", "books", "")
+	if !ok {
 		writeError(antwort, http.StatusBadRequest, "ungültige route")
 		return
 	}
 
-	id := teile[2]
 	if id == "" {
 		writeError(antwort, http.StatusBadRequest, "id darf nicht leer sein")
 		return

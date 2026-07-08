@@ -105,13 +105,13 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 }
 
 func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request *http.Request) {
-	parts := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
-	if len(parts) != 4 || parts[0] != "api" || parts[1] != "books" || parts[3] != "cover-upload" {
+	pathID, ok := extractPathID(request.URL.Path, 4, "api", "books", "cover-upload")
+	if !ok {
 		writeError(writer, http.StatusBadRequest, "ungültige route")
 		return
 	}
 
-	id := filepath.Base(parts[2])
+	id := filepath.Base(pathID)
 	if id == "" || id == "." || id == "/" {
 		writeError(writer, http.StatusBadRequest, "id darf nicht leer sein")
 		return

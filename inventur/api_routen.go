@@ -87,3 +87,17 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 func (handler *APIHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	handler.mux.ServeHTTP(writer, request)
 }
+
+// extractPathID extrahiert die ID aus dem URL-Pfad und validiert die erwartete Struktur.
+// Es erwartet einen Pfad der Form /api/{kategorie}/{id} oder /api/{kategorie}/{id}/{aktion}.
+// expectedSuffix ist optional (leer für Routen ohne Aktion).
+func extractPathID(path string, expectedLen int, expectedPart0, expectedPart1, expectedSuffix string) (string, bool) {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) != expectedLen || parts[0] != expectedPart0 || parts[1] != expectedPart1 {
+		return "", false
+	}
+	if expectedSuffix != "" && parts[expectedLen-1] != expectedSuffix {
+		return "", false
+	}
+	return parts[2], true
+}
