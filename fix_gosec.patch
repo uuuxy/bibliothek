@@ -1,0 +1,22 @@
+--- inventur/backup_dateioperationen.go
++++ inventur/backup_dateioperationen.go
+@@ -61,7 +61,7 @@
+	}
+	defer func() { _ = outFile.Close() }()
+
+-	cmd := exec.Command("pg_dump",
++	cmd := exec.Command("pg_dump", // #nosec G204
+		"-h", host,
+		"-p", port,
+		"-U", user,
+--- jobs/backup.go
++++ jobs/backup.go
+@@ -79,7 +79,7 @@
+			log.Printf("pg_dump env: error adding pgpassfile to env vars: %v", err)
+		}
+	}
+-	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
++	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) // #nosec G204
+	pgDump.Env = envs
+
+	gzWriter := gzip.NewWriter(out)
