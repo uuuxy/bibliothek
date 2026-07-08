@@ -154,55 +154,80 @@ func (s *defaultDeviceService) HandleDeviceAction(
 
 	// Fall A: Keine aktive Ausleihe vorhanden -> Das Gerät wird ausgeliehen
 	if !hasActiveLoan {
-		if student == nil && teacher == nil {
-			return nil, fmt.Errorf("%w: Bitte scannen Sie zuerst einen Schüler- oder Lehrerausweis", ErrInvalidState)
-		}
-
-		// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen)
-		dueTime := time.Now().AddDate(0, 0, 14)
-		var newLoanID string
-		if student != nil {
-			err = tx.QueryRow(ctx, `
-				INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id)
-				VALUES ($1, $2, $3, $4)
-				RETURNING id
-			`, g.ID, student.ID, dueTime, staffID).Scan(&newLoanID)
-			resp.Student = student
-		} else {
-			// Lehrer leihen Geräte standardmäßig als Handapparat (Dauerleihe) aus
-			err = tx.QueryRow(ctx, `
-				INSERT INTO ausleihen (geraet_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
-				VALUES ($1, $2, $3, $4, true)
-				RETURNING id
-			`, g.ID, teacher.ID, dueTime, staffID).Scan(&newLoanID)
-			resp.Teacher = teacher
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			return nil, err
-		}
-
-		// Revisionssicheres Audit-Log schreiben
-		if student != nil {
-			logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", staffID))
-		} else {
-			logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, staffID))
-		}
-
-		resp.Type = "ausleihe"
-		resp.Geraet = &g
-		resp.DueDate = &dueTime
-		resp.LoanID = &newLoanID
-
-		return resp, nil
+		return s.handleDeviceCheckout(ctx, tx, &g, student, teacher, staffID, resp)
 	}
 
 	// Fall B: Gerät ist bereits ausgeliehen -> Das Gerät wird zurückgegeben
+	return s.handleDeviceReturn(ctx, tx, &g, &activeLoan, student, teacher, staffID, resp)
+}
 
+func (s *defaultDeviceService) handleDeviceCheckout(
+	ctx context.Context,
+	tx pgx.Tx,
+	g *repository.Geraet,
+	student *repository.Student,
+	teacher *repository.User,
+	staffID string,
+	resp *DeviceResult,
+) (*DeviceResult, error) {
+	if student == nil && teacher == nil {
+		return nil, fmt.Errorf("%w: Bitte scannen Sie zuerst einen Schüler- oder Lehrerausweis", ErrInvalidState)
+	}
+
+	// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen)
+	dueTime := time.Now().AddDate(0, 0, 14)
+	var newLoanID string
+	var err error
+	if student != nil {
+		err = tx.QueryRow(ctx, `
+			INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id
+		`, g.ID, student.ID, dueTime, staffID).Scan(&newLoanID)
+		resp.Student = student
+	} else {
+		// Lehrer leihen Geräte standardmäßig als Handapparat (Dauerleihe) aus
+		err = tx.QueryRow(ctx, `
+			INSERT INTO ausleihen (geraet_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
+			VALUES ($1, $2, $3, $4, true)
+			RETURNING id
+		`, g.ID, teacher.ID, dueTime, staffID).Scan(&newLoanID)
+		resp.Teacher = teacher
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	// Revisionssicheres Audit-Log schreiben
+	if student != nil {
+		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", staffID))
+	} else {
+		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, staffID))
+	}
+
+	resp.Type = "ausleihe"
+	resp.Geraet = g
+	resp.DueDate = &dueTime
+	resp.LoanID = &newLoanID
+
+	return resp, nil
+}
+
+func (s *defaultDeviceService) handleDeviceReturn(
+	ctx context.Context,
+	tx pgx.Tx,
+	g *repository.Geraet,
+	activeLoan *repository.Loan,
+	student *repository.Student,
+	teacher *repository.User,
+	staffID string,
+	resp *DeviceResult,
+) (*DeviceResult, error) {
 	// Prüfen, ob es sich um eine Fremdrückgabe handelt.
 	// Das ist der Fall, wenn die Person, die das Gerät zurückgibt (aktiver Schüler/Lehrer),
 	// nicht mit der Person übereinstimmt, die das Gerät ausgeliehen hat.
@@ -211,7 +236,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 		if student == nil || *activeLoan.SchuelerID != student.ID {
 			isFremd = true
 			var vorbesitzer repository.Student
-			err = s.pool.QueryRow(ctx, "SELECT vorname, nachname, klasse FROM schueler WHERE id = $1 AND deleted_at IS NULL", *activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
+			err := s.pool.QueryRow(ctx, "SELECT vorname, nachname, klasse FROM schueler WHERE id = $1 AND deleted_at IS NULL", *activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return nil, err
 			}
@@ -221,7 +246,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 		if teacher == nil || *activeLoan.AusleiherBenutzerID != teacher.ID {
 			isFremd = true
 			var vorbesitzerUser repository.User
-			err = s.pool.QueryRow(ctx, "SELECT vorname, nachname FROM benutzer WHERE id = $1", *activeLoan.AusleiherBenutzerID).Scan(&vorbesitzerUser.Vorname, &vorbesitzerUser.Nachname)
+			err := s.pool.QueryRow(ctx, "SELECT vorname, nachname FROM benutzer WHERE id = $1", *activeLoan.AusleiherBenutzerID).Scan(&vorbesitzerUser.Vorname, &vorbesitzerUser.Nachname)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return nil, err
 			}
@@ -230,7 +255,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	}
 
 	// Rückgabe in der Datenbank eintragen (rueckgabe_am und bearbeiter_id setzen)
-	_, err = tx.Exec(ctx, `
+	_, err := tx.Exec(ctx, `
 		UPDATE ausleihen
 		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = $1, ist_fremdrueckgabe = $2
 		WHERE id = $3
@@ -251,7 +276,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	}
 
 	resp.Type = "rueckgabe"
-	resp.Geraet = &g
+	resp.Geraet = g
 	resp.LoanID = &activeLoan.ID
 	resp.Fremdrueckgabe = isFremd
 
