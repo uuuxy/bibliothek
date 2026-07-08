@@ -105,9 +105,8 @@ func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName s
 
 	// ⚡ Bolt: Batch INSERT new bindings using PostgreSQL unnest
 	if len(bookIDs) > 0 && len(newClassNames) > 0 {
-		capacity := len(newClassNames) * len(bookIDs)
-		insertClasses := make([]string, 0, capacity)
-		insertBooks := make([]string, 0, capacity)
+		var insertClasses []string
+		var insertBooks []string
 
 		for _, className := range newClassNames {
 			for _, bookID := range bookIDs {
@@ -203,9 +202,8 @@ func (repo *BookRepository) AddBooksToClasses(ctx context.Context, classNames []
 		return nil
 	}
 
-	capacity := len(classNames) * len(bookIDs)
-	insertClasses := make([]string, 0, capacity)
-	insertBooks := make([]string, 0, capacity)
+	var insertClasses []string
+	var insertBooks []string
 
 	for _, className := range classNames {
 		for _, bookID := range bookIDs {
