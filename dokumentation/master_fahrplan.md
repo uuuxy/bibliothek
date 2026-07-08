@@ -90,8 +90,8 @@ Reihenfolge nach Risiko × Änderungsfrequenz:
 
 **T4 — Mahnwesen: ✅ erledigt 2026-07-07 — und der Test fand sofort einen echten Bug:** Alle drei Mahnlisten-Queries gruppierten über Pointer in Slice-Elemente; `append`-Reallokationen machten sie ungültig → bei zwei gleichnamigen Schülern verlor die Mahnliste still Medien. Fix: gemeinsamer index-basierter `klassenGrouper`, Scan-Fehler werden nicht mehr verschluckt. Tests decken den verzahnten Namens-Fall explizit ab.
 
-**T5 — E2E-Gerüst (Playwright), genau 3 Smoke-Flows, nicht mehr — ⏳ NÄCHSTER SCHRITT.**
-Braucht eine laufende Umgebung (Backend auf :8084 + Postgres via `docker-compose.local.yml`) — in der Dev-Umgebung ohne Docker nicht lauffähig, daher bewusst keine ungetesteten Specs eingecheckt. Vorgehen: `npm i -D @playwright/test`, Config mit `baseURL: http://localhost:8084`, Login-Fixture (Session-Cookie), dann:
+**T5 — E2E-Gerüst (Playwright): ✅ erledigt 2026-07-08.**
+`npm run test:e2e` gegen den lokalen Docker-Stack (`docker compose -f docker-compose.local.yml up -d --build`, Backend :8084, Mock-IMAP). Drei Smoke-Flows, 3× in Folge stabil grün (~1,6s): UI-Login/Logout, Lieferant anlegen + Berichte-Datumsvalidierung, Schüler per API seeden → Omnibox-Scan → Konto. **Neuer Befund aus dem Bau:** Die SPA macht beim Boot keinen Session-Restore — mit gültigem Cookie zeigt ein Reload trotzdem den Login-Screen (F5 = UI-Logout). Folge-Item für T3: Boot-Check (z. B. `GET /api/auth/me`) einführen. Ursprünglich geplante Flows (Referenz):
 1. Omnibox: Schüler scannen → Buch ausleihen → zurückgeben
 2. Bestellung anlegen → Wareneingang einbuchen → Druckempfehlung erscheint → Etiketten laden
 3. Schüler anlegen → sperren → Sperre aufheben (deckt den Vorab-Bugfix ab)
@@ -99,8 +99,9 @@ Braucht eine laufende Umgebung (Backend auf :8084 + Postgres via `docker-compose
 **T6 — Rechte-Angleichung Inventur-Modul: ✅ erledigt 2026-07-07 (war ein Benennungs-Fehlalarm).**
 `api/router.go` injizierte längst `RequirePermission("view_books")`/`("edit_books")` — nur die Felder hießen irreführend `RequireAuth`/`RequireAdminAuth` und täuschten ein schwächeres Rechtemodell vor. Umbenannt zu `RequireViewBooks`/`RequireEditBooks`. (`GET /uploads/` bleibt unauthentifiziert — enthält ausschließlich Buchcover-WebPs, dokumentiert.)
 
-**T7 — Betriebs-Pflichten aus dem Go-Live-Plan (kein Code, aber Teil der Festung):**
-Migration 035 (`lusd_id`-Unique-Index) real dry-runnen + LUSD-Re-Import testen; einmalige Restore-Probe gegen Wegwerf-DB; Prod-Secrets-Checkliste (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuft **kein** Backup).
+**T7 — Betriebs-Pflichten aus dem Go-Live-Plan:**
+✅ **Migration 035 real getestet (2026-07-08, lokaler Docker-Stack):** Migration läuft via `RunMigrations` beim Start durch; Verhaltens-Test bestanden — Soft-Delete + Wiederanmeldung derselben `lusd_id` legt einen frischen aktiven Datensatz an, ein zweiter *aktiver* mit gleicher `lusd_id` scheitert an `uniq_schueler_lusd_id_active`.
+⏳ Bleiben (nur in der Zielumgebung möglich): einmalige Restore-Probe gegen Wegwerf-DB; Prod-Secrets-Checkliste (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuft **kein** Backup).
 
 ---
 
