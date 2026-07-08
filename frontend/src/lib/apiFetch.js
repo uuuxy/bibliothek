@@ -35,6 +35,32 @@ function readCsrfToken() {
 /** HTTP methods that require CSRF token validation */
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+/** @type {Promise<string> | null} Laufender Bootstrap — verhindert parallele Doppel-Requests */
+let csrfBootstrap = null;
+
+/**
+ * Liefert das CSRF-Token und holt es beim allerersten Mal vom Bootstrap-Endpoint.
+ * Ohne das lief die erste Mutation direkt nach dem Login ohne Token in einen 403
+ * (Cookie wird sonst erst durch irgendein vorheriges API-GET gesetzt).
+ * @returns {Promise<string>}
+ */
+async function ensureCsrfToken() {
+  const existing = readCsrfToken();
+  if (existing) return existing;
+
+  csrfBootstrap ??= fetch("/api/csrf-token", { credentials: "include" })
+    .then(async (res) => {
+      if (!res.ok) return "";
+      const data = await res.json();
+      return data.csrf_token || "";
+    })
+    .catch(() => "")
+    .finally(() => { csrfBootstrap = null; });
+
+  const fetched = await csrfBootstrap;
+  return readCsrfToken() || fetched;
+}
+
 /**
  * Drop-in replacement for `fetch()` with automatic CSRF and credentials.
  *
@@ -50,7 +76,7 @@ export async function apiFetch(url, options = {}) {
 
   // Inject CSRF header on mutating requests
   if (MUTATION_METHODS.has(method)) {
-    const token = readCsrfToken();
+    const token = await ensureCsrfToken();
     if (token) {
       options.headers = {
         .../** @type {Record<string, string>} */ (options.headers || {}),
