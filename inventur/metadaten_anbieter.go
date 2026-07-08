@@ -10,51 +10,55 @@ import (
 	"strings"
 )
 
-// sucheDNB fragt die Deutsche Nationalbibliothek (DNB) über die MARC21-XML-Schnittstelle ab.
+type dnbSubfield struct {
+	Code  string `xml:"code,attr"`
+	Value string `xml:",chardata"`
+}
 
-func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
-	url := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=NUM=%s&recordSchema=MARC21-xml", isbn)
-	koerper, fehler := client.holeInhalt(kontext, url)
-	if fehler != nil {
-		return nil, fehler
-	}
+type dnbDatafield struct {
+	Tag      string        `xml:"tag,attr"`
+	Subfield []dnbSubfield `xml:"subfield"`
+}
 
-	var nutzlast struct {
-		Records struct {
-			Record []struct {
-				RecordData struct {
-					Record struct {
-						Datafield []struct {
-							Tag      string `xml:"tag,attr"`
-							Subfield []struct {
-								Code  string `xml:"code,attr"`
-								Value string `xml:",chardata"`
-							} `xml:"subfield"`
-						} `xml:"datafield"`
-					} `xml:"record"`
-				} `xml:"recordData"`
-			} `xml:"record"`
-		} `xml:"records"`
-	}
+type dnbNutzlast struct {
+	Records struct {
+		Record []struct {
+			RecordData struct {
+				Record struct {
+					Datafield []dnbDatafield `xml:"datafield"`
+				} `xml:"record"`
+			} `xml:"recordData"`
+		} `xml:"record"`
+	} `xml:"records"`
+}
 
-	// LimitReader protects against memory exhaustion during XML parsing (e.g. billion laughs attack)
-	// even though the byte array is already bounded, using it on the stream explicitly ensures safety.
-	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
-	if fehler := decoder.Decode(&nutzlast); fehler != nil {
-		return nil, fehler
-	}
-
-	if len(nutzlast.Records.Record) == 0 {
-		return nil, fmt.Errorf("nicht gefunden")
-	}
-
+func parseDNBRecord(datenFelder []dnbDatafield) MetadatenErgebnis {
 	var titelTeile []string
 	var hauptAutor string
 	var extrahierteAutoren []string
 	var verlag string
 	var jahr string
+	var isbn string
 
-	for _, datenFeld := range nutzlast.Records.Record[0].RecordData.Record.Datafield {
+	for _, datenFeld := range datenFelder {
+		if datenFeld.Tag == "020" {
+			for _, unterFeld := range datenFeld.Subfield {
+				if unterFeld.Code == "a" {
+					parts := strings.Fields(unterFeld.Value)
+					if len(parts) > 0 {
+						clean := ""
+						for _, char := range parts[0] {
+							if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
+								clean += string(char)
+							}
+						}
+						if len(clean) == 10 || len(clean) == 13 {
+							isbn = clean
+						}
+					}
+				}
+			}
+		}
 		if datenFeld.Tag == "245" {
 			for _, unterFeld := range datenFeld.Subfield {
 				if unterFeld.Code == "a" || unterFeld.Code == "b" || unterFeld.Code == "n" || unterFeld.Code == "p" || unterFeld.Code == "c" {
@@ -112,17 +116,44 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 		}
 	}
 
-	if titel == "" && finalerAutor == "" {
-		return nil, fmt.Errorf("nicht gefunden")
-	}
-
-	return &MetadatenErgebnis{
+	return MetadatenErgebnis{
 		ISBN:   isbn,
 		Titel:  titel,
 		Autor:  finalerAutor,
 		Verlag: verlag,
 		Jahr:   jahr,
-	}, nil
+	}
+}
+
+// sucheDNB fragt die Deutsche Nationalbibliothek (DNB) über die MARC21-XML-Schnittstelle ab.
+
+func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
+	url := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=NUM=%s&recordSchema=MARC21-xml", isbn)
+	koerper, fehler := client.holeInhalt(kontext, url)
+	if fehler != nil {
+		return nil, fehler
+	}
+
+	var nutzlast dnbNutzlast
+
+	// LimitReader protects against memory exhaustion during XML parsing (e.g. billion laughs attack)
+	// even though the byte array is already bounded, using it on the stream explicitly ensures safety.
+	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
+	if fehler := decoder.Decode(&nutzlast); fehler != nil {
+		return nil, fehler
+	}
+
+	if len(nutzlast.Records.Record) == 0 {
+		return nil, fmt.Errorf("nicht gefunden")
+	}
+
+	ergebnis := parseDNBRecord(nutzlast.Records.Record[0].RecordData.Record.Datafield)
+	if ergebnis.Titel == "" && ergebnis.Autor == "" {
+		return nil, fmt.Errorf("nicht gefunden")
+	}
+	ergebnis.ISBN = isbn // Original API returns queried ISBN if extracted is empty or different, maintain behavior
+
+	return &ergebnis, nil
 }
 
 // sucheLobid fragt das nordrhein-westfälische Bibliotheksnetzwerk ab.
@@ -190,23 +221,7 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 		return nil, fehler
 	}
 
-	var nutzlast struct {
-		Records struct {
-			Record []struct {
-				RecordData struct {
-					Record struct {
-						Datafield []struct {
-							Tag      string `xml:"tag,attr"`
-							Subfield []struct {
-								Code  string `xml:"code,attr"`
-								Value string `xml:",chardata"`
-							} `xml:"subfield"`
-						} `xml:"datafield"`
-					} `xml:"record"`
-				} `xml:"recordData"`
-			} `xml:"record"`
-		} `xml:"records"`
-	}
+	var nutzlast dnbNutzlast
 
 	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
 	if fehler := decoder.Decode(&nutzlast); fehler != nil {
@@ -216,96 +231,13 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 	var ergebnisse []MetadatenErgebnis
 
 	for _, rec := range nutzlast.Records.Record {
-		var titelTeile []string
-		var hauptAutor string
-		var extrahierteAutoren []string
-		var verlag string
-		var jahr string
-		var isbn string
-
-		for _, datenFeld := range rec.RecordData.Record.Datafield {
-			if datenFeld.Tag == "020" {
-				for _, unterFeld := range datenFeld.Subfield {
-					if unterFeld.Code == "a" {
-						parts := strings.Fields(unterFeld.Value)
-						if len(parts) > 0 {
-							clean := ""
-							for _, char := range parts[0] {
-								if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
-									clean += string(char)
-								}
-							}
-							if len(clean) == 10 || len(clean) == 13 {
-								isbn = clean
-							}
-						}
-					}
-				}
-			}
-			if datenFeld.Tag == "245" {
-				for _, unterFeld := range datenFeld.Subfield {
-					if unterFeld.Code == "a" || unterFeld.Code == "b" || unterFeld.Code == "n" || unterFeld.Code == "p" || unterFeld.Code == "c" {
-						wert := strings.TrimSpace(unterFeld.Value)
-						if idx := strings.Index(wert, " / "); idx != -1 {
-							autorInfo := strings.TrimSpace(wert[idx+3:])
-							if autorInfo != "" {
-								extrahierteAutoren = append(extrahierteAutoren, autorInfo)
-							}
-							wert = strings.TrimSpace(wert[:idx])
-						}
-						if wert != "" {
-							titelTeile = append(titelTeile, wert)
-						}
-					}
-				}
-			}
-			if datenFeld.Tag == "100" || datenFeld.Tag == "700" {
-				if hauptAutor == "" {
-					for _, unterFeld := range datenFeld.Subfield {
-						if unterFeld.Code == "a" {
-							hauptAutor = strings.TrimSpace(unterFeld.Value)
-							break
-						}
-					}
-				}
-			}
-			if datenFeld.Tag == "260" || datenFeld.Tag == "264" {
-				for _, unterFeld := range datenFeld.Subfield {
-					if unterFeld.Code == "b" && verlag == "" {
-						verlag = strings.TrimSpace(strings.TrimRight(unterFeld.Value, ",;/ "))
-					}
-					if unterFeld.Code == "c" && jahr == "" {
-						jahrStr := strings.TrimSpace(unterFeld.Value)
-						jahrStr = strings.Trim(jahrStr, "[]().,;")
-						jahr = jahrStr
-					}
-				}
-			}
-		}
-
-		titel := strings.Join(titelTeile, " ")
-		finalerAutor := hauptAutor
-		if len(extrahierteAutoren) > 0 {
-			if hauptAutor == "" {
-				finalerAutor = strings.Join(extrahierteAutoren, " ; ")
-			} else {
-				finalerAutor = hauptAutor + " (" + strings.Join(extrahierteAutoren, " ; ") + ")"
-			}
-		}
-
-		if titel == "" && finalerAutor == "" {
+		ergebnis := parseDNBRecord(rec.RecordData.Record.Datafield)
+		if ergebnis.Titel == "" && ergebnis.Autor == "" {
 			continue
 		}
 
-		ergebnisse = append(ergebnisse, MetadatenErgebnis{
-			ISBN:   isbn,
-			Titel:  titel,
-			Autor:  finalerAutor,
-			Verlag: verlag,
-			Jahr:   jahr,
-		})
+		ergebnisse = append(ergebnisse, ergebnis)
 	}
 
 	return ergebnisse, nil
 }
-
