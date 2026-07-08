@@ -41,45 +41,29 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 
 		ctx := r.Context()
 
-		// 1. Check if student exists
+		// 1. Check if student exists, has active loans, or unpaid damages
 		var studentExists bool
-		err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)", id).Scan(&studentExists)
+		var activeLoansCount int
+		var unpaidDamagesCount int
+
+		qCombined := `
+			SELECT
+				EXISTS(SELECT 1 FROM schueler WHERE id = $1),
+				(SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL),
+				(SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
+		`
+		err := s.DB.Pool.QueryRow(ctx, qCombined, id).Scan(&studentExists, &activeLoansCount, &unpaidDamagesCount)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
+
 		if !studentExists {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return
 		}
-
-		// 2. Check for active (unreturned) loans
-		var activeLoansCount int
-		qLoans := `
-			SELECT COUNT(*) 
-			FROM ausleihen 
-			WHERE schueler_id = $1 AND rueckgabe_am IS NULL
-		`
-		err = s.DB.Pool.QueryRow(ctx, qLoans, id).Scan(&activeLoansCount)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
 		if activeLoansCount > 0 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("löschen nicht möglich: Schüler hat noch entliehene Bücher"))
-			return
-		}
-
-		// 3. Check for unpaid damage cases (unpaid damages block deletion)
-		var unpaidDamagesCount int
-		qDamages := `
-			SELECT COUNT(*) 
-			FROM schadensfaelle 
-			WHERE schueler_id = $1 AND ist_bezahlt = false
-		`
-		err = s.DB.Pool.QueryRow(ctx, qDamages, id).Scan(&unpaidDamagesCount)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		if unpaidDamagesCount > 0 {
@@ -87,7 +71,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 			return
 		}
 
-		// 4. Perform transaction delete with audit log
+		// 2. Perform transaction delete with audit log
 		err = auditRepo.DeleteStudent(ctx, id, claims.UserID, "Manuelle Löschung")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
