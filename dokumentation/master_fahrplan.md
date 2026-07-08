@@ -77,13 +77,15 @@ Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuf
    #197 (PGPASSWORD-Leak — schleppt CI-/go.mod-Änderungen mit, genau prüfen).
    **Achtung:** Bolt-Order-PRs #195/#196 sind gegen den Stand *vor* dem orders→bestellungen-Refactor
    gebaut → vermutlich konfliktbehaftet/obsolet. Palette-PRs (a11y) risikoarm.
-3. **Vierter E2E-Flow:** Schüler sperren → Omnibox-Block-Alert → „Sperre dauerhaft aufheben"
-   (deckt den Vorab-Bugfix ab); danach optional Bestellung→Wareneingang→Druckempfehlung
-   (braucht Katalog-Seeding via `/api/buecher/aus-isbn` oder SQL).
-4. **Login-Handler-Tests** (T3-Rest): IMAP-Abhängigkeit mocken (Mock-Modus existiert bereits),
-   Brute-Force-Limiter-Verhalten (E-Mail|IP-Schlüssel) testen.
-5. **FE ruft 501-Stub:** `send-overdue-notification` ist serverseitig dauerhaft deaktiviert
-   (Datenschutz) — UI-Aufrufer entfernen oder Feature bewusst reaktivieren.
+3. ~~**Vierter E2E-Flow**~~ ✅ **erledigt 08.07.** (`093968f`): sperren → Block-Alert →
+   „Sperre dauerhaft aufheben" → Ausleihe läuft durch (deckt den Vorab-Bugfix E2E ab).
+   **Beifang — echter Prod-Bug gefixt** (`e94a6fb`): Eine NULL-wert-Zeile in
+   `system_einstellungen` machte über querySettings' string-Scan **jeden Checkout zum 500**
+   (pgx bricht ab, rows.Err() schlägt durch). Fix: `coalesce(wert,'')` + Regressionstest.
+4. ~~**Login-Handler-Tests**~~ ✅ **erledigt 08.07.** (`f0058b3`): 5 Tests — Validierung,
+   401 unbekannt/403 deaktiviert, Cookie+LoginShape, Brute-Force-Limiter (429 ohne DB-Zugriff).
+5. ~~**FE ruft 501-Stub**~~ ✅ **erledigt 08.07.** (`49c7abc`): Eltern-Mail-Button samt
+   Store-Pfad, Stub-Handler und Route entfernt — Versand bleibt aus Datenschutzgründen deaktiviert.
 
 ---
 
