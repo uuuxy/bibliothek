@@ -1,9 +1,24 @@
 # Master-Fahrplan: Radar-Analyse & Konsolidierung
 
-> Stand: **2026-07-08** · Ursprung: Radar-Analyse vom 07.07. (Routen-Abgleich, Komponenten-Nutzung,
-> Test-Inventar, Middleware-Audit). Lebendes Dokument — Phase 1 und Phase 2 sind abgeschlossen,
-> aktueller Arbeitsvorrat steht unter „Nächste Schritte".
+> Stand: **2026-07-08 abends** · Lebendes Dokument. **Lesehilfe: ✅/durchgestrichen = erledigt
+> und committet — nichts mehr zu tun. Ohne Haken = offen.**
 > Radar-Referenz: [`dokumentation/api_inventar.md`](api_inventar.md) (neu erzeugen mit `./scripts/api_inventar.sh`).
+
+## 📍 WO STEHEN WIR (Kurzfassung)
+
+**Erledigt und im Rücken:** Phase 1 (Dead Code), Phase 2 (Test-Festung T1–T7 inkl. E2E),
+der komplette Arbeitsvorrat danach (Session-Restore, Login-Tests, 501-Stub, 4. E2E-Flow)
+und die **Bot-PR-Triage: alle 15 Alt-PRs entschieden — 6 gemergt, 10 geschlossen** (s. u.).
+Unterwegs 6 echte Bugs gefunden und gefixt (Zeitzone, Mahnlisten-Slice, jti, CSRF-Bootstrap,
+NULL-Setting-500, Geister-Route).
+
+**Offen sind genau vier Dinge:**
+1. **Neue Bot-PR-Welle** (~15 Stück, alle vom 08.07. vormittags — Code-Health/Tests) → gebündelt
+   triagieren, nicht einzeln hinterherlaufen; **Empfehlung: Bot-Kadenz drosseln** (s. Punkt 6)
+2. **Drei Produktentscheidungen** (Phase 3.1–3.3): LUSD-Konsolidierung, Klassensatz-„erledigen"-UI,
+   Schuljahres-Versetzung (**Deadline Schuljahreswechsel!**)
+3. **Ausbau** (Phase 3.4–3.5): `/api/v1`-Paket, dann Mandantenfähigkeit
+4. **T7-Rest, nur in der Zielumgebung möglich:** Restore-Probe + Prod-Secrets-Checkliste
 
 ---
 
@@ -72,22 +87,22 @@ Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuf
    (Cookie wurde nie initial beschafft, jetzt Bootstrap über `GET /api/csrf-token`). Außerdem:
    Heartbeat-Overlay erscheint nicht mehr bei transientem SSE-`onerror` (Druckdialog!), sondern
    erst nach dem dokumentierten 25s-Timeout.
-2. ~~**Bot-PR-Triage**~~ ✅ **Review erledigt 08.07.** — Merge-Entscheidung liegt bei Peter.
-   Alle 15 offenen PRs gesichtet, Security-PRs tief reviewt, Merge-Checks gegen aktuellen main gelaufen:
-
-   | PR | Empfehlung | Begründung |
-   |---|---|---|
-   | **#194** G304 backup_email | ✅ **MERGEN** | Minimaler, korrekter `os.OpenRoot`-Fix (13 Zeilen); lokal gemerged, gebaut, Inventur-Tests grün |
-   | **#190** PGPASSWORD (CRITICAL) | ✅ **MERGEN** | Sauberer tmp-`.pgpass`+`PGPASSFILE`-Fix mit korrektem Escaping; lokal gemerged, jobs-Tests grün. go.mod-Beifang (odbc direkt) ist korrekt — littera_migration importiert es hinter Build-Tag |
-   | **#200** Path Traversal (HIGH) | ❌ **SCHLIESSEN** | Kern-Fix byte-gleich in #194 enthalten; schleppt **Supply-Chain-Downgrade** mit (gosec via `curl \| sh` vom master-Branch!) |
-   | **#197** PGPASSWORD (MEDIUM) | ❌ **SCHLIESSEN** | Duplikat von #190 + Trivy `exit-code: 0` (Scanner darf still failen!) + themenfremde Svelte-Datei |
-   | **#192, #198, #201** Import-Bulk | ❌ **SCHLIESSEN** | Optimieren alle die in Phase 1 **gelöschte** `api/import.go` (toter Handler) — obsolet |
-   | **#195** Order-Bulk (CopyFrom) | 🟡 optional | Korrekt, mergebar, ohne Beifang — aber Bestellungen haben typisch <20 Positionen, Gewinn marginal |
-   | **#196** Order-Bulk | ❌ **SCHLIESSEN** | Duplikat von #195 mit go.mod-Beifang |
-   | **#199** Login-Loading-State | 🟡 nach Prüfung | Gute Idee, textuell mergebar — aber ändert `handleLogin`, das wir refactort haben (`#applyLogin`): nach Merge unbedingt `npm test` + E2E |
-   | **#193, #202** BookCopiesManager a11y | 🟡 risikoarm | Mergebar; nacheinander mergen (gleiche Datei) |
-   | **#191** Sidebar-ARIA | ⚠️ prüfen | Mergebar, aber fasst auch workflow + package.json an; ARIA-Labels können die accessible names der E2E-Selektoren ändern → nach Merge E2E laufen lassen |
-   | **#188** Mahnwesen-ARIA | ❌ **SCHLIESSEN** (oder Rebase) | Konflikt mit unserer Spalten-Entfernung in MahnwesenTable |
+2. ~~**Bot-PR-Triage (Alt-Bestand #188–#202)**~~ ✅ **entschieden & ausgeführt 08.07. abends** —
+   alle 15 Alt-PRs sind vom Tisch, jede Entscheidung als PR-Kommentar begründet:
+   - **Gemergt (6):** #194 (G304 `os.OpenRoot`), #190 (PGPASSWORD→`.pgpass`; Konflikt nach #194
+     manuell aufgelöst), #193 (a11y BookCopiesManager), #199 (Login-Loading-State — Auto-Merge in
+     den refactorten `authStore` semantisch verifiziert), #226 (hartkodiertes JWT-Fallback im
+     Seed-CLI entfernt). Nach jedem Schritt: Build, Tests, am Ende 2× volle E2E-Suite grün.
+   - **Geschlossen (10):** #200 + #197 (Duplikate **mit Security-Downgrades**: gosec via `curl|sh`
+     bzw. Trivy `exit-code:0`), #192/#198/#201 (optimierten die in Phase 1 gelöschte
+     `api/import.go`), #196 (Duplikat), #195 (korrekt, aber marginal + ungetestet — gerne später
+     als Perf-Paket), #188 (Konflikt mit unserer MahnwesenTable-Änderung), #202 (Obermenge in
+     #193), #191 (themenfremde `undici`-Dependency + Workflow-Beifang).
+6. **Neue Bot-PR-Welle (~15 PRs vom 08.07. vormittags, #217ff):** Code-Health/Test-PRs.
+   NICHT einzeln hinterherlaufen — gesammelt in einer Sitzung triagieren (gleiches Verfahren:
+   Merge-Check gegen main, Beifang prüfen). **Wurzelproblem: die Bot-Kadenz erzeugt ~5 PRs/Tag
+   und damit den Übersichtsverlust → in der Jules/Bot-Konfiguration drosseln oder auf
+   wöchentliche Batches stellen.**
 3. ~~**Vierter E2E-Flow**~~ ✅ **erledigt 08.07.** (`093968f`): sperren → Block-Alert →
    „Sperre dauerhaft aufheben" → Ausleihe läuft durch (deckt den Vorab-Bugfix E2E ab).
    **Beifang — echter Prod-Bug gefixt** (`e94a6fb`): Eine NULL-wert-Zeile in
