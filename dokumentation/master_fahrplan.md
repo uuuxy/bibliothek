@@ -12,13 +12,20 @@ und die **Bot-PR-Triage: alle 15 Alt-PRs entschieden — 6 gemergt, 10 geschloss
 Unterwegs 6 echte Bugs gefunden und gefixt (Zeitzone, Mahnlisten-Slice, jti, CSRF-Bootstrap,
 NULL-Setting-500, Geister-Route).
 
-**Offen sind genau vier Dinge:**
-1. **Neue Bot-PR-Welle** (~15 Stück, alle vom 08.07. vormittags — Code-Health/Tests) → gebündelt
-   triagieren, nicht einzeln hinterherlaufen; **Empfehlung: Bot-Kadenz drosseln** (s. Punkt 6)
+**PR-Backlog: KOMPLETT ABGERÄUMT (08.07. abends) — 0 offene PRs.** Gesamtbilanz über alle
+Wellen (#161–#231): **11 gemergt** (Security: G304-ZIP #194, PGPASSWORD #190, JWT-Seed #226,
+Secrets-Migrationsscript #228, SMTP-From-Validierung #176 · Tests: #225, #220 · a11y: #193,
+#199, #229 · plus Router-Härtung aus #174 selbst umgesetzt in `b9a4b90`), **35 mit begründeten
+Kommentaren geschlossen** (Duplikate, Konflikte gegen den konsolidierten Stand, Parkdeck-Policy,
+zwei mit versteckten CI-Security-Downgrades). Nach jedem Merge verifiziert; Endstand 2× E2E grün.
+
+**Offen sind genau drei Dinge:**
+1. **Bot-Kadenz drosseln** (~5 PRs/Tag erzeugen den Backlog immer wieder neu → Jules-Konfiguration
+   auf wöchentliche Batches; neue PRs ab jetzt nach dem etablierten Triage-Verfahren)
 2. **Drei Produktentscheidungen** (Phase 3.1–3.3): LUSD-Konsolidierung, Klassensatz-„erledigen"-UI,
    Schuljahres-Versetzung (**Deadline Schuljahreswechsel!**)
-3. **Ausbau** (Phase 3.4–3.5): `/api/v1`-Paket, dann Mandantenfähigkeit
-4. **T7-Rest, nur in der Zielumgebung möglich:** Restore-Probe + Prod-Secrets-Checkliste
+3. **Ausbau + Betrieb:** `/api/v1`-Paket, dann Mandantenfähigkeit (Phase 3.4–3.5);
+   Restore-Probe + Prod-Secrets nur in der Zielumgebung (T7-Rest)
 
 ---
 
