@@ -63,10 +63,15 @@ Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuf
 
 # 🔧 NÄCHSTE SCHRITTE (aktueller Arbeitsvorrat, in dieser Reihenfolge)
 
-1. **Session-Restore beim SPA-Boot** *(T3-Folge-Befund aus dem E2E-Bau)*: Die SPA prüft beim Laden
-   nie, ob eine Session existiert — F5 zeigt trotz gültigem Cookie den Login-Screen. Fix:
-   `GET /api/auth/me` (Claims → Benutzerdaten) + Boot-Check im `authStore` (Erfolg → eingeloggt
-   weiterlaufen, 401 → Login-Screen). E2E: „Login → Reload → immer noch eingeloggt".
+1. ~~**Session-Restore beim SPA-Boot**~~ ✅ **erledigt 08.07.** (`daf19f2`): `GET /api/auth/me` +
+   `restoreSession()`-Boot-Check mit `sessionChecked`-Gate; Logout invalidiert jetzt auch serverseitig.
+   E2E beweist beide Richtungen (Reload bleibt eingeloggt / bleibt ausgeloggt). **Der E2E-Bau fand
+   dabei zwei weitere echte Bugs, beide gefixt:** (a) `fix(auth) d2ecf4c` — JWTs ohne `jti` waren bei
+   zwei Logins in derselben Sekunde byte-identisch, ein Logout widerrief beide Sessions;
+   (b) `fix(api) 2c54ce6` — die erste Mutation nach dem Login lief ohne CSRF-Token in einen 403
+   (Cookie wurde nie initial beschafft, jetzt Bootstrap über `GET /api/csrf-token`). Außerdem:
+   Heartbeat-Overlay erscheint nicht mehr bei transientem SSE-`onerror` (Druckdialog!), sondern
+   erst nach dem dokumentierten 25s-Timeout.
 2. **Bot-PR-Triage** (10 offene PRs, Stand 08.07. — Review/Merge ist Peters Entscheidung):
    zuerst **#200 (HIGH, Path Traversal)**, dann #194 (`os.OpenRoot`, backup_email) und
    #197 (PGPASSWORD-Leak — schleppt CI-/go.mod-Änderungen mit, genau prüfen).
@@ -118,5 +123,5 @@ Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuf
 | Tote Go-Handler | 11 + 3 Fälle | **0** (3 bewusste Entscheidungsfälle dokumentiert) |
 | Tote Svelte-Dateien | 13–16 | **0** |
 | Svelte-4-Konstrukte | 0 | 0 (Runes-Migration vollständig) |
-| Go-Testdateien / FE-Testdateien / E2E-Flows | 25 / 1 / 0 | **28 / 3 / 3** |
-| Bekannte offene UX-Defekte | — | 2 (Session-Restore beim Boot; 501-Stub-Aufruf Mahn-Mail) |
+| Go-Testdateien / FE-Testdateien / E2E-Flows | 25 / 1 / 0 | **30 / 4 / 3** |
+| Bekannte offene UX-Defekte | — | 1 (501-Stub-Aufruf Mahn-Mail) |
