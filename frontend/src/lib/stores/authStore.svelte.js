@@ -3,6 +3,8 @@ import { appState } from "../../inventur/lib/store.svelte.js";
 class AuthStore {
     isLoggedIn = $state(false);
     currentUser = $state(/** @type {any} */ (null));
+    /** Erst nach dem Boot-Restore-Versuch true — davor zeigt die App weder Login noch Inhalt. */
+    sessionChecked = $state(false);
     heartbeatOk = $state(true);
     lastHeartbeatTime = $state(Date.now());
     loginEmail = $state("");
@@ -37,23 +39,71 @@ class AuthStore {
         if (this.sseSource) this.sseSource.close();
         const source = new EventSource("/events");
         this.sseSource = source;
-        this.lastHeartbeatTime = Date.now();
-        this.heartbeatOk = true;
-        source.addEventListener("ping", () => {
+        // Frische kommt ausschließlich von echten Server-Signalen (connected/ping).
+        // Ob wir offline sind, entscheidet allein der 25s-Checker in App.svelte —
+        // ein transienter onerror (Druckdialog, Sleep, Reconnect-Race) darf das
+        // Vollbild-Overlay nicht sofort auslösen.
+        const markAlive = () => {
             this.lastHeartbeatTime = Date.now();
             this.heartbeatOk = true;
-        });
-        source.onerror = () => { 
-            this.heartbeatOk = false; 
-            // Automatisch neu verbinden nach Verbindungsabbruch (z.B. durch Druckdialog oder Sleep)
+        };
+        source.addEventListener("connected", markAlive);
+        source.addEventListener("ping", markAlive);
+        source.onerror = () => {
+            // Nur neu verbinden — keine Zustandsänderung (siehe oben)
             setTimeout(() => {
                 if (this.isLoggedIn) this.connectSSE();
             }, 2000);
         };
     }
 
-    /** 
-     * @param {Event|null} e 
+    /**
+     * Gemeinsamer Einstieg für Login und Session-Restore: setzt den Store-Zustand,
+     * startet SSE + Refresh-Loop und pflegt die appState-Rollen-Flags.
+     * @param {any} user
+     * @param {Function} [onRoleCallback]
+     */
+    #applyLogin(user, onRoleCallback) {
+        this.currentUser = user;
+        this.isLoggedIn = true;
+        // Grace-Period: direkt nach dem Login gilt die Verbindung als frisch,
+        // bis der erste SSE-Ping eintrifft (Server pingt alle 15s).
+        this.lastHeartbeatTime = Date.now();
+        this.heartbeatOk = true;
+        this.connectSSE();
+        this.startSessionRefresh();
+
+        if (user && (user.rolle === "admin" || user.rolle === "mitarbeiter")) {
+            appState.adminAuthenticated = true;
+            appState.guestAuthenticated = true;
+            if (onRoleCallback) onRoleCallback(user.rolle);
+        } else if (user && user.rolle === "lehrer") {
+            appState.guestAuthenticated = true;
+            if (onRoleCallback) onRoleCallback("lehrer");
+        } else {
+            if (onRoleCallback) onRoleCallback(user?.rolle || "");
+        }
+    }
+
+    /**
+     * Boot-Restore: stellt eine bestehende Session aus dem HttpOnly-Cookie wieder her.
+     * Ohne diesen Check zeigte jeder Reload den Login-Screen (F5 = UI-Logout),
+     * obwohl die Session serverseitig noch 12h gültig war.
+     */
+    async restoreSession() {
+        try {
+            const res = await fetch("/api/auth/me");
+            if (res.ok) {
+                this.#applyLogin(await res.json());
+            }
+        } catch { /* offline/Server weg → Login-Screen ist der richtige Fallback */ }
+        finally {
+            this.sessionChecked = true;
+        }
+    }
+
+    /**
+     * @param {Event|null} e
      * @param {Function} [onRoleCallback]
      */
     async handleLogin(e, onRoleCallback) {
@@ -72,23 +122,10 @@ class AuthStore {
                 try { const d = await res.json(); msg = d.error || msg; } catch { try { msg = (await res.text()) || msg; } catch {} }
                 throw new Error(msg);
             }
-            this.currentUser = await res.json();
-            this.isLoggedIn = true;
+            const user = await res.json();
             this.loginEmail = "";
             this.loginPassword = "";
-            this.connectSSE();
-            this.startSessionRefresh();
-
-            if (this.currentUser && (this.currentUser.rolle === "admin" || this.currentUser.rolle === "mitarbeiter")) {
-                appState.adminAuthenticated = true;
-                appState.guestAuthenticated = true;
-                if (onRoleCallback) onRoleCallback(this.currentUser.rolle);
-            } else if (this.currentUser && this.currentUser.rolle === "lehrer") {
-                appState.guestAuthenticated = true;
-                if (onRoleCallback) onRoleCallback("lehrer");
-            } else {
-                if (onRoleCallback) onRoleCallback(this.currentUser?.rolle || "");
-            }
+            this.#applyLogin(user, onRoleCallback);
         } catch (err) {
             const errorMessage = /** @type {any} */ (err).message || String(err);
             this.loginError = errorMessage;
@@ -98,6 +135,11 @@ class AuthStore {
     }
 
     handleLogout(onLogoutCallback) {
+        // Serverseitig invalidieren (Token-Blacklist + Cookie löschen) — sonst würde
+        // der Boot-Restore die Session beim nächsten Reload wiederbeleben.
+        // Fire-and-forget: der lokale Zustand wird unabhängig vom Netz geleert.
+        fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        this.sessionChecked = true;
         this.isLoggedIn = false;
         this.currentUser = null;
         this.loginEmail = "";

@@ -104,6 +104,9 @@ func (s *Server) Routes() http.Handler {
 	// Token refresh (sliding window) — exempt from CSRF via middleware config
 	mux.HandleFunc("POST /api/auth/refresh", auth.RefreshTokenHandler(s.Auth, s.CookieSecure))
 
+	// Session-Restore für den SPA-Boot: prüft Cookie + DB-Zustand, liefert Login-Shape
+	mux.HandleFunc("GET /api/auth/me", auth.MeHandler(s.DB.Pool, s.Auth))
+
 	// Logout — blacklists the current token and clears the session cookie
 	mux.HandleFunc("POST /api/auth/logout", s.logoutHandler())
 

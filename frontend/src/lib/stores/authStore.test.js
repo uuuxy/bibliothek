@@ -46,6 +46,64 @@ describe('authStore', () => {
     });
 });
 
+describe('authStore Session-Restore (Boot)', () => {
+    beforeEach(() => {
+        // @ts-ignore
+        global.fetch = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }));
+        // @ts-ignore
+        global.EventSource = vi.fn(function() {
+            return { addEventListener: vi.fn(), close: vi.fn() };
+        });
+        authStore.handleLogout();
+        authStore.sessionChecked = false;
+        vi.clearAllMocks();
+    });
+    afterEach(() => {
+        authStore.stopSessionRefresh();
+    });
+
+    it('stellt die Session aus einem gültigen Cookie wieder her', async () => {
+        // @ts-ignore
+        global.fetch = vi.fn(async () => ({
+            ok: true, status: 200,
+            json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Peter', nachname: 'F', permissions: ['*'] }),
+        }));
+
+        await authStore.restoreSession();
+
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me');
+        expect(authStore.isLoggedIn).toBe(true);
+        expect(authStore.currentUser?.rolle).toBe('admin');
+        expect(authStore.sessionChecked).toBe(true);
+    });
+
+    it('bleibt bei 401 ausgeloggt, markiert den Check aber als erledigt', async () => {
+        // @ts-ignore
+        global.fetch = vi.fn(async () => ({ ok: false, status: 401 }));
+
+        await authStore.restoreSession();
+
+        expect(authStore.isLoggedIn).toBe(false);
+        expect(authStore.sessionChecked).toBe(true);
+    });
+
+    it('wertet Netzwerkfehler als ausgeloggt statt zu hängen', async () => {
+        // @ts-ignore
+        global.fetch = vi.fn(async () => { throw new TypeError('Failed to fetch'); });
+
+        await authStore.restoreSession();
+
+        expect(authStore.isLoggedIn).toBe(false);
+        expect(authStore.sessionChecked).toBe(true);
+    });
+
+    it('handleLogout invalidiert die Session auch serverseitig', () => {
+        authStore.handleLogout();
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/logout', { method: 'POST' });
+        expect(authStore.sessionChecked).toBe(true);
+    });
+});
+
 describe('authStore Session-Refresh', () => {
     beforeEach(() => {
         authStore.handleLogout();

@@ -17,6 +17,10 @@
 
   const _currentPath = window.location.pathname;
 
+  // Boot-Restore: bestehende Session aus dem Cookie wiederherstellen,
+  // bevor Login-Screen oder App gerendert werden (sonst: F5 = UI-Logout).
+  authStore.restoreSession();
+
   $effect(() => {
     const handleError = (event) => Sentry.captureException(event.error || event);
     const handleRejection = (event) => Sentry.captureException(event.reason);
@@ -79,7 +83,12 @@
     </div>
   {/if}
 
-  {#if !authStore.isLoggedIn}
+  {#if !authStore.sessionChecked}
+    <!-- Boot-Restore läuft — kurzer neutraler Zustand statt Login-Flackern -->
+    <div class="fixed inset-0 flex items-center justify-center">
+      <div class="w-10 h-10 border-4 border-t-slate-800 border-slate-200/60 rounded-full animate-spin"></div>
+    </div>
+  {:else if !authStore.isLoggedIn}
     <Login />
   {:else}
     <div class="h-screen flex w-full overflow-hidden">

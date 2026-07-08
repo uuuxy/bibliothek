@@ -203,42 +203,99 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			SameSite: http.SameSiteStrictMode, // Strict: keine Cross-Site-Requests erlaubt
 		})
 
-		// Effektive Rechte aus der konfigurierbaren role_permissions-Tabelle laden, damit das
-		// Frontend exakt das anzeigt, was der Admin im PermissionManager freigeschaltet hat
-		// (statt einer hartkodierten, vom echten System entkoppelten Liste). Admin hat implizit
-		// alle Rechte ("*"), analog zum Bypass in der RequirePermission-Middleware.
-		permissions := []string{}
-		if strings.EqualFold(roleStr, string(RoleAdmin)) {
-			permissions = []string{"*"}
-		} else {
-			permRows, permErr := dbPool.Query(ctx, `
-				SELECT permission
-				FROM role_permissions
-				WHERE UPPER(role) = UPPER($1) AND allowed = true
-			`, roleStr)
-			if permErr != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
-				return
-			}
-			defer permRows.Close()
-			for permRows.Next() {
-				var p string
-				if scanErr := permRows.Scan(&p); scanErr != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, scanErr)
-					return
-				}
-				permissions = append(permissions, p)
-			}
-			if rowsErr := permRows.Err(); rowsErr != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, rowsErr)
-				return
-			}
+		permissions, err := loadPermissionsForRole(ctx, dbPool, roleStr)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		httpresp.Encode(w, LoginResponse{
 			UserID:      id,
 			Rolle:       role,
+			Vorname:     vorname,
+			Nachname:    nachname,
+			Permissions: permissions,
+		})
+	}
+}
+
+// loadPermissionsForRole lädt die effektiven Rechte aus der konfigurierbaren
+// role_permissions-Tabelle, damit das Frontend exakt das anzeigt, was der Admin im
+// PermissionManager freigeschaltet hat. Admin hat implizit alle Rechte ("*"),
+// analog zum Bypass in der RequirePermission-Middleware.
+func loadPermissionsForRole(ctx context.Context, dbPool db.PgxPoolIface, roleStr string) ([]string, error) {
+	if strings.EqualFold(roleStr, string(RoleAdmin)) {
+		return []string{"*"}, nil
+	}
+
+	permissions := []string{}
+	permRows, err := dbPool.Query(ctx, `
+		SELECT permission
+		FROM role_permissions
+		WHERE UPPER(role) = UPPER($1) AND allowed = true
+	`, roleStr)
+	if err != nil {
+		return nil, err
+	}
+	defer permRows.Close()
+	for permRows.Next() {
+		var p string
+		if err := permRows.Scan(&p); err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, p)
+	}
+	if err := permRows.Err(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+// MeHandler liefert den Benutzer der aktuellen Session — gleicher Response-Body wie
+// der Login. Der SPA-Boot nutzt ihn, um eine bestehende Session wiederherzustellen,
+// statt bei jedem Reload den Login-Screen zu zeigen.
+func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session_token")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+			return
+		}
+
+		claims, err := authenticator.VerifyToken(cookie.Value)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
+			return
+		}
+
+		ctx := r.Context()
+
+		// Rolle und Stammdaten aus der DB — nicht aus den Claims: Rolle oder
+		// Aktiv-Status können sich seit Token-Ausstellung geändert haben.
+		var roleStr, vorname, nachname string
+		var aktiv bool
+		err = dbPool.QueryRow(ctx, `
+			SELECT rolle, vorname, nachname, aktiv
+			FROM benutzer
+			WHERE id = $1
+			LIMIT 1
+		`, claims.UserID).Scan(&roleStr, &vorname, &nachname, &aktiv)
+		if err != nil || !aktiv {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+			return
+		}
+
+		permissions, err := loadPermissionsForRole(ctx, dbPool, roleStr)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		httpresp.Encode(w, LoginResponse{
+			UserID:      claims.UserID,
+			Rolle:       Role(roleStr),
 			Vorname:     vorname,
 			Nachname:    nachname,
 			Permissions: permissions,
