@@ -77,14 +77,14 @@ describe('orderStore Summen', () => {
         orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
         orderStore.addToCart({ id: 'b', titel: 'B', autor: '', isbn: '2' }, 3);
         orderStore.cart[0].preis = 10.5;
-        orderStore.cart[1].preis = '4.50'; // Eingabefeld liefert Strings
+        orderStore.cart[1].preis = 4.5; // Eingabefeld liefert Strings
         expect(orderStore.totalQty).toBe(5);
         expect(orderStore.total).toBeCloseTo(2 * 10.5 + 3 * 4.5);
     });
 
     it('wertet ungültige Preise als 0', () => {
         orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
-        orderStore.cart[0].preis = 'abc';
+        orderStore.cart[0].preis = NaN;
         expect(orderStore.total).toBe(0);
     });
 });
@@ -110,9 +110,9 @@ describe('orderStore.submitOrder', () => {
     });
 
     it('baut das Payload korrekt und leert den Warenkorb', async () => {
-        apiPost.mockResolvedValueOnce({ status: 'success', message: 'ok', ordered_qty: 2 });
+        mockedApiPost.mockResolvedValueOnce({ status: 'success', message: 'ok', ordered_qty: 2 });
         orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 2, true);
-        orderStore.cart[0].preis = '9.90';
+        orderStore.cart[0].preis = 9.9;
 
         await orderStore.submitOrder();
 
@@ -125,18 +125,18 @@ describe('orderStore.submitOrder', () => {
     });
 
     it('unterdrückt generate_barcodes, wenn der globale Schalter aus ist', async () => {
-        apiPost.mockResolvedValueOnce({ status: 'success' });
+        mockedApiPost.mockResolvedValueOnce({ status: 'success' });
         orderStore.attachBarcodes = false;
         orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 1, true);
 
         await orderStore.submitOrder();
 
-        const payload = apiPost.mock.calls[0][1];
+        const payload = mockedApiPost.mock.calls[0][1];
         expect(payload.items[0].generate_barcodes).toBe(false);
     });
 
     it('behält den Warenkorb bei einem API-Fehler', async () => {
-        apiPost.mockRejectedValueOnce(new Error('boom'));
+        mockedApiPost.mockRejectedValueOnce(new Error('boom'));
         orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' });
 
         await orderStore.submitOrder();

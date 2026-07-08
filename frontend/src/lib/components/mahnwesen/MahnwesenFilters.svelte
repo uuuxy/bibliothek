@@ -107,7 +107,7 @@
         {/each}
       </select>
       <button
-        onclick={mahnwesenStore.downloadKlassePDF}
+        onclick={() => mahnwesenStore.downloadKlassePDF(mahnwesenStore.selectedKlasse)}
         disabled={mahnwesenStore.klassePdfLoading || !mahnwesenStore.selectedKlasse}
         class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-1"
       >

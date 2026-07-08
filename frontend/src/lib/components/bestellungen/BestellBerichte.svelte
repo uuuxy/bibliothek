@@ -31,7 +31,7 @@
     { value: "lieferant", label: "Lieferantenabrechnung", desc: "Alle Bestellungen bei einem Lieferanten in einem Zeitraum" },
   ];
 
-  let rangeInvalid = $derived(typ === "lieferant" && vonDatum > bisDatum);
+  let rangeInvalid = $derived(typ === "monat" && vonDatum > bisDatum);
   let canDownload = $derived(!rangeInvalid && (typ !== "lieferant" || lieferantId !== ""));
 
   let downloadURL = $derived.by(() => {
