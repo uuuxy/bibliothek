@@ -39,9 +39,9 @@ type StudentProfileResponse struct {
 // @Produce      json
 // @Param        id   path      string  true  "Student ID (UUID)"
 // @Success      200  {object}  StudentProfileResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /schueler/{id} [get]
 func (s *Server) GetStudentProfileHandler(
 	studentRepo repository.StudentRepository,
@@ -129,7 +129,7 @@ func (s *Server) GetStudentProfileHandler(
 // @Accept       json
 // @Produce      json
 // @Success      200  {array}   string
-// @Failure      500  {object}  map[string]string
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /klassen [get]
 func (s *Server) GetClassesHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
