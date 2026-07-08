@@ -1,16 +1,16 @@
 package repository
 
 import (
-	"bibliothek/db"
 	"context"
+	"bibliothek/db"
 )
 
 // Supplier repräsentiert einen Lieferanten (z. B. eine Buchhandlung).
 type Supplier struct {
-	ID           string
-	Name         string
-	Email        string
-	Kundennummer string
+	ID             string
+	Name           string
+	Email          string
+	Kundennummer   string
 }
 
 // SupplierRepository definiert die Datenbank-Zugriffe für Lieferanten.

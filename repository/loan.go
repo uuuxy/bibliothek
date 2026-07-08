@@ -41,6 +41,7 @@ type LoanRepository interface {
 
 	// ReturnLoanTx markiert eine aktive Ausleihe als zurückgegeben innerhalb einer Transaktion.
 	ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool) error
+
 }
 
 // pgLoanRepository implementiert das LoanRepository für PostgreSQL.
