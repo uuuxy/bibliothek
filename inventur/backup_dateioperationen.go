@@ -61,7 +61,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	}
 	defer func() { _ = outFile.Close() }()
 
-	cmd := exec.Command("pg_dump",
+	cmd := exec.Command("pg_dump", //nolint:gosec // G204: arguments are parsed from configured DSN securely
 		"-h", host,
 		"-p", port,
 		"-U", user,

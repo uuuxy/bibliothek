@@ -138,7 +138,7 @@ func createZip(srcDir string) ([]byte, error) {
 			return err
 		}
 
-		file, err := os.Open(path)
+		file, err := os.Open(path) //nolint:gosec // G304: path comes from filepath.WalkDir of a trusted backup directory
 		if err != nil {
 			return err
 		}

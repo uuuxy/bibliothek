@@ -74,7 +74,7 @@ func run() error {
 		out = f
 	}
 
-	if _, err := io.Copy(out, gz); err != nil {
+	if _, err := io.Copy(out, gz); err != nil { // #nosec G110 - authenticated local operator file
 		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
 	}
 

@@ -64,7 +64,7 @@ func main() {
 		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
 		path := filepath.Join(uploadDir, entry.Name())
 
-		imgBytes, err := os.ReadFile(path)
+		imgBytes, err := os.ReadFile(path) //nolint:gosec // G304: file is guaranteed to be inside uploadDir from ReadDir
 		if err != nil {
 			slog.Error("Konnte Bild nicht lesen", "file", path, "error", err)
 			continue
