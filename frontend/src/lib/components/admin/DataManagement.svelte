@@ -7,6 +7,7 @@
 	import LitteraImportWidget from "../../LitteraImportWidget.svelte";
 	import { exportiereCSV } from "../../../inventur/lib/admin_api.js";
 	import PageContainer from "../layout/PageContainer.svelte";
+	import LusdImportView from "../students/LusdImportView.svelte";
 
 	let isExporting = $state(false);
 	let exportError = $state<string | null>(null);
@@ -223,6 +224,13 @@
 				"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4",
 				exportContent
 			)}
+		</div>
+
+		<!-- Schüler-Stammdaten (LUSD): bewusst AUßERHALB der Schatten-Kacheln oben, damit das
+		     eigene Edge-to-Edge-Listen-Design von LusdImportView nicht in einer Kachel-in-Kachel
+		     verschachtelt wird. -->
+		<div class="pt-8 border-t border-slate-200">
+			<LusdImportView />
 		</div>
 	</div>
 </PageContainer>

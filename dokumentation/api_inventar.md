@@ -1,15 +1,11 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-07-07. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-07-08. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `POST /api/auth/refresh`
-- `POST /api/lusd/import`
-- `POST /api/lusd/preview`
-- `POST /api/students/promote`
 - `PUT /api/reservierungen/klassensatz/{id}/erledigen`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
@@ -44,6 +40,7 @@
 - `GET /api/admin/permissions`
 - `GET /api/admin/settings/mail`
 - `GET /api/audit`
+- `GET /api/auth/me`
 - `GET /api/barcode`
 - `GET /api/barcode/next`
 - `GET /api/benutzer`
@@ -135,7 +132,6 @@
 - `POST /api/lusd/import`
 - `POST /api/lusd/preview`
 - `POST /api/mahnwesen/senden`
-- `POST /api/mail/send-overdue-notification/{schuelerID}`
 - `POST /api/print/labels`
 - `POST /api/reservierungen/klassensatz`
 - `POST /api/schueler`

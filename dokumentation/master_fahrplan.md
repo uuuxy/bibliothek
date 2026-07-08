@@ -22,8 +22,9 @@ zwei mit versteckten CI-Security-Downgrades). Nach jedem Merge verifiziert; Ends
 **Offen sind genau drei Dinge:**
 1. **Bot-Kadenz drosseln** (~5 PRs/Tag erzeugen den Backlog immer wieder neu → Jules-Konfiguration
    auf wöchentliche Batches; neue PRs ab jetzt nach dem etablierten Triage-Verfahren)
-2. **Drei Produktentscheidungen** (Phase 3.1–3.3): LUSD-Konsolidierung, Klassensatz-„erledigen"-UI,
-   Schuljahres-Versetzung (**Deadline Schuljahreswechsel!**)
+2. **Zwei verbleibende Produktentscheidungen** (Phase 3.2–3.3): Klassensatz-„erledigen"-UI,
+   Schuljahres-Versetzung (**Deadline Schuljahreswechsel!**). **LUSD-Konsolidierung (3.1) ist
+   entschieden und in Umsetzung, aber noch nicht fertig/committet** — Details s. u. 🚧.
 3. **Ausbau + Betrieb:** `/api/v1`-Paket, dann Mandantenfähigkeit (Phase 3.4–3.5);
    Restore-Probe + Prod-Secrets nur in der Zielumgebung (T7-Rest)
 
@@ -60,7 +61,7 @@ extrahiert; Regressionstests gegen den Zeitzonen-Bug (Monatsletzter, Schaltjahre
 
 **T3 — Auth-Lebenszyklus (07.07., `fc36fb1`):** Session-Refresh-Loop im `authStore` verdrahtet
 (30-min-Tick; Server erneuert ab <50% Restlaufzeit; 401→Logout, Netzfehler≠Logout).
-5 Go-Tests `RefreshTokenHandler`, 3 Vitest-Tests. *Rest offen: Login-Handler-Tests (IMAP mocken).*
+5 Go-Tests `RefreshTokenHandler`, 3 Vitest-Tests. *Login-Handler-Tests → erledigt, s. Nächste Schritte #4.*
 
 **T4 — Mahnwesen (07.07., `d659759`):** Test fand echten Bug — **Slice-Reallokation verschluckte
 Medien gleichnamiger Schüler** in allen drei Mahnlisten-Queries (Pointer in Slice-Elemente).
@@ -80,6 +81,35 @@ Omnibox-Scan → Konto. `uiLogin`-Fixture mit Fill-Guards (Svelte-Mount-Race); V
 einer soft-gelöschten `lusd_id` legt frischen aktiven Datensatz an; zweiter *aktiver* scheitert
 korrekt an `uniq_schueler_lusd_id_active`. ⏳ Nur in Zielumgebung: Restore-Probe gegen Wegwerf-DB;
 Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuft **kein** Backup).
+
+---
+
+# 🚧 IN ARBEIT — LUSD-Import-Konsolidierung (Phase 3.1, 08.07., NICHT COMMITTET)
+
+**Entscheidung getroffen:** `/api/lusd/preview`+`/api/lusd/import` (der getestete Preview→Commit-
+Flow aus `api/lusd.go`, s. Phase 1) wird ans Frontend angebunden statt endgültig gestrichen.
+Das alte `/api/import/lusd` (`LusdImportModal`, liefert nur rohe Zähler) bleibt vorerst parallel
+bestehen, bis der neue Flow im Sekretariat verifiziert ist.
+
+**Umgesetzt, aber nur im Arbeitsverzeichnis (`git status` zeigt es als unstaged):**
+- Backend (`api/lusd.go`): `LusdPreviewResult` liefert jetzt qualitative Diffs statt reiner
+  Zähler — neues `StudentDiff{ID (=LUSD-ID), Vorname, Nachname, AlteKlasse, NeueKlasse}`, befüllt
+  in `computeLusdChanges` für `NewStudents`/`ClassChanges`/`Graduates`. Namen der Abgänger werden
+  vor der DSGVO-Anonymisierung aus der DB gelesen, damit die Vorschau sie noch zeigen kann.
+- Frontend (neu: `frontend/src/lib/components/students/LusdImportView.svelte`, 195 Zeilen,
+  reine Svelte-5-Runes/Snippets): Upload → Preview → „Import finalisieren", edge-to-edge Listen
+  mit `<details>`-Akkordeons pro Kategorie (Namen + Klassenwechsel „5a → 6a" sichtbar),
+  Risiko-Warnung bei auffällig vielen Abgängern (≥30 % der Datei). Nutzt durchgängig `apiFetch`
+  (CSRF + Credentials automatisch).
+
+**Fehlt noch, bevor das als „erledigt" gilt:**
+1. **Commit** der beiden Dateien (`api/lusd.go`, neue `LusdImportView.svelte`).
+2. **Einbindung in die App** — die Komponente wird aktuell von **niemandem importiert/geroutet**
+   (kein Menüpunkt, kein Ersatz für den bestehenden `LusdImportModal`-Button in `Graduates.svelte`).
+   Ohne diesen Schritt ist der neue Flow für das Sekretariat unerreichbar.
+3. Manuelle/E2E-Verifikation mit einer echten LUSD-Exportdatei (insbesondere der
+   Schuljahreswechsel-Fall mit vielen Abgängern) und anschließend Entscheidung, ob
+   `LusdImportModal` + `/api/import/lusd` danach gestrichen werden.
 
 ---
 
@@ -124,9 +154,10 @@ Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuf
 
 # 🚀 Phase 3: Produktentscheidungen & Ausbau (nach den nächsten Schritten)
 
-1. **LUSD-Import-Konsolidierung:** Aktiv ist nur `/api/import/lusd` (LusdImportModal);
-   `/api/lusd/preview`+`import` (api/lusd.go) sind der *getestete* Preview→Commit-Flow, aber seit
-   Löschung des toten Modals verwaist. Entscheiden: besseren Flow anbinden oder endgültig streichen.
+1. ~~**LUSD-Import-Konsolidierung**~~ **entschieden, in Umsetzung** 🚧 (noch nicht committet) —
+   Details im Abschnitt „🚧 IN ARBEIT" oben. Kurzfassung: `/api/lusd/preview`+`import`
+   (api/lusd.go, der getestete Preview→Commit-Flow) wird ans Frontend angebunden statt gestrichen;
+   `/api/import/lusd` (LusdImportModal) bleibt bis zur Verifikation parallel bestehen.
 2. **Klassensatz-Reservierung „erledigen"** — UI-Lücke schließen (Handler existiert und ist korrekt).
 3. **Schuljahres-Versetzung** (`students/promote`): UI bauen oder Handler streichen — **Deadline
    Schuljahreswechsel!**
@@ -159,4 +190,4 @@ Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuf
 | Tote Svelte-Dateien | 13–16 | **0** |
 | Svelte-4-Konstrukte | 0 | 0 (Runes-Migration vollständig) |
 | Go-Testdateien / FE-Testdateien / E2E-Flows | 25 / 1 / 0 | **30 / 4 / 3** |
-| Bekannte offene UX-Defekte | — | 1 (501-Stub-Aufruf Mahn-Mail) |
+| Bekannte offene UX-Defekte | — | **0** (501-Stub-Aufruf Mahn-Mail entfernt, s. Nächste Schritte #5) |

@@ -15,12 +15,24 @@ import (
 	"bibliothek/pkg/closeutil"
 )
 
-// LusdPreviewResult contains the statistics for the frontend preview.
+// StudentDiff represents a single student-level change for the qualitative LUSD
+// preview. ID holds the LUSD-ID (from the export file), not the internal DB-UUID —
+// it is a stable key for the frontend list and avoids leaking internal identifiers.
+type StudentDiff struct {
+	ID         string `json:"id"`
+	Vorname    string `json:"vorname"`
+	Nachname   string `json:"nachname"`
+	AlteKlasse string `json:"alte_klasse,omitempty"`
+	NeueKlasse string `json:"neue_klasse,omitempty"`
+}
+
+// LusdPreviewResult contains the detailed diff lists for the frontend preview,
+// so the Sekretariat can visually verify names and class changes before committing.
 type LusdPreviewResult struct {
-	NewStudents     int `json:"new_students"`
-	ClassChanges    int `json:"class_changes"`
-	Graduates       int `json:"graduates"` // Abgänger (missing in CSV but in DB)
-	TotalCsvRecords int `json:"total_csv_records"`
+	NewStudents     []StudentDiff `json:"new_students"`
+	ClassChanges    []StudentDiff `json:"class_changes"`
+	Graduates       []StudentDiff `json:"graduates"` // Abgänger (missing in CSV but in DB)
+	TotalCsvRecords int           `json:"total_csv_records"`
 }
 
 // lusdRecord represents a parsed row from the CSV.
@@ -127,27 +139,32 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 	// eine soft-gelöschte, aber noch auf der LUSD-Liste stehende Zeile, der aktive
 	// Schüler würde nie neu angelegt und bliebe unsichtbar. Re-Insert einer zuvor
 	// gelöschten lusd_id ist dank partiellem Unique-Index (Migration 035) sicher.
-	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse FROM schueler WHERE ist_abgaenger = false AND deleted_at IS NULL")
+	// Vorname/Nachname werden mitgelesen, damit Abgänger-Diffs den Namen VOR der
+	// DSGVO-Anonymisierung anzeigen können.
+	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse, vorname, nachname FROM schueler WHERE ist_abgaenger = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
 	dbStudents := make(map[string]struct {
-		ID     string
-		Klasse string
+		ID       string
+		Klasse   string
+		Vorname  string
+		Nachname string
 	})
 	for rows.Next() {
-		var id string
+		var id, klasse, vorname, nachname string
 		var lusdID *string
-		var klasse string
-		if err := rows.Scan(&id, &lusdID, &klasse); err != nil {
+		if err := rows.Scan(&id, &lusdID, &klasse, &vorname, &nachname); err != nil {
 			rows.Close()
 			return nil, err
 		}
 		if lusdID != nil && *lusdID != "" {
 			dbStudents[*lusdID] = struct {
-				ID     string
-				Klasse string
-			}{id, klasse}
+				ID       string
+				Klasse   string
+				Vorname  string
+				Nachname string
+			}{id, klasse, vorname, nachname}
 		}
 	}
 	if err := rows.Err(); err != nil {
@@ -156,7 +173,12 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 	}
 	rows.Close()
 
-	res := &LusdPreviewResult{TotalCsvRecords: len(records)}
+	res := &LusdPreviewResult{
+		NewStudents:     make([]StudentDiff, 0),
+		ClassChanges:    make([]StudentDiff, 0),
+		Graduates:       make([]StudentDiff, 0),
+		TotalCsvRecords: len(records),
+	}
 	csvLusdIDs := make(map[string]bool)
 
 	// Process CSV records (Updates and Inserts)
@@ -164,7 +186,13 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 		csvLusdIDs[rec.LusdID] = true
 		if dbRec, exists := dbStudents[rec.LusdID]; exists {
 			if dbRec.Klasse != rec.Klasse {
-				res.ClassChanges++
+				res.ClassChanges = append(res.ClassChanges, StudentDiff{
+					ID:         rec.LusdID,
+					Vorname:    rec.Vorname,
+					Nachname:   rec.Nachname,
+					AlteKlasse: dbRec.Klasse,
+					NeueKlasse: rec.Klasse,
+				})
 				if apply {
 					_, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID)
 					if err != nil {
@@ -173,7 +201,12 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 				}
 			}
 		} else {
-			res.NewStudents++
+			res.NewStudents = append(res.NewStudents, StudentDiff{
+				ID:         rec.LusdID,
+				Vorname:    rec.Vorname,
+				Nachname:   rec.Nachname,
+				NeueKlasse: rec.Klasse,
+			})
 			if apply {
 				barcode := fmt.Sprintf("S-%05d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000) // Temporary unique short barcode
 				year := time.Now().Year() + 5                                                                 // Default abgang
@@ -194,7 +227,12 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 	// Process missing records (Abgänger)
 	for lusdID, dbRec := range dbStudents {
 		if !csvLusdIDs[lusdID] {
-			res.Graduates++
+			res.Graduates = append(res.Graduates, StudentDiff{
+				ID:         lusdID,
+				Vorname:    dbRec.Vorname,
+				Nachname:   dbRec.Nachname,
+				AlteKlasse: dbRec.Klasse,
+			})
 			if apply {
 				// Check if they have active loans
 				var pending int
