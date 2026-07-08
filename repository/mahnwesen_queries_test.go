@@ -37,7 +37,8 @@ func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	mock.ExpectQuery(`SELECT a\.id, s\.id, s\.vorname \|\| ' ' \|\| s\.nachname, s\.klasse`).
 		WillReturnRows(rows)
 
-	mock.ExpectQuery(`SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`).
+	mock.ExpectQuery(`SELECT klasse, lehrer_email FROM klassen_lehrer_mapping WHERE klasse = ANY\(\$1\)`).
+		WithArgs([]string{"7A", "8B"}).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse", "lehrer_email"}).
 			AddRow("7A", "lehrer7a@schule.de"))
 

@@ -104,7 +104,12 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 
 	// Falls Klassen existieren, ordnen wir ihnen die Lehrer-E-Mails aus dem Mapping zu
 	if len(klassen) > 0 {
-		mRows, err := repo.db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
+		klassenNamen := make([]string, len(klassen))
+		for i, k := range klassen {
+			klassenNamen[i] = k.Klasse
+		}
+
+		mRows, err := repo.db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping WHERE klasse = ANY($1)`, klassenNamen)
 		if err == nil {
 			defer mRows.Close()
 			emailMap := map[string]string{}
