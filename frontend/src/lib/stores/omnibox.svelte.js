@@ -232,7 +232,7 @@ export function createOmniboxStore() {
       }
       if (e instanceof TypeError || !window.navigator.onLine || offlineSync.isOffline || (e instanceof Error && e.message.includes("Timeout"))) {
          if (q.startsWith("B-")) {
-            await enqueueOfflineAction("checkin", q, activeStudent?.id ?? null, idempotencyKey);
+            await enqueueOfflineAction("checkin", q, activeStudent?.id ?? "", idempotencyKey);
             offlineSync.updateCount();
             triggerScreenFlash("warning");
             playSoundSuccess();

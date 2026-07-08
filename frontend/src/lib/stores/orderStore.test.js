@@ -110,7 +110,7 @@ describe('orderStore.submitOrder', () => {
     });
 
     it('baut das Payload korrekt und leert den Warenkorb', async () => {
-        mockedApiPost.mockResolvedValueOnce({ status: 'success', message: 'ok', ordered_qty: 2 });
+        /** @type {any} */ (apiPost).mockResolvedValueOnce({ status: 'success', message: 'ok', ordered_qty: 2 });
         orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 2, true);
         orderStore.cart[0].preis = 9.9;
 
@@ -125,18 +125,18 @@ describe('orderStore.submitOrder', () => {
     });
 
     it('unterdrückt generate_barcodes, wenn der globale Schalter aus ist', async () => {
-        mockedApiPost.mockResolvedValueOnce({ status: 'success' });
+        /** @type {any} */ (apiPost).mockResolvedValueOnce({ status: 'success' });
         orderStore.attachBarcodes = false;
         orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 1, true);
 
         await orderStore.submitOrder();
 
-        const payload = mockedApiPost.mock.calls[0][1];
+        const payload = /** @type {any} */ (apiPost).mock.calls[0][1];
         expect(payload.items[0].generate_barcodes).toBe(false);
     });
 
     it('behält den Warenkorb bei einem API-Fehler', async () => {
-        mockedApiPost.mockRejectedValueOnce(new Error('boom'));
+        /** @type {any} */ (apiPost).mockRejectedValueOnce(new Error('boom'));
         orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' });
 
         await orderStore.submitOrder();
@@ -171,8 +171,9 @@ describe('orderStore Suche', () => {
     });
 
     it('verwirft veraltete Antworten (Out-of-Order-Race)', async () => {
-        let resolveFirst;
-        apiPost
+        /** @type {any} */
+    let resolveFirst;
+        /** @type {any} */ (apiPost)
             .mockImplementationOnce(() => new Promise((res) => { resolveFirst = res; }))
             .mockImplementationOnce(async () => [{ titel: 'Neu', source: 'local' }]);
 

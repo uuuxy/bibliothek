@@ -32,7 +32,7 @@
   ];
 
   let rangeInvalid = $derived(typ === "monat" && vonDatum > bisDatum);
-  let canDownload = $derived(!rangeInvalid && (typ !== "lieferant" || lieferantId !== ""));
+  let canDownload = $derived(!rangeInvalid && (typ !== "monat" || lieferantId !== ""));
 
   let downloadURL = $derived.by(() => {
     const base = "/api/bestellhistorie/bericht";

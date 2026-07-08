@@ -100,7 +100,7 @@ export async function apiFetch(url, options = {}) {
     return response;
   } catch (error) {
     clearTimeout(id);
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new Error("Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.");
     }
     throw error;
