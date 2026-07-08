@@ -1,134 +1,122 @@
 # Master-Fahrplan: Radar-Analyse & Konsolidierung
 
-> Stand: 2026-07-07 · Basis: vollständiger Abgleich aller 113 registrierten Go-Routen
-> gegen sämtliche `/api/`-Aufrufer im Frontend, Komponenten-Nutzungsanalyse,
-> Test-Inventar (25 Go-Testdateien / 1 FE-Testdatei / 0 E2E) und Middleware-Audit.
+> Stand: **2026-07-08** · Ursprung: Radar-Analyse vom 07.07. (Routen-Abgleich, Komponenten-Nutzung,
+> Test-Inventar, Middleware-Audit). Lebendes Dokument — Phase 1 und Phase 2 sind abgeschlossen,
+> aktueller Arbeitsvorrat steht unter „Nächste Schritte".
+> Radar-Referenz: [`dokumentation/api_inventar.md`](api_inventar.md) (neu erzeugen mit `./scripts/api_inventar.sh`).
 
 ---
 
-## ⚡ VORAB: Ein echter Laufzeit-Bug (heute fixen, vor allem anderen)
+# ✅ ERLEDIGT (Kurzprotokoll mit Befunden)
 
-**`OmniboxBlockAlert.svelte:31` ruft `POST /api/schueler/{id}/update` auf — diese Route
-existiert im Backend nicht.** Der Button „Sperre aufheben" im Omnibox-Block-Alert läuft
-seit der Schüler-API-Konsolidierung ins 404-Leere. Fix: auf das bestehende
-`PATCH /api/schueler/{id}` umstellen (Payload `is_manually_blocked`/`block_reason` bleibt).
-Das ist der einzige im Radar gefundene *aktive* Defekt — alles andere ist tot, nicht kaputt.
+## ⚡ Vorab-Bug (2026-07-07, `3efb88f`)
+„Sperre aufheben" im Omnibox-Block-Alert rief das nicht existierende `POST /api/schueler/{id}/update`
+→ umgestellt auf `PATCH /api/admin/students/{id}/lock` (wie `StudentLockModal`). War der einzige
+Geister-Aufruf im gesamten Abgleich; E2E-Flow „sperren/entsperren" steht noch aus (s. u.).
+
+## 🧹 Phase 1 — Dead Code & Cleanup (2026-07-07, `b33e05c` + `28b3add` + `098194d`)
+- **11 tote Go-Handler + Routen gelöscht** inkl. verwaister Helfer (`service.ReceiveItem`,
+  beide `UndoReturn`-Repo-Methoden, `RecentTransaction`): `bestellungen/receive`,
+  `transactions/recent`, 2 Mail-501-Stubs, Import-Dreifach-Cluster (`import/students`,
+  `students/import`, `schueler/import-lusd`), Signatur-PUT/DELETE, `ausleihen/{id}/rueckgabe`.
+- **Undo-Return-Feature bewusst gestrichen** (Handler + `UndoToast` + Store — war nie verdrahtet).
+- **16 tote Svelte-Dateien gelöscht** (GlobalScanner/KioskMode-Cluster, LusdPreviewModal,
+  ClassPrintStation, StudentEditModal, OfflineQueueBanner, SvelteKit-Reste unter `inventur/routes/`,
+  3 Inventur-Komponenten). `triggerStudentScan` blieb — hat aktive Schreiber (BookBorrowers*).
+- **`scripts/api_inventar.sh`** erzeugt das Routen/Aufrufer-Inventar als Radar-Referenz.
+- Bewusst **nicht** gelöscht (Entscheidungsfälle → Phase 3): `PromoteStudentsHandler`,
+  Klassensatz-„erledigen"-Handler, `api/lusd.go` (preview/import — getesteter Flow, verwaist).
+
+## 🧪 Phase 2 — Die Festung (T1–T7)
+
+**T1 — Wareneingang/Bestellwesen (07.07., `5160156`):** Go-Tests `BulkReceiveOrder`
+(`received_items` + `etikett_gedruckt`-Vertrag, 404-Wortlaut); 13 orderStore-Vitest-Tests
+(Warenkorb-Dedup `titel_id`/ISBN, Summen, Submit-Gate, **Out-of-Order-Such-Race**).
+
+**T2 — Berichts-Datumsgrenzen (07.07., `5160156`):** Datums-Helfer nach `lib/utils/dates.js`
+extrahiert; Regressionstests gegen den Zeitzonen-Bug (Monatsletzter, Schaltjahre).
+
+**T3 — Auth-Lebenszyklus (07.07., `fc36fb1`):** Session-Refresh-Loop im `authStore` verdrahtet
+(30-min-Tick; Server erneuert ab <50% Restlaufzeit; 401→Logout, Netzfehler≠Logout).
+5 Go-Tests `RefreshTokenHandler`, 3 Vitest-Tests. *Rest offen: Login-Handler-Tests (IMAP mocken).*
+
+**T4 — Mahnwesen (07.07., `d659759`):** Test fand echten Bug — **Slice-Reallokation verschluckte
+Medien gleichnamiger Schüler** in allen drei Mahnlisten-Queries (Pointer in Slice-Elemente).
+Fix: index-basierter `klassenGrouper`; Scan-Fehler werden nicht mehr verschluckt.
+
+**T5 — E2E-Gerüst Playwright (08.07., `346e1ce`):** `npm run test:e2e` (frontend/) gegen den
+lokalen Docker-Stack (`docker compose -f docker-compose.local.yml up -d --build`; Backend :8084,
+Postgres :5434, Mock-IMAP akzeptiert jedes Passwort). 3 Smoke-Flows, mehrfach stabil grün (~1,6 s):
+UI-Login/Logout · Lieferant anlegen + Berichte-Datumsvalidierung · Schüler per API seeden →
+Omnibox-Scan → Konto. `uiLogin`-Fixture mit Fill-Guards (Svelte-Mount-Race); Vitest excludet `e2e/`.
+
+**T6 — Inventur-Rechte (07.07., `9ddd050`):** Fehlalarm der Benennung — RBAC war längst injiziert
+(`RequirePermission("view_books"/"edit_books")`); Felder umbenannt zu `RequireViewBooks`/`RequireEditBooks`.
+(`GET /uploads/` bleibt unauthentifiziert — ausschließlich Buchcover-WebPs.)
+
+**T7 — Betriebspflichten:** ✅ **Migration 035 real getestet** (08.07., lokale DB): Wiederanmeldung
+einer soft-gelöschten `lusd_id` legt frischen aktiven Datensatz an; zweiter *aktiver* scheitert
+korrekt an `uniq_schueler_lusd_id_active`. ⏳ Nur in Zielumgebung: Restore-Probe gegen Wegwerf-DB;
+Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuft **kein** Backup).
 
 ---
 
-# 🛑 STOP: Das Parkdeck (fassen wir vorerst NICHT an)
+# 🔧 NÄCHSTE SCHRITTE (aktueller Arbeitsvorrat, in dieser Reihenfolge)
+
+1. **Session-Restore beim SPA-Boot** *(T3-Folge-Befund aus dem E2E-Bau)*: Die SPA prüft beim Laden
+   nie, ob eine Session existiert — F5 zeigt trotz gültigem Cookie den Login-Screen. Fix:
+   `GET /api/auth/me` (Claims → Benutzerdaten) + Boot-Check im `authStore` (Erfolg → eingeloggt
+   weiterlaufen, 401 → Login-Screen). E2E: „Login → Reload → immer noch eingeloggt".
+2. **Bot-PR-Triage** (10 offene PRs, Stand 08.07. — Review/Merge ist Peters Entscheidung):
+   zuerst **#200 (HIGH, Path Traversal)**, dann #194 (`os.OpenRoot`, backup_email) und
+   #197 (PGPASSWORD-Leak — schleppt CI-/go.mod-Änderungen mit, genau prüfen).
+   **Achtung:** Bolt-Order-PRs #195/#196 sind gegen den Stand *vor* dem orders→bestellungen-Refactor
+   gebaut → vermutlich konfliktbehaftet/obsolet. Palette-PRs (a11y) risikoarm.
+3. **Vierter E2E-Flow:** Schüler sperren → Omnibox-Block-Alert → „Sperre dauerhaft aufheben"
+   (deckt den Vorab-Bugfix ab); danach optional Bestellung→Wareneingang→Druckempfehlung
+   (braucht Katalog-Seeding via `/api/buecher/aus-isbn` oder SQL).
+4. **Login-Handler-Tests** (T3-Rest): IMAP-Abhängigkeit mocken (Mock-Modus existiert bereits),
+   Brute-Force-Limiter-Verhalten (E-Mail|IP-Schlüssel) testen.
+5. **FE ruft 501-Stub:** `send-overdue-notification` ist serverseitig dauerhaft deaktiviert
+   (Datenschutz) — UI-Aufrufer entfernen oder Feature bewusst reaktivieren.
+
+---
+
+# 🚀 Phase 3: Produktentscheidungen & Ausbau (nach den nächsten Schritten)
+
+1. **LUSD-Import-Konsolidierung:** Aktiv ist nur `/api/import/lusd` (LusdImportModal);
+   `/api/lusd/preview`+`import` (api/lusd.go) sind der *getestete* Preview→Commit-Flow, aber seit
+   Löschung des toten Modals verwaist. Entscheiden: besseren Flow anbinden oder endgültig streichen.
+2. **Klassensatz-Reservierung „erledigen"** — UI-Lücke schließen (Handler existiert und ist korrekt).
+3. **Schuljahres-Versetzung** (`students/promote`): UI bauen oder Handler streichen — **Deadline
+   Schuljahreswechsel!**
+4. **API-Versionierung `/api/v1` + Rest-Sprachvereinheitlichung** — ein Paket, jetzt mit E2E-Netz.
+5. **Mandantenfähigkeit (RLS)** — Tenant-Claim in Auth-Middleware, `tenant_id`-Migrationen mit dem
+   etablierten Dry-Run-Prozess.
+
+---
+
+# 🛑 Das Parkdeck (unverändert — fassen wir NICHT an)
 
 | Thema | Warum geparkt |
 |---|---|
-| **Mandantenfähigkeit / RLS** | Null Stabilitätsgewinn heute; erst sinnvoll auf getestetem, totem-Code-freiem Fundament (→ Phase 3) |
-| **Rest-Vereinheitlichung der API-Sprache** (`/api/books` vs. `/api/buecher`, `/api/students/*` vs. `/api/schueler/*`) | Bestellungen sind migriert; der Rest ist reine Kosmetik mit Breaking-Change-Risiko. Kommt als Paket mit `/api/v1`-Versionierung |
-| **Integer-Cent-Refactor** (Geld ist Go-seitig `float64`, DB exakt `NUMERIC(10,2)`) | Bewusste, dokumentierte Nicht-Entscheidung — bleibt so |
-| **Bundle-Splitting** (720-kB-Chunk-Warnung im Vite-Build) | Performance-Feinschliff, kein Stabilitätsthema |
-| **TypeScript-Migration / `any[]`-Typisierung** | Nice-to-have; JSDoc-Typedefs im orderStore reichen aktuell |
-| **Verschmelzung des `inventur/`-Moduls ins Haupt-API** | Zweites Routing-Universum ist hässlich, aber funktional. Nur der Rechte-Unterschied wird behandelt (→ Phase 2, Punkt T6) — die Struktur bleibt |
-| **Edge-to-Edge-Feinschliff restlicher Views** | UI-Refactoring ist offiziell abgeschlossen; kein Re-Opening ohne Anlass |
+| **Mandantenfähigkeit / RLS** | Erst als Phase-3-Punkt 5, nicht früher |
+| **Rest-Vereinheitlichung API-Sprache** (`/api/books` vs. `/api/buecher` …) | Nur als Paket mit `/api/v1` (Phase 3.4) |
+| **Integer-Cent-Refactor** (Go `float64`, DB `NUMERIC(10,2)`) | Bewusste, dokumentierte Nicht-Entscheidung |
+| **Bundle-Splitting** (720-kB-Chunk) | Performance-Feinschliff, kein Stabilitätsthema |
+| **TypeScript-Migration** | JSDoc-Typedefs reichen aktuell |
+| **Verschmelzung `inventur/` ins Haupt-API** | Rechte sind angeglichen (T6); Struktur bleibt |
+| **Edge-to-Edge-Feinschliff restlicher Views** | UI-Refactoring abgeschlossen; kein Re-Opening ohne Anlass |
 
 ---
 
-# 🧹 Phase 1: Dead Code & Cleanup (die nächsten 1–2 Tage)
+## Radar-Zahlen (Stand 08.07., nach Phase 1+2)
 
-Regel: Vor jedem Löschen ein `grep` über das Gesamt-Repo (inkl. `loadtest.js`, Doku zählt nicht) — dann löschen, bauen, Tests grün, committen. Kleine Commits pro Cluster.
-
-## 1a. Go-Handler ohne Frontend-Aufrufer (löschen)
-
-| Route | Handler | Anmerkung |
+| Metrik | Radar 07.07. | Jetzt |
 |---|---|---|
-| `POST /api/bestellungen/receive` | `ReceiveItemHandler` | Vom Bulk-Receive-Flow ersetzt — der bekannte Altlast-Fund |
-| `GET /api/transactions/recent` | `GetRecentTransactionsHandler` | Kein Aufrufer im gesamten Frontend |
-| `POST /api/mail/send-notification/{schuelerID}` | `PostSendNotificationHandler` | Nur die `send-overdue-notification`-Variante wird genutzt |
-| `POST /api/mail/send-bulk-overdue` | `PostSendBulkOverdueHandler` | Kein Aufrufer |
-| `POST /api/import/students` | `ImportStudentsHandler` | Import-Altlasten-Cluster: aktiv sind nur |
-| `POST /api/students/import` | `ImportStudentsLUSDHandler` | `/api/import/lusd`, `/api/lusd/preview`, |
-| `POST /api/schueler/import-lusd` | `PostSchuelerImportLusdHandler` | `/api/lusd/import` und `/api/import/littera` |
-| `PUT /api/signatures/{id}` + `DELETE /api/signatures/{id}` | Signatur-Mutationen | FE nutzt nur `GET/POST /api/signatures` |
-
-## 1b. Go-Handler ohne Aufrufer — aber ERST ENTSCHEIDEN, dann löschen
-
-| Route | Frage an uns selbst |
-|---|---|
-| `DELETE /api/ausleihen/{id}/rueckgabe` (`UndoReturnHandler`) | Gehörte zum nie fertig verdrahteten Undo-Feature (siehe toter `UndoToast` unten). Feature streichen → beides löschen. Feature wollen → Ticket für Phase 3 |
-| `POST /api/students/promote` (`PromoteStudentsHandler`) | Schuljahres-Versetzung: fachlich wichtig, aber ohne UI unerreichbar. Vor dem Schuljahreswechsel entscheiden: UI bauen (Phase 3) oder löschen |
-| `PUT /api/reservierungen/klassensatz/{id}/erledigen` | Die Reservierungs-*Anzeige* wird genutzt, aber keine Reservierung kann je erledigt werden — hier fehlt UI, der Handler ist korrekt. **Nicht löschen**, UI-Lücke in Phase 3 schließen |
-
-## 1c. Tote Svelte-Dateien (löschen)
-
-- `lib/GlobalScanner.svelte` + `lib/KioskMode.svelte` — Cluster: nirgends importiert; der Kiosk-Tab wird anders gerendert. Danach prüfen, ob `appState.triggerStudentScan` (Inventur-Store + App-Effect) seinen letzten Schreiber verloren hat → dann auch das Feld und den `$effect` in `App.svelte` entfernen
-- `lib/UndoToast.svelte` + `lib/undoToastStore.svelte.js` — nutzen nur einander (siehe 1b, UndoReturn)
-- `lib/LusdPreviewModal.svelte` — vom neuen LUSD-Flow ersetzt
-- `lib/ClassPrintStation.svelte` — Klassensatz-Druck lebt jetzt im DruckCenter
-- `lib/StudentEditModal.svelte`, `lib/OfflineQueueBanner.svelte` — keine Importe
-- `inventur/lib/components/StartseitenHeader.svelte`, `admin/KlassenNamenEditor.svelte`, `admin/BuchAuswahlListe.svelte` — keine Importe
-- `inventur/routes/+layout.svelte`, `+page.js`, `admin/+page.js`, `settings/+page.svelte`, `scanner/+page.svelte` — SvelteKit-Konventionsreste in einer Vite-SPA. **Achtung:** `+page.svelte` und `admin/+page.svelte` sind über `MediaCatalog.svelte` aktiv eingebunden — die bleiben! Wegen der verwechselbaren `+page`-Namen jede Datei einzeln per Import-Grep verifizieren
-
-## 1d. Abschluss Phase 1
-
-- `go build ./... && go vet ./... && go test ./...`, `npm run build && npm test`
-- Routen-Inventar einmal neu ziehen (Skript aus dieser Analyse) und als `dokumentation/api_inventar.md` einchecken — das ist ab jetzt unsere Radar-Referenz
-
----
-
-# 🧪 Phase 2: Die Festung bauen (Testing der blinden Flecken)
-
-Befund: Solide Go-Tests für Ausleih-Regeln, RBAC-Middleware, LUSD-Parser, Backup-Roundtrip.
-Aber: **das komplette Bestellwesen, der Etikettendruck und der Auth-Lebenszyklus sind ungetestet**, im Frontend existiert genau eine Testdatei (`authStore.test.js`), E2E-Tests gibt es nicht.
-
-Reihenfolge nach Risiko × Änderungsfrequenz:
-
-**T1 — Wareneingang → Etikettendruck (der frisch umgebaute Pfad, höchstes Risiko):**
-- Go: Handler-Test `BulkReceiveOrderHandler` — insbesondere das neue `received_items`-Payload mit `etikett_gedruckt` (der SQL-JOIN auf `buecher_titel` ist jung), Leerlauf-Fall (bereits freigegeben → 404), Teilmengen
-- FE: `orderStore`-Unit-Tests — jetzt isoliert testbar: Warenkorb-Dedup (`titel_id` vs. `id` vs. ISBN — der frühere Duplikat-Bug!), `total`/`totalQty`, Submit-Payload mit/ohne `attachBarcodes`, Such-Race (Sequenznummer, mit Fake-Timern)
-- FE: `printQueue`-Übergabe Wareneingang → DruckCenter (Komponententest oder E2E, siehe T5)
-
-**T2 — Bestellberichte-Datumsgrenzen:** Regressionstest für den Zeitzonen-Fix (Monatsletzter!) plus Go-Test, dass `von`/`bis` im Berichts-SQL inklusiv sind. Falsche Abrechnungssummen sind Vertrauenskiller Nr. 1.
-
-**T3 — Auth-Lebenszyklus: ✅ erledigt 2026-07-07.** Refresh-Loop im `authStore` verdrahtet (30-min-Tick, Server-Sliding-Window ab <50% Restlaufzeit; 401 → Logout, Netzfehler ≠ Logout). 5 Go-Tests für `RefreshTokenHandler` (skipped/renewed/blacklisted/no-cookie/invalid), 3 Vitest-Tests. Offen aus T3: Login-Handler-Tests (IMAP-Abhängigkeit mocken) — klein, bei Gelegenheit.
-
-**T4 — Mahnwesen: ✅ erledigt 2026-07-07 — und der Test fand sofort einen echten Bug:** Alle drei Mahnlisten-Queries gruppierten über Pointer in Slice-Elemente; `append`-Reallokationen machten sie ungültig → bei zwei gleichnamigen Schülern verlor die Mahnliste still Medien. Fix: gemeinsamer index-basierter `klassenGrouper`, Scan-Fehler werden nicht mehr verschluckt. Tests decken den verzahnten Namens-Fall explizit ab.
-
-**T5 — E2E-Gerüst (Playwright): ✅ erledigt 2026-07-08.**
-`npm run test:e2e` gegen den lokalen Docker-Stack (`docker compose -f docker-compose.local.yml up -d --build`, Backend :8084, Mock-IMAP). Drei Smoke-Flows, 3× in Folge stabil grün (~1,6s): UI-Login/Logout, Lieferant anlegen + Berichte-Datumsvalidierung, Schüler per API seeden → Omnibox-Scan → Konto. **Neuer Befund aus dem Bau:** Die SPA macht beim Boot keinen Session-Restore — mit gültigem Cookie zeigt ein Reload trotzdem den Login-Screen (F5 = UI-Logout). Folge-Item für T3: Boot-Check (z. B. `GET /api/auth/me`) einführen. Ursprünglich geplante Flows (Referenz):
-1. Omnibox: Schüler scannen → Buch ausleihen → zurückgeben
-2. Bestellung anlegen → Wareneingang einbuchen → Druckempfehlung erscheint → Etiketten laden
-3. Schüler anlegen → sperren → Sperre aufheben (deckt den Vorab-Bugfix ab)
-
-**T6 — Rechte-Angleichung Inventur-Modul: ✅ erledigt 2026-07-07 (war ein Benennungs-Fehlalarm).**
-`api/router.go` injizierte längst `RequirePermission("view_books")`/`("edit_books")` — nur die Felder hießen irreführend `RequireAuth`/`RequireAdminAuth` und täuschten ein schwächeres Rechtemodell vor. Umbenannt zu `RequireViewBooks`/`RequireEditBooks`. (`GET /uploads/` bleibt unauthentifiziert — enthält ausschließlich Buchcover-WebPs, dokumentiert.)
-
-**T7 — Betriebs-Pflichten aus dem Go-Live-Plan:**
-✅ **Migration 035 real getestet (2026-07-08, lokaler Docker-Stack):** Migration läuft via `RunMigrations` beim Start durch; Verhaltens-Test bestanden — Soft-Delete + Wiederanmeldung derselben `lusd_id` legt einen frischen aktiven Datensatz an, ein zweiter *aktiver* mit gleicher `lusd_id` scheitert an `uniq_schueler_lusd_id_active`.
-⏳ Bleiben (nur in der Zielumgebung möglich): einmalige Restore-Probe gegen Wegwerf-DB; Prod-Secrets-Checkliste (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuft **kein** Backup).
-
----
-
-# 🚀 Phase 3: Zukünftige Features (erst wenn Phase 1 & 2 grün sind)
-
-> Neuer Befund aus dem Inventar (2026-07-07): `POST /api/auth/refresh` hat keinen
-> Frontend-Aufrufer — die SPA erneuert Tokens nie, Sessions laufen einfach ab.
-> Entweder in `apiFetch` bei 401 einen Refresh-Versuch einbauen oder das bewusst
-> so dokumentieren (Kiosk-Betrieb mit Heartbeat). Gehört zu T3 (Auth-Lebenszyklus).
-
-In dieser Reihenfolge:
-
-1. **LUSD-Import-Konsolidierung:** Nach Phase 1 ist nur noch `/api/import/lusd` (LusdImportModal) aktiv. `/api/lusd/preview` + `/api/lusd/import` (api/lusd.go) sind durch die Löschung des toten `LusdPreviewModal` verwaist — aber das ist der *getestete* Preview→Commit-Flow (`lusd_parser_test.go`). Entscheidung: den besseren Flow wieder anbinden und den einfachen Import ablösen, oder umgekehrt. Bis dahin bleibt api/lusd.go bewusst stehen
-2. **Klassensatz-Reservierung „erledigen"** — die in 1b identifizierte UI-Lücke schließen
-3. **Schuljahres-Versetzung** (`students/promote`): UI bauen oder Handler endgültig streichen — Deadline ist der Schuljahreswechsel
-4. **API-Versionierung `/api/v1` + Rest-Sprachvereinheitlichung** — ein einziges großes, gut getestetes Migrations-Paket (wie die orders→bestellungen-Migration, jetzt mit E2E-Netz)
-5. **Mandantenfähigkeit (Row-Level Security)** — erst jetzt: RLS-Policies auf einem Schema ohne tote Tabellen-Zugriffspfade, Tenant-Claim in der Auth-Middleware, `tenant_id`-Spalten-Migrationen mit dem in T7 etablierten Migrations-Dry-Run-Prozess
-
----
-
-## Radar-Zahlen (Referenz)
-
-| Metrik | Wert |
-|---|---|
-| Registrierte Routen (alle Registrierungsorte) | 113 + Subtree-Mounts (`/api/books*`, `/api/admin/*`, `/api/lookup/*`) |
-| Go-Handler ohne Frontend-Aufrufer | 11 sicher tot, 3 Entscheidungsfälle |
-| Frontend-Aufrufe ohne Backend-Route | 1 (= der Vorab-Bug) |
-| Tote Svelte-Dateien | 13–16 (5 davon einzeln zu verifizieren) |
-| Svelte-4-Konstrukte (`export let`, `$:`, Dispatcher, `on:`) | **0** — Runes-Migration vollständig ✅ |
-| Go-Testdateien / FE-Testdateien / E2E | 25 / 1 / 0 |
+| Geister-Aufrufe (FE ohne Backend-Route) | 1 | **0** |
+| Tote Go-Handler | 11 + 3 Fälle | **0** (3 bewusste Entscheidungsfälle dokumentiert) |
+| Tote Svelte-Dateien | 13–16 | **0** |
+| Svelte-4-Konstrukte | 0 | 0 (Runes-Migration vollständig) |
+| Go-Testdateien / FE-Testdateien / E2E-Flows | 25 / 1 / 0 | **28 / 3 / 3** |
+| Bekannte offene UX-Defekte | — | 2 (Session-Restore beim Boot; 501-Stub-Aufruf Mahn-Mail) |
