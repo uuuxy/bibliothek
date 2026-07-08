@@ -67,7 +67,7 @@ func (r *MailSettingsRepository) UpdateConfig(ctx context.Context, host, port, u
 				smtp_password_encrypted = EXCLUDED.smtp_password_encrypted,
 				sender_email = EXCLUDED.sender_email
 		`, host, port, user, encrypted, sender)
-		
+
 		return err
 	}
 

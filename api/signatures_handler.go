@@ -82,4 +82,3 @@ func (s *Server) CreateSignatureHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusCreated, Signature{ID: newID, Name: req.Name, Description: req.Description})
 	}
 }
-

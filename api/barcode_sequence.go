@@ -16,7 +16,7 @@ func (s *Server) NextBarcodeHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		seqRepo := repository.NewSequenceRepository(s.DB.Pool)
-		
+
 		// Determine the next B- barcode number dynamically from the DB
 		startNum, err := seqRepo.GetNextSequence(ctx, "buecher_exemplare", "barcode_id", "B-")
 		if err != nil {

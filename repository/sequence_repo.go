@@ -50,7 +50,7 @@ func (r *SequenceRepository) GetNextSequence(ctx context.Context, tableName, col
 	var lastValue string
 
 	err := r.db.QueryRow(ctx, query, likePattern).Scan(&lastValue)
-	
+
 	startNum := 10001
 
 	if err == nil {

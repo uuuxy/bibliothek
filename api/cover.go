@@ -3,9 +3,9 @@ package api
 import (
 	"context"
 	"log"
+	"net/http"
 	"strings"
 	"time"
-	"net/http"
 
 	"bibliothek/db"
 	"bibliothek/internal/service"
@@ -55,7 +55,7 @@ func SyncCoversHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		go coverSvc.SyncMissingCoversAsync()
 
 		RespondJSON(w, http.StatusOK, map[string]string{
-			"status": "success",
+			"status":  "success",
 			"message": "Der Hintergrund-Job zum Herunterladen fehlender Cover wurde gestartet.",
 		})
 	}

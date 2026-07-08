@@ -234,7 +234,10 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 
 	// Jahresübersicht-Tabellen
 	if jahresansicht {
-		type monthStat struct{ count, exemplare int; betrag float64 }
+		type monthStat struct {
+			count, exemplare int
+			betrag           float64
+		}
 		monthly := map[time.Month]*monthStat{}
 		for _, o := range orders {
 			m := o.Bestelldatum.Month()
@@ -275,7 +278,10 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 		p.Ln(10)
 
 		// Aufteilung nach Lieferant
-		type supplierStat struct{ count int; betrag float64 }
+		type supplierStat struct {
+			count  int
+			betrag float64
+		}
 		bySupplier := map[string]*supplierStat{}
 		for _, o := range orders {
 			if bySupplier[o.LieferantName] == nil {
