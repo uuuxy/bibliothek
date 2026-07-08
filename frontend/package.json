@@ -22,11 +22,11 @@
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
+    "@lucide/svelte": "^1.23.0",
     "@sentry/svelte": "^10.59.0",
     "@tailwindcss/vite": "^4.3.0",
     "html5-qrcode": "^2.3.8",
     "idb": "^8.0.3",
-    "lucide-svelte": "^1.0.1",
     "tailwindcss": "^4.3.0"
   }
 }

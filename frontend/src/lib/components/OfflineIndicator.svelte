@@ -1,6 +1,6 @@
 <script>
   import { offlineSync } from "../stores/offlineSync.svelte.js";
-  import { CloudOff, Download, Upload } from "lucide-svelte";
+  import { CloudOff, Download, Upload } from "@lucide/svelte";
   import { toastStore } from "../stores/toastStore.svelte.js";
 
   // isOffline and global events are now handled centrally in offlineSync.svelte.js

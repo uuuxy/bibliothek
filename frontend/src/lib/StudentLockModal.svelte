@@ -1,6 +1,6 @@
 <script>
   import { apiClient } from "./apiFetch.js";
-  import { Unlock, Lock, X, AlertCircle } from "lucide-svelte";
+  import { Unlock, Lock, X, AlertCircle } from "@lucide/svelte";
   import Button from "./components/ui/Button.svelte";
 
   /** @type {{ open: boolean, profile: any, onsuccess: (updatedProfile: any) => void }} */

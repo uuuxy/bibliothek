@@ -1,6 +1,6 @@
 <script>
   import Button from "./components/ui/Button.svelte";
-  import { Printer, FileText, Lock, Unlock, AlertTriangle } from "lucide-svelte";
+  import { Printer, FileText, Lock, Unlock, AlertTriangle } from "@lucide/svelte";
 
   /**
    * @typedef {Object} Props
