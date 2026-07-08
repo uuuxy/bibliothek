@@ -26,7 +26,7 @@ func TestNormalizeAllClasses_Regex(t *testing.T) {
 
 	tx, err := pool.Begin(ctx)
 	require.NoError(t, err)
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	_, err = tx.Exec(ctx, `
 		CREATE TEMP TABLE class_books (
