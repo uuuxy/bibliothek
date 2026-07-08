@@ -123,9 +123,19 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 	return settings, nil
 }
 
+// DueDateConfig bündelt die Parameter zur Berechnung des Rückgabedatums.
+type DueDateConfig struct {
+	Titel           string
+	Medientyp       string
+	LmfStichtag     string
+	FristBuchTage   int
+	FristMedienTage int
+	AdditionalYears int
+}
+
 // calculateDueDate berechnet das Rückgabedatum auf Basis von Titel, Medientyp und
 // den definierten Standardfristen.
-func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage, additionalYears int) time.Time {
+func calculateDueDate(cfg DueDateConfig) time.Time {
 	// In Schul-Zeitzone rechnen, damit sowohl der Jahreswechsel-Stichtag (August)
 	// als auch das "Ende des Tages" (23:59:59) deterministisch sind — unabhängig
 	// von der Server-Zeitzone. now.Location() ist dadurch schoolLocation().
@@ -134,7 +144,7 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 	// 1. Fall: Lernmittelfreiheit (Schulbücher)
 	// Schulbücher (erkennbar am Präfix "lmf-" oder "LMF-") werden für das gesamte Schuljahr ausgeliehen.
 	// Sie müssen spätestens am definierten Stichtag (standardmäßig 31. Juli) zurückgegeben werden.
-	if strings.HasPrefix(strings.ToLower(titel), "lmf-") {
+	if strings.HasPrefix(strings.ToLower(cfg.Titel), "lmf-") {
 		year := now.Year()
 		// Wenn wir uns bereits im oder nach dem August befinden (neues Schuljahr),
 		// liegt der Stichtag im nächsten Kalenderjahr.
@@ -143,13 +153,13 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 		}
 
 		// Mehrjährige Ausleihen
-		year += additionalYears
+		year += cfg.AdditionalYears
 
 		month := time.July
 		day := 31
 
 		// Stichtag aus den Einstellungen parsen (Format: MM-DD, z.B. "07-31")
-		parts := strings.SplitN(lmfStichtag, "-", 2)
+		parts := strings.SplitN(cfg.LmfStichtag, "-", 2)
 		if len(parts) == 2 {
 			m, err1 := strconv.Atoi(parts[0])
 			d, err2 := strconv.Atoi(parts[1])
@@ -165,14 +175,14 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 	// 2. Fall: Audiovisuelle/Digitale Medien
 	// Medien wie CDs, DVDs oder Audio-Dateien haben aufgrund der höheren Nachfrage
 	// eine verkürzte Ausleihfrist (fristMedienTage).
-	lower := strings.ToLower(medientyp)
+	lower := strings.ToLower(cfg.Medientyp)
 	if strings.Contains(lower, "cd") || strings.Contains(lower, "dvd") || strings.Contains(lower, "audio") {
-		return now.AddDate(0, 0, fristMedienTage)
+		return now.AddDate(0, 0, cfg.FristMedienTage)
 	}
 
 	// 3. Fall: Reguläre Bücher
 	// Standardleihfrist für normale Buchbestände (fristBuchTage).
-	return now.AddDate(0, 0, fristBuchTage)
+	return now.AddDate(0, 0, cfg.FristBuchTage)
 }
 
 // parseGrade extrahiert den Jahrgang aus dem Klassen-String.
@@ -213,7 +223,14 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 
 	if err != nil {
 		// Bei einem Datenbankfehler greifen wir auf feste Notfall-Standardwerte zurück
-		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31", 21, 7, additionalYears), nil
+		return calculateDueDate(DueDateConfig{
+			Titel:           copy.Titel,
+			Medientyp:       copy.Medientyp,
+			LmfStichtag:     "07-31",
+			FristBuchTage:   21,
+			FristMedienTage: 7,
+			AdditionalYears: additionalYears,
+		}), nil
 	}
 
 	isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
@@ -229,5 +246,12 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 	}
 
 	// Reguläre Fristenberechnung
-	return calculateDueDate(copy.Titel, copy.Medientyp, settings.LmfStichtag, settings.FristBuchTage, settings.FristMedienTage, additionalYears), nil
+	return calculateDueDate(DueDateConfig{
+		Titel:           copy.Titel,
+		Medientyp:       copy.Medientyp,
+		LmfStichtag:     settings.LmfStichtag,
+		FristBuchTage:   settings.FristBuchTage,
+		FristMedienTage: settings.FristMedienTage,
+		AdditionalYears: additionalYears,
+	}), nil
 }
