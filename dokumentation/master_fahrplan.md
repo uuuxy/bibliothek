@@ -72,11 +72,22 @@ Prod-Secrets (`ENFORCE_PROD_SECRETS`, `BACKUP_ENCRYPTION_KEY` — ohne den läuf
    (Cookie wurde nie initial beschafft, jetzt Bootstrap über `GET /api/csrf-token`). Außerdem:
    Heartbeat-Overlay erscheint nicht mehr bei transientem SSE-`onerror` (Druckdialog!), sondern
    erst nach dem dokumentierten 25s-Timeout.
-2. **Bot-PR-Triage** (10 offene PRs, Stand 08.07. — Review/Merge ist Peters Entscheidung):
-   zuerst **#200 (HIGH, Path Traversal)**, dann #194 (`os.OpenRoot`, backup_email) und
-   #197 (PGPASSWORD-Leak — schleppt CI-/go.mod-Änderungen mit, genau prüfen).
-   **Achtung:** Bolt-Order-PRs #195/#196 sind gegen den Stand *vor* dem orders→bestellungen-Refactor
-   gebaut → vermutlich konfliktbehaftet/obsolet. Palette-PRs (a11y) risikoarm.
+2. ~~**Bot-PR-Triage**~~ ✅ **Review erledigt 08.07.** — Merge-Entscheidung liegt bei Peter.
+   Alle 15 offenen PRs gesichtet, Security-PRs tief reviewt, Merge-Checks gegen aktuellen main gelaufen:
+
+   | PR | Empfehlung | Begründung |
+   |---|---|---|
+   | **#194** G304 backup_email | ✅ **MERGEN** | Minimaler, korrekter `os.OpenRoot`-Fix (13 Zeilen); lokal gemerged, gebaut, Inventur-Tests grün |
+   | **#190** PGPASSWORD (CRITICAL) | ✅ **MERGEN** | Sauberer tmp-`.pgpass`+`PGPASSFILE`-Fix mit korrektem Escaping; lokal gemerged, jobs-Tests grün. go.mod-Beifang (odbc direkt) ist korrekt — littera_migration importiert es hinter Build-Tag |
+   | **#200** Path Traversal (HIGH) | ❌ **SCHLIESSEN** | Kern-Fix byte-gleich in #194 enthalten; schleppt **Supply-Chain-Downgrade** mit (gosec via `curl \| sh` vom master-Branch!) |
+   | **#197** PGPASSWORD (MEDIUM) | ❌ **SCHLIESSEN** | Duplikat von #190 + Trivy `exit-code: 0` (Scanner darf still failen!) + themenfremde Svelte-Datei |
+   | **#192, #198, #201** Import-Bulk | ❌ **SCHLIESSEN** | Optimieren alle die in Phase 1 **gelöschte** `api/import.go` (toter Handler) — obsolet |
+   | **#195** Order-Bulk (CopyFrom) | 🟡 optional | Korrekt, mergebar, ohne Beifang — aber Bestellungen haben typisch <20 Positionen, Gewinn marginal |
+   | **#196** Order-Bulk | ❌ **SCHLIESSEN** | Duplikat von #195 mit go.mod-Beifang |
+   | **#199** Login-Loading-State | 🟡 nach Prüfung | Gute Idee, textuell mergebar — aber ändert `handleLogin`, das wir refactort haben (`#applyLogin`): nach Merge unbedingt `npm test` + E2E |
+   | **#193, #202** BookCopiesManager a11y | 🟡 risikoarm | Mergebar; nacheinander mergen (gleiche Datei) |
+   | **#191** Sidebar-ARIA | ⚠️ prüfen | Mergebar, aber fasst auch workflow + package.json an; ARIA-Labels können die accessible names der E2E-Selektoren ändern → nach Merge E2E laufen lassen |
+   | **#188** Mahnwesen-ARIA | ❌ **SCHLIESSEN** (oder Rebase) | Konflikt mit unserer Spalten-Entfernung in MahnwesenTable |
 3. ~~**Vierter E2E-Flow**~~ ✅ **erledigt 08.07.** (`093968f`): sperren → Block-Alert →
    „Sperre dauerhaft aufheben" → Ausleihe läuft durch (deckt den Vorab-Bugfix E2E ab).
    **Beifang — echter Prod-Bug gefixt** (`e94a6fb`): Eine NULL-wert-Zeile in
