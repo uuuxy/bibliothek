@@ -24,6 +24,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// escapePgPass escapes backslashes and colons as required by PostgreSQL .pgpass format.
+func escapePgPass(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	return strings.ReplaceAll(s, ":", "\\:")
+}
+
 // BackupJob führt tägliche verschlüsselte PostgreSQL-Datenbank-Backups durch.
 // Es ruft pg_dump auf (muss im PATH sein), komprimiert mit gzip und
 // verschlüsselt mit AES-256-GCM unter Verwendung eines Schlüssels, der aus BACKUP_ENCRYPTION_KEY abgeleitet wird.
@@ -74,13 +80,51 @@ func (b *BackupJob) RunDatabaseBackup() {
 
 	// pg_dump schreibt SQL nach stdout; wir pipen es durch gzip → AES-GCM Verschlüsselung.
 	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
-	pgDumpArgs, envs, err := dsnToPgDumpArgs(dsn)
+	config, err := pgconn.ParseConfig(dsn)
 	if err != nil {
 		log.Printf("Backup: failed to parse DSN: %v", err)
 		return
 	}
+
+	passFile, err := os.CreateTemp("", "pgpass-*")
+	if err != nil {
+		log.Printf("Backup: konnte pgpass-Datei nicht erstellen: %v", err)
+		return
+	}
+	defer func() { _ = os.Remove(passFile.Name()) }()
+
+	port := fmt.Sprintf("%d", config.Port)
+	if port == "0" {
+		port = "5432"
+	}
+
+	pgPassLine := fmt.Sprintf("%s:%s:%s:%s:%s\n",
+		escapePgPass(config.Host),
+		escapePgPass(port),
+		escapePgPass(config.Database),
+		escapePgPass(config.User),
+		escapePgPass(config.Password),
+	)
+	if _, err := passFile.WriteString(pgPassLine); err != nil {
+		_ = passFile.Close()
+		log.Printf("Backup: konnte in pgpass-Datei nicht schreiben: %v", err)
+		return
+	}
+	_ = passFile.Close()
+
+	pgDumpArgs := []string{
+		"--host=" + config.Host,
+		"--port=" + port,
+		"--username=" + config.User,
+		"--dbname=" + config.Database,
+		"--no-password",
+		"--format=plain",
+		"--encoding=UTF8",
+		"--verbose",
+	}
+
 	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
-	pgDump.Env = envs
+	pgDump.Env = append(os.Environ(), "PGPASSFILE="+passFile.Name())
 
 	sqlReader, sqlWriter := io.Pipe()
 	pgDump.Stdout = sqlWriter
@@ -248,33 +292,6 @@ func rotateBackups(dir string, maxKeep int) {
 			log.Printf("Backup rotation: deleted old backup %s", f)
 		}
 	}
-}
-
-// dsnToPgDumpArgs konvertiert einen PostgreSQL-DSN/Verbindungsstring in CLI-Argumente für pg_dump.
-// Unterstützt sowohl das postgres:// URL-Format als auch das key=value-Format.
-func dsnToPgDumpArgs(dsn string) ([]string, []string, error) {
-	config, err := pgconn.ParseConfig(dsn)
-	if err != nil {
-		return nil, nil, fmt.Errorf("invalid DSN: %w", err)
-	}
-
-	args := []string{
-		"--host=" + config.Host,
-		"--port=" + fmt.Sprintf("%d", config.Port),
-		"--username=" + config.User,
-		"--dbname=" + config.Database,
-		"--no-password",
-		"--format=plain",
-		"--encoding=UTF8",
-		"--verbose",
-	}
-
-	envs := os.Environ()
-	if config.Password != "" {
-		envs = append(envs, "PGPASSWORD="+config.Password)
-	}
-
-	return args, envs, nil
 }
 
 // BackupKeyFingerprint gibt einen kurzen Hex-Fingerabdruck des Verschlüsselungsschlüssels für Protokollierungs-/Audit-Zwecke zurück.
