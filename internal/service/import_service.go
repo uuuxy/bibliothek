@@ -35,6 +35,41 @@ type Feld struct {
 	Value   string `xml:",chardata"`
 }
 
+const qCombinedLittera = `
+			WITH t AS (
+				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+				VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
+				ON CONFLICT (isbn) DO UPDATE SET
+					titel = EXCLUDED.titel, autor = EXCLUDED.autor,
+					verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr,
+					subject = EXCLUDED.subject
+				RETURNING id, (xmax = 0) AS is_new_titel
+			), fb_sel AS (
+				SELECT id, false AS is_new_titel FROM buecher_titel
+				WHERE titel = $1 AND (isbn IS NULL OR isbn = '')
+				AND NOT EXISTS (SELECT 1 FROM t)
+			), fb_ins AS (
+				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+				SELECT $1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6
+				WHERE NOT EXISTS (SELECT 1 FROM t) AND NOT EXISTS (SELECT 1 FROM fb_sel)
+				RETURNING id, true AS is_new_titel
+			), final_titel AS (
+				SELECT id, is_new_titel FROM t UNION ALL SELECT id, is_new_titel FROM fb_sel UNION ALL SELECT id, is_new_titel FROM fb_ins
+			), ex_ins AS (
+				INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
+				SELECT id, $7, CURRENT_DATE, $8, $9
+				FROM final_titel
+				ON CONFLICT (barcode_id) DO UPDATE SET
+					zustand_notiz = EXCLUDED.zustand_notiz,
+					ist_ausleihbar = EXCLUDED.ist_ausleihbar,
+					aktualisiert_am = CURRENT_TIMESTAMP
+				RETURNING id
+			)
+			SELECT
+				COALESCE((SELECT is_new_titel FROM final_titel LIMIT 1), false) AS titel_inserted,
+				EXISTS(SELECT 1 FROM ex_ins) AS exemplar_inserted
+		`
+
 // ImportService stellt Geschäftslogik für Datenimporte bereit.
 type ImportService struct {
 	bookRepo repository.BookRepository
@@ -127,74 +162,30 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 	return importedCount, nil
 }
 
-// ImportLitteraBestand liest eine finale Bestands-CSV (Trennzeichen ';') und importiert
-// Titel sowie Exemplare über eine einzige SQL-Transaktion.
-// Spalten: Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand
-func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Reader) (int, int, error) {
+func parseLitteraCSV(csvData io.Reader) ([][]string, error) {
 	reader := csv.NewReader(csvData)
 	reader.Comma = ';'
 	reader.LazyQuotes = true
 
 	rows, err := reader.ReadAll()
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 	if len(rows) < 2 {
-		return 0, 0, nil // Leer oder nur Header
+		return nil, nil // Leer oder nur Header
 	}
 
 	// Kopfzeile prüfen (Index 0 bis 7)
 	header := rows[0]
 	if len(header) < 8 {
-		return 0, 0, errors.New("CSV hat nicht die benötigten 8 Spalten")
+		return nil, errors.New("CSV hat nicht die benötigten 8 Spalten")
 	}
 
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer db.SafeRollback(ctx, tx)
+	return rows, nil
+}
 
-	newTitlesCount := 0
-	importedCopiesCount := 0
-
+func buildLitteraBatch(rows [][]string) (*pgx.Batch, []string, []string) {
 	batch := &pgx.Batch{}
-
-	qCombined := `
-			WITH t AS (
-				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-				VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
-				ON CONFLICT (isbn) DO UPDATE SET 
-					titel = EXCLUDED.titel, autor = EXCLUDED.autor, 
-					verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, 
-					subject = EXCLUDED.subject
-				RETURNING id, (xmax = 0) AS is_new_titel
-			), fb_sel AS (
-				SELECT id, false AS is_new_titel FROM buecher_titel 
-				WHERE titel = $1 AND (isbn IS NULL OR isbn = '') 
-				AND NOT EXISTS (SELECT 1 FROM t)
-			), fb_ins AS (
-				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-				SELECT $1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6
-				WHERE NOT EXISTS (SELECT 1 FROM t) AND NOT EXISTS (SELECT 1 FROM fb_sel)
-				RETURNING id, true AS is_new_titel
-			), final_titel AS (
-				SELECT id, is_new_titel FROM t UNION ALL SELECT id, is_new_titel FROM fb_sel UNION ALL SELECT id, is_new_titel FROM fb_ins
-			), ex_ins AS (
-				INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
-				SELECT id, $7, CURRENT_DATE, $8, $9
-				FROM final_titel
-				ON CONFLICT (barcode_id) DO UPDATE SET 
-					zustand_notiz = EXCLUDED.zustand_notiz, 
-					ist_ausleihbar = EXCLUDED.ist_ausleihbar, 
-					aktualisiert_am = CURRENT_TIMESTAMP
-				RETURNING id
-			)
-			SELECT 
-				COALESCE((SELECT is_new_titel FROM final_titel LIMIT 1), false) AS titel_inserted,
-				EXISTS(SELECT 1 FROM ex_ins) AS exemplar_inserted
-		`
-
 	var queuedBarcodes []string
 	var queuedTitles []string
 
@@ -239,8 +230,15 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 
 		queuedBarcodes = append(queuedBarcodes, barcode)
 		queuedTitles = append(queuedTitles, titel)
-		batch.Queue(qCombined, titel, autor, verlag, isbn, jahr, kategorie, barcode, istAusleihbar, zustandCSV)
+		batch.Queue(qCombinedLittera, titel, autor, verlag, isbn, jahr, kategorie, barcode, istAusleihbar, zustandCSV)
 	}
+
+	return batch, queuedBarcodes, queuedTitles
+}
+
+func executeLitteraBatch(ctx context.Context, tx pgx.Tx, batch *pgx.Batch, queuedBarcodes, queuedTitles []string) (int, int, error) {
+	newTitlesCount := 0
+	importedCopiesCount := 0
 
 	br := tx.SendBatch(ctx, batch)
 	for i := 0; i < batch.Len(); i++ {
@@ -260,6 +258,34 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 		}
 	}
 	if err := br.Close(); err != nil {
+		return 0, 0, err
+	}
+
+	return newTitlesCount, importedCopiesCount, nil
+}
+
+// ImportLitteraBestand liest eine finale Bestands-CSV (Trennzeichen ';') und importiert
+// Titel sowie Exemplare über eine einzige SQL-Transaktion.
+// Spalten: Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand
+func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Reader) (int, int, error) {
+	rows, err := parseLitteraCSV(csvData)
+	if err != nil {
+		return 0, 0, err
+	}
+	if rows == nil {
+		return 0, 0, nil
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	batch, queuedBarcodes, queuedTitles := buildLitteraBatch(rows)
+
+	newTitlesCount, importedCopiesCount, err := executeLitteraBatch(ctx, tx, batch, queuedBarcodes, queuedTitles)
+	if err != nil {
 		return 0, 0, err
 	}
 
