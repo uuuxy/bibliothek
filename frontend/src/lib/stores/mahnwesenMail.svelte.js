@@ -10,9 +10,6 @@ export function useMahnwesenMail() {
     let modalSending = $state(false);
     let modalMsg = $state(/** @type {{ type: 'success'|'error', text: string }|null} */ (null));
 
-    let sendingStudentId = $state(/** @type {string|null} */ (null));
-    let studentMessages = $state(/** @type {Record<string, {type: 'success'|'error', text: string} | null>} */ ({}));
-
     /**
      * @param {string} klasse 
      * @param {string|null} [email] 
@@ -60,28 +57,6 @@ export function useMahnwesenMail() {
         }
     }
 
-    /**
-     * Sends a reminder directly to a student's parents.
-     * @param {string} schuelerId 
-     */
-    async function sendStudentMahnung(schuelerId) {
-        sendingStudentId = schuelerId;
-        studentMessages[schuelerId] = null;
-        try {
-            const res = await apiFetch(`/api/mail/send-overdue-notification/${schuelerId}`, { method: "POST" });
-            const json = await res.json();
-            if (res.ok) {
-                studentMessages[schuelerId] = { type: 'success', text: json.message || "Gesendet" };
-            } else {
-                studentMessages[schuelerId] = { type: 'error', text: json.error || json.message || "Fehler" };
-            }
-        } catch (e) {
-            studentMessages[schuelerId] = { type: 'error', text: String(e) };
-        } finally {
-            sendingStudentId = null;
-        }
-    }
-
     return {
         get modalOpen() { return modalOpen; },
         get modalKlasse() { return modalKlasse; },
@@ -89,11 +64,8 @@ export function useMahnwesenMail() {
         set modalEmail(v) { modalEmail = v; },
         get modalSending() { return modalSending; },
         get modalMsg() { return modalMsg; },
-        get sendingStudentId() { return sendingStudentId; },
-        get studentMessages() { return studentMessages; },
         openModal,
         closeModal,
-        sendMahnliste,
-        sendStudentMahnung
+        sendMahnliste
     };
 }

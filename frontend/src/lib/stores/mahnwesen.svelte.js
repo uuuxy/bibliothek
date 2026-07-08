@@ -153,12 +153,9 @@ export function createMahnwesenStore() {
         set modalEmail(v) { mailStore.modalEmail = v; },
         get modalSending() { return mailStore.modalSending; },
         get modalMsg() { return mailStore.modalMsg; },
-        get sendingStudentId() { return mailStore.sendingStudentId; },
-        get studentMessages() { return mailStore.studentMessages; },
         openModal: mailStore.openModal,
         closeModal: mailStore.closeModal,
         sendMahnliste: mailStore.sendMahnliste,
-        sendStudentMahnung: mailStore.sendStudentMahnung,
 
         // Expose pdf store methods and state directly
         get pdfLoading() { return pdfStore.pdfLoading; },

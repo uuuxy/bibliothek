@@ -33,7 +33,6 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// Mail Templates
 	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_users")(s.GetMailTemplatesHandler()))
 	mux.Handle("PUT /api/mail-templates/{id}", s.RequirePermission("manage_users")(s.UpdateMailTemplateHandler()))
-	mux.Handle("POST /api/mail/send-overdue-notification/{schuelerID}", s.RequirePermission("manage_users")(s.PostSendOverdueNotificationHandler()))
 
 	// Print / Reports
 	mux.Handle("GET /api/reports/overdue-pdf", s.RequirePermission("view_students")(s.GetOverdueReportsPDFHandler()))

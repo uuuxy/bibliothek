@@ -51,7 +51,6 @@
             <th class="px-4 py-3">Klasse</th>
             <th class="px-4 py-3">Medien</th>
             <th class="px-4 py-3">Status</th>
-            <th class="px-4 py-3 text-right">Aktionen</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -100,29 +99,11 @@
                   {schueler.mahnstufe}
                 </span>
               </td>
-              <td class="px-4 py-3 text-right">
-                {#if schueler.eltern_email}
-                  <button
-                    onclick={() => mahnwesenStore.sendStudentMahnung(schueler.schueler_id)}
-                    disabled={mahnwesenStore.sendingStudentId === schueler.schueler_id}
-                    class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors inline-flex"
-                    title="Mahnung an Eltern senden"
-                  >
-                    {#if mahnwesenStore.sendingStudentId === schueler.schueler_id}
-                      <div class="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                    {:else}
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    {/if}
-                  </button>
-                {/if}
-              </td>
             </tr>
           {/each}
           {#if mahnwesenStore.filteredSchueler.length === 0}
             <tr>
-              <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+              <td colspan="5" class="px-4 py-8 text-center text-slate-500">
                 Keine Einträge für den Filter "{mahnwesenStore.activeFilter}" gefunden.
               </td>
             </tr>
