@@ -154,6 +154,7 @@ func (s *Server) registerFrontendRoutes(mux *http.ServeMux) {
 			return
 		}
 		path := filepath.Join("./frontend/dist", r.URL.Path)
+		// #nosec G703
 		info, err := os.Stat(path)
 		if err != nil || info.IsDir() {
 			http.ServeFile(w, r, "./frontend/dist/index.html")

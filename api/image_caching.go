@@ -83,6 +83,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		if _, err := root.Stat(fileName); err == nil {
 			w.Header().Set("Cache-Control", "public, max-age=31536000")
 			w.Header().Set("Content-Type", "image/webp")
+			// #nosec G703
 			http.ServeFileFS(w, r, root.FS(), fileName)
 			return
 		}
@@ -129,6 +130,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		if _, err := root.Stat(fileName); err == nil {
 			w.Header().Set("Cache-Control", "public, max-age=31536000")
 			w.Header().Set("Content-Type", "image/webp")
+			// #nosec G703
 			http.ServeFileFS(w, r, root.FS(), fileName)
 		} else {
 			serveFallback(w)

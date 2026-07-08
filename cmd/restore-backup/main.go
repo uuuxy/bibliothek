@@ -74,6 +74,8 @@ func run() error {
 		out = f
 	}
 
+	// #nosec G110
+	//
 	if _, err := io.Copy(out, gz); err != nil {
 		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
 	}

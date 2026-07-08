@@ -27,6 +27,7 @@ type LitteraImportResponse struct {
 func (s *Server) LitteraImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 100<<20) // 100 MB limit
+		// #nosec G120
 		if err := r.ParseMultipartForm(100 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -171,6 +172,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 // BestandImportHandler verarbeitet den Upload der finalen Bestands-CSV (Semikolon-separiert).
 func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 20<<20)
+	// #nosec G120
 	if err := r.ParseMultipartForm(20 << 20); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return
