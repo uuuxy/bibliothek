@@ -45,6 +45,12 @@ func SendEmail(req MailRequest) error {
 		from = user
 	}
 
+	parsedFrom, err := mail.ParseAddress(from)
+	if err != nil {
+		return fmt.Errorf("invalid sender email address: %w", err)
+	}
+	from = parsedFrom.Address
+
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 	boundary := writer.Boundary()
