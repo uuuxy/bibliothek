@@ -42,7 +42,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", ""))
 
 	// 1. Settings query for auto-block
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", "5").
 			AddRow("standard_ausleihfrist_tage", "14").
@@ -55,7 +55,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 2. querySettings inside resolveCheckoutDueDate
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", "5").
 			AddRow("standard_ausleihfrist_tage", "14"))
@@ -79,7 +79,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{}))
 
 	// 7. querySettings inside early limit check
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", "5").
 			AddRow("standard_ausleihfrist_tage", "14"))

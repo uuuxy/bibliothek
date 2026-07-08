@@ -75,11 +75,11 @@ func expectSettingsAndOverdue(mock pgxmock.PgxPoolIface, overdueCount int) {
 			AddRow("max_overdue_items", "1").
 			AddRow("max_overdue_days", "14")
 	}
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").WillReturnRows(settingsRows())
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").WillReturnRows(settingsRows())
 	mock.ExpectQuery("SELECT COUNT").
 		WithArgs("s1", 14).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(overdueCount))
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").WillReturnRows(settingsRows())
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").WillReturnRows(settingsRows())
 }
 
 func newValidationService(t *testing.T, student *repository.Student) (*defaultLoanService, *mockAuditRepo, pgxmock.PgxPoolIface) {
@@ -158,7 +158,7 @@ func TestResolveBorrower_OverdueAutomaticBlock(t *testing.T) {
 	defer mock.Close()
 
 	// Nicht manuell gesperrt, aber 2 überfällige Medien bei MaxOverdueItems=1.
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("max_overdue_items", "1"))
 	mock.ExpectQuery("SELECT COUNT").
 		WithArgs("s1", 14).

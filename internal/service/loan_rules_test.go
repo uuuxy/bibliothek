@@ -153,7 +153,7 @@ func TestQuerySettings_ParsesValuesAndIgnoresInvalid(t *testing.T) {
 		AddRow("ferien_leseclub_aktiv", "true").
 		AddRow("max_overdue_items", "3")
 
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(rows)
 
 	got, err := svc.querySettings(context.Background())
@@ -189,7 +189,7 @@ func TestQuerySettings_EmptyTableKeepsDefaults(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 
 	got, err := svc.querySettings(context.Background())
@@ -205,7 +205,7 @@ func TestQuerySettings_DBErrorPropagates(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnError(errors.New("connection refused"))
 
 	if _, err := svc.querySettings(context.Background()); err == nil {
@@ -224,7 +224,7 @@ func TestResolveCheckoutDueDate_LeseclubOverride(t *testing.T) {
 		AddRow("ferien_leseclub_aktiv", "true").
 		AddRow("ferien_leseclub_zieldatum", ziel)
 
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(rows)
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
@@ -245,7 +245,7 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 		AddRow("ferien_leseclub_aktiv", "true").
 		AddRow("ferien_leseclub_zieldatum", "2030-09-15")
 
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(rows)
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
@@ -263,7 +263,7 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
-	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnError(errors.New("db down"))
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
@@ -276,5 +276,32 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	want := time.Now().AddDate(0, 0, 21)
 	if !sameDay(got, want) {
 		t.Errorf("Notfall-Default soll 21 Tage sein: got %v, want Tag %v", got, want)
+	}
+}
+
+// Regressionstest: Eine NULL-wert-Zeile (z. B. nie gesetztes
+// ferien_leseclub_zieldatum) machte vor dem coalesce-Fix JEDEN Checkout zum 500 —
+// der Scan in string brach die pgx-Iteration ab und rows.Err() schlug durch.
+// Mit coalesce kommt sie als leerer String an und fällt auf Defaults zurück.
+func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
+	svc, mock := newServiceWithMock(t)
+	defer mock.Close()
+
+	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
+		AddRow("ferien_leseclub_zieldatum", ""). // war in der DB: NULL
+		AddRow("frist_buch_tage", "")
+
+	mock.ExpectQuery(`SELECT schluessel, coalesce\(wert, ''\) FROM system_einstellungen`).
+		WillReturnRows(rows)
+
+	got, err := svc.querySettings(context.Background())
+	if err != nil {
+		t.Fatalf("leere Werte dürfen keinen Fehler auslösen: %v", err)
+	}
+	if got.FerienLeseclubZieldatum != nil {
+		t.Errorf("leeres Zieldatum muss nil bleiben, bekam %q", *got.FerienLeseclubZieldatum)
+	}
+	if got.FristBuchTage != 21 {
+		t.Errorf("leerer Zahlwert muss Default behalten: FristBuchTage = %d, want 21", got.FristBuchTage)
 	}
 }
