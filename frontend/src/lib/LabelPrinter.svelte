@@ -32,7 +32,7 @@
       Schneidet den Text mit '...' ab, um den Barcode/QR-Code nicht zu verschieben.
     - author-clamp: Begrenzt Autorennamen auf maximal 1 Zeile.
   */
-  .title-clamp {
+  :global(.title-clamp) {
     display: -webkit-box;
     -webkit-line-clamp: 2; /* Maximal 2 Zeilen anzeigen */
     line-clamp: 2;
@@ -41,7 +41,7 @@
     word-break: break-word;
   }
 
-  .author-clamp {
+  :global(.author-clamp) {
     display: -webkit-box;
     -webkit-line-clamp: 1; /* Maximal 1 Zeile anzeigen */
     line-clamp: 1;

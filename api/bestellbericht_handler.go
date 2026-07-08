@@ -192,31 +192,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 	tr := p.UnicodeTranslatorFromDescriptor("")
 	p.AddPage()
 
-	var gesamtBetrag float64
-	var gesamtExemplare int
-	for _, o := range orders {
-		gesamtBetrag += o.Gesamtbetrag
-		gesamtExemplare += o.AnzahlExemplare
-	}
-
-	drawBriefkopf(p, tr, schule)
-	drawBerichtstitel(p, tr, titel, von, bis)
-	drawZusammenfassung(p, tr, len(orders), gesamtExemplare, gesamtBetrag)
-
-	if jahresansicht {
-		drawJahresansicht(p, tr, orders, gesamtExemplare, gesamtBetrag)
-	}
-
-	drawDetailliste(p, tr, orders, gesamtBetrag, von, bis)
-
-	var buf bytes.Buffer
-	if err := p.Output(&buf); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func drawBriefkopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo) {
+	// Briefkopf
 	p.SetFont("Arial", "B", 12)
 	p.Cell(0, 8, tr(schule.Name))
 	p.Ln(5)
@@ -229,9 +205,8 @@ func drawBriefkopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo
 	p.SetFont("Arial", "", 10)
 	p.CellFormat(0, 6, tr(schule.OrtDatum(time.Now().Format("02.01.2006"))), "", 1, "R", false, 0, "")
 	p.Ln(6)
-}
 
-func drawBerichtstitel(p *gofpdf.Fpdf, tr func(string) string, titel string, von, bis time.Time) {
+	// Berichtstitel
 	p.SetFont("Arial", "B", 14)
 	p.Cell(0, 10, tr(titel))
 	p.Ln(7)
@@ -240,88 +215,94 @@ func drawBerichtstitel(p *gofpdf.Fpdf, tr func(string) string, titel string, von
 	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", von.Format("02.01.2006"), bis.Format("02.01.2006"))))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(12)
-}
 
-func drawZusammenfassung(p *gofpdf.Fpdf, tr func(string) string, ordersCount, gesamtExemplare int, gesamtBetrag float64) {
+	// Zusammenfassung
+	var gesamtBetrag float64
+	var gesamtExemplare int
+	for _, o := range orders {
+		gesamtBetrag += o.Gesamtbetrag
+		gesamtExemplare += o.AnzahlExemplare
+	}
+
 	p.SetFillColor(240, 245, 255)
 	p.SetFont("Arial", "B", 9)
-	p.CellFormat(60, 10, tr(fmt.Sprintf("Bestellungen: %d", ordersCount)), "1", 0, "C", true, 0, "")
+	p.CellFormat(60, 10, tr(fmt.Sprintf("Bestellungen: %d", len(orders))), "1", 0, "C", true, 0, "")
 	p.CellFormat(60, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 0, "C", true, 0, "")
 	p.CellFormat(50, 10, tr("Gesamtbetrag: "+euroStr(gesamtBetrag)), "1", 1, "C", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(10)
-}
 
-func drawJahresansicht(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, gesamtExemplare int, gesamtBetrag float64) {
-	type monthStat struct{ count, exemplare int; betrag float64 }
-	monthly := map[time.Month]*monthStat{}
-	for _, o := range orders {
-		m := o.Bestelldatum.Month()
-		if monthly[m] == nil {
-			monthly[m] = &monthStat{}
+	// Jahresübersicht-Tabellen
+	if jahresansicht {
+		type monthStat struct{ count, exemplare int; betrag float64 }
+		monthly := map[time.Month]*monthStat{}
+		for _, o := range orders {
+			m := o.Bestelldatum.Month()
+			if monthly[m] == nil {
+				monthly[m] = &monthStat{}
+			}
+			monthly[m].count++
+			monthly[m].exemplare += o.AnzahlExemplare
+			monthly[m].betrag += o.Gesamtbetrag
 		}
-		monthly[m].count++
-		monthly[m].exemplare += o.AnzahlExemplare
-		monthly[m].betrag += o.Gesamtbetrag
-	}
 
-	p.SetFont("Arial", "B", 11)
-	p.Cell(0, 8, tr("Übersicht nach Monat"))
-	p.Ln(8)
-	p.SetFont("Arial", "B", 9)
-	p.SetFillColor(220, 220, 220)
-	p.CellFormat(55, 7, tr("Monat"), "1", 0, "L", true, 0, "")
-	p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
-	p.CellFormat(40, 7, tr("Exemplare"), "1", 0, "C", true, 0, "")
-	p.CellFormat(35, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
-	p.SetFont("Arial", "", 9)
-	p.SetFillColor(255, 255, 255)
-	for m := time.January; m <= time.December; m++ {
-		if stat, ok := monthly[m]; ok {
-			p.CellFormat(55, 6, tr(monthNames[m-1]), "1", 0, "L", false, 0, "")
+		p.SetFont("Arial", "B", 11)
+		p.Cell(0, 8, tr("Übersicht nach Monat"))
+		p.Ln(8)
+		p.SetFont("Arial", "B", 9)
+		p.SetFillColor(220, 220, 220)
+		p.CellFormat(55, 7, tr("Monat"), "1", 0, "L", true, 0, "")
+		p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
+		p.CellFormat(40, 7, tr("Exemplare"), "1", 0, "C", true, 0, "")
+		p.CellFormat(35, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
+		p.SetFont("Arial", "", 9)
+		p.SetFillColor(255, 255, 255)
+		for m := time.January; m <= time.December; m++ {
+			if stat, ok := monthly[m]; ok {
+				p.CellFormat(55, 6, tr(monthNames[m-1]), "1", 0, "L", false, 0, "")
+				p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
+				p.CellFormat(40, 6, fmt.Sprintf("%d", stat.exemplare), "1", 0, "C", false, 0, "")
+				p.CellFormat(35, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
+			}
+		}
+		p.SetFont("Arial", "B", 9)
+		p.SetFillColor(240, 240, 240)
+		p.CellFormat(55, 7, tr("Gesamt"), "1", 0, "L", true, 0, "")
+		p.CellFormat(40, 7, fmt.Sprintf("%d", len(orders)), "1", 0, "C", true, 0, "")
+		p.CellFormat(40, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
+		p.CellFormat(35, 7, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
+		p.SetFillColor(255, 255, 255)
+		p.Ln(10)
+
+		// Aufteilung nach Lieferant
+		type supplierStat struct{ count int; betrag float64 }
+		bySupplier := map[string]*supplierStat{}
+		for _, o := range orders {
+			if bySupplier[o.LieferantName] == nil {
+				bySupplier[o.LieferantName] = &supplierStat{}
+			}
+			bySupplier[o.LieferantName].count++
+			bySupplier[o.LieferantName].betrag += o.Gesamtbetrag
+		}
+		p.SetFont("Arial", "B", 11)
+		p.Cell(0, 8, tr("Ausgaben nach Lieferant"))
+		p.Ln(8)
+		p.SetFont("Arial", "B", 9)
+		p.SetFillColor(220, 220, 220)
+		p.CellFormat(85, 7, tr("Lieferant"), "1", 0, "L", true, 0, "")
+		p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
+		p.CellFormat(45, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
+		p.SetFont("Arial", "", 9)
+		p.SetFillColor(255, 255, 255)
+		for name, stat := range bySupplier {
+			p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
 			p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
-			p.CellFormat(40, 6, fmt.Sprintf("%d", stat.exemplare), "1", 0, "C", false, 0, "")
-			p.CellFormat(35, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
+			p.CellFormat(45, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
 		}
+		p.Ln(10)
 	}
-	p.SetFont("Arial", "B", 9)
-	p.SetFillColor(240, 240, 240)
-	p.CellFormat(55, 7, tr("Gesamt"), "1", 0, "L", true, 0, "")
-	p.CellFormat(40, 7, fmt.Sprintf("%d", len(orders)), "1", 0, "C", true, 0, "")
-	p.CellFormat(40, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
-	p.CellFormat(35, 7, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
-	p.SetFillColor(255, 255, 255)
-	p.Ln(10)
 
-	// Aufteilung nach Lieferant
-	type supplierStat struct{ count int; betrag float64 }
-	bySupplier := map[string]*supplierStat{}
-	for _, o := range orders {
-		if bySupplier[o.LieferantName] == nil {
-			bySupplier[o.LieferantName] = &supplierStat{}
-		}
-		bySupplier[o.LieferantName].count++
-		bySupplier[o.LieferantName].betrag += o.Gesamtbetrag
-	}
-	p.SetFont("Arial", "B", 11)
-	p.Cell(0, 8, tr("Ausgaben nach Lieferant"))
-	p.Ln(8)
-	p.SetFont("Arial", "B", 9)
-	p.SetFillColor(220, 220, 220)
-	p.CellFormat(85, 7, tr("Lieferant"), "1", 0, "L", true, 0, "")
-	p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
-	p.CellFormat(45, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
-	p.SetFont("Arial", "", 9)
-	p.SetFillColor(255, 255, 255)
-	for name, stat := range bySupplier {
-		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
-		p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
-		p.CellFormat(45, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
-	}
-	p.Ln(10)
-}
-
-func drawDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, gesamtBetrag float64, von, bis time.Time) {
+	// Detailliste
 	if len(orders) == 0 {
 		p.SetFont("Arial", "I", 10)
 		p.SetTextColor(120, 120, 120)
@@ -387,6 +368,12 @@ func drawDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrd
 		p.CellFormat(20, 9, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
 		p.SetFillColor(255, 255, 255)
 	}
+
+	var buf bytes.Buffer
+	if err := p.Output(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func berichtTrunc(s string, max int) string {
