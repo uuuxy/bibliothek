@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -68,11 +70,21 @@ func NewAuthenticator(secret string, pool DatabasePool, duration time.Duration) 
 
 // GenerateToken generiert ein signiertes JWT, das Benutzeridentität und Rolle enthält.
 func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (string, error) {
+	// jti macht jedes Token einzigartig. Ohne sie sind zwei Logins desselben
+	// Kontos innerhalb derselben Sekunde byte-identisch (iat/exp haben
+	// Sekunden-Granularität) — ein Logout des einen würde über die hash-basierte
+	// Blacklist auch die Session des anderen widerrufen.
+	jtiBytes := make([]byte, 16)
+	if _, err := rand.Read(jtiBytes); err != nil {
+		return "", fmt.Errorf("failed to generate token id: %w", err)
+	}
+
 	claims := Claims{
 		UserID:    userID,
 		BarcodeID: barcodeID,
 		Rolle:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        hex.EncodeToString(jtiBytes),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.tokenDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
