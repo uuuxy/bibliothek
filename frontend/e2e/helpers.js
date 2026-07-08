@@ -1,0 +1,62 @@
+// Gemeinsame Helfer für die E2E-Smoke-Flows.
+
+export const ADMIN_EMAIL = 'pflasch@philipp-reis-schule.de';
+// Mock-IMAP (IMAP_HOST=mock im lokalen Stack) akzeptiert jedes Passwort.
+export const ADMIN_PASSWORD = 'e2e-egal';
+
+/**
+ * Loggt über die echte Login-UI ein und wartet, bis die App steht.
+ * (Die SPA macht beim Boot keinen Session-Restore — ein reines API-Login
+ * ließe den Login-Screen stehen. Der Cookie-Jar wird mit page.request geteilt,
+ * API-Seeding nach diesem Login ist also authentifiziert.)
+ * @param {import('@playwright/test').Page} page
+ */
+export async function uiLogin(page) {
+    await page.goto('/');
+
+    const email = page.locator('#login-email');
+    const password = page.locator('#login-password');
+
+    // Erst fokussieren, dann füllen, dann verifizieren — die Svelte-Bindings
+    // rendern kurz nach dem Mount; ungeduldiges fill landet sonst im falschen Feld.
+    await email.click();
+    await email.fill(ADMIN_EMAIL);
+    await password.click();
+    await password.fill(ADMIN_PASSWORD);
+
+    const { expect } = await import('@playwright/test');
+    await expect(email).toHaveValue(ADMIN_EMAIL);
+    await expect(password).toHaveValue(ADMIN_PASSWORD);
+
+    await page.getByRole('button', { name: 'Anmelden' }).click();
+    await page.getByRole('button', { name: 'Abmelden' }).waitFor();
+}
+
+/**
+ * Holt das CSRF-Token (Double-Submit-Cookie-Pattern) für schreibende API-Calls.
+ * @param {import('@playwright/test').Page} page
+ */
+export async function csrfToken(page) {
+    const res = await page.request.get('/api/csrf-token');
+    const body = await res.json();
+    return body.csrf_token;
+}
+
+/**
+ * Schreibender API-Call mit CSRF-Header — für Test-Seeding (Schüler, Lieferanten …).
+ * @param {import('@playwright/test').Page} page
+ * @param {string} url
+ * @param {object} data
+ */
+export async function apiPost(page, url, data) {
+    const token = await csrfToken(page);
+    return page.request.post(url, {
+        data,
+        headers: { 'X-CSRF-Token': token },
+    });
+}
+
+/** Eindeutiger Suffix, damit Läufe auf derselben DB nicht kollidieren. */
+export function uniqueSuffix() {
+    return `${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
+}

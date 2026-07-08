@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -34,6 +35,10 @@ export default defineConfig({
       }
     })
   ],
+  test: {
+    // Playwright-Specs (e2e/) laufen über `npm run test:e2e`, nicht über Vitest
+    exclude: [...configDefaults.exclude, 'e2e/**'],
+  },
   resolve: {
     alias: {
       '$lib': path.resolve('src/inventur/lib')
