@@ -1,0 +1,13 @@
+--- frontend/src/lib/PermissionManager.svelte
++++ frontend/src/lib/PermissionManager.svelte
+@@ -142,9 +142,3 @@
+   {#if activeSubTab === "users"}
+     <UserManagement />
+   {/if}
+ </div>
+-
+-<style>
+-  .peer-checked\:bg-blue-600:checked + div {
+-    background-color: rgb(37 99 235);
+-  }
+-</style>

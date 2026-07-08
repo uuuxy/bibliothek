@@ -1,0 +1,97 @@
+--- frontend/src/lib/components/InventoryStartModal.svelte
++++ frontend/src/lib/components/InventoryStartModal.svelte
+@@ -47,8 +47,8 @@
+
+       {#if state.scopeType === 'signature'}
+         <div transition:slide class="space-y-2">
+-          <label class="block text-sm font-medium text-slate-700">Signatur auswählen</label>
+-          <select bind:value={state.selectedSignatureId} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none">
++          <label for="signatureSelect" class="block text-sm font-medium text-slate-700">Signatur auswählen</label>
++          <select id="signatureSelect" bind:value={state.selectedSignatureId} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none">
+             <option value="" disabled selected>-- Bitte wählen --</option>
+             {#each state.signatures as sig}
+               <option value={sig.id}>{sig.name}</option>
+--- frontend/src/lib/UnifiedInventory.svelte
++++ frontend/src/lib/UnifiedInventory.svelte
+@@ -7,9 +7,9 @@
+
+   const inventoryState = useUnifiedInventory();
+
+-  let startDialog;
+-  let finishDialog;
+-  let barcodeInputEl;
++  let startDialog = $state();
++  let finishDialog = $state();
++  let barcodeInputEl = $state();
+
+   $effect(() => {
+     if (inventoryState.state.status === 'scanning' && barcodeInputEl) {
+--- frontend/src/lib/PermissionManager.svelte
++++ frontend/src/lib/PermissionManager.svelte
+@@ -143,10 +143,6 @@
+     </div>
+   </div>
+ </div>
+-
+-<style>
+-  .peer-checked\:bg-blue-600:checked + div {
+-    background-color: rgb(37 99 235);
+-  }
+-</style>
+--- frontend/src/lib/LabelPrinter.svelte
++++ frontend/src/lib/LabelPrinter.svelte
+@@ -32,18 +32,6 @@
+   /*
+     - title-clamp: Begrenzt Buchtitel auf maximal 2 Zeilen.
+     - author-clamp: Begrenzt Autorennamen auf maximal 1 Zeile.
+   */
+-  .title-clamp {
+-    display: -webkit-box;
+-    -webkit-line-clamp: 2; /* Maximal 2 Zeilen anzeigen */
+-    -webkit-box-orient: vertical;
+-    overflow: hidden;
+-    text-overflow: ellipsis;
+-  }
+-
+-  .author-clamp {
+-    display: -webkit-box;
+-    -webkit-line-clamp: 1; /* Maximal 1 Zeile anzeigen */
+-    -webkit-box-orient: vertical;
+-    overflow: hidden;
+-    text-overflow: ellipsis;
+-  }
+ </style>
+--- frontend/src/lib/StudentEditSheet.svelte
++++ frontend/src/lib/StudentEditSheet.svelte
+@@ -29,7 +29,11 @@
+     open = false;
+   }
+
+-  const { formData, saving, syncData, save } = useStudentEditForm({ student, onSave, showSnackbar });
++  const { formData, saving, syncData, save } = useStudentEditForm({
++    get student() { return student },
++    get onSave() { return onSave },
++    showSnackbar
++  });
+
+   $effect(() => {
+     if (open && student) {
+--- frontend/src/lib/components/BookExemplarStatusEditor.svelte
++++ frontend/src/lib/components/BookExemplarStatusEditor.svelte
+@@ -10,13 +10,13 @@
+   let { ex, onSave, onCancel } = $props();
+
+   let editStatusType = $state(
+-    ex.ist_ausleihbar
++    ex?.ist_ausleihbar
+       ? "Verfügbar"
+-      : (ex.ist_ausgesondert || (ex.zustand_notiz && ex.zustand_notiz.toLowerCase().includes("verloren")))
++      : (ex?.ist_ausgesondert || (ex?.zustand_notiz && ex.zustand_notiz.toLowerCase().includes("verloren")))
+         ? "Verloren"
+         : "Gesperrt (Defekt/Reserviert)"
+   );
+-  let editStatusNote = $state(ex.zustand_notiz || "");
++  let editStatusNote = $state(ex?.zustand_notiz || "");
+   let statusError = $state("");
+
+   async function handleSaveStatus() {

@@ -1,0 +1,34 @@
+--- frontend/src/lib/StudentEditSheet.svelte
++++ frontend/src/lib/StudentEditSheet.svelte
+@@ -29,7 +29,11 @@
+     open = false;
+   }
+
+-  const { formData, saving, syncData, save } = useStudentEditForm({ student, onSave, showSnackbar });
++  const { formData, saving, syncData, save } = useStudentEditForm({
++    get student() { return student; },
++    get onSave() { return onSave; },
++    showSnackbar
++  });
+
+   $effect(() => {
+     if (open && student) {
+--- frontend/src/lib/components/BookExemplarStatusEditor.svelte
++++ frontend/src/lib/components/BookExemplarStatusEditor.svelte
+@@ -9,14 +9,14 @@
+    */
+   let { ex, onSave, onCancel } = $props();
+
+-  let editStatusType = $state(
++  let editStatusType = $derived(
+     ex.ist_ausleihbar
+       ? "Verfügbar"
+       : (ex.ist_ausgesondert || (ex.zustand_notiz && ex.zustand_notiz.toLowerCase().includes("verloren")))
+         ? "Verloren"
+         : "Gesperrt (Defekt/Reserviert)"
+   );
+-  let editStatusNote = $state(ex.zustand_notiz || "");
++  let editStatusNote = $derived(ex.zustand_notiz || "");
+   let statusError = $state("");
+
+   async function handleSaveStatus() {

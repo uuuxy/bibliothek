@@ -47,8 +47,8 @@
 
       {#if state.scopeType === 'signature'}
         <div transition:slide class="space-y-2">
-          <label class="block text-sm font-medium text-slate-700">Signatur auswählen</label>
-          <select bind:value={state.selectedSignatureId} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none">
+          <label for="signatureSelect" class="block text-sm font-medium text-slate-700">Signatur auswählen</label>
+          <select id="signatureSelect" bind:value={state.selectedSignatureId} class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none">
             <option value="" disabled selected>-- Bitte wählen --</option>
             {#each state.signatures as sig}
               <option value={sig.id}>{sig.name}</option>

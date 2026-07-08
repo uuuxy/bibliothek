@@ -9,14 +9,14 @@
    */
   let { ex, onDone } = $props();
 
-  let editStatusType = $state(
+  let editStatusType = $derived(
     ex.ist_ausleihbar
       ? "Verfügbar"
       : (ex.ist_ausgesondert || (ex.zustand_notiz && ex.zustand_notiz.toLowerCase().includes("verloren")))
         ? "Verloren"
         : "Gesperrt (Defekt/Reserviert)"
   );
-  let editStatusNote = $state(ex.zustand_notiz || "");
+  let editStatusNote = $derived(ex.zustand_notiz || "");
   let statusError = $state("");
 
   async function saveStatus() {
