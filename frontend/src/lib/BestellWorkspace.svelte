@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { orderStore } from "./stores/orderStore.svelte.js";
   import { printQueue } from "./stores/printQueue.svelte.js";
+  import { uiStore } from "./stores/uiStore.svelte.js";
 
   import OrderCreationPanel from "./components/bestellungen/OrderCreationPanel.svelte";
   import IncomingShipments from "./components/bestellungen/IncomingShipments.svelte";
@@ -11,6 +12,7 @@
   import BestellHistorie from "./components/bestellungen/BestellHistorie.svelte";
   import BestellBerichte from "./components/bestellungen/BestellBerichte.svelte";
   import PrintSuggestion from "./components/bestellungen/PrintSuggestion.svelte";
+  import KlassensatzReservierungen from "./components/bestellungen/KlassensatzReservierungen.svelte";
 
   let activeTab = $state("bestellungen");
   let showWareneingang = $state(false);
@@ -52,6 +54,15 @@
     {@render tab("lieferanten", "Lieferanten verwalten")}
     {@render tab("historie", "Bestellhistorie")}
     {@render tab("berichte", "Berichte")}
+    <button
+      onclick={() => activeTab = "klassensaetze"}
+      class="pb-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 {activeTab === 'klassensaetze' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}"
+    >
+      Klassensatz-Reservierungen
+      {#if uiStore.pendingReservierungen > 0}
+        <span class="min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-bold px-1">{uiStore.pendingReservierungen}</span>
+      {/if}
+    </button>
   </div>
 
   {#if activeTab === "bestellungen"}
@@ -101,5 +112,9 @@
 
   {#if activeTab === "berichte"}
     <BestellBerichte suppliers={orderStore.suppliers} />
+  {/if}
+
+  {#if activeTab === "klassensaetze"}
+    <KlassensatzReservierungen />
   {/if}
 </div>

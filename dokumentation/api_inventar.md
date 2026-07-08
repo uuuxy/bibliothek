@@ -6,7 +6,6 @@
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `PUT /api/reservierungen/klassensatz/{id}/erledigen`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
