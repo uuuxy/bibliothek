@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -79,20 +80,12 @@ func main() {
 
 		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
 
-
 		f, err := root.Open(entry.Name())
 		if err != nil {
 			slog.Error("Konnte Bild nicht öffnen", "file", entry.Name(), "error", err)
 			continue
 		}
-		fileInfo, err := f.Stat()
-		if err != nil {
-			slog.Error("Konnte Datei-Info nicht lesen", "file", entry.Name(), "error", err)
-			_ = f.Close()
-			continue
-		}
-		imgBytes := make([]byte, fileInfo.Size())
-		_, err = f.Read(imgBytes)
+		imgBytes, err := io.ReadAll(f)
 		_ = f.Close()
 		if err != nil {
 			slog.Error("Konnte Bild nicht lesen", "file", entry.Name(), "error", err)
