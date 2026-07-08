@@ -8,7 +8,7 @@ import { apiClient } from './apiFetch.js';
  * @param {(msg: string, type: 'success' | 'error') => void} props.showSnackbar - Callback to show notifications
  * @returns {{ formData: any, saving: boolean, syncData: () => void, save: () => Promise<void> }}
  */
-export function useStudentEditForm({ student, onSave, showSnackbar }) {
+export function useStudentEditForm(getProps) {
   let saving = $state(false);
 
   let formData = $state({
@@ -32,6 +32,7 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
    * Call this in an $effect when the student prop changes.
    */
   function syncData() {
+    const { student } = getProps();
     if (!student) return;
     formData.vorname      = student.vorname       || '';
     formData.nachname     = student.nachname      || '';
