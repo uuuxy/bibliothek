@@ -22,7 +22,7 @@ function processFile(fileName) {
     let raw = fs.readFileSync(safeFile, 'utf8');
 
     // Remove the import statement
-    raw = raw.replace(/import\s+\{[^}]+\}\s+from\s+['"]lucide-svelte['"];\r?\n?/g, '');
+    raw = raw.replace(/import\s+\{[^}]+\}\s+from\s+['"]@lucide/svelte['"];\r?\n?/g, '');
 
     // Replace X
     raw = raw.replace(/<X\s+size=\{28\}\s*\/>/g, ICONS.X(28));

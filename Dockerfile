@@ -1,7 +1,7 @@
 # ==============================================================================
 # Stage 1: Build the Svelte 5 frontend
 # ==============================================================================
-FROM node:22-alpine AS frontend-builder
+FROM node:22 AS frontend-builder
 WORKDIR /app/frontend
 
 # Copy dependencies first for Docker caching
@@ -15,7 +15,7 @@ RUN npm run build
 # ==============================================================================
 # Stage 2: Build the Go backend
 # ==============================================================================
-FROM golang:1.26-alpine AS backend-builder
+FROM golang:1.26.4-alpine AS backend-builder
 WORKDIR /app
 
 # Disable Go workspace mode to build using root go.mod directly
