@@ -1,0 +1,9 @@
+🧹 [Code Health] Refactor sendMailViaSMTP to use configuration struct
+
+Also fix vulnerability in x/image
+
+Extracted the six parameters from sendMailViaSMTP into an internal
+smtpConfig struct to improve maintainability and readability. Updated
+internal usage in the function and the caller in SendEmail.
+
+Also updated golang.org/x/image to v0.43.0 to resolve GO-2026-5061 and GO-2026-4961 vulnerabilities flagged by govulncheck.
