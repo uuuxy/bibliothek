@@ -60,10 +60,17 @@ func inferSubjectFromTitle(title string) string {
 
 func mapHeaderToField(header string) string {
 	name := strings.ToLower(strings.TrimSpace(header))
-	name = strings.ReplaceAll(name, " ", "")
-	name = strings.ReplaceAll(name, "_", "")
-	name = strings.ReplaceAll(name, "-", "")
-	name = strings.ReplaceAll(name, "/", "")
+
+	// Fast string cleaning instead of multiple ReplaceAll calls
+	var b strings.Builder
+	b.Grow(len(name))
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if c != ' ' && c != '_' && c != '-' && c != '/' {
+			b.WriteByte(c)
+		}
+	}
+	name = b.String()
 
 	if strings.Contains(name, "isbn") {
 		return "isbn"
