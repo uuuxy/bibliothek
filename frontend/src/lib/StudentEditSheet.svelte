@@ -29,7 +29,11 @@
     snackbarTimer = setTimeout(() => { snackbar = null; }, 3000);
   }
 
-  const { formData, saving, syncData, save } = useStudentEditForm({ student, onSave, showSnackbar });
+  const { formData, saving, syncData, save } = useStudentEditForm({
+    get student() { return student; },
+    get onSave() { return onSave; },
+    showSnackbar
+  });
 
   $effect(() => {
     syncData();
