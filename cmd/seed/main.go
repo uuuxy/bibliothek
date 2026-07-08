@@ -42,8 +42,8 @@ func main() {
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "supersecretkeydaslanggenugistfuertests" // Default fallback für Tests
+	if len(jwtSecret) < 32 {
+		log.Fatalf("FATAL: JWT_SECRET environment variable must be at least 32 characters long for security")
 	}
 	authenticator, err := auth.NewAuthenticator(jwtSecret, pool, 8760*time.Hour) // 1 Jahr gültig
 	if err == nil {
