@@ -2,6 +2,30 @@
 
 ---
 
+## 2026-07-08 — E2E-Testing, Session-Restore & Bugfixes
+
+- **E2E-Festung (Playwright)**: Erste Smoke-Flows für Kernfunktionen implementiert (Login/Logout, Datumsvalidierung, Omnibox-Scan zu Schülerkonto) inkl. lokalem Docker-Test-Stack.
+- **Session-Restore**: SPA-Boot stellt Session via `GET /api/auth/me` wieder her. Ein Serverseitiger Logout ist nun vollständig implementiert.
+- **Bugfixes**:
+  - JWTs ohne `jti` kollidierten bei Logins in derselben Sekunde (behoben).
+  - Fehlender CSRF-Token nach initialem Login führte zu 403 (jetzt via `GET /api/csrf-token` gebootstrappt).
+  - Ein NULL-Wert in `system_einstellungen` verursachte einen 500er beim Checkout (behoben mit `coalesce`).
+  - 501-Stub für Eltern-Mail-Versand aus UI entfernt (Datenschutz).
+- **PR-Triage**: Alt-PRs ausgemistet und konsolidiert (6 gemergt, 10 geschlossen).
+
+---
+
+## 2026-07-07 — Dead Code Cleanup & Stabilisierung
+
+- **Dead Code Cleanup (Phase 1)**: 11 tote Go-Handler und Routen sowie 16 ungenutzte Svelte-Dateien (GlobalScanner, KioskMode, etc.) gelöscht. Das nicht verdrahtete "Undo-Return"-Feature wurde restlos entfernt.
+- **Mahnwesen Bugfix**: Ein Slice-Reallokations-Bug, der Medien gleichnamiger Schüler verschluckte, wurde durch einen index-basierten Grouper behoben.
+- **Auth-Lebenszyklus**: Session-Refresh-Loop im Frontend (`authStore`) via `POST /api/auth/refresh` implementiert (30-Minuten-Tick).
+- **Inventur-Rechte**: RBAC-Guards für `RequireViewBooks` / `RequireEditBooks` wurden namentlich konsolidiert.
+- **Wareneingang / Bestellwesen**: Umfangreiche Unit- und Frontend-Tests (13 Vitest-Tests) für den Warenkorb ergänzt.
+- **Berichts-Datumsgrenzen**: Datums-Helfer ausgelagert (`lib/utils/dates.js`) und Zeitzonen/Schaltjahr-Bugs per Regressionstests gefixt.
+
+---
+
 ## 2026-06-25 — Secret-Guard per Schalter (Testbetrieb entsperrt)
 
 **Wunsch:** Die harte Start-Verweigerung soll während der Test-/Pilotphase aus sein und erst zum echten Prod-Deploy „bei Bedarf" eingeschaltet werden.

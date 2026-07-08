@@ -23,7 +23,27 @@
       "Bash(./scripts/api_inventar.sh)",
       "Bash(perl -pi -e 's/RequireAuth\\\\b/RequireViewBooks/g; s/RequireAdminAuth\\\\b/RequireEditBooks/g' inventur/api_routen.go api/router.go)",
       "Bash(perl -0pi -e 's/\\\\t\\\\/\\\\/ Protected GETs \\\\\\(view_books \\\\/ view_inventur\\\\\\)/\\\\t\\\\/\\\\/ Lesend: RBAC-Permission view_books \\(injiziert aus api\\\\/router.go\\)/; s/\\\\t\\\\/\\\\/ Admin Protected \\\\\\(edit_books\\\\\\)/\\\\t\\\\/\\\\/ Schreibend: RBAC-Permission edit_books \\(injiziert aus api\\\\/router.go\\)/' inventur/api_routen.go)",
-      "Bash(gofmt -w inventur/api_routen.go api/router.go)"
+      "Bash(gofmt -w inventur/api_routen.go api/router.go)",
+      "Bash(awk '/^diff --git a\\\\/jobs\\\\/backup.go/{f=1} f')",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
+      "Bash(awk '/diff --git a\\\\/frontend/{f=1} f')",
+      "Bash(awk '/diff --git a\\\\/api\\\\/order_service.go/{f=1} f')",
+      "Bash(awk '/diff --git a\\\\/.github/{f=1} /diff --git a\\\\/.jules/{f=0} f')",
+      "Bash(awk '/diff --git a\\\\/frontend\\\\/package.json/{f=1} /diff --git a\\\\/frontend\\\\/src/{f=0} f')",
+      "Bash(git pull *)",
+      "Bash(python3 -)",
+      "Bash(awk '/diff --git a\\\\/.github/{f=1} /diff --git a\\\\/cmd/{f=0} f')",
+      "Bash(python3 - /private/tmp/claude-501/-Users-peterflasch-Developer-Bibliothek/43568e08-b81a-491d-afff-2645992fbf1f/scratchpad)",
+      "Bash(gofmt -w inventur/datenbank_klassen_test.go)",
+      "Bash(perl -0pi -e 's/\\\\t\"path\\\\/filepath\"\\\\n/\\\\t\"strings\"\\\\n/' api/router.go)",
+      "Bash(docker compose *)",
+      "Bash(curl -sf http://localhost:8084/health)",
+      "Bash(curl -s -o /dev/null -w \"App-Shell /: %{http_code} | \" http://localhost:8084/)",
+      "Bash(curl -s -o /dev/null -w \"SPA-Fallback /kiosk: %{http_code} | \" http://localhost:8084/kiosk)",
+      "Bash(curl -s -o /dev/null -w \"Traversal-Probe: %{http_code}\\\\n\" --path-as-is \"http://localhost:8084/../go.mod\")",
+      "Bash(npx playwright *)",
+      "Bash(go test *)"
     ]
   }
 }
