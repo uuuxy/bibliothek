@@ -44,7 +44,23 @@ func main() {
 	defer pool.Close()
 
 	uploadDir := filepath.Join("uploads", "fotos")
-	entries, err := os.ReadDir(uploadDir)
+	root, err := os.OpenRoot(uploadDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			slog.Info("Kein uploads/fotos Verzeichnis gefunden. Nichts zu migrieren.")
+			return
+		}
+		slog.Error("Fehler beim Öffnen des Foto-Verzeichnisses", "error", err)
+		os.Exit(1)
+	}
+	defer root.Close()
+	rootFile, err := root.Open(".")
+	if err != nil {
+		slog.Error("Fehler beim Lesen des Foto-Verzeichnisses", "error", err)
+		os.Exit(1)
+	}
+	entries, err := rootFile.ReadDir(-1)
+	_ = rootFile.Close()
 	if err != nil {
 		if os.IsNotExist(err) {
 			slog.Info("Kein uploads/fotos Verzeichnis gefunden. Nichts zu migrieren.")
@@ -62,17 +78,30 @@ func main() {
 		processed++
 
 		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
-		path := filepath.Join(uploadDir, entry.Name())
 
-		imgBytes, err := os.ReadFile(path)
+
+		f, err := root.Open(entry.Name())
 		if err != nil {
-			slog.Error("Konnte Bild nicht lesen", "file", path, "error", err)
+			slog.Error("Konnte Bild nicht öffnen", "file", entry.Name(), "error", err)
+			continue
+		}
+		fileInfo, err := f.Stat()
+		if err != nil {
+			slog.Error("Konnte Datei-Info nicht lesen", "file", entry.Name(), "error", err)
+			_ = f.Close()
+			continue
+		}
+		imgBytes := make([]byte, fileInfo.Size())
+		_, err = f.Read(imgBytes)
+		_ = f.Close()
+		if err != nil {
+			slog.Error("Konnte Bild nicht lesen", "file", entry.Name(), "error", err)
 			continue
 		}
 
 		encryptedData, err := crypto.Encrypt(imgBytes)
 		if err != nil {
-			slog.Error("Konnte Bild nicht verschlüsseln", "file", path, "error", err)
+			slog.Error("Konnte Bild nicht verschlüsseln", "file", entry.Name(), "error", err)
 			continue
 		}
 
