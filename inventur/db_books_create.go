@@ -60,52 +60,90 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	return id, nil
 }
 
-// UpsertBooksBatch handles batch upserting book records.
-func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) (int64, error) {
-	if len(books) == 0 {
-		return 0, nil
+type bookBatchArrays struct {
+	isbns                   []string
+	titles                  []string
+	authors                 []string
+	coverUrls               []string
+	subjects                []string
+	grades                  []int16
+	tracks                  []string
+	stocks                  []int32
+	lastCounteds            []*string
+	medientypen             []string
+	jahrgaengeVon           []int
+	jahrgaengeBis           []int
+	untertitel              []string
+	verlage                 []string
+	erscheinungsjahre       []int
+	beschreibungen          []string
+	erweiterteEigenschaften [][]byte
+}
+
+func prepareBookBatchArrays(books []Book) bookBatchArrays {
+	// Deduplicate in-memory by ISBN
+	// Note: We use the first occurrence for metadata, but accumulate the stock.
+	bookMap := make(map[string]*Book)
+	uniqueISBNs := make([]string, 0, len(books))
+
+	for i := range books {
+		b := &books[i]
+		if existing, found := bookMap[b.ISBN]; found {
+			existing.Stock += b.Stock
+		} else {
+			// Copy book to avoid modifying original array
+			bookCopy := *b
+			bookMap[b.ISBN] = &bookCopy
+			uniqueISBNs = append(uniqueISBNs, b.ISBN)
+		}
 	}
 
-	isbns := make([]string, len(books))
-	titles := make([]string, len(books))
-	authors := make([]string, len(books))
-	coverUrls := make([]string, len(books))
-	subjects := make([]string, len(books))
-	grades := make([]int16, len(books))
-	tracks := make([]string, len(books))
-	stocks := make([]int32, len(books))
-	lastCounteds := make([]*string, len(books))
-	medientypen := make([]string, len(books))
-	jahrgaengeVon := make([]int, len(books))
-	jahrgaengeBis := make([]int, len(books))
-	untertitel := make([]string, len(books))
-	verlage := make([]string, len(books))
-	erscheinungsjahre := make([]int, len(books))
-	beschreibungen := make([]string, len(books))
-	// Wir speichern die JSONB-Daten als []byte
-	erweiterteEigenschaften := make([][]byte, len(books))
+	uniqueCount := len(uniqueISBNs)
+	data := bookBatchArrays{
+		isbns:                   make([]string, uniqueCount),
+		titles:                  make([]string, uniqueCount),
+		authors:                 make([]string, uniqueCount),
+		coverUrls:               make([]string, uniqueCount),
+		subjects:                make([]string, uniqueCount),
+		grades:                  make([]int16, uniqueCount),
+		tracks:                  make([]string, uniqueCount),
+		stocks:                  make([]int32, uniqueCount),
+		lastCounteds:            make([]*string, uniqueCount),
+		medientypen:             make([]string, uniqueCount),
+		jahrgaengeVon:           make([]int, uniqueCount),
+		jahrgaengeBis:           make([]int, uniqueCount),
+		untertitel:              make([]string, uniqueCount),
+		verlage:                 make([]string, uniqueCount),
+		erscheinungsjahre:       make([]int, uniqueCount),
+		beschreibungen:          make([]string, uniqueCount),
+		erweiterteEigenschaften: make([][]byte, uniqueCount),
+	}
 
-	for i, b := range books {
-		isbns[i] = b.ISBN
-		titles[i] = b.Title
-		authors[i] = b.Author
-		coverUrls[i] = b.CoverURL
-		subjects[i] = b.Subject
-		grades[i] = b.GradeLevel
-		tracks[i] = b.Track
+	for i, isbn := range uniqueISBNs {
+		b := bookMap[isbn]
+		data.isbns[i] = b.ISBN
+		data.titles[i] = b.Title
+		data.authors[i] = b.Author
+		data.coverUrls[i] = b.CoverURL
+		data.subjects[i] = b.Subject
+		data.grades[i] = b.GradeLevel
+		data.tracks[i] = b.Track
 		// #nosec G115 - Stock is a physical book count, fits easily in int32
-		stocks[i] = int32(b.Stock)
-		lastCounteds[i] = b.LastCounted
-		medientypen[i] = b.Medientyp
-		if medientypen[i] == "" {
-			medientypen[i] = "Buch"
+		data.stocks[i] = int32(b.Stock)
+		data.lastCounteds[i] = b.LastCounted
+
+		medientyp := b.Medientyp
+		if medientyp == "" {
+			medientyp = "Buch"
 		}
-		jahrgaengeVon[i] = b.JahrgangVon
-		jahrgaengeBis[i] = b.JahrgangBis
-		untertitel[i] = b.Untertitel
-		verlage[i] = b.Verlag
-		erscheinungsjahre[i] = b.Erscheinungsjahr
-		beschreibungen[i] = b.Beschreibung
+		data.medientypen[i] = medientyp
+
+		data.jahrgaengeVon[i] = b.JahrgangVon
+		data.jahrgaengeBis[i] = b.JahrgangBis
+		data.untertitel[i] = b.Untertitel
+		data.verlage[i] = b.Verlag
+		data.erscheinungsjahre[i] = b.Erscheinungsjahr
+		data.beschreibungen[i] = b.Beschreibung
 
 		props := b.ErweiterteEigenschaften
 		if props == nil {
@@ -113,8 +151,19 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		}
 		// In JSON umwandeln für pgx JSONB-Array Kompatibilität
 		jsonProps, _ := json.Marshal(props)
-		erweiterteEigenschaften[i] = jsonProps
+		data.erweiterteEigenschaften[i] = jsonProps
 	}
+
+	return data
+}
+
+// UpsertBooksBatch handles batch upserting book records.
+func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) (int64, error) {
+	if len(books) == 0 {
+		return 0, nil
+	}
+
+	data := prepareBookBatchArrays(books)
 
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften)
@@ -143,23 +192,23 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	cmdTag, err := repo.db.Exec(
 		ctx,
 		query,
-		isbns,
-		titles,
-		authors,
-		coverUrls,
-		subjects,
-		grades,
-		tracks,
-		stocks,
-		lastCounteds,
-		medientypen,
-		jahrgaengeVon,
-		jahrgaengeBis,
-		untertitel,
-		verlage,
-		erscheinungsjahre,
-		beschreibungen,
-		erweiterteEigenschaften,
+		data.isbns,
+		data.titles,
+		data.authors,
+		data.coverUrls,
+		data.subjects,
+		data.grades,
+		data.tracks,
+		data.stocks,
+		data.lastCounteds,
+		data.medientypen,
+		data.jahrgaengeVon,
+		data.jahrgaengeBis,
+		data.untertitel,
+		data.verlage,
+		data.erscheinungsjahre,
+		data.beschreibungen,
+		data.erweiterteEigenschaften,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("bücher konnten nicht im batch importiert werden: %w", err)
