@@ -12,6 +12,8 @@
    * }}
    */
   let { student, onClose, onSave, role = '' } = $props();
+  let studentVal = $derived(student);
+  let onSaveVal = $derived(onSave);
 
   /** @type {{ msg: string, type: 'success' | 'error' } | null} */
   let snackbar = $state(null);
@@ -29,7 +31,7 @@
     snackbarTimer = setTimeout(() => { snackbar = null; }, 3000);
   }
 
-  const { formData, saving, syncData, save } = useStudentEditForm({ student, onSave, showSnackbar });
+  const { formData, saving, syncData, save } = useStudentEditForm({ student: studentVal, onSave: onSaveVal, showSnackbar });
 
   $effect(() => {
     syncData();
