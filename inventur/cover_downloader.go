@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	_ "golang.org/x/image/webp"
+	_ "github.com/chai2010/webp"
 )
 
 // coverFetchUserAgent identifiziert uns gegenüber DNB/Google/OpenLibrary als ehrliches
