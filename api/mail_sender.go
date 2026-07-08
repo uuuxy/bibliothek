@@ -113,15 +113,32 @@ func SendEmail(req MailRequest) error {
 		auth = smtp.PlainAuth("", user, pass, host)
 	}
 
-	if err := sendMailViaSMTP(addr, host, auth, from, []string{req.To}, buf.Bytes()); err != nil {
+	cfg := smtpConfig{
+		addr: addr,
+		host: host,
+		auth: auth,
+		from: from,
+		to:   []string{req.To},
+		msg:  buf.Bytes(),
+	}
+	if err := sendMailViaSMTP(cfg); err != nil {
 		return fmt.Errorf("SMTP send failed: %w", err)
 	}
 
 	return nil
 }
 
-func sendMailViaSMTP(addr, host string, a smtp.Auth, from string, to []string, msg []byte) error {
-	c, err := smtp.Dial(addr)
+type smtpConfig struct {
+	addr string
+	host string
+	auth smtp.Auth
+	from string
+	to   []string
+	msg  []byte
+}
+
+func sendMailViaSMTP(cfg smtpConfig) error {
+	c, err := smtp.Dial(cfg.addr)
 	if err != nil {
 		return err
 	}
@@ -136,7 +153,7 @@ func sendMailViaSMTP(addr, host string, a smtp.Auth, from string, to []string, m
 		// auch den Mailinhalt (Schülernamen, Mahndaten, Elternadressen) mitlesen.
 		// Escape-Hatch nur für Legacy-Server mit Self-Signed-Zertifikat via Env.
 		config := &tls.Config{
-			ServerName:         host,
+			ServerName:         cfg.host,
 			MinVersion:         tls.VersionTLS12,
 			InsecureSkipVerify: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true", // #nosec G402 - bewusst per Env, Default sicher
 		}
@@ -144,17 +161,17 @@ func sendMailViaSMTP(addr, host string, a smtp.Auth, from string, to []string, m
 			return err
 		}
 	}
-	if a != nil {
+	if cfg.auth != nil {
 		if ok, _ := c.Extension("AUTH"); ok {
-			if err = c.Auth(a); err != nil {
+			if err = c.Auth(cfg.auth); err != nil {
 				return err
 			}
 		}
 	}
-	if err = c.Mail(from); err != nil {
+	if err = c.Mail(cfg.from); err != nil {
 		return err
 	}
-	for _, addr := range to {
+	for _, addr := range cfg.to {
 		if err = c.Rcpt(addr); err != nil {
 			return err
 		}
@@ -163,7 +180,7 @@ func sendMailViaSMTP(addr, host string, a smtp.Auth, from string, to []string, m
 	if err != nil {
 		return err
 	}
-	_, err = w.Write(msg)
+	_, err = w.Write(cfg.msg)
 	if err != nil {
 		return err
 	}
