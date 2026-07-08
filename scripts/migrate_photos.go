@@ -18,18 +18,16 @@ import (
 func main() {
 	log.Println("Starte Foto-Migration (Legacy -> Encrypted DB)...")
 
-	// 1. Datenbank-URL aus Umgebungsvariable oder lokalem Standard
+	// 1. Datenbank-URL aus Umgebungsvariable
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		dbUrl = "postgres://postgres:postgrespassword@127.0.0.1:5434/bibliothek?sslmode=disable"
-		log.Println("WARNUNG: Keine DATABASE_URL gefunden, nutze lokalen Standard:", dbUrl)
+		log.Fatal("FEHLER: DATABASE_URL Umgebungsvariable ist nicht gesetzt.")
 	}
 
 	// 2. Encryption Key überprüfen
 	encKey := os.Getenv("APP_ENCRYPTION_KEY")
 	if encKey == "" {
-		// Falls nicht in env, probieren wir den Standard (wie im Backend)
-		os.Setenv("APP_ENCRYPTION_KEY", "super-secure-aes-key-32-chars-ok")
+		log.Fatal("FEHLER: APP_ENCRYPTION_KEY Umgebungsvariable ist nicht gesetzt.")
 	}
 
 	ctx := context.Background()
