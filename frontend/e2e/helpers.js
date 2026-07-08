@@ -1,5 +1,7 @@
 // Gemeinsame Helfer für die E2E-Smoke-Flows.
 
+import { execSync } from 'node:child_process';
+
 export const ADMIN_EMAIL = 'pflasch@philipp-reis-schule.de';
 // Mock-IMAP (IMAP_HOST=mock im lokalen Stack) akzeptiert jedes Passwort.
 export const ADMIN_PASSWORD = 'e2e-egal';
@@ -53,6 +55,31 @@ export async function apiPost(page, url, data) {
     return page.request.post(url, {
         data,
         headers: { 'X-CSRF-Token': token },
+    });
+}
+
+/**
+ * Schreibender API-Call (PATCH) mit CSRF-Header.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} url
+ * @param {object} data
+ */
+export async function apiPatch(page, url, data) {
+    const token = await csrfToken(page);
+    return page.request.patch(url, {
+        data,
+        headers: { 'X-CSRF-Token': token },
+    });
+}
+
+/**
+ * Seedet Testdaten direkt in die lokale Stack-DB (docker-compose.local.yml).
+ * Nur für Entitäten ohne einfachen API-Weg (z. B. Buch-Exemplare).
+ * @param {string} sql
+ */
+export function seedSQL(sql) {
+    execSync('docker exec -i bibliothek-db-local psql -U postgres -d bibliothek -v ON_ERROR_STOP=1', {
+        input: sql,
     });
 }
 
