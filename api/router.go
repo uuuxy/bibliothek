@@ -10,7 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -148,20 +148,32 @@ func (s *Server) Routes() http.Handler {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	// Serve Svelte frontend static assets from build directory
-	fs := http.FileServer(http.Dir("./frontend/dist"))
+	// Serve Svelte frontend static assets from build directory.
+	// os.OpenRoot bindet alle Datei-Zugriffe OS-seitig an dist/ — der frühere
+	// os.Stat auf den konkatenierten Pfad war als Existenz-Orakel außerhalb
+	// des Verzeichnisses nutzbar (gosec G304, Projekt-Learning in .jules/sentinel.md).
+	frontendRoot, frontendRootErr := os.OpenRoot("./frontend/dist")
+	if frontendRootErr != nil {
+		log.Printf("router: frontend/dist nicht verfügbar (%v) — SPA-Auslieferung deaktiviert", frontendRootErr)
+	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 			return
 		}
-		path := filepath.Join("./frontend/dist", r.URL.Path)
-		info, err := os.Stat(path)
-		if err != nil || info.IsDir() {
-			http.ServeFile(w, r, "./frontend/dist/index.html")
+		if frontendRoot == nil {
+			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, errors.New("frontend assets unavailable"))
 			return
 		}
-		fs.ServeHTTP(w, r)
+		rel := strings.TrimPrefix(r.URL.Path, "/")
+		if rel != "" {
+			if info, err := frontendRoot.Stat(rel); err == nil && !info.IsDir() {
+				http.ServeFileFS(w, r, frontendRoot.FS(), rel)
+				return
+			}
+		}
+		// SPA-Fallback: alle unbekannten Pfade auf die App-Shell
+		http.ServeFileFS(w, r, frontendRoot.FS(), "index.html")
 	})
 
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
