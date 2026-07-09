@@ -135,6 +135,20 @@ type bestandKennzahlen struct {
 	Zirkulationsquote            float64 // verliehen / aktiver Bestand
 }
 
+// resolveListLimit begrenzt den ?limit=-Parameter für die Renner-/Ladenhüter-
+// Listen. Default 5 (Dashboard-Kacheln); das Drill-Down-Panel lädt einmalig
+// mehr und filtert rein clientseitig. Hartes Cap gegen Missbrauch.
+func resolveListLimit(raw string) int {
+	limit, err := strconv.Atoi(raw)
+	if err != nil || limit < 1 {
+		return 5
+	}
+	if limit > 200 {
+		return 200
+	}
+	return limit
+}
+
 // resolveBestandsFilter mappt den ?type=-Parameter auf ein serverkontrolliertes
 // SQL-Fragment. LMF-Bestand ist per Projekt-Konvention am Titel-Präfix „lmf-"
 // erkennbar (dieselbe Regel wie im Ausleih-Limit, loan_checkout.go).
@@ -213,6 +227,7 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 		}
 
 		typeFilter, typeName := resolveBestandsFilter(r.URL.Query().Get("type"))
+		listLimit := resolveListLimit(r.URL.Query().Get("limit"))
 
 		// 1. Beliebteste Titel (Die Renner) — inkl. Drill-Down-Feldern
 		popularTitles := []PopularTitle{}
@@ -226,8 +241,8 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 			WHERE 1=1 %s %s
 			GROUP BY t.id, t.titel, t.autor, t.cover_url, t.subject, t.signatur, t.erscheinungsjahr
 			ORDER BY count DESC
-			LIMIT 5
-		`, ausleihenFilter, typeFilter)
+			LIMIT %d
+		`, ausleihenFilter, typeFilter, listLimit)
 		rows, err := s.DB.Pool.Query(ctx, qPopular)
 		if err == nil {
 			defer rows.Close()
@@ -258,8 +273,8 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 			HAVING MAX(a.ausgeliehen_am) < NOW() - INTERVAL '2 years'
 			    OR MAX(a.ausgeliehen_am) IS NULL
 			ORDER BY last_loan ASC NULLS FIRST
-			LIMIT 5
-		`, typeFilter)
+			LIMIT %d
+		`, typeFilter, listLimit)
 		rowsW, err := s.DB.Pool.Query(ctx, qWarmers)
 		if err == nil {
 			defer rowsW.Close()

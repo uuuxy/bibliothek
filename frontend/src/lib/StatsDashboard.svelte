@@ -1,12 +1,15 @@
 <script>
   import { apiFetch, apiClient } from "./apiFetch.js";
   import OverdueWidget from "./OverdueWidget.svelte";
-  
+  import StatistikDetailPanel from "./components/stats/StatistikDetailPanel.svelte";
+
   // State Runes (Svelte 5)
   /** @type {any} */
   let stats = $state(null);
   let loading = $state(true);
   let selectedTimeframe = $state("all");
+  /** @type {'renner' | 'ladenhueter' | null} Drill-Down-Panel */
+  let activePanel = $state(null);
 
   const TIMEFRAMES = [
     { value: "all",       label: "Alle" },
@@ -14,12 +17,19 @@
     { value: "monat",     label: "Monat" },
   ];
 
-  // Fetch statistics from backend API
+  // Kacheln zeigen Top 5; das Drill-Down-Panel filtert die volle Liste clientseitig
+  const topRenner = $derived(stats?.popular_titles?.slice(0, 5) ?? []);
+  const topWarmers = $derived(stats?.shelf_warmers?.slice(0, 5) ?? []);
+
+  // Fetch statistics from backend API.
+  // limit=100 lädt die Drill-Down-Daten gleich mit — das Panel braucht
+  // dadurch keinen einzigen weiteren API-Call.
   async function fetchStats() {
     loading = true;
     try {
-      const params = selectedTimeframe !== "all" ? `?zeitraum=${selectedTimeframe}` : "";
-      const res = await apiFetch(`/api/statistiken${params}`);
+      const params = new URLSearchParams({ limit: "100" });
+      if (selectedTimeframe !== "all") params.set("zeitraum", selectedTimeframe);
+      const res = await apiFetch(`/api/statistiken?${params}`);
       if (!res.ok) throw new Error("Fehler beim Laden");
       stats = await res.json();
     } catch (err) {
@@ -36,6 +46,20 @@
   });
 
 </script>
+
+{#snippet drillDownHeader(label, panel)}
+  <button
+    onclick={() => (activePanel = panel)}
+    class="w-full flex items-center justify-between border-b border-slate-100 pb-2 group cursor-pointer text-left"
+    aria-label="{label} — Detailansicht öffnen"
+  >
+    <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans group-hover:text-slate-900 transition-colors">{label}</h3>
+    <span class="flex items-center gap-1 text-[11px] font-bold text-slate-400 group-hover:text-blue-600 transition-colors">
+      Alle
+      <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17L17 7M7 7h10v10" /></svg>
+    </span>
+  </button>
+{/snippet}
 
 <div class="w-full space-y-6 text-slate-800">
   
@@ -91,7 +115,7 @@
       </div>
       <!-- Top Borrowed Books Section ("Die Renner") -->
       <div class="space-y-3 text-left">
-        <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans border-b border-slate-100 pb-2">Beliebteste Titel (Die Renner)</h3>
+        {@render drillDownHeader("Beliebteste Titel (Die Renner)", "renner")}
         
         <div class="w-full">
           <table class="w-full text-left text-base border-collapse">
@@ -110,7 +134,7 @@
                   </td>
                 </tr>
               {:else}
-                {#each stats.popular_titles as book}
+                {#each topRenner as book}
                   <tr class="hover:bg-slate-50/50 transition-colors">
                     <td class="py-3 px-4 flex items-center gap-3">
                       <!-- Cover Thumbnail -->
@@ -145,7 +169,7 @@
 
       <!-- Shelf Warmers Table -->
       <div class="space-y-3 text-left">
-        <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans border-b border-slate-100 pb-2">Ladenhüter</h3>
+        {@render drillDownHeader("Ladenhüter", "ladenhueter")}
         
         <div class="w-full">
           <table class="w-full text-left text-base border-collapse">
@@ -165,7 +189,7 @@
                   </td>
                 </tr>
               {:else}
-                {#each stats.shelf_warmers as book}
+                {#each topWarmers as book}
                   <tr class="hover:bg-slate-50/50 transition-colors">
                     <td class="py-3.5 px-4 text-slate-800 font-bold truncate max-w-[160px]" title={book.titel}>{book.titel}</td>
                     <td class="py-3.5 px-4 text-slate-500 truncate max-w-[120px]" title={book.autor}>{book.autor}</td>
@@ -179,5 +203,11 @@
       </div>
 
     </div>
+  {/if}
+
+  {#if activePanel === "renner"}
+    <StatistikDetailPanel kind="renner" items={stats?.popular_titles ?? []} onClose={() => (activePanel = null)} />
+  {:else if activePanel === "ladenhueter"}
+    <StatistikDetailPanel kind="ladenhueter" items={stats?.shelf_warmers ?? []} onClose={() => (activePanel = null)} />
   {/if}
 </div>
