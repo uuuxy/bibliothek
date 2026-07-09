@@ -10,6 +10,17 @@ test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }
     await page.getByRole('button', { name: 'System' }).click();
     await page.getByRole('button', { name: 'Statistiken' }).click();
 
+    // Neue Kennzahl-Kacheln sind da
+    await expect(page.getByText('Zirkulationsquote')).toBeVisible();
+    await expect(page.getByText('Wiederbeschaffungswert')).toBeVisible();
+    await expect(page.getByText('Aktuell verliehen')).toBeVisible();
+
+    // Bestandsfilter: Umschalten auf LMF lädt neu und rendert weiter sauber
+    await page.getByRole('button', { name: 'LMF', exact: true }).click();
+    await expect(page.getByText('Gesamtbestand')).toBeVisible();
+    await page.getByRole('button', { name: 'Gesamt', exact: true }).click();
+    await expect(page.getByText('Zirkulationsquote')).toBeVisible();
+
     // Kachel-Header ist der Drill-Down-Einstieg
     await page.getByRole('button', { name: /Ladenhüter — Detailansicht öffnen/ }).click();
 

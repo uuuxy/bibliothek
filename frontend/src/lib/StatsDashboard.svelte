@@ -8,6 +8,8 @@
   let stats = $state(null);
   let loading = $state(true);
   let selectedTimeframe = $state("all");
+  /** Bestandsfilter: '' = Gesamt, 'freihand' = Schülerbücherei, 'lmf' = Lernmittel */
+  let selectedType = $state("");
   /** @type {'renner' | 'ladenhueter' | null} Drill-Down-Panel */
   let activePanel = $state(null);
 
@@ -16,6 +18,15 @@
     { value: "schuljahr", label: "Schuljahr" },
     { value: "monat",     label: "Monat" },
   ];
+
+  const BESTAND_TYPES = [
+    { value: "",         label: "Gesamt" },
+    { value: "freihand", label: "Freihand" },
+    { value: "lmf",      label: "LMF" },
+  ];
+
+  /** @param {number} v */
+  const euro = (v) => (v ?? 0).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
 
   // Kacheln zeigen Top 5; das Drill-Down-Panel filtert die volle Liste clientseitig
   const topRenner = $derived(stats?.popular_titles?.slice(0, 5) ?? []);
@@ -29,6 +40,7 @@
     try {
       const params = new URLSearchParams({ limit: "100" });
       if (selectedTimeframe !== "all") params.set("zeitraum", selectedTimeframe);
+      if (selectedType) params.set("type", selectedType);
       const res = await apiFetch(`/api/statistiken?${params}`);
       if (!res.ok) throw new Error("Fehler beim Laden");
       stats = await res.json();
@@ -39,13 +51,22 @@
     }
   }
 
-  // Re-fetch whenever the selected timeframe changes
+  // Re-fetch whenever timeframe or Bestandsfilter changes
   $effect(() => {
     selectedTimeframe; // track dependency
+    selectedType;
     fetchStats();
   });
 
 </script>
+
+{#snippet kennzahl(label, value, hint, valueClass)}
+  <div class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0">
+    <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">{label}</span>
+    <span class="text-4xl font-extrabold {valueClass} leading-none py-1">{value}</span>
+    <span class="text-sm text-slate-500 font-medium">{hint}</span>
+  </div>
+{/snippet}
 
 {#snippet drillDownHeader(label, panel)}
   <button
@@ -63,8 +84,21 @@
 
 <div class="w-full space-y-6 text-slate-800">
   
-  <!-- Header Info & Period Filter -->
+  <!-- Header: Bestandsfilter + Zeitraum -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4 border-b border-slate-100 pb-5">
+
+    <!-- Bestandsfilter (LMF / Freihand / Gesamt) — filtert serverseitig ALLE Kennzahlen -->
+    <div class="flex items-center gap-2 self-start md:self-center">
+      <span class="text-sm font-semibold text-slate-400 uppercase tracking-wider font-sans">Bestand:</span>
+      <div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+        {#each BESTAND_TYPES as bt}
+          <button
+            onclick={() => selectedType = bt.value}
+            class="px-4 py-1.5 text-sm font-bold rounded-lg cursor-pointer transition-all {selectedType === bt.value ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'}"
+          >{bt.label}</button>
+        {/each}
+      </div>
+    </div>
 
     <!-- Time Filter Buttons -->
     <div class="flex items-center gap-2 self-start md:self-center">
@@ -85,25 +119,16 @@
       <div class="w-8 h-8 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin"></div>
     </div>
   {:else if stats}
-    <!-- Inventory Metrics & Loss Rate Card Grid -->
+    <!-- Kennzahlen: zwei flache Dreierreihen (Bestand/Zirkulation · Verluste/Finanzen) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0">
-        <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Gesamtbestand</span>
-        <span class="text-4xl font-extrabold text-slate-900 leading-none py-1">{stats.loss_stats.gesamt_bestand}</span>
-        <span class="text-sm text-slate-500 font-medium">Physische Buchkopien im System</span>
-      </div>
-      
-      <div class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0">
-        <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Verlorene / Defekte Bücher</span>
-        <span class="text-4xl font-extrabold text-rose-600 leading-none py-1">{stats.loss_stats.verlorene_exemplare}</span>
-        <span class="text-sm text-slate-500 font-medium">Exemplare mit Schadensfällen</span>
-      </div>
- 
-      <div class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0">
-        <span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans">Verlustquote</span>
-        <span class="text-4xl font-extrabold text-amber-600 leading-none py-1">{stats.loss_stats.verlust_quote}%</span>
-        <span class="text-sm text-slate-500 font-medium">Prozentsatz verlorener Lehrmittel</span>
-      </div>
+      {@render kennzahl("Gesamtbestand", stats.loss_stats.gesamt_bestand, "Physische Buchkopien im System", "text-slate-900")}
+      {@render kennzahl("Aktuell verliehen", stats.zirkulation?.aktuell_verliehen ?? 0, `von ${stats.zirkulation?.aktiver_bestand ?? 0} aktiven Exemplaren`, "text-blue-600")}
+      {@render kennzahl("Zirkulationsquote", `${stats.zirkulationsquote ?? 0}%`, "Verliehen ÷ aktiver Bestand", "text-emerald-600")}
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100">
+      {@render kennzahl("Verlorene / Defekte Bücher", stats.loss_stats.verlorene_exemplare, "Exemplare mit Schadensfällen", "text-rose-600")}
+      {@render kennzahl("Verlustquote", `${stats.loss_stats.verlust_quote}%`, "Prozentsatz verlorener Lehrmittel", "text-amber-600")}
+      {@render kennzahl("Wiederbeschaffungswert", euro(stats.wiederbeschaffungswert_defekt), "Einkaufspreise verlorener/defekter Exemplare", "text-rose-700")}
     </div>
 
     <!-- Stats Tables Layout -->
