@@ -49,3 +49,4 @@ tmp/
 /*_report.txt
 /*_report.html
 *.log
+!scripts/*.sql
