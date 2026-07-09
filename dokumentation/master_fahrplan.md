@@ -21,13 +21,24 @@ Secrets-Migrationsscript #228, SMTP-From-Validierung #176 · Tests: #225, #220 �
 Kommentaren geschlossen** (Duplikate, Konflikte gegen den konsolidierten Stand, Parkdeck-Policy,
 zwei mit versteckten CI-Security-Downgrades). Nach jedem Merge verifiziert; Endstand 2× E2E grün.
 
+~~**Verifikation der drei neuen Flows**~~ ✅ **erledigt 09.07.** (`5b2edf3` + `549f8cf`):
+Read-Only-Review fand zwei harte FAILs, beide behoben und verifiziert —
+- **Versetzung:** `SET klasse = NULL` verletzte NOT NULL (wäre beim ersten echten Lauf mit
+  Abschlussklassen gestorben) → `'ABG'`; `lpad` erhält führende Nullen (`05a`→`06a`); echter
+  Dry-Run (TX+Rollback) als Vorschau-Stufe im UI; Audit-Log atomar; 10-min-Doppellauf-Guard.
+  SQL real gegen die lokale DB verifiziert (BEGIN/ROLLBACK-Probe), 4 Handler-Tests.
+- **LUSD:** Barcode-Kollision (Geburtstagsparadoxon) → laufender Zähler; serverseitige
+  30%-Massenabgang-Bremse (Basis: aktiver DB-Bestand, 409 + `confirm_graduates`-Override
+  mit rotem Bestätigungs-Button); Flow nutzt jetzt den **getesteten** Parser; alte
+  Parallel-Pfade (`/api/import/lusd`, `LusdImportModal`) gestrichen — Graduates nutzt das
+  LusdImportView-Overlay. 3 neue Tests.
+- **Klassensatz:** war PASS; 404 („bereits erledigt") räumt jetzt auch lokal auf.
+
 **Offen ist jetzt nur noch:**
-1. **Verifikation der drei neu verdrahteten Flows** (LUSD-Import, Schuljahres-Versetzung,
-   Klassensatz-Reservierung „erledigen") mit echten Daten bzw. einem E2E-Test, **bevor** die
-   alten Parallel-Pfade (`LusdImportModal`, `/api/import/lusd`) gestrichen werden — Details in
-   den Abschnitten „🎓 Phase 3.1 + 3.3" und „📦 Phase 3.2" unten.
-2. **Neue Bot-PR-Welle** (~15 PRs vom 08.07. vormittags, #217ff) gesammelt triagieren +
+1. **Neue Bot-PR-Welle** (~15 PRs vom 08.07. vormittags, #217ff) gesammelt triagieren +
    Bot-Kadenz drosseln (Jules-Konfiguration auf wöchentliche Batches).
+2. **Manuelle Abnahme der zwei Admin-Flows mit einer echten LUSD-Datei** durch Peter
+   (Sekretariats-Realdaten kennen nur ihr) — technisch sind beide Flows test- und real-DB-verifiziert.
 3. **Ausbau + Betrieb:** `/api/v1`-Paket, dann Mandantenfähigkeit (Phase 3.4–3.5);
    Restore-Probe + Prod-Secrets nur in der Zielumgebung (T7-Rest).
 
