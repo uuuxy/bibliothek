@@ -40,7 +40,8 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			untertitel = $14,
 			verlag = $15,
 			erscheinungsjahr = $16,
-			beschreibung = $17
+			beschreibung = $17,
+			signatur = COALESCE(NULLIF($19, ''), signatur)
 		WHERE id = $18`
 
 	medientyp := book.Medientyp
@@ -74,6 +75,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Erscheinungsjahr,
 		book.Beschreibung,
 		id,
+		book.Signatur, // $19 — leerer Wert lässt die verklebte Signatur unangetastet
 	)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", handleDbError(err))

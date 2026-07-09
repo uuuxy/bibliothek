@@ -91,7 +91,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 				    autor      = EXCLUDED.autor,
 				    verlag     = EXCLUDED.verlag,
 				    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
-				    cover_url  = EXCLUDED.cover_url,
+				    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
 				    aktualisiert_am = CURRENT_TIMESTAMP
 			RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,'')
 		`, meta.Titel, meta.Autor, req.ISBN, meta.Verlag, jahrInt, meta.CoverURL).Scan(&newID, &newTitel, &newAutor, &newVerlag, &newCoverURL)

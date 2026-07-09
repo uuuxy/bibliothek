@@ -122,16 +122,20 @@ func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, co
 }
 
 // UpsertBookTitle speichert oder aktualisiert ein Buchtitel-Objekt.
+// signatur: COALESCE-Schutz — die Signatur klebt physisch auf dem Buchrücken.
+// Ein Re-Import mit leerer Signatur-Spalte darf einen befüllten Wert NIE
+// überschreiben (sonst droht Re-Labeling des Bestands); eine nicht-leere
+// Littera-Signatur gewinnt weiterhin 1:1.
 func (r *pgBookRepository) UpsertBookTitle(ctx context.Context, t BookTitle) error {
 	query := `
 		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur, ziel_jahrgang, aktualisiert_am)
-		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), $6, $7, CURRENT_TIMESTAMP)
-		ON CONFLICT (isbn) DO UPDATE SET 
-		    titel = EXCLUDED.titel, 
-		    autor = EXCLUDED.autor, 
-		    verlag = EXCLUDED.verlag, 
+		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''), $7, CURRENT_TIMESTAMP)
+		ON CONFLICT (isbn) DO UPDATE SET
+		    titel = EXCLUDED.titel,
+		    autor = EXCLUDED.autor,
+		    verlag = EXCLUDED.verlag,
 		    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
-		    signatur = EXCLUDED.signatur,
+		    signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
 		    ziel_jahrgang = EXCLUDED.ziel_jahrgang,
 		    aktualisiert_am = CURRENT_TIMESTAMP
 	`

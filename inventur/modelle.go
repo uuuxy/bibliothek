@@ -6,6 +6,9 @@ type Book struct {
 	ISBN                    string         `json:"isbn" db:"isbn"`
 	Title                   string         `json:"title" db:"title"`
 	Author                  string         `json:"author" db:"author"`
+	// Signatur steht physisch auf dem Buchrücken-Etikett (Littera-Systematik,
+	// z. B. "Bio 5" oder "Row") — Importe dürfen befüllte Werte NIE leeren.
+	Signatur                string         `json:"signatur" db:"signatur"`
 	CoverURL                string         `json:"coverUrl" db:"cover_url"`
 	Subject                 string         `json:"subject" db:"subject"`
 	GradeLevel              int16          `json:"gradeLevel" db:"grade_level"`

@@ -25,43 +25,51 @@
     import { lmfFaecher, bibKategorien } from "./signatur_optionen.js";
 
     let lastAutoSignatur = "";
-    
+
     // Computed states for the template
     let isLmfTrack = $derived(["Gymnasium", "Realschule", "Hauptschule", "Förderstufe", "Oberstufe"].includes(formular.track));
     let isBibTrack = $derived(formular.track === "Bibliothek");
 
+    // Belletristik-Vorschlag: erste 3 Buchstaben des Autor-Nachnamens
+    // ("Rowling, J.K." → "Row", "Joanne K. Rowling" → "Row") — die klassische
+    // Freihand-Systematik. Greift nur, wenn kein Schulbuch-Track gewählt ist.
+    const autorKuerzel = $derived.by(() => {
+        const autor = (formular.author ?? "").trim();
+        if (!autor) return "";
+        const nachname = autor.includes(",") ? autor.split(",")[0] : (autor.split(/\s+/).pop() ?? "");
+        const k = nachname.trim().slice(0, 3);
+        return k ? k.charAt(0).toUpperCase() + k.slice(1).toLowerCase() : "";
+    });
+
+    /** Neuanlage ohne Signatur → Speichern gesperrt (Material-Error-State am Feld). */
+    const signaturFehlt = $derived(!formular.id && !(formular.signatur ?? "").trim());
+
     $effect(() => {
         if (!formular.erweiterteEigenschaften) {
-            formular.erweiterteEigenschaften = { standort: "", signatur: "" };
-        } else {
-            if (typeof formular.erweiterteEigenschaften.standort !== "string") {
-                formular.erweiterteEigenschaften.standort = "";
-            }
-            if (typeof formular.erweiterteEigenschaften.signatur !== "string") {
-                formular.erweiterteEigenschaften.signatur = "";
-            }
+            formular.erweiterteEigenschaften = { standort: "" };
+        } else if (typeof formular.erweiterteEigenschaften.standort !== "string") {
+            formular.erweiterteEigenschaften.standort = "";
         }
-        
+
         // Defaults for Jahrgang
         if (formular.jahrgangVon === undefined) formular.jahrgangVon = 5;
         if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
 
-        // Auto-Generate Signatur
+        // Auto-Signatur-Vorschlag (bestehendes Guard-Muster: überschreibt nie
+        // eine manuelle Eingabe, nur den eigenen letzten Vorschlag).
+        // Ziel ist seit Migration 038 die ECHTE Spalte formular.signatur.
         let autoSig = "";
-
-        if (formular.subject) {
+        if (formular.subject && (isLmfTrack || isBibTrack)) {
             const sys = systematikListe.find(s => s.bezeichnung === formular.subject);
             const kuerzel = sys ? sys.kuerzel : "";
-            if (isLmfTrack) {
-                autoSig = kuerzel ? `LMF ${kuerzel}` : "LMF";
-            } else if (isBibTrack) {
-                autoSig = kuerzel ? `BIB ${kuerzel}` : "BIB";
-            }
+            autoSig = isLmfTrack ? (kuerzel ? `LMF ${kuerzel}` : "LMF") : (kuerzel ? `BIB ${kuerzel}` : "BIB");
+        } else if (!formular.id && autorKuerzel) {
+            autoSig = autorKuerzel; // Belletristik/Freihand-Neuzugang
         }
 
         if (autoSig) {
-            if (!formular.erweiterteEigenschaften.signatur || formular.erweiterteEigenschaften.signatur === lastAutoSignatur) {
-                formular.erweiterteEigenschaften.signatur = autoSig;
+            if (!formular.signatur || formular.signatur === lastAutoSignatur) {
+                formular.signatur = autoSig;
                 lastAutoSignatur = autoSig;
             }
         }
@@ -145,6 +153,32 @@
 
         <!-- Extrahierte ISBN-Feld-Komponente -->
         <IsbnFeld bind:formular bind:wirdGescannt />
+    </div>
+
+    <!-- Signatur: steht physisch auf dem Buchrücken-Etikett — prominent und
+         bei Neuanlage Pflicht. DNB liefert dieses Feld nie; hier entscheidet
+         sich, ob das Buch zur Littera-Systematik passt. -->
+    <div class="rounded-xl border-2 p-4 transition-colors {signaturFehlt ? 'border-rose-300 bg-rose-50/40' : 'border-emerald-200 bg-emerald-50/30'}">
+        <label for="buch-signatur" class="flex items-center gap-2 text-sm font-bold text-gray-800 mb-1">
+            🏷️ Signatur (Buchrücken)
+            {#if !formular.id}<span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded {signaturFehlt ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">Pflicht</span>{/if}
+        </label>
+        <input
+            id="buch-signatur"
+            type="text"
+            bind:value={formular.signatur}
+            placeholder={autorKuerzel ? `z. B. "${autorKuerzel}" (Belletristik) oder "LMF M"` : 'z. B. LMF M, BIB ROM, Row …'}
+            aria-invalid={signaturFehlt}
+            class="w-full rounded-lg px-4 py-2.5 text-gray-900 outline-none transition border bg-white
+                   {signaturFehlt
+                     ? 'border-rose-400 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'
+                     : 'border-emerald-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'}"
+        />
+        {#if signaturFehlt}
+            <p class="mt-1.5 text-xs font-semibold text-rose-600">Ohne Signatur kein Etikett — bitte Systematik-Kürzel eintragen (Speichern ist bis dahin gesperrt).</p>
+        {:else}
+            <p class="mt-1.5 text-xs text-gray-500">Wird 1:1 auf das Rücken-Etikett gedruckt. Bestehende Littera-Signaturen werden von Importen nie überschrieben.</p>
+        {/if}
     </div>
 
     <div class="grid grid-cols-2 gap-4">

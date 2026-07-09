@@ -10,6 +10,11 @@
 
     let wirdGescannt = $state(false);
 
+    // Neuanlage ohne Signatur ist gesperrt — die Signatur muss aufs
+    // Rücken-Etikett, DNB liefert sie nie. Altbestand (formular.id) bleibt
+    // speicherbar, damit leere Littera-Importe pflegbar sind.
+    const speichernGesperrt = $derived(!formular.id && !(formular.signatur ?? "").trim());
+
     /** @param {string} code */
     async function handleScan(code) {
         formular.isbn = code;
@@ -101,7 +106,9 @@
         </button>
         <button
             onclick={onSave}
-            class="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all active:scale-95"
+            disabled={speichernGesperrt}
+            title={speichernGesperrt ? "Signatur eintragen, um zu speichern" : undefined}
+            class="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all active:scale-95 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
         >
             Speichern
         </button>

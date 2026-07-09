@@ -51,8 +51,8 @@
           {#if book.medientyp && book.medientyp !== "Buch"}
             <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700">{book.medientyp}</span>
           {/if}
-          {#if book.erweiterte_eigenschaften?.signatur}
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-purple-700">📚 {book.erweiterte_eigenschaften.signatur}</span>
+          {#if book.signatur || book.erweiterte_eigenschaften?.signatur}
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-purple-700">📚 {book.signatur || book.erweiterte_eigenschaften?.signatur}</span>
           {/if}
           {#if book.erweiterte_eigenschaften?.standort}
             <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700">📍 {book.erweiterte_eigenschaften.standort}</span>

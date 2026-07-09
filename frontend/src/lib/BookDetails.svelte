@@ -96,16 +96,17 @@
             {title.medientyp === 'CD' || title.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {title.isbn || '-'} · 
             Verlag: {title.verlag} ({title.erscheinungsjahr})
           </p>
-          {#if title.erweiterteEigenschaften?.standort || title.erweiterteEigenschaften?.signatur}
+          {#if title.erweiterteEigenschaften?.standort || title.signatur || title.erweiterteEigenschaften?.signatur}
             <div class="mt-1.5 flex flex-wrap gap-2">
               {#if title.erweiterteEigenschaften?.standort}
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-100">
                   📍 Standort: {title.erweiterteEigenschaften.standort}
                 </span>
               {/if}
-              {#if title.erweiterteEigenschaften?.signatur}
+              {#if title.signatur || title.erweiterteEigenschaften?.signatur}
+                <!-- Spalte ist die Quelle der Wahrheit; JSONB-Fallback nur bis Migration 038 überall gelaufen ist -->
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-100">
-                  📚 Signatur: {title.erweiterteEigenschaften.signatur}
+                  📚 Signatur: {title.signatur || title.erweiterteEigenschaften?.signatur}
                 </span>
               {/if}
             </div>
