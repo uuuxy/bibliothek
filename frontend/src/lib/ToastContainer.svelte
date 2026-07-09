@@ -4,7 +4,8 @@
   import { fly, fade } from "svelte/transition";
 </script>
 
-<div class="fixed top-6 right-6 z-50 flex flex-col gap-3 pointer-events-none items-end">
+<!-- z-9999: Toasts müssen über allen Modals (z-50/z-60) und Omnibox-Alerts (z-100) liegen -->
+<div class="fixed top-6 right-6 z-9999 flex flex-col gap-3 pointer-events-none items-end">
   {#each toastStore.toasts as toast (toast.id)}
     <div
       animate:flip={{ duration: 250 }}
