@@ -43,7 +43,14 @@
       "Bash(curl -s -o /dev/null -w \"SPA-Fallback /kiosk: %{http_code} | \" http://localhost:8084/kiosk)",
       "Bash(curl -s -o /dev/null -w \"Traversal-Probe: %{http_code}\\\\n\" --path-as-is \"http://localhost:8084/../go.mod\")",
       "Bash(npx playwright *)",
-      "Bash(go test *)"
+      "Bash(go test *)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(git mv *)",
+      "Bash(perl -ni -e 'print unless m{/api/import/lusd}' api/routes_students.go)",
+      "Bash(echo \"BUILD:$?\")",
+      "Bash(echo \"MODAL-REFS: $?\")",
+      "Bash(docker info *)",
+      "Bash(open -a Docker)"
     ]
   }
 }

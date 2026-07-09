@@ -10,7 +10,7 @@
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 
-## Alle registrierten Routen (139)
+## Alle registrierten Routen (138)
 
 - `/`
 - `/api/admin`
@@ -122,7 +122,6 @@
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/damage/report`
 - `POST /api/import/littera`
-- `POST /api/import/lusd`
 - `POST /api/inventur/finish`
 - `POST /api/inventur/scan`
 - `POST /api/inventur/start`

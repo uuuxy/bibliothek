@@ -50,6 +50,13 @@
     completingId = id;
     try {
       const res = await apiFetch(`/api/reservierungen/klassensatz/${id}/erledigen`, { method: "PUT" });
+      if (res.status === 404) {
+        // Bereits anderweitig erledigt (z. B. zweiter Admin) — lokal genauso entfernen
+        reservierungen = reservierungen.filter((r) => r.id !== id);
+        confirmingId = null;
+        toastStore.addToast("Reservierung war bereits abgeschlossen.", "success");
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || "Reservierung konnte nicht abgeschlossen werden.");

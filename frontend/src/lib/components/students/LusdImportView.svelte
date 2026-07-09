@@ -6,7 +6,7 @@
   import { toastStore } from "../../stores/toastStore.svelte.js";
 
   /** @typedef {{ id: string, vorname: string, nachname: string, alte_klasse?: string, neue_klasse?: string }} StudentDiff */
-  /** @typedef {{ new_students: StudentDiff[], class_changes: StudentDiff[], graduates: StudentDiff[], total_csv_records: number }} LusdPreviewResult */
+  /** @typedef {{ new_students: StudentDiff[], class_changes: StudentDiff[], graduates: StudentDiff[], total_csv_records: number, active_db_students: number, skipped_no_id: number }} LusdPreviewResult */
 
   /** @type {{ onImported?: (result: LusdPreviewResult) => void }} */
   let { onImported = () => {} } = $props();
@@ -30,7 +30,13 @@
       : [],
   );
 
-  const hasRiskyGraduates = $derived(!!previewResult && previewResult.total_csv_records > 0 && previewResult.graduates.length / previewResult.total_csv_records >= 0.3);
+  // Bezugsgröße ist der aktive DB-Bestand (kommt vom Server), NICHT die
+  // CSV-Zeilenzahl — sonst rutscht ein Teilexport unter die Schwelle.
+  const hasRiskyGraduates = $derived(
+    !!previewResult && previewResult.active_db_students > 0 && previewResult.graduates.length / previewResult.active_db_students >= 0.3,
+  );
+  /** Serverseitige 409-Bremse hat gegriffen — zweite, bewusste Bestätigung nötig. */
+  let needsGraduateConfirm = $state(false);
 
   function handleFileChange(/** @type {Event} */ e) {
     const target = /** @type {HTMLInputElement} */ (e.target);
@@ -47,18 +53,22 @@
     previewResult = null;
     importResult = null;
     errorMessage = null;
+    needsGraduateConfirm = false;
     stage = "upload";
   }
 
   /** Sendet die aktuell gewählte Datei an einen der beiden LUSD-Endpoints. @param {string} url */
-  async function submitLusdFile(url) {
+  async function submitLusdFile(url, confirmGraduates = false) {
     const formData = new FormData();
     formData.append("csvFile", /** @type {File} */ (selectedFile));
+    if (confirmGraduates) formData.append("confirm_graduates", "true");
 
     const res = await apiFetch(url, { method: "POST", body: formData });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      throw new Error(data?.error || "Fehler bei der Verarbeitung der LUSD-Datei.");
+      const err = new Error(data?.error || "Fehler bei der Verarbeitung der LUSD-Datei.");
+      /** @type {any} */ (err).status = res.status;
+      throw err;
     }
     return res.json();
   }
@@ -78,18 +88,25 @@
     }
   }
 
-  async function finalizeImport() {
+  async function finalizeImport(confirmGraduates = false) {
     if (!selectedFile || importLoading) return;
     importLoading = true;
     errorMessage = null;
     try {
-      importResult = await submitLusdFile("/api/lusd/import");
+      importResult = await submitLusdFile("/api/lusd/import", confirmGraduates);
       stage = "done";
+      needsGraduateConfirm = false;
       toastStore.addToast("LUSD-Import erfolgreich übernommen.", "success");
       onImported(/** @type {LusdPreviewResult} */ (importResult));
     } catch (err) {
-      errorMessage = /** @type {any} */ (err).message || String(err);
-      toastStore.addToast(errorMessage, "error");
+      if (/** @type {any} */ (err).status === 409) {
+        // Serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten
+        needsGraduateConfirm = true;
+        errorMessage = /** @type {any} */ (err).message;
+      } else {
+        errorMessage = /** @type {any} */ (err).message || String(err);
+        toastStore.addToast(errorMessage, "error");
+      }
     } finally {
       importLoading = false;
     }
@@ -147,7 +164,7 @@
       {:else}
         <div class="space-y-1">
           <p class="text-xs font-bold text-slate-600">LUSD-CSV auswählen oder reinziehen</p>
-          <p class="text-[10px] text-slate-400 font-medium">Unterstützt Komma- &amp; Semikolon-Trennung</p>
+          <p class="text-[10px] text-slate-400 font-medium">Unterstützt Komma- &amp; Semikolon-Trennung · erwartete Spalten: <code>lusd_id, vorname, nachname, klasse</code> (optional <code>geburtsdatum</code>)</p>
         </div>
       {/if}
     </label>
@@ -166,9 +183,14 @@
 
     {#if stage === "preview" && previewResult}
       <div class="space-y-4">
-        <p class="text-xs text-slate-450">{previewResult.total_csv_records} Datensätze in der Datei gefunden.</p>
+        <p class="text-xs text-slate-450">
+          {previewResult.total_csv_records} Datensätze in der Datei · {previewResult.active_db_students} aktive Schüler im Bestand
+          {#if previewResult.skipped_no_id > 0}
+            · <span class="text-amber-700 font-semibold">{previewResult.skipped_no_id} Zeilen ohne LUSD-ID werden übersprungen</span>
+          {/if}
+        </p>
         {#if hasRiskyGraduates}
-          <div class="p-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-semibold flex items-center gap-2"><span>⚠️</span><span>Auffällig viele Abgänger ({previewResult.graduates.length} von {previewResult.total_csv_records}) — Datei vor dem Import genau prüfen, gerade beim Schuljahreswechsel.</span></div>
+          <div class="p-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-semibold flex items-center gap-2"><span>⚠️</span><span>Auffällig viele Abgänger ({previewResult.graduates.length} von {previewResult.active_db_students} aktiven Schülern) — Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche Bestätigung.</span></div>
         {/if}
 
         <div class="divide-y divide-slate-100">
@@ -181,13 +203,23 @@
           <button onclick={resetFlow} class="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold transition-colors cursor-pointer">
             Andere Datei wählen
           </button>
-          <button onclick={finalizeImport} disabled={importLoading} class="px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2">
-            {#if importLoading}
-              <span class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"></span> Import wird übernommen…
-            {:else}
-              Import finalisieren
-            {/if}
-          </button>
+          {#if needsGraduateConfirm}
+            <button onclick={() => finalizeImport(true)} disabled={importLoading} class="px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2">
+              {#if importLoading}
+                <span class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"></span> Import wird übernommen…
+              {:else}
+                Massenabgang bestätigen &amp; endgültig importieren
+              {/if}
+            </button>
+          {:else}
+            <button onclick={() => finalizeImport(false)} disabled={importLoading} class="px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2">
+              {#if importLoading}
+                <span class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"></span> Import wird übernommen…
+              {:else}
+                Import finalisieren
+              {/if}
+            </button>
+          {/if}
         </div>
       </div>
     {/if}

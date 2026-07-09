@@ -1,7 +1,7 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
-  import LusdImportModal from "./components/students/LusdImportModal.svelte";
+  import LusdImportView from "./components/students/LusdImportView.svelte";
 
   // State Runes
   /** @type {any[]} */
@@ -153,7 +153,16 @@
 </div>
 
 {#if showImportModal}
-  <LusdImportModal onClose={closeImportModal} />
+  <!-- Gleicher Preview-Import-Flow wie in der Datenverwaltung — der alte
+       Direkt-Import ohne Vorschau wurde stillgelegt. -->
+  <div class="fixed inset-0 bg-slate-900/20 backdrop-blur-xs z-50 flex items-start justify-center overflow-y-auto p-6 no-print">
+    <div class="w-full max-w-2xl bg-white rounded-2xl border border-slate-100 shadow-2xl p-8 my-8 space-y-6">
+      <div class="flex justify-end">
+        <button onclick={closeImportModal} class="text-slate-400 hover:text-slate-700 text-sm font-bold cursor-pointer" aria-label="Import schließen">✕ Schließen</button>
+      </div>
+      <LusdImportView onImported={() => fetchGraduates()} />
+    </div>
+  </div>
 {/if}
 
 

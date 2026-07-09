@@ -2,12 +2,10 @@ package api
 
 import (
 	"context"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -28,105 +26,74 @@ type StudentDiff struct {
 
 // LusdPreviewResult contains the detailed diff lists for the frontend preview,
 // so the Sekretariat can visually verify names and class changes before committing.
+// ActiveDbStudents ist die Bezugsgröße für die Abgänger-Quote (aktive Schüler mit
+// LUSD-ID in der DB) — NICHT die CSV-Zeilenzahl.
 type LusdPreviewResult struct {
-	NewStudents     []StudentDiff `json:"new_students"`
-	ClassChanges    []StudentDiff `json:"class_changes"`
-	Graduates       []StudentDiff `json:"graduates"` // Abgänger (missing in CSV but in DB)
-	TotalCsvRecords int           `json:"total_csv_records"`
+	NewStudents      []StudentDiff `json:"new_students"`
+	ClassChanges     []StudentDiff `json:"class_changes"`
+	Graduates        []StudentDiff `json:"graduates"` // Abgänger (missing in CSV but in DB)
+	TotalCsvRecords  int           `json:"total_csv_records"`
+	ActiveDbStudents int           `json:"active_db_students"`
+	SkippedNoID      int           `json:"skipped_no_id"` // CSV-Zeilen ohne LUSD-ID — werden nie importiert
 }
 
-// lusdRecord represents a parsed row from the CSV.
-type lusdRecord struct {
-	LusdID       string
-	Vorname      string
-	Nachname     string
-	Klasse       string
-	Geburtsdatum string
+// massGraduationThresholdPct: Ab diesem Anteil an Abgängern (bezogen auf die
+// aktiven DB-Schüler) verweigert der Import ohne explizite Bestätigung — die
+// Abgänger-Behandlung anonymisiert irreversibel. Schutz gegen versehentliche
+// Teilexporte (z. B. nur eine Jahrgangsstufe in der Datei).
+const massGraduationThresholdPct = 30
+
+// minStudentsForThreshold verhindert, dass der Schwellen-Schutz winzige
+// Bestände (Erstinstallation, Testsysteme) blockiert.
+const minStudentsForThreshold = 10
+
+// errMassGraduation trägt die Zahlen für die 409-Antwort ans Frontend.
+type errMassGraduation struct {
+	Graduates int
+	Active    int
 }
 
-// parseLusdCSV reads the multipart file and extracts the relevant fields.
-// It uses case-insensitive matching to find the column indices for LUSD-ID, Vorname, Nachname, Klasse, and Geburtsdatum.
-func parseLusdCSV(r *http.Request) ([]lusdRecord, error) {
+func (e *errMassGraduation) Error() string {
+	return fmt.Sprintf(
+		"%d von %d aktiven Schülern würden als Abgänger anonymisiert (Schwelle: %d%%). Datei prüfen — falls der Massenabgang beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.",
+		e.Graduates, e.Active, massGraduationThresholdPct)
+}
+
+// readLusdUpload liest die hochgeladene CSV und parst sie mit dem getesteten
+// LUSD-Parser (lusd_parser.go): exakte Spaltennamen, Dedupe per LUSD-ID
+// (letzte Zeile gewinnt), echte Datums-Validierung, harte Fehler statt
+// stillem Überspringen.
+func readLusdUpload(r *http.Request) ([]parsedStudentRow, error) {
 	file, _, err := r.FormFile("csvFile")
 	if err != nil {
 		return nil, fmt.Errorf("CSV-Datei fehlt: %w", err)
 	}
 	defer closeutil.LogClose(file, "lusd upload")
 
-	reader := csv.NewReader(file)
-	reader.Comma = ';' // Typical for German CSVs, fallback to ',' below if needed
-	reader.LazyQuotes = true
-	// Read header
-	header, err := reader.Read()
-	// Try comma if semicolon failed to produce multiple columns
-	if err != nil || len(header) < 3 {
-		if _, serr := file.Seek(0, io.SeekStart); serr != nil {
-			return nil, fmt.Errorf("CSV konnte für erneutes Einlesen nicht zurückgespult werden: %w", serr)
-		}
-		reader = csv.NewReader(file)
-		reader.Comma = ','
-		reader.LazyQuotes = true
-		header, err = reader.Read()
-		if err != nil {
-			return nil, fmt.Errorf("fehler beim Lesen der CSV-Kopfzeile: %w", err)
-		}
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err)
 	}
 
-	// Map headers to indices
-	colIdx := map[string]int{"id": -1, "vorname": -1, "nachname": -1, "klasse": -1, "geburtsdatum": -1}
-	for i, h := range header {
-		lowerH := strings.ToLower(strings.TrimSpace(h))
-		if strings.Contains(lowerH, "id") && colIdx["id"] == -1 {
-			colIdx["id"] = i
-		} else if strings.Contains(lowerH, "vorname") && colIdx["vorname"] == -1 {
-			colIdx["vorname"] = i
-		} else if strings.Contains(lowerH, "name") && !strings.Contains(lowerH, "vorname") && colIdx["nachname"] == -1 {
-			colIdx["nachname"] = i
-		} else if strings.Contains(lowerH, "klasse") && colIdx["klasse"] == -1 {
-			colIdx["klasse"] = i
-		} else if strings.Contains(lowerH, "geburt") && colIdx["geburtsdatum"] == -1 {
-			colIdx["geburtsdatum"] = i
-		}
+	rows, _, err := parseLUSDCSV(content)
+	if err != nil {
+		return nil, err
 	}
+	return rows, nil
+}
 
-	if colIdx["id"] == -1 || colIdx["vorname"] == -1 || colIdx["nachname"] == -1 {
-		return nil, errors.New("fehlende Pflichtspalten in der CSV. Benötigt: ID, Vorname, Name")
-	}
-
-	records := make([]lusdRecord, 0)
-	for {
-		row, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			continue // Skip bad rows
-		}
-		rec := lusdRecord{
-			LusdID:   strings.TrimSpace(row[colIdx["id"]]),
-			Vorname:  strings.TrimSpace(row[colIdx["vorname"]]),
-			Nachname: strings.TrimSpace(row[colIdx["nachname"]]),
-		}
-		if colIdx["klasse"] != -1 && len(row) > colIdx["klasse"] {
-			rec.Klasse = strings.TrimSpace(row[colIdx["klasse"]])
-		}
-		if colIdx["geburtsdatum"] != -1 && len(row) > colIdx["geburtsdatum"] {
-			rec.Geburtsdatum = strings.TrimSpace(row[colIdx["geburtsdatum"]])
-			// Convert DD.MM.YYYY to YYYY-MM-DD for postgres
-			if parts := strings.Split(rec.Geburtsdatum, "."); len(parts) == 3 {
-				rec.Geburtsdatum = fmt.Sprintf("%s-%s-%s", parts[2], parts[1], parts[0])
-			}
-		}
-		if rec.LusdID != "" && rec.Vorname != "" && rec.Nachname != "" {
-			records = append(records, rec)
-		}
-	}
-	return records, nil
+// generateImportBarcode liefert einen eindeutigen vorläufigen Barcode für im
+// LUSD-Import neu angelegte Schüler. Der laufende Zähler macht die Barcodes
+// INNERHALB eines Imports garantiert kollisionsfrei (barcode_id ist UNIQUE —
+// die frühere Nanosekunden-Variante kollidierte per Geburtstagsparadoxon ab
+// ~50 Neuzugängen regelmäßig und brach den gesamten Import ab).
+func generateImportBarcode(counter int) string {
+	return fmt.Sprintf("S-%06d%04d", time.Now().Unix()%1000000, counter)
 }
 
 // computeLusdChanges compares the CSV records with the database inside a transaction
 // and either returns the preview stats or actually applies the changes.
-func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, apply bool) (*LusdPreviewResult, error) {
+func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudentRow, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
 	// Start transaction. Everything is done within a single TX to ensure atomicity.
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
@@ -174,15 +141,24 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 	rows.Close()
 
 	res := &LusdPreviewResult{
-		NewStudents:     make([]StudentDiff, 0),
-		ClassChanges:    make([]StudentDiff, 0),
-		Graduates:       make([]StudentDiff, 0),
-		TotalCsvRecords: len(records),
+		NewStudents:      make([]StudentDiff, 0),
+		ClassChanges:     make([]StudentDiff, 0),
+		Graduates:        make([]StudentDiff, 0),
+		TotalCsvRecords:  len(records),
+		ActiveDbStudents: len(dbStudents),
 	}
 	csvLusdIDs := make(map[string]bool)
 
-	// Process CSV records (Updates and Inserts)
+	// Erster Durchlauf: nur klassifizieren (neu / Klassenwechsel / Abgänger),
+	// noch nichts schreiben — der Schwellen-Check unten muss VOR dem ersten
+	// destruktiven Statement entscheiden.
 	for _, rec := range records {
+		if rec.LusdID == "" {
+			// Ohne LUSD-ID gibt es keinen stabilen Schlüssel: jeder Import würde
+			// dieselbe Person erneut anlegen. Sichtbar zählen statt still anlegen.
+			res.SkippedNoID++
+			continue
+		}
 		csvLusdIDs[rec.LusdID] = true
 		if dbRec, exists := dbStudents[rec.LusdID]; exists {
 			if dbRec.Klasse != rec.Klasse {
@@ -193,12 +169,6 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 					AlteKlasse: dbRec.Klasse,
 					NeueKlasse: rec.Klasse,
 				})
-				if apply {
-					_, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID)
-					if err != nil {
-						return nil, err
-					}
-				}
 			}
 		} else {
 			res.NewStudents = append(res.NewStudents, StudentDiff{
@@ -207,24 +177,8 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 				Nachname:   rec.Nachname,
 				NeueKlasse: rec.Klasse,
 			})
-			if apply {
-				barcode := fmt.Sprintf("S-%05d%04d", time.Now().Unix()%100000, time.Now().Nanosecond()%10000) // Temporary unique short barcode
-				year := time.Now().Year() + 5                                                                 // Default abgang
-				geb := interface{}(rec.Geburtsdatum)
-				if rec.Geburtsdatum == "" {
-					geb = nil
-				}
-				_, err := tx.Exec(ctx,
-					"INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-					barcode, rec.Vorname, rec.Nachname, rec.Klasse, year, rec.LusdID, geb)
-				if err != nil {
-					return nil, err
-				}
-			}
 		}
 	}
-
-	// Process missing records (Abgänger)
 	for lusdID, dbRec := range dbStudents {
 		if !csvLusdIDs[lusdID] {
 			res.Graduates = append(res.Graduates, StudentDiff{
@@ -233,31 +187,66 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []lusdRecord, a
 				Nachname:   dbRec.Nachname,
 				AlteKlasse: dbRec.Klasse,
 			})
-			if apply {
-				// Check if they have active loans
-				var pending int
-				err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", dbRec.ID).Scan(&pending)
-				if err != nil {
+		}
+	}
+
+	if !apply {
+		return res, nil
+	}
+
+	// Serverseitige Massenabgang-Bremse: Die Abgänger-Behandlung anonymisiert
+	// Namen IRREVERSIBEL. Ein UI-Banner allein schützt nicht — die Schwelle wird
+	// hier durchgesetzt, wo die Destruktion passiert.
+	if !allowMassGraduation &&
+		res.ActiveDbStudents >= minStudentsForThreshold &&
+		len(res.Graduates)*100 >= res.ActiveDbStudents*massGraduationThresholdPct {
+		return nil, &errMassGraduation{Graduates: len(res.Graduates), Active: res.ActiveDbStudents}
+	}
+
+	// Zweiter Durchlauf: anwenden.
+	barcodeCounter := 0
+	for _, rec := range records {
+		if rec.LusdID == "" {
+			continue
+		}
+		if dbRec, exists := dbStudents[rec.LusdID]; exists {
+			if dbRec.Klasse != rec.Klasse {
+				if _, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID); err != nil {
 					return nil, err
 				}
-				if pending > 0 {
-					// Mark as inactive/abgänger
-					_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
-				} else {
-					// DSGVO compliant anonymization
-					_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = 'Anonymisiert', klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
-				}
-				if err != nil {
-					return nil, err
-				}
+			}
+		} else {
+			barcodeCounter++
+			year := time.Now().Year() + 5 // Default abgang
+			if _, err := tx.Exec(ctx,
+				"INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+				generateImportBarcode(barcodeCounter), rec.Vorname, rec.Nachname, rec.Klasse, year, rec.LusdID, rec.GebDatum); err != nil {
+				return nil, err
 			}
 		}
 	}
 
-	if apply {
-		if err := tx.Commit(ctx); err != nil {
+	for _, grad := range res.Graduates {
+		dbRec := dbStudents[grad.ID]
+		// Check if they have active loans
+		var pending int
+		if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", dbRec.ID).Scan(&pending); err != nil {
 			return nil, err
 		}
+		if pending > 0 {
+			// Mark as inactive/abgänger — Name bleibt fürs Mahnwesen sichtbar
+			_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
+		} else {
+			// DSGVO compliant anonymization
+			_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = 'Anonymisiert', klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
 	}
 
 	return res, nil
@@ -271,12 +260,12 @@ func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		records, err := parseLusdCSV(r)
+		records, err := readLusdUpload(r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		res, err := s.computeLusdChanges(r.Context(), records, false)
+		res, err := s.computeLusdChanges(r.Context(), records, false, false)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -286,6 +275,8 @@ func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
 }
 
 // PostLusdImportHandler parses the CSV and applies the changes transactionally.
+// Ab massGraduationThresholdPct Abgängern verlangt er das Formularfeld
+// confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
 func (s *Server) PostLusdImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
@@ -293,13 +284,19 @@ func (s *Server) PostLusdImportHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		records, err := parseLusdCSV(r)
+		records, err := readLusdUpload(r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		res, err := s.computeLusdChanges(r.Context(), records, true)
+		allowMass := r.FormValue("confirm_graduates") == "true"
+		res, err := s.computeLusdChanges(r.Context(), records, true, allowMass)
 		if err != nil {
+			var massErr *errMassGraduation
+			if errors.As(err, &massErr) {
+				apierrors.SendHTTPError(w, http.StatusConflict, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
