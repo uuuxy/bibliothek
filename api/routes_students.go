@@ -14,6 +14,10 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("create_students")(s.LockStudentHandler()))
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
 
+	// DSGVO-Betroffenenauskunft (Art. 15) — bewusst nur für Admins (manage_users):
+	// Der Export bündelt sämtliche personenbezogenen Daten eines Schülers.
+	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft", s.RequirePermission("manage_users")(s.DsgvoAuskunftHandler()))
+
 	// Papierkorb
 	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.GetDeletedStudentsHandler()))
 	mux.Handle("POST /api/schueler/{id}/restore", s.RequirePermission("delete_students")(s.RestoreStudentHandler()))

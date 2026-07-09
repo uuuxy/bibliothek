@@ -82,6 +82,30 @@
       console.error("Fehler beim Speichern der manuellen Sperre", e);
     }
   }
+
+  async function downloadDsgvoAuskunft() {
+    try {
+      const res = await apiFetch(`/api/schueler/${profile.id}/dsgvo-auskunft`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `dsgvo-auskunft-${profile.nachname || 'Unbekannt'}-${profile.vorname || 'Unbekannt'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        const text = await res.text();
+        console.error("Auskunft Error:", text);
+        alert("Fehler beim Herunterladen der Auskunft.");
+      }
+    } catch (e) {
+      console.error("Netzwerkfehler DSGVO Auskunft:", e);
+      alert("Netzwerkfehler");
+    }
+  }
 </script>
 
 <div class="lg:col-span-1 relative bg-slate-50/60 border-r border-slate-200 px-7 pt-8 pb-6 flex flex-col items-start text-left gap-6">
@@ -190,11 +214,18 @@
   <!-- Linke Aktionen (z. B. "Sitzung beenden" im Kiosk) -->
   {@render leftActions?.()}
 
-  <!-- Ausweis drucken — ganz unten, volle Breite -->
-  <div class="w-full mt-auto pt-4">
+  <!-- Aktionen — ganz unten, volle Breite -->
+  <div class="w-full mt-auto pt-4 flex flex-col gap-2">
     <button onclick={onPrint} class="w-full py-3 bg-white hover:bg-blue-50 border border-blue-500 text-blue-600 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 text-sm">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
       Ausweis drucken
     </button>
+
+    {#if role === 'admin'}
+      <button onclick={downloadDsgvoAuskunft} class="w-full py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-600 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 text-xs" title="DSGVO-Auskunft (Art. 15) als JSON exportieren">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+        DSGVO-Auskunft (JSON)
+      </button>
+    {/if}
   </div>
 </div>

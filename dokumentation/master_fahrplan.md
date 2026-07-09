@@ -46,6 +46,11 @@ Read-Only-Review fand zwei harte FAILs, beide behoben und verifiziert —
 
 # ✅ ERLEDIGT (Kurzprotokoll mit Befunden)
 
+## 🛡️ Go-Live-Ready: Backup-Wächter & DSGVO-Auskunft (09.07.)
+Die letzten zwei offenen Empfehlungspunkte aus der Go-Live-Einschätzung wurden abgearbeitet:
+- **Backup-Wächter**: Endpoint und UI-Komponente zur aktiven Überwachung des Backup-Status (`api/backup_status.go`, `BackupStatusBadge.svelte`).
+- **DSGVO-Betroffenenauskunft (Art. 15)**: Neues API (`/api/schueler/{id}/dsgvo-auskunft`) sammelt alle personenbezogenen Daten (Stammdaten, Historie, Audit-Logs, Bilder, Vormerkungen, Schäden) plus Verarbeitungsangaben. JSON-Download-Button im Svelte-Schülerprofil für Administratoren integriert. Automatische Audit-Protokollierung (`dsgvo_auskunft`) bei jedem Abruf.
+
 ## ⚡ Vorab-Bug (2026-07-07, `3efb88f`)
 „Sperre aufheben" im Omnibox-Block-Alert rief das nicht existierende `POST /api/schueler/{id}/update`
 → umgestellt auf `PATCH /api/admin/students/{id}/lock` (wie `StudentLockModal`). War der einzige
