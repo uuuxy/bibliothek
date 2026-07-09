@@ -25,6 +25,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// Permissions
 	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))
+	mux.Handle("GET /api/admin/system/backup-status", s.RequirePermission("manage_users")(s.BackupStatusHandler()))
 	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.UpdatePermissionsHandler()))
 
 	// Audit & Transactions

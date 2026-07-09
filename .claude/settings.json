@@ -51,7 +51,14 @@
       "Bash(echo \"MODAL-REFS: $?\")",
       "Bash(docker info *)",
       "Bash(open -a Docker)",
-      "Bash(awk '$1>200')"
+      "Bash(awk '$1>200')",
+      "Bash(awk '$1 > 200')",
+      "Bash(perl -0pi -e 's/import \\\\\\(\\\\n\\\\t\"context\"\\\\n\\\\t\"testing\"\\\\n/import \\(\\\\n\\\\t\"context\"\\\\n\\\\t\"net\\\\/http\"\\\\n\\\\t\"net\\\\/http\\\\/httptest\"\\\\n\\\\t\"strings\"\\\\n\\\\t\"testing\"\\\\n/' api/stats_test.go)",
+      "Bash(gofmt -w api/stats_test.go)",
+      "Bash(perl -0pi -e 's/ORDER BY count DESC\\\\n\\\\t\\\\t\\\\tLIMIT 5\\\\n\\\\t\\\\t`, ausleihenFilter, typeFilter\\\\\\)/ORDER BY count DESC\\\\n\\\\t\\\\t\\\\tLIMIT %d\\\\n\\\\t\\\\t`, ausleihenFilter, typeFilter, listLimit\\)/; s/ORDER BY last_loan ASC NULLS FIRST\\\\n\\\\t\\\\t\\\\tLIMIT 5\\\\n\\\\t\\\\t`, typeFilter\\\\\\)/ORDER BY last_loan ASC NULLS FIRST\\\\n\\\\t\\\\t\\\\tLIMIT %d\\\\n\\\\t\\\\t`, typeFilter, listLimit\\)/; s/typeFilter, typeName := resolveBestandsFilter\\\\\\(r\\\\.URL\\\\.Query\\\\\\(\\\\\\)\\\\.Get\\\\\\(\"type\"\\\\\\)\\\\\\)/typeFilter, typeName := resolveBestandsFilter\\(r.URL.Query\\(\\).Get\\(\"type\"\\)\\)\\\\n\\\\t\\\\tlistLimit := resolveListLimit\\(r.URL.Query\\(\\).Get\\(\"limit\"\\)\\)/' api/stats.go)",
+      "Bash(cd frontend *)",
+      "Bash(xargs sed -n '/Page snapshot/,/Statistiken\\\\|System/p')",
+      "Bash(grep -n 'title\\\\.\\\\|let { title\\\\|$props' frontend/src/lib/BookDetails.svelte)"
     ]
   }
 }

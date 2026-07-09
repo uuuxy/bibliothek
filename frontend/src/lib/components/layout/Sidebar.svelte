@@ -3,6 +3,7 @@
   import { uiStore } from "../../stores/uiStore.svelte.js";
   import { menuGroups, canSeeItem } from "../../menu.js";
   import { sidebarExtensions } from "../../plugins.svelte.js";
+  import BackupStatusBadge from "../system/BackupStatusBadge.svelte";
   
   let systemOpen = $state(false);
 
@@ -172,6 +173,10 @@
     </div>
 
     <div class="border-t border-slate-100 mt-auto">
+      <!-- Backup-Wächter: nur Admins können das Problem beheben -->
+      {#if authStore.currentUser?.rolle === "admin"}
+        <BackupStatusBadge collapsed={uiStore.isSidebarCollapsed} />
+      {/if}
       {#if !uiStore.isSidebarCollapsed}
         <div class="p-4 flex flex-col gap-3 animate-fade-in no-print shrink-0 text-left">
           <div class="flex flex-col">
