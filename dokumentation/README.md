@@ -39,7 +39,11 @@ Eine moderne, webbasierte Verwaltungssoftware für Schulbibliotheken. Das System
 | [INSTALL.md](INSTALL.md) | Lokales Setup |
 | [SCRIPTS.md](SCRIPTS.md) | CLI-Werkzeuge und Migrationen |
 | [CHANGELOG.md](CHANGELOG.md) | Änderungshistorie |
-| [MYSQL_TO_POSTGRES_MIGRATION.md](MYSQL_TO_POSTGRES_MIGRATION.md) | Altdaten-Migration von MySQL |
+| [resilience_and_recovery.md](resilience_and_recovery.md) | Backup-Verschlüsselung, Restore-Probe, Notfall-Wiederherstellung |
+| [backup_cron.md](backup_cron.md) | Backup-Cronjob-Einrichtung |
+| [master_fahrplan.md](master_fahrplan.md) | Lebendes Status-Dokument: erledigt / offen / Parkdeck |
+| [api_inventar.md](api_inventar.md) | Generiertes Routen-Inventar (`scripts/api_inventar.sh`) |
+| [archive/](archive/) | Abgeschlossene Pläne und Checklisten (u. a. MySQL-Migration, Audit-Sweeps) |
 
 ---
 
