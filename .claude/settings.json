@@ -50,7 +50,8 @@
       "Bash(echo \"BUILD:$?\")",
       "Bash(echo \"MODAL-REFS: $?\")",
       "Bash(docker info *)",
-      "Bash(open -a Docker)"
+      "Bash(open -a Docker)",
+      "Bash(awk '$1>200')"
     ]
   }
 }
