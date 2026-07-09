@@ -1,6 +1,6 @@
 module bibliothek
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/alexbrainman/odbc v0.0.0-20250601004241-49e6b2bc0cf0
