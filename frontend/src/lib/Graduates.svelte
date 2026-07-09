@@ -1,7 +1,6 @@
 <script>
   import { apiFetch } from "./apiFetch.js";
   import { onMount } from "svelte";
-  import LusdImportView from "./components/students/LusdImportView.svelte";
 
   // State Runes
   /** @type {any[]} */
@@ -34,8 +33,6 @@
       loadingLaufzettel = false;
     }
   }
-  
-  let showImportModal = $state(false);
 
   // Fetch graduates list from backend api
   async function fetchGraduates() {
@@ -48,11 +45,6 @@
     } finally {
       loading = false;
     }
-  }
-
-  function closeImportModal() {
-    showImportModal = false;
-    fetchGraduates();
   }
 
   onMount(() => {
@@ -96,9 +88,6 @@
         {:else}
           🖨️ Laufzettel drucken
         {/if}
-      </button>
-      <button onclick={() => showImportModal = true} class="no-print px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-        📥 LUSD-Datei importieren
       </button>
       <div class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Live-Synchronisation aktiv"></div>
     </div>
@@ -151,18 +140,4 @@
     </div>
   {/if}
 </div>
-
-{#if showImportModal}
-  <!-- Gleicher Preview-Import-Flow wie in der Datenverwaltung — der alte
-       Direkt-Import ohne Vorschau wurde stillgelegt. -->
-  <div class="fixed inset-0 bg-slate-900/20 backdrop-blur-xs z-50 flex items-start justify-center overflow-y-auto p-6 no-print">
-    <div class="w-full max-w-2xl bg-white rounded-2xl border border-slate-100 shadow-2xl p-8 my-8 space-y-6">
-      <div class="flex justify-end">
-        <button onclick={closeImportModal} class="text-slate-400 hover:text-slate-700 text-sm font-bold cursor-pointer" aria-label="Import schließen">✕ Schließen</button>
-      </div>
-      <LusdImportView onImported={() => fetchGraduates()} />
-    </div>
-  </div>
-{/if}
-
 
