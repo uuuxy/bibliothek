@@ -12,7 +12,7 @@
 - [ ] **Cleanup**: Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.
 
 ### 2. Testing & Infrastruktur
-- [ ] **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) nachreichen.
+- [x] **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) erfolgreich integriert.
 - [ ] **Bot-PR-Welle**: Die neue Welle an PRs (#217ff vom 08.07.) triagieren + Jules-Bot auf wöchentliche Batches drosseln.
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
 
