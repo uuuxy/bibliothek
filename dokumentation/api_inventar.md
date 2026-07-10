@@ -1,16 +1,17 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-07-09. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-07-10. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
+- `POST /api/buecher/exemplare/{id}/defekt`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 
-## Alle registrierten Routen (138)
+## Alle registrierten Routen (140)
 
 - `/`
 - `/api/admin`
@@ -38,6 +39,7 @@
 - `GET /api/admin/auditlog`
 - `GET /api/admin/permissions`
 - `GET /api/admin/settings/mail`
+- `GET /api/admin/system/backup-status`
 - `GET /api/audit`
 - `GET /api/auth/me`
 - `GET /api/barcode`
@@ -82,6 +84,7 @@
 - `GET /api/schueler`
 - `GET /api/schueler/deleted`
 - `GET /api/schueler/{id}`
+- `GET /api/schueler/{id}/dsgvo-auskunft`
 - `GET /api/schueler/{id}/photo`
 - `GET /api/search`
 - `GET /api/signatures`
