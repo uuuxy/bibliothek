@@ -150,7 +150,9 @@ export function createKioskStore() {
     async function handleBookSubmit() {
         const val = bookInputVal.trim();
         bookInputVal = "";
-        if (!val || !activeStudent || isStudentBlocked) return;
+        // Override erlaubt den Scan trotz Sperre — der Server prüft
+        // override_block ohnehin noch einmal serverseitig.
+        if (!val || !activeStudent || (isStudentBlocked && !overrideBlock)) return;
         
         isScanningBook = true;
         try {

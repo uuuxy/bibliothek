@@ -50,7 +50,7 @@
   }
 </script>
 
-{#if !kioskStore.isStudentBlocked}
+{#if !kioskStore.isStudentBlocked || kioskStore.overrideBlock}
   <div class="relative w-full mb-8 print:hidden {kioskStore.isShaking ? 'animate-shake' : ''}">
     <form onsubmit={(e) => { e.preventDefault(); kioskStore.handleBookSubmit(); }} class="relative w-full">
       <svg class="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
