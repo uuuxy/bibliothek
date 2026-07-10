@@ -112,19 +112,29 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		log.Printf("Cover-Download: uploads-Verzeichnis konnte nicht angelegt werden: %v", err)
 		return ""
 	}
-	cleanDir := filepath.Clean("uploads")
-	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
-	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
 
-	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
-		log.Printf("Path traversal attempt in cover downloader: %s", isbn)
+	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
+
+	root, err := os.OpenRoot("uploads")
+	if err != nil {
+		log.Printf("Cover-Download: uploads-Verzeichnis konnte nicht geöffnet werden: %v", err)
 		return ""
 	}
+	defer func() { _ = root.Close() }()
 
-	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
-		log.Printf("Fehler beim lokalen Speichern von %s: %v", savePath, err)
+	out, err := root.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		log.Printf("Fehler beim lokalen Erstellen von %s: %v", filename, err)
 		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
 	}
+
+	if _, err := out.Write(finalBytes); err != nil {
+		_ = out.Close()
+		_ = root.Remove(filename)
+		log.Printf("Fehler beim lokalen Speichern von %s: %v", filename, err)
+		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
+	}
+	_ = out.Close()
 
 	// Erfolg! Das Bild liegt lokal.
 	return "/uploads/" + filename

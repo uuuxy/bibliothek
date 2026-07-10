@@ -20,17 +20,17 @@ type BorrowedBook struct {
 
 // StudentListStat represents a student along with their current loan statistics.
 type StudentListStat struct {
-	ID                 string `json:"id"`
-	BarcodeID          string `json:"barcode_id"`
-	Vorname            string `json:"vorname"`
-	Nachname           string `json:"nachname"`
-	Klasse             string `json:"klasse"`
-	AbgaengerJahr      int    `json:"abgaenger_jahr"`
-	IstGesperrt        bool   `json:"ist_gesperrt"`
-	HasFoto            bool   `json:"-"`
-	FotoURL            string `json:"foto_url"`
-	AusgeliehenCount   int    `json:"ausgeliehen_count"`
-	UeberfaelligCount  int    `json:"ueberfaellig_count"`
+	ID                string `json:"id"`
+	BarcodeID         string `json:"barcode_id"`
+	Vorname           string `json:"vorname"`
+	Nachname          string `json:"nachname"`
+	Klasse            string `json:"klasse"`
+	AbgaengerJahr     int    `json:"abgaenger_jahr"`
+	IstGesperrt       bool   `json:"ist_gesperrt"`
+	HasFoto           bool   `json:"-"`
+	FotoURL           string `json:"foto_url"`
+	AusgeliehenCount  int    `json:"ausgeliehen_count"`
+	UeberfaelligCount int    `json:"ueberfaellig_count"`
 }
 
 // Scanner kapselt die Scan-Schnittstelle von pgx.Row und pgx.Rows,

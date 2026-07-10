@@ -17,3 +17,8 @@
 **Vulnerability:** The PostgreSQL password was being passed to `pg_dump` via the `PGPASSWORD` environment variable in `jobs/backup.go`. This is insecure because environment variables can be exposed to other processes on the same system, leading to credential theft.
 **Learning:** `gosec` G204 can be triggered by passing connection strings directly to subprocesses, and using `PGPASSWORD` exposes the password to other processes.
 **Prevention:** To securely pass PostgreSQL connection details to external subprocesses like `pg_dump`, construct explicit command-line arguments and DO NOT pass the password via `PGPASSWORD`. Instead, supply the password via a securely generated temporary `.pgpass` file with restrictive permissions.
+
+## 2026-07-10 - Mitigate Path Traversal (G304) during File Writing using Go 1.24 os.OpenRoot
+**Vulnerability:** A `G304: Potential file inclusion via variable` vulnerability was found in `inventur/upload_handler.go` and `inventur/cover_downloader.go` during cover storage. The code used manual string validation and `os.WriteFile` with paths containing user input (ID or ISBN), allowing potential path traversal attacks.
+**Learning:** Relying on `filepath.Clean` and `strings.HasPrefix` to validate paths constructed with user input is error-prone and flagged by linters. `os.OpenRoot` from Go 1.24 is the superior and idiomatic approach for enforcing directory boundaries securely.
+**Prevention:** When saving files to a specific directory using user-supplied names, establish a root context with `root, err := os.OpenRoot(dir)`, then use `root.OpenFile` to create and write the file securely.

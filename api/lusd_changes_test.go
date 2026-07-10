@@ -88,7 +88,7 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 	records := []parsedStudentRow{
 		{LusdID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"}, // Klassenwechsel
 		{LusdID: "L-neu", Vorname: "Neu", Nachname: "Kind", Klasse: "5A"}, // Neuzugang
-		{Vorname: "Ohne", Nachname: "ID", Klasse: "5A"},                  // ohne LUSD-ID → übersprungen
+		{Vorname: "Ohne", Nachname: "ID", Klasse: "5A"},                   // ohne LUSD-ID → übersprungen
 	}
 
 	res, err := s.computeLusdChanges(t.Context(), records, false, false)

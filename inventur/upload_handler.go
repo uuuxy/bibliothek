@@ -95,10 +95,9 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 	if abfrageErr == nil && altesBook != nil && strings.HasPrefix(altesBook.CoverURL, "/uploads/") {
 		filename := filepath.Base(altesBook.CoverURL)
 		if filename != "" && filename != "/" && filename != "." {
-			cleanDir := filepath.Clean("uploads")
-			alterPfad := filepath.Clean(filepath.Join(cleanDir, filename))
-			if strings.HasPrefix(alterPfad, cleanDir+string(filepath.Separator)) {
-				_ = os.Remove(alterPfad) // Fehler ignorieren (Datei existiert ggf. nicht mehr)
+			if root, err := os.OpenRoot("uploads"); err == nil {
+				_ = root.Remove(filename)
+				_ = root.Close()
 			}
 		}
 	}
@@ -165,21 +164,31 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 		return
 	}
 
-	cleanDir := filepath.Clean("uploads")
 	filename := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), saveExt)
-	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
 
-	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
-		writeError(writer, http.StatusBadRequest, "invalid file path")
+	root, err := os.OpenRoot("uploads")
+	if err != nil {
+		log.Printf("cover-upload: OpenRoot uploads failed for book %s: %v", logger.SanitizeLog(id), err)
+		writeError(writer, http.StatusInternalServerError, "uploads-verzeichnis konnte nicht geöffnet werden")
 		return
 	}
+	defer func() { _ = root.Close() }()
 
-	// #nosec G304 - filename is safely generated on the server side
-	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
-		log.Printf("cover-upload: write file failed for book %s (%s): %v", logger.SanitizeLog(id), logger.SanitizeLog(savePath), err)
+	out, err := root.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		log.Printf("cover-upload: open file failed for book %s (%s): %v", logger.SanitizeLog(id), logger.SanitizeLog(filename), err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
 		return
 	}
+
+	if _, err := out.Write(finalBytes); err != nil {
+		_ = out.Close()
+		_ = root.Remove(filename)
+		log.Printf("cover-upload: write file failed for book %s (%s): %v", logger.SanitizeLog(id), logger.SanitizeLog(filename), err)
+		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
+		return
+	}
+	_ = out.Close()
 
 	coverURL := fmt.Sprintf("/uploads/%s", filename)
 

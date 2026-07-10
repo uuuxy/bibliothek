@@ -43,7 +43,7 @@ type BookRepository interface {
 
 	// BulkInsertCopies fügt mehrere Buchexemplare performant per Massen-Insert (CopyFrom) in die Datenbank ein.
 	BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error
-	
+
 	// BulkInsertCopiesTx führt BulkInsertCopies innerhalb einer expliziten SQL-Transaktion aus.
 	BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, copies []BookCopyInsert) error
 

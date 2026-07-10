@@ -66,4 +66,3 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusOK, logs)
 	}
 }
-

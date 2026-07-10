@@ -85,12 +85,12 @@ type DsgvoAuditEintrag struct {
 
 // DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 lit. a–d, g DSGVO.
 type DsgvoVerarbeitungsangaben struct {
-	Zwecke          []string `json:"zwecke"`
-	Rechtsgrundlage string   `json:"rechtsgrundlage"`
-	Empfaenger      string   `json:"empfaenger"`
-	Speicherdauer   string   `json:"speicherdauer"`
-	Herkunft        string   `json:"herkunft_der_daten"`
-	Betroffenenrechte string `json:"betroffenenrechte"`
+	Zwecke            []string `json:"zwecke"`
+	Rechtsgrundlage   string   `json:"rechtsgrundlage"`
+	Empfaenger        string   `json:"empfaenger"`
+	Speicherdauer     string   `json:"speicherdauer"`
+	Herkunft          string   `json:"herkunft_der_daten"`
+	Betroffenenrechte string   `json:"betroffenenrechte"`
 }
 
 // DsgvoAuskunftResponse ist die vollständige Betroffenenauskunft nach Art. 15 DSGVO.

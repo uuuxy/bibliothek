@@ -308,4 +308,3 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 
 	return ergebnisse, nil
 }
-

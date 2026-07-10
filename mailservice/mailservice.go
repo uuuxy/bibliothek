@@ -38,10 +38,10 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 	// SMTP-Konfiguration aus der Datenbank laden
 	var smtpHost, smtpPort, smtpUser, sender string
 	var smtpPassEncrypted []byte
-	
+
 	err = dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
 		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-	
+
 	if err != nil {
 		// Fallback, falls die Tabelle leer ist oder noch nicht migriert wurde
 		smtpHost = "localhost"
@@ -115,10 +115,10 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 	// SMTP-Konfiguration aus der Datenbank laden
 	var smtpHost, smtpPort, smtpUser, sender string
 	var smtpPassEncrypted []byte
-	
+
 	err := dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
 		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-	
+
 	if err != nil {
 		return fmt.Errorf("mail-konfiguration nicht gefunden: %w", err)
 	}

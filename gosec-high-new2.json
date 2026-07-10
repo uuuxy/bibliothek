@@ -1,0 +1,268 @@
+{
+	"Golang errors": {},
+	"Issues": [
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/app/inventur/metadaten_client.go",
+			"code": "148: \tanfrage.Header.Set(\"User-Agent\", \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\")\n149: \tantwort, fehler := client.httpClient.Do(anfrage)\n150: \tif fehler != nil {\n",
+			"line": "149",
+			"column": "41",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/app/inventur/metadaten_client.go",
+			"code": "143: \t// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert\n144: \tanfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, apiURL, nil)\n145: \tif fehler != nil {\n",
+			"line": "144",
+			"column": "47",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/app/inventur/cover_downloader.go",
+			"code": "67: \n68: \tresp, err := client.Do(req)\n69: \tif err != nil {\n",
+			"line": "68",
+			"column": "24",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/app/inventur/cover_downloader.go",
+			"code": "56: \t// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert\n57: \treq, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)\n58: \tif err != nil {\n",
+			"line": "57",
+			"column": "40",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/app/api/image_caching.go",
+			"code": "98: \n99: \t\tresp, err := http.DefaultClient.Do(req)\n100: \t\tif err != nil || resp.StatusCode != http.StatusOK {\n",
+			"line": "99",
+			"column": "37",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "918",
+				"url": "https://cwe.mitre.org/data/definitions/918.html"
+			},
+			"rule_id": "G704",
+			"details": "SSRF via taint analysis",
+			"file": "/app/api/image_caching.go",
+			"code": "90: \t\t// Download if missing\n91: \t\treq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, urlStr, nil)\n92: \t\tif err != nil {\n",
+			"line": "91",
+			"column": "41",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/jobs/backup.go",
+			"code": "286: \t\t// #nosec G304 - f is derived from filepath.Glob\n287: \t\tif err := os.Remove(f); err != nil {\n288: \t\t\t// #nosec G706\n",
+			"line": "287",
+			"column": "22",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/jobs/backup.go",
+			"code": "183: \t// #nosec G304 - outFilename is safely constructed using a timestamp\n184: \tif err := os.WriteFile(outFilename, encrypted, 0600); err != nil {\n185: \t\t// #nosec G706\n",
+			"line": "184",
+			"column": "24",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/jobs/backup.go",
+			"code": "60: \t}\n61: \tif err := os.MkdirAll(backupDir, 0750); err != nil {\n62: \t\t// #nosec G706\n",
+			"line": "61",
+			"column": "23",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/cmd/restore-backup/main.go",
+			"code": "68: \tif len(args) == 2 {\n69: \t\tf, err := os.OpenFile(args[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Operator-Argument\n70: \t\tif err != nil {\n",
+			"line": "69",
+			"column": "24",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/cmd/restore-backup/main.go",
+			"code": "47: \tinputPath := args[0]\n48: \tciphertext, err := os.ReadFile(inputPath) // #nosec G304 - Pfad ist ein bewusst übergebenes Operator-Argument\n49: \tif err != nil {\n",
+			"line": "48",
+			"column": "32",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/api/router.go",
+			"code": "170: \t\t\tif info, err := frontendRoot.Stat(rel); err == nil \u0026\u0026 !info.IsDir() {\n171: \t\t\t\thttp.ServeFileFS(w, r, frontendRoot.FS(), rel)\n172: \t\t\t\treturn\n",
+			"line": "171",
+			"column": "21",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/api/image_caching.go",
+			"code": "131: \t\t\tw.Header().Set(\"Content-Type\", \"image/webp\")\n132: \t\t\thttp.ServeFileFS(w, r, root.FS(), fileName)\n133: \t\t} else {\n",
+			"line": "132",
+			"column": "20",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/api/image_caching.go",
+			"code": "85: \t\t\tw.Header().Set(\"Content-Type\", \"image/webp\")\n86: \t\t\thttp.ServeFileFS(w, r, root.FS(), fileName)\n87: \t\t\treturn\n",
+			"line": "86",
+			"column": "20",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G703",
+			"details": "Path traversal via taint analysis",
+			"file": "/app/api/backup_status.go",
+			"code": "40: \tfor _, m := range matches {\n41: \t\tinfo, statErr := os.Stat(m)\n42: \t\tif statErr != nil {\n",
+			"line": "41",
+			"column": "27",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "78",
+				"url": "https://cwe.mitre.org/data/definitions/78.html"
+			},
+			"rule_id": "G702",
+			"details": "Command injection via taint analysis",
+			"file": "/app/jobs/backup.go",
+			"code": "125: \n126: \tpgDump := exec.CommandContext(ctx, \"pg_dump\", pgDumpArgs...) //nolint:gosec\n127: \tpgDump.Env = append(os.Environ(), \"PGPASSFILE=\"+passFile.Name())\n",
+			"line": "126",
+			"column": "31",
+			"nosec": false,
+			"suppressions": null
+		}
+	],
+	"Stats": {
+		"files": 201,
+		"lines": 27909,
+		"nosec": 51,
+		"found": 16
+	},
+	"GosecVersion": "dev"
+}
