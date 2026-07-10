@@ -22,6 +22,8 @@ type StudentProfileResponse struct {
 	LusdID            *string                   `json:"lusd_id,omitempty"`
 	Status            string                    `json:"status,omitempty"`
 	HasOpenDamages    bool                      `json:"has_open_damages"`
+	IsManuallyBlocked bool                      `json:"is_manually_blocked"`
+	BlockReason       *string                   `json:"block_reason"`
 	Strasse           string                    `json:"strasse"`
 	Hausnummer        string                    `json:"hausnummer"`
 	Plz               string                    `json:"plz"`
@@ -109,6 +111,8 @@ func (s *Server) GetStudentProfileHandler(
 			LusdID:            student.LusdID,
 			Status:            statusStr,
 			HasOpenDamages:    hasOpenDamages,
+			IsManuallyBlocked: student.IsManuallyBlocked,
+			BlockReason:       student.BlockReason,
 			Strasse:           student.Strasse,
 			Hausnummer:        student.Hausnummer,
 			Plz:               student.Plz,
