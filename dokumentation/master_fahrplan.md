@@ -10,14 +10,14 @@
 - [ ] **Schuljahres-Versetzung**: Manuelle Abnahme mit einem echten Klassensatz vor dem Wechsel.
 - [ ] **Klassensatz-Reservierungen**: Abnahme des "Erledigen"-Ablaufs mit einer echten Anfrage.
 - [ ] **Cleanup**: Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.
+- [ ] **Cleanup**: Toter Kiosk-Parallelbau (`stores/kiosk.svelte.js`, `components/kiosk/KioskActiveSession.svelte`, `KioskIdle.svelte`) wird nirgends eingebunden und dupliziert den Omnibox-Flow — entfernen oder bewusst fertigstellen. Hat am 10.07. zwei Analysen in die Irre geführt.
 
 ### 2. Testing & Infrastruktur
 - [x] **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) erfolgreich integriert.
-- [ ] **Bot-PR-Welle**: Die neue Welle an PRs (#217ff vom 08.07.) triagieren + Jules-Bot auf wöchentliche Batches drosseln.
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
 
 ### 3. Phase 3: Ausbau & Betrieb (Zukunft)
-- [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`).
+- [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`)
 - [ ] **Mandantenfähigkeit (RLS)**: Tenant-Claim in Auth-Middleware, `tenant_id`-Migrationen (Dry-Run-Prozess).
 
 ---
