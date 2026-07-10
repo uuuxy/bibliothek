@@ -12,8 +12,9 @@ export const ADMIN_PASSWORD = 'e2e-egal';
  * ließe den Login-Screen stehen. Der Cookie-Jar wird mit page.request geteilt,
  * API-Seeding nach diesem Login ist also authentifiziert.)
  * @param {import('@playwright/test').Page} page
+ * @param {string} [asEmail] anderer Benutzer (Mock-IMAP akzeptiert jedes Passwort)
  */
-export async function uiLogin(page) {
+export async function uiLogin(page, asEmail = ADMIN_EMAIL) {
     await page.goto('/');
 
     const email = page.locator('#login-email');
@@ -22,12 +23,12 @@ export async function uiLogin(page) {
     // Erst fokussieren, dann füllen, dann verifizieren — die Svelte-Bindings
     // rendern kurz nach dem Mount; ungeduldiges fill landet sonst im falschen Feld.
     await email.click();
-    await email.fill(ADMIN_EMAIL);
+    await email.fill(asEmail);
     await password.click();
     await password.fill(ADMIN_PASSWORD);
 
     const { expect } = await import('@playwright/test');
-    await expect(email).toHaveValue(ADMIN_EMAIL);
+    await expect(email).toHaveValue(asEmail);
     await expect(password).toHaveValue(ADMIN_PASSWORD);
 
     await page.getByRole('button', { name: 'Anmelden' }).click();
