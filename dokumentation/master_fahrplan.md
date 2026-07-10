@@ -18,11 +18,11 @@
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
 
 #### E2E-Lücken-Analyse (10.07., extern angeregt — Bewertung am Code)
-- [ ] **P1 — RBAC-Negativpfad** (`permissions.spec.js`): Nicht-Admin (MITARBEITER/LEHRER) darf DSGVO-Auskunft, Backup-Status & Co. nicht erreichen — Server muss 403 liefern, UI sauber ausblenden/umleiten, nichts leaken. Serverseitig existiert `RequirePermission` + Unit-Tests; der E2E-Beweis für die Kette fehlt. **Größtes Risiko** (Schülerdaten, meldepflichtiges Leck) bei kleinstem Aufwand.
-- [ ] **P2 — Kiosk-Scan-Dauerfeuer**: 3 Bücher in schneller Folge scannen → alle sauber verbucht. Der Omnibox-Store hat KEINEN Submit-Guard (kein isSubmitting); Backend ist über Idempotenz-Keys + Migration 033 geschützt, aber das UI-Verhalten ist unbewiesen.
-- [ ] **P3 — LUSD-Schrottdatei-E2E**: Parser hat bereits 10 Negativ-Unit-Tests (fehlende Header, leere Pflichtfelder, kaputter Header ⇒ Handler antwortet 400, nicht 500). Rest-Lücke: ein E2E-Smoke „kaputte Datei hochladen → verständliche Meldung im UI" + Encoding-Fall (Latin-1/UTF-16).
-- [ ] **P4 — Massendaten**: 2.000 Schüler + 50.000 Ausleihen-Historie per `generate_series` seeden (realistische Obergrenze × 1,5 — NICHT 8.000 Schüler: kein Erkenntnisgewinn, die Historie ist der echte Wachstumstreiber) → Schülerdatei, Suche, Mahnwesen und Statistik bleiben bedienbar. Klärt nebenbei, ob die Listen serverseitig limitiert sind.
-- [ ] **P5 — Mehrplatz-Livesync (bis zu 10 PCs im Betrieb)**: Zwei Playwright-Browser-Kontexte — PC A bucht Rückgabe, PC B muss den neuen Stand ohne Reload sehen (SSE). Last ist bei 10 Clients kein Thema, Checkout-Konflikte sind DB-hart gelöst (033); ungetestet ist allein das Live-Sync-Versprechen.
+- [x] **P1 — RBAC-Negativpfad** (`permissions.spec.js`, 10.07.): Mitarbeiter → DSGVO-Auskunft/Backup-Status 403 + Badge unsichtbar; Lehrer → `/abgaenger` leakt nichts, Benutzer-Anlage 403.
+- [x] **P2 — Kiosk-Scan-Dauerfeuer** (`kiosk-dauerfeuer.spec.js`, 10.07.): 3 Scans ohne Pause → alle 3 verbucht, Zähler stimmt.
+- [x] **P3 — LUSD-Schrottdatei** (10.07.): E2E für falsche Header + Binärmüll; Parser-Fehlermeldungen dabei auf verständliches Deutsch umgestellt („Pflichtspalte 'lusd_id' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?").
+- [x] **P4 — Massendaten** (`massendaten.spec.js`, 10.07.): 2.000 Schüler + 50.000 Ausleihen + 100 überfällige — Schülerdatei-Suche und Mahnwesen antworten in <2s; Daten werden nach dem Test wieder entfernt (MASS-Präfix).
+- [x] **P5 — Mehrplatz-Livesync** (`sse-livesync.spec.js`, 10.07.): Zwei Browser-Kontexte — Rückgabe an PC A entfernt das Buch ohne Reload aus dem offenen Konto an PC B (SSE bewiesen).
 - [x] **Race Condition Doppel-Checkout**: bereits auf DB-Ebene hart garantiert (Migration 033 „≤ 1 aktive Ausleihe je Exemplar", dazu Idempotenz-Keys). Klassensatz-Reservierungen sind eine Merkliste ohne knappen Bestand — kein echtes Race-Gut. E2E-Race-Tests mit parallelen Browser-Kontexten wären flaky; falls überhaupt, als Go-Concurrency-Test.
 
 #### CI-Budget (privates Repo → 2.000 Actions-Minuten/Monat)
