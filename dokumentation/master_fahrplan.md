@@ -6,10 +6,13 @@
 ## 🎯 Aktuell Offen & Nächste Schritte
 
 ### 1. Ausstehende Verifikationen (Admin-Flows)
+> **Blockiert: aktuell kein LUSD-Zugriff** (Stand 11.07.). Vorbereitung ist fertig:
+> [`abnahme_checkliste.md`](abnahme_checkliste.md) — damit ist jede Abnahme ein ~10-Minuten-Durchlauf,
+> sobald eine echte Exportdatei vorliegt.
 - [ ] **LUSD-Import**: Manuelle Abnahme mit einer echten LUSD-Exportdatei durch das Sekretariat.
-- [ ] **Schuljahres-Versetzung**: Manuelle Abnahme mit einem echten Klassensatz vor dem Wechsel.
-- [ ] **Klassensatz-Reservierungen**: Abnahme des "Erledigen"-Ablaufs mit einer echten Anfrage.
-- [ ] **Cleanup**: Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.
+- [ ] **Schuljahres-Versetzung**: Manuelle Abnahme mit einem echten Klassensatz vor dem Wechsel (⏰ Deadline Schuljahreswechsel; braucht kein LUSD).
+- [ ] **Klassensatz-Reservierungen**: Abnahme des "Erledigen"-Ablaufs mit einer echten Anfrage (braucht kein LUSD).
+- [x] **Cleanup**: ~~Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.~~ Bereits erledigt (09.07.) — Code-Prüfung 11.07.: kein Treffer mehr für `LusdImportModal` oder `/api/import/lusd`, es existiert nur noch der getestete Preview-Flow (`/api/lusd/preview` + `/api/lusd/import`).
 
 ### 2. Testing & Infrastruktur
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
