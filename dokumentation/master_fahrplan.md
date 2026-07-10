@@ -14,7 +14,18 @@
 
 ### 2. Testing & Infrastruktur
 - [x] **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) erfolgreich integriert.
+- [x] **E2E-Alltagsflüsse** (10.07.): Rückgabe, Fremdrückgabe, Mahnwesen (+PDF-Smoke), Schadensfall — Suite: 14 Flows, läuft jetzt auch in der CI (e2e-Job).
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
+
+#### E2E-Lücken-Analyse (10.07., extern angeregt — Bewertung am Code)
+- [ ] **P1 — RBAC-Negativpfad** (`permissions.spec.js`): Nicht-Admin (MITARBEITER/LEHRER) darf DSGVO-Auskunft, Backup-Status & Co. nicht erreichen — Server muss 403 liefern, UI sauber ausblenden/umleiten, nichts leaken. Serverseitig existiert `RequirePermission` + Unit-Tests; der E2E-Beweis für die Kette fehlt. **Größtes Risiko** (Schülerdaten, meldepflichtiges Leck) bei kleinstem Aufwand.
+- [ ] **P2 — Kiosk-Scan-Dauerfeuer**: 3 Bücher in schneller Folge scannen → alle sauber verbucht. Der Omnibox-Store hat KEINEN Submit-Guard (kein isSubmitting); Backend ist über Idempotenz-Keys + Migration 033 geschützt, aber das UI-Verhalten ist unbewiesen.
+- [ ] **P3 — LUSD-Schrottdatei-E2E**: Parser hat bereits 10 Negativ-Unit-Tests (fehlende Header, leere Pflichtfelder, kaputter Header ⇒ Handler antwortet 400, nicht 500). Rest-Lücke: ein E2E-Smoke „kaputte Datei hochladen → verständliche Meldung im UI" + Encoding-Fall (Latin-1/UTF-16).
+- [ ] **P4 — Massendaten**: 1000 Schüler per `generate_series` seeden → Schülerdatei, Suche und Mahnwesen bleiben bedienbar. Ob die Listen serverseitig limitiert sind, ist ungeklärt — der Test klärt es.
+- [x] **Race Condition Doppel-Checkout**: bereits auf DB-Ebene hart garantiert (Migration 033 „≤ 1 aktive Ausleihe je Exemplar", dazu Idempotenz-Keys). Klassensatz-Reservierungen sind eine Merkliste ohne knappen Bestand — kein echtes Race-Gut. E2E-Race-Tests mit parallelen Browser-Kontexten wären flaky; falls überhaupt, als Go-Concurrency-Test.
+
+#### CI-Budget (privates Repo → 2.000 Actions-Minuten/Monat)
+- [ ] **Entscheidung nötig**: (a) Repo public machen ⇒ Minuten unbegrenzt kostenlos (prüfen: nichts Sensibles in Historie), (b) e2e-Job nur auf PRs + `concurrency: cancel-in-progress` (spart Push-Serien), oder (c) Self-hosted Runner auf eigenem Rechner/Server. Bis dahin frisst der Docker-Build im e2e-Job das Kontingent am schnellsten.
 
 ### 3. Phase 3: Ausbau & Betrieb (Zukunft)
 - [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`)
