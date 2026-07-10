@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
 )
 
 // InventoryRepository handles all database interactions required during a physical
@@ -107,46 +106,25 @@ func (r *InventoryRepository) MarkExemplarScanned(ctx context.Context, copyID st
 }
 
 // MarkRemainingAsLostAndReset marks all remaining 'ausstehend' items as discarded/lost
-// due to inventory. It updates the available count for affected titles, resets the global
-// inventory status to NULL, and returns the total number of books declared lost.
+// due to inventory, resets the global inventory status to NULL, and returns the
+// total number of books declared lost.
+//
+// Hinweis: Der frühere Aufruf von update_verfuegbar_count($1) ist entfernt —
+// die SQL-Funktion existierte nirgends. Innerhalb der Finish-Transaktion
+// brach der fehlgeschlagene Aufruf die Transaktion ab (SQLSTATE 25P02) und
+// machte JEDEN Inventur-Abschluss zum 500; die Verfügbarkeit wird ohnehin
+// dynamisch über view_buecher_bestand berechnet.
 func (r *InventoryRepository) MarkRemainingAsLostAndReset(ctx context.Context) (int, error) {
-	query := `
-		WITH updated AS (
-			UPDATE buecher_exemplare
-			SET ist_ausleihbar = false,
-			    ist_ausgesondert = true,
-			    zustand_notiz = 'Verlust bei Inventur',
-			    aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE inventur_status = 'ausstehend'
-			RETURNING titel_id
-		)
-		SELECT titel_id FROM updated
-	`
-	rows, err := r.db.Query(ctx, query)
+	tag, err := r.db.Exec(ctx, `
+		UPDATE buecher_exemplare
+		SET ist_ausleihbar = false,
+		    ist_ausgesondert = true,
+		    zustand_notiz = 'Verlust bei Inventur',
+		    aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE inventur_status = 'ausstehend'
+	`)
 	if err != nil {
 		return 0, fmt.Errorf("failed to mark as lost: %w", err)
-	}
-
-	titelIDs := make(map[string]bool)
-	count := 0
-	for rows.Next() {
-		var tID string
-		if err := rows.Scan(&tID); err == nil {
-			titelIDs[tID] = true
-			count++
-		}
-	}
-	if err := rows.Err(); err != nil {
-		rows.Close()
-		return 0, fmt.Errorf("failed to read affected titles: %w", err)
-	}
-	rows.Close()
-
-	// Update total verfuegbar count for affected titles
-	for tID := range titelIDs {
-		if _, err := r.db.Exec(ctx, "SELECT update_verfuegbar_count($1)", tID); err != nil {
-			log.Printf("inventur: Verfügbarkeitszähler für Titel %s konnte nicht aktualisiert werden: %v", tID, err)
-		}
 	}
 
 	// Reset all inventur_status to NULL globally
@@ -154,5 +132,5 @@ func (r *InventoryRepository) MarkRemainingAsLostAndReset(ctx context.Context) (
 		return 0, fmt.Errorf("failed to reset status: %w", err)
 	}
 
-	return count, nil
+	return int(tag.RowsAffected()), nil
 }
