@@ -17,8 +17,28 @@ import (
 // Each migration runs in its own transaction; on failure the run is aborted and
 // the error is returned — the database is left in its last-successfully-migrated state.
 func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) error {
+	// 0. Check if schema_migrations exists to determine if this is a fresh database
+	var hasMigrationsTable bool
+	err := d.Pool.QueryRow(ctx, "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'schema_migrations')").Scan(&hasMigrationsTable)
+	if err != nil {
+		return fmt.Errorf("migrations: failed to check for schema_migrations: %w", err)
+	}
+
+	if !hasMigrationsTable {
+		log.Println("Migrations: Fresh database detected. Applying schema.sql as baseline...")
+		schemaBytes, err := os.ReadFile("schema.sql")
+		if err == nil {
+			if _, err := d.Pool.Exec(ctx, string(schemaBytes)); err != nil {
+				return fmt.Errorf("migrations: failed to apply schema.sql: %w", err)
+			}
+			log.Println("Migrations: schema.sql applied successfully.")
+		} else {
+			log.Printf("Migrations: warning: schema.sql not found: %v", err)
+		}
+	}
+
 	// 1. Ensure the tracking table exists (idempotent)
-	_, err := d.Pool.Exec(ctx, `
+	_, err = d.Pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_migrations (
 			version     VARCHAR(255) PRIMARY KEY,
 			applied_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
