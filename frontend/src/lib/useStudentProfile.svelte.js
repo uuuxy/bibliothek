@@ -114,7 +114,9 @@ export function useStudentProfile() {
             const res = await apiClient.post(`/api/damage/report`, {
                 loan_id: damageBook.ausleihe_id,
                 schueler_id: studentId,
-                copy_id: damageBook.exemplar_id,
+                // BorrowedBook liefert die Exemplar-ID als `id` — ein
+                // `exemplar_id`-Feld gibt es dort nicht (500: leere UUID).
+                copy_id: damageBook.id,
                 beschreibung: reason,
                 betrag: amount
             });
