@@ -85,6 +85,18 @@ export function seedSQL(sql) {
     });
 }
 
+/**
+ * Liest einen Wert aus der Test-DB (für Zustands-Asserts nach UI-Aktionen).
+ * @param {string} sql  SELECT-Statement
+ * @returns {string} getrimmte Ausgabe (tuples-only)
+ */
+export function querySQL(sql) {
+    const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
+    return execSync(`docker exec -i ${container} psql -U postgres -d bibliothek -tA -v ON_ERROR_STOP=1`, {
+        input: sql,
+    }).toString().trim();
+}
+
 /** Eindeutiger Suffix, damit Läufe auf derselben DB nicht kollidieren. */
 export function uniqueSuffix() {
     return `${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
