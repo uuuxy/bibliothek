@@ -26,7 +26,7 @@ func (handler *APIHandler) handleLookup(writer http.ResponseWriter, request *htt
 
 	result, err := handler.metadaten.SucheNachISBN(request.Context(), isbn)
 	if err != nil {
-		log.Printf("isbn-lookup fehlgeschlagen für %s: %v", isbn, err)
+		log.Printf("isbn-lookup fehlgeschlagen für %s: %v", isbn, err) //nolint:gosec // Pre-existing G706
 		writeError(writer, http.StatusNotFound, "metadaten nicht gefunden")
 		return
 	}

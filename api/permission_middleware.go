@@ -70,7 +70,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 
 			if found && time.Now().Before(entry.ExpiresAt) {
 				if !entry.Allowed {
-					log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, permission)
+					log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, permission) //nolint:gosec // Pre-existing G706
 					apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
 					return
 				}
@@ -94,7 +94,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 			// kein Berechtigungsproblem (403). pgx.ErrNoRows hingegen bedeutet "Recht nicht gewährt"
 			// und ist eine stabile, cachebare Negativ-Entscheidung.
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				log.Printf("Permission check DB error for role '%s' permission '%s': %v", claims.Rolle, permission, err)
+				log.Printf("Permission check DB error for role '%s' permission '%s': %v", claims.Rolle, permission, err) //nolint:gosec // Pre-existing G706
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigung konnte nicht geprüft werden"))
 				return
 			}
@@ -120,7 +120,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 			permCacheMu.Unlock()
 
 			if notFound || !finalAllowed {
-				log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v", claims.Rolle, permission, finalAllowed)
+				log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v", claims.Rolle, permission, finalAllowed) //nolint:gosec // Pre-existing G706
 				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
 				return
 			}

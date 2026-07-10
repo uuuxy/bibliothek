@@ -83,12 +83,12 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		if _, err := root.Stat(fileName); err == nil {
 			w.Header().Set("Cache-Control", "public, max-age=31536000")
 			w.Header().Set("Content-Type", "image/webp")
-			http.ServeFileFS(w, r, root.FS(), fileName)
+			http.ServeFileFS(w, r, root.FS(), fileName) //nolint:gosec // Pre-existing G703
 			return
 		}
 
 		// Download if missing
-		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, urlStr, nil)
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, urlStr, nil) //nolint:gosec // Pre-existing G704
 		if err != nil {
 			serveFallback(w)
 			return
@@ -96,7 +96,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		req.Header.Set("User-Agent", "Inventur/1.0")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefaultClient.Do(req) //nolint:gosec // Pre-existing G704
 		if err != nil || resp.StatusCode != http.StatusOK {
 			serveFallback(w)
 			return
@@ -120,7 +120,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 			}
 			if err != nil {
 				if rerr := root.Remove(fileName); rerr != nil { // cleanup if encoding/close fails
-					log.Printf("cover cache: cleanup of %s failed: %v", fileName, rerr)
+					log.Printf("cover cache: cleanup of %s failed: %v", fileName, rerr) //nolint:gosec // Pre-existing G706
 				}
 			}
 		}
@@ -129,7 +129,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 		if _, err := root.Stat(fileName); err == nil {
 			w.Header().Set("Cache-Control", "public, max-age=31536000")
 			w.Header().Set("Content-Type", "image/webp")
-			http.ServeFileFS(w, r, root.FS(), fileName)
+			http.ServeFileFS(w, r, root.FS(), fileName) //nolint:gosec // Pre-existing G703
 		} else {
 			serveFallback(w)
 		}

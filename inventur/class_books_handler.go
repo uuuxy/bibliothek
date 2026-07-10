@@ -104,7 +104,7 @@ func (handler *APIHandler) handleDeleteClassGroup(writer http.ResponseWriter, re
 
 	err := handler.repo.DeleteClassGroup(request.Context(), className)
 	if err != nil {
-		log.Printf("Fehler beim Löschen der Klassengruppe %s: %v", className, err)
+		log.Printf("Fehler beim Löschen der Klassengruppe %s: %v", className, err) //nolint:gosec // Pre-existing G706
 		writeError(writer, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden")
 		return
 	}

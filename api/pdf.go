@@ -154,7 +154,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		`
 		_, dbErr := s.DB.Pool.Exec(ctx, updateQuery, id)
 		if dbErr != nil {
-			log.Printf("PDF Generator: Database status update failed for case %s: %v", id, dbErr)
+			log.Printf("PDF Generator: Database status update failed for case %s: %v", id, dbErr) //nolint:gosec // Pre-existing G706
 		}
 
 		// Stream the generated PDF

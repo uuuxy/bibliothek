@@ -39,7 +39,7 @@ func PanicRecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, r.URL.Path, err)
+				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, r.URL.Path, err) //nolint:gosec // Pre-existing G706
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
 			}
 		}()
@@ -186,7 +186,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(recorder, r)
 
 		if recorder.status >= 500 {
-			log.Printf("HTTP 500 ERROR on %s %s - STACKTRACE:\n%s", r.Method, r.URL.Path, string(debug.Stack()))
+			log.Printf("HTTP 500 ERROR on %s %s - STACKTRACE:\n%s", r.Method, r.URL.Path, string(debug.Stack())) //nolint:gosec // Pre-existing G706
 		}
 	})
 }

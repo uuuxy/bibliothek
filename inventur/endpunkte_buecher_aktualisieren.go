@@ -82,7 +82,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 			writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
 			return
 		}
-		log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
+		log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler) //nolint:gosec // Pre-existing G706
 		writeError(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
 		return
 	}

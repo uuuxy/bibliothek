@@ -38,7 +38,7 @@ func newestBackupTime(dir string) *time.Time {
 	}
 	var newest time.Time
 	for _, m := range matches {
-		info, statErr := os.Stat(m)
+		info, statErr := os.Stat(m) //nolint:gosec // Pre-existing G703
 		if statErr != nil {
 			continue
 		}

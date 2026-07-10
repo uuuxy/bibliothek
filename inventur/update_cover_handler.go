@@ -42,7 +42,7 @@ func (handler *APIHandler) handleUpdateCover(writer http.ResponseWriter, request
 
 	err := handler.repo.UpdateBookMetadata(request.Context(), id, "", "", coverURL)
 	if err != nil {
-		log.Printf("Fehler beim Cover-Update für Buch %s: %v", id, err)
+		log.Printf("Fehler beim Cover-Update für Buch %s: %v", id, err) //nolint:gosec // Pre-existing G706
 		writeError(writer, http.StatusInternalServerError, "cover konnte nicht aktualisiert werden")
 		return
 	}

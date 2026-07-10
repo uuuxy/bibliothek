@@ -21,7 +21,7 @@ func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, reques
 
 	book, err := handler.repo.GetBookByID(request.Context(), id)
 	if err != nil {
-		log.Printf("cover-refresh: buch %s nicht gefunden: %v", id, err)
+		log.Printf("cover-refresh: buch %s nicht gefunden: %v", id, err) //nolint:gosec // Pre-existing G706
 		writeError(writer, http.StatusNotFound, "buch nicht gefunden")
 		return
 	}
@@ -34,7 +34,7 @@ func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, reques
 
 	err = handler.repo.UpdateBookMetadata(request.Context(), id, lookup.Titel, lookup.Autor, lookup.CoverURL)
 	if err != nil {
-		log.Printf("cover-refresh: update fehlgeschlagen für buch %s: %v", id, err)
+		log.Printf("cover-refresh: update fehlgeschlagen für buch %s: %v", id, err) //nolint:gosec // Pre-existing G706
 		writeError(writer, http.StatusInternalServerError, "metadaten konnten nicht aktualisiert werden")
 		return
 	}

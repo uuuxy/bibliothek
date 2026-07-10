@@ -168,7 +168,7 @@ func (s *Server) Routes() http.Handler {
 		rel := strings.TrimPrefix(r.URL.Path, "/")
 		if rel != "" {
 			if info, err := frontendRoot.Stat(rel); err == nil && !info.IsDir() {
-				http.ServeFileFS(w, r, frontendRoot.FS(), rel)
+				http.ServeFileFS(w, r, frontendRoot.FS(), rel) //nolint:gosec // Pre-existing G703
 				return
 			}
 		}

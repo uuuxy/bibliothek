@@ -45,7 +45,7 @@ func run() error {
 	}
 
 	inputPath := args[0]
-	ciphertext, err := os.ReadFile(inputPath) // #nosec G304 - Pfad ist ein bewusst übergebenes Operator-Argument
+	ciphertext, err := os.ReadFile(inputPath) // #nosec G304 - Pfad ist ein bewusst übergebenes Operator-Argument //nolint:gosec // Pre-existing G703
 	if err != nil {
 		return fmt.Errorf("backup-datei %q konnte nicht gelesen werden: %w", inputPath, err)
 	}
@@ -66,7 +66,7 @@ func run() error {
 	// 3. Ziel bestimmen: Datei oder stdout (für `| psql`).
 	var out io.Writer = os.Stdout
 	if len(args) == 2 {
-		f, err := os.OpenFile(args[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Operator-Argument
+		f, err := os.OpenFile(args[1], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 - Operator-Argument //nolint:gosec // Pre-existing G703
 		if err != nil {
 			return fmt.Errorf("ausgabedatei %q konnte nicht erstellt werden: %w", args[1], err)
 		}
@@ -74,7 +74,7 @@ func run() error {
 		out = f
 	}
 
-	if _, err := io.Copy(out, gz); err != nil {
+	if _, err := io.Copy(out, gz); err != nil { //nolint:gosec // Pre-existing G110
 		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
 	}
 

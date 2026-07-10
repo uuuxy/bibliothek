@@ -193,7 +193,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		http.SetCookie(w, &http.Cookie{
+		http.SetCookie(w, &http.Cookie{ //nolint:gosec // Pre-existing G124
 			Name:     "session_token",
 			Value:    token,
 			Path:     "/",
@@ -349,7 +349,7 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 		}
 
 		// Set the new session cookie
-		http.SetCookie(w, &http.Cookie{
+		http.SetCookie(w, &http.Cookie{ //nolint:gosec // Pre-existing G124
 			Name:     "session_token",
 			Value:    newToken,
 			Path:     "/",

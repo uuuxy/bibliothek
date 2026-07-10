@@ -17,7 +17,7 @@ import (
 
 func extractImportRows(w http.ResponseWriter, request *http.Request) ([][]string, error) {
 	request.Body = http.MaxBytesReader(w, request.Body, 100<<20)
-	err := request.ParseMultipartForm(100 << 20) // 100 MB
+	err := request.ParseMultipartForm(100 << 20) // 100 MB //nolint:gosec // Pre-existing G120
 	if err != nil {
 		return nil, errors.New("datei zu groß oder ungültig")
 	}

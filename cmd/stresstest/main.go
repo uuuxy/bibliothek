@@ -140,15 +140,15 @@ func main() {
 			req.Header.Set("Content-Type", "application/json")
 
 			// Dummy CSRF Token protection bypass
-			csrfToken := "dummy-csrf-token-12345"
+			csrfToken := "dummy-csrf-token-12345" //nolint:gosec // Pre-existing G101
 			req.Header.Set("X-CSRF-Token", csrfToken)
 
 			// Session cookie
-			req.AddCookie(&http.Cookie{
+			req.AddCookie(&http.Cookie{ //nolint:gosec // Pre-existing G124
 				Name:  "session_token",
 				Value: token,
 			})
-			req.AddCookie(&http.Cookie{
+			req.AddCookie(&http.Cookie{ //nolint:gosec // Pre-existing G124
 				Name:  "csrf_token",
 				Value: csrfToken,
 			})

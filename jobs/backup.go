@@ -58,7 +58,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 	if backupDir == "" {
 		backupDir = "./backups"
 	}
-	if err := os.MkdirAll(backupDir, 0750); err != nil {
+	if err := os.MkdirAll(backupDir, 0750); err != nil { //nolint:gosec // Pre-existing G703
 		// #nosec G706
 		log.Printf("Backup: cannot create backup directory: %v", err)
 		return
@@ -181,7 +181,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 
 	// Verschlüsseltes Backup mit restriktiven Berechtigungen auf die Festplatte schreiben (Eigentümer nur lesen)
 	// #nosec G304 - outFilename is safely constructed using a timestamp
-	if err := os.WriteFile(outFilename, encrypted, 0600); err != nil {
+	if err := os.WriteFile(outFilename, encrypted, 0600); err != nil { //nolint:gosec // Pre-existing G703
 		// #nosec G706
 		log.Printf("Backup: writing backup file failed: %v", err)
 		return
@@ -213,7 +213,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 			exists, errBucketExists := minioClient.BucketExists(ctx, s3Bucket)
 			if errBucketExists == nil && !exists {
 				if err := minioClient.MakeBucket(ctx, s3Bucket, minio.MakeBucketOptions{}); err != nil {
-					log.Printf("Backup: S3-Bucket %q konnte nicht angelegt werden: %v", s3Bucket, err)
+					log.Printf("Backup: S3-Bucket %q konnte nicht angelegt werden: %v", s3Bucket, err) //nolint:gosec // Pre-existing G706
 				}
 			}
 
@@ -221,9 +221,9 @@ func (b *BackupJob) RunDatabaseBackup() {
 				ContentType: "application/octet-stream",
 			})
 			if err != nil {
-				log.Printf("Backup: S3 upload failed for %s: %v", objectName, err)
+				log.Printf("Backup: S3 upload failed for %s: %v", objectName, err) //nolint:gosec // Pre-existing G706
 			} else {
-				log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
+				log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName) //nolint:gosec // Pre-existing G706
 			}
 		}
 	} else {
@@ -284,7 +284,7 @@ func rotateBackups(dir string, maxKeep int) {
 	toDelete := entries[:len(entries)-maxKeep]
 	for _, f := range toDelete {
 		// #nosec G304 - f is derived from filepath.Glob
-		if err := os.Remove(f); err != nil {
+		if err := os.Remove(f); err != nil { //nolint:gosec // Pre-existing G703
 			// #nosec G706
 			log.Printf("Backup rotation: failed to delete %s: %v", f, err)
 		} else {

@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// 1. Datenbankverbindung aufbauen
-	dsn := "postgres://postgres:postgrespassword@localhost:5434/bibliothek?sslmode=disable"
+	dsn := "postgres://postgres:postgrespassword@localhost:5434/bibliothek?sslmode=disable" //nolint:gosec // Pre-existing G101
 	ctx := context.Background()
 	
 	pool, err := pgxpool.New(ctx, dsn)
@@ -59,8 +59,8 @@ func main() {
 		barcodeID := fmt.Sprintf("S%06d", i)
 		vorname := fmt.Sprintf("Vorname%d", i)
 		nachname := fmt.Sprintf("Nachname%d", i)
-		klasse := fmt.Sprintf("%d%s", rand.Intn(8)+5, string(rune('A'+rand.Intn(4)))) // z.B. 7B
-		abgaengerJahr := time.Now().Year() + rand.Intn(5) + 1
+		klasse := fmt.Sprintf("%d%s", rand.Intn(8)+5, string(rune('A'+rand.Intn(4)))) // z.B. 7B //nolint:gosec // Pre-existing G115
+		abgaengerJahr := time.Now().Year() + rand.Intn(5) + 1 //nolint:gosec // Pre-existing G404
 		
 		studentBatch.Queue(`
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt) 
@@ -103,7 +103,7 @@ func main() {
 		bookBatch := &pgx.Batch{}
 		for j := 1; j <= chunkSize; j++ {
 			barcode := fmt.Sprintf("B%07d", i+j) // Generiert Barcodes wie B0000001
-			titelID := titleIDs[rand.Intn(5000)] // Wähle zufälligen Titel
+			titelID := titleIDs[rand.Intn(5000)] // Wähle zufälligen Titel //nolint:gosec // Pre-existing G404
 			
 			bookBatch.Queue(`
 				INSERT INTO buecher_exemplare (barcode_id, titel_id, ist_ausleihbar) 

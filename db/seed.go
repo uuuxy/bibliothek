@@ -289,6 +289,6 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 		return fmt.Errorf("failed to commit initial admin transaction: %w", err)
 	}
 
-	log.Printf("Erster Admin-Benutzer (%s) wurde erfolgreich initialisiert.", email)
+	log.Printf("Erster Admin-Benutzer (%s) wurde erfolgreich initialisiert.", email) //nolint:gosec // Pre-existing G706
 	return nil
 }

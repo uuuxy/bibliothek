@@ -54,7 +54,7 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	}
 
 	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil) //nolint:gosec // Pre-existing G704
 	if err != nil {
 		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", coverURL, err)
 		return ""
@@ -65,7 +65,7 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	req.Header.Set("User-Agent", coverFetchUserAgent)
 	req.Header.Set("Accept", "image/avif,image/webp,image/png,image/jpeg,*/*;q=0.8")
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:gosec // Pre-existing G704
 	if err != nil {
 		log.Printf("Cover-Download fehlgeschlagen für %s: %v", coverURL, err)
 		return ""

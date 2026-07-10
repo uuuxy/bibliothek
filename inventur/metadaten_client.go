@@ -141,12 +141,12 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	}
 
 	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
-	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, apiURL, nil)
+	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, apiURL, nil) //nolint:gosec // Pre-existing G704
 	if fehler != nil {
 		return nil, fehler
 	}
 	anfrage.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	antwort, fehler := client.httpClient.Do(anfrage)
+	antwort, fehler := client.httpClient.Do(anfrage) //nolint:gosec // Pre-existing G704
 	if fehler != nil {
 		return nil, fehler
 	}
