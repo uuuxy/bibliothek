@@ -10,7 +10,7 @@
 - [ ] **Schuljahres-Versetzung**: Manuelle Abnahme mit einem echten Klassensatz vor dem Wechsel.
 - [ ] **Klassensatz-Reservierungen**: Abnahme des "Erledigen"-Ablaufs mit einer echten Anfrage.
 - [ ] **Cleanup**: Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.
-- [ ] **Cleanup**: Toter Kiosk-Parallelbau (`stores/kiosk.svelte.js`, `components/kiosk/KioskActiveSession.svelte`, `KioskIdle.svelte`) wird nirgends eingebunden und dupliziert den Omnibox-Flow — entfernen oder bewusst fertigstellen. Hat am 10.07. zwei Analysen in die Irre geführt.
+- [x] **Cleanup**: Toter Kiosk-Parallelbau (`stores/kiosk.svelte.js`, `components/kiosk/`) am 10.07. entfernt — war nirgends eingebunden, der Omnibox-Flow ist der produktive Ausleihe-Pfad.
 
 ### 2. Testing & Infrastruktur
 - [x] **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) erfolgreich integriert.
