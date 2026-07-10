@@ -55,3 +55,51 @@ jobs:
         cd frontend
         npm ci
         npm run test
+
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24
+
+    # docker-compose.local.yml referenziert das externe Caddy-Netz des
+    # Produktiv-Hosts — auf dem Runner muss es nur existieren.
+    - name: Start local stack
+      run: |
+        docker network create caddy_global_net
+        docker compose -f docker-compose.local.yml up -d --build
+        for i in $(seq 1 60); do
+          curl -sf http://localhost:8084/health >/dev/null && break
+          sleep 2
+        done
+        curl -sf http://localhost:8084/health
+
+    - name: Install Playwright
+      run: |
+        cd frontend
+        npm ci
+        npx playwright install --with-deps chromium
+
+    - name: Run E2E tests
+      run: |
+        cd frontend
+        npx playwright test
+
+    - name: Upload traces on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-traces
+        path: frontend/test-results/
+        retention-days: 7
+
+    - name: Backend logs on failure
+      if: failure()
+      run: docker logs bibliothek-backend-local --tail 200
