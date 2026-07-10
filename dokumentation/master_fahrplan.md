@@ -1,6 +1,6 @@
 # Master-Fahrplan: Radar-Analyse & Konsolidierung
 
-> Stand: **2026-07-09** · Lebendes Dokument.
+> Stand: **2026-07-10** · Lebendes Dokument.
 > Radar-Referenz: [`dokumentation/api_inventar.md`](api_inventar.md) (neu erzeugen mit `./scripts/api_inventar.sh`).
 
 ## 🎯 Aktuell Offen & Nächste Schritte
@@ -10,23 +10,9 @@
 - [ ] **Schuljahres-Versetzung**: Manuelle Abnahme mit einem echten Klassensatz vor dem Wechsel.
 - [ ] **Klassensatz-Reservierungen**: Abnahme des "Erledigen"-Ablaufs mit einer echten Anfrage.
 - [ ] **Cleanup**: Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.
-- [x] **Cleanup**: Toter Kiosk-Parallelbau (`stores/kiosk.svelte.js`, `components/kiosk/`) am 10.07. entfernt — war nirgends eingebunden, der Omnibox-Flow ist der produktive Ausleihe-Pfad.
-
-### 1b. Produktentscheidung Fremdscan in aktiver Sitzung — ENTSCHIEDEN & UMGESETZT (10.07.)
-- [x] **Petes Entscheidung: Doppel-Scan ohne Dialog.** Fremdes Buch in aktiver Sitzung → NUR Rückgabe beim Vorbesitzer, Info per Toast + Banner („war auf Max verbucht — dort zurückgegeben. Erneut scannen, um es an Lisa auszuleihen"), null Klicks, Workflow läuft ungestört weiter. Zweiter Scan leiht das nun freie Buch normal an die Sitzung aus (deckt den Altlasten-Fall ab). Ohne Sitzung bleibt der Scan eine reine Rückgabe; manuelle Rücknahme (Profil-Button) unverändert. Umgesetzt in loan_checkout_cases.go (handleForeignReturn ohne Auto-Umbuchen), Omnibox-Store/-Banner, Fremdrückgabe-E2E-Test schreibt das neue Verhalten fest.
 
 ### 2. Testing & Infrastruktur
-- [x] **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) erfolgreich integriert.
-- [x] **E2E-Alltagsflüsse** (10.07.): Rückgabe, Fremdrückgabe, Mahnwesen (+PDF-Smoke), Schadensfall — Suite: 14 Flows, läuft jetzt auch in der CI (e2e-Job).
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
-
-#### E2E-Lücken-Analyse (10.07., extern angeregt — Bewertung am Code)
-- [x] **P1 — RBAC-Negativpfad** (`permissions.spec.js`, 10.07.): Mitarbeiter → DSGVO-Auskunft/Backup-Status 403 + Badge unsichtbar; Lehrer → `/abgaenger` leakt nichts, Benutzer-Anlage 403.
-- [x] **P2 — Kiosk-Scan-Dauerfeuer** (`kiosk-dauerfeuer.spec.js`, 10.07.): 3 Scans ohne Pause → alle 3 verbucht, Zähler stimmt.
-- [x] **P3 — LUSD-Schrottdatei** (10.07.): E2E für falsche Header + Binärmüll; Parser-Fehlermeldungen dabei auf verständliches Deutsch umgestellt („Pflichtspalte 'lusd_id' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?").
-- [x] **P4 — Massendaten** (`massendaten.spec.js`, 10.07.): 2.000 Schüler + 50.000 Ausleihen + 100 überfällige — Schülerdatei-Suche und Mahnwesen antworten in <2s; Daten werden nach dem Test wieder entfernt (MASS-Präfix).
-- [x] **P5 — Mehrplatz-Livesync** (`sse-livesync.spec.js`, 10.07.): Zwei Browser-Kontexte — Rückgabe an PC A entfernt das Buch ohne Reload aus dem offenen Konto an PC B (SSE bewiesen).
-- [x] **Race Condition Doppel-Checkout**: bereits auf DB-Ebene hart garantiert (Migration 033 „≤ 1 aktive Ausleihe je Exemplar", dazu Idempotenz-Keys). Klassensatz-Reservierungen sind eine Merkliste ohne knappen Bestand — kein echtes Race-Gut. E2E-Race-Tests mit parallelen Browser-Kontexten wären flaky; falls überhaupt, als Go-Concurrency-Test.
 
 #### CI-Budget (privates Repo → 2.000 Actions-Minuten/Monat)
 - [ ] **Entscheidung nötig**: (a) Repo public machen ⇒ Minuten unbegrenzt kostenlos (prüfen: nichts Sensibles in Historie), (b) e2e-Job nur auf PRs + `concurrency: cancel-in-progress` (spart Push-Serien), oder (c) Self-hosted Runner auf eigenem Rechner/Server. Bis dahin frisst der Docker-Build im e2e-Job das Kontingent am schnellsten.
@@ -39,6 +25,18 @@
 
 ## ✅ Kürzlich Erledigt (Go-Live Ready)
 
+- **Fremdscan, Testing & E2E-Absicherung (10.07.)**:
+  - **Fremdscan in aktiver Sitzung**: Doppel-Scan ohne Dialog implementiert (fremdes Buch in aktiver Sitzung führt direkt zur Rückgabe beim Vorbesitzer mit Info-Banner/Toast, ein zweiter Scan leiht es normal an die neue Sitzung aus). Umgesetzt in `loan_checkout_cases.go`.
+  - **Kiosk-Code-Bereinigung**: Toter Kiosk-Parallelbau (`stores/kiosk.svelte.js`, `components/kiosk/`) entfernt (der Omnibox-Flow ist der produktive Ausleihe-Pfad).
+  - **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) erfolgreich integriert.
+  - **E2E-Alltagsflüsse**: Rückgabe, Fremdrückgabe, Mahnwesen (+PDF-Smoke), Schadensfall laufen stabil in der CI (14 Flows).
+  - **E2E-Lücken-Analyse**:
+    - **P1 — RBAC-Negativpfad**: Mitarbeiter → DSGVO-Auskunft/Backup-Status 403 + Badge unsichtbar; Lehrer → `/abgaenger` leakt nichts, Benutzer-Anlage 403.
+    - **P2 — Kiosk-Scan-Dauerfeuer**: 3 Scans ohne Pause → alle 3 verbucht, Zähler stimmt.
+    - **P3 — LUSD-Schrottdatei**: E2E für falsche Header + Binärmüll; Parser-Fehlermeldungen auf Deutsch optimiert.
+    - **P4 — Massendaten**: 2.000 Schüler + 50.000 Ausleihen + 100 überfällige — Suche und Mahnwesen antworten in <2 Sekunden.
+    - **P5 — Mehrplatz-Livesync**: SSE-Synchronisation bewiesen (Rückgabe an PC A aktualisiert Konto an PC B live).
+    - **Race Condition Doppel-Checkout**: Auf DB-Ebene hart garantiert (Migration 033 „≤ 1 aktive Ausleihe je Exemplar", Idempotenz-Keys).
 - **Backup-Wächter & DSGVO-Auskunft (09.07.)**:
   - Backup-Status-Endpoint & UI-Badge zur aktiven Überwachung implementiert.
   - DSGVO-Auskunft (Art. 15) als JSON-Export im Svelte-Schülerprofil integriert inkl. automatischer Audit-Protokollierung. Letzte Go-Live-Empfehlungspunkte damit abgeschlossen.
