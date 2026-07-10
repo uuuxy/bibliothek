@@ -7,7 +7,7 @@ test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
     await uiLogin(page);
 
     // In den Bestellungen-Workspace
-    await page.getByRole('button', { name: 'Bestellungen', exact: true }).click();
+    await page.getByTitle('Bestellungen').click();
 
     // Sub-Tab „Lieferanten verwalten"
     await page.getByRole('button', { name: 'Lieferanten verwalten' }).click();

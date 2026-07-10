@@ -6,7 +6,7 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
     const s = uniqueSuffix();
     seedSQL(`
         INSERT INTO buecher_titel (id, isbn, titel, autor)
-        VALUES (gen_random_uuid(), '978-${s}', 'E2E Klassensatz Buch', 'Test Autor');
+        VALUES (gen_random_uuid(), '978-${s}', 'E2E Klassensatz Buch ${s}', 'Test Autor');
 
         INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, notiz, angefordert_von)
         VALUES ((SELECT id FROM buecher_titel WHERE isbn = '978-${s}'), '08b', 25, 'E2E Test Notiz', NULL);
@@ -22,16 +22,14 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
     // der Button in der Tab-Leiste enthält auch "Klassensatz-Reservierungen".
     await page.getByRole('button', { name: /Klassensatz-Reservierungen/i }).click();
 
-    // 5. Button "Als erledigt markieren" klicken
-    await page.getByRole('button', { name: 'Als erledigt markieren' }).first().click();
 
     // 4. Verifikation des Renderns der Reservierung
-    await expect(page.getByText('E2E Klassensatz Buch').first()).toBeVisible();
+    await expect(page.getByText(`E2E Klassensatz Buch ${s}`).first()).toBeVisible();
     await expect(page.getByText('08b').first()).toBeVisible();
     await expect(page.getByText('25').first()).toBeVisible();
 
     // 5. Reservierung abschließen
-    const reservierungZeile = page.locator('li').filter({ hasText: 'E2E Klassensatz Buch' });
+    const reservierungZeile = page.locator('li').filter({ hasText: `E2E Klassensatz Buch ${s}` }).first();
     await reservierungZeile.getByRole('button', { name: 'Abschließen' }).click();
     
     // Bestätigung klicken

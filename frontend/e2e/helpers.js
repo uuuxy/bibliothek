@@ -78,7 +78,8 @@ export async function apiPatch(page, url, data) {
  * @param {string} sql
  */
 export function seedSQL(sql) {
-    execSync('docker exec -i bibliothek-db-local psql -U postgres -d bibliothek -v ON_ERROR_STOP=1', {
+    const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
+    execSync(`docker exec -i ${container} psql -U postgres -d bibliothek -v ON_ERROR_STOP=1`, {
         input: sql,
     });
 }

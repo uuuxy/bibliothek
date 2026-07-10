@@ -5,6 +5,8 @@ test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
     // 1. Seed two students (one in 05a, one in 10a)
     const s = uniqueSuffix();
     seedSQL(`
+        DELETE FROM audit_logs WHERE aktion = 'SCHULJAHRESWECHSEL';
+
         INSERT INTO schueler (vorname, nachname, klasse, barcode_id, lusd_id, ist_abgaenger, abgaenger_jahr)
         VALUES 
         ('Versetz', 'Fuenf_${s}', '05a', 'BC5_${s}', 'LUSD5_${s}', false, 2030),
