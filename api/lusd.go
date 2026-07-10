@@ -238,7 +238,9 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 			_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
 		} else {
 			// DSGVO compliant anonymization
-			_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = 'Anonymisiert', klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
+			// Append internal DB UUID to avoid unique constraint violations
+			anonymisiertName := fmt.Sprintf("Anonymisiert-%s", dbRec.ID)
+			_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = $1, klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $2", anonymisiertName, dbRec.ID)
 		}
 		if err != nil {
 			return nil, err
