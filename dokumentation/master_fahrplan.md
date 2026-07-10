@@ -22,8 +22,12 @@
 - [x] **Katalog-Suche**: in buecher-crud.spec.js integriert (Suche & Filter-Tab).
 - [x] **Offline-Queue als Vitest-Unit** (`offlineSync.test.js`, fake-indexeddb): Idempotenz-Keys, Batch-Sync, 4xx-Dequeue, 502-Retention.
 
-#### CI-Budget (privates Repo → 2.000 Actions-Minuten/Monat)
-- [ ] **Entscheidung nötig**: (a) Repo public machen ⇒ Minuten unbegrenzt kostenlos (prüfen: nichts Sensibles in Historie), (b) e2e-Job nur auf PRs + `concurrency: cancel-in-progress` (spart Push-Serien), oder (c) Self-hosted Runner auf eigenem Rechner/Server. Bis dahin frisst der Docker-Build im e2e-Job das Kontingent am schnellsten.
+#### CI-Budget (privates Repo, Actions-Billing aktuell erschöpft — Jobs starten nicht)
+- **Petes Entscheidung 11.07.: Repo bleibt auf jeden Fall PRIVAT** — Option „public" ist gestrichen.
+- [x] **Sofort-Hygiene** (11.07.): `concurrency: cancel-in-progress` in ci.yml — Push-Serien verbrennen keine Minuten mehr für veraltete Läufe.
+- [ ] **Empfehlung: Self-hosted Runner** (kostenlos, für private Repos unbedenklich) auf dem Schulserver oder einem dauerhaft laufenden Rechner: `Settings → Actions → Runners → New self-hosted runner`, dann in ci.yml `runs-on: self-hosted`. Docker muss auf dem Runner verfügbar sein (für den e2e-Job).
+- [ ] **Alternative**: Spending-Limit/Billing bei GitHub reparieren und e2e-Job auf PRs beschränken — kostet Geld, dafür null Wartung.
+- Bis zur Entscheidung: E2E-Disziplin lokal — vor jedem Push `npm run test:e2e` (Suite läuft in ~20 s).
 
 ### 3. Phase 3: Ausbau & Betrieb (Zukunft)
 - [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`)

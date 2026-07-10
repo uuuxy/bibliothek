@@ -9,6 +9,12 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
+# Push-Serien: nur der jeweils neueste Lauf pro Branch zählt —
+# veraltete Läufe werden abgebrochen und verbrennen keine Minuten.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
