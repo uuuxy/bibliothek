@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Peter Flasch. All rights reserved.
+// This source code is proprietary and confidential.
+
 package main
 
 import (

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Peter Flasch. All rights reserved.
+// This source code is proprietary and confidential.
+
 import { mount } from 'svelte'
 import '@fontsource/inter/300.css';
 import '@fontsource/inter/400.css';

@@ -1,3 +1,6 @@
+-- Copyright (c) 2026 Peter Flasch. All rights reserved.
+-- This source code is proprietary and confidential.
+
 -- PostgreSQL Schema for a School Library System (Bibliothek)
 -- Designed for ~80,000 books and ~2,000 students.
 -- Uses UUIDs, generated columns for full-text search, and explicit relationships.
