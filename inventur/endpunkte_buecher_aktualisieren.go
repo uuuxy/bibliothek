@@ -25,6 +25,7 @@ type BuchAktualisierenAnfrage struct {
 	Verlag                  string         `json:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
 	Beschreibung            string         `json:"beschreibung"`
+	Signatur                string         `json:"signatur"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 }
 
@@ -70,6 +71,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Verlag:                  eingabe.Verlag,
 		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
 		Beschreibung:            eingabe.Beschreibung,
+		Signatur:                strings.TrimSpace(eingabe.Signatur),
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 	}
 

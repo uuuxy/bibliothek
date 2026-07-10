@@ -56,6 +56,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		CoverURL                string         `json:"coverUrl"`
 		ZaehlDatum              *string        `json:"lastCounted"`
 		Medientyp               string         `json:"medientyp"`
+		Signatur                string         `json:"signatur"`
 		ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 	}
 
@@ -85,6 +86,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Stock:                   eingabe.Bestand,
 		LastCounted:             eingabe.ZaehlDatum,
 		Medientyp:               strings.TrimSpace(eingabe.Medientyp),
+		Signatur:                strings.TrimSpace(eingabe.Signatur),
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 	}
 	buch.Title = strings.TrimSpace(eingabe.Titel)
