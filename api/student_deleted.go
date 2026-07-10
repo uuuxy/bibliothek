@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -14,8 +15,9 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		rows, err := s.DB.Pool.Query(ctx, `
-			SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, deleted_at
-			FROM schueler 
+			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
+			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at
+			FROM schueler
 			WHERE deleted_at IS NOT NULL
 			ORDER BY deleted_at DESC
 		`)
@@ -30,20 +32,24 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 			var id, barcode, vorname, nachname, kl string
 			var abgaengerJahr *int
 			var gesperrt bool
-			var deletedAt string
+			// timestamptz braucht time.Time — ein String-Scan brach hier
+			// die Iteration ab und machte den Papierkorb zum 500er.
+			var deletedAt time.Time
 
-			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &deletedAt); err == nil {
-				students = append(students, map[string]any{
-					"id":             id,
-					"barcode_id":     barcode,
-					"vorname":        vorname,
-					"nachname":       nachname,
-					"klasse":         kl,
-					"abgaenger_jahr": abgaengerJahr,
-					"ist_gesperrt":   gesperrt,
-					"deleted_at":     deletedAt,
-				})
+			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &deletedAt); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
 			}
+			students = append(students, map[string]any{
+				"id":             id,
+				"barcode_id":     barcode,
+				"vorname":        vorname,
+				"nachname":       nachname,
+				"klasse":         kl,
+				"abgaenger_jahr": abgaengerJahr,
+				"ist_gesperrt":   gesperrt,
+				"deleted_at":     deletedAt,
+			})
 		}
 		if err := rows.Err(); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
