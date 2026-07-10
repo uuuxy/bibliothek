@@ -14,6 +14,14 @@
 ### 2. Testing & Infrastruktur
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
 
+#### E2E-Backlog Runde 2 (10.07., bewertet — Reihenfolge = Priorität)
+- [ ] **Inventur-Ablauf**: Sitzung starten → scannen → abschließen. Saisonal kritisch (Schuljahresende), zustandsbehaftet, verändert Bestandsdaten — größte echte Lücke.
+- [ ] **Bücher-CRUD + Signatur-Schutz**: Titel anlegen → Exemplar → Update mit leerem Signatur-Feld darf die Signatur NICHT überschreiben (schützt die Konsolidierung aus Migration 038 + COALESCE/NULLIF-Muster).
+- [ ] **Settings-Enforcement**: max_ausleihen_schueler=1 setzen → zweiter Checkout blockt sofort; Einstellung im finally zurücksetzen (gemeinsame Dev-DB!).
+- [ ] **Schüler löschen/wiederherstellen**: Papierkorb-Flow inkl. Blockade durch unbezahlte Schadensfälle (DSGVO-relevant). Anlegen/Ändern ist über API-Seeds bereits x-fach exerziert.
+- [ ] **Katalog-Suche & Filter**: billig, aber read-only und wenig Risiko — letzte Priorität.
+- [ ] **Offline-Queue als Vitest-Unit (NICHT E2E)**: offlineSync.svelte.js — Queue, Idempotenz, Sync nach Reconnect. PWA-Offline-E2E bewusst verworfen (Service-Worker-Flakiness in CI).
+
 #### CI-Budget (privates Repo → 2.000 Actions-Minuten/Monat)
 - [ ] **Entscheidung nötig**: (a) Repo public machen ⇒ Minuten unbegrenzt kostenlos (prüfen: nichts Sensibles in Historie), (b) e2e-Job nur auf PRs + `concurrency: cancel-in-progress` (spart Push-Serien), oder (c) Self-hosted Runner auf eigenem Rechner/Server. Bis dahin frisst der Docker-Build im e2e-Job das Kontingent am schnellsten.
 
