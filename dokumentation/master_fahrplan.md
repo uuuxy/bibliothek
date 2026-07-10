@@ -25,9 +25,7 @@
 #### CI-Budget (privates Repo, Actions-Billing aktuell erschöpft — Jobs starten nicht)
 - **Petes Entscheidung 11.07.: Repo bleibt auf jeden Fall PRIVAT** — Option „public" ist gestrichen.
 - [x] **Sofort-Hygiene** (11.07.): `concurrency: cancel-in-progress` in ci.yml — Push-Serien verbrennen keine Minuten mehr für veraltete Läufe.
-- [ ] **Empfehlung: Self-hosted Runner** (kostenlos, für private Repos unbedenklich) auf dem Schulserver oder einem dauerhaft laufenden Rechner: `Settings → Actions → Runners → New self-hosted runner`, dann in ci.yml `runs-on: self-hosted`. Docker muss auf dem Runner verfügbar sein (für den e2e-Job).
-- [ ] **Alternative**: Spending-Limit/Billing bei GitHub reparieren und e2e-Job auf PRs beschränken — kostet Geld, dafür null Wartung.
-- Bis zur Entscheidung: E2E-Disziplin lokal — vor jedem Push `npm run test:e2e` (Suite läuft in ~20 s).
+- [x] **Lösung (11.07.): pre-push-Git-Hook** (`scripts/git-hooks/pre-push`) — jeder `git push` läuft erst durch Go-Build+Tests, Vitest, Container-Rebuild und die volle Playwright-Suite; rot = Push blockiert. Aktivierung pro Klon einmalig: `git config core.hooksPath scripts/git-hooks`. Notausgang: `SKIP_E2E=1 git push` (nur Go+Vitest) oder `git push --no-verify`. Die GitHub-Actions-CI bleibt als Definition bestehen, falls später doch ein Self-hosted Runner kommt — bis dahin ist der Hook die verbindliche Prüfinstanz.
 
 ### 3. Phase 3: Ausbau & Betrieb (Zukunft)
 - [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`)

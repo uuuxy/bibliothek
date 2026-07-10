@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# pre-push: Lokale Test-Festung — ersetzt die (abgeklemmte) GitHub-Actions-CI.
+#
+# Läuft automatisch bei jedem `git push` und blockiert den Upload, wenn etwas
+# rot ist: Go-Build + Go-Tests, Vitest, Container-Rebuild, Playwright (E2E).
+#
+# Einmalige Aktivierung pro Klon:   git config core.hooksPath scripts/git-hooks
+# Bewusst überspringen (Notfall):   SKIP_E2E=1 git push   (nur Go+Vitest)
+#                                   git push --no-verify  (gar keine Prüfung)
+set -euo pipefail
+
+ROOT=$(git rev-parse --show-toplevel)
+COMPOSE="$ROOT/docker-compose.local.yml"
+
+echo "🛡  pre-push 1/4: Go-Build + Go-Tests"
+(cd "$ROOT" && go build ./... && go test ./...)
+
+echo "🛡  pre-push 2/4: Vitest"
+(cd "$ROOT/frontend" && npx vitest run)
+
+if [ "${SKIP_E2E:-0}" = "1" ]; then
+    echo "⚠️  E2E übersprungen (SKIP_E2E=1) — Go + Vitest waren grün."
+    exit 0
+fi
+
+echo "🛡  pre-push 3/4: Backend-Container mit aktuellem Stand bauen"
+if ! docker info >/dev/null 2>&1; then
+    echo "✖ Docker läuft nicht — E2E-Tests unmöglich."
+    echo "  Entweder Docker Desktop starten oder bewusst ohne E2E pushen:"
+    echo "    SKIP_E2E=1 git push"
+    exit 1
+fi
+(cd "$ROOT" && docker compose -f "$COMPOSE" up -d --build backend)
+for i in $(seq 1 30); do
+    curl -sf http://localhost:8084/health >/dev/null && break || sleep 2
+done
+if ! curl -sf http://localhost:8084/health >/dev/null; then
+    echo "✖ Backend wird nicht gesund (http://localhost:8084/health) — Abbruch."
+    exit 1
+fi
+
+echo "🛡  pre-push 4/4: Playwright E2E-Suite"
+(cd "$ROOT/frontend" && npx playwright test)
+
+echo "✅ Alles grün — Push wird durchgelassen."
