@@ -153,6 +153,7 @@
                     onclick={() => onToggleBook(book.id)}
                     class="text-gray-400 hover:text-red-500 p-1 rounded-full transition-colors"
                     title="Buch entfernen"
+                    aria-label="Buch entfernen"
                 >
                     <svg
                         width="20"
