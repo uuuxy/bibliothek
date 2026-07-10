@@ -612,3 +612,36 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 );
 
 CREATE INDEX IF NOT EXISTS idx_idempotency_keys_created_at ON idempotency_keys(created_at);
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Drift-Abgleich (10.07.2026): DDL aus oben bereits als angewendet
+-- markierten Migrationen (008, 021, 022, 027), die in dieser Baseline
+-- fehlte. Frische Datenbanken bekämen diese Objekte sonst nie — die
+-- Migrationen laufen wegen des schema_migrations-Seeds nicht mehr.
+
+ALTER TABLE buecher_titel
+    ADD COLUMN IF NOT EXISTS jahrgang_von INTEGER NOT NULL DEFAULT 5,
+    ADD COLUMN IF NOT EXISTS jahrgang_bis INTEGER NOT NULL DEFAULT 10;
+
+CREATE TABLE IF NOT EXISTS signatures (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    description TEXT
+);
+
+ALTER TABLE buecher_titel
+    ADD COLUMN IF NOT EXISTS signature_id INT REFERENCES signatures(id) ON DELETE RESTRICT;
+
+ALTER TABLE vormerkungen
+    ADD COLUMN IF NOT EXISTS bereitgestellt_bis TIMESTAMP WITH TIME ZONE;
+
+CREATE TABLE IF NOT EXISTS mail_settings_config (
+    id SERIAL PRIMARY KEY,
+    smtp_host VARCHAR(255) NOT NULL DEFAULT 'localhost',
+    smtp_port VARCHAR(50) NOT NULL DEFAULT '1025',
+    smtp_user VARCHAR(255) NOT NULL DEFAULT '',
+    smtp_password_encrypted BYTEA,
+    sender_email VARCHAR(255) NOT NULL DEFAULT 'noreply@bibliothek-schule.de',
+    CONSTRAINT mail_settings_config_single_row_chk CHECK (id = 1)
+);
+INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;
