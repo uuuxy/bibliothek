@@ -36,6 +36,16 @@ func GenerateBarcodePNG(content string, isQR bool, width, height int) ([]byte, e
 		return nil, fmt.Errorf("failed to encode barcode: %w", err)
 	}
 
+	// barcode.Scale verweigert Verkleinern unter die native Modulgröße
+	// (lange Inhalte sprengen z. B. die üblichen 200px der Ausweiskarten).
+	// Dann lieber größer ausliefern als mit 500 scheitern.
+	if minW := bc.Bounds().Dx(); width < minW {
+		width = minW
+	}
+	if minH := bc.Bounds().Dy(); height < minH {
+		height = minH
+	}
+
 	scaled, err := barcode.Scale(bc, width, height)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scale barcode: %w", err)
