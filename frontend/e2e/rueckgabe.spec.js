@@ -36,9 +36,11 @@ test('Rückgabe: entliehenes Buch scannen bucht es zurück', async ({ page }) =>
     await expect(page.getByText(`„${bookTitle}" erfolgreich zurückgegeben.`)).toBeVisible();
 });
 
-// Fremdrückgabe: Buch von Schüler A wird in der Sitzung von Schüler B gescannt
-// → automatische Ausbuchung bei A, Neuausleihe an B, unübersehbare Warnung.
-test('Fremdrückgabe: Scan in fremder Sitzung bucht um und warnt', async ({ page }) => {
+// Fremdrückgabe (Produktentscheidung 10.07.): Buch von Schüler A wird in der
+// Sitzung von Schüler B gescannt → NUR Rückgabe bei A mit Info-Banner, KEIN
+// automatisches Umbuchen (Freund-Rückgaben landeten sonst still auf dem
+// falschen Konto). Erst ein zweiter Scan leiht das nun freie Buch an B aus.
+test('Fremdrückgabe: Scan 1 bucht nur beim Vorbesitzer aus, Scan 2 leiht an die Sitzung', async ({ page }) => {
     await uiLogin(page);
     const suffix = uniqueSuffix();
     const { bookBarcode, bookTitle } = seedStudentWithLoan(suffix);
@@ -58,11 +60,16 @@ test('Fremdrückgabe: Scan in fremder Sitzung bucht um und warnt', async ({ page
     await scanInput.press('Enter');
     await expect(page.getByText(`Zweitleiher-${suffix}`).first()).toBeVisible();
 
-    // Buch von Schüler A in Bs Sitzung scannen
+    // Scan 1: Buch von Schüler A in Bs Sitzung → reine Rückgabe + Info
     await scanInput.fill(bookBarcode);
     await scanInput.press('Enter');
+    await expect(page.getByText(/war auf E2E Leiher-.* verbucht/).first()).toBeVisible();
+    // NICHT auf B gebucht — die Sitzung läuft ungestört weiter
+    await expect(page.getByText('ENTLIEHENE BÜCHER (0)')).toBeVisible();
 
-    await expect(page.getByText(/Fremdrückgabe erfolgt \(Vorbesitzer: E2E Leiher-/)).toBeVisible();
-    // Das Buch hängt jetzt an B
-    await expect(page.getByText(bookTitle).first()).toBeVisible();
+    // Scan 2: jetzt ist das Buch frei → normale Ausleihe an B
+    await scanInput.fill(bookBarcode);
+    await scanInput.press('Enter');
+    await expect(page.getByText(`„${bookTitle}" ausgeliehen an E2E.`)).toBeVisible();
+    await expect(page.getByText('ENTLIEHENE BÜCHER (1)')).toBeVisible();
 });

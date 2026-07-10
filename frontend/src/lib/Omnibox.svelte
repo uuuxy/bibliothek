@@ -153,7 +153,7 @@
     {#if omniboxStore.lastFremdrueckgabe}
       <div class="w-full max-w-xl p-3 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-medium flex items-center space-x-2 animate-slide-up no-print mb-2">
         <span>⚠️</span>
-        <span><strong>Fremdrückgabe:</strong> Buch wurde von <strong>{omniboxStore.lastFremdrueckgabe.vorbesitzerName}</strong> zurückgegeben und für {omniboxStore.activeStudent.vorname} verbucht.</span>
+        <span><strong>Fremdrückgabe:</strong> Buch war auf <strong>{omniboxStore.lastFremdrueckgabe.vorbesitzerName}</strong> verbucht und wurde dort zurückgegeben — <strong>nicht</strong> auf {omniboxStore.activeStudent.vorname} gebucht. Erneut scannen, um es auszuleihen.</span>
       </div>
     {/if}
     <StudentProfile bind:this={studentProfileComponent} student={omniboxStore.activeStudent} {role} onDeselect={() => { omniboxStore.activeStudent = null; omniboxStore.lastFremdrueckgabe = null; }} onReturnClick={(barcode) => { omniboxStore.queryVal = barcode; omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile()); }} />

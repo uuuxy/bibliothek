@@ -113,7 +113,12 @@ func (s *defaultLoanService) handleReturn(
 	return resp, nil
 }
 
-// handleForeignReturn handles the complex case where user B checks out a book currently checked out by user A.
+// handleForeignReturn: In einer aktiven Sitzung wird ein Buch gescannt, das auf
+// jemand ANDEREN verbucht ist. Bewusst NUR eine Rückgabe beim Vorbesitzer —
+// kein automatisches Umbuchen auf die aktive Sitzung (Produktentscheidung
+// 10.07.: Freund-Rückgaben landeten sonst still auf dem falschen Konto).
+// Soll das Buch an die aktive Sitzung: einfach erneut scannen — das Buch ist
+// jetzt frei und der zweite Scan läuft als normale Ausleihe (handleNewLoan).
 func (s *defaultLoanService) handleForeignReturn(
 	ctx context.Context,
 	tx pgx.Tx,
@@ -144,21 +149,8 @@ func (s *defaultLoanService) handleForeignReturn(
 		return nil, err
 	}
 
-	var loan *repository.Loan
-	if chkCtx.borrowerType == "student" {
-		loan, err = s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime)
-	} else {
-		loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, true)
-	}
-	if err != nil {
-		return nil, mapLoanCreateErr(err)
-	}
-
-	if chkCtx.borrowerType == "student" {
-		if _, err := tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, chkCtx.borrowerID); err != nil {
-			log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
-		}
-	}
+	// Vormerkungs-Hinweis wie bei jeder Rückgabe: das Buch wird gerade frei
+	s.processReturnVormerkungTx(ctx, tx, copy, resp)
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -170,14 +162,6 @@ func (s *defaultLoanService) handleForeignReturn(
 		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 	}
 
-	if chkCtx.borrowerType == "student" {
-		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
-		resp.Student = chkCtx.student
-	} else {
-		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
-		resp.Teacher = chkCtx.teacher
-	}
-
 	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
 		CopyID:       copy.ID,
 		BarcodeID:    copy.BarcodeID,
@@ -186,11 +170,12 @@ func (s *defaultLoanService) handleForeignReturn(
 		BearbeiterID: staffID,
 	})
 
-	resp.Type = "ausleihe"
+	resp.Type = "rueckgabe"
 	resp.Book = copy
-	if loan != nil {
-		resp.DueDate = &loan.RueckgabeFrist
-	}
+	resp.LoanID = &activeLoan.ID
+	// Student = Vorbesitzer: SSE-Livesync zielt auf das Konto, das sich
+	// geändert hat; die aktive Sitzung bleibt clientseitig unangetastet.
+	resp.Student = prevStudent
 	resp.Fremdrueckgabe = true
 	resp.Vorbesitzer = prevStudent
 	resp.VorbesitzerUser = prevTeacher

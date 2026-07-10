@@ -174,33 +174,36 @@ export function createOmniboxStore() {
           `📋 Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`,
         );
       } else if (data.type === "ausleihe") {
+        triggerScreenFlash("success");
+        playSoundSuccess();
+        triggerFlash("green");
+        showToast(
+          `📖 „${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`,
+        );
+        if (reloadProfileCb) reloadProfileCb();
+      } else if (data.type === "rueckgabe") {
         if (data.fremdrueckgabe) {
+          // Fremdes Buch in aktiver Sitzung: NUR beim Vorbesitzer ausgebucht —
+          // bewusst kein automatisches Umbuchen. Info ohne Unterbrechung;
+          // erneuter Scan leiht es an die aktive Sitzung aus.
           triggerScreenFlash("warning");
           playSoundError();
           triggerFlash("orange");
           const prevName = data.vorbesitzer
             ? `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`
-            : `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
+            : (data.vorbesitzer_user ? `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}` : "unbekannt");
           lastFremdrueckgabe = { vorbesitzerName: prevName };
+          const aktiv = activeTeacher?.vorname || activeStudent?.vorname;
           showToast(
-            `⚠️ Fremdrückgabe erfolgt (Vorbesitzer: ${prevName})`,
+            `⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : ""}`,
             "warning",
           );
         } else {
           triggerScreenFlash("success");
           playSoundSuccess();
           triggerFlash("green");
-          showToast(
-            `📖 „${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`,
-          );
+          showToast(`📥 „${data.book.titel}" erfolgreich zurückgegeben.`);
         }
-        if (reloadProfileCb) reloadProfileCb();
-      } else if (data.type === "rueckgabe") {
-        triggerScreenFlash("success");
-        playSoundSuccess();
-        triggerFlash("green");
-
-        showToast(`📥 „${data.book.titel}" erfolgreich zurückgegeben.`);
         if (data.has_vormerkung) {
           vormerkungAlert = {
             titel: data.vormerkung_titel || data.book?.titel,

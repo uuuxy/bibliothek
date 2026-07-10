@@ -12,8 +12,8 @@
 - [ ] **Cleanup**: Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.
 - [x] **Cleanup**: Toter Kiosk-Parallelbau (`stores/kiosk.svelte.js`, `components/kiosk/`) am 10.07. entfernt — war nirgends eingebunden, der Omnibox-Flow ist der produktive Ausleihe-Pfad.
 
-### 1b. Offene Produktentscheidung: Fremdscan in aktiver Sitzung
-- [ ] **Peter denkt nach (Stand 10.07.):** Wird in einer aktiven Schüler-Sitzung ein Buch gescannt, das auf einen ANDEREN Schüler verbucht ist, bucht das System heute automatisch um (orange Warnung „Fremdrückgabe erfolgt, Vorbesitzer: …"). Das ist richtig für Altlasten (liegengebliebenes Buch wird neu ausgegeben → heilt sich selbst), aber falsch für Freund-Rückgaben (Buch landet still auf dem falschen Konto). Ohne Sitzung ist der Scan bereits eine reine Rückgabe beim Besitzer — dieser Fall ist korrekt und getestet. Optionen für den Sitzungs-Fall: (a) Nachfrage-Dialog „Nur zurückgeben / Auf X umbuchen" (Empfehlung), (b) immer nur zurückgeben + erneuter Scan leiht ans aktive Konto, (c) Status quo. Betroffene Stellen: internal/service/loan_checkout_cases.go (Fremdrückgabe-Pfad), Omnibox-UI, rueckgabe.spec.js (Fremdrückgabe-Test asserts aktuell das Umbuchen).
+### 1b. Produktentscheidung Fremdscan in aktiver Sitzung — ENTSCHIEDEN & UMGESETZT (10.07.)
+- [x] **Petes Entscheidung: Doppel-Scan ohne Dialog.** Fremdes Buch in aktiver Sitzung → NUR Rückgabe beim Vorbesitzer, Info per Toast + Banner („war auf Max verbucht — dort zurückgegeben. Erneut scannen, um es an Lisa auszuleihen"), null Klicks, Workflow läuft ungestört weiter. Zweiter Scan leiht das nun freie Buch normal an die Sitzung aus (deckt den Altlasten-Fall ab). Ohne Sitzung bleibt der Scan eine reine Rückgabe; manuelle Rücknahme (Profil-Button) unverändert. Umgesetzt in loan_checkout_cases.go (handleForeignReturn ohne Auto-Umbuchen), Omnibox-Store/-Banner, Fremdrückgabe-E2E-Test schreibt das neue Verhalten fest.
 
 ### 2. Testing & Infrastruktur
 - [x] **E2E-Tests**: Playwright-Tests für die drei neuen Admin-Flows (Versetzung, LUSD, Reservierungen) erfolgreich integriert.
