@@ -114,10 +114,13 @@ func (s *defaultOmniboxService) ProcessQuery(
 		}
 		return resp, err
 	} else {
-		// Fallback: Wenn kein Präfix vorhanden ist, prüfen wir zuerst, ob die Eingabe ein registrierter Buch-Barcode ist.
-		// Ist dies der Fall, verarbeiten wir es als Buch-Aktion. Andernfalls führen wir eine Volltext-Titelsuche aus.
-		// GetCopyByBarcode liefert bei nicht gefundenem Barcode (nil, nil); ein non-nil Fehler ist daher
-		// ein echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als "kein Buch" zu verschlucken.
+		// Fallback ohne Präfix — Auflösungsreihenfolge: Buch → Schülerausweis → Volltextsuche.
+		// Die Littera-Altbestand-Ausweise tragen nackte Nummern ohne "S-"-Präfix und dürfen
+		// nicht neu etikettiert werden; ihre Nummernkreise überschneiden sich nicht mit den
+		// (kürzeren) Littera-Mediennummern, daher ist die Reihenfolge deterministisch.
+		// GetCopyByBarcode/GetByBarcode liefern bei Nichttreffer (nil, nil); ein non-nil Fehler
+		// ist daher ein echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als
+		// "nicht gefunden" zu verschlucken.
 		copy, lookupErr := s.bookRepo.GetCopyByBarcode(ctx, query)
 		if lookupErr != nil {
 			return resp, fmt.Errorf("datenbankfehler bei Barcode-Auflösung: %w", lookupErr)
@@ -125,7 +128,15 @@ func (s *defaultOmniboxService) ProcessQuery(
 		if copy != nil {
 			err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
 		} else {
-			err = s.handleSearchAction(ctx, query, resp)
+			student, studentErr := s.studentRepo.GetByBarcode(ctx, query)
+			if studentErr != nil {
+				return resp, fmt.Errorf("datenbankfehler bei Ausweis-Auflösung: %w", studentErr)
+			}
+			if student != nil {
+				err = s.handleStudentAction(ctx, query, resp)
+			} else {
+				err = s.handleSearchAction(ctx, query, resp)
+			}
 		}
 	}
 
