@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -80,7 +81,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			var days float64 // EXTRACT returns numeric/float
 
 			if err := rows.Scan(&id, &vorname, &nachname, &ausgeliehenAm, &frist, &days, &titel, &barcode); err != nil {
-				fmt.Printf("Scan error: %v\n", err)
+				log.Printf("Scan error: %v", err)
 				continue
 			}
 
@@ -221,7 +222,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 		err = pdf.Output(w)
 		if err != nil {
-			fmt.Printf("Error writing PDF output: %v\n", err)
+			log.Printf("Error writing PDF output: %v", err)
 		}
 	}
 }
