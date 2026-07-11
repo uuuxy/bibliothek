@@ -280,7 +280,7 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 }
 
 // Regressionstest: Eine NULL-wert-Zeile (z. B. nie gesetztes
-// ferien_leseclub_zieldatum) machte vor dem coalesce-Fix JEDEN Checkout zum 500 —
+// ferien_leseclub_zieldatum) machte vor der coalesce-Korrektur JEDEN Checkout zum 500 —
 // der Scan in string brach die pgx-Iteration ab und rows.Err() schlug durch.
 // Mit coalesce kommt sie als leerer String an und fällt auf Defaults zurück.
 func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
