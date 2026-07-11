@@ -45,6 +45,11 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 // Fehlende Metadaten (Titel, Autor, Cover) werden, falls ISBN vorhanden, automatisch
 // über den MetadataClient via OpenLibrary-API im Hintergrund ergänzt, um Arbeit zu sparen.
 func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, anfrage *http.Request) {
+	if anfrage.Method != http.MethodPost {
+		writeError(antwort, http.StatusMethodNotAllowed, "nur post-anfragen erlaubt")
+		return
+	}
+
 	var eingabe struct {
 		ISBN                    string         `json:"isbn"`
 		Fach                    string         `json:"subject"`
