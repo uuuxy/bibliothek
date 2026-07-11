@@ -13,6 +13,11 @@ import (
 // nutzt ein Wörterbuch für Synonyme (z.B. powi -> politik) und fragt die Datenbank ab.
 // Danach werden die Bücher logisch (natürlich) sortiert und als JSON gesendet.
 func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, anfrage *http.Request) {
+	if anfrage.Method != http.MethodGet {
+		writeError(antwort, http.StatusMethodNotAllowed, "nur get-anfragen erlaubt")
+		return
+	}
+
 	anfrageParameter := anfrage.URL.Query()
 	fach := strings.TrimSpace(anfrageParameter.Get("subject"))
 
