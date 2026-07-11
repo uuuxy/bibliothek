@@ -27,13 +27,7 @@ test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
     await page.getByRole('button', { name: 'Vorschau laden' }).click();
 
     // Warten auf das Ergebnis oder Fehlermeldung
-    try {
-        await expect(page.getByText('Neue Schüler')).toBeVisible({ timeout: 2000 });
-    } catch (e) {
-        const bodyText = await page.locator('body').innerText();
-        console.log("Body text on failure:", bodyText);
-        throw e;
-    }
+    await expect(page.getByText('Neue Schüler')).toBeVisible({ timeout: 2000 });
 
     // Akkordeon öffnen um den Namen zu sehen
     await page.locator('summary').filter({ hasText: 'Neue Schüler' }).click();
