@@ -6,7 +6,12 @@ import (
 )
 
 func (repo *BookRepository) GetActiveSubjects(ctx context.Context) ([]Subject, error) {
-	query := "SELECT id, name, is_active FROM subjects WHERE is_active = true ORDER BY name ASC"
+	query := `
+		SELECT DISTINCT fach
+		FROM buecher
+		WHERE fach IS NOT NULL AND fach != ''
+		ORDER BY fach ASC
+	`
 	rows, err := repo.db.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("fächer konnten nicht geladen werden: %w", err)
@@ -14,12 +19,18 @@ func (repo *BookRepository) GetActiveSubjects(ctx context.Context) ([]Subject, e
 	defer rows.Close()
 
 	var subjects []Subject
+	idCounter := 1
 	for rows.Next() {
-		var s Subject
-		if err := rows.Scan(&s.ID, &s.Name, &s.IsActive); err != nil {
+		var fachName string
+		if err := rows.Scan(&fachName); err != nil {
 			return nil, fmt.Errorf("fehler beim lesen der fächer: %w", err)
 		}
-		subjects = append(subjects, s)
+		subjects = append(subjects, Subject{
+			ID:       idCounter,
+			Name:     fachName,
+			IsActive: true,
+		})
+		idCounter++
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("fehler beim lesen der fächer: %w", err)
