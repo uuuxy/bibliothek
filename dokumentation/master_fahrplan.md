@@ -13,10 +13,15 @@
 - [ ] **Schuljahres-Versetzung**: Manuelle Abnahme mit einem echten Klassensatz vor dem Wechsel (⏰ Deadline Schuljahreswechsel; braucht kein LUSD).
 - [ ] **Klassensatz-Reservierungen**: Abnahme des "Erledigen"-Ablaufs mit einer echten Anfrage (braucht kein LUSD).
 
-### 2. Testing & Infrastruktur
-- [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
+### 2. Kritischer Pfad Go-Live (wartet auf Pete, Stand 11.07.)
+- [ ] **Littera-MySQL-Dump + 3 Ausweis-Probe-Scans** besorgen → dann: Migrations-Tool auf echtes Littera-Schema (Titel/Exemplare mit Zugangsdatum+Preis, Leser↔LUSD-Matching, **offene Ausleihen** — ohne die startet das System mit „alles verfügbar", obwohl tausende LMF-Bücher verliehen sind).
+- [ ] **Zielumgebung klären**: Server/Domain, Prod-Secrets, echter Schul-IMAP (`IMAP_HOST`) und **SMTP-Zugangsdaten** (ohne sie versendet das Mahnwesen nichts — `mail_settings_config` ist leer).
+- [ ] **OPAC-Produktentscheidung**: LMF-Schulbücher erscheinen in der öffentlichen Katalogsuche — rausfiltern ja/nein? (Umsetzung: Fünfzeiler.)
 
-### 3. Phase 3: Ausbau & Betrieb (Zukunft)
+### 3. Testing & Infrastruktur
+- [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen. Dabei den dokumentierten Cover-Reset beachten ([DEPLOYMENT.md §6](DEPLOYMENT.md)).
+
+### 4. Phase 3: Ausbau & Betrieb (Zukunft)
 - [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`)
 - [ ] **Mandantenfähigkeit (RLS)**: Tenant-Claim in Auth-Middleware, `tenant_id`-Migrationen (Dry-Run-Prozess).
 
@@ -24,6 +29,11 @@
 
 ## ✅ Kürzlich Erledigt (Go-Live Ready)
 
+- **Betriebsvorbereitung (11.07. nachmittags)**:
+  - **Cover-Sync gedrosselt**: Der bestehende 6-h-Job lief ungedrosselt (8 Worker, bis zu ~5 HTTP-Calls/Titel) — beim Altbestands-Backfill (~14k Titel) reales IP-Block-Risiko bei der DNB, was auch den ISBN-Lookup am Pult getroffen hätte. Jetzt global 2 Titel/s (kompletter Altbestand in ~2 h).
+  - **Backup-Scope bewusst entschieden & dokumentiert** (DEPLOYMENT.md §6): nur DB im Backup; Schülerfotos liegen verschlüsselt in der DB, Cover sind reproduzierbar (inkl. dokumentiertem Einmal-Reset nach Volume-Verlust).
+  - **[Runbook fürs Sekretariat](runbook_sekretariat.md)**: Tagesgeschäft, Sonderfälle, Störungen (Offline-Pufferung!, Scanner defekt → Tastatur), Wochen-Checkliste, Eskalation.
+  - **PR-Triage-Nachgang**: #274 nach Verifikation gemergt (peek via timestamp-Index), #275 geschlossen (No-Op — Branch-Diff gegen main war leer), #235-Bewertung revidiert (kein echter HIGH-Fund; `filepath.Base` + ISBN-Validierung decken den Pfad ab). 0 offene PRs.
 - **Lücken-Analyse & E2E-Vervollständigung (11.07.)**:
   - Validierung der 7 behaupteten Lücken gegen den echten Testbestand durchgeführt.
   - Lehrer-Portal & OPAC waren bereits abgedeckt.

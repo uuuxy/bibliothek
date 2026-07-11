@@ -28,6 +28,14 @@ func NewCoverService(dbPool db.PgxPoolIface) *CoverService {
 // Flaschenhals (bei ~20k Titeln von Stunden auf Minuten), ohne die APIs zu überlasten.
 const coverSyncConcurrency = 8
 
+// coverSyncMinInterval drosselt die Titel-Rate GLOBAL über alle Worker. Pro Titel fallen
+// bis zu ~5 externe HTTP-Calls an (DNB-SRU-Lookup + Cover-Kandidaten). Ungedrosselt
+// hämmern 8 Worker beim Altbestands-Backfill (~14.000 Littera-Titel) im zweistelligen
+// req/s-Bereich auf die DNB — ein IP-Block dort würde auch den ISBN-Lookup am
+// Ausleih-Pult lahmlegen, der über dieselbe Quell-IP läuft. 2 Titel/s ⇒ der komplette
+// Altbestand ist in ~2 h durch; die Parallelität glättet dabei nur langsame Downloads.
+const coverSyncMinInterval = 500 * time.Millisecond
+
 // coverSyncRunning verhindert überlappende Sync-Läufe (Start, Cron und manueller
 // Trigger erzeugen jeweils eine neue CoverService-Instanz) über einen prozessweiten Guard.
 var coverSyncRunning atomic.Bool
@@ -92,11 +100,17 @@ func (s *CoverService) SyncMissingCoversAsync() {
 	jobs := make(chan missingCover)
 	var wg sync.WaitGroup
 
+	// Globale Drossel: jeder Worker wartet vor JEDEM Titel auf den Ticker —
+	// damit ist die Gesamtrate unabhängig von der Worker-Zahl hart begrenzt.
+	throttle := time.NewTicker(coverSyncMinInterval)
+	defer throttle.Stop()
+
 	for i := 0; i < coverSyncConcurrency; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for mc := range jobs {
+				<-throttle.C
 				s.processCover(ctx, client, mc, &found, &notFound, &failed)
 			}
 		}()

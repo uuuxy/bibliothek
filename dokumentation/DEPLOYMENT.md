@@ -169,6 +169,28 @@ Manuelles Backup:
 ./scripts/backup.sh
 ```
 
+### Backup-Umfang: nur die Datenbank (bewusste Entscheidung, 11.07.2026)
+
+Das `uploads/`-Volume (Buchcover als lokale WebP-Dateien) wird **absichtlich nicht**
+mitgesichert:
+
+- **Schülerfotos** liegen verschlüsselt in der Datenbank (`schueler_fotos.foto_encrypted`)
+  und sind damit vom pg_dump abgedeckt — es gehen keine personenbezogenen Daten verloren.
+- **Cover sind reproduzierbar**: Der Cover-Sync-Job (alle 6 h + bei Serverstart,
+  `internal/service/cover_service.go`) lädt PENDING/FAILED-Titel gedrosselt
+  (2 Titel/s) von DNB/Google/OpenLibrary nach. **Achtung:** Titel mit Status
+  `FOUND` und totem `/uploads/`-Pfad überspringt der Job — nach einem Restore
+  ohne Volume einmalig zurücksetzen, dann heilt der nächste Lauf alles nach:
+  ```sql
+  UPDATE buecher_titel SET cover_status = 'PENDING'
+  WHERE cover_url LIKE '/uploads/%';
+  ```
+- **Etiketten/PDFs** werden on-demand generiert und nie persistiert.
+
+Wer das Nachladen nach einem Restore vermeiden will (z. B. Offline-Betrieb), kann das
+Volume zusätzlich mit `docker run --rm -v bibliothek_uploads:/data alpine tar czf - /data`
+wegsichern — Pflicht ist es nicht.
+
 ---
 
 ## 7. Health Check & Monitoring
