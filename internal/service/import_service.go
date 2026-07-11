@@ -59,7 +59,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 	importedCount := 0
 
 	for _, kat := range root.Items {
-		var autor, titel, ort, verlag, isbn, jahrStr, signatur string
+		var autor, titel, ort, verlag, isbn, jahrStr, signatur, standort string
 
 		// Parsing-Logik & Mapping
 		for _, feld := range kat.Felder {
@@ -70,6 +70,8 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 			switch mab {
 			case "100":
 				autor = val
+			case "108a":
+				standort = val
 			case "310":
 				titel = val
 			case "410":
@@ -80,7 +82,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 				jahrStr = val
 			case "540":
 				isbn = strings.ReplaceAll(strings.ReplaceAll(val, "-", ""), " ", "")
-			case "700 ":
+			case "700":
 				if feld.Reihung == "1" {
 					signatur = val
 				}
@@ -89,6 +91,14 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 
 		if titel == "" {
 			continue // Ein Titel ist zwingend erforderlich
+		}
+
+		// Lernmittelfreiheit: Kennung aus Signatur ("LMF Bio 7") oder
+		// Standort-Feld 108a ("LMF", "LMF/Bibliothek") → reine Fach-Signatur
+		// behalten und den Titel per Projekt-Konvention "LMF-" flaggen.
+		if hatLMFKennung(signatur) || hatLMFKennung(standort) {
+			signatur = entferneLMFToken(signatur)
+			titel = flaggeAlsSchulbuch(titel)
 		}
 
 		erscheinungsjahr := 0
@@ -209,6 +219,13 @@ func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Rea
 		isbn := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(row[3]), "-", ""), " ", "")
 		jahrStr := strings.TrimSpace(row[4])
 		kategorie := strings.TrimSpace(row[5])
+
+		// Lernmittelfreiheit: LMF-Token in der Kategorie ("Buch LMF Ma 6/Gri")
+		// → Token entfernen und den Titel per Projekt-Konvention "LMF-" flaggen.
+		if hatLMFKennung(kategorie) {
+			kategorie = entferneLMFToken(kategorie)
+			titel = flaggeAlsSchulbuch(titel)
+		}
 
 		// 1. String-Bereinigung & 2. Datentyp-Sicherheit (Bleibt konsequent String)
 		// Entfernt Whitespaces, Zeilenumbrüche und unsichtbare Steuerzeichen (BOM, Zero-Width Space, Null-Bytes)

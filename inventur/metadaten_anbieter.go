@@ -53,6 +53,8 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	var extrahierteAutoren []string
 	var verlag string
 	var jahr string
+	var genres []string
+	var zielgruppe string
 
 	for _, datenFeld := range nutzlast.Records.Record[0].RecordData.Record.Datafield {
 		if datenFeld.Tag == "245" {
@@ -98,6 +100,27 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 				}
 			}
 		}
+		// Genre-/Formangaben (z. B. "Kinderbuch", "Jugendbücher ab 12 Jahre")
+		// aus den GND-Vokabularen — Basis für den Signatur-Vorschlag.
+		if datenFeld.Tag == "655" {
+			for _, unterFeld := range datenFeld.Subfield {
+				if unterFeld.Code == "a" {
+					if genre := strings.TrimSpace(unterFeld.Value); genre != "" {
+						genres = append(genres, genre)
+					}
+				}
+			}
+		}
+		// Verlagsangabe zur Zielgruppe: 653 $a mit Präfix "(Zielgruppe)",
+		// z. B. "(Zielgruppe)ab 10 Jahre".
+		if datenFeld.Tag == "653" {
+			for _, unterFeld := range datenFeld.Subfield {
+				wert := strings.TrimSpace(unterFeld.Value)
+				if unterFeld.Code == "a" && zielgruppe == "" && strings.HasPrefix(wert, "(Zielgruppe)") {
+					zielgruppe = strings.TrimSpace(strings.TrimPrefix(wert, "(Zielgruppe)"))
+				}
+			}
+		}
 	}
 
 	titel := strings.Join(titelTeile, " ")
@@ -117,11 +140,13 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	}
 
 	return &MetadatenErgebnis{
-		ISBN:   isbn,
-		Titel:  titel,
-		Autor:  finalerAutor,
-		Verlag: verlag,
-		Jahr:   jahr,
+		ISBN:         isbn,
+		Titel:        titel,
+		Autor:        finalerAutor,
+		Verlag:       verlag,
+		Jahr:         jahr,
+		Zielgruppe:   zielgruppe,
+		BibKategorie: leiteBibKategorieAb(genres, zielgruppe),
 	}, nil
 }
 

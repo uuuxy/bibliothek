@@ -76,6 +76,16 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			continue
 		}
 
+		// Lernmittelfreiheit: LMF-Token in der Kategorie ("Buch LMF Ma 6/Gri")
+		// → Token entfernen und den Titel per Projekt-Konvention "LMF-" flaggen.
+		// Muss VOR dem Titel-Matching passieren, damit beide Pässe und die
+		// Bestandsdaten denselben Schlüssel verwenden.
+		kategorie := getCol("kategorie")
+		if hatLMFKennung(kategorie) {
+			kategorie = entferneLMFToken(kategorie)
+			titel = flaggeAlsSchulbuch(titel)
+		}
+
 		isbn := strings.ReplaceAll(strings.ReplaceAll(getCol("isbn"), "-", ""), " ", "")
 
 		titelID := ""
@@ -102,7 +112,7 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 					Verlag:    getCol("verlag"),
 					ISBN:      isbn,
 					Jahr:      jahr,
-					Kategorie: getCol("kategorie"),
+					Kategorie: kategorie,
 				}
 				newTitlesOrder = append(newTitlesOrder, cacheKey)
 			}
@@ -154,6 +164,12 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			return ""
 		}
 		titel := getCol("titel")
+
+		// LMF-Flag identisch zu Pass 1 anwenden, sonst verfehlt das
+		// Titel-Matching die gerade angelegten "LMF-…"-Titel.
+		if hatLMFKennung(getCol("kategorie")) {
+			titel = flaggeAlsSchulbuch(titel)
+		}
 
 		// 1. String-Bereinigung & 2. Datentyp-Sicherheit
 		barcodeRaw := ""

@@ -11,8 +11,10 @@
     let wirdGescannt = $state(false);
 
     // Neuanlage ohne Signatur ist gesperrt — die Signatur muss aufs
-    // Rücken-Etikett, DNB liefert sie nie. Altbestand (formular.id) bleibt
-    // speicherbar, damit leere Littera-Importe pflegbar sind.
+    // Rücken-Etikett. Die DNB liefert höchstens einen Kategorie-Vorschlag
+    // (Kinder-/Jugendbuch → "BIB …"), die Entscheidung bleibt beim Menschen.
+    // Altbestand (formular.id) bleibt speicherbar, damit leere
+    // Littera-Importe pflegbar sind.
     const speichernGesperrt = $derived(!formular.id && !(formular.signatur ?? "").trim());
 
     /** @param {string} code */
@@ -31,6 +33,11 @@
                     if (data.coverUrl) formular.coverUrl = data.coverUrl;
                     if (data.subject) formular.subject = data.subject;
                     if (data.grade) formular.gradeLevel = parseInt(data.grade) || formular.gradeLevel;
+                    // DNB-Altersstufe → Signatur-Vorschlag "BIB {Kategorie}",
+                    // nur solange das Pflichtfeld noch leer ist.
+                    if (data.bibKategorie && !(formular.signatur ?? "").trim()) {
+                        formular.signatur = `BIB ${data.bibKategorie}`;
+                    }
                 }
             } catch (e) {
                 console.error("Lookup failed", e);

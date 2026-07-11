@@ -4,6 +4,37 @@ import (
 	"testing"
 )
 
+func TestLeiteBibKategorieAb(t *testing.T) {
+	tests := []struct {
+		name       string
+		genres     []string
+		zielgruppe string
+		want       string
+	}{
+		// Echte DNB-655-Werte (gnd-content / gatbeg)
+		{"Kinderbuch direkt", []string{"Kinderbuch"}, "", "Kinderbuch"},
+		{"Kinderbücher mit Altersgrenze", []string{"Kinderbücher bis 11 Jahre"}, "", "Kinderbuch"},
+		{"Jugendbücher ab 12", []string{"Jugendbücher ab 12 Jahre"}, "", "Jugendbuch"},
+		{"Manga schlägt Jugendbuch", []string{"Jugendbuch", "Manga"}, "", "Manga"},
+		{"Comic", []string{"Comic"}, "", "Comic"},
+		// Fallback über die Verlags-Zielgruppe (DNB 653)
+		{"Zielgruppe ab 10 → Kinderbuch", nil, "ab 10 Jahre", "Kinderbuch"},
+		{"Zielgruppe ab 12 → Jugendbuch", nil, "ab 12 Jahre", "Jugendbuch"},
+		{"Zielgruppe ab 14 → Jugendbuch", nil, "ab 14", "Jugendbuch"},
+		// Kein Signal → kein Vorschlag (Sachbücher/Romane bleiben Handarbeit)
+		{"Erwachsenen-Roman", []string{"Roman"}, "", ""},
+		{"leer", nil, "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := leiteBibKategorieAb(tt.genres, tt.zielgruppe); got != tt.want {
+				t.Errorf("leiteBibKategorieAb(%v, %q) = %q, want %q", tt.genres, tt.zielgruppe, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestAutomatischeKategorisierung(t *testing.T) {
 	tests := []struct {
 		name       string

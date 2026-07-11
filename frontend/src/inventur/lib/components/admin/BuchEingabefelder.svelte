@@ -156,8 +156,9 @@
     </div>
 
     <!-- Signatur: steht physisch auf dem Buchrücken-Etikett — prominent und
-         bei Neuanlage Pflicht. DNB liefert dieses Feld nie; hier entscheidet
-         sich, ob das Buch zur Littera-Systematik passt. -->
+         bei Neuanlage Pflicht. Die DNB-Altersstufe füllt höchstens einen
+         "BIB …"-Vorschlag vor (IsbnFeld); hier entscheidet sich, ob das Buch
+         zur Littera-Systematik passt. -->
     <div class="rounded-xl border-2 p-4 transition-colors {signaturFehlt ? 'border-rose-300 bg-rose-50/40' : 'border-emerald-200 bg-emerald-50/30'}">
         <label for="buch-signatur" class="flex items-center gap-2 text-sm font-bold text-gray-800 mb-1">
             🏷️ Signatur (Buchrücken)

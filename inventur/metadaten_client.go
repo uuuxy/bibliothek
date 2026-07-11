@@ -28,6 +28,8 @@ type MetadatenErgebnis struct {
 	KlassenStufe string `json:"grade"`
 	Verlag       string `json:"verlag"`
 	Jahr         string `json:"jahr"`
+	Zielgruppe   string `json:"zielgruppe"`   // Altersempfehlung des Verlags, z. B. "ab 10 Jahre" (DNB 653)
+	BibKategorie string `json:"bibKategorie"` // Signatur-Kategorie der Schülerbücherei (Kinderbuch, Jugendbuch, Comic, Manga)
 }
 
 // NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,

@@ -1,6 +1,6 @@
 # Master-Fahrplan: Radar-Analyse & Konsolidierung
 
-> Stand: **2026-07-10** · Lebendes Dokument.
+> Stand: **2026-07-11** · Lebendes Dokument.
 > Radar-Referenz: [`dokumentation/api_inventar.md`](api_inventar.md) (neu erzeugen mit `./scripts/api_inventar.sh`).
 
 ## 🎯 Aktuell Offen & Nächste Schritte
@@ -12,32 +12,52 @@
 - [ ] **LUSD-Import**: Manuelle Abnahme mit einer echten LUSD-Exportdatei durch das Sekretariat.
 - [ ] **Schuljahres-Versetzung**: Manuelle Abnahme mit einem echten Klassensatz vor dem Wechsel (⏰ Deadline Schuljahreswechsel; braucht kein LUSD).
 - [ ] **Klassensatz-Reservierungen**: Abnahme des "Erledigen"-Ablaufs mit einer echten Anfrage (braucht kein LUSD).
-- [x] **Cleanup**: ~~Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird.~~ Bereits erledigt (09.07.) — Code-Prüfung 11.07.: kein Treffer mehr für `LusdImportModal` oder `/api/import/lusd`, es existiert nur noch der getestete Preview-Flow (`/api/lusd/preview` + `/api/lusd/import`).
 
 ### 2. Testing & Infrastruktur
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen.
-
-#### E2E-Backlog Runde 2 — KOMPLETT ERLEDIGT (11.07., drei Produktbugs gefunden)
-- [x] **Inventur-Ablauf** (`inventur.spec.js`): Signatur-Scope, Scan, Abschluss. **Fand Bug: JEDER Inventur-Abschluss war ein 500** — nicht existente SQL-Funktion `update_verfuegbar_count` brach die Finish-Transaktion ab (25P02). Behoben.
-- [x] **Bücher-CRUD + Signatur** (`buecher-crud.spec.js`): Anlegen, Exemplare, Katalog-Suche, Littera-Import-Schutz. **Fand Bug: Create/Update-Handler verwarfen das signatur-Feld** — das Pflichtfeld des Formulars kam nie in der DB an. Behoben.
-- [x] **Settings-Enforcement** (`settings-enforcement.spec.js`): Limit=1 → zweiter Checkout blockt sofort, Reset im finally.
-- [x] **Papierkorb-Flow** (`papierkorb.spec.js`): löschen (Tipp-Bestätigung) → wiederherstellen; Schadensfall blockt Löschung. **Fand Bug: Papierkorb-Liste war ein 500** — timestamptz in *string gescannt. Behoben.
-- [x] **Katalog-Suche**: in buecher-crud.spec.js integriert (Suche & Filter-Tab).
-- [x] **Offline-Queue als Vitest-Unit** (`offlineSync.test.js`, fake-indexeddb): Idempotenz-Keys, Batch-Sync, 4xx-Dequeue, 502-Retention.
-
-#### CI-Budget (privates Repo, Actions-Billing aktuell erschöpft — Jobs starten nicht)
-- **Petes Entscheidung 11.07.: Repo bleibt auf jeden Fall PRIVAT** — Option „public" ist gestrichen.
-- [x] **Sofort-Hygiene** (11.07.): `concurrency: cancel-in-progress` in ci.yml — Push-Serien verbrennen keine Minuten mehr für veraltete Läufe.
-- [x] **Lösung (11.07.): pre-push-Git-Hook** (`scripts/git-hooks/pre-push`) — jeder `git push` läuft erst durch Go-Build+Tests, Vitest, Container-Rebuild und die volle Playwright-Suite; rot = Push blockiert. Aktivierung pro Klon einmalig: `git config core.hooksPath scripts/git-hooks`. Notausgang: `SKIP_E2E=1 git push` (nur Go+Vitest) oder `git push --no-verify`. Die GitHub-Actions-CI bleibt als Definition bestehen, falls später doch ein Self-hosted Runner kommt — bis dahin ist der Hook die verbindliche Prüfinstanz.
 
 ### 3. Phase 3: Ausbau & Betrieb (Zukunft)
 - [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`)
 - [ ] **Mandantenfähigkeit (RLS)**: Tenant-Claim in Auth-Middleware, `tenant_id`-Migrationen (Dry-Run-Prozess).
 
+## ISBN-Katalogisierung & Altersstufen-Automatik — UMGESETZT (11.07.)
+
+### 1. Datenquellen-Entscheidung (revidiert)
+* **DNB SRU direkt statt Lobid:** Der ursprüngliche Lobid-Plan ("spart MARC21-Parsing-Boilerplate") war beim Code-Abgleich überholt — der MARC21-XML-Parser existierte längst und ist produktiv (`inventur/metadaten_anbieter.go`, Fallback-Kette DNB → Google Books → OpenLibrary). Lobid bleibt als auskommentiertes Backup im Code.
+* **Inhaltlicher Hebel bestätigt:** Die DNB liefert die Altersstufen strukturiert — MARC **655** (Genre: "Kinderbuch", "Kinderbücher bis 11 Jahre", "Jugendbücher ab 12 Jahre") und **653** mit Präfix `(Zielgruppe)` (z. B. "ab 10 Jahre"). Live gegen die echte API verifiziert.
+
+### 2. Umgesetzter Workflow (Neuanschaffungen)
+1. ISBN-Scan/Eingabe im Buchformular → `GET /api/lookup/{isbn}` (bestehende Route).
+2. `sucheDNB` extrahiert zusätzlich 655-Genres + 653-Zielgruppe.
+3. `leiteBibKategorieAb` (metadaten_helfer.go) mappt auf die Signatur-Kategorien der Schülerbücherei aus `signatur_optionen.js`: **Manga > Comic > Jugendbuch > Kinderbuch** (Genre-Treffer), Fallback über die Altersgrenze (ab 12 = Jugendbuch, darunter Kinderbuch). Kein Treffer = kein Vorschlag — Sachbücher/Romane bleiben Handarbeit.
+4. Response enthält `zielgruppe` + `bibKategorie`; IsbnFeld/BuchFormular befüllen das leere Signatur-Pflichtfeld mit `BIB {Kategorie}` vor. Eine vorhandene Signatur wird nie überschrieben (Guard-Muster).
+
+### 3. LMF-Import (Littera-Altbestand) — UMGESETZT (11.07.)
+* **Erkennung:** Littera kennzeichnet Lernmittelfreiheit uneinheitlich — Signatur-Präfix (`LMF Bio 7`, MAB 700), Standort-Feld (MAB **108a**: "LMF", "LMF/Bibliothek") oder CSV-Kategorie-Token ("Buch LMF Ma 6/Gri"). `internal/service/import_lmf.go` erkennt alle drei Varianten (Token an Wortgrenze, "Filmfest" schlägt nicht an).
+* **Verarbeitung:** LMF-Token wird aus der Signatur geschnitten (reine Fach-Signatur wie auf dem Rücken-Etikett bleibt), der Titel bekommt das Projekt-Präfix **`LMF-`** — daran erkennen Leihfristen (loan_rules), Statistik und Massenverlängerung den Schulbuch-Bestand bereits heute. Eingebaut in alle drei Import-Pfade (ParseLitteraXML, ImportDynamic, ImportLitteraBestand); in ImportDynamic vor dem Titel-Matching, damit beide Pässe denselben Schlüssel nutzen.
+* **🐛 Bestandsbug gefunden & behoben:** Der XML-Import hat die Signatur **noch nie übernommen** — `feld.MAB` wurde getrimmt, der Switch-Case verglich aber mit `"700 "` (trailing Space, toter Case). Realdaten-Probelauf gegen das echte `katalogisat.xml`: 13.708 Titel, davon jetzt **100 % mit Signatur** (vorher 0) und **480 LMF-geflaggt**.
+* **Datenlage:** `katalogisat.xml` (14.858 Titel, saubere Felder, keine Barcodes) + `clean_import.csv` (30.658 Exemplare mit Barcodes, ~48 % LMF, aber verrutschte Spalten aus der PDF-Konvertierung). Empfohlene Import-Reihenfolge: **XML zuerst** (Titel + Signaturen), **dann CSV** (Exemplare/Barcodes, matcht per ISBN/Titel).
+
+### 4. Abgrenzung & Randfälle
+* **API-Ausfall/Lücke:** Kennt keine der drei Quellen die ISBN (z. B. Schenkung), greift die manuelle Eingabe im Svelte-Formular; das Signatur-Pflichtfeld bleibt der menschliche Kontrollpunkt.
+* **Offen (bewusst nicht gebaut):** Kein `ist_schulbuch`-Schemafeld — die etablierte `LMF-`-Titel-Konvention ist projektweit verdrahtet (loan_rules, stats, ausleihe, Frontend). Ein Schema-Refactor wäre eine eigene Entscheidung nach dem Go-Live.
+
 ---
 
 ## ✅ Kürzlich Erledigt (Go-Live Ready)
 
+- **E2E-Absicherung Runde 2 & CI-Hygiene (11.07.)**:
+  - **Inventur-Ablauf** (`inventur.spec.js`): Signatur-Scope, Scan, Abschluss. **Fand Bug: JEDER Inventur-Abschluss war ein 500** — nicht existente SQL-Funktion `update_verfuegbar_count` brach die Finish-Transaktion ab (25P02). Behoben.
+  - **Bücher-CRUD + Signatur** (`buecher-crud.spec.js`): Anlegen, Exemplare, Katalog-Suche, Littera-Import-Schutz. **Fand Bug: Create/Update-Handler verwarfen das signatur-Feld** — das Pflichtfeld des Formulars kam nie in der DB an. Behoben.
+  - **Settings-Enforcement** (`settings-enforcement.spec.js`): Limit=1 → zweiter Checkout blockt sofort, Reset im finally.
+  - **Papierkorb-Flow** (`papierkorb.spec.js`): löschen (Tipp-Bestätigung) → wiederherstellen; Schadensfall blockt Löschung. **Fand Bug: Papierkorb-Liste war ein 500** — timestamptz in *string gescannt. Behoben.
+  - **Katalog-Suche**: in buecher-crud.spec.js integriert (Suche & Filter-Tab).
+  - **Offline-Queue als Vitest-Unit** (`offlineSync.test.js`, fake-indexeddb): Idempotenz-Keys, Batch-Sync, 4xx-Dequeue, 502-Retention.
+  - **Git Hook & CI-Hygiene**:
+    - **Petes Entscheidung 11.07.**: Repo bleibt auf jeden Fall PRIVAT — Option „public" ist gestrichen.
+    - **Sofort-Hygiene** (11.07.): `concurrency: cancel-in-progress` in ci.yml — Push-Serien verbrennen keine Minuten mehr für veraltete Läufe.
+    - **Lösung (11.07.): pre-push-Git-Hook** (`scripts/git-hooks/pre-push`) — jeder `git push` läuft erst durch Go-Build+Tests, Vitest, Container-Rebuild und die volle Playwright-Suite; rot = Push blockiert. Aktivierung pro Klon einmalig: `git config core.hooksPath scripts/git-hooks`. Notausgang: `SKIP_E2E=1 git push` (nur Go+Vitest) oder `git push --no-verify`. Die GitHub-Actions-CI bleibt als Definition bestehen, falls später doch ein Self-hosted Runner kommt — bis dahin ist der Hook die verbindliche Prüfinstanz.
+  - **Cleanup**: Nach erfolgreicher LUSD-Abnahme entscheiden, ob das alte `LusdImportModal` + `/api/import/lusd` gestrichen wird. Bereits erledigt (09.07.) — Code-Prüfung 11.07.: kein Treffer mehr für `LusdImportModal` oder `/api/import/lusd`, es existiert nur noch der getestete Preview-Flow (`/api/lusd/preview` + `/api/lusd/import`).
 - **Fremdscan, Testing & E2E-Absicherung (10.07.)**:
   - **Fremdscan in aktiver Sitzung**: Doppel-Scan ohne Dialog implementiert (fremdes Buch in aktiver Sitzung führt direkt zur Rückgabe beim Vorbesitzer mit Info-Banner/Toast, ein zweiter Scan leiht es normal an die neue Sitzung aus). Umgesetzt in `loan_checkout_cases.go`.
   - **Kiosk-Code-Bereinigung**: Toter Kiosk-Parallelbau (`stores/kiosk.svelte.js`, `components/kiosk/`) entfernt (der Omnibox-Flow ist der produktive Ausleihe-Pfad).

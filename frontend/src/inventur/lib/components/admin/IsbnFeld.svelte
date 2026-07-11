@@ -41,6 +41,12 @@
                     formular.gradeLevel = parsedGrade;
                 }
             }
+            // DNB-Altersstufe ("Kinderbuch", "Jugendbücher ab 12 Jahre") →
+            // Signatur-Vorschlag "BIB {Kategorie}". Nur solange das Feld leer
+            // ist — eine vorhandene Signatur wird nie überschrieben.
+            if (daten.bibKategorie && !(formular.signatur ?? "").trim()) {
+                formular.signatur = `BIB ${daten.bibKategorie}`;
+            }
             // Klares Feedback statt stillem "nichts passiert"
             showToast(
                 daten.title ? `Metadaten übernommen: ${daten.title}` : "Keine verwertbaren Metadaten gefunden.",

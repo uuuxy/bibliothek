@@ -34,14 +34,16 @@ func (handler *APIHandler) handleLookup(writer http.ResponseWriter, request *htt
 	// Send mapping back exactly as frontend expects it via REST JSON tags
 	writeJSON(writer, http.StatusOK, map[string]any{
 		"data": map[string]string{
-			"title":    result.Titel,
-			"subtitle": result.Untertitel,
-			"author":   result.Autor,
-			"coverUrl": result.CoverURL,
-			"subject":  result.Fach,
-			"grade":    result.KlassenStufe,
-			"verlag":   result.Verlag,
-			"jahr":     result.Jahr,
+			"title":        result.Titel,
+			"subtitle":     result.Untertitel,
+			"author":       result.Autor,
+			"coverUrl":     result.CoverURL,
+			"subject":      result.Fach,
+			"grade":        result.KlassenStufe,
+			"verlag":       result.Verlag,
+			"jahr":         result.Jahr,
+			"zielgruppe":   result.Zielgruppe,
+			"bibKategorie": result.BibKategorie,
 		},
 	})
 }
