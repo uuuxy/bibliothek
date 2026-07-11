@@ -11,6 +11,11 @@ import (
 // BearbeiteBuecherLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
 // Es erwartet ein JSON-Array mit IDs und löscht diese sicher über das Repository.
 func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter, anfrage *http.Request) {
+	if anfrage.Method != http.MethodDelete {
+		writeError(antwort, http.StatusMethodNotAllowed, "nur delete-anfragen erlaubt")
+		return
+	}
+
 	var eingabe struct {
 		IDs []string `json:"ids"`
 	}
@@ -29,7 +34,7 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 			writeError(antwort, http.StatusNotFound, "keines der ausgewählten bücher wurde gefunden")
 			return
 		}
-		if strings.Contains(fehler.Error(), "Löschen abgebrochen") {
+		if strings.Contains(fehler.Error(), "löschen abgebrochen") {
 			writeError(antwort, http.StatusBadRequest, fehler.Error())
 			return
 		}
