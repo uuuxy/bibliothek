@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // escapePgPass escapes backslashes and colons as required by PostgreSQL .pgpass format.
@@ -20,19 +21,19 @@ func escapePgPass(s string) string {
 
 // dumpDatabase führt pg_dump aus und speichert die Ausgabe als db_dump.sql.
 func (bm *BackupManager) dumpDatabase(backupPath string) error {
-	u, err := url.Parse(bm.databaseURL)
+	config, err := pgconn.ParseConfig(bm.databaseURL)
 	if err != nil {
 		return fmt.Errorf("ungültige DATABASE_URL: %w", err)
 	}
 
-	host := u.Hostname()
-	port := u.Port()
-	if port == "" {
+	host := config.Host
+	port := fmt.Sprintf("%d", config.Port)
+	if port == "0" {
 		port = "5432"
 	}
-	dbName := u.Path[1:]
-	user := u.User.Username()
-	password, _ := u.User.Password()
+	dbName := config.Database
+	user := config.User
+	password := config.Password
 
 	passFile, err := os.CreateTemp("", "pgpass-*")
 	if err != nil {
@@ -61,7 +62,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	}
 	defer func() { _ = outFile.Close() }()
 
-	cmd := exec.Command("pg_dump",
+	cmd := exec.Command("pg_dump", //nolint:gosec
 		"-h", host,
 		"-p", port,
 		"-U", user,
