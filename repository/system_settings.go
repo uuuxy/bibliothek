@@ -120,7 +120,7 @@ func (repo *pgSystemSettingsRepository) GetSettings(ctx context.Context) (*Syste
 func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *SystemEinstellungen) error {
 	upsert := `
 		INSERT INTO system_einstellungen (schluessel, wert)
-		VALUES ($1, $2)
+		SELECT * FROM UNNEST($1::varchar[], $2::text[])
 		ON CONFLICT (schluessel) DO UPDATE
 		  SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP
 	`
@@ -172,10 +172,20 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 		{"schule_plz", req.SchulePLZ},
 		{"schule_ort", req.SchuleOrt},
 	}
+	seen := make(map[string]bool, len(pairs))
+	schluessels := make([]string, 0, len(pairs))
+	werts := make([]string, 0, len(pairs))
+
 	for _, p := range pairs {
-		if _, err := repo.db.Exec(ctx, upsert, p[0], p[1]); err != nil {
-			return err
+		if !seen[p[0]] {
+			seen[p[0]] = true
+			schluessels = append(schluessels, p[0])
+			werts = append(werts, p[1])
 		}
+	}
+
+	if _, err := repo.db.Exec(ctx, upsert, schluessels, werts); err != nil {
+		return err
 	}
 
 	return nil
