@@ -43,6 +43,9 @@ func (g *klassenGrouper) add(klasse, schuelerID, name string, medium Ueberfaelli
 		g.schuelerIdx[schuelerKey] = si
 	}
 
+	if medium.TageUeberfaellig > g.klassen[ki].Schueler[si].MaxTage {
+		g.klassen[ki].Schueler[si].MaxTage = medium.TageUeberfaellig
+	}
 	g.klassen[ki].Schueler[si].Medien = append(g.klassen[ki].Schueler[si].Medien, medium)
 }
 

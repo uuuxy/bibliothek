@@ -9,7 +9,7 @@
     mahnwesenStore.klassen.reduce((sum, k) =>
       sum + k.schueler.filter(s => {
         const isLehrer = s.klasse && s.klasse.toLowerCase() === 'lehrer';
-        const maxTage = s.medien.reduce((max, m) => m.tage_ueberfaellig > max ? m.tage_ueberfaellig : max, 0);
+        const maxTage = s.max_tage || 0;
         return maxTage > 0 && maxTage <= 14 && !isLehrer;
       }).length, 0)
   );
@@ -18,7 +18,7 @@
     mahnwesenStore.klassen.reduce((sum, k) =>
       sum + k.schueler.filter(s => {
         const isLehrer = s.klasse && s.klasse.toLowerCase() === 'lehrer';
-        const maxTage = s.medien.reduce((max, m) => m.tage_ueberfaellig > max ? m.tage_ueberfaellig : max, 0);
+        const maxTage = s.max_tage || 0;
         return maxTage > 14 && !isLehrer;
       }).length, 0)
   );

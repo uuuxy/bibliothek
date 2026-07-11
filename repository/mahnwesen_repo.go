@@ -33,6 +33,8 @@ type UeberfaelligerSchueler struct {
 	Name string `json:"name"`
 	// Klasse ist die aktuelle Schulklasse des Schülers.
 	Klasse string `json:"klasse"`
+	// MaxTage ist die maximale Anzahl an überfälligen Tagen unter allen Medien.
+	MaxTage int `json:"max_tage"`
 	// Medien listet alle überfälligen Buchexemplare auf, die auf diesen Schüler entfallen.
 	Medien []UeberfaelligesMedium `json:"medien"`
 }

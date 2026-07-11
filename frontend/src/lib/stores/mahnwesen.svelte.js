@@ -42,10 +42,7 @@ export function createMahnwesenStore() {
         let list = [];
         for (const k of klassen) {
             for (const s of k.schueler) {
-                let maxTage = 0;
-                for (const m of s.medien) {
-                    if (m.tage_ueberfaellig > maxTage) maxTage = m.tage_ueberfaellig;
-                }
+                let maxTage = s.max_tage || 0;
                 
                 let mahnstufe = "Erledigt";
                 if (s.klasse && s.klasse.toLowerCase() === "lehrer") {
