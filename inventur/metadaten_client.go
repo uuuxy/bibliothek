@@ -32,11 +32,11 @@ type MetadatenErgebnis struct {
 	BibKategorie string `json:"bibKategorie"` // Signatur-Kategorie der Schülerbücherei (Kinderbuch, Jugendbuch, Comic, Manga)
 }
 
-// NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,
+// NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 10 Sekunden,
 // um ewig ladende APIs zu unterbrechen.
 func NeuerMetadatenClient() *MetadatenClient {
 	return &MetadatenClient{
-		httpClient: &http.Client{Timeout: 8 * time.Second},
+		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
