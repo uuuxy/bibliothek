@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bibliothek/pkg/closeutil"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -45,14 +44,14 @@ func connectIMAP(ctx context.Context, addr string, tlsConfig *tls.Config) (*clie
 	go func() {
 		select {
 		case <-ctx.Done():
-			closeutil.LogClose(conn, "imap connection")
+			_ = conn.Close()
 		case <-done:
 		}
 	}()
 
 	c, err := client.New(conn)
 	if err != nil {
-		closeutil.LogClose(conn, "imap connection")
+		_ = conn.Close()
 		if ctx.Err() == context.DeadlineExceeded {
 			return nil, nil, fmt.Errorf("zeitüberschreitung bei verbindung")
 		}
@@ -77,7 +76,7 @@ func loginIMAP(ctx context.Context, c *client.Client, conn net.Conn, email, pass
 	case <-ctx.Done():
 		// Force-close the connection to unblock the goroutine stuck in c.Login()
 		// This prevents a goroutine leak on every timeout.
-		closeutil.LogClose(conn, "imap connection")
+		_ = conn.Close()
 		// Drain the result so the goroutine can exit
 		<-loginDone
 		return fmt.Errorf("zeitüberschreitung beim login")
@@ -147,11 +146,14 @@ func AuthenticateIMAP(email, password string) error {
 				log.Printf("imap: Logout fehlgeschlagen: %v", err)
 			}
 		}
+		if conn != nil {
+			_ = conn.Close()
+		}
 	}()
 
 	if err := loginIMAP(ctx, c, conn, email, password); err != nil {
 		slog.Warn("IMAP Login failed", "error", err)
-		closeutil.LogClose(conn, "imap connection")
+		_ = conn.Close()
 		return fmt.Errorf("anmeldung fehlgeschlagen")
 	}
 
