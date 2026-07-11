@@ -36,7 +36,7 @@ describe('orderStore.addToCart', () => {
     });
 
     it('dedupliziert, wenn dasselbe Buch einmal mit titel_id und einmal ohne kommt', () => {
-        // Suchergebnis liefert titel_id, Empfehlung liefert nur id — früherer Duplikat-Bug
+        // Suchergebnis liefert titel_id, Empfehlung liefert nur id — früherer Duplikat-Problem
         orderStore.addToCart({ titel_id: 't1', titel: 'Faust', autor: 'Goethe', isbn: '978-1' }, 2);
         orderStore.addToCart({ id: 't1', titel: 'Faust', autor: 'Goethe', isbn: '978-1' }, 3);
         expect(orderStore.cart).toHaveLength(1);
