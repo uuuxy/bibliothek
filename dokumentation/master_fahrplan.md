@@ -29,6 +29,9 @@
 
 ## ✅ Kürzlich Erledigt (Go-Live Ready)
 
+- **E2E-Nachschärfung + Produktbug im Lehrerportal (11.07. abends)**:
+  - **🐛 Produktbug: Lehrerportal-Suche war komplett kaputt** — `getForm()` mutierte `$state` während des Template-Renderns (`{@const form = getForm(...)}`), Svelte 5 wirft `state_unsafe_mutation` und bricht das Rendern der Suchtreffer ab. Lehrkräfte konnten real keine Klassensätze reservieren. Fix: `ensureForm()` (nur Event-Handler) von der reinen Lese-Sicht `getForm()` getrennt. Gefunden durch den neuen `lehrer-reservierung`-E2E — der Klassensatz-Spec hatte per SQL geseedet und den UI-Pfad nie betreten.
+  - **3 der 5 neuen E2E-Specs waren nicht idempotent** (fixe ISBNs/Barcodes statt `uniqueSuffix()` → zweiter Lauf kollidierte am Unique-Index) und `lmf-massenverlaengerung` assertete nur `toContain('Erfolgreich')` — das erscheint auch bei 0 verlängerten Ausleihen (und es WAREN 0: Seed-Titel „LMF Titel" ohne Bindestrich matchte `ILIKE 'LMF-%'` nie). Alle drei auf Suite-Konvention umgeschrieben, harte DB-Asserts ergänzt. Suite 2× hintereinander grün (31/31).
 - **Betriebsvorbereitung (11.07. nachmittags)**:
   - **Cover-Sync gedrosselt**: Der bestehende 6-h-Job lief ungedrosselt (8 Worker, bis zu ~5 HTTP-Calls/Titel) — beim Altbestands-Backfill (~14k Titel) reales IP-Block-Risiko bei der DNB, was auch den ISBN-Lookup am Pult getroffen hätte. Jetzt global 2 Titel/s (kompletter Altbestand in ~2 h).
   - **Backup-Scope bewusst entschieden & dokumentiert** (DEPLOYMENT.md §6): nur DB im Backup; Schülerfotos liegen verschlüsselt in der DB, Cover sind reproduzierbar (inkl. dokumentiertem Einmal-Reset nach Volume-Verlust).

@@ -18,8 +18,10 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
         VALUES ('978-${s}', 'E2E Lehrerwunsch ${s}', 'Portal Autor');
     `);
 
-    // Lehrer-Login: das Lehrerportal ist die Startansicht der Rolle.
+    // Lehrer-Login, dann über den Menüpunkt "Mein Portal" ins Lehrerportal
+    // (es ist NICHT die Startseite — auch Lehrkräfte landen zuerst im Standard-Tab).
     await uiLogin(page, LEHRER_EMAIL);
+    await page.getByTitle('Mein Portal').click();
     await expect(page.getByRole('heading', { name: 'Mein Lehrerportal' })).toBeVisible();
 
     // Buch suchen (debounced Suchfeld)
@@ -33,8 +35,8 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
     await page.getByPlaceholder(/Benötigt ab/i).fill('E2E Notiz — bitte ignorieren');
     await page.getByRole('button', { name: 'Anfrage senden' }).click();
 
-    // Erfolgs-Feedback im Portal
-    await expect(page.getByText('Reservierungsanfrage wurde gesendet!')).toBeVisible();
+    // Erfolgs-Feedback im Portal (die Karte zeigt das Badge "✓ Gesendet")
+    await expect(page.getByText('✓ Gesendet')).toBeVisible();
 
     // DB-Zustand: Anfrage liegt mit Klasse und Anzahl in klassensatz_reservierungen
     const row = querySQL(`

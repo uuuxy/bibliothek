@@ -1,38 +1,44 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
-test('LMF-Massenverlängerung: global extend', async ({ page }) => {
+// LMF-Massenverlängerung (/lmf-aktionen): kritisches Massen-Update — verlängert
+// alle offenen LMF-Ausleihen einer Klasse auf ein fixes Datum. Der Handler matcht
+// per Projekt-Konvention über das Titel-Präfix "LMF-" (mit Bindestrich!).
+test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausleihen', async ({ page }) => {
+    const s = uniqueSuffix();
+    const klasse = `1e${s.slice(-2)}`; // eigene Wegwerf-Klasse, kollidiert nicht mit echten Daten
+
     seedSQL(`
         WITH bt AS (
             INSERT INTO buecher_titel (isbn, titel, autor)
-            VALUES ('978-LMF-EXT', 'LMF Titel', 'Autor')
+            VALUES ('978x${s}', 'LMF-Extend Testbuch ${s}', 'Autor')
             RETURNING id
         ),
-        s AS (
+        st AS (
             INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-            VALUES ('LMF', 'Test1', '10b', 'LMF-S1', 2030),
-                   ('LMF', 'Test2', '10b', 'LMF-S2', 2030)
+            VALUES ('LMF', 'Ext1-${s}', '${klasse}', 'S-lmf1-${s}', 2030),
+                   ('LMF', 'Ext2-${s}', '${klasse}', 'S-lmf2-${s}', 2030)
             RETURNING id
         ),
         ex AS (
             INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-            SELECT bt.id, 'LMF-BC-' || s.id, true
-            FROM bt, s
+            SELECT bt.id, 'B-lmf-${s}-' || st.id, true
+            FROM bt, st
             RETURNING id, barcode_id
         )
         INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, ausgeliehen_am, rueckgabe_frist)
-        SELECT ex.id, s.id, (SELECT id FROM benutzer ORDER BY id LIMIT 1), NOW(), NOW() - INTERVAL '10 days'
+        SELECT ex.id, st.id, (SELECT id FROM benutzer ORDER BY id LIMIT 1), NOW(), NOW() - INTERVAL '10 days'
         FROM ex
-        JOIN s ON ex.barcode_id = 'LMF-BC-' || s.id;
+        JOIN st ON ex.barcode_id = 'B-lmf-${s}-' || st.id;
     `);
 
     await uiLogin(page);
     await page.goto('/lmf-aktionen');
-    
+
     await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
 
-    await page.getByLabel(/Klasse/i).fill('10b');
-    
+    await page.getByLabel(/Klasse/i).fill(klasse);
+
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 1);
     const dateStr = futureDate.toISOString().split('T')[0];
@@ -46,6 +52,17 @@ test('LMF-Massenverlängerung: global extend', async ({ page }) => {
 
     await page.getByRole('button', { name: /verlängern/i }).click();
 
-    await page.waitForTimeout(500); // Give the API a moment
-    expect(dialogMessages.join(' ')).toContain('Erfolgreich');
+    // Der Erfolgs-Alert nennt die Anzahl — "Erfolgreich" allein würde auch bei
+    // 0 Treffern erscheinen und wäre als Assertion wertlos.
+    await expect.poll(() => dialogMessages.join(' ')).toContain('2 Ausleihen');
+
+    // Harte DB-Verifikation: BEIDE Fristen stehen auf dem neuen Datum (23:59:59).
+    const fristen = querySQL(`
+        SELECT count(*) FROM ausleihen a
+        JOIN schueler st ON st.id = a.schueler_id
+        WHERE st.klasse = '${klasse}'
+          AND a.rueckgabe_am IS NULL
+          AND a.rueckgabe_frist::date = '${dateStr}'
+    `);
+    expect(fristen).toBe('2');
 });

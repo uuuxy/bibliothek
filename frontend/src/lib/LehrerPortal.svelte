@@ -35,9 +35,14 @@
   });
 
   /**
+   * Legt das Formular-Objekt für einen Titel an, falls es fehlt.
+   * Darf NUR aus Event-Handlern/asynchronem Code aufgerufen werden —
+   * eine Zuweisung an $state während des Template-Renderns wirft in
+   * Svelte 5 `state_unsafe_mutation` und bricht das Rendern der
+   * Suchtreffer komplett ab (so konnten Lehrkräfte real nicht suchen).
    * @param {string} titelId
    */
-  function getForm(titelId) {
+  function ensureForm(titelId) {
     if (!reservierungForms[titelId]) {
       reservierungForms[titelId] = {
         open: false,
@@ -53,10 +58,28 @@
   }
 
   /**
+   * Reine Lese-Sicht fürs Template — mutiert nie.
+   * @param {string} titelId
+   */
+  function getForm(titelId) {
+    return (
+      reservierungForms[titelId] ?? {
+        open: false,
+        klasse: user?.klasse ?? "",
+        anzahl: 1,
+        notiz: "",
+        loading: false,
+        success: null,
+        error: null,
+      }
+    );
+  }
+
+  /**
    * @param {string} titelId
    */
   function toggleForm(titelId) {
-    const f = getForm(titelId);
+    const f = ensureForm(titelId);
     f.open = !f.open;
     f.success = null;
     f.error = null;
@@ -66,7 +89,7 @@
    * @param {string} titelId
    */
   async function submitReservierung(titelId) {
-    const f = getForm(titelId);
+    const f = ensureForm(titelId);
     if (!f.klasse.trim()) { f.error = "Bitte Klasse angeben."; return; }
     f.loading = true;
     f.error = null;
