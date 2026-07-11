@@ -129,17 +129,23 @@ func createZip(srcDir string) ([]byte, error) {
 			return err
 		}
 
+		if !filepath.IsLocal(relPath) {
+			return fmt.Errorf("ungültiger pfad (path traversal detektiert): %s", relPath)
+		}
+
+		zipPath := filepath.ToSlash(relPath)
+
 		if info.IsDir() {
 			// Ordner-Einträge brauchen einen trailing slash
 			if relPath != "." {
-				_, err := zipWriter.Create(relPath + "/")
+				_, err := zipWriter.Create(zipPath + "/")
 				return err
 			}
 			return nil
 		}
 
 		// Datei zum ZIP hinzufügen
-		writer, err := zipWriter.Create(relPath)
+		writer, err := zipWriter.Create(zipPath)
 		if err != nil {
 			return err
 		}
