@@ -1,5 +1,5 @@
 <script>
-  import { Search, Plus } from "lucide-svelte";
+  import { Search, Plus } from "@lucide/svelte";
   import Button from "../ui/Button.svelte";
 
   /** @type {{ searchQuery?: string, role?: string, totalCount?: number, filteredCount?: number, oncreate?: () => void }} */

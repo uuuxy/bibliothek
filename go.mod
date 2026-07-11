@@ -1,6 +1,6 @@
 module bibliothek
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/alexbrainman/odbc v0.0.0-20250601004241-49e6b2bc0cf0
@@ -23,7 +23,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/xuri/excelize/v2 v2.10.1
 	golang.org/x/image v0.43.0
-	golang.org/x/net v0.54.0
+	golang.org/x/net v0.55.0
 	golang.org/x/text v0.38.0
 )
 

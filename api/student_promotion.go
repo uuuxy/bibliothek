@@ -114,7 +114,7 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			return
 		}
 		if !req.DryRun && !req.Confirm {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(`Bestätigung erforderlich: { "confirm": true } im Body senden`))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(`bestätigung erforderlich: { "confirm": true } im Body senden`))
 			return
 		}
 
@@ -146,7 +146,7 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			}
 			if recentRuns > 0 {
 				apierrors.SendHTTPError(w, http.StatusConflict,
-					errors.New("Schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
+					errors.New("schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
 				return
 			}
 		}

@@ -59,11 +59,20 @@ func inferSubjectFromTitle(title string) string {
 }
 
 func mapHeaderToField(header string) string {
-	name := strings.ToLower(strings.TrimSpace(header))
-	name = strings.ReplaceAll(name, " ", "")
-	name = strings.ReplaceAll(name, "_", "")
-	name = strings.ReplaceAll(name, "-", "")
-	name = strings.ReplaceAll(name, "/", "")
+	raw := strings.ToLower(strings.TrimSpace(header))
+
+	// ⚡ Bolt: Single pass string cleaning using strings.Builder
+	// Replaces multiple strings.ReplaceAll calls to prevent unnecessary allocations
+	// when cleaning headers from spaces, underscores, dashes, and slashes.
+	var b strings.Builder
+	b.Grow(len(raw))
+	for i := 0; i < len(raw); i++ {
+		c := raw[i]
+		if c != ' ' && c != '_' && c != '-' && c != '/' {
+			b.WriteByte(c)
+		}
+	}
+	name := b.String()
 
 	if strings.Contains(name, "isbn") {
 		return "isbn"

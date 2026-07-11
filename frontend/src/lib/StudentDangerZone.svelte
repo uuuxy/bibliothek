@@ -1,5 +1,5 @@
 <script>
-  import { AlertTriangle } from "lucide-svelte";
+  import { AlertTriangle } from "@lucide/svelte";
 
   /**
    * @component StudentDangerZone
