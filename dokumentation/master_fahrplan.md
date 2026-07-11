@@ -20,33 +20,21 @@
 - [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`)
 - [ ] **Mandantenfähigkeit (RLS)**: Tenant-Claim in Auth-Middleware, `tenant_id`-Migrationen (Dry-Run-Prozess).
 
-## ISBN-Katalogisierung & Altersstufen-Automatik — UMGESETZT (11.07.)
-
-### 1. Datenquellen-Entscheidung (revidiert)
-* **DNB SRU direkt statt Lobid:** Der ursprüngliche Lobid-Plan ("spart MARC21-Parsing-Boilerplate") war beim Code-Abgleich überholt — der MARC21-XML-Parser existierte längst und ist produktiv (`inventur/metadaten_anbieter.go`, Fallback-Kette DNB → Google Books → OpenLibrary). Lobid bleibt als auskommentiertes Backup im Code.
-* **Inhaltlicher Hebel bestätigt:** Die DNB liefert die Altersstufen strukturiert — MARC **655** (Genre: "Kinderbuch", "Kinderbücher bis 11 Jahre", "Jugendbücher ab 12 Jahre") und **653** mit Präfix `(Zielgruppe)` (z. B. "ab 10 Jahre"). Live gegen die echte API verifiziert.
-
-### 2. Umgesetzter Workflow (Neuanschaffungen)
-1. ISBN-Scan/Eingabe im Buchformular → `GET /api/lookup/{isbn}` (bestehende Route).
-2. `sucheDNB` extrahiert zusätzlich 655-Genres + 653-Zielgruppe.
-3. `leiteBibKategorieAb` (metadaten_helfer.go) mappt auf die Signatur-Kategorien der Schülerbücherei aus `signatur_optionen.js`: **Manga > Comic > Jugendbuch > Kinderbuch** (Genre-Treffer), Fallback über die Altersgrenze (ab 12 = Jugendbuch, darunter Kinderbuch). Kein Treffer = kein Vorschlag — Sachbücher/Romane bleiben Handarbeit.
-4. Response enthält `zielgruppe` + `bibKategorie`; IsbnFeld/BuchFormular befüllen das leere Signatur-Pflichtfeld mit `BIB {Kategorie}` vor. Eine vorhandene Signatur wird nie überschrieben (Guard-Muster).
-
-### 3. LMF-Import (Littera-Altbestand) — UMGESETZT (11.07.)
-* **Erkennung:** Littera kennzeichnet Lernmittelfreiheit uneinheitlich — Signatur-Präfix (`LMF Bio 7`, MAB 700), Standort-Feld (MAB **108a**: "LMF", "LMF/Bibliothek") oder CSV-Kategorie-Token ("Buch LMF Ma 6/Gri"). `internal/service/import_lmf.go` erkennt alle drei Varianten (Token an Wortgrenze, "Filmfest" schlägt nicht an).
-* **Verarbeitung:** LMF-Token wird aus der Signatur geschnitten (reine Fach-Signatur wie auf dem Rücken-Etikett bleibt), der Titel bekommt das Projekt-Präfix **`LMF-`** — daran erkennen Leihfristen (loan_rules), Statistik und Massenverlängerung den Schulbuch-Bestand bereits heute. Eingebaut in alle drei Import-Pfade (ParseLitteraXML, ImportDynamic, ImportLitteraBestand); in ImportDynamic vor dem Titel-Matching, damit beide Pässe denselben Schlüssel nutzen.
-* **🐛 Bestandsbug gefunden & behoben:** Der XML-Import hat die Signatur **noch nie übernommen** — `feld.MAB` wurde getrimmt, der Switch-Case verglich aber mit `"700 "` (trailing Space, toter Case). Realdaten-Probelauf gegen das echte `katalogisat.xml`: 13.708 Titel, davon jetzt **100 % mit Signatur** (vorher 0) und **480 LMF-geflaggt**.
-* **Datenlage:** `katalogisat.xml` (14.858 Titel, saubere Felder, keine Barcodes) + `clean_import.csv` (30.658 Exemplare mit Barcodes, ~48 % LMF, aber verrutschte Spalten aus der PDF-Konvertierung). Empfohlene Import-Reihenfolge: **XML zuerst** (Titel + Signaturen), **dann CSV** (Exemplare/Barcodes, matcht per ISBN/Titel).
-* **✅ Probelauf gegen lokalen Stack (11.07., beide Dateien über `POST /api/import/littera`):** XML → 13.708 Titel in 2,6 s (12.961 neu, 747 ISBN-Dubletten zusammengeführt); CSV → **30.658 von 30.658 Exemplaren** in 0,7 s (1.704 Titel ohne XML-Match neu angelegt). Endstand: 603 LMF-Titel mit 14.730 Exemplaren, **kein LMF-Rest** in Signatur/Subject, Barcode-Lookup (z. B. `2417` → „LMF-Mathematik heute 6 F", Signatur `Ma 6`) und Katalog-Suche funktionieren. Befund am Rande: LMF-Schulbücher erscheinen auch in der **öffentlichen OPAC-Suche** — ob das gewollt ist, ist eine offene Produktfrage.
-
-### 4. Abgrenzung & Randfälle
-* **API-Ausfall/Lücke:** Kennt keine der drei Quellen die ISBN (z. B. Schenkung), greift die manuelle Eingabe im Svelte-Formular; das Signatur-Pflichtfeld bleibt der menschliche Kontrollpunkt.
-* **Offen (bewusst nicht gebaut):** Kein `ist_schulbuch`-Schemafeld — die etablierte `LMF-`-Titel-Konvention ist projektweit verdrahtet (loan_rules, stats, ausleihe, Frontend). Ein Schema-Refactor wäre eine eigene Entscheidung nach dem Go-Live.
-
 ---
 
 ## ✅ Kürzlich Erledigt (Go-Live Ready)
 
+- **Lücken-Analyse & E2E-Vervollständigung (11.07.)**:
+  - Validierung der 7 behaupteten Lücken gegen den echten Testbestand durchgeführt.
+  - Lehrer-Portal & OPAC waren bereits abgedeckt.
+  - Fehlende E2E-Specs für *LMF-Massenverlängerung*, *Abgänger-Management*, *E-Mail-Konfiguration*, *System-Logs* und *Monitor-Slideshow* implementiert.
+  - Etabliertes Suite-Muster (Seeds, `uiLogin`, DB-Cleanup) konsequent fortgeführt, alle 23 Specs (inkl. der neuen 5) laufen lokal grün.
+
+- **ISBN-Katalogisierung & Altersstufen-Automatik (11.07.)**:
+  - **Datenquellen-Entscheidung (revidiert)**: DNB SRU direkt statt Lobid (MARC21-XML-Parser bereits produktiv).
+  - **Workflow**: `GET /api/lookup/{isbn}` extrahiert DNB 655/653-Daten und mappt Signaturen (Manga > Comic > Jugendbuch > Kinderbuch) als Vorschlag ins Frontend-Formular.
+  - **LMF-Import (Littera-Altbestand)**: Erkennung über Signatur-Präfix, MAB 108a und CSV-Kategorie. Behebung eines MAB 700 XML-Parsing-Bugs (trailing Space). Lokaler Testlauf mit 13.708 Titeln und 30.658 Exemplaren erfolgreich validiert.
+  - **Abgrenzung**: Keine `ist_schulbuch`-Tabellenspalte (Projekt nutzt etablierte `LMF-`-Titelpräfix-Konvention). API-Ausfall fängt manuelle Eingabe ab.
 - **E2E-Absicherung Runde 2 & CI-Hygiene (11.07.)**:
   - **Inventur-Ablauf** (`inventur.spec.js`): Signatur-Scope, Scan, Abschluss. **Fand Bug: JEDER Inventur-Abschluss war ein 500** — nicht existente SQL-Funktion `update_verfuegbar_count` brach die Finish-Transaktion ab (25P02). Behoben.
   - **Bücher-CRUD + Signatur** (`buecher-crud.spec.js`): Anlegen, Exemplare, Katalog-Suche, Littera-Import-Schutz. **Fand Bug: Create/Update-Handler verwarfen das signatur-Feld** — das Pflichtfeld des Formulars kam nie in der DB an. Behoben.

@@ -59,7 +59,31 @@
       "Bash(cd frontend *)",
       "Bash(xargs sed -n '/Page snapshot/,/Statistiken\\\\|System/p')",
       "Bash(grep -n 'title\\\\.\\\\|let { title\\\\|$props' frontend/src/lib/BookDetails.svelte)",
-      "Bash(git -C /Users/peterflasch/Developer/Bibliothek ls-files)"
+      "Bash(git -C /Users/peterflasch/Developer/Bibliothek ls-files)",
+      "Bash(grep -iB2 -A6 \"error\\\\|fehler\")",
+      "Bash(gh run *)",
+      "Bash(docker exec *)",
+      "Bash(grep -vE \"^--|^SET |^SELECT pg_catalog|^$\")",
+      "Bash(gh repo *)",
+      "Bash(curl -sf http://localhost:8085/health)",
+      "Bash(E2E_BASE_URL=http://localhost:8085 E2E_DB_CONTAINER=bibliothek-db-fresh npx playwright test)",
+      "Bash(chmod +x /Users/peterflasch/Developer/Bibliothek/scripts/git-hooks/pre-push)",
+      "Bash(git config *)",
+      "Bash(SKIP_E2E=1 git push)",
+      "Bash(grep -rh \"'/api/\\\\|\\\\\"/api/\\\\|\\\\`/api/\" /Users/peterflasch/Developer/Bibliothek/frontend/src --include=\"*.js\" --include=\"*.svelte\")",
+      "WebSearch",
+      "WebFetch(domain:www.dieschulapp.de)",
+      "WebFetch(domain:support.schulportal.hessen.de)",
+      "Read(//Users/peterflasch/Developer/littera import/**)",
+      "Bash(awk -F',' 'NR>1 {print $6}' \"/Users/peterflasch/Developer/littera import/clean_import.csv\")",
+      "Bash(awk -F';' 'NR>1' \"/Users/peterflasch/Developer/littera import/clean_import.csv\")",
+      "Bash(python3 -c ' *)",
+      "Bash(grep -o '<Feld MAB=\"700\"[^>]*>[^<]*</Feld>' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | head -8; echo \"=== LMF im Feld 700 ===\"; grep -o '<Feld MAB=\"700\"[^>]*>LMF[^<]*</Feld>' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | head -5; grep -c '<Feld MAB=\"700\"[^>]*>LMF' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\")",
+      "Bash(grep -o 'MAB=\"700[^\"]*\"' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | sort | uniq -c | head; echo ---; grep -o '<Feld MAB=\"700 \" Reihung=\"1\">[^<]*' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | sed 's/.*>//' | head -10; echo \"=== LMF-Signaturen ===\"; grep -o '<Feld MAB=\"700 \" Reihung=\"1\">LMF[^<]*' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | sed 's/.*>//' | sort -u | head -10; grep -c '<Feld MAB=\"700 \" Reihung=\"1\">LMF' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\")",
+      "Bash(grep -o 'MAB=\"[^\"]*\"' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | sort | uniq -c | sort -rn | head -25; echo \"=== Anzahl Katalogisate ===\"; grep -c '<Katalogisat>' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\")",
+      "Bash(grep -o '<Katalogisat>' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | wc -l; echo \"=== Titelfelder 310 \\(Bücher gesamt\\) ===\"; grep -o '<Feld MAB=\"310 \" Reihung=\"1\">' \"/Users/peterflasch/Developer/littera import/katalogisat.xml\" | wc -l)",
+      "Bash(python3)",
+      "Bash(echo \"--- Go-Suite Exit: $?\")"
     ]
   }
 }
