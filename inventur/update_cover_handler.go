@@ -8,6 +8,10 @@ import (
 )
 
 func (handler *APIHandler) handleUpdateCover(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		writeError(writer, http.StatusMethodNotAllowed, "Nur POST erlaubt")
+		return
+	}
 	parts := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
 	if len(parts) != 4 || parts[0] != "api" || parts[1] != "books" || parts[3] != "cover" {
 		writeError(writer, http.StatusBadRequest, "ungültige route")
