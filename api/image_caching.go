@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/chai2010/webp"
 )
@@ -72,7 +72,7 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		// Sanity check to avoid unnecessary download/processing steps for obvious path traversals
 		// even though root.OpenFile would safely block them later.
-		if filepath.Base(isbn) != isbn {
+		if strings.ContainsAny(isbn, "/\\") || strings.Contains(isbn, "..") {
 			serveFallback(w)
 			return
 		}
