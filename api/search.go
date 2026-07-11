@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"sync"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -28,17 +29,33 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 
 		limit := 10
 
-		// Using channels or just sequential is fine, but sequential is easier and perfectly fast enough
-		// for a local postgres database with limits.
-		students, err := studentRepo.SearchStudentsFuzzy(ctx, query, limit)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		var students []repository.Student
+		var books []repository.BookTitle
+		var studentErr, bookErr error
+
+		// Run both queries concurrently to reduce search latency since they are independent
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+			students, studentErr = studentRepo.SearchStudentsFuzzy(ctx, query, limit)
+		}()
+
+		go func() {
+			defer wg.Done()
+			books, bookErr = bookRepo.SearchTitlesFuzzy(ctx, query, limit)
+		}()
+
+		wg.Wait()
+
+		if studentErr != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, studentErr)
 			return
 		}
 
-		books, err := bookRepo.SearchTitlesFuzzy(ctx, query, limit)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		if bookErr != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, bookErr)
 			return
 		}
 
