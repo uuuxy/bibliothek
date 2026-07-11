@@ -4,15 +4,23 @@ const DB_NAME = "bibliothek-offline-db";
 const STORE_NAME = "offline_actions";
 
 async function getDB() {
-  return openDB(DB_NAME, 2, {
-    upgrade(db, oldVersion) {
+  return openDB(DB_NAME, 3, {
+    upgrade(db, oldVersion, newVersion, transaction) {
       if (oldVersion < 2) {
         if (db.objectStoreNames.contains("scans")) {
           db.deleteObjectStore("scans");
         }
       }
+      let store;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+        store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      } else {
+        store = transaction.objectStore(STORE_NAME);
+      }
+      if (oldVersion < 3) {
+        if (!store.indexNames.contains("timestamp")) {
+          store.createIndex("timestamp", "timestamp");
+        }
       }
     }
   });
@@ -64,12 +72,9 @@ export async function peekOfflineAction() {
     const db = await getDB();
     const tx = db.transaction(STORE_NAME, 'readonly');
     const store = tx.objectStore(STORE_NAME);
-    // Use cursor to get the first one (they are ordered by ID but we should sort by timestamp if possible)
-    // For simplicity, getAll and then sort by timestamp is fine since queue is usually small.
-    const all = await store.getAll();
-    if (all.length === 0) return null;
-    all.sort((a, b) => a.timestamp - b.timestamp);
-    return all[0];
+    const index = store.index('timestamp');
+    const cursor = await index.openCursor();
+    return cursor ? cursor.value : null;
   } catch (err) {
     console.error("Failed to peek offline queue:", err);
     return null;
