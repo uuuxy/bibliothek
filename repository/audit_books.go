@@ -87,6 +87,131 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	return tx.Commit(ctx)
 }
 
+// BulkDeleteCopies bucht mehrere physische Exemplare aus dem System aus (Soft-Delete) und protokolliert dies im Audit-Log.
+func (r *pgAuditRepository) BulkDeleteCopies(ctx context.Context, copyIDs []string, bearbeiterID string) ([]string, map[string]string, error) {
+	deletedIDs := make([]string, 0, len(copyIDs))
+	errorsMap := make(map[string]string)
+
+	if len(copyIDs) == 0 {
+		return deletedIDs, errorsMap, nil
+	}
+
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	// Snapshot erstellen: Exemplardaten für das Audit-Log sichern
+	query := `
+		SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz,''), e.titel_id, t.titel
+		FROM buecher_exemplare e
+		JOIN buecher_titel t ON e.titel_id = t.id
+		WHERE e.id = ANY($1)
+	`
+	rows, err := tx.Query(ctx, query, copyIDs)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to snapshot copies for audit: %w", err)
+	}
+	defer rows.Close()
+
+	type copySnapshot struct {
+		id           string
+		barcode      string
+		zustandNotiz string
+		titelID      string
+		titel        string
+	}
+	snapshots := make(map[string]copySnapshot)
+	for rows.Next() {
+		var s copySnapshot
+		if err := rows.Scan(&s.id, &s.barcode, &s.zustandNotiz, &s.titelID, &s.titel); err == nil {
+			snapshots[s.id] = s
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("failed to read snapshot rows: %w", err)
+	}
+	rows.Close()
+
+	// Sicherheitsschranke: Sind Exemplare aktuell noch verliehen?
+	loanQuery := `
+		SELECT exemplar_id, count(*)
+		FROM ausleihen
+		WHERE exemplar_id = ANY($1) AND rueckgabe_am IS NULL
+		GROUP BY exemplar_id
+	`
+	loanRows, err := tx.Query(ctx, loanQuery, copyIDs)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to check active loans: %w", err)
+	}
+	defer loanRows.Close()
+
+	activeLoans := make(map[string]bool)
+	for loanRows.Next() {
+		var exemplarID string
+		var count int
+		if err := loanRows.Scan(&exemplarID, &count); err == nil && count > 0 {
+			activeLoans[exemplarID] = true
+		}
+	}
+	if err := loanRows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("failed to read loan rows: %w", err)
+	}
+	loanRows.Close()
+
+	// Determine which copies can be deleted
+	var toDelete []string
+	for _, id := range copyIDs {
+		if activeLoans[id] {
+			errorsMap[id] = "Exemplar ist aktuell noch verliehen!"
+			continue
+		}
+		if _, exists := snapshots[id]; !exists {
+			errorsMap[id] = "Exemplar nicht gefunden"
+			continue
+		}
+		toDelete = append(toDelete, id)
+	}
+
+	if len(toDelete) > 0 {
+		// Soft-Delete durchführen in einer Abfrage
+		updateQuery := `
+			UPDATE buecher_exemplare
+			SET ist_ausgesondert = true, ist_ausleihbar = false, zustand_notiz = 'Systematisch gelöscht'
+			WHERE id = ANY($1)
+		`
+		if _, err = tx.Exec(ctx, updateQuery, toDelete); err != nil {
+			return nil, nil, fmt.Errorf("failed to update copies: %w", err)
+		}
+
+		// Logs schreiben
+		kontext := "Buch ausgebuchen (Soft-Delete)"
+		for _, id := range toDelete {
+			snap := snapshots[id]
+			details := map[string]any{
+				"barcode_id":    snap.barcode,
+				"zustand_notiz": snap.zustandNotiz,
+				"titel_id":      snap.titelID,
+				"titel":         snap.titel,
+				"action":        "soft_delete",
+			}
+			if err = r.insertAuditLog(ctx, tx, "buecher_exemplare", "UPDATE", id,
+				&bearbeiterID, "USER", &kontext, details,
+			); err != nil {
+				return nil, nil, fmt.Errorf("failed to insert audit log for copy %s: %w", id, err)
+			}
+			deletedIDs = append(deletedIDs, id)
+		}
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, nil, err
+	}
+
+	return deletedIDs, errorsMap, nil
+}
+
 // DeleteCopy bucht ein physisches Exemplar aus dem System aus (Soft-Delete) und protokolliert dies im Audit-Log.
 // Da historische Ausleihdaten und Schadensfälle für statistische Zwecke erhalten bleiben müssen, wird das Exemplar
 // nicht physisch aus der Tabelle gelöscht, sondern als ausgesondert markiert.

@@ -56,6 +56,59 @@ func (s *Server) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 	}
 }
 
+// BulkDeleteCopiesHandler removes multiple physical copies from circulation in a single transaction.
+// @Summary      Bulk delete physical book copies
+// @Description  Deletes multiple specific physical book copies by their IDs from the library catalog and registers the deletion in the audit trail.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        request body     object  true  "List of book copy IDs"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /buecher/exemplare/bulk-delete [post]
+func (s *Server) BulkDeleteCopiesHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+	type BulkDeleteRequest struct {
+		CopyIDs []string `json:"copy_ids" validate:"required,min=1"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := auth.GetClaims(r.Context())
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+			return
+		}
+
+		var req BulkDeleteRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return
+		}
+
+		ctx := r.Context()
+
+		deletedIDs, errorsMap, err := auditRepo.BulkDeleteCopies(ctx, req.CopyIDs, claims.UserID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		response := map[string]interface{}{
+			"deleted_ids": deletedIDs,
+			"errors":      errorsMap,
+		}
+
+		// Wenn gar keine gelöscht wurden und es Fehler gab, geben wir 400 zurück, um das bisherige Verhalten
+		// für die Fehleranzeige im Frontend ggf. besser abzubilden.
+		if len(deletedIDs) == 0 && len(errorsMap) > 0 {
+			RespondJSON(w, http.StatusBadRequest, response)
+			return
+		}
+
+		RespondJSON(w, http.StatusOK, response)
+	}
+}
+
 // DeleteTitleHandler deletes a book title and all its physical copies from the database, creating an audit log.
 // @Summary      Delete book title
 // @Description  Deletes a specific book title and all associated physical copies, registering the deletion in the audit trail.

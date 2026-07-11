@@ -183,3 +183,5 @@ func TestRunGDPRDeleteAbgaenger_Blocked(t *testing.T) {
 		t.Errorf("erwartete 0 LogSystemAktion Aufrufe, bekam %d", auditMock.LogSystemAktionCalls)
 	}
 }
+
+func (m *MockAuditRepo) BulkDeleteCopies(ctx context.Context, copyIDs []string, bearbeiterID string) ([]string, map[string]string, error) { return nil, nil, nil }

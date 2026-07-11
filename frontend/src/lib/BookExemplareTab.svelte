@@ -46,29 +46,49 @@
     if (selectedExemplare.size === 0) return;
     if (!confirm(`Möchtest du die ${selectedExemplare.size} ausgewählten Exemplare unwiderruflich löschen?`)) return;
 
-    let successCount = 0;
+    try {
+      const res = await apiFetch(`/api/buecher/exemplare/bulk-delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ copy_ids: Array.from(selectedExemplare) }),
+        credentials: "include"
+      });
 
-    const results = await Promise.allSettled(
-      Array.from(selectedExemplare).map(async (id) => {
-        const res = await apiFetch(`/api/buecher/exemplare/${id}`, { method: "DELETE", credentials: "include" });
-        if (!res.ok) throw new Error("not ok");
-        return id;
-      })
-    );
+      const data = await res.json().catch(() => ({}));
 
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        const id = result.value;
-        exemplare = exemplare.filter((e) => e.id !== id);
-        successCount++;
-      } else {
-        console.error("Fehler beim Löschen:", result.reason);
+      if (!res.ok && (!data.deleted_ids || data.deleted_ids.length === 0)) {
+        alert(data.error || "Fehler beim Löschen der Exemplare.");
+        return;
       }
-    }
-    selectedExemplare.clear();
-    if (successCount > 0) {
-      showToast(`${successCount} Exemplare erfolgreich gelöscht`, "success");
-      if (book && book.id) loadAll(book.id);
+
+      const deletedIds = data.deleted_ids || [];
+      const deletedSet = new Set(deletedIds);
+
+      if (deletedIds.length > 0) {
+        exemplare = exemplare.filter((e) => !deletedSet.has(e.id));
+        showToast(`${deletedIds.length} Exemplare erfolgreich gelöscht`, "success");
+        if (book && book.id) loadAll(book.id);
+      }
+
+      if (data.errors && Object.keys(data.errors).length > 0) {
+        console.error("Fehler beim Löschen einiger Exemplare:", data.errors);
+        alert(`Einige Exemplare konnten nicht gelöscht werden. Überprüfe die Konsole für Details.`);
+      }
+
+      // Deselect only the ones that were successfully deleted
+      const remainingSelected = new Set();
+      for (const id of selectedExemplare) {
+        if (!deletedSet.has(id)) {
+          remainingSelected.add(id);
+        }
+      }
+      selectedExemplare = remainingSelected;
+
+    } catch (e) {
+      console.error(e);
+      alert("Netzwerkfehler beim Löschen der Exemplare.");
     }
   }
 </script>

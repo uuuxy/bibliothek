@@ -205,3 +205,5 @@ func TestResolveBorrower_NoActiveBorrower(t *testing.T) {
 		t.Errorf("weder Schüler noch Lehrer aktiv soll ErrInvalidState liefern, bekam: %v", err)
 	}
 }
+
+func (m *mockAuditRepo) BulkDeleteCopies(ctx context.Context, copyIDs []string, bearbeiterID string) ([]string, map[string]string, error) { return nil, nil, nil }

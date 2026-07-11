@@ -17,6 +17,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.PrintLabelsHandler()))
 
 	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler(auditRepo)))
+	mux.Handle("POST /api/buecher/exemplare/bulk-delete", s.RequirePermission("delete_books")(s.BulkDeleteCopiesHandler(auditRepo)))
 
 	// Update specific copy fields
 	damageRepo := repository.NewDamageRepository(s.DB.Pool)

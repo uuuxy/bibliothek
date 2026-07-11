@@ -17,6 +17,8 @@ type AuditRepository interface {
 	DeleteTitle(ctx context.Context, titleID string, bearbeiterID string) error
 	// DeleteCopy protokolliert die administrative Löschung eines konkreten Buchexemplars.
 	DeleteCopy(ctx context.Context, copyID string, bearbeiterID string) error
+	// BulkDeleteCopies bucht mehrere physische Exemplare aus dem System aus (Soft-Delete) und protokolliert dies im Audit-Log.
+	BulkDeleteCopies(ctx context.Context, copyIDs []string, bearbeiterID string) ([]string, map[string]string, error)
 	// DeleteUser protokolliert die administrative Löschung eines Systembenutzers.
 	DeleteUser(ctx context.Context, userID string, bearbeiterID string) error
 
