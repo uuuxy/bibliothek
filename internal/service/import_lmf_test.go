@@ -84,9 +84,9 @@ type stubBookRepo struct {
 	titles []repository.BookTitle
 }
 
-func (s *stubBookRepo) UpsertBookTitle(_ context.Context, t repository.BookTitle) error {
-	s.titles = append(s.titles, t)
-	return nil
+func (s *stubBookRepo) BulkUpsertBookTitles(_ context.Context, titles []repository.BookTitle) (int, error) {
+	s.titles = append(s.titles, titles...)
+	return len(titles), nil
 }
 
 func TestParseLitteraXML_LMFUndSignatur(t *testing.T) {

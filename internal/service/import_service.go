@@ -2,19 +2,13 @@ package service
 
 import (
 	"context"
-	"encoding/csv"
 	"encoding/xml"
-	"errors"
-	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"strings"
 
 	"bibliothek/db"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // Katalogisate repräsentiert die Wurzel des MAB2 XML-Exports
@@ -56,7 +50,10 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 		return 0, err
 	}
 
-	importedCount := 0
+	// Titel sammeln und in EINEM gepipelineten Batch schreiben (statt je Titel
+	// eine eigene DB-Rundreise) — der frühere N+1 ließ den Import mit ~15.000
+	// Titeln gegen eine nicht-lokale DB in Client-Timeouts laufen.
+	books := make([]repository.BookTitle, 0, len(root.Items))
 
 	for _, kat := range root.Items {
 		var autor, titel, ort, verlag, isbn, jahrStr, signatur, standort string
@@ -116,173 +113,20 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 			verlag = ort
 		}
 
-		book := repository.BookTitle{
+		books = append(books, repository.BookTitle{
 			Titel:            titel,
 			Autor:            autor,
 			ISBN:             isbn,
 			Verlag:           verlag,
 			Erscheinungsjahr: erscheinungsjahr,
 			Signatur:         signatur,
-		}
+		})
+	}
 
-		// Speichere die bereinigten Buch-Objekte über unser Repository
-		if err := s.bookRepo.UpsertBookTitle(ctx, book); err != nil {
-			log.Printf("Fehler beim Speichern des Buches %q (ISBN: %s): %v", titel, isbn, err)
-			continue
-		}
-
-		importedCount++
+	importedCount, err := s.bookRepo.BulkUpsertBookTitles(ctx, books)
+	if err != nil {
+		return 0, err
 	}
 
 	return importedCount, nil
-}
-
-// ImportLitteraBestand liest eine finale Bestands-CSV (Trennzeichen ';') und importiert
-// Titel sowie Exemplare über eine einzige SQL-Transaktion.
-// Spalten: Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand
-func (s *ImportService) ImportLitteraBestand(ctx context.Context, csvData io.Reader) (int, int, error) {
-	reader := csv.NewReader(csvData)
-	reader.Comma = ';'
-	reader.LazyQuotes = true
-
-	rows, err := reader.ReadAll()
-	if err != nil {
-		return 0, 0, err
-	}
-	if len(rows) < 2 {
-		return 0, 0, nil // Leer oder nur Header
-	}
-
-	// Kopfzeile prüfen (Index 0 bis 7)
-	header := rows[0]
-	if len(header) < 8 {
-		return 0, 0, errors.New("CSV hat nicht die benötigten 8 Spalten")
-	}
-
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer db.SafeRollback(ctx, tx)
-
-	newTitlesCount := 0
-	importedCopiesCount := 0
-
-	batch := &pgx.Batch{}
-
-	qCombined := `
-			WITH t AS (
-				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-				VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
-				ON CONFLICT (isbn) DO UPDATE SET 
-					titel = EXCLUDED.titel, autor = EXCLUDED.autor, 
-					verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, 
-					subject = EXCLUDED.subject
-				RETURNING id, (xmax = 0) AS is_new_titel
-			), fb_sel AS (
-				SELECT id, false AS is_new_titel FROM buecher_titel 
-				WHERE titel = $1 AND (isbn IS NULL OR isbn = '') 
-				AND NOT EXISTS (SELECT 1 FROM t)
-			), fb_ins AS (
-				INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-				SELECT $1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6
-				WHERE NOT EXISTS (SELECT 1 FROM t) AND NOT EXISTS (SELECT 1 FROM fb_sel)
-				RETURNING id, true AS is_new_titel
-			), final_titel AS (
-				SELECT id, is_new_titel FROM t UNION ALL SELECT id, is_new_titel FROM fb_sel UNION ALL SELECT id, is_new_titel FROM fb_ins
-			), ex_ins AS (
-				INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
-				SELECT id, $7, CURRENT_DATE, $8, $9
-				FROM final_titel
-				ON CONFLICT (barcode_id) DO UPDATE SET 
-					zustand_notiz = EXCLUDED.zustand_notiz, 
-					ist_ausleihbar = EXCLUDED.ist_ausleihbar, 
-					aktualisiert_am = CURRENT_TIMESTAMP
-				RETURNING id
-			)
-			SELECT 
-				COALESCE((SELECT is_new_titel FROM final_titel LIMIT 1), false) AS titel_inserted,
-				EXISTS(SELECT 1 FROM ex_ins) AS exemplar_inserted
-		`
-
-	var queuedBarcodes []string
-	var queuedTitles []string
-
-	for i, row := range rows[1:] {
-		if len(row) < 8 {
-			continue // Zeile ignorieren, wenn zu kurz
-		}
-
-		titel := strings.TrimSpace(row[0])
-		autor := strings.TrimSpace(row[1])
-		verlag := strings.TrimSpace(row[2])
-		isbn := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(row[3]), "-", ""), " ", "")
-		jahrStr := strings.TrimSpace(row[4])
-		kategorie := strings.TrimSpace(row[5])
-
-		// Lernmittelfreiheit: LMF-Token in der Kategorie ("Buch LMF Ma 6/Gri")
-		// → Token entfernen und den Titel per Projekt-Konvention "LMF-" flaggen.
-		if hatLMFKennung(kategorie) {
-			kategorie = entferneLMFToken(kategorie)
-			titel = flaggeAlsSchulbuch(titel)
-		}
-
-		// 1. String-Bereinigung & 2. Datentyp-Sicherheit (Bleibt konsequent String)
-		// Entfernt Whitespaces, Zeilenumbrüche und unsichtbare Steuerzeichen (BOM, Zero-Width Space, Null-Bytes)
-		barcode := strings.TrimSpace(strings.Trim(row[6], "\uFEFF\u200B\x00\r\n\t"))
-		zustandCSV := strings.TrimSpace(row[7])
-
-		if titel == "" {
-			continue
-		}
-
-		// 3. Robustes Logging & Fehlerabfang
-		if barcode == "" {
-			id := fmt.Sprintf("Zeile %d", i+2)
-			log.Printf("Warnung: Exemplar ID %s hat keinen Barcode", id)
-			continue
-		}
-
-		jahr, convErr := strconv.Atoi(jahrStr)
-		if convErr != nil {
-			jahr = 0 // ungültiges/leeres Jahr → 0 (wird per NULLIF zu NULL)
-		}
-
-		// Zustand mappen (verfuegbar oder verliehen etc.)
-		istAusleihbar := true
-		if strings.ToLower(zustandCSV) == "verliehen" {
-			istAusleihbar = false
-		}
-
-		queuedBarcodes = append(queuedBarcodes, barcode)
-		queuedTitles = append(queuedTitles, titel)
-		batch.Queue(qCombined, titel, autor, verlag, isbn, jahr, kategorie, barcode, istAusleihbar, zustandCSV)
-	}
-
-	br := tx.SendBatch(ctx, batch)
-	for i := 0; i < batch.Len(); i++ {
-		var titelInserted, exemplarInserted bool
-		err := br.QueryRow().Scan(&titelInserted, &exemplarInserted)
-		if err == nil {
-			if titelInserted {
-				newTitlesCount++
-			}
-			if exemplarInserted {
-				importedCopiesCount++
-			}
-		} else if errors.Is(err, pgx.ErrNoRows) {
-			log.Printf("Warnung: Exemplar mit Barcode '%s' (Titel: %s) wurde übersprungen (bereits vorhanden)", queuedBarcodes[i], queuedTitles[i])
-		} else {
-			log.Printf("❌ Fehler beim Insert von Barcode '%s' (Titel: %s): %v", queuedBarcodes[i], queuedTitles[i], err)
-		}
-	}
-	if err := br.Close(); err != nil {
-		return 0, 0, err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return 0, 0, err
-	}
-
-	return newTitlesCount, importedCopiesCount, nil
 }

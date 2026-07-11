@@ -91,12 +91,8 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				return
 			}
 		} else {
-			delimiter := ','
-			if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
-				delimiter = ';'
-			}
 			reader := csv.NewReader(strings.NewReader(contentStr))
-			reader.Comma = delimiter
+			reader.Comma = detectCSVDelimiter(contentStr)
 			reader.LazyQuotes = true
 			rows, err = reader.ReadAll()
 			if err != nil {
@@ -110,28 +106,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		headers := rows[0]
-		headerMap := make(map[string]int)
-		for idx, h := range headers {
-			norm := strings.ToLower(strings.TrimSpace(h))
-			switch {
-			case strings.Contains(norm, "titel") || norm == "titelliste":
-				headerMap["titel"] = idx
-			case strings.Contains(norm, "autor") || norm == "verfasser":
-				headerMap["autor"] = idx
-			case strings.Contains(norm, "verlag"):
-				headerMap["verlag"] = idx
-			case strings.Contains(norm, "isbn"):
-				headerMap["isbn"] = idx
-			case strings.Contains(norm, "jahr") || norm == "ersch.jahr" || norm == "erscheinungsjahr":
-				headerMap["jahr"] = idx
-			case strings.Contains(norm, "kategorie") || strings.Contains(norm, "systematik") || norm == "fach":
-				headerMap["kategorie"] = idx
-			case strings.Contains(norm, "barcode") || strings.Contains(norm, "exemplar") || norm == "signatur" || norm == "inventarnummer":
-				headerMap["barcode"] = idx
-			}
-		}
-
+		headerMap := buildImportHeaderMap(rows[0])
 		if _, ok := headerMap["titel"]; !ok {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("missing required column: titel"))
 			return
@@ -168,7 +143,12 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 	}
 }
 
-// BestandImportHandler verarbeitet den Upload der finalen Bestands-CSV (Semikolon-separiert).
+// BestandImportHandler verarbeitet den Upload der finalen Bestands-CSV.
+//
+// Er nutzt denselben robusten Pfad wie der Littera-Import (Trennzeichen-Erkennung,
+// namensbasiertes Spalten-Mapping, Titel-Dedup über ImportDynamic). Dadurch ist es
+// egal, ob die Datei Komma- oder Semikolon-getrennt ist bzw. die Zustand-Spalte
+// enthält — ein Formatfehler des Nutzers wird als 400 (nicht 500) gemeldet.
 func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 20<<20)
 	if err := r.ParseMultipartForm(20 << 20); err != nil {
@@ -188,20 +168,53 @@ func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	content, err := io.ReadAll(file)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	contentStr := string(content)
+
+	reader := csv.NewReader(strings.NewReader(contentStr))
+	reader.Comma = detectCSVDelimiter(contentStr)
+	reader.LazyQuotes = true
+	rows, err := reader.ReadAll()
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err))
+		return
+	}
+	if len(rows) < 2 {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("die CSV enthält keine Datenzeilen"))
+		return
+	}
+
+	headerMap := buildImportHeaderMap(rows[0])
+	if _, ok := headerMap["titel"]; !ok {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Titel"))
+		return
+	}
+	if _, ok := headerMap["barcode"]; !ok {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Barcode/Exemplarnummer"))
+		return
+	}
+
 	bookRepo := repository.NewBookRepository(s.DB.Pool)
 	importSvc := service.NewImportService(bookRepo, s.DB.Pool)
 
-	newTitles, importedCopies, err := importSvc.ImportLitteraBestand(r.Context(), file)
+	newTitles, importedCopies, err := importSvc.ImportDynamic(r.Context(), rows, headerMap)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	response := map[string]interface{}{
+	if claims, ok := auth.GetClaims(r.Context()); ok {
+		details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitles, importedCopies)
+		logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "BESTAND_IMPORT", details, getIP(r)))
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
 		"new_titles_count":      newTitles,
 		"imported_copies_count": importedCopies,
 		"message":               "Bestands-CSV erfolgreich importiert",
-	}
-
-	RespondJSON(w, http.StatusOK, response)
+	})
 }

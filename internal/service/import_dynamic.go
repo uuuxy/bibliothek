@@ -54,8 +54,10 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	}
 
 	type CopyData struct {
-		TitelID string
-		Barcode string
+		TitelID       string
+		Barcode       string
+		IstAusleihbar bool
+		ZustandNotiz  string
 	}
 
 	newTitlesMap := make(map[string]*NewTitle) // key: isbn or titel
@@ -198,8 +200,23 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			titelID = titelToID[titel]
 		}
 
+		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
+		// "verliehen" sperrt das Exemplar für neue Ausleihen, der Rohwert
+		// landet als Zustandsnotiz. Fehlt die Spalte, ist das Exemplar
+		// standardmäßig ausleihbar.
+		istAusleihbar := true
+		zustand := getCol("zustand")
+		if strings.EqualFold(zustand, "verliehen") {
+			istAusleihbar = false
+		}
+
 		if titelID != "" {
-			copiesToInsert = append(copiesToInsert, CopyData{TitelID: titelID, Barcode: barcode})
+			copiesToInsert = append(copiesToInsert, CopyData{
+				TitelID:       titelID,
+				Barcode:       barcode,
+				IstAusleihbar: istAusleihbar,
+				ZustandNotiz:  zustand,
+			})
 		}
 	}
 
@@ -208,13 +225,13 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	if len(copiesToInsert) > 0 {
 		batchCopies := &pgx.Batch{}
 		qInsertExemplar := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am)
-			VALUES ($1, $2, CURRENT_DATE)
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
+			VALUES ($1, $2, CURRENT_DATE, $3, NULLIF($4, ''))
 			ON CONFLICT (barcode_id) DO NOTHING
 			RETURNING id
 		`
 		for _, c := range copiesToInsert {
-			batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode)
+			batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode, c.IstAusleihbar, c.ZustandNotiz)
 		}
 
 		bcr := tx.SendBatch(ctx, batchCopies)

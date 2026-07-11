@@ -85,8 +85,15 @@ export async function apiFetch(url, options = {}) {
     }
   }
 
-  // Set up AbortController for network timeouts
-  const timeoutMs = MUTATION_METHODS.has(method) ? 10000 : 15000;
+  // Set up AbortController for network timeouts.
+  // Datei-Uploads (FormData) laufen naturgemäß lange — ein voller Katalog-Import
+  // überträgt Megabytes und berührt tausende Zeilen. Das starre 10s-Limit brach
+  // solche Uploads mitten im Lauf ab ("Netzwerk-Timeout"), obwohl der Server noch
+  // arbeitete. Sie bekommen daher großzügige 5 Minuten (abgestimmt auf Caddys
+  // response_header_timeout). Aufrufer können per options.timeoutMs überschreiben.
+  const isUpload = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const timeoutMs = options.timeoutMs ?? (isUpload ? 300000 : MUTATION_METHODS.has(method) ? 10000 : 15000);
+  delete options.timeoutMs;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
 

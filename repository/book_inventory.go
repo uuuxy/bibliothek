@@ -143,3 +143,123 @@ func (r *pgBookRepository) UpsertBookTitle(ctx context.Context, t BookTitle) err
 	_, err := r.db.Exec(ctx, query, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur, t.ZielJahrgang)
 	return err
 }
+
+// BulkUpsertBookTitles speichert viele Titel in EINEM gepipelineten Batch statt
+// je Titel eine eigene Datenbank-Rundreise (der frühere N+1 ließ den MAB2-Import
+// mit ~15.000 Titeln gegen eine nicht-lokale DB in Client-Timeouts laufen).
+//
+// Titel MIT ISBN werden über den isbn-Unique-Key aktualisiert. Titel OHNE ISBN
+// (bei Littera die Mehrheit) können nicht per ON CONFLICT dedupliziert werden —
+// sie werden gegen den vorhandenen Bestand per Titel abgeglichen, damit ein
+// erneuter Import sie nicht endlos dupliziert. Die Signatur wird beim Update nie
+// mit einem leeren Wert überschrieben (das Rücken-Etikett gewinnt).
+//
+// Zurückgegeben wird die Zahl der verarbeiteten (eingefügten oder
+// aktualisierten) Titel.
+func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []BookTitle) (int, error) {
+	if len(titles) == 0 {
+		return 0, nil
+	}
+
+	// Alles-oder-nichts: entweder der komplette Import landet, oder gar nichts
+	// (kein halb importierter Katalog bei einem Fehler in der Mitte).
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }() // No-op nach erfolgreichem Commit.
+
+	// 1. Bestand einmalig vorladen (isbn→id, titel→id).
+	rows, err := tx.Query(ctx, "SELECT id, COALESCE(isbn, ''), titel FROM buecher_titel")
+	if err != nil {
+		return 0, err
+	}
+	isbnToID := make(map[string]string)
+	titelToID := make(map[string]string)
+	for rows.Next() {
+		var id, isbn, titel string
+		if err := rows.Scan(&id, &isbn, &titel); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		if isbn != "" {
+			isbnToID[isbn] = id
+		}
+		titelToID[titel] = id
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return 0, err
+	}
+	rows.Close()
+
+	const qInsert = `
+		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur, aktualisiert_am)
+		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''), CURRENT_TIMESTAMP)
+	`
+	const qUpdate = `
+		UPDATE buecher_titel SET
+			titel = $2,
+			autor = $3,
+			verlag = $4,
+			erscheinungsjahr = NULLIF($5, 0),
+			signatur = COALESCE(NULLIF($6, ''), signatur),
+			aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`
+
+	// 2. In-Batch-Dedup (letzter Datensatz gewinnt): verhindert, dass derselbe
+	//    Titel bzw. dieselbe ISBN innerhalb einer Datei doppelt geschrieben wird.
+	seenISBN := make(map[string]bool)
+	seenTitel := make(map[string]bool)
+
+	batch := &pgx.Batch{}
+	queued := 0
+	for _, t := range titles {
+		if t.Titel == "" {
+			continue
+		}
+		if t.ISBN != "" {
+			if seenISBN[t.ISBN] {
+				continue
+			}
+			seenISBN[t.ISBN] = true
+			if id, ok := isbnToID[t.ISBN]; ok {
+				batch.Queue(qUpdate, id, t.Titel, t.Autor, t.Verlag, t.Erscheinungsjahr, t.Signatur)
+			} else {
+				batch.Queue(qInsert, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur)
+			}
+		} else {
+			if seenTitel[t.Titel] {
+				continue
+			}
+			seenTitel[t.Titel] = true
+			if id, ok := titelToID[t.Titel]; ok {
+				batch.Queue(qUpdate, id, t.Titel, t.Autor, t.Verlag, t.Erscheinungsjahr, t.Signatur)
+			} else {
+				batch.Queue(qInsert, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur)
+			}
+		}
+		queued++
+	}
+
+	if queued == 0 {
+		return 0, nil
+	}
+
+	br := tx.SendBatch(ctx, batch)
+	for i := 0; i < queued; i++ {
+		if _, err := br.Exec(); err != nil {
+			_ = br.Close()
+			return 0, err
+		}
+	}
+	if err := br.Close(); err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+	return queued, nil
+}

@@ -43,12 +43,17 @@ type BookRepository interface {
 
 	// BulkInsertCopies fügt mehrere Buchexemplare performant per Massen-Insert (CopyFrom) in die Datenbank ein.
 	BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error
-	
+
 	// BulkInsertCopiesTx führt BulkInsertCopies innerhalb einer expliziten SQL-Transaktion aus.
 	BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, copies []BookCopyInsert) error
 
 	// UpsertBookTitle speichert oder aktualisiert ein Buchtitel-Objekt in der Datenbank.
 	UpsertBookTitle(ctx context.Context, title BookTitle) error
+
+	// BulkUpsertBookTitles speichert viele Titel in einem einzigen gepipelineten
+	// Batch (statt je Titel eine eigene Rundreise) und liefert die Zahl der
+	// verarbeiteten Titel. Titel ohne ISBN werden per Titel dedupliziert.
+	BulkUpsertBookTitles(ctx context.Context, titles []BookTitle) (int, error)
 }
 
 // BookCopyInsert beschreibt die Datenstruktur für das Einfügen neuer Buchexemplare im Bulk-Verfahren.
