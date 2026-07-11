@@ -112,18 +112,17 @@ func (b *BackupJob) RunDatabaseBackup() {
 	}
 	_ = passFile.Close()
 
-	pgDumpArgs := []string{
-		"--host=" + config.Host,
-		"--port=" + port,
-		"--username=" + config.User,
-		"--dbname=" + config.Database,
+	// #nosec G204 - arguments are derived from securely parsed DSN configuration
+	pgDump := exec.CommandContext(ctx, "pg_dump",
+		"--host="+config.Host,
+		"--port="+port,
+		"--username="+config.User,
+		"--dbname="+config.Database,
 		"--no-password",
 		"--format=plain",
 		"--encoding=UTF8",
 		"--verbose",
-	}
-
-	pgDump := exec.CommandContext(ctx, "pg_dump", pgDumpArgs...) //nolint:gosec
+	)
 	pgDump.Env = append(os.Environ(), "PGPASSFILE="+passFile.Name())
 
 	sqlReader, sqlWriter := io.Pipe()
