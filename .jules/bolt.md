@@ -1,3 +1,3 @@
-## 2025-10-24 - Omnibox search latency
-**Learning:** The unified search API (`/api/search`) sequentially queried the `StudentRepository` and `BookRepository` when resolving queries. Since these database queries are independent, this resulted in an additive latency cost.
-**Action:** Use a `sync.WaitGroup` to execute independent backend repository lookups concurrently, effectively making the latency the maximum of the two queries rather than the sum.
+## 2026-06-22 - [Refactoring N+1 Query in SupplierOrderHandler]
+**Learning:** Found an N+1 issue in `SupplierOrderHandler` (inside `api/barcode.go`) where multiple database inserts were performed in a loop (`tx.Exec`) for each generated barcode when ordering copies. Refactored this to use a single bulk insert operation via `tx.CopyFrom` combined with `pgx.CopyFromRows`.
+**Action:** Always prefer `pgx.CopyFromRows` for batch database creation or insertion. This drastically reduces database round-trips when processing larger quantities (like bulk ordering of books).
