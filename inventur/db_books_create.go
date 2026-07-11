@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 )
 
 // CreateBook inserts a new book record.
@@ -54,7 +55,7 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	if book.Stock > 0 {
 		if syncErr := repo.syncBookStock(ctx, id, book.Stock); syncErr != nil {
 			// Log error, but don't fail the creation
-			fmt.Printf("Warnung: Konnte Exemplare nach Erstellung nicht synchronisieren: %v\n", syncErr)
+			log.Printf("Warnung: Konnte Exemplare nach Erstellung nicht synchronisieren: %v\n", syncErr)
 		}
 	}
 

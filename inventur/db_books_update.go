@@ -3,6 +3,7 @@ package inventur
 import (
 	"context"
 	"fmt"
+	"log"
 )
 
 // UpdateStock modifies the stock level of a book.
@@ -88,7 +89,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	// Bestand synchronisieren
 	if syncErr := repo.syncBookStock(ctx, id, book.Stock); syncErr != nil {
 		// Log error, but don't fail the update entirely
-		fmt.Printf("Warnung: Konnte Exemplare nach Aktualisierung nicht synchronisieren: %v\n", syncErr)
+		log.Printf("Warnung: Konnte Exemplare nach Aktualisierung nicht synchronisieren: %v\n", syncErr)
 	}
 
 	return nil
