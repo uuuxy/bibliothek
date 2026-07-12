@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +12,61 @@ import (
 
 	"github.com/jackc/pgx/v5"
 )
+
+// parseErscheinungsjahr parst ein plausibles Erscheinungsjahr (1001–2099) aus rohem Text.
+func parseErscheinungsjahr(raw string) *int {
+	if raw == "" {
+		return nil
+	}
+	var j int
+	if _, err := fmt.Sscanf(raw, "%d", &j); err == nil && j > 1000 && j < 2100 {
+		return &j
+	}
+	return nil
+}
+
+// findeLokalenTitel sucht einen Titel im lokalen Katalog anhand der (entstrichenen) ISBN.
+// Rückgabe (nil, nil) bedeutet: nicht im Katalog vorhanden.
+func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLookupResponse, error) {
+	resp := ISBNLookupResponse{ISBN: isbn}
+	err := s.DB.Pool.QueryRow(ctx, `
+		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,'')
+		FROM buecher_titel WHERE replace(isbn, '-', '') = $1 LIMIT 1
+	`, isbn).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL)
+	if err == nil {
+		resp.Exists = true
+		return &resp, nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	return nil, err
+}
+
+// upsertTitelAusMetadaten legt einen neuen Titel aus den Nachschlage-Metadaten an
+// (ON CONFLICT (isbn) als Schutz gegen parallele Inserts) und liefert die Antwort.
+func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
+	jahrInt := parseErscheinungsjahr(meta.Jahr)
+
+	resp := ISBNLookupResponse{ISBN: isbn}
+	err := s.DB.Pool.QueryRow(ctx, `
+		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (isbn) DO UPDATE
+			SET titel      = EXCLUDED.titel,
+			    autor      = EXCLUDED.autor,
+			    verlag     = EXCLUDED.verlag,
+			    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
+			    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
+			    aktualisiert_am = CURRENT_TIMESTAMP
+		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,'')
+	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL)
+	if err != nil {
+		return ISBNLookupResponse{}, err
+	}
+	resp.Exists = false
+	return resp, nil
+}
 
 // ISBNLookupResponse is the result of a live ISBN metadata query.
 // exists=true means the title is already in the catalog and has a stable titel_id.
@@ -48,19 +104,13 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		// 1. Check whether the title is already in the local catalog.
-		var resp ISBNLookupResponse
-		resp.ISBN = req.ISBN
-		err := s.DB.Pool.QueryRow(ctx, `
-			SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,'')
-			FROM buecher_titel WHERE replace(isbn, '-', '') = $1 LIMIT 1
-		`, req.ISBN).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL)
-		if err == nil {
-			resp.Exists = true
-			RespondJSON(w, http.StatusOK, resp)
+		lokal, err := s.findeLokalenTitel(ctx, req.ISBN)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if !errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		if lokal != nil {
+			RespondJSON(w, http.StatusOK, *lokal)
 			return
 		}
 
@@ -72,40 +122,11 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		}
 
 		// 3. Insert new title; use ON CONFLICT as safety net for concurrent inserts.
-		var newID, newTitel, newAutor, newVerlag, newCoverURL string
-
-		// Parse jahr as integer if possible
-		var jahrInt *int
-		if meta.Jahr != "" {
-			var j int
-			if _, err := fmt.Sscanf(meta.Jahr, "%d", &j); err == nil && j > 1000 && j < 2100 {
-				jahrInt = &j
-			}
-		}
-
-		err = s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url)
-			VALUES ($1, $2, $3, $4, $5, $6)
-			ON CONFLICT (isbn) DO UPDATE
-				SET titel      = EXCLUDED.titel,
-				    autor      = EXCLUDED.autor,
-				    verlag     = EXCLUDED.verlag,
-				    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
-				    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
-				    aktualisiert_am = CURRENT_TIMESTAMP
-			RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,'')
-		`, meta.Titel, meta.Autor, req.ISBN, meta.Verlag, jahrInt, meta.CoverURL).Scan(&newID, &newTitel, &newAutor, &newVerlag, &newCoverURL)
+		resp, err := s.upsertTitelAusMetadaten(ctx, req.ISBN, meta)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-
-		resp.Exists = false
-		resp.TitelID = newID
-		resp.Titel = newTitel
-		resp.Autor = newAutor
-		resp.Verlag = newVerlag
-		resp.CoverURL = newCoverURL
 
 		RespondJSON(w, http.StatusOK, resp)
 	}

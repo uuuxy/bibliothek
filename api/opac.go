@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -8,6 +9,30 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
 )
+
+// queryOpacTitel führt die (parametrisierte) OPAC-Suche aus und mappt die Zeilen.
+// Bei einem Query- oder Iterationsfehler wird der Fehler propagiert, damit der
+// öffentliche Katalog keine irreführenden Teildaten als vollständig ausliefert.
+func (s *Server) queryOpacTitel(ctx context.Context, query string, args []any) ([]OpacTitel, error) {
+	rows, err := s.DB.Pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]OpacTitel, 0)
+	for rows.Next() {
+		var t OpacTitel
+		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.CoverURL, &t.Verfuegbar, &t.Gesamt); err != nil {
+			return nil, err
+		}
+		result = append(result, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 
 // OpacTitel is a DSGVO-compliant book view for the public catalog.
 // Contains no loan data and no reader data.
@@ -28,7 +53,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 
 		if q == "" {
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set(headerContentType, contentTypeJSON)
 			httpresp.Write(w, []byte("[]"))
 			return
 		}
@@ -70,31 +95,10 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			LIMIT 50
 		`, whereClause)
 
-		rows, err := s.DB.Pool.Query(ctx, query, args...)
+		result, err := s.queryOpacTitel(ctx, query, args)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
-		}
-		defer rows.Close()
-
-		result := make([]OpacTitel, 0)
-		for rows.Next() {
-			var t OpacTitel
-			if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.CoverURL, &t.Verfuegbar, &t.Gesamt); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			result = append(result, t)
-		}
-		// rows.Next() liefert auch bei einem mittendrin abgebrochenen Query false —
-		// ohne rows.Err() würde der öffentliche Katalog stillschweigend Teildaten als
-		// vollständig (200 OK) ausliefern.
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if result == nil {
-			result = []OpacTitel{}
 		}
 
 		RespondJSON(w, http.StatusOK, result)

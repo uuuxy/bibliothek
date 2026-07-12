@@ -27,15 +27,7 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
-		if req.TitelID == "" || req.Klasse == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id und klasse sind erforderlich"))
-			return
-		}
-		if req.Anzahl <= 0 {
-			req.Anzahl = 1
-		}
-		if req.Anzahl > 200 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("anzahl darf 200 nicht überschreiten"))
+		if !validateKlassensatzRequest(w, &req) {
 			return
 		}
 
@@ -75,7 +67,7 @@ func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		
+
 		// Ensure we don't return null for empty slices
 		if result == nil {
 			result = []repository.KlassensatzReservierung{}
@@ -112,7 +104,7 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 
 		repo := repository.NewReservationRepository(s.DB.Pool)
 		rowsAffected, err := repo.ErledigeKlassensatzReservierung(r.Context(), id)
-		
+
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -124,6 +116,23 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+// validateKlassensatzRequest prüft die Pflichtfelder und normalisiert die Anzahl
+// (Default 1, Obergrenze 200). ok=false: die Fehlerantwort wurde bereits geschrieben.
+func validateKlassensatzRequest(w http.ResponseWriter, req *KlassensatzReservierungRequest) bool {
+	if req.TitelID == "" || req.Klasse == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id und klasse sind erforderlich"))
+		return false
+	}
+	if req.Anzahl <= 0 {
+		req.Anzahl = 1
+	}
+	if req.Anzahl > 200 {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("anzahl darf 200 nicht überschreiten"))
+		return false
+	}
+	return true
 }
 
 // nullableString converts an empty string to nil for nullable DB columns.

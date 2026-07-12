@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,6 +11,34 @@ import (
 
 	"github.com/jackc/pgx/v5"
 )
+
+// ladeExemplarFuerScan lädt die für die Inventur-Logik nötigen Exemplardetails.
+// ok=false: die Fehlerantwort (404 bei unbekanntem Barcode, sonst 500) wurde bereits geschrieben.
+func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventoryRepository, w http.ResponseWriter, barcodeID string) (*repository.InventoryScanResult, bool) {
+	res, err := invRepo.GetExemplarForInventoryScan(ctx, barcodeID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			return nil, false
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, false
+	}
+	return res, true
+}
+
+// inventurWarnungen sammelt nicht-blockierende Hinweise zu einem gescannten Exemplar
+// (aktuell ausgeliehen bzw. außerhalb des laufenden Inventur-Scopes).
+func inventurWarnungen(isLent bool, inventurStatus *string) []string {
+	var warnungen []string
+	if isLent {
+		warnungen = append(warnungen, "Buch ist laut System aktuell ausgeliehen.")
+	}
+	if inventurStatus == nil || *inventurStatus != "ausstehend" {
+		warnungen = append(warnungen, "Buch gehört nicht zum aktuell gestarteten Inventur-Scope.")
+	}
+	return warnungen
+}
 
 // InventurScanRequest is the payload for checking in an item during inventory.
 type InventurScanRequest struct {
@@ -49,13 +78,8 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 		invRepo := repository.NewInventoryRepository(s.DB.Pool)
 
 		// 1. Fetch details required for inventory logic
-		res, err := invRepo.GetExemplarForInventoryScan(ctx, req.BarcodeID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		res, ok := ladeExemplarFuerScan(ctx, invRepo, w, req.BarcodeID)
+		if !ok {
 			return
 		}
 
@@ -65,13 +89,7 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 			return
 		}
 
-		var warnungen []string
-		if res.IsLent {
-			warnungen = append(warnungen, "Buch ist laut System aktuell ausgeliehen.")
-		}
-		if res.InventurStatus == nil || *res.InventurStatus != "ausstehend" {
-			warnungen = append(warnungen, "Buch gehört nicht zum aktuell gestarteten Inventur-Scope.")
-		}
+		warnungen := inventurWarnungen(res.IsLent, res.InventurStatus)
 
 		// 3. Register the scan
 		if err := invRepo.MarkExemplarScanned(ctx, res.CopyID); err != nil {

@@ -75,25 +75,7 @@ func (s *Server) BarcodeHandler() http.HandlerFunc {
 		}
 
 		isQR := r.URL.Query().Get("qr") == "true"
-
-		// Set default size metrics
-		width := 300
-		height := 100
-		if isQR {
-			width = 200
-			height = 200
-		}
-
-		if wStr := r.URL.Query().Get("width"); wStr != "" {
-			if parsed, err := strconv.Atoi(wStr); err == nil {
-				width = parsed
-			}
-		}
-		if hStr := r.URL.Query().Get("height"); hStr != "" {
-			if parsed, err := strconv.Atoi(hStr); err == nil {
-				height = parsed
-			}
-		}
+		width, height := resolveBarcodeSize(r, isQR)
 
 		pngBytes, err := GenerateBarcodePNG(content, isQR, width, height)
 		if err != nil {
@@ -101,8 +83,28 @@ func (s *Server) BarcodeHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "image/png")
-		w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
+		w.Header().Set(headerContentType, "image/png")
+		w.Header().Set(headerCacheControl, "public, max-age=31536000") // Cache for 1 year
 		httpresp.Write(w, pngBytes)
 	}
+}
+
+// resolveBarcodeSize bestimmt die Zielgröße (Default 300×100, QR 200×200) und übernimmt
+// gültige width/height-Query-Parameter.
+func resolveBarcodeSize(r *http.Request, isQR bool) (width, height int) {
+	width, height = 300, 100
+	if isQR {
+		width, height = 200, 200
+	}
+	if wStr := r.URL.Query().Get("width"); wStr != "" {
+		if parsed, err := strconv.Atoi(wStr); err == nil {
+			width = parsed
+		}
+	}
+	if hStr := r.URL.Query().Get("height"); hStr != "" {
+		if parsed, err := strconv.Atoi(hStr); err == nil {
+			height = parsed
+		}
+	}
+	return width, height
 }
