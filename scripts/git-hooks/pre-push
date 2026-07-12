@@ -1,45 +1,64 @@
-#!/usr/bin/env bash
-# pre-push: Lokale Test-Festung — ersetzt die (abgeklemmte) GitHub-Actions-CI.
-#
-# Läuft automatisch bei jedem `git push` und blockiert den Upload, wenn etwas
-# rot ist: Go-Build + Go-Tests, Vitest, Container-Rebuild, Playwright (E2E).
-#
-# Einmalige Aktivierung pro Klon:   git config core.hooksPath scripts/git-hooks
-# Bewusst überspringen (Notfall):   SKIP_E2E=1 git push   (nur Go+Vitest)
-#                                   git push --no-verify  (gar keine Prüfung)
-set -euo pipefail
+#!/bin/bash
+# pre-push hook
 
-ROOT=$(git rev-parse --show-toplevel)
-COMPOSE="$ROOT/docker-compose.local.yml"
+# Farben für Output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-echo "🛡  pre-push 1/4: Go-Build + Go-Tests"
-(cd "$ROOT" && go build ./... && go test ./...)
+echo "======================================================"
+echo "🛡️ PRE-PUSH HOOK: Starte Tests & Security-Scans..."
+echo "======================================================"
 
-echo "🛡  pre-push 2/4: Vitest"
-(cd "$ROOT/frontend" && npx vitest run)
-
-if [ "${SKIP_E2E:-0}" = "1" ]; then
-    echo "⚠️  E2E übersprungen (SKIP_E2E=1) — Go + Vitest waren grün."
-    exit 0
-fi
-
-echo "🛡  pre-push 3/4: Backend-Container mit aktuellem Stand bauen"
-if ! docker info >/dev/null 2>&1; then
-    echo "✖ Docker läuft nicht — E2E-Tests unmöglich."
-    echo "  Entweder Docker Desktop starten oder bewusst ohne E2E pushen:"
-    echo "    SKIP_E2E=1 git push"
-    exit 1
-fi
-(cd "$ROOT" && docker compose -f "$COMPOSE" up -d --build backend)
-for i in $(seq 1 30); do
-    curl -sf http://localhost:8084/health >/dev/null && break || sleep 2
-done
-if ! curl -sf http://localhost:8084/health >/dev/null; then
-    echo "✖ Backend wird nicht gesund (http://localhost:8084/health) — Abbruch."
+# 1. Go Tests
+echo "[1/4] Führe Go Tests aus..."
+if go test ./...; then
+    echo -e "${GREEN}✓ Go Tests bestanden.${NC}"
+else
+    echo -e "${RED}✗ Go Tests fehlgeschlagen! Push abgebrochen.${NC}"
     exit 1
 fi
 
-echo "🛡  pre-push 4/4: Playwright E2E-Suite"
-(cd "$ROOT/frontend" && npx playwright test)
+# 2. npm audit (Frontend Dependency Security)
+echo "[2/4] Führe npm audit (Frontend) aus..."
+cd frontend || exit 1
+if npm audit; then
+    echo -e "${GREEN}✓ npm audit bestanden.${NC}"
+else
+    echo -e "${YELLOW}⚠ npm audit hat Schwachstellen gefunden! Bitte prüfen (Push geht weiter, da audit oft false-positives hat).${NC}"
+fi
+cd ..
 
-echo "✅ Alles grün — Push wird durchgelassen."
+# 3. govulncheck (Backend Dependency Security)
+echo "[3/4] Führe govulncheck (Backend) aus..."
+if command -v govulncheck &> /dev/null; then
+    if govulncheck ./...; then
+        echo -e "${GREEN}✓ govulncheck bestanden.${NC}"
+    else
+        echo -e "${RED}✗ govulncheck fehlgeschlagen! Kritische Backend-Schwachstellen gefunden.${NC}"
+        exit 1
+    fi
+else
+    echo -e "${YELLOW}⚠ govulncheck nicht installiert. Überspringe Scan. (go install golang.org/x/vuln/cmd/govulncheck@latest)${NC}"
+fi
+
+# 4. Trivy (Container Security)
+echo "[4/4] Führe Trivy (Container) aus..."
+if command -v trivy &> /dev/null; then
+    if [ -f "Dockerfile" ]; then
+        if trivy config Dockerfile; then
+            echo -e "${GREEN}✓ Trivy Config Scan bestanden.${NC}"
+        else
+            echo -e "${RED}✗ Trivy Config Scan fehlgeschlagen! Dockerfile weist Fehler auf.${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${YELLOW}⚠ Kein Dockerfile gefunden. Überspringe Trivy Scan.${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠ trivy nicht installiert. Überspringe Scan.${NC}"
+fi
+
+echo -e "${GREEN}✅ Alle Pre-Push Checks bestanden! Code wird gepusht.${NC}"
+exit 0

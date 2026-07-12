@@ -225,7 +225,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 		}
 
 		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-		settings, _ := settingsRepo.GetSettings(ctx)
+		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
 		schule := pdf.SchuleInfo{
 			Name:    settings.SchuleName,
 			Strasse: settings.SchuleStrasse,

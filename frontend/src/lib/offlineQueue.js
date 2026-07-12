@@ -1,29 +1,29 @@
-import { openDB } from "idb";
+import { openDB } from 'idb';
 
-const DB_NAME = "bibliothek-offline-db";
-const STORE_NAME = "offline_actions";
+const DB_NAME = 'bibliothek-offline-db';
+const STORE_NAME = 'offline_actions';
 
 async function getDB() {
-  return openDB(DB_NAME, 3, {
-    upgrade(db, oldVersion, newVersion, transaction) {
-      if (oldVersion < 2) {
-        if (db.objectStoreNames.contains("scans")) {
-          db.deleteObjectStore("scans");
-        }
-      }
-      let store;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
-      } else {
-        store = transaction.objectStore(STORE_NAME);
-      }
-      if (oldVersion < 3) {
-        if (!store.indexNames.contains("timestamp")) {
-          store.createIndex("timestamp", "timestamp");
-        }
-      }
-    }
-  });
+	return openDB(DB_NAME, 3, {
+		upgrade(db, oldVersion, newVersion, transaction) {
+			if (oldVersion < 2) {
+				if (db.objectStoreNames.contains('scans')) {
+					db.deleteObjectStore('scans');
+				}
+			}
+			let store;
+			if (!db.objectStoreNames.contains(STORE_NAME)) {
+				store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+			} else {
+				store = transaction.objectStore(STORE_NAME);
+			}
+			if (oldVersion < 3) {
+				if (!store.indexNames.contains('timestamp')) {
+					store.createIndex('timestamp', 'timestamp');
+				}
+			}
+		}
+	});
 }
 
 /**
@@ -31,13 +31,13 @@ async function getDB() {
  * @returns {Promise<any[]>}
  */
 export async function loadQueue() {
-  try {
-    const db = await getDB();
-    return await db.getAll(STORE_NAME);
-  } catch (err) {
-    console.error("Failed to load offline queue from IndexedDB:", err);
-    return [];
-  }
+	try {
+		const db = await getDB();
+		return await db.getAll(STORE_NAME);
+	} catch (err) {
+		console.error('Failed to load offline queue from IndexedDB:', err);
+		return [];
+	}
 }
 
 /**
@@ -47,20 +47,25 @@ export async function loadQueue() {
  * @param {string|null} schueler_id
  * @returns {Promise<void>}
  */
-export async function enqueueOfflineAction(action_type, barcode_id, schueler_id = null, idempotencyKey = null) {
-  try {
-    const db = await getDB();
-    const id = idempotencyKey || crypto.randomUUID();
-    await db.add(STORE_NAME, {
-      id,
-      action_type,
-      barcode_id,
-      schueler_id,
-      timestamp: Date.now()
-    });
-  } catch (err) {
-    console.error("Failed to enqueue offline action to IndexedDB:", err);
-  }
+export async function enqueueOfflineAction(
+	action_type,
+	barcode_id,
+	schueler_id = null,
+	idempotencyKey = null
+) {
+	try {
+		const db = await getDB();
+		const id = idempotencyKey || crypto.randomUUID();
+		await db.add(STORE_NAME, {
+			id,
+			action_type,
+			barcode_id,
+			schueler_id,
+			timestamp: Date.now()
+		});
+	} catch (err) {
+		console.error('Failed to enqueue offline action to IndexedDB:', err);
+	}
 }
 
 /**
@@ -68,17 +73,17 @@ export async function enqueueOfflineAction(action_type, barcode_id, schueler_id 
  * @returns {Promise<any | null>}
  */
 export async function peekOfflineAction() {
-  try {
-    const db = await getDB();
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const index = store.index('timestamp');
-    const cursor = await index.openCursor();
-    return cursor ? cursor.value : null;
-  } catch (err) {
-    console.error("Failed to peek offline queue:", err);
-    return null;
-  }
+	try {
+		const db = await getDB();
+		const tx = db.transaction(STORE_NAME, 'readonly');
+		const store = tx.objectStore(STORE_NAME);
+		const index = store.index('timestamp');
+		const cursor = await index.openCursor();
+		return cursor ? cursor.value : null;
+	} catch (err) {
+		console.error('Failed to peek offline queue:', err);
+		return null;
+	}
 }
 
 /**
@@ -87,10 +92,10 @@ export async function peekOfflineAction() {
  * @returns {Promise<void>}
  */
 export async function dequeueOfflineAction(id) {
-  try {
-    const db = await getDB();
-    await db.delete(STORE_NAME, id);
-  } catch (err) {
-    console.error(`Failed to dequeue offline action ${id}:`, err);
-  }
+	try {
+		const db = await getDB();
+		await db.delete(STORE_NAME, id);
+	} catch (err) {
+		console.error(`Failed to dequeue offline action ${id}:`, err);
+	}
 }

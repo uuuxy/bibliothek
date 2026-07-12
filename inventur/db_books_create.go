@@ -116,7 +116,7 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 			props = make(map[string]any)
 		}
 		// In JSON umwandeln für pgx JSONB-Array Kompatibilität
-		jsonProps, _ := json.Marshal(props)
+		jsonProps, _ := json.Marshal(props)  //nolint:errcheck
 		erweiterteEigenschaften[i] = jsonProps
 	}
 

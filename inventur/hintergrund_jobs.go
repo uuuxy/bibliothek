@@ -82,7 +82,7 @@ func brauchtAktualisierung(b Book) bool {
 // nil bedeutet: kein Treffer bzw. Fehler beim Nachschlagen.
 func ladeMetadaten(ctx context.Context, client *MetadatenClient, isbn string, cache *sync.Map) *MetadatenErgebnis {
 	if cachedVal, ok := cache.Load(isbn); ok {
-		return cachedVal.(*MetadatenErgebnis)
+		return cachedVal.(*MetadatenErgebnis)  //nolint:errcheck
 	}
 	nachschlagen, err := client.SucheNachISBN(ctx, isbn)
 	if err != nil || nachschlagen == nil {
@@ -120,7 +120,7 @@ func aktualisiereKategorie(ctx context.Context, repo *BookRepository, b Book, na
 	newGrade := b.GradeLevel
 	if b.GradeLevel == 0 && nachschlagen.KlassenStufe != "" {
 		var parsedGrade int
-		_, _ = fmt.Sscanf(nachschlagen.KlassenStufe, "%d", &parsedGrade)
+		_, _ = fmt.Sscanf(nachschlagen.KlassenStufe, "%d", &parsedGrade)  //nolint:errcheck
 		if parsedGrade >= 5 && parsedGrade <= 13 {
 			newGrade = int16(parsedGrade)
 		}

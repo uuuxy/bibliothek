@@ -94,7 +94,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	buch.CoverURL = strings.TrimSpace(eingabe.CoverURL)
 
 	if buch.Title == "" || buch.Author == "" || buch.CoverURL == "" {
-		nachschlagen, _ := handler.metadaten.SucheNachISBN(anfrage.Context(), buch.ISBN)
+		nachschlagen, _ := handler.metadaten.SucheNachISBN(anfrage.Context(), buch.ISBN)  //nolint:errcheck
 		if nachschlagen != nil {
 			if buch.Title == "" {
 				buch.Title = strings.TrimSpace(nachschlagen.Titel)

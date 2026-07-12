@@ -1,8 +1,8 @@
 <script>
-	import { apiFetch, apiClient } from "../../../../lib/apiFetch.js";
-	import BookTableToolbar from "$lib/components/admin/BookTableToolbar.svelte";
-	import BookTableZeile from "$lib/components/admin/BookTableZeile.svelte";
-	import Button from "../../../../lib/components/ui/Button.svelte";
+	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
+	import BookTableToolbar from '$lib/components/admin/BookTableToolbar.svelte';
+	import BookTableZeile from '$lib/components/admin/BookTableZeile.svelte';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	/**
 	 * @type {{
@@ -15,15 +15,7 @@
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let {
-		books,
-		loading,
-		onOpenDetail,
-		onCreateNew,
-		onScan,
-		onDelete,
-		onRetryCovers,
-	} = $props();
+	let { books, loading, onOpenDetail, onCreateNew, onScan, onDelete, onRetryCovers } = $props();
 
 	/** @type {string[]} */
 	let selectedIds = $state([]);
@@ -31,7 +23,7 @@
 	let draggedIndex = $state(null);
 	/** @type {number|null} */
 	let dragOverIndex = $state(null);
-	
+
 	// Performance: Begrenzung der gerenderten DOM-Elemente
 	let maxVisible = $state(50);
 
@@ -39,7 +31,7 @@
 	 * @param {{ type: string, message: string }} param0
 	 */
 	function addToast({ type, message }) {
-		if (type === "error") {
+		if (type === 'error') {
 			console.error(message);
 		}
 	}
@@ -75,12 +67,12 @@
 	function onDragStart(event, index) {
 		draggedIndex = index;
 		if (event.dataTransfer) {
-			event.dataTransfer.effectAllowed = "move";
-			event.dataTransfer.setData("text/plain", String(index));
+			event.dataTransfer.effectAllowed = 'move';
+			event.dataTransfer.setData('text/plain', String(index));
 		}
 		const target = /** @type {HTMLElement} */ (event.target);
 		setTimeout(() => {
-			target.classList.add("opacity-50");
+			target.classList.add('opacity-50');
 		}, 0);
 	}
 
@@ -91,7 +83,7 @@
 	function onDragOver(event, index) {
 		event.preventDefault();
 		if (event.dataTransfer) {
-			event.dataTransfer.dropEffect = "move";
+			event.dataTransfer.dropEffect = 'move';
 		}
 		if (draggedIndex === null || draggedIndex === index) return;
 		dragOverIndex = index;
@@ -112,7 +104,7 @@
 	 */
 	function onDragEnd(event) {
 		const target = /** @type {HTMLElement} */ (event.target);
-		target.classList.remove("opacity-50");
+		target.classList.remove('opacity-50');
 		draggedIndex = null;
 		dragOverIndex = null;
 	}
@@ -137,22 +129,22 @@
 
 		try {
 			const bookIds = books.map((book) => book.id);
-			const response = await apiFetch("/api/admin/books/reorder", {
-				method: "PUT",
-				credentials: "include",
+			const response = await apiFetch('/api/admin/books/reorder', {
+				method: 'PUT',
+				credentials: 'include',
 				headers: /** @type {HeadersInit} */ ({
-					"Content-Type": "application/json",
+					'Content-Type': 'application/json'
 				}),
-				body: JSON.stringify({ bookIds }),
+				body: JSON.stringify({ bookIds })
 			});
 
 			if (!response.ok) {
-				throw new Error("Network response was not ok");
+				throw new Error('Network response was not ok');
 			}
-			addToast({ type: "success", message: "Sortierung gespeichert" });
+			addToast({ type: 'success', message: 'Sortierung gespeichert' });
 		} catch (error) {
-			console.error("Fehler beim Speichern der Sortierung:", error);
-			addToast({ type: "error", message: "Sortierung konnte nicht gespeichert werden" });
+			console.error('Fehler beim Speichern der Sortierung:', error);
+			addToast({ type: 'error', message: 'Sortierung konnte nicht gespeichert werden' });
 		}
 	}
 </script>
@@ -162,9 +154,9 @@
 		booksLength={books.length}
 		selectedCount={selectedIds.length}
 		onDelete={handleDelete}
-		onScan={onScan}
-		onCreateNew={onCreateNew}
-		onRetryCovers={onRetryCovers}
+		{onScan}
+		{onCreateNew}
+		{onRetryCovers}
 	/>
 
 	<div class="overflow-x-auto">
@@ -200,13 +192,13 @@
 						{index}
 						{dragOverIndex}
 						isSelected={selectedIds.includes(book.id)}
-						onOpenDetail={onOpenDetail}
+						{onOpenDetail}
 						onToggleSelect={toggleSelect}
-						onDragStart={onDragStart}
-						onDragOver={onDragOver}
-						onDragLeave={onDragLeave}
-						onDrop={onDrop}
-						onDragEnd={onDragEnd}
+						{onDragStart}
+						{onDragOver}
+						{onDragLeave}
+						{onDrop}
+						{onDragEnd}
 					/>
 				{/each}
 
@@ -222,11 +214,10 @@
 
 		{#if books.length > maxVisible}
 			<div class="p-4 flex justify-center bg-slate-50 border-t border-slate-100">
-				<Button variant="secondary" onclick={() => maxVisible += 50}>
+				<Button variant="secondary" onclick={() => (maxVisible += 50)}>
 					Weitere Bücher laden ({books.length - maxVisible} verbleibend)
 				</Button>
 			</div>
 		{/if}
 	</div>
 </div>
-

@@ -96,6 +96,6 @@ func loescheLokaleCoverDateien(localCovers []string) {
 			continue
 		}
 		// #nosec G304 - name is sanitized using filepath.Base
-		_ = os.Remove(filepath.Join("uploads", name))
+		_ = os.Remove(filepath.Join("uploads", name))  //nolint:errcheck
 	}
 }

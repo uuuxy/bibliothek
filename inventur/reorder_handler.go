@@ -33,7 +33,7 @@ func (handler *APIHandler) handleReorderBooks(writer http.ResponseWriter, reques
 		writeError(writer, http.StatusInternalServerError, "transaktion konnte nicht gestartet werden")
 		return
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
 	// Erstelle Arrays für den Batch-Update mittels unnest
 	sortOrders := make([]int, len(input.BookIDs))

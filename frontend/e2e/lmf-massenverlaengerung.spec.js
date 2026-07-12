@@ -4,11 +4,13 @@ import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 // LMF-Massenverlängerung (/lmf-aktionen): kritisches Massen-Update — verlängert
 // alle offenen LMF-Ausleihen einer Klasse auf ein fixes Datum. Der Handler matcht
 // per Projekt-Konvention über das Titel-Präfix "LMF-" (mit Bindestrich!).
-test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausleihen', async ({ page }) => {
-    const s = uniqueSuffix();
-    const klasse = `1e${s.slice(-2)}`; // eigene Wegwerf-Klasse, kollidiert nicht mit echten Daten
+test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausleihen', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	const klasse = `1e${s.slice(-2)}`; // eigene Wegwerf-Klasse, kollidiert nicht mit echten Daten
 
-    seedSQL(`
+	seedSQL(`
         WITH bt AS (
             INSERT INTO buecher_titel (isbn, titel, autor)
             VALUES ('978x${s}', 'LMF-Extend Testbuch ${s}', 'Autor')
@@ -32,37 +34,37 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
         JOIN st ON ex.barcode_id = 'B-lmf-${s}-' || st.id;
     `);
 
-    await uiLogin(page);
-    await page.goto('/lmf-aktionen');
+	await uiLogin(page);
+	await page.goto('/lmf-aktionen');
 
-    await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
 
-    await page.getByLabel(/Klasse/i).fill(klasse);
+	await page.getByLabel(/Klasse/i).fill(klasse);
 
-    const futureDate = new Date();
-    futureDate.setFullYear(futureDate.getFullYear() + 1);
-    const dateStr = futureDate.toISOString().split('T')[0];
-    await page.locator('input[type="date"]').fill(dateStr);
+	const futureDate = new Date();
+	futureDate.setFullYear(futureDate.getFullYear() + 1);
+	const dateStr = futureDate.toISOString().split('T')[0];
+	await page.locator('input[type="date"]').fill(dateStr);
 
-    const dialogMessages = [];
-    page.on('dialog', async dialog => {
-        dialogMessages.push(dialog.message());
-        await dialog.accept();
-    });
+	const dialogMessages = [];
+	page.on('dialog', async (dialog) => {
+		dialogMessages.push(dialog.message());
+		await dialog.accept();
+	});
 
-    await page.getByRole('button', { name: /verlängern/i }).click();
+	await page.getByRole('button', { name: /verlängern/i }).click();
 
-    // Der Erfolgs-Alert nennt die Anzahl — "Erfolgreich" allein würde auch bei
-    // 0 Treffern erscheinen und wäre als Assertion wertlos.
-    await expect.poll(() => dialogMessages.join(' ')).toContain('2 Ausleihen');
+	// Der Erfolgs-Alert nennt die Anzahl — "Erfolgreich" allein würde auch bei
+	// 0 Treffern erscheinen und wäre als Assertion wertlos.
+	await expect.poll(() => dialogMessages.join(' ')).toContain('2 Ausleihen');
 
-    // Harte DB-Verifikation: BEIDE Fristen stehen auf dem neuen Datum (23:59:59).
-    const fristen = querySQL(`
+	// Harte DB-Verifikation: BEIDE Fristen stehen auf dem neuen Datum (23:59:59).
+	const fristen = querySQL(`
         SELECT count(*) FROM ausleihen a
         JOIN schueler st ON st.id = a.schueler_id
         WHERE st.klasse = '${klasse}'
           AND a.rueckgabe_am IS NULL
           AND a.rueckgabe_frist::date = '${dateStr}'
     `);
-    expect(fristen).toBe('2');
+	expect(fristen).toBe('2');
 });

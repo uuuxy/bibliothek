@@ -88,7 +88,7 @@ func ergaenzeMetadaten(ctx context.Context, metadaten *MetadatenClient, book *Bo
 		return
 	}
 
-	lookup, _ := metadaten.SucheNachISBN(ctx, book.ISBN)
+	lookup, _ := metadaten.SucheNachISBN(ctx, book.ISBN)  //nolint:errcheck
 	if lookup == nil {
 		return
 	}

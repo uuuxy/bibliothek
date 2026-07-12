@@ -148,7 +148,7 @@ func baueBestellpositionen(itemsToOrder []reorderItem, startNum int, isNaacher b
 // Bestellung per Mail. Antwortet selbst (Erfolg oder Fehler) auf w.
 func (s *Server) versendeBestellung(ctx context.Context, w http.ResponseWriter, toEmail string, isNaacher bool, labels []BarcodeLabelDetail, orderSummaryItems []OrderedItem) {
 	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-	orderSettings, _ := settingsRepo.GetSettings(ctx)
+	orderSettings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
 	schule := pdf.SchuleInfo{
 		Name:    orderSettings.SchuleName,
 		Strasse: orderSettings.SchuleStrasse,

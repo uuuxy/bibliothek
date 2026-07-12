@@ -1,7 +1,7 @@
-import { apiFetch, apiClient } from "../../lib/apiFetch.js";
+import { apiFetch, apiClient } from '../../lib/apiFetch.js';
 /**
  * startseiten_api.js
- * 
+ *
  * Enthält alle API-Aufrufe und Hilfsfunktionen für die Gast-Startseite.
  * Hierzu gehören: Bücher laden, Klassen laden,
  * sowie Filterung und Gruppierung der Bücher nach Klassen.
@@ -12,16 +12,16 @@ import { apiFetch, apiClient } from "../../lib/apiFetch.js";
  * @returns {Promise<any[]>} Liste der Bücher
  */
 export async function buecherLaden() {
-    const antwort = await apiFetch("/api/books", {
-        credentials: "include",
-    });
-    if (!antwort.ok) {
-        if (antwort.status === 401) {
-            throw new Error("UNAUTHORIZED");
-        }
-        throw new Error("Fehler beim Laden der Bücher");
-    }
-    return (await antwort.json()).data ?? [];
+	const antwort = await apiFetch('/api/books', {
+		credentials: 'include'
+	});
+	if (!antwort.ok) {
+		if (antwort.status === 401) {
+			throw new Error('UNAUTHORIZED');
+		}
+		throw new Error('Fehler beim Laden der Bücher');
+	}
+	return (await antwort.json()).data ?? [];
 }
 
 /**
@@ -29,15 +29,15 @@ export async function buecherLaden() {
  * @returns {Promise<any[]>} Liste der Klassengruppen
  */
 export async function echteKlassenLaden() {
-    const antwort = await apiFetch("/api/class-books", {
-        credentials: "include",
-    });
-    if (!antwort.ok) return [];
-    const daten = (await antwort.json()).data ?? [];
-    return daten.map((/** @type {any} */ klasse) => ({
-        name: klasse.className,
-        books: klasse.books,
-    }));
+	const antwort = await apiFetch('/api/class-books', {
+		credentials: 'include'
+	});
+	if (!antwort.ok) return [];
+	const daten = (await antwort.json()).data ?? [];
+	return daten.map((/** @type {any} */ klasse) => ({
+		name: klasse.className,
+		books: klasse.books
+	}));
 }
 
 /**
@@ -46,18 +46,16 @@ export async function echteKlassenLaden() {
  * @returns {any[]} Sortierte Liste von Klasseobjekten
  */
 export function buecherNachKlassenGruppieren(buecherArray) {
-    const klassenMap = new Map();
-    for (const buch of buecherArray) {
-        if (!buch.gradeLevel) continue;
-        const klassenName = `Klasse ${buch.gradeLevel}${buch.track ? " " + buch.track : ""}`;
-        if (!klassenMap.has(klassenName)) {
-            klassenMap.set(klassenName, { name: klassenName, books: [] });
-        }
-        klassenMap.get(klassenName).books.push(buch);
-    }
-    return Array.from(klassenMap.values()).sort((a, b) =>
-        a.name.localeCompare(b.name),
-    );
+	const klassenMap = new Map();
+	for (const buch of buecherArray) {
+		if (!buch.gradeLevel) continue;
+		const klassenName = `Klasse ${buch.gradeLevel}${buch.track ? ' ' + buch.track : ''}`;
+		if (!klassenMap.has(klassenName)) {
+			klassenMap.set(klassenName, { name: klassenName, books: [] });
+		}
+		klassenMap.get(klassenName).books.push(buch);
+	}
+	return Array.from(klassenMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
@@ -66,9 +64,7 @@ export function buecherNachKlassenGruppieren(buecherArray) {
  * @returns {string} Tailwind-CSS-Klassen für die Bestandsanzeige
  */
 export function bestandsFarbe(bestand) {
-    if (bestand === 0)
-        return "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]";
-    if (bestand < 5)
-        return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
-    return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+	if (bestand === 0) return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]';
+	if (bestand < 5) return 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]';
+	return 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]';
 }

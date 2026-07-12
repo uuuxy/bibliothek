@@ -174,7 +174,7 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		}
 
 		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-		settings, _ := settingsRepo.GetSettings(ctx)
+		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
 		schule := pdf.SchuleInfo{
 			Name:    settings.SchuleName,
 			Strasse: settings.SchuleStrasse,
@@ -192,7 +192,7 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(pdfBytes)
+		_, _ = w.Write(pdfBytes) //nolint:errcheck
 	}
 }
 

@@ -22,18 +22,18 @@
  * @returns {string}
  */
 function readCsrfToken() {
-  if (typeof document === "undefined") return "";
-  const entries = document.cookie ? document.cookie.split("; ") : [];
-  for (const entry of entries) {
-    if (entry.startsWith("csrf_token=")) {
-      return decodeURIComponent(entry.slice("csrf_token=".length));
-    }
-  }
-  return "";
+	if (typeof document === 'undefined') return '';
+	const entries = document.cookie ? document.cookie.split('; ') : [];
+	for (const entry of entries) {
+		if (entry.startsWith('csrf_token=')) {
+			return decodeURIComponent(entry.slice('csrf_token='.length));
+		}
+	}
+	return '';
 }
 
 /** HTTP methods that require CSRF token validation */
-const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** @type {Promise<string> | null} Laufender Bootstrap — verhindert parallele Doppel-Requests */
 let csrfBootstrap = null;
@@ -45,20 +45,22 @@ let csrfBootstrap = null;
  * @returns {Promise<string>}
  */
 async function ensureCsrfToken() {
-  const existing = readCsrfToken();
-  if (existing) return existing;
+	const existing = readCsrfToken();
+	if (existing) return existing;
 
-  csrfBootstrap ??= fetch("/api/csrf-token", { credentials: "include" })
-    .then(async (res) => {
-      if (!res.ok) return "";
-      const data = await res.json();
-      return data.csrf_token || "";
-    })
-    .catch(() => "")
-    .finally(() => { csrfBootstrap = null; });
+	csrfBootstrap ??= fetch('/api/csrf-token', { credentials: 'include' })
+		.then(async (res) => {
+			if (!res.ok) return '';
+			const data = await res.json();
+			return data.csrf_token || '';
+		})
+		.catch(() => '')
+		.finally(() => {
+			csrfBootstrap = null;
+		});
 
-  const fetched = await csrfBootstrap;
-  return readCsrfToken() || fetched;
+	const fetched = await csrfBootstrap;
+	return readCsrfToken() || fetched;
 }
 
 /**
@@ -69,49 +71,50 @@ async function ensureCsrfToken() {
  * @returns {Promise<Response>}
  */
 export async function apiFetch(url, options = {}) {
-  // Always include credentials (cookies)
-  options.credentials = "include";
+	// Always include credentials (cookies)
+	options.credentials = 'include';
 
-  const method = (options.method || "GET").toUpperCase();
+	const method = (options.method || 'GET').toUpperCase();
 
-  // Inject CSRF header on mutating requests
-  if (MUTATION_METHODS.has(method)) {
-    const token = await ensureCsrfToken();
-    if (token) {
-      options.headers = {
-        .../** @type {Record<string, string>} */ (options.headers || {}),
-        "X-CSRF-Token": token,
-      };
-    }
-  }
+	// Inject CSRF header on mutating requests
+	if (MUTATION_METHODS.has(method)) {
+		const token = await ensureCsrfToken();
+		if (token) {
+			options.headers = {
+				.../** @type {Record<string, string>} */ (options.headers || {}),
+				'X-CSRF-Token': token
+			};
+		}
+	}
 
-  // Set up AbortController for network timeouts.
-  // Datei-Uploads (FormData) laufen naturgemäß lange — ein voller Katalog-Import
-  // überträgt Megabytes und berührt tausende Zeilen. Das starre 10s-Limit brach
-  // solche Uploads mitten im Lauf ab ("Netzwerk-Timeout"), obwohl der Server noch
-  // arbeitete. Sie bekommen daher großzügige 5 Minuten (abgestimmt auf Caddys
-  // response_header_timeout). Aufrufer können per options.timeoutMs überschreiben.
-  const isUpload = typeof FormData !== "undefined" && options.body instanceof FormData;
-  const timeoutMs = options.timeoutMs ?? (isUpload ? 300000 : MUTATION_METHODS.has(method) ? 10000 : 15000);
-  delete options.timeoutMs;
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
+	// Set up AbortController for network timeouts.
+	// Datei-Uploads (FormData) laufen naturgemäß lange — ein voller Katalog-Import
+	// überträgt Megabytes und berührt tausende Zeilen. Das starre 10s-Limit brach
+	// solche Uploads mitten im Lauf ab ("Netzwerk-Timeout"), obwohl der Server noch
+	// arbeitete. Sie bekommen daher großzügige 5 Minuten (abgestimmt auf Caddys
+	// response_header_timeout). Aufrufer können per options.timeoutMs überschreiben.
+	const isUpload = typeof FormData !== 'undefined' && options.body instanceof FormData;
+	const timeoutMs =
+		options.timeoutMs ?? (isUpload ? 300000 : MUTATION_METHODS.has(method) ? 10000 : 15000);
+	delete options.timeoutMs;
+	const controller = new AbortController();
+	const id = setTimeout(() => controller.abort(), timeoutMs);
 
-  // If the user already provided a signal, link them (simplified handling: we just overwrite with our timeout, 
-  // or if they passed one we could use `AbortSignal.any` but standard AbortController is enough for our use-case)
-  options.signal = controller.signal;
+	// If the user already provided a signal, link them (simplified handling: we just overwrite with our timeout,
+	// or if they passed one we could use `AbortSignal.any` but standard AbortController is enough for our use-case)
+	options.signal = controller.signal;
 
-  try {
-    const response = await fetch(url, options);
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    if (error.name === 'AbortError') {
-      throw new Error("Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.");
-    }
-    throw error;
-  }
+	try {
+		const response = await fetch(url, options);
+		clearTimeout(id);
+		return response;
+	} catch (error) {
+		clearTimeout(id);
+		if (error.name === 'AbortError') {
+			throw new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.');
+		}
+		throw error;
+	}
 }
 
 /**
@@ -119,92 +122,92 @@ export async function apiFetch(url, options = {}) {
  * It automatically serializes objects to JSON and sets the Content-Type header.
  */
 export const apiClient = {
-  get(url, options = {}) {
-    return apiFetch(url, { ...options, method: "GET" });
-  },
-  post(url, data, options = {}) {
-    return apiFetch(url, {
-      ...options,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      body: JSON.stringify(data),
-    });
-  },
-  put(url, data, options = {}) {
-    return apiFetch(url, {
-      ...options,
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      body: JSON.stringify(data),
-    });
-  },
-  delete(url, options = {}) {
-    return apiFetch(url, { ...options, method: "DELETE" });
-  },
-  patch(url, data, options = {}) {
-    return apiFetch(url, {
-      ...options,
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      body: JSON.stringify(data),
-    });
-  },
+	get(url, options = {}) {
+		return apiFetch(url, { ...options, method: 'GET' });
+	},
+	post(url, data, options = {}) {
+		return apiFetch(url, {
+			...options,
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				...options.headers
+			},
+			body: JSON.stringify(data)
+		});
+	},
+	put(url, data, options = {}) {
+		return apiFetch(url, {
+			...options,
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				...options.headers
+			},
+			body: JSON.stringify(data)
+		});
+	},
+	delete(url, options = {}) {
+		return apiFetch(url, { ...options, method: 'DELETE' });
+	},
+	patch(url, data, options = {}) {
+		return apiFetch(url, {
+			...options,
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json',
+				...options.headers
+			},
+			body: JSON.stringify(data)
+		});
+	}
 };
 
-import { toastStore } from "./stores/toastStore.svelte.js";
+import { toastStore } from './stores/toastStore.svelte.js';
 
 async function handleSmartResponse(res) {
-  if (res.ok) {
-    if (res.status === 204) return null;
-    const text = await res.text();
-    if (!text) return null;
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
-    }
-  } else {
-    const errorText = (await res.text()) || `Fehler ${res.status}`;
-    toastStore.addToast(errorText, "error");
-    throw new Error(errorText);
-  }
+	if (res.ok) {
+		if (res.status === 204) return null;
+		const text = await res.text();
+		if (!text) return null;
+		try {
+			return JSON.parse(text);
+		} catch {
+			return text;
+		}
+	} else {
+		const errorText = (await res.text()) || `Fehler ${res.status}`;
+		toastStore.addToast(errorText, 'error');
+		throw new Error(errorText);
+	}
 }
 
 export async function apiGet(url, options = {}) {
-  const res = await apiFetch(url, { ...options, method: "GET" });
-  return handleSmartResponse(res);
+	const res = await apiFetch(url, { ...options, method: 'GET' });
+	return handleSmartResponse(res);
 }
 
 export async function apiPost(url, data, options = {}) {
-  const res = await apiFetch(url, {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options.headers },
-    body: data ? JSON.stringify(data) : undefined,
-  });
-  return handleSmartResponse(res);
+	const res = await apiFetch(url, {
+		...options,
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...options.headers },
+		body: data ? JSON.stringify(data) : undefined
+	});
+	return handleSmartResponse(res);
 }
 
 export async function apiPut(url, data, options = {}) {
-  const res = await apiFetch(url, {
-    ...options,
-    method: "PUT",
-    headers: { "Content-Type": "application/json", ...options.headers },
-    body: data ? JSON.stringify(data) : undefined,
-  });
-  return handleSmartResponse(res);
+	const res = await apiFetch(url, {
+		...options,
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json', ...options.headers },
+		body: data ? JSON.stringify(data) : undefined
+	});
+	return handleSmartResponse(res);
 }
 
 export async function apiDelete(url, options = {}) {
-  const res = await apiFetch(url, { ...options, method: "DELETE" });
-  return handleSmartResponse(res);
+	const res = await apiFetch(url, { ...options, method: 'DELETE' });
+	return handleSmartResponse(res);
 }

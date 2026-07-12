@@ -98,7 +98,7 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 			cleanDir := filepath.Clean("uploads")
 			alterPfad := filepath.Clean(filepath.Join(cleanDir, filename))
 			if strings.HasPrefix(alterPfad, cleanDir+string(filepath.Separator)) {
-				_ = os.Remove(alterPfad) // Fehler ignorieren (Datei existiert ggf. nicht mehr)
+				_ = os.Remove(alterPfad) //nolint:errcheck // Fehler ignorieren (Datei existiert ggf. nicht mehr)
 			}
 		}
 	}
@@ -184,7 +184,7 @@ func readCoverUpload(writer http.ResponseWriter, request *http.Request, id strin
 		writeError(writer, http.StatusBadRequest, "kein bild gefunden")
 		return nil, false
 	}
-	defer func() { _ = file.Close() }()
+	defer func() { _ = file.Close() }() //nolint:errcheck
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {

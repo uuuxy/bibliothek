@@ -82,7 +82,7 @@ func Wrap(h APIHandler) http.HandlerFunc {
 				}
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(apiErr.StatusCode)
-				_ = json.NewEncoder(w).Encode(apiErr)
+				_ = json.NewEncoder(w).Encode(apiErr)  //nolint:errcheck
 			} else {
 				// Fallback to the existing SendHTTPError logic for generic errors
 				SendHTTPError(w, http.StatusInternalServerError, err)
@@ -119,7 +119,7 @@ func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 		msg = sanitizeInternalError(internalErr)
 	}
 
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})  //nolint:errcheck
 }
 
 // istDatenbankFehler erkennt DB-nahe Fehlermeldungen (SQL, Constraints, Treiber-Logs),

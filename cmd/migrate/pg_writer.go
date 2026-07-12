@@ -34,12 +34,12 @@ func newErrLogger() (*errLogger, error) {
 func (el *errLogger) write(mysqlID int, isbn, reason string) {
 	el.n++
 	ts := time.Now().Format("2006-01-02 15:04:05")
-	_, _ = fmt.Fprintf(el.w, "[%s] mysql_id=%d isbn=%q reason=%s\n", ts, mysqlID, isbn, reason)
+	_, _ = fmt.Fprintf(el.w, "[%s] mysql_id=%d isbn=%q reason=%s\n", ts, mysqlID, isbn, reason)  //nolint:errcheck
 }
 
 func (el *errLogger) close() {
-	_ = el.w.Flush()
-	_ = el.f.Close()
+	_ = el.w.Flush()  //nolint:errcheck
+	_ = el.f.Close()  //nolint:errcheck
 }
 
 // buildErweiterteEigenschaften serialises free-text fields into the JSONB column.
@@ -104,7 +104,7 @@ func insertBatch(
 		log.Printf("ERROR begin transaction: %v", err)
 		return
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer func() { _ = tx.Rollback(ctx) }()  //nolint:errcheck
 
 	for _, m := range batch {
 		// ── Validate ISBN ────────────────────────────────────────────────

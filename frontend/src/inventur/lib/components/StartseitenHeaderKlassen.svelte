@@ -3,7 +3,7 @@
 		klasseSearchQuery = $bindable(),
 		isKlasseDropdownOpen = $bindable(),
 		filteredKlassenList,
-		onSelectKlasse,
+		onSelectKlasse
 	} = $props();
 </script>
 
@@ -31,25 +31,37 @@
 				<button
 					type="button"
 					onclick={() => {
-						klasseSearchQuery = "";
+						klasseSearchQuery = '';
 						isKlasseDropdownOpen = false;
 					}}
 					class="p-1 text-slate-400 hover:text-emerald-500 transition-colors duration-200 focus:outline-none"
 					aria-label="Suche löschen"
 				>
 					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			{/if}
 			<div class="text-slate-400">
 				<svg
-					class="h-6 w-6 transition-transform duration-200 {isKlasseDropdownOpen ? 'rotate-180' : ''}"
+					class="h-6 w-6 transition-transform duration-200 {isKlasseDropdownOpen
+						? 'rotate-180'
+						: ''}"
 					fill="none"
 					stroke="currentColor"
 					viewBox="0 0 24 24"
 				>
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M19 9l-7 7-7-7"
+					/>
 				</svg>
 			</div>
 		</div>
@@ -72,10 +84,11 @@
 				{/each}
 			</ul>
 		{:else if isKlasseDropdownOpen && filteredKlassenList.length === 0}
-			<div class="absolute z-10 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-lg py-4 px-6 text-slate-500 text-center">
+			<div
+				class="absolute z-10 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-lg py-4 px-6 text-slate-500 text-center"
+			>
 				Keine Klasse gefunden.
 			</div>
 		{/if}
 	</div>
 </div>
-

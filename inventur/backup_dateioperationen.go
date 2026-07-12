@@ -38,7 +38,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	if err != nil {
 		return fmt.Errorf("konnte pgpass-Datei nicht erstellen: %w", err)
 	}
-	defer func() { _ = os.Remove(passFile.Name()) }()
+	defer func() { _ = os.Remove(passFile.Name()) }()  //nolint:errcheck
 
 	pgPassLine := fmt.Sprintf("%s:%s:%s:%s:%s\n",
 		escapePgPass(host),
@@ -48,10 +48,10 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 		escapePgPass(password),
 	)
 	if _, err := passFile.WriteString(pgPassLine); err != nil {
-		_ = passFile.Close()
+		_ = passFile.Close()  //nolint:errcheck
 		return fmt.Errorf("konnte in pgpass-Datei nicht schreiben: %w", err)
 	}
-	_ = passFile.Close()
+	_ = passFile.Close()  //nolint:errcheck
 
 	dumpFile := filepath.Join(backupPath, "db_dump.sql")
 	// #nosec G304 - dumpFile is safely constructed inside the backup directory
@@ -59,7 +59,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 	if err != nil {
 		return fmt.Errorf("konnte Dump-Datei nicht erstellen: %w", err)
 	}
-	defer func() { _ = outFile.Close() }()
+	defer func() { _ = outFile.Close() }()  //nolint:errcheck
 
 	// #nosec G204 - arguments are derived from securely parsed DSN configuration
 	cmd := exec.Command("pg_dump",
@@ -82,7 +82,7 @@ func (bm *BackupManager) dumpDatabase(backupPath string) error {
 		return fmt.Errorf("pg_dump konnte nicht gestartet werden: %w", err)
 	}
 
-	stderr, _ := io.ReadAll(stderrPipe)
+	stderr, _ := io.ReadAll(stderrPipe)  //nolint:errcheck
 	if err := cmd.Wait(); err != nil {
 		return fmt.Errorf("pg_dump fehlgeschlagen: %w (stderr: %s)", err, string(stderr))
 	}
@@ -176,14 +176,14 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = in.Close() }()
+	defer func() { _ = in.Close() }()  //nolint:errcheck
 
 	// #nosec G304 - dst is safely constructed
 	out, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = out.Close() }()
+	defer func() { _ = out.Close() }()  //nolint:errcheck
 
 	if _, err := io.Copy(out, in); err != nil {
 		return err

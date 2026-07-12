@@ -90,7 +90,7 @@ func highestBarcodeSeq(ctx context.Context, pool *pgxpool.Pool) (int, error) {
 	if len(m) < 2 {
 		return 0, nil
 	}
-	n, _ := strconv.Atoi(m[1])
+	n, _ := strconv.Atoi(m[1])  //nolint:errcheck
 	return n, nil
 }
 

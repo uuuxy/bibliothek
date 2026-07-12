@@ -180,8 +180,8 @@ func main() {
 				return
 			} else {
 				statusCode = resp.StatusCode
-				_, _ = io.Copy(io.Discard, resp.Body)
-				_ = resp.Body.Close()
+				_, _ = io.Copy(io.Discard, resp.Body)  //nolint:errcheck
+				_ = resp.Body.Close()  //nolint:errcheck
 
 				resultsMu.Lock()
 				statusCounts[statusCode]++

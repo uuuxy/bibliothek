@@ -16,8 +16,8 @@
 	>
 		<button
 			role="tab"
-			aria-selected={ansichtsModus === "list"}
-			onclick={() => onWechsel("list")}
+			aria-selected={ansichtsModus === 'list'}
+			onclick={() => onWechsel('list')}
 			class="px-6 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer {ansichtsModus ===
 			'list'
 				? 'bg-white text-blue-600 font-bold shadow-sm'
@@ -27,8 +27,8 @@
 		</button>
 		<button
 			role="tab"
-			aria-selected={ansichtsModus === "classes"}
-			onclick={() => onWechsel("classes")}
+			aria-selected={ansichtsModus === 'classes'}
+			onclick={() => onWechsel('classes')}
 			class="px-6 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer {ansichtsModus ===
 			'classes'
 				? 'bg-white text-blue-600 font-bold shadow-sm'

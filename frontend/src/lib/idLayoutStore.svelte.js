@@ -24,59 +24,171 @@
 
 let _nextId = 100;
 /** @returns {string} */
-export function nextId() { return `el-${++_nextId}`; }
+export function nextId() {
+	return `el-${++_nextId}`;
+}
 
 /** @returns {any[]} */
 export function defaultFrontElements() {
-  return [
-    { id: 'header',   type: 'text',     content: 'STÄDTISCHES GYMNASIUM MUSTERSTADT', x: 5,  y: 4,  scale: 1.0,  show: true, zIndex: 1, bold: true,  fontSize: 7.5 },
-    { id: 'address',  type: 'text',     content: 'Musterstraße 12, 12345 Musterstadt',  x: 30, y: 8,  scale: 0.8,  show: true, zIndex: 1, bold: false, fontSize: 6.5 },
-    { id: 'logo',     type: 'image',    content: '',                                    x: 68, y: 12, scale: 1.0,  show: true, zIndex: 2, width: 12,  height: 12 },
-    { id: 'photo',    type: 'photo',    content: '',                                    x: 5,  y: 12, scale: 1.0,  show: true, zIndex: 2 },
-    { id: 'name',     type: 'name',     content: '',                                    x: 30, y: 14, scale: 1.1,  show: true, zIndex: 1, bold: true,  fontSize: 9 },
-    { id: 'details',  type: 'details',  content: '',                                    x: 30, y: 21, scale: 0.9,  show: true, zIndex: 1, bold: false, fontSize: 7.5 },
-    { id: 'validity', type: 'validity', content: '',                                    x: 30, y: 27, scale: 0.85, show: true, zIndex: 1, bold: false, fontSize: 7 },
-    { id: 'barcode',  type: 'barcode',  content: '',                                    x: 30, y: 34, scale: 0.8,  show: true, zIndex: 1 },
-  ];
+	return [
+		{
+			id: 'header',
+			type: 'text',
+			content: 'STÄDTISCHES GYMNASIUM MUSTERSTADT',
+			x: 5,
+			y: 4,
+			scale: 1.0,
+			show: true,
+			zIndex: 1,
+			bold: true,
+			fontSize: 7.5
+		},
+		{
+			id: 'address',
+			type: 'text',
+			content: 'Musterstraße 12, 12345 Musterstadt',
+			x: 30,
+			y: 8,
+			scale: 0.8,
+			show: true,
+			zIndex: 1,
+			bold: false,
+			fontSize: 6.5
+		},
+		{
+			id: 'logo',
+			type: 'image',
+			content: '',
+			x: 68,
+			y: 12,
+			scale: 1.0,
+			show: true,
+			zIndex: 2,
+			width: 12,
+			height: 12
+		},
+		{ id: 'photo', type: 'photo', content: '', x: 5, y: 12, scale: 1.0, show: true, zIndex: 2 },
+		{
+			id: 'name',
+			type: 'name',
+			content: '',
+			x: 30,
+			y: 14,
+			scale: 1.1,
+			show: true,
+			zIndex: 1,
+			bold: true,
+			fontSize: 9
+		},
+		{
+			id: 'details',
+			type: 'details',
+			content: '',
+			x: 30,
+			y: 21,
+			scale: 0.9,
+			show: true,
+			zIndex: 1,
+			bold: false,
+			fontSize: 7.5
+		},
+		{
+			id: 'validity',
+			type: 'validity',
+			content: '',
+			x: 30,
+			y: 27,
+			scale: 0.85,
+			show: true,
+			zIndex: 1,
+			bold: false,
+			fontSize: 7
+		},
+		{ id: 'barcode', type: 'barcode', content: '', x: 30, y: 34, scale: 0.8, show: true, zIndex: 1 }
+	];
 }
 
 /** @returns {any[]} */
 export function defaultBackElements() {
-  return [
-    { id: 'back-header',        type: 'text',  content: 'STÄDTISCHE SCHULBIBLIOTHEK',                             x: 5,  y: 8,  scale: 1.0, show: true, zIndex: 1, bold: true,  fontSize: 7.5 },
-    { id: 'back-info',          type: 'text',  content: 'Bitte bei Verlust abgeben an\nHauptschule · Bibliothek', x: 5,  y: 18, scale: 1.0, show: true, zIndex: 1, bold: false, fontSize: 6.5 },
-    { id: 'back-sponsor-label', type: 'text',  content: 'Mit freundlicher Unterstützung von:',                   x: 5,  y: 35, scale: 1.0, show: true, zIndex: 1, bold: false, fontSize: 6   },
-    { id: 'back-sponsor-logo',  type: 'image', content: '',                                                       x: 32, y: 40, scale: 1.0, show: true, zIndex: 2, width: 20,   height: 10   },
-  ];
+	return [
+		{
+			id: 'back-header',
+			type: 'text',
+			content: 'STÄDTISCHE SCHULBIBLIOTHEK',
+			x: 5,
+			y: 8,
+			scale: 1.0,
+			show: true,
+			zIndex: 1,
+			bold: true,
+			fontSize: 7.5
+		},
+		{
+			id: 'back-info',
+			type: 'text',
+			content: 'Bitte bei Verlust abgeben an\nHauptschule · Bibliothek',
+			x: 5,
+			y: 18,
+			scale: 1.0,
+			show: true,
+			zIndex: 1,
+			bold: false,
+			fontSize: 6.5
+		},
+		{
+			id: 'back-sponsor-label',
+			type: 'text',
+			content: 'Mit freundlicher Unterstützung von:',
+			x: 5,
+			y: 35,
+			scale: 1.0,
+			show: true,
+			zIndex: 1,
+			bold: false,
+			fontSize: 6
+		},
+		{
+			id: 'back-sponsor-logo',
+			type: 'image',
+			content: '',
+			x: 32,
+			y: 40,
+			scale: 1.0,
+			show: true,
+			zIndex: 2,
+			width: 20,
+			height: 10
+		}
+	];
 }
 
 export const idStore = $state({
-  /** @type {"code39" | "qr"} */
-  barcodeType: "code39",
+	/** @type {"code39" | "qr"} */
+	barcodeType: 'code39',
 
-  /** @type {"card" | "a4"} Scheckkarte (ID-1) is the mandatory default */
-  printMode: /** @type {"card"} */ ("card"),
+	/** @type {"card" | "a4"} Scheckkarte (ID-1) is the mandatory default */
+	printMode: /** @type {"card"} */ ('card'),
 
-  cardTheme: "bg-white text-black border-slate-200",
+	cardTheme: 'bg-white text-black border-slate-200',
 
-  layout: {
-    header:   { x: 5,  y: 4,  scale: 1.0,  show: true, text: "STÄDTISCHES GYMNASIUM MUSTERSTADT" },
-    address:  { x: 30, y: 8,  scale: 0.8,  show: true, text: "Musterstraße 12, 12345 Musterstadt" },
-    logo:     { x: 68, y: 12, scale: 1.0,  show: true, url: "" },
-    photo:    { x: 5,  y: 12, scale: 1.0,  show: true },
-    name:     { x: 30, y: 14, scale: 1.1,  show: true },
-    details:  { x: 30, y: 21, scale: 0.9,  show: true },
-    validity: { x: 30, y: 27, scale: 0.85, show: true },
-    barcode:  { x: 30, y: 34, scale: 0.8,  show: true },
-  },
+	layout: {
+		header: { x: 5, y: 4, scale: 1.0, show: true, text: 'STÄDTISCHES GYMNASIUM MUSTERSTADT' },
+		address: { x: 30, y: 8, scale: 0.8, show: true, text: 'Musterstraße 12, 12345 Musterstadt' },
+		logo: { x: 68, y: 12, scale: 1.0, show: true, url: '' },
+		photo: { x: 5, y: 12, scale: 1.0, show: true },
+		name: { x: 30, y: 14, scale: 1.1, show: true },
+		details: { x: 30, y: 21, scale: 0.9, show: true },
+		validity: { x: 30, y: 27, scale: 0.85, show: true },
+		barcode: { x: 30, y: 34, scale: 0.8, show: true }
+	},
 
-  front: {
-    elements: defaultFrontElements(),
-    theme: "bg-white text-black border-slate-200"
-  },
+	front: {
+		elements: defaultFrontElements(),
+		theme: 'bg-white text-black border-slate-200'
+	},
 
-  back: {
-    elements: defaultBackElements(),
-    theme: "bg-slate-50 text-slate-900 border-slate-200"
-  }
+	back: {
+		elements: defaultBackElements(),
+		theme: 'bg-slate-50 text-slate-900 border-slate-200'
+	}
 });

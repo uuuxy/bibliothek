@@ -1,18 +1,18 @@
-import { apiFetch, apiClient } from "../../lib/apiFetch.js";
-import { toastStore } from "../../lib/stores/toastStore.svelte.js";
+import { apiFetch, apiClient } from '../../lib/apiFetch.js';
+import { toastStore } from '../../lib/stores/toastStore.svelte.js';
 // src/lib/store.svelte.js
 
 /** @type {{ searchQuery: string, selectedBook: any, activeBookId: string | null, isSidebarOpen: boolean, adminAuthenticated: boolean, guestAuthenticated: boolean, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
 export const appState = $state({
-    searchQuery: '',
-    selectedBook: null,
-    activeBookId: null,
-    isSidebarOpen: true,
-    adminAuthenticated: false,
-    guestAuthenticated: false,
-    triggerStudentScan: '',
-    bookToEdit: null,
-    requestAdminView: false
+	searchQuery: '',
+	selectedBook: null,
+	activeBookId: null,
+	isSidebarOpen: true,
+	adminAuthenticated: false,
+	guestAuthenticated: false,
+	triggerStudentScan: '',
+	bookToEdit: null,
+	requestAdminView: false
 });
 
 /**
@@ -23,18 +23,18 @@ export const appState = $state({
  * @param {'success' | 'error' | 'info'} [type='success']
  */
 export function showToast(message, type = 'success') {
-    toastStore.addToast(message, type);
+	toastStore.addToast(message, type);
 }
 
 export async function logout() {
-    appState.adminAuthenticated = false;
-    appState.guestAuthenticated = false;
+	appState.adminAuthenticated = false;
+	appState.guestAuthenticated = false;
 
-    try {
-        await apiFetch('/api/auth/logout', {
-            method: 'POST'
-        });
-    } catch {
-        // UI-State wurde bereits zurückgesetzt
-    }
+	try {
+		await apiFetch('/api/auth/logout', {
+			method: 'POST'
+		});
+	} catch {
+		// UI-State wurde bereits zurückgesetzt
+	}
 }

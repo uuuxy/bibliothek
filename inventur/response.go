@@ -11,7 +11,7 @@ import (
 func writeJSON(writer http.ResponseWriter, status int, payload any) {
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(status)
-	_ = json.NewEncoder(writer).Encode(payload)
+	_ = json.NewEncoder(writer).Encode(payload) //nolint:errcheck
 }
 
 func writeError(writer http.ResponseWriter, status int, message string) {

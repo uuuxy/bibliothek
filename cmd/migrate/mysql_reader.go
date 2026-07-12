@@ -48,7 +48,7 @@ func readMySQLTitles(db *sql.DB) ([]mysqlMedium, error) {
 	if err != nil {
 		return nil, fmt.Errorf("mysql query: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer func() { _ = rows.Close() }()  //nolint:errcheck
 
 	var results []mysqlMedium
 	for rows.Next() {

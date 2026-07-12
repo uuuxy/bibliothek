@@ -2,6 +2,18 @@
 # Hinweis: In v2 ist gosimple in staticcheck integriert; ein separater Eintrag
 # entfällt. "disable-all: true" heißt jetzt "default: none".
 version: "2"
+issues:
+  exclude-dirs:
+    - frontend
+    - node_modules
+  exclude-rules:
+    - path: ".*node_modules.*"
+      linters:
+        - errcheck
+        - govet
+        - staticcheck
+        - ineffassign
+        - unused
 linters:
   default: none
   enable:

@@ -3,9 +3,7 @@
 </script>
 
 <div class="relative group">
-	<div
-		class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none"
-	>
+	<div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
 		<svg
 			class="h-6 w-6 text-slate-400 group-focus-within:text-emerald-500 transition-colors duration-200"
 			fill="none"
@@ -30,16 +28,11 @@
 	{#if searchQuery}
 		<button
 			type="button"
-			onclick={() => (searchQuery = "")}
+			onclick={() => (searchQuery = '')}
 			class="absolute inset-y-0 right-0 pr-5 flex items-center text-slate-400 hover:text-emerald-500 transition-colors duration-200 focus:outline-none"
 			aria-label="Suche löschen"
 		>
-			<svg
-				class="h-6 w-6"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-			>
+			<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
 					stroke-linecap="round"
 					stroke-linejoin="round"
@@ -50,4 +43,3 @@
 		</button>
 	{/if}
 </div>
-

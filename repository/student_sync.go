@@ -40,61 +40,13 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 	defer db.SafeRollback(ctx, tx)
 
 	// 1. Massen-Update mit pgx und UNNEST durchführen (reduziert Roundtrips drastisch)
-	if len(updates) > 0 {
-		var updID, updVorname, updNach, updKlasse []string
-		var updGeb, updLusd []*string
-
-		for _, u := range updates {
-			updID = append(updID, u.ID)
-			updVorname = append(updVorname, u.Vorname)
-			updNach = append(updNach, u.Nachname)
-			updKlasse = append(updKlasse, u.Klasse)
-			updGeb = append(updGeb, u.Geburtsdatum)
-			updLusd = append(updLusd, u.LusdID)
-		}
-
-		qUpdate := `
-			UPDATE schueler s
-			SET vorname = d.vorname,
-				nachname = d.nachname,
-				klasse = d.klasse,
-				geburtsdatum = d.geburtsdatum::date,
-				ist_abgaenger = false,
-				aktualisiert_am = CURRENT_TIMESTAMP,
-				lusd_id = COALESCE(d.lusd_id, s.lusd_id)
-			FROM (
-				SELECT * FROM UNNEST($1::uuid[], $2::varchar[], $3::varchar[], $4::varchar[], $5::varchar[], $6::varchar[])
-				AS u(id, vorname, nachname, klasse, geburtsdatum, lusd_id)
-			) d
-			WHERE s.id = d.id
-		`
-		_, err = tx.Exec(ctx, qUpdate, updID, updVorname, updNach, updKlasse, updGeb, updLusd)
-		if err != nil {
-			return 0, err
-		}
+	if err := bulkUpdateSchueler(ctx, tx, updates); err != nil {
+		return 0, err
 	}
 
 	// 2. Massen-Insert per CopyFrom durchführen
-	if len(inserts) > 0 {
-		var copyRows [][]any
-		for _, i := range inserts {
-			var geb any = nil
-			if i.Geburtsdatum != nil {
-				geb = *i.Geburtsdatum
-			}
-			copyRows = append(copyRows, []any{
-				i.BarcodeID, i.Vorname, i.Nachname, i.Klasse, geb, i.AbgaengerJahr, i.LusdID, i.IstAbgaenger,
-			})
-		}
-		_, err = tx.CopyFrom(
-			ctx,
-			pgx.Identifier{"schueler"},
-			[]string{"barcode_id", "vorname", "nachname", "klasse", "geburtsdatum", "abgaenger_jahr", "lusd_id", "ist_abgaenger"},
-			pgx.CopyFromRows(copyRows),
-		)
-		if err != nil {
-			return 0, err
-		}
+	if err := bulkInsertSchueler(ctx, tx, inserts); err != nil {
+		return 0, err
 	}
 
 	// 3. Alle Schüler als Abgänger markieren, die eine LUSD-ID besitzen, aber nicht mehr in der aktuellen Importdatei enthalten sind
@@ -138,4 +90,66 @@ func (r *pgStudentRepository) BulkSyncLUSD(ctx context.Context, updates []Studen
 	}
 
 	return abgaengerOpenCount, tx.Commit(ctx)
+}
+
+// bulkUpdateSchueler aktualisiert bestehende Schüler in einem UNNEST-Massen-UPDATE.
+func bulkUpdateSchueler(ctx context.Context, tx pgx.Tx, updates []StudentUpdate) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	var updID, updVorname, updNach, updKlasse []string
+	var updGeb, updLusd []*string
+	for _, u := range updates {
+		updID = append(updID, u.ID)
+		updVorname = append(updVorname, u.Vorname)
+		updNach = append(updNach, u.Nachname)
+		updKlasse = append(updKlasse, u.Klasse)
+		updGeb = append(updGeb, u.Geburtsdatum)
+		updLusd = append(updLusd, u.LusdID)
+	}
+
+	qUpdate := `
+		UPDATE schueler s
+		SET vorname = d.vorname,
+			nachname = d.nachname,
+			klasse = d.klasse,
+			geburtsdatum = d.geburtsdatum::date,
+			ist_abgaenger = false,
+			aktualisiert_am = CURRENT_TIMESTAMP,
+			lusd_id = COALESCE(d.lusd_id, s.lusd_id)
+		FROM (
+			SELECT * FROM UNNEST($1::uuid[], $2::varchar[], $3::varchar[], $4::varchar[], $5::varchar[], $6::varchar[])
+			AS u(id, vorname, nachname, klasse, geburtsdatum, lusd_id)
+		) d
+		WHERE s.id = d.id
+	`
+	_, err := tx.Exec(ctx, qUpdate, updID, updVorname, updNach, updKlasse, updGeb, updLusd)
+	return err
+}
+
+// bulkInsertSchueler fügt neue Schüler per CopyFrom ein.
+func bulkInsertSchueler(ctx context.Context, tx pgx.Tx, inserts []StudentInsert) error {
+	if len(inserts) == 0 {
+		return nil
+	}
+
+	var copyRows [][]any
+	for _, i := range inserts {
+		var geb any = nil
+		if i.Geburtsdatum != nil {
+			geb = *i.Geburtsdatum
+		}
+		copyRows = append(copyRows, []any{
+			i.BarcodeID, i.Vorname, i.Nachname, i.Klasse, geb, i.AbgaengerJahr, i.LusdID, i.IstAbgaenger,
+		})
+	}
+
+	_, err := tx.CopyFrom(
+		ctx,
+		pgx.Identifier{"schueler"},
+		[]string{"barcode_id", "vorname", "nachname", "klasse", "geburtsdatum", "abgaenger_jahr", "lusd_id", "ist_abgaenger"},
+		pgx.CopyFromRows(copyRows),
+	)
+	return err
 }

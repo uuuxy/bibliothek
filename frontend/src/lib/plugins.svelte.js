@@ -8,7 +8,7 @@ export const studentTabExtensions = $state([]);
  * @param {any} [props] - Optional props object to pass to the component
  */
 export function registerSidebarExtension(component, props = {}) {
-  sidebarExtensions.push({ component, props });
+	sidebarExtensions.push({ component, props });
 }
 
 /**
@@ -18,5 +18,5 @@ export function registerSidebarExtension(component, props = {}) {
  * @param {any} [props] - Optional props object to pass to the component
  */
 export function registerStudentTabExtension(name, component, props = {}) {
-  studentTabExtensions.push({ name, component, props });
+	studentTabExtensions.push({ name, component, props });
 }

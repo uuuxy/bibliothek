@@ -15,11 +15,11 @@ const CLEANUP = `
 `;
 
 test('Massendaten: 2.000 Schüler + 50.000 Ausleihen — UI bleibt bedienbar', async ({ page }) => {
-    test.setTimeout(120000);
-    seedSQL(CLEANUP); // Reste eines abgebrochenen Laufs wegräumen
+	test.setTimeout(120000);
+	seedSQL(CLEANUP); // Reste eines abgebrochenen Laufs wegräumen
 
-    try {
-        seedSQL(`
+	try {
+		seedSQL(`
             INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
             SELECT 'Mass', 'Schueler' || i, lpad((5 + i % 9)::text, 2, '0') || chr(97 + i % 4),
                    'MASS-S-' || i, 2030
@@ -65,19 +65,21 @@ test('Massendaten: 2.000 Schüler + 50.000 Ausleihen — UI bleibt bedienbar', a
             CROSS JOIN b;
         `);
 
-        await uiLogin(page);
+		await uiLogin(page);
 
-        // Schülerdatei: öffnet und die Suche findet einen konkreten Schüler
-        await page.getByTitle('Schülerdatei').click();
-        const suche = page.getByPlaceholder('Nach Name, Klasse oder Barcode filtern...');
-        await expect(suche).toBeVisible({ timeout: 15000 });
-        await suche.fill('Schueler1234');
-        await expect(page.getByText('Schueler1234').first()).toBeVisible({ timeout: 15000 });
+		// Schülerdatei: öffnet und die Suche findet einen konkreten Schüler
+		await page.getByTitle('Schülerdatei').click();
+		const suche = page.getByPlaceholder('Nach Name, Klasse oder Barcode filtern...');
+		await expect(suche).toBeVisible({ timeout: 15000 });
+		await suche.fill('Schueler1234');
+		await expect(page.getByText('Schueler1234').first()).toBeVisible({ timeout: 15000 });
 
-        // Mahnwesen: lädt trotz 50k-Historie und zeigt die überfälligen Schüler
-        await page.getByTitle('Mahnwesen').click();
-        await expect(page.getByRole('row', { name: /Mass Schueler/ }).first()).toBeVisible({ timeout: 15000 });
-    } finally {
-        seedSQL(CLEANUP);
-    }
+		// Mahnwesen: lädt trotz 50k-Historie und zeigt die überfälligen Schüler
+		await page.getByTitle('Mahnwesen').click();
+		await expect(page.getByRole('row', { name: /Mass Schueler/ }).first()).toBeVisible({
+			timeout: 15000
+		});
+	} finally {
+		seedSQL(CLEANUP);
+	}
 });

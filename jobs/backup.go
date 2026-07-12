@@ -135,7 +135,7 @@ func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok
 		log.Printf("Backup: konnte pgpass-Datei nicht erstellen: %v", err)
 		return nil, false
 	}
-	defer func() { _ = os.Remove(passFile.Name()) }()
+	defer func() { _ = os.Remove(passFile.Name()) }() //nolint:errcheck
 
 	port := fmt.Sprintf("%d", config.Port)
 	if port == "0" {
@@ -150,11 +150,11 @@ func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok
 		escapePgPass(config.Password),
 	)
 	if _, err := passFile.WriteString(pgPassLine); err != nil {
-		_ = passFile.Close()
+		_ = passFile.Close() //nolint:errcheck
 		log.Printf("Backup: konnte in pgpass-Datei nicht schreiben: %v", err)
 		return nil, false
 	}
-	_ = passFile.Close()
+	_ = passFile.Close() //nolint:errcheck
 
 	// #nosec G204 - arguments are derived from securely parsed DSN configuration
 	pgDump := exec.CommandContext(ctx, "pg_dump",

@@ -61,7 +61,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("gzip-header ungültig (kein gültiges Backup?): %w", err)
 	}
-	defer func() { _ = gz.Close() }()
+	defer func() { _ = gz.Close() }() //nolint:errcheck
 
 	// 3. Ziel bestimmen: Datei oder stdout (für `| psql`).
 	var out io.Writer = os.Stdout
@@ -70,7 +70,7 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("ausgabedatei %q konnte nicht erstellt werden: %w", args[1], err)
 		}
-		defer func() { _ = f.Close() }()
+		defer func() { _ = f.Close() }() //nolint:errcheck
 		out = f
 	}
 

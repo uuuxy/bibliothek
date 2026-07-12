@@ -39,13 +39,13 @@
 		onDragOver,
 		onDragLeave,
 		onDrop,
-		onDragEnd,
+		onDragEnd
 	} = $props();
 
 	/** @type {string[]} */
 	let coverCandidates = $state([]);
 	let currentCandidateIndex = $state(0);
-	let coverSrc = $derived(coverCandidates[currentCandidateIndex] || "");
+	let coverSrc = $derived(coverCandidates[currentCandidateIndex] || '');
 	let coverFailed = $state(false);
 
 	$effect(() => {
@@ -54,8 +54,10 @@
 			candidates.push(book.coverUrl);
 		}
 		if (book?.isbn) {
-			const cleanIsbn = book.isbn.replace(/[- ]/g, "");
-			candidates.push(`https://books.google.com/books/content?id=&vid=ISBN:${cleanIsbn}&printsec=frontcover&img=1&zoom=1`);
+			const cleanIsbn = book.isbn.replace(/[- ]/g, '');
+			candidates.push(
+				`https://books.google.com/books/content?id=&vid=ISBN:${cleanIsbn}&printsec=frontcover&img=1&zoom=1`
+			);
 			candidates.push(`https://covers.openlibrary.org/b/isbn/${cleanIsbn}-S.jpg`);
 		}
 		coverCandidates = candidates;
@@ -82,9 +84,9 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <tr
-	class="group transition-colors cursor-pointer border-b border-slate-100 text-slate-700 hover:bg-slate-50/50 {dragOverIndex === index
+	class="group transition-colors cursor-pointer border-b border-slate-100 text-slate-700 hover:bg-slate-50/50 {dragOverIndex ===
+	index
 		? 'border-t-2 border-blue-500 bg-blue-50/30'
 		: ''}"
 	draggable="true"
@@ -103,12 +105,7 @@
 				viewBox="0 0 24 24"
 				stroke="currentColor"
 			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M4 8h16M4 16h16"
-				/>
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
 			</svg>
 			<input
 				type="checkbox"
@@ -181,7 +178,7 @@
 			<span
 				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100 text-slate-500 text-xs font-medium"
 			>
-				{new Date(book.lastCounted).toLocaleDateString("de-DE")}
+				{new Date(book.lastCounted).toLocaleDateString('de-DE')}
 			</span>
 		{:else}
 			<span class="text-slate-350 text-xs">-</span>
@@ -205,13 +202,7 @@
 			viewBox="0 0 24 24"
 			stroke="currentColor"
 		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d="M9 5l7 7-7 7"
-			/>
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 		</svg>
 	</td>
 </tr>
-

@@ -1,0 +1,6 @@
+# Gitleaks Ignore File
+# Ignore dummy test JWT secret in middleware test
+2a01577ad72baa2e538e66a15e3b74b8046a500b:api/permission_middleware_test.go:generic-api-key:17
+
+# Ignore dummy JWT in scan scripts
+e03beb6f567ab08e4bffafff5685e9949825c005:security-scan.sh:jwt:20

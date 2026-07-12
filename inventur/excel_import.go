@@ -25,7 +25,7 @@ func extractImportRows(w http.ResponseWriter, request *http.Request) ([][]string
 	if err != nil {
 		return nil, errors.New("keine datei gefunden")
 	}
-	defer func() { _ = file.Close() }()
+	defer func() { _ = file.Close() }()  //nolint:errcheck
 
 	if strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
 		return parseCSVRows(file)
@@ -63,7 +63,7 @@ func parseExcelRows(file io.Reader) ([][]string, error) {
 	if err != nil {
 		return nil, errors.New("ungültige excel-datei")
 	}
-	defer func() { _ = f.Close() }()
+	defer func() { _ = f.Close() }()  //nolint:errcheck
 
 	sheets := f.GetSheetList()
 	if len(sheets) == 0 {

@@ -1,13 +1,8 @@
 <script>
-	import { onMount, onDestroy } from "svelte";
-	import { createBarcodeDetector } from "$lib/components/scanner/barcode_detector.js";
+	import { onMount, onDestroy } from 'svelte';
+	import { createBarcodeDetector } from '$lib/components/scanner/barcode_detector.js';
 
-	let {
-		onDecode,
-		onStatusChange,
-		showControls = true,
-		scanning = $bindable(false),
-	} = $props();
+	let { onDecode, onStatusChange, showControls = true, scanning = $bindable(false) } = $props();
 
 	/** @type {HTMLVideoElement|null} */
 	let videoEl = $state(null);
@@ -18,7 +13,7 @@
 	/** @type {any} */
 	let detector = null;
 	let starting = false;
-	let lastDecoded = "";
+	let lastDecoded = '';
 	let lastDecodeTime = 0;
 
 	// Cooldown: gleichen Code nicht doppelt innerhalb von 3 Sekunden melden
@@ -39,9 +34,7 @@
 		try {
 			const detectorResult = await createBarcodeDetector();
 			if (!detectorResult) {
-				onStatusChange(
-					"Barcode-Erkennung wird von diesem Browser nicht unterstützt.",
-				);
+				onStatusChange('Barcode-Erkennung wird von diesem Browser nicht unterstützt.');
 				return;
 			}
 			detector = detectorResult.detector;
@@ -49,11 +42,11 @@
 			// Kamera-Stream starten
 			stream = await navigator.mediaDevices.getUserMedia({
 				video: {
-					facingMode: { ideal: "environment" },
+					facingMode: { ideal: 'environment' },
 					width: { ideal: 1280 },
-					height: { ideal: 720 },
+					height: { ideal: 720 }
 				},
-				audio: false,
+				audio: false
 			});
 
 			if (videoEl) {
@@ -62,12 +55,12 @@
 			}
 
 			scanning = true;
-			onStatusChange("Kamera aktiv. Barcode scannen.");
+			onStatusChange('Kamera aktiv. Barcode scannen.');
 
 			// Scan-Schleife starten
 			scanLoop();
 		} catch (error) {
-			console.error("Kamerafehler:", error);
+			console.error('Kamerafehler:', error);
 			const errMsg = error instanceof Error ? error.message : String(error);
 			onStatusChange(`Kamerafehler: ${errMsg}`);
 		} finally {
@@ -92,10 +85,7 @@
 					const now = Date.now();
 
 					// Cooldown prüfen: gleichen Code nicht doppelt melden
-					if (
-						code !== lastDecoded ||
-						now - lastDecodeTime > DECODE_COOLDOWN_MS
-					) {
+					if (code !== lastDecoded || now - lastDecodeTime > DECODE_COOLDOWN_MS) {
 						lastDecoded = code;
 						lastDecodeTime = now;
 						onDecode(code);
@@ -140,7 +130,6 @@
 <div
 	class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
 >
-	<!-- svelte-ignore element_invalid_self_closing_tag -->
 	<video
 		bind:this={videoEl}
 		autoplay
@@ -150,9 +139,7 @@
 	/>
 	<!-- Scan-Rahmen Overlay -->
 	{#if scanning}
-		<div
-			class="absolute inset-0 flex items-center justify-center pointer-events-none"
-		>
+		<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
 			<div
 				class="border-2 border-blue-500 rounded-lg opacity-60 animate-pulse"
 				style="width: 80%; height: 40%;"

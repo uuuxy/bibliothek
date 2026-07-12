@@ -8,7 +8,7 @@
  * @param {Date} d
  */
 export function localISO(d) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /**
@@ -16,6 +16,6 @@ export function localISO(d) {
  * @param {string} yyyyMM z. B. "2026-02"
  */
 export function lastOfMonth(yyyyMM) {
-    const [y, m] = yyyyMM.split("-").map(Number);
-    return localISO(new Date(y, m, 0));
+	const [y, m] = yyyyMM.split('-').map(Number);
+	return localISO(new Date(y, m, 0));
 }

@@ -84,7 +84,7 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		}
 
 		settingsRepo := repository.NewSystemSettingsRepository(dbPool)
-		settings, _ := settingsRepo.GetSettings(ctx)
+		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
 		schule := pdf.SchuleInfo{
 			Name:    settings.SchuleName,
 			Strasse: settings.SchuleStrasse,

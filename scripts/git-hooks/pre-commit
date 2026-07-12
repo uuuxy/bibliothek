@@ -1,0 +1,34 @@
+#!/bin/bash
+# pre-commit hook
+
+# Farben für Output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+echo "================================================"
+echo "⚡ PRE-COMMIT HOOK: Starte schnelle Code-Checks..."
+echo "================================================"
+
+# 1. ESLint (Frontend)
+echo "[1/2] Führe ESLint (Frontend) aus..."
+cd frontend || exit 1
+if npx eslint . --quiet; then
+    echo -e "${GREEN}✓ ESLint bestanden.${NC}"
+else
+    echo -e "${RED}✗ ESLint fehlgeschlagen! Bitte Fehler im Frontend beheben.${NC}"
+    exit 1
+fi
+cd ..
+
+# 2. golangci-lint (Backend)
+echo "[2/2] Führe golangci-lint (Backend) aus..."
+if golangci-lint run ./...; then
+    echo -e "${GREEN}✓ golangci-lint bestanden.${NC}"
+else
+    echo -e "${RED}✗ golangci-lint fehlgeschlagen! Bitte Fehler im Backend beheben.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Alle Pre-Commit Checks bestanden! Commit wird erstellt.${NC}"
+exit 0

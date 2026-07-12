@@ -51,6 +51,6 @@ func BenchmarkSaveSettings(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = repo.SaveSettings(ctx, settings)
+		_ = repo.SaveSettings(ctx, settings)  //nolint:errcheck
 	}
 }

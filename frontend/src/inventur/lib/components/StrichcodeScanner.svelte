@@ -1,20 +1,15 @@
 <script>
-	import { apiFetch, apiClient } from "../../../lib/apiFetch.js";
-	import IsbnLookupDialog from "$lib/components/IsbnLookupDialog.svelte";
-	import KameraScanner from "$lib/components/scanner/KameraScanner.svelte";
-	import ManualInput from "$lib/components/scanner/ManualInput.svelte";
-	import FileUploader from "$lib/components/scanner/FileUploader.svelte";
+	import { apiFetch, apiClient } from '../../../lib/apiFetch.js';
+	import IsbnLookupDialog from '$lib/components/IsbnLookupDialog.svelte';
+	import KameraScanner from '$lib/components/scanner/KameraScanner.svelte';
+	import ManualInput from '$lib/components/scanner/ManualInput.svelte';
+	import FileUploader from '$lib/components/scanner/FileUploader.svelte';
 
-	let {
-		subject = "Mathe",
-		gradeLevel = 5,
-		onClose = () => {},
-		onCreated = () => {},
-	} = $props();
-	let status = $state("Bereit zum Scannen.");
+	let { subject = 'Mathe', gradeLevel = 5, onClose = () => {}, onCreated = () => {} } = $props();
+	let status = $state('Bereit zum Scannen.');
 	let scanning = $state(false);
 	let busy = $state(false);
-	let lastCode = $state("");
+	let lastCode = $state('');
 	/** @type {any} */
 	let lookupData = $state(null);
 	/** @type {any} */
@@ -24,7 +19,7 @@
 	 * @param {string} value
 	 */
 	function normalizeISBN(value) {
-		return value.replace(/[^0-9Xx]/g, "").toUpperCase();
+		return value.replace(/[^0-9Xx]/g, '').toUpperCase();
 	}
 
 	/**
@@ -41,8 +36,7 @@
 	 */
 	async function submitISBN(raw) {
 		const isbn = normalizeISBN(raw);
-		if (isbn.length < 10 || isbn.length > 13 || isbn === lastCode || busy)
-			return;
+		if (isbn.length < 10 || isbn.length > 13 || isbn === lastCode || busy) return;
 		lastCode = isbn;
 		busy = true;
 		status = `ISBN erkannt: ${isbn}`;
@@ -54,17 +48,17 @@
 			if (!res.ok) throw new Error();
 			const payload = await res.json();
 			lookupData = payload.data;
-			status = "Metadaten geladen. Bitte prüfen und speichern.";
+			status = 'Metadaten geladen. Bitte prüfen und speichern.';
 		} catch {
 			lookupData = {
 				isbn,
-				title: "",
-				author: "",
-				coverUrl: "",
+				title: '',
+				author: '',
+				coverUrl: '',
 				subject,
-				grade: String(gradeLevel),
+				grade: String(gradeLevel)
 			};
-			status = "Keine Metadaten gefunden. Bitte manuell ergänzen.";
+			status = 'Keine Metadaten gefunden. Bitte manuell ergänzen.';
 		} finally {
 			busy = false;
 		}
@@ -76,36 +70,34 @@
 	async function saveBook(payload) {
 		busy = true;
 		try {
-			const res = await apiFetch("/api/books", {
-				method: "POST",
-				credentials: "include",
+			const res = await apiFetch('/api/books', {
+				method: 'POST',
+				credentials: 'include',
 				headers: /** @type {HeadersInit} */ ({
-					"Content-Type": "application/json",
+					'Content-Type': 'application/json'
 				}),
-				body: JSON.stringify(payload),
+				body: JSON.stringify(payload)
 			});
-			let errorMessage = "";
+			let errorMessage = '';
 			if (!res.ok) {
 				const body = await res.json().catch(() => null);
-				errorMessage = body?.error ?? "";
+				errorMessage = body?.error ?? '';
 			}
-			if (res.status === 401) throw new Error("unauthorized");
-			if (!res.ok) throw new Error(errorMessage || "request_failed");
+			if (res.status === 401) throw new Error('unauthorized');
+			if (!res.ok) throw new Error(errorMessage || 'request_failed');
 			status = `Buch ${payload.isbn} wurde gespeichert.`;
 			lookupData = null;
-			lastCode = "";
+			lastCode = '';
 			onCreated(payload.isbn);
 			if (cameraCmp) await cameraCmp.startScanner();
 		} catch (error) {
 			const err = /** @type {any} */ (error);
-			if (err?.message === "unauthorized") {
-				status =
-					"401 Unauthorized: Admin-Token ist falsch oder abgelaufen.";
-			} else if (err?.message && err?.message !== "request_failed") {
+			if (err?.message === 'unauthorized') {
+				status = '401 Unauthorized: Admin-Token ist falsch oder abgelaufen.';
+			} else if (err?.message && err?.message !== 'request_failed') {
 				status = `Speichern fehlgeschlagen: ${err.message}`;
 			} else {
-				status =
-					"Speichern fehlgeschlagen. Bitte Daten und API prüfen.";
+				status = 'Speichern fehlgeschlagen. Bitte Daten und API prüfen.';
 			}
 		} finally {
 			busy = false;
@@ -114,8 +106,8 @@
 
 	async function cancelLookup() {
 		lookupData = null;
-		status = "Erfassung abgebrochen.";
-		lastCode = "";
+		status = 'Erfassung abgebrochen.';
+		lastCode = '';
 		if (cameraCmp) await cameraCmp.startScanner();
 	}
 
@@ -130,9 +122,7 @@
 >
 	<div class="mb-4 flex items-start justify-between gap-3">
 		<div>
-			<h3 class="text-lg font-bold text-slate-900">
-				ISBN-Scanner
-			</h3>
+			<h3 class="text-lg font-bold text-slate-900">ISBN-Scanner</h3>
 			<p class="mt-1.5 text-sm text-slate-500 font-medium">
 				{status}
 			</p>
@@ -171,16 +161,12 @@
 
 	<FileUploader
 		onDecode={submitISBN}
-		onStatusChange={(/** @type {string} */ msg, /** @type {boolean} */ isBusy) => handleStatusChange(msg, isBusy)}
+		onStatusChange={(/** @type {string} */ msg, /** @type {boolean} */ isBusy) =>
+			handleStatusChange(msg, isBusy)}
 		disabled={busy}
 	/>
 </div>
 
 {#if lookupData}
-	<IsbnLookupDialog
-		data={lookupData}
-		{busy}
-		onCancel={cancelLookup}
-		onSave={saveBook}
-	/>
+	<IsbnLookupDialog data={lookupData} {busy} onCancel={cancelLookup} onSave={saveBook} />
 {/if}

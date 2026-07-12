@@ -100,7 +100,7 @@ func (bm *BackupManager) runBackup() {
 
 	if err := bm.dumpDatabase(backupPath); err != nil {
 		log.Printf("Backup FEHLER: Datenbank-Dump fehlgeschlagen: %v", err)
-		_ = os.RemoveAll(backupPath)
+		_ = os.RemoveAll(backupPath)  //nolint:errcheck
 		return
 	}
 

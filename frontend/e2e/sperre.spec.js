@@ -7,67 +7,69 @@ import { uiLogin, apiPost, apiPatch, seedSQL, uniqueSuffix } from './helpers.js'
  * beim Buch-Scan — der Server antwortet dann mit 403 „Manuelle Sperre".
  */
 async function openBlockedStudent(page, suffix) {
-    const studentBarcode = `S-${suffix}`;
-    const bookBarcode = `B-${suffix}`;
-    const bookTitle = `E2E-Sperrbuch-${suffix}`;
+	const studentBarcode = `S-${suffix}`;
+	const bookBarcode = `B-${suffix}`;
+	const bookTitle = `E2E-Sperrbuch-${suffix}`;
 
-    // Schüler anlegen und manuell sperren (gleicher Endpoint wie StudentLockModal)
-    const created = await apiPost(page, '/api/schueler', {
-        vorname: 'E2E',
-        nachname: `Gesperrt-${suffix}`,
-        klasse: '7B',
-        barcode_id: studentBarcode,
-    });
-    expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
-    const { id: studentId } = await created.json();
+	// Schüler anlegen und manuell sperren (gleicher Endpoint wie StudentLockModal)
+	const created = await apiPost(page, '/api/schueler', {
+		vorname: 'E2E',
+		nachname: `Gesperrt-${suffix}`,
+		klasse: '7B',
+		barcode_id: studentBarcode
+	});
+	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
+	const { id: studentId } = await created.json();
 
-    const locked = await apiPatch(page, `/api/admin/students/${studentId}/lock`, { is_locked: true });
-    expect(locked.ok(), `Sperren: ${locked.status()}`).toBeTruthy();
+	const locked = await apiPatch(page, `/api/admin/students/${studentId}/lock`, { is_locked: true });
+	expect(locked.ok(), `Sperren: ${locked.status()}`).toBeTruthy();
 
-    // Ausleihbares Buch-Exemplar seeden (kein einfacher API-Weg vorhanden)
-    seedSQL(`
+	// Ausleihbares Buch-Exemplar seeden (kein einfacher API-Weg vorhanden)
+	seedSQL(`
         WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('${bookTitle}') RETURNING id)
         INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
         SELECT id, '${bookBarcode}', true FROM t;
     `);
 
-    // Ausleihe: Schüler scannen → Profil öffnet sich
-    await page.getByTitle('Ausleihe').click();
-    const scanInput = page.getByPlaceholder(/scannen/i).first();
-    await scanInput.fill(studentBarcode);
-    await scanInput.press('Enter');
-    await expect(page.getByText(`Gesperrt-${suffix}`).first()).toBeVisible();
+	// Ausleihe: Schüler scannen → Profil öffnet sich
+	await page.getByTitle('Ausleihe').click();
+	const scanInput = page.getByPlaceholder(/scannen/i).first();
+	await scanInput.fill(studentBarcode);
+	await scanInput.press('Enter');
+	await expect(page.getByText(`Gesperrt-${suffix}`).first()).toBeVisible();
 
-    // Buch scannen → 403 „Manuelle Sperre" → Block-Alert-Modal
-    const bookInput = page.getByPlaceholder(/scannen/i).first();
-    await bookInput.fill(bookBarcode);
-    await bookInput.press('Enter');
-    await expect(page.getByRole('heading', { name: 'Ausleihe blockiert' })).toBeVisible();
+	// Buch scannen → 403 „Manuelle Sperre" → Block-Alert-Modal
+	const bookInput = page.getByPlaceholder(/scannen/i).first();
+	await bookInput.fill(bookBarcode);
+	await bookInput.press('Enter');
+	await expect(page.getByRole('heading', { name: 'Ausleihe blockiert' })).toBeVisible();
 
-    return { bookTitle };
+	return { bookTitle };
 }
 
 // Smoke-Flow Sperre: „Sperre dauerhaft aufheben" entsperrt (PATCH ans Backend)
 // und holt die abgebrochene Ausleihe automatisch nach. Der Button erscheint
 // nur, wenn is_manually_blocked am aktiven Schüler ankommt.
 test('Gesperrter Schüler: Block-Alert und Sperre aufheben', async ({ page }) => {
-    await uiLogin(page);
-    const { bookTitle } = await openBlockedStudent(page, uniqueSuffix());
+	await uiLogin(page);
+	const { bookTitle } = await openBlockedStudent(page, uniqueSuffix());
 
-    await page.getByRole('button', { name: 'Sperre dauerhaft aufheben' }).click();
-    await expect(page.getByRole('heading', { name: 'Ausleihe blockiert' })).not.toBeVisible();
+	await page.getByRole('button', { name: 'Sperre dauerhaft aufheben' }).click();
+	await expect(page.getByRole('heading', { name: 'Ausleihe blockiert' })).not.toBeVisible();
 
-    await expect(page.getByText(bookTitle).first()).toBeVisible();
+	await expect(page.getByText(bookTitle).first()).toBeVisible();
 });
 
 // Override-Pfad: „Einmalig ignorieren" lässt die Sperre bestehen, wiederholt
 // den Scan aber mit override_block — die Ausleihe läuft durch.
-test('Gesperrter Schüler: Einmalig ignorieren (Override) erlaubt die Ausleihe', async ({ page }) => {
-    await uiLogin(page);
-    const { bookTitle } = await openBlockedStudent(page, uniqueSuffix());
+test('Gesperrter Schüler: Einmalig ignorieren (Override) erlaubt die Ausleihe', async ({
+	page
+}) => {
+	await uiLogin(page);
+	const { bookTitle } = await openBlockedStudent(page, uniqueSuffix());
 
-    await page.getByRole('button', { name: 'Einmalig ignorieren (Override)' }).click();
-    await expect(page.getByRole('heading', { name: 'Ausleihe blockiert' })).not.toBeVisible();
+	await page.getByRole('button', { name: 'Einmalig ignorieren (Override)' }).click();
+	await expect(page.getByRole('heading', { name: 'Ausleihe blockiert' })).not.toBeVisible();
 
-    await expect(page.getByText(bookTitle).first()).toBeVisible();
+	await expect(page.getByText(bookTitle).first()).toBeVisible();
 });

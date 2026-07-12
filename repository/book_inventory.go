@@ -167,7 +167,7 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	if err != nil {
 		return 0, err
 	}
-	defer func() { _ = tx.Rollback(ctx) }() // No-op nach erfolgreichem Commit.
+	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck // No-op nach erfolgreichem Commit.
 
 	// 1. Bestand einmalig vorladen (isbn→id, titel→id).
 	rows, err := tx.Query(ctx, "SELECT id, COALESCE(isbn, ''), titel FROM buecher_titel")
@@ -250,7 +250,7 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	br := tx.SendBatch(ctx, batch)
 	for i := 0; i < queued; i++ {
 		if _, err := br.Exec(); err != nil {
-			_ = br.Close()
+			_ = br.Close()  //nolint:errcheck
 			return 0, err
 		}
 	}

@@ -1,94 +1,109 @@
 <script>
-  import { apiFetch, apiClient } from "./apiFetch.js";
-  import { onMount } from "svelte";
+	import { apiFetch, apiClient } from './apiFetch.js';
+	import { onMount } from 'svelte';
 
-  // State Runes
-  /** @type {any[]} */
-  let logs = $state.raw([]);
-  /** @type {string|null} */
-  let error = $state(null);
-  let loading = $state(true);
+	// State Runes
+	/** @type {any[]} */
+	let logs = $state.raw([]);
+	/** @type {string|null} */
+	let error = $state(null);
+	let loading = $state(true);
 
-  async function fetchLogs() {
-    loading = true;
-    error = null;
-    try {
-      const res = await apiFetch("/api/audit");
-      if (!res.ok) {
-        if (res.status === 403) {
-          throw new Error("Zugriff verweigert: Nur für System-Administratoren.");
-        }
-        const text = await res.text();
-        throw new Error(text || "Fehler beim Laden des Logbuchs");
-      }
-      logs = await res.json();
-    } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
-    } finally {
-      loading = false;
-    }
-  }
+	async function fetchLogs() {
+		loading = true;
+		error = null;
+		try {
+			const res = await apiFetch('/api/audit');
+			if (!res.ok) {
+				if (res.status === 403) {
+					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
+				}
+				const text = await res.text();
+				throw new Error(text || 'Fehler beim Laden des Logbuchs');
+			}
+			logs = await res.json();
+		} catch (err) {
+			error = err instanceof Error ? err.message : String(err);
+		} finally {
+			loading = false;
+		}
+	}
 
-  onMount(() => {
-    fetchLogs();
-  });
+	onMount(() => {
+		fetchLogs();
+	});
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print">
-  <div class="flex items-center justify-end">
-    <button onclick={fetchLogs} class="px-4 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">
-      🔄 Aktualisieren
-    </button>
-  </div>
+	<div class="flex items-center justify-end">
+		<button
+			onclick={fetchLogs}
+			class="px-4 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+		>
+			🔄 Aktualisieren
+		</button>
+	</div>
 
-  {#if loading}
-    <div class="p-12 text-center text-slate-400 font-medium animate-pulse">Lade Logbuch-Einträge...</div>
-  {:else if error}
-    <div class="p-6 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium">{error}</div>
-  {:else if logs.length === 0}
-    <div class="p-12 rounded-2xl border border-dashed border-slate-200 bg-white text-center text-slate-400">
-      <span class="text-2xl block mb-2">📜</span>
-      Keine Audit-Einträge vorhanden.
-    </div>
-  {:else}
-    <div class="w-full">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="border-b border-gray-200 text-sm font-semibold text-gray-500">
-              <th class="p-4.5">Zeitstempel</th>
-              <th class="p-4.5">Aktion</th>
-              <th class="p-4.5">Tabelle</th>
-              <th class="p-4.5">Datensatz-ID</th>
-              <th class="p-4.5">Bearbeiter (Operator)</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 text-base text-slate-600">
-            {#each logs as log}
-              <tr class="hover:bg-slate-50/50 transition-colors">
-                <td class="p-4.5 text-xs text-slate-500">
-                  {new Date(log.timestamp).toLocaleString("de-DE")}
-                </td>
-                <td class="p-4.5">
-                  <span class="inline-flex px-2 py-0.5 rounded-md text-xs font-bold bg-rose-50 border border-rose-100 text-rose-600">
-                    {log.aktion}
-                  </span>
-                </td>
-                <td class="p-4.5 text-xs text-emerald-600">
-                  {log.tabelle}
-                </td>
-                <td class="p-4.5 text-xs text-slate-400">
-                  {log.datensatz_id}
-                </td>
-                <td class="p-4.5">
-                  <span class="font-medium text-slate-700">{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span>
-                  <span class="block text-[10px] text-slate-400">{log.bearbeiter_id}</span>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {/if}
+	{#if loading}
+		<div class="p-12 text-center text-slate-400 font-medium animate-pulse">
+			Lade Logbuch-Einträge...
+		</div>
+	{:else if error}
+		<div
+			class="p-6 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium"
+		>
+			{error}
+		</div>
+	{:else if logs.length === 0}
+		<div
+			class="p-12 rounded-2xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
+		>
+			<span class="text-2xl block mb-2">📜</span>
+			Keine Audit-Einträge vorhanden.
+		</div>
+	{:else}
+		<div class="w-full">
+			<div class="overflow-x-auto">
+				<table class="w-full text-left border-collapse">
+					<thead>
+						<tr class="border-b border-gray-200 text-sm font-semibold text-gray-500">
+							<th class="p-4.5">Zeitstempel</th>
+							<th class="p-4.5">Aktion</th>
+							<th class="p-4.5">Tabelle</th>
+							<th class="p-4.5">Datensatz-ID</th>
+							<th class="p-4.5">Bearbeiter (Operator)</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100 text-base text-slate-600">
+						{#each logs as log, _i (_i)}
+							<tr class="hover:bg-slate-50/50 transition-colors">
+								<td class="p-4.5 text-xs text-slate-500">
+									{new Date(log.timestamp).toLocaleString('de-DE')}
+								</td>
+								<td class="p-4.5">
+									<span
+										class="inline-flex px-2 py-0.5 rounded-md text-xs font-bold bg-rose-50 border border-rose-100 text-rose-600"
+									>
+										{log.aktion}
+									</span>
+								</td>
+								<td class="p-4.5 text-xs text-emerald-600">
+									{log.tabelle}
+								</td>
+								<td class="p-4.5 text-xs text-slate-400">
+									{log.datensatz_id}
+								</td>
+								<td class="p-4.5">
+									<span class="font-medium text-slate-700"
+										>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
+									>
+									<span class="block text-[10px] text-slate-400">{log.bearbeiter_id}</span>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	{/if}
 </div>

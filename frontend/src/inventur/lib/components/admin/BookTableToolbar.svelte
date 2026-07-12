@@ -1,5 +1,5 @@
 <script>
-	import { appState } from "$lib/store.svelte.js";
+	import { appState } from '$lib/store.svelte.js';
 
 	/**
 	 * @type {{
@@ -11,8 +11,7 @@
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let { booksLength, selectedCount, onDelete, onScan, onCreateNew, onRetryCovers } =
-		$props();
+	let { booksLength, selectedCount, onDelete, onScan, onCreateNew, onRetryCovers } = $props();
 </script>
 
 <div
@@ -51,12 +50,7 @@
 				onclick={onDelete}
 				class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100/60 transition-colors cursor-pointer"
 			>
-				<svg
-					class="w-4 h-4"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
+				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -103,12 +97,7 @@
 			class="w-full sm:w-auto mt-2 sm:mt-0 justify-center flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
 		>
 			<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M12 4v16m8-8H4"
-				/>
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 			</svg>
 			Neues Buch
 		</button>

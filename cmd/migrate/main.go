@@ -55,7 +55,7 @@ func main() {
 	defer el.close()
 
 	mysqlDB := connectMySQL(ctx, mysqlDSN)
-	defer func() { _ = mysqlDB.Close() }()
+	defer func() { _ = mysqlDB.Close() }()  //nolint:errcheck
 
 	pgPool := connectPostgres(ctx, pgDSN)
 	defer pgPool.Close()

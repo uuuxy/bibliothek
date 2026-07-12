@@ -6,10 +6,10 @@
 /** @typedef {{ barcode_id: string, titel: string, autor?: string }} PrintCopy */
 
 export const printQueue = $state({
-    /** @type {PrintCopy[] | null} */
-    copies: null,
+	/** @type {PrintCopy[] | null} */
+	copies: null
 });
 
 export function clearPrintQueue() {
-    printQueue.copies = null;
+	printQueue.copies = null;
 }

@@ -15,24 +15,24 @@ export const ADMIN_PASSWORD = 'e2e-egal';
  * @param {string} [asEmail] anderer Benutzer (Mock-IMAP akzeptiert jedes Passwort)
  */
 export async function uiLogin(page, asEmail = ADMIN_EMAIL) {
-    await page.goto('/');
+	await page.goto('/');
 
-    const email = page.locator('#login-email');
-    const password = page.locator('#login-password');
+	const email = page.locator('#login-email');
+	const password = page.locator('#login-password');
 
-    // Erst fokussieren, dann füllen, dann verifizieren — die Svelte-Bindings
-    // rendern kurz nach dem Mount; ungeduldiges fill landet sonst im falschen Feld.
-    await email.click();
-    await email.fill(asEmail);
-    await password.click();
-    await password.fill(ADMIN_PASSWORD);
+	// Erst fokussieren, dann füllen, dann verifizieren — die Svelte-Bindings
+	// rendern kurz nach dem Mount; ungeduldiges fill landet sonst im falschen Feld.
+	await email.click();
+	await email.fill(asEmail);
+	await password.click();
+	await password.fill(ADMIN_PASSWORD);
 
-    const { expect } = await import('@playwright/test');
-    await expect(email).toHaveValue(asEmail);
-    await expect(password).toHaveValue(ADMIN_PASSWORD);
+	const { expect } = await import('@playwright/test');
+	await expect(email).toHaveValue(asEmail);
+	await expect(password).toHaveValue(ADMIN_PASSWORD);
 
-    await page.getByRole('button', { name: 'Anmelden' }).click();
-    await page.getByRole('button', { name: 'Abmelden' }).waitFor();
+	await page.getByRole('button', { name: 'Anmelden' }).click();
+	await page.getByRole('button', { name: 'Abmelden' }).waitFor();
 }
 
 /**
@@ -40,9 +40,9 @@ export async function uiLogin(page, asEmail = ADMIN_EMAIL) {
  * @param {import('@playwright/test').Page} page
  */
 export async function csrfToken(page) {
-    const res = await page.request.get('/api/csrf-token');
-    const body = await res.json();
-    return body.csrf_token;
+	const res = await page.request.get('/api/csrf-token');
+	const body = await res.json();
+	return body.csrf_token;
 }
 
 /**
@@ -52,11 +52,11 @@ export async function csrfToken(page) {
  * @param {object} data
  */
 export async function apiPost(page, url, data) {
-    const token = await csrfToken(page);
-    return page.request.post(url, {
-        data,
-        headers: { 'X-CSRF-Token': token },
-    });
+	const token = await csrfToken(page);
+	return page.request.post(url, {
+		data,
+		headers: { 'X-CSRF-Token': token }
+	});
 }
 
 /**
@@ -66,11 +66,11 @@ export async function apiPost(page, url, data) {
  * @param {object} data
  */
 export async function apiPatch(page, url, data) {
-    const token = await csrfToken(page);
-    return page.request.patch(url, {
-        data,
-        headers: { 'X-CSRF-Token': token },
-    });
+	const token = await csrfToken(page);
+	return page.request.patch(url, {
+		data,
+		headers: { 'X-CSRF-Token': token }
+	});
 }
 
 /**
@@ -79,10 +79,10 @@ export async function apiPatch(page, url, data) {
  * @param {string} sql
  */
 export function seedSQL(sql) {
-    const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
-    execSync(`docker exec -i ${container} psql -U postgres -d bibliothek -v ON_ERROR_STOP=1`, {
-        input: sql,
-    });
+	const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
+	execSync(`docker exec -i ${container} psql -U postgres -d bibliothek -v ON_ERROR_STOP=1`, {
+		input: sql
+	});
 }
 
 /**
@@ -91,13 +91,18 @@ export function seedSQL(sql) {
  * @returns {string} getrimmte Ausgabe (tuples-only)
  */
 export function querySQL(sql) {
-    const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
-    return execSync(`docker exec -i ${container} psql -U postgres -d bibliothek -tA -v ON_ERROR_STOP=1`, {
-        input: sql,
-    }).toString().trim();
+	const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
+	return execSync(
+		`docker exec -i ${container} psql -U postgres -d bibliothek -tA -v ON_ERROR_STOP=1`,
+		{
+			input: sql
+		}
+	)
+		.toString()
+		.trim();
 }
 
 /** Eindeutiger Suffix, damit Läufe auf derselben DB nicht kollidieren. */
 export function uniqueSuffix() {
-    return `${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
+	return `${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
 }

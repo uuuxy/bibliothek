@@ -106,7 +106,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 	if expectedStock > currentStock {
 		numToCreate := expectedStock - currentStock
 		if numToCreate > 0 {
-			_, _ = repo.db.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`)
+			_, _ = repo.db.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`)  //nolint:errcheck
 			_, err := repo.db.Exec(ctx, `
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
 				SELECT $1, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert'

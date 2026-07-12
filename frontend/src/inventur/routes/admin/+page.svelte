@@ -4,41 +4,41 @@
   Liest und schreibt Bücherdaten mithilfe der API und steuert Unterkomponenten.
 -->
 <script>
-	import { onMount } from "svelte";
-	import { appState } from "$lib/store.svelte.js";
-	import BookTable from "$lib/components/admin/BookTable.svelte";
-	import BuchFormular from "$lib/components/admin/BuchFormular.svelte";
-	import StrichcodeScanner from "$lib/components/StrichcodeScanner.svelte";
-	import KlassenUebersicht from "$lib/components/admin/KlassenUebersicht.svelte";
-	import AdminBuchAktionen from "$lib/components/admin/AdminBuchAktionen.svelte";
-	import AdminAnsichtsUmschalter from "$lib/components/admin/AdminAnsichtsUmschalter.svelte";
+	import { onMount } from 'svelte';
+	import { appState } from '$lib/store.svelte.js';
+	import BookTable from '$lib/components/admin/BookTable.svelte';
+	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
+	import StrichcodeScanner from '$lib/components/StrichcodeScanner.svelte';
+	import KlassenUebersicht from '$lib/components/admin/KlassenUebersicht.svelte';
+	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
+	import AdminAnsichtsUmschalter from '$lib/components/admin/AdminAnsichtsUmschalter.svelte';
 	import {
 		holeBuecherListe,
 		loescheBuecher,
 		holeExterneCover,
-		retryExterneCover,
-	} from "$lib/admin_api.js";
+		retryExterneCover
+	} from '$lib/admin_api.js';
 
 	/** @type {any[]} */
 	let buecher = $state.raw([]);
 	let wirdGeladen = $state(false);
 	let istBearbeitenModus = $state(false);
 	let wirdGescannt = $state(false);
-	let ansichtsModus = $state("list"); // 'list' | 'classes'
+	let ansichtsModus = $state('list'); // 'list' | 'classes'
 	let buchAktionen = $state();
 
 	let formular = $state({
 		id: null,
-		isbn: "",
-		title: "",
-		author: "",
-		subject: "Mathe",
+		isbn: '',
+		title: '',
+		author: '',
+		subject: 'Mathe',
 		gradeLevel: 5,
-		track: "Gymnasium",
+		track: 'Gymnasium',
 		stock: 0,
-		coverUrl: "",
-		lastCounted: "",
-		medientyp: "Buch",
+		coverUrl: '',
+		lastCounted: '',
+		medientyp: 'Buch'
 	});
 
 	/** @type {any} */
@@ -47,7 +47,7 @@
 		const suchAnfrage = appState.searchQuery;
 		if (suchVerzoegerung) clearTimeout(suchVerzoegerung);
 		suchVerzoegerung = setTimeout(() => {
-			if (appState.adminAuthenticated && typeof suchAnfrage === "string") {
+			if (appState.adminAuthenticated && typeof suchAnfrage === 'string') {
 				aktualisiereBuecher();
 			}
 		}, 300);
@@ -59,7 +59,7 @@
 
 	$effect(() => {
 		if (appState.bookToEdit && !wirdGeladen) {
-			const found = buecher.find(b => b.id === appState.bookToEdit.id);
+			const found = buecher.find((b) => b.id === appState.bookToEdit.id);
 			if (found) {
 				oeffneDetails(found);
 			} else {
@@ -85,16 +85,16 @@
 	function neuesBuchErstellen() {
 		formular = {
 			id: null,
-			isbn: "",
-			title: "",
-			author: "",
-			subject: "Mathe",
+			isbn: '',
+			title: '',
+			author: '',
+			subject: 'Mathe',
 			gradeLevel: 5,
-			track: "Gymnasium",
+			track: 'Gymnasium',
 			stock: 0,
-			coverUrl: "",
-			lastCounted: "",
-			medientyp: "Buch",
+			coverUrl: '',
+			lastCounted: '',
+			medientyp: 'Buch'
 		};
 		istBearbeitenModus = true;
 	}
@@ -103,20 +103,17 @@
 	function oeffneDetails(buch) {
 		formular = { ...buch };
 		if (!formular.medientyp) {
-			formular.medientyp = "Buch";
+			formular.medientyp = 'Buch';
 		}
-		if (formular.lastCounted && formular.lastCounted.includes("T")) {
-			formular.lastCounted = formular.lastCounted.split("T")[0];
+		if (formular.lastCounted && formular.lastCounted.includes('T')) {
+			formular.lastCounted = formular.lastCounted.split('T')[0];
 		}
 		istBearbeitenModus = true;
 	}
 
-
-
 	/** @param {any} ids */
 	async function aktionBuecherLoeschen(ids) {
-		if (!ids.length || !confirm(`${ids.length} Bücher wirklich löschen?`))
-			return;
+		if (!ids.length || !confirm(`${ids.length} Bücher wirklich löschen?`)) return;
 		try {
 			await loescheBuecher(ids);
 			buecher = buecher.filter((b) => !ids.includes(b.id));
@@ -129,7 +126,7 @@
 		try {
 			const externe = await holeExterneCover();
 			if (!externe.length) {
-				alert("Keine externen Cover mehr vorhanden.");
+				alert('Keine externen Cover mehr vorhanden.');
 				return;
 			}
 			if (!confirm(`${externe.length} externe Cover jetzt erneut lokalisieren?`)) {
@@ -139,7 +136,9 @@
 			const ids = externe.map((/** @type {any} */ b) => b.id);
 			const ergebnis = await retryExterneCover(ids);
 			await aktualisiereBuecher();
-			alert(`Cover-Retry fertig. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`);
+			alert(
+				`Cover-Retry fertig. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`
+			);
 		} catch (fehler) {
 			alert(/** @type {any} */ (fehler).message);
 		}
@@ -151,29 +150,22 @@
 </script>
 
 <div class="relative min-h-[calc(100vh-8rem)]">
-	<AdminAnsichtsUmschalter
-		{ansichtsModus}
-		onWechsel={(modus) => (ansichtsModus = modus)}
-	/>
+	<AdminAnsichtsUmschalter {ansichtsModus} onWechsel={(modus) => (ansichtsModus = modus)} />
 
 	{#if wirdGescannt}
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
 		>
-			<StrichcodeScanner
-				onClose={() => (wirdGescannt = false)}
-				onCreated={nachScanAktion}
-			/>
+			<StrichcodeScanner onClose={() => (wirdGescannt = false)} onCreated={nachScanAktion} />
 		</div>
 	{:else if istBearbeitenModus}
 		<BuchFormular
 			bind:formular
 			onClose={() => (istBearbeitenModus = false)}
 			onSave={() => buchAktionen.saveChanges()}
-			onCoverUpload={(/** @type {any} */ ereignis) =>
-				buchAktionen.handleCoverUpload(ereignis)}
+			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.handleCoverUpload(ereignis)}
 		/>
-	{:else if ansichtsModus === "classes"}
+	{:else if ansichtsModus === 'classes'}
 		<KlassenUebersicht />
 	{:else}
 		<BookTable

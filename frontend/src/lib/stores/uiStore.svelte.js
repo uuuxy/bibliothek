@@ -1,21 +1,23 @@
-import { apiFetch, apiClient } from "../apiFetch.js";
+import { apiFetch, apiClient } from '../apiFetch.js';
 
 class UIStore {
-    activeTab = $state("kiosk");
-    selectedBook = $state(/** @type {any} */ (null));
-    isSidebarCollapsed = $state(false);
-    pendingReservierungen = $state(0);
-    isInitialRouteMatched = $state(false);
+	activeTab = $state('kiosk');
+	selectedBook = $state(/** @type {any} */ (null));
+	isSidebarCollapsed = $state(false);
+	pendingReservierungen = $state(0);
+	isInitialRouteMatched = $state(false);
 
-    async fetchPendingReservierungen() {
-        try {
-            const res = await apiFetch("/api/reservierungen/klassensatz/anzahl");
-            if (res.ok) {
-                const data = await res.json();
-                this.pendingReservierungen = data.anzahl ?? 0;
-            }
-        } catch { /* ignore */ }
-    }
+	async fetchPendingReservierungen() {
+		try {
+			const res = await apiFetch('/api/reservierungen/klassensatz/anzahl');
+			if (res.ok) {
+				const data = await res.json();
+				this.pendingReservierungen = data.anzahl ?? 0;
+			}
+		} catch {
+			/* ignore */
+		}
+	}
 }
 
 export const uiStore = new UIStore();

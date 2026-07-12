@@ -152,7 +152,7 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	if fehler != nil {
 		return nil, fehler
 	}
-	defer func() { _ = antwort.Body.Close() }()
+	defer func() { _ = antwort.Body.Close() }()  //nolint:errcheck
 	if antwort.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("status %d", antwort.StatusCode)
 	}

@@ -39,7 +39,7 @@ func lusdHeaderMap(headers []string) (map[string]int, error) {
 
 	for _, col := range []string{lusdColID, lusdColVorname, lusdColNachname, lusdColKlasse} {
 		if _, exists := headerMap[col]; !exists {
-			return nil, fmt.Errorf("Pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", col)
+			return nil, fmt.Errorf("pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", col)
 		}
 	}
 	return headerMap, nil
@@ -73,7 +73,7 @@ func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedSt
 	geburtsdatum := parseLUSDGebDatum(row, headerMap)
 
 	if vorname == "" || nachname == "" || klasse == "" {
-		return parsedStudentRow{}, fmt.Errorf("Zeile %d enthält ein leeres Pflichtfeld (Vorname/Nachname/Klasse)", lineNum)
+		return parsedStudentRow{}, fmt.Errorf("zeile %d enthält ein leeres Pflichtfeld (Vorname/Nachname/Klasse)", lineNum)
 	}
 
 	return parsedStudentRow{
@@ -120,7 +120,7 @@ func parseLUSDCSV(content []byte) ([]parsedStudentRow, []string, error) {
 		}
 		lineNum++
 		if err != nil {
-			return nil, nil, fmt.Errorf("Zeile %d der CSV-Datei ist nicht lesbar: %w", lineNum, err)
+			return nil, nil, fmt.Errorf("zeile %d der CSV-Datei ist nicht lesbar: %w", lineNum, err)
 		}
 
 		sRow, err := parseLUSDRow(row, headerMap, lineNum)

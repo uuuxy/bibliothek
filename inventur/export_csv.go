@@ -25,7 +25,7 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, time.Now().Format("2006-01-02")))
 
 	// Write UTF-8 BOM so Excel opens it correctly with UTF-8
-	_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF})
+	_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF})  //nolint:errcheck
 
 	writer := csv.NewWriter(w)
 	writer.Comma = ';' // German Excel standard
