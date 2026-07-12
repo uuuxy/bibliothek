@@ -112,39 +112,45 @@ func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 	}
 
 	// Check if the error is database-related (SQL structure, constraint violation, DB driver logs)
-	isDBError := false
-	if internalErr != nil {
-		errMsg := strings.ToLower(internalErr.Error())
-		if strings.Contains(errMsg, "pgx") ||
-			strings.Contains(errMsg, "pgconn") ||
-			strings.Contains(errMsg, "sql:") ||
-			strings.Contains(errMsg, "unique constraint") ||
-			strings.Contains(errMsg, "foreign key") ||
-			strings.Contains(errMsg, "duplicate key") ||
-			strings.Contains(errMsg, "violates") ||
-			strings.Contains(errMsg, "insert into") ||
-			strings.Contains(errMsg, "select ") ||
-			strings.Contains(errMsg, "update ") ||
-			strings.Contains(errMsg, "delete ") {
-			isDBError = true
-		}
-	}
+	isDBError := internalErr != nil && istDatenbankFehler(strings.ToLower(internalErr.Error()))
 
 	// Strictly sanitize all internal server errors and database errors
 	if status == http.StatusInternalServerError || isDBError {
-		if internalErr != nil {
-			errStr := internalErr.Error()
-			if strings.Contains(errStr, "23505") || strings.Contains(errStr, "unique_violation") || strings.Contains(errStr, "duplicate key") {
-				msg = "Ein Eintrag mit diesen eindeutigen Eigenschaften existiert bereits."
-			} else if strings.Contains(errStr, "23503") || strings.Contains(errStr, "foreign_key_violation") {
-				msg = "Diese Aktion kann nicht durchgeführt werden, da verknüpfte Daten existieren."
-			} else {
-				msg = "Ein interner Datenbankfehler ist aufgetreten."
-			}
-		} else {
-			msg = "Internal Server Error"
-		}
+		msg = sanitizeInternalError(internalErr)
 	}
 
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+}
+
+// istDatenbankFehler erkennt DB-nahe Fehlermeldungen (SQL, Constraints, Treiber-Logs),
+// die niemals ungefiltert an den Client gelangen dürfen. errMsg muss lowercase sein.
+func istDatenbankFehler(errMsg string) bool {
+	return strings.Contains(errMsg, "pgx") ||
+		strings.Contains(errMsg, "pgconn") ||
+		strings.Contains(errMsg, "sql:") ||
+		strings.Contains(errMsg, "unique constraint") ||
+		strings.Contains(errMsg, "foreign key") ||
+		strings.Contains(errMsg, "duplicate key") ||
+		strings.Contains(errMsg, "violates") ||
+		strings.Contains(errMsg, "insert into") ||
+		strings.Contains(errMsg, "select ") ||
+		strings.Contains(errMsg, "update ") ||
+		strings.Contains(errMsg, "delete ")
+}
+
+// sanitizeInternalError liefert die neutrale, client-sichere Meldung für interne bzw.
+// DB-Fehler (bekannte Constraint-Verletzungen werden fachlich übersetzt).
+func sanitizeInternalError(internalErr error) string {
+	if internalErr == nil {
+		return "Internal Server Error"
+	}
+	errStr := internalErr.Error()
+	switch {
+	case strings.Contains(errStr, "23505") || strings.Contains(errStr, "unique_violation") || strings.Contains(errStr, "duplicate key"):
+		return "Ein Eintrag mit diesen eindeutigen Eigenschaften existiert bereits."
+	case strings.Contains(errStr, "23503") || strings.Contains(errStr, "foreign_key_violation"):
+		return "Diese Aktion kann nicht durchgeführt werden, da verknüpfte Daten existieren."
+	default:
+		return "Ein interner Datenbankfehler ist aufgetreten."
+	}
 }

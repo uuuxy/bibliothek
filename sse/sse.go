@@ -71,14 +71,7 @@ func (b *Broker) Broadcast(event, data string) {
 func (b *Broker) Handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rc := http.NewResponseController(w)
-		// Disable read/write deadlines so the long-lived SSE stream is not terminated by the
-		// server's Read-/WriteTimeout. Best-effort: not all transports support deadlines.
-		if err := rc.SetReadDeadline(time.Time{}); err != nil {
-			log.Printf("SSE: could not clear read deadline: %v", err)
-		}
-		if err := rc.SetWriteDeadline(time.Time{}); err != nil {
-			log.Printf("SSE: could not clear write deadline: %v", err)
-		}
+		clearStreamDeadlines(rc)
 
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
@@ -94,40 +87,59 @@ func (b *Broker) Handler() http.HandlerFunc {
 			b.unregister <- clientChan
 		}()
 
-		// writeAndFlush sends one SSE chunk and flushes it. A non-nil error means the
-		// client has disconnected, so the caller must terminate the handler.
-		writeAndFlush := func(chunk string) error {
-			if _, err := io.WriteString(w, chunk); err != nil {
-				return err
-			}
-			return rc.Flush()
-		}
+		streamEvents(w, r, rc, clientChan)
+	}
+}
 
-		// Send handshake acknowledgment
-		if err := writeAndFlush("event: connected\ndata: {\"status\":\"ok\"}\n\n"); err != nil {
+// clearStreamDeadlines hebt Read-/Write-Deadlines für den langlebigen SSE-Stream auf,
+// damit er nicht durch die Server-Timeouts beendet wird (best-effort: nicht alle
+// Transports unterstützen Deadlines).
+func clearStreamDeadlines(rc *http.ResponseController) {
+	if err := rc.SetReadDeadline(time.Time{}); err != nil {
+		log.Printf("SSE: could not clear read deadline: %v", err)
+	}
+	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+		log.Printf("SSE: could not clear write deadline: %v", err)
+	}
+}
+
+// streamEvents sendet den Handshake, 15s-Heartbeats (Dead-Man-Switch) und die
+// Broadcast-Nachrichten, bis der Client die Verbindung schließt oder ein Schreibfehler
+// (Disconnect) auftritt.
+func streamEvents(w http.ResponseWriter, r *http.Request, rc *http.ResponseController, clientChan <-chan string) {
+	// writeAndFlush sends one SSE chunk and flushes it. A non-nil error means the
+	// client has disconnected, so the caller must terminate the handler.
+	writeAndFlush := func(chunk string) error {
+		if _, err := io.WriteString(w, chunk); err != nil {
+			return err
+		}
+		return rc.Flush()
+	}
+
+	// Send handshake acknowledgment
+	if err := writeAndFlush("event: connected\ndata: {\"status\":\"ok\"}\n\n"); err != nil {
+		return
+	}
+
+	// Heartbeat ticker for dead-man-switch detection (15s is sufficient for library use)
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-r.Context().Done():
 			return
-		}
-
-		// Heartbeat ticker for dead-man-switch detection (15s is sufficient for library use)
-		ticker := time.NewTicker(15 * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-r.Context().Done():
+		case <-ticker.C:
+			ping := fmt.Sprintf("event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
+			if err := writeAndFlush(ping); err != nil {
 				return
-			case <-ticker.C:
-				ping := fmt.Sprintf("event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
-				if err := writeAndFlush(ping); err != nil {
-					return
-				}
-			case msg, ok := <-clientChan:
-				if !ok {
-					return
-				}
-				if err := writeAndFlush(msg); err != nil {
-					return
-				}
+			}
+		case msg, ok := <-clientChan:
+			if !ok {
+				return
+			}
+			if err := writeAndFlush(msg); err != nil {
+				return
 			}
 		}
 	}
