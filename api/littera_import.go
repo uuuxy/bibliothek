@@ -24,115 +24,146 @@ type LitteraImportResponse struct {
 	Type           string `json:"type"` // "csv", "xml" or "xlsx"
 }
 
+// leseUploadInhalt begrenzt, parst und liest die hochgeladene Datei. Bei Fehler
+// wird bereits geantwortet und ok=false zurückgegeben.
+func (s *Server) leseUploadInhalt(w http.ResponseWriter, r *http.Request, maxBytes int64) (content []byte, filename string, ok bool) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+	if err := r.ParseMultipartForm(maxBytes); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return nil, "", false
+	}
+
+	file, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return nil, "", false
+	}
+	defer closeutil.LogClose(file, litteraImportSource)
+
+	content, err = io.ReadAll(file)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, "", false
+	}
+	return content, fileHeader.Filename, true
+}
+
+// istLitteraXML erkennt ein MAB2-XML-Katalogisat an Endung oder Inhalt.
+func istLitteraXML(filename, contentStr string) bool {
+	lowerName := strings.ToLower(filename)
+	lowerContent := strings.ToLower(contentStr)
+	return strings.HasSuffix(lowerName, ".xml") ||
+		strings.Contains(lowerContent, "<?xml") ||
+		strings.Contains(lowerContent, "<katalogisat")
+}
+
+// leseTabellarischeDaten liest die Zeilen aus einer XLSX- oder CSV-Datei.
+func leseTabellarischeDaten(filename string, content []byte, contentStr string) (rows [][]string, isXLSX bool, err error) {
+	if strings.HasSuffix(strings.ToLower(filename), ".xlsx") {
+		f, err := excelize.OpenReader(bytes.NewReader(content))
+		if err != nil {
+			return nil, true, fmt.Errorf("failed to open excel file: %w", err)
+		}
+		defer closeutil.LogClose(f, litteraImportSource)
+		sheetName := f.GetSheetName(f.GetActiveSheetIndex())
+		rows, err = f.GetRows(sheetName, excelize.Options{RawCellValue: true})
+		if err != nil {
+			return nil, true, fmt.Errorf("failed to get excel rows: %w", err)
+		}
+		return rows, true, nil
+	}
+
+	reader := csv.NewReader(strings.NewReader(contentStr))
+	reader.Comma = detectCSVDelimiter(contentStr)
+	reader.LazyQuotes = true
+	rows, err = reader.ReadAll()
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to read csv content: %w", err)
+	}
+	return rows, false, nil
+}
+
+// importHeaderMitPflichtspalten baut die Spaltenzuordnung und prüft die
+// Pflichtspalten (Titel, Barcode).
+func importHeaderMitPflichtspalten(rows [][]string) (map[string]int, error) {
+	if len(rows) < 1 {
+		return nil, fmt.Errorf("empty file")
+	}
+	headerMap := buildImportHeaderMap(rows[0])
+	if _, ok := headerMap["titel"]; !ok {
+		return nil, fmt.Errorf("missing required column: titel")
+	}
+	if _, ok := headerMap["barcode"]; !ok {
+		return nil, fmt.Errorf("missing required column: barcode/exemplarnummer")
+	}
+	return headerMap, nil
+}
+
+// logImportAudit schreibt einen Audit-Log-Eintrag, sofern ein Nutzer im Kontext ist.
+func (s *Server) logImportAudit(r *http.Request, aktion, details string) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		return
+	}
+	logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, aktion, details, getIP(r)))
+}
+
+// verarbeiteLitteraXML importiert ein MAB2-XML-Katalogisat und antwortet.
+func (s *Server) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, content []byte) {
+	importSvc := service.NewImportService(repository.NewBookRepository(s.DB.Pool), s.DB.Pool)
+	importedCount, err := importSvc.ParseLitteraXML(r.Context(), bytes.NewReader(content))
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	s.logImportAudit(r, "LUSD_IMPORT", fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount))
+
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"imported_count":       importedCount,
+		"updated_titles_count": importedCount,
+		"type":                 "xml",
+		"message":              "MAB2-XML Katalogisat erfolgreich importiert",
+	})
+}
+
 func (s *Server) LitteraImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, 100<<20) // 100 MB limit
-		if err := r.ParseMultipartForm(100 << 20); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		file, fileHeader, err := r.FormFile("file")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-		defer closeutil.LogClose(file, litteraImportSource)
-
-		content, err := io.ReadAll(file)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		content, filename, ok := s.leseUploadInhalt(w, r, 100<<20) // 100 MB limit
+		if !ok {
 			return
 		}
 
 		contentStr := string(content)
-		isXML := strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xml") || strings.Contains(strings.ToLower(contentStr), "<?xml") || strings.Contains(strings.ToLower(contentStr), "<katalogisat")
-
-		bookRepo := repository.NewBookRepository(s.DB.Pool)
-		importSvc := service.NewImportService(bookRepo, s.DB.Pool)
-
-		if isXML {
-			importedCount, err := importSvc.ParseLitteraXML(r.Context(), bytes.NewReader(content))
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-
-			if claims, ok := auth.GetClaims(r.Context()); ok {
-				details := fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount)
-				logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, getIP(r)))
-			}
-
-			response := map[string]interface{}{
-				"imported_count":       importedCount,
-				"updated_titles_count": importedCount,
-				"type":                 "xml",
-				"message":              "MAB2-XML Katalogisat erfolgreich importiert",
-			}
-
-			RespondJSON(w, http.StatusOK, response)
+		if istLitteraXML(filename, contentStr) {
+			s.verarbeiteLitteraXML(w, r, content)
 			return
 		}
 
-		var rows [][]string
-		var isXLSX bool
-		if strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
-			isXLSX = true
-			f, err := excelize.OpenReader(bytes.NewReader(content))
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to open excel file: %w", err))
-				return
-			}
-			defer closeutil.LogClose(f, litteraImportSource)
-			sheetName := f.GetSheetName(f.GetActiveSheetIndex())
-			rows, err = f.GetRows(sheetName, excelize.Options{RawCellValue: true})
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to get excel rows: %w", err))
-				return
-			}
-		} else {
-			reader := csv.NewReader(strings.NewReader(contentStr))
-			reader.Comma = detectCSVDelimiter(contentStr)
-			reader.LazyQuotes = true
-			rows, err = reader.ReadAll()
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to read csv content: %w", err))
-				return
-			}
-		}
-
-		if len(rows) < 1 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("empty file"))
+		rows, isXLSX, err := leseTabellarischeDaten(filename, content, contentStr)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 
-		headerMap := buildImportHeaderMap(rows[0])
-		if _, ok := headerMap["titel"]; !ok {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("missing required column: titel"))
-			return
-		}
-		if _, ok := headerMap["barcode"]; !ok {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("missing required column: barcode/exemplarnummer"))
+		headerMap, err := importHeaderMitPflichtspalten(rows)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 
+		importSvc := service.NewImportService(repository.NewBookRepository(s.DB.Pool), s.DB.Pool)
 		newTitlesCount, importedCopiesCount, err := importSvc.ImportDynamic(r.Context(), rows, headerMap)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Admin audit log
-		if claims, ok := auth.GetClaims(r.Context()); ok {
-			details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount)
-			logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "LUSD_IMPORT", details, getIP(r)))
-		}
+		s.logImportAudit(r, "LUSD_IMPORT", fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount))
 
-		var importType string
+		importType := "csv"
 		if isXLSX {
 			importType = "xlsx"
-		} else {
-			importType = "csv"
 		}
 
 		RespondJSON(w, http.StatusOK, LitteraImportResponse{
