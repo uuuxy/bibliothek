@@ -227,6 +227,55 @@ func (s *defaultOmniboxService) checkVormerkung(ctx context.Context, titelID str
 	return &v, nil
 }
 
+// versucheReaktivierung behandelt gesperrte/ausgesonderte Exemplare: liegt kein
+// aktiver Ausleihvorgang vor und ist das Buch unreserviert bzw. wird es vom
+// berechtigten Reservierer geholt, wird die Sperre automatisch aufgehoben.
+// fertig=true bedeutet, dass resp bereits final gesetzt wurde (nur reaktiviert);
+// fertig=false ohne Fehler heißt: weiter zur Ausleihe.
+func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.BookCopy, activeStudentID *string, resp *OmniboxResult) (fertig bool, err error) {
+	activeLoan, err := s.loanRepo.GetActiveLoanByCopyID(ctx, copy.ID)
+	if err != nil {
+		return false, err
+	}
+
+	isReserved := strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:")
+	reservedForThisStudent := false
+
+	// Falls das Exemplar reserviert ist, prüfen wir, ob der aktive Schüler der berechtigte Reservierer ist.
+	if isReserved && activeStudentID != nil && *activeStudentID != "" {
+		v, checkErr := s.checkVormerkung(ctx, copy.TitelID)
+		if checkErr == nil && v != nil && v.SchuelerID == *activeStudentID {
+			reservedForThisStudent = true
+		}
+	}
+
+	// Automatisches Reaktivieren, wenn keine aktive Ausleihe vorliegt und das Buch
+	// unreserviert ist oder der berechtigte Schüler es ausleiht.
+	if activeLoan == nil && (!isReserved || reservedForThisStudent) {
+		if _, err := s.pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, zustand_notiz = '' WHERE id = $1", copy.ID); err != nil {
+			return false, err
+		}
+		copy.IstAusleihbar = true
+		copy.ZustandNotiz = ""
+
+		if !reservedForThisStudent {
+			resp.Type = "info"
+			resp.Message = "Buch reaktiviert"
+			return true, nil
+		}
+		// Reaktiviert für den berechtigten Schüler -> Ausleihe folgt im Aufrufer.
+		return false, nil
+	}
+
+	if isReserved && !reservedForThisStudent {
+		return false, fmt.Errorf("%w: Dieses Buchexemplar ist %s", ErrBlocked, copy.ZustandNotiz)
+	}
+	if copy.IstAusgesondert {
+		return false, fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", ErrInvalidState, query)
+	}
+	return false, fmt.Errorf("%w: Buchexemplar ist nicht ausleihbar", ErrInvalidState)
+}
+
 // handleBookAction verarbeitet das Scannen eines Buch-Barcodes.
 // Wenn kein aktiver Ausleiher vorhanden ist, wird das Buch zurückgegeben.
 // Ist ein Schüler oder Lehrer aktiv, wird das Buch an diesen ausgeliehen.
@@ -248,46 +297,14 @@ func (s *defaultOmniboxService) handleBookAction(
 		return fmt.Errorf("%w: Buchexemplar-Barcode %s wurde nicht gefunden", ErrNotFound, query)
 	}
 
-	// Falls das Buch gesperrt oder ausgesondert ist, prüfen wir auf automatische Reaktivierungsmöglichkeiten.
+	// Gesperrte/ausgesonderte Exemplare ggf. automatisch reaktivieren.
 	if !copy.IstAusleihbar || copy.IstAusgesondert {
-		activeLoan, err := s.loanRepo.GetActiveLoanByCopyID(ctx, copy.ID)
+		fertig, err := s.versucheReaktivierung(ctx, query, copy, activeStudentID, resp)
 		if err != nil {
 			return err
 		}
-
-		isReserved := strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:")
-		reservedForThisStudent := false
-
-		// Falls das Exemplar reserviert ist, prüfen wir, ob der aktive Schüler der berechtigte Reservierer ist.
-		if isReserved && activeStudentID != nil && *activeStudentID != "" {
-			v, checkErr := s.checkVormerkung(ctx, copy.TitelID)
-			if checkErr == nil && v != nil && v.SchuelerID == *activeStudentID {
-				reservedForThisStudent = true
-			}
-		}
-
-		// Automatisches Reaktivieren:
-		// Wenn kein aktiver Ausleihvorgang vorliegt und das Buch entweder unreserviert ist oder der
-		// berechtigte Schüler es ausleiht, heben wir die Ausleihsperre automatisch auf.
-		if activeLoan == nil && (!isReserved || reservedForThisStudent) {
-			_, err = s.pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, zustand_notiz = '' WHERE id = $1", copy.ID)
-			if err != nil {
-				return err
-			}
-			copy.IstAusleihbar = true
-			copy.ZustandNotiz = ""
-
-			if !reservedForThisStudent {
-				resp.Type = "info"
-				resp.Message = "Buch reaktiviert"
-				return nil
-			}
-		} else if isReserved && !reservedForThisStudent {
-			return fmt.Errorf("%w: Dieses Buchexemplar ist %s", ErrBlocked, copy.ZustandNotiz)
-		} else if copy.IstAusgesondert {
-			return fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", ErrInvalidState, query)
-		} else {
-			return fmt.Errorf("%w: Buchexemplar ist nicht ausleihbar", ErrInvalidState)
+		if fertig {
+			return nil
 		}
 	}
 
