@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -10,6 +11,51 @@ import (
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
+
+// normalisiereBenutzerRolle bildet die Eingaberolle auf einen gültigen DB-Enum-Wert
+// ab; unbekannte Rollen werden auf "mitarbeiter" zurückgesetzt.
+func normalisiereBenutzerRolle(rolle string) string {
+	dbEnumRole := strings.ToLower(rolle)
+	if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" && dbEnumRole != "helfer" {
+		dbEnumRole = "mitarbeiter"
+	}
+	return dbEnumRole
+}
+
+// pruefeEmailEindeutig prüft die E-Mail-Eindeutigkeit (excludeID leer bei Neuanlage,
+// sonst die eigene ID). Bei Konflikt oder DB-Fehler wird die HTTP-Antwort direkt
+// geschrieben und false zurückgegeben.
+func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, email, excludeID string) bool {
+	exists, err := userRepo.CheckEmailExists(ctx, email, excludeID)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if exists {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+		return false
+	}
+	return true
+}
+
+// pruefeBarcodeEindeutig liefert den optionalen Barcode-Pointer und validiert dessen
+// Eindeutigkeit. Ist kein Barcode gesetzt, wird (nil, true) geliefert. Bei Konflikt
+// oder DB-Fehler wird die HTTP-Antwort direkt geschrieben (ok=false).
+func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, barcodeID, excludeID, konfliktMsg string) (barcode *string, ok bool) {
+	if barcodeID == "" {
+		return nil, true
+	}
+	exists, err := userRepo.CheckBarcodeExists(ctx, barcodeID, excludeID)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, false
+	}
+	if exists {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(konfliktMsg))
+		return nil, false
+	}
+	return &barcodeID, true
+}
 
 // CreateUserRequest holds payload data for user creation.
 type CreateUserRequest struct {
@@ -45,39 +91,18 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		ctx := r.Context()
 
-		// Validate email uniqueness
-		exists, err := userRepo.CheckEmailExists(ctx, req.Email, "")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if exists {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+		if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, "") {
 			return
 		}
 
-		// Validate barcode uniqueness if provided
-		var barcode *string
-		if req.BarcodeID != "" {
-			barcode = &req.BarcodeID
-			exists, err = userRepo.CheckBarcodeExists(ctx, req.BarcodeID, "")
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			if exists {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("dieser Barcode wird bereits verwendet"))
-				return
-			}
+		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, req.BarcodeID, "", "dieser Barcode wird bereits verwendet")
+		if !ok {
+			return
 		}
 
-		dbEnumRole := strings.ToLower(req.Rolle)
-		if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" && dbEnumRole != "helfer" {
-			dbEnumRole = "mitarbeiter"
-		}
+		dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
 
-		_, err = userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole)
-		if err != nil {
+		if _, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -128,53 +153,24 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 		}
 
 		// Prevent admin self-demotion or self-deactivation
-		claims, ok := auth.GetClaims(r.Context())
-		if ok && claims.UserID == id {
-			if strings.ToUpper(req.Rolle) != "ADMIN" {
-				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigene Admin-Rolle kann nicht herabgestuft werden"))
-				return
-			}
-			if !req.Aktiv {
-				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
-				return
-			}
+		if !pruefeAdminSelbstschutz(w, r, id, req) {
+			return
 		}
 
 		ctx := r.Context()
 
-		// Validate email uniqueness excluding this user
-		exists, err := userRepo.CheckEmailExists(ctx, req.Email, id)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if exists {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+		if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, id) {
 			return
 		}
 
-		// Validate barcode uniqueness excluding this user
-		var barcode *string
-		if req.BarcodeID != "" {
-			barcode = &req.BarcodeID
-			exists, err = userRepo.CheckBarcodeExists(ctx, req.BarcodeID, id)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			if exists {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("dieser Barcode wird bereits von einem anderen Benutzer verwendet"))
-				return
-			}
+		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, req.BarcodeID, id, "dieser Barcode wird bereits von einem anderen Benutzer verwendet")
+		if !ok {
+			return
 		}
 
-		dbEnumRole := strings.ToLower(req.Rolle)
-		if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" && dbEnumRole != "helfer" {
-			dbEnumRole = "mitarbeiter"
-		}
+		dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
 
-		err = userRepo.UpdateUser(ctx, id, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv)
-		if err != nil {
+		if err := userRepo.UpdateUser(ctx, id, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -184,6 +180,25 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
+}
+
+// pruefeAdminSelbstschutz verhindert, dass ein Admin die eigene Rolle herabstuft
+// oder das eigene Konto deaktiviert. Bei einem Verstoß wird die HTTP-Antwort direkt
+// geschrieben und false zurückgegeben.
+func pruefeAdminSelbstschutz(w http.ResponseWriter, r *http.Request, id string, req UpdateUserRequest) bool {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok || claims.UserID != id {
+		return true
+	}
+	if strings.ToUpper(req.Rolle) != "ADMIN" {
+		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigene Admin-Rolle kann nicht herabgestuft werden"))
+		return false
+	}
+	if !req.Aktiv {
+		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
+		return false
+	}
+	return true
 }
 
 // DeleteUserHandler deletes a user and logs it in the audit log.

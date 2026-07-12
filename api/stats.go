@@ -198,6 +198,101 @@ func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) 
 	return k, nil
 }
 
+// resolveZeitraumFilter mappt den ?zeitraum=-Parameter auf ein serverkontrolliertes
+// SQL-Fragment für das Renner-Ranking (Werte sind nie nutzergesteuertes SQL).
+func resolveZeitraumFilter(zeitraum string) string {
+	switch zeitraum {
+	case "schuljahr":
+		// Current school year starts August 1st.
+		return `AND a.ausgeliehen_am >= (
+			CASE WHEN EXTRACT(MONTH FROM CURRENT_DATE) >= 8
+				THEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 8, 1)
+				ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int - 1, 8, 1)
+			END
+		)`
+	case "monat":
+		return "AND a.ausgeliehen_am >= CURRENT_DATE - INTERVAL '30 days'"
+	default:
+		return ""
+	}
+}
+
+// queryPopularTitles liefert die meistausgeliehenen Titel (best-effort: bei einem
+// Query- oder Iterationsfehler wird eine leere Liste statt eines Fehlers geliefert).
+func (s *Server) queryPopularTitles(ctx context.Context, ausleihenFilter, typeFilter string, limit int) []PopularTitle {
+	popularTitles := []PopularTitle{}
+	q := fmt.Sprintf(`
+		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''),
+		       coalesce(t.subject, ''), coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
+		       COUNT(a.id) AS count
+		FROM buecher_titel t
+		JOIN buecher_exemplare e ON t.id = e.titel_id
+		JOIN ausleihen a ON e.id = a.exemplar_id
+		WHERE 1=1 %s %s
+		GROUP BY t.id, t.titel, t.autor, t.cover_url, t.subject, t.signatur, t.erscheinungsjahr
+		ORDER BY count DESC
+		LIMIT %d
+	`, ausleihenFilter, typeFilter, limit)
+	rows, err := s.DB.Pool.Query(ctx, q)
+	if err != nil {
+		return popularTitles
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p PopularTitle
+		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Count); err == nil {
+			popularTitles = append(popularTitles, p)
+		}
+	}
+	// Bei einem Abbruch mitten in der Iteration keine irreführende Teil-Top-Liste
+	// zeigen (best-effort-Sektion, daher verwerfen statt 500).
+	if err := rows.Err(); err != nil {
+		return []PopularTitle{}
+	}
+	return popularTitles
+}
+
+// queryShelfWarmers liefert die Ladenhüter (keine Ausleihe seit 2 Jahren oder nie);
+// ebenfalls best-effort mit leerer Liste bei Fehlern.
+func (s *Server) queryShelfWarmers(ctx context.Context, typeFilter string, limit int) []ShelfWarmer {
+	shelfWarmers := []ShelfWarmer{}
+	q := fmt.Sprintf(`
+		SELECT t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''),
+		       coalesce(t.subject, ''), coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
+		       MAX(a.ausgeliehen_am) AS last_loan
+		FROM buecher_titel t
+		LEFT JOIN buecher_exemplare e ON t.id = e.titel_id
+		LEFT JOIN ausleihen a ON e.id = a.exemplar_id
+		WHERE 1=1 %s
+		GROUP BY t.id, t.titel, t.autor, t.isbn, t.subject, t.signatur, t.erscheinungsjahr
+		HAVING MAX(a.ausgeliehen_am) < NOW() - INTERVAL '2 years'
+		    OR MAX(a.ausgeliehen_am) IS NULL
+		ORDER BY last_loan ASC NULLS FIRST
+		LIMIT %d
+	`, typeFilter, limit)
+	rows, err := s.DB.Pool.Query(ctx, q)
+	if err != nil {
+		return shelfWarmers
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var sw ShelfWarmer
+		var lastLoan *time.Time
+		if err := rows.Scan(&sw.Titel, &sw.Autor, &sw.ISBN, &sw.Fachbereich, &sw.Systematik, &sw.Erscheinungsjahr, &lastLoan); err == nil {
+			sw.LetzteAusleihe = "Nie ausgeliehen"
+			if lastLoan != nil {
+				sw.LetzteAusleihe = lastLoan.Format(dateFormatDE)
+			}
+			shelfWarmers = append(shelfWarmers, sw)
+		}
+	}
+	// Bei Iterationsabbruch keine irreführende Teil-Ladenhüterliste zeigen.
+	if err := rows.Err(); err != nil {
+		return []ShelfWarmer{}
+	}
+	return shelfWarmers
+}
+
 // GetStatisticsHandler returns analytical metadata details.
 // Optional query parameters:
 //   - ?zeitraum=all|schuljahr|monat filtert das Renner-Ranking zeitlich.
@@ -208,92 +303,15 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// Resolve time filter for popular_titles query.
-		// Values are server-controlled strings, never user-provided SQL fragments.
-		var ausleihenFilter string
-		switch r.URL.Query().Get("zeitraum") {
-		case "schuljahr":
-			// Current school year starts August 1st.
-			ausleihenFilter = `AND a.ausgeliehen_am >= (
-				CASE WHEN EXTRACT(MONTH FROM CURRENT_DATE) >= 8
-					THEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 8, 1)
-					ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int - 1, 8, 1)
-				END
-			)`
-		case "monat":
-			ausleihenFilter = "AND a.ausgeliehen_am >= CURRENT_DATE - INTERVAL '30 days'"
-		default:
-			ausleihenFilter = ""
-		}
-
+		ausleihenFilter := resolveZeitraumFilter(r.URL.Query().Get("zeitraum"))
 		typeFilter, typeName := resolveBestandsFilter(r.URL.Query().Get("type"))
 		listLimit := resolveListLimit(r.URL.Query().Get("limit"))
 
 		// 1. Beliebteste Titel (Die Renner) — inkl. Drill-Down-Feldern
-		popularTitles := []PopularTitle{}
-		qPopular := fmt.Sprintf(`
-			SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''),
-			       coalesce(t.subject, ''), coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
-			       COUNT(a.id) AS count
-			FROM buecher_titel t
-			JOIN buecher_exemplare e ON t.id = e.titel_id
-			JOIN ausleihen a ON e.id = a.exemplar_id
-			WHERE 1=1 %s %s
-			GROUP BY t.id, t.titel, t.autor, t.cover_url, t.subject, t.signatur, t.erscheinungsjahr
-			ORDER BY count DESC
-			LIMIT %d
-		`, ausleihenFilter, typeFilter, listLimit)
-		rows, err := s.DB.Pool.Query(ctx, qPopular)
-		if err == nil {
-			defer rows.Close()
-			for rows.Next() {
-				var p PopularTitle
-				if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Count); err == nil {
-					popularTitles = append(popularTitles, p)
-				}
-			}
-			// Bei einem Abbruch mitten in der Iteration keine irreführende Teil-Top-Liste
-			// zeigen (best-effort-Sektion, daher verwerfen statt 500).
-			if err := rows.Err(); err != nil {
-				popularTitles = []PopularTitle{}
-			}
-		}
+		popularTitles := s.queryPopularTitles(ctx, ausleihenFilter, typeFilter, listLimit)
 
 		// 2. Ladenhüter (No checkouts since 2 years or never) — inkl. Drill-Down-Feldern
-		shelfWarmers := []ShelfWarmer{}
-		qWarmers := fmt.Sprintf(`
-			SELECT t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''),
-			       coalesce(t.subject, ''), coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
-			       MAX(a.ausgeliehen_am) AS last_loan
-			FROM buecher_titel t
-			LEFT JOIN buecher_exemplare e ON t.id = e.titel_id
-			LEFT JOIN ausleihen a ON e.id = a.exemplar_id
-			WHERE 1=1 %s
-			GROUP BY t.id, t.titel, t.autor, t.isbn, t.subject, t.signatur, t.erscheinungsjahr
-			HAVING MAX(a.ausgeliehen_am) < NOW() - INTERVAL '2 years'
-			    OR MAX(a.ausgeliehen_am) IS NULL
-			ORDER BY last_loan ASC NULLS FIRST
-			LIMIT %d
-		`, typeFilter, listLimit)
-		rowsW, err := s.DB.Pool.Query(ctx, qWarmers)
-		if err == nil {
-			defer rowsW.Close()
-			for rowsW.Next() {
-				var sw ShelfWarmer
-				var lastLoan *time.Time
-				if err := rowsW.Scan(&sw.Titel, &sw.Autor, &sw.ISBN, &sw.Fachbereich, &sw.Systematik, &sw.Erscheinungsjahr, &lastLoan); err == nil {
-					sw.LetzteAusleihe = "Nie ausgeliehen"
-					if lastLoan != nil {
-						sw.LetzteAusleihe = lastLoan.Format("02.01.2006")
-					}
-					shelfWarmers = append(shelfWarmers, sw)
-				}
-			}
-			// Bei Iterationsabbruch keine irreführende Teil-Ladenhüterliste zeigen.
-			if err := rowsW.Err(); err != nil {
-				shelfWarmers = []ShelfWarmer{}
-			}
-		}
+		shelfWarmers := s.queryShelfWarmers(ctx, typeFilter, listLimit)
 
 		// 3. Verlust-, Finanz- und Zirkulationskennzahlen (EIN aggregierter Scan)
 		kennzahlen, err := s.queryBestandKennzahlen(ctx, typeFilter)
