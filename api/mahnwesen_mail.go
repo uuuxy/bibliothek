@@ -59,40 +59,8 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			return
 		}
 
-		totalMedien := 0
-		totalSchueler := 0
-		for _, kl := range klassen {
-			totalSchueler += len(kl.Schueler)
-			for _, sch := range kl.Schueler {
-				totalMedien += len(sch.Medien)
-			}
-		}
-
-		emailBody := fmt.Sprintf(
-			"Sehr geehrte Damen und Herren,\n\n"+
-				"anbei erhalten Sie die aktuelle Mahntliste der Schulbibliothek für die Klasse %s (Stand: %s).\n\n"+
-				"Betroffene Schüler/innen: %d\n"+
-				"Überfällige Medien gesamt: %d\n\n"+
-				"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
-				"Mit freundlichen Grüßen,\nSchulbibliothek",
-			req.Klasse,
-			time.Now().Format("02.01.2006"),
-			totalSchueler,
-			totalMedien,
-		)
-
-		mailReq := MailRequest{
-			To:      req.Email,
-			Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, time.Now().Format("02.01.2006")),
-			Body:    emailBody,
-			Attachments: []MailAttachment{
-				{
-					Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, time.Now().Format("2006-01-02")),
-					ContentType: "application/pdf",
-					Data:        pdfBytes,
-				},
-			},
-		}
+		totalSchueler, totalMedien := zaehleMahnStatistik(klassen)
+		mailReq := baueMahnMailRequest(req, pdfBytes, totalSchueler, totalMedien)
 
 		if os.Getenv("SMTP_HOST") == "" {
 			log.Printf("MAHNWESEN: SMTP_HOST not set – skipping email dispatch for class %s", req.Klasse)
@@ -112,5 +80,45 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			"status":  "sent",
 			"message": fmt.Sprintf("Mahnliste für Klasse %s an %s gesendet.", req.Klasse, req.Email),
 		})
+	}
+}
+
+// zaehleMahnStatistik summiert betroffene Schüler und überfällige Medien über alle Klassen.
+func zaehleMahnStatistik(klassen []repository.MahnwesenKlasse) (totalSchueler, totalMedien int) {
+	for _, kl := range klassen {
+		totalSchueler += len(kl.Schueler)
+		for _, sch := range kl.Schueler {
+			totalMedien += len(sch.Medien)
+		}
+	}
+	return totalSchueler, totalMedien
+}
+
+// baueMahnMailRequest baut die E-Mail (Text + PDF-Anhang) für eine Klassen-Mahnliste.
+func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchueler, totalMedien int) MailRequest {
+	emailBody := fmt.Sprintf(
+		"Sehr geehrte Damen und Herren,\n\n"+
+			"anbei erhalten Sie die aktuelle Mahntliste der Schulbibliothek für die Klasse %s (Stand: %s).\n\n"+
+			"Betroffene Schüler/innen: %d\n"+
+			"Überfällige Medien gesamt: %d\n\n"+
+			"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
+			"Mit freundlichen Grüßen,\nSchulbibliothek",
+		req.Klasse,
+		time.Now().Format(dateFormatDE),
+		totalSchueler,
+		totalMedien,
+	)
+
+	return MailRequest{
+		To:      req.Email,
+		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, time.Now().Format(dateFormatDE)),
+		Body:    emailBody,
+		Attachments: []MailAttachment{
+			{
+				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, time.Now().Format(dateFormatISO)),
+				ContentType: contentTypePDF,
+				Data:        pdfBytes,
+			},
+		},
 	}
 }

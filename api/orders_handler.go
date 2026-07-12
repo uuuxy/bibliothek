@@ -50,22 +50,11 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 
 		res, err := orderSvc.ProcessOrder(ctx, req)
 		if err != nil {
-			status := http.StatusInternalServerError
-			if err.Error() == "supplier not found" {
-				status = http.StatusNotFound
-			} else if strings.HasPrefix(err.Error(), "invalid quantity") {
-				status = http.StatusBadRequest
-			}
-			apierrors.SendHTTPError(w, status, err)
+			apierrors.SendHTTPError(w, mapProcessOrderError(err), err)
 			return
 		}
 
-		host := os.Getenv("SMTP_HOST")
-		pass := os.Getenv("SMTP_PASS")
-
-		isPlaceholder := host == "" || host == "Ihr SMTP-Host" || strings.Contains(pass, "Passwort") || pass == "secret"
-
-		if isPlaceholder {
+		if istPlaceholderSMTP() {
 			log.Println("WARNING: SMTP_HOST environment variable not set. Email dispatch skipped. Order has been saved locally.")
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "success",
@@ -76,13 +65,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		}
 
 		// Sum up how many items have generate_barcodes to pass to pdfSvc
-		anyBarcodesGenerated := false
-		for _, item := range req.Items {
-			if item.GenerateBarcodes {
-				anyBarcodesGenerated = true
-				break
-			}
-		}
+		anyBarcodesGenerated := hatVorabBarcodes(req.Items)
 
 		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
 		settings, _ := settingsRepo.GetSettings(ctx)
@@ -108,6 +91,35 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			"ordered_qty": res.TotalAllocated,
 		})
 	}
+}
+
+// mapProcessOrderError bildet die (textbasierten) Fehler von ProcessOrder auf HTTP-Status ab.
+func mapProcessOrderError(err error) int {
+	switch {
+	case err.Error() == "supplier not found":
+		return http.StatusNotFound
+	case strings.HasPrefix(err.Error(), "invalid quantity"):
+		return http.StatusBadRequest
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+// istPlaceholderSMTP erkennt eine nicht (produktiv) konfigurierte SMTP-Umgebung.
+func istPlaceholderSMTP() bool {
+	host := os.Getenv("SMTP_HOST")
+	pass := os.Getenv("SMTP_PASS")
+	return host == "" || host == "Ihr SMTP-Host" || strings.Contains(pass, "Passwort") || pass == "secret"
+}
+
+// hatVorabBarcodes prüft, ob mindestens eine Bestellposition Vorab-Barcodes generiert.
+func hatVorabBarcodes(items []OrderItemRequest) bool {
+	for _, item := range items {
+		if item.GenerateBarcodes {
+			return true
+		}
+	}
+	return false
 }
 
 // GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,

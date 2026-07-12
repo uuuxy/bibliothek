@@ -102,28 +102,35 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	}
 	klassen := g.klassen
 
-	// Falls Klassen existieren, ordnen wir ihnen die Lehrer-E-Mails aus dem Mapping zu
-	if len(klassen) > 0 {
-		mRows, err := repo.db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
-		if err == nil {
-			defer mRows.Close()
-			emailMap := map[string]string{}
-			for mRows.Next() {
-				var k, e string
-				if err := mRows.Scan(&k, &e); err == nil {
-					emailMap[k] = e
-				}
-			}
-			if err := mRows.Err(); err != nil {
-				emailMap = map[string]string{} // Teil-Mapping verwerfen (best-effort-Anreicherung)
-			}
-			for i := range klassen {
-				klassen[i].LehrerEmail = emailMap[klassen[i].Klasse]
-			}
+	repo.reichereLehrerEmails(ctx, klassen)
+	return klassen, nil
+}
+
+// reichereLehrerEmails ordnet den Klassen die Lehrer-E-Mails aus dem Mapping zu.
+// Best-effort: bei fehlendem/teilweisem Mapping bleibt LehrerEmail leer.
+func (repo *MahnwesenRepository) reichereLehrerEmails(ctx context.Context, klassen []MahnwesenKlasse) {
+	if len(klassen) == 0 {
+		return
+	}
+	mRows, err := repo.db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
+	if err != nil {
+		return
+	}
+	defer mRows.Close()
+
+	emailMap := map[string]string{}
+	for mRows.Next() {
+		var k, e string
+		if err := mRows.Scan(&k, &e); err == nil {
+			emailMap[k] = e
 		}
 	}
-
-	return klassen, nil
+	if err := mRows.Err(); err != nil {
+		emailMap = map[string]string{} // Teil-Mapping verwerfen (best-effort-Anreicherung)
+	}
+	for i := range klassen {
+		klassen[i].LehrerEmail = emailMap[klassen[i].Klasse]
+	}
 }
 
 // QueryUeberfaelligeNachJahrgang ermittelt Bücher, die über die Jahrgangsstufe hinaus ausgeliehen wurden
@@ -203,7 +210,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	
+
 	q := `
 		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),

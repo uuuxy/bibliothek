@@ -3,10 +3,37 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/repository"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 )
+
+// resolveFotoURL liefert die Foto-URL eines Schülers, falls ein (verschlüsseltes) Foto
+// hinterlegt ist, sonst einen leeren String.
+func resolveFotoURL(ctx context.Context, studentRepo repository.StudentRepository, student *repository.Student) string {
+	if student.BarcodeID == "" {
+		return ""
+	}
+	hasPhoto, err := studentRepo.HasPhoto(ctx, student.ID)
+	if err == nil && hasPhoto {
+		return fmt.Sprintf("/api/schueler/%s/photo", student.BarcodeID)
+	}
+	return ""
+}
+
+// bestimmeSchuelerStatus leitet den Anzeigestatus (aktiv/gesperrt/abgaenger) ab;
+// Abgänger hat Vorrang vor Gesperrt.
+func bestimmeSchuelerStatus(student *repository.Student) string {
+	statusStr := "aktiv"
+	if student.IstGesperrt {
+		statusStr = "gesperrt"
+	}
+	if student.IstAbgaenger {
+		statusStr = "abgaenger"
+	}
+	return statusStr
+}
 
 // StudentProfileResponse returns master data (with photo_url) and currently borrowed books.
 type StudentProfileResponse struct {
@@ -66,13 +93,7 @@ func (s *Server) GetStudentProfileHandler(
 		}
 
 		// 2. Resolve photo URL if an encrypted photo exists in the DB
-		fotoURL := ""
-		if student.BarcodeID != "" {
-			hasPhoto, err := studentRepo.HasPhoto(ctx, student.ID)
-			if err == nil && hasPhoto {
-				fotoURL = fmt.Sprintf("/api/schueler/%s/photo", student.BarcodeID)
-			}
-		}
+		fotoURL := resolveFotoURL(ctx, studentRepo, student)
 
 		// 3. Retrieve currently active loans for this student
 		borrowedBooks, err := studentRepo.GetActiveBorrowedBooks(ctx, id)
@@ -83,13 +104,7 @@ func (s *Server) GetStudentProfileHandler(
 			borrowedBooks = []repository.BorrowedBook{}
 		}
 
-		statusStr := "aktiv"
-		if student.IstGesperrt {
-			statusStr = "gesperrt"
-		}
-		if student.IstAbgaenger {
-			statusStr = "abgaenger"
-		}
+		statusStr := bestimmeSchuelerStatus(student)
 
 		// 3.5 Check for open damages
 		hasOpenDamages, err := studentRepo.HasOpenDamages(ctx, student.ID)
