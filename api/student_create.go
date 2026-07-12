@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // calculateAbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers
@@ -103,14 +106,9 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		var parsedGebdatum *time.Time
-		if req.Geburtsdatum != nil && *req.Geburtsdatum != "" {
-			t, err := time.Parse("2006-01-02", *req.Geburtsdatum)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
-				return
-			}
-			parsedGebdatum = &t
+		parsedGebdatum, ok := parseCreateGeburtsdatum(w, req.Geburtsdatum)
+		if !ok {
+			return
 		}
 
 		tx, err := s.DB.Pool.Begin(ctx)
@@ -121,9 +119,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		defer db.SafeRollback(ctx, tx)
 
 		// 1. Notfall-Wachhund: Duplikatsprüfung (Vorname, Nachname, Geburtsdatum)
-		var isDuplicate bool
-		qDup := `SELECT EXISTS(SELECT 1 FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND coalesce(geburtsdatum, '1900-01-01'::DATE) = coalesce($3::DATE, '1900-01-01'::DATE) AND deleted_at IS NULL)`
-		err = tx.QueryRow(ctx, qDup, req.Vorname, req.Nachname, parsedGebdatum).Scan(&isDuplicate)
+		isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -134,29 +130,9 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		}
 
 		// 2. Resolve/generate barcode_id if not provided
-		barcodeID := req.BarcodeID
-		if barcodeID == "" {
-			// Use central repository for sequence generation
-			seqRepo := repository.NewSequenceRepository(tx)
-			startNum, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "S-")
-			if err != nil {
-				db.SafeRollback(ctx, tx)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			barcodeID = fmt.Sprintf("S-%05d", startNum)
-		} else {
-			// Check if barcode_id already exists
-			var exists bool
-			err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1)", barcodeID).Scan(&exists)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			if exists {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("Barcode-ID '%s' wird bereits verwendet", barcodeID))
-				return
-			}
+		barcodeID, ok := resolveNeueBarcodeID(ctx, tx, w, req.BarcodeID)
+		if !ok {
+			return
 		}
 
 		// 3. Insert student
@@ -184,4 +160,56 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			"barcode_id": barcodeID,
 		})
 	}
+}
+
+// parseCreateGeburtsdatum parst das optionale Geburtsdatum (YYYY-MM-DD) aus dem
+// Anlage-Request. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
+func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bool) {
+	if raw == nil || *raw == "" {
+		return nil, true
+	}
+	t, err := time.Parse(dateFormatISO, *raw)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
+		return nil, false
+	}
+	return &t, true
+}
+
+// pruefeSchuelerDuplikat erkennt einen bereits existierenden Schüler anhand von
+// Vor-/Nachname und Geburtsdatum (case-insensitive, ohne soft-gelöschte Datensätze).
+func pruefeSchuelerDuplikat(ctx context.Context, tx pgx.Tx, vorname, nachname string, gebdatum *time.Time) (bool, error) {
+	var isDuplicate bool
+	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND coalesce(geburtsdatum, '1900-01-01'::DATE) = coalesce($3::DATE, '1900-01-01'::DATE) AND deleted_at IS NULL)`
+	err := tx.QueryRow(ctx, q, vorname, nachname, gebdatum).Scan(&isDuplicate)
+	return isDuplicate, err
+}
+
+// resolveNeueBarcodeID liefert die zu verwendende Barcode-ID: entweder die vom Client
+// gewünschte (nach Eindeutigkeitsprüfung) oder eine neu generierte S-Nummer aus der
+// zentralen Sequenz. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
+func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, requested string) (string, bool) {
+	if requested == "" {
+		// Use central repository for sequence generation
+		seqRepo := repository.NewSequenceRepository(tx)
+		startNum, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "S-")
+		if err != nil {
+			db.SafeRollback(ctx, tx)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return "", false
+		}
+		return fmt.Sprintf("S-%05d", startNum), true
+	}
+
+	// Check if barcode_id already exists
+	var exists bool
+	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1)", requested).Scan(&exists); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return "", false
+	}
+	if exists {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("Barcode-ID '%s' wird bereits verwendet", requested))
+		return "", false
+	}
+	return requested, true
 }

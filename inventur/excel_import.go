@@ -17,8 +17,7 @@ import (
 
 func extractImportRows(w http.ResponseWriter, request *http.Request) ([][]string, error) {
 	request.Body = http.MaxBytesReader(w, request.Body, 100<<20)
-	err := request.ParseMultipartForm(100 << 20) // 100 MB
-	if err != nil {
+	if err := request.ParseMultipartForm(100 << 20); err != nil { // 100 MB
 		return nil, errors.New("datei zu groß oder ungültig")
 	}
 
@@ -29,28 +28,37 @@ func extractImportRows(w http.ResponseWriter, request *http.Request) ([][]string
 	defer func() { _ = file.Close() }()
 
 	if strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
-		content, err := io.ReadAll(file)
-		if err != nil {
-			return nil, errors.New("fehler beim lesen der csv-datei")
-		}
-		contentStr := string(content)
-		delimiter := ','
-		if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
-			delimiter = ';'
-		}
-		reader := csv.NewReader(strings.NewReader(contentStr))
-		reader.Comma = delimiter
-		reader.LazyQuotes = true
-		rows, err := reader.ReadAll()
-		if err != nil {
-			return nil, errors.New("ungültige csv-datei")
-		}
-		if len(rows) == 0 {
-			return nil, errors.New("datei ist leer")
-		}
-		return rows, nil
+		return parseCSVRows(file)
 	}
+	return parseExcelRows(file)
+}
 
+// parseCSVRows liest eine CSV-Datei mit heuristischer Trennzeichenerkennung (, oder ;).
+func parseCSVRows(file io.Reader) ([][]string, error) {
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return nil, errors.New("fehler beim lesen der csv-datei")
+	}
+	contentStr := string(content)
+	delimiter := ','
+	if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
+		delimiter = ';'
+	}
+	reader := csv.NewReader(strings.NewReader(contentStr))
+	reader.Comma = delimiter
+	reader.LazyQuotes = true
+	rows, err := reader.ReadAll()
+	if err != nil {
+		return nil, errors.New("ungültige csv-datei")
+	}
+	if len(rows) == 0 {
+		return nil, errors.New("datei ist leer")
+	}
+	return rows, nil
+}
+
+// parseExcelRows liest die erste Tabelle einer Excel-Datei.
+func parseExcelRows(file io.Reader) ([][]string, error) {
 	f, err := excelize.OpenReader(file)
 	if err != nil {
 		return nil, errors.New("ungültige excel-datei")
@@ -153,26 +161,28 @@ func (handler *APIHandler) processImportRows(ctx context.Context, dataRows [][]s
 	return booksToUpsert, failed, firstError
 }
 
-func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request *http.Request) {
+// prepareImportRows validiert Methode und Datei, ermittelt die Spaltenzuordnung und
+// liefert die Datenzeilen (ohne Kopfzeile). ok=false bedeutet: die Fehlerantwort wurde
+// bereits geschrieben.
+func (handler *APIHandler) prepareImportRows(writer http.ResponseWriter, request *http.Request) (dataRows [][]string, colIdx map[string]int, ok bool) {
 	if request.Method != http.MethodPost {
 		writeError(writer, http.StatusMethodNotAllowed, "nur post-anfragen erlaubt")
-		return
+		return nil, nil, false
 	}
 
 	rows, err := extractImportRows(writer, request)
 	if err != nil {
 		writeError(writer, http.StatusBadRequest, err.Error())
-		return
+		return nil, nil, false
 	}
 
 	colIdx, hasHeader := determineColumnIndices(rows[0])
-
 	if colIdx["isbn"] == -1 {
 		writeError(writer, http.StatusBadRequest, "spalte 'isbn' fehlt in der datei. bitte stellen sie sicher, dass eine isbn-spalte vorhanden ist.")
-		return
+		return nil, nil, false
 	}
 
-	dataRows := rows
+	dataRows = rows
 	if hasHeader {
 		dataRows = rows[1:]
 	}
@@ -180,37 +190,55 @@ func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request
 	const maxImportRows = 100000
 	if len(dataRows) > maxImportRows {
 		writeError(writer, http.StatusBadRequest, fmt.Sprintf("zu viele zeilen (%d), maximal %d erlaubt", len(dataRows), maxImportRows))
+		return nil, nil, false
+	}
+
+	return dataRows, colIdx, true
+}
+
+// persistImportedBooks schreibt die eingelesenen Bücher per Batch-Upsert; schlägt der
+// Batch fehl, wird zeilenweise als Fallback eingefügt. Liefert die aktualisierten
+// Zähler zurück.
+func (handler *APIHandler) persistImportedBooks(ctx context.Context, booksToUpsert []Book, failed int32, firstError error) (imported, outFailed int32, outErr error) {
+	if len(booksToUpsert) == 0 {
+		return 0, failed, firstError
+	}
+
+	count, err := handler.repo.UpsertBooksBatch(ctx, booksToUpsert)
+	if err != nil {
+		// Fallback: Einzelne Inserts, wenn der Batch-Insert fehlgeschlägt (z.B. wegen Constraint-Fehlern bei einem Buch)
+		for _, book := range booksToUpsert {
+			_, singleErr := handler.repo.UpsertBook(ctx, book)
+			if singleErr != nil {
+				failed++
+				if firstError == nil {
+					firstError = singleErr
+				}
+			} else {
+				imported++
+			}
+		}
+		return imported, failed, firstError
+	}
+
+	// #nosec G115 - count is bounded by maxImportRows (5000)
+	imported += int32(count)
+	if imported == 0 {
+		// Falls count 0 ist wegen z.B. nur Updates in manchen DB Versionen
+		// #nosec G115 - len is bounded by maxImportRows (5000)
+		imported = int32(len(booksToUpsert))
+	}
+	return imported, failed, firstError
+}
+
+func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request *http.Request) {
+	dataRows, colIdx, ok := handler.prepareImportRows(writer, request)
+	if !ok {
 		return
 	}
 
-	var imported int32 = 0
 	booksToUpsert, failed, firstError := handler.processImportRows(request.Context(), dataRows, colIdx)
-
-	if len(booksToUpsert) > 0 {
-		count, err := handler.repo.UpsertBooksBatch(request.Context(), booksToUpsert)
-		if err != nil {
-			// Fallback: Einzelne Inserts, wenn der Batch-Insert fehlgeschlägt (z.B. wegen Constraint-Fehlern bei einem Buch)
-			for _, book := range booksToUpsert {
-				_, singleErr := handler.repo.UpsertBook(request.Context(), book)
-				if singleErr != nil {
-					failed++
-					if firstError == nil {
-						firstError = singleErr
-					}
-				} else {
-					imported++
-				}
-			}
-		} else {
-			// #nosec G115 - count is bounded by maxImportRows (5000)
-			imported += int32(count)
-			if imported == 0 {
-				// Falls count 0 ist wegen z.B. nur Updates in manchen DB Versionen
-				// #nosec G115 - len is bounded by maxImportRows (5000)
-				imported = int32(len(booksToUpsert))
-			}
-		}
-	}
+	imported, failed, firstError := handler.persistImportedBooks(request.Context(), booksToUpsert, failed, firstError)
 
 	if imported == 0 && failed > 0 {
 		msg := "keine bücher konnten importiert werden."
