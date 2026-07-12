@@ -43,6 +43,56 @@ func (w *statusWriter) WriteHeader(status int) {
 	w.ResponseWriter.WriteHeader(status)
 }
 
+// reserviereLoginVersuch prüft/aktualisiert den Fehlversuchszähler einer IP (unter Lock).
+// blocked=true bedeutet: die IP ist derzeit gesperrt (>=5 Versuche im 15-Minuten-Fenster).
+func reserviereLoginVersuch(ip string, now time.Time) (attempt *failedAttempt, blocked bool) {
+	failedLoginsMutex.Lock()
+	defer failedLoginsMutex.Unlock()
+
+	attempt, exists := failedLogins[ip]
+	if exists {
+		// If the penalty window of 15 minutes has expired, reset the attempt record.
+		if now.Sub(attempt.firstFail) > 15*time.Minute {
+			attempt.count = 0
+			attempt.firstFail = now
+		} else if attempt.count >= 5 {
+			return attempt, true
+		}
+		return attempt, false
+	}
+
+	// Vor dem Einfügen ab einer Schwelle abgelaufene Einträge entfernen, um die Map
+	// ohne Dauer-Goroutine beschränkt zu halten (analog zum IP-Rate-Limiter).
+	if len(failedLogins) > 5000 {
+		evictExpiredLogins(now)
+	}
+	attempt = &failedAttempt{
+		count:     0,
+		firstFail: now,
+	}
+	failedLogins[ip] = attempt
+	return attempt, false
+}
+
+// verzeichneLoginErgebnis aktualisiert den Fehlversuchszähler anhand des Antwortstatus
+// (401/403 erhöhen, 200 setzt bei Erfolg zurück) — unter Lock.
+func verzeichneLoginErgebnis(attempt *failedAttempt, status int, now time.Time) {
+	switch status {
+	case http.StatusUnauthorized, http.StatusForbidden:
+		failedLoginsMutex.Lock()
+		attempt.count++
+		failedLoginsMutex.Unlock()
+	case http.StatusOK:
+		// Optional: reset counter on successful login
+		failedLoginsMutex.Lock()
+		if attempt.count > 0 {
+			attempt.count = 0
+			attempt.firstFail = now
+		}
+		failedLoginsMutex.Unlock()
+	}
+}
+
 // AuthRateLimitMiddleware limits the number of failed authentication attempts to 5 per IP within 15 minutes.
 // Further requests within the window will be blocked with a 429 Too Many Requests response.
 func AuthRateLimitMiddleware(next http.Handler) http.Handler {
@@ -52,34 +102,12 @@ func AuthRateLimitMiddleware(next http.Handler) http.Handler {
 			ip = r.RemoteAddr
 		}
 
-		// Check if IP is currently blocked
-		failedLoginsMutex.Lock()
-		attempt, exists := failedLogins[ip]
 		now := time.Now()
-
-		if exists {
-			// If the penalty window of 15 minutes has expired, reset the attempt record.
-			if now.Sub(attempt.firstFail) > 15*time.Minute {
-				attempt.count = 0
-				attempt.firstFail = now
-			} else if attempt.count >= 5 {
-				failedLoginsMutex.Unlock()
-				apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("zu viele fehlerhafte Login-Versuche. Bitte warten Sie 15 Minuten"))
-				return
-			}
-		} else {
-			// Vor dem Einfügen ab einer Schwelle abgelaufene Einträge entfernen, um die Map
-			// ohne Dauer-Goroutine beschränkt zu halten (analog zum IP-Rate-Limiter).
-			if len(failedLogins) > 5000 {
-				evictExpiredLogins(now)
-			}
-			attempt = &failedAttempt{
-				count:     0,
-				firstFail: now,
-			}
-			failedLogins[ip] = attempt
+		attempt, blocked := reserviereLoginVersuch(ip, now)
+		if blocked {
+			apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("zu viele fehlerhafte Login-Versuche. Bitte warten Sie 15 Minuten"))
+			return
 		}
-		failedLoginsMutex.Unlock()
 
 		// Intercept the response status
 		sw := &statusWriter{
@@ -89,20 +117,7 @@ func AuthRateLimitMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(sw, r)
 
-		// Increment failure count if authentication failed
-		switch sw.status {
-		case http.StatusUnauthorized, http.StatusForbidden:
-			failedLoginsMutex.Lock()
-			attempt.count++
-			failedLoginsMutex.Unlock()
-		case http.StatusOK:
-			// Optional: reset counter on successful login
-			failedLoginsMutex.Lock()
-			if attempt.count > 0 {
-				attempt.count = 0
-				attempt.firstFail = now
-			}
-			failedLoginsMutex.Unlock()
-		}
+		// Increment/reset failure count based on the auth result
+		verzeichneLoginErgebnis(attempt, sw.status, now)
 	})
 }

@@ -110,15 +110,7 @@ func (s *Server) Routes() http.Handler {
 	// Logout — blacklists the current token and clears the session cookie
 	mux.HandleFunc("POST /api/auth/logout", s.logoutHandler())
 
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if err := s.DB.Pool.Ping(r.Context()); err != nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			httpresp.Write(w, []byte(`{"status":"unhealthy","error":"database unreachable"}`))
-			return
-		}
-		httpresp.Write(w, []byte(`{"status":"healthy"}`))
-	})
+	mux.HandleFunc("GET /health", s.healthHandler())
 
 	// Delegate to domain-specific routers
 	s.registerPublicRoutes(mux)
@@ -156,25 +148,7 @@ func (s *Server) Routes() http.Handler {
 	if frontendRootErr != nil {
 		log.Printf("router: frontend/dist nicht verfügbar (%v) — SPA-Auslieferung deaktiviert", frontendRootErr)
 	}
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
-			return
-		}
-		if frontendRoot == nil {
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, errors.New("frontend assets unavailable"))
-			return
-		}
-		rel := strings.TrimPrefix(r.URL.Path, "/")
-		if rel != "" {
-			if info, err := frontendRoot.Stat(rel); err == nil && !info.IsDir() {
-				http.ServeFileFS(w, r, frontendRoot.FS(), rel)
-				return
-			}
-		}
-		// SPA-Fallback: alle unbekannten Pfade auf die App-Shell
-		http.ServeFileFS(w, r, frontendRoot.FS(), "index.html")
-	})
+	mux.HandleFunc("/", spaHandler(frontendRoot))
 
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
 	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024) // 100MB limit
@@ -195,4 +169,42 @@ func (s *Server) Routes() http.Handler {
 		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
 		globalHandler.ServeHTTP(w, r)
 	})
+}
+
+// healthHandler antwortet mit dem DB-Verbindungsstatus (Liveness-/Readiness-Probe).
+func (s *Server) healthHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set(headerContentType, contentTypeJSON)
+		if err := s.DB.Pool.Ping(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			httpresp.Write(w, []byte(`{"status":"unhealthy","error":"database unreachable"}`))
+			return
+		}
+		httpresp.Write(w, []byte(`{"status":"healthy"}`))
+	}
+}
+
+// spaHandler liefert die statischen Frontend-Assets aus frontendRoot und fällt für
+// unbekannte Pfade auf die App-Shell (index.html) zurück. os.OpenRoot bindet alle
+// Datei-Zugriffe OS-seitig an dist/ (Schutz gegen Path-Traversal, gosec G304).
+func spaHandler(frontendRoot *os.Root) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			apierrors.SendHTTPError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+			return
+		}
+		if frontendRoot == nil {
+			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, errors.New("frontend assets unavailable"))
+			return
+		}
+		rel := strings.TrimPrefix(r.URL.Path, "/")
+		if rel != "" {
+			if info, err := frontendRoot.Stat(rel); err == nil && !info.IsDir() {
+				http.ServeFileFS(w, r, frontendRoot.FS(), rel)
+				return
+			}
+		}
+		// SPA-Fallback: alle unbekannten Pfade auf die App-Shell
+		http.ServeFileFS(w, r, frontendRoot.FS(), "index.html")
+	}
 }

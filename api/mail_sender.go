@@ -51,10 +51,6 @@ func SendEmail(req MailRequest) error {
 	}
 	from = parsedFrom.Address
 
-	var buf bytes.Buffer
-	writer := multipart.NewWriter(&buf)
-	boundary := writer.Boundary()
-
 	parsedTo, err := mail.ParseAddress(req.To)
 	if err != nil {
 		return fmt.Errorf("invalid recipient email address: %w", err)
@@ -64,6 +60,31 @@ func SendEmail(req MailRequest) error {
 	// Sanitize subject to prevent CRLF injection
 	req.Subject = strings.ReplaceAll(req.Subject, "\r", "")
 	req.Subject = strings.ReplaceAll(req.Subject, "\n", "")
+
+	msg, err := baueMailNachricht(req, from)
+	if err != nil {
+		return err
+	}
+
+	addr := host + ":" + port
+	var auth smtp.Auth
+	if user != "" && pass != "" {
+		auth = smtp.PlainAuth("", user, pass, host)
+	}
+
+	if err := sendMailViaSMTP(addr, host, auth, from, []string{req.To}, msg); err != nil {
+		return fmt.Errorf("SMTP send failed: %w", err)
+	}
+
+	return nil
+}
+
+// baueMailNachricht erstellt die vollständige MIME-Multipart-Nachricht (Header, Textteil,
+// Anhänge). req.To und req.Subject müssen bereits sanitiert sein.
+func baueMailNachricht(req MailRequest, from string) ([]byte, error) {
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	boundary := writer.Boundary()
 
 	// Write SMTP Headers
 	fmt.Fprintf(&buf, "From: %s\r\n", from)
@@ -77,52 +98,49 @@ func SendEmail(req MailRequest) error {
 	bodyHeader.Set("Content-Type", "text/plain; charset=utf-8")
 	part, err := writer.CreatePart(bodyHeader)
 	if err != nil {
-		return fmt.Errorf("failed to create email body part: %w", err)
+		return nil, fmt.Errorf("failed to create email body part: %w", err)
 	}
 	if _, err := part.Write([]byte(req.Body)); err != nil {
-		return fmt.Errorf("failed to write email body: %w", err)
+		return nil, fmt.Errorf("failed to write email body: %w", err)
 	}
 
 	// Attachments
 	for _, att := range req.Attachments {
-		// Dateinamen gegen Header-Injection absichern: CRLF und Anführungszeichen
-		// entfernen, damit kein Caller (z. B. aus Nutzer-/Importdaten abgeleiteter Name)
-		// zusätzliche MIME-Header einschleusen kann.
-		safeName := strings.NewReplacer("\r", "", "\n", "", `"`, "").Replace(att.Name)
-		attHeader := make(textproto.MIMEHeader)
-		attHeader.Set("Content-Type", att.ContentType)
-		attHeader.Set("Content-Transfer-Encoding", "base64")
-		attHeader.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
-		part, err := writer.CreatePart(attHeader)
-		if err != nil {
-			return fmt.Errorf("failed to create attachment part for %s: %w", att.Name, err)
-		}
-
-		encoder := base64.NewEncoder(base64.StdEncoding, part)
-		if _, err := encoder.Write(att.Data); err != nil {
-			return fmt.Errorf("failed to write attachment data for %s: %w", att.Name, err)
-		}
-		// Close flushes the final base64 bytes; a failure here corrupts the attachment.
-		if err := encoder.Close(); err != nil {
-			return fmt.Errorf("failed to finalize attachment encoding for %s: %w", att.Name, err)
+		if err := schreibeAnhang(writer, att); err != nil {
+			return nil, err
 		}
 	}
 
 	// Close writes the closing MIME boundary; a failure leaves the message malformed.
 	if err := writer.Close(); err != nil {
-		return fmt.Errorf("failed to finalize multipart message: %w", err)
+		return nil, fmt.Errorf("failed to finalize multipart message: %w", err)
 	}
 
-	addr := host + ":" + port
-	var auth smtp.Auth
-	if user != "" && pass != "" {
-		auth = smtp.PlainAuth("", user, pass, host)
+	return buf.Bytes(), nil
+}
+
+// schreibeAnhang hängt eine Datei base64-kodiert als MIME-Part an. Der Dateiname wird
+// gegen Header-Injection abgesichert (CRLF und Anführungszeichen entfernt), damit kein
+// (z. B. aus Nutzer-/Importdaten abgeleiteter) Name zusätzliche MIME-Header einschleust.
+func schreibeAnhang(writer *multipart.Writer, att MailAttachment) error {
+	safeName := strings.NewReplacer("\r", "", "\n", "", `"`, "").Replace(att.Name)
+	attHeader := make(textproto.MIMEHeader)
+	attHeader.Set("Content-Type", att.ContentType)
+	attHeader.Set("Content-Transfer-Encoding", "base64")
+	attHeader.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
+	part, err := writer.CreatePart(attHeader)
+	if err != nil {
+		return fmt.Errorf("failed to create attachment part for %s: %w", att.Name, err)
 	}
 
-	if err := sendMailViaSMTP(addr, host, auth, from, []string{req.To}, buf.Bytes()); err != nil {
-		return fmt.Errorf("SMTP send failed: %w", err)
+	encoder := base64.NewEncoder(base64.StdEncoding, part)
+	if _, err := encoder.Write(att.Data); err != nil {
+		return fmt.Errorf("failed to write attachment data for %s: %w", att.Name, err)
 	}
-
+	// Close flushes the final base64 bytes; a failure here corrupts the attachment.
+	if err := encoder.Close(); err != nil {
+		return fmt.Errorf("failed to finalize attachment encoding for %s: %w", att.Name, err)
+	}
 	return nil
 }
 
@@ -132,36 +150,55 @@ func sendMailViaSMTP(addr, host string, a smtp.Auth, from string, to []string, m
 		return err
 	}
 	defer closeutil.LogClose(c, "smtp client")
-	if err = c.Hello("localhost"); err != nil {
+
+	if err := c.Hello("localhost"); err != nil {
 		return err
 	}
-	if ok, _ := c.Extension("STARTTLS"); ok {
-		// Zertifikat gegen den konfigurierten Host VERIFIZIEREN. Ohne Verifikation
-		// (früher InsecureSkipVerify=true) kann ein MITM beim STARTTLS-Upgrade ein
-		// beliebiges Zertifikat vorlegen und sowohl die SMTP-AUTH-Zugangsdaten als
-		// auch den Mailinhalt (Schülernamen, Mahndaten, Elternadressen) mitlesen.
-		// Escape-Hatch nur für Legacy-Server mit Self-Signed-Zertifikat via Env.
-		config := &tls.Config{
-			ServerName:         host,
-			MinVersion:         tls.VersionTLS12,
-			InsecureSkipVerify: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true", // #nosec G402 - bewusst per Env, Default sicher
-		}
-		if err = c.StartTLS(config); err != nil {
-			return err
-		}
+	if err := starttlsWennMoeglich(c, host); err != nil {
+		return err
 	}
-	if a != nil {
-		if ok, _ := c.Extension("AUTH"); ok {
-			if err = c.Auth(a); err != nil {
-				return err
-			}
-		}
+	if err := smtpAuthenticate(c, a); err != nil {
+		return err
 	}
-	if err = c.Mail(from); err != nil {
+	return smtpSendData(c, from, to, msg)
+}
+
+// starttlsWennMoeglich führt bei Server-Unterstützung ein verifiziertes STARTTLS-Upgrade
+// durch. Das Zertifikat wird gegen den konfigurierten Host VERIFIZIERT — ohne Verifikation
+// könnte ein MITM beim Upgrade ein beliebiges Zertifikat vorlegen und sowohl die SMTP-AUTH-
+// Zugangsdaten als auch den Mailinhalt (Schülernamen, Mahndaten, Elternadressen) mitlesen.
+// Escape-Hatch nur für Legacy-Server mit Self-Signed-Zertifikat via Env.
+func starttlsWennMoeglich(c *smtp.Client, host string) error {
+	ok, _ := c.Extension("STARTTLS")
+	if !ok {
+		return nil
+	}
+	config := &tls.Config{
+		ServerName:         host,
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true", // #nosec G402 - bewusst per Env, Default sicher
+	}
+	return c.StartTLS(config)
+}
+
+// smtpAuthenticate authentifiziert sich, sofern eine Auth vorliegt und der Server sie anbietet.
+func smtpAuthenticate(c *smtp.Client, a smtp.Auth) error {
+	if a == nil {
+		return nil
+	}
+	if ok, _ := c.Extension("AUTH"); ok {
+		return c.Auth(a)
+	}
+	return nil
+}
+
+// smtpSendData überträgt den Envelope (MAIL FROM / RCPT TO) und den Nachrichtentext.
+func smtpSendData(c *smtp.Client, from string, to []string, msg []byte) error {
+	if err := c.Mail(from); err != nil {
 		return err
 	}
 	for _, addr := range to {
-		if err = c.Rcpt(addr); err != nil {
+		if err := c.Rcpt(addr); err != nil {
 			return err
 		}
 	}
@@ -169,12 +206,10 @@ func sendMailViaSMTP(addr, host string, a smtp.Auth, from string, to []string, m
 	if err != nil {
 		return err
 	}
-	_, err = w.Write(msg)
-	if err != nil {
+	if _, err := w.Write(msg); err != nil {
 		return err
 	}
-	err = w.Close()
-	if err != nil {
+	if err := w.Close(); err != nil {
 		return err
 	}
 	return c.Quit()
