@@ -11,6 +11,8 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/pkg/closeutil"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // StudentDiff represents a single student-level change for the qualitative LUSD
@@ -91,90 +93,68 @@ func generateImportBarcode(counter int) string {
 	return fmt.Sprintf("S-%06d%04d", time.Now().Unix()%1000000, counter)
 }
 
-// computeLusdChanges compares the CSV records with the database inside a transaction
-// and either returns the preview stats or actually applies the changes.
-func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudentRow, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
-	// Start transaction. Everything is done within a single TX to ensure atomicity.
-	tx, err := s.DB.Pool.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// Always rollback on panic or early return. If we apply, we commit at the very end.
-	defer db.SafeRollback(ctx, tx)
+// lusdDbStudent ist ein aktiver Schüler-Datensatz, indexiert über die LUSD-ID.
+type lusdDbStudent struct {
+	ID       string
+	Klasse   string
+	Vorname  string
+	Nachname string
+}
 
-	// Read all current students. deleted_at IS NULL ist zwingend: sonst „matcht"
-	// eine soft-gelöschte, aber noch auf der LUSD-Liste stehende Zeile, der aktive
-	// Schüler würde nie neu angelegt und bliebe unsichtbar. Re-Insert einer zuvor
-	// gelöschten lusd_id ist dank partiellem Unique-Index (Migration 035) sicher.
-	// Vorname/Nachname werden mitgelesen, damit Abgänger-Diffs den Namen VOR der
-	// DSGVO-Anonymisierung anzeigen können.
+// ladeAktiveSchueler liest alle aktiven (nicht-abgegangenen, nicht soft-gelöschten)
+// Schüler mit LUSD-ID. deleted_at IS NULL ist zwingend, sonst würde eine soft-
+// gelöschte Zeile matchen und der aktive Schüler nie neu angelegt.
+func ladeAktiveSchueler(ctx context.Context, tx pgx.Tx) (map[string]lusdDbStudent, error) {
 	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse, vorname, nachname FROM schueler WHERE ist_abgaenger = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
-	dbStudents := make(map[string]struct {
-		ID       string
-		Klasse   string
-		Vorname  string
-		Nachname string
-	})
+	defer rows.Close()
+
+	dbStudents := make(map[string]lusdDbStudent)
 	for rows.Next() {
 		var id, klasse, vorname, nachname string
 		var lusdID *string
 		if err := rows.Scan(&id, &lusdID, &klasse, &vorname, &nachname); err != nil {
-			rows.Close()
 			return nil, err
 		}
 		if lusdID != nil && *lusdID != "" {
-			dbStudents[*lusdID] = struct {
-				ID       string
-				Klasse   string
-				Vorname  string
-				Nachname string
-			}{id, klasse, vorname, nachname}
+			dbStudents[*lusdID] = lusdDbStudent{ID: id, Klasse: klasse, Vorname: vorname, Nachname: nachname}
 		}
 	}
 	if err := rows.Err(); err != nil {
-		rows.Close()
 		return nil, err
 	}
-	rows.Close()
+	return dbStudents, nil
+}
 
-	res := &LusdPreviewResult{
-		NewStudents:      make([]StudentDiff, 0),
-		ClassChanges:     make([]StudentDiff, 0),
-		Graduates:        make([]StudentDiff, 0),
-		TotalCsvRecords:  len(records),
-		ActiveDbStudents: len(dbStudents),
-	}
+// klassifiziereLusdRecords ordnet die CSV-Zeilen (rein klassifizierend, ohne
+// Schreibzugriff) in Neuzugänge, Klassenwechsel und Abgänger ein.
+func klassifiziereLusdRecords(records []parsedStudentRow, dbStudents map[string]lusdDbStudent, res *LusdPreviewResult) {
 	csvLusdIDs := make(map[string]bool)
-
-	// Erster Durchlauf: nur klassifizieren (neu / Klassenwechsel / Abgänger),
-	// noch nichts schreiben — der Schwellen-Check unten muss VOR dem ersten
-	// destruktiven Statement entscheiden.
 	for _, rec := range records {
 		if rec.LusdID == "" {
-			// Ohne LUSD-ID gibt es keinen stabilen Schlüssel: jeder Import würde
-			// dieselbe Person erneut anlegen. Sichtbar zählen statt still anlegen.
+			// Ohne LUSD-ID gibt es keinen stabilen Schlüssel — sichtbar zählen.
 			res.SkippedNoID++
 			continue
 		}
 		csvLusdIDs[rec.LusdID] = true
-		if dbRec, exists := dbStudents[rec.LusdID]; exists {
-			if dbRec.Klasse != rec.Klasse {
-				res.ClassChanges = append(res.ClassChanges, StudentDiff{
-					ID:         rec.LusdID,
-					Vorname:    rec.Vorname,
-					Nachname:   rec.Nachname,
-					AlteKlasse: dbRec.Klasse,
-					NeueKlasse: rec.Klasse,
-				})
-			}
-		} else {
+		dbRec, exists := dbStudents[rec.LusdID]
+		if !exists {
 			res.NewStudents = append(res.NewStudents, StudentDiff{
 				ID:         rec.LusdID,
 				Vorname:    rec.Vorname,
 				Nachname:   rec.Nachname,
+				NeueKlasse: rec.Klasse,
+			})
+			continue
+		}
+		if dbRec.Klasse != rec.Klasse {
+			res.ClassChanges = append(res.ClassChanges, StudentDiff{
+				ID:         rec.LusdID,
+				Vorname:    rec.Vorname,
+				Nachname:   rec.Nachname,
+				AlteKlasse: dbRec.Klasse,
 				NeueKlasse: rec.Klasse,
 			})
 		}
@@ -189,62 +169,107 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 			})
 		}
 	}
+}
+
+// wendeLusdAenderungenAn führt den zweiten Durchlauf aus: Klassenwechsel updaten
+// und Neuzugänge anlegen.
+func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, dbStudents map[string]lusdDbStudent) error {
+	barcodeCounter := 0
+	for _, rec := range records {
+		if rec.LusdID == "" {
+			continue
+		}
+		dbRec, exists := dbStudents[rec.LusdID]
+		if !exists {
+			barcodeCounter++
+			year := time.Now().Year() + 5 // Default abgang
+			if _, err := tx.Exec(ctx,
+				"INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+				generateImportBarcode(barcodeCounter), rec.Vorname, rec.Nachname, rec.Klasse, year, rec.LusdID, rec.GebDatum); err != nil {
+				return err
+			}
+			continue
+		}
+		if dbRec.Klasse != rec.Klasse {
+			if _, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// behandleAbgaenger sperrt Abgänger mit offenen Ausleihen (Name bleibt fürs
+// Mahnwesen sichtbar) und anonymisiert die übrigen DSGVO-konform.
+func behandleAbgaenger(ctx context.Context, tx pgx.Tx, graduates []StudentDiff, dbStudents map[string]lusdDbStudent) error {
+	for _, grad := range graduates {
+		dbRec := dbStudents[grad.ID]
+
+		var pending int
+		if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", dbRec.ID).Scan(&pending); err != nil {
+			return err
+		}
+
+		var err error
+		if pending > 0 {
+			_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
+		} else {
+			// Interne DB-UUID anhängen, um Unique-Constraint-Verletzungen zu vermeiden.
+			anonymisiertName := fmt.Sprintf("Anonymisiert-%s", dbRec.ID)
+			_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = $1, klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $2", anonymisiertName, dbRec.ID)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// computeLusdChanges compares the CSV records with the database inside a transaction
+// and either returns the preview stats or actually applies the changes.
+func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudentRow, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
+	// Alles in einer TX für Atomarität. Bei Panic/frühem Return wird zurückgerollt.
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	dbStudents, err := ladeAktiveSchueler(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &LusdPreviewResult{
+		NewStudents:      make([]StudentDiff, 0),
+		ClassChanges:     make([]StudentDiff, 0),
+		Graduates:        make([]StudentDiff, 0),
+		TotalCsvRecords:  len(records),
+		ActiveDbStudents: len(dbStudents),
+	}
+
+	// Erster Durchlauf: nur klassifizieren — der Schwellen-Check muss VOR dem
+	// ersten destruktiven Statement entscheiden.
+	klassifiziereLusdRecords(records, dbStudents, res)
 
 	if !apply {
 		return res, nil
 	}
 
 	// Serverseitige Massenabgang-Bremse: Die Abgänger-Behandlung anonymisiert
-	// Namen IRREVERSIBEL. Ein UI-Banner allein schützt nicht — die Schwelle wird
-	// hier durchgesetzt, wo die Destruktion passiert.
+	// Namen IRREVERSIBEL. Die Schwelle wird hier durchgesetzt, wo die Destruktion passiert.
 	if !allowMassGraduation &&
 		res.ActiveDbStudents >= minStudentsForThreshold &&
 		len(res.Graduates)*100 >= res.ActiveDbStudents*massGraduationThresholdPct {
 		return nil, &errMassGraduation{Graduates: len(res.Graduates), Active: res.ActiveDbStudents}
 	}
 
-	// Zweiter Durchlauf: anwenden.
-	barcodeCounter := 0
-	for _, rec := range records {
-		if rec.LusdID == "" {
-			continue
-		}
-		if dbRec, exists := dbStudents[rec.LusdID]; exists {
-			if dbRec.Klasse != rec.Klasse {
-				if _, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID); err != nil {
-					return nil, err
-				}
-			}
-		} else {
-			barcodeCounter++
-			year := time.Now().Year() + 5 // Default abgang
-			if _, err := tx.Exec(ctx,
-				"INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-				generateImportBarcode(barcodeCounter), rec.Vorname, rec.Nachname, rec.Klasse, year, rec.LusdID, rec.GebDatum); err != nil {
-				return nil, err
-			}
-		}
+	if err := wendeLusdAenderungenAn(ctx, tx, records, dbStudents); err != nil {
+		return nil, err
 	}
 
-	for _, grad := range res.Graduates {
-		dbRec := dbStudents[grad.ID]
-		// Check if they have active loans
-		var pending int
-		if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", dbRec.ID).Scan(&pending); err != nil {
-			return nil, err
-		}
-		if pending > 0 {
-			// Mark as inactive/abgänger — Name bleibt fürs Mahnwesen sichtbar
-			_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
-		} else {
-			// DSGVO compliant anonymization
-			// Append internal DB UUID to avoid unique constraint violations
-			anonymisiertName := fmt.Sprintf("Anonymisiert-%s", dbRec.ID)
-			_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = $1, klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $2", anonymisiertName, dbRec.ID)
-		}
-		if err != nil {
-			return nil, err
-		}
+	if err := behandleAbgaenger(ctx, tx, res.Graduates, dbStudents); err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
