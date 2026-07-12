@@ -46,7 +46,7 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 		// Fallback, falls die Tabelle leer ist oder noch nicht migriert wurde
 		smtpHost = "localhost"
 		smtpPort = "1025"
-		sender = "noreply@bibliothek-schule.de"
+		sender = defaultFromAddress
 	}
 
 	var smtpPass string
@@ -65,7 +65,7 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 		smtpPort = "1025"
 	}
 	if sender == "" {
-		sender = "noreply@bibliothek-schule.de"
+		sender = defaultFromAddress
 	}
 
 	// validate sender
@@ -139,7 +139,7 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 		smtpPort = "1025"
 	}
 	if sender == "" {
-		sender = "noreply@bibliothek-schule.de"
+		sender = defaultFromAddress
 	}
 
 	parsedSender, err := mail.ParseAddress(sender)

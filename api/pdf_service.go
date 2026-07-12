@@ -52,7 +52,7 @@ func (s *PDFService) DispatchOrderEmail(
 
 	attachments := []MailAttachment{
 		{
-			Name:        fmt.Sprintf("bestellanschreiben_%s.pdf", time.Now().Format("2006-01-02")),
+			Name:        fmt.Sprintf("bestellanschreiben_%s.pdf", time.Now().Format(dateFormatISO)),
 			ContentType: "application/pdf",
 			Data:        summaryPDF,
 		},
@@ -60,12 +60,12 @@ func (s *PDFService) DispatchOrderEmail(
 
 	if generateBarcodes && len(labels) > 0 {
 		attachments = append(attachments, MailAttachment{
-			Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format("2006-01-02")),
+			Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format(dateFormatISO)),
 			ContentType: "application/pdf",
 			Data:        barcodePDF,
 		})
 		attachments = append(attachments, MailAttachment{
-			Name:        fmt.Sprintf("barcode_mapping_%s.csv", time.Now().Format("2006-01-02")),
+			Name:        fmt.Sprintf("barcode_mapping_%s.csv", time.Now().Format(dateFormatISO)),
 			ContentType: "text/csv",
 			Data:        barcodeCSV,
 		})

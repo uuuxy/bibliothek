@@ -10,8 +10,190 @@ import (
 	"strings"
 )
 
-// sucheDNB fragt die Deutsche Nationalbibliothek (DNB) über die MARC21-XML-Schnittstelle ab.
+// --- Gemeinsame MARC21-/SRU-Strukturen und Parsing-Logik ---
+//
+// sucheDNB und SucheTextDNB werten dieselbe MARC21-XML-Antwort der DNB aus.
+// Die Feld-Auswertung ist deshalb in einem gemeinsamen Akkumulator gebündelt
+// (früher zwei je ~100er-Cognitive-Complexity-Funktionen, SonarQube go:S3776).
 
+type marcSubfield struct {
+	Code  string `xml:"code,attr"`
+	Value string `xml:",chardata"`
+}
+
+type marcDatafield struct {
+	Tag      string         `xml:"tag,attr"`
+	Subfield []marcSubfield `xml:"subfield"`
+}
+
+type marcRecord struct {
+	RecordData struct {
+		Record struct {
+			Datafield []marcDatafield `xml:"datafield"`
+		} `xml:"record"`
+	} `xml:"recordData"`
+}
+
+type sruAntwort struct {
+	Records struct {
+		Record []marcRecord `xml:"record"`
+	} `xml:"records"`
+}
+
+// dekodiereMARC parst die SRU-/MARC21-XML-Antwort. Der LimitReader schützt vor
+// Speicher-Erschöpfung beim XML-Parsing (z. B. Billion-Laughs-Angriff).
+func dekodiereMARC(koerper []byte) (sruAntwort, error) {
+	var nutzlast sruAntwort
+	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
+	if err := decoder.Decode(&nutzlast); err != nil {
+		return sruAntwort{}, err
+	}
+	return nutzlast, nil
+}
+
+// marcBibDaten sammelt die aus den Datafields extrahierten bibliografischen
+// Angaben eines einzelnen Datensatzes.
+type marcBibDaten struct {
+	titelTeile         []string
+	hauptAutor         string
+	extrahierteAutoren []string
+	verlag             string
+	jahr               string
+	isbn               string
+	genres             []string
+	zielgruppe         string
+}
+
+// verarbeiteFeld leitet ein Datafield an den passenden Tag-Handler weiter.
+func (b *marcBibDaten) verarbeiteFeld(feld marcDatafield) {
+	switch feld.Tag {
+	case "020":
+		b.verarbeiteISBN(feld.Subfield)
+	case "245":
+		b.verarbeiteTitel(feld.Subfield)
+	case "100", "700":
+		b.verarbeiteAutor(feld.Subfield)
+	case "260", "264":
+		b.verarbeitePublikation(feld.Subfield)
+	case "655":
+		b.verarbeiteGenre(feld.Subfield)
+	case "653":
+		b.verarbeiteZielgruppe(feld.Subfield)
+	}
+}
+
+// verarbeiteISBN liest die ISBN aus Tag 020 $a (letzter gültiger Wert gewinnt).
+func (b *marcBibDaten) verarbeiteISBN(subfelder []marcSubfield) {
+	for _, unterFeld := range subfelder {
+		if unterFeld.Code != "a" {
+			continue
+		}
+		parts := strings.Fields(unterFeld.Value)
+		if len(parts) == 0 {
+			continue
+		}
+		var clean strings.Builder
+		for _, char := range parts[0] {
+			if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
+				clean.WriteRune(char)
+			}
+		}
+		if l := clean.Len(); l == 10 || l == 13 {
+			b.isbn = clean.String()
+		}
+	}
+}
+
+// verarbeiteTitel wertet Tag 245 aus. Im Titel versteckte Autoren (durch
+// " / " abgetrennt) werden extrahiert.
+func (b *marcBibDaten) verarbeiteTitel(subfelder []marcSubfield) {
+	for _, unterFeld := range subfelder {
+		switch unterFeld.Code {
+		case "a", "b", "n", "p", "c":
+		default:
+			continue
+		}
+		wert := strings.TrimSpace(unterFeld.Value)
+		if idx := strings.Index(wert, " / "); idx != -1 {
+			autorInfo := strings.TrimSpace(wert[idx+3:])
+			if autorInfo != "" {
+				b.extrahierteAutoren = append(b.extrahierteAutoren, autorInfo)
+			}
+			wert = strings.TrimSpace(wert[:idx])
+		}
+		if wert != "" {
+			b.titelTeile = append(b.titelTeile, wert)
+		}
+	}
+}
+
+// verarbeiteAutor übernimmt den ersten Autor aus Tag 100/700 $a.
+func (b *marcBibDaten) verarbeiteAutor(subfelder []marcSubfield) {
+	if b.hauptAutor != "" {
+		return
+	}
+	for _, unterFeld := range subfelder {
+		if unterFeld.Code == "a" {
+			b.hauptAutor = strings.TrimSpace(unterFeld.Value)
+			return
+		}
+	}
+}
+
+// verarbeitePublikation liest Verlag ($b) und Jahr ($c) aus Tag 260/264.
+func (b *marcBibDaten) verarbeitePublikation(subfelder []marcSubfield) {
+	for _, unterFeld := range subfelder {
+		if unterFeld.Code == "b" && b.verlag == "" {
+			b.verlag = strings.TrimSpace(strings.TrimRight(unterFeld.Value, ",;/ "))
+		}
+		if unterFeld.Code == "c" && b.jahr == "" {
+			// DNB-Jahr kann Klammern enthalten, z. B. [2021] oder 2021.
+			jahrStr := strings.TrimSpace(unterFeld.Value)
+			jahrStr = strings.Trim(jahrStr, "[]().,;")
+			b.jahr = jahrStr
+		}
+	}
+}
+
+// verarbeiteGenre sammelt Genre-/Formangaben aus Tag 655 $a (GND-Vokabular).
+func (b *marcBibDaten) verarbeiteGenre(subfelder []marcSubfield) {
+	for _, unterFeld := range subfelder {
+		if unterFeld.Code == "a" {
+			if genre := strings.TrimSpace(unterFeld.Value); genre != "" {
+				b.genres = append(b.genres, genre)
+			}
+		}
+	}
+}
+
+// verarbeiteZielgruppe liest die Zielgruppe aus Tag 653 $a mit Präfix
+// "(Zielgruppe)", z. B. "(Zielgruppe)ab 10 Jahre".
+func (b *marcBibDaten) verarbeiteZielgruppe(subfelder []marcSubfield) {
+	for _, unterFeld := range subfelder {
+		wert := strings.TrimSpace(unterFeld.Value)
+		if unterFeld.Code == "a" && b.zielgruppe == "" && strings.HasPrefix(wert, "(Zielgruppe)") {
+			b.zielgruppe = strings.TrimSpace(strings.TrimPrefix(wert, "(Zielgruppe)"))
+		}
+	}
+}
+
+func (b *marcBibDaten) titel() string {
+	return strings.Join(b.titelTeile, " ")
+}
+
+// autor bevorzugt den direkten Autoren-Tag; im Titel gefundene Autoren werden
+// ergänzend in Klammern angehängt.
+func (b *marcBibDaten) autor() string {
+	if len(b.extrahierteAutoren) == 0 {
+		return b.hauptAutor
+	}
+	if b.hauptAutor == "" {
+		return strings.Join(b.extrahierteAutoren, " ; ")
+	}
+	return b.hauptAutor + " (" + strings.Join(b.extrahierteAutoren, " ; ") + ")"
+}
+
+// sucheDNB fragt die Deutsche Nationalbibliothek (DNB) über die MARC21-XML-Schnittstelle ab.
 func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
 	url := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=NUM=%s&recordSchema=MARC21-xml", isbn)
 	koerper, fehler := client.holeInhalt(kontext, url)
@@ -19,122 +201,21 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 		return nil, fehler
 	}
 
-	var nutzlast struct {
-		Records struct {
-			Record []struct {
-				RecordData struct {
-					Record struct {
-						Datafield []struct {
-							Tag      string `xml:"tag,attr"`
-							Subfield []struct {
-								Code  string `xml:"code,attr"`
-								Value string `xml:",chardata"`
-							} `xml:"subfield"`
-						} `xml:"datafield"`
-					} `xml:"record"`
-				} `xml:"recordData"`
-			} `xml:"record"`
-		} `xml:"records"`
-	}
-
-	// LimitReader protects against memory exhaustion during XML parsing (e.g. billion laughs attack)
-	// even though the byte array is already bounded, using it on the stream explicitly ensures safety.
-	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
-	if fehler := decoder.Decode(&nutzlast); fehler != nil {
+	antwort, fehler := dekodiereMARC(koerper)
+	if fehler != nil {
 		return nil, fehler
 	}
-
-	if len(nutzlast.Records.Record) == 0 {
+	if len(antwort.Records.Record) == 0 {
 		return nil, fmt.Errorf("nicht gefunden")
 	}
 
-	var titelTeile []string
-	var hauptAutor string
-	var extrahierteAutoren []string
-	var verlag string
-	var jahr string
-	var genres []string
-	var zielgruppe string
-
-	for _, datenFeld := range nutzlast.Records.Record[0].RecordData.Record.Datafield {
-		if datenFeld.Tag == "245" {
-			for _, unterFeld := range datenFeld.Subfield {
-				if unterFeld.Code == "a" || unterFeld.Code == "b" || unterFeld.Code == "n" || unterFeld.Code == "p" || unterFeld.Code == "c" {
-					wert := strings.TrimSpace(unterFeld.Value)
-
-					// Teils im Titel versteckte Autoren extrahieren (durch Space-Slash-Space abgetrennt)
-					if idx := strings.Index(wert, " / "); idx != -1 {
-						autorInfo := strings.TrimSpace(wert[idx+3:])
-						if autorInfo != "" {
-							extrahierteAutoren = append(extrahierteAutoren, autorInfo)
-						}
-						wert = strings.TrimSpace(wert[:idx])
-					}
-
-					if wert != "" {
-						titelTeile = append(titelTeile, wert)
-					}
-				}
-			}
-		}
-		if datenFeld.Tag == "100" || datenFeld.Tag == "700" {
-			if hauptAutor == "" {
-				for _, unterFeld := range datenFeld.Subfield {
-					if unterFeld.Code == "a" {
-						hauptAutor = strings.TrimSpace(unterFeld.Value)
-						break
-					}
-				}
-			}
-		}
-		if datenFeld.Tag == "260" || datenFeld.Tag == "264" {
-			for _, unterFeld := range datenFeld.Subfield {
-				if unterFeld.Code == "b" && verlag == "" {
-					verlag = strings.TrimSpace(strings.TrimRight(unterFeld.Value, ",;/ "))
-				}
-				if unterFeld.Code == "c" && jahr == "" {
-					// DNB year might have brackets like [2021] or 2021.
-					jahrStr := strings.TrimSpace(unterFeld.Value)
-					jahrStr = strings.Trim(jahrStr, "[]().,;")
-					jahr = jahrStr
-				}
-			}
-		}
-		// Genre-/Formangaben (z. B. "Kinderbuch", "Jugendbücher ab 12 Jahre")
-		// aus den GND-Vokabularen — Basis für den Signatur-Vorschlag.
-		if datenFeld.Tag == "655" {
-			for _, unterFeld := range datenFeld.Subfield {
-				if unterFeld.Code == "a" {
-					if genre := strings.TrimSpace(unterFeld.Value); genre != "" {
-						genres = append(genres, genre)
-					}
-				}
-			}
-		}
-		// Verlagsangabe zur Zielgruppe: 653 $a mit Präfix "(Zielgruppe)",
-		// z. B. "(Zielgruppe)ab 10 Jahre".
-		if datenFeld.Tag == "653" {
-			for _, unterFeld := range datenFeld.Subfield {
-				wert := strings.TrimSpace(unterFeld.Value)
-				if unterFeld.Code == "a" && zielgruppe == "" && strings.HasPrefix(wert, "(Zielgruppe)") {
-					zielgruppe = strings.TrimSpace(strings.TrimPrefix(wert, "(Zielgruppe)"))
-				}
-			}
-		}
+	var akk marcBibDaten
+	for _, datenFeld := range antwort.Records.Record[0].RecordData.Record.Datafield {
+		akk.verarbeiteFeld(datenFeld)
 	}
 
-	titel := strings.Join(titelTeile, " ")
-
-	// Bevorzuge den direkten Autoren-Tag, falls vorhanden
-	finalerAutor := hauptAutor
-	if len(extrahierteAutoren) > 0 {
-		if hauptAutor == "" {
-			finalerAutor = strings.Join(extrahierteAutoren, " ; ")
-		} else {
-			finalerAutor = hauptAutor + " (" + strings.Join(extrahierteAutoren, " ; ") + ")"
-		}
-	}
-
+	titel := akk.titel()
+	finalerAutor := akk.autor()
 	if titel == "" && finalerAutor == "" {
 		return nil, fmt.Errorf("nicht gefunden")
 	}
@@ -143,10 +224,10 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 		ISBN:         isbn,
 		Titel:        titel,
 		Autor:        finalerAutor,
-		Verlag:       verlag,
-		Jahr:         jahr,
-		Zielgruppe:   zielgruppe,
-		BibKategorie: leiteBibKategorieAb(genres, zielgruppe),
+		Verlag:       akk.verlag,
+		Jahr:         akk.jahr,
+		Zielgruppe:   akk.zielgruppe,
+		BibKategorie: leiteBibKategorieAb(akk.genres, akk.zielgruppe),
 	}, nil
 }
 
@@ -215,122 +296,32 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 		return nil, fehler
 	}
 
-	var nutzlast struct {
-		Records struct {
-			Record []struct {
-				RecordData struct {
-					Record struct {
-						Datafield []struct {
-							Tag      string `xml:"tag,attr"`
-							Subfield []struct {
-								Code  string `xml:"code,attr"`
-								Value string `xml:",chardata"`
-							} `xml:"subfield"`
-						} `xml:"datafield"`
-					} `xml:"record"`
-				} `xml:"recordData"`
-			} `xml:"record"`
-		} `xml:"records"`
-	}
-
-	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
-	if fehler := decoder.Decode(&nutzlast); fehler != nil {
+	antwort, fehler := dekodiereMARC(koerper)
+	if fehler != nil {
 		return nil, fehler
 	}
 
 	var ergebnisse []MetadatenErgebnis
-
-	for _, rec := range nutzlast.Records.Record {
-		var titelTeile []string
-		var hauptAutor string
-		var extrahierteAutoren []string
-		var verlag string
-		var jahr string
-		var isbn string
-
+	for _, rec := range antwort.Records.Record {
+		var akk marcBibDaten
 		for _, datenFeld := range rec.RecordData.Record.Datafield {
-			if datenFeld.Tag == "020" {
-				for _, unterFeld := range datenFeld.Subfield {
-					if unterFeld.Code == "a" {
-						parts := strings.Fields(unterFeld.Value)
-						if len(parts) > 0 {
-							clean := ""
-							for _, char := range parts[0] {
-								if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
-									clean += string(char)
-								}
-							}
-							if len(clean) == 10 || len(clean) == 13 {
-								isbn = clean
-							}
-						}
-					}
-				}
-			}
-			if datenFeld.Tag == "245" {
-				for _, unterFeld := range datenFeld.Subfield {
-					if unterFeld.Code == "a" || unterFeld.Code == "b" || unterFeld.Code == "n" || unterFeld.Code == "p" || unterFeld.Code == "c" {
-						wert := strings.TrimSpace(unterFeld.Value)
-						if idx := strings.Index(wert, " / "); idx != -1 {
-							autorInfo := strings.TrimSpace(wert[idx+3:])
-							if autorInfo != "" {
-								extrahierteAutoren = append(extrahierteAutoren, autorInfo)
-							}
-							wert = strings.TrimSpace(wert[:idx])
-						}
-						if wert != "" {
-							titelTeile = append(titelTeile, wert)
-						}
-					}
-				}
-			}
-			if datenFeld.Tag == "100" || datenFeld.Tag == "700" {
-				if hauptAutor == "" {
-					for _, unterFeld := range datenFeld.Subfield {
-						if unterFeld.Code == "a" {
-							hauptAutor = strings.TrimSpace(unterFeld.Value)
-							break
-						}
-					}
-				}
-			}
-			if datenFeld.Tag == "260" || datenFeld.Tag == "264" {
-				for _, unterFeld := range datenFeld.Subfield {
-					if unterFeld.Code == "b" && verlag == "" {
-						verlag = strings.TrimSpace(strings.TrimRight(unterFeld.Value, ",;/ "))
-					}
-					if unterFeld.Code == "c" && jahr == "" {
-						jahrStr := strings.TrimSpace(unterFeld.Value)
-						jahrStr = strings.Trim(jahrStr, "[]().,;")
-						jahr = jahrStr
-					}
-				}
-			}
+			akk.verarbeiteFeld(datenFeld)
 		}
 
-		titel := strings.Join(titelTeile, " ")
-		finalerAutor := hauptAutor
-		if len(extrahierteAutoren) > 0 {
-			if hauptAutor == "" {
-				finalerAutor = strings.Join(extrahierteAutoren, " ; ")
-			} else {
-				finalerAutor = hauptAutor + " (" + strings.Join(extrahierteAutoren, " ; ") + ")"
-			}
-		}
-
+		titel := akk.titel()
+		finalerAutor := akk.autor()
 		if titel == "" && finalerAutor == "" {
 			continue
 		}
 
 		ergebnisse = append(ergebnisse, MetadatenErgebnis{
-			ISBN:   isbn,
+			ISBN:   akk.isbn,
 			Titel:  titel,
 			Autor:  finalerAutor,
-			Verlag: verlag,
-			Jahr:   jahr,
+			Verlag: akk.verlag,
+			Jahr:   akk.jahr,
 		})
 	}
 
 	return ergebnisse, nil
 }
-

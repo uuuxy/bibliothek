@@ -42,7 +42,7 @@ services:
       # ein bekannter Default-Wert für JWT_SECRET/APP_ENCRYPTION_KEY aktiv ist.
       - APP_ENV=${APP_ENV:-production}
       - ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-false}
-      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-super-secret-default-key-at-least-32-bytes}
       - COOKIE_SECURE=${COOKIE_SECURE:-false}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}

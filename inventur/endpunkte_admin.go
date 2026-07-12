@@ -24,18 +24,18 @@ func (handler *APIHandler) handleAdminBooks(writer http.ResponseWriter, request 
 	switch request.Method {
 	case http.MethodGet:
 		switch path {
-		case "/api/admin/class-books":
+		case routeClassBooks:
 			handler.handleClassBooks(w, request)
 		case "/api/admin/books/external-covers":
 			handler.handleListExternalCovers(w, request)
 		case "/api/admin/books/export":
 			handler.handleExportCSV(w, request)
 		default:
-			writeError(w, http.StatusNotFound, "route nicht gefunden")
+			writeError(w, http.StatusNotFound, routeNotFoundMsg)
 		}
 	case http.MethodPost:
 		switch {
-		case path == "/api/admin/class-books":
+		case path == routeClassBooks:
 			handler.handleUpdateClassBooks(w, request)
 		case path == "/api/admin/class-books/add":
 			handler.handleAddClassBooks(w, request)
@@ -52,7 +52,7 @@ func (handler *APIHandler) handleAdminBooks(writer http.ResponseWriter, request 
 		case strings.HasSuffix(path, "/cover-upload"):
 			handler.handleUploadCover(w, request)
 		default:
-			writeError(w, http.StatusNotFound, "route nicht gefunden")
+			writeError(w, http.StatusNotFound, routeNotFoundMsg)
 		}
 	case http.MethodPut:
 		switch {
@@ -63,19 +63,19 @@ func (handler *APIHandler) handleAdminBooks(writer http.ResponseWriter, request 
 		case strings.HasPrefix(path, "/api/books/"):
 			handler.BearbeiteBuchAktualisieren(w, request)
 		default:
-			writeError(w, http.StatusNotFound, "route nicht gefunden")
+			writeError(w, http.StatusNotFound, routeNotFoundMsg)
 		}
 	case http.MethodDelete:
 		switch path {
-		case "/api/admin/class-books":
+		case routeClassBooks:
 			handler.handleDeleteClassGroup(w, request)
 		case "/api/books":
 			handler.BearbeiteBuecherLoeschen(w, request)
 		default:
-			writeError(w, http.StatusNotFound, "route nicht gefunden")
+			writeError(w, http.StatusNotFound, routeNotFoundMsg)
 		}
 	default:
-		writeError(w, http.StatusNotFound, "route nicht gefunden")
+		writeError(w, http.StatusNotFound, routeNotFoundMsg)
 	}
 
 	// Bei erfolgreicher Mutation: Backup-Signal auslösen

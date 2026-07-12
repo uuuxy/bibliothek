@@ -50,3 +50,8 @@ tmp/
 /*_report.html
 *.log
 !scripts/*.sql
+
+# SonarQube-Scan-Artefakte (lokal, nicht versioniert)
+.scannerwork/
+/sonarqube_*.json
+/issues_page_*.json

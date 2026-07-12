@@ -53,7 +53,7 @@ func GenerateKontoauszug(schueler KontoauszugSchueler, buecher []KontoauszugBuch
 	// Date
 	m.AddRow(10,
 		col.New(12).Add(
-			text.New(fmt.Sprintf("Stand: %s", time.Now().Format("02.01.2006")), props.Text{
+			text.New(fmt.Sprintf("Stand: %s", time.Now().Format(dateFormatDE)), props.Text{
 				Size:  10,
 				Align: align.Right,
 			}),
@@ -75,8 +75,8 @@ func GenerateKontoauszug(schueler KontoauszugSchueler, buecher []KontoauszugBuch
 		m.AddRow(10,
 			col.New(5).Add(text.New(buch.Titel, props.Text{Size: 10})),
 			col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 10})),
-			col.New(2).Add(text.New(buch.Ausleihdatum.Format("02.01.2006"), props.Text{Size: 10})),
-			col.New(2).Add(text.New(buch.Rueckgabedatum.Format("02.01.2006"), props.Text{Size: 10})),
+			col.New(2).Add(text.New(buch.Ausleihdatum.Format(dateFormatDE), props.Text{Size: 10})),
+			col.New(2).Add(text.New(buch.Rueckgabedatum.Format(dateFormatDE), props.Text{Size: 10})),
 		)
 	}
 

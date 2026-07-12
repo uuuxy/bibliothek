@@ -85,7 +85,7 @@ export function useUnifiedInventory() {
                     warnings: data.warnungen || []
                 };
             } else {
-                const err = await res.json().catch(() => ({}));
+                const err = await res.json().catch((e) => { console.error("Fehler:", e); return {}; });
                 lastScan = {
                     success: false,
                     barcode: barcode,

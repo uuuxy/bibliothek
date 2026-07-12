@@ -92,10 +92,10 @@ func (s *defaultLoanService) handleReturn(
 	}
 
 	if chkCtx.borrowerType == "student" {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
+		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
 		resp.Student = chkCtx.student
 	} else {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
+		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
 		resp.Teacher = chkCtx.teacher
 	}
 
@@ -157,9 +157,9 @@ func (s *defaultLoanService) handleForeignReturn(
 	}
 
 	if activeLoan.SchuelerID != nil {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID))
+		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID))
 	} else if activeLoan.AusleiherBenutzerID != nil {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
+		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 	}
 
 	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{

@@ -126,7 +126,7 @@ export function useStudentProfile() {
                 showDamageModal = false;
                 fetchProfile(studentId);
             } else {
-                const err = await res.json().catch(() => ({}));
+                const err = await res.json().catch((e) => { console.error("Fehler:", e); return {}; });
                 alert(err.error || "Fehler beim Melden.");
             }
         } catch (e) {

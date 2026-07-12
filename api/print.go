@@ -88,9 +88,9 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/pdf")
-		w.Header().Set("Content-Disposition", `inline; filename="Rechnung.pdf"`)
-		w.Header().Set("Content-Length", fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(headerContentType, contentTypePDF)
+		w.Header().Set(headerContentDisposition, `inline; filename="Rechnung.pdf"`)
+		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
 
 		http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfBytes))
 	}
@@ -178,9 +178,9 @@ func PrintMahnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 
 		filename := fmt.Sprintf("Mahnliste_Klasse_%s.pdf", klasse)
 
-		w.Header().Set("Content-Type", "application/pdf")
-		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-		w.Header().Set("Content-Length", fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(headerContentType, contentTypePDF)
+		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
+		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
 
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}
@@ -249,9 +249,9 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 
 		filename := fmt.Sprintf("Kontoauszug_%s_%s.pdf", s.Vorname, s.Nachname)
 
-		w.Header().Set("Content-Type", "application/pdf")
-		w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, filename))
-		w.Header().Set("Content-Length", fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(headerContentType, contentTypePDF)
+		w.Header().Set(headerContentDisposition, fmt.Sprintf(`inline; filename="%s"`, filename))
+		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
 
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}

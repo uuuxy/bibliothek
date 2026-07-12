@@ -16,8 +16,11 @@ import (
 )
 
 func main() {
-	// 1. Datenbankverbindung aufbauen
-	dsn := "postgres://postgres:postgrespassword@localhost:5434/bibliothek?sslmode=disable"
+	// 1. Datenbankverbindung aufbauen (Zugangsdaten ausschließlich aus der Umgebung)
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL environment variable is required")
+	}
 	ctx := context.Background()
 	
 	pool, err := pgxpool.New(ctx, dsn)

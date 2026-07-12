@@ -38,80 +38,91 @@ func NewSystemSettingsRepository(db db.PgxPoolIface) SystemSettingsRepository {
 	return &pgSystemSettingsRepository{db: db}
 }
 
+// standardEinstellungen liefert die Default-Konfiguration (Fallback, wenn ein
+// Wert nicht in der DB steht).
+func standardEinstellungen() *SystemEinstellungen {
+	return &SystemEinstellungen{
+		LmfStichtag:          "07-31",
+		MaxAusleihenSchueler: 5,
+		FristBuchTage:        21,
+		FristMedienTage:      7,
+		MaxOverdueDays:       14,
+		MaxOverdueItems:      1,
+	}
+}
+
+func setzeIntEinstellung(val *string, ziel *int) {
+	if val == nil || *val == "" {
+		return
+	}
+	if v, err := strconv.Atoi(*val); err == nil {
+		*ziel = v
+	}
+}
+
+func setzeStringNichtLeer(val *string, ziel *string) {
+	if val != nil && *val != "" {
+		*ziel = *val
+	}
+}
+
+func setzeStringRoh(val *string, ziel *string) {
+	if val != nil {
+		*ziel = *val
+	}
+}
+
+// applyEinstellung überträgt einen einzelnen Key/Value-Eintrag aus der DB auf
+// die Settings-Struktur.
+func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
+	switch key {
+	case "ferien_leseclub_aktiv":
+		settings.FerienLeseclubAktiv = val != nil && *val == "true"
+	case "ferien_leseclub_zieldatum":
+		if val != nil && *val != "" {
+			v := *val
+			settings.FerienLeseclubZieldatum = &v
+		}
+	case "lmf_stichtag":
+		setzeStringNichtLeer(val, &settings.LmfStichtag)
+	case "max_ausleihen_schueler":
+		setzeIntEinstellung(val, &settings.MaxAusleihenSchueler)
+	case "frist_buch_tage":
+		setzeIntEinstellung(val, &settings.FristBuchTage)
+	case "frist_medien_tage":
+		setzeIntEinstellung(val, &settings.FristMedienTage)
+	case "max_overdue_days":
+		setzeIntEinstellung(val, &settings.MaxOverdueDays)
+	case "max_overdue_items":
+		setzeIntEinstellung(val, &settings.MaxOverdueItems)
+	case "schule_name":
+		setzeStringRoh(val, &settings.SchuleName)
+	case "schule_strasse":
+		setzeStringRoh(val, &settings.SchuleStrasse)
+	case "schule_plz":
+		setzeStringRoh(val, &settings.SchulePLZ)
+	case "schule_ort":
+		setzeStringRoh(val, &settings.SchuleOrt)
+	}
+}
+
 // GetSettings reads system settings from the database.
 func (repo *pgSystemSettingsRepository) GetSettings(ctx context.Context) (*SystemEinstellungen, error) {
+	settings := standardEinstellungen()
+
 	rows, err := repo.db.Query(ctx, `SELECT schluessel, wert FROM system_einstellungen`)
 	if err != nil {
-		return &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7, MaxOverdueDays: 14, MaxOverdueItems: 1}, err
+		return settings, err
 	}
 	defer rows.Close()
 
-	settings := &SystemEinstellungen{LmfStichtag: "07-31", MaxAusleihenSchueler: 5, FristBuchTage: 21, FristMedienTage: 7, MaxOverdueDays: 14, MaxOverdueItems: 1}
 	for rows.Next() {
 		var key string
 		var val *string
 		if scanErr := rows.Scan(&key, &val); scanErr != nil {
 			continue
 		}
-		switch key {
-		case "ferien_leseclub_aktiv":
-			settings.FerienLeseclubAktiv = val != nil && *val == "true"
-		case "ferien_leseclub_zieldatum":
-			if val != nil && *val != "" {
-				v := *val
-				settings.FerienLeseclubZieldatum = &v
-			}
-		case "lmf_stichtag":
-			if val != nil && *val != "" {
-				settings.LmfStichtag = *val
-			}
-		case "max_ausleihen_schueler":
-			if val != nil && *val != "" {
-				if v, err := strconv.Atoi(*val); err == nil {
-					settings.MaxAusleihenSchueler = v
-				}
-			}
-		case "frist_buch_tage":
-			if val != nil && *val != "" {
-				if v, err := strconv.Atoi(*val); err == nil {
-					settings.FristBuchTage = v
-				}
-			}
-		case "frist_medien_tage":
-			if val != nil && *val != "" {
-				if v, err := strconv.Atoi(*val); err == nil {
-					settings.FristMedienTage = v
-				}
-			}
-		case "max_overdue_days":
-			if val != nil && *val != "" {
-				if v, err := strconv.Atoi(*val); err == nil {
-					settings.MaxOverdueDays = v
-				}
-			}
-		case "max_overdue_items":
-			if val != nil && *val != "" {
-				if v, err := strconv.Atoi(*val); err == nil {
-					settings.MaxOverdueItems = v
-				}
-			}
-		case "schule_name":
-			if val != nil {
-				settings.SchuleName = *val
-			}
-		case "schule_strasse":
-			if val != nil {
-				settings.SchuleStrasse = *val
-			}
-		case "schule_plz":
-			if val != nil {
-				settings.SchulePLZ = *val
-			}
-		case "schule_ort":
-			if val != nil {
-				settings.SchuleOrt = *val
-			}
-		}
+		applyEinstellung(settings, key, val)
 	}
 	return settings, rows.Err()
 }

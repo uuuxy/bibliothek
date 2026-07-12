@@ -203,7 +203,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 	p.Ln(12)
 
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(time.Now().Format("02.01.2006"))), "", 1, "R", false, 0, "")
+	p.CellFormat(0, 6, tr(schule.OrtDatum(time.Now().Format(dateFormatDE))), "", 1, "R", false, 0, "")
 	p.Ln(6)
 
 	// Berichtstitel
@@ -212,7 +212,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 	p.Ln(7)
 	p.SetFont("Arial", "", 10)
 	p.SetTextColor(80, 80, 80)
-	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", von.Format("02.01.2006"), bis.Format("02.01.2006"))))
+	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(12)
 
@@ -321,7 +321,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 			p.SetFont("Arial", "B", 9)
 			p.SetFillColor(235, 235, 245)
 			header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
-				o.Bestelldatum.Format("02.01.2006"), o.LieferantName, o.Kundennummer)
+				o.Bestelldatum.Format(dateFormatDE), o.LieferantName, o.Kundennummer)
 			p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
 			p.SetFillColor(255, 255, 255)
 
@@ -364,7 +364,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 		p.Ln(4)
 		p.SetFont("Arial", "B", 11)
 		p.SetFillColor(220, 230, 255)
-		p.CellFormat(150, 9, tr(fmt.Sprintf("Gesamtbetrag %s – %s", von.Format("02.01.2006"), bis.Format("02.01.2006"))), "1", 0, "R", true, 0, "")
+		p.CellFormat(150, 9, tr(fmt.Sprintf("Gesamtbetrag %s – %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))), "1", 0, "R", true, 0, "")
 		p.CellFormat(20, 9, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
 		p.SetFillColor(255, 255, 255)
 	}

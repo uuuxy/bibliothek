@@ -88,7 +88,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		// Date line (Right-aligned)
 		pdf.SetY(40)
 		pdf.SetFont("Arial", "", 10)
-		pdf.CellFormat(0, 6, schule.OrtDatum(time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
+		pdf.CellFormat(0, 6, schule.OrtDatum(time.Now().Format(dateFormatDE)), "", 0, "R", false, 0, "")
 
 		// DIN 5008 Address Window (approx. 45mm from top)
 		pdf.SetXY(20, 45)
@@ -116,7 +116,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		introText := fmt.Sprintf("Sehr geehrte Erziehungsberechtigte,\n\n"+
 			"bei der Rückgabe bzw. Überprüfung des von Ihrem Kind ausgeliehenen Schulbuches "+
 			"\"%s\" (Barcode: %s) wurde am %s folgende Beschädigung oder Verlust festgestellt:\n\n",
-			tTitel, eBarcode, erstelltAm.Format("02.01.2006"))
+			tTitel, eBarcode, erstelltAm.Format(dateFormatDE))
 		pdf.MultiCell(0, 5, tr(introText), "", "L", false)
 
 		// Damage Description Box
@@ -127,7 +127,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 
 		// Resolution guidelines and payment request
 		pdf.SetFont("Arial", "", 10)
-		dueTime := time.Now().AddDate(0, 0, 14).Format("02.01.2006")
+		dueTime := time.Now().AddDate(0, 0, 14).Format(dateFormatDE)
 		instructions := fmt.Sprintf("Gemäß der Schulbibliotheksordnung bitten wir Sie, für den entstandenen Schaden "+
 			"einen Ersatzbetrag von %.2f EUR bis spätestens zum %s zu begleichen.\n\n"+
 			"Bitte bezahlen Sie den Betrag bar in der Bibliothek zu den Öffnungszeiten.\n\n"+

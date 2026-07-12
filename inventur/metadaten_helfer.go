@@ -59,7 +59,7 @@ var (
 var kategorisierungFachZuweisungen = map[string]string{
 	"mathematik": "Mathe", "algebra": "Mathe", "geometrie": "Mathe", "mathe": "Mathe",
 	"english": "Englisch", "englisch": "Englisch", "grammar": "Englisch",
-	"französisch": "Französisch", "franzosisch": "Französisch", "français": "Französisch", "francais": "Französisch", "fremdsprache": "Französisch",
+	"französisch": langFrench, "franzosisch": langFrench, "français": langFrench, "francais": langFrench, "fremdsprache": langFrench,
 	"deutsch": "Deutsch", "grammatik": "Deutsch", "literatur": "Deutsch",
 	"geschichte": "Geschichte", "histor": "Geschichte", "europa": "Geschichte",
 	"biologie": "Biologie", "chemie": "Chemie", "physik": "Physik",

@@ -19,13 +19,17 @@ import (
 func main() {
 	// 1. Konfiguration über Command-Line Flags
 	csvFilePath := flag.String("file", "isbns.csv", "Pfad zur CSV-Datei")
-	dbConnStr := flag.String("db", "postgres://postgres:geheim@localhost:5434/bibliothek?sslmode=disable", "PostgreSQL Connection String")
+	dbConnStr := flag.String("db", os.Getenv("DATABASE_URL"), "PostgreSQL Connection String (Default: $DATABASE_URL)")
 	separator := flag.String("sep", ";", "Trennzeichen für die CSV (z.B. ',' oder ';')")
 	colTitle := flag.Int("col-title", 0, "Index der Spalte mit dem Buchtitel (0-basiert)")
 	colIsbn := flag.Int("col-isbn", 1, "Index der Spalte mit der ISBN (0-basiert)")
 	hasHeader := flag.Bool("header", true, "Gibt an, ob die erste Zeile eine Kopfzeile ist und übersprungen werden soll")
 	
 	flag.Parse()
+
+	if *dbConnStr == "" {
+		log.Fatal("Kein Connection-String: setze DATABASE_URL oder nutze das -db Flag")
+	}
 
 	// 2. Datenbankverbindung herstellen
 	db, err := sql.Open("pgx", *dbConnStr)

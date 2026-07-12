@@ -82,7 +82,7 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
 }
@@ -181,7 +181,7 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		InvalidatePermissionCache()
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
 }
@@ -225,7 +225,7 @@ func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository) http.Ha
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Write(w, []byte(`{"status":"success"}`))
 	}
 }

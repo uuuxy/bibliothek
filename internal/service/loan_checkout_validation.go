@@ -43,7 +43,7 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 			if !overrideBlock {
 				return nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
 			}
-			logAuditErr("override-block", s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+			logAuditErr(overrideBlockAction, s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
 				"schueler_id": result.borrowerID,
 				"reason":      "Ausleihsperre manuell ignoriert (IstGesperrt)",
 			}))
@@ -57,7 +57,7 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 			if !overrideBlock {
 				return nil, fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
 			}
-			logAuditErr("override-block", s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+			logAuditErr(overrideBlockAction, s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
 				"schueler_id": result.borrowerID,
 				"reason":      "Ausleihsperre manuell ignoriert (Manuelle Sperre: " + reason + ")",
 			}))
@@ -86,7 +86,7 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 			if !overrideBlock {
 				return nil, fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdueCount)
 			}
-			logAuditErr("override-block", s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+			logAuditErr(overrideBlockAction, s.auditRepo.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
 				"schueler_id": result.borrowerID,
 				"reason":      fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", overdueCount),
 			}))

@@ -37,7 +37,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		defer closeutil.LogClose(file, "littera import file")
+		defer closeutil.LogClose(file, litteraImportSource)
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -83,7 +83,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("failed to open excel file: %w", err))
 				return
 			}
-			defer closeutil.LogClose(f, "littera import file")
+			defer closeutil.LogClose(f, litteraImportSource)
 			sheetName := f.GetSheetName(f.GetActiveSheetIndex())
 			rows, err = f.GetRows(sheetName, excelize.Options{RawCellValue: true})
 			if err != nil {
@@ -161,7 +161,7 @@ func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("keine Datei hochgeladen"))
 		return
 	}
-	defer closeutil.LogClose(file, "littera import file")
+	defer closeutil.LogClose(file, litteraImportSource)
 
 	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("es werden nur CSV-Dateien akzeptiert"))

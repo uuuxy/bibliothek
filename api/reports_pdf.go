@@ -158,7 +158,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			// --- Date ---
 			pdf.SetFont("Arial", "", 11)
 			pdf.SetXY(150, 85)
-			pdf.Cell(40, 5, "Datum: "+time.Now().Format("02.01.2006"))
+			pdf.Cell(40, 5, "Datum: "+time.Now().Format(dateFormatDE))
 
 			// --- Subject ---
 			pdf.SetFont("Arial", "B", 12)
@@ -174,7 +174,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 			parsedText := strings.ReplaceAll(textBody, "{{.Vorname}}", student.Vorname)
 			parsedText = strings.ReplaceAll(parsedText, "{{.Nachname}}", student.Nachname)
-			parsedText = strings.ReplaceAll(parsedText, "{{.Frist}}", time.Now().Format("02.01.2006"))
+			parsedText = strings.ReplaceAll(parsedText, "{{.Frist}}", time.Now().Format(dateFormatDE))
 
 			// Split by the book list placeholder
 			parts := strings.Split(parsedText, "{{.BuchListe}}")
@@ -203,7 +203,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 				pdf.CellFormat(75, 6, tr(tTitle), "1", 0, "L", false, 0, "")
 				pdf.CellFormat(35, 6, tr(b.BarcodeID), "1", 0, "L", false, 0, "")
-				pdf.CellFormat(30, 6, b.AusgeliehenAm.Format("02.01.2006"), "1", 0, "L", false, 0, "")
+				pdf.CellFormat(30, 6, b.AusgeliehenAm.Format(dateFormatDE), "1", 0, "L", false, 0, "")
 				pdf.CellFormat(30, 6, fmt.Sprintf("%d", b.DaysOverdue), "1", 1, "R", false, 0, "")
 			}
 

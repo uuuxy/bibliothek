@@ -105,7 +105,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 		if err := tx.Commit(ctx); err != nil {
 			return nil, err
 		}
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
+		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 
 		// Event für Plugins triggern (Rückgabe registriert)
 		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
@@ -145,9 +145,9 @@ func (s *defaultLoanService) HandleSimpleReturn(
 
 	// Revisionssicheres Audit-Log schreiben
 	if activeLoan.SchuelerID != nil {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID))
+		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID))
 	} else if activeLoan.AusleiherBenutzerID != nil {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
+		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 	}
 
 	// Event für Plugins triggern (Rückgabe registriert)

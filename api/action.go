@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -11,6 +12,42 @@ import (
 	"bibliothek/auth"
 	"bibliothek/internal/service"
 )
+
+const insertIdempotencyQuery = "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
+
+func mapServiceErrorToStatus(err error) int {
+	switch {
+	case errors.Is(err, service.ErrNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, service.ErrBlocked):
+		return http.StatusForbidden
+	case errors.Is(err, service.ErrInvalidState):
+		return http.StatusBadRequest
+	case errors.Is(err, service.ErrConflict):
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+func (s *Server) getCachedResponse(ctx context.Context, key string) ([]byte, int, error) {
+	var cachedRespJSON []byte
+	var cachedStatus int
+	err := s.DB.Pool.QueryRow(ctx, "SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1", key).Scan(&cachedRespJSON, &cachedStatus)
+	return cachedRespJSON, cachedStatus, err
+}
+
+func (s *Server) saveToCache(ctx context.Context, key string, data interface{}, status int) {
+	if key == "" || status >= 500 {
+		return
+	}
+	respData, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("idempotenz: Antwort konnte nicht serialisiert werden: %v", err)
+		return
+	}
+	logExec(s.DB.Pool.Exec(ctx, insertIdempotencyQuery, key, respData, status))
+}
 
 // ActionHandler dispatches requests from the Omnibox.
 func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFunc {
@@ -35,9 +72,7 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 		ctx := r.Context()
 
 		if req.IdempotencyKey != "" {
-			var cachedRespJSON []byte
-			var cachedStatus int
-			err := s.DB.Pool.QueryRow(ctx, "SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1", req.IdempotencyKey).Scan(&cachedRespJSON, &cachedStatus)
+			cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, req.IdempotencyKey)
 			if err == nil {
 				// Cache Hit
 				if cachedStatus >= 400 {
@@ -62,31 +97,9 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 
 		res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
 
-		status := http.StatusOK
 		if err != nil {
-			status = http.StatusInternalServerError
-			switch {
-			case errors.Is(err, service.ErrNotFound):
-				status = http.StatusNotFound
-			case errors.Is(err, service.ErrBlocked):
-				status = http.StatusForbidden
-			case errors.Is(err, service.ErrInvalidState):
-				status = http.StatusBadRequest
-			case errors.Is(err, service.ErrConflict):
-				status = http.StatusConflict
-			}
-
-			// 5xx sind typischerweise transient (DB-Timeout o. ä.) und werden NICHT gecacht,
-			// damit ein Retry neu berechnet statt den alten Fehler zurückzuliefern. Deterministische
-			// Client-Fehler (4xx) werden gecacht, um die Idempotenz-Semantik zu wahren.
-			if req.IdempotencyKey != "" && status < 500 {
-				if errData, merr := json.Marshal(map[string]string{"error": err.Error()}); merr == nil {
-					logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status))
-				} else {
-					log.Printf("idempotenz: Fehler-Antwort konnte nicht serialisiert werden: %v", merr)
-				}
-			}
-
+			status := mapServiceErrorToStatus(err)
+			s.saveToCache(ctx, req.IdempotencyKey, map[string]string{"error": err.Error()}, status)
 			apierrors.SendHTTPError(w, status, err)
 			return
 		}
@@ -94,13 +107,7 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 		// Map to API response
 		resp := mapOmniboxResultToActionResponse(res)
 
-		if req.IdempotencyKey != "" {
-			if respData, merr := json.Marshal(resp); merr == nil {
-				logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status))
-			} else {
-				log.Printf("idempotenz: Antwort konnte nicht serialisiert werden: %v", merr)
-			}
-		}
+		s.saveToCache(ctx, req.IdempotencyKey, resp, http.StatusOK)
 
 		// Broadcast updates to all monitoring dashboards (SSE)
 		if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
@@ -152,101 +159,79 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 		var batchResp ActionBatchResponse
 
 		for i, req := range batchReq {
-			req.Query = strings.TrimSpace(req.Query)
-			if req.Query == "" {
-				batchResp.Results = append(batchResp.Results, ActionBatchResponseItem{
-					Index:   i,
-					Success: false,
-					Status:  http.StatusBadRequest,
-					Error:   "Query ist leer",
-				})
-				continue
-			}
-
-			if req.IdempotencyKey != "" {
-				var cachedRespJSON []byte
-				var cachedStatus int
-				err := s.DB.Pool.QueryRow(ctx, "SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1", req.IdempotencyKey).Scan(&cachedRespJSON, &cachedStatus)
-				if err == nil {
-					item := ActionBatchResponseItem{
-						Index:   i,
-						Status:  cachedStatus,
-						Success: cachedStatus >= 200 && cachedStatus < 300,
-					}
-					decodeOK := true
-					if item.Success {
-						var data ActionResponse
-						if uerr := json.Unmarshal(cachedRespJSON, &data); uerr != nil {
-							log.Printf("idempotenz: beschädigte Batch-Antwort im Cache, wird neu berechnet: %v", uerr)
-							decodeOK = false
-						} else {
-							item.Data = &data
-						}
-					} else {
-						var errData map[string]string
-						if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
-							log.Printf("idempotenz: beschädigte Batch-Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
-							decodeOK = false
-						} else {
-							item.Error = errData["error"]
-						}
-					}
-					if decodeOK {
-						batchResp.Results = append(batchResp.Results, item)
-						continue
-					}
-				}
-			}
-
-			res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
-
-			status := http.StatusOK
-			if err != nil {
-				status = http.StatusInternalServerError
-				switch {
-				case errors.Is(err, service.ErrNotFound):
-					status = http.StatusNotFound
-				case errors.Is(err, service.ErrBlocked):
-					status = http.StatusForbidden
-				case errors.Is(err, service.ErrInvalidState):
-					status = http.StatusBadRequest
-				case errors.Is(err, service.ErrConflict):
-					status = http.StatusConflict
-				}
-			}
-
-			item := ActionBatchResponseItem{
-				Index:   i,
-				Status:  status,
-				Success: err == nil,
-			}
-			if err != nil {
-				item.Error = err.Error()
-				// Transiente 5xx nicht cachen (siehe Einzel-Handler), nur deterministische 4xx.
-				if req.IdempotencyKey != "" && status < 500 {
-					if errData, merr := json.Marshal(map[string]string{"error": err.Error()}); merr == nil {
-						logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, errData, status))
-					} else {
-						log.Printf("idempotenz: Batch-Fehler-Antwort konnte nicht serialisiert werden: %v", merr)
-					}
-				}
-			} else {
-				item.Data = mapOmniboxResultToActionResponse(res)
-				if req.IdempotencyKey != "" {
-					if respData, merr := json.Marshal(item.Data); merr == nil {
-						logExec(s.DB.Pool.Exec(ctx, "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", req.IdempotencyKey, respData, status))
-					} else {
-						log.Printf("idempotenz: Batch-Antwort konnte nicht serialisiert werden: %v", merr)
-					}
-				}
-				// Broadcast updates
-				if item.Data.Type == "ausleihe" || item.Data.Type == "rueckgabe" {
-					s.broadcastActionEvent(*item.Data)
-				}
-			}
-			batchResp.Results = append(batchResp.Results, item)
+			batchResp.Results = append(batchResp.Results, s.processSingleBatchItem(ctx, omniboxSvc, req, i, claims.UserID, string(claims.Rolle)))
 		}
 
 		RespondJSON(w, http.StatusOK, batchResp)
 	}
+}
+
+func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.OmniboxService, req ActionRequest, index int, userID string, rolle string) ActionBatchResponseItem {
+	req.Query = strings.TrimSpace(req.Query)
+	if req.Query == "" {
+		return ActionBatchResponseItem{
+			Index:   index,
+			Success: false,
+			Status:  http.StatusBadRequest,
+			Error:   "Query ist leer",
+		}
+	}
+
+	if req.IdempotencyKey != "" {
+		cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, req.IdempotencyKey)
+		if err == nil {
+			item := ActionBatchResponseItem{
+				Index:   index,
+				Status:  cachedStatus,
+				Success: cachedStatus >= 200 && cachedStatus < 300,
+			}
+			decodeOK := true
+			if item.Success {
+				var data ActionResponse
+				if uerr := json.Unmarshal(cachedRespJSON, &data); uerr != nil {
+					log.Printf("idempotenz: beschädigte Batch-Antwort im Cache, wird neu berechnet: %v", uerr)
+					decodeOK = false
+				} else {
+					item.Data = &data
+				}
+			} else {
+				var errData map[string]string
+				if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
+					log.Printf("idempotenz: beschädigte Batch-Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
+					decodeOK = false
+				} else {
+					item.Error = errData["error"]
+				}
+			}
+			if decodeOK {
+				return item
+			}
+		}
+	}
+
+	res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, userID, rolle, req.OverrideBlock)
+
+	status := http.StatusOK
+	if err != nil {
+		status = mapServiceErrorToStatus(err)
+	}
+
+	item := ActionBatchResponseItem{
+		Index:   index,
+		Status:  status,
+		Success: err == nil,
+	}
+	if err != nil {
+		item.Error = err.Error()
+		s.saveToCache(ctx, req.IdempotencyKey, map[string]string{"error": err.Error()}, status)
+	} else {
+		item.Data = mapOmniboxResultToActionResponse(res)
+		s.saveToCache(ctx, req.IdempotencyKey, item.Data, status)
+		// Broadcast updates
+		if item.Data.Type == "ausleihe" || item.Data.Type == "rueckgabe" {
+			s.broadcastActionEvent(*item.Data)
+		}
+	}
+
+	return item
 }

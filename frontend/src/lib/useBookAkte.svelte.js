@@ -28,7 +28,7 @@ export function useBookAkte() {
             try {
                 const res = await apiFetch(`/api/books/${id}`, { credentials: "include" });
                 if (res.ok) book = await res.json();
-            } catch { /* ignore */ }
+            } catch (err) { console.error("Fehler beim Laden des Buches:", err); }
         }
 
         const candidates = [];
@@ -65,7 +65,7 @@ export function useBookAkte() {
                 if (showToast) showToast("Titel erfolgreich gelöscht", "success");
                 if (onBack) onBack();
             } else {
-                const err = await res.json().catch(() => ({}));
+                const err = await res.json().catch((e) => { console.error("Fehler:", e); return {}; });
                 alert(err.error || "Fehler beim Löschen des Titels.");
             }
         } catch (e) {

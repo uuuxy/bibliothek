@@ -6,11 +6,18 @@ export const options = {
   duration: '10s',
 };
 
+// Zugangsdaten ausschließlich über k6-Umgebungsvariablen (z.B. k6 run -e TEST_PASSWORD=... loadtest.js)
+const TEST_EMAIL = __ENV.TEST_EMAIL || 'pflasch@philipp-reis-schule.de';
+const TEST_PASSWORD = __ENV.TEST_PASSWORD;
+
 // Setup wird einmalig vor allen VUs ausgeführt
 export function setup() {
+  if (!TEST_PASSWORD) {
+    throw new Error('TEST_PASSWORD environment variable is required (k6 run -e TEST_PASSWORD=...)');
+  }
   const loginRes = http.post('http://localhost:8084/login', JSON.stringify({
-    email: 'pflasch@philipp-reis-schule.de',
-    password: 'peterfxy23'
+    email: TEST_EMAIL,
+    password: TEST_PASSWORD
   }), {
     headers: { 'Content-Type': 'application/json' }
   });

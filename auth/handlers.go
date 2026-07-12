@@ -209,7 +209,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Encode(w, LoginResponse{
 			UserID:      id,
 			Rolle:       role,
@@ -292,7 +292,7 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Encode(w, LoginResponse{
 			UserID:      claims.UserID,
 			Rolle:       Role(roleStr),
@@ -335,7 +335,7 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			remaining := time.Until(claims.ExpiresAt.Time)
 			if remaining > authenticator.tokenDuration/2 {
 				// Token is still fresh enough, return current session info
-				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set(headerContentType, contentTypeJSON)
 				httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
 				return
 			}
@@ -359,7 +359,7 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			SameSite: http.SameSiteStrictMode,
 		})
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "renewed"})
 	}
 }

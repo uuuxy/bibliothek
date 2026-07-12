@@ -28,8 +28,8 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 	}
 
 	serveFallback := func(w http.ResponseWriter) {
-		w.Header().Set("Content-Type", "image/gif")
-		w.Header().Set("Cache-Control", "public, max-age=86400")
+		w.Header().Set(headerContentType, "image/gif")
+		w.Header().Set(headerCacheControl, "public, max-age=86400")
 		w.WriteHeader(http.StatusOK)
 		httpresp.Write(w, transparent1x1)
 	}
@@ -81,8 +81,8 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		// Serve cached version if it exists
 		if _, err := root.Stat(fileName); err == nil {
-			w.Header().Set("Cache-Control", "public, max-age=31536000")
-			w.Header().Set("Content-Type", "image/webp")
+			w.Header().Set(headerCacheControl, "public, max-age=31536000")
+			w.Header().Set(headerContentType, "image/webp")
 			http.ServeFileFS(w, r, root.FS(), fileName)
 			return
 		}
@@ -127,8 +127,8 @@ func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
 
 		// Serve the newly converted file if it exists
 		if _, err := root.Stat(fileName); err == nil {
-			w.Header().Set("Cache-Control", "public, max-age=31536000")
-			w.Header().Set("Content-Type", "image/webp")
+			w.Header().Set(headerCacheControl, "public, max-age=31536000")
+			w.Header().Set(headerContentType, "image/webp")
 			http.ServeFileFS(w, r, root.FS(), fileName)
 		} else {
 			serveFallback(w)
