@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,6 +26,83 @@ type MonitorSlides struct {
 	Beliebt         []MonitorTitel `json:"beliebt"`
 }
 
+// queryBuchDesMonats liefert das „Buch des Monats" (meistausgeliehener Titel mit Cover
+// der letzten 30 Tage); fehlt eines, wird der zuletzt hinzugefügte Titel mit Cover als
+// Fallback genutzt. ok=false: die Fehlerantwort wurde bereits geschrieben.
+func (s *Server) queryBuchDesMonats(ctx context.Context, w http.ResponseWriter) (*MonitorTitel, bool) {
+	// Buch des Monats: most borrowed title in the last 30 days that has a cover.
+	var bm MonitorTitel
+	err := s.DB.Pool.QueryRow(ctx, `
+		SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,'')
+		FROM ausleihen a
+		JOIN buecher_exemplare e ON e.id = a.exemplar_id
+		JOIN buecher_titel bt ON bt.id = e.titel_id
+		WHERE a.ausgeliehen_am >= NOW() - INTERVAL '30 days'
+		  AND bt.cover_url IS NOT NULL AND bt.cover_url <> ''
+		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url
+		ORDER BY COUNT(*) DESC
+		LIMIT 1
+	`).Scan(&bm.ID, &bm.Titel, &bm.Autor, &bm.CoverURL)
+
+	if err == nil {
+		return &bm, true
+	}
+	if err != pgx.ErrNoRows {
+		log.Printf("DB Error in Monitor (Buch des Monats): %v", err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		return nil, false
+	}
+
+	// Fallback: the most recently added title with a cover.
+	var fb MonitorTitel
+	err = s.DB.Pool.QueryRow(ctx, `
+		SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,'')
+		FROM buecher_titel
+		WHERE cover_url IS NOT NULL AND cover_url <> ''
+		ORDER BY erstellt_am DESC LIMIT 1
+	`).Scan(&fb.ID, &fb.Titel, &fb.Autor, &fb.CoverURL)
+
+	if err == nil {
+		return &fb, true
+	}
+	if err != pgx.ErrNoRows {
+		log.Printf("DB Error in Monitor (Fallback Buch des Monats): %v", err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		return nil, false
+	}
+	return nil, true // kein Buch des Monats vorhanden, aber kein Fehler
+}
+
+// queryMonitorListe führt eine Titel-Listen-Query aus und mappt sie auf MonitorTitel.
+// sektion dient als Label für die (unveränderten) Fehlermeldungen. ok=false: die
+// Fehlerantwort wurde bereits geschrieben.
+func (s *Server) queryMonitorListe(ctx context.Context, w http.ResponseWriter, query, sektion string) ([]MonitorTitel, bool) {
+	rows, err := s.DB.Pool.Query(ctx, query)
+	if err != nil {
+		log.Printf("DB Error in Monitor (%s): %v", sektion, err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		return nil, false
+	}
+	defer rows.Close()
+
+	liste := []MonitorTitel{}
+	for rows.Next() {
+		var t MonitorTitel
+		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.CoverURL); err != nil {
+			log.Printf("DB Error in Monitor (Scan %s): %v", sektion, err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+			return nil, false
+		}
+		liste = append(liste, t)
+	}
+	if err := rows.Err(); err != nil {
+		log.Printf("DB Error in Monitor (Iteration %s): %v", sektion, err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		return nil, false
+	}
+	return liste, true
+}
+
 // GetMonitorSlidesHandler handles GET /api/monitor/slides (public, no auth).
 func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -35,78 +113,27 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 			Beliebt:         []MonitorTitel{},
 		}
 
-		// Buch des Monats: most borrowed title in the last 30 days that has a cover.
-		var bm MonitorTitel
-		err := s.DB.Pool.QueryRow(ctx, `
-			SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,'')
-			FROM ausleihen a
-			JOIN buecher_exemplare e ON e.id = a.exemplar_id
-			JOIN buecher_titel bt ON bt.id = e.titel_id
-			WHERE a.ausgeliehen_am >= NOW() - INTERVAL '30 days'
-			  AND bt.cover_url IS NOT NULL AND bt.cover_url <> ''
-			GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url
-			ORDER BY COUNT(*) DESC
-			LIMIT 1
-		`).Scan(&bm.ID, &bm.Titel, &bm.Autor, &bm.CoverURL)
-
-		if err == nil {
-			slides.BuchDesMonats = &bm
-		} else if err != pgx.ErrNoRows {
-			log.Printf("DB Error in Monitor (Buch des Monats): %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		bdm, ok := s.queryBuchDesMonats(ctx, w)
+		if !ok {
 			return
 		}
-
-		// Fallback: the most recently added title with a cover.
-		if slides.BuchDesMonats == nil {
-			var fb MonitorTitel
-			err := s.DB.Pool.QueryRow(ctx, `
-				SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,'')
-				FROM buecher_titel
-				WHERE cover_url IS NOT NULL AND cover_url <> ''
-				ORDER BY erstellt_am DESC LIMIT 1
-			`).Scan(&fb.ID, &fb.Titel, &fb.Autor, &fb.CoverURL)
-
-			if err == nil {
-				slides.BuchDesMonats = &fb
-			} else if err != pgx.ErrNoRows {
-				log.Printf("DB Error in Monitor (Fallback Buch des Monats): %v", err)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-				return
-			}
-		}
+		slides.BuchDesMonats = bdm
 
 		// Neu eingetroffen: last 10 titles added with a cover.
-		rows, err := s.DB.Pool.Query(ctx, `
+		neu, ok := s.queryMonitorListe(ctx, w, `
 			SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,'')
 			FROM buecher_titel
 			WHERE cover_url IS NOT NULL AND cover_url <> ''
 			ORDER BY erstellt_am DESC
 			LIMIT 10
-		`)
-		if err != nil {
-			log.Printf("DB Error in Monitor (Neu eingetroffen): %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		`, "Neu eingetroffen")
+		if !ok {
 			return
 		}
-		defer rows.Close()
-		for rows.Next() {
-			var t MonitorTitel
-			if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.CoverURL); err != nil {
-				log.Printf("DB Error in Monitor (Scan Neu eingetroffen): %v", err)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-				return
-			}
-			slides.NeuEingetroffen = append(slides.NeuEingetroffen, t)
-		}
-		if err := rows.Err(); err != nil {
-			log.Printf("DB Error in Monitor (Iteration Neu eingetroffen): %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-			return
-		}
+		slides.NeuEingetroffen = neu
 
 		// Beliebt: top 5 titles by loan count in the last 7 days.
-		rows2, err := s.DB.Pool.Query(ctx, `
+		beliebt, ok := s.queryMonitorListe(ctx, w, `
 			SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,'')
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON e.id = a.exemplar_id
@@ -115,27 +142,11 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 			GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url
 			ORDER BY COUNT(*) DESC
 			LIMIT 5
-		`)
-		if err != nil {
-			log.Printf("DB Error in Monitor (Beliebt): %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+		`, "Beliebt")
+		if !ok {
 			return
 		}
-		defer rows2.Close()
-		for rows2.Next() {
-			var t MonitorTitel
-			if err := rows2.Scan(&t.ID, &t.Titel, &t.Autor, &t.CoverURL); err != nil {
-				log.Printf("DB Error in Monitor (Scan Beliebt): %v", err)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-				return
-			}
-			slides.Beliebt = append(slides.Beliebt, t)
-		}
-		if err := rows2.Err(); err != nil {
-			log.Printf("DB Error in Monitor (Iteration Beliebt): %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-			return
-		}
+		slides.Beliebt = beliebt
 
 		RespondJSON(w, http.StatusOK, slides)
 	}

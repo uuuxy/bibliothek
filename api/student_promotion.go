@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // PromoteStudentsResponse liefert die Statistik des Schuljahreswechsels zurück.
@@ -108,13 +111,8 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			return
 		}
 
-		var req promoteStudentsRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiger oder fehlender Request-Body"))
-			return
-		}
-		if !req.DryRun && !req.Confirm {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(`bestätigung erforderlich: { "confirm": true } im Body senden`))
+		req, ok := parsePromoteRequest(w, r)
+		if !ok {
 			return
 		}
 
@@ -131,22 +129,7 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 		defer db.SafeRollback(ctx, tx)
 
 		if !req.DryRun {
-			// Doppellauf-Schutz: Ein zweiter Lauf kurz nach dem ersten würde alle
-			// Schüler NOCHMAL versetzen (+2). Ein absichtlicher zweiter Lauf im
-			// nächsten Jahr bleibt möglich.
-			var recentRuns int
-			err := tx.QueryRow(ctx, `
-				SELECT COUNT(*) FROM audit_logs
-				WHERE aktion = 'SCHULJAHRESWECHSEL'
-				  AND zeitstempel > NOW() - INTERVAL '10 minutes'
-			`).Scan(&recentRuns)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			if recentRuns > 0 {
-				apierrors.SendHTTPError(w, http.StatusConflict,
-					errors.New("schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
+			if !pruefeDoppellaufSchutz(ctx, tx, w) {
 				return
 			}
 		}
@@ -158,24 +141,9 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 		}
 
 		if !req.DryRun {
-			// Audit-Eintrag atomar mit dem Batch — ein irreversibler Massenvorgang
-			// gehört ins Audit-Log, nicht nur ins Server-Log. Er trägt zugleich den
-			// Doppellauf-Schutz (siehe oben).
-			if _, err := tx.Exec(ctx, `
-				INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse, zeitstempel)
-				VALUES ($1, 'SCHULJAHRESWECHSEL', $2::jsonb, $3, CURRENT_TIMESTAMP)
-			`, claims.UserID,
-				fmt.Sprintf(`{"versetzt": %d, "abgaenger": %d}`, promoted, archived),
-				getIP(r)); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			if !s.finalisiereSchuljahreswechsel(ctx, tx, w, r, claims.UserID, promoted, archived) {
 				return
 			}
-
-			if err := tx.Commit(ctx); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			log.Printf("Schuljahreswechsel durchgeführt (Benutzer %s): %d Schüler versetzt, %d neue Abgänger", claims.UserID, promoted, archived)
 		}
 
 		RespondJSON(w, http.StatusOK, PromoteStudentsResponse{
@@ -184,4 +152,63 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			DryRun:        req.DryRun,
 		})
 	}
+}
+
+// parsePromoteRequest dekodiert den Request-Body und erzwingt die explizite Bestätigung
+// (außer im Dry-Run). ok=false: die Fehlerantwort wurde bereits geschrieben.
+func parsePromoteRequest(w http.ResponseWriter, r *http.Request) (promoteStudentsRequest, bool) {
+	var req promoteStudentsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiger oder fehlender Request-Body"))
+		return req, false
+	}
+	if !req.DryRun && !req.Confirm {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(`bestätigung erforderlich: { "confirm": true } im Body senden`))
+		return req, false
+	}
+	return req, true
+}
+
+// pruefeDoppellaufSchutz verhindert einen zweiten Schuljahreswechsel innerhalb von
+// 10 Minuten (ein zweiter Lauf würde alle Schüler +2 versetzen). ok=false: die
+// Fehlerantwort (500 oder 409) wurde bereits geschrieben.
+func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
+	var recentRuns int
+	err := tx.QueryRow(ctx, `
+		SELECT COUNT(*) FROM audit_logs
+		WHERE aktion = 'SCHULJAHRESWECHSEL'
+		  AND zeitstempel > NOW() - INTERVAL '10 minutes'
+	`).Scan(&recentRuns)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if recentRuns > 0 {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			errors.New("schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
+		return false
+	}
+	return true
+}
+
+// finalisiereSchuljahreswechsel schreibt den Audit-Eintrag atomar mit dem Batch (er
+// trägt zugleich den Doppellauf-Schutz) und committet die Transaktion. ok=false: die
+// Fehlerantwort wurde bereits geschrieben.
+func (s *Server) finalisiereSchuljahreswechsel(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, r *http.Request, userID string, promoted, archived int) bool {
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse, zeitstempel)
+		VALUES ($1, 'SCHULJAHRESWECHSEL', $2::jsonb, $3, CURRENT_TIMESTAMP)
+	`, userID,
+		fmt.Sprintf(`{"versetzt": %d, "abgaenger": %d}`, promoted, archived),
+		getIP(r)); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	log.Printf("Schuljahreswechsel durchgeführt (Benutzer %s): %d Schüler versetzt, %d neue Abgänger", userID, promoted, archived)
+	return true
 }

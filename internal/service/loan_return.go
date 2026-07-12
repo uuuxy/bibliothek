@@ -73,22 +73,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 	if activeLoan == nil {
 		// Spezialfall: Scan durch eine Lehrkraft -> Direktes Ausleihen als Handapparat (Dauerleihe, 1 Jahr Frist)
 		if staffRole == "LEHRER" {
-			dueTime := time.Now().AddDate(1, 0, 0) // 1 Jahr Leihfrist
-			loan, err := s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, staffID, staffID, dueTime, true)
-			if err != nil {
-				return nil, err
-			}
-			if err := tx.Commit(ctx); err != nil {
-				return nil, err
-			}
-			logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, "", staffID, staffID))
-
-			resp.Type = "ausleihe"
-			resp.Book = copy
-			if loan != nil {
-				resp.DueDate = &loan.RueckgabeFrist
-			}
-			return resp, nil
+			return s.handleLehrerHandapparat(ctx, tx, copy, staffID, resp)
 		}
 		// Für normale Mitarbeiter/Schüler ist dies ein Fehler (Buch ist bereits im Bestand)
 		return nil, fmt.Errorf("%w: Dieses Buchexemplar ist aktuell nicht ausgeliehen", ErrInvalidState)
@@ -96,35 +81,69 @@ func (s *defaultLoanService) HandleSimpleReturn(
 
 	// Falls das Buch auf denselben Mitarbeiter ausgeliehen ist, der es gerade scannt:
 	if activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == staffID {
-		if err = s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
-			return nil, err
-		}
-
-		s.processReturnVormerkungTx(ctx, tx, copy, resp)
-
-		if err := tx.Commit(ctx); err != nil {
-			return nil, err
-		}
-		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
-
-		// Event für Plugins triggern (Rückgabe registriert)
-		plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-			CopyID:       copy.ID,
-			BarcodeID:    copy.BarcodeID,
-			Titel:        copy.Titel,
-			SchuelerID:   activeLoan.SchuelerID,
-			BearbeiterID: staffID,
-		})
-
-		resp.Type = "rueckgabe"
-		resp.Book = copy
-		resp.LoanID = &activeLoan.ID
-		return resp, nil
+		return s.handleEigenrueckgabeMitarbeiter(ctx, tx, copy, activeLoan, staffID, resp)
 	}
 
 	// Regulärer Fall: Rückgabe eines von einem Schüler ausgeliehenen Buchs
+	return s.handleSchuelerRueckgabe(ctx, tx, copy, activeLoan, staffID, resp)
+}
+
+// handleLehrerHandapparat verbucht ein nicht ausgeliehenes Buch beim Lehrer-Scan als
+// Handapparat-Dauerleihe (1 Jahr Frist) und committet die Transaktion.
+func (s *defaultLoanService) handleLehrerHandapparat(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, staffID string, resp *LoanResult) (*LoanResult, error) {
+	dueTime := time.Now().AddDate(1, 0, 0) // 1 Jahr Leihfrist
+	loan, err := s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, staffID, staffID, dueTime, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, "", staffID, staffID))
+
+	resp.Type = "ausleihe"
+	resp.Book = copy
+	if loan != nil {
+		resp.DueDate = &loan.RueckgabeFrist
+	}
+	return resp, nil
+}
+
+// handleEigenrueckgabeMitarbeiter verbucht die Rückgabe eines Buchs, das auf denselben
+// scannenden Mitarbeiter ausgeliehen ist, inkl. Vormerkungsaktivierung und Plugin-Event.
+func (s *defaultLoanService) handleEigenrueckgabeMitarbeiter(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, activeLoan *repository.Loan, staffID string, resp *LoanResult) (*LoanResult, error) {
+	if err := s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+		return nil, err
+	}
+
+	s.processReturnVormerkungTx(ctx, tx, copy, resp)
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
+
+	// Event für Plugins triggern (Rückgabe registriert)
+	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
+		CopyID:       copy.ID,
+		BarcodeID:    copy.BarcodeID,
+		Titel:        copy.Titel,
+		SchuelerID:   activeLoan.SchuelerID,
+		BearbeiterID: staffID,
+	})
+
+	resp.Type = "rueckgabe"
+	resp.Book = copy
+	resp.LoanID = &activeLoan.ID
+	return resp, nil
+}
+
+// handleSchuelerRueckgabe verbucht die reguläre Rückgabe eines von einem Schüler (oder
+// einer anderen Person) ausgeliehenen Buchs inkl. Vormerkungsaktivierung und Plugin-Event.
+func (s *defaultLoanService) handleSchuelerRueckgabe(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, activeLoan *repository.Loan, staffID string, resp *LoanResult) (*LoanResult, error) {
 	var borrowerStudent *repository.Student
 	if activeLoan.SchuelerID != nil {
+		var err error
 		borrowerStudent, err = s.studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
 		if err != nil {
 			return nil, err
@@ -132,7 +151,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 	}
 
 	// Rückgabe buchen
-	if err = s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
+	if err := s.loanRepo.ReturnLoanTx(ctx, tx, activeLoan.ID, staffID, false); err != nil {
 		return nil, err
 	}
 
