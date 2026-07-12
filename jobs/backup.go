@@ -42,25 +42,8 @@ type BackupJob struct{}
 
 // RunDatabaseBackup führt die komplette Backup-Pipeline aus: Dump → gzip → AES-256-GCM Verschlüsselung.
 func (b *BackupJob) RunDatabaseBackup() {
-	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
-	if encKey == "" {
-		log.Println("Backup: BACKUP_ENCRYPTION_KEY not set – skipping encrypted backup")
-		return
-	}
-
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		log.Println("Backup: DATABASE_URL not set – skipping backup")
-		return
-	}
-
-	backupDir := os.Getenv("BACKUP_DIR")
-	if backupDir == "" {
-		backupDir = "./backups"
-	}
-	if err := os.MkdirAll(backupDir, 0750); err != nil {
-		// #nosec G706
-		log.Printf("Backup: cannot create backup directory: %v", err)
+	encKey, dsn, backupDir, ok := resolveBackupEnv()
+	if !ok {
 		return
 	}
 
@@ -71,102 +54,13 @@ func (b *BackupJob) RunDatabaseBackup() {
 	timestamp := time.Now().UTC().Format("2006-01-02T150405Z")
 	outFilename := filepath.Join(backupDir, fmt.Sprintf("backup_%s.sql.gz.enc", timestamp))
 
-	// #nosec G706
-
 	log.Printf("Backup: starting daily PostgreSQL backup → %s", outFilename)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	// pg_dump schreibt SQL nach stdout; wir pipen es durch gzip → AES-GCM Verschlüsselung.
-	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
-	config, err := pgconn.ParseConfig(dsn)
-	if err != nil {
-		log.Printf("Backup: failed to parse DSN: %v", err)
-		return
-	}
-
-	passFile, err := os.CreateTemp("", "pgpass-*")
-	if err != nil {
-		log.Printf("Backup: konnte pgpass-Datei nicht erstellen: %v", err)
-		return
-	}
-	defer func() { _ = os.Remove(passFile.Name()) }()
-
-	port := fmt.Sprintf("%d", config.Port)
-	if port == "0" {
-		port = "5432"
-	}
-
-	pgPassLine := fmt.Sprintf("%s:%s:%s:%s:%s\n",
-		escapePgPass(config.Host),
-		escapePgPass(port),
-		escapePgPass(config.Database),
-		escapePgPass(config.User),
-		escapePgPass(config.Password),
-	)
-	if _, err := passFile.WriteString(pgPassLine); err != nil {
-		_ = passFile.Close()
-		log.Printf("Backup: konnte in pgpass-Datei nicht schreiben: %v", err)
-		return
-	}
-	_ = passFile.Close()
-
-	// #nosec G204 - arguments are derived from securely parsed DSN configuration
-	pgDump := exec.CommandContext(ctx, "pg_dump",
-		"--host="+config.Host,
-		"--port="+port,
-		"--username="+config.User,
-		"--dbname="+config.Database,
-		"--no-password",
-		"--format=plain",
-		"--encoding=UTF8",
-		"--verbose",
-	)
-	pgDump.Env = append(os.Environ(), "PGPASSFILE="+passFile.Name())
-
-	sqlReader, sqlWriter := io.Pipe()
-	pgDump.Stdout = sqlWriter
-	pgDump.Stderr = os.Stderr
-
-	if err := pgDump.Start(); err != nil {
-		// #nosec G706
-		log.Printf("Backup: pg_dump start failed: %v", err)
-		return
-	}
-
-	// Pipeline: Gzip-Komprimierung des SQL-Streams
-	var compressedBuf strings.Builder
-	pr, pw := io.Pipe()
-
-	// Goroutine: Gzip-Komprimierung der pg_dump-Ausgabe
-	go func() {
-		gz := gzip.NewWriter(pw)
-		if _, err := io.Copy(gz, sqlReader); err != nil {
-			pw.CloseWithError(err)
-			return
-		}
-		// gz.Close flushes the gzip footer; propagate a failure to the reader so it
-		// does not consume a truncated, invalid archive.
-		if err := gz.Close(); err != nil {
-			pw.CloseWithError(err)
-			return
-		}
-		pw.CloseWithError(nil) // signals clean EOF to the reading side
-	}()
-
-	// Alle komprimierten Daten lesen
-	compressedData, err := io.ReadAll(pr)
-	_ = compressedBuf // silence unused var
-	if err != nil {
-		// #nosec G706
-		log.Printf("Backup: compression failed: %v", err)
-		return
-	}
-
-	if err := pgDump.Wait(); err != nil {
-		// #nosec G706
-		log.Printf("Backup: pg_dump finished with error: %v", err)
+	compressedData, ok := dumpAndCompress(ctx, dsn)
+	if !ok {
 		return
 	}
 
@@ -191,46 +85,178 @@ func (b *BackupJob) RunDatabaseBackup() {
 	log.Printf("Backup: completed successfully → %s (%.2f MB)", outFilename, sizeMB)
 
 	// S3 Offsite Upload
+	uploadBackupToS3(ctx, outFilename, encrypted)
+
+	// Rotation: Nur die letzten 14 täglichen Backups behalten, um Speicherplatzmangel zu vermeiden
+	rotateBackups(backupDir, 14)
+}
+
+// resolveBackupEnv liest die Backup-relevanten Umgebungsvariablen und legt bei
+// Bedarf das Zielverzeichnis an. ok=false signalisiert einen (protokollierten)
+// Abbruchgrund (fehlender Key/DSN oder nicht anlegbares Verzeichnis).
+func resolveBackupEnv() (encKey, dsn, backupDir string, ok bool) {
+	encKey = os.Getenv("BACKUP_ENCRYPTION_KEY")
+	if encKey == "" {
+		log.Println("Backup: BACKUP_ENCRYPTION_KEY not set – skipping encrypted backup")
+		return "", "", "", false
+	}
+
+	dsn = os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Println("Backup: DATABASE_URL not set – skipping backup")
+		return "", "", "", false
+	}
+
+	backupDir = os.Getenv("BACKUP_DIR")
+	if backupDir == "" {
+		backupDir = "./backups"
+	}
+	if err := os.MkdirAll(backupDir, 0750); err != nil {
+		// #nosec G706
+		log.Printf("Backup: cannot create backup directory: %v", err)
+		return "", "", "", false
+	}
+	return encKey, dsn, backupDir, true
+}
+
+// dumpAndCompress ruft pg_dump auf (Verbindungsdaten via temporärer .pgpass-Datei)
+// und liefert den gzip-komprimierten SQL-Dump. Jeder Fehler wird mit seiner Ursache
+// protokolliert; ok=false bedeutet Abbruch.
+func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok bool) {
+	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
+	config, err := pgconn.ParseConfig(dsn)
+	if err != nil {
+		log.Printf("Backup: failed to parse DSN: %v", err)
+		return nil, false
+	}
+
+	passFile, err := os.CreateTemp("", "pgpass-*")
+	if err != nil {
+		log.Printf("Backup: konnte pgpass-Datei nicht erstellen: %v", err)
+		return nil, false
+	}
+	defer func() { _ = os.Remove(passFile.Name()) }()
+
+	port := fmt.Sprintf("%d", config.Port)
+	if port == "0" {
+		port = "5432"
+	}
+
+	pgPassLine := fmt.Sprintf("%s:%s:%s:%s:%s\n",
+		escapePgPass(config.Host),
+		escapePgPass(port),
+		escapePgPass(config.Database),
+		escapePgPass(config.User),
+		escapePgPass(config.Password),
+	)
+	if _, err := passFile.WriteString(pgPassLine); err != nil {
+		_ = passFile.Close()
+		log.Printf("Backup: konnte in pgpass-Datei nicht schreiben: %v", err)
+		return nil, false
+	}
+	_ = passFile.Close()
+
+	// #nosec G204 - arguments are derived from securely parsed DSN configuration
+	pgDump := exec.CommandContext(ctx, "pg_dump",
+		"--host="+config.Host,
+		"--port="+port,
+		"--username="+config.User,
+		"--dbname="+config.Database,
+		"--no-password",
+		"--format=plain",
+		"--encoding=UTF8",
+		"--verbose",
+	)
+	pgDump.Env = append(os.Environ(), "PGPASSFILE="+passFile.Name())
+
+	sqlReader, sqlWriter := io.Pipe()
+	pgDump.Stdout = sqlWriter
+	pgDump.Stderr = os.Stderr
+
+	if err := pgDump.Start(); err != nil {
+		// #nosec G706
+		log.Printf("Backup: pg_dump start failed: %v", err)
+		return nil, false
+	}
+
+	// Pipeline: Gzip-Komprimierung des SQL-Streams
+	pr, pw := io.Pipe()
+
+	// Goroutine: Gzip-Komprimierung der pg_dump-Ausgabe
+	go func() {
+		gz := gzip.NewWriter(pw)
+		if _, err := io.Copy(gz, sqlReader); err != nil {
+			pw.CloseWithError(err)
+			return
+		}
+		// gz.Close flushes the gzip footer; propagate a failure to the reader so it
+		// does not consume a truncated, invalid archive.
+		if err := gz.Close(); err != nil {
+			pw.CloseWithError(err)
+			return
+		}
+		pw.CloseWithError(nil) // signals clean EOF to the reading side
+	}()
+
+	// Alle komprimierten Daten lesen
+	data, err := io.ReadAll(pr)
+	if err != nil {
+		// #nosec G706
+		log.Printf("Backup: compression failed: %v", err)
+		return nil, false
+	}
+
+	if err := pgDump.Wait(); err != nil {
+		// #nosec G706
+		log.Printf("Backup: pg_dump finished with error: %v", err)
+		return nil, false
+	}
+
+	return data, true
+}
+
+// uploadBackupToS3 lädt das verschlüsselte Backup offsite zu S3 hoch, sofern die
+// S3-Zugangsdaten vollständig konfiguriert sind. Fehler werden protokolliert, aber
+// nicht weitergereicht – das lokale Backup gilt bereits als erfolgreich.
+func uploadBackupToS3(ctx context.Context, outFilename string, encrypted []byte) {
 	s3Endpoint := os.Getenv("S3_ENDPOINT")
 	s3AccessKey := os.Getenv("S3_ACCESS_KEY")
 	s3SecretKey := os.Getenv("S3_SECRET_KEY")
 	s3Bucket := os.Getenv("S3_BUCKET")
 	s3UseSSL := os.Getenv("S3_USE_SSL") != "false" // Default to true
 
-	if s3Endpoint != "" && s3AccessKey != "" && s3SecretKey != "" && s3Bucket != "" {
-		minioClient, err := minio.New(s3Endpoint, &minio.Options{
-			Creds:  credentials.NewStaticV4(s3AccessKey, s3SecretKey, ""),
-			Secure: s3UseSSL,
-		})
-		if err != nil {
-			log.Printf("Backup: Failed to initialize S3 client: %v", err)
-		} else {
-			objectName := filepath.Base(outFilename)
-			reader := bytes.NewReader(encrypted)
-
-			// Optional: Make bucket if not exists
-			exists, errBucketExists := minioClient.BucketExists(ctx, s3Bucket)
-			if errBucketExists == nil && !exists {
-				if err := minioClient.MakeBucket(ctx, s3Bucket, minio.MakeBucketOptions{}); err != nil {
-					log.Printf("Backup: S3-Bucket %q konnte nicht angelegt werden: %v", s3Bucket, err)
-				}
-			}
-
-			_, err = minioClient.PutObject(ctx, s3Bucket, objectName, reader, int64(len(encrypted)), minio.PutObjectOptions{
-				ContentType: "application/octet-stream",
-			})
-			if err != nil {
-				log.Printf("Backup: S3 upload failed for %s: %v", objectName, err)
-			} else {
-				log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
-			}
-		}
-	} else {
+	if s3Endpoint == "" || s3AccessKey == "" || s3SecretKey == "" || s3Bucket == "" {
 		log.Println("Backup: S3 credentials not fully configured – skipping offsite upload")
+		return
 	}
 
-	// Rotation: Nur die letzten 14 täglichen Backups behalten, um Speicherplatzmangel zu vermeiden
-	rotateBackups(backupDir, 14)
+	minioClient, err := minio.New(s3Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(s3AccessKey, s3SecretKey, ""),
+		Secure: s3UseSSL,
+	})
+	if err != nil {
+		log.Printf("Backup: Failed to initialize S3 client: %v", err)
+		return
+	}
+
+	objectName := filepath.Base(outFilename)
+	reader := bytes.NewReader(encrypted)
+
+	// Optional: Make bucket if not exists
+	exists, errBucketExists := minioClient.BucketExists(ctx, s3Bucket)
+	if errBucketExists == nil && !exists {
+		if err := minioClient.MakeBucket(ctx, s3Bucket, minio.MakeBucketOptions{}); err != nil {
+			log.Printf("Backup: S3-Bucket %q konnte nicht angelegt werden: %v", s3Bucket, err)
+		}
+	}
+
+	if _, err := minioClient.PutObject(ctx, s3Bucket, objectName, reader, int64(len(encrypted)), minio.PutObjectOptions{
+		ContentType: "application/octet-stream",
+	}); err != nil {
+		log.Printf("Backup: S3 upload failed for %s: %v", objectName, err)
+		return
+	}
+	log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
 }
 
 // encryptAESGCM verschlüsselt Klartext mit AES-256-GCM.
