@@ -49,6 +49,72 @@ func (s *Server) saveToCache(ctx context.Context, key string, data interface{}, 
 	logExec(s.DB.Pool.Exec(ctx, insertIdempotencyQuery, key, respData, status))
 }
 
+// serveCachedActionResponse liefert eine zwischengespeicherte idempotente Antwort aus,
+// falls vorhanden und unversehrt. true = Antwort wurde gesendet (Aufrufer beendet);
+// false = kein (verwertbarer) Cache-Eintrag, Aufrufer berechnet neu.
+func (s *Server) serveCachedActionResponse(ctx context.Context, w http.ResponseWriter, key string) bool {
+	if key == "" {
+		return false
+	}
+	cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, key)
+	if err != nil {
+		return false
+	}
+
+	// Cache Hit
+	if cachedStatus >= 400 {
+		var errData map[string]string
+		if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
+			log.Printf("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
+			return false
+		}
+		apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
+		return true
+	}
+
+	var cachedResp ActionResponse
+	if uerr := json.Unmarshal(cachedRespJSON, &cachedResp); uerr != nil {
+		log.Printf("idempotenz: beschädigte Antwort im Cache, wird neu berechnet: %v", uerr)
+		return false
+	}
+	RespondJSON(w, cachedStatus, cachedResp)
+	return true
+}
+
+// cachedBatchItem liefert das zwischengespeicherte Batch-Ergebnis für einen Idempotenz-
+// Key. ok=false: kein (verwertbarer) Cache-Eintrag vorhanden — der Aufrufer berechnet neu.
+func (s *Server) cachedBatchItem(ctx context.Context, key string, index int) (ActionBatchResponseItem, bool) {
+	if key == "" {
+		return ActionBatchResponseItem{}, false
+	}
+	cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, key)
+	if err != nil {
+		return ActionBatchResponseItem{}, false
+	}
+
+	item := ActionBatchResponseItem{
+		Index:   index,
+		Status:  cachedStatus,
+		Success: cachedStatus >= 200 && cachedStatus < 300,
+	}
+	if item.Success {
+		var data ActionResponse
+		if uerr := json.Unmarshal(cachedRespJSON, &data); uerr != nil {
+			log.Printf("idempotenz: beschädigte Batch-Antwort im Cache, wird neu berechnet: %v", uerr)
+			return ActionBatchResponseItem{}, false
+		}
+		item.Data = &data
+	} else {
+		var errData map[string]string
+		if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
+			log.Printf("idempotenz: beschädigte Batch-Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
+			return ActionBatchResponseItem{}, false
+		}
+		item.Error = errData["error"]
+	}
+	return item, true
+}
+
 // ActionHandler dispatches requests from the Omnibox.
 func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -71,28 +137,8 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 
 		ctx := r.Context()
 
-		if req.IdempotencyKey != "" {
-			cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, req.IdempotencyKey)
-			if err == nil {
-				// Cache Hit
-				if cachedStatus >= 400 {
-					var errData map[string]string
-					if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
-						log.Printf("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
-					} else {
-						apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
-						return
-					}
-				} else {
-					var cachedResp ActionResponse
-					if uerr := json.Unmarshal(cachedRespJSON, &cachedResp); uerr != nil {
-						log.Printf("idempotenz: beschädigte Antwort im Cache, wird neu berechnet: %v", uerr)
-					} else {
-						RespondJSON(w, cachedStatus, cachedResp)
-						return
-					}
-				}
-			}
+		if s.serveCachedActionResponse(ctx, w, req.IdempotencyKey) {
+			return
 		}
 
 		res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
@@ -177,36 +223,8 @@ func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.
 		}
 	}
 
-	if req.IdempotencyKey != "" {
-		cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, req.IdempotencyKey)
-		if err == nil {
-			item := ActionBatchResponseItem{
-				Index:   index,
-				Status:  cachedStatus,
-				Success: cachedStatus >= 200 && cachedStatus < 300,
-			}
-			decodeOK := true
-			if item.Success {
-				var data ActionResponse
-				if uerr := json.Unmarshal(cachedRespJSON, &data); uerr != nil {
-					log.Printf("idempotenz: beschädigte Batch-Antwort im Cache, wird neu berechnet: %v", uerr)
-					decodeOK = false
-				} else {
-					item.Data = &data
-				}
-			} else {
-				var errData map[string]string
-				if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
-					log.Printf("idempotenz: beschädigte Batch-Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
-					decodeOK = false
-				} else {
-					item.Error = errData["error"]
-				}
-			}
-			if decodeOK {
-				return item
-			}
-		}
+	if item, ok := s.cachedBatchItem(ctx, req.IdempotencyKey, index); ok {
+		return item
 	}
 
 	res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, userID, rolle, req.OverrideBlock)

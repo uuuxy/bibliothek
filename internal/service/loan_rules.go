@@ -82,37 +82,7 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 		if err := rows.Scan(&key, &value); err != nil {
 			continue
 		}
-		switch key {
-		case "frist_buch_tage":
-			if v, err := strconv.Atoi(value); err == nil {
-				settings.FristBuchTage = v
-			}
-		case "frist_medien_tage":
-			if v, err := strconv.Atoi(value); err == nil {
-				settings.FristMedienTage = v
-			}
-		case "max_ausleihen_schueler":
-			if v, err := strconv.Atoi(value); err == nil {
-				settings.MaxAusleihenSchueler = v
-			}
-		case "lmf_stichtag":
-			settings.LmfStichtag = value
-		case "ferien_leseclub_aktiv":
-			settings.FerienLeseclubAktiv = (value == "true")
-		case "ferien_leseclub_zieldatum":
-			if value != "" {
-				val := value
-				settings.FerienLeseclubZieldatum = &val
-			}
-		case "max_overdue_days":
-			if v, err := strconv.Atoi(value); err == nil {
-				settings.MaxOverdueDays = v
-			}
-		case "max_overdue_items":
-			if v, err := strconv.Atoi(value); err == nil {
-				settings.MaxOverdueItems = v
-			}
-		}
+		applyEinstellung(settings, key, value)
 	}
 	// Ein mittendrin abgebrochener Query würde sonst stillschweigend die Defaults
 	// liefern, statt den Fehler sichtbar zu machen — heikel, weil die Werte direkt
@@ -121,6 +91,42 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 		return nil, err
 	}
 	return settings, nil
+}
+
+// applyEinstellung überträgt einen einzelnen Schlüssel/Wert aus system_einstellungen
+// in die Settings-Struktur; unbekannte Schlüssel und ungültige Zahlen werden ignoriert.
+func applyEinstellung(settings *SystemEinstellungen, key, value string) {
+	switch key {
+	case "frist_buch_tage":
+		if v, err := strconv.Atoi(value); err == nil {
+			settings.FristBuchTage = v
+		}
+	case "frist_medien_tage":
+		if v, err := strconv.Atoi(value); err == nil {
+			settings.FristMedienTage = v
+		}
+	case "max_ausleihen_schueler":
+		if v, err := strconv.Atoi(value); err == nil {
+			settings.MaxAusleihenSchueler = v
+		}
+	case "lmf_stichtag":
+		settings.LmfStichtag = value
+	case "ferien_leseclub_aktiv":
+		settings.FerienLeseclubAktiv = (value == "true")
+	case "ferien_leseclub_zieldatum":
+		if value != "" {
+			val := value
+			settings.FerienLeseclubZieldatum = &val
+		}
+	case "max_overdue_days":
+		if v, err := strconv.Atoi(value); err == nil {
+			settings.MaxOverdueDays = v
+		}
+	case "max_overdue_items":
+		if v, err := strconv.Atoi(value); err == nil {
+			settings.MaxOverdueItems = v
+		}
+	}
 }
 
 // calculateDueDate berechnet das Rückgabedatum auf Basis von Titel, Medientyp und

@@ -61,15 +61,7 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 			return nil, err
 		}
 
-		supplierName := "Unbekannter Lieferant"
-		if strings.HasPrefix(zustandNotiz, "Im Zulauf - ") {
-			supplierName = strings.TrimPrefix(zustandNotiz, "Im Zulauf - ")
-		} else if strings.HasPrefix(zustandNotiz, "Bestellt (Lieferanten-Vorab-Barcode)") {
-			supplierName = "Vorab-Barcode Bestellung"
-		} else if zustandNotiz == "bestellt" {
-			supplierName = "Automatische Nachbestellung"
-		}
-
+		supplierName := resolveSupplierName(zustandNotiz)
 		dateStr := erstelltAm.Format("02.01.2006")
 		groupKey := dateStr + "|" + supplierName
 
@@ -85,27 +77,7 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 			groupsMap[groupKey] = group
 		}
 
-		var itemFound *GroupedItem
-		for _, item := range group.Items {
-			if item.Titel == titel {
-				itemFound = item
-				break
-			}
-		}
-
-		if itemFound != nil {
-			itemFound.Menge++
-			itemFound.ExemplarIDs = append(itemFound.ExemplarIDs, exemplarID)
-		} else {
-			group.Items = append(group.Items, &GroupedItem{
-				TitelID:     titelID,
-				Titel:       titel,
-				ISBN:        isbn,
-				CoverURL:    coverURL,
-				Menge:       1,
-				ExemplarIDs: []string{exemplarID},
-			})
-		}
+		addExemplarToGroup(group, titelID, titel, isbn, coverURL, exemplarID)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -123,6 +95,40 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 	return groups, nil
 }
 
+// resolveSupplierName leitet den Lieferantennamen aus der Zustandsnotiz eines Exemplars ab.
+func resolveSupplierName(zustandNotiz string) string {
+	switch {
+	case strings.HasPrefix(zustandNotiz, "Im Zulauf - "):
+		return strings.TrimPrefix(zustandNotiz, "Im Zulauf - ")
+	case strings.HasPrefix(zustandNotiz, "Bestellt (Lieferanten-Vorab-Barcode)"):
+		return "Vorab-Barcode Bestellung"
+	case zustandNotiz == "bestellt":
+		return "Automatische Nachbestellung"
+	default:
+		return "Unbekannter Lieferant"
+	}
+}
+
+// addExemplarToGroup ordnet ein Exemplar dem passenden GroupedItem (nach Titel) zu oder
+// legt einen neuen Item-Eintrag in der Gruppe an.
+func addExemplarToGroup(group *ShipmentGroup, titelID, titel, isbn, coverURL, exemplarID string) {
+	for _, item := range group.Items {
+		if item.Titel == titel {
+			item.Menge++
+			item.ExemplarIDs = append(item.ExemplarIDs, exemplarID)
+			return
+		}
+	}
+	group.Items = append(group.Items, &GroupedItem{
+		TitelID:     titelID,
+		Titel:       titel,
+		ISBN:        isbn,
+		CoverURL:    coverURL,
+		Menge:       1,
+		ExemplarIDs: []string{exemplarID},
+	})
+}
+
 type OrderSearchItem struct {
 	ID           string `json:"id,omitempty"`
 	Titel        string `json:"titel"`
@@ -137,15 +143,23 @@ type OrderSearchItem struct {
 
 // SearchOrders searches local DB and DNB for book orders.
 func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventur.MetadatenClient, query string) ([]OrderSearchItem, error) {
-	var results []OrderSearchItem
+	results := searchLocalOrders(ctx, pool, query)
+	results = append(results, searchDNBOrders(ctx, pool, metaClient, query)...)
+	return results, nil
+}
 
+// searchLocalOrders durchsucht den lokalen Bestand (Volltext + ILIKE-Fallbacks).
+// Bei einem Query- oder Iterationsfehler wird eine leere/nil-Liste geliefert
+// (best-effort; die DNB-Treffer werden ohnehin separat angehängt).
+func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) []OrderSearchItem {
+	var results []OrderSearchItem
 	localQuery := `
-		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), 
+		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''),
 		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
 		       (SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = t.id AND e.ist_ausgesondert = false) AS current_stock
 		FROM buecher_titel t
-		WHERE 
-			t.search_vector @@ plainto_tsquery('german', $1) 
+		WHERE
+			t.search_vector @@ plainto_tsquery('german', $1)
 			OR t.titel ILIKE '%' || $1 || '%'
 			OR t.autor ILIKE '%' || $1 || '%'
 			OR t.isbn ILIKE '%' || $1 || '%'
@@ -154,53 +168,61 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 		LIMIT 50
 	`
 	rows, err := pool.Query(ctx, localQuery, query)
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var item OrderSearchItem
-			item.Source = "local"
-			if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.CurrentStock); errScan == nil {
-				results = append(results, item)
-			}
-		}
-		// Bei Abbruch mitten in der Iteration lokale Teiltreffer verwerfen; die
-		// DNB-Ergebnisse werden anschließend ohnehin separat angehängt.
-		if err := rows.Err(); err != nil {
-			results = nil
+	if err != nil {
+		return results
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var item OrderSearchItem
+		item.Source = "local"
+		if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.CurrentStock); errScan == nil {
+			results = append(results, item)
 		}
 	}
+	// Bei Abbruch mitten in der Iteration lokale Teiltreffer verwerfen; die
+	// DNB-Ergebnisse werden anschließend ohnehin separat angehängt.
+	if err := rows.Err(); err != nil {
+		return nil
+	}
+	return results
+}
 
+// searchDNBOrders fragt die DNB nach Titeln und markiert bereits lokal vorhandene ISBNs.
+// Bei einem DNB-Fehler wird nil geliefert (best-effort).
+func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventur.MetadatenClient, query string) []OrderSearchItem {
 	dnbResults, errDNB := metaClient.SucheTextDNB(ctx, query)
-	if errDNB == nil {
-		for _, dr := range dnbResults {
-			coverURL := dr.CoverURL
-			if coverURL == "" && dr.ISBN != "" {
-				coverURL = fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", dr.ISBN)
-			}
-
-			existsLocally := false
-			if dr.ISBN != "" {
-				var count int
-				if err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM buecher_titel WHERE replace(isbn, '-', '') = $1", dr.ISBN).Scan(&count); err != nil {
-					log.Printf("order-service: ISBN-Existenzprüfung fehlgeschlagen: %v", err)
-				} else if count > 0 {
-					existsLocally = true
-				}
-			}
-
-			results = append(results, OrderSearchItem{
-				Titel:       dr.Titel,
-				Autor:       dr.Autor,
-				ISBN:        dr.ISBN,
-				Verlag:      dr.Verlag,
-				CoverURL:    coverURL,
-				Source:      "dnb",
-				IsDuplicate: existsLocally,
-			})
-		}
+	if errDNB != nil {
+		return nil
 	}
 
-	return results, nil
+	var results []OrderSearchItem
+	for _, dr := range dnbResults {
+		coverURL := dr.CoverURL
+		if coverURL == "" && dr.ISBN != "" {
+			coverURL = fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", dr.ISBN)
+		}
+
+		existsLocally := false
+		if dr.ISBN != "" {
+			var count int
+			if err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM buecher_titel WHERE replace(isbn, '-', '') = $1", dr.ISBN).Scan(&count); err != nil {
+				log.Printf("order-service: ISBN-Existenzprüfung fehlgeschlagen: %v", err)
+			} else if count > 0 {
+				existsLocally = true
+			}
+		}
+
+		results = append(results, OrderSearchItem{
+			Titel:       dr.Titel,
+			Autor:       dr.Autor,
+			ISBN:        dr.ISBN,
+			Verlag:      dr.Verlag,
+			CoverURL:    coverURL,
+			Source:      "dnb",
+			IsDuplicate: existsLocally,
+		})
+	}
+	return results
 }
 
 // ReceivedItem describes a received exemplar, including whether its
