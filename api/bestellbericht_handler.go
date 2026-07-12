@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -34,6 +35,106 @@ type berichtPosition struct {
 	Einzelpreis float64
 }
 
+// parseBerichtZeitraum validiert und parst die Zeitraum-Parameter (YYYY-MM-DD).
+func parseBerichtZeitraum(vonStr, bisStr string) (time.Time, time.Time, error) {
+	if vonStr == "" || bisStr == "" {
+		return time.Time{}, time.Time{}, fmt.Errorf("parameter 'von' und 'bis' erforderlich (YYYY-MM-DD)")
+	}
+	von, err := time.Parse(dateFormatISO, vonStr)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'von': %w", err)
+	}
+	bis, err := time.Parse(dateFormatISO, bisStr)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'bis': %w", err)
+	}
+	return von, bis, nil
+}
+
+// berichtTitelAbleiten liefert den Berichtstitel: expliziter Titel hat Vorrang,
+// sonst wird er aus dem Kontext (Lieferant / Jahresansicht) abgeleitet.
+func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool) string {
+	if titel != "" {
+		return titel
+	}
+	if lieferantID != "" {
+		return "Lieferantenabrechnung"
+	}
+	if jahresansicht {
+		return "Jahresbericht"
+	}
+	return "Bestellbericht"
+}
+
+// ladeBestellungen liest die Bestellungen im Zeitraum (optional je Lieferant) und
+// liefert zusätzlich einen Index ID→Position für das Nachladen der Positionen.
+func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Time, lieferantID string) ([]berichtOrder, map[string]int, error) {
+	orderQuery := `
+		SELECT id, lieferant_name, lieferant_email, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare
+		FROM bestellungen_verlauf
+		WHERE bestelldatum >= $1 AND bestelldatum < $2`
+	args := []any{von, bisExklusiv}
+	if lieferantID != "" {
+		orderQuery += " AND lieferant_id = $3"
+		args = append(args, lieferantID)
+	}
+	orderQuery += " ORDER BY bestelldatum ASC"
+
+	orderRows, err := s.DB.Pool.Query(ctx, orderQuery, args...)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer orderRows.Close()
+
+	orders := make([]berichtOrder, 0)
+	orderIndex := map[string]int{}
+	for orderRows.Next() {
+		var o berichtOrder
+		if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
+			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare); err != nil {
+			return nil, nil, err
+		}
+		orderIndex[o.ID] = len(orders)
+		orders = append(orders, o)
+	}
+	if err := orderRows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return orders, orderIndex, nil
+}
+
+// ladeBestellPositionen lädt die Positionen aller Bestellungen nach und hängt sie
+// den passenden Orders an.
+func (s *Server) ladeBestellPositionen(ctx context.Context, orders []berichtOrder, orderIndex map[string]int) error {
+	if len(orders) == 0 {
+		return nil
+	}
+	ids := make([]string, len(orders))
+	for i, o := range orders {
+		ids[i] = o.ID
+	}
+	posRows, err := s.DB.Pool.Query(ctx, `
+		SELECT bestellung_id, titel_name, isbn, menge, einzelpreis
+		FROM bestellungen_positionen
+		WHERE bestellung_id = ANY($1::uuid[])
+		ORDER BY bestellung_id, titel_name`, ids)
+	if err != nil {
+		return err
+	}
+	defer posRows.Close()
+	for posRows.Next() {
+		var bestellungID string
+		var pos berichtPosition
+		if err := posRows.Scan(&bestellungID, &pos.TitelName, &pos.ISBN, &pos.Menge, &pos.Einzelpreis); err != nil {
+			return err
+		}
+		if idx, ok := orderIndex[bestellungID]; ok {
+			orders[idx].Positionen = append(orders[idx].Positionen, pos)
+		}
+	}
+	return posRows.Err()
+}
+
 // GetBestellBerichtPDFHandler generates a printable PDF report for a date range.
 //
 // Query parameters:
@@ -50,104 +151,26 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 
 		vonStr := q.Get("von")
 		bisStr := q.Get("bis")
-		if vonStr == "" || bisStr == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("parameter 'von' und 'bis' erforderlich (YYYY-MM-DD)"))
-			return
-		}
-
-		von, err := time.Parse("2006-01-02", vonStr)
+		von, bis, err := parseBerichtZeitraum(vonStr, bisStr)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiges Datum 'von': %w", err))
-			return
-		}
-		bis, err := time.Parse("2006-01-02", bisStr)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültiges Datum 'bis': %w", err))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 		bisExklusiv := bis.AddDate(0, 0, 1)
 
 		lieferantID := q.Get("lieferant_id")
-		berichtTitel := q.Get("titel")
 		jahresansicht := q.Get("jahresansicht") == "true"
+		berichtTitel := berichtTitelAbleiten(q.Get("titel"), lieferantID, jahresansicht)
 
-		if berichtTitel == "" {
-			if lieferantID != "" {
-				berichtTitel = "Lieferantenabrechnung"
-			} else if jahresansicht {
-				berichtTitel = "Jahresbericht"
-			} else {
-				berichtTitel = "Bestellbericht"
-			}
-		}
-
-		// Build query dynamically so we share one code path
-		orderQuery := `
-			SELECT id, lieferant_name, lieferant_email, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare
-			FROM bestellungen_verlauf
-			WHERE bestelldatum >= $1 AND bestelldatum < $2`
-		args := []any{von, bisExklusiv}
-		if lieferantID != "" {
-			orderQuery += " AND lieferant_id = $3"
-			args = append(args, lieferantID)
-		}
-		orderQuery += " ORDER BY bestelldatum ASC"
-
-		orderRows, err := s.DB.Pool.Query(ctx, orderQuery, args...)
+		orders, orderIndex, err := s.ladeBestellungen(ctx, von, bisExklusiv, lieferantID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer orderRows.Close()
 
-		orders := make([]berichtOrder, 0)
-		orderIndex := map[string]int{}
-		for orderRows.Next() {
-			var o berichtOrder
-			if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
-				&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			orderIndex[o.ID] = len(orders)
-			orders = append(orders, o)
-		}
-		if err := orderRows.Err(); err != nil {
+		if err := s.ladeBestellPositionen(ctx, orders, orderIndex); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
-		}
-
-		// Load positionen for all found orders
-		if len(orders) > 0 {
-			ids := make([]string, len(orders))
-			for i, o := range orders {
-				ids[i] = o.ID
-			}
-			posRows, err := s.DB.Pool.Query(ctx, `
-				SELECT bestellung_id, titel_name, isbn, menge, einzelpreis
-				FROM bestellungen_positionen
-				WHERE bestellung_id = ANY($1::uuid[])
-				ORDER BY bestellung_id, titel_name`, ids)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			defer posRows.Close()
-			for posRows.Next() {
-				var bestellungID string
-				var pos berichtPosition
-				if err := posRows.Scan(&bestellungID, &pos.TitelName, &pos.ISBN, &pos.Menge, &pos.Einzelpreis); err != nil {
-					apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-					return
-				}
-				if idx, ok := orderIndex[bestellungID]; ok {
-					orders[idx].Positionen = append(orders[idx].Positionen, pos)
-				}
-			}
-			if err := posRows.Err(); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
 		}
 
 		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
@@ -166,8 +189,8 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		}
 
 		dateiname := fmt.Sprintf("bestellbericht_%s_%s.pdf", vonStr, bisStr)
-		w.Header().Set("Content-Type", "application/pdf")
-		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, dateiname))
+		w.Header().Set(headerContentType, contentTypePDF)
+		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(pdfBytes)
 	}
@@ -184,6 +207,157 @@ func euroStr(n float64) string {
 
 var monthNames = [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni",
 	"Juli", "August", "September", "Oktober", "November", "Dezember"}
+
+type berichtMonthStat struct {
+	count, exemplare int
+	betrag           float64
+}
+
+type berichtSupplierStat struct {
+	count  int
+	betrag float64
+}
+
+// zeichneMonatsuebersicht rendert die Tabelle "Übersicht nach Monat".
+func zeichneMonatsuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, gesamtExemplare int, gesamtBetrag float64) {
+	monthly := map[time.Month]*berichtMonthStat{}
+	for _, o := range orders {
+		m := o.Bestelldatum.Month()
+		if monthly[m] == nil {
+			monthly[m] = &berichtMonthStat{}
+		}
+		monthly[m].count++
+		monthly[m].exemplare += o.AnzahlExemplare
+		monthly[m].betrag += o.Gesamtbetrag
+	}
+
+	p.SetFont("Arial", "B", 11)
+	p.Cell(0, 8, tr("Übersicht nach Monat"))
+	p.Ln(8)
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(220, 220, 220)
+	p.CellFormat(55, 7, tr("Monat"), "1", 0, "L", true, 0, "")
+	p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
+	p.CellFormat(40, 7, tr("Exemplare"), "1", 0, "C", true, 0, "")
+	p.CellFormat(35, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
+	p.SetFont("Arial", "", 9)
+	p.SetFillColor(255, 255, 255)
+	for m := time.January; m <= time.December; m++ {
+		if stat, ok := monthly[m]; ok {
+			p.CellFormat(55, 6, tr(monthNames[m-1]), "1", 0, "L", false, 0, "")
+			p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
+			p.CellFormat(40, 6, fmt.Sprintf("%d", stat.exemplare), "1", 0, "C", false, 0, "")
+			p.CellFormat(35, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
+		}
+	}
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(240, 240, 240)
+	p.CellFormat(55, 7, tr("Gesamt"), "1", 0, "L", true, 0, "")
+	p.CellFormat(40, 7, fmt.Sprintf("%d", len(orders)), "1", 0, "C", true, 0, "")
+	p.CellFormat(40, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
+	p.CellFormat(35, 7, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
+	p.SetFillColor(255, 255, 255)
+	p.Ln(10)
+}
+
+// zeichneLieferantenuebersicht rendert die Tabelle "Ausgaben nach Lieferant".
+func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder) {
+	bySupplier := map[string]*berichtSupplierStat{}
+	for _, o := range orders {
+		if bySupplier[o.LieferantName] == nil {
+			bySupplier[o.LieferantName] = &berichtSupplierStat{}
+		}
+		bySupplier[o.LieferantName].count++
+		bySupplier[o.LieferantName].betrag += o.Gesamtbetrag
+	}
+	p.SetFont("Arial", "B", 11)
+	p.Cell(0, 8, tr("Ausgaben nach Lieferant"))
+	p.Ln(8)
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(220, 220, 220)
+	p.CellFormat(85, 7, tr("Lieferant"), "1", 0, "L", true, 0, "")
+	p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
+	p.CellFormat(45, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
+	p.SetFont("Arial", "", 9)
+	p.SetFillColor(255, 255, 255)
+	for name, stat := range bySupplier {
+		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
+		p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
+		p.CellFormat(45, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
+	}
+	p.Ln(10)
+}
+
+// zeichneDetailliste rendert die Bestellungen mit ihren Positionen und den
+// Gesamtbetrag.
+func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, von, bis time.Time, gesamtBetrag float64) {
+	if len(orders) == 0 {
+		p.SetFont("Arial", "I", 10)
+		p.SetTextColor(120, 120, 120)
+		p.Cell(0, 8, tr("Keine Bestellungen im gewählten Zeitraum."))
+		p.SetTextColor(0, 0, 0)
+		return
+	}
+
+	p.SetFont("Arial", "B", 11)
+	p.Cell(0, 8, tr("Bestellungen im Detail"))
+	p.Ln(8)
+
+	for _, o := range orders {
+		if p.GetY() > 240 {
+			p.AddPage()
+		}
+		// Bestellkopf
+		p.SetFont("Arial", "B", 9)
+		p.SetFillColor(235, 235, 245)
+		header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
+			o.Bestelldatum.Format(dateFormatDE), o.LieferantName, o.Kundennummer)
+		p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
+		p.SetFillColor(255, 255, 255)
+
+		// Spaltenköpfe
+		p.SetFont("Arial", "B", 8)
+		p.SetFillColor(245, 245, 245)
+		p.CellFormat(83, 6, tr("Titel"), "1", 0, "L", true, 0, "")
+		p.CellFormat(33, 6, tr("ISBN"), "1", 0, "C", true, 0, "")
+		p.CellFormat(14, 6, tr("Menge"), "1", 0, "C", true, 0, "")
+		p.CellFormat(20, 6, tr("Einzelpr."), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 6, tr("Gesamt"), "1", 1, "R", true, 0, "")
+		p.SetFillColor(255, 255, 255)
+
+		p.SetFont("Arial", "", 8)
+		for _, pos := range o.Positionen {
+			if p.GetY() > 265 {
+				p.AddPage()
+			}
+			isbn := pos.ISBN
+			if isbn == "" {
+				isbn = "—"
+			}
+			p.CellFormat(83, 5, tr(berichtTrunc(pos.TitelName, 62)), "1", 0, "L", false, 0, "")
+			p.CellFormat(33, 5, tr(isbn), "1", 0, "C", false, 0, "")
+			p.CellFormat(14, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
+			p.CellFormat(20, 5, tr(euroStr(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
+			p.CellFormat(20, 5, tr(euroStr(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
+		}
+
+		// Summe der Bestellung
+		p.SetFont("Arial", "B", 8)
+		p.SetFillColor(235, 235, 245)
+		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%d Exemplare)", o.AnzahlExemplare)), "LBR", 0, "R", true, 0, "")
+		p.CellFormat(20, 6, tr(euroStr(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
+		p.SetFillColor(255, 255, 255)
+		p.Ln(5)
+	}
+
+	// Gesamtbetrag
+	p.Ln(4)
+	p.SetFont("Arial", "B", 11)
+	p.SetFillColor(220, 230, 255)
+	p.CellFormat(150, 9, tr(fmt.Sprintf("Gesamtbetrag %s – %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))), "1", 0, "R", true, 0, "")
+	p.CellFormat(20, 9, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
+	p.SetFillColor(255, 255, 255)
+}
 
 func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, titel string, von, bis time.Time, jahresansicht bool) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
@@ -234,140 +408,12 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 
 	// Jahresübersicht-Tabellen
 	if jahresansicht {
-		type monthStat struct{ count, exemplare int; betrag float64 }
-		monthly := map[time.Month]*monthStat{}
-		for _, o := range orders {
-			m := o.Bestelldatum.Month()
-			if monthly[m] == nil {
-				monthly[m] = &monthStat{}
-			}
-			monthly[m].count++
-			monthly[m].exemplare += o.AnzahlExemplare
-			monthly[m].betrag += o.Gesamtbetrag
-		}
-
-		p.SetFont("Arial", "B", 11)
-		p.Cell(0, 8, tr("Übersicht nach Monat"))
-		p.Ln(8)
-		p.SetFont("Arial", "B", 9)
-		p.SetFillColor(220, 220, 220)
-		p.CellFormat(55, 7, tr("Monat"), "1", 0, "L", true, 0, "")
-		p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
-		p.CellFormat(40, 7, tr("Exemplare"), "1", 0, "C", true, 0, "")
-		p.CellFormat(35, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
-		p.SetFont("Arial", "", 9)
-		p.SetFillColor(255, 255, 255)
-		for m := time.January; m <= time.December; m++ {
-			if stat, ok := monthly[m]; ok {
-				p.CellFormat(55, 6, tr(monthNames[m-1]), "1", 0, "L", false, 0, "")
-				p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
-				p.CellFormat(40, 6, fmt.Sprintf("%d", stat.exemplare), "1", 0, "C", false, 0, "")
-				p.CellFormat(35, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
-			}
-		}
-		p.SetFont("Arial", "B", 9)
-		p.SetFillColor(240, 240, 240)
-		p.CellFormat(55, 7, tr("Gesamt"), "1", 0, "L", true, 0, "")
-		p.CellFormat(40, 7, fmt.Sprintf("%d", len(orders)), "1", 0, "C", true, 0, "")
-		p.CellFormat(40, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
-		p.CellFormat(35, 7, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
-		p.SetFillColor(255, 255, 255)
-		p.Ln(10)
-
-		// Aufteilung nach Lieferant
-		type supplierStat struct{ count int; betrag float64 }
-		bySupplier := map[string]*supplierStat{}
-		for _, o := range orders {
-			if bySupplier[o.LieferantName] == nil {
-				bySupplier[o.LieferantName] = &supplierStat{}
-			}
-			bySupplier[o.LieferantName].count++
-			bySupplier[o.LieferantName].betrag += o.Gesamtbetrag
-		}
-		p.SetFont("Arial", "B", 11)
-		p.Cell(0, 8, tr("Ausgaben nach Lieferant"))
-		p.Ln(8)
-		p.SetFont("Arial", "B", 9)
-		p.SetFillColor(220, 220, 220)
-		p.CellFormat(85, 7, tr("Lieferant"), "1", 0, "L", true, 0, "")
-		p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
-		p.CellFormat(45, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
-		p.SetFont("Arial", "", 9)
-		p.SetFillColor(255, 255, 255)
-		for name, stat := range bySupplier {
-			p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
-			p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
-			p.CellFormat(45, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
-		}
-		p.Ln(10)
+		zeichneMonatsuebersicht(p, tr, orders, gesamtExemplare, gesamtBetrag)
+		zeichneLieferantenuebersicht(p, tr, orders)
 	}
 
 	// Detailliste
-	if len(orders) == 0 {
-		p.SetFont("Arial", "I", 10)
-		p.SetTextColor(120, 120, 120)
-		p.Cell(0, 8, tr("Keine Bestellungen im gewählten Zeitraum."))
-		p.SetTextColor(0, 0, 0)
-	} else {
-		p.SetFont("Arial", "B", 11)
-		p.Cell(0, 8, tr("Bestellungen im Detail"))
-		p.Ln(8)
-
-		for _, o := range orders {
-			if p.GetY() > 240 {
-				p.AddPage()
-			}
-			// Bestellkopf
-			p.SetFont("Arial", "B", 9)
-			p.SetFillColor(235, 235, 245)
-			header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
-				o.Bestelldatum.Format(dateFormatDE), o.LieferantName, o.Kundennummer)
-			p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
-			p.SetFillColor(255, 255, 255)
-
-			// Spaltenköpfe
-			p.SetFont("Arial", "B", 8)
-			p.SetFillColor(245, 245, 245)
-			p.CellFormat(83, 6, tr("Titel"), "1", 0, "L", true, 0, "")
-			p.CellFormat(33, 6, tr("ISBN"), "1", 0, "C", true, 0, "")
-			p.CellFormat(14, 6, tr("Menge"), "1", 0, "C", true, 0, "")
-			p.CellFormat(20, 6, tr("Einzelpr."), "1", 0, "R", true, 0, "")
-			p.CellFormat(20, 6, tr("Gesamt"), "1", 1, "R", true, 0, "")
-			p.SetFillColor(255, 255, 255)
-
-			p.SetFont("Arial", "", 8)
-			for _, pos := range o.Positionen {
-				if p.GetY() > 265 {
-					p.AddPage()
-				}
-				isbn := pos.ISBN
-				if isbn == "" {
-					isbn = "—"
-				}
-				p.CellFormat(83, 5, tr(berichtTrunc(pos.TitelName, 62)), "1", 0, "L", false, 0, "")
-				p.CellFormat(33, 5, tr(isbn), "1", 0, "C", false, 0, "")
-				p.CellFormat(14, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
-				p.CellFormat(20, 5, tr(euroStr(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
-				p.CellFormat(20, 5, tr(euroStr(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
-			}
-
-			// Summe der Bestellung
-			p.SetFont("Arial", "B", 8)
-			p.SetFillColor(235, 235, 245)
-			p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%d Exemplare)", o.AnzahlExemplare)), "LBR", 0, "R", true, 0, "")
-			p.CellFormat(20, 6, tr(euroStr(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
-			p.SetFillColor(255, 255, 255)
-			p.Ln(5)
-		}
-
-		// Gesamtbetrag
-		p.Ln(4)
-		p.SetFont("Arial", "B", 11)
-		p.SetFillColor(220, 230, 255)
-		p.CellFormat(150, 9, tr(fmt.Sprintf("Gesamtbetrag %s – %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))), "1", 0, "R", true, 0, "")
-		p.CellFormat(20, 9, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
-		p.SetFillColor(255, 255, 255)
-	}
+	zeichneDetailliste(p, tr, orders, von, bis, gesamtBetrag)
 
 	var buf bytes.Buffer
 	if err := p.Output(&buf); err != nil {
