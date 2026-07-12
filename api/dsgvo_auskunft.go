@@ -85,12 +85,12 @@ type DsgvoAuditEintrag struct {
 
 // DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 lit. a–d, g DSGVO.
 type DsgvoVerarbeitungsangaben struct {
-	Zwecke          []string `json:"zwecke"`
-	Rechtsgrundlage string   `json:"rechtsgrundlage"`
-	Empfaenger      string   `json:"empfaenger"`
-	Speicherdauer   string   `json:"speicherdauer"`
-	Herkunft        string   `json:"herkunft_der_daten"`
-	Betroffenenrechte string `json:"betroffenenrechte"`
+	Zwecke            []string `json:"zwecke"`
+	Rechtsgrundlage   string   `json:"rechtsgrundlage"`
+	Empfaenger        string   `json:"empfaenger"`
+	Speicherdauer     string   `json:"speicherdauer"`
+	Herkunft          string   `json:"herkunft_der_daten"`
+	Betroffenenrechte string   `json:"betroffenenrechte"`
 }
 
 // DsgvoAuskunftResponse ist die vollständige Betroffenenauskunft nach Art. 15 DSGVO.
@@ -272,6 +272,76 @@ func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]Dsg
 // @Success      200  {object}  DsgvoAuskunftResponse
 // @Failure      404  {object}  map[string]string
 // @Router       /schueler/{id}/dsgvo-auskunft [get]
+// dsgvoDaten bündelt alle personenbezogenen Daten eines Schülers für die Auskunft.
+type dsgvoDaten struct {
+	stammdaten     *DsgvoStammdaten
+	foto           DsgvoFoto
+	ausleihen      []DsgvoAusleihe
+	schaeden       []DsgvoSchadensfall
+	vormerkungen   []DsgvoVormerkung
+	auditEintraege []DsgvoAuditEintrag
+}
+
+// sammleDsgvoDaten lädt alle personenbezogenen Daten eines Schülers für die
+// Art.-15-Auskunft. Fehler sind bereits als HTTP-Fehler (apierrors) verpackt.
+func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, error) {
+	stammdaten, err := s.dsgvoQueryStammdaten(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Stammdaten", err)
+	}
+	if stammdaten == nil {
+		return nil, apierrors.NotFound("student record not found", nil)
+	}
+
+	foto, err := s.dsgvoQueryFoto(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Prüfen des Fotos", err)
+	}
+	ausleihen, err := s.dsgvoQueryAusleihen(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Ausleihhistorie", err)
+	}
+	schaeden, err := s.dsgvoQuerySchadensfaelle(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Schadensfälle", err)
+	}
+	vormerkungen, err := s.dsgvoQueryVormerkungen(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Vormerkungen", err)
+	}
+	auditEintraege, err := s.dsgvoQueryAuditEintraege(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Protokolleinträge", err)
+	}
+
+	return &dsgvoDaten{
+		stammdaten:     stammdaten,
+		foto:           foto,
+		ausleihen:      ausleihen,
+		schaeden:       schaeden,
+		vormerkungen:   vormerkungen,
+		auditEintraege: auditEintraege,
+	}, nil
+}
+
+// protokolliereDsgvoAuskunft schreibt den Rechenschafts-Audit-Eintrag der Auskunft.
+// Ein Fehler wird nur protokolliert, nicht weitergereicht (die Auskunft geht vor).
+func (s *Server) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
+	akteur := "SYSTEM"
+	var bearbeiterID *string
+	if claims, ok := auth.GetClaims(ctx); ok {
+		akteur = "USER"
+		bearbeiterID = &claims.UserID
+	}
+	if _, err := s.DB.Pool.Exec(ctx,
+		`INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
+		 VALUES ('schueler', 'dsgvo_auskunft', $1::uuid, $2, $3)`,
+		id, bearbeiterID, akteur,
+	); err != nil {
+		log.Printf("dsgvo-auskunft: Audit-Protokollierung fehlgeschlagen: %v", err)
+	}
+}
+
 func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
@@ -280,60 +350,23 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 		}
 		ctx := r.Context()
 
-		stammdaten, err := s.dsgvoQueryStammdaten(ctx, id)
+		daten, err := s.sammleDsgvoDaten(ctx, id)
 		if err != nil {
-			return apierrors.Internal("Fehler beim Laden der Stammdaten", err)
-		}
-		if stammdaten == nil {
-			return apierrors.NotFound("student record not found", nil)
-		}
-
-		foto, err := s.dsgvoQueryFoto(ctx, id)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Prüfen des Fotos", err)
-		}
-		ausleihen, err := s.dsgvoQueryAusleihen(ctx, id)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Laden der Ausleihhistorie", err)
-		}
-		schaeden, err := s.dsgvoQuerySchadensfaelle(ctx, id)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Laden der Schadensfälle", err)
-		}
-		vormerkungen, err := s.dsgvoQueryVormerkungen(ctx, id)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Laden der Vormerkungen", err)
-		}
-		auditEintraege, err := s.dsgvoQueryAuditEintraege(ctx, id)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Laden der Protokolleinträge", err)
+			return err
 		}
 
 		// Rechenschaftspflicht: Die Auskunftserteilung selbst wird protokolliert.
-		// Ein Fehler hier darf die Auskunft nicht verhindern — nur loggen.
-		akteur := "SYSTEM"
-		var bearbeiterID *string
-		if claims, ok := auth.GetClaims(ctx); ok {
-			akteur = "USER"
-			bearbeiterID = &claims.UserID
-		}
-		if _, err := s.DB.Pool.Exec(ctx,
-			`INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
-			 VALUES ('schueler', 'dsgvo_auskunft', $1::uuid, $2, $3)`,
-			id, bearbeiterID, akteur,
-		); err != nil {
-			log.Printf("dsgvo-auskunft: Audit-Protokollierung fehlgeschlagen: %v", err)
-		}
+		s.protokolliereDsgvoAuskunft(ctx, id)
 
 		RespondJSON(w, http.StatusOK, DsgvoAuskunftResponse{
 			Art:                  "Auskunft nach Art. 15 DSGVO",
 			ErstelltAm:           time.Now(),
-			Stammdaten:           *stammdaten,
-			Foto:                 foto,
-			Ausleihen:            ausleihen,
-			Schadensfaelle:       schaeden,
-			Vormerkungen:         vormerkungen,
-			AuditEintraege:       auditEintraege,
+			Stammdaten:           *daten.stammdaten,
+			Foto:                 daten.foto,
+			Ausleihen:            daten.ausleihen,
+			Schadensfaelle:       daten.schaeden,
+			Vormerkungen:         daten.vormerkungen,
+			AuditEintraege:       daten.auditEintraege,
 			Verarbeitungsangaben: dsgvoVerarbeitungsangaben(),
 		})
 		return nil

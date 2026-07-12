@@ -105,47 +105,13 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 }
 
 func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request *http.Request) {
-	parts := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
-	if len(parts) != 4 || parts[0] != "api" || parts[1] != "books" || parts[3] != "cover-upload" {
-		writeError(writer, http.StatusBadRequest, "ungültige route")
+	id, ok := validateCoverRoute(writer, request)
+	if !ok {
 		return
 	}
 
-	id := filepath.Base(parts[2])
-	if id == "" || id == "." || id == "/" {
-		writeError(writer, http.StatusBadRequest, "id darf nicht leer sein")
-		return
-	}
-
-	request.Body = http.MaxBytesReader(writer, request.Body, maxCoverUploadBytes)
-	err := request.ParseMultipartForm(maxCoverUploadBytes)
-	if err != nil {
-		log.Printf("cover-upload: multipart parse failed for book %s: %v", logger.SanitizeLog(id), err)
-		writeError(writer, http.StatusBadRequest, "datei zu groß oder ungültig (max. 10 MB)")
-		return
-	}
-
-	file, header, err := request.FormFile("cover")
-	if err != nil {
-		writeError(writer, http.StatusBadRequest, "kein bild gefunden")
-		return
-	}
-	defer func() { _ = file.Close() }()
-
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		log.Printf("cover-upload: read failed for book %s: %v", logger.SanitizeLog(id), err)
-		writeError(writer, http.StatusInternalServerError, "fehler beim lesen der datei")
-		return
-	}
-	if len(fileBytes) == 0 {
-		writeError(writer, http.StatusBadRequest, "leere datei")
-		return
-	}
-
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
-		writeError(writer, http.StatusBadRequest, "nur jpg, jpeg, png oder webp erlaubt")
+	fileBytes, ok := readCoverUpload(writer, request, id)
+	if !ok {
 		return
 	}
 
@@ -159,29 +125,10 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 		return
 	}
 
-	if err := os.MkdirAll("uploads", 0750); err != nil {
-		log.Printf("cover-upload: mkdir uploads failed for book %s: %v", logger.SanitizeLog(id), err)
-		writeError(writer, http.StatusInternalServerError, "uploads-verzeichnis konnte nicht erstellt werden")
+	coverURL, ok := saveCoverFile(writer, id, finalBytes, saveExt)
+	if !ok {
 		return
 	}
-
-	cleanDir := filepath.Clean("uploads")
-	filename := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), saveExt)
-	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
-
-	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
-		writeError(writer, http.StatusBadRequest, "invalid file path")
-		return
-	}
-
-	// #nosec G304 - filename is safely generated on the server side
-	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
-		log.Printf("cover-upload: write file failed for book %s (%s): %v", logger.SanitizeLog(id), logger.SanitizeLog(savePath), err)
-		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
-		return
-	}
-
-	coverURL := fmt.Sprintf("/uploads/%s", filename)
 
 	deleteOldCoverFile(request.Context(), handler, id)
 
@@ -203,4 +150,86 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 			"coverUrl": coverURL,
 		},
 	})
+}
+
+// validateCoverRoute validiert die Upload-Route (/api/books/{id}/cover-upload) und
+// extrahiert die Buch-ID. ok=false: die Fehlerantwort wurde bereits geschrieben.
+func validateCoverRoute(writer http.ResponseWriter, request *http.Request) (string, bool) {
+	parts := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
+	if len(parts) != 4 || parts[0] != "api" || parts[1] != "books" || parts[3] != "cover-upload" {
+		writeError(writer, http.StatusBadRequest, "ungültige route")
+		return "", false
+	}
+
+	id := filepath.Base(parts[2])
+	if id == "" || id == "." || id == "/" {
+		writeError(writer, http.StatusBadRequest, "id darf nicht leer sein")
+		return "", false
+	}
+	return id, true
+}
+
+// readCoverUpload liest und validiert das hochgeladene Bild (Größe, Nicht-Leer,
+// zulässige Endung). ok=false: die Fehlerantwort wurde bereits geschrieben.
+func readCoverUpload(writer http.ResponseWriter, request *http.Request, id string) ([]byte, bool) {
+	request.Body = http.MaxBytesReader(writer, request.Body, maxCoverUploadBytes)
+	if err := request.ParseMultipartForm(maxCoverUploadBytes); err != nil {
+		log.Printf("cover-upload: multipart parse failed for book %s: %v", logger.SanitizeLog(id), err)
+		writeError(writer, http.StatusBadRequest, "datei zu groß oder ungültig (max. 10 MB)")
+		return nil, false
+	}
+
+	file, header, err := request.FormFile("cover")
+	if err != nil {
+		writeError(writer, http.StatusBadRequest, "kein bild gefunden")
+		return nil, false
+	}
+	defer func() { _ = file.Close() }()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Printf("cover-upload: read failed for book %s: %v", logger.SanitizeLog(id), err)
+		writeError(writer, http.StatusInternalServerError, "fehler beim lesen der datei")
+		return nil, false
+	}
+	if len(fileBytes) == 0 {
+		writeError(writer, http.StatusBadRequest, "leere datei")
+		return nil, false
+	}
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
+		writeError(writer, http.StatusBadRequest, "nur jpg, jpeg, png oder webp erlaubt")
+		return nil, false
+	}
+	return fileBytes, true
+}
+
+// saveCoverFile legt das uploads-Verzeichnis an, schreibt die Bilddatei unter einem
+// serverseitig generierten (traversal-geschützten) Pfad und liefert die öffentliche
+// Cover-URL. ok=false: die Fehlerantwort wurde bereits geschrieben.
+func saveCoverFile(writer http.ResponseWriter, id string, finalBytes []byte, saveExt string) (string, bool) {
+	if err := os.MkdirAll("uploads", 0750); err != nil {
+		log.Printf("cover-upload: mkdir uploads failed for book %s: %v", logger.SanitizeLog(id), err)
+		writeError(writer, http.StatusInternalServerError, "uploads-verzeichnis konnte nicht erstellt werden")
+		return "", false
+	}
+
+	cleanDir := filepath.Clean("uploads")
+	filename := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), saveExt)
+	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
+
+	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
+		writeError(writer, http.StatusBadRequest, "invalid file path")
+		return "", false
+	}
+
+	// #nosec G304 - filename is safely generated on the server side
+	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
+		log.Printf("cover-upload: write file failed for book %s (%s): %v", logger.SanitizeLog(id), logger.SanitizeLog(savePath), err)
+		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
+		return "", false
+	}
+
+	return fmt.Sprintf("/uploads/%s", filename), true
 }

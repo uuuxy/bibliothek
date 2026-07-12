@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -8,6 +9,36 @@ import (
 	"bibliothek/db"
 	"bibliothek/repository"
 )
+
+// validateInventurStart prüft Typ und (bei "signature") die erforderliche Signatur-ID.
+// ok=false: die Fehlerantwort wurde bereits geschrieben.
+func validateInventurStart(w http.ResponseWriter, req InventurStartRequest) bool {
+	if req.Type != "global" && req.Type != "signature" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("invalid type, must be 'global' or 'signature'"))
+		return false
+	}
+	if req.Type == "signature" && req.SignatureID == nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signature_id is required when type is 'signature'"))
+		return false
+	}
+	return true
+}
+
+// setzeInventurUmfang setzt den Inventur-Status zurück und markiert den gewählten
+// Umfang (global oder je Signatur) als 'ausstehend'; liefert die Anzahl erwarteter
+// Exemplare.
+func setzeInventurUmfang(ctx context.Context, invRepo *repository.InventoryRepository, req InventurStartRequest) (int, error) {
+	// 1. Reset all old states globally
+	if err := invRepo.ResetInventoryStatus(ctx); err != nil {
+		return 0, err
+	}
+
+	// 2. Set 'ausstehend' for the targeted scope
+	if req.Type == "global" {
+		return invRepo.SetInventoryScopeGlobal(ctx)
+	}
+	return invRepo.SetInventoryScopeSignature(ctx, *req.SignatureID)
+}
 
 // InventurStartRequest holds the parameters needed to define the scope
 // of a new physical stock-take (inventory).
@@ -40,13 +71,7 @@ func (s *Server) InventurStartHandler() http.HandlerFunc {
 			return
 		}
 
-		if req.Type != "global" && req.Type != "signature" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("invalid type, must be 'global' or 'signature'"))
-			return
-		}
-
-		if req.Type == "signature" && req.SignatureID == nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signature_id is required when type is 'signature'"))
+		if !validateInventurStart(w, req) {
 			return
 		}
 
@@ -61,21 +86,7 @@ func (s *Server) InventurStartHandler() http.HandlerFunc {
 		defer db.SafeRollback(ctx, tx)
 
 		invRepo := repository.NewInventoryRepository(tx)
-
-		// 1. Reset all old states globally
-		if err := invRepo.ResetInventoryStatus(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 2. Set 'ausstehend' for the targeted scope
-		var count int
-		if req.Type == "global" {
-			count, err = invRepo.SetInventoryScopeGlobal(ctx)
-		} else {
-			count, err = invRepo.SetInventoryScopeSignature(ctx, *req.SignatureID)
-		}
-
+		count, err := setzeInventurUmfang(ctx, invRepo, req)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

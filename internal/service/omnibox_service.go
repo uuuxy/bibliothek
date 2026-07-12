@@ -94,53 +94,55 @@ func (s *defaultOmniboxService) ProcessQuery(
 	overrideBlock bool,
 ) (*OmniboxResult, error) {
 	resp := &OmniboxResult{}
-	var err error
 
 	// Präfix-Erkennung (Scanner-Steuerung):
 	// S- steht für Schüler (Student)
 	// L- steht für Lehrer (Teacher)
 	// B- steht für Buch (Book)
 	// G- steht für Gerät (Hardware-Geräte)
-	if strings.HasPrefix(query, "S-") {
-		err = s.handleStudentAction(ctx, query, resp)
-	} else if strings.HasPrefix(query, "L-") {
-		err = s.handleTeacherAction(ctx, query, resp)
-	} else if strings.HasPrefix(query, "B-") {
-		err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
-	} else if strings.HasPrefix(query, "G-") {
+	switch {
+	case strings.HasPrefix(query, "S-"):
+		return resp, s.handleStudentAction(ctx, query, resp)
+	case strings.HasPrefix(query, "L-"):
+		return resp, s.handleTeacherAction(ctx, query, resp)
+	case strings.HasPrefix(query, "B-"):
+		return resp, s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
+	case strings.HasPrefix(query, "G-"):
 		dr, err := s.deviceSvc.HandleDeviceAction(ctx, query, activeStudentID, activeTeacherID, confirmedChecklist, staffID)
 		if err == nil {
 			s.mapDeviceResult(dr, resp)
 		}
 		return resp, err
-	} else {
-		// Fallback ohne Präfix — Auflösungsreihenfolge: Buch → Schülerausweis → Volltextsuche.
-		// Die Littera-Altbestand-Ausweise tragen nackte Nummern ohne "S-"-Präfix und dürfen
-		// nicht neu etikettiert werden; ihre Nummernkreise überschneiden sich nicht mit den
-		// (kürzeren) Littera-Mediennummern, daher ist die Reihenfolge deterministisch.
-		// GetCopyByBarcode/GetByBarcode liefern bei Nichttreffer (nil, nil); ein non-nil Fehler
-		// ist daher ein echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als
-		// "nicht gefunden" zu verschlucken.
-		copy, lookupErr := s.bookRepo.GetCopyByBarcode(ctx, query)
-		if lookupErr != nil {
-			return resp, fmt.Errorf("datenbankfehler bei Barcode-Auflösung: %w", lookupErr)
-		}
-		if copy != nil {
-			err = s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
-		} else {
-			student, studentErr := s.studentRepo.GetByBarcode(ctx, query)
-			if studentErr != nil {
-				return resp, fmt.Errorf("datenbankfehler bei Ausweis-Auflösung: %w", studentErr)
-			}
-			if student != nil {
-				err = s.handleStudentAction(ctx, query, resp)
-			} else {
-				err = s.handleSearchAction(ctx, query, resp)
-			}
-		}
+	default:
+		return resp, s.resolveOhnePraefix(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
+	}
+}
+
+// resolveOhnePraefix löst einen Barcode/eine Query ohne bekanntes Präfix auf.
+// Auflösungsreihenfolge: Buch → Schülerausweis → Volltextsuche.
+// Die Littera-Altbestand-Ausweise tragen nackte Nummern ohne "S-"-Präfix und dürfen
+// nicht neu etikettiert werden; ihre Nummernkreise überschneiden sich nicht mit den
+// (kürzeren) Littera-Mediennummern, daher ist die Reihenfolge deterministisch.
+// GetCopyByBarcode/GetByBarcode liefern bei Nichttreffer (nil, nil); ein non-nil Fehler
+// ist daher ein echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als
+// "nicht gefunden" zu verschlucken.
+func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, query string, activeStudentID, activeTeacherID *string, staffID, staffRole string, overrideBlock bool, resp *OmniboxResult) error {
+	copy, lookupErr := s.bookRepo.GetCopyByBarcode(ctx, query)
+	if lookupErr != nil {
+		return fmt.Errorf("datenbankfehler bei Barcode-Auflösung: %w", lookupErr)
+	}
+	if copy != nil {
+		return s.handleBookAction(ctx, query, activeStudentID, activeTeacherID, staffID, staffRole, overrideBlock, resp)
 	}
 
-	return resp, err
+	student, studentErr := s.studentRepo.GetByBarcode(ctx, query)
+	if studentErr != nil {
+		return fmt.Errorf("datenbankfehler bei Ausweis-Auflösung: %w", studentErr)
+	}
+	if student != nil {
+		return s.handleStudentAction(ctx, query, resp)
+	}
+	return s.handleSearchAction(ctx, query, resp)
 }
 
 // mapDeviceResult mappt die Felder aus DeviceResult in die flache OmniboxResult-Struktur.

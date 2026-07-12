@@ -133,19 +133,9 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		var id, roleStr, vorname, nachname string
-		var aktiv bool
-		var authSuccess bool
-
 		// 1. Check if it's an email-based login
-		if req.Email == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("email is required"))
-			return
-		}
-
-		password := req.Password
-		if password == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("password is required"))
+		password, ok := validateLoginCredentials(w, req)
+		if !ok {
 			return
 		}
 
@@ -160,34 +150,20 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		// ONLY perform IMAP verification (Roundcube SSO)
-		if imapErr := AuthenticateIMAP(req.Email, password); imapErr == nil {
-			// IMAP succeeded, check if the user is registered in our local DB
-			query := `
-				SELECT id, rolle, vorname, nachname, aktiv 
-				FROM benutzer 
-				WHERE LOWER(email) = LOWER($1) 
-				LIMIT 1
-			`
-			err := dbPool.QueryRow(ctx, query, req.Email).Scan(&id, &roleStr, &vorname, &nachname, &aktiv)
-			if err == nil {
-				authSuccess = true
-			}
-		}
-
+		user, authSuccess := verifyIMAPCredentials(ctx, dbPool, req.Email, password)
 		if !authSuccess {
 			globalLoginLimiter.recordFailure(bruteForceKey)
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 			return
 		}
 
-		if !aktiv {
+		if !user.aktiv {
 			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("user account is deactivated"))
 			return
 		}
 
-		role := Role(roleStr)
-		token, err := authenticator.GenerateToken(id, req.BarcodeID, role)
+		role := Role(user.roleStr)
+		token, err := authenticator.GenerateToken(user.id, req.BarcodeID, role)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -203,7 +179,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			SameSite: http.SameSiteStrictMode, // Strict: keine Cross-Site-Requests erlaubt
 		})
 
-		permissions, err := loadPermissionsForRole(ctx, dbPool, roleStr)
+		permissions, err := loadPermissionsForRole(ctx, dbPool, user.roleStr)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
 			return
@@ -211,13 +187,59 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 
 		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Encode(w, LoginResponse{
-			UserID:      id,
+			UserID:      user.id,
 			Rolle:       role,
-			Vorname:     vorname,
-			Nachname:    nachname,
+			Vorname:     user.vorname,
+			Nachname:    user.nachname,
 			Permissions: permissions,
 		})
 	}
+}
+
+// loginUser bündelt die aus der benutzer-Tabelle geladenen Login-Felder.
+type loginUser struct {
+	id       string
+	roleStr  string
+	vorname  string
+	nachname string
+	aktiv    bool
+}
+
+// validateLoginCredentials erzwingt das Vorhandensein von E-Mail und Passwort.
+// ok=false: die Fehlerantwort wurde bereits geschrieben.
+func validateLoginCredentials(w http.ResponseWriter, req LoginRequest) (password string, ok bool) {
+	if req.Email == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("email is required"))
+		return "", false
+	}
+	if req.Password == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("password is required"))
+		return "", false
+	}
+	return req.Password, true
+}
+
+// verifyIMAPCredentials prüft die Zugangsdaten per IMAP (Roundcube-SSO) und lädt bei
+// Erfolg den lokal registrierten Benutzer. ok=false bedeutet: kein gültiger Login
+// (IMAP fehlgeschlagen oder Benutzer nicht in der lokalen DB).
+func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, password string) (loginUser, bool) {
+	// ONLY perform IMAP verification (Roundcube SSO)
+	if imapErr := AuthenticateIMAP(email, password); imapErr != nil {
+		return loginUser{}, false
+	}
+
+	// IMAP succeeded, check if the user is registered in our local DB
+	var u loginUser
+	query := `
+		SELECT id, rolle, vorname, nachname, aktiv
+		FROM benutzer
+		WHERE LOWER(email) = LOWER($1)
+		LIMIT 1
+	`
+	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv); err != nil {
+		return loginUser{}, false
+	}
+	return u, true
 }
 
 // loadPermissionsForRole lädt die effektiven Rechte aus der konfigurierbaren
