@@ -31,33 +31,31 @@ import (
 // sauberes 404, wenn kein Cover existiert). Daher NICHT auf einen Chrome-UA „aufrüsten".
 const coverFetchUserAgent = "Inventur/1.0"
 
-// downloadAndSaveCoverLocally lädt ein Bild von einer externen URL herunter,
-// verkleinert es falls nötig, speichert es auf dem Server im Verzeichnis "uploads/"
-// und gibt den lokalen Pfad zurück. Im Fehlerfall oder wenn es sich um Platzhalter handelt,
-// wird die Original-URL (oder leer) zurückgegeben.
-func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, coverURL string, isbn string) string {
-	if coverURL == "" || coverURL == "https://covers.openlibrary.org/b/isbn/-L.jpg" {
-		return ""
+// ladeCoverBytes lädt die Bilddaten einer whitelisteten Cover-URL (SSRF-Schutz) und
+// verwirft Nicht-Bild-Antworten (Bot-Schranken-HTML). Liefert nil bei jedem Fehler.
+func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) []byte {
+	if coverURL == "" || coverURL == openLibraryLeeresCover {
+		return nil
 	}
 
 	parsed, urlErr := url.Parse(coverURL)
 	if urlErr != nil {
 		log.Printf("Ungültige Cover-URL: %s", coverURL)
-		return ""
+		return nil
 	}
 	switch parsed.Hostname() {
 	case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org", "books.google.com", "books.google.de":
 		// Erlaubte Hosts
 	default:
 		log.Printf("SSRF Schutz: Cover-URL Hostname %s ist nicht in der Whitelist", parsed.Hostname())
-		return ""
+		return nil
 	}
 
 	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)
 	if err != nil {
 		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", coverURL, err)
-		return ""
+		return nil
 	}
 
 	// Identische Programm-Identifikation wie beim DNB-HEAD-Check, sonst blockt die
@@ -68,12 +66,12 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Cover-Download fehlgeschlagen für %s: %v", coverURL, err)
-		return ""
+		return nil
 	}
 	defer closeutil.LogClose(resp.Body, "cover download")
 
 	if resp.StatusCode != http.StatusOK {
-		return ""
+		return nil
 	}
 
 	// Nicht-Bild-Antworten sofort verwerfen. Bot-Schranken (z. B. DNB/Anubis) liefern bei
@@ -81,11 +79,49 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 	// So fällt der Aufrufer sauber auf die nächste Quelle zurück, statt HTML zu dekodieren.
 	if ct := resp.Header.Get("Content-Type"); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
 		log.Printf("Cover-Download: Nicht-Bild-Antwort (%s) für %s — übersprungen", ct, coverURL)
-		return ""
+		return nil
 	}
 
 	fileBytes, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20)) // max. 10 MB
 	if err != nil || len(fileBytes) == 0 {
+		return nil
+	}
+	return fileBytes
+}
+
+// speichereCoverDatei schreibt das aufbereitete Cover unter einem serverseitig
+// generierten (traversal-geschützten) Pfad in uploads/ und liefert den öffentlichen
+// Pfad; "" bei Fehler.
+func speichereCoverDatei(finalBytes []byte, isbn, saveExt string) string {
+	if err := os.MkdirAll("uploads", 0750); err != nil {
+		log.Printf("Cover-Download: uploads-Verzeichnis konnte nicht angelegt werden: %v", err)
+		return ""
+	}
+	cleanDir := filepath.Clean("uploads")
+	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
+	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
+
+	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
+		log.Printf("Path traversal attempt in cover downloader: %s", isbn)
+		return ""
+	}
+
+	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
+		log.Printf("Fehler beim lokalen Speichern von %s: %v", savePath, err)
+		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
+	}
+
+	// Erfolg! Das Bild liegt lokal.
+	return "/uploads/" + filename
+}
+
+// downloadAndSaveCoverLocally lädt ein Bild von einer externen URL herunter,
+// verkleinert es falls nötig, speichert es auf dem Server im Verzeichnis "uploads/"
+// und gibt den lokalen Pfad zurück. Im Fehlerfall oder wenn es sich um Platzhalter handelt,
+// wird die Original-URL (oder leer) zurückgegeben.
+func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, coverURL string, isbn string) string {
+	fileBytes := ladeCoverBytes(ctx, client, coverURL)
+	if fileBytes == nil {
 		return ""
 	}
 
@@ -108,24 +144,5 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		return ""
 	}
 
-	if err := os.MkdirAll("uploads", 0750); err != nil {
-		log.Printf("Cover-Download: uploads-Verzeichnis konnte nicht angelegt werden: %v", err)
-		return ""
-	}
-	cleanDir := filepath.Clean("uploads")
-	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
-	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
-
-	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
-		log.Printf("Path traversal attempt in cover downloader: %s", isbn)
-		return ""
-	}
-
-	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
-		log.Printf("Fehler beim lokalen Speichern von %s: %v", savePath, err)
-		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
-	}
-
-	// Erfolg! Das Bild liegt lokal.
-	return "/uploads/" + filename
+	return speichereCoverDatei(finalBytes, isbn, saveExt)
 }

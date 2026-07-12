@@ -3,7 +3,33 @@ package inventur
 import (
 	"context"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
+
+// insertClassBookBindings schreibt das Kreuzprodukt aus Klassen × Büchern per
+// unnest-INSERT in class_books. Leere Eingaben werden ignoriert (kein Insert).
+func insertClassBookBindings(ctx context.Context, tx pgx.Tx, newClassNames, bookIDs []string) error {
+	if len(bookIDs) == 0 || len(newClassNames) == 0 {
+		return nil
+	}
+
+	var insertClasses []string
+	var insertBooks []string
+	for _, className := range newClassNames {
+		for _, bookID := range bookIDs {
+			insertClasses = append(insertClasses, className)
+			insertBooks = append(insertBooks, bookID)
+		}
+	}
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO class_books (class_name, book_id)
+		SELECT class_name, book_id::uuid FROM unnest($1::text[], $2::text[]) AS t(class_name, book_id)`, insertClasses, insertBooks); err != nil {
+		return fmt.Errorf("neue zuweisung konnte nicht gespeichert werden: %w", err)
+	}
+	return nil
+}
 
 func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, sortOrder string) ([]ClassGroup, error) {
 	query := `
@@ -89,38 +115,21 @@ func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName s
 
 	// If there's an old class name, delete it.
 	if oldClassName != "" {
-		_, err = tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = $1`, oldClassName)
-		if err != nil {
+		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = $1`, oldClassName); err != nil {
 			return fmt.Errorf("alte zuweisungen konnten nicht gelöscht werden: %w", err)
 		}
 	}
 
 	// ⚡ Bolt: Batch DELETE existing bindings for all target classes (overwrite)
 	if len(newClassNames) > 0 {
-		_, err = tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, newClassNames)
-		if err != nil {
+		if _, err := tx.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, newClassNames); err != nil {
 			return fmt.Errorf("vorhandene zuweisungen des neuen namens konnten nicht gelöscht werden: %w", err)
 		}
 	}
 
 	// ⚡ Bolt: Batch INSERT new bindings using PostgreSQL unnest
-	if len(bookIDs) > 0 && len(newClassNames) > 0 {
-		var insertClasses []string
-		var insertBooks []string
-
-		for _, className := range newClassNames {
-			for _, bookID := range bookIDs {
-				insertClasses = append(insertClasses, className)
-				insertBooks = append(insertBooks, bookID)
-			}
-		}
-
-		_, err = tx.Exec(ctx, `
-			INSERT INTO class_books (class_name, book_id)
-			SELECT class_name, book_id::uuid FROM unnest($1::text[], $2::text[]) AS t(class_name, book_id)`, insertClasses, insertBooks)
-		if err != nil {
-			return fmt.Errorf("neue zuweisung konnte nicht gespeichert werden: %w", err)
-		}
+	if err := insertClassBookBindings(ctx, tx, newClassNames, bookIDs); err != nil {
+		return err
 	}
 
 	if err := tx.Commit(ctx); err != nil {

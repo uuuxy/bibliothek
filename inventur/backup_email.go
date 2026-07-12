@@ -118,7 +118,21 @@ func createZip(srcDir string) ([]byte, error) {
 	}
 	defer func() { _ = root.Close() }()
 
-	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(srcDir, zipWalkFunc(zipWriter, root, srcDir)); err != nil {
+		return nil, err
+	}
+
+	if err := zipWriter.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// zipWalkFunc liefert die WalkFunc, die jeden (traversal-geprüften) Pfad relativ ins
+// ZIP schreibt: Ordner als Eintrag mit trailing slash, Dateien via addFileToZip.
+func zipWalkFunc(zipWriter *zip.Writer, root *os.Root, srcDir string) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -144,31 +158,26 @@ func createZip(srcDir string) ([]byte, error) {
 			return nil
 		}
 
-		// Datei zum ZIP hinzufügen
-		writer, err := zipWriter.Create(zipPath)
-		if err != nil {
-			return err
-		}
+		return addFileToZip(zipWriter, root, zipPath, relPath)
+	}
+}
 
-		file, err := root.Open(relPath)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = file.Close() }()
-
-		_, err = io.Copy(writer, file)
-		return err
-	})
-
+// addFileToZip schreibt eine einzelne Datei (aus root, traversal-sicher) unter zipPath
+// in das Archiv.
+func addFileToZip(zipWriter *zip.Writer, root *os.Root, zipPath, relPath string) error {
+	writer, err := zipWriter.Create(zipPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if err := zipWriter.Close(); err != nil {
-		return nil, err
+	file, err := root.Open(relPath)
+	if err != nil {
+		return err
 	}
+	defer func() { _ = file.Close() }()
 
-	return buf.Bytes(), nil
+	_, err = io.Copy(writer, file)
+	return err
 }
 
 // buildEmailWithAttachment erstellt eine MIME-Multipart-E-Mail mit Anhang.
