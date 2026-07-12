@@ -13,19 +13,35 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ImportDynamic verarbeitet die in rows übergebenen Daten (aus CSV oder XLSX).
-// Die Spalten werden über die headerMap dynamisch zugeordnet.
-func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, headerMap map[string]int) (int, int, error) {
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer db.SafeRollback(ctx, tx)
+type importNewTitle struct {
+	Titel     string
+	Autor     string
+	Verlag    string
+	ISBN      string
+	Jahr      int
+	Kategorie string
+}
 
-	// Preload existing titles for fast mapping
+type importCopyData struct {
+	TitelID       string
+	Barcode       string
+	IstAusleihbar bool
+	ZustandNotiz  string
+}
+
+// spaltenWert liest den getrimmten Wert der über headerMap zugeordneten Spalte.
+func spaltenWert(row []string, headerMap map[string]int, key string) string {
+	if idx, ok := headerMap[key]; ok && idx < len(row) {
+		return strings.TrimSpace(row[idx])
+	}
+	return ""
+}
+
+// ladeVorhandeneTitel lädt die bestehenden Titel für schnelles ISBN-/Titel-Matching.
+func ladeVorhandeneTitel(ctx context.Context, tx pgx.Tx) (map[string]string, map[string]string, error) {
 	dbRows, err := tx.Query(ctx, "SELECT id, coalesce(isbn, ''), titel FROM buecher_titel")
 	if err != nil {
-		return 0, 0, err
+		return nil, nil, err
 	}
 	isbnToID := make(map[string]string)
 	titelToID := make(map[string]string)
@@ -40,40 +56,21 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	}
 	if err := dbRows.Err(); err != nil {
 		dbRows.Close()
-		return 0, 0, err
+		return nil, nil, err
 	}
 	dbRows.Close()
+	return isbnToID, titelToID, nil
+}
 
-	type NewTitle struct {
-		Titel     string
-		Autor     string
-		Verlag    string
-		ISBN      string
-		Jahr      int
-		Kategorie string
-	}
-
-	type CopyData struct {
-		TitelID       string
-		Barcode       string
-		IstAusleihbar bool
-		ZustandNotiz  string
-	}
-
-	newTitlesMap := make(map[string]*NewTitle) // key: isbn or titel
+// sammleNeueTitel identifiziert (erster Pass) die Titel, die neu angelegt werden
+// müssen, weil sie sich weder über ISBN noch über den Titel matchen lassen.
+func sammleNeueTitel(rows [][]string, headerMap map[string]int, isbnToID, titelToID map[string]string) (map[string]*importNewTitle, []string) {
+	newTitlesMap := make(map[string]*importNewTitle) // key: isbn or titel
 	var newTitlesOrder []string
 
-	// First pass: identify titles that need to be created
 	for _, row := range rows[1:] {
-		getCol := func(key string) string {
-			if idx, ok := headerMap[key]; ok && idx < len(row) {
-				return strings.TrimSpace(row[idx])
-			}
-			return ""
-		}
-
-		titel := getCol("titel")
-		barcode := getCol("barcode")
+		titel := spaltenWert(row, headerMap, "titel")
+		barcode := spaltenWert(row, headerMap, "barcode")
 		if titel == "" || barcode == "" {
 			continue
 		}
@@ -82,13 +79,13 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 		// → Token entfernen und den Titel per Projekt-Konvention "LMF-" flaggen.
 		// Muss VOR dem Titel-Matching passieren, damit beide Pässe und die
 		// Bestandsdaten denselben Schlüssel verwenden.
-		kategorie := getCol("kategorie")
+		kategorie := spaltenWert(row, headerMap, "kategorie")
 		if hatLMFKennung(kategorie) {
 			kategorie = entferneLMFToken(kategorie)
 			titel = flaggeAlsSchulbuch(titel)
 		}
 
-		isbn := strings.ReplaceAll(strings.ReplaceAll(getCol("isbn"), "-", ""), " ", "")
+		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
 
 		titelID := ""
 		if isbn != "" && isbnToID[isbn] != "" {
@@ -96,80 +93,86 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 		} else if titelToID[titel] != "" {
 			titelID = titelToID[titel]
 		}
-
-		if titelID == "" {
-			// Needs new title
-			cacheKey := isbn
-			if cacheKey == "" {
-				cacheKey = titel
-			}
-			if _, exists := newTitlesMap[cacheKey]; !exists {
-				var jahr int
-				if j, err := strconv.Atoi(getCol("jahr")); err == nil {
-					jahr = j
-				}
-				newTitlesMap[cacheKey] = &NewTitle{
-					Titel:     titel,
-					Autor:     getCol("autor"),
-					Verlag:    getCol("verlag"),
-					ISBN:      isbn,
-					Jahr:      jahr,
-					Kategorie: kategorie,
-				}
-				newTitlesOrder = append(newTitlesOrder, cacheKey)
-			}
+		if titelID != "" {
+			continue
 		}
+
+		// Needs new title
+		cacheKey := isbn
+		if cacheKey == "" {
+			cacheKey = titel
+		}
+		if _, exists := newTitlesMap[cacheKey]; exists {
+			continue
+		}
+
+		var jahr int
+		if j, err := strconv.Atoi(spaltenWert(row, headerMap, "jahr")); err == nil {
+			jahr = j
+		}
+		newTitlesMap[cacheKey] = &importNewTitle{
+			Titel:     titel,
+			Autor:     spaltenWert(row, headerMap, "autor"),
+			Verlag:    spaltenWert(row, headerMap, "verlag"),
+			ISBN:      isbn,
+			Jahr:      jahr,
+			Kategorie: kategorie,
+		}
+		newTitlesOrder = append(newTitlesOrder, cacheKey)
+	}
+	return newTitlesMap, newTitlesOrder
+}
+
+// fuegeNeueTitelEin legt die neuen Titel per Batch an und ergänzt die
+// ID-Maps um die neu vergebenen Titel-IDs.
+func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, isbnToID, titelToID map[string]string) (int, error) {
+	if len(newTitlesOrder) == 0 {
+		return 0, nil
 	}
 
-	var newTitlesCount int
-	// Insert new titles using batch
-	if len(newTitlesOrder) > 0 {
-		batch := &pgx.Batch{}
-		qInsertTitel := `
-			INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
-			VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
-			RETURNING id
-		`
-		for _, key := range newTitlesOrder {
-			t := newTitlesMap[key]
-			batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, t.Kategorie)
-		}
-
-		br := tx.SendBatch(ctx, batch)
-		for _, key := range newTitlesOrder {
-			var insertedID string
-			err := br.QueryRow().Scan(&insertedID)
-			if err != nil {
-				closeutil.LogClose(br, "title insert batch")
-				return 0, 0, fmt.Errorf("failed to insert title batch: %w", err)
-			}
-			t := newTitlesMap[key]
-			if t.ISBN != "" {
-				isbnToID[t.ISBN] = insertedID
-			}
-			titelToID[t.Titel] = insertedID
-			newTitlesCount++
-		}
-		if err := br.Close(); err != nil {
-			return 0, 0, fmt.Errorf("failed to close title insert batch: %w", err)
-		}
+	batch := &pgx.Batch{}
+	qInsertTitel := `
+		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject)
+		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6)
+		RETURNING id
+	`
+	for _, key := range newTitlesOrder {
+		t := newTitlesMap[key]
+		batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, t.Kategorie)
 	}
 
-	// Second pass: Now all titles have IDs, collect all copies again
-	var copiesToInsert []CopyData
+	br := tx.SendBatch(ctx, batch)
+	newTitlesCount := 0
+	for _, key := range newTitlesOrder {
+		var insertedID string
+		if err := br.QueryRow().Scan(&insertedID); err != nil {
+			closeutil.LogClose(br, "title insert batch")
+			return 0, fmt.Errorf("failed to insert title batch: %w", err)
+		}
+		t := newTitlesMap[key]
+		if t.ISBN != "" {
+			isbnToID[t.ISBN] = insertedID
+		}
+		titelToID[t.Titel] = insertedID
+		newTitlesCount++
+	}
+	if err := br.Close(); err != nil {
+		return 0, fmt.Errorf("failed to close title insert batch: %w", err)
+	}
+	return newTitlesCount, nil
+}
+
+// sammleExemplare sammelt (zweiter Pass) alle einzufügenden Exemplare, jetzt mit
+// den vollständigen Titel-IDs aus Pass 1.
+func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelToID map[string]string) []importCopyData {
+	var copiesToInsert []importCopyData
 
 	for i, row := range rows[1:] {
-		getCol := func(key string) string {
-			if idx, ok := headerMap[key]; ok && idx < len(row) {
-				return strings.TrimSpace(row[idx])
-			}
-			return ""
-		}
-		titel := getCol("titel")
+		titel := spaltenWert(row, headerMap, "titel")
 
 		// LMF-Flag identisch zu Pass 1 anwenden, sonst verfehlt das
 		// Titel-Matching die gerade angelegten "LMF-…"-Titel.
-		if hatLMFKennung(getCol("kategorie")) {
+		if hatLMFKennung(spaltenWert(row, headerMap, "kategorie")) {
 			titel = flaggeAlsSchulbuch(titel)
 		}
 
@@ -191,7 +194,7 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			continue
 		}
 
-		isbn := strings.ReplaceAll(strings.ReplaceAll(getCol("isbn"), "-", ""), " ", "")
+		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
 
 		titelID := ""
 		if isbn != "" && isbnToID[isbn] != "" {
@@ -205,13 +208,13 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 		// landet als Zustandsnotiz. Fehlt die Spalte, ist das Exemplar
 		// standardmäßig ausleihbar.
 		istAusleihbar := true
-		zustand := getCol("zustand")
+		zustand := spaltenWert(row, headerMap, "zustand")
 		if strings.EqualFold(zustand, "verliehen") {
 			istAusleihbar = false
 		}
 
 		if titelID != "" {
-			copiesToInsert = append(copiesToInsert, CopyData{
+			copiesToInsert = append(copiesToInsert, importCopyData{
 				TitelID:       titelID,
 				Barcode:       barcode,
 				IstAusleihbar: istAusleihbar,
@@ -219,37 +222,72 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 			})
 		}
 	}
+	return copiesToInsert
+}
 
-	var importedCopiesCount int
-	// Insert copies using batch ON CONFLICT DO NOTHING
-	if len(copiesToInsert) > 0 {
-		batchCopies := &pgx.Batch{}
-		qInsertExemplar := `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
-			VALUES ($1, $2, CURRENT_DATE, $3, NULLIF($4, ''))
-			ON CONFLICT (barcode_id) DO NOTHING
-			RETURNING id
-		`
-		for _, c := range copiesToInsert {
-			batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode, c.IstAusleihbar, c.ZustandNotiz)
-		}
+// fuegeExemplareEin schreibt die Exemplare per Batch (ON CONFLICT DO NOTHING).
+func fuegeExemplareEin(ctx context.Context, tx pgx.Tx, copiesToInsert []importCopyData) (int, error) {
+	if len(copiesToInsert) == 0 {
+		return 0, nil
+	}
 
-		bcr := tx.SendBatch(ctx, batchCopies)
-		for i := 0; i < len(copiesToInsert); i++ {
-			var id string
-			err := bcr.QueryRow().Scan(&id)
-			if err == nil {
-				importedCopiesCount++
-			} else if errors.Is(err, pgx.ErrNoRows) {
-				// ON CONFLICT DO NOTHING liefert ErrNoRows zurück
-				log.Printf("Warnung: Exemplar mit Barcode '%s' (Titel-ID: %s) wurde übersprungen (bereits vorhanden)", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID)
-			} else {
-				log.Printf("❌ Fehler beim Insert von Barcode '%s' (Titel-ID: %s): %v", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID, err)
-			}
+	batchCopies := &pgx.Batch{}
+	qInsertExemplar := `
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
+		VALUES ($1, $2, CURRENT_DATE, $3, NULLIF($4, ''))
+		ON CONFLICT (barcode_id) DO NOTHING
+		RETURNING id
+	`
+	for _, c := range copiesToInsert {
+		batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode, c.IstAusleihbar, c.ZustandNotiz)
+	}
+
+	bcr := tx.SendBatch(ctx, batchCopies)
+	importedCopiesCount := 0
+	for i := 0; i < len(copiesToInsert); i++ {
+		var id string
+		err := bcr.QueryRow().Scan(&id)
+		if err == nil {
+			importedCopiesCount++
+		} else if errors.Is(err, pgx.ErrNoRows) {
+			// ON CONFLICT DO NOTHING liefert ErrNoRows zurück
+			log.Printf("Warnung: Exemplar mit Barcode '%s' (Titel-ID: %s) wurde übersprungen (bereits vorhanden)", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID)
+		} else {
+			log.Printf("❌ Fehler beim Insert von Barcode '%s' (Titel-ID: %s): %v", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID, err)
 		}
-		if err := bcr.Close(); err != nil {
-			return 0, 0, fmt.Errorf("failed to close copy insert batch: %w", err)
-		}
+	}
+	if err := bcr.Close(); err != nil {
+		return 0, fmt.Errorf("failed to close copy insert batch: %w", err)
+	}
+	return importedCopiesCount, nil
+}
+
+// ImportDynamic verarbeitet die in rows übergebenen Daten (aus CSV oder XLSX).
+// Die Spalten werden über die headerMap dynamisch zugeordnet.
+func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, headerMap map[string]int) (int, int, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	isbnToID, titelToID, err := ladeVorhandeneTitel(ctx, tx)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, isbnToID, titelToID)
+
+	newTitlesCount, err := fuegeNeueTitelEin(ctx, tx, newTitlesMap, newTitlesOrder, isbnToID, titelToID)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	copiesToInsert := sammleExemplare(rows, headerMap, isbnToID, titelToID)
+
+	importedCopiesCount, err := fuegeExemplareEin(ctx, tx, copiesToInsert)
+	if err != nil {
+		return 0, 0, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
