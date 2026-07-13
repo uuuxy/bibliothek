@@ -69,58 +69,75 @@ func sammleNeueTitel(rows [][]string, headerMap map[string]int, isbnToID, titelT
 	var newTitlesOrder []string
 
 	for _, row := range rows[1:] {
-		titel := spaltenWert(row, headerMap, "titel")
-		barcode := spaltenWert(row, headerMap, "barcode")
-		if titel == "" || barcode == "" {
+		cacheKey, t, ok := baueNeuTitelAusZeile(row, headerMap, isbnToID, titelToID)
+		if !ok {
 			continue
-		}
-
-		// Lernmittelfreiheit: LMF-Token in der Kategorie ("Buch LMF Ma 6/Gri")
-		// → Token entfernen und den Titel per Projekt-Konvention "LMF-" flaggen.
-		// Muss VOR dem Titel-Matching passieren, damit beide Pässe und die
-		// Bestandsdaten denselben Schlüssel verwenden.
-		kategorie := spaltenWert(row, headerMap, "kategorie")
-		if hatLMFKennung(kategorie) {
-			kategorie = entferneLMFToken(kategorie)
-			titel = flaggeAlsSchulbuch(titel)
-		}
-
-		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
-
-		titelID := ""
-		if isbn != "" && isbnToID[isbn] != "" {
-			titelID = isbnToID[isbn]
-		} else if titelToID[titel] != "" {
-			titelID = titelToID[titel]
-		}
-		if titelID != "" {
-			continue
-		}
-
-		// Needs new title
-		cacheKey := isbn
-		if cacheKey == "" {
-			cacheKey = titel
 		}
 		if _, exists := newTitlesMap[cacheKey]; exists {
 			continue
 		}
-
-		var jahr int
-		if j, err := strconv.Atoi(spaltenWert(row, headerMap, "jahr")); err == nil {
-			jahr = j
-		}
-		newTitlesMap[cacheKey] = &importNewTitle{
-			Titel:     titel,
-			Autor:     spaltenWert(row, headerMap, "autor"),
-			Verlag:    spaltenWert(row, headerMap, "verlag"),
-			ISBN:      isbn,
-			Jahr:      jahr,
-			Kategorie: kategorie,
-		}
+		newTitlesMap[cacheKey] = t
 		newTitlesOrder = append(newTitlesOrder, cacheKey)
 	}
 	return newTitlesMap, newTitlesOrder
+}
+
+// matchTitelID liefert die bekannte Titel-ID über ISBN (bevorzugt) oder Titel; "" wenn
+// noch unbekannt.
+func matchTitelID(isbn, titel string, isbnToID, titelToID map[string]string) string {
+	if isbn != "" && isbnToID[isbn] != "" {
+		return isbnToID[isbn]
+	}
+	if titelToID[titel] != "" {
+		return titelToID[titel]
+	}
+	return ""
+}
+
+// baueNeuTitelAusZeile prüft eine Zeile und liefert (falls es ein noch unbekannter Titel
+// ist) den Cache-Key und den anzulegenden Titel. ok=false bedeutet: Zeile überspringen
+// (leer oder bereits über ISBN/Titel gematcht).
+func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, titelToID map[string]string) (cacheKey string, t *importNewTitle, ok bool) {
+	titel := spaltenWert(row, headerMap, "titel")
+	barcode := spaltenWert(row, headerMap, "barcode")
+	if titel == "" || barcode == "" {
+		return "", nil, false
+	}
+
+	// Lernmittelfreiheit: LMF-Token in der Kategorie ("Buch LMF Ma 6/Gri")
+	// → Token entfernen und den Titel per Projekt-Konvention "LMF-" flaggen.
+	// Muss VOR dem Titel-Matching passieren, damit beide Pässe und die
+	// Bestandsdaten denselben Schlüssel verwenden.
+	kategorie := spaltenWert(row, headerMap, "kategorie")
+	if hatLMFKennung(kategorie) {
+		kategorie = entferneLMFToken(kategorie)
+		titel = flaggeAlsSchulbuch(titel)
+	}
+
+	isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+
+	if matchTitelID(isbn, titel, isbnToID, titelToID) != "" {
+		return "", nil, false // schon vorhanden
+	}
+
+	// Needs new title
+	cacheKey = isbn
+	if cacheKey == "" {
+		cacheKey = titel
+	}
+
+	var jahr int
+	if j, err := strconv.Atoi(spaltenWert(row, headerMap, "jahr")); err == nil {
+		jahr = j
+	}
+	return cacheKey, &importNewTitle{
+		Titel:     titel,
+		Autor:     spaltenWert(row, headerMap, "autor"),
+		Verlag:    spaltenWert(row, headerMap, "verlag"),
+		ISBN:      isbn,
+		Jahr:      jahr,
+		Kategorie: kategorie,
+	}, true
 }
 
 // fuegeNeueTitelEin legt die neuen Titel per Batch an und ergänzt die
@@ -195,13 +212,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelT
 		}
 
 		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
-
-		titelID := ""
-		if isbn != "" && isbnToID[isbn] != "" {
-			titelID = isbnToID[isbn]
-		} else if titelToID[titel] != "" {
-			titelID = titelToID[titel]
-		}
+		titelID := matchTitelID(isbn, titel, isbnToID, titelToID)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
 		// "verliehen" sperrt das Exemplar für neue Ausleihen, der Rohwert

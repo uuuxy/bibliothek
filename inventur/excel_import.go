@@ -25,7 +25,7 @@ func extractImportRows(w http.ResponseWriter, request *http.Request) ([][]string
 	if err != nil {
 		return nil, errors.New("keine datei gefunden")
 	}
-	defer func() { _ = file.Close() }()  //nolint:errcheck
+	defer func() { _ = file.Close() }() //nolint:errcheck
 
 	if strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".csv") {
 		return parseCSVRows(file)
@@ -63,7 +63,7 @@ func parseExcelRows(file io.Reader) ([][]string, error) {
 	if err != nil {
 		return nil, errors.New("ungültige excel-datei")
 	}
-	defer func() { _ = f.Close() }()  //nolint:errcheck
+	defer func() { _ = f.Close() }() //nolint:errcheck
 
 	sheets := f.GetSheetList()
 	if len(sheets) == 0 {
@@ -92,26 +92,32 @@ func determineColumnIndices(header []string) (map[string]int, bool) {
 	// Fallback: Wenn kein Header erkannt wurde (keine ISBN Spalte), versuche Inhalt zu erraten
 	if colIdx["isbn"] == -1 {
 		hasHeader = false
-		// Check if first row is ISBN
-		for i, col := range header {
-			val := strings.TrimSpace(col)
-			cleanVal := strings.ReplaceAll(val, "-", "")
-			if (strings.HasPrefix(val, "978") || strings.HasPrefix(val, "979")) && len(cleanVal) >= 10 {
-				colIdx["isbn"] = i
-				continue
-			}
-			if _, err := strconv.Atoi(val); err == nil {
-				if colIdx["bestand"] == -1 {
-					colIdx["bestand"] = i
-				}
-				continue
-			}
-			if colIdx["titel"] == -1 && len(val) > 2 {
-				colIdx["titel"] = i
-			}
-		}
+		errateSpaltenAusInhalt(header, colIdx)
 	}
 	return colIdx, hasHeader
+}
+
+// errateSpaltenAusInhalt rät die Spaltenzuordnung anhand des Zeileninhalts, wenn keine
+// Kopfzeile erkannt wurde: ISBN am 978/979-Präfix, reine Zahlen als Bestand, längere
+// Texte als Titel. Mutiert colIdx.
+func errateSpaltenAusInhalt(header []string, colIdx map[string]int) {
+	for i, col := range header {
+		val := strings.TrimSpace(col)
+		cleanVal := strings.ReplaceAll(val, "-", "")
+		if (strings.HasPrefix(val, "978") || strings.HasPrefix(val, "979")) && len(cleanVal) >= 10 {
+			colIdx["isbn"] = i
+			continue
+		}
+		if _, err := strconv.Atoi(val); err == nil {
+			if colIdx["bestand"] == -1 {
+				colIdx["bestand"] = i
+			}
+			continue
+		}
+		if colIdx["titel"] == -1 && len(val) > 2 {
+			colIdx["titel"] = i
+		}
+	}
 }
 
 func (handler *APIHandler) processImportRows(ctx context.Context, dataRows [][]string, colIdx map[string]int) ([]Book, int32, error) {
