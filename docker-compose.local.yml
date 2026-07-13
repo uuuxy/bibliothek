@@ -6,7 +6,7 @@ services:
     container_name: bibliothek-db-local
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-geheim}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt - bitte .env aus .env.example anlegen (cp .env.example .env)}
       - POSTGRES_DB=${POSTGRES_DB:-bibliothek}
     volumes:
       - postgres_data_local:/var/lib/postgresql/data
@@ -29,9 +29,11 @@ services:
     environment:
       - PORT=8084
       - DB_HOST=postgres-db
-      # Lokaler Entwicklungsmodus: Default-Secrets sind hier bewusst erlaubt (APP_ENV=local).
+      # Lokaler Entwicklungsmodus (APP_ENV=local): COOKIE_SECURE=false, Guard aus.
+      # Das DB-Passwort kommt aus der .env (POSTGRES_PASSWORD) — kein committetes
+      # Default-Secret mehr; siehe .env.example (cp .env.example .env).
       - APP_ENV=local
-      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-geheim}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt - bitte .env aus .env.example anlegen (cp .env.example .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-local-dev-jwt-secret-min-32-characters}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - COOKIE_SECURE=false
