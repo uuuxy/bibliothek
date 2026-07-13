@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -37,30 +38,10 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 
 		ctx := r.Context()
 
-		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		mailReq, ok := bereiteKlassenMahnung(ctx, w, mahnRepo, req)
+		if !ok {
 			return
 		}
-		if isFerien {
-			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
-			return
-		}
-
-		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, req.Klasse)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		pdfBytes, err := generateMahnPDF(klassen)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		totalSchueler, totalMedien := zaehleMahnStatistik(klassen)
-		mailReq := baueMahnMailRequest(req, pdfBytes, totalSchueler, totalMedien)
 
 		if os.Getenv("SMTP_HOST") == "" {
 			log.Printf("MAHNWESEN: SMTP_HOST not set – skipping email dispatch for class %s", req.Klasse)
@@ -81,6 +62,36 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			"message": fmt.Sprintf("Mahnliste für Klasse %s an %s gesendet.", req.Klasse, req.Email),
 		})
 	}
+}
+
+// bereiteKlassenMahnung prüft die Ferien-Pause, lädt die überfälligen Ausleihen der
+// Klasse, erzeugt das PDF und baut die versandfertige E-Mail. ok=false: die Fehlerantwort
+// (500 bzw. 403 während einer Ferien-/Schließzeit) wurde bereits geschrieben.
+func bereiteKlassenMahnung(ctx context.Context, w http.ResponseWriter, mahnRepo *repository.MahnwesenRepository, req mahnwesenSendenRequest) (MailRequest, bool) {
+	isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return MailRequest{}, false
+	}
+	if isFerien {
+		apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
+		return MailRequest{}, false
+	}
+
+	klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, req.Klasse)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return MailRequest{}, false
+	}
+
+	pdfBytes, err := generateMahnPDF(klassen)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return MailRequest{}, false
+	}
+
+	totalSchueler, totalMedien := zaehleMahnStatistik(klassen)
+	return baueMahnMailRequest(req, pdfBytes, totalSchueler, totalMedien), true
 }
 
 // zaehleMahnStatistik summiert betroffene Schüler und überfällige Medien über alle Klassen.

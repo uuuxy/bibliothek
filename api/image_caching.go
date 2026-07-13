@@ -101,60 +101,65 @@ func holeUndKonvertiereCover(ctx context.Context, root *os.Root, urlStr, fileNam
 // ServeCoverImageHandler serves a locally cached WebP image by ISBN, or downloads and converts it from URL if missing.
 // On errors (invalid host, download failure), it serves a transparent 1x1 GIF to prevent browser console spam.
 func (s *Server) ServeCoverImageHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		isbn := r.URL.Query().Get("isbn")
-		urlStr := r.URL.Query().Get("url")
+	return s.serveCoverImage
+}
 
-		if isbn == "" || urlStr == "" {
-			serveCoverFallback(w)
-			return
-		}
+// serveCoverImage liefert ein lokal gecachtes WebP-Cover zur ISBN aus oder lädt und
+// konvertiert es bei Bedarf. Bei jedem Fehler (ungültiger Host, Download-Fehler) wird
+// ein transparentes 1x1-GIF ausgeliefert, um Browser-Konsolen-Spam zu vermeiden.
+func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
+	isbn := r.URL.Query().Get("isbn")
+	urlStr := r.URL.Query().Get("url")
 
-		// SSRF-Schutz für externe URLs
-		if !istErlaubterCoverHost(urlStr) {
-			serveCoverFallback(w)
-			return
-		}
+	if isbn == "" || urlStr == "" {
+		serveCoverFallback(w)
+		return
+	}
 
-		dir := "uploads/covers"
-		if err := os.MkdirAll(dir, 0750); err != nil {
-			serveCoverFallback(w)
-			return
-		}
+	// SSRF-Schutz für externe URLs
+	if !istErlaubterCoverHost(urlStr) {
+		serveCoverFallback(w)
+		return
+	}
 
-		root, err := os.OpenRoot(dir)
-		if err != nil {
-			serveCoverFallback(w)
-			return
-		}
-		defer closeutil.LogClose(root, "cover cache dir")
+	dir := "uploads/covers"
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		serveCoverFallback(w)
+		return
+	}
 
-		// Sanity check to avoid unnecessary download/processing steps for obvious path traversals
-		// even though root.OpenFile would safely block them later.
-		if filepath.Base(isbn) != isbn {
-			serveCoverFallback(w)
-			return
-		}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		serveCoverFallback(w)
+		return
+	}
+	defer closeutil.LogClose(root, "cover cache dir")
 
-		fileName := isbn + ".webp"
+	// Sanity check to avoid unnecessary download/processing steps for obvious path traversals
+	// even though root.OpenFile would safely block them later.
+	if filepath.Base(isbn) != isbn {
+		serveCoverFallback(w)
+		return
+	}
 
-		// Serve cached version if it exists
-		if _, err := root.Stat(fileName); err == nil {
-			serveCachedCover(w, r, root, fileName)
-			return
-		}
+	fileName := isbn + ".webp"
 
-		// Download & convert if missing
-		if err := holeUndKonvertiereCover(r.Context(), root, urlStr, fileName); err != nil {
-			serveCoverFallback(w)
-			return
-		}
+	// Serve cached version if it exists
+	if _, err := root.Stat(fileName); err == nil {
+		serveCachedCover(w, r, root, fileName)
+		return
+	}
 
-		// Serve the newly converted file if it exists
-		if _, err := root.Stat(fileName); err == nil {
-			serveCachedCover(w, r, root, fileName)
-		} else {
-			serveCoverFallback(w)
-		}
+	// Download & convert if missing
+	if err := holeUndKonvertiereCover(r.Context(), root, urlStr, fileName); err != nil {
+		serveCoverFallback(w)
+		return
+	}
+
+	// Serve the newly converted file if it exists
+	if _, err := root.Stat(fileName); err == nil {
+		serveCachedCover(w, r, root, fileName)
+	} else {
+		serveCoverFallback(w)
 	}
 }

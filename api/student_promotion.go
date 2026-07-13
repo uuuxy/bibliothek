@@ -116,34 +116,9 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			return
 		}
 
-		// Der gesamte Hochzähl-Vorgang läuft in einer einzigen strikten Transaktion:
-		// entweder wird JEDER Schüler versetzt/archiviert, oder — bei jedem Fehler —
-		// keiner. db.SafeRollback greift auf jedem Fehler- UND Panic-Pfad; nur der
-		// explizite Commit ganz unten übernimmt final. Im Dry-Run-Modus wird bewusst
-		// NICHT committet — dieselbe Berechnung, null Seiteneffekte.
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		promoted, archived, ok := s.fuehreSchuljahreswechselAus(ctx, w, r, req, claims.UserID)
+		if !ok {
 			return
-		}
-		defer db.SafeRollback(ctx, tx)
-
-		if !req.DryRun {
-			if !pruefeDoppellaufSchutz(ctx, tx, w) {
-				return
-			}
-		}
-
-		var promoted, archived int
-		if err := tx.QueryRow(ctx, promoteStudentsQuery).Scan(&promoted, &archived); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if !req.DryRun {
-			if !s.finalisiereSchuljahreswechsel(ctx, tx, w, r, claims.UserID, promoted, archived) {
-				return
-			}
 		}
 
 		RespondJSON(w, http.StatusOK, PromoteStudentsResponse{
@@ -152,6 +127,38 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			DryRun:        req.DryRun,
 		})
 	}
+}
+
+// fuehreSchuljahreswechselAus wickelt den Versetzungs-Batch in einer einzigen strikten
+// Transaktion ab: entweder wird JEDER Schüler versetzt/archiviert, oder — bei jedem
+// Fehler — keiner (db.SafeRollback greift auf jedem Fehler- UND Panic-Pfad). Im
+// Dry-Run-Modus wird bewusst NICHT committet (dieselbe Berechnung, null Seiteneffekte).
+// ok=false: die Fehlerantwort wurde bereits geschrieben.
+func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.ResponseWriter, r *http.Request, req promoteStudentsRequest, userID string) (promoted, archived int, ok bool) {
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return 0, 0, false
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	if !req.DryRun {
+		if !pruefeDoppellaufSchutz(ctx, tx, w) {
+			return 0, 0, false
+		}
+	}
+
+	if err := tx.QueryRow(ctx, promoteStudentsQuery).Scan(&promoted, &archived); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return 0, 0, false
+	}
+
+	if !req.DryRun {
+		if !s.finalisiereSchuljahreswechsel(ctx, tx, w, r, userID, promoted, archived) {
+			return 0, 0, false
+		}
+	}
+	return promoted, archived, true
 }
 
 // parsePromoteRequest dekodiert den Request-Body und erzwingt die explizite Bestätigung

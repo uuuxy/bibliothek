@@ -112,43 +112,50 @@ func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permis
 func (s *Server) RequirePermission(permission string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims, status, err := s.claimsAusRequest(r)
-			if err != nil {
-				apierrors.SendHTTPError(w, status, err)
-				return
-			}
-
-			// Admin role always has all permissions allowed
-			if strings.EqualFold(string(claims.Rolle), string(auth.RoleAdmin)) {
-				erlaubeZugriff(w, r, next, claims)
-				return
-			}
-
-			cacheKey := string(claims.Rolle) + ":" + permission
-			if allowed, found := leseBerechtigungCache(cacheKey); found {
-				if !allowed {
-					log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, permission)
-					apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
-					return
-				}
-				erlaubeZugriff(w, r, next, claims)
-				return
-			}
-
-			finalAllowed, err := s.ermittleUndCacheBerechtigung(r.Context(), string(claims.Rolle), permission, cacheKey)
-			if err != nil {
-				log.Printf("Permission check DB error for role '%s' permission '%s': %v", claims.Rolle, permission, err)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigung konnte nicht geprüft werden"))
-				return
-			}
-
-			if !finalAllowed {
-				log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v", claims.Rolle, permission, finalAllowed)
-				apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
-				return
-			}
-
-			erlaubeZugriff(w, r, next, claims)
+			s.pruefeBerechtigung(w, r, next, permission)
 		})
 	}
+}
+
+// pruefeBerechtigung setzt die RBAC-Prüfung für einen Request um: Admins dürfen immer,
+// sonst wird die konfigurierte Rolle→Permission-Zuordnung (mit Cache) geprüft. Bei
+// Erlaubnis wird an next delegiert, andernfalls 403 bzw. 500 gesendet.
+func (s *Server) pruefeBerechtigung(w http.ResponseWriter, r *http.Request, next http.Handler, permission string) {
+	claims, status, err := s.claimsAusRequest(r)
+	if err != nil {
+		apierrors.SendHTTPError(w, status, err)
+		return
+	}
+
+	// Admin role always has all permissions allowed
+	if strings.EqualFold(string(claims.Rolle), string(auth.RoleAdmin)) {
+		erlaubeZugriff(w, r, next, claims)
+		return
+	}
+
+	cacheKey := string(claims.Rolle) + ":" + permission
+	if allowed, found := leseBerechtigungCache(cacheKey); found {
+		if !allowed {
+			log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, permission)
+			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
+			return
+		}
+		erlaubeZugriff(w, r, next, claims)
+		return
+	}
+
+	finalAllowed, err := s.ermittleUndCacheBerechtigung(r.Context(), string(claims.Rolle), permission, cacheKey)
+	if err != nil {
+		log.Printf("Permission check DB error for role '%s' permission '%s': %v", claims.Rolle, permission, err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigung konnte nicht geprüft werden"))
+		return
+	}
+
+	if !finalAllowed {
+		log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v", claims.Rolle, permission, finalAllowed)
+		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("keine Berechtigung für diese Aktion"))
+		return
+	}
+
+	erlaubeZugriff(w, r, next, claims)
 }
