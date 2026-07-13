@@ -1,3 +1,16 @@
+/*
+ * Dieses Programm ist freie Software: Sie können es unter den Bedingungen 
+ * der European Union Public Licence (EUPL), Version 1.2 (oder jeder späteren 
+ * Version, die von der Europäischen Kommission veröffentlicht wird), 
+ * weitergeben und/oder modifizieren.
+ * * Dieses Programm wird in der Hoffnung vertrieben, dass es nützlich sein wird, 
+ * jedoch OHNE JEDE GARANTIE; auch ohne die implizite Garantie der 
+ * MARKTGÄNGIGKEIT oder der EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. 
+ * Weitere Details finden Sie in der vollständigen EUPL 1.2.
+ * * Eine Kopie der EUPL 1.2 sollte in diesem Repository unter der Datei LICENSE 
+ * verfügbar sein. Andernfalls siehe: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ */
+
 package api
 
 // router.go — HTTP route registration.
