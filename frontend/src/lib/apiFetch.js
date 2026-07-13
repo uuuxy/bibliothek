@@ -81,7 +81,7 @@ export async function apiFetch(url, options = {}) {
 		const token = await ensureCsrfToken();
 		if (token) {
 			options.headers = {
-				.../** @type {Record<string, string>} */ (options.headers || {}),
+				.../** @type {Record<string, string>} */ (options.headers),
 				'X-CSRF-Token': token
 			};
 		}

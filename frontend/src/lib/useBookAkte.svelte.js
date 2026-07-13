@@ -51,9 +51,9 @@ export function useBookAkte() {
 		if (book?.isbn) {
 			const clean = book.isbn.replace(/[- ]/g, '');
 			candidates.push(
-				`https://books.google.com/books/content?id=&vid=ISBN:${clean}&printsec=frontcover&img=1&zoom=1`
+				`https://books.google.com/books/content?id=&vid=ISBN:${clean}&printsec=frontcover&img=1&zoom=1`,
+				`https://covers.openlibrary.org/b/isbn/${clean}-L.jpg`
 			);
-			candidates.push(`https://covers.openlibrary.org/b/isbn/${clean}-L.jpg`);
 		}
 		coverCandidates = candidates;
 		currentCandidateIndex = 0;

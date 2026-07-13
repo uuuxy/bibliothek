@@ -1,4 +1,4 @@
-import { loadQueue, peekOfflineAction, dequeueOfflineAction } from '../offlineQueue.js';
+import { loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
 import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
 
@@ -110,7 +110,7 @@ function createOfflineSyncStore() {
 		a.download = `offline_scans_backup_${new Date().toISOString().slice(0, 10)}.json`;
 		document.body.appendChild(a);
 		a.click();
-		document.body.removeChild(a);
+		a.remove();
 		URL.revokeObjectURL(url);
 	}
 

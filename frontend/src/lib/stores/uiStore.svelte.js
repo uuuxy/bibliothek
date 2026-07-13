@@ -1,4 +1,4 @@
-import { apiFetch, apiClient } from '../apiFetch.js';
+import { apiFetch } from '../apiFetch.js';
 
 class UIStore {
 	activeTab = $state('kiosk');

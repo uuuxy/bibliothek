@@ -54,8 +54,7 @@ export function canSeeItem(item, currentUser) {
 		if (item.roles) return item.roles.includes(r);
 		// Lehrer sehen nur ihr Portal + ausdrücklich freigeschaltete Rechte, keine
 		// allgemeinen Werkzeuge ohne Rechtebezug.
-		if (r === 'lehrer') return false;
-		return true;
+		return r !== 'lehrer';
 	}
 
 	return perms.includes('*') || perms.includes(item.permission);

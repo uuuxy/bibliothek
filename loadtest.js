@@ -1,5 +1,5 @@
 import http from 'k6/http';
-import { check, sleep } from 'k6';
+import { check } from 'k6';
 
 export const options = {
   vus: 11,
@@ -37,7 +37,7 @@ export function setup() {
   return { cookies };
 }
 
-export default function (data) {
+export default function bulkReceiveTest(data) {
   const url = 'http://localhost:8084/api/bestellungen/bulk-receive'; 
   
   const payload = JSON.stringify({

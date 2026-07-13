@@ -1,4 +1,4 @@
-import { apiFetch, apiClient } from '../../lib/apiFetch.js';
+import { apiFetch } from '../../lib/apiFetch.js';
 import { appState } from './store.svelte.js';
 
 export async function holeBuecherListe() {
@@ -93,5 +93,5 @@ export async function exportiereCSV() {
 	document.body.appendChild(a);
 	a.click();
 	window.URL.revokeObjectURL(url);
-	document.body.removeChild(a);
+	a.remove();
 }
