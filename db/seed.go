@@ -75,31 +75,13 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	}
 
 	// 2. Create pg_trgm GIN indexes
-	queries := []string{
-		"CREATE INDEX IF NOT EXISTS idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_buecher_isbn_trgm ON buecher_titel USING gin (isbn gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);",
-	}
-	for _, q := range queries {
-		if _, err := db.Pool.Exec(ctx, q); err != nil {
-			return fmt.Errorf("failed to create GIN index: %w", err)
-		}
+	if err := db.createTrgmIndexes(ctx); err != nil {
+		return err
 	}
 
 	// 3. Migrate role_permissions table role column to VARCHAR(50) if it's enum
-	var dataType string
-	err = db.Pool.QueryRow(ctx, `
-		SELECT data_type 
-		FROM information_schema.columns 
-		WHERE table_name = 'role_permissions' AND column_name = 'role'
-	`).Scan(&dataType)
-	if err == nil && dataType == "USER-DEFINED" {
-		_, err = db.Pool.Exec(ctx, "ALTER TABLE role_permissions ALTER COLUMN role TYPE VARCHAR(50);")
-		if err != nil {
-			return fmt.Errorf("failed to alter role_permissions.role column type: %w", err)
-		}
+	if err := db.migrateRolePermissionsColumn(ctx); err != nil {
+		return err
 	}
 
 	// 4. Create role_permissions table
@@ -115,13 +97,8 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	}
 
 	// 6. Migrate existing roles from benutzer table to benutzer_rollen if empty
-	var exists int
-	err = db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer_rollen").Scan(&exists)
-	if err == nil && exists == 0 {
-		_, err = db.Pool.Exec(ctx, migrateBenutzerRollenSQL)
-		if err != nil {
-			return fmt.Errorf("failed to migrate existing benutzer roles: %w", err)
-		}
+	if err := db.migrateBenutzerRollen(ctx); err != nil {
+		return err
 	}
 
 	// 7. Seed default role permissions with uppercase role names
@@ -209,6 +186,53 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		_, err = db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
 		if err != nil {
 			return fmt.Errorf("failed to seed permission default (%s, %s): %w", d.Role, d.Permission, err)
+		}
+	}
+	return nil
+}
+
+// createTrgmIndexes legt die pg_trgm-GIN-Indizes für die Fuzzy-Suche an (idempotent).
+func (db *Database) createTrgmIndexes(ctx context.Context) error {
+	queries := []string{
+		"CREATE INDEX IF NOT EXISTS idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_buecher_isbn_trgm ON buecher_titel USING gin (isbn gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);",
+		"CREATE INDEX IF NOT EXISTS idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);",
+	}
+	for _, q := range queries {
+		if _, err := db.Pool.Exec(ctx, q); err != nil {
+			return fmt.Errorf("failed to create GIN index: %w", err)
+		}
+	}
+	return nil
+}
+
+// migrateRolePermissionsColumn hebt eine evtl. noch als ENUM angelegte role-Spalte auf
+// VARCHAR(50) an (idempotent, nur bei USER-DEFINED-Typ).
+func (db *Database) migrateRolePermissionsColumn(ctx context.Context) error {
+	var dataType string
+	err := db.Pool.QueryRow(ctx, `
+		SELECT data_type
+		FROM information_schema.columns
+		WHERE table_name = 'role_permissions' AND column_name = 'role'
+	`).Scan(&dataType)
+	if err == nil && dataType == "USER-DEFINED" {
+		if _, err := db.Pool.Exec(ctx, "ALTER TABLE role_permissions ALTER COLUMN role TYPE VARCHAR(50);"); err != nil {
+			return fmt.Errorf("failed to alter role_permissions.role column type: %w", err)
+		}
+	}
+	return nil
+}
+
+// migrateBenutzerRollen übernimmt bestehende Rollen aus der benutzer-Tabelle einmalig in
+// benutzer_rollen (nur, solange diese noch leer ist).
+func (db *Database) migrateBenutzerRollen(ctx context.Context) error {
+	var exists int
+	err := db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer_rollen").Scan(&exists)
+	if err == nil && exists == 0 {
+		if _, err := db.Pool.Exec(ctx, migrateBenutzerRollenSQL); err != nil {
+			return fmt.Errorf("failed to migrate existing benutzer roles: %w", err)
 		}
 	}
 	return nil
