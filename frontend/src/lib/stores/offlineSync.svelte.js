@@ -12,6 +12,67 @@ function createOfflineSyncStore() {
 		pendingCount = q.length;
 	}
 
+	// Baut das Batch-Payload; nur Checkouts mit Schüler-ID tragen active_student_id.
+	function baueBatchPayload(batchItems) {
+		return batchItems.map((item) => {
+			const req = {
+				query: item.barcode_id,
+				idempotency_key: item.id
+			};
+			if (item.action_type === 'checkout' && item.schueler_id) {
+				req.active_student_id = item.schueler_id;
+			}
+			return req;
+		});
+	}
+
+	// Bucht je Item aus, wenn der Server Erfolg oder einen permanenten 4xx-Fehler
+	// (außer 429 Too Many Requests) meldet.
+	async function verarbeiteBatchErgebnisse(data, batchItems) {
+		for (let i = 0; i < batchItems.length; i++) {
+			const item = batchItems[i];
+			const result = data.results?.find((r) => r.index === i);
+
+			// Dequeue if successful, or if server rejected with a permanent client error (4xx) except Too Many Requests (429)
+			if (
+				result &&
+				(result.success || (result.status >= 400 && result.status < 500 && result.status !== 429))
+			) {
+				await dequeueOfflineAction(item.id);
+			} else if (!result) {
+				// Failsafe: if backend doesn't return an index for some reason but 200 OK overall
+				await dequeueOfflineAction(item.id);
+			}
+		}
+	}
+
+	// Verschickt einen Batch und verarbeitet dessen Ergebnisse. Liefert false, wenn der
+	// Sync abbrechen soll (kompletter Batch-Fehler wie 502, oder Netzwerkfehler).
+	async function sendeBatch(payload, batchItems, queueLength) {
+		try {
+			const res = await apiClient.post('/api/action/batch', payload);
+
+			if (!res.ok) {
+				// Batch request failed completely (e.g. 502 Bad Gateway), stop syncing
+				return false;
+			}
+
+			const data = await res.json();
+			await verarbeiteBatchErgebnisse(data, batchItems);
+			await updateCount();
+
+			// Network Jitter: wait 200-500ms before sending the next batch
+			if (queueLength > 50) {
+				const jitter = 200 + Math.random() * 300;
+				await new Promise((resolve) => setTimeout(resolve, jitter));
+			}
+			return true;
+		} catch (err) {
+			// Network error
+			return false;
+		}
+	}
+
 	async function startSync() {
 		if (isSyncing || !navigator.onLine) return;
 		isSyncing = true;
@@ -26,54 +87,11 @@ function createOfflineSyncStore() {
 			q.sort((a, b) => a.timestamp - b.timestamp);
 
 			const batchItems = q.slice(0, 50);
-			const payload = batchItems.map((item) => {
-				const req = {
-					query: item.barcode_id,
-					idempotency_key: item.id
-				};
-				if (item.action_type === 'checkout' && item.schueler_id) {
-					req.active_student_id = item.schueler_id;
-				}
-				return req;
-			});
+			const payload = baueBatchPayload(batchItems);
 
-			try {
-				const res = await apiClient.post('/api/action/batch', payload);
-
-				if (res.ok) {
-					const data = await res.json();
-					for (let i = 0; i < batchItems.length; i++) {
-						const item = batchItems[i];
-						const result = data.results?.find((r) => r.index === i);
-
-						// Dequeue if successful, or if server rejected with a permanent client error (4xx) except Too Many Requests (429)
-						if (
-							result &&
-							(result.success ||
-								(result.status >= 400 && result.status < 500 && result.status !== 429))
-						) {
-							await dequeueOfflineAction(item.id);
-						} else if (!result) {
-							// Failsafe: if backend doesn't return an index for some reason but 200 OK overall
-							await dequeueOfflineAction(item.id);
-						}
-					}
-					await updateCount();
-					syncedAny = true;
-
-					// Network Jitter: wait 200-500ms before sending the next batch
-					if (q.length > 50) {
-						const jitter = 200 + Math.random() * 300;
-						await new Promise((resolve) => setTimeout(resolve, jitter));
-					}
-				} else {
-					// Batch request failed completely (e.g. 502 Bad Gateway), stop syncing
-					break;
-				}
-			} catch (err) {
-				// Network error
-				break;
-			}
+			const ok = await sendeBatch(payload, batchItems, q.length);
+			if (!ok) break;
+			syncedAny = true;
 		}
 
 		if (syncedAny && pendingCount === 0) {
