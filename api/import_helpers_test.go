@@ -46,3 +46,24 @@ func TestBuildImportHeaderMap(t *testing.T) {
 		t.Errorf("Alternative Header falsch gemappt: %+v", alt)
 	}
 }
+
+// Regressionstest: Signatur ist das Rücken-Etikett (buecher_titel.signatur) und
+// KEIN Barcode-Alias. Das frühere Mapping signatur→barcode hat Signaturen als
+// Exemplar-Barcodes importiert und die echte Barcode-Spalte verdrängt.
+func TestBuildImportHeaderMap_SignaturIstKeinBarcode(t *testing.T) {
+	m := buildImportHeaderMap([]string{"Titel", "Signatur", "Barcode"})
+	if idx, ok := m["signatur"]; !ok || idx != 1 {
+		t.Errorf("signatur = %d (ok=%v), want 1", idx, ok)
+	}
+	if idx, ok := m["barcode"]; !ok || idx != 2 {
+		t.Errorf("barcode = %d (ok=%v), want 2 — Signatur darf Barcode nicht verdrängen", idx, ok)
+	}
+
+	// Datei nur mit Signatur-Spalte: kein Barcode-Mapping mehr — der Handler
+	// meldet dann sauber die fehlende Pflichtspalte, statt Signaturen als
+	// Barcodes zu importieren.
+	nurSignatur := buildImportHeaderMap([]string{"Titel", "Signatur"})
+	if _, ok := nurSignatur["barcode"]; ok {
+		t.Errorf("Signatur-Spalte darf nicht mehr als barcode gemappt werden: %+v", nurSignatur)
+	}
+}

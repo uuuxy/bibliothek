@@ -123,7 +123,6 @@ func (s *defaultLoanService) handleForeignReturn(
 	ctx context.Context,
 	tx pgx.Tx,
 	copy *repository.BookCopy,
-	chkCtx *checkoutContext,
 	activeLoan *repository.Loan,
 	staffID string,
 	resp *LoanResult,

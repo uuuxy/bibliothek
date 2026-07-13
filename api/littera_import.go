@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -109,11 +110,17 @@ func (s *Server) logImportAudit(r *http.Request, aktion, details string) {
 }
 
 // verarbeiteLitteraXML importiert ein MAB2-XML-Katalogisat und antwortet.
+// Eine Datei, die kein Katalogisat ist (z. B. Schlagwort-/Systematik-Export),
+// ist ein Nutzer-Formatfehler und wird als 400 gemeldet, nicht als 500.
 func (s *Server) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, content []byte) {
 	importSvc := service.NewImportService(repository.NewBookRepository(s.DB.Pool), s.DB.Pool)
 	importedCount, err := importSvc.ParseLitteraXML(r.Context(), bytes.NewReader(content))
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, service.ErrKeinKatalogisat) {
+			status = http.StatusBadRequest
+		}
+		apierrors.SendHTTPError(w, status, err)
 		return
 	}
 

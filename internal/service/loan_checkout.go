@@ -154,5 +154,5 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	if isReturningThis {
 		return s.handleReturn(ctx, tx, copy, chkCtx, activeLoan, staffID, resp)
 	}
-	return s.handleForeignReturn(ctx, tx, copy, chkCtx, activeLoan, staffID, resp)
+	return s.handleForeignReturn(ctx, tx, copy, activeLoan, staffID, resp)
 }
