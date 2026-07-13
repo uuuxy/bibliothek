@@ -49,7 +49,7 @@ func parseYear(y string) int {
 	for i := 0; i <= len(y)-4; i++ {
 		if y[i] >= '0' && y[i] <= '9' && y[i+1] >= '0' && y[i+1] <= '9' && y[i+2] >= '0' && y[i+2] <= '9' && y[i+3] >= '0' && y[i+3] <= '9' {
 			var year int
-			_, _ = fmt.Sscanf(y[i:i+4], "%d", &year)  //nolint:errcheck
+			_, _ = fmt.Sscanf(y[i:i+4], "%d", &year) //nolint:errcheck
 			return year
 		}
 	}
@@ -131,7 +131,7 @@ func main() {
 		slog.Error("Konnte XML-Datei nicht öffnen", "error", err)
 		os.Exit(1)
 	}
-	defer func() { _ = file.Close() }()  //nolint:errcheck
+	defer func() { _ = file.Close() }() //nolint:errcheck
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
@@ -144,78 +144,91 @@ func main() {
 			break // EOF oder Fehler
 		}
 
-		switch se := t.(type) {
-		case xml.StartElement:
-			if strings.EqualFold(se.Name.Local, "katalogisat") {
-				var k Katalogisat
-				if err := decoder.DecodeElement(&k, &se); err != nil {
-					slog.Warn("Fehler beim Dekodieren", "error", err)
-					continue
-				}
+		se, ok := t.(xml.StartElement)
+		if !ok || !strings.EqualFold(se.Name.Local, "katalogisat") {
+			continue
+		}
 
-				processedCount++
-				titel := cleanTitle(toUTF8(extractValue(k.Felder, "310")))
-				isbn := toUTF8(extractValue(k.Felder, "540"))
-				untertitel := toUTF8(extractValue(k.Felder, "335"))
-				autor := toUTF8(extractValue(k.Felder, "100"))
-				verlag := toUTF8(extractValue(k.Felder, "412"))
-				erscheinungsjahr := parseYear(extractValue(k.Felder, "425"))
-				beschreibung := toUTF8(extractValue(k.Felder, "750f"))
-				signatur := toUTF8(extractValue(k.Felder, "700"))
-				standort := toUTF8(extractValue(k.Felder, "108a"))
+		var k Katalogisat
+		if err := decoder.DecodeElement(&k, &se); err != nil {
+			slog.Warn("Fehler beim Dekodieren", "error", err)
+			continue
+		}
 
-				subjects := extractAllValues(k.Felder, "710")
-				var subject string
-				if len(subjects) > 0 {
-					for i, s := range subjects {
-						subjects[i] = toUTF8(s)
-					}
-					subject = limitString(strings.Join(subjects, ", "), 100)
-				}
+		processedCount++
+		updatedCount += aktualisiereKatalogisat(pool, k)
 
-				if titel != "" {
-					query := `
-						UPDATE buecher_titel 
-						SET 
-							isbn = COALESCE(NULLIF(isbn, ''), NULLIF($1, '')),
-							untertitel = COALESCE(NULLIF(untertitel, ''), NULLIF($3, '')),
-							autor = COALESCE(NULLIF(autor, ''), NULLIF($4, '')),
-							verlag = COALESCE(NULLIF(verlag, ''), NULLIF($5, '')),
-							erscheinungsjahr = COALESCE(NULLIF(erscheinungsjahr, 0), $6),
-							beschreibung = COALESCE(NULLIF(beschreibung, ''), NULLIF($7, '')),
-							subject = COALESCE(NULLIF(subject, ''), NULLIF($8, '')),
-							erweiterte_eigenschaften = 
-								CASE 
-									WHEN $9::text <> '' AND $10::text <> '' THEN
-										jsonb_set(jsonb_set(erweiterte_eigenschaften, '{signatur}', to_jsonb($9::text)), '{standort}', to_jsonb($10::text))
-									WHEN $9::text <> '' THEN
-										jsonb_set(erweiterte_eigenschaften, '{signatur}', to_jsonb($9::text))
-									WHEN $10::text <> '' THEN
-										jsonb_set(erweiterte_eigenschaften, '{standort}', to_jsonb($10::text))
-									ELSE erweiterte_eigenschaften
-								END
-						WHERE titel ILIKE $2`
-
-					res, err := pool.Exec(context.Background(), query,
-						isbn, titel, untertitel, autor, verlag, erscheinungsjahr,
-						beschreibung, subject, signatur, standort,
-					)
-
-					if err == nil {
-						if res.RowsAffected() > 0 {
-							updatedCount += int(res.RowsAffected())
-						}
-					} else {
-						slog.Error("DB Update Fehler", "titel", titel, "error", err)
-					}
-				}
-
-				if processedCount%1000 == 0 {
-					slog.Info("Zwischenstand", "verarbeitet", processedCount, "aktualisiert", updatedCount)
-				}
-			}
+		if processedCount%1000 == 0 {
+			slog.Info("Zwischenstand", "verarbeitet", processedCount, "aktualisiert", updatedCount)
 		}
 	}
 
 	fmt.Printf("Import abgeschlossen. %d Katalogisate verarbeitet, %d ISBNs wurden aktualisiert.\n", processedCount, updatedCount)
+}
+
+// baueSubject wandelt die (roh eingelesenen) Schlagworte nach UTF-8, verbindet sie mit
+// ", " und begrenzt das Ergebnis auf 100 Zeichen. Ohne Schlagworte: leerer String.
+func baueSubject(subjects []string) string {
+	if len(subjects) == 0 {
+		return ""
+	}
+	for i, s := range subjects {
+		subjects[i] = toUTF8(s)
+	}
+	return limitString(strings.Join(subjects, ", "), 100)
+}
+
+// aktualisiereKatalogisat mappt die MAB-Felder eines Katalogisats auf buecher_titel und
+// reichert einen per Titel (ILIKE) gematchten Datensatz an (bestehende Werte gewinnen via
+// COALESCE). Liefert die Zahl der aktualisierten Zeilen (0 bei leerem Titel oder Fehler).
+func aktualisiereKatalogisat(pool *pgxpool.Pool, k Katalogisat) int {
+	titel := cleanTitle(toUTF8(extractValue(k.Felder, "310")))
+	isbn := toUTF8(extractValue(k.Felder, "540"))
+	untertitel := toUTF8(extractValue(k.Felder, "335"))
+	autor := toUTF8(extractValue(k.Felder, "100"))
+	verlag := toUTF8(extractValue(k.Felder, "412"))
+	erscheinungsjahr := parseYear(extractValue(k.Felder, "425"))
+	beschreibung := toUTF8(extractValue(k.Felder, "750f"))
+	signatur := toUTF8(extractValue(k.Felder, "700"))
+	standort := toUTF8(extractValue(k.Felder, "108a"))
+	subject := baueSubject(extractAllValues(k.Felder, "710"))
+
+	if titel == "" {
+		return 0
+	}
+
+	query := `
+		UPDATE buecher_titel
+		SET
+			isbn = COALESCE(NULLIF(isbn, ''), NULLIF($1, '')),
+			untertitel = COALESCE(NULLIF(untertitel, ''), NULLIF($3, '')),
+			autor = COALESCE(NULLIF(autor, ''), NULLIF($4, '')),
+			verlag = COALESCE(NULLIF(verlag, ''), NULLIF($5, '')),
+			erscheinungsjahr = COALESCE(NULLIF(erscheinungsjahr, 0), $6),
+			beschreibung = COALESCE(NULLIF(beschreibung, ''), NULLIF($7, '')),
+			subject = COALESCE(NULLIF(subject, ''), NULLIF($8, '')),
+			erweiterte_eigenschaften =
+				CASE
+					WHEN $9::text <> '' AND $10::text <> '' THEN
+						jsonb_set(jsonb_set(erweiterte_eigenschaften, '{signatur}', to_jsonb($9::text)), '{standort}', to_jsonb($10::text))
+					WHEN $9::text <> '' THEN
+						jsonb_set(erweiterte_eigenschaften, '{signatur}', to_jsonb($9::text))
+					WHEN $10::text <> '' THEN
+						jsonb_set(erweiterte_eigenschaften, '{standort}', to_jsonb($10::text))
+					ELSE erweiterte_eigenschaften
+				END
+		WHERE titel ILIKE $2`
+
+	res, err := pool.Exec(context.Background(), query,
+		isbn, titel, untertitel, autor, verlag, erscheinungsjahr,
+		beschreibung, subject, signatur, standort,
+	)
+	if err != nil {
+		slog.Error("DB Update Fehler", "titel", titel, "error", err)
+		return 0
+	}
+	if res.RowsAffected() > 0 {
+		return int(res.RowsAffected())
+	}
+	return 0
 }
