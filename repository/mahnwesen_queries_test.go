@@ -7,6 +7,17 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
+// medienAnzahl liefert die Anzahl der Medien des Schülers mit der gegebenen ID
+// (0, wenn nicht in der Liste).
+func medienAnzahl(schueler []UeberfaelligerSchueler, id string) int {
+	for _, sch := range schueler {
+		if sch.SchuelerID == id {
+			return len(sch.Medien)
+		}
+	}
+	return 0
+}
+
 // T4 (Fahrplan): Die Gruppierung der Mahnliste ist geldrelevant — verlorene
 // Medien bedeuten nicht gemahnte Bücher. Der Test deckt insbesondere den Fall
 // zweier gleichnamiger Schüler ab, deren Zeilen durch die Sortierung
@@ -60,20 +71,11 @@ func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 
 	// s1 hat ZWEI Medien — das zweite kam nach dem Einschub von s2.
 	// Verliert die Gruppierung es, wird das Buch nie angemahnt.
-	var s1Medien, s2Medien int
-	for _, sch := range k7a.Schueler {
-		switch sch.SchuelerID {
-		case "s1":
-			s1Medien = len(sch.Medien)
-		case "s2":
-			s2Medien = len(sch.Medien)
-		}
+	if n := medienAnzahl(k7a.Schueler, "s1"); n != 2 {
+		t.Errorf("s1: erwartet 2 Medien, bekam %d (Medium bei Slice-Reallokation verloren?)", n)
 	}
-	if s1Medien != 2 {
-		t.Errorf("s1: erwartet 2 Medien, bekam %d (Medium bei Slice-Reallokation verloren?)", s1Medien)
-	}
-	if s2Medien != 1 {
-		t.Errorf("s2: erwartet 1 Medium, bekam %d", s2Medien)
+	if n := medienAnzahl(k7a.Schueler, "s2"); n != 1 {
+		t.Errorf("s2: erwartet 1 Medium, bekam %d", n)
 	}
 
 	k8b := klassen[1]
