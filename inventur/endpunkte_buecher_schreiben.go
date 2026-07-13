@@ -1,12 +1,73 @@
 package inventur
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
 )
+
+// validiereBuchErstellenEingabe prüft ISBN (vorhanden + Format) und Klassenstufe.
+// ok=false: die Fehlerantwort wurde bereits geschrieben.
+func validiereBuchErstellenEingabe(antwort http.ResponseWriter, isbn string, klassenStufe int16) bool {
+	if isbn == "" {
+		writeError(antwort, http.StatusBadRequest, "isbn ist erforderlich")
+		return false
+	}
+	if !validiereISBN(isbn) {
+		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+		return false
+	}
+	if klassenStufe < 0 || klassenStufe > 13 {
+		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
+		return false
+	}
+	return true
+}
+
+// ergaenzeBuchMetadaten füllt fehlende Titel/Autor/Cover aus dem ISBN-Nachschlagen und
+// setzt anschließend sichere Defaults für Titel und Autor.
+func (handler *APIHandler) ergaenzeBuchMetadaten(ctx context.Context, buch *Book) {
+	if buch.Title == "" || buch.Author == "" || buch.CoverURL == "" {
+		nachschlagen, _ := handler.metadaten.SucheNachISBN(ctx, buch.ISBN) //nolint:errcheck
+		if nachschlagen != nil {
+			if buch.Title == "" {
+				buch.Title = strings.TrimSpace(nachschlagen.Titel)
+			}
+			if buch.Author == "" {
+				buch.Author = strings.TrimSpace(nachschlagen.Autor)
+			}
+			if buch.CoverURL == "" {
+				buch.CoverURL = strings.TrimSpace(nachschlagen.CoverURL)
+			}
+		}
+	}
+	if buch.Title == "" {
+		buch.Title = "Unbekannter Titel"
+	}
+	if buch.Author == "" {
+		buch.Author = "Unbekannter Autor"
+	}
+}
+
+// speichereNeuesBuch legt das Buch an und setzt buch.ID. ok=false: die Fehlerantwort
+// (409 bei Duplikat-ISBN, sonst 400) wurde bereits geschrieben.
+func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.ResponseWriter, buch *Book) bool {
+	erstellteID, fehler := handler.repo.CreateBook(ctx, *buch)
+	if fehler != nil {
+		if errors.Is(fehler, ErrDuplicateISBN) {
+			writeError(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
+			return false
+		}
+		log.Printf("Fehler beim Erstellen von Buch ISBN %s: %v", buch.ISBN, fehler)
+		writeError(antwort, http.StatusBadRequest, "buch konnte nicht erstellt werden")
+		return false
+	}
+	buch.ID = erstellteID
+	return true
+}
 
 // BearbeiteBuecherLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
 // Es erwartet ein JSON-Array mit IDs und löscht diese sicher über das Repository.
@@ -65,16 +126,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		return
 	}
 
-	if eingabe.ISBN == "" {
-		writeError(antwort, http.StatusBadRequest, "isbn ist erforderlich")
-		return
-	}
-	if !validiereISBN(eingabe.ISBN) {
-		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
-		return
-	}
-	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
-		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
+	if !validiereBuchErstellenEingabe(antwort, eingabe.ISBN, eingabe.KlassenStufe) {
 		return
 	}
 
@@ -93,38 +145,11 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	buch.Author = strings.TrimSpace(eingabe.Autor)
 	buch.CoverURL = strings.TrimSpace(eingabe.CoverURL)
 
-	if buch.Title == "" || buch.Author == "" || buch.CoverURL == "" {
-		nachschlagen, _ := handler.metadaten.SucheNachISBN(anfrage.Context(), buch.ISBN)  //nolint:errcheck
-		if nachschlagen != nil {
-			if buch.Title == "" {
-				buch.Title = strings.TrimSpace(nachschlagen.Titel)
-			}
-			if buch.Author == "" {
-				buch.Author = strings.TrimSpace(nachschlagen.Autor)
-			}
-			if buch.CoverURL == "" {
-				buch.CoverURL = strings.TrimSpace(nachschlagen.CoverURL)
-			}
-		}
-	}
-	if buch.Title == "" {
-		buch.Title = "Unbekannter Titel"
-	}
-	if buch.Author == "" {
-		buch.Author = "Unbekannter Autor"
-	}
+	handler.ergaenzeBuchMetadaten(anfrage.Context(), &buch)
 
-	erstellteID, fehler := handler.repo.CreateBook(anfrage.Context(), buch)
-	if fehler != nil {
-		if errors.Is(fehler, ErrDuplicateISBN) {
-			writeError(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
-			return
-		}
-		log.Printf("Fehler beim Erstellen von Buch ISBN %s: %v", buch.ISBN, fehler)
-		writeError(antwort, http.StatusBadRequest, "buch konnte nicht erstellt werden")
+	if !handler.speichereNeuesBuch(anfrage.Context(), antwort, &buch) {
 		return
 	}
-	buch.ID = erstellteID
 
 	writeJSON(antwort, http.StatusCreated, map[string]any{"message": "buch erstellt", "data": buch})
 }
