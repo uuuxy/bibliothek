@@ -7,6 +7,34 @@ import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
 import { SvelteSet } from 'svelte/reactivity';
 
 /**
+ * Höchste Überfälligkeit (Tage) über alle Medien eines Schülers.
+ * @param {any[]} medien
+ * @returns {number}
+ */
+function maxTageUeberfaellig(medien) {
+	let maxTage = 0;
+	for (const m of medien) {
+		if (m.tage_ueberfaellig > maxTage) maxTage = m.tage_ueberfaellig;
+	}
+	return maxTage;
+}
+
+/**
+ * Mahnstufe eines Schülers: Lehrer → Lehrerkollegium, sonst nach Überfälligkeit.
+ * @param {any} schueler
+ * @param {number} maxTage
+ * @returns {string}
+ */
+function berechneMahnstufe(schueler, maxTage) {
+	if (schueler.klasse && schueler.klasse.toLowerCase() === 'lehrer') {
+		return 'Lehrerkollegium';
+	}
+	if (maxTage > 14) return 'Mahnung';
+	if (maxTage > 0) return '1. Erinnerung';
+	return 'Erledigt';
+}
+
+/**
  * Creates the central Mahnwesen store.
  */
 export function createMahnwesenStore() {
@@ -50,20 +78,8 @@ export function createMahnwesenStore() {
 		let list = [];
 		for (const k of klassen) {
 			for (const s of k.schueler) {
-				let maxTage = 0;
-				for (const m of s.medien) {
-					if (m.tage_ueberfaellig > maxTage) maxTage = m.tage_ueberfaellig;
-				}
-
-				let mahnstufe = 'Erledigt';
-				if (s.klasse && s.klasse.toLowerCase() === 'lehrer') {
-					mahnstufe = 'Lehrerkollegium';
-				} else if (maxTage > 14) {
-					mahnstufe = 'Mahnung';
-				} else if (maxTage > 0) {
-					mahnstufe = '1. Erinnerung';
-				}
-
+				const maxTage = maxTageUeberfaellig(s.medien);
+				const mahnstufe = berechneMahnstufe(s, maxTage);
 				list.push({ ...s, maxTage, mahnstufe, lehrer_email: k.lehrer_email });
 			}
 		}

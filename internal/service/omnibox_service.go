@@ -241,14 +241,11 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 	}
 
 	isReserved := strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:")
-	reservedForThisStudent := false
 
 	// Falls das Exemplar reserviert ist, prüfen wir, ob der aktive Schüler der berechtigte Reservierer ist.
-	if isReserved && activeStudentID != nil && *activeStudentID != "" {
-		v, checkErr := s.checkVormerkung(ctx, copy.TitelID)
-		if checkErr == nil && v != nil && v.SchuelerID == *activeStudentID {
-			reservedForThisStudent = true
-		}
+	reservedForThisStudent := false
+	if isReserved {
+		reservedForThisStudent = s.istBerechtigterReservierer(ctx, copy.TitelID, activeStudentID)
 	}
 
 	// Automatisches Reaktivieren, wenn keine aktive Ausleihe vorliegt und das Buch
@@ -276,6 +273,16 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 		return false, fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", ErrInvalidState, query)
 	}
 	return false, fmt.Errorf("%w: Buchexemplar ist nicht ausleihbar", ErrInvalidState)
+}
+
+// istBerechtigterReservierer prüft, ob der aktive Schüler der berechtigte Reservierer
+// des (reservierten) Buchtitels ist. Ohne aktiven Schüler ist das Ergebnis false.
+func (s *defaultOmniboxService) istBerechtigterReservierer(ctx context.Context, titelID string, activeStudentID *string) bool {
+	if activeStudentID == nil || *activeStudentID == "" {
+		return false
+	}
+	v, checkErr := s.checkVormerkung(ctx, titelID)
+	return checkErr == nil && v != nil && v.SchuelerID == *activeStudentID
 }
 
 // handleBookAction verarbeitet das Scannen eines Buch-Barcodes.

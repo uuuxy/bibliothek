@@ -167,75 +167,18 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		var req struct {
-			Vorname           *string `json:"vorname"`
-			Nachname          *string `json:"nachname"`
-			Klasse            *string `json:"klasse"`
-			LusdID            *string `json:"lusd_id"`
-			BarcodeID         *string `json:"barcode_id"`
-			AbgaengerJahr     *int    `json:"abgaenger_jahr"`
-			Geburtsdatum      *string `json:"geburtsdatum"`
-			IsManuallyBlocked *bool   `json:"is_manually_blocked"`
-			BlockReason       *string `json:"block_reason"`
-			Strasse           *string `json:"strasse"`
-			Hausnummer        *string `json:"hausnummer"`
-			Plz               *string `json:"plz"`
-			Ort               *string `json:"ort"`
-			ElternEmail       *string `json:"eltern_email"`
-		}
+		var req patchStudentRequest
 		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
 
-		// Bei Klassenänderung ohne explizites Abgängerjahr dieses automatisch ableiten.
-		if req.Klasse != nil && req.AbgaengerJahr == nil {
-			newJahr := calculateAbgaengerJahr(*req.Klasse)
-			req.AbgaengerJahr = &newJahr
-		}
-
-		b := &updateBuilder{}
-		b.addStr("vorname", req.Vorname)
-		b.addStr("nachname", req.Nachname)
-		b.addStr("lusd_id", req.LusdID)
-		b.addStr("barcode_id", req.BarcodeID)
-		b.addStr("klasse", req.Klasse)
-		b.addInt("abgaenger_jahr", req.AbgaengerJahr)
-
-		if req.Geburtsdatum != nil {
-			parsedDate, err := parseGeburtsdatum(*req.Geburtsdatum)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-				return
-			}
-			b.add("geburtsdatum", parsedDate)
-		}
-
-		b.addBool("is_manually_blocked", req.IsManuallyBlocked)
-		b.addStr("block_reason", req.BlockReason)
-		// Postanschrift & Elternkontakt (Stammdaten): nur bei vorhandenem Feld ändern.
-		b.addStr("strasse", req.Strasse)
-		b.addStr("hausnummer", req.Hausnummer)
-		b.addStr("plz", req.Plz)
-		b.addStr("ort", req.Ort)
-		b.addStr("eltern_email", req.ElternEmail)
-
-		// Empty PATCH (kein aktualisierbares Feld): als 400 ablehnen, statt einen
-		// No-op-UPDATE zu fahren, dessen RowsAffected==0 fälschlich als 404 gälte.
-		if len(b.sets) == 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
+		b, ok := baueSchuelerUpdate(w, &req)
+		if !ok {
 			return
 		}
 
 		ctx := r.Context()
-		query, args := b.build("UPDATE schueler SET aktualisiert_am = CURRENT_TIMESTAMP", id)
-
-		tag, err := s.DB.Pool.Exec(ctx, query, args...)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if tag.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+		if !s.fuehreSchuelerUpdateAus(ctx, w, id, b) {
 			return
 		}
 
@@ -246,4 +189,83 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		}
 		httpresp.Encode(w, response)
 	}
+}
+
+// patchStudentRequest bündelt die optional aktualisierbaren Stammdatenfelder (nil = unverändert).
+type patchStudentRequest struct {
+	Vorname           *string `json:"vorname"`
+	Nachname          *string `json:"nachname"`
+	Klasse            *string `json:"klasse"`
+	LusdID            *string `json:"lusd_id"`
+	BarcodeID         *string `json:"barcode_id"`
+	AbgaengerJahr     *int    `json:"abgaenger_jahr"`
+	Geburtsdatum      *string `json:"geburtsdatum"`
+	IsManuallyBlocked *bool   `json:"is_manually_blocked"`
+	BlockReason       *string `json:"block_reason"`
+	Strasse           *string `json:"strasse"`
+	Hausnummer        *string `json:"hausnummer"`
+	Plz               *string `json:"plz"`
+	Ort               *string `json:"ort"`
+	ElternEmail       *string `json:"eltern_email"`
+}
+
+// baueSchuelerUpdate erzeugt aus dem PATCH-Request den dynamischen updateBuilder (inkl.
+// Klassen→Abgängerjahr-Ableitung und Geburtsdatum-Parsing). ok=false: die Fehlerantwort
+// (ungültiges Datum bzw. leerer PATCH) wurde bereits geschrieben.
+func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updateBuilder, bool) {
+	// Bei Klassenänderung ohne explizites Abgängerjahr dieses automatisch ableiten.
+	if req.Klasse != nil && req.AbgaengerJahr == nil {
+		newJahr := calculateAbgaengerJahr(*req.Klasse)
+		req.AbgaengerJahr = &newJahr
+	}
+
+	b := &updateBuilder{}
+	b.addStr("vorname", req.Vorname)
+	b.addStr("nachname", req.Nachname)
+	b.addStr("lusd_id", req.LusdID)
+	b.addStr("barcode_id", req.BarcodeID)
+	b.addStr("klasse", req.Klasse)
+	b.addInt("abgaenger_jahr", req.AbgaengerJahr)
+
+	if req.Geburtsdatum != nil {
+		parsedDate, err := parseGeburtsdatum(*req.Geburtsdatum)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return nil, false
+		}
+		b.add("geburtsdatum", parsedDate)
+	}
+
+	b.addBool("is_manually_blocked", req.IsManuallyBlocked)
+	b.addStr("block_reason", req.BlockReason)
+	// Postanschrift & Elternkontakt (Stammdaten): nur bei vorhandenem Feld ändern.
+	b.addStr("strasse", req.Strasse)
+	b.addStr("hausnummer", req.Hausnummer)
+	b.addStr("plz", req.Plz)
+	b.addStr("ort", req.Ort)
+	b.addStr("eltern_email", req.ElternEmail)
+
+	// Empty PATCH (kein aktualisierbares Feld): als 400 ablehnen, statt einen
+	// No-op-UPDATE zu fahren, dessen RowsAffected==0 fälschlich als 404 gälte.
+	if len(b.sets) == 0 {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
+		return nil, false
+	}
+	return b, true
+}
+
+// fuehreSchuelerUpdateAus baut das dynamische UPDATE und führt es aus. ok=false: die
+// Fehlerantwort (500 bzw. 404 bei unbekanntem Schüler) wurde bereits geschrieben.
+func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWriter, id string, b *updateBuilder) bool {
+	query, args := b.build("UPDATE schueler SET aktualisiert_am = CURRENT_TIMESTAMP", id)
+	tag, err := s.DB.Pool.Exec(ctx, query, args...)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if tag.RowsAffected() == 0 {
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+		return false
+	}
+	return true
 }

@@ -22,6 +22,7 @@ func detectCSVDelimiter(content string) rune {
 // Positionen zu. Die Erkennung ist bewusst tolerant (Teilstring-Matching, klein
 // geschrieben), damit sowohl der schlanke Littera-Export (Titel,Autor,…,Barcode)
 // als auch die volle Bestandsdatei (…;Barcode;Zustand) über denselben Pfad laufen.
+// Optionale Spalten: Zustand (sperrt "verliehen") und Signatur (Rücken-Etikett).
 func buildImportHeaderMap(headers []string) map[string]int {
 	headerMap := make(map[string]int)
 	for idx, h := range headers {
@@ -39,7 +40,12 @@ func buildImportHeaderMap(headers []string) map[string]int {
 			headerMap["jahr"] = idx
 		case strings.Contains(norm, "kategorie") || strings.Contains(norm, "systematik") || norm == "fach":
 			headerMap["kategorie"] = idx
-		case strings.Contains(norm, "barcode") || strings.Contains(norm, "exemplar") || norm == "signatur" || norm == "inventarnummer":
+		// Signatur ist das Rücken-Etikett (buecher_titel.signatur) — sie ist KEIN
+		// Exemplar-Barcode. Das frühere Alias signatur→barcode hat Signaturen als
+		// Barcodes importiert und die echten Barcodes verdrängt.
+		case strings.Contains(norm, "signatur"):
+			headerMap["signatur"] = idx
+		case strings.Contains(norm, "barcode") || strings.Contains(norm, "exemplar") || norm == "inventarnummer":
 			headerMap["barcode"] = idx
 		case strings.Contains(norm, "zustand") || strings.Contains(norm, "status"):
 			headerMap["zustand"] = idx

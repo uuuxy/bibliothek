@@ -3,38 +3,37 @@ package inventur
 import (
 	"context"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
-// ListBooks lists books matching subject, grade level, and text query.
-func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string) ([]Book, error) {
-	query := `
-		SELECT 
-			bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
-			COALESCE(bt.signatur, '') AS signatur,
-			COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject,
-			COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track, 
-			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
-			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt,
-			TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp, 
-			COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis, 
-			COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag, 
-			COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, COALESCE(bt.beschreibung, '') AS beschreibung, 
-			bt.erweiterte_eigenschaften
-		FROM buecher_titel bt
-		LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
-		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
-		WHERE ($1 = '' OR bt.subject = $1)
-		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
-		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR bt.isbn ILIKE '%' || $3 || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
-		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften
-		ORDER BY bt.sort_order ASC, bt.titel ASC`
+// buchListenSelect ist der gemeinsame SELECT für Buchlisten und Einzel-Reads:
+// Stammdaten (inkl. Signatur) plus Verfügbarkeits-/Bestandszählung über die
+// Exemplare. Verwender hängen WHERE an; buchListenGroupBy muss folgen.
+const buchListenSelect = `
+	SELECT
+		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
+		COALESCE(bt.signatur, '') AS signatur,
+		COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject,
+		COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track,
+		COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+		COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt,
+		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
+		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
+		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
+		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, COALESCE(bt.beschreibung, '') AS beschreibung,
+		bt.erweiterte_eigenschaften
+	FROM buecher_titel bt
+	LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
+	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
+`
 
-	rows, err := repo.db.Query(ctx, query, subject, grade, searchQuery)
-	if err != nil {
-		return nil, fmt.Errorf("bücher konnten nicht geladen werden: %w", err)
-	}
-	defer rows.Close()
+const buchListenGroupBy = `
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften
+`
 
+// scanBuchZeilen liest alle Zeilen eines buchListenSelect-Ergebnisses ein.
+func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 	books := make([]Book, 0)
 	for rows.Next() {
 		var book Book
@@ -67,12 +66,28 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 		book.Stock = book.Gesamt
 		books = append(books, book)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("fehler beim iterieren: %w", err)
 	}
-
 	return books, nil
+}
+
+// ListBooks lists books matching subject, grade level, and text query.
+func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string) ([]Book, error) {
+	query := buchListenSelect + `
+		WHERE ($1 = '' OR bt.subject = $1)
+		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
+		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR bt.isbn ILIKE '%' || $3 || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
+	` + buchListenGroupBy + `
+		ORDER BY bt.sort_order ASC, bt.titel ASC`
+
+	rows, err := repo.db.Query(ctx, query, subject, grade, searchQuery)
+	if err != nil {
+		return nil, fmt.Errorf("bücher konnten nicht geladen werden: %w", err)
+	}
+	defer rows.Close()
+
+	return scanBuchZeilen(rows)
 }
 
 // ListExternalCoverBooks lists books having external cover URLs.
@@ -110,16 +125,19 @@ func (repo *BookRepository) ListExternalCoverBooks(ctx context.Context, limit in
 }
 
 // ListBooksByIDs retrieves list of books for provided IDs.
+// Liefert den VOLLEN Datensatz inkl. Signatur und Bestandszählung — der
+// Einzel-Read GET /api/books/{id} (Buch-Akte, „Titel bearbeiten") hängt daran.
+// Das frühere Minimal-SELECT (id, isbn, titel, cover_url) ließ Signatur und
+// Exemplar-Zahlen im Frontend leer erscheinen.
 func (repo *BookRepository) ListBooksByIDs(ctx context.Context, ids []string) ([]Book, error) {
 	if len(ids) == 0 {
 		return []Book{}, nil
 	}
 
-	query := `
-		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(cover_url, '') AS cover_url
-		FROM buecher_titel
-		WHERE id = ANY($1::uuid[])
-		ORDER BY id ASC`
+	query := buchListenSelect + `
+		WHERE bt.id = ANY($1::uuid[])
+	` + buchListenGroupBy + `
+		ORDER BY bt.id ASC`
 
 	rows, err := repo.db.Query(ctx, query, ids)
 	if err != nil {
@@ -127,17 +145,5 @@ func (repo *BookRepository) ListBooksByIDs(ctx context.Context, ids []string) ([
 	}
 	defer rows.Close()
 
-	books := make([]Book, 0)
-	for rows.Next() {
-		var book Book
-		if scanErr := rows.Scan(&book.ID, &book.ISBN, &book.Title, &book.CoverURL); scanErr != nil {
-			return nil, fmt.Errorf("bücher nach ids konnten nicht gelesen werden: %w", scanErr)
-		}
-		books = append(books, book)
-	}
-	if rowsErr := rows.Err(); rowsErr != nil {
-		return nil, fmt.Errorf("fehler beim iterieren der buch-ids: %w", rowsErr)
-	}
-
-	return books, nil
+	return scanBuchZeilen(rows)
 }

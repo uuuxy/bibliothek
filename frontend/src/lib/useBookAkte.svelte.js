@@ -2,6 +2,19 @@ import { appState } from '../inventur/lib/store.svelte.js';
 import { uiStore } from './stores/uiStore.svelte.js';
 import { apiFetch } from './apiFetch.js';
 
+/**
+ * Liefert das geparste JSON eines erfüllten, erfolgreichen Promise.allSettled-Ergebnisses,
+ * sonst ein leeres Array.
+ * @param {PromiseSettledResult<any>} settled
+ * @returns {Promise<any[]>}
+ */
+async function jsonOrEmpty(settled) {
+	if (settled.status === 'fulfilled' && settled.value.ok) {
+		return await settled.value.json();
+	}
+	return [];
+}
+
 export function useBookAkte() {
 	/** @type {any} */
 	let book = $state(null);
@@ -53,10 +66,10 @@ export function useBookAkte() {
 			apiFetch(`/api/vormerkungen?titel_id=${id}`, { credentials: 'include' })
 		]);
 
-		borrowers = bRes.status === 'fulfilled' && bRes.value.ok ? await bRes.value.json() : [];
-		exemplare = eRes.status === 'fulfilled' && eRes.value.ok ? await eRes.value.json() : [];
-		history = hRes.status === 'fulfilled' && hRes.value.ok ? await hRes.value.json() : [];
-		vormerkungen = vRes.status === 'fulfilled' && vRes.value.ok ? await vRes.value.json() : [];
+		borrowers = await jsonOrEmpty(bRes);
+		exemplare = await jsonOrEmpty(eRes);
+		history = await jsonOrEmpty(hRes);
+		vormerkungen = await jsonOrEmpty(vRes);
 		isLoading = false;
 	}
 

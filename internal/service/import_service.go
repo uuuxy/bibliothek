@@ -3,13 +3,23 @@ package service
 import (
 	"context"
 	"encoding/xml"
+	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
 
 	"bibliothek/db"
 	"bibliothek/repository"
+
+	"golang.org/x/net/html/charset"
 )
+
+// ErrKeinKatalogisat kennzeichnet eine hochgeladene XML-Datei, die kein
+// Littera-MAB2-Katalogisat ist (z. B. eine Schlagwort- oder Systematikliste).
+// Der Handler übersetzt diesen Fehler in ein 400 — es ist ein Datei-, kein
+// Serverproblem.
+var ErrKeinKatalogisat = errors.New("die Datei ist kein Littera-Katalogisat-Export (erwartet wird MAB2-XML mit <Katalogisate>-Wurzel)")
 
 // Katalogisate repräsentiert die Wurzel des MAB2 XML-Exports
 type Katalogisate struct {
@@ -41,13 +51,21 @@ func NewImportService(bookRepo repository.BookRepository, dbPool db.PgxPoolIface
 }
 
 // ParseLitteraXML liest die MAB2-XML-Datei ein und speichert die Bücher in der Datenbank.
+// Ist die Datei kein Katalogisat (falsche Wurzel, kaputtes XML, keine Datensätze),
+// kommt ein ErrKeinKatalogisat zurück.
 func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) (int, error) {
 	decoder := xml.NewDecoder(xmlData)
+	// Littera exportiert je nach Version auch ISO-8859-1/Windows-1252 —
+	// ohne CharsetReader bricht der Decoder bei deklarierten Nicht-UTF-8-Encodings ab.
+	decoder.CharsetReader = charset.NewReaderLabel
 	var root Katalogisate
 
 	// Komplette XML-Struktur einlesen
 	if err := decoder.Decode(&root); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("%w: %v", ErrKeinKatalogisat, err)
+	}
+	if len(root.Items) == 0 {
+		return 0, ErrKeinKatalogisat
 	}
 
 	// Titel sammeln und in EINEM gepipelineten Batch schreiben (statt je Titel

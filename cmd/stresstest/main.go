@@ -75,6 +75,158 @@ type ActionRequest struct {
 	ActiveStudentID *string `json:"active_student_id,omitempty"`
 }
 
+// stresstestRunner bündelt die geteilte Concurrency-State: die Start-Barriere (damit
+// alle Worker exakt gleichzeitig feuern) und die gesammelten Status-Code-Zähler.
+type stresstestRunner struct {
+	baseURL     string
+	jsonData    []byte
+	token       string
+	numRequests int
+
+	wg         sync.WaitGroup
+	startMu    sync.Mutex
+	startCond  *sync.Cond
+	readyCount int
+	start      bool
+
+	resultsMu    sync.Mutex
+	statusCounts map[int]int
+}
+
+func newStresstestRunner(baseURL, token string, jsonData []byte, numRequests int) *stresstestRunner {
+	r := &stresstestRunner{
+		baseURL:      baseURL,
+		token:        token,
+		jsonData:     jsonData,
+		numRequests:  numRequests,
+		statusCounts: make(map[int]int),
+	}
+	r.startCond = sync.NewCond(&r.startMu)
+	return r
+}
+
+// baueRequest erstellt den POST-Request inkl. Header sowie CSRF- und Session-Cookie.
+func (r *stresstestRunner) baueRequest() (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodPost, r.baseURL, bytes.NewReader(r.jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Dummy CSRF Token protection bypass
+	csrfToken := "dummy-csrf-token-12345"
+	req.Header.Set("X-CSRF-Token", csrfToken)
+
+	// Session cookie
+	req.AddCookie(&http.Cookie{
+		Name:  "session_token",
+		Value: r.token,
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  "csrf_token",
+		Value: csrfToken,
+	})
+	return req, nil
+}
+
+// wartAufStart meldet den Worker als bereit und blockiert, bis das Startsignal kommt.
+func (r *stresstestRunner) wartAufStart() {
+	r.startMu.Lock()
+	r.readyCount++
+	if r.readyCount == r.numRequests {
+		r.startCond.Broadcast() // Wake up everyone if this is the last one
+	}
+	for !r.start {
+		r.startCond.Wait()
+	}
+	r.startMu.Unlock()
+}
+
+// erfasseErgebnis feuert den Request und protokolliert den Status-Code bzw. Netzwerkfehler.
+func (r *stresstestRunner) erfasseErgebnis(client *http.Client, req *http.Request) {
+	resp, err := client.Do(req)
+	if err != nil {
+		// network error → statusCode bleibt 0
+
+		// Log the first error for debugging
+		r.resultsMu.Lock()
+		if len(r.statusCounts) == 0 {
+			fmt.Printf("\n[DEBUG] Network error details: %v\n", err)
+		}
+		r.statusCounts[0]++
+		r.resultsMu.Unlock()
+		return
+	}
+	statusCode := resp.StatusCode
+	_, _ = io.Copy(io.Discard, resp.Body) //nolint:errcheck
+	_ = resp.Body.Close()                 //nolint:errcheck
+
+	r.resultsMu.Lock()
+	r.statusCounts[statusCode]++
+	r.resultsMu.Unlock()
+}
+
+// fuehreWorkerAus ist der Rumpf einer Worker-Goroutine: Request bauen, auf das
+// gemeinsame Startsignal warten und dann feuern.
+func (r *stresstestRunner) fuehreWorkerAus() {
+	defer r.wg.Done()
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+		// Wir schalten HTTP/2 aus und zwingen das Programm neue Connections aufzubauen,
+		// um die Parallelität bei manchen OS/Go-Versionen sicherzustellen.
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 100,
+		},
+	}
+
+	req, err := r.baueRequest()
+	if err != nil {
+		r.resultsMu.Lock()
+		r.statusCounts[-1]++ // -1 means request creation failed
+		r.resultsMu.Unlock()
+		return
+	}
+
+	r.wartAufStart()
+	r.erfasseErgebnis(client, req)
+}
+
+// starteAlle startet numRequests Worker-Goroutinen (die zunächst an der Barriere warten).
+func (r *stresstestRunner) starteAlle() {
+	r.wg.Add(r.numRequests)
+	for i := 0; i < r.numRequests; i++ {
+		go r.fuehreWorkerAus()
+	}
+}
+
+// gibStartsignal wartet, bis alle Worker bereitstehen, und weckt sie gleichzeitig.
+func (r *stresstestRunner) gibStartsignal() {
+	// Give goroutines a moment to spin up and wait on condition
+	time.Sleep(100 * time.Millisecond)
+
+	r.startMu.Lock()
+	if r.readyCount < r.numRequests {
+		r.startCond.Wait()
+	}
+	r.start = true
+	r.startCond.Broadcast()
+	r.startMu.Unlock()
+}
+
+func (r *stresstestRunner) druckeErgebnisse() {
+	fmt.Println("\n--- Stress Test Results ---")
+	for code, count := range r.statusCounts {
+		if code == 0 {
+			fmt.Printf("%dx Network Error (Failed to execute request)\n", count)
+		} else {
+			statusText := http.StatusText(code)
+			fmt.Printf("%dx %d %s\n", count, code, statusText)
+		}
+	}
+}
+
 func main() {
 	portFlag := flag.String("port", "", "Port to run the stress test against (overrides .env)")
 	flag.Parse()
@@ -101,116 +253,13 @@ func main() {
 	}
 
 	const numRequests = 50
-	var wg sync.WaitGroup
-	wg.Add(numRequests)
-
-	// To make sure all goroutines start at exactly the same time
-	var startMu sync.Mutex
-	startCond := sync.NewCond(&startMu)
-	readyCount := 0
-	start := false
-
-	// Result collection
-	var resultsMu sync.Mutex
-	statusCounts := make(map[int]int)
+	runner := newStresstestRunner(baseURL, token, jsonData, numRequests)
 
 	fmt.Printf("Starting stress test: 50 concurrent requests to %s\n", baseURL)
 
-	for i := 0; i < numRequests; i++ {
-		go func(workerID int) {
-			defer wg.Done()
+	runner.starteAlle()
+	runner.gibStartsignal()
+	runner.wg.Wait()
 
-			client := &http.Client{
-				Timeout: 10 * time.Second,
-				// Wir schalten HTTP/2 aus und zwingen das Programm neue Connections aufzubauen,
-				// um die Parallelität bei manchen OS/Go-Versionen sicherzustellen.
-				Transport: &http.Transport{
-					MaxIdleConnsPerHost: 100,
-				},
-			}
-
-			req, err := http.NewRequest(http.MethodPost, baseURL, bytes.NewReader(jsonData))
-			if err != nil {
-				resultsMu.Lock()
-				statusCounts[-1]++ // -1 means request creation failed
-				resultsMu.Unlock()
-				return
-			}
-
-			req.Header.Set("Content-Type", "application/json")
-
-			// Dummy CSRF Token protection bypass
-			csrfToken := "dummy-csrf-token-12345"
-			req.Header.Set("X-CSRF-Token", csrfToken)
-
-			// Session cookie
-			req.AddCookie(&http.Cookie{
-				Name:  "session_token",
-				Value: token,
-			})
-			req.AddCookie(&http.Cookie{
-				Name:  "csrf_token",
-				Value: csrfToken,
-			})
-
-			// Wait for start signal
-			startMu.Lock()
-			readyCount++
-			if readyCount == numRequests {
-				startCond.Broadcast() // Wake up everyone if this is the last one
-			}
-			for !start {
-				startCond.Wait()
-			}
-			startMu.Unlock()
-
-			// Fire!
-			resp, err := client.Do(req)
-			statusCode := 0
-			if err != nil {
-				// network error → statusCode bleibt 0
-
-				// Log the first error for debugging
-				resultsMu.Lock()
-				if len(statusCounts) == 0 {
-					fmt.Printf("\n[DEBUG] Network error details: %v\n", err)
-				}
-				statusCounts[0]++
-				resultsMu.Unlock()
-				return
-			} else {
-				statusCode = resp.StatusCode
-				_, _ = io.Copy(io.Discard, resp.Body)  //nolint:errcheck
-				_ = resp.Body.Close()  //nolint:errcheck
-
-				resultsMu.Lock()
-				statusCounts[statusCode]++
-				resultsMu.Unlock()
-			}
-		}(i)
-	}
-
-	// Give goroutines a moment to spin up and wait on condition
-	time.Sleep(100 * time.Millisecond)
-
-	startMu.Lock()
-	if readyCount < numRequests {
-		startCond.Wait()
-	}
-	start = true
-	startCond.Broadcast()
-	startMu.Unlock()
-
-	// Wait for all to finish
-	wg.Wait()
-
-	fmt.Println("\n--- Stress Test Results ---")
-	for code, count := range statusCounts {
-		if code == 0 {
-			fmt.Printf("%dx Network Error (Failed to execute request)\n", count)
-		} else {
-			statusText := http.StatusText(code)
-			fmt.Printf("%dx %d %s\n", count, code, statusText)
-		}
-	}
+	runner.druckeErgebnisse()
 }

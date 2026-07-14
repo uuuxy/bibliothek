@@ -55,58 +55,66 @@ func main() {
 		if file.IsDir() || filepath.Ext(strings.ToLower(file.Name())) != ".jpg" {
 			continue
 		}
-
-		barcodeID := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name())) // z.B. "S-10041"
-
-		// 1. Hole UUID des Schülers anhand des Barcodes
-		var schuelerID string
-		err := pool.QueryRow(ctx, "SELECT id FROM schueler WHERE barcode_id = $1", barcodeID).Scan(&schuelerID)
-		if err != nil {
-			log.Printf("Überspringe %s: Schüler mit Barcode %s nicht in der DB gefunden.", file.Name(), barcodeID)
+		switch migrierePhotoDatei(ctx, pool, fotosDir, file.Name()) {
+		case "erfolg":
+			erfolg++
+		case "fehler":
+			fehler++
+		case "uebersprungen":
 			uebersprungen++
-			continue
 		}
-
-		// 2. Lese das JPEG-Bild
-		filePath := filepath.Join(fotosDir, file.Name())
-		imgBytes, err := os.ReadFile(filePath)
-		if err != nil {
-			log.Printf("Fehler beim Lesen der Datei %s: %v", file.Name(), err)
-			fehler++
-			continue
-		}
-
-		// 3. Verschlüssele das Bild
-		encryptedData, err := crypto.Encrypt(imgBytes)
-		if err != nil {
-			log.Printf("Fehler beim Verschlüsseln von %s: %v", file.Name(), err)
-			fehler++
-			continue
-		}
-
-		// 4. In die Datenbank einfügen
-		query := `
-			INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
-			VALUES ($1, $2)
-			ON CONFLICT (schueler_id) DO UPDATE SET 
-				foto_encrypted = EXCLUDED.foto_encrypted,
-				aktualisiert_am = CURRENT_TIMESTAMP
-		`
-		_, err = pool.Exec(ctx, query, schuelerID, encryptedData)
-		if err != nil {
-			log.Printf("Fehler beim Speichern von %s in die DB: %v", file.Name(), err)
-			fehler++
-			continue
-		}
-
-		log.Printf("Erfolgreich migriert: %s", file.Name())
-		erfolg++
-
-		// Optional: Alte Datei löschen/umbenennen nach erfolgreicher Migration
-		// os.Rename(filePath, filePath+".migrated")
 	}
 
 	fmt.Println("-------------------------------------------------")
 	fmt.Printf("Migration abgeschlossen!\nErfolgreich: %d\nÜbersprungen: %d\nFehler: %d\n", erfolg, uebersprungen, fehler)
 	fmt.Println("Du kannst die migrierten Dateien im Ordner uploads/fotos/ nun löschen.")
+}
+
+// migrierePhotoDatei liest die JPEG-Datei eines Schülers (Dateiname = "<barcode>.jpg"),
+// verschlüsselt sie und speichert sie in schueler_fotos. Rückgabe: "erfolg", "fehler"
+// oder "uebersprungen" (kein Schüler zum Barcode gefunden).
+func migrierePhotoDatei(ctx context.Context, pool *pgxpool.Pool, fotosDir, name string) string {
+	barcodeID := strings.TrimSuffix(name, filepath.Ext(name)) // z.B. "S-10041"
+
+	// 1. Hole UUID des Schülers anhand des Barcodes
+	var schuelerID string
+	err := pool.QueryRow(ctx, "SELECT id FROM schueler WHERE barcode_id = $1", barcodeID).Scan(&schuelerID)
+	if err != nil {
+		log.Printf("Überspringe %s: Schüler mit Barcode %s nicht in der DB gefunden.", name, barcodeID)
+		return "uebersprungen"
+	}
+
+	// 2. Lese das JPEG-Bild
+	filePath := filepath.Join(fotosDir, name)
+	imgBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Printf("Fehler beim Lesen der Datei %s: %v", name, err)
+		return "fehler"
+	}
+
+	// 3. Verschlüssele das Bild
+	encryptedData, err := crypto.Encrypt(imgBytes)
+	if err != nil {
+		log.Printf("Fehler beim Verschlüsseln von %s: %v", name, err)
+		return "fehler"
+	}
+
+	// 4. In die Datenbank einfügen
+	query := `
+		INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
+		VALUES ($1, $2)
+		ON CONFLICT (schueler_id) DO UPDATE SET
+			foto_encrypted = EXCLUDED.foto_encrypted,
+			aktualisiert_am = CURRENT_TIMESTAMP
+	`
+	_, err = pool.Exec(ctx, query, schuelerID, encryptedData)
+	if err != nil {
+		log.Printf("Fehler beim Speichern von %s in die DB: %v", name, err)
+		return "fehler"
+	}
+
+	log.Printf("Erfolgreich migriert: %s", name)
+	// Optional: Alte Datei löschen/umbenennen nach erfolgreicher Migration
+	// os.Rename(filePath, filePath+".migrated")
+	return "erfolg"
 }

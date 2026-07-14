@@ -108,6 +108,153 @@ export function createOmniboxStore() {
 		}
 	}
 
+	// Liest die Fehlermeldung aus einer nicht-ok HTTP-Antwort. Bei einem
+	// Sperr-/Überfälligkeits-403 wird blockAlert gesetzt und BLOCK_ALERT geworfen,
+	// sonst ein generischer Fehler. Wirft in jedem Fall.
+	async function handleActionHttpError(res, q) {
+		let errStr = await res.text();
+		try {
+			const errData = JSON.parse(errStr);
+			if (errData.error) errStr = errData.error;
+		} catch (e) {}
+
+		if (
+			res.status === 403 &&
+			(errStr.includes('Sperre') ||
+				errStr.includes('Sperr-Automatik') ||
+				errStr.includes('überfällig'))
+		) {
+			blockAlert = { message: errStr, query: q };
+			throw new Error('BLOCK_ALERT');
+		}
+
+		throw new Error(errStr || 'Aktion fehlgeschlagen');
+	}
+
+	// Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
+	function formatVorbesitzerName(data) {
+		if (data.vorbesitzer) {
+			return `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`;
+		}
+		if (data.vorbesitzer_user) {
+			return `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
+		}
+		return 'unbekannt';
+	}
+
+	// Fremdes Buch in aktiver Sitzung: NUR beim Vorbesitzer ausgebucht — bewusst kein
+	// automatisches Umbuchen. Info ohne Unterbrechung; erneuter Scan leiht es an die
+	// aktive Sitzung aus.
+	function verarbeiteFremdrueckgabe(data) {
+		triggerScreenFlash('warning');
+		playSoundError();
+		triggerFlash('orange');
+		const prevName = formatVorbesitzerName(data);
+		lastFremdrueckgabe = { vorbesitzerName: prevName };
+		const aktiv = activeTeacher?.vorname || activeStudent?.vorname;
+		showToast(
+			`⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : ''}`,
+			'warning'
+		);
+	}
+
+	// Verarbeitet eine Rückgabe-Antwort (fremd/normal, Vormerkung, Session-Fortführung).
+	function verarbeiteRueckgabe(data, reloadProfileCb) {
+		if (data.fremdrueckgabe) {
+			verarbeiteFremdrueckgabe(data);
+		} else {
+			triggerScreenFlash('success');
+			playSoundSuccess();
+			triggerFlash('green');
+			showToast(`📥 „${data.book.titel}" erfolgreich zurückgegeben.`);
+		}
+		if (data.has_vormerkung) {
+			vormerkungAlert = {
+				titel: data.vormerkung_titel || data.book?.titel,
+				user: data.vormerkung_user
+			};
+		}
+		if (reloadProfileCb) reloadProfileCb();
+
+		if (data.student && !activeStudent && !activeTeacher) {
+			activeStudent = data.student;
+		} else if (data.teacher && !activeStudent && !activeTeacher) {
+			activeTeacher = data.teacher;
+		}
+	}
+
+	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type.
+	function verarbeiteAktionsErgebnis(data, reloadProfileCb) {
+		if (data.type === 'student') {
+			activeStudent = data.student;
+			activeTeacher = null;
+			triggerScreenFlash('success');
+			playSoundSuccess();
+			triggerFlash('green');
+		} else if (data.type === 'teacher') {
+			activeTeacher = data.teacher;
+			activeStudent = null;
+			triggerScreenFlash('success');
+			playSoundSuccess();
+			triggerFlash('green');
+			showToast(
+				`📋 Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`
+			);
+		} else if (data.type === 'ausleihe') {
+			triggerScreenFlash('success');
+			playSoundSuccess();
+			triggerFlash('green');
+			showToast(
+				`📖 „${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
+			);
+			if (reloadProfileCb) reloadProfileCb();
+		} else if (data.type === 'rueckgabe') {
+			verarbeiteRueckgabe(data, reloadProfileCb);
+		} else if (data.type === 'info') {
+			triggerScreenFlash('success');
+			playSoundSuccess();
+			triggerFlash('green');
+			showToast(data.message, 'success');
+			if (reloadProfileCb) reloadProfileCb();
+		} else if (data.type === 'search_results') {
+			triggerShake();
+			showToast('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
+		}
+	}
+
+	// Speichert eine Scan-Aktion offline (nur Rückgaben „B-…"), sonst Netzwerkfehler-Toast.
+	async function speichereOfflineAktion(q, idempotencyKey) {
+		if (q.startsWith('B-')) {
+			await enqueueOfflineAction('checkin', q, activeStudent?.id ?? null, idempotencyKey);
+			offlineSync.updateCount();
+			triggerScreenFlash('warning');
+			playSoundSuccess();
+			showToast(`📴 Offline: Aktion für „${q}“ gespeichert.`, 'warning');
+		} else {
+			showToast('⚠️ Netzwerkfehler', 'error');
+		}
+	}
+
+	// Ordnet einen Fehler aus submitAction ein: Block-Alert, Offline/Netzwerk oder generisch.
+	async function verarbeiteAktionsFehler(e, q, idempotencyKey) {
+		if (e instanceof Error && e.message === 'BLOCK_ALERT') {
+			triggerScreenFlash('error');
+			playSoundError();
+			return;
+		}
+		if (
+			e instanceof TypeError ||
+			!window.navigator.onLine ||
+			offlineSync.isOffline ||
+			(e instanceof Error && e.message.includes('Timeout'))
+		) {
+			await speichereOfflineAktion(q, idempotencyKey);
+		} else {
+			errorMessage = String(e);
+			showToast(`⚠️ Fehler: ${e instanceof Error ? e.message : String(e)}`, 'error');
+		}
+	}
+
 	// Haupt-Scan-Aktion
 	async function submitAction(e, reloadProfileCb, overrideBlock = false) {
 		if (e) e.preventDefault();
@@ -140,122 +287,12 @@ export function createOmniboxStore() {
 			});
 
 			if (!res.ok) {
-				let errStr = await res.text();
-				try {
-					const errData = JSON.parse(errStr);
-					if (errData.error) errStr = errData.error;
-				} catch (e) {}
-
-				if (
-					res.status === 403 &&
-					(errStr.includes('Sperre') ||
-						errStr.includes('Sperr-Automatik') ||
-						errStr.includes('überfällig'))
-				) {
-					blockAlert = { message: errStr, query: q };
-					throw new Error('BLOCK_ALERT');
-				}
-
-				throw new Error(errStr || 'Aktion fehlgeschlagen');
+				await handleActionHttpError(res, q); // wirft immer
 			}
 			const data = await res.json();
-
-			if (data.type === 'student') {
-				activeStudent = data.student;
-				activeTeacher = null;
-				triggerScreenFlash('success');
-				playSoundSuccess();
-				triggerFlash('green');
-			} else if (data.type === 'teacher') {
-				activeTeacher = data.teacher;
-				activeStudent = null;
-				triggerScreenFlash('success');
-				playSoundSuccess();
-				triggerFlash('green');
-				showToast(
-					`📋 Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`
-				);
-			} else if (data.type === 'ausleihe') {
-				triggerScreenFlash('success');
-				playSoundSuccess();
-				triggerFlash('green');
-				showToast(
-					`📖 „${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
-				);
-				if (reloadProfileCb) reloadProfileCb();
-			} else if (data.type === 'rueckgabe') {
-				if (data.fremdrueckgabe) {
-					// Fremdes Buch in aktiver Sitzung: NUR beim Vorbesitzer ausgebucht —
-					// bewusst kein automatisches Umbuchen. Info ohne Unterbrechung;
-					// erneuter Scan leiht es an die aktive Sitzung aus.
-					triggerScreenFlash('warning');
-					playSoundError();
-					triggerFlash('orange');
-					const prevName = data.vorbesitzer
-						? `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`
-						: data.vorbesitzer_user
-							? `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`
-							: 'unbekannt';
-					lastFremdrueckgabe = { vorbesitzerName: prevName };
-					const aktiv = activeTeacher?.vorname || activeStudent?.vorname;
-					showToast(
-						`⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : ''}`,
-						'warning'
-					);
-				} else {
-					triggerScreenFlash('success');
-					playSoundSuccess();
-					triggerFlash('green');
-					showToast(`📥 „${data.book.titel}" erfolgreich zurückgegeben.`);
-				}
-				if (data.has_vormerkung) {
-					vormerkungAlert = {
-						titel: data.vormerkung_titel || data.book?.titel,
-						user: data.vormerkung_user
-					};
-				}
-				if (reloadProfileCb) reloadProfileCb();
-
-				if (data.student && !activeStudent && !activeTeacher) {
-					activeStudent = data.student;
-				} else if (data.teacher && !activeStudent && !activeTeacher) {
-					activeTeacher = data.teacher;
-				}
-			} else if (data.type === 'info') {
-				triggerScreenFlash('success');
-				playSoundSuccess();
-				triggerFlash('green');
-				showToast(data.message, 'success');
-				if (reloadProfileCb) reloadProfileCb();
-			} else if (data.type === 'search_results') {
-				triggerShake();
-				showToast('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
-			}
+			verarbeiteAktionsErgebnis(data, reloadProfileCb);
 		} catch (e) {
-			if (e instanceof Error && e.message === 'BLOCK_ALERT') {
-				triggerScreenFlash('error');
-				playSoundError();
-				return;
-			}
-			if (
-				e instanceof TypeError ||
-				!window.navigator.onLine ||
-				offlineSync.isOffline ||
-				(e instanceof Error && e.message.includes('Timeout'))
-			) {
-				if (q.startsWith('B-')) {
-					await enqueueOfflineAction('checkin', q, activeStudent?.id ?? null, idempotencyKey);
-					offlineSync.updateCount();
-					triggerScreenFlash('warning');
-					playSoundSuccess();
-					showToast(`📴 Offline: Aktion für „${q}“ gespeichert.`, 'warning');
-				} else {
-					showToast('⚠️ Netzwerkfehler', 'error');
-				}
-			} else {
-				errorMessage = String(e);
-				showToast(`⚠️ Fehler: ${e instanceof Error ? e.message : String(e)}`, 'error');
-			}
+			await verarbeiteAktionsFehler(e, q, idempotencyKey);
 		} finally {
 			triggerFlash('red');
 		}

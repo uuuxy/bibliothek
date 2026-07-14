@@ -67,6 +67,23 @@ func main() {
 	log.Println("PostgreSQL Transaktion gestartet.")
 
 	// 4. Metadaten (TITEL) migrieren
+	titleMap := migriereTitel(ctx, tx, accessDB)
+
+	// 5. Exemplare migrieren
+	migriereExemplare(ctx, tx, accessDB, titleMap)
+
+	// 6. Transaktion abschließen
+	log.Println("Schließe PostgreSQL Transaktion ab (Commit)...")
+	if err := tx.Commit(); err != nil {
+		log.Fatalf("Fehler beim Commit der Transaktion: %v", err)
+	}
+
+	log.Println("Migration erfolgreich abgeschlossen!")
+}
+
+// migriereTitel liest die Access-TITEL-Tabelle und upsertet sie nach buecher_titel.
+// Rückgabe: Zuordnung Access-TitelID → Postgres-TitelID für die Exemplar-Migration.
+func migriereTitel(ctx context.Context, tx *sql.Tx, accessDB *sql.DB) map[string]string {
 	log.Println("Lese Metadaten aus Access (TITEL)...")
 	// WICHTIG: Ersetze 'TITEL' und die Spaltennamen durch die exakten Namen deiner Access-Tabelle.
 	// Wir nehmen hier Standardnamen an, passend zu den üblichen Strukturierungen.
@@ -77,7 +94,6 @@ func main() {
 	}
 	defer rowsTitel.Close()
 
-	var countTitel int
 	// Map Access TitelID -> Postgres UUID (bzw. ID), falls in Postgres eine serial ID verwendet wird.
 	// Wir speichern hier die Zuordnung Access ID -> ISBN oder wir machen einen CTE beim Insert.
 	// Da buecher_titel einen Serial 'id' nutzt, können wir die neue ID per RETURNING abfragen.
@@ -86,7 +102,7 @@ func main() {
 	insertTitelStmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur)
 		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), $6)
-		ON CONFLICT (isbn) DO UPDATE SET 
+		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
 			verlag = EXCLUDED.verlag,
@@ -99,6 +115,7 @@ func main() {
 	}
 	defer insertTitelStmt.Close()
 
+	var countTitel int
 	for rowsTitel.Next() {
 		var accessID string
 		var titel, autor, isbn, verlag, signatur sql.NullString
@@ -134,8 +151,12 @@ func main() {
 		log.Fatalf("Fehler beim Lesen der TITEL: %v", err)
 	}
 	log.Printf("Erfolgreich %d Metadaten-Datensätze verarbeitet.\n", countTitel)
+	return titleMap
+}
 
-	// 5. Exemplare migrieren
+// migriereExemplare liest die Access-EXEMPLARE-Tabelle und schreibt die Exemplare den
+// (über titleMap aufgelösten) Postgres-Titeln zu.
+func migriereExemplare(ctx context.Context, tx *sql.Tx, accessDB *sql.DB, titleMap map[string]string) {
 	log.Println("Lese Exemplare aus Access (EXEMPLARE)...")
 	// WICHTIG: Passe den Tabellennamen an deine Access-DB an!
 	exemplareQuery := `SELECT ExemplarID, TitelID, Barcode, ErworbenAm FROM EXEMPLARE`
@@ -157,53 +178,52 @@ func main() {
 
 	var countExemplare int
 	for rowsExemplare.Next() {
-		var exID, tID string
-		var barcode sql.NullString
-		var erworbenAm sql.NullTime
-
-		// Wir lesen Barcode bewusst als String via sql.NullString, um führende Nullen zu behalten!
-		if err := rowsExemplare.Scan(&exID, &tID, &barcode, &erworbenAm); err != nil {
-			log.Fatalf("Fehler beim Scannen der Exemplarzeile: %v", err)
-		}
-
-		pgTitelID, ok := titleMap[tID]
-		if !ok {
-			// Titel wurde scheinbar nicht migriert (z.B. weil Metadaten defekt oder fehlten)
-			log.Printf("Überspringe Exemplar %s, da zugehöriger Titel (AccessID: %s) nicht gefunden wurde.", barcode.String, tID)
-			continue
-		}
-
-		cleanBarcode := strings.TrimSpace(barcode.String)
-		if cleanBarcode == "" {
-			continue // Kein Barcode -> kein valides Exemplar im System
-		}
-
-		var pTime interface{}
-		if erworbenAm.Valid {
-			pTime = erworbenAm.Time
-		}
-
-		_, err = insertExemplarStmt.ExecContext(ctx, pgTitelID, cleanBarcode, pTime)
-		if err != nil {
-			log.Printf("Warnung: Konnte Exemplar (Barcode: %s) nicht einfügen: %v", cleanBarcode, err)
-			continue
-		}
-
-		countExemplare++
-		if countExemplare%500 == 0 {
-			log.Printf("%d Exemplare verarbeitet...", countExemplare)
+		if verarbeiteExemplarZeile(ctx, insertExemplarStmt, titleMap, rowsExemplare) {
+			countExemplare++
+			if countExemplare%500 == 0 {
+				log.Printf("%d Exemplare verarbeitet...", countExemplare)
+			}
 		}
 	}
 	if err := rowsExemplare.Err(); err != nil {
 		log.Fatalf("Fehler beim Lesen der EXEMPLARE: %v", err)
 	}
 	log.Printf("Erfolgreich %d Exemplar-Datensätze verarbeitet.\n", countExemplare)
+}
 
-	// 6. Transaktion abschließen
-	log.Println("Schließe PostgreSQL Transaktion ab (Commit)...")
-	if err := tx.Commit(); err != nil {
-		log.Fatalf("Fehler beim Commit der Transaktion: %v", err)
+// verarbeiteExemplarZeile scannt eine Exemplarzeile, löst den zugehörigen Titel auf und
+// fügt das Exemplar ein. Liefert true, wenn ein Exemplar tatsächlich eingefügt wurde
+// (fehlender Titel, leerer Barcode oder Insert-Fehler ⇒ false, übersprungen).
+func verarbeiteExemplarZeile(ctx context.Context, stmt *sql.Stmt, titleMap map[string]string, rows *sql.Rows) bool {
+	var exID, tID string
+	var barcode sql.NullString
+	var erworbenAm sql.NullTime
+
+	// Wir lesen Barcode bewusst als String via sql.NullString, um führende Nullen zu behalten!
+	if err := rows.Scan(&exID, &tID, &barcode, &erworbenAm); err != nil {
+		log.Fatalf("Fehler beim Scannen der Exemplarzeile: %v", err)
 	}
 
-	log.Println("Migration erfolgreich abgeschlossen!")
+	pgTitelID, ok := titleMap[tID]
+	if !ok {
+		// Titel wurde scheinbar nicht migriert (z.B. weil Metadaten defekt oder fehlten)
+		log.Printf("Überspringe Exemplar %s, da zugehöriger Titel (AccessID: %s) nicht gefunden wurde.", barcode.String, tID)
+		return false
+	}
+
+	cleanBarcode := strings.TrimSpace(barcode.String)
+	if cleanBarcode == "" {
+		return false // Kein Barcode -> kein valides Exemplar im System
+	}
+
+	var pTime interface{}
+	if erworbenAm.Valid {
+		pTime = erworbenAm.Time
+	}
+
+	if _, err := stmt.ExecContext(ctx, pgTitelID, cleanBarcode, pTime); err != nil {
+		log.Printf("Warnung: Konnte Exemplar (Barcode: %s) nicht einfügen: %v", cleanBarcode, err)
+		return false
+	}
+	return true
 }

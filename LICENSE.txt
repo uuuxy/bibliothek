@@ -1,7 +1,0 @@
-Copyright (c) 2026 Peter Flasch
-Alle Rechte vorbehalten (All Rights Reserved).
-
-Dieses Softwareprojekt und der dazugehörige Quellcode sind proprietär.
-Ein "Forken", Kopieren, Modifizieren, Verbreiten oder die Nutzung durch Dritte,
-sei es kommerziell oder nicht-kommerziell, ist ohne ausdrückliche 
-schriftliche Genehmigung des Urhebers strikt untersagt.

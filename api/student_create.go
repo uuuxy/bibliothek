@@ -111,46 +111,8 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer db.SafeRollback(ctx, tx)
-
-		// 1. Notfall-Wachhund: Duplikatsprüfung (Vorname, Nachname, Geburtsdatum)
-		isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if isDuplicate {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("achtung: Ein Schüler mit diesem Namen und Geburtsdatum existiert bereits im System"))
-			return
-		}
-
-		// 2. Resolve/generate barcode_id if not provided
-		barcodeID, ok := resolveNeueBarcodeID(ctx, tx, w, req.BarcodeID)
+		studentID, barcodeID, ok := s.legeSchuelerAn(ctx, w, req, parsedGebdatum)
 		if !ok {
-			return
-		}
-
-		// 3. Insert student
-		abgaengerJahr := calculateAbgaengerJahr(req.Klasse)
-		var studentID string
-		qInsert := `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr)
-			VALUES ($1, $2, $3, $4, $5, $6)
-			RETURNING id
-		`
-		err = tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, req.Klasse, parsedGebdatum, abgaengerJahr).Scan(&studentID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -160,6 +122,53 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			"barcode_id": barcodeID,
 		})
 	}
+}
+
+// legeSchuelerAn wickelt die Neuanlage in einer Transaktion ab (Duplikatsprüfung,
+// Barcode-Auflösung/-Generierung, Insert, Commit) und liefert die neue Schüler- und
+// Barcode-ID. ok=false: die Fehlerantwort wurde bereits geschrieben.
+func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req CreateStudentRequest, parsedGebdatum *time.Time) (studentID, barcodeID string, ok bool) {
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return "", "", false
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	// 1. Notfall-Wachhund: Duplikatsprüfung (Vorname, Nachname, Geburtsdatum)
+	isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return "", "", false
+	}
+	if isDuplicate {
+		apierrors.SendHTTPError(w, http.StatusConflict, errors.New("achtung: Ein Schüler mit diesem Namen und Geburtsdatum existiert bereits im System"))
+		return "", "", false
+	}
+
+	// 2. Resolve/generate barcode_id if not provided
+	barcodeID, ok = resolveNeueBarcodeID(ctx, tx, w, req.BarcodeID)
+	if !ok {
+		return "", "", false
+	}
+
+	// 3. Insert student
+	abgaengerJahr := calculateAbgaengerJahr(req.Klasse)
+	qInsert := `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id
+	`
+	if err := tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, req.Klasse, parsedGebdatum, abgaengerJahr).Scan(&studentID); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return "", "", false
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return "", "", false
+	}
+	return studentID, barcodeID, true
 }
 
 // parseCreateGeburtsdatum parst das optionale Geburtsdatum (YYYY-MM-DD) aus dem

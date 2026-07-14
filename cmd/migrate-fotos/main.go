@@ -60,52 +60,60 @@ func main() {
 			continue
 		}
 		processed++
-
-		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
-		path := filepath.Join(uploadDir, entry.Name())
-
-		imgBytes, err := os.ReadFile(path)
-		if err != nil {
-			slog.Error("Konnte Bild nicht lesen", "file", path, "error", err)
-			continue
+		if migriereFoto(pool, uploadDir, entry.Name()) {
+			migrated++
 		}
-
-		encryptedData, err := crypto.Encrypt(imgBytes)
-		if err != nil {
-			slog.Error("Konnte Bild nicht verschlüsseln", "file", path, "error", err)
-			continue
-		}
-
-		var studentID string
-		err = pool.QueryRow(context.Background(), "SELECT id FROM schueler WHERE barcode_id = $1", barcodeID).Scan(&studentID)
-		if err != nil {
-			if errorsIs(err, pgx.ErrNoRows) {
-				slog.Warn("Kein Schüler für Barcode gefunden (übersprungen)", "barcode", barcodeID)
-			} else {
-				slog.Error("DB Fehler beim Suchen des Schülers", "barcode", barcodeID, "error", err)
-			}
-			continue
-		}
-
-		query := `
-			INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
-			VALUES ($1, $2)
-			ON CONFLICT (schueler_id) DO UPDATE SET 
-				foto_encrypted = EXCLUDED.foto_encrypted,
-				aktualisiert_am = CURRENT_TIMESTAMP
-		`
-		_, err = pool.Exec(context.Background(), query, studentID, encryptedData)
-		if err != nil {
-			slog.Error("Fehler beim Einfügen in die Datenbank", "student_id", studentID, "error", err)
-			continue
-		}
-
-		slog.Info("Foto erfolgreich migriert", "barcode", barcodeID)
-		migrated++
 	}
 
 	fmt.Printf("Migration abgeschlossen. %d Fotos gefunden, %d erfolgreich migriert und verschlüsselt.\n", processed, migrated)
 	fmt.Println("Du kannst das Verzeichnis 'uploads/fotos' jetzt sicher löschen.")
+}
+
+// migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =
+// "<barcode>.jpg") in schueler_fotos. Liefert true bei Erfolg; Fehler und fehlende
+// Schüler werden protokolliert und mit false quittiert.
+func migriereFoto(pool *pgxpool.Pool, uploadDir, name string) bool {
+	barcodeID := strings.TrimSuffix(name, filepath.Ext(name))
+	path := filepath.Join(uploadDir, name)
+
+	imgBytes, err := os.ReadFile(path)
+	if err != nil {
+		slog.Error("Konnte Bild nicht lesen", "file", path, "error", err)
+		return false
+	}
+
+	encryptedData, err := crypto.Encrypt(imgBytes)
+	if err != nil {
+		slog.Error("Konnte Bild nicht verschlüsseln", "file", path, "error", err)
+		return false
+	}
+
+	var studentID string
+	err = pool.QueryRow(context.Background(), "SELECT id FROM schueler WHERE barcode_id = $1", barcodeID).Scan(&studentID)
+	if err != nil {
+		if errorsIs(err, pgx.ErrNoRows) {
+			slog.Warn("Kein Schüler für Barcode gefunden (übersprungen)", "barcode", barcodeID)
+		} else {
+			slog.Error("DB Fehler beim Suchen des Schülers", "barcode", barcodeID, "error", err)
+		}
+		return false
+	}
+
+	query := `
+		INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
+		VALUES ($1, $2)
+		ON CONFLICT (schueler_id) DO UPDATE SET
+			foto_encrypted = EXCLUDED.foto_encrypted,
+			aktualisiert_am = CURRENT_TIMESTAMP
+	`
+	_, err = pool.Exec(context.Background(), query, studentID, encryptedData)
+	if err != nil {
+		slog.Error("Fehler beim Einfügen in die Datenbank", "student_id", studentID, "error", err)
+		return false
+	}
+
+	slog.Info("Foto erfolgreich migriert", "barcode", barcodeID)
+	return true
 }
 
 func errorsIs(err error, target error) bool {

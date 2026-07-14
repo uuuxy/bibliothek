@@ -89,42 +89,13 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		// Begin transaction to ensure sequence and inserts are atomic
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer db.SafeRollback(ctx, tx)
-
-		// 1. Resolve master title details
-		titel, autor, ok := resolveOrderTitel(ctx, tx, w, req.TitelID)
+		barcodes, titel, autor, startNum, ok := s.reserviereVorabBarcodes(ctx, w, req)
 		if !ok {
 			return
 		}
 
-		// 2. Fetch the highest B-XXXXX barcode in the system using central repo
-		seqRepo := repository.NewSequenceRepository(tx)
-		startNum, err := seqRepo.GetNextSequence(ctx, "buecher_exemplare", "barcode_id", "B-")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 3. Register copies in DB (marked as not borrowable until delivery)
-		newBarcodes, err := insertVorabBarcodes(ctx, tx, req.TitelID, req.Menge, startNum)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 4. Generate printable PDF label sheets
-		labelItems := buildBarcodeLabels(newBarcodes, titel, autor)
+		// Generate printable PDF label sheets
+		labelItems := buildBarcodeLabels(barcodes, titel, autor)
 		pdf, err := GenerateLabelsPDF("zweckform_l4760", 1, false, labelItems)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -137,4 +108,44 @@ func (s *Server) SupplierOrderHandler() http.HandlerFunc {
 			log.Printf("Barcode: PDF streaming failure: %v", err)
 		}
 	}
+}
+
+// reserviereVorabBarcodes wickelt die gesamte Bestell-Transaktion ab (Titel prüfen,
+// B-Sequenz ziehen, Exemplare per CopyFrom anlegen, committen) und liefert die erzeugten
+// Barcodes samt Titeldaten. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
+func (s *Server) reserviereVorabBarcodes(ctx context.Context, w http.ResponseWriter, req OrderRequest) (barcodes []string, titel, autor string, startNum int, ok bool) {
+	// Begin transaction to ensure sequence and inserts are atomic
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, "", "", 0, false
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	// 1. Resolve master title details
+	titel, autor, ok = resolveOrderTitel(ctx, tx, w, req.TitelID)
+	if !ok {
+		return nil, "", "", 0, false
+	}
+
+	// 2. Fetch the highest B-XXXXX barcode in the system using central repo
+	seqRepo := repository.NewSequenceRepository(tx)
+	startNum, err = seqRepo.GetNextSequence(ctx, "buecher_exemplare", "barcode_id", "B-")
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, "", "", 0, false
+	}
+
+	// 3. Register copies in DB (marked as not borrowable until delivery)
+	barcodes, err = insertVorabBarcodes(ctx, tx, req.TitelID, req.Menge, startNum)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, "", "", 0, false
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, "", "", 0, false
+	}
+	return barcodes, titel, autor, startNum, true
 }
