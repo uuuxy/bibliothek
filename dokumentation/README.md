@@ -1,6 +1,6 @@
 # Bibliothek – Moderne Schulbibliotheks-Software
 
-Eine moderne, webbasierte Verwaltungssoftware für Schulbibliotheken. Das System ist speziell auf den Schulalltag optimiert und ermöglicht eine hocheffiziente Abwicklung von Buch- und Hardware-Ausleihen durch ein integriertes Barcode-Scanner-Konzept.
+Eine moderne, webbasierte Verwaltungssoftware für Schulbibliotheken. Das System ist speziell auf den Schulalltag optimiert und ermöglicht eine hocheffiziente Abwicklung von Buch- und Hardware-Ausleihen durch ein integriertes Barcode-Scanner-Konzept. 
 
 ---
 
