@@ -77,10 +77,11 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	}
 
 	// Löschung im Audit-Log vermerken
-	if err = r.insertAuditLog(ctx, tx, "buecher_titel", "DELETE", titleID,
-		&bearbeiterID, "USER", nil,
-		map[string]any{"titel": titel, "autor": autor, "isbn": isbn},
-	); err != nil {
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "buecher_titel", Aktion: "DELETE", DatensatzID: titleID,
+		BearbeiterID: &bearbeiterID, Akteur: "USER",
+		Details: map[string]any{"titel": titel, "autor": autor, "isbn": isbn},
+	}); err != nil {
 		return err
 	}
 
@@ -127,10 +128,11 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	}
 
 	kontext := "Buch ausgebuchen (Soft-Delete)"
-	if err = r.insertAuditLog(ctx, tx, "buecher_exemplare", "UPDATE", copyID,
-		&bearbeiterID, "USER", &kontext,
-		map[string]any{"barcode_id": barcode, "zustand_notiz": zustandNotiz, "titel_id": titelID, "titel": titel, "action": "soft_delete"},
-	); err != nil {
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: copyID,
+		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
+		Details: map[string]any{"barcode_id": barcode, "zustand_notiz": zustandNotiz, "titel_id": titelID, "titel": titel, "action": "soft_delete"},
+	}); err != nil {
 		return err
 	}
 
@@ -171,10 +173,11 @@ func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, e
 		details["benutzer_id"] = benutzerID
 	}
 
-	if err = r.insertAuditLog(ctx, tx, tabelle, aktion, exemplarID,
-		bearbeiterPtr, "USER", nil,
-		details,
-	); err != nil {
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: tabelle, Aktion: aktion, DatensatzID: exemplarID,
+		BearbeiterID: bearbeiterPtr, Akteur: "USER",
+		Details: details,
+	}); err != nil {
 		return err
 	}
 

@@ -23,7 +23,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string) (string, error)
 
 	// UpdateUser aktualisiert die Daten eines bestehenden Systembenutzers.
-	UpdateUser(ctx context.Context, id string, barcode *string, vorname, nachname, email, rolle string, aktiv bool) error
+	UpdateUser(ctx context.Context, p UpdateUserParams) error
 }
 
 // postgresUserRepo implementiert das UserRepository für PostgreSQL.
@@ -101,12 +101,23 @@ func (r *postgresUserRepo) CreateUser(ctx context.Context, barcode *string, vorn
 }
 
 // UpdateUser aktualisiert die Daten eines Benutzers.
-func (r *postgresUserRepo) UpdateUser(ctx context.Context, id string, barcode *string, vorname, nachname, email, rolle string, aktiv bool) error {
+// UpdateUserParams bündelt die aktualisierbaren Felder eines Benutzers.
+type UpdateUserParams struct {
+	ID       string
+	Barcode  *string
+	Vorname  string
+	Nachname string
+	Email    string
+	Rolle    string
+	Aktiv    bool
+}
+
+func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) error {
 	query := `
 		UPDATE benutzer
 		SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $7
 	`
-	_, err := r.pool.Exec(ctx, query, barcode, vorname, nachname, email, rolle, aktiv, id)
+	_, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID)
 	return err
 }

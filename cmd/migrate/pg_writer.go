@@ -203,27 +203,26 @@ func insertMedium(
 	}
 	titlesOK = 1
 
-	copiesOK = insertExemplare(ctx, tx, titelID, m, isbnRaw, erstelltAm, el, barcodeSeq)
+	copiesOK = insertExemplare(ctx, tx, exemplarInsert{TitelID: titelID, Medium: m, ISBNRaw: isbnRaw, ErstelltAm: erstelltAm}, el, barcodeSeq)
 	return titlesOK, copiesOK
 }
 
 // insertExemplare erzeugt und schreibt die Exemplar-Barcodes eines Titels. Ungültige
 // oder fehlschlagende Barcodes werden protokolliert und übersprungen. Der barcodeSeq-
 // Zähler wird um m.Anzahl weitergezählt.
-func insertExemplare(
-	ctx context.Context,
-	tx pgx.Tx,
-	titelID string,
-	m mysqlMedium,
-	isbnRaw string,
-	erstelltAm time.Time,
-	el *errLogger,
-	barcodeSeq *int,
-) (copiesOK int) {
-	barcodes := nextBarcodes(*barcodeSeq, m.Anzahl)
+// exemplarInsert bündelt die Daten eines Titels, dessen Exemplare geschrieben werden.
+type exemplarInsert struct {
+	TitelID    string
+	Medium     mysqlMedium
+	ISBNRaw    string
+	ErstelltAm time.Time
+}
+
+func insertExemplare(ctx context.Context, tx pgx.Tx, data exemplarInsert, el *errLogger, barcodeSeq *int) (copiesOK int) {
+	barcodes := nextBarcodes(*barcodeSeq, data.Medium.Anzahl)
 	for _, bc := range barcodes {
 		if !validateBarcode(bc) {
-			el.write(m.ID, isbnRaw, fmt.Sprintf("generierter Barcode ungültig: %s", bc))
+			el.write(data.Medium.ID, data.ISBNRaw, fmt.Sprintf("generierter Barcode ungültig: %s", bc))
 			continue
 		}
 		_, err := tx.Exec(ctx, `
@@ -231,13 +230,13 @@ func insertExemplare(
 				(titel_id, barcode_id, erworben_am, ist_ausleihbar,
 				 erweiterte_eigenschaften, erstellt_am)
 			VALUES ($1, $2, CURRENT_DATE, true, '{}', $3)
-		`, titelID, bc, erstelltAm)
+		`, data.TitelID, bc, data.ErstelltAm)
 		if err != nil {
-			el.write(m.ID, isbnRaw, fmt.Sprintf("INSERT exemplar barcode=%s: %v", bc, err))
+			el.write(data.Medium.ID, data.ISBNRaw, fmt.Sprintf("INSERT exemplar barcode=%s: %v", bc, err))
 			continue
 		}
 		copiesOK++
 	}
-	*barcodeSeq += m.Anzahl
+	*barcodeSeq += data.Medium.Anzahl
 	return copiesOK
 }

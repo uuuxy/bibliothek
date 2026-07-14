@@ -170,7 +170,10 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
 
-		if err := userRepo.UpdateUser(ctx, id, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole, req.Aktiv); err != nil {
+		if err := userRepo.UpdateUser(ctx, repository.UpdateUserParams{
+			ID: id, Barcode: barcode, Vorname: req.Vorname, Nachname: req.Nachname,
+			Email: req.Email, Rolle: dbEnumRole, Aktiv: req.Aktiv,
+		}); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
