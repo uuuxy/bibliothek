@@ -1,6 +1,9 @@
 #!/bin/bash
 # pre-push hook
 
+# Füge Go-Bin-Verzeichnis zum PATH hinzu, damit govulncheck immer gefunden wird
+export PATH="$PATH:$(go env GOPATH)/bin"
+
 # Farben für Output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
