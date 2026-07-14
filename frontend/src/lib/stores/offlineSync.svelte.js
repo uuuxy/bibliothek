@@ -68,7 +68,7 @@ function createOfflineSyncStore() {
 			}
 			return true;
 		} catch (err) {
-			// Network error
+			console.warn('Offline-Sync: Netzwerkfehler beim Batch-Versand:', err);
 			return false;
 		}
 	}

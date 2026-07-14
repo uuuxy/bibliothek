@@ -97,6 +97,7 @@ export function useBookAkte() {
 				alert(err.error || 'Fehler beim Löschen des Titels.');
 			}
 		} catch (e) {
+			console.error('Titel löschen fehlgeschlagen:', e);
 			alert('Netzwerkfehler beim Löschen des Titels.');
 		}
 	}

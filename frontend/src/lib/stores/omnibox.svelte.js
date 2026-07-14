@@ -116,7 +116,9 @@ export function createOmniboxStore() {
 		try {
 			const errData = JSON.parse(errStr);
 			if (errData.error) errStr = errData.error;
-		} catch (e) {}
+		} catch (e) {
+			console.debug('Fehlerantwort war kein JSON, nutze Rohtext:', e);
+		}
 
 		if (
 			res.status === 403 &&

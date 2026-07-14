@@ -25,7 +25,9 @@ export function playSoundSuccess() {
 			osc.start(ctx.currentTime + i * 0.08);
 			osc.stop(ctx.currentTime + i * 0.08 + 0.28);
 		});
-	} catch (e) {}
+	} catch (e) {
+		console.debug('Audio-Wiedergabe nicht möglich:', e);
+	}
 }
 
 export function playSoundError() {
@@ -42,7 +44,9 @@ export function playSoundError() {
 		gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.32);
 		osc.start(ctx.currentTime);
 		osc.stop(ctx.currentTime + 0.35);
-	} catch (e) {}
+	} catch (e) {
+		console.debug('Audio-Wiedergabe nicht möglich:', e);
+	}
 }
 
 export function playSuccessBeep() {
@@ -59,7 +63,9 @@ export function playSuccessBeep() {
 		gain.connect(ctx.destination);
 		osc.start();
 		osc.stop(ctx.currentTime + 0.1);
-	} catch (e) {}
+	} catch (e) {
+		console.debug('Audio-Wiedergabe nicht möglich:', e);
+	}
 }
 
 export function playErrorBeep() {
@@ -75,5 +81,7 @@ export function playErrorBeep() {
 		gain.connect(ctx.destination);
 		osc.start();
 		osc.stop(ctx.currentTime + 0.3);
-	} catch (e) {}
+	} catch (e) {
+		console.debug('Audio-Wiedergabe nicht möglich:', e);
+	}
 }
