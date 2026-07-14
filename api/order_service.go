@@ -207,15 +207,26 @@ func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req 
 
 // insertBestellpositionen schreibt alle Positionen des Bestellkopfs.
 func (s *OrderService) insertBestellpositionen(ctx context.Context, tx pgx.Tx, bestellungID string, positionen []bestellungPosition) error {
-	for _, pos := range positionen {
-		if _, err := tx.Exec(ctx, `
-			INSERT INTO bestellungen_positionen
-				(bestellung_id, titel_id, titel_name, isbn, menge, einzelpreis)
-			VALUES ($1, $2, $3, $4, $5, $6)`,
-			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
-		); err != nil {
-			return fmt.Errorf("position insert: %w", err)
-		}
+	if len(positionen) == 0 {
+		return nil
 	}
+
+	copyRows := make([][]any, 0, len(positionen))
+	for _, pos := range positionen {
+		copyRows = append(copyRows, []any{
+			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
+		})
+	}
+
+	// Use pgx.CopyFromRows to resolve N+1 queries when inserting multiple order positions
+	if _, err := tx.CopyFrom(
+		ctx,
+		pgx.Identifier{"bestellungen_positionen"},
+		[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis"},
+		pgx.CopyFromRows(copyRows),
+	); err != nil {
+		return fmt.Errorf("position bulk insert: %w", err)
+	}
+
 	return nil
 }
