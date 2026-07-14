@@ -1,3 +1,5 @@
+German/English (down below)
+
 # Bibliothek – Schulbibliotheks-Software
 
 Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterstützt die Abwicklung von Buch- und Hardware-Ausleihen mittels eines integrierten Barcode-Scanner-Konzepts.
