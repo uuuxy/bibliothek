@@ -51,19 +51,23 @@ func NewAuditRepository(db db.PgxPoolIface) AuditRepository {
 
 // insertAuditLog ist die zentrale Hilfsfunktion, die alle Logeinträge in die Tabelle `audit_log` schreibt.
 // Durch die Kapselung in einer Funktion wird ein konsistentes Datenbankschema und eine Append-Only-Semantik erzwungen.
-func (r *pgAuditRepository) insertAuditLog(
-	ctx context.Context,
-	tx pgx.Tx,
-	tabelle, aktion, datensatzID string,
-	bearbeiterID *string,
-	akteur string,
-	kontext *string,
-	details map[string]any,
-) error {
+// auditEntry bündelt die fachlichen Felder eines Audit-Log-Eintrags (ohne die
+// Infrastruktur-Parameter ctx/tx), damit insertAuditLog nicht neun Einzelargumente führt.
+type auditEntry struct {
+	Tabelle      string
+	Aktion       string
+	DatensatzID  string
+	BearbeiterID *string
+	Akteur       string
+	Kontext      *string
+	Details      map[string]any
+}
+
+func (r *pgAuditRepository) insertAuditLog(ctx context.Context, tx pgx.Tx, e auditEntry) error {
 	var detailsJSON []byte
-	if details != nil {
+	if e.Details != nil {
 		var err error
-		detailsJSON, err = json.Marshal(details)
+		detailsJSON, err = json.Marshal(e.Details)
 		if err != nil {
 			return fmt.Errorf("audit details serialization: %w", err)
 		}
@@ -75,8 +79,8 @@ func (r *pgAuditRepository) insertAuditLog(
 		VALUES ($1, $2, $3::uuid, $4, $5, $6, $7)
 	`
 	_, err := tx.Exec(ctx, q,
-		tabelle, aktion, datensatzID,
-		bearbeiterID, akteur, kontext,
+		e.Tabelle, e.Aktion, e.DatensatzID,
+		e.BearbeiterID, e.Akteur, e.Kontext,
 		func() interface{} {
 			if detailsJSON == nil {
 				return nil

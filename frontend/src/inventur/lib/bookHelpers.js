@@ -124,7 +124,7 @@ export function formatDate(dateString) {
 	if (!dateString) return null;
 	try {
 		const date = new Date(dateString);
-		if (isNaN(date.getTime())) return null;
+		if (Number.isNaN(date.getTime())) return null;
 		return new Intl.DateTimeFormat('de-DE', {
 			day: '2-digit',
 			month: '2-digit',

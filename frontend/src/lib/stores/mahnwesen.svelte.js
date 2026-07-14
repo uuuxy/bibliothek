@@ -26,7 +26,7 @@ function maxTageUeberfaellig(medien) {
  * @returns {string}
  */
 function berechneMahnstufe(schueler, maxTage) {
-	if (schueler.klasse && schueler.klasse.toLowerCase() === 'lehrer') {
+	if (schueler.klasse?.toLowerCase() === 'lehrer') {
 		return 'Lehrerkollegium';
 	}
 	if (maxTage > 14) return 'Mahnung';
@@ -132,14 +132,13 @@ export function createMahnwesenStore() {
 		selectedIds = s;
 	}
 
-	/** @param {boolean} selectAll */
-	function toggleSelectAll(selectAll) {
-		if (!selectAll) {
-			selectedIds = new SvelteSet();
-		} else {
-			const currentList = filteredSchueler();
-			selectedIds = new SvelteSet(currentList.map((/** @type {any} */ s) => s.schueler_id));
-		}
+	function selectAllSchueler() {
+		const currentList = filteredSchueler();
+		selectedIds = new SvelteSet(currentList.map((/** @type {any} */ s) => s.schueler_id));
+	}
+
+	function deselectAllSchueler() {
+		selectedIds = new SvelteSet();
 	}
 
 	/** Wrapper for bulk printing that supplies needed state context. */
@@ -204,7 +203,8 @@ export function createMahnwesenStore() {
 		fetchData,
 		toggleKlasse,
 		toggleSelect,
-		toggleSelectAll,
+		selectAllSchueler,
+		deselectAllSchueler,
 
 		// Expose mail store methods and state directly
 		get modalOpen() {

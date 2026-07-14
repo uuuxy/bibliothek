@@ -141,7 +141,15 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			return
 		}
 
-		res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, claims.UserID, string(claims.Rolle), req.OverrideBlock)
+		res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
+			Query:              req.Query,
+			ActiveStudentID:    req.ActiveStudentID,
+			ActiveTeacherID:    req.ActiveTeacherID,
+			ConfirmedChecklist: req.ConfirmedChecklist,
+			StaffID:            claims.UserID,
+			StaffRole:          string(claims.Rolle),
+			OverrideBlock:      req.OverrideBlock,
+		})
 
 		if err != nil {
 			status := mapServiceErrorToStatus(err)
@@ -227,7 +235,15 @@ func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.
 		return item
 	}
 
-	res, err := omniboxSvc.ProcessQuery(ctx, req.Query, req.ActiveStudentID, req.ActiveTeacherID, req.ConfirmedChecklist, userID, rolle, req.OverrideBlock)
+	res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
+		Query:              req.Query,
+		ActiveStudentID:    req.ActiveStudentID,
+		ActiveTeacherID:    req.ActiveTeacherID,
+		ConfirmedChecklist: req.ConfirmedChecklist,
+		StaffID:            userID,
+		StaffRole:          rolle,
+		OverrideBlock:      req.OverrideBlock,
+	})
 
 	status := http.StatusOK
 	if err != nil {

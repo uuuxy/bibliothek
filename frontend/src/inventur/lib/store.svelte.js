@@ -1,4 +1,4 @@
-import { apiFetch, apiClient } from '../../lib/apiFetch.js';
+import { apiFetch } from '../../lib/apiFetch.js';
 import { toastStore } from '../../lib/stores/toastStore.svelte.js';
 // src/lib/store.svelte.js
 

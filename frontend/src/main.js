@@ -33,9 +33,6 @@ Sentry.init({
 registerSW({ immediate: true });
 
 const target = document.getElementById('app');
-let app;
-if (target) {
-	app = mount(App, { target });
-}
+const app = target ? mount(App, { target }) : undefined;
 
 export default app;

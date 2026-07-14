@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
-import path from 'path';
+import path from 'node:path';
 
 export default defineConfig({
 	plugins: [svelte(), tailwindcss()],

@@ -56,6 +56,7 @@ export function useUnifiedInventory() {
 				errorMessage = 'Fehler beim Starten der Inventur.';
 			}
 		} catch (e) {
+			console.error('Inventur-Start fehlgeschlagen:', e);
 			errorMessage = 'Netzwerkfehler.';
 		}
 	}
@@ -97,6 +98,7 @@ export function useUnifiedInventory() {
 				};
 			}
 		} catch (e) {
+			console.error('Scan fehlgeschlagen:', e);
 			lastScan = {
 				success: false,
 				barcode: barcode,
@@ -125,6 +127,7 @@ export function useUnifiedInventory() {
 				alert('Fehler beim Abschließen der Inventur.');
 			}
 		} catch (e) {
+			console.error('Inventur-Abschluss fehlgeschlagen:', e);
 			alert('Netzwerkfehler.');
 		}
 	}

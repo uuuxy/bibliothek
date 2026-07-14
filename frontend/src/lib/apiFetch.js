@@ -81,7 +81,7 @@ export async function apiFetch(url, options = {}) {
 		const token = await ensureCsrfToken();
 		if (token) {
 			options.headers = {
-				.../** @type {Record<string, string>} */ (options.headers || {}),
+				.../** @type {Record<string, string>} */ (options.headers),
 				'X-CSRF-Token': token
 			};
 		}
@@ -94,8 +94,13 @@ export async function apiFetch(url, options = {}) {
 	// arbeitete. Sie bekommen daher großzügige 5 Minuten (abgestimmt auf Caddys
 	// response_header_timeout). Aufrufer können per options.timeoutMs überschreiben.
 	const isUpload = typeof FormData !== 'undefined' && options.body instanceof FormData;
-	const timeoutMs =
-		options.timeoutMs ?? (isUpload ? 300000 : MUTATION_METHODS.has(method) ? 10000 : 15000);
+	let defaultTimeout = 15000;
+	if (isUpload) {
+		defaultTimeout = 300000;
+	} else if (MUTATION_METHODS.has(method)) {
+		defaultTimeout = 10000;
+	}
+	const timeoutMs = options.timeoutMs ?? defaultTimeout;
 	delete options.timeoutMs;
 	const controller = new AbortController();
 	const id = setTimeout(() => controller.abort(), timeoutMs);

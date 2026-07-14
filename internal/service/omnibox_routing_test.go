@@ -44,7 +44,7 @@ func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 		}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), "20240001737", nil, nil, false, "staff", "admin", false)
+	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "20240001737", StaffID: "staff", StaffRole: "admin"})
 	if err != nil {
 		t.Fatalf("ProcessQuery: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestProcessQuery_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 
-	res, err := svc.ProcessQuery(context.Background(), "gibtesnicht", nil, nil, false, "staff", "admin", false)
+	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "gibtesnicht", StaffID: "staff", StaffRole: "admin"})
 	if err != nil {
 		t.Fatalf("ProcessQuery: %v", err)
 	}

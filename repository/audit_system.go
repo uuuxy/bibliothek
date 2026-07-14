@@ -34,15 +34,16 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 	}
 
 	kontext := "Gebühr storniert"
-	if err = r.insertAuditLog(ctx, tx, "schadensfaelle", "STORNIERUNG", schadensfallID,
-		&bearbeiterID, "USER", &kontext,
-		map[string]any{
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
+		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
+		Details: map[string]any{
 			"betrag":        betrag,
 			"grund":         grund,
 			"storniert_am":  time.Now().UTC().Format(time.RFC3339),
 			"bearbeiter_id": bearbeiterID,
 		},
-	); err != nil {
+	}); err != nil {
 		return fmt.Errorf("writing audit log: %w", err)
 	}
 
@@ -61,9 +62,10 @@ func (r *pgAuditRepository) LogSystemAktion(ctx context.Context, tabelle string,
 	// Systemaktionen verwenden eine Standard-Null-UUID als Datensatz-ID
 	const systemSentinelID = "00000000-0000-0000-0000-000000000000"
 
-	if err = r.insertAuditLog(ctx, tx, tabelle, aktion, systemSentinelID,
-		nil, "SYSTEM", &kontext, details,
-	); err != nil {
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: tabelle, Aktion: aktion, DatensatzID: systemSentinelID,
+		Akteur: "SYSTEM", Kontext: &kontext, Details: details,
+	}); err != nil {
 		return err
 	}
 

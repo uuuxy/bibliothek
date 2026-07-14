@@ -33,10 +33,11 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 		return err
 	}
 
-	if err = r.insertAuditLog(ctx, tx, "benutzer", "DELETE", userID,
-		&bearbeiterID, "USER", nil,
-		map[string]any{"vorname": vorname, "nachname": nachname, "email": email, "rolle": rolle},
-	); err != nil {
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "benutzer", Aktion: "DELETE", DatensatzID: userID,
+		BearbeiterID: &bearbeiterID, Akteur: "USER",
+		Details: map[string]any{"vorname": vorname, "nachname": nachname, "email": email, "rolle": rolle},
+	}); err != nil {
 		return err
 	}
 
@@ -91,9 +92,10 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	kontext := "Soft-Delete Routine"
 
 	// Protokolleintrag schreiben
-	if err = r.insertAuditLog(ctx, tx, "schueler", "UPDATE", studentID,
-		bearbeiterPtr, akteur, &kontext,
-		map[string]any{
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "schueler", Aktion: "UPDATE", DatensatzID: studentID,
+		BearbeiterID: bearbeiterPtr, Akteur: akteur, Kontext: &kontext,
+		Details: map[string]any{
 			"vorname":        vorname,
 			"nachname":       nachname,
 			"klasse":         klasse,
@@ -103,7 +105,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 			"geloescht_am":   time.Now().UTC().Format(time.RFC3339),
 			"action":         "soft_delete",
 		},
-	); err != nil {
+	}); err != nil {
 		return fmt.Errorf("writing audit log: %w", err)
 	}
 

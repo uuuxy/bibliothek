@@ -7,14 +7,17 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
+// labelPos ist die linke obere Ecke eines Etiketts auf der Seite.
+type labelPos struct{ X, Y float64 }
+
 // zeichneQRLabel rendert ein Etikett mit QR-Code (Titel, Autor, QR, Barcode-Text).
-func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel, autor string, x, y float64) {
+func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel, autor string, pos labelPos) {
 	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(x+2, y+3)
+	pdf.SetXY(pos.X+2, pos.Y+3)
 	pdf.Cell(format.LabelWidth-4, 4, tr(titel))
 
 	pdf.SetFont("Arial", "", 7)
-	pdf.SetXY(x+2, y+7)
+	pdf.SetXY(pos.X+2, pos.Y+7)
 	pdf.Cell(format.LabelWidth-4, 4, tr(autor))
 
 	// Generate dynamic QR code PNG
@@ -26,32 +29,32 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 		if format.LabelHeight < 30 {
 			qrSize = 12.0 // scale down for smaller labels like standard_52
 		}
-		qrX := x + (format.LabelWidth-qrSize)/2
-		qrY := y + 11.0
+		qrX := pos.X + (format.LabelWidth-qrSize)/2
+		qrY := pos.Y + 11.0
 		if format.LabelHeight < 30 {
-			qrY = y + 8.0
+			qrY = pos.Y + 8.0
 		}
 		pdf.Image(item.BarcodeID, qrX, qrY, qrSize, qrSize, false, "", 0, "")
 	}
 
 	// Barcode text
 	pdf.SetFont("Arial", "B", 8)
-	textY := y + 28
+	textY := pos.Y + 28
 	if format.LabelHeight < 30 {
-		textY = y + 21
+		textY = pos.Y + 21
 	}
-	pdf.SetXY(x+2, textY)
+	pdf.SetXY(pos.X+2, textY)
 	pdf.CellFormat(format.LabelWidth-4, 4, tr(item.BarcodeID), "", 0, "C", false, 0, "")
 }
 
 // zeichneBarcodeLabel rendert ein Etikett mit 1D-Barcode (Code39/Code128).
-func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel string, x, y float64) {
+func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel string, pos labelPos) {
 	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(x, y+4)
+	pdf.SetXY(pos.X, pos.Y+4)
 	pdf.CellFormat(format.LabelWidth, 4, tr("Schulbibliothek"), "", 0, "C", false, 0, "")
 
 	pdf.SetFont("Arial", "", 8)
-	pdf.SetXY(x, y+8)
+	pdf.SetXY(pos.X, pos.Y+8)
 	pdf.CellFormat(format.LabelWidth, 4, tr(titel), "", 0, "C", false, 0, "")
 
 	bcWidth := 40.0
@@ -68,17 +71,17 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 		opt := gofpdf.ImageOptions{ImageType: "PNG"}
 		pdf.RegisterImageOptionsReader(imgName, opt, imgReader)
 
-		bcX := x + (format.LabelWidth-bcWidth)/2
-		bcY := y + 14
+		bcX := pos.X + (format.LabelWidth-bcWidth)/2
+		bcY := pos.Y + 14
 		pdf.ImageOptions(imgName, bcX, bcY, bcWidth, bcHeight, false, opt, 0, "")
 	}
 
 	pdf.SetFont("Courier", "B", 10)
-	textY := y + 26
+	textY := pos.Y + 26
 	if format.LabelHeight < 30 {
-		textY = y + 23
+		textY = pos.Y + 23
 	}
-	pdf.SetXY(x, textY)
+	pdf.SetXY(pos.X, textY)
 	pdf.CellFormat(format.LabelWidth, 4, tr(item.BarcodeID), "", 0, "C", false, 0, "")
 }
 
@@ -131,9 +134,9 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Ba
 		}
 
 		if isQR {
-			zeichneQRLabel(pdf, tr, format, item, titel, autor, x, y)
+			zeichneQRLabel(pdf, tr, format, item, titel, autor, labelPos{X: x, Y: y})
 		} else {
-			zeichneBarcodeLabel(pdf, tr, format, item, titel, x, y)
+			zeichneBarcodeLabel(pdf, tr, format, item, titel, labelPos{X: x, Y: y})
 		}
 	}
 

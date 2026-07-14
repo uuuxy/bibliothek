@@ -1,6 +1,53 @@
-import { loadQueue, peekOfflineAction, dequeueOfflineAction } from '../offlineQueue.js';
+import { loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
 import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
+
+// Baut das Batch-Payload; nur Checkouts mit Schüler-ID tragen active_student_id.
+function baueBatchPayload(batchItems) {
+	return batchItems.map((item) => {
+		const req = {
+			query: item.barcode_id,
+			idempotency_key: item.id
+		};
+		if (item.action_type === 'checkout' && item.schueler_id) {
+			req.active_student_id = item.schueler_id;
+		}
+		return req;
+	});
+}
+
+// Bucht je Item aus, wenn der Server Erfolg oder einen permanenten 4xx-Fehler
+// (außer 429 Too Many Requests) meldet.
+async function verarbeiteBatchErgebnisse(data, batchItems) {
+	for (let i = 0; i < batchItems.length; i++) {
+		const item = batchItems[i];
+		const result = data.results?.find((r) => r.index === i);
+
+		// Dequeue on success, on a permanent client error (4xx except 429), or as
+		// failsafe when the backend returned no index for this item (overall 200 OK).
+		if (
+			!result ||
+			result.success ||
+			(result.status >= 400 && result.status < 500 && result.status !== 429)
+		) {
+			await dequeueOfflineAction(item.id);
+		}
+	}
+}
+
+async function exportQueueAsJSON() {
+	const q = await loadQueue();
+	if (q.length === 0) return;
+	const blob = new Blob([JSON.stringify(q, null, 2)], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = `offline_scans_backup_${new Date().toISOString().slice(0, 10)}.json`;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	URL.revokeObjectURL(url);
+}
 
 function createOfflineSyncStore() {
 	let pendingCount = $state(0);
@@ -10,40 +57,6 @@ function createOfflineSyncStore() {
 	async function updateCount() {
 		const q = await loadQueue();
 		pendingCount = q.length;
-	}
-
-	// Baut das Batch-Payload; nur Checkouts mit Schüler-ID tragen active_student_id.
-	function baueBatchPayload(batchItems) {
-		return batchItems.map((item) => {
-			const req = {
-				query: item.barcode_id,
-				idempotency_key: item.id
-			};
-			if (item.action_type === 'checkout' && item.schueler_id) {
-				req.active_student_id = item.schueler_id;
-			}
-			return req;
-		});
-	}
-
-	// Bucht je Item aus, wenn der Server Erfolg oder einen permanenten 4xx-Fehler
-	// (außer 429 Too Many Requests) meldet.
-	async function verarbeiteBatchErgebnisse(data, batchItems) {
-		for (let i = 0; i < batchItems.length; i++) {
-			const item = batchItems[i];
-			const result = data.results?.find((r) => r.index === i);
-
-			// Dequeue if successful, or if server rejected with a permanent client error (4xx) except Too Many Requests (429)
-			if (
-				result &&
-				(result.success || (result.status >= 400 && result.status < 500 && result.status !== 429))
-			) {
-				await dequeueOfflineAction(item.id);
-			} else if (!result) {
-				// Failsafe: if backend doesn't return an index for some reason but 200 OK overall
-				await dequeueOfflineAction(item.id);
-			}
-		}
 	}
 
 	// Verschickt einen Batch und verarbeitet dessen Ergebnisse. Liefert false, wenn der
@@ -68,7 +81,7 @@ function createOfflineSyncStore() {
 			}
 			return true;
 		} catch (err) {
-			// Network error
+			console.warn('Offline-Sync: Netzwerkfehler beim Batch-Versand:', err);
 			return false;
 		}
 	}
@@ -98,20 +111,6 @@ function createOfflineSyncStore() {
 			playSoundSuccess();
 		}
 		isSyncing = false;
-	}
-
-	async function exportQueueAsJSON() {
-		const q = await loadQueue();
-		if (q.length === 0) return;
-		const blob = new Blob([JSON.stringify(q, null, 2)], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `offline_scans_backup_${new Date().toISOString().slice(0, 10)}.json`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
 	}
 
 	async function importQueueFromJSON(file) {

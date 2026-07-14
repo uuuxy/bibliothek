@@ -133,6 +133,7 @@ export function useStudentProfile() {
 				alert(err.error || 'Fehler beim Melden.');
 			}
 		} catch (e) {
+			console.error('Schaden melden fehlgeschlagen:', e);
 			alert('Netzwerkfehler.');
 		} finally {
 			isSubmittingDamage = false;

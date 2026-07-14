@@ -6,6 +6,17 @@ import { playSoundSuccess, playSoundError } from '../audio.js';
 import { enqueueOfflineAction } from '../offlineQueue.js';
 import { offlineSync } from './offlineSync.svelte.js';
 
+// Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
+function formatVorbesitzerName(data) {
+	if (data.vorbesitzer) {
+		return `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`;
+	}
+	if (data.vorbesitzer_user) {
+		return `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
+	}
+	return 'unbekannt';
+}
+
 export function createOmniboxStore() {
 	let activeStudent = $state(/** @type {any} */ (null));
 	let activeTeacher = $state(/** @type {any} */ (null));
@@ -116,7 +127,9 @@ export function createOmniboxStore() {
 		try {
 			const errData = JSON.parse(errStr);
 			if (errData.error) errStr = errData.error;
-		} catch (e) {}
+		} catch (e) {
+			console.debug('Fehlerantwort war kein JSON, nutze Rohtext:', e);
+		}
 
 		if (
 			res.status === 403 &&
@@ -131,17 +144,6 @@ export function createOmniboxStore() {
 		throw new Error(errStr || 'Aktion fehlgeschlagen');
 	}
 
-	// Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
-	function formatVorbesitzerName(data) {
-		if (data.vorbesitzer) {
-			return `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`;
-		}
-		if (data.vorbesitzer_user) {
-			return `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
-		}
-		return 'unbekannt';
-	}
-
 	// Fremdes Buch in aktiver Sitzung: NUR beim Vorbesitzer ausgebucht — bewusst kein
 	// automatisches Umbuchen. Info ohne Unterbrechung; erneuter Scan leiht es an die
 	// aktive Sitzung aus.
@@ -152,8 +154,9 @@ export function createOmniboxStore() {
 		const prevName = formatVorbesitzerName(data);
 		lastFremdrueckgabe = { vorbesitzerName: prevName };
 		const aktiv = activeTeacher?.vorname || activeStudent?.vorname;
+		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
 		showToast(
-			`⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : ''}`,
+			`⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
 			'warning'
 		);
 	}
