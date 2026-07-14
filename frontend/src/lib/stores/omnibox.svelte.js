@@ -154,8 +154,9 @@ export function createOmniboxStore() {
 		const prevName = formatVorbesitzerName(data);
 		lastFremdrueckgabe = { vorbesitzerName: prevName };
 		const aktiv = activeTeacher?.vorname || activeStudent?.vorname;
+		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
 		showToast(
-			`⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : ''}`,
+			`⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
 			'warning'
 		);
 	}

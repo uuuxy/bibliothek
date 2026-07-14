@@ -25,7 +25,7 @@ export function useMahnwesenPdf() {
 			const ausleihIds = [];
 			for (const schuelerId of selectedIds) {
 				const s = currentList.find(/** @type {any} */ (x) => x.schueler_id === schuelerId);
-				if (s && s.medien) {
+				if (s?.medien) {
 					for (const m of s.medien) {
 						if (m.ausleihe_id) ausleihIds.push(m.ausleihe_id);
 					}

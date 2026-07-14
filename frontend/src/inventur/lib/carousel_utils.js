@@ -16,7 +16,7 @@ export function scrollCarousel(event, direction) {
  */
 export function scrollHandler(node) {
 	const checkScroll = () => {
-		if (!node || !node.parentElement) return;
+		if (!node?.parentElement) return;
 		const canScrollLeft = node.scrollLeft > 0;
 		// Use a margin of 2px to prevent float rounding issues
 		const canScrollRight = Math.ceil(node.scrollLeft + node.clientWidth) < node.scrollWidth - 2;

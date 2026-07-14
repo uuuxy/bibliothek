@@ -26,7 +26,7 @@ function maxTageUeberfaellig(medien) {
  * @returns {string}
  */
 function berechneMahnstufe(schueler, maxTage) {
-	if (schueler.klasse && schueler.klasse.toLowerCase() === 'lehrer') {
+	if (schueler.klasse?.toLowerCase() === 'lehrer') {
 		return 'Lehrerkollegium';
 	}
 	if (maxTage > 14) return 'Mahnung';

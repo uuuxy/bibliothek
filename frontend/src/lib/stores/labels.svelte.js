@@ -19,9 +19,11 @@ export function createLabelStore() {
 	let startPosition = $state(1); // 1 to 21
 
 	let formatId = $state('avery_3475'); // Default format
-	let maxPositions = $derived(
-		formatId === 'standard_52' ? 52 : formatId === 'avery_3475' ? 24 : 21
-	);
+	let maxPositions = $derived.by(() => {
+		if (formatId === 'standard_52') return 52;
+		if (formatId === 'avery_3475') return 24;
+		return 21;
+	});
 	let generationMode = $state('existing');
 	let existingCopies = $state.raw(/** @type {any[]} */ ([]));
 	let loadingCopies = $state(false);
@@ -74,7 +76,7 @@ export function createLabelStore() {
 			const res = await apiFetch('/api/class-books');
 			if (res.ok) {
 				const body = await res.json();
-				if (body && body.data) {
+				if (body?.data) {
 					classGroups = body.data;
 				}
 			}

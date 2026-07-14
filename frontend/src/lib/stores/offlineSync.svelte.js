@@ -33,14 +33,13 @@ function createOfflineSyncStore() {
 			const item = batchItems[i];
 			const result = data.results?.find((r) => r.index === i);
 
-			// Dequeue if successful, or if server rejected with a permanent client error (4xx) except Too Many Requests (429)
+			// Dequeue on success, on a permanent client error (4xx except 429), or as
+			// failsafe when the backend returned no index for this item (overall 200 OK).
 			if (
-				result &&
-				(result.success || (result.status >= 400 && result.status < 500 && result.status !== 429))
+				!result ||
+				result.success ||
+				(result.status >= 400 && result.status < 500 && result.status !== 429)
 			) {
-				await dequeueOfflineAction(item.id);
-			} else if (!result) {
-				// Failsafe: if backend doesn't return an index for some reason but 200 OK overall
 				await dequeueOfflineAction(item.id);
 			}
 		}
