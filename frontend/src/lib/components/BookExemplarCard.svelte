@@ -162,6 +162,7 @@
 						{:else}
 							<button
 								title="Barcode zuweisen/ändern"
+								aria-label="Barcode zuweisen oder ändern"
 								class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1"
 								onclick={(e) => {
 									e.stopPropagation();
