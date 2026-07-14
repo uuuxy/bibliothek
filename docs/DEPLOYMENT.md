@@ -1,107 +1,107 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-06-24
+> Last updated: 2026-06-24
 
 ---
 
-## Übersicht
+## Overview
 
-Das System besteht aus:
-- **Go-Backend** (Port 8083 Produktion / 8084 lokal)
+The system consists of:
+- **Go Backend** (Port 8083 production / 8084 local)
 - **PostgreSQL 15/16**
-- **Caddy** als Reverse-Proxy (TLS-Terminierung)
-- **Docker Compose** als Orchestrierung
+- **Caddy** as Reverse-Proxy (TLS termination)
+- **Docker Compose** as orchestration
 
 ---
 
-## 1. Umgebungsvariablen (Pflicht)
+## 1. Environment Variables (Required)
 
-Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in die `.env` des Repos committen.**
+All secrets are provided via environment variables. **Never commit secrets to the `.env` of the repo.**
 
-| Variable | Beschreibung | Anforderung |
+| Variable | Description | Requirement |
 |---|---|---|
-| `DATABASE_URL` | PostgreSQL-DSN | Pflicht |
-| `JWT_SECRET` | HMAC-Signatur-Schlüssel | Pflicht, ≥ 32 Zeichen |
-| `APP_ENCRYPTION_KEY` | AES-256-Schlüssel für Schülerfotos | Pflicht, genau 32 Bytes |
-| `APP_ENV` | Umgebung (`production` / `local`) — steuert Cookie-Secure & Swagger | Standard: `production` |
-| `ENFORCE_PROD_SECRETS` | Harte Start-Verweigerung bei Default-Secrets | Standard: `false` (Testphase) |
-| `COOKIE_SECURE` | `true` hinter TLS-Proxy (Caddy) | Standard: `false` |
-| `PORT` | HTTP-Port des Backends | Pflicht |
-| `SMTP_HOST` | SMTP-Server | Optional (Mahnwesen) |
-| `SMTP_PORT` | SMTP-Port | Standard: 587 |
-| `SMTP_USER` | SMTP-Benutzername | Optional |
-| `SMTP_PASSWORD` | SMTP-Passwort | Optional |
-| `SMTP_FROM` | Absender-Adresse | Optional |
-| `SMTP_ALLOW_INSECURE_TLS` | TLS-Zertifikatsprüfung deaktivieren | Nur für Legacy-SMTP-Server |
-| `INITIAL_ADMIN_EMAIL` | E-Mail des initialen Admins | Standard: pflasch@philipp-reis-schule.de |
+| `DATABASE_URL` | PostgreSQL DSN | Required |
+| `JWT_SECRET` | HMAC signature key | Required, ≥ 32 characters |
+| `APP_ENCRYPTION_KEY` | AES-256 key for student photos | Required, exactly 32 bytes |
+| `APP_ENV` | Environment (`production` / `local`) — controls Cookie-Secure & Swagger | Default: `production` |
+| `ENFORCE_PROD_SECRETS` | Hard start-refusal with default secrets | Default: `false` (Testing phase) |
+| `COOKIE_SECURE` | `true` behind TLS proxy (Caddy) | Default: `false` |
+| `PORT` | HTTP port of the backend | Required |
+| `SMTP_HOST` | SMTP server | Optional (Dunning process) |
+| `SMTP_PORT` | SMTP port | Default: 587 |
+| `SMTP_USER` | SMTP username | Optional |
+| `SMTP_PASSWORD` | SMTP password | Optional |
+| `SMTP_FROM` | Sender address | Optional |
+| `SMTP_ALLOW_INSECURE_TLS` | Disable TLS certificate check | Only for legacy SMTP servers |
+| `INITIAL_ADMIN_EMAIL` | Email of the initial admin | Default: pflasch@philipp-reis-schule.de |
 | `SENTRY_DSN` | Sentry Error Tracking | Optional |
 
 ---
 
-## 2. Produktions-Deployment (Hetzner/Docker)
+## 2. Production Deployment (Hetzner/Docker)
 
-### 2.1 `.env`-Datei anlegen
+### 2.1 Create `.env` file
 
-Auf dem Server eine `.env`-Datei (nicht im Repo) anlegen:
+Create a `.env` file on the server (not in the repo):
 
 ```bash
 # /opt/bibliothek/.env
-POSTGRES_PASSWORD=<sicheres-passwort>
-JWT_SECRET=<mindestens-32-zeichen-geheimes-jwt-secret>
-APP_ENCRYPTION_KEY=<genau-32-bytes-aes-schluessel>
+POSTGRES_PASSWORD=<secure-password>
+JWT_SECRET=<at-least-32-chars-secret-jwt-key>
+APP_ENCRYPTION_KEY=<exactly-32-bytes-aes-key>
 APP_ENV=production
-ENFORCE_PROD_SECRETS=true   # erst beim echten Prod-Deploy scharf schalten
+ENFORCE_PROD_SECRETS=true   # enable only for real prod deploy
 COOKIE_SECURE=true
 SMTP_HOST=smtp.example.com
 SMTP_USER=user@example.com
-SMTP_PASSWORD=<smtp-passwort>
+SMTP_PASSWORD=<smtp-password>
 SMTP_FROM=bibliothek@schule.de
 ```
 
-### 2.2 Secret Guard (per Schalter einschaltbar)
+### 2.2 Secret Guard (Toggleable)
 
-Die harte Start-Verweigerung ist von `APP_ENV` **entkoppelt** und wird über den dedizierten Schalter `ENFORCE_PROD_SECRETS` gesteuert:
+The hard start-refusal is **decoupled** from `APP_ENV` and is controlled via the dedicated switch `ENFORCE_PROD_SECRETS`:
 
-| Phase | `ENFORCE_PROD_SECRETS` | Verhalten |
+| Phase | `ENFORCE_PROD_SECRETS` | Behavior |
 |---|---|---|
-| Test-/Pilotbetrieb | `false` (Standard) | Stack startet auch mit Default-Secrets — bequemes Testen |
-| Echter Prod-Deploy | `true` | Server **verweigert den Start**, wenn ein bekannter Default für `JWT_SECRET` oder `APP_ENCRYPTION_KEY` aktiv ist |
+| Test/Pilot operation | `false` (Default) | Stack starts even with default secrets — comfortable testing |
+| Real Prod Deploy | `true` | Server **refuses to start** if a known default for `JWT_SECRET` or `APP_ENCRYPTION_KEY` is active |
 
-> **Warum entkoppelt von `APP_ENV`?** `APP_ENV=local` würde gleichzeitig das Cookie-`Secure`-Flag deaktivieren und die Swagger-Docs öffentlich freischalten — auf einem über das Internet erreichbaren Test-Server unerwünscht. Mit `ENFORCE_PROD_SECRETS` bleibt `APP_ENV=production` (sichere Cookies, kein Swagger), während die Secret-Härtung unabhängig davon ein-/ausgeschaltet wird.
+> **Why decoupled from `APP_ENV`?** `APP_ENV=local` would simultaneously deactivate the cookie `Secure` flag and publicly expose the Swagger docs — undesirable on an internet-accessible test server. With `ENFORCE_PROD_SECRETS`, `APP_ENV=production` remains (secure cookies, no Swagger), while secret hardening can be toggled independently.
 
-Fehlermeldung bei `ENFORCE_PROD_SECRETS=true` + Default-Secret:
+Error message with `ENFORCE_PROD_SECRETS=true` + Default Secret:
 ```
-FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes
-JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.
+FATAL: JWT_SECRET uses a known default value. Set your own secret
+JWT_SECRET (≥32 chars) — or ENFORCE_PROD_SECRETS=false during the testing phase.
 ```
 
-**Checkliste vor dem ersten echten Prod-Deploy:** `ENFORCE_PROD_SECRETS=true` setzen und dazu echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS).
+**Checklist before the first real Prod Deploy:** Set `ENFORCE_PROD_SECRETS=true` and provide real values for `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD` as well as `COOKIE_SECURE=true` (behind Caddy HTTPS).
 
-### 2.3 Docker Compose starten
+### 2.3 Start Docker Compose
 
 ```bash
-cd /pfad/zur/bibliothek
+cd /path/to/bibliothek
 docker compose --env-file .env up -d --build
 ```
 
-`docker-compose.yml` liefert für alle Secrets bequeme Defaults (`${VAR:-…}`), damit der Stack in der Testphase ohne weitere Konfiguration startet. Die Produktions-Absicherung übernimmt der Code-Guard (`ENFORCE_PROD_SECRETS=true`), nicht die Compose-Datei.
+`docker-compose.yml` provides convenient defaults for all secrets (`${VAR:-…}`) so the stack starts during the testing phase without further configuration. Production security is handled by the code guard (`ENFORCE_PROD_SECRETS=true`), not the compose file.
 
-### 2.4 Deployment-Skript
+### 2.4 Deployment Script
 
-Das Skript `scripts/deploy.sh` automatisiert den Prozess:
+The script `scripts/deploy.sh` automates the process:
 ```bash
 ./scripts/deploy.sh
 ```
 
-Führt aus: `git pull` → `docker compose up -d --build` → ggf. Caddy-Neuladung.
+Executes: `git pull` → `docker compose up -d --build` → reload Caddy if necessary.
 
 ---
 
 ## 3. Caddy Reverse Proxy
 
-Bibliothek läuft hinter Caddy als TLS-Proxy im Docker-Netzwerk `caddy_global_net`.
+Bibliothek runs behind Caddy as a TLS proxy in the Docker network `caddy_global_net`.
 
-### Caddyfile-Eintrag
+### Caddyfile entry
 ```caddyfile
 flasch3.herzog-dupont.de {
     reverse_proxy bibliothek-backend:8083
@@ -110,18 +110,18 @@ flasch3.herzog-dupont.de {
 
 ### Zero-Downtime Reload
 ```bash
-# Wenn Caddy als Docker-Container läuft:
+# If Caddy runs as a Docker container:
 docker exec caddy caddy reload -c /etc/caddy/Caddyfile
 
-# Wenn Caddy als systemd-Dienst läuft:
+# If Caddy runs as a systemd service:
 systemctl reload caddy
 ```
 
-**Wichtig:** `restart` statt `reload` würde aktive Verbindungen anderer Dienste kappen.
+**Important:** `restart` instead of `reload` would sever active connections of other services.
 
 ---
 
-## 4. Lokale Entwicklung (docker-compose.local.yml)
+## 4. Local Development (docker-compose.local.yml)
 
 ```bash
 docker compose -f docker-compose.local.yml up -d
@@ -129,73 +129,65 @@ docker compose -f docker-compose.local.yml up -d
 
 - Backend: `http://localhost:8084`
 - PostgreSQL: `localhost:5434`
-- `APP_ENV=local` → Default-Secrets aus `docker-compose.local.yml` sind erlaubt
-- `COOKIE_SECURE=false` → kein TLS nötig
+- `APP_ENV=local` → Default secrets from `docker-compose.local.yml` are allowed
+- `COOKIE_SECURE=false` → no TLS needed
 
-Die lokale Compose-Datei enthält bereits gültige Entwicklungs-Secrets (≥32 Zeichen), die bewusst im Repo liegen dürfen — sie gelten **nur** für `APP_ENV=local`.
+The local compose file already contains valid development secrets (≥32 chars), which are intentionally allowed in the repo — they apply **only** for `APP_ENV=local`.
 
 ---
 
-## 5. Datenbank-Migrationen
+## 5. Database Migrations
 
-Migrationen laufen **automatisch beim Serverstart** (`database.RunMigrations`). Manuelles Eingreifen ist nur bei Problemen nötig.
+Migrations run **automatically on server start** (`database.RunMigrations`). Manual intervention is only necessary in case of problems.
 
-### Migrations-Verzeichnis: `migrations/`
+### Migration Directory: `migrations/`
 
-| Datei | Inhalt |
+| File | Content |
 |---|---|
-| `030_ziel_jahrgang.sql` | LMF-Mehrstufenfristen; idempotent (beide Fälle: Spalte existiert / existiert nicht) |
-| `032_reconcile_titel_columns.sql` | Idempotente Angleichung aller `buecher_titel`-Spalten (behebt Schema-Drift aus alten Deployments) |
-| `033_unique_active_loan.sql` | Dedup bestehender Duplikate + Unique-Partial-Indizes für aktive Ausleihen |
+| `030_ziel_jahrgang.sql` | LMF multi-level deadlines; idempotent (both cases: column exists / does not exist) |
+| `032_reconcile_titel_columns.sql` | Idempotent alignment of all `buecher_titel` columns (fixes schema drift from old deployments) |
+| `033_unique_active_loan.sql` | Deduplication of existing duplicates + unique partial indices for active loans |
 
-### Neue Migration hinzufügen
-1. Datei `migrations/NNN_beschreibung.sql` anlegen (NNN = nächste Nummer, kein Namenskonflikt)
-2. Hash in `schema.sql` unter `schema_migrations` eintragen (wird beim nächsten Start automatisch geprüft)
+### Add a new migration
+1. Create file `migrations/NNN_description.sql` (NNN = next number, no name conflict)
+2. Add hash in `schema.sql` under `schema_migrations` (will be checked automatically on next start)
 
 ---
 
 ## 6. Backup & Recovery
 
-Automatischer Backup-Cronjob täglich um 02:30 Uhr (konfigurierbar in `jobs/cron.go`):
+Automatic backup cronjob daily at 02:30 AM (configurable in `jobs/cron.go`):
 
 ```
-pg_dump → gzip → AES-GCM-Verschlüsselung (Zufalls-Nonce) → 0600 auf Disk
+pg_dump → gzip → AES-GCM encryption (random nonce) → 0600 on disk
 ```
 
-Backup-Rotation: älteste Dateien werden nach Ablauf des Aufbewahrungsfensters gelöscht.
+Backup rotation: oldest files are deleted after the retention window expires.
 
-Manuelles Backup:
+Manual backup:
 ```bash
 ./scripts/backup.sh
 ```
 
-### Backup-Umfang: nur die Datenbank (bewusste Entscheidung, 11.07.2026)
+### Backup Scope: Database only (conscious decision, 11.07.2026)
 
-Das `uploads/`-Volume (Buchcover als lokale WebP-Dateien) wird **absichtlich nicht**
-mitgesichert:
+The `uploads/` volume (book covers as local WebP files) is **intentionally not** backed up:
 
-- **Schülerfotos** liegen verschlüsselt in der Datenbank (`schueler_fotos.foto_encrypted`)
-  und sind damit vom pg_dump abgedeckt — es gehen keine personenbezogenen Daten verloren.
-- **Cover sind reproduzierbar**: Der Cover-Sync-Job (alle 6 h + bei Serverstart,
-  `internal/service/cover_service.go`) lädt PENDING/FAILED-Titel gedrosselt
-  (2 Titel/s) von DNB/Google/OpenLibrary nach. **Achtung:** Titel mit Status
-  `FOUND` und totem `/uploads/`-Pfad überspringt der Job — nach einem Restore
-  ohne Volume einmalig zurücksetzen, dann heilt der nächste Lauf alles nach:
+- **Student photos** are stored encrypted in the database (`schueler_fotos.foto_encrypted`) and are thus covered by pg_dump — no personal data is lost.
+- **Covers are reproducible**: The cover sync job (every 6 h + on server start, `internal/service/cover_service.go`) throttles reloading of PENDING/FAILED titles (2 titles/s) from DNB/Google/OpenLibrary. **Attention:** The job skips titles with status `FOUND` and a dead `/uploads/` path — after a restore without volume, reset once, then the next run heals everything:
   ```sql
   UPDATE buecher_titel SET cover_status = 'PENDING'
   WHERE cover_url LIKE '/uploads/%';
   ```
-- **Etiketten/PDFs** werden on-demand generiert und nie persistiert.
+- **Labels/PDFs** are generated on-demand and never persisted.
 
-Wer das Nachladen nach einem Restore vermeiden will (z. B. Offline-Betrieb), kann das
-Volume zusätzlich mit `docker run --rm -v bibliothek_uploads:/data alpine tar czf - /data`
-wegsichern — Pflicht ist es nicht.
+If you want to avoid reloading after a restore (e.g., offline operation), you can additionally backup the volume with `docker run --rm -v bibliothek_uploads:/data alpine tar czf - /data` — it is not mandatory.
 
 ---
 
 ## 7. Health Check & Monitoring
 
-Der Docker-Container enthält einen eingebauten Health Check:
+The Docker container contains a built-in Health Check:
 ```yaml
 healthcheck:
   test: ["CMD-SHELL", "pg_isready -U postgres -d bibliothek"]
@@ -204,4 +196,4 @@ healthcheck:
   retries: 5
 ```
 
-Optional: Sentry-Integration für Error-Tracking via `SENTRY_DSN`.
+Optional: Sentry integration for error tracking via `SENTRY_DSN`.

@@ -1,97 +1,97 @@
-# Sicherheits- und Datenschutzkonzept (DSGVO)
+# Security and Privacy Concept (GDPR)
 
-Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
+This documentation describes the system-wide mechanisms for maintaining the security and privacy of the library management software.
 
-> Zuletzt aktualisiert: 2026-06-24 (Session-Audit: alle 46 Dateien tief gescannt)
+> Last updated: 2026-06-24 (Session Audit: deeply scanned all 46 files)
 
 ---
 
-## 🛡️ Authentifizierung & Session-Management
+## 🛡️ Authentication & Session Management
 
 ### JWT (JSON Web Tokens)
-- **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
-- **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 500), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen.
-- **Lebensdauer:** 12 Stunden; danach ist eine erneute Anmeldung erforderlich.
-- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Lax`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`).
+- **Algorithm Pinning:** The server exclusively accepts HMAC-signed tokens (HS256). The `alg=none` vulnerability (CVE class) is thus prevented — a token without a signature is rejected.
+- **Blacklist (fail-closed):** Logged out tokens are registered in a database blacklist. If the blacklist query is unreachable (DB error), the request is rejected (HTTP 500), not allowed through. "Fail-open" behavior is excluded.
+- **Lifespan:** 12 hours; re-login is required afterwards.
+- **Cookie Attributes:** `HttpOnly` (no JS access), `SameSite=Lax`, additionally `Secure` in production (via `COOKIE_SECURE=true`).
 
-### Brute-Force-Schutz (Login)
-- **Schlüssel:** `lower(email)|ip` — sperrt ein Konto für eine IP-Adresse (5 Fehlversuche / 15 min).
-- **Warum nicht nur IP?** An einer Schulnetzwerk-NAT sind alle Geräte hinter einer IP. Würde nur die IP gesperrt, würde ein einziger Fehlversuch die gesamte Schule aussperren. Der Composite-Key (`email|ip`) isoliert das betroffene Konto auf dieser IP und schützt trotzdem gegen gezielte Account-Angriffe.
-- **Globaler Rate-Limiter:** Zusätzlich 50 Requests/s/IP über alle Endpunkte (Map+Mutex, kein externer Cache nötig).
-
----
-
-## 🔒 Autorisierung (RBAC)
-
-### RequirePermission-Middleware
-- Alle schützenswerten Endpunkte sind über `RequirePermission` bzw. `RequireRoles` abgesichert.
-- **Keine transiente 403-Cacheung:** Ist die Datenbank bei der Berechtigungsprüfung nicht erreichbar (Netzwerkfehler, Timeout), wird HTTP 500 zurückgegeben und **nicht** in den Permission-Cache geschrieben. Ein vorübergehender DB-Ausfall führt also nicht dazu, dass legitime Benutzer für 60 Sekunden ausgesperrt bleiben.
-- **Stabile Verweigerung:** Nur `pgx.ErrNoRows` (Berechtigung definitiv nicht vorhanden) wird gecacht und als 403 gewertet.
-
-### Rollenkonzept
-- `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
-- `lehrer`: Granulare Rechte — jede Berechtigung muss explizit durch einen Admin freigeschaltet werden.
-- `mitarbeiter`: Grundrechte für den Tresen-Betrieb.
-- Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `lehrer`, `mitarbeiter`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
+### Brute-Force Protection (Login)
+- **Key:** `lower(email)|ip` — locks an account for an IP address (5 failed attempts / 15 min).
+- **Why not just IP?** On a school network NAT, all devices share an IP. If only the IP were blocked, a single failed attempt would lock out the entire school. The composite key (`email|ip`) isolates the affected account on that IP while still protecting against targeted account attacks.
+- **Global Rate Limiter:** Additionally 50 requests/s/IP across all endpoints (Map+Mutex, no external cache needed).
 
 ---
 
-## 🛡️ Schutz vor Injection-Angriffen
+## 🔒 Authorization (RBAC)
 
-### SQL-Injection
-- Alle Datenbankinteraktionen erfolgen ausschließlich über parametrisierte Queries (`$1`, `$2`, …) mit `jackc/pgx/v5`. String-Konkatenation in SQL-Statements existiert nicht.
+### RequirePermission Middleware
+- All sensitive endpoints are secured via `RequirePermission` or `RequireRoles`.
+- **No transient 403 caching:** If the database is unreachable during the permission check (network error, timeout), HTTP 500 is returned and **not** written to the permission cache. A temporary DB failure thus does not lock out legitimate users for 60 seconds.
+- **Stable Denial:** Only `pgx.ErrNoRows` (permission definitely not present) is cached and evaluated as 403.
 
-### CSV-Formel-Injection (CWE-1236)
-- **Angriffsvektor:** Buchtitel oder Autornamen, die mit `=`, `+`, `-`, `@`, `\t`, `\r`, `\n` beginnen, können in CSV-Dateien als Formeln interpretiert werden (Excel/LibreOffice führt diese bei Öffnen aus).
-- **Schutz:** `pkg/csvutil.SanitizeRow()` setzt einen Apostroph-Präfix vor alle Zellen, die mit einem dieser Zeichen beginnen (OWASP-Empfehlung). Wird bei allen CSV-Exporten verwendet (`inventur/export_csv.go`, Bestellexporte).
+### Role Concept
+- `admin`: Full access (`["*"]`). Permissions are loaded directly from `role_permissions` upon login.
+- `lehrer`: Granular rights — every permission must be explicitly enabled by an admin.
+- `mitarbeiter`: Basic rights for front desk operations.
+- All Enum values in the database are **lowercase** (`admin`, `lehrer`, `mitarbeiter`). SQL comparisons use `LOWER(rolle::text)` to avoid casing errors (Bugfix: `LEHRER` Enum led to HTTP 500 in the Omnibox).
+
+---
+
+## 🛡️ Protection against Injection Attacks
+
+### SQL Injection
+- All database interactions are exclusively executed via parameterized queries (`$1`, `$2`, …) using `jackc/pgx/v5`. String concatenation in SQL statements does not exist.
+
+### CSV Formula Injection (CWE-1236)
+- **Attack Vector:** Book titles or author names starting with `=`, `+`, `-`, `@`, `\t`, `\r`, `\n` can be interpreted as formulas in CSV files (Excel/LibreOffice executes these upon opening).
+- **Protection:** `pkg/csvutil.SanitizeRow()` prefixes all cells starting with one of these characters with an apostrophe (OWASP recommendation). Used for all CSV exports (`inventur/export_csv.go`, order exports).
 
 ### XSS (Cross-Site Scripting)
-- Svelte 5 escaped alle Template-Variablen automatisch.
-- `{@html}` wird im gesamten Frontend nicht eingesetzt.
-- SVG-Icons sind hartcodierte Konstanten, keine benutzerkontrollierten Werte.
+- Svelte 5 automatically escapes all template variables.
+- `{@html}` is not used anywhere in the frontend.
+- SVG icons are hardcoded constants, not user-controlled values.
 
 ---
 
-## 📁 Datei-Uploads
+## 📁 File Uploads
 
-### Foto-Uploads (Schülerfotos)
-- **Decompression-Bomb-Schutz:** `pkg/imageutil.GuardImageDimensions()` liest per `image.DecodeConfig` nur den Bild-Header (ohne volle Dekodierung). Bilder über 50 Megapixel werden abgelehnt, bevor `image.Decode` die vollständige Pixelmatrix allokiert (Schutz gegen RAM-Erschöpfung durch präparierte Bilder).
-- **MIME-Prüfung:** Über echte Dekodierung, nicht nur Dateiendung.
-- **Verschlüsselung:** Fotos werden AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank gespeichert — kein Klarpfad auf dem Dateisystem.
-- **Path-Traversal:** Alle Pfadoperationen nutzen `filepath.Base` + `filepath.Clean` + Prefix-Guard.
+### Photo Uploads (Student Photos)
+- **Decompression Bomb Protection:** `pkg/imageutil.GuardImageDimensions()` reads only the image header via `image.DecodeConfig` (without full decoding). Images over 50 megapixels are rejected before `image.Decode` allocates the full pixel matrix (protection against RAM exhaustion via crafted images).
+- **MIME Check:** Via real decoding, not just file extension.
+- **Encryption:** Photos are AES-256-GCM encrypted and stored as `BYTEA` in the database — no plaintext on the filesystem.
+- **Path Traversal:** All path operations use `filepath.Base` + `filepath.Clean` + Prefix-Guard.
 
-### Cover-Uploads
-- 10 MB Body-Limit, 0600 Dateiberechtigungen.
-- Ebenfalls `GuardImageDimensions` vor dem vollständigen Decode.
+### Cover Uploads
+- 10 MB body limit, 0600 file permissions.
+- Also `GuardImageDimensions` before full decode.
 
 ---
 
-## 📧 E-Mail-Sicherheit (SMTP/IMAP)
+## 📧 Email Security (SMTP/IMAP)
 
 ### SMTP STARTTLS
-- **Zertifikatsprüfung aktiv:** `ServerName` wird gesetzt, `MinVersion: TLS 1.2` erzwungen. `InsecureSkipVerify` war zuvor auf `true` gesetzt — ein MITM-Angreifer konnte dadurch SMTP-Credentials und den gesamten E-Mail-Inhalt (inkl. Personendaten für Mahnwesen) mitlesen. **Behoben.**
-- **Opt-out für interne/Legacy-Server:** Umgebungsvariable `SMTP_ALLOW_INSECURE_TLS=true` erlaubt das Abschalten der Zertifikatsprüfung bei Bedarf (mit expliziter Warnung im Log).
-- **Header-Injection:** Attachment-Dateinamen werden gegen CRLF-Injection bereinigt.
+- **Certificate Check Active:** `ServerName` is set, `MinVersion: TLS 1.2` enforced. `InsecureSkipVerify` was previously set to `true` — a MITM attacker could have read SMTP credentials and the entire email content (including personal data for dunning processes). **Fixed.**
+- **Opt-out for internal/legacy servers:** Environment variable `SMTP_ALLOW_INSECURE_TLS=true` allows disabling the certificate check if needed (with explicit warning in the log).
+- **Header Injection:** Attachment filenames are sanitized against CRLF injection.
 
 ### IMAP
-- Implizites TLS (Port 993), `MinVersion: TLS 1.2`, ServerName-Verifikation, Timeouts.
+- Implicit TLS (Port 993), `MinVersion: TLS 1.2`, ServerName verification, timeouts.
 
 ---
 
-## 🔏 CSRF-Schutz
+## 🔏 CSRF Protection
 
-- **Methode:** Double-Submit Cookie mit Constant-Time-Vergleich.
-- **Achtung (behoben):** `sync-covers` und `import-bestand` sind global registrierte Endpunkte unter `/api/admin/…`. Durch eine zu breite Ausnahme-Regel für `/api/admin/*` waren diese temporär ohne CSRF-Schutz. Die Ausnahme wurde entfernt — beide Endpunkte durchlaufen jetzt die globale CSRF-Prüfung. Das Frontend sendet den Token bereits korrekt (keine Frontend-Änderung nötig).
+- **Method:** Double-Submit Cookie with constant-time comparison.
+- **Attention (fixed):** `sync-covers` and `import-bestand` are globally registered endpoints under `/api/admin/…`. Due to an overly broad exemption rule for `/api/admin/*`, these were temporarily without CSRF protection. The exemption was removed — both endpoints now pass through the global CSRF check. The frontend already sends the token correctly (no frontend changes needed).
 
 ---
 
-## 🐳 Produktions-Absicherung (Secret Guard)
+## 🐳 Production Safeguards (Secret Guard)
 
 ### Problem
-Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
+If `JWT_SECRET` or `APP_ENCRYPTION_KEY` use the committed development defaults, anyone with repo access can forge admin JWTs (complete takeover) or decrypt AES-encrypted student photos.
 
-### Lösung (`main.go/loadConfig`)
-Der Server **verweigert den Start**, wenn der Schalter `ENFORCE_PROD_SECRETS=true` gesetzt ist und bekannte Default-Secrets erkannt werden:
+### Solution (`main.go/loadConfig`)
+The server **refuses to start** if the switch `ENFORCE_PROD_SECRETS=true` is set and known default secrets are detected:
 ```go
 enforceProdSecrets := strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true"
 if enforceProdSecrets {
@@ -100,52 +100,52 @@ if enforceProdSecrets {
         "super-secure-aes-key-32-chars-ok":           true,
         "supergeheim_lokal":                          true,
     }
-    // … log.Fatalf bei Treffer
+    // … log.Fatalf on match
 }
 ```
 
-**Bewusst per Schalter einschaltbar (entkoppelt von `APP_ENV`):**
-- Test-/Pilotphase: `ENFORCE_PROD_SECRETS=false` (Standard) → Stack startet auch mit Defaults.
-- Echter Prod-Deploy: `ENFORCE_PROD_SECRETS=true` → harte Start-Verweigerung bei Default-Secrets.
+**Consciously toggleable via switch (decoupled from `APP_ENV`):**
+- Testing/Pilot phase: `ENFORCE_PROD_SECRETS=false` (Default) → Stack also starts with defaults.
+- Real Prod Deploy: `ENFORCE_PROD_SECRETS=true` → Hard start-refusal with default secrets.
 
-Die Entkopplung von `APP_ENV` ist Absicht: `APP_ENV=local` würde sonst gleichzeitig das Cookie-`Secure`-Flag deaktivieren und Swagger öffentlich freischalten. So bleibt `APP_ENV=production` (sichere Cookies, kein Swagger), während die Secret-Härtung separat geschaltet wird.
+The decoupling from `APP_ENV` is intentional: `APP_ENV=local` would otherwise simultaneously deactivate the cookie `Secure` flag and publicly expose Swagger. This way, `APP_ENV=production` remains (secure cookies, no Swagger), while secret hardening is switched separately.
 
-### Mindestanforderungen
-- `JWT_SECRET`: ≥ 32 Zeichen
-- `APP_ENCRYPTION_KEY`: genau 32 Bytes (oder 64 Hex-Zeichen)
-- In Produktion: `docker-compose.yml` erzwingt per `${VAR:?Fehlermeldung}`, dass alle Secrets gesetzt sind
-
----
-
-## 🔒 Datenschutz und DSGVO-Konformität
-
-### Automatisierte Löschroutinen
-Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
-
-- **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** Entfernt `bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden.
-- **Abgänger-Löschung (`RunGDPRDeleteAbgaenger`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) nach Karenzzeit (30 Tage im neuen Schuljahr), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
-
-### Datenverschlüsselung
-- Schülerfotos: AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank. Kein Klartext auf dem Dateisystem.
-- DB-Backups: `pg_dump → gzip → AES-GCM` (Zufalls-Nonce), 0600 Dateiberechtigungen, Rotation.
-
-### Adressdaten (DSGVO vs. Mahnwesen)
-Adressspalten (`strasse`, `plz`, `ort`) werden für das Mahnwesen (Briefversand) benötigt und sind **bewusst vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der Adressspalten blockiert hätte — dieser wurde entfernt, da die Daten fachlich essenziell sind.
+### Minimum Requirements
+- `JWT_SECRET`: ≥ 32 characters
+- `APP_ENCRYPTION_KEY`: exactly 32 bytes (or 64 Hex characters)
+- In production: `docker-compose.yml` enforces via `${VAR:?ErrorMessage}` that all secrets are set
 
 ---
 
-## 🛡️ Netzwerksicherheit & Security-Header
+## 🔒 Privacy and GDPR Compliance
 
-Restriktive HTTP-Header in `api/middleware.go`:
-- `frame-ancestors 'none'` — verhindert Clickjacking via iFrame
-- `form-action 'self'` — Formulare nur an eigene API
-- `script-src 'self'` — kein externes Script-Loading
+### Automated Deletion Routines
+The application executes automated cronjobs (`jobs/cron.go`):
+
+- **Loan Anonymization (`RunGDPRAnonymizeLoans`):** Removes `bearbeiter_id` from loans returned more than 14 days ago.
+- **Graduate Deletion (`RunGDPRDeleteAbgaenger`):** Hard delete of student records (`ist_abgaenger = true`) after a grace period (30 days into the new school year), provided there are no open loans or unpaid damages. Historical loan data is anonymized (`schueler_id = NULL`).
+
+### Data Encryption
+- Student photos: AES-256-GCM encrypted as `BYTEA` in the database. No plaintext on the filesystem.
+- DB Backups: `pg_dump → gzip → AES-GCM` (random nonce), 0600 file permissions, rotation.
+
+### Address Data (GDPR vs. Dunning)
+Address columns (`strasse`, `plz`, `ort`) are required for the dunning process (postal letters) and are **consciously present**. Migration 003 originally contained a `RAISE EXCEPTION` guard that would have blocked address columns — this was removed since the data is technically essential.
+
+---
+
+## 🛡️ Network Security & Security Headers
+
+Restrictive HTTP headers in `api/middleware.go`:
+- `frame-ancestors 'none'` — prevents clickjacking via iFrame
+- `form-action 'self'` — forms only to own API
+- `script-src 'self'` — no external script loading
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 
 ---
 
-## 📋 Audit-Trail
+## 📋 Audit Trail
 
-- Alle administrativen Aktionen und Buchbewegungen werden in `audit_logs` protokolliert (Append-Only).
-- Auditierung erfolgt **nach** dem Transaktions-Commit (kein Rollback-Risiko).
+- All administrative actions and book movements are logged in `audit_logs` (Append-Only).
+- Auditing happens **after** the transaction commit (no rollback risk).
