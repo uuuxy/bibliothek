@@ -1,15 +1,14 @@
-German/Englisch (down below)
-# Bibliothek – Moderne Schulbibliotheks-Software
+# Bibliothek – Schulbibliotheks-Software
 
-Eine moderne, webbasierte Verwaltungssoftware für Schulbibliotheken. Das System ist speziell auf den Schulalltag optimiert und ermöglicht eine hocheffiziente Abwicklung von Buch- und Hardware-Ausleihen durch ein integriertes Barcode-Scanner-Konzept. 
+Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterstützt die Abwicklung von Buch- und Hardware-Ausleihen mittels eines integrierten Barcode-Scanner-Konzepts.
 
 ---
 
-## 🛠️ Tech-Stack
+## Tech-Stack
 
 | Komponente | Technologie |
 |---|---|
-| Backend | Go 1.22+, `net/http`, `pgx/v5` |
+| Backend | Go 1.26.4+, `net/http`, `pgx/v5` |
 | Frontend | Svelte 5 (Runes), Tailwind CSS, Vite |
 | Datenbank | PostgreSQL 15/16 |
 | Echtzeit | Server-Sent Events (SSE) |
@@ -17,45 +16,45 @@ Eine moderne, webbasierte Verwaltungssoftware für Schulbibliotheken. Das System
 
 ---
 
-## ✨ Hauptfunktionen
+## Hauptfunktionen
 
-- **Zentrale Omnibox (Scanner-Dispatcher):** Ein einziges Eingabefeld verarbeitet alle Barcode-Scans. Das System erkennt anhand von Präfixen (`S-` Schüler, `L-` Lehrer, `B-` Buch, `G-` Gerät) vollautomatisch die richtige Aktion.
-- **Automatische Fristenberechnung:** LMF-Bücher (jährlicher Stichtag 31. Juli), Sonderbestände (CDs, DVDs, Hörbücher), Ferien-Leseclub.
-- **Revisionssicherer Audit-Trail:** Append-Only-Ereignisprotokollierung für alle administrativen Aktionen.
-- **DSGVO-Compliance:** Automatisierte Löschroutinen für Schulabgänger, AES-256-verschlüsselte Schülerfotos.
-- **LUSD-Schnittstelle:** Import von Schülerdaten aus dem hessischen LUSD-System.
-- **Hardware-Verwaltung:** Ausleihe von Laptops/Tablets mit Zubehör-Checklisten.
-- **Druck-Center:** Barcode-Etiketten und Schülerausweise.
-- **Feingranulares RBAC:** Admin / Lehrer (konfigurierbare Rechte) / Mitarbeiter.
+- **Zentrale Omnibox (Scanner-Dispatcher):** Ein Eingabefeld verarbeitet Barcode-Scans und ordnet Aktionen anhand von Präfixen (`S-` Schüler, `L-` Lehrer, `B-` Buch, `G-` Gerät) zu.
+- **Fristenberechnung:** Berücksichtigung von LMF-Büchern (Stichtag 31. Juli), Sonderbeständen (CDs, DVDs, Hörbücher) und Ferien-Leseclub.
+- **Audit-Trail:** Append-Only-Ereignisprotokollierung für administrative Aktionen.
+- **Datenschutz-Funktionen:** Löschroutinen für Schulabgänger, AES-256-Verschlüsselung für Schülerfotos.
+- **LUSD-Schnittstelle:** Import von Schülerdaten aus dem LUSD-System.
+- **Hardware-Verwaltung:** Ausleihe von Laptops/Tablets inklusive Zubehör-Checklisten.
+- **Druck-Center:** Erstellung von Barcode-Etiketten und Schülerausweisen.
+- **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Lehrer (konfigurierbare Rechte) und Mitarbeiter.
 
 ---
 
-## 📚 Dokumentation
+## Dokumentation
 
 | Dokument | Inhalt |
 |---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Schichtenarchitektur, Concurrency-Modell, Datenbankdesign, Frontend |
-| [SECURITY.md](SECURITY.md) | Sicherheitskonzept, DSGVO, alle Schutzmaßnahmen |
+| [SECURITY.md](SECURITY.md) | Sicherheitskonzept, DSGVO, Schutzmaßnahmen |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups |
 | [INSTALL.md](INSTALL.md) | Lokales Setup |
 | [SCRIPTS.md](SCRIPTS.md) | CLI-Werkzeuge und Migrationen |
 | [CHANGELOG.md](CHANGELOG.md) | Änderungshistorie |
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup-Verschlüsselung, Restore-Probe, Notfall-Wiederherstellung |
 | [backup_cron.md](backup_cron.md) | Backup-Cronjob-Einrichtung |
-| [master_fahrplan.md](master_fahrplan.md) | Lebendes Status-Dokument: erledigt / offen / Parkdeck |
+| [master_fahrplan.md](master_fahrplan.md) | Status-Dokument: erledigt / offen / Parkdeck |
 | [api_inventar.md](api_inventar.md) | Generiertes Routen-Inventar (`scripts/api_inventar.sh`) |
 | [archive/](archive/) | Abgeschlossene Pläne und Checklisten (u. a. MySQL-Migration, Audit-Sweeps) |
 
 ---
 
-## 💻 Schnellstart (lokal)
+## Schnellstart (lokal)
 
 ### Voraussetzungen
-- Go 1.22+
+- Go 1.26.4+
 - Node.js (npm)
 - PostgreSQL (lokal oder via Docker)
 
-### Mit Docker (empfohlen)
+### Mit Docker
 ```bash
 docker compose -f docker-compose.local.yml up -d
 ```
@@ -85,7 +84,7 @@ npm run dev
 
 ---
 
-## 🏛️ Systemarchitektur (Kurzübersicht)
+## Systemarchitektur (Kurzübersicht)
 
 ```
 Middleware (Rate-Limit → Auth → CSRF → RBAC)
@@ -101,7 +100,7 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
-## 🔒 Sicherheit
+## Sicherheit
 
 - JWT HMAC-only (kein `alg=none`)
 - Brute-Force-Schutz: `email|ip`-Composite-Key
@@ -114,6 +113,8 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Details: [SECURITY.md](SECURITY.md)
 
+---
+---
 # Bibliothek – School Library Software (English Version)
 
 A web-based management software for school libraries. The system supports the processing of book and hardware rentals using an integrated barcode scanner concept.
