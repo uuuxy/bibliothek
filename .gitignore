@@ -48,6 +48,7 @@ tmp/
 # Kuratierte Audit-Belege unter docs/security/ bleiben bewusst versioniert.
 /*_report.txt
 /*_report.html
+/*_report.json
 *.log
 !scripts/*.sql
 
