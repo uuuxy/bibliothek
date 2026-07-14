@@ -6,6 +6,17 @@ import { playSoundSuccess, playSoundError } from '../audio.js';
 import { enqueueOfflineAction } from '../offlineQueue.js';
 import { offlineSync } from './offlineSync.svelte.js';
 
+// Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
+function formatVorbesitzerName(data) {
+	if (data.vorbesitzer) {
+		return `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`;
+	}
+	if (data.vorbesitzer_user) {
+		return `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
+	}
+	return 'unbekannt';
+}
+
 export function createOmniboxStore() {
 	let activeStudent = $state(/** @type {any} */ (null));
 	let activeTeacher = $state(/** @type {any} */ (null));
@@ -131,17 +142,6 @@ export function createOmniboxStore() {
 		}
 
 		throw new Error(errStr || 'Aktion fehlgeschlagen');
-	}
-
-	// Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
-	function formatVorbesitzerName(data) {
-		if (data.vorbesitzer) {
-			return `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`;
-		}
-		if (data.vorbesitzer_user) {
-			return `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
-		}
-		return 'unbekannt';
 	}
 
 	// Fremdes Buch in aktiver Sitzung: NUR beim Vorbesitzer ausgebucht — bewusst kein

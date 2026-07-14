@@ -17,7 +17,8 @@
 
 	// Toggle all
 	function toggleAll() {
-		mahnwesenStore.toggleSelectAll(!allSelected);
+		if (allSelected) mahnwesenStore.deselectAllSchueler();
+		else mahnwesenStore.selectAllSchueler();
 	}
 </script>
 
