@@ -345,16 +345,15 @@ func (s *Server) queryReorders(ctx context.Context) ([]ReorderTitle, error) {
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), 
 		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
 		       t.meldebestand,
-			(SELECT COUNT(*) FROM buecher_exemplare e 
-			 WHERE e.titel_id = t.id AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
-			   AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-			) AS verfuegbar
+			v.verfuegbar
 		FROM buecher_titel t
-		WHERE (
-			SELECT COUNT(*) FROM buecher_exemplare e 
+		JOIN LATERAL (
+			SELECT COUNT(*)::int AS verfuegbar
+			FROM buecher_exemplare e
 			WHERE e.titel_id = t.id AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
 			  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		) < t.meldebestand
+		) v ON true
+		WHERE v.verfuegbar < t.meldebestand
 		ORDER BY t.titel
 	`
 	rows, err := s.DB.Pool.Query(ctx, query)

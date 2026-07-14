@@ -7,3 +7,6 @@
 ## 2026-07-13 - [Refactoring N+1 Query in OrderService]
 **Learning:** Found an N+1 issue in `OrderService` (inside `api/order_service.go`) where multiple database inserts were performed in a loop (`tx.Exec`) for each order position (`bestellungPosition`) inside the `insertBestellpositionen` function. Refactored this to use a single bulk insert operation via `tx.CopyFrom` combined with `pgx.CopyFromRows`.
 **Action:** Consistently use `pgx.CopyFromRows` for batch database creation or insertion. This eliminates N+1 query problems and significantly reduces database round-trips when processing larger quantities (like inserting multiple order lines).
+## 2026-07-14 - [Optimize Reorder Queries]
+**Learning:** Found redundant correlated subqueries in `sammleNachbestellungen` (`api/order_handler.go`) and `queryReorders` (`api/stats.go`) where the same subquery calculating available book copies was used in both the `SELECT` clause and the `WHERE` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
+**Action:** Used `JOIN LATERAL (...) v ON true` to evaluate the subquery exactly once per row and then referenced `v.verfuegbar` in both the `SELECT` and `WHERE` clauses, preventing the redundant subquery execution and improving read performance.
