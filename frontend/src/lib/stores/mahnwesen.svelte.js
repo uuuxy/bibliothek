@@ -228,6 +228,7 @@ export function createMahnwesenStore() {
 		openModal: mailStore.openModal,
 		closeModal: mailStore.closeModal,
 		sendMahnliste: mailStore.sendMahnliste,
+		sendBulkOverdueMails: mailStore.sendBulkOverdueMails,
 
 		// Expose pdf store methods and state directly
 		get pdfLoading() {
