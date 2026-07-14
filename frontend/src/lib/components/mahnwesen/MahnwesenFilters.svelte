@@ -174,6 +174,22 @@
 			Mahnlauf starten (PDF)
 		</button>
 
+		<button
+			onclick={() => {
+				if (
+					window.confirm(
+						'Achtung: Bist du sicher, dass du jetzt Mahnungen an ALLE säumigen Schüler per E-Mail versenden möchtest?'
+					)
+				) {
+					mahnwesenStore.sendBulkOverdueMails();
+				}
+			}}
+			aria-label="Mahnlisten aller Klassen per E-Mail an die Klassenleitungen senden"
+			class="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+		>
+			📧 Alle anmahnen
+		</button>
+
 		<div class="flex items-center gap-1 bg-slate-100 rounded-xl px-2 py-1">
 			<select
 				bind:value={mahnwesenStore.selectedKlasse}
