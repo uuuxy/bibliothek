@@ -55,16 +55,15 @@ func resolveRecipientEmail(reqEmail string) (string, error) {
 func sammleNachbestellungen(ctx context.Context, tx pgx.Tx) ([]reorderItem, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), t.meldebestand,
-			(SELECT COUNT(*) FROM buecher_exemplare e
-			 WHERE e.titel_id = t.id AND e.ist_ausleihbar = true
-			   AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-			) AS verfuegbar
+			v.verfuegbar
 		FROM buecher_titel t
-		WHERE (
-			SELECT COUNT(*) FROM buecher_exemplare e
+		JOIN LATERAL (
+			SELECT COUNT(*)::int AS verfuegbar
+			FROM buecher_exemplare e
 			WHERE e.titel_id = t.id AND e.ist_ausleihbar = true
 			  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		) < t.meldebestand
+		) v ON true
+		WHERE v.verfuegbar < t.meldebestand
 	`)
 	if err != nil {
 		return nil, err
