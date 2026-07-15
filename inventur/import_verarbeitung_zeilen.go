@@ -61,10 +61,11 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 }
 
 // parseKlassenStufe versucht die Klassenstufe aus einem String zu extrahieren.
-// Außerhalb von 5–10 gilt der Default 5. Early Return statt Clamp-Zuweisung:
-// die int16-Konvertierung muss auf einem Pfad liegen, den der Bounds-Check
-// exklusiv kontrolliert — nach einem Merge mit dem Default-Zweig gilt der
-// Check statisch nicht mehr als Guard (go/incorrect-integer-conversion).
+// Gültig ist 5–13 (kooperative Gesamtschule inkl. Oberstufe); außerhalb gilt der
+// Default 5. Early Return statt Clamp-Zuweisung: die int16-Konvertierung muss auf
+// einem Pfad liegen, den der Bounds-Check exklusiv kontrolliert — nach einem Merge
+// mit dem Default-Zweig gilt der Check statisch nicht mehr als Guard
+// (go/incorrect-integer-conversion).
 func parseKlassenStufe(gradeStr string, title string) int16 {
 	gradeLevel := 0
 	if g, err := strconv.Atoi(gradeStr); err == nil {
@@ -73,7 +74,7 @@ func parseKlassenStufe(gradeStr string, title string) int16 {
 	if gradeLevel == 0 {
 		gradeLevel = inferGradeLevelFromTitle(title)
 	}
-	if gradeLevel < 5 || gradeLevel > 10 {
+	if gradeLevel < 5 || gradeLevel > 13 {
 		return 5
 	}
 	return int16(gradeLevel)
@@ -97,7 +98,7 @@ func ergaenzeMetadaten(ctx context.Context, metadaten *MetadatenClient, book *Bo
 		return
 	}
 
-	lookup, _ := metadaten.SucheNachISBN(ctx, book.ISBN)  //nolint:errcheck
+	lookup, _ := metadaten.SucheNachISBN(ctx, book.ISBN) //nolint:errcheck
 	if lookup == nil {
 		return
 	}
