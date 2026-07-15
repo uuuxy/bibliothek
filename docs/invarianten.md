@@ -13,7 +13,9 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept | Ja — reine Hoffnung |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-07-15.
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-07-15
+(Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
+Postgres abgesichert).
 
 ---
 
@@ -122,8 +124,8 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
 | `benutzer.rolle` ∈ Enum (inkl. `helfer` seit Migration 042) | 🟢 `benutzer_rolle` ENUM (kleingeschr.) | `schema.sql:15`, `migrations/042` |
-| **[G5]** Ein einziges Rollen-Vokabular zur Laufzeit: `benutzer.rolle` | 🟢 alle Laufzeit-Queries umgestellt | `loan_checkout_validation.go:105` |
-| `benutzer_rollen` (GROSS-Vokabular) — **Legacy**, nur noch Bootstrap-Seed schreibt sie, kein Laufzeit-Code liest sie | 🔴 Drop offen | `db/seed.go` |
+| **[G5]** **Genau eine** Quelle für die Rolle eines Benutzers: `benutzer.rolle` | 🟢 Legacy-Tabelle entfernt + Test verhindert Rückkehr | `migrations/044`, `rollen_vokabular_pg_test.go` |
+| Welche Rechte eine Rolle hat: `role_permissions` (GROSS; Middleware mappt per `UPPER()`) | 🟡 konfigurierbar (bewusst) | `permission_middleware.go:83` |
 | Login-Rate-Limit je echter Client-IP (nicht Proxy) | 🟢/🟡 `pkg/clientip` + `TRUSTED_PROXIES` | `middleware_ratelimit.go` |
 
 ---
@@ -146,7 +148,7 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 | ~~**G2**~~ | **ERLEDIGT:** `vormerkungen.status`, `inventur_status` (Migration 040), `cover_status` (Migration 041 — die vermutete inkonsistente Schreibung war ein Grep-Artefakt aus JSON-Responses; Vokabular ist durchgängig GROSS). **Dauerhaft ohne CHECK (Beschluss):** `medientyp` — offenes, frei eingebbares Vokabular. | 🟢 erledigt | `migrations/040`, `migrations/041` | — |
 | ~~**G4b**~~ | **ERLEDIGT:** `grade_level` = 0–13 (0 = unkategorisiert, 5–13 kooperative Gesamtschule inkl. Oberstufe), NULL erlaubt. Deckt sich mit App-Validierung. **Nebenbefund gefixt:** `parseKlassenStufe` klemmte fälschlich bei 10 → Jahrgang 11–13 wurde beim Import als 5 einsortiert; jetzt 5–13. | 🟢 erledigt | `migrations/040`, `import_verarbeitung_zeilen.go` | — |
 | ~~**G3**~~ | **ERLEDIGT (Migration 043):** `aussonderung_grund` {VERLUST, BESCHAEDIGUNG, AUSSORTIERT, BESTANDSKORREKTUR} + `chk_aussonderung_grund` (im Umlauf = NULL, ausgesondert = genau ein Wert). Backfill aus `zustand_notiz`-Markern, alle 7 Schreibpfade angepasst, gegen echtes PG + e2e verifiziert. Bewusst kein Status „Ausgeliehen" — Ausleihzustand lebt allein in `ausleihen` (Unique-Index Migration 033). | 🟢 erledigt | `migrations/043_aussonderung_grund.sql` | — |
-| **G5** | **Kern erledigt:** Handapparat-Bug behoben (Laufzeit liest `benutzer.rolle`), Rolle `helfer` erreichbar gemacht (Migration 042: ENUM-Wert + Admin-Dropdown; Router/Permissions existierten bereits). **Offen (Aufräumen, kein Risiko):** Legacy-Tabelle `benutzer_rollen` droppen + Bootstrap-Befüllung in `db/seed.go` entfernen — kein Laufzeit-Code liest sie mehr. | Aufräumen offen | `migrations/042`, `db/seed.go` | — |
+| ~~**G5**~~ | **ERLEDIGT:** Handapparat-Bug behoben (Laufzeit liest `benutzer.rolle`), Rolle `helfer` erreichbar (Migration 042), Legacy-Tabelle `benutzer_rollen` entfernt (Migration 044) samt Bootstrap-Befüllung in `db/seed.go`. Ein Test verhindert ihre Rückkehr. **Wichtig war die Reihenfolge:** Migrationen laufen vor `InitPermissions` — ein verbliebenes `CREATE TABLE IF NOT EXISTS` hätte die Tabelle direkt nach dem DROP als leere Ruine neu angelegt. | 🟢 erledigt | `migrations/044`, `db/seed.go` | — |
 | ~~**G6**~~ | **ERLEDIGT:** Seed-Liste vervollständigt (038–043) + CI-Drift-Guard: Test vergleicht `migrations/*.sql` gegen die Seed-Liste in `schema.sql` und schlägt bei jeder Abweichung fehl. | 🟢 erledigt | `db/migrations_drift_test.go` | — |
 
 ---
@@ -159,18 +161,31 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 - ✅ **Phase 2 — Constraints nachrüsten.** Migrationen 039–043: 12 CHECKs + ENUM-Wert, jede gegen
   echtes PG 15/16 verifiziert (Verletzung provoziert → Fehler erwartet; gültige Werte akzeptiert).
 - ✅ **Phase 3 — Prozess härten (G6).** `db/migrations_drift_test.go` läuft in CI.
-- ◐ **Phase 4 — In Tests überführen.** *Teilweise:* die 🟡-Ausleihregeln (Limit, Vormerkkonflikt,
-  Lehrer-Auflösung, Race-Mapping) sind als Unit-Tests committet (`loan_checkout_test.go`).
-  **Offen:** die 🟢-Constraint-Verletzungstests liefen nur manuell gegen Wegwerf-Container —
-  es gibt **keinen committeten Test**, der sie in CI provoziert. Der e2e-Lauf deckt die
-  Happy-Paths der Schreibpfade ab, nicht die Abwehr. Braucht eine Test-DB in CI
-  (Postgres-Service-Container) — bewusst als eigener, abgegrenzter Schritt.
+- ✅ **Phase 4 — In Tests überführen.** Die 🟡-Ausleihregeln als Unit-Tests
+  (`loan_checkout_test.go`); die 🟢-Invarianten als Integrationstests gegen echtes
+  Postgres 15 im CI-Service-Container (`db/constraints_*_pg_test.go`): jede Verletzung
+  wird provoziert und muss am erwarteten Constraint scheitern, jeder gültige Wert muss
+  durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
+  dass das **in CI** nicht unbemerkt passiert.
 
-## Restarbeit (Stand 2026-07-15, nach Migration 043)
+## Testebenen — wofür welche
 
-**Code (klein, entscheidungsfrei):**
-1. Legacy `benutzer_rollen` droppen + Bootstrap-Befüllung aus `db/seed.go` entfernen (G5-Rest).
-2. Phase 4-Rest: Constraint-Verletzungstests gegen echte PG in CI (s. o.).
+| Ebene | Beantwortet | Beispiel |
+|---|---|---|
+| Unit (pgxmock) | Stimmt die Go-Logik? | Ausleihlimit, Vormerkkonflikt |
+| **DB-Integration (echtes PG)** | Hält die DB die Invariante wirklich? | `chk_aussonderung_grund` lehnt NULL ab |
+| e2e (Playwright) | Funktioniert der Weg durch die App? | Inventur-Verlust bucht korrekt aus |
+
+Die mittlere Ebene ist nicht ersetzbar: pgxmock kennt keine Constraints, und e2e läuft nur
+Happy-Paths. Genau in dieser Lücke sass der NULL-Bug in Migration 043.
+
+## Restarbeit (Stand 2026-07-15, nach Migration 044)
+
+**Code:** *(keine offenen Punkte aus dem Katalog)*
+
+Nicht aus dem Katalog, aber notiert: Die Rolle `helfer` hat **keine e2e-Abdeckung** —
+der Kiosk-Modus für Helfer ist nie automatisiert durchgespielt worden. Lohnt sich, sobald
+die Rolle produktiv vergeben wird.
 
 **Betreiber (nur der Betreiber kann sie erledigen):**
 1. Oberstufen-Diagnose-Query auf der Prod-DB ausführen (Altdaten des 5-13-Bugs).

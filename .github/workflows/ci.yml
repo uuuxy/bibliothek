@@ -24,7 +24,29 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-    
+      # Aktiviert die DB-Integrationstests (db/constraints_pg_test.go). Ohne diese
+      # Variable überspringen sie sich selbst — dann prüfte CI die DB-Invarianten nicht.
+      # Der Name MUSS "test" enthalten: die Tests verwerfen das Schema (Notbremse in
+      # pruefeTestDatenbank). Wegwerf-Container, daher Passwort im Klartext unkritisch.
+      TEST_DATABASE_URL: postgres://postgres:ci-throwaway@localhost:5432/bibliothek_test?sslmode=disable
+
+    # Postgres 15 = Produktionsversion. Die Constraint-Tests prüfen echtes
+    # Postgres-Verhalten (z. B. dass ein CHECK nur bei FALSE greift, nicht bei NULL) —
+    # das lässt sich mit pgxmock prinzipiell nicht nachbilden.
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: ci-throwaway
+          POSTGRES_DB: bibliothek_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - name: Check out repository code
       uses: actions/checkout@v4
