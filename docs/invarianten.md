@@ -29,7 +29,8 @@ Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026
 | Überfällig-Automatik: ≥ `MaxOverdueItems` sperrt | 🟡 | `loan_checkout_validation.go:56` |
 | Ausleih-Limit `max_ausleihen_schueler` (LMF + eigene Rückgabe ausgenommen) | 🟡 **jetzt getestet** (88,9 %) | `loan_checkout.go:55`, `loan_checkout_test.go` |
 | Abholbereit reserviertes Exemplar geht nicht an Dritte | 🟡 **jetzt getestet** (90,9 %) | `loan_checkout.go:72`, `loan_checkout_test.go` |
-| Doppel-Scan desselben Exemplars → sauberer Konflikt | 🟡 `ErrConflict` + `SELECT … FOR UPDATE` | `loan_checkout_cases.go:22`, `loan.go:106` |
+| Doppel-Scan desselben Exemplars → sauberer Konflikt (409 statt 500) | 🟢 Unique-Index + 🟡 `mapLoanCreateErr` **100 % getestet** | `loan_checkout_cases.go:19`, `loan.go:106` |
+| Lehrkraft (Handapparat) → Jahresfrist, nur aktive Lehrer | 🟡 **100 % getestet** | `loan_checkout_validation.go:105` |
 
 **Bewertung:** Sehr robust. Die datenkritischen Invarianten sind bereits auf DB-Ebene. Die
 Geschäftsregeln (Sperre/Limit/Overdue) liegen bewusst im Code (brauchen Kontext + Override) —
