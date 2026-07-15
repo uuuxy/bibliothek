@@ -45,7 +45,10 @@
 	let realClasses = $state.raw([]);
 	// --- Abgeleitete Werte ---
 	let classes = $derived(buecherNachKlassenGruppieren(books));
-	let klassenList = $derived(realClasses.map((c) => c.name.replace('Klasse ', '')));
+	// Set: Das replace() bildet zwei Namen auf denselben Wert ab, sobald „Klasse 5a" und
+	// „5a" nebeneinander existieren. Die Liste wird per Wert als each-Key genutzt —
+	// doppelte Keys reissen die Ansicht ab (each_key_duplicate).
+	let klassenList = $derived([...new Set(realClasses.map((c) => c.name.replace('Klasse ', '')))]);
 
 	// --- WZ-Synonyme für Suchbegriffe auf der Startseite ---
 	const suchSynonyme = new Map([
