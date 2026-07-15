@@ -121,9 +121,15 @@ CREATE TABLE benutzer_rollen (
 
 
 -- Table: schueler (Students borrowing books)
--- DSGVO Art. 5 Abs. 1 lit. c – Datensparsamkeit:
--- Erlaubte Felder (ausschließlich aus LUSD-Import): vorname, nachname, klasse,
--- geburtsdatum, lusd_id. Adress- und Kontaktdaten dürfen NICHT gespeichert werden.
+-- DSGVO Art. 5 Abs. 1 lit. c – Zweckbindung & Datensparsamkeit:
+-- Aus dem LUSD-Import übernommen: vorname, nachname, klasse, geburtsdatum, lusd_id
+-- sowie – sofern im Export vorhanden – Anschrift (strasse, hausnummer, plz, ort)
+-- und eltern_email. Zweck der Adress-/Kontaktdaten ist ausschließlich der Versand
+-- von Schadens-Rechnungen (Anschrift) und Eltern-Mahnungen (E-Mail).
+-- Löschung: Beim Abgang ohne offene Vorgänge werden diese Felder in der
+-- Anonymisierung geleert (siehe api/lusd_apply.go: anonymisiereAbgaenger).
+-- TODO(Betreiber): Rechtsgrundlage & Aufbewahrungsfrist im Verzeichnis von
+-- Verarbeitungstätigkeiten dokumentieren.
 CREATE TABLE schueler (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     barcode_id VARCHAR(100) UNIQUE NOT NULL,          -- Barcode ID on student ID card
@@ -572,7 +578,10 @@ INSERT INTO schema_migrations (version) VALUES
 ('034_drop_antolin.sql'),
 ('035_lusd_id_partial_unique.sql'),
 ('036_schule_einstellungen.sql'),
-('037_bestellungen_verlauf.sql')
+('037_bestellungen_verlauf.sql'),
+('038_signatur_konsolidierung.sql'),
+('039_wertebereich_constraints.sql'),
+('040_status_constraints.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -648,3 +657,51 @@ CREATE TABLE IF NOT EXISTS mail_settings_config (
     CONSTRAINT mail_settings_config_single_row_chk CHECK (id = 1)
 );
 INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+-- Non-Negativitäts-/Positivitäts-Constraints für Zählwerte & Geld (siehe
+-- Migration 039). Hier für Neuinstallationen; idempotent per DO-Guard.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_stock_nonneg') THEN
+        ALTER TABLE buecher_titel ADD CONSTRAINT chk_stock_nonneg CHECK (stock >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_meldebestand_nonneg') THEN
+        ALTER TABLE buecher_titel ADD CONSTRAINT chk_meldebestand_nonneg CHECK (meldebestand >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_einkaufspreis_nonneg') THEN
+        ALTER TABLE buecher_exemplare ADD CONSTRAINT chk_einkaufspreis_nonneg CHECK (einkaufspreis >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_pos_menge_positiv') THEN
+        ALTER TABLE bestellungen_positionen ADD CONSTRAINT chk_pos_menge_positiv CHECK (menge >= 1);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_pos_einzelpreis_nonneg') THEN
+        ALTER TABLE bestellungen_positionen ADD CONSTRAINT chk_pos_einzelpreis_nonneg CHECK (einzelpreis >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_verlauf_gesamtbetrag_nonneg') THEN
+        ALTER TABLE bestellungen_verlauf ADD CONSTRAINT chk_verlauf_gesamtbetrag_nonneg CHECK (gesamtbetrag >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_verlauf_anzahl_nonneg') THEN
+        ALTER TABLE bestellungen_verlauf ADD CONSTRAINT chk_verlauf_anzahl_nonneg CHECK (anzahl_exemplare >= 0);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ksr_anzahl_positiv') THEN
+        ALTER TABLE klassensatz_reservierungen ADD CONSTRAINT chk_ksr_anzahl_positiv CHECK (anzahl >= 1);
+    END IF;
+END $$;
+
+-- Wertemengen-Constraints für Status-Felder + grade_level-Untergrenze (siehe
+-- Migration 040). Hier für Neuinstallationen; idempotent per DO-Guard.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_vormerkung_status') THEN
+        ALTER TABLE vormerkungen ADD CONSTRAINT chk_vormerkung_status
+            CHECK (status IN ('wartend', 'abholbereit'));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_inventur_status') THEN
+        ALTER TABLE buecher_exemplare ADD CONSTRAINT chk_inventur_status
+            CHECK (inventur_status IS NULL OR inventur_status IN ('ausstehend', 'erfasst'));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_grade_level_bereich') THEN
+        ALTER TABLE buecher_titel ADD CONSTRAINT chk_grade_level_bereich
+            CHECK (grade_level IS NULL OR grade_level BETWEEN 0 AND 13);
+    END IF;
+END $$;
