@@ -57,9 +57,10 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 | ISBN eindeutig (wo gesetzt) | 🟢 UNIQUE | `schema.sql:246` |
 | Exemplar-Barcode eindeutig | 🟢 UNIQUE NOT NULL | `schema.sql:291` |
 | Exemplar hängt an existierendem Titel | 🟢 FK ON DELETE CASCADE | `schema.sql:290` |
-| **[G4]** `grade_level`, `stock` in gültigem Bereich | 🟡 nur in Go (Import-Parser) | `import_verarbeitung_zeilen.go` |
-| **[G3]** Physischer Zustand „Verloren/…" als Zustandsautomat | 🔴 Freitext `zustand_notiz` | `schema.sql:292` |
-| **[G2]** `cover_status`, `medientyp` in gültiger Menge | 🔴 kein CHECK | `schema.sql:252,260` |
+| **[G4]** `grade_level` 0–13, `stock` ≥ 0 | 🟢 `chk_grade_level_bereich`, `chk_stock_nonneg` | `migrations/039`, `migrations/040` |
+| **[G3]** Aussonderungs-Grund strukturiert: im Umlauf = NULL, ausgesondert = genau ein Wert aus {VERLUST, BESCHAEDIGUNG, AUSSORTIERT, BESTANDSKORREKTUR} | 🟢 `chk_aussonderung_grund` | `migrations/043` |
+| **[G2]** `cover_status` ∈ {PENDING, FOUND, FAILED, NOT_FOUND} | 🟢 `chk_cover_status` | `migrations/041` |
+| `medientyp` — **bewusst ohne CHECK**: offenes, per Formular frei eingebbares Vokabular | 🟡 Formular | `migrations/040` (Begründung im Kopf) |
 
 ---
 
@@ -79,11 +80,11 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
 | Ein Schüler merkt einen Titel höchstens einmal vor | 🟢 `UNIQUE(titel_id, schueler_id)` | `schema.sql:502` |
-| **[G2]** Status-Lebenszyklus `wartend → abholbereit` (3-Tage-Fenster) | 🔴 Freitext, kein CHECK | `loan_return.go:38` |
+| **[G2]** Status ∈ {`wartend`, `abholbereit`} | 🟢 `chk_vormerkung_status` | `migrations/040` |
 | Bereitgestelltes Exemplar existiert | 🟢 FK ON DELETE SET NULL | `schema.sql:500` |
 
-**Hinweis:** Verwendete Werte im Code: `wartend`, `abholbereit`. Der **vollständige** erlaubte
-Satz (inkl. Ablauf/Abholung aus Migration 022) muss vor einem CHECK in Phase 0 gepinnt werden.
+**Hinweis:** Das Vokabular ist bewusst zweiwertig — erfüllte Vormerkungen werden
+**gelöscht**, nicht auf einen Endstatus gesetzt (geprüft vor Migration 040).
 
 ---
 
@@ -93,7 +94,7 @@ Satz (inkl. Ablauf/Abholung aus Migration 022) muss vor einem CHECK in Phase 0 g
 |---|---|---|
 | Hängt an existierendem Titel | 🟢 FK CASCADE | `schema.sql:511` |
 | Lebenszyklus offen/erledigt | 🟡 Boolean `erledigt` | `schema.sql:516` |
-| **[G4]** `anzahl > 0` | 🔴 kein CHECK (nur DEFAULT 1) | `schema.sql:513` |
+| **[G4]** `anzahl ≥ 1` | 🟢 `chk_ksr_anzahl_positiv` | `migrations/039` |
 
 ---
 
@@ -103,7 +104,7 @@ Satz (inkl. Ablauf/Abholung aus Migration 022) muss vor einem CHECK in Phase 0 g
 |---|---|---|
 | Position hängt an existierender Bestellung | 🟢 FK CASCADE | `schema.sql:481` |
 | Nur Positionen mit Menge > 0 werden bestellt | 🟡 Go-Guard | `order_handler.go:78` |
-| **[G4]** `menge > 0`, `einzelpreis ≥ 0` auf DB-Ebene | 🔴 kein CHECK | `schema.sql:485` |
+| **[G4]** `menge ≥ 1`, `einzelpreis ≥ 0`, `gesamtbetrag ≥ 0`, `anzahl_exemplare ≥ 0` | 🟢 4 CHECKs | `migrations/039` |
 
 ---
 
@@ -112,7 +113,7 @@ Satz (inkl. Ablauf/Abholung aus Migration 022) muss vor einem CHECK in Phase 0 g
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
 | Gesperrtes/ausgesondertes Gerät leiht nicht | 🟡 | `device_service.go:84` |
-| **[G2]** `inventur_status` ∈ {`ausstehend`,`erfasst`} | 🔴 Freitext, kein CHECK | `schema.sql:296` |
+| **[G2]** `inventur_status` ∈ {NULL, `ausstehend`, `erfasst`} | 🟢 `chk_inventur_status` | `migrations/040` |
 
 ---
 
@@ -120,9 +121,9 @@ Satz (inkl. Ablauf/Abholung aus Migration 022) muss vor einem CHECK in Phase 0 g
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| `benutzer.rolle` ∈ Enum | 🟢 `benutzer_rolle` ENUM (kleingeschr.) | `schema.sql:15` |
-| `benutzer_rollen.rolle` ∈ Menge | 🟢 CHECK (GROSS + `HELFER`) | `schema.sql:119` |
-| **[G5]** Ein einziges Rollen-Vokabular | 🔴 **zwei divergierende** Definitionen | siehe Lücken-Register |
+| `benutzer.rolle` ∈ Enum (inkl. `helfer` seit Migration 042) | 🟢 `benutzer_rolle` ENUM (kleingeschr.) | `schema.sql:15`, `migrations/042` |
+| **[G5]** Ein einziges Rollen-Vokabular zur Laufzeit: `benutzer.rolle` | 🟢 alle Laufzeit-Queries umgestellt | `loan_checkout_validation.go:105` |
+| `benutzer_rollen` (GROSS-Vokabular) — **Legacy**, nur noch Bootstrap-Seed schreibt sie, kein Laufzeit-Code liest sie | 🔴 Drop offen | `db/seed.go` |
 | Login-Rate-Limit je echter Client-IP (nicht Proxy) | 🟢/🟡 `pkg/clientip` + `TRUSTED_PROXIES` | `middleware_ratelimit.go` |
 
 ---
@@ -131,7 +132,7 @@ Satz (inkl. Ablauf/Abholung aus Migration 022) muss vor einem CHECK in Phase 0 g
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Seed-Liste == alle `migrations/*.sql` | 🔴 **[G6]** `038` fehlt in der Liste | `schema.sql:534` |
+| Seed-Liste == alle `migrations/*.sql` | 🟢 CI-Drift-Guard (Test schlägt bei Abweichung fehl) | `db/migrations_drift_test.go` |
 | Jede Migration atomar (eigene TX) | 🟢 Runner | `db/migrations.go:146` |
 
 ---
@@ -141,22 +142,40 @@ Satz (inkl. Ablauf/Abholung aus Migration 022) muss vor einem CHECK in Phase 0 g
 | # | Lücke | Schwere | Soll-Durchsetzung | Blockiert durch |
 |---|---|---|---|---|
 | ~~**G1**~~ | **ERLEDIGT (Entscheidung B, 2026-07-15):** LUSD importiert jetzt Anschrift + `eltern_email` (optional). Zweck Rechnung/Mahnung; Anonymisierung bei Abgang löscht die Daten. Kommentar korrigiert. **Offen:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis dokumentieren (Betreiber). | erledigt | `lusd_apply.go`, `lusd_parser.go`, `schema.sql:127` | — |
-| **G4a** | ~~`stock`, `meldebestand`, `einkaufspreis`, `menge`, `einzelpreis`, `gesamtbetrag`, `anzahl` ohne DB-Wertebereich~~ **ERLEDIGT (Migration 039):** Non-Negativitäts-/Positivitäts-CHECKs, gegen echtes PG verifiziert. | 🟢 erledigt | `migrations/039_wertebereich_constraints.sql` |
-| **G2** | ~~Status-Freitextfelder ohne CHECK~~ **TEILWEISE ERLEDIGT (Migration 040):** `vormerkungen.status` {wartend,abholbereit}, `inventur_status` {ausstehend,erfasst}+NULL — gegen echtes PG verifiziert. **Offen bewusst:** `cover_status` (inkonsistente Groß-/Kleinschreibung im Code → erst bereinigen), `medientyp` (offenes Vokabular, freie Formulareingabe → kein CHECK). | 🟢 Kern erledigt | `migrations/040_status_constraints.sql` |
-| ~~**G4b**~~ | **ERLEDIGT:** `grade_level` = 0–13 (0 = unkategorisiert, 5–13 kooperative Gesamtschule inkl. Oberstufe), NULL erlaubt. Deckt sich mit App-Validierung. **Nebenbefund gefixt:** `parseKlassenStufe` klemmte fälschlich bei 10 → Jahrgang 11–13 wurde beim Import als 5 einsortiert; jetzt 5–13. | 🟢 erledigt | `migrations/040`, `import_verarbeitung_zeilen.go` |
-| **G3** | Buch-Zustand als Freitext statt Zustandsautomat. | Mittel | Statusspalte + erlaubte Übergänge | Produkt-Entscheidung |
-| **G5** | **Halb abgebrochene Migration** — `benutzer_rollen` (GROSS, mit `HELFER`) war als neues Rollenmodell gedacht, wird aber nur beim Bootstrap **einmalig** befüllt; Login/JWT/Benutzer-Anlage nutzen weiter `benutzer.rolle` (ENUM). **Folge (behoben):** neu angelegte Lehrkräfte fehlten in `benutzer_rollen` → Handapparat-Ausleihe unmöglich; Vorbesitzer wurde als „HELFER" angezeigt. Laufzeit-Queries nutzen jetzt `benutzer.rolle` → `benutzer_rollen` ist gegenstandslos. **Offen:** Tabelle droppen + Schicksal der unerreichbaren Rolle `HELFER` (ENUM kennt sie nicht, Admin-UI bietet sie nicht an, Router/Permissions erwarten sie). | Bug behoben, Aufräumen offen | `loan_checkout_validation.go:105`, `loan_checkout_cases.go:141` | **HELFER-Entscheidung** |
-| **G6** | `038_signatur_konsolidierung.sql` fehlt in der Seed-Liste. **Kein** Fresh-Install-Breaker (reines idempotentes Daten-UPDATE), aber Prozessregel verletzt. | Niedrig | CI-Check Liste↔Dateien | — |
+| **G4a** | ~~`stock`, `meldebestand`, `einkaufspreis`, `menge`, `einzelpreis`, `gesamtbetrag`, `anzahl` ohne DB-Wertebereich~~ **ERLEDIGT (Migration 039):** Non-Negativitäts-/Positivitäts-CHECKs, gegen echtes PG verifiziert. | 🟢 erledigt | `migrations/039_wertebereich_constraints.sql` | — |
+| ~~**G2**~~ | **ERLEDIGT:** `vormerkungen.status`, `inventur_status` (Migration 040), `cover_status` (Migration 041 — die vermutete inkonsistente Schreibung war ein Grep-Artefakt aus JSON-Responses; Vokabular ist durchgängig GROSS). **Dauerhaft ohne CHECK (Beschluss):** `medientyp` — offenes, frei eingebbares Vokabular. | 🟢 erledigt | `migrations/040`, `migrations/041` | — |
+| ~~**G4b**~~ | **ERLEDIGT:** `grade_level` = 0–13 (0 = unkategorisiert, 5–13 kooperative Gesamtschule inkl. Oberstufe), NULL erlaubt. Deckt sich mit App-Validierung. **Nebenbefund gefixt:** `parseKlassenStufe` klemmte fälschlich bei 10 → Jahrgang 11–13 wurde beim Import als 5 einsortiert; jetzt 5–13. | 🟢 erledigt | `migrations/040`, `import_verarbeitung_zeilen.go` | — |
+| ~~**G3**~~ | **ERLEDIGT (Migration 043):** `aussonderung_grund` {VERLUST, BESCHAEDIGUNG, AUSSORTIERT, BESTANDSKORREKTUR} + `chk_aussonderung_grund` (im Umlauf = NULL, ausgesondert = genau ein Wert). Backfill aus `zustand_notiz`-Markern, alle 7 Schreibpfade angepasst, gegen echtes PG + e2e verifiziert. Bewusst kein Status „Ausgeliehen" — Ausleihzustand lebt allein in `ausleihen` (Unique-Index Migration 033). | 🟢 erledigt | `migrations/043_aussonderung_grund.sql` | — |
+| **G5** | **Kern erledigt:** Handapparat-Bug behoben (Laufzeit liest `benutzer.rolle`), Rolle `helfer` erreichbar gemacht (Migration 042: ENUM-Wert + Admin-Dropdown; Router/Permissions existierten bereits). **Offen (Aufräumen, kein Risiko):** Legacy-Tabelle `benutzer_rollen` droppen + Bootstrap-Befüllung in `db/seed.go` entfernen — kein Laufzeit-Code liest sie mehr. | Aufräumen offen | `migrations/042`, `db/seed.go` | — |
+| ~~**G6**~~ | **ERLEDIGT:** Seed-Liste vervollständigt (038–043) + CI-Drift-Guard: Test vergleicht `migrations/*.sql` gegen die Seed-Liste in `schema.sql` und schlägt bei jeder Abweichung fehl. | 🟢 erledigt | `db/migrations_drift_test.go` | — |
 
 ---
 
 ## Fahrplan
 
-- **Phase 0 — Katalog vervollständigen.** *(dieses Dokument — erledigt für die Kern-Entitäten)*
-- **Phase 1 — G1 entscheiden (Governance).** Rechtsgrundlage/Zweck der Adress-/Kontaktdaten
-  festhalten, Aufbewahrung/Löschung klären, Kommentar korrigieren. **Vor** jeder `schueler`-Migration.
-- **Phase 2 — Constraints nachrüsten (G4 → G2 → G5).** Je Lücke eine kleine idempotente Migration:
-  erst `SELECT` auf Bestandsverletzer, dann `CHECK`/Enum/Unique. Datenkorruption vor Kosmetik.
-- **Phase 3 — Prozess härten (G6).** CI-Diff `migrations/*.sql` ↔ Seed-Liste.
-- **Phase 4 — In Tests überführen.** 🟡-Invarianten als table-driven Handler-Tests (echter HTTP-Pfad),
-  🟢-Invarianten mit einem Test, der die Verletzung provoziert und den DB-Fehler erwartet.
+- ✅ **Phase 0 — Katalog vervollständigen.** *(dieses Dokument)*
+- ✅ **Phase 1 — G1 entscheiden (Governance).** Entscheidung B umgesetzt (Import + Löschung bei
+  Anonymisierung). **Offen beim Betreiber:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis.
+- ✅ **Phase 2 — Constraints nachrüsten.** Migrationen 039–043: 12 CHECKs + ENUM-Wert, jede gegen
+  echtes PG 15/16 verifiziert (Verletzung provoziert → Fehler erwartet; gültige Werte akzeptiert).
+- ✅ **Phase 3 — Prozess härten (G6).** `db/migrations_drift_test.go` läuft in CI.
+- ◐ **Phase 4 — In Tests überführen.** *Teilweise:* die 🟡-Ausleihregeln (Limit, Vormerkkonflikt,
+  Lehrer-Auflösung, Race-Mapping) sind als Unit-Tests committet (`loan_checkout_test.go`).
+  **Offen:** die 🟢-Constraint-Verletzungstests liefen nur manuell gegen Wegwerf-Container —
+  es gibt **keinen committeten Test**, der sie in CI provoziert. Der e2e-Lauf deckt die
+  Happy-Paths der Schreibpfade ab, nicht die Abwehr. Braucht eine Test-DB in CI
+  (Postgres-Service-Container) — bewusst als eigener, abgegrenzter Schritt.
+
+## Restarbeit (Stand 2026-07-15, nach Migration 043)
+
+**Code (klein, entscheidungsfrei):**
+1. Legacy `benutzer_rollen` droppen + Bootstrap-Befüllung aus `db/seed.go` entfernen (G5-Rest).
+2. Phase 4-Rest: Constraint-Verletzungstests gegen echte PG in CI (s. o.).
+
+**Betreiber (nur der Betreiber kann sie erledigen):**
+1. Oberstufen-Diagnose-Query auf der Prod-DB ausführen (Altdaten des 5-13-Bugs).
+2. Echten LUSD-Export einmal hochladen — Log nennt die erkannten Adressspalten.
+3. DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.
+4. Branch-Protection: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel
+   ernst nehmen (PR-Workflow) oder abschaffen.
+5. Nach erster `helfer`-Vergabe: geseedete Rechte im PermissionManager gegenprüfen.
