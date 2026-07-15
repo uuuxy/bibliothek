@@ -114,11 +114,10 @@ BEFORE UPDATE ON benutzer
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
 
--- Table: benutzer_rollen (Mapping users to their roles)
-CREATE TABLE benutzer_rollen (
-    benutzer_id UUID PRIMARY KEY REFERENCES benutzer(id) ON DELETE CASCADE,
-    rolle VARCHAR(50) NOT NULL CHECK (rolle IN ('ADMIN', 'MITARBEITER', 'LEHRER', 'HELFER'))
-);
+-- Hinweis: Die frühere Tabelle benutzer_rollen wurde mit Migration 044 entfernt.
+-- Die Rolle eines Benutzers steht ausschliesslich in benutzer.rolle (ENUM). Welche
+-- Rechte eine Rolle hat, steht in role_permissions (GROSS-Vokabular; die Middleware
+-- verbindet beide per UPPER(), siehe api/permission_middleware.go).
 
 
 -- Table: schueler (Students borrowing books)
@@ -627,7 +626,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('040_status_constraints.sql'),
 ('041_cover_status_constraint.sql'),
 ('042_rolle_helfer.sql'),
-('043_aussonderung_grund.sql')
+('043_aussonderung_grund.sql'),
+('044_drop_benutzer_rollen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

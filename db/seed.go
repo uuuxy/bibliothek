@@ -19,20 +19,6 @@ const (
 		)
 	`
 
-	createBenutzerRollenTableSQL = `
-		CREATE TABLE IF NOT EXISTS benutzer_rollen (
-			benutzer_id UUID PRIMARY KEY REFERENCES benutzer(id) ON DELETE CASCADE,
-			rolle VARCHAR(50) NOT NULL CHECK (rolle IN ('ADMIN', 'MITARBEITER', 'LEHRER', 'HELFER'))
-		)
-	`
-
-	migrateBenutzerRollenSQL = `
-		INSERT INTO benutzer_rollen (benutzer_id, rolle)
-		SELECT id, UPPER(rolle::text)
-		FROM benutzer
-		ON CONFLICT DO NOTHING
-	`
-
 	seedRolePermissionSQL = `
 		INSERT INTO role_permissions (role, permission, allowed)
 		VALUES ($1, $2, $3)
@@ -58,11 +44,6 @@ const (
 		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
 		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
 		RETURNING id
-	`
-
-	insertInitialAdminRoleSQL = `
-		INSERT INTO benutzer_rollen (benutzer_id, rolle)
-		VALUES ($1, 'ADMIN')
 	`
 )
 
@@ -90,18 +71,10 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		return fmt.Errorf("failed to create role_permissions table: %w", err)
 	}
 
-	// 5. Create benutzer_rollen table
-	_, err = db.Pool.Exec(ctx, createBenutzerRollenTableSQL)
-	if err != nil {
-		return fmt.Errorf("failed to create benutzer_rollen table: %w", err)
-	}
-
-	// 6. Migrate existing roles from benutzer table to benutzer_rollen if empty
-	if err := db.migrateBenutzerRollen(ctx); err != nil {
-		return err
-	}
-
-	// 7. Seed default role permissions with uppercase role names
+	// 5. Seed default role permissions with uppercase role names.
+	// Die Rolle eines Benutzers steht in benutzer.rolle (ENUM, kleingeschrieben); die
+	// Middleware verbindet beide Vokabulare per UPPER() (permission_middleware.go).
+	// role_permissions bildet also nur ab, was eine ROLLE darf — nicht, wer sie hat.
 	defaults := []struct {
 		Role       string
 		Permission string
@@ -225,19 +198,6 @@ func (db *Database) migrateRolePermissionsColumn(ctx context.Context) error {
 	return nil
 }
 
-// migrateBenutzerRollen übernimmt bestehende Rollen aus der benutzer-Tabelle einmalig in
-// benutzer_rollen (nur, solange diese noch leer ist).
-func (db *Database) migrateBenutzerRollen(ctx context.Context) error {
-	var exists int
-	err := db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer_rollen").Scan(&exists)
-	if err == nil && exists == 0 {
-		if _, err := db.Pool.Exec(ctx, migrateBenutzerRollenSQL); err != nil {
-			return fmt.Errorf("failed to migrate existing benutzer roles: %w", err)
-		}
-	}
-	return nil
-}
-
 // InitLieferanten initializes the lieferanten table and seeds it with default values.
 func (db *Database) InitLieferanten(ctx context.Context) error {
 	_, err := db.Pool.Exec(ctx, createLieferantenTableSQL)
@@ -292,25 +252,11 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 		return nil
 	}
 
-	tx, err := db.Pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction for initial admin: %w", err)
-	}
-	defer SafeRollback(ctx, tx)
-
+	// Ein einzelnes INSERT ist für sich atomar — die frühere Transaktion klammerte den
+	// zusätzlichen Insert in die inzwischen entfernte Tabelle benutzer_rollen.
 	var adminID string
-	err = tx.QueryRow(ctx, insertInitialAdminSQL, email).Scan(&adminID)
-	if err != nil {
+	if err := db.Pool.QueryRow(ctx, insertInitialAdminSQL, email).Scan(&adminID); err != nil {
 		return fmt.Errorf("failed to insert initial admin: %w", err)
-	}
-
-	_, err = tx.Exec(ctx, insertInitialAdminRoleSQL, adminID)
-	if err != nil {
-		return fmt.Errorf("failed to insert initial admin role: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit initial admin transaction: %w", err)
 	}
 
 	log.Printf("Erster Admin-Benutzer (%s) wurde erfolgreich initialisiert.", email)
