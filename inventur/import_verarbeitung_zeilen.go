@@ -61,8 +61,10 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 }
 
 // parseKlassenStufe versucht die Klassenstufe aus einem String zu extrahieren.
-// Der Rückgabewert liegt garantiert in 5–10; die Konvertierung nach int16 ist
-// deshalb hier — hinter dem Bounds-Check — verlustfrei.
+// Außerhalb von 5–10 gilt der Default 5. Early Return statt Clamp-Zuweisung:
+// die int16-Konvertierung muss auf einem Pfad liegen, den der Bounds-Check
+// exklusiv kontrolliert — nach einem Merge mit dem Default-Zweig gilt der
+// Check statisch nicht mehr als Guard (go/incorrect-integer-conversion).
 func parseKlassenStufe(gradeStr string, title string) int16 {
 	gradeLevel := 0
 	if g, err := strconv.Atoi(gradeStr); err == nil {
@@ -72,7 +74,7 @@ func parseKlassenStufe(gradeStr string, title string) int16 {
 		gradeLevel = inferGradeLevelFromTitle(title)
 	}
 	if gradeLevel < 5 || gradeLevel > 10 {
-		gradeLevel = 5
+		return 5
 	}
 	return int16(gradeLevel)
 }

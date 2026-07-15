@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bytes"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -81,6 +83,40 @@ func TestVerbieteInterneZieladressen(t *testing.T) {
 			err := verbieteInterneZieladressen("tcp4", tt.address, nil)
 			if blocked := err != nil; blocked != tt.blocked {
 				t.Errorf("verbieteInterneZieladressen(%q) blocked = %v (err: %v); want %v", tt.address, blocked, err, tt.blocked)
+			}
+		})
+	}
+}
+
+// Diese Fälle enden alle vor dem Dateisystem-Zugriff des Handlers — statt eines
+// Fehlers muss das transparente Fallback-GIF kommen (kein Browser-Konsolen-Spam).
+func TestServeCoverImage_FallbackOhneDownload(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+	}{
+		{"ISBN fehlt", "?url=https://covers.openlibrary.org/b/isbn/123-M.jpg"},
+		{"URL fehlt", "?isbn=9783161484100"},
+		{"Host nicht auf der Allowlist", "?isbn=9783161484100&url=https://evil.example/x.jpg"},
+		{"Interne Ziel-URL", "?isbn=9783161484100&url=http://169.254.169.254/latest/meta-data/"},
+	}
+
+	s := &Server{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/api/cover"+tt.query, nil)
+
+			s.serveCoverImage(rec, req)
+
+			if rec.Code != 200 {
+				t.Errorf("Status = %d; want 200", rec.Code)
+			}
+			if ct := rec.Header().Get("Content-Type"); ct != "image/gif" {
+				t.Errorf("Content-Type = %q; want image/gif", ct)
+			}
+			if !bytes.Equal(rec.Body.Bytes(), coverFallbackGIF) {
+				t.Errorf("Body ist nicht das Fallback-GIF (%d Bytes)", rec.Body.Len())
 			}
 		})
 	}
