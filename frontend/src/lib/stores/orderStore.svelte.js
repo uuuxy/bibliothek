@@ -37,12 +37,46 @@ class OrderStore {
 	/** @type {any[]} */
 	incomingShipments = $state([]);
 
+	/** Zeitpunkt des letzten vollständigen Ladens (0 = noch nie). */
+	#zuletztGeladen = 0;
+
+	/**
+	 * Lädt die Arbeitsdaten des Bestellwesens.
+	 *
+	 * Der Store ist ein Singleton, seine Daten überleben also den Unmount der Ansicht.
+	 * Trotzdem lud jeder Mount alles neu — und BestellWorkspace wird bei jedem
+	 * Tab-Wechsel neu aufgebaut (Router.svelte nutzt {#if}/{:else if}). Der
+	 * Bestellbedarf ist die mit Abstand grösste Liste der Anwendung; genau das war der
+	 * spürbare Hänger beim Zurückwechseln auf „Bestellungen".
+	 *
+	 * Jetzt: vorhandene Daten sofort anzeigen und nur dann auffrischen, wenn sie älter
+	 * als frischeDauerMs sind — im Hintergrund, ohne die Ansicht zu blockieren. Nach
+	 * jeder verändernden Aktion (Wareneingang, Bestellung) laden die Aufrufer ohnehin
+	 * gezielt neu, die Liste ist also nicht auf den Tab-Wechsel als Auslöser angewiesen.
+	 */
 	async init() {
+		const frischeDauerMs = 60_000;
+		const alter = Date.now() - this.#zuletztGeladen;
+
+		if (this.#zuletztGeladen !== 0 && alter < frischeDauerMs) {
+			return; // Daten sind da und frisch genug — nichts tun.
+		}
+		if (this.#zuletztGeladen !== 0) {
+			// Daten sind da, aber älter: im Hintergrund auffrischen. Bewusst ohne await —
+			// die Ansicht zeigt sofort den vorhandenen Stand.
+			void this.#ladeAlles();
+			return;
+		}
+		await this.#ladeAlles(); // Erster Aufruf: es gibt noch nichts zu zeigen.
+	}
+
+	async #ladeAlles() {
 		await Promise.all([
 			this.loadSuppliers(),
 			this.loadIncomingShipments(),
 			this.loadRecommendations()
 		]);
+		this.#zuletztGeladen = Date.now();
 	}
 
 	async loadSuppliers() {
