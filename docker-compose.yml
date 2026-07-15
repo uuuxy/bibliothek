@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres-db:
     image: postgres:15-alpine
@@ -24,10 +22,19 @@ services:
       dockerfile: Dockerfile
     container_name: bibliothek-backend
     ports:
-      - "8083:8083" # Localhost-Binding für globalen Caddy Reverse Proxy
+      # Nur an localhost binden: Caddy erreicht das Backend über das Docker-Netz
+      # (bibliothek-backend:8083), nicht über diesen Host-Port. 0.0.0.0-Binding
+      # würde das Backend im LAN direkt erreichbar machen und das Vertrauen in die
+      # privaten Proxy-Netze (TRUSTED_PROXIES) unterlaufen (XFF-Spoofing).
+      - "127.0.0.1:8083:8083"
     environment:
       - PORT=8083
       - DB_HOST=postgres-db
+      # Vertrauenswürdige Proxy-Netze für die echte Client-IP (Rate-Limiting,
+      # Login-Brute-Force, Audit-Logs). Default = private Docker-Netze, damit die
+      # von Caddy angehängte X-Forwarded-For-Client-IP ausgewertet wird. Siehe
+      # .env.example. Bei bekanntem caddy_global_net-Subnetz enger fassen.
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
       # ── Sicherheit / Secrets ────────────────────────────────────────────────
       # Test-/Pilotphase (Standard): Der Stack startet auch mit den Default-Secrets.
       #

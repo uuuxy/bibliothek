@@ -3,11 +3,11 @@ package auth
 import (
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/httpresp"
 	"context"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -76,29 +76,11 @@ func (l *loginFailureLimiter) recordFailure(ip string) {
 // globalLoginLimiter: 5 failed attempts per IP within 15 minutes.
 var globalLoginLimiter = newLoginFailureLimiter(5, 15*time.Minute)
 
-// realIP extracts the true client IP.
-// X-Forwarded-For and X-Real-IP are only trusted when the direct connection
-// comes from a loopback address (i.e. behind the Caddy reverse proxy).
+// realIP extracts the true client IP via the shared, trusted-proxy-aware
+// resolver (see pkg/clientip), so the per-(email+IP) brute-force key is keyed on
+// the real client rather than the Caddy proxy address.
 func realIP(r *http.Request) string {
-	remoteIP, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		// RemoteAddr ohne Port: unverändert als IP behandeln
-		remoteIP = r.RemoteAddr
-	}
-	if remoteIP != "" {
-		parsed := net.ParseIP(remoteIP)
-		if parsed != nil && parsed.IsLoopback() {
-			if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-				parts := strings.SplitN(xff, ",", 2)
-				return strings.TrimSpace(parts[0])
-			}
-			if xri := r.Header.Get("X-Real-IP"); xri != "" {
-				return xri
-			}
-		}
-		return remoteIP
-	}
-	return r.RemoteAddr
+	return clientip.FromRequest(r)
 }
 
 // LoginRequest represents the payload for login.

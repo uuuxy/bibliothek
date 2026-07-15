@@ -2,12 +2,12 @@ package api
 
 import (
 	"errors"
-	"net"
 	"net/http"
 	"sync"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/clientip"
 )
 
 // failedAttempt stores the count of failed login attempts and the time of the first failure in a window.
@@ -95,12 +95,13 @@ func verzeichneLoginErgebnis(attempt *failedAttempt, status int, now time.Time) 
 
 // AuthRateLimitMiddleware limits the number of failed authentication attempts to 5 per IP within 15 minutes.
 // Further requests within the window will be blocked with a 429 Too Many Requests response.
+//
+// The IP is resolved via clientip so that requests behind the Caddy reverse
+// proxy are keyed on the real client — not on the single proxy address, which
+// would let five failed logins lock out every user (global denial of service).
 func AuthRateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = r.RemoteAddr
-		}
+		ip := clientip.FromRequest(r)
 
 		now := time.Now()
 		attempt, blocked := reserviereLoginVersuch(ip, now)

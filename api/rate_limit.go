@@ -2,13 +2,13 @@ package api
 
 import (
 	"errors"
-	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/clientip"
 )
 
 type visitor struct {
@@ -73,39 +73,11 @@ func (l *ipRateLimiter) allow(ip string) bool {
 	return false
 }
 
-// getIP extracts the client IP address from the request.
-// X-Forwarded-For and X-Real-IP are only trusted when the direct connection
-// comes from a loopback address (i.e. behind Caddy reverse proxy).
+// getIP extracts the client IP address from the request via the shared,
+// trusted-proxy-aware resolver (see pkg/clientip). Used for both rate limiting
+// and audit-log attribution.
 func getIP(r *http.Request) string {
-	remoteIP, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		// RemoteAddr ohne Port (z. B. Unix-Socket): unverändert übernehmen
-		remoteIP = r.RemoteAddr
-	}
-	if isLoopback(remoteIP) {
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			parts := strings.Split(xff, ",")
-			if len(parts) > 0 {
-				return strings.TrimSpace(parts[0])
-			}
-		}
-		if ip := r.Header.Get("X-Real-IP"); ip != "" {
-			return ip
-		}
-	}
-	if remoteIP != "" {
-		return remoteIP
-	}
-	return r.RemoteAddr
-}
-
-// isLoopback checks if an IP string is a loopback address (trusted proxy).
-func isLoopback(ip string) bool {
-	parsed := net.ParseIP(ip)
-	if parsed == nil {
-		return ip == "localhost"
-	}
-	return parsed.IsLoopback()
+	return clientip.FromRequest(r)
 }
 
 func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {

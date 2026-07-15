@@ -30,6 +30,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/service"
 	"bibliothek/jobs"
+	"bibliothek/pkg/clientip"
 	"bibliothek/plugins/vorlage"
 	"bibliothek/repository"
 	"bibliothek/sse"
@@ -175,6 +176,13 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	if err != nil {
 		cookieSecure = false
 	}
+
+	// Trusted-Proxy-Konfiguration für die Client-IP-Ermittlung (Rate-Limiting,
+	// Login-Brute-Force, Audit-Logs). Ohne TRUSTED_PROXIES wird nur Loopback
+	// vertraut — hinter Caddy im Docker-Netz muss das Netz dort gesetzt werden,
+	// sonst kollabieren alle Clients auf die Proxy-IP.
+	clientip.ConfigureFromEnv()
+
 	return
 }
 
