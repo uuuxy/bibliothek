@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# Kein Job schreibt ins Repo — der GITHUB_TOKEN braucht nur Lesezugriff.
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
