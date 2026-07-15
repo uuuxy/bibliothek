@@ -1,9 +1,13 @@
+// defineConfig kommt aus ESLint selbst; tseslint.config() ist seit typescript-eslint 8
+// zugunsten dieser Variante als deprecated markiert (SonarQube javascript:S1874).
+// tseslint bleibt für Parser und Regelsätze im Einsatz.
+import { defineConfig } from 'eslint/config';
 import eslintPluginSvelte from 'eslint-plugin-svelte';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
-export default tseslint.config(
+export default defineConfig(
   ...tseslint.configs.recommended,
   ...eslintPluginSvelte.configs['flat/recommended'],
   {
