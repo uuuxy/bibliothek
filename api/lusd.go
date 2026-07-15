@@ -171,60 +171,6 @@ func klassifiziereLusdRecords(records []parsedStudentRow, dbStudents map[string]
 	}
 }
 
-// wendeLusdAenderungenAn führt den zweiten Durchlauf aus: Klassenwechsel updaten
-// und Neuzugänge anlegen.
-func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, dbStudents map[string]lusdDbStudent) error {
-	barcodeCounter := 0
-	for _, rec := range records {
-		if rec.LusdID == "" {
-			continue
-		}
-		dbRec, exists := dbStudents[rec.LusdID]
-		if !exists {
-			barcodeCounter++
-			year := time.Now().Year() + 5 // Default abgang
-			if _, err := tx.Exec(ctx,
-				"INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-				generateImportBarcode(barcodeCounter), rec.Vorname, rec.Nachname, rec.Klasse, year, rec.LusdID, rec.GebDatum); err != nil {
-				return err
-			}
-			continue
-		}
-		if dbRec.Klasse != rec.Klasse {
-			if _, err := tx.Exec(ctx, "UPDATE schueler SET klasse = $1, aktualisiert_am = NOW() WHERE id = $2", rec.Klasse, dbRec.ID); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// behandleAbgaenger sperrt Abgänger mit offenen Ausleihen (Name bleibt fürs
-// Mahnwesen sichtbar) und anonymisiert die übrigen DSGVO-konform.
-func behandleAbgaenger(ctx context.Context, tx pgx.Tx, graduates []StudentDiff, dbStudents map[string]lusdDbStudent) error {
-	for _, grad := range graduates {
-		dbRec := dbStudents[grad.ID]
-
-		var pending int
-		if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", dbRec.ID).Scan(&pending); err != nil {
-			return err
-		}
-
-		var err error
-		if pending > 0 {
-			_, err = tx.Exec(ctx, "UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1", dbRec.ID)
-		} else {
-			// Interne DB-UUID anhängen, um Unique-Constraint-Verletzungen zu vermeiden.
-			anonymisiertName := fmt.Sprintf("Anonymisiert-%s", dbRec.ID)
-			_, err = tx.Exec(ctx, "UPDATE schueler SET vorname = 'Abgänger', nachname = $1, klasse = 'ABG', ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $2", anonymisiertName, dbRec.ID)
-		}
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // computeLusdChanges compares the CSV records with the database inside a transaction
 // and either returns the preview stats or actually applies the changes.
 func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudentRow, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {

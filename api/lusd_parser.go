@@ -9,12 +9,17 @@ import (
 )
 
 type parsedStudentRow struct {
-	LusdID   string
-	Vorname  string
-	Nachname string
-	Klasse   string
-	GebDatum *time.Time
-	LineNum  int
+	LusdID      string
+	Vorname     string
+	Nachname    string
+	Klasse      string
+	GebDatum    *time.Time
+	Strasse     string
+	Hausnummer  string
+	PLZ         string
+	Ort         string
+	ElternEmail string
+	LineNum     int
 }
 
 const (
@@ -23,26 +28,27 @@ const (
 	lusdColNachname     = "nachname"
 	lusdColKlasse       = "klasse"
 	lusdColGeburtsdatum = "geburtsdatum"
+	// Optionale Kontakt-/Adressspalten. Fehlen sie im Export, bleibt der Import
+	// gültig; die Felder sind dann leer. Zweck: Schadens-Rechnung (Anschrift) und
+	// Eltern-Mahnung (E-Mail). Header müssen exakt (case-insensitiv) so heißen.
+	lusdColStrasse     = "strasse"
+	lusdColHausnummer  = "hausnummer"
+	lusdColPLZ         = "plz"
+	lusdColOrt         = "ort"
+	lusdColElternEmail = "eltern_email"
 )
 
-// lusdHeaderMap ordnet die bekannten Spalten ihren Indizes zu und prüft, ob alle
-// Pflichtspalten (LUSD-ID, Vorname, Nachname, Klasse) vorhanden sind.
-func lusdHeaderMap(headers []string) (map[string]int, error) {
-	headerMap := make(map[string]int)
-	for idx, h := range headers {
-		norm := strings.ToLower(strings.TrimSpace(h))
-		switch norm {
-		case lusdColID, lusdColVorname, lusdColNachname, lusdColKlasse, lusdColGeburtsdatum:
-			headerMap[norm] = idx
-		}
-	}
+// Header-Erkennung (Normalisierung, Alias-Tabelle, Pflichtspalten) liegt in
+// lusd_header.go.
 
-	for _, col := range []string{lusdColID, lusdColVorname, lusdColNachname, lusdColKlasse} {
-		if _, exists := headerMap[col]; !exists {
-			return nil, fmt.Errorf("pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", col)
-		}
+// spaltenWert liest eine optionale Spalte getrimmt aus; fehlt sie oder ist die
+// Zeile zu kurz, wird "" zurückgegeben.
+func spaltenWert(row []string, headerMap map[string]int, col string) string {
+	idx, ok := headerMap[col]
+	if !ok || idx >= len(row) {
+		return ""
 	}
-	return headerMap, nil
+	return strings.TrimSpace(row[idx])
 }
 
 // parseLUSDGebDatum liest das optionale Geburtsdatum und probiert mehrere Layouts.
@@ -77,12 +83,17 @@ func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedSt
 	}
 
 	return parsedStudentRow{
-		LusdID:   lusdID,
-		Vorname:  vorname,
-		Nachname: nachname,
-		Klasse:   klasse,
-		GebDatum: geburtsdatum,
-		LineNum:  lineNum,
+		LusdID:      lusdID,
+		Vorname:     vorname,
+		Nachname:    nachname,
+		Klasse:      klasse,
+		GebDatum:    geburtsdatum,
+		Strasse:     spaltenWert(row, headerMap, lusdColStrasse),
+		Hausnummer:  spaltenWert(row, headerMap, lusdColHausnummer),
+		PLZ:         spaltenWert(row, headerMap, lusdColPLZ),
+		Ort:         spaltenWert(row, headerMap, lusdColOrt),
+		ElternEmail: spaltenWert(row, headerMap, lusdColElternEmail),
+		LineNum:     lineNum,
 	}, nil
 }
 

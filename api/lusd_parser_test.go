@@ -147,3 +147,48 @@ func TestParseLUSDCSV_EmptyHeaderErrors(t *testing.T) {
 		t.Fatal("leerer Inhalt soll Fehler bei Kopfzeile liefern")
 	}
 }
+
+func TestParseLUSDCSV_AddressColumnsParsed(t *testing.T) {
+	csv := "lusd_id,vorname,nachname,klasse,strasse,hausnummer,plz,ort,eltern_email\n" +
+		"L1,Max,Mustermann,5a,Hauptstraße,12a,63500,Seligenstadt,eltern@example.de\n"
+
+	rows, _, err := parseLUSDCSV([]byte(csv))
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	got := rows[0]
+	if got.Strasse != "Hauptstraße" || got.Hausnummer != "12a" || got.PLZ != "63500" ||
+		got.Ort != "Seligenstadt" || got.ElternEmail != "eltern@example.de" {
+		t.Errorf("Adressspalten falsch geparst: %+v", got)
+	}
+}
+
+func TestParseLUSDCSV_AddressColumnsOptional(t *testing.T) {
+	// Export ohne Adressspalten bleibt gültig; die Adressfelder sind dann leer.
+	csv := "lusd_id,vorname,nachname,klasse\nL1,Max,Mustermann,5a\n"
+
+	rows, _, err := parseLUSDCSV([]byte(csv))
+	if err != nil {
+		t.Fatalf("Adressspalten sind optional, Fehler: %v", err)
+	}
+	if rows[0].Strasse != "" || rows[0].ElternEmail != "" {
+		t.Errorf("ohne Adressspalten sollen die Felder leer sein: %+v", rows[0])
+	}
+}
+
+func TestParseLUSDCSV_PartialAddressColumns(t *testing.T) {
+	// Nur ein Teil der optionalen Spalten vorhanden — der Rest bleibt leer.
+	csv := "lusd_id,vorname,nachname,klasse,eltern_email\n" +
+		"L1,Max,Mustermann,5a,eltern@example.de\n"
+
+	rows, _, err := parseLUSDCSV([]byte(csv))
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if rows[0].ElternEmail != "eltern@example.de" {
+		t.Errorf("vorhandene E-Mail soll geparst werden: %+v", rows[0])
+	}
+	if rows[0].Strasse != "" || rows[0].PLZ != "" {
+		t.Errorf("fehlende Adressspalten sollen leer bleiben: %+v", rows[0])
+	}
+}
