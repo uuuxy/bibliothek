@@ -11,11 +11,19 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-// sameDay vergleicht zwei Zeitpunkte auf Kalendertag-Ebene (Jahr/Monat/Tag),
-// unabhängig von Uhrzeit und Zeitzone-Offset.
+// sameDay vergleicht zwei Zeitpunkte auf Kalendertag-Ebene (Jahr/Monat/Tag) — beide
+// zuvor in die Schul-Zeitzone umgerechnet.
+//
+// Die Umrechnung ist der Kern: Date() liefert den Kalendertag in der Location des
+// jeweiligen Zeitpunkts. calculateDueDate rechnet bewusst in schoolLocation(), die
+// Erwartungswerte der Tests entstehen aber aus time.Now() in der Zeitzone des
+// Rechners. Auf einem UTC-Server (CI) sind das ab 22:00 UTC zwei verschiedene
+// Kalendertage — derselbe Zeitpunkt, aber 22:09 UTC = 00:09 des Folgetags in Berlin.
+// Ohne Normalisierung waren diese Tests jede Nacht zwei Stunden lang rot.
 func sameDay(a, b time.Time) bool {
-	ay, am, ad := a.Date()
-	by, bm, bd := b.Date()
+	loc := schoolLocation()
+	ay, am, ad := a.In(loc).Date()
+	by, bm, bd := b.In(loc).Date()
 	return ay == by && am == bm && ad == bd
 }
 
