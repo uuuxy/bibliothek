@@ -107,6 +107,13 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 | Position hängt an existierender Bestellung | 🟢 FK CASCADE | `schema.sql:481` |
 | Nur Positionen mit Menge > 0 werden bestellt | 🟡 Go-Guard | `order_handler.go:78` |
 | **[G4]** `menge ≥ 1`, `einzelpreis ≥ 0`, `gesamtbetrag ≥ 0`, `anzahl_exemplare ≥ 0` | 🟢 4 CHECKs | `migrations/039` |
+| Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Default `?type=lmf` + Test | `reorders.go`, `reorders_test.go` |
+
+**Hinweis zum Bestellbedarf:** Ohne die LMF-Vorauswahl bestand die Liste zu ~99% aus
+Titeln, die niemand nachbestellen will (gemessen: 12.079 von 12.707 Titeln), weil alle
+Titel den Default-Meldebestand 5 tragen, der Median aber bei 1 Exemplar liegt. **Offen
+für den Betreiber:** ob `meldebestand` je Lernmittel-Titel gepflegt wird — der Default 5
+ist eine Annahme, kein Beschluss.
 
 ---
 
@@ -179,16 +186,19 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 Die mittlere Ebene ist nicht ersetzbar: pgxmock kennt keine Constraints, und e2e läuft nur
 Happy-Paths. Genau in dieser Lücke sass der NULL-Bug in Migration 043.
 
-## Restarbeit (Stand 2026-07-15, nach Migration 044)
+## Restarbeit (Stand 2026-07-16)
 
 **Code:** *(keine offenen Punkte aus dem Katalog)*
 
-Nicht aus dem Katalog, aber notiert: Die Rolle `helfer` hat **keine e2e-Abdeckung** —
-der Kiosk-Modus für Helfer ist nie automatisiert durchgespielt worden. Lohnt sich, sobald
-die Rolle produktiv vergeben wird.
+Die Rolle `helfer` hat inzwischen eine e2e-Spec (`helfer-kiosk.spec.js`): Rolle
+vergebbar, Weiche in den Kiosk, kein Zugriff auf fremde Bereiche. Ob ein Helfer im
+Kiosk **scannen** darf, schreibt sie bewusst nicht fest — siehe Punkt 4 unten.
 
 **Betreiber (nur der Betreiber kann sie erledigen):**
-1. Oberstufen-Diagnose-Query auf der Prod-DB ausführen (Altdaten des 5-13-Bugs).
+1. ~~Oberstufen-Diagnose-Query~~ **ERLEDIGT (2026-07-16):** gegen die lokale DB
+   ausgeführt — alle 12.707 Titel haben `grade_level = NULL`, kein genutzter
+   Import-Pfad befüllt das Feld. Der Clamp-Bug war real, hatte aber nie
+   Datenwirkung. Kein Repair nötig.
 2. Echten LUSD-Export einmal hochladen — Log nennt die erkannten Adressspalten.
 3. DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.
 4. Branch-Protection: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel
