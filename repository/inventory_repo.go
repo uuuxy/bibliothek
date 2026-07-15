@@ -119,6 +119,7 @@ func (r *InventoryRepository) MarkRemainingAsLostAndReset(ctx context.Context) (
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = false,
 		    ist_ausgesondert = true,
+		    aussonderung_grund = 'VERLUST',
 		    zustand_notiz = 'Verlust bei Inventur',
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE inventur_status = 'ausstehend'

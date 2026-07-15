@@ -81,7 +81,8 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 
 	_, err = tx.Exec(ctx, `
 		UPDATE buecher_exemplare
-		SET ist_ausgesondert = true, ist_ausleihbar = false, zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
+		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESCHAEDIGUNG',
+		    zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $2
 	`, beschreibung, copyID)
 	if err != nil {

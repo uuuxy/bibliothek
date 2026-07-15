@@ -339,6 +339,11 @@ CREATE TABLE buecher_exemplare (
     inventur_geprueft_am TIMESTAMP WITH TIME ZONE,    -- Inventory scan check timestamp
     inventur_status VARCHAR(20) DEFAULT NULL,         -- 'ausstehend' or 'erfasst' during inventory
     ist_ausgesondert BOOLEAN NOT NULL DEFAULT false,   -- Decommissioned copies: hidden from catalog/kiosk/inventory, kept for statistics
+    -- Grund des Abgangs (siehe Migration 043). Pflicht sobald ist_ausgesondert=true,
+    -- sonst NULL — erzwungen durch chk_aussonderung_grund. Ermöglicht u. a. die
+    -- Verlustquote (VERLUST) getrennt von planmäßigen Abgängen (AUSSORTIERT) und
+    -- technischen Anpassungen (BESTANDSKORREKTUR).
+    aussonderung_grund VARCHAR(20),
     etikett_gedruckt BOOLEAN NOT NULL DEFAULT false,   -- True if barcode label has been printed
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf position, condition details)
     einkaufspreis DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -621,7 +626,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('039_wertebereich_constraints.sql'),
 ('040_status_constraints.sql'),
 ('041_cover_status_constraint.sql'),
-('042_rolle_helfer.sql')
+('042_rolle_helfer.sql'),
+('043_aussonderung_grund.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -749,4 +755,20 @@ BEGIN
         ALTER TABLE buecher_titel ADD CONSTRAINT chk_cover_status
             CHECK (cover_status IS NULL OR cover_status IN ('PENDING', 'FOUND', 'FAILED', 'NOT_FOUND'));
     END IF;
+    -- Aussonderungs-Grund: im Umlauf = kein Grund, ausgesondert = genau ein
+    -- gültiger Grund (siehe Migration 043).
+    -- "IS NOT NULL" ist nicht redundant: sonst ergäbe der zweite Zweig bei
+    -- grund = NULL den Wert NULL, und ein CHECK schlägt nur bei FALSE an.
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_aussonderung_grund') THEN
+        ALTER TABLE buecher_exemplare ADD CONSTRAINT chk_aussonderung_grund
+            CHECK (
+                (ist_ausgesondert = false AND aussonderung_grund IS NULL)
+             OR (ist_ausgesondert = true  AND aussonderung_grund IS NOT NULL
+                 AND aussonderung_grund IN
+                    ('VERLUST', 'BESCHAEDIGUNG', 'AUSSORTIERT', 'BESTANDSKORREKTUR'))
+            );
+    END IF;
 END $$;
+
+CREATE INDEX IF NOT EXISTS idx_exemplare_aussonderung_grund
+    ON buecher_exemplare (aussonderung_grund) WHERE aussonderung_grund IS NOT NULL;

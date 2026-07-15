@@ -122,7 +122,8 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 		// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
 		query := `
 			UPDATE buecher_exemplare
-			SET ist_ausgesondert = true, zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert'
+			SET ist_ausgesondert = true, aussonderung_grund = 'BESTANDSKORREKTUR',
+			    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert'
 			WHERE id IN (
 				SELECT e.id
 				FROM buecher_exemplare e
@@ -142,7 +143,8 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 			remainingToRetire := int64(numToRetire) - retired
 			fallbackQuery := `
 				UPDATE buecher_exemplare
-				SET ist_ausgesondert = true, zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
+				SET ist_ausgesondert = true, aussonderung_grund = 'BESTANDSKORREKTUR',
+				    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
 				WHERE id IN (
 					SELECT e.id
 					FROM buecher_exemplare e

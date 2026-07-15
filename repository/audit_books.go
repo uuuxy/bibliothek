@@ -123,7 +123,7 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	}
 
 	// Soft-Delete durchführen: Exemplar sperren und Zustand auf "Systematisch gelöscht" setzen
-	if _, err = tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, zustand_notiz = 'Systematisch gelöscht' WHERE id = $1", copyID); err != nil {
+	if _, err = tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT', zustand_notiz = 'Systematisch gelöscht' WHERE id = $1", copyID); err != nil {
 		return err
 	}
 

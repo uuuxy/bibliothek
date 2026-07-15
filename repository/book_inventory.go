@@ -55,7 +55,8 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) error {
 	query := `
 		UPDATE buecher_exemplare
-		SET ist_ausgesondert = true, ist_ausleihbar = false, aktualisiert_am = CURRENT_TIMESTAMP
+		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT',
+		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`
 	_, err := r.db.Exec(ctx, query, id)
