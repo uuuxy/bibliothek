@@ -27,8 +27,9 @@ jobs:
       # Aktiviert die DB-Integrationstests (db/constraints_pg_test.go). Ohne diese
       # Variable überspringen sie sich selbst — dann prüfte CI die DB-Invarianten nicht.
       # Der Name MUSS "test" enthalten: die Tests verwerfen das Schema (Notbremse in
-      # pruefeTestDatenbank). Wegwerf-Container, daher Passwort im Klartext unkritisch.
-      TEST_DATABASE_URL: postgres://postgres:ci-throwaway@localhost:5432/bibliothek_test?sslmode=disable
+      # pruefeTestDatenbank).
+      # Ohne Passwort — siehe POSTGRES_HOST_AUTH_METHOD unten.
+      TEST_DATABASE_URL: postgres://postgres@localhost:5432/bibliothek_test?sslmode=disable
 
     # Postgres 15 = Produktionsversion. Die Constraint-Tests prüfen echtes
     # Postgres-Verhalten (z. B. dass ein CHECK nur bei FALSE greift, nicht bei NULL) —
@@ -37,7 +38,12 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_PASSWORD: ci-throwaway
+          # trust statt eines Wegwerf-Passworts: Der Container existiert nur für die
+          # Dauer dieses Jobs, ist ausschliesslich über localhost des Runners
+          # erreichbar und enthält nur Testdaten. Ein Passwort hier wäre kein
+          # Sicherheitsgewinn, sondern nur ein Credential im Repository — und als
+          # solches nicht von einem echten zu unterscheiden (SonarQube secrets:S6698).
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: bibliothek_test
         ports:
           - 5432:5432
