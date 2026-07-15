@@ -193,4 +193,19 @@ die Rolle produktiv vergeben wird.
 3. DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.
 4. Branch-Protection: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel
    ernst nehmen (PR-Workflow) oder abschaffen.
-5. Nach erster `helfer`-Vergabe: geseedete Rechte im PermissionManager gegenprüfen.
+5. **`helfer`-Rechte entscheiden — die Rolle ist mit den Default-Rechten funktionsunfähig.**
+   Belegt: `db/seed.go` seedet für `HELFER` **alle** Rechte auf `false`. Der Router
+   (`Router.svelte:37`) zwingt Helfer aber auf genau zwei Ansichten, die beide Rechte
+   brauchen:
+
+   | Ansicht | Endpunkt | benötigtes Recht | Default |
+   |---|---|---|---|
+   | Kiosk (Omnibox) | `POST /api/action`, `GET /api/search` | `view_students` | ❌ false |
+   | Katalog | `GET /api/books` | `view_books` | ❌ false |
+
+   Ein Helfer könnte sich also anmelden, landet im Kiosk — und **jeder Scan liefert 403**.
+   Das ist bewusst nicht von mir entschieden worden: `view_students` öffnet Schülerdaten,
+   und ob eine Hilfskraft (Schüler/Eltern?) die sehen darf, ist eine fachliche und
+   datenschutzrechtliche Entscheidung des Betreibers — kein Implementierungsdetail.
+   Ist die Antwort „ja, für den Kiosk", genügt es, die beiden Rechte im
+   PermissionManager zu aktivieren (konfigurierbar, keine Code-Änderung nötig).
