@@ -24,6 +24,11 @@
 		 * Disable this if you'd like to use dynamic types.
 		 */
 		"checkJs": true,
+		/**
+		 * jsconfig.json default ist 2 — damit würde checkJs auch importiertes
+		 * JS aus node_modules prüfen (z. B. fake-indexeddb in den Tests).
+		 */
+		"maxNodeModuleJsDepth": 0,
 		"noImplicitAny": false,
 		"paths": {
 			"$lib/*": ["./src/inventur/lib/*"]

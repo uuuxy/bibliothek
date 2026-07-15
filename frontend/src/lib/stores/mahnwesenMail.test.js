@@ -11,13 +11,18 @@ import { apiFetch } from '../apiFetch.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
 
+const apiFetchMock = vi.mocked(apiFetch);
+const showToastMock = vi.mocked(showToast);
+
 describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it('POSTet an /api/mail/send-bulk-overdue und meldet die Anzahl per Erfolgs-Toast', async () => {
-		apiFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ sent_count: 3 }) });
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: true, json: async () => ({ sent_count: 3 }) })
+		);
 		const store = useMahnwesenMail();
 
 		await store.sendBulkOverdueMails();
@@ -27,10 +32,12 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 	});
 
 	it('zeigt bei einer Fehlerantwort (res.ok=false) die Server-Meldung als Fehler-Toast', async () => {
-		apiFetch.mockResolvedValueOnce({
-			ok: false,
-			json: async () => ({ error: 'Mahnwesen ist derzeit pausiert (Ferien)' })
-		});
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: false,
+				json: async () => ({ error: 'Mahnwesen ist derzeit pausiert (Ferien)' })
+			})
+		);
 		const store = useMahnwesenMail();
 
 		await store.sendBulkOverdueMails();
@@ -39,12 +46,12 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 	});
 
 	it('fängt Netzwerkfehler ab und meldet sie als Fehler-Toast', async () => {
-		apiFetch.mockRejectedValueOnce(new Error('boom'));
+		apiFetchMock.mockRejectedValueOnce(new Error('boom'));
 		const store = useMahnwesenMail();
 
 		await store.sendBulkOverdueMails();
 
-		expect(showToast).toHaveBeenCalledTimes(1);
-		expect(showToast.mock.calls[0][1]).toBe('error');
+		expect(showToastMock).toHaveBeenCalledTimes(1);
+		expect(showToastMock.mock.calls[0][1]).toBe('error');
 	});
 });

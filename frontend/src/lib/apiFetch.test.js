@@ -15,7 +15,7 @@ describe('apiFetch CSRF-Bootstrap', () => {
 	});
 
 	it('holt das Token vom Bootstrap-Endpoint, wenn das Cookie fehlt', async () => {
-		const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(async (url) => {
+		const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
 			if (String(url) === '/api/csrf-token') {
 				return /** @type {any} */ ({ ok: true, json: async () => ({ csrf_token: 'boot-token' }) });
 			}
@@ -32,7 +32,7 @@ describe('apiFetch CSRF-Bootstrap', () => {
 	it('macht keinen Bootstrap, wenn das Cookie schon existiert', async () => {
 		document.cookie = 'csrf_token=cookie-token; path=/';
 		const fetchMock = vi
-			.spyOn(global, 'fetch')
+			.spyOn(globalThis, 'fetch')
 			.mockImplementation(async () => /** @type {any} */ ({ ok: true, json: async () => ({}) }));
 
 		await apiFetch('/api/lieferanten', { method: 'POST', body: '{}' });
@@ -44,7 +44,7 @@ describe('apiFetch CSRF-Bootstrap', () => {
 
 	it('GETs lösen keinen Bootstrap aus', async () => {
 		const fetchMock = vi
-			.spyOn(global, 'fetch')
+			.spyOn(globalThis, 'fetch')
 			.mockImplementation(async () => /** @type {any} */ ({ ok: true, json: async () => ({}) }));
 
 		await apiFetch('/api/lieferanten');

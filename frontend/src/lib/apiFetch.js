@@ -67,7 +67,7 @@ async function ensureCsrfToken() {
  * Drop-in replacement for `fetch()` with automatic CSRF and credentials.
  *
  * @param {string | URL} url - The URL to fetch
- * @param {RequestInit} [options] - Standard fetch options
+ * @param {RequestInit & { timeoutMs?: number }} [options] - Fetch-Optionen; timeoutMs überschreibt das Default-Timeout
  * @returns {Promise<Response>}
  */
 export async function apiFetch(url, options = {}) {
@@ -115,7 +115,7 @@ export async function apiFetch(url, options = {}) {
 		return response;
 	} catch (error) {
 		clearTimeout(id);
-		if (error.name === 'AbortError') {
+		if (error instanceof Error && error.name === 'AbortError') {
 			throw new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.');
 		}
 		throw error;

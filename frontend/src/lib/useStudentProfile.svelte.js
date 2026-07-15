@@ -13,9 +13,9 @@ export function useStudentProfile() {
 	let showEditModal = $state(false);
 	let showDamageModal = $state(false);
 	let showLockModal = $state(false);
-	let damageBook = $state(null);
+	let damageBook = $state(/** @type {any} */ (null));
 	let isSubmittingDamage = $state(false);
-	let globalErrorToast = $state(null);
+	let globalErrorToast = $state(/** @type {string|null} */ (null));
 	let rechnungPdfLoading = $state(false);
 	let kontoauszugPdfLoading = $state(false);
 

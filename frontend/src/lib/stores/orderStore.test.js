@@ -13,6 +13,8 @@ vi.mock('./toastStore.svelte.js', () => ({
 import { apiGet, apiPost } from '../apiFetch.js';
 import { orderStore } from './orderStore.svelte.js';
 
+const apiPostMock = vi.mocked(apiPost);
+
 function resetStore() {
 	orderStore.cart = [];
 	orderStore.suppliers = [];
@@ -83,14 +85,14 @@ describe('orderStore Summen', () => {
 		orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
 		orderStore.addToCart({ id: 'b', titel: 'B', autor: '', isbn: '2' }, 3);
 		orderStore.cart[0].preis = 10.5;
-		orderStore.cart[1].preis = '4.50'; // Eingabefeld liefert Strings
+		orderStore.cart[1].preis = /** @type {any} */ ('4.50'); // Eingabefeld liefert Strings
 		expect(orderStore.totalQty).toBe(5);
 		expect(orderStore.total).toBeCloseTo(2 * 10.5 + 3 * 4.5);
 	});
 
 	it('wertet ungültige Preise als 0', () => {
 		orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' }, 2);
-		orderStore.cart[0].preis = 'abc';
+		orderStore.cart[0].preis = /** @type {any} */ ('abc');
 		expect(orderStore.total).toBe(0);
 	});
 });
@@ -116,9 +118,9 @@ describe('orderStore.submitOrder', () => {
 	});
 
 	it('baut das Payload korrekt und leert den Warenkorb', async () => {
-		apiPost.mockResolvedValueOnce({ status: 'success', message: 'ok', ordered_qty: 2 });
+		apiPostMock.mockResolvedValueOnce({ status: 'success', message: 'ok', ordered_qty: 2 });
 		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 2, true);
-		orderStore.cart[0].preis = '9.90';
+		orderStore.cart[0].preis = /** @type {any} */ ('9.90');
 
 		await orderStore.submitOrder();
 
@@ -131,18 +133,18 @@ describe('orderStore.submitOrder', () => {
 	});
 
 	it('unterdrückt generate_barcodes, wenn der globale Schalter aus ist', async () => {
-		apiPost.mockResolvedValueOnce({ status: 'success' });
+		apiPostMock.mockResolvedValueOnce({ status: 'success' });
 		orderStore.attachBarcodes = false;
 		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 1, true);
 
 		await orderStore.submitOrder();
 
-		const payload = apiPost.mock.calls[0][1];
+		const payload = apiPostMock.mock.calls[0][1];
 		expect(payload.items[0].generate_barcodes).toBe(false);
 	});
 
 	it('behält den Warenkorb bei einem API-Fehler', async () => {
-		apiPost.mockRejectedValueOnce(new Error('boom'));
+		apiPostMock.mockRejectedValueOnce(new Error('boom'));
 		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' });
 
 		await orderStore.submitOrder();
@@ -177,8 +179,9 @@ describe('orderStore Suche', () => {
 	});
 
 	it('verwirft veraltete Antworten (Out-of-Order-Race)', async () => {
-		let resolveFirst;
-		apiPost
+		/** @type {(value: any) => void} */
+		let resolveFirst = () => {};
+		apiPostMock
 			.mockImplementationOnce(
 				() =>
 					new Promise((res) => {

@@ -37,11 +37,13 @@ jobs:
     - name: Verify dependencies
       run: go mod verify
 
+    # Action v8 + gepinnte v2-Version: .golangci.yml nutzt das v2-Schema, und
+    # goinstall@latest würde über den alten Modulpfad (ohne /v2) v1 installieren,
+    # dessen "config verify" das v2-Schema ablehnt. Version = lokaler Stand.
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v8
       with:
-        version: latest
-        install-mode: goinstall
+        version: v2.12.2
         args: --timeout=5m
       
     - name: Run Unit Tests
@@ -81,7 +83,11 @@ jobs:
 
     # docker-compose.local.yml referenziert das externe Caddy-Netz des
     # Produktiv-Hosts — auf dem Runner muss es nur existieren.
+    # POSTGRES_PASSWORD ist im Compose bewusst Pflicht ohne Default; für den
+    # Wegwerf-Stack auf dem Runner reicht ein fester Dummy-Wert.
     - name: Start local stack
+      env:
+        POSTGRES_PASSWORD: ci-e2e-throwaway-password
       run: |
         docker network create caddy_global_net
         docker compose -f docker-compose.local.yml up -d --build

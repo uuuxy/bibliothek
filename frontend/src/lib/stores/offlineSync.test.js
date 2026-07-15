@@ -54,10 +54,12 @@ describe('offlineSync.startSync', () => {
 	it('synct die Queue als Batch mit Idempotenz-Keys und leert sie bei Erfolg', async () => {
 		await enqueueOfflineAction('checkout', 'B-100', 'schueler-42');
 
-		apiClient.post.mockResolvedValue({
-			ok: true,
-			json: async () => ({ results: [{ index: 0, success: true }] })
-		});
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({ results: [{ index: 0, success: true }] })
+			})
+		);
 
 		await offlineSync.startSync();
 
@@ -75,10 +77,12 @@ describe('offlineSync.startSync', () => {
 	it('wirft dauerhaft abgelehnte Aktionen (4xx) aus der Queue statt endlos zu hängen', async () => {
 		await enqueueOfflineAction('checkin', 'B-KAPUTT');
 
-		apiClient.post.mockResolvedValue({
-			ok: true,
-			json: async () => ({ results: [{ index: 0, success: false, status: 404 }] })
-		});
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({ results: [{ index: 0, success: false, status: 404 }] })
+			})
+		);
 
 		await offlineSync.startSync();
 		expect(await loadQueue()).toHaveLength(0);
@@ -87,7 +91,7 @@ describe('offlineSync.startSync', () => {
 	it('behält die Queue, wenn der Batch-Request selbst scheitert (z. B. 502)', async () => {
 		await enqueueOfflineAction('checkin', 'B-200');
 
-		apiClient.post.mockResolvedValue({ ok: false, status: 502 });
+		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 502 }));
 
 		await offlineSync.startSync();
 		expect(await loadQueue()).toHaveLength(1);

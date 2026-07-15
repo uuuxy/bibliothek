@@ -61,7 +61,9 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
 				lusd_id: formData.lusd_id || null,
 				klasse: formData.klasse || null,
 				barcode_id: formData.barcode_id || null,
-				abgaenger_jahr: formData.abgaenger_jahr ? Number.parseInt(formData.abgaenger_jahr, 10) : null,
+				abgaenger_jahr: formData.abgaenger_jahr
+					? Number.parseInt(formData.abgaenger_jahr, 10)
+					: null,
 				status: formData.status || null,
 				strasse: formData.strasse || null,
 				hausnummer: formData.hausnummer || null,
@@ -77,7 +79,7 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
 			showSnackbar('Änderungen gespeichert.', 'success');
 			onSave();
 		} catch (e) {
-			showSnackbar(e?.message || String(e), 'error');
+			showSnackbar(e instanceof Error ? e.message : String(e), 'error');
 		} finally {
 			saving = false;
 		}
