@@ -139,7 +139,9 @@ func TestMapLoanCreateErr(t *testing.T) {
 
 // --- Lehrkraft als Entleiher (Handapparat) ---
 
-const lehrerQuery = "SELECT b.id, b.barcode_id, b.vorname, b.nachname, br.rolle"
+// Die Rolle kommt aus benutzer.rolle — NICHT mehr aus benutzer_rollen (siehe
+// Regressionstest unten).
+const lehrerQuery = "SELECT b.id, b.barcode_id, b.vorname, b.nachname, b.rolle::text"
 
 func TestResolveTeacher_AktiveLehrkraftBekommtJahresfrist(t *testing.T) {
 	svc, _, mock := newValidationService(t, nil)
@@ -147,7 +149,7 @@ func TestResolveTeacher_AktiveLehrkraftBekommtJahresfrist(t *testing.T) {
 
 	mock.ExpectQuery(lehrerQuery).WithArgs("l1").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "rolle"}).
-			AddRow("l1", "B-L1", "Anna", "Lehrerin", "LEHRER"))
+			AddRow("l1", "B-L1", "Anna", "Lehrerin", "lehrer"))
 
 	chkCtx, err := svc.resolveTeacherBorrower(context.Background(), "l1")
 
@@ -176,6 +178,36 @@ func TestResolveTeacher_UnbekannteOderInaktiveLehrkraft(t *testing.T) {
 
 	if !errors.Is(err, ErrNotFound) {
 		t.Errorf("unbekannte/inaktive Lehrkraft soll ErrNotFound liefern, bekam: %v", err)
+	}
+}
+
+// TestResolveTeacher_FragtNichtBenutzerRollen ist der Regressionstest fuer den
+// Handapparat-Bug: benutzer_rollen wird nur beim Bootstrap einmalig befuellt, das
+// Admin-UI schreibt beim Anlegen ausschliesslich benutzer.rolle. Der frühere
+// INNER JOIN auf benutzer_rollen liess deshalb JEDE neu angelegte Lehrkraft
+// auflaufen ("Aktives Lehrerprofil nicht gefunden"). Die Abfrage darf diese
+// Tabelle nicht mehr berühren.
+func TestResolveTeacher_FragtNichtBenutzerRollen(t *testing.T) {
+	svc, _, mock := newValidationService(t, nil)
+	defer mock.Close()
+
+	// Erwartet wird exakt EINE Abfrage — ohne benutzer_rollen. Ein Join-Rückfall
+	// würde hier an der nicht erfüllten Erwartung scheitern.
+	mock.ExpectQuery("FROM benutzer b\\s+WHERE b.id = \\$1 AND LOWER\\(b.rolle::text\\) = 'lehrer'").
+		WithArgs("neu1").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "rolle"}).
+			AddRow("neu1", "B-N1", "Neue", "Lehrkraft", "lehrer"))
+
+	chkCtx, err := svc.resolveTeacherBorrower(context.Background(), "neu1")
+
+	if err != nil {
+		t.Fatalf("neu angelegte Lehrkraft (ohne benutzer_rollen-Zeile) muss ausleihen koennen, bekam: %v", err)
+	}
+	if chkCtx.borrowerID != "neu1" {
+		t.Errorf("erwartete borrowerID neu1, bekam %q", chkCtx.borrowerID)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Abfrage entspricht nicht der Erwartung (benutzer_rollen-Join zurueck?): %v", err)
 	}
 }
 

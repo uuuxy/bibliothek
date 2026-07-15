@@ -102,13 +102,18 @@ func (s *defaultLoanService) resolveStudentBorrower(ctx context.Context, copy *r
 
 // resolveTeacherBorrower lädt den aktiven Lehrer; für Lehrkräfte gilt eine
 // Leihfrist von 1 Jahr (Dauerleihgabe / Handapparat).
+//
+// Die Rolle kommt aus benutzer.rolle — derselben Quelle, die Login/JWT nutzen und
+// die das Admin-UI beim Anlegen schreibt. Früher wurde hier gegen benutzer_rollen
+// gejoint; diese Tabelle wird aber nur einmalig beim Bootstrap befüllt, sodass
+// NEU angelegte Lehrkräfte dort fehlten und keinen Handapparat ausleihen konnten.
 func (s *defaultLoanService) resolveTeacherBorrower(ctx context.Context, teacherID string) (*checkoutContext, error) {
 	result := &checkoutContext{borrowerType: "teacher", borrowerID: teacherID, teacher: &repository.User{}}
 
 	err := s.pool.QueryRow(ctx, `
-		SELECT b.id, b.barcode_id, b.vorname, b.nachname, br.rolle
-		FROM benutzer b JOIN benutzer_rollen br ON b.id = br.benutzer_id
-		WHERE b.id = $1 AND br.rolle = 'LEHRER' AND b.aktiv = true LIMIT 1
+		SELECT b.id, b.barcode_id, b.vorname, b.nachname, b.rolle::text
+		FROM benutzer b
+		WHERE b.id = $1 AND LOWER(b.rolle::text) = 'lehrer' AND b.aktiv = true LIMIT 1
 	`, teacherID).Scan(&result.teacher.ID, &result.teacher.BarcodeID, &result.teacher.Vorname, &result.teacher.Nachname, &result.teacher.Rolle)
 	if err != nil {
 		return nil, fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", ErrNotFound)

@@ -138,7 +138,10 @@ func (s *defaultLoanService) handleForeignReturn(
 		}
 	} else if activeLoan.AusleiherBenutzerID != nil {
 		prevTeacher = &repository.User{}
-		err = tx.QueryRow(ctx, "SELECT b.id, b.vorname, b.nachname, COALESCE(br.rolle, 'HELFER') FROM benutzer b LEFT JOIN benutzer_rollen br ON b.id = br.benutzer_id WHERE b.id = $1 LIMIT 1", *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
+		// Rolle aus benutzer.rolle (Quelle von Login/JWT). Der frühere LEFT JOIN auf
+		// benutzer_rollen zeigte für alle nach dem Bootstrap angelegten Benutzer den
+		// COALESCE-Fallback 'HELFER' an, weil dort keine Zeile existiert.
+		err = tx.QueryRow(ctx, "SELECT b.id, b.vorname, b.nachname, b.rolle::text FROM benutzer b WHERE b.id = $1 LIMIT 1", *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
 		if errors.Is(err, pgx.ErrNoRows) {
 			prevTeacher = nil
 		}
