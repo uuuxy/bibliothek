@@ -233,6 +233,43 @@ CREATE TRIGGER trg_mail_vorlagen_updated_at
 BEFORE UPDATE ON mail_vorlagen
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+-- Seed der Mail-Vorlagen (Spiegel von migrations/023_seed_mail_vorlagen.sql).
+-- WICHTIG: 023 ist oben als bereits angewendet markiert und läuft auf frischen
+-- Datenbanken daher NIE — ohne diesen Seed bliebe mail_vorlagen leer und der
+-- Eltern-Mahnungs-/Abholbereit-Versand hätte keine Vorlage.
+INSERT INTO mail_vorlagen (typ, betreff, text_body)
+VALUES
+(
+    'MAHNUNG_ELTERN',
+    'Erinnerung: Bitte Bücher in die Schulbibliothek zurückbringen',
+    'Liebe Eltern von {{.Vorname}} {{.Nachname}},
+
+wir möchten Sie höflich daran erinnern, dass die Leihfrist für folgende Medien abgelaufen ist:
+
+{{.BuchListe}}
+
+Bitte sorgen Sie dafür, dass Ihr Kind die Medien zeitnah in der Bibliothek abgibt.
+Ursprüngliche Frist: {{.Frist}}
+
+Vielen Dank für Ihre Mithilfe!
+Ihre Schulbibliothek'
+),
+(
+    'BESTELLUNG_EINGETROFFEN',
+    'Dein vorgemerktes Buch ist abholbereit!',
+    'Hallo {{.Vorname}} {{.Nachname}},
+
+dein vorgemerktes Buch ist in der Schulbibliothek für dich eingetroffen:
+
+{{.BuchListe}}
+
+Bitte hole das Buch bis zum {{.Frist}} ab, da es ansonsten an den nächsten Schüler auf der Warteliste weitergegeben wird.
+
+Viele Grüße,
+Deine Schulbibliothek'
+)
+ON CONFLICT (typ) DO NOTHING;
+
 -- Table: revoked_tokens
 CREATE TABLE revoked_tokens (
     token_signature VARCHAR(255) PRIMARY KEY,

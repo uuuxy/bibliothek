@@ -75,7 +75,11 @@ func lusdHeaderMap(headers []string) (map[string]int, error) {
 
 	for _, col := range lusdPflichtspalten {
 		if _, exists := headerMap[col]; !exists {
-			return nil, fmt.Errorf("pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", col)
+			// Nutzer-sichtbare Meldung (landet 1:1 im Import-Dialog), daher deutsche
+			// Großschreibung statt der sonst üblichen kleingeschriebenen Go-Fehler.
+			// Diese Meldung landet 1:1 im Import-Dialog des Sekretariats, daher
+			// korrekte deutsche Großschreibung statt kleingeschriebenem Go-Fehler.
+			return nil, fmt.Errorf("Pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", col) //nolint:staticcheck // ST1005: nutzer-sichtbarer Text, siehe oben
 		}
 	}
 
