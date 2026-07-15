@@ -81,6 +81,7 @@
 					bind:value={userForm.rolle}
 					class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-300 transition-all font-medium text-slate-800"
 				>
+					<option value="helfer">Helfer</option>
 					<option value="mitarbeiter">Mitarbeiter</option>
 					<option value="lehrer">Lehrer</option>
 					<option value="admin">Administrator</option>

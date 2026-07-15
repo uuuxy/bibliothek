@@ -12,7 +12,8 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 -- -------------------------------------------------------------
 -- 1. ENUMS AND CUSTOM TYPES
 -- -------------------------------------------------------------
-CREATE TYPE benutzer_rolle AS ENUM ('admin', 'lehrer', 'mitarbeiter');
+-- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe auth/jwt.go RoleHelfer, Router.svelte).
+CREATE TYPE benutzer_rolle AS ENUM ('admin', 'lehrer', 'mitarbeiter', 'helfer');
 
 -- -------------------------------------------------------------
 -- 2. REUSABLE TRIGGER FUNCTIONS
@@ -619,7 +620,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('038_signatur_konsolidierung.sql'),
 ('039_wertebereich_constraints.sql'),
 ('040_status_constraints.sql'),
-('041_cover_status_constraint.sql')
+('041_cover_status_constraint.sql'),
+('042_rolle_helfer.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
