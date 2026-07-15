@@ -102,7 +102,16 @@ export function querySQL(sql) {
 		.trim();
 }
 
-/** Eindeutiger Suffix, damit Läufe auf derselben DB nicht kollidieren. */
+/**
+ * Eindeutiger Suffix, damit Läufe auf derselben DB nicht kollidieren.
+ *
+ * randomUUID statt Math.random(): Playwright führt Specs parallel aus, und
+ * `Math.random() * 1000` lieferte nur 1000 Werte — zwei Specs in derselben
+ * Millisekunde kollidierten mit 1:1000. Das ist selten genug, um als unerklärlicher
+ * Flake durchzugehen, und häufig genug, um irgendwann aufzutreten. randomUUID ist
+ * hier nicht wegen Kryptografie richtig, sondern weil es das Versprechen im Namen
+ * dieser Funktion tatsächlich einlöst.
+ */
 export function uniqueSuffix() {
-	return `${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
+	return `${Date.now().toString(36)}${crypto.randomUUID().slice(0, 8)}`;
 }

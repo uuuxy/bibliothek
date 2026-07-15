@@ -74,7 +74,14 @@ function createOfflineSyncStore() {
 			await verarbeiteBatchErgebnisse(data, batchItems);
 			await updateCount();
 
-			// Network Jitter: wait 200-500ms before sending the next batch
+			// Network Jitter: 200-500 ms Pause vor dem nächsten Batch, damit mehrere
+			// Geräte nach einer Offline-Phase nicht im Gleichtakt auf den Server laufen.
+			//
+			// Math.random() ist hier bewusst richtig und kein Sicherheitsmangel
+			// (SonarQube javascript:S2245 meldet jede Verwendung): Das Ergebnis ist eine
+			// Wartedauer, kein Geheimnis. Es schützt nichts, identifiziert nichts und ist
+			// für niemanden von Vorteil, wenn er es vorhersagt. Eine kryptografische
+			// Quelle brächte hier keinerlei Schutz — nur Aufwand.
 			if (queueLength > 50) {
 				const jitter = 200 + Math.random() * 300;
 				await new Promise((resolve) => setTimeout(resolve, jitter));

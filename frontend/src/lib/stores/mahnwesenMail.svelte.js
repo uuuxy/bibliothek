@@ -2,6 +2,28 @@ import { apiFetch } from '../apiFetch.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
 /**
+ * Massenversand: schickt je überfällige Klasse die Mahnliste an die Klassenleitung.
+ * Rückmeldung über die globale Snackbar, da die Aktion aus der Aktionsleiste kommt
+ * (nicht aus dem Modal, dessen modalMsg hier nicht sichtbar wäre).
+ *
+ * Steht ausserhalb der Factory, weil sie keinen Zustand des Modals berührt — sie
+ * muss deshalb nicht je Store-Instanz neu entstehen (SonarQube javascript:S7721).
+ */
+async function sendBulkOverdueMails() {
+	try {
+		const res = await apiFetch('/api/mail/send-bulk-overdue', { method: 'POST' });
+		const json = await res.json();
+		if (res.ok) {
+			showToast(`${json.sent_count ?? 0} Klassen-Mahnliste(n) versendet.`, 'success');
+		} else {
+			showToast(json.error ?? json.message ?? 'Versand fehlgeschlagen.', 'error');
+		}
+	} catch (e) {
+		showToast(`Netzwerkfehler beim Mahnversand: ${e}`, 'error');
+	}
+}
+
+/**
  * Handles mailing logic for Mahnwesen.
  */
 export function useMahnwesenMail() {
@@ -58,25 +80,6 @@ export function useMahnwesenMail() {
 			modalMsg = { type: 'error', text: String(e) };
 		} finally {
 			modalSending = false;
-		}
-	}
-
-	/**
-	 * Massenversand: schickt je überfällige Klasse die Mahnliste an die Klassenleitung.
-	 * Rückmeldung über die globale Snackbar, da die Aktion aus der Aktionsleiste kommt
-	 * (nicht aus dem Modal, dessen modalMsg hier nicht sichtbar wäre).
-	 */
-	async function sendBulkOverdueMails() {
-		try {
-			const res = await apiFetch('/api/mail/send-bulk-overdue', { method: 'POST' });
-			const json = await res.json();
-			if (res.ok) {
-				showToast(`${json.sent_count ?? 0} Klassen-Mahnliste(n) versendet.`, 'success');
-			} else {
-				showToast(json.error ?? json.message ?? 'Versand fehlgeschlagen.', 'error');
-			}
-		} catch (e) {
-			showToast(`Netzwerkfehler beim Mahnversand: ${e}`, 'error');
 		}
 	}
 
