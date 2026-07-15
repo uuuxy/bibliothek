@@ -109,6 +109,7 @@
 			</svg>
 			<input
 				type="checkbox"
+				aria-label="Buch auswählen"
 				class="rounded border-slate-200 bg-white text-blue-650 focus:ring-blue-500/20 cursor-pointer"
 				checked={isSelected}
 				onchange={() => onToggleSelect(book.id)}

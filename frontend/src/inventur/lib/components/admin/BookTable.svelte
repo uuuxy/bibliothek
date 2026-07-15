@@ -168,6 +168,7 @@
 					<th class="px-6 py-4 w-10">
 						<input
 							type="checkbox"
+							aria-label="Alle Bücher auswählen"
 							class="rounded border-slate-200 bg-white text-blue-600 focus:ring-blue-500/20 cursor-pointer"
 							checked={books.length > 0 && selectedIds.length === books.length}
 							onclick={toggleSelectAll}
