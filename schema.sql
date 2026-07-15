@@ -618,7 +618,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('037_bestellungen_verlauf.sql'),
 ('038_signatur_konsolidierung.sql'),
 ('039_wertebereich_constraints.sql'),
-('040_status_constraints.sql')
+('040_status_constraints.sql'),
+('041_cover_status_constraint.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -740,5 +741,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_grade_level_bereich') THEN
         ALTER TABLE buecher_titel ADD CONSTRAINT chk_grade_level_bereich
             CHECK (grade_level IS NULL OR grade_level BETWEEN 0 AND 13);
+    END IF;
+    -- cover_status-Wertemenge (siehe Migration 041).
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_cover_status') THEN
+        ALTER TABLE buecher_titel ADD CONSTRAINT chk_cover_status
+            CHECK (cover_status IS NULL OR cover_status IN ('PENDING', 'FOUND', 'FAILED', 'NOT_FOUND'));
     END IF;
 END $$;
