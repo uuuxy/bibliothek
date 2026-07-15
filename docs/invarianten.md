@@ -27,7 +27,8 @@ Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026
 | Rückgabe nie vor Ausleihe | 🟢 `check_return_date` | `schema.sql:370` |
 | Gesperrte/manuell blockierte Schüler leihen nicht | 🟡 mit Override + Audit | `loan_checkout_validation.go:33` |
 | Überfällig-Automatik: ≥ `MaxOverdueItems` sperrt | 🟡 | `loan_checkout_validation.go:56` |
-| Ausleih-Limit `max_ausleihen_schueler` | 🟡 (Checkout-Pfad, per Test belegt) | `action_helpers_test.go:47` |
+| Ausleih-Limit `max_ausleihen_schueler` (LMF + eigene Rückgabe ausgenommen) | 🟡 **jetzt getestet** (88,9 %) | `loan_checkout.go:55`, `loan_checkout_test.go` |
+| Abholbereit reserviertes Exemplar geht nicht an Dritte | 🟡 **jetzt getestet** (90,9 %) | `loan_checkout.go:72`, `loan_checkout_test.go` |
 | Doppel-Scan desselben Exemplars → sauberer Konflikt | 🟡 `ErrConflict` + `SELECT … FOR UPDATE` | `loan_checkout_cases.go:22`, `loan.go:106` |
 
 **Bewertung:** Sehr robust. Die datenkritischen Invarianten sind bereits auf DB-Ebene. Die
