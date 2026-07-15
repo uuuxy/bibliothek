@@ -84,8 +84,8 @@ func TestGetStatistics_TypeFilterReachesAllQueries(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).
 			AddRow("t1", "LMF-Mathe 7", "Verlag", "", "Mathematik", "Ma 7", 2023, 42))
 	mock.ExpectQuery(`MAX\(a\.ausgeliehen_am\) AS last_loan[\s\S]*LIKE 'lmf-%'`).
-		WillReturnRows(pgxmock.NewRows([]string{"titel", "autor", "isbn", "subject", "signatur", "erscheinungsjahr", "last_loan"}).
-			AddRow("LMF-Physik 9", "", "978-1", "Physik", "Ph 9", 2019, nil))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "subject", "signatur", "erscheinungsjahr", "last_loan"}).
+			AddRow("sw1", "LMF-Physik 9", "", "978-1", "Physik", "Ph 9", 2019, nil))
 	mock.ExpectQuery(`wiederbeschaffung[\s\S]*LIKE 'lmf-%'`).
 		WillReturnRows(pgxmock.NewRows([]string{"gesamt", "aktiv", "verliehen", "verlorene", "wiederbeschaffung", "verlust_quote", "zirkulationsquote"}).
 			AddRow(200, 190, 57, 4, 129.90, 2.0, 30.0))

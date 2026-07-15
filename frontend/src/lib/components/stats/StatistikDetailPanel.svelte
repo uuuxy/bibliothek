@@ -120,7 +120,9 @@
 			<div class="py-20 text-center text-slate-400 text-sm">Keine Einträge für diese Filter.</div>
 		{:else}
 			<ul class="divide-y divide-slate-100">
-				{#each gefiltert as row (row.id ?? row.titel + (row.isbn ?? ''))}
+				<!-- Key ist die Titel-ID: Titel+ISBN taugt nicht, zwei Titel duerfen gleich
+				     heissen und beide ohne ISBN sein (doppelter Key = Absturz der Ansicht). -->
+				{#each gefiltert as row (row.id)}
 					<li class="px-8 py-3.5 flex items-center gap-4">
 						{#if row.cover_url}
 							<img

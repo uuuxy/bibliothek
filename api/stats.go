@@ -112,6 +112,11 @@ type PopularTitle struct {
 
 // ShelfWarmer ist ein Eintrag der „Ladenhüter"-Liste inkl. Drill-Down-Feldern.
 type ShelfWarmer struct {
+	// ID ist Pflicht, auch wenn die Liste sie nicht anzeigt: Sie ist der einzige
+	// eindeutige Schlüssel. Zwei Titel dürfen legitim gleich heissen und beide keine
+	// ISBN haben (etwa zwei Ausgaben desselben Werks) — ohne ID kollidierten sie im
+	// Frontend zu einem doppelten each-Key und rissen die Statistik-Ansicht ab.
+	ID               string `json:"id"`
 	Titel            string `json:"titel"`
 	Autor            string `json:"autor"`
 	ISBN             string `json:"isbn"`
@@ -240,9 +245,14 @@ func (s *Server) queryPopularTitles(ctx context.Context, ausleihenFilter, typeFi
 	defer rows.Close()
 	for rows.Next() {
 		var p PopularTitle
-		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Count); err == nil {
-			popularTitles = append(popularTitles, p)
+		// Scan-Fehler nicht stillschweigend überspringen: Laufen Query und Struct
+		// auseinander (Spalte ergänzt/entfernt), wäre die Liste sonst einfach leer —
+		// nicht von "keine Treffer" zu unterscheiden.
+		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Count); err != nil {
+			log.Printf("stats: Renner-Zeile unlesbar: %v", err)
+			continue
 		}
+		popularTitles = append(popularTitles, p)
 	}
 	// Bei einem Abbruch mitten in der Iteration keine irreführende Teil-Top-Liste
 	// zeigen (best-effort-Sektion, daher verwerfen statt 500).
@@ -256,8 +266,10 @@ func (s *Server) queryPopularTitles(ctx context.Context, ausleihenFilter, typeFi
 // ebenfalls best-effort mit leerer Liste bei Fehlern.
 func (s *Server) queryShelfWarmers(ctx context.Context, typeFilter string, limit int) []ShelfWarmer {
 	shelfWarmers := []ShelfWarmer{}
+	// t.id mitliefern: Es wird ohnehin danach gruppiert (eine Zeile je Titel), war aber
+	// nicht Teil der Projektion — dem Client fehlte damit der eindeutige Schlüssel.
 	q := fmt.Sprintf(`
-		SELECT t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''),
+		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''),
 		       coalesce(t.subject, ''), coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
 		       MAX(a.ausgeliehen_am) AS last_loan
 		FROM buecher_titel t
@@ -278,13 +290,16 @@ func (s *Server) queryShelfWarmers(ctx context.Context, typeFilter string, limit
 	for rows.Next() {
 		var sw ShelfWarmer
 		var lastLoan *time.Time
-		if err := rows.Scan(&sw.Titel, &sw.Autor, &sw.ISBN, &sw.Fachbereich, &sw.Systematik, &sw.Erscheinungsjahr, &lastLoan); err == nil {
-			sw.LetzteAusleihe = "Nie ausgeliehen"
-			if lastLoan != nil {
-				sw.LetzteAusleihe = lastLoan.Format(dateFormatDE)
-			}
-			shelfWarmers = append(shelfWarmers, sw)
+		// Wie oben: ein verschluckter Scan-Fehler sähe aus wie "keine Ladenhüter".
+		if err := rows.Scan(&sw.ID, &sw.Titel, &sw.Autor, &sw.ISBN, &sw.Fachbereich, &sw.Systematik, &sw.Erscheinungsjahr, &lastLoan); err != nil {
+			log.Printf("stats: Ladenhüter-Zeile unlesbar: %v", err)
+			continue
 		}
+		sw.LetzteAusleihe = "Nie ausgeliehen"
+		if lastLoan != nil {
+			sw.LetzteAusleihe = lastLoan.Format(dateFormatDE)
+		}
+		shelfWarmers = append(shelfWarmers, sw)
 	}
 	// Bei Iterationsabbruch keine irreführende Teil-Ladenhüterliste zeigen.
 	if err := rows.Err(); err != nil {
