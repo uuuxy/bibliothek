@@ -119,13 +119,15 @@ func baueMailNachricht(req MailRequest, from string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// schreibeAnhang hängt eine Datei base64-kodiert als MIME-Part an. Der Dateiname wird
-// gegen Header-Injection abgesichert (CRLF und Anführungszeichen entfernt), damit kein
-// (z. B. aus Nutzer-/Importdaten abgeleiteter) Name zusätzliche MIME-Header einschleust.
+// schreibeAnhang hängt eine Datei base64-kodiert als MIME-Part an. Dateiname und
+// Content-Type werden gegen Header-Injection abgesichert (CRLF bzw. Anführungszeichen
+// entfernt): CreatePart schreibt Header-Werte unvalidiert, ein eingeschleustes CRLF
+// würde also zusätzliche MIME-Header erzeugen.
 func schreibeAnhang(writer *multipart.Writer, att MailAttachment) error {
 	safeName := strings.NewReplacer("\r", "", "\n", "", `"`, "").Replace(att.Name)
+	safeContentType := strings.NewReplacer("\r", "", "\n", "").Replace(att.ContentType)
 	attHeader := make(textproto.MIMEHeader)
-	attHeader.Set("Content-Type", att.ContentType)
+	attHeader.Set("Content-Type", safeContentType)
 	attHeader.Set("Content-Transfer-Encoding", "base64")
 	attHeader.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
 	part, err := writer.CreatePart(attHeader)

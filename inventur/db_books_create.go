@@ -96,7 +96,7 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 		subjects[i] = b.Subject
 		grades[i] = b.GradeLevel
 		tracks[i] = b.Track
-		// #nosec G115 - Stock is a physical book count, fits easily in int32
+		// #nosec G115 - parseBestand begrenzt Stock beim Import auf [0, MaxInt32]
 		stocks[i] = int32(b.Stock)
 		lastCounteds[i] = b.LastCounted
 		medientypen[i] = b.Medientyp

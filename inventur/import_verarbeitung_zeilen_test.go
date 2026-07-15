@@ -9,7 +9,7 @@ func TestParseKlassenStufe(t *testing.T) {
 		name     string
 		gradeStr string
 		title    string
-		expected int
+		expected int16
 	}{
 		{"Valid grade string inside bounds", "7", "Any Title", 7},
 		{"Valid grade string lower bound", "5", "Any Title", 5},
@@ -31,6 +31,32 @@ func TestParseKlassenStufe(t *testing.T) {
 			result := parseKlassenStufe(tt.gradeStr, tt.title)
 			if result != tt.expected {
 				t.Errorf("parseKlassenStufe(%q, %q) = %d; want %d", tt.gradeStr, tt.title, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestParseBestand(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int
+	}{
+		{"Normaler Bestand", "12", 12},
+		{"Null", "0", 0},
+		{"Leerer String", "", 0},
+		{"Kein Zahlwert", "abc", 0},
+		{"Negativ ist Datenfehler", "-3", 0},
+		{"Obergrenze int32 noch erlaubt", "2147483647", 2147483647},
+		{"Über int32 würde beim Bulk-Upsert überlaufen", "2147483648", 0},
+		{"Absurd großer Wert", "5000000000", 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseBestand(tt.input)
+			if result != tt.expected {
+				t.Errorf("parseBestand(%q) = %d; want %d", tt.input, result, tt.expected)
 			}
 		})
 	}

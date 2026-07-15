@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"context"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -38,21 +39,13 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 		subject = "Unbekannt"
 	}
 
-	gradeLevel := parseKlassenStufe(getCol("klasse"), title)
-
-	stock := 0
-	if s, err := strconv.Atoi(getCol("bestand")); err == nil {
-		stock = s
-	}
-
 	book := Book{
-		ISBN:    isbn,
-		Title:   title,
-		Author:  author,
-		Subject: subject,
-		// #nosec G115 - gradeLevel is guaranteed to be 5-10 by parseKlassenStufe
-		GradeLevel:  int16(gradeLevel),
-		Stock:       stock,
+		ISBN:        isbn,
+		Title:       title,
+		Author:      author,
+		Subject:     subject,
+		GradeLevel:  parseKlassenStufe(getCol("klasse"), title),
+		Stock:       parseBestand(getCol("bestand")),
 		LastCounted: nil,
 	}
 
@@ -68,7 +61,9 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 }
 
 // parseKlassenStufe versucht die Klassenstufe aus einem String zu extrahieren.
-func parseKlassenStufe(gradeStr string, title string) int {
+// Der Rückgabewert liegt garantiert in 5–10; die Konvertierung nach int16 ist
+// deshalb hier — hinter dem Bounds-Check — verlustfrei.
+func parseKlassenStufe(gradeStr string, title string) int16 {
 	gradeLevel := 0
 	if g, err := strconv.Atoi(gradeStr); err == nil {
 		gradeLevel = g
@@ -79,7 +74,19 @@ func parseKlassenStufe(gradeStr string, title string) int {
 	if gradeLevel < 5 || gradeLevel > 10 {
 		gradeLevel = 5
 	}
-	return gradeLevel
+	return int16(gradeLevel)
+}
+
+// parseBestand liest den Bestand aus der Import-Spalte. Nur Werte aus [0, MaxInt32]
+// werden übernommen: negative Bestände sind Datenfehler, und die DB-Spalte ist int4 —
+// der Bulk-Upsert konvertiert nach int32. Ungültiges wird wie ein Parse-Fehler
+// behandelt (Bestand 0).
+func parseBestand(s string) int {
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 0 || n > math.MaxInt32 {
+		return 0
+	}
+	return n
 }
 
 // ergaenzeMetadaten ergänzt fehlende Buch-Metadaten über externe APIs.

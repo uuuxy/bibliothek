@@ -8,10 +8,15 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
+	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
 
 	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/httpresp"
@@ -42,18 +47,79 @@ func serveCachedCover(w http.ResponseWriter, r *http.Request, root *os.Root, fil
 	http.ServeFileFS(w, r, root.FS(), fileName)
 }
 
-// istErlaubterCoverHost prüft die Cover-URL gegen die Host-Allowlist (SSRF-Schutz).
-func istErlaubterCoverHost(urlStr string) bool {
+// erlaubteCoverHosts ist die Host-Allowlist für Cover-Downloads (SSRF-Schutz).
+var erlaubteCoverHosts = []string{
+	"covers.openlibrary.org",
+	"portal.dnb.de",
+	"services.dnb.de",
+	"www.googleapis.com",
+	"openlibrary.org",
+	"books.google.com",
+	"books.google.de",
+}
+
+// erlaubterCoverHost bildet einen Hostnamen auf die kanonische Allowlist-Konstante
+// ab; "" heißt: nicht erlaubt. Zurückgegeben wird bewusst das Listen-Element und
+// nicht die Eingabe, damit nachgelagerte URLs keinen ungeprüften Wert enthalten.
+func erlaubterCoverHost(hostname string) string {
+	for _, h := range erlaubteCoverHosts {
+		if hostname == h {
+			return h
+		}
+	}
+	return ""
+}
+
+// baueSichereCoverURL validiert die Cover-URL gegen die Host-Allowlist und baut sie
+// aus geprüften Teilen neu auf: Schema fest HTTPS, Host aus der Allowlist-Konstante —
+// nur Pfad und Query stammen aus der Eingabe und können Host wie Schema des Requests
+// nicht mehr beeinflussen (SSRF-Schutz).
+func baueSichereCoverURL(urlStr string) (string, bool) {
 	parsed, err := url.Parse(urlStr)
 	if err != nil {
-		return false
+		return "", false
 	}
-	switch parsed.Hostname() {
-	case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org", "books.google.com", "books.google.de":
-		return true
-	default:
-		return false
+	host := erlaubterCoverHost(parsed.Hostname())
+	if host == "" {
+		return "", false
 	}
+	sichereURL := "https://" + host + "/" + strings.TrimPrefix(parsed.EscapedPath(), "/")
+	if parsed.RawQuery != "" {
+		sichereURL += "?" + parsed.RawQuery
+	}
+	return sichereURL, true
+}
+
+// coverHTTPClient lädt Cover mit Schutzmaßnahmen, die http.DefaultClient fehlen:
+// Verbindungen zu nicht-öffentlichen IPs werden auf Dialer-Ebene abgelehnt — nach
+// der DNS-Auflösung und damit auch für jeden Redirect-Hop (OpenLibrary leitet z. B.
+// real auf archive.org um) und bei DNS-Rebinding. Dazu ein hartes Gesamt-Timeout.
+var coverHTTPClient = &http.Client{
+	Timeout: 20 * time.Second,
+	Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: 10 * time.Second,
+			Control: verbieteInterneZieladressen,
+		}).DialContext,
+		TLSHandshakeTimeout: 10 * time.Second,
+	},
+}
+
+// verbieteInterneZieladressen lehnt Verbindungen zu Loopback-, privaten, Link-Local-,
+// Multicast- und unspezifizierten Adressen ab. Läuft als Dialer-Control nach der
+// DNS-Auflösung, address ist also immer eine aufgelöste IP:Port-Kombination.
+func verbieteInterneZieladressen(_, address string, _ syscall.RawConn) error {
+	addrPort, err := netip.ParseAddrPort(address)
+	if err != nil {
+		return fmt.Errorf("cover download: unerwartete Zieladresse %q: %w", address, err)
+	}
+	// Unmap: IPv4-in-IPv6 (::ffff:127.0.0.1) würde sonst an den Is*-Checks vorbeigehen.
+	addr := addrPort.Addr().Unmap()
+	if addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() ||
+		addr.IsLinkLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified() {
+		return fmt.Errorf("cover download: Ziel-IP %s ist nicht öffentlich", addr)
+	}
+	return nil
 }
 
 // holeUndKonvertiereCover lädt das Cover herunter und speichert es als WebP im
@@ -66,7 +132,7 @@ func holeUndKonvertiereCover(ctx context.Context, root *os.Root, urlStr, fileNam
 	}
 	req.Header.Set("User-Agent", "Inventur/1.0")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := coverHTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -116,8 +182,9 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// SSRF-Schutz für externe URLs
-	if !istErlaubterCoverHost(urlStr) {
+	// SSRF-Schutz: URL aus validierten Teilen neu aufbauen
+	sichereURL, ok := baueSichereCoverURL(urlStr)
+	if !ok {
 		serveCoverFallback(w)
 		return
 	}
@@ -151,7 +218,7 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Download & convert if missing
-	if err := holeUndKonvertiereCover(r.Context(), root, urlStr, fileName); err != nil {
+	if err := holeUndKonvertiereCover(r.Context(), root, sichereURL, fileName); err != nil {
 		serveCoverFallback(w)
 		return
 	}
