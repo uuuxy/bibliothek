@@ -698,7 +698,9 @@ ALTER TABLE buecher_titel
 CREATE TABLE IF NOT EXISTS inventur_sessions (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     scope_type        VARCHAR(20) NOT NULL,
-    signature_id      INT REFERENCES signatures(id) ON DELETE SET NULL,
+    -- ON DELETE CASCADE (nicht SET NULL): sonst verletzt das Löschen einer Signatur
+    -- den chk_inv_session_scope unten (Signatur-Session braucht signature_id).
+    signature_id      INT REFERENCES signatures(id) ON DELETE CASCADE,
     scope_label       VARCHAR(255) NOT NULL DEFAULT '',
     gestartet_von     UUID REFERENCES benutzer(id) ON DELETE SET NULL,
     gestartet_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),

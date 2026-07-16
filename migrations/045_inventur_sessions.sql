@@ -25,7 +25,11 @@
 CREATE TABLE IF NOT EXISTS inventur_sessions (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     scope_type        VARCHAR(20) NOT NULL,
-    signature_id      INT REFERENCES signatures(id) ON DELETE SET NULL,
+    -- ON DELETE CASCADE, nicht SET NULL: Der CHECK unten verlangt für eine
+    -- Signatur-Session eine signature_id. SET NULL würde beim Löschen der Signatur
+    -- genau diese Bedingung verletzen. Eine Session ist an ihre Signatur gebunden —
+    -- verschwindet die Signatur, ist die Session gegenstandslos und wird mitentfernt.
+    signature_id      INT REFERENCES signatures(id) ON DELETE CASCADE,
     scope_label       VARCHAR(255) NOT NULL DEFAULT '',
     gestartet_von     UUID REFERENCES benutzer(id) ON DELETE SET NULL,
     gestartet_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
