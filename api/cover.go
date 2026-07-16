@@ -10,6 +10,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
+	"bibliothek/pkg/safego"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -22,6 +23,7 @@ func FetchAndSaveCoverURL(db *pgxpool.Pool, titleID string, isbn string) {
 	}
 
 	go func() {
+		defer safego.Guard("cover-fetch")
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 

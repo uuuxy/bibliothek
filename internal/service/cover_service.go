@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/inventur"
+	"bibliothek/pkg/safego"
 )
 
 // CoverService handles fetching book covers asynchronously.
@@ -109,6 +110,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer safego.Guard("cover-sync-worker")
 			for mc := range jobs {
 				<-throttle.C
 				s.processCover(ctx, client, mc, &found, &notFound, &failed)

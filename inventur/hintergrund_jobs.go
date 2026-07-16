@@ -6,6 +6,8 @@ import (
 	"log"
 	"sync"
 	"time"
+
+	"bibliothek/pkg/safego"
 )
 
 // StarteHintergrundAktualisierung lädt automatisch fehlende Cover und Kategorien
@@ -43,6 +45,7 @@ func StarteHintergrundAktualisierung(ctx context.Context, repo *BookRepository, 
 		go func(b Book) {
 			defer wg.Done()
 			defer func() { <-sem }()
+			defer safego.Guard("metadaten-batch-update")
 
 			coverUpdated, catUpdated := aktualisiereEinzelnesBuch(ctx, repo, metadatenClient, b, &cache)
 			mu.Lock()
