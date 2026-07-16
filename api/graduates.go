@@ -180,8 +180,13 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 	}
 }
 
-// queryLaufzettelStudents lädt die Abschlussklassen (9h/10r/13) inkl. etwaiger offener
-// Ausleihen (LEFT JOIN → auch Schüler ohne offene Bücher) für die Laufzettel-PDF.
+// queryLaufzettelStudents lädt alle Abgänger inkl. etwaiger offener Ausleihen
+// (LEFT JOIN → auch Schüler ohne offene Bücher) für die Laufzettel-PDF.
+//
+// Filter ist ist_abgaenger — dieselbe Definition wie die übrige Abgänger-Ansicht.
+// Früher stand hier eine hartkodierte, case-sensitive Klassenliste ('9h','10r','13').
+// Die versetzte/importierte Klassen wie '09h', '9H' oder '10a' schlicht ignoriert:
+// Betroffene Abgänger fehlten auf dem PDF und verließen die Schule mit ihren Büchern.
 func (s *Server) queryLaufzettelStudents(ctx context.Context) ([]pdf.LaufzettelStudent, error) {
 	detailQuery := `
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
@@ -194,7 +199,7 @@ func (s *Server) queryLaufzettelStudents(ctx context.Context) ([]pdf.LaufzettelS
 		LEFT JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
 		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE s.deleted_at IS NULL AND s.klasse IN ('9h', '10r', '13')
+		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = true
 		ORDER BY s.klasse, s.nachname, t.titel
 	`
 	rows, err := s.DB.Pool.Query(ctx, detailQuery)
