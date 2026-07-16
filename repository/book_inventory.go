@@ -41,10 +41,23 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 }
 
 // UpdateCopyStatus ändert den Verleihstatus und Zustand eines Exemplars.
+//
+// aussonderung_grund muss hier mitgeführt werden (chk_aussonderung_grund, Migration
+// 043): ausgesondert verlangt genau einen Grund, im Umlauf verlangt NULL. Beim
+// manuellen Aussondern über den Status-Editor ist AUSSORTIERT der fachliche Default
+// (bewusste Entnahme, wie DecommissionCopy); ein bereits gesetzter Grund — etwa
+// VERLUST aus der Inventur — bleibt beim blossen Bearbeiten der Notiz erhalten.
+// Beim Reaktivieren wird der Grund gelöscht, sonst lehnt der CHECK das UPDATE ab.
 func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error {
 	query := `
 		UPDATE buecher_exemplare
-		SET ist_ausleihbar = $1, ist_ausgesondert = $2, zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP
+		SET ist_ausleihbar = $1,
+		    ist_ausgesondert = $2,
+		    aussonderung_grund = CASE
+		        WHEN $2 THEN COALESCE(aussonderung_grund, 'AUSSORTIERT')
+		        ELSE NULL
+		    END,
+		    zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $4
 	`
 	_, err := r.db.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id)
