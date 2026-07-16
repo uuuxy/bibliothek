@@ -29,9 +29,14 @@ type MailRequest struct {
 	Attachments []MailAttachment
 }
 
-// SendEmail sends a multipart email (HTML/Text) with attachments using net/smtp.
+// SendEmail versendet eine Mail. Als überschreibbare Variable (nicht als reine
+// Funktion), damit Tests den Versand simulieren können — u. a. um zu prüfen, dass ein
+// SMTP-Fehler die Bestell-Transaktion zurückrollt (keine Ghost-Orders).
+var SendEmail = sendEmailSMTP
+
+// sendEmailSMTP sends a multipart email (HTML/Text) with attachments using net/smtp.
 // Environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
-func SendEmail(req MailRequest) error {
+func sendEmailSMTP(req MailRequest) error {
 	host := os.Getenv("SMTP_HOST")
 	port := os.Getenv("SMTP_PORT")
 	user := os.Getenv("SMTP_USER")
