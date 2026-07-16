@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"bibliothek/db"
 
@@ -71,6 +72,13 @@ func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, 
 	return schadensID, nil
 }
 
+// ErrExemplarNeuVerliehen signalisiert, dass das zu meldende Exemplar zwischenzeitlich
+// (nach dem Öffnen des Schadensformulars) an jemand anderen ausgeliehen wurde. Der Text
+// ist nutzer-sichtbar (wird als 409-Meldung ausgeliefert), daher deutsche Großschreibung.
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
+var ErrExemplarNeuVerliehen = errors.New("Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden")
+
 // ReportDamage sets ist_ausgesondert = true, inserts a damage record, and ends the loan.
 func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, betrag float64) (string, error) {
 	tx, err := r.db.Begin(ctx)
@@ -78,6 +86,21 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 		return "", err
 	}
 	defer db.SafeRollback(ctx, tx)
+
+	// Race-Schutz: Bleibt das Schadensformular offen, während das Buch zurückgegeben
+	// und neu ausgeliehen wird, würde der "Melden"-Klick ein aktiv verliehenes Exemplar
+	// aussondern. Gibt es für dieses Exemplar eine aktive Ausleihe, die NICHT die hier
+	// gemeldete ist, brechen wir ab, statt die neue Ausleihe blind zu überschreiben.
+	var fremdeAktive int
+	if err := tx.QueryRow(ctx, `
+		SELECT count(*) FROM ausleihen
+		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
+	`, copyID, loanID).Scan(&fremdeAktive); err != nil {
+		return "", err
+	}
+	if fremdeAktive > 0 {
+		return "", ErrExemplarNeuVerliehen
+	}
 
 	_, err = tx.Exec(ctx, `
 		UPDATE buecher_exemplare

@@ -1,11 +1,13 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -84,6 +86,11 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 
 		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, req.SchuelerID, claims.UserID, req.Beschreibung, req.Betrag)
 		if err != nil {
+			// Zwischenzeitliche Neuausleihe ist ein Konflikt (409), kein Serverfehler:
+			// Der Nutzer muss den Vorgang neu laden, nicht der Server ist kaputt.
+			if errors.Is(err, repository.ErrExemplarNeuVerliehen) {
+				return apierrors.Conflict(err.Error(), err)
+			}
 			return apierrors.Internal("Fehler beim Melden des Schadens", err)
 		}
 

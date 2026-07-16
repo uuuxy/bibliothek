@@ -75,16 +75,18 @@ func baueRepoTestDB(dsn string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// resetInventurDaten räumt zwischen Tests die Inventur- und Bestandsdaten leer, damit
-// jeder Test von einer bekannten Basis startet (schema-Load passiert nur einmal).
+// resetInventurDaten räumt zwischen Tests die Bestands-, Ausleih- und Personendaten
+// leer, damit jeder Test von einer bekannten Basis startet (schema-Load passiert nur
+// einmal). CASCADE räumt abhängige Zeilen (u. a. schadensfaelle) mit.
 func resetInventurDaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
-		TRUNCATE inventur_erfassungen, inventur_sessions, ausleihen,
-		         buecher_exemplare, buecher_titel, signatures RESTART IDENTITY CASCADE
+		TRUNCATE inventur_erfassungen, inventur_sessions, schadensfaelle, ausleihen,
+		         buecher_exemplare, buecher_titel, signatures, schueler, benutzer
+		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {
-		t.Fatalf("Reset der Inventurdaten fehlgeschlagen: %v", err)
+		t.Fatalf("Reset der Testdaten fehlgeschlagen: %v", err)
 	}
 }
 

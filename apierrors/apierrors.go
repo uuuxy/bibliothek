@@ -66,6 +66,16 @@ func Unauthorized(message string, err error) *APIError {
 	return New(http.StatusUnauthorized, message, err)
 }
 
+// Conflict signalisiert einen Zustandskonflikt (409): Die Anfrage war gültig, kollidiert
+// aber mit dem inzwischen geänderten Serverzustand (z. B. ein zwischenzeitlich neu
+// ausgeliehenes Exemplar). Der Client soll neu laden, nicht wiederholen.
+func Conflict(message string, err error) *APIError {
+	if message == "" {
+		message = "Konflikt mit dem aktuellen Stand"
+	}
+	return New(http.StatusConflict, message, err)
+}
+
 // APIHandler is a signature for HTTP handlers that return an error.
 type APIHandler func(w http.ResponseWriter, r *http.Request) error
 
@@ -82,7 +92,7 @@ func Wrap(h APIHandler) http.HandlerFunc {
 				}
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(apiErr.StatusCode)
-				_ = json.NewEncoder(w).Encode(apiErr)  //nolint:errcheck
+				_ = json.NewEncoder(w).Encode(apiErr) //nolint:errcheck
 			} else {
 				// Fallback to the existing SendHTTPError logic for generic errors
 				SendHTTPError(w, http.StatusInternalServerError, err)
@@ -119,7 +129,7 @@ func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 		msg = sanitizeInternalError(internalErr)
 	}
 
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})  //nolint:errcheck
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg}) //nolint:errcheck
 }
 
 // istDatenbankFehler erkennt DB-nahe Fehlermeldungen (SQL, Constraints, Treiber-Logs),
