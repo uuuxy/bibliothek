@@ -9,8 +9,18 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// testDBLockKey serialisiert die Test-DB-Nutzung über db/, repository/ und api/ —
+// alle teilen sich EINE Test-DB, und `go test ./...` startet ihre Binaries parallel.
+// Ohne den Lock kollidieren gleichzeitige DROP SCHEMA (Deadlock). Wert identisch in
+// allen drei Paketen halten.
+const testDBLockKey int64 = 0x42DB0001
+
+// lockConn hält den Lock über eine dedizierte Connection bis Prozessende.
+var lockConn *pgx.Conn
 
 // Integrationstests gegen echtes Postgres (gated auf TEST_DATABASE_URL, wie im
 // db-Paket). Lokal ohne die Variable werden sie übersprungen; in CI setzt der
@@ -45,6 +55,16 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 
 func baueRepoTestDB(dsn string) (*pgxpool.Pool, error) {
 	ctx := context.Background()
+
+	lc, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := lc.Exec(ctx, "SELECT pg_advisory_lock($1)", testDBLockKey); err != nil {
+		return nil, err
+	}
+	lockConn = lc // offen halten bis Prozessende
+
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, err

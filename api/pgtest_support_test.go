@@ -9,8 +9,22 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// testDBLockKey serialisiert die Test-DB-Nutzung über die Paketgrenzen db/,
+// repository/ und api/ hinweg. Alle drei teilen sich EINE Test-DB; `go test ./...`
+// startet ihre Binaries parallel. Ohne diesen Lock machen mehrere gleichzeitig
+// DROP SCHEMA und ziehen sich die Tabellen weg (Deadlock). Derselbe Key in allen
+// drei Paketen. Wert identisch in db/ und repository/ halten.
+const testDBLockKey int64 = 0x42DB0001
+
+// lockConn hält den paket-übergreifenden Advisory-Lock über eine dedizierte
+// Connection, die absichtlich bis zum Prozessende (Ende der Paket-Tests) offen
+// bleibt — dann gibt Postgres den Lock automatisch frei und das nächste Test-Binary
+// darf ran.
+var lockConn *pgx.Conn
 
 // PG-Integrationstests fürs api-Paket (gated auf TEST_DATABASE_URL, wie db/ und
 // repository/). Nötig für die order-/graduates-Bugs, deren Kern in SQL-Filtern liegt
@@ -41,6 +55,17 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 
 func baueAPITestDB(dsn string) (*pgxpool.Pool, error) {
 	ctx := context.Background()
+
+	// Paket-übergreifenden Lock nehmen, bevor irgendjemand das Schema anfasst.
+	lc, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := lc.Exec(ctx, "SELECT pg_advisory_lock($1)", testDBLockKey); err != nil {
+		return nil, err
+	}
+	lockConn = lc // offen halten bis Prozessende
+
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, err

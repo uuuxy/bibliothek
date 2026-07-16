@@ -33,6 +33,12 @@ import (
 
 const testDBEnvVar = "TEST_DATABASE_URL"
 
+// testDBLockKey serialisiert die Test-DB-Nutzung über db/, repository/ und api/ —
+// alle teilen sich EINE Test-DB, und `go test ./...` startet ihre Binaries parallel.
+// Ohne den Lock kollidieren gleichzeitige DROP SCHEMA (Deadlock). Wert identisch in
+// allen drei Paketen halten.
+const testDBLockKey int64 = 0x42DB0001
+
 // Pool und Schema werden prozessweit genau einmal aufgebaut: schema.sql ist nicht
 // idempotent (CREATE TYPE bricht beim zweiten Lauf ab), und jeder Test räumt ohnehin
 // per Transaktions-Rollback hinter sich auf.
@@ -40,6 +46,8 @@ var (
 	pgTestOnce sync.Once
 	pgTestDB   *pgxpool.Pool
 	pgTestErr  error
+	// lockConn hält den paket-übergreifenden Lock bis Prozessende.
+	lockConn *pgx.Conn
 )
 
 // pgTestPool liefert den gemeinsamen Test-Pool mit geladenem schema.sql. Ohne
@@ -67,6 +75,15 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 // jungfräuliche DB grün — beim zweiten `go test` gegen dieselbe DB schlüge er fehl.
 func baueTestDB(dsn string) (*pgxpool.Pool, error) {
 	ctx := context.Background()
+
+	lc, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := lc.Exec(ctx, "SELECT pg_advisory_lock($1)", testDBLockKey); err != nil {
+		return nil, err
+	}
+	lockConn = lc // offen halten bis Prozessende
 
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
