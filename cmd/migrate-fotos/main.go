@@ -54,7 +54,7 @@ func main() {
 		slog.Error("Fehler beim Öffnen des Foto-Verzeichnisses", "error", err)
 		os.Exit(1)
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 
 	dir, err := root.Open(".")
 	if err != nil {
@@ -62,7 +62,7 @@ func main() {
 		os.Exit(1)
 	}
 	entries, err := dir.ReadDir(-1)
-	dir.Close()
+	_ = dir.Close()
 	if err != nil {
 		slog.Error("Fehler beim Lesen des Foto-Verzeichnisses", "error", err)
 		os.Exit(1)
@@ -94,7 +94,7 @@ func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string) bool {
 		slog.Error("Konnte Bild nicht öffnen", "file", name, "error", err)
 		return false
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	imgBytes, err := io.ReadAll(file)
 	if err != nil {
