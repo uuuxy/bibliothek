@@ -177,21 +177,22 @@ func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionRespons
 		return nil
 	}
 	return &ActionResponse{
-		Type:            res.Type,
-		Message:         res.Message,
-		Student:         res.Student,
-		Teacher:         res.Teacher,
-		Book:            res.Book,
-		Geraet:          res.Geraet,
-		DueDate:         res.DueDate,
-		LoanID:          res.LoanID,
-		Fremdrueckgabe:  res.Fremdrueckgabe,
-		Vorbesitzer:     res.Vorbesitzer,
-		VorbesitzerUser: res.VorbesitzerUser,
-		SearchResults:   res.SearchResults,
-		HasVormerkung:   res.HasVormerkung,
-		VormerkungTitel: res.VormerkungTitel,
-		VormerkungUser:  res.VormerkungUser,
+		Type:                 res.Type,
+		Message:              res.Message,
+		Student:              res.Student,
+		Teacher:              res.Teacher,
+		Book:                 res.Book,
+		Geraet:               res.Geraet,
+		DueDate:              res.DueDate,
+		LoanID:               res.LoanID,
+		Fremdrueckgabe:       res.Fremdrueckgabe,
+		Vorbesitzer:          res.Vorbesitzer,
+		VorbesitzerUser:      res.VorbesitzerUser,
+		SearchResults:        res.SearchResults,
+		HasVormerkung:        res.HasVormerkung,
+		VormerkungTitel:      res.VormerkungTitel,
+		VormerkungUser:       res.VormerkungUser,
+		RegalfreigabeBarcode: res.RegalfreigabeBarcode,
 	}
 }
 

@@ -210,6 +210,14 @@ export function createOmniboxStore() {
 			showToast(
 				`📖 „${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
 			);
+			// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
+			// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
+			if (data.regalfreigabe_barcode) {
+				showToast(
+					`📚 Hinweis: Reserviertes Exemplar ${data.regalfreigabe_barcode} zurück ins Regal räumen.`,
+					'warning'
+				);
+			}
 			if (reloadProfileCb) reloadProfileCb();
 		} else if (data.type === 'rueckgabe') {
 			verarbeiteRueckgabe(data, reloadProfileCb);

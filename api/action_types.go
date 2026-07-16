@@ -51,6 +51,9 @@ type ActionResponse struct {
 	HasVormerkung   bool                   `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
 	VormerkungTitel string                 `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
 	VormerkungUser  string                 `json:"vormerkung_user,omitempty"`  // Reserved for: student name & class
+	// RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the
+	// regular shelf because the student took a different copy of the same title.
+	RegalfreigabeBarcode string `json:"regalfreigabe_barcode,omitempty"`
 }
 
 // ActionEvent represents the data broadcasted to SSE clients on updates.

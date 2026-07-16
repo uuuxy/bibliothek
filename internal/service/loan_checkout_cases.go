@@ -24,6 +24,38 @@ func mapLoanCreateErr(err error) error {
 	return err
 }
 
+// entferneErfuellteVormerkung löscht die (erfüllte) Vormerkung des Schülers für diesen
+// Titel und erkennt dabei den "Geisterbuch"-Fall: War für ihn bereits ein ANDERES
+// Exemplar im Reservierungsfach bereitgestellt, er nimmt sich aber ein Freihand-
+// Exemplar, muss das reservierte zurück ins Regal. Der Barcode dieses Exemplars wandert
+// als Regal-Hinweis in die Antwort. Fehler hier sind nicht ausleihe-blockierend
+// (die Ausleihe selbst ist bereits verbucht) — sie werden nur protokolliert.
+func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, schuelerID string, resp *LoanResult) {
+	var bereitgestellt *string
+	err := tx.QueryRow(ctx,
+		`DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2
+		 RETURNING bereitgestellt_exemplar_id`,
+		copy.TitelID, schuelerID).Scan(&bereitgestellt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return // keine Vormerkung — Normalfall
+	}
+	if err != nil {
+		log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
+		return
+	}
+	if bereitgestellt == nil || *bereitgestellt == copy.ID {
+		return // nichts reserviert, oder genau dieses Exemplar wurde genommen
+	}
+
+	var barcode string
+	if err := tx.QueryRow(ctx,
+		`SELECT barcode_id FROM buecher_exemplare WHERE id = $1`, *bereitgestellt).Scan(&barcode); err != nil {
+		log.Printf("ausleihe: Barcode des reservierten Exemplars %s nicht ladbar: %v", *bereitgestellt, err)
+		return
+	}
+	resp.RegalfreigabeBarcode = barcode
+}
+
 // handleNewLoan handles the case where the book is currently available (not checked out).
 func (s *defaultLoanService) handleNewLoan(
 	ctx context.Context,
@@ -46,9 +78,7 @@ func (s *defaultLoanService) handleNewLoan(
 	}
 
 	if chkCtx.borrowerType == "student" {
-		if _, err := tx.Exec(ctx, "DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2", copy.TitelID, chkCtx.borrowerID); err != nil {
-			log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
-		}
+		entferneErfuellteVormerkung(ctx, tx, copy, chkCtx.borrowerID, resp)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

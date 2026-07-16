@@ -45,6 +45,9 @@ type OmniboxResult struct {
 	VormerkungTitel string
 	// VormerkungUser ist der Name des Schülers, der die Reservierung ausgelöst hat.
 	VormerkungUser string
+	// RegalfreigabeBarcode: reserviertes Exemplar, das zurück ins Regal muss (der
+	// Schüler hat ein anderes Exemplar desselben Titels genommen).
+	RegalfreigabeBarcode string
 }
 
 // OmniboxQuery bündelt die Eingabe und den Sitzungskontext eines Omnibox-Requests,
@@ -349,4 +352,5 @@ func (s *defaultOmniboxService) mapLoanResult(lr *LoanResult, resp *OmniboxResul
 	resp.HasVormerkung = lr.HasVormerkung
 	resp.VormerkungTitel = lr.VormerkungTitel
 	resp.VormerkungUser = lr.VormerkungUser
+	resp.RegalfreigabeBarcode = lr.RegalfreigabeBarcode
 }

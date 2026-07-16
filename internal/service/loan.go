@@ -46,6 +46,11 @@ type LoanResult struct {
 	VormerkungTitel string
 	// VormerkungUser ist der Name (und ggf. Klasse) des Schülers, für den das Buch reserviert wurde.
 	VormerkungUser string
+	// RegalfreigabeBarcode ist gesetzt, wenn für diesen Schüler ein ANDERES Exemplar
+	// desselben Titels im Reservierungsfach lag, er sich aber ein Freihand-Exemplar
+	// genommen hat. Das reservierte Exemplar muss zurück ins normale Regal — sonst
+	// bleibt es als "Geisterbuch" im Fach liegen, obwohl es laut DB verfügbar ist.
+	RegalfreigabeBarcode string
 }
 
 // LoanService steuert die Geschäftsregeln und Transaktionen rund um das Ausleihen und Zurückgeben von Büchern.

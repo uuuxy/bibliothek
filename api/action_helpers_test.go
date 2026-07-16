@@ -94,10 +94,11 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow("loan-1", &copy.ID, &studentID, nil, time.Now(), time.Now(), nil, staffID, nil, false, false))
 
-	// Mock Delete Vormerkungen
-	mock.ExpectExec("DELETE FROM vormerkungen WHERE titel_id = \\$1 AND schueler_id = \\$2").
+	// Delete Vormerkung: liefert jetzt bereitgestellt_exemplar_id via RETURNING
+	// (Regal-Hinweis-Erkennung). Hier ohne offene Vormerkung -> ErrNoRows.
+	mock.ExpectQuery("DELETE FROM vormerkungen WHERE titel_id = \\$1 AND schueler_id = \\$2").
 		WithArgs(copy.TitelID, studentID).
-		WillReturnResult(pgxmock.NewResult("DELETE", 0))
+		WillReturnError(pgx.ErrNoRows)
 
 	// Mock Commit
 	mock.ExpectCommit()
