@@ -28,20 +28,21 @@ func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventoryRepo
 }
 
 // inventurWarnungen sammelt nicht-blockierende Hinweise zu einem gescannten Exemplar
-// (aktuell ausgeliehen bzw. außerhalb des laufenden Inventur-Scopes).
-func inventurWarnungen(isLent bool, inventurStatus *string) []string {
+// (aktuell ausgeliehen bzw. außerhalb des Session-Scopes).
+func inventurWarnungen(isLent, imScope bool) []string {
 	var warnungen []string
 	if isLent {
 		warnungen = append(warnungen, "Buch ist laut System aktuell ausgeliehen.")
 	}
-	if inventurStatus == nil || *inventurStatus != "ausstehend" {
-		warnungen = append(warnungen, "Buch gehört nicht zum aktuell gestarteten Inventur-Scope.")
+	if !imScope {
+		warnungen = append(warnungen, "Buch gehört nicht zum Scope dieser Inventur.")
 	}
 	return warnungen
 }
 
 // InventurScanRequest is the payload for checking in an item during inventory.
 type InventurScanRequest struct {
+	SessionID string `json:"session_id"`
 	BarcodeID string `json:"barcode_id"`
 }
 
@@ -50,17 +51,17 @@ type InventurScanResponse struct {
 	BarcodeID string   `json:"barcode_id"`
 	Titel     string   `json:"titel"`
 	CoverURL  string   `json:"cover_url,omitempty"`
-	Status    string   `json:"status"` // e.g. "erfasst"
+	Status    string   `json:"status"`
 	Warnungen []string `json:"warnungen,omitempty"`
 }
 
-// InventurScanHandler registers copy scans in the active inventory list.
+// InventurScanHandler verbucht einen Exemplar-Scan in einer laufenden Session.
 // @Summary      Scan a copy during inventory
-// @Description  Records that a physical copy was physically present during a stock-take.
+// @Description  Records that a physical copy was present, bound to the given session.
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        body  body      InventurScanRequest   true  "Barcode to check in"
+// @Param        body  body      InventurScanRequest   true  "Session and barcode"
 // @Success      200   {object}  InventurScanResponse
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
@@ -73,26 +74,41 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
+		if req.SessionID == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
+			return
+		}
 
 		ctx := r.Context()
 		invRepo := repository.NewInventoryRepository(s.DB.Pool)
 
-		// 1. Fetch details required for inventory logic
+		// Session muss offen sein — sonst ist der Scan gegenstandslos (404).
+		session, err := invRepo.LadeInventurSession(ctx, req.SessionID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
+				return
+			}
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
 		res, ok := ladeExemplarFuerScan(ctx, invRepo, w, req.BarcodeID)
 		if !ok {
 			return
 		}
-
-		// 2. Validate current state
 		if res.IsAusgesondert {
 			apierrors.SendHTTPError(w, http.StatusConflict, fmt.Errorf("exemplar %s ist bereits ausgesondert", req.BarcodeID))
 			return
 		}
 
-		warnungen := inventurWarnungen(res.IsLent, res.InventurStatus)
+		imScope, err := invRepo.ExemplarImScope(ctx, res.CopyID, session.SignatureID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
-		// 3. Register the scan
-		if err := invRepo.MarkExemplarScanned(ctx, res.CopyID); err != nil {
+		if err := invRepo.RecordInventurScan(ctx, req.SessionID, res.CopyID); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -102,7 +118,7 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 			Titel:     res.Title,
 			CoverURL:  res.CoverURL,
 			Status:    "erfasst",
-			Warnungen: warnungen,
+			Warnungen: inventurWarnungen(res.IsLent, imScope),
 		})
 	}
 }

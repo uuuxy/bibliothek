@@ -22,17 +22,9 @@ func TestStatusConstraints(t *testing.T) {
 		})
 	})
 
-	t.Run("inventur-status nur NULL/ausstehend/erfasst", func(t *testing.T) {
-		inTx(t, pool, func(tx pgx.Tx) {
-			titelID := neuerTitel(t, tx)
-			erwarteConstraintVerletzung(t, tx, "chk_inventur_status",
-				`INSERT INTO buecher_exemplare (titel_id, barcode_id, inventur_status)
-				 VALUES ($1, 'INV-1', 'unbekannt')`, titelID)
-			erwarteErfolg(t, tx, "inventur_status = NULL (nicht in Inventur)",
-				`INSERT INTO buecher_exemplare (titel_id, barcode_id, inventur_status)
-				 VALUES ($1, 'INV-2', NULL)`, titelID)
-		})
-	})
+	// Der frühere Unterfall "inventur-status nur NULL/ausstehend/erfasst" entfiel mit
+	// Migration 045: Die Spalte inventur_status existiert nicht mehr, der Inventur-
+	// Fortschritt ist session-gebunden (siehe repository/inventur_session_repo_test.go).
 
 	t.Run("grade_level nur 0-13", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {

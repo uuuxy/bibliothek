@@ -335,8 +335,9 @@ CREATE TABLE buecher_exemplare (
     zustand_notiz TEXT,                               -- Field for damage notes / physical condition remarks
     erworben_am DATE NOT NULL DEFAULT CURRENT_DATE,
     ist_ausleihbar BOOLEAN NOT NULL DEFAULT true,      -- Switch to block copies from being lent out
-    inventur_geprueft_am TIMESTAMP WITH TIME ZONE,    -- Inventory scan check timestamp
-    inventur_status VARCHAR(20) DEFAULT NULL,         -- 'ausstehend' or 'erfasst' during inventory
+    -- Der frühere globale Inventur-Zustand (inventur_status/inventur_geprueft_am) wurde
+    -- mit Migration 045 entfernt. Inventur-Fortschritt lebt jetzt session-gebunden in
+    -- inventur_sessions / inventur_erfassungen (weiter unten definiert).
     ist_ausgesondert BOOLEAN NOT NULL DEFAULT false,   -- Decommissioned copies: hidden from catalog/kiosk/inventory, kept for statistics
     -- Grund des Abgangs (siehe Migration 043). Pflicht sobald ist_ausgesondert=true,
     -- sonst NULL — erzwungen durch chk_aussonderung_grund. Ermöglicht u. a. die
@@ -627,7 +628,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('041_cover_status_constraint.sql'),
 ('042_rolle_helfer.sql'),
 ('043_aussonderung_grund.sql'),
-('044_drop_benutzer_rollen.sql')
+('044_drop_benutzer_rollen.sql'),
+('045_inventur_sessions.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -690,6 +692,38 @@ CREATE TABLE IF NOT EXISTS signatures (
 ALTER TABLE buecher_titel
     ADD COLUMN IF NOT EXISTS signature_id INT REFERENCES signatures(id) ON DELETE RESTRICT;
 
+-- Inventur als Sessions (siehe Migration 045). Jede Inventur hat eigenen Scope und
+-- session-gebundenen Fortschritt; damit ist Parallelbetrieb ohne gegenseitiges
+-- Überschreiben möglich.
+CREATE TABLE IF NOT EXISTS inventur_sessions (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    scope_type        VARCHAR(20) NOT NULL,
+    signature_id      INT REFERENCES signatures(id) ON DELETE SET NULL,
+    scope_label       VARCHAR(255) NOT NULL DEFAULT '',
+    gestartet_von     UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    gestartet_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    abgeschlossen_am  TIMESTAMP WITH TIME ZONE,
+    verloren_gemeldet INT,
+    CONSTRAINT chk_inv_session_scope
+        CHECK (scope_type IN ('global', 'signature')
+               AND (scope_type = 'global' OR signature_id IS NOT NULL))
+);
+
+CREATE TABLE IF NOT EXISTS inventur_erfassungen (
+    session_id  UUID NOT NULL REFERENCES inventur_sessions(id) ON DELETE CASCADE,
+    exemplar_id UUID NOT NULL REFERENCES buecher_exemplare(id) ON DELETE CASCADE,
+    erfasst_am  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    PRIMARY KEY (session_id, exemplar_id)
+);
+
+-- Nur eine offene Session je Scope (global bzw. je Signatur).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_global
+    ON inventur_sessions ((true)) WHERE abgeschlossen_am IS NULL AND scope_type = 'global';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_signature
+    ON inventur_sessions (signature_id) WHERE abgeschlossen_am IS NULL AND scope_type = 'signature';
+CREATE INDEX IF NOT EXISTS idx_inv_erfassung_exemplar
+    ON inventur_erfassungen (exemplar_id);
+
 ALTER TABLE vormerkungen
     ADD COLUMN IF NOT EXISTS bereitgestellt_bis TIMESTAMP WITH TIME ZONE;
 
@@ -742,10 +776,8 @@ BEGIN
         ALTER TABLE vormerkungen ADD CONSTRAINT chk_vormerkung_status
             CHECK (status IN ('wartend', 'abholbereit'));
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_inventur_status') THEN
-        ALTER TABLE buecher_exemplare ADD CONSTRAINT chk_inventur_status
-            CHECK (inventur_status IS NULL OR inventur_status IN ('ausstehend', 'erfasst'));
-    END IF;
+    -- chk_inventur_status (Migration 040) entfiel mit Migration 045: die Spalte
+    -- inventur_status existiert nicht mehr, der Zustand lebt in inventur_erfassungen.
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_grade_level_bereich') THEN
         ALTER TABLE buecher_titel ADD CONSTRAINT chk_grade_level_bereich
             CHECK (grade_level IS NULL OR grade_level BETWEEN 0 AND 13);

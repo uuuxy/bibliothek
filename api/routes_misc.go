@@ -25,9 +25,11 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	mux.Handle("GET /api/search", s.RequirePermission("view_students")(searchHandler))
 
 	// Inventory
+	mux.Handle("GET /api/inventur/sessions", s.RequirePermission("inventory_scan")(s.ListInventurSessionsHandler()))
 	mux.Handle("POST /api/inventur/start", s.RequirePermission("manage_inventory")(s.InventurStartHandler()))
 	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.InventurScanHandler()))
 	mux.Handle("POST /api/inventur/finish", s.RequirePermission("manage_inventory")(s.InventurFinishHandler()))
+	mux.Handle("POST /api/inventur/abort", s.RequirePermission("manage_inventory")(s.InventurAbortHandler()))
 
 	// Smart Scanner (Tresen-Weiche)
 	mux.Handle("GET /api/scan", s.RequirePermission("view_students")(s.SmartScanHandler()))

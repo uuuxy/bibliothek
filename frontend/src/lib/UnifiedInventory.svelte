@@ -35,6 +35,7 @@
 
 	onMount(async () => {
 		await inventoryState.loadSignatures();
+		await inventoryState.loadOffeneSessions();
 	});
 
 	function focusInput() {
@@ -84,6 +85,49 @@
 				</svg>
 				<span>Neue Bestandsprüfung starten</span>
 			</button>
+
+			{#if inventoryState.errorMessage}
+				<div
+					class="w-full max-w-lg mx-auto p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800"
+				>
+					{inventoryState.errorMessage}
+				</div>
+			{/if}
+
+			{#if inventoryState.offeneSessions.length > 0}
+				<div class="w-full max-w-lg mx-auto text-left space-y-2 pt-4">
+					<h4 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+						Laufende Inventuren
+					</h4>
+					{#each inventoryState.offeneSessions as session (session.session_id)}
+						<div
+							class="flex items-center justify-between gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg"
+						>
+							<div class="min-w-0">
+								<div class="font-semibold text-slate-800 truncate">{session.label}</div>
+								<div class="text-xs text-slate-500">
+									{session.erfasst} / {session.erwartet} erfasst · seit {session.gestartet_am?.slice(
+										0,
+										16
+									)}
+								</div>
+							</div>
+							<div class="flex items-center gap-2 shrink-0">
+								<button
+									onclick={() => inventoryState.resumeSession(session)}
+									class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md"
+									>Fortsetzen</button
+								>
+								<button
+									onclick={() => inventoryState.verwerfeSession(session)}
+									class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-500 text-xs font-bold rounded-md border border-slate-200"
+									>Verwerfen</button
+								>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="space-y-6">
