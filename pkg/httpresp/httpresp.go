@@ -37,13 +37,33 @@ func Encode(w io.Writer, payload any) {
 // fuer kuenftige, ohne dass jemand daran denken muss. Einzelne Handler haben das bisher
 // von Hand abgefangen (z. B. inventur/class_books_handler.go); noetig ist das nun nicht
 // mehr.
+//
+// Neben der obersten Ebene werden auch Map-WERTE normalisiert (eine Ebene tief), weil
+// viele Endpunkte Listen im Umschlag {"data": ...} liefern — dort saesse das null
+// sonst eine Ebene tiefer und der Schutz liefe ins Leere. Bewusst keine Rekursion in
+// Structs oder tiefere Ebenen: Deren Felder sind typisierte Vertraege, die der
+// jeweilige Autor kennt; hier geht es nur um die generischen Antwort-Umschlaege.
 func alsListe(payload any) any {
 	if payload == nil {
 		return payload
 	}
 	v := reflect.ValueOf(payload)
-	if v.Kind() == reflect.Slice && v.IsNil() {
-		return reflect.MakeSlice(v.Type(), 0, 0).Interface()
+	switch v.Kind() {
+	case reflect.Slice:
+		if v.IsNil() {
+			return reflect.MakeSlice(v.Type(), 0, 0).Interface()
+		}
+	case reflect.Map:
+		for _, key := range v.MapKeys() {
+			wert := v.MapIndex(key)
+			// Map-Werte sind meist interface{} (map[string]any) — erst auspacken.
+			if wert.Kind() == reflect.Interface && !wert.IsNil() {
+				wert = wert.Elem()
+			}
+			if wert.Kind() == reflect.Slice && wert.IsNil() {
+				v.SetMapIndex(key, reflect.MakeSlice(wert.Type(), 0, 0))
+			}
+		}
 	}
 	return payload
 }

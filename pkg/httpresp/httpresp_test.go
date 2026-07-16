@@ -36,6 +36,21 @@ func TestEncodeBefuellteListe(t *testing.T) {
 	}
 }
 
+// TestEncodeUmschlagMitLeererListe sichert die Umschlag-Konvention {"data": ...} ab,
+// die u. a. das inventur-Paket durchgehend nutzt: Auch dort muss eine leere Liste als
+// [] ankommen, nicht als null — das null saesse sonst eine Ebene tiefer als die
+// Top-Level-Normalisierung reicht.
+func TestEncodeUmschlagMitLeererListe(t *testing.T) {
+	var leer []eintrag
+
+	var buf bytes.Buffer
+	Encode(&buf, map[string]any{"data": leer})
+
+	if got := strings.TrimSpace(buf.String()); got != `{"data":[]}` {
+		t.Errorf(`Umschlag: erwartet {"data":[]}, war: %s`, got)
+	}
+}
+
 // TestEncodeNichtListenUnveraendert prueft die Faelle, die NICHT angefasst werden
 // duerfen. Vor allem null selbst: Wo eine Antwort bewusst null ist (kein Datensatz),
 // darf daraus kein [] werden.
@@ -50,6 +65,10 @@ func TestEncodeNichtListenUnveraendert(t *testing.T) {
 		{"nil-Payload bleibt null", nil, "null"},
 		{"leere Map bleibt {}", map[string]string{}, "{}"},
 		{"Zahl", 42, "42"},
+		// Ein untypisiertes nil im Umschlag ist KEINE Liste — es muss null bleiben
+		// (bewusstes "kein Datensatz", z. B. {"data": null} bei Einzelobjekten).
+		{"Umschlag mit nil-Objekt", map[string]any{"data": nil}, `{"data":null}`},
+		{"Umschlag mit Struct", map[string]any{"data": eintrag{ID: "y"}}, `{"data":{"id":"y"}}`},
 	}
 
 	for _, f := range faelle {
