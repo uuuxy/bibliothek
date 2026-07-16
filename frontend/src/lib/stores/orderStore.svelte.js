@@ -71,39 +71,50 @@ class OrderStore {
 	}
 
 	async #ladeAlles() {
-		await Promise.all([
+		const ergebnisse = await Promise.all([
 			this.loadSuppliers(),
 			this.loadIncomingShipments(),
 			this.loadRecommendations()
 		]);
-		this.#zuletztGeladen = Date.now();
+		// Nur vollen Erfolg als "frisch" stempeln: Nach einem Netzwerkfehler soll der
+		// nächste Mount sofort erneut laden, nicht 60 Sekunden leere Listen zeigen.
+		if (ergebnisse.every(Boolean)) {
+			this.#zuletztGeladen = Date.now();
+		}
 	}
 
+	// Die Loader melden zurück, ob sie durchkamen (Fehler-Toast zeigt apiFetch selbst):
+	// #ladeAlles stempelt den Cache nur bei vollem Erfolg. Ein gecachter Fehlschlag
+	// hieße sonst: 60 Sekunden leere Listen ohne Retry beim nächsten Mount.
 	async loadSuppliers() {
+		let ok = true;
 		try {
 			this.suppliers = (await apiGet('/api/lieferanten')) || [];
 		} catch {
-			/* apiFetch zeigt Fehler-Toast */
+			ok = false;
 		}
 		// Auswahl per ID stabil halten; Index-basierte Auswahl kippt bei Reload/Umsortierung
 		if (!this.suppliers.some((s) => s.id === this.selectedSupplierId)) {
 			this.selectedSupplierId = this.suppliers[0]?.id ?? '';
 		}
+		return ok;
 	}
 
 	async loadIncomingShipments() {
 		try {
 			this.incomingShipments = (await apiGet('/api/bestellungen/zulauf')) || [];
+			return true;
 		} catch {
-			/* apiFetch zeigt Fehler-Toast */
+			return false;
 		}
 	}
 
 	async loadRecommendations() {
 		try {
 			this.recommendations = (await apiGet('/api/bestellungen')) || [];
+			return true;
 		} catch {
-			/* apiFetch zeigt Fehler-Toast */
+			return false;
 		}
 	}
 

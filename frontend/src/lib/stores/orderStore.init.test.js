@@ -65,6 +65,21 @@ describe('orderStore.init – Ladeverhalten', () => {
 		await vi.waitFor(() => expect(apiGet).toHaveBeenCalledTimes(3));
 	});
 
+	// Ein Fehlschlag ist keine Frische: Wer offline den Tab öffnete, soll beim nächsten
+	// Mount sofort einen neuen Versuch bekommen — nicht 60 Sekunden leere Listen.
+	it('cacht einen fehlgeschlagenen Ladeversuch nicht', async () => {
+		const { store, apiGet } = await frischerStore();
+		apiGet.mockRejectedValue(new Error('offline'));
+
+		await store.init(); // erster Versuch scheitert
+		apiGet.mockClear();
+		apiGet.mockResolvedValue([]);
+
+		await store.init(); // direkt danach — muss erneut laden
+
+		expect(apiGet).toHaveBeenCalledTimes(3);
+	});
+
 	// Veraltete Daten dürfen die Ansicht nicht blockieren: init() kehrt sofort zurück,
 	// der Abgleich läuft daneben. Andernfalls hätte der Cache den Hänger nur verschoben.
 	it('blockiert beim Auffrischen nicht auf dem Netz', async () => {
