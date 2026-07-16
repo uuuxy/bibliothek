@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +29,7 @@ type reorderItem struct {
 	Verlag       string
 	Meldebestand int
 	Verfuegbar   int
+	Bestellt     int // bereits bestellte, noch nicht gelieferte Exemplare (Platzhalter)
 	OrderQty     int
 }
 
@@ -53,17 +52,31 @@ func resolveRecipientEmail(reqEmail string) (string, error) {
 // sammleNachbestellungen liefert alle Titel, deren verfügbarer Bestand unter dem
 // Meldebestand liegt, inklusive berechneter Bestellmenge (> 0).
 func sammleNachbestellungen(ctx context.Context, tx pgx.Tx) ([]reorderItem, error) {
+	// Bereits bestellte Exemplare (Platzhalter mit ist_ausleihbar=false und
+	// zustand_notiz 'bestellt' / 'Bestellt…' / 'Im Zulauf…', siehe order_service.go
+	// und baueBestellpositionen) zählen mit: Sonst ignoriert die Query jede laufende
+	// Bestellung und bestellt Woche für Woche dieselben Titel nach, bis die Lieferung
+	// physisch eintrifft (Budget-Falle). OrderQty = Fehlmenge NACH Zulauf.
 	rows, err := tx.Query(ctx, `
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''), t.meldebestand,
-			v.verfuegbar
+			v.verfuegbar, v.bestellt
 		FROM buecher_titel t
 		JOIN LATERAL (
-			SELECT COUNT(*)::int AS verfuegbar
+			SELECT
+				COUNT(*) FILTER (
+					WHERE e.ist_ausleihbar = true
+					  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
+				)::int AS verfuegbar,
+				COUNT(*) FILTER (
+					WHERE e.ist_ausgesondert = false
+					  AND (coalesce(e.zustand_notiz, '') = 'bestellt'
+					       OR coalesce(e.zustand_notiz, '') LIKE 'Bestellt%'
+					       OR coalesce(e.zustand_notiz, '') LIKE 'Im Zulauf%')
+				)::int AS bestellt
 			FROM buecher_exemplare e
-			WHERE e.titel_id = t.id AND e.ist_ausleihbar = true
-			  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
+			WHERE e.titel_id = t.id
 		) v ON true
-		WHERE v.verfuegbar < t.meldebestand
+		WHERE v.verfuegbar + v.bestellt < t.meldebestand
 	`)
 	if err != nil {
 		return nil, err
@@ -73,8 +86,8 @@ func sammleNachbestellungen(ctx context.Context, tx pgx.Tx) ([]reorderItem, erro
 	var itemsToOrder []reorderItem
 	for rows.Next() {
 		var item reorderItem
-		if err := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.Meldebestand, &item.Verfuegbar); err == nil {
-			item.OrderQty = item.Meldebestand - item.Verfuegbar
+		if err := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.Meldebestand, &item.Verfuegbar, &item.Bestellt); err == nil {
+			item.OrderQty = item.Meldebestand - item.Verfuegbar - item.Bestellt
 			if item.OrderQty > 0 {
 				itemsToOrder = append(itemsToOrder, item)
 			}
@@ -90,24 +103,25 @@ func sammleNachbestellungen(ctx context.Context, tx pgx.Tx) ([]reorderItem, erro
 // höchsten bereits vergebenen Barcode. Fallback ist 10001.
 func naechsteBarcodeNummer(ctx context.Context, tx pgx.Tx) int {
 	startNum := 10001
-	var lastBarcode string
+	var lastNum int
+	// Numerisch sortieren, NICHT lexikografisch: Bei ORDER BY barcode_id DESC (String)
+	// gilt 'B-99999' > 'B-100000' (die '9' schlägt die '1'). Ab dem Übergang zu
+	// sechsstelligen Nummern lieferte die Query dauerhaft 'B-99999' als Maximum, das
+	// System erzeugte erneut 'B-100000' und lief in den UNIQUE-Constraint — das
+	// Bestellsystem fror ein. Der Cast auf die Ziffernfolge sortiert echt numerisch.
 	err := tx.QueryRow(ctx, `
-		SELECT barcode_id
+		SELECT (substring(barcode_id from 'B-([0-9]+)'))::bigint
 		FROM buecher_exemplare
-		WHERE barcode_id LIKE 'B-%'
-		ORDER BY barcode_id DESC
+		WHERE barcode_id ~ '^B-[0-9]+$'
+		ORDER BY (substring(barcode_id from 'B-([0-9]+)'))::bigint DESC
 		LIMIT 1
-	`).Scan(&lastBarcode)
+	`).Scan(&lastNum)
 	if err != nil {
 		return startNum
 	}
 
-	re := regexp.MustCompile(`B-(\d+)`)
-	matches := re.FindStringSubmatch(lastBarcode)
-	if len(matches) > 1 {
-		if parsed, err := strconv.Atoi(matches[1]); err == nil {
-			startNum = parsed + 1
-		}
+	if lastNum+1 > startNum {
+		startNum = lastNum + 1
 	}
 	return startNum
 }
@@ -144,8 +158,12 @@ func baueBestellpositionen(itemsToOrder []reorderItem, startNum int, isNaacher b
 }
 
 // versendeBestellung erzeugt Bestellübersicht- und Barcode-PDF und schickt die
-// Bestellung per Mail. Antwortet selbst (Erfolg oder Fehler) auf w.
-func (s *Server) versendeBestellung(ctx context.Context, w http.ResponseWriter, toEmail string, isNaacher bool, labels []BarcodeLabelDetail, orderSummaryItems []OrderedItem) {
+// Bestellung per Mail. Sie antwortet NICHT selbst, sondern liefert einen *apierrors.APIError
+// (nil bei Erfolg) — damit der Aufrufer erst nach erfolgreichem Mailversand committen
+// kann. Zuvor wurde umgekehrt committet und danach gemailt: Fiel der SMTP-Server aus,
+// waren die Bestell-Platzhalter bereits hart in der DB, der Händler hatte aber nie eine
+// Mail bekommen (Ghost-Order, nur per Hand korrigierbar).
+func (s *Server) versendeBestellung(ctx context.Context, toEmail string, isNaacher bool, labels []BarcodeLabelDetail, orderSummaryItems []OrderedItem) *apierrors.APIError {
 	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
 	orderSettings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
 	schule := pdf.SchuleInfo{
@@ -157,14 +175,12 @@ func (s *Server) versendeBestellung(ctx context.Context, w http.ResponseWriter, 
 
 	summaryPDF, err := GenerateOrderSummaryPDF(orderSummaryItems, schule)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return
+		return apierrors.Internal("Bestellübersicht-PDF fehlgeschlagen", err)
 	}
 
 	barcodePDF, err := GenerateBarcodeSheetPDF(labels)
 	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return
+		return apierrors.Internal("Barcode-PDF fehlgeschlagen", err)
 	}
 
 	emailBody := fmt.Sprintf(
@@ -197,16 +213,9 @@ func (s *Server) versendeBestellung(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	if err := SendEmail(mailReq); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadGateway, err)
-		return
+		return apierrors.New(http.StatusBadGateway, "Versand an den Lieferanten fehlgeschlagen", err)
 	}
-
-	RespondJSON(w, http.StatusOK, map[string]any{
-		"status":      "success",
-		"message":     fmt.Sprintf("Bestellung erfolgreich an %s gesendet.", toEmail),
-		"ordered_qty": len(labels),
-		"titles_qty":  len(orderSummaryItems),
-	})
+	return nil
 }
 
 func (s *Server) SendOrderMailHandler() http.HandlerFunc {
@@ -261,11 +270,25 @@ func (s *Server) SendOrderMailHandler() http.HandlerFunc {
 			return
 		}
 
+		// WICHTIG: erst mailen, dann committen. Schlägt der Mailversand fehl, greift der
+		// defer-Rollback und es entstehen keine Bestell-Platzhalter, die niemand beim
+		// Händler abgegeben hat. Erst wenn die Mail draußen ist, wird die Bestellung
+		// dauerhaft.
+		if apiErr := s.versendeBestellung(ctx, toEmail, isNaacher, labels, orderSummaryItems); apiErr != nil {
+			apierrors.SendHTTPError(w, apiErr.StatusCode, apiErr)
+			return
+		}
+
 		if err := tx.Commit(ctx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		s.versendeBestellung(ctx, w, toEmail, isNaacher, labels, orderSummaryItems)
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"status":      "success",
+			"message":     fmt.Sprintf("Bestellung erfolgreich an %s gesendet.", toEmail),
+			"ordered_qty": len(labels),
+			"titles_qty":  len(orderSummaryItems),
+		})
 	}
 }
