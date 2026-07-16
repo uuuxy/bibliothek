@@ -177,14 +177,22 @@ func parsePromoteRequest(w http.ResponseWriter, r *http.Request) (promoteStudent
 }
 
 // pruefeDoppellaufSchutz verhindert einen zweiten Schuljahreswechsel innerhalb von
-// 10 Minuten (ein zweiter Lauf würde alle Schüler +2 versetzen). ok=false: die
+// 12 Stunden (ein zweiter Lauf würde alle Schüler +2 versetzen). ok=false: die
 // Fehlerantwort (500 oder 409) wurde bereits geschrieben.
+//
+// Das Fenster ist bewusst großzügig: Der Schuljahreswechsel ist ein Batch, der einmal
+// im Jahr läuft. Das frühere 10-Minuten-Fenster ließ genau den wahrscheinlichsten
+// Fehler durch — der Admin bemerkt etwas, korrigiert, und klickt nach einer
+// Viertelstunde erneut, wodurch die ganze Schule ein zweites Mal befördert wird. Ein
+// legitimer Wiederholungslauf nach einem FEHLGESCHLAGENEN Wechsel bleibt möglich: Der
+// Audit-Eintrag wird atomar mit dem Batch committet (finalisiereSchuljahreswechsel),
+// ein abgebrochener Lauf hinterlässt also keinen Eintrag und keine Sperre.
 func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
 	var recentRuns int
 	err := tx.QueryRow(ctx, `
 		SELECT COUNT(*) FROM audit_logs
 		WHERE aktion = 'SCHULJAHRESWECHSEL'
-		  AND zeitstempel > NOW() - INTERVAL '10 minutes'
+		  AND zeitstempel > NOW() - INTERVAL '12 hours'
 	`).Scan(&recentRuns)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

@@ -70,7 +70,7 @@ func TestPromoteStudents_DryRunRollsBackAndSkipsGuardAndAudit(t *testing.T) {
 func TestPromoteStudents_SecondRunWithinWindowReturns409(t *testing.T) {
 	s, mock := promotionTestServer(t)
 
-	// Ein Lauf vor <10 min existiert → 409, ohne dass das UPDATE läuft.
+	// Ein Lauf innerhalb des Schutzfensters (12 h) existiert → 409, ohne dass das UPDATE läuft.
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
