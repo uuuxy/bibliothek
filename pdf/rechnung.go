@@ -7,10 +7,12 @@ import (
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
+	"github.com/johnfercher/maroto/v2/pkg/components/row"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
+	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
 )
 
@@ -120,12 +122,7 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 	// Table Rows
 	var total float64
 	for _, item := range items {
-		m.AddRow(10,
-			col.New(5).Add(text.New(item.Titel, props.Text{Size: 10})),
-			col.New(3).Add(text.New(item.Barcode, props.Text{Size: 10})),
-			col.New(2).Add(text.New(item.Ausleihdatum.Format("02.01.2006"), props.Text{Size: 10})),
-			col.New(2).Add(text.New(fmt.Sprintf("%.2f EUR", item.Ersatzpreis), props.Text{Size: 10, Align: align.Right})),
-		)
+		m.AddRows(generateItemRow(item))
 		total += item.Ersatzpreis
 	}
 	// Geldbeträge liegen in der DB exakt als NUMERIC(10,2); in Go werden sie als
@@ -156,4 +153,13 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 	}
 
 	return doc.GetBytes(), nil
+}
+
+func generateItemRow(item RechnungItem) core.Row {
+	return row.New(10).Add(
+		col.New(5).Add(text.New(item.Titel, props.Text{Size: 10})),
+		col.New(3).Add(text.New(item.Barcode, props.Text{Size: 10})),
+		col.New(2).Add(text.New(item.Ausleihdatum.Format("02.01.2006"), props.Text{Size: 10})),
+		col.New(2).Add(text.New(fmt.Sprintf("%.2f EUR", item.Ersatzpreis), props.Text{Size: 10, Align: align.Right})),
+	)
 }
