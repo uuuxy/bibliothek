@@ -9,7 +9,7 @@ import (
 	"bibliothek/inventur"
     "net/http"
     "bytes"
-    "io/ioutil"
+    "io"
 )
 
 type MockTransport struct{}
@@ -39,7 +39,7 @@ func (t *MockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	return &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(bytes.NewBufferString(xml)),
+		Body:       io.NopCloser(bytes.NewBufferString(xml)),
 		Header:     make(http.Header),
 	}, nil
 }
