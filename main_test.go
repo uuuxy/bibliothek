@@ -9,12 +9,12 @@ import (
 
 func setupSuccessEnv() {
 	os.Clearenv()
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-	os.Setenv("JWT_SECRET", "this-is-a-very-secret-key-that-is-at-least-32-bytes")
-	os.Setenv("APP_ENCRYPTION_KEY", "12345678901234567890123456789012")
-	os.Setenv("PORT", "8080")
-	os.Setenv("COOKIE_SECURE", "true")
-	os.Setenv("ENFORCE_PROD_SECRETS", "false")
+	_ = os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
+	_ = os.Setenv("JWT_SECRET", "this-is-a-very-secret-key-that-is-at-least-32-bytes")
+	_ = os.Setenv("APP_ENCRYPTION_KEY", "12345678901234567890123456789012")
+	_ = os.Setenv("PORT", "8080")
+	_ = os.Setenv("COOKIE_SECURE", "true")
+	_ = os.Setenv("ENFORCE_PROD_SECRETS", "false")
 }
 
 func restoreEnv(originalEnv []string) {
@@ -22,7 +22,7 @@ func restoreEnv(originalEnv []string) {
 	for _, e := range originalEnv {
 		parts := strings.SplitN(e, "=", 2)
 		if len(parts) == 2 {
-			os.Setenv(parts[0], parts[1])
+			_ = os.Setenv(parts[0], parts[1])
 		}
 	}
 }
@@ -67,43 +67,43 @@ func testFatal(t *testing.T, testName string, setupEnv func()) {
 func TestLoadConfig_MissingDatabaseURL(t *testing.T) {
 	testFatal(t, "TestLoadConfig_MissingDatabaseURL", func() {
 		setupSuccessEnv()
-		os.Unsetenv("DATABASE_URL")
+		_ = os.Unsetenv("DATABASE_URL")
 	})
 }
 
 func TestLoadConfig_ShortJWT(t *testing.T) {
 	testFatal(t, "TestLoadConfig_ShortJWT", func() {
 		setupSuccessEnv()
-		os.Setenv("JWT_SECRET", "short")
+		_ = os.Setenv("JWT_SECRET", "short")
 	})
 }
 
 func TestLoadConfig_InvalidAESKey(t *testing.T) {
 	testFatal(t, "TestLoadConfig_InvalidAESKey", func() {
 		setupSuccessEnv()
-		os.Setenv("APP_ENCRYPTION_KEY", "invalid")
+		_ = os.Setenv("APP_ENCRYPTION_KEY", "invalid")
 	})
 }
 
 func TestLoadConfig_MissingPort(t *testing.T) {
 	testFatal(t, "TestLoadConfig_MissingPort", func() {
 		setupSuccessEnv()
-		os.Unsetenv("PORT")
+		_ = os.Unsetenv("PORT")
 	})
 }
 
 func TestLoadConfig_EnforceProdSecrets_KnownJWT(t *testing.T) {
 	testFatal(t, "TestLoadConfig_EnforceProdSecrets_KnownJWT", func() {
 		setupSuccessEnv()
-		os.Setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
-		os.Setenv("ENFORCE_PROD_SECRETS", "true")
+		_ = os.Setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+		_ = os.Setenv("ENFORCE_PROD_SECRETS", "true")
 	})
 }
 
 func TestLoadConfig_EnforceProdSecrets_KnownAES(t *testing.T) {
 	testFatal(t, "TestLoadConfig_EnforceProdSecrets_KnownAES", func() {
 		setupSuccessEnv()
-		os.Setenv("APP_ENCRYPTION_KEY", "super-secure-aes-key-32-chars-ok")
-		os.Setenv("ENFORCE_PROD_SECRETS", "true")
+		_ = os.Setenv("APP_ENCRYPTION_KEY", "super-secure-aes-key-32-chars-ok")
+		_ = os.Setenv("ENFORCE_PROD_SECRETS", "true")
 	})
 }
