@@ -40,11 +40,15 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 	// Rollback-Defer, welches wirksam wird, falls tx.Commit() nicht erreicht wird
 	defer db.SafeRollback(ctx, tx)
 
+	// rueckgabe_am IS NULL: Gibt ein Schüler sein Buch zwischen dem Aufbereiten der
+	// Mahnliste und dem Klick auf "Drucken" zurück, darf seine Mahnstufe NICHT für ein
+	// bereits zurückgegebenes Buch hochgezählt werden. Die PDF-Query filtert gleich
+	// (mahnwesen_queries.go: QueryUeberfaelligeByAusleiheIDs).
 	cmdTag, err := tx.Exec(ctx, `
 		UPDATE ausleihen
 		SET mahnstufe = mahnstufe + 1,
 		    letztes_mahndatum = CURRENT_TIMESTAMP
-		WHERE id = ANY($1)
+		WHERE id = ANY($1) AND rueckgabe_am IS NULL
 	`, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))

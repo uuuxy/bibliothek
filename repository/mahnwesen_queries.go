@@ -220,7 +220,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t    ON e.titel_id = t.id
 		JOIN schueler s         ON a.schueler_id = s.id
-		WHERE a.id = ANY($1)
+		WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
 		ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist
 	`
 
