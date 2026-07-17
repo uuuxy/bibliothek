@@ -130,7 +130,12 @@ The application executes automated cronjobs (`jobs/cron.go`):
 - DB Backups: `pg_dump → gzip → AES-GCM` (random nonce), 0600 file permissions, rotation.
 
 ### Address Data (GDPR vs. Dunning)
-Address columns (`strasse`, `plz`, `ort`) are required for the dunning process (postal letters) and are **consciously present**. Migration 003 originally contained a `RAISE EXCEPTION` guard that would have blocked address columns — this was removed since the data is technically essential.
+Address columns (`strasse`, `plz`, `ort`) and `eltern_email` are required for the dunning process (postal letters for damage invoices and emails for reminders) and are **consciously present**. Migration 003 originally contained a `RAISE EXCEPTION` guard that would have blocked address columns — this was removed since the data is technically essential.
+
+**Documentation for the Record of Processing Activities (VVT):**
+- **Legal Basis:** Art. 6 (1) (c) GDPR (Compliance with a legal obligation, e.g., school law/learning materials exemption) in conjunction with Art. 6 (1) (b) GDPR (Performance of a contract regarding borrowing) and Art. 5 (1) (c) GDPR (Purpose limitation & data minimization).
+- **Purpose:** Exclusively for sending damage invoices (address) and parent reminders (e-mail).
+- **Retention Period/Deletion:** Upon departure of a student (without open transactions such as loans or unpaid invoices), these fields are immediately cleared by the anonymization routine (`anonymisiereAbgaenger`).
 
 ---
 

@@ -159,7 +159,7 @@ ist eine Annahme, kein Beschluss.
 
 | # | Lücke | Schwere | Soll-Durchsetzung | Blockiert durch |
 |---|---|---|---|---|
-| ~~**G1**~~ | **ERLEDIGT (Entscheidung B, 2026-07-15):** LUSD importiert jetzt Anschrift + `eltern_email` (optional). Zweck Rechnung/Mahnung; Anonymisierung bei Abgang löscht die Daten. Kommentar korrigiert. **Offen:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis dokumentieren (Betreiber). | erledigt | `lusd_apply.go`, `lusd_parser.go`, `schema.sql:127` | — |
+| ~~**G1**~~ | **ERLEDIGT (Entscheidung B, 2026-07-15):** LUSD importiert jetzt Anschrift + `eltern_email` (optional). Zweck Rechnung/Mahnung; Anonymisierung bei Abgang löscht die Daten. Kommentar korrigiert. ~~**Offen:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis dokumentieren (Betreiber).~~ **ERLEDIGT: In `docs/SECURITY.de.md` dokumentiert.** | erledigt | `lusd_apply.go`, `lusd_parser.go`, `schema.sql:127` | — |
 | ~~**G4a**~~ | ~~`stock`, `meldebestand`, `einkaufspreis`, `menge`, `einzelpreis`, `gesamtbetrag`, `anzahl` ohne DB-Wertebereich~~ **ERLEDIGT (Migration 039):** Non-Negativitäts-/Positivitäts-CHECKs, in CI gegen echtes PG geprüft. | 🟢 erledigt | `migrations/039_wertebereich_constraints.sql` | — |
 | ~~**G2**~~ | **ERLEDIGT:** `vormerkungen.status` (Migration 040), `cover_status` (Migration 041 — die vermutete inkonsistente Schreibung war ein Grep-Artefakt aus JSON-Responses; Vokabular ist durchgängig GROSS). **Dauerhaft ohne CHECK (Beschluss):** `medientyp` — offenes, frei eingebbares Vokabular. *Hinweis:* `inventur_status` (früher `chk_inventur_status`) entfiel mit Migration 045 — der Inventur-Zustand ist jetzt session-gebunden statt eine globale Spalte. | 🟢 erledigt | `migrations/040`, `migrations/041`, `migrations/045` | — |
 | ~~**G4b**~~ | **ERLEDIGT:** `grade_level` = 0–13 (0 = unkategorisiert, 5–13 kooperative Gesamtschule inkl. Oberstufe), NULL erlaubt. Deckt sich mit App-Validierung. **Nebenbefund gefixt:** `parseKlassenStufe` klemmte fälschlich bei 10 → Jahrgang 11–13 wurde beim Import als 5 einsortiert; jetzt 5–13. | 🟢 erledigt | `migrations/040`, `import_verarbeitung_zeilen.go` | — |
@@ -173,7 +173,7 @@ ist eine Annahme, kein Beschluss.
 
 - ✅ **Phase 0 — Katalog vervollständigen.** *(dieses Dokument)*
 - ✅ **Phase 1 — G1 entscheiden (Governance).** Entscheidung B umgesetzt (Import + Löschung bei
-  Anonymisierung). **Offen beim Betreiber:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis.
+  Anonymisierung). ~~**Offen beim Betreiber:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis.~~ **ERLEDIGT (in `SECURITY.de.md` dokumentiert).**
 - ✅ **Phase 2 — Constraints nachrüsten.** Migrationen 039–043: 12 CHECKs + ENUM-Wert, jede gegen
   echtes PG 15/16 verifiziert (Verletzung provoziert → Fehler erwartet; gültige Werte akzeptiert).
 - ✅ **Phase 3 — Prozess härten (G6).** `db/migrations_drift_test.go` läuft in CI.
@@ -209,7 +209,7 @@ Kiosk **scannen** darf, schreibt sie bewusst nicht fest — siehe Punkt 4 unten.
    Import-Pfad befüllt das Feld. Der Clamp-Bug war real, hatte aber nie
    Datenwirkung. Kein Repair nötig.
 2. Echten LUSD-Export einmal hochladen — Log nennt die erkannten Adressspalten.
-3. DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.
+3. ~~DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.~~ **ERLEDIGT (in `SECURITY.de.md` dokumentiert).**
 4. Branch-Protection: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel
    ernst nehmen (PR-Workflow) oder abschaffen.
 5. **`helfer`-Rechte entscheiden — die Rolle ist mit den Default-Rechten funktionsunfähig.**

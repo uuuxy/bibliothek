@@ -130,7 +130,12 @@ Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 - DB-Backups: `pg_dump → gzip → AES-GCM` (Zufalls-Nonce), 0600 Dateiberechtigungen, Rotation.
 
 ### Adressdaten (DSGVO vs. Mahnwesen)
-Adressspalten (`strasse`, `plz`, `ort`) werden für das Mahnwesen (Briefversand) benötigt und sind **bewusst vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der Adressspalten blockiert hätte — dieser wurde entfernt, da die Daten fachlich essenziell sind.
+Adressspalten (`strasse`, `plz`, `ort`) und `eltern_email` werden für das Mahnwesen (Briefversand für Schadens-Rechnungen und E-Mail für Mahnungen) benötigt und sind **bewusst vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der Adressspalten blockiert hätte — dieser wurde entfernt, da die Daten fachlich essenziell sind.
+
+**Dokumentation für das Verzeichnis von Verarbeitungstätigkeiten (VVT):**
+- **Rechtsgrundlage:** Art. 6 Abs. 1 lit. c DSGVO (Erfüllung einer rechtlichen Verpflichtung, z.B. Schulgesetz/Lernmittelfreiheit) in Verbindung mit Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung bzgl. Ausleihe) und Art. 5 Abs. 1 lit. c DSGVO (Zweckbindung & Datensparsamkeit).
+- **Zweck:** Ausschließlich für den Versand von Schadens-Rechnungen (Anschrift) und Eltern-Mahnungen (E-Mail).
+- **Aufbewahrungsfrist/Löschung:** Beim Abgang eines Schülers (ohne offene Vorgänge wie Ausleihen oder unbezahlte Rechnungen) werden diese Felder durch die Anonymisierungsroutine (`anonymisiereAbgaenger`) umgehend geleert.
 
 ---
 
