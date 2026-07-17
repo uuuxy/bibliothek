@@ -152,17 +152,24 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetXY(20, 100)
 
-	parsedBetreff := strings.ReplaceAll(betreff, "{{.Vorname}}", student.Vorname)
-	parsedBetreff = strings.ReplaceAll(parsedBetreff, "{{.Nachname}}", student.Nachname)
+	// ⚡ Bolt: Use a single Replacer to prevent intermediate allocations
+	replacer := strings.NewReplacer(
+		"{{.Vorname}}", student.Vorname,
+		"{{.Nachname}}", student.Nachname,
+	)
+	parsedBetreff := replacer.Replace(betreff)
 	pdf.Cell(0, 5, tr(parsedBetreff))
 
 	// --- Body Text ---
 	pdf.SetFont("Arial", "", 11)
 	pdf.SetXY(20, 115)
 
-	parsedText := strings.ReplaceAll(textBody, "{{.Vorname}}", student.Vorname)
-	parsedText = strings.ReplaceAll(parsedText, "{{.Nachname}}", student.Nachname)
-	parsedText = strings.ReplaceAll(parsedText, "{{.Frist}}", time.Now().Format(dateFormatDE))
+	bodyReplacer := strings.NewReplacer(
+		"{{.Vorname}}", student.Vorname,
+		"{{.Nachname}}", student.Nachname,
+		"{{.Frist}}", time.Now().Format(dateFormatDE),
+	)
+	parsedText := bodyReplacer.Replace(textBody)
 
 	// Split by the book list placeholder
 	parts := strings.Split(parsedText, "{{.BuchListe}}")

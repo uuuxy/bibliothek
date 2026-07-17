@@ -10,3 +10,6 @@
 ## 2026-07-14 - [Optimize Reorder Queries]
 **Learning:** Found redundant correlated subqueries in `sammleNachbestellungen` (`api/order_handler.go`) and `queryReorders` (`api/stats.go`) where the same subquery calculating available book copies was used in both the `SELECT` clause and the `WHERE` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `JOIN LATERAL (...) v ON true` to evaluate the subquery exactly once per row and then referenced `v.verfuegbar` in both the `SELECT` and `WHERE` clauses, preventing the redundant subquery execution and improving read performance.
+## 2026-08-01 - [High-performance string cleaning]
+**Learning:** Found multiple sequential `strings.ReplaceAll` calls in `zeichneElternMahnbrief` (inside `api/reports_pdf.go`) being used to replace template variables (`{{.Vorname}}`, `{{.Nachname}}`, `{{.Frist}}`). This leads to unnecessary intermediate string allocations. Additionally, sequential `strings.ReplaceAll` can unintentionally replace substrings within already-substituted values.
+**Action:** Use `strings.NewReplacer` to evaluate all replacements in a single pass. This prevents intermediate string allocations and safely performs non-overlapping replacements, which is particularly beneficial in performance-sensitive contexts like PDF generation loops.
