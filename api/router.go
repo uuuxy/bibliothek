@@ -59,6 +59,7 @@ func NewServer(database *db.Database, authenticator *auth.Authenticator, broker 
 	}
 }
 
+
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.
 // Maps endpoints to their handlers and wraps protected endpoints in RBAC middleware.
 func (s *Server) Routes() http.Handler {
@@ -78,6 +79,25 @@ func (s *Server) Routes() http.Handler {
 	orderSvc := NewOrderService(s.DB, bookRepo)
 	pdfSvc := NewPDFService()
 
+	s.registerInventurSubmoduleRoutes(mux)
+	s.registerAuthRoutes(mux)
+
+	// Delegate to domain-specific routers
+	s.registerPublicRoutes(mux)
+	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, omniboxSvc)
+	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
+	s.registerBookRoutes(mux, bookRepo, auditRepo)
+	s.registerSystemRoutes(mux, auditRepo, userRepo, s.DB.Pool)
+	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
+
+	s.registerImportRoutes(mux)
+	s.registerSwaggerRoutes(mux)
+	s.registerFrontendRoutes(mux)
+
+	return s.wrapMiddleware(mux)
+}
+
+func (s *Server) registerInventurSubmoduleRoutes(mux *http.ServeMux) {
 	// Initialize Inventur sub-module handlers
 	if err := os.MkdirAll("uploads", 0750); err != nil {
 		log.Printf("router: Upload-Verzeichnis konnte nicht angelegt werden: %v", err)
@@ -104,7 +124,9 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("/api/admin", invHandler)
 	mux.Handle("/api/admin/", invHandler)
 	mux.Handle("/uploads/", invHandler)
+}
 
+func (s *Server) registerAuthRoutes(mux *http.ServeMux) {
 	// Public Endpoints
 	mux.Handle("POST /login", AuthRateLimitMiddleware(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))))
 
@@ -124,20 +146,16 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/auth/logout", s.logoutHandler())
 
 	mux.HandleFunc("GET /health", s.healthHandler())
+}
 
-	// Delegate to domain-specific routers
-	s.registerPublicRoutes(mux)
-	s.registerCoreActionRoutes(mux, studentRepo, bookRepo, omniboxSvc)
-	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
-	s.registerBookRoutes(mux, bookRepo, auditRepo)
-	s.registerSystemRoutes(mux, auditRepo, userRepo, s.DB.Pool)
-	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
-
+func (s *Server) registerImportRoutes(mux *http.ServeMux) {
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.LitteraImportHandler()))
 	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.BestandImportHandler)))
 	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(SyncCoversHandler(s.DB.Pool)))
+}
 
+func (s *Server) registerSwaggerRoutes(mux *http.ServeMux) {
 	// Swagger interactive documentation (Only accessible in local/development mode)
 	if os.Getenv("APP_ENV") == "local" || os.Getenv("APP_ENV") == "development" {
 		mux.Handle("GET /swagger/", httpSwagger.Handler(
@@ -147,7 +165,9 @@ func (s *Server) Routes() http.Handler {
 			http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
 		})
 	}
+}
 
+func (s *Server) registerFrontendRoutes(mux *http.ServeMux) {
 	// Intercept missing favicon.ico to prevent fallback to index.html and 404 errors
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -162,7 +182,9 @@ func (s *Server) Routes() http.Handler {
 		log.Printf("router: frontend/dist nicht verfügbar (%v) — SPA-Auslieferung deaktiviert", frontendRootErr)
 	}
 	mux.HandleFunc("/", spaHandler(frontendRoot))
+}
 
+func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
 	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024) // 100MB limit
 	rateLimiter := RateLimitMiddleware(50)
