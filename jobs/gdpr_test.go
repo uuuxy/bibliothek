@@ -32,6 +32,10 @@ func (m *MockAuditRepo) DeleteStudent(ctx context.Context, studentID string, bea
 	return nil
 }
 
+func (m *MockAuditRepo) PurgeStudent(ctx context.Context, studentID string, bearbeiterID string) error {
+	return nil
+}
+
 func (m *MockAuditRepo) LogAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
 	return nil
 }

@@ -20,9 +20,15 @@ type AuditRepository interface {
 	// DeleteUser protokolliert die administrative Löschung eines Systembenutzers.
 	DeleteUser(ctx context.Context, userID string, bearbeiterID string) error
 
-	// DeleteStudent löscht einen Schüler unwiderruflich aus der Datenbank (zur Einhaltung der DSGVO / Datenschutz)
-	// und hinterlässt einen anonymisierten Löscheintrag im Audit-Log zur Nachverfolgbarkeit.
+	// DeleteStudent verschiebt einen Schüler in den Papierkorb (Soft-Delete, wiederherstellbar).
+	// Die PII bleibt erhalten — die endgültige DSGVO-Anonymisierung macht PurgeStudent.
 	DeleteStudent(ctx context.Context, studentID string, bearbeiterID string, grund string) error
+
+	// PurgeStudent entfernt einen bereits im Papierkorb liegenden Schüler endgültig und
+	// DSGVO-konform: Ausleihhistorie anonymisiert, Audit-Logs anonymisiert, bezahlte
+	// Schadensfälle gelöscht, Schüler-Datensatz entfernt. Offene Ausleihen oder
+	// unbezahlte Schadensfälle blockieren die Löschung (liefern einen Fehler).
+	PurgeStudent(ctx context.Context, studentID string, bearbeiterID string) error
 
 	// StornierungGebuehr protokolliert den Erlass oder die Stornierung einer ausstehenden Gebühr mit Begründung.
 	StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, betrag float64, grund string) error

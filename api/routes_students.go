@@ -21,6 +21,8 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Papierkorb
 	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.GetDeletedStudentsHandler()))
 	mux.Handle("POST /api/schueler/{id}/restore", s.RequirePermission("delete_students")(s.RestoreStudentHandler()))
+	// Endgültig löschen (DSGVO-Purge): getrennte, stärkere Berechtigung als Soft-Delete.
+	mux.Handle("DELETE /api/schueler/deleted/{id}", s.RequirePermission("manage_users")(s.PurgeStudentHandler(auditRepo)))
 
 	// Photos
 	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.UploadStudentPhotoHandler()))
