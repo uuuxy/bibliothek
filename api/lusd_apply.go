@@ -46,21 +46,35 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 	return err
 }
 
-// aktualisiereBestandsschueler übernimmt Klasse und Kontaktdaten aus dem Export.
+// aktualisiereBestandsschueler übernimmt Klasse, Name und Kontaktdaten aus dem Export.
 // COALESCE(NULLIF(...)) sorgt dafür, dass ein LEERER Export-Wert bestehende Daten
 // NICHT überschreibt — ein Export ohne Adressspalten löscht also nichts.
+//
+// Rückkehrer-Behandlung: Steht ein Schüler wieder im aktiven Export, ist er per
+// Definition KEIN Abgänger mehr. War er zuvor als Abgänger anonymisiert worden
+// (Vorname 'Abgänger', Nachname 'Anonymisiert-…', gesperrt), bliebe er sonst dauerhaft
+// unter diesem Namen und gesperrt im System — obwohl sein echter Name im Export steht
+// (z. B. Wechsel in die Oberstufe). Deshalb: Name IMMER aus dem Export übernehmen und
+// den Abgänger-/Anonymisierungs-Status zurücksetzen. Eine Sperre aus ANDEREM Grund
+// (nicht die Anonymisierung) bleibt bestehen.
 func aktualisiereBestandsschueler(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, id string) error {
 	_, err := tx.Exec(ctx, `
 		UPDATE schueler SET
-			klasse       = $1,
-			strasse      = COALESCE(NULLIF($2, ''), strasse),
-			hausnummer   = COALESCE(NULLIF($3, ''), hausnummer),
-			plz          = COALESCE(NULLIF($4, ''), plz),
-			ort          = COALESCE(NULLIF($5, ''), ort),
-			eltern_email = COALESCE(NULLIF($6, ''), eltern_email),
+			vorname      = COALESCE(NULLIF($1, ''), vorname),
+			nachname     = COALESCE(NULLIF($2, ''), nachname),
+			klasse       = $3,
+			strasse      = COALESCE(NULLIF($4, ''), strasse),
+			hausnummer   = COALESCE(NULLIF($5, ''), hausnummer),
+			plz          = COALESCE(NULLIF($6, ''), plz),
+			ort          = COALESCE(NULLIF($7, ''), ort),
+			eltern_email = COALESCE(NULLIF($8, ''), eltern_email),
+			ist_abgaenger = false,
+			ist_gesperrt = CASE WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%'
+			                    THEN false ELSE ist_gesperrt END,
 			aktualisiert_am = NOW()
-		WHERE id = $7`,
-		rec.Klasse, rec.Strasse, rec.Hausnummer, rec.PLZ, rec.Ort, rec.ElternEmail, id)
+		WHERE id = $9`,
+		rec.Vorname, rec.Nachname, rec.Klasse,
+		rec.Strasse, rec.Hausnummer, rec.PLZ, rec.Ort, rec.ElternEmail, id)
 	return err
 }
 
