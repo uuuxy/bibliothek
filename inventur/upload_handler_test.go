@@ -27,9 +27,9 @@ func createDummyImage(format string, width, height int) []byte {
 	var buf bytes.Buffer
 	switch format {
 	case "png":
-		_ = png.Encode(&buf, img)
+		_ = png.Encode(&buf, img) //nolint:errcheck
 	case "jpeg", "jpg":
-		_ = jpeg.Encode(&buf, img, nil)
+		_ = jpeg.Encode(&buf, img, nil) //nolint:errcheck
 	}
 	return buf.Bytes()
 }
@@ -47,7 +47,7 @@ func createMultipartRequest(t *testing.T, fieldName, fileName, format string, da
 	if _, err := fw.Write(data); err != nil {
 		t.Fatalf("failed to write data: %v", err)
 	}
-	_ = w.Close()
+	_ = w.Close() //nolint:errcheck
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/123/cover-upload", &b)
 	req.Header.Set("Content-Type", w.FormDataContentType())
@@ -268,7 +268,7 @@ func TestSaveCoverFile(t *testing.T) {
 		}
 
 		// Clean up the created file
-		defer func() { _ = os.Remove(filePath) }()
+		defer func() { _ = os.Remove(filePath) }() //nolint:errcheck
 	})
 
 	t.Run("Path Traversal Protection", func(t *testing.T) {
@@ -298,7 +298,7 @@ func TestSaveCoverFile(t *testing.T) {
 			}
 
 			// Clean up the created file
-			defer func() { _ = os.Remove(filePath) }()
+			defer func() { _ = os.Remove(filePath) }() //nolint:errcheck
 		}
 	})
 }
