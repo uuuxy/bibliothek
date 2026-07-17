@@ -56,8 +56,14 @@ func TestMigriereEinzelnesCover(t *testing.T) {
 	defer mock.Close()
 
 	// Create uploads directory if it doesn't exist, and defer removal of test files if any.
-	_ = os.MkdirAll("uploads", 0750)
-	defer func() { _ = os.RemoveAll("uploads") }()
+	if err := os.MkdirAll("uploads", 0750); err != nil {
+		t.Fatalf("could not create uploads dir: %v", err)
+	}
+	defer func() {
+		if err := os.RemoveAll("uploads"); err != nil {
+			t.Logf("could not remove uploads dir: %v", err)
+		}
+	}()
 
 	t.Run("Empty Cover URL", func(t *testing.T) {
 		client := &http.Client{}
@@ -260,8 +266,14 @@ func TestRunCoverMigration(t *testing.T) {
 	}
 	defer mock.Close()
 
-	_ = os.MkdirAll("uploads", 0750)
-	defer func() { _ = os.RemoveAll("uploads") }()
+	if err := os.MkdirAll("uploads", 0750); err != nil {
+		t.Fatalf("could not create uploads dir: %v", err)
+	}
+	defer func() {
+		if err := os.RemoveAll("uploads"); err != nil {
+			t.Logf("could not remove uploads dir: %v", err)
+		}
+	}()
 
 	// Replace http.DefaultTransport
 	originalTransport := http.DefaultTransport
