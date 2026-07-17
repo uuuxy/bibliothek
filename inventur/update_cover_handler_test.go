@@ -12,26 +12,15 @@ import (
 )
 
 func TestHandleUpdateCover(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-	defer mock.Close()
-
-	repo := NewBookRepository(mock)
-	handler := &APIHandler{repo: repo}
-
 	// Helper function for making requests
 	makeReq := func(method, path string, body map[string]any) *http.Request {
 		var reqBody []byte
 		if body != nil {
-			reqBody, _ = json.Marshal(body)
+			reqBody, _ = json.Marshal(body) //nolint:errcheck
 		}
-		req, _ := http.NewRequestWithContext(context.Background(), method, path, bytes.NewReader(reqBody))
+		req, _ := http.NewRequestWithContext(context.Background(), method, path, bytes.NewReader(reqBody)) //nolint:errcheck
 		return req
 	}
-
-	var dummyLastCounted *string
 
 	tests := []struct {
 		name           string
@@ -124,7 +113,7 @@ func TestHandleUpdateCover(t *testing.T) {
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
 					}).AddRow(
-						"123", "9781234567890", "Test Title", "Test Author", "", "https://example.com/cover.jpg", "", int16(0), "", 1, dummyLastCounted, 1, "Buch", 5, 10, map[string]any{},
+						"123", "9781234567890", "Test Title", "Test Author", "", "https://example.com/cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
 					))
 			},
 			expectedStatus: http.StatusOK,
@@ -144,7 +133,7 @@ func TestHandleUpdateCover(t *testing.T) {
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
 					}).AddRow(
-						"123", "9781234567890", "Test Title", "Test Author", "", "/uploads/cover.jpg", "", int16(0), "", 1, dummyLastCounted, 1, "Buch", 5, 10, map[string]any{},
+						"123", "9781234567890", "Test Title", "Test Author", "", "/uploads/cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
 					))
 			},
 			expectedStatus: http.StatusOK,
@@ -153,6 +142,15 @@ func TestHandleUpdateCover(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			}
+			defer mock.Close()
+
+			repo := NewBookRepository(mock)
+			handler := &APIHandler{repo: repo}
+
 			tt.setupMock(mock)
 
 			req := makeReq(tt.method, tt.path, tt.body)
