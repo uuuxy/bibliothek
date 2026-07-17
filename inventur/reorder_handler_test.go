@@ -127,7 +127,7 @@ func TestHandleReorderBooks(t *testing.T) {
 			handler.handleReorderBooks(w, req)
 
 			res := w.Result()
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 
 			if res.StatusCode != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, res.StatusCode)
@@ -139,7 +139,9 @@ func TestHandleReorderBooks(t *testing.T) {
 					t.Fatalf("failed to decode response body: %v", err)
 				}
 				expectedBodyMap := map[string]any{}
-				json.Unmarshal([]byte(tt.expectedBody), &expectedBodyMap)
+				if err := json.Unmarshal([]byte(tt.expectedBody), &expectedBodyMap); err != nil {
+					t.Fatalf("failed to unmarshal expected body: %v", err)
+				}
 
 				if respBody["message"] != expectedBodyMap["message"] {
 					t.Errorf("expected body %s, got %v", tt.expectedBody, respBody)
