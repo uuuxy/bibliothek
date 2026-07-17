@@ -10,34 +10,19 @@ import (
 )
 
 func TestNewBackupEmailConfigFromEnv(t *testing.T) {
-	// Sichern der Umgebungsvariablen
-	oldHost := os.Getenv("SMTP_HOST")
-	oldPort := os.Getenv("SMTP_PORT")
-	oldUser := os.Getenv("SMTP_USER")
-	oldPassword := os.Getenv("SMTP_PASSWORD")
-	oldTo := os.Getenv("BACKUP_EMAIL_TO")
-
-	defer func() {
-		os.Setenv("SMTP_HOST", oldHost)
-		os.Setenv("SMTP_PORT", oldPort)
-		os.Setenv("SMTP_USER", oldUser)
-		os.Setenv("SMTP_PASSWORD", oldPassword)
-		os.Setenv("BACKUP_EMAIL_TO", oldTo)
-	}()
-
 	// Test 1: Kein Host
-	os.Setenv("SMTP_HOST", "")
+	t.Setenv("SMTP_HOST", "")
 	config := NewBackupEmailConfigFromEnv()
 	if config != nil {
 		t.Errorf("Erwartet nil wenn SMTP_HOST leer ist, aber %v erhalten", config)
 	}
 
 	// Test 2: Vollständige Konfiguration (mit Default-Port)
-	os.Setenv("SMTP_HOST", "smtp.example.com")
-	os.Setenv("SMTP_PORT", "") // Sollte zu "587" werden
-	os.Setenv("SMTP_USER", "user")
-	os.Setenv("SMTP_PASSWORD", "pass")
-	os.Setenv("BACKUP_EMAIL_TO", "to@example.com")
+	t.Setenv("SMTP_HOST", "smtp.example.com")
+	t.Setenv("SMTP_PORT", "") // Sollte zu "587" werden
+	t.Setenv("SMTP_USER", "user")
+	t.Setenv("SMTP_PASSWORD", "pass")
+	t.Setenv("BACKUP_EMAIL_TO", "to@example.com")
 
 	config = NewBackupEmailConfigFromEnv()
 	if config == nil {
@@ -60,7 +45,7 @@ func TestNewBackupEmailConfigFromEnv(t *testing.T) {
 	}
 
 	// Test 3: Benutzerdefinierter Port
-	os.Setenv("SMTP_PORT", "465")
+	t.Setenv("SMTP_PORT", "465")
 	config = NewBackupEmailConfigFromEnv()
 	if config.Port != "465" {
 		t.Errorf("Erwartet Port 465, aber %s erhalten", config.Port)
@@ -87,15 +72,11 @@ func TestSendBackupEmail_NotConfigured(t *testing.T) {
 
 func TestCreateZip(t *testing.T) {
 	// Temp-Verzeichnis erstellen
-	tempDir, err := os.MkdirTemp("", "test_backup_zip")
-	if err != nil {
-		t.Fatalf("Konnte Temp-Verzeichnis nicht erstellen: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// Dateien und Ordner erstellen
 	subDir := filepath.Join(tempDir, "subdir")
-	err = os.Mkdir(subDir, 0755)
+	err := os.Mkdir(subDir, 0755)
 	if err != nil {
 		t.Fatalf("Konnte Unterordner nicht erstellen: %v", err)
 	}
