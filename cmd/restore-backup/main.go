@@ -74,8 +74,17 @@ func run() error {
 		out = f
 	}
 
-	if _, err := io.Copy(out, gz); err != nil {
+	limit := int64(10 * 1024 * 1024 * 1024) // 10 GB
+	lr := io.LimitReader(gz, limit)
+	copied, err := io.Copy(out, lr)
+	if err != nil {
 		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
+	}
+	if copied == limit {
+		// Attempt to read one more byte to see if there is more data
+		if _, err := gz.Read(make([]byte, 1)); err == nil || err != io.EOF {
+			return fmt.Errorf("dekomprimierung fehlgeschlagen: limit von 10 GB überschritten (mögliche decompression bomb)")
+		}
 	}
 
 	if len(args) == 2 {
