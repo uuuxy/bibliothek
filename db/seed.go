@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -222,11 +224,19 @@ func (db *Database) InitLieferanten(ctx context.Context) error {
 			{"Westermann", "order@westermann.de", "W-77441"},
 		}
 
+		rows := make([][]any, 0, len(defaults))
 		for _, d := range defaults {
-			_, err = db.Pool.Exec(ctx, seedLieferantenSQL, d.Name, d.Email, d.Kundennummer)
-			if err != nil {
-				return fmt.Errorf("failed to seed supplier default (%s): %w", d.Name, err)
-			}
+			rows = append(rows, []any{d.Name, d.Email, d.Kundennummer})
+		}
+
+		_, err = db.Pool.CopyFrom(
+			ctx,
+			pgx.Identifier{"lieferanten"},
+			[]string{"name", "email", "kundennummer"},
+			pgx.CopyFromRows(rows),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to bulk seed supplier defaults: %w", err)
 		}
 	}
 	return nil
