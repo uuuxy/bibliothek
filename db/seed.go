@@ -37,11 +37,6 @@ const (
 		)
 	`
 
-	seedLieferantenSQL = `
-		INSERT INTO lieferanten (name, email, kundennummer)
-		VALUES ($1, $2, $3)
-	`
-
 	insertInitialAdminSQL = `
 		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
 		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
