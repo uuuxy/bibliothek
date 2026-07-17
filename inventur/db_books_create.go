@@ -62,64 +62,84 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	return id, nil
 }
 
-// UpsertBooksBatch handles batch upserting book records.
-func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) (int64, error) {
-	if len(books) == 0 {
-		return 0, nil
+type bookBatchData struct {
+	isbns                   []string
+	titles                  []string
+	authors                 []string
+	coverUrls               []string
+	subjects                []string
+	grades                  []int16
+	tracks                  []string
+	stocks                  []int32
+	lastCounteds            []*string
+	medientypen             []string
+	jahrgaengeVon           []int
+	jahrgaengeBis           []int
+	untertitel              []string
+	verlage                 []string
+	erscheinungsjahre       []int
+	beschreibungen          []string
+	signaturen              []string
+	erweiterteEigenschaften [][]byte
+}
+
+func prepareUpsertBatchData(books []Book) bookBatchData {
+	data := bookBatchData{
+		isbns:                   make([]string, len(books)),
+		titles:                  make([]string, len(books)),
+		authors:                 make([]string, len(books)),
+		coverUrls:               make([]string, len(books)),
+		subjects:                make([]string, len(books)),
+		grades:                  make([]int16, len(books)),
+		tracks:                  make([]string, len(books)),
+		stocks:                  make([]int32, len(books)),
+		lastCounteds:            make([]*string, len(books)),
+		medientypen:             make([]string, len(books)),
+		jahrgaengeVon:           make([]int, len(books)),
+		jahrgaengeBis:           make([]int, len(books)),
+		untertitel:              make([]string, len(books)),
+		verlage:                 make([]string, len(books)),
+		erscheinungsjahre:       make([]int, len(books)),
+		beschreibungen:          make([]string, len(books)),
+		signaturen:              make([]string, len(books)),
+		erweiterteEigenschaften: make([][]byte, len(books)),
 	}
 
-	isbns := make([]string, len(books))
-	titles := make([]string, len(books))
-	authors := make([]string, len(books))
-	coverUrls := make([]string, len(books))
-	subjects := make([]string, len(books))
-	grades := make([]int16, len(books))
-	tracks := make([]string, len(books))
-	stocks := make([]int32, len(books))
-	lastCounteds := make([]*string, len(books))
-	medientypen := make([]string, len(books))
-	jahrgaengeVon := make([]int, len(books))
-	jahrgaengeBis := make([]int, len(books))
-	untertitel := make([]string, len(books))
-	verlage := make([]string, len(books))
-	erscheinungsjahre := make([]int, len(books))
-	beschreibungen := make([]string, len(books))
-	signaturen := make([]string, len(books))
-	// Wir speichern die JSONB-Daten als []byte
-	erweiterteEigenschaften := make([][]byte, len(books))
-
 	for i, b := range books {
-		isbns[i] = b.ISBN
-		titles[i] = b.Title
-		authors[i] = b.Author
-		coverUrls[i] = b.CoverURL
-		subjects[i] = b.Subject
-		grades[i] = b.GradeLevel
-		tracks[i] = b.Track
+		data.isbns[i] = b.ISBN
+		data.titles[i] = b.Title
+		data.authors[i] = b.Author
+		data.coverUrls[i] = b.CoverURL
+		data.subjects[i] = b.Subject
+		data.grades[i] = b.GradeLevel
+		data.tracks[i] = b.Track
 		// #nosec G115 - parseBestand begrenzt Stock beim Import auf [0, MaxInt32]
-		stocks[i] = int32(b.Stock)
-		lastCounteds[i] = b.LastCounted
-		medientypen[i] = b.Medientyp
-		if medientypen[i] == "" {
-			medientypen[i] = "Buch"
+		data.stocks[i] = int32(b.Stock)
+		data.lastCounteds[i] = b.LastCounted
+		data.medientypen[i] = b.Medientyp
+		if data.medientypen[i] == "" {
+			data.medientypen[i] = "Buch"
 		}
-		jahrgaengeVon[i] = b.JahrgangVon
-		jahrgaengeBis[i] = b.JahrgangBis
-		untertitel[i] = b.Untertitel
-		verlage[i] = b.Verlag
-		erscheinungsjahre[i] = b.Erscheinungsjahr
-		beschreibungen[i] = b.Beschreibung
-		signaturen[i] = b.Signatur
+		data.jahrgaengeVon[i] = b.JahrgangVon
+		data.jahrgaengeBis[i] = b.JahrgangBis
+		data.untertitel[i] = b.Untertitel
+		data.verlage[i] = b.Verlag
+		data.erscheinungsjahre[i] = b.Erscheinungsjahr
+		data.beschreibungen[i] = b.Beschreibung
+		data.signaturen[i] = b.Signatur
 
 		props := b.ErweiterteEigenschaften
 		if props == nil {
 			props = make(map[string]any)
 		}
 		// In JSON umwandeln für pgx JSONB-Array Kompatibilität
-		jsonProps, _ := json.Marshal(props)  //nolint:errcheck
-		erweiterteEigenschaften[i] = jsonProps
+		jsonProps, _ := json.Marshal(props) //nolint:errcheck
+		data.erweiterteEigenschaften[i] = jsonProps
 	}
+	return data
+}
 
+func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, data bookBatchData) (int64, error) {
 	// signatur: NULLIF beim Insert + COALESCE beim Konflikt — Import-Läufe
 	// dürfen eine physisch verklebte Signatur nie mit Leerwerten überschreiben.
 	query := `
@@ -150,30 +170,40 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	cmdTag, err := repo.db.Exec(
 		ctx,
 		query,
-		isbns,
-		titles,
-		authors,
-		coverUrls,
-		subjects,
-		grades,
-		tracks,
-		stocks,
-		lastCounteds,
-		medientypen,
-		jahrgaengeVon,
-		jahrgaengeBis,
-		untertitel,
-		verlage,
-		erscheinungsjahre,
-		beschreibungen,
-		erweiterteEigenschaften,
-		signaturen,
+		data.isbns,
+		data.titles,
+		data.authors,
+		data.coverUrls,
+		data.subjects,
+		data.grades,
+		data.tracks,
+		data.stocks,
+		data.lastCounteds,
+		data.medientypen,
+		data.jahrgaengeVon,
+		data.jahrgaengeBis,
+		data.untertitel,
+		data.verlage,
+		data.erscheinungsjahre,
+		data.beschreibungen,
+		data.erweiterteEigenschaften,
+		data.signaturen,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("bücher konnten nicht im batch importiert werden: %w", err)
 	}
 
 	return cmdTag.RowsAffected(), nil
+}
+
+// UpsertBooksBatch handles batch upserting book records.
+func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) (int64, error) {
+	if len(books) == 0 {
+		return 0, nil
+	}
+
+	data := prepareUpsertBatchData(books)
+	return repo.executeUpsertBatchQuery(ctx, data)
 }
 
 // UpsertBook inserts or updates a book record.
