@@ -21,7 +21,7 @@ const (
 
 	seedRolePermissionSQL = `
 		INSERT INTO role_permissions (role, permission, allowed)
-		VALUES ($1, $2, $3)
+		SELECT * FROM UNNEST($1::text[], $2::text[], $3::boolean[])
 		ON CONFLICT (role, permission) DO NOTHING
 	`
 
@@ -155,11 +155,19 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		{"HELFER", "manage_users", false},
 	}
 
-	for _, d := range defaults {
-		_, err = db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
-		if err != nil {
-			return fmt.Errorf("failed to seed permission default (%s, %s): %w", d.Role, d.Permission, err)
-		}
+	roles := make([]string, len(defaults))
+	perms := make([]string, len(defaults))
+	allows := make([]bool, len(defaults))
+
+	for i, d := range defaults {
+		roles[i] = d.Role
+		perms[i] = d.Permission
+		allows[i] = d.Allowed
+	}
+
+	_, err = db.Pool.Exec(ctx, seedRolePermissionSQL, roles, perms, allows)
+	if err != nil {
+		return fmt.Errorf("failed to seed permission defaults: %w", err)
 	}
 	return nil
 }

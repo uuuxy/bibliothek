@@ -10,3 +10,6 @@
 ## 2026-07-14 - [Optimize Reorder Queries]
 **Learning:** Found redundant correlated subqueries in `sammleNachbestellungen` (`api/order_handler.go`) and `queryReorders` (`api/stats.go`) where the same subquery calculating available book copies was used in both the `SELECT` clause and the `WHERE` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `JOIN LATERAL (...) v ON true` to evaluate the subquery exactly once per row and then referenced `v.verfuegbar` in both the `SELECT` and `WHERE` clauses, preventing the redundant subquery execution and improving read performance.
+## Performance Optimizations
+
+*   **Database Seeding (N+1 Queries):** When seeding large amounts of default data (e.g., default role permissions) in PostgreSQL using `pgx`, looping over `db.Pool.Exec` to perform individual `INSERT`s creates significant N+1 overhead. To optimize, collect the struct fields into parallel Go slices (`[]string`, `[]bool`, etc.) and execute a single bulk `INSERT ... SELECT * FROM UNNEST($1::type[], $2::type[], ...)` query. This dramatically reduces execution time by eliminating database roundtrips.
