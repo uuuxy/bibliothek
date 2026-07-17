@@ -128,7 +128,7 @@ func TestHandleReorderBooks(t *testing.T) {
 			handler.handleReorderBooks(w, req)
 
 			res := w.Result()
-			defer func() { _ = res.Body.Close() }()
+			defer res.Body.Close() //nolint:errcheck
 
 			if res.StatusCode != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, res.StatusCode)
