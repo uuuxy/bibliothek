@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 )
 
@@ -138,9 +139,10 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 	now := time.Now().In(schoolLocation())
 
 	// 1. Fall: Lernmittelfreiheit (Schulbücher)
-	// Schulbücher (erkennbar am Präfix "lmf-" oder "LMF-") werden für das gesamte Schuljahr ausgeliehen.
-	// Sie müssen spätestens am definierten Stichtag (standardmäßig 31. Juli) zurückgegeben werden.
-	if strings.HasPrefix(strings.ToLower(titel), "lmf-") {
+	// Schulbücher (erkennbar am LMF-Kennzeichen im Titel) werden für das gesamte Schuljahr
+	// ausgeliehen. Sie müssen spätestens am definierten Stichtag (standardmäßig 31. Juli)
+	// zurückgegeben werden.
+	if lmf.IstTitel(titel) {
 		year := now.Year()
 		// Wenn wir uns bereits im oder nach dem August befinden (neues Schuljahr),
 		// liegt der Stichtag im nächsten Kalenderjahr.
@@ -222,7 +224,7 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31", 21, 7, additionalYears), nil
 	}
 
-	isLMF := strings.HasPrefix(strings.ToLower(copy.Titel), "lmf-")
+	isLMF := lmf.IstTitel(copy.Titel)
 
 	// Leseclub-Regel: Falls die Ferien-Leseclub-Aktion aktiv ist und ein Zieldatum konfiguriert wurde,
 	// erhalten alle regulären Buchbestände (ausgenommen LMF-Schulbücher) dieses Zieldatum als Frist.

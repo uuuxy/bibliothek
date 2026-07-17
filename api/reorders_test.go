@@ -65,9 +65,9 @@ func TestReorderFilterDefaultIstLMF(t *testing.T) {
 	faelle := []struct {
 		name, query, wantFragment string
 	}{
-		{"ohne Parameter", "", "AND LOWER(t.titel) LIKE 'lmf-%'"},
-		{"type=lmf", "?type=lmf", "AND LOWER(t.titel) LIKE 'lmf-%'"},
-		{"type=freihand", "?type=freihand", "AND LOWER(t.titel) NOT LIKE 'lmf-%'"},
+		{"ohne Parameter", "", "AND LOWER(t.titel) ~ '^lmf[ -]'"},
+		{"type=lmf", "?type=lmf", "AND LOWER(t.titel) ~ '^lmf[ -]'"},
+		{"type=freihand", "?type=freihand", "AND NOT (LOWER(t.titel) ~ '^lmf[ -]')"},
 		{"type=alle", "?type=alle", ""},
 		{"unbekannter Wert", "?type=kaputt", ""},
 	}

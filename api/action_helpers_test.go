@@ -69,7 +69,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("SELECT", 1))
 
 	// 5. Mock count active loans
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen a JOIN buecher_exemplare be ON a\\.exemplar_id = be\\.id JOIN buecher_titel bt ON be\\.titel_id = bt\\.id WHERE a\\.schueler_id = \\$1 AND a\\.rueckgabe_am IS NULL AND LOWER\\(bt\\.titel\\) NOT LIKE 'lmf-%'").
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen a JOIN buecher_exemplare be ON a\\.exemplar_id = be\\.id JOIN buecher_titel bt ON be\\.titel_id = bt\\.id WHERE a\\.schueler_id = \\$1 AND a\\.rueckgabe_am IS NULL AND NOT \\(LOWER\\(bt\\.titel\\) ~ '\\^lmf\\[ -\\]'\\)").
 		WithArgs(studentID).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 

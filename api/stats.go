@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"bibliothek/pkg/lmf"
 )
 
 // PopularTitle ist ein Eintrag der „Renner"-Liste inkl. Drill-Down-Feldern
@@ -70,14 +72,14 @@ func resolveListLimit(raw string) int {
 }
 
 // resolveBestandsFilter mappt den ?type=-Parameter auf ein serverkontrolliertes
-// SQL-Fragment. LMF-Bestand ist per Projekt-Konvention am Titel-Präfix „lmf-"
-// erkennbar (dieselbe Regel wie im Ausleih-Limit, loan_checkout.go).
+// SQL-Fragment. LMF-Bestand ist am LMF-Kennzeichen im Titel erkennbar — zentral und
+// schreibvarianten-robust über pkg/lmf, dieselbe Regel wie im Ausleih-Limit.
 func resolveBestandsFilter(typ string) (fragment string, normalized string) {
 	switch typ {
 	case "lmf":
-		return "AND LOWER(t.titel) LIKE 'lmf-%'", "lmf"
+		return "AND " + lmf.SQLBedingung("t.titel"), "lmf"
 	case "freihand":
-		return "AND LOWER(t.titel) NOT LIKE 'lmf-%'", "freihand"
+		return "AND NOT (" + lmf.SQLBedingung("t.titel") + ")", "freihand"
 	default:
 		return "", "alle"
 	}
