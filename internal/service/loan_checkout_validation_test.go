@@ -59,6 +59,7 @@ func (m *mockAuditRepo) DeleteCopy(ctx context.Context, c, b string) error      
 func (m *mockAuditRepo) DeleteUser(ctx context.Context, u, b string) error       { return nil }
 func (m *mockAuditRepo) DeleteStudent(ctx context.Context, s, b, g string) error { return nil }
 func (m *mockAuditRepo) PurgeStudent(ctx context.Context, s, b string) error     { return nil }
+func (m *mockAuditRepo) PurgeAbgaenger(ctx context.Context, s, b string) error   { return nil }
 func (m *mockAuditRepo) StornierungGebuehr(ctx context.Context, s, b string, betrag float64, g string) error {
 	return nil
 }

@@ -107,9 +107,16 @@ func verarbeiteEinenAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string)
 
 // sperreAbgaenger markiert einen Abgänger mit offenen Ausleihen als gesperrt,
 // lässt Name und Kontaktdaten aber unangetastet (Mahnung/Rechnung laufen noch).
+//
+// abgaenger_jahr wird auf das TATSÄCHLICHE Abgangsjahr (jetzt) gesetzt. Ohne das blieb
+// es auf dem Default vom Anlegen (Jahr+5, in der Zukunft), und der DSGVO-Cronjob
+// (RunGDPRDeleteAbgaenger, Filter abgaenger_jahr < cutoffYear) hätte den Abgänger nach
+// der Buchrückgabe NIE erfasst — die PII wäre für immer geblieben.
 func sperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
 	_, err := tx.Exec(ctx,
-		"UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW() WHERE id = $1",
+		`UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
+		        abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
+		 WHERE id = $1`,
 		schuelerID)
 	return err
 }
@@ -119,11 +126,15 @@ func sperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
 // um Unique-Constraint-Verletzungen zu vermeiden.
 func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
 	anonymisiertName := fmt.Sprintf("Anonymisiert-%s", schuelerID)
+	// abgaenger_jahr aufs echte Abgangsjahr setzen — damit der DSGVO-Cronjob den
+	// (bereits namens-anonymisierten) Datensatz nach Karenzzeit endgültig entfernt,
+	// statt ihn unbegrenzt zu behalten.
 	_, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = 'Abgänger', nachname = $1, klasse = 'ABG',
 			strasse = NULL, hausnummer = NULL, plz = NULL, ort = NULL, eltern_email = NULL,
-			ist_abgaenger = true, ist_gesperrt = true, aktualisiert_am = NOW()
+			ist_abgaenger = true, ist_gesperrt = true,
+			abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
 		WHERE id = $2`,
 		anonymisiertName, schuelerID)
 	return err

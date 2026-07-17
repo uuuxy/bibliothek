@@ -117,16 +117,71 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	return tx.Commit(ctx)
 }
 
+// blockiereBeiOffenenVorgaengen verhindert das endgültige Löschen, solange Bücher
+// draußen sind oder eine Gebühr offen ist — in beiden Fällen läuft noch ein
+// berechtigtes Interesse, das die Aufbewahrung rechtfertigt.
+func blockiereBeiOffenenVorgaengen(ctx context.Context, tx pgx.Tx, studentID string) error {
+	var offeneAusleihen int
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL`, studentID).Scan(&offeneAusleihen); err != nil {
+		return fmt.Errorf("checking open loans: %w", err)
+	}
+	if offeneAusleihen > 0 {
+		return fmt.Errorf("endgültiges Löschen blockiert: %d offene Ausleihe(n)", offeneAusleihen)
+	}
+	var offeneSchaeden int
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`, studentID).Scan(&offeneSchaeden); err != nil {
+		return fmt.Errorf("checking unpaid damages: %w", err)
+	}
+	if offeneSchaeden > 0 {
+		return fmt.Errorf("endgültiges Löschen blockiert: %d unbezahlte(r) Schadensfall/-fälle", offeneSchaeden)
+	}
+	return nil
+}
+
+// entferneSchuelerPIIUndLoesche ist die gemeinsame DSGVO-Löschung für PurgeStudent
+// (manueller Papierkorb) und PurgeAbgaenger (Cronjob): Ausleihhistorie anonymisieren
+// (schueler_id = NULL — beide Entleiher NULL ist laut check_loan_borrower erlaubt),
+// bezahlte Schadensfälle löschen, Schüler-Audit-Details anonymisieren, Datensatz
+// entfernen (FK-CASCADE räumt Fotos + Vormerkungen), Löschung ohne PII protokollieren.
+func (r *pgAuditRepository) entferneSchuelerPIIUndLoesche(ctx context.Context, tx pgx.Tx, studentID, bearbeiterID, kontextText string) error {
+	if _, err := tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1`, studentID); err != nil {
+		return fmt.Errorf("anonymizing loans: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM schadensfaelle WHERE schueler_id = $1`, studentID); err != nil {
+		return fmt.Errorf("deleting damages: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE audit_log
+		SET details = jsonb_build_object('anonymisiert', true, 'grund', 'DSGVO-Löschung')
+		WHERE tabelle = 'schueler' AND datensatz_id = $1`, studentID); err != nil {
+		return fmt.Errorf("anonymizing audit logs: %w", err)
+	}
+	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, studentID)
+	if err != nil {
+		return fmt.Errorf("deleting student: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("student %s not found", studentID)
+	}
+
+	var bearbeiterPtr *string
+	akteur := "SYSTEM"
+	if bearbeiterID != "" {
+		akteur = "USER"
+		bearbeiterPtr = &bearbeiterID
+	}
+	if err := r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "schueler", Aktion: "DELETE", DatensatzID: studentID,
+		BearbeiterID: bearbeiterPtr, Akteur: akteur, Kontext: &kontextText,
+		Details: map[string]any{"action": "purge", "geloescht_am": time.Now().UTC().Format(time.RFC3339)},
+	}); err != nil {
+		return fmt.Errorf("writing purge audit log: %w", err)
+	}
+	return nil
+}
+
 // PurgeStudent entfernt einen im Papierkorb liegenden Schüler endgültig und
-// DSGVO-konform. Reihenfolge (alles in EINER Transaktion):
-//  1. Sicherheitsschranken: nur aus dem Papierkorb; keine offenen Ausleihen; keine
-//     unbezahlten Schadensfälle (dort läuft noch eine Forderung).
-//  2. Ausleihhistorie anonymisieren (schueler_id = NULL — beide Entleiher NULL ist
-//     laut check_loan_borrower erlaubt).
-//  3. (bezahlte) Schadensfälle löschen — unbezahlte sind oben bereits ausgeschlossen.
-//  4. Schüler-bezogene Audit-Log-Details anonymisieren (Name/Klasse entfernen).
-//  5. Schüler-Datensatz löschen (FK-CASCADE räumt Fotos und Vormerkungen).
-//  6. Löschung protokollieren (ohne PII).
+// DSGVO-konform. Nur aus dem Papierkorb; offene Ausleihen/unbezahlte Schäden blockieren.
 func (r *pgAuditRepository) PurgeStudent(ctx context.Context, studentID string, bearbeiterID string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -134,7 +189,7 @@ func (r *pgAuditRepository) PurgeStudent(ctx context.Context, studentID string, 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// 1a. Nur bereits weichgelöschte Schüler (Papierkorb) dürfen endgültig entfernt werden.
+	// Nur bereits weichgelöschte Schüler (Papierkorb) dürfen endgültig entfernt werden.
 	var imPapierkorb bool
 	err = tx.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM schueler WHERE id = $1`, studentID).Scan(&imPapierkorb)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -147,66 +202,33 @@ func (r *pgAuditRepository) PurgeStudent(ctx context.Context, studentID string, 
 		return fmt.Errorf("student %s ist nicht im Papierkorb — erst löschen, dann endgültig entfernen", studentID)
 	}
 
-	// 1b. Offene Ausleihen blockieren (die Bücher sind noch draußen).
-	var offeneAusleihen int
-	if err = tx.QueryRow(ctx, `SELECT count(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL`, studentID).Scan(&offeneAusleihen); err != nil {
-		return fmt.Errorf("checking open loans: %w", err)
+	if err = blockiereBeiOffenenVorgaengen(ctx, tx, studentID); err != nil {
+		return err
 	}
-	if offeneAusleihen > 0 {
-		return fmt.Errorf("endgültiges Löschen blockiert: %d offene Ausleihe(n)", offeneAusleihen)
+	if err = r.entferneSchuelerPIIUndLoesche(ctx, tx, studentID, bearbeiterID, "DSGVO-Löschung (Purge)"); err != nil {
+		return err
 	}
+	return tx.Commit(ctx)
+}
 
-	// 1c. Unbezahlte Schadensfälle blockieren (offene Forderung).
-	var offeneSchaeden int
-	if err = tx.QueryRow(ctx, `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`, studentID).Scan(&offeneSchaeden); err != nil {
-		return fmt.Errorf("checking unpaid damages: %w", err)
-	}
-	if offeneSchaeden > 0 {
-		return fmt.Errorf("endgültiges Löschen blockiert: %d unbezahlte(r) Schadensfall/-fälle", offeneSchaeden)
-	}
-
-	// 2. Ausleihhistorie anonymisieren.
-	if _, err = tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1`, studentID); err != nil {
-		return fmt.Errorf("anonymizing loans: %w", err)
-	}
-
-	// 3. Schadensfälle löschen (nur bezahlte übrig).
-	if _, err = tx.Exec(ctx, `DELETE FROM schadensfaelle WHERE schueler_id = $1`, studentID); err != nil {
-		return fmt.Errorf("deleting damages: %w", err)
-	}
-
-	// 4. Audit-Log-Details anonymisieren (Name/Klasse aus früheren Einträgen entfernen).
-	if _, err = tx.Exec(ctx, `
-		UPDATE audit_log
-		SET details = jsonb_build_object('anonymisiert', true, 'grund', 'DSGVO-Löschung')
-		WHERE tabelle = 'schueler' AND datensatz_id = $1`, studentID); err != nil {
-		return fmt.Errorf("anonymizing audit logs: %w", err)
-	}
-
-	// 5. Schüler löschen (CASCADE räumt schueler_fotos + vormerkungen).
-	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, studentID)
+// PurgeAbgaenger entfernt einen ehemaligen Schüler (Abgänger) endgültig und
+// DSGVO-konform — der Cronjob-Pendant zu PurgeStudent. Anders als PurgeStudent ist der
+// Abgänger NICHT im Papierkorb (ist_abgaenger=true, deleted_at IS NULL); die Auswahl
+// (Karenzzeit, ist_abgaenger) trifft der Aufrufer. Die Blockade bei offenen Vorgängen
+// wird hier dennoch geprüft — als Sicherheitsnetz gegen einen Race zwischen Auswahl
+// und Löschung.
+func (r *pgAuditRepository) PurgeAbgaenger(ctx context.Context, studentID string, bearbeiterID string) error {
+	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("deleting student: %w", err)
+		return err
 	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("student %s not found", studentID)
-	}
+	defer db.SafeRollback(ctx, tx)
 
-	// 6. Löschung protokollieren — bewusst OHNE PII.
-	var bearbeiterPtr *string
-	akteur := "SYSTEM"
-	if bearbeiterID != "" {
-		akteur = "USER"
-		bearbeiterPtr = &bearbeiterID
+	if err = blockiereBeiOffenenVorgaengen(ctx, tx, studentID); err != nil {
+		return err
 	}
-	kontext := "DSGVO-Löschung (Purge)"
-	if err = r.insertAuditLog(ctx, tx, auditEntry{
-		Tabelle: "schueler", Aktion: "DELETE", DatensatzID: studentID,
-		BearbeiterID: bearbeiterPtr, Akteur: akteur, Kontext: &kontext,
-		Details: map[string]any{"action": "purge", "geloescht_am": time.Now().UTC().Format(time.RFC3339)},
-	}); err != nil {
-		return fmt.Errorf("writing purge audit log: %w", err)
+	if err = r.entferneSchuelerPIIUndLoesche(ctx, tx, studentID, bearbeiterID, "DSGVO-Löschung (Abgänger-Cronjob)"); err != nil {
+		return err
 	}
-
 	return tx.Commit(ctx)
 }

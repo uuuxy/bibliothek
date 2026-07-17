@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -225,5 +226,87 @@ func TestPurgeStudent_OffeneAusleiheBlockiert(t *testing.T) {
 	}
 	if !exists {
 		t.Error("Schüler wurde trotz Blockade gelöscht")
+	}
+}
+
+// TestAbgaengerRetentionKette sichert die DSGVO-Kette ab, die sonst nie schliesst:
+// Ein Abgänger mit offenem Buch wird gesperrt (Name bleibt) UND bekommt sein
+// abgaenger_jahr aufs Abgangsjahr — nur so erfasst ihn der Cronjob später. Nach der
+// Buchrückgabe entfernt PurgeAbgaenger ihn endgültig (PII weg).
+func TestAbgaengerRetentionKette(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	// Schüler mit lusd_id + abgaenger_jahr in der ZUKUNFT (Default vom Anlegen),
+	// plus ein offenes Buch.
+	zukunft := time.Now().Year() + 5
+	var sid, tid, eid string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
+		 VALUES ('A-1', 'Alt', 'Schüler', '10a', $1, 'LUSD-99') RETURNING id`, zukunft).Scan(&sid); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Z') RETURNING id`).Scan(&tid); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'AB-1') RETURNING id`, tid).Scan(&eid); err != nil {
+		t.Fatal(err)
+	}
+	var loanID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist) VALUES ($1, $2, CURRENT_DATE) RETURNING id`,
+		eid, sid).Scan(&loanID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Abgang mit offenem Buch -> sperreAbgaenger (über eine Tx, wie im Sync).
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sperreAbgaenger(ctx, tx, sid); err != nil {
+		t.Fatalf("sperreAbgaenger: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// abgaenger_jahr muss jetzt das AKTUELLE Jahr sein (nicht mehr die Zukunft) —
+	// sonst würde der Cronjob-Filter (abgaenger_jahr < cutoff) nie greifen.
+	var jahr int
+	var gesperrt bool
+	var vorname string
+	if err := pool.QueryRow(ctx, `SELECT abgaenger_jahr, ist_gesperrt, vorname FROM schueler WHERE id = $1`, sid).
+		Scan(&jahr, &gesperrt, &vorname); err != nil {
+		t.Fatal(err)
+	}
+	if jahr != time.Now().Year() {
+		t.Errorf("abgaenger_jahr: erwartet %d (Abgangsjahr), war %d — Cronjob würde ihn nie erfassen", time.Now().Year(), jahr)
+	}
+	if !gesperrt || vorname != "Alt" {
+		t.Errorf("Abgänger mit offenem Buch soll gesperrt sein, Name behalten: gesperrt=%v vorname=%q", gesperrt, vorname)
+	}
+
+	// PurgeAbgaenger ist blockiert, solange das Buch offen ist.
+	auditRepo := repository.NewAuditRepository(pool)
+	if err := auditRepo.PurgeAbgaenger(ctx, sid, ""); err == nil {
+		t.Error("PurgeAbgaenger trotz offenem Buch durchgelaufen")
+	}
+
+	// Buch zurückgeben -> jetzt entfernt PurgeAbgaenger den Datensatz endgültig.
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() WHERE id = $1`, loanID); err != nil {
+		t.Fatal(err)
+	}
+	if err := auditRepo.PurgeAbgaenger(ctx, sid, ""); err != nil {
+		t.Fatalf("PurgeAbgaenger nach Rückgabe: %v", err)
+	}
+	var exists bool
+	if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)`, sid).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Error("Abgänger nach Purge nicht gelöscht (PII bliebe für immer)")
 	}
 }

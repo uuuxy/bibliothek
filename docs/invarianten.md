@@ -49,6 +49,14 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 | LUSD-ID eindeutig **unter aktiven** (Soft-Delete gibt sie frei) | 🟢 partieller Unique-Index | `schema.sql:156` |
 | `abgaenger_jahr` immer gesetzt | 🟢 NOT NULL | `schema.sql:134` |
 | **[G1] Adress-/Kontaktdaten** aus LUSD importiert, Zweck Rechnung/Mahnung, bei Anonymisierung gelöscht | 🟢 **entschieden (B)** — Import + Löschung umgesetzt | `lusd_apply.go`, `schema.sql:127` |
+| **DSGVO-Retention-Kette schliesst:** Abgänger mit offenen Vorgängen → gesperrt (Name bleibt); nach Rückgabe/Bezahlung → nach Karenzzeit endgültig gelöscht | 🟡 `abgaenger_jahr` aufs Abgangsjahr + Cronjob `PurgeAbgaenger` (echte Löschung, nicht Soft-Delete) | `lusd_apply.go`, `jobs/cron.go`, `repository/audit_users.go` |
+| Manuelles Löschen: Soft-Delete (Papierkorb, `DeleteStudent`) vs. endgültig (`PurgeStudent`, Recht `manage_users`) sind getrennt | 🟡 Restore hebt Lösch-Sperre auf; Purge blockiert bei offenen Vorgängen | `api/student_deleted.go`, `repository/audit_users.go` |
+
+**Hinweis (Retention):** Der frühere Zustand hatte eine tote Kette — `sperreAbgaenger`
+setzte `abgaenger_jahr` nicht (blieb auf Anlege-Default Jahr+5), also erfasste der
+Cronjob den Abgänger nie; und der Job rief `DeleteStudent` (Soft-Delete), sodass die PII
+selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
+`TestAbgaengerRetentionKette`, `TestRunGDPRDeleteAbgaenger_Deleted`).
 
 ---
 

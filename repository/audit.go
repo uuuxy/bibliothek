@@ -30,6 +30,11 @@ type AuditRepository interface {
 	// unbezahlte Schadensfälle blockieren die Löschung (liefern einen Fehler).
 	PurgeStudent(ctx context.Context, studentID string, bearbeiterID string) error
 
+	// PurgeAbgaenger ist das Cronjob-Pendant für ehemalige Schüler (nicht im Papierkorb,
+	// sondern ist_abgaenger=true). Gleiche DSGVO-Löschung wie PurgeStudent; offene
+	// Vorgänge blockieren ebenfalls.
+	PurgeAbgaenger(ctx context.Context, studentID string, bearbeiterID string) error
+
 	// StornierungGebuehr protokolliert den Erlass oder die Stornierung einer ausstehenden Gebühr mit Begründung.
 	StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, betrag float64, grund string) error
 

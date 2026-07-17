@@ -12,6 +12,7 @@ import (
 
 type MockAuditRepo struct {
 	DeleteStudentCalls   int
+	PurgeAbgaengerCalls  int
 	LogSystemAktionCalls int
 }
 
@@ -33,6 +34,11 @@ func (m *MockAuditRepo) DeleteStudent(ctx context.Context, studentID string, bea
 }
 
 func (m *MockAuditRepo) PurgeStudent(ctx context.Context, studentID string, bearbeiterID string) error {
+	return nil
+}
+
+func (m *MockAuditRepo) PurgeAbgaenger(ctx context.Context, studentID string, bearbeiterID string) error {
+	m.PurgeAbgaengerCalls++
 	return nil
 }
 
@@ -140,9 +146,13 @@ func TestRunGDPRDeleteAbgaenger_Deleted(t *testing.T) {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 
-	// 1 Aufruf von DeleteStudent und 1 Aufruf von LogSystemAktion für das Batch-Summary
-	if auditMock.DeleteStudentCalls != 1 {
-		t.Errorf("erwartete 1 DeleteStudent Aufruf, bekam %d", auditMock.DeleteStudentCalls)
+	// Der Job muss die ECHTE Löschung (PurgeAbgaenger) rufen, nicht den Soft-Delete
+	// (DeleteStudent) — sonst bliebe die PII im Papierkorb.
+	if auditMock.PurgeAbgaengerCalls != 1 {
+		t.Errorf("erwartete 1 PurgeAbgaenger Aufruf, bekam %d", auditMock.PurgeAbgaengerCalls)
+	}
+	if auditMock.DeleteStudentCalls != 0 {
+		t.Errorf("DeleteStudent (Soft-Delete) darf NICHT gerufen werden, war %d", auditMock.DeleteStudentCalls)
 	}
 	if auditMock.LogSystemAktionCalls != 1 {
 		t.Errorf("erwartete 1 LogSystemAktion Aufruf, bekam %d", auditMock.LogSystemAktionCalls)
@@ -180,8 +190,8 @@ func TestRunGDPRDeleteAbgaenger_Blocked(t *testing.T) {
 	}
 
 	// 0 Aufrufe, da niemand berechtigt war
-	if auditMock.DeleteStudentCalls != 0 {
-		t.Errorf("erwartete 0 DeleteStudent Aufrufe, bekam %d", auditMock.DeleteStudentCalls)
+	if auditMock.PurgeAbgaengerCalls != 0 {
+		t.Errorf("erwartete 0 PurgeAbgaenger Aufrufe, bekam %d", auditMock.PurgeAbgaengerCalls)
 	}
 	if auditMock.LogSystemAktionCalls != 0 {
 		t.Errorf("erwartete 0 LogSystemAktion Aufrufe, bekam %d", auditMock.LogSystemAktionCalls)

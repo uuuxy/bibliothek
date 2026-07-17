@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -217,11 +216,12 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	var failures []string
 
 	for _, student := range students {
-		grund := fmt.Sprintf("DSGVO-Abgänger-Löschung: Abgangsjahr %d, Löschfrist abgelaufen (30 Tage Karenzzeit)",
-			student.AbgaengerJahr)
-
-		if err := s.auditRepo.DeleteStudent(ctx, student.ID, "", grund); err != nil {
-			log.Printf("Scheduler GDPR Delete: failed to delete student ID %s: %v",
+		// PurgeAbgaenger statt DeleteStudent: DeleteStudent ist ein Soft-Delete
+		// (Papierkorb) — die PII bliebe erhalten. PurgeAbgaenger entfernt sie wirklich
+		// (Ausleihhistorie anonymisiert, Datensatz gelöscht). Der Löschgrund steht im
+		// Audit-Log über den festen Kontext der Methode.
+		if err := s.auditRepo.PurgeAbgaenger(ctx, student.ID, ""); err != nil {
+			log.Printf("Scheduler GDPR Delete: failed to purge student ID %s: %v",
 				logger.SanitizeLog(student.ID), err)
 			failures = append(failures, student.ID)
 			continue
