@@ -83,7 +83,8 @@ func TestHandleReorderBooks(t *testing.T) {
 					WithArgs([]string{"id1", "id2"}, []int{1, 2}).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 2))
 				mock.ExpectCommit().WillReturnError(fmt.Errorf("commit error"))
-				mock.ExpectRollback()
+				// ExpectRollback is NOT needed here because pgx marks the tx as closed on a Commit failure,
+				// so tx.Rollback() will return ErrTxClosed and won't hit the DB.
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   "Ein interner Datenbankfehler ist aufgetreten.",
