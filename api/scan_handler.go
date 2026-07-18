@@ -34,7 +34,7 @@ func (s *Server) SmartScanHandler() http.HandlerFunc {
 		err := s.DB.Pool.QueryRow(ctx, `
 			SELECT id, barcode_id, vorname, nachname, klasse 
 			FROM schueler 
-			WHERE (barcode_id = $1 OR lusd_id = $1) AND deleted_at IS NULL AND ist_abgaenger = false
+			WHERE (barcode_id = $1 OR lusd_id = $1) AND deleted_at IS NULL
 			LIMIT 1
 		`, barcode).Scan(&student.ID, &student.BarcodeID, &student.Vorname, &student.Nachname, &student.Klasse)
 

@@ -277,6 +277,8 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		      OR
 		      (ist_abgaenger = true AND abgaenger_jahr <= EXTRACT(YEAR FROM NOW() - INTERVAL '360 days'))
 		  )
+		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
+		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)
 	`
 
 	tag, err := s.db.Exec(ctx, query)

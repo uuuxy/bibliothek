@@ -38,7 +38,9 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 		UPDATE ausleihen
 		SET mahnstufe = mahnstufe + 1,
 		    letztes_mahndatum = CURRENT_TIMESTAMP
-		WHERE id = ANY($1) AND rueckgabe_am IS NULL
+		WHERE id = ANY($1) 
+		  AND rueckgabe_am IS NULL
+		  AND (letztes_mahndatum IS NULL OR letztes_mahndatum::date < CURRENT_DATE)
 	`, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))

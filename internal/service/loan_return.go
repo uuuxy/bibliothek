@@ -13,17 +13,25 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// schuelerAbholberechtigt filtert wartende Vormerkungen auf Schüler, die das Buch auch
+// tatsächlich abholen dürfen: nicht soft-gelöscht (deleted_at) und nicht gesperrt
+// (ist_gesperrt / is_manually_blocked). Ohne diesen Filter würde ein zurückgegebenes Buch
+// für einen gelöschten oder gesperrten "Geister"-Schüler abholbereit blockiert, während
+// aktive Schüler leer ausgehen. Der Alias "s" muss dabei die schueler-Tabelle sein.
+const schuelerAbholberechtigt = `s.deleted_at IS NULL AND s.ist_gesperrt = false AND COALESCE(s.is_manually_blocked, false) = false`
+
 // processReturnVormerkungTx prüft innerhalb einer laufenden Transaktion, ob eine Vormerkung (Reservierung)
 // für das zurückgegebene Buch vorliegt. Wenn ja, wird diese Vormerkung aktiviert (Status auf 'abholbereit' gesetzt)
-// und dem nächsten wartenden Schüler zugeteilt.
+// und dem nächsten wartenden, abholberechtigten Schüler zugeteilt.
 func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *LoanResult) {
 	var vID, sVorname, sNachname, sKlasse string
-	// Die älteste wartende Vormerkung für diesen Buchtitel ermitteln und sperren (FOR UPDATE)
+	// Die älteste wartende Vormerkung eines abholberechtigten Schülers ermitteln und sperren.
 	err := tx.QueryRow(ctx, `
 		SELECT v.id, s.vorname, s.nachname, COALESCE(s.klasse, '')
 		FROM vormerkungen v
 		JOIN schueler s ON v.schueler_id = s.id
 		WHERE v.titel_id = $1 AND v.status = 'wartend'
+		  AND `+schuelerAbholberechtigt+`
 		ORDER BY v.erstellt_am ASC LIMIT 1
 		FOR UPDATE
 	`, copy.TitelID).Scan(&vID, &sVorname, &sNachname, &sKlasse)

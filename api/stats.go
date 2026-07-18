@@ -49,11 +49,14 @@ type bestandKennzahlen struct {
 	GesamtBestand      int
 	AktiverBestand     int // physisch vorhanden = nicht ausgesondert
 	AktuellVerliehen   int
+	// VerloreneExemplare: nur echte Abgänge (aussonderung_grund VERLUST oder
+	// BESCHAEDIGUNG). Bewusst Aussortiertes und Bestandskorrekturen zählen nicht.
 	VerloreneExemplare int
-	// Wiederbeschaffungswert: Summe der Einkaufspreise aller Exemplare, die
-	// ausgesondert sind ODER einen Schadensfall haben (verloren/defekt).
+	// Wiederbeschaffungswert: Summe der Einkaufspreise der echten Verluste
+	// (VERLUST/BESCHAEDIGUNG) — also der Bücher, die tatsächlich nachgekauft werden
+	// müssen. Kuratiert Aussortiertes und Bestandskorrekturen bleiben aussen vor.
 	WiederbeschaffungswertDefekt float64
-	VerlustQuote                 float64 // verlorene / Gesamtbestand (Def. wie bisher)
+	VerlustQuote                 float64 // echte Verluste / Gesamtbestand
 	Zirkulationsquote            float64 // verliehen / aktiver Bestand
 }
 
@@ -88,15 +91,24 @@ func resolveBestandsFilter(typ string) (fragment string, normalized string) {
 // queryBestandKennzahlen liefert Verlust-, Finanz- und Zirkulationszahlen in
 // einem einzigen aggregierten Statement.
 func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) (*bestandKennzahlen, error) {
+	// Als "Verlust" zählen ausschliesslich unfreiwillige Abgänge: VERLUST (nicht
+	// auffindbar) und BESCHAEDIGUNG (Schadensfall). Bewusst NICHT enthalten sind
+	// AUSSORTIERT (veraltet/verschlissen, kuratierte Entfernung) und BESTANDSKORREKTUR
+	// (Import-/Sync-Anpassung, laut Migration 043 "kein echter Abgang") — sie würden
+	// Verlustquote und Wiederbeschaffungswert künstlich aufblähen. aussonderung_grund
+	// ist per chk_aussonderung_grund (Migration 043) nur bei ist_ausgesondert gesetzt,
+	// deshalb impliziert dieser Filter bereits die Aussonderung.
+	const istVerlust = "e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
+
 	q := fmt.Sprintf(`
 		SELECT
 			COUNT(*)::int AS gesamt,
 			COUNT(*) FILTER (WHERE NOT e.ist_ausgesondert)::int AS aktiv,
 			COUNT(*) FILTER (WHERE al.exemplar_id IS NOT NULL AND NOT e.ist_ausgesondert)::int AS verliehen,
-			COUNT(*) FILTER (WHERE sf.exemplar_id IS NOT NULL)::int AS verlorene,
-			COALESCE(SUM(e.einkaufspreis) FILTER (WHERE e.ist_ausgesondert OR sf.exemplar_id IS NOT NULL), 0)::float8 AS wiederbeschaffung,
+			COUNT(*) FILTER (WHERE %[1]s)::int AS verlorene,
+			COALESCE(SUM(e.einkaufspreis) FILTER (WHERE %[1]s), 0)::float8 AS wiederbeschaffung,
 			CASE WHEN COUNT(*) = 0 THEN 0.0
-				 ELSE ROUND(COUNT(*) FILTER (WHERE sf.exemplar_id IS NOT NULL) * 100.0 / COUNT(*), 2)
+				 ELSE ROUND(COUNT(*) FILTER (WHERE %[1]s) * 100.0 / COUNT(*), 2)
 			END::float8 AS verlust_quote,
 			CASE WHEN COUNT(*) FILTER (WHERE NOT e.ist_ausgesondert) = 0 THEN 0.0
 				 ELSE ROUND(COUNT(*) FILTER (WHERE al.exemplar_id IS NOT NULL AND NOT e.ist_ausgesondert) * 100.0
@@ -105,9 +117,8 @@ func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) 
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		LEFT JOIN (SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL) al ON al.exemplar_id = e.id
-		LEFT JOIN (SELECT DISTINCT exemplar_id FROM schadensfaelle) sf ON sf.exemplar_id = e.id
-		WHERE 1=1 %s
-	`, typeFilter)
+		WHERE 1=1 %[2]s
+	`, istVerlust, typeFilter)
 
 	k := &bestandKennzahlen{}
 	err := s.DB.Pool.QueryRow(ctx, q).Scan(

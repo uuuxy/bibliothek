@@ -237,10 +237,15 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 		ctx := r.Context()
 
 		query := `
-			SELECT s.vorname, s.nachname, s.klasse, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am
+			SELECT 
+			  COALESCE(s.vorname, b.vorname) AS vorname,
+			  COALESCE(s.nachname, b.nachname) AS nachname,
+			  COALESCE(s.klasse, 'Lehrer') AS klasse,
+			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			JOIN schueler s ON a.schueler_id = s.id
+			LEFT JOIN schueler s ON a.schueler_id = s.id
+			LEFT JOIN benutzer b ON a.ausleiher_benutzer_id = b.id
 			WHERE e.titel_id = $1
 			ORDER BY a.ausgeliehen_am DESC
 			LIMIT 200
@@ -255,9 +260,21 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 		history := []TitleHistory{}
 		for rows.Next() {
 			var h TitleHistory
-			if err := rows.Scan(&h.Vorname, &h.Nachname, &h.Klasse, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
+			var vorname, nachname, klasse *string
+			if err := rows.Scan(&vorname, &nachname, &klasse, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
+			}
+			if vorname != nil {
+				h.Vorname = *vorname
+			} else {
+				h.Vorname = "Anonym"
+			}
+			if nachname != nil {
+				h.Nachname = *nachname
+			}
+			if klasse != nil {
+				h.Klasse = *klasse
 			}
 			history = append(history, h)
 		}

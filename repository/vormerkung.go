@@ -108,16 +108,25 @@ func (r *pgVormerkungRepository) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-// GetEarliestPending returns the earliest pending reservation for a given title.
+// GetEarliestPending returns the earliest pending reservation of an eligible student for a
+// given title. Nur abholberechtigte Schüler (nicht soft-gelöscht, nicht gesperrt) kommen in
+// Frage — analog zum Live-Fulfillment in internal/service/loan_return.go, damit ein Buch
+// nicht für einen gelöschten/gesperrten "Geister"-Schüler reserviert wird.
+//
+// Hinweis: aktuell ohne Produktionsaufrufer; der Fulfillment-Pfad läuft über den
+// Service-Layer. Der Filter bleibt hier bewusst konsistent, falls die Methode wieder
+// verdrahtet wird.
 func (r *pgVormerkungRepository) GetEarliestPending(ctx context.Context, titelID string) (*Vormerkung, error) {
 	var v Vormerkung
 	err := r.db.QueryRow(ctx, `
 		SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-		       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
+		       s.id::text, s.vorname || ' ' || s.nachname || ', ' || s.klasse
 		FROM vormerkungen v
 		JOIN buecher_titel bt ON bt.id = v.titel_id
-		LEFT JOIN schueler s ON s.id = v.schueler_id
+		JOIN schueler s ON s.id = v.schueler_id
 		WHERE v.titel_id = $1 AND v.status = 'wartend'
+		  AND s.deleted_at IS NULL AND s.ist_gesperrt = false
+		  AND COALESCE(s.is_manually_blocked, false) = false
 		ORDER BY v.erstellt_am ASC
 		LIMIT 1
 	`, titelID).Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName)

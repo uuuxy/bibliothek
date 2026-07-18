@@ -37,6 +37,36 @@ func (s *Server) ExtendLoanHandler(settingsRepo repository.SystemSettingsReposit
 
 		ctx := r.Context()
 
+		// Sanktions-Konsistenz: Ist das Buch an einen gesperrten Schüler verliehen, darf die
+		// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
+		// eine Verlängerung ausgehebelt werden. Lehrer-/Handapparat-Ausleihen (kein
+		// schueler_id → LEFT JOIN liefert NULL) sind nicht betroffen.
+		var gesperrt bool
+		var blockReason string
+		if errChk := s.DB.Pool.QueryRow(ctx, `
+			SELECT COALESCE(s.ist_gesperrt, false) OR COALESCE(s.is_manually_blocked, false),
+			       COALESCE(s.block_reason, '')
+			FROM ausleihen a
+			LEFT JOIN schueler s ON s.id = a.schueler_id
+			WHERE a.id = $1 AND a.rueckgabe_am IS NULL
+		`, ausleiheID).Scan(&gesperrt, &blockReason); errChk != nil {
+			if errChk == pgx.ErrNoRows {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+				return
+			}
+			log.Printf("Fehler bei Sperr-Prüfung (Einzel-Verlängerung): %v", errChk)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+			return
+		}
+		if gesperrt {
+			msg := "Verlängerung nicht möglich: Ausleihe gesperrt"
+			if blockReason != "" {
+				msg += " (" + blockReason + ")"
+			}
+			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(msg))
+			return
+		}
+
 		// Retrieve standard extension interval
 		settings, err := settingsRepo.GetSettings(ctx)
 		extensionDays := 28 // Default if not configured
@@ -182,6 +212,10 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			  AND e.titel_id = t.id
 			  AND a.rueckgabe_am IS NULL
 			  AND s.deleted_at IS NULL
+			  -- Gesperrte Schüler von der Massen-Verlängerung ausnehmen: die Sperre soll zur
+			  -- Rückgabe zwingen, nicht durch eine Fristverlängerung ausgehebelt werden.
+			  AND s.ist_gesperrt = false
+			  AND COALESCE(s.is_manually_blocked, false) = false
 			  AND s.klasse = $2
 			  AND ` + lmf.SQLBedingung("t.titel") + `
 		`

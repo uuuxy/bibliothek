@@ -71,13 +71,17 @@ func (m *mockAuditRepo) LogSystemAktion(ctx context.Context, tabelle, aktion, ko
 func strPtr(s string) *string { return &s }
 
 // expectSettingsAndOverdue richtet die Mock-Erwartungen für den erfolgreichen
-// Validierungspfad ein: querySettings → Overdue-Zählung → querySettings (in resolveCheckoutDueDate).
+// Validierungspfad ein: offene Schäden → querySettings → Overdue-Zählung → querySettings
+// (in resolveCheckoutDueDate).
 func expectSettingsAndOverdue(mock pgxmock.PgxPoolIface, overdueCount int) {
 	settingsRows := func() *pgxmock.Rows {
 		return pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_overdue_items", "1").
 			AddRow("max_overdue_days", "14")
 	}
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
+		WithArgs("s1").
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").WillReturnRows(settingsRows())
 	mock.ExpectQuery("SELECT COUNT").
 		WithArgs("s1", 14).
@@ -160,7 +164,10 @@ func TestResolveBorrower_OverdueAutomaticBlock(t *testing.T) {
 	})
 	defer mock.Close()
 
-	// Nicht manuell gesperrt, aber 2 überfällige Medien bei MaxOverdueItems=1.
+	// Nicht manuell gesperrt, keine offenen Schäden, aber 2 überfällige Medien bei MaxOverdueItems=1.
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
+		WithArgs("s1").
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("max_overdue_items", "1"))
 	mock.ExpectQuery("SELECT COUNT").
@@ -172,6 +179,58 @@ func TestResolveBorrower_OverdueAutomaticBlock(t *testing.T) {
 
 	if !errors.Is(err, ErrBlocked) {
 		t.Errorf("überfällige Medien über Limit sollen automatisch sperren, bekam: %v", err)
+	}
+}
+
+func TestResolveBorrower_UnpaidDamageBlock(t *testing.T) {
+	svc, _, mock := newValidationService(t, &repository.Student{
+		ID: "s1", Klasse: "5a",
+	})
+	defer mock.Close()
+
+	// Kein Sperr-Flag, aber ein offener (unbezahlter) Schadensfall -> automatische Sperre,
+	// noch bevor Settings/Overdue überhaupt abgefragt werden.
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
+		WithArgs("s1").
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
+
+	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	_, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"), nil, "staff1", false)
+
+	if !errors.Is(err, ErrBlocked) {
+		t.Errorf("offener Schadensfall soll automatisch sperren, bekam: %v", err)
+	}
+}
+
+func TestResolveBorrower_UnpaidDamageOverride(t *testing.T) {
+	svc, audit, mock := newValidationService(t, &repository.Student{
+		ID: "s1", Klasse: "5a",
+	})
+	defer mock.Close()
+
+	// Offener Schadensfall, aber overrideBlock=true: Ausleihe geht durch, wird auditiert.
+	// Danach laufen Settings/Overdue wie im Happy-Path (0 überfällig).
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
+		WithArgs("s1").
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
+			AddRow("max_overdue_items", "1").AddRow("max_overdue_days", "14"))
+	mock.ExpectQuery("SELECT COUNT").
+		WithArgs("s1", 14).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
+			AddRow("max_overdue_items", "1").AddRow("max_overdue_days", "14"))
+
+	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	_, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"), nil, "staff1", true)
+
+	if err != nil {
+		t.Fatalf("override soll offene Schäden umgehen, bekam Fehler: %v", err)
+	}
+	if audit.adminAktionCalls < 1 {
+		t.Errorf("override muss als Admin-Aktion auditiert werden, calls=%d", audit.adminAktionCalls)
 	}
 }
 

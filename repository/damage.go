@@ -32,18 +32,52 @@ func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	res, err := tx.Exec(ctx, `
+	// Doppelklick-/Doppelrequest-Schutz analog ReportDamage: Wir sperren zuerst die
+	// Exemplar-Zeile (FOR UPDATE). Zwei parallel abgeschickte "Defekt speichern"-Klicks
+	// laufen damit serialisiert; der zweite sieht den vom ersten bereits angelegten
+	// Schadensfall und gibt ihn idempotent zurück, statt den Betrag doppelt zu buchen.
+	// Der Lock ersetzt zugleich die frühere RowsAffected-Existenzprüfung.
+	var vorhanden bool
+	if err := tx.QueryRow(ctx,
+		`SELECT true FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, copyID,
+	).Scan(&vorhanden); err != nil {
+		return "", err // pgx.ErrNoRows: Exemplar existiert nicht
+	}
+
+	// Idempotenz-Schlüssel: bei zugeordneter Ausleihe die ausleihe_id (ein Schaden je
+	// Ausleihe, exakt wie ReportDamage); sonst der bereits offene, nicht stornierte
+	// Exemplarschaden ohne Ausleihbezug. Ein neuer Schaden entsteht erst, wenn der alte
+	// bezahlt oder storniert ist.
+	var bestehenderSchaden string
+	var lookupErr error
+	if loanID != nil && *loanID != "" {
+		lookupErr = tx.QueryRow(ctx,
+			`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
+			*loanID,
+		).Scan(&bestehenderSchaden)
+	} else {
+		lookupErr = tx.QueryRow(ctx,
+			`SELECT id FROM schadensfaelle
+			 WHERE exemplar_id = $1 AND ausleihe_id IS NULL AND storniert_am IS NULL AND ist_bezahlt = false
+			 LIMIT 1`,
+			copyID,
+		).Scan(&bestehenderSchaden)
+	}
+	if lookupErr == nil {
+		return bestehenderSchaden, nil // bereits gebucht — nichts doppelt anlegen
+	}
+	if !errors.Is(lookupErr, pgx.ErrNoRows) {
+		return "", lookupErr
+	}
+
+	if _, err := tx.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = false,
 		    zustand_notiz = $1,
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $2
-	`, beschreibung, copyID)
-	if err != nil {
+	`, beschreibung, copyID); err != nil {
 		return "", err
-	}
-	if res.RowsAffected() == 0 {
-		return "", pgx.ErrNoRows
 	}
 
 	var schadensID string

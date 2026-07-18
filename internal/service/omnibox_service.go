@@ -224,7 +224,16 @@ type vormerkung struct {
 // Gibt nil, nil zurück, wenn keine wartende Vormerkung existiert.
 func (s *defaultOmniboxService) checkVormerkung(ctx context.Context, titelID string) (*vormerkung, error) {
 	var v vormerkung
-	err := s.pool.QueryRow(ctx, "SELECT id, titel_id, schueler_id, notiz, status, erstellt_am FROM vormerkungen WHERE titel_id = $1 AND status = 'wartend' ORDER BY erstellt_am ASC LIMIT 1", titelID).
+	// Nur Vormerkungen abholberechtigter Schüler zählen als aktive Reservierung — sonst
+	// würde eine Vormerkung eines gelöschten/gesperrten Schülers das Exemplar für andere
+	// blockieren (schuelerAbholberechtigt, siehe loan_return.go).
+	err := s.pool.QueryRow(ctx, `
+		SELECT v.id, v.titel_id, v.schueler_id, v.notiz, v.status, v.erstellt_am
+		FROM vormerkungen v
+		JOIN schueler s ON s.id = v.schueler_id
+		WHERE v.titel_id = $1 AND v.status = 'wartend'
+		  AND `+schuelerAbholberechtigt+`
+		ORDER BY v.erstellt_am ASC LIMIT 1`, titelID).
 		Scan(&v.ID, &v.TitelID, &v.SchuelerID, &v.Notiz, &v.Status, &v.ErstelltAm)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

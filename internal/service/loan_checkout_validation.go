@@ -26,8 +26,8 @@ func (s *defaultLoanService) logOverride(ctx context.Context, staffID, borrowerI
 	}))
 }
 
-// pruefeSchuelerAusleihbar prüft die drei Sperrgründe (manuelle Sperre-Flags und
-// die Überfällig-Automatik). Ist overrideBlock gesetzt, wird die Sperre statt
+// pruefeSchuelerAusleihbar prüft die Sperrgründe (Sperr-Flags, offene Schadensrechnungen
+// und die Überfällig-Automatik). Ist overrideBlock gesetzt, wird die Sperre statt
 // eines Fehlers nur revisionssicher protokolliert.
 func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
 	if sObj.IstGesperrt {
@@ -53,6 +53,26 @@ func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj 
 			return fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
 		}
 		s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (Manuelle Sperre: "+reason+")")
+	}
+
+	// Automatische Sperre bei offenen Schadensrechnungen: Wer einen unbezahlten, nicht
+	// stornierten Schadensfall hat, darf nichts Neues ausleihen, bis die Schule entschädigt
+	// ist — sonst könnte man Bücher zerstören, die Rechnung ignorieren und sich am nächsten
+	// Tag neu eindecken. storniert_am setzt ist_bezahlt = true (repository/audit_system.go),
+	// daher genügt ist_bezahlt = false. Wie bei den übrigen Sperren ist overrideBlock möglich,
+	// wird dann aber revisionssicher protokolliert.
+	var offeneSchaeden int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
+		borrowerID,
+	).Scan(&offeneSchaeden); err != nil {
+		return err
+	}
+	if offeneSchaeden > 0 {
+		if !overrideBlock {
+			return fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offeneSchaeden)
+		}
+		s.logOverride(ctx, staffID, borrowerID, fmt.Sprintf("Ausleihsperre manuell ignoriert (unbezahlte Schäden: %d)", offeneSchaeden))
 	}
 
 	settings, err := s.querySettings(ctx)

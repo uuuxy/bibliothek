@@ -41,6 +41,11 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", ""))
 
+	// 0. Auto-block: offene Schadensfälle prüfen (0 = keine offenen Schäden)
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle WHERE schueler_id = \\$1 AND ist_bezahlt = false").
+		WithArgs(studentID).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+
 	// 1. Settings query for auto-block
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
