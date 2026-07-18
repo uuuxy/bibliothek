@@ -27,15 +27,13 @@ func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventoryRepo
 	return res, true
 }
 
-// inventurWarnungen sammelt nicht-blockierende Hinweise zu einem gescannten Exemplar
-// (aktuell ausgeliehen bzw. außerhalb des Session-Scopes).
-func inventurWarnungen(isLent, imScope bool) []string {
+// inventurWarnungen sammelt nicht-blockierende Hinweise zu einem gescannten Exemplar.
+// Der Scope ist KEINE Warnung mehr, sondern eine harte Abweisung (siehe Handler): ein
+// Buch außerhalb des Scopes darf gar nicht erst in dieser Session verbucht werden.
+func inventurWarnungen(isLent bool) []string {
 	var warnungen []string
 	if isLent {
 		warnungen = append(warnungen, "Buch ist laut System aktuell ausgeliehen.")
-	}
-	if !imScope {
-		warnungen = append(warnungen, "Buch gehört nicht zum Scope dieser Inventur.")
 	}
 	return warnungen
 }
@@ -108,6 +106,28 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 			return
 		}
 
+		// Cross-Contamination-Schutz: Ein Exemplar außerhalb des Session-Scopes darf NICHT
+		// in dieser Session verbucht werden (409, nicht stillschweigend absorbieren). Täte es
+		// das doch, läge der Scan session-gebunden im fremden Scope — beim Abschluss der
+		// ZUSTÄNDIGEN Fach-Session fehlte das Exemplar dann in deren Erfassungen und würde
+		// dort fälschlich als VERLUST gebucht, obwohl das Buch physisch vorliegt.
+		//
+		// Bewusst als STRUKTURIERTE 409-Antwort (nicht als rohe Fehlermeldung): Das Buch
+		// existiert ja, es liegt nur im falschen Scope. Das Frontend soll den echten Titel und
+		// den Warntext zeigen — nicht "Unbekanntes Buch" — und den Scan als Warnung rendern,
+		// ohne ihn mitzuzählen. Der Status "ausser_scope" macht den Fall clientseitig
+		// unterscheidbar.
+		if !imScope {
+			RespondJSON(w, http.StatusConflict, InventurScanResponse{
+				BarcodeID: req.BarcodeID,
+				Titel:     res.Title,
+				CoverURL:  res.CoverURL,
+				Status:    "ausser_scope",
+				Warnungen: []string{"Buch gehört nicht zum Scope dieser Inventur — es wurde NICHT erfasst. Bitte im zuständigen Inventur-Bereich scannen."},
+			})
+			return
+		}
+
 		if err := invRepo.RecordInventurScan(ctx, req.SessionID, res.CopyID); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -118,7 +138,7 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 			Titel:     res.Title,
 			CoverURL:  res.CoverURL,
 			Status:    "erfasst",
-			Warnungen: inventurWarnungen(res.IsLent, imScope),
+			Warnungen: inventurWarnungen(res.IsLent),
 		})
 	}
 }

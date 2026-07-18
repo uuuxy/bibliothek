@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"strconv"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -49,7 +48,7 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 	query := `
 		SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, ''), coalesce(abgaenger_jahr, 0), coalesce(ist_gesperrt, false), lusd_id, coalesce(ist_abgaenger, false), TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, coalesce(is_manually_blocked, false), block_reason, coalesce(strasse, ''), coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''), coalesce(eltern_email, '')
 		FROM schueler
-		WHERE (vorname ILIKE '%' || $1::text || '%' 
+		WHERE (vorname ILIKE '%' || $1::text || '%'
 		   OR nachname ILIKE '%' || $1::text || '%'
 		   OR barcode_id ILIKE '%' || $1::text || '%')
 		  AND deleted_at IS NULL
@@ -74,24 +73,4 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 		return nil, err
 	}
 	return results, nil
-}
-
-// GetNextSequence ermittelt die fortlaufende Barcode-Sequenz für Schüler (z. B. "S-10005").
-func (r *pgStudentRepository) GetNextSequence(ctx context.Context) (int, error) {
-	var lastBarcode string
-	qLast := `
-		SELECT barcode_id 
-		FROM schueler 
-		WHERE barcode_id LIKE 'S-%' AND deleted_at IS NULL
-		ORDER BY barcode_id DESC 
-		LIMIT 1
-	`
-	err := r.db.QueryRow(ctx, qLast).Scan(&lastBarcode)
-	startNum := 10001
-	if err == nil && len(lastBarcode) > 2 {
-		if parsed, err2 := strconv.Atoi(lastBarcode[2:]); err2 == nil {
-			startNum = parsed + 1
-		}
-	}
-	return startNum, nil
 }

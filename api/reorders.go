@@ -23,10 +23,13 @@ type ReorderTitle struct {
 	CoverURL         string `json:"cover_url,omitempty"`
 	Meldebestand     int    `json:"meldebestand"`
 	// VerfuegbarBestand = aktuell im Regal (nicht ausgeliehen, nicht ausgesondert).
+	// Reine Anzeige-Kontextzahl — NICHT die Nachbestell-Schwelle (siehe GesamtBestand).
 	VerfuegbarBestand int `json:"verfuegbarer_bestand"`
-	// GesamtBestand = alle nicht ausgesonderten Exemplare. Erst beide Zahlen zusammen
-	// sind aussagekräftig: Bei Lernmitteln ist ein Klassensatz das ganze Schuljahr
-	// verliehen — "0 verfügbar" bei 30 vorhandenen heisst nicht "nachbestellen".
+	// GesamtBestand = alle nicht ausgesonderten Exemplare (inkl. der als "bestellt"
+	// markierten Platzhalter). DAS ist die Nachbestell-Schwelle: Meldebestand meint die
+	// Zahl der Exemplare, die man BESITZEN will — nicht, wie viele gerade im Regal stehen.
+	// Bei Lernmitteln ist ein Klassensatz das ganze Schuljahr verliehen — "0 verfügbar"
+	// bei 30 vorhandenen ist KEIN Bestellgrund, deshalb triggert gesamt < meldebestand.
 	GesamtBestand int `json:"gesamt_bestand"`
 }
 
@@ -63,7 +66,11 @@ func reorderFilter(r *http.Request) string {
 	return fragment
 }
 
-// queryReorders liefert die Titel unter Meldebestand, knappste zuerst.
+// queryReorders liefert die Titel, deren BESITZ (gesamt, nicht ausgesondert) unter dem
+// Meldebestand liegt — der größte Fehlbestand zuerst. Bewusst gesamt statt verfügbar:
+// sonst würde jeder verliehene Lernmittel-Klassensatz (im Schuljahr der Normalfall) als
+// Bestellbedarf gemeldet. Da "gesamt" die als "bestellt" markierten Platzhalter mitzählt,
+// ist die Liste zugleich bereits-bestellt-bewusst (keine Doppelbestellung).
 func (s *Server) queryReorders(ctx context.Context, typeFilter string) ([]ReorderTitle, error) {
 	// Ein LATERAL je Titel liefert beide Bestandszahlen in einem Durchgang.
 	query := fmt.Sprintf(`
@@ -84,8 +91,8 @@ func (s *Server) queryReorders(ctx context.Context, typeFilter string) ([]Reorde
 			FROM buecher_exemplare e
 			WHERE e.titel_id = t.id
 		) v ON true
-		WHERE v.verfuegbar < t.meldebestand %s
-		ORDER BY v.verfuegbar ASC, t.titel ASC
+		WHERE v.gesamt < t.meldebestand %s
+		ORDER BY (t.meldebestand - v.gesamt) DESC, t.titel ASC
 	`, typeFilter)
 
 	rows, err := s.DB.Pool.Query(ctx, query)

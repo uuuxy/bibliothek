@@ -27,7 +27,6 @@ func (m *mockStudentRepo) GetByBarcode(ctx context.Context, barcode string) (*re
 func (m *mockStudentRepo) SearchStudentsFuzzy(ctx context.Context, q string, limit int) ([]repository.Student, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) GetNextSequence(ctx context.Context) (int, error) { return 0, nil }
 func (m *mockStudentRepo) GetAllLUSDStudents(ctx context.Context) ([]repository.Student, error) {
 	return nil, nil
 }

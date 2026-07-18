@@ -59,7 +59,10 @@ func baueBestelllistePDF(reorders []ReorderTitle) *gofpdf.Fpdf {
 		pdf.CellFormat(12, 6, strconv.Itoa(b.Meldebestand), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(12, 6, strconv.Itoa(b.VerfuegbarBestand), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(12, 6, strconv.Itoa(b.GesamtBestand), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(14, 6, strconv.Itoa(b.Meldebestand-b.VerfuegbarBestand), "1", 1, "C", false, 0, "")
+		// Nachbestellmenge = fehlende EIGENE Exemplare (Meldebestand − Gesamtbestand),
+		// nicht − Verfügbar: verliehene Exemplare kommen zurück und müssen nicht ersetzt
+		// werden. Sonst überbestellte man um die Zahl der gerade ausgeliehenen Bücher.
+		pdf.CellFormat(14, 6, strconv.Itoa(b.Meldebestand-b.GesamtBestand), "1", 1, "C", false, 0, "")
 	}
 	return pdf
 }

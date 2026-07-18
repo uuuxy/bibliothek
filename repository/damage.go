@@ -87,6 +87,34 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 	}
 	defer db.SafeRollback(ctx, tx)
 
+	// Idempotenz + Serialisierung gegen Doppelklick: Zwei parallel abgeschickte
+	// "Schaden melden"-Klicks mit derselben ausleihe_id würden sonst beide den
+	// fremdeAktive-Check passieren und JE einen Schadensfall anlegen — der Schüler würde
+	// für dasselbe Buch doppelt belastet. Wir sperren zuerst die Ausleihe-Zeile
+	// (FOR UPDATE): der zweite Aufruf blockiert, bis der erste committet hat, und liest
+	// danach den bereits angelegten Schadensfall. Existiert für diese Ausleihe schon ein
+	// (nicht stornierter) Schadensfall, geben wir dessen ID idempotent zurück, statt einen
+	// zweiten anzulegen.
+	var vorhanden bool
+	if err := tx.QueryRow(ctx,
+		`SELECT true FROM ausleihen WHERE id = $1 FOR UPDATE`, loanID,
+	).Scan(&vorhanden); err != nil {
+		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
+	}
+
+	var bestehenderSchaden string
+	err = tx.QueryRow(ctx,
+		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
+		loanID,
+	).Scan(&bestehenderSchaden)
+	if err == nil {
+		// Schadensfall existiert bereits — idempotent zurückgeben, nichts doppelt buchen.
+		return bestehenderSchaden, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+
 	// Race-Schutz: Bleibt das Schadensformular offen, während das Buch zurückgegeben
 	// und neu ausgeliehen wird, würde der "Melden"-Klick ein aktiv verliehenes Exemplar
 	// aussondern. Gibt es für dieses Exemplar eine aktive Ausleihe, die NICHT die hier

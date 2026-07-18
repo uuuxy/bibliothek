@@ -73,6 +73,11 @@ const promoteStudentsQuery = `
 			klasse = CASE WHEN c.is_graduating THEN 'ABG' ELSE c.new_klasse END,
 			ist_abgaenger = c.is_graduating,
 			ist_gesperrt = CASE WHEN c.is_graduating THEN true ELSE s.ist_gesperrt END,
+			-- Abgänger werden gesperrt → chk_schueler_block_reason verlangt einen Grund.
+			-- Ein vorhandener (z. B. manueller) Grund bleibt erhalten.
+			block_reason = CASE WHEN c.is_graduating
+			                    THEN COALESCE(NULLIF(s.block_reason, ''), 'Automatische Abgänger-Sperre (Schuljahreswechsel)')
+			                    ELSE s.block_reason END,
 			abgaenger_jahr = CASE
 				WHEN c.is_graduating THEN EXTRACT(YEAR FROM CURRENT_DATE)
 				ELSE s.abgaenger_jahr

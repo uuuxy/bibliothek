@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -164,7 +165,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			  AND a.rueckgabe_am IS NULL
 			  AND s.deleted_at IS NULL
 			  AND s.klasse = $2
-			  AND t.titel ILIKE 'LMF-%'
+			  AND ` + lmf.SQLBedingung("t.titel") + `
 		`
 		tag, err := tx.Exec(ctx, q, newDate, req.Klasse)
 		if err != nil {

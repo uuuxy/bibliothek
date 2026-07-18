@@ -27,9 +27,12 @@ func TestQueryReorders(t *testing.T) {
 
 	server := &Server{DB: &db.Database{Pool: mock}}
 
+	// Echter Fehlbestand: gesamt 3 < Meldebestand 5 (ein Titel hat Exemplare verloren).
+	// Ein verliehener Klassensatz (gesamt 30 >= 5) taucht dagegen gar nicht auf — das
+	// prüft der PG-Test; hier geht es um die Projektion beider Bestandszahlen.
 	mock.ExpectQuery("SELECT t.id, t.titel, coalesce").
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()).
-			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 2, 30))
+			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3))
 
 	results, err := server.queryReorders(context.Background(), "")
 	if err != nil {
@@ -43,14 +46,12 @@ func TestQueryReorders(t *testing.T) {
 	if got.Titel != "LMF-Mathe 7" {
 		t.Errorf("Titel: erwartet 'LMF-Mathe 7', war %q", got.Titel)
 	}
-	if got.VerfuegbarBestand != 2 {
-		t.Errorf("VerfuegbarBestand: erwartet 2, war %d", got.VerfuegbarBestand)
+	if got.VerfuegbarBestand != 1 {
+		t.Errorf("VerfuegbarBestand: erwartet 1, war %d", got.VerfuegbarBestand)
 	}
-	// Beide Bestandszahlen müssen ankommen: 2 verfügbar bei 30 vorhandenen ist ein
-	// verliehener Klassensatz, kein Bestellgrund — das kann die Ansicht nur
-	// unterscheiden, wenn sie den Gesamtbestand kennt.
-	if got.GesamtBestand != 30 {
-		t.Errorf("GesamtBestand: erwartet 30, war %d", got.GesamtBestand)
+	// Beide Bestandszahlen müssen ankommen — der Gesamtbestand ist die Nachbestell-Schwelle.
+	if got.GesamtBestand != 3 {
+		t.Errorf("GesamtBestand: erwartet 3, war %d", got.GesamtBestand)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Mock-Erwartungen: %v", err)

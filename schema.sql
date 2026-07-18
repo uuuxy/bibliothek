@@ -150,13 +150,28 @@ CREATE TABLE schueler (
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_manually_blocked BOOLEAN DEFAULT false,
     block_reason TEXT,
-    deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+    deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    -- Ein gesperrter Schüler ohne Grund ist ein toter Zustand ("Zombie-Sperre"): das
+    -- Personal sieht nur das rote Flag und muss die Historie durchwühlen. Sperre erzwingt
+    -- daher einen nicht-leeren Grund (siehe Migration 047). is_manually_blocked läuft über
+    -- einen eigenen Grund im selben Feld und ist von diesem Constraint nicht betroffen.
+    CONSTRAINT chk_schueler_block_reason
+        CHECK (ist_gesperrt = false OR btrim(coalesce(block_reason, '')) <> '')
 );
 
 CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
 CREATE INDEX idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);
 CREATE INDEX idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);
-CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (vorname, nachname, coalesce(geburtsdatum, '1900-01-01'::DATE));
+-- Duplikatsschutz nur bei BEKANNTEM Geburtsdatum: Zwei namensgleiche Schüler ohne
+-- (noch nicht aus der LUSD übernommenes) Geburtsdatum sind nicht automatisch dieselbe
+-- Person. Das frühere coalesce(geburtsdatum, '1900-01-01') stülpte NULL-Geburtsdaten ein
+-- Ersatzdatum über und machte namensgleiche Schüler OHNE Geburtsdatum zu Duplikaten
+-- (Zwillings-Blockade — der zweite "Leon Müller" ohne Datum ließ sich nicht anlegen).
+-- Als partieller Index greift die Eindeutigkeit nur bei nicht-leerem Geburtsdatum und
+-- nur unter aktiven Schülern (soft-gelöschte dürfen bei Wiederanmeldung neu entstehen,
+-- analog uniq_schueler_lusd_id_active). Siehe Migration 048.
+CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (vorname, nachname, geburtsdatum)
+    WHERE geburtsdatum IS NOT NULL AND deleted_at IS NULL;
 -- lusd_id ist nur unter AKTIVEN Schülern eindeutig; eine soft-gelöschte lusd_id
 -- darf bei Wiederanmeldung neu vergeben werden (siehe Migration 035).
 CREATE UNIQUE INDEX uniq_schueler_lusd_id_active ON schueler (lusd_id) WHERE deleted_at IS NULL AND lusd_id IS NOT NULL;
@@ -401,7 +416,12 @@ CREATE TABLE ausleihen (
     
     ist_fremdrueckgabe BOOLEAN NOT NULL DEFAULT false, -- True if returned by someone other than the borrower
     ist_handapparat BOOLEAN NOT NULL DEFAULT false,    -- True if borrowed by a teacher (handapparat)
-    
+
+    -- Mahnwesen: Mahnstufe (0 = noch nie gemahnt) und Zeitpunkt der letzten Mahnung.
+    -- Der Bulk-Mahnlauf (api/mahnwesen_bulk.go) zählt mahnstufe pro Mahnung hoch.
+    mahnstufe INTEGER NOT NULL DEFAULT 0,
+    letztes_mahndatum TIMESTAMP WITH TIME ZONE,
+
     -- Constraint: Exactly one borrower must be associated with the loan, or both NULL when anonymized/deleted
     CONSTRAINT check_loan_borrower CHECK (
         (schueler_id IS NOT NULL AND ausleiher_benutzer_id IS NULL) OR
@@ -629,7 +649,10 @@ INSERT INTO schema_migrations (version) VALUES
 ('042_rolle_helfer.sql'),
 ('043_aussonderung_grund.sql'),
 ('044_drop_benutzer_rollen.sql'),
-('045_inventur_sessions.sql')
+('045_inventur_sessions.sql'),
+('046_mahnstufe_spalten.sql'),
+('047_block_reason_pflicht.sql'),
+('048_schueler_gebdatum_dup.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

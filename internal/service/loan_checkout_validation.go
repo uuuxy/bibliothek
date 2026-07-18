@@ -31,10 +31,17 @@ func (s *defaultLoanService) logOverride(ctx context.Context, staffID, borrowerI
 // eines Fehlers nur revisionssicher protokolliert.
 func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
 	if sObj.IstGesperrt {
-		if !overrideBlock {
-			return fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
+		// Grund mit ausgeben — ein gesperrter Schüler ohne sichtbaren Grund zwingt das
+		// Personal sonst, in der Historie zu wühlen. block_reason ist bei Sperre garantiert
+		// gefüllt (chk_schueler_block_reason); der Fallback greift nur bei Altbeständen.
+		reason := "Grund nicht erfasst"
+		if sObj.BlockReason != nil && *sObj.BlockReason != "" {
+			reason = *sObj.BlockReason
 		}
-		s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (IstGesperrt)")
+		if !overrideBlock {
+			return fmt.Errorf("%w: Ausleihe gesperrt: %s", ErrBlocked, reason)
+		}
+		s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (gesperrt: "+reason+")")
 	}
 
 	if sObj.IsManuallyBlocked {

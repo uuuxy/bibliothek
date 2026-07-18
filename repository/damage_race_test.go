@@ -75,6 +75,45 @@ func TestReportDamageNormalfall(t *testing.T) {
 	}
 }
 
+// TestReportDamageIdempotent sichert #4 (Doppelte Rechnungen) ab: Ein doppelt abgeschickter
+// "Schaden melden"-Klick mit derselben ausleihe_id darf den Schüler nicht zweimal belasten.
+// Der zweite Aufruf muss den bereits angelegten Schadensfall idempotent zurückgeben; es darf
+// genau EIN Schadensfall entstehen. Der FOR-UPDATE-Lock auf der Ausleihe-Zeile serialisiert
+// dabei auch die echt parallele Variante (zwei Transaktionen gleichzeitig).
+func TestReportDamageIdempotent(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewDamageRepository(pool)
+
+	_, ex := seedSignaturMitExemplaren(t, pool, "IdemTest", 1)
+	copyID := ex[0]
+	schueler := seedSchueler(t, pool, "IDEM-A", "Dora", "9a")
+	bearbeiter := seedBearbeiter(t, pool)
+	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
+
+	id1, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", 7.5)
+	if err != nil {
+		t.Fatalf("erster Report abgelehnt: %v", err)
+	}
+	id2, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", 7.5)
+	if err != nil {
+		t.Fatalf("zweiter Report (Doppelklick) abgelehnt: %v", err)
+	}
+	if id1 != id2 {
+		t.Errorf("Doppelklick erzeugte einen zweiten Schadensfall: %q vs %q", id1, id2)
+	}
+
+	var anzahl int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM schadensfaelle WHERE ausleihe_id = $1`, loan).Scan(&anzahl); err != nil {
+		t.Fatal(err)
+	}
+	if anzahl != 1 {
+		t.Errorf("erwartet genau 1 Schadensfall für die Ausleihe, waren %d (Doppelbelastung des Schülers)", anzahl)
+	}
+}
+
 func seedSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
 	var id string

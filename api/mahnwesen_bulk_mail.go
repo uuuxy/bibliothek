@@ -28,6 +28,12 @@ type bulkOverdueResponse struct {
 // Empfängern oder Mahn-Status (kein TO/CC über mehrere Betroffene). Während
 // Ferien-/Schließzeiten ist der Versand gesperrt, und der Massenversand wird
 // auditiert (Rechenschaftspflicht, Art. 5 (2) DSGVO).
+//
+// INVARIANTE: Der Mail-Versand erhöht die Mahnstufe NICHT. Die Stufenerhöhung ist ein
+// physischer Verwaltungsakt und passiert ausschließlich beim PDF-Druck
+// (mahnwesen_bulk.go). Die Mail ist ein „Friendly Reminder" VOR der Eskalation — und
+// verhält sich bewusst identisch zum Einzelversand (system-konsistent, keine
+// Button-abhängige Sonderlogik). Siehe docs/invarianten.md §1.
 // POST /api/mail/send-bulk-overdue
 func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

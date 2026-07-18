@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // klassenGrouper sammelt Zeilen zu Klassen→Schüler→Medien. Bewusst index-basiert:
@@ -205,33 +207,25 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 	return g.klassen, nil
 }
 
-// QueryUeberfaelligeByAusleiheIDs ermittelt spezifische überfällige Ausleihen für den Bulk-Print.
-func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Context, ids []string) ([]MahnwesenKlasse, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
+// sqlUeberfaelligeByAusleiheIDs sammelt die PDF-Daten zu konkreten Ausleih-IDs.
+// rueckgabe_am IS NULL: bereits zurückgegebene Bücher gehören nicht in eine Mahnung.
+const sqlUeberfaelligeByAusleiheIDs = `
+	SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
+	       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
+	       a.rueckgabe_frist,
+	       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
+	FROM ausleihen a
+	JOIN buecher_exemplare e ON a.exemplar_id = e.id
+	JOIN buecher_titel t    ON e.titel_id = t.id
+	JOIN schueler s         ON a.schueler_id = s.id
+	WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
+	ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist
+`
 
-	q := `
-		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
-		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
-		       a.rueckgabe_frist,
-		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
-		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t    ON e.titel_id = t.id
-		JOIN schueler s         ON a.schueler_id = s.id
-		WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
-		ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist
-	`
-
-	rows, err := repo.db.Query(ctx, q, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+// scanUeberfaelligeKlassen liest die Spaltenreihenfolge von sqlUeberfaelligeByAusleiheIDs
+// in die gruppierte Klassen→Schüler→Medien-Struktur.
+func scanUeberfaelligeKlassen(rows pgx.Rows) ([]MahnwesenKlasse, error) {
 	g := newKlassenGrouper()
-
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
 		var titel, autor, isbn, coverURL string
@@ -242,7 +236,6 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 			&frist, &tage); err != nil {
 			return nil, err
 		}
-
 		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
 			AusleiheID:       ausleiheID,
 			Titel:            titel,
@@ -256,6 +249,35 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Con
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return g.klassen, nil
+}
+
+// QueryUeberfaelligeByAusleiheIDs ermittelt spezifische überfällige Ausleihen für den Bulk-Print.
+func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Context, ids []string) ([]MahnwesenKlasse, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	rows, err := repo.db.Query(ctx, sqlUeberfaelligeByAusleiheIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanUeberfaelligeKlassen(rows)
+}
+
+// QueryUeberfaelligeByAusleiheIDsTx liest dieselben Daten INNERHALB einer Transaktion.
+// Der Bulk-Mahnlauf ruft dies NACH dem Mahnstufen-UPDATE in derselben Tx auf, damit das
+// PDF exakt den festgeschriebenen Zustand widerspiegelt (Papier == DB). Läge das Auslesen
+// vor der Tx, könnte ein zwischenzeitlich zurückgegebenes Buch aufs Papier geraten, ohne
+// dass seine Mahnstufe steigt (TOCTOU).
+func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDsTx(ctx context.Context, tx pgx.Tx, ids []string) ([]MahnwesenKlasse, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	rows, err := tx.Query(ctx, sqlUeberfaelligeByAusleiheIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanUeberfaelligeKlassen(rows)
 }

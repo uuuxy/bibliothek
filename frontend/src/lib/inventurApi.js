@@ -10,7 +10,9 @@ async function auswerten(res) {
 		return { ok: true, status: res.status, data: await res.json().catch(() => ({})) };
 	}
 	const body = await res.json().catch(() => ({}));
-	return { ok: false, status: res.status, error: body.error || body.message || 'Unbekannter Fehler' };
+	// `data` wird auch im Fehlerfall durchgereicht, damit der Hook strukturierte 409-Antworten
+	// (z. B. "ausser_scope" mit Titel + Warntext) auswerten kann, ohne HTTP-Details zu kennen.
+	return { ok: false, status: res.status, error: body.error || body.message || 'Unbekannter Fehler', data: body };
 }
 
 /** Laufende Sessions laden (für die "bereits laufend"-Anzeige). */

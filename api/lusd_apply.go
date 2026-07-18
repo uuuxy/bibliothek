@@ -71,6 +71,11 @@ func aktualisiereBestandsschueler(ctx context.Context, tx pgx.Tx, rec parsedStud
 			ist_abgaenger = false,
 			ist_gesperrt = CASE WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%'
 			                    THEN false ELSE ist_gesperrt END,
+			-- Beim Entsperren des anonymisierten Rückkehrers auch den Grund räumen
+			-- (kein stehen bleibender „Abgänger anonymisiert"; chk_schueler_block_reason
+			-- verlangt einen Grund NUR solange ist_gesperrt = true).
+			block_reason = CASE WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%'
+			                    THEN NULL ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $9`,
 		rec.Vorname, rec.Nachname, rec.Klasse,
@@ -113,8 +118,12 @@ func verarbeiteEinenAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string)
 // (RunGDPRDeleteAbgaenger, Filter abgaenger_jahr < cutoffYear) hätte den Abgänger nach
 // der Buchrückgabe NIE erfasst — die PII wäre für immer geblieben.
 func sperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
+	// block_reason MUSS gesetzt sein (chk_schueler_block_reason). Ein bereits vorhandener
+	// (z. B. manueller) Grund bleibt erhalten — sonst greift der Abgänger-Standardgrund,
+	// damit das Personal im Profil sofort sieht, WARUM gesperrt wurde.
 	_, err := tx.Exec(ctx,
 		`UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
+		        block_reason = COALESCE(NULLIF(block_reason, ''), 'Automatisierte Abgänger-Sperre (offene Rückgaben)'),
 		        abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
 		 WHERE id = $1`,
 		schuelerID)
@@ -129,11 +138,14 @@ func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) er
 	// abgaenger_jahr aufs echte Abgangsjahr setzen — damit der DSGVO-Cronjob den
 	// (bereits namens-anonymisierten) Datensatz nach Karenzzeit endgültig entfernt,
 	// statt ihn unbegrenzt zu behalten.
+	// block_reason wird auf einen festen Text gesetzt (nicht der alte erhalten): Bei der
+	// Anonymisierung wird jeglicher personenbezogene Kontext geleert, ein evtl. alter Grund
+	// könnte solchen enthalten. chk_schueler_block_reason verlangt zudem einen Grund.
 	_, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = 'Abgänger', nachname = $1, klasse = 'ABG',
 			strasse = NULL, hausnummer = NULL, plz = NULL, ort = NULL, eltern_email = NULL,
-			ist_abgaenger = true, ist_gesperrt = true,
+			ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Abgänger anonymisiert',
 			abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
 		WHERE id = $2`,
 		anonymisiertName, schuelerID)

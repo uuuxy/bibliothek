@@ -62,7 +62,10 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/signatures", s.RequirePermission("view_books")(s.GetSignaturesHandler()))
 	mux.Handle("POST /api/signatures", s.RequirePermission("manage_users")(s.CreateSignatureHandler()))
 
-	// Real-time Events
+	// Real-time Events. perform_actions statt view_students: den SSE-Stream öffnet jeder
+	// eingeloggte Client (authStore + Kiosk-Omnibox). Gehörte er weiter zu view_students,
+	// liefe die Helfer-Rolle in eine 403-Reconnect-Schleife. Der Stream trägt nur
+	// operative Aktions-Events (Typ, IDs, Buchtitel, Zeitstempel) — keine Schüler-PII.
 	sseHandler := s.Broker.Handler()
-	mux.Handle("GET /events", s.RequirePermission("view_students")(sseHandler))
+	mux.Handle("GET /events", s.RequirePermission("perform_actions")(sseHandler))
 }

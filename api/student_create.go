@@ -187,9 +187,18 @@ func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bo
 
 // pruefeSchuelerDuplikat erkennt einen bereits existierenden Schüler anhand von
 // Vor-/Nachname und Geburtsdatum (case-insensitive, ohne soft-gelöschte Datensätze).
+//
+// Ein fehlendes Geburtsdatum ist bewusst KEIN Duplikat-Kriterium: Zwei namensgleiche
+// Schüler ohne (noch nicht aus der LUSD übernommenes) Geburtsdatum sind nicht
+// automatisch dieselbe Person. Nur bei beidseitig bekanntem, identischem Geburtsdatum
+// liegt ein echtes Duplikat vor. `geburtsdatum = $3` liefert genau das: Ist eine der
+// beiden Seiten NULL, ist der Vergleich SQL-NULL ("nicht gleich"), die Zeile zählt nicht
+// als Treffer. Vorher stülpte coalesce beiden Seiten '1900-01-01' über und machte damit
+// namensgleiche Schüler OHNE Geburtsdatum fälschlich zu Duplikaten (Zwillings-Blockade):
+// der zweite "Leon Müller" ohne Geburtsdatum konnte gar nicht angelegt werden.
 func pruefeSchuelerDuplikat(ctx context.Context, tx pgx.Tx, vorname, nachname string, gebdatum *time.Time) (bool, error) {
 	var isDuplicate bool
-	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND coalesce(geburtsdatum, '1900-01-01'::DATE) = coalesce($3::DATE, '1900-01-01'::DATE) AND deleted_at IS NULL)`
+	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND geburtsdatum = $3::DATE AND deleted_at IS NULL)`
 	err := tx.QueryRow(ctx, q, vorname, nachname, gebdatum).Scan(&isDuplicate)
 	return isDuplicate, err
 }

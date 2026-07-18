@@ -52,9 +52,6 @@ type StudentRepository interface {
 	// SearchStudentsFuzzy führt eine Teilstring-Suche über Vorname, Nachname und Barcode-ID aus.
 	SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error)
 
-	// GetNextSequence ermittelt die nächste freie Barcode-Nummer für neue Schülerausweise (Format: "S-1xxxx").
-	GetNextSequence(ctx context.Context) (int, error)
-
 	// GetAllLUSDStudents lädt alle Schüler-IDs, LUSD-IDs, Namen und Geburtsdaten zur Vorbereitung eines LUSD-Abgleichs.
 	GetAllLUSDStudents(ctx context.Context) ([]Student, error)
 

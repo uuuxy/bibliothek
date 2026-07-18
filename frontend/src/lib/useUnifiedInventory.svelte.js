@@ -92,6 +92,17 @@ export function useUnifiedInventory() {
 			if (r.ok) {
 				stats.erfasst++;
 				lastScan = { success: true, barcode: r.data.barcode_id, title: r.data.titel, warnings: r.data.warnungen || [] };
+			} else if (r.status === 409 && r.data?.status === 'ausser_scope') {
+				// Buch existiert, liegt nur im falschen Scope: echten Titel + Warntext als
+				// (gelbe) Warnung zeigen — NICHT als "Unbekanntes Buch". success:true steuert nur
+				// die Warn-Optik; NICHT mitzählen (stats.erfasst bleibt unverändert), weil der Scan
+				// bewusst nicht verbucht wurde.
+				lastScan = {
+					success: true,
+					barcode: r.data.barcode_id || barcode,
+					title: r.data.titel || 'Buch',
+					warnings: r.data.warnungen?.length ? r.data.warnungen : ['Buch gehört nicht zum Scope dieser Inventur.']
+				};
 			} else {
 				lastScan = { success: false, barcode, title: 'Unbekanntes Buch', warnings: [r.error] };
 			}

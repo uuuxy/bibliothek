@@ -97,10 +97,12 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	ctx := context.Background()
 
 	var id string
+	// Anonymisierter Abgänger, wie ihn anonymisiereAbgaenger hinterlässt: gesperrt MIT
+	// Grund (chk_schueler_block_reason verlangt ihn).
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id,
-		                       ist_abgaenger, ist_gesperrt)
-		 VALUES ('L-1', 'Abgänger', 'Anonymisiert-alt', 'ABG', 2030, 'LUSD-42', true, true)
+		                       ist_abgaenger, ist_gesperrt, block_reason)
+		 VALUES ('L-1', 'Abgänger', 'Anonymisiert-alt', 'ABG', 2030, 'LUSD-42', true, true, 'Abgänger anonymisiert')
 		 RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
@@ -118,9 +120,10 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 
 	var vorname, nachname, klasse string
 	var abgaenger, gesperrt bool
+	var grund *string
 	if err := tx.QueryRow(ctx,
-		`SELECT vorname, nachname, klasse, ist_abgaenger, ist_gesperrt FROM schueler WHERE id = $1`, id).
-		Scan(&vorname, &nachname, &klasse, &abgaenger, &gesperrt); err != nil {
+		`SELECT vorname, nachname, klasse, ist_abgaenger, ist_gesperrt, block_reason FROM schueler WHERE id = $1`, id).
+		Scan(&vorname, &nachname, &klasse, &abgaenger, &gesperrt, &grund); err != nil {
 		t.Fatal(err)
 	}
 	if vorname != "Lena" || nachname != "Zurück" {
@@ -134,6 +137,9 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	}
 	if gesperrt {
 		t.Error("Anonymisierungs-Sperre nicht aufgehoben")
+	}
+	if grund != nil {
+		t.Errorf("block_reason nicht geräumt: %q (stehen gebliebener Anonymisierungs-Grund)", *grund)
 	}
 }
 

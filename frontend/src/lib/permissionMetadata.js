@@ -63,6 +63,11 @@ export const permissionsMetadata = [
 		icon: '🛒',
 		items: [
 			{
+				key: 'perform_actions',
+				label: 'Kiosk / Terminal bedienen',
+				desc: 'Ausleihe, Rückgabe, Scan und Suche am Terminal — die Kernfunktion der Helfer-Rolle (ohne Zugriff auf Schülerlisten oder Mahnwesen)'
+			},
+			{
 				key: 'view_orders',
 				label: 'Bestellungen anzeigen',
 				desc: 'Erlaubt das Einsehen von Buchbestellungen und Lieferanten-Order'

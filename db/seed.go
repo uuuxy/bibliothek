@@ -81,6 +81,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		Allowed    bool
 	}{
 		// Admin defaults
+		{"ADMIN", "perform_actions", true},
 		{"ADMIN", "view_students", true},
 		{"ADMIN", "edit_students", true},
 		{"ADMIN", "create_students", true},
@@ -100,6 +101,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		{"ADMIN", "manage_users", true},
 
 		// Mitarbeiter defaults
+		{"MITARBEITER", "perform_actions", true},
 		{"MITARBEITER", "view_students", true},
 		{"MITARBEITER", "edit_students", true},
 		{"MITARBEITER", "create_students", true},
@@ -119,6 +121,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		{"MITARBEITER", "manage_users", false},
 
 		// Lehrer defaults
+		{"LEHRER", "perform_actions", true},
 		{"LEHRER", "view_students", true},
 		{"LEHRER", "edit_students", false},
 		{"LEHRER", "create_students", false},
@@ -136,7 +139,11 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 		{"LEHRER", "audit_logs", false},
 		{"LEHRER", "manage_users", false},
 
-		// Helfer defaults
+		// Helfer defaults — Kiosk-Rolle: darf NUR am Terminal ausleihen/zurücknehmen
+		// (perform_actions: /api/action, /scan, /search, /events). Bewusst KEIN
+		// view_students: das gäbe Zugriff auf Schülerlisten, Profile, Mahnwesen und den
+		// Bulk-Mahndruck (= Mahnstufen-Eskalation) — alles jenseits des Kiosk-Zwecks.
+		{"HELFER", "perform_actions", true},
 		{"HELFER", "view_students", false},
 		{"HELFER", "edit_students", false},
 		{"HELFER", "create_students", false},

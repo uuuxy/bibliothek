@@ -16,17 +16,20 @@
 		maxVisible = 50;
 	});
 
-	/** Ab hier wird es eng: unter 3 verfügbaren Exemplaren reicht ein Zugang nicht mehr. */
+	/** Ab hier wird es eng: unter 3 EIGENEN Exemplaren (nicht ausgesondert) ist der
+	 * Titel praktisch weg. Bewusst der Gesamt-, nicht der Verfügbarbestand — ein
+	 * verliehener Klassensatz (0 verfügbar, 30 vorhanden) ist kein Notfall. */
 	const KRITISCH_AB = 3;
 
 	/**
 	 * Farbstufe einer Zeile. Der Meldebestand ist die eigentliche Schwelle (je Titel
 	 * konfigurierbar, Standard 5); KRITISCH_AB hebt daraus die Fälle hervor, die keinen
-	 * Aufschub dulden.
+	 * Aufschub dulden. Basis ist der Gesamtbestand (Besitz), konsistent zur Backend-Query
+	 * (reorders.go: gesamt < meldebestand).
 	 * @param {any} r
 	 */
 	function stufe(r) {
-		return r.verfuegbarer_bestand < KRITISCH_AB ? 'kritisch' : 'knapp';
+		return r.gesamt_bestand < KRITISCH_AB ? 'kritisch' : 'knapp';
 	}
 
 	let kritischeAnzahl = $derived(
@@ -45,7 +48,7 @@
 			</h2>
 			{#if kritischeAnzahl}
 				<p class="text-[11px] font-semibold text-red-600 mt-0.5">
-					{kritischeAnzahl}× dringend (unter {KRITISCH_AB} verfügbar)
+					{kritischeAnzahl}× dringend (unter {KRITISCH_AB} vorhanden)
 				</p>
 			{/if}
 		</div>
@@ -113,8 +116,9 @@
 						</div>
 					</div>
 					<div class="flex items-center gap-2 shrink-0">
-						<!-- Verfügbar UND gesamt: 0 von 30 heisst "Klassensatz unterwegs",
-						     0 von 1 heisst "fehlt wirklich". -->
+						<!-- "verfügbar von gesamt": Kontext fürs Auge. Die Liste selbst enthält
+						     nur Titel mit gesamt < Meldebestand; ein verliehener Klassensatz
+						     (0 von 30) taucht gar nicht mehr auf. -->
 						<div class="text-right leading-tight">
 							<div class="font-bold {ist_kritisch ? 'text-red-700' : 'text-amber-700'}">
 								{r.verfuegbarer_bestand} von {r.gesamt_bestand}
