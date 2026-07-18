@@ -17,3 +17,8 @@
 **Vulnerability:** The PostgreSQL password was being passed to `pg_dump` via the `PGPASSWORD` environment variable in `jobs/backup.go`. This is insecure because environment variables can be exposed to other processes on the same system, leading to credential theft.
 **Learning:** `gosec` G204 can be triggered by passing connection strings directly to subprocesses, and using `PGPASSWORD` exposes the password to other processes.
 **Prevention:** To securely pass PostgreSQL connection details to external subprocesses like `pg_dump`, construct explicit command-line arguments and DO NOT pass the password via `PGPASSWORD`. Instead, supply the password via a securely generated temporary `.pgpass` file with restrictive permissions.
+
+## 2026-07-16 - Mitigate Decompression Bomb (G110) Using io.LimitReader
+**Vulnerability:** A `MEDIUM` severity gosec warning (G110) identified a potential DoS vulnerability via decompression bomb in `cmd/restore-backup/main.go`. The issue occurred because `io.Copy(out, gz)` read an unbounded amount of compressed data into `out`, which could lead to resource exhaustion if a maliciously crafted compressed file was provided.
+**Learning:** Functions that read and decompress data, such as `gzip.NewReader` combined with `io.Copy`, are vulnerable to decompression bombs (zip bombs) where a small compressed file expands to an enormous size.
+**Prevention:** Always bound the maximum amount of decompressed data using `io.LimitReader` when reading from compressed streams to prevent potential DoS attacks.

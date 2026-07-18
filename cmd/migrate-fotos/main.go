@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -44,12 +45,31 @@ func main() {
 	defer pool.Close()
 
 	uploadDir := filepath.Join("uploads", "fotos")
-	entries, err := os.ReadDir(uploadDir)
+	root, err := os.OpenRoot(uploadDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			slog.Info("Kein uploads/fotos Verzeichnis gefunden. Nichts zu migrieren.")
 			return
 		}
+		slog.Error("Fehler beim Öffnen des Foto-Verzeichnisses", "error", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if cerr := root.Close(); cerr != nil {
+			slog.Error("Fehler beim Schließen des Root-Verzeichnisses", "error", cerr)
+		}
+	}()
+
+	dir, err := root.Open(".")
+	if err != nil {
+		slog.Error("Fehler beim Lesen des Foto-Verzeichnisses", "error", err)
+		os.Exit(1)
+	}
+	entries, err := dir.ReadDir(-1)
+	if cerr := dir.Close(); cerr != nil {
+		slog.Error("Fehler beim Schließen des Foto-Verzeichnisses", "error", cerr)
+	}
+	if err != nil {
 		slog.Error("Fehler beim Lesen des Foto-Verzeichnisses", "error", err)
 		os.Exit(1)
 	}
@@ -60,7 +80,7 @@ func main() {
 			continue
 		}
 		processed++
-		if migriereFoto(pool, uploadDir, entry.Name()) {
+		if migriereFoto(pool, root, entry.Name()) {
 			migrated++
 		}
 	}
@@ -72,19 +92,29 @@ func main() {
 // migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =
 // "<barcode>.jpg") in schueler_fotos. Liefert true bei Erfolg; Fehler und fehlende
 // Schüler werden protokolliert und mit false quittiert.
-func migriereFoto(pool *pgxpool.Pool, uploadDir, name string) bool {
+func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string) bool {
 	barcodeID := strings.TrimSuffix(name, filepath.Ext(name))
-	path := filepath.Join(uploadDir, name)
 
-	imgBytes, err := os.ReadFile(path)
+	file, err := root.Open(name)
 	if err != nil {
-		slog.Error("Konnte Bild nicht lesen", "file", path, "error", err)
+		slog.Error("Konnte Bild nicht öffnen", "file", name, "error", err)
+		return false
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			slog.Error("Fehler beim Schließen der Datei", "file", name, "error", cerr)
+		}
+	}()
+
+	imgBytes, err := io.ReadAll(file)
+	if err != nil {
+		slog.Error("Konnte Bild nicht lesen", "file", name, "error", err)
 		return false
 	}
 
 	encryptedData, err := crypto.Encrypt(imgBytes)
 	if err != nil {
-		slog.Error("Konnte Bild nicht verschlüsseln", "file", path, "error", err)
+		slog.Error("Konnte Bild nicht verschlüsseln", "file", name, "error", err)
 		return false
 	}
 

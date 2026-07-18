@@ -74,8 +74,21 @@ func run() error {
 		out = f
 	}
 
-	if _, err := io.Copy(out, gz); err != nil {
+	// Limit decompression output to 100GB to mitigate decompression bomb vulnerability (G110)
+	// We use 100<<30 bytes (100GB).
+	limit := int64(100 << 30)
+	limitReader := io.LimitReader(gz, limit)
+
+	n, err := io.Copy(out, limitReader)
+	if err != nil {
 		return fmt.Errorf("dekomprimierung fehlgeschlagen: %w", err)
+	}
+	if n == limit {
+		// Check if there is more data to trigger an error instead of silently truncating
+		buf := make([]byte, 1)
+		if _, err := gz.Read(buf); err != io.EOF {
+			return fmt.Errorf("dekomprimierung fehlgeschlagen: maximale größe (100GB) überschritten")
+		}
 	}
 
 	if len(args) == 2 {
