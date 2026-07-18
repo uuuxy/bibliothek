@@ -126,8 +126,14 @@ func TestLadeCoverBytes(t *testing.T) {
 
 func TestSpeichereCoverDatei(t *testing.T) {
 	// Clean up uploads dir if it exists
-	_ = os.RemoveAll("uploads")
-	defer func() { _ = os.RemoveAll("uploads") }()
+	if err := os.RemoveAll("uploads"); err != nil {
+		t.Fatalf("cleanup uploads: %v", err)
+	}
+	defer func() {
+		if err := os.RemoveAll("uploads"); err != nil {
+			t.Logf("cleanup uploads: %v", err)
+		}
+	}()
 
 	t.Run("successful save", func(t *testing.T) {
 		res := speichereCoverDatei([]byte("dummy data"), "1234567890", ".webp")
@@ -155,8 +161,14 @@ func TestSpeichereCoverDatei(t *testing.T) {
 
 func TestDownloadAndSaveCoverLocally(t *testing.T) {
 	ctx := context.Background()
-	_ = os.RemoveAll("uploads")
-	defer func() { _ = os.RemoveAll("uploads") }()
+	if err := os.RemoveAll("uploads"); err != nil {
+		t.Fatalf("cleanup uploads: %v", err)
+	}
+	defer func() {
+		if err := os.RemoveAll("uploads"); err != nil {
+			t.Logf("cleanup uploads: %v", err)
+		}
+	}()
 
 	t.Run("invalid image data fails decode", func(t *testing.T) {
 		client := &http.Client{
@@ -181,7 +193,9 @@ func TestDownloadAndSaveCoverLocally(t *testing.T) {
 	t.Run("small image is ignored", func(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 5, 5))
 		var buf bytes.Buffer
-		_ = png.Encode(&buf, img)
+		if err := png.Encode(&buf, img); err != nil {
+			t.Fatalf("png encode: %v", err)
+		}
 
 		client := &http.Client{
 			Transport: &mockTransport{
@@ -210,7 +224,9 @@ func TestDownloadAndSaveCoverLocally(t *testing.T) {
 			}
 		}
 		var buf bytes.Buffer
-		_ = png.Encode(&buf, img)
+		if err := png.Encode(&buf, img); err != nil {
+			t.Fatalf("png encode: %v", err)
+		}
 
 		client := &http.Client{
 			Transport: &mockTransport{
