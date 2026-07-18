@@ -46,7 +46,7 @@ func leiheAus(t *testing.T, pool *pgxpool.Pool, exemplarID string) {
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		 VALUES ('S-INV', 'Test', 'Schueler', '7a', 2030)
-		 ON CONFLICT (barcode_id) DO UPDATE SET vorname = EXCLUDED.vorname
+		 ON CONFLICT (barcode_id) WHERE deleted_at IS NULL DO UPDATE SET vorname = EXCLUDED.vorname
 		 RETURNING id`).Scan(&schuelerID); err != nil {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}

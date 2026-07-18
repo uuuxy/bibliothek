@@ -7,6 +7,51 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// TestAnonymisiereAbgaenger_LoeschtFoto sichert die DSGVO-Datensparsamkeit ab: Beim
+// Anonymisieren eines Abgängers muss das verschlüsselte Passfoto sofort verschwinden — nicht
+// erst beim späteren Hard-Purge. Sonst überlebt das personenbezogenste Datum die
+// Namens-/Adress-Löschung.
+func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var id string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
+		 VALUES ('F-1', 'Max', 'Muster', '7a', 2025, 'L-F') RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, '\x0102'::bytea)`, id); err != nil {
+		t.Fatalf("Foto anlegen: %v", err)
+	}
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	if err := anonymisiereAbgaenger(ctx, tx, id); err != nil {
+		t.Fatalf("anonymisiereAbgaenger: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	var fotos int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`, id).Scan(&fotos); err != nil {
+		t.Fatal(err)
+	}
+	if fotos != 0 {
+		t.Error("verschlüsseltes Foto wurde bei der Anonymisierung nicht gelöscht")
+	}
+	if _, abgaenger, _, vorname := leseSchuelerStatus(t, pool, id); !abgaenger || vorname != "Abgänger" {
+		t.Errorf("Datensatz nicht korrekt anonymisiert: vorname=%q abgaenger=%v", vorname, abgaenger)
+	}
+}
+
 // Bug 5 (Permanent Ghost-Block): Ein Abgänger, der wegen offener Vorgänge nur GESPERRT (nicht
 // anonymisiert) wurde, behielt seine "Automatisierte Abgänger-Sperre" beim LUSD-Wiedereintritt
 // dauerhaft. aktualisiereBestandsschueler muss beim Rückkehrer prüfen, ob noch Vorgänge offen

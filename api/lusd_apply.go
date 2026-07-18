@@ -214,6 +214,14 @@ func sperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
 // eines Abgängers ohne offene Vorgänge. Die interne DB-UUID hängt am Nachnamen,
 // um Unique-Constraint-Verletzungen zu vermeiden.
 func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
+	// Verschlüsseltes Passfoto sofort mit der Anonymisierung löschen — nicht erst beim
+	// späteren Hard-Purge (ON DELETE CASCADE). Der Foto-Zweck (Wiedererkennung an der Theke)
+	// entfällt mit dem Abgang; Name/Adresse werden hier ohnehin geleert, das Foto ist das
+	// personenbezogenste verbleibende Datum und gehört mit weg (Datensparsamkeit).
+	if _, err := tx.Exec(ctx, "DELETE FROM schueler_fotos WHERE schueler_id = $1", schuelerID); err != nil {
+		return err
+	}
+
 	anonymisiertName := fmt.Sprintf("Anonymisiert-%s", schuelerID)
 	// abgaenger_jahr aufs echte Abgangsjahr setzen — damit der DSGVO-Cronjob den
 	// (bereits namens-anonymisierten) Datensatz nach Karenzzeit endgültig entfernt,

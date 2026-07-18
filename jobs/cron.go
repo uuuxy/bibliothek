@@ -287,6 +287,15 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		return
 	}
 
+	// Verschlüsselte Passfotos anonymisierter Schüler entfernen. Selbstheilend: räumt auch
+	// Altbestände, deren Anonymisierung vor der Foto-Löschung lief. (Das Foto lebt in
+	// schueler_fotos, nicht in schueler.foto_url — Letzteres wird oben bereits geleert.)
+	if _, delErr := s.db.Exec(ctx,
+		"DELETE FROM schueler_fotos WHERE schueler_id IN (SELECT id FROM schueler WHERE anonymized_at IS NOT NULL)",
+	); delErr != nil {
+		log.Printf("Scheduler GDPR Anonymize: Fotos anonymisierter Schüler konnten nicht gelöscht werden: %v", delErr)
+	}
+
 	count := tag.RowsAffected()
 	if count > 0 {
 		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)

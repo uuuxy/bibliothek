@@ -8,25 +8,36 @@
 
 	let isSubmitting = $state(false);
 	let errorMsg = $state('');
+	let reason = $state('');
+
+	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem
+	// Backend-Check und dem DB-Constraint chk_schueler_block_reason.
+	let willLock = $derived(profile && !profile.is_manually_blocked);
 
 	async function handleConfirm() {
 		if (!profile) return;
+		if (willLock && reason.trim() === '') {
+			errorMsg = 'Bitte einen Grund für die Sperre angeben.';
+			return;
+		}
 		isSubmitting = true;
 		errorMsg = '';
 		try {
 			const res = await apiClient.patch(`/api/admin/students/${profile.id}/lock`, {
-				is_locked: !profile.is_manually_blocked
+				is_locked: !profile.is_manually_blocked,
+				reason: reason.trim()
 			});
 
 			if (res.ok) {
 				const updated = await res.json();
 				onsuccess(updated);
+				reason = '';
 				open = false;
 			} else {
 				const err = await res.json().catch(() => ({}));
 				errorMsg = err.error || 'Fehler beim Aktualisieren der Sperre.';
 			}
-		} catch (e) {
+		} catch {
 			errorMsg = 'Netzwerkfehler.';
 		} finally {
 			isSubmitting = false;
@@ -78,6 +89,19 @@
 						> wirklich sperren?
 					{/if}
 				</p>
+
+				{#if willLock}
+					<label class="block space-y-1.5">
+						<span class="text-xs font-bold text-slate-700">Grund der Sperre <span class="text-rose-500">*</span></span>
+						<textarea
+							bind:value={reason}
+							rows="2"
+							disabled={isSubmitting}
+							placeholder="z. B. wiederholt Bücher nicht zurückgegeben"
+							class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:opacity-50 resize-none"
+						></textarea>
+					</label>
+				{/if}
 
 				{#if errorMsg}
 					<div

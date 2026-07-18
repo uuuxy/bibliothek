@@ -132,7 +132,7 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- Verarbeitungstätigkeiten (VVT) sind in docs/SECURITY.de.md dokumentiert.
 CREATE TABLE schueler (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    barcode_id VARCHAR(100) UNIQUE NOT NULL,          -- Barcode ID on student ID card
+    barcode_id VARCHAR(100) NOT NULL,                 -- Barcode ID on student ID card (Eindeutigkeit: partieller Index uniq_schueler_barcode_active, nur aktive Zeilen — siehe Migration 049)
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
     klasse VARCHAR(20) NOT NULL,                      -- e.g., '5a', '10b', 'Q2'
@@ -152,11 +152,14 @@ CREATE TABLE schueler (
     block_reason TEXT,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     -- Ein gesperrter Schüler ohne Grund ist ein toter Zustand ("Zombie-Sperre"): das
-    -- Personal sieht nur das rote Flag und muss die Historie durchwühlen. Sperre erzwingt
-    -- daher einen nicht-leeren Grund (siehe Migration 047). is_manually_blocked läuft über
-    -- einen eigenen Grund im selben Feld und ist von diesem Constraint nicht betroffen.
+    -- Personal sieht nur das rote Flag und muss die Historie durchwühlen. JEDE Sperrquelle
+    -- (System ist_gesperrt ODER manuell is_manually_blocked) verlangt daher einen
+    -- nicht-leeren Grund im gemeinsamen Feld block_reason (siehe Migration 047 + 051).
     CONSTRAINT chk_schueler_block_reason
-        CHECK (ist_gesperrt = false OR btrim(coalesce(block_reason, '')) <> '')
+        CHECK (
+            (ist_gesperrt = false AND COALESCE(is_manually_blocked, false) = false)
+            OR btrim(coalesce(block_reason, '')) <> ''
+        )
 );
 
 CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
@@ -175,6 +178,9 @@ CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (vorname, nachname
 -- lusd_id ist nur unter AKTIVEN Schülern eindeutig; eine soft-gelöschte lusd_id
 -- darf bei Wiederanmeldung neu vergeben werden (siehe Migration 035).
 CREATE UNIQUE INDEX uniq_schueler_lusd_id_active ON schueler (lusd_id) WHERE deleted_at IS NULL AND lusd_id IS NOT NULL;
+-- barcode_id ist ebenfalls nur unter AKTIVEN Schülern eindeutig; ein soft-gelöschter
+-- Ausweis-Barcode darf bei Wiederanmeldung/Recycling neu vergeben werden (siehe Migration 049).
+CREATE UNIQUE INDEX uniq_schueler_barcode_active ON schueler (barcode_id) WHERE deleted_at IS NULL;
 
 CREATE TRIGGER trg_schueler_aktualisiert_am
 BEFORE UPDATE ON schueler
@@ -321,13 +327,17 @@ CREATE TABLE buecher_titel (
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
-    -- Immutable generated column for German language full-text search indexing
+    -- Immutable generated column for German language full-text search indexing.
+    -- Enthält isbn und beschreibung (siehe Migration 050), damit ISBN-Eingaben und
+    -- Stichworte aus der Beschreibung über die Omnibox auffindbar sind.
     search_vector TSVECTOR GENERATED ALWAYS AS (
-        to_tsvector('german', 
-            coalesce(titel, '') || ' ' || 
-            coalesce(untertitel, '') || ' ' || 
-            coalesce(autor, '') || ' ' || 
-            coalesce(verlag, '')
+        to_tsvector('german',
+            coalesce(titel, '') || ' ' ||
+            coalesce(untertitel, '') || ' ' ||
+            coalesce(autor, '') || ' ' ||
+            coalesce(verlag, '') || ' ' ||
+            coalesce(isbn, '') || ' ' ||
+            coalesce(beschreibung, '')
         )
     ) STORED
 );
@@ -652,7 +662,10 @@ INSERT INTO schema_migrations (version) VALUES
 ('045_inventur_sessions.sql'),
 ('046_mahnstufe_spalten.sql'),
 ('047_block_reason_pflicht.sql'),
-('048_schueler_gebdatum_dup.sql')
+('048_schueler_gebdatum_dup.sql'),
+('049_schueler_barcode_partial_unique.sql'),
+('050_search_vector_isbn_beschreibung.sql'),
+('051_manual_block_reason_pflicht.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

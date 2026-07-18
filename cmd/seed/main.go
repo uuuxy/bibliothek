@@ -66,9 +66,9 @@ func main() {
 		abgaengerJahr := time.Now().Year() + rand.Intn(5) + 1
 		
 		studentBatch.Queue(`
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt) 
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt)
 			VALUES ($1, $2, $3, $4, $5, false)
-			ON CONFLICT (barcode_id) DO NOTHING
+			ON CONFLICT (barcode_id) WHERE deleted_at IS NULL DO NOTHING
 		`, barcodeID, vorname, nachname, klasse, abgaengerJahr)
 	}
 
