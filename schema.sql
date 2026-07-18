@@ -128,8 +128,8 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- von Schadens-Rechnungen (Anschrift) und Eltern-Mahnungen (E-Mail).
 -- Löschung: Beim Abgang ohne offene Vorgänge werden diese Felder in der
 -- Anonymisierung geleert (siehe api/lusd_apply.go: anonymisiereAbgaenger).
--- TODO(Betreiber): Rechtsgrundlage & Aufbewahrungsfrist im Verzeichnis von
--- Verarbeitungstätigkeiten dokumentieren.
+-- Hinweis: Rechtsgrundlage & Aufbewahrungsfrist für das Verzeichnis von
+-- Verarbeitungstätigkeiten (VVT) sind in docs/SECURITY.de.md dokumentiert.
 CREATE TABLE schueler (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     barcode_id VARCHAR(100) UNIQUE NOT NULL,          -- Barcode ID on student ID card
