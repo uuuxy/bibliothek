@@ -50,6 +50,7 @@
 			onclick={stopScanner}
 			class="p-1.5 rounded-full bg-white/80 text-slate-700 hover:bg-white shadow transition-colors cursor-pointer"
 			title="Kamera schließen"
+			aria-label="Kamera schließen"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"

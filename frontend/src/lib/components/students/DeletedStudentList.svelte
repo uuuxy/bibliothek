@@ -124,6 +124,7 @@
 								<button
 									onclick={() => restoreStudent(s.id)}
 									title="Wiederherstellen"
+									aria-label="Wiederherstellen"
 									class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors shadow-sm cursor-pointer"
 								>
 									<svg
