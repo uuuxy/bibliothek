@@ -52,15 +52,10 @@ type StudentRepository interface {
 	// SearchStudentsFuzzy führt eine Teilstring-Suche über Vorname, Nachname und Barcode-ID aus.
 	SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error)
 
-	// GetAllLUSDStudents lädt alle Schüler-IDs, LUSD-IDs, Namen und Geburtsdaten zur Vorbereitung eines LUSD-Abgleichs.
-	GetAllLUSDStudents(ctx context.Context) ([]Student, error)
-
-	// BulkSyncLUSD führt den LUSD-Datenabgleich (Massen-Update und Massen-Insert) in einer Transaktion durch.
-	// Schueler, die nicht mehr im LUSD-Datenbestand gelistet sind, werden automatisch als Schulabgänger (ist_abgaenger = true) markiert
-	// und deren Vormerkungen gelöscht.
-	// Gibt die Anzahl der Abgänger zurück, die noch offene Ausleihen haben.
-	// BulkSyncLUSD führt den LUSD-Datenabgleich durch.
-	BulkSyncLUSD(ctx context.Context, updates []StudentUpdate, inserts []StudentInsert, allLusdIDs []string) (int, error)
+	// Hinweis: Der LUSD-Abgleich läuft ausschließlich über den Handler-Pfad in
+	// api/lusd.go (ladeAktiveSchueler → wendeLusdAenderungenAn). Eine frühere
+	// Massen-Pipeline (BulkSyncLUSD/GetAllLUSDStudents) wurde entfernt: ungenutzt und
+	// mit latenten Fehlern (u. a. Ghost-Block bei Rückkehrern).
 
 	// HasPhoto checks if an encrypted photo exists for the student.
 	HasPhoto(ctx context.Context, studentID string) (bool, error)
@@ -76,28 +71,6 @@ type StudentRepository interface {
 
 	// ListStudentsWithStats returns a list of students with loan statistics.
 	ListStudentsWithStats(ctx context.Context, klasse string) ([]StudentListStat, error)
-}
-
-// StudentUpdate definiert die Datenstruktur für Aktualisierungen eines Schülers während des LUSD-Imports.
-type StudentUpdate struct {
-	ID           string
-	Vorname      string
-	Nachname     string
-	Klasse       string
-	Geburtsdatum *string // Format: YYYY-MM-DD
-	LusdID       *string
-}
-
-// StudentInsert definiert die Datenstruktur für neu anzulegende Schüler während des LUSD-Imports.
-type StudentInsert struct {
-	BarcodeID     string
-	Vorname       string
-	Nachname      string
-	Klasse        string
-	Geburtsdatum  *string // Format: YYYY-MM-DD
-	AbgaengerJahr int
-	LusdID        *string
-	IstAbgaenger  bool
 }
 
 // pgStudentRepository implementiert das StudentRepository für PostgreSQL.

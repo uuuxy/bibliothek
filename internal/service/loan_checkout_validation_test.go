@@ -27,12 +27,6 @@ func (m *mockStudentRepo) GetByBarcode(ctx context.Context, barcode string) (*re
 func (m *mockStudentRepo) SearchStudentsFuzzy(ctx context.Context, q string, limit int) ([]repository.Student, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) GetAllLUSDStudents(ctx context.Context) ([]repository.Student, error) {
-	return nil, nil
-}
-func (m *mockStudentRepo) BulkSyncLUSD(ctx context.Context, u []repository.StudentUpdate, i []repository.StudentInsert, ids []string) (int, error) {
-	return 0, nil
-}
 func (m *mockStudentRepo) HasPhoto(ctx context.Context, id string) (bool, error) { return false, nil }
 func (m *mockStudentRepo) HasOpenDamages(ctx context.Context, id string) (bool, error) {
 	return false, nil
