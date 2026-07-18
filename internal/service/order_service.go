@@ -195,6 +195,33 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 		return nil
 	}
 
+	var isbns []string
+	for _, dr := range dnbResults {
+		if dr.ISBN != "" {
+			normalizedISBN := strings.ReplaceAll(dr.ISBN, "-", "")
+			isbns = append(isbns, normalizedISBN)
+		}
+	}
+
+	existingISBNs := make(map[string]struct{})
+	if len(isbns) > 0 {
+		rows, err := pool.Query(ctx, "SELECT replace(isbn, '-', '') FROM buecher_titel WHERE replace(isbn, '-', '') = ANY($1)", isbns)
+		if err != nil {
+			log.Printf("order-service: Bulk ISBN-Existenzprüfung fehlgeschlagen: %v", err)
+		} else {
+			defer rows.Close()
+			for rows.Next() {
+				var isbn string
+				if err := rows.Scan(&isbn); err == nil {
+					existingISBNs[isbn] = struct{}{}
+				}
+			}
+			if err := rows.Err(); err != nil {
+				log.Printf("order-service: Fehler beim Lesen der Bulk ISBN-Existenzprüfung: %v", err)
+			}
+		}
+	}
+
 	var results []OrderSearchItem
 	for _, dr := range dnbResults {
 		coverURL := dr.CoverURL
@@ -204,10 +231,8 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 
 		existsLocally := false
 		if dr.ISBN != "" {
-			var count int
-			if err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM buecher_titel WHERE replace(isbn, '-', '') = $1", dr.ISBN).Scan(&count); err != nil {
-				log.Printf("order-service: ISBN-Existenzprüfung fehlgeschlagen: %v", err)
-			} else if count > 0 {
+			normalizedISBN := strings.ReplaceAll(dr.ISBN, "-", "")
+			if _, found := existingISBNs[normalizedISBN]; found {
 				existsLocally = true
 			}
 		}
