@@ -37,6 +37,7 @@ func TestMeHandler_ActiveAdminGetsLoginShape(t *testing.T) {
 	}
 
 	expectNotBlacklisted(mock)
+	expectKontoAktiv(mock, true)
 	mock.ExpectQuery(`SELECT rolle, vorname, nachname, aktiv`).
 		WithArgs("user-1").
 		WillReturnRows(pgxmock.NewRows([]string{"rolle", "vorname", "nachname", "aktiv"}).
@@ -71,6 +72,7 @@ func TestMeHandler_NonAdminLoadsConfiguredPermissions(t *testing.T) {
 	}
 
 	expectNotBlacklisted(mock)
+	expectKontoAktiv(mock, true)
 	mock.ExpectQuery(`SELECT rolle, vorname, nachname, aktiv`).
 		WithArgs("user-2").
 		WillReturnRows(pgxmock.NewRows([]string{"rolle", "vorname", "nachname", "aktiv"}).
@@ -108,10 +110,9 @@ func TestMeHandler_DeactivatedUserReturns401(t *testing.T) {
 	}
 
 	expectNotBlacklisted(mock)
-	mock.ExpectQuery(`SELECT rolle, vorname, nachname, aktiv`).
-		WithArgs("user-3").
-		WillReturnRows(pgxmock.NewRows([]string{"rolle", "vorname", "nachname", "aktiv"}).
-			AddRow("mitarbeiter", "Ex", "Kollege", false))
+	// VerifyToken lehnt den deaktivierten Benutzer bereits ab (aktiv=false) — MeHandlers
+	// eigene Stammdaten-Query wird gar nicht mehr erreicht.
+	expectKontoAktiv(mock, false)
 
 	rec := doMe(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusUnauthorized {

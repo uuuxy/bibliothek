@@ -104,6 +104,7 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 
 	// Das ausgestellte Token muss verifizierbar sein und die Identität tragen.
 	expectNotBlacklisted(mock)
+	expectKontoAktiv(mock, true)
 	claims, err := a.VerifyToken(cookies[0].Value)
 	if err != nil {
 		t.Fatalf("ausgestelltes Token ungültig: %v", err)

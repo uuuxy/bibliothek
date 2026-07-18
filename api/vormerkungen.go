@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"bibliothek/apierrors"
@@ -48,6 +49,11 @@ func (s *Server) CreateVormerkungHandler(vormerkungRepo repository.VormerkungRep
 
 		id, err := vormerkungRepo.Create(ctx, req.TitelID, req.Notiz, req.SchuelerID)
 		if err != nil {
+			// Fachlicher Konflikt (409): Der Schüler hat den Titel bereits selbst ausgeliehen
+			// und darf ihn nicht zusätzlich vormerken — kein Serverfehler.
+			if errors.Is(err, repository.ErrTitelBereitsAusgeliehen) {
+				return apierrors.Conflict(err.Error(), err)
+			}
 			return apierrors.Internal("Fehler beim Erstellen der Vormerkung", err)
 		}
 

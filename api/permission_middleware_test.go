@@ -31,11 +31,15 @@ func setupRBAC(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 	return &Server{DB: &db.Database{Pool: mock}, Auth: a}, mock
 }
 
-// expectBlacklistPass erwartet die Blacklist-Prüfung in VerifyToken und meldet "nicht widerrufen".
+// expectBlacklistPass erwartet die beiden Prüfungen in VerifyToken bei gültigem Token:
+// die Blacklist ("nicht widerrufen") und direkt danach den aktiv-Status des Kontos ("aktiv").
 func expectBlacklistPass(mock pgxmock.PgxPoolIface) {
 	mock.ExpectQuery("revoked_tokens").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+	mock.ExpectQuery("SELECT aktiv FROM benutzer").
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"aktiv"}).AddRow(true))
 }
 
 func reqWithToken(t *testing.T, s *Server, role auth.Role) *http.Request {
@@ -111,6 +115,30 @@ func TestRequirePermission_GrantedAllowsAccess(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unerfüllte Erwartungen: %v", err)
+	}
+}
+
+func TestRequirePermission_DeactivatedUserUnauthorized(t *testing.T) {
+	s, mock := setupRBAC(t)
+	defer mock.Close()
+
+	// Blacklist ok, aber das Konto wurde nach Token-Ausstellung deaktiviert → VerifyToken
+	// muss ablehnen (Echtzeit-Widerruf), bevor überhaupt Rechte geprüft werden.
+	mock.ExpectQuery("revoked_tokens").
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+	mock.ExpectQuery("SELECT aktiv FROM benutzer").
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"aktiv"}).AddRow(false))
+
+	req := reqWithToken(t, s, auth.RoleLehrer)
+	rr, reached := serve(s, "buch.ausleihen", req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("deaktiviertes Konto erwartet 401, bekam %d", rr.Code)
+	}
+	if reached {
+		t.Error("deaktiviertes Konto darf den geschützten Handler nicht erreichen")
 	}
 }
 

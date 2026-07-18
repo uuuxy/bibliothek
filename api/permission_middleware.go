@@ -44,10 +44,14 @@ func (s *Server) claimsAusRequest(r *http.Request) (*auth.Claims, int, error) {
 		}
 		return nil, http.StatusBadRequest, err
 	}
+	// VerifyToken prüft neben Signatur und Blacklist auch den Echtzeit-Kontostatus
+	// (aktiv / nicht gelöscht) direkt in der DB — siehe auth.Authenticator.VerifyToken.
+	// Deshalb ist hier keine zusätzliche Zombie-Session-Prüfung nötig.
 	claims, err := s.Auth.VerifyToken(cookie.Value)
 	if err != nil {
 		return nil, http.StatusUnauthorized, err
 	}
+
 	return claims, 0, nil
 }
 

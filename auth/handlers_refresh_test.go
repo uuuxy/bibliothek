@@ -35,6 +35,14 @@ func expectNotBlacklisted(mock pgxmock.PgxPoolIface) {
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 }
 
+// expectKontoAktiv erwartet die aktiv-Prüfung in VerifyToken (nach der Blacklist, nur bei
+// gültigem Token) und meldet den gewünschten Kontostatus zurück.
+func expectKontoAktiv(mock pgxmock.PgxPoolIface, aktiv bool) {
+	mock.ExpectQuery(`SELECT aktiv FROM benutzer`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"aktiv"}).AddRow(aktiv))
+}
+
 func doRefresh(t *testing.T, a *Authenticator, cookie *http.Cookie) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/refresh", nil)
@@ -71,6 +79,7 @@ func TestRefreshTokenHandler_FreshTokenIsSkippedWithoutNewCookie(t *testing.T) {
 		t.Fatalf("GenerateToken: %v", err)
 	}
 	expectNotBlacklisted(mock)
+	expectKontoAktiv(mock, true)
 
 	rec := doRefresh(t, a, &http.Cookie{Name: "session_token", Value: token})
 
@@ -96,6 +105,7 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 	expectNotBlacklisted(mock)
+	expectKontoAktiv(mock, true)
 
 	rec := doRefresh(t, a, &http.Cookie{Name: "session_token", Value: token})
 
@@ -116,6 +126,7 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 
 	// Das neue Token muss gültig sein und die Claims unverändert tragen.
 	expectNotBlacklisted(mock)
+	expectKontoAktiv(mock, true)
 	claims, err := a.VerifyToken(cookies[0].Value)
 	if err != nil {
 		t.Fatalf("neues Token ungültig: %v", err)

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 )
 
 // Role definiert die Berechtigungsstufen/Rollen im Bibliothekssystem.
@@ -54,6 +56,7 @@ type Authenticator struct {
 	secretKey     []byte
 	tokenDuration time.Duration
 	Blacklist     *TokenBlacklist
+	pool          DatabasePool
 }
 
 // NewAuthenticator erstellt eine neue JWT-Authenticator-Instanz mit dem angegebenen Secret und der Dauer.
@@ -65,6 +68,7 @@ func NewAuthenticator(secret string, pool DatabasePool, duration time.Duration) 
 		secretKey:     []byte(secret),
 		tokenDuration: duration,
 		Blacklist:     NewTokenBlacklist(pool),
+		pool:          pool,
 	}, nil
 }
 
@@ -124,5 +128,33 @@ func (a *Authenticator) VerifyToken(tokenString string) (*Claims, error) {
 		return nil, errors.New("invalid token claims")
 	}
 
+	// Echtzeit-Sitzungswiderruf: Signatur und Blacklist allein reichen nicht. Wird ein
+	// Mitarbeiter deaktiviert (aktiv=false) oder gelöscht, kennt die Blacklist sein Token
+	// nicht (er hat sich nie ausgeloggt) — er behielte sonst bis zum natürlichen Ablauf des
+	// (12h-)Tokens vollen Zugriff. Deshalb bei JEDER Verifikation den aktuellen DB-Status
+	// prüfen. Eigener Timeout-Context wie in IsBlacklisted (unabhängig vom Request-Kontext).
+	if err := a.pruefeKontoAktiv(claims.UserID); err != nil {
+		return nil, err
+	}
+
 	return claims, nil
+}
+
+// pruefeKontoAktiv stellt sicher, dass das Konto zum Zeitpunkt des Requests noch existiert
+// und aktiv ist. Fail-closed wie die Blacklist: bei DB-Fehler wird der Zugriff verweigert.
+func (a *Authenticator) pruefeKontoAktiv(userID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	var aktiv bool
+	if err := a.pool.QueryRow(ctx, `SELECT aktiv FROM benutzer WHERE id = $1`, userID).Scan(&aktiv); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errors.New("user account no longer exists")
+		}
+		return errors.New("account status could not be verified")
+	}
+	if !aktiv {
+		return errors.New("user account is deactivated")
+	}
+	return nil
 }

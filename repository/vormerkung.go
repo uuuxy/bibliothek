@@ -2,11 +2,20 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"bibliothek/db"
 	"github.com/jackc/pgx/v5"
 )
+
+// ErrTitelBereitsAusgeliehen signalisiert, dass ein Schüler einen Titel vormerken will, den
+// er aktuell bereits selbst ausgeliehen hat. Ohne diese Sperre könnte er das Buch bei der
+// Rückgabe sofort wieder für sich selbst abgreifen und die Vormerkungs-Warteschlange
+// dauerhaft für sich monopolisieren. Nutzer-sichtbar (409).
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
+var ErrTitelBereitsAusgeliehen = errors.New("Buch wird aktuell bereits von diesem Schüler ausgeliehen")
 
 // Vormerkung represents a pending book reservation entry for a student.
 type Vormerkung struct {
@@ -92,7 +101,29 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 }
 
 // Create creates a new reservation.
+//
+// Monopolisierungs-Schutz: Ein Schüler, der ein Exemplar dieses Titels aktuell selbst
+// ausgeliehen hat, darf ihn nicht zusätzlich für sich vormerken (siehe
+// ErrTitelBereitsAusgeliehen). Der Check läuft nur bei gesetztem schuelerID — anonyme
+// Vormerkungen (ohne Schüler) sind davon nicht betroffen.
 func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, schuelerID string) (string, error) {
+	if schuelerID != "" {
+		var bereitsAusgeliehen bool
+		if err := r.db.QueryRow(ctx, `
+			SELECT EXISTS (
+				SELECT 1
+				FROM ausleihen a
+				JOIN buecher_exemplare e ON e.id = a.exemplar_id
+				WHERE e.titel_id = $1 AND a.schueler_id = $2 AND a.rueckgabe_am IS NULL
+			)
+		`, titelID, schuelerID).Scan(&bereitsAusgeliehen); err != nil {
+			return "", err
+		}
+		if bereitsAusgeliehen {
+			return "", ErrTitelBereitsAusgeliehen
+		}
+	}
+
 	var id string
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO vormerkungen (titel_id, notiz, schueler_id)

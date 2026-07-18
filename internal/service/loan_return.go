@@ -23,18 +23,25 @@ const schuelerAbholberechtigt = `s.deleted_at IS NULL AND s.ist_gesperrt = false
 // processReturnVormerkungTx prüft innerhalb einer laufenden Transaktion, ob eine Vormerkung (Reservierung)
 // für das zurückgegebene Buch vorliegt. Wenn ja, wird diese Vormerkung aktiviert (Status auf 'abholbereit' gesetzt)
 // und dem nächsten wartenden, abholberechtigten Schüler zugeteilt.
-func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *LoanResult) {
+//
+// returningSchuelerID ist der Schüler, der das Buch GERADE zurückgibt (nil bei Mitarbeiter-/
+// Handapparat-Rückgaben). Seine eigene Vormerkung wird bei der Zuteilung übersprungen: Sonst
+// könnte er das Buch beim Zurückgeben sofort wieder für sich selbst abholbereit stellen und die
+// Warteschlange dauerhaft monopolisieren (Vormerkungs-Monopolisierung).
+func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *LoanResult, returningSchuelerID *string) {
 	var vID, sVorname, sNachname, sKlasse string
 	// Die älteste wartende Vormerkung eines abholberechtigten Schülers ermitteln und sperren.
+	// Die Vormerkung des gerade zurückgebenden Schülers wird ausgeschlossen ($2).
 	err := tx.QueryRow(ctx, `
 		SELECT v.id, s.vorname, s.nachname, COALESCE(s.klasse, '')
 		FROM vormerkungen v
 		JOIN schueler s ON v.schueler_id = s.id
 		WHERE v.titel_id = $1 AND v.status = 'wartend'
 		  AND `+schuelerAbholberechtigt+`
+		  AND ($2::uuid IS NULL OR v.schueler_id <> $2::uuid)
 		ORDER BY v.erstellt_am ASC LIMIT 1
 		FOR UPDATE
-	`, copy.TitelID).Scan(&vID, &sVorname, &sNachname, &sKlasse)
+	`, copy.TitelID, returningSchuelerID).Scan(&vID, &sVorname, &sNachname, &sKlasse)
 
 	if err == nil {
 		schuelerName := sVorname + " " + sNachname
@@ -124,7 +131,9 @@ func (s *defaultLoanService) handleEigenrueckgabeMitarbeiter(ctx context.Context
 		return nil, err
 	}
 
-	s.processReturnVormerkungTx(ctx, tx, copy, resp)
+	// Handapparat-Rückgabe: kein Schüler-Ausleiher (activeLoan.SchuelerID == nil) → nichts
+	// auszuschließen; die Zuteilung läuft normal über die Warteschlange.
+	s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID)
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -163,8 +172,9 @@ func (s *defaultLoanService) handleSchuelerRueckgabe(ctx context.Context, tx pgx
 		return nil, err
 	}
 
-	// Eventuelle Vormerkungen aktivieren
-	s.processReturnVormerkungTx(ctx, tx, copy, resp)
+	// Eventuelle Vormerkungen aktivieren — die eigene Vormerkung des zurückgebenden
+	// Schülers wird dabei übersprungen (Monopolisierungs-Schutz).
+	s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID)
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err

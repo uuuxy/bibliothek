@@ -10,6 +10,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// ErrUserHasActiveLoans signalisiert, dass ein Benutzer nicht gelöscht werden kann, weil er
+// noch aktive (nicht zurückgegebene) Handapparat-Ausleihen hat. Nutzer-sichtbar (409).
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
+var ErrUserHasActiveLoans = errors.New("Benutzer hat noch aktive Handapparat-Ausleihen — bitte zuerst zurückbuchen")
+
 // DeleteUser löscht einen Systembenutzer endgültig aus der Datenbank und erfasst die Löschung im Audit-Log.
 func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearbeiterID string) error {
 	tx, err := r.db.Begin(ctx)
@@ -27,6 +33,22 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 	).Scan(&vorname, &nachname, &email, &rolle)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to snapshot user for audit: %w", err)
+	}
+
+	// Schutz vor verwaisten Handapparat-Ausleihen: Das Schema hat auf
+	// ausleihen.ausleiher_benutzer_id ein ON DELETE SET NULL. Ein DELETE würde die Bücher
+	// eines Lehrers also im Status "ausgeliehen" zurücklassen, aber an NULL (niemand)
+	// gebunden — dauerhaft blockiert und nicht mehr zuordenbar. Deshalb die Löschung
+	// verweigern, solange der Benutzer noch aktive Ausleihen hat.
+	var aktiveAusleihen int
+	if err = tx.QueryRow(ctx,
+		`SELECT count(*) FROM ausleihen WHERE ausleiher_benutzer_id = $1 AND rueckgabe_am IS NULL`,
+		userID,
+	).Scan(&aktiveAusleihen); err != nil {
+		return fmt.Errorf("failed to check active loans for user: %w", err)
+	}
+	if aktiveAusleihen > 0 {
+		return fmt.Errorf("%w (%d offen)", ErrUserHasActiveLoans, aktiveAusleihen)
 	}
 
 	if _, err = tx.Exec(ctx, "DELETE FROM benutzer WHERE id = $1", userID); err != nil {

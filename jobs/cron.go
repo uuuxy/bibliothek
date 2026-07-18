@@ -275,7 +275,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '180 days')
 		      OR
-		      (ist_abgaenger = true AND abgaenger_jahr <= EXTRACT(YEAR FROM NOW() - INTERVAL '360 days'))
+		      (ist_abgaenger = true AND aktualisiert_am < NOW() - INTERVAL '360 days')
 		  )
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)

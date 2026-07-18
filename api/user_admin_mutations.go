@@ -66,9 +66,10 @@ type CreateUserRequest struct {
 	Rolle     string `json:"rolle" validate:"required"`
 }
 
-// CreateUserHandler inserts a new user with bcrypt-hashed credentials.
+// CreateUserHandler inserts a new user. Es gibt keine lokalen Passwörter — die
+// Authentifizierung läuft über den Schul-Mailserver (IMAP) bzw. Barcode/PIN.
 // @Summary      Create system user
-// @Description  Registers a new system user (admin, teacher, staff) with hashed password and role assignments.
+// @Description  Registers a new system user (admin, teacher, staff) with role assignments. Login erfolgt über IMAP/Barcode, nicht über ein lokales Passwort.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -118,13 +119,17 @@ type UpdateUserRequest struct {
 	Nachname  string `json:"nachname" validate:"required"`
 	Email     string `json:"email" validate:"required,email"`
 	Rolle     string `json:"rolle" validate:"required"`
-	Password  string `json:"password,omitempty"` // nur gehasht, wenn nicht leer
 	Aktiv     bool   `json:"aktiv"`
+	// Kein Passwort-Feld: Staff-Logins laufen über den Schul-Mailserver (IMAP) bzw.
+	// Barcode/PIN — es gibt keine lokale Passwortspalte (siehe Migration 012). Ein früher
+	// hier vorhandenes `password`-Feld wurde ersatzlos entfernt, weil der Wert nirgends
+	// gespeichert wurde und Admins fälschlich glauben ließ, ein Passwort zu setzen.
 }
 
-// UpdateUserHandler modifies user properties and dynamically updates details/passwords.
+// UpdateUserHandler modifies user properties (Name, E-Mail, Barcode, Rolle, Aktiv-Status).
+// Passwörter gibt es hier nicht — Login läuft über IMAP/Barcode (siehe CreateUserHandler).
 // @Summary      Update system user
-// @Description  Modifies an existing user's properties, role, active status, or password.
+// @Description  Modifies an existing user's properties, role, or active status.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -239,6 +244,12 @@ func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository) http.Ha
 
 		err := auditRepo.DeleteUser(ctx, id, claims.UserID)
 		if err != nil {
+			// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
+			// Der Admin muss die Bücher erst zurückbuchen.
+			if errors.Is(err, repository.ErrUserHasActiveLoans) {
+				apierrors.SendHTTPError(w, http.StatusConflict, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

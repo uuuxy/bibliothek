@@ -115,7 +115,8 @@ func (s *defaultLoanService) handleReturn(
 		return nil, err
 	}
 
-	s.processReturnVormerkungTx(ctx, tx, copy, resp)
+	// Eigene Vormerkung des zurückgebenden Schülers überspringen (Monopolisierungs-Schutz).
+	s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID)
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -181,8 +182,9 @@ func (s *defaultLoanService) handleForeignReturn(
 		return nil, err
 	}
 
-	// Vormerkungs-Hinweis wie bei jeder Rückgabe: das Buch wird gerade frei
-	s.processReturnVormerkungTx(ctx, tx, copy, resp)
+	// Vormerkungs-Hinweis wie bei jeder Rückgabe: das Buch wird gerade frei. Die eigene
+	// Vormerkung des Vorbesitzers wird übersprungen (Monopolisierungs-Schutz).
+	s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID)
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
