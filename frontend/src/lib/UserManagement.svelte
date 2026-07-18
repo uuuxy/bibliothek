@@ -126,16 +126,27 @@
 		error = null;
 		try {
 			const res = await apiFetch(`/api/benutzer/${userToDelete.id}`, { method: 'DELETE' });
-			if (!res.ok) throw new Error((await res.text()) || 'Benutzer konnte nicht gelöscht werden.');
+			if (!res.ok) {
+				// Der Server antwortet als JSON ({"error": "..."}). Meldung herausziehen,
+				// sonst den Rohtext verwenden. Bei 409 (offene Handapparat-Ausleihen) trägt
+				// die Meldung bereits den Hinweis "bitte zuerst zurückbuchen".
+				const body = await res.text();
+				let msg = body;
+				try {
+					msg = JSON.parse(body)?.error || body;
+				} catch {
+					// kein JSON — Rohtext belassen
+				}
+				throw new Error(msg || 'Benutzer konnte nicht gelöscht werden.');
+			}
 			showDeleteConfirm = false;
 			userToDelete = null;
 			showToast('Benutzer erfolgreich gelöscht.');
 			fetchUsers();
 		} catch (err) {
+			// Modal bewusst offen lassen: Die (handlungsleitende) Fehlermeldung wird inline
+			// im Lösch-Dialog angezeigt, nicht im hier ausgeblendeten globalen Banner.
 			error = err instanceof Error ? err.message : String(err);
-			setTimeout(() => {
-				error = null;
-			}, 5000);
 		} finally {
 			deletingUser = false;
 		}
@@ -177,6 +188,7 @@
 	/** @param {any} user */
 	function openDeleteConfirm(user) {
 		userToDelete = user;
+		error = null;
 		showDeleteConfirm = true;
 	}
 
@@ -258,8 +270,12 @@
 <!-- Modal: Delete Confirmation -->
 <UserManagementDeleteModal
 	open={showDeleteConfirm && !!userToDelete}
-	onclose={() => (showDeleteConfirm = false)}
+	onclose={() => {
+		showDeleteConfirm = false;
+		error = null;
+	}}
 	{userToDelete}
 	{deletingUser}
+	{error}
 	{confirmDeleteUser}
 />

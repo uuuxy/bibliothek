@@ -7,14 +7,24 @@
 	 * @property {() => void} onclose
 	 * @property {any} userToDelete
 	 * @property {boolean} deletingUser
+	 * @property {string | null} error
 	 * @property {() => void} confirmDeleteUser
 	 */
 	/** @type {Props} */
-	let { open, onclose, userToDelete, deletingUser, confirmDeleteUser } = $props();
+	let { open, onclose, userToDelete, deletingUser, error, confirmDeleteUser } = $props();
 </script>
 
 <Modal {open} {onclose} size="sm">
 		<div class="p-6 space-y-4">
+			{#if error}
+				<!-- Fachlicher Konflikt (z. B. 409: offene Handapparat-Ausleihen). Bleibt im Modal
+				     stehen, damit die handlungsleitende Meldung im Kontext sichtbar ist. -->
+				<div
+					class="p-3.5 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold leading-relaxed animate-slide-up"
+				>
+					⚠️ {error}
+				</div>
+			{/if}
 			<div
 				class="w-12 h-12 rounded-full bg-rose-50 border border-rose-150 text-rose-600 flex items-center justify-center text-xl mx-auto"
 			>
