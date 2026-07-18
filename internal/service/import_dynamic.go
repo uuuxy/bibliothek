@@ -133,7 +133,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, tite
 		return "", nil, false
 	}
 
-	isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+	isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 
 	if matchTitelID(isbn, titel, isbnToID, titelToID) != "" {
 		return "", nil, false // schon vorhanden
@@ -227,7 +227,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelT
 			continue
 		}
 
-		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 		titelID := matchTitelID(isbn, titel, isbnToID, titelToID)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
@@ -266,7 +266,7 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, isbnToID, 
 		if titel == "" || signatur == "" {
 			continue
 		}
-		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 		if id := matchTitelID(isbn, titel, isbnToID, titelToID); id != "" {
 			updates[id] = signatur
 		}
@@ -373,4 +373,20 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	}
 
 	return newTitlesCount, importedCopiesCount, nil
+}
+
+// cleanISBN entfernt Bindestriche und Leerzeichen aus einer ISBN ohne unnötige Allokationen.
+// Ersetzt verschachtelte strings.ReplaceAll Aufrufe für bessere Performance beim Massenimport.
+func cleanISBN(s string) string {
+	if !strings.ContainsAny(s, "- ") {
+		return s
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i] != '-' && s[i] != ' ' {
+			b.WriteByte(s[i])
+		}
+	}
+	return b.String()
 }
