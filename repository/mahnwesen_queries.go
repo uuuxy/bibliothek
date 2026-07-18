@@ -62,6 +62,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		JOIN schueler s         ON a.schueler_id = s.id
 		WHERE a.rueckgabe_am IS NULL
 		  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
+		  AND s.deleted_at IS NULL
 	`
 	args := []any{}
 	if klasseFilter != "" {
@@ -151,6 +152,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 		JOIN buecher_titel t    ON e.titel_id = t.id
 		JOIN schueler s         ON a.schueler_id = s.id
 		WHERE a.rueckgabe_am IS NULL
+		  AND s.deleted_at IS NULL
 		  AND (
 		      (NULLIF(regexp_replace(s.klasse, '\D', '', 'g'), '')::int > t.jahrgang_bis)
 		      OR s.ist_abgaenger = true
@@ -209,6 +211,9 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 
 // sqlUeberfaelligeByAusleiheIDs sammelt die PDF-Daten zu konkreten Ausleih-IDs.
 // rueckgabe_am IS NULL: bereits zurückgegebene Bücher gehören nicht in eine Mahnung.
+// s.deleted_at IS NULL: für einen in den Papierkorb gelöschten Schüler dürfen keine
+// Mahn-Daten mehr verarbeitet werden (DSGVO — sonst gingen "Zombie-Mahnungen" an den
+// ehemaligen Klassenlehrer).
 const sqlUeberfaelligeByAusleiheIDs = `
 	SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 	       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
@@ -219,6 +224,7 @@ const sqlUeberfaelligeByAusleiheIDs = `
 	JOIN buecher_titel t    ON e.titel_id = t.id
 	JOIN schueler s         ON a.schueler_id = s.id
 	WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
+	  AND s.deleted_at IS NULL
 	ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist
 `
 

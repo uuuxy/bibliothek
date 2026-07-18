@@ -180,8 +180,11 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 	}
 }
 
-// queryLaufzettelStudents lädt alle Abgänger inkl. etwaiger offener Ausleihen
-// (LEFT JOIN → auch Schüler ohne offene Bücher) für die Laufzettel-PDF.
+// queryLaufzettelStudents lädt die Abgänger MIT noch offenen Ausleihen für die
+// Laufzettel-PDF. Ein Laufzettel listet die zurückzugebenden Bücher — ein Abgänger ohne
+// offene Bücher braucht keinen. Deshalb INNER JOIN auf ausleihen (früher LEFT JOIN):
+// sonst erschien jeder Abgänger, und beim Massendruck von 150 Abgängern kamen 140 komplett
+// leere Laufzettel aus dem Drucker (massive Papierverschwendung).
 //
 // Filter ist ist_abgaenger — dieselbe Definition wie die übrige Abgänger-Ansicht.
 // Früher stand hier eine hartkodierte, case-sensitive Klassenliste ('9h','10r','13').
@@ -196,9 +199,9 @@ func (s *Server) queryLaufzettelStudents(ctx context.Context) ([]pdf.LaufzettelS
 		       e.barcode_id AS ex_barcode,
 		       coalesce(to_char(a.rueckgabe_frist, 'DD.MM.YYYY'), '') AS frist
 		FROM schueler s
-		LEFT JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
-		LEFT JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
+		JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = true
 		ORDER BY s.klasse, s.nachname, t.titel
 	`

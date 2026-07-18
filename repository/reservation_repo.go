@@ -24,6 +24,9 @@ type KlassensatzReservierung struct {
 // ReservationRepository kapselt die Datenbankzugriffe für Reservierungen.
 type ReservationRepository interface {
 	CheckTitleExists(ctx context.Context, titelID string) (bool, error)
+	// CountTitleStock liefert die Zahl physisch vorhandener (nicht ausgesonderter)
+	// Exemplare eines Titels — die Obergrenze für eine Klassensatz-Reservierung.
+	CountTitleStock(ctx context.Context, titelID string) (int, error)
 	CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string) (string, error)
 	GetKlassensatzReservierungen(ctx context.Context) ([]KlassensatzReservierung, error)
 	GetKlassensatzReservierungenAnzahl(ctx context.Context) (int, error)
@@ -42,6 +45,19 @@ func (r *pgReservationRepository) CheckTitleExists(ctx context.Context, titelID 
 	var exists bool
 	err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE id = $1)`, titelID).Scan(&exists)
 	return exists, err
+}
+
+// CountTitleStock zählt die physisch vorhandenen (nicht ausgesonderten) Exemplare eines
+// Titels. Eine Klassensatz-Reservierung über diese Zahl hinaus ist grundsätzlich
+// unerfüllbar (die Bibliothek besitzt die Bücher schlicht nicht) und bliebe als
+// unlösbare Aufgabe im Dashboard hängen.
+func (r *pgReservationRepository) CountTitleStock(ctx context.Context, titelID string) (int, error) {
+	var count int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM buecher_exemplare
+		WHERE titel_id = $1 AND ist_ausgesondert = false
+	`, titelID).Scan(&count)
+	return count, err
 }
 
 func (r *pgReservationRepository) CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string) (string, error) {

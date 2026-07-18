@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/apierrors"
@@ -44,6 +45,21 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 		exists, err := repo.CheckTitleExists(ctx, req.TitelID)
 		if err != nil || !exists {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
+			return
+		}
+
+		// Bestandsdeckelung: Mehr Exemplare zu reservieren, als die Bibliothek überhaupt
+		// besitzt, erzeugt eine dauerhaft unerfüllbare Aufgabe im Dashboard (Ghost-Order).
+		// Die Wunschmenge wird deshalb gegen den physischen Bestand (nicht ausgesondert)
+		// geprüft.
+		bestand, err := repo.CountTitleStock(ctx, req.TitelID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if req.Anzahl > bestand {
+			apierrors.SendHTTPError(w, http.StatusBadRequest,
+				fmt.Errorf("nur %d Exemplare im Bestand — %d können nicht reserviert werden", bestand, req.Anzahl))
 			return
 		}
 

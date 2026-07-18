@@ -44,9 +44,17 @@ func (s *Server) ExtendLoanHandler(settingsRepo repository.SystemSettingsReposit
 			extensionDays = settings.FristBuchTage
 		}
 
+		// Die Verlängerung setzt die Mahn-Eskalation zurück, SOBALD die neue Frist wieder in
+		// der Zukunft liegt. Ohne das würde ein nach der 1. Mahnung verlängertes und erneut
+		// überzogenes Buch die 1. Stufe überspringen und sofort in Stufe 2 (Rechnung)
+		// eskalieren. Bleibt die Frist trotz Verlängerung in der Vergangenheit (stark
+		// überzogene Ausleihe), bleibt die Mahnstufe erhalten — dann ist die Eskalation
+		// berechtigt weiterzuführen, nicht zurückzusetzen.
 		q := `
-			UPDATE ausleihen 
-			SET rueckgabe_frist = rueckgabe_frist + ($2 * INTERVAL '1 day')
+			UPDATE ausleihen
+			SET rueckgabe_frist = rueckgabe_frist + ($2 * INTERVAL '1 day'),
+			    mahnstufe = CASE WHEN rueckgabe_frist + ($2 * INTERVAL '1 day') > CURRENT_TIMESTAMP THEN 0 ELSE mahnstufe END,
+			    letztes_mahndatum = CASE WHEN rueckgabe_frist + ($2 * INTERVAL '1 day') > CURRENT_TIMESTAMP THEN NULL ELSE letztes_mahndatum END
 			WHERE id = $1 AND rueckgabe_am IS NULL
 			RETURNING id, rueckgabe_frist
 		`
@@ -97,9 +105,14 @@ func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		// Wie bei der regulären Verlängerung: Eine neue Frist in der Zukunft macht die
+		// Ausleihe wieder "nicht überfällig" und setzt die Mahn-Eskalation zurück. Ein
+		// vorgezogenes Datum (Rückruf) lässt die Mahnstufe unberührt.
 		q := `
-			UPDATE ausleihen 
-			SET rueckgabe_frist = $1
+			UPDATE ausleihen
+			SET rueckgabe_frist = $1,
+			    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE mahnstufe END,
+			    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE letztes_mahndatum END
 			WHERE id = $2 AND rueckgabe_am IS NULL
 			RETURNING id, rueckgabe_frist
 		`
@@ -155,9 +168,14 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 		}
 		defer db.SafeRollback(ctx, tx)
 
+		// Mass-Verlängerung setzt zugleich die Mahn-Eskalation der betroffenen Ausleihen
+		// zurück (sofern die neue Frist in der Zukunft liegt) — sonst würde ein ganzer
+		// Klassensatz nach der Verlängerung fälschlich auf der alten Mahnstufe weiterlaufen.
 		q := `
 			UPDATE ausleihen a
-			SET rueckgabe_frist = $1
+			SET rueckgabe_frist = $1,
+			    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
+			    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
 			FROM schueler s, buecher_exemplare e, buecher_titel t
 			WHERE a.schueler_id = s.id
 			  AND a.exemplar_id = e.id

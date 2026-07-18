@@ -179,8 +179,11 @@ func (s *Server) queryPopularTitles(ctx context.Context, ausleihenFilter, typeFi
 	return popularTitles
 }
 
-// queryShelfWarmers liefert die Ladenhüter (keine Ausleihe seit 2 Jahren oder nie);
-// ebenfalls best-effort mit leerer Liste bei Fehlern.
+// queryShelfWarmers liefert die Ladenhüter: entweder seit >2 Jahren nicht mehr
+// ausgeliehen, ODER noch nie ausgeliehen UND bereits seit >2 Jahren im Bestand. Der
+// Bestandsalter-Filter (MIN(e.erstellt_am)) verhindert, dass frisch gekaufte Neuzugänge
+// — nie ausgeliehen, weil brandneu — sofort auf der Aussonderungsliste landen und
+// versehentlich entsorgt werden. Best-effort mit leerer Liste bei Fehlern.
 func (s *Server) queryShelfWarmers(ctx context.Context, typeFilter string, limit int) []ShelfWarmer {
 	shelfWarmers := []ShelfWarmer{}
 	// t.id mitliefern: Es wird ohnehin danach gruppiert (eine Zeile je Titel), war aber
@@ -195,7 +198,7 @@ func (s *Server) queryShelfWarmers(ctx context.Context, typeFilter string, limit
 		WHERE 1=1 %s
 		GROUP BY t.id, t.titel, t.autor, t.isbn, t.subject, t.signatur, t.erscheinungsjahr
 		HAVING MAX(a.ausgeliehen_am) < NOW() - INTERVAL '2 years'
-		    OR MAX(a.ausgeliehen_am) IS NULL
+		    OR (MAX(a.ausgeliehen_am) IS NULL AND MIN(e.erstellt_am) < NOW() - INTERVAL '2 years')
 		ORDER BY last_loan ASC NULLS FIRST
 		LIMIT %d
 	`, typeFilter, limit)
