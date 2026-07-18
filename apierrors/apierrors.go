@@ -90,9 +90,9 @@ func Wrap(h APIHandler) http.HandlerFunc {
 				if apiErr.StatusCode >= 500 {
 					log.Printf("API Error [HTTP %d]: %v", apiErr.StatusCode, apiErr.Err)
 				}
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				w.WriteHeader(apiErr.StatusCode)
-				_ = json.NewEncoder(w).Encode(apiErr) //nolint:errcheck
+				// apiErr serialisiert exakt zu {"error": Message} (StatusCode/Err sind json:"-").
+				// writeJSONError zentralisiert diese Form, damit sie nicht von SendHTTPError abweicht.
+				writeJSONError(w, apiErr.StatusCode, apiErr.Message)
 			} else {
 				// Fallback to the existing SendHTTPError logic for generic errors
 				SendHTTPError(w, http.StatusInternalServerError, err)
@@ -106,9 +106,6 @@ func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 	if internalErr != nil {
 		log.Printf("API Error [HTTP %d]: %v (path: %s)", status, internalErr, "unknown")
 	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
 
 	// Default to status text
 	msg := http.StatusText(status)
@@ -129,6 +126,17 @@ func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 		msg = sanitizeInternalError(internalErr)
 	}
 
+	writeJSONError(w, status, msg)
+}
+
+// writeJSONError schreibt die EINE kanonische Fehlerdarstellung des API: Body {"error": msg}
+// mit passendem Status und Content-Type. Einzige Stelle, die das Wire-Format bestimmt —
+// SendHTTPError und Wrap nutzen sie beide, damit die Form nicht auseinanderläuft (der Client
+// darf sich auf genau das eine Schema verlassen). Die jeweilige Sanitisierungs-/
+// Nachrichtenpolitik bleibt bei den Aufrufern; hier wird nur serialisiert.
+func writeJSONError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg}) //nolint:errcheck
 }
 

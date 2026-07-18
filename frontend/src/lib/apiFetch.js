@@ -170,6 +170,33 @@ export const apiClient = {
 
 import { toastStore } from './stores/toastStore.svelte.js';
 
+/**
+ * Zieht die menschenlesbare Fehlermeldung aus einer fehlgeschlagenen Response.
+ * Das Backend antwortet einheitlich mit JSON `{"error": "..."}` (siehe
+ * apierrors.writeJSONError) — diese eine Stelle kapselt das Auspacken, damit nirgends mehr
+ * roher `{"error":...}`-JSON in einem Toast oder Banner landet. Fällt sauber auf Rohtext
+ * bzw. den HTTP-Status zurück, falls der Body kein solches JSON ist.
+ * @param {Response} res
+ * @returns {Promise<string>}
+ */
+export async function extractApiError(res) {
+	let body = '';
+	try {
+		body = await res.text();
+	} catch {
+		return `Fehler ${res.status}`;
+	}
+	if (!body) return `Fehler ${res.status}`;
+	try {
+		const parsed = JSON.parse(body);
+		const msg = parsed?.error ?? parsed?.message;
+		if (typeof msg === 'string' && msg.trim()) return msg;
+	} catch {
+		// kein JSON — Rohtext unten verwenden
+	}
+	return body;
+}
+
 async function handleSmartResponse(res) {
 	if (res.ok) {
 		if (res.status === 204) return null;
@@ -181,7 +208,7 @@ async function handleSmartResponse(res) {
 			return text;
 		}
 	} else {
-		const errorText = (await res.text()) || `Fehler ${res.status}`;
+		const errorText = await extractApiError(res);
 		toastStore.addToast(errorText, 'error');
 		throw new Error(errorText);
 	}

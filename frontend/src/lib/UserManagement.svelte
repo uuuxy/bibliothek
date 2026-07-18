@@ -16,7 +16,7 @@
 	import UserManagementTable from './UserManagementTable.svelte';
 	import UserManagementEditModal from './UserManagementEditModal.svelte';
 	import UserManagementDeleteModal from './UserManagementDeleteModal.svelte';
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch, extractApiError } from './apiFetch.js';
 
 	/** @type {any[]} */
 	let users = $state.raw([]);
@@ -72,7 +72,7 @@
 			if (!res.ok) {
 				if (res.status === 403)
 					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
-				throw new Error((await res.text()) || 'Fehler beim Laden der Benutzer');
+				throw new Error(await extractApiError(res));
 			}
 			users = await res.json();
 		} catch (err) {
@@ -105,8 +105,7 @@
 				body: JSON.stringify(payload)
 			});
 			if (!res.ok) {
-				const text = await res.text();
-				throw new Error(text || 'Fehler beim Speichern des Benutzers.');
+				throw new Error(await extractApiError(res));
 			}
 			showUserModal = false;
 			showToast(
@@ -127,17 +126,9 @@
 		try {
 			const res = await apiFetch(`/api/benutzer/${userToDelete.id}`, { method: 'DELETE' });
 			if (!res.ok) {
-				// Der Server antwortet als JSON ({"error": "..."}). Meldung herausziehen,
-				// sonst den Rohtext verwenden. Bei 409 (offene Handapparat-Ausleihen) trägt
-				// die Meldung bereits den Hinweis "bitte zuerst zurückbuchen".
-				const body = await res.text();
-				let msg = body;
-				try {
-					msg = JSON.parse(body)?.error || body;
-				} catch {
-					// kein JSON — Rohtext belassen
-				}
-				throw new Error(msg || 'Benutzer konnte nicht gelöscht werden.');
+				// Bei 409 (offene Handapparat-Ausleihen) trägt die Server-Meldung bereits den
+				// Hinweis "bitte zuerst zurückbuchen"; extractApiError packt sie aus dem JSON aus.
+				throw new Error(await extractApiError(res));
 			}
 			showDeleteConfirm = false;
 			userToDelete = null;
