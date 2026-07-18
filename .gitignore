@@ -21,6 +21,10 @@ uploads/
 *.local
 frontend/*.local
 
+# Lokale KI-/Tool-Konfiguration (Claude Code) — maschinenspezifische Permission-Allowlist,
+# nicht teamweit geteilt. Die eigentlichen Git-Hooks liegen in scripts/git-hooks/.
+.claude/
+
 # OS Metadata
 .DS_Store
 Thumbs.db
