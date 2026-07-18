@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -22,12 +23,46 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, records []parsedStud
 			}
 			continue
 		}
+
+		// Nicht in der Aktiven-Liste (ladeAktiveSchueler filtert ist_abgaenger = false):
+		// Es kann aber ein zurückkehrender Abgänger sein, dessen NICHT soft-gelöschte Zeile
+		// die lusd_id weiterhin hält. Ein blindes INSERT (legeNeuenSchuelerAn) kollidiert
+		// dann am partiellen Unique-Index uniq_schueler_lusd_id_active und ließe den GESAMTEN
+		// Import scheitern (SQLSTATE 23505). Solche Rückkehrer werden reaktiviert statt neu
+		// angelegt — aktualisiereBestandsschueler setzt ist_abgaenger zurück und hebt die
+		// Abgänger-Sperre auf, sofern keine Vorgänge mehr offen sind (Ghost-Block).
+		// Soft-gelöschte Zeilen (deleted_at IS NOT NULL) blockieren den Index NICHT und
+		// sollen bewusst als frischer Datensatz neu entstehen — daher hier ausgeklammert.
+		if rueckkehrerID, err := findeAktivenSchuelerNachLusdID(ctx, tx, rec.LusdID); err != nil {
+			return err
+		} else if rueckkehrerID != "" {
+			if err := aktualisiereBestandsschueler(ctx, tx, rec, rueckkehrerID); err != nil {
+				return err
+			}
+			continue
+		}
+
 		barcodeCounter++
 		if err := legeNeuenSchuelerAn(ctx, tx, rec, barcodeCounter); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// findeAktivenSchuelerNachLusdID sucht die (höchstens eine — garantiert durch den partiellen
+// Unique-Index) nicht soft-gelöschte Schülerzeile zu einer lusd_id. Leerer String, wenn keine
+// existiert. Dient dazu, einen zurückkehrenden Abgänger zu erkennen, der nicht in der
+// Aktiven-Liste steht, dessen Zeile aber die lusd_id noch belegt.
+func findeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID string) (string, error) {
+	var id string
+	err := tx.QueryRow(ctx,
+		"SELECT id FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL LIMIT 1", lusdID,
+	).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return id, err
 }
 
 // legeNeuenSchuelerAn legt einen per LUSD neu hinzugekommenen Schüler an.
