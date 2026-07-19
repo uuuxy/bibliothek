@@ -53,6 +53,8 @@ tmp/
 /*_report.txt
 /*_report.html
 /*_report.json
+/gosec.json
+frontend/lint_results.json
 *.log
 !scripts/*.sql
 
