@@ -178,10 +178,23 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 		{"frist_medien_tage", fristMedien},
 		{"max_overdue_days", maxOverdueDays},
 		{"max_overdue_items", maxOverdueItems},
+	}
+
+	// Schul-Identität (PDF-Briefkopf) getrennt behandeln: Diese Felder haben
+	// KEINE eigene UI und werden von der Allgemein-Sektion NICHT mitgesendet.
+	// Ein leerer Wert bedeutet hier "nicht angefasst", nicht "leeren". Ohne diese
+	// Guard würde jedes Speichern der Allgemein-Einstellungen die Schuladresse
+	// löschen, die in fünf PDF-Generatoren (Mahnung, Bestellbericht, Reports,
+	// Print, Orders) als Briefkopf genutzt wird.
+	for _, f := range [][2]string{
 		{"schule_name", req.SchuleName},
 		{"schule_strasse", req.SchuleStrasse},
 		{"schule_plz", req.SchulePLZ},
 		{"schule_ort", req.SchuleOrt},
+	} {
+		if f[1] != "" {
+			pairs = append(pairs, f)
+		}
 	}
 	seen := make(map[string]bool, len(pairs))
 	schluessels := make([]string, 0, len(pairs))
