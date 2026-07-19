@@ -1,5 +1,5 @@
 <script>
-	import { apiPost } from './apiFetch.js';
+	import { apiPut } from './apiFetch.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import SettingField from './components/settings/SettingField.svelte';
 
@@ -32,7 +32,7 @@
 	async function saveSettings() {
 		saving = true;
 		try {
-			await apiPost('/api/einstellungen', {
+			await apiPut('/api/einstellungen', {
 				ferien_leseclub_aktiv: ferienLeseclubAktiv,
 				ferien_leseclub_zieldatum: ferienLeseclubZieldatum || null,
 				lmf_stichtag: lmfStichtag || '07-31',
@@ -44,7 +44,7 @@
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
 		} catch {
-			// Toast already shown by apiPost
+			// Toast already shown by apiPut
 		}
 		saving = false;
 	}

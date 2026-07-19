@@ -11,7 +11,6 @@
 	import MediaCatalog from './MediaCatalog.svelte';
 	import StatsDashboard from './StatsDashboard.svelte';
 	import StudentDirectory from './StudentDirectory.svelte';
-	import PermissionManager from './PermissionManager.svelte';
 	import LehrerPortal from './LehrerPortal.svelte';
 	import Mahnwesen from './Mahnwesen.svelte';
 	import SystemSettings from './SystemSettings.svelte';
@@ -19,6 +18,27 @@
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
 	import Graduates from './Graduates.svelte';
+
+	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
+	// Map dupliziert im Routing-$effect und im popstate-Handler — dadurch wurde ein
+	// neu ergänzter Tab (lehrer_portal) in beiden Kopien vergessen, seine URL nie
+	// gesetzt/wiederhergestellt, und ein Refresh warf den Lehrer aus dem Portal.
+	/** @type {Record<string, string>} */
+	const tabToPath = {
+		settings: '/einstellungen',
+		inventory: '/inventur',
+		students_dir: '/schuelerdatei',
+		orders: '/bestellungen',
+		media_catalog: '/katalog',
+		graduates: '/abgaenger',
+		stats: '/statistiken',
+		mahnwesen: '/mahnwesen',
+		lehrer_portal: '/lehrer-portal',
+		'system-logs': '/system-logs',
+		lmf_actions: '/lmf-aktionen',
+		'druck-center': '/druck-center',
+		kiosk: '/kiosk'
+	};
 
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
@@ -44,22 +64,6 @@
 					window.history.replaceState(null, '', '/kiosk');
 				}
 			} else {
-				/** @type {Record<string, string>} */
-				const tabToPath = {
-					settings: '/einstellungen',
-					inventory: '/inventur',
-					students_dir: '/schuelerdatei',
-					orders: '/bestellungen',
-					media_catalog: '/katalog',
-					graduates: '/abgaenger',
-					stats: '/statistiken',
-					mahnwesen: '/mahnwesen',
-					'system-logs': '/system-logs',
-					lmf_actions: '/lmf-aktionen',
-					'druck-center': '/druck-center',
-					kiosk: '/kiosk'
-				};
-
 				if (!uiStore.isInitialRouteMatched && path !== '/') {
 					if (path.startsWith('/katalog/buch/')) {
 						uiStore.activeTab = 'book_detail';
@@ -98,21 +102,6 @@
 				uiStore.activeTab = 'book_detail';
 				appState.activeBookId = path.replace('/katalog/buch/', '');
 			} else {
-				/** @type {Record<string, string>} */
-				const tabToPath = {
-					settings: '/einstellungen',
-					inventory: '/inventur',
-					students_dir: '/schuelerdatei',
-					orders: '/bestellungen',
-					media_catalog: '/katalog',
-					graduates: '/abgaenger',
-					stats: '/statistiken',
-					mahnwesen: '/mahnwesen',
-					'system-logs': '/system-logs',
-					lmf_actions: '/lmf-aktionen',
-					'druck-center': '/druck-center',
-					kiosk: '/kiosk'
-				};
 				const matchedTab = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
 				if (matchedTab) uiStore.activeTab = matchedTab;
 			}
