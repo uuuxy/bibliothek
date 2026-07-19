@@ -115,6 +115,7 @@
 			if (res.ok) {
 				f.success = 'Reservierungsanfrage wurde gesendet!';
 				f.open = false;
+				reservierungForms[titelId] = { ...f };
 			} else {
 				const txt = await res.text();
 				f.error = txt || 'Fehler beim Senden.';
