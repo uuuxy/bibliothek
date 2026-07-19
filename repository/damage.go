@@ -174,6 +174,19 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 		return "", err
 	}
 
+	// Geister-Zuteilung verhindern: Wurde dieses Exemplar bei der Rückgabe gerade einem
+	// wartenden Schüler als 'abholbereit' zugewiesen und wird nun als beschädigt ausgesondert,
+	// zeigt dessen Profil ein abholbereites, aber physisch defektes Buch. Die Vormerkung
+	// zurück auf 'wartend' setzen und die Exemplar-Bindung lösen — der Schüler rückt damit für
+	// das nächste verfügbare Exemplar wieder in die Warteschlange.
+	if _, err = tx.Exec(ctx, `
+		UPDATE vormerkungen
+		SET status = 'wartend', bereitgestellt_exemplar_id = NULL, bereitgestellt_bis = NULL
+		WHERE bereitgestellt_exemplar_id = $1 AND status = 'abholbereit'
+	`, copyID); err != nil {
+		return "", err
+	}
+
 	var schadensID string
 	err = tx.QueryRow(ctx, `
 		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag)

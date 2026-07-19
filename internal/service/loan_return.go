@@ -32,6 +32,12 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 	var vID, sVorname, sNachname, sKlasse string
 	// Die älteste wartende Vormerkung eines abholberechtigten Schülers ermitteln und sperren.
 	// Die Vormerkung des gerade zurückgebenden Schülers wird ausgeschlossen ($2).
+	//
+	// FOR UPDATE OF v: NUR die vormerkungen-Zeile sperren, nicht die (nur gelesene)
+	// schueler-Zeile. Ein pauschales FOR UPDATE lockt beim JOIN auch schueler — das kann mit
+	// der Ausleih-Logik (loan_checkout.go: SELECT ... FROM schueler ... FOR UPDATE) in einen
+	// Deadlock laufen (Sperren in umgekehrter Reihenfolge). SKIP LOCKED lässt zwei zeitgleiche
+	// Rückgaben desselben Titels je die nächste freie Vormerkung greifen, statt zu blockieren.
 	err := tx.QueryRow(ctx, `
 		SELECT v.id, s.vorname, s.nachname, COALESCE(s.klasse, '')
 		FROM vormerkungen v
@@ -40,7 +46,7 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 		  AND `+schuelerAbholberechtigt+`
 		  AND ($2::uuid IS NULL OR v.schueler_id <> $2::uuid)
 		ORDER BY v.erstellt_am ASC LIMIT 1
-		FOR UPDATE
+		FOR UPDATE OF v SKIP LOCKED
 	`, copy.TitelID, returningSchuelerID).Scan(&vID, &sVorname, &sNachname, &sKlasse)
 
 	if err == nil {
@@ -106,6 +112,23 @@ func (s *defaultLoanService) HandleSimpleReturn(
 // handleLehrerHandapparat verbucht ein nicht ausgeliehenes Buch beim Lehrer-Scan als
 // Handapparat-Dauerleihe (1 Jahr Frist) und committet die Transaktion.
 func (s *defaultLoanService) handleLehrerHandapparat(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, staffID string, resp *LoanResult) (*LoanResult, error) {
+	// Auch der Handapparat-Schnellpfad muss dieselben Schranken achten wie der reguläre
+	// Checkout — sonst bucht ein versehentlicher Scan (LMF-Personal sortiert Rückläufer) ein
+	// defektes, ausgesondertes oder für einen Schüler reserviertes Exemplar kommentarlos auf
+	// die Lehrkraft, statt zu warnen ("das ist defekt" / "das gehört ins Reservierungsfach").
+	if !copy.IstAusleihbar {
+		return nil, fmt.Errorf("%w: dieses Buchexemplar ist nicht ausleihbar", ErrInvalidState)
+	}
+	if copy.IstAusgesondert {
+		return nil, fmt.Errorf("%w: dieses Buchexemplar ist ausgesondert", ErrInvalidState)
+	}
+	// Die Lehrkraft ist kein Schüler-Ausleiher → jede aktive Reservierung (abholbereit) auf
+	// dieses Exemplar ist ein Konflikt und blockiert die Handapparat-Buchung.
+	if err := s.pruefeVormerkungKonflikt(ctx, tx, copy.ID,
+		&checkoutContext{borrowerID: staffID, borrowerType: "teacher"}, false); err != nil {
+		return nil, err
+	}
+
 	dueTime := time.Now().AddDate(1, 0, 0) // 1 Jahr Leihfrist
 	loan, err := s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, staffID, staffID, dueTime, true)
 	if err != nil {

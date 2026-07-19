@@ -131,13 +131,27 @@ func ladeAktiveAusleihe(ctx context.Context, tx pgx.Tx, geraetID string) (reposi
 }
 
 // leiheGeraetAus behandelt Fall A: das freie Gerät wird an Schüler oder Lehrer ausgeliehen.
+// geraeteLeihfristTage ist die Standard-Leihfrist für Hardware (2 Wochen).
+const geraeteLeihfristTage = 14
+
+// geraeteRueckgabeFrist normalisiert die Geräte-Leihfrist auf das Tagesende (23:59:59) in der
+// Schul-Zeitzone (Europe/Berlin) — exakt wie die Buch-Fristen (loan_rules.go). Ohne diese
+// Normalisierung fiel die Frist auf die Sekunde genau N Tage später in der Server-Zeitzone
+// (im Docker-Container UTC); ein um 10:00 MESZ geliehenes Gerät wäre 08:00 UTC fällig, was
+// Mahnläufe und die "heute/morgen fällig"-Anzeige verschob.
+func geraeteRueckgabeFrist(now time.Time) time.Time {
+	d := now.In(schoolLocation()).AddDate(0, 0, geraeteLeihfristTage)
+	return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, schoolLocation())
+}
+
 func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, student *repository.Student, teacher *repository.User, staffID string) (*DeviceResult, error) {
 	if student == nil && teacher == nil {
 		return nil, fmt.Errorf("%w: Bitte scannen Sie zuerst einen Schüler- oder Lehrerausweis", ErrInvalidState)
 	}
 
-	// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen).
-	dueTime := time.Now().AddDate(0, 0, 14)
+	// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen), auf das Tagesende in der
+	// Schul-Zeitzone normalisiert (analog zu den Buch-Fristen).
+	dueTime := geraeteRueckgabeFrist(time.Now())
 	resp := &DeviceResult{}
 	var newLoanID string
 	var err error
