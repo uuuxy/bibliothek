@@ -140,8 +140,7 @@ const geraeteLeihfristTage = 14
 // (im Docker-Container UTC); ein um 10:00 MESZ geliehenes Gerät wäre 08:00 UTC fällig, was
 // Mahnläufe und die "heute/morgen fällig"-Anzeige verschob.
 func geraeteRueckgabeFrist(now time.Time) time.Time {
-	d := now.In(schoolLocation()).AddDate(0, 0, geraeteLeihfristTage)
-	return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, schoolLocation())
+	return tagesEndeInSchulzeitzone(now.In(schoolLocation()).AddDate(0, 0, geraeteLeihfristTage))
 }
 
 func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, student *repository.Student, teacher *repository.User, staffID string) (*DeviceResult, error) {

@@ -5,6 +5,20 @@ import (
 	"time"
 )
 
+// TestTagesEndeInSchulzeitzone deckt die EINE zentrale Frist-Normalisierung ab, über die
+// alle Fristen (Bücher, Medien, Geräte, Handapparat) laufen: Ende des Berliner Kalendertags
+// (23:59:59), korrekt über die UTC-/Berlin-Tagesgrenze hinweg.
+func TestTagesEndeInSchulzeitzone(t *testing.T) {
+	loc := schoolLocation()
+	// 2026-06-10 22:30 UTC entspricht 2026-06-11 00:30 MESZ → Berliner Kalendertag ist der 11.
+	in := time.Date(2026, time.June, 10, 22, 30, 0, 0, time.UTC)
+	got := tagesEndeInSchulzeitzone(in)
+	want := time.Date(2026, time.June, 11, 23, 59, 59, 0, loc)
+	if !got.Equal(want) {
+		t.Errorf("got %s, want %s", got.In(loc), want)
+	}
+}
+
 // TestGeraeteRueckgabeFrist_TagesendeSchulzeitzone sichert #4 ab: Die Geräte-Leihfrist muss —
 // wie die Buch-Fristen — auf das Tagesende in der Schul-Zeitzone (Europe/Berlin) fallen, nicht
 // auf die sekundengenaue Server-Zeit (UTC). Ein um 10:00 MESZ geliehenes Gerät war sonst

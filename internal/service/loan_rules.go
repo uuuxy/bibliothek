@@ -34,6 +34,19 @@ func schoolLocation() *time.Location {
 	return schoolLoc
 }
 
+// tagesEndeInSchulzeitzone normalisiert einen Zeitpunkt auf das Ende seines Kalendertags
+// (23:59:59) in der Schul-Zeitzone (Europe/Berlin). Dies ist die EINZIGE Definition von
+// "Ende des Tages" im System: JEDE Rückgabefrist (reguläre Bücher, Medien, LMF-Stichtag,
+// Geräte, Handapparat/Lehrer-Dauerleihe) läuft hierüber. Damit fällt die Fälligkeit immer
+// deterministisch auf den Kalendertag — unabhängig von der Server-Zeitzone (Docker = UTC) —
+// und es gibt keine zweite, rohe Berechnungsmethode mehr, die bei künftigen Änderungen
+// (z. B. kürzere Handapparat-Frist) auf die Füße fällt.
+func tagesEndeInSchulzeitzone(t time.Time) time.Time {
+	loc := schoolLocation()
+	d := t.In(loc)
+	return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, loc)
+}
+
 // SystemEinstellungen repräsentiert die Konfigurationsparameter des Ausleihsystems,
 // die in der Datenbanktabelle `system_einstellungen` verwaltet werden.
 type SystemEinstellungen struct {
@@ -166,8 +179,8 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 				day = d
 			}
 		}
-		// Rückgabezeitpunkt auf das Ende des Stichtags (23:59:59 Uhr) setzen
-		return time.Date(year, month, day, 23, 59, 59, 0, now.Location())
+		// Rückgabezeitpunkt auf das Ende des Stichtags (23:59:59 Uhr) setzen.
+		return tagesEndeInSchulzeitzone(time.Date(year, month, day, 12, 0, 0, 0, now.Location()))
 	}
 
 	// 2. Fall: Audiovisuelle/Digitale Medien
@@ -175,12 +188,12 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 	// eine verkürzte Ausleihfrist (fristMedienTage).
 	lower := strings.ToLower(medientyp)
 	if strings.Contains(lower, "cd") || strings.Contains(lower, "dvd") || strings.Contains(lower, "audio") {
-		return now.AddDate(0, 0, fristMedienTage)
+		return tagesEndeInSchulzeitzone(now.AddDate(0, 0, fristMedienTage))
 	}
 
 	// 3. Fall: Reguläre Bücher
 	// Standardleihfrist für normale Buchbestände (fristBuchTage).
-	return now.AddDate(0, 0, fristBuchTage)
+	return tagesEndeInSchulzeitzone(now.AddDate(0, 0, fristBuchTage))
 }
 
 // parseGrade extrahiert den Jahrgang aus dem Klassen-String.

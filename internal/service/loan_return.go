@@ -129,7 +129,9 @@ func (s *defaultLoanService) handleLehrerHandapparat(ctx context.Context, tx pgx
 		return nil, err
 	}
 
-	dueTime := time.Now().AddDate(1, 0, 0) // 1 Jahr Leihfrist
+	// 1 Jahr Dauerleihe, auf das Tagesende in der Schul-Zeitzone normalisiert — einheitlich
+	// mit allen anderen Fristen (kein rohes AddDate mehr).
+	dueTime := tagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
 	loan, err := s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, staffID, staffID, dueTime, true)
 	if err != nil {
 		return nil, err

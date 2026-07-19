@@ -159,10 +159,14 @@ func TestResolveTeacher_AktiveLehrkraftBekommtJahresfrist(t *testing.T) {
 	if chkCtx.borrowerType != "teacher" || chkCtx.borrowerID != "l1" {
 		t.Errorf("erwartete teacher/l1, bekam %q/%q", chkCtx.borrowerType, chkCtx.borrowerID)
 	}
-	// Handapparat: Dauerleihgabe über ein Jahr (nicht die Schüler-Frist).
-	erwartet := time.Now().AddDate(1, 0, 0)
-	if diff := chkCtx.dueTime.Sub(erwartet); diff > time.Minute || diff < -time.Minute {
-		t.Errorf("Leihfrist soll ~1 Jahr betragen, bekam %v (erwartet ~%v)", chkCtx.dueTime, erwartet)
+	// Handapparat: Dauerleihgabe über ein Jahr (nicht die Schüler-Frist), auf das Tagesende
+	// der Schul-Zeitzone normalisiert — einheitlich mit allen anderen Fristen.
+	erwarteterTag := time.Now().In(schoolLocation()).AddDate(1, 0, 0)
+	if !sameDay(chkCtx.dueTime, erwarteterTag) {
+		t.Errorf("Leihfrist soll ~1 Jahr betragen, bekam %v (erwarteter Tag ~%v)", chkCtx.dueTime, erwarteterTag)
+	}
+	if h, m, sec := chkCtx.dueTime.In(schoolLocation()).Clock(); h != 23 || m != 59 || sec != 59 {
+		t.Errorf("Frist soll auf das Tagesende (23:59:59) fallen, bekam %02d:%02d:%02d", h, m, sec)
 	}
 }
 
