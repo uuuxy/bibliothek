@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/isbnutil"
 	"context"
 	"fmt"
 	"io"
@@ -47,8 +48,8 @@ func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn strin
 	var fehler error
 
 	// ISBN von Strichen und Leerzeichen befreien
-	saubereIsbn := strings.ReplaceAll(isbn, "-", "")
-	saubereIsbn = strings.ReplaceAll(saubereIsbn, " ", "")
+	saubereIsbn := isbnutil.Clean(isbn)
+	// removed duplicate space cleaning handled by isbnutil.Clean
 
 	// SSRF und Argument Injection Schutz: Nur gültige ISBN-Zeichenfolgen zulassen
 	// ⚡ Bolt: Using validiereISBN() which utilizes a pre-compiled regex instead of regexp.MatchString
@@ -152,7 +153,7 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	if fehler != nil {
 		return nil, fehler
 	}
-	defer func() { _ = antwort.Body.Close() }()  //nolint:errcheck
+	defer func() { _ = antwort.Body.Close() }() //nolint:errcheck
 	if antwort.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("status %d", antwort.StatusCode)
 	}

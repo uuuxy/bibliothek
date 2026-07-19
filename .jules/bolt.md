@@ -13,3 +13,6 @@
 ## 2026-07-15 - [Efficient string template replacements]
 **Learning:** Found sequential `strings.ReplaceAll` calls inside `api/reports_pdf.go` used to inject dynamic data (like Vorname, Nachname) into PDF text templates. This leads to unnecessary intermediate allocations and increased GC pressure, especially when generating bulk PDFs.
 **Action:** Replaced sequential `strings.ReplaceAll` calls with a single `strings.NewReplacer` which is highly optimized for multi-string replacement in a single pass.
+## 2026-07-28 - [High-performance ISBN cleaning]
+**Learning:** Found multiple instances where ISBNs were cleaned using sequential `strings.ReplaceAll(..., "-", "")` calls to remove hyphens and spaces. This is highly inefficient because it allocates new memory for every replacement pass, adding significant garbage collection pressure during bulk operations (like importing catalogs or fetching metadata).
+**Action:** Replaced these calls with a single-pass implementation in `pkg/isbnutil` that pre-counts the required characters. If the string is already clean, it returns the original string (0 allocations). Otherwise, it allocates an exactly-sized byte slice once and populates it. This pattern should be consistently preferred over multiple `strings.ReplaceAll` calls when filtering out specific ASCII characters.

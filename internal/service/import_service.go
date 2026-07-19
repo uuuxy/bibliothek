@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bibliothek/pkg/isbnutil"
 	"context"
 	"encoding/xml"
 	"errors"
@@ -116,7 +117,7 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 		case "425":
 			f.jahrStr = val
 		case "540":
-			f.isbn = strings.ReplaceAll(strings.ReplaceAll(val, "-", ""), " ", "")
+			f.isbn = isbnutil.Clean(val)
 		case "700":
 			if feld.Reihung == "1" {
 				f.signatur = val

@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/isbnutil"
 	"bytes"
 	"context"
 	"encoding/xml"
@@ -281,8 +282,8 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 		return nil, nil
 	}
 
-	cleanQuery := strings.ReplaceAll(trimmed, "-", "")
-	cleanQuery = strings.ReplaceAll(cleanQuery, " ", "")
+	cleanQuery := isbnutil.Clean(trimmed)
+	// removed duplicate space cleaning handled by isbnutil.Clean
 	var sruQuery string
 	if validiereISBN(cleanQuery) {
 		sruQuery = "NUM=" + cleanQuery
