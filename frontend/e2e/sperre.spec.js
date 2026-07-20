@@ -21,7 +21,7 @@ async function openBlockedStudent(page, suffix) {
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 	const { id: studentId } = await created.json();
 
-	const locked = await apiPatch(page, `/api/admin/students/${studentId}/lock`, { is_locked: true });
+	const locked = await apiPatch(page, `/api/admin/students/${studentId}/lock`, { is_locked: true, reason: 'E2E Test Sperre' });
 	expect(locked.ok(), `Sperren: ${locked.status()}`).toBeTruthy();
 
 	// Ausleihbares Buch-Exemplar seeden (kein einfacher API-Weg vorhanden)
