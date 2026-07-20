@@ -72,7 +72,6 @@ export const menuGroups = [
 		name: 'Bibliothek',
 		items: [
 			{ id: 'media_catalog', label: 'Medienkatalog', icon: 'catalog', permission: 'view_books' },
-			{ id: 'lmf_actions', label: 'LMF-Aktionen', icon: 'clock', permission: 'manage_inventory' },
 			{ id: 'druck-center', label: 'Druck-Center', icon: 'printer', permission: 'edit_books' }
 		]
 	},
@@ -83,7 +82,8 @@ export const menuGroups = [
 			{ id: 'schulklassen', label: 'Schulklassen', icon: 'identification', permission: 'edit_books' },
 			{ id: 'graduates', label: 'Abgänger', icon: 'academic-cap', permission: 'view_graduates' },
 			{ id: 'orders', label: 'Bestellungen', icon: 'shopping-bag', permission: 'view_orders' },
-			{ id: 'inventory', label: 'Inventur', icon: 'clipboard', permission: 'inventory_scan' }
+			{ id: 'inventory', label: 'Inventur', icon: 'clipboard', permission: 'inventory_scan' },
+			{ id: 'lmf_actions', label: 'LMF-Aktionen', icon: 'clock', permission: 'manage_inventory' }
 		]
 	},
 	{

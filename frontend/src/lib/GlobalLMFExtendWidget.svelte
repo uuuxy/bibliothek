@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import { onMount } from 'svelte';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -7,6 +8,23 @@
 	let neuesDatum = $state('');
 	/** @type {boolean} */
 	let isExtending = $state(false);
+	/** @type {string[]} Vorschläge für das Klassenfeld (freies Tippen bleibt möglich) */
+	let klassenVorschlaege = $state([]);
+
+	onMount(async () => {
+		// Echte Schüler-Klassen als Vorschläge (GET /api/klassen liefert DISTINCT klasse).
+		// Rein optional: schlägt der Abruf fehl (z. B. fehlendes view_students-Recht),
+		// tippt man den Klassennamen einfach frei ein.
+		try {
+			const res = await apiFetch('/api/klassen', { credentials: 'include' });
+			if (res.ok) {
+				const data = await res.json();
+				klassenVorschlaege = Array.isArray(data) ? data : [];
+			}
+		} catch {
+			/* Vorschläge sind optional */
+		}
+	});
 
 	async function handleGlobalExtend() {
 		if (!klasse.trim() || !neuesDatum) {
@@ -61,10 +79,16 @@
 			<input
 				id="extendKlasse"
 				type="text"
+				list="lmf-klassen-vorschlaege"
 				bind:value={klasse}
 				placeholder="10b"
 				class="w-32 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
 			/>
+			<datalist id="lmf-klassen-vorschlaege">
+				{#each klassenVorschlaege as k (k)}
+					<option value={k}></option>
+				{/each}
+			</datalist>
 		</div>
 
 		<div>
