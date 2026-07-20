@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/pkg/csvutil"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -133,7 +135,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, tite
 		return "", nil, false
 	}
 
-	isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+	isbn := csvutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
 
 	if matchTitelID(isbn, titel, isbnToID, titelToID) != "" {
 		return "", nil, false // schon vorhanden
@@ -227,7 +229,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelT
 			continue
 		}
 
-		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+		isbn := csvutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
 		titelID := matchTitelID(isbn, titel, isbnToID, titelToID)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
@@ -266,7 +268,7 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, isbnToID, 
 		if titel == "" || signatur == "" {
 			continue
 		}
-		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+		isbn := csvutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
 		if id := matchTitelID(isbn, titel, isbnToID, titelToID); id != "" {
 			updates[id] = signatur
 		}

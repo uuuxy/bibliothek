@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/csvutil"
 	"regexp"
 	"strings"
 )
@@ -11,8 +12,7 @@ var isbnRegex = regexp.MustCompile(`^[0-9]{9,13}[0-9xX]?$`)
 // validiereISBN prüft, ob die ISBN ein gültiges Format hat.
 // Akzeptiert ISBN-10 und ISBN-13 (mit und ohne Bindestriche/Leerzeichen).
 func validiereISBN(isbn string) bool {
-	sauber := strings.ReplaceAll(isbn, "-", "")
-	sauber = strings.ReplaceAll(sauber, " ", "")
+	sauber := csvutil.CleanISBN(isbn)
 	sauber = strings.TrimSpace(sauber)
 
 	if len(sauber) < 10 || len(sauber) > 13 {

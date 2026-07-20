@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/csvutil"
 	"bytes"
 	"context"
 	"encoding/xml"
@@ -281,8 +282,7 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 		return nil, nil
 	}
 
-	cleanQuery := strings.ReplaceAll(trimmed, "-", "")
-	cleanQuery = strings.ReplaceAll(cleanQuery, " ", "")
+	cleanQuery := csvutil.CleanISBN(trimmed)
 	var sruQuery string
 	if validiereISBN(cleanQuery) {
 		sruQuery = "NUM=" + cleanQuery

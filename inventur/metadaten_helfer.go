@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/csvutil"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,7 +24,7 @@ func konvertiereISBN10zu13(isbn string) string {
 	}
 
 	if idx != 10 {
-		return strings.ReplaceAll(isbn, "-", "")
+		return csvutil.CleanISBN(isbn)
 	}
 
 	summe := 38 // 9*1 + 7*3 + 8*1

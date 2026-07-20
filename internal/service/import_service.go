@@ -12,6 +12,8 @@ import (
 	"bibliothek/db"
 	"bibliothek/repository"
 
+	"bibliothek/pkg/csvutil"
+
 	"golang.org/x/net/html/charset"
 )
 
@@ -116,7 +118,7 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 		case "425":
 			f.jahrStr = val
 		case "540":
-			f.isbn = strings.ReplaceAll(strings.ReplaceAll(val, "-", ""), " ", "")
+			f.isbn = csvutil.CleanISBN(val)
 		case "700":
 			if feld.Reihung == "1" {
 				f.signatur = val
