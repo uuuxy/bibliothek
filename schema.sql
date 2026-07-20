@@ -288,6 +288,19 @@ Bitte hole das Buch bis zum {{.Frist}} ab, da es ansonsten an den nächsten Sch�
 
 Viele Grüße,
 Deine Schulbibliothek'
+),
+(
+    'BESTELLUNG_HAENDLER',
+    'Buchbestellung Schulbibliothek - {{.Datum}} (Kundennummer {{.Kundennummer}})',
+    'Sehr geehrte Damen und Herren,
+
+anbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.
+
+Bestellte Titel: {{.AnzahlTitel}}
+Gesamtanzahl Exemplare: {{.AnzahlExemplare}}
+
+Mit freundlichen Grüßen,
+Schulbibliothek'
 )
 ON CONFLICT (typ) DO NOTHING;
 
@@ -665,7 +678,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('048_schueler_gebdatum_dup.sql'),
 ('049_schueler_barcode_partial_unique.sql'),
 ('050_search_vector_isbn_beschreibung.sql'),
-('051_manual_block_reason_pflicht.sql')
+('051_manual_block_reason_pflicht.sql'),
+('052_seed_bestellung_haendler.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

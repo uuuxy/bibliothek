@@ -1,12 +1,15 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -76,7 +79,10 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			Ort:     settings.SchuleOrt,
 		}
 
-		if err := pdfSvc.DispatchOrderEmail(res.SupplierName, res.SupplierEmail, res.CustomerNumber, res.SummaryItems, res.Labels, anyBarcodesGenerated, schule); err != nil {
+		betreff, textBody := s.loadBestellTemplate(ctx)
+		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels))
+
+		if err := pdfSvc.DispatchOrderEmail(res.SupplierEmail, subject, body, res.SummaryItems, res.Labels, anyBarcodesGenerated, schule); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
 				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
@@ -120,6 +126,35 @@ func hatVorabBarcodes(items []OrderItemRequest) bool {
 		}
 	}
 	return false
+}
+
+// bestellMailFallback* ist der Standardtext, falls die Vorlage BESTELLUNG_HAENDLER
+// fehlt oder ein Feld leer ist — so bleibt der Bestellversand immer versandfähig
+// (identisch zum früher hartkodierten Text in pdf_service.go).
+const (
+	bestellMailFallbackBetreff = "Buchbestellung Schulbibliothek - {{.Datum}} (Kundennummer {{.Kundennummer}})"
+	bestellMailFallbackBody    = "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nBestellte Titel: {{.AnzahlTitel}}\nGesamtanzahl Exemplare: {{.AnzahlExemplare}}\n\nMit freundlichen Grüßen,\nSchulbibliothek"
+)
+
+// loadBestellTemplate lädt die Händler-Bestellvorlage aus der Datenbank; fehlt sie
+// oder ist ein Feld leer, greift der hartkodierte Fallback.
+func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody string) {
+	err := s.DB.Pool.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = 'BESTELLUNG_HAENDLER'").Scan(&betreff, &textBody)
+	if err != nil || betreff == "" || textBody == "" {
+		return bestellMailFallbackBetreff, bestellMailFallbackBody
+	}
+	return betreff, textBody
+}
+
+// resolveBestellMail ersetzt die Platzhalter der Bestellvorlage in Betreff und Text.
+func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int) (subject, body string) {
+	replacer := strings.NewReplacer(
+		"{{.Datum}}", time.Now().Format(dateFormatDE),
+		"{{.Kundennummer}}", kundennummer,
+		"{{.AnzahlTitel}}", strconv.Itoa(anzahlTitel),
+		"{{.AnzahlExemplare}}", strconv.Itoa(anzahlExemplare),
+	)
+	return replacer.Replace(betreff), replacer.Replace(textBody)
 }
 
 // GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,

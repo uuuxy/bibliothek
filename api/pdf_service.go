@@ -17,8 +17,10 @@ func NewPDFService() *PDFService {
 }
 
 // DispatchOrderEmail generates the necessary PDFs and sends the order email to the supplier.
+// Betreff (subject) und Text (body) werden vom Aufrufer bereits aus der Vorlage
+// BESTELLUNG_HAENDLER aufgelöst übergeben, damit dieser Service DB-frei bleibt.
 func (s *PDFService) DispatchOrderEmail(
-	supplierName, supplierEmail, customerNumber string,
+	supplierEmail, subject, body string,
 	summaryItems []OrderedItem,
 	labels []BarcodeLabelDetail,
 	generateBarcodes bool,
@@ -41,14 +43,6 @@ func (s *PDFService) DispatchOrderEmail(
 			return err
 		}
 	}
-
-	emailBody := fmt.Sprintf(
-		"Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom %s (Kundennummer: %s) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nBestellte Titel: %d\nGesamtanzahl Exemplare: %d\n\nMit freundlichen Grüßen,\nSchulbibliothek",
-		time.Now().Format("02.01.2006"),
-		customerNumber,
-		len(summaryItems),
-		len(labels),
-	)
 
 	attachments := []MailAttachment{
 		{
@@ -73,8 +67,8 @@ func (s *PDFService) DispatchOrderEmail(
 
 	mailReq := MailRequest{
 		To:          supplierEmail,
-		Subject:     fmt.Sprintf("Buchbestellung Schulbibliothek - %s (Kundennummer %s)", time.Now().Format("02.01.2006"), customerNumber),
-		Body:        emailBody,
+		Subject:     subject,
+		Body:        body,
 		Attachments: attachments,
 	}
 
