@@ -12,10 +12,12 @@
 	 *   onCreateNew: () => void,
 	 *   onScan: () => void,
 	 *   onDelete: (ids: string[]) => void,
+	 *   onAssignClass: (ids: string[]) => void,
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let { books, loading, onOpenDetail, onCreateNew, onScan, onDelete, onRetryCovers } = $props();
+	let { books, loading, onOpenDetail, onCreateNew, onScan, onDelete, onAssignClass, onRetryCovers } =
+		$props();
 
 	/** @type {string[]} */
 	let selectedIds = $state([]);
@@ -58,6 +60,12 @@
 	function handleDelete() {
 		onDelete(selectedIds);
 		selectedIds = [];
+	}
+
+	function handleAssignClass() {
+		// Auswahl bleibt bestehen, bis der Dialog abgeschlossen/abgebrochen ist —
+		// der Picker hält die IDs bereits über seine Prop.
+		onAssignClass(selectedIds);
 	}
 
 	/**
@@ -154,6 +162,7 @@
 		booksLength={books.length}
 		selectedCount={selectedIds.length}
 		onDelete={handleDelete}
+		onAssignClass={handleAssignClass}
 		{onScan}
 		{onCreateNew}
 		{onRetryCovers}

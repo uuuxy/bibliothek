@@ -11,6 +11,7 @@
 	import MediaCatalog from './MediaCatalog.svelte';
 	import StatsDashboard from './StatsDashboard.svelte';
 	import StudentDirectory from './StudentDirectory.svelte';
+	import Schulklassen from './Schulklassen.svelte';
 	import LehrerPortal from './LehrerPortal.svelte';
 	import Mahnwesen from './Mahnwesen.svelte';
 	import SystemSettings from './SystemSettings.svelte';
@@ -28,6 +29,7 @@
 		settings: '/einstellungen',
 		inventory: '/inventur',
 		students_dir: '/schuelerdatei',
+		schulklassen: '/schulklassen',
 		orders: '/bestellungen',
 		media_catalog: '/katalog',
 		graduates: '/abgaenger',
@@ -142,6 +144,8 @@
 		</div>
 	{:else if uiStore.activeTab === 'graduates'}
 		<div class="w-full animate-fade-in"><Graduates /></div>
+	{:else if uiStore.activeTab === 'schulklassen'}
+		<div class="w-full animate-fade-in"><Schulklassen /></div>
 	{:else if uiStore.activeTab === 'mahnwesen'}
 		<div class="w-full animate-fade-in"><Mahnwesen /></div>
 	{:else if uiStore.activeTab === 'lehrer_portal'}
