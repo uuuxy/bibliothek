@@ -105,7 +105,6 @@
 									<button
 										onclick={() => (systemOpen = !systemOpen)}
 										aria-expanded={systemOpen}
-
 										class="w-full flex items-center justify-between px-3 mb-2 text-left cursor-pointer group/sys"
 									>
 										<span
