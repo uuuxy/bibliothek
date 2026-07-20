@@ -1,22 +1,22 @@
-# Installation Guide
+# Installationsanweisung
 
-This documentation describes the environment variables and dependencies required to operate the library system.
+Diese Dokumentation beschreibt die Umgebungsvariablen und Abhängigkeiten, die für den Betrieb des Bibliothek-Systems erforderlich sind.
 
-## Dependencies
+## Abhängigkeiten
 
 - **Go:** >= 1.26.4
 - **PostgreSQL:** >= 15
-- **Node.js:** >= 20 (for the Svelte 5 frontend build process)
+- **Node.js:** >= 20 (für den Build-Prozess des Svelte 5 Frontends)
 
-## Environment Variables (ENVs)
+## Umgebungsvariablen (ENVs)
 
-The application is configured strictly via environment variables. For local operation, a `.env` file can be created in the main directory.
+Die Konfiguration der Applikation erfolgt strikt über Umgebungsvariablen. Für den lokalen Betrieb kann eine `.env`-Datei im Hauptverzeichnis angelegt werden.
 
-| Variable | Data Type | Description |
+| Variable | Datentyp | Beschreibung |
 |---|---|---|
-| `PORT` | Integer / String | Defines the port on which the HTTP server listens (e.g., `8081`). |
-| `COOKIE_SECURE` | Boolean | Controls the `Secure` flag of HTTP cookies (`true` in production for HTTPS). |
-| `DATABASE_URL` | String | Complete PostgreSQL Connection String (e.g., `postgres://user:pass@host:port/dbname`). |
-| `JWT_SECRET` | String | Symmetric cryptographic key for JSON Web Token signature (minimum 32 characters). |
-| `INITIAL_ADMIN_EMAIL` | String | Email address for the primary system administrator (only relevant for initial bootstrapping of an empty database). |
-| `INITIAL_ADMIN_PASSWORD` | String | Plaintext password for the primary system administrator (will be cryptographically hashed upon creation). |
+| `PORT` | Integer / String | Definiert den Port, auf dem der HTTP-Server lauscht (z.B. `8081`). |
+| `COOKIE_SECURE` | Boolean | Steuert das `Secure`-Flag der HTTP-Cookies (`true` im Produktivbetrieb für HTTPS). |
+| `DATABASE_URL` | String | Vollständiger PostgreSQL Connection String (z.B. `postgres://user:pass@host:port/dbname`). |
+| `JWT_SECRET` | String | Symmetrischer kryptografischer Schlüssel für die Signatur der JSON Web Tokens (mindestens 32 Zeichen). |
+| `INITIAL_ADMIN_EMAIL` | String | E-Mail-Adresse für den primären Systemadministrator (nur relevant beim initialen Bootstrapping einer leeren Datenbank). |
+| `INITIAL_ADMIN_PASSWORD` | String | Klartext-Passwort für den primären Systemadministrator (wird bei der Erstellung kryptografisch gehasht). |

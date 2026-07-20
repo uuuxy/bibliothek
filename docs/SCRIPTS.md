@@ -1,86 +1,86 @@
-# Command Line Scripts and Tools
+# Kommandozeilen-Skripte und Werkzeuge
 
 ---
 
-## 1. LITTERA Import (`cmd/littera_migration`)
+## 1. LITTERA-Import (`cmd/littera_migration`)
 
-Migrates legacy data from LITTERA exports into the new database structure.
+Migriert Altbestände aus LITTERA-Exporten in die neue Datenbankstruktur.
 
-- **Operation:** Processes CSV dumps of the LITTERA software (title information + barcodes of physical copies).
-- **Build Tag:** Requires `unixODBC`. The default build excludes this tool — no ODBC required on the server:
+- **Funktionsweise:** Verarbeitet CSV-Dumps der LITTERA-Software (Titelinformationen + Barcodes physischer Exemplare).
+- **Build-Tag:** Benötigt `unixODBC`. Standard-Build schließt dieses Tool aus — kein ODBC auf dem Server nötig:
   ```bash
   go build -tags odbc ./cmd/littera_migration/...
   ```
-- **Architecture:** Transactional import — book titles (`buecher_titel`) and copies (`buecher_exemplare`) are created atomically.
+- **Architektur:** Transaktionaler Import — Buchtitel (`buecher_titel`) und Exemplare (`buecher_exemplare`) werden atomar angelegt.
 
 ---
 
-## 2. Photo Migration (`cmd/migrate-fotos`)
+## 2. Foto-Migration (`cmd/migrate-fotos`)
 
-Migrates unencrypted image files from the filesystem into the database.
+Migriert unverschlüsselte Bilddateien vom Dateisystem in die Datenbank.
 
-- **Operation:** Iterates over a directory containing student photos, validates and encrypts them (AES-256-GCM), and stores them as `BYTEA` in `schueler_fotos`.
-- **Purpose:** Consolidation of the infrastructure (no separate photo directory) + data security.
+- **Funktionsweise:** Iteriert über ein Verzeichnis mit Schülerfotos, validiert und verschlüsselt diese (AES-256-GCM), speichert sie als `BYTEA` in `schueler_fotos`.
+- **Zweck:** Konsolidierung der Infrastruktur (kein separates Foto-Verzeichnis) + Datensicherheit.
 
 ---
 
-## 3. Database Backup (`scripts/backup.sh` / `jobs/backup.go`)
+## 3. Datenbank-Backup (`scripts/backup.sh` / `jobs/backup.go`)
 
-Periodic database backups.
+Periodische Datenbank-Backups.
 
-- **Manual:** `./scripts/backup.sh`
-- **Automatic:** Daily at 02:30 AM via internal scheduler (`jobs/cron.go`)
-- **Pipeline:** `pg_dump → gzip → AES-GCM encryption (random nonce) → 0600 on disk`
-- **Rotation:** Oldest files are deleted after the retention window expires.
+- **Manuell:** `./scripts/backup.sh`
+- **Automatisch:** Täglich 02:30 Uhr via internem Scheduler (`jobs/cron.go`)
+- **Pipeline:** `pg_dump → gzip → AES-GCM-Verschlüsselung (Zufalls-Nonce) → 0600 auf Disk`
+- **Rotation:** Älteste Dateien werden nach Ablauf des Aufbewahrungsfensters gelöscht.
 
 ---
 
 ## 4. Deployment (`scripts/deploy.sh`)
 
-Automates production deployment on the Hetzner server.
+Automatisiert das Produktions-Deployment auf dem Hetzner-Server.
 
 ```bash
 ./scripts/deploy.sh
 ```
 
-Executes:
-1. `git pull` (fetch latest state)
-2. `docker compose up -d --build` (rebuild containers, zero-downtime for other services)
-3. Checks if Caddy configuration contains the domain block, appends it if necessary
+Führt aus:
+1. `git pull` (aktuellsten Stand ziehen)
+2. `docker compose up -d --build` (Container neu bauen, Zero-Downtime für andere Dienste)
+3. Prüft ob Caddy-Konfiguration den Domain-Block enthält, hängt ihn ggf. an
 
 ---
 
-## 5. Concurrency Load Test (`cmd/stresstest`)
+## 5. Concurrency-Lasttest (`cmd/stresstest`)
 
-Simulates race conditions for parallel barcode scans.
+Simuliert Race Conditions für parallele Barcode-Scans.
 
 ```bash
 go run cmd/stresstest/main.go -port 8084
 ```
 
-- Fires dozens of simultaneous requests against `/api/action` via `sync.Cond` + goroutines
-- Purpose: Verification of transaction safety (FOR UPDATE + Unique Partial Index)
+- Feuert via `sync.Cond` + Goroutinen zeitgleich Dutzende Requests gegen `/api/action`
+- Zweck: Verifikation der Transaktionssicherheit (FOR UPDATE + Unique Partial Index)
 
 ---
 
-## 6. Package Utilities (`pkg/`)
+## 6. Paket-Utilities (`pkg/`)
 
 ### `pkg/csvutil`
-CSV Formula Injection protection (OWASP CWE-1236):
+CSV-Formel-Injection-Schutz (OWASP CWE-1236):
 ```go
 import "bibliothek/pkg/csvutil"
 
 safeRow := csvutil.SanitizeRow([]string{titel, autor, ...})
 ```
-Prefixes cells starting with `= + - @ \t \r \n` with an apostrophe.
+Setzt Apostroph-Präfix bei Zellen die mit `= + - @ \t \r \n` beginnen.
 
 ### `pkg/imageutil`
-Decompression Bomb Guard:
+Decompression-Bomb-Guard:
 ```go
 import "bibliothek/pkg/imageutil"
 
 if err := imageutil.GuardImageDimensions(r.Body, 50_000_000); err != nil {
-    // Image too large or invalid
+    // Bild zu groß oder ungültig
 }
 ```
-Reads only the image header (`image.DecodeConfig`) — without full RAM allocation. Limit: 50 Megapixels.
+Liest nur den Bild-Header (`image.DecodeConfig`) — ohne volle RAM-Allokation. Limit: 50 Megapixel.

@@ -1,39 +1,39 @@
-# System Architecture & Technical Concepts
+# Systemarchitektur & technische Konzepte
 
-> Last updated: 2026-06-24
+> Zuletzt aktualisiert: 2026-06-24
 
 ---
 
-## Layered Architecture (Go Backend)
+## Schichtenarchitektur (Go Backend)
 
 ```
 HTTP Request
      │
      ▼
 ┌─────────────────────────────────────┐
-│  Middleware Chain (api/)            │
-│  Rate Limiter → Auth (JWT) →        │
-│  CSRF → RBAC → Security Header      │
+│  Middleware-Kette (api/)            │
+│  Rate-Limiter → Auth (JWT) →        │
+│  CSRF → RBAC → Security-Header      │
 └─────────────────┬───────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────┐
 │  Handler / Router (api/)            │
-│  HTTP Parsing, Validation,          │
-│  JSON Response                      │
+│  HTTP-Parsing, Validierung,         │
+│  JSON-Response                      │
 └─────────────────┬───────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────┐
-│  Service Layer (internal/service)   │
-│  Business Logic, Orchestration,     │
-│  PDF, E-Mail, Event Dispatch        │
+│  Service-Schicht (internal/service) │
+│  Geschäftslogik, Orchestrierung,    │
+│  PDF, E-Mail, Event-Dispatch        │
 └─────────────────┬───────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────┐
-│  Repository Layer (repository/)     │
-│  SQL, pgx/v5, Mapping → Go Structs  │
+│  Repository-Schicht (repository/)   │
+│  SQL, pgx/v5, Mapping → Go-Structs  │
 └─────────────────┬───────────────────┘
                   │
                   ▼
@@ -42,17 +42,17 @@ HTTP Request
 
 ---
 
-## ⚡ Concurrency Model (8-PC Load Distribution)
+## ⚡ Concurrency-Modell (8-PC-Lastverteilung)
 
-Up to 8 kiosk stations operate simultaneously. The system prevents race conditions, double scans, and inconsistencies through three layers:
+Bis zu 8 Kiosk-Stationen arbeiten zeitgleich. Das System verhindert Race Conditions, Doppel-Scans und Inkonsistenzen durch drei Schichten:
 
-### 1. Transaction Isolation & Row-Level Locking
-- **READ COMMITTED** (PostgreSQL standard): high throughput for parallel access
-- **`SELECT … FOR UPDATE`** on `buecher_exemplare` and active loans: a second parallel scan waits, reads the current state, and aborts cleanly
+### 1. Transaktions-Isolation & Row-Level-Locking
+- **READ COMMITTED** (PostgreSQL-Standard): hoher Durchsatz bei parallelen Zugriffen
+- **`SELECT … FOR UPDATE`** auf `buecher_exemplare` und aktive Ausleihe: ein zweiter paralleler Scan wartet, liest den aktuellen Zustand, bricht sauber ab
 
-### 2. Data Integrity via Unique Partial Index
+### 2. Datenintegrität durch Unique-Partial-Index
 ```sql
--- Migration 033 — prevents two active loans on the same copy
+-- Migration 033 — verhindert zwei aktive Ausleihen auf demselben Exemplar
 CREATE UNIQUE INDEX unique_active_loan
     ON ausleihen (exemplar_id)
     WHERE rueckgabe_am IS NULL;
@@ -61,11 +61,11 @@ CREATE UNIQUE INDEX unique_active_device_loan
     ON geraete_ausleihen (geraet_id)
     WHERE rueckgabe_am IS NULL;
 ```
-- Protects against TOCTOU races with idempotency keys (atomic DB level, not just application level)
-- Unique violation maps to HTTP 409 Conflict (`mapLoanCreateErr`)
+- Schützt auch gegen TOCTOU-Race bei Idempotenz-Keys (atomare DB-Ebene, nicht nur Applikationsebene)
+- Unique-Verletzung wird zu HTTP 409 Conflict gemappt (`mapLoanCreateErr`)
 
-### 3. Real-Time Synchronization (SSE Broker)
-After each DB commit, the server broadcasts an update to all connected clients via Server-Sent Events (SSE). All kiosk PCs see the same state in real-time.
+### 3. Echtzeit-Synchronisation (SSE Broker)
+Nach jedem DB-Commit sendet der Server über Server-Sent Events (SSE) ein Update an alle verbundenen Clients. Alle Kiosk-PCs sehen denselben Zustand in Echtzeit.
 
 ```mermaid
 graph TD
@@ -83,46 +83,46 @@ graph TD
 
 ---
 
-## 🔄 Idempotency Keys
+## 🔄 Idempotenz-Keys
 
-Each scan request carries an `item.id`-based idempotency key:
-- Duplicate key → cached response is returned (no second DB write)
-- 5xx errors are not cached (retry possible)
-- TTL cleanup runs daily (24h cron)
-- **Additional protection via DB unique index** (Migration 033): even if two requests with the same key pass the idempotency check simultaneously, the index prevents a second active loan
+Jeder Scan-Request trägt einen `item.id`-basierten Idempotenz-Key:
+- Doppelter Key → gespeicherte Antwort wird zurückgegeben (kein zweiter DB-Write)
+- 5xx-Fehler werden nicht gecacht (Retry möglich)
+- TTL-Cleanup läuft täglich (24h-Cron)
+- **Zusätzliche Absicherung durch DB-Unique-Index** (Migration 033): selbst wenn zwei Requests mit gleichem Key gleichzeitig die Idempotenz-Prüfung passieren, verhindert der Index eine zweite aktive Ausleihe
 
 ---
 
-## 🗄️ Database Design
+## 🗄️ Datenbankdesign
 
-### Catalog vs. Inventory (Strict Separation)
-- **`buecher_titel`** — metadata (ISBN, title, author, publisher, target grade, LMF flag)
-- **`buecher_exemplare`** — physical instances (barcode, condition, `ist_ausleihbar`)
-- **`ausleihen`** — active and historical loans (linked to copy + student)
+### Katalog vs. Bestand (strikte Trennung)
+- **`buecher_titel`** — Metadaten (ISBN, Titel, Autor, Verlag, Ziel-Jahrgang, LMF-Flag)
+- **`buecher_exemplare`** — physische Instanzen (Barcode, Zustand, `ist_ausleihbar`)
+- **`ausleihen`** — aktive und historische Ausleihen (verknüpft mit Exemplar + Schüler)
 
-### JSONB Extensibility
-Main tables have `erweiterte_eigenschaften JSONB DEFAULT '{}'` for ad-hoc attributes (shelf position, call number, external IDs) without schema migration:
+### JSONB-Erweiterbarkeit
+Haupttabellen haben `erweiterte_eigenschaften JSONB DEFAULT '{}'` für ad-hoc-Attribute (Regalposition, Signatur, externe IDs) ohne Schema-Migration:
 - `buecher_titel.erweiterte_eigenschaften`
 - `buecher_exemplare.erweiterte_eigenschaften`
 - `audit_logs.details`
 
-GIN indexes can be applied to these columns if necessary.
+GIN-Indizes können bei Bedarf auf diese Spalten gelegt werden.
 
-### Enum Casing
-`benutzer_rolle` is a PostgreSQL ENUM with lowercase values: `admin`, `lehrer`, `mitarbeiter`.
-SQL comparisons must use `LOWER(rolle::text)` (no `= 'LEHRER'`).
+### Enum-Casing
+`benutzer_rolle` ist ein PostgreSQL-ENUM mit lowercase-Werten: `admin`, `lehrer`, `mitarbeiter`.
+SQL-Vergleiche müssen `LOWER(rolle::text)` verwenden (kein `= 'LEHRER'`).
 
-### Migration Hygiene
-- Migrations are numbered (`NNN_description.sql`) and deduplicated via the `schema_migrations` table
-- The seed list in `schema.sql` must exactly match the files in `migrations/` (no phantom entries, no missing entries)
-- Duplicate number prefixes (003, 008, 021, 022) sort deterministically and have no order dependency — style smell, but functionally correct
-- **Idempotency**: All migrations must use `IF NOT EXISTS` / `IF EXISTS` / `DO $$ BEGIN … EXCEPTION WHEN …`
+### Migrations-Hygiene
+- Migrationen sind nummeriert (`NNN_beschreibung.sql`) und werden via `schema_migrations`-Tabelle dedupliziert
+- Die Seed-Liste in `schema.sql` muss exakt mit den Dateien in `migrations/` übereinstimmen (kein Phantom-Eintrag, kein fehlender Eintrag)
+- Doppelte Zahlenpräfixe (003, 008, 021, 022) sortieren deterministisch und haben keine Reihenfolge-Abhängigkeit — Style-Smell, aber funktional korrekt
+- **Idempotenz**: Alle Migrationen müssen `IF NOT EXISTS` / `IF EXISTS` / `DO $$ BEGIN … EXCEPTION WHEN …` verwenden
 
 ---
 
-## 🏗️ Repository Layer — Error Handling
+## 🏗️ Repository-Schicht — Fehlerbehandlung
 
-All `rows.Next()` loops end with a `rows.Err()` check:
+Alle `rows.Next()`-Schleifen enden mit einer `rows.Err()`-Prüfung:
 ```go
 for rows.Next() {
     // scan …
@@ -131,69 +131,69 @@ if err := rows.Err(); err != nil {
     return nil, fmt.Errorf("…: %w", err)
 }
 ```
-**Why critical:** Without `rows.Err()`, a connection drop in the middle of iteration would be treated as success — the returned list would silently be incomplete. In `audit_books.go`, this could have caused a title to be treated as "borrowable" despite active loans.
+**Warum kritisch:** Ohne `rows.Err()` würde ein Verbindungsabbruch mitten in der Iteration als Erfolg behandelt — die zurückgegebene Liste wäre still unvollständig. In `audit_books.go` hätte dies dazu führen können, dass ein Titel trotz aktiver Ausleihen als "ausleihbar" behandelt wird.
 
 ---
 
 ## 📡 SSE Broker (Real-Time)
 
-- Central event loop, no goroutine per client
-- `RLock`/`Lock` prevent send-on-closed
-- Non-blocking broadcast (buffered channel) — a slow client does not block others
-- Heartbeat + context cancellation on graceful shutdown
+- Zentraler Event-Loop, keine Goroutine pro Client
+- `RLock`/`Lock` verhindern Send-on-Closed
+- Non-blocking Broadcast (gepufferter Channel) — ein langsamer Client blockiert andere nicht
+- Heartbeat + Context-Abbruch bei Graceful Shutdown
 
 ---
 
 ## ⚙️ Background Jobs
 
-| Job | Schedule | Function |
+| Job | Zeitplan | Funktion |
 |---|---|---|
-| GDPR Anonymization | Startup + daily | `RunGDPRAnonymizeLoans` — deletes `bearbeiter_id` after 14 days |
-| GDPR Graduate Deletion | Startup + daily | `RunGDPRDeleteAbgaenger` — Hard delete after grace period |
-| DB Backup | Daily 02:30 | `pg_dump` → gzip → AES-GCM |
-| Idempotency TTL | Daily | Cleans up expired idempotency keys (24h) |
-| Cover Sync | On-demand + daily | Worker pool (8), re-entrancy guard, FAILED-retry |
+| GDPR Anonymisierung | Startup + täglich | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen |
+| GDPR Abgänger-Löschung | Startup + täglich | `RunGDPRDeleteAbgaenger` — Hard-Delete nach Karenzzeit |
+| DB-Backup | täglich 02:30 | `pg_dump` → gzip → AES-GCM |
+| Idempotenz-TTL | täglich | Bereinigt abgelaufene Idempotenz-Keys (24h) |
+| Cover-Sync | on-demand + täglich | Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry |
 
 ---
 
-## 🔌 External Dependencies
+## 🔌 Externe Abhängigkeiten
 
-| Package | Purpose |
+| Paket | Zweck |
 |---|---|
-| `jackc/pgx/v5` | PostgreSQL driver (Connection pool, type-safe queries) |
-| `golang-jwt/jwt` | JWT signing and verification (HMAC-only) |
-| `chai2010/webp` | WebP decoding for cover images (CGO) |
-| `go-playground/validator/v10` | Struct validation of all API payloads |
-| `getsentry/sentry-go` | Error tracking (optional via `SENTRY_DSN`) |
-| `jung-kurt/gofpdf` | PDF generation (dunning, graduates, damages) |
-| `emersion/go-imap` | IMAP for incoming email |
+| `jackc/pgx/v5` | PostgreSQL-Treiber (Connection Pool, typsichere Queries) |
+| `golang-jwt/jwt` | JWT-Signierung und -Verifikation (HMAC-only) |
+| `chai2010/webp` | WebP-Dekodierung für Cover-Bilder (CGO) |
+| `go-playground/validator/v10` | Struct-Validierung aller API-Payloads |
+| `getsentry/sentry-go` | Error Tracking (optional via `SENTRY_DSN`) |
+| `jung-kurt/gofpdf` | PDF-Generierung (Mahnwesen, Abgänger, Schäden) |
+| `emersion/go-imap` | IMAP für E-Mail-Eingang |
 
-### Build Tags
-- `//go:build odbc` — isolates the `cmd/littera_migration` ODBC dependency; default build (`go build ./...`) does not require `unixODBC`
+### Build-Tags
+- `//go:build odbc` — isoliert die `cmd/littera_migration`-ODBC-Abhängigkeit; Standardbuild (`go build ./...`) benötigt kein `unixODBC`
 
 ---
 
-## 🎨 Frontend Architecture (Svelte 5 Runes)
+## 🎨 Frontend-Architektur (Svelte 5 Runes)
 
-### Design System: Flat & Edge-to-Edge
-- No card/tile anti-pattern at the layout level
-- Separation by `border-b border-gray-200` instead of box-shadow
-- Container: `max-w-5xl` to `max-w-6xl`, `w-full`
+### Designsystem: Flat & Edge-to-Edge
+- Kein Karten-/Kachel-Anti-Pattern auf Layout-Ebene
+- Trennung durch `border-b border-gray-200` statt Box-Shadow
+- Container: `max-w-5xl` bis `max-w-6xl`, `w-full`
 - Labels: `text-sm font-medium text-gray-600`
-- Important fields/values: `text-lg font-medium`
-- **Kept** as cards: Modals, toasts, dropdowns, cover gallery tiles
+- Wichtige Felder/Werte: `text-lg font-medium`
+- **Bewahrt** als Karten: Modals, Toasts, Dropdowns, Cover-Galerie-Kacheln
 
-### Component Rules
-- ≤ 200 lines per `.svelte` file
-- Logic-free subcomponents using `{#snippet}` / `{@render}` for DRY
-- Data arrays outsourced to `.js` metadata files (e.g., `permissionMetadata.js`)
+### Komponenten-Regeln
+- ≤ 200 Zeilen pro `.svelte`-Datei
+- Logik-freie Teilkomponenten mit `{#snippet}` / `{@render}` für DRY
+- Daten-Arrays in `.js`-Metadatendateien auslagern (z. B. `permissionMetadata.js`)
 
 ### State Management
-- Svelte 5 Runes (`$state`, `$derived`, `$props`, `$bindable`) — local, no global store
-- SSE reconnect with guards (`isLoggedIn`, timeout)
-- Offline queue: Items removed only on 2xx/permanent 4xx; retained on 5xx/network errors
+- Svelte 5 Runes (`$state`, `$derived`, `$props`, `$bindable`) — lokal, kein globaler Store
+- SSE-Reconnect mit Guards (`isLoggedIn`, Timeout)
+- Offline-Queue: Items nur bei 2xx/permanentem 4xx entfernt; bei 5xx/Netzwerkfehler erhalten
 
-### RBAC in Frontend
-- Menu items are hidden client-side via permission map
-- **The authority is exclusively the backend**: every data query is permission-gated (`RequirePermission`)
-- Forced view without permission → 403, no data leak
+### RBAC im Frontend
+- Menü-Items werden client-seitig per Permission-Map geblendet
+- **Die Autorität ist ausschließlich das Backend**: jede Datenabfrage ist permission-gated (`RequirePermission`)
+- Erzwungene View ohne Berechtigung → 403, kein Datenleck
