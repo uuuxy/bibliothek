@@ -105,7 +105,7 @@
 									<button
 										onclick={() => (systemOpen = !systemOpen)}
 										aria-expanded={systemOpen}
-										aria-label={`${group.name} Menü ${systemOpen ? 'schließen' : 'öffnen'}`}
+
 										class="w-full flex items-center justify-between px-3 mb-2 text-left cursor-pointer group/sys"
 									>
 										<span
