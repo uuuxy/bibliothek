@@ -58,6 +58,7 @@
 						aria-label="Navigation einklappen"
 					>
 						<svg
+							aria-hidden="true"
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-4.5 w-4.5"
 							fill="none"
@@ -78,6 +79,7 @@
 						aria-label="Navigation ausklappen"
 					>
 						<svg
+							aria-hidden="true"
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-4.5 w-4.5 rotate-180"
 							fill="none"
@@ -102,6 +104,8 @@
 								{#if !uiStore.isSidebarCollapsed}
 									<button
 										onclick={() => (systemOpen = !systemOpen)}
+										aria-expanded={systemOpen}
+										aria-label={`${group.name} Menü ${systemOpen ? 'schließen' : 'öffnen'}`}
 										class="w-full flex items-center justify-between px-3 mb-2 text-left cursor-pointer group/sys"
 									>
 										<span
@@ -109,6 +113,7 @@
 											>{group.name}</span
 										>
 										<svg
+											aria-hidden="true"
 											class="w-3.5 h-3.5 text-slate-400 group-hover/sys:text-slate-600 transition-transform duration-200 {systemOpen
 												? 'rotate-180'
 												: ''}"
@@ -139,6 +144,7 @@
 													title={item.label}
 												>
 													<svg
+														aria-hidden="true"
 														xmlns="http://www.w3.org/2000/svg"
 														class="h-5 w-5 shrink-0"
 														fill="none"
@@ -277,6 +283,7 @@
 											title={item.label}
 										>
 											<svg
+												aria-hidden="true"
 												xmlns="http://www.w3.org/2000/svg"
 												class="h-5 w-5 shrink-0"
 												fill="none"
@@ -438,7 +445,12 @@
 						onclick={handleLogout}
 						class="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100/60 border border-rose-100 text-rose-600 hover:text-rose-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
 					>
-						<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+						<svg
+							aria-hidden="true"
+							class="w-3.5 h-3.5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
 							><path
 								stroke-linecap="round"
 								stroke-linejoin="round"
@@ -473,7 +485,12 @@
 						class="w-8 h-8 flex items-center justify-center bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 hover:text-rose-700 rounded-full transition-colors cursor-pointer"
 						title="Abmelden"
 					>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+						<svg
+							aria-hidden="true"
+							class="w-4 h-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
 							><path
 								stroke-linecap="round"
 								stroke-linejoin="round"
