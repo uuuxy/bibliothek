@@ -23,12 +23,16 @@ export function createOmniboxStore() {
 	let queryVal = $state('');
 
 	let toast = $state(/** @type {any} */ (null));
+	/** @type {any} Auto-Dismiss-Timer der Toast-Pille */
+	let toastTimer = null;
 	let flashBorder = $state('');
 	let screenFlash = $state(''); // "success" | "error" | ""
 	let lastFremdrueckgabe = $state(/** @type {any} */ (null));
 	let isShaking = $state(false);
 	let scanError = $state(false);
 	let errorMessage = $state('');
+	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
+	let errorMessageTimer = null;
 	let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
 	let blockAlert = $state(/** @type {{message: string, query: string} | null} */ (null));
 	// isOffline is now handled globally via offlineSync
@@ -71,8 +75,36 @@ export function createOmniboxStore() {
 		}, 1000);
 	}
 
+	// Zeigt das Inline-Fehlerbanner an der Omnibox und blendet es nach 6s automatisch
+	// aus. Ein noch laufender Timer wird verworfen, damit ein neuer Fehler die volle
+	// Anzeigedauer bekommt (und nicht der alte Timer das frische Banner sofort löscht).
+	function zeigeFehlerBanner(message) {
+		clearFehlerBanner();
+		errorMessage = message;
+		errorMessageTimer = setTimeout(() => {
+			errorMessage = '';
+			errorMessageTimer = null;
+		}, 6000);
+	}
+
+	// Blendet das Inline-Fehlerbanner sofort aus und stoppt den Auto-Dismiss-Timer.
+	function clearFehlerBanner() {
+		if (errorMessageTimer) {
+			clearTimeout(errorMessageTimer);
+			errorMessageTimer = null;
+		}
+		errorMessage = '';
+	}
+
 	function showToast(message, type = 'success') {
+		if (toastTimer) clearTimeout(toastTimer);
 		toast = { message, type };
+		// Ohne diesen Timer blieb jede Pille (auch Erfolg/Warnung) bis zur nächsten
+		// Aktion stehen — sie „verschwand nie" von selbst.
+		toastTimer = setTimeout(() => {
+			toast = null;
+			toastTimer = null;
+		}, 5000);
 	}
 
 	// Such-Logik
@@ -261,8 +293,9 @@ export function createOmniboxStore() {
 		) {
 			await speichereOfflineAktion(q, idempotencyKey);
 		} else {
-			errorMessage = String(e);
-			showToast(`⚠️ Fehler: ${e instanceof Error ? e.message : String(e)}`, 'error');
+			// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
+			// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
+			zeigeFehlerBanner(`⚠️ Fehler: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	}
 
@@ -280,7 +313,7 @@ export function createOmniboxStore() {
 		queryVal = '';
 		isDropdownOpen = false;
 		lastFremdrueckgabe = null;
-		errorMessage = '';
+		clearFehlerBanner();
 
 		// Disable input while processing
 		document.getElementById('omnibox-input')?.blur();
