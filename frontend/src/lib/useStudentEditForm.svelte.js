@@ -19,7 +19,6 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
 		klasse: '',
 		barcode_id: '',
 		abgaenger_jahr: '',
-		status: '',
 		strasse: '',
 		hausnummer: '',
 		plz: '',
@@ -40,7 +39,6 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
 		formData.klasse = student.klasse || '';
 		formData.barcode_id = student.barcode_id || '';
 		formData.abgaenger_jahr = student.abgaenger_jahr?.toString() || '';
-		formData.status = student.status || '';
 		formData.strasse = student.strasse || '';
 		formData.hausnummer = student.hausnummer || '';
 		formData.plz = student.plz || '';
@@ -64,7 +62,6 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
 				abgaenger_jahr: formData.abgaenger_jahr
 					? Number.parseInt(formData.abgaenger_jahr, 10)
 					: null,
-				status: formData.status || null,
 				strasse: formData.strasse || null,
 				hausnummer: formData.hausnummer || null,
 				plz: formData.plz || null,

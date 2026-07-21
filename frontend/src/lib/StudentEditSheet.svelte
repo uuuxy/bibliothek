@@ -175,22 +175,10 @@
 					extraClasses="font-semibold"
 				/>
 
-				<div>
-					<label
-						for="status"
-						class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5"
-						>Status</label
-					>
-					<select
-						id="status"
-						bind:value={formData.status}
-						class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-					>
-						<option value="aktiv">Aktiv</option>
-						<option value="inaktiv">Inaktiv</option>
-						<option value="abgaenger">Abgänger</option>
-					</select>
-				</div>
+				<!-- Kein Status-Dropdown: „status" ist ein abgeleiteter Lesewert
+				     (aktiv/gesperrt/abgaenger aus ist_gesperrt/ist_abgaenger) ohne eigene
+				     DB-Spalte. Sperren läuft übers Lock-Modal, Abgänger über das Abgangsjahr —
+				     ein editierbares Feld hier wurde vom Backend still verworfen. -->
 			</div>
 		</section>
 
