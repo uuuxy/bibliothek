@@ -161,7 +161,7 @@
 </script>
 
 <div
-	class="flex-1 flex flex-col items-center justify-center overflow-hidden bg-slate-100 border border-dashed border-slate-200 rounded-3xl min-h-[480px] relative p-6"
+	class="flex-1 flex flex-col items-center justify-center overflow-hidden bg-slate-100 border border-dashed border-slate-200 rounded-3xl min-h-120 relative p-6"
 	role="presentation"
 	onpointerdown={onCanvasClick}
 >
@@ -172,10 +172,10 @@
 	>
 		<div
 			bind:this={cardEl}
-			class="card-container shadow-2xl relative border border-slate-200 rounded-[8px] overflow-visible select-none"
+			class="card-container shadow-2xl relative border border-slate-200 rounded-lg overflow-visible select-none"
 			style="width: 85.6mm; height: 53.98mm; background: white;"
 		>
-			<div class="w-full h-full relative rounded-[8px] overflow-hidden {theme}">
+			<div class="w-full h-full relative rounded-lg overflow-hidden {theme}">
 				{#each elements as el (el.id)}
 					{@render canvasElement(el)}
 				{/each}

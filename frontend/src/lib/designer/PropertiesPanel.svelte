@@ -115,7 +115,7 @@
 			<label class="relative inline-flex items-center cursor-pointer select-none">
 				<input type="checkbox" bind:checked={el.show} class="sr-only peer" />
 				<div
-					class="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"
+					class="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"
 				></div>
 			</label>
 		</div>
