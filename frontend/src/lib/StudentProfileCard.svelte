@@ -85,13 +85,13 @@
 
 	async function downloadDsgvoAuskunft() {
 		try {
-			const res = await apiFetch(`/api/schueler/${profile.id}/dsgvo-auskunft`);
+			const res = await apiFetch(`/api/schueler/${profile.id}/dsgvo-auskunft/pdf`);
 			if (res.ok) {
 				const blob = await res.blob();
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement('a');
 				a.href = url;
-				a.download = `dsgvo-auskunft-${profile.nachname || 'Unbekannt'}-${profile.vorname || 'Unbekannt'}.json`;
+				a.download = `dsgvo-auskunft-${profile.nachname || 'Unbekannt'}-${profile.vorname || 'Unbekannt'}.pdf`;
 				document.body.appendChild(a);
 				a.click();
 				document.body.removeChild(a);
@@ -321,7 +321,7 @@
 			<button
 				onclick={downloadDsgvoAuskunft}
 				class="w-full py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-600 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 text-xs"
-				title="DSGVO-Auskunft (Art. 15) als JSON exportieren"
+				title="DSGVO-Auskunft (Art. 15) als PDF exportieren"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -336,7 +336,7 @@
 						d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
 					/></svg
 				>
-				DSGVO-Auskunft (JSON)
+				DSGVO-Auskunft (PDF)
 			</button>
 		{/if}
 	</div>

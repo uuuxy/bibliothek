@@ -17,6 +17,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// DSGVO-Betroffenenauskunft (Art. 15) — bewusst nur für Admins (manage_users):
 	// Der Export bündelt sämtliche personenbezogenen Daten eines Schülers.
 	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft", s.RequirePermission("manage_users")(s.DsgvoAuskunftHandler()))
+	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft/pdf", s.RequirePermission("manage_users")(s.DsgvoAuskunftPDFHandler()))
 
 	// Papierkorb
 	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.GetDeletedStudentsHandler()))
