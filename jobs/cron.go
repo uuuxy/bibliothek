@@ -156,53 +156,13 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 		cutoffYear--
 	}
 
-	// Berechtigte Schüler-IDs abrufen
-	query := `
-		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
-		FROM schueler
-		WHERE ist_abgaenger = true
-		  AND deleted_at IS NULL
-		  AND abgaenger_jahr < $1
-		  AND NOT EXISTS (
-		      SELECT 1 FROM ausleihen
-		      WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL
-		  )
-		  AND NOT EXISTS (
-		      SELECT 1 FROM schadensfaelle
-		      WHERE schueler_id = schueler.id AND ist_bezahlt = false
-		  )
-	`
-	rows, err := s.db.Query(ctx, query, cutoffYear)
+	// Berechtigte Abgänger laden. Der Helfer schließt die Rows per defer — die
+	// Connection ist damit zurück im Pool, bevor die eigentliche Löschphase beginnt.
+	students, err := s.fetchDeletionEligibleStudents(ctx, cutoffYear)
 	if err != nil {
 		log.Printf("Scheduler GDPR Delete: Failed to fetch eligible students: %v", err)
 		return
 	}
-
-	type eligibleStudent struct {
-		ID            string
-		Vorname       string
-		Nachname      string
-		Klasse        string
-		BarcodeID     string
-		AbgaengerJahr int
-	}
-
-	var students []eligibleStudent
-	for rows.Next() {
-		var s eligibleStudent
-		if err := rows.Scan(&s.ID, &s.Vorname, &s.Nachname, &s.Klasse, &s.BarcodeID, &s.AbgaengerJahr); err != nil {
-			log.Printf("Scheduler GDPR Delete: Scan error: %v", err)
-			rows.Close()
-			return
-		}
-		students = append(students, s)
-	}
-	if err := rows.Err(); err != nil {
-		rows.Close()
-		log.Printf("Scheduler GDPR Delete: Iterationsfehler: %v", err)
-		return
-	}
-	rows.Close()
 
 	if len(students) == 0 {
 		log.Printf("Scheduler GDPR Delete: no eligible students for deletion (cutoff year: %d)", cutoffYear)
@@ -250,6 +210,52 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	} else {
 		log.Printf("Scheduler GDPR Delete: successfully deleted %d student(s)", deleted)
 	}
+}
+
+// deletionEligibleStudent ist ein für die DSGVO-Löschung berechtigter Abgänger.
+type deletionEligibleStudent struct {
+	ID            string
+	Vorname       string
+	Nachname      string
+	Klasse        string
+	BarcodeID     string
+	AbgaengerJahr int
+}
+
+// fetchDeletionEligibleStudents lädt alle löschberechtigten Abgänger (Abgangsjahr <
+// cutoffYear, ohne offene Ausleihen und ohne unbezahlte Schadensgebühren). Die Rows
+// werden per defer geschlossen — robust gegen künftige Early-Returns und die
+// Connection kehrt vor der Löschphase in den Pool zurück.
+func (s *Scheduler) fetchDeletionEligibleStudents(ctx context.Context, cutoffYear int) ([]deletionEligibleStudent, error) {
+	const query = `
+		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
+		FROM schueler
+		WHERE ist_abgaenger = true
+		  AND deleted_at IS NULL
+		  AND abgaenger_jahr < $1
+		  AND NOT EXISTS (
+		      SELECT 1 FROM ausleihen
+		      WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL
+		  )
+		  AND NOT EXISTS (
+		      SELECT 1 FROM schadensfaelle
+		      WHERE schueler_id = schueler.id AND ist_bezahlt = false
+		  )`
+	rows, err := s.db.Query(ctx, query, cutoffYear)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var students []deletionEligibleStudent
+	for rows.Next() {
+		var st deletionEligibleStudent
+		if err := rows.Scan(&st.ID, &st.Vorname, &st.Nachname, &st.Klasse, &st.BarcodeID, &st.AbgaengerJahr); err != nil {
+			return nil, err
+		}
+		students = append(students, st)
+	}
+	return students, rows.Err()
 }
 
 // ── GDPR: Anonymisierung alter Datensätze (180 Tage nach Soft-Delete / 360 Tage Abgänger) ──
