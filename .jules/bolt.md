@@ -13,3 +13,6 @@
 ## 2026-07-15 - [Efficient string template replacements]
 **Learning:** Found sequential `strings.ReplaceAll` calls inside `api/reports_pdf.go` used to inject dynamic data (like Vorname, Nachname) into PDF text templates. This leads to unnecessary intermediate allocations and increased GC pressure, especially when generating bulk PDFs.
 **Action:** Replaced sequential `strings.ReplaceAll` calls with a single `strings.NewReplacer` which is highly optimized for multi-string replacement in a single pass.
+## 2026-07-21 - [Optimize CWE-117 Log Sanitization]
+**Learning:** Found sequential `strings.ReplaceAll` calls in `SanitizeLog` (`pkg/logger/sanitize.go`) used for filtering out carriage return and newline characters. This function is called frequently when logging IDs and paths (e.g., in `cover-upload` handlers), leading to unnecessary allocations on every invocation.
+**Action:** Replaced sequential `strings.ReplaceAll` calls with a fast-path check (`strings.ContainsAny`) and a single-pass byte slice iteration. This avoids string allocations entirely when no filtering is needed, and reduces allocations when filtering is required.
