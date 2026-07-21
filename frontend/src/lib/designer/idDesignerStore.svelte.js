@@ -310,3 +310,44 @@ export function removeElement(side, id) {
 		idStore.back.elements = idStore.back.elements.filter((e) => e.id !== id);
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Zentrale Persistenz (Backend) — damit alle vernetzten Arbeitsplätze denselben
+// Ausweis-Stand sehen. serialize/apply kapseln die JSON-Form des Designs.
+// ---------------------------------------------------------------------------
+
+/** Liefert einen plainen Snapshot des gesamten Designs (für PUT /api/ausweis-layout). */
+export function serializeDesign() {
+	return $state.snapshot(idStore);
+}
+
+/**
+ * Übernimmt ein vom Server geladenes Design in den Store. Defensiv: fehlende oder
+ * ungültige Felder bleiben auf ihren Defaults (leeres {} = Erststart → Defaults).
+ * @param {any} data
+ */
+export function applyDesign(data) {
+	if (!data || typeof data !== 'object') return;
+	if (data.barcodeType === 'qr' || data.barcodeType === 'code39') {
+		idStore.barcodeType = data.barcodeType;
+	}
+	if (data.printMode === 'card' || data.printMode === 'a4') {
+		idStore.printMode = data.printMode;
+	}
+	applySeite(idStore.front, data.front);
+	applySeite(idStore.back, data.back);
+}
+
+/**
+ * @param {{elements: any[], theme: string}} ziel
+ * @param {any} quelle
+ */
+function applySeite(ziel, quelle) {
+	if (!quelle || typeof quelle !== 'object') return;
+	if (Array.isArray(quelle.elements)) {
+		ziel.elements = quelle.elements;
+	}
+	if (typeof quelle.theme === 'string' && quelle.theme.trim() !== '') {
+		ziel.theme = quelle.theme;
+	}
+}

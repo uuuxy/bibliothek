@@ -5,7 +5,7 @@
 	 * Canvas-based ID-card designer — top-level coordinator component.
 	 */
 	import { onMount } from 'svelte';
-	import { idStore } from './designer/idDesignerStore.svelte.js';
+	import { idStore, applyDesign, serializeDesign } from './designer/idDesignerStore.svelte.js';
 	import CanvasArea from './designer/CanvasArea.svelte';
 	import PropertiesPanel from './designer/PropertiesPanel.svelte';
 	import Toolbar from './designer/Toolbar.svelte';
@@ -20,6 +20,14 @@
 	let previewStudents = $state.raw(/** @type {any[]} */ ([]));
 	let loadingStudents = $state(false);
 	let timestamp = $state(Date.now());
+
+	// Zentrale Persistenz: erst nach dem initialen Laden auto-speichern, sonst würden
+	// die Store-Defaults den geladenen Stand überschreiben.
+	let designLoaded = $state(false);
+	/** @type {'idle'|'saving'|'saved'|'error'} */
+	let saveState = $state('idle');
+	/** @type {any} */
+	let saveTimer = null;
 
 	const mockStudents = [
 		{ id: 's1', barcode_id: 'S-10041', vorname: 'Maximilian', nachname: 'Schmidt', klasse: '9a' },
@@ -66,6 +74,44 @@
 
 	onMount(() => {
 		loadClasses();
+		loadDesign();
+	});
+
+	// Lädt das zentral gespeicherte Ausweis-Design. Leeres {} (Erststart) → Defaults.
+	async function loadDesign() {
+		try {
+			const res = await apiFetch('/api/ausweis-layout');
+			if (res.ok) applyDesign(await res.json());
+		} catch (e) {
+			console.error('Ausweis-Design konnte nicht geladen werden:', e);
+		} finally {
+			designLoaded = true;
+		}
+	}
+
+	/** @param {string} body */
+	async function saveDesign(body) {
+		try {
+			const res = await apiFetch('/api/ausweis-layout', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body
+			});
+			saveState = res.ok ? 'saved' : 'error';
+		} catch {
+			saveState = 'error';
+		}
+	}
+
+	// Auto-Save (debounced): jede Design-Änderung wird zentral gespeichert, damit der
+	// Druck-Arbeitsplatz beim nächsten Öffnen exakt denselben Stand lädt.
+	$effect(() => {
+		const body = JSON.stringify(serializeDesign()); // liest reaktiven State → Dependency
+		if (!designLoaded) return;
+		clearTimeout(saveTimer);
+		saveState = 'saving';
+		saveTimer = setTimeout(() => saveDesign(body), 800);
+		return () => clearTimeout(saveTimer);
 	});
 
 	function triggerPrint() {
@@ -87,6 +133,16 @@
 </script>
 
 <div class="w-full space-y-5 no-print text-slate-800 animate-fade-in font-sans">
+	<div class="flex items-center justify-end gap-2 text-xs font-semibold min-h-4">
+		{#if saveState === 'saving'}
+			<span class="text-slate-400">Speichert…</span>
+		{:else if saveState === 'saved'}
+			<span class="text-emerald-600">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
+		{:else if saveState === 'error'}
+			<span class="text-rose-600">Speichern fehlgeschlagen</span>
+		{/if}
+	</div>
+
 	<Toolbar
 		{zoom}
 		onZoom={(v) => {
