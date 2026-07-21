@@ -18,6 +18,11 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_users")(s.GetSettingsHandler(settingsRepo)))
 	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_users")(s.UpdateSettingsHandler(settingsRepo)))
 
+	// Ausweis-Design (zentral, für alle vernetzten Arbeitsplätze). Lesen breit (jeder,
+	// der Ausweise druckt), Speichern nur administrativ.
+	mux.Handle("GET /api/ausweis-layout", s.RequirePermission("view_students")(s.GetAusweisLayoutHandler()))
+	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_users")(s.SaveAusweisLayoutHandler()))
+
 	mailRepo := repository.NewMailSettingsRepository(dbPool)
 	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_users")(s.GetMailSettingsHandler(mailRepo)))
 	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_users")(s.UpdateMailSettingsHandler(mailRepo)))
