@@ -14,6 +14,16 @@
 	// Backend-Check und dem DB-Constraint chk_schueler_block_reason.
 	let willLock = $derived(profile && !profile.is_manually_blocked);
 
+	// Das Modal bleibt (via bind:open) dauerhaft gemountet, der State überlebt also das
+	// Schließen. Ohne diesen Reset blitzte beim nächsten Öffnen — ggf. für einen anderen
+	// Schüler — die alte Fehlermeldung und der alte Grund kurz auf.
+	$effect(() => {
+		if (!open) {
+			errorMsg = '';
+			reason = '';
+		}
+	});
+
 	async function handleConfirm() {
 		if (!profile) return;
 		if (willLock && reason.trim() === '') {

@@ -318,7 +318,10 @@
 <InventoryStartModal
 	bind:dialogEl={startDialog}
 	state={inventoryState}
-	onClose={() => (inventoryState.showStartModal = false)}
+	onClose={() => {
+		inventoryState.showStartModal = false;
+		inventoryState.clearError();
+	}}
 	onStart={inventoryState.startInventory}
 />
 

@@ -76,8 +76,16 @@ export function useUnifiedInventory() {
 
 	/** @param {any} session */
 	async function verwerfeSession(session) {
+		errorMessage = '';
 		await brichAb(session.session_id);
 		await loadOffeneSessions();
+	}
+
+	// errorMessage wird an zwei Stellen angezeigt (Start-Modal + Hauptschirm). Ohne diesen
+	// Reset blieb eine modal-lokale Meldung (z. B. „Bitte wähle eine Signatur aus.“) nach
+	// dem Abbrechen kontextlos als Banner auf dem Hauptschirm stehen.
+	function clearError() {
+		errorMessage = '';
 	}
 
 	/** @param {string} barcodeVal @param {Function} [focusInput] */
@@ -157,6 +165,7 @@ export function useUnifiedInventory() {
 		get showFinishModal() { return showFinishModal; },
 		set showFinishModal(v) { showFinishModal = v; },
 		get errorMessage() { return errorMessage; },
+		clearError,
 		loadSignatures,
 		loadOffeneSessions,
 		startInventory,

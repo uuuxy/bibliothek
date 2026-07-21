@@ -101,8 +101,9 @@
 			previewResult = await submitLusdFile('/api/lusd/preview');
 			stage = 'preview';
 		} catch (err) {
+			// Nur das Inline-Banner unten — kein zusätzlicher Toast mit identischem Text
+			// (das wirkte wie zwei getrennte Fehler).
 			errorMessage = /** @type {any} */ (err).message || String(err);
-			toastStore.addToast(errorMessage, 'error');
 		} finally {
 			previewLoading = false;
 		}
@@ -124,8 +125,8 @@
 				needsGraduateConfirm = true;
 				errorMessage = /** @type {any} */ (err).message;
 			} else {
+				// Nur das Inline-Banner — kein doppelter Toast mit gleichem Text.
 				errorMessage = /** @type {any} */ (err).message || String(err);
-				toastStore.addToast(errorMessage, 'error');
 			}
 		} finally {
 			importLoading = false;
