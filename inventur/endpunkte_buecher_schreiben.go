@@ -117,6 +117,12 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		CoverURL                string         `json:"coverUrl"`
 		ZaehlDatum              *string        `json:"lastCounted"`
 		Medientyp               string         `json:"medientyp"`
+		JahrgangVon             int            `json:"jahrgangVon"`
+		JahrgangBis             int            `json:"jahrgangBis"`
+		Untertitel              string         `json:"untertitel"`
+		Verlag                  string         `json:"verlag"`
+		Erscheinungsjahr        int            `json:"erscheinungsjahr"`
+		Beschreibung            string         `json:"beschreibung"`
 		Signatur                string         `json:"signatur"`
 		ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 	}
@@ -138,6 +144,12 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Stock:                   eingabe.Bestand,
 		LastCounted:             eingabe.ZaehlDatum,
 		Medientyp:               strings.TrimSpace(eingabe.Medientyp),
+		JahrgangVon:             eingabe.JahrgangVon,
+		JahrgangBis:             eingabe.JahrgangBis,
+		Untertitel:              strings.TrimSpace(eingabe.Untertitel),
+		Verlag:                  strings.TrimSpace(eingabe.Verlag),
+		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
+		Beschreibung:            strings.TrimSpace(eingabe.Beschreibung),
 		Signatur:                strings.TrimSpace(eingabe.Signatur),
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 	}

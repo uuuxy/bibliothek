@@ -21,6 +21,8 @@ type BuchAktualisierenAnfrage struct {
 	Bestand                 int            `json:"stock"`
 	ZaehlDatum              *string        `json:"lastCounted"`
 	Medientyp               string         `json:"medientyp"`
+	JahrgangVon             int            `json:"jahrgangVon"`
+	JahrgangBis             int            `json:"jahrgangBis"`
 	Untertitel              string         `json:"untertitel"`
 	Verlag                  string         `json:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
@@ -67,6 +69,8 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Stock:                   eingabe.Bestand,
 		LastCounted:             eingabe.ZaehlDatum,
 		Medientyp:               eingabe.Medientyp,
+		JahrgangVon:             eingabe.JahrgangVon,
+		JahrgangBis:             eingabe.JahrgangBis,
 		Untertitel:              eingabe.Untertitel,
 		Verlag:                  eingabe.Verlag,
 		Erscheinungsjahr:        eingabe.Erscheinungsjahr,

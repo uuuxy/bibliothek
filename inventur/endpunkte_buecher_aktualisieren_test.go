@@ -1,8 +1,54 @@
 package inventur
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 )
+
+// TestBuchAktualisierenAnfrageDecodesAlleFelder sichert die Regression ab, bei der
+// jahrgangVon/jahrgangBis nicht im Request-Struct standen: der JSON-Decoder verwarf
+// die Felder still, der Handler schrieb 0/0 in die DB und meldete trotzdem 200
+// ("erfolgreich gespeichert", aber der Klassenbereich 11–13 war weg). Der Test
+// dekodiert exakt die Nutzlast, die das Frontend sendet, und prüft, dass alle vom
+// Formular gebundenen Felder ankommen.
+func TestBuchAktualisierenAnfrageDecodesAlleFelder(t *testing.T) {
+	// Feldnamen entsprechen den json-Tags aus dem Frontend (BuchEingabefelder*.svelte).
+	body := `{
+		"isbn": "978-3-16-148410-0",
+		"title": "Testtitel",
+		"jahrgangVon": 11,
+		"jahrgangBis": 13,
+		"untertitel": "Ein Untertitel",
+		"verlag": "Testverlag",
+		"erscheinungsjahr": 2024,
+		"beschreibung": "Beschreibungstext"
+	}`
+
+	var eingabe BuchAktualisierenAnfrage
+	if err := json.NewDecoder(strings.NewReader(body)).Decode(&eingabe); err != nil {
+		t.Fatalf("Decode fehlgeschlagen: %v", err)
+	}
+
+	if eingabe.JahrgangVon != 11 {
+		t.Errorf("JahrgangVon: erwartet 11, bekam %d", eingabe.JahrgangVon)
+	}
+	if eingabe.JahrgangBis != 13 {
+		t.Errorf("JahrgangBis: erwartet 13, bekam %d", eingabe.JahrgangBis)
+	}
+	if eingabe.Untertitel != "Ein Untertitel" {
+		t.Errorf("Untertitel: erwartet 'Ein Untertitel', bekam %q", eingabe.Untertitel)
+	}
+	if eingabe.Verlag != "Testverlag" {
+		t.Errorf("Verlag: erwartet 'Testverlag', bekam %q", eingabe.Verlag)
+	}
+	if eingabe.Erscheinungsjahr != 2024 {
+		t.Errorf("Erscheinungsjahr: erwartet 2024, bekam %d", eingabe.Erscheinungsjahr)
+	}
+	if eingabe.Beschreibung != "Beschreibungstext" {
+		t.Errorf("Beschreibung: erwartet 'Beschreibungstext', bekam %q", eingabe.Beschreibung)
+	}
+}
 
 func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 	tests := []struct {
