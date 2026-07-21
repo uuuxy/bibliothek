@@ -227,16 +227,22 @@ type TitleHistory struct {
 // GetTitleHistoryHandler lists all historical loans for a book title.
 // @Router       /buecher/titel/{id}/historie [get]
 func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
-			return
-		}
+	return s.handleGetTitleHistory
+}
 
-		ctx := r.Context()
+// handleGetTitleHistory liefert die letzten 200 Ausleih-Vorgänge eines Titels. Als
+// Top-Level-Methode ausgelagert (nicht Inline-Closure), damit die Scan-Schleife nicht
+// zusätzlich als Verschachtelung zählt (S3776).
+func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
+		return
+	}
 
-		query := `
+	ctx := r.Context()
+
+	query := `
 			SELECT 
 			  COALESCE(s.vorname, b.vorname) AS vorname,
 			  COALESCE(s.nachname, b.nachname) AS nachname,
@@ -250,39 +256,38 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 			ORDER BY a.ausgeliehen_am DESC
 			LIMIT 200
 		`
-		rows, err := s.DB.Pool.Query(ctx, query, id)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer rows.Close()
-
-		history := []TitleHistory{}
-		for rows.Next() {
-			var h TitleHistory
-			var vorname, nachname, klasse *string
-			if err := rows.Scan(&vorname, &nachname, &klasse, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			if vorname != nil {
-				h.Vorname = *vorname
-			} else {
-				h.Vorname = "Anonym"
-			}
-			if nachname != nil {
-				h.Nachname = *nachname
-			}
-			if klasse != nil {
-				h.Klasse = *klasse
-			}
-			history = append(history, h)
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		RespondJSON(w, http.StatusOK, history)
+	rows, err := s.DB.Pool.Query(ctx, query, id)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
 	}
+	defer rows.Close()
+
+	history := []TitleHistory{}
+	for rows.Next() {
+		var h TitleHistory
+		var vorname, nachname, klasse *string
+		if err := rows.Scan(&vorname, &nachname, &klasse, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		h.Vorname = stringOrDefault(vorname, "Anonym")
+		h.Nachname = stringOrDefault(nachname, "")
+		h.Klasse = stringOrDefault(klasse, "")
+		history = append(history, h)
+	}
+	if err := rows.Err(); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, history)
+}
+
+// stringOrDefault liefert den Wert von s, oder fallback wenn s nil ist.
+func stringOrDefault(s *string, fallback string) string {
+	if s != nil {
+		return *s
+	}
+	return fallback
 }

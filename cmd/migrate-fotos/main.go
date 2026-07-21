@@ -74,7 +74,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	var processed, migrated int
+	processed, migrated := migriereAlleFotos(pool, root, entries)
+
+	fmt.Printf("Migration abgeschlossen. %d Fotos gefunden, %d erfolgreich migriert und verschlüsselt.\n", processed, migrated)
+	fmt.Println("Du kannst das Verzeichnis 'uploads/fotos' jetzt sicher löschen.")
+}
+
+// migriereAlleFotos verschlüsselt alle .jpg-Dateien im Verzeichnis und liefert die Zahl
+// gefundener und erfolgreich migrierter Fotos. Ausgelagert aus main, damit main flach bleibt.
+func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry) (processed, migrated int) {
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jpg") {
 			continue
@@ -84,9 +92,7 @@ func main() {
 			migrated++
 		}
 	}
-
-	fmt.Printf("Migration abgeschlossen. %d Fotos gefunden, %d erfolgreich migriert und verschlüsselt.\n", processed, migrated)
-	fmt.Println("Du kannst das Verzeichnis 'uploads/fotos' jetzt sicher löschen.")
+	return processed, migrated
 }
 
 // migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =

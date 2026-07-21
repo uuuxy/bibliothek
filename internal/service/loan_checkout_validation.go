@@ -29,38 +29,64 @@ func (s *defaultLoanService) logOverride(ctx context.Context, staffID, borrowerI
 // pruefeSchuelerAusleihbar prüft die Sperrgründe (Sperr-Flags, offene Schadensrechnungen
 // und die Überfällig-Automatik). Ist overrideBlock gesetzt, wird die Sperre statt
 // eines Fehlers nur revisionssicher protokolliert.
+// pruefeSchuelerAusleihbar führt die vier Sperr-Checks der Reihe nach aus. Jeder Check ist
+// in einen eigenen Helfer ausgelagert (reine Extract-Method, keine Logikänderung) — die
+// Reihenfolge und das overrideBlock-/Audit-Verhalten sind identisch zum vorherigen Monolithen.
 func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
-	if sObj.IstGesperrt {
-		// Grund mit ausgeben — ein gesperrter Schüler ohne sichtbaren Grund zwingt das
-		// Personal sonst, in der Historie zu wühlen. block_reason ist bei Sperre garantiert
-		// gefüllt (chk_schueler_block_reason); der Fallback greift nur bei Altbeständen.
-		reason := "Grund nicht erfasst"
-		if sObj.BlockReason != nil && *sObj.BlockReason != "" {
-			reason = *sObj.BlockReason
-		}
-		if !overrideBlock {
-			return fmt.Errorf("%w: Ausleihe gesperrt: %s", ErrBlocked, reason)
-		}
-		s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (gesperrt: "+reason+")")
+	if err := s.pruefeGesperrt(ctx, sObj, borrowerID, staffID, overrideBlock); err != nil {
+		return err
 	}
-
-	if sObj.IsManuallyBlocked {
-		reason := "ohne Grund"
-		if sObj.BlockReason != nil && *sObj.BlockReason != "" {
-			reason = *sObj.BlockReason
-		}
-		if !overrideBlock {
-			return fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
-		}
-		s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (Manuelle Sperre: "+reason+")")
+	if err := s.pruefeManuellGesperrt(ctx, sObj, borrowerID, staffID, overrideBlock); err != nil {
+		return err
 	}
+	if err := s.pruefeOffeneSchaeden(ctx, borrowerID, staffID, overrideBlock); err != nil {
+		return err
+	}
+	return s.pruefeUeberfaellig(ctx, borrowerID, staffID, overrideBlock)
+}
 
-	// Automatische Sperre bei offenen Schadensrechnungen: Wer einen unbezahlten, nicht
-	// stornierten Schadensfall hat, darf nichts Neues ausleihen, bis die Schule entschädigt
-	// ist — sonst könnte man Bücher zerstören, die Rechnung ignorieren und sich am nächsten
-	// Tag neu eindecken. storniert_am setzt ist_bezahlt = true (repository/audit_system.go),
-	// daher genügt ist_bezahlt = false. Wie bei den übrigen Sperren ist overrideBlock möglich,
-	// wird dann aber revisionssicher protokolliert.
+// pruefeGesperrt blockt einen gesperrten Schüler; overrideBlock hebt die Sperre
+// revisionssicher protokolliert auf.
+func (s *defaultLoanService) pruefeGesperrt(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
+	if !sObj.IstGesperrt {
+		return nil
+	}
+	// Grund mit ausgeben — ein gesperrter Schüler ohne sichtbaren Grund zwingt das
+	// Personal sonst, in der Historie zu wühlen. block_reason ist bei Sperre garantiert
+	// gefüllt (chk_schueler_block_reason); der Fallback greift nur bei Altbeständen.
+	reason := "Grund nicht erfasst"
+	if sObj.BlockReason != nil && *sObj.BlockReason != "" {
+		reason = *sObj.BlockReason
+	}
+	if !overrideBlock {
+		return fmt.Errorf("%w: Ausleihe gesperrt: %s", ErrBlocked, reason)
+	}
+	s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (gesperrt: "+reason+")")
+	return nil
+}
+
+// pruefeManuellGesperrt behandelt die separate manuelle Sperre (is_manually_blocked).
+func (s *defaultLoanService) pruefeManuellGesperrt(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
+	if !sObj.IsManuallyBlocked {
+		return nil
+	}
+	reason := "ohne Grund"
+	if sObj.BlockReason != nil && *sObj.BlockReason != "" {
+		reason = *sObj.BlockReason
+	}
+	if !overrideBlock {
+		return fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
+	}
+	s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (Manuelle Sperre: "+reason+")")
+	return nil
+}
+
+// pruefeOffeneSchaeden blockt bei unbezahlten, nicht stornierten Schadensrechnungen: Wer
+// einen unbezahlten Schadensfall hat, darf nichts Neues ausleihen, bis die Schule entschädigt
+// ist — sonst könnte man Bücher zerstören, die Rechnung ignorieren und sich am nächsten Tag
+// neu eindecken. storniert_am setzt ist_bezahlt = true (repository/audit_system.go), daher
+// genügt ist_bezahlt = false. overrideBlock möglich, wird dann revisionssicher protokolliert.
+func (s *defaultLoanService) pruefeOffeneSchaeden(ctx context.Context, borrowerID, staffID string, overrideBlock bool) error {
 	var offeneSchaeden int
 	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
@@ -74,7 +100,12 @@ func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj 
 		}
 		s.logOverride(ctx, staffID, borrowerID, fmt.Sprintf("Ausleihsperre manuell ignoriert (unbezahlte Schäden: %d)", offeneSchaeden))
 	}
+	return nil
+}
 
+// pruefeUeberfaellig setzt die Overdue-Sperr-Automatik um: ab MaxOverdueItems überfälligen
+// Medien (älter als MaxOverdueDays) ist die Ausleihe gesperrt.
+func (s *defaultLoanService) pruefeUeberfaellig(ctx context.Context, borrowerID, staffID string, overrideBlock bool) error {
 	settings, err := s.querySettings(ctx)
 	if err != nil {
 		return err

@@ -29,58 +29,65 @@ type OverrideDueDateRequest struct {
 // ExtendLoanHandler extends the due date of a single loan by the standard book interval (e.g. 28 days).
 func (s *Server) ExtendLoanHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ausleiheID := r.PathValue("ausleihe_id")
-		if ausleiheID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
-			return
-		}
+		s.handleExtendLoan(w, r, settingsRepo)
+	}
+}
 
-		ctx := r.Context()
+// handleExtendLoan verlängert eine einzelne Ausleihe. Als Top-Level-Methode ausgelagert,
+// damit die Frühabbrüche nicht zusätzlich als Closure-Verschachtelung zählen (S3776).
+func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settingsRepo repository.SystemSettingsRepository) {
+	ausleiheID := r.PathValue("ausleihe_id")
+	if ausleiheID == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
+		return
+	}
 
-		// Sanktions-Konsistenz: Ist das Buch an einen gesperrten Schüler verliehen, darf die
-		// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
-		// eine Verlängerung ausgehebelt werden. Lehrer-/Handapparat-Ausleihen (kein
-		// schueler_id → LEFT JOIN liefert NULL) sind nicht betroffen.
-		var gesperrt bool
-		var blockReason string
-		if errChk := s.DB.Pool.QueryRow(ctx, `
+	ctx := r.Context()
+
+	// Sanktions-Konsistenz: Ist das Buch an einen gesperrten Schüler verliehen, darf die
+	// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
+	// eine Verlängerung ausgehebelt werden. Lehrer-/Handapparat-Ausleihen (kein
+	// schueler_id → LEFT JOIN liefert NULL) sind nicht betroffen.
+	var gesperrt bool
+	var blockReason string
+	if errChk := s.DB.Pool.QueryRow(ctx, `
 			SELECT COALESCE(s.ist_gesperrt, false) OR COALESCE(s.is_manually_blocked, false),
 			       COALESCE(s.block_reason, '')
 			FROM ausleihen a
 			LEFT JOIN schueler s ON s.id = a.schueler_id
 			WHERE a.id = $1 AND a.rueckgabe_am IS NULL
 		`, ausleiheID).Scan(&gesperrt, &blockReason); errChk != nil {
-			if errChk == pgx.ErrNoRows {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
-				return
-			}
-			log.Printf("Fehler bei Sperr-Prüfung (Einzel-Verlängerung): %v", errChk)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		if errChk == pgx.ErrNoRows {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 			return
 		}
-		if gesperrt {
-			msg := "Verlängerung nicht möglich: Ausleihe gesperrt"
-			if blockReason != "" {
-				msg += " (" + blockReason + ")"
-			}
-			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(msg))
-			return
+		log.Printf("Fehler bei Sperr-Prüfung (Einzel-Verlängerung): %v", errChk)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		return
+	}
+	if gesperrt {
+		msg := "Verlängerung nicht möglich: Ausleihe gesperrt"
+		if blockReason != "" {
+			msg += " (" + blockReason + ")"
 		}
+		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(msg))
+		return
+	}
 
-		// Retrieve standard extension interval
-		settings, err := settingsRepo.GetSettings(ctx)
-		extensionDays := 28 // Default if not configured
-		if err == nil && settings.FristBuchTage > 0 {
-			extensionDays = settings.FristBuchTage
-		}
+	// Retrieve standard extension interval
+	settings, err := settingsRepo.GetSettings(ctx)
+	extensionDays := 28 // Default if not configured
+	if err == nil && settings.FristBuchTage > 0 {
+		extensionDays = settings.FristBuchTage
+	}
 
-		// Die Verlängerung setzt die Mahn-Eskalation zurück, SOBALD die neue Frist wieder in
-		// der Zukunft liegt. Ohne das würde ein nach der 1. Mahnung verlängertes und erneut
-		// überzogenes Buch die 1. Stufe überspringen und sofort in Stufe 2 (Rechnung)
-		// eskalieren. Bleibt die Frist trotz Verlängerung in der Vergangenheit (stark
-		// überzogene Ausleihe), bleibt die Mahnstufe erhalten — dann ist die Eskalation
-		// berechtigt weiterzuführen, nicht zurückzusetzen.
-		q := `
+	// Die Verlängerung setzt die Mahn-Eskalation zurück, SOBALD die neue Frist wieder in
+	// der Zukunft liegt. Ohne das würde ein nach der 1. Mahnung verlängertes und erneut
+	// überzogenes Buch die 1. Stufe überspringen und sofort in Stufe 2 (Rechnung)
+	// eskalieren. Bleibt die Frist trotz Verlängerung in der Vergangenheit (stark
+	// überzogene Ausleihe), bleibt die Mahnstufe erhalten — dann ist die Eskalation
+	// berechtigt weiterzuführen, nicht zurückzusetzen.
+	q := `
 			UPDATE ausleihen
 			SET rueckgabe_frist = rueckgabe_frist + ($2 * INTERVAL '1 day'),
 			    mahnstufe = CASE WHEN rueckgabe_frist + ($2 * INTERVAL '1 day') > CURRENT_TIMESTAMP THEN 0 ELSE mahnstufe END,
@@ -89,24 +96,23 @@ func (s *Server) ExtendLoanHandler(settingsRepo repository.SystemSettingsReposit
 			RETURNING id, rueckgabe_frist
 		`
 
-		var id string
-		var newFrist time.Time
-		err = s.DB.Pool.QueryRow(ctx, q, ausleiheID, extensionDays).Scan(&id, &newFrist)
-		if err != nil {
-			if err == pgx.ErrNoRows {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
-				return
-			}
-			log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+	var id string
+	var newFrist time.Time
+	err = s.DB.Pool.QueryRow(ctx, q, ausleiheID, extensionDays).Scan(&id, &newFrist)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 			return
 		}
-
-		RespondJSON(w, http.StatusOK, map[string]interface{}{
-			"success":               true,
-			"neues_rueckgabe_datum": newFrist,
-		})
+		log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		return
 	}
+
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"success":               true,
+		"neues_rueckgabe_datum": newFrist,
+	})
 }
 
 // OverrideDueDateHandler manually overrides the due date of an active loan.
