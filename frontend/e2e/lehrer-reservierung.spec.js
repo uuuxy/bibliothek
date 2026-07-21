@@ -14,8 +14,9 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
         VALUES ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'lehrer', true)
         ON CONFLICT (email) DO UPDATE SET aktiv = true;
 
-        INSERT INTO buecher_titel (isbn, titel, autor)
-        VALUES ('978-${s}', 'E2E Lehrerwunsch ${s}', 'Portal Autor');
+        WITH t AS (INSERT INTO buecher_titel (isbn, titel, autor) VALUES ('978-${s}', 'E2E Lehrerwunsch ${s}', 'Portal Autor') RETURNING id)
+        INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+        SELECT id, 'B-E2E-' || '${s}-' || generate_series(1, 30), true FROM t;
     `);
 
 	// Lehrer-Login, dann über den Menüpunkt "Mein Portal" ins Lehrerportal
