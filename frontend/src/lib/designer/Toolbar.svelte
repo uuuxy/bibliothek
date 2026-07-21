@@ -43,16 +43,22 @@
 		previewStudent
 	} = $props();
 
+	// Sichtbar unterscheidbare, druck-taugliche Töne. Die vorherigen Themes lagen bei
+	// -50/40-Opazität (praktisch weiß) — die Auswahl war in der Vorschau nicht erkennbar.
 	const themes = [
-		{ value: 'bg-white text-black border-slate-200', name: 'Standard Weiß' },
-		{ value: 'bg-slate-50 text-slate-900 border-slate-200', name: 'Dezentes Grau' },
+		{ value: 'bg-white text-black border-slate-200', name: 'Weiß' },
+		{ value: 'bg-slate-100 text-slate-900 border-slate-300', name: 'Grau' },
 		{
-			value: 'bg-linear-to-tr from-emerald-50/40 to-teal-50/40 text-zinc-900 border-emerald-100',
+			value: 'bg-linear-to-tr from-emerald-100 to-teal-100 text-emerald-950 border-emerald-300',
 			name: 'Smaragd'
 		},
 		{
-			value: 'bg-linear-to-tr from-blue-50/40 to-indigo-50/40 text-zinc-900 border-blue-100',
-			name: 'Klassik'
+			value: 'bg-linear-to-tr from-sky-100 to-indigo-100 text-indigo-950 border-sky-300',
+			name: 'Blau'
+		},
+		{
+			value: 'bg-linear-to-tr from-amber-100 to-orange-100 text-amber-950 border-amber-300',
+			name: 'Bernstein'
 		}
 	];
 

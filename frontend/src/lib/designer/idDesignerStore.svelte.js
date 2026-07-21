@@ -216,7 +216,9 @@ export const idStore = $state({
 	},
 	back: {
 		elements: defaultBackElements(),
-		theme: 'bg-slate-50 text-slate-900 border-slate-200'
+		// Muss exakt einem themes-Wert in Toolbar.svelte entsprechen, sonst zeigt das
+		// Hintergrund-Dropdown keine Auswahl an.
+		theme: 'bg-slate-100 text-slate-900 border-slate-300'
 	}
 });
 
