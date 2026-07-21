@@ -214,6 +214,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
+			cover_url = EXCLUDED.cover_url,
 			subject = EXCLUDED.subject,
 			grade_level = EXCLUDED.grade_level,
 			track = EXCLUDED.track,
