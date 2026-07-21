@@ -83,7 +83,7 @@ function createOfflineSyncStore() {
 			// für niemanden von Vorteil, wenn er es vorhersagt. Eine kryptografische
 			// Quelle brächte hier keinerlei Schutz — nur Aufwand.
 			if (queueLength > 50) {
-				const jitter = 200 + Math.random() * 300;
+				const jitter = 200 + Math.random() * 300; // NOSONAR — Jitter, kein Sicherheitskontext (siehe Kommentar oben; S2245 ist hier ein False Positive)
 				await new Promise((resolve) => setTimeout(resolve, jitter));
 			}
 			return true;
