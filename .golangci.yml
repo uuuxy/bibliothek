@@ -5,15 +5,21 @@ version: "2"
 linters:
   default: none
   enable:
-    - errcheck    # Findet ignorierte Fehler (wie das fehlende Fehler-Handling bei tx.Rollback)
-    - govet       # Findet Bugs und verdächtige Konstrukte (z.B. falsche Operator-Präzedenz)
-    - ineffassign # Findet Zuweisungen, die nie genutzt werden
-    - staticcheck # Der Standard-Linter (inkl. der ehemaligen gosimple-Checks, z.B. SA4010)
-    - unused      # Findet ungenutzte Variablen, Konstanten und Funktionen
+    - errcheck      # Findet ignorierte Fehler (wie das fehlende Fehler-Handling bei tx.Rollback)
+    - govet         # Findet Bugs und verdächtige Konstrukte (z.B. falsche Operator-Präzedenz)
+    - ineffassign   # Findet Zuweisungen, die nie genutzt werden
+    - rowserrcheck  # Erzwingt rows.Err()-Prüfung nach pgx-Query (institutionalisiert #1, verifiziert für pgx v5)
+    - staticcheck   # Der Standard-Linter (inkl. der ehemaligen gosimple-Checks, z.B. SA4010)
+    - unused        # Findet ungenutzte Variablen, Konstanten und Funktionen
   settings:
     errcheck:
       check-type-assertions: true
       check-blank: true
+    rowserrcheck:
+      # rowserrcheck kennt database/sql von Haus aus nicht pgx — hier explizit
+      # den pgx-v5-Treiber registrieren, sonst prüft es unsere Query-Aufrufe nicht.
+      packages:
+        - github.com/jackc/pgx/v5
   # v1 "issues.exclude-dirs". Die frühere exclude-rules-Regel für node_modules
   # war davon bereits vollständig abgedeckt und entfällt ersatzlos.
   exclusions:
