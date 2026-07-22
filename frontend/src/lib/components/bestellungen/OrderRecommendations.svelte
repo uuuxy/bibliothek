@@ -131,27 +131,38 @@
 		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] px-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
 				{@const ist_kritisch = stufe(r) === 'kritisch'}
+				<!-- Kein Zeilen-Alarm mehr: die Liste IST per Definition die Dringend-Liste
+				     (sortiert nach Fehlbestand). Dringlichkeit trägt die farbige Zahl rechts
+				     + das „Vergriffen"-Pill — nicht 335 rote Balken (Alarm-Müdigkeit). -->
 				<div
-					class="group flex items-center gap-3 rounded-xl border border-transparent pl-3 pr-2.5 py-2.5 hover:bg-slate-50 hover:border-slate-200 transition-colors border-l-[3px] {ist_kritisch
-						? 'border-l-rose-400'
-						: 'border-l-amber-400'}"
+					class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 hover:bg-slate-50 hover:border-slate-200 transition-colors"
 				>
-					{#if r.cover_url}
-						<!-- lazy: schmales Scrollfenster; ohne dies fordert der Browser alle Cover auf einmal an. -->
-						<img
-							src="/api/images/cover?isbn={r.isbn || ''}&url={encodeURIComponent(r.cover_url)}"
-							class="w-10 aspect-3/4 object-cover rounded-md shrink-0 bg-white ring-1 ring-slate-200/70"
-							loading="lazy"
-							decoding="async"
-							alt=""
-						/>
-					{:else}
+					<!-- Platzhalter liegt IMMER dahinter; das Cover legt sich drüber und blendet
+					     sich bei Ladefehler aus (DNB liefert für viele LMF-Titel kein Bild —
+					     sonst blieben leere Kästen zurück, die kaputt aussehen). -->
+					<div class="relative w-10 aspect-3/4 shrink-0">
 						<div
-							class="w-10 aspect-3/4 rounded-md bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 text-sm ring-1 ring-slate-200/70"
+							class="absolute inset-0 rounded-md bg-slate-100 flex items-center justify-center text-slate-400 text-sm ring-1 ring-slate-200/70"
 						>
 							📖
 						</div>
-					{/if}
+						{#if r.cover_url}
+							<img
+								src="/api/images/cover?isbn={r.isbn || ''}&url={encodeURIComponent(r.cover_url)}"
+								class="absolute inset-0 w-full h-full object-cover rounded-md bg-white ring-1 ring-slate-200/70"
+								loading="lazy"
+								decoding="async"
+								alt=""
+								onload={(e) => {
+									// Der Cover-Proxy liefert bei fehlendem Bild ein transparentes 1×1-GIF
+									// (bewusst 200 statt 404, gegen Konsolen-Spam). Das ist KEIN Fehler,
+									// onerror greift nicht — an der Winzgröße erkennen wir den Platzhalter.
+									if (e.currentTarget.naturalWidth <= 1) e.currentTarget.style.display = 'none';
+								}}
+								onerror={(e) => (e.currentTarget.style.display = 'none')}
+							/>
+						{/if}
+					</div>
 
 					<div class="min-w-0 flex-1">
 						<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
