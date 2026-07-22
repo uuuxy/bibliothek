@@ -84,22 +84,28 @@
 				onReceived={handleShipmentReceived}
 			/>
 		{:else}
-			<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start overflow-y-auto">
-				<OrderCreationPanel />
+			<div class="flex flex-col gap-5">
+				<!-- Wareneingang als schlanker Statusstreifen über der Arbeitsfläche -->
+				<IncomingShipments
+					incomingShipments={orderStore.incomingShipments}
+					{showGreenFade}
+					onOpenWareneingang={() => (showWareneingang = true)}
+				/>
 
-				<div class="lg:col-span-4 space-y-6">
-					<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} />
+				<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+					<!-- HERO: der Bestellbedarf ist die tägliche Arbeitsfläche -->
+					<div class="lg:col-span-7 xl:col-span-8 min-w-0">
+						<OrderRecommendations
+							recommendations={orderStore.recommendations}
+							onAddToCart={(book) => orderStore.addToCart(book)}
+						/>
+					</div>
 
-					<IncomingShipments
-						incomingShipments={orderStore.incomingShipments}
-						{showGreenFade}
-						onOpenWareneingang={() => (showWareneingang = true)}
-					/>
-
-					<OrderRecommendations
-						recommendations={orderStore.recommendations}
-						onAddToCart={(book) => orderStore.addToCart(book)}
-					/>
+					<!-- RAIL: die Bestellung wächst sichtbar mit, bleibt beim Scrollen stehen -->
+					<div class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-2">
+						<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} />
+						<OrderCreationPanel />
+					</div>
 				</div>
 			</div>
 		{/if}

@@ -54,27 +54,27 @@
 	}
 </script>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-4">
 	<div class="space-y-1.5">
-		<label for="supplier" class="block text-sm font-medium text-slate-600">Lieferant</label>
+		<label for="supplier" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Lieferant</label>
 		<select
 			id="supplier"
 			bind:value={orderStore.selectedSupplierId}
-			class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-base bg-white"
+			class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
 		>
 			{#each orderStore.suppliers as s, _i (_i)}<option value={s.id}>{s.name} ({s.customerNumber})</option
 				>{/each}
 		</select>
 	</div>
 	<div class="space-y-1.5 relative">
-		<label for="book" class="block text-sm font-medium text-slate-600">Buchtitel hinzufügen</label>
+		<label for="book" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Titel suchen &amp; hinzufügen</label>
 		<input
 			id="book"
 			type="text"
 			bind:value={orderStore.searchQuery}
 			oninput={() => orderStore.handleSearchInput()}
-			placeholder="Titel, Autor oder ISBN suchen..."
-			class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-base bg-white"
+			placeholder="Titel, Autor oder ISBN …"
+			class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
 		/>
 		{#if orderStore.showDropdown && (localResults.length > 0 || dnbResults.length > 0)}
 			<div
@@ -186,16 +186,14 @@
 </div>
 
 {#if stagedBook}
-	<div
-		class="p-4 border-l-2 border-blue-400 bg-blue-50/50 flex flex-col md:flex-row items-center justify-between gap-4 animate-fade-in"
-	>
+	<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50/60 space-y-3.5 animate-fade-in">
 		<div class="flex items-center gap-3 min-w-0">
 			{#if stagedBook.cover_url}
 				<img
 					src="/api/images/cover?isbn={stagedBook.isbn || ''}&url={encodeURIComponent(
 						stagedBook.cover_url
 					)}"
-					class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-slate-100 shrink-0"
+					class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-white shrink-0"
 					alt=""
 				/>
 			{:else}
@@ -206,48 +204,43 @@
 				</div>
 			{/if}
 			<div class="min-w-0">
-				<div class="font-bold text-slate-800 truncate">{stagedBook.titel}</div>
+				<div class="font-bold text-slate-900 text-sm truncate">{stagedBook.titel}</div>
 				<div class="text-xs text-slate-500 truncate">{stagedBook.autor}</div>
 			</div>
 		</div>
 
-		<div class="flex flex-wrap items-center gap-4 shrink-0">
+		<div class="flex items-center justify-between gap-3">
 			<div class="flex items-center gap-2">
-				<label for="stagedMengeInput" class="text-xs font-bold text-slate-500 uppercase"
-					>Menge:</label
-				>
+				<label for="stagedMengeInput" class="text-xs font-bold text-slate-500 uppercase">Menge</label>
 				<input
 					id="stagedMengeInput"
 					type="number"
 					min="1"
 					bind:value={stagedMenge}
-					class="w-16 px-2 py-1.5 border border-slate-200 bg-white rounded-md text-center font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+					class="w-16 px-2 py-1.5 border border-slate-200 bg-white rounded-lg text-center font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 				/>
 			</div>
-
-			<label
-				class="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 border border-slate-200 rounded-md"
-			>
+			<label class="flex items-center gap-2 cursor-pointer select-none">
 				<input
 					type="checkbox"
 					bind:checked={stagedGenerateBarcodes}
 					class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
 				/>
-				<span class="text-sm font-semibold text-slate-700">Barcodes generieren</span>
+				<span class="text-xs font-semibold text-slate-700">Barcodes generieren</span>
 			</label>
+		</div>
 
-			<div class="flex items-center gap-2 ml-auto">
-				<button
-					onclick={() => (stagedBook = null)}
-					class="px-3 py-1.5 text-sm font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
-					>Abbrechen</button
-				>
-				<button
-					onclick={confirmAddToCart}
-					class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow-sm cursor-pointer whitespace-nowrap"
-					>In den Warenkorb</button
-				>
-			</div>
+		<div class="flex items-center gap-2">
+			<button
+				onclick={() => (stagedBook = null)}
+				class="px-3 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+				>Abbrechen</button
+			>
+			<button
+				onclick={confirmAddToCart}
+				class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+				>In den Warenkorb</button
+			>
 		</div>
 	</div>
 {/if}

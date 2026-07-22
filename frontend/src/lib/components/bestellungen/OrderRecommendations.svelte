@@ -4,16 +4,34 @@
 	// Nur die ersten Einträge ins DOM (Muster wie BookTable/Inventur-Startseite).
 	// Der Bestellbedarf umfasst schnell den halben Katalog — jeder Titel unter seinem
 	// Meldebestand landet hier. Alle zu rendern hiess: tausende DOM-Knoten und ebenso
-	// viele Cover-Requests für eine Liste, die in ein 240px-Fenster schaut.
-	let maxVisible = $state(50);
+	// viele Cover-Requests. Das Scrollfenster wächst mit dem Viewport, damit man die
+	// dringenden Titel sieht statt drei Zeilen durch ein Guckloch.
+	let maxVisible = $state(60);
 
-	let sichtbare = $derived(recommendations.slice(0, maxVisible));
+	// Schnellfilter: bei 335 Titeln ist Suchen schneller als Scrollen.
+	let filter = $state('');
 
-	// Nach einem Datenwechsel (z. B. Wareneingang) wieder von vorn beginnen.
+	let gefiltert = $derived(
+		filter.trim()
+			? recommendations.filter((/** @type {any} */ r) => {
+					const q = filter.trim().toLowerCase();
+					return (
+						(r.titel || '').toLowerCase().includes(q) ||
+						(r.isbn || '').toLowerCase().includes(q) ||
+						(r.verlag || '').toLowerCase().includes(q) ||
+						(r.signatur || '').toLowerCase().includes(q)
+					);
+				})
+			: recommendations
+	);
+
+	let sichtbare = $derived(gefiltert.slice(0, maxVisible));
+
+	// Nach einem Datenwechsel (z. B. Wareneingang) oder neuem Filter wieder von vorn.
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		recommendations;
-		maxVisible = 50;
+		recommendations, filter;
+		maxVisible = 60;
 	});
 
 	/** Ab hier wird es eng: unter 3 EIGENEN Exemplaren (nicht ausgesondert) ist der
@@ -37,110 +55,151 @@
 	);
 </script>
 
-<div class="space-y-4">
-	<div class="border-b border-gray-200 pb-3 flex items-center justify-between">
-		<div>
-			<h2 class="text-base font-bold text-slate-800">
-				Bestellbedarf Lernmittel
-				{#if recommendations.length}
-					<span class="text-slate-400 font-semibold">({recommendations.length})</span>
+<section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden">
+	<!-- Header -->
+	<header class="px-5 pt-5 pb-4 border-b border-slate-100">
+		<div class="flex items-start justify-between gap-4">
+			<div class="min-w-0">
+				<h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+					Bestellbedarf
+					{#if recommendations.length}
+						<span
+							class="text-xs font-bold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 tabular-nums"
+							>{recommendations.length}</span
+						>
+					{/if}
+				</h2>
+				{#if kritischeAnzahl}
+					<p class="text-[13px] font-semibold text-rose-600 mt-1 flex items-center gap-1.5">
+						<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+						{kritischeAnzahl}× dringend · unter {KRITISCH_AB} Exemplaren
+					</p>
+				{:else if recommendations.length}
+					<p class="text-[13px] text-slate-400 mt-1">Alle unter dem jeweiligen Meldebestand.</p>
 				{/if}
-			</h2>
-			{#if kritischeAnzahl}
-				<p class="text-[11px] font-semibold text-red-600 mt-0.5">
-					{kritischeAnzahl}× dringend (unter {KRITISCH_AB} vorhanden)
-				</p>
-			{/if}
-		</div>
-		<a
-			href="/api/bestellungen/pdf"
-			download
-			class="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-3.5 w-3.5 shrink-0"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
+			</div>
+			<a
+				href="/api/bestellungen/pdf"
+				download
+				class="shrink-0 flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl transition-colors"
 			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+				<svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+					/>
+				</svg>
+				<span class="hidden sm:inline">PDF-Bestellliste</span>
+			</a>
+		</div>
+
+		{#if recommendations.length}
+			<!-- Schnellfilter -->
+			<div class="relative mt-4">
+				<svg
+					class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+				</svg>
+				<input
+					type="search"
+					bind:value={filter}
+					placeholder="In {recommendations.length} Titeln filtern …"
+					class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white transition-all"
 				/>
-			</svg>
-			PDF-Bestellliste
-		</a>
-	</div>
+			</div>
+		{/if}
+	</header>
+
+	<!-- List -->
 	{#if !recommendations.length}
-		<p class="text-xs text-slate-400 text-center py-4">Bestände ausreichend.</p>
+		<div class="flex flex-col items-center justify-center text-center py-16 px-6 text-slate-400">
+			<span class="text-3xl mb-2">✅</span>
+			<p class="text-sm font-semibold text-slate-500">Bestände ausreichend</p>
+			<p class="text-xs mt-1">Kein Titel liegt unter seinem Meldebestand.</p>
+		</div>
+	{:else if !gefiltert.length}
+		<div class="text-center py-14 px-6 text-slate-400">
+			<p class="text-sm font-medium">Kein Treffer für <em>„{filter}"</em></p>
+		</div>
 	{:else}
-		<div class="max-h-60 overflow-y-auto space-y-2">
+		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] px-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
 				{@const ist_kritisch = stufe(r) === 'kritisch'}
 				<div
-					class="p-2.5 border rounded-lg flex items-center justify-between gap-3 text-[11px] {ist_kritisch
-						? 'bg-red-50 border-red-200'
-						: 'bg-amber-50 border-amber-200'}"
+					class="group flex items-center gap-3 rounded-xl border border-transparent pl-3 pr-2.5 py-2.5 hover:bg-slate-50 hover:border-slate-200 transition-colors border-l-[3px] {ist_kritisch
+						? 'border-l-rose-400'
+						: 'border-l-amber-400'}"
 				>
-					<div class="flex items-center gap-2.5 min-w-0">
-						{#if r.cover_url}
-							<!-- lazy: die Liste ist ein schmales Scrollfenster; ohne dies fordert
-							     der Browser die Cover aller gerenderten Zeilen auf einmal an. -->
-							<img
-								src="/api/images/cover?isbn={r.isbn || ''}&url={encodeURIComponent(r.cover_url)}"
-								class="w-9 aspect-3/4 object-cover rounded-sm shrink-0 bg-white"
-								loading="lazy"
-								decoding="async"
-								alt=""
-							/>
+					{#if r.cover_url}
+						<!-- lazy: schmales Scrollfenster; ohne dies fordert der Browser alle Cover auf einmal an. -->
+						<img
+							src="/api/images/cover?isbn={r.isbn || ''}&url={encodeURIComponent(r.cover_url)}"
+							class="w-10 aspect-3/4 object-cover rounded-md shrink-0 bg-white ring-1 ring-slate-200/70"
+							loading="lazy"
+							decoding="async"
+							alt=""
+						/>
+					{:else}
+						<div
+							class="w-10 aspect-3/4 rounded-md bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 text-sm ring-1 ring-slate-200/70"
+						>
+							📖
+						</div>
+					{/if}
+
+					<div class="min-w-0 flex-1">
+						<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
+						<p class="text-xs text-slate-500 truncate mt-0.5">
+							{#if r.isbn}<span class="font-mono text-slate-400">{r.isbn}</span>{/if}
+							{#if r.verlag}<span class="mx-1.5 text-slate-300">·</span>{r.verlag}{/if}
+							{#if r.signatur}<span class="mx-1.5 text-slate-300">·</span>{r.signatur}{/if}
+						</p>
+					</div>
+
+					<!-- Bestandsstatus: bei 0 im Bestand die klare Ansage statt "0 von 0" -->
+					<div class="text-right shrink-0 leading-tight">
+						{#if r.gesamt_bestand === 0}
+							<span
+								class="inline-block text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-full px-2 py-0.5"
+								>Vergriffen</span
+							>
 						{:else}
 							<div
-								class="w-9 aspect-3/4 rounded bg-slate-200 flex items-center justify-center text-slate-400 shrink-0 text-[9px]"
+								class="text-sm font-bold tabular-nums {ist_kritisch ? 'text-rose-600' : 'text-amber-600'}"
+								title="verfügbar / im Bestand"
 							>
-								📖
+								{r.verfuegbarer_bestand}<span class="text-slate-300 font-medium">/</span>{r.gesamt_bestand}
 							</div>
 						{/if}
-						<div class="min-w-0">
-							<h4 class="font-bold text-slate-800 truncate leading-tight">{r.titel}</h4>
-							<!-- Beschaffungsdaten direkt sichtbar: ISBN und Verlag braucht man zum
-							     Bestellen, die Signatur zum Wiederfinden im Regal. -->
-							<p class="text-slate-500 truncate mt-0.5">
-								{#if r.isbn}<span class="font-mono">{r.isbn}</span>{/if}
-								{#if r.verlag}<span class="mx-1">·</span>{r.verlag}{/if}
-								{#if r.signatur}<span class="mx-1">·</span>{r.signatur}{/if}
-								{#if r.erscheinungsjahr}<span class="mx-1">·</span>{r.erscheinungsjahr}{/if}
-							</p>
-						</div>
+						<div class="text-[10px] text-slate-400 mt-0.5">Melde {r.meldebestand}</div>
 					</div>
-					<div class="flex items-center gap-2 shrink-0">
-						<!-- "verfügbar von gesamt": Kontext fürs Auge. Die Liste selbst enthält
-						     nur Titel mit gesamt < Meldebestand; ein verliehener Klassensatz
-						     (0 von 30) taucht gar nicht mehr auf. -->
-						<div class="text-right leading-tight">
-							<div class="font-bold {ist_kritisch ? 'text-red-700' : 'text-amber-700'}">
-								{r.verfuegbarer_bestand} von {r.gesamt_bestand}
-							</div>
-							<div class="text-[9px] text-slate-500">Melde: {r.meldebestand}</div>
-						</div>
-						<button
-							onclick={() => onAddToCart(r)}
-							class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-md text-[9px] cursor-pointer"
-							>+ Add</button
-						>
-					</div>
+
+					<button
+						onclick={() => onAddToCart(r)}
+						aria-label="{r.titel} zur Bestellung hinzufügen"
+						class="shrink-0 w-9 h-9 rounded-full border border-slate-200 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 active:scale-90 transition-all cursor-pointer"
+					>
+						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+						</svg>
+					</button>
 				</div>
 			{/each}
-			{#if recommendations.length > maxVisible}
+
+			{#if gefiltert.length > maxVisible}
 				<button
-					onclick={() => (maxVisible += 50)}
-					class="w-full py-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+					onclick={() => (maxVisible += 60)}
+					class="w-full py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
 				>
-					Mehr laden ({recommendations.length - maxVisible} weitere)
+					Weitere {gefiltert.length - maxVisible} anzeigen
 				</button>
 			{/if}
 		</div>
 	{/if}
-</div>
+</section>

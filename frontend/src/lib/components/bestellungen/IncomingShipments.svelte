@@ -5,59 +5,48 @@
 		incomingShipments.reduce((sum, s) => sum + s.items.reduce((s2, i) => s2 + i.menge, 0), 0)
 	);
 	let totalShipments = $derived(incomingShipments.length);
+	let hatZulauf = $derived(incomingShipments.length > 0);
 </script>
 
-<div class="space-y-4 {showGreenFade ? 'animate-green-fade' : ''}">
-	<div class="flex items-center justify-between border-b border-gray-200 pb-3">
-		<h2 class="text-base font-bold text-slate-800">Wareneingang</h2>
-		<span class="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold uppercase"
-			>Im Zulauf</span
-		>
+<!-- Slimer Status-Streifen: im Leerzustand nur eine dezente Zeile, mit Zulauf eine
+     kompakte, klickbare Karte — nie mehr die halbe Spalte für „nichts da". -->
+<div
+	class="rounded-2xl border px-4 py-3 flex items-center gap-3 transition-colors {hatZulauf
+		? 'bg-white border-slate-200/80 shadow-sm'
+		: 'bg-slate-50/60 border-slate-200/60 border-dashed'} {showGreenFade ? 'animate-green-fade' : ''}"
+>
+	<div
+		class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 {hatZulauf
+			? 'bg-blue-50 text-blue-600'
+			: 'bg-slate-100 text-slate-400'}"
+	>
+		<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+			<path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+			/>
+		</svg>
 	</div>
 
-	{#if !incomingShipments.length}
-		<div class="py-8 text-center text-xs text-slate-400">
-			🚚 Keine offenen Bestellungen im Zulauf.
-		</div>
-	{:else}
-		<div class="space-y-4 pt-1">
-			<div class="flex items-center gap-4">
-				<div
-					class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-6 w-6"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-						/>
-					</svg>
-				</div>
-				<div>
-					<div class="text-2xl font-black text-slate-800 tracking-tight">
-						{totalItems} <span class="text-base font-bold text-slate-500">Exemplare</span>
-					</div>
-					<div class="text-xs font-semibold text-slate-400">
-						aus {totalShipments} ausstehenden {totalShipments === 1 ? 'Lieferung' : 'Lieferungen'}
-					</div>
-				</div>
+	{#if hatZulauf}
+		<div class="min-w-0 flex-1">
+			<div class="text-sm font-bold text-slate-900">
+				{totalItems} Exemplare im Zulauf
 			</div>
-
-			<button
-				onclick={onOpenWareneingang}
-				class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
-			>
-				Wareneingang bearbeiten
-				<span class="transform transition-transform">→</span>
-			</button>
+			<div class="text-xs text-slate-500">
+				aus {totalShipments} offenen {totalShipments === 1 ? 'Lieferung' : 'Lieferungen'}
+			</div>
 		</div>
+		<button
+			onclick={onOpenWareneingang}
+			class="shrink-0 flex items-center gap-1.5 py-2 px-3.5 bg-slate-900 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+		>
+			Einbuchen
+			<span>→</span>
+		</button>
+	{:else}
+		<div class="text-sm text-slate-400 font-medium">Kein Wareneingang im Zulauf</div>
 	{/if}
 </div>
 
@@ -66,18 +55,14 @@
 		0% {
 			background-color: rgba(16, 185, 129, 0.15);
 			border-color: rgba(16, 185, 129, 0.45);
-			transform: scale(1);
 		}
 		50% {
-			background-color: rgba(16, 185, 129, 0.35);
+			background-color: rgba(16, 185, 129, 0.3);
 			border-color: rgba(16, 185, 129, 0.9);
-			transform: scale(1.02);
 		}
 		100% {
-			background-color: transparent;
+			background-color: rgba(255, 255, 255, 1);
 			border-color: rgba(226, 232, 240, 1);
-			opacity: 0;
-			transform: scale(0.95);
 		}
 	}
 	.animate-green-fade {
