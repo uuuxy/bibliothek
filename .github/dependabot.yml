@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Go Backend
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      go-updates:
+        patterns:
+          - "*"
+
+  # Svelte Frontend
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    groups:
+      frontend-updates:
+        patterns:
+          - "*"
