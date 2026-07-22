@@ -85,9 +85,14 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Bilder und Uploads vom Rate-Limiter ausschließen, da ein Seitenaufruf oft dutzende Bilder gleichzeitig lädt.
+			// /api/barcode gehört genau in diese Klasse: die Etiketten-Vorschau (LabelPreview.svelte) rendert einen
+			// kompletten A4-Bogen (Standard 52 = 52 Etiketten) und feuert pro Etikett ein <img src="/api/barcode…">
+			// nahezu gleichzeitig ab — das sprengt sonst das 50-Requests/s-Bucket und liefert 429 (authentifiziert,
+			// view_books, Antwort 1 Jahr cachebar, winzige PNGs). Exakter Pfad-Match, damit /api/barcode/next (JSON)
+			// weiter limitiert bleibt.
 			// /events (SSE) ist eine langlebige Verbindung, die bei jedem (Re-)Connect sonst einen Token verbraucht
 			// und flaky Clients unnötig ausbremst.
-			if strings.HasPrefix(r.URL.Path, "/api/images/cover") || strings.HasPrefix(r.URL.Path, "/uploads/") || r.URL.Path == "/events" {
+			if strings.HasPrefix(r.URL.Path, "/api/images/cover") || strings.HasPrefix(r.URL.Path, "/uploads/") || r.URL.Path == "/api/barcode" || r.URL.Path == "/events" {
 				next.ServeHTTP(w, r)
 				return
 			}

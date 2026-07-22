@@ -35,6 +35,50 @@ func resetLoginState() {
 	failedLoginsMutex.Unlock()
 }
 
+// burstN feuert n GET-Requests auf path durch den allgemeinen IP-Rate-Limiter
+// (Limit=5, damit der Burst klein bleibt) und zählt, wie viele 429 zurückkamen.
+func burstN(t *testing.T, path string, n int) (blocked int) {
+	t.Helper()
+	handler := RateLimitMiddleware(5)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	for i := 0; i < n; i++ {
+		req := httptest.NewRequest("GET", path, nil)
+		req.RemoteAddr = "127.0.0.1:5000"
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code == http.StatusTooManyRequests {
+			blocked++
+		}
+	}
+	return blocked
+}
+
+// Regressionstest für die 429-Flut der Etiketten-Vorschau: ein A4-Bogen rendert
+// dutzende <img src="/api/barcode…"> gleichzeitig. /api/barcode muss — wie
+// /api/images/cover — vom Bucket ausgenommen sein, sonst blockiert ein einziger
+// Seitenaufruf einen Teil seiner eigenen Barcodes.
+func TestRateLimit_BarcodeBurstIsExempt(t *testing.T) {
+	clientip.Configure(nil) // nur Loopback
+	t.Cleanup(func() { clientip.Configure(nil) })
+
+	// 40 Barcodes in einem Rutsch, Bucket=5 → ohne Ausnahme wären 35 geblockt.
+	if got := burstN(t, "/api/barcode?content=112622&width=150&height=50", 40); got != 0 {
+		t.Fatalf("/api/barcode: %d Requests mit 429; want 0 (Endpoint ist vom Rate-Limiter ausgenommen)", got)
+	}
+
+	// Gegenprobe: ein normaler API-Pfad wird nach dem 5. Token weiter limitiert.
+	if got := burstN(t, "/api/books", 40); got == 0 {
+		t.Fatal("/api/books: 0 Requests mit 429; want >0 (normale Pfade bleiben limitiert)")
+	}
+
+	// /api/barcode/next (JSON, kein Fan-out) bleibt ebenfalls limitiert — der
+	// exakte Pfad-Match darf den Unterpfad nicht mit ausnehmen.
+	if got := burstN(t, "/api/barcode/next", 40); got == 0 {
+		t.Fatal("/api/barcode/next: 0 Requests mit 429; want >0 (nur exakt /api/barcode ist ausgenommen)")
+	}
+}
+
 // Der eigentliche DoS-Regressionstest: Hinter einem vertrauenswürdigen Proxy
 // müssen zwei verschiedene echte Clients unabhängige Fehlversuchszähler haben.
 // Vor dem Fix wurde auf r.RemoteAddr (= Proxy) gekeyt, sodass fünf Fehlversuche
