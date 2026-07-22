@@ -9,13 +9,22 @@ const LEHRER_EMAIL = 'e2e-lehrer@test.local';
 test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) => {
 	const s = uniqueSuffix();
 
+	// Der Titel braucht mindestens so viele physische Exemplare wie reserviert werden (25),
+	// sonst greift die Bestandsdeckelung im Handler (reservation.go) und antwortet mit 400 —
+	// die Reservierung käme nie in klassensatz_reservierungen an.
 	seedSQL(`
         INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
         VALUES ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'lehrer', true)
         ON CONFLICT (email) DO UPDATE SET aktiv = true;
 
-        INSERT INTO buecher_titel (isbn, titel, autor)
-        VALUES ('978-${s}', 'E2E Lehrerwunsch ${s}', 'Portal Autor');
+        WITH t AS (
+            INSERT INTO buecher_titel (isbn, titel, autor)
+            VALUES ('978-${s}', 'E2E Lehrerwunsch ${s}', 'Portal Autor')
+            RETURNING id
+        )
+        INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+        SELECT t.id, 'LW-${s}-' || g, true
+        FROM t, generate_series(1, 25) AS g;
     `);
 
 	// Lehrer-Login, dann über den Menüpunkt "Mein Portal" ins Lehrerportal
