@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch } from './apiFetch.js';
 	import OverdueWidget from './OverdueWidget.svelte';
 	import StatistikDetailPanel from './components/stats/StatistikDetailPanel.svelte';
 
@@ -293,10 +293,10 @@
 								{#each topWarmers as book, _i (_i)}
 									<tr class="hover:bg-slate-50/50 transition-colors">
 										<td
-											class="py-3.5 px-4 text-slate-800 font-bold truncate max-w-[160px]"
+											class="py-3.5 px-4 text-slate-800 font-bold truncate max-w-40"
 											title={book.titel}>{book.titel}</td
 										>
-										<td class="py-3.5 px-4 text-slate-500 truncate max-w-[120px]" title={book.autor}
+										<td class="py-3.5 px-4 text-slate-500 truncate max-w-30" title={book.autor}
 											>{book.autor}</td
 										>
 										<td class="py-3.5 px-4 text-amber-600 font-bold text-right"

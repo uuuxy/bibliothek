@@ -1,6 +1,6 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
-	import { authStore } from './stores/authStore.svelte.js';
+	import { apiFetch } from './apiFetch.js';
+	import { uiStore } from './stores/uiStore.svelte.js';
 
 	/** @type {any} */
 	let summary = $state(null);
@@ -33,16 +33,36 @@
 {:else if summary}
 	<!-- Flaches Alert mit Links-Akzent statt umschließender Karte -->
 	<div class="border-l-4 border-rose-500 pl-5 flex flex-col h-full">
-		<!-- Header -->
-		<div class="flex justify-between items-center pb-4 border-b border-gray-200">
+		<!-- Header: klickbar → springt aufs Mahnwesen (eigene, vollwertige Seite;
+		     deshalb Navigation statt eines dritten Slide-in-Panels wie bei Renner/Ladenhüter) -->
+		<button
+			type="button"
+			onclick={() => (uiStore.activeTab = 'mahnwesen')}
+			class="w-full flex justify-between items-center pb-4 border-b border-gray-200 group cursor-pointer text-left"
+			aria-label="Mahnwesen öffnen — alle überfälligen Ausleihen"
+		>
 			<div>
-				<h3 class="text-rose-700 font-bold text-base">Dringend: Mahnungen</h3>
+				<h3 class="text-rose-700 font-bold text-base flex items-center gap-1.5">
+					Dringend: Mahnungen
+					<svg
+						class="w-3.5 h-3.5 text-rose-300 transition-all group-hover:text-rose-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						><path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2.5"
+							d="M7 17L17 7M7 7h10v10"
+						/></svg
+					>
+				</h3>
 				<p class="text-sm text-gray-600 mt-0.5">Überfällige Ausleihen gesamt</p>
 			</div>
 			<div class="text-rose-600 font-extrabold text-4xl tabular-nums">
 				{summary.total_overdue}
 			</div>
-		</div>
+		</button>
 
 		<!-- Top 5 List -->
 		<div class="pt-4 flex-1 pb-6">
