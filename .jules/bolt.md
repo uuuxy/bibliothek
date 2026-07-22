@@ -13,3 +13,6 @@
 ## 2026-07-15 - [Efficient string template replacements]
 **Learning:** Found sequential `strings.ReplaceAll` calls inside `api/reports_pdf.go` used to inject dynamic data (like Vorname, Nachname) into PDF text templates. This leads to unnecessary intermediate allocations and increased GC pressure, especially when generating bulk PDFs.
 **Action:** Replaced sequential `strings.ReplaceAll` calls with a single `strings.NewReplacer` which is highly optimized for multi-string replacement in a single pass.
+## 2026-07-22 - [High-performance ISBN string cleaning]
+**Learning:** Found sequential `strings.ReplaceAll` calls across multiple files (like `inventur/isbn_validierung.go`, `internal/service/import_dynamic.go`) used to strip hyphens and spaces from ISBNs. This causes multiple intermediate string allocations.
+**Action:** Replaced sequential `strings.ReplaceAll` calls with a centralized, highly optimized `strutil.CleanISBN` function that pre-counts required bytes and performs replacements in a single pass without any allocations if the string is already clean.

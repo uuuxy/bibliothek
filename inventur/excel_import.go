@@ -14,6 +14,8 @@ import (
 
 	"bibliothek/pkg/safego"
 
+	"bibliothek/pkg/strutil"
+
 	"github.com/xuri/excelize/v2"
 )
 
@@ -105,7 +107,7 @@ func determineColumnIndices(header []string) (map[string]int, bool) {
 func errateSpaltenAusInhalt(header []string, colIdx map[string]int) {
 	for i, col := range header {
 		val := strings.TrimSpace(col)
-		cleanVal := strings.ReplaceAll(val, "-", "")
+		cleanVal := strutil.CleanISBN(val)
 		if (strings.HasPrefix(val, "978") || strings.HasPrefix(val, "979")) && len(cleanVal) >= 10 {
 			colIdx["isbn"] = i
 			continue
