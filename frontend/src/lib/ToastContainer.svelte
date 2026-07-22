@@ -64,7 +64,12 @@
 				class="ml-2 text-white/70 hover:text-white transition-colors cursor-pointer shrink-0"
 				aria-label="Schließen"
 			>
-				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+				<svg
+					class="w-4 h-4"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
 					><path
 						stroke-linecap="round"
 						stroke-linejoin="round"
