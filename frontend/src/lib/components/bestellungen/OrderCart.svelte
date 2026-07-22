@@ -56,7 +56,7 @@
 								aria-label="Menge verringern"
 								onclick={() => (item.menge = Math.max(1, item.menge - 1))}
 								class="px-2 py-0.5 hover:bg-slate-50 font-bold text-slate-500">-</button
-							><span class="px-3 font-bold text-slate-700 min-w-[20px] text-center"
+							><span class="px-3 font-bold text-slate-700 min-w-5 text-center"
 								>{item.menge}</span
 							><button
 								aria-label="Menge erhöhen"

@@ -93,7 +93,7 @@
 						</span>
 						{#if ex.zustand_notiz}
 							<span
-								class="text-[10px] text-gray-500 truncate max-w-[150px]"
+								class="text-[10px] text-gray-500 truncate max-w-37.5"
 								title={ex.zustand_notiz}>{ex.zustand_notiz}</span
 							>
 						{/if}
