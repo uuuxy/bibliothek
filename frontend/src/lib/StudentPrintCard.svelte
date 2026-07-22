@@ -31,12 +31,12 @@
   Wrappers gerendert, damit es die Druckunterdrückung überlebt.
 -->
 <div class="single-card-print-section" style="display:none" aria-hidden="true">
-	<div class="print-card-box {idStore.front.theme}">
+	<div class="print-card-box single-card-front {idStore.front.theme}">
 		<CardFace side="front" student={profile} barcodeType={idStore.barcodeType} {timestamp} />
 	</div>
 	{#if hasBack}
 		<!-- Rückseite: student={null} — exakt wie im Batch-Druck (statischer Inhalt). -->
-		<div class="print-card-box {idStore.back.theme}">
+		<div class="print-card-box single-card-back {idStore.back.theme}">
 			<CardFace side="back" student={null} barcodeType={idStore.barcodeType} {timestamp} />
 		</div>
 	{/if}

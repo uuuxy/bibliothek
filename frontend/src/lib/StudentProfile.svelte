@@ -44,14 +44,17 @@
 		st.fetchProfile(student?.id);
 	}
 
-	function printCard() {
+	/** @param {'front'|'back'|'both'} [side] Zu druckende Ausweisseite(n). */
+	function printCard(side = 'both') {
 		const styleEl = document.createElement('style');
 		styleEl.textContent = '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
 		document.head.appendChild(styleEl);
 		document.body.setAttribute('data-print-mode', 'card-single');
+		if (side !== 'both') document.body.setAttribute('data-print-card-side', side);
 		window.print();
 		document.head.removeChild(styleEl);
 		document.body.removeAttribute('data-print-mode');
+		document.body.removeAttribute('data-print-card-side');
 	}
 </script>
 

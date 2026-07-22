@@ -178,16 +178,23 @@ body {
 		print-color-adjust: exact !important;
 	}
 	body[data-print-mode='card-single'] .single-card-print-section .print-card-box {
-		page-break-after: always !important;
-		break-after: page !important;
 		page-break-inside: avoid !important;
 		break-inside: avoid !important;
 		-webkit-print-color-adjust: exact !important;
 		print-color-adjust: exact !important;
 	}
-	body[data-print-mode='card-single'] .single-card-print-section .print-card-box:last-child {
-		page-break-after: avoid !important;
-		break-after: avoid !important;
+	/* Rückseite beginnt auf einer neuen Karten-Seite (Umbruch nur vor der Rückseite,
+	   erzeugt also keine leere Seite, wenn nur eine Seite gedruckt wird). */
+	body[data-print-mode='card-single'] .single-card-print-section .single-card-back {
+		page-break-before: always !important;
+		break-before: page !important;
+	}
+	/* Seitenwahl: gezielt nur Vorder- bzw. nur Rückseite drucken. */
+	body[data-print-mode='card-single'][data-print-card-side='front'] .single-card-back {
+		display: none !important;
+	}
+	body[data-print-mode='card-single'][data-print-card-side='back'] .single-card-front {
+		display: none !important;
 	}
 
 	.print-rendered-output.a4_sheet .print-cards-grid {

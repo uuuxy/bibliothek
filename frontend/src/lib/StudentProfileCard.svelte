@@ -1,8 +1,9 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
+	import { idStore } from './designer/idDesignerStore.svelte.js';
 
-	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, onPrint: () => void, leftActions?: import('svelte').Snippet }} */
+	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, onPrint: (side: 'front'|'back'|'both') => void, leftActions?: import('svelte').Snippet }} */
 	let {
 		profile = $bindable(),
 		role = '',
@@ -13,6 +14,12 @@
 		onPrint,
 		leftActions
 	} = $props();
+
+	// Seitenwahl für den Ausweis-Einzeldruck. Der Umschalter erscheint nur, wenn die
+	// Rückseite überhaupt Inhalt hat — sonst gibt es nur die Vorderseite zu drucken.
+	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
+	/** @type {'front'|'back'|'both'} */
+	let printSide = $state('both');
 
 	// ── Abgangsjahr inline editing ────────────────────────────────────────────
 	let editingAbgang = $state(false);
@@ -296,8 +303,26 @@
 
 	<!-- Aktionen — ganz unten, volle Breite -->
 	<div class="w-full mt-auto pt-4 flex flex-col gap-2">
+		{#if hasBack}
+			<!-- Seitenwahl: nur relevant, wenn eine Rückseite gestaltet ist -->
+			<div class="flex gap-1" role="group" aria-label="Zu druckende Ausweisseite">
+				{#each [['both', 'Beides'], ['front', 'Vorderseite'], ['back', 'Rückseite']] as [wert, label] (wert)}
+					<button
+						type="button"
+						onclick={() => (printSide = /** @type {'front'|'back'|'both'} */ (wert))}
+						aria-pressed={printSide === wert}
+						class="flex-1 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer {printSide ===
+						wert
+							? 'bg-blue-600 text-white'
+							: 'bg-slate-100 text-slate-600 hover:bg-slate-200'}"
+					>
+						{label}
+					</button>
+				{/each}
+			</div>
+		{/if}
 		<button
-			onclick={onPrint}
+			onclick={() => onPrint(hasBack ? printSide : 'both')}
 			class="w-full py-3 bg-white hover:bg-blue-50 border border-blue-500 text-blue-600 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 text-sm"
 		>
 			<svg
