@@ -5,8 +5,8 @@
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen) so aussehen wie erwartet.
 >
-> **Sicherheitsnetz für alle Abnahmen:** Vorher ein Backup ziehen (`scripts/backup`-Ablauf,
-> siehe [backup_cron.md](backup_cron.md)). Alle drei Flows haben zusätzlich eine
+> **Sicherheitsnetz für alle Abnahmen:** Vorher ein Backup ziehen
+> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Alle drei Flows haben zusätzlich eine
 > unverbindliche Vorschau-Stufe, die **nichts verändert** — erst der jeweils letzte,
 > deutlich beschriftete Button schreibt in die Datenbank.
 

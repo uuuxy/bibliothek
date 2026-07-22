@@ -1,6 +1,6 @@
 # MySQL → PostgreSQL Migration
 
-Dieses Dokument beschreibt das isolierte Migrations-Skript unter [cmd/migrate/main.go](../cmd/migrate/main.go).
+Dieses Dokument beschreibt das isolierte Migrations-Skript unter [cmd/migrate/main.go](../../cmd/migrate/main.go).
 
 ## Zweck
 
@@ -45,7 +45,7 @@ Das Skript erwartet eine ältere Medientabelle mit folgenden Feldern:
 - `anzahl`
 - `erstellt_am`
 
-Falls die Quellstruktur anders heißt, muss nur die SELECT-Abfrage in [cmd/migrate/main.go](../cmd/migrate/main.go) angepasst werden.
+Falls die Quellstruktur anders heißt, muss nur die SELECT-Abfrage in [cmd/migrate/main.go](../../cmd/migrate/main.go) angepasst werden.
 
 ## Daten-Mapping
 

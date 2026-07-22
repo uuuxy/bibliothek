@@ -5,12 +5,17 @@
 # ==========================================
 
 # -- Konfiguration --
-# Name des laufenden Datenbank-Containers
+# .env aus dem Repo-Root laden, falls vorhanden (POSTGRES_USER/POSTGRES_DB)
+ENV_FILE="$(dirname "$0")/../.env"
+if [ -f "$ENV_FILE" ]; then
+  export $(grep -v '^#' "$ENV_FILE" | xargs)
+fi
+
+# Name des laufenden Datenbank-Containers (siehe docker-compose.yml)
 CONTAINER_NAME="bibliothek-db"
-# PostgreSQL Benutzername (default: postgres)
-DB_USER="postgres"
-# Name der Datenbank
-DB_NAME="bibliothek"
+# PostgreSQL Benutzername / Datenbank — Defaults wie im Compose (${VAR:-...})
+DB_USER="${POSTGRES_USER:-postgres}"
+DB_NAME="${POSTGRES_DB:-bibliothek}"
 # Verzeichnis, in dem die Backups gespeichert werden sollen
 BACKUP_DIR="$(dirname "$0")/../backups"
 

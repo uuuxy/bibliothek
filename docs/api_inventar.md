@@ -1,17 +1,18 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-07-11. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-07-22. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
+- `GET /api/schueler/{id}/dsgvo-auskunft`
 - `POST /api/buecher/exemplare/{id}/defekt`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 
-## Alle registrierten Routen (140)
+## Alle registrierten Routen (147)
 
 - `/`
 - `/api/admin`
@@ -30,6 +31,7 @@
 - `DELETE /api/buecher/titel/{id}`
 - `DELETE /api/klassen-mapping/{klasse}`
 - `DELETE /api/lieferanten/{id}`
+- `DELETE /api/schueler/deleted/{id}`
 - `DELETE /api/schueler/{id}`
 - `DELETE /api/vormerkungen/{id}`
 - `GET /admin/dashboard`
@@ -41,6 +43,7 @@
 - `GET /api/admin/settings/mail`
 - `GET /api/admin/system/backup-status`
 - `GET /api/audit`
+- `GET /api/ausweis-layout`
 - `GET /api/auth/me`
 - `GET /api/barcode`
 - `GET /api/barcode/next`
@@ -61,6 +64,7 @@
 - `GET /api/dashboard/summary`
 - `GET /api/einstellungen`
 - `GET /api/images/cover`
+- `GET /api/inventur/sessions`
 - `GET /api/klassen`
 - `GET /api/klassen-mapping`
 - `GET /api/lieferanten`
@@ -85,6 +89,7 @@
 - `GET /api/schueler/deleted`
 - `GET /api/schueler/{id}`
 - `GET /api/schueler/{id}/dsgvo-auskunft`
+- `GET /api/schueler/{id}/dsgvo-auskunft/pdf`
 - `GET /api/schueler/{id}/photo`
 - `GET /api/search`
 - `GET /api/signatures`
@@ -125,6 +130,7 @@
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/damage/report`
 - `POST /api/import/littera`
+- `POST /api/inventur/abort`
 - `POST /api/inventur/finish`
 - `POST /api/inventur/scan`
 - `POST /api/inventur/start`
@@ -133,6 +139,7 @@
 - `POST /api/lusd/import`
 - `POST /api/lusd/preview`
 - `POST /api/mahnwesen/senden`
+- `POST /api/mail/send-bulk-overdue`
 - `POST /api/print/labels`
 - `POST /api/reservierungen/klassensatz`
 - `POST /api/schueler`
@@ -145,6 +152,7 @@
 - `PUT /api/admin/`
 - `PUT /api/admin/permissions`
 - `PUT /api/admin/settings/mail`
+- `PUT /api/ausweis-layout`
 - `PUT /api/benutzer/{id}`
 - `PUT /api/books/`
 - `PUT /api/buecher/exemplare/{id}/barcode`

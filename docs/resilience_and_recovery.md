@@ -23,11 +23,12 @@ backups/backup_<ZEITSTEMPEL>.sql.gz.enc
 > Ohne den originalen `BACKUP_ENCRYPTION_KEY` ist ein verschlüsseltes Backup **nicht** wiederherstellbar.
 
 ### 1b. Manuelles unverschlüsseltes Skript (Optional)
-`scripts/db_backup.sh` erzeugt eine unverschlüsselte `.sql.gz`-Datei (z. B. für schnelle Ad-hoc-Sicherungen).
+`scripts/backup.sh` erzeugt eine unverschlüsselte `.sql.gz`-Datei (`backups/bibliothek_backup_<DATUM>.sql.gz`,
+7-Tage-Rotation) — führt `pg_dump` per `docker exec` im DB-Container aus (z. B. für schnelle Ad-hoc-Sicherungen).
 Beispiel-Crontab:
 
 ```bash
-0 2 * * * /Pfad/zu/Bibliothek/scripts/db_backup.sh >> /Pfad/zu/Bibliothek/backups/backup.log 2>&1
+0 2 * * * /Pfad/zu/Bibliothek/scripts/backup.sh >> /Pfad/zu/Bibliothek/backups/backup.log 2>&1
 ```
 
 ## 2. Wiederherstellung (Recovery)
@@ -63,7 +64,7 @@ psql -U postgres -d bibliothek -f wiederherstellung.sql
 ```bash
 dropdb -U postgres bibliothek
 createdb -U postgres bibliothek
-zcat backups/backup_<…>.sql.gz | psql -U postgres -d bibliothek
+zcat backups/bibliothek_backup_<…>.sql.gz | psql -U postgres -d bibliothek
 ```
 
 ### 2c. Restore-Probe vor Go-Live (dringend empfohlen)

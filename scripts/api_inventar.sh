@@ -1,12 +1,12 @@
 #!/bin/sh
-# Erzeugt dokumentation/api_inventar.md: alle registrierten Go-Routen,
+# Erzeugt docs/api_inventar.md: alle registrierten Go-Routen,
 # alle /api/-Aufrufer im Frontend und den Abgleich in beide Richtungen
 # (tote Handler / Geister-Aufrufe). Radar-Referenz aus dem Master-Fahrplan.
 #
 # Aufruf: ./scripts/api_inventar.sh   (vom Repo-Root)
 set -eu
 
-OUT=dokumentation/api_inventar.md
+OUT=docs/api_inventar.md
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
