@@ -40,5 +40,9 @@
 		"html5-qrcode": "^2.3.8",
 		"idb": "^8.0.3",
 		"tailwindcss": "^4.3.0"
+	},
+	"overrides": {
+		"brace-expansion@5.0.6": "5.0.7",
+		"brace-expansion@2.1.1": "2.1.2"
 	}
 }
