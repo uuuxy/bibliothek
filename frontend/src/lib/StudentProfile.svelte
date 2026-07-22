@@ -135,7 +135,7 @@
 					{#if st.activeTab === 'ausleihen'}
 						{@render rightTop?.()}
 						<div
-							class="col-span-1 md:col-span-1 relative flex flex-col gap-6 h-full min-h-[400px] animate-fade-in mt-4"
+							class="col-span-1 md:col-span-1 relative flex flex-col gap-6 h-full min-h-100 animate-fade-in mt-4"
 						>
 							<BorrowedBooksCard
 								books={st.profile.entliehene_buecher || []}
