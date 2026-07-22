@@ -9,7 +9,7 @@
 	let { children, variant = 'primary', size = 'md', class: className = '', ...rest } = $props();
 
 	const variants = {
-		primary: 'bg-slate-800 text-white hover:bg-slate-900 border-transparent shadow-sm',
+		primary: 'bg-blue-600 text-white hover:bg-blue-700 border-transparent shadow-sm',
 		secondary: 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm',
 		danger: 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100 shadow-sm',
 		'danger-solid': 'bg-rose-600 text-white hover:bg-rose-700 border-transparent shadow-sm',

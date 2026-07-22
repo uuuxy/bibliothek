@@ -169,14 +169,19 @@
 			</button>
 
 			<div class="flex flex-wrap gap-1.5 mb-4">
-				<span class="{getSubjectColor(book.subject)} text-[10px] font-bold px-2 py-0.5 rounded-md">
-					{book.subject}
-				</span>
-				<span
-					class="bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md"
-				>
-					Klasse {book.gradeLevel}
-				</span>
+				{#if book.subject}
+					<span class="{getSubjectColor(book.subject)} text-[10px] font-bold px-2 py-0.5 rounded-md">
+						{book.subject}
+					</span>
+				{/if}
+				<!-- Klasse 0 = nicht zugeordnet: kein Badge statt einer sinnlosen „Klasse 0". -->
+				{#if book.gradeLevel}
+					<span
+						class="bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md"
+					>
+						Klasse {book.gradeLevel}
+					</span>
+				{/if}
 				{#if book.track}
 					<span
 						class="bg-cyan-50 border border-cyan-200 text-cyan-700 text-[10px] font-bold px-2 py-0.5 rounded-md"

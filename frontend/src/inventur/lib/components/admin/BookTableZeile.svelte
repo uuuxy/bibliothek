@@ -142,13 +142,20 @@
 	</td>
 
 	<td class="px-6 py-3">
-		<span
-			class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600"
-		>
-			{book.subject}
-		</span>
+		{#if book.subject}
+			<span
+				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600"
+			>
+				{book.subject}
+			</span>
+		{:else}
+			<span class="text-slate-350 text-xs">–</span>
+		{/if}
 	</td>
-	<td class="px-6 py-3 text-slate-600 text-sm">Kl. {book.gradeLevel}</td>
+	<!-- Klasse 0 = nicht zugeordnet: „–" statt einer sinnlosen „Kl. 0". -->
+	<td class="px-6 py-3 text-slate-600 text-sm">
+		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-slate-350 text-xs">–</span>{/if}
+	</td>
 
 	<td class="px-6 py-3">
 		{#if book.track}

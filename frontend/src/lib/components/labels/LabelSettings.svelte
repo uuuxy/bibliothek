@@ -222,6 +222,15 @@
 					</div>
 				{/if}
 			</div>
+		{:else}
+			<!-- Platzhalter, damit die Schrittfolge nicht von 1 auf 3 springt (wirkt sonst
+			     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
+			<div class="py-5 space-y-2 border-b border-gray-200 opacity-60">
+				<h3 class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+					2. Barcodes generieren
+				</h3>
+				<p class="text-[11px] text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
+			</div>
 		{/if}
 	{/if}
 

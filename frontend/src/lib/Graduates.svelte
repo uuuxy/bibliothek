@@ -92,9 +92,12 @@
 				{/if}
 			</button>
 			<div
-				class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"
-				title="Live-Synchronisation aktiv"
-			></div>
+				class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 shrink-0"
+				title="Änderungen an allen Arbeitsplätzen sofort sichtbar (Live-Synchronisation)"
+			>
+				<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+				Live
+			</div>
 		</div>
 	</div>
 
