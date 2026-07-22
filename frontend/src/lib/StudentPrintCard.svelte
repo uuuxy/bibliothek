@@ -7,6 +7,9 @@
 	/** @type {{ profile: any, timestamp: number }} */
 	let { profile, timestamp } = $props();
 
+	// Rückseite nur mitdrucken, wenn sie Inhalt hat (sonst leere zweite Kartenseite).
+	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
+
 	// Zentrales Ausweis-Design laden, damit der profilseitige Einzeldruck EXAKT dasselbe
 	// Layout wie der DruckCenter-Batchdruck zeigt. Beide rendern über CardFace aus
 	// demselben idStore — es gibt nur noch ein optisches Ergebnis pro Ausweis, egal von
@@ -31,4 +34,10 @@
 	<div class="print-card-box {idStore.front.theme}">
 		<CardFace side="front" student={profile} barcodeType={idStore.barcodeType} {timestamp} />
 	</div>
+	{#if hasBack}
+		<!-- Rückseite: student={null} — exakt wie im Batch-Druck (statischer Inhalt). -->
+		<div class="print-card-box {idStore.back.theme}">
+			<CardFace side="back" student={null} barcodeType={idStore.barcodeType} {timestamp} />
+		</div>
+	{/if}
 </div>

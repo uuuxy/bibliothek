@@ -169,20 +169,25 @@ body {
 		display: none !important;
 	}
 
-	/* Single-card print (triggered from student profile) */
+	/* Single-card print (triggered from student profile): Vorder- + optionale Rückseite,
+	   je auf einer eigenen karten-großen Seite (Duplex-Kartendrucker). Block-Fluss statt
+	   position:fixed, damit mehr als eine Seite entstehen kann. */
 	body[data-print-mode='card-single'] .single-card-print-section {
 		display: block !important;
-		position: fixed !important;
-		top: 0 !important;
-		left: 0 !important;
-		width: 85.6mm !important;
-		height: 53.98mm !important;
 		-webkit-print-color-adjust: exact !important;
 		print-color-adjust: exact !important;
 	}
 	body[data-print-mode='card-single'] .single-card-print-section .print-card-box {
+		page-break-after: always !important;
+		break-after: page !important;
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
 		-webkit-print-color-adjust: exact !important;
 		print-color-adjust: exact !important;
+	}
+	body[data-print-mode='card-single'] .single-card-print-section .print-card-box:last-child {
+		page-break-after: avoid !important;
+		break-after: avoid !important;
 	}
 
 	.print-rendered-output.a4_sheet .print-cards-grid {
