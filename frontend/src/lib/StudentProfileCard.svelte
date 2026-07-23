@@ -1,9 +1,8 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiClient } from './apiFetch.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
-	import { idStore } from './designer/idDesignerStore.svelte.js';
 
-	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, onPrint: (side: 'front'|'back'|'both') => void, leftActions?: import('svelte').Snippet }} */
+	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet }} */
 	let {
 		profile = $bindable(),
 		role = '',
@@ -11,15 +10,33 @@
 		showWebcam = $bindable(),
 		showDeleteConfirm = $bindable(),
 		onDeselect,
-		onPrint,
 		leftActions
 	} = $props();
 
-	// Seitenwahl für den Ausweis-Einzeldruck. Der Umschalter erscheint nur, wenn die
-	// Rückseite überhaupt Inhalt hat — sonst gibt es nur die Vorderseite zu drucken.
-	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
-	/** @type {'front'|'back'|'both'} */
-	let printSide = $state('both');
+	// ── Initialen-Avatar (Passbild-Ersatz) ────────────────────────────────────
+	// Eine leere graue Box liest sich wie „kaputt". Fehlt das Foto, zeigen wir –
+	// wie Apple Kontakte / Google – eine Initialen-Kachel auf farbigem Verlauf.
+	// Die Farbe wird deterministisch aus dem Namen abgeleitet, damit derselbe
+	// Schüler immer dieselbe Kachel bekommt (wirkt gewollt statt zufällig).
+	const AVATAR_GRADIENTS = [
+		'from-blue-500 to-indigo-600',
+		'from-emerald-500 to-teal-600',
+		'from-fuchsia-500 to-purple-600',
+		'from-amber-500 to-orange-600',
+		'from-rose-500 to-pink-600',
+		'from-sky-500 to-cyan-600',
+		'from-violet-500 to-purple-600',
+		'from-lime-500 to-emerald-600'
+	];
+	const initials = $derived(
+		((profile.vorname?.[0] ?? '') + (profile.nachname?.[0] ?? '')).toUpperCase() || '?'
+	);
+	const avatarGradient = $derived.by(() => {
+		const key = `${profile.vorname ?? ''} ${profile.nachname ?? ''}`;
+		let h = 0;
+		for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+		return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length];
+	});
 
 	// ── Abgangsjahr inline editing ────────────────────────────────────────────
 	let editingAbgang = $state(false);
@@ -74,45 +91,6 @@
 			abgangSaving = false;
 		}
 	}
-
-	async function handleBlockChange() {
-		try {
-			const res = await apiClient.patch(`/api/schueler/${profile.id}`, {
-				is_manually_blocked: profile.is_manually_blocked,
-				block_reason: profile.block_reason || ''
-			});
-			if (res.ok) {
-				// Lokales Update des abgeleiteten Status "Gesperrt" für sofortiges Feedback
-				profile.ist_gesperrt = profile.is_manually_blocked || profile.has_open_damages;
-			}
-		} catch (e) {
-			console.error('Fehler beim Speichern der manuellen Sperre', e);
-		}
-	}
-
-	async function downloadDsgvoAuskunft() {
-		try {
-			const res = await apiFetch(`/api/schueler/${profile.id}/dsgvo-auskunft/pdf`);
-			if (res.ok) {
-				const blob = await res.blob();
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `dsgvo-auskunft-${profile.nachname || 'Unbekannt'}-${profile.vorname || 'Unbekannt'}.pdf`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				URL.revokeObjectURL(url);
-			} else {
-				const text = await res.text();
-				console.error('Auskunft Error:', text);
-				alert('Fehler beim Herunterladen der Auskunft.');
-			}
-		} catch (e) {
-			console.error('Netzwerkfehler DSGVO Auskunft:', e);
-			alert('Netzwerkfehler');
-		}
-	}
 </script>
 
 <div
@@ -148,22 +126,10 @@
 			/>
 		{:else}
 			<div
-				class="w-28 h-28 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-300"
+				class="w-28 h-28 rounded-2xl border border-black/5 shadow-inner flex items-center justify-center text-white font-bold text-4xl tracking-tight select-none bg-linear-to-br {avatarGradient}"
+				aria-hidden="true"
 			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-14 w-14"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-					aria-hidden="true"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="1.5"
-						d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-					/></svg
-				>
+				{initials}
 			</div>
 		{/if}
 		<button
@@ -298,71 +264,12 @@
 		</div>
 	{/if}
 
-	<!-- Linke Aktionen (z. B. "Sitzung beenden" im Kiosk) -->
-	{@render leftActions?.()}
-
-	<!-- Aktionen — ganz unten, volle Breite -->
-	<div class="w-full mt-auto pt-4 flex flex-col gap-2">
-		{#if hasBack}
-			<!-- Seitenwahl: nur relevant, wenn eine Rückseite gestaltet ist -->
-			<div class="flex gap-1" role="group" aria-label="Zu druckende Ausweisseite">
-				{#each [['both', 'Beides'], ['front', 'Vorderseite'], ['back', 'Rückseite']] as [wert, label] (wert)}
-					<button
-						type="button"
-						onclick={() => (printSide = /** @type {'front'|'back'|'both'} */ (wert))}
-						aria-pressed={printSide === wert}
-						class="flex-1 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer {printSide ===
-						wert
-							? 'bg-blue-600 text-white'
-							: 'bg-slate-100 text-slate-600 hover:bg-slate-200'}"
-					>
-						{label}
-					</button>
-				{/each}
-			</div>
-		{/if}
-		<button
-			onclick={() => onPrint(hasBack ? printSide : 'both')}
-			class="w-full py-3 bg-white hover:bg-blue-50 border border-blue-500 text-blue-600 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 text-sm"
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-5 w-5"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
-				aria-hidden="true"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-				/></svg
-			>
-			Ausweis drucken
-		</button>
-
-		{#if role === 'admin'}
-			<button
-				onclick={downloadDsgvoAuskunft}
-				class="w-full py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-600 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 text-xs"
-				title="DSGVO-Auskunft (Art. 15) als PDF exportieren"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-					stroke-width="2"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-					/></svg
-				>
-				DSGVO-Auskunft (PDF)
-			</button>
-		{/if}
-	</div>
+	<!-- Linke Aktionen (z. B. "Sitzung beenden" im Kiosk). Ausweis-Druck & DSGVO-
+	     Auskunft leben bewusst rechts unter „Dokumente & Aktionen" — die Identitäts-
+	     spalte bleibt rein Identität. -->
+	{#if leftActions}
+		<div class="w-full mt-auto pt-4">
+			{@render leftActions()}
+		</div>
+	{/if}
 </div>

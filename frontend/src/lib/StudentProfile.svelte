@@ -87,7 +87,7 @@
 
 	{#if !st.showEditModal}
 		<div
-			class="w-full grid grid-cols-1 lg:grid-cols-3 items-start text-slate-800 animate-fade-in no-print print:hidden font-sans"
+			class="w-full grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-stretch text-slate-800 animate-fade-in no-print print:hidden font-sans"
 		>
 			<!-- Left Column Profile Card -->
 			<StudentProfileCard
@@ -97,20 +97,21 @@
 				bind:showWebcam={st.showWebcam}
 				bind:showDeleteConfirm={st.showDeleteConfirm}
 				{onDeselect}
-				onPrint={printCard}
 				{leftActions}
 			/>
 
-			<!-- Right: Timeline / Loans List / Stammdaten (2 cols) -->
-			<div class="lg:col-span-2 space-y-6 flex flex-col h-full px-6 pt-6 pb-4">
+			<!-- Right: Timeline / Loans List / Stammdaten -->
+			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pt-6 pb-4">
 				{#if role === 'admin' || role === 'mitarbeiter'}
 					<StudentProfileActions
 						profile={st.profile}
+						{role}
 						kontoauszugPdfLoading={st.kontoauszugPdfLoading}
 						rechnungPdfLoading={st.rechnungPdfLoading}
 						downloadKontoauszugPDF={st.downloadKontoauszugPDF}
 						downloadRechnungPDF={st.downloadRechnungPDF}
 						showLockModal={() => (st.showLockModal = true)}
+						onPrint={printCard}
 					/>
 				{/if}
 
