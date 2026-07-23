@@ -38,22 +38,39 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med reposi
 	pdf.CellFormat(8, rowHeight, "", "1", 0, "", false, 0, "")
 
 	// Title cell
-	pdf.SetXY(26, startY)
 	titleCell := med.Titel
-	if len(titleCell) > 55 {
-		titleCell = titleCell[:52] + "…"
+	if len(titleCell) > 40 {
+		titleCell = titleCell[:37] + "…"
 	}
-	pdf.CellFormat(70, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(52, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
 
 	// Author
 	autorCell := med.Autor
-	if len(autorCell) > 32 {
-		autorCell = autorCell[:29] + "…"
+	if len(autorCell) > 20 {
+		autorCell = autorCell[:18] + "…"
 	}
-	pdf.CellFormat(40, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(26, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
 
-	// Due date
-	pdf.CellFormat(30, rowHeight, tr(med.FaelligAm), "1", 0, "C", false, 0, "")
+	// Barcode-Zelle: Rahmen zeichnen, dann Barcode-Bild + darunter die Nummer einbetten —
+	// damit das Buch bei der Rückgabe direkt vom Zettel gescannt werden kann.
+	bcX := pdf.GetX()
+	pdf.CellFormat(40, rowHeight, "", "1", 0, "", false, 0, "")
+	if med.Barcode != "" {
+		if pngBytes, err := GenerateBarcodePNG(med.Barcode, false, 300, 80); err == nil {
+			imgName := "bc_" + med.Barcode
+			opt := gofpdf.ImageOptions{ImageType: "PNG"}
+			pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))
+			pdf.ImageOptions(imgName, bcX+3, startY+2.5, 34, 8, false, opt, 0, "")
+		}
+		pdf.SetFont("Courier", "", 7)
+		pdf.SetXY(bcX, startY+11.5)
+		pdf.CellFormat(40, 4, tr(med.Barcode), "", 0, "C", false, 0, "")
+		pdf.SetFont("Arial", "", 8)
+	}
+
+	// Zurück in die Fällig-Spalte (Barcode-Overlay hat die Position verschoben).
+	pdf.SetXY(144, startY)
+	pdf.CellFormat(22, rowHeight, tr(med.FaelligAm), "1", 0, "C", false, 0, "")
 
 	// Days overdue (highlighted red if > 14)
 	if med.TageUeberfaellig > 14 {
@@ -110,9 +127,10 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch repository.U
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetFillColor(220, 225, 240)
 	pdf.CellFormat(8, 8, "", "1", 0, "C", true, 0, "") // cover placeholder col
-	pdf.CellFormat(70, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(40, 8, tr("Autor"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(30, 8, tr("Fällig am"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(52, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(26, 8, tr("Autor"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(40, 8, tr("Barcode"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(22, 8, tr("Fällig"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(26, 8, tr("Tage überfällig"), "1", 1, "C", true, 0, "")
 
 	// ─── Table rows ───────────────────────────────────────────────

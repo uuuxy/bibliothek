@@ -4,6 +4,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/repository"
+	"bytes"
 	"context"
 	"errors"
 
@@ -179,23 +180,42 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	pdf.SetX(20)
 	pdf.SetFillColor(240, 240, 240)
 	pdf.CellFormat(75, 7, tr("Titel"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(35, 7, tr("Barcode"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(35, 7, tr("Barcode"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(30, 7, tr("Ausgeliehen"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(30, 7, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
 
 	pdf.SetFont("Arial", "", 10)
 	for _, b := range student.Books {
+		startY := pdf.GetY()
+		rowH := 15.0
 		pdf.SetX(20)
 
 		tTitle := b.Titel
 		if len(tTitle) > 38 {
 			tTitle = tTitle[:35] + "..."
 		}
+		pdf.CellFormat(75, rowH, tr(tTitle), "1", 0, "L", false, 0, "")
 
-		pdf.CellFormat(75, 6, tr(tTitle), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(35, 6, tr(b.BarcodeID), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(30, 6, b.AusgeliehenAm.Format(dateFormatDE), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(30, 6, fmt.Sprintf("%d", b.DaysOverdue), "1", 1, "R", false, 0, "")
+		// Barcode-Zelle: Rahmen + eingebettetes Barcode-Bild + darunter die lesbare Nummer,
+		// damit das Buch bei der Rückgabe direkt vom Brief gescannt werden kann.
+		bcX := pdf.GetX()
+		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")
+		if b.BarcodeID != "" {
+			if pngBytes, err := GenerateBarcodePNG(b.BarcodeID, false, 300, 80); err == nil {
+				imgName := "bc_eltern_" + b.BarcodeID
+				opt := gofpdf.ImageOptions{ImageType: "PNG"}
+				pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))
+				pdf.ImageOptions(imgName, bcX+2.5, startY+2, 30, 8, false, opt, 0, "")
+			}
+			pdf.SetFont("Courier", "", 7)
+			pdf.SetXY(bcX, startY+10.5)
+			pdf.CellFormat(35, 4, tr(b.BarcodeID), "", 0, "C", false, 0, "")
+			pdf.SetFont("Arial", "", 10)
+		}
+
+		pdf.SetXY(bcX+35, startY)
+		pdf.CellFormat(30, rowH, b.AusgeliehenAm.Format(dateFormatDE), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(30, rowH, fmt.Sprintf("%d", b.DaysOverdue), "1", 1, "R", false, 0, "")
 	}
 
 	// Print text after book list (if any)

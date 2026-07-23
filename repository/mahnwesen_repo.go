@@ -17,6 +17,8 @@ type UeberfaelligesMedium struct {
 	Autor string `json:"autor"`
 	// ISBN ist die ISBN des Buchs.
 	ISBN string `json:"isbn"`
+	// Barcode ist der Exemplar-Barcode (zum Scannen bei der Rückgabe; steht auf den Zetteln).
+	Barcode string `json:"barcode"`
 	// CoverURL verweist optional auf das Coverbild des Buchs.
 	CoverURL string `json:"cover_url,omitempty"`
 	// FaelligAm ist das formatierte Fälligkeitsdatum (z. B. "20.06.2026").

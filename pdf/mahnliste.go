@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/johnfercher/maroto/v2"
+	"github.com/johnfercher/maroto/v2/pkg/components/code"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/page"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
@@ -79,17 +80,22 @@ func GenerateMahnliste(schuelerListe []MahnungSchueler) ([]byte, error) {
 
 		// Table Header
 		p.Add(row.New(10).Add(
-			col.New(6).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
-			col.New(3).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold})),
+			col.New(5).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
+			col.New(4).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
 			col.New(3).Add(text.New("Fällig seit", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 		))
 
-		// Table Rows
+		// Table Rows: Barcode-Bild zum Scannen, darunter die lesbare Nummer.
 		for _, buch := range schueler.Buecher {
-			p.Add(row.New(10).Add(
-				col.New(6).Add(text.New(buch.Titel, props.Text{Size: 10})),
-				col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 10})),
+			p.Add(row.New(12).Add(
+				col.New(5).Add(text.New(buch.Titel, props.Text{Size: 10})),
+				code.NewBarCol(4, buch.Barcode, props.Barcode{Center: true, Percent: 90}),
 				col.New(3).Add(text.New(buch.FaelligSeit.Format("02.01.2006"), props.Text{Size: 10, Align: align.Right})),
+			))
+			p.Add(row.New(5).Add(
+				col.New(5),
+				col.New(4).Add(text.New(buch.Barcode, props.Text{Size: 8, Align: align.Center})),
+				col.New(3),
 			))
 		}
 

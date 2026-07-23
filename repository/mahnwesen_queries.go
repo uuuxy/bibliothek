@@ -54,6 +54,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	q := `
 		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
+		       coalesce(e.barcode_id,''),
 		       a.rueckgabe_frist,
 		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
 		FROM ausleihen a
@@ -81,11 +82,11 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
-		var titel, autor, isbn, coverURL string
+		var titel, autor, isbn, coverURL, exBarcode string
 		var frist time.Time
 		var tage int
 		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
-			&titel, &autor, &isbn, &coverURL,
+			&titel, &autor, &isbn, &coverURL, &exBarcode,
 			&frist, &tage); err != nil {
 			return nil, err
 		}
@@ -95,6 +96,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 			Titel:            titel,
 			Autor:            autor,
 			ISBN:             isbn,
+			Barcode:          exBarcode,
 			CoverURL:         coverURL,
 			FaelligAm:        frist.Format("02.01.2006"),
 			TageUeberfaellig: tage,
@@ -143,6 +145,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 	q := `
 		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
+		       coalesce(e.barcode_id,''),
 		       a.ausgeliehen_am,
 		       t.jahrgang_bis,
 		       NULLIF(regexp_replace(s.klasse, '\D', '', 'g'), '')::int AS schueler_jahrgang,
@@ -175,14 +178,14 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
-		var titel, autor, isbn, coverURL string
+		var titel, autor, isbn, coverURL, exBarcode string
 		var ausgeliehenAm time.Time
 		var jahrgangBis int
 		var schuelerJahrgang *int
 		var istAbgaenger bool
 
 		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
-			&titel, &autor, &isbn, &coverURL,
+			&titel, &autor, &isbn, &coverURL, &exBarcode,
 			&ausgeliehenAm, &jahrgangBis, &schuelerJahrgang, &istAbgaenger); err != nil {
 			return nil, err
 		}
@@ -197,6 +200,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 			Titel:            titel,
 			Autor:            autor,
 			ISBN:             isbn,
+			Barcode:          exBarcode,
 			CoverURL:         coverURL,
 			FaelligAm:        fmt.Sprintf("bis Kl. %d", jahrgangBis),
 			TageUeberfaellig: ueberschreitung,
@@ -217,6 +221,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 const sqlUeberfaelligeByAusleiheIDs = `
 	SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 	       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
+	       coalesce(e.barcode_id,''),
 	       a.rueckgabe_frist,
 	       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
 	FROM ausleihen a
@@ -234,11 +239,11 @@ func scanUeberfaelligeKlassen(rows pgx.Rows) ([]MahnwesenKlasse, error) {
 	g := newKlassenGrouper()
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
-		var titel, autor, isbn, coverURL string
+		var titel, autor, isbn, coverURL, exBarcode string
 		var frist time.Time
 		var tage int
 		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
-			&titel, &autor, &isbn, &coverURL,
+			&titel, &autor, &isbn, &coverURL, &exBarcode,
 			&frist, &tage); err != nil {
 			return nil, err
 		}
@@ -247,6 +252,7 @@ func scanUeberfaelligeKlassen(rows pgx.Rows) ([]MahnwesenKlasse, error) {
 			Titel:            titel,
 			Autor:            autor,
 			ISBN:             isbn,
+			Barcode:          exBarcode,
 			CoverURL:         coverURL,
 			FaelligAm:        frist.Format("02.01.2006"),
 			TageUeberfaellig: tage,

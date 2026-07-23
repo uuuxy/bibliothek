@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/johnfercher/maroto/v2"
+	"github.com/johnfercher/maroto/v2/pkg/components/code"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
@@ -65,18 +66,23 @@ func GenerateKontoauszug(schueler KontoauszugSchueler, buecher []KontoauszugBuch
 	// Table Header
 	m.AddRow(10,
 		col.New(5).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
-		col.New(3).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold})),
+		col.New(3).Add(text.New("Barcode", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Center})),
 		col.New(2).Add(text.New("Ausgeliehen", props.Text{Size: 10, Style: fontstyle.Bold})),
 		col.New(2).Add(text.New("Rückgabe", props.Text{Size: 10, Style: fontstyle.Bold})),
 	)
 
-	// Table Rows
+	// Table Rows: Barcode-Bild zum Scannen, darunter die lesbare Nummer.
 	for _, buch := range buecher {
-		m.AddRow(10,
+		m.AddRow(12,
 			col.New(5).Add(text.New(buch.Titel, props.Text{Size: 10})),
-			col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 10})),
+			code.NewBarCol(3, buch.Barcode, props.Barcode{Center: true, Percent: 90}),
 			col.New(2).Add(text.New(buch.Ausleihdatum.Format(dateFormatDE), props.Text{Size: 10})),
 			col.New(2).Add(text.New(buch.Rueckgabedatum.Format(dateFormatDE), props.Text{Size: 10})),
+		)
+		m.AddRow(5,
+			col.New(5),
+			col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 8, Align: align.Center})),
+			col.New(4),
 		)
 	}
 

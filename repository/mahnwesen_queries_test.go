@@ -34,16 +34,16 @@ func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 
 	rows := pgxmock.NewRows([]string{
 		"id", "s_id", "name", "klasse",
-		"titel", "autor", "isbn", "cover_url",
+		"titel", "autor", "isbn", "cover_url", "barcode",
 		"rueckgabe_frist", "tage_ueberfaellig",
 	}).
 		// Klasse 7A: zwei VERSCHIEDENE Schülerinnen mit identischem Namen,
 		// deren Ausleihen nach Frist verzahnt sortiert sind.
-		AddRow("a1", "s1", "Anna Müller", "7A", "Faust", "Goethe", "978-1", "", frist, 17).
-		AddRow("a2", "s2", "Anna Müller", "7A", "Die Räuber", "Schiller", "978-2", "", frist.AddDate(0, 0, 1), 16).
-		AddRow("a3", "s1", "Anna Müller", "7A", "Woyzeck", "Büchner", "978-3", "", frist.AddDate(0, 0, 2), 15).
+		AddRow("a1", "s1", "Anna Müller", "7A", "Faust", "Goethe", "978-1", "", "B-1", frist, 17).
+		AddRow("a2", "s2", "Anna Müller", "7A", "Die Räuber", "Schiller", "978-2", "", "B-2", frist.AddDate(0, 0, 1), 16).
+		AddRow("a3", "s1", "Anna Müller", "7A", "Woyzeck", "Büchner", "978-3", "", "B-3", frist.AddDate(0, 0, 2), 15).
 		// Zweite Klasse — löst die Reallokation des klassen-Slices aus.
-		AddRow("a4", "s3", "Ben Yilmaz", "8B", "Effi Briest", "Fontane", "978-4", "", frist, 17)
+		AddRow("a4", "s3", "Ben Yilmaz", "8B", "Effi Briest", "Fontane", "978-4", "", "B-4", frist, 17)
 
 	mock.ExpectQuery(`SELECT a\.id, s\.id, s\.vorname \|\| ' ' \|\| s\.nachname, s\.klasse`).
 		WillReturnRows(rows)
@@ -110,7 +110,7 @@ func TestQueryUeberfaelligeNachKlasse_MitKlassenfilter(t *testing.T) {
 		WithArgs("7A").
 		WillReturnRows(pgxmock.NewRows([]string{
 			"id", "s_id", "name", "klasse",
-			"titel", "autor", "isbn", "cover_url",
+			"titel", "autor", "isbn", "cover_url", "barcode",
 			"rueckgabe_frist", "tage_ueberfaellig",
 		}))
 
