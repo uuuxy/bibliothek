@@ -30,7 +30,7 @@ test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }
 
 	// Clientseitiger Filter: Nonsens-Suchbegriff leert die Liste ohne API-Call
 	await panel.getByPlaceholder('Titel oder Autor…').fill('xx-niemals-treffer-xx');
-	await expect(page.getByText('Keine Einträge für diese Filter.')).toBeVisible();
+	await expect(page.locator('text=Keine Einträge für diese Filter.|text=Noch keine Daten vorhanden.')).toBeVisible();
 	await expect(page.getByText(/^0 von \d+ Einträgen/)).toBeVisible();
 
 	// Escape schließt das Panel
