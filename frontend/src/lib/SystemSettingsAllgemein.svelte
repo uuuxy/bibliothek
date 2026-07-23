@@ -13,6 +13,8 @@
 	 * @property {number} fristMedienTage
 	 * @property {number} maxOverdueDays
 	 * @property {number} maxOverdueItems
+	 * @property {boolean} bestellbedarfWarnungAktiv
+	 * @property {number} bestellbedarfSchwelle
 	 */
 
 	/** @type {Props} */
@@ -24,7 +26,9 @@
 		fristBuchTage = $bindable(),
 		fristMedienTage = $bindable(),
 		maxOverdueDays = $bindable(),
-		maxOverdueItems = $bindable()
+		maxOverdueItems = $bindable(),
+		bestellbedarfWarnungAktiv = $bindable(),
+		bestellbedarfSchwelle = $bindable()
 	} = $props();
 
 	let saving = $state(false);
@@ -40,7 +44,9 @@
 				frist_buch_tage: fristBuchTage,
 				frist_medien_tage: fristMedienTage,
 				max_overdue_days: maxOverdueDays,
-				max_overdue_items: maxOverdueItems
+				max_overdue_items: maxOverdueItems,
+				bestellbedarf_warnung_aktiv: bestellbedarfWarnungAktiv,
+				bestellbedarf_schwelle: bestellbedarfSchwelle
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
 		} catch {
@@ -126,6 +132,44 @@
 			<SettingField bind:value={maxOverdueDays} label="Tage bis Sperre" min={0} max={365} />
 			<SettingField bind:value={maxOverdueItems} label="Ab x Medien sperren" min={1} max={50} />
 		</div>
+	</section>
+
+	<!-- Bestellbedarf-Warnung -->
+	<section class="border-b border-slate-200 pb-8">
+		<div class="flex items-start justify-between gap-4">
+			{@render sectionHeader(
+				'Bestellbedarf-Warnung',
+				'Meldet Schulbücher (LMF), deren eigener Bestand unter die Schwelle fällt. Aus = keine Bestellbedarf-Liste. Ersetzt den früheren pauschalen Meldebestand.'
+			)}
+			<button
+				type="button"
+				onclick={() => (bestellbedarfWarnungAktiv = !bestellbedarfWarnungAktiv)}
+				class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {bestellbedarfWarnungAktiv
+					? 'bg-emerald-500'
+					: 'bg-slate-200'}"
+				role="switch"
+				aria-checked={bestellbedarfWarnungAktiv}
+				aria-label="Bestellbedarf-Warnung umschalten"
+			>
+				<span
+					class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {bestellbedarfWarnungAktiv
+						? 'translate-x-6'
+						: 'translate-x-0'}"
+				></span>
+			</button>
+		</div>
+
+		{#if bestellbedarfWarnungAktiv}
+			<div class="mt-6 max-w-xs">
+				<SettingField
+					bind:value={bestellbedarfSchwelle}
+					label="Warnen unter x Exemplaren"
+					min={1}
+					max={50}
+					hint="Ein Titel gilt als Bestellbedarf, wenn er weniger als x eigene (nicht ausgesonderte) Exemplare hat."
+				/>
+			</div>
+		{/if}
 	</section>
 
 	<div class="flex justify-end">

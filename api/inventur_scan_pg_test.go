@@ -57,7 +57,7 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 	_, exMathe := seedSignaturMitExemplar(t, pool, "INV-Mathe-"+suffix, barcodeMathe)
 
 	invRepo := repository.NewInventoryRepository(pool)
-	session, err := invRepo.CreateInventurSession(ctx, "signature", &sigDeutsch, "Deutsch", "")
+	session, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{SignatureID: &sigDeutsch}, "Deutsch", "")
 	if err != nil {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}

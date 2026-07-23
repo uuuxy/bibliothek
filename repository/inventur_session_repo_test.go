@@ -20,7 +20,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	_, deutschEx := seedSignaturMitExemplaren(t, pool, "Deutsch", 4)
 
 	// Kollege A: Mathe-Session, scannt 3 von 5.
-	sessA, err := repo.CreateInventurSession(ctx, "signature", &matheID, "Mathematik", "")
+	sessA, err := repo.CreateInventurSession(ctx, "signature", InventurScope{SignatureID: &matheID}, "Mathematik", "")
 	if err != nil {
 		t.Fatalf("Session A anlegen: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	// Kollege B startet PARALLEL eine Deutsch-Session — im alten Modell hätte das A's
 	// Fortschritt global gelöscht.
 	deutschID := deutschSignaturID(t, pool)
-	sessB, err := repo.CreateInventurSession(ctx, "signature", &deutschID, "Deutsch", "")
+	sessB, err := repo.CreateInventurSession(ctx, "signature", InventurScope{SignatureID: &deutschID}, "Deutsch", "")
 	if err != nil {
 		t.Fatalf("Session B anlegen: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	}
 
 	// A schließt ab: genau die 2 nicht gescannten Mathe-Exemplare gelten als Verlust.
-	verloren, err := repo.FinishInventurSession(ctx, sessA.ID, &matheID)
+	verloren, err := repo.FinishInventurSession(ctx, sessA.ID, InventurScope{SignatureID: &matheID})
 	if err != nil {
 		t.Fatalf("Finish A: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	leiheAus(t, pool, ex[0]) // ein Exemplar verliehen
 
 	// Scope zählt nur die 2 physisch anwesenden.
-	scope, err := repo.ZaehleScope(ctx, &sigID)
+	scope, err := repo.ZaehleScope(ctx, InventurScope{SignatureID: &sigID})
 	if err != nil {
 		t.Fatalf("ZaehleScope: %v", err)
 	}
@@ -82,11 +82,11 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 
 	// Session starten, NICHTS scannen, abschließen: nur die 2 anwesenden fehlen.
 	// Das verliehene Buch darf nicht darunter sein.
-	sess, err := repo.CreateInventurSession(ctx, "signature", &sigID, "Physik", "")
+	sess, err := repo.CreateInventurSession(ctx, "signature", InventurScope{SignatureID: &sigID}, "Physik", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
-	verloren, err := repo.FinishInventurSession(ctx, sess.ID, &sigID)
+	verloren, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{SignatureID: &sigID})
 	if err != nil {
 		t.Fatalf("Finish: %v", err)
 	}
@@ -109,11 +109,11 @@ func TestInventurEineOffeneSessionJeScope(t *testing.T) {
 
 	sigID, _ := seedSignaturMitExemplaren(t, pool, "Chemie", 2)
 
-	if _, err := repo.CreateInventurSession(ctx, "signature", &sigID, "Chemie", ""); err != nil {
+	if _, err := repo.CreateInventurSession(ctx, "signature", InventurScope{SignatureID: &sigID}, "Chemie", ""); err != nil {
 		t.Fatalf("erste Session: %v", err)
 	}
 
-	_, err := repo.CreateInventurSession(ctx, "signature", &sigID, "Chemie", "")
+	_, err := repo.CreateInventurSession(ctx, "signature", InventurScope{SignatureID: &sigID}, "Chemie", "")
 	if !errors.Is(err, ErrInventurLaeuftBereits) {
 		t.Errorf("zweite Session im selben Scope: erwartet ErrInventurLaeuftBereits, war %v", err)
 	}
@@ -129,7 +129,63 @@ func TestInventurEineOffeneSessionJeScope(t *testing.T) {
 	if err := repo.AbortInventurSession(ctx, offen[0].ID); err != nil {
 		t.Fatalf("Abort: %v", err)
 	}
-	if _, err := repo.CreateInventurSession(ctx, "signature", &sigID, "Chemie", ""); err != nil {
+	if _, err := repo.CreateInventurSession(ctx, "signature", InventurScope{SignatureID: &sigID}, "Chemie", ""); err != nil {
 		t.Errorf("nach Abbruch muss ein Neustart möglich sein, war: %v", err)
+	}
+}
+
+// TestInventurFilterScopeFachKlasse sichert den gezielten Teil-Scope ab: eine Inventur
+// nach Fach + Klasse erfasst genau die Titel mit passendem Fach UND Jahrgangsbereich —
+// nicht die mit falschem Fach oder außerhalb der Klasse.
+func TestInventurFilterScopeFachKlasse(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventoryRepository(pool)
+
+	matheKl5 := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA5")  // im Scope
+	matheKl9 := seedFachExemplar(t, pool, "Mathematik", 9, 10, "BC-MA9") // falsche Klasse
+	deutschKl5 := seedFachExemplar(t, pool, "Deutsch", 5, 6, "BC-DE5")   // falsches Fach
+
+	subject, grade := "Mathematik", 5
+	scope := InventurScope{Subject: &subject, Grade: &grade}
+
+	if n, err := repo.ZaehleScope(ctx, scope); err != nil {
+		t.Fatalf("ZaehleScope: %v", err)
+	} else if n != 1 {
+		t.Errorf("Scope 'Mathe Kl.5': erwartet 1, war %d", n)
+	}
+
+	// Dimensions-Prüfung (Scan-Warnung): nur das passende Fach+Klasse gehört dazu.
+	if in, err := repo.ExemplarImScope(ctx, matheKl5, scope); err != nil {
+		t.Fatalf("ExemplarImScope matheKl5: %v", err)
+	} else if !in {
+		t.Error("Mathe Kl.5 sollte im Scope sein")
+	}
+	
+	if in, err := repo.ExemplarImScope(ctx, deutschKl5, scope); err != nil {
+		t.Fatalf("ExemplarImScope deutschKl5: %v", err)
+	} else if in {
+		t.Error("Deutsch Kl.5 sollte NICHT im Scope sein (falsches Fach)")
+	}
+
+	sess, err := repo.CreateInventurSession(ctx, "filter", scope, "Mathematik · Kl. 5", "")
+	if err != nil {
+		t.Fatalf("Filter-Session anlegen: %v", err)
+	}
+
+	// Nichts scannen, abschließen: genau das eine In-Scope-Exemplar fehlt.
+	verloren, err := repo.FinishInventurSession(ctx, sess.ID, scope)
+	if err != nil {
+		t.Fatalf("Finish: %v", err)
+	}
+	if verloren != 1 {
+		t.Errorf("Verluste: erwartet 1 (nur Mathe Kl.5), war %d", verloren)
+	}
+	if aus := ausgesonderteZahl(t, pool, []string{matheKl5}); aus != 1 {
+		t.Errorf("In-Scope Mathe Kl.5 nicht als Verlust ausgesondert: %d", aus)
+	}
+	if aus := ausgesonderteZahl(t, pool, []string{matheKl9, deutschKl5}); aus != 0 {
+		t.Errorf("Out-of-Scope-Exemplare fälschlich ausgesondert: %d", aus)
 	}
 }

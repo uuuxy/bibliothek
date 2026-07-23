@@ -38,6 +38,8 @@
 	let fristMedienTage = $state(7);
 	let maxOverdueDays = $state(14);
 	let maxOverdueItems = $state(1);
+	let bestellbedarfWarnungAktiv = $state(true);
+	let bestellbedarfSchwelle = $state(3);
 
 	// --- LOGIC ---
 
@@ -52,6 +54,8 @@
 			fristMedienTage = data.frist_medien_tage ?? 7;
 			maxOverdueDays = data.max_overdue_days ?? 14;
 			maxOverdueItems = data.max_overdue_items ?? 1;
+			bestellbedarfWarnungAktiv = data.bestellbedarf_warnung_aktiv ?? true;
+			bestellbedarfSchwelle = data.bestellbedarf_schwelle ?? 3;
 		} catch {
 			/* use defaults */
 		}
@@ -105,6 +109,8 @@
 					bind:fristMedienTage
 					bind:maxOverdueDays
 					bind:maxOverdueItems
+					bind:bestellbedarfWarnungAktiv
+					bind:bestellbedarfSchwelle
 				/>
 
 				<!-- TAB: TEAM & RECHTE -->

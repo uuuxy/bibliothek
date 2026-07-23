@@ -106,7 +106,7 @@ func (s *Server) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imScope, err := invRepo.ExemplarImScope(ctx, res.CopyID, session.SignatureID)
+	imScope, err := invRepo.ExemplarImScope(ctx, res.CopyID, session.Scope())
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return

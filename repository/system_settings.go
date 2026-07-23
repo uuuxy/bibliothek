@@ -16,6 +16,11 @@ type SystemEinstellungen struct {
 	FristMedienTage         int     `json:"frist_medien_tage"`
 	MaxOverdueDays          int     `json:"max_overdue_days"`
 	MaxOverdueItems         int     `json:"max_overdue_items"`
+	// Bestellbedarf: ob überhaupt gewarnt wird und ab welcher Exemplarzahl ein
+	// (LMF-)Titel als Bestellbedarf gilt (gesamt < Schwelle). Löst den früheren
+	// pauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.
+	BestellbedarfWarnungAktiv bool `json:"bestellbedarf_warnung_aktiv"`
+	BestellbedarfSchwelle     int  `json:"bestellbedarf_schwelle"`
 	// School identity — used in PDF letter headers (set once via settings UI).
 	SchuleName    string `json:"schule_name"`
 	SchuleStrasse string `json:"schule_strasse"`
@@ -48,6 +53,10 @@ func standardEinstellungen() *SystemEinstellungen {
 		FristMedienTage:      7,
 		MaxOverdueDays:       14,
 		MaxOverdueItems:      1,
+		// Warnung standardmäßig an; Schwelle 3 (statt des früheren Default 5) als
+		// ruhigerer Startwert — der Betreiber justiert sie in den Einstellungen.
+		BestellbedarfWarnungAktiv: true,
+		BestellbedarfSchwelle:     3,
 	}
 }
 
@@ -95,6 +104,10 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeIntEinstellung(val, &settings.MaxOverdueDays)
 	case "max_overdue_items":
 		setzeIntEinstellung(val, &settings.MaxOverdueItems)
+	case "bestellbedarf_warnung_aktiv":
+		settings.BestellbedarfWarnungAktiv = val != nil && *val == "true"
+	case "bestellbedarf_schwelle":
+		setzeIntEinstellung(val, &settings.BestellbedarfSchwelle)
 	case "schule_name":
 		setzeStringRoh(val, &settings.SchuleName)
 	case "schule_strasse":
@@ -168,6 +181,14 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 	if req.MaxOverdueItems > 0 {
 		maxOverdueItems = strconv.Itoa(req.MaxOverdueItems)
 	}
+	bestellSchwelle := "3"
+	if req.BestellbedarfSchwelle > 0 {
+		bestellSchwelle = strconv.Itoa(req.BestellbedarfSchwelle)
+	}
+	bestellAktiv := "false"
+	if req.BestellbedarfWarnungAktiv {
+		bestellAktiv = "true"
+	}
 
 	pairs := [][2]string{
 		{"ferien_leseclub_aktiv", aktiv},
@@ -178,6 +199,8 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 		{"frist_medien_tage", fristMedien},
 		{"max_overdue_days", maxOverdueDays},
 		{"max_overdue_items", maxOverdueItems},
+		{"bestellbedarf_warnung_aktiv", bestellAktiv},
+		{"bestellbedarf_schwelle", bestellSchwelle},
 	}
 
 	// Schul-Identität (PDF-Briefkopf) getrennt behandeln: Diese Felder haben

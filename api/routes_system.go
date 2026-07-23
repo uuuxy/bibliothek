@@ -53,6 +53,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// Lookups
 	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
+	mux.Handle("GET /api/faecher", s.RequirePermission("view_books")(s.GetFaecherHandler()))
 	mux.Handle("GET /api/readergroups", s.RequirePermission("view_students")(s.GetReaderGroupsHandler()))
 
 	// Audit Logs

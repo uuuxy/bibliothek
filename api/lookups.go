@@ -40,6 +40,38 @@ func (s *Server) GetSystematicsHandler() http.HandlerFunc {
 	}
 }
 
+// GetFaecherHandler liefert die distinkten Fächer (buecher_titel.subject) — für die
+// Fach-Auswahl beim gezielten Inventur-Scope ("nur Mathe, Klasse 5").
+func (s *Server) GetFaecherHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		rows, err := s.DB.Pool.Query(ctx, `
+			SELECT DISTINCT btrim(subject)
+			FROM buecher_titel
+			WHERE subject IS NOT NULL AND btrim(subject) <> ''
+			ORDER BY 1
+		`)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
+			return
+		}
+		defer rows.Close()
+
+		faecher := []string{}
+		for rows.Next() {
+			var f string
+			if err := rows.Scan(&f); err == nil {
+				faecher = append(faecher, f)
+			}
+		}
+		if err := rows.Err(); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
+			return
+		}
+		RespondJSON(w, http.StatusOK, faecher)
+	}
+}
+
 // GetReaderGroupsHandler returns all entries from lesergruppen
 func (s *Server) GetReaderGroupsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

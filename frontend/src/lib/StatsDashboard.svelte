@@ -98,7 +98,7 @@
 {#snippet drillDownHeader(label, panel)}
 	<button
 		onclick={() => openDetail(panel)}
-		class="w-full flex items-center justify-between border-b border-slate-100 pb-2 group cursor-pointer text-left"
+		class="w-full flex items-center justify-between gap-3 border-b border-slate-100 pb-2 -mx-2 px-2 rounded-md group cursor-pointer text-left hover:bg-slate-50 transition-colors"
 		aria-label="{label} — Detailansicht öffnen"
 	>
 		<h3
@@ -106,21 +106,18 @@
 		>
 			{label}
 		</h3>
+		<!-- Klar als klickbar erkennbar: dauerhaft blaues Pill statt zartem Hover-Grau.
+		     Chevron (→) statt Außen-Pfeil (↗), weil es jetzt auf eine interne Seite navigiert. -->
 		<span
-			class="flex items-center gap-1 text-[11px] font-bold text-slate-400 group-hover:text-blue-600 transition-colors"
+			class="shrink-0 flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 group-hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors"
 		>
-			Alle
+			Alle anzeigen
 			<svg
-				class="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+				class="w-3 h-3 transition-transform group-hover:translate-x-0.5"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2.5"
-					d="M7 17L17 7M7 7h10v10"
-				/></svg
+				><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg
 			>
 		</span>
 	</button>

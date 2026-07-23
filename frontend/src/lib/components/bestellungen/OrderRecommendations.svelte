@@ -34,20 +34,16 @@
 		maxVisible = 60;
 	});
 
-	/** Ab hier wird es eng: unter 3 EIGENEN Exemplaren (nicht ausgesondert) ist der
-	 * Titel praktisch weg. Bewusst der Gesamt-, nicht der Verfügbarbestand — ein
-	 * verliehener Klassensatz (0 verfügbar, 30 vorhanden) ist kein Notfall. */
-	const KRITISCH_AB = 3;
-
 	/**
-	 * Farbstufe einer Zeile. Der Meldebestand ist die eigentliche Schwelle (je Titel
-	 * konfigurierbar, Standard 5); KRITISCH_AB hebt daraus die Fälle hervor, die keinen
-	 * Aufschub dulden. Basis ist der Gesamtbestand (Besitz), konsistent zur Backend-Query
-	 * (reorders.go: gesamt < meldebestand).
+	 * Farbstufe einer Zeile. Die Liste ist bereits die Bestellbedarf-Liste (Backend:
+	 * gesamt < konfigurierbare Schwelle). Herausgehoben wird nur der echte Notfall:
+	 * 0 eigene Exemplare (Titel komplett weg) = kritisch, alles andere = knapp. Basis ist
+	 * der Gesamtbestand (Besitz), nicht der Verfügbarbestand — ein verliehener Klassensatz
+	 * (0 verfügbar, 30 vorhanden) taucht hier ohnehin nicht auf.
 	 * @param {any} r
 	 */
 	function stufe(r) {
-		return r.gesamt_bestand < KRITISCH_AB ? 'kritisch' : 'knapp';
+		return r.gesamt_bestand === 0 ? 'kritisch' : 'knapp';
 	}
 
 	let kritischeAnzahl = $derived(
@@ -72,10 +68,10 @@
 				{#if kritischeAnzahl}
 					<p class="text-[13px] font-semibold text-rose-600 mt-1 flex items-center gap-1.5">
 						<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-						{kritischeAnzahl}× dringend · unter {KRITISCH_AB} Exemplaren
+						{kritischeAnzahl}× komplett fehlend · 0 Exemplare
 					</p>
 				{:else if recommendations.length}
-					<p class="text-[13px] text-slate-400 mt-1">Alle unter dem jeweiligen Meldebestand.</p>
+					<p class="text-[13px] text-slate-400 mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
 				{/if}
 			</div>
 			<a
@@ -121,7 +117,7 @@
 		<div class="flex flex-col items-center justify-center text-center py-16 px-6 text-slate-400">
 			<span class="text-3xl mb-2">✅</span>
 			<p class="text-sm font-semibold text-slate-500">Bestände ausreichend</p>
-			<p class="text-xs mt-1">Kein Titel liegt unter seinem Meldebestand.</p>
+			<p class="text-xs mt-1">Kein Titel liegt unter der Bestellbedarf-Schwelle.</p>
 		</div>
 	{:else if !gefiltert.length}
 		<div class="text-center py-14 px-6 text-slate-400">
@@ -130,10 +126,9 @@
 	{:else}
 		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] px-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
-				{@const ist_kritisch = stufe(r) === 'kritisch'}
-				<!-- Kein Zeilen-Alarm mehr: die Liste IST per Definition die Dringend-Liste
+				<!-- Kein Zeilen-Alarm mehr: die Liste IST per Definition die Bestellbedarf-Liste
 				     (sortiert nach Fehlbestand). Dringlichkeit trägt die farbige Zahl rechts
-				     + das „Vergriffen"-Pill — nicht 335 rote Balken (Alarm-Müdigkeit). -->
+				     + das „Fehlt komplett"-Pill — nicht 335 rote Balken (Alarm-Müdigkeit). -->
 				<div
 					class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 hover:bg-slate-50 hover:border-slate-200 transition-colors"
 				>
@@ -173,22 +168,20 @@
 						</p>
 					</div>
 
-					<!-- Bestandsstatus: bei 0 im Bestand die klare Ansage statt "0 von 0" -->
+					<!-- Bestandsstatus: bei 0 eigenen Exemplaren die klare Ansage statt "0/0".
+					     „Fehlt komplett" (nicht „Vergriffen"): 0 im eigenen Bestand ist keine
+					     Aussage über die Lieferbarkeit beim Verlag. -->
 					<div class="text-right shrink-0 leading-tight">
 						{#if r.gesamt_bestand === 0}
 							<span
 								class="inline-block text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-full px-2 py-0.5"
-								>Vergriffen</span
+								>Fehlt komplett</span
 							>
 						{:else}
-							<div
-								class="text-sm font-bold tabular-nums {ist_kritisch ? 'text-rose-600' : 'text-amber-600'}"
-								title="verfügbar / im Bestand"
-							>
+							<div class="text-sm font-bold tabular-nums text-amber-600" title="verfügbar / im Bestand">
 								{r.verfuegbarer_bestand}<span class="text-slate-300 font-medium">/</span>{r.gesamt_bestand}
 							</div>
 						{/if}
-						<div class="text-[10px] text-slate-400 mt-0.5">Melde {r.meldebestand}</div>
 					</div>
 
 					<button

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // ReorderTitle ist ein Titel, dessen verfügbarer Bestand unter den Meldebestand
@@ -45,13 +46,27 @@ type ReorderTitle struct {
 // Lernmittel gibt es ausserdem die Titelsuche im Bestellworkspace.
 func (s *Server) GetReordersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reorders, err := s.queryReorders(r.Context(), reorderFilter(r))
+		reorders, err := s.reordersMitSettings(r.Context(), r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		RespondJSON(w, http.StatusOK, reorders)
 	}
+}
+
+// reordersMitSettings liefert den Bestellbedarf gemäß Konfiguration: Warnung aus →
+// leere Liste; sonst gefiltert auf gesamt < Schwelle. Eine Quelle für Ansicht UND
+// PDF-Export, damit beide nie auseinanderlaufen.
+func (s *Server) reordersMitSettings(ctx context.Context, r *http.Request) ([]ReorderTitle, error) {
+	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !settings.BestellbedarfWarnungAktiv {
+		return []ReorderTitle{}, nil
+	}
+	return s.queryReorders(ctx, reorderFilter(r), settings.BestellbedarfSchwelle)
 }
 
 // reorderFilter liest ?type= und fällt auf den LMF-Bestand zurück (siehe
@@ -66,12 +81,14 @@ func reorderFilter(r *http.Request) string {
 	return fragment
 }
 
-// queryReorders liefert die Titel, deren BESITZ (gesamt, nicht ausgesondert) unter dem
-// Meldebestand liegt — der größte Fehlbestand zuerst. Bewusst gesamt statt verfügbar:
-// sonst würde jeder verliehene Lernmittel-Klassensatz (im Schuljahr der Normalfall) als
-// Bestellbedarf gemeldet. Da "gesamt" die als "bestellt" markierten Platzhalter mitzählt,
-// ist die Liste zugleich bereits-bestellt-bewusst (keine Doppelbestellung).
-func (s *Server) queryReorders(ctx context.Context, typeFilter string) ([]ReorderTitle, error) {
+// queryReorders liefert die Titel, deren BESITZ (gesamt, nicht ausgesondert) unter der
+// konfigurierten Bestellbedarf-Schwelle liegt — der größte Fehlbestand zuerst. Bewusst
+// gesamt statt verfügbar: sonst würde jeder verliehene Lernmittel-Klassensatz (im
+// Schuljahr der Normalfall) als Bestellbedarf gemeldet. Da "gesamt" die als "bestellt"
+// markierten Platzhalter mitzählt, ist die Liste zugleich bereits-bestellt-bewusst.
+// Die Schwelle ersetzt den früheren pro-Titel-Meldebestand (der pauschal auf 5 stand und
+// fast jeden Titel meldete); t.meldebestand wird nur noch informativ mitgeliefert.
+func (s *Server) queryReorders(ctx context.Context, typeFilter string, schwelle int) ([]ReorderTitle, error) {
 	// Ein LATERAL je Titel liefert beide Bestandszahlen in einem Durchgang.
 	query := fmt.Sprintf(`
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''),
@@ -91,11 +108,11 @@ func (s *Server) queryReorders(ctx context.Context, typeFilter string) ([]Reorde
 			FROM buecher_exemplare e
 			WHERE e.titel_id = t.id
 		) v ON true
-		WHERE v.gesamt < t.meldebestand %s
-		ORDER BY (t.meldebestand - v.gesamt) DESC, t.titel ASC
+		WHERE v.gesamt < $1 %s
+		ORDER BY ($1 - v.gesamt) DESC, t.titel ASC
 	`, typeFilter)
 
-	rows, err := s.DB.Pool.Query(ctx, query)
+	rows, err := s.DB.Pool.Query(ctx, query, schwelle)
 	if err != nil {
 		return nil, err
 	}

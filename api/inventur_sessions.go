@@ -41,7 +41,7 @@ func (s *Server) ListInventurSessionsHandler() http.HandlerFunc {
 
 		out := make([]InventurSessionDTO, 0, len(sessions))
 		for i := range sessions {
-			erwartet, err := invRepo.ZaehleScope(ctx, sessions[i].SignatureID)
+			erwartet, err := invRepo.ZaehleScope(ctx, sessions[i].Scope())
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return

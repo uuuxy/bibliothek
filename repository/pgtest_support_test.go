@@ -139,3 +139,25 @@ func seedSignaturMitExemplaren(t *testing.T, pool *pgxpool.Pool, name string, n 
 	}
 	return sigID, ids
 }
+
+// seedFachExemplar legt einen Titel mit Fach (subject) + Jahrgangsbereich und genau
+// einem ausleihbaren Exemplar an; liefert die Exemplar-ID. Für Filter-Scope-Tests.
+func seedFachExemplar(t *testing.T, pool *pgxpool.Pool, subject string, jvon, jbis int, barcode string) string {
+	t.Helper()
+	ctx := context.Background()
+
+	var titelID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_titel (titel, subject, jahrgang_von, jahrgang_bis)
+		 VALUES ($1, $2, $3, $4) RETURNING id`,
+		fmt.Sprintf("%s-Kl%d-%s", subject, jvon, barcode), subject, jvon, jbis).Scan(&titelID); err != nil {
+		t.Fatalf("Fach-Titel anlegen: %v", err)
+	}
+	var exID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
+		titelID, barcode).Scan(&exID); err != nil {
+		t.Fatalf("Fach-Exemplar anlegen: %v", err)
+	}
+	return exID
+}

@@ -3,7 +3,9 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -13,8 +15,22 @@ import (
 // InventurStartRequest holds the parameters needed to define the scope
 // of a new physical stock-take (inventory).
 type InventurStartRequest struct {
-	Type        string `json:"type"` // "global" or "signature"
-	SignatureID *int   `json:"signature_id,omitempty"`
+	Type        string  `json:"type"`                   // "global" | "signature" | "filter"
+	SignatureID *int    `json:"signature_id,omitempty"` // bei "signature"
+	Subject     *string `json:"subject,omitempty"`      // bei "filter": Fach (buecher_titel.subject)
+	Grade       *int    `json:"grade,omitempty"`        // bei "filter": Klasse (Jahrgangsbereich enthält)
+}
+
+// scope leitet den auswertbaren Scope aus dem Request ab.
+func (req InventurStartRequest) scope() repository.InventurScope {
+	switch req.Type {
+	case "signature":
+		return repository.InventurScope{SignatureID: req.SignatureID}
+	case "filter":
+		return repository.InventurScope{Subject: req.Subject, Grade: req.Grade}
+	default:
+		return repository.InventurScope{}
+	}
 }
 
 // InventurStartResponse returns the new session and the number of copies expected.
@@ -25,25 +41,54 @@ type InventurStartResponse struct {
 	Erwartet  int    `json:"erwartet"`
 }
 
-// validateInventurStart prüft Typ und (bei "signature") die erforderliche Signatur-ID.
+// validateInventurStart prüft Typ und die je Typ erforderlichen Scope-Felder.
 func validateInventurStart(w http.ResponseWriter, req InventurStartRequest) bool {
-	if req.Type != "global" && req.Type != "signature" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("invalid type, must be 'global' or 'signature'"))
+	switch req.Type {
+	case "global":
+		return true
+	case "signature":
+		if req.SignatureID == nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signature_id is required when type is 'signature'"))
+			return false
+		}
+		return true
+	case "filter":
+		if req.Subject == nil && req.Grade == nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("filter scope requires at least 'subject' or 'grade'"))
+			return false
+		}
+		return true
+	default:
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("invalid type, must be 'global', 'signature' or 'filter'"))
 		return false
 	}
-	if req.Type == "signature" && req.SignatureID == nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signature_id is required when type is 'signature'"))
-		return false
-	}
-	return true
 }
 
 // scopeLabelFuer bestimmt die Anzeigebezeichnung des Inventur-Scopes.
 func scopeLabelFuer(ctx context.Context, invRepo *repository.InventoryRepository, req InventurStartRequest) (string, error) {
-	if req.Type == "global" {
+	switch req.Type {
+	case "signature":
+		return invRepo.SignaturBezeichnung(ctx, *req.SignatureID)
+	case "filter":
+		return filterLabel(req), nil
+	default:
 		return "Gesamtbestand", nil
 	}
-	return invRepo.SignaturBezeichnung(ctx, *req.SignatureID)
+}
+
+// filterLabel baut ein lesbares Scope-Label, z. B. "Mathematik · Kl. 5", "Deutsch" oder "Kl. 7".
+func filterLabel(req InventurStartRequest) string {
+	var teile []string
+	if req.Subject != nil && *req.Subject != "" {
+		teile = append(teile, *req.Subject)
+	}
+	if req.Grade != nil {
+		teile = append(teile, fmt.Sprintf("Kl. %d", *req.Grade))
+	}
+	if len(teile) == 0 {
+		return "Teilbestand"
+	}
+	return strings.Join(teile, " · ")
 }
 
 // InventurStartHandler eröffnet eine neue Inventur-Session für den gewählten Scope.
@@ -54,7 +99,7 @@ func scopeLabelFuer(ctx context.Context, invRepo *repository.InventoryRepository
 // (der den Fortschritt eines parallel scannenden Kollegen löschte) entfällt.
 //
 // @Summary      Start an inventory session
-// @Description  Opens a new inventory session for the chosen scope (global or per signature).
+// @Description  Opens a new inventory session for the chosen scope (global, per signature, or a Fach/Klasse filter).
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
@@ -88,7 +133,7 @@ func (s *Server) InventurStartHandler() http.HandlerFunc {
 			return
 		}
 
-		session, err := invRepo.CreateInventurSession(ctx, req.Type, req.SignatureID, label, benutzerID)
+		session, err := invRepo.CreateInventurSession(ctx, req.Type, req.scope(), label, benutzerID)
 		if err != nil {
 			if errors.Is(err, repository.ErrInventurLaeuftBereits) {
 				apierrors.SendHTTPError(w, http.StatusConflict, err)

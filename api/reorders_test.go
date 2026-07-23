@@ -31,10 +31,11 @@ func TestQueryReorders(t *testing.T) {
 	// Ein verliehener Klassensatz (gesamt 30 >= 5) taucht dagegen gar nicht auf — das
 	// prüft der PG-Test; hier geht es um die Projektion beider Bestandszahlen.
 	mock.ExpectQuery("SELECT t.id, t.titel, coalesce").
+		WithArgs(5).
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()).
 			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3))
 
-	results, err := server.queryReorders(context.Background(), "")
+	results, err := server.queryReorders(context.Background(), "", 5)
 	if err != nil {
 		t.Fatalf("queryReorders: unerwarteter Fehler: %v", err)
 	}
@@ -92,7 +93,13 @@ func TestGetReordersLeereListeIstArray(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// Der Handler liest zuerst die Einstellungen (Warnung aktiv? Schwelle?), dann den
+	// Bestellbedarf — beide Queries müssen der Reihe nach erwartet werden. Leere
+	// Settings-Zeilen ⇒ Defaults (Warnung an, Schwelle 3).
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mock.ExpectQuery("SELECT t.id, t.titel, coalesce").
+		WithArgs(3). // Default-Schwelle (leere Settings ⇒ Default 3)
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()))
 
 	server := &Server{DB: &db.Database{Pool: mock}}

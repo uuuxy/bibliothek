@@ -16,7 +16,7 @@ import (
 // Reihenfolge wie die Ansicht (Default LMF, knappste zuerst, siehe GetReordersHandler).
 func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reorders, err := s.queryReorders(r.Context(), reorderFilter(r))
+		reorders, err := s.reordersMitSettings(r.Context(), r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

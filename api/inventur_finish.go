@@ -70,7 +70,7 @@ func (s *Server) InventurFinishHandler() http.HandlerFunc {
 			return
 		}
 
-		count, err := invRepo.FinishInventurSession(ctx, session.ID, session.SignatureID)
+		count, err := invRepo.FinishInventurSession(ctx, session.ID, session.Scope())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

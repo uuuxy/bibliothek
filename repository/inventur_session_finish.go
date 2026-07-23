@@ -19,21 +19,24 @@ func (r *InventoryRepository) RecordInventurScan(ctx context.Context, sessionID,
 	return nil
 }
 
-// ExemplarImScope prüft, ob ein Exemplar zum Scope einer Signatur-Session gehört.
-// Für globale Sessions (signatureID == nil) ist immer true. Dient nur der
-// nicht-blockierenden Scan-Warnung ("gehört nicht zum Scope").
-func (r *InventoryRepository) ExemplarImScope(ctx context.Context, exemplarID string, signatureID *int) (bool, error) {
-	if signatureID == nil {
+// ExemplarImScope prüft, ob ein Exemplar zu den Scope-Dimensionen einer Session gehört
+// (Signatur/Fach/Klasse). Für globale Sessions ist immer true. Dient nur der
+// nicht-blockierenden Scan-Warnung ("gehört nicht zum Scope") — physische Bedingungen
+// (verliehen etc.) spielen hier keine Rolle, das Buch liegt ja gescannt in der Hand.
+func (r *InventoryRepository) ExemplarImScope(ctx context.Context, exemplarID string, scope InventurScope) (bool, error) {
+	dimBedingung, dimArgs := scope.DimensionBedingung(2)
+	if dimBedingung == "TRUE" {
 		return true, nil
 	}
+	args := append([]any{exemplarID}, dimArgs...)
 	var vorhanden bool
 	err := r.db.QueryRow(ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE e.id = $1 AND t.signature_id = $2
+			WHERE e.id = $1 AND `+dimBedingung+`
 		)
-	`, exemplarID, *signatureID).Scan(&vorhanden)
+	`, args...).Scan(&vorhanden)
 	if err != nil {
 		return false, fmt.Errorf("scope-prüfung fehlgeschlagen: %w", err)
 	}
@@ -48,8 +51,13 @@ func (r *InventoryRepository) ExemplarImScope(ctx context.Context, exemplarID st
 // Entscheidend gegenüber dem alten Modell: Nur die NICHT in dieser Session erfassten
 // Exemplare gelten als vermisst — der Fortschritt einer parallelen Session bleibt
 // unberührt, weil er session-gebunden in inventur_erfassungen liegt.
-func (r *InventoryRepository) FinishInventurSession(ctx context.Context, sessionID string, signatureID *int) (int, error) {
-	tag, err := r.db.Exec(ctx, `
+func (r *InventoryRepository) FinishInventurSession(ctx context.Context, sessionID string, scope InventurScope) (int, error) {
+	// Scope-Prädikat (physisch + Dimensionen) aus der einen Quelle; die Session-ID hängt
+	// als letzter Platzhalter hinten dran.
+	bedingung, args := scope.Bedingung(1)
+	sessionIdx := len(args) + 1
+	args = append(args, sessionID)
+	query := fmt.Sprintf(`
 		UPDATE buecher_exemplare e
 		SET ist_ausleihbar = false,
 		    ist_ausgesondert = true,
@@ -58,15 +66,13 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		FROM buecher_titel t
 		WHERE e.titel_id = t.id
-		  AND e.ist_ausgesondert = false
-		  AND e.ist_ausleihbar = true
-		  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		  AND ($1::int IS NULL OR t.signature_id = $1)
+		  AND %s
 		  AND NOT EXISTS (
 		      SELECT 1 FROM inventur_erfassungen ie
-		      WHERE ie.session_id = $2 AND ie.exemplar_id = e.id
+		      WHERE ie.session_id = $%d AND ie.exemplar_id = e.id
 		  )
-	`, signatureID, sessionID)
+	`, bedingung, sessionIdx)
+	tag, err := r.db.Exec(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("verluste markieren fehlgeschlagen: %w", err)
 	}

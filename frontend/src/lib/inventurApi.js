@@ -24,7 +24,7 @@ export async function ladeOffeneSessions() {
 
 /**
  * Neue Session eröffnen.
- * @param {{type: string, signature_id?: number}} payload
+ * @param {{type: string, signature_id?: number, subject?: string, grade?: number}} payload
  */
 export async function starteSession(payload) {
 	const res = await apiFetch('/api/inventur/start', {
@@ -47,6 +47,35 @@ export async function scanne(sessionId, barcode) {
 		body: JSON.stringify({ session_id: sessionId, barcode_id: barcode })
 	});
 	return auswerten(res);
+}
+
+/**
+ * Deutet eine Scan-Antwort in { lastScan, zaehlen } — pur, ohne Zustand, damit die
+ * Optik-Regeln (Treffer / außer-Scope-Warnung / unbekannt) getrennt vom Hook testbar sind.
+ * `zaehlen` ist nur beim echten Treffer true; ein außer-Scope-Buch wird bewusst NICHT
+ * mitgezählt, aber als (gelbe) Warnung mit echtem Titel gezeigt.
+ * @param {{ok: boolean, status: number, data?: any, error?: string}} r
+ * @param {string} barcode
+ */
+export function deuteScanErgebnis(r, barcode) {
+	if (r.ok) {
+		return {
+			zaehlen: true,
+			lastScan: { success: true, barcode: r.data.barcode_id, title: r.data.titel, warnings: r.data.warnungen || [] }
+		};
+	}
+	if (r.status === 409 && r.data?.status === 'ausser_scope') {
+		return {
+			zaehlen: false,
+			lastScan: {
+				success: true,
+				barcode: r.data.barcode_id || barcode,
+				title: r.data.titel || 'Buch',
+				warnings: r.data.warnungen?.length ? r.data.warnungen : ['Buch gehört nicht zum Scope dieser Inventur.']
+			}
+		};
+	}
+	return { zaehlen: false, lastScan: { success: false, barcode, title: 'Unbekanntes Buch', warnings: [r.error] } };
 }
 
 /** @param {string} sessionId */

@@ -68,6 +68,26 @@
 						<div class="text-xs text-slate-500">Grenze die Inventur auf eine Kategorie ein.</div>
 					</div>
 				</label>
+
+				<label
+					class="flex items-start space-x-3 p-3 border rounded-xl cursor-pointer transition-colors {state.scopeType ===
+					'filter'
+						? 'border-blue-500 bg-blue-50'
+						: 'border-slate-200 hover:bg-slate-50'}"
+				>
+					<div class="flex items-center h-5 mt-0.5">
+						<input
+							type="radio"
+							bind:group={state.scopeType}
+							value="filter"
+							class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-600"
+						/>
+					</div>
+					<div class="flex-1">
+						<div class="font-bold text-slate-900">Nach Fach / Klasse</div>
+						<div class="text-xs text-slate-500">Gezielte Teil-Inventur, z. B. „Mathe, Klasse 5“.</div>
+					</div>
+				</label>
 			</div>
 
 			{#if state.scopeType === 'signature'}
@@ -82,6 +102,35 @@
 							<option value={sig.id}>{sig.name}</option>
 						{/each}
 					</select>
+				</div>
+			{/if}
+
+			{#if state.scopeType === 'filter'}
+				<div transition:slide class="grid grid-cols-2 gap-3">
+					<div class="space-y-2">
+						<label class="block text-sm font-medium text-slate-700">Fach</label>
+						<select
+							bind:value={state.selectedFach}
+							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+						>
+							<option value="">Alle Fächer</option>
+							{#each state.faecher as fach, _i (_i)}
+								<option value={fach}>{fach}</option>
+							{/each}
+						</select>
+					</div>
+					<div class="space-y-2">
+						<label class="block text-sm font-medium text-slate-700">Klasse</label>
+						<select
+							bind:value={state.selectedGrade}
+							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+						>
+							<option value="">Alle Klassen</option>
+							{#each [5, 6, 7, 8, 9, 10, 11, 12, 13] as g (g)}
+								<option value={g}>Klasse {g}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 			{/if}
 		</div>

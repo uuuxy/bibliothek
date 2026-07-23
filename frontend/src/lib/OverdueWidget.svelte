@@ -44,37 +44,37 @@
 		<button
 			type="button"
 			onclick={() => (uiStore.activeTab = 'mahnwesen')}
-			class="w-full flex justify-between items-center pb-4 border-b border-gray-200 group cursor-pointer text-left"
-			aria-label="Mahnwesen öffnen — alle überfälligen Ausleihen"
+			class="w-full flex justify-between items-start gap-3 pb-4 border-b border-gray-200 -mx-2 px-2 rounded-md group cursor-pointer text-left transition-colors {hatMahnungen
+				? 'hover:bg-rose-50/50'
+				: 'hover:bg-emerald-50/50'}"
+			aria-label="Zum Mahnwesen — alle überfälligen Ausleihen"
 		>
-			<div>
-				<h3
-					class="{hatMahnungen
-						? 'text-rose-700'
-						: 'text-emerald-700'} font-bold text-base flex items-center gap-1.5"
-				>
+			<div class="space-y-1">
+				<h3 class="{hatMahnungen ? 'text-rose-700' : 'text-emerald-700'} font-bold text-base">
 					{hatMahnungen ? 'Dringend: Mahnungen' : 'Mahnungen'}
+				</h3>
+				<p class="text-sm text-gray-600">Überfällige Ausleihen gesamt</p>
+				<!-- Explizites „Zum Mahnwesen": macht klar, dass dies in einen ANDEREN Bereich
+				     springt (kein Statistik-Unterblatt) — deshalb bewusst kein „zurück zur Statistik". -->
+				<span
+					class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full transition-colors {hatMahnungen
+						? 'text-rose-600 bg-rose-50 group-hover:bg-rose-100'
+						: 'text-emerald-600 bg-emerald-50 group-hover:bg-emerald-100'}"
+				>
+					Zum Mahnwesen
 					<svg
-						class="w-3.5 h-3.5 {hatMahnungen
-							? 'text-rose-300 group-hover:text-rose-600'
-							: 'text-emerald-300 group-hover:text-emerald-600'} transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+						class="w-3 h-3 transition-transform group-hover:translate-x-0.5"
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"
-						><path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2.5"
-							d="M7 17L17 7M7 7h10v10"
-						/></svg
+						><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg
 					>
-				</h3>
-				<p class="text-sm text-gray-600 mt-0.5">Überfällige Ausleihen gesamt</p>
+				</span>
 			</div>
 			<div
 				class="{hatMahnungen
 					? 'text-rose-600'
-					: 'text-emerald-600'} font-extrabold text-4xl tabular-nums"
+					: 'text-emerald-600'} font-extrabold text-4xl tabular-nums shrink-0"
 			>
 				{summary.total_overdue}
 			</div>

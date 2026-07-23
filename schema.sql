@@ -679,7 +679,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('049_schueler_barcode_partial_unique.sql'),
 ('050_search_vector_isbn_beschreibung.sql'),
 ('051_manual_block_reason_pflicht.sql'),
-('052_seed_bestellung_haendler.sql')
+('052_seed_bestellung_haendler.sql'),
+('053_inventur_scope_filter.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -751,14 +752,17 @@ CREATE TABLE IF NOT EXISTS inventur_sessions (
     -- ON DELETE CASCADE (nicht SET NULL): sonst verletzt das Löschen einer Signatur
     -- den chk_inv_session_scope unten (Signatur-Session braucht signature_id).
     signature_id      INT REFERENCES signatures(id) ON DELETE CASCADE,
+    scope_subject     TEXT,                             -- 'filter'-Scope: Fach (buecher_titel.subject)
+    scope_grade       SMALLINT,                         -- 'filter'-Scope: Klasse (jahrgang_von..bis enthält)
     scope_label       VARCHAR(255) NOT NULL DEFAULT '',
     gestartet_von     UUID REFERENCES benutzer(id) ON DELETE SET NULL,
     gestartet_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     abgeschlossen_am  TIMESTAMP WITH TIME ZONE,
     verloren_gemeldet INT,
     CONSTRAINT chk_inv_session_scope
-        CHECK (scope_type IN ('global', 'signature')
-               AND (scope_type = 'global' OR signature_id IS NOT NULL))
+        CHECK (scope_type IN ('global', 'signature', 'filter')
+               AND (scope_type <> 'signature' OR signature_id IS NOT NULL)
+               AND (scope_type <> 'filter' OR scope_subject IS NOT NULL OR scope_grade IS NOT NULL))
 );
 
 CREATE TABLE IF NOT EXISTS inventur_erfassungen (
@@ -773,6 +777,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_global
     ON inventur_sessions ((true)) WHERE abgeschlossen_am IS NULL AND scope_type = 'global';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_signature
     ON inventur_sessions (signature_id) WHERE abgeschlossen_am IS NULL AND scope_type = 'signature';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_filter
+    ON inventur_sessions (coalesce(scope_subject, ''), coalesce(scope_grade, -1))
+    WHERE abgeschlossen_am IS NULL AND scope_type = 'filter';
 CREATE INDEX IF NOT EXISTS idx_inv_erfassung_exemplar
     ON inventur_erfassungen (exemplar_id);
 
