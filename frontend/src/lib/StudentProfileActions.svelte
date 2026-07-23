@@ -2,7 +2,18 @@
 	import Button from './components/ui/Button.svelte';
 	import { apiFetch } from './apiFetch.js';
 	import { idStore } from './designer/idDesignerStore.svelte.js';
-	import { Printer, FileText, Lock, Unlock, AlertTriangle, IdCard, ShieldCheck } from '@lucide/svelte';
+	import { scale } from 'svelte/transition';
+	import {
+		Printer,
+		FileText,
+		Lock,
+		Unlock,
+		AlertTriangle,
+		IdCard,
+		ShieldCheck,
+		ChevronDown,
+		Layers
+	} from '@lucide/svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -27,11 +38,46 @@
 		onPrint
 	} = $props();
 
-	// Seitenwahl für den Ausweis-Einzeldruck. Der Umschalter erscheint nur, wenn die
-	// Rückseite überhaupt Inhalt hat — sonst gibt es nur die Vorderseite zu drucken.
+	// Der Ausweis-Druck ist die Primäraktion. Gibt es eine gestaltete Rückseite, bietet
+	// ein Material-3-Split-Button (Hauptaktion + Chevron-Menü) die Seitenwahl — ohne die
+	// Toolbar mit einem Dauer-Umschalter zuzustellen.
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
-	/** @type {'front'|'back'|'both'} */
-	let printSide = $state('both');
+
+	/** @type {{ side: 'front'|'back'|'both', label: string, hint: string, icon: any }[]} */
+	const printOptions = [
+		{ side: 'both', label: 'Beides', hint: 'Vorder- & Rückseite', icon: Layers },
+		{ side: 'front', label: 'Nur Vorderseite', hint: 'Foto & Ausweisdaten', icon: IdCard },
+		{ side: 'back', label: 'Nur Rückseite', hint: 'Hinweise & Zusatzinfos', icon: FileText }
+	];
+
+	let menuOpen = $state(false);
+	/** @type {HTMLElement | null} */
+	let menuAnchor = $state(null);
+
+	/** @param {'front'|'back'|'both'} side */
+	function doPrint(side) {
+		menuOpen = false;
+		onPrint(side);
+	}
+
+	// Menü schließt bei Klick außerhalb und mit Escape.
+	$effect(() => {
+		if (!menuOpen) return;
+		/** @param {PointerEvent} e */
+		const onDown = (e) => {
+			if (menuAnchor && !menuAnchor.contains(/** @type {Node} */ (e.target))) menuOpen = false;
+		};
+		/** @param {KeyboardEvent} e */
+		const onKey = (e) => {
+			if (e.key === 'Escape') menuOpen = false;
+		};
+		document.addEventListener('pointerdown', onDown);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.removeEventListener('pointerdown', onDown);
+			document.removeEventListener('keydown', onKey);
+		};
+	});
 
 	async function downloadDsgvoAuskunft() {
 		try {
@@ -58,8 +104,7 @@
 	}
 </script>
 
-<!-- Aktionen / Dokumente — alle Druck-, Export- & Verwaltungsaktionen an einem Ort.
-     Der Ausweis-Druck lebt bewusst hier (nicht in der Identitätsspalte). -->
+<!-- Aktionen / Dokumente — alle Druck-, Export- & Verwaltungsaktionen an einem Ort. -->
 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
 	<h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
 		<FileText class="w-3.5 h-3.5" />
@@ -71,40 +116,68 @@
 		></div>
 	{/snippet}
 
-	{#if hasBack}
-		<!-- Seitenwahl: nur relevant, wenn eine Rückseite gestaltet ist -->
-		<div class="flex items-center gap-2">
-			<span class="text-xs font-semibold text-slate-500">Ausweisseiten</span>
-			<div
-				class="flex gap-0.5 rounded-full bg-slate-100 p-0.5"
-				role="group"
-				aria-label="Zu druckende Ausweisseite"
-			>
-				{#each [['both', 'Beides'], ['front', 'Vorderseite'], ['back', 'Rückseite']] as [wert, label] (wert)}
+	<div class="flex flex-wrap gap-3 items-center">
+		<!-- Primäraktion: Ausweis drucken. Mit Rückseite → Split-Button mit Seitenwahl. -->
+		<div class="relative" bind:this={menuAnchor}>
+			{#if hasBack}
+				<div class="inline-flex rounded-full shadow-sm">
 					<button
 						type="button"
-						onclick={() => (printSide = /** @type {'front'|'back'|'both'} */ (wert))}
-						aria-pressed={printSide === wert}
-						class="px-3 py-1 text-xs font-bold rounded-full transition-colors cursor-pointer {printSide ===
-						wert
-							? 'bg-white text-blue-600 shadow-sm'
-							: 'text-slate-500 hover:text-slate-700'}"
+						onclick={() => doPrint('both')}
+						class="inline-flex items-center gap-2 pl-4 pr-3.5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-l-full transition-colors cursor-pointer"
 					>
-						{label}
+						<IdCard class="w-4 h-4" />
+						Ausweis drucken
 					</button>
-				{/each}
-			</div>
+					<button
+						type="button"
+						onclick={() => (menuOpen = !menuOpen)}
+						aria-haspopup="menu"
+						aria-expanded={menuOpen}
+						aria-label="Ausweisseiten wählen"
+						class="inline-flex items-center px-2.5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-r-full border-l border-white/25 transition-colors cursor-pointer"
+					>
+						<ChevronDown class="w-4 h-4 transition-transform {menuOpen ? 'rotate-180' : ''}" />
+					</button>
+				</div>
+
+				{#if menuOpen}
+					<div
+						role="menu"
+						tabindex="-1"
+						transition:scale={{ duration: 130, start: 0.95, opacity: 0 }}
+						class="absolute left-0 top-full mt-2 z-30 w-60 origin-top-left rounded-2xl bg-white border border-slate-200 shadow-xl p-1.5"
+					>
+						{#each printOptions as opt (opt.side)}
+							{@const Icon = opt.icon}
+							<button
+								type="button"
+								role="menuitem"
+								onclick={() => doPrint(opt.side)}
+								class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-100 active:bg-slate-200/70 transition-colors cursor-pointer group"
+							>
+								<span
+									class="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors"
+								>
+									<Icon class="w-4 h-4" />
+								</span>
+								<span class="flex flex-col leading-tight">
+									<span class="text-sm font-semibold text-slate-800">{opt.label}</span>
+									<span class="text-xs text-slate-400">{opt.hint}</span>
+								</span>
+							</button>
+						{/each}
+					</div>
+				{/if}
+			{:else}
+				<Button variant="primary" onclick={() => doPrint('both')}>
+					<IdCard class="w-4 h-4" />
+					Ausweis drucken
+				</Button>
+			{/if}
 		</div>
-	{/if}
 
-	<div class="flex flex-wrap gap-3 items-center">
-		<!-- Ausweis-Druck: Anker der Gruppe (häufigste Aktion beim Onboarding). -->
-		<Button variant="primary" onclick={() => onPrint(hasBack ? printSide : 'both')}>
-			<IdCard class="w-4 h-4" />
-			Ausweis drucken
-		</Button>
-
-		<!-- Druck- & Export-Aktionen -->
+		<!-- Kontoauszug: das (einzige) Ausleih-Dokument als archivierbares Server-PDF. -->
 		<Button
 			variant="secondary"
 			onclick={downloadKontoauszugPDF}
@@ -116,28 +189,19 @@
 			Kontoauszug
 		</Button>
 
+		<!-- Ersatzforderung: Rechnung an die Eltern über offene Schadensfälle. -->
 		<Button
 			variant="secondary"
 			onclick={downloadRechnungPDF}
 			disabled={rechnungPdfLoading || !profile.has_open_damages}
-			title={!profile.has_open_damages ? 'Keine offenen Forderungen' : 'Ersatzforderung drucken'}
+			title={!profile.has_open_damages
+				? 'Keine offenen Schadensfälle'
+				: 'Ersatzforderung über offene Schäden drucken'}
 		>
 			{#if rechnungPdfLoading}{@render spinner()}{:else}<AlertTriangle
 					class="w-4 h-4 text-rose-600"
 				/>{/if}
-			Forderung
-		</Button>
-
-		<Button
-			variant="secondary"
-			onclick={() => window.print()}
-			disabled={!(profile.entliehene_buecher?.length > 0)}
-			title={!(profile.entliehene_buecher?.length > 0)
-				? 'Keine offenen Ausleihen'
-				: 'Druckansicht der Ausleihen'}
-		>
-			<Printer class="w-4 h-4 text-slate-500" />
-			Ausleihen-Liste
+			Ersatzforderung
 		</Button>
 
 		{#if role === 'admin'}
