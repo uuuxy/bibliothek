@@ -20,6 +20,7 @@
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
 	import Graduates from './Graduates.svelte';
+	import RouteFallback from './components/layout/RouteFallback.svelte';
 
 	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
 	// Map dupliziert im Routing-$effect und im popstate-Handler — dadurch wurde ein
@@ -186,5 +187,8 @@
 				}}
 			/>
 		</div>
+	{:else}
+		<!-- Unbekannter Tab: sichtbarer Fallback statt lautloser weißer Seite (+ Sentry). -->
+		<RouteFallback tab={uiStore.activeTab} />
 	{/if}
 </main>
