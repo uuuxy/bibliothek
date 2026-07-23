@@ -1,6 +1,13 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { slide } from 'svelte/transition';
+
+	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
+	function openProfile(schuelerId) {
+		uiStore.requestedStudentId = schuelerId;
+		uiStore.activeTab = 'students_dir';
+	}
 
 	const filters = ['Alle', '1. Erinnerung', 'Mahnung', 'Lehrerkollegium'];
 
@@ -78,7 +85,14 @@
 								/>
 							</td>
 							<td class="px-4 py-3">
-								<p class="font-semibold text-slate-800">{schueler.name}</p>
+								<button
+									type="button"
+									onclick={() => openProfile(schueler.schueler_id)}
+									class="font-semibold text-slate-800 text-left hover:text-blue-700 hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-blue-600"
+									aria-label="Profil von {schueler.name} anzeigen"
+								>
+									{schueler.name}
+								</button>
 								{#if !schueler.eltern_email}
 									<span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider"
 										>Keine Eltern-E-Mail</span

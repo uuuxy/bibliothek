@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
+	import { uiStore } from './stores/uiStore.svelte.js';
 	import StudentProfile from './StudentProfile.svelte';
 	import StudentCreateModal from './StudentCreateModal.svelte';
 	import Graduates from './Graduates.svelte';
@@ -72,6 +73,16 @@
 	onMount(() => {
 		loadStudents();
 		loadClasses();
+	});
+
+	// Öffnet ein Profil, das aus einer anderen Ansicht (Mahnwesen/Abgänger) angefordert
+	// wurde: ID einmalig abgreifen, Request sofort zurücksetzen (kein Wiederöffnen), dann
+	// per { id } laden — StudentProfile holt den Rest selbst über GET /api/schueler/{id}.
+	$effect(() => {
+		const id = uiStore.requestedStudentId;
+		if (!id) return;
+		uiStore.requestedStudentId = null;
+		activeStudent = { id };
 	});
 </script>
 

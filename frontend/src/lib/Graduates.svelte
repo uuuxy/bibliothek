@@ -1,6 +1,13 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
+	import { uiStore } from './stores/uiStore.svelte.js';
+
+	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
+	function openProfile(student) {
+		uiStore.requestedStudentId = student.id;
+		uiStore.activeTab = 'students_dir';
+	}
 
 	// State Runes
 	/** @type {any[]} */
@@ -147,7 +154,19 @@
 				</thead>
 				<tbody class="divide-y divide-slate-50">
 					{#each graduates as student (student.id)}
-						<tr class="hover:bg-slate-50/85 transition-colors animate-slide-up">
+						<tr
+							onclick={() => openProfile(student)}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									openProfile(student);
+								}
+							}}
+							tabindex="0"
+							role="button"
+							aria-label="Profil von {student.vorname} {student.nachname} (Klasse {student.klasse}) anzeigen"
+							class="hover:bg-slate-50/85 cursor-pointer transition-colors animate-slide-up focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
+						>
 							<td class="py-3.5 px-4 font-bold text-blue-600">{student.klasse}</td>
 							<td class="py-3.5 px-4 text-slate-700 font-semibold"
 								>{student.vorname} {student.nachname}</td

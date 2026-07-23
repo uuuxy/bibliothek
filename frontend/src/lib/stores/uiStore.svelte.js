@@ -8,6 +8,13 @@ class UIStore {
 	isInitialRouteMatched = $state(false);
 	/** Welche Statistik-Detailliste die stats_detail-Seite zeigt (deep-linkbar via URL). */
 	statsDetailKind = $state(/** @type {'renner' | 'ladenhueter'} */ ('renner'));
+	/**
+	 * Aus einer anderen Ansicht (Mahnwesen/Abgänger) angefordertes Schülerprofil.
+	 * Zentral im Store, bewusst NICHT localStorage: welches Profil DU gerade ansiehst,
+	 * ist Session-lokal und nicht PC-übergreifend zu teilen (Multi-PC). StudentDirectory
+	 * greift die ID auf, öffnet das Profil und setzt sie zurück.
+	 */
+	requestedStudentId = $state(/** @type {string | null} */ (null));
 
 	async fetchPendingReservierungen() {
 		try {
