@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch } from './apiFetch.js';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void, mode?: "loans" | "scans" }} */
@@ -65,18 +65,20 @@
 </script>
 
 <div class="max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-	<table class="w-full text-left border-collapse">
+	<table class="w-full text-left border-collapse table-fixed">
 		<thead>
 			<tr
 				class="border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider"
 			>
+				<!-- table-fixed: Titel nimmt den Rest (truncatet), die schmalen Spalten haben feste
+				     Breiten → die Aktions-Spalte bleibt IMMER sichtbar, kein horizontaler Scroll. -->
 				<th class="py-3 px-4">Titel & Autor</th>
-				<th class="py-3 px-4">Barcode</th>
+				<th class="py-3 px-4 w-32">Barcode</th>
 				{#if mode === 'loans'}
-					<th class="py-3 px-4">Rückgabedatum</th>
-					<th class="py-3 px-4">Status</th>
+					<th class="py-3 px-4 w-48">Rückgabedatum</th>
+					<th class="py-3 px-4 w-28">Status</th>
 				{/if}
-				<th class="py-3 px-4 text-right">Aktion</th>
+				<th class="py-3 px-4 w-40 text-right">Aktion</th>
 			</tr>
 		</thead>
 		<tbody class="divide-y divide-slate-100">
@@ -100,8 +102,8 @@
 								</div>
 							{/if}
 							<div class="flex-1 min-w-0">
-								<div class="flex items-center gap-2">
-									<h4 class="font-bold text-sm text-slate-900 truncate">{book.titel}</h4>
+								<div class="flex items-center gap-2 min-w-0">
+									<h4 class="font-bold text-sm text-slate-900 truncate min-w-0" title={book.titel}>{book.titel}</h4>
 									{#if isLMF}
 										<span
 											class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase"
