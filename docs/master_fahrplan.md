@@ -23,7 +23,7 @@
 
 ### 4. Offene Betreiber-Entscheidungen
 > Detail + Begründung im [Invarianten-Katalog](invarianten.md) (§ Restarbeit) — hier nur als Go-Live-Merker:
-- [ ] **`helfer`-Rechte entscheiden**: Die Rolle ist mit den Default-Rechten funktionsunfähig (jeder Kiosk-Scan → 403). `view_students`/`view_books` öffnen Schülerdaten — fachliche/datenschutzrechtliche Entscheidung, keine Code-Änderung.
+- [ ] **`helfer`-Katalogzugriff entscheiden**: Kiosk läuft (Scan/Ausleihe über `perform_actions` = true, bewusst entkoppelt von `view_students`). Offen ist nur noch, ob ein Helfer den **Katalog** sehen darf (`view_books` öffnet Buchdaten) — Betreiber-Entscheidung, keine Code-Änderung. *(Der frühere „jeder Scan → 403"-Zustand ist behoben.)*
 - [ ] **Branch-Protection**: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel ernst nehmen oder abschaffen.
 - [ ] **Meldebestand** je LMF-Titel: ob der Default 5 gepflegt wird, ist eine Betreiber-Annahme, kein Beschluss.
 

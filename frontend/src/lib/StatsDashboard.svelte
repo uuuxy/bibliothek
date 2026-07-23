@@ -1,7 +1,7 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
-	import StatistikDetailPanel from './components/stats/StatistikDetailPanel.svelte';
 
 	// State Runes (Svelte 5)
 	/** @type {any} */
@@ -10,8 +10,13 @@
 	let selectedTimeframe = $state('all');
 	/** Bestandsfilter: '' = Gesamt, 'freihand' = Schülerbücherei, 'lmf' = Lernmittel */
 	let selectedType = $state('');
-	/** @type {'renner' | 'ladenhueter' | null} Drill-Down-Panel */
-	let activePanel = $state(null);
+
+	/** Drill-Down: navigiert auf die eigene Detailseite (deep-linkbar), kein Slide-in mehr.
+	 *  @param {'renner' | 'ladenhueter'} kind */
+	function openDetail(kind) {
+		uiStore.statsDetailKind = kind;
+		uiStore.activeTab = 'stats_detail';
+	}
 
 	const TIMEFRAMES = [
 		{ value: 'all', label: 'Alle' },
@@ -31,6 +36,22 @@
 	// Kacheln zeigen Top 5; das Drill-Down-Panel filtert die volle Liste clientseitig
 	const topRenner = $derived(stats?.popular_titles?.slice(0, 5) ?? []);
 	const topWarmers = $derived(stats?.shelf_warmers?.slice(0, 5) ?? []);
+
+	// Farbe folgt dem Wert: „Schaden"-Kennzahlen werden erst rot/gelb, wenn es wirklich
+	// etwas zu melden gibt. Bei 0 bleiben sie ruhig-grün — so behält Rot seine Signalwirkung
+	// und der Bestzustand sieht nicht wie eine Alarmtafel aus.
+	const verlusteFarbe = $derived(
+		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'text-rose-600' : 'text-emerald-600'
+	);
+	const verlustquoteFarbe = $derived.by(() => {
+		const q = stats?.loss_stats?.verlust_quote ?? 0;
+		if (q <= 0) return 'text-emerald-600';
+		if (q < 5) return 'text-amber-600';
+		return 'text-rose-600';
+	});
+	const wiederbeschaffungFarbe = $derived(
+		(stats?.wiederbeschaffungswert_defekt ?? 0) > 0 ? 'text-rose-700' : 'text-emerald-600'
+	);
 
 	// Fetch statistics from backend API.
 	// limit=100 lädt die Drill-Down-Daten gleich mit — das Panel braucht
@@ -76,7 +97,7 @@
 
 {#snippet drillDownHeader(label, panel)}
 	<button
-		onclick={() => (activePanel = panel)}
+		onclick={() => openDetail(panel)}
 		class="w-full flex items-center justify-between border-b border-slate-100 pb-2 group cursor-pointer text-left"
 		aria-label="{label} — Detailansicht öffnen"
 	>
@@ -180,19 +201,19 @@
 				'Verlorene / Defekte Bücher',
 				stats.loss_stats.verlorene_exemplare,
 				'Exemplare mit Schadensfällen',
-				'text-rose-600'
+				verlusteFarbe
 			)}
 			{@render kennzahl(
 				'Verlustquote',
 				`${stats.loss_stats.verlust_quote}%`,
 				'Prozentsatz verlorener Lehrmittel',
-				'text-amber-600'
+				verlustquoteFarbe
 			)}
 			{@render kennzahl(
 				'Wiederbeschaffungswert',
 				euro(stats.wiederbeschaffungswert_defekt),
 				'Einkaufspreise verlorener/defekter Exemplare',
-				'text-rose-700'
+				wiederbeschaffungFarbe
 			)}
 		</div>
 
@@ -310,19 +331,5 @@
 				</div>
 			</div>
 		</div>
-	{/if}
-
-	{#if activePanel === 'renner'}
-		<StatistikDetailPanel
-			kind="renner"
-			items={stats?.popular_titles ?? []}
-			onClose={() => (activePanel = null)}
-		/>
-	{:else if activePanel === 'ladenhueter'}
-		<StatistikDetailPanel
-			kind="ladenhueter"
-			items={stats?.shelf_warmers ?? []}
-			onClose={() => (activePanel = null)}
-		/>
 	{/if}
 </div>

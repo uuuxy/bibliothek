@@ -27,12 +27,12 @@ Postgres abgesichert).
 | Genau **ein Entleiher** (Schüler XOR Benutzer) oder beide NULL (anonymisiert) | 🟢 `check_loan_borrower` | `schema.sql:357` |
 | Genau **ein Objekt** (Exemplar XOR Gerät) | 🟢 `check_loan_item` | `schema.sql:364` |
 | Rückgabe nie vor Ausleihe | 🟢 `check_return_date` | `schema.sql:370` |
-| Gesperrte/manuell blockierte Schüler leihen nicht | 🟡 mit Override + Audit | `loan_checkout_validation.go:33` |
-| Überfällig-Automatik: ≥ `MaxOverdueItems` sperrt | 🟡 | `loan_checkout_validation.go:56` |
-| Ausleih-Limit `max_ausleihen_schueler` (LMF + eigene Rückgabe ausgenommen) | 🟡 **jetzt getestet** (88,9 %) | `loan_checkout.go:55`, `loan_checkout_test.go` |
-| Abholbereit reserviertes Exemplar geht nicht an Dritte | 🟡 **jetzt getestet** (90,9 %) | `loan_checkout.go:72`, `loan_checkout_test.go` |
-| Doppel-Scan desselben Exemplars → sauberer Konflikt (409 statt 500) | 🟢 Unique-Index + 🟡 `mapLoanCreateErr` **100 % getestet** | `loan_checkout_cases.go:19`, `loan.go:106` |
-| Lehrkraft (Handapparat) → Jahresfrist, nur aktive Lehrer | 🟡 **100 % getestet** | `loan_checkout_validation.go:105` |
+| Gesperrte/manuell blockierte Schüler leihen nicht | 🟡 mit Override + Audit | `internal/service/loan_checkout_validation.go:48` |
+| Überfällig-Automatik: ≥ `MaxOverdueItems` sperrt | 🟡 | `internal/service/loan_checkout_validation.go:107` |
+| Ausleih-Limit `max_ausleihen_schueler` (LMF + eigene Rückgabe ausgenommen) | 🟡 **jetzt getestet** (88,9 %) | `internal/service/loan_checkout.go:55`, `loan_checkout_test.go` |
+| Abholbereit reserviertes Exemplar geht nicht an Dritte | 🟡 **jetzt getestet** (90,9 %) | `internal/service/loan_checkout.go:73`, `loan_checkout_test.go` |
+| Doppel-Scan desselben Exemplars → sauberer Konflikt (409 statt 500) | 🟢 Unique-Index + 🟡 `mapLoanCreateErr` **100 % getestet** | `internal/service/loan_checkout_cases.go:19` |
+| Lehrkraft (Handapparat) → Jahresfrist, nur aktive Lehrer | 🟡 **100 % getestet** | `internal/service/loan_checkout_validation.go:162` |
 | **Mahnstufe steigt NUR beim PDF-Druck** (physischer Verwaltungsakt), NIE beim Mail-Versand (Massen- wie Einzelversand = „Friendly Reminder"). PDF-Lauf schreibt `mahnstufe` + liest die PDF-Daten in DERSELBEN Tx (Papier == DB) | 🟡 nur `mahnwesen_bulk.go` schreibt `mahnstufe`; alle Mail-Pfade bewusst nicht | `api/mahnwesen_bulk.go`, `api/mahnwesen_bulk_mail.go`, `api/mahnwesen_mail.go` |
 
 **Bewertung:** Sehr robust. Die datenkritischen Invarianten sind bereits auf DB-Ebene. Die
@@ -83,7 +83,7 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 | Betrag ≥ 0 | 🟢 `check_positive_amount` | `schema.sql:397` |
 | Genau ein Verantwortlicher (Schüler XOR Benutzer) oder beide NULL | 🟢 `check_damage_responsible` | `schema.sql:409` |
 | Genau ein betroffenes Objekt | 🟢 `check_damage_item` | `schema.sql:416` |
-| Stornierung revisionssicher (wer/wann/warum) | 🟡 Spalten `storniert_*` + Audit | `audit_system.go:10` |
+| Stornierung revisionssicher (wer/wann/warum) | 🟡 Spalten `storniert_*` + Audit | `repository/audit_system.go` (`StornierungGebuehr`) |
 
 ---
 
@@ -115,7 +115,7 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
 | Position hängt an existierender Bestellung | 🟢 FK CASCADE | `schema.sql:481` |
-| Nur Positionen mit Menge > 0 werden bestellt | 🟡 Go-Guard | `order_handler.go:78` |
+| Nur Positionen mit Menge > 0 werden bestellt | 🟡 Go-Guard | `api/order_service.go` (`verarbeiteBestellItem`) |
 | **[G4]** `menge ≥ 1`, `einzelpreis ≥ 0`, `gesamtbetrag ≥ 0`, `anzahl_exemplare ≥ 0` | 🟢 4 CHECKs | `migrations/039` |
 | Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Default `?type=lmf` + Test | `reorders.go`, `reorders_test.go` |
 
@@ -131,7 +131,7 @@ ist eine Annahme, kein Beschluss.
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Gesperrtes/ausgesondertes Gerät leiht nicht | 🟡 | `device_service.go:84` |
+| Gesperrtes/ausgesondertes Gerät leiht nicht | 🟡 | `internal/service/device_service.go` (`ladeGeraet`) |
 | Inventur-Fortschritt ist **session-gebunden** (nicht global): parallele Inventuren überschreiben sich nicht | 🟢 `inventur_sessions` + `inventur_erfassungen`, partieller Unique-Index je Scope | `migrations/045`, `repository/inventur_session_repo_test.go` |
 | Ein aktuell **verliehenes** Buch gilt bei der Inventur nie als Verlust | 🟡 Scope-Bedingung (`NOT EXISTS` aktive Ausleihe) | `repository/inventur_session_finish.go` |
 
@@ -197,7 +197,7 @@ ist eine Annahme, kein Beschluss.
 Die mittlere Ebene ist nicht ersetzbar: pgxmock kennt keine Constraints, und e2e läuft nur
 Happy-Paths. Genau in dieser Lücke sass der NULL-Bug in Migration 043.
 
-## Restarbeit (Stand 2026-07-16)
+## Restarbeit (Stand 2026-07-23)
 
 **Code:** *(keine offenen Punkte aus dem Katalog)*
 
@@ -214,19 +214,14 @@ Kiosk **scannen** darf, schreibt sie bewusst nicht fest — siehe Punkt 4 unten.
 3. ~~DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.~~ **ERLEDIGT (in `SECURITY.md` dokumentiert).**
 4. Branch-Protection: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel
    ernst nehmen (PR-Workflow) oder abschaffen.
-5. **`helfer`-Rechte entscheiden — die Rolle ist mit den Default-Rechten funktionsunfähig.**
-   Belegt: `db/seed.go` seedet für `HELFER` **alle** Rechte auf `false`. Der Router
-   (`Router.svelte:37`) zwingt Helfer aber auf genau zwei Ansichten, die beide Rechte
-   brauchen:
+5. **`helfer`-Katalogzugriff — Rest der früheren „Rolle funktionsunfähig"-Lücke.**
 
-   | Ansicht | Endpunkt | benötigtes Recht | Default |
-   |---|---|---|---|
-   | Kiosk (Omnibox) | `POST /api/action`, `GET /api/search` | `view_students` | ❌ false |
-   | Katalog | `GET /api/books` | `view_books` | ❌ false |
+   **Erledigt (Code, 2026-07-23 verifiziert):** Die Kiosk-Kernfunktion ist bewusst von
+   `view_students` auf ein eigenes `perform_actions`-Recht entkoppelt (`api/routes_misc.go:19`
+   — `POST /api/action`, `GET /api/search`, `GET /api/scan`); `db/seed.go` seedet
+   `HELFER` → `perform_actions = true`. Der frühere Zustand „jeder Scan → 403" ist damit
+   behoben, der Kiosk läuft.
 
-   Ein Helfer könnte sich also anmelden, landet im Kiosk — und **jeder Scan liefert 403**.
-   Das ist bewusst nicht von mir entschieden worden: `view_students` öffnet Schülerdaten,
-   und ob eine Hilfskraft (Schüler/Eltern?) die sehen darf, ist eine fachliche und
-   datenschutzrechtliche Entscheidung des Betreibers — kein Implementierungsdetail.
-   Ist die Antwort „ja, für den Kiosk", genügt es, die beiden Rechte im
-   PermissionManager zu aktivieren (konfigurierbar, keine Code-Änderung nötig).
+   **Offen (Betreiber, keine Code-Änderung):** Ob ein Helfer den **Katalog** sehen darf —
+   `GET /api/books` verlangt `view_books` (HELFER-Default `false`, öffnet Buchdaten). Ist
+   die Antwort „ja", genügt der Toggle im PermissionManager.

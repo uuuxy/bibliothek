@@ -27,18 +27,34 @@ body {
 }
 
 @media print {
-	/* Reset margins for printing layout */
+	/* Reset margins for printing layout.
+	   Strukturelle Container: Chrome strippen UND Block-Fluss erzwingen, damit die
+	   Druck-Sektionen sauber stapeln. Diese sind nie .no-print → display:block ist hier sicher. */
 	html,
 	body,
 	main,
-	main > div,
+	main > div {
+		margin: 0 !important;
+		padding: 0 !important;
+		max-width: none !important;
+		width: auto !important;
+		display: block !important;
+		box-shadow: none !important;
+		background: white !important;
+		color: black !important;
+	}
+
+	/* Tiefe Content-Divs (außer Karten-/Label-Boxen): NUR Abstände/Hintergrund normalisieren.
+	   Bewusst KEIN display hier — sonst überschreibt dieses !important (höhere Spezifität als
+	   .no-print / inline display:none) die Sichtbarkeitssteuerung, und das Profil bzw. die
+	   Quittung leckt in JEDEN Druck (u. a. der gemeldete Ausweis-Druck-Bug: gedruckt wurde die
+	   Profil-Seitenleiste statt der Ausweiskarte). Verifiziert per print-media-Test. */
 	main
 		div:not(.print-card-box):not(.print-card-box *):not(.print-label-box):not(.print-label-box *) {
 		margin: 0 !important;
 		padding: 0 !important;
 		max-width: none !important;
 		width: auto !important;
-		display: block !important;
 		box-shadow: none !important;
 		background: white !important;
 		color: black !important;

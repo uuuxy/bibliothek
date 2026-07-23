@@ -14,6 +14,7 @@
 	import Schulklassen from './Schulklassen.svelte';
 	import LehrerPortal from './LehrerPortal.svelte';
 	import Mahnwesen from './Mahnwesen.svelte';
+	import StatistikDetailPage from './components/stats/StatistikDetailPage.svelte';
 	import SystemSettings from './SystemSettings.svelte';
 	import GlobalLMFExtendWidget from './GlobalLMFExtendWidget.svelte';
 	import DruckCenter from './DruckCenter.svelte';
@@ -42,6 +43,42 @@
 		kiosk: '/kiosk'
 	};
 
+	// Parametrisierte Sonderrouten (Tab braucht einen Zusatzparameter, passt nicht in tabToPath).
+	const STATS_DETAIL_KINDS = ['renner', 'ladenhueter'];
+
+	/**
+	 * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad. BEWUSST die einzige Quelle für
+	 * Initial-Match UND popstate — vorher lag die book_detail-Logik dupliziert in beiden,
+	 * neue Routen wurden leicht in einer Kopie vergessen (siehe lehrer_portal-Bug).
+	 * @param {string} path
+	 */
+	function applyPathToState(path) {
+		if (path.startsWith('/katalog/buch/')) {
+			uiStore.activeTab = 'book_detail';
+			appState.activeBookId = path.replace('/katalog/buch/', '');
+			return;
+		}
+		const statsKind = path.startsWith('/statistiken/') && path.replace('/statistiken/', '');
+		if (statsKind && STATS_DETAIL_KINDS.includes(statsKind)) {
+			uiStore.activeTab = 'stats_detail';
+			uiStore.statsDetailKind = /** @type {'renner'|'ladenhueter'} */ (statsKind);
+			return;
+		}
+		const matchedTab = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
+		if (matchedTab) uiStore.activeTab = matchedTab;
+	}
+
+	/** Zielpfad für den aktuellen Tab — inkl. der parametrisierten Sonderrouten. */
+	function currentTargetPath() {
+		if (uiStore.activeTab === 'book_detail' && appState.activeBookId) {
+			return `/katalog/buch/${appState.activeBookId}`;
+		}
+		if (uiStore.activeTab === 'stats_detail') {
+			return `/statistiken/${uiStore.statsDetailKind}`;
+		}
+		return tabToPath[uiStore.activeTab];
+	}
+
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
 		// öffnen (book_detail → BookAkte via bookId, inkl. Deep-Link /katalog/buch/{id}) —
@@ -67,23 +104,11 @@
 				}
 			} else {
 				if (!uiStore.isInitialRouteMatched && path !== '/') {
-					if (path.startsWith('/katalog/buch/')) {
-						uiStore.activeTab = 'book_detail';
-						appState.activeBookId = path.replace('/katalog/buch/', '');
-					} else {
-						const matchedTab = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
-						if (matchedTab) uiStore.activeTab = matchedTab;
-					}
-					uiStore.isInitialRouteMatched = true;
-				} else if (!uiStore.isInitialRouteMatched) {
-					uiStore.isInitialRouteMatched = true;
+					applyPathToState(path);
 				}
+				uiStore.isInitialRouteMatched = true;
 
-				let targetPath = tabToPath[uiStore.activeTab];
-				if (uiStore.activeTab === 'book_detail' && appState.activeBookId) {
-					targetPath = `/katalog/buch/${appState.activeBookId}`;
-				}
-
+				const targetPath = currentTargetPath();
 				if (targetPath && path !== targetPath && uiStore.isInitialRouteMatched) {
 					window.history.pushState(null, '', targetPath);
 				}
@@ -99,14 +124,7 @@
 			}
 		}
 		function handlePopState() {
-			const path = window.location.pathname;
-			if (path.startsWith('/katalog/buch/')) {
-				uiStore.activeTab = 'book_detail';
-				appState.activeBookId = path.replace('/katalog/buch/', '');
-			} else {
-				const matchedTab = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
-				if (matchedTab) uiStore.activeTab = matchedTab;
-			}
+			applyPathToState(window.location.pathname);
 		}
 		window.addEventListener('keydown', handleGlobalKeyDown);
 		window.addEventListener('popstate', handlePopState);
@@ -130,6 +148,8 @@
 		<div class="w-full animate-fade-in"><BestellWorkspace /></div>
 	{:else if uiStore.activeTab === 'stats'}
 		<div class="w-full animate-fade-in"><StatsDashboard /></div>
+	{:else if uiStore.activeTab === 'stats_detail'}
+		<div class="w-full animate-fade-in"><StatistikDetailPage /></div>
 	{:else if uiStore.activeTab === 'system-logs'}
 		<div class="w-full animate-fade-in h-full"><SystemLogs /></div>
 	{:else if uiStore.activeTab === 'druck-center'}

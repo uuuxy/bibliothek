@@ -6,6 +6,8 @@ class UIStore {
 	isSidebarCollapsed = $state(false);
 	pendingReservierungen = $state(0);
 	isInitialRouteMatched = $state(false);
+	/** Welche Statistik-Detailliste die stats_detail-Seite zeigt (deep-linkbar via URL). */
+	statsDetailKind = $state(/** @type {'renner' | 'ladenhueter'} */ ('renner'));
 
 	async fetchPendingReservierungen() {
 		try {

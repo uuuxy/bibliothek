@@ -6,6 +6,9 @@
 	let summary = $state(null);
 	let loading = $state(true);
 
+	// Rot nur bei echten Mahnungen. Bei 0 ruhiger Grün-Zustand — kein Fehlalarm im Bestzustand.
+	const hatMahnungen = $derived((summary?.total_overdue ?? 0) > 0);
+
 	async function fetchSummary() {
 		try {
 			const res = await apiFetch('/api/dashboard/summary');
@@ -31,8 +34,11 @@
 		></div>
 	</div>
 {:else if summary}
-	<!-- Flaches Alert mit Links-Akzent statt umschließender Karte -->
-	<div class="border-l-4 border-rose-500 pl-5 flex flex-col h-full">
+	<!-- Flaches Alert mit Links-Akzent statt umschließender Karte.
+	     Farbwelt folgt dem Zustand: Rot nur bei offenen Mahnungen, sonst ruhiges Grün. -->
+	<div
+		class="border-l-4 {hatMahnungen ? 'border-rose-500' : 'border-emerald-400'} pl-5 flex flex-col h-full"
+	>
 		<!-- Header: klickbar → springt aufs Mahnwesen (eigene, vollwertige Seite;
 		     deshalb Navigation statt eines dritten Slide-in-Panels wie bei Renner/Ladenhüter) -->
 		<button
@@ -42,10 +48,16 @@
 			aria-label="Mahnwesen öffnen — alle überfälligen Ausleihen"
 		>
 			<div>
-				<h3 class="text-rose-700 font-bold text-base flex items-center gap-1.5">
-					Dringend: Mahnungen
+				<h3
+					class="{hatMahnungen
+						? 'text-rose-700'
+						: 'text-emerald-700'} font-bold text-base flex items-center gap-1.5"
+				>
+					{hatMahnungen ? 'Dringend: Mahnungen' : 'Mahnungen'}
 					<svg
-						class="w-3.5 h-3.5 text-rose-300 transition-all group-hover:text-rose-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+						class="w-3.5 h-3.5 {hatMahnungen
+							? 'text-rose-300 group-hover:text-rose-600'
+							: 'text-emerald-300 group-hover:text-emerald-600'} transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"
@@ -59,7 +71,11 @@
 				</h3>
 				<p class="text-sm text-gray-600 mt-0.5">Überfällige Ausleihen gesamt</p>
 			</div>
-			<div class="text-rose-600 font-extrabold text-4xl tabular-nums">
+			<div
+				class="{hatMahnungen
+					? 'text-rose-600'
+					: 'text-emerald-600'} font-extrabold text-4xl tabular-nums"
+			>
 				{summary.total_overdue}
 			</div>
 		</button>
