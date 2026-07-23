@@ -82,19 +82,29 @@
 								/>
 							</td>
 							<td class="px-4 py-3">
-								<button
-									type="button"
-									onclick={() => openProfile(schueler.schueler_id)}
-									class="font-semibold text-slate-800 text-left hover:text-blue-700 hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-blue-600"
-									aria-label="Profil von {schueler.name} anzeigen"
-								>
-									{schueler.name}
-								</button>
-								{#if !schueler.eltern_email}
-									<span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider"
-										>Keine Eltern-E-Mail</span
+								<div class="flex items-center gap-1.5">
+									<button
+										type="button"
+										onclick={() => openProfile(schueler.schueler_id)}
+										class="font-semibold text-slate-800 text-left hover:text-blue-700 hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-blue-600"
+										aria-label="Profil von {schueler.name} anzeigen"
 									>
-								{/if}
+										{schueler.name}
+									</button>
+									{#if !schueler.eltern_email}
+										<!-- Dezentes „keine Eltern-E-Mail"-Icon statt lautem Dauer-Label auf jeder Zeile. -->
+										<span
+											class="text-slate-300 shrink-0 flex items-center"
+											title="Keine Eltern-E-Mail hinterlegt"
+											aria-label="Keine Eltern-E-Mail hinterlegt"
+										>
+											<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+												<path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+											</svg>
+										</span>
+									{/if}
+								</div>
 							</td>
 							<td class="px-4 py-3">
 								<span
@@ -133,25 +143,36 @@
 								</div>
 							</td>
 							<td class="px-4 py-3">
-								<span
-									class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold
+								<div class="flex flex-col items-start gap-1">
+									<span
+										class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold
                   {schueler.mahnstufe === 'Mahnung'
-										? 'bg-rose-100 text-rose-700'
-										: schueler.mahnstufe === '1. Erinnerung'
-											? 'bg-amber-100 text-amber-800'
-											: schueler.mahnstufe === 'Lehrerkollegium'
-												? 'bg-blue-100 text-blue-700'
-												: 'bg-emerald-50 text-emerald-700'}"
-								>
-									{schueler.mahnstufe}
-								</span>
+											? 'bg-rose-100 text-rose-700'
+											: schueler.mahnstufe === '1. Erinnerung'
+												? 'bg-amber-100 text-amber-800'
+												: schueler.mahnstufe === 'Lehrerkollegium'
+													? 'bg-blue-100 text-blue-700'
+													: 'bg-emerald-50 text-emerald-700'}"
+									>
+										{schueler.mahnstufe}
+									</span>
+									<span
+										class="text-[11px] font-medium {schueler.maxTage > 14
+											? 'text-rose-500'
+											: 'text-slate-400'}"
+									>
+										{schueler.maxTage === 0
+											? 'heute fällig'
+											: `${schueler.maxTage} ${schueler.maxTage === 1 ? 'Tag' : 'Tage'} überfällig`}
+									</span>
+								</div>
 							</td>
 						</tr>
 					{/each}
 					{#if mahnwesenStore.filteredSchueler.length === 0}
 						<tr>
 							<td colspan="5" class="px-4 py-8 text-center text-slate-500">
-								Keine Einträge für den Filter "{mahnwesenStore.activeFilter}" gefunden.
+								Keine Treffer für die aktuelle Auswahl (Tab, Klasse oder Suche).
 							</td>
 						</tr>
 					{/if}

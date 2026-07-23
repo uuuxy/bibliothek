@@ -107,7 +107,7 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	seedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	students, err := srv.queryLaufzettelStudents(ctx)
+	students, err := srv.queryLaufzettelStudents(ctx, "")
 	if err != nil {
 		t.Fatalf("queryLaufzettelStudents: %v", err)
 	}

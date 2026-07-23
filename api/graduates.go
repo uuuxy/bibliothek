@@ -200,7 +200,9 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 // Früher stand hier eine hartkodierte, case-sensitive Klassenliste ('9h','10r','13').
 // Die versetzte/importierte Klassen wie '09h', '9H' oder '10a' schlicht ignoriert:
 // Betroffene Abgänger fehlten auf dem PDF und verließen die Schule mit ihren Büchern.
-func (s *Server) queryLaufzettelStudents(ctx context.Context) ([]pdf.LaufzettelStudent, error) {
+// Ein leerer klasse-Filter ("") liefert alle Abgänger; sonst nur die genannte Klasse
+// (für den klassenweisen Laufzettel-Druck).
+func (s *Server) queryLaufzettelStudents(ctx context.Context, klasse string) ([]pdf.LaufzettelStudent, error) {
 	detailQuery := `
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
 		       t.titel,
@@ -213,9 +215,10 @@ func (s *Server) queryLaufzettelStudents(ctx context.Context) ([]pdf.LaufzettelS
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = true
+		  AND ($1 = '' OR s.klasse = $1)
 		ORDER BY s.klasse, s.nachname, t.titel
 	`
-	rows, err := s.DB.Pool.Query(ctx, detailQuery)
+	rows, err := s.DB.Pool.Query(ctx, detailQuery, klasse)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +276,10 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		result, err := s.queryLaufzettelStudents(ctx)
+		// Optionaler Klassenfilter: /api/abgaenger/pdf?klasse=10a druckt nur diese Klasse.
+		klasse := r.URL.Query().Get("klasse")
+
+		result, err := s.queryLaufzettelStudents(ctx, klasse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -290,9 +296,14 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 			return
 		}
 
+		filename := "Laufzettel.pdf"
+		if klasse != "" {
+			filename = fmt.Sprintf("Laufzettel_Klasse_%s.pdf", klasse)
+		}
+
 		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, `attachment; filename="Laufzettel.pdf"`)
+		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
 		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
-		http.ServeContent(w, r, "Laufzettel.pdf", time.Now(), bytes.NewReader(pdfBytes))
+		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}
 }

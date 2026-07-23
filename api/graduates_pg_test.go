@@ -35,7 +35,7 @@ func TestLaufzettelStudents_AbgaengerFilter(t *testing.T) {
 	seedAusleihe(t, pool, dana, "Buch Dana", frist)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	studenten, err := srv.queryLaufzettelStudents(ctx)
+	studenten, err := srv.queryLaufzettelStudents(ctx, "")
 	if err != nil {
 		t.Fatalf("queryLaufzettelStudents: %v", err)
 	}

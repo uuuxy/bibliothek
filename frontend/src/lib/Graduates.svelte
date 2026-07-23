@@ -14,13 +14,40 @@
 	let graduates = $state([]);
 	let loading = $state(true);
 
+	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Laufzettel-Druck.
+	let selectedKlasse = $state('');
+	let classes = $derived(
+		[...new Set(graduates.map((/** @type {any} */ s) => s.klasse))].sort((a, b) =>
+			String(a).localeCompare(String(b), 'de', { numeric: true })
+		)
+	);
+	let filteredGraduates = $derived(
+		(selectedKlasse
+			? graduates.filter((/** @type {any} */ s) => s.klasse === selectedKlasse)
+			: graduates
+		)
+			.slice()
+			// Dringlichkeit zuerst: überfällige oben, dann nach Anzahl offener Bücher, dann Klasse/Name.
+			.sort(
+				(/** @type {any} */ a, /** @type {any} */ b) =>
+					b.ueberfaellig - a.ueberfaellig ||
+					b.offene_buecher - a.offene_buecher ||
+					String(a.klasse).localeCompare(String(b.klasse), 'de', { numeric: true }) ||
+					String(a.nachname).localeCompare(String(b.nachname), 'de')
+			)
+	);
+
 	// Laufzettel print state
 	let loadingLaufzettel = $state(false);
 
 	async function printLaufzettel() {
 		loadingLaufzettel = true;
 		try {
-			const response = await apiFetch('/api/abgaenger/pdf');
+			// Ist eine Klasse gewählt, druckt der Laufzettel gezielt nur diese Klasse.
+			const endpoint = selectedKlasse
+				? `/api/abgaenger/pdf?klasse=${encodeURIComponent(selectedKlasse)}`
+				: '/api/abgaenger/pdf';
+			const response = await apiFetch(endpoint);
 			if (!response.ok) {
 				throw new Error('Failed to load PDF');
 			}
@@ -29,7 +56,7 @@
 			const url = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = 'Laufzettel.pdf';
+			a.download = selectedKlasse ? `Laufzettel_${selectedKlasse}.pdf` : 'Laufzettel.pdf';
 			document.body.appendChild(a);
 			a.click();
 			window.URL.revokeObjectURL(url);
@@ -81,9 +108,30 @@
 </script>
 
 <div class="w-full space-y-6 text-slate-800">
-	<!-- Header Info -->
-	<div class="flex items-center justify-end border-b border-slate-100 pb-5">
-		<div class="flex items-center space-x-4">
+	<!-- Header Info: links Klassenfilter, rechts Laufzettel-Druck (der dem Filter folgt). -->
+	<div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
+		{#if !loading && graduates.length > 0}
+			<div class="flex items-center gap-3 min-w-0">
+				<label class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0" for="grad-klasse"
+					>Klasse</label
+				>
+				<select
+					id="grad-klasse"
+					bind:value={selectedKlasse}
+					class="bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+				>
+					<option value="">Alle Klassen ({graduates.length})</option>
+					{#each classes as k (k)}
+						<option value={k}>{k}</option>
+					{/each}
+				</select>
+				<span class="text-xs text-slate-400 shrink-0">{filteredGraduates.length} Abgänger</span>
+			</div>
+		{:else}
+			<div></div>
+		{/if}
+
+		<div class="flex items-center space-x-4 shrink-0">
 			<button
 				onclick={printLaufzettel}
 				disabled={loadingLaufzettel || graduates.length === 0}
@@ -95,7 +143,7 @@
 					></div>
 					Lade Daten…
 				{:else}
-					🖨️ Laufzettel drucken
+					🖨️ {selectedKlasse ? `Laufzettel ${selectedKlasse}` : 'Laufzettel drucken'}
 				{/if}
 			</button>
 			<div
@@ -153,7 +201,7 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-50">
-					{#each graduates as student (student.id)}
+					{#each filteredGraduates as student (student.id)}
 						<tr
 							onclick={() => openProfile(student)}
 							onkeydown={(e) => {

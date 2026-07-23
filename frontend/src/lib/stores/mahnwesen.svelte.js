@@ -29,9 +29,11 @@ function berechneMahnstufe(schueler, maxTage) {
 	if (schueler.klasse?.toLowerCase() === 'lehrer') {
 		return 'Lehrerkollegium';
 	}
+	// Diese Liste enthält ausschließlich überfällige Ausleihen (rueckgabe_frist < now).
+	// tage_ueberfaellig kann bei <24 h Überfälligkeit rechnerisch 0 sein — das ist dann
+	// „gerade fällig", NICHT „erledigt". Daher gibt es hier bewusst kein 'Erledigt'.
 	if (maxTage > 14) return 'Mahnung';
-	if (maxTage > 0) return '1. Erinnerung';
-	return 'Erledigt';
+	return '1. Erinnerung';
 }
 
 /**
@@ -50,7 +52,8 @@ export function createMahnwesenStore() {
 	// Filter und Auswahl
 	let expandedKlassen = /** @type {Set<string>} */ (new SvelteSet());
 	let mahnMode = $state('datum'); // "datum" oder "jahrgang"
-	let selectedKlasse = $state('');
+	let selectedKlasse = $state(''); // Klassenfilter (leer = alle); steuert Liste UND Klassen-PDF
+	let searchQuery = $state(''); // Freitextsuche über Name/Klasse
 
 	// MD3 Filter & Bulk Actions
 	let activeFilter = $state('Alle'); // "Alle", "1. Erinnerung", "Mahnung", "Lehrerkollegium"
@@ -87,9 +90,23 @@ export function createMahnwesenStore() {
 	});
 
 	let filteredSchueler = $derived(() => {
-		const list = flatSchueler();
-		if (activeFilter === 'Alle') return list;
-		return list.filter((/** @type {any} */ s) => s.mahnstufe === activeFilter);
+		let list = flatSchueler();
+		if (activeFilter !== 'Alle')
+			list = list.filter((/** @type {any} */ s) => s.mahnstufe === activeFilter);
+		if (selectedKlasse) list = list.filter((/** @type {any} */ s) => s.klasse === selectedKlasse);
+		const q = searchQuery.trim().toLowerCase();
+		if (q) {
+			list = list.filter(
+				(/** @type {any} */ s) =>
+					(s.name || '').toLowerCase().includes(q) || (s.klasse || '').toLowerCase().includes(q)
+			);
+		}
+		// Dringlichkeit zuerst: am längsten überfällig oben, dann alphabetisch. So arbeitet man
+		// die Liste von oben nach unten ab.
+		return [...list].sort(
+			(/** @type {any} */ a, /** @type {any} */ b) =>
+				b.maxTage - a.maxTage || String(a.name).localeCompare(String(b.name), 'de')
+		);
 	});
 
 	/**
@@ -124,21 +141,22 @@ export function createMahnwesenStore() {
 		expandedKlassen = s;
 	}
 
+	// WICHTIG: selectedIds ist ein reaktives SvelteSet, aber KEIN $state-Binding. Deshalb muss
+	// es IN-PLACE mutiert werden (add/delete/clear) — eine Neuzuweisung (selectedIds = neuesSet)
+	// wäre nicht reaktiv, die Checkboxen und die Auswahl-Toolbar würden nicht reagieren.
 	/** @param {string} id */
 	function toggleSelect(id) {
-		const s = new SvelteSet(selectedIds);
-		if (s.has(id)) s.delete(id);
-		else s.add(id);
-		selectedIds = s;
+		if (selectedIds.has(id)) selectedIds.delete(id);
+		else selectedIds.add(id);
 	}
 
 	function selectAllSchueler() {
-		const currentList = filteredSchueler();
-		selectedIds = new SvelteSet(currentList.map((/** @type {any} */ s) => s.schueler_id));
+		selectedIds.clear();
+		for (const s of filteredSchueler()) selectedIds.add(s.schueler_id);
 	}
 
 	function deselectAllSchueler() {
-		selectedIds = new SvelteSet();
+		selectedIds.clear();
 	}
 
 	/** Wrapper for bulk printing that supplies needed state context. */
@@ -170,6 +188,15 @@ export function createMahnwesenStore() {
 		},
 		set selectedKlasse(v) {
 			selectedKlasse = v;
+			// Sichtbereich ändert sich → Auswahl leeren, damit sie stets zur Liste passt.
+			selectedIds.clear();
+		},
+		get searchQuery() {
+			return searchQuery;
+		},
+		set searchQuery(v) {
+			searchQuery = v;
+			selectedIds.clear();
 		},
 		get klassen() {
 			return klassen;
