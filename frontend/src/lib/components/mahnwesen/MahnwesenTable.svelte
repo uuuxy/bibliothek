@@ -1,15 +1,12 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
-	import { slide } from 'svelte/transition';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function openProfile(schuelerId) {
 		uiStore.requestedStudentId = schuelerId;
 		uiStore.activeTab = 'students_dir';
 	}
-
-	const filters = ['Alle', '1. Erinnerung', 'Mahnung', 'Lehrerkollegium'];
 
 	// Derived state for 'Select All' checkbox
 	let allSelected = $derived(
@@ -47,7 +44,7 @@
 	</div>
 {:else}
 	<!-- MD3 Table -->
-	<div class="bg-white w-full pb-16">
+	<div class="bg-white w-full pb-6">
 		<div class="overflow-x-auto w-full">
 			<table class="w-full text-left text-sm whitespace-nowrap">
 				<thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
@@ -164,42 +161,8 @@
 	</div>
 {/if}
 
-<!-- Contextual Action Bar -->
-{#if mahnwesenStore.selectedIds.size > 0}
-	<div
-		transition:slide={{ axis: 'y', duration: 250 }}
-		class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-6 py-3 rounded-full shadow-xl shadow-slate-900/20 flex items-center gap-4"
-	>
-		<div class="flex items-center gap-2">
-			<span
-				class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-xs font-bold"
-				>{mahnwesenStore.selectedIds.size}</span
-			>
-			<span class="text-sm font-medium">ausgewählt</span>
-		</div>
-		<div class="w-px h-6 bg-slate-600"></div>
-		<button
-			onclick={mahnwesenStore.printSelectedMahnungen}
-			class="flex items-center gap-2 text-sm font-bold bg-white text-slate-900 px-4 py-1.5 rounded-full hover:bg-blue-50 transition-colors"
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-4 w-4"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-				/>
-			</svg>
-			Ausgewählte Mahnungen drucken
-		</button>
-	</div>
-{/if}
+<!-- Die Auswahl-Aktion („Mahnbriefe drucken") lebt jetzt in der kontextuellen Toolbar oben
+     (MahnwesenFilters) — kein separater Schwebe-Balken mehr. -->
 
 <!-- E-Mail Modal -->
 {#if mahnwesenStore.modalOpen}

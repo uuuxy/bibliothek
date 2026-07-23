@@ -35,15 +35,21 @@ type GraduateDetail struct {
 	Ausleihen     []AusleiheDetail `json:"ausleihen"`
 }
 
-// queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen.
+// queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen — inkl. der
+// Anzahl offener und davon überfälliger Bücher. Genau diese Zahl ist in der Abgänger-
+// Ansicht die handlungsrelevante Information (was muss noch zurück?), nicht die Ausweis-
+// nummer. COUNT + GROUP BY ersetzt das frühere DISTINCT (eine Zeile je Schüler bleibt).
 func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 	query := `
-		SELECT DISTINCT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt
+		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
+		       COUNT(a.id)                                        AS offene_buecher,
+		       COUNT(a.id) FILTER (WHERE a.rueckgabe_frist < now()) AS ueberfaellig
 		FROM schueler s
 		JOIN ausleihen a ON s.id = a.schueler_id
 		WHERE s.deleted_at IS NULL
 		  AND s.ist_abgaenger = true
 		  AND a.rueckgabe_am IS NULL
+		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt
 		ORDER BY s.klasse, s.nachname
 	`
 	rows, err := s.DB.Pool.Query(ctx, query)
@@ -57,7 +63,9 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 		var id, barcode, vorname, nachname, klasse string
 		var abgaengerJahr int
 		var gesperrt bool
-		if err := rows.Scan(&id, &barcode, &vorname, &nachname, &klasse, &abgaengerJahr, &gesperrt); err != nil {
+		var offeneBuecher, ueberfaellig int
+		if err := rows.Scan(&id, &barcode, &vorname, &nachname, &klasse, &abgaengerJahr, &gesperrt,
+			&offeneBuecher, &ueberfaellig); err != nil {
 			return nil, err
 		}
 		students = append(students, map[string]any{
@@ -68,6 +76,8 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 			"klasse":         klasse,
 			"abgaenger_jahr": abgaengerJahr,
 			"ist_gesperrt":   gesperrt,
+			"offene_buecher": offeneBuecher,
+			"ueberfaellig":   ueberfaellig,
 		})
 	}
 	if err := rows.Err(); err != nil {

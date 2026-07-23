@@ -137,7 +137,7 @@
 			</div>
 			<h3 class="font-bold text-slate-800">Alle Abgänger entlastet!</h3>
 			<p class="text-xs text-slate-500 max-w-xs mx-auto">
-				Keine offenen Lehrmittel oder unbezahlten Schadensfälle in den Klassen 9h, 10r und 13.
+				Kein Abgänger hat mehr offene Lehrmittel oder unbezahlte Schadensfälle.
 			</p>
 		</div>
 	{:else}
@@ -148,7 +148,7 @@
 					<tr class="border-b border-slate-100 text-slate-450 text-sm uppercase">
 						<th class="py-3 px-4">Klasse</th>
 						<th class="py-3 px-4">Name</th>
-						<th class="py-3 px-4">Barcode-ID</th>
+						<th class="py-3 px-4">Offene Bücher</th>
 						<th class="py-3 px-4">Sperr-Status</th>
 					</tr>
 				</thead>
@@ -171,7 +171,27 @@
 							<td class="py-3.5 px-4 text-slate-700 font-semibold"
 								>{student.vorname} {student.nachname}</td
 							>
-							<td class="py-3.5 px-4 text-slate-400 text-xs">{student.barcode_id}</td>
+							<td class="py-3.5 px-4">
+								<span
+									class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-sm font-bold {student.ueberfaellig >
+									0
+										? 'bg-rose-50 text-rose-600 border border-rose-100'
+										: 'bg-slate-100 text-slate-600'}"
+									title={student.ueberfaellig > 0
+										? `${student.offene_buecher} offen, davon ${student.ueberfaellig} überfällig`
+										: `${student.offene_buecher} offen`}
+								>
+									{student.offene_buecher}
+									<span class="text-xs font-medium opacity-70"
+										>{student.offene_buecher === 1 ? 'Buch' : 'Bücher'}</span
+									>
+								</span>
+								{#if student.ueberfaellig > 0}
+									<span class="ml-2 text-xs font-semibold text-rose-500"
+										>{student.ueberfaellig} überfällig</span
+									>
+								{/if}
+							</td>
 							<td class="py-3.5 px-4">
 								{#if student.ist_gesperrt}
 									<span
