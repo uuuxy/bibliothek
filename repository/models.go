@@ -166,7 +166,10 @@ type Loan struct {
 	// RueckgabeAm ist der tatsächliche Rückgabezeitpunkt (null bei laufenden Ausleihen).
 	RueckgabeAm *time.Time `json:"rueckgabe_am,omitempty"`
 	// BearbeiterID verweist auf den Bibliotheksmitarbeiter, der die Ausleihe erfasst hat.
-	BearbeiterID string `json:"bearbeiter_id"`
+	// Nullbar: die DB-Spalte ist ON DELETE SET NULL, und der GDPR-Anonymisierungs-Job
+	// setzt sie auf NULL. Als nicht-nullbarer string scheiterte der Scan mit
+	// "cannot scan NULL into *string" → HTTP 500 im Kiosk (Scan/Rückgabe).
+	BearbeiterID *string `json:"bearbeiter_id"`
 	// RueckgabeBearbeiterID verweist auf den Mitarbeiter, der die Rückgabe erfasst hat (null bei laufenden Ausleihen).
 	RueckgabeBearbeiterID *string `json:"rueckgabe_bearbeiter_id,omitempty"`
 	// IstFremdrueckgabe zeigt an, ob das Buch von einer anderen Person zurückgebracht wurde.

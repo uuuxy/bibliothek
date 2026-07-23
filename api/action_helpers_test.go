@@ -97,7 +97,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	mock.ExpectQuery("INSERT INTO ausleihen \\(exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\) ON CONFLICT DO NOTHING RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat").
 		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow("loan-1", &copy.ID, &studentID, nil, time.Now(), time.Now(), nil, staffID, nil, false, false))
+			AddRow("loan-1", &copy.ID, &studentID, nil, time.Now(), time.Now(), nil, &staffID, nil, false, false))
 
 	// Delete Vormerkung: liefert jetzt bereitgestellt_exemplar_id via RETURNING
 	// (Regal-Hinweis-Erkennung). Hier ohne offene Vormerkung -> ErrNoRows.
@@ -162,7 +162,7 @@ func TestHandleBookReturn(t *testing.T) {
 	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
 		WithArgs(copyID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow(activeLoanID, &copyID, &studentID, nil, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, staffID, nil, false, false))
+			AddRow(activeLoanID, &copyID, &studentID, nil, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, &staffID, nil, false, false))
 
 	// Student lookup fallback
 	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason, coalesce\\(strasse, ''\\), coalesce\\(hausnummer, ''\\), coalesce\\(plz, ''\\), coalesce\\(ort, ''\\), coalesce\\(eltern_email, ''\\) FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
