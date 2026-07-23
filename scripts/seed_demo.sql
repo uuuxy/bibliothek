@@ -35,7 +35,11 @@ SELECT
     p.nn[1 + (((i - 1) / array_length(p.vn, 1)) % array_length(p.nn, 1))],
     p.kl[1 + (i % array_length(p.kl, 1))],
     DATE '2007-01-01' + ((i * 37) % 2600),
-    CASE WHEN i % 12 = 0 THEN 2024 + (i % 3) ELSE 2028 + (i % 5) END,
+    -- Abgänger aufs AKTUELLE Jahr: der GDPR-Job löscht Abgänger mit abgaenger_jahr <
+    -- aktuellem Jahr (jobs/cron.go). 2024 (fix, wegen i%3==0 bei Vielfachen von 12) wurde
+    -- daher beim Start sofort weggeräumt → Abgänger-Ansicht leer. CURRENT_DATE hält sie
+    -- in der Karenzzeit und macht den Seed selbstwartend. Aktive Schüler: künftiges Jahr.
+    CASE WHEN i % 12 = 0 THEN EXTRACT(YEAR FROM CURRENT_DATE)::int ELSE 2028 + (i % 5) END,
     (i % 12 = 0),
     'demo' || i || '@example.invalid',
     (i % 50 = 0),
