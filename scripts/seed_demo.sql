@@ -45,19 +45,27 @@ CROSS JOIN (SELECT
     ARRAY['5a','5b','5c','5d','6a','6b','6c','6d','7a','7b','7c','7d','8a','8b','8c','8d','9a','9b','9c','9d','10a','10b','10c','10d','E1','E2','Q1','Q2','Q3','Q4'] AS kl
 ) p;
 
--- 3) 200 DEMO-Titel + 2500 ausleihbare Exemplare mit gedruckten Barcodes.
-INSERT INTO buecher_titel (titel, autor, isbn)
-SELECT 'DEMO-Titel ' || i, 'Autor ' || (1 + i % 60), '978' || lpad(i::text, 10, '0')
-FROM generate_series(1, 200) AS i;
+-- 3) 2500 ausleihbare Exemplare mit gedruckten Barcodes.
+--    Wenn echte (importierte) Titel existieren, hängen wir die DEMO-Exemplare an eine
+--    Stichprobe DAVON — dann zeigen Ausleihe & Mahnwesen echte Buchnamen. Nur wenn gar
+--    keine Titel vorhanden sind (z. B. leere lokale DB), werden DEMO-Titel angelegt.
+--    Cleanup entfernt nur DEMO-Exemplare/-Titel, echte Titel bleiben unangetastet.
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM buecher_titel WHERE titel NOT LIKE 'DEMO-Titel %') = 0 THEN
+        INSERT INTO buecher_titel (titel, autor, isbn)
+        SELECT 'DEMO-Titel ' || i, 'Autor ' || (1 + i % 60), '978' || lpad(i::text, 10, '0')
+        FROM generate_series(1, 200) AS i;
+    END IF;
+END $$;
 
-WITH titel AS (
-    SELECT id, row_number() OVER (ORDER BY titel) AS rn
-    FROM buecher_titel WHERE titel LIKE 'DEMO-Titel %'
-)
+WITH n AS (SELECT count(*)::int AS c FROM buecher_titel),
+titel AS (SELECT id, row_number() OVER (ORDER BY random()) AS rn FROM buecher_titel)
 INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, etikett_gedruckt)
 SELECT t.id, 'DEMO-B-' || g, true, true
 FROM generate_series(1, 2500) AS g
-JOIN titel t ON t.rn = 1 + (g % 200);
+CROSS JOIN n
+JOIN titel t ON t.rn = 1 + (g % n.c);
 
 -- 4) 1550 Ausleihen: 350 überfällig (Frist in der Vergangenheit, nicht zurückgegeben →
 --    speist das Mahnwesen; ein Drittel bereits einmal gemahnt) + 1200 aktiv (Frist in
