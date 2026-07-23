@@ -122,10 +122,15 @@ func dsgvoVerarbeitungsangaben() DsgvoVerarbeitungsangaben {
 }
 
 func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {
+	// Adress-/Kontaktfelder sind in der DB nullbar (VARCHAR ohne NOT NULL), werden aber
+	// in nicht-nullbare Go-strings gescannt. Ohne COALESCE scheitert Scan(NULL → *string)
+	// mit 500 — das traf jeden Schüler ohne erfasste Adresse (nicht nur Demo-Daten).
 	const q = `
 		SELECT id, barcode_id, vorname, nachname, klasse, geburtsdatum::text,
 		       abgaenger_jahr, ist_gesperrt, ist_abgaenger, lusd_id,
-		       strasse, hausnummer, plz, ort, eltern_email,
+		       COALESCE(strasse, '') AS strasse, COALESCE(hausnummer, '') AS hausnummer,
+		       COALESCE(plz, '') AS plz, COALESCE(ort, '') AS ort,
+		       COALESCE(eltern_email, '') AS eltern_email,
 		       is_manually_blocked, block_reason,
 		       erstellt_am, aktualisiert_am, deleted_at
 		FROM schueler
