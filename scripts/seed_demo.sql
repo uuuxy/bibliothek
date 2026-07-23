@@ -101,4 +101,31 @@ SELECT
 FROM e JOIN s ON s.rn = e.rn
 WHERE e.rn <= 1550;
 
+-- 5) Ein Teil der Abgänger hat noch offene Bücher. NUR DIESE erscheinen in der
+--    Abgänger-Ansicht (sie listet gezielt Abgänger mit nicht zurückgegebenen Medien —
+--    JOIN ausleihen ... rueckgabe_am IS NULL). Ohne offene Ausleihe gäbe es dort nichts.
+--    ~60 % überfällig. Nebeneffekt: diese Abgänger sind vor der GDPR-Löschung geschützt
+--    (Löschung verlangt "keine offenen Ausleihen"). Exemplare 1551–1670 (vom Block oben
+--    ungenutzt), damit kein Exemplar doppelt verliehen wird.
+WITH ab AS (
+    SELECT id, row_number() OVER (ORDER BY barcode_id) AS rn
+    FROM schueler WHERE barcode_id LIKE 'DEMO-S-%' AND ist_abgaenger = true
+),
+e AS (
+    SELECT id, row_number() OVER (ORDER BY barcode_id) AS rn
+    FROM buecher_exemplare WHERE barcode_id LIKE 'DEMO-B-%'
+)
+INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist,
+                      rueckgabe_am, mahnstufe, letztes_mahndatum)
+SELECT
+    e.id, ab.id,
+    now() - ((30 + ab.rn % 60) * INTERVAL '1 day'),
+    CASE WHEN ab.rn % 5 < 3 THEN now() - ((1 + ab.rn % 40) * INTERVAL '1 day')
+         ELSE now() + ((5 + ab.rn % 20) * INTERVAL '1 day') END,
+    NULL,
+    CASE WHEN ab.rn % 5 < 3 AND ab.rn % 2 = 0 THEN 1 ELSE 0 END,
+    CASE WHEN ab.rn % 5 < 3 AND ab.rn % 2 = 0 THEN now() - (7 * INTERVAL '1 day') ELSE NULL END
+FROM ab JOIN e ON e.rn = 1550 + ab.rn
+WHERE ab.rn <= 120;
+
 COMMIT;
