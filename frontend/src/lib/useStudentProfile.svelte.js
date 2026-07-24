@@ -1,4 +1,5 @@
 import { apiFetch, apiClient } from './apiFetch.js';
+import { toastStore } from './stores/toastStore.svelte.js';
 
 export function useStudentProfile() {
 	/** @type {any} */
@@ -130,11 +131,11 @@ export function useStudentProfile() {
 					console.error('Fehler:', e);
 					return {};
 				});
-				alert(err.error || 'Fehler beim Melden.');
+				toastStore.addToast(err.error || 'Fehler beim Melden.', 'error');
 			}
 		} catch (e) {
 			console.error('Schaden melden fehlgeschlagen:', e);
-			alert('Netzwerkfehler.');
+			toastStore.addToast('Netzwerkfehler.', 'error');
 		} finally {
 			isSubmittingDamage = false;
 		}
