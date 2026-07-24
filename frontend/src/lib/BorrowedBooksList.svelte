@@ -72,7 +72,7 @@
 			>
 				<!-- table-fixed: Titel nimmt den Rest (truncatet), die schmalen Spalten haben feste
 				     Breiten → die Aktions-Spalte bleibt IMMER sichtbar, kein horizontaler Scroll. -->
-				<th class="py-3 px-4 min-w-[150px]">Titel & Autor</th>
+				<th class="py-3 px-4 w-full min-w-[150px]">Titel & Autor</th>
 				<th class="py-3 px-4 w-32">Barcode</th>
 				{#if mode === 'loans'}
 					<th class="py-3 px-4 w-48">Rückgabedatum</th>
