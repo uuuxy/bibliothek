@@ -119,23 +119,12 @@ func resolveBackupEnv() (encKey, dsn, backupDir string, ok bool) {
 	return encKey, dsn, backupDir, true
 }
 
-// dumpAndCompress ruft pg_dump auf (Verbindungsdaten via temporärer .pgpass-Datei)
-// und liefert den gzip-komprimierten SQL-Dump. Jeder Fehler wird mit seiner Ursache
-// protokolliert; ok=false bedeutet Abbruch.
-func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok bool) {
-	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
-	config, err := pgconn.ParseConfig(dsn)
-	if err != nil {
-		log.Printf("Backup: failed to parse DSN: %v", err)
-		return nil, false
-	}
-
+func createPgPassFile(config *pgconn.Config) (string, error) {
 	passFile, err := os.CreateTemp("", "pgpass-*")
 	if err != nil {
-		log.Printf("Backup: konnte pgpass-Datei nicht erstellen: %v", err)
-		return nil, false
+		return "", fmt.Errorf("konnte pgpass-Datei nicht erstellen: %w", err)
 	}
-	defer func() { _ = os.Remove(passFile.Name()) }() //nolint:errcheck
+	defer func() { _ = passFile.Close() }() //nolint:errcheck
 
 	port := fmt.Sprintf("%d", config.Port)
 	if port == "0" {
@@ -150,11 +139,34 @@ func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok
 		escapePgPass(config.Password),
 	)
 	if _, err := passFile.WriteString(pgPassLine); err != nil {
-		_ = passFile.Close() //nolint:errcheck
-		log.Printf("Backup: konnte in pgpass-Datei nicht schreiben: %v", err)
+		return "", fmt.Errorf("konnte in pgpass-Datei nicht schreiben: %w", err)
+	}
+
+	return passFile.Name(), nil
+}
+
+// dumpAndCompress ruft pg_dump auf (Verbindungsdaten via temporärer .pgpass-Datei)
+// und liefert den gzip-komprimierten SQL-Dump. Jeder Fehler wird mit seiner Ursache
+// protokolliert; ok=false bedeutet Abbruch.
+func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok bool) {
+	// Parse den DSN, um die Verbindungsparameter für pg_dump zu extrahieren.
+	config, err := pgconn.ParseConfig(dsn)
+	if err != nil {
+		log.Printf("Backup: failed to parse DSN: %v", err)
 		return nil, false
 	}
-	_ = passFile.Close() //nolint:errcheck
+
+	passFileName, err := createPgPassFile(config)
+	if err != nil {
+		log.Printf("Backup: %v", err)
+		return nil, false
+	}
+	defer func() { _ = os.Remove(passFileName) }() //nolint:errcheck
+
+	port := fmt.Sprintf("%d", config.Port)
+	if port == "0" {
+		port = "5432"
+	}
 
 	// #nosec G204 - arguments are derived from securely parsed DSN configuration
 	pgDump := exec.CommandContext(ctx, "pg_dump",
@@ -167,8 +179,7 @@ func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok
 		"--encoding=UTF8",
 		"--verbose",
 	)
-	pgDump.Env = append(os.Environ(), "PGPASSFILE="+passFile.Name())
-
+	pgDump.Env = append(os.Environ(), "PGPASSFILE="+passFileName)
 	sqlReader, sqlWriter := io.Pipe()
 	pgDump.Stdout = sqlWriter
 	pgDump.Stderr = os.Stderr
@@ -178,6 +189,14 @@ func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok
 		log.Printf("Backup: pg_dump start failed: %v", err)
 		return nil, false
 	}
+
+	// Start Wait in a goroutine to close the writer when process exits
+	waitErrCh := make(chan error, 1)
+	go func() {
+		err := pgDump.Wait()
+		_ = sqlWriter.Close() //nolint:errcheck
+		waitErrCh <- err
+	}()
 
 	// Pipeline: Gzip-Komprimierung des SQL-Streams
 	pr, pw := io.Pipe()
@@ -206,7 +225,7 @@ func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok
 		return nil, false
 	}
 
-	if err := pgDump.Wait(); err != nil {
+	if err := <-waitErrCh; err != nil {
 		// #nosec G706
 		log.Printf("Backup: pg_dump finished with error: %v", err)
 		return nil, false
