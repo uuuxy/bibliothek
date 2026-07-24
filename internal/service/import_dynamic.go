@@ -116,6 +116,28 @@ func sammleNeueTitel(rows [][]string, headerMap map[string]int, isbnToID, titelT
 
 // matchTitelID liefert die bekannte Titel-ID über ISBN (bevorzugt) oder Titel; "" wenn
 // noch unbekannt. Der Titel-Lookup läuft über den normalisierten Schlüssel.
+// cleanISBN entfernt effizient Bindestriche und Leerzeichen aus einer ISBN
+func cleanISBN(val string) string {
+	var count int
+	for i := 0; i < len(val); i++ {
+		if val[i] == '-' || val[i] == ' ' {
+			count++
+		}
+	}
+	if count == 0 {
+		return val
+	}
+	b := make([]byte, len(val)-count)
+	var j int
+	for i := 0; i < len(val); i++ {
+		if val[i] != '-' && val[i] != ' ' {
+			b[j] = val[i]
+			j++
+		}
+	}
+	return string(b)
+}
+
 func matchTitelID(isbn, titel string, isbnToID, titelToID map[string]string) string {
 	if isbn != "" && isbnToID[isbn] != "" {
 		return isbnToID[isbn]
@@ -133,7 +155,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, tite
 		return "", nil, false
 	}
 
-	isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+	isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 
 	if matchTitelID(isbn, titel, isbnToID, titelToID) != "" {
 		return "", nil, false // schon vorhanden
@@ -227,7 +249,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelT
 			continue
 		}
 
-		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 		titelID := matchTitelID(isbn, titel, isbnToID, titelToID)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
@@ -266,7 +288,7 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, isbnToID, 
 		if titel == "" || signatur == "" {
 			continue
 		}
-		isbn := strings.ReplaceAll(strings.ReplaceAll(spaltenWert(row, headerMap, "isbn"), "-", ""), " ", "")
+		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 		if id := matchTitelID(isbn, titel, isbnToID, titelToID); id != "" {
 			updates[id] = signatur
 		}
