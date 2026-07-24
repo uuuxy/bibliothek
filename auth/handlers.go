@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -157,7 +156,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			Path:     "/",
 			Expires:  time.Now().Add(authenticator.tokenDuration),
 			HttpOnly: true,
-			Secure:   os.Getenv("APP_ENV") != "local",
+			Secure:   cookieSecure,
 			SameSite: http.SameSiteStrictMode, // Strict: keine Cross-Site-Requests erlaubt
 		})
 
@@ -359,7 +358,7 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			Path:     "/",
 			Expires:  time.Now().Add(authenticator.tokenDuration),
 			HttpOnly: true,
-			Secure:   os.Getenv("APP_ENV") != "local",
+			Secure:   cookieSecure,
 			SameSite: http.SameSiteStrictMode,
 		})
 

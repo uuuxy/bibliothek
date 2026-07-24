@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"bibliothek/apierrors"
@@ -41,7 +40,7 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 			Expires:  time.Unix(0, 0),
 			MaxAge:   -1,
 			HttpOnly: true,
-			Secure:   os.Getenv("APP_ENV") != "local",
+			Secure:   s.CookieSecure,
 			SameSite: http.SameSiteStrictMode,
 		})
 
