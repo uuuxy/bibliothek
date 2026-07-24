@@ -65,7 +65,7 @@
 	);
 </script>
 
-<div class="w-full max-w-4xl mx-auto px-6 pt-6 pb-10 text-slate-800">
+<div class="w-full max-w-4xl mx-auto px-6 pt-6 pb-10 text-slate-800" role="dialog" aria-label={title}>
 	<!-- Zurück zur Statistik-Übersicht -->
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}

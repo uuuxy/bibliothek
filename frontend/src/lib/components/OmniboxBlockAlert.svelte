@@ -9,6 +9,7 @@
 {#if omniboxStore.blockAlert}
 	<div
 		class="fixed inset-0 bg-rose-900/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
+		role="dialog"
 	>
 		<div
 			class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-rose-500"
