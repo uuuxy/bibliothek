@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"encoding/json"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 )
@@ -52,10 +53,11 @@ func TestBuchAktualisierenAnfrageDecodesAlleFelder(t *testing.T) {
 
 func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 	tests := []struct {
-		name    string
-		eingabe BuchAktualisierenAnfrage
-		wantErr bool
-		errMsg  string
+		name        string
+		eingabe     BuchAktualisierenAnfrage
+		wantErr     bool
+		errMsg      string
+		wantEingabe *BuchAktualisierenAnfrage
 	}{
 		{
 			name: "Valid input",
@@ -132,6 +134,18 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 				Beschreibung: "  Beschreibung  ",
 			},
 			wantErr: false,
+			wantEingabe: &BuchAktualisierenAnfrage{
+				ISBN:         "978-3-16-148410-0",
+				Titel:        "Titel",
+				Autor:        "Autor",
+				CoverURL:     "URL",
+				Fach:         "Fach",
+				Schulzweig:   "Schulzweig",
+				Medientyp:    "Medientyp",
+				Untertitel:   "Untertitel",
+				Verlag:       "Verlag",
+				Beschreibung: "Beschreibung",
+			},
 		},
 	}
 
@@ -145,38 +159,8 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 			if tt.wantErr && err.Error() != tt.errMsg {
 				t.Errorf("bereinigeUndValidiereBuchEingabe() expected error message %q, got %q", tt.errMsg, err.Error())
 			}
-
-			if !tt.wantErr && tt.name == "Trims spaces from fields" {
-				if tt.eingabe.ISBN != "978-3-16-148410-0" {
-					t.Errorf("Expected ISBN '978-3-16-148410-0', got %q", tt.eingabe.ISBN)
-				}
-				if tt.eingabe.Titel != "Titel" {
-					t.Errorf("Expected Titel 'Titel', got %q", tt.eingabe.Titel)
-				}
-				if tt.eingabe.Autor != "Autor" {
-					t.Errorf("Expected Autor 'Autor', got %q", tt.eingabe.Autor)
-				}
-				if tt.eingabe.CoverURL != "URL" {
-					t.Errorf("Expected CoverURL 'URL', got %q", tt.eingabe.CoverURL)
-				}
-				if tt.eingabe.Fach != "Fach" {
-					t.Errorf("Expected Fach 'Fach', got %q", tt.eingabe.Fach)
-				}
-				if tt.eingabe.Schulzweig != "Schulzweig" {
-					t.Errorf("Expected Schulzweig 'Schulzweig', got %q", tt.eingabe.Schulzweig)
-				}
-				if tt.eingabe.Medientyp != "Medientyp" {
-					t.Errorf("Expected Medientyp 'Medientyp', got %q", tt.eingabe.Medientyp)
-				}
-				if tt.eingabe.Untertitel != "Untertitel" {
-					t.Errorf("Expected Untertitel 'Untertitel', got %q", tt.eingabe.Untertitel)
-				}
-				if tt.eingabe.Verlag != "Verlag" {
-					t.Errorf("Expected Verlag 'Verlag', got %q", tt.eingabe.Verlag)
-				}
-				if tt.eingabe.Beschreibung != "Beschreibung" {
-					t.Errorf("Expected Beschreibung 'Beschreibung', got %q", tt.eingabe.Beschreibung)
-				}
+			if !tt.wantErr && tt.wantEingabe != nil {
+				assert.Equal(t, *tt.wantEingabe, tt.eingabe)
 			}
 		})
 	}
