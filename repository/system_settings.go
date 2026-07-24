@@ -149,6 +149,27 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 		  SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP
 	`
 
+	pairs := buildSettingsPairs(req)
+	seen := make(map[string]bool, len(pairs))
+	schluessels := make([]string, 0, len(pairs))
+	werts := make([]string, 0, len(pairs))
+
+	for _, p := range pairs {
+		if !seen[p[0]] {
+			seen[p[0]] = true
+			schluessels = append(schluessels, p[0])
+			werts = append(werts, p[1])
+		}
+	}
+
+	if _, err := repo.db.Exec(ctx, upsert, schluessels, werts); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
 	aktiv := "false"
 	if req.FerienLeseclubAktiv {
 		aktiv = "true"
@@ -219,21 +240,6 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 			pairs = append(pairs, f)
 		}
 	}
-	seen := make(map[string]bool, len(pairs))
-	schluessels := make([]string, 0, len(pairs))
-	werts := make([]string, 0, len(pairs))
 
-	for _, p := range pairs {
-		if !seen[p[0]] {
-			seen[p[0]] = true
-			schluessels = append(schluessels, p[0])
-			werts = append(werts, p[1])
-		}
-	}
-
-	if _, err := repo.db.Exec(ctx, upsert, schluessels, werts); err != nil {
-		return err
-	}
-
-	return nil
+	return pairs
 }
