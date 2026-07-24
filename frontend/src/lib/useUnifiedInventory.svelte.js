@@ -1,4 +1,5 @@
 import { apiFetch } from './apiFetch.js';
+import { toastStore } from './stores/toastStore.svelte.js';
 import {
 	ladeOffeneSessions,
 	starteSession,
@@ -84,7 +85,8 @@ export function useUnifiedInventory() {
 		if (r.status === 409) {
 			// Für diesen Bereich läuft bereits eine Inventur — statt sie zu überschreiben
 			// (der alte Datenverlust-Bug), die laufende anzeigen und zum Fortsetzen anbieten.
-			errorMessage = 'Für diesen Bereich läuft bereits eine Inventur. Unten fortsetzen oder verwerfen.';
+			errorMessage =
+				'Für diesen Bereich läuft bereits eine Inventur. Unten fortsetzen oder verwerfen.';
 			await loadOffeneSessions();
 			showStartModal = false;
 			return;
@@ -129,7 +131,12 @@ export function useUnifiedInventory() {
 			lastScan = ergebnis.lastScan;
 		} catch (e) {
 			console.error('Scan fehlgeschlagen:', e);
-			lastScan = { success: false, barcode, title: 'Fehler', warnings: ['Netzwerkfehler beim Scannen'] };
+			lastScan = {
+				success: false,
+				barcode,
+				title: 'Fehler',
+				warnings: ['Netzwerkfehler beim Scannen']
+			};
 		} finally {
 			isScanning = false;
 			if (focusInput) focusInput();
@@ -139,11 +146,14 @@ export function useUnifiedInventory() {
 	async function finishInventory() {
 		const r = await schliesseAb(sessionId);
 		if (r.ok) {
-			alert(`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`);
+			toastStore.addToast(
+				`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`,
+				'success'
+			);
 			resetToIdle();
 			await loadOffeneSessions();
 		} else {
-			alert(r.error || 'Fehler beim Abschließen der Inventur.');
+			toastStore.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
 		}
 	}
 
@@ -161,28 +171,72 @@ export function useUnifiedInventory() {
 	}
 
 	return {
-		get status() { return status; },
-		get scopeType() { return scopeType; },
-		set scopeType(v) { scopeType = v; },
-		get selectedSignatureId() { return selectedSignatureId; },
-		set selectedSignatureId(v) { selectedSignatureId = v; },
-		get signatures() { return signatures; },
-		get selectedFach() { return selectedFach; },
-		set selectedFach(v) { selectedFach = v; },
-		get selectedGrade() { return selectedGrade; },
-		set selectedGrade(v) { selectedGrade = v; },
-		get faecher() { return faecher; },
-		get offeneSessions() { return offeneSessions; },
-		get stats() { return stats; },
-		get lastScan() { return lastScan; },
-		get barcodeInput() { return barcodeInput; },
-		set barcodeInput(v) { barcodeInput = v; },
-		get isScanning() { return isScanning; },
-		get showStartModal() { return showStartModal; },
-		set showStartModal(v) { showStartModal = v; },
-		get showFinishModal() { return showFinishModal; },
-		set showFinishModal(v) { showFinishModal = v; },
-		get errorMessage() { return errorMessage; },
+		get status() {
+			return status;
+		},
+		get scopeType() {
+			return scopeType;
+		},
+		set scopeType(v) {
+			scopeType = v;
+		},
+		get selectedSignatureId() {
+			return selectedSignatureId;
+		},
+		set selectedSignatureId(v) {
+			selectedSignatureId = v;
+		},
+		get signatures() {
+			return signatures;
+		},
+		get selectedFach() {
+			return selectedFach;
+		},
+		set selectedFach(v) {
+			selectedFach = v;
+		},
+		get selectedGrade() {
+			return selectedGrade;
+		},
+		set selectedGrade(v) {
+			selectedGrade = v;
+		},
+		get faecher() {
+			return faecher;
+		},
+		get offeneSessions() {
+			return offeneSessions;
+		},
+		get stats() {
+			return stats;
+		},
+		get lastScan() {
+			return lastScan;
+		},
+		get barcodeInput() {
+			return barcodeInput;
+		},
+		set barcodeInput(v) {
+			barcodeInput = v;
+		},
+		get isScanning() {
+			return isScanning;
+		},
+		get showStartModal() {
+			return showStartModal;
+		},
+		set showStartModal(v) {
+			showStartModal = v;
+		},
+		get showFinishModal() {
+			return showFinishModal;
+		},
+		set showFinishModal(v) {
+			showFinishModal = v;
+		},
+		get errorMessage() {
+			return errorMessage;
+		},
 		clearError,
 		loadSignatures,
 		loadFaecher,
