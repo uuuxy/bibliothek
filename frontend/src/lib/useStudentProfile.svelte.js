@@ -130,11 +130,13 @@ export function useStudentProfile() {
 					console.error('Fehler:', e);
 					return {};
 				});
-				alert(err.error || 'Fehler beim Melden.');
+				globalErrorToast = err.error || 'Fehler beim Melden.';
+				setTimeout(() => (globalErrorToast = null), 4000);
 			}
 		} catch (e) {
 			console.error('Schaden melden fehlgeschlagen:', e);
-			alert('Netzwerkfehler.');
+			globalErrorToast = 'Netzwerkfehler.';
+			setTimeout(() => (globalErrorToast = null), 4000);
 		} finally {
 			isSubmittingDamage = false;
 		}
