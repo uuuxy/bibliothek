@@ -156,14 +156,16 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 	localQuery := `
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''),
 		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
-		       (SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = t.id AND e.ist_ausgesondert = false) AS current_stock
+		       COUNT(e.id) AS current_stock
 		FROM buecher_titel t
+		LEFT JOIN buecher_exemplare e ON e.titel_id = t.id AND e.ist_ausgesondert = false
 		WHERE
 			t.search_vector @@ plainto_tsquery('german', $1)
 			OR t.titel ILIKE '%' || $1 || '%'
 			OR t.autor ILIKE '%' || $1 || '%'
 			OR t.isbn ILIKE '%' || $1 || '%'
 			OR replace(t.isbn, '-', '') = replace($1, '-', '')
+		GROUP BY t.id
 		ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
 		LIMIT 50
 	`
