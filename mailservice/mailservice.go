@@ -83,12 +83,16 @@ func (c *smtpConfig) sendMail(to, betreff, bodyText string) error {
 	betreff = strings.ReplaceAll(betreff, "\r", "")
 	betreff = strings.ReplaceAll(betreff, "\n", "")
 
-	msg := []byte(fmt.Sprintf("From: %s\r\n"+
-		"To: %s\r\n"+
-		"Subject: %s\r\n"+
-		"Content-Type: text/plain; charset=UTF-8\r\n"+
-		"\r\n"+
-		"%s\r\n", c.Sender, to, betreff, bodyText))
+	var b bytes.Buffer
+	b.WriteString("From: " + c.Sender + "\r\n")
+	b.WriteString("To: " + to + "\r\n")
+	b.WriteString("Subject: " + betreff + "\r\n")
+	b.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
+	b.WriteString("\r\n")
+	b.WriteString(bodyText)
+	b.WriteString("\r\n")
+
+	msg := b.Bytes()
 
 	addr := fmt.Sprintf("%s:%s", c.Host, c.Port)
 
