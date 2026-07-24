@@ -3,6 +3,7 @@
 
 import { apiFetch, apiClient } from '../apiFetch.js';
 import { printQueue, clearPrintQueue } from './printQueue.svelte.js';
+import { toastStore } from './toastStore.svelte.js';
 
 export function createLabelStore() {
 	let searchVal = $state('');
@@ -178,11 +179,11 @@ export function createLabelStore() {
 				window.open(url, '_blank');
 			} else {
 				console.error('Fehler beim Erstellen des PDFs');
-				alert('Fehler beim Erstellen des PDFs');
+				toastStore.addToast('Fehler beim Erstellen des PDFs', 'error');
 			}
 		} catch (err) {
 			console.error('Netzwerkfehler beim Drucken', err);
-			alert('Fehler beim Senden der Daten');
+			toastStore.addToast('Fehler beim Senden der Daten', 'error');
 		}
 	}
 
