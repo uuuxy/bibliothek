@@ -1,6 +1,9 @@
 # Dependency directories
 node_modules/
 frontend/node_modules/
+# Verirrtes Python-venv (Projekt nutzt kein Python) — explizit, damit nie ein
+# ~130-MB-venv versehentlich committet wird.
+.venv/
 
 # Build outputs
 dist/
