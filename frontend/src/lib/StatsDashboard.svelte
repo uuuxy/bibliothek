@@ -121,6 +121,30 @@
 	</div>
 {/snippet}
 
+{#snippet verlustItem(label, value, valueClass, status)}
+	<span class="flex items-center gap-2">
+		<span class="text-sm text-slate-500">{label}:</span>
+		{#if status === 'warn'}
+			<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
+			<svg
+				class="w-4 h-4 shrink-0 {valueClass}"
+				fill="none"
+				stroke="currentColor"
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 9v3.75m0 3.75h.01M10.29 3.86l-8.48 14.7A1.5 1.5 0 003.11 21h17.78a1.5 1.5 0 001.3-2.44l-8.48-14.7a1.5 1.5 0 00-2.6 0z"
+				/>
+			</svg>
+		{/if}
+		<span class="text-lg font-extrabold {valueClass}">{value}</span>
+	</span>
+{/snippet}
+
 {#snippet drillDownHeader(label, panel)}
 	<button
 		onclick={() => openDetail(panel)}
@@ -198,7 +222,11 @@
 			></div>
 		</div>
 	{:else if stats}
-		<!-- Kennzahlen: zwei flache Dreierreihen (Bestand/Zirkulation · Verluste/Finanzen) -->
+		<!-- 1) Dringend zuerst: das Mahn-Aktionsband ganz nach oben — die wichtigste,
+		     handlungsrelevante Zahl der Seite (Überfälligkeiten) auf einen Blick. -->
+		<OverdueWidget />
+
+		<!-- 2) Bestand & Zirkulation (die ruhigen Kennzahlen) -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 			{@render kennzahl(
 				'Gesamtbestand',
@@ -221,41 +249,43 @@
 				'text-slate-900'
 			)}
 		</div>
-		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100">
-			{@render kennzahl(
-				'Verlorene / Defekte Bücher',
+		<!-- 3) Verluste & Schäden — kompakt in EINER Zeile statt drei großer Kacheln.
+		     Bei 0 nimmt das kaum Platz weg; das Warn-Icon erscheint nur bei Handlungsbedarf. -->
+		<div
+			class="rounded-lg border border-slate-200 px-5 py-3 flex flex-wrap items-center gap-x-8 gap-y-2"
+		>
+			<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans"
+				>Verluste &amp; Schäden</span
+			>
+			{@render verlustItem(
+				'Verlorene / Defekte',
 				num(stats.loss_stats.verlorene_exemplare),
-				'Exemplare mit Schadensfällen',
 				verlusteFarbe,
 				verlusteStatus
 			)}
-			{@render kennzahl(
+			<span class="hidden sm:block w-px h-5 bg-slate-200"></span>
+			{@render verlustItem(
 				'Verlustquote',
 				`${stats.loss_stats.verlust_quote}%`,
-				'Prozentsatz verlorener Lehrmittel',
 				verlustquoteFarbe,
 				verlustquoteStatus
 			)}
-			{@render kennzahl(
+			<span class="hidden sm:block w-px h-5 bg-slate-200"></span>
+			{@render verlustItem(
 				'Wiederbeschaffungswert',
 				euro(stats.wiederbeschaffungswert_defekt),
-				'Einkaufspreise verlorener/defekter Exemplare',
 				wiederbeschaffungFarbe,
 				wiederbeschaffungStatus
 			)}
 		</div>
 
-		<!-- Aktivitäts-Zeitreihe: gibt der Seite die fehlende Zeitdimension (Trend) -->
+		<!-- 4) Trend-Chart als Rückgrat: gibt der Seite die Zeitdimension. -->
 		<div class="pt-6 border-t border-slate-100">
 			<StatsTrendChart data={stats.monats_trend ?? []} />
 		</div>
 
-		<!-- Stats Tables Layout -->
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6">
-			<!-- Overdue Widget -->
-			<div class="space-y-3 text-left h-full">
-				<OverdueWidget />
-			</div>
+		<!-- 5) Renner & Ladenhüter als „nice to know" nach unten (2 gleichwertige Spalten). -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6">
 			<!-- Top Borrowed Books Section ("Die Renner") -->
 			<div class="space-y-3 text-left">
 				{@render drillDownHeader('Beliebteste Titel (Die Renner)', 'renner')}

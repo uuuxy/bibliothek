@@ -19,7 +19,9 @@
 	const jahr = (ym) => ym.split('-')[0];
 
 	// Geometrie in viewBox-Einheiten; das SVG skaliert per width:100% mit dem Container.
-	const VBW = 720;
+	// Bewusst flaches Seitenverhältnis (~4,5:1): auf breiten Monitoren wird der Chart sonst
+	// zu hoch und drückt die Listen unter die Falz. Zusätzlich per max-h gedeckelt.
+	const VBW = 1080;
 	const VBH = 240;
 	const M = { top: 12, right: 12, bottom: 28, left: 40 };
 	const plotW = VBW - M.left - M.right;
@@ -50,7 +52,7 @@
 	const groups = $derived.by(() => {
 		const n = data.length || 1;
 		const groupW = plotW / n;
-		const barW = Math.min(13, groupW * 0.28);
+		const barW = Math.min(16, groupW * 0.24);
 		const gap = 3; // 2px+ Surface-Gap zwischen benachbarten Balken (Mark-Spec)
 		const pairW = barW * 2 + gap;
 		return data.map((d, i) => {
@@ -120,7 +122,7 @@
 		<div class="relative">
 			<svg
 				viewBox="0 0 {VBW} {VBH}"
-				class="w-full h-auto"
+				class="w-full h-auto max-h-90"
 				role="img"
 				aria-label="Balkendiagramm: Ausleihen und Rückgaben je Monat über die letzten 12 Monate. Details in der folgenden Tabelle."
 				onmousemove={onMove}
