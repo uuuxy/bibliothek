@@ -113,19 +113,17 @@ func (s *Server) queryOverdueStudents(ctx context.Context) ([]*OverdueStudent, e
 
 // zeichneElternMahnbrief rendert eine DIN-5008-Mahnseite (für Fensterkuvert, Formblatt A)
 // für einen Schüler inkl. Adressfeld, Betreff, Fließtext und Tabelle der überfälligen Bücher.
-func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *OverdueStudent, betreff, textBody, absender string) {
-	pdf.AddPage()
 
-	// --- DIN 5008 Folding Marks ---
+func drawDIN5008FoldingMarks(pdf *gofpdf.Fpdf) {
 	pdf.SetLineWidth(0.2)
 	pdf.SetDrawColor(150, 150, 150)
 	pdf.Line(0, 105, 4, 105)     // Falzmarke oben (Formblatt A)
 	pdf.Line(0, 148.5, 6, 148.5) // Lochmarke (Mitte)
 	pdf.Line(0, 210, 4, 210)     // Falzmarke unten (Formblatt A)
+	pdf.SetDrawColor(0, 0, 0)    // Reset to black
+}
 
-	pdf.SetDrawColor(0, 0, 0) // Reset to black
-
-	// --- Address Window ---
+func drawAddressWindow(pdf *gofpdf.Fpdf, tr func(string) string, student *OverdueStudent, absender string) {
 	// Start Y: 45mm, X: 20mm (Formblatt A)
 	pdf.SetFont("Arial", "U", 7)
 	pdf.SetXY(20, 45)
@@ -143,6 +141,57 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	pdf.CellFormat(85, 5, tr(addrLine1), "", 1, "L", false, 0, "")
 	pdf.SetX(20)
 	pdf.CellFormat(85, 5, tr(addrLine2), "", 1, "L", false, 0, "")
+}
+
+func drawOverdueBooksTable(pdf *gofpdf.Fpdf, tr func(string) string, books []OverdueBook) {
+	pdf.SetFont("Arial", "B", 10)
+	pdf.SetX(20)
+	pdf.SetFillColor(240, 240, 240)
+	pdf.CellFormat(75, 7, tr("Titel"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(35, 7, tr("Barcode"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 7, tr("Ausgeliehen"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(30, 7, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
+
+	pdf.SetFont("Arial", "", 10)
+	for _, b := range books {
+		startY := pdf.GetY()
+		rowH := 15.0
+		pdf.SetX(20)
+
+		tTitle := b.Titel
+		if len(tTitle) > 38 {
+			tTitle = tTitle[:35] + "..."
+		}
+		pdf.CellFormat(75, rowH, tr(tTitle), "1", 0, "L", false, 0, "")
+
+		// Barcode-Zelle: Rahmen + eingebettetes Barcode-Bild + darunter die lesbare Nummer,
+		// damit das Buch bei der Rückgabe direkt vom Brief gescannt werden kann.
+		bcX := pdf.GetX()
+		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")
+		if b.BarcodeID != "" {
+			if pngBytes, err := GenerateBarcodePNG(b.BarcodeID, false, 300, 80); err == nil {
+				imgName := "bc_eltern_" + b.BarcodeID
+				opt := gofpdf.ImageOptions{ImageType: "PNG"}
+				pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))
+				pdf.ImageOptions(imgName, bcX+2.5, startY+2, 30, 8, false, opt, 0, "")
+			}
+			pdf.SetFont("Courier", "", 7)
+			pdf.SetXY(bcX, startY+10.5)
+			pdf.CellFormat(35, 4, tr(b.BarcodeID), "", 0, "C", false, 0, "")
+			pdf.SetFont("Arial", "", 10)
+		}
+
+		pdf.SetXY(bcX+35, startY)
+		pdf.CellFormat(30, rowH, b.AusgeliehenAm.Format(dateFormatDE), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(30, rowH, fmt.Sprintf("%d", b.DaysOverdue), "1", 1, "R", false, 0, "")
+	}
+}
+
+func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *OverdueStudent, betreff, textBody, absender string) {
+	pdf.AddPage()
+
+	drawDIN5008FoldingMarks(pdf)
+	drawAddressWindow(pdf, tr, student, absender)
 
 	// --- Date ---
 	pdf.SetFont("Arial", "", 11)
@@ -175,48 +224,7 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	pdf.MultiCell(170, 6, tr(parts[0]), "", "L", false)
 	pdf.Ln(5)
 
-	// --- Overdue Books Table ---
-	pdf.SetFont("Arial", "B", 10)
-	pdf.SetX(20)
-	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(75, 7, tr("Titel"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(35, 7, tr("Barcode"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 7, tr("Ausgeliehen"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(30, 7, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
-
-	pdf.SetFont("Arial", "", 10)
-	for _, b := range student.Books {
-		startY := pdf.GetY()
-		rowH := 15.0
-		pdf.SetX(20)
-
-		tTitle := b.Titel
-		if len(tTitle) > 38 {
-			tTitle = tTitle[:35] + "..."
-		}
-		pdf.CellFormat(75, rowH, tr(tTitle), "1", 0, "L", false, 0, "")
-
-		// Barcode-Zelle: Rahmen + eingebettetes Barcode-Bild + darunter die lesbare Nummer,
-		// damit das Buch bei der Rückgabe direkt vom Brief gescannt werden kann.
-		bcX := pdf.GetX()
-		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")
-		if b.BarcodeID != "" {
-			if pngBytes, err := GenerateBarcodePNG(b.BarcodeID, false, 300, 80); err == nil {
-				imgName := "bc_eltern_" + b.BarcodeID
-				opt := gofpdf.ImageOptions{ImageType: "PNG"}
-				pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))
-				pdf.ImageOptions(imgName, bcX+2.5, startY+2, 30, 8, false, opt, 0, "")
-			}
-			pdf.SetFont("Courier", "", 7)
-			pdf.SetXY(bcX, startY+10.5)
-			pdf.CellFormat(35, 4, tr(b.BarcodeID), "", 0, "C", false, 0, "")
-			pdf.SetFont("Arial", "", 10)
-		}
-
-		pdf.SetXY(bcX+35, startY)
-		pdf.CellFormat(30, rowH, b.AusgeliehenAm.Format(dateFormatDE), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(30, rowH, fmt.Sprintf("%d", b.DaysOverdue), "1", 1, "R", false, 0, "")
-	}
+	drawOverdueBooksTable(pdf, tr, student.Books)
 
 	// Print text after book list (if any)
 	if len(parts) > 1 {
