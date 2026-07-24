@@ -190,26 +190,23 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 	}
 }
 
-// queryLaufzettelStudents lädt die Abgänger MIT noch offenen Ausleihen für die
-// Laufzettel-PDF. Ein Laufzettel listet die zurückzugebenden Bücher — ein Abgänger ohne
-// offene Bücher braucht keinen. Deshalb INNER JOIN auf ausleihen (früher LEFT JOIN):
-// sonst erschien jeder Abgänger, und beim Massendruck von 150 Abgängern kamen 140 komplett
-// leere Laufzettel aus dem Drucker (massive Papierverschwendung).
+// queryAbgaengerKontoauszug lädt die Abgänger MIT noch offenen Ausleihen als Kontoauszug-
+// Einträge (ein Eintrag je Abgänger, seine Bücher gruppiert). Genutzt für den Stapel-
+// Kontoauszug beim Schulabgang (der frühere „Laufzettel" — jetzt ein Kontoauszug mit
+// Unterschriftszeile). Ein Abgänger ohne offene Bücher braucht keinen: deshalb INNER JOIN
+// auf ausleihen (früher LEFT JOIN) — sonst kamen beim Massendruck von 150 Abgängern 140
+// komplett leere Seiten aus dem Drucker.
 //
-// Filter ist ist_abgaenger — dieselbe Definition wie die übrige Abgänger-Ansicht.
-// Früher stand hier eine hartkodierte, case-sensitive Klassenliste ('9h','10r','13').
-// Die versetzte/importierte Klassen wie '09h', '9H' oder '10a' schlicht ignoriert:
-// Betroffene Abgänger fehlten auf dem PDF und verließen die Schule mit ihren Büchern.
-// Ein leerer klasse-Filter ("") liefert alle Abgänger; sonst nur die genannte Klasse
-// (für den klassenweisen Laufzettel-Druck).
-func (s *Server) queryLaufzettelStudents(ctx context.Context, klasse string) ([]pdf.LaufzettelStudent, error) {
+// Filter ist ist_abgaenger — dieselbe Definition wie die übrige Abgänger-Ansicht. Ein
+// leerer klasse-Filter ("") liefert alle Abgänger; sonst nur die genannte Klasse (für den
+// klassenweisen Druck via /api/abgaenger/pdf?klasse=…).
+func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) ([]pdf.KontoauszugEintrag, error) {
 	detailQuery := `
-		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
+		SELECT s.id, s.vorname, s.nachname, s.klasse,
 		       t.titel,
-		       coalesce(t.autor, '') AS autor,
-		       coalesce(t.cover_url, '') AS cover_url,
-		       e.barcode_id AS ex_barcode,
-		       coalesce(to_char(a.rueckgabe_frist, 'DD.MM.YYYY'), '') AS frist
+		       coalesce(e.barcode_id, '') AS ex_barcode,
+		       a.ausgeliehen_am,
+		       a.rueckgabe_frist
 		FROM schueler s
 		JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
@@ -224,42 +221,36 @@ func (s *Server) queryLaufzettelStudents(ctx context.Context, klasse string) ([]
 	}
 	defer rows.Close()
 
-	studMap := map[string]*pdf.LaufzettelStudent{}
+	studMap := map[string]*pdf.KontoauszugEintrag{}
 	studOrder := make([]string, 0)
 	for rows.Next() {
-		var id, barcode, vorname, nachname, klasse string
-		var abgaengerJahr int
-		var gesperrt bool
-		var titel, autor, coverURL, exBarcode, frist *string
-
-		if err := rows.Scan(&id, &barcode, &vorname, &nachname, &klasse,
-			&abgaengerJahr, &gesperrt, &titel, &autor, &coverURL, &exBarcode, &frist); err != nil {
+		var id, vorname, nachname, klasse, titel, exBarcode string
+		var ausgeliehenAm, frist time.Time
+		if err := rows.Scan(&id, &vorname, &nachname, &klasse,
+			&titel, &exBarcode, &ausgeliehenAm, &frist); err != nil {
 			return nil, err
 		}
 
 		if _, ok := studMap[id]; !ok {
-			studMap[id] = &pdf.LaufzettelStudent{
-				Vorname:   vorname,
-				Nachname:  nachname,
-				Klasse:    klasse,
-				Ausleihen: []pdf.LaufzettelAusleihe{},
+			studMap[id] = &pdf.KontoauszugEintrag{
+				Schueler: pdf.KontoauszugSchueler{Vorname: vorname, Nachname: nachname, Klasse: klasse},
+				Buecher:  []pdf.KontoauszugBuch{},
 			}
 			studOrder = append(studOrder, id)
 		}
 
-		if titel != nil {
-			studMap[id].Ausleihen = append(studMap[id].Ausleihen, pdf.LaufzettelAusleihe{
-				Titel:     *titel,
-				BarcodeID: *exBarcode,
-				Frist:     *frist,
-			})
-		}
+		studMap[id].Buecher = append(studMap[id].Buecher, pdf.KontoauszugBuch{
+			Titel:          titel,
+			Barcode:        exBarcode,
+			Ausleihdatum:   ausgeliehenAm,
+			Rueckgabedatum: frist,
+		})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	result := make([]pdf.LaufzettelStudent, 0, len(studOrder))
+	result := make([]pdf.KontoauszugEintrag, 0, len(studOrder))
 	for _, id := range studOrder {
 		result = append(result, *studMap[id])
 	}
@@ -279,7 +270,7 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 		// Optionaler Klassenfilter: /api/abgaenger/pdf?klasse=10a druckt nur diese Klasse.
 		klasse := r.URL.Query().Get("klasse")
 
-		result, err := s.queryLaufzettelStudents(ctx, klasse)
+		result, err := s.queryAbgaengerKontoauszug(ctx, klasse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -290,7 +281,9 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 			return
 		}
 
-		pdfBytes, err := pdf.GenerateLaufzettel(result)
+		// Der Abgänger-„Laufzettel" ist jetzt ein Kontoauszug MIT Unterschriftszeile
+		// (eine Seite je Abgänger). Ein Dokument statt zweier — Freigabezeile optional.
+		pdfBytes, err := pdf.GenerateKontoauszugBatch(result, true)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

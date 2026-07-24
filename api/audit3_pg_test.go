@@ -107,15 +107,15 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	seedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	students, err := srv.queryLaufzettelStudents(ctx, "")
+	students, err := srv.queryAbgaengerKontoauszug(ctx, "")
 	if err != nil {
-		t.Fatalf("queryLaufzettelStudents: %v", err)
+		t.Fatalf("queryAbgaengerKontoauszug: %v", err)
 	}
 
 	if len(students) != 1 {
 		t.Fatalf("erwartet genau 1 Laufzettel (nur Abgänger mit Buch), waren %d", len(students))
 	}
-	if students[0].Vorname != "Anna" || len(students[0].Ausleihen) != 1 {
+	if students[0].Schueler.Vorname != "Anna" || len(students[0].Buecher) != 1 {
 		t.Errorf("falscher/leerer Laufzettel: %+v", students[0])
 	}
 }

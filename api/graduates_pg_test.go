@@ -35,14 +35,14 @@ func TestLaufzettelStudents_AbgaengerFilter(t *testing.T) {
 	seedAusleihe(t, pool, dana, "Buch Dana", frist)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	studenten, err := srv.queryLaufzettelStudents(ctx, "")
+	studenten, err := srv.queryAbgaengerKontoauszug(ctx, "")
 	if err != nil {
-		t.Fatalf("queryLaufzettelStudents: %v", err)
+		t.Fatalf("queryAbgaengerKontoauszug: %v", err)
 	}
 
 	namen := map[string]bool{}
 	for _, s := range studenten {
-		namen[s.Vorname] = true
+		namen[s.Schueler.Vorname] = true
 	}
 
 	for _, erwartet := range []string{"Anna", "Bea", "Cem"} {
