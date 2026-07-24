@@ -46,6 +46,21 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 
 	m := maroto.New(cfg)
 
+	buildAddressBlock(m, schule, schueler)
+	buildHeaderBlock(m)
+	buildIntroBlock(m)
+	buildItemsTableBlock(m, items)
+	buildFooterBlock(m)
+
+	doc, err := m.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	return doc.GetBytes(), nil
+}
+
+func buildAddressBlock(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 	// DIN 5008 Address Window (Sender + Receiver)
 	// Absender (Sender line above address)
 	m.AddRow(15,
@@ -78,7 +93,9 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 
 	// Space before subject (DIN 5008 padding)
 	m.AddRow(20, col.New(12))
+}
 
+func buildHeaderBlock(m core.Maroto) {
 	// Date aligned right
 	m.AddRow(10,
 		col.New(12).Add(
@@ -99,7 +116,9 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 			}),
 		),
 	)
+}
 
+func buildIntroBlock(m core.Maroto) {
 	// Introductory Text
 	m.AddRow(10,
 		col.New(12).Add(
@@ -111,7 +130,9 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 			text.New("bitte überweisen Sie die Ersatzforderung für folgende Medien:", props.Text{Size: 10}),
 		),
 	)
+}
 
+func buildItemsTableBlock(m core.Maroto, items []RechnungItem) {
 	// Table Header
 	m.AddRow(10,
 		col.New(5).Add(text.New("Titel", props.Text{Size: 10, Style: fontstyle.Bold})),
@@ -136,7 +157,9 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 		col.New(10).Add(text.New("Summe:", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 		col.New(2).Add(text.New(fmt.Sprintf("%.2f EUR", total), props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
+}
 
+func buildFooterBlock(m core.Maroto) {
 	// Footer: cash-payment note
 	m.AddRow(40, col.New(12))
 	m.AddRow(10,
@@ -147,13 +170,6 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 			}),
 		),
 	)
-
-	doc, err := m.Generate()
-	if err != nil {
-		return nil, err
-	}
-
-	return doc.GetBytes(), nil
 }
 
 // generateItemRow liefert zwei Zeilen: den Rechnungsposten mit Barcode-Bild und darunter
