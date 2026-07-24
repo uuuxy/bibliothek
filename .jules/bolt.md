@@ -13,3 +13,4 @@
 ## 2026-07-15 - [Efficient string template replacements]
 **Learning:** Found sequential `strings.ReplaceAll` calls inside `api/reports_pdf.go` used to inject dynamic data (like Vorname, Nachname) into PDF text templates. This leads to unnecessary intermediate allocations and increased GC pressure, especially when generating bulk PDFs.
 **Action:** Replaced sequential `strings.ReplaceAll` calls with a single `strings.NewReplacer` which is highly optimized for multi-string replacement in a single pass.
+Optimized correlated subquery in search queries to LEFT JOIN + GROUP BY for better performance
