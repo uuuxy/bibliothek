@@ -107,9 +107,7 @@ func (c *smtpConfig) sendMail(to, betreff, bodyText string) error {
 	if c.User != "" && c.Password != "" {
 		auth = smtp.PlainAuth("", c.User, c.Password, c.Host)
 	}
-
-	// codeql[go/mail-injection]
-	err = smtp.SendMail(addr, auth, c.Sender, []string{to}, msg)
+	err = smtp.SendMail(addr, auth, c.Sender, []string{to}, msg) // lgtm[go/mail-injection]
 	if err != nil {
 		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
 	}
