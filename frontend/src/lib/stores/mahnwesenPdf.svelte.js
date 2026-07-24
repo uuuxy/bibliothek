@@ -1,4 +1,5 @@
 import { apiFetch } from '../apiFetch.js';
+import { toastStore } from './toastStore.svelte.js';
 import { SvelteDate } from 'svelte/reactivity';
 
 /**
@@ -33,7 +34,7 @@ export function useMahnwesenPdf() {
 			}
 
 			if (ausleihIds.length === 0) {
-				alert('Keine überfälligen Medien für die ausgewählten Schüler gefunden.');
+				toastStore.addToast('Keine überfälligen Medien für die ausgewählten Schüler gefunden.', 'info');
 				return;
 			}
 
@@ -58,7 +59,7 @@ export function useMahnwesenPdf() {
 			selectedIds.clear();
 			await refreshData();
 		} catch (e) {
-			alert('Fehler: ' + String(e));
+			toastStore.addToast('Fehler: ' + String(e), 'error');
 		} finally {
 			pdfLoading = false;
 		}
@@ -80,7 +81,7 @@ export function useMahnwesenPdf() {
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			alert('Fehler: ' + String(e));
+			toastStore.addToast('Fehler: ' + String(e), 'error');
 		} finally {
 			pdfLoading = false;
 		}
