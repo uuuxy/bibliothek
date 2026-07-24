@@ -128,11 +128,13 @@ function createOfflineSyncStore() {
 
 			const { enqueueOfflineAction } = await import('../offlineQueue.js');
 			let importedCount = 0;
+			const promises = [];
 			for (const item of items) {
 				if (!item.action_type || !item.barcode_id) continue;
-				await enqueueOfflineAction(item.action_type, item.barcode_id, item.schueler_id || null);
+				promises.push(enqueueOfflineAction(item.action_type, item.barcode_id, item.schueler_id || null));
 				importedCount++;
 			}
+			await Promise.all(promises);
 
 			await updateCount();
 			startSync();
