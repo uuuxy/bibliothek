@@ -1,11 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+vi.mock('./toastStore.svelte.js', () => ({
+	toastStore: { addToast: vi.fn() }
+}));
+
 vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn()
 }));
 
 import { apiFetch } from '../apiFetch.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
+import { toastStore } from './toastStore.svelte.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 
@@ -28,8 +33,6 @@ function mockErrorResponse(text) {
 /** @type {{ href: string, download: string }[]} */
 let clicks;
 /** @type {ReturnType<typeof vi.fn>} */
-let alertMock;
-
 beforeEach(() => {
 	vi.clearAllMocks();
 	clicks = [];
@@ -37,8 +40,6 @@ beforeEach(() => {
 	// ohne document.createElement zu verbiegen.
 	URL.createObjectURL = vi.fn(() => 'blob:mock-url');
 	URL.revokeObjectURL = vi.fn();
-	alertMock = vi.fn();
-	vi.stubGlobal('alert', alertMock);
 	vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
 		/** @this {HTMLAnchorElement} */ function () {
 			clicks.push({ href: this.href, download: this.download });
@@ -92,7 +93,7 @@ describe('useMahnwesenPdf.downloadPDF', () => {
 		await store.downloadPDF();
 
 		expect(clicks).toEqual([]);
-		expect(alertMock).toHaveBeenCalledTimes(1);
+		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
 		expect(store.pdfLoading).toBe(false);
 	});
 });
@@ -138,8 +139,9 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 		await store.printSelectedMahnungen(selectedIds, () => schuelerListe, vi.fn());
 
 		expect(apiFetch).not.toHaveBeenCalled();
-		expect(alertMock).toHaveBeenCalledWith(
-			'Keine überfälligen Medien für die ausgewählten Schüler gefunden.'
+		expect(toastStore.addToast).toHaveBeenCalledWith(
+			'Keine überfälligen Medien für die ausgewählten Schüler gefunden.',
+			'info'
 		);
 		expect(store.pdfLoading).toBe(false);
 	});
@@ -152,8 +154,8 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 
 		await store.printSelectedMahnungen(selectedIds, () => schuelerListe, refreshData);
 
-		expect(alertMock).toHaveBeenCalledTimes(1);
-		expect(String(alertMock.mock.calls[0][0])).toContain('Drucker brennt');
+		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
+		expect(String(vi.mocked(toastStore.addToast).mock.calls[0][0])).toContain('Drucker brennt');
 		expect(selectedIds.size).toBe(1); // Auswahl bleibt für einen zweiten Versuch
 		expect(refreshData).not.toHaveBeenCalled();
 		expect(store.pdfLoading).toBe(false);
