@@ -31,6 +31,20 @@ func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo) ([]byte, 
 	// UTF-8 to ISO-8859-1 conversion to support German umlauts (ä, ö, ü, ß) in standard PDF fonts
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
+	addSchadensfallHeader(pdf, schule, tr)
+	addSchadensfallAddress(pdf, data, tr)
+	addSchadensfallBody(pdf, data, tr)
+	addSchadensfallSignatures(pdf, tr)
+
+	var buf bytes.Buffer
+	if err := pdf.Output(&buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func addSchadensfallHeader(pdf *gofpdf.Fpdf, schule SchuleInfo, tr func(string) string) {
 	// Letter Header
 	pdf.SetFont("Arial", "B", 14)
 	pdf.Cell(0, 10, tr(schule.Name))
@@ -44,7 +58,9 @@ func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo) ([]byte, 
 	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
 	pdf.CellFormat(0, 6, schule.OrtDatum(time.Now().Format(dateFormatDE)), "", 0, "R", false, 0, "")
+}
 
+func addSchadensfallAddress(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(string) string) {
 	// DIN 5008 Address Window (approx. 45mm from top)
 	pdf.SetXY(20, 45)
 	pdf.SetFont("Arial", "B", 9)
@@ -60,7 +76,9 @@ func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo) ([]byte, 
 	pdf.SetX(20)
 	pdf.Cell(0, 6, tr("_________________________"))
 	pdf.Ln(30)
+}
 
+func addSchadensfallBody(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(string) string) {
 	// Letter Subject
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(0, 8, tr("Ersatzforderung für ein beschädigtes oder verlorenes Bibliotheksbuch"))
@@ -92,17 +110,12 @@ func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo) ([]byte, 
 		data.Betrag, dueTime)
 	pdf.MultiCell(0, 5, tr(instructions), "", "L", false)
 	pdf.Ln(15)
+}
 
+func addSchadensfallSignatures(pdf *gofpdf.Fpdf, tr func(string) string) {
 	// Signatures
 	pdf.Cell(0, 6, tr("Mit freundlichen Grüßen,"))
 	pdf.Ln(15)
 	pdf.SetFont("Arial", "B", 10)
 	pdf.Cell(0, 6, tr("Die Bibliotheksleitung"))
-
-	var buf bytes.Buffer
-	if err := pdf.Output(&buf); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }
