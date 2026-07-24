@@ -3,6 +3,7 @@ package api
 import (
 	"bibliothek/pkg/httpresp"
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -74,7 +75,7 @@ func (s *Server) tryScanStudent(ctx context.Context, barcode string) (map[string
 		}, nil
 	}
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil // Not found
 	}
 
@@ -116,7 +117,7 @@ func (s *Server) tryScanBook(ctx context.Context, barcode string) (map[string]an
 		}, nil
 	}
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil // Not found
 	}
 
