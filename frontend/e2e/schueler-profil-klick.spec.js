@@ -34,8 +34,8 @@ test('Abgänger-Zeile klickbar → Schülerprofil öffnet sich', async ({ page }
 		.getByRole('button', { name: new RegExp(`Profil von Abgklick${s} Testschueler`) })
 		.click();
 
-	// FIX-BEWEIS: Das Profil ist offen, sobald die profil-spezifischen Tabs erscheinen
-	// (die gibt es in der Abgänger-Liste nicht).
+	// Verifiziert, dass das Profil korrekt geöffnet wurde.
+	// Das Profil ist offen, sobald die profil-spezifischen Tabs erscheinen.
 	await expect(page.getByText('Ausleihen & Historie')).toBeVisible();
 	await expect(page.getByRole('heading', { name: new RegExp(`Abgklick${s}`) })).toBeVisible();
 });

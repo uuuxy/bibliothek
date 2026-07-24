@@ -49,9 +49,8 @@
 
 	$effect(() => {
 		if (printQueue.copies) {
-			// 'druck-center' ist der App-Route-Name (Router.svelte); 'labels' ist nur der
-			// INTERNE Unter-Tab in DruckCenter. Vorher stand hier 'labels' — den kennt der
-			// Router nicht, also rendert <main> nichts → weiße Seite beim Etikettendruck.
+			// Leitet zum Druck-Center weiter, wenn Exemplare gedruckt werden sollen.
+			// Der Sub-Tab 'labels' wird innerhalb des Druck-Centers verwaltet.
 			uiStore.activeTab = 'druck-center';
 		}
 	});

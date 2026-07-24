@@ -57,12 +57,10 @@ test('Etiketten: Titel-Bogen und freier Labeldruck liefern echte PDFs', async ({
 	expect((await labels.body()).length).toBeGreaterThan(1000);
 });
 
-// Regression: Der Druck-Vorschlag nach dem Wareneingang führte auf eine WEISSE SEITE.
-// Ursache: App.svelte setzte beim gefüllten printQueue activeTab='labels' — diesen Tab
-// kennt der Router nicht (der App-Route-Name ist 'druck-center'; 'labels' ist nur der
-// interne Unter-Tab in DruckCenter), also rendert <main> nichts. Der bisherige Etiketten-
-// Test deckte nur die Server-PDF-Endpunkte ab, nie diesen UI-Handoff.
-test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße Seite)', async ({
+// Stellt sicher, dass der Druck-Vorschlag nach dem Wareneingang korrekt geroutet wird
+// und den Etikettendruck (Druck-Center) öffnet, statt eine leere Seite anzuzeigen.
+// Testet die Übergabe der printQueue an das Druck-Center (UI-Handoff).
+test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck', async ({
 	page
 }) => {
 	const s = uniqueSuffix();
@@ -94,8 +92,7 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
 	await expect(printBtn).toBeVisible();
 	await printBtn.click();
 
-	// FIX-BEWEIS: Diese Meldung stammt aus dem Etikettendruck (LabelSettings) und erscheint
-	// NUR, wenn printQueue.copies dort ankommt. Vor dem Fix war die Seite leer, der Text
-	// existierte nie. Er beweist beide Hälften: Navigation UND Queue-Übergabe.
+	// Verifiziert Navigation zum Druck-Center und korrekte Übergabe der printQueue.
+	// Die Meldung erscheint nur, wenn die Exemplare erfolgreich in LabelSettings ankommen.
 	await expect(page.getByText(/Etiketten aus der freigegebenen Lieferung geladen/)).toBeVisible();
 });

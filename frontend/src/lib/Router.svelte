@@ -22,10 +22,8 @@
 	import Graduates from './Graduates.svelte';
 	import RouteFallback from './components/layout/RouteFallback.svelte';
 
-	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
-	// Map dupliziert im Routing-$effect und im popstate-Handler — dadurch wurde ein
-	// neu ergänzter Tab (lehrer_portal) in beiden Kopien vergessen, seine URL nie
-	// gesetzt/wiederhergestellt, und ein Refresh warf den Lehrer aus dem Portal.
+	// Zentrale Tab→Pfad-Zuordnung. Bildet die einzige Quelle (Single Source of Truth)
+	// für das Mapping von Tabs zu URLs, sowohl für Initial-Match als auch für popstate.
 	/** @type {Record<string, string>} */
 	const tabToPath = {
 		settings: '/einstellungen',
@@ -48,9 +46,8 @@
 	const STATS_DETAIL_KINDS = ['renner', 'ladenhueter'];
 
 	/**
-	 * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad. BEWUSST die einzige Quelle für
-	 * Initial-Match UND popstate — vorher lag die book_detail-Logik dupliziert in beiden,
-	 * neue Routen wurden leicht in einer Kopie vergessen (siehe lehrer_portal-Bug).
+	 * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad.
+	 * Dies ist die zentrale Logik für initiale Ladevorgänge und popstate-Events.
 	 * @param {string} path
 	 */
 	function applyPathToState(path) {
