@@ -2,6 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
+	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
 
 	// State Runes (Svelte 5)
 	/** @type {any} */
@@ -33,6 +34,9 @@
 	/** @param {number} v */
 	const euro = (v) => (v ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
+	/** Ganzzahl mit deutscher Tausender-Trennung (33166 → „33.166"). @param {number} v */
+	const num = (v) => (v ?? 0).toLocaleString('de-DE');
+
 	// Kacheln zeigen Top 5; das Drill-Down-Panel filtert die volle Liste clientseitig
 	const topRenner = $derived(stats?.popular_titles?.slice(0, 5) ?? []);
 	const topWarmers = $derived(stats?.shelf_warmers?.slice(0, 5) ?? []);
@@ -51,6 +55,15 @@
 	});
 	const wiederbeschaffungFarbe = $derived(
 		(stats?.wiederbeschaffungswert_defekt ?? 0) > 0 ? 'text-rose-700' : 'text-emerald-600'
+	);
+
+	// Zweiter, farbunabhängiger Kanal (WCAG 1.4.1): Bei Handlungsbedarf erscheint zusätzlich
+	// ein Warn-Icon. Im Bestzustand (0) bleibt es icon-frei — die Ampelfarbe steht dann nicht
+	// mehr allein für die Aussage; die Zahl selbst und das (fehlende) Icon tragen sie mit.
+	const verlusteStatus = $derived((stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'warn' : null);
+	const verlustquoteStatus = $derived((stats?.loss_stats?.verlust_quote ?? 0) > 0 ? 'warn' : null);
+	const wiederbeschaffungStatus = $derived(
+		(stats?.wiederbeschaffungswert_defekt ?? 0) > 0 ? 'warn' : null
 	);
 
 	// Fetch statistics from backend API.
@@ -83,14 +96,27 @@
 	});
 </script>
 
-{#snippet kennzahl(label, value, hint, valueClass)}
+{#snippet kennzahl(label, value, hint, valueClass, status = null)}
 	<div
 		class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0"
 	>
 		<span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans"
 			>{label}</span
 		>
-		<span class="text-4xl font-extrabold {valueClass} leading-none py-1">{value}</span>
+		<span class="text-4xl font-extrabold {valueClass} leading-none py-1 flex items-center gap-2">
+			{#if status === 'warn'}
+				<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
+				<svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 9v3.75m0 3.75h.01M10.29 3.86l-8.48 14.7A1.5 1.5 0 003.11 21h17.78a1.5 1.5 0 001.3-2.44l-8.48-14.7a1.5 1.5 0 00-2.6 0z"
+					/>
+				</svg>
+			{/if}
+			<span>{value}</span>
+		</span>
 		<span class="text-sm text-slate-500 font-medium">{hint}</span>
 	</div>
 {/snippet}
@@ -176,42 +202,52 @@
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 			{@render kennzahl(
 				'Gesamtbestand',
-				stats.loss_stats.gesamt_bestand,
+				num(stats.loss_stats.gesamt_bestand),
 				'Physische Buchkopien im System',
 				'text-slate-900'
 			)}
 			{@render kennzahl(
 				'Aktuell verliehen',
-				stats.zirkulation?.aktuell_verliehen ?? 0,
-				`von ${stats.zirkulation?.aktiver_bestand ?? 0} aktiven Exemplaren`,
+				num(stats.zirkulation?.aktuell_verliehen ?? 0),
+				`von ${num(stats.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
 				'text-blue-600'
 			)}
+			<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
+			     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
 			{@render kennzahl(
 				'Zirkulationsquote',
 				`${stats.zirkulationsquote ?? 0}%`,
-				'Verliehen ÷ aktiver Bestand',
-				'text-emerald-600'
+				'Momentaufnahme: verliehen ÷ aktiver Bestand',
+				'text-slate-900'
 			)}
 		</div>
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100">
 			{@render kennzahl(
 				'Verlorene / Defekte Bücher',
-				stats.loss_stats.verlorene_exemplare,
+				num(stats.loss_stats.verlorene_exemplare),
 				'Exemplare mit Schadensfällen',
-				verlusteFarbe
+				verlusteFarbe,
+				verlusteStatus
 			)}
 			{@render kennzahl(
 				'Verlustquote',
 				`${stats.loss_stats.verlust_quote}%`,
 				'Prozentsatz verlorener Lehrmittel',
-				verlustquoteFarbe
+				verlustquoteFarbe,
+				verlustquoteStatus
 			)}
 			{@render kennzahl(
 				'Wiederbeschaffungswert',
 				euro(stats.wiederbeschaffungswert_defekt),
 				'Einkaufspreise verlorener/defekter Exemplare',
-				wiederbeschaffungFarbe
+				wiederbeschaffungFarbe,
+				wiederbeschaffungStatus
 			)}
+		</div>
+
+		<!-- Aktivitäts-Zeitreihe: gibt der Seite die fehlende Zeitdimension (Trend) -->
+		<div class="pt-6 border-t border-slate-100">
+			<StatsTrendChart data={stats.monats_trend ?? []} />
 		</div>
 
 		<!-- Stats Tables Layout -->
@@ -301,10 +337,24 @@
 						</thead>
 						<tbody class="divide-y divide-slate-100 text-sm text-slate-650 font-semibold">
 							{#if !stats.shelf_warmers || stats.shelf_warmers.length === 0}
+								<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün
+								     statt des früheren 🕳️-Emojis, das wie ein Render-Artefakt/Tintenklecks wirkte. -->
 								<tr>
 									<td colspan="3" class="py-12 text-center text-xs text-slate-400 font-medium">
-										<span class="text-2xl block mb-2">🕳️</span>
-										Keine Ladenhüter identifiziert
+										<svg
+											class="w-7 h-7 mx-auto mb-2 text-emerald-500"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											aria-hidden="true"
+											><path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+											/></svg
+										>
+										Keine Ladenhüter — der Bestand ist in Bewegung.
 									</td>
 								</tr>
 							{:else}

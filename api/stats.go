@@ -239,6 +239,75 @@ func (s *Server) queryShelfWarmers(ctx context.Context, typeFilter string, limit
 	return shelfWarmers
 }
 
+// MonatsTrendPunkt ist ein Monat der Aktivitäts-Zeitreihe: wie viele Ausleihen
+// getätigt und wie viele Rückgaben verbucht wurden. Zwei Serien derselben Einheit
+// (Vorgänge/Monat) → eine gemeinsame Y-Achse im Frontend, kein Dual-Axis.
+type MonatsTrendPunkt struct {
+	Monat     string `json:"monat"` // "2026-07"
+	Ausleihen int    `json:"ausleihen"`
+	Ruckgaben int    `json:"rueckgaben"`
+}
+
+// queryMonatsTrend liefert die letzten 12 Monate Ausleih-/Rückgabe-Aktivität als
+// lückenlose (zero-gefüllte) Zeitreihe. Ausleihen zählen nach ausgeliehen_am, Rückgaben
+// nach rueckgabe_am — dieselbe Ausleihe kann also in unterschiedlichen Monaten in beide
+// Serien fallen. Best-effort mit leerer Liste bei Fehlern (wie die übrigen Sektionen);
+// der typeFilter (LMF/Freihand) bindet an t.titel. Bewusst anonym: keine Schülerdaten.
+func (s *Server) queryMonatsTrend(ctx context.Context, typeFilter string) []MonatsTrendPunkt {
+	trend := []MonatsTrendPunkt{}
+	q := fmt.Sprintf(`
+		WITH monate AS (
+			SELECT date_trunc('month', m) AS monat_start
+			FROM generate_series(
+				date_trunc('month', CURRENT_DATE) - INTERVAL '11 months',
+				date_trunc('month', CURRENT_DATE),
+				INTERVAL '1 month'
+			) AS m
+		),
+		ausl AS (
+			SELECT date_trunc('month', a.ausgeliehen_am) AS monat, COUNT(*) AS n
+			FROM ausleihen a
+			JOIN buecher_exemplare e ON e.id = a.exemplar_id
+			JOIN buecher_titel t ON t.id = e.titel_id
+			WHERE a.ausgeliehen_am >= date_trunc('month', CURRENT_DATE) - INTERVAL '11 months' %[1]s
+			GROUP BY 1
+		),
+		rueck AS (
+			SELECT date_trunc('month', a.rueckgabe_am) AS monat, COUNT(*) AS n
+			FROM ausleihen a
+			JOIN buecher_exemplare e ON e.id = a.exemplar_id
+			JOIN buecher_titel t ON t.id = e.titel_id
+			WHERE a.rueckgabe_am IS NOT NULL
+			  AND a.rueckgabe_am >= date_trunc('month', CURRENT_DATE) - INTERVAL '11 months' %[1]s
+			GROUP BY 1
+		)
+		SELECT to_char(m.monat_start, 'YYYY-MM'),
+		       COALESCE(al.n, 0)::int,
+		       COALESCE(r.n, 0)::int
+		FROM monate m
+		LEFT JOIN ausl al ON al.monat = m.monat_start
+		LEFT JOIN rueck r ON r.monat = m.monat_start
+		ORDER BY m.monat_start
+	`, typeFilter)
+	rows, err := s.DB.Pool.Query(ctx, q)
+	if err != nil {
+		return trend
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p MonatsTrendPunkt
+		if err := rows.Scan(&p.Monat, &p.Ausleihen, &p.Ruckgaben); err != nil {
+			log.Printf("stats: Monatstrend-Zeile unlesbar: %v", err)
+			continue
+		}
+		trend = append(trend, p)
+	}
+	if err := rows.Err(); err != nil {
+		return []MonatsTrendPunkt{}
+	}
+	return trend
+}
+
 // GetStatisticsHandler returns analytical metadata details.
 // Optional query parameters:
 //   - ?zeitraum=all|schuljahr|monat filtert das Renner-Ranking zeitlich.
@@ -266,10 +335,16 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 			kennzahlen = &bestandKennzahlen{}
 		}
 
+		// 4. Aktivitäts-Zeitreihe (Ausleihen/Rückgaben je Monat, letzte 12 Monate).
+		//    Bewusst NICHT vom ?zeitraum-Parameter abhängig: der Trend definiert sein
+		//    eigenes 12-Monats-Fenster; der Bestand-Filter (LMF/Freihand) gilt aber.
+		monatsTrend := s.queryMonatsTrend(ctx, typeFilter)
+
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"filter_type":    typeName,
 			"popular_titles": popularTitles,
 			"shelf_warmers":  shelfWarmers,
+			"monats_trend":   monatsTrend,
 			"loss_stats": map[string]any{
 				"gesamt_bestand":      kennzahlen.GesamtBestand,
 				"verlorene_exemplare": kennzahlen.VerloreneExemplare,

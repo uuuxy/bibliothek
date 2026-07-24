@@ -8,66 +8,63 @@ import (
 )
 
 // DashboardSummary holds key metrics for the library reporting dashboard.
+//
+// Bewusst OHNE personenbezogene Einzeldaten: Diese Zusammenfassung speist die
+// Statistik-Seite (Analyse-Kontext). Klarnamen der (minderjährigen) Schüler samt
+// entliehenem Titel gehören dort nicht hin — das wäre Zweckentfremdung und verletzt
+// die Datenminimierung (Art. 5 Abs. 1 lit. c DSGVO); zudem sind Lesegewohnheiten
+// besonders schützenswert. Die namentliche Bearbeitung überfälliger Ausleihen läuft
+// operativ und mit eigener Zugriffskontrolle im Mahnwesen (/api/mahnwesen). Hier nur
+// die aggregierte Gesamtzahl und eine anonyme Verteilung nach Überfälligkeitsdauer.
 type DashboardSummary struct {
-	TotalOverdue int              `json:"total_overdue"`
-	TopOverdue   []OverdueSummary `json:"top_overdue"`
+	TotalOverdue   int             `json:"total_overdue"`
+	MaxTageOverdue int             `json:"max_tage_overdue"` // längste Überfälligkeit in Tagen (anonym)
+	OverdueBuckets []OverdueBucket `json:"overdue_buckets"`  // anonyme Verteilung nach Dauer
 }
 
-// OverdueSummary groups overdue loans by delay categories.
-type OverdueSummary struct {
-	SchuelerName string `json:"schueler_name"`
-	Klasse       string `json:"klasse"`
-	Titel        string `json:"titel"`
-	Tage         int    `json:"tage"`
+// OverdueBucket ist ein anonymer Zähler je Überfälligkeits-Zeitspanne.
+type OverdueBucket struct {
+	Label string `json:"label"`
+	Count int    `json:"count"`
 }
 
 // GetDashboardSummaryHandler gibt aggregierte Daten für das Dashboard zurück (z.B. Mahnungen).
+// Liefert ausschliesslich anonyme Aggregate — siehe DashboardSummary.
 func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		var summary DashboardSummary
 
-		// 1. Gesamtanzahl aktuell überfälliger Ausleihen ermitteln
+		// Gesamtzahl, längste Dauer und die Dauer-Verteilung in EINEM aggregierten
+		// Scan über die offenen, überfälligen Ausleihen. Keine JOINs auf schueler/titel:
+		// es verlässt bewusst kein personenbezogenes Feld die Datenbank.
+		var b1, b2, b3, b4 int
 		err := s.DB.Pool.QueryRow(ctx, `
-			SELECT count(*) FROM ausleihen 
-			WHERE rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP
-		`).Scan(&summary.TotalOverdue)
+			WITH offen AS (
+				SELECT (CURRENT_TIMESTAMP - rueckgabe_frist) AS verzug
+				FROM ausleihen
+				WHERE rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP
+			)
+			SELECT
+				COUNT(*)::int,
+				COALESCE(MAX(GREATEST(0, EXTRACT(DAY FROM verzug)::int)), 0)::int,
+				COUNT(*) FILTER (WHERE verzug <= INTERVAL '14 days')::int,
+				COUNT(*) FILTER (WHERE verzug > INTERVAL '14 days' AND verzug <= INTERVAL '30 days')::int,
+				COUNT(*) FILTER (WHERE verzug > INTERVAL '30 days' AND verzug <= INTERVAL '60 days')::int,
+				COUNT(*) FILTER (WHERE verzug > INTERVAL '60 days')::int
+			FROM offen
+		`).Scan(&summary.TotalOverdue, &summary.MaxTageOverdue, &b1, &b2, &b3, &b4)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Gesamtanzahl"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Mahnkennzahlen"))
 			return
 		}
 
-		// 2. Top 5 der am längsten überfälligen Bücher
-		rows, err := s.DB.Pool.Query(ctx, `
-			SELECT s.vorname || ' ' || s.nachname AS schueler_name, 
-			       s.klasse, 
-			       t.titel, 
-			       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage
-			FROM ausleihen a
-			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			JOIN buecher_titel t ON e.titel_id = t.id
-			JOIN schueler s ON a.schueler_id = s.id
-			WHERE a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP
-			ORDER BY a.rueckgabe_frist ASC
-			LIMIT 5
-		`)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Top 5"))
-			return
-		}
-		defer rows.Close()
-
-		summary.TopOverdue = make([]OverdueSummary, 0)
-		for rows.Next() {
-			var o OverdueSummary
-			if err := rows.Scan(&o.SchuelerName, &o.Klasse, &o.Titel, &o.Tage); err == nil {
-				summary.TopOverdue = append(summary.TopOverdue, o)
-			}
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		summary.OverdueBuckets = []OverdueBucket{
+			{Label: "1–14 Tage", Count: b1},
+			{Label: "15–30 Tage", Count: b2},
+			{Label: "31–60 Tage", Count: b3},
+			{Label: "über 60 Tage", Count: b4},
 		}
 
 		RespondJSON(w, http.StatusOK, summary)

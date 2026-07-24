@@ -9,6 +9,12 @@
 	// Rot nur bei echten Mahnungen. Bei 0 ruhiger Grün-Zustand — kein Fehlalarm im Bestzustand.
 	const hatMahnungen = $derived((summary?.total_overdue ?? 0) > 0);
 
+	// Anonyme Dauer-Verteilung statt Klarnamen: Die Statistik-Seite ist ein Analyse-
+	// Kontext; namentliche Bearbeitung läuft im Mahnwesen. Die Balken werden am grössten
+	// Bucket skaliert, damit die Verteilung auf einen Blick lesbar ist.
+	const buckets = $derived(summary?.overdue_buckets ?? []);
+	const maxBucket = $derived(Math.max(1, ...buckets.map((b) => b.count)));
+
 	async function fetchSummary() {
 		try {
 			const res = await apiFetch('/api/dashboard/summary');
@@ -80,25 +86,39 @@
 			</div>
 		</button>
 
-		<!-- Top 5 List -->
+		<!-- Anonyme Verteilung nach Überfälligkeitsdauer.
+		     BEWUSST ohne Schülernamen/Titel: Die Statistik-Seite ist ein Analyse-Kontext
+		     (Datenminimierung, Art. 5 DSGVO). Namentliche Bearbeitung → „Zum Mahnwesen". -->
 		<div class="pt-4 flex-1 pb-6">
-			<h4 class="text-sm font-medium text-gray-600 mb-3">Am längsten überfällig (Härtefälle)</h4>
-			{#if summary.top_overdue && summary.top_overdue.length > 0}
-				<ul class="space-y-3">
-					{#each summary.top_overdue as item, _i (_i)}
-						<li class="flex justify-between items-start text-sm">
-							<div class="min-w-0 pr-2">
-								<span class="block font-bold text-slate-800 truncate"
-									>{item.schueler_name}
-									<span class="text-slate-400 font-semibold text-xs ml-1">({item.klasse})</span
-									></span
+			<div class="flex items-baseline justify-between mb-3">
+				<h4 class="text-sm font-medium text-gray-600">Verteilung nach Überfälligkeit</h4>
+				{#if hatMahnungen}
+					<span class="text-xs font-semibold text-slate-400">
+						längste: <span class="text-rose-600 font-bold">{summary.max_tage_overdue} Tage</span>
+					</span>
+				{/if}
+			</div>
+			{#if hatMahnungen}
+				<ul class="space-y-2.5">
+					{#each buckets as bucket, _i (_i)}
+						{@const kritisch = bucket.label === 'über 60 Tage' && bucket.count > 0}
+						<li class="text-sm">
+							<div class="flex items-center justify-between mb-1">
+								<span class="text-xs font-semibold {kritisch ? 'text-rose-700' : 'text-slate-600'}"
+									>{bucket.label}</span
 								>
-								<span class="block text-slate-500 text-xs font-medium truncate">{item.titel}</span>
+								<span
+									class="text-xs font-bold tabular-nums {kritisch
+										? 'text-rose-600'
+										: 'text-slate-700'}">{bucket.count}</span
+								>
 							</div>
-							<div class="shrink-0 text-right">
-								<span class="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded text-xs"
-									>{item.tage} Tage</span
-								>
+							<!-- Proportionaler Balken, am grössten Bucket skaliert -->
+							<div class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+								<div
+									class="h-full rounded-full {kritisch ? 'bg-rose-500' : 'bg-slate-400'}"
+									style="width: {(bucket.count / maxBucket) * 100}%"
+								></div>
 							</div>
 						</li>
 					{/each}
