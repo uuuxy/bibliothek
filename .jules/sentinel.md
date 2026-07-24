@@ -22,3 +22,7 @@
 **Vulnerability:** A `MEDIUM` severity gosec warning (G110) identified a potential DoS vulnerability via decompression bomb in `cmd/restore-backup/main.go`. The issue occurred because `io.Copy(out, gz)` read an unbounded amount of compressed data into `out`, which could lead to resource exhaustion if a maliciously crafted compressed file was provided.
 **Learning:** Functions that read and decompress data, such as `gzip.NewReader` combined with `io.Copy`, are vulnerable to decompression bombs (zip bombs) where a small compressed file expands to an enormous size.
 **Prevention:** Always bound the maximum amount of decompressed data using `io.LimitReader` when reading from compressed streams to prevent potential DoS attacks.
+## 2024-07-24 - [CRITICAL/HIGH] Fix CWE-614 Insecure Cookie Secure Attribute Configuration
+**Vulnerability:** The `Secure` attribute of cookies was dynamically configured using `os.Getenv("APP_ENV") != "local"`, which bypasses the decoupled configuration and creates a CWE-614 vulnerability.
+**Learning:** In this project, cookie `Secure` attributes must be configured using the explicitly injected `cookieSecure` boolean parameter (derived from `COOKIE_SECURE`).
+**Prevention:** Always use the injected `cookieSecure` parameter instead of reading the environment variable directly.

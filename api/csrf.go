@@ -19,7 +19,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 
 	"bibliothek/apierrors"
@@ -38,14 +37,14 @@ func generateGlobalCSRFToken() (string, error) {
 
 // newCSRFCookie baut das (nicht-HttpOnly) Double-Submit-Cookie. Das Secure-Flag wird
 // dynamisch aus APP_ENV abgeleitet, damit lokale HTTP-Entwicklung funktioniert.
-func newCSRFCookie(token string) *http.Cookie {
+func newCSRFCookie(token string, cookieSecure bool) *http.Cookie {
 	// #nosec G124 - Secure flag is dynamically configured
 	return &http.Cookie{
 		Name:     csrfCookieName,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: false, // Must be readable by frontend JS
-		Secure:   os.Getenv("APP_ENV") != "local",
+		Secure:   cookieSecure,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   86400, // 24 hours
 	}
@@ -69,7 +68,7 @@ func (s *Server) CSRFTokenHandler() http.HandlerFunc {
 				return
 			}
 			token = generated
-			http.SetCookie(w, newCSRFCookie(token))
+			http.SetCookie(w, newCSRFCookie(token, s.CookieSecure))
 		}
 		RespondJSON(w, http.StatusOK, map[string]string{"csrf_token": token})
 	}
@@ -105,7 +104,7 @@ func classifyCSRFPath(path string) (isAPIPath, isInventurPath bool) {
 // existiert, damit das Frontend es auslesen kann. Der Bootstrap-Endpunkt verwaltet
 // sein Cookie selbst und wird hier übersprungen, um doppelte Set-Cookie-Header zu
 // vermeiden.
-func refreshCSRFCookie(w http.ResponseWriter, r *http.Request, isAPIPath, isInventurPath bool, path string) {
+func refreshCSRFCookie(w http.ResponseWriter, r *http.Request, isAPIPath, isInventurPath bool, path string, cookieSecure bool) {
 	if !isAPIPath || isInventurPath || path == "/api/csrf-token" {
 		return
 	}
@@ -120,7 +119,7 @@ func refreshCSRFCookie(w http.ResponseWriter, r *http.Request, isAPIPath, isInve
 	}
 	token, err := generateGlobalCSRFToken()
 	if err == nil {
-		http.SetCookie(w, newCSRFCookie(token))
+		http.SetCookie(w, newCSRFCookie(token, cookieSecure))
 	}
 }
 
@@ -155,7 +154,7 @@ func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 		isAPIPath, isInventurPath := classifyCSRFPath(path)
 
 		// Always set/refresh the CSRF cookie so the frontend can read it.
-		refreshCSRFCookie(w, r, isAPIPath, isInventurPath, path)
+		refreshCSRFCookie(w, r, isAPIPath, isInventurPath, path, s.CookieSecure)
 
 		// Only validate on mutating methods for API paths (not inventur)
 		isMutation := r.Method == http.MethodPost ||
