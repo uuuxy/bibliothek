@@ -97,13 +97,14 @@
 </script>
 
 {#snippet kennzahl(label, value, hint, valueClass, status = null)}
+	<!-- Bento-Card: eigenständige, greifbare weiße Box auf der grauen Fläche (Material-Look). -->
 	<div
-		class="p-6 flex flex-col justify-between space-y-2 text-left border border-gray-200 sm:border-0 sm:border-l sm:first:border-l-0"
+		class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between gap-2.5 text-left"
 	>
-		<span class="text-sm font-semibold uppercase tracking-wider text-slate-400 font-sans"
+		<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans"
 			>{label}</span
 		>
-		<span class="text-4xl font-extrabold {valueClass} leading-none py-1 flex items-center gap-2">
+		<span class="text-4xl font-extrabold {valueClass} leading-none flex items-center gap-2">
 			{#if status === 'warn'}
 				<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
 				<svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -173,11 +174,10 @@
 	</button>
 {/snippet}
 
-<div class="w-full space-y-6 text-slate-800">
-	<!-- Header: Bestandsfilter + Zeitraum -->
-	<div
-		class="flex flex-col md:flex-row md:items-center md:justify-end gap-4 border-b border-slate-100 pb-5"
-	>
+<!-- Grau-Fläche (Material-Kontrast): die weißen Cards heben sich davon ab (Bento-Struktur). -->
+<div class="w-full min-h-full bg-slate-50 p-5 sm:p-6 space-y-5 text-slate-800">
+	<!-- Header: Bestandsfilter + Zeitraum (auf der grauen Fläche, keine Trennlinie nötig) -->
+	<div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
 		<!-- Bestandsfilter (LMF / Freihand / Gesamt) — filtert serverseitig ALLE Kennzahlen -->
 		<div class="flex items-center gap-2 self-start md:self-center">
 			<span class="text-sm font-semibold text-slate-400 uppercase tracking-wider font-sans"
@@ -222,11 +222,7 @@
 			></div>
 		</div>
 	{:else if stats}
-		<!-- 1) Dringend zuerst: das Mahn-Aktionsband ganz nach oben — die wichtigste,
-		     handlungsrelevante Zahl der Seite (Überfälligkeiten) auf einen Blick. -->
-		<OverdueWidget />
-
-		<!-- 2) Bestand & Zirkulation (die ruhigen Kennzahlen) -->
+		<!-- 1) Kennzahlen als Bento-Cards (die headline-Zahlen, neutral). -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 			{@render kennzahl(
 				'Gesamtbestand',
@@ -249,10 +245,9 @@
 				'text-slate-900'
 			)}
 		</div>
-		<!-- 3) Verluste & Schäden — kompakt in EINER Zeile statt drei großer Kacheln.
-		     Bei 0 nimmt das kaum Platz weg; das Warn-Icon erscheint nur bei Handlungsbedarf. -->
+		<!-- 2) Verluste & Schäden — eigene flache Card (schwebt nicht mehr frei). -->
 		<div
-			class="rounded-lg border border-slate-200 px-5 py-3 flex flex-wrap items-center gap-x-8 gap-y-2"
+			class="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 flex flex-wrap items-center gap-x-8 gap-y-2"
 		>
 			<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans"
 				>Verluste &amp; Schäden</span
@@ -279,22 +274,27 @@
 			)}
 		</div>
 
-		<!-- 4) Trend-Chart als Rückgrat: gibt der Seite die Zeitdimension. -->
-		<div class="pt-6 border-t border-slate-100">
+		<!-- 3) Trend-Chart in eigener Card (Höhe in der Komponente gedeckelt). -->
+		<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 			<StatsTrendChart data={stats.monats_trend ?? []} />
 		</div>
 
-		<!-- 5) Renner & Ladenhüter als „nice to know" nach unten (2 gleichwertige Spalten). -->
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6">
+		<!-- 4) Überfälligkeit — NEUTRAL (kein Rot-Alarm mehr), eigene Card, unter dem Chart. -->
+		<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+			<OverdueWidget aktuellVerliehen={stats.zirkulation?.aktuell_verliehen ?? 0} />
+		</div>
+
+		<!-- 5) Renner & Ladenhüter als eigene Cards nebeneinander. -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 			<!-- Top Borrowed Books Section ("Die Renner") -->
-			<div class="space-y-3 text-left">
+			<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3 text-left">
 				{@render drillDownHeader('Beliebteste Titel (Die Renner)', 'renner')}
 
 				<div class="w-full">
 					<table class="w-full text-left text-base border-collapse">
 						<thead>
 							<tr
-								class="bg-slate-50 border-b border-slate-100 text-sm font-bold text-slate-400 font-sans uppercase tracking-wider"
+								class="border-b border-slate-100 text-xs font-medium text-slate-500 font-sans uppercase tracking-wider"
 							>
 								<th class="py-3 px-4">Buchtitel</th>
 								<th class="py-3 px-4 text-right">Ausleihen</th>
@@ -351,14 +351,14 @@
 			</div>
 
 			<!-- Shelf Warmers Table -->
-			<div class="space-y-3 text-left">
+			<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3 text-left">
 				{@render drillDownHeader('Ladenhüter', 'ladenhueter')}
 
 				<div class="w-full">
 					<table class="w-full text-left text-base border-collapse">
 						<thead>
 							<tr
-								class="bg-slate-50 border-b border-slate-100 text-sm font-bold text-slate-400 font-sans uppercase tracking-wider"
+								class="border-b border-slate-100 text-xs font-medium text-slate-500 font-sans uppercase tracking-wider"
 							>
 								<th class="py-3 px-4">Buchtitel</th>
 								<th class="py-3 px-4">Autor</th>
