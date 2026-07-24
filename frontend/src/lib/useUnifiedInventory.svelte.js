@@ -1,3 +1,4 @@
+import { toastStore } from './stores/toastStore.svelte.js';
 import { apiFetch } from './apiFetch.js';
 import {
 	ladeOffeneSessions,
@@ -139,11 +140,11 @@ export function useUnifiedInventory() {
 	async function finishInventory() {
 		const r = await schliesseAb(sessionId);
 		if (r.ok) {
-			alert(`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`);
+			toastStore.addToast(`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`, 'success');
 			resetToIdle();
 			await loadOffeneSessions();
 		} else {
-			alert(r.error || 'Fehler beim Abschließen der Inventur.');
+			toastStore.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
 		}
 	}
 
