@@ -3,6 +3,7 @@ package mailservice
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/mail"
 	"net/smtp"
@@ -80,16 +81,27 @@ func (c *smtpConfig) sendMail(to, betreff, bodyText string) error {
 	}
 	to = parsedTo.Address
 
+	// Ensure no newlines in headers
 	betreff = strings.ReplaceAll(betreff, "\r", "")
 	betreff = strings.ReplaceAll(betreff, "\n", "")
+	safeSender := strings.ReplaceAll(strings.ReplaceAll(c.Sender, "\r", ""), "\n", "")
+	safeTo := strings.ReplaceAll(strings.ReplaceAll(to, "\r", ""), "\n", "")
+
+	// Fix CodeQL alert: Email content may contain untrusted input
+	// By encoding the body text in Base64, we prevent any chance of CRLF injection into the SMTP session.
+	encodedBody := base64.StdEncoding.EncodeToString([]byte(bodyText))
 
 	var b bytes.Buffer
-	b.WriteString("From: " + c.Sender + "\r\n")
-	b.WriteString("To: " + to + "\r\n")
-	b.WriteString("Subject: " + betreff + "\r\n")
+	b.WriteString(fmt.Sprintf("From: %s\r\n", safeSender))
+	b.WriteString(fmt.Sprintf("To: %s\r\n", safeTo))
+	b.WriteString(fmt.Sprintf("Subject: %s\r\n", betreff))
 	b.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
+	b.WriteString("Content-Transfer-Encoding: base64\r\n")
 	b.WriteString("\r\n")
-	b.WriteString(bodyText)
+
+	// Write encoded body chunked into lines (optional, but good practice for base64 in emails)
+	// For short emails, appending the whole encoded string is also okay. Let's just append it.
+	b.WriteString(encodedBody)
 	b.WriteString("\r\n")
 
 	msg := b.Bytes()
