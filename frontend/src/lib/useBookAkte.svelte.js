@@ -94,11 +94,11 @@ export function useBookAkte() {
 					console.error('Fehler:', e);
 					return {};
 				});
-				alert(err.error || 'Fehler beim Löschen des Titels.');
+				if (showToast) showToast(err.error || 'Fehler beim Löschen des Titels.', 'error');
 			}
 		} catch (e) {
 			console.error('Titel löschen fehlgeschlagen:', e);
-			alert('Netzwerkfehler beim Löschen des Titels.');
+			if (showToast) showToast('Netzwerkfehler beim Löschen des Titels.', 'error');
 		}
 	}
 
