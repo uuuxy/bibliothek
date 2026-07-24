@@ -96,3 +96,27 @@ describe('apiFetch CSRF-Bootstrap', () => {
 		expect(fetchMock.mock.calls.some(([u]) => String(u) === '/api/csrf-token')).toBe(false);
 	});
 });
+
+describe('apiFetch error handling', () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('re-throws generic errors without modification', async () => {
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+			throw new Error('Some generic network failure');
+		});
+
+		await expect(apiFetch('/api/test')).rejects.toThrow('Some generic network failure');
+	});
+
+	it('transforms AbortError into a user-friendly timeout message', async () => {
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+			const error = new Error('The operation was aborted');
+			error.name = 'AbortError';
+			throw error;
+		});
+
+		await expect(apiFetch('/api/test')).rejects.toThrow('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.');
+	});
+});
