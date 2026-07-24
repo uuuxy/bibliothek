@@ -13,6 +13,98 @@ import (
 	"bibliothek/internal/crypto"
 )
 
+type smtpConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Sender   string
+}
+
+func loadSMTPConfig(ctx context.Context, dbPool db.PgxPoolIface, allowFallback bool) (*smtpConfig, error) {
+	var host, port, user, sender string
+	var passEncrypted []byte
+
+	err := dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
+		Scan(&host, &port, &user, &passEncrypted, &sender)
+
+	if err != nil {
+		if allowFallback {
+			// Fallback, falls die Tabelle leer ist oder noch nicht migriert wurde
+			host = "localhost"
+			port = "1025"
+			sender = defaultFromAddress
+		} else {
+			return nil, fmt.Errorf("mail-konfiguration nicht gefunden: %w", err)
+		}
+	}
+
+	var pass string
+	if len(passEncrypted) > 0 {
+		decrypted, err := crypto.Decrypt(passEncrypted)
+		if err != nil {
+			return nil, fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts: %w", err)
+		}
+		pass = string(decrypted)
+	}
+
+	if host == "" {
+		host = "localhost"
+	}
+	if port == "" {
+		port = "1025"
+	}
+	if sender == "" {
+		sender = defaultFromAddress
+	}
+
+	parsedSender, err := mail.ParseAddress(sender)
+	if err != nil {
+		return nil, fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err)
+	}
+	sender = parsedSender.Address
+
+	return &smtpConfig{
+		Host:     host,
+		Port:     port,
+		User:     user,
+		Password: pass,
+		Sender:   sender,
+	}, nil
+}
+
+func (c *smtpConfig) sendMail(to, betreff, bodyText string) error {
+	parsedTo, err := mail.ParseAddress(to)
+	if err != nil {
+		return fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err)
+	}
+	to = parsedTo.Address
+
+	betreff = strings.ReplaceAll(betreff, "\r", "")
+	betreff = strings.ReplaceAll(betreff, "\n", "")
+
+	msg := []byte(fmt.Sprintf("From: %s\r\n"+
+		"To: %s\r\n"+
+		"Subject: %s\r\n"+
+		"Content-Type: text/plain; charset=UTF-8\r\n"+
+		"\r\n"+
+		"%s\r\n", c.Sender, to, betreff, bodyText))
+
+	addr := fmt.Sprintf("%s:%s", c.Host, c.Port)
+
+	var auth smtp.Auth
+	if c.User != "" && c.Password != "" {
+		auth = smtp.PlainAuth("", c.User, c.Password, c.Host)
+	}
+
+	err = smtp.SendMail(addr, auth, c.Sender, []string{to}, msg)
+	if err != nil {
+		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
+	}
+
+	return nil
+}
+
 // SendTemplateMail lädt eine Vorlage aus der Datenbank, ersetzt Platzhalter (z.B. {{.Name}}) und versendet die E-Mail.
 func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, templateType string, data map[string]interface{}) error {
 	var betreff, textBody string
@@ -35,146 +127,23 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 		return fmt.Errorf("fehler beim anwenden der Daten auf Vorlage: %w", err)
 	}
 
-	// SMTP-Konfiguration aus der Datenbank laden
-	var smtpHost, smtpPort, smtpUser, sender string
-	var smtpPassEncrypted []byte
-	
-	err = dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
-		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-	
+	cfg, err := loadSMTPConfig(ctx, dbPool, true)
 	if err != nil {
-		// Fallback, falls die Tabelle leer ist oder noch nicht migriert wurde
-		smtpHost = "localhost"
-		smtpPort = "1025"
-		sender = defaultFromAddress
+		return err
 	}
 
-	var smtpPass string
-	if len(smtpPassEncrypted) > 0 {
-		decrypted, err := crypto.Decrypt(smtpPassEncrypted)
-		if err != nil {
-			return fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts: %w", err)
-		}
-		smtpPass = string(decrypted)
-	}
-
-	if smtpHost == "" {
-		smtpHost = "localhost"
-	}
-	if smtpPort == "" {
-		smtpPort = "1025"
-	}
-	if sender == "" {
-		sender = defaultFromAddress
-	}
-
-	// validate sender
-	parsedSender, err := mail.ParseAddress(sender)
-	if err != nil {
-		return fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err)
-	}
-	sender = parsedSender.Address
-
-	// validate recipient
-	parsedTo, err := mail.ParseAddress(to)
-	if err != nil {
-		return fmt.Errorf("ungültige E-Mail-Adresse: %w", err)
-	}
-	to = parsedTo.Address
-
-	betreff = strings.ReplaceAll(betreff, "\r", "")
-	betreff = strings.ReplaceAll(betreff, "\n", "")
-
-	// Nachricht nach RFC 822 formatieren
-	// Für echte HTML-Mails muss der Content-Type auf text/html gesetzt werden
-	msg := []byte(fmt.Sprintf("From: %s\r\n"+
-		"To: %s\r\n"+
-		"Subject: %s\r\n"+
-		"Content-Type: text/plain; charset=UTF-8\r\n"+
-		"\r\n"+
-		"%s\r\n", sender, to, betreff, bodyBuf.String()))
-
-	// SMTP-Verbindung aufbauen und E-Mail versenden
-	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
-
-	var auth smtp.Auth
-	if smtpUser != "" && smtpPass != "" {
-		auth = smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
-	}
-
-	err = smtp.SendMail(addr, auth, sender, []string{to}, msg)
-	if err != nil {
-		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
-	}
-
-	return nil
+	return cfg.sendMail(to, betreff, bodyBuf.String())
 }
 
 // SendTestMail versendet eine einfache Testnachricht, um die SMTP-Konfiguration zu validieren.
 func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error {
-	// SMTP-Konfiguration aus der Datenbank laden
-	var smtpHost, smtpPort, smtpUser, sender string
-	var smtpPassEncrypted []byte
-	
-	err := dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
-		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-	
+	cfg, err := loadSMTPConfig(ctx, dbPool, false)
 	if err != nil {
-		return fmt.Errorf("mail-konfiguration nicht gefunden: %w", err)
+		return err
 	}
-
-	var smtpPass string
-	if len(smtpPassEncrypted) > 0 {
-		decrypted, err := crypto.Decrypt(smtpPassEncrypted)
-		if err != nil {
-			return fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts: %w", err)
-		}
-		smtpPass = string(decrypted)
-	}
-
-	if smtpHost == "" {
-		smtpHost = "localhost"
-	}
-	if smtpPort == "" {
-		smtpPort = "1025"
-	}
-	if sender == "" {
-		sender = defaultFromAddress
-	}
-
-	parsedSender, err := mail.ParseAddress(sender)
-	if err != nil {
-		return fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err)
-	}
-	sender = parsedSender.Address
-
-	parsedTo, err := mail.ParseAddress(to)
-	if err != nil {
-		return fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err)
-	}
-	to = parsedTo.Address
 
 	betreff := "Test-E-Mail der Schulbibliothek"
 	bodyText := "Dies ist eine automatisch generierte Test-E-Mail zur Überprüfung der SMTP-Konfiguration."
 
-	msg := []byte(fmt.Sprintf("From: %s\r\n"+
-		"To: %s\r\n"+
-		"Subject: %s\r\n"+
-		"Content-Type: text/plain; charset=UTF-8\r\n"+
-		"\r\n"+
-		"%s\r\n", sender, to, betreff, bodyText))
-
-	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
-
-	var smtpAuth smtp.Auth
-	if smtpUser != "" && smtpPass != "" {
-		smtpAuth = smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
-	}
-
-	err = smtp.SendMail(addr, smtpAuth, sender, []string{to}, msg)
-	if err != nil {
-		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
-	}
-
-	return nil
+	return cfg.sendMail(to, betreff, bodyText)
 }
