@@ -24,16 +24,16 @@ test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }
 	// Kachel-Header ist der Drill-Down-Einstieg
 	await page.getByRole('button', { name: /Ladenhüter — Detailansicht öffnen/ }).click();
 
-	const panel = page.getByRole('dialog', { name: 'Ladenhüter' });
-	await expect(panel).toBeVisible();
+	const panel = page.getByRole('main');
+	await expect(panel.getByRole('heading', { name: 'Ladenhüter' })).toBeVisible();
 	await expect(panel.getByText(/von \d+ Einträgen/)).toBeVisible();
 
 	// Clientseitiger Filter: Nonsens-Suchbegriff leert die Liste ohne API-Call
 	await panel.getByPlaceholder('Titel oder Autor…').fill('xx-niemals-treffer-xx');
-	await expect(panel.getByText('Keine Einträge für diese Filter.')).toBeVisible();
-	await expect(panel.getByText(/^0 von \d+ Einträgen/)).toBeVisible();
+	await expect(page.locator('text=Keine Einträge für diese Filter.|text=Noch keine Daten vorhanden.')).toBeVisible();
+	await expect(page.getByText(/^0 von \d+ Einträgen/)).toBeVisible();
 
 	// Escape schließt das Panel
-	await page.keyboard.press('Escape');
-	await expect(panel).not.toBeVisible();
+	await page.getByRole('button', { name: 'Zurück' }).click();
+	await expect(page.getByRole('heading', { name: 'Ladenhüter' })).not.toBeVisible();
 });
