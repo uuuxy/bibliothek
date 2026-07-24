@@ -194,7 +194,7 @@ func dumpAndCompress(ctx context.Context, dsn string) (compressedData []byte, ok
 	waitErrCh := make(chan error, 1)
 	go func() {
 		err := pgDump.Wait()
-		_ = sqlWriter.Close() // Ensure io.Copy gets EOF
+		_ = sqlWriter.Close() //nolint:errcheck
 		waitErrCh <- err
 	}()
 
