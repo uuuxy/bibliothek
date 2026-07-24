@@ -72,6 +72,11 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	}
 
 	// 5. Seed default role permissions with uppercase role names.
+	return db.seedRolePermissions(ctx)
+}
+
+// seedRolePermissions seeds the role_permissions table with default values.
+func (db *Database) seedRolePermissions(ctx context.Context) error {
 	// Die Rolle eines Benutzers steht in benutzer.rolle (ENUM, kleingeschrieben); die
 	// Middleware verbindet beide Vokabulare per UPPER() (permission_middleware.go).
 	// role_permissions bildet also nur ab, was eine ROLLE darf — nicht, wer sie hat.
@@ -163,7 +168,7 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	}
 
 	for _, d := range defaults {
-		_, err = db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
+		_, err := db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
 		if err != nil {
 			return fmt.Errorf("failed to seed permission default (%s, %s): %w", d.Role, d.Permission, err)
 		}
