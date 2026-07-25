@@ -12,6 +12,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/inventur"
+	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 )
 
@@ -200,7 +201,7 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 	var isbns []string
 	for _, dr := range dnbResults {
 		if dr.ISBN != "" {
-			isbns = append(isbns, strings.ReplaceAll(dr.ISBN, "-", ""))
+			isbns = append(isbns, isbnutil.CleanISBN(dr.ISBN))
 		}
 	}
 
@@ -249,7 +250,7 @@ func baueDNBSuchItem(dr inventur.MetadatenErgebnis, existingISBNs map[string]str
 
 	existsLocally := false
 	if dr.ISBN != "" {
-		if _, found := existingISBNs[strings.ReplaceAll(dr.ISBN, "-", "")]; found {
+		if _, found := existingISBNs[isbnutil.CleanISBN(dr.ISBN)]; found {
 			existsLocally = true
 		}
 	}
