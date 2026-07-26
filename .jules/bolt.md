@@ -16,3 +16,6 @@
 ## 2026-07-16 - [High-performance ISBN cleaning]
 **Learning:** Found multiple sequential `strings.ReplaceAll` calls in `internal/service/import_dynamic.go` being used to strip characters from ISBNs during CSV import loops. This leads to unnecessary allocations and garbage collection overhead.
 **Action:** Replaced sequential `strings.ReplaceAll` with a single-pass byte array allocation and population when stripping multiple ASCII characters to avoid intermediate allocations and improve performance.
+## 2026-07-22 - [Refactoring N+1 Query in LUSD Apply]
+**Learning:** Found an N+1 issue in `wendeLusdAenderungenAn` (inside `api/lusd_apply.go`) where multiple database inserts were performed in a loop (`tx.Exec`) for each new student row during import. Refactored this to use a single bulk insert operation via `tx.CopyFrom` combined with `pgx.CopyFromRows`.
+**Action:** Consistently use `pgx.CopyFromRows` for batch database creation or insertion to prevent N+1 query issues.

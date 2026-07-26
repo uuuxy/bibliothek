@@ -13,44 +13,56 @@ import (
 // aktualisieren (Klasse + Kontaktdaten) und Neuzugänge anlegen.
 func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, dbStudents map[string]lusdDbStudent) error {
 	barcodeCounter := 0
+
+	// Collect all new students for bulk insertion to avoid N+1 queries
+	var newStudents []parsedStudentRow
+	var newStudentBarcodes []int
+
 	for _, rec := range records {
-		if err := wendeLusdRecordAn(ctx, tx, rec, dbStudents, &barcodeCounter); err != nil {
+		if rec.LusdID == "" {
+			continue
+		}
+
+		if dbRec, exists := dbStudents[rec.LusdID]; exists {
+			if err := aktualisiereBestandsschueler(ctx, tx, rec, dbRec.ID); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Nicht in der Aktiven-Liste (ladeAktiveSchueler filtert ist_abgaenger = false):
+		// Es kann aber ein zurückkehrender Abgänger sein, dessen NICHT soft-gelöschte Zeile
+		// die lusd_id weiterhin hält. Ein blindes INSERT kollidiert
+		// dann am partiellen Unique-Index uniq_schueler_lusd_id_active und ließe den GESAMTEN
+		// Import scheitern (SQLSTATE 23505). Solche Rückkehrer werden reaktiviert statt neu
+		// angelegt — aktualisiereBestandsschueler setzt ist_abgaenger zurück und hebt die
+		// Abgänger-Sperre auf, sofern keine Vorgänge mehr offen sind (Ghost-Block).
+		// Soft-gelöschte Zeilen (deleted_at IS NOT NULL) blockieren den Index NICHT und
+		// sollen bewusst als frischer Datensatz neu entstehen — daher hier ausgeklammert.
+		rueckkehrerID, err := findeAktivenSchuelerNachLusdID(ctx, tx, rec.LusdID)
+		if err != nil {
+			return err
+		}
+		if rueckkehrerID != "" {
+			if err := aktualisiereBestandsschueler(ctx, tx, rec, rueckkehrerID); err != nil {
+				return err
+			}
+			continue
+		}
+
+		barcodeCounter++
+		newStudents = append(newStudents, rec)
+		newStudentBarcodes = append(newStudentBarcodes, barcodeCounter)
+	}
+
+	// ⚡ Bolt: Bulk insert new students using pgx.CopyFromRows to fix N+1 query issue
+	if len(newStudents) > 0 {
+		if err := legeNeueSchuelerAnBatch(ctx, tx, newStudents, newStudentBarcodes); err != nil {
 			return err
 		}
 	}
+
 	return nil
-}
-
-// wendeLusdRecordAn verarbeitet eine einzelne LUSD-Zeile: aktualisieren, reaktivieren
-// (zurückkehrender Abgänger) oder neu anlegen. Ausgelagert aus wendeLusdAenderungenAn,
-// damit die Schleife flach bleibt. barcodeCounter wird nur bei echten Neuzugängen erhöht.
-func wendeLusdRecordAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, dbStudents map[string]lusdDbStudent, barcodeCounter *int) error {
-	if rec.LusdID == "" {
-		return nil
-	}
-	if dbRec, exists := dbStudents[rec.LusdID]; exists {
-		return aktualisiereBestandsschueler(ctx, tx, rec, dbRec.ID)
-	}
-
-	// Nicht in der Aktiven-Liste (ladeAktiveSchueler filtert ist_abgaenger = false):
-	// Es kann aber ein zurückkehrender Abgänger sein, dessen NICHT soft-gelöschte Zeile
-	// die lusd_id weiterhin hält. Ein blindes INSERT (legeNeuenSchuelerAn) kollidiert
-	// dann am partiellen Unique-Index uniq_schueler_lusd_id_active und ließe den GESAMTEN
-	// Import scheitern (SQLSTATE 23505). Solche Rückkehrer werden reaktiviert statt neu
-	// angelegt — aktualisiereBestandsschueler setzt ist_abgaenger zurück und hebt die
-	// Abgänger-Sperre auf, sofern keine Vorgänge mehr offen sind (Ghost-Block).
-	// Soft-gelöschte Zeilen (deleted_at IS NOT NULL) blockieren den Index NICHT und
-	// sollen bewusst als frischer Datensatz neu entstehen — daher hier ausgeklammert.
-	rueckkehrerID, err := findeAktivenSchuelerNachLusdID(ctx, tx, rec.LusdID)
-	if err != nil {
-		return err
-	}
-	if rueckkehrerID != "" {
-		return aktualisiereBestandsschueler(ctx, tx, rec, rueckkehrerID)
-	}
-
-	*barcodeCounter++
-	return legeNeuenSchuelerAn(ctx, tx, rec, *barcodeCounter)
 }
 
 // findeAktivenSchuelerNachLusdID sucht die (höchstens eine — garantiert durch den partiellen
@@ -68,19 +80,31 @@ func findeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID strin
 	return id, err
 }
 
-// legeNeuenSchuelerAn legt einen per LUSD neu hinzugekommenen Schüler an.
+// legeNeueSchuelerAnBatch legt per LUSD neu hinzugekommene Schüler im Batch-Verfahren an.
 // Leere Adress-/Kontaktwerte werden als NULL gespeichert.
-func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, barcodeCounter int) error {
+func legeNeueSchuelerAnBatch(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, barcodes []int) error {
 	year := time.Now().Year() + 5 // Default-Abgangsjahr
-	_, err := tx.Exec(ctx, `
-		INSERT INTO schueler
-			(barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum,
-			 strasse, hausnummer, plz, ort, eltern_email)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-		generateImportBarcode(barcodeCounter), rec.Vorname, rec.Nachname, rec.Klasse, year,
-		rec.LusdID, rec.GebDatum,
-		nullableString(rec.Strasse), nullableString(rec.Hausnummer), nullableString(rec.PLZ),
-		nullableString(rec.Ort), nullableString(rec.ElternEmail))
+
+	copyRows := make([][]any, 0, len(records))
+	for i, rec := range records {
+		copyRows = append(copyRows, []any{
+			generateImportBarcode(barcodes[i]), rec.Vorname, rec.Nachname, rec.Klasse, year,
+			rec.LusdID, rec.GebDatum,
+			nullableString(rec.Strasse), nullableString(rec.Hausnummer), nullableString(rec.PLZ),
+			nullableString(rec.Ort), nullableString(rec.ElternEmail),
+		})
+	}
+
+	_, err := tx.CopyFrom(
+		ctx,
+		pgx.Identifier{"schueler"},
+		[]string{
+			"barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr",
+			"lusd_id", "geburtsdatum", "strasse", "hausnummer", "plz", "ort", "eltern_email",
+		},
+		pgx.CopyFromRows(copyRows),
+	)
+
 	return err
 }
 
