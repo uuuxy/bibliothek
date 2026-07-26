@@ -9,3 +9,9 @@
 **Learning:** If the CI enforces security scanning tools like govulncheck and trivy, it will sometimes fail a PR if there is an existing, unrelated vulnerability in the base codebase.
 **Action:** When a CI pipeline fails due to an existing vulnerability (like a CVE in a go library), update it to unblock the PR, even if it feels out of scope for the current persona.
 ## 2024-05-25 - Added ARIA labels to table checkboxes\n**Learning:** Found that checkboxes within table rows and headers used for batch selection often lack adjacent text labels, making them inaccessible to screen readers.\n**Action:** Always ensure that structural, icon-only, or standalone checkboxes have a clear `aria-label` (e.g. "Alle Bücher auswählen" or "Buch auswählen").
+## 2026-07-28 - Replaced blocking alerts with toast notifications
+**Learning:** Native  dialogs in Svelte applications offer a poor, disruptive user experience and block the main thread. Using a centralized toast notification system provides a much smoother, modern interaction pattern.
+**Action:** When handling errors or showing feedback to users, always prefer a non-blocking toast notification system (like `toastStore.addToast`) over native browser `alert()` dialogs.
+## 2026-07-28 - Replaced blocking alerts with toast notifications
+**Learning:** Native `alert()` dialogs in Svelte applications offer a poor, disruptive user experience and block the main thread. Using a centralized toast notification system provides a much smoother, modern interaction pattern.
+**Action:** When handling errors or showing feedback to users, always prefer a non-blocking toast notification system (like `toastStore.addToast`) over native browser `alert()` dialogs.
