@@ -39,6 +39,7 @@
 		"@tailwindcss/vite": "^4.3.0",
 		"html5-qrcode": "^2.3.8",
 		"idb": "^8.0.3",
+		"postcss": "^8.5.21",
 		"tailwindcss": "^4.3.0"
 	},
 	"overrides": {
