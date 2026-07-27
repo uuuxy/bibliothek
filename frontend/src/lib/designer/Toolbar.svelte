@@ -191,14 +191,12 @@
 			(v) => onSide(/** @type {'front'|'back'} */ (v))
 		)}
 
-		{#if side === 'back'}
-			<button
-				onclick={() => addTextElement()}
-				class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
-			>
-				+ Text
-			</button>
-		{/if}
+		<button
+			onclick={() => addTextElement(side)}
+			class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+		>
+			+ Text
+		</button>
 
 		<!-- Multi-image upload -->
 		<label

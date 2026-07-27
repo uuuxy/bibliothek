@@ -5,7 +5,12 @@
 	 * Canvas-based ID-card designer — top-level coordinator component.
 	 */
 	import { onMount } from 'svelte';
-	import { idStore, applyDesign, serializeDesign } from './designer/idDesignerStore.svelte.js';
+	import {
+		idStore,
+		applyDesign,
+		serializeDesign,
+		resetDesign
+	} from './designer/idDesignerStore.svelte.js';
 	import CanvasArea from './designer/CanvasArea.svelte';
 	import PropertiesPanel from './designer/PropertiesPanel.svelte';
 	import Toolbar from './designer/Toolbar.svelte';
@@ -114,6 +119,22 @@
 		return () => clearTimeout(saveTimer);
 	});
 
+	/**
+	 * Verwirft das aktuelle Design und stellt die Standardwerte her. Der Auto-Save-Effekt
+	 * schreibt das Ergebnis anschließend zentral — die Rückfrage ist deshalb Pflicht:
+	 * Der Schritt trifft ALLE Arbeitsplätze, nicht nur diesen Browser.
+	 */
+	function zuruecksetzen() {
+		const ok = window.confirm(
+			'Ausweis-Design auf die Standardwerte zurücksetzen?\n\n' +
+				'Alle eigenen Anpassungen an Vorder- und Rückseite gehen verloren — ' +
+				'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.'
+		);
+		if (!ok) return;
+		resetDesign();
+		selectedId = null;
+	}
+
 	function triggerPrint() {
 		const style = document.createElement('style');
 		if (printMode === 'a4') {
@@ -133,7 +154,7 @@
 </script>
 
 <div class="w-full space-y-5 no-print text-slate-800 animate-fade-in font-sans">
-	<div class="flex items-center justify-end gap-2 text-xs font-semibold min-h-4">
+	<div class="flex items-center justify-end gap-3 text-xs font-semibold min-h-4">
 		{#if saveState === 'saving'}
 			<span class="text-slate-400">Speichert…</span>
 		{:else if saveState === 'saved'}
@@ -141,6 +162,13 @@
 		{:else if saveState === 'error'}
 			<span class="text-rose-600">Speichern fehlgeschlagen</span>
 		{/if}
+		<button
+			type="button"
+			onclick={zuruecksetzen}
+			class="text-slate-400 hover:text-slate-700 underline underline-offset-2 transition-colors cursor-pointer"
+		>
+			Standardwerte wiederherstellen
+		</button>
 	</div>
 
 	<Toolbar

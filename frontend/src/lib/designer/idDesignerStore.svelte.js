@@ -50,7 +50,7 @@ export function defaultFrontElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(7.5, '#1e293b', 'center', 'bold')
+			style: textStyle(8, '#1e293b', 'center', 'bold')
 		},
 		{
 			id: 'address',
@@ -63,7 +63,7 @@ export function defaultFrontElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(6.5, '#475569', 'left', 'normal')
+			style: textStyle(7, '#475569', 'left', 'normal')
 		},
 		{
 			id: 'logo',
@@ -100,7 +100,7 @@ export function defaultFrontElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(9, '#0f172a', 'left', 'bold')
+			style: textStyle(10, '#0f172a', 'left', 'bold')
 		},
 		{
 			id: 'details',
@@ -113,7 +113,7 @@ export function defaultFrontElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(7.5, '#475569', 'left', 'normal')
+			style: textStyle(8, '#475569', 'left', 'normal')
 		},
 		{
 			id: 'validity',
@@ -126,7 +126,7 @@ export function defaultFrontElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(7, '#475569', 'left', 'normal')
+			style: textStyle(7.5, '#475569', 'left', 'normal')
 		},
 		{
 			id: 'barcode',
@@ -157,7 +157,7 @@ export function defaultBackElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(7.5, '#1e293b', 'left', 'bold')
+			style: textStyle(8, '#1e293b', 'left', 'bold')
 		},
 		{
 			id: 'back-info',
@@ -170,7 +170,7 @@ export function defaultBackElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(6.5, '#475569', 'left', 'normal')
+			style: textStyle(7.5, '#475569', 'left', 'normal')
 		},
 		{
 			id: 'back-sponsor-label',
@@ -183,7 +183,7 @@ export function defaultBackElements() {
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(6, '#475569', 'left', 'normal')
+			style: textStyle(6.5, '#475569', 'left', 'normal')
 		},
 		{
 			id: 'back-sponsor-logo',
@@ -200,6 +200,12 @@ export function defaultBackElements() {
 	];
 }
 
+// Muss exakt einem themes-Wert in Toolbar.svelte entsprechen, sonst zeigt das
+// Hintergrund-Dropdown keine Auswahl an. Als Konstante, damit Store-Initialisierung
+// und resetDesign() nicht auseinanderlaufen können.
+export const FRONT_THEME_DEFAULT = 'bg-white text-black border-slate-200';
+export const BACK_THEME_DEFAULT = 'bg-slate-100 text-slate-900 border-slate-300';
+
 /**
  * Central store — all fields are deeply reactive via Svelte 5 $state.
  * Access as `idStore.front.elements[i].x` etc. from any component.
@@ -212,15 +218,31 @@ export const idStore = $state({
 
 	front: {
 		elements: defaultFrontElements(),
-		theme: 'bg-white text-black border-slate-200'
+		theme: FRONT_THEME_DEFAULT
 	},
 	back: {
 		elements: defaultBackElements(),
-		// Muss exakt einem themes-Wert in Toolbar.svelte entsprechen, sonst zeigt das
-		// Hintergrund-Dropdown keine Auswahl an.
-		theme: 'bg-slate-100 text-slate-900 border-slate-300'
+		theme: BACK_THEME_DEFAULT
 	}
 });
+
+/**
+ * Setzt beide Seiten auf die Standardwerte zurück.
+ *
+ * Nötig, weil die Defaults oben ausschließlich beim Erststart greifen: Sobald einmal ein
+ * Design zentral gespeichert wurde, überschreibt applyDesign() sie vollständig. Ohne
+ * diesen Weg käme eine Änderung an den Standardwerten (etwa an den Schriftgrößen) auf
+ * einer laufenden Installation nie an.
+ *
+ * Der Aufrufer muss die Elementauswahl zurücksetzen — die bisherigen IDs existieren
+ * danach nicht mehr.
+ */
+export function resetDesign() {
+	idStore.front.elements = defaultFrontElements();
+	idStore.front.theme = FRONT_THEME_DEFAULT;
+	idStore.back.elements = defaultBackElements();
+	idStore.back.theme = BACK_THEME_DEFAULT;
+}
 
 // ---------------------------------------------------------------------------
 // Z-index helpers
@@ -251,27 +273,39 @@ export function sendBackward(side, id) {
 }
 
 // ---------------------------------------------------------------------------
-// Element management (back-side custom elements)
+// Element management (frei hinzugefügte Elemente, beide Seiten)
 // ---------------------------------------------------------------------------
 
-/** Add a new free-text element to the back side. */
-export function addTextElement() {
-	idStore.back.elements = [
-		...idStore.back.elements,
-		{
-			id: nextId(),
-			type: 'text',
-			content: 'Neuer Text',
-			x: 10,
-			y: 10,
-			width: 40,
-			height: 8,
-			zIndex: 1,
-			show: true,
-			proportional: false,
-			style: textStyle(7, '#1e293b', 'left', 'normal')
-		}
-	];
+/**
+ * Fügt ein freies Textelement auf der angegebenen Seite hinzu.
+ *
+ * Die Seite ist ein Parameter (wie bei addImageElements): Die Funktion schrieb früher
+ * fest auf die Rückseite, weshalb die Toolbar den „+ Text"-Button auf der Vorderseite
+ * ausblenden musste. Gerendert wurden Text-Elemente aber schon immer auf beiden Seiten
+ * (CardFace.svelte führt 'text' in der isText-Liste) — es fehlte nur der Weg, auf der
+ * Vorderseite eines anzulegen.
+ *
+ * @param {'front'|'back'} side
+ */
+export function addTextElement(side) {
+	const neu = {
+		id: nextId(),
+		type: 'text',
+		content: 'Neuer Text',
+		x: 10,
+		y: 10,
+		width: 40,
+		height: 8,
+		zIndex: 1,
+		show: true,
+		proportional: false,
+		style: textStyle(7.5, '#1e293b', 'left', 'normal')
+	};
+	if (side === 'front') {
+		idStore.front.elements = [...idStore.front.elements, neu];
+	} else {
+		idStore.back.elements = [...idStore.back.elements, neu];
+	}
 }
 
 /**
