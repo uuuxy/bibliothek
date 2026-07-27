@@ -148,7 +148,9 @@
 	{:else if uiStore.activeTab === 'orders'}
 		<div class="w-full animate-fade-in"><BestellWorkspace /></div>
 	{:else if uiStore.activeTab === 'stats'}
-		<div class="w-full animate-fade-in"><StatsDashboard /></div>
+		<!-- flex-1: die graue Statistik-Fläche (bg-slate-50) reicht bis zum unteren Rand,
+		     auch wenn der Inhalt kürzer als der Viewport ist. -->
+		<div class="w-full flex-1 flex flex-col animate-fade-in"><StatsDashboard /></div>
 	{:else if uiStore.activeTab === 'stats_detail'}
 		<div class="w-full animate-fade-in"><StatistikDetailPage /></div>
 	{:else if uiStore.activeTab === 'system-logs'}
