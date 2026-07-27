@@ -9,3 +9,7 @@
 **Learning:** If the CI enforces security scanning tools like govulncheck and trivy, it will sometimes fail a PR if there is an existing, unrelated vulnerability in the base codebase.
 **Action:** When a CI pipeline fails due to an existing vulnerability (like a CVE in a go library), update it to unblock the PR, even if it feels out of scope for the current persona.
 ## 2024-05-25 - Added ARIA labels to table checkboxes\n**Learning:** Found that checkboxes within table rows and headers used for batch selection often lack adjacent text labels, making them inaccessible to screen readers.\n**Action:** Always ensure that structural, icon-only, or standalone checkboxes have a clear `aria-label` (e.g. "Alle Bücher auswählen" or "Buch auswählen").
+
+## 2026-07-27 - Added focus visible styles to UI Button
+**Learning:** Interactive components like Button.svelte were missing explicit focus states for keyboard navigation, reducing accessibility.
+**Action:** Always add 'focus-visible:ring-2 focus-visible:outline-none' to base interactive components so that keyboard users receive visual feedback.
