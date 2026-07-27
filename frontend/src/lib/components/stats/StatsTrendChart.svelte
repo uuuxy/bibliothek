@@ -12,21 +12,40 @@
 	const FARBE_AUSLEIHEN = '#2a78d6';
 	const FARBE_RUECKGABEN = '#eb6834';
 
-	const MONATE_KURZ = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+	const MONATE_KURZ = [
+		'Jan',
+		'Feb',
+		'Mär',
+		'Apr',
+		'Mai',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Okt',
+		'Nov',
+		'Dez'
+	];
 	/** @param {string} ym  "2026-07" → "Jul" */
 	const monatLabel = (ym) => MONATE_KURZ[Number(ym.split('-')[1]) - 1] ?? ym;
 	/** @param {string} ym  "2026-07" → "2026" */
 	const jahr = (ym) => ym.split('-')[0];
 
-	// Geometrie in viewBox-Einheiten; das SVG skaliert per width:100% mit dem Container.
-	// Bewusst flaches Seitenverhältnis (~4,5:1): auf breiten Monitoren wird der Chart sonst
-	// zu hoch und drückt die Listen unter die Falz. Zusätzlich per max-h gedeckelt.
-	const VBW = 1440;
-	const VBH = 240;
-	const M = { top: 12, right: 12, bottom: 28, left: 40 };
-	const plotW = VBW - M.left - M.right;
-	const plotH = VBH - M.top - M.bottom;
-	const baselineY = M.top + plotH;
+	// Der Chart füllt die feste Höhe seiner Bento-Card. Damit er dabei weder verzerrt noch
+	// letterboxed wird, ist die viewBox nicht fix, sondern = gemessene Containergröße:
+	// 1 viewBox-Einheit == 1 CSS-Pixel. Nebeneffekt (und eigentlicher Grund): Achsen-Labels
+	// bleiben lesbar. Mit fixer viewBox von 1440 skalierte 11px Schrift auf einem 690px
+	// breiten Container auf ~5px herunter.
+	let boxW = $state(0);
+	let boxH = $state(0);
+	// Fallback bis zur ersten Messung — verhindert Division durch 0 (NaN-Pfade).
+	const VBW = $derived(boxW || 640);
+	const VBH = $derived(boxH || 220);
+
+	const M = { top: 10, right: 8, bottom: 22, left: 44 };
+	const plotW = $derived(Math.max(1, VBW - M.left - M.right));
+	const plotH = $derived(Math.max(1, VBH - M.top - M.bottom));
+	const baselineY = $derived(M.top + plotH);
 
 	const hatDaten = $derived(data.some((d) => d.ausleihen > 0 || d.rueckgaben > 0));
 	const maxVal = $derived(Math.max(1, ...data.flatMap((d) => [d.ausleihen, d.rueckgaben])));
@@ -96,12 +115,12 @@
 	}
 </script>
 
-<div class="w-full">
+<!-- h-full + flex: der Chart füllt die feste Höhe seiner Bento-Card aus, statt sie zu
+     bestimmen. Die Card deckelt damit die Höhe hart — der SVG skaliert nach innen. -->
+<div class="w-full h-full flex flex-col">
 	<!-- Kopf: Titel + Legende (Legende immer vorhanden → Identität nie farb-only) -->
 	<div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
-		<h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans">
-			Aktivität pro Monat
-		</h3>
+		<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Aktivität pro Monat</h3>
 		<div class="flex items-center gap-4 text-xs font-semibold">
 			<span class="flex items-center gap-1.5 text-slate-600">
 				<span class="w-2.5 h-2.5 rounded-sm" style="background:{FARBE_AUSLEIHEN}"></span>Ausleihen
@@ -114,15 +133,17 @@
 	<p class="text-xs text-slate-400 mb-2">Letzte 12 Monate · nach Ausleih- bzw. Rückgabedatum</p>
 
 	{#if !hatDaten}
-		<div class="py-12 text-center text-xs text-slate-400 font-medium">
+		<div
+			class="flex-1 flex flex-col items-center justify-center text-center text-xs text-slate-400 font-medium"
+		>
 			<span class="text-2xl block mb-2">📈</span>
 			Noch keine Ausleih-Aktivität im letzten Jahr.
 		</div>
 	{:else}
-		<div class="relative">
+		<div class="relative flex-1 min-h-0" bind:clientWidth={boxW} bind:clientHeight={boxH}>
 			<svg
 				viewBox="0 0 {VBW} {VBH}"
-				class="w-full h-auto max-h-80"
+				class="block w-full h-full"
 				role="img"
 				aria-label="Balkendiagramm: Ausleihen und Rückgaben je Monat über die letzten 12 Monate. Details in der folgenden Tabelle."
 				onmousemove={onMove}
@@ -130,7 +151,14 @@
 			>
 				<!-- Y-Gridlines + Ticks (recessiv) -->
 				{#each yTicks as t, _i (_i)}
-					<line x1={M.left} y1={t.y} x2={VBW - M.right} y2={t.y} stroke="#f1f5f9" stroke-width="1" />
+					<line
+						x1={M.left}
+						y1={t.y}
+						x2={VBW - M.right}
+						y2={t.y}
+						stroke="#f1f5f9"
+						stroke-width="1"
+					/>
 					<text
 						x={M.left - 6}
 						y={t.y}
@@ -145,7 +173,14 @@
 				{#each groups as g, _i (_i)}
 					<!-- Hover-Highlight des aktiven Monats -->
 					{#if hoverIdx === g.i}
-						<rect x={g.groupX} y={M.top} width={g.groupW} height={plotH} fill="#0f172a" opacity="0.04" />
+						<rect
+							x={g.groupX}
+							y={M.top}
+							width={g.groupW}
+							height={plotH}
+							fill="#0f172a"
+							opacity="0.04"
+						/>
 					{/if}
 					<path d={barPath(g.barA)} fill={FARBE_AUSLEIHEN} />
 					<path d={barPath(g.barR)} fill={FARBE_RUECKGABEN} />

@@ -11,6 +11,8 @@
 	let selectedTimeframe = $state('all');
 	/** Bestandsfilter: '' = Gesamt, 'freihand' = Schülerbücherei, 'lmf' = Lernmittel */
 	let selectedType = $state('');
+	/** Segmented Control der „Bestands-Analysen"-Card. @type {'renner' | 'ladenhueter'} */
+	let analyse = $state('renner');
 
 	/** Drill-Down: navigiert auf die eigene Detailseite (deep-linkbar), kein Slide-in mehr.
 	 *  @param {'renner' | 'ladenhueter'} kind */
@@ -31,39 +33,38 @@
 		{ value: 'lmf', label: 'LMF' }
 	];
 
+	// Die beiden Sichten der „Bestands-Analysen"-Card. detailLabel ist der Name, unter dem
+	// die Detailseite firmiert — er trägt auch das aria-label des Drill-Down-Buttons.
+	const ANALYSEN = [
+		{ value: 'renner', label: 'Renner', detailLabel: 'Beliebteste Titel (Die Renner)' },
+		{ value: 'ladenhueter', label: 'Ladenhüter', detailLabel: 'Ladenhüter' }
+	];
+	const aktiveAnalyse = $derived(ANALYSEN.find((a) => a.value === analyse) ?? ANALYSEN[0]);
+
 	/** @param {number} v */
 	const euro = (v) => (v ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
 	/** Ganzzahl mit deutscher Tausender-Trennung (33166 → „33.166"). @param {number} v */
 	const num = (v) => (v ?? 0).toLocaleString('de-DE');
 
-	// Kacheln zeigen Top 5; das Drill-Down-Panel filtert die volle Liste clientseitig
-	const topRenner = $derived(stats?.popular_titles?.slice(0, 5) ?? []);
-	const topWarmers = $derived(stats?.shelf_warmers?.slice(0, 5) ?? []);
+	// Die Card zeigt Top 8 (eine Tabelle statt zwei → mehr Platz pro Zeile);
+	// die volle Liste liegt auf der Detailseite.
+	const topRenner = $derived(stats?.popular_titles?.slice(0, 8) ?? []);
+	const topWarmers = $derived(stats?.shelf_warmers?.slice(0, 8) ?? []);
+	const aktiveListe = $derived(analyse === 'renner' ? topRenner : topWarmers);
 
-	// Farbe folgt dem Wert: „Schaden"-Kennzahlen werden erst rot/gelb, wenn es wirklich
-	// etwas zu melden gibt. Bei 0 bleiben sie ruhig-grün — so behält Rot seine Signalwirkung
-	// und der Bestzustand sieht nicht wie eine Alarmtafel aus.
+	// Farbe folgt dem Wert: „Schaden"-Kennzahlen werden erst rot, wenn es wirklich etwas zu
+	// melden gibt. Bei 0 bleiben sie ruhig-grün — so behält Rot seine Signalwirkung und der
+	// Bestzustand sieht nicht wie eine Alarmtafel aus.
 	const verlusteFarbe = $derived(
 		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'text-rose-600' : 'text-emerald-600'
-	);
-	const verlustquoteFarbe = $derived.by(() => {
-		const q = stats?.loss_stats?.verlust_quote ?? 0;
-		if (q <= 0) return 'text-emerald-600';
-		if (q < 5) return 'text-amber-600';
-		return 'text-rose-600';
-	});
-	const wiederbeschaffungFarbe = $derived(
-		(stats?.wiederbeschaffungswert_defekt ?? 0) > 0 ? 'text-rose-700' : 'text-emerald-600'
 	);
 
 	// Zweiter, farbunabhängiger Kanal (WCAG 1.4.1): Bei Handlungsbedarf erscheint zusätzlich
 	// ein Warn-Icon. Im Bestzustand (0) bleibt es icon-frei — die Ampelfarbe steht dann nicht
 	// mehr allein für die Aussage; die Zahl selbst und das (fehlende) Icon tragen sie mit.
-	const verlusteStatus = $derived((stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'warn' : null);
-	const verlustquoteStatus = $derived((stats?.loss_stats?.verlust_quote ?? 0) > 0 ? 'warn' : null);
-	const wiederbeschaffungStatus = $derived(
-		(stats?.wiederbeschaffungswert_defekt ?? 0) > 0 ? 'warn' : null
+	const verlusteStatus = $derived(
+		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'warn' : null
 	);
 
 	// Fetch statistics from backend API.
@@ -96,317 +97,310 @@
 	});
 </script>
 
-{#snippet kennzahl(label, value, hint, valueClass, status = null)}
-	<!-- Bento-Card: eigenständige, greifbare weiße Box auf der grauen Fläche (Material-Look). -->
+{#snippet warnIcon(klasse)}
+	<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
+	<svg class={klasse} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+		<path
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			stroke-width="2"
+			d="M12 9v3.75m0 3.75h.01M10.29 3.86l-8.48 14.7A1.5 1.5 0 003.11 21h17.78a1.5 1.5 0 001.3-2.44l-8.48-14.7a1.5 1.5 0 00-2.6 0z"
+		/>
+	</svg>
+{/snippet}
+
+<!-- Segmented Control (Material 3): eine Pillen-Gruppe, aktives Segment als weiße Kapsel.
+     Ein Snippet für alle drei Vorkommen (Bestand, Zeitraum, Analyse-Umschalter). -->
+{#snippet pills(items, current, select, ariaLabel)}
 	<div
-		class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between gap-2.5 text-left"
+		class="flex items-center bg-slate-100 p-1 rounded-full border border-slate-200/70"
+		role="group"
+		aria-label={ariaLabel}
 	>
-		<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans"
-			>{label}</span
-		>
-		<span class="text-4xl font-extrabold {valueClass} leading-none flex items-center gap-2">
-			{#if status === 'warn'}
-				<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
-				<svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 9v3.75m0 3.75h.01M10.29 3.86l-8.48 14.7A1.5 1.5 0 003.11 21h17.78a1.5 1.5 0 001.3-2.44l-8.48-14.7a1.5 1.5 0 00-2.6 0z"
-					/>
-				</svg>
-			{/if}
-			<span>{value}</span>
-		</span>
-		<span class="text-sm text-slate-500 font-medium">{hint}</span>
+		{#each items as it (it.value)}
+			<button
+				type="button"
+				onclick={() => select(it.value)}
+				aria-pressed={current === it.value}
+				class="px-3.5 py-1 text-xs font-bold rounded-full cursor-pointer transition-all whitespace-nowrap {current ===
+				it.value
+					? 'bg-white text-slate-900 shadow-xs'
+					: 'text-slate-500 hover:text-slate-800'}">{it.label}</button
+			>
+		{/each}
 	</div>
 {/snippet}
 
-{#snippet verlustItem(label, value, valueClass, status)}
-	<span class="flex items-center gap-2">
-		<span class="text-sm text-slate-500">{label}:</span>
-		{#if status === 'warn'}
-			<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
-			<svg
-				class="w-4 h-4 shrink-0 {valueClass}"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-				aria-hidden="true"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M12 9v3.75m0 3.75h.01M10.29 3.86l-8.48 14.7A1.5 1.5 0 003.11 21h17.78a1.5 1.5 0 001.3-2.44l-8.48-14.7a1.5 1.5 0 00-2.6 0z"
-				/>
-			</svg>
-		{/if}
-		<span class="text-lg font-extrabold {valueClass}">{value}</span>
-	</span>
+<!-- KPI-Kachel: Zahl groß und dünn, Label winzig und fett (Material-3-Typografie). -->
+{#snippet kpi(label, value, hint, valueClass, status = null)}
+	<div
+		class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex flex-col justify-between gap-3 text-left"
+	>
+		<span class="text-xs font-bold uppercase tracking-widest text-slate-500">{label}</span>
+		<span
+			class="text-4xl font-light tracking-tight tabular-nums leading-none flex items-center gap-2 {valueClass}"
+		>
+			{#if status === 'warn'}{@render warnIcon('w-6 h-6 shrink-0')}{/if}
+			<span class="truncate">{value}</span>
+		</span>
+		<span class="text-xs text-slate-400 leading-snug">{hint}</span>
+	</div>
 {/snippet}
 
-{#snippet drillDownHeader(label, panel)}
+<!-- Kopfzeile jeder großen Card: Label links, optionale Aktionen rechts. -->
+{#snippet cardTitel(label)}
+	<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">{label}</h3>
+{/snippet}
+
+{#snippet drillDownButton()}
 	<button
-		onclick={() => openDetail(panel)}
-		class="w-full flex items-center justify-between gap-3 border-b border-slate-100 pb-2 -mx-2 px-2 rounded-md group cursor-pointer text-left hover:bg-slate-50 transition-colors"
-		aria-label="{label} — Detailansicht öffnen"
+		type="button"
+		onclick={() => openDetail(analyse)}
+		class="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-full transition-colors cursor-pointer"
+		aria-label="{aktiveAnalyse.detailLabel} — Detailansicht öffnen"
 	>
-		<h3
-			class="font-bold text-slate-700 text-sm uppercase tracking-wider font-sans group-hover:text-slate-900 transition-colors"
+		Alle anzeigen
+		<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+			><path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				stroke-width="2.5"
+				d="M9 5l7 7-7 7"
+			/></svg
 		>
-			{label}
-		</h3>
-		<!-- Klar als klickbar erkennbar: dauerhaft blaues Pill statt zartem Hover-Grau.
-		     Chevron (→) statt Außen-Pfeil (↗), weil es jetzt auf eine interne Seite navigiert. -->
-		<span
-			class="shrink-0 flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 group-hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors"
-		>
-			Alle anzeigen
-			<svg
-				class="w-3 h-3 transition-transform group-hover:translate-x-0.5"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-				><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg
-			>
-		</span>
 	</button>
 {/snippet}
 
-<!-- Grau-Fläche (Material-Kontrast): die weißen Cards heben sich davon ab (Bento-Struktur). -->
-<div class="w-full min-h-full bg-slate-50 p-5 sm:p-6 space-y-5 text-slate-800">
-	<!-- Header: Bestandsfilter + Zeitraum (auf der grauen Fläche, keine Trennlinie nötig) -->
-	<div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
-		<!-- Bestandsfilter (LMF / Freihand / Gesamt) — filtert serverseitig ALLE Kennzahlen -->
-		<div class="flex items-center gap-2 self-start md:self-center">
-			<span class="text-sm font-semibold text-slate-400 uppercase tracking-wider font-sans"
-				>Bestand:</span
-			>
-			<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-				{#each BESTAND_TYPES as bt, _i (_i)}
-					<button
-						onclick={() => (selectedType = bt.value)}
-						class="px-4 py-1.5 text-sm font-bold rounded-lg cursor-pointer transition-all {selectedType ===
-						bt.value
-							? 'bg-white text-slate-900 shadow-xs'
-							: 'text-slate-500 hover:text-slate-700'}">{bt.label}</button
-					>
-				{/each}
-			</div>
-		</div>
-
-		<!-- Time Filter Buttons -->
-		<div class="flex items-center gap-2 self-start md:self-center">
-			<span class="text-sm font-semibold text-slate-400 uppercase tracking-wider font-sans"
-				>Zeitraum:</span
-			>
-			<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-				{#each TIMEFRAMES as tf, _i (_i)}
-					<button
-						onclick={() => (selectedTimeframe = tf.value)}
-						class="px-4 py-1.5 text-sm font-bold rounded-lg cursor-pointer transition-all {selectedTimeframe ===
-						tf.value
-							? 'bg-white text-slate-900 shadow-xs'
-							: 'text-slate-500 hover:text-slate-700'}">{tf.label}</button
-					>
-				{/each}
-			</div>
-		</div>
+<!-- Leerzustand als eigene Fläche statt als Tabellenzeile: nur so lässt er sich in der
+     fixen Boxhöhe zentrieren (eine <td> würde oben kleben). -->
+{#snippet leerFlaeche(inhalt)}
+	<div
+		class="h-full flex flex-col items-center justify-center text-center text-xs text-slate-400 font-medium"
+	>
+		{@render inhalt()}
 	</div>
+{/snippet}
 
-	{#if loading}
-		<div class="py-12 flex justify-center items-center">
+{#snippet spaltenKopf(spalten)}
+	<thead class="sticky top-0 z-10 bg-white">
+		<tr class="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+			{#each spalten as s (s.label)}
+				<th class="py-2 px-4 font-bold {s.right ? 'text-right' : 'text-left'}">{s.label}</th>
+			{/each}
+		</tr>
+	</thead>
+{/snippet}
+
+{#snippet keineAusleihen()}
+	<span class="text-2xl block mb-2">📊</span>
+	Noch keine Ausleihen registriert
+{/snippet}
+
+{#snippet keineLadenhueter()}
+	<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün. -->
+	<svg
+		class="w-7 h-7 mx-auto mb-2 text-emerald-500"
+		fill="none"
+		stroke="currentColor"
+		viewBox="0 0 24 24"
+		aria-hidden="true"
+		><path
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			stroke-width="2"
+			d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+		/></svg
+	>
+	Keine Ladenhüter — der Bestand ist in Bewegung.
+{/snippet}
+
+{#snippet rennerTabelle()}
+	<table class="w-full border-collapse">
+		{@render spaltenKopf([
+			{ label: 'Buchtitel' },
+			{ label: 'Autor' },
+			{ label: 'Ausleihen', right: true }
+		])}
+		<tbody class="divide-y divide-slate-100">
+			{#each topRenner as book (book.id)}
+				<tr class="hover:bg-slate-50 transition-colors">
+					<td class="py-2 px-4">
+						<div class="flex items-center gap-3 min-w-0">
+							{#if book.cover_url}
+								<img
+									src={book.cover_url}
+									alt=""
+									class="w-8 aspect-3/4 object-cover rounded shadow-xs border border-slate-100 shrink-0"
+								/>
+							{:else}
+								<div
+									class="w-8 aspect-3/4 bg-slate-50 border border-slate-200 rounded flex items-center justify-center text-slate-300 text-xs shrink-0"
+								>
+									📖
+								</div>
+							{/if}
+							<span class="font-semibold text-slate-800 text-sm truncate" title={book.titel}
+								>{book.titel}</span
+							>
+						</div>
+					</td>
+					<td class="py-2 px-4 text-sm text-slate-500 truncate max-w-48" title={book.autor}
+						>{book.autor}</td
+					>
+					<td class="py-2 px-4 text-sm font-semibold text-slate-900 tabular-nums text-right"
+						>{num(book.count)}×</td
+					>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+{/snippet}
+
+{#snippet ladenhueterTabelle()}
+	<table class="w-full border-collapse">
+		{@render spaltenKopf([
+			{ label: 'Buchtitel' },
+			{ label: 'Autor' },
+			{ label: 'Zuletzt geliehen', right: true }
+		])}
+		<tbody class="divide-y divide-slate-100">
+			{#each topWarmers as book (book.id)}
+				<tr class="hover:bg-slate-50 transition-colors">
+					<td
+						class="py-3 px-4 text-sm font-semibold text-slate-800 truncate max-w-64"
+						title={book.titel}>{book.titel}</td
+					>
+					<td class="py-3 px-4 text-sm text-slate-500 truncate max-w-48" title={book.autor}
+						>{book.autor}</td
+					>
+					<td class="py-3 px-4 text-sm font-semibold text-amber-600 tabular-nums text-right"
+						>{book.letzte_aus}</td
+					>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+{/snippet}
+
+<!-- Skeleton in der Geometrie des fertigen Layouts: beim Filterwechsel springt nichts. -->
+{#snippet skeleton()}
+	<div class="flex-1 min-h-0 flex flex-col gap-4 animate-pulse" aria-hidden="true">
+		<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+			{#each [0, 1, 2, 3] as i (i)}
+				<div class="h-28 bg-white rounded-3xl border border-slate-200/80"></div>
+			{/each}
+		</div>
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+			<div class="lg:col-span-2 h-72 bg-white rounded-3xl border border-slate-200/80"></div>
+			<div class="h-72 bg-white rounded-3xl border border-slate-200/80"></div>
+		</div>
+		<div class="flex-1 min-h-48 bg-white rounded-3xl border border-slate-200/80"></div>
+	</div>
+{/snippet}
+
+<!-- Graue Fläche (Material-Kontrast): die weißen Cards heben sich davon ab (Bento-Struktur).
+     Das Dashboard ist eine Höhen-Flexbox: die Bento-Reihen oben haben feste Höhen, die
+     „Bestands-Analysen"-Card unten nimmt den Rest. Dadurch endet das Layout genau am
+     unteren Viewport-Rand statt in einen Scroll-Wurm auszulaufen.
+     flex-1/min-h-0 statt min-h-full: Die Deckelung braucht eine DEFINITE Höhe. min-height:100%
+     setzt nur eine Untergrenze — die Card unten wäre trotzdem auf Inhaltshöhe gewachsen und
+     hätte die Seite wieder scrollen lassen. Die Höhe kommt aus der Flex-Kette des Routers. -->
+<div class="w-full flex-1 min-h-0 bg-slate-50 p-4 sm:p-5 text-slate-800 flex flex-col">
+	<div class="flex-1 min-h-0 flex flex-col gap-4">
+		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
+		<div class="shrink-0 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
+			<div class="flex items-center gap-2">
+				<span class="text-xs font-bold uppercase tracking-widest text-slate-500">Bestand</span>
+				{@render pills(BESTAND_TYPES, selectedType, (v) => (selectedType = v), 'Bestand filtern')}
+			</div>
+			<div class="flex items-center gap-2">
+				<span class="text-xs font-bold uppercase tracking-widest text-slate-500">Zeitraum</span>
+				{@render pills(
+					TIMEFRAMES,
+					selectedTimeframe,
+					(v) => (selectedTimeframe = v),
+					'Zeitraum filtern'
+				)}
+			</div>
+		</div>
+
+		{#if loading}
+			{@render skeleton()}
+		{:else if stats}
+			<!-- 1) KPI-Reihe: vier gleichwertige Kacheln in EINEM durchgehenden 4er-Grid. -->
+			<div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
+				{@render kpi(
+					'Gesamtbestand',
+					num(stats.loss_stats.gesamt_bestand),
+					'Physische Buchkopien im System',
+					'text-slate-900'
+				)}
+				{@render kpi(
+					'Aktuell verliehen',
+					num(stats.zirkulation?.aktuell_verliehen ?? 0),
+					`von ${num(stats.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
+					'text-blue-600'
+				)}
+				<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
+				     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
+				{@render kpi(
+					'Zirkulationsquote',
+					`${stats.zirkulationsquote ?? 0}%`,
+					'verliehen ÷ aktiver Bestand',
+					'text-slate-900'
+				)}
+				{@render kpi(
+					'Verluste & Schäden',
+					num(stats.loss_stats.verlorene_exemplare),
+					`${stats.loss_stats.verlust_quote}% Quote · ${euro(stats.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
+					verlusteFarbe,
+					verlusteStatus
+				)}
+			</div>
+
+			<!-- 2) Asymmetrische Reihe: Chart (2 Spalten) + Mahnungs-Widget (1 Spalte).
+			     Beide Cards teilen sich exakt dieselbe feste Höhe → die Reihe kippt nie. -->
+			<div class="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
+				<div
+					class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 h-72 flex flex-col"
+				>
+					<StatsTrendChart data={stats.monats_trend ?? []} />
+				</div>
+				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
+				<div
+					class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 h-72 flex flex-col"
+				>
+					<OverdueWidget aktuellVerliehen={stats.zirkulation?.aktuell_verliehen ?? 0} />
+				</div>
+			</div>
+
+			<!-- 3) Bestands-Analysen: EINE Card, Segmented Control schaltet Renner ↔ Ladenhüter.
+			     flex-1: füllt die Resthöhe bis zum Viewport-Rand aus. -->
 			<div
-				class="w-8 h-8 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin"
-			></div>
-		</div>
-	{:else if stats}
-		<!-- 1) Kennzahlen als Bento-Cards (die headline-Zahlen, neutral). -->
-		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-			{@render kennzahl(
-				'Gesamtbestand',
-				num(stats.loss_stats.gesamt_bestand),
-				'Physische Buchkopien im System',
-				'text-slate-900'
-			)}
-			{@render kennzahl(
-				'Aktuell verliehen',
-				num(stats.zirkulation?.aktuell_verliehen ?? 0),
-				`von ${num(stats.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
-				'text-blue-600'
-			)}
-			<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
-			     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
-			{@render kennzahl(
-				'Zirkulationsquote',
-				`${stats.zirkulationsquote ?? 0}%`,
-				'Momentaufnahme: verliehen ÷ aktiver Bestand',
-				'text-slate-900'
-			)}
-		</div>
-		<!-- 2) Verluste & Schäden — eigene flache Card (schwebt nicht mehr frei). -->
-		<div
-			class="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 flex flex-wrap items-center gap-x-8 gap-y-2"
-		>
-			<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans"
-				>Verluste &amp; Schäden</span
+				class="flex-1 min-h-0 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex flex-col"
 			>
-			{@render verlustItem(
-				'Verlorene / Defekte',
-				num(stats.loss_stats.verlorene_exemplare),
-				verlusteFarbe,
-				verlusteStatus
-			)}
-			<span class="hidden sm:block w-px h-5 bg-slate-200"></span>
-			{@render verlustItem(
-				'Verlustquote',
-				`${stats.loss_stats.verlust_quote}%`,
-				verlustquoteFarbe,
-				verlustquoteStatus
-			)}
-			<span class="hidden sm:block w-px h-5 bg-slate-200"></span>
-			{@render verlustItem(
-				'Wiederbeschaffungswert',
-				euro(stats.wiederbeschaffungswert_defekt),
-				wiederbeschaffungFarbe,
-				wiederbeschaffungStatus
-			)}
-		</div>
+				<div class="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
+					{@render cardTitel('Bestands-Analysen')}
+					<div class="flex items-center gap-2">
+						{@render pills(ANALYSEN, analyse, (v) => (analyse = v), 'Analyse umschalten')}
+						{@render drillDownButton()}
+					</div>
+				</div>
 
-		<!-- 3) Trend-Chart in eigener Card (Höhe in der Komponente gedeckelt). -->
-		<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-			<StatsTrendChart data={stats.monats_trend ?? []} />
-		</div>
-
-		<!-- 4) Überfälligkeit — NEUTRAL (kein Rot-Alarm mehr), eigene Card, unter dem Chart. -->
-		<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-			<OverdueWidget aktuellVerliehen={stats.zirkulation?.aktuell_verliehen ?? 0} />
-		</div>
-
-		<!-- 5) Renner & Ladenhüter als eigene Cards nebeneinander. -->
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-			<!-- Top Borrowed Books Section ("Die Renner") -->
-			<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3 text-left">
-				{@render drillDownHeader('Beliebteste Titel (Die Renner)', 'renner')}
-
-				<div class="w-full">
-					<table class="w-full text-left text-base border-collapse">
-						<thead>
-							<tr
-								class="border-b border-slate-100 text-xs font-medium text-slate-500 font-sans uppercase tracking-wider"
-							>
-								<th class="py-3 px-4">Buchtitel</th>
-								<th class="py-3 px-4 text-right">Ausleihen</th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-slate-100 text-sm text-slate-650 font-semibold">
-							{#if !stats.popular_titles || stats.popular_titles.length === 0}
-								<tr>
-									<td colspan="2" class="py-12 text-center text-xs text-slate-400 font-medium">
-										<span class="text-2xl block mb-2">📊</span>
-										Noch keine Ausleihen registriert
-									</td>
-								</tr>
-							{:else}
-								{#each topRenner as book, _i (_i)}
-									<tr class="hover:bg-slate-50/50 transition-colors">
-										<td class="py-3 px-4 flex items-center gap-3">
-											<!-- Cover Thumbnail -->
-											{#if book.cover_url}
-												<img
-													src={book.cover_url}
-													alt="Cover"
-													class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-slate-100/50 shrink-0"
-												/>
-											{:else}
-												<div
-													class="w-10 aspect-3/4 bg-slate-50 border border-slate-150 rounded flex items-center justify-center text-slate-400 text-xs shadow-sm shrink-0 font-medium"
-												>
-													📖
-												</div>
-											{/if}
-
-											<!-- Title & Author -->
-											<div class="min-w-0">
-												<span
-													class="font-bold text-slate-800 text-sm truncate block"
-													title={book.titel}>{book.titel}</span
-												>
-												<span
-													class="text-slate-450 text-xs block font-medium truncate"
-													title={book.autor}>{book.autor}</span
-												>
-											</div>
-										</td>
-										<td class="py-3 px-4 text-slate-900 font-bold text-right shrink-0">
-											{book.count}x geliehen
-										</td>
-									</tr>
-								{/each}
-							{/if}
-						</tbody>
-					</table>
+				<!-- Die Liste bekommt exakt die Resthöhe (nie mehr) und scrollt INNERHALB der Box —
+				     die Kopfzeile bleibt dabei stehen. min-h-48 ist die Untergrenze: erst wenn das
+				     Fenster darunter schrumpft, scrollt überhaupt die Seite. Feste Höhe statt max-h,
+				     damit beim Umschalten Renner ↔ Ladenhüter nichts springt. -->
+				<div class="flex-1 min-h-48 overflow-y-auto overflow-x-auto">
+					{#if aktiveListe.length === 0}
+						{@render leerFlaeche(analyse === 'renner' ? keineAusleihen : keineLadenhueter)}
+					{:else if analyse === 'renner'}
+						{@render rennerTabelle()}
+					{:else}
+						{@render ladenhueterTabelle()}
+					{/if}
 				</div>
 			</div>
-
-			<!-- Shelf Warmers Table -->
-			<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3 text-left">
-				{@render drillDownHeader('Ladenhüter', 'ladenhueter')}
-
-				<div class="w-full">
-					<table class="w-full text-left text-base border-collapse">
-						<thead>
-							<tr
-								class="border-b border-slate-100 text-xs font-medium text-slate-500 font-sans uppercase tracking-wider"
-							>
-								<th class="py-3 px-4">Buchtitel</th>
-								<th class="py-3 px-4">Autor</th>
-								<th class="py-3 px-4 text-right">Zuletzt geliehen</th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-slate-100 text-sm text-slate-650 font-semibold">
-							{#if !stats.shelf_warmers || stats.shelf_warmers.length === 0}
-								<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün
-								     statt des früheren 🕳️-Emojis, das wie ein Render-Artefakt/Tintenklecks wirkte. -->
-								<tr>
-									<td colspan="3" class="py-12 text-center text-xs text-slate-400 font-medium">
-										<svg
-											class="w-7 h-7 mx-auto mb-2 text-emerald-500"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-											aria-hidden="true"
-											><path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-											/></svg
-										>
-										Keine Ladenhüter — der Bestand ist in Bewegung.
-									</td>
-								</tr>
-							{:else}
-								{#each topWarmers as book, _i (_i)}
-									<tr class="hover:bg-slate-50/50 transition-colors">
-										<td
-											class="py-3.5 px-4 text-slate-800 font-bold truncate max-w-40"
-											title={book.titel}>{book.titel}</td
-										>
-										<td class="py-3.5 px-4 text-slate-500 truncate max-w-30" title={book.autor}
-											>{book.autor}</td
-										>
-										<td class="py-3.5 px-4 text-amber-600 font-bold text-right"
-											>{book.letzte_aus}</td
-										>
-									</tr>
-								{/each}
-							{/if}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-	{/if}
+		{/if}
+	</div>
 </div>

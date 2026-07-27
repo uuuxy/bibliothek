@@ -149,8 +149,11 @@
 		<div class="w-full animate-fade-in"><BestellWorkspace /></div>
 	{:else if uiStore.activeTab === 'stats'}
 		<!-- flex-1: die graue Statistik-Fläche (bg-slate-50) reicht bis zum unteren Rand,
-		     auch wenn der Inhalt kürzer als der Viewport ist. -->
-		<div class="w-full flex-1 flex flex-col animate-fade-in"><StatsDashboard /></div>
+		     auch wenn der Inhalt kürzer als der Viewport ist.
+		     min-h-0: ohne das behält der Flex-Item seine implizite min-height:auto und kann
+		     NICHT unter seine Inhaltshöhe schrumpfen — das Dashboard könnte seine Bento-Cards
+		     dann nicht auf die Viewport-Höhe deckeln und liefe wieder in einen Scroll-Wurm. -->
+		<div class="w-full flex-1 min-h-0 flex flex-col animate-fade-in"><StatsDashboard /></div>
 	{:else if uiStore.activeTab === 'stats_detail'}
 		<div class="w-full animate-fade-in"><StatistikDetailPage /></div>
 	{:else if uiStore.activeTab === 'system-logs'}

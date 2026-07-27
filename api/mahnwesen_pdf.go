@@ -5,34 +5,84 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/imageutil"
 	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
 )
+
+// uploadsVerzeichnis ist die Wurzel aller lokal gespeicherten Bilder, relativ zum
+// Arbeitsverzeichnis des Servers.
+const uploadsVerzeichnis = "uploads"
+
+// coverDateiPfad löst die CoverURL eines Mediums in einen lesbaren lokalen Dateipfad auf.
+// Rückgabe "" bedeutet: kein verwendbares Cover — der Aufrufer zeichnet dann nur den Rahmen.
+//
+// Der Clean-und-Prefix-Test ist kein Selbstzweck: ohne ihn würde eine CoverURL wie
+// "/uploads/../../etc/passwd" aus dem Upload-Verzeichnis ausbrechen und beliebige Dateien
+// in ein PDF einbetten lassen.
+func coverDateiPfad(coverURL string) string {
+	if !strings.HasPrefix(coverURL, "/uploads/") {
+		return ""
+	}
+	pfad := filepath.Clean(strings.TrimPrefix(coverURL, "/"))
+	if pfad != uploadsVerzeichnis && !strings.HasPrefix(pfad, uploadsVerzeichnis+string(filepath.Separator)) {
+		return ""
+	}
+	info, err := os.Stat(pfad)
+	if err != nil || info.IsDir() {
+		return ""
+	}
+	return pfad
+}
+
+// bindeCoverEin bettet das Coverbild eines Mediums an der angegebenen Position ein.
+//
+// Der Umweg über ConvertToJPEG ist notwendig, weil gofpdf den Bildtyp an der Dateiendung
+// erkennt und nur JPG/PNG/GIF beherrscht — unsere Cover liegen aber als WebP auf der Platte.
+// Ein direkt übergebener .webp-Pfad setzte den internen Fehlerzustand des Fpdf-Objekts, und
+// der ist KLEBRIG: er wird bei jedem weiteren Aufruf durchgereicht und schlägt am Ende in
+// pdf.Output() durch. Ein einziges WebP-Cover ließ damit die komplette Mahnliste mit HTTP 500
+// scheitern, nicht etwa nur die eine Zeile.
+//
+// Genau deshalb werden hier auch alle Fehler geschluckt: Ein unlesbares, defektes oder
+// überdimensioniertes Cover darf das Dokument nie als Ganzes kosten. Es fehlt dann still —
+// die Rahmenzelle zeichnet der Aufrufer ohnehin immer.
+func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float64) {
+	pfad := coverDateiPfad(coverURL)
+	if pfad == "" {
+		return
+	}
+	opt := gofpdf.ImageOptions{ImageType: "JPG"}
+	// gofpdf hält registrierte Bilder unter ihrem Namen vor. Mehrfach überfällige Exemplare
+	// desselben Titels lesen und dekodieren ihr Cover so nur einmal.
+	if pdf.GetImageInfo(pfad) == nil {
+		roh, err := os.ReadFile(pfad)
+		if err != nil {
+			return
+		}
+		jpg, err := imageutil.ConvertToJPEG(roh, imageutil.DefaultJPEGQuality)
+		if err != nil {
+			return
+		}
+		pdf.RegisterImageOptionsReader(pfad, opt, bytes.NewReader(jpg))
+	}
+	pdf.ImageOptions(pfad, x, y, breite, hoehe, false, opt, 0, "")
+}
 
 // zeichneMahnMedienZeile rendert eine Tabellenzeile für ein überfälliges Medium
 // (inkl. lokalem Cover, gekürztem Titel/Autor und Rot-Hervorhebung ab 14 Tagen).
 func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med repository.UeberfaelligesMedium, rowHeight float64) {
 	startY := pdf.GetY()
 
-	// Cover image (if local)
-	coverPath := ""
-	if strings.HasPrefix(med.CoverURL, "/uploads/") {
-		localPath := strings.TrimPrefix(med.CoverURL, "/")
-		if _, err := os.Stat(localPath); err == nil {
-			coverPath = localPath
-		}
-	}
-	if coverPath != "" {
-		// Register image; gofpdf auto-detects type from file extension
-		pdf.ImageOptions(coverPath, 18, startY+0.5, 7, rowHeight-1, false,
-			gofpdf.ImageOptions{ReadDpi: true}, 0, "")
-	}
+	bindeCoverEin(pdf, med.CoverURL, 18, startY+0.5, 7, rowHeight-1)
+
 	// Cover cell border (always draw border)
 	pdf.SetXY(18, startY)
 	pdf.CellFormat(8, rowHeight, "", "1", 0, "", false, 0, "")
