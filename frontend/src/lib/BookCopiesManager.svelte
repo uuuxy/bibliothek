@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import { toastStore } from './stores/toastStore.svelte.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -79,7 +80,7 @@
 			activeCopy = null;
 		} catch (err) {
 			const error = /** @type {any} */ (err);
-			alert(error.message);
+			toastStore.addToast(error.message, 'error');
 		}
 	}
 
@@ -102,7 +103,7 @@
 			copies = copies.filter((/** @type {any} */ c) => c.id !== copyId);
 		} catch (err) {
 			const error = /** @type {any} */ (err);
-			alert(error.message);
+			toastStore.addToast(error.message, 'error');
 		}
 	}
 
@@ -130,7 +131,7 @@
 			}
 		} catch (err) {
 			const error = /** @type {any} */ (err);
-			alert(error.message);
+			toastStore.addToast(error.message, 'error');
 		}
 	}
 </script>
