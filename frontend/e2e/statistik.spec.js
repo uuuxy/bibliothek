@@ -30,10 +30,19 @@ test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }
 
 	// Clientseitiger Filter: Nonsens-Suchbegriff leert die Liste ohne API-Call
 	await panel.getByPlaceholder('Titel oder Autor…').fill('xx-niemals-treffer-xx');
-	await expect(page.locator('text=Keine Einträge für diese Filter.|text=Noch keine Daten vorhanden.')).toBeVisible();
+	// Regex statt 'text=A|text=B': Letzteres ist KEINE gültige Playwright-Syntax
+	// (wird als ein einziger Textstring gesucht) und matchte deshalb nie.
+	await expect(
+		page.getByText(/Keine Einträge für diese Filter\.|Noch keine Daten vorhanden\./)
+	).toBeVisible();
 	await expect(page.getByText(/^0 von \d+ Einträgen/)).toBeVisible();
 
-	// Escape schließt das Panel
-	await page.getByRole('button', { name: 'Zurück' }).click();
-	await expect(page.getByRole('heading', { name: 'Ladenhüter' })).not.toBeVisible();
+	// Zurück zur Übersicht. Der Button trägt den Namen „Statistik" (nicht „Zurück");
+	// exact:true, damit er nicht mit „Statistiken" in der Sidebar kollidiert.
+	await page.getByRole('button', { name: 'Statistik', exact: true }).click();
+
+	// Verlassen der Detailseite über ihr eigenes Suchfeld prüfen — NICHT über die
+	// Überschrift „Ladenhüter": die gibt es auf dem Dashboard als Kachel-Header auch.
+	await expect(page.getByPlaceholder('Titel oder Autor…')).toBeHidden();
+	await expect(page.getByText('Zirkulationsquote')).toBeVisible();
 });

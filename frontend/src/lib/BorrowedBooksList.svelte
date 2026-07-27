@@ -70,15 +70,22 @@
 			<tr
 				class="border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider"
 			>
-				<!-- table-fixed: Titel nimmt den Rest (truncatet), die schmalen Spalten haben feste
-				     Breiten → die Aktions-Spalte bleibt IMMER sichtbar, kein horizontaler Scroll. -->
-				<th class="py-3 px-4 w-full min-w-[150px]">Titel & Autor</th>
-				<th class="py-3 px-4 w-32">Barcode</th>
+				<!-- table-fixed + PROZENT-Breiten (Summe 100%): Die Liste steht auch in schmalen
+				     Panels (Schülerprofil ~590px). Mit festen px-Breiten (w-32/w-48/w-28/w-40 =
+				     592px) blieb dort für die Titelspalte 0px übrig — der truncatete Titel
+				     (overflow:hidden) wurde damit unsichtbar und die Aktions-Spalte abgeschnitten.
+				     Prozente skalieren mit jeder Containerbreite und können nie kollabieren. -->
+				<!-- truncate auch auf den Kopfzellen: bei table-fixed ragt zu langer Kopftext
+				     sonst in die Nachbarspalte hinein (überlappte „RÜCKGABEDATUM|STATUS"). -->
+				<th class="py-3 px-4 truncate {mode === 'loans' ? 'w-[30%]' : 'w-[60%]'}">Titel & Autor</th>
+				<th class="py-3 px-4 truncate {mode === 'loans' ? 'w-[14%]' : 'w-[22%]'}">Barcode</th>
 				{#if mode === 'loans'}
-					<th class="py-3 px-4 w-48">Rückgabedatum</th>
-					<th class="py-3 px-4 w-28">Status</th>
+					<th class="py-3 px-4 truncate w-[20%]">Rückgabe</th>
+					<th class="py-3 px-4 truncate w-[19%]">Status</th>
 				{/if}
-				<th class="py-3 px-4 w-40 text-right">Aktion</th>
+				<th class="py-3 px-4 truncate text-right {mode === 'loans' ? 'w-[17%]' : 'w-[18%]'}"
+					>Aktion</th
+				>
 			</tr>
 		</thead>
 		<tbody class="divide-y divide-slate-100">
@@ -117,9 +124,13 @@
 							</div>
 						</div>
 					</td>
-					<td class="py-3 px-4 text-sm font-semibold text-slate-700">{book.barcode_id}</td>
+					<!-- truncate: lange Barcodes brechen sonst um und überlappen die Nachbarspalte -->
+					<td
+						class="py-3 px-4 text-sm font-semibold text-slate-700 truncate"
+						title={book.barcode_id}>{book.barcode_id}</td
+					>
 					{#if mode === 'loans'}
-						<td class="py-3 px-4 text-sm font-semibold text-slate-700">
+						<td class="py-3 px-4 text-sm font-semibold text-slate-700 whitespace-nowrap">
 							{#if editingId === (book.ausleihe_id || book.id)}
 								<div class="flex items-center gap-1.5">
 									<input
@@ -203,7 +214,7 @@
 								</div>
 							{/if}
 						</td>
-						<td class="py-3 px-4">
+						<td class="py-3 px-4 whitespace-nowrap">
 							{#if isOverdue}
 								<span
 									class="px-2 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded-full border border-rose-100"
