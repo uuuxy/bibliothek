@@ -16,3 +16,6 @@
 ## 2026-07-16 - [High-performance ISBN cleaning]
 **Learning:** Found multiple sequential `strings.ReplaceAll` calls in `internal/service/import_dynamic.go` being used to strip characters from ISBNs during CSV import loops. This leads to unnecessary allocations and garbage collection overhead.
 **Action:** Replaced sequential `strings.ReplaceAll` with a single-pass byte array allocation and population when stripping multiple ASCII characters to avoid intermediate allocations and improve performance.
+## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
+**Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
+**Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
