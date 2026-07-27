@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"bibliothek/pkg/isbnutil"
 )
 
 // konvertiereISBN10zu13 wandelt eine 10-stellige ISBN in das moderne 13-stellige Format um.
@@ -23,7 +25,7 @@ func konvertiereISBN10zu13(isbn string) string {
 	}
 
 	if idx != 10 {
-		return strings.ReplaceAll(isbn, "-", "")
+		return isbnutil.CleanISBN(isbn)
 	}
 
 	summe := 38 // 9*1 + 7*3 + 8*1

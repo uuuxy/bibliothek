@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/url"
 	"strings"
+
+	"bibliothek/pkg/isbnutil"
 )
 
 // --- Gemeinsame MARC21-/SRU-Strukturen und Parsing-Logik ---
@@ -281,8 +283,7 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 		return nil, nil
 	}
 
-	cleanQuery := strings.ReplaceAll(trimmed, "-", "")
-	cleanQuery = strings.ReplaceAll(cleanQuery, " ", "")
+	cleanQuery := isbnutil.CleanISBN(trimmed)
 	var sruQuery string
 	if validiereISBN(cleanQuery) {
 		sruQuery = "NUM=" + cleanQuery
