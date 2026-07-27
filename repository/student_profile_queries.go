@@ -91,20 +91,34 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 	if klasse != "" {
 		rows, err = repo.db.Query(ctx, `
 			SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
-				(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL) as ausgeliehen_anzahl,
-				(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl,
+				COALESCE(l.ausgeliehen_anzahl, 0) as ausgeliehen_anzahl,
+				COALESCE(l.ueberfaellig_anzahl, 0) as ueberfaellig_anzahl,
 				EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
 			FROM schueler 
+			LEFT JOIN LATERAL (
+				SELECT
+					COUNT(*) as ausgeliehen_anzahl,
+					COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
+				FROM ausleihen a
+				WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL
+			) l ON true
 			WHERE klasse = $1 AND deleted_at IS NULL
 			ORDER BY nachname, vorname
 		`, klasse)
 	} else {
 		rows, err = repo.db.Query(ctx, `
 			SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
-				(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL) as ausgeliehen_anzahl,
-				(SELECT COUNT(*) FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL AND a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl,
+				COALESCE(l.ausgeliehen_anzahl, 0) as ausgeliehen_anzahl,
+				COALESCE(l.ueberfaellig_anzahl, 0) as ueberfaellig_anzahl,
 				EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
 			FROM schueler 
+			LEFT JOIN LATERAL (
+				SELECT
+					COUNT(*) as ausgeliehen_anzahl,
+					COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
+				FROM ausleihen a
+				WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL
+			) l ON true
 			WHERE deleted_at IS NULL
 			ORDER BY klasse, nachname, vorname 
 			LIMIT 500
