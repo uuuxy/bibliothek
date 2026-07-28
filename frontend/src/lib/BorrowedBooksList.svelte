@@ -1,6 +1,9 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { AlertTriangle, CalendarPlus, Loader2, Undo2 } from '@lucide/svelte';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void, mode?: "loans" | "scans" }} */
 	let {
@@ -30,12 +33,17 @@
 				const data = await response.json();
 				book.rueckgabe_frist = data.faellig_am;
 				editingId = null;
+				showToast(
+					`Rückgabedatum auf ${new Date(data.faellig_am).toLocaleDateString('de-DE')} gesetzt.`,
+					'success'
+				);
 			} else {
-				alert('Fehler beim Speichern des Datums');
+				const fehler = await response.json().catch(() => ({}));
+				showToast(fehler.error ?? 'Datum konnte nicht gespeichert werden.', 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			alert('Netzwerkfehler');
+			showToast('Netzwerkfehler beim Speichern des Datums.', 'error');
 		} finally {
 			isSavingDate = false;
 		}
@@ -52,12 +60,20 @@
 			if (response.ok) {
 				const data = await response.json();
 				book.rueckgabe_frist = data.neues_rueckgabe_datum;
+				// Rückmeldung mit dem NEUEN Datum. Vorher änderte sich still eine Zahl in
+				// einer anderen Spalte — wer auf den Knopf sah, sah nichts passieren und
+				// hielt die Verlängerung für kaputt.
+				const neu = new Date(data.neues_rueckgabe_datum).toLocaleDateString('de-DE');
+				showToast(`Verlängert bis ${neu}.`, 'success');
 			} else {
-				alert('Fehler bei der Verlängerung');
+				const fehler = await response.json().catch(() => ({}));
+				// Die Serverbegründung durchreichen: „Ausleihe gesperrt (Grund)" sagt, was zu
+				// tun ist — „Fehler bei der Verlängerung" lässt den Nutzer ratlos zurück.
+				showToast(fehler.error ?? 'Verlängerung nicht möglich.', 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			alert('Netzwerkfehler');
+			showToast('Netzwerkfehler bei der Verlängerung.', 'error');
 		} finally {
 			extendingIds.delete(id);
 		}
@@ -217,108 +233,63 @@
 							{/if}
 						</td>
 						<td class="py-3 px-4 whitespace-nowrap">
+							<!-- Farbe nur für die Ausnahme: „In Frist" ist der Normalfall einer
+							     laufenden Ausleihe und braucht kein grünes Abzeichen. Grün auf jeder
+							     Zeile heisst nur, dass Grün nichts mehr bedeutet. -->
 							{#if isOverdue}
-								<span
-									class="px-2 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded-full border border-rose-100"
-									>Überfällig</span
-								>
+								<span class="text-sm font-medium text-rose-600">Überfällig</span>
 							{:else}
-								<span
-									class="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full border border-emerald-100"
-									>In Frist</span
-								>
+								<span class="text-sm text-slate-500">In Frist</span>
 							{/if}
 						</td>
 					{/if}
+					<!-- Icons ohne Text, aber mit eindeutigem Symbol. Beschriftungen wurden
+					     versucht und wieder verworfen: Die Liste steht im Schülerprofil in einem
+					     ~590-px-Panel, die Aktionsspalte hat 17 % davon — „Verlängern" überdeckte
+					     dort die Status-Spalte. Statt Platz zu erzwingen, trägt das Symbol jetzt
+					     die Bedeutung: Kalender-Plus statt Uhr (eine Uhr heisst „Zeit", nicht
+					     „Frist verlängern"). Die Rückmeldung nach dem Klick liefert der Toast. -->
 					<td class="py-3 px-4 text-right">
-						<div class="flex items-center justify-end gap-2">
+						<div class="flex items-center justify-end gap-1">
 							{#if mode === 'loans'}
-								<button
+								<Button
+									variant="ghost"
+									size="sm"
 									onclick={() => handleExtend(book)}
 									disabled={extendingIds.has(book.ausleihe_id || book.id)}
-									class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 disabled:opacity-50 rounded-full transition-colors cursor-pointer"
-									title="Verlängern"
+									title="Um die Standard-Leihfrist verlängern"
 									aria-label="Ausleihe verlängern"
+									class="px-2 text-blue-600 hover:bg-blue-50"
 								>
 									{#if extendingIds.has(book.ausleihe_id || book.id)}
-										<svg
-											class="w-4 h-4 animate-spin text-blue-400"
-											xmlns="http://www.w3.org/2000/svg"
-											fill="none"
-											viewBox="0 0 24 24"
-											aria-hidden="true"
-											><circle
-												class="opacity-25"
-												cx="12"
-												cy="12"
-												r="10"
-												stroke="currentColor"
-												stroke-width="4"
-											></circle><path
-												class="opacity-75"
-												fill="currentColor"
-												d="M4 12a8 8 0 018-8v8H4z"
-											></path></svg
-										>
+										<Loader2 class="h-4 w-4 animate-spin" aria-hidden="true" />
 									{:else}
-										<svg
-											class="w-4 h-4"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											aria-hidden="true"
-											><path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2.5"
-												d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-											/></svg
-										>
+										<CalendarPlus class="h-4 w-4" aria-hidden="true" />
 									{/if}
-								</button>
+								</Button>
 								{#if onDamageClick}
-									<button
+									<Button
+										variant="ghost"
+										size="sm"
 										onclick={() => onDamageClick(book)}
-										class="p-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-full transition-colors cursor-pointer"
-										title="Verlust/Schaden melden"
+										title="Verlust oder Schaden melden"
 										aria-label="Verlust oder Schaden melden"
+										class="px-2 text-rose-700 hover:bg-rose-50"
 									>
-										<svg
-											class="w-4 h-4"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											aria-hidden="true"
-											><path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2.5"
-												d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-											/></svg
-										>
-									</button>
+										<AlertTriangle class="h-4 w-4" aria-hidden="true" />
+									</Button>
 								{/if}
 								{#if onReturnClick}
-									<button
+									<Button
+										variant="ghost"
+										size="sm"
 										onclick={() => onReturnClick(book.barcode_id)}
-										class="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-full transition-colors cursor-pointer"
 										title="Buch zurückgeben"
 										aria-label="Buch zurückgeben"
+										class="px-2 text-emerald-700 hover:bg-emerald-50"
 									>
-										<svg
-											class="w-4 h-4"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											aria-hidden="true"
-											><path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2.5"
-												d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-											/></svg
-										>
-									</button>
+										<Undo2 class="h-4 w-4" aria-hidden="true" />
+									</Button>
 								{/if}
 							{:else if mode === 'scans'}
 								<svg

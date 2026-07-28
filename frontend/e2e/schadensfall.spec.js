@@ -36,7 +36,10 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	await expect(page.getByText(`E2E-Schadenbuch-${suffix}`).first()).toBeVisible();
 
 	// Schaden melden → Modal ausfüllen → Elternbrief öffnet als PDF-Popup
-	await page.getByTitle('Verlust/Schaden melden').first().click();
+	// Am zugänglichen Namen festmachen, nicht am title-Attribut: Der Locator hing an
+	// „Verlust/Schaden melden" und fiel um, als title und aria-label vereinheitlicht
+	// wurden. getByRole prüft, was Nutzer und Screenreader tatsächlich adressieren.
+	await page.getByRole('button', { name: 'Verlust oder Schaden melden' }).first().click();
 	await page.locator('#damage-reason').fill('E2E Wasserschaden');
 	await page.locator('#damage-amount').fill('12.50');
 	const popupPromise = page.waitForEvent('popup');

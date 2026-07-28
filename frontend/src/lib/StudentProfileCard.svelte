@@ -228,21 +228,14 @@
 
 	<!-- Konto-Status (flach, kein Sub-Card) -->
 	<div class="w-full flex items-center justify-between border-t border-b border-slate-200 py-3">
-		<span class="text-base font-bold text-slate-700">Konto-Status</span>
+		<span class="text-base text-slate-600">Konto-Status</span>
+		<!-- Gesperrt ist die Ausnahme und trägt Farbe; „Aktiv" ist der Normalfall und
+		     bleibt still. Ein pulsierender grüner Punkt für „alles in Ordnung" zieht
+		     Aufmerksamkeit auf die einzige Stelle, die keine braucht. -->
 		{#if profile.ist_gesperrt}
-			<span
-				class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-bold bg-rose-100 text-rose-700"
-			>
-				<span class="w-2 h-2 rounded-full bg-rose-500 mr-2 animate-pulse"></span>
-				Gesperrt
-			</span>
+			<span class="text-sm font-medium text-rose-600">Gesperrt</span>
 		{:else}
-			<span
-				class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-bold bg-emerald-100 text-emerald-700"
-			>
-				<span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-				Aktiv
-			</span>
+			<span class="text-sm text-slate-500">Aktiv</span>
 		{/if}
 	</div>
 
