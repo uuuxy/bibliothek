@@ -43,13 +43,19 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 	query := `
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
 		       COUNT(a.id)                                        AS offene_buecher,
-		       COUNT(a.id) FILTER (WHERE a.rueckgabe_frist < now()) AS ueberfaellig
+		       COUNT(a.id) FILTER (WHERE a.rueckgabe_frist < now()) AS ueberfaellig,
+		       coalesce(m.lehrer_email, '')                        AS lehrer_email
 		FROM schueler s
 		JOIN ausleihen a ON s.id = a.schueler_id
+		-- Klassenleitung mitliefern: Ohne sie kann die Oberfläche VOR dem Versand nicht
+		-- zeigen, welche Klasse überhaupt eine Adresse hat. Verglichen wird normalisiert
+		-- (getrimmt, Kleinschreibung) — „5a", „5A" und „5a " sind dieselbe Klasse, und
+		-- ein unsichtbares Leerzeichen darf keinen stillen Nullversand auslösen.
+		LEFT JOIN klassen_lehrer_mapping m ON lower(btrim(m.klasse)) = lower(btrim(s.klasse))
 		WHERE s.deleted_at IS NULL
 		  AND s.ist_abgaenger = true
 		  AND a.rueckgabe_am IS NULL
-		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt
+		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt, m.lehrer_email
 		ORDER BY s.klasse, s.nachname
 	`
 	rows, err := s.DB.Pool.Query(ctx, query)
@@ -60,12 +66,12 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 
 	students := []any{}
 	for rows.Next() {
-		var id, barcode, vorname, nachname, klasse string
+		var id, barcode, vorname, nachname, klasse, lehrerEmail string
 		var abgaengerJahr int
 		var gesperrt bool
 		var offeneBuecher, ueberfaellig int
 		if err := rows.Scan(&id, &barcode, &vorname, &nachname, &klasse, &abgaengerJahr, &gesperrt,
-			&offeneBuecher, &ueberfaellig); err != nil {
+			&offeneBuecher, &ueberfaellig, &lehrerEmail); err != nil {
 			return nil, err
 		}
 		students = append(students, map[string]any{
@@ -78,6 +84,7 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 			"ist_gesperrt":   gesperrt,
 			"offene_buecher": offeneBuecher,
 			"ueberfaellig":   ueberfaellig,
+			"lehrer_email":   lehrerEmail,
 		})
 	}
 	if err := rows.Err(); err != nil {

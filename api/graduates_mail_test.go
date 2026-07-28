@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/pdf"
+	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v4"
 )
@@ -201,5 +202,22 @@ func TestSendAbgaengerKontoauszuege_LeereAuswahlOhneDBZugriff(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unerwarteter DB-Zugriff: %v", err)
+	}
+}
+
+// Regression: Das Mapping wird von Menschen gepflegt, die Klassen kommen aus dem
+// LUSD-Import. „5A" gegen „5a" oder ein mitkopiertes Leerzeichen darf den Versand
+// nicht kosten — vorher meldete die Oberfläche „keine E-Mail" und der Lauf
+// übersprang die Klasse still, obwohl die Adresse hinterlegt war.
+func TestWaehleAbgaengerKlassen_SchreibweiseDesMappingsEgal(t *testing.T) {
+	eintraege := []pdf.KontoauszugEintrag{eintrag("Max", "Mustermann", "5a")}
+	adressen := map[string]string{
+		repository.KlassenSchluessel(" 5A "): "pflasch@philipp-reis-schule.de",
+	}
+
+	gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, nil)
+
+	if len(gewaehlt) != 1 || gewaehlt[0].Empfaenger != "pflasch@philipp-reis-schule.de" {
+		t.Fatalf("Empfänger = %q, want pflasch@philipp-reis-schule.de (Schreibweise darf egal sein)", gewaehlt[0].Empfaenger)
 	}
 }

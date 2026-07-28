@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -111,8 +112,21 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	return klassen, nil
 }
 
+// KlassenSchluessel normalisiert ein Klassenkürzel für den Vergleich zwischen
+// Schülerdaten und Klassenlehrer-Mapping. Die beiden Quellen werden von Menschen
+// bzw. vom LUSD-Import befüllt und stimmen in Schreibweise und Leerzeichen nicht
+// zuverlässig überein.
+func KlassenSchluessel(klasse string) string {
+	return strings.ToLower(strings.TrimSpace(klasse))
+}
+
 // reichereLehrerEmails ordnet den Klassen die Lehrer-E-Mails aus dem Mapping zu.
 // Best-effort: bei fehlendem/teilweisem Mapping bleibt LehrerEmail leer.
+//
+// Verglichen wird NORMALISIERT. Vorher war es ein exakter Schlüsselvergleich: Ein im
+// Mapping als „5A" oder mit angehängtem Leerzeichen erfasstes Kürzel traf die Klasse
+// „5a" nicht — die Oberfläche meldete „keine E-Mail", obwohl die Adresse hinterlegt
+// war, und der Versand übersprang die Klasse still.
 func (repo *MahnwesenRepository) reichereLehrerEmails(ctx context.Context, klassen []MahnwesenKlasse) {
 	if len(klassen) == 0 {
 		return
@@ -127,14 +141,14 @@ func (repo *MahnwesenRepository) reichereLehrerEmails(ctx context.Context, klass
 	for mRows.Next() {
 		var k, e string
 		if err := mRows.Scan(&k, &e); err == nil {
-			emailMap[k] = e
+			emailMap[KlassenSchluessel(k)] = e
 		}
 	}
 	if err := mRows.Err(); err != nil {
 		emailMap = map[string]string{} // Teil-Mapping verwerfen (best-effort-Anreicherung)
 	}
 	for i := range klassen {
-		klassen[i].LehrerEmail = emailMap[klassen[i].Klasse]
+		klassen[i].LehrerEmail = emailMap[KlassenSchluessel(klassen[i].Klasse)]
 	}
 }
 
@@ -209,6 +223,11 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	// Auch der Jahrgangs-Modus braucht die Klassenleitungen: Ohne diese Zeile stand im
+	// Umschalter „Jahrgang" bei JEDER Klasse „keine E-Mail" — die Datums-Ansicht war
+	// angereichert, diese nicht, und der Unterschied war von aussen nicht zu erklären.
+	repo.reichereLehrerEmails(ctx, g.klassen)
 
 	return g.klassen, nil
 }

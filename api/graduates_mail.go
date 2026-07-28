@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/repository"
 )
 
 // abgaengerKlasse bündelt die Kontoauszüge einer Abgangsklasse mit ihrem Empfänger.
@@ -116,7 +117,8 @@ func (s *Server) klassenlehrerAdressen(ctx context.Context) (map[string]string, 
 		if err := rows.Scan(&klasse, &email); err != nil {
 			return nil, err
 		}
-		adressen[klasse] = email
+		// Normalisiert ablegen — „5A" im Mapping muss die Klasse „5a" treffen.
+		adressen[repository.KlassenSchluessel(klasse)] = email
 	}
 	return adressen, rows.Err()
 }
@@ -137,7 +139,7 @@ func waehleAbgaengerKlassen(
 	for _, e := range eintraege {
 		k := e.Schueler.Klasse
 		if _, ok := nachKlasse[k]; !ok {
-			nachKlasse[k] = &abgaengerKlasse{Klasse: k, Empfaenger: adressen[k]}
+			nachKlasse[k] = &abgaengerKlasse{Klasse: k, Empfaenger: adressen[repository.KlassenSchluessel(k)]}
 			reihenfolge = append(reihenfolge, k)
 		}
 		nachKlasse[k].Eintraege = append(nachKlasse[k].Eintraege, e)

@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -56,6 +57,12 @@ func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 		if !DecodeAndValidate(w, r, &req) {
 			return
 		}
+		// Getrimmt speichern: Ein aus der Zwischenablage mitgeschlepptes Leerzeichen ist
+		// unsichtbar, macht das Kürzel aber zu einem anderen — die Klasse bliebe ohne
+		// Adresse, ohne dass jemand sieht warum.
+		req.Klasse = strings.TrimSpace(req.Klasse)
+		req.LehrerEmail = strings.TrimSpace(req.LehrerEmail)
+
 		if req.Klasse == "" || req.LehrerEmail == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("klasse und lehrer_email sind erforderlich"))
 			return

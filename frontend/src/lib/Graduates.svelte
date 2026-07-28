@@ -83,11 +83,19 @@
 	// Der Dialog erwartet die Form des Mahnwesens ({ klasse, schueler, lehrer_email }),
 	// damit er für beide Aufrufer derselbe bleibt. Die Abgängerliste ist flach, also
 	// wird sie hier auf Klassen verdichtet.
+	//
+	// lehrer_email kommt seit dem Mapping-JOIN in /api/abgaenger mit. Ohne sie stand im
+	// Dialog bei JEDER Klasse „keine E-Mail" — auch bei hinterlegter Adresse, weil das
+	// Frontend die Adressen schlicht nicht kannte.
 	let klassenFuerVersand = $derived(
-		classes.map((k) => ({
-			klasse: String(k),
-			schueler: graduates.filter((/** @type {any} */ s) => s.klasse === k)
-		}))
+		classes.map((k) => {
+			const schueler = graduates.filter((/** @type {any} */ s) => s.klasse === k);
+			return {
+				klasse: String(k),
+				schueler,
+				lehrer_email: schueler[0]?.lehrer_email ?? ''
+			};
+		})
 	);
 
 	/** @param {{ klassen: string[], overrideEmail: string }} auswahl */
