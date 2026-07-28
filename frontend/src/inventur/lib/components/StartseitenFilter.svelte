@@ -94,28 +94,34 @@
 		<!-- Dynamic Filter Area -->
 		<div class="w-full max-w-3xl transition-all duration-300 ease-in-out">
 			{#if viewMode === 'suche'}
-				<div class="relative group" id="filter-suche">
-					<div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-						<svg
-							class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors duration-200"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-							/>
-						</svg>
-					</div>
+				<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst NICHT auf der
+				     36-px-Control-Skala und bewusst rounded-full — dieses Feld ist kein Datenfeld
+				     im Formular, sondern das globale Werkzeug der Seite und soll sich davon
+				     abheben. Der Container trägt Rahmen, Fläche und Fokus; das Feld selbst nichts. -->
+				<div
+					class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:shadow-md focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
+					id="filter-suche"
+				>
+					<svg
+						class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						aria-hidden="true"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+						/>
+					</svg>
 					<input
 						type="text"
 						bind:value={searchQuery}
 						aria-label="Suchen nach Titel, Fach, Klasse oder Autor"
 						placeholder="Suchen nach Titel, Fach, Klasse (z.B. 'Mathe 5' oder 'Gymnasium')..."
-						class="block w-full pl-14 pr-6 py-3.5 bg-white border border-slate-300 rounded-xl text-slate-800 shadow-sm hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-200 text-sm placeholder-slate-400"
+						class="flex-1 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
 					/>
 				</div>
 			{:else if viewMode === 'jahrgaenge'}

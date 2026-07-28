@@ -15,6 +15,23 @@
 	} = $props();
 </script>
 
+<!-- Lupe, Feld und Kamera-Knopf sind Flex-Geschwister im Pillen-Container (Omnibox.svelte).
+     Vorher lagen Icon und Knopf absolut positioniert über einem Feld mit eigenem Padding —
+     in einer 48-px-Pille bricht das, weil die Höhe nicht mehr vom Padding kommt. -->
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
+	fill="none"
+	viewBox="0 0 24 24"
+	stroke="currentColor"
+	aria-hidden="true"
+	><path
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		stroke-width="2"
+		d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+	/></svg
+>
 <input
 	id="omnibox-input"
 	type="text"
@@ -32,39 +49,23 @@
 		onIndexChange: onIndexChange,
 		onEscape: onEscape
 	}}
-	class="w-full pl-10 pr-12 bg-transparent text-slate-800 font-sans text-xl placeholder-slate-400 focus:outline-none tracking-wide"
+	class="flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
 	placeholder={isActive
 		? 'Buch-Barcode (B-) scannen...'
 		: 'Schüler (S-), Lehrer (L-), Buch (B-) scannen...'}
 />
-<div class="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400">
-	<svg
-		xmlns="http://www.w3.org/2000/svg"
-		class="h-6 w-6"
-		fill="none"
-		viewBox="0 0 24 24"
-		stroke="currentColor"
-		aria-hidden="true"
-		><path
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			stroke-width="2"
-			d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-		/></svg
-	>
-</div>
 <button
 	type="button"
 	onclick={onToggleCamera}
 	title="Kamera-Scanner (Mobilgerät)"
 	aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
-	class="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl transition-colors {showCamera
+	class="shrink-0 -mr-2 p-1.5 rounded-full transition-colors {showCamera
 		? 'bg-blue-100 text-blue-600'
-		: 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'}"
+		: 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'}"
 >
 	<svg
 		xmlns="http://www.w3.org/2000/svg"
-		class="h-6 w-6"
+		class="h-5 w-5"
 		fill="none"
 		viewBox="0 0 24 24"
 		stroke="currentColor"

@@ -15,6 +15,23 @@
 
 	let studentProfileComponent = $state(/** @type {any} */ (null));
 
+	// Rückmeldung des Scanners (rot = blockiert, grün = gebucht, orange = Hinweis).
+	// Diese Klassen tragen die focus-within-Variante MIT, obwohl sie ohne Fokus gälten:
+	// Das Scanfeld ist im Kiosk dauerhaft fokussiert, und `focus-within:border-blue-600`
+	// aus dem Pillen-Grundzustand hat höhere Spezifität als ein einfaches `border-red-500`.
+	// Ohne die Verdopplung würde die Fehlerfarbe genau dann verschluckt, wenn sie gebraucht wird.
+	const feedbackKlassen = $derived.by(() => {
+		if (omniboxStore.scanError)
+			return 'bg-red-50 border-red-500 ring-1 ring-red-500 focus-within:bg-red-50 focus-within:border-red-500 focus-within:ring-red-500';
+		if (omniboxStore.flashBorder === 'green')
+			return 'border-emerald-400 ring-1 ring-emerald-400 focus-within:border-emerald-400 focus-within:ring-emerald-400';
+		if (omniboxStore.flashBorder === 'orange')
+			return 'border-amber-400 ring-1 ring-amber-400 focus-within:border-amber-400 focus-within:ring-amber-400';
+		if (omniboxStore.flashBorder === 'red')
+			return 'border-red-500 ring-1 ring-red-500 focus-within:border-red-500 focus-within:ring-red-500';
+		return '';
+	});
+
 	$effect(() => {
 		if (appState.triggerStudentScan) {
 			omniboxStore.queryVal = appState.triggerStudentScan;
@@ -130,21 +147,17 @@
 			? 'sticky -top-4 z-30 bg-slate-50/95 backdrop-blur-md py-4'
 			: ''}"
 	>
+		<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst rounded-full und
+		     bewusst 48 px statt der 36-px-Control-Höhe — das Scanfeld ist das globale Werkzeug
+		     des Kiosks und soll sich von den eckigen Datenfeldern abheben. Der Container trägt
+		     Fläche, Rahmen und Fokus; Lupe, Feld und Kamera-Knopf sind seine Flex-Kinder.
+		     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 		<form
 			onsubmit={(e) => omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
-			class="w-full relative py-5 px-8 rounded-3xl border shadow-2xl no-print transition-all duration-500 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 {omniboxStore.isActive
-				? 'scale-100'
-				: 'scale-105'} {omniboxStore.isShaking || omniboxStore.scanError
+			class="group relative flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:shadow-md focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600 no-print {omniboxStore.isShaking ||
+			omniboxStore.scanError
 				? 'animate-shake'
-				: ''} {omniboxStore.scanError
-				? 'ring-2 ring-red-500 bg-red-50 border-red-500'
-				: 'bg-white border-slate-200'} {omniboxStore.flashBorder === 'green'
-				? 'ring-4 ring-emerald-500/10 border-emerald-400'
-				: omniboxStore.flashBorder === 'orange'
-					? 'ring-4 ring-amber-500/10 border-amber-400'
-					: omniboxStore.flashBorder === 'red' && !omniboxStore.scanError
-						? 'ring-4 ring-red-500/30 border-red-500'
-						: ''}"
+				: ''} {feedbackKlassen}"
 		>
 			<OmniboxInput
 				bind:queryVal={omniboxStore.queryVal}
