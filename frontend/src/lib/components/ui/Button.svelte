@@ -18,14 +18,21 @@
 			'bg-transparent border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
 	};
 
+	// Feste Höhen statt reinem Padding: Nur so stehen Buttons neben Eingabefeldern und
+	// in Tabellenzeilen auf einer Linie. Gemessen wurden vorher NEUN verschiedene
+	// Button-Höhen zwischen 15 und 38 px — jede Komponente brachte ihre eigene mit.
 	const sizes = {
-		sm: 'px-3 py-1.5 text-xs',
-		md: 'px-4 py-2 text-sm',
-		lg: 'px-6 py-3 text-base'
+		sm: 'h-7 px-2.5 text-xs',
+		md: 'h-8 px-3 text-sm',
+		lg: 'h-10 px-4 text-sm'
 	};
 
+	// rounded-md (4 px) statt rounded-full: Die Pille war das deutlichste
+	// Consumer-App-Signal der Anwendung — ausgerechnet in der Komponente, die als
+	// Referenz für alle anderen dient. Pillen bleiben Badges und Segmented Controls
+	// vorbehalten, wo die Form eine Bedeutung trägt.
 	const baseClasses =
-		'inline-flex items-center justify-center gap-2 font-bold transition-all border rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+		'inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
 </script>
 
 <button class="{baseClasses} {sizes[size]} {variants[variant]} {className}" {...rest}>

@@ -2,6 +2,41 @@
 
 @theme {
 	--font-sans: 'Inter', 'Roboto', 'system-ui', sans-serif;
+
+	/* ── Eckenradien ──────────────────────────────────────────────────────────
+	   Zusammengestauchte Skala für ein Verwaltungswerkzeug. Das Audit fand 18
+	   verschiedene Radius-Werte in 763 Vorkommen; die großen (rounded-xl 12 px,
+	   -2xl 16 px, -3xl 24 px) gaben der Anwendung ihre verspielte Anmutung.
+
+	   Umdefiniert wird hier die SKALA, nicht der Aufruf: Damit ändern sich alle
+	   763 Fundstellen auf einmal, ohne eine einzige Komponente anzufassen — und
+	   die Klassennamen behalten ihre relative Ordnung (xl bleibt größer als lg).
+	   Ein Suchen-und-Ersetzen über alle rounded-* hätte dagegen auch die Pillen
+	   erwischt, die bei Badges und Segmented Controls richtig sind.
+
+	   --radius-full bleibt bewusst unangetastet: Avatare, Statuspunkte und
+	   Segmented Controls müssen rund bleiben. */
+	--radius-xs: 2px;
+	--radius-sm: 3px;
+	--radius-md: 4px;
+	--radius-lg: 5px;
+	--radius-xl: 6px;
+	--radius-2xl: 8px;
+	--radius-3xl: 10px;
+	--radius-4xl: 12px;
+
+	/* ── Schatten ─────────────────────────────────────────────────────────────
+	   235 Vorkommen auf sieben Stufen. Ein strenges Werkzeug braucht zwei
+	   Aussagen: „liegt auf der Fläche" und „schwebt darüber". Die Stufen bleiben
+	   als Klassen erhalten, rücken aber eng zusammen — sichtbar bleibt nur noch
+	   der Unterschied zwischen Karte und Overlay, nicht mehr fünf Abstufungen
+	   von Wolkigkeit dazwischen. */
+	--shadow-xs: 0 1px 1px rgb(15 23 42 / 0.04);
+	--shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+	--shadow-md: 0 1px 3px rgb(15 23 42 / 0.08);
+	--shadow-lg: 0 2px 6px rgb(15 23 42 / 0.09);
+	--shadow-xl: 0 4px 12px rgb(15 23 42 / 0.11);
+	--shadow-2xl: 0 8px 24px rgb(15 23 42 / 0.14);
 }
 
 body {

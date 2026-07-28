@@ -28,7 +28,7 @@
 	</div>
 	<button
 		onclick={onDelete}
-		class="shrink-0 px-6 py-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white rounded-full text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer"
+		class="shrink-0 px-6 py-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white rounded-md text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer"
 	>
 		Schüler archivieren / löschen
 	</button>
