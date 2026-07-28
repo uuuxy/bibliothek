@@ -252,8 +252,7 @@
 								<div>
 									<label
 										for="klasse-{titelId}"
-										class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1"
-										>Klasse *</label
+										class="block text-xs font-medium text-slate-500 mb-1">Klasse *</label
 									>
 									<input
 										id="klasse-{titelId}"
@@ -266,8 +265,7 @@
 								<div>
 									<label
 										for="anzahl-{titelId}"
-										class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1"
-										>Anzahl</label
+										class="block text-xs font-medium text-slate-500 mb-1">Anzahl</label
 									>
 									<input
 										id="anzahl-{titelId}"
@@ -280,9 +278,7 @@
 								</div>
 							</div>
 							<div class="mt-3">
-								<label
-									for="notiz-{titelId}"
-									class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1"
+								<label for="notiz-{titelId}" class="block text-xs font-medium text-slate-500 mb-1"
 									>Notiz (optional)</label
 								>
 								<textarea

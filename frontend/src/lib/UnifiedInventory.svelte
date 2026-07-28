@@ -95,9 +95,7 @@
 
 			{#if inventoryState.offeneSessions.length > 0}
 				<div class="w-full max-w-lg mx-auto text-left space-y-2 pt-4">
-					<h4 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-						Laufende Inventuren
-					</h4>
+					<h4 class="text-sm font-semibold text-slate-500">Laufende Inventuren</h4>
 					{#each inventoryState.offeneSessions as session (session.session_id)}
 						<div
 							class="flex items-center justify-between gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg"
@@ -134,9 +132,7 @@
 			<div class="p-6">
 				<div class="flex justify-between items-end mb-4">
 					<div>
-						<span class="text-sm font-semibold text-slate-500 uppercase tracking-wider"
-							>Aktueller Fortschritt</span
-						>
+						<span class="text-sm font-semibold text-slate-500">Aktueller Fortschritt</span>
 						<div class="text-2xl font-bold text-slate-900 mt-1">
 							{inventoryState.stats.erfasst} / {inventoryState.stats.erwartet}
 							<span class="text-base font-medium text-slate-400">erfasst</span>

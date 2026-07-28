@@ -112,7 +112,7 @@
 			</div>
 
 			<div class="mt-5 grid gap-3 sm:grid-cols-2">
-				<label class="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+				<label class="block text-xs font-semibold text-slate-400"
 					>Fach
 					<input
 						type="text"
@@ -120,7 +120,7 @@
 						class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
 					/>
 				</label>
-				<label class="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+				<label class="block text-xs font-semibold text-slate-400"
 					>Klassenstufe
 					<select
 						bind:value={grade}
@@ -132,7 +132,7 @@
 					</select>
 				</label>
 			</div>
-			<label class="mt-4 block text-xs font-semibold uppercase tracking-wider text-slate-400"
+			<label class="mt-4 block text-xs font-semibold text-slate-400"
 				>Bestand
 				<input
 					type="number"

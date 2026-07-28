@@ -182,7 +182,7 @@
 	</div>
 
 	<span
-		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-[9px] uppercase tracking-wider text-slate-400 font-bold pointer-events-none"
+		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-slate-400 font-medium pointer-events-none"
 	>
 		{side === 'front' ? 'Vorderseite' : 'Rückseite'} · Drag &amp; Drop zum Verschieben · Ecken zum Skalieren
 	</span>
@@ -265,9 +265,7 @@
 						d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
 					/>
 				</svg>
-				<span class="text-[5px] font-bold tracking-widest pointer-events-none uppercase"
-					>PASSBILD</span
-				>
+				<span class="text-[5px] font-medium pointer-events-none">PASSBILD</span>
 			</div>
 		{:else if isBarcode}
 			<div class="w-full h-full flex flex-col items-center justify-center">

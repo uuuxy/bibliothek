@@ -24,7 +24,7 @@
 		)} opacity-90 shadow-md"
 	></div>
 	<div class="pl-4 pr-1 pt-1 text-left">
-		<span class="text-[9px] uppercase tracking-widest text-white/80 font-extrabold">{subject}</span>
+		<span class="text-xs text-white/80 font-extrabold">{subject}</span>
 		<h4 class="text-sm font-extrabold text-white leading-snug line-clamp-3 mt-1.5">{title}</h4>
 	</div>
 	<div class="pl-4 pr-1 pt-1 text-left">

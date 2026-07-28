@@ -10,9 +10,7 @@
 			<div class="flex items-start gap-2.5">
 				<Printer class="h-4 w-4" aria-hidden="true" />
 				<div>
-					<h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider">
-						Aktiver Druckauftrag
-					</h3>
+					<h3 class="text-xs font-medium text-blue-800">Aktiver Druckauftrag</h3>
 					<p class="text-xs text-blue-700 font-medium leading-relaxed mt-1">
 						Es werden {printQueue.copies?.length ?? 0} Etiketten aus der freigegebenen Lieferung geladen.
 					</p>
@@ -28,17 +26,13 @@
 	{:else}
 		<!-- Step 1: Selection -->
 		<div class="py-5 space-y-4 border-b border-slate-200">
-			<h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">
-				1. Titel / Klassensatz wählen
-			</h3>
+			<h3 class="text-xs text-blue-600 font-medium">1. Titel / Klassensatz wählen</h3>
 
 			<!-- Tab selector for search vs class set -->
 			<div class="space-y-3">
 				<!-- Autocomplete search -->
 				<div class="space-y-1.5">
-					<span class="text-[10px] uppercase font-bold text-slate-500 block"
-						>Buchtitel im Katalog suchen</span
-					>
+					<span class="text-xs font-medium text-slate-500 block">Buchtitel im Katalog suchen</span>
 					<div class="relative">
 						<input
 							type="text"
@@ -80,18 +74,14 @@
 				<!-- Divider -->
 				<div class="relative flex py-1 items-center">
 					<div class="grow border-t border-slate-100"></div>
-					<span class="shrink mx-3 text-[9px] uppercase tracking-wider text-slate-400 font-bold"
-						>ODER</span
-					>
+					<span class="shrink mx-3 text-xs text-slate-400 font-medium">ODER</span>
 					<div class="grow border-t border-slate-100"></div>
 				</div>
 
 				<!-- Class Selection -->
 				<div class="grid grid-cols-2 gap-3">
 					<div class="space-y-1.5">
-						<span class="text-[10px] uppercase font-bold text-slate-500 block"
-							>Aus Klasse laden</span
-						>
+						<span class="text-xs font-medium text-slate-500 block">Aus Klasse laden</span>
 						<select
 							bind:value={labelStore.selectedClass}
 							onchange={labelStore.handleClassChange}
@@ -105,8 +95,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<span class="text-[10px] uppercase font-bold text-slate-500 block">Buch aus Klasse</span
-						>
+						<span class="text-xs font-medium text-slate-500 block">Buch aus Klasse</span>
 						<select
 							disabled={!labelStore.selectedClass}
 							onchange={(e) => {
@@ -137,9 +126,7 @@
 		<!-- Step 2: Barcodes & Mode -->
 		{#if labelStore.selectedTitle}
 			<div class="py-5 space-y-4 border-b border-slate-200">
-				<h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">
-					2. Barcodes generieren
-				</h3>
+				<h3 class="text-xs text-blue-600 font-medium">2. Barcodes generieren</h3>
 
 				<!-- Selection mode -->
 				<div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/40 text-xs">
@@ -161,7 +148,7 @@
 
 				{#if labelStore.generationMode === 'existing'}
 					<div class="space-y-2">
-						<span class="text-[10px] uppercase font-bold text-slate-500 block"
+						<span class="text-xs font-medium text-slate-500 block"
 							>Exemplare auswählen ({labelStore.existingCopies.length} gefunden)</span
 						>
 						{#if labelStore.loadingCopies}
@@ -200,7 +187,7 @@
 					<!-- Generating new sequential labels -->
 					<div class="grid grid-cols-2 gap-3">
 						<div class="space-y-1.5">
-							<span class="text-[10px] uppercase font-bold text-slate-500 block">Menge</span>
+							<span class="text-xs font-medium text-slate-500 block">Menge</span>
 							<input
 								type="number"
 								min="1"
@@ -210,9 +197,7 @@
 							/>
 						</div>
 						<div class="space-y-1.5">
-							<span class="text-[10px] uppercase font-bold text-slate-500 block"
-								>Start-Ziffer (B-)</span
-							>
+							<span class="text-xs font-medium text-slate-500 block">Start-Ziffer (B-)</span>
 							<input
 								type="number"
 								min="1"
@@ -227,9 +212,7 @@
 			<!-- Platzhalter, damit die Schrittfolge nicht von 1 auf 3 springt (wirkt sonst
 			     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
 			<div class="py-5 space-y-2 border-b border-slate-200 opacity-60">
-				<h3 class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-					2. Barcodes generieren
-				</h3>
+				<h3 class="text-xs text-slate-400 font-medium">2. Barcodes generieren</h3>
 				<p class="text-[11px] text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
 			</div>
 		{/if}
@@ -237,11 +220,11 @@
 
 	<!-- Step 3: Print Layout settings -->
 	<div class="py-5 space-y-4 border-b border-slate-200">
-		<h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">3. Layout-Optionen</h3>
+		<h3 class="text-xs text-blue-600 font-medium">3. Layout-Optionen</h3>
 
 		<div class="space-y-3.5">
 			<div class="space-y-1.5">
-				<span class="text-[10px] uppercase font-bold text-slate-500 block">Etikettenformat</span>
+				<span class="text-xs font-medium text-slate-500 block">Etikettenformat</span>
 				<select
 					bind:value={labelStore.formatId}
 					class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -253,9 +236,7 @@
 			</div>
 
 			<div class="space-y-1.5">
-				<span class="text-[10px] uppercase font-bold text-slate-500 block"
-					>Startposition auf dem A4-Bogen</span
-				>
+				<span class="text-xs font-medium text-slate-500 block">Startposition auf dem A4-Bogen</span>
 				<div class="flex items-center gap-2">
 					<input
 						type="number"
@@ -272,7 +253,7 @@
 			</div>
 
 			<div class="space-y-1.5">
-				<span class="text-[10px] uppercase font-bold text-slate-500 block">Barcode-Ausgabe</span>
+				<span class="text-xs font-medium text-slate-500 block">Barcode-Ausgabe</span>
 				<select
 					bind:value={labelStore.barcodeType}
 					class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none"

@@ -72,7 +72,7 @@
 		{:else if currentSlide === 0}
 			<!-- Buch des Monats -->
 			<div class="flex flex-col items-center text-center gap-6 max-w-sm">
-				<span class="text-sm font-bold tracking-widest uppercase text-amber-400"
+				<span class="text-sm font-medium text-amber-400"
 					><Star class="h-4 w-4" aria-hidden="true" /> Buch des Monats</span
 				>
 				{#if slides.buch_des_monats}
@@ -104,7 +104,7 @@
 		{:else if currentSlide === 1}
 			<!-- Neu eingetroffen -->
 			<div class="flex flex-col items-center gap-8 w-full max-w-4xl">
-				<span class="text-sm font-bold tracking-widest uppercase text-cyan-400"
+				<span class="text-sm font-medium text-cyan-400"
 					><Sparkles class="h-4 w-4" aria-hidden="true" /> Neu eingetroffen</span
 				>
 				{#if slides.neu_eingetroffen.length > 0}
@@ -154,7 +154,7 @@
 		{:else if currentSlide === 2}
 			<!-- Beliebt -->
 			<div class="flex flex-col items-center gap-6 w-full max-w-lg">
-				<span class="text-sm font-bold tracking-widest uppercase text-rose-400"
+				<span class="text-sm font-medium text-rose-400"
 					><Flame class="h-4 w-4" aria-hidden="true" /> Beliebt diese Woche</span
 				>
 				{#if slides.beliebt.length > 0}

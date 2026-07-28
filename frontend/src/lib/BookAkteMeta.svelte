@@ -35,7 +35,7 @@
 				/>
 			{:else}
 				<div class="text-center p-6 z-10">
-					<p class="text-xs font-extrabold text-white/60 uppercase tracking-widest mb-2">
+					<p class="text-xs font-extrabold text-white/60 mb-2">
 						{book.subject}
 					</p>
 					<p class="text-sm font-bold text-white leading-snug line-clamp-4">{book.title}</p>

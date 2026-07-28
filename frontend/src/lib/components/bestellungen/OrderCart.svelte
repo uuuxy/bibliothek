@@ -5,7 +5,7 @@
 
 <div class="space-y-3">
 	<div class="flex items-center justify-between">
-		<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Warenkorb</span>
+		<span class="text-xs font-medium text-slate-500">Warenkorb</span>
 		{#if orderStore.cart.length}
 			<span
 				class="text-xs font-bold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 tabular-nums"

@@ -86,7 +86,7 @@
 		</div>
 	{:else}
 		<div class="flex items-center justify-between">
-			<h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">{el.id}</h3>
+			<h3 class="text-xs font-medium text-slate-600">{el.id}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'details', 'validity', 'barcode'].includes(el.id)}
 				<button
 					onclick={handleDelete}
@@ -111,7 +111,7 @@
 
 		<!-- Visibility -->
 		<div class="flex items-center justify-between">
-			<span class="text-[10px] font-bold text-slate-500 uppercase">Sichtbar</span>
+			<span class="text-xs font-medium text-slate-500">Sichtbar</span>
 			<label class="relative inline-flex items-center cursor-pointer select-none">
 				<input type="checkbox" bind:checked={el.show} class="sr-only peer" />
 				<div
@@ -122,7 +122,7 @@
 
 		<!-- Position & Size -->
 		<div class="space-y-2 pt-2 border-t border-slate-100">
-			<span class="text-[10px] font-bold text-slate-500 uppercase block">Position &amp; Größe</span>
+			<span class="text-xs font-medium text-slate-500 block">Position &amp; Größe</span>
 			<div class="grid grid-cols-2 gap-2">
 				{@render numInput('X (mm)', el.x, 0, 80, 0.5, (v) => {
 					el.x = v;
@@ -141,9 +141,7 @@
 
 		<!-- Z-Index -->
 		<div class="flex items-center gap-2 pt-2 border-t border-slate-100">
-			<span class="text-[10px] font-bold text-slate-500 uppercase flex-1"
-				>Ebene (z={el.zIndex})</span
-			>
+			<span class="text-xs font-medium text-slate-500 flex-1">Ebene (z={el.zIndex})</span>
 			<button
 				onclick={() => bringForward(side, el.id)}
 				class="px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
@@ -159,11 +157,11 @@
 		<!-- Text style panel -->
 		{#if isTextType && el.style}
 			<div class="space-y-3 pt-2 border-t border-slate-100">
-				<span class="text-[10px] font-bold text-slate-500 uppercase block">Textformatierung</span>
+				<span class="text-xs font-medium text-slate-500 block">Textformatierung</span>
 
 				{#if !isDynamic}
 					<div class="space-y-1">
-						<span class="text-[9px] text-slate-400 font-bold uppercase block">Inhalt</span>
+						<span class="text-xs text-slate-400 font-medium block">Inhalt</span>
 						<input
 							type="text"
 							bind:value={el.content}
@@ -173,7 +171,7 @@
 				{/if}
 
 				<div class="space-y-1">
-					<span class="text-[9px] text-slate-400 font-bold uppercase block">Schriftart</span>
+					<span class="text-xs text-slate-400 font-medium block">Schriftart</span>
 					<select
 						bind:value={el.style.fontFamily}
 						class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none"
@@ -189,7 +187,7 @@
 						el.style.fontSize = v;
 					})}
 					<div class="space-y-1">
-						<span class="text-[9px] text-slate-400 font-bold uppercase block">Farbe</span>
+						<span class="text-xs text-slate-400 font-medium block">Farbe</span>
 						<input
 							type="color"
 							bind:value={el.style.color}
@@ -223,7 +221,7 @@
 		<!-- Image panel -->
 		{#if isImageType}
 			<div class="space-y-3 pt-2 border-t border-slate-100">
-				<span class="text-[10px] font-bold text-slate-500 uppercase block">Bild</span>
+				<span class="text-xs font-medium text-slate-500 block">Bild</span>
 				<input
 					type="file"
 					accept="image/*"
@@ -245,7 +243,7 @@
 
 {#snippet numInput(label, value, min, max, step, onInput)}
 	<div class="space-y-1">
-		<span class="text-[9px] text-slate-400 font-bold uppercase block">{label}</span>
+		<span class="text-xs text-slate-400 font-medium block">{label}</span>
 		<input
 			type="number"
 			{min}

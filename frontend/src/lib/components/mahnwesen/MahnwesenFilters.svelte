@@ -238,9 +238,7 @@
 						transition:scale={{ duration: 130, start: 0.95, opacity: 0 }}
 						class="absolute right-0 top-full mt-2 w-72 origin-top-right bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-30"
 					>
-						<div
-							class="px-2 pt-1 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider"
-						>
+						<div class="px-2 pt-1 pb-1 text-xs font-medium text-slate-400">
 							Mahnbriefe an Eltern
 						</div>
 						<button
@@ -295,11 +293,7 @@
 						</div>
 
 						<div class="border-t border-slate-100 my-1.5"></div>
-						<div
-							class="px-2 pt-1 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider"
-						>
-							Weitere
-						</div>
+						<div class="px-2 pt-1 pb-1 text-xs font-medium text-slate-400">Weitere</div>
 						<button
 							role="menuitem"
 							onclick={() => {

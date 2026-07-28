@@ -158,7 +158,7 @@
 </script>
 
 <div class="mt-6 border-t border-slate-100 pt-4">
-	<span class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
+	<span class="block text-xs font-semibold text-slate-400 mb-2"
 		>Alternativ: Foto vom Barcode machen</span
 	>
 	<label

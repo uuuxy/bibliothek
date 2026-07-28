@@ -125,7 +125,7 @@
 					</div>
 				{/if}
 				<div>
-					<span class="text-xs font-semibold text-slate-400 tracking-wider uppercase"
+					<span class="text-xs font-semibold text-slate-400"
 						>Lehrmittelfreiheit (LMF) Klassensatz</span
 					>
 					<h2 class="text-2xl font-bold text-slate-900 leading-tight">{title.titel}</h2>

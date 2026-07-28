@@ -179,7 +179,7 @@
 	<div class="overflow-x-auto">
 		<table class="w-full text-left text-base text-slate-700">
 			<thead
-				class="bg-slate-50 border-b border-slate-100 uppercase tracking-wider text-[10px] font-bold text-slate-500 font-sans"
+				class="bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500 font-sans"
 			>
 				<tr>
 					<th class="px-6 py-4 w-10">

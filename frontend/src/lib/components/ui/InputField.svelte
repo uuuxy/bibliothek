@@ -23,9 +23,7 @@
 </script>
 
 <div>
-	<label for={id} class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5"
-		>{label}</label
-	>
+	<label for={id} class="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
 	<input
 		{id}
 		{type}

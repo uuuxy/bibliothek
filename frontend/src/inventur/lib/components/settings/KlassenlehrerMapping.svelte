@@ -93,12 +93,8 @@
 			<table class="w-full text-sm">
 				<thead class="bg-slate-50 text-slate-500">
 					<tr>
-						<th class="text-left px-4 py-2.5 font-semibold text-xs uppercase tracking-wide"
-							>Klasse</th
-						>
-						<th class="text-left px-4 py-2.5 font-semibold text-xs uppercase tracking-wide"
-							>E-Mail Klassenlehrer</th
-						>
+						<th class="text-left px-4 py-2.5 font-medium text-xs">Klasse</th>
+						<th class="text-left px-4 py-2.5 font-medium text-xs">E-Mail Klassenlehrer</th>
 						<th class="px-4 py-2.5 w-12"></th>
 					</tr>
 				</thead>
@@ -139,9 +135,7 @@
 	<!-- Add new mapping -->
 	<div class="flex gap-3 items-end pt-2 border-t border-slate-100">
 		<div class="w-28">
-			<label
-				for="new-mapping-klasse"
-				class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+			<label for="new-mapping-klasse" class="block text-xs font-medium text-slate-400 mb-1"
 				>Klasse</label
 			>
 			<input
@@ -153,9 +147,7 @@
 			/>
 		</div>
 		<div class="flex-1">
-			<label
-				for="new-mapping-email"
-				class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+			<label for="new-mapping-email" class="block text-xs font-medium text-slate-400 mb-1"
 				>E-Mail</label
 			>
 			<input

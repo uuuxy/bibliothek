@@ -83,9 +83,7 @@
 <div class="max-h-64 overflow-y-auto pr-2 custom-scrollbar">
 	<table class="w-full text-left border-collapse table-fixed">
 		<thead>
-			<tr
-				class="border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider"
-			>
+			<tr class="border-b border-slate-200 text-xs font-medium text-slate-600">
 				<!-- table-fixed + PROZENT-Breiten (Summe 100%): Die Liste steht auch in schmalen
 				     Panels (Schülerprofil ~590px). Mit festen px-Breiten (w-32/w-48/w-28/w-40 =
 				     592px) blieb dort für die Titelspalte 0px übrig — der truncatete Titel

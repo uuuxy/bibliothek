@@ -35,9 +35,7 @@
 			</div>
 
 			<div class="space-y-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-				<p class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">
-					Bitte auf Vollständigkeit prüfen:
-				</p>
+				<p class="text-sm font-medium text-slate-700 mb-2">Bitte auf Vollständigkeit prüfen:</p>
 				{#each checklistItems as item, _i (_i)}
 					<label class="flex items-center space-x-3 cursor-pointer group">
 						<input

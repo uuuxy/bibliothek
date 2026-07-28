@@ -153,7 +153,7 @@
 
 				<button
 					onclick={onClose}
-					class="mt-auto w-full text-center py-3 text-emerald-800 font-bold text-lg hover:text-emerald-900 transition-colors uppercase tracking-widest bg-transparent border-none cursor-pointer"
+					class="mt-auto w-full text-center py-3 text-emerald-800 font-medium text-lg hover:text-emerald-900 transition-colors bg-transparent border-none cursor-pointer"
 				>
 					Abbrechen
 				</button>

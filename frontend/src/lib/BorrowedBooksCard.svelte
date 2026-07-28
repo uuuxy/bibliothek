@@ -7,7 +7,7 @@
 
 <div class="w-full h-full pt-2">
 	<div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-6">
-		<h3 class="text-base font-bold text-slate-500 uppercase tracking-wider">
+		<h3 class="text-base font-medium text-slate-500">
 			Entliehene Bücher ({books?.length || 0})
 		</h3>
 	</div>

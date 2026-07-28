@@ -21,7 +21,7 @@
 			/>
 		{:else}
 			<div
-				class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-bold text-xs uppercase"
+				class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-medium text-xs"
 				aria-hidden="true"
 			>
 				{s.vorname.charAt(0)}{s.nachname.charAt(0)}

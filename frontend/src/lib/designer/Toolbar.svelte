@@ -117,7 +117,7 @@
 		class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4"
 	>
 		<div class="space-y-1">
-			<span class="text-[10px] uppercase font-bold text-slate-500">Klasse</span>
+			<span class="text-xs font-medium text-slate-500">Klasse</span>
 			{#if classesList.length > 0}
 				<select
 					value={selectedKlasse}
@@ -136,7 +136,7 @@
 		</div>
 
 		<div class="space-y-1">
-			<span class="text-[10px] uppercase font-bold text-slate-500">Barcode-Typ</span>
+			<span class="text-xs font-medium text-slate-500">Barcode-Typ</span>
 			<select
 				value={barcodeType}
 				onchange={(e) =>
@@ -151,7 +151,7 @@
 		</div>
 
 		<div class="space-y-1">
-			<span class="text-[10px] uppercase font-bold text-slate-500">Karten-Hintergrund</span>
+			<span class="text-xs font-medium text-slate-500">Karten-Hintergrund</span>
 			<select
 				value={currentTheme}
 				onchange={(e) => setTheme(/** @type {HTMLSelectElement} */ (e.currentTarget).value)}
@@ -164,7 +164,7 @@
 		</div>
 
 		<div class="space-y-1">
-			<span class="text-[10px] uppercase font-bold text-slate-500">Zoom</span>
+			<span class="text-xs font-medium text-slate-500">Zoom</span>
 			<div class="flex items-center gap-2">
 				<input
 					type="range"

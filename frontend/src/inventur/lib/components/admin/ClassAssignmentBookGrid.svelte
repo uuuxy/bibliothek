@@ -33,7 +33,7 @@
 </script>
 
 <div class="mb-4 px-1">
-	<p class="text-xs uppercase text-slate-500 font-bold mb-1">BÜCHER FINDEN</p>
+	<p class="text-xs text-slate-500 font-medium mb-1">BÜCHER FINDEN</p>
 
 	<div
 		class="bg-emerald-50 border border-surface-variant/10 rounded-full flex items-center px-4 sm:px-6 py-3 sm:py-4 shadow-sm hover:shadow-md transition-shadow group focus-within:ring-2 focus-within:ring-emerald-300"
@@ -146,12 +146,11 @@
 			<!-- Content -->
 			<div class="p-5 flex flex-col grow justify-end space-y-3 w-full">
 				<div class="flex flex-wrap gap-1.5 items-start">
-					<span
-						class="px-2.5 py-0.5 bg-primary-100 text-primary-900 text-[10px] font-black uppercase rounded-lg tracking-wider"
+					<span class="px-2.5 py-0.5 bg-primary-100 text-primary-900 text-xs font-black rounded-lg"
 						>{book.subject}</span
 					>
 					<span
-						class="px-2.5 py-0.5 bg-surface-container-high text-surface-variant text-[10px] font-black uppercase rounded-lg tracking-wider"
+						class="px-2.5 py-0.5 bg-surface-container-high text-surface-variant text-xs font-black rounded-lg"
 					>
 						Kl. {book.gradeLevel}
 						{#if book.track}

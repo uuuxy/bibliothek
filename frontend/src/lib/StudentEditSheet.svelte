@@ -104,9 +104,7 @@
 	<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
 		<!-- ── Persönliche Daten ──────────────────────────────── -->
 		<section>
-			<h3
-				class="text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-4 flex items-center gap-2"
-			>
+			<h3 class="text-xs font-medium text-slate-500 mb-4 flex items-center gap-2">
 				<div class="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
 				Persönliche Daten
 			</h3>
@@ -141,9 +139,7 @@
 
 		<!-- ── Schuldaten ─────────────────────────────────────── -->
 		<section>
-			<h3
-				class="text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-4 flex items-center gap-2"
-			>
+			<h3 class="text-xs font-medium text-slate-500 mb-4 flex items-center gap-2">
 				<div class="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
 				Schuldaten
 			</h3>
@@ -178,9 +174,7 @@
 
 		<!-- ── Kontaktdaten ────────────────────────────────────── -->
 		<section>
-			<h3
-				class="text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-4 flex items-center gap-2"
-			>
+			<h3 class="text-xs font-medium text-slate-500 mb-4 flex items-center gap-2">
 				<div class="w-2.5 h-2.5 rounded-full bg-blue-400"></div>
 				Kontaktdaten
 			</h3>

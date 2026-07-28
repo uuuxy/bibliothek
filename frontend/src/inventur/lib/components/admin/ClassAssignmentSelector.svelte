@@ -43,9 +43,7 @@
 	}
 </script>
 
-<label for="class-input" class="block text-xs uppercase text-slate-500 font-bold mb-1"
-	>ZIELKLASSEN</label
->
+<label for="class-input" class="block text-xs text-slate-500 font-medium mb-1">ZIELKLASSEN</label>
 
 <div
 	class="flex flex-wrap items-center gap-2 border border-surface-variant/20 rounded-2xl p-2 px-4 w-full sm:w-fit min-w-0 sm:min-w-75 bg-white hover:border-emerald-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 transition-all cursor-text shadow-sm mb-4 sm:mb-6"

@@ -163,7 +163,7 @@
 		>
 			🏷️ Signatur (Buchrücken)
 			{#if !formular.id}<span
-					class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded {signaturFehlt
+					class="text-xs font-medium px-1.5 py-0.5 rounded {signaturFehlt
 						? 'bg-rose-100 text-rose-700'
 						: 'bg-emerald-100 text-emerald-700'}">Pflicht</span
 				>{/if}

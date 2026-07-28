@@ -28,9 +28,7 @@
 		<div class="overflow-x-auto">
 			<table class="w-full text-left border-collapse">
 				<thead>
-					<tr
-						class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider"
-					>
+					<tr class="bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-400">
 						<th class="p-4">Name</th>
 						<th class="p-4">E-Mail</th>
 						<th class="p-4">Barcode</th>

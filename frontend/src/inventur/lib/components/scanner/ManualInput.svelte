@@ -22,9 +22,7 @@
 </script>
 
 <div class="mt-4">
-	<label
-		for="manual-isbn"
-		class="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+	<label for="manual-isbn" class="block text-xs font-semibold text-slate-400"
 		>Handscanner / ISBN-Eingabe</label
 	>
 	<div class="mt-2 flex gap-2">

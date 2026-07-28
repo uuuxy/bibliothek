@@ -7,7 +7,7 @@
 <div
 	class="lg:col-span-7 flex flex-col items-center justify-start p-6 bg-slate-50 border border-dashed border-slate-200 rounded-3xl min-h-125"
 >
-	<span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-4"
+	<span class="text-xs text-slate-400 font-medium mb-4"
 		>A4 Etiketten-Vorschau · {labelStore.formatId === 'standard_52'
 			? 'Standard 52'
 			: labelStore.formatId === 'avery_3475'

@@ -14,7 +14,7 @@
 	<div class="overflow-y-auto overscroll-contain flex-1 p-3 space-y-4">
 		{#if unifiedSearchResults.students.length > 0}
 			<div>
-				<div class="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+				<div class="px-3 pb-2 text-xs font-medium text-slate-400">
 					Schüler ({unifiedSearchResults.students.length})
 				</div>
 				<div class="space-y-1">
@@ -31,7 +31,7 @@
 		{/if}
 		{#if unifiedSearchResults.books.length > 0}
 			<div>
-				<div class="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+				<div class="px-3 pb-2 text-xs font-medium text-slate-400">
 					Bücher ({unifiedSearchResults.books.length})
 				</div>
 				<div class="space-y-1">

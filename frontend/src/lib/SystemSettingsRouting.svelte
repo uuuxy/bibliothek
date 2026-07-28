@@ -78,9 +78,7 @@
 	{:else}
 		<table class="w-full text-sm border-b border-slate-200">
 			<thead>
-				<tr
-					class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider"
-				>
+				<tr class="border-b border-slate-200 text-xs font-medium text-slate-500">
 					<th class="text-left py-3">Klasse</th>
 					<th class="text-left py-3">Lehrer-E-Mail</th>
 					<th class="py-3 text-right">Aktion</th>

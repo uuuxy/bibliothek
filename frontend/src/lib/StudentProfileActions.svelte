@@ -106,7 +106,7 @@
 
 <!-- Aktionen / Dokumente — alle Druck-, Export- & Verwaltungsaktionen an einem Ort. -->
 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
-	<h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+	<h4 class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
 		<FileText class="w-3.5 h-3.5" />
 		Dokumente & Aktionen
 	</h4>

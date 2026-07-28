@@ -174,10 +174,7 @@
 	<div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
 		{#if !loading && graduates.length > 0}
 			<div class="flex items-center gap-3 min-w-0">
-				<label
-					class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0"
-					for="grad-klasse">Klasse</label
-				>
+				<label class="text-xs font-medium text-slate-500 shrink-0" for="grad-klasse">Klasse</label>
 				<select
 					id="grad-klasse"
 					bind:value={selectedKlasse}
@@ -269,7 +266,7 @@
 		<div class="overflow-x-auto">
 			<table class="w-full text-left text-base border-collapse">
 				<thead>
-					<tr class="border-b border-slate-100 text-slate-500 text-sm uppercase">
+					<tr class="border-b border-slate-100 text-slate-500 text-sm">
 						<th class="py-2 px-4">Klasse</th>
 						<th class="py-2 px-4">Name</th>
 						<th class="py-2 px-4">Offene Bücher</th>

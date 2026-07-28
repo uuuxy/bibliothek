@@ -223,15 +223,11 @@
 
 			<div class="space-y-4">
 				<div>
-					<span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1"
-						>Klasse</span
-					>
+					<span class="block text-xs font-medium text-slate-500 mb-1">Klasse</span>
 					<p class="text-sm font-semibold text-slate-800">{mahnwesenStore.modalKlasse}</p>
 				</div>
 				<div>
-					<label
-						for="modal-email"
-						class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1"
+					<label for="modal-email" class="block text-xs font-medium text-slate-500 mb-1"
 						>E-Mail-Adresse des Klassenlehrers</label
 					>
 					<input

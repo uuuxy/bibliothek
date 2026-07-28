@@ -87,10 +87,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 				<!-- Host -->
 				<div class="flex flex-col">
-					<label
-						for="smtp_host"
-						class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">SMTP Host</label
-					>
+					<label for="smtp_host" class="text-xs font-medium text-slate-500 mb-2">SMTP Host</label>
 					<input
 						id="smtp_host"
 						type="text"
@@ -102,10 +99,7 @@
 
 				<!-- Port -->
 				<div class="flex flex-col">
-					<label
-						for="smtp_port"
-						class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">SMTP Port</label
-					>
+					<label for="smtp_port" class="text-xs font-medium text-slate-500 mb-2">SMTP Port</label>
 					<input
 						id="smtp_port"
 						type="text"
@@ -117,10 +111,7 @@
 
 				<!-- User -->
 				<div class="flex flex-col">
-					<label
-						for="smtp_user"
-						class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2"
-						>Benutzername</label
+					<label for="smtp_user" class="text-xs font-medium text-slate-500 mb-2">Benutzername</label
 					>
 					<input
 						id="smtp_user"
@@ -133,9 +124,7 @@
 
 				<!-- Sender -->
 				<div class="flex flex-col">
-					<label
-						for="smtp_sender"
-						class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2"
+					<label for="smtp_sender" class="text-xs font-medium text-slate-500 mb-2"
 						>Absender-E-Mail</label
 					>
 					<input
@@ -149,9 +138,7 @@
 
 				<!-- Password -->
 				<div class="flex flex-col md:col-span-2">
-					<label
-						for="smtp_password"
-						class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Passwort</label
+					<label for="smtp_password" class="text-xs font-medium text-slate-500 mb-2">Passwort</label
 					>
 					<input
 						id="smtp_password"
@@ -191,9 +178,7 @@
 
 			<div class="flex flex-col sm:flex-row gap-4 items-end">
 				<div class="flex flex-col w-full sm:w-72">
-					<label
-						for="test_email_target"
-						class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2"
+					<label for="test_email_target" class="text-xs font-medium text-slate-500 mb-2"
 						>Test-Empfänger</label
 					>
 					<input

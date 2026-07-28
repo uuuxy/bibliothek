@@ -183,9 +183,7 @@
 				></div>
 
 				<div class="pl-1.5 pr-0.5 pt-0.5 text-left">
-					<span class="text-[7px] uppercase tracking-widest text-white/80 font-extrabold"
-						>{book.subject}</span
-					>
+					<span class="text-[7px] text-white/80 font-extrabold">{book.subject}</span>
 					<h4 class="text-[9px] font-extrabold text-white leading-snug line-clamp-4 mt-1">
 						{book.title}
 					</h4>
@@ -221,7 +219,7 @@
 		<div class="absolute bottom-2 right-2 flex flex-col gap-1 items-end z-10">
 			{#if book.track}
 				<div
-					class="bg-white/90 border border-slate-200 backdrop-blur-xs px-1.5 py-0.5 rounded text-[8px] font-bold text-slate-700 shadow-sm uppercase tracking-wider"
+					class="bg-white/90 border border-slate-200 backdrop-blur-xs px-1.5 py-0.5 rounded text-[8px] font-medium text-slate-700 shadow-sm"
 				>
 					{book.track}
 				</div>

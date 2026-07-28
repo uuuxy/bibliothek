@@ -164,7 +164,7 @@
 	{:else}
 		<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 			<table class="w-full text-left text-sm whitespace-nowrap">
-				<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
+				<thead class="bg-slate-50 text-slate-500 text-xs font-medium">
 					<tr>
 						<th class="px-4 py-2">Wartet seit</th>
 						<th class="px-4 py-2">Schüler</th>

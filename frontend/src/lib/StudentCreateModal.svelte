@@ -113,7 +113,7 @@
 			</div>
 		{/if}
 
-		<label class="block text-xs font-bold uppercase tracking-wider text-slate-400"
+		<label class="block text-xs font-medium text-slate-400"
 			>Vorname *
 			<input
 				type="text"
@@ -123,7 +123,7 @@
 			/>
 		</label>
 
-		<label class="block text-xs font-bold uppercase tracking-wider text-slate-400"
+		<label class="block text-xs font-medium text-slate-400"
 			>Nachname *
 			<input
 				type="text"
@@ -133,7 +133,7 @@
 			/>
 		</label>
 
-		<label class="block text-xs font-bold uppercase tracking-wider text-slate-400"
+		<label class="block text-xs font-medium text-slate-400"
 			>Geburtsdatum
 			<input
 				type="date"
@@ -142,7 +142,7 @@
 			/>
 		</label>
 
-		<label class="block text-xs font-bold uppercase tracking-wider text-slate-400"
+		<label class="block text-xs font-medium text-slate-400"
 			>Klasse *
 			<div class="mt-1.5 flex gap-2">
 				{#if !customKlasseInput}
@@ -185,7 +185,7 @@
 			</div>
 		</label>
 
-		<label class="block text-xs font-bold uppercase tracking-wider text-slate-400"
+		<label class="block text-xs font-medium text-slate-400"
 			>Barcode-ID (optional)
 			<input
 				type="text"

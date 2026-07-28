@@ -165,7 +165,7 @@
 	<div class="w-full space-y-2">
 		{#if profile.ist_gesperrt}
 			<span
-				class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-bold bg-rose-100 text-rose-700 border border-rose-200 mb-1"
+				class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-rose-100 text-rose-700 border border-rose-200 mb-1"
 			>
 				<svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"
 					><path
@@ -245,9 +245,7 @@
 			{#each studentTabExtensions as ext, _i (_i)}
 				{@const Component = ext.component}
 				<div class="w-full">
-					<span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
-						>{ext.name}</span
-					>
+					<span class="block text-xs font-medium text-slate-400 mb-2">{ext.name}</span>
 					<Component student={profile} {...ext.props} />
 				</div>
 			{/each}

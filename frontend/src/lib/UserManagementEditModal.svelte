@@ -76,9 +76,7 @@
 			'Z. B. L-001, MA-04 (optional)'
 		)}
 		<div class="space-y-1.5">
-			<label for="rolle" class="block text-xs font-bold text-slate-400 uppercase tracking-wider"
-				>Benutzer-Rolle</label
-			>
+			<label for="rolle" class="block text-xs font-medium text-slate-400">Benutzer-Rolle</label>
 			<select
 				id="rolle"
 				bind:value={userForm.rolle}
@@ -115,9 +113,7 @@
 
 {#snippet inputField(id, label, type, value, onInput, required, placeholder)}
 	<div class="space-y-1.5">
-		<label for={id} class="block text-xs font-bold text-slate-400 uppercase tracking-wider"
-			>{label}</label
-		>
+		<label for={id} class="block text-xs font-medium text-slate-400">{label}</label>
 		<input
 			{id}
 			{type}

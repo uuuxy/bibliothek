@@ -53,9 +53,7 @@
 	     Layout: vertikal gestapelt, weil das Widget in der schmalen 1/3-Spalte der
 	     Bento-Reihe sitzt — nebeneinander bräche es dort um. -->
 	<div class="h-full flex flex-col">
-		<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">
-			Überfällige Ausleihen
-		</h3>
+		<h3 class="text-xs font-medium text-slate-500">Überfällige Ausleihen</h3>
 		<div class="flex items-baseline gap-2 mt-2">
 			<span class="text-4xl font-light text-slate-900 tabular-nums leading-none"
 				>{summary.total_overdue}</span
@@ -67,9 +65,7 @@
 
 		{#if hatMahnungen}
 			<div class="flex items-baseline justify-between gap-2 mt-5 mb-2.5">
-				<h4 class="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-					Verteilung nach Dauer
-				</h4>
+				<h4 class="text-[11px] font-medium text-slate-400">Verteilung nach Dauer</h4>
 				<span class="text-[11px] text-slate-400 shrink-0"
 					>längste: {summary.max_tage_overdue} Tage</span
 				>

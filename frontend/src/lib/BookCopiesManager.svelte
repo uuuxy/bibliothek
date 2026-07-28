@@ -189,10 +189,7 @@
 							{copy.barcode_id}
 						</span>
 						{#if copy.ist_ausgesondert}
-							<span
-								class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-0.5"
-								>⛔ Ausgesondert</span
-							>
+							<span class="block text-xs font-medium text-slate-400 pt-0.5">⛔ Ausgesondert</span>
 						{/if}
 						<p class="text-xs text-slate-600 pt-1.5">
 							<strong class="text-slate-500 font-medium">Zustand:</strong>

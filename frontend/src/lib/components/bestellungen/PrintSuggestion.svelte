@@ -12,9 +12,7 @@
 		<div class="flex items-start gap-2.5">
 			<AlertTriangle class="h-4 w-4" aria-hidden="true" />
 			<div>
-				<h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider">
-					Etikettendruck erforderlich
-				</h3>
+				<h3 class="text-xs font-medium text-amber-800">Etikettendruck erforderlich</h3>
 				<p class="text-xs text-amber-700 font-medium leading-relaxed mt-1">
 					Es gibt {printSuggestion.length} Exemplare in dieser freigegebenen Lieferung, für die noch keine
 					Barcode-Etiketten gedruckt wurden (z.B. Amazon-Bestellung).

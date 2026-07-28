@@ -163,7 +163,7 @@
 					<div class="shrink-0 text-right">
 						{#if kind === 'renner'}
 							<span class="text-sm font-black text-slate-900 tabular-nums">{row.count}×</span>
-							<span class="block text-[10px] text-slate-400 font-semibold uppercase">geliehen</span>
+							<span class="block text-xs text-slate-400 font-semibold">geliehen</span>
 						{:else}
 							<span class="text-xs font-bold text-amber-600">{row.letzte_aus}</span>
 						{/if}

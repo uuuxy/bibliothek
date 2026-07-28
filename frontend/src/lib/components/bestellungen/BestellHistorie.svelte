@@ -45,9 +45,7 @@
 		</div>
 		{#if bestellungen.length > 0}
 			<div class="text-right">
-				<div class="text-xs text-slate-400 uppercase tracking-wide font-semibold">
-					Gesamtausgaben
-				</div>
+				<div class="text-xs text-slate-400 font-semibold">Gesamtausgaben</div>
 				<div class="text-2xl font-black text-slate-800">{euro(gesamtsumme)}</div>
 			</div>
 		{/if}
@@ -70,9 +68,7 @@
 		<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
 			<table class="w-full border-collapse text-sm">
 				<thead>
-					<tr
-						class="border-b border-slate-200 bg-slate-50/60 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-					>
+					<tr class="border-b border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-400">
 						<th class="px-3 py-2 text-left font-semibold">Datum</th>
 						<th class="px-3 py-2 text-left font-semibold">Lieferant</th>
 						<th class="px-3 py-2 text-right font-semibold">Exemplare</th>
@@ -132,9 +128,7 @@
 									{:else}
 										<table class="w-full border-collapse text-sm">
 											<thead>
-												<tr
-													class="border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-												>
+												<tr class="border-b border-slate-200 text-xs font-semibold text-slate-400">
 													<th class="pb-1.5 text-left font-semibold">Titel</th>
 													<th class="pb-1.5 text-left font-semibold">ISBN</th>
 													<th class="pb-1.5 text-right font-semibold">Menge</th>

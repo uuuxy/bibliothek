@@ -38,7 +38,7 @@
 					<CloudOff size={32} strokeWidth={2.5} class="text-white" />
 				</div>
 				<div>
-					<h1 class="text-xl md:text-2xl font-black tracking-tight uppercase drop-shadow-md">
+					<h1 class="text-xl md:text-2xl font-black tracking-tight drop-shadow-md">
 						Offline-Modus! Rechner nicht ausschalten - Datenverlust droht!
 					</h1>
 					<p class="text-rose-100 font-semibold mt-1">

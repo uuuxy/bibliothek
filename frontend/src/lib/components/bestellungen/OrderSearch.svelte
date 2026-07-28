@@ -57,9 +57,7 @@
 
 <div class="space-y-4">
 	<div class="space-y-1.5">
-		<label for="supplier" class="block text-xs font-bold text-slate-500 uppercase tracking-wider"
-			>Lieferant</label
-		>
+		<label for="supplier" class="block text-xs font-medium text-slate-500">Lieferant</label>
 		<select
 			id="supplier"
 			bind:value={orderStore.selectedSupplierId}
@@ -71,7 +69,7 @@
 		</select>
 	</div>
 	<div class="space-y-1.5 relative">
-		<label for="book" class="block text-xs font-bold text-slate-500 uppercase tracking-wider"
+		<label for="book" class="block text-xs font-medium text-slate-500"
 			>Titel suchen &amp; hinzufügen</label
 		>
 		<input
@@ -88,7 +86,7 @@
 			>
 				{#if localResults.length > 0}
 					<div
-						class="bg-slate-50/80 px-3.5 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 backdrop-blur-xs z-5"
+						class="bg-slate-50/80 px-3.5 py-2 text-xs font-medium text-slate-500 sticky top-0 backdrop-blur-xs z-5"
 					>
 						Im lokalen Bestand
 					</div>
@@ -121,7 +119,7 @@
 
 				{#if dnbResults.length > 0}
 					<div
-						class="bg-slate-50/80 px-3.5 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 backdrop-blur-xs z-5"
+						class="bg-slate-50/80 px-3.5 py-2 text-xs font-medium text-slate-500 sticky top-0 backdrop-blur-xs z-5"
 					>
 						Neu aus DNB (Externe Suche)
 					</div>
@@ -153,7 +151,7 @@
 							</div>
 							{#if isDuplicate}
 								<span
-									class="shrink-0 text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold uppercase"
+									class="shrink-0 text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium"
 								>
 									Vorhanden
 								</span>
@@ -217,9 +215,7 @@
 
 		<div class="flex items-center justify-between gap-3">
 			<div class="flex items-center gap-2">
-				<label for="stagedMengeInput" class="text-xs font-bold text-slate-500 uppercase"
-					>Menge</label
-				>
+				<label for="stagedMengeInput" class="text-xs font-medium text-slate-500">Menge</label>
 				<input
 					id="stagedMengeInput"
 					type="number"

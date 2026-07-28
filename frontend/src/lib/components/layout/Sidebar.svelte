@@ -106,7 +106,7 @@
 										class="w-full flex items-center justify-between px-3 mb-2 text-left cursor-pointer group/sys"
 									>
 										<span
-											class="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover/sys:text-slate-600 transition-colors animate-fade-in"
+											class="text-xs font-medium text-slate-400 group-hover/sys:text-slate-600 transition-colors animate-fade-in"
 											>{group.name}</span
 										>
 										<svg
@@ -261,8 +261,7 @@
 								{/if}
 							{:else}
 								{#if !uiStore.isSidebarCollapsed}
-									<span
-										class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 animate-fade-in"
+									<span class="px-3 text-xs font-medium text-slate-400 block mb-2 animate-fade-in"
 										>{group.name}</span
 									>
 								{/if}
@@ -403,10 +402,7 @@
 				{#if sidebarExtensions.length > 0}
 					<div class="pt-4 border-t border-slate-100 space-y-1">
 						{#if !uiStore.isSidebarCollapsed}
-							<span
-								class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2"
-								>Erweiterungen</span
-							>
+							<span class="px-3 text-xs font-medium text-slate-400 block mb-2">Erweiterungen</span>
 						{/if}
 						{#each sidebarExtensions as ext, _i (_i)}
 							{@const Component = ext.component}
