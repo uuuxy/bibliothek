@@ -9,6 +9,7 @@
 	import PageContainer from '../layout/PageContainer.svelte';
 	import LusdImportView from '../students/LusdImportView.svelte';
 	import PromoteStudentsView from '../students/PromoteStudentsView.svelte';
+	import Button from '../ui/Button.svelte';
 
 	let isExporting = $state(false);
 	let exportError = $state<string | null>(null);
@@ -169,10 +170,11 @@
 					</div>
 				</label>
 
-				<button
+				<Button
+					size="lg"
 					onclick={handleBestandUpload}
 					disabled={isImportingCsv || !files || files.length === 0}
-					class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+					class="px-6 bg-emerald-600 hover:bg-emerald-700"
 				>
 					{#if isImportingCsv}
 						<div
@@ -182,7 +184,7 @@
 					{:else}
 						<span>Import Starten</span>
 					{/if}
-				</button>
+				</Button>
 			</div>
 
 			{#if importCsvResult}

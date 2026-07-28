@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import Button from './components/ui/Button.svelte';
 	/** @type {{ user: any }} */
 	let { user } = $props();
 
@@ -232,14 +233,13 @@
 							{#if form.success}
 								<span class="text-xs text-emerald-600 font-semibold">✓ Gesendet</span>
 							{:else}
-								<button
+								<Button
+									variant={form.open ? 'secondary' : 'primary'}
+									size="sm"
 									onclick={() => toggleForm(titelId)}
-									class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all {form.open
-										? 'bg-slate-100 text-slate-600'
-										: 'bg-blue-600 hover:bg-blue-700 text-white'}"
 								>
 									{form.open ? 'Abbrechen' : 'Klassensatz reservieren'}
-								</button>
+								</Button>
 							{/if}
 						</div>
 					</div>
@@ -297,18 +297,14 @@
 								<p class="text-xs text-rose-500 mt-2">{form.error}</p>
 							{/if}
 							<div class="mt-3 flex justify-end">
-								<button
-									onclick={() => submitReservierung(titelId)}
-									disabled={form.loading}
-									class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-2"
-								>
+								<Button onclick={() => submitReservierung(titelId)} disabled={form.loading}>
 									{#if form.loading}
 										<div
 											class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"
 										></div>
 									{/if}
 									Anfrage senden
-								</button>
+								</Button>
 							</div>
 						</div>
 					{/if}

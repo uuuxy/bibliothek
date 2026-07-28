@@ -1,4 +1,5 @@
 <script>
+	import Button from '../../../../lib/components/ui/Button.svelte';
 	let {
 		selectedClasses = [],
 		selectedBookIds = new Set(),
@@ -161,10 +162,10 @@
 </div>
 
 <footer class="p-4 sm:p-6 bg-white border-t border-surface-variant/20 flex flex-col gap-4">
-	<button
+	<Button
 		disabled={selectedClasses.length === 0 || (!isUpdate && selectedBookIds.size === 0) || isSaving}
 		onclick={(e) => onsave(e)}
-		class="flex items-center justify-center w-full gap-2 p-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-full font-bold text-base shadow-lg hover:shadow-emerald-200 transition-all tracking-wide"
+		class="h-auto w-full p-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-100 text-base tracking-wide shadow-lg"
 	>
 		<svg
 			fill="none"
@@ -181,5 +182,5 @@
 			></polyline><polyline points="7 3 7 8 15 8"></polyline></svg
 		>
 		{isSaving ? 'SPEICHERT...' : 'AUSWAHL SPEICHERN'}
-	</button>
+	</Button>
 </footer>

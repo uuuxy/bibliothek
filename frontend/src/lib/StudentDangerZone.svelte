@@ -1,5 +1,6 @@
 <script>
 	import { AlertTriangle } from '@lucide/svelte';
+	import Button from './components/ui/Button.svelte';
 
 	/**
 	 * @component StudentDangerZone
@@ -26,10 +27,12 @@
 			Ausleihen oder Forderungen müssen vorher beglichen werden.
 		</p>
 	</div>
-	<button
+	<Button
+		variant="danger"
+		size="lg"
 		onclick={onDelete}
-		class="shrink-0 px-6 py-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white rounded-md text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer"
+		class="shrink-0 px-6 bg-white hover:bg-rose-600 hover:text-white"
 	>
 		Schüler archivieren / löschen
-	</button>
+	</Button>
 </section>

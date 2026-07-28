@@ -2,6 +2,7 @@
 	import { appState } from '../../inventur/lib/store.svelte.js';
 	import { apiFetch, apiClient } from '../apiFetch.js';
 	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
+	import Button from './ui/Button.svelte';
 
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
@@ -82,16 +83,10 @@
 					}}
 				/>
 				<div class="mt-1 flex gap-2">
-					<button
-						onclick={generateInternalId}
-						class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-semibold cursor-pointer"
-						>Interne ID generieren</button
-					>
-					<button
-						onclick={saveBarcode}
-						class="text-[10px] bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded font-semibold cursor-pointer"
-						>Speichern</button
-					>
+					<Button variant="secondary" size="sm" onclick={generateInternalId} class="text-[10px]">
+						Interne ID generieren
+					</Button>
+					<Button size="sm" onclick={saveBarcode} class="text-[10px]">Speichern</Button>
 				</div>
 				{#if barcodeError}
 					<p

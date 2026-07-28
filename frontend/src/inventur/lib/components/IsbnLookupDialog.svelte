@@ -1,4 +1,5 @@
 <script>
+	import Button from '../../../lib/components/ui/Button.svelte';
 	/**
 	 * @type {{
 	 *   data: any,
@@ -142,18 +143,10 @@
 			</label>
 
 			<div class="mt-6 flex justify-end gap-3">
-				<button
-					onclick={onCancel}
-					disabled={busy}
-					class="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer"
-					>Abbrechen</button
-				>
-				<button
-					onclick={save}
-					disabled={busy}
-					class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors cursor-pointer"
-					>Speichern</button
-				>
+				<Button variant="secondary" size="lg" onclick={onCancel} disabled={busy} class="px-5">
+					Abbrechen
+				</Button>
+				<Button size="lg" onclick={save} disabled={busy} class="px-5">Speichern</Button>
 			</div>
 		</div>
 	</div>

@@ -1,6 +1,7 @@
 <script>
 	import Modal from './Modal.svelte';
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import Button from './components/ui/Button.svelte';
 
 	let { open = false, readerGroups = [], onclose, onsuccess } = $props();
 
@@ -197,19 +198,10 @@
 			</label>
 
 			<div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
-				<button
-					onclick={handleClose}
-					disabled={isSaving}
-					class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer font-sans"
-					>Abbrechen</button
-				>
-				<button
-					onclick={createStudent}
-					disabled={isSaving}
-					class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-750 disabled:opacity-60 transition-colors cursor-pointer font-sans"
-				>
+				<Button variant="secondary" onclick={handleClose} disabled={isSaving}>Abbrechen</Button>
+				<Button onclick={createStudent} disabled={isSaving}>
 					{isSaving ? 'Speichern...' : 'Speichern'}
-				</button>
+				</Button>
 			</div>
 		</div>
 </Modal>

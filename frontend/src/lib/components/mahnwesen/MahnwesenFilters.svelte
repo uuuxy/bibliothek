@@ -1,6 +1,7 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { scale } from 'svelte/transition';
+	import Button from '../ui/Button.svelte';
 
 	// Split-Button-Menü (Mahnbriefe): eigener Open-State, schließt bei Klick außerhalb & Escape.
 	let menuOpen = $state(false);
@@ -78,11 +79,12 @@
 	     Nur noch die auf die Markierung bezogenen Aktionen sind sichtbar. -->
 	<div class="flex items-center gap-2 print:hidden shrink-0">
 		{#if mahnwesenStore.selectedIds.size > 0}
-			<button
+			<Button
+				variant="secondary"
 				onclick={mahnwesenStore.deselectAllSchueler}
 				aria-label="Auswahl aufheben"
 				title="Auswahl aufheben"
-				class="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+				class="px-2 text-slate-500 hover:text-slate-700"
 			>
 				<svg
 					class="h-4 w-4"
@@ -94,15 +96,11 @@
 				>
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 				</svg>
-			</button>
+			</Button>
 			<span class="text-sm font-semibold text-slate-700"
 				>{mahnwesenStore.selectedIds.size} ausgewählt</span
 			>
-			<button
-				onclick={mahnwesenStore.printSelectedMahnungen}
-				disabled={mahnwesenStore.pdfLoading}
-				class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
-			>
+			<Button onclick={mahnwesenStore.printSelectedMahnungen} disabled={mahnwesenStore.pdfLoading}>
 				{#if mahnwesenStore.pdfLoading}
 					<div
 						class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"
@@ -124,7 +122,7 @@
 					</svg>
 				{/if}
 				Mahnbriefe drucken
-			</button>
+			</Button>
 		{:else}
 			<div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
 				<button
@@ -153,11 +151,12 @@
 				</button>
 			</div>
 
-			<button
+			<Button
+				variant="secondary"
 				onclick={mahnwesenStore.fetchData}
 				aria-label="Daten neu laden"
 				title="Neu laden"
-				class="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+				class="px-2 text-slate-500 hover:text-slate-700"
 			>
 				<svg
 					class="h-4 w-4"
@@ -173,17 +172,17 @@
 						d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
 					/>
 				</svg>
-			</button>
+			</Button>
 
 			<!-- Mahnbriefe: eine Primäraktion (Eltern-Briefe drucken) + Menü mit Geltungsbereich.
 			     Ersetzt die vier früher verstreuten PDF-Wege. Drucker-/Dokument-Icons — kein Umschlag,
 			     denn hier wird nichts gemailt (nur PDF erzeugt). -->
 			<div class="relative" bind:this={menuAnchor}>
-				<div class="inline-flex rounded-xl shadow-sm">
-					<button
+				<div class="inline-flex rounded-md shadow-sm">
+					<Button
 						onclick={mahnwesenStore.downloadElternPDF}
 						disabled={mahnwesenStore.elternPdfLoading}
-						class="px-4 py-2 rounded-l-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
+						class="rounded-r-none"
 					>
 						{#if mahnwesenStore.elternPdfLoading}
 							<div
@@ -206,13 +205,13 @@
 							</svg>
 						{/if}
 						Mahnbriefe
-					</button>
-					<button
+					</Button>
+					<Button
 						onclick={() => (menuOpen = !menuOpen)}
 						aria-haspopup="menu"
 						aria-expanded={menuOpen}
 						aria-label="Weitere Druck- und Export-Optionen"
-						class="px-2 py-2 rounded-r-xl bg-blue-600 hover:bg-blue-700 text-white border-l border-white/25 flex items-center transition-colors"
+						class="rounded-l-none border-l-white/25 px-2"
 					>
 						<svg
 							class="h-3.5 w-3.5 transition-transform {menuOpen ? 'rotate-180' : ''}"
@@ -224,7 +223,7 @@
 						>
 							<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
 						</svg>
-					</button>
+					</Button>
 				</div>
 
 				{#if menuOpen}
@@ -276,16 +275,17 @@
 										<option value={k.klasse}>{k.klasse}</option>
 									{/each}
 								</select>
-								<button
+								<Button
+									size="sm"
 									onclick={() => {
 										mahnwesenStore.downloadKlassePDF(mahnwesenStore.selectedKlasse);
 										menuOpen = false;
 									}}
 									disabled={mahnwesenStore.klassePdfLoading || !mahnwesenStore.selectedKlasse}
-									class="shrink-0 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-bold transition-colors"
+									class="shrink-0 disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
 								>
 									PDF
-								</button>
+								</Button>
 							</div>
 						</div>
 
@@ -350,7 +350,8 @@
 
 			<!-- „Alle anmahnen" ist die EINZIGE echte E-Mail-Aktion → nur hier das Umschlag-Icon. -->
 			{#if countAlle > 0}
-				<button
+				<Button
+					variant="danger-solid"
 					onclick={() => {
 						if (
 							window.confirm(
@@ -361,7 +362,6 @@
 						}
 					}}
 					aria-label="Mahnlisten aller Klassen per E-Mail an die Klassenleitungen senden"
-					class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
 				>
 					<svg
 						class="h-4 w-4"
@@ -378,7 +378,7 @@
 						/>
 					</svg>
 					Alle anmahnen
-				</button>
+				</Button>
 			{/if}
 		{/if}
 	</div>

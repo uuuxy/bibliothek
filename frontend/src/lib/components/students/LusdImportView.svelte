@@ -4,6 +4,7 @@
 <script>
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import Button from '../ui/Button.svelte';
 
 	/** @typedef {{ id: string, vorname: string, nachname: string, alte_klasse?: string, neue_klasse?: string }} StudentDiff */
 	/** @typedef {{ new_students: StudentDiff[], class_changes: StudentDiff[], graduates: StudentDiff[], total_csv_records: number, active_db_students: number, skipped_no_id: number }} LusdPreviewResult */
@@ -242,11 +243,7 @@
 
 		{#if stage === 'upload'}
 			<div class="flex justify-end">
-				<button
-					onclick={runPreview}
-					disabled={!selectedFile || previewLoading}
-					class="px-5 py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-				>
+				<Button onclick={runPreview} disabled={!selectedFile || previewLoading}>
 					{#if previewLoading}
 						<span
 							class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
@@ -254,7 +251,7 @@
 					{:else}
 						Vorschau laden
 					{/if}
-				</button>
+				</Button>
 			</div>
 		{/if}
 
@@ -288,18 +285,9 @@
 				</div>
 
 				<div class="flex justify-end gap-3 pt-2">
-					<button
-						onclick={resetFlow}
-						class="px-4 py-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold transition-colors cursor-pointer"
-					>
-						Andere Datei wählen
-					</button>
+					<Button variant="secondary" onclick={resetFlow}>Andere Datei wählen</Button>
 					{#if needsGraduateConfirm}
-						<button
-							onclick={() => finalizeImport(true)}
-							disabled={importLoading}
-							class="px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-						>
+						<Button variant="danger-solid" onclick={() => finalizeImport(true)} disabled={importLoading}>
 							{#if importLoading}
 								<span
 									class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
@@ -307,13 +295,9 @@
 							{:else}
 								Massenabgang bestätigen &amp; endgültig importieren
 							{/if}
-						</button>
+						</Button>
 					{:else}
-						<button
-							onclick={() => finalizeImport(false)}
-							disabled={importLoading}
-							class="px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-						>
+						<Button onclick={() => finalizeImport(false)} disabled={importLoading}>
 							{#if importLoading}
 								<span
 									class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
@@ -321,7 +305,7 @@
 							{:else}
 								Import finalisieren
 							{/if}
-						</button>
+						</Button>
 					{/if}
 				</div>
 			</div>

@@ -1,6 +1,7 @@
 <script>
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import { apiClient } from '../apiFetch.js';
+	import Button from './ui/Button.svelte';
 
 	/** @type {{ onReload: () => void }} */
 	let { onReload } = $props();
@@ -18,7 +19,9 @@
 			<p class="text-slate-700 font-medium mb-6">{omniboxStore.blockAlert.message}</p>
 
 			<div class="space-y-3">
-				<button
+				<Button
+					variant="danger-solid"
+					size="lg"
 					onclick={() => {
 						const q = omniboxStore.blockAlert?.query;
 						if (!q) return;
@@ -26,13 +29,15 @@
 						omniboxStore.queryVal = q;
 						omniboxStore.submitAction(null, onReload, true);
 					}}
-					class="px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-lg transition-colors cursor-pointer w-full"
+					class="w-full text-lg"
 				>
 					Einmalig ignorieren (Override)
-				</button>
+				</Button>
 
 				{#if omniboxStore.activeStudent?.is_manually_blocked}
-					<button
+					<Button
+						variant="secondary"
+						size="lg"
 						onclick={async () => {
 							try {
 								const res = await apiClient.patch(
@@ -52,20 +57,22 @@
 								console.error(e);
 							}
 						}}
-						class="px-8 py-3 bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-lg transition-colors cursor-pointer w-full"
+						class="w-full text-lg"
 					>
 						Sperre dauerhaft aufheben
-					</button>
+					</Button>
 				{/if}
 
-				<button
+				<Button
+					variant="ghost"
+					size="lg"
 					onclick={() => {
 						omniboxStore.blockAlert = null;
 					}}
-					class="px-8 py-3 bg-transparent text-slate-500 hover:text-slate-700 font-bold rounded-xl text-sm transition-colors cursor-pointer w-full mt-2"
+					class="mt-2 w-full"
 				>
 					Abbrechen
-				</button>
+				</Button>
 			</div>
 		</div>
 	</div>

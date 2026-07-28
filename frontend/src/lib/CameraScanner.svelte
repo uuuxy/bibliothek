@@ -71,5 +71,5 @@
 	<div class="px-4 pt-3 pb-1 text-xs text-blue-200 font-semibold text-center">
 		Kamera auf Barcode richten
 	</div>
-	<div id="camera-scan-region" class="w-full min-h-[240px]"></div>
+	<div id="camera-scan-region" class="w-full min-h-60"></div>
 </div>

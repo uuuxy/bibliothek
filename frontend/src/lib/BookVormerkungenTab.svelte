@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {{ vormerkungen: any[], book: any }} */
 	let { vormerkungen = $bindable(), book } = $props();
@@ -79,12 +80,9 @@
 <div class="space-y-6 pt-4">
 	<div class="flex items-center justify-between">
 		<h3 class="text-lg font-bold text-slate-800">Warteliste / Vormerkungen</h3>
-		<button
-			onclick={() => (isAdding = !isAdding)}
-			class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
-		>
+		<Button onclick={() => (isAdding = !isAdding)}>
 			{isAdding ? 'Abbrechen' : '+ Schüler vormerken'}
-		</button>
+		</Button>
 	</div>
 
 	{#if isAdding}
@@ -101,15 +99,11 @@
 							bind:value={searchVal}
 							onkeydown={(e) => e.key === 'Enter' && searchStudent()}
 							placeholder="z.B. Max Mustermann"
-							class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+							class="flex-1 h-9 bg-white border border-slate-200 rounded-xl px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 						/>
-						<button
-							onclick={searchStudent}
-							disabled={isSearching}
-							class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
-						>
+						<Button variant="secondary" onclick={searchStudent} disabled={isSearching}>
 							{isSearching ? '...' : 'Suchen'}
-						</button>
+						</Button>
 					</div>
 				</div>
 				<div>
@@ -136,12 +130,14 @@
 								<p class="font-semibold text-slate-800 text-sm">{r.title}</p>
 								<p class="text-xs text-slate-500">{r.subtitle}</p>
 							</div>
-							<button
+							<Button
+								variant="secondary"
+								size="sm"
 								onclick={() => addVormerkung(r.id)}
-								class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors"
+								class="border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100"
 							>
 								Auswählen
-							</button>
+							</Button>
 						</div>
 					{/each}
 				</div>

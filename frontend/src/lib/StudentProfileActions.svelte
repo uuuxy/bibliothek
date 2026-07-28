@@ -120,25 +120,21 @@
 		<!-- Primäraktion: Ausweis drucken. Mit Rückseite → Split-Button mit Seitenwahl. -->
 		<div class="relative" bind:this={menuAnchor}>
 			{#if hasBack}
-				<div class="inline-flex rounded-full shadow-sm">
-					<button
-						type="button"
-						onclick={() => doPrint('both')}
-						class="inline-flex items-center gap-2 pl-4 pr-3.5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-l-full transition-colors cursor-pointer"
-					>
+				<div class="inline-flex rounded-md shadow-sm">
+					<Button type="button" onclick={() => doPrint('both')} class="rounded-r-none">
 						<IdCard class="w-4 h-4" />
 						Ausweis drucken
-					</button>
-					<button
+					</Button>
+					<Button
 						type="button"
 						onclick={() => (menuOpen = !menuOpen)}
 						aria-haspopup="menu"
 						aria-expanded={menuOpen}
 						aria-label="Ausweisseiten wählen"
-						class="inline-flex items-center px-2.5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-r-full border-l border-white/25 transition-colors cursor-pointer"
+						class="rounded-l-none border-l-white/25 px-2.5"
 					>
 						<ChevronDown class="w-4 h-4 transition-transform {menuOpen ? 'rotate-180' : ''}" />
-					</button>
+					</Button>
 				</div>
 
 				{#if menuOpen}

@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {any[]} */
 	let templates = $state([]);
@@ -170,7 +171,7 @@
 							id="text_body"
 							value={selectedTemplate.text_body}
 							oninput={updateTextBody}
-							class="w-full grow min-h-[280px] p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white text-slate-700 leading-relaxed font-mono text-base resize-y"
+							class="w-full grow min-h-70 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white text-slate-700 leading-relaxed font-mono text-base resize-y"
 						></textarea>
 					</div>
 
@@ -196,13 +197,9 @@
 					</div>
 
 					<div class="flex justify-end pt-2">
-						<button
-							class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-sm"
-							onclick={saveTemplate}
-							disabled={isSaving}
-						>
+						<Button size="lg" onclick={saveTemplate} disabled={isSaving} class="px-6">
 							{isSaving ? 'Speichern...' : 'Vorlage Speichern'}
-						</button>
+						</Button>
 					</div>
 				</div>
 			{:else if templates.length > 0}

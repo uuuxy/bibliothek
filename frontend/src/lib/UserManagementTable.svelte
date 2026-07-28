@@ -1,4 +1,6 @@
 <script>
+	import Button from './components/ui/Button.svelte';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {boolean} loadingUsers
@@ -82,18 +84,12 @@
 								{/if}
 							</td>
 							<td class="p-4 text-right space-x-2 shrink-0">
-								<button
-									onclick={() => openEditUserModal(user)}
-									class="px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
-								>
+								<Button variant="secondary" size="sm" onclick={() => openEditUserModal(user)}>
 									Bearbeiten
-								</button>
-								<button
-									onclick={() => openDeleteConfirm(user)}
-									class="px-2.5 py-1 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-colors cursor-pointer"
-								>
+								</Button>
+								<Button variant="danger" size="sm" onclick={() => openDeleteConfirm(user)}>
 									Löschen
-								</button>
+								</Button>
 							</td>
 						</tr>
 					{/each}

@@ -139,7 +139,7 @@
 
 			<!-- Right Sidebar Area -->
 			<aside
-				class="w-full lg:w-[340px] flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
+				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
 			>
 				<ClassAssignmentSummary
 					{selectedClasses}

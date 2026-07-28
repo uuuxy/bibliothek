@@ -2,6 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
+	import Button from './components/ui/Button.svelte';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function openProfile(student) {
@@ -133,10 +134,10 @@
 		{/if}
 
 		<div class="flex items-center space-x-4 shrink-0">
-			<button
+			<Button
 				onclick={printLaufzettel}
 				disabled={loadingLaufzettel || graduates.length === 0}
-				class="no-print px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+				class="no-print"
 			>
 				{#if loadingLaufzettel}
 					<div
@@ -146,7 +147,7 @@
 				{:else}
 					🖨️ {selectedKlasse ? `Laufzettel ${selectedKlasse}` : 'Laufzettel drucken'}
 				{/if}
-			</button>
+			</Button>
 			<div
 				class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 shrink-0"
 				title="Änderungen an allen Arbeitsplätzen sofort sichtbar (Live-Synchronisation)"

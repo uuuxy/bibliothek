@@ -1,5 +1,6 @@
 <script>
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
+	import Button from './ui/Button.svelte';
 </script>
 
 {#if omniboxStore.vormerkungAlert}
@@ -23,14 +24,16 @@
 					Vorgemerkt für: {omniboxStore.vormerkungAlert.user}
 				</p>
 			{/if}
-			<button
+			<Button
+				variant="danger-solid"
+				size="lg"
 				onclick={() => {
 					omniboxStore.vormerkungAlert = null;
 				}}
-				class="px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-lg transition-colors cursor-pointer w-full"
+				class="w-full text-lg"
 			>
 				Verstanden
-			</button>
+			</Button>
 		</div>
 	</div>
 {/if}

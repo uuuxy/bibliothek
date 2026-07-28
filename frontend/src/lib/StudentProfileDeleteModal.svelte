@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import Button from './components/ui/Button.svelte';
 
 	let { open = false, profile, onclose, onsuccess } = $props();
 
@@ -84,11 +85,7 @@
 					Löschen nicht möglich: Schüler hat noch entliehene Bücher
 				</div>
 				<div class="mt-6 flex justify-end">
-					<button
-						onclick={handleClose}
-						class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-						>Schließen</button
-					>
+					<Button variant="secondary" onclick={handleClose}>Schließen</Button>
 				</div>
 			{:else}
 				<p class="mt-4 text-sm text-slate-600 leading-relaxed font-sans">
@@ -123,19 +120,22 @@
 					</div>
 				{/if}
 				<div class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
-					<button
+					<Button
+						variant="secondary"
+						size="lg"
 						onclick={handleClose}
 						disabled={isDeleting}
-						class="w-full sm:w-auto rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer"
-						>Abbrechen</button
+						class="w-full sm:w-auto">Abbrechen</Button
 					>
-					<button
+					<Button
+						variant="danger-solid"
+						size="lg"
 						onclick={deleteStudent}
 						disabled={isDeleting || !isConfirmed}
-						class="w-full sm:w-auto rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-sm"
+						class="w-full sm:w-auto"
 					>
 						{#if isDeleting}Wird verarbeitet...{:else}Endgültig archivieren/löschen{/if}
-					</button>
+					</Button>
 				</div>
 			{/if}
 		</div>

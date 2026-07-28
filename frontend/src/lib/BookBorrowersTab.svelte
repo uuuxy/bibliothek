@@ -1,5 +1,6 @@
 <script>
 	import { appState } from '../inventur/lib/store.svelte.js';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {{ borrowers: any[], book: any, onBack: () => void }} */
 	let { borrowers, book, onBack } = $props();
@@ -153,10 +154,7 @@
 			>
 		{/if}
 		<div class="flex-1"></div>
-		<button
-			onclick={printAusleiher}
-			class="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
-		>
+		<Button variant="secondary" onclick={printAusleiher}>
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 				><path
 					stroke-linecap="round"
@@ -166,7 +164,7 @@
 				/></svg
 			>
 			Mahnliste drucken
-		</button>
+		</Button>
 	</div>
 
 	<!-- List -->

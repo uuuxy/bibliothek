@@ -1,5 +1,6 @@
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import Button from '../ui/Button.svelte';
 </script>
 
 <div class="space-y-3">
@@ -103,10 +104,11 @@
 				/>
 				<span class="text-sm font-semibold text-slate-700">Barcodes mitschicken</span>
 			</label>
-			<button
+			<Button
+				size="lg"
 				onclick={() => orderStore.submitOrder()}
 				disabled={orderStore.submitting || !orderStore.selectedSupplier}
-				class="w-full px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.99] transition-all shadow-sm"
+				class="w-full disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
 			>
 				{#if orderStore.submitting}
 					<div class="w-4 h-4 border-2 border-t-white border-white/20 rounded-full animate-spin"></div>
@@ -114,7 +116,7 @@
 				{:else}
 					Bestellung auslösen · {orderStore.totalQty} Expl.
 				{/if}
-			</button>
+			</Button>
 			{#if !orderStore.selectedSupplier}
 				<p class="text-[11px] text-center text-amber-600 font-medium">Bitte zuerst einen Lieferanten wählen.</p>
 			{/if}

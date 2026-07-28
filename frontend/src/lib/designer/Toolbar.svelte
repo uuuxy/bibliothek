@@ -13,6 +13,7 @@
 	 * `addTextElement` and `addImageElements` from the shared store.
 	 */
 	import { idStore, addTextElement, addImageElements } from './idDesignerStore.svelte.js';
+	import Button from '../components/ui/Button.svelte';
 
 	/**
 	 * @type {{
@@ -104,12 +105,9 @@
 			printMode,
 			(v) => onPrintMode(/** @type {'card'|'a4'} */ (v))
 		)}
-		<button
-			onclick={onPrint}
-			class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex items-center gap-2 shadow-xs cursor-pointer text-xs"
-		>
+		<Button onclick={onPrint} class="px-5">
 			🖨️ {side === 'back' ? 'Rückseiten drucken' : 'Vorderseiten drucken'}
-		</button>
+		</Button>
 	</div>
 
 	<!-- Row 2: Class / barcode selectors -->
@@ -191,12 +189,7 @@
 			(v) => onSide(/** @type {'front'|'back'} */ (v))
 		)}
 
-		<button
-			onclick={() => addTextElement(side)}
-			class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
-		>
-			+ Text
-		</button>
+		<Button variant="secondary" size="sm" onclick={() => addTextElement(side)}>+ Text</Button>
 
 		<!-- Multi-image upload -->
 		<label

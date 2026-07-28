@@ -2,6 +2,7 @@
 	import { offlineSync } from '../stores/offlineSync.svelte.js';
 	import { CloudOff, Download, Upload } from '@lucide/svelte';
 	import { toastStore } from '../stores/toastStore.svelte.js';
+	import Button from './ui/Button.svelte';
 
 	// isOffline and global events are now handled centrally in offlineSync.svelte.js
 
@@ -55,13 +56,15 @@
 
 			<div class="flex items-center gap-3 shrink-0">
 				{#if offlineSync.pendingCount > 0}
-					<button
+					<Button
+						variant="secondary"
+						size="lg"
 						onclick={handleBackup}
-						class="px-5 py-2.5 bg-white text-rose-700 hover:bg-rose-50 active:bg-rose-100 font-bold rounded-xl shadow-lg border border-rose-200 transition-all cursor-pointer flex items-center gap-2"
+						class="px-5 border-rose-200 text-rose-700 shadow-lg hover:bg-rose-50"
 					>
 						<Download size={18} strokeWidth={3} />
 						Notfall-Backup auf USB-Stick speichern
-					</button>
+					</Button>
 				{/if}
 
 				<!-- Verstecktes File Input für Import -->
@@ -73,14 +76,16 @@
 					class="hidden"
 				/>
 
-				<button
+				<Button
+					variant="danger-solid"
+					size="lg"
 					onclick={() => fileInput?.click()}
-					class="px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-rose-50 font-bold rounded-xl shadow-inner border border-rose-800 transition-all cursor-pointer flex items-center gap-2"
+					class="bg-rose-700 border-rose-800 text-rose-50 shadow-inner hover:bg-rose-800"
 					title="Backup einspielen (falls du an einem anderen PC den Stand nachträgst)"
 				>
 					<Upload size={18} strokeWidth={2.5} />
 					Offline-Backup einspielen
-				</button>
+				</Button>
 			</div>
 		</div>
 	</div>

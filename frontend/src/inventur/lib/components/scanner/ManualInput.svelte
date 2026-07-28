@@ -1,4 +1,5 @@
 <script>
+	import Button from '../../../../lib/components/ui/Button.svelte';
 	/**
 	 * @type {{
 	 *   onSubmit: (isbn: string) => void,
@@ -33,17 +34,18 @@
 			bind:value={manualISBN}
 			onkeydown={handleKeydown}
 			placeholder="ISBN scannen oder eintippen"
-			class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 placeholder-slate-400 shadow-sm"
+			class="w-full h-10 rounded-xl border border-slate-300 bg-white px-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 placeholder-slate-400 shadow-sm"
 		/>
-		<button
+		<Button
+			size="lg"
 			onclick={() => {
 				onSubmit(manualISBN);
 				manualISBN = '';
 			}}
 			{disabled}
-			class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors cursor-pointer shadow-sm"
+			class="px-5"
 		>
 			Senden
-		</button>
+		</Button>
 	</div>
 </div>

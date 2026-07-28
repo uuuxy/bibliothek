@@ -3,6 +3,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
 	import BookExemplarCard from './components/BookExemplarCard.svelte';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {{ exemplare: any[], book: any, loadAll: (id: string) => void }} */
 	let { exemplare = $bindable([]), book, loadAll } = $props();
@@ -104,12 +105,9 @@
 			<span class="text-sm font-semibold text-rose-800"
 				>{selectedExemplare.size} Exemplare ausgewählt</span
 			>
-			<button
-				class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
-				onclick={deleteSelectedCopies}
-			>
+			<Button variant="danger-solid" size="sm" onclick={deleteSelectedCopies}>
 				Ausgewählte löschen
-			</button>
+			</Button>
 		</div>
 	{/if}
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -4,6 +4,7 @@
 <script>
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import Button from '../ui/Button.svelte';
 
 	/** @typedef {{ promoted_count: number, archived_count: number, dry_run: boolean }} PromoteStudentsResponse */
 
@@ -131,21 +132,12 @@
 			<span>🎉</span><span>Schuljahreswechsel abgeschlossen.</span>
 		</div>
 		{@render summaryRows(result)}
-		<button
-			onclick={reset}
-			class="px-5 py-2.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer"
-		>
-			Fertig
-		</button>
+		<Button onclick={reset}>Fertig</Button>
 	{:else if !preview}
 		<!-- Stufe 1: erst die unverbindliche Vorschau — der Server rechnet das
          identische SQL in einer Transaktion und rollt zurück. -->
 		<div class="flex justify-end">
-			<button
-				onclick={runPreview}
-				disabled={loading}
-				class="px-5 py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-			>
+			<Button onclick={runPreview} disabled={loading}>
 				{#if loading}
 					<span
 						class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
@@ -153,7 +145,7 @@
 				{:else}
 					Vorschau berechnen
 				{/if}
-			</button>
+			</Button>
 		</div>
 	{:else}
 		<div
@@ -176,35 +168,17 @@
 
 		{#if !awaitingConfirmation}
 			<div class="flex justify-end gap-3">
-				<button
-					onclick={reset}
-					disabled={loading}
-					class="px-4 py-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
-				>
-					Abbrechen
-				</button>
-				<button
-					onclick={() => (awaitingConfirmation = true)}
-					disabled={loading}
-					class="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all cursor-pointer"
-				>
+				<Button variant="secondary" onclick={reset} disabled={loading}>Abbrechen</Button>
+				<Button onclick={() => (awaitingConfirmation = true)} disabled={loading}>
 					Schuljahr wechseln
-				</button>
+				</Button>
 			</div>
 		{:else}
 			<div class="flex justify-end gap-3">
-				<button
-					onclick={() => (awaitingConfirmation = false)}
-					disabled={loading}
-					class="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
-				>
+				<Button variant="secondary" onclick={() => (awaitingConfirmation = false)} disabled={loading}>
 					Abbrechen
-				</button>
-				<button
-					onclick={executePromotion}
-					disabled={loading}
-					class="px-5 py-2.5 rounded-md bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-				>
+				</Button>
+				<Button variant="danger-solid" onclick={executePromotion} disabled={loading}>
 					{#if loading}
 						<span
 							class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
@@ -212,7 +186,7 @@
 					{:else}
 						Ja, unwiderruflich ausführen
 					{/if}
-				</button>
+				</Button>
 			</div>
 		{/if}
 	{/if}

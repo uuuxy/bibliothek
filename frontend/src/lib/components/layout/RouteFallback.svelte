@@ -1,6 +1,7 @@
 <script>
 	import * as Sentry from '@sentry/svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import Button from '../ui/Button.svelte';
 
 	let { tab } = $props();
 
@@ -18,10 +19,5 @@
 	<div class="text-4xl mb-3">🧭</div>
 	<h2 class="text-lg font-bold text-slate-800">Ansicht nicht gefunden</h2>
 	<p class="mt-1 text-sm text-slate-500">Dieser Bereich ist unbekannt oder nicht verfügbar.</p>
-	<button
-		onclick={() => (uiStore.activeTab = 'kiosk')}
-		class="mt-5 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer transition-colors"
-	>
-		Zur Startseite
-	</button>
+	<Button onclick={() => (uiStore.activeTab = 'kiosk')} class="mt-5">Zur Startseite</Button>
 </div>

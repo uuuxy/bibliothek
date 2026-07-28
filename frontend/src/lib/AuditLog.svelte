@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
+	import Button from './components/ui/Button.svelte';
 
 	// State Runes
 	/** @type {any[]} */
@@ -36,12 +37,7 @@
 
 <div class="w-full space-y-6 animate-fade-in no-print">
 	<div class="flex items-center justify-end">
-		<button
-			onclick={fetchLogs}
-			class="px-4 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
-		>
-			🔄 Aktualisieren
-		</button>
+		<Button variant="secondary" onclick={fetchLogs}>🔄 Aktualisieren</Button>
 	</div>
 
 	{#if loading}

@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
+	import Button from './components/ui/Button.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -267,19 +268,14 @@
 				placeholder="Schaden beschreiben..."></textarea>
 
 			<div class="flex justify-end space-x-3 text-sm pt-2">
-				<button
+				<Button
+					variant="secondary"
 					onclick={() => {
 						showModal = false;
 						activeCopy = null;
-					}}
-					class="px-4 py-2 rounded-xl bg-slate-100 text-slate-650 hover:bg-slate-200 transition-colors cursor-pointer"
-					>Abbrechen</button
+					}}>Abbrechen</Button
 				>
-				<button
-					onclick={updateNote}
-					class="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
-					>Speichern</button
-				>
+				<Button onclick={updateNote}>Speichern</Button>
 			</div>
 		</div>
 	</div>

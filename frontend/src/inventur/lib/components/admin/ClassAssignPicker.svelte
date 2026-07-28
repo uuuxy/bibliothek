@@ -5,6 +5,7 @@
 	// POST /api/admin/class-books/add (klassenname wird serverseitig normalisiert).
 	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();
@@ -95,19 +96,10 @@
 		{/if}
 
 		<div class="flex justify-end gap-3">
-			<button
-				onclick={onClose}
-				class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-			>
-				Abbrechen
-			</button>
-			<button
-				onclick={assign}
-				disabled={saving}
-				class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-60"
-			>
+			<Button variant="ghost" onclick={onClose}>Abbrechen</Button>
+			<Button onclick={assign} disabled={saving}>
 				{saving ? 'Speichern...' : 'Zuweisen'}
-			</button>
+			</Button>
 		</div>
 	</div>
 </div>

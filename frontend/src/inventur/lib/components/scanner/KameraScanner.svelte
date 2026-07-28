@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { createBarcodeDetector } from '$lib/components/scanner/barcode_detector.js';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	let { onDecode, onStatusChange, showControls = true, scanning = $bindable(false) } = $props();
 
@@ -150,12 +151,7 @@
 
 {#if showControls}
 	<div class="mt-4 flex gap-3 justify-center">
-		<button
-			onclick={startScanner}
-			disabled={scanning}
-			class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors cursor-pointer shadow-sm"
-			>Starten</button
-		>
+		<Button size="lg" onclick={startScanner} disabled={scanning} class="px-5">Starten</Button>
 		<button
 			onclick={stopScanner}
 			disabled={!scanning}

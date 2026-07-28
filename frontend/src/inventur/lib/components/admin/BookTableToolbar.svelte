@@ -1,5 +1,6 @@
 <script>
 	import { appState } from '$lib/store.svelte.js';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	/**
 	 * @type {{
@@ -48,9 +49,10 @@
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
 		{#if selectedCount > 0}
-			<button
+			<Button
+				variant="secondary"
 				onclick={onAssignClass}
-				class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100/60 transition-colors cursor-pointer"
+				class="border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100/60"
 			>
 				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path
@@ -61,11 +63,8 @@
 					/>
 				</svg>
 				Klasse zuweisen ({selectedCount})
-			</button>
-			<button
-				onclick={onDelete}
-				class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100/60 transition-colors cursor-pointer"
-			>
+			</Button>
+			<Button variant="danger" onclick={onDelete}>
 				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path
 						stroke-linecap="round"
@@ -75,13 +74,10 @@
 					/>
 				</svg>
 				Löschen ({selectedCount})
-			</button>
+			</Button>
 		{/if}
 
-		<button
-			onclick={onRetryCovers}
-			class="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-slate-650 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-		>
+		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
 			<svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 				<path
 					stroke-linecap="round"
@@ -91,12 +87,9 @@
 				/>
 			</svg>
 			Retry Cover
-		</button>
+		</Button>
 
-		<button
-			onclick={onScan}
-			class="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-slate-650 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-		>
+		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
 			<svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 				<path
 					stroke-linecap="round"
@@ -106,16 +99,13 @@
 				/>
 			</svg>
 			Scanner
-		</button>
+		</Button>
 
-		<button
-			onclick={onCreateNew}
-			class="w-full sm:w-auto mt-2 sm:mt-0 justify-center flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
-		>
+		<Button onclick={onCreateNew} class="mt-2 w-full sm:mt-0 sm:w-auto">
 			<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 			</svg>
 			Neues Buch
-		</button>
+		</Button>
 	</div>
 </div>

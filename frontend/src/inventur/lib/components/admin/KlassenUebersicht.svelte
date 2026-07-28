@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import ClassAssignmentDialog from './ClassAssignmentDialog.svelte';
 	import KlassenKarte from './KlassenKarte.svelte';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	/** @type {any[]} */
 	let classGroups = $state([]);
@@ -84,12 +85,11 @@
 				<option value="desc">Absteigend 10-5</option>
 			</select>
 
-			<button
+			<Button
 				onclick={() => {
 					managingGroup = null;
 					isManaging = true;
 				}}
-				class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold flex items-center gap-2 shadow-sm cursor-pointer"
 			>
 				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
 					><path
@@ -100,7 +100,7 @@
 					/></svg
 				>
 				Klasse hinzufügen
-			</button>
+			</Button>
 		</div>
 	</div>
 

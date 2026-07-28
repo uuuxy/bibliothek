@@ -4,6 +4,7 @@
 	import KameraScanner from '$lib/components/scanner/KameraScanner.svelte';
 	import ManualInput from '$lib/components/scanner/ManualInput.svelte';
 	import FileUploader from '$lib/components/scanner/FileUploader.svelte';
+	import Button from '../../../lib/components/ui/Button.svelte';
 
 	let { subject = 'Mathe', gradeLevel = 5, onClose = () => {}, onCreated = () => {} } = $props();
 	let status = $state('Bereit zum Scannen.');
@@ -145,18 +146,12 @@
 	<ManualInput onSubmit={submitISBN} disabled={busy} />
 
 	<div class="mt-4 flex gap-3">
-		<button
-			onclick={() => cameraCmp?.startScanner()}
-			disabled={scanning || busy || !!lookupData}
-			class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors cursor-pointer shadow-sm"
-			>Starten</button
-		>
-		<button
-			onclick={() => cameraCmp?.stopScanner()}
-			disabled={!scanning}
-			class="rounded-xl bg-slate-100 border border-slate-250 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer"
-			>Stoppen</button
-		>
+		<Button size="lg" onclick={() => cameraCmp?.startScanner()} disabled={scanning || busy || !!lookupData} class="px-5">
+			Starten
+		</Button>
+		<Button variant="secondary" size="lg" onclick={() => cameraCmp?.stopScanner()} disabled={!scanning} class="px-5">
+			Stoppen
+		</Button>
 	</div>
 
 	<FileUploader

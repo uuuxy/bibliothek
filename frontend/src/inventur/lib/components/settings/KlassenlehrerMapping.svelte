@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	/**
 	 * Klassenlehrer-Mapping — in sich geschlossener Einstellungs-Block.
@@ -165,10 +166,10 @@
 				class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
 			/>
 		</div>
-		<button
+		<Button
 			onclick={upsertMapping}
 			disabled={mappingSaving || !newMappingKlasse.trim() || !newMappingEmail.trim()}
-			class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors flex items-center gap-1.5 shrink-0"
+			class="shrink-0"
 		>
 			{#if mappingSaving}
 				<div
@@ -177,6 +178,6 @@
 			{:else}
 				Speichern
 			{/if}
-		</button>
+		</Button>
 	</div>
 </div>

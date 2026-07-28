@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { apiGet, apiPut, apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import Button from '../ui/Button.svelte';
 
 	let loading = $state(true);
 	let saving = $state(false);
@@ -203,13 +204,15 @@
 						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full"
 					/>
 				</div>
-				<button
+				<Button
+					variant="secondary"
+					size="lg"
 					onclick={testConfig}
 					disabled={testing || !testEmail}
-					class="px-6 py-3 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm rounded-full transition-colors cursor-pointer disabled:opacity-60 border border-slate-200 shadow-sm"
+					class="px-6"
 				>
 					{testing ? 'Wird gesendet...' : 'Test-E-Mail senden'}
-				</button>
+				</Button>
 			</div>
 		</div>
 	</div>

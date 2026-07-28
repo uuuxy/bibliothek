@@ -55,7 +55,7 @@
 			<div class="flex gap-2">
 				<select
 					bind:value={filterKlasse}
-					class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer min-w-[100px]"
+					class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer min-w-25"
 				>
 					{#each availableKlassen as k, _i (_i)}
 						<option value={k}>{k}</option>

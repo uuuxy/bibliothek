@@ -1,6 +1,7 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import Button from '../ui/Button.svelte';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function openProfile(schuelerId) {
@@ -267,15 +268,10 @@
 			{/if}
 
 			<div class="flex justify-end gap-2">
-				<button
-					onclick={mahnwesenStore.closeModal}
-					class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold transition-all"
-					>Abbrechen</button
-				>
-				<button
+				<Button variant="secondary" onclick={mahnwesenStore.closeModal}>Abbrechen</Button>
+				<Button
 					onclick={mahnwesenStore.sendMahnliste}
 					disabled={mahnwesenStore.modalSending || mahnwesenStore.modalMsg?.type === 'success'}
-					class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-2"
 				>
 					{#if mahnwesenStore.modalSending}
 						<div
@@ -298,7 +294,7 @@
 						</svg>
 					{/if}
 					Senden
-				</button>
+				</Button>
 			</div>
 		</div>
 	</div>

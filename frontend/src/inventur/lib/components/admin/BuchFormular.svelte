@@ -5,6 +5,7 @@
 	import BuchCoverUpload from './BuchCoverUpload.svelte';
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	let { formular = $bindable(), onClose, onSave, onCoverUpload, onAssignClass } = $props();
 
@@ -88,9 +89,11 @@
 		class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 sticky bottom-0 rounded-b-2xl"
 	>
 		{#if formular.id}
-			<button
+			<Button
+				variant="secondary"
+				size="lg"
 				onclick={() => window.open(`/api/buecher/titel/${formular.id}/etiketten`, '_blank')}
-				class="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors flex items-center gap-2"
+				class="px-5"
 				title="A4 Zweckform Etikettenbogen für dieses Buch generieren"
 			>
 				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -102,10 +105,12 @@
 					/></svg
 				>
 				Barcodes drucken
-			</button>
-			<button
+			</Button>
+			<Button
+				variant="secondary"
+				size="lg"
 				onclick={onAssignClass}
-				class="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors mr-auto flex items-center gap-2"
+				class="mr-auto px-5"
 				title="Dieses Buch einer Schulklasse zuweisen"
 			>
 				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -117,22 +122,18 @@
 					/></svg
 				>
 				Klasse zuweisen
-			</button>
+			</Button>
 		{/if}
 
-		<button
-			onclick={onClose}
-			class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-200 transition-colors"
-		>
-			Abbrechen
-		</button>
-		<button
+		<Button variant="ghost" size="lg" onclick={onClose} class="px-5">Abbrechen</Button>
+		<Button
+			size="lg"
 			onclick={onSave}
 			disabled={speichernGesperrt}
 			title={speichernGesperrt ? 'Signatur eintragen, um zu speichern' : undefined}
-			class="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all active:scale-95 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
+			class="px-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300"
 		>
 			Speichern
-		</button>
+		</Button>
 	</div>
 </div>

@@ -6,6 +6,7 @@
 	import BookVormerkungenTab from './BookVormerkungenTab.svelte';
 	import BookAkteMeta from './BookAkteMeta.svelte';
 	import { useBookAkte } from './useBookAkte.svelte.js';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {{ bookId: string | null, onBack: () => void }} */
 	let { bookId, onBack } = $props();
@@ -40,9 +41,11 @@
 		</div>
 		{#if !akte.isLoading && akte.book}
 			<div class="flex items-center gap-2">
-				<button
+				<Button
+					variant="secondary"
+					size="sm"
 					onclick={akte.editTitle}
-					class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-all text-xs font-semibold cursor-pointer border border-blue-200"
+					class="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
 				>
 					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 						><path
@@ -53,11 +56,8 @@
 						/></svg
 					>
 					Titel bearbeiten
-				</button>
-				<button
-					onclick={() => akte.deleteTitle(showToast, onBack)}
-					class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-all text-xs font-semibold cursor-pointer border border-rose-200"
-				>
+				</Button>
+				<Button variant="danger" size="sm" onclick={() => akte.deleteTitle(showToast, onBack)}>
 					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 						><path
 							stroke-linecap="round"
@@ -67,7 +67,7 @@
 						/></svg
 					>
 					Gesamten Titel löschen
-				</button>
+				</Button>
 			</div>
 		{/if}
 	</div>

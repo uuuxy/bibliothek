@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { apiFetch } from './apiFetch.js';
+	import Button from './components/ui/Button.svelte';
 
 	let files: FileList | null = $state(null);
 	let isImporting = $state(false);
@@ -77,10 +78,11 @@
 			</div>
 		</label>
 
-		<button
+		<Button
+			size="lg"
 			onclick={handleUpload}
 			disabled={isImporting || !files || files.length === 0}
-			class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+			class="px-6"
 		>
 			{#if isImporting}
 				<div
@@ -90,7 +92,7 @@
 			{:else}
 				<span>Import Starten</span>
 			{/if}
-		</button>
+		</Button>
 	</div>
 
 	{#if importResult}

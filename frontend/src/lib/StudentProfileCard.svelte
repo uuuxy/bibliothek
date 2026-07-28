@@ -1,6 +1,7 @@
 <script>
 	import { apiClient } from './apiFetch.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet }} */
 	let {
@@ -191,26 +192,20 @@
 						min="2000"
 						max="2100"
 						bind:value={abgangInput}
-						class="w-24 px-2 py-1 text-sm border border-blue-400 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
+						class="w-24 h-7 px-2 text-sm border border-blue-400 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
 					/>
-					<button
+					<Button
+						variant="secondary"
+						size="sm"
 						onclick={() => {
 							abgangInput = calcAbgangFromKlasse(profile.klasse);
 						}}
-						class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg font-semibold text-slate-600 cursor-pointer"
-						title="Automatisch aus Klasse berechnen">↺ Neu berechnen</button
+						title="Automatisch aus Klasse berechnen">↺ Neu berechnen</Button
 					>
-					<button
-						onclick={saveAbgang}
-						disabled={abgangSaving}
-						class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold cursor-pointer disabled:opacity-50"
-					>
+					<Button size="sm" onclick={saveAbgang} disabled={abgangSaving}>
 						{abgangSaving ? '…' : 'Speichern'}
-					</button>
-					<button
-						onclick={() => (editingAbgang = false)}
-						class="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 cursor-pointer">✕</button
-					>
+					</Button>
+					<Button variant="ghost" size="sm" onclick={() => (editingAbgang = false)}>✕</Button>
 				</div>
 				{#if abgangError}<p class="text-xs text-rose-500 mt-1">{abgangError}</p>{/if}
 			{:else}

@@ -17,6 +17,7 @@
 	import UserManagementEditModal from './UserManagementEditModal.svelte';
 	import UserManagementDeleteModal from './UserManagementDeleteModal.svelte';
 	import { apiFetch, extractApiError } from './apiFetch.js';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {any[]} */
 	let users = $state.raw([]);
@@ -232,16 +233,11 @@
 			type="text"
 			bind:value={userSearchQuery}
 			placeholder="Benutzer suchen..."
-			class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-medium text-slate-800"
+			class="w-full h-9 bg-white border border-slate-200 rounded-xl px-3 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-medium text-slate-800"
 		/>
-		<span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
+		<span class="absolute left-3 top-2 text-slate-400">🔍</span>
 	</div>
-	<button
-		onclick={openNewUserModal}
-		class="w-full sm:w-auto px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-	>
-		➕ Benutzer anlegen
-	</button>
+	<Button onclick={openNewUserModal} class="w-full sm:w-auto">➕ Benutzer anlegen</Button>
 </div>
 
 <!-- User Table -->

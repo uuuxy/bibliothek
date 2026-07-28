@@ -12,6 +12,7 @@
 	import BuchRasterStartseite from '$lib/components/BuchRasterStartseite.svelte';
 	import KlassenUebersichtStartseite from '$lib/components/KlassenUebersichtStartseite.svelte';
 	import StartseitenFilter from '$lib/components/StartseitenFilter.svelte';
+	import Button from '../../lib/components/ui/Button.svelte';
 	import {
 		buecherLaden,
 		echteKlassenLaden,
@@ -231,12 +232,9 @@
 					/>
 					{#if displayLimit < filteredBooks.length}
 						<div class="mt-8 flex justify-center">
-							<button
-								class="px-6 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-full border border-slate-300 shadow-sm transition-all cursor-pointer"
-								onclick={() => (displayLimit += 50)}
-							>
+							<Button variant="secondary" onclick={() => (displayLimit += 50)} class="px-6">
 								Mehr laden ({filteredBooks.length - displayLimit} weitere)
-							</button>
+							</Button>
 						</div>
 					{/if}
 				</div>

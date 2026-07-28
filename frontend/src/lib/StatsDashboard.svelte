@@ -3,6 +3,7 @@
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
 	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
+	import Button from './components/ui/Button.svelte';
 
 	// State Runes (Svelte 5)
 	/** @type {any} */
@@ -153,10 +154,12 @@
 {/snippet}
 
 {#snippet drillDownButton()}
-	<button
+	<Button
+		variant="secondary"
+		size="sm"
 		type="button"
 		onclick={() => openDetail(analyse)}
-		class="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-full transition-colors cursor-pointer"
+		class="shrink-0 gap-1 border-blue-100 bg-blue-50 text-[11px] text-blue-600 hover:bg-blue-100"
 		aria-label="{aktiveAnalyse.detailLabel} — Detailansicht öffnen"
 	>
 		Alle anzeigen
@@ -168,7 +171,7 @@
 				d="M9 5l7 7-7 7"
 			/></svg
 		>
-	</button>
+	</Button>
 {/snippet}
 
 <!-- Leerzustand als eigene Fläche statt als Tabellenzeile: nur so lässt er sich in der

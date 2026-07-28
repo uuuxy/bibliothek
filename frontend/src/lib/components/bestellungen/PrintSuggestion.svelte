@@ -1,4 +1,6 @@
 <script>
+	import Button from '../ui/Button.svelte';
+
 	let { printSuggestion, onPrint } = $props();
 </script>
 
@@ -18,11 +20,8 @@
 				</p>
 			</div>
 		</div>
-		<button
-			onclick={onPrint}
-			class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm cursor-pointer transition-all active:scale-95"
-		>
+		<Button size="sm" onclick={onPrint} class="w-full">
 			🖨️ Etiketten für diese Lieferung drucken
-		</button>
+		</Button>
 	</div>
 {/if}

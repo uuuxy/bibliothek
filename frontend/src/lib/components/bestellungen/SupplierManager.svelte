@@ -1,4 +1,6 @@
 <script>
+	import Button from '../ui/Button.svelte';
+
 	let { suppliers, onAddSupplier, onEditSupplier, onRemoveSupplier } = $props();
 
 	let newName = $state('');
@@ -72,11 +74,7 @@
 					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
 				/>
 			</div>
-			<button
-				type="submit"
-				class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg cursor-pointer text-base"
-				>Lieferanten speichern</button
-			>
+			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
 		</form>
 	</div>
 

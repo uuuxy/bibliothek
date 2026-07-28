@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
+	import Button from './components/ui/Button.svelte';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -99,16 +100,16 @@
 				id="extendDatum"
 				type="date"
 				bind:value={neuesDatum}
-				class="w-48 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
+				class="w-48 h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
 			/>
 		</div>
 
-		<button
+		<Button
 			onclick={handleGlobalExtend}
 			disabled={isExtending || !klasse.trim() || !neuesDatum}
-			class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+			class="px-6"
 		>
 			{isExtending ? 'Wird verarbeitet...' : 'Klassen-LMF global verlängern'}
-		</button>
+		</Button>
 	</div>
 </div>

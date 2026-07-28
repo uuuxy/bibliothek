@@ -48,7 +48,7 @@
 >
 
 <div
-	class="flex flex-wrap items-center gap-2 border border-surface-variant/20 rounded-2xl p-2 px-4 w-full sm:w-fit min-w-0 sm:min-w-[300px] bg-white hover:border-emerald-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 transition-all cursor-text shadow-sm mb-4 sm:mb-6"
+	class="flex flex-wrap items-center gap-2 border border-surface-variant/20 rounded-2xl p-2 px-4 w-full sm:w-fit min-w-0 sm:min-w-75 bg-white hover:border-emerald-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 transition-all cursor-text shadow-sm mb-4 sm:mb-6"
 >
 	<!-- Group Icon -->
 	<svg
@@ -104,7 +104,7 @@
 		placeholder={selectedClasses.length === 0 ? 'Klasse wählen...' : ''}
 		bind:value={classInput.value}
 		onkeydown={handleKeyDown}
-		class="flex-1 bg-transparent border-none outline-none focus:ring-0 px-1 min-w-[120px] text-gray-900 placeholder:text-gray-400 font-medium"
+		class="flex-1 bg-transparent border-none outline-none focus:ring-0 px-1 min-w-30 text-gray-900 placeholder:text-gray-400 font-medium"
 	/>
 
 	<!-- Chevron Down Icon -->

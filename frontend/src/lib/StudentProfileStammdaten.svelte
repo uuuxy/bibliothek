@@ -2,6 +2,7 @@
 	let { profile, role, rechnungPdfLoading, onDownloadRechnung, onEdit } = $props();
 
 	import { apiClient } from './apiFetch.js';
+	import Button from './components/ui/Button.svelte';
 
 	function formatDate(dateString) {
 		if (!dateString) return 'Keine Angabe';
@@ -29,9 +30,11 @@
 		</h3>
 		<div class="flex items-center gap-2">
 			{#if role === 'admin'}
-				<button
+				<Button
+					variant="secondary"
+					size="lg"
 					onclick={onEdit}
-					class="px-5 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md text-sm font-bold transition-all shadow-sm hover:shadow cursor-pointer flex items-center gap-2"
+					class="px-5 bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100"
 				>
 					<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
 						><path
@@ -42,7 +45,7 @@
 						/></svg
 					>
 					Bearbeiten
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>

@@ -3,6 +3,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import WareneingangTable from './WareneingangTable.svelte';
 	import PageContainer from '../layout/PageContainer.svelte';
+	import Button from '../ui/Button.svelte';
 
 	let { incomingShipments = [], onBack, onReceived } = $props();
 
@@ -61,10 +62,11 @@
 		</div>
 
 		<div class="flex items-center justify-end sm:self-end">
-			<button
+			<Button
+				size="lg"
 				onclick={handleBulkReceive}
 				disabled={isSubmitting || selectedExemplarIds.length === 0}
-				class="px-6 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-xs shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+				class="px-6"
 			>
 				{#if isSubmitting}
 					<div
@@ -72,7 +74,7 @@
 					></div>
 				{/if}
 				Ausgewählte Positionen einbuchen
-			</button>
+			</Button>
 		</div>
 	</div>
 

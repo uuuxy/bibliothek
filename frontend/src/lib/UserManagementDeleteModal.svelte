@@ -1,5 +1,6 @@
 <script>
 	import Modal from './Modal.svelte';
+	import Button from './components/ui/Button.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -39,22 +40,13 @@
 				</p>
 			</div>
 			<div class="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
-				<button
-					onclick={onclose}
-					disabled={deletingUser}
-					class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer"
-					>Abbrechen</button
-				>
-				<button
-					onclick={confirmDeleteUser}
-					disabled={deletingUser}
-					class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition-colors flex items-center justify-center cursor-pointer"
-				>
+				<Button variant="secondary" onclick={onclose} disabled={deletingUser}>Abbrechen</Button>
+				<Button variant="danger-solid" onclick={confirmDeleteUser} disabled={deletingUser}>
 					{#if deletingUser}<div
-							class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"
+							class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
 						></div>{/if}
 					Löschen
-				</button>
+				</Button>
 			</div>
 		</div>
 </Modal>

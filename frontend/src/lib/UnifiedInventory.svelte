@@ -4,6 +4,7 @@
 	import { useUnifiedInventory } from './useUnifiedInventory.svelte.js';
 	import InventoryStartModal from './components/InventoryStartModal.svelte';
 	import InventoryFinishModal from './components/InventoryFinishModal.svelte';
+	import Button from './components/ui/Button.svelte';
 
 	const inventoryState = useUnifiedInventory();
 
@@ -70,10 +71,7 @@
 					gezielt nach einer bestimmten Signatur / Kategorie scannen.
 				</p>
 			</div>
-			<button
-				onclick={() => (inventoryState.showStartModal = true)}
-				class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl shadow-sm transition-colors flex items-center space-x-2"
-			>
+			<Button size="lg" onclick={() => (inventoryState.showStartModal = true)} class="px-6">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					fill="none"
@@ -85,7 +83,7 @@
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 				</svg>
 				<span>Neue Bestandsprüfung starten</span>
-			</button>
+			</Button>
 
 			{#if inventoryState.errorMessage}
 				<div
@@ -114,16 +112,16 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-2 shrink-0">
-								<button
-									onclick={() => inventoryState.resumeSession(session)}
-									class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md"
-									>Fortsetzen</button
-								>
-								<button
+								<Button size="sm" onclick={() => inventoryState.resumeSession(session)}>
+									Fortsetzen
+								</Button>
+								<Button
+									variant="secondary"
+									size="sm"
 									onclick={() => inventoryState.verwerfeSession(session)}
-									class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-500 text-xs font-bold rounded-md border border-slate-200"
-									>Verwerfen</button
 								>
+									Verwerfen
+								</Button>
 							</div>
 						</div>
 					{/each}
@@ -304,12 +302,9 @@
 			{/if}
 
 			<div class="pt-8 border-t border-slate-200 flex justify-end">
-				<button
-					onclick={() => (inventoryState.showFinishModal = true)}
-					class="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-6 py-3 rounded-xl border border-red-200 transition-colors"
-				>
+				<Button variant="danger" size="lg" onclick={() => (inventoryState.showFinishModal = true)} class="px-6">
 					Inventur abschließen
-				</button>
+				</Button>
 			</div>
 		</div>
 	{/if}

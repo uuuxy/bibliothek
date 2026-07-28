@@ -2,6 +2,7 @@
 	import KlassenBuchKachel from '$lib/components/admin/KlassenBuchKachel.svelte';
 	import { sortBooksBySubjectAndTitle } from '$lib/book_sorting.js';
 	import { scrollCarousel, scrollHandler } from '$lib/carousel_utils.js';
+	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	/**
 	 * @type {{
@@ -28,9 +29,10 @@
 			{group.className}
 		</h2>
 		<div class="flex gap-2">
-			<button
+			<Button
+				variant="secondary"
 				onclick={onEdit}
-				class="bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-600 font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
+				class="border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100"
 				title="Klasse bearbeiten"
 				aria-label="Klasse bearbeiten"
 			>
@@ -43,7 +45,7 @@
 					/></svg
 				>
 				Bücher verwalten
-			</button>
+			</Button>
 			<button
 				onclick={onDelete}
 				class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors cursor-pointer"

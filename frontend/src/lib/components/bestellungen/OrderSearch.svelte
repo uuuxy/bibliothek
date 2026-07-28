@@ -2,6 +2,7 @@
 	import { apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import Button from '../ui/Button.svelte';
 
 	/** @type {any} */
 	let stagedBook = $state(null);
@@ -231,16 +232,8 @@
 		</div>
 
 		<div class="flex items-center gap-2">
-			<button
-				onclick={() => (stagedBook = null)}
-				class="px-3 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
-				>Abbrechen</button
-			>
-			<button
-				onclick={confirmAddToCart}
-				class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
-				>In den Warenkorb</button
-			>
+			<Button variant="ghost" onclick={() => (stagedBook = null)}>Abbrechen</Button>
+			<Button onclick={confirmAddToCart} class="flex-1">In den Warenkorb</Button>
 		</div>
 	</div>
 {/if}

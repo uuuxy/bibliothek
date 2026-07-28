@@ -1,6 +1,7 @@
 <script>
 	import InputField from './components/ui/InputField.svelte';
 	import Snackbar from './components/ui/Snackbar.svelte';
+	import Button from './components/ui/Button.svelte';
 	import { useStudentEditForm } from './useStudentEditForm.svelte.js';
 
 	/**
@@ -79,13 +80,7 @@
 		</div>
 
 		<div class="flex items-center gap-3 shrink-0">
-			<button
-				onclick={save}
-				disabled={saving}
-				class="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700
-               rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50
-               flex items-center gap-2.5"
-			>
+			<Button size="lg" onclick={save} disabled={saving} class="px-6">
 				{#if saving}
 					<div
 						class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
@@ -102,7 +97,7 @@
 					</svg>
 					Speichern
 				{/if}
-			</button>
+			</Button>
 		</div>
 	</header>
 

@@ -1,5 +1,6 @@
 <script>
 	import Modal from './Modal.svelte';
+	import Button from './components/ui/Button.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -99,22 +100,13 @@
 				</div>
 			{/if}
 			<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-				<button
-					type="button"
-					onclick={onclose}
-					class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer"
-					>Abbrechen</button
-				>
-				<button
-					type="submit"
-					disabled={submittingUser}
-					class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors flex items-center justify-center cursor-pointer disabled:opacity-60"
-				>
+				<Button variant="secondary" type="button" onclick={onclose}>Abbrechen</Button>
+				<Button type="submit" disabled={submittingUser}>
 					{#if submittingUser}<div
-							class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"
+							class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
 						></div>{/if}
 					Speichern
-				</button>
+				</Button>
 			</div>
 		</form>
 </Modal>

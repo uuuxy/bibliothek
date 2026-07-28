@@ -4,6 +4,7 @@
 	import { menuGroups, canSeeItem } from '../../menu.js';
 	import { sidebarExtensions } from '../../plugins.svelte.js';
 	import BackupStatusBadge from '../system/BackupStatusBadge.svelte';
+	import Button from '../ui/Button.svelte';
 
 	let systemOpen = $state(false);
 
@@ -434,10 +435,7 @@
 							</span>
 						{/if}
 					</div>
-					<button
-						onclick={handleLogout}
-						class="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100/60 border border-rose-100 text-rose-600 hover:text-rose-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
-					>
+					<Button variant="danger" size="sm" onclick={handleLogout} class="w-full gap-1.5">
 						<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 							><path
 								stroke-linecap="round"
@@ -447,7 +445,7 @@
 							></path></svg
 						>
 						<span>Abmelden</span>
-					</button>
+					</Button>
 				</div>
 				<div class="px-4 pb-4 text-center no-print animate-fade-in shrink-0">
 					<div
