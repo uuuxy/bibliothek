@@ -121,7 +121,7 @@
 						bind:value={searchQuery}
 						aria-label="Suchen nach Titel, Fach, Klasse oder Autor"
 						placeholder="Suchen nach Titel, Fach, Klasse (z.B. 'Mathe 5' oder 'Gymnasium')..."
-						class="flex-1 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
+						class="h-full flex-1 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
 					/>
 				</div>
 			{:else if viewMode === 'jahrgaenge'}

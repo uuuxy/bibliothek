@@ -49,7 +49,7 @@
 		onIndexChange: onIndexChange,
 		onEscape: onEscape
 	}}
-	class="flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
+	class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
 	placeholder={isActive
 		? 'Buch-Barcode (B-) scannen...'
 		: 'Schüler (S-), Lehrer (L-), Buch (B-) scannen...'}

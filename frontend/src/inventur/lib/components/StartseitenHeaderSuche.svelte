@@ -23,7 +23,7 @@
 		bind:value={searchQuery}
 		placeholder="Titel, ISBN oder Autor suchen..."
 		aria-label="Suchbegriff für Bücher eingeben"
-		class="block w-full pl-14 pr-12 py-4 bg-white border border-slate-200 rounded-full text-slate-900 shadow-sm hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-300 focus:outline-none transition-all duration-300 text-lg placeholder-slate-400"
+		class="h-auto block w-full pl-14 pr-12 py-4 bg-white border border-slate-200 rounded-full text-slate-900 shadow-sm hover:border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-300 focus:outline-none transition-all duration-300 text-lg placeholder-slate-400"
 	/>
 	{#if searchQuery}
 		<button

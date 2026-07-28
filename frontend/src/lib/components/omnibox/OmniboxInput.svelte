@@ -32,7 +32,7 @@
 		onIndexChange: onIndexChange,
 		onEscape: onEscape
 	}}
-	class="w-full pl-10 pr-12 bg-transparent text-slate-800 font-sans text-xl placeholder-slate-400 focus:outline-none tracking-wide"
+	class="h-full w-full pl-10 pr-12 bg-transparent text-slate-800 font-sans text-xl placeholder-slate-400 focus:outline-none tracking-wide"
 	placeholder={isActive
 		? 'Buch-Barcode (B-) scannen...'
 		: 'Schüler (S-), Lehrer (L-), Buch (B-) scannen...'}

@@ -104,7 +104,7 @@
 		placeholder={selectedClasses.length === 0 ? 'Klasse wählen...' : ''}
 		bind:value={classInput.value}
 		onkeydown={handleKeyDown}
-		class="flex-1 bg-transparent border-none outline-none focus:ring-0 px-1 min-w-30 text-gray-900 placeholder:text-gray-400 font-medium"
+		class="h-auto flex-1 bg-transparent border-none outline-none focus:ring-0 px-1 min-w-30 text-gray-900 placeholder:text-gray-400 font-medium"
 	/>
 
 	<!-- Chevron Down Icon -->

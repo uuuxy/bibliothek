@@ -1,5 +1,4 @@
 <script>
-
 	let query = $state('');
 	/** @type {any[]} */
 	let results = $state.raw([]);
@@ -76,7 +75,7 @@
 				bind:value={query}
 				oninput={onInput}
 				placeholder="Titel, Autor oder ISBN eingeben …"
-				class="w-full pl-12 pr-12 py-4 text-lg border border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-2 focus:ring-slate-300 outline-none transition-shadow"
+				class="h-auto w-full pl-12 pr-12 py-4 text-lg border border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-2 focus:ring-slate-300 outline-none transition-shadow"
 				autofocus
 			/>
 			{#if loading}

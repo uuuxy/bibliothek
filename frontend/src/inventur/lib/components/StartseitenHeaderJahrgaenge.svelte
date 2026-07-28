@@ -12,7 +12,7 @@
 		<select
 			bind:value={selectedZweig}
 			aria-label="Nach Schulzweig filtern"
-			class="appearance-none block w-full bg-white border border-slate-200 text-slate-700 py-3.5 pl-5 pr-10 rounded-2xl shadow-sm hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-all duration-200 cursor-pointer text-base"
+			class="h-auto appearance-none block w-full bg-white border border-slate-200 text-slate-700 py-3.5 pl-5 pr-10 rounded-2xl shadow-sm hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-all duration-200 cursor-pointer text-base"
 		>
 			<option value="">Alle Zweige</option>
 			{#each schulzweige as zweig (zweig)}
@@ -32,7 +32,7 @@
 		<select
 			bind:value={selectedJahrgang}
 			aria-label="Nach Jahrgangsstufe filtern"
-			class="appearance-none block w-full bg-white border border-slate-200 text-slate-700 py-3.5 pl-5 pr-10 rounded-2xl shadow-sm hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-all duration-200 cursor-pointer text-base"
+			class="h-auto appearance-none block w-full bg-white border border-slate-200 text-slate-700 py-3.5 pl-5 pr-10 rounded-2xl shadow-sm hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-all duration-200 cursor-pointer text-base"
 		>
 			<option value="">Alle Jahrgänge</option>
 			{#each jahrgaenge as jahrgang (jahrgang)}

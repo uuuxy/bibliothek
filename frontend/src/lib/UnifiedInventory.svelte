@@ -186,7 +186,7 @@
 					bind:value={inventoryState.barcodeInput}
 					type="text"
 					placeholder="Barcode scannen..."
-					class="w-full pl-12 pr-4 py-4 bg-white border-2 border-blue-100 rounded-2xl shadow-sm text-lg font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+					class="h-auto w-full pl-12 pr-4 py-4 bg-white border-2 border-blue-100 rounded-2xl shadow-sm text-lg font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
 					disabled={inventoryState.isScanning}
 				/>
 				{#if inventoryState.isScanning}
@@ -302,7 +302,12 @@
 			{/if}
 
 			<div class="pt-8 border-t border-slate-200 flex justify-end">
-				<Button variant="danger" size="lg" onclick={() => (inventoryState.showFinishModal = true)} class="px-6">
+				<Button
+					variant="danger"
+					size="lg"
+					onclick={() => (inventoryState.showFinishModal = true)}
+					class="px-6"
+				>
 					Inventur abschließen
 				</Button>
 			</div>

@@ -62,7 +62,7 @@
 			data-form-type="other"
 			placeholder="Suche Titel, Fach, oder ISBN..."
 			bind:value={searchQuery}
-			class="grow text-base sm:text-xl w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-gray-900 placeholder:text-gray-400 font-medium"
+			class="h-full grow text-base sm:text-xl w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-gray-900 placeholder:text-gray-400 font-medium"
 		/>
 		<span
 			class="ml-2 sm:ml-4 text-[10px] sm:text-xs font-bold text-gray-500 bg-black/5 px-2 py-1 sm:px-3 sm:py-1 rounded-full whitespace-nowrap"

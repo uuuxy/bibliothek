@@ -32,7 +32,7 @@
 		bind:value
 		{placeholder}
 		{maxlength}
-		class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
+		class="w-full h-9 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
            focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all {extraClasses}"
 	/>
 </div>
