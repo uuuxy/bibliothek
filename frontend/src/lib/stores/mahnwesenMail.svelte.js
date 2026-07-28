@@ -2,19 +2,43 @@ import { apiFetch } from '../apiFetch.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
 /**
- * Massenversand: schickt je überfällige Klasse die Mahnliste an die Klassenleitung.
+ * Massenversand: schickt je gewählte überfällige Klasse die Mahnliste an die
+ * Klassenleitung — oder, mit overrideEmail, an genau diese eine Adresse.
  * Rückmeldung über die globale Snackbar, da die Aktion aus der Aktionsleiste kommt
  * (nicht aus dem Modal, dessen modalMsg hier nicht sichtbar wäre).
  *
+ * Die Meldung des Servers wird durchgereicht statt selbst formuliert: Nur sie weiß,
+ * an WEN die Listen tatsächlich gingen — bei einer Override-Adresse ist das die
+ * entscheidende Information, und ein selbstgebautes „n versendet" verschweigt sie.
+ *
  * Steht ausserhalb der Factory, weil sie keinen Zustand des Modals berührt — sie
  * muss deshalb nicht je Store-Instanz neu entstehen (SonarQube javascript:S7721).
+ *
+ * @param {{ klassen: string[], overrideEmail?: string }} auswahl
  */
-async function sendBulkOverdueMails() {
+async function sendBulkOverdueMails(auswahl) {
+	// Ohne Auswahl gar nicht erst losschicken: Ein fehlendes klassen-Feld bedeutet
+	// serverseitig „ALLE Klassen" — genau der Rundumschlag, den der Dialog verhindert.
+	if (!auswahl?.klassen?.length) {
+		showToast('Keine Klasse ausgewählt.', 'error');
+		return;
+	}
+
 	try {
-		const res = await apiFetch('/api/mail/send-bulk-overdue', { method: 'POST' });
+		const res = await apiFetch('/api/mail/send-bulk-overdue', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				klassen: auswahl.klassen,
+				override_email: auswahl.overrideEmail ?? ''
+			})
+		});
 		const json = await res.json();
 		if (res.ok) {
-			showToast(`${json.sent_count ?? 0} Klassen-Mahnliste(n) versendet.`, 'success');
+			showToast(
+				json.message ?? `${json.sent_count ?? 0} Klassen-Mahnliste(n) versendet.`,
+				'success'
+			);
 		} else {
 			showToast(json.error ?? json.message ?? 'Versand fehlgeschlagen.', 'error');
 		}

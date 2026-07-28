@@ -34,6 +34,9 @@ Postgres abgesichert).
 | Doppel-Scan desselben Exemplars → sauberer Konflikt (409 statt 500) | 🟢 Unique-Index + 🟡 `mapLoanCreateErr` **100 % getestet** | `internal/service/loan_checkout_cases.go:19` |
 | Lehrkraft (Handapparat) → Jahresfrist, nur aktive Lehrer | 🟡 **100 % getestet** | `internal/service/loan_checkout_validation.go:162` |
 | **Mahnstufe steigt NUR beim PDF-Druck** (physischer Verwaltungsakt), NIE beim Mail-Versand (Massen- wie Einzelversand = „Friendly Reminder"). PDF-Lauf schreibt `mahnstufe` + liest die PDF-Daten in DERSELBEN Tx (Papier == DB) | 🟡 nur `mahnwesen_bulk.go` schreibt `mahnstufe`; alle Mail-Pfade bewusst nicht | `api/mahnwesen_bulk.go`, `api/mahnwesen_bulk_mail.go`, `api/mahnwesen_mail.go` |
+| **Mahnliste geht an die Klassenleitung, nie an Schüler** — je Klasse eine Mail an genau eine Adresse (kein TO/CC über mehrere Betroffene) | 🟡 `versendeKlassenMahnungen` überspringt Klassen ohne hinterlegte Adresse; getestet | `api/mahnwesen_bulk_mail.go`, `api/mahnwesen_bulk_mail_test.go` |
+| **Massenversand-Auswahl: leer heißt niemand, nicht alle.** Fehlendes `klassen`-Feld = alle (alter Vertrag), leeres Array = 400 | 🟡 `parseBulkOverdueRequest`, Zeiger-Semantik + Test | `api/mahnwesen_bulk_mail.go` |
+| **`override_email` ist die einzige Abweichung** von „jede Lehrkraft nur die eigene Klasse": Ein Empfänger sieht dann mehrere Klassen (Vertretung/Sekretariat). Weiterhin eine Mail je Klasse, kein Sammel-PDF — und die Adresse steht im Klartext im Audit-Log | 🟡 Handler + `bulkOverdueAudit` (zwei Einträge: Absicht vor dem Versand, Ergebnis danach) | `api/mahnwesen_bulk_mail.go`, `frontend/src/lib/components/mahnwesen/MahnlaufDialog.svelte` |
 
 **Bewertung:** Sehr robust. Die datenkritischen Invarianten sind bereits auf DB-Ebene. Die
 Geschäftsregeln (Sperre/Limit/Overdue) liegen bewusst im Code (brauchen Kontext + Override) —

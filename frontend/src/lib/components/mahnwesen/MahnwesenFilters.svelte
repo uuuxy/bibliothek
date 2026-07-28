@@ -2,6 +2,11 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { scale } from 'svelte/transition';
 	import Button from '../ui/Button.svelte';
+	import MahnlaufDialog from './MahnlaufDialog.svelte';
+
+	// „Alle anmahnen" lief früher gegen ein window.confirm: alles oder nichts, immer
+	// an die hinterlegten Klassenleitungen. Der Dialog steht jetzt als Türsteher davor.
+	let mahnlaufOffen = $state(false);
 
 	// Split-Button-Menü (Mahnbriefe): eigener Open-State, schließt bei Klick außerhalb & Escape.
 	let menuOpen = $state(false);
@@ -352,16 +357,8 @@
 			{#if countAlle > 0}
 				<Button
 					variant="danger-solid"
-					onclick={() => {
-						if (
-							window.confirm(
-								'Achtung: Bist du sicher, dass du jetzt Mahnungen an ALLE säumigen Schüler per E-Mail versenden möchtest?'
-							)
-						) {
-							mahnwesenStore.sendBulkOverdueMails();
-						}
-					}}
-					aria-label="Mahnlisten aller Klassen per E-Mail an die Klassenleitungen senden"
+					onclick={() => (mahnlaufOffen = true)}
+					aria-label="Mahnlauf konfigurieren und Mahnlisten per E-Mail versenden"
 				>
 					<svg
 						class="h-4 w-4"
@@ -383,6 +380,18 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Auf oberster Ebene, nicht in der Werkzeugleiste: Der Dialog ist ein Overlay und
+     hat in einem Flex-Container mit print:hidden nichts verloren. -->
+<MahnlaufDialog
+	open={mahnlaufOffen}
+	klassen={mahnwesenStore.klassen}
+	onclose={() => (mahnlaufOffen = false)}
+	onconfirm={(auswahl) => {
+		mahnlaufOffen = false;
+		mahnwesenStore.sendBulkOverdueMails(auswahl);
+	}}
+/>
 
 <!-- Tabs Navigation -->
 {#if mahnwesenStore.data && !mahnwesenStore.loading}
