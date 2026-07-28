@@ -63,97 +63,118 @@
 			<span class="text-sm">Bestellungen werden hier automatisch gespeichert.</span>
 		</div>
 	{:else}
-		<div class="space-y-3">
-			{#each bestellungen as b (b.id)}
-				<div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
-					<!-- Kopfzeile -->
-					<button
-						onclick={() => toggleExpand(b.id)}
-						class="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors cursor-pointer"
+		<!-- Eine Kopfzeile für alle Bestellungen statt vier Beschriftungen je Zeile: Der Inhalt ist
+		     ein gleichförmiger Datensatz mit festen Spalten, also eine Tabelle. Als Karten brauchte
+		     dieselbe Information rund das Dreifache an Höhe. Die Zeile bleibt aufklappbar — sie
+		     trägt dafür role="button" samt Tastaturbedienung, das Chevron ist nur noch Anzeige. -->
+		<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
+			<table class="w-full border-collapse text-sm">
+				<thead>
+					<tr
+						class="border-b border-slate-200 bg-slate-50/60 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
 					>
-						<div class="flex items-center gap-6 flex-1 min-w-0">
-							<div class="shrink-0">
-								<div class="text-xs text-slate-400 font-semibold uppercase tracking-wide">
-									Datum
-								</div>
-								<div class="font-bold text-slate-800 text-sm">{datum(b.bestelldatum)}</div>
-							</div>
-							<div class="min-w-0">
-								<div class="text-xs text-slate-400 font-semibold uppercase tracking-wide">
-									Lieferant
-								</div>
-								<div class="font-bold text-slate-800 text-sm truncate">{b.lieferant_name}</div>
-								<div class="text-xs text-slate-400 truncate">
-									{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
-								</div>
-							</div>
-							<div class="shrink-0">
-								<div class="text-xs text-slate-400 font-semibold uppercase tracking-wide">
-									Exemplare
-								</div>
-								<div class="font-bold text-slate-800 text-sm">{b.anzahl_exemplare}</div>
-							</div>
-						</div>
-						<div class="shrink-0 text-right">
-							<div class="text-xs text-slate-400 font-semibold uppercase tracking-wide">Betrag</div>
-							<div class="text-lg font-black text-slate-900">{euro(b.gesamtbetrag)}</div>
-						</div>
-						<div
-							class="text-slate-400 shrink-0 text-lg transition-transform {expandedId === b.id
-								? 'rotate-180'
-								: ''}"
+						<th class="px-3 py-2 text-left font-semibold">Datum</th>
+						<th class="px-3 py-2 text-left font-semibold">Lieferant</th>
+						<th class="px-3 py-2 text-right font-semibold">Exemplare</th>
+						<th class="px-3 py-2 text-right font-semibold">Betrag</th>
+						<th class="w-8 px-3 py-2"><span class="sr-only">Positionen</span></th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-100">
+					{#each bestellungen as b (b.id)}
+						<tr
+							role="button"
+							tabindex="0"
+							aria-expanded={expandedId === b.id}
+							aria-controls="positionen-{b.id}"
+							onclick={() => toggleExpand(b.id)}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleExpand(b.id);
+								}
+							}}
+							class="cursor-pointer transition-colors hover:bg-slate-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
 						>
-							▾
-						</div>
-					</button>
+							<td class="px-3 py-2 font-semibold whitespace-nowrap text-slate-800 tabular-nums">
+								{datum(b.bestelldatum)}
+							</td>
+							<td class="max-w-0 px-3 py-2">
+								<span class="block truncate font-semibold text-slate-800">{b.lieferant_name}</span>
+								<span class="block truncate text-xs text-slate-400">
+									{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
+								</span>
+							</td>
+							<td class="px-3 py-2 text-right whitespace-nowrap text-slate-700 tabular-nums">
+								{b.anzahl_exemplare}
+							</td>
+							<td class="px-3 py-2 text-right font-bold whitespace-nowrap text-slate-900 tabular-nums">
+								{euro(b.gesamtbetrag)}
+							</td>
+							<td class="px-3 py-2 text-right">
+								<span
+									aria-hidden="true"
+									class="inline-block text-slate-400 transition-transform {expandedId === b.id
+										? 'rotate-180'
+										: ''}">▾</span
+								>
+							</td>
+						</tr>
 
-					<!-- Positionen -->
-					{#if expandedId === b.id}
-						<div class="border-t border-slate-100 bg-slate-50/40 px-5 py-4">
-							{#if b.positionen.length === 0}
-								<p class="text-sm text-slate-400 italic">Keine Positionen gespeichert.</p>
-							{:else}
-								<table class="w-full text-sm border-collapse">
-									<thead>
-										<tr
-											class="text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-200"
-										>
-											<th class="pb-2 text-left font-semibold">Titel</th>
-											<th class="pb-2 text-left font-semibold">ISBN</th>
-											<th class="pb-2 text-right font-semibold">Menge</th>
-											<th class="pb-2 text-right font-semibold">Einzelpreis</th>
-											<th class="pb-2 text-right font-semibold">Gesamt</th>
-										</tr>
-									</thead>
-									<tbody class="divide-y divide-slate-100">
-										{#each b.positionen as p, _i (_i)}
-											<tr>
-												<td class="py-2 font-medium text-slate-800 pr-4">{p.titel_name}</td>
-												<td class="py-2 text-slate-500 font-mono text-xs pr-4">{p.isbn || '—'}</td>
-												<td class="py-2 text-right text-slate-700">{p.menge}</td>
-												<td class="py-2 text-right text-slate-700">{euro(p.einzelpreis)}</td>
-												<td class="py-2 text-right font-bold text-slate-800"
-													>{euro(p.gesamtpreis)}</td
+						<!-- Positionen -->
+						{#if expandedId === b.id}
+							<tr id="positionen-{b.id}">
+								<td colspan="5" class="border-t border-slate-100 bg-slate-50/40 px-5 py-4">
+									{#if b.positionen.length === 0}
+										<p class="text-sm text-slate-400 italic">Keine Positionen gespeichert.</p>
+									{:else}
+										<table class="w-full border-collapse text-sm">
+											<thead>
+												<tr
+													class="border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
 												>
-											</tr>
-										{/each}
-									</tbody>
-									<tfoot>
-										<tr class="border-t-2 border-slate-200">
-											<td colspan="4" class="pt-2 text-right font-bold text-slate-600 text-sm"
-												>Summe</td
-											>
-											<td class="pt-2 text-right font-black text-slate-900"
-												>{euro(b.gesamtbetrag)}</td
-											>
-										</tr>
-									</tfoot>
-								</table>
-							{/if}
-						</div>
-					{/if}
-				</div>
-			{/each}
+													<th class="pb-1.5 text-left font-semibold">Titel</th>
+													<th class="pb-1.5 text-left font-semibold">ISBN</th>
+													<th class="pb-1.5 text-right font-semibold">Menge</th>
+													<th class="pb-1.5 text-right font-semibold">Einzelpreis</th>
+													<th class="pb-1.5 text-right font-semibold">Gesamt</th>
+												</tr>
+											</thead>
+											<tbody class="divide-y divide-slate-100">
+												{#each b.positionen as p, _i (_i)}
+													<tr>
+														<td class="py-1.5 pr-4 font-medium text-slate-800">{p.titel_name}</td>
+														<td class="py-1.5 pr-4 font-mono text-xs text-slate-500"
+															>{p.isbn || '—'}</td
+														>
+														<td class="py-1.5 text-right text-slate-700 tabular-nums">{p.menge}</td>
+														<td class="py-1.5 text-right text-slate-700 tabular-nums"
+															>{euro(p.einzelpreis)}</td
+														>
+														<td class="py-1.5 text-right font-bold text-slate-800 tabular-nums"
+															>{euro(p.gesamtpreis)}</td
+														>
+													</tr>
+												{/each}
+											</tbody>
+											<tfoot>
+												<tr class="border-t-2 border-slate-200">
+													<td colspan="4" class="pt-1.5 text-right text-sm font-bold text-slate-600"
+														>Summe</td
+													>
+													<td class="pt-1.5 text-right font-black text-slate-900 tabular-nums"
+														>{euro(b.gesamtbetrag)}</td
+													>
+												</tr>
+											</tfoot>
+										</table>
+									{/if}
+								</td>
+							</tr>
+						{/if}
+					{/each}
+				</tbody>
+			</table>
 		</div>
 	{/if}
 </div>
