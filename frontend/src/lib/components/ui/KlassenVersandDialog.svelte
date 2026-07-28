@@ -21,12 +21,26 @@
 	 *   beschreibung: string,
 	 *   aktion: string,
 	 *   hinweis: string,
+	 *   variant?: 'primary' | 'danger-solid',
 	 *   klassen?: Array<{ klasse: string, lehrer_email?: string, schueler?: unknown[] }>,
 	 *   onclose: () => void,
 	 *   onconfirm: (auswahl: { klassen: string[], overrideEmail: string }) => void
 	 * }}
 	 */
-	let { open, titel, beschreibung, aktion, hinweis, klassen = [], onclose, onconfirm } = $props();
+	let {
+		open,
+		titel,
+		beschreibung,
+		aktion,
+		hinweis,
+		// Rot ist eine Warnung, keine Dekoration. Der Mahnlauf trägt sie zu Recht
+		// (Eskalation gegenüber Schülern); ein Kontoauszug an die Klassenleitung ist
+		// Routine — dort wäre Rot ein Fehlalarm, der die Farbe entwertet.
+		variant = 'primary',
+		klassen = [],
+		onclose,
+		onconfirm
+	} = $props();
 
 	let ausgewaehlt = $state(/** @type {string[]} */ ([]));
 	let overrideEmail = $state('');
@@ -73,9 +87,13 @@
 
 	/** @param {{ klasse: string, schueler?: unknown[] }} k */
 	const anzahlSchueler = (k) => k.schueler?.length ?? 0;
+
+	const ausgewaehlteSchueler = $derived(
+		klassen.filter((k) => ausgewaehlt.includes(k.klasse)).reduce((n, k) => n + anzahlSchueler(k), 0)
+	);
 </script>
 
-<Modal {open} {onclose} size="md">
+<Modal {open} {onclose} size="lg">
 	{#snippet header()}
 		<h3 class="text-lg font-bold text-slate-900">{titel}</h3>
 	{/snippet}
@@ -93,29 +111,57 @@
 				</button>
 			</div>
 
-			<div class="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2">
+			<!-- Zweizeilige Liste: oben WAS (Klasse, Umfang), darunter WOHIN. Der
+			     Empfänger stand vorher nirgends — sichtbar war nur seine Abwesenheit
+			     („keine E-Mail"). Wer prüfen wollte, ob die richtige Adresse hinterlegt
+			     ist, musste dafür die Einstellungen öffnen. -->
+			<div
+				class="max-h-64 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100"
+			>
 				{#each klassen as k (k.klasse)}
+					{@const ziel = emailGetrimmt || k.lehrer_email}
 					<label
-						class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-md cursor-pointer text-sm"
+						class="flex items-center gap-3 px-3 py-3 hover:bg-slate-50 cursor-pointer text-sm transition-colors"
 					>
 						<input
 							type="checkbox"
 							checked={ausgewaehlt.includes(k.klasse)}
 							onchange={() => toggle(k.klasse)}
-							class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+							class="w-4 h-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
 						/>
-						<span class="font-semibold text-slate-800">{k.klasse}</span>
-						<span class="text-xs text-slate-500">{anzahlSchueler(k)} Schüler</span>
-						<!-- Ohne hinterlegte Adresse überspringt der Server die Klasse still —
-						     das gehört vor den Versand, nicht in die Ergebnismeldung danach. -->
-						{#if !k.lehrer_email && emailGetrimmt === ''}
-							<span class="ml-auto text-xs font-medium text-amber-700">keine E-Mail</span>
+						<span class="w-16 shrink-0 font-semibold text-slate-800">{k.klasse}</span>
+						<span class="w-20 shrink-0 text-xs text-slate-500">{anzahlSchueler(k)} Schüler</span>
+
+						<!-- Die Adresse ist die Hauptinformation der Zeile: Sie beantwortet
+						     „geht das an die richtige Person?" — deshalb bekommt sie den Platz
+						     und wird nur am Ende gekürzt (title zeigt sie vollständig). -->
+						{#if ziel}
+							<span
+								class="min-w-0 flex-1 truncate text-right text-xs {emailGetrimmt
+									? 'font-medium text-blue-700'
+									: 'text-slate-500'}"
+								title={ziel}
+							>
+								{ziel}
+							</span>
+						{:else}
+							<!-- Ohne Adresse überspringt der Server die Klasse still — das gehört
+							     vor den Versand, nicht in die Ergebnismeldung danach. -->
+							<span class="min-w-0 flex-1 text-right text-xs font-medium text-amber-700">
+								keine E-Mail hinterlegt
+							</span>
 						{/if}
 					</label>
 				{:else}
-					<p class="p-2 text-sm text-slate-500">Keine Klassen vorhanden.</p>
+					<p class="p-3 text-sm text-slate-500">Keine Klassen vorhanden.</p>
 				{/each}
 			</div>
+
+			<!-- Umfang in einer Zeile: „5 Klassen senden" allein verrät nicht, wie viele
+			     Menschen das betrifft. -->
+			<p class="text-xs text-slate-500">
+				{ausgewaehlt.length} von {klassen.length} Klassen · {ausgewaehlteSchueler} Schüler
+			</p>
 		</div>
 
 		<div>
@@ -147,7 +193,7 @@
 	<div class="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50/50">
 		<Button variant="secondary" onclick={onclose}>Abbrechen</Button>
 		<Button
-			variant="danger-solid"
+			{variant}
 			disabled={!absendbar}
 			onclick={() => onconfirm({ klassen: ausgewaehlt, overrideEmail: emailGetrimmt })}
 		>

@@ -386,6 +386,7 @@
 <KlassenVersandDialog
 	open={mahnlaufOffen}
 	titel="Mahnlauf konfigurieren"
+	variant="danger-solid"
 	beschreibung="Wähle die Klassen aus, für die Mahnungen generiert werden sollen."
 	aktion="anmahnen"
 	hinweis="Leer lassen = an die regulären Klassenleitungen. Der Namensteil genügt, die Schul-Domäne wird ergänzt."

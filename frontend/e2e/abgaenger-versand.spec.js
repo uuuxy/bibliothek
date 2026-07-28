@@ -6,7 +6,7 @@
 // wird der Payload, den das Frontend schicken WÜRDE; die Serverseite deckt
 // api/graduates_mail_test.go ab.
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost } from './helpers.js';
+import { uiLogin, apiPost, csrfToken } from './helpers.js';
 
 test('Abgänger: Klassenauswahl und Override landen im Versand-Request', async ({ page }) => {
 	await uiLogin(page);
@@ -83,6 +83,14 @@ test('Abgänger: hinterlegte Klassenleitung erscheint im Dialog', async ({ page 
 	// mehr gerendert wird — geprüft wäre dann nichts.
 	const ohneMapping = abgaenger.find((/** @type {any} */ s) => s.klasse !== klasse);
 	if (ohneMapping) {
+		// Voraussetzung selbst herstellen statt sie vorauszusetzen: Ein Mapping aus einem
+		// früheren Lauf würde die Gegenprobe still entwerten.
+		await page.request.delete(`/api/klassen-mapping/${encodeURIComponent(ohneMapping.klasse)}`, {
+			headers: { 'X-CSRF-Token': await csrfToken(page) }
+		});
+		await page.reload();
+		await page.getByRole('button', { name: /An Klassenleitungen mailen/ }).click();
+
 		const andere = dialog.locator('label').filter({ hasText: ohneMapping.klasse }).first();
 		await expect(andere).toContainText('keine E-Mail');
 	}
