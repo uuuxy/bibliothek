@@ -17,6 +17,14 @@
 
 	let testEmail = $state('');
 
+	/**
+	 * Ergebnis des letzten Testversands. Steht fest im Formular statt nur im Toast:
+	 * SMTP-Fehler sind lang (Zertifikats- und Auth-Meldungen) und in einem Toast, der
+	 * nach 5 Sekunden verschwindet, nicht lesbar.
+	 * @type {{ ok: boolean, message: string } | null}
+	 */
+	let testResult = $state(null);
+
 	onMount(async () => {
 		try {
 			const data = await apiGet('/api/admin/settings/mail');
@@ -44,10 +52,13 @@
 				sender_email: sender
 			});
 			toastStore.addToast('Mail-Konfiguration gespeichert', 'success');
-			password = '';
 			if (password !== '') hasPassword = true;
-		} catch {
-			toastStore.addToast('Fehler beim Speichern', 'error');
+			password = '';
+		} catch (e) {
+			// Servermeldung wurde von apiFetch bereits als Toast gezeigt — nicht überdecken.
+			if (!(/** @type {any} */ (e)?.handled)) {
+				toastStore.addToast('Fehler beim Speichern', 'error');
+			}
 		} finally {
 			saving = false;
 		}
@@ -59,13 +70,17 @@
 			return;
 		}
 		testing = true;
+		testResult = null;
 		try {
 			await apiPost('/api/admin/settings/mail/test', {
 				to: testEmail
 			});
-			toastStore.addToast('Test-E-Mail erfolgreich versendet', 'success');
-		} catch {
-			toastStore.addToast('Fehler beim Testversand. Bitte Logs prüfen.', 'error');
+			testResult = { ok: true, message: `Test-E-Mail an ${testEmail} versendet.` };
+		} catch (e) {
+			testResult = {
+				ok: false,
+				message: /** @type {Error} */ (e)?.message || 'Unbekannter Fehler beim Testversand.'
+			};
 		} finally {
 			testing = false;
 		}
@@ -199,6 +214,21 @@
 					{testing ? 'Wird gesendet...' : 'Test-E-Mail senden'}
 				</Button>
 			</div>
+
+			{#if testResult}
+				<div
+					class="mt-6 rounded-xl border px-4 py-3 text-sm {testResult.ok
+						? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+						: 'bg-rose-50 border-rose-100 text-rose-700'}"
+				>
+					<p class="font-semibold">
+						{testResult.ok ? 'Test-E-Mail versendet' : 'Testversand fehlgeschlagen'}
+					</p>
+					{#if !testResult.ok}
+						<p class="mt-1 wrap-break-word">{testResult.message}</p>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}

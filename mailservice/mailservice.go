@@ -3,6 +3,8 @@ package mailservice
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"net/mail"
 	"net/smtp"
@@ -12,6 +14,26 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/crypto"
 )
+
+// describeSMTPError übersetzt die technischen Fehler von net/smtp in eine Meldung,
+// aus der hervorgeht, was zu tun ist. Vor allem der Zertifikatsfall lohnt sich:
+// Go prüft beim STARTTLS den Hostnamen streng, und viele Schulserver liefern ein
+// Zertifikat, das nur auf ihren echten Namen ausgestellt ist (z.B. srv1.<domain>)
+// und nicht auf den gewohnten smtp.<domain>-Alias.
+func describeSMTPError(addr string, err error) error {
+	var hostErr x509.HostnameError
+	if errors.As(err, &hostErr) {
+		names := hostErr.Certificate.DNSNames
+		if len(names) == 0 {
+			names = []string{hostErr.Certificate.Subject.CommonName}
+		}
+		return fmt.Errorf(
+			"SMTP-Versand über %s fehlgeschlagen: Das Zertifikat des Servers gilt für %s, nicht für %q. "+
+				"Bitte den SMTP-Host auf einen dieser Namen ändern",
+			addr, strings.Join(names, ", "), hostErr.Host)
+	}
+	return fmt.Errorf("SMTP-Versand über %s fehlgeschlagen: %w", addr, err)
+}
 
 // SendTemplateMail lädt eine Vorlage aus der Datenbank, ersetzt Platzhalter (z.B. {{.Name}}) und versendet die E-Mail.
 func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, templateType string, data map[string]interface{}) error {
@@ -38,10 +60,10 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 	// SMTP-Konfiguration aus der Datenbank laden
 	var smtpHost, smtpPort, smtpUser, sender string
 	var smtpPassEncrypted []byte
-	
+
 	err = dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
 		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-	
+
 	if err != nil {
 		// Fallback, falls die Tabelle leer ist oder noch nicht migriert wurde
 		smtpHost = "localhost"
@@ -104,7 +126,7 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 
 	err = smtp.SendMail(addr, auth, sender, []string{to}, msg)
 	if err != nil {
-		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
+		return describeSMTPError(addr, err)
 	}
 
 	return nil
@@ -115,10 +137,10 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 	// SMTP-Konfiguration aus der Datenbank laden
 	var smtpHost, smtpPort, smtpUser, sender string
 	var smtpPassEncrypted []byte
-	
+
 	err := dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
 		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-	
+
 	if err != nil {
 		return fmt.Errorf("mail-konfiguration nicht gefunden: %w", err)
 	}
@@ -173,7 +195,7 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 
 	err = smtp.SendMail(addr, smtpAuth, sender, []string{to}, msg)
 	if err != nil {
-		return fmt.Errorf("fehler beim SMTP-Versand (Server unter %s erreichbar?): %w", addr, err)
+		return describeSMTPError(addr, err)
 	}
 
 	return nil

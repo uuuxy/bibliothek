@@ -210,7 +210,12 @@ async function handleSmartResponse(res) {
 	} else {
 		const errorText = await extractApiError(res);
 		toastStore.addToast(errorText, 'error');
-		throw new Error(errorText);
+		const err = new Error(errorText);
+		// Markiert den Fehler als "dem Nutzer bereits gezeigt". Ohne das legen Aufrufer
+		// in ihrem catch-Block gern noch einen generischen Toast ("Fehler beim Speichern")
+		// obendrauf — der verdeckt die eigentliche Servermeldung, die die Ursache nennt.
+		Object.assign(err, { handled: true });
+		throw err;
 	}
 }
 
