@@ -19,7 +19,7 @@ test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	// 3. Navigation zu Einstellungen -> Datenverwaltung
 	await page.getByRole('button', { name: 'System', exact: true }).click();
 	await page.getByRole('button', { name: 'Einstellungen' }).click();
-	await page.getByRole('button', { name: 'Datenverwaltung' }).click();
+	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
 
 	// 4. Vorschau berechnen
 	await page.getByRole('button', { name: 'Vorschau berechnen' }).click();
