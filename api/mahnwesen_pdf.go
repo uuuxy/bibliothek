@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"bibliothek/pkg/closeutil"
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
@@ -68,7 +69,7 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float6
 		if err != nil {
 			return
 		}
-		defer func() { _ = dirRoot.Close() }()
+		defer closeutil.LogClose(dirRoot, "mahnwesen_pdf dirRoot")
 
 		relPfad, err := filepath.Rel(uploadsVerzeichnis, pfad)
 		if err != nil {
@@ -79,7 +80,7 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float6
 		if err != nil {
 			return
 		}
-		defer func() { _ = f.Close() }()
+		defer closeutil.LogClose(f, "mahnwesen_pdf cover image")
 
 		roh, err := io.ReadAll(f)
 		if err != nil {
