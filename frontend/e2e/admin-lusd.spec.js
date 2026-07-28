@@ -7,7 +7,9 @@ test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
 	// 1. Navigation zu Einstellungen -> Datenverwaltung
 	await page.getByRole('button', { name: 'System', exact: true }).click();
 	await page.getByRole('button', { name: 'Einstellungen' }).click();
-	await page.getByRole('button', { name: 'Datenverwaltung' }).click();
+	// exact: true — seit dem Backup-Alert gibt es zusätzlich einen Knopf
+	// „Datenverwaltung öffnen", auf den die Teilstring-Suche sonst ebenfalls passt.
+	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
 
 	// 2. CSV generieren (1 neuer Schüler)
 	const s = uniqueSuffix();
@@ -60,7 +62,9 @@ test('LUSD-Import: Schrottdateien werden sauber abgewiesen', async ({ page }) =>
 
 	await page.getByRole('button', { name: 'System', exact: true }).click();
 	await page.getByRole('button', { name: 'Einstellungen' }).click();
-	await page.getByRole('button', { name: 'Datenverwaltung' }).click();
+	// exact: true — seit dem Backup-Alert gibt es zusätzlich einen Knopf
+	// „Datenverwaltung öffnen", auf den die Teilstring-Suche sonst ebenfalls passt.
+	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
 
 	const uploadAndPreview = async (name, buffer) => {
 		// Direkt aufs versteckte File-Input — Label-Texte ändern sich nach dem

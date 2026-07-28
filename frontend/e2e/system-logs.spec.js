@@ -12,7 +12,9 @@ test('System-Logs: Administrative Aktionen werden protokolliert', async ({ page 
 
 	// 1. Aktion durchführen: Wir rufen direkt die API auf, um die Rolle zu ändern,
 	// oder eine andere Aktion auszulösen. Ein einfacher Weg ist ein API-Call.
-	const res = await page.request.patch('/api/admin/users/logtest@local/role', {
+	// Rückgabe bewusst ignoriert: Der Aufruf soll nur einen Logbuch-Eintrag erzeugen.
+	// Ob die Rolle wirklich umgestellt wurde, prüft der Test darunter über die Settings.
+	await page.request.patch('/api/admin/users/logtest@local/role', {
 		data: { role: 'lehrer' }
 	});
 	// Wenn die Role-API nicht existiert, triggern wir einfach die Settings-Speicherung

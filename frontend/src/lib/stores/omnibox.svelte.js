@@ -339,7 +339,29 @@ export function createOmniboxStore() {
 			await verarbeiteAktionsFehler(e, q, idempotencyKey);
 		} finally {
 			triggerFlash('red');
+			scanfeldWiederScharfstellen();
 		}
+	}
+
+	/**
+	 * Gibt dem Scanfeld den Fokus zurück, den submitAction oben bewusst weggenommen hat.
+	 *
+	 * Der blur() ist richtig — er verhindert Doppel-Scans, während die Aktion läuft. Ihm
+	 * fehlte nur das Gegenstück: Ein Handscanner ist eine Tastatur und tippt blind. Ohne
+	 * Fokus landen seine Zeichen im Nichts — keine Ausleihe, keine Fehlermeldung, gar
+	 * nichts. Am Tresen musste man deshalb vor JEDEM Buch erst ins Feld klicken.
+	 *
+	 * Der bestehende $effect in Omnibox.svelte fängt das nicht ab: Er läuft nur, solange
+	 * KEIN Schüler geladen ist (`!isActive`) — also genau nicht während des Ausleihens.
+	 *
+	 * Nicht zurückholen, solange ein Dialog eine menschliche Entscheidung braucht
+	 * (Sperre, Vormerkung) oder die Kamera scannt — dort würde der Fokussprung die
+	 * Bedienung stören und den Dialog wegtippbar machen.
+	 */
+	function scanfeldWiederScharfstellen() {
+		if (showCamera || blockAlert || vormerkungAlert) return;
+		// Nach der Aktion rendert Svelte das Profil neu; erst danach steht das Feld wieder.
+		setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
 	}
 
 	return {
