@@ -147,7 +147,7 @@
 									>
 									<button
 										onclick={() => onRemoveSupplier(s.id)}
-										class="text-slate-400 hover:text-rose-600 cursor-pointer text-sm"
+										class="text-rose-600/80 hover:text-rose-700 cursor-pointer text-sm"
 										>Löschen</button
 									>
 								</td>

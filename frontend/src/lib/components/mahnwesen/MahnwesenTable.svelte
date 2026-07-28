@@ -49,7 +49,7 @@
 			<table class="w-full text-left text-sm whitespace-nowrap">
 				<thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
 					<tr>
-						<th class="w-12 px-4 py-3 text-center">
+						<th class="w-12 px-4 py-2 text-center">
 							<input
 								type="checkbox"
 								class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
@@ -58,10 +58,10 @@
 								onclick={toggleAll}
 							/>
 						</th>
-						<th class="px-4 py-3">Schüler/in</th>
-						<th class="px-4 py-3">Klasse</th>
-						<th class="px-4 py-3">Medien</th>
-						<th class="px-4 py-3">Status</th>
+						<th class="px-4 py-2">Schüler/in</th>
+						<th class="px-4 py-2">Klasse</th>
+						<th class="px-4 py-2">Medien</th>
+						<th class="px-4 py-2">Status</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-100">
@@ -73,7 +73,7 @@
 								? 'bg-blue-50/50'
 								: ''}"
 						>
-							<td class="w-12 px-4 py-3 text-center">
+							<td class="w-12 px-4 py-2 text-center">
 								<input
 									type="checkbox"
 									class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
@@ -81,7 +81,7 @@
 									onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
 								/>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								<div class="flex items-center gap-1.5">
 									<button
 										type="button"
@@ -98,22 +98,32 @@
 											title="Keine Eltern-E-Mail hinterlegt"
 											aria-label="Keine Eltern-E-Mail hinterlegt"
 										>
-											<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-												<path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+											<svg
+												class="h-3.5 w-3.5"
+												fill="none"
+												viewBox="0 0 24 24"
+												stroke="currentColor"
+												stroke-width="1.8"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+												/>
 												<path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
 											</svg>
 										</span>
 									{/if}
 								</div>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								<span
 									class="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-700 font-bold text-xs"
 								>
 									{schueler.klasse}
 								</span>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								<div class="flex -space-x-2">
 									{#each schueler.medien.slice(0, 3) as medium, _i (_i)}
 										{#if medium.cover_url}
@@ -142,7 +152,7 @@
 									{/if}
 								</div>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-2">
 								<div class="flex flex-col items-start gap-1">
 									<span
 										class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold

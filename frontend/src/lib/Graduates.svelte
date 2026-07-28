@@ -112,8 +112,9 @@
 	<div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
 		{#if !loading && graduates.length > 0}
 			<div class="flex items-center gap-3 min-w-0">
-				<label class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0" for="grad-klasse"
-					>Klasse</label
+				<label
+					class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0"
+					for="grad-klasse">Klasse</label
 				>
 				<select
 					id="grad-klasse"
@@ -194,10 +195,10 @@
 			<table class="w-full text-left text-base border-collapse">
 				<thead>
 					<tr class="border-b border-slate-100 text-slate-450 text-sm uppercase">
-						<th class="py-3 px-4">Klasse</th>
-						<th class="py-3 px-4">Name</th>
-						<th class="py-3 px-4">Offene Bücher</th>
-						<th class="py-3 px-4">Sperr-Status</th>
+						<th class="py-2 px-4">Klasse</th>
+						<th class="py-2 px-4">Name</th>
+						<th class="py-2 px-4">Offene Bücher</th>
+						<th class="py-2 px-4">Sperr-Status</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-50">
@@ -215,11 +216,11 @@
 							aria-label="Profil von {student.vorname} {student.nachname} (Klasse {student.klasse}) anzeigen"
 							class="hover:bg-slate-50/85 cursor-pointer transition-colors animate-slide-up focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
 						>
-							<td class="py-3.5 px-4 font-bold text-blue-600">{student.klasse}</td>
-							<td class="py-3.5 px-4 text-slate-700 font-semibold"
+							<td class="py-2 px-4 font-bold text-blue-600">{student.klasse}</td>
+							<td class="py-2 px-4 text-slate-700 font-semibold"
 								>{student.vorname} {student.nachname}</td
 							>
-							<td class="py-3.5 px-4">
+							<td class="py-2 px-4">
 								<span
 									class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-sm font-bold {student.ueberfaellig >
 									0
@@ -240,7 +241,7 @@
 									>
 								{/if}
 							</td>
-							<td class="py-3.5 px-4">
+							<td class="py-2 px-4">
 								{#if student.ist_gesperrt}
 									<span
 										class="text-[10px] px-2 py-0.5 rounded bg-rose-50 border border-rose-100 text-rose-600 font-semibold"

@@ -96,7 +96,7 @@
 								<tr
 									class="hover:bg-blue-50/30 transition-colors {isSelected ? 'bg-blue-50/50' : ''}"
 								>
-									<td class="pl-6 pr-3 py-4 w-12">
+									<td class="pl-6 pr-3 py-2 w-12">
 										<input
 											type="checkbox"
 											class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
@@ -104,11 +104,11 @@
 											onchange={(e) => toggleItemSelection(e, item.exemplar_ids || [])}
 										/>
 									</td>
-									<td class="px-3 py-4 w-20 shrink-0">
+									<td class="px-3 py-2 w-20 shrink-0">
 										{@render coverImage(item)}
 									</td>
-									<td class="px-3 py-4 text-slate-800 font-semibold text-base">{item.titel}</td>
-									<td class="px-6 py-4 text-right">
+									<td class="px-3 py-2 text-slate-800 font-semibold text-base">{item.titel}</td>
+									<td class="px-4 py-2 text-right">
 										<span
 											class="inline-flex items-center justify-center min-w-14 h-14 px-2 rounded-xl bg-blue-50 text-blue-800 text-3xl font-extrabold shadow-inner border border-blue-200"
 										>

@@ -94,24 +94,24 @@
 			<table class="w-full text-base text-slate-700">
 				<thead class="border-b border-gray-200 text-sm font-semibold text-gray-500 font-sans">
 					<tr>
-						<th class="px-6 py-4">Name</th>
-						<th class="px-6 py-4 w-24">Klasse</th>
-						<th class="px-6 py-4 w-44">Gelöscht am</th>
-						<th class="px-6 py-4 w-36 text-right">Aktion</th>
+						<th class="px-4 py-2">Name</th>
+						<th class="px-4 py-2 w-24">Klasse</th>
+						<th class="px-4 py-2 w-44">Gelöscht am</th>
+						<th class="px-4 py-2 w-36 text-right">Aktion</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-100">
 					{#each deletedStudents as s, _i (_i)}
 						<tr class="hover:bg-slate-50/50 transition-colors">
-							<td class="px-6 py-3 font-semibold text-slate-800">
+							<td class="px-4 py-2 font-semibold text-slate-800">
 								{s.vorname}
 								{s.nachname}
 								<div class="text-[9px] text-slate-400 font-normal mt-0.5">{s.barcode_id}</div>
 							</td>
-							<td class="px-6 py-3 font-medium text-slate-600">
+							<td class="px-4 py-2 font-medium text-slate-600">
 								Kl. {s.klasse || 'N/A'}
 							</td>
-							<td class="px-6 py-3 text-sm text-slate-500">
+							<td class="px-4 py-2 text-sm text-slate-500">
 								{new Date(s.deleted_at).toLocaleString('de-DE', {
 									day: '2-digit',
 									month: '2-digit',
@@ -120,7 +120,7 @@
 									minute: '2-digit'
 								})}
 							</td>
-							<td class="px-6 py-3 text-right">
+							<td class="px-4 py-2 text-right">
 								<button
 									onclick={() => restoreStudent(s.id)}
 									title="Wiederherstellen"

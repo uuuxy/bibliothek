@@ -30,7 +30,7 @@
 	// Nach einem Datenwechsel (z. B. Wareneingang) oder neuem Filter wieder von vorn.
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		recommendations, filter;
+		(recommendations, filter);
 		maxVisible = 60;
 	});
 
@@ -51,7 +51,9 @@
 	);
 </script>
 
-<section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden">
+<section
+	class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden"
+>
 	<!-- Header -->
 	<header class="px-5 pt-5 pb-4 border-b border-slate-100">
 		<div class="flex items-start justify-between gap-4">
@@ -79,7 +81,13 @@
 				download
 				class="shrink-0 flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl transition-colors"
 			>
-				<svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<svg
+					class="h-4 w-4 shrink-0"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2"
+				>
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -100,7 +108,11 @@
 					stroke="currentColor"
 					stroke-width="2"
 				>
-					<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+					/>
 				</svg>
 				<input
 					type="search"
@@ -126,62 +138,39 @@
 	{:else}
 		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] px-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
-				<!-- Kein Zeilen-Alarm mehr: die Liste IST per Definition die Bestellbedarf-Liste
-				     (sortiert nach Fehlbestand). Dringlichkeit trägt die farbige Zahl rechts
-				     + das „Fehlt komplett"-Pill — nicht 335 rote Balken (Alarm-Müdigkeit). -->
 				<div
-					class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 hover:bg-slate-50 hover:border-slate-200 transition-colors"
+					class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-slate-50 hover:border-slate-200 transition-colors"
 				>
-					<!-- Platzhalter liegt IMMER dahinter; das Cover legt sich drüber und blendet
-					     sich bei Ladefehler aus (DNB liefert für viele LMF-Titel kein Bild —
-					     sonst blieben leere Kästen zurück, die kaputt aussehen). -->
-					<div class="relative w-10 aspect-3/4 shrink-0">
-						<div
-							class="absolute inset-0 rounded-md bg-slate-100 flex items-center justify-center text-slate-400 text-sm ring-1 ring-slate-200/70"
-						>
-							📖
-						</div>
-						{#if r.cover_url}
-							<img
-								src="/api/images/cover?isbn={r.isbn || ''}&url={encodeURIComponent(r.cover_url)}"
-								class="absolute inset-0 w-full h-full object-cover rounded-md bg-white ring-1 ring-slate-200/70"
-								loading="lazy"
-								decoding="async"
-								alt=""
-								onload={(e) => {
-									// Der Cover-Proxy liefert bei fehlendem Bild ein transparentes 1×1-GIF
-									// (bewusst 200 statt 404, gegen Konsolen-Spam). Das ist KEIN Fehler,
-									// onerror greift nicht — an der Winzgröße erkennen wir den Platzhalter.
-									if (e.currentTarget.naturalWidth <= 1) e.currentTarget.style.display = 'none';
-								}}
-								onerror={(e) => (e.currentTarget.style.display = 'none')}
-							/>
-						{/if}
-					</div>
-
+					<!-- Bewusst OHNE Cover. Das ist eine Arbeitsliste zum Bestellen, kein Katalog:
+					     Entschieden wird nach Titel, ISBN, Verlag und Signatur — die stehen alle da.
+					     Das frühere Cover-Feld kostete 53 px, also 71 % der Zeilenhöhe, und war in der
+					     Praxis fast immer ein leerer grauer Kasten (die DNB liefert für Lehrmittel
+					     kaum Bilder). Es reservierte den Platz unabhängig davon, ob je ein Bild kam,
+					     und löste dazu je Zeile einen Proxy-Request aus — bei 334 Titeln 334 Stück.
+					     Cover gehören in den Medienkatalog, wo sie beim Wiedererkennen helfen. -->
 					<div class="min-w-0 flex-1">
 						<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
-						<p class="text-xs text-slate-500 truncate mt-0.5">
+						<p class="text-xs text-slate-500 truncate">
 							{#if r.isbn}<span class="font-mono text-slate-400">{r.isbn}</span>{/if}
 							{#if r.verlag}<span class="mx-1.5 text-slate-300">·</span>{r.verlag}{/if}
 							{#if r.signatur}<span class="mx-1.5 text-slate-300">·</span>{r.signatur}{/if}
 						</p>
 					</div>
 
-					<!-- Bestandsstatus: bei 0 eigenen Exemplaren die klare Ansage statt "0/0".
-					     „Fehlt komplett" (nicht „Vergriffen"): 0 im eigenen Bestand ist keine
-					     Aussage über die Lieferbarkeit beim Verlag. -->
-					<div class="text-right shrink-0 leading-tight">
-						{#if r.gesamt_bestand === 0}
-							<span
-								class="inline-block text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-full px-2 py-0.5"
-								>Fehlt komplett</span
-							>
-						{:else}
-							<div class="text-sm font-bold tabular-nums text-amber-600" title="verfügbar / im Bestand">
-								{r.verfuegbarer_bestand}<span class="text-slate-300 font-medium">/</span>{r.gesamt_bestand}
-							</div>
-						{/if}
+					<!-- Durchgehend dieselbe Bestandsspalte statt eines Pills im Null-Fall. Das
+					     „Fehlt komplett"-Pill stand auf 252 von 334 Zeilen — ein Signal, das auf drei
+					     Vierteln der Liste steht, markiert den Normalzustand statt der Ausnahme. Als
+					     Zahlenspalte lässt sich dieselbe Aussage senkrecht scannen, und Rot bleibt
+					     dem Null-Bestand vorbehalten. Die Kopfzeile nennt die Gesamtzahl ohnehin. -->
+					<div
+						class="text-right shrink-0 leading-tight text-sm font-bold tabular-nums {r.gesamt_bestand ===
+						0
+							? 'text-rose-600'
+							: 'text-amber-600'}"
+						title="verfügbar / im Bestand"
+					>
+						{r.verfuegbarer_bestand}<span class="text-slate-300 font-medium">/</span
+						>{r.gesamt_bestand}
 					</div>
 
 					<button
@@ -189,7 +178,13 @@
 						aria-label="{r.titel} zur Bestellung hinzufügen"
 						class="shrink-0 w-9 h-9 rounded-full border border-slate-200 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 active:scale-90 transition-all cursor-pointer"
 					>
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+						<svg
+							class="w-4 h-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2.5"
+						>
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
 						</svg>
 					</button>

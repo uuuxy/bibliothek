@@ -170,29 +170,29 @@
 			<table class="w-full text-left text-sm whitespace-nowrap">
 				<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
 					<tr>
-						<th class="px-6 py-4">Wartet seit</th>
-						<th class="px-6 py-4">Schüler</th>
-						<th class="px-6 py-4">Notiz</th>
-						<th class="px-6 py-4 text-right">Aktion</th>
+						<th class="px-4 py-2">Wartet seit</th>
+						<th class="px-4 py-2">Schüler</th>
+						<th class="px-4 py-2">Notiz</th>
+						<th class="px-4 py-2 text-right">Aktion</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-100">
 					{#each vormerkungen as v, _i (_i)}
 						<tr class="hover:bg-slate-50/50 transition-colors">
-							<td class="px-6 py-4 font-medium text-slate-800">
+							<td class="px-4 py-2 font-medium text-slate-800">
 								{new Date(v.erstellt_am).toLocaleDateString('de-DE', {
 									day: '2-digit',
 									month: '2-digit',
 									year: 'numeric'
 								})}
 							</td>
-							<td class="px-6 py-4 font-semibold text-blue-600">
+							<td class="px-4 py-2 font-semibold text-blue-600">
 								{v.schueler_name || 'Unbekannt'}
 							</td>
-							<td class="px-6 py-4 text-slate-500">
+							<td class="px-4 py-2 text-slate-500">
 								{v.notiz || '—'}
 							</td>
-							<td class="px-6 py-4 text-right">
+							<td class="px-4 py-2 text-right">
 								<button
 									onclick={() => deleteVormerkung(v.id)}
 									class="text-rose-600 hover:text-rose-700 font-semibold p-2 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
