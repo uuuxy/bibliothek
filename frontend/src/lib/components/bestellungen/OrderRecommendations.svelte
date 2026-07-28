@@ -1,4 +1,6 @@
 <script>
+	import CoverPeek from './CoverPeek.svelte';
+
 	let { recommendations, onAddToCart } = $props();
 
 	// Nur die ersten Einträge ins DOM (Muster wie BookTable/Inventur-Startseite).
@@ -141,13 +143,14 @@
 				<div
 					class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-slate-50 hover:border-slate-200 transition-colors"
 				>
-					<!-- Bewusst OHNE Cover. Das ist eine Arbeitsliste zum Bestellen, kein Katalog:
-					     Entschieden wird nach Titel, ISBN, Verlag und Signatur — die stehen alle da.
-					     Das frühere Cover-Feld kostete 53 px, also 71 % der Zeilenhöhe, und war in der
-					     Praxis fast immer ein leerer grauer Kasten (die DNB liefert für Lehrmittel
-					     kaum Bilder). Es reservierte den Platz unabhängig davon, ob je ein Bild kam,
-					     und löste dazu je Zeile einen Proxy-Request aus — bei 334 Titeln 334 Stück.
-					     Cover gehören in den Medienkatalog, wo sie beim Wiedererkennen helfen. -->
+					<!-- Kein dauerhaftes Cover, sondern eines auf Abruf. Das feste Feld kostete 53 px
+					     je Zeile (71 % der Zeilenhöhe) und einen Proxy-Request je Titel, war für
+					     Lehrmittel aber fast immer leer. Der Abruf kostet 20 px in der Breite, nichts
+					     in der Höhe und null Requests, solange niemand hinsieht — deckt aber den Fall
+					     ab, für den das Bild wirklich gebraucht wird: die richtige Auflage erkennen,
+					     wenn die ISBN allein nicht reicht. -->
+					<CoverPeek isbn={r.isbn || ''} coverUrl={r.cover_url || ''} titel={r.titel} />
+
 					<div class="min-w-0 flex-1">
 						<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
 						<p class="text-xs text-slate-500 truncate">
