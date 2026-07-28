@@ -8,7 +8,11 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			$lib: path.resolve('src/inventur/lib')
-		}
+		},
+		// Ohne die browser-Condition löst Vitest Svelte auf den Server-Build auf; ein
+		// render() scheitert dann mit „mount(...) is not available on the server", obwohl
+		// environment: 'jsdom' gesetzt ist. Nötig, sobald Komponenten getestet werden.
+		conditions: ['browser']
 	},
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],

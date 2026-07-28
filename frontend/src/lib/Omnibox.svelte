@@ -15,21 +15,24 @@
 
 	let studentProfileComponent = $state(/** @type {any} */ (null));
 
-	// Rückmeldung des Scanners (rot = blockiert, grün = gebucht, orange = Hinweis).
-	// Diese Klassen tragen die focus-within-Variante MIT, obwohl sie ohne Fokus gälten:
-	// Das Scanfeld ist im Kiosk dauerhaft fokussiert, und `focus-within:border-blue-600`
-	// aus dem Pillen-Grundzustand hat höhere Spezifität als ein einfaches `border-red-500`.
-	// Ohne die Verdopplung würde die Fehlerfarbe genau dann verschluckt, wenn sie gebraucht wird.
-	const feedbackKlassen = $derived.by(() => {
-		if (omniboxStore.scanError)
-			return 'bg-red-50 border-red-500 ring-1 ring-red-500 focus-within:bg-red-50 focus-within:border-red-500 focus-within:ring-red-500';
-		if (omniboxStore.flashBorder === 'green')
-			return 'border-emerald-400 ring-1 ring-emerald-400 focus-within:border-emerald-400 focus-within:ring-emerald-400';
-		if (omniboxStore.flashBorder === 'orange')
-			return 'border-amber-400 ring-1 ring-amber-400 focus-within:border-amber-400 focus-within:ring-amber-400';
-		if (omniboxStore.flashBorder === 'red')
-			return 'border-red-500 ring-1 ring-red-500 focus-within:border-red-500 focus-within:ring-red-500';
-		return '';
+	// Rückmeldung des Scanners (rot = blockiert/fehlgeschlagen, grün = gebucht, orange = Hinweis).
+	//
+	// Entscheidend ist, dass Grundzustand und Rückmeldung sich AUSSCHLIESSEN, statt
+	// nebeneinander im class-Attribut zu stehen: Tailwind-Utilities haben alle dieselbe
+	// Spezifität, es gewinnt die Regel, die im Stylesheet WEITER HINTEN steht — nicht die,
+	// die im Attribut später kommt. `border-transparent` steht dort hinter `border-red-500`,
+	// also hätte der Grundzustand die Fehlerfarbe geschluckt. (Genau so gemessen: Klassen
+	// gesetzt, berechnete Rahmenfarbe trotzdem transparent.)
+	//
+	// Deshalb liefert dieser Ausdruck den KOMPLETTEN Farbsatz — entweder Ruhe oder Rückmeldung.
+	// Ein Fokus-Blau während einer roten Rückmeldung gibt es damit gar nicht erst.
+	const RUHE =
+		'bg-slate-100 border-transparent focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600';
+	const farbZustand = $derived.by(() => {
+		if (omniboxStore.flashBorder === 'green') return 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400';
+		if (omniboxStore.flashBorder === 'orange') return 'bg-amber-50 border-amber-400 ring-1 ring-amber-400';
+		if (omniboxStore.flashBorder === 'red') return 'bg-red-50 border-red-500 ring-1 ring-red-500';
+		return RUHE;
 	});
 
 	$effect(() => {
@@ -154,10 +157,9 @@
 		     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 		<form
 			onsubmit={(e) => omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
-			class="group relative flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:shadow-md focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600 no-print {omniboxStore.isShaking ||
-			omniboxStore.scanError
+			class="group relative flex items-center w-full h-12 px-5 rounded-full border transition-all duration-200 focus-within:shadow-md no-print {omniboxStore.isShaking
 				? 'animate-shake'
-				: ''} {feedbackKlassen}"
+				: ''} {farbZustand}"
 		>
 			<OmniboxInput
 				bind:queryVal={omniboxStore.queryVal}

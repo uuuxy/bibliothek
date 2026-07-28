@@ -37,8 +37,33 @@
 	// vorbehalten, wo die Form eine Bedeutung trägt.
 	const baseClasses =
 		'inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+
+	// Farb-Utilities des Aufrufers ERSETZEN die der Variante, statt mit ihnen zu konkurrieren.
+	//
+	// Ohne das gewinnt nicht der Aufrufer, sondern der Zufall: Tailwind-Utilities haben alle
+	// dieselbe Spezifität, also entscheidet die Reihenfolge IM STYLESHEET — nicht die im
+	// class-Attribut. `bg-white` der Variante steht hinter `bg-blue-50` des Aufrufers, also
+	// blieb ein getönter Button stumm weiß. Gemessen an sechs Stellen (Medienkatalog-Toolbar,
+	// Klassenkarte, Stammdaten, Buch-Akte, Offline-Banner, Mahnwesen), alle unbemerkt.
+	//
+	// Nur Basisfarben werden ersetzt; Zustandsvarianten (hover:, disabled:, focus-within:)
+	// bleiben stehen, und Größenangaben wie text-[10px] gelten nicht als Farbe.
+	const FARBE =
+		/^(bg|border|ring|text)-(slate|gray|zinc|blue|indigo|emerald|green|amber|orange|rose|red|white|black|transparent)/;
+	const familie = (/** @type {string} */ c) => c.split('-')[0];
+
+	const variantClasses = $derived.by(() => {
+		const eigene = new Set(
+			className.split(/\s+/).filter((c) => FARBE.test(c)).map(familie)
+		);
+		if (eigene.size === 0) return variants[variant];
+		return variants[variant]
+			.split(/\s+/)
+			.filter((c) => !(FARBE.test(c) && eigene.has(familie(c))))
+			.join(' ');
+	});
 </script>
 
-<button class="{baseClasses} {sizes[size]} {variants[variant]} {className}" {...rest}>
+<button class="{baseClasses} {sizes[size]} {variantClasses} {className}" {...rest}>
 	{@render children?.()}
 </button>
