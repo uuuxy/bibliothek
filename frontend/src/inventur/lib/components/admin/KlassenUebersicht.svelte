@@ -1,4 +1,5 @@
 <script>
+	import { BookOpen } from '@lucide/svelte';
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
 	import ClassAssignmentDialog from './ClassAssignmentDialog.svelte';
@@ -114,7 +115,7 @@
 		</div>
 	{:else if classGroups.length === 0}
 		<div class="text-center py-16 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-			<div class="text-4xl mb-4">📚</div>
+			<div class="text-4xl mb-4"><BookOpen class="h-5 w-5" aria-hidden="true" /></div>
 			<h3 class="text-lg font-semibold text-slate-800 mb-2">Noch keine Klassen angelegt</h3>
 			<p class="text-slate-400 text-sm max-w-md mx-auto">
 				Weise Bücher zu Klassen zu, um hier eine Übersicht zu sehen.

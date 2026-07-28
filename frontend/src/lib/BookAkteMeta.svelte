@@ -1,4 +1,5 @@
 <script>
+	import { BookOpen } from '@lucide/svelte';
 	import { getSubjectGradient } from '../inventur/lib/bookHelpers.js';
 
 	/**
@@ -75,7 +76,8 @@
 					{#if book.signatur || book.erweiterte_eigenschaften?.signatur}
 						<span
 							class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-purple-700"
-							>📚 {book.signatur || book.erweiterte_eigenschaften?.signatur}</span
+							><BookOpen class="h-5 w-5" aria-hidden="true" />
+							{book.signatur || book.erweiterte_eigenschaften?.signatur}</span
 						>
 					{/if}
 					{#if book.erweiterte_eigenschaften?.standort}

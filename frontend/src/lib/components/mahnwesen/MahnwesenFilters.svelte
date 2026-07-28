@@ -400,13 +400,13 @@
 
 <!-- Tabs Navigation -->
 {#if mahnwesenStore.data && !mahnwesenStore.loading}
-	<div class="flex space-x-1 border-b border-gray-200 mt-6 print:hidden">
+	<div class="flex space-x-1 border-b border-slate-200 mt-6 print:hidden">
 		<!-- Alle Tab -->
 		<button
 			class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter ===
 			'Alle'
 				? 'border-b-2 border-blue-600 text-blue-600'
-				: 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+				: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}"
 			onclick={() => (mahnwesenStore.activeFilter = 'Alle')}
 		>
 			Alle
@@ -414,7 +414,7 @@
 				class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter ===
 					'Alle' && countAlle > 0
 					? 'bg-blue-100 text-blue-600'
-					: 'bg-gray-100 text-gray-600'}"
+					: 'bg-slate-100 text-slate-600'}"
 			>
 				{countAlle}
 			</span>
@@ -425,7 +425,7 @@
 			class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter ===
 			'1. Erinnerung'
 				? 'border-b-2 border-blue-600 text-blue-600'
-				: 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+				: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}"
 			onclick={() => (mahnwesenStore.activeFilter = '1. Erinnerung')}
 		>
 			Akut fällig
@@ -433,7 +433,7 @@
 				class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter ===
 					'1. Erinnerung' && countAkut > 0
 					? 'bg-blue-100 text-blue-600'
-					: 'bg-gray-100 text-gray-600'}"
+					: 'bg-slate-100 text-slate-600'}"
 			>
 				{countAkut}
 			</span>
@@ -444,7 +444,7 @@
 			class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter ===
 			'Mahnung'
 				? 'border-b-2 border-blue-600 text-blue-600'
-				: 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+				: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}"
 			onclick={() => (mahnwesenStore.activeFilter = 'Mahnung')}
 		>
 			Eskaliert
@@ -452,7 +452,7 @@
 				class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter ===
 					'Mahnung' && countEskaliert > 0
 					? 'bg-blue-100 text-blue-600'
-					: 'bg-gray-100 text-gray-600'}"
+					: 'bg-slate-100 text-slate-600'}"
 			>
 				{countEskaliert}
 			</span>
@@ -463,7 +463,7 @@
 			class="flex items-center px-4 py-2 text-sm font-medium transition-colors {mahnwesenStore.activeFilter ===
 			'Lehrerkollegium'
 				? 'border-b-2 border-blue-600 text-blue-600'
-				: 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+				: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}"
 			onclick={() => (mahnwesenStore.activeFilter = 'Lehrerkollegium')}
 		>
 			Kollegium
@@ -471,7 +471,7 @@
 				class="ml-2 py-0.5 px-2 rounded-full text-xs font-bold {mahnwesenStore.activeFilter ===
 					'Lehrerkollegium' && countKollegium > 0
 					? 'bg-blue-100 text-blue-600'
-					: 'bg-gray-100 text-gray-600'}"
+					: 'bg-slate-100 text-slate-600'}"
 			>
 				{countKollegium}
 			</span>

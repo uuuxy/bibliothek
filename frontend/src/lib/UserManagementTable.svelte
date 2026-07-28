@@ -79,7 +79,7 @@
 									</span>
 								{:else}
 									<span class="inline-flex items-center gap-1.5 text-xs text-slate-400">
-										<span class="w-1.5 h-1.5 rounded-full bg-slate-350"></span> Inaktiv
+										<span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Inaktiv
 									</span>
 								{/if}
 							</td>

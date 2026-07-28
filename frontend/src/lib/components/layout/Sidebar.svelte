@@ -457,7 +457,7 @@
 			{:else}
 				<div class="p-4 flex flex-col items-center gap-3 no-print shrink-0">
 					<div
-						class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-650 cursor-default"
+						class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 cursor-default"
 						title="{authStore.currentUser?.vorname} {authStore.currentUser?.nachname} ({authStore
 							.currentUser?.rolle})"
 					>

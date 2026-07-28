@@ -47,7 +47,7 @@
 </script>
 
 <div class="w-full border-l-2 border-rose-300">
-	<div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+	<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
 		<h3 class="text-base font-bold text-rose-800 flex items-center gap-2">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -92,7 +92,7 @@
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
 			<table class="w-full text-base text-slate-700">
-				<thead class="border-b border-gray-200 text-sm font-semibold text-gray-500 font-sans">
+				<thead class="border-b border-slate-200 text-sm font-semibold text-slate-500 font-sans">
 					<tr>
 						<th class="px-4 py-2">Name</th>
 						<th class="px-4 py-2 w-24">Klasse</th>

@@ -41,7 +41,7 @@
 	</div>
 {:else if !mahnwesenStore.data || mahnwesenStore.klassen.length === 0}
 	<div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-10 text-center">
-		<p class="text-emerald-700 font-semibold">Keine überfälligen Ausleihen vorhanden. 🎉</p>
+		<p class="text-emerald-700 font-semibold">Keine überfälligen Ausleihen vorhanden.</p>
 	</div>
 {:else}
 	<!-- MD3 Table -->
@@ -118,9 +118,7 @@
 								</div>
 							</td>
 							<td class="px-4 py-2">
-								<span
-									class="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-700 font-bold text-xs"
-								>
+								<span class="text-sm text-slate-600">
 									{schueler.klasse}
 								</span>
 							</td>
@@ -153,25 +151,21 @@
 									{/if}
 								</div>
 							</td>
+							<!-- Ein Farbträger je Zeile, und Farbe nur für die AUSNAHME. Auf diesem
+							     Bildschirm ist alles überfällig — die erste Erinnerung ist der Normalfall
+							     und braucht keine Warnfarbe. Rot bekommt nur die Eskalation. Vorher trug
+							     jede Zeile Pille UND roten Text: bei 422 Zeilen eine Farbwand, in der die
+							     wirklich dringenden Fälle untergehen. -->
 							<td class="px-4 py-2">
-								<div class="flex flex-col items-start gap-1">
+								<div class="flex flex-col items-start">
 									<span
-										class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold
-                  {schueler.mahnstufe === 'Mahnung'
-											? 'bg-rose-100 text-rose-700'
-											: schueler.mahnstufe === '1. Erinnerung'
-												? 'bg-amber-100 text-amber-800'
-												: schueler.mahnstufe === 'Lehrerkollegium'
-													? 'bg-blue-100 text-blue-700'
-													: 'bg-emerald-50 text-emerald-700'}"
+										class="text-sm font-medium {schueler.mahnstufe === 'Mahnung'
+											? 'text-rose-600'
+											: 'text-slate-700'}"
 									>
 										{schueler.mahnstufe}
 									</span>
-									<span
-										class="text-[11px] font-medium {schueler.maxTage > 14
-											? 'text-rose-500'
-											: 'text-slate-400'}"
-									>
+									<span class="text-xs text-slate-500">
 										{schueler.maxTage === 0
 											? 'heute fällig'
 											: `${schueler.maxTage} ${schueler.maxTage === 1 ? 'Tag' : 'Tage'} überfällig`}

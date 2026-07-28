@@ -2,6 +2,7 @@
      Go-Handler sind zustandslos (keine Preview-Session), daher wird dieselbe Datei bei
      „Import finalisieren“ erneut an /api/lusd/import gesendet. -->
 <script>
+	import { AlertTriangle, CircleCheck } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -155,7 +156,7 @@
 				>
 				<div class="min-w-0">
 					<p class="text-sm font-bold text-slate-800">{section.label}</p>
-					<p class="text-xs text-slate-450 mt-0.5">{section.hint}</p>
+					<p class="text-xs text-slate-500 mt-0.5">{section.hint}</p>
 				</div>
 			</div>
 			<span class="text-lg font-black tabular-nums shrink-0 ml-4 {section.valueClass}"
@@ -188,9 +189,10 @@
 
 	{#if errorMessage}
 		<div
-			class="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-650 text-xs font-semibold flex items-center gap-2"
+			role="alert"
+			class="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold flex items-center gap-2"
 		>
-			<span>⚠️</span><span>{errorMessage}</span>
+			<AlertTriangle class="h-4 w-4" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 
@@ -198,7 +200,9 @@
 		<div
 			class="p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-sm font-semibold flex items-center gap-2"
 		>
-			<span>🎉</span><span>Import abgeschlossen — der Bestand ist aktuell.</span>
+			<CircleCheck class="h-4 w-4" aria-hidden="true" /><span
+				>Import abgeschlossen — der Bestand ist aktuell.</span
+			>
 		</div>
 		<div class="divide-y divide-slate-100">
 			{#each summaryRows as section (section.key)}
@@ -257,7 +261,7 @@
 
 		{#if stage === 'preview' && previewResult}
 			<div class="space-y-4">
-				<p class="text-xs text-slate-450">
+				<p class="text-xs text-slate-500">
 					{previewResult.total_csv_records} Datensätze in der Datei · {previewResult.active_db_students}
 					aktive Schüler im Bestand
 					{#if previewResult.skipped_no_id > 0}
@@ -270,7 +274,7 @@
 					<div
 						class="p-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-semibold flex items-center gap-2"
 					>
-						<span>⚠️</span><span
+						<AlertTriangle class="h-4 w-4" aria-hidden="true" /><span
 							>Auffällig viele Abgänger ({previewResult.graduates.length} von {previewResult.active_db_students}
 							aktiven Schülern) — Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span
@@ -287,7 +291,11 @@
 				<div class="flex justify-end gap-3 pt-2">
 					<Button variant="secondary" onclick={resetFlow}>Andere Datei wählen</Button>
 					{#if needsGraduateConfirm}
-						<Button variant="danger-solid" onclick={() => finalizeImport(true)} disabled={importLoading}>
+						<Button
+							variant="danger-solid"
+							onclick={() => finalizeImport(true)}
+							disabled={importLoading}
+						>
 							{#if importLoading}
 								<span
 									class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"

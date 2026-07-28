@@ -54,8 +54,8 @@
 <div
 	class="px-4 sm:px-6 py-4 sm:py-6 border-b border-surface-variant/20 flex items-center justify-between"
 >
-	<h3 class="text-xl font-bold text-gray-900">Auswahl</h3>
-	<div class="bg-gray-100 px-3 py-1.5 rounded-full text-sm font-bold text-gray-800">
+	<h3 class="text-xl font-bold text-slate-900">Auswahl</h3>
+	<div class="bg-slate-100 px-3 py-1.5 rounded-full text-sm font-bold text-slate-800">
 		{selectedBookIds.size}
 	</div>
 </div>
@@ -68,7 +68,7 @@
 			<svg
 				width="48"
 				height="48"
-				class="text-gray-400 mb-4"
+				class="text-slate-400 mb-4"
 				viewBox="0 0 24 24"
 				fill="none"
 				stroke="currentColor"
@@ -79,7 +79,7 @@
 					d="M9 21V9"
 				/></svg
 			>
-			<p class="text-sm font-medium text-gray-500">Deine Auswahl ist noch leer</p>
+			<p class="text-sm font-medium text-slate-500">Deine Auswahl ist noch leer</p>
 		</div>
 	{:else}
 		{#each selectedBooksList as book (book.id)}
@@ -104,7 +104,9 @@
 							class="w-full h-full object-cover"
 							onerror={handleImageError}
 						/>
-						<div class="w-full h-full hidden items-center justify-center bg-gray-100 text-gray-300">
+						<div
+							class="w-full h-full hidden items-center justify-center bg-slate-100 text-slate-300"
+						>
 							<svg
 								width="24"
 								height="24"
@@ -118,7 +120,7 @@
 							>
 						</div>
 					{:else}
-						<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+						<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
 							<svg
 								width="24"
 								height="24"
@@ -133,12 +135,12 @@
 						</div>
 					{/if}
 				</div>
-				<p class="font-medium text-gray-800 grow truncate leading-tight">
+				<p class="font-medium text-slate-800 grow truncate leading-tight">
 					{book.title}
 				</p>
 				<button
 					onclick={() => onToggleBook(book.id)}
-					class="text-gray-400 hover:text-red-500 p-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+					class="text-slate-400 hover:text-red-500 p-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
 					title="Buch entfernen"
 					aria-label="Buch entfernen"
 				>
@@ -165,7 +167,7 @@
 	<Button
 		disabled={selectedClasses.length === 0 || (!isUpdate && selectedBookIds.size === 0) || isSaving}
 		onclick={(e) => onsave(e)}
-		class="h-auto w-full p-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-100 text-base tracking-wide shadow-lg"
+		class="h-auto w-full p-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:opacity-100 text-base tracking-wide shadow-lg"
 	>
 		<svg
 			fill="none"

@@ -5,7 +5,7 @@
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
-	import { Mail } from '@lucide/svelte';
+	import { Mail, Printer } from '@lucide/svelte';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function openProfile(student) {
@@ -209,7 +209,8 @@
 					></div>
 					Lade Daten…
 				{:else}
-					🖨️ {selectedKlasse ? `Kontoauszüge ${selectedKlasse}` : 'Kontoauszüge drucken'}
+					<Printer class="h-4 w-4" aria-hidden="true" />
+					{selectedKlasse ? `Kontoauszüge ${selectedKlasse}` : 'Kontoauszüge drucken'}
 				{/if}
 			</Button>
 			<Button
@@ -268,7 +269,7 @@
 		<div class="overflow-x-auto">
 			<table class="w-full text-left text-base border-collapse">
 				<thead>
-					<tr class="border-b border-slate-100 text-slate-450 text-sm uppercase">
+					<tr class="border-b border-slate-100 text-slate-500 text-sm uppercase">
 						<th class="py-2 px-4">Klasse</th>
 						<th class="py-2 px-4">Name</th>
 						<th class="py-2 px-4">Offene Bücher</th>
@@ -290,42 +291,22 @@
 							aria-label="Profil von {student.vorname} {student.nachname} (Klasse {student.klasse}) anzeigen"
 							class="hover:bg-slate-50/85 cursor-pointer transition-colors animate-slide-up focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
 						>
-							<td class="py-2 px-4 font-bold text-blue-600">{student.klasse}</td>
-							<td class="py-2 px-4 text-slate-700 font-semibold"
+							<td class="py-2 px-4 text-slate-500">{student.klasse}</td>
+							<td class="py-2 px-4 font-medium text-slate-800"
 								>{student.vorname} {student.nachname}</td
 							>
-							<td class="py-2 px-4">
-								<span
-									class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-sm font-bold {student.ueberfaellig >
-									0
-										? 'bg-rose-50 text-rose-600 border border-rose-100'
-										: 'bg-slate-100 text-slate-600'}"
-									title={student.ueberfaellig > 0
-										? `${student.offene_buecher} offen, davon ${student.ueberfaellig} überfällig`
-										: `${student.offene_buecher} offen`}
-								>
-									{student.offene_buecher}
-									<span class="text-xs font-medium opacity-70"
-										>{student.offene_buecher === 1 ? 'Buch' : 'Bücher'}</span
-									>
-								</span>
+							<td class="py-2 px-4 text-slate-600">
+								{student.offene_buecher}
+								{student.offene_buecher === 1 ? 'Buch' : 'Bücher'}
 								{#if student.ueberfaellig > 0}
-									<span class="ml-2 text-xs font-semibold text-rose-500"
-										>{student.ueberfaellig} überfällig</span
-									>
+									<span class="font-medium text-rose-600">
+										· {student.ueberfaellig} überfällig
+									</span>
 								{/if}
 							</td>
 							<td class="py-2 px-4">
 								{#if student.ist_gesperrt}
-									<span
-										class="text-[10px] px-2 py-0.5 rounded bg-rose-50 border border-rose-100 text-rose-600 font-semibold"
-										>Sperre aktiv</span
-									>
-								{:else}
-									<span
-										class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-400 font-medium"
-										>Bereit</span
-									>
+									<span class="text-xs font-medium text-rose-600">Sperre aktiv</span>
 								{/if}
 							</td>
 						</tr>

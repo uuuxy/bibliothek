@@ -18,14 +18,14 @@
 	{#if !labelStore.selectedTitle && (printQueue.copies?.length ?? 0) === 0}
 		<div class="grow flex flex-col items-center justify-center text-slate-400 py-12">
 			<span>Kein Buch ausgewählt</span>
-			<span class="text-[10px] mt-1 text-slate-450"
+			<span class="text-[10px] mt-1 text-slate-500"
 				>Suche einen Titel links, um die Live-Vorschau zu aktivieren.</span
 			>
 		</div>
 	{:else if labelStore.finalLabels.length === 0}
 		<div class="grow flex flex-col items-center justify-center text-slate-400 py-12">
 			<span>Keine Etiketten gewählt</span>
-			<span class="text-[10px] mt-1 text-slate-450"
+			<span class="text-[10px] mt-1 text-slate-500"
 				>Wähle mindestens ein Exemplar oder erhöhe die Menge.</span
 			>
 		</div>
@@ -45,7 +45,7 @@
 							class="border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center"
 							style="width: 42.3mm; height: 25.4mm;"
 						>
-							<span class="text-[6px] text-slate-350 tracking-wider font-bold">LEER</span>
+							<span class="text-[6px] text-slate-300 tracking-wider font-bold">LEER</span>
 						</div>
 					{:else}
 						<div
@@ -60,7 +60,7 @@
 							>
 								{lbl.titel}
 							</div>
-							<div class="text-slate-550 author-clamp" style="font-size: 5px; line-height: 1.1;">
+							<div class="text-slate-500 author-clamp" style="font-size: 5px; line-height: 1.1;">
 								{lbl.autor || 'Unbekannt'}
 							</div>
 							<div class="flex flex-col items-center justify-center grow pt-0.5">

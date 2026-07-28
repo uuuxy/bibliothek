@@ -27,8 +27,8 @@
 	</div>
 {:else}
 	<div class="w-full">
-		<div class="px-1 py-3 border-b border-gray-200 flex items-center justify-between">
-			<p class="text-sm font-medium text-gray-600">Letzte {history.length} Ausleihen</p>
+		<div class="px-1 py-3 border-b border-slate-200 flex items-center justify-between">
+			<p class="text-sm font-medium text-slate-600">Letzte {history.length} Ausleihen</p>
 		</div>
 		<ul class="divide-y divide-slate-50">
 			{#each history as h, _i (_i)}

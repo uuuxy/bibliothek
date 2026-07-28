@@ -121,10 +121,10 @@
 			<!-- Left Content Area -->
 			<div class="grow flex flex-col gap-4 sm:gap-6 relative z-10 w-full overflow-hidden">
 				<div class="shrink-0">
-					<h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 leading-none">
+					<h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 leading-none">
 						Klasse & Bücher zuweisen
 					</h2>
-					<p class="mt-1 sm:mt-2 text-gray-500 font-medium text-sm sm:text-lg">
+					<p class="mt-1 sm:mt-2 text-slate-500 font-medium text-sm sm:text-lg">
 						Wähle Zielklassen und die entsprechenden Schulbücher aus.
 					</p>
 				</div>
@@ -139,7 +139,7 @@
 
 			<!-- Right Sidebar Area -->
 			<aside
-				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
+				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
 			>
 				<ClassAssignmentSummary
 					{selectedClasses}
@@ -163,7 +163,7 @@
 			<button
 				aria-label="Schließen"
 				onclick={onClose}
-				class="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-all duration-200 text-gray-400 z-20 cursor-pointer border-none bg-transparent"
+				class="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-all duration-200 text-slate-400 z-20 cursor-pointer border-none bg-transparent"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

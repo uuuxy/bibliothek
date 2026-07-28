@@ -1,4 +1,5 @@
 <script>
+	import { CircleCheck } from '@lucide/svelte';
 	import CoverPeek from './CoverPeek.svelte';
 
 	let { recommendations, onAddToCart } = $props();
@@ -129,7 +130,7 @@
 	<!-- List -->
 	{#if !recommendations.length}
 		<div class="flex flex-col items-center justify-center text-center py-16 px-6 text-slate-400">
-			<span class="text-3xl mb-2">✅</span>
+			<CircleCheck class="h-5 w-5" aria-hidden="true" />
 			<p class="text-sm font-semibold text-slate-500">Bestände ausreichend</p>
 			<p class="text-xs mt-1">Kein Titel liegt unter der Bestellbedarf-Schwelle.</p>
 		</div>

@@ -86,7 +86,9 @@ test('LUSD-Import: Schrottdateien werden sauber abgewiesen', async ({ page }) =>
 
 	// Fall 2: Binärmüll (ungültige Kodierung) → Fehler statt Crash
 	await uploadAndPreview('binaer.csv', Buffer.from([0xff, 0xfe, 0x00, 0x9c, 0x01, 0x02, 0x03]));
-	await expect(page.locator('div').filter({ hasText: /⚠️/ }).last()).toBeVisible();
+	// Am Zustand festmachen, nicht am Zeichen: Der Locator hing vorher am Emoji ⚠️
+	// und fiel um, als die Oberfläche auf eine einheitliche Icon-Familie umstellte.
+	await expect(page.getByRole('alert').last()).toBeVisible();
 	await expect(page.getByText('Neue Schüler')).toHaveCount(0);
 
 	// Die Seite lebt noch: Vorschau-Kontrolle weiterhin bedienbar

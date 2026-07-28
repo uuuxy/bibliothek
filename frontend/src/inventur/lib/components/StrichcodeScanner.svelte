@@ -146,10 +146,21 @@
 	<ManualInput onSubmit={submitISBN} disabled={busy} />
 
 	<div class="mt-4 flex gap-3">
-		<Button size="lg" onclick={() => cameraCmp?.startScanner()} disabled={scanning || busy || !!lookupData} class="px-5">
+		<Button
+			size="lg"
+			onclick={() => cameraCmp?.startScanner()}
+			disabled={scanning || busy || !!lookupData}
+			class="px-5"
+		>
 			Starten
 		</Button>
-		<Button variant="secondary" size="lg" onclick={() => cameraCmp?.stopScanner()} disabled={!scanning} class="px-5">
+		<Button
+			variant="secondary"
+			size="lg"
+			onclick={() => cameraCmp?.stopScanner()}
+			disabled={!scanning}
+			class="px-5"
+		>
 			Stoppen
 		</Button>
 	</div>

@@ -43,7 +43,7 @@
 	}
 </script>
 
-<label for="class-input" class="block text-xs uppercase text-gray-500 font-bold mb-1"
+<label for="class-input" class="block text-xs uppercase text-slate-500 font-bold mb-1"
 	>ZIELKLASSEN</label
 >
 
@@ -61,7 +61,7 @@
 		stroke-width="2"
 		stroke-linecap="round"
 		stroke-linejoin="round"
-		class="text-gray-500 mr-1"
+		class="text-slate-500 mr-1"
 		><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"
 		></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"
 		></path></svg
@@ -104,7 +104,7 @@
 		placeholder={selectedClasses.length === 0 ? 'Klasse wählen...' : ''}
 		bind:value={classInput.value}
 		onkeydown={handleKeyDown}
-		class="h-auto flex-1 bg-transparent border-none outline-none focus:ring-0 px-1 min-w-30 text-gray-900 placeholder:text-gray-400 font-medium"
+		class="h-auto flex-1 bg-transparent border-none outline-none focus:ring-0 px-1 min-w-30 text-slate-900 placeholder:text-slate-400 font-medium"
 	/>
 
 	<!-- Chevron Down Icon -->
@@ -118,7 +118,7 @@
 		stroke-width="2"
 		stroke-linecap="round"
 		stroke-linejoin="round"
-		class="text-gray-400 ml-auto pointer-events-none"
+		class="text-slate-400 ml-auto pointer-events-none"
 		><polyline points="6 9 12 15 18 9"></polyline></svg
 	>
 </div>

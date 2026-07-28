@@ -2,6 +2,7 @@
      Dreistufig: Dry-Run-Vorschau (Server rechnet identisches SQL und rollt zurück)
      → Ausführen-Knopf → rote Bestätigung. Kein window.confirm/Modal. -->
 <script>
+	import { AlertTriangle, CircleCheck } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -97,7 +98,7 @@
 			<li class="flex items-center justify-between py-3">
 				<div class="min-w-0">
 					<p class="text-sm font-bold text-slate-800">{row.label}</p>
-					<p class="text-xs text-slate-450 mt-0.5">{row.hint}</p>
+					<p class="text-xs text-slate-500 mt-0.5">{row.hint}</p>
 				</div>
 				<span class="text-lg font-black tabular-nums shrink-0 ml-4 {row.valueClass}"
 					>{row.value}</span
@@ -119,9 +120,9 @@
 
 	{#if errorMessage}
 		<div
-			class="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-650 text-xs font-semibold flex items-center gap-2"
+			class="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold flex items-center gap-2"
 		>
-			<span>⚠️</span><span>{errorMessage}</span>
+			<AlertTriangle class="h-4 w-4" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 
@@ -129,7 +130,9 @@
 		<div
 			class="p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-sm font-semibold flex items-center gap-2"
 		>
-			<span>🎉</span><span>Schuljahreswechsel abgeschlossen.</span>
+			<CircleCheck class="h-4 w-4" aria-hidden="true" /><span
+				>Schuljahreswechsel abgeschlossen.</span
+			>
 		</div>
 		{@render summaryRows(result)}
 		<Button onclick={reset}>Fertig</Button>
@@ -158,7 +161,7 @@
 		<div
 			class="p-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-semibold flex items-start gap-2"
 		>
-			<span>⚠️</span>
+			<AlertTriangle class="h-4 w-4" aria-hidden="true" />
 			<span
 				>Dieser Vorgang ist <strong>irreversibel</strong> und betrifft alle aktiven Schüler gleichzeitig.
 				Es gibt keinen automatischen Rückweg — nur ein erneuter LUSD-Import kann einzelne Datensätze danach
@@ -175,7 +178,11 @@
 			</div>
 		{:else}
 			<div class="flex justify-end gap-3">
-				<Button variant="secondary" onclick={() => (awaitingConfirmation = false)} disabled={loading}>
+				<Button
+					variant="secondary"
+					onclick={() => (awaitingConfirmation = false)}
+					disabled={loading}
+				>
 					Abbrechen
 				</Button>
 				<Button variant="danger-solid" onclick={executePromotion} disabled={loading}>

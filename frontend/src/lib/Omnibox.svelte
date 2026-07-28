@@ -1,4 +1,5 @@
 <script>
+	import { AlertTriangle } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import StudentProfile from './StudentProfile.svelte';
 	import CameraScanner from './CameraScanner.svelte';
@@ -29,8 +30,10 @@
 	const RUHE =
 		'bg-slate-100 border-transparent focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600';
 	const farbZustand = $derived.by(() => {
-		if (omniboxStore.flashBorder === 'green') return 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400';
-		if (omniboxStore.flashBorder === 'orange') return 'bg-amber-50 border-amber-400 ring-1 ring-amber-400';
+		if (omniboxStore.flashBorder === 'green')
+			return 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400';
+		if (omniboxStore.flashBorder === 'orange')
+			return 'bg-amber-50 border-amber-400 ring-1 ring-amber-400';
 		if (omniboxStore.flashBorder === 'red') return 'bg-red-50 border-red-500 ring-1 ring-red-500';
 		return RUHE;
 	});
@@ -207,7 +210,7 @@
 			<div
 				class="w-full max-w-xl p-3 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-medium flex items-center space-x-2 animate-slide-up no-print mb-2"
 			>
-				<span>⚠️</span>
+				<AlertTriangle class="h-4 w-4" aria-hidden="true" />
 				<span
 					><strong>Fremdrückgabe:</strong> Buch war auf
 					<strong>{omniboxStore.lastFremdrueckgabe.vorbesitzerName}</strong>

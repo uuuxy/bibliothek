@@ -75,23 +75,23 @@
 	onMount(fetchMapping);
 </script>
 
-<div class="py-6 border-b border-gray-200 space-y-4">
+<div class="py-6 border-b border-slate-200 space-y-4">
 	<div>
-		<h3 class="text-lg font-semibold text-gray-900">Klassenlehrer-Mapping</h3>
-		<p class="text-sm text-gray-500 mt-0.5">
+		<h3 class="text-lg font-semibold text-slate-900">Klassenlehrer-Mapping</h3>
+		<p class="text-sm text-slate-500 mt-0.5">
 			Weist jeder Klasse die E-Mail-Adresse der Klassenlehrerin / des Klassenlehrers zu. Diese
 			Adresse wird im Mahnwesen vorausgefüllt.
 		</p>
 	</div>
 
 	{#if mappingLoading}
-		<p class="text-sm text-gray-400">Lade Mapping…</p>
+		<p class="text-sm text-slate-400">Lade Mapping…</p>
 	{:else if mappingRows.length === 0}
-		<p class="text-sm text-gray-400 italic">Noch keine Einträge vorhanden.</p>
+		<p class="text-sm text-slate-400 italic">Noch keine Einträge vorhanden.</p>
 	{:else}
-		<div class="overflow-hidden rounded-xl border border-gray-200">
+		<div class="overflow-hidden rounded-xl border border-slate-200">
 			<table class="w-full text-sm">
-				<thead class="bg-gray-50 text-gray-500">
+				<thead class="bg-slate-50 text-slate-500">
 					<tr>
 						<th class="text-left px-4 py-2.5 font-semibold text-xs uppercase tracking-wide"
 							>Klasse</th
@@ -102,9 +102,9 @@
 						<th class="px-4 py-2.5 w-12"></th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-100">
+				<tbody class="divide-y divide-slate-100">
 					{#each mappingRows as row (row.klasse)}
-						<tr class="hover:bg-gray-50 transition-colors">
+						<tr class="hover:bg-slate-50 transition-colors">
 							<td class="px-4 py-2.5 font-semibold text-slate-700">{row.klasse}</td>
 							<td class="px-4 py-2.5 text-slate-600">{row.lehrer_email}</td>
 							<td class="px-4 py-2.5 text-right">
@@ -137,11 +137,11 @@
 	{/if}
 
 	<!-- Add new mapping -->
-	<div class="flex gap-3 items-end pt-2 border-t border-gray-100">
+	<div class="flex gap-3 items-end pt-2 border-t border-slate-100">
 		<div class="w-28">
 			<label
 				for="new-mapping-klasse"
-				class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+				class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1"
 				>Klasse</label
 			>
 			<input
@@ -149,13 +149,13 @@
 				type="text"
 				bind:value={newMappingKlasse}
 				placeholder="z. B. 8b"
-				class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+				class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
 			/>
 		</div>
 		<div class="flex-1">
 			<label
 				for="new-mapping-email"
-				class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+				class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1"
 				>E-Mail</label
 			>
 			<input
@@ -163,7 +163,7 @@
 				type="email"
 				bind:value={newMappingEmail}
 				placeholder="klassenlehrer@schule.de"
-				class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+				class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
 			/>
 		</div>
 		<Button

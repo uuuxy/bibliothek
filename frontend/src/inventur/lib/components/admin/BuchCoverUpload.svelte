@@ -10,7 +10,7 @@
 </script>
 
 <div class="flex flex-col items-center">
-	<div class="w-32 h-44 bg-gray-100 rounded-lg shadow-md overflow-hidden mb-4 relative group">
+	<div class="w-32 h-44 bg-slate-100 rounded-lg shadow-md overflow-hidden mb-4 relative group">
 		{#if formular.coverUrl}
 			<img
 				src={formular.coverUrl}
@@ -26,7 +26,7 @@
 				}}
 			/>
 		{:else}
-			<div class="w-full h-full flex items-center justify-center text-gray-400">Kein Bild</div>
+			<div class="w-full h-full flex items-center justify-center text-slate-400">Kein Bild</div>
 		{/if}
 
 		<!-- Overlay Upload Button -->
@@ -53,7 +53,7 @@
 			</button>
 		{:else}
 			<div
-				class="absolute inset-0 flex items-center justify-center text-center p-2 text-xs text-gray-500"
+				class="absolute inset-0 flex items-center justify-center text-center p-2 text-xs text-slate-500"
 			>
 				Erst speichern, dann Bild hochladen
 			</div>

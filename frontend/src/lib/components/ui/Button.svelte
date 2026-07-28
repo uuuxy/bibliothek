@@ -54,7 +54,10 @@
 
 	const variantClasses = $derived.by(() => {
 		const eigene = new Set(
-			className.split(/\s+/).filter((c) => FARBE.test(c)).map(familie)
+			className
+				.split(/\s+/)
+				.filter((c) => FARBE.test(c))
+				.map(familie)
 		);
 		if (eigene.size === 0) return variants[variant];
 		return variants[variant]

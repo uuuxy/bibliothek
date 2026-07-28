@@ -89,14 +89,13 @@
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
 		>
 			<img
-				src="/api/barcode?content={student.barcode_id}&qr={barcodeType === 'qr'}&width={barcodeType ===
-				'qr'
-					? 80
-					: 200}&height={barcodeType === 'qr' ? 80 : 50}"
+				src="/api/barcode?content={student.barcode_id}&qr={barcodeType ===
+					'qr'}&width={barcodeType === 'qr' ? 80 : 200}&height={barcodeType === 'qr' ? 80 : 50}"
 				class="{barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[8mm]'} object-contain"
 				alt="Barcode"
 			/>
-			<span class="font-bold mt-0.5 text-[6.5pt] tracking-widest text-zinc-800">{student.barcode_id}</span
+			<span class="font-bold mt-0.5 text-[6.5pt] tracking-widest text-zinc-800"
+				>{student.barcode_id}</span
 			>
 		</div>
 	{/if}

@@ -13,7 +13,9 @@
 <div
 	class="rounded-2xl border px-4 py-3 flex items-center gap-3 transition-colors {hatZulauf
 		? 'bg-white border-slate-200/80 shadow-sm'
-		: 'bg-slate-50/60 border-slate-200/60 border-dashed'} {showGreenFade ? 'animate-green-fade' : ''}"
+		: 'bg-slate-50/60 border-slate-200/60 border-dashed'} {showGreenFade
+		? 'animate-green-fade'
+		: ''}"
 >
 	<div
 		class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 {hatZulauf

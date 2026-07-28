@@ -1,4 +1,5 @@
 <script>
+	import { BookOpen } from '@lucide/svelte';
 	let query = $state('');
 	/** @type {any[]} */
 	let results = $state.raw([]);
@@ -40,7 +41,7 @@
 		class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs"
 	>
 		<div class="flex items-center gap-3">
-			<span class="text-2xl">📚</span>
+			<BookOpen class="h-5 w-5" aria-hidden="true" />
 			<div>
 				<h1 class="text-lg font-bold text-slate-800 leading-tight">Schulbibliothek</h1>
 				<p class="text-xs text-slate-400">Öffentlicher Medienkatalog</p>
@@ -146,7 +147,7 @@
 			</div>
 		{:else if !searched}
 			<div class="text-center py-20 text-slate-300 select-none">
-				<span class="text-6xl mb-5 block">📚</span>
+				<BookOpen class="h-5 w-5" aria-hidden="true" />
 				<p class="text-xl font-semibold text-slate-400">Suche nach einem Buch</p>
 				<p class="text-sm text-slate-300 mt-1">Titel, Autor oder ISBN eingeben</p>
 			</div>

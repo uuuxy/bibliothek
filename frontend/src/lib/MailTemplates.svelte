@@ -75,10 +75,10 @@
 
 <section class="w-full max-w-6xl mx-auto px-2 py-8 space-y-8">
 	<!-- Header: flach, durch feine Linie statt Kachel abgesetzt -->
-	<div class="flex items-start justify-between gap-4 border-b border-gray-200 pb-6">
+	<div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-6">
 		<div>
 			<h3 class="text-xl font-bold text-slate-900">E-Mail Vorlagen</h3>
-			<p class="text-sm text-gray-600 mt-1">
+			<p class="text-sm text-slate-600 mt-1">
 				Passen Sie die Texte für Mahnungen und Bestellbenachrichtigungen an.
 			</p>
 		</div>
@@ -152,7 +152,8 @@
 			{#if selectedTemplate}
 				<div class="flex flex-col h-full gap-6">
 					<div>
-						<label for="betreff" class="block text-sm font-medium text-gray-600 mb-2">Betreff</label
+						<label for="betreff" class="block text-sm font-medium text-slate-600 mb-2"
+							>Betreff</label
 						>
 						<input
 							id="betreff"
@@ -164,7 +165,7 @@
 					</div>
 
 					<div class="grow flex flex-col">
-						<label for="text_body" class="block text-sm font-medium text-gray-600 mb-2"
+						<label for="text_body" class="block text-sm font-medium text-slate-600 mb-2"
 							>Text-Inhalt</label
 						>
 						<textarea

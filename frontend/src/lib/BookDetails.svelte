@@ -1,4 +1,5 @@
 <script>
+	import { BookOpen } from '@lucide/svelte';
 	import { apiFetch } from './apiFetch.js';
 	import BookBorrowersList from './BookBorrowersList.svelte';
 	import BookCopiesManager from './BookCopiesManager.svelte';
@@ -147,7 +148,8 @@
 								<span
 									class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-100"
 								>
-									📚 Signatur: {title.signatur || title.erweiterteEigenschaften?.signatur}
+									<BookOpen class="h-5 w-5" aria-hidden="true" /> Signatur: {title.signatur ||
+										title.erweiterteEigenschaften?.signatur}
 								</span>
 							{/if}
 						</div>

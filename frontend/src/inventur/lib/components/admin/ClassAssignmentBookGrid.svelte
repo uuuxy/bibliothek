@@ -33,7 +33,7 @@
 </script>
 
 <div class="mb-4 px-1">
-	<p class="text-xs uppercase text-gray-500 font-bold mb-1">BÜCHER FINDEN</p>
+	<p class="text-xs uppercase text-slate-500 font-bold mb-1">BÜCHER FINDEN</p>
 
 	<div
 		class="bg-emerald-50 border border-surface-variant/10 rounded-full flex items-center px-4 sm:px-6 py-3 sm:py-4 shadow-sm hover:shadow-md transition-shadow group focus-within:ring-2 focus-within:ring-emerald-300"
@@ -48,7 +48,7 @@
 			stroke-width="2"
 			stroke-linecap="round"
 			stroke-linejoin="round"
-			class="text-gray-500 mr-2 sm:mr-4 group-focus-within:text-emerald-600 transition-colors hidden sm:block"
+			class="text-slate-500 mr-2 sm:mr-4 group-focus-within:text-emerald-600 transition-colors hidden sm:block"
 			><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"
 			></line></svg
 		>
@@ -62,10 +62,10 @@
 			data-form-type="other"
 			placeholder="Suche Titel, Fach, oder ISBN..."
 			bind:value={searchQuery}
-			class="h-full grow text-base sm:text-xl w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-gray-900 placeholder:text-gray-400 font-medium"
+			class="h-full grow text-base sm:text-xl w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-slate-900 placeholder:text-slate-400 font-medium"
 		/>
 		<span
-			class="ml-2 sm:ml-4 text-[10px] sm:text-xs font-bold text-gray-500 bg-black/5 px-2 py-1 sm:px-3 sm:py-1 rounded-full whitespace-nowrap"
+			class="ml-2 sm:ml-4 text-[10px] sm:text-xs font-bold text-slate-500 bg-black/5 px-2 py-1 sm:px-3 sm:py-1 rounded-full whitespace-nowrap"
 			>{filteredBooks.length} Treffer</span
 		>
 	</div>
@@ -110,7 +110,7 @@
 						class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
 						onerror={handleImageError}
 					/>
-					<div class="w-full h-full hidden items-center justify-center bg-gray-100 text-gray-300">
+					<div class="w-full h-full hidden items-center justify-center bg-slate-100 text-slate-300">
 						<svg
 							width="48"
 							height="48"
@@ -124,7 +124,7 @@
 						>
 					</div>
 				{:else}
-					<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+					<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
 						<svg
 							width="48"
 							height="48"

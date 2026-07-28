@@ -99,7 +99,7 @@
 							onload={onCoverLoad}
 						/>
 					{:else}
-						<div class="grid h-full place-items-center text-xs text-slate-450 font-semibold">
+						<div class="grid h-full place-items-center text-xs text-slate-500 font-semibold">
 							Kein Cover
 						</div>
 					{/if}
@@ -117,14 +117,14 @@
 					<input
 						type="text"
 						bind:value={subject}
-						class="mt-1.5 w-full rounded-xl border border-slate-350 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+						class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
 					/>
 				</label>
 				<label class="block text-xs font-semibold uppercase tracking-wider text-slate-400"
 					>Klassenstufe
 					<select
 						bind:value={grade}
-						class="mt-1.5 w-full rounded-xl border border-slate-350 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+						class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
 					>
 						{#each [5, 6, 7, 8, 9, 10] as g (g)}
 							<option value={g}>{g}</option>
@@ -138,7 +138,7 @@
 					type="number"
 					min="0"
 					bind:value={stock}
-					class="mt-1.5 w-full rounded-xl border border-slate-350 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+					class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
 				/>
 			</label>
 

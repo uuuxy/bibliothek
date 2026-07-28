@@ -59,22 +59,24 @@
 	}
 </script>
 
-<div class="mt-8 border-t border-gray-100 pt-6">
-	<h3 class="text-lg font-semibold text-gray-900 mb-4">Exemplare ({exemplare.length})</h3>
+<div class="mt-8 border-t border-slate-100 pt-6">
+	<h3 class="text-lg font-semibold text-slate-900 mb-4">Exemplare ({exemplare.length})</h3>
 
 	{#if loading}
-		<div class="text-sm text-gray-500 py-4 flex items-center justify-center">Lade Exemplare...</div>
+		<div class="text-sm text-slate-500 py-4 flex items-center justify-center">
+			Lade Exemplare...
+		</div>
 	{:else if error}
 		<div class="text-sm text-red-600 py-4">{error}</div>
 	{:else if exemplare.length === 0}
-		<div class="text-sm text-gray-500 py-4 italic text-center">
+		<div class="text-sm text-slate-500 py-4 italic text-center">
 			Keine Exemplare in der Datenbank vorhanden. (Gesamtbestand: {formular.stock})
 		</div>
 	{:else}
 		<div class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
 			{#each exemplare as ex, _i (_i)}
 				<div
-					class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
+					class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"
 				>
 					<div class="flex items-center gap-3">
 						<span
@@ -92,19 +94,23 @@
 							{!ex.ist_ausleihbar ? 'Gesperrt' : !ex.ist_verfuegbar ? 'Ausgeliehen' : 'Verfügbar'}
 						</span>
 						{#if ex.zustand_notiz}
-							<span
-								class="text-[10px] text-gray-500 truncate max-w-37.5"
-								title={ex.zustand_notiz}>{ex.zustand_notiz}</span
+							<span class="text-[10px] text-slate-500 truncate max-w-37.5" title={ex.zustand_notiz}
+								>{ex.zustand_notiz}</span
 							>
 						{/if}
 					</div>
 					<button
 						title="Exemplar löschen"
 						aria-label="Exemplar löschen"
-						class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+						class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
 						onclick={() => deleteCopy(ex)}
 					>
-						<svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+						<svg
+							aria-hidden="true"
+							class="w-4 h-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
 							><path
 								stroke-linecap="round"
 								stroke-linejoin="round"

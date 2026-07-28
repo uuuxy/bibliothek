@@ -1,4 +1,5 @@
 <script>
+	import { Printer } from '@lucide/svelte';
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
 </script>
@@ -7,7 +8,7 @@
 	{#if (printQueue.copies?.length ?? 0) > 0}
 		<div class="p-4 border-l-2 border-blue-300 bg-blue-50/50 space-y-4 text-left animate-fade-in">
 			<div class="flex items-start gap-2.5">
-				<span class="text-lg">🖨️</span>
+				<Printer class="h-4 w-4" aria-hidden="true" />
 				<div>
 					<h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider">
 						Aktiver Druckauftrag
@@ -26,7 +27,7 @@
 		</div>
 	{:else}
 		<!-- Step 1: Selection -->
-		<div class="py-5 space-y-4 border-b border-gray-200">
+		<div class="py-5 space-y-4 border-b border-slate-200">
 			<h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">
 				1. Titel / Klassensatz wählen
 			</h3>
@@ -35,7 +36,7 @@
 			<div class="space-y-3">
 				<!-- Autocomplete search -->
 				<div class="space-y-1.5">
-					<span class="text-[10px] uppercase font-bold text-slate-450 block"
+					<span class="text-[10px] uppercase font-bold text-slate-500 block"
 						>Buchtitel im Katalog suchen</span
 					>
 					<div class="relative">
@@ -66,7 +67,7 @@
 										class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 transition-colors flex flex-col gap-0.5 cursor-pointer"
 									>
 										<span class="text-xs font-bold text-slate-900">{r.titel}</span>
-										<span class="text-[10px] text-slate-450"
+										<span class="text-[10px] text-slate-500"
 											>{r.autor || 'Unbekannt'} · {r.verlag || 'Kein Verlag'}</span
 										>
 									</button>
@@ -88,13 +89,13 @@
 				<!-- Class Selection -->
 				<div class="grid grid-cols-2 gap-3">
 					<div class="space-y-1.5">
-						<span class="text-[10px] uppercase font-bold text-slate-450 block"
+						<span class="text-[10px] uppercase font-bold text-slate-500 block"
 							>Aus Klasse laden</span
 						>
 						<select
 							bind:value={labelStore.selectedClass}
 							onchange={labelStore.handleClassChange}
-							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550"
+							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 						>
 							<option value="">-- Klasse wählen --</option>
 							{#each labelStore.classGroups as group, _i (_i)}
@@ -104,7 +105,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<span class="text-[10px] uppercase font-bold text-slate-450 block">Buch aus Klasse</span
+						<span class="text-[10px] uppercase font-bold text-slate-500 block">Buch aus Klasse</span
 						>
 						<select
 							disabled={!labelStore.selectedClass}
@@ -135,7 +136,7 @@
 
 		<!-- Step 2: Barcodes & Mode -->
 		{#if labelStore.selectedTitle}
-			<div class="py-5 space-y-4 border-b border-gray-200">
+			<div class="py-5 space-y-4 border-b border-slate-200">
 				<h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">
 					2. Barcodes generieren
 				</h3>
@@ -160,7 +161,7 @@
 
 				{#if labelStore.generationMode === 'existing'}
 					<div class="space-y-2">
-						<span class="text-[10px] uppercase font-bold text-slate-450 block"
+						<span class="text-[10px] uppercase font-bold text-slate-500 block"
 							>Exemplare auswählen ({labelStore.existingCopies.length} gefunden)</span
 						>
 						{#if labelStore.loadingCopies}
@@ -170,7 +171,7 @@
 								></div>
 							</div>
 						{:else if labelStore.existingCopies.length === 0}
-							<p class="text-[11px] text-slate-450">
+							<p class="text-[11px] text-slate-500">
 								Keine physischen Exemplare in der Datenbank vorhanden.
 							</p>
 						{:else}
@@ -187,7 +188,7 @@
 											class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white"
 										/>
 										<span class="font-bold text-slate-800">{copy.barcode_id}</span>
-										<span class="text-[10px] text-slate-450 font-sans"
+										<span class="text-[10px] text-slate-500 font-sans"
 											>({copy.zustand_notiz || 'Neuwertig'})</span
 										>
 									</label>
@@ -199,24 +200,24 @@
 					<!-- Generating new sequential labels -->
 					<div class="grid grid-cols-2 gap-3">
 						<div class="space-y-1.5">
-							<span class="text-[10px] uppercase font-bold text-slate-450 block">Menge</span>
+							<span class="text-[10px] uppercase font-bold text-slate-500 block">Menge</span>
 							<input
 								type="number"
 								min="1"
 								max="100"
 								bind:value={labelStore.newQuantity}
-								class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550"
+								class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 							/>
 						</div>
 						<div class="space-y-1.5">
-							<span class="text-[10px] uppercase font-bold text-slate-450 block"
+							<span class="text-[10px] uppercase font-bold text-slate-500 block"
 								>Start-Ziffer (B-)</span
 							>
 							<input
 								type="number"
 								min="1"
 								bind:value={labelStore.newStartNum}
-								class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550"
+								class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 							/>
 						</div>
 					</div>
@@ -225,7 +226,7 @@
 		{:else}
 			<!-- Platzhalter, damit die Schrittfolge nicht von 1 auf 3 springt (wirkt sonst
 			     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
-			<div class="py-5 space-y-2 border-b border-gray-200 opacity-60">
+			<div class="py-5 space-y-2 border-b border-slate-200 opacity-60">
 				<h3 class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
 					2. Barcodes generieren
 				</h3>
@@ -235,15 +236,15 @@
 	{/if}
 
 	<!-- Step 3: Print Layout settings -->
-	<div class="py-5 space-y-4 border-b border-gray-200">
+	<div class="py-5 space-y-4 border-b border-slate-200">
 		<h3 class="text-[10px] uppercase tracking-wider text-blue-600 font-bold">3. Layout-Optionen</h3>
 
 		<div class="space-y-3.5">
 			<div class="space-y-1.5">
-				<span class="text-[10px] uppercase font-bold text-slate-450 block">Etikettenformat</span>
+				<span class="text-[10px] uppercase font-bold text-slate-500 block">Etikettenformat</span>
 				<select
 					bind:value={labelStore.formatId}
-					class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550"
+					class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 				>
 					<option value="zweckform_l4760">Zweckform L4760 (3x7, 21 Etiketten)</option>
 					<option value="avery_3475">Avery 3475 (3x8, 24 Etiketten)</option>
@@ -252,7 +253,7 @@
 			</div>
 
 			<div class="space-y-1.5">
-				<span class="text-[10px] uppercase font-bold text-slate-450 block"
+				<span class="text-[10px] uppercase font-bold text-slate-500 block"
 					>Startposition auf dem A4-Bogen</span
 				>
 				<div class="flex items-center gap-2">
@@ -261,7 +262,7 @@
 						min="1"
 						max={labelStore.maxPositions}
 						bind:value={labelStore.startPosition}
-						class="w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-550"
+						class="w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 					/>
 					<span class="text-[10px] text-slate-400">max. {labelStore.maxPositions}</span>
 				</div>
@@ -271,7 +272,7 @@
 			</div>
 
 			<div class="space-y-1.5">
-				<span class="text-[10px] uppercase font-bold text-slate-450 block">Barcode-Ausgabe</span>
+				<span class="text-[10px] uppercase font-bold text-slate-500 block">Barcode-Ausgabe</span>
 				<select
 					bind:value={labelStore.barcodeType}
 					class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none"

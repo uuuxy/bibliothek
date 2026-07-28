@@ -1,4 +1,5 @@
 <script>
+	import { AlertTriangle } from '@lucide/svelte';
 	/**
 	 * UserManagement — self-contained component for staff user CRUD.
 	 *
@@ -200,8 +201,8 @@
 	<div
 		class="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium animate-slide-up flex items-center justify-between"
 	>
-		<span>⚠️ {error}</span>
-		<button onclick={() => (error = null)} class="text-rose-450 hover:text-rose-650 font-bold ml-2"
+		<span><AlertTriangle class="h-4 w-4" aria-hidden="true" /> {error}</span>
+		<button onclick={() => (error = null)} class="text-rose-500 hover:text-rose-600 font-bold ml-2"
 			>×</button
 		>
 	</div>

@@ -21,7 +21,6 @@
 		}
 	});
 
-
 	let lastAutoSignatur = '';
 
 	// Computed states for the template
@@ -84,21 +83,21 @@
 
 <div class="space-y-5">
 	<div>
-		<label for="buch-medientyp" class="block text-sm font-medium text-gray-700 mb-1"
+		<label for="buch-medientyp" class="block text-sm font-medium text-slate-700 mb-1"
 			>Medientyp</label
 		>
 		<div class="relative">
 			<select
 				id="buch-medientyp"
 				bind:value={formular.medientyp}
-				class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none cursor-pointer"
+				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none cursor-pointer"
 			>
 				<option value="Buch">Buch</option>
 				<option value="CD">CD</option>
 				<option value="DVD">DVD</option>
 			</select>
 			<div class="absolute right-3 top-3 pointer-events-none">
-				<svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -111,37 +110,37 @@
 	</div>
 
 	<div>
-		<label for="buch-titel" class="block text-sm font-medium text-gray-700 mb-1">Titel</label>
+		<label for="buch-titel" class="block text-sm font-medium text-slate-700 mb-1">Titel</label>
 		<input
 			id="buch-titel"
 			type="text"
 			bind:value={formular.title}
-			class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
 		/>
 	</div>
 
 	<div>
-		<label for="buch-untertitel" class="block text-sm font-medium text-gray-700 mb-1"
+		<label for="buch-untertitel" class="block text-sm font-medium text-slate-700 mb-1"
 			>Untertitel</label
 		>
 		<input
 			id="buch-untertitel"
 			type="text"
 			bind:value={formular.untertitel}
-			class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
 		/>
 	</div>
 
 	<div class="grid grid-cols-2 gap-4">
 		<div>
-			<label for="buch-autor" class="block text-sm font-medium text-gray-700 mb-1"
+			<label for="buch-autor" class="block text-sm font-medium text-slate-700 mb-1"
 				>{formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}</label
 			>
 			<input
 				id="buch-autor"
 				type="text"
 				bind:value={formular.author}
-				class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
 			/>
 		</div>
 
@@ -158,7 +157,10 @@
 			? 'border-rose-300 bg-rose-50/40'
 			: 'border-emerald-200 bg-emerald-50/30'}"
 	>
-		<label for="buch-signatur" class="flex items-center gap-2 text-sm font-bold text-gray-800 mb-1">
+		<label
+			for="buch-signatur"
+			class="flex items-center gap-2 text-sm font-bold text-slate-800 mb-1"
+		>
 			🏷️ Signatur (Buchrücken)
 			{#if !formular.id}<span
 					class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded {signaturFehlt
@@ -174,7 +176,7 @@
 				? `z. B. "${autorKuerzel}" (Belletristik) oder "LMF M"`
 				: 'z. B. LMF M, BIB ROM, Row …'}
 			aria-invalid={signaturFehlt}
-			class="w-full rounded-lg px-4 py-2.5 text-gray-900 outline-none transition border bg-white
+			class="w-full rounded-lg px-4 py-2.5 text-slate-900 outline-none transition border bg-white
                    {signaturFehlt
 				? 'border-rose-400 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'
 				: 'border-emerald-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'}"
@@ -185,7 +187,7 @@
 				gesperrt).
 			</p>
 		{:else}
-			<p class="mt-1.5 text-xs text-gray-500">
+			<p class="mt-1.5 text-xs text-slate-500">
 				Wird 1:1 auf das Rücken-Etikett gedruckt. Bestehende Littera-Signaturen werden von Importen
 				nie überschrieben.
 			</p>
@@ -194,23 +196,23 @@
 
 	<div class="grid grid-cols-2 gap-4">
 		<div>
-			<label for="buch-verlag" class="block text-sm font-medium text-gray-700 mb-1">Verlag</label>
+			<label for="buch-verlag" class="block text-sm font-medium text-slate-700 mb-1">Verlag</label>
 			<input
 				id="buch-verlag"
 				type="text"
 				bind:value={formular.verlag}
-				class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
 			/>
 		</div>
 		<div>
-			<label for="buch-jahr" class="block text-sm font-medium text-gray-700 mb-1"
+			<label for="buch-jahr" class="block text-sm font-medium text-slate-700 mb-1"
 				>Erscheinungsjahr</label
 			>
 			<input
 				id="buch-jahr"
 				type="number"
 				bind:value={formular.erscheinungsjahr}
-				class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
 			/>
 		</div>
 	</div>
@@ -220,14 +222,14 @@
 	<BuchEingabefelderInventar bind:formular />
 
 	<div>
-		<label for="buch-beschreibung" class="block text-sm font-medium text-gray-700 mb-1"
+		<label for="buch-beschreibung" class="block text-sm font-medium text-slate-700 mb-1"
 			>Beschreibung / Klappentext</label
 		>
 		<textarea
 			id="buch-beschreibung"
 			rows="3"
 			bind:value={formular.beschreibung}
-			class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
 		></textarea>
 	</div>
 </div>

@@ -62,7 +62,7 @@
 		<div>
 			<h3 class="text-lg font-bold text-slate-900">{title}</h3>
 			{#if description}
-				<p class="text-sm text-gray-600 mt-1.5 leading-relaxed max-w-2xl">{description}</p>
+				<p class="text-sm text-slate-600 mt-1.5 leading-relaxed max-w-2xl">{description}</p>
 			{/if}
 		</div>
 	{/snippet}

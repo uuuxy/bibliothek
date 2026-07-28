@@ -85,7 +85,9 @@
 					</div>
 					<div class="flex-1">
 						<div class="font-bold text-slate-900">Nach Fach / Klasse</div>
-						<div class="text-xs text-slate-500">Gezielte Teil-Inventur, z. B. „Mathe, Klasse 5“.</div>
+						<div class="text-xs text-slate-500">
+							Gezielte Teil-Inventur, z. B. „Mathe, Klasse 5“.
+						</div>
 					</div>
 				</label>
 			</div>

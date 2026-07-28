@@ -89,7 +89,7 @@
 		<div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 animate-fade-in">
 			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div>
-					<label for="student-search-input" class="block text-sm font-medium text-gray-600 mb-2"
+					<label for="student-search-input" class="block text-sm font-medium text-slate-600 mb-2"
 						>Schüler suchen (Name oder Barcode)</label
 					>
 					<div class="flex gap-2">
@@ -107,7 +107,7 @@
 					</div>
 				</div>
 				<div>
-					<label for="notiz-input" class="block text-sm font-medium text-gray-600 mb-2"
+					<label for="notiz-input" class="block text-sm font-medium text-slate-600 mb-2"
 						>Interne Notiz (optional)</label
 					>
 					<input

@@ -1,4 +1,5 @@
 <script>
+	import { Printer } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { labelStore } from './stores/labels.svelte.js';
 	import LabelSettings from './components/labels/LabelSettings.svelte';
@@ -21,7 +22,7 @@
 			disabled={labelStore.finalLabels.filter((lbl) => !lbl.isBlank).length === 0}
 			class="px-5 disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
 		>
-			<span>🖨️ A4-Bogen drucken</span>
+			<span><Printer class="h-4 w-4" aria-hidden="true" /> A4-Bogen drucken</span>
 		</Button>
 	</div>
 

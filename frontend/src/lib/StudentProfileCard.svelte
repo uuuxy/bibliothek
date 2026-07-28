@@ -1,4 +1,5 @@
 <script>
+	import { RotateCcw } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
 	import Button from './components/ui/Button.svelte';
@@ -200,7 +201,8 @@
 						onclick={() => {
 							abgangInput = calcAbgangFromKlasse(profile.klasse);
 						}}
-						title="Automatisch aus Klasse berechnen">↺ Neu berechnen</Button
+						title="Automatisch aus Klasse berechnen"
+						><RotateCcw class="h-3.5 w-3.5" aria-hidden="true" /> Neu berechnen</Button
 					>
 					<Button size="sm" onclick={saveAbgang} disabled={abgangSaving}>
 						{abgangSaving ? '…' : 'Speichern'}

@@ -37,13 +37,13 @@
 </script>
 
 <label class="flex flex-col">
-	<span class="text-sm font-medium text-gray-600 mb-2">{label}</span>
+	<span class="text-sm font-medium text-slate-600 mb-2">{label}</span>
 	{#if type === 'number'}
 		<input type="number" {min} {max} {placeholder} bind:value class={inputClass} />
 	{:else}
 		<input {type} {placeholder} {pattern} {maxlength} bind:value class={inputClass} />
 	{/if}
 	{#if hint}
-		<span class="text-sm text-gray-500 mt-2">{hint}</span>
+		<span class="text-sm text-slate-500 mt-2">{hint}</span>
 	{/if}
 </label>

@@ -1,4 +1,5 @@
 <script>
+	import { Printer, Trash2 } from '@lucide/svelte';
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Button from './components/ui/Button.svelte';
@@ -148,7 +149,7 @@
 		class="py-12 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4"
 	>
 		<div
-			class="w-12 h-12 rounded-full bg-amber-50 border border-amber-250 flex items-center justify-center text-amber-650 shadow-xs"
+			class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-xs"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -193,7 +194,7 @@
 								>⛔ Ausgesondert</span
 							>
 						{/if}
-						<p class="text-xs text-slate-650 pt-1.5">
+						<p class="text-xs text-slate-600 pt-1.5">
 							<strong class="text-slate-500 font-medium">Zustand:</strong>
 							{copy.zustand_notiz || 'Neuwertig'}
 						</p>
@@ -204,11 +205,11 @@
 						{#if !copy.ist_ausgesondert}
 							<button
 								onclick={() => printLabel(copy.barcode_id)}
-								class="p-1.5 text-slate-450 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+								class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
 								title="Schnelldruck Barcode-Etikett"
 								aria-label="Schnelldruck Barcode-Etikett"
 							>
-								<span aria-hidden="true">🖨️</span>
+								<Printer class="h-4 w-4" aria-hidden="true" />
 							</button>
 							<button
 								onclick={() => {
@@ -216,7 +217,7 @@
 									newNote = copy.zustand_notiz;
 									showModal = true;
 								}}
-								class="p-1.5 text-slate-450 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
+								class="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
 								title="Schadensnotiz bearbeiten"
 								aria-label="Schadensnotiz bearbeiten"
 							>
@@ -224,7 +225,7 @@
 							</button>
 							<button
 								onclick={() => aussondernCopy(copy.id)}
-								class="p-1.5 text-slate-450 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50"
+								class="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50"
 								title="Exemplar aussondern (Makulatur)"
 								aria-label="Exemplar aussondern (Makulatur)"
 							>
@@ -233,11 +234,11 @@
 						{/if}
 						<button
 							onclick={() => deleteCopy(copy.id)}
-							class="p-1.5 text-slate-450 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50"
+							class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50"
 							title="Exemplar löschen"
 							aria-label="Exemplar löschen"
 						>
-							<span aria-hidden="true">🗑️</span>
+							<Trash2 class="h-4 w-4" aria-hidden="true" />
 						</button>
 					</div>
 				</div>

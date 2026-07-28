@@ -6,11 +6,7 @@
   Sie zeigt ein Profilbild, den Namen, die Klasse, die Anzahl der ausgeliehenen Bücher und den Status an.
 -->
 <script>
-	let {
-		filteredStudents = [],
-		loading = false,
-		onSelectStudent = () => {}
-	} = $props();
+	let { filteredStudents = [], loading = false, onSelectStudent = () => {} } = $props();
 </script>
 
 {#snippet avatar(s)}
@@ -78,7 +74,7 @@
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
 			<table class="w-full text-base text-slate-700">
-				<thead class="border-b border-gray-200 text-sm font-semibold text-gray-500 font-sans">
+				<thead class="border-b border-slate-200 text-sm font-semibold text-slate-500 font-sans">
 					<tr>
 						<th class="px-4 py-2 w-16">Foto</th>
 						<th class="px-4 py-2">Name</th>

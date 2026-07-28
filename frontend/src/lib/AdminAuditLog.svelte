@@ -60,7 +60,7 @@
 			<div class="overflow-x-auto">
 				<table class="w-full text-left border-collapse">
 					<thead>
-						<tr class="border-b border-gray-200 text-sm font-semibold text-gray-500">
+						<tr class="border-b border-slate-200 text-sm font-semibold text-slate-500">
 							<th class="p-4">Zeitstempel</th>
 							<th class="p-4">Aktion</th>
 							<th class="p-4">Admin</th>

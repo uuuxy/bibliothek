@@ -47,7 +47,9 @@
 	let filterSystematik = $state('alle');
 	let suchbegriff = $state('');
 
-	const fachOptionen = $derived([...new Set(items.map((i) => i.fachbereich).filter(Boolean))].sort());
+	const fachOptionen = $derived(
+		[...new Set(items.map((i) => i.fachbereich).filter(Boolean))].sort()
+	);
 	const systematikOptionen = $derived(
 		[...new Set(items.map((i) => i.systematik).filter(Boolean))].sort()
 	);
@@ -72,7 +74,12 @@
 		class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer mb-5"
 	>
 		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-			><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg
+			><path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				stroke-width="2.5"
+				d="M15 19l-7-7 7-7"
+			/></svg
 		>
 		Statistik
 	</button>
@@ -117,7 +124,9 @@
 
 	{#if loading}
 		<div class="py-20 flex justify-center">
-			<div class="w-8 h-8 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin"></div>
+			<div
+				class="w-8 h-8 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin"
+			></div>
 		</div>
 	{:else if gefiltert.length === 0}
 		<div class="py-20 text-center text-slate-400 text-sm">
@@ -144,7 +153,7 @@
 					{/if}
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-bold text-slate-800 truncate" title={row.titel}>{row.titel}</p>
-						<p class="text-xs text-slate-450 truncate">
+						<p class="text-xs text-slate-500 truncate">
 							{row.autor || '—'}
 							{#if row.fachbereich}· {row.fachbereich}{/if}
 							{#if row.systematik}· <span class="font-mono">{row.systematik}</span>{/if}

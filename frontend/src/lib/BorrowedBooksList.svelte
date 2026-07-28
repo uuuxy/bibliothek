@@ -110,7 +110,9 @@
 							{/if}
 							<div class="flex-1 min-w-0">
 								<div class="flex items-center gap-2 min-w-0">
-									<h4 class="font-bold text-sm text-slate-900 truncate min-w-0" title={book.titel}>{book.titel}</h4>
+									<h4 class="font-bold text-sm text-slate-900 truncate min-w-0" title={book.titel}>
+										{book.titel}
+									</h4>
 									{#if isLMF}
 										<span
 											class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase"
@@ -190,7 +192,7 @@
 											editingId = book.ausleihe_id || book.id;
 											editingDate = book.rueckgabe_frist.split('T')[0];
 										}}
-										class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-blue-600 transition-opacity cursor-pointer"
+										class="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-blue-600 transition-opacity cursor-pointer"
 										title="Datum bearbeiten"
 										aria-label="Rückgabedatum bearbeiten"
 									>

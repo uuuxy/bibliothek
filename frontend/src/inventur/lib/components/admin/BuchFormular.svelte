@@ -54,14 +54,14 @@
 <div class="flex flex-col w-full my-4" transition:fade={{ duration: 200 }}>
 	<!-- Drawer Header -->
 	<div
-		class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10 rounded-t-2xl"
+		class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10 rounded-t-2xl"
 	>
-		<h2 class="text-xl font-bold text-gray-900">
+		<h2 class="text-xl font-bold text-slate-900">
 			{formular.id ? 'Buch bearbeiten' : 'Neues Buch'}
 		</h2>
 		<button
 			onclick={onClose}
-			class="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
+			class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"
 			aria-label="Schließen"
 		>
 			<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,7 +86,7 @@
 
 	<!-- Drawer Footer -->
 	<div
-		class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 sticky bottom-0 rounded-b-2xl"
+		class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0 rounded-b-2xl"
 	>
 		{#if formular.id}
 			<Button
@@ -131,7 +131,7 @@
 			onclick={onSave}
 			disabled={speichernGesperrt}
 			title={speichernGesperrt ? 'Signatur eintragen, um zu speichern' : undefined}
-			class="px-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300"
+			class="px-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300"
 		>
 			Speichern
 		</Button>

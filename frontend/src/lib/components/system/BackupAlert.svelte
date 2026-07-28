@@ -11,7 +11,7 @@
         was zu tun ist, und der Knopf führt direkt auf den richtigen Reiter. -->
 <script>
 	import { onMount } from 'svelte';
-	import { AlertTriangle, ArrowRight } from '@lucide/svelte';
+	import { AlertTriangle, ArrowRight, X } from '@lucide/svelte';
 	import { backupStatus } from '../../stores/backupStatus.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -20,13 +20,24 @@
 
 	const critical = $derived(backupStatus.data?.status === 'critical');
 
+	// Für die Sitzung wegklickbar. Eine Warnung, die auf JEDEM Bildschirm steht und
+	// nie verschwindet, ist keine Warnung mehr, sondern Möblierung — und sie kostet
+	// die oberste, wertvollste Bildschirmzeile.
+	//
+	// Bewusst NICHT gespeichert (weder localStorage noch Server): Beim nächsten Laden
+	// steht sie wieder da. Wer den Schlüssel nicht hinterlegt, soll morgen erneut
+	// erinnert werden — nur nicht den ganzen Tag lang. Ohne Persistenz gibt es
+	// ausserdem keinen geteilten Zustand, der zwischen den Arbeitsplätzen ausdriften
+	// könnte.
+	let weggeklickt = $state(false);
+
 	function openDatenverwaltung() {
 		uiStore.requestedSettingsTab = 'Datenverwaltung';
 		uiStore.activeTab = 'settings';
 	}
 </script>
 
-{#if backupStatus.needsAction}
+{#if backupStatus.needsAction && !weggeklickt}
 	<div
 		role="alert"
 		class="no-print mb-5 flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] bg-white py-3 pr-4 pl-3.5 shadow-xs
@@ -43,6 +54,16 @@
 		<Button variant="secondary" size="sm" onclick={openDatenverwaltung} class="mt-0.5 shrink-0">
 			Datenverwaltung öffnen
 			<ArrowRight class="h-3.5 w-3.5" />
+		</Button>
+		<Button
+			variant="ghost"
+			size="sm"
+			onclick={() => (weggeklickt = true)}
+			class="mt-0.5 shrink-0 px-2 text-slate-400 hover:text-slate-600"
+			aria-label="Hinweis für diese Sitzung ausblenden"
+			title="Für diese Sitzung ausblenden — beim nächsten Laden wieder da"
+		>
+			<X class="h-4 w-4" />
 		</Button>
 	</div>
 {/if}

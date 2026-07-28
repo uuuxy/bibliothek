@@ -111,7 +111,7 @@
 
 		<!-- Visibility -->
 		<div class="flex items-center justify-between">
-			<span class="text-[10px] font-bold text-slate-450 uppercase">Sichtbar</span>
+			<span class="text-[10px] font-bold text-slate-500 uppercase">Sichtbar</span>
 			<label class="relative inline-flex items-center cursor-pointer select-none">
 				<input type="checkbox" bind:checked={el.show} class="sr-only peer" />
 				<div
@@ -122,7 +122,7 @@
 
 		<!-- Position & Size -->
 		<div class="space-y-2 pt-2 border-t border-slate-100">
-			<span class="text-[10px] font-bold text-slate-450 uppercase block">Position &amp; Größe</span>
+			<span class="text-[10px] font-bold text-slate-500 uppercase block">Position &amp; Größe</span>
 			<div class="grid grid-cols-2 gap-2">
 				{@render numInput('X (mm)', el.x, 0, 80, 0.5, (v) => {
 					el.x = v;
@@ -141,7 +141,7 @@
 
 		<!-- Z-Index -->
 		<div class="flex items-center gap-2 pt-2 border-t border-slate-100">
-			<span class="text-[10px] font-bold text-slate-450 uppercase flex-1"
+			<span class="text-[10px] font-bold text-slate-500 uppercase flex-1"
 				>Ebene (z={el.zIndex})</span
 			>
 			<button
@@ -159,7 +159,7 @@
 		<!-- Text style panel -->
 		{#if isTextType && el.style}
 			<div class="space-y-3 pt-2 border-t border-slate-100">
-				<span class="text-[10px] font-bold text-slate-450 uppercase block">Textformatierung</span>
+				<span class="text-[10px] font-bold text-slate-500 uppercase block">Textformatierung</span>
 
 				{#if !isDynamic}
 					<div class="space-y-1">
@@ -223,7 +223,7 @@
 		<!-- Image panel -->
 		{#if isImageType}
 			<div class="space-y-3 pt-2 border-t border-slate-100">
-				<span class="text-[10px] font-bold text-slate-450 uppercase block">Bild</span>
+				<span class="text-[10px] font-bold text-slate-500 uppercase block">Bild</span>
 				<input
 					type="file"
 					accept="image/*"

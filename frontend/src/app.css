@@ -3,6 +3,24 @@
 @theme {
 	--font-sans: 'Inter', 'Roboto', 'system-ui', sans-serif;
 
+	/* ── Schriftstärken ───────────────────────────────────────────────────────
+	   Gezählt: 596-mal font-bold/semibold gegen 138-mal font-medium und ACHTMAL
+	   font-normal. Wenn vier von fünf Textstellen betont sind, betont keine mehr —
+	   Tabellenkopf, Datenzelle, Zustand und Überschrift schreien gleich laut, und
+	   das Auge findet keinen Einstieg.
+
+	   Wieder die SKALA statt der Aufrufe (wie bei den Radien): Die Klassennamen
+	   bleiben stehen, ihre Bedeutung rückt eine Stufe herunter. Damit ändern sich
+	   596 Fundstellen in einem Zugriff, und die relative Ordnung bleibt erhalten —
+	   bold ist weiterhin stärker als semibold.
+
+	   Bewusst nur Standard-Stufen: Es ist keine Webfont geladen (Inter steht nur im
+	   Stack, gerendert wird Systemschrift). Zwischenwerte wie 450 kann die nicht
+	   darstellen; sie würden gerundet oder synthetisch verzerrt. */
+	--font-weight-medium: 500;
+	--font-weight-semibold: 500;
+	--font-weight-bold: 600;
+
 	/* ── Eckenradien ──────────────────────────────────────────────────────────
 	   Zusammengestauchte Skala für ein Verwaltungswerkzeug. Das Audit fand 18
 	   verschiedene Radius-Werte in 763 Vorkommen; die großen (rounded-xl 12 px,

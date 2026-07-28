@@ -184,7 +184,7 @@
 				d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
 			/>
 		</svg>
-		<span class="text-sm font-semibold text-slate-650">Kamera öffnen / Foto auswählen</span>
+		<span class="text-sm font-semibold text-slate-600">Kamera öffnen / Foto auswählen</span>
 		<input
 			type="file"
 			accept="image/*"

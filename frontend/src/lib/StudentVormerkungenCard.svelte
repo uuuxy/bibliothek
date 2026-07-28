@@ -44,7 +44,7 @@
 	{:else}
 		<div class="space-y-4">
 			{#each vormerkungen as v, _i (_i)}
-				<div class="border-b border-gray-200 py-4 flex items-start justify-between">
+				<div class="border-b border-slate-200 py-4 flex items-start justify-between">
 					<div class="flex flex-col gap-1">
 						<h4 class="font-bold text-slate-800">{v.titel_name || 'Unbekannter Titel'}</h4>
 						<div class="flex items-center gap-2 text-xs font-semibold text-slate-500">

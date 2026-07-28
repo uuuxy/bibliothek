@@ -1,4 +1,5 @@
 <script>
+	import { AlertTriangle, Printer } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 
 	let { printSuggestion, onPrint } = $props();
@@ -9,7 +10,7 @@
 		class="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-2xs space-y-3.5 text-left animate-fade-in no-print"
 	>
 		<div class="flex items-start gap-2.5">
-			<span class="text-xl">⚠️</span>
+			<AlertTriangle class="h-4 w-4" aria-hidden="true" />
 			<div>
 				<h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider">
 					Etikettendruck erforderlich
@@ -21,7 +22,7 @@
 			</div>
 		</div>
 		<Button size="sm" onclick={onPrint} class="w-full">
-			🖨️ Etiketten für diese Lieferung drucken
+			<Printer class="h-4 w-4" aria-hidden="true" /> Etiketten für diese Lieferung drucken
 		</Button>
 	</div>
 {/if}

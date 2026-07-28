@@ -70,7 +70,7 @@
 </script>
 
 <div>
-	<label for="buch-isbn" class="block text-sm font-medium text-gray-700 mb-1">
+	<label for="buch-isbn" class="block text-sm font-medium text-slate-700 mb-1">
 		{formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
 	</label>
 	<div class="relative">
@@ -79,19 +79,19 @@
 			type="text"
 			bind:value={formular.isbn}
 			onblur={beiVerlassen}
-			class="w-full rounded-lg border-gray-300 bg-gray-50 px-4 py-2.5 pr-20 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 pr-20 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
 		/>
 		<button
 			type="button"
 			onclick={aktualisiereMetadaten}
 			disabled={isLookupActive}
-			class="absolute right-10 top-2 text-gray-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
+			class="absolute right-10 top-2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors disabled:opacity-50"
 			title="Daten aus dem Internet aktualisieren"
 			aria-label="Daten aus dem Internet aktualisieren"
 		>
 			{#if isLookupActive}
 				<div
-					class="w-5 h-5 border-2 border-gray-300 border-t-emerald-600 rounded-full animate-spin"
+					class="w-5 h-5 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin"
 				></div>
 			{:else}
 				<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,7 +108,7 @@
 			type="button"
 			onclick={() => (wirdGescannt = true)}
 			aria-pressed={wirdGescannt}
-			class="absolute right-2 top-2 text-gray-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-gray-200 transition-colors"
+			class="absolute right-2 top-2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
 			title="Scan ISBN"
 			aria-label="Scan ISBN"
 		>

@@ -81,7 +81,7 @@
 	<li class="flex items-center justify-between gap-4 py-4">
 		<div class="min-w-0 flex-1">
 			<p class="text-sm font-bold text-slate-800 truncate">{r.titel_name}</p>
-			<p class="text-xs text-slate-450 mt-0.5">
+			<p class="text-xs text-slate-500 mt-0.5">
 				Klasse <span class="font-semibold text-slate-600">{r.klasse}</span> · {r.anzahl} Exemplare
 				{#if r.angefordert_von}· angefragt von {r.angefordert_von}{/if}
 			</p>
@@ -93,7 +93,12 @@
 		<div class="shrink-0">
 			{#if confirmingId === r.id}
 				<div class="flex items-center gap-2">
-					<Button variant="secondary" size="sm" onclick={cancelConfirm} disabled={completingId === r.id}>
+					<Button
+						variant="secondary"
+						size="sm"
+						onclick={cancelConfirm}
+						disabled={completingId === r.id}
+					>
 						Abbrechen
 					</Button>
 					<Button

@@ -170,7 +170,9 @@
 
 			<div class="flex flex-wrap gap-1.5 mb-4">
 				{#if book.subject}
-					<span class="{getSubjectColor(book.subject)} text-[10px] font-bold px-2 py-0.5 rounded-md">
+					<span
+						class="{getSubjectColor(book.subject)} text-[10px] font-bold px-2 py-0.5 rounded-md"
+					>
 						{book.subject}
 					</span>
 				{/if}

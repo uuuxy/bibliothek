@@ -16,8 +16,16 @@
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let { books, loading, onOpenDetail, onCreateNew, onScan, onDelete, onAssignClass, onRetryCovers } =
-		$props();
+	let {
+		books,
+		loading,
+		onOpenDetail,
+		onCreateNew,
+		onScan,
+		onDelete,
+		onAssignClass,
+		onRetryCovers
+	} = $props();
 
 	/** @type {string[]} */
 	let selectedIds = $state([]);

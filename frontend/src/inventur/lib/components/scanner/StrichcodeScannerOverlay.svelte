@@ -22,7 +22,7 @@
 		<div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
 			<button
 				onclick={() => (isScanning = false)}
-				class="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+				class="absolute top-4 right-4 text-slate-500 hover:text-slate-800"
 				aria-label="Scanner schließen"
 			>
 				<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,7 +39,7 @@
 				onDecode={handleScan}
 				onStatusChange={(/** @type {string} */ s) => (scanStatus = s)}
 			/>
-			<p class="text-center text-sm text-gray-600 mt-2">{scanStatus}</p>
+			<p class="text-center text-sm text-slate-600 mt-2">{scanStatus}</p>
 		</div>
 	</div>
 {/if}

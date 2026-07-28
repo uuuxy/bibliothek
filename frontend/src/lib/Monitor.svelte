@@ -1,4 +1,5 @@
 <script>
+	import { Flame, Sparkles, Star } from '@lucide/svelte';
 	import { apiFetch } from './apiFetch.js';
 	import { onMount, onDestroy } from 'svelte';
 
@@ -43,7 +44,7 @@
 		clearInterval(coverTimer);
 	});
 
-	const slideLabels = ['⭐ Buch des Monats', '🆕 Neu eingetroffen', '🔥 Beliebt diese Woche'];
+	const slideLabels = ['Buch des Monats', 'Neu eingetroffen', 'Beliebt diese Woche'];
 </script>
 
 <div class="fixed inset-0 bg-slate-900 text-white flex flex-col overflow-hidden select-none">
@@ -72,7 +73,7 @@
 			<!-- Buch des Monats -->
 			<div class="flex flex-col items-center text-center gap-6 max-w-sm">
 				<span class="text-sm font-bold tracking-widest uppercase text-amber-400"
-					>⭐ Buch des Monats</span
+					><Star class="h-4 w-4" aria-hidden="true" /> Buch des Monats</span
 				>
 				{#if slides.buch_des_monats}
 					{#if slides.buch_des_monats.cover_url}
@@ -104,7 +105,7 @@
 			<!-- Neu eingetroffen -->
 			<div class="flex flex-col items-center gap-8 w-full max-w-4xl">
 				<span class="text-sm font-bold tracking-widest uppercase text-cyan-400"
-					>🆕 Neu eingetroffen</span
+					><Sparkles class="h-4 w-4" aria-hidden="true" /> Neu eingetroffen</span
 				>
 				{#if slides.neu_eingetroffen.length > 0}
 					<div class="flex gap-4 items-end justify-center flex-wrap">
@@ -154,7 +155,7 @@
 			<!-- Beliebt -->
 			<div class="flex flex-col items-center gap-6 w-full max-w-lg">
 				<span class="text-sm font-bold tracking-widest uppercase text-rose-400"
-					>🔥 Beliebt diese Woche</span
+					><Flame class="h-4 w-4" aria-hidden="true" /> Beliebt diese Woche</span
 				>
 				{#if slides.beliebt.length > 0}
 					<ol class="w-full flex flex-col gap-3">

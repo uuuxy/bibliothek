@@ -102,7 +102,9 @@
 
 				{#if willLock}
 					<label class="block space-y-1.5">
-						<span class="text-xs font-bold text-slate-700">Grund der Sperre <span class="text-rose-500">*</span></span>
+						<span class="text-xs font-bold text-slate-700"
+							>Grund der Sperre <span class="text-rose-500">*</span></span
+						>
 						<textarea
 							bind:value={reason}
 							rows="2"

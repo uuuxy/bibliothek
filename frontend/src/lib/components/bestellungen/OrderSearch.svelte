@@ -57,18 +57,23 @@
 
 <div class="space-y-4">
 	<div class="space-y-1.5">
-		<label for="supplier" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Lieferant</label>
+		<label for="supplier" class="block text-xs font-bold text-slate-500 uppercase tracking-wider"
+			>Lieferant</label
+		>
 		<select
 			id="supplier"
 			bind:value={orderStore.selectedSupplierId}
 			class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
 		>
-			{#each orderStore.suppliers as s, _i (_i)}<option value={s.id}>{s.name} ({s.customerNumber})</option
+			{#each orderStore.suppliers as s, _i (_i)}<option value={s.id}
+					>{s.name} ({s.customerNumber})</option
 				>{/each}
 		</select>
 	</div>
 	<div class="space-y-1.5 relative">
-		<label for="book" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Titel suchen &amp; hinzufügen</label>
+		<label for="book" class="block text-xs font-bold text-slate-500 uppercase tracking-wider"
+			>Titel suchen &amp; hinzufügen</label
+		>
 		<input
 			id="book"
 			type="text"
@@ -212,7 +217,9 @@
 
 		<div class="flex items-center justify-between gap-3">
 			<div class="flex items-center gap-2">
-				<label for="stagedMengeInput" class="text-xs font-bold text-slate-500 uppercase">Menge</label>
+				<label for="stagedMengeInput" class="text-xs font-bold text-slate-500 uppercase"
+					>Menge</label
+				>
 				<input
 					id="stagedMengeInput"
 					type="number"

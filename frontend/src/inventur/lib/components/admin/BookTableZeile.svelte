@@ -100,7 +100,7 @@
 	<td class="px-6 py-3" onclick={(event) => event.stopPropagation()}>
 		<div class="flex items-center gap-2">
 			<svg
-				class="w-4 h-4 text-slate-350 cursor-grab active:cursor-grabbing hover:text-slate-500"
+				class="w-4 h-4 text-slate-300 cursor-grab active:cursor-grabbing hover:text-slate-500"
 				fill="none"
 				viewBox="0 0 24 24"
 				stroke="currentColor"
@@ -110,7 +110,7 @@
 			<input
 				type="checkbox"
 				aria-label="Buch auswählen"
-				class="rounded border-slate-200 bg-white text-blue-650 focus:ring-blue-500/20 cursor-pointer"
+				class="rounded border-slate-200 bg-white text-blue-600 focus:ring-blue-500/20 cursor-pointer"
 				checked={isSelected}
 				onchange={() => onToggleSelect(book.id)}
 			/>
@@ -129,7 +129,7 @@
 			/>
 		{:else}
 			<div
-				class="w-12 aspect-3/4 rounded-md shadow-xs flex items-center justify-center font-bold text-white bg-linear-to-br from-blue-500 to-indigo-650 text-sm border border-indigo-600/10"
+				class="w-12 aspect-3/4 rounded-md shadow-xs flex items-center justify-center font-bold text-white bg-linear-to-br from-blue-500 to-indigo-600 text-sm border border-indigo-600/10"
 			>
 				{book.title ? book.title.charAt(0).toUpperCase() : '?'}
 			</div>
@@ -138,7 +138,7 @@
 
 	<td class="px-6 py-3 font-semibold text-slate-900">
 		{book.title}
-		<div class="text-xs text-slate-450 font-normal">{book.author}</div>
+		<div class="text-xs text-slate-500 font-normal">{book.author}</div>
 	</td>
 
 	<td class="px-6 py-3">
@@ -149,12 +149,13 @@
 				{book.subject}
 			</span>
 		{:else}
-			<span class="text-slate-350 text-xs">–</span>
+			<span class="text-slate-300 text-xs">–</span>
 		{/if}
 	</td>
 	<!-- Klasse 0 = nicht zugeordnet: „–" statt einer sinnlosen „Kl. 0". -->
 	<td class="px-6 py-3 text-slate-600 text-sm">
-		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-slate-350 text-xs">–</span>{/if}
+		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-slate-300 text-xs">–</span
+			>{/if}
 	</td>
 
 	<td class="px-6 py-3">
@@ -165,7 +166,7 @@
 				{book.track}
 			</span>
 		{:else}
-			<span class="text-slate-350 text-xs">-</span>
+			<span class="text-slate-300 text-xs">-</span>
 		{/if}
 	</td>
 
@@ -177,7 +178,7 @@
 				{book.erweiterteEigenschaften.standort}
 			</span>
 		{:else}
-			<span class="text-slate-350 text-xs">-</span>
+			<span class="text-slate-300 text-xs">-</span>
 		{/if}
 	</td>
 
@@ -189,7 +190,7 @@
 				{new Date(book.lastCounted).toLocaleDateString('de-DE')}
 			</span>
 		{:else}
-			<span class="text-slate-350 text-xs">-</span>
+			<span class="text-slate-300 text-xs">-</span>
 		{/if}
 	</td>
 

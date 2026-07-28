@@ -108,7 +108,9 @@
 							<td class="px-3 py-2 text-right whitespace-nowrap text-slate-700 tabular-nums">
 								{b.anzahl_exemplare}
 							</td>
-							<td class="px-3 py-2 text-right font-bold whitespace-nowrap text-slate-900 tabular-nums">
+							<td
+								class="px-3 py-2 text-right font-bold whitespace-nowrap text-slate-900 tabular-nums"
+							>
 								{euro(b.gesamtbetrag)}
 							</td>
 							<td class="px-3 py-2 text-right">
