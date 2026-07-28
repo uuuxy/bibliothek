@@ -68,7 +68,7 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float6
 		if err != nil {
 			return
 		}
-		defer dirRoot.Close()
+		defer func() { _ = dirRoot.Close() }()
 
 		relPfad, err := filepath.Rel(uploadsVerzeichnis, pfad)
 		if err != nil {
@@ -79,7 +79,7 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float6
 		if err != nil {
 			return
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 
 		roh, err := io.ReadAll(f)
 		if err != nil {
