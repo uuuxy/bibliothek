@@ -220,23 +220,41 @@ type exemplarInsert struct {
 
 func insertExemplare(ctx context.Context, tx pgx.Tx, data exemplarInsert, el *errLogger, barcodeSeq *int) (copiesOK int) {
 	barcodes := nextBarcodes(*barcodeSeq, data.Medium.Anzahl)
+	var rows [][]interface{}
+
 	for _, bc := range barcodes {
 		if !validateBarcode(bc) {
 			el.write(data.Medium.ID, data.ISBNRaw, fmt.Sprintf("generierter Barcode ungültig: %s", bc))
 			continue
 		}
-		_, err := tx.Exec(ctx, `
-			INSERT INTO buecher_exemplare
-				(titel_id, barcode_id, erworben_am, ist_ausleihbar,
-				 erweiterte_eigenschaften, erstellt_am)
-			VALUES ($1, $2, CURRENT_DATE, true, '{}', $3)
-		`, data.TitelID, bc, data.ErstelltAm)
-		if err != nil {
-			el.write(data.Medium.ID, data.ISBNRaw, fmt.Sprintf("INSERT exemplar barcode=%s: %v", bc, err))
-			continue
-		}
-		copiesOK++
+
+		// erworben_am wird hier von der DB (CURRENT_DATE) in pgx.CopyFromRows nicht direkt
+		// unterstützt. Wir fügen stattdessen das aktuelle Datum als time.Time ein.
+		now := time.Now()
+		rows = append(rows, []interface{}{
+			data.TitelID,
+			bc,
+			now,      // erworben_am
+			true,     // ist_ausleihbar
+			"{}",     // erweiterte_eigenschaften
+			data.ErstelltAm,
+		})
 	}
+
+	if len(rows) > 0 {
+		inserted, err := tx.CopyFrom(
+			ctx,
+			pgx.Identifier{"buecher_exemplare"},
+			[]string{"titel_id", "barcode_id", "erworben_am", "ist_ausleihbar", "erweiterte_eigenschaften", "erstellt_am"},
+			pgx.CopyFromRows(rows),
+		)
+		if err != nil {
+			el.write(data.Medium.ID, data.ISBNRaw, fmt.Sprintf("COPY buecher_exemplare fehlerhaft: %v", err))
+		} else {
+			copiesOK = int(inserted)
+		}
+	}
+
 	*barcodeSeq += data.Medium.Anzahl
 	return copiesOK
 }
