@@ -109,7 +109,7 @@
 		}}
 	>
 		<div
-			class="bg-white rounded-none sm:rounded-[32px] shadow-2xl w-full lg:w-[1200px] max-w-[100vw] lg:max-w-[90vw] h-dvh sm:h-[90vh] lg:h-[850px] max-h-dvh lg:max-h-[95vh] p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
+			class="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full lg:w-[1200px] max-w-[100vw] lg:max-w-[90vw] h-dvh sm:h-[90vh] lg:h-[850px] max-h-dvh lg:max-h-[95vh] p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
 		>
 			<!-- Background Particles -->
 			<div class="absolute inset-0 opacity-40 pointer-events-none">

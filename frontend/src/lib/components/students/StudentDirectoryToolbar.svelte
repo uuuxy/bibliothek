@@ -21,7 +21,7 @@
 			aria-label="Schüler suchen"
 			placeholder="Nach Name, Klasse oder Barcode filtern..."
 			bind:value={searchQuery}
-			class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+			class="w-full h-9 pl-10 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
 		/>
 	</div>
 

@@ -21,9 +21,13 @@
 	// Feste Höhen statt reinem Padding: Nur so stehen Buttons neben Eingabefeldern und
 	// in Tabellenzeilen auf einer Linie. Gemessen wurden vorher NEUN verschiedene
 	// Button-Höhen zwischen 15 und 38 px — jede Komponente brachte ihre eigene mit.
+	//
+	// md = 36 px ist die gemeinsame Control-Höhe der Anwendung: Suchfelder, Selects und
+	// Buttons müssen denselben Wert tragen, sonst steht in jeder Werkzeugleiste ein
+	// Feld neben einem Button auf zwei verschiedenen Grundlinien.
 	const sizes = {
 		sm: 'h-7 px-2.5 text-xs',
-		md: 'h-8 px-3 text-sm',
+		md: 'h-9 px-3 text-sm',
 		lg: 'h-10 px-4 text-sm'
 	};
 

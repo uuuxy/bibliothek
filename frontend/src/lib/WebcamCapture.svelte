@@ -143,7 +143,7 @@
 					class="absolute inset-0 pointer-events-none flex items-center justify-center bg-zinc-950/20"
 				>
 					<div
-						class="w-[50%] h-[90%] border-2 border-dashed border-emerald-400 rounded-[20px] flex items-center justify-center relative"
+						class="w-[50%] h-[90%] border-2 border-dashed border-emerald-400 rounded-lg flex items-center justify-center relative"
 					>
 						<div
 							class="w-[85%] h-[80%] border border-dashed border-emerald-400/40 rounded-full"
