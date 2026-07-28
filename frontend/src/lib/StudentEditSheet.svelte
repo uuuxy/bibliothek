@@ -9,10 +9,9 @@
 	 *   student: any,
 	 *   onClose: () => void,
 	 *   onSave: () => void,
-	 *   role?: string
 	 * }}
 	 */
-	let { student, onClose, onSave, role = '' } = $props();
+	let { student, onClose, onSave } = $props();
 
 	/** @type {{ msg: string, type: 'success' | 'error' } | null} */
 	let snackbar = $state(null);

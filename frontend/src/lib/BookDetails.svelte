@@ -21,14 +21,12 @@
 
 	/** @type {any[]} */
 	let borrowers = $state.raw([]);
-	let loadingBorrowers = $state(false);
 
 	async function loadBorrowers() {
 		if (!title || !title.id || title.id === '1') {
 			borrowers = [];
 			return;
 		}
-		loadingBorrowers = true;
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${title.id}/ausleiher`);
 			if (res.ok) {
@@ -40,7 +38,6 @@
 			console.error('Fehler beim Laden der Ausleiher:', err);
 			borrowers = [];
 		} finally {
-			loadingBorrowers = false;
 		}
 	}
 

@@ -62,7 +62,7 @@
 		if (!('BarcodeDetector' in window)) return null;
 
 		try {
-			// @ts-ignore
+			// @ts-expect-error  BarcodeDetector ist noch nicht in den DOM-Typen (Chromium-only)
 			const detector = new window.BarcodeDetector({
 				formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
 			});

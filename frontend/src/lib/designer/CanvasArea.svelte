@@ -16,8 +16,8 @@
 	import { onDestroy } from 'svelte';
 	import { idStore } from './idDesignerStore.svelte.js';
 
-	/** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string, timestamp: number }} */
-	const { side, selectedId, onSelect, student, zoom, barcodeType, timestamp } = $props();
+	/** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string }} */
+	const { side, selectedId, onSelect, student, zoom, barcodeType } = $props();
 
 	/** Elements for the active side, sorted ascending by zIndex so higher layers render on top. */
 	const elements = $derived(
@@ -63,13 +63,11 @@
 			startY = e.clientY;
 		const ix = el.x,
 			iy = el.y;
-		let hasMoved = false;
 
 		/** @param {PointerEvent} mv */
 		function onMove(mv) {
 			const dx = (mv.clientX - startX) * scale;
 			const dy = (mv.clientY - startY) * scale;
-			if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) hasMoved = true;
 			el.x = Math.max(0, Math.min(85.6 - el.width, Math.round((ix + dx) * 10) / 10));
 			el.y = Math.max(0, Math.min(53.98 - el.height, Math.round((iy + dy) * 10) / 10));
 		}

@@ -157,8 +157,6 @@
 						<StudentProfileStammdaten
 							profile={st.profile}
 							{role}
-							rechnungPdfLoading={st.rechnungPdfLoading}
-							onDownloadRechnung={st.downloadRechnungPDF}
 							onEdit={() => (st.showEditModal = true)}
 						/>
 
@@ -173,7 +171,6 @@
 	{:else}
 		<StudentEditSheet
 			student={st.profile}
-			{role}
 			onClose={() => (st.showEditModal = false)}
 			onSave={() => st.handleSaveEdit(student?.id)}
 		/>

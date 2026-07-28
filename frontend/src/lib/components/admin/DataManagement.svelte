@@ -19,8 +19,8 @@
 		exportError = null;
 		try {
 			await exportiereCSV();
-		} catch (err: any) {
-			exportError = err.message || 'Export fehlgeschlagen';
+		} catch (err) {
+			exportError = (err instanceof Error && err.message) || 'Export fehlgeschlagen';
 		} finally {
 			isExporting = false;
 		}
@@ -52,10 +52,10 @@
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || 'Fehler beim Starten des Cover-Syncs');
 			syncCoversResult = { type: 'success', message: data.message || 'Job gestartet.' };
-		} catch (err: any) {
+		} catch (err) {
 			syncCoversResult = {
 				type: 'error',
-				message: err.message || 'Job konnte nicht gestartet werden.'
+				message: (err instanceof Error && err.message) || 'Job konnte nicht gestartet werden.'
 			};
 		} finally {
 			isSyncingCovers = false;
@@ -93,10 +93,10 @@
 				message: `Kombi-Import erfolgreich! ${data.new_titles_count || 0} neue Titel und ${data.imported_copies_count || 0} Exemplare wurden verarbeitet.`
 			};
 			files = null;
-		} catch (err: any) {
+		} catch (err) {
 			importCsvResult = {
 				type: 'error',
-				message: err.message || 'Ein unerwarteter Fehler ist aufgetreten.'
+				message: (err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.'
 			};
 		} finally {
 			isImportingCsv = false;
@@ -104,6 +104,10 @@
 	}
 </script>
 
+<!-- contentSnippet bleibt `any`: der explizite Snippet-Import aus 'svelte' kollidiert hier mit
+     dem ambienten Snippet-Typ, den svelte-check für Inline-Snippets verwendet („Two different
+     types with this name exist") — die Typisierung erzeugte zwei neue Fehler statt Sicherheit. -->
+<!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
 {#snippet adminCard(title: string, description: string, iconPath: string, contentSnippet: any)}
 	<div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/70 space-y-6">
 		<div class="flex items-start gap-4">

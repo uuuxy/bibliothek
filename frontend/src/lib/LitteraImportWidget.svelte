@@ -41,10 +41,10 @@
 				message: successMsg
 			};
 			files = null; // reset input
-		} catch (err: any) {
+		} catch (err) {
 			importResult = {
 				type: 'error',
-				message: err.message || 'Ein unerwarteter Fehler ist aufgetreten.'
+				message: (err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.'
 			};
 		} finally {
 			isImporting = false;

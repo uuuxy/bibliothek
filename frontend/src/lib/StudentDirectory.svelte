@@ -137,8 +137,7 @@
 						<div class="mt-6">
 							<ActiveStudentList
 								{filteredStudents}
-								{students}
-								{loading}
+									{loading}
 								onSelectStudent={(s) => (activeStudent = s)}
 							/>
 						</div>

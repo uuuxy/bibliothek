@@ -15,7 +15,7 @@ describe('authStore', () => {
 
 	it('should login successfully and set isLoggedIn to true', async () => {
 		// Mock global fetch
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({
 			ok: true,
 			json: async () => ({ id: 1, rolle: 'mitarbeiter', vorname: 'Test' }),
@@ -23,7 +23,7 @@ describe('authStore', () => {
 		}));
 
 		// Mock EventSource to prevent network errors in test
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Stub statt vollständiger EventSource
 		globalThis.EventSource = vi.fn(function () {
 			return {
 				addEventListener: vi.fn(),
@@ -48,9 +48,9 @@ describe('authStore', () => {
 
 describe('authStore Session-Restore (Boot)', () => {
 	beforeEach(() => {
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }));
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Stub statt vollständiger EventSource
 		globalThis.EventSource = vi.fn(function () {
 			return { addEventListener: vi.fn(), close: vi.fn() };
 		});
@@ -63,7 +63,7 @@ describe('authStore Session-Restore (Boot)', () => {
 	});
 
 	it('stellt die Session aus einem gültigen Cookie wieder her', async () => {
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({
 			ok: true,
 			status: 200,
@@ -85,7 +85,7 @@ describe('authStore Session-Restore (Boot)', () => {
 	});
 
 	it('bleibt bei 401 ausgeloggt, markiert den Check aber als erledigt', async () => {
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({ ok: false, status: 401 }));
 
 		await authStore.restoreSession();
@@ -95,7 +95,6 @@ describe('authStore Session-Restore (Boot)', () => {
 	});
 
 	it('wertet Netzwerkfehler als ausgeloggt statt zu hängen', async () => {
-		// @ts-ignore
 		globalThis.fetch = vi.fn(async () => {
 			throw new TypeError('Failed to fetch');
 		});
@@ -118,7 +117,7 @@ describe('authStore Session-Refresh', () => {
 		authStore.handleLogout();
 		vi.clearAllMocks();
 		vi.useFakeTimers();
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Stub statt vollständiger EventSource
 		globalThis.EventSource = vi.fn(function () {
 			return { addEventListener: vi.fn(), close: vi.fn() };
 		});
@@ -129,7 +128,7 @@ describe('authStore Session-Refresh', () => {
 	});
 
 	it('ruft nach dem Login alle 30 Minuten /api/auth/refresh auf', async () => {
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({
 			ok: true,
 			status: 200,
@@ -139,7 +138,7 @@ describe('authStore Session-Refresh', () => {
 		authStore.loginEmail = 'test@example.com';
 		authStore.loginPassword = 'pw';
 		await authStore.handleLogin(null);
-		// @ts-ignore
+		// @ts-expect-error  globalThis.fetch ist hier der vi.fn-Mock, nicht die DOM-Signatur
 		globalThis.fetch.mockClear();
 
 		await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
@@ -150,7 +149,7 @@ describe('authStore Session-Refresh', () => {
 	});
 
 	it('loggt aus, wenn der Refresh 401 liefert (Session serverseitig tot)', async () => {
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({
 			ok: true,
 			status: 200,
@@ -161,20 +160,20 @@ describe('authStore Session-Refresh', () => {
 		authStore.loginPassword = 'pw';
 		await authStore.handleLogin(null);
 
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({ ok: false, status: 401 }));
 		await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
 
 		expect(authStore.isLoggedIn).toBe(false);
 		// Nach dem Logout darf kein weiterer Refresh mehr feuern
-		// @ts-ignore
+		// @ts-expect-error  globalThis.fetch ist hier der vi.fn-Mock, nicht die DOM-Signatur
 		globalThis.fetch.mockClear();
 		await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
 		expect(globalThis.fetch).not.toHaveBeenCalled();
 	});
 
 	it('überlebt Netzwerkfehler ohne Logout (offline ≠ abgemeldet)', async () => {
-		// @ts-ignore
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
 		globalThis.fetch = vi.fn(async () => ({
 			ok: true,
 			status: 200,
@@ -185,7 +184,6 @@ describe('authStore Session-Refresh', () => {
 		authStore.loginPassword = 'pw';
 		await authStore.handleLogin(null);
 
-		// @ts-ignore
 		globalThis.fetch = vi.fn(async () => {
 			throw new TypeError('Failed to fetch');
 		});

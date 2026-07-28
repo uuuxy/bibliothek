@@ -210,7 +210,6 @@
 			student={previewStudent}
 			{zoom}
 			barcodeType={idStore.barcodeType}
-			{timestamp}
 		/>
 
 		<PropertiesPanel {selectedId} {side} />

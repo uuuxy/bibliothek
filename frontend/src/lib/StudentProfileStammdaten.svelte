@@ -1,5 +1,5 @@
 <script>
-	let { profile, role, rechnungPdfLoading, onDownloadRechnung, onEdit } = $props();
+	let { profile, role, onEdit } = $props();
 
 	import Button from './components/ui/Button.svelte';
 

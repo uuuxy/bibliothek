@@ -21,7 +21,7 @@ import '@fontsource/inter/800.css';
 import '@fontsource/inter/900.css';
 import './app.css';
 import App from './App.svelte';
-// @ts-ignore
+// @ts-expect-error  virtual:pwa-register wird erst von vite-plugin-pwa zur Bauzeit erzeugt
 import { registerSW } from 'virtual:pwa-register';
 import * as Sentry from '@sentry/svelte';
 

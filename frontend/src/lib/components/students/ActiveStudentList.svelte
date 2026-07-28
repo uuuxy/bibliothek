@@ -8,7 +8,6 @@
 <script>
 	let {
 		filteredStudents = [],
-		students = [],
 		loading = false,
 		onSelectStudent = () => {}
 	} = $props();
