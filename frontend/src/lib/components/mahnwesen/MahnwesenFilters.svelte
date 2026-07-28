@@ -2,7 +2,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { scale } from 'svelte/transition';
 	import Button from '../ui/Button.svelte';
-	import MahnlaufDialog from './MahnlaufDialog.svelte';
+	import KlassenVersandDialog from '../ui/KlassenVersandDialog.svelte';
 
 	// „Alle anmahnen" lief früher gegen ein window.confirm: alles oder nichts, immer
 	// an die hinterlegten Klassenleitungen. Der Dialog steht jetzt als Türsteher davor.
@@ -358,7 +358,7 @@
 				<Button
 					variant="danger-solid"
 					onclick={() => (mahnlaufOffen = true)}
-					aria-label="Mahnlauf konfigurieren und Mahnlisten per E-Mail versenden"
+					aria-label="Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden"
 				>
 					<svg
 						class="h-4 w-4"
@@ -383,8 +383,12 @@
 
 <!-- Auf oberster Ebene, nicht in der Werkzeugleiste: Der Dialog ist ein Overlay und
      hat in einem Flex-Container mit print:hidden nichts verloren. -->
-<MahnlaufDialog
+<KlassenVersandDialog
 	open={mahnlaufOffen}
+	titel="Mahnlauf konfigurieren"
+	beschreibung="Wähle die Klassen aus, für die Mahnungen generiert werden sollen."
+	aktion="anmahnen"
+	hinweis="Leer lassen = an die regulären Klassenleitungen. Der Namensteil genügt, die Schul-Domäne wird ergänzt."
 	klassen={mahnwesenStore.klassen}
 	onclose={() => (mahnlaufOffen = false)}
 	onconfirm={(auswahl) => {

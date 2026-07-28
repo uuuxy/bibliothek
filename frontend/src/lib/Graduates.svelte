@@ -2,7 +2,10 @@
 	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
+	import { showToast } from '../inventur/lib/store.svelte.js';
 	import Button from './components/ui/Button.svelte';
+	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
+	import { Mail } from '@lucide/svelte';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function openProfile(student) {
@@ -15,7 +18,7 @@
 	let graduates = $state([]);
 	let loading = $state(true);
 
-	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Laufzettel-Druck.
+	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Ausdruck.
 	let selectedKlasse = $state('');
 	let classes = $derived(
 		[...new Set(graduates.map((/** @type {any} */ s) => s.klasse))].sort((a, b) =>
@@ -38,11 +41,12 @@
 			)
 	);
 
-	// Laufzettel print state
-	let loadingLaufzettel = $state(false);
+	// Kontoauszug-Druck. Das PDF heißt intern noch /abgaenger/pdf, ist aber seit
+	// Langem der Kontoauszug mit Freigabezeile — eine Seite je Abgänger.
+	let loadingKontoauszuege = $state(false);
 
-	async function printLaufzettel() {
-		loadingLaufzettel = true;
+	async function printKontoauszuege() {
+		loadingKontoauszuege = true;
 		try {
 			// Ist eine Klasse gewählt, druckt der Laufzettel gezielt nur diese Klasse.
 			const endpoint = selectedKlasse
@@ -57,15 +61,64 @@
 			const url = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = selectedKlasse ? `Laufzettel_${selectedKlasse}.pdf` : 'Laufzettel.pdf';
+			a.download = selectedKlasse
+				? `Kontoauszuege_${selectedKlasse}.pdf`
+				: 'Kontoauszuege_Abgaenger.pdf';
 			document.body.appendChild(a);
 			a.click();
 			window.URL.revokeObjectURL(url);
 			a.remove();
 		} catch (err) {
-			console.error('Laufzettel load error:', err);
+			console.error('Kontoauszug load error:', err);
 		} finally {
-			loadingLaufzettel = false;
+			loadingKontoauszuege = false;
+		}
+	}
+
+	// Versand an die Klassenleitungen: je Klasse eine Mail, darin ein Kontoauszug je
+	// Abgänger. Der Dialog davor ist derselbe wie beim Mahnlauf — er entscheidet, WELCHE
+	// Klassen laufen und ob die Auszüge ausnahmsweise an eine einzelne Adresse gehen.
+	let versandOffen = $state(false);
+
+	// Der Dialog erwartet die Form des Mahnwesens ({ klasse, schueler, lehrer_email }),
+	// damit er für beide Aufrufer derselbe bleibt. Die Abgängerliste ist flach, also
+	// wird sie hier auf Klassen verdichtet.
+	let klassenFuerVersand = $derived(
+		classes.map((k) => ({
+			klasse: String(k),
+			schueler: graduates.filter((/** @type {any} */ s) => s.klasse === k)
+		}))
+	);
+
+	/** @param {{ klassen: string[], overrideEmail: string }} auswahl */
+	async function sendeKontoauszuege(auswahl) {
+		versandOffen = false;
+		// Ohne Auswahl gar nicht erst losschicken: Ein fehlendes klassen-Feld bedeutet
+		// serverseitig ALLE Klassen — genau der Rundumschlag, den der Dialog verhindert.
+		if (!auswahl.klassen.length) {
+			showToast('Keine Klasse ausgewählt.', 'error');
+			return;
+		}
+		try {
+			const res = await apiFetch('/api/abgaenger/mail', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					klassen: auswahl.klassen,
+					override_email: auswahl.overrideEmail ?? ''
+				})
+			});
+			const json = await res.json();
+			// Die Server-Meldung wird durchgereicht, nicht selbst formuliert: nur sie weiß,
+			// an WEN die Auszüge tatsächlich gingen.
+			showToast(
+				res.ok
+					? (json.message ?? 'Kontoauszüge versendet.')
+					: (json.error ?? json.message ?? 'Versand fehlgeschlagen.'),
+				res.ok ? 'success' : 'error'
+			);
+		} catch (e) {
+			showToast(`Netzwerkfehler beim Versand: ${e}`, 'error');
 		}
 	}
 
@@ -134,19 +187,31 @@
 		{/if}
 
 		<div class="flex items-center space-x-4 shrink-0">
+			<!-- Zwei Wege für dasselbe Dokument: ausdrucken (Papier bleibt der Notweg,
+			     wenn keine Lehrer-Adresse hinterlegt ist) oder an die Klassenleitungen mailen. -->
 			<Button
-				onclick={printLaufzettel}
-				disabled={loadingLaufzettel || graduates.length === 0}
+				variant="secondary"
+				onclick={printKontoauszuege}
+				disabled={loadingKontoauszuege || graduates.length === 0}
 				class="no-print"
 			>
-				{#if loadingLaufzettel}
+				{#if loadingKontoauszuege}
 					<div
-						class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
+						class="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"
 					></div>
 					Lade Daten…
 				{:else}
-					🖨️ {selectedKlasse ? `Laufzettel ${selectedKlasse}` : 'Laufzettel drucken'}
+					🖨️ {selectedKlasse ? `Kontoauszüge ${selectedKlasse}` : 'Kontoauszüge drucken'}
 				{/if}
+			</Button>
+			<Button
+				onclick={() => (versandOffen = true)}
+				disabled={graduates.length === 0}
+				class="no-print"
+				title="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
+			>
+				<Mail class="h-4 w-4" />
+				An Klassenleitungen mailen
 			</Button>
 			<div
 				class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 shrink-0"
@@ -262,3 +327,15 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Auf oberster Ebene: Der Dialog ist ein Overlay und gehört nicht in die Werkzeugleiste. -->
+<KlassenVersandDialog
+	open={versandOffen}
+	titel="Kontoauszüge versenden"
+	beschreibung="Wähle die Klassen aus, deren Abgänger-Kontoauszüge an die Klassenleitung gehen sollen."
+	aktion="senden"
+	hinweis="Leer lassen = jede Klasse an ihre eigene Klassenleitung. Der Namensteil genügt, die Schul-Domäne wird ergänzt."
+	klassen={klassenFuerVersand}
+	onclose={() => (versandOffen = false)}
+	onconfirm={sendeKontoauszuege}
+/>

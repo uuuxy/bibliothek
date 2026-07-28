@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import MahnlaufDialog from './MahnlaufDialog.svelte';
+import KlassenVersandDialog from './KlassenVersandDialog.svelte';
 
 /**
  * Zwei Fehler wären hier unsichtbar und teuer:
@@ -17,12 +17,22 @@ const klassen = [
 	{ klasse: '07C', lehrer_email: '', schueler: [{}] }
 ];
 
+// Die Wörter kommen jetzt von aussen — hier die des Mahnlaufs, damit die Tests
+// weiter den echten Aufrufer abbilden.
+const texte = {
+	titel: 'Mahnlauf konfigurieren',
+	beschreibung: 'Wähle die Klassen aus, für die Mahnungen generiert werden sollen.',
+	aktion: 'anmahnen',
+	hinweis: 'Bleibt das Feld leer, gehen die Mahnungen an die regulären Klassenleitungen.'
+};
+
 const senden = (getByRole) => getByRole('button', { name: /anmahnen/ });
 const beschriftung = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
 
-describe('MahnlaufDialog', () => {
+describe('KlassenVersandDialog', () => {
 	it('wählt beim Öffnen alle Klassen vor', () => {
-		const { getByRole } = render(MahnlaufDialog, {
+		const { getByRole } = render(KlassenVersandDialog, {
+			...texte,
 			open: true,
 			klassen,
 			onclose: () => {},
@@ -33,7 +43,8 @@ describe('MahnlaufDialog', () => {
 
 	it('übergibt nur die angehakten Klassen und die getrimmte Override-Adresse', async () => {
 		const onconfirm = vi.fn();
-		const { getByRole, getByLabelText } = render(MahnlaufDialog, {
+		const { getByRole, getByLabelText } = render(KlassenVersandDialog, {
+			...texte,
 			open: true,
 			klassen,
 			onclose: () => {},
@@ -53,7 +64,8 @@ describe('MahnlaufDialog', () => {
 	});
 
 	it('sperrt den Versand bei ungültiger Adresse und ohne ausgewählte Klasse', async () => {
-		const { getByRole, getByLabelText } = render(MahnlaufDialog, {
+		const { getByRole, getByLabelText } = render(KlassenVersandDialog, {
+			...texte,
 			open: true,
 			klassen,
 			onclose: () => {},
@@ -73,7 +85,8 @@ describe('MahnlaufDialog', () => {
 	});
 
 	it('setzt Auswahl und Override-Adresse beim Wiederöffnen zurück', async () => {
-		const { getByRole, getByLabelText, rerender } = render(MahnlaufDialog, {
+		const { getByRole, getByLabelText, rerender } = render(KlassenVersandDialog, {
+			...texte,
 			open: true,
 			klassen,
 			onclose: () => {},

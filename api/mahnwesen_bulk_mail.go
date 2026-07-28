@@ -16,7 +16,10 @@ import (
 	"bibliothek/repository"
 )
 
-// bulkOverdueRequest ist der optionale Body von POST /api/mail/send-bulk-overdue.
+// klassenVersandRequest ist der optionale Body jedes klassenweisen Massenversands
+// (Mahnlauf, Abgänger-Kontoauszüge). Bewusst EIN Typ für beide: Die gefährliche
+// Regel darunter — leere Auswahl heißt „niemand", nicht „alle" — darf es nur an
+// einer Stelle geben.
 //
 // Klassen ist bewusst ein Zeiger, weil „Feld fehlt" und „leeres Array" hier NICHT
 // dasselbe bedeuten dürfen:
@@ -26,7 +29,7 @@ import (
 //
 // Eine leere Auswahl heißt „niemand". Sie als „alle" zu lesen, wäre der teuerste
 // denkbare Fehlgriff des Systems: ein Klick, hunderte ungewollte Mahnungen.
-type bulkOverdueRequest struct {
+type klassenVersandRequest struct {
 	Klassen       *[]string `json:"klassen"`
 	OverrideEmail string    `json:"override_email"`
 }
@@ -68,7 +71,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 
 		// 1. Auswahl aus dem Body lesen. Fehlt der Body ganz, bleibt es beim alten
 		//    Vertrag „alle überfälligen Klassen an ihre Klassenleitungen".
-		req, err := parseBulkOverdueRequest(r)
+		req, err := parseKlassenVersandRequest(r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -109,7 +112,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 		//    danach hätte genau im teuersten Fall eine Lücke: Bricht der Prozess nach
 		//    300 versendeten Mahnungen ab, stünde nirgends, wer den Lauf ausgelöst hat
 		//    und an welche Adresse er ging.
-		s.logBulkOverdueAudit(r, bulkOverdueAudit{
+		s.logKlassenVersandAudit(r, "BULK_OVERDUE_MAIL", klassenVersandAudit{
 			Phase:         "start",
 			Klassen:       klassennamen(gewaehlt),
 			AlleKlassen:   req.Klassen == nil,
@@ -123,7 +126,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 		sent, skipped := versendeKlassenMahnungen(gewaehlt, generateMahnPDF, SendEmail)
 
 		// 8. Ergebnis protokollieren.
-		s.logBulkOverdueAudit(r, bulkOverdueAudit{
+		s.logKlassenVersandAudit(r, "BULK_OVERDUE_MAIL", klassenVersandAudit{
 			Phase:         "ende",
 			Klassen:       klassennamen(gewaehlt),
 			AlleKlassen:   req.Klassen == nil,
@@ -141,12 +144,12 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 	}
 }
 
-// parseBulkOverdueRequest liest die optionale Auswahl aus dem Request-Body und
+// parseKlassenVersandRequest liest die optionale Auswahl aus dem Request-Body und
 // weist alles zurück, was einen Massenversand an den falschen Empfänger schicken
 // würde. Ein fehlender Body ist gültig (= alle Klassen, alter Vertrag), ein
 // kaputter nicht.
-func parseBulkOverdueRequest(r *http.Request) (bulkOverdueRequest, error) {
-	var req bulkOverdueRequest
+func parseKlassenVersandRequest(r *http.Request) (klassenVersandRequest, error) {
+	var req klassenVersandRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
 		return req, fmt.Errorf("ungültiger Request-Body: %w", err)
 	}
@@ -154,7 +157,7 @@ func parseBulkOverdueRequest(r *http.Request) (bulkOverdueRequest, error) {
 	// Die Adresse kommt von Hand aus einem Eingabefeld. Ein Tippfehler darf hier
 	// nicht in einen „erfolgreichen" Lauf ins Leere münden, deshalb dieselbe
 	// Prüfung, die auch der Versand selbst anlegt (mail_sender.go).
-	req.OverrideEmail = strings.TrimSpace(req.OverrideEmail)
+	req.OverrideEmail = ergaenzeSchulDomain(strings.TrimSpace(req.OverrideEmail))
 	if req.OverrideEmail != "" {
 		if _, err := mail.ParseAddress(req.OverrideEmail); err != nil {
 			return req, fmt.Errorf("ungültige Empfänger-Adresse %q", req.OverrideEmail)
@@ -176,6 +179,37 @@ func parseBulkOverdueRequest(r *http.Request) (bulkOverdueRequest, error) {
 	}
 	req.Klassen = &gesaeubert
 	return req, nil
+}
+
+// ergaenzeSchulDomain vervollständigt eine von Hand eingetippte Adresse ohne „@"
+// um die Domäne der Schule: „mueller" wird zu „mueller@philipp-reis-schule.de".
+//
+// Alle Dienstadressen der Schule liegen auf derselben Domäne — sie jedes Mal
+// mitzutippen ist reine Fehlerquelle, und ein Vertipper darin fällt niemandem auf
+// (der Lauf meldet Erfolg, die Post kommt nie an).
+//
+// Die Domäne wird NICHT im Code festgeschrieben, sondern aus der Absenderadresse
+// des Systems abgeleitet (SMTP_FROM, ersatzweise SMTP_USER). Damit folgt sie
+// automatisch der Konfiguration und stimmt auch nach einem Domänenwechsel noch.
+// Ist keine konfiguriert, bleibt die Eingabe unverändert und läuft in die normale
+// Adressprüfung — lieber eine klare Fehlermeldung als eine geratene Domäne.
+//
+// Eine vollständige Adresse (mit „@") bleibt unangetastet: Der Versand an eine
+// externe Stelle — Schulamt, Vertretung, private Adresse — muss möglich bleiben.
+func ergaenzeSchulDomain(eingabe string) string {
+	if eingabe == "" || strings.Contains(eingabe, "@") {
+		return eingabe
+	}
+
+	absender := os.Getenv("SMTP_FROM")
+	if absender == "" {
+		absender = os.Getenv("SMTP_USER")
+	}
+	at := strings.LastIndex(absender, "@")
+	if at < 0 {
+		return eingabe
+	}
+	return eingabe + absender[at:]
 }
 
 // waehleKlassen schneidet die geladenen Klassen auf die Auswahl zu und meldet
@@ -293,13 +327,14 @@ func versendeKlassenMahnungen(
 	return sent, skipped
 }
 
-// bulkOverdueAudit ist der details-Payload des Audit-Eintrags BULK_OVERDUE_MAIL.
+// klassenVersandAudit ist der details-Payload jedes klassenweisen Massenversands
+// (BULK_OVERDUE_MAIL, ABGAENGER_KONTOAUSZUG_MAIL).
 //
 // Er beantwortet die Frage, die im Zweifel jemand von aussen stellt: Wer hat wann
 // wie viele Mahnungen an WEN geschickt? Die Override-Adresse steht deshalb im
 // Klartext im Log — sie ist der Unterschied zwischen „ging an die Klassenleitungen"
 // und „ging an eine von Hand eingetippte Adresse".
-type bulkOverdueAudit struct {
+type klassenVersandAudit struct {
 	// Phase trennt Absicht ("start") von Ergebnis ("ende"). Zwei Einträge je Lauf:
 	// Nur so bleibt ein mittendrin abgebrochener Versand nachvollziehbar.
 	Phase         string   `json:"phase"`
@@ -311,22 +346,23 @@ type bulkOverdueAudit struct {
 	Skipped       int      `json:"skipped"`
 }
 
-// logBulkOverdueAudit protokolliert den Massenversand im audit_logs — analog zum
-// Import-Audit.
+// logKlassenVersandAudit protokolliert einen Massenversand im audit_logs — analog
+// zum Import-Audit. Die Aktion kommt vom Aufrufer, der Payload ist für alle
+// klassenweisen Versände derselbe.
 //
 // Der Payload wird marshalled, nicht zusammengesetzt: Seit die frei eingetippte
 // Override-Adresse mit im Detail steht, würde ein handgebautes JSON-Literal bei
 // einem Anführungszeichen in der Eingabe kaputtes JSON in eine jsonb-Spalte
 // schreiben — der INSERT scheitert, und der Lauf verlöre still seinen Log-Eintrag.
-func (s *Server) logBulkOverdueAudit(r *http.Request, details bulkOverdueAudit) {
+func (s *Server) logKlassenVersandAudit(r *http.Request, aktion string, details klassenVersandAudit) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return
 	}
 	payload, err := json.Marshal(details)
 	if err != nil {
-		log.Printf("bulk-overdue: Audit-Details nicht serialisierbar: %v", err)
+		log.Printf("%s: Audit-Details nicht serialisierbar: %v", aktion, err)
 		return
 	}
-	logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "BULK_OVERDUE_MAIL", string(payload), getIP(r)))
+	logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, aktion, string(payload), getIP(r)))
 }

@@ -45,6 +45,9 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Abgänger (Graduates)
 	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
 	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.GetGraduatesPDFHandler()))
+	// Versand ist mehr als Lesen: dasselbe Recht wie der Mahnlauf (create_orders),
+	// nicht das reine view_graduates der Liste.
+	mux.Handle("POST /api/abgaenger/mail", s.RequirePermission("create_orders")(s.SendAbgaengerKontoauszuegeHandler()))
 
 	// Kiosk / Damage
 	damageRepo := repository.NewDamageRepository(s.DB.Pool)

@@ -3,7 +3,7 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
 // Abgänger-Management (/abgaenger): Die Liste zeigt NUR Abgänger mit offenen
 // Ausleihen ("nicht entlastet"); wer nichts mehr schuldet, verschwindet.
-// Der Laufzettel-PDF-Export filtert serverseitig auf die Klassen 9h/10r/13.
+// Der Kontoauszug-PDF-Export filtert serverseitig auf die Klassen 9h/10r/13.
 test('Abgänger: listet nur Abgänger mit offenen Ausleihen, erlaubt PDF-Export', async ({
 	page
 }) => {
@@ -45,9 +45,10 @@ test('Abgänger: listet nur Abgänger mit offenen Ausleihen, erlaubt PDF-Export'
 	// A-Eintrag prüfen, damit die Liste sicher fertig geladen ist.
 	await expect(page.getByText(`Ist Entlastet-${s}`)).not.toBeVisible();
 
-	// Laufzettel-PDF (Smoke): Download startet und heißt Laufzettel.pdf
+	// Kontoauszug-PDF (Smoke): Der frühere „Laufzettel" ist längst der Kontoauszug mit
+	// Freigabezeile — jetzt heißt auch der Knopf so.
 	const downloadPromise = page.waitForEvent('download');
-	await page.getByRole('button', { name: /Laufzettel drucken/i }).click();
+	await page.getByRole('button', { name: /Kontoauszüge drucken/i }).click();
 	const download = await downloadPromise;
-	expect(download.suggestedFilename()).toBe('Laufzettel.pdf');
+	expect(download.suggestedFilename()).toBe('Kontoauszuege_Abgaenger.pdf');
 });

@@ -257,8 +257,10 @@ func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) (
 	return result, nil
 }
 
-// GetGraduatesPDFHandler generates the Laufzettel PDF for graduating students.
-// @Summary      Get Laufzettel PDF
+// GetGraduatesPDFHandler erzeugt die Kontoauszüge der Abgänger als PDF (eine Seite
+// je Schüler, mit Freigabezeile). Hieß früher „Laufzettel" — der Name hing dem
+// Dokument noch an, obwohl längst der Kontoauszug erzeugt wird.
+// @Summary      Get Kontoauszug PDF
 // @Description  Generates a printable PDF for former/graduating students with their unreturned books.
 // @Tags         admin
 // @Produce      application/pdf
@@ -289,9 +291,9 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 			return
 		}
 
-		filename := "Laufzettel.pdf"
+		filename := "Kontoauszuege_Abgaenger.pdf"
 		if klasse != "" {
-			filename = fmt.Sprintf("Laufzettel_Klasse_%s.pdf", klasse)
+			filename = fmt.Sprintf("Kontoauszuege_Klasse_%s.pdf", klasse)
 		}
 
 		w.Header().Set(headerContentType, contentTypePDF)

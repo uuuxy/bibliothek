@@ -166,7 +166,7 @@ func (a *argFaenger) Match(v interface{}) bool {
 // „alle" (alter Vertrag), ein LEERES Array heisst „niemand" und muss abgewiesen
 // werden. Würden beide gleich behandelt, löste eine leere Auswahl den grössten
 // denkbaren Fehlversand aus.
-func TestParseBulkOverdueRequest(t *testing.T) {
+func TestParseKlassenVersandRequest(t *testing.T) {
 	tests := []struct {
 		name        string
 		body        string
@@ -200,7 +200,7 @@ func TestParseBulkOverdueRequest(t *testing.T) {
 			}
 			req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", body)
 
-			got, err := parseBulkOverdueRequest(req)
+			got, err := parseKlassenVersandRequest(req)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("Fehler erwartet, bekam keinen (%+v)", got)
@@ -335,7 +335,7 @@ func TestSendBulkOverdueHandler_LeereAuswahlOhneDBZugriff(t *testing.T) {
 // Revisionssicherheit: Der Audit-Eintrag muss die Override-Adresse im Klartext
 // führen und gültiges JSON sein — auch wenn die Adresse Zeichen enthält, die ein
 // handgebautes JSON-Literal zerrissen hätten (früher: fmt.Sprintf).
-func TestLogBulkOverdueAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T) {
+func TestLogKlassenVersandAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
@@ -351,7 +351,7 @@ func TestLogBulkOverdueAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: "admin-1"}))
 
-	server.logBulkOverdueAudit(req, bulkOverdueAudit{
+	server.logKlassenVersandAudit(req, "BULK_OVERDUE_MAIL", klassenVersandAudit{
 		Phase:         "ende",
 		Klassen:       []string{"5a", "6b"},
 		OverrideEmail: `"seltsam"@schule.de`,
@@ -364,11 +364,57 @@ func TestLogBulkOverdueAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T) {
 	}
 
 	// Der geschriebene Payload muss als JSON parsebar sein (Spalte ist jsonb).
-	var geparst bulkOverdueAudit
+	var geparst klassenVersandAudit
 	if err := json.Unmarshal([]byte(details), &geparst); err != nil {
 		t.Fatalf("details ist kein gültiges JSON: %v (%s)", err, details)
 	}
 	if geparst.OverrideEmail != `"seltsam"@schule.de` {
 		t.Fatalf("OverrideEmail = %q — die Adresse muss unverfälscht im Log stehen", geparst.OverrideEmail)
+	}
+}
+
+// Alle Dienstadressen der Schule liegen auf derselben Domäne. Sie jedes Mal
+// mitzutippen ist Fehlerquelle — „mueller" muss reichen. Vollständige Adressen
+// bleiben unangetastet, damit der Versand an externe Stellen möglich bleibt.
+func TestErgaenzeSchulDomain(t *testing.T) {
+	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")
+
+	tests := []struct{ eingabe, want string }{
+		{"mueller", "mueller@philipp-reis-schule.de"},
+		{"m.mueller", "m.mueller@philipp-reis-schule.de"},
+		{"extern@schulamt.hessen.de", "extern@schulamt.hessen.de"}, // vollständig → unverändert
+		{"", ""},
+	}
+	for _, tt := range tests {
+		if got := ergaenzeSchulDomain(tt.eingabe); got != tt.want {
+			t.Errorf("ergaenzeSchulDomain(%q) = %q, want %q", tt.eingabe, got, tt.want)
+		}
+	}
+}
+
+// Ohne konfigurierten Absender wird NICHT geraten: Die Eingabe läuft unverändert in
+// die Adressprüfung und scheitert dort mit einer klaren Meldung.
+func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
+	t.Setenv("SMTP_FROM", "")
+	t.Setenv("SMTP_USER", "")
+
+	if got := ergaenzeSchulDomain("mueller"); got != "mueller" {
+		t.Fatalf("ergaenzeSchulDomain = %q, want unverändert %q", got, "mueller")
+	}
+}
+
+// Der Weg über den echten Body: „mueller" kommt als vollständige Adresse heraus.
+func TestParseKlassenVersandRequest_ErgaenztDomaene(t *testing.T) {
+	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")
+
+	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail",
+		strings.NewReader(`{"klassen":["9h"],"override_email":" mueller "}`))
+
+	got, err := parseKlassenVersandRequest(req)
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if got.OverrideEmail != "mueller@philipp-reis-schule.de" {
+		t.Fatalf("OverrideEmail = %q, want mueller@philipp-reis-schule.de", got.OverrideEmail)
 	}
 }
