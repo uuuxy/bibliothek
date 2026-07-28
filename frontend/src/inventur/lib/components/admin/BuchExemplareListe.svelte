@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
+	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { showToast } from '$lib/store.svelte.js';
 	import { onMount } from 'svelte';
 
@@ -53,7 +53,7 @@
 				const err = await res.json().catch(() => ({}));
 				showToast(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
 			}
-		} catch (e) {
+		} catch {
 			showToast('Netzwerkfehler beim Löschen.', 'error');
 		}
 	}

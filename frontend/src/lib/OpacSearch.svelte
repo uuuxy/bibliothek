@@ -1,5 +1,4 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
 
 	let query = $state('');
 	/** @type {any[]} */

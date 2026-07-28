@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
+	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import BookTableToolbar from '$lib/components/admin/BookTableToolbar.svelte';
 	import BookTableZeile from '$lib/components/admin/BookTableZeile.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';

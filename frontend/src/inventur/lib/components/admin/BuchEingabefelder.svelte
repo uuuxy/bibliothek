@@ -1,10 +1,9 @@
 <script>
-	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
+	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
 	import IsbnFeld from './IsbnFeld.svelte';
 	import BuchEingabefelderKategorisierung from './BuchEingabefelderKategorisierung.svelte';
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
-	import { klassenStufen, schulZweige } from '$lib/components/admin/buch_form_optionen.js';
 
 	let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
@@ -22,7 +21,6 @@
 		}
 	});
 
-	import { lmfFaecher, bibKategorien } from './signatur_optionen.js';
 
 	let lastAutoSignatur = '';
 

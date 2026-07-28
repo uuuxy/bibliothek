@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiClient } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
 
 	/** @type {any[]} */

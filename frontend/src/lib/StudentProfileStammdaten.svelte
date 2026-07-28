@@ -1,7 +1,6 @@
 <script>
 	let { profile, role, rechnungPdfLoading, onDownloadRechnung, onEdit } = $props();
 
-	import { apiClient } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
 
 	function formatDate(dateString) {

@@ -46,7 +46,7 @@
 			toastStore.addToast('Mail-Konfiguration gespeichert', 'success');
 			password = '';
 			if (password !== '') hasPassword = true;
-		} catch (e) {
+		} catch {
 			toastStore.addToast('Fehler beim Speichern', 'error');
 		} finally {
 			saving = false;
@@ -64,7 +64,7 @@
 				to: testEmail
 			});
 			toastStore.addToast('Test-E-Mail erfolgreich versendet', 'success');
-		} catch (e) {
+		} catch {
 			toastStore.addToast('Fehler beim Testversand. Bitte Logs prüfen.', 'error');
 		} finally {
 			testing = false;

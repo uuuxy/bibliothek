@@ -1,6 +1,6 @@
 <script>
-	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
-	import { fly, fade } from 'svelte/transition';
+	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { fade } from 'svelte/transition';
 	import StrichcodeScannerOverlay from '$lib/components/scanner/StrichcodeScannerOverlay.svelte';
 	import BuchCoverUpload from './BuchCoverUpload.svelte';
 	import BuchEingabefelder from './BuchEingabefelder.svelte';

@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import { mahnwesenStore } from './stores/mahnwesen.svelte.js';
 	import { offlineSync } from './stores/offlineSync.svelte.js';
 	import MahnwesenFilters from './components/mahnwesen/MahnwesenFilters.svelte';

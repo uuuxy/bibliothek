@@ -1,6 +1,6 @@
 <script>
 	import Modal from './Modal.svelte';
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiClient } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
 
 	let { open = false, readerGroups = [], onclose, onsuccess } = $props();

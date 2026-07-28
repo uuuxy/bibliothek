@@ -23,7 +23,7 @@
 				const err = await res.json().catch(() => ({}));
 				showToast(err.error || 'Fehler beim Löschen', 'error');
 			}
-		} catch (e) {
+		} catch {
 			showToast('Netzwerkfehler', 'error');
 		}
 	}
@@ -71,7 +71,7 @@
 				const err = await res.json().catch(() => ({}));
 				showToast(err.error || 'Fehler beim Hinzufügen', 'error');
 			}
-		} catch (e) {
+		} catch {
 			showToast('Netzwerkfehler', 'error');
 		}
 	}

@@ -35,7 +35,7 @@
 				const errorData = await res.json().catch(() => ({}));
 				barcodeError = errorData.error || 'Fehler beim Speichern';
 			}
-		} catch (e) {
+		} catch {
 			barcodeError = 'Netzwerkfehler';
 		}
 	}
@@ -49,7 +49,7 @@
 			} else {
 				barcodeError = 'Fehler beim Generieren der ID';
 			}
-		} catch (e) {
+		} catch {
 			barcodeError = 'Netzwerkfehler';
 		}
 	}

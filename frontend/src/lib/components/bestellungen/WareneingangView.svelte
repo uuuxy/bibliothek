@@ -2,7 +2,6 @@
 	import { apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import WareneingangTable from './WareneingangTable.svelte';
-	import PageContainer from '../layout/PageContainer.svelte';
 	import Button from '../ui/Button.svelte';
 
 	let { incomingShipments = [], onBack, onReceived } = $props();

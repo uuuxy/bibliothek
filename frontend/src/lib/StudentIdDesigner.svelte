@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch } from './apiFetch.js';
 	/**
 	 * @file StudentIdDesigner.svelte
 	 * Canvas-based ID-card designer — top-level coordinator component.

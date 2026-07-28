@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
 
 	/** @type {{ studentId: string, onCapture: (url: string) => void, onClose: () => void }} */

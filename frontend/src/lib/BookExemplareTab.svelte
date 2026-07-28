@@ -41,7 +41,7 @@
 				const err = await res.json().catch(() => ({}));
 				alert(err.error || 'Fehler beim Löschen des Exemplars.');
 			}
-		} catch (e) {
+		} catch {
 			alert('Netzwerkfehler beim Löschen.');
 		}
 	}

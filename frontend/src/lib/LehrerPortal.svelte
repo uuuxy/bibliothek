@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
 	/** @type {{ user: any }} */
 	let { user } = $props();

@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
 

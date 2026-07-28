@@ -41,7 +41,7 @@
 				const errData = await res.json().catch(() => ({}));
 				statusError = errData.error || 'Fehler beim Speichern';
 			}
-		} catch (e) {
+		} catch {
 			statusError = 'Netzwerkfehler';
 		}
 	}

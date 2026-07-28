@@ -1,8 +1,7 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch } from './apiFetch.js';
 	import BookBorrowersList from './BookBorrowersList.svelte';
 	import BookCopiesManager from './BookCopiesManager.svelte';
-	import { appState } from '../inventur/lib/store.svelte.js';
 
 	// Props
 	let {
