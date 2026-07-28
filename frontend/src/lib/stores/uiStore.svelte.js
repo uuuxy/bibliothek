@@ -15,6 +15,13 @@ class UIStore {
 	 * greift die ID auf, öffnet das Profil und setzt sie zurück.
 	 */
 	requestedStudentId = $state(/** @type {string | null} */ (null));
+	/**
+	 * Aus einem System-Alert angeforderter Reiter der Einstellungen. Gleiche Mechanik
+	 * wie requestedStudentId: SystemSettings greift den Wert auf und setzt ihn zurück.
+	 * Damit kann ein Alert direkt dorthin verweisen, wo sich das Problem beheben lässt,
+	 * statt den Nutzer auf „Allgemein" abzusetzen.
+	 */
+	requestedSettingsTab = $state(/** @type {string | null} */ (null));
 
 	async fetchPendingReservierungen() {
 		try {

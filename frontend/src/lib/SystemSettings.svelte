@@ -8,6 +8,7 @@
 	import SystemSettingsAllgemein from './SystemSettingsAllgemein.svelte';
 	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
+	import { uiStore } from './stores/uiStore.svelte.js';
 
 	// --- STATE ---
 	let loading = $state(true);
@@ -28,6 +29,15 @@
 			: ['Allgemein', 'Team & Rechte', 'Mahnwesen-Routing', 'System']
 	);
 	let activeTab = $state('Allgemein');
+
+	// Deep-Link aus einem System-Alert: der Alert nennt den Reiter, hier wird er
+	// aufgegriffen und zurückgesetzt (gleiche Mechanik wie requestedStudentId).
+	$effect(() => {
+		const wanted = uiStore.requestedSettingsTab;
+		if (!wanted) return;
+		if (tabs.includes(wanted)) activeTab = wanted;
+		uiStore.requestedSettingsTab = null;
+	});
 
 	// Global Settings (Allgemein)
 	let ferienLeseclubAktiv = $state(false);
