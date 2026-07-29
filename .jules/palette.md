@@ -13,3 +13,6 @@
 ## 2026-07-27 - Added focus visible styles to UI Button
 **Learning:** Interactive components like Button.svelte were missing explicit focus states for keyboard navigation, reducing accessibility.
 **Action:** Always add 'focus-visible:ring-2 focus-visible:outline-none' to base interactive components so that keyboard users receive visual feedback.
+## 2024-05-24 - Missing ARIA Labels in Tables and Inputs
+**Learning:** Table checkboxes and search inputs need explicit `aria-label`s for screen reader context when visible labels are omitted.
+**Action:** Always add `aria-label` to standalone checkboxes in table columns and standalone search inputs.
