@@ -15,6 +15,62 @@ import (
 	"bibliothek/internal/crypto"
 )
 
+// ErrHeaderUmbruch meldet einen Zeilenumbruch in einem Kopfzeilen-Wert.
+var ErrHeaderUmbruch = errors.New("zeilenumbruch im E-Mail-Kopf")
+
+// HeaderWert stellt sicher, dass ein Wert gefahrlos in eine Kopfzeile geschrieben
+// werden kann. Ein CR oder LF darin beendet die Kopfzeile vorzeitig; alles danach
+// liest der Mailserver als WEITERE Kopfzeile — so schmuggelt man ein "Bcc:" in eine
+// Mail, die für einen einzigen Empfänger gedacht war.
+//
+// Für die Empfängeradresse prüft mail.ParseAddress das bereits mit (nachgewiesen in
+// mailservice_test.go: sieben Angriffsvarianten werden alle abgewiesen). Diese Hürde
+// steht hier trotzdem, und zwar direkt an der Schreibstelle — aus drei Gründen:
+// Sie gilt auch für Betreff und Absender, sie überlebt einen Umbau, bei dem jemand
+// ParseAddress herausnimmt, und sie ist an genau der Stelle sichtbar, an der die
+// Kopfzeile entsteht, statt vierzig Zeilen weiter oben.
+//
+// Zurückgewiesen statt bereinigt: Eine Adresse mit Zeilenumbruch ist keine Adresse,
+// die man reparieren möchte — sie ist ein Angriff oder ein Datenfehler. Beides soll
+// auffallen, nicht stillschweigend zurechtgebogen werden.
+func HeaderWert(feld, wert string) (string, error) {
+	if strings.ContainsAny(wert, "\r\n") {
+		return "", fmt.Errorf("%w: Feld %q", ErrHeaderUmbruch, feld)
+	}
+	return wert, nil
+}
+
+// baueTextNachricht setzt eine einfache Textmail zusammen und prüft dabei jede
+// Kopfzeile. Eine Stelle statt zwei: Vorher stand derselbe Sprintf zweimal im
+// Paket, und eine Absicherung an nur einer der beiden Stellen wäre keine.
+func baueTextNachricht(sender, to, betreff, body string) ([]byte, error) {
+	// Der Betreff kommt bei Vorlagenmails aus der Datenbank, wo eine Redakteurin
+	// beim Bearbeiten leicht einen Umbruch hinterlässt. Den weisen wir nicht ab,
+	// sondern glätten ihn zu einem Leerzeichen — er ist ein Tippfehler, kein
+	// Angriff. Danach greift für alle drei Felder dieselbe Hürde.
+	betreff = strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(betreff)
+
+	felder := []struct {
+		name string
+		wert *string
+	}{{"From", &sender}, {"To", &to}, {"Subject", &betreff}}
+
+	for _, f := range felder {
+		geprueft, err := HeaderWert(f.name, *f.wert)
+		if err != nil {
+			return nil, err
+		}
+		*f.wert = geprueft
+	}
+
+	return []byte(fmt.Sprintf("From: %s\r\n"+
+		"To: %s\r\n"+
+		"Subject: %s\r\n"+
+		"Content-Type: text/plain; charset=UTF-8\r\n"+
+		"\r\n"+
+		"%s\r\n", sender, to, betreff, body)), nil
+}
+
 // describeSMTPError übersetzt die technischen Fehler von net/smtp in eine Meldung,
 // aus der hervorgeht, was zu tun ist. Vor allem der Zertifikatsfall lohnt sich:
 // Go prüft beim STARTTLS den Hostnamen streng, und viele Schulserver liefern ein
@@ -104,17 +160,11 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 	}
 	to = parsedTo.Address
 
-	betreff = strings.ReplaceAll(betreff, "\r", "")
-	betreff = strings.ReplaceAll(betreff, "\n", "")
-
-	// Nachricht nach RFC 822 formatieren
 	// Für echte HTML-Mails muss der Content-Type auf text/html gesetzt werden
-	msg := []byte(fmt.Sprintf("From: %s\r\n"+
-		"To: %s\r\n"+
-		"Subject: %s\r\n"+
-		"Content-Type: text/plain; charset=UTF-8\r\n"+
-		"\r\n"+
-		"%s\r\n", sender, to, betreff, bodyBuf.String()))
+	msg, err := baueTextNachricht(sender, to, betreff, bodyBuf.String())
+	if err != nil {
+		return err
+	}
 
 	// SMTP-Verbindung aufbauen und E-Mail versenden
 	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
@@ -179,12 +229,10 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 	betreff := "Test-E-Mail der Schulbibliothek"
 	bodyText := "Dies ist eine automatisch generierte Test-E-Mail zur Überprüfung der SMTP-Konfiguration."
 
-	msg := []byte(fmt.Sprintf("From: %s\r\n"+
-		"To: %s\r\n"+
-		"Subject: %s\r\n"+
-		"Content-Type: text/plain; charset=UTF-8\r\n"+
-		"\r\n"+
-		"%s\r\n", sender, to, betreff, bodyText))
+	msg, err := baueTextNachricht(sender, to, betreff, bodyText)
+	if err != nil {
+		return err
+	}
 
 	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
 

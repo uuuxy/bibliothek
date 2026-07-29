@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"bibliothek/mailservice"
 )
 
 // EmailMessage kapselt die Daten einer zu versendenden E-Mail.
@@ -116,7 +118,7 @@ func createZip(srcDir string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = root.Close() }()  //nolint:errcheck
+	defer func() { _ = root.Close() }() //nolint:errcheck
 
 	if err := filepath.Walk(srcDir, zipWalkFunc(zipWriter, root, srcDir)); err != nil {
 		return nil, err
@@ -174,7 +176,7 @@ func addFileToZip(zipWriter *zip.Writer, root *os.Root, zipPath, relPath string)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = file.Close() }()  //nolint:errcheck
+	defer func() { _ = file.Close() }() //nolint:errcheck
 
 	_, err = io.Copy(writer, file)
 	return err
@@ -187,7 +189,17 @@ func buildEmailWithAttachment(msg EmailMessage) ([]byte, error) {
 	writer := multipart.NewWriter(&buf)
 	boundary := writer.Boundary()
 
-	// E-Mail-Header
+	// E-Mail-Header — jeder Wert wird geprüft, bevor er in eine Kopfzeile geht.
+	// Hier stammen sie aus der Konfiguration (SMTP_TO, SMTP_USER) und sind damit
+	// nicht über HTTP beeinflussbar; die Hürde steht trotzdem, weil sie an dieser
+	// Stelle gilt und nicht an der Herkunft: Wer morgen einen anderen Empfänger
+	// anschließt, erbt sie automatisch.
+	for feld, wert := range map[string]string{"From": msg.From, "To": msg.To, "Subject": msg.Subject} {
+		if _, err := mailservice.HeaderWert(feld, wert); err != nil {
+			return nil, err
+		}
+	}
+
 	headers := []string{
 		fmt.Sprintf("From: %s", msg.From),
 		fmt.Sprintf("To: %s", msg.To),
@@ -202,7 +214,7 @@ func buildEmailWithAttachment(msg EmailMessage) ([]byte, error) {
 
 	// Neu: multipart writer mit gleichem boundary
 	writer2 := multipart.NewWriter(&buf)
-	_ = writer2.SetBoundary(boundary)  //nolint:errcheck
+	_ = writer2.SetBoundary(boundary) //nolint:errcheck
 
 	// Text-Teil
 	textHeader := make(textproto.MIMEHeader)
@@ -211,7 +223,7 @@ func buildEmailWithAttachment(msg EmailMessage) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, _ = textPart.Write([]byte(msg.Body))  //nolint:errcheck
+	_, _ = textPart.Write([]byte(msg.Body)) //nolint:errcheck
 
 	// ZIP-Anhang
 	attachHeader := make(textproto.MIMEHeader)
@@ -230,10 +242,10 @@ func buildEmailWithAttachment(msg EmailMessage) ([]byte, error) {
 		if end > len(encoded) {
 			end = len(encoded)
 		}
-		_, _ = attachPart.Write([]byte(encoded[i:end] + "\r\n"))  //nolint:errcheck
+		_, _ = attachPart.Write([]byte(encoded[i:end] + "\r\n")) //nolint:errcheck
 	}
 
-	_ = writer2.Close()  //nolint:errcheck
+	_ = writer2.Close() //nolint:errcheck
 
 	return buf.Bytes(), nil
 }

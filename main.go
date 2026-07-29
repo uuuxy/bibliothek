@@ -126,6 +126,48 @@ func setupDatabase(ctx context.Context, dsn string) *db.Database {
 	return database
 }
 
+// ermittleCookieSecure entscheidet über das Secure-Flag der Sitzungs- und
+// CSRF-Cookies.
+//
+// Vorher galt bei fehlender oder unlesbarer Variable still `false` — ausgerechnet
+// die unsichere Richtung. Ein vergessenes COOKIE_SECURE im Deploy reichte, damit
+// Sitzungscookies ohne Secure ausgeliefert werden; auffallen würde das niemandem,
+// weil über HTTPS trotzdem alles funktioniert. Jetzt ist die Vorgabe außerhalb der
+// lokalen Entwicklung `true`: Wer es unsicher will, muss es hinschreiben.
+//
+// Bewusst KEIN harter Abbruch bei explizitem false: Der geplante Server in der
+// Schule läuft möglicherweise über schlichtes HTTP im LAN, und dort würde ein
+// Secure-Cookie den Login unmöglich machen (der Browser sendet es über http nicht
+// mit). Diese Entscheidung darf der Betrieb treffen — sie soll nur nicht
+// versehentlich passieren, deshalb die deutliche Warnung.
+func ermittleCookieSecure() bool {
+	appEnv := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	lokal := appEnv == "local" || appEnv == "development" || appEnv == "test"
+
+	roh, gesetzt := os.LookupEnv("COOKIE_SECURE")
+	if !gesetzt || strings.TrimSpace(roh) == "" {
+		if lokal {
+			return false
+		}
+		slog.Warn("COOKIE_SECURE ist nicht gesetzt — sichere Vorgabe (true) wird verwendet",
+			"app_env", appEnv)
+		return true
+	}
+
+	wert, err := strconv.ParseBool(strings.TrimSpace(roh))
+	if err != nil {
+		// Ein unlesbarer Wert ist immer ein Fehler und nie eine Absicht. Ihn als
+		// "false" zu deuten, war genau die stille Fehlannahme von vorher.
+		log.Fatalf("FATAL: COOKIE_SECURE=%q ist kein Wahrheitswert (erlaubt: true/false)", roh)
+	}
+
+	if !wert && !lokal {
+		slog.Warn("COOKIE_SECURE=false außerhalb der lokalen Entwicklung — Sitzungscookies werden OHNE Secure-Flag ausgeliefert. Nur zulässig, wenn die Anwendung ausschließlich über HTTP im lokalen Netz erreichbar ist.",
+			"app_env", appEnv)
+	}
+	return wert
+}
+
 func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	dsn = os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -171,11 +213,7 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 		log.Fatalf("FATAL: PORT environment variable is required and cannot be empty")
 	}
 
-	var err error
-	cookieSecure, err = strconv.ParseBool(os.Getenv("COOKIE_SECURE"))
-	if err != nil {
-		cookieSecure = false
-	}
+	cookieSecure = ermittleCookieSecure()
 
 	// Trusted-Proxy-Konfiguration für die Client-IP-Ermittlung (Rate-Limiting,
 	// Login-Brute-Force, Audit-Logs). Ohne TRUSTED_PROXIES wird nur Loopback
