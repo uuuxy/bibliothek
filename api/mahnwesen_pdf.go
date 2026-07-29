@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/imageutil"
 	"bibliothek/repository"
@@ -63,7 +65,24 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float6
 	// gofpdf hält registrierte Bilder unter ihrem Namen vor. Mehrfach überfällige Exemplare
 	// desselben Titels lesen und dekodieren ihr Cover so nur einmal.
 	if pdf.GetImageInfo(pfad) == nil {
-		roh, err := os.ReadFile(pfad)
+		dirRoot, err := os.OpenRoot(uploadsVerzeichnis)
+		if err != nil {
+			return
+		}
+		defer closeutil.LogClose(dirRoot, "mahnwesen_pdf dirRoot")
+
+		relPfad, err := filepath.Rel(uploadsVerzeichnis, pfad)
+		if err != nil {
+			return
+		}
+
+		f, err := dirRoot.Open(relPfad)
+		if err != nil {
+			return
+		}
+		defer closeutil.LogClose(f, "mahnwesen_pdf cover image")
+
+		roh, err := io.ReadAll(f)
 		if err != nil {
 			return
 		}
