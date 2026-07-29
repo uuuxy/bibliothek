@@ -8,6 +8,23 @@
 -- Enable pgcrypto or uuid-ossp for UUID generation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+CREATE EXTENSION IF NOT EXISTS "unaccent";
+
+-- suchnorm() ist die Normalform aller Namens- und Titelvergleiche: erst Diakritika
+-- weg (Öztürk → ozturk, Straße → strasse), dann die deutschen Ersatzschreibungen auf
+-- denselben Nenner (ss→s, ue→u, oe→o, ae→a), damit "Mueller" und "Müller" beide auf
+-- muller fallen. Ohne diese Funktion startet keine Suche — Details in Migration 054.
+CREATE OR REPLACE FUNCTION suchnorm(text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT replace(replace(replace(replace(
+               public.unaccent('public.unaccent'::regdictionary, lower($1)),
+           'ss', 's'), 'ue', 'u'), 'oe', 'o'), 'ae', 'a')
+$$;
 
 -- -------------------------------------------------------------
 -- 1. ENUMS AND CUSTOM TYPES
@@ -165,6 +182,11 @@ CREATE TABLE schueler (
 CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
 CREATE INDEX idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);
 CREATE INDEX idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);
+-- Die Namenssuche vergleicht suchnorm(spalte); die Indizes müssen exakt diesen
+-- Ausdruck tragen, sonst greifen sie nicht (siehe Migration 054).
+CREATE INDEX idx_schueler_vorname_suchnorm_trgm ON schueler USING gin (suchnorm(vorname) gin_trgm_ops);
+CREATE INDEX idx_schueler_nachname_suchnorm_trgm ON schueler USING gin (suchnorm(nachname) gin_trgm_ops);
+CREATE INDEX idx_schueler_barcode_lower_trgm ON schueler USING gin (lower(barcode_id) gin_trgm_ops);
 -- Duplikatsschutz nur bei BEKANNTEM Geburtsdatum: Zwei namensgleiche Schüler ohne
 -- (noch nicht aus der LUSD übernommenes) Geburtsdatum sind nicht automatisch dieselbe
 -- Person. Das frühere coalesce(geburtsdatum, '1900-01-01') stülpte NULL-Geburtsdaten ein
@@ -359,6 +381,13 @@ CREATE INDEX idx_buecher_titel_search ON buecher_titel USING GIN (search_vector)
 CREATE INDEX idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);
 CREATE INDEX idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);
 CREATE INDEX idx_buecher_isbn_trgm ON buecher_titel USING gin (isbn gin_trgm_ops);
+-- Die Token-Suche der Omnibox vergleicht über suchnorm(...); die Indizes auf den
+-- rohen Spalten oben greifen dafür nicht (siehe Migration 054).
+CREATE INDEX idx_buecher_titel_suchnorm_trgm ON buecher_titel USING gin (suchnorm(titel) gin_trgm_ops);
+CREATE INDEX idx_buecher_autor_suchnorm_trgm ON buecher_titel USING gin (suchnorm(autor) gin_trgm_ops);
+CREATE INDEX idx_buecher_isbn_lower_trgm ON buecher_titel USING gin (lower(isbn) gin_trgm_ops);
+CREATE INDEX idx_buecher_signatur_lower_trgm ON buecher_titel USING gin (lower(signatur) gin_trgm_ops);
+CREATE INDEX idx_buecher_isbn_normalisiert ON buecher_titel (replace(isbn, '-', ''));
 
 CREATE TRIGGER trg_buecher_titel_aktualisiert_am
 BEFORE UPDATE ON buecher_titel
@@ -680,7 +709,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('050_search_vector_isbn_beschreibung.sql'),
 ('051_manual_block_reason_pflicht.sql'),
 ('052_seed_bestellung_haendler.sql'),
-('053_inventur_scope_filter.sql')
+('053_inventur_scope_filter.sql'),
+('054_schueler_namenssuche_unaccent.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

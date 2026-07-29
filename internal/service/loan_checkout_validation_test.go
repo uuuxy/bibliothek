@@ -24,8 +24,8 @@ func (m *mockStudentRepo) GetByID(ctx context.Context, id string) (*repository.S
 func (m *mockStudentRepo) GetByBarcode(ctx context.Context, barcode string) (*repository.Student, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) SearchStudentsFuzzy(ctx context.Context, q string, limit int) ([]repository.Student, error) {
-	return nil, nil
+func (m *mockStudentRepo) SearchStudentsFuzzy(ctx context.Context, q string, limit int) ([]repository.Student, int, error) {
+	return nil, 0, nil
 }
 func (m *mockStudentRepo) HasPhoto(ctx context.Context, id string) (bool, error) { return false, nil }
 func (m *mockStudentRepo) HasOpenDamages(ctx context.Context, id string) (bool, error) {

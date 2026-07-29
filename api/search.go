@@ -10,9 +10,13 @@ import (
 )
 
 // UnifiedSearchResult defines the combined payload for the fuzzy search.
+// StudentsTotal/BooksTotal nennen die Gesamttrefferzahl vor dem Limit, damit die
+// Omnibox eine gekürzte Liste als gekürzt ausweisen kann.
 type UnifiedSearchResult struct {
-	Students []repository.Student   `json:"students"`
-	Books    []repository.BookTitle `json:"books"`
+	Students      []repository.Student   `json:"students"`
+	Books         []repository.BookTitle `json:"books"`
+	StudentsTotal int                    `json:"students_total"`
+	BooksTotal    int                    `json:"books_total"`
 }
 
 // SearchHandler provides a unified fuzzy search for students and books without requiring prefixes.
@@ -30,13 +34,13 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 
 		// Using channels or just sequential is fine, but sequential is easier and perfectly fast enough
 		// for a local postgres database with limits.
-		students, err := studentRepo.SearchStudentsFuzzy(ctx, query, limit)
+		students, studentsTotal, err := studentRepo.SearchStudentsFuzzy(ctx, query, limit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		books, err := bookRepo.SearchTitlesFuzzy(ctx, query, limit)
+		books, booksTotal, err := bookRepo.SearchTitlesFuzzy(ctx, query, limit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -51,8 +55,10 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 		}
 
 		result := UnifiedSearchResult{
-			Students: students,
-			Books:    books,
+			Students:      students,
+			Books:         books,
+			StudentsTotal: studentsTotal,
+			BooksTotal:    booksTotal,
 		}
 
 		RespondJSON(w, http.StatusOK, result)

@@ -49,8 +49,11 @@ type StudentRepository interface {
 	// Liefert nil zurück, wenn kein Schüler gefunden wurde.
 	GetByID(ctx context.Context, id string) (*Student, error)
 
-	// SearchStudentsFuzzy führt eine Teilstring-Suche über Vorname, Nachname und Barcode-ID aus.
-	SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, error)
+	// SearchStudentsFuzzy sucht tokenweise und diakritikfrei über Vorname, Nachname
+	// und Barcode-ID. Zweiter Rückgabewert ist die Gesamtzahl der Treffer vor dem
+	// Limit — ohne sie kann die Oberfläche eine abgeschnittene Liste nicht als solche
+	// kennzeichnen und zeigt stillschweigend nur die ersten Namen.
+	SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, int, error)
 
 	// Hinweis: Der LUSD-Abgleich läuft ausschließlich über den Handler-Pfad in
 	// api/lusd.go (ladeAktiveSchueler → wendeLusdAenderungenAn). Eine frühere
@@ -85,12 +88,20 @@ func NewStudentRepository(db db.PgxPoolIface) StudentRepository {
 
 // scanStudent ist eine Hilfsfunktion zum Einlesen einer Datenbankzeile in das Student-Modell.
 func scanStudent(row Scanner) (*Student, error) {
+	return scanStudentMitZusatz(row)
+}
+
+// scanStudentMitZusatz scannt die Standard-Spaltenliste und danach beliebige
+// Zusatzspalten (z. B. count(*) OVER () für die Gesamttrefferzahl). So bleibt die
+// Feldreihenfolge an genau einer Stelle — eine zweite Kopie würde beim nächsten
+// Spaltenzuwachs still auseinanderlaufen.
+func scanStudentMitZusatz(row Scanner, zusatz ...any) (*Student, error) {
 	var s Student
-	err := row.Scan(
+	ziele := []any{
 		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm, &s.IsManuallyBlocked, &s.BlockReason,
 		&s.Strasse, &s.Hausnummer, &s.Plz, &s.Ort, &s.ElternEmail,
-	)
-	if err != nil {
+	}
+	if err := row.Scan(append(ziele, zusatz...)...); err != nil {
 		return nil, err
 	}
 	return &s, nil

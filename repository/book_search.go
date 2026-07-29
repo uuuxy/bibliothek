@@ -64,38 +64,78 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 	return results, nil
 }
 
-// SearchTitlesFuzzy führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus.
-func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error) {
+// SearchTitlesFuzzy führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus
+// und liefert zusätzlich die Gesamtzahl der Treffer (nicht nur die des Limits).
+//
+// Wie bei der Schülersuche muss jedes Token irgendeine Spalte treffen, statt die
+// komplette Eingabe eine einzelne: "rowling harry" findet damit den Titel über
+// Autor + Titel, was der frühere Ganzstring-Vergleich nicht konnte. Die
+// ISBN-Gleichheit bleibt als eigener Zweig bestehen — dort wird die ganze,
+// bindestrichbereinigte Eingabe verglichen, nicht tokenweise.
+func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, int, error) {
+	tokens := suchTokens(queryText)
+	if len(tokens) == 0 {
+		return nil, 0, nil
+	}
+
 	query := `
-		SELECT 
-			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
-		FROM buecher_titel
-		WHERE titel ILIKE '%' || $1::text || '%'
-		   OR autor ILIKE '%' || $1::text || '%'
-		   OR isbn ILIKE '%' || $1::text || '%'
-		   OR replace(isbn, '-', '') = replace($1::text, '-', '')
-		ORDER BY titel ASC
-		LIMIT $2
+		WITH tokens AS (
+			SELECT suchnorm(t) AS norm, lower(t) AS roh FROM unnest($1::text[]) AS t
+		)
+		SELECT
+			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb),
+			count(*) OVER () AS gesamt
+		FROM buecher_titel b
+		WHERE (
+			-- Index-Anker: erstes Token als direkte LIKE-Bedingung, damit der Planer
+			-- die Ausdrucks-Indizes aus Migration 054 per BitmapOr zieht. Die
+			-- Ausdrücke müssen buchstäblich denen der Indizes entsprechen — ein
+			-- coalesce() darum herum macht den Zweig unindexierbar und kippt die
+			-- ganze Abfrage in den Seq Scan (siehe SearchStudentsFuzzy).
+			   suchnorm(b.titel)    LIKE '%' || suchnorm($4::text) || '%'
+			OR suchnorm(b.autor)    LIKE '%' || suchnorm($4::text) || '%'
+			OR lower(b.isbn)        LIKE '%' || lower($4::text) || '%'
+			OR lower(b.signatur)    LIKE '%' || lower($4::text) || '%'
+			OR replace(b.isbn, '-', '') = replace($2::text, '-', '')
+		  )
+		  AND (
+			   replace(b.isbn, '-', '') = replace($2::text, '-', '')
+			OR (
+				SELECT bool_and(
+					   suchnorm(coalesce(b.titel, ''))     LIKE '%' || tokens.norm || '%'
+					OR suchnorm(coalesce(b.autor, ''))     LIKE '%' || tokens.norm || '%'
+					OR lower(coalesce(b.isbn, ''))         LIKE '%' || tokens.roh || '%'
+					OR lower(coalesce(b.signatur, ''))     LIKE '%' || tokens.roh || '%')
+				FROM tokens
+			   )
+		  )
+		ORDER BY
+			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE tokens.norm || '%') DESC,
+			b.titel ASC
+		LIMIT $3
 	`
-	rows, err := r.db.Query(ctx, query, queryText, limit)
+	rows, err := r.db.Query(ctx, query, tokens, queryText, limit, tokens[0])
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var results []BookTitle
+	gesamt := 0
 	for rows.Next() {
-		t, err := scanBookTitle(rows)
+		var zeilenGesamt int
+		t, err := scanBookTitleMitZusatz(rows, &zeilenGesamt)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+		gesamt = zeilenGesamt
 		results = append(results, *t)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return results, nil
+	return results, gesamt, nil
 }
 
 // GetTitleByIDTx sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.

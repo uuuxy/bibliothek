@@ -19,9 +19,10 @@ type BookRepository interface {
 	// und sortiert die Ergebnisse nach ihrer Relevanz (ts_rank).
 	SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error)
 
-	// SearchTitlesFuzzy führt eine performante Fuzzy-Suche (Teilstring-Suche mittels ILIKE)
-	// über Titel, Autor und ISBN mit einer Ergebnismengenbegrenzung aus.
-	SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, error)
+	// SearchTitlesFuzzy sucht tokenweise über Titel, Autor, ISBN und Signatur mit
+	// einer Ergebnismengenbegrenzung. Zweiter Rückgabewert ist die Gesamtzahl der
+	// Treffer vor dem Limit (siehe StudentRepository.SearchStudentsFuzzy).
+	SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, int, error)
 
 	// GetTitleByIDTx sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.
 	GetTitleByIDTx(ctx context.Context, tx pgx.Tx, id string) (*BookTitle, error)
@@ -97,11 +98,18 @@ func scanBookCopy(row Scanner) (*BookCopy, error) {
 
 // scanBookTitle ist eine Hilfsfunktion zum Einlesen einer Zeile in ein BookTitle-Objekt.
 func scanBookTitle(row Scanner) (*BookTitle, error) {
+	return scanBookTitleMitZusatz(row)
+}
+
+// scanBookTitleMitZusatz scannt die Standard-Spaltenliste und danach beliebige
+// Zusatzspalten (z. B. count(*) OVER () für die Gesamttrefferzahl) — siehe
+// scanStudentMitZusatz, gleiche Begründung.
+func scanBookTitleMitZusatz(row Scanner, zusatz ...any) (*BookTitle, error) {
 	var t BookTitle
-	err := row.Scan(
+	ziele := []any{
 		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.Signatur, &t.ZielJahrgang, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
-	)
-	if err != nil {
+	}
+	if err := row.Scan(append(ziele, zusatz...)...); err != nil {
 		return nil, err
 	}
 	return &t, nil
