@@ -51,7 +51,12 @@ services:
       - ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-false}
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-super-secret-default-key-at-least-32-bytes}
-      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      # Vorgabe true, nicht false: Dieser Stack läuft hinter Caddy (caddy_global_net,
+      # Backend nur auf 127.0.0.1) — also über HTTPS. Ein Default von false setzte die
+      # Variable auf den unsicheren Wert und hebelte damit die sichere Vorgabe in
+      # ermittleCookieSecure() aus, die nur bei NICHT gesetzter Variable greift.
+      # Nur überschreiben, wenn die Anwendung ausschließlich über HTTP im LAN läuft.
+      - COOKIE_SECURE=${COOKIE_SECURE:-true}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - IMAP_HOST=${IMAP_HOST:-mock}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
