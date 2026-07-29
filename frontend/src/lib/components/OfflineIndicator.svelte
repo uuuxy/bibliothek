@@ -13,16 +13,33 @@
 	/** @type {HTMLInputElement | null} */
 	let fileInput = $state(null);
 
+	// Mehrere Dateien auf einmal: Bei zehn Kiosk-Rechnern liegen im Sicherungsordner
+	// zehn Dateien. Sie einzeln auszuwählen lädt dazu ein, eine zu übersehen.
 	async function handleFileSelect(e) {
-		const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
-		if (!file) return;
-		try {
-			const count = await offlineSync.importQueueFromJSON(file);
-			toastStore.addToast(`${count} Offline-Scans erfolgreich nachgetragen!`, 'success');
-		} catch (err) {
-			toastStore.addToast(err instanceof Error ? err.message : String(err), 'error');
+		const input = /** @type {HTMLInputElement} */ (e.target);
+		const files = [...(input.files ?? [])];
+		if (files.length === 0) return;
+
+		let gesamt = 0;
+		const fehler = [];
+		for (const file of files) {
+			try {
+				gesamt += await offlineSync.importQueueFromJSON(file);
+			} catch (err) {
+				fehler.push(`${file.name}: ${err instanceof Error ? err.message : String(err)}`);
+			}
 		}
-		/** @type {HTMLInputElement} */ (e.target).value = ''; // reset
+
+		if (gesamt > 0) {
+			toastStore.addToast(
+				`${gesamt} Vorgang/Vorgänge aus ${files.length - fehler.length} Datei(en) übernommen — werden jetzt übertragen.`,
+				'success'
+			);
+		}
+		if (fehler.length > 0) {
+			toastStore.addToast(fehler.join(' · '), 'error');
+		}
+		input.value = ''; // reset
 	}
 </script>
 
@@ -38,17 +55,19 @@
 					<CloudOff size={32} strokeWidth={2.5} class="text-white" />
 				</div>
 				<div>
+					<!-- Anweisung statt Angst: "Nicht ausschalten" hält niemand bis Feierabend
+					     durch, und an einem Rechner, der beim Herunterfahren zurückgesetzt
+					     wird, ist die Sicherung der einzige Weg, der wirklich hilft. -->
 					<h1 class="text-xl md:text-2xl font-black tracking-tight drop-shadow-md">
-						Offline-Modus! Rechner nicht ausschalten - Datenverlust droht!
+						Offline — bitte Sicherung speichern, bevor dieser Rechner ausgeschaltet wird
 					</h1>
 					<p class="text-rose-100 font-semibold mt-1">
-						{offlineSync.pendingCount} ausstehende Aktion{offlineSync.pendingCount === 1
-							? ''
-							: 'en'} in der lokalen Warteschlange.
+						{offlineSync.pendingCount} Vorgang{offlineSync.pendingCount === 1 ? '' : 'e'} nur auf diesem
+						Rechner — noch nicht im System, für die anderen Arbeitsplätze unsichtbar.
 						{#if offlineSync.isSyncing}
-							<span class="animate-pulse ml-2">(Wird gerade synchronisiert...)</span>
+							<span class="ml-2">Wird übertragen …</span>
 						{:else if offlineSync.isOffline}
-							(Wartet auf Internetverbindung...)
+							Sobald die Verbindung zurück ist, geschieht das von selbst.
 						{/if}
 					</p>
 				</div>
@@ -63,7 +82,7 @@
 						class="px-5 border-rose-200 text-rose-700 shadow-lg hover:bg-rose-50"
 					>
 						<Download size={18} strokeWidth={3} />
-						Notfall-Backup auf USB-Stick speichern
+						Sicherung speichern
 					</Button>
 				{/if}
 
@@ -71,6 +90,7 @@
 				<input
 					type="file"
 					accept=".json"
+					multiple
 					bind:this={fileInput}
 					onchange={handleFileSelect}
 					class="hidden"

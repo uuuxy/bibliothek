@@ -120,6 +120,19 @@ function createOfflineSyncStore() {
 		isSyncing = false;
 	}
 
+	/**
+	 * Spielt eine Notfall-Sicherung zurück in die lokale Warteschlange; der Auto-Sync
+	 * schiebt sie danach zum Server.
+	 *
+	 * item.id MUSS mitwandern: Diese ID ist der Idempotenz-Schlüssel, den der Server
+	 * kennt (siehe baueBatchPayload und idempotency_keys in api/action.go). Ohne sie
+	 * vergibt enqueueOfflineAction eine frische UUID — und dieselbe Datei zweimal
+	 * eingespielt würde jede Aktion ZWEIMAL ausführen. Bei zehn Kiosk-Rechnern mit
+	 * einem gemeinsamen Sicherungsordner ist doppeltes Einspielen der Normalfall,
+	 * nicht der Ausnahmefall: Zwei Admins, oder einer, der unsicher ist, ob er es
+	 * schon getan hat. Mit dem Schlüssel ist der zweite Durchlauf wirkungslos.
+	 * @param {File} file
+	 */
 	async function importQueueFromJSON(file) {
 		try {
 			const text = await file.text();
@@ -131,7 +144,14 @@ function createOfflineSyncStore() {
 			const promises = [];
 			for (const item of items) {
 				if (!item.action_type || !item.barcode_id) continue;
-				promises.push(enqueueOfflineAction(item.action_type, item.barcode_id, item.schueler_id || null));
+				promises.push(
+					enqueueOfflineAction(
+						item.action_type,
+						item.barcode_id,
+						item.schueler_id || null,
+						item.id || null
+					)
+				);
 				importedCount++;
 			}
 			await Promise.all(promises);
@@ -145,11 +165,15 @@ function createOfflineSyncStore() {
 		}
 	}
 
+	// Der Dialog nennt den Ausweg, nicht nur die Gefahr: "Nicht ausschalten" ist an
+	// einem Schulrechner keine Handlungsanweisung, die jemand bis Feierabend
+	// durchhalten kann. Verlassen darf man sich darauf ohnehin nicht — beim
+	// Herunterfahren von Windows bekommt der Browser oft keine Gelegenheit mehr,
+	// diesen Dialog zu zeigen. Deshalb steht dieselbe Anweisung dauerhaft im Banner.
 	function handleBeforeUnload(e) {
 		if (pendingCount > 0) {
 			e.preventDefault();
-			const msg =
-				'Es gibt noch ungespeicherte Daten (Offline-Queue). Datenverlust droht! Bitte Browser nicht schließen.';
+			const msg = `${pendingCount} Vorgang/Vorgänge sind nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern" — danach darf der Rechner aus.`;
 			e.returnValue = msg;
 			return msg;
 		}
