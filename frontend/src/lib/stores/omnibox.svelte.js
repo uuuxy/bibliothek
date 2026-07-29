@@ -336,9 +336,16 @@ export function createOmniboxStore() {
 			const data = await res.json();
 			verarbeiteAktionsErgebnis(data, reloadProfileCb);
 		} catch (e) {
+			// Rot gehört in den Fehlerfall, nicht ins finally: Dort feuerte es bei JEDEM
+			// Scan und überschrieb das Grün, das der Erfolgspfad Millisekunden vorher
+			// gesetzt hatte — die Leiste stand also nach einer geglückten Ausleihe über
+			// eine Sekunde auf Fehlerfarbe (gemessen: bg-red-50/border-red-500 bei t=200
+			// bis t=1200 ms). Dieselbe Zeile schluckte das Orange der Fremdrückgabe.
+			// Wenn Erfolg wie Fehler aussieht, hört man auf, auf die Farbe zu schauen —
+			// und übersieht dann den echten Fehler.
+			triggerFlash('red');
 			await verarbeiteAktionsFehler(e, q, idempotencyKey);
 		} finally {
-			triggerFlash('red');
 			scanfeldWiederScharfstellen();
 		}
 	}
