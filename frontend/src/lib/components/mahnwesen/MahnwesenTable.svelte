@@ -57,6 +57,7 @@
 								checked={allSelected}
 								{indeterminate}
 								onclick={toggleAll}
+								aria-label="Alle überfälligen Schüler auswählen"
 							/>
 						</th>
 						<th class="px-4 py-2">Schüler/in</th>
@@ -80,6 +81,7 @@
 									class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
 									checked={mahnwesenStore.selectedIds.has(schueler.schueler_id)}
 									onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
+									aria-label="{schueler.name} auswählen"
 								/>
 							</td>
 							<td class="px-4 py-2">
