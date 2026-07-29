@@ -16,6 +16,95 @@ import (
 // mapLoanCreateErr übersetzt eine Unique-Verletzung (Migration 033: höchstens eine aktive
 // Ausleihe je Exemplar/Gerät) in einen sauberen Konflikt. Das tritt auf, wenn ein zweiter
 // zeitgleicher Checkout dasselbe Exemplar greifen will — dann ist 409 (statt 500) korrekt.
+// erzeugeAusleihe schreibt die Ausleihe und behandelt den einen Fall, den der
+// INSERT nicht selbst entscheiden kann: Er prallt am eindeutigen Index ab, weil
+// zwischen Freiprüfung und Schreiben ein anderer Vorgang das Exemplar verbucht hat.
+func (s *defaultLoanService) erzeugeAusleihe(
+	ctx context.Context,
+	tx pgx.Tx,
+	copy *repository.BookCopy,
+	chkCtx *checkoutContext,
+	staffID string,
+) (*repository.Loan, error) {
+	var loan *repository.Loan
+	var err error
+
+	if chkCtx.borrowerType == "student" {
+		loan, err = s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime)
+	} else {
+		loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, true)
+	}
+	if err == nil {
+		return loan, nil
+	}
+	if !errors.Is(err, repository.ErrAusleiheKonflikt) {
+		return nil, mapLoanCreateErr(err)
+	}
+
+	// Doppelter Scan desselben Ausleihers: gewünschter Zustand besteht schon.
+	deutung := s.deuteAusleiheKonflikt(ctx, tx, copy, chkCtx)
+	var bereits errAusleiheBereitsVorhanden
+	if errors.As(deutung, &bereits) {
+		return bereits.loan, nil
+	}
+	return nil, deutung
+}
+
+// deuteAusleiheKonflikt beantwortet die Frage, die nach einem abgeprallten INSERT
+// wirklich zählt: WER hat das Exemplar jetzt?
+//
+// Zwischen der Freiprüfung und dem Schreiben hat ein anderer Vorgang es verbucht.
+// Zwei sehr verschiedene Fälle:
+//
+//   - Derselbe Ausleiher (Handscanner feuert doppelt, ungeduldiges zweites Enter):
+//     Der gewünschte Zustand ist bereits hergestellt. Die bestehende Ausleihe wird
+//     zurückgemeldet — der Scan war wirkungslos, aber nicht falsch. Genau dafür war
+//     das ON CONFLICT gedacht.
+//   - Ein anderer Ausleiher: Hier MUSS der Arbeitsplatz einen Fehler sehen. Vorher
+//     bekam er "ausgeliehen an <eigenen Schüler>" gemeldet, während das Buch auf
+//     jemand anderem stand — grüner Blitz, Erfolgston, und die Kraft gibt das Buch
+//     heraus. Auffällig wird das erst bei der Inventur.
+//
+// Read Committed: Die fremde Transaktion ist committet, ein neues SELECT sieht sie.
+func (s *defaultLoanService) deuteAusleiheKonflikt(
+	ctx context.Context,
+	tx pgx.Tx,
+	copy *repository.BookCopy,
+	chkCtx *checkoutContext,
+) error {
+	aktiv, err := s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID)
+	if err != nil {
+		return err
+	}
+	if aktiv == nil {
+		// Weder geschrieben noch auffindbar — nichts beschönigen.
+		return fmt.Errorf("%w: dieses Exemplar konnte nicht verbucht werden, bitte erneut scannen", ErrConflict)
+	}
+
+	if istSelberAusleiher(aktiv, chkCtx) {
+		return errAusleiheBereitsVorhanden{loan: aktiv}
+	}
+
+	return fmt.Errorf("%w: dieses Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht", ErrConflict)
+}
+
+// istSelberAusleiher prüft, ob die bestehende Ausleihe demselben Schüler bzw.
+// derselben Lehrkraft gehört wie der aktuelle Vorgang.
+func istSelberAusleiher(aktiv *repository.Loan, chkCtx *checkoutContext) bool {
+	if chkCtx.borrowerType == "student" {
+		return aktiv.SchuelerID != nil && *aktiv.SchuelerID == chkCtx.borrowerID
+	}
+	return aktiv.AusleiherBenutzerID != nil && *aktiv.AusleiherBenutzerID == chkCtx.borrowerID
+}
+
+// errAusleiheBereitsVorhanden ist kein Fehler nach außen, sondern das Signal an
+// handleNewLoan, mit der bestehenden Ausleihe weiterzumachen (doppelter Scan).
+type errAusleiheBereitsVorhanden struct{ loan *repository.Loan }
+
+func (e errAusleiheBereitsVorhanden) Error() string {
+	return "ausleihe besteht bereits für denselben Ausleiher"
+}
+
 func mapLoanCreateErr(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -65,16 +154,9 @@ func (s *defaultLoanService) handleNewLoan(
 	staffID string,
 	resp *LoanResult,
 ) (*LoanResult, error) {
-	var loan *repository.Loan
-	var err error
-
-	if chkCtx.borrowerType == "student" {
-		loan, err = s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime)
-	} else {
-		loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, true)
-	}
+	loan, err := s.erzeugeAusleihe(ctx, tx, copy, chkCtx, staffID)
 	if err != nil {
-		return nil, mapLoanCreateErr(err)
+		return nil, err
 	}
 
 	if chkCtx.borrowerType == "student" {

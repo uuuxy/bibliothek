@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -134,6 +135,12 @@ func (s *defaultLoanService) handleLehrerHandapparat(ctx context.Context, tx pgx
 	dueTime := tagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
 	loan, err := s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, staffID, staffID, dueTime, true)
 	if err != nil {
+		// Der Konflikt darf nicht als 500 durchrutschen: Er bedeutet, dass das
+		// Exemplar zwischenzeitlich anderweitig verbucht wurde — ein Zustand, den
+		// der Arbeitsplatz verstehen und wiederholen kann, kein Serverfehler.
+		if errors.Is(err, repository.ErrAusleiheKonflikt) {
+			return nil, fmt.Errorf("%w: dieses Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht", ErrConflict)
+		}
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {

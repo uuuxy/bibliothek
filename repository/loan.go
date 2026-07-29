@@ -10,6 +10,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// ErrAusleiheKonflikt meldet, dass der INSERT am eindeutigen Index
+// (exemplar_id, rueckgabe_am IS NULL) abgeprallt ist: Zwischen der Prüfung
+// "Exemplar ist frei" und dem Schreiben hat ein anderer Vorgang es verbucht.
+//
+// Vorher gaben die Create*-Funktionen in diesem Fall (nil, nil) zurück — kein Fehler,
+// keine Zeile. Der Aufrufer prüfte nur err, hielt das für Erfolg, committete und
+// meldete dem Arbeitsplatz eine Ausleihe, die nie geschrieben wurde. Genau diese
+// Bugklasse: HTTP 200 trotz Datenverlust.
+var ErrAusleiheKonflikt = errors.New("exemplar wurde zwischenzeitlich anderweitig verbucht")
+
 // LoanRepository verwaltet alle Datenbank-Interaktionen für Ausleihen und Rückgaben (Bücher und Geräte).
 type LoanRepository interface {
 	// GetActiveLoanByCopyID sucht die aktuell aktive (nicht zurückgegebene) Ausleihe für ein Buchexemplar.
@@ -127,8 +137,10 @@ func (r *pgLoanRepository) CreateLoan(ctx context.Context, exemplarID, schuelerI
 	`
 	l, err := scanLoan(r.db.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID))
 	if err != nil {
+		// Keine Zeile heißt hier NICHT "nichts gefunden", sondern "ON CONFLICT hat
+		// den INSERT verworfen" — ein Konflikt, kein Normalfall.
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, ErrAusleiheKonflikt
 		}
 		return nil, err
 	}
@@ -145,8 +157,10 @@ func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplar
 	`
 	l, err := scanLoan(tx.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID))
 	if err != nil {
+		// Keine Zeile heißt hier NICHT "nichts gefunden", sondern "ON CONFLICT hat
+		// den INSERT verworfen" — ein Konflikt, kein Normalfall.
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, ErrAusleiheKonflikt
 		}
 		return nil, err
 	}
@@ -163,8 +177,10 @@ func (r *pgLoanRepository) CreateUserLoan(ctx context.Context, exemplarID, ausle
 	`
 	l, err := scanLoan(r.db.QueryRow(ctx, query, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat))
 	if err != nil {
+		// Keine Zeile heißt hier NICHT "nichts gefunden", sondern "ON CONFLICT hat
+		// den INSERT verworfen" — ein Konflikt, kein Normalfall.
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, ErrAusleiheKonflikt
 		}
 		return nil, err
 	}
@@ -181,8 +197,10 @@ func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exem
 	`
 	l, err := scanLoan(tx.QueryRow(ctx, query, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat))
 	if err != nil {
+		// Keine Zeile heißt hier NICHT "nichts gefunden", sondern "ON CONFLICT hat
+		// den INSERT verworfen" — ein Konflikt, kein Normalfall.
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, ErrAusleiheKonflikt
 		}
 		return nil, err
 	}
