@@ -2,19 +2,19 @@
 	let { student, index, selected, onSelect } = $props();
 </script>
 
-<!-- Datenzeile, keine Karte: keine Radien, kein Schatten, keine Transition. Der
-     Auswahlzustand wird allein über die Fläche getragen — ein zusätzlicher Schatten
-     sagt nichts, was die Farbe nicht schon sagt. Bei Tastaturnavigation durch zehn
-     Treffer ist jede Transition spürbare Latenz. -->
+<!-- Ausgerichtete Spalten statt Fließtext: Klasse und Ausweisnummer standen vorher
+     direkt hinter dem Namen und damit in jeder Zeile an anderer Stelle. Bei
+     namensgleichen Schülern (Hoffmann/Hofmann) ist genau das Untereinander die
+     Entscheidungshilfe. Zeilenhöhe 48px wie die Scanleiste — ein Raster, nicht zwei. -->
 <div
 	id="dropdown-item-{index}"
 	role="option"
 	aria-selected={selected}
-	aria-label="Schüler: {student.vorname} {student.nachname}, Klasse {student.klasse}, Barcode {student.barcode_id}"
+	aria-label="Schüler: {student.vorname} {student.nachname}, Klasse {student.klasse}, Ausweis {student.barcode_id}"
 	tabindex="-1"
-	class="flex items-baseline gap-3 px-3 py-2 cursor-pointer {selected
-		? 'bg-blue-600 text-white'
-		: 'text-slate-700 hover:bg-slate-100'}"
+	class="grid grid-cols-[minmax(0,1fr)_5rem_11rem] items-center gap-4 px-4 h-12 cursor-pointer {selected
+		? 'bg-blue-50 text-blue-900'
+		: 'text-slate-900 hover:bg-slate-50'}"
 	onclick={() => onSelect(index)}
 	onkeydown={(e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
@@ -23,14 +23,11 @@
 		}
 	}}
 >
-	<span class="font-medium {selected ? 'text-white' : 'text-slate-900'}">
-		{student.vorname}
-		{student.nachname}
-	</span>
-	<span class="text-xs {selected ? 'text-blue-100' : 'text-slate-500'}">
-		{student.klasse}
-		{#if student.geburtsdatum}
-			· {new Date(student.geburtsdatum).toLocaleDateString('de-DE')}{/if}
-		· {student.barcode_id}
-	</span>
+	<span class="truncate font-medium">{student.vorname} {student.nachname}</span>
+	<span class="text-sm truncate {selected ? 'text-blue-700' : 'text-slate-600'}"
+		>{student.klasse}</span
+	>
+	<span class="text-sm truncate {selected ? 'text-blue-700' : 'text-slate-600'}"
+		>{student.barcode_id}</span
+	>
 </div>

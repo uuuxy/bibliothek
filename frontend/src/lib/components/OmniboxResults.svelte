@@ -27,10 +27,10 @@
 	id="omnibox-dropdown"
 	role="listbox"
 	aria-label="Suchergebnisse"
-	class="absolute top-full left-0 right-0 mt-2 z-50 max-h-[60vh] overflow-y-auto overscroll-contain bg-white border border-slate-200 rounded-sm shadow-[0_2px_6px_rgb(0,0,0,0.10)] py-1"
+	class="absolute top-full left-0 right-0 mt-2 z-50 max-h-[60vh] overflow-y-auto overscroll-contain bg-white border border-slate-200 rounded-2xl shadow-[0_2px_6px_rgb(0,0,0,0.10)] py-2"
 >
 	{#if unifiedSearchResults.students.length > 0}
-		<div class="px-3 pt-2 pb-1 text-xs text-slate-500">
+		<div class="px-4 pt-3 pb-2 text-xs font-medium text-slate-600">
 			{gruppenTitel(
 				'Schüler',
 				unifiedSearchResults.students.length,
@@ -42,7 +42,7 @@
 		{/each}
 	{/if}
 	{#if unifiedSearchResults.books.length > 0}
-		<div class="px-3 pt-2 pb-1 text-xs text-slate-500">
+		<div class="px-4 pt-3 pb-2 text-xs font-medium text-slate-600">
 			{gruppenTitel(
 				'Bücher',
 				unifiedSearchResults.books.length,

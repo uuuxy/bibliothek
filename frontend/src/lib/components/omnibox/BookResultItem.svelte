@@ -2,17 +2,21 @@
 	let { book, index, selected, onSelect } = $props();
 </script>
 
-<!-- Wie StudentResultItem: nackte Datenzeile. Das Cover behält seine Fläche, aber
-     weder Rahmen noch Schatten noch Radius — es ist eine Abbildung, kein Objekt. -->
+<!-- Gleiches Spaltenraster wie StudentResultItem, damit beide Gruppen im selben
+     Dropdown auf einer Kante stehen. Und dieselbe Primärfarbe: Vorher war die
+     Auswahl bei Schülern blau und bei Büchern indigo — zwei Akzente für dieselbe
+     Interaktion in derselben Liste.
+     Die Signatur steht vor dem Autor, weil sie beim Suchen im Regal die Frage
+     beantwortet; das Cover ist raus, es hielt die Zeile auf und trug nichts bei. -->
 <div
 	id="dropdown-item-{index}"
 	role="option"
 	aria-selected={selected}
-	aria-label="Buch: {book.titel} von {book.autor}, ISBN {book.isbn || 'Keine ISBN'}"
+	aria-label="Buch: {book.titel} von {book.autor}, Signatur {book.signatur || 'keine'}"
 	tabindex="-1"
-	class="flex items-center gap-3 px-3 py-2 cursor-pointer {selected
-		? 'bg-indigo-600 text-white'
-		: 'text-slate-700 hover:bg-slate-100'}"
+	class="grid grid-cols-[minmax(0,1fr)_5rem_11rem] items-center gap-4 px-4 h-12 cursor-pointer {selected
+		? 'bg-blue-50 text-blue-900'
+		: 'text-slate-900 hover:bg-slate-50'}"
 	onclick={() => onSelect(index)}
 	onkeydown={(e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
@@ -21,15 +25,9 @@
 		}
 	}}
 >
-	{#if book.cover_url}
-		<img src={book.cover_url} class="w-8 h-11 shrink-0 object-cover" alt="Cover von {book.titel}" />
-	{:else}
-		<div class="w-8 h-11 shrink-0" aria-hidden="true"></div>
-	{/if}
-	<span class="font-medium line-clamp-1 {selected ? 'text-white' : 'text-slate-900'}">
-		{book.titel}
-	</span>
-	<span class="text-xs line-clamp-1 {selected ? 'text-indigo-100' : 'text-slate-500'}">
-		{book.autor} · {book.isbn || 'Keine ISBN'}
-	</span>
+	<span class="truncate font-medium">{book.titel}</span>
+	<span class="text-sm truncate {selected ? 'text-blue-700' : 'text-slate-600'}"
+		>{book.signatur}</span
+	>
+	<span class="text-sm truncate {selected ? 'text-blue-700' : 'text-slate-600'}">{book.autor}</span>
 </div>
