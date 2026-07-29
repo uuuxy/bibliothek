@@ -41,9 +41,7 @@
 		onEscape: onEscape
 	}}
 	class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
-	placeholder={isActive
-		? 'Buch-Barcode (B-) scannen...'
-		: 'Scannen oder Namen eingeben — Vor- und Nachname in beliebiger Reihenfolge'}
+	placeholder={isActive ? 'Buch-Barcode (B-) scannen' : 'Scannen oder Namen eingeben'}
 />
 <button
 	type="button"
