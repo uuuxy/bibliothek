@@ -143,16 +143,15 @@
 
 <!-- ── Offline / Queue banner was replaced by global OfflineIndicator ── -->
 
+<!-- Harter Zustandswechsel statt animiertem Layout: Das frühere transition-all
+     duration-500 animierte min-height und max-width eine halbe Sekunde lang bei
+     jedem Scan. Bei drei Vorgängen pro Minute ist das keine Politur, sondern Wartezeit. -->
 <div
-	class="w-full mx-auto transition-all duration-500 ease-in-out {omniboxStore.isActive
+	class="w-full mx-auto {omniboxStore.isActive
 		? 'w-full pt-4 justify-start'
 		: 'max-w-2xl min-h-[60vh] justify-center'} flex flex-col items-center space-y-6"
 >
-	<div
-		class="w-full transition-all duration-500 {omniboxStore.isActive
-			? 'sticky -top-4 z-30 bg-slate-50/95 backdrop-blur-md py-4'
-			: ''}"
-	>
+	<div class="w-full {omniboxStore.isActive ? 'sticky -top-4 z-30 bg-slate-50 py-4' : ''}">
 		<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst rounded-full und
 		     bewusst 48 px statt der 36-px-Control-Höhe — das Scanfeld ist das globale Werkzeug
 		     des Kiosks und soll sich von den eckigen Datenfeldern abheben. Der Container trägt
@@ -160,7 +159,7 @@
 		     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 		<form
 			onsubmit={(e) => omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
-			class="group relative flex items-center w-full h-12 px-5 rounded-full border transition-all duration-200 focus-within:shadow-md no-print {omniboxStore.isShaking
+			class="group relative flex items-center w-full h-12 px-5 rounded-full border transition-colors no-print {omniboxStore.isShaking
 				? 'animate-shake'
 				: ''} {farbZustand}"
 		>
@@ -187,9 +186,7 @@
 		</form>
 
 		{#if omniboxStore.errorMessage}
-			<div
-				class="mt-3 p-3 bg-red-600 text-white font-bold rounded-xl shadow-lg text-center animate-slide-down"
-			>
+			<div class="mt-3 p-3 bg-red-600 text-white text-center">
 				{omniboxStore.errorMessage}
 			</div>
 		{/if}
@@ -207,15 +204,17 @@
 
 	{#if omniboxStore.activeStudent}
 		{#if omniboxStore.lastFremdrueckgabe}
+			<!-- Eine Betonung, nicht vier: Der entscheidende Teil ist, auf wen NICHT
+			     gebucht wurde. Wenn jedes zweite Wort fett ist, betont keines mehr. -->
 			<div
-				class="w-full max-w-xl p-3 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-medium flex items-center space-x-2 animate-slide-up no-print mb-2"
+				class="w-full max-w-xl p-3 bg-amber-50 border border-amber-100 text-amber-800 text-xs flex items-center space-x-2 no-print mb-2"
 			>
-				<AlertTriangle class="h-4 w-4" aria-hidden="true" />
+				<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
 				<span
-					><strong>Fremdrückgabe:</strong> Buch war auf
-					<strong>{omniboxStore.lastFremdrueckgabe.vorbesitzerName}</strong>
-					verbucht und wurde dort zurückgegeben — <strong>nicht</strong> auf {omniboxStore
-						.activeStudent.vorname} gebucht. Erneut scannen, um es auszuleihen.</span
+					>Fremdrückgabe: Buch war auf {omniboxStore.lastFremdrueckgabe.vorbesitzerName} verbucht und
+					wurde dort zurückgegeben —
+					<strong class="font-medium">nicht auf {omniboxStore.activeStudent.vorname} gebucht</strong
+					>. Erneut scannen, um es auszuleihen.</span
 				>
 			</div>
 		{/if}
@@ -243,23 +242,9 @@
 	{/if}
 </div>
 
-<!-- Toast notifications -->
-<div
-	class="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 space-y-3 px-4 pointer-events-none"
->
-	{#if omniboxStore.toast}
-		<div
-			class="p-4 rounded-xl shadow-xl flex items-center space-x-3 backdrop-blur-md animate-slide-down pointer-events-auto border
-      {omniboxStore.toast.type === 'success'
-				? 'bg-emerald-50 border-emerald-100/50 text-emerald-700'
-				: omniboxStore.toast.type === 'warning'
-					? 'bg-amber-50 border-amber-100/50 text-amber-700'
-					: 'bg-red-600 border-red-700 text-white shadow-red-500/30'}"
-		>
-			<span class="text-sm font-semibold">{omniboxStore.toast.message}</span>
-		</div>
-	{/if}
-</div>
+<!-- Toasts laufen ausschließlich über ToastContainer.svelte (global eingehängt).
+     Hier stand bis zuletzt ein zweites, eigenes Toast-Markup mit anderer Optik und
+     anderem Timing — zwei Meldungswege für dieselbe Sache. -->
 
 <OmniboxVormerkungAlert />
 

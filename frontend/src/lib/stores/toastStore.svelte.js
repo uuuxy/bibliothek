@@ -1,7 +1,15 @@
 import { SvelteMap } from 'svelte/reactivity';
 
+/**
+ * 'warning' kam dazu, als das eigene Toast-Markup der Omnibox hier aufging: Der
+ * Kiosk unterscheidet zwischen "hat geklappt", "hat geklappt, aber anders als
+ * erwartet" (Fremdrückgabe, Offline-Puffer) und "Fehler". Ohne die dritte Stufe
+ * wäre die mittlere still zum Fehler geworden.
+ * @typedef {'success' | 'error' | 'warning' | 'info'} ToastTyp
+ */
+
 export const toastStore = new (class {
-	/** @type {{id: number, message: string, type: 'success' | 'error' | 'info'}[]} */
+	/** @type {{id: number, message: string, type: ToastTyp}[]} */
 	toasts = $state([]);
 
 	#counter = 0;
@@ -10,7 +18,7 @@ export const toastStore = new (class {
 
 	/**
 	 * @param {string} message
-	 * @param {'success' | 'error' | 'info'} [type='info']
+	 * @param {ToastTyp} [type='info']
 	 */
 	addToast(message, type = 'info') {
 		const id = this.#counter++;

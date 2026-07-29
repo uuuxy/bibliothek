@@ -5,6 +5,7 @@ import { apiFetch, apiClient } from '../apiFetch.js';
 import { playSoundSuccess, playSoundError } from '../audio.js';
 import { enqueueOfflineAction } from '../offlineQueue.js';
 import { offlineSync } from './offlineSync.svelte.js';
+import { toastStore } from './toastStore.svelte.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
 function formatVorbesitzerName(data) {
@@ -22,9 +23,6 @@ export function createOmniboxStore() {
 	let activeTeacher = $state(/** @type {any} */ (null));
 	let queryVal = $state('');
 
-	let toast = $state(/** @type {any} */ (null));
-	/** @type {any} Auto-Dismiss-Timer der Toast-Pille */
-	let toastTimer = null;
 	let flashBorder = $state('');
 	let screenFlash = $state(''); // "success" | "error" | ""
 	let lastFremdrueckgabe = $state(/** @type {any} */ (null));
@@ -45,7 +43,7 @@ export function createOmniboxStore() {
 	// Such-Status
 	let debounceTimer = $state(/** @type {any} */ (null));
 	let isDropdownOpen = $state(false);
-	let unifiedSearchResults = $state({ students: [], books: [] });
+	let unifiedSearchResults = $state({ students: [], books: [], studentsTotal: 0, booksTotal: 0 });
 	let selectedDropdownIndex = $state(-1);
 	let totalDropdownItems = $derived(
 		unifiedSearchResults.students.length + unifiedSearchResults.books.length
@@ -96,15 +94,15 @@ export function createOmniboxStore() {
 		errorMessage = '';
 	}
 
+	// Geht an den globalen toastStore (ToastContainer.svelte in App.svelte). Vorher
+	// hielt die Omnibox einen eigenen Toast-Zustand samt eigenem Markup und eigenem
+	// Auto-Dismiss — zwei Meldungswege mit zwei Optiken für dieselbe Sache.
+	/**
+	 * @param {string} message
+	 * @param {import('./toastStore.svelte.js').ToastTyp} [type='success']
+	 */
 	function showToast(message, type = 'success') {
-		if (toastTimer) clearTimeout(toastTimer);
-		toast = { message, type };
-		// Ohne diesen Timer blieb jede Pille (auch Erfolg/Warnung) bis zur nächsten
-		// Aktion stehen — sie „verschwand nie" von selbst.
-		toastTimer = setTimeout(() => {
-			toast = null;
-			toastTimer = null;
-		}, 5000);
+		toastStore.addToast(message, type);
 	}
 
 	// Such-Logik
@@ -112,7 +110,7 @@ export function createOmniboxStore() {
 		clearTimeout(debounceTimer);
 		if (!queryVal.trim()) {
 			isDropdownOpen = false;
-			unifiedSearchResults = { students: [], books: [] };
+			unifiedSearchResults = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
 			return;
 		}
 		debounceTimer = setTimeout(async () => {
@@ -123,7 +121,9 @@ export function createOmniboxStore() {
 					const results = await res.json();
 					unifiedSearchResults = {
 						students: results.students || [],
-						books: results.books || []
+						books: results.books || [],
+						studentsTotal: results.students_total ?? (results.students || []).length,
+						booksTotal: results.books_total ?? (results.books || []).length
 					};
 					isDropdownOpen =
 						unifiedSearchResults.students.length > 0 || unifiedSearchResults.books.length > 0;
@@ -188,7 +188,7 @@ export function createOmniboxStore() {
 		const aktiv = activeTeacher?.vorname || activeStudent?.vorname;
 		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
 		showToast(
-			`⚠️ „${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
+			`„${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
 			'warning'
 		);
 	}
@@ -201,7 +201,7 @@ export function createOmniboxStore() {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
-			showToast(`📥 „${data.book.titel}" erfolgreich zurückgegeben.`);
+			showToast(`„${data.book.titel}" erfolgreich zurückgegeben.`);
 		}
 		if (data.has_vormerkung) {
 			vormerkungAlert = {
@@ -233,20 +233,20 @@ export function createOmniboxStore() {
 			playSoundSuccess();
 			triggerFlash('green');
 			showToast(
-				`📋 Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`
+				`Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`
 			);
 		} else if (data.type === 'ausleihe') {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
 			showToast(
-				`📖 „${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
+				`„${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
 			);
 			// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
 			// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
 			if (data.regalfreigabe_barcode) {
 				showToast(
-					`📚 Hinweis: Reserviertes Exemplar ${data.regalfreigabe_barcode} zurück ins Regal räumen.`,
+					`Hinweis: Reserviertes Exemplar ${data.regalfreigabe_barcode} zurück ins Regal räumen.`,
 					'warning'
 				);
 			}
@@ -272,9 +272,9 @@ export function createOmniboxStore() {
 			offlineSync.updateCount();
 			triggerScreenFlash('warning');
 			playSoundSuccess();
-			showToast(`📴 Offline: Aktion für „${q}“ gespeichert.`, 'warning');
+			showToast(`Offline: Aktion für „${q}“ gespeichert.`, 'warning');
 		} else {
-			showToast('⚠️ Netzwerkfehler', 'error');
+			showToast('Netzwerkfehler', 'error');
 		}
 	}
 
@@ -295,7 +295,7 @@ export function createOmniboxStore() {
 		} else {
 			// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
 			// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
-			zeigeFehlerBanner(`⚠️ Fehler: ${e instanceof Error ? e.message : String(e)}`);
+			zeigeFehlerBanner(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	}
 
@@ -382,12 +382,6 @@ export function createOmniboxStore() {
 		},
 		set queryVal(v) {
 			queryVal = v;
-		},
-		get toast() {
-			return toast;
-		},
-		set toast(v) {
-			toast = v;
 		},
 		get flashBorder() {
 			return flashBorder;
