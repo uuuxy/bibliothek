@@ -190,10 +190,7 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 		rowH := 15.0
 		pdf.SetX(20)
 
-		tTitle := b.Titel
-		if len(tTitle) > 38 {
-			tTitle = tTitle[:35] + "..."
-		}
+		tTitle := kuerzeAufZeichen(b.Titel, 38)
 		pdf.CellFormat(75, rowH, tr(tTitle), "1", 0, "L", false, 0, "")
 
 		// Barcode-Zelle: Rahmen + eingebettetes Barcode-Bild + darunter die lesbare Nummer,

@@ -10,6 +10,19 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// ErrTitelHatAktiveAusleihen meldet, dass ein Titel nicht gelöscht werden kann, weil
+// noch Exemplare verliehen sind. Das ist ein Bedienfehler (HTTP 400), keine Störung.
+//
+// Als Sentinel und nicht als Textvergleich: Der Handler prüfte die Meldung früher per
+// err.Error()[:22] gegen "Löschen fehlgeschlagen:" — und traf nie. Der Text hier begann
+// klein, das Literal groß, und 22 Bytes können ein 24-Byte-Literal ohnehin nicht
+// treffen (die Umlaute zählen doppelt). Jeder blockierte Löschversuch wurde damit zu
+// einem HTTP 500, und die Liste der noch verliehenen Barcodes — genau die Auskunft, die
+// weiterhilft — verschwand hinter „Serverfehler".
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, nutzer-sichtbare Meldung
+var ErrTitelHatAktiveAusleihen = errors.New("Löschen fehlgeschlagen: folgende Exemplare sind noch verliehen")
+
 // DeleteTitle entfernt einen Buchtitel vollständig aus dem Katalog und erstellt einen revisionssicheren Audit-Eintrag.
 // Vor dem Löschen wird geprüft, ob noch Exemplare dieses Titels verliehen sind (was das Löschen blockiert).
 // Historische Ausleihen und abgeschlossene Schadensfälle werden bereinigt, um Fremdschlüssel-Fehler zu vermeiden.
@@ -55,7 +68,7 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("failed to read active loans for title: %w", err)
 	}
 	if len(activeLoans) > 0 {
-		return fmt.Errorf("löschen fehlgeschlagen: Folgende Exemplare sind noch verliehen: %v", activeLoans)
+		return fmt.Errorf("%w: %v", ErrTitelHatAktiveAusleihen, activeLoans)
 	}
 
 	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden

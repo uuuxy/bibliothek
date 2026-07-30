@@ -85,7 +85,7 @@ func (s *Server) DeleteTitleHandler(auditRepo repository.AuditRepository) http.H
 
 		err := auditRepo.DeleteTitle(ctx, id, claims.UserID)
 		if err != nil {
-			if len(err.Error()) > 21 && err.Error()[:22] == "Löschen fehlgeschlagen:" {
+			if errors.Is(err, repository.ErrTitelHatAktiveAusleihen) {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			} else {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

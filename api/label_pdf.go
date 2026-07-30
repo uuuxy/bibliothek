@@ -123,15 +123,9 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Ba
 		x := format.MarginLeft + float64(colIdx)*(format.LabelWidth+format.GapX)
 		y := format.MarginTop + float64(rowIdx)*(format.LabelHeight+format.GapY)
 
-		// Truncate title and author if they are too long
-		titel := item.Titel
-		if len(titel) > 40 {
-			titel = titel[:37] + "..."
-		}
-		autor := item.Autor
-		if len(autor) > 30 {
-			autor = autor[:27] + "..."
-		}
+		// Titel und Autor auf die Etikettenbreite bringen (zeichen-, nicht byteweise).
+		titel := kuerzeAufZeichen(item.Titel, 40)
+		autor := kuerzeAufZeichen(item.Autor, 30)
 
 		if isQR {
 			zeichneQRLabel(pdf, tr, format, item, titel, autor, labelPos{X: x, Y: y})

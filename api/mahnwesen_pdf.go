@@ -107,17 +107,11 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med reposi
 	pdf.CellFormat(8, rowHeight, "", "1", 0, "", false, 0, "")
 
 	// Title cell
-	titleCell := med.Titel
-	if len(titleCell) > 40 {
-		titleCell = titleCell[:37] + "…"
-	}
+	titleCell := kuerzeAufZeichen(med.Titel, 38)
 	pdf.CellFormat(52, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
 
 	// Author
-	autorCell := med.Autor
-	if len(autorCell) > 20 {
-		autorCell = autorCell[:18] + "…"
-	}
+	autorCell := kuerzeAufZeichen(med.Autor, 19)
 	pdf.CellFormat(26, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
 
 	// Barcode-Zelle: Rahmen zeichnen, dann Barcode-Bild + darunter die Nummer einbetten —
