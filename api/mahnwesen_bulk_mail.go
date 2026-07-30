@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/mail"
-	"os"
 	"strings"
 
 	"bibliothek/apierrors"
@@ -89,7 +88,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 		}
 
 		// 3. Ohne konfigurierten Mailserver kein Massenversand.
-		if os.Getenv("SMTP_HOST") == "" {
+		if !smtpKonfiguriert() {
 			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
 			return
 		}
@@ -189,10 +188,11 @@ func parseKlassenVersandRequest(r *http.Request) (klassenVersandRequest, error) 
 // (der Lauf meldet Erfolg, die Post kommt nie an).
 //
 // Die Domäne wird NICHT im Code festgeschrieben, sondern aus der Absenderadresse
-// des Systems abgeleitet (SMTP_FROM, ersatzweise SMTP_USER). Damit folgt sie
-// automatisch der Konfiguration und stimmt auch nach einem Domänenwechsel noch.
-// Ist keine konfiguriert, bleibt die Eingabe unverändert und läuft in die normale
-// Adressprüfung — lieber eine klare Fehlermeldung als eine geratene Domäne.
+// des Systems abgeleitet — derselben, mit der auch verschickt wird. Damit folgt sie
+// automatisch der Konfiguration in der Oberfläche und stimmt auch nach einem
+// Domänenwechsel noch. Ist keine konfiguriert, bleibt die Eingabe unverändert und
+// läuft in die normale Adressprüfung — lieber eine klare Fehlermeldung als eine
+// geratene Domäne.
 //
 // Eine vollständige Adresse (mit „@") bleibt unangetastet: Der Versand an eine
 // externe Stelle — Schulamt, Vertretung, private Adresse — muss möglich bleiben.
@@ -201,9 +201,13 @@ func ergaenzeSchulDomain(eingabe string) string {
 		return eingabe
 	}
 
-	absender := os.Getenv("SMTP_FROM")
+	konfig, err := smtpKonfigLader()
+	if err != nil {
+		return eingabe
+	}
+	absender := konfig.Absender
 	if absender == "" {
-		absender = os.Getenv("SMTP_USER")
+		absender = konfig.Benutzer
 	}
 	at := strings.LastIndex(absender, "@")
 	if at < 0 {

@@ -198,43 +198,24 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 	return nil
 }
 
-// SendTestMail versendet eine einfache Testnachricht, um die SMTP-Konfiguration zu validieren.
+// SendTestMail versendet eine einfache Testnachricht, um die SMTP-Konfiguration zu
+// validieren. Die Konfiguration kommt aus LadeSMTPKonfig — derselben Quelle, aus der
+// auch jeder echte Versand liest. Sonst wäre der Test-Knopf eine Aussage über eine
+// Konfiguration, die niemand benutzt.
 func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error {
-	// SMTP-Konfiguration aus der Datenbank laden
-	var smtpHost, smtpPort, smtpUser, sender string
-	var smtpPassEncrypted []byte
-
-	err := dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
-		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-
+	konfig, err := LadeSMTPKonfig(ctx, dbPool)
 	if err != nil {
-		return fmt.Errorf("mail-konfiguration nicht gefunden: %w", err)
+		return err
+	}
+	if !konfig.IstKonfiguriert() {
+		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
 	}
 
-	var smtpPass string
-	if len(smtpPassEncrypted) > 0 {
-		decrypted, err := crypto.Decrypt(smtpPassEncrypted)
-		if err != nil {
-			return fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts: %w", err)
-		}
-		smtpPass = string(decrypted)
-	}
-
-	if smtpHost == "" {
-		smtpHost = "localhost"
-	}
-	if smtpPort == "" {
-		smtpPort = "1025"
-	}
-	if sender == "" {
-		sender = defaultFromAddress
-	}
-
-	parsedSender, err := mail.ParseAddress(sender)
+	parsedSender, err := mail.ParseAddress(konfig.Absender)
 	if err != nil {
 		return fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err)
 	}
-	sender = parsedSender.Address
+	sender := parsedSender.Address
 
 	parsedTo, err := mail.ParseAddress(to)
 	if err != nil {
@@ -250,16 +231,8 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 		return err
 	}
 
-	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
-
-	var smtpAuth smtp.Auth
-	if smtpUser != "" && smtpPass != "" {
-		smtpAuth = smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
-	}
-
-	err = smtp.SendMail(addr, smtpAuth, sender, []string{to}, msg)
-	if err != nil {
-		return BeschreibeSMTPFehler(addr, err)
+	if err := smtp.SendMail(konfig.Adresse(), konfig.Auth(), sender, []string{to}, msg); err != nil {
+		return BeschreibeSMTPFehler(konfig.Adresse(), err)
 	}
 
 	return nil

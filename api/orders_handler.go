@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -57,8 +56,8 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			return
 		}
 
-		if istPlaceholderSMTP() {
-			log.Println("WARNING: SMTP_HOST environment variable not set. Email dispatch skipped. Order has been saved locally.")
+		if !smtpKonfiguriert() {
+			log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "success",
 				"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
@@ -111,12 +110,9 @@ func mapProcessOrderError(err error) int {
 	}
 }
 
-// istPlaceholderSMTP erkennt eine nicht (produktiv) konfigurierte SMTP-Umgebung.
-func istPlaceholderSMTP() bool {
-	host := os.Getenv("SMTP_HOST")
-	pass := os.Getenv("SMTP_PASS")
-	return host == "" || host == "Ihr SMTP-Host" || strings.Contains(pass, "Passwort") || pass == "secret"
-}
+// istPlaceholderSMTP ist entfallen: Die Platzhalter-Erkennung steckt jetzt in
+// mailservice.SMTPKonfig.IstKonfiguriert und gilt damit für alle Versender — vorher
+// kannte nur die Bestell-Abwicklung sie.
 
 // hatVorabBarcodes prüft, ob mindestens eine Bestellposition Vorab-Barcodes generiert.
 func hatVorabBarcodes(items []OrderItemRequest) bool {

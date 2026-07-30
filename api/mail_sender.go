@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bibliothek/db"
 	"bibliothek/mailservice"
 	"bibliothek/pkg/closeutil"
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
@@ -15,6 +17,7 @@ import (
 	"net/textproto"
 	"os"
 	"strings"
+	"time"
 )
 
 // MailAttachment represents an email attachment.
@@ -37,21 +40,51 @@ type MailRequest struct {
 // SMTP-Fehler die Bestell-Transaktion zurückrollt (keine Ghost-Orders).
 var SendEmail = sendEmailSMTP
 
-// sendEmailSMTP sends a multipart email (HTML/Text) with attachments using net/smtp.
-// Environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
-func sendEmailSMTP(req MailRequest) error {
-	host := os.Getenv("SMTP_HOST")
-	port := os.Getenv("SMTP_PORT")
-	user := os.Getenv("SMTP_USER")
-	pass := os.Getenv("SMTP_PASSWORD")
-	from := os.Getenv("SMTP_FROM")
+// smtpKonfigLader liefert die Konfiguration für den nächsten Versand.
+//
+// Als Variable, damit NewServer sie an die Datenbank binden kann: Der Versand ist über
+// die injizierbare Funktion SendEmail(MailRequest) erreichbar und hat weder Kontext
+// noch Pool zur Hand. Vorgabe bleibt die Umgebung, damit Tests und Werkzeuge ohne
+// Datenbank weiter versenden können.
+var smtpKonfigLader = func() (mailservice.SMTPKonfig, error) {
+	return mailservice.KonfigAusUmgebung(), nil
+}
 
-	if host == "" || port == "" {
-		return fmt.Errorf("SMTP connection parameters missing from environment (SMTP_HOST/SMTP_PORT)")
+// BindeSMTPKonfigAnDatenbank lässt jeden Versand die in der Oberfläche gespeicherte
+// Konfiguration benutzen. Wird beim Start einmal aufgerufen (NewServer), bevor der
+// erste Request läuft.
+func BindeSMTPKonfigAnDatenbank(pool db.PgxPoolIface) {
+	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) {
+		// Eigener Kontext mit kurzer Frist: Der Aufrufer hat keinen, und ein hängender
+		// Konfigurationszugriff darf einen Massenversand nicht blockieren.
+		ctx, abbruch := context.WithTimeout(context.Background(), 5*time.Second)
+		defer abbruch()
+		return mailservice.LadeSMTPKonfig(ctx, pool)
 	}
-	if from == "" {
-		from = user
+}
+
+// smtpKonfiguriert meldet, ob ein Versand versucht werden kann. Die Handler fragen
+// damit die tatsächlich benutzte Konfiguration ab statt os.Getenv("SMTP_HOST") —
+// sonst melden sie "SMTP nicht konfiguriert", während in der Oberfläche ein Server
+// steht (und umgekehrt).
+func smtpKonfiguriert() bool {
+	konfig, err := smtpKonfigLader()
+	return err == nil && konfig.IstKonfiguriert()
+}
+
+// sendEmailSMTP sends a multipart email (HTML/Text) with attachments using net/smtp.
+// Die Zugangsdaten kommen aus der gespeicherten Konfiguration (siehe smtpKonfigLader).
+func sendEmailSMTP(req MailRequest) error {
+	konfig, err := smtpKonfigLader()
+	if err != nil {
+		return err
 	}
+	if !konfig.IstKonfiguriert() {
+		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", mailservice.ErrMailNichtKonfiguriert)
+	}
+
+	host := konfig.Host
+	from := konfig.Absender
 
 	parsedFrom, err := mail.ParseAddress(from)
 	if err != nil {
@@ -74,13 +107,8 @@ func sendEmailSMTP(req MailRequest) error {
 		return err
 	}
 
-	addr := host + ":" + port
-	var auth smtp.Auth
-	if user != "" && pass != "" {
-		auth = smtp.PlainAuth("", user, pass, host)
-	}
-
-	if err := sendMailViaSMTP(addr, host, auth, from, []string{req.To}, msg); err != nil {
+	addr := konfig.Adresse()
+	if err := sendMailViaSMTP(addr, host, konfig.Auth(), from, []string{req.To}, msg); err != nil {
 		// Dieselbe Übersetzung wie im DB-konfigurierten Versender: Dieser hier spricht
 		// mit dem Schulserver und verifiziert dessen Zertifikat — der Fall, für den die
 		// Meldung über den Zertifikatsnamen überhaupt geschrieben wurde.
@@ -95,10 +123,16 @@ func sendEmailSMTP(req MailRequest) error {
 // reicht apierrors die Meldung durch: Als 500 bekäme der Admin für jede
 // SMTP-Fehlkonfiguration "Ein interner Datenbankfehler ist aufgetreten" zu lesen.
 func mailFehlerStatus(err error) int {
-	if errors.Is(err, mailservice.ErrSMTPVersand) {
+	switch {
+	case errors.Is(err, mailservice.ErrSMTPVersand):
 		return http.StatusBadGateway
+	case errors.Is(err, mailservice.ErrMailNichtKonfiguriert):
+		// Offene Einstellung, keine Störung — dieselbe Antwort, die die Massenversände
+		// schon vorher gegeben haben.
+		return http.StatusServiceUnavailable
+	default:
+		return http.StatusInternalServerError
 	}
-	return http.StatusInternalServerError
 }
 
 // baueMailNachricht erstellt die vollständige MIME-Multipart-Nachricht (Header, Textteil,

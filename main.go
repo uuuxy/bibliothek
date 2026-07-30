@@ -1,13 +1,13 @@
 /*
- * Dieses Programm ist freie Software: Sie können es unter den Bedingungen 
- * der European Union Public Licence (EUPL), Version 1.2 (oder jeder späteren 
- * Version, die von der Europäischen Kommission veröffentlicht wird), 
+ * Dieses Programm ist freie Software: Sie können es unter den Bedingungen
+ * der European Union Public Licence (EUPL), Version 1.2 (oder jeder späteren
+ * Version, die von der Europäischen Kommission veröffentlicht wird),
  * weitergeben und/oder modifizieren.
- * * Dieses Programm wird in der Hoffnung vertrieben, dass es nützlich sein wird, 
- * jedoch OHNE JEDE GARANTIE; auch ohne die implizite Garantie der 
- * MARKTGÄNGIGKEIT oder der EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. 
+ * * Dieses Programm wird in der Hoffnung vertrieben, dass es nützlich sein wird,
+ * jedoch OHNE JEDE GARANTIE; auch ohne die implizite Garantie der
+ * MARKTGÄNGIGKEIT oder der EIGNUNG FÜR EINEN BESTIMMTEN ZWECK.
  * Weitere Details finden Sie in der vollständigen EUPL 1.2.
- * * Eine Kopie der EUPL 1.2 sollte in diesem Repository unter der Datei LICENSE 
+ * * Eine Kopie der EUPL 1.2 sollte in diesem Repository unter der Datei LICENSE
  * verfügbar sein. Andernfalls siehe: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  */
 
@@ -120,6 +120,18 @@ func setupDatabase(ctx context.Context, dsn string) *db.Database {
 	slog.Info("Bootstrapping initial admin (if database is empty)...")
 	if err := database.InitAdmin(ctx); err != nil {
 		slog.Error("Admin bootstrapping failed", "error", err)
+		os.Exit(1)
+	}
+
+	// Muss vor dem ersten Versand laufen: Übernimmt die SMTP-Zugangsdaten aus der
+	// Umgebung in die Datenbank, solange dort die Schema-Vorgabe steht. Ab dann gilt
+	// die Konfiguration aus der Oberfläche — ohne diese Übernahme gingen die Mahnungen
+	// nach dem Umstieg an localhost:1025.
+	// Meldet sich nur, wenn wirklich übernommen wurde — sonst stünde bei jedem Start
+	// "übernehme", obwohl nichts passiert.
+	slog.Info("Prüfe gespeicherte SMTP-Konfiguration...")
+	if err := database.InitMailKonfig(ctx); err != nil {
+		slog.Error("Übernahme der Mail-Konfiguration fehlgeschlagen", "error", err)
 		os.Exit(1)
 	}
 

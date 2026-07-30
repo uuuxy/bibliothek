@@ -97,7 +97,13 @@
 	<div class="space-y-10 animate-fade-in w-full max-w-3xl py-4">
 		<div>
 			<h3 class="text-xl font-bold text-slate-900 mb-2">SMTP Server Konfiguration</h3>
-			<p class="text-sm text-slate-500 mb-8">Hinterlege die Zugangsdaten für den E-Mail-Versand.</p>
+			<p class="text-sm text-slate-500 mb-8">
+				Hinterlege die Zugangsdaten für den E-Mail-Versand. Diese Einstellungen gelten für
+				<strong class="font-medium text-slate-700"
+					>alle E-Mails der Bibliothek — Mahnungen, Abgänger-Kontoauszüge und Bestellungen</strong
+				>
+				und wirken sofort, ohne Neustart.
+			</p>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 				<!-- Host -->

@@ -13,6 +13,7 @@ package api
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/mailservice"
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -217,6 +219,63 @@ func TestPostTestMail_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 	}
 	if strings.Contains(meldung, "Datenbankfehler") {
 		t.Errorf("SMTP-Fehler als Datenbankfehler ausgeliefert: %q", meldung)
+	}
+}
+
+// Der Kern des Umbaus vom 30.07.2026: Der echte Versand (Mahnungen, Abgänger,
+// Bestellungen) benutzt die in der Oberfläche gespeicherte Konfiguration — nicht die
+// Umgebungsvariablen des Containers.
+//
+// Vorher las der Testversand die Datenbank und jeder echte Versand die Umgebung. Wer
+// den SMTP-Server im Admin-Bereich umstellte, änderte am Versand nichts, und der
+// Test-Knopf bestätigte eine Konfiguration, die kein Mahnlauf jemals benutzt hat.
+// Deshalb steht hier die Umgebung absichtlich auf einem falschen Server: Landet die
+// Mail trotzdem beim Fake-SMTP aus der Datenbank, ist die Frage beantwortet.
+func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
+	host, port, sitzungen := starteFakeSMTP(t)
+
+	t.Setenv("SMTP_HOST", "sollte-nicht-benutzt-werden.invalid")
+	t.Setenv("SMTP_PORT", "2525")
+	t.Setenv("SMTP_FROM", "umgebung@schule.de")
+
+	_, mock := mailTestServer(t)
+	erwarteMailKonfig(mock, host, port, "gespeichert@schule.de")
+	BindeSMTPKonfigAnDatenbank(mock)
+	t.Cleanup(func() {
+		smtpKonfigLader = func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }
+	})
+
+	err := SendEmail(MailRequest{To: "lehrerin@schule.de", Subject: "Mahnliste 5b", Body: "Anbei die Liste."})
+	if err != nil {
+		t.Fatalf("Versand fehlgeschlagen: %v", err)
+	}
+
+	sitzung := <-sitzungen
+	if len(sitzung.empfaenger) != 1 || sitzung.empfaenger[0] != "lehrerin@schule.de" {
+		t.Fatalf("Empfänger am Server = %v, want [lehrerin@schule.de]", sitzung.empfaenger)
+	}
+	if !strings.Contains(sitzung.nachricht, "From: gespeichert@schule.de") {
+		t.Errorf("Absender kommt nicht aus der gespeicherten Konfiguration:\n%s", sitzung.nachricht)
+	}
+	if strings.Contains(sitzung.nachricht, "umgebung@schule.de") {
+		t.Errorf("Absender aus der Umgebung hat gewonnen:\n%s", sitzung.nachricht)
+	}
+}
+
+// Ohne hinterlegten Server ist der Versand keine Störung, sondern eine offene
+// Einstellung: 503 mit Klartext, nicht 500 mit "Datenbankfehler".
+func TestSendEmail_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
+	t.Setenv("SMTP_HOST", "")
+	t.Setenv("SMTP_PORT", "")
+	t.Setenv("SMTP_FROM", "")
+	t.Setenv("SMTP_USER", "")
+
+	err := SendEmail(MailRequest{To: "lehrerin@schule.de", Subject: "x", Body: "y"})
+	if !errors.Is(err, mailservice.ErrMailNichtKonfiguriert) {
+		t.Fatalf("Fehler = %v, want ErrMailNichtKonfiguriert", err)
+	}
+	if mailFehlerStatus(err) != http.StatusServiceUnavailable {
+		t.Errorf("Status = %d, want 503", mailFehlerStatus(err))
 	}
 }
 

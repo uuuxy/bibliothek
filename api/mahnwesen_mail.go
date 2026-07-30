@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"bibliothek/apierrors"
@@ -43,8 +42,8 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			return
 		}
 
-		if os.Getenv("SMTP_HOST") == "" {
-			log.Printf("MAHNWESEN: SMTP_HOST not set – skipping email dispatch for class %s", req.Klasse)
+		if !smtpKonfiguriert() {
+			log.Printf("MAHNWESEN: kein SMTP-Server hinterlegt – Versand für Klasse %s übersprungen", req.Klasse)
 			RespondJSON(w, http.StatusOK, map[string]string{
 				"status":  "pdf_only",
 				"message": "SMTP nicht konfiguriert – E-Mail wurde nicht gesendet",
