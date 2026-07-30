@@ -1,7 +1,7 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
 > Stand: 2026-07-10. Für die Abnahme mit dem Sekretariat, sobald LUSD-Zugriff besteht.
-> Alle drei Flows sind technisch fertig und durch automatische Tests (Go, Vitest, 24 E2E-Flows)
+> Alle drei Flows sind technisch fertig und durch automatische Tests (Go, Vitest, 46 E2E-Flows)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen) so aussehen wie erwartet.
 >

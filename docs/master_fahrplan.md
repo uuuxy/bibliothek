@@ -15,7 +15,7 @@
 
 ### 2. Kritischer Pfad Go-Live (wartet auf Pete)
 - [ ] **Littera-MySQL-Dump + 3 Ausweis-Probe-Scans** besorgen → dann: Migrations-Tool auf echtes Littera-Schema (Titel/Exemplare mit Zugangsdatum+Preis, Leser↔LUSD-Matching, **offene Ausleihen** — ohne die startet das System mit „alles verfügbar", obwohl tausende LMF-Bücher verliehen sind).
-- [ ] **Zielumgebung klären**: Server/Domain, Prod-Secrets, echter Schul-IMAP (`IMAP_HOST`) und **SMTP-Zugangsdaten** (ohne sie versendet das Mahnwesen nichts — `mail_settings_config` ist leer).
+- [ ] **Zielumgebung klären**: Server/Domain, Prod-Secrets, echter Schul-IMAP (`IMAP_HOST`) und **SMTP-Zugangsdaten** (ohne sie versendet das Mahnwesen nichts). *Seit 30.07.2026 gilt für Mail eine einzige Quelle: die Einstellung in der Oberfläche (`mail_settings_config`). Die `SMTP_*`-Variablen werden beim ersten Start einmalig übernommen und sind danach nur noch Rückfall — ein Serverwechsel braucht keinen Container-Neustart mehr.*
 - [ ] **OPAC-Produktentscheidung**: LMF-Schulbücher erscheinen in der öffentlichen Katalogsuche — rausfiltern ja/nein? (Umsetzung: Fünfzeiler.)
 
 ### 3. Testing & Infrastruktur
