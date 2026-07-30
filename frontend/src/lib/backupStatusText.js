@@ -31,9 +31,11 @@ export function backupMessage(s) {
 
 	const ageH = (Date.now() - lastMs) / 3600000;
 	const tage = Math.floor(ageH / 24);
-	return tage >= 1
-		? `Seit ${tage === 1 ? 'über 1 Tag' : `${tage} Tagen`} kein Backup`
-		: `Letztes Backup vor ${Math.round(ageH)} Stunden`;
+	if (tage < 1) {
+		return `Letztes Backup vor ${Math.round(ageH)} Stunden`;
+	}
+	const dauer = tage === 1 ? 'über 1 Tag' : `${tage} Tagen`;
+	return `Seit ${dauer} kein Backup`;
 }
 
 /**

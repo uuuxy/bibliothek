@@ -31,9 +31,8 @@ test('OPAC: öffentliche Suche ohne Login zeigt Verfügbarkeit, leakt keine Pers
 
 	// DSGVO-Check auf API-Ebene: die öffentliche Antwort enthält keine
 	// Ausleiher-/Personenfelder.
-	const res = await page.request.get(
-		`/api/public/opac/suche?q=${encodeURIComponent(`E2E Opactitel ${s}`)}`
-	);
+	const suchbegriff = encodeURIComponent(`E2E Opactitel ${s}`);
+	const res = await page.request.get(`/api/public/opac/suche?q=${suchbegriff}`);
 	expect(res.status()).toBe(200);
 	const body = JSON.stringify(await res.json()).toLowerCase();
 	for (const feld of ['vorname', 'nachname', 'schueler', 'klasse', 'barcode_id', 'eltern_email']) {

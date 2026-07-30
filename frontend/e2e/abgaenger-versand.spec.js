@@ -49,7 +49,7 @@ test('Abgänger: Klassenauswahl und Override landen im Versand-Request', async (
 
 	await expect(page.getByRole('heading', { name: 'Kontoauszüge versenden' })).toBeHidden();
 	expect(gesendeterBody.override_email).toBe('sekretariat@schule.de');
-	expect(gesendeterBody.klassen.length).toBe(anzahl > 1 ? anzahl - 1 : anzahl);
+	expect(gesendeterBody.klassen).toHaveLength(anzahl > 1 ? anzahl - 1 : anzahl);
 });
 
 // Regression: Eine hinterlegte Klassenleitung MUSS im Dialog ankommen. Vorher stand

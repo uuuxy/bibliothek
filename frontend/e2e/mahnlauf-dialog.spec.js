@@ -61,7 +61,7 @@ test('Mahnlauf: Auswahl und Override-Adresse landen im Request', async ({ page }
 	expect(gesendeterBody).not.toBeNull();
 	expect(gesendeterBody.override_email).toBe('sekretariat@schule.de');
 	expect(Array.isArray(gesendeterBody.klassen)).toBe(true);
-	expect(gesendeterBody.klassen.length).toBe(anzahl > 1 ? anzahl - 1 : anzahl);
+	expect(gesendeterBody.klassen).toHaveLength(anzahl > 1 ? anzahl - 1 : anzahl);
 });
 
 test('Mahnlauf: Abbrechen schickt nichts und vergisst die Eingaben', async ({ page }) => {

@@ -50,6 +50,35 @@ const AUSNAHMEN = [
 	}
 ];
 
+/**
+ * Wartet, bis die Feldliste eines Bildschirms zur Ruhe gekommen ist.
+ *
+ * Ersetzt ein blindes waitForTimeout(1000): zu kurz auf einem langsamen Rechner, zu
+ * lang auf einem schnellen — vierzehnmal hintereinander.
+ *
+ * Bewusst NICHT „warte auf mindestens ein Feld": MESSEN erfasst nur input und select,
+ * und Bildschirme wie Kiosk oder Statistiken haben davon womöglich gar keines. Eine
+ * solche Bedingung liefe dort in den Timeout und machte aus einem grünen Test einen
+ * roten. Stattdessen wird auf einen STABILEN Messwert gewartet — zwei gleiche Messungen
+ * hintereinander —, was die Null einschließt.
+ * @param {import('@playwright/test').Page} page
+ */
+async function warteAufStabileFelder(page) {
+	await page.waitForLoadState('domcontentloaded');
+	let vorherige = -1;
+	await expect
+		.poll(
+			async () => {
+				const jetzt = (await page.evaluate(MESSEN)).length;
+				const stabil = jetzt === vorherige;
+				vorherige = jetzt;
+				return stabil;
+			},
+			{ timeout: 10_000, intervals: [100, 150, 200, 300] }
+		)
+		.toBe(true);
+}
+
 const MESSEN = () =>
 	[...document.querySelectorAll('input, select')]
 		.filter((el) => {
@@ -78,7 +107,7 @@ test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
 
 	for (const [name, pfad] of SCREENS) {
 		await page.goto(pfad);
-		await page.waitForTimeout(1000);
+		await warteAufStabileFelder(page);
 
 		for (const feld of await page.evaluate(MESSEN)) {
 			if (AUSNAHMEN.some((a) => a.kennung === feld.kennung)) continue;

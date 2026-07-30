@@ -18,6 +18,20 @@ function formatVorbesitzerName(data) {
 	return 'unbekannt';
 }
 
+// Geht an den globalen toastStore (ToastContainer.svelte in App.svelte). Vorher
+// hielt die Omnibox einen eigenen Toast-Zustand samt eigenem Markup und eigenem
+// Auto-Dismiss — zwei Meldungswege mit zwei Optiken für dieselbe Sache.
+//
+// Steht auf Modulebene, weil die Funktion nichts aus dem Store einfängt: Sonst würde
+// bei jedem createOmniboxStore() eine neue, identische Funktion angelegt (sonarjs S7721).
+/**
+ * @param {string} message
+ * @param {import('./toastStore.svelte.js').ToastTyp} [type='success']
+ */
+function showToast(message, type = 'success') {
+	toastStore.addToast(message, type);
+}
+
 export function createOmniboxStore() {
 	let activeStudent = $state(/** @type {any} */ (null));
 	let activeTeacher = $state(/** @type {any} */ (null));
@@ -92,17 +106,6 @@ export function createOmniboxStore() {
 			errorMessageTimer = null;
 		}
 		errorMessage = '';
-	}
-
-	// Geht an den globalen toastStore (ToastContainer.svelte in App.svelte). Vorher
-	// hielt die Omnibox einen eigenen Toast-Zustand samt eigenem Markup und eigenem
-	// Auto-Dismiss — zwei Meldungswege mit zwei Optiken für dieselbe Sache.
-	/**
-	 * @param {string} message
-	 * @param {import('./toastStore.svelte.js').ToastTyp} [type='success']
-	 */
-	function showToast(message, type = 'success') {
-		toastStore.addToast(message, type);
 	}
 
 	// Such-Logik
