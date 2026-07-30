@@ -1,6 +1,7 @@
 <script>
 	import StudentIdDesigner from './StudentIdDesigner.svelte';
 	import LabelPrinter from './LabelPrinter.svelte';
+	import EtikettenNachdruck from './components/labels/EtikettenNachdruck.svelte';
 	let activeTab = $state('labels');
 </script>
 
@@ -14,6 +15,14 @@
 					: 'border-transparent text-slate-500 hover:text-slate-800'}"
 			>
 				Buch-Etiketten
+			</button>
+			<button
+				onclick={() => (activeTab = 'nachdruck')}
+				class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'nachdruck'
+					? 'border-blue-600 text-blue-700'
+					: 'border-transparent text-slate-500 hover:text-slate-800'}"
+			>
+				Fehlende Etiketten
 			</button>
 			<button
 				onclick={() => (activeTab = 'ids')}
@@ -30,6 +39,13 @@
 		{#if activeTab === 'labels'}
 			<div class="animate-fade-in h-full">
 				<LabelPrinter />
+			</div>
+		{:else if activeTab === 'nachdruck'}
+			<!-- Nach dem Übergeben direkt zum Etikettendruck: Die Auswahl liegt dort schon
+			     bereit, und ein Hinweis "wechseln Sie jetzt nach nebenan" wäre eine Arbeit,
+			     die das Programm selbst erledigen kann. -->
+			<div class="animate-fade-in h-full px-8 py-6">
+				<EtikettenNachdruck onUebergeben={() => (activeTab = 'labels')} />
 			</div>
 		{:else}
 			<div class="animate-fade-in h-full">

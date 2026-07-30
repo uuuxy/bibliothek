@@ -16,6 +16,11 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.LabelsHandler()))
 	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.PrintLabelsHandler()))
 
+	// Nachdruck: Welche Exemplare haben noch kein Etikett, und Gegenbuchung nach dem Druck.
+	// edit_books statt view_books — die Gegenbuchung ändert Bestandsdaten.
+	mux.Handle("GET /api/exemplare/etiketten-offen", s.RequirePermission("edit_books")(s.EtikettenOffenHandler()))
+	mux.Handle("POST /api/exemplare/etiketten-gedruckt", s.RequirePermission("edit_books")(s.EtikettenGedrucktHandler()))
+
 	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler(auditRepo)))
 
 	// Update specific copy fields

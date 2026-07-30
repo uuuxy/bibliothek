@@ -153,6 +153,32 @@ export function createLabelStore() {
 		}
 	}
 
+	/**
+	 * Bucht den Druck gegen, damit die Nachdruck-Liste die Exemplare loswird.
+	 *
+	 * Gemessen wird am erzeugten PDF, nicht am Papier — mehr weiss der Browser nicht. Wer
+	 * den Ausdruck abbricht, findet das Exemplar über die Suche im Nachdruck wieder.
+	 *
+	 * Scheitert der Vermerk, bleibt der Druck trotzdem gültig: Das PDF ist bereits offen,
+	 * und ein Fehler an dieser Stelle darf ihn nicht als fehlgeschlagen erscheinen lassen.
+	 * Der Preis ist ein Exemplar, das erneut auf der Liste steht — harmlos gegenüber einem
+	 * Etikett, das niemand mehr nachdruckt.
+	 * @param {Array<{barcode_id?: string}>} gedruckt
+	 */
+	async function vermerkeGedruckt(gedruckt) {
+		const barcodes = gedruckt.map((l) => l.barcode_id).filter(Boolean);
+		if (barcodes.length === 0) return;
+		try {
+			await apiFetch('/api/exemplare/etiketten-gedruckt', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ barcode_ids: barcodes })
+			});
+		} catch (err) {
+			console.error('Etiketten konnten nicht als gedruckt vermerkt werden', err);
+		}
+	}
+
 	async function triggerPrint() {
 		const itemsToPrint = finalLabels.filter((l) => !l.isBlank);
 		if (itemsToPrint.length === 0) return;
@@ -177,6 +203,7 @@ export function createLabelStore() {
 				const blob = await res.blob();
 				const url = window.URL.createObjectURL(blob);
 				window.open(url, '_blank');
+				await vermerkeGedruckt(itemsToPrint);
 			} else {
 				console.error('Fehler beim Erstellen des PDFs');
 				toastStore.addToast('Fehler beim Erstellen des PDFs', 'error');
