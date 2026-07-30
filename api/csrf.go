@@ -10,8 +10,8 @@ package api
 //   3. If they don't match or are missing, the request is rejected with 403.
 //
 // This complements SameSite=Strict cookies as a defense-in-depth measure.
-// The inventur sub-module has its own CSRF system ("inventur_csrf") which
-// remains untouched — this middleware skips paths handled by inventur.
+// Ausgenommen sind nur die drei Pfade in istPruefungsAusnahme; jede weitere Ausnahme
+// nimmt genau diese zweite Schranke wieder heraus.
 
 import (
 	"crypto/rand"
@@ -74,38 +74,45 @@ func (s *Server) CSRFTokenHandler() http.HandlerFunc {
 	}
 }
 
-// classifyCSRFPath ordnet einen Request-Pfad für die globale CSRF-Prüfung ein.
-// isInventurPath markiert Pfade, die das Inventur-Modul mit eigenem CSRF absichert.
-func classifyCSRFPath(path string) (isAPIPath, isInventurPath bool) {
-	// Skip non-API paths (static frontend assets, swagger, etc.)
-	isAPIPath = strings.HasPrefix(path, "/api/") ||
-		path == "/login/barcode"
+// istAPIPfad entscheidet, ob ein Pfad der globalen CSRF-Prüfung unterliegt. Alles
+// andere ist statische Auslieferung (gebautes Frontend, Uploads, Swagger) und kennt
+// keine Mutation.
+//
+// Hier stand bis zum 30.07.2026 eine zweite Liste, die /api/admin, /api/books,
+// /api/class-books, /api/subjects, /api/lookup/ und /api/auth/status von der Prüfung
+// ausnahm — begründet damit, das Inventur-Modul bringe ein eigenes CSRF-System mit.
+// Dieses System existierte im Code nicht; der Kommentar war sein einziger Beleg. Die
+// echten Inventur-Routen liegen unter /api/inventur/* und liefen immer durch die
+// globale Prüfung. Tatsächlich ausgenommen waren sechs Admin-Mutationen, darunter
+// PUT /api/admin/permissions und PUT /api/admin/settings/mail — letzteres genügt, um
+// den SMTP-Host mitsamt gespeicherter Zugangsdaten auf einen fremden Server
+// umzubiegen. Getragen hat das allein SameSite=Strict am Sitzungscookie: Die zweite
+// Schranke, die diese Datei verspricht, fehlte für die größte Angriffsfläche.
+func istAPIPfad(path string) bool {
+	return strings.HasPrefix(path, "/api/") || path == "/login/barcode"
+}
 
-	// Diese Admin-Mutationen werden NICHT vom Inventur-Modul behandelt, sondern direkt
-	// im globalen Router registriert (router.go). Sie müssen daher der globalen
-	// CSRF-Prüfung unterliegen und dürfen nicht über den /api/admin-Präfix ausgenommen
-	// werden — sonst gäbe es für sie gar keinen CSRF-Schutz. Das Frontend sendet für
-	// beide bereits den X-CSRF-Token-Header.
-	globalAdminMutation := path == "/api/admin/sync-covers" || path == "/api/admin/import-bestand"
-
-	// Skip paths handled by the inventur module's own CSRF system
-	isInventurPath = !globalAdminMutation && (strings.HasPrefix(path, "/api/books") ||
-		strings.HasPrefix(path, "/api/class-books") ||
-		strings.HasPrefix(path, "/api/lookup/") ||
-		strings.HasPrefix(path, "/api/subjects") ||
-		strings.HasPrefix(path, "/api/admin") ||
-		strings.HasPrefix(path, "/api/auth/status") ||
-		strings.HasPrefix(path, "/uploads/"))
-
-	return isAPIPath, isInventurPath
+// istPruefungsAusnahme nennt die mutierenden Pfade, die ohne Token durchmüssen —
+// jeder mit seinem Grund, damit die Liste nicht wieder unbemerkt wächst:
+//
+//   - /login/barcode: Vor dem Login gibt es keine Sitzung, die sich missbrauchen ließe.
+//   - /api/auth/logout: Der Aufruf löscht nur das eigene Cookie; ein erzwungenes
+//     Abmelden ist die Obergrenze des Schadens, und ein abgelaufenes Token darf sich
+//     nicht am fehlenden CSRF-Cookie festhaken.
+//   - /api/auth/refresh: Läuft im Frontend absichtlich ohne apiFetch (authStore), also
+//     ohne Header — und erneuert nur eine Sitzung, die der Browser schon hat.
+func istPruefungsAusnahme(path string) bool {
+	return path == "/login/barcode" ||
+		path == "/api/auth/logout" ||
+		path == "/api/auth/refresh"
 }
 
 // refreshCSRFCookie setzt das csrf_token-Cookie, falls noch keines (bzw. ein leeres)
 // existiert, damit das Frontend es auslesen kann. Der Bootstrap-Endpunkt verwaltet
 // sein Cookie selbst und wird hier übersprungen, um doppelte Set-Cookie-Header zu
 // vermeiden.
-func refreshCSRFCookie(w http.ResponseWriter, r *http.Request, isAPIPath, isInventurPath bool, path string, cookieSecure bool) {
-	if !isAPIPath || isInventurPath || path == "/api/csrf-token" {
+func refreshCSRFCookie(w http.ResponseWriter, r *http.Request, isAPIPath bool, path string, cookieSecure bool) {
+	if !isAPIPath || path == "/api/csrf-token" {
 		return
 	}
 
@@ -145,29 +152,25 @@ func validateCSRFDoubleSubmit(r *http.Request) error {
 // CSRFMiddleware returns an HTTP middleware that enforces the Double-Submit
 // Cookie CSRF pattern on all mutating API requests.
 //
-// Exempt paths: /login/barcode, /health, paths starting with /api/books
-// (handled by inventur's own CSRF), and non-API paths (static assets).
+// Ausgenommen bleiben ausschließlich die in istPruefungsAusnahme genannten Pfade und
+// alles, was keine API ist (statische Auslieferung) — die Begründung steht dort
+// jeweils an der Zeile.
 func (s *Server) CSRFMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
-		isAPIPath, isInventurPath := classifyCSRFPath(path)
+		isAPIPath := istAPIPfad(path)
 
 		// Always set/refresh the CSRF cookie so the frontend can read it.
-		refreshCSRFCookie(w, r, isAPIPath, isInventurPath, path, s.CookieSecure)
+		refreshCSRFCookie(w, r, isAPIPath, path, s.CookieSecure)
 
-		// Only validate on mutating methods for API paths (not inventur)
+		// Only validate on mutating methods for API paths
 		isMutation := r.Method == http.MethodPost ||
 			r.Method == http.MethodPut ||
 			r.Method == http.MethodPatch ||
 			r.Method == http.MethodDelete
 
-		// Exempt: login endpoint (no cookie yet), logout, refresh, and inventur paths
-		isExempt := path == "/login/barcode" ||
-			path == "/api/auth/logout" ||
-			path == "/api/auth/refresh" ||
-			isInventurPath ||
-			!isAPIPath
+		isExempt := !isAPIPath || istPruefungsAusnahme(path)
 
 		if isMutation && !isExempt {
 			if err := validateCSRFDoubleSubmit(r); err != nil {
