@@ -16,16 +16,16 @@
 ### 2. Kritischer Pfad Go-Live (wartet auf Pete)
 - [ ] **Littera-MySQL-Dump + 3 Ausweis-Probe-Scans** besorgen → dann: Migrations-Tool auf echtes Littera-Schema (Titel/Exemplare mit Zugangsdatum+Preis, Leser↔LUSD-Matching, **offene Ausleihen** — ohne die startet das System mit „alles verfügbar", obwohl tausende LMF-Bücher verliehen sind).
 - [ ] **Zielumgebung klären**: Server/Domain, Prod-Secrets, echter Schul-IMAP (`IMAP_HOST`) und **SMTP-Zugangsdaten** (ohne sie versendet das Mahnwesen nichts). *Seit 30.07.2026 gilt für Mail eine einzige Quelle: die Einstellung in der Oberfläche (`mail_settings_config`). Die `SMTP_*`-Variablen werden beim ersten Start einmalig übernommen und sind danach nur noch Rückfall — ein Serverwechsel braucht keinen Container-Neustart mehr.*
-- [ ] **OPAC-Produktentscheidung**: LMF-Schulbücher erscheinen in der öffentlichen Katalogsuche — rausfiltern ja/nein? (Umsetzung: Fünfzeiler.)
+- [x] **OPAC-Produktentscheidung** (30.07.2026): LMF-Schulbücher sind aus der öffentlichen Katalogsuche ausgefiltert — sie werden klassensatzweise zugeteilt, nicht recherchiert. Nur die öffentliche Suche filtert; Verwaltung, Inventur, Bestellwesen und Klassensatz-Reservierung finden sie unverändert (`api/opac.go`, E2E-Beleg in `opac-suche.spec.js`).
 
 ### 3. Testing & Infrastruktur
 - [ ] **Restore-Probe**: Datenbank-Restore-Probe gegen eine Wegwerf-DB in der Zielumgebung durchführen. Dabei den dokumentierten Cover-Reset beachten ([DEPLOYMENT.md §6](DEPLOYMENT.md)).
 
 ### 4. Offene Betreiber-Entscheidungen
 > Detail + Begründung im [Invarianten-Katalog](invarianten.md) (§ Restarbeit) — hier nur als Go-Live-Merker:
-- [ ] **`helfer`-Katalogzugriff entscheiden**: Kiosk läuft (Scan/Ausleihe über `perform_actions` = true, bewusst entkoppelt von `view_students`). Offen ist nur noch, ob ein Helfer den **Katalog** sehen darf (`view_books` öffnet Buchdaten) — Betreiber-Entscheidung, keine Code-Änderung. *(Der frühere „jeder Scan → 403"-Zustand ist behoben.)*
-- [ ] **Branch-Protection**: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel ernst nehmen oder abschaffen.
-- [ ] **Meldebestand** je LMF-Titel: ob der Default 5 gepflegt wird, ist eine Betreiber-Annahme, kein Beschluss.
+- [x] **`helfer`-Katalogzugriff** (30.07.2026): **Ja.** Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste dafür bisher jede Frage weiterreichen. Rein lesend; die Grenze zu Personendaten zieht weiterhin `view_students`. Umgesetzt per Migration 055 (die Vorgabe in `seed.go` allein hätte die laufende Installation nicht erreicht).
+- [ ] **Branch-Protection**: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass. **Entscheidung 30.07.2026: PR-Pflicht abschaffen** (Solo-Entwicklung, die Regel ist derzeit Zeremonie). Empfehlung dazu: „Block force pushes" und „Restrict deletions" eingeschaltet lassen — sie kosten im Alltag nichts und sind der einzige Schutz gegen ein versehentliches Überschreiben der Historie. *Auszuführen in den GitHub-Einstellungen, keine Code-Änderung.*
+- [x] **Meldebestand** je LMF-Titel (30.07.2026): Wird **nicht** gepflegt und bekommt keine eigene Oberfläche — der Bestellbedarf richtet sich nach der konfigurierbaren Schwelle. Das Feld war allerdings nicht folgenlos: Die Bestellliste für den Händler rechnete ihre Menge daraus und konnte negativ werden. Behoben, die Menge folgt jetzt dem Soll-Bestand (`api/reorders_pdf.go`).
 
 ### 5. Phase 3: Ausbau & Betrieb (Zukunft)
 - [ ] **API-Versionierung**: Einführung von `/api/v1` inkl. Rest-Sprachvereinheitlichung (z.B. `/api/books` statt `/api/buecher`).
