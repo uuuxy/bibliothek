@@ -222,6 +222,7 @@
 			bind:this={studentProfileComponent}
 			student={omniboxStore.activeStudent}
 			{role}
+			defaultTab="ausleihen"
 			onDeselect={() => {
 				omniboxStore.activeStudent = null;
 				omniboxStore.lastFremdrueckgabe = null;

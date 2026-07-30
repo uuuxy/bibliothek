@@ -8,11 +8,15 @@ import (
 
 // BorrowedBook represents a currently checked out book copy detail for the student.
 type BorrowedBook struct {
-	ID             string    `json:"id"`
-	AusleiheID     string    `json:"ausleihe_id"`
-	BarcodeID      string    `json:"barcode_id"`
-	Titel          string    `json:"titel"`
-	Autor          string    `json:"autor"`
+	ID         string `json:"id"`
+	AusleiheID string `json:"ausleihe_id"`
+	BarcodeID  string `json:"barcode_id"`
+	Titel      string `json:"titel"`
+	Autor      string `json:"autor"`
+	// ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein
+	// Cover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den
+	// Cover-Proxy) — und das ist bei importierten Beständen der Normalfall.
+	ISBN           string    `json:"isbn,omitempty"`
 	CoverURL       string    `json:"cover_url,omitempty"`
 	AusgeliehenAm  time.Time `json:"ausgeliehen_am"`
 	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
@@ -20,17 +24,17 @@ type BorrowedBook struct {
 
 // StudentListStat represents a student along with their current loan statistics.
 type StudentListStat struct {
-	ID                 string `json:"id"`
-	BarcodeID          string `json:"barcode_id"`
-	Vorname            string `json:"vorname"`
-	Nachname           string `json:"nachname"`
-	Klasse             string `json:"klasse"`
-	AbgaengerJahr      int    `json:"abgaenger_jahr"`
-	IstGesperrt        bool   `json:"ist_gesperrt"`
-	HasFoto            bool   `json:"-"`
-	FotoURL            string `json:"foto_url"`
-	AusgeliehenCount   int    `json:"ausgeliehen_count"`
-	UeberfaelligCount  int    `json:"ueberfaellig_count"`
+	ID                string `json:"id"`
+	BarcodeID         string `json:"barcode_id"`
+	Vorname           string `json:"vorname"`
+	Nachname          string `json:"nachname"`
+	Klasse            string `json:"klasse"`
+	AbgaengerJahr     int    `json:"abgaenger_jahr"`
+	IstGesperrt       bool   `json:"ist_gesperrt"`
+	HasFoto           bool   `json:"-"`
+	FotoURL           string `json:"foto_url"`
+	AusgeliehenCount  int    `json:"ausgeliehen_count"`
+	UeberfaelligCount int    `json:"ueberfaellig_count"`
 }
 
 // Scanner kapselt die Scan-Schnittstelle von pgx.Row und pgx.Rows,

@@ -4,6 +4,7 @@
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { AlertTriangle, CalendarPlus, Loader2, Undo2 } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import CoverPeek from './components/ui/CoverPeek.svelte';
 
 	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void, mode?: "loans" | "scans" }} */
 	let {
@@ -109,19 +110,26 @@
 				<tr class="hover:bg-slate-50 transition-colors">
 					<td class="py-3 px-4">
 						<div class="flex items-center space-x-3">
-							{#if book.cover_url}
-								<img
-									src={book.cover_url}
-									class="w-8 h-12 object-cover rounded shadow-sm border border-slate-100"
-									alt="Cover"
-								/>
-							{:else}
-								<div
-									class="w-8 h-12 rounded shadow-sm flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-600 text-xs border border-indigo-600/10"
-								>
-									{book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
-								</div>
-							{/if}
+							<!-- Das Miniaturbild ist der Auslöser für die Großansicht: 32×48 px reichen,
+							     um eine Zeile wiederzuerkennen, nicht um ein Cover zu prüfen. Ein
+							     dauerhaft größeres Bild kostete in dieser dichten Liste die Übersicht
+							     (in der Bestellliste waren es 53 px Zeilenhöhe), deshalb erscheint es
+							     nur auf Anforderung — und dann auch per Tastatur und auf dem iPad. -->
+							<CoverPeek isbn={book.isbn || ''} coverUrl={book.cover_url || ''} titel={book.titel}>
+								{#if book.cover_url}
+									<img
+										src={book.cover_url}
+										class="w-8 h-12 object-cover rounded shadow-sm border border-slate-100"
+										alt="Cover"
+									/>
+								{:else}
+									<div
+										class="w-8 h-12 rounded shadow-sm flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-600 text-xs border border-indigo-600/10"
+									>
+										{book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
+									</div>
+								{/if}
+							</CoverPeek>
 							<div class="flex-1 min-w-0">
 								<div class="flex items-center gap-2 min-w-0">
 									<h4 class="font-bold text-sm text-slate-900 truncate min-w-0" title={book.titel}>

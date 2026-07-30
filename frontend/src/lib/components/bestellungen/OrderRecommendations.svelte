@@ -1,6 +1,6 @@
 <script>
 	import { CircleCheck } from '@lucide/svelte';
-	import CoverPeek from './CoverPeek.svelte';
+	import CoverPeek from '../ui/CoverPeek.svelte';
 
 	let { recommendations, onAddToCart } = $props();
 

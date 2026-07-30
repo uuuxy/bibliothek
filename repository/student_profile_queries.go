@@ -30,6 +30,7 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			e.barcode_id, 
 			t.titel, 
 			coalesce(t.autor, ''), 
+			coalesce(t.isbn, ''),
 			coalesce(t.cover_url, ''),
 			a.ausgeliehen_am, 
 			a.rueckgabe_frist
@@ -54,6 +55,7 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			&b.BarcodeID,
 			&b.Titel,
 			&b.Autor,
+			&b.ISBN,
 			&b.CoverURL,
 			&b.AusgeliehenAm,
 			&b.RueckgabeFrist,

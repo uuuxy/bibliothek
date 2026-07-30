@@ -75,6 +75,11 @@
 		loadClasses();
 	});
 
+	// Reiter nach Absicht (siehe StudentProfile): Wer hier selbst gesucht hat, will
+	// Stammdaten — Elternkontakt, Adressabgleich, Abgangsjahr. Wer aus Mahnwesen oder
+	// Abgängern kommt, fragt nach Büchern und darf nicht im Adressformular landen.
+	let profilReiter = $state(/** @type {'ausleihen'|'stammdaten'} */ ('stammdaten'));
+
 	// Öffnet ein Profil, das aus einer anderen Ansicht (Mahnwesen/Abgänger) angefordert
 	// wurde: ID einmalig abgreifen, Request sofort zurücksetzen (kein Wiederöffnen), dann
 	// per { id } laden — StudentProfile holt den Rest selbst über GET /api/schueler/{id}.
@@ -82,6 +87,7 @@
 		const id = uiStore.requestedStudentId;
 		if (!id) return;
 		uiStore.requestedStudentId = null;
+		profilReiter = 'ausleihen';
 		activeStudent = { id };
 	});
 </script>
@@ -92,9 +98,11 @@
 			<StudentProfile
 				student={activeStudent}
 				{role}
+				defaultTab={profilReiter}
 				onDeselect={() => {
 					activeStudent = null;
 					loadStudents();
+					profilReiter = 'stammdaten';
 				}}
 			/>
 		</div>
@@ -138,7 +146,11 @@
 							<ActiveStudentList
 								{filteredStudents}
 								{loading}
-								onSelectStudent={(s) => (activeStudent = s)}
+								onSelectStudent={(s) => {
+									// Selbst gesucht und angeklickt = Datenpflege-Absicht.
+									profilReiter = 'stammdaten';
+									activeStudent = s;
+								}}
 							/>
 						</div>
 					</div>

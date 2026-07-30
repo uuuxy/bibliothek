@@ -22,6 +22,7 @@
 	 * @property {(barcode: string) => void} [onReturnClick] - Callback for returning a book
 	 * @property {import('svelte').Snippet} [leftActions] - Optional slot for left card actions
 	 * @property {import('svelte').Snippet} [rightTop] - Optional slot for right content top
+	 * @property {'ausleihen'|'stammdaten'} [defaultTab] - Reiter, der beim Öffnen oben liegt
 	 */
 
 	/** @type {Props} */
@@ -31,13 +32,24 @@
 		role = '',
 		onReturnClick = undefined,
 		leftActions,
-		rightTop
+		rightTop,
+		defaultTab = 'ausleihen'
 	} = $props();
 
 	const st = useStudentProfile();
 
+	// Der Reiter folgt der Absicht, mit der das Profil geöffnet wurde — nicht der
+	// Route: Am Kiosk und aus Mahnwesen/Abgängern heraus geht es um Ausleihen, in der
+	// selbst durchsuchten Schülerdatei um Stammdaten (Anruf bei den Eltern,
+	// Adressabgleich). Deshalb entscheidet der Aufrufer, nicht diese Komponente.
+	//
+	// Zurückgesetzt wird bei JEDEM Schülerwechsel: Sonst klebt der Reiter des vorigen
+	// Schülers am nächsten — man klappt einmal die Stammdaten auf und bekommt sie
+	// danach für jeden gescannten Schüler, ohne zu wissen, warum.
 	$effect(() => {
-		if (student?.id) st.fetchProfile(student.id);
+		if (!student?.id) return;
+		st.activeTab = defaultTab;
+		st.fetchProfile(student.id);
 	});
 
 	export function reloadProfile() {

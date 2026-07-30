@@ -13,8 +13,12 @@
      3. Kein reines CSS-:hover. Das beherrscht weder Touch noch Tastatur — auf dem iPad
         beim Bestandsabgleich im Raum wäre das Feature sonst nicht erreichbar. -->
 <script>
-	/** @type {{ isbn?: string, coverUrl?: string, titel?: string }} */
-	let { isbn = '', coverUrl = '', titel = '' } = $props();
+	/** children ist der Auslöser. Ohne Angabe erscheint das Bild-Symbol (Bestellliste,
+	 *  wo kein Cover in der Zeile steht). Mit Angabe wird der übergebene Inhalt selbst
+	 *  zum Auslöser — die Ausleihliste hängt so ihr vorhandenes Miniaturbild hinein,
+	 *  statt daneben noch ein zweites Bedienelement zu setzen.
+	 *  @type {{ isbn?: string, coverUrl?: string, titel?: string, children?: import('svelte').Snippet }} */
+	let { isbn = '', coverUrl = '', titel = '', children } = $props();
 
 	let offen = $state(false);
 	/** ungeprueft → laedt → da | keins. Bleibt nach dem ersten Versuch erhalten,
@@ -92,19 +96,25 @@
 	onblur={() => (offen = false)}
 	aria-expanded={offen}
 	aria-label="Cover von {titel} anzeigen"
-	class="shrink-0 w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors cursor-pointer"
+	class="shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors cursor-pointer {children
+		? ''
+		: 'w-5 h-5 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-100'}"
 >
-	<svg
-		class="w-4 h-4"
-		fill="none"
-		viewBox="0 0 24 24"
-		stroke="currentColor"
-		stroke-width="1.8"
-		aria-hidden="true"
-	>
-		<rect x="3" y="4" width="18" height="16" rx="2" />
-		<path stroke-linecap="round" stroke-linejoin="round" d="M3 15l5-4 4 3 3-2 6 4" />
-	</svg>
+	{#if children}
+		{@render children()}
+	{:else}
+		<svg
+			class="w-4 h-4"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke="currentColor"
+			stroke-width="1.8"
+			aria-hidden="true"
+		>
+			<rect x="3" y="4" width="18" height="16" rx="2" />
+			<path stroke-linecap="round" stroke-linejoin="round" d="M3 15l5-4 4 3 3-2 6 4" />
+		</svg>
+	{/if}
 </button>
 
 {#if offen}
