@@ -310,6 +310,29 @@ export function createOmniboxStore() {
 			return;
 		}
 
+		// Enter direkt nach dem Tippen, ohne vorher mit den Pfeiltasten auszuwählen: Wenn
+		// die Vorschlagsliste genau EINEN Treffer hat, ist der gemeint.
+		//
+		// Ohne das ging der rohe Text an /api/action — und der Weg dort endet für eine
+		// Eingabe ohne Präfix in der Titelsuche (resolveOhnePraefix → handleSearchAction),
+		// die nur Bücher kennt. Ein getippter Nachname lieferte damit zuverlässig "nichts
+		// gefunden", obwohl der Schüler im Vorschlag direkt darüber stand.
+		//
+		// Bewusst eng gefasst — genau ein Schüler und kein Buch daneben:
+		//   • Bei "Müller" mit zwölf Namensgleichen darf Enter nicht raten und ein fremdes
+		//     Konto öffnen. Dann bleibt die Liste zur Auswahl stehen.
+		//   • Bücher bleiben außen vor. Ihr Zweig in selectDropdownItem braucht einen
+		//     onSelectBook-Rückruf, den es hier nicht gibt; automatisch ausgelöst würde ein
+		//     Buchscan still ins Leere laufen statt auszuleihen.
+		if (
+			isDropdownOpen &&
+			unifiedSearchResults.students.length === 1 &&
+			unifiedSearchResults.books.length === 0
+		) {
+			selectDropdownItem(0, null);
+			return;
+		}
+
 		const q = queryVal.trim();
 		if (!q) return;
 

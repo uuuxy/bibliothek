@@ -3,6 +3,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import { coverSrc } from '../../utils/coverSrc.js';
 
 	/** @type {any} */
 	let stagedBook = $state(null);
@@ -91,12 +92,13 @@
 						Im lokalen Bestand
 					</div>
 					{#each localResults as b, _i (_i)}
+						{@const quelle = coverSrc(b.cover_url, b.isbn)}
 						<button
 							onclick={() => openStaging(b)}
 							class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center gap-3 text-base"
 						>
-							{#if b.cover_url}<img
-									src="/api/images/cover?isbn={b.isbn || ''}&url={encodeURIComponent(b.cover_url)}"
+							{#if quelle}<img
+									src={quelle}
 									class="w-7 aspect-3/4 object-cover rounded-sm"
 									alt=""
 								/>{:else}<div
@@ -129,6 +131,7 @@
 							localResults.some(
 								(l) => (l.isbn || '').replace(/-/g, '') === (b.isbn || '').replace(/-/g, '')
 							)}
+						{@const quelle = coverSrc(b.cover_url, b.isbn)}
 						<button
 							onclick={() => !isDuplicate && openStaging(b)}
 							disabled={isDuplicate}
@@ -136,8 +139,8 @@
 								? 'opacity-50 cursor-not-allowed bg-slate-50/30'
 								: 'hover:bg-slate-50'}"
 						>
-							{#if b.cover_url}<img
-									src="/api/images/cover?isbn={b.isbn || ''}&url={encodeURIComponent(b.cover_url)}"
+							{#if quelle}<img
+									src={quelle}
 									class="w-7 aspect-3/4 object-cover rounded-sm"
 									alt=""
 								/>{:else}<div
@@ -190,13 +193,12 @@
 </div>
 
 {#if stagedBook}
+	{@const stagedQuelle = coverSrc(stagedBook.cover_url, stagedBook.isbn)}
 	<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50/60 space-y-3.5 animate-fade-in">
 		<div class="flex items-center gap-3 min-w-0">
-			{#if stagedBook.cover_url}
+			{#if stagedQuelle}
 				<img
-					src="/api/images/cover?isbn={stagedBook.isbn || ''}&url={encodeURIComponent(
-						stagedBook.cover_url
-					)}"
+					src={stagedQuelle}
 					class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-white shrink-0"
 					alt=""
 				/>

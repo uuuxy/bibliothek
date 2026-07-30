@@ -3,8 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
-
-	"github.com/jackc/pgx/v5"
+	"strings"
 )
 
 // HasPhoto checks if an encrypted photo exists for the student.
@@ -85,47 +84,69 @@ func (repo *pgStudentRepository) GetDistinctClasses(ctx context.Context) ([]stri
 	return classes, rows.Err()
 }
 
-// ListStudentsWithStats returns a list of students with loan statistics.
-func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klasse string) ([]StudentListStat, error) {
-	var rows pgx.Rows
-	var err error
+// ListStudentsWithStatsLimit ist die Obergrenze der ungefilterten Schülerdatei. Sie
+// existiert, damit eine Schule mit 20.000 Schülern nicht bei jedem Seitenaufruf die
+// komplette Kartei über die Leitung schickt. Wer jemanden dahinter sucht, findet ihn
+// über suche — die Suche läuft auf dem Server und kennt keine Grenze bei 500.
+const ListStudentsWithStatsLimit = 500
+
+// ListStudentsWithStats liefert Schüler samt Ausleihzahlen, optional auf eine Klasse
+// eingegrenzt und/oder auf einen Suchbegriff (Name oder Barcode).
+//
+// Gesucht wird über dieselben SQL-Bausteine wie in der Omnibox an der Theke
+// (SchuelerSuchCTE/-Bedingung/-Rang, siehe student_queries.go): Tokens in beliebiger
+// Reihenfolge, diakritikfrei, deutsche Ersatzschreibung in beide Richtungen. Vorher
+// filterte die Schülerdatei im Browser über die ersten 500 gelieferten Zeilen — wer
+// alphabetisch dahinter lag, war über die Suche nicht erreichbar, und zwar abhängig vom
+// Klassennamen, also für den Benutzer ohne erkennbares Muster.
+func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error) {
+	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
+	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
+	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
+	// Postgres lehnt sonst überzählige Bind-Parameter ab.
+	bedingungen := []string{"s.deleted_at IS NULL"}
+	args := []any{}
+	praefix := ""
+	limit := ""
+
+	if tokens := suchTokens(suche); len(tokens) > 0 {
+		praefix = SchuelerSuchCTE
+		// mitKlasse: Die Schülerdatei durchsuchte schon immer auch die Klasse ("10a"
+		// listet die Klasse). Das darf die Serversuche nicht stillschweigend verlieren.
+		bedingungen = append(bedingungen, SchuelerSuchBedingung(true))
+		args = append(args, tokens, tokens[0])
+	} else {
+		// Nur die reine Liste wird gekappt. Eine Suche darf das nicht — genau daran
+		// ist sie vorher gescheitert.
+		limit = fmt.Sprintf(" LIMIT %d", ListStudentsWithStatsLimit)
+	}
 
 	if klasse != "" {
-		rows, err = repo.db.Query(ctx, `
-			SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
-				COALESCE(l.ausgeliehen_anzahl, 0) as ausgeliehen_anzahl,
-				COALESCE(l.ueberfaellig_anzahl, 0) as ueberfaellig_anzahl,
-				EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
-			FROM schueler 
-			LEFT JOIN LATERAL (
-				SELECT
-					COUNT(*) as ausgeliehen_anzahl,
-					COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
-				FROM ausleihen a
-				WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL
-			) l ON true
-			WHERE klasse = $1 AND deleted_at IS NULL
-			ORDER BY nachname, vorname
-		`, klasse)
-	} else {
-		rows, err = repo.db.Query(ctx, `
-			SELECT id, barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt,
-				COALESCE(l.ausgeliehen_anzahl, 0) as ausgeliehen_anzahl,
-				COALESCE(l.ueberfaellig_anzahl, 0) as ueberfaellig_anzahl,
-				EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = schueler.id) as has_foto
-			FROM schueler 
-			LEFT JOIN LATERAL (
-				SELECT
-					COUNT(*) as ausgeliehen_anzahl,
-					COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
-				FROM ausleihen a
-				WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL
-			) l ON true
-			WHERE deleted_at IS NULL
-			ORDER BY klasse, nachname, vorname 
-			LIMIT 500
-		`)
+		args = append(args, klasse)
+		bedingungen = append(bedingungen, fmt.Sprintf("s.klasse = $%d", len(args)))
 	}
+
+	// Bei einer Suche zuerst die besten Treffer, sonst die gewohnte Kartei-Reihenfolge.
+	sortierung := "s.klasse, s.nachname, s.vorname"
+	if praefix != "" {
+		sortierung = SchuelerSuchRang + ", s.nachname ASC, s.vorname ASC"
+	}
+
+	rows, err := repo.db.Query(ctx, praefix+`
+		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
+			COALESCE(l.ausgeliehen_anzahl, 0) as ausgeliehen_anzahl,
+			COALESCE(l.ueberfaellig_anzahl, 0) as ueberfaellig_anzahl,
+			EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = s.id) as has_foto
+		FROM schueler s
+		LEFT JOIN LATERAL (
+			SELECT
+				COUNT(*) as ausgeliehen_anzahl,
+				COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
+			FROM ausleihen a
+			WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL
+		) l ON true
+		WHERE `+strings.Join(bedingungen, " AND ")+`
+		ORDER BY `+sortierung+limit, args...)
 
 	if err != nil {
 		return nil, err

@@ -102,6 +102,28 @@ export function querySQL(sql) {
 		.trim();
 }
 
+/** 8×8-PNG, damit ein Test ein ECHTES Bild bekommt. Die Größe ist der Punkt: Der
+ *  Cover-Proxy liefert bei jedem Fehler ein 1×1-GIF mit Status 200 aus, ein Test gegen
+ *  "Bild geladen" ginge daran vorbei. Nur naturalWidth > 1 trennt beides. */
+const TESTBILD_PNG_BASE64 =
+	'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGM4EaCBFTEMLQkAaplQAc/OcKAAAAAASUVORK5CYII=';
+
+/**
+ * Legt ein echtes Bild im uploads-Verzeichnis des Backends ab und gibt dessen
+ * öffentlichen Pfad zurück — so, wie der Cover-Sync ihn in buecher_titel.cover_url
+ * schreibt (lokal, nicht extern).
+ * @param {string} name Dateiname ohne Endung
+ * @returns {string} Pfad für cover_url, z. B. "/uploads/e2e-cover-abc.png"
+ */
+export function seedCoverDatei(name) {
+	const container = process.env.E2E_BACKEND_CONTAINER || 'bibliothek-backend-local';
+	const datei = `${name}.png`;
+	execSync(`docker exec -i ${container} sh -c 'base64 -d > /app/uploads/${datei}'`, {
+		input: TESTBILD_PNG_BASE64
+	});
+	return `/uploads/${datei}`;
+}
+
 /**
  * Eindeutiger Suffix, damit Läufe auf derselben DB nicht kollidieren.
  *

@@ -5,6 +5,7 @@
 	import { AlertTriangle, CalendarPlus, Loader2, Undo2 } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import CoverPeek from './components/ui/CoverPeek.svelte';
+	import { coverSrc } from './utils/coverSrc.js';
 
 	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void, mode?: "loans" | "scans" }} */
 	let {
@@ -107,6 +108,11 @@
 			{#each books as book (book.id || book.barcode_id || Math.random())}
 				{@const isLMF = book.titel?.toLowerCase().startsWith('lmf-')}
 				{@const isOverdue = mode === 'loans' && new Date(book.rueckgabe_frist) < new Date()}
+				<!-- Miniatur und Großansicht ziehen ihre Quelle aus derselben Funktion. Vorher lud
+				     die Miniatur den Pfad direkt, die Großansicht dagegen über den Cover-Proxy —
+				     der lokale Pfade ablehnt. Ergebnis: sichtbares Cover in der Zeile, "Kein
+				     Coverbild hinterlegt" in der Vergrößerung. -->
+				{@const miniatur = coverSrc(book.cover_url, book.isbn)}
 				<tr class="hover:bg-slate-50 transition-colors">
 					<td class="py-3 px-4">
 						<div class="flex items-center space-x-3">
@@ -116,9 +122,9 @@
 							     (in der Bestellliste waren es 53 px Zeilenhöhe), deshalb erscheint es
 							     nur auf Anforderung — und dann auch per Tastatur und auf dem iPad. -->
 							<CoverPeek isbn={book.isbn || ''} coverUrl={book.cover_url || ''} titel={book.titel}>
-								{#if book.cover_url}
+								{#if miniatur}
 									<img
-										src={book.cover_url}
+										src={miniatur}
 										class="w-8 h-12 object-cover rounded shadow-sm border border-slate-100"
 										alt="Cover"
 									/>

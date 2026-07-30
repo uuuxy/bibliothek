@@ -105,3 +105,64 @@ func TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb(t *testing.T) {
 		})
 	}
 }
+
+// Der Mailtext selbst ist NICHT gefiltert — mit Absicht. Er darf alles enthalten, was
+// ein Mensch schreiben kann, und ein Mahntext mit einer Zeile "." oder einem Doppelpunkt
+// darin ist kein Angriff.
+//
+// Dieser Test hält fest, WARUM das gefahrlos ist, denn genau darauf zeigt CodeQL mit
+// go/email-injection (Email content injection, versand.go w.Write):
+//
+//  1. Der Text steht hinter der Leerzeile, die Kopf und Rumpf trennt. Was dort wie eine
+//     Kopfzeile aussieht, IST keine — es bleibt Fließtext.
+//  2. Eine Zeile, die nur aus einem Punkt besteht, beendet in SMTP die Übertragung.
+//     smtp.Client.Data() schreibt über textproto.DotWriter, der solche Zeilen verdoppelt
+//     ("dot stuffing"). Ohne das könnte ein Schülername oder ein Vorlagentext die
+//     Nachricht abschneiden und den Rest als SMTP-Befehle einschleusen.
+//
+// Die Kopfzeilen sind die Stelle, an der es wirklich gefährlich wäre — die werden beim
+// Bauen geprüft (TestBaueTextNachrichtWeistAdressenUmbruchAb) und im Envelope nochmal
+// (TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb). Fällt dieser Test hier, ist die
+// Einschätzung "Fließtext ist ungefährlich" nicht mehr gedeckt.
+func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
+	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
+
+	// Ein Text, wie ihn ein Angreifer in eine Vorlage oder einen Namen schreiben würde.
+	boesartig := "Guten Tag\r\n.\r\nMAIL FROM:<angreifer@example.com>\r\n" +
+		"Bcc: mitleser@example.com\r\nEnde der Nachricht"
+
+	nachricht, err := baueTextNachricht("bibliothek@schule.de", "lehrerin@schule.de", "Mahnung", boesartig)
+	if err != nil {
+		t.Fatalf("Nachricht konnte nicht gebaut werden: %v", err)
+	}
+
+	if err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+		[]string{"lehrerin@schule.de"}, nachricht); err != nil {
+		t.Fatalf("Versand fehlgeschlagen: %v", err)
+	}
+
+	sitzung := <-sitzungen
+
+	// Der Envelope ist unberührt: Kein zweiter Empfänger, kein zweites MAIL FROM.
+	if len(sitzung.Empfaenger) != 1 || sitzung.Empfaenger[0] != "lehrerin@schule.de" {
+		t.Fatalf("Empfänger = %v — aus dem Mailtext wurde ein Empfänger geschmuggelt", sitzung.Empfaenger)
+	}
+
+	// Die Übertragung ist nicht am eingeschmuggelten Punkt abgerissen: Der Server hat
+	// den Schluss gesehen. Ohne Dot-Stuffing endete die Nachricht bei "Guten Tag".
+	if !strings.Contains(sitzung.Nachricht, "Ende der Nachricht") {
+		t.Fatalf("Nachricht wurde vorzeitig beendet, Server sah nur: %q", sitzung.Nachricht)
+	}
+
+	// Und das "Bcc:" ist Fließtext geblieben — es steht hinter der Trennleerzeile.
+	kopf, rumpf, getrennt := strings.Cut(sitzung.Nachricht, "\r\n\r\n")
+	if !getrennt {
+		t.Fatal("Nachricht hatte keine Trennung zwischen Kopf und Rumpf")
+	}
+	if strings.Contains(kopf, "Bcc") || strings.Contains(kopf, "mitleser@example.com") {
+		t.Errorf("aus dem Mailtext wurde eine Kopfzeile: %q", kopf)
+	}
+	if !strings.Contains(rumpf, "Bcc: mitleser@example.com") {
+		t.Errorf("der Text kam nicht als Rumpf an: %q", rumpf)
+	}
+}

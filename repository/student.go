@@ -76,8 +76,10 @@ type StudentRepository interface {
 	// GetDistinctClasses returns a list of all active classes.
 	GetDistinctClasses(ctx context.Context) ([]string, error)
 
-	// ListStudentsWithStats returns a list of students with loan statistics.
-	ListStudentsWithStats(ctx context.Context, klasse string) ([]StudentListStat, error)
+	// ListStudentsWithStats liefert Schüler samt Ausleihzahlen, optional nach Klasse
+	// und/oder Suchbegriff eingegrenzt. Die Suche läuft über dieselben SQL-Bausteine
+	// wie SearchStudentsFuzzy und kennt keine 500er-Grenze.
+	ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error)
 }
 
 // pgStudentRepository implementiert das StudentRepository für PostgreSQL.

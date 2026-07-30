@@ -13,12 +13,17 @@
      3. Kein reines CSS-:hover. Das beherrscht weder Touch noch Tastatur — auf dem iPad
         beim Bestandsabgleich im Raum wäre das Feature sonst nicht erreichbar. -->
 <script>
+	import { coverSrc } from '../../utils/coverSrc.js';
+
 	/** children ist der Auslöser. Ohne Angabe erscheint das Bild-Symbol (Bestellliste,
 	 *  wo kein Cover in der Zeile steht). Mit Angabe wird der übergebene Inhalt selbst
 	 *  zum Auslöser — die Ausleihliste hängt so ihr vorhandenes Miniaturbild hinein,
 	 *  statt daneben noch ein zweites Bedienelement zu setzen.
 	 *  @type {{ isbn?: string, coverUrl?: string, titel?: string, children?: import('svelte').Snippet }} */
 	let { isbn = '', coverUrl = '', titel = '', children } = $props();
+
+	/** Lokaler Pfad oder Proxy-URL — siehe utils/coverSrc.js. '' heißt: kein Bild holbar. */
+	const quelle = $derived(coverSrc(coverUrl, isbn));
 
 	let offen = $state(false);
 	/** ungeprueft → laedt → da | keins. Bleibt nach dem ersten Versuch erhalten,
@@ -123,7 +128,7 @@
 		style="top: {pos.top}px; left: {pos.left}px; width: {BREITE}px; height: {HOEHE}px;"
 		role="tooltip"
 	>
-		{#if status === 'keins' || !coverUrl}
+		{#if status === 'keins' || !quelle}
 			<div
 				class="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3 text-center text-slate-400"
 			>
@@ -149,7 +154,7 @@
 				</div>
 			{/if}
 			<img
-				src="/api/images/cover?isbn={isbn}&url={encodeURIComponent(coverUrl)}"
+				src={quelle}
 				alt="Cover von {titel}"
 				class="w-full h-full object-contain bg-white"
 				onload={(e) => {

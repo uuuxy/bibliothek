@@ -1,6 +1,7 @@
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import { coverSrc } from '../../utils/coverSrc.js';
 </script>
 
 <div class="space-y-3">
@@ -25,12 +26,11 @@
 	{:else}
 		<div class="space-y-2">
 			{#each orderStore.cart as item, idx (idx)}
+				{@const quelle = coverSrc(item.cover_url, item.isbn)}
 				<div class="rounded-xl border border-slate-200 bg-white p-3 space-y-2.5">
 					<div class="flex items-start gap-2.5">
-						{#if item.cover_url}<img
-								src="/api/images/cover?isbn={item.isbn || ''}&url={encodeURIComponent(
-									item.cover_url
-								)}"
+						{#if quelle}<img
+								src={quelle}
 								class="w-8 aspect-3/4 object-cover rounded-sm shrink-0 ring-1 ring-slate-200/70"
 								alt=""
 							/>{:else}<div

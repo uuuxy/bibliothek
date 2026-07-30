@@ -27,30 +27,43 @@
 	let readerGroups = $state.raw([]);
 	let showCreateModal = $state(false);
 
-	// Derived: client-seitig gefilterte Schülerliste
-	let filteredStudents = $derived.by(() => {
-		const q = searchQuery.toLowerCase().trim();
-		if (!q) return students;
-		return students.filter(
-			(s) =>
-				(s.vorname + ' ' + s.nachname).toLowerCase().includes(q) ||
-				s.klasse.toLowerCase().includes(q) ||
-				s.barcode_id.toLowerCase().includes(q)
-		);
-	});
+	// Gesucht wird auf dem SERVER. Vorher filterte diese Ansicht im Browser über die
+	// gelieferte Liste — und die ist bei 500 Zeilen gekappt. Bei 875 Schülern waren 375
+	// über die Suche schlicht nicht erreichbar, welche genau hing an der alphabetischen
+	// Reihenfolge der Klassennamen. Für den Benutzer sah das nach Zufall aus.
+	//
+	// Nebeneffekt, der den Ausschlag gab: Die Serversuche ist dieselbe wie an der Theke
+	// (suchnorm) — "Muller" findet Müller, "Hoffmann Lena" dasselbe wie "Lena Hoffmann".
+	// Der Browser-Filter konnte beides nicht.
+	let sucheLaeuft = $state(false);
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let sucheTimer;
+	/** Muss zu ListStudentsWithStatsLimit im Backend passen: Erreicht die ungefilterte
+	 *  Liste diese Länge, ist sie gekappt und die Ansicht sagt das auch. */
+	const LISTEN_GRENZE = 500;
 
 	async function loadStudents() {
 		loading = true;
 		try {
-			const res = await apiFetch('/api/schueler');
+			const q = searchQuery.trim();
+			const res = await apiFetch(`/api/schueler${q ? `?q=${encodeURIComponent(q)}` : ''}`);
 			if (res.ok) {
-				students = await res.json();
+				students = (await res.json()) || [];
 			}
 		} catch (err) {
 			console.error('Fehler beim Laden des Schülerverzeichnisses:', err);
 		} finally {
 			loading = false;
+			sucheLaeuft = false;
 		}
+	}
+
+	// Tippen wird entprellt, damit nicht jeder Tastendruck eine Abfrage auslöst. 300 ms
+	// wie in der Omnibox — dieselbe Eingabegeschwindigkeit, dieselbe Wartezeit.
+	function sucheAngestossen() {
+		sucheLaeuft = true;
+		clearTimeout(sucheTimer);
+		sucheTimer = setTimeout(loadStudents, 300);
 	}
 
 	async function loadClasses() {
@@ -137,15 +150,17 @@
 						<StudentDirectoryToolbar
 							bind:searchQuery
 							{role}
-							totalCount={students.length}
-							filteredCount={filteredStudents.length}
+							trefferzahl={students.length}
+							suchend={searchQuery.trim().length > 0}
+							gekuerzt={!searchQuery.trim() && students.length >= LISTEN_GRENZE}
+							onsearch={sucheAngestossen}
 							oncreate={() => (showCreateModal = true)}
 						/>
 
 						<div class="mt-6">
 							<ActiveStudentList
-								{filteredStudents}
-								{loading}
+								filteredStudents={students}
+								loading={loading || sucheLaeuft}
 								onSelectStudent={(s) => {
 									// Selbst gesucht und angeklickt = Datenpflege-Absicht.
 									profilReiter = 'stammdaten';

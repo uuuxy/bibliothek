@@ -1,4 +1,6 @@
 <script>
+	import { coverSrc } from '../../utils/coverSrc.js';
+
 	/**
 	 * @component WareneingangTable
 	 * Rendert die Liste der erwarteten Lieferungen gruppiert nach Lieferant.
@@ -42,9 +44,10 @@
 </script>
 
 {#snippet coverImage(item)}
-	{#if item.isbn && item.cover_url}
+	{@const quelle = coverSrc(item.cover_url, item.isbn)}
+	{#if quelle}
 		<img
-			src="/api/images/cover?isbn={item.isbn}&url={encodeURIComponent(item.cover_url)}"
+			src={quelle}
 			class="w-16 h-24 object-cover shadow-sm rounded border border-slate-200"
 			alt="Cover"
 			loading="lazy"
