@@ -710,7 +710,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('051_manual_block_reason_pflicht.sql'),
 ('052_seed_bestellung_haendler.sql'),
 ('053_inventur_scope_filter.sql'),
-('054_schueler_namenssuche_unaccent.sql')
+('054_schueler_namenssuche_unaccent.sql'),
+('055_helfer_katalogzugriff.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

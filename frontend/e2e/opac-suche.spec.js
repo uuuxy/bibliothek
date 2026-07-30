@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { seedSQL, uniqueSuffix } from './helpers.js';
+import { seedSQL, uiLogin, uniqueSuffix } from './helpers.js';
 
 // Öffentlicher Medienkatalog (/katalog): die einzige komplett anonyme Route.
 // Muss OHNE Login erreichbar sein und darf keine Ausleiher-Daten leaken (DSGVO).
@@ -38,4 +38,43 @@ test('OPAC: öffentliche Suche ohne Login zeigt Verfügbarkeit, leakt keine Pers
 	for (const feld of ['vorname', 'nachname', 'schueler', 'klasse', 'barcode_id', 'eltern_email']) {
 		expect(body, `öffentliche OPAC-Antwort enthält "${feld}"`).not.toContain(feld);
 	}
+});
+
+// Schulbücher der Lernmittelfreiheit werden klassensatzweise zugeteilt, nicht
+// recherchiert. Im öffentlichen Katalog würden sie die Treffer der Freihand-
+// Bibliothek zuschütten — bei Klassensatzstärke sind das hunderte Titel.
+test('OPAC: LMF-Schulbücher bleiben aus dem öffentlichen Katalog heraus', async ({ page }) => {
+	const s = uniqueSuffix();
+
+	// Beide Schreibweisen, die pkg/lmf kennt — ein manuell angelegtes "LMF - Deutsch"
+	// mit Leerzeichen fiel früher schon einmal durch die Erkennung.
+	seedSQL(`
+        WITH t AS (
+            INSERT INTO buecher_titel (titel, autor)
+            VALUES ('LMF-Biologie ${s}', 'Schulbuchverlag'),
+                   ('LMF - Deutsch ${s}', 'Schulbuchverlag'),
+                   ('Freihand Roman ${s}', 'Romanautor')
+            RETURNING id, titel
+        )
+        INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+        SELECT id, 'LMFOPAC-' || substr(md5(titel), 1, 8) || '-${s}', true FROM t;
+    `);
+
+	// Gesucht wird nach dem gemeinsamen Suffix: Ohne Filter kämen alle drei zurück.
+	const res = await page.request.get(`/api/public/opac/suche?q=${encodeURIComponent(s)}`);
+	expect(res.status()).toBe(200);
+	const titel = (await res.json()).map((/** @type {any} */ t) => t.titel);
+
+	expect(titel, 'Freihand-Titel muss im Katalog stehen').toContain(`Freihand Roman ${s}`);
+	expect(titel, 'LMF-Titel mit Bindestrich').not.toContain(`LMF-Biologie ${s}`);
+	expect(titel, 'LMF-Titel mit Leerzeichen').not.toContain(`LMF - Deutsch ${s}`);
+
+	// Und derselbe Titel bleibt für die Verwaltung auffindbar — der Filter gehört
+	// ausschließlich in die öffentliche Suche.
+	await uiLogin(page);
+	const intern = await page.request.get(`/api/books?q=${encodeURIComponent('LMF-Biologie ' + s)}`);
+	expect(intern.status(), 'interne Buchsuche').toBe(200);
+	expect(JSON.stringify(await intern.json()), 'LMF-Titel muss intern auffindbar bleiben').toContain(
+		`LMF-Biologie ${s}`
+	);
 });

@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/lmf"
 )
 
 // queryOpacTitel führt die (parametrisierte) OPAC-Suche aus und mappt die Zeilen.
@@ -65,7 +66,15 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		// only to determine availability — no ausleihe column values are returned.
 		args := []any{}
 
-		var searchConditions []string
+		// Schulbücher der Lernmittelfreiheit gehören nicht in den öffentlichen Katalog:
+		// Sie werden klassensatzweise zugeteilt, niemand recherchiert freiwillig nach
+		// dem Biologiebuch der 8. Klasse. Im Katalog stehend würden sie die Treffer der
+		// eigentlichen Freihand-Bibliothek (Romane, Sachbücher) zuschütten — bei einem
+		// LMF-Bestand in Klassensatzstärke sind das hunderte Titel.
+		//
+		// Nur diese eine öffentliche Suche filtert. Verwaltung, Inventur, Bestellwesen
+		// und die Klassensatz-Reservierung müssen die Bücher weiter finden.
+		var searchConditions = []string{"NOT (" + lmf.SQLBedingung("bt.titel") + ")"}
 
 		if q != "" {
 			args = append(args, q)

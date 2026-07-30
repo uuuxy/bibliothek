@@ -155,7 +155,12 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 		{"HELFER", "delete_students", false},
 		{"HELFER", "import_students", false},
 		{"HELFER", "upload_photos", false},
-		{"HELFER", "view_books", false},
+		// Katalog JA (Betreiber-Entscheidung 30.07.2026): Ein Helfer an der Theke ist
+		// die erste Anlaufstelle für "Habt ihr Band 3 von Gregs Tagebuch noch da?".
+		// Ohne Katalogzugriff müsste er dafür jedes Mal an die Leitung abgeben. Das
+		// Recht ist rein lesend und öffnet keine Personendaten — die stecken hinter
+		// view_students, das für den Helfer weiterhin verschlossen bleibt.
+		{"HELFER", "view_books", true},
 		{"HELFER", "edit_books", false},
 		{"HELFER", "delete_books", false},
 		{"HELFER", "inventory_scan", false},

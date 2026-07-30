@@ -39,6 +39,13 @@ func TestHelferPermissions_KioskJaMahnwesenNein(t *testing.T) {
 		t.Error("HELFER darf KEIN manage_users haben")
 	}
 
+	// Katalog JA (Betreiber-Entscheidung 30.07.2026): Der Helfer an der Theke muss
+	// nachsehen können, ob ein Titel da ist, ohne jede Frage weiterzureichen. Rein
+	// lesend — die Grenze zu Personendaten zieht view_students, nicht view_books.
+	if a, found := allowed("HELFER", "view_books"); !found || !a {
+		t.Errorf("HELFER muss view_books haben (Theken-Auskunft), war allowed=%v found=%v", a, found)
+	}
+
 	// Keine Regression: Die anderen operativen Rollen behalten perform_actions, nachdem
 	// die Kiosk-Routen von view_students auf perform_actions umgestellt wurden.
 	for _, role := range []string{"LEHRER", "MITARBEITER"} {
