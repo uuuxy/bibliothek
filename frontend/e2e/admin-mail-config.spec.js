@@ -1,28 +1,58 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, csrfToken, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, csrfToken, seedSQL, uniqueSuffix } from './helpers.js';
 
-test('E-Mail- & SMTP-Konfiguration: Test-Mail API Endpunkt liefert 200', async ({ page }) => {
+// Der geglückte Versand steht bewusst NICHT hier, sondern in api/mail_settings_test.go
+// (Fake-SMTP-Server, der die Nachricht annimmt und sich befragen lässt): Die
+// SMTP-Konfiguration des lokalen Stacks zeigt auf den Schulserver — ein E2E-Test des
+// Versandwegs würde echte Mails verschicken. Was nur hier zu prüfen ist, ist der
+// Weg durch Router und Berechtigungen; die Abweisungen lösen keine Verbindung aus.
+//
+// Vorher stand hier expect([200, 400, 500]).toContain(status) — eine Zusicherung, die
+// nicht rot werden konnte: Der Aufruf schickte zudem Felder (test_recipient), die die
+// API nie gelesen hat, lief also dauerhaft in die 400 und belegte nichts.
+
+// Klein geschrieben passiert absichtlich: Go-Fehlerstrings beginnen laut Linter-Gate
+// kleingeschrieben, und die Meldung wird unverändert zur Toast-Nachricht.
+const EMPFAENGER_FELD = /empfänger/i;
+
+test('Test-Mail: unbrauchbarer Empfänger wird abgewiesen, ohne SMTP zu bemühen', async ({
+	page
+}) => {
 	await uiLogin(page);
-	await page.goto('/einstellungen');
 
-	// Wir rufen den Endpoint direkt auf, um den Backend-Weg zu testen,
-	// ohne uns auf die genaue UI der Settings zu verlassen (falls der Button in einem Untertab ist).
-	const res = await page.request.post('/api/admin/settings/mail/test', {
-		data: {
-			host: 'localhost',
-			port: 1025,
-			username: '',
-			password: '',
-			encryption: 'none',
-			sender: 'test@local',
-			test_recipient: 'admin@local'
-		}
+	// Leer: Das Formular lässt es nicht zu, ein API-Client schon.
+	const leer = await apiPost(page, '/api/admin/settings/mail/test', { to: '' });
+	expect(leer.status(), 'leerer Empfänger').toBe(400);
+	expect((await leer.json()).error).toMatch(EMPFAENGER_FELD);
+
+	// Keine Adresse: muss als Eingabefehler zurückkommen (400), nicht als
+	// Serverstörung (500) — sonst kann das Formular es nicht von einem SMTP-Ausfall
+	// unterscheiden, und apierrors dampft die Meldung auf "Datenbankfehler" ein.
+	const kaputt = await apiPost(page, '/api/admin/settings/mail/test', { to: 'admin(at)schule.de' });
+	expect(kaputt.status(), 'Adresse ohne @').toBe(400);
+	expect((await kaputt.json()).error).toMatch(EMPFAENGER_FELD);
+
+	// Kopfzeilen-Schmuggel: Ein CR/LF im Empfänger hängte sonst ein Bcc an die Mail.
+	const schmuggel = await apiPost(page, '/api/admin/settings/mail/test', {
+		to: 'admin@schule.de>\r\nBcc: mitleser@example.com'
 	});
+	expect(schmuggel.status(), 'Bcc-Schmuggel im Empfänger').toBe(400);
+});
 
-	// Wir erwarten 200, oder 500 falls mail server lokal nicht erreichbar ist.
-	// Ein echter Fehler wegen fehlendem Server ist 500, das UI zeigt ihn an.
-	// Aber für Smoke checken wir nur, dass der Endpoint existiert und reagiert (nicht 404).
-	expect([200, 400, 500]).toContain(res.status());
+// Der Testversand verschickt Mail über den Schul-SMTP — er gehört keinem Konto in
+// die Hand, das keine Benutzer verwalten darf. Die Berechtigung hängt am Router, ein
+// Handler-Test in Go kann sie nicht belegen.
+test('Test-Mail: ohne manage_users bleibt der Versandknopf verschlossen', async ({ page }) => {
+	const mitarbeiter = `e2e-mailtest-${uniqueSuffix()}@test.local`;
+	seedSQL(`
+        INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+        VALUES ('E2E', 'Mailtest', '${mitarbeiter}', 'mitarbeiter', true)
+        ON CONFLICT DO NOTHING;
+    `);
+	await uiLogin(page, mitarbeiter);
+
+	const res = await apiPost(page, '/api/admin/settings/mail/test', { to: 'admin@schule.de' });
+	expect(res.status(), 'Testversand als Mitarbeiter').toBe(403);
 });
 
 // Mahn-Template-Bearbeitung: der Admin muss Betreff/Text der Mahnungen ändern

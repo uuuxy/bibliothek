@@ -71,6 +71,17 @@ func baueTextNachricht(sender, to, betreff, body string) ([]byte, error) {
 		"%s\r\n", sender, to, betreff, body)), nil
 }
 
+// ErrSMTPVersand markiert jeden Fehler, der beim Sprechen mit dem SMTP-Server
+// entstanden ist — im Unterschied zu einer Störung in der Anwendung selbst.
+//
+// Der Marker ist nicht Kosmetik: apierrors dampft jede HTTP 500 auf eine neutrale
+// Meldung ein ("Ein interner Datenbankfehler ist aufgetreten"). Ein Testversand, der
+// den SMTP-Fehler als 500 zurückgibt, verwandelt also genau die Diagnose, für die
+// describeSMTPError geschrieben wurde, in eine Meldung über die Datenbank. Anhand
+// dieses Markers kann der Aufrufer den Fehler stattdessen als Antwort über den
+// Zielserver ausliefern und die Meldung durchreichen.
+var ErrSMTPVersand = errors.New("SMTP-Versand fehlgeschlagen")
+
 // describeSMTPError übersetzt die technischen Fehler von net/smtp in eine Meldung,
 // aus der hervorgeht, was zu tun ist. Vor allem der Zertifikatsfall lohnt sich:
 // Go prüft beim STARTTLS den Hostnamen streng, und viele Schulserver liefern ein
@@ -84,11 +95,11 @@ func describeSMTPError(addr string, err error) error {
 			names = []string{hostErr.Certificate.Subject.CommonName}
 		}
 		return fmt.Errorf(
-			"SMTP-Versand über %s fehlgeschlagen: Das Zertifikat des Servers gilt für %s, nicht für %q. "+
+			"%w (Server %s): Das Zertifikat des Servers gilt für %s, nicht für %q. "+
 				"Bitte den SMTP-Host auf einen dieser Namen ändern",
-			addr, strings.Join(names, ", "), hostErr.Host)
+			ErrSMTPVersand, addr, strings.Join(names, ", "), hostErr.Host)
 	}
-	return fmt.Errorf("SMTP-Versand über %s fehlgeschlagen: %w", addr, err)
+	return fmt.Errorf("%w (Server %s): %w", ErrSMTPVersand, addr, err)
 }
 
 // SendTemplateMail lädt eine Vorlage aus der Datenbank, ersetzt Platzhalter (z.B. {{.Name}}) und versendet die E-Mail.

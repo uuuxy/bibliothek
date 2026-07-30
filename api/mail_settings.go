@@ -3,8 +3,11 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"net/mail"
+	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -63,6 +66,19 @@ func (s *Server) UpdateMailSettingsHandler(mailRepo *repository.MailSettingsRepo
 			return
 		}
 
+		// Absender beim Speichern prüfen, nicht erst beim Versand: Eine Adresse mit
+		// Tippfehler ließ sich bisher speichern und fiel erst im Testversand auf — dort
+		// als 500, die der Admin als Datenbankfehler zu lesen bekam. Leer ist erlaubt,
+		// dafür setzt der Versand seinen Standardabsender ein.
+		if sender := strings.TrimSpace(req.SenderEmail); sender != "" {
+			parsed, err := mail.ParseAddress(sender)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err))
+				return
+			}
+			req.SenderEmail = parsed.Address
+		}
+
 		ctx := r.Context()
 		err := mailRepo.UpdateConfig(ctx, req.SMTPHost, req.SMTPPort, req.SMTPUser, req.SMTPPassword, req.SenderEmail)
 		if err != nil {
@@ -100,13 +116,33 @@ func (s *Server) PostTestMailSettingsHandler() http.HandlerFunc {
 			return
 		}
 
-		if req.To == "" {
+		to := strings.TrimSpace(req.To)
+		if to == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("empfänger-E-Mail-Adresse fehlt"))
 			return
 		}
 
+		// Die Adresse hier prüfen, nicht erst im Versand: Eine unbrauchbare Eingabe
+		// ist ein Client-Fehler (400) und keine Serverstörung (500) — nur so kann das
+		// Formular sie von einem echten SMTP-Ausfall unterscheiden. Die Hürde in
+		// SendTestMail bleibt trotzdem stehen, sie schützt die anderen Aufrufer.
+		parsed, err := mail.ParseAddress(to)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("ungültige Empfänger-E-Mail-Adresse: %w", err))
+			return
+		}
+
 		ctx := r.Context()
-		err := mailservice.SendTestMail(ctx, s.DB.Pool, req.To)
+		err = mailservice.SendTestMail(ctx, s.DB.Pool, parsed.Address)
+		if errors.Is(err, mailservice.ErrSMTPVersand) {
+			// 502 statt 500: Der Zielserver hat versagt, nicht diese Anwendung — und
+			// nur unterhalb von 500 reicht apierrors die Meldung durch. Als 500 hätte
+			// der Admin für jede SMTP-Fehlkonfiguration "Ein interner Datenbankfehler
+			// ist aufgetreten" im Formular gelesen; die Diagnose aus describeSMTPError
+			// (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname) wäre verloren.
+			apierrors.SendHTTPError(w, http.StatusBadGateway, err)
+			return
+		}
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
