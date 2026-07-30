@@ -9,20 +9,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-func TestStatusRecorder(t *testing.T) {
-	recorder := httptest.NewRecorder()
-	statusRec := &statusRecorder{ResponseWriter: recorder, status: http.StatusOK}
-	statusRec.WriteHeader(http.StatusCreated)
-
-	if statusRec.status != http.StatusCreated {
-		t.Errorf("Expected status %d, got %d", http.StatusCreated, statusRec.status)
-	}
-	if recorder.Code != http.StatusCreated {
-		t.Errorf("Expected ResponseWriter status %d, got %d", http.StatusCreated, recorder.Code)
-	}
-}
-
-func TestHandleAdminBooks_RoutingAndBackup(t *testing.T) {
+func TestHandleAdminBooks_Routing(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -33,22 +20,17 @@ func TestHandleAdminBooks_RoutingAndBackup(t *testing.T) {
 	metadatenClient := &MetadatenClient{httpClient: &http.Client{}}
 
 	handler := NewAPIHandler(APIHandlerConfig{
-		Repo:      repo,
-		Metadaten: metadatenClient,
+		Repo:             repo,
+		Metadaten:        metadatenClient,
 		RequireViewBooks: func(h http.Handler) http.Handler { return h },
 		RequireEditBooks: func(h http.Handler) http.Handler { return h },
 	})
-
-	backupManager := NewBackupManager("dummy-url")
-	handler.backup = backupManager
-	defer backupManager.Stop()
 
 	tests := []struct {
 		name           string
 		method         string
 		path           string
 		expectedStatus int
-		expectBackup   bool
 		setupMock      func()
 	}{
 		{
@@ -56,49 +38,42 @@ func TestHandleAdminBooks_RoutingAndBackup(t *testing.T) {
 			method:         http.MethodPost,
 			path:           "/api/admin/books/import",
 			expectedStatus: http.StatusNotImplemented,
-			expectBackup:   false,
 		},
 		{
 			name:           "GET invalid path - Not Found",
 			method:         http.MethodGet,
 			path:           "/api/admin/books/invalid",
 			expectedStatus: http.StatusNotFound,
-			expectBackup:   false,
 		},
 		{
 			name:           "POST invalid path - Not Found",
 			method:         http.MethodPost,
 			path:           "/api/admin/books/invalid",
 			expectedStatus: http.StatusNotFound,
-			expectBackup:   false,
 		},
 		{
 			name:           "PUT invalid path - Not Found",
 			method:         http.MethodPut,
 			path:           "/api/admin/books/invalid",
 			expectedStatus: http.StatusNotFound,
-			expectBackup:   false,
 		},
 		{
 			name:           "DELETE invalid path - Not Found",
 			method:         http.MethodDelete,
 			path:           "/api/admin/books/invalid",
 			expectedStatus: http.StatusNotFound,
-			expectBackup:   false,
 		},
 		{
 			name:           "PATCH unsupported method - Not Found",
 			method:         http.MethodPatch,
 			path:           "/api/admin/books",
 			expectedStatus: http.StatusNotFound,
-			expectBackup:   false,
 		},
 		{
 			name:           "PUT /api/admin/books/reorder - Success triggers backup",
 			method:         http.MethodPut,
 			path:           "/api/admin/books/reorder",
 			expectedStatus: http.StatusOK,
-			expectBackup:   true,
 			setupMock: func() {
 				mockPool.ExpectBegin()
 				mockPool.ExpectExec(`UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge`).
@@ -114,12 +89,6 @@ func TestHandleAdminBooks_RoutingAndBackup(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Clear signal channel before test
-			select {
-			case <-backupManager.signalCh:
-			default:
-			}
-
 			if tc.setupMock != nil {
 				tc.setupMock()
 			}
@@ -137,18 +106,6 @@ func TestHandleAdminBooks_RoutingAndBackup(t *testing.T) {
 
 			if rec.Code != tc.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rec.Code)
-			}
-
-			// Ensure backup was triggered correctly
-			backupTriggered := false
-			select {
-			case <-backupManager.signalCh:
-				backupTriggered = true
-			default:
-			}
-
-			if backupTriggered != tc.expectBackup {
-				t.Errorf("Expected backup triggered: %v, got %v", tc.expectBackup, backupTriggered)
 			}
 
 			if err := mockPool.ExpectationsWereMet(); err != nil {

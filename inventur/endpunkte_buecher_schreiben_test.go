@@ -83,13 +83,7 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	defer mock.Close()
 
 	repo := NewBookRepository(mock)
-	backup := NewBackupManager("dummy-url")
-	defer backup.Stop()
-
-	handler := &APIHandler{
-		repo:   repo,
-		backup: backup,
-	}
+	handler := &APIHandler{repo: repo}
 
 	t.Run("Invalid JSON", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader("invalid json"))
@@ -153,8 +147,6 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	defer mock.Close()
 
 	repo := NewBookRepository(mock)
-	backup := NewBackupManager("dummy-url")
-	defer backup.Stop()
 
 	// Mock HTTP Client for MetadatenClient
 	mockHTTP := &http.Client{
@@ -172,7 +164,6 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	handler := &APIHandler{
 		repo:      repo,
 		metadaten: metaClient,
-		backup:    backup,
 	}
 
 	t.Run("Invalid JSON", func(t *testing.T) {

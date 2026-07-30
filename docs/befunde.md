@@ -33,11 +33,7 @@ Zwei Regeln dazu:
 
 ## Offen
 
-| # | Fund | Kat. | Fundstelle |
-|---|---|---|---|
-| 1 | E2E-Test fällt gelegentlich um (Popup-Timing), lief in 1 von 3 Läufen rot. Ein Gate, dem man nicht ganz traut, ist ein halbes Gate. | B | `frontend/e2e/schadensfall.spec.js` |
-| 2 | `SendTemplateMail` hat keinen einzigen Aufrufer mehr — Vorlagen-Versand über die Datenbank, den niemand benutzt. | B | `mailservice/mailservice.go` |
-| 3 | Backup-Mails lesen weiterhin nur die Umgebung, nicht die Oberfläche. **Bewusst so**: Eine Backup-Mail muss auch dann rausgehen, wenn die Datenbank das Problem ist. | C (entschieden) | `inventur/backup_email.go` |
+*(leer)*
 
 ---
 
@@ -57,5 +53,17 @@ funktionieren, und nichts prüfte die Behauptung nach:
 **Merksatz:** Der Fundort ist immer die Stelle, an der eine Zusicherung steht, die
 niemand prüft — ein Kommentar, ein Testname, eine Eingabemaske. Wer dort sucht,
 findet; wer im Code sucht, findet Schönheitsfehler.
+
+### Nachtrag desselben Tages: die Liste selbst abgearbeitet
+
+| Fund | Was es behauptete | Was stimmte |
+|---|---|---|
+| `schadensfall.spec.js` fiel unter Last um | Test prüft den Elternbrief | `popup.url()` wurde gelesen, bevor die Navigation übernommen hatte — allein grün, im vollen Lauf manchmal rot. Jetzt wird die Adresse abgewartet und die Route zusätzlich am Inhaltstyp geprüft. |
+| `SendTemplateMail` | Vorlagen-Versand des Systems | kein einziger Aufrufer; die Vorlagen werden anderswo direkt geladen. Entfernt. |
+| `inventur`-Backup-Modul samt Benachrichtigungs-Mail | zweites Backup-System mit Mail bei Änderungen | `NewAPIHandler` hat das Feld nie gesetzt — unerreichbar. Gesichert wird über `jobs.BackupJob`. Die `.env.example` lud dazu ein, `BACKUP_EMAIL_TO` zu setzen und auf Mails zu warten, die nie kommen konnten. Ersatzlos entfernt. |
+
+Der dritte Fund kam aus der Prüfung des zweiten: Der Eintrag stand hier als
+„bewusst so entschieden" — und die Begründung hielt der Nachfrage nicht stand. Auch
+eine Notiz in dieser Liste ist eine Zusicherung, die jemand prüfen muss.
 
 Stand: 2026-07-30

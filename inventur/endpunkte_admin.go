@@ -6,19 +6,7 @@ import (
 )
 
 // handleAdminBooks ist der zentrale Router für admin-geschützte Buch-Operationen.
-// Schreibende Operationen lösen automatisch ein Backup-Signal aus.
-func (handler *APIHandler) handleAdminBooks(writer http.ResponseWriter, request *http.Request) {
-	isMutation := request.Method == http.MethodPost ||
-		request.Method == http.MethodPut ||
-		request.Method == http.MethodDelete
-
-	w := writer
-	var recorder *statusRecorder
-	if isMutation && handler.backup != nil {
-		recorder = &statusRecorder{ResponseWriter: writer, status: http.StatusOK}
-		w = recorder
-	}
-
+func (handler *APIHandler) handleAdminBooks(w http.ResponseWriter, request *http.Request) {
 	path := request.URL.Path
 
 	switch request.Method {
@@ -77,21 +65,4 @@ func (handler *APIHandler) handleAdminBooks(writer http.ResponseWriter, request 
 	default:
 		writeError(w, http.StatusNotFound, routeNotFoundMsg)
 	}
-
-	// Bei erfolgreicher Mutation: Backup-Signal auslösen
-	if recorder != nil && recorder.status >= 200 && recorder.status < 300 {
-		handler.backup.NotifyChange()
-	}
-}
-
-// statusRecorder ist ein http.ResponseWriter-Wrapper, der den HTTP-Statuscode
-// aufzeichnet, um nach dem Handler-Aufruf zu prüfen, ob die Operation erfolgreich war.
-type statusRecorder struct {
-	http.ResponseWriter
-	status int
-}
-
-func (r *statusRecorder) WriteHeader(code int) {
-	r.status = code
-	r.ResponseWriter.WriteHeader(code)
 }

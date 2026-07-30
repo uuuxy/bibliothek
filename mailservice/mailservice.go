@@ -1,18 +1,14 @@
 package mailservice
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/mail"
-	"net/smtp"
 	"strings"
-	"text/template"
 
 	"bibliothek/db"
-	"bibliothek/internal/crypto"
 )
 
 // ErrHeaderUmbruch meldet einen Zeilenumbruch in einem Kopfzeilen-Wert.
@@ -44,10 +40,10 @@ func HeaderWert(feld, wert string) (string, error) {
 // Kopfzeile. Eine Stelle statt zwei: Vorher stand derselbe Sprintf zweimal im
 // Paket, und eine Absicherung an nur einer der beiden Stellen wäre keine.
 func baueTextNachricht(sender, to, betreff, body string) ([]byte, error) {
-	// Der Betreff kommt bei Vorlagenmails aus der Datenbank, wo eine Redakteurin
-	// beim Bearbeiten leicht einen Umbruch hinterlässt. Den weisen wir nicht ab,
-	// sondern glätten ihn zu einem Leerzeichen — er ist ein Tippfehler, kein
-	// Angriff. Danach greift für alle drei Felder dieselbe Hürde.
+	// Ein Betreff kann aus einer Vorlage in der Datenbank stammen, wo beim Bearbeiten
+	// leicht ein Umbruch stehen bleibt. Den weisen wir nicht ab, sondern glätten ihn
+	// zu einem Leerzeichen — er ist ein Tippfehler, kein Angriff. Danach greift für
+	// alle drei Felder dieselbe Hürde.
 	betreff = strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(betreff)
 
 	felder := []struct {
@@ -88,10 +84,9 @@ var ErrSMTPVersand = errors.New("SMTP-Versand fehlgeschlagen")
 // Zertifikat, das nur auf ihren echten Namen ausgestellt ist (z.B. srv1.<domain>)
 // und nicht auf den gewohnten smtp.<domain>-Alias.
 //
-// Exportiert, weil es einen zweiten Versender gibt (api/mail_sender.go, env-statt
-// DB-konfiguriert, mit verifiziertem STARTTLS): Der Mahnlauf läuft über genau den
-// Schulserver, für dessen Zertifikatsfall diese Übersetzung geschrieben wurde — sie
-// darf nicht in dem Versender eingeschlossen bleiben, der ihn nicht benutzt.
+// Exportiert, weil der Aufbau der Nachricht und ihr Transport in verschiedenen
+// Päckchen liegen (api/mail_sender.go baut die Mahnung mit PDF-Anhang, versendet wird
+// sie über versand.go) — die Übersetzung muss für beide dieselbe sein.
 func BeschreibeSMTPFehler(addr string, err error) error {
 	var hostErr x509.HostnameError
 	if errors.As(err, &hostErr) {
@@ -105,97 +100,6 @@ func BeschreibeSMTPFehler(addr string, err error) error {
 			ErrSMTPVersand, addr, strings.Join(names, ", "), hostErr.Host)
 	}
 	return fmt.Errorf("%w (Server %s): %w", ErrSMTPVersand, addr, err)
-}
-
-// SendTemplateMail lädt eine Vorlage aus der Datenbank, ersetzt Platzhalter (z.B. {{.Name}}) und versendet die E-Mail.
-func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, templateType string, data map[string]interface{}) error {
-	var betreff, textBody string
-
-	// Vorlage aus der DB laden
-	err := dbPool.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = $1", templateType).Scan(&betreff, &textBody)
-	if err != nil {
-		return fmt.Errorf("vorlage '%s' nicht gefunden oder Fehler beim Laden: %w", templateType, err)
-	}
-
-	// Template parsen
-	tmpl, err := template.New("mail_body").Parse(textBody)
-	if err != nil {
-		return fmt.Errorf("fehler beim parsen des Vorlagentextes: %w", err)
-	}
-
-	// Daten in das Template einsetzen
-	var bodyBuf bytes.Buffer
-	if err := tmpl.Execute(&bodyBuf, data); err != nil {
-		return fmt.Errorf("fehler beim anwenden der Daten auf Vorlage: %w", err)
-	}
-
-	// SMTP-Konfiguration aus der Datenbank laden
-	var smtpHost, smtpPort, smtpUser, sender string
-	var smtpPassEncrypted []byte
-
-	err = dbPool.QueryRow(ctx, "SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email FROM mail_settings_config WHERE id = 1").
-		Scan(&smtpHost, &smtpPort, &smtpUser, &smtpPassEncrypted, &sender)
-
-	if err != nil {
-		// Fallback, falls die Tabelle leer ist oder noch nicht migriert wurde
-		smtpHost = "localhost"
-		smtpPort = "1025"
-		sender = defaultFromAddress
-	}
-
-	var smtpPass string
-	if len(smtpPassEncrypted) > 0 {
-		decrypted, err := crypto.Decrypt(smtpPassEncrypted)
-		if err != nil {
-			return fmt.Errorf("fehler beim Entschlüsseln des SMTP-Passworts: %w", err)
-		}
-		smtpPass = string(decrypted)
-	}
-
-	if smtpHost == "" {
-		smtpHost = "localhost"
-	}
-	if smtpPort == "" {
-		smtpPort = "1025"
-	}
-	if sender == "" {
-		sender = defaultFromAddress
-	}
-
-	// validate sender
-	parsedSender, err := mail.ParseAddress(sender)
-	if err != nil {
-		return fmt.Errorf("ungültige Absender-E-Mail-Adresse: %w", err)
-	}
-	sender = parsedSender.Address
-
-	// validate recipient
-	parsedTo, err := mail.ParseAddress(to)
-	if err != nil {
-		return fmt.Errorf("ungültige E-Mail-Adresse: %w", err)
-	}
-	to = parsedTo.Address
-
-	// Für echte HTML-Mails muss der Content-Type auf text/html gesetzt werden
-	msg, err := baueTextNachricht(sender, to, betreff, bodyBuf.String())
-	if err != nil {
-		return err
-	}
-
-	// SMTP-Verbindung aufbauen und E-Mail versenden
-	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
-
-	var auth smtp.Auth
-	if smtpUser != "" && smtpPass != "" {
-		auth = smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
-	}
-
-	err = smtp.SendMail(addr, auth, sender, []string{to}, msg)
-	if err != nil {
-		return BeschreibeSMTPFehler(addr, err)
-	}
-
-	return nil
 }
 
 // SendTestMail versendet eine einfache Testnachricht, um die SMTP-Konfiguration zu

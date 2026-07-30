@@ -45,8 +45,22 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	const popupPromise = page.waitForEvent('popup');
 	await page.getByRole('button', { name: 'Melden & PDF generieren' }).click();
 	const popup = await popupPromise;
-	expect(popup.url()).toContain('/pdf');
+
+	// popup.url() sofort auszulesen war der Grund, warum dieser Test unter Last
+	// gelegentlich umfiel: Das popup-Ereignis feuert, sobald das Fenster existiert —
+	// die Adresse steht erst, wenn die Navigation übernommen hat. Bis dahin liefert
+	// url() "about:blank". Allein lief der Test deshalb immer durch, im vollen Lauf
+	// (Backend erzeugt gleichzeitig das PDF) reichte die Zeit manchmal nicht.
+	await expect
+		.poll(() => popup.url(), { message: 'Elternbrief-Popup öffnet das PDF' })
+		.toContain('/pdf');
+	const elternbriefURL = popup.url();
 	await popup.close();
+
+	// Ein geöffnetes Fenster ist noch kein Elternbrief — die Route muss auch liefern.
+	const elternbrief = await page.request.get(elternbriefURL);
+	expect(elternbrief.status(), 'Elternbrief-PDF').toBe(200);
+	expect(elternbrief.headers()['content-type']).toContain('application/pdf');
 
 	// Die Ausleihe ist beendet — das Buch verschwindet aus der Liste
 	await expect(page.getByText(`E2E-Schadenbuch-${suffix}`)).not.toBeVisible();

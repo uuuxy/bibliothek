@@ -19,17 +19,17 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 
 	s, err := f.Stat()
 	if err != nil {
-		_ = f.Close()  //nolint:errcheck
+		_ = f.Close() //nolint:errcheck
 		return nil, err
 	}
 
 	if s.IsDir() {
 		index := strings.TrimSuffix(path, "/") + "/index.html"
 		if idx, err := nfs.fs.Open(index); err != nil {
-			_ = f.Close()  //nolint:errcheck
+			_ = f.Close() //nolint:errcheck
 			return nil, err
 		} else {
-			_ = idx.Close()  //nolint:errcheck
+			_ = idx.Close() //nolint:errcheck
 		}
 	}
 
@@ -43,10 +43,17 @@ type APIHandlerConfig struct {
 	RequireEditBooks func(http.Handler) http.Handler
 }
 
+// APIHandler bündelt die Endpunkte des Inventur-Moduls.
+//
+// Hier stand bis zum 30.07.2026 ein Feld backup *BackupManager, das NewAPIHandler nie
+// gesetzt hat: ein vollständiges zweites Backup-System (Dump, Datei-Rotation,
+// Benachrichtigungs-Mail), das nichts erreichen konnte. Gesichert wird über
+// jobs.BackupJob — verschlüsselt, täglich, mit Statusanzeige in der Oberfläche.
+// Die .env.example lud allerdings dazu ein, BACKUP_EMAIL_TO zu setzen und auf
+// Benachrichtigungen zu warten, die nie kommen konnten. Ersatzlos entfernt.
 type APIHandler struct {
 	repo      *BookRepository
 	metadaten *MetadatenClient
-	backup    *BackupManager
 	mux       *http.ServeMux
 }
 
