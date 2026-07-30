@@ -87,7 +87,11 @@
 
 <svelte:window
 	onkeydown={(e) => {
-		if (e.key === 'Escape') offen = false;
+		if (e.key !== 'Escape' || !offen) return;
+		offen = false;
+		// Als verarbeitet markieren: Sonst schliesst derselbe Tastendruck zusätzlich die
+		// ganze Ansicht (globaler Escape-Kurzbefehl in Router.svelte).
+		e.preventDefault();
 	}}
 />
 
