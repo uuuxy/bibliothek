@@ -53,7 +53,7 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 		}
 
 		if err := SendEmail(mailReq); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("E-Mail-Versand fehlgeschlagen: %w", err))
+			apierrors.SendHTTPError(w, mailFehlerStatus(err), fmt.Errorf("E-Mail-Versand fehlgeschlagen: %w", err))
 			return
 		}
 

@@ -134,17 +134,11 @@ func (s *Server) PostTestMailSettingsHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 		err = mailservice.SendTestMail(ctx, s.DB.Pool, parsed.Address)
-		if errors.Is(err, mailservice.ErrSMTPVersand) {
-			// 502 statt 500: Der Zielserver hat versagt, nicht diese Anwendung — und
-			// nur unterhalb von 500 reicht apierrors die Meldung durch. Als 500 hätte
-			// der Admin für jede SMTP-Fehlkonfiguration "Ein interner Datenbankfehler
-			// ist aufgetreten" im Formular gelesen; die Diagnose aus describeSMTPError
-			// (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname) wäre verloren.
-			apierrors.SendHTTPError(w, http.StatusBadGateway, err)
-			return
-		}
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			// mailFehlerStatus: 502, wenn der Zielserver versagt hat — nur so erreicht
+			// die Diagnose (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname)
+			// das Formular, für das sie geschrieben wurde.
+			apierrors.SendHTTPError(w, mailFehlerStatus(err), err)
 			return
 		}
 

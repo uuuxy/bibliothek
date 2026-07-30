@@ -1,12 +1,15 @@
 package api
 
 import (
+	"bibliothek/mailservice"
 	"bibliothek/pkg/closeutil"
 	"bytes"
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"mime/multipart"
+	"net/http"
 	"net/mail"
 	"net/smtp"
 	"net/textproto"
@@ -78,10 +81,24 @@ func sendEmailSMTP(req MailRequest) error {
 	}
 
 	if err := sendMailViaSMTP(addr, host, auth, from, []string{req.To}, msg); err != nil {
-		return fmt.Errorf("SMTP send failed: %w", err)
+		// Dieselbe Übersetzung wie im DB-konfigurierten Versender: Dieser hier spricht
+		// mit dem Schulserver und verifiziert dessen Zertifikat — der Fall, für den die
+		// Meldung über den Zertifikatsnamen überhaupt geschrieben wurde.
+		return mailservice.BeschreibeSMTPFehler(addr, err)
 	}
 
 	return nil
+}
+
+// mailFehlerStatus ordnet einem Versandfehler den HTTP-Status zu. Versagt der
+// Zielserver, ist das keine Störung dieser Anwendung — und nur unterhalb von 500
+// reicht apierrors die Meldung durch: Als 500 bekäme der Admin für jede
+// SMTP-Fehlkonfiguration "Ein interner Datenbankfehler ist aufgetreten" zu lesen.
+func mailFehlerStatus(err error) int {
+	if errors.Is(err, mailservice.ErrSMTPVersand) {
+		return http.StatusBadGateway
+	}
+	return http.StatusInternalServerError
 }
 
 // baueMailNachricht erstellt die vollständige MIME-Multipart-Nachricht (Header, Textteil,

@@ -77,17 +77,22 @@ func baueTextNachricht(sender, to, betreff, body string) ([]byte, error) {
 // Der Marker ist nicht Kosmetik: apierrors dampft jede HTTP 500 auf eine neutrale
 // Meldung ein ("Ein interner Datenbankfehler ist aufgetreten"). Ein Testversand, der
 // den SMTP-Fehler als 500 zurückgibt, verwandelt also genau die Diagnose, für die
-// describeSMTPError geschrieben wurde, in eine Meldung über die Datenbank. Anhand
+// BeschreibeSMTPFehler geschrieben wurde, in eine Meldung über die Datenbank. Anhand
 // dieses Markers kann der Aufrufer den Fehler stattdessen als Antwort über den
 // Zielserver ausliefern und die Meldung durchreichen.
 var ErrSMTPVersand = errors.New("SMTP-Versand fehlgeschlagen")
 
-// describeSMTPError übersetzt die technischen Fehler von net/smtp in eine Meldung,
+// BeschreibeSMTPFehler übersetzt die technischen Fehler von net/smtp in eine Meldung,
 // aus der hervorgeht, was zu tun ist. Vor allem der Zertifikatsfall lohnt sich:
 // Go prüft beim STARTTLS den Hostnamen streng, und viele Schulserver liefern ein
 // Zertifikat, das nur auf ihren echten Namen ausgestellt ist (z.B. srv1.<domain>)
 // und nicht auf den gewohnten smtp.<domain>-Alias.
-func describeSMTPError(addr string, err error) error {
+//
+// Exportiert, weil es einen zweiten Versender gibt (api/mail_sender.go, env-statt
+// DB-konfiguriert, mit verifiziertem STARTTLS): Der Mahnlauf läuft über genau den
+// Schulserver, für dessen Zertifikatsfall diese Übersetzung geschrieben wurde — sie
+// darf nicht in dem Versender eingeschlossen bleiben, der ihn nicht benutzt.
+func BeschreibeSMTPFehler(addr string, err error) error {
 	var hostErr x509.HostnameError
 	if errors.As(err, &hostErr) {
 		names := hostErr.Certificate.DNSNames
@@ -187,7 +192,7 @@ func SendTemplateMail(ctx context.Context, dbPool db.PgxPoolIface, to string, te
 
 	err = smtp.SendMail(addr, auth, sender, []string{to}, msg)
 	if err != nil {
-		return describeSMTPError(addr, err)
+		return BeschreibeSMTPFehler(addr, err)
 	}
 
 	return nil
@@ -254,7 +259,7 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 
 	err = smtp.SendMail(addr, smtpAuth, sender, []string{to}, msg)
 	if err != nil {
-		return describeSMTPError(addr, err)
+		return BeschreibeSMTPFehler(addr, err)
 	}
 
 	return nil
