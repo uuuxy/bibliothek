@@ -6,136 +6,25 @@ package api
 //
 // Warum hier ein echter (falscher) SMTP-Server läuft und nicht in der E2E-Suite:
 // Die lokale Stack-Konfiguration zeigt auf den Schulserver — ein E2E-Test, der den
-// Versandweg wirklich durchläuft, würde echte Mails verschicken. Der Fake-Server
-// hier nimmt die Nachricht an, ohne sie irgendwohin zu liefern, und lässt sich
-// gleichzeitig danach befragen, was tatsächlich über die Leitung ging.
+// Versandweg wirklich durchläuft, würde echte Mails verschicken. internal/smtptest
+// nimmt die Nachricht an, ohne sie irgendwohin zu liefern, und lässt sich danach
+// befragen, was tatsächlich über die Leitung ging.
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/smtptest"
 	"bibliothek/mailservice"
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v4"
 )
-
-// smtpSitzung hält fest, was der Server tatsächlich zu sehen bekam.
-type smtpSitzung struct {
-	empfaenger []string
-	nachricht  string
-}
-
-// starteFakeSMTP nimmt genau eine Sitzung an und spricht das Minimum an SMTP, das
-// net/smtp ohne Auth braucht. Bewusst ohne STARTTLS/AUTH in der EHLO-Antwort: Damit
-// bleibt der Ablauf der schlichte Klartext-Versand, den ein Schulserver im LAN auch
-// fährt, und der Test hängt nicht an einem Testzertifikat.
-func starteFakeSMTP(t *testing.T) (host, port string, sitzungen <-chan smtpSitzung) {
-	t.Helper()
-
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("Fake-SMTP konnte nicht lauschen: %v", err)
-	}
-	t.Cleanup(func() { _ = ln.Close() }) //nolint:errcheck // Test-Listener: ein Fehler beim Schließen ändert keine Zusicherung
-
-	ch := make(chan smtpSitzung, 1)
-	go func() {
-		conn, err := ln.Accept()
-		if err != nil {
-			return
-		}
-		defer func() { _ = conn.Close() }() //nolint:errcheck // s.o.
-
-		leser := bufio.NewReader(conn)
-		// Schreibfehler brauchen keine Behandlung: Bricht die Verbindung weg, scheitert
-		// der Versand — und genau darüber urteilt der Test ohnehin anhand der Antwort.
-		schreibe := func(zeile string) {
-			_, _ = conn.Write([]byte(zeile + "\r\n")) //nolint:errcheck
-		}
-
-		var sitzung smtpSitzung
-		schreibe("220 fake ESMTP")
-		for {
-			zeile, err := leser.ReadString('\n')
-			if err != nil {
-				break
-			}
-			befehl := strings.ToUpper(strings.TrimSpace(zeile))
-			switch {
-			case strings.HasPrefix(befehl, "EHLO"), strings.HasPrefix(befehl, "HELO"):
-				schreibe("250 fake")
-			case strings.HasPrefix(befehl, "MAIL FROM"):
-				schreibe("250 2.1.0 Ok")
-			case strings.HasPrefix(befehl, "RCPT TO"):
-				sitzung.empfaenger = append(sitzung.empfaenger, adresseAusBefehl(zeile))
-				schreibe("250 2.1.5 Ok")
-			case befehl == "DATA":
-				schreibe("354 Ende mit <CR><LF>.<CR><LF>")
-				var body strings.Builder
-				for {
-					datenzeile, err := leser.ReadString('\n')
-					if err != nil {
-						break
-					}
-					if strings.TrimRight(datenzeile, "\r\n") == "." {
-						break
-					}
-					body.WriteString(datenzeile)
-				}
-				sitzung.nachricht = body.String()
-				schreibe("250 2.0.0 Ok: queued")
-			case befehl == "QUIT":
-				schreibe("221 2.0.0 Bye")
-				ch <- sitzung
-				return
-			default:
-				schreibe("250 Ok")
-			}
-		}
-		ch <- sitzung
-	}()
-
-	_, p, err := net.SplitHostPort(ln.Addr().String())
-	if err != nil {
-		t.Fatalf("Port des Fake-SMTP unlesbar: %v", err)
-	}
-	return "127.0.0.1", p, ch
-}
-
-// adresseAusBefehl schält die Adresse aus "RCPT TO:<a@b.de>".
-func adresseAusBefehl(zeile string) string {
-	auf := strings.Index(zeile, "<")
-	zu := strings.LastIndex(zeile, ">")
-	if auf == -1 || zu <= auf {
-		return strings.TrimSpace(zeile)
-	}
-	return zeile[auf+1 : zu]
-}
-
-// geschlossenerPort liefert einen Port, auf dem sicher niemand lauscht.
-func geschlossenerPort(t *testing.T) (host, port string) {
-	t.Helper()
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("Port konnte nicht belegt werden: %v", err)
-	}
-	_, p, err := net.SplitHostPort(ln.Addr().String())
-	if err != nil {
-		t.Fatalf("Port unlesbar: %v", err)
-	}
-	if err := ln.Close(); err != nil {
-		t.Fatalf("Port konnte nicht freigegeben werden: %v", err)
-	}
-	return "127.0.0.1", p
-}
 
 func mailTestServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 	t.Helper()
@@ -176,7 +65,7 @@ func fehlermeldung(t *testing.T, rec *httptest.ResponseRecorder) string {
 // Der eigentliche Beweis: 200 bedeutet, dass eine Nachricht wirklich über SMTP
 // hinausgegangen ist — mit genau einem Empfänger und ohne geschmuggelte Kopfzeile.
 func TestPostTestMail_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
-	host, port, sitzungen := starteFakeSMTP(t)
+	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 	s, mock := mailTestServer(t)
 	erwarteMailKonfig(mock, host, port, "bibliothek@schule.de")
 
@@ -190,12 +79,12 @@ func TestPostTestMail_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
 	}
 
 	sitzung := <-sitzungen
-	if len(sitzung.empfaenger) != 1 || sitzung.empfaenger[0] != "admin@schule.de" {
-		t.Fatalf("Empfänger am Server = %v, want genau [admin@schule.de]", sitzung.empfaenger)
+	if len(sitzung.Empfaenger) != 1 || sitzung.Empfaenger[0] != "admin@schule.de" {
+		t.Fatalf("Empfänger am Server = %v, want genau [admin@schule.de]", sitzung.Empfaenger)
 	}
 	for _, want := range []string{"From: bibliothek@schule.de", "To: admin@schule.de", "Subject: Test-E-Mail"} {
-		if !strings.Contains(sitzung.nachricht, want) {
-			t.Errorf("Nachricht enthält %q nicht:\n%s", want, sitzung.nachricht)
+		if !strings.Contains(sitzung.Nachricht, want) {
+			t.Errorf("Nachricht enthält %q nicht:\n%s", want, sitzung.Nachricht)
 		}
 	}
 }
@@ -204,7 +93,7 @@ func TestPostTestMail_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
 // Host) — und der, an dem sich zeigt, ob die Diagnose beim Admin ankommt: Als 500
 // dampft apierrors sie auf "Ein interner Datenbankfehler ist aufgetreten" ein.
 func TestPostTestMail_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
-	host, port := geschlossenerPort(t)
+	host, port := smtptest.GeschlossenerPort(t)
 	s, mock := mailTestServer(t)
 	erwarteMailKonfig(mock, host, port, "bibliothek@schule.de")
 
@@ -232,7 +121,7 @@ func TestPostTestMail_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 // Deshalb steht hier die Umgebung absichtlich auf einem falschen Server: Landet die
 // Mail trotzdem beim Fake-SMTP aus der Datenbank, ist die Frage beantwortet.
 func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
-	host, port, sitzungen := starteFakeSMTP(t)
+	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
 	t.Setenv("SMTP_HOST", "sollte-nicht-benutzt-werden.invalid")
 	t.Setenv("SMTP_PORT", "2525")
@@ -251,14 +140,14 @@ func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 	}
 
 	sitzung := <-sitzungen
-	if len(sitzung.empfaenger) != 1 || sitzung.empfaenger[0] != "lehrerin@schule.de" {
-		t.Fatalf("Empfänger am Server = %v, want [lehrerin@schule.de]", sitzung.empfaenger)
+	if len(sitzung.Empfaenger) != 1 || sitzung.Empfaenger[0] != "lehrerin@schule.de" {
+		t.Fatalf("Empfänger am Server = %v, want [lehrerin@schule.de]", sitzung.Empfaenger)
 	}
-	if !strings.Contains(sitzung.nachricht, "From: gespeichert@schule.de") {
-		t.Errorf("Absender kommt nicht aus der gespeicherten Konfiguration:\n%s", sitzung.nachricht)
+	if !strings.Contains(sitzung.Nachricht, "From: gespeichert@schule.de") {
+		t.Errorf("Absender kommt nicht aus der gespeicherten Konfiguration:\n%s", sitzung.Nachricht)
 	}
-	if strings.Contains(sitzung.nachricht, "umgebung@schule.de") {
-		t.Errorf("Absender aus der Umgebung hat gewonnen:\n%s", sitzung.nachricht)
+	if strings.Contains(sitzung.Nachricht, "umgebung@schule.de") {
+		t.Errorf("Absender aus der Umgebung hat gewonnen:\n%s", sitzung.Nachricht)
 	}
 }
 

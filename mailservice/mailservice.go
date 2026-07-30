@@ -231,9 +231,7 @@ func SendTestMail(ctx context.Context, dbPool db.PgxPoolIface, to string) error 
 		return err
 	}
 
-	if err := smtp.SendMail(konfig.Adresse(), konfig.Auth(), sender, []string{to}, msg); err != nil {
-		return BeschreibeSMTPFehler(konfig.Adresse(), err)
-	}
-
-	return nil
+	// Derselbe Transportweg wie jede echte Mail — sonst wäre der Test-Knopf eine
+	// Aussage über Code, den der Mahnlauf gar nicht ausführt.
+	return VersendeUeberSMTP(konfig, sender, []string{to}, msg)
 }
