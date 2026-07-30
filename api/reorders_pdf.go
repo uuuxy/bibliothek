@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -22,7 +23,13 @@ func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 			return
 		}
 
-		pdf := baueBestelllistePDF(reorders)
+		settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(r.Context())
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		pdf := baueBestelllistePDF(reorders, settings.BestellbedarfSchwelle)
 
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", "attachment; filename=bestellliste.pdf")
@@ -34,7 +41,14 @@ func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 
 // baueBestelllistePDF setzt die Tabelle. Getrennt vom Handler, damit das Layout ohne
 // HTTP-Kontext lesbar (und testbar) bleibt.
-func baueBestelllistePDF(reorders []ReorderTitle) *gofpdf.Fpdf {
+//
+// schwelle ist der konfigurierte Soll-Bestand — dieselbe Zahl, die bestimmt, WELCHE
+// Titel überhaupt auf der Liste stehen. Bis zum 30.07.2026 rechnete die Spalte
+// „Nachbestellmenge" stattdessen mit dem Feld meldebestand aus dem Titel, das seit der
+// Umstellung auf die Schwelle niemand mehr pflegt: Es steht auf der Vorgabe 5. Bei
+// einer Schwelle von 30 und 10 vorhandenen Exemplaren stand auf der Bestellliste für
+// den Händler „−5". Die Auswahl kam aus der einen Zahl, die Menge aus der anderen.
+func baueBestelllistePDF(reorders []ReorderTitle, schwelle int) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 	pdf.SetMargins(15, 15, 15)
@@ -56,15 +70,26 @@ func baueBestelllistePDF(reorders []ReorderTitle) *gofpdf.Fpdf {
 		pdf.CellFormat(62, 6, tr(b.Titel), "1", 0, "L", false, 0, "")
 		pdf.CellFormat(35, 6, tr(b.Autor), "1", 0, "L", false, 0, "")
 		pdf.CellFormat(33, 6, tr(b.ISBN), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(12, 6, strconv.Itoa(b.Meldebestand), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(12, 6, strconv.Itoa(schwelle), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(12, 6, strconv.Itoa(b.VerfuegbarBestand), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(12, 6, strconv.Itoa(b.GesamtBestand), "1", 0, "C", false, 0, "")
-		// Nachbestellmenge = fehlende EIGENE Exemplare (Meldebestand − Gesamtbestand),
-		// nicht − Verfügbar: verliehene Exemplare kommen zurück und müssen nicht ersetzt
+		// Nachbestellmenge = fehlende EIGENE Exemplare (Soll − Gesamtbestand), nicht
+		// − Verfügbar: verliehene Exemplare kommen zurück und müssen nicht ersetzt
 		// werden. Sonst überbestellte man um die Zahl der gerade ausgeliehenen Bücher.
-		pdf.CellFormat(14, 6, strconv.Itoa(b.Meldebestand-b.GesamtBestand), "1", 1, "C", false, 0, "")
+		pdf.CellFormat(14, 6, strconv.Itoa(nachbestellmenge(schwelle, b.GesamtBestand)), "1", 1, "C", false, 0, "")
 	}
 	return pdf
+}
+
+// nachbestellmenge liefert, wie viele Exemplare bis zum Soll-Bestand fehlen — nie
+// weniger als null. Eine negative Menge auf einem Dokument, das an einen Händler geht,
+// ist keine Zahl, sondern eine Blamage: Sie entsteht, sobald ein Titel mehr Exemplare
+// hat als die Schwelle verlangt.
+func nachbestellmenge(schwelle, gesamtBestand int) int {
+	if fehlend := schwelle - gesamtBestand; fehlend > 0 {
+		return fehlend
+	}
+	return 0
 }
 
 // schreibeBestelllisteKopf setzt die Kopfzeile der Tabelle.
@@ -74,7 +99,7 @@ func schreibeBestelllisteKopf(pdf *gofpdf.Fpdf, tr func(string) string) {
 	pdf.CellFormat(62, 7, tr("Buchtitel"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(35, 7, tr("Autor"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(33, 7, tr("ISBN"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(12, 7, tr("Melde."), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(12, 7, tr("Soll"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(12, 7, tr("Verf."), "1", 0, "C", true, 0, "")
 	// Gesamt neben Verfügbar: Ein verliehener Klassensatz ist kein Bestellgrund.
 	pdf.CellFormat(12, 7, tr("Ges."), "1", 0, "C", true, 0, "")

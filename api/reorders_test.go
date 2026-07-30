@@ -110,3 +110,31 @@ func TestGetReordersLeereListeIstArray(t *testing.T) {
 		t.Errorf("erwartet [], war: %s", body)
 	}
 }
+
+// Die Nachbestellmenge steht auf einem Dokument, das an einen Händler geht, und wird
+// von niemandem gegengelesen. Bis zum 30.07.2026 rechnete sie mit dem Titel-Feld
+// meldebestand, das seit der Umstellung auf die Bestellbedarf-Schwelle niemand mehr
+// pflegt (Vorgabe 5) — während die Auswahl der Titel längst der Schwelle folgte. Bei
+// Schwelle 30 und 10 vorhandenen Exemplaren stand dort "-5".
+func TestNachbestellmenge(t *testing.T) {
+	faelle := map[string]struct {
+		schwelle, gesamt, want int
+	}{
+		"halber Klassensatz fehlt":      {30, 15, 15},
+		"nichts vorhanden":              {30, 0, 30},
+		"Soll genau erreicht":           {30, 30, 0},
+		"mehr als das Soll vorhanden":   {5, 12, 0},
+		"Schwelle 0 (Warnung aus/leer)": {0, 3, 0},
+	}
+
+	for name, f := range faelle {
+		t.Run(name, func(t *testing.T) {
+			if got := nachbestellmenge(f.schwelle, f.gesamt); got != f.want {
+				t.Errorf("nachbestellmenge(%d, %d) = %d, want %d", f.schwelle, f.gesamt, got, f.want)
+			}
+			if got := nachbestellmenge(f.schwelle, f.gesamt); got < 0 {
+				t.Errorf("negative Bestellmenge auf der Händler-Liste: %d", got)
+			}
+		})
+	}
+}
