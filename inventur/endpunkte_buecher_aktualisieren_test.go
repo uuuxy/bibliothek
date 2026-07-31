@@ -7,13 +7,13 @@ import (
 	"testing"
 )
 
-// TestBuchAktualisierenAnfrageDecodesAlleFelder sichert die Regression ab, bei der
+// TestBuchAnfrageDecodesAlleFelder sichert die Regression ab, bei der
 // jahrgangVon/jahrgangBis nicht im Request-Struct standen: der JSON-Decoder verwarf
 // die Felder still, der Handler schrieb 0/0 in die DB und meldete trotzdem 200
 // ("erfolgreich gespeichert", aber der Klassenbereich 11–13 war weg). Der Test
 // dekodiert exakt die Nutzlast, die das Frontend sendet, und prüft, dass alle vom
 // Formular gebundenen Felder ankommen.
-func TestBuchAktualisierenAnfrageDecodesAlleFelder(t *testing.T) {
+func TestBuchAnfrageDecodesAlleFelder(t *testing.T) {
 	// Feldnamen entsprechen den json-Tags aus dem Frontend (BuchEingabefelder*.svelte).
 	body := `{
 		"isbn": "978-3-16-148410-0",
@@ -26,7 +26,7 @@ func TestBuchAktualisierenAnfrageDecodesAlleFelder(t *testing.T) {
 		"beschreibung": "Beschreibungstext"
 	}`
 
-	var eingabe BuchAktualisierenAnfrage
+	var eingabe BuchAnfrage
 	if err := json.NewDecoder(strings.NewReader(body)).Decode(&eingabe); err != nil {
 		t.Fatalf("Decode fehlgeschlagen: %v", err)
 	}
@@ -54,14 +54,14 @@ func TestBuchAktualisierenAnfrageDecodesAlleFelder(t *testing.T) {
 func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 	tests := []struct {
 		name        string
-		eingabe     BuchAktualisierenAnfrage
+		eingabe     BuchAnfrage
 		wantErr     bool
 		errMsg      string
-		wantEingabe *BuchAktualisierenAnfrage
+		wantEingabe *BuchAnfrage
 	}{
 		{
 			name: "Valid input",
-			eingabe: BuchAktualisierenAnfrage{
+			eingabe: BuchAnfrage{
 				ISBN:         "978-3-16-148410-0",
 				KlassenStufe: 5,
 				Bestand:      10,
@@ -71,7 +71,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Empty ISBN",
-			eingabe: BuchAktualisierenAnfrage{
+			eingabe: BuchAnfrage{
 				ISBN:         "",
 				KlassenStufe: 5,
 				Bestand:      10,
@@ -81,7 +81,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Invalid ISBN format",
-			eingabe: BuchAktualisierenAnfrage{
+			eingabe: BuchAnfrage{
 				ISBN:         "123",
 				KlassenStufe: 5,
 				Bestand:      10,
@@ -91,7 +91,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Negative gradeLevel",
-			eingabe: BuchAktualisierenAnfrage{
+			eingabe: BuchAnfrage{
 				ISBN:         "978-3-16-148410-0",
 				KlassenStufe: -1,
 				Bestand:      10,
@@ -101,7 +101,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "gradeLevel too high",
-			eingabe: BuchAktualisierenAnfrage{
+			eingabe: BuchAnfrage{
 				ISBN:         "978-3-16-148410-0",
 				KlassenStufe: 14,
 				Bestand:      10,
@@ -111,7 +111,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Negative stock",
-			eingabe: BuchAktualisierenAnfrage{
+			eingabe: BuchAnfrage{
 				ISBN:         "978-3-16-148410-0",
 				KlassenStufe: 5,
 				Bestand:      -1,
@@ -121,7 +121,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		},
 		{
 			name: "Trims spaces from fields",
-			eingabe: BuchAktualisierenAnfrage{
+			eingabe: BuchAnfrage{
 				ISBN:         "  978-3-16-148410-0  ",
 				Titel:        "  Titel  ",
 				Autor:        "  Autor  ",
@@ -134,7 +134,7 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 				Beschreibung: "  Beschreibung  ",
 			},
 			wantErr: false,
-			wantEingabe: &BuchAktualisierenAnfrage{
+			wantEingabe: &BuchAnfrage{
 				ISBN:         "978-3-16-148410-0",
 				Titel:        "Titel",
 				Autor:        "Autor",

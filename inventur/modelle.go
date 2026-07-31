@@ -1,5 +1,27 @@
 package inventur
 
+// BuchAnfrage repräsentiert die erwartete JSON-Struktur für das Erstellen und Aktualisieren eines Buches.
+type BuchAnfrage struct {
+	ISBN                    string         `json:"isbn"`
+	Titel                   string         `json:"title"`
+	Autor                   string         `json:"author"`
+	CoverURL                string         `json:"coverUrl"`
+	Fach                    string         `json:"subject"`
+	KlassenStufe            int16          `json:"gradeLevel"`
+	Schulzweig              string         `json:"track"`
+	Bestand                 int            `json:"stock"`
+	ZaehlDatum              *string        `json:"lastCounted"`
+	Medientyp               string         `json:"medientyp"`
+	JahrgangVon             int            `json:"jahrgangVon"`
+	JahrgangBis             int            `json:"jahrgangBis"`
+	Untertitel              string         `json:"untertitel"`
+	Verlag                  string         `json:"verlag"`
+	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
+	Beschreibung            string         `json:"beschreibung"`
+	Signatur                string         `json:"signatur"`
+	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
+}
+
 // Book bildet die Tabelle buecher_titel im Code ab.
 type Book struct {
 	ID                      string         `json:"id" db:"id"`
