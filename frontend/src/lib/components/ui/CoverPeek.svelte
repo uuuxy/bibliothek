@@ -95,6 +95,10 @@
 	}}
 />
 
+<!-- Bewusst KEINE Sprechblase (data-tip): Dieser Knopf zeigt beim Überfahren bereits das
+     Cover selbst — eine reichere Erklärung, als eine Textblase geben könnte. Beides
+     übereinander würde sich nur verdecken. data-tip-eigen nimmt ihn aus dem Gate
+     e2e/icon-tooltips.spec.js heraus und nennt dort zugleich den Grund. -->
 <button
 	bind:this={trigger}
 	type="button"
@@ -105,6 +109,7 @@
 	onblur={() => (offen = false)}
 	aria-expanded={offen}
 	aria-label="Cover von {titel} anzeigen"
+	data-tip-eigen="zeigt beim Überfahren das Cover"
 	class="shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors cursor-pointer {children
 		? ''
 		: 'icon-btn text-slate-300 hover:text-slate-600 hover:bg-slate-100'}"

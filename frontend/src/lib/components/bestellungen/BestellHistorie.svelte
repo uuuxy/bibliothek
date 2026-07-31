@@ -213,7 +213,7 @@
 																	<button
 																		type="button"
 																		onclick={() => zumNachdruck(p)}
-																		title="{p.etiketten_offen} Exemplare dieses Titels haben kein Etikett — im Druck-Center nachdrucken"
+																		data-tip="{p.etiketten_offen} Exemplare dieses Titels haben kein Etikett — im Druck-Center nachdrucken"
 																		aria-label="Etiketten für {p.titel_name} nachdrucken"
 																		class="icon-btn gap-1 px-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
 																	>
@@ -225,7 +225,7 @@
 																	<button
 																		type="button"
 																		onclick={() => zumTitel(p)}
-																		title="Titelsatz öffnen"
+																		data-tip="Titelsatz öffnen"
 																		aria-label="Titelsatz von {p.titel_name} öffnen"
 																		class="icon-btn text-slate-400 hover:bg-slate-100 hover:text-slate-700"
 																	>

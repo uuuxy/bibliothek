@@ -57,6 +57,7 @@
 						onclick={() => (uiStore.isSidebarCollapsed = true)}
 						class="icon-btn text-slate-400 hover:text-slate-600 hover:bg-slate-50"
 						aria-label="Navigation einklappen"
+						data-tip="Navigation einklappen"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -77,6 +78,7 @@
 						onclick={() => (uiStore.isSidebarCollapsed = false)}
 						class="icon-btn text-slate-400 hover:text-slate-600 hover:bg-slate-50"
 						aria-label="Navigation ausklappen"
+						data-tip="Navigation ausklappen"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"

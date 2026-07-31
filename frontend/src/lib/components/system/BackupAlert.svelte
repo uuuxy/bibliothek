@@ -61,7 +61,7 @@
 			onclick={() => (weggeklickt = true)}
 			class="icon-btn mt-0.5 shrink-0 px-2 text-slate-400 hover:text-slate-600"
 			aria-label="Hinweis für diese Sitzung ausblenden"
-			title="Für diese Sitzung ausblenden — beim nächsten Laden wieder da"
+			data-tip="Für diese Sitzung ausblenden — beim nächsten Laden wieder da"
 		>
 			<X class="h-4 w-4" />
 		</Button>

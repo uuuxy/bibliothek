@@ -164,6 +164,7 @@
 				variant="secondary"
 				onclick={mahnwesenStore.fetchData}
 				aria-label="Daten neu laden"
+				data-tip="Daten neu laden"
 				title="Neu laden"
 				class="px-2 text-slate-500 hover:text-slate-700"
 			>
@@ -220,6 +221,7 @@
 						aria-haspopup="menu"
 						aria-expanded={menuOpen}
 						aria-label="Weitere Druck- und Export-Optionen"
+						data-tip="Weitere Druck- und Export-Optionen"
 						class="rounded-l-none border-l-white/25 px-2"
 					>
 						<svg

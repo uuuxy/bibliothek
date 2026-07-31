@@ -180,6 +180,7 @@
 					<button
 						onclick={() => onAddToCart(r)}
 						aria-label="{r.titel} zur Bestellung hinzufügen"
+						data-tip="Zur Bestellung hinzufügen"
 						class="shrink-0 w-9 h-9 rounded-full border border-slate-200 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 active:scale-90 transition-all cursor-pointer"
 					>
 						<svg

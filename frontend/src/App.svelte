@@ -14,6 +14,7 @@
 	import Router from './lib/Router.svelte';
 	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
 	import ToastContainer from './lib/ToastContainer.svelte';
+	import { initTooltips } from './lib/actions/tooltip.js';
 	import * as Sentry from '@sentry/svelte';
 
 	const _currentPath = window.location.pathname;
@@ -21,6 +22,10 @@
 	// Boot-Restore: bestehende Session aus dem Cookie wiederherstellen,
 	// bevor Login-Screen oder App gerendert werden (sonst: F5 = UI-Logout).
 	authStore.restoreSession();
+
+	// Ein Zuhörer für alle Sprechblasen (data-tip). Muss vor jedem Bildschirm stehen,
+	// weil er delegiert arbeitet und die Elemente erst später entstehen.
+	$effect(() => initTooltips());
 
 	$effect(() => {
 		const handleError = (event) => Sentry.captureException(event.error || event);
