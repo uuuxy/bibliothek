@@ -78,7 +78,7 @@
 	);
 </script>
 
-<div class="flex items-center justify-between gap-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 	<div class="min-w-0">
 		<h1 class="text-2xl font-bold text-slate-800">Mahnwesen</h1>
 		<p class="text-sm text-slate-500 mt-0.5">Überfällige Ausleihen nach Klassen sortiert.</p>
@@ -86,7 +86,7 @@
 
 	<!-- Rechte Aktionsleiste. Bei einer Auswahl übernimmt sie den Auswahl-Modus (wie Gmail/Drive):
 	     Nur noch die auf die Markierung bezogenen Aktionen sind sichtbar. -->
-	<div class="flex items-center gap-2 print:hidden shrink-0">
+	<div class="flex flex-wrap items-center gap-2 print:hidden shrink-0">
 		{#if mahnwesenStore.selectedIds.size > 0}
 			<Button
 				variant="secondary"
