@@ -357,6 +357,7 @@
 					variant="danger-solid"
 					onclick={() => (mahnlaufOffen = true)}
 					aria-label="Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden"
+					class="shrink-0"
 				>
 					<svg
 						class="h-4 w-4"
