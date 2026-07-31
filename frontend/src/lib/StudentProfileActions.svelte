@@ -69,7 +69,11 @@
 		};
 		/** @param {KeyboardEvent} e */
 		const onKey = (e) => {
-			if (e.key === 'Escape') menuOpen = false;
+			if (e.key !== 'Escape') return;
+			menuOpen = false;
+			// Als verarbeitet melden, sonst schliesst derselbe Tastendruck zusätzlich das
+			// Schülerprofil (globaler Escape-Kurzbefehl in Router.svelte).
+			e.preventDefault();
 		};
 		document.addEventListener('pointerdown', onDown);
 		document.addEventListener('keydown', onKey);

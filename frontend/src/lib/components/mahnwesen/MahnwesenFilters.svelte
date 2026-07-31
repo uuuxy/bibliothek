@@ -19,7 +19,11 @@
 		};
 		/** @param {KeyboardEvent} e */
 		const onKey = (e) => {
-			if (e.key === 'Escape') menuOpen = false;
+			if (e.key !== 'Escape') return;
+			menuOpen = false;
+			// Als verarbeitet melden, sonst verlässt derselbe Tastendruck zusätzlich das
+			// Mahnwesen (globaler Escape-Kurzbefehl in Router.svelte).
+			e.preventDefault();
 		};
 		document.addEventListener('pointerdown', onDown);
 		document.addEventListener('keydown', onKey);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
 // Escape bringt von überall zurück an die Theke. Der Kurzbefehl galt bedingungslos —
 // und machte damit die Berichte unbenutzbar: Die Ansicht besteht aus Monats-, Jahres- und
@@ -39,4 +39,32 @@ test('Escape außerhalb von Eingabefeldern führt weiter zur Ausleihe', async ({
 	await page.keyboard.press('Escape');
 
 	await expect(page.locator('#omnibox-input')).toBeVisible();
+});
+
+// Der zweite Teil derselben Fehlerklasse: Ein aufgeklapptes Menü ist kein Eingabefeld,
+// sein Auslöser ist ein Knopf. Die Feld-Ausnahme greift hier also nicht — das Menü muss
+// den Tastendruck selbst als verarbeitet melden. Tat es keins, schloss Escape das Menü
+// UND warf den Benutzer aus dem Schülerprofil in die Ausleihe.
+test('Escape in einem offenen Menü schliesst nur das Menü', async ({ page }) => {
+	const s = uniqueSuffix();
+	seedSQL(`
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger)
+		VALUES ('E2E-ESC-${s}', 'Escmenue${s}', 'Testschueler', '9a',
+		        EXTRACT(YEAR FROM CURRENT_DATE)::int + 3, false);
+	`);
+
+	await uiLogin(page);
+	await page.getByTitle('Schülerdatei').click();
+	await page
+		.getByPlaceholder(/filtern|suchen/i)
+		.first()
+		.fill(`Escmenue${s}`);
+	await page.getByText(`Escmenue${s} Testschueler`).first().click();
+	await expect(page.getByRole('heading', { name: new RegExp(`Escmenue${s}`) })).toBeVisible();
+
+	await page.getByRole('button', { name: 'Ausweisseiten wählen' }).click();
+	await page.keyboard.press('Escape');
+
+	// Das Profil steht noch — nur das Menü ist zu.
+	await expect(page.getByRole('heading', { name: new RegExp(`Escmenue${s}`) })).toBeVisible();
 });
