@@ -14,19 +14,10 @@ import (
 )
 
 func TestGlobalExtendLMFHandler(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("failed to create pgxmock: %v", err)
-	}
-	defer mock.Close()
-
-	srv := &Server{DB: &db.Database{Pool: mock}}
-	handler := srv.GlobalExtendLMFHandler()
-
 	tests := []struct {
 		name           string
 		payload        interface{}
-		setupMock      func()
+		setupMock      func(mock pgxmock.PgxPoolIface)
 		expectedStatus int
 		expectedBody   string
 	}{
@@ -36,7 +27,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
-			setupMock: func() {
+			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE ausleihen a").
 					WithArgs(
@@ -55,7 +46,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 			payload: GlobalExtendLMFRequest{
 				Klasse: "",
 			},
-			setupMock:      func() {},
+			setupMock:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `klasse und neues_rueckgabe_datum sind erforderlich`,
 		},
@@ -65,7 +56,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "31.12.2023",
 			},
-			setupMock:      func() {},
+			setupMock:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `ungültiges Datumsformat (erwartet YYYY-MM-DD)`,
 		},
@@ -75,7 +66,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
-			setupMock: func() {
+			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin().WillReturnError(assert.AnError)
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -87,7 +78,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
-			setupMock: func() {
+			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE ausleihen a").
 					WithArgs(pgxmock.AnyArg(), "10A").
@@ -103,7 +94,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 				Klasse:              "10A",
 				NeuesRueckgabeDatum: "2023-12-31",
 			},
-			setupMock: func() {
+			setupMock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE ausleihen a").
 					WithArgs(pgxmock.AnyArg(), "10A").
@@ -118,8 +109,16 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_ = mock.ExpectationsWereMet()
-			tt.setupMock()
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("failed to create pgxmock: %v", err)
+			}
+			defer mock.Close()
+
+			srv := &Server{DB: &db.Database{Pool: mock}}
+			handler := srv.GlobalExtendLMFHandler()
+
+			tt.setupMock(mock)
 
 			body, err := json.Marshal(tt.payload)
 			assert.NoError(t, err)
