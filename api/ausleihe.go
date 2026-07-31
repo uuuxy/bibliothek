@@ -81,17 +81,28 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 		extensionDays = settings.FristBuchTage
 	}
 
-	// Die Verlängerung setzt die Mahn-Eskalation zurück, SOBALD die neue Frist wieder in
-	// der Zukunft liegt. Ohne das würde ein nach der 1. Mahnung verlängertes und erneut
-	// überzogenes Buch die 1. Stufe überspringen und sofort in Stufe 2 (Rechnung)
-	// eskalieren. Bleibt die Frist trotz Verlängerung in der Vergangenheit (stark
-	// überzogene Ausleihe), bleibt die Mahnstufe erhalten — dann ist die Eskalation
-	// berechtigt weiterzuführen, nicht zurückzusetzen.
+	// Gerechnet wird ab dem SPÄTEREN von altem Fristende und heute.
+	//
+	// Vorher stand hier rueckgabe_frist + Intervall, also immer ab dem alten Fristende. Bei
+	// einer Ausleihe, die länger überfällig war als die Leihfrist, landete die neue Frist
+	// damit WIEDER in der Vergangenheit: Das Buch blieb „Überfällig", die Zeile sah
+	// unverändert aus, und die Erfolgsmeldung nannte ein Datum, das schon vorbei war. Aus
+	// dem Betrieb gemeldet als „es kommt ein Datum in der Vergangenheit, sonst passiert
+	// nichts" — eine Verlängerung, die nicht verlängert, ist keine.
+	//
+	// GREATEST statt schlicht CURRENT_DATE + Intervall: Wer VOR Fristablauf verlängert, soll
+	// die verbleibenden Tage nicht verlieren. Für diesen Fall bleibt es beim bisherigen
+	// Verhalten; nur der überfällige Fall rechnet ab heute.
+	//
+	// Damit liegt die neue Frist immer in der Zukunft, und die Mahn-Eskalation wird immer
+	// zurückgesetzt. Das ist beabsichtigt: Wer verlängert, gewährt ausdrücklich neue Zeit —
+	// ohne den Reset übersprünge dasselbe Buch beim nächsten Überziehen die 1. Mahnstufe
+	// und eskalierte sofort in Stufe 2 (Rechnung).
 	q := `
 			UPDATE ausleihen
-			SET rueckgabe_frist = rueckgabe_frist + ($2 * INTERVAL '1 day'),
-			    mahnstufe = CASE WHEN rueckgabe_frist + ($2 * INTERVAL '1 day') > CURRENT_TIMESTAMP THEN 0 ELSE mahnstufe END,
-			    letztes_mahndatum = CASE WHEN rueckgabe_frist + ($2 * INTERVAL '1 day') > CURRENT_TIMESTAMP THEN NULL ELSE letztes_mahndatum END
+			SET rueckgabe_frist = GREATEST(rueckgabe_frist, CURRENT_TIMESTAMP) + ($2 * INTERVAL '1 day'),
+			    mahnstufe = 0,
+			    letztes_mahndatum = NULL
 			WHERE id = $1 AND rueckgabe_am IS NULL
 			RETURNING id, rueckgabe_frist
 		`
