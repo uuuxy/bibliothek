@@ -29,6 +29,12 @@ class UIStore {
 	 * Reiter", der eine Arbeit beschreibt, die das Programm selbst erledigen kann.
 	 */
 	requestedDruckCenterTab = $state(/** @type {string | null} */ (null));
+	/**
+	 * Vorbelegung für den Filter der Nachdruck-Liste. Die Bestellhistorie verweist damit
+	 * auf genau den Titel, den man dort gerade ansieht — statt den Benutzer die Liste
+	 * noch einmal von Hand durchsuchen zu lassen, obwohl das Programm den Titel kennt.
+	 */
+	requestedEtikettenFilter = $state(/** @type {string | null} */ (null));
 
 	async fetchPendingReservierungen() {
 		try {

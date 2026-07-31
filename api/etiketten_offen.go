@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"strings"
 
@@ -108,6 +110,21 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusOK, map[string]int{"anzahl": anzahl})
 		return nil
 	})
+}
+
+// markEtikettGedruckt vermerkt den Druck eines EINZELNEN Exemplars (Buchakte,
+// Ersatz-Etikett). Ein Fehler wird protokolliert, aber nicht durchgereicht: Das PDF ist
+// zu diesem Zeitpunkt erzeugt, und ein misslungener Vermerk darf den Druck nicht als
+// gescheitert erscheinen lassen. Der Preis ist ein Exemplar, das erneut auf der Liste
+// steht — harmlos gegenüber einem Etikett, das niemand mehr nachdruckt.
+func (s *Server) markEtikettGedruckt(ctx context.Context, exemplarID string) {
+	_, err := s.DB.Pool.Exec(ctx, `
+		UPDATE buecher_exemplare SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $1 AND etikett_gedruckt = false
+	`, exemplarID)
+	if err != nil {
+		log.Printf("Etikettendruck: Vermerk für Exemplar %s fehlgeschlagen: %v", exemplarID, err)
+	}
 }
 
 // EtikettenGedrucktRequest nennt die Exemplare, deren Etiketten gedruckt wurden.

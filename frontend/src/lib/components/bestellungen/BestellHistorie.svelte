@@ -1,6 +1,9 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiGet } from '../../apiFetch.js';
+	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import { appState } from '../../../inventur/lib/store.svelte.js';
+	import { Printer, BookOpen } from '@lucide/svelte';
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
@@ -32,6 +35,34 @@
 	/** @param {string} id */
 	function toggleExpand(id) {
 		expandedId = expandedId === id ? null : id;
+	}
+
+	/**
+	 * Von der Bestellposition in die Nachdruck-Liste, gefiltert auf diesen Titel.
+	 *
+	 * Der Verweis erscheint nur, wenn es für den Titel überhaupt offene Etiketten gibt
+	 * (etiketten_offen > 0) — sonst öffnete er eine leere Liste, und ein Verweis, der ins
+	 * Leere führt, entwertet alle anderen gleich mit.
+	 *
+	 * Er zeigt die Exemplare DIESES TITELS, nicht die dieser Lieferung: Eine Position
+	 * kennt nur den Titel, welches Exemplar aus welcher Lieferung stammt, steht nirgends.
+	 * Die Beschriftung sagt das auch so.
+	 * @param {any} pos
+	 */
+	function zumNachdruck(pos) {
+		uiStore.requestedEtikettenFilter = pos.titel_name;
+		uiStore.requestedDruckCenterTab = 'nachdruck';
+		uiStore.activeTab = 'druck-center';
+	}
+
+	/**
+	 * Von der Bestellposition in den Titelsatz — der kürzeste Weg, eine Lücke zu schliessen,
+	 * die einem hier auffällt (im Bestellbrief an den Lieferanten fehlte z. B. der Autor).
+	 * @param {any} pos
+	 */
+	function zumTitel(pos) {
+		appState.activeBookId = pos.titel_id;
+		uiStore.activeTab = 'book_detail';
 	}
 </script>
 
@@ -134,6 +165,9 @@
 													<th class="pb-1.5 text-right font-semibold">Menge</th>
 													<th class="pb-1.5 text-right font-semibold">Einzelpreis</th>
 													<th class="pb-1.5 text-right font-semibold">Gesamt</th>
+													<th class="pb-1.5 text-right font-semibold"
+														><span class="sr-only">Aktionen</span></th
+													>
 												</tr>
 											</thead>
 											<tbody class="divide-y divide-slate-100">
@@ -150,6 +184,36 @@
 														<td class="py-1.5 text-right font-bold text-slate-800 tabular-nums"
 															>{euro(p.gesamtpreis)}</td
 														>
+														<!-- Beide Verweise nur, wenn sie auch irgendwohin führen: der Titelsatz
+														     nur bei vorhandener titel_id (die Bestellung überlebt den Titel,
+														     ON DELETE SET NULL), der Nachdruck nur bei offenen Etiketten. -->
+														<td class="py-1.5 pl-3 text-right whitespace-nowrap">
+															<div class="inline-flex items-center gap-1">
+																{#if p.etiketten_offen > 0}
+																	<button
+																		type="button"
+																		onclick={() => zumNachdruck(p)}
+																		title="{p.etiketten_offen} Exemplare dieses Titels haben kein Etikett — im Druck-Center nachdrucken"
+																		aria-label="Etiketten für {p.titel_name} nachdrucken"
+																		class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 cursor-pointer"
+																	>
+																		<Printer class="h-3.5 w-3.5" aria-hidden="true" />
+																		{p.etiketten_offen}
+																	</button>
+																{/if}
+																{#if p.titel_id}
+																	<button
+																		type="button"
+																		onclick={() => zumTitel(p)}
+																		title="Titelsatz öffnen"
+																		aria-label="Titelsatz von {p.titel_name} öffnen"
+																		class="rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+																	>
+																		<BookOpen class="h-3.5 w-3.5" aria-hidden="true" />
+																	</button>
+																{/if}
+															</div>
+														</td>
 													</tr>
 												{/each}
 											</tbody>
@@ -161,6 +225,7 @@
 													<td class="pt-1.5 text-right font-black text-slate-900 tabular-nums"
 														>{euro(b.gesamtbetrag)}</td
 													>
+													<td></td>
 												</tr>
 											</tfoot>
 										</table>

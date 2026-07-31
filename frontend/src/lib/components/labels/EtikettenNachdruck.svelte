@@ -13,6 +13,7 @@
 	import { apiGet } from '../../apiFetch.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import { Printer, Search } from '@lucide/svelte';
 
@@ -50,7 +51,16 @@
 		}
 	}
 
-	onMount(laden);
+	onMount(() => {
+		// Ein Verweis aus der Bestellhistorie bringt den Titel mit. Sofort zurücksetzen,
+		// sonst klebt der Filter am nächsten Aufruf der Liste, und der Benutzer sucht den
+		// Grund für eine halbleere Ansicht.
+		if (uiStore.requestedEtikettenFilter) {
+			suche = uiStore.requestedEtikettenFilter;
+			uiStore.requestedEtikettenFilter = null;
+		}
+		laden();
+	});
 
 	function sucheAngestossen() {
 		clearTimeout(sucheTimer);

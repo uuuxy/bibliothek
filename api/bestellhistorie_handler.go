@@ -14,6 +14,20 @@ type BestellPositionResponse struct {
 	Menge       int     `json:"menge"`
 	Einzelpreis float64 `json:"einzelpreis"`
 	Gesamtpreis float64 `json:"gesamtpreis"`
+	// TitelID verweist auf den Titelsatz. Sie kann leer sein: Die Fremdschlüssel-Regel
+	// ist ON DELETE SET NULL — eine Bestellung bleibt als Beleg bestehen, auch wenn der
+	// Titel später aus dem Katalog verschwindet. Die Oberfläche darf daraus also keinen
+	// Verweis bauen, ohne vorher zu prüfen.
+	TitelID string `json:"titel_id,omitempty"`
+	// EtikettenOffen zählt die Exemplare DIESES TITELS ohne gedrucktes Etikett — nicht
+	// die dieser Lieferung. Eine Bestellposition kennt nur den Titel; welches Exemplar
+	// aus welcher Lieferung stammt, steht nirgends. Die Zahl ist damit ehrlich das, was
+	// die Nachdruck-Liste beim Filtern auf diesen Titel auch zeigen wird.
+	//
+	// Sie trägt den Verweis: Ohne sie müsste die Oberfläche blind verlinken und öffnete
+	// in der Hälfte der Fälle eine leere Liste — ein Verweis, der ins Leere führt,
+	// entwertet alle anderen gleich mit.
+	EtikettenOffen int `json:"etiketten_offen"`
 }
 
 type BestellVerlaufResponse struct {
@@ -87,13 +101,19 @@ func (s *Server) ladeBestellhistorie(ctx context.Context) ([]BestellVerlaufRespo
 // ladeBestellhistoriePositionen lädt alle Positionen in einer Query und ordnet sie den
 // Bestellungen über orderIndex zu (Gesamtpreis wird pro Position berechnet).
 func (s *Server) ladeBestellhistoriePositionen(ctx context.Context, orders []BestellVerlaufResponse, orderIndex map[string]int) error {
+	// etikettenOffenBedingung ist dieselbe Definition, die auch die Nachdruck-Liste und
+	// ihr Zähler verwenden (etiketten_offen.go). Wäre sie hier abgeschrieben, zeigte der
+	// Verweis irgendwann eine andere Zahl als die Liste, die er öffnet.
 	posRows, err := s.DB.Pool.Query(ctx, `
-		SELECT bestellung_id, titel_name, isbn, menge, einzelpreis
-		FROM bestellungen_positionen
-		WHERE bestellung_id = ANY(
+		SELECT p.bestellung_id, p.titel_name, p.isbn, p.menge, p.einzelpreis,
+		       coalesce(p.titel_id::text, ''),
+		       (SELECT count(*) FROM buecher_exemplare e
+		         WHERE e.titel_id = p.titel_id AND `+etikettenOffenBedingung+`)
+		FROM bestellungen_positionen p
+		WHERE p.bestellung_id = ANY(
 			SELECT id FROM bestellungen_verlauf ORDER BY bestelldatum DESC
 		)
-		ORDER BY bestellung_id, titel_name
+		ORDER BY p.bestellung_id, p.titel_name
 	`)
 	if err != nil {
 		return err
@@ -103,7 +123,8 @@ func (s *Server) ladeBestellhistoriePositionen(ctx context.Context, orders []Bes
 	for posRows.Next() {
 		var bestellungID string
 		var pos BestellPositionResponse
-		if err := posRows.Scan(&bestellungID, &pos.TitelName, &pos.ISBN, &pos.Menge, &pos.Einzelpreis); err != nil {
+		if err := posRows.Scan(&bestellungID, &pos.TitelName, &pos.ISBN, &pos.Menge, &pos.Einzelpreis,
+			&pos.TitelID, &pos.EtikettenOffen); err != nil {
 			return err
 		}
 		pos.Gesamtpreis = float64(pos.Menge) * pos.Einzelpreis

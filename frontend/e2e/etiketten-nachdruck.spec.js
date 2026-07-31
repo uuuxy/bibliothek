@@ -116,3 +116,101 @@ test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', asyn
 	await page.getByLabel('Exemplare filtern').fill(`E2E-HIN-${s}`);
 	await expect(page.getByLabel(`${titel} (E2E-HIN-${s}) auswählen`)).toBeVisible();
 });
+
+// Zwei Druckwege mit verschiedenem Gedächtnis: Der A4-Bogen buchte gegen, der Einzeldruck
+// aus der Buchakte nicht. Ein dort gedrucktes Etikett blieb damit für immer auf der Liste
+// "Fehlende Etiketten" — sie wurde also ausgerechnet durch Benutzung unbrauchbar.
+test('Einzeldruck aus der Buchakte bucht das Etikett gegen', async ({ page }) => {
+	const s = uniqueSuffix();
+	const barcode = `B-E2E${s.slice(0, 8)}`;
+
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('E2E-Einzel-Titel ${s}', 'Testautorin') RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT t.id, '${barcode}', false, CURRENT_DATE FROM t;
+	`);
+
+	const exemplarID = querySQL(`SELECT id FROM buecher_exemplare WHERE barcode_id = '${barcode}'`);
+	await uiLogin(page);
+
+	// Der Weg, den die Buchakte nimmt: ein GET auf die Etikett-Route.
+	const res = await page.request.get(`/api/print/etikett/${exemplarID}`);
+	expect(res.status(), 'Ersatz-Etikett-PDF').toBe(200);
+	expect(res.headers()['content-type']).toContain('application/pdf');
+
+	// BEWEIS an der Datenbank: Vorher blieb der Wert auf 'f'.
+	await expect
+		.poll(() =>
+			querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE id = '${exemplarID}'`)
+		)
+		.toBe('t');
+});
+
+// Die Verweise in der Bestellhistorie. Der Betreiber suchte den Nachdruck dort, weil dort
+// der Anlass entsteht ("ich habe diese Titel bestellt, wo sind ihre Etiketten?").
+//
+// Bedingung: Der Verweis erscheint NUR, wenn es für den Titel offene Etiketten gibt. Ein
+// Verweis, der eine leere Liste öffnet, entwertet alle anderen gleich mit.
+test('Bestellhistorie verweist auf Nachdruck und Titelsatz — und nur, wenn es etwas zu drucken gibt', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	const offenerTitel = `E2E-Histo-Offen ${s}`;
+	const fertigerTitel = `E2E-Histo-Fertig ${s}`;
+
+	// Zwei Positionen in EINER Bestellung: eine mit offenem Etikett, eine ohne.
+	seedSQL(`
+		WITH t1 AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('${offenerTitel}', 'A') RETURNING id
+		), t2 AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('${fertigerTitel}', 'B') RETURNING id
+		), e1 AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+			SELECT id, 'E2E-HO-${s}', false, CURRENT_DATE FROM t1
+		), e2 AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+			SELECT id, 'E2E-HF-${s}', true, CURRENT_DATE FROM t2
+		), b AS (
+			INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare)
+			VALUES ('E2E-Lieferant ${s}', 'e2e@example.org', 'K-${s}', CURRENT_TIMESTAMP, 0, 2) RETURNING id
+		)
+		INSERT INTO bestellungen_positionen (bestellung_id, titel_id, titel_name, isbn, menge, einzelpreis)
+		SELECT b.id, t1.id, '${offenerTitel}', '', 1, 0 FROM b, t1
+		UNION ALL
+		SELECT b.id, t2.id, '${fertigerTitel}', '', 1, 0 FROM b, t2;
+	`);
+
+	await uiLogin(page);
+	await page.getByTitle('Bestellungen').click();
+	await page.getByRole('button', { name: 'Bestellhistorie', exact: true }).click();
+
+	// Bestellung aufklappen
+	await page.getByRole('button', { name: new RegExp(`E2E-Lieferant ${s}`) }).click();
+	await expect(page.getByText(offenerTitel)).toBeVisible();
+
+	// Der Titelsatz-Verweis steht bei BEIDEN Positionen.
+	await expect(
+		page.getByRole('button', { name: `Titelsatz von ${offenerTitel} öffnen` })
+	).toBeVisible();
+	await expect(
+		page.getByRole('button', { name: `Titelsatz von ${fertigerTitel} öffnen` })
+	).toBeVisible();
+
+	// BEWEIS: Der Nachdruck-Verweis steht NUR bei der Position mit offenem Etikett.
+	// Angesprochen wird der Knopf selbst, nicht seine Zeile: Die aufgeklappte Bestellzeile
+	// enthaelt die gesamte Positionstabelle, ein row-Treffer waere also mehrdeutig.
+	const nachdruckOffen = page.getByRole('button', {
+		name: `Etiketten für ${offenerTitel} nachdrucken`
+	});
+	await expect(nachdruckOffen).toBeVisible();
+	await expect(
+		page.getByRole('button', { name: `Etiketten für ${fertigerTitel} nachdrucken` })
+	).toHaveCount(0);
+
+	// Und der Verweis landet in der Liste, bereits auf diesen Titel gefiltert.
+	await nachdruckOffen.click();
+	await expect(page.getByLabel('Exemplare filtern')).toHaveValue(offenerTitel);
+	await expect(page.getByLabel(`${offenerTitel} (E2E-HO-${s}) auswählen`)).toBeVisible();
+});

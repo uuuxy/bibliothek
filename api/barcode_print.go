@@ -46,6 +46,17 @@ func (s *Server) PrintErsatzEtikettHandler() http.HandlerFunc {
 			return
 		}
 
+		// Erst hier vermerken, nicht beim Klick: Jetzt steht fest, dass ein PDF entstanden
+		// ist. Ein Schreibzugriff in einem GET ist die Ausnahme — sie folgt dem bereits
+		// vorhandenen Muster von markElternbriefGenerated (GET /api/schadensfaelle/{id}/pdf)
+		// und ist idempotent.
+		//
+		// Ohne diesen Vermerk hatte der Etikettendruck zwei Wege mit verschiedenem
+		// Gedaechtnis: Der A4-Bogen buchte gegen, der Einzeldruck nicht. Ein hier
+		// gedrucktes Etikett blieb damit fuer immer auf der Liste "Fehlende Etiketten" —
+		// die Liste wurde also ausgerechnet durch Benutzung unbrauchbar.
+		s.markEtikettGedruckt(ctx, id)
+
 		filename := fmt.Sprintf("Ersatz_Etikett_%s.pdf", label.BarcodeID)
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, filename))
