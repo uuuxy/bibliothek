@@ -10,12 +10,12 @@
      Wareneingang benutzt, und wird vom Etikettendruck nebenan gesetzt. -->
 <script>
 	import { onMount } from 'svelte';
-	import { apiGet } from '../../apiFetch.js';
+	import { apiGet, apiPost } from '../../apiFetch.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
-	import { Printer, Search } from '@lucide/svelte';
+	import { Printer, Search, Eraser } from '@lucide/svelte';
 
 	/** @type {{ onUebergeben?: () => void }} */
 	let { onUebergeben } = $props();
@@ -91,6 +91,51 @@
 			'success'
 		);
 		onUebergeben?.();
+	}
+
+	// --- Altbestand ---
+	//
+	// etikett_gedruckt wurde bis vor Kurzem NIRGENDS gesetzt. Fuer den gesamten Altbestand
+	// steht deshalb "kein Etikett" — nicht weil keins da waere, sondern weil es nie jemand
+	// vermerkt hat. Ohne Aufraeummoeglichkeit zeigte diese Liste dauerhaft den ganzen
+	// Bestand, und der Hinweis im Bestellwesen nennte eine Zahl ohne Bedeutung.
+	//
+	// Der Stichtag gehoert dem Betreiber: Er weiss, ab wann sein Regal beklebt ist. Deshalb
+	// hier und nicht in einer Migration, die beim Update stillschweigend zugeschlagen und
+	// dabei genau die Exemplare mitversteckt haette, wegen denen die Liste entstand.
+	let stichtag = $state('');
+	let betroffen = $state(0);
+	let raeumtAuf = $state(false);
+
+	async function zaehleAltbestand() {
+		if (!stichtag) {
+			betroffen = 0;
+			return;
+		}
+		try {
+			const daten = await apiGet(
+				`/api/exemplare/etiketten-offen/anzahl?bis=${encodeURIComponent(stichtag)}`
+			);
+			betroffen = daten?.anzahl ?? 0;
+		} catch {
+			betroffen = 0;
+		}
+	}
+
+	async function raeumeAltbestandAuf() {
+		if (!stichtag || betroffen === 0) return;
+		raeumtAuf = true;
+		try {
+			const daten = await apiPost('/api/exemplare/etiketten-altbestand', { bis: stichtag });
+			toastStore.addToast(`${daten?.markiert ?? 0} Exemplare als erledigt vermerkt.`, 'success');
+			stichtag = '';
+			betroffen = 0;
+			await laden();
+		} catch {
+			toastStore.addToast('Der Altbestand konnte nicht vermerkt werden.', 'error');
+		} finally {
+			raeumtAuf = false;
+		}
 	}
 
 	/** @param {string} iso */
@@ -185,4 +230,46 @@
 			Neueste zuerst. Nach dem Druck verschwinden die Exemplare aus dieser Liste.
 		</p>
 	{/if}
+
+	<!-- Altbestand aufräumen. Bewusst unten und optisch zurückhaltend: Es ist eine einmalige
+	     Aufräumaktion, keine tägliche Arbeit — und sie lässt sich nicht rückgängig machen,
+	     deshalb nennt sie die betroffene Zahl, bevor sie etwas tut. -->
+	<details class="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+		<summary class="cursor-pointer text-sm font-semibold text-slate-600 select-none">
+			Altbestand aufräumen
+		</summary>
+		<div class="mt-3 space-y-3">
+			<p class="text-xs leading-relaxed text-slate-500">
+				Für Exemplare aus der Zeit vor dieser Funktion wurde nie vermerkt, ob ein Etikett gedruckt
+				wurde — sie stehen deshalb alle in dieser Liste, auch die längst beklebten. Wähle den Tag,
+				bis zu dem dein Bestand beklebt ist; alles bis dahin gilt danach als erledigt. <span
+					class="font-semibold text-slate-600">Das lässt sich nicht rückgängig machen.</span
+				>
+			</p>
+			<div class="flex flex-wrap items-center gap-3">
+				<label class="text-xs font-medium text-slate-600" for="stichtag">Beklebt bis</label>
+				<input
+					id="stichtag"
+					type="date"
+					bind:value={stichtag}
+					onchange={zaehleAltbestand}
+					class="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+				/>
+				<Button
+					variant="secondary"
+					onclick={raeumeAltbestandAuf}
+					disabled={!stichtag || betroffen === 0 || raeumtAuf}
+				>
+					<Eraser class="h-4 w-4" aria-hidden="true" />
+					{#if !stichtag}
+						Datum wählen
+					{:else if betroffen === 0}
+						Nichts zu vermerken
+					{:else}
+						{betroffen} Exemplare als erledigt vermerken
+					{/if}
+				</Button>
+			</div>
+		</div>
+	</details>
 </div>

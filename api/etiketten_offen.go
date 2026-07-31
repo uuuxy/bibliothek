@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"bibliothek/apierrors"
 )
@@ -99,9 +100,24 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 // @Router       /exemplare/etiketten-offen/anzahl [get]
 func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		// Optionaler Stichtag: Damit beantwortet dieselbe Route auch "wie viele Exemplare
+		// wuerde das Aufraeumen des Altbestands treffen?" — die Zahl, die der Betreiber vor
+		// dem Bestaetigen sehen muss.
+		bisStr := strings.TrimSpace(r.URL.Query().Get("bis"))
+		var bis any
+		if bisStr != "" {
+			geparst, err := time.Parse(dateFormatISO, bisStr)
+			if err != nil {
+				return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
+			}
+			bis = geparst
+		}
+
 		var anzahl int
 		err := s.DB.Pool.QueryRow(r.Context(), `
-			SELECT count(*) FROM buecher_exemplare e WHERE `+etikettenOffenBedingung,
+			SELECT count(*) FROM buecher_exemplare e
+			WHERE `+etikettenOffenBedingung+` AND ($1::date IS NULL OR e.erworben_am <= $1)`,
+			bis,
 		).Scan(&anzahl)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)
@@ -125,6 +141,56 @@ func (s *Server) markEtikettGedruckt(ctx context.Context, exemplarID string) {
 	if err != nil {
 		log.Printf("Etikettendruck: Vermerk für Exemplar %s fehlgeschlagen: %v", exemplarID, err)
 	}
+}
+
+// EtikettenAltbestandRequest nennt den Stichtag, bis zu dem aufgeraeumt wird.
+type EtikettenAltbestandRequest struct {
+	Bis string `json:"bis"` // YYYY-MM-DD, einschliesslich
+}
+
+// EtikettenAltbestandHandler vermerkt alle Exemplare bis zu einem Stichtag als gedruckt.
+//
+// Der Anlass ist eine Altlast, keine Funktion: etikett_gedruckt wurde bis vor Kurzem
+// NIRGENDS gesetzt. Fuer den gesamten Bestand steht deshalb "kein Etikett" — nicht weil
+// keins da waere, sondern weil es nie jemand vermerkt hat. Die Nachdruck-Liste zeigt so
+// den ganzen Bestand, und der Hinweis im Bestellwesen nennt eine Zahl, die nichts bedeutet.
+//
+// BEWUSST KEINE MIGRATION. Eine Migration haette beim Update stillschweigend zugeschlagen —
+// und dabei genau die Exemplare mitversteckt, die wirklich kein Etikett haben (die
+// Lieferung, wegen der die Liste ueberhaupt gebaut wurde). Der Stichtag gehoert dem
+// Betreiber: Er weiss, ab wann sein Regal beklebt ist, und sieht vorher, wie viele Zeilen
+// es trifft.
+//
+// Umkehrbar ist das nicht — deshalb nennt die Oberflaeche die Zahl vorher und verlangt
+// eine ausdrueckliche Bestaetigung.
+//
+// @Summary      Etiketten des Altbestands als gedruckt vermerken
+// @Tags         books
+// @Accept       json
+// @Success      200  {object}  map[string]int
+// @Router       /exemplare/etiketten-altbestand [post]
+func (s *Server) EtikettenAltbestandHandler() http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		var req EtikettenAltbestandRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return nil
+		}
+		bis, err := time.Parse(dateFormatISO, req.Bis)
+		if err != nil {
+			return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
+		}
+
+		tag, err := s.DB.Pool.Exec(r.Context(), `
+			UPDATE buecher_exemplare e SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
+			WHERE `+etikettenOffenBedingung+` AND e.erworben_am <= $1
+		`, bis)
+		if err != nil {
+			return apierrors.Internal("Fehler beim Vermerken des Altbestands", err)
+		}
+
+		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": tag.RowsAffected()})
+		return nil
+	})
 }
 
 // EtikettenGedrucktRequest nennt die Exemplare, deren Etiketten gedruckt wurden.

@@ -21,6 +21,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("GET /api/exemplare/etiketten-offen", s.RequirePermission("edit_books")(s.EtikettenOffenHandler()))
 	mux.Handle("GET /api/exemplare/etiketten-offen/anzahl", s.RequirePermission("edit_books")(s.EtikettenOffenAnzahlHandler()))
 	mux.Handle("POST /api/exemplare/etiketten-gedruckt", s.RequirePermission("edit_books")(s.EtikettenGedrucktHandler()))
+	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.EtikettenAltbestandHandler()))
 
 	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler(auditRepo)))
 

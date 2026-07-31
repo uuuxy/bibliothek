@@ -214,3 +214,49 @@ test('Bestellhistorie verweist auf Nachdruck und Titelsatz — und nur, wenn es 
 	await expect(page.getByLabel('Exemplare filtern')).toHaveValue(offenerTitel);
 	await expect(page.getByLabel(`${offenerTitel} (E2E-HO-${s}) auswählen`)).toBeVisible();
 });
+
+// Der Altbestand. etikett_gedruckt wurde bis vor Kurzem NIRGENDS gesetzt — für den
+// gesamten Bestand steht deshalb "kein Etikett", nicht weil keins da wäre, sondern weil es
+// nie jemand vermerkt hat. Ohne Aufräummöglichkeit zeigte diese Liste dauerhaft den
+// ganzen Bestand, und der Hinweis im Bestellwesen nennte eine Zahl ohne Bedeutung.
+//
+// Bewusst KEINE Migration: Die hätte beim Update stillschweigend zugeschlagen und dabei
+// genau die Exemplare mitversteckt, wegen denen die Liste überhaupt entstand. Der Stichtag
+// gehört dem Betreiber — deshalb prüft der Test auch, dass NEUERES stehen bleibt.
+test('Altbestand aufräumen vermerkt nur Exemplare bis zum Stichtag', async ({ page }) => {
+	const s = uniqueSuffix();
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('E2E-Alt-Titel ${s}', 'A') RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT t.id, 'E2E-ALT-${s}', false, CURRENT_DATE - 400 FROM t
+		UNION ALL
+		SELECT t.id, 'E2E-NEU-${s}', false, CURRENT_DATE FROM t;
+	`);
+
+	await uiLogin(page);
+	await page.getByTitle('Druck-Center').click();
+	await page.getByRole('button', { name: 'Fehlende Etiketten' }).click();
+
+	await page.getByRole('group').filter({ hasText: 'Altbestand aufräumen' }).click();
+	// Stichtag: gestern — trifft das alte Exemplar, nicht das heutige.
+	const gestern = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+	await page.locator('#stichtag').fill(gestern);
+	await page.locator('#stichtag').dispatchEvent('change');
+
+	// Die Zahl steht VOR der Bestätigung — die Aktion ist nicht umkehrbar.
+	const knopf = page.getByRole('button', { name: /Exemplare als erledigt vermerken/ });
+	await expect(knopf).toBeEnabled();
+	await knopf.click();
+
+	// BEWEIS an der Datenbank: das alte vermerkt, das neue unberührt.
+	await expect
+		.poll(() =>
+			querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-ALT-${s}'`)
+		)
+		.toBe('t');
+	expect(
+		querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-NEU-${s}'`)
+	).toBe('f');
+});
