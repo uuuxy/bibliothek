@@ -85,3 +85,34 @@ test('Nach dem Druck sind die Exemplare als gedruckt vermerkt', async ({ page, c
 	await page.getByLabel('Exemplare filtern').fill(`E2E-VER-${s}`);
 	await expect(page.getByText(`Kein Exemplar ohne Etikett passt zu „E2E-VER-${s}"`)).toBeVisible();
 });
+
+// Die Verbindung, die vorher fehlte: Der Bedarf entsteht im Bestellwesen ("30 Bücher sind
+// da, aber ohne Etikett"), das Werkzeug steht im Druck-Center. Dazwischen lag nichts —
+// der Hinweis nach dem Wareneingang war flüchtig, und war der Moment vorbei, erfuhr
+// niemand je wieder davon.
+test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', async ({ page }) => {
+	const s = uniqueSuffix();
+	const titel = `E2E-Hinweis-Titel ${s}`;
+
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('${titel}', 'Testautorin') RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT t.id, 'E2E-HIN-${s}', false, CURRENT_DATE FROM t;
+	`);
+
+	await uiLogin(page);
+	await page.getByTitle('Bestellungen').click();
+
+	// Der Hinweis steht dauerhaft, nicht nur direkt nach einem Wareneingang.
+	const hinweis = page.getByRole('button', { name: 'Im Druck-Center nachdrucken' });
+	await expect(hinweis).toBeVisible();
+
+	// BEWEIS: Der Verweis landet nicht irgendwo im Druck-Center, sondern in der Liste.
+	await hinweis.click();
+	await expect(page.getByLabel('Exemplare filtern')).toBeVisible();
+
+	await page.getByLabel('Exemplare filtern').fill(`E2E-HIN-${s}`);
+	await expect(page.getByLabel(`${titel} (E2E-HIN-${s}) auswählen`)).toBeVisible();
+});

@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { apiGet } from './apiFetch.js';
 	import { orderStore } from './stores/orderStore.svelte.js';
 	import { printQueue } from './stores/printQueue.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
@@ -20,8 +21,22 @@
 	/** @type {any[] | null} Exemplare der letzten Einbuchung ohne gedrucktes Etikett */
 	let printSuggestion = $state(null);
 
+	/** Exemplare ohne Barcode-Etikett — speist den stehenden Hinweis in PrintSuggestion. */
+	let offeneEtiketten = $state(0);
+
+	async function ladeOffeneEtiketten() {
+		try {
+			const daten = await apiGet('/api/exemplare/etiketten-offen/anzahl');
+			offeneEtiketten = daten?.anzahl ?? 0;
+		} catch (err) {
+			// Ein fehlender Hinweis darf das Bestellwesen nicht aufhalten.
+			console.error('Offene Etiketten konnten nicht gezählt werden', err);
+		}
+	}
+
 	onMount(() => {
 		orderStore.init();
+		ladeOffeneEtiketten();
 	});
 
 	/** @param {any[]} receivedItems */
@@ -32,6 +47,7 @@
 		showGreenFade = true;
 		await orderStore.loadIncomingShipments();
 		orderStore.loadRecommendations();
+		ladeOffeneEtiketten();
 		setTimeout(() => {
 			showGreenFade = false;
 		}, 1500);
@@ -103,7 +119,7 @@
 
 					<!-- RAIL: die Bestellung wächst sichtbar mit, bleibt beim Scrollen stehen -->
 					<div class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-2">
-						<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} />
+						<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} {offeneEtiketten} />
 						<OrderCreationPanel />
 					</div>
 				</div>

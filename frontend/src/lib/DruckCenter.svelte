@@ -2,7 +2,18 @@
 	import StudentIdDesigner from './StudentIdDesigner.svelte';
 	import LabelPrinter from './LabelPrinter.svelte';
 	import EtikettenNachdruck from './components/labels/EtikettenNachdruck.svelte';
+	import { uiStore } from './stores/uiStore.svelte.js';
+
 	let activeTab = $state('labels');
+
+	// Ein Verweis aus einer anderen Ansicht (z. B. der Hinweis auf offene Etiketten im
+	// Bestellwesen) bestimmt den Reiter. Sofort zurücksetzen, sonst klebt die Wahl am
+	// nächsten Aufruf des Druck-Centers, ohne dass jemand versteht, warum.
+	$effect(() => {
+		if (!uiStore.requestedDruckCenterTab) return;
+		activeTab = uiStore.requestedDruckCenterTab;
+		uiStore.requestedDruckCenterTab = null;
+	});
 </script>
 
 <div class="w-full flex flex-col h-full bg-slate-50">

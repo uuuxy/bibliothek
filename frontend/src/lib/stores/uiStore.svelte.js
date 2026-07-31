@@ -22,6 +22,13 @@ class UIStore {
 	 * statt den Nutzer auf „Allgemein" abzusetzen.
 	 */
 	requestedSettingsTab = $state(/** @type {string | null} */ (null));
+	/**
+	 * Angeforderter Reiter des Druck-Centers, gleiche Mechanik. Das Bestellwesen weist
+	 * auf offene Etiketten hin und schickt von dort direkt in die Nachdruck-Liste —
+	 * ohne den Hinweis "wechseln Sie bitte ins Druck-Center und dann auf den dritten
+	 * Reiter", der eine Arbeit beschreibt, die das Programm selbst erledigen kann.
+	 */
+	requestedDruckCenterTab = $state(/** @type {string | null} */ (null));
 
 	async fetchPendingReservierungen() {
 		try {

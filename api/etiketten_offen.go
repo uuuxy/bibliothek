@@ -12,6 +12,15 @@ import (
 // die Titelsuche im Druck-Center gedacht.
 const etikettenOffenLimit = 300
 
+// etikettenOffenBedingung ist die EINZIGE Definition von "Etikett steht noch aus".
+// Liste und Zähler teilen sie sich — sonst zeigt der Hinweis im Bestellwesen irgendwann
+// eine andere Zahl an, als die Liste im Druck-Center Zeilen hat, und keiner der beiden
+// Werte ist mehr zu trauen.
+//
+// Ausgesonderte Exemplare stehen nicht mehr im Regal; für sie ein Etikett zu drucken
+// wäre immer falsch.
+const etikettenOffenBedingung = `e.etikett_gedruckt = false AND e.ist_ausgesondert = false`
+
 // ExemplarOhneEtikett ist eine Zeile der Nachdruck-Liste. Die Feldnamen barcode_id/titel/
 // autor sind KEIN Zufall: In genau dieser Form nimmt der Etikettendruck seine Aufträge
 // entgegen (printQueue → labels.svelte.js), die Liste kann also direkt übergeben werden.
@@ -42,14 +51,11 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		suche := strings.TrimSpace(r.URL.Query().Get("q"))
 
-		// Ausgesonderte Exemplare stehen nicht mehr im Regal — für sie ein Etikett zu
-		// drucken wäre immer falsch.
 		rows, err := s.DB.Pool.Query(r.Context(), `
 			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY-MM-DD')
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE e.etikett_gedruckt = false
-			  AND e.ist_ausgesondert = false
+			WHERE `+etikettenOffenBedingung+`
 			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%')
 			ORDER BY e.erworben_am DESC, e.erstellt_am DESC, e.barcode_id
 			LIMIT $2
@@ -74,6 +80,32 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, http.StatusOK, liste)
+		return nil
+	})
+}
+
+// EtikettenOffenAnzahlHandler nennt nur die Anzahl.
+//
+// Eigene Route statt der Liste, weil der Hinweis im Bestellwesen bei jedem Öffnen lädt:
+// Für eine Zahl 300 Zeilen zu übertragen wäre Verschwendung — und ab dem Limit wäre die
+// Zahl schlicht falsch (die Liste ist gedeckelt, der Bestand nicht).
+//
+// @Summary      Anzahl der Exemplare ohne gedrucktes Etikett
+// @Tags         books
+// @Produce      json
+// @Success      200  {object}  map[string]int
+// @Router       /exemplare/etiketten-offen/anzahl [get]
+func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		var anzahl int
+		err := s.DB.Pool.QueryRow(r.Context(), `
+			SELECT count(*) FROM buecher_exemplare e WHERE `+etikettenOffenBedingung,
+		).Scan(&anzahl)
+		if err != nil {
+			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)
+		}
+
+		RespondJSON(w, http.StatusOK, map[string]int{"anzahl": anzahl})
 		return nil
 	})
 }
