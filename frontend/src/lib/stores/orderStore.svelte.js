@@ -138,21 +138,31 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} name @param {string} email @param {string} customerNumber */
-	async addSupplier(name, email, customerNumber) {
+	/** @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] */
+	async addSupplier(name, email, customerNumber, liefertMitBarcode = false) {
 		if (!name || !email || !customerNumber) return;
 		try {
-			await apiPost('/api/lieferanten', { name, email, customerNumber });
+			await apiPost('/api/lieferanten', {
+				name,
+				email,
+				customerNumber,
+				liefert_mit_barcode: liefertMitBarcode
+			});
 			await this.loadSuppliers();
 		} catch {
 			/* apiFetch zeigt Fehler-Toast */
 		}
 	}
 
-	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber */
-	async editSupplier(id, name, email, customerNumber) {
+	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] */
+	async editSupplier(id, name, email, customerNumber, liefertMitBarcode = false) {
 		try {
-			await apiPut(`/api/lieferanten/${id}`, { name, email, customerNumber });
+			await apiPut(`/api/lieferanten/${id}`, {
+				name,
+				email,
+				customerNumber,
+				liefert_mit_barcode: liefertMitBarcode
+			});
 			await this.loadSuppliers();
 			toastStore.addToast('Lieferant aktualisiert.', 'success');
 		} catch {

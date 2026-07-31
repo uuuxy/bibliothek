@@ -7,10 +7,16 @@ import (
 
 // Supplier repräsentiert einen Lieferanten (z. B. eine Buchhandlung).
 type Supplier struct {
-	ID             string
-	Name           string
-	Email          string
-	Kundennummer   string
+	ID           string
+	Name         string
+	Email        string
+	Kundennummer string
+
+	// LiefertMitBarcode: Der Händler beklebt die Bücher vor der Lieferung mit UNSEREN
+	// Barcodes. Der Barcodebogen geht weiterhin mit dem Bestellbrief mit — er braucht ihn
+	// ja dafür. Die Exemplare entstehen dann aber bereits als „Etikett vorhanden" und
+	// erscheinen nicht auf der Nachdruck-Liste (siehe api/order_service.go).
+	LiefertMitBarcode bool
 }
 
 // SupplierRepository definiert die Datenbank-Zugriffe für Lieferanten.
@@ -32,10 +38,10 @@ func (r *pgSupplierRepository) GetSupplierByID(ctx context.Context, id string) (
 	var s Supplier
 	s.ID = id
 	err := r.db.QueryRow(ctx, `
-		SELECT name, email, kundennummer 
-		FROM lieferanten 
+		SELECT name, email, kundennummer, liefert_mit_barcode
+		FROM lieferanten
 		WHERE id = $1
-	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer)
+	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer, &s.LiefertMitBarcode)
 	if err != nil {
 		return nil, err
 	}

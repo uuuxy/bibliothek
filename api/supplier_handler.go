@@ -15,6 +15,9 @@ type SupplierResponse struct {
 	Email          string    `json:"email"`
 	CustomerNumber string    `json:"customerNumber"`
 	ErstelltAm     time.Time `json:"erstellt_am"`
+
+	// LiefertMitBarcode: Händler beklebt die Bücher vor der Lieferung mit unseren Barcodes.
+	LiefertMitBarcode bool `json:"liefert_mit_barcode"`
 }
 
 // CreateSupplierRequest holds the payload for creating a new supplier.
@@ -22,6 +25,10 @@ type CreateSupplierRequest struct {
 	Name           string `json:"name"`
 	Email          string `json:"email"`
 	CustomerNumber string `json:"customerNumber"`
+
+	// LiefertMitBarcode ist bewusst ein einfaches bool und kein *bool: Fehlt das Feld,
+	// gilt false — das bisherige Verhalten, bei dem wir selbst etikettieren.
+	LiefertMitBarcode bool `json:"liefert_mit_barcode"`
 }
 
 // ListSuppliersHandler returns a list of all suppliers.
@@ -29,7 +36,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		rows, err := s.DB.Pool.Query(ctx, "SELECT id, name, email, kundennummer, erstellt_am FROM lieferanten ORDER BY name ASC")
+		rows, err := s.DB.Pool.Query(ctx, "SELECT id, name, email, kundennummer, erstellt_am, liefert_mit_barcode FROM lieferanten ORDER BY name ASC")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -39,7 +46,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 		suppliers := []SupplierResponse{}
 		for rows.Next() {
 			var sup SupplierResponse
-			if err := rows.Scan(&sup.ID, &sup.Name, &sup.Email, &sup.CustomerNumber, &sup.ErstelltAm); err != nil {
+			if err := rows.Scan(&sup.ID, &sup.Name, &sup.Email, &sup.CustomerNumber, &sup.ErstelltAm, &sup.LiefertMitBarcode); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -72,21 +79,22 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 		var newID string
 		var erstelltAm time.Time
 		err := s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO lieferanten (name, email, kundennummer)
-			VALUES ($1, $2, $3)
+			INSERT INTO lieferanten (name, email, kundennummer, liefert_mit_barcode)
+			VALUES ($1, $2, $3, $4)
 			RETURNING id, erstellt_am
-		`, req.Name, req.Email, req.CustomerNumber).Scan(&newID, &erstelltAm)
+		`, req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode).Scan(&newID, &erstelltAm)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		RespondJSON(w, http.StatusCreated, SupplierResponse{
-			ID:             newID,
-			Name:           req.Name,
-			Email:          req.Email,
-			CustomerNumber: req.CustomerNumber,
-			ErstelltAm:     erstelltAm,
+			ID:                newID,
+			Name:              req.Name,
+			Email:             req.Email,
+			CustomerNumber:    req.CustomerNumber,
+			ErstelltAm:        erstelltAm,
+			LiefertMitBarcode: req.LiefertMitBarcode,
 		})
 	}
 }
@@ -111,8 +119,8 @@ func (s *Server) UpdateSupplierHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 		tag, err := s.DB.Pool.Exec(ctx,
-			`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3 WHERE id = $4`,
-			req.Name, req.Email, req.CustomerNumber, id,
+			`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3, liefert_mit_barcode = $4 WHERE id = $5`,
+			req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode, id,
 		)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -124,10 +132,11 @@ func (s *Server) UpdateSupplierHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, http.StatusOK, SupplierResponse{
-			ID:             id,
-			Name:           req.Name,
-			Email:          req.Email,
-			CustomerNumber: req.CustomerNumber,
+			ID:                id,
+			Name:              req.Name,
+			Email:             req.Email,
+			CustomerNumber:    req.CustomerNumber,
+			LiefertMitBarcode: req.LiefertMitBarcode,
 		})
 	}
 }

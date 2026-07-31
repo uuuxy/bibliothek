@@ -580,7 +580,11 @@ CREATE TABLE lieferanten (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     kundennummer VARCHAR(100) NOT NULL,
-    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Händler beklebt die Bücher vor der Lieferung mit UNSEREN Barcodes. Der Barcodebogen
+    -- geht weiterhin mit dem Bestellbrief mit; die Exemplare gelten sofort als beklebt und
+    -- erscheinen nicht auf der Nachdruck-Liste (Migration 056).
+    liefert_mit_barcode BOOLEAN NOT NULL DEFAULT false
 );
 
 
@@ -711,7 +715,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('052_seed_bestellung_haendler.sql'),
 ('053_inventur_scope_filter.sql'),
 ('054_schueler_namenssuche_unaccent.sql'),
-('055_helfer_katalogzugriff.sql')
+('055_helfer_katalogzugriff.sql'),
+('056_lieferant_liefert_mit_barcode.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

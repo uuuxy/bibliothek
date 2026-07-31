@@ -6,28 +6,34 @@
 	let newName = $state('');
 	let newEmail = $state('');
 	let newCustNum = $state('');
+	let newMitBarcode = $state(false);
 
 	/** @type {string|null} */
 	let editingId = $state(null);
 	let editName = $state('');
 	let editEmail = $state('');
 	let editCustNum = $state('');
+	let editMitBarcode = $state(false);
 
 	/** @param {SubmitEvent} e */
 	function handleSubmit(e) {
 		e.preventDefault();
-		onAddSupplier(newName, newEmail, newCustNum);
+		onAddSupplier(newName, newEmail, newCustNum, newMitBarcode);
 		newName = '';
 		newEmail = '';
 		newCustNum = '';
+		newMitBarcode = false;
 	}
 
-	/** @param {{ id: string, name: string, email: string, customerNumber: string }} s */
+	/** @param {{ id: string, name: string, email: string, customerNumber: string, liefert_mit_barcode?: boolean }} s */
 	function startEdit(s) {
 		editingId = s.id;
 		editName = s.name;
 		editEmail = s.email;
 		editCustNum = s.customerNumber;
+		// Ohne diese Zeile stünde beim Bearbeiten immer „aus" im Feld, und wer nur die
+		// E-Mail korrigiert, schaltete die Beklebung des Händlers still ab.
+		editMitBarcode = s.liefert_mit_barcode ?? false;
 	}
 
 	function cancelEdit() {
@@ -36,7 +42,7 @@
 
 	async function saveEdit() {
 		if (!editingId) return;
-		await onEditSupplier(editingId, editName, editEmail, editCustNum);
+		await onEditSupplier(editingId, editName, editEmail, editCustNum, editMitBarcode);
 		editingId = null;
 	}
 </script>
@@ -74,6 +80,19 @@
 					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
 				/>
 			</div>
+			<!-- Diese Einstellung entscheidet, ob die gelieferten Exemplare auf der
+			     Nachdruck-Liste landen. Deshalb steht die Folge im Klartext daneben und nicht
+			     nur ein Häkchen: „Barcodes" allein liest jeder anders. -->
+			<label class="flex cursor-pointer gap-2.5 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+				<input type="checkbox" bind:checked={newMitBarcode} class="mt-0.5 h-4 w-4 shrink-0" />
+				<span class="text-sm">
+					<span class="block font-semibold text-slate-700">Händler beklebt die Bücher</span>
+					<span class="block text-xs text-slate-500">
+						Der Barcodebogen geht wie bisher mit der Bestellung mit. Die Exemplare gelten dann
+						als beklebt und erscheinen nicht auf der Liste der fehlenden Etiketten.
+					</span>
+				</span>
+			</label>
 			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
 		</form>
 	</div>
@@ -91,6 +110,7 @@
 						<th class="py-2.5">Name</th>
 						<th class="py-2.5">E-Mail</th>
 						<th class="py-2.5">Kundennummer</th>
+						<th class="py-2.5">Etiketten</th>
 						<th class="py-2.5 text-right">Aktionen</th>
 					</tr>
 				</thead>
@@ -119,6 +139,12 @@
 										class="w-full px-2 py-1.5 rounded border border-blue-300 text-sm"
 									/></td
 								>
+								<td class="py-2 pr-2">
+									<label class="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
+										<input type="checkbox" bind:checked={editMitBarcode} class="h-4 w-4 shrink-0" />
+										Händler beklebt
+									</label>
+								</td>
 								<td class="py-2 text-right whitespace-nowrap">
 									<button
 										onclick={saveEdit}
@@ -137,6 +163,18 @@
 								<td class="py-3 font-bold text-slate-800">{s.name}</td>
 								<td class="py-3 text-slate-600">{s.email}</td>
 								<td class="py-3 text-slate-600">{s.customerNumber}</td>
+								<td class="py-3">
+									{#if s.liefert_mit_barcode}
+										<span
+											class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+											data-tip="Die Bücher kommen beklebt an und stehen nicht auf der Nachdruck-Liste"
+										>
+											Händler beklebt
+										</span>
+									{:else}
+										<span class="text-xs text-slate-400">wir drucken</span>
+									{/if}
+								</td>
 								<td class="py-3 text-right whitespace-nowrap">
 									<button
 										onclick={() => startEdit(s)}

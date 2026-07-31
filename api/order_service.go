@@ -80,7 +80,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	var positionen []bestellungPosition
 
 	for _, item := range req.Items {
-		res, err := s.verarbeiteBestellItem(ctx, tx, item, supplier.Name)
+		res, err := s.verarbeiteBestellItem(ctx, tx, item, supplier)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +121,9 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 
 // verarbeiteBestellItem validiert eine Bestellposition, lädt den Titel, reserviert die
 // Barcodes und erzeugt die Exemplar-Datensätze samt (optionalen) Etiketten.
-func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, item OrderItemRequest, supplierName string) (*bestellItemResult, error) {
+func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, item OrderItemRequest, supplier *repository.Supplier) (*bestellItemResult, error) {
+	supplierName := supplier.Name
+
 	if item.Menge <= 0 || item.Menge > 200 {
 		return nil, fmt.Errorf("invalid quantity %d for title %s", item.Menge, item.TitelID)
 	}
@@ -163,6 +165,15 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 		statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", supplierName)
 	}
 
+	// Beklebt der Händler selbst, gilt das Exemplar sofort als etikettiert — sonst stünde
+	// ein fertig beklebt geliefertes Buch dauerhaft auf der Nachdruck-Liste, und der
+	// Hinweis im Bestellwesen nennte eine Zahl, die niemand mehr abarbeiten kann.
+	//
+	// Beide Bedingungen müssen zutreffen: Ohne erzeugten Barcode steht für diese Position
+	// nichts auf dem Barcodebogen, der Händler kann also nichts aufkleben — dann bleibt das
+	// Etikett unsere Aufgabe, auch wenn er sonst beklebt liefert.
+	beklebtGeliefert := supplier.LiefertMitBarcode && item.GenerateBarcodes
+
 	for i := 0; i < item.Menge; i++ {
 		barcodeID := barcodes[i]
 		res.copies = append(res.copies, repository.BookCopyInsert{
@@ -170,7 +181,7 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 			BarcodeID:       barcodeID,
 			ZustandNotiz:    statusText,
 			IstAusleihbar:   false,
-			EtikettGedruckt: false,
+			EtikettGedruckt: beklebtGeliefert,
 			Einkaufspreis:   item.Preis,
 		})
 
