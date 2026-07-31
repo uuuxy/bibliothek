@@ -107,7 +107,7 @@
 	aria-label="Cover von {titel} anzeigen"
 	class="shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors cursor-pointer {children
 		? ''
-		: 'w-5 h-5 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-100'}"
+		: 'icon-btn text-slate-300 hover:text-slate-600 hover:bg-slate-100'}"
 >
 	{#if children}
 		{@render children()}

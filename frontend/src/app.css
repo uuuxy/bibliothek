@@ -92,6 +92,42 @@ body {
 	}
 }
 
+@layer components {
+	/* ── Icon-Buttons ─────────────────────────────────────────────────────────
+	   Dieselbe Geschichte wie bei den Feldhöhen, eine Stufe kleiner: Buttons, die
+	   nur ein Symbol tragen, hatten kein gemeinsames Maß. Im Browser gemessen
+	   ergab die Inventur vier verschiedene — 20×20 (Cover-Vorschau, ganz ohne
+	   Polsterung), 22×22 (Titelsatz in der Bestellhistorie), 30×30 (Navigation
+	   einklappen) und 38×28 (Banner schließen). Der beschriftete Nachbar daneben
+	   stand längst auf 36 px, und in der Bestellhistorie saß ein 14-px-Symbol in
+	   einer 22-px-Fläche — sichtbar zu klein und kaum zu treffen.
+
+	   Material 3 nennt für den Icon-Button „extra small" einen Container von
+	   32 dp. Das ist hier auch das praktische Maß: groß genug als Trefferfläche,
+	   klein genug, um eine dichte Tabellenzeile nicht auseinanderzuziehen (36 px
+	   wie bei den Feldern würde die Detailzeilen der Bestellhistorie strecken).
+
+	   Warum eine Komponenten-Klasse und KEINE base-Regel auf button:has(> svg):
+	   Eine base-Regel verliert gegen jede Utility — CoverPeek trägt ein
+	   explizites w-5 h-5 und wäre stillschweigend kleiner geblieben, also genau
+	   die Fundstelle, die am weitesten daneben lag. Und sie hätte Buttons
+	   getroffen, die ich nie angesehen habe. Die Klasse steht sichtbar an der
+	   Fundstelle, die Wirkung ist auf sie begrenzt.
+
+	   Verankert im E2E-Gate e2e/icon-trefferflaechen.spec.js (misst im Browser). */
+	.icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 2rem; /* 32 px */
+		min-height: 2rem;
+		border-radius: var(--radius-2xl);
+		cursor: pointer;
+		transition-property: color, background-color, border-color;
+		transition-duration: 150ms;
+	}
+}
+
 /* Card & Label layouts */
 .print-card-box {
 	width: 85.6mm;

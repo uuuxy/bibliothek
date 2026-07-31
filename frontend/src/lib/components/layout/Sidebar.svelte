@@ -55,7 +55,7 @@
 					</div>
 					<button
 						onclick={() => (uiStore.isSidebarCollapsed = true)}
-						class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+						class="icon-btn text-slate-400 hover:text-slate-600 hover:bg-slate-50"
 						aria-label="Navigation einklappen"
 					>
 						<svg
@@ -75,7 +75,7 @@
 				{:else}
 					<button
 						onclick={() => (uiStore.isSidebarCollapsed = false)}
-						class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+						class="icon-btn text-slate-400 hover:text-slate-600 hover:bg-slate-50"
 						aria-label="Navigation ausklappen"
 					>
 						<svg

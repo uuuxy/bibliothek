@@ -215,9 +215,9 @@
 																		onclick={() => zumNachdruck(p)}
 																		title="{p.etiketten_offen} Exemplare dieses Titels haben kein Etikett — im Druck-Center nachdrucken"
 																		aria-label="Etiketten für {p.titel_name} nachdrucken"
-																		class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 cursor-pointer"
+																		class="icon-btn gap-1 px-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
 																	>
-																		<Printer class="h-3.5 w-3.5" aria-hidden="true" />
+																		<Printer class="h-4 w-4" aria-hidden="true" />
 																		{p.etiketten_offen}
 																	</button>
 																{/if}
@@ -227,9 +227,9 @@
 																		onclick={() => zumTitel(p)}
 																		title="Titelsatz öffnen"
 																		aria-label="Titelsatz von {p.titel_name} öffnen"
-																		class="rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+																		class="icon-btn text-slate-400 hover:bg-slate-100 hover:text-slate-700"
 																	>
-																		<BookOpen class="h-3.5 w-3.5" aria-hidden="true" />
+																		<BookOpen class="h-4 w-4" aria-hidden="true" />
 																	</button>
 																{/if}
 															</div>
