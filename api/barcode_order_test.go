@@ -66,8 +66,12 @@ func TestSupplierOrderHandler_Validation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var reqBody []byte
+			var err error
 			if tt.body != nil {
-				reqBody, _ = json.Marshal(tt.body)
+				reqBody, err = json.Marshal(tt.body)
+				if err != nil {
+					t.Fatalf("failed to marshal body: %v", err)
+				}
 			} else {
 				reqBody = []byte(`{"titel_id": "123", "menge": "invalid"}`)
 			}
