@@ -1,14 +1,19 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
-> Stand: 2026-07-10. Für die Abnahme mit dem Sekretariat, sobald LUSD-Zugriff besteht.
-> Alle drei Flows sind technisch fertig und durch automatische Tests (Go, Vitest, 46 E2E-Flows)
+> Stand: 2026-07-31. Für die Abnahme mit dem Sekretariat, sobald LUSD-Zugriff besteht.
+> Alle vier Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
-> LUSD-Exportdatei, reale Klassenbezeichnungen) so aussehen wie erwartet.
+> LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
+> erwartet.
 >
 > **Sicherheitsnetz für alle Abnahmen:** Vorher ein Backup ziehen
-> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Alle drei Flows haben zusätzlich eine
+> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Alle vier Flows haben zusätzlich eine
 > unverbindliche Vorschau-Stufe, die **nichts verändert** — erst der jeweils letzte,
 > deutlich beschriftete Button schreibt in die Datenbank.
+>
+> **Ausnahme beachten:** Flow 1–3 lassen sich nachbessern, Flow 4 (Altbestand-Etiketten)
+> **nicht**. Dort ist die Vorschau-Zahl die einzige Kontrolle vor einer endgültigen
+> Änderung — sie verdient einen zweiten Blick.
 
 ---
 
@@ -71,6 +76,48 @@ Vorschau und Ausführung rechnen identisches SQL.
 
 **Bestanden, wenn:** Ablauf für das Sekretariat ohne Rückfragen verständlich ist und der
 Bestand nach dem Erledigen stimmt.
+
+---
+
+## 4. Altbestand-Etiketten aufräumen (einmalig, **nicht umkehrbar**)
+
+⚠️ **Der einzige Flow ohne Rückweg.** Alle anderen Aktionen dieser Checkliste lassen sich
+nachbessern — diese nicht. Es gibt keinen Knopf, der einen zu weit gefassten Stichtag
+zurücknimmt. Vorher ein Backup ziehen.
+
+**Warum es das gibt:** `etikett_gedruckt` wurde bis vor Kurzem nirgends gesetzt. Für den
+gesamten Altbestand steht deshalb „kein Etikett" — nicht weil keins am Buch klebt, sondern
+weil es nie jemand vermerkt hat. Ohne dieses Aufräumen zeigt die Nachdruck-Liste dauerhaft
+den ganzen Bestand, und der Hinweis im Bestellwesen nennt eine Zahl ohne Bedeutung.
+
+**Vorbereitung:** Klären, **ab wann das Regal nachweislich beklebt ist**. Das weiß nur der
+Betreiber — die Software kann es nicht wissen und rät deshalb bewusst nicht.
+
+**Ablauf** (Druck-Center → **Fehlende Etiketten** → Abschnitt „Altbestand aufräumen" aufklappen):
+
+1. [ ] Stichtag eintragen. Die Zahl der betroffenen Exemplare erscheint sofort — es wird
+   noch **nichts** geändert.
+2. [ ] Zahl prüfen: Liegt sie in der Größenordnung des Altbestands? Ist sie **auffällig
+   nah an der Gesamtzahl der Exemplare**, ist der Stichtag zu spät gewählt.
+3. [ ] Bestätigen → Meldung „*n* Exemplare als erledigt vermerkt".
+4. [ ] Gegenprobe: Die Nachdruck-Liste enthält jetzt **nur noch** Exemplare aus jüngeren
+   Lieferungen. Stichprobe: Ein Buch aus der letzten Lieferung muss noch dastehen.
+
+**Die eine echte Gefahr:** Ein **zu später** Stichtag (z. B. heute). Dann verschwindet die
+frische Lieferung, die noch gar kein Etikett hat, still aus der Liste — und niemand
+bemerkt es, weil eine leere Liste wie ein erledigter Stapel aussieht. Im Zweifel den
+Stichtag **früher** setzen: Zu wenig aufgeräumt ist folgenlos (die Zeilen bleiben sichtbar
+und lassen sich jederzeit erneut aufräumen), zu viel aufgeräumt ist es nicht.
+
+**Eingebaute Bremsen:**
+- Vorschau-Zahl und Aktion nutzen dieselbe Bedingung — die genannte Zahl ist die, die
+  wirklich zuschlägt.
+- Ausgesonderte Exemplare bleiben unberührt.
+- Bereits vermerkte Exemplare werden nicht erneut angefasst; ein zweiter Lauf mit demselben
+  Stichtag meldet folgerichtig `0`.
+
+**Bestanden, wenn:** Nach dem Aufräumen stehen genau die Exemplare auf der Liste, für die
+tatsächlich noch ein Etikett gedruckt werden muss.
 
 ---
 
