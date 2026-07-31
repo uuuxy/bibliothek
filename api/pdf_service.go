@@ -26,14 +26,19 @@ func (s *PDFService) DispatchOrderEmail(
 	generateBarcodes bool,
 	schule pdf.SchuleInfo,
 ) error {
-	summaryPDF, err := GenerateOrderSummaryPDF(summaryItems, schule)
+	// Eine Bedingung, an der ALLES hängt: der Bogen, die CSV und der Satz im Anschreiben,
+	// der auf den Bogen verweist. Vorher stand der Satz unabhängig davon im Brief — der
+	// Lieferant wurde auf eine Anlage hingewiesen, die nicht existierte.
+	mitBarcodebogen := generateBarcodes && len(labels) > 0
+
+	summaryPDF, err := GenerateOrderSummaryPDF(summaryItems, schule, mitBarcodebogen)
 	if err != nil {
 		return err
 	}
 
 	var barcodePDF []byte
 	var barcodeCSV []byte
-	if generateBarcodes && len(labels) > 0 {
+	if mitBarcodebogen {
 		barcodePDF, err = GenerateBarcodeSheetPDF(labels)
 		if err != nil {
 			return err
@@ -52,7 +57,7 @@ func (s *PDFService) DispatchOrderEmail(
 		},
 	}
 
-	if generateBarcodes && len(labels) > 0 {
+	if mitBarcodebogen {
 		attachments = append(attachments, MailAttachment{
 			Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format(dateFormatISO)),
 			ContentType: "application/pdf",

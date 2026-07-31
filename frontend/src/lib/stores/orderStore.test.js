@@ -67,6 +67,27 @@ describe('orderStore.addToCart', () => {
 		expect(orderStore.cart[0].generate_barcodes).toBe(true);
 	});
 
+	// Der Fehler, den dieser Test festhaelt: Eine Bestellung ging OHNE Barcodebogen
+	// hinaus, obwohl der Schalter "Barcodes mitschicken" an war — und das Anschreiben
+	// verwies den Lieferanten trotzdem auf den "beigefuegten Bogen".
+	//
+	// Grund war der Vorgabewert `false`. Der Bestellbedarf, die taegliche Arbeitsflaeche,
+	// ruft addToCart mit EINEM Argument auf; die Position landete also immer ohne
+	// Barcodes im Warenkorb. Beim Absenden wirkt der Schalter nur als Sperre
+	// (`schalter ? wert : false`) — er konnte abschalten, aber niemals einschalten.
+	it('uebernimmt ohne dritten Parameter den Schalter aus dem Warenkorb', () => {
+		orderStore.attachBarcodes = true;
+		orderStore.addToCart({ id: 'bedarf-1', titel: 'Faust', autor: 'G', isbn: '978-1' });
+		expect(orderStore.cart[0].generate_barcodes).toBe(true);
+	});
+
+	it('folgt dem Schalter auch, wenn er aus ist', () => {
+		orderStore.attachBarcodes = false;
+		orderStore.addToCart({ id: 'bedarf-2', titel: 'Faust', autor: 'G', isbn: '978-2' });
+		expect(orderStore.cart[0].generate_barcodes).toBe(false);
+		orderStore.attachBarcodes = true;
+	});
+
 	it('setzt den Such-Zustand nach dem Hinzufügen zurück', () => {
 		orderStore.searchQuery = 'faust';
 		orderStore.searchResults = [{ titel: 'x' }];

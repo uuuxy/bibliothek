@@ -29,8 +29,32 @@ type BarcodeLabelDetail struct {
 	ISBN      string
 }
 
+// barcodebogenSatz ist die Anweisung an den Lieferanten, die Exemplare vorab zu
+// bekleben. Sie darf nur im Brief stehen, wenn der Bogen der E-Mail auch beiliegt.
+const barcodebogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode/QR-Code-Aufklebern aus dem beigefügten Bogen.\n"
+
+// bestellAnschreibenText baut den Fliesstext des Anschreibens.
+//
+// Eigene Funktion, damit der Satz mit dem "beigefügten Bogen" prüfbar ist, ohne ein
+// erzeugtes PDF wieder auseinanderzunehmen: Genau dieser Satz stand vorher bedingungslos
+// im Brief und verwies auf eine Anlage, die oft nicht existierte.
+func bestellAnschreibenText(mitBarcodebogen bool) string {
+	text := "Sehr geehrte Damen und Herren,\n\n" +
+		"hiermit bestellen wir für unsere Schulbibliothek die nachfolgend aufgeführten Buchtitel zur Lieferung.\n"
+	if mitBarcodebogen {
+		text += barcodebogenSatz
+	}
+	return text + "Die Rechnung senden Sie bitte an die oben angegebene Anschrift.\n\n" +
+		"Bestellte Titel:"
+}
+
 // GenerateOrderSummaryPDF generates a PDF cover letter ("Bestellanschreiben") containing the table of ordered book titles.
-func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo) ([]byte, error) {
+//
+// mitBarcodebogen entscheidet über EINEN Satz im Anschreiben — den mit dem "beigefügten
+// Bogen". Er stand vorher immer drin, auch wenn der Bogen gar nicht mitgeschickt wurde.
+// Der Lieferant bekam damit eine Anweisung auf etwas, das der E-Mail nicht beilag: Er
+// kann sie nur ignorieren oder nachfragen, beides kostet die Lieferung Zeit.
+func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, mitBarcodebogen bool) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.AddPage()
 	p.SetMargins(20, 20, 20)
@@ -63,12 +87,7 @@ func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo) ([]byte
 
 	// Letter Body Text
 	p.SetFont("Arial", "", 10)
-	bodyText := "Sehr geehrte Damen und Herren,\n\n" +
-		"hiermit bestellen wir für unsere Schulbibliothek die nachfolgend aufgeführten Buchtitel zur Lieferung.\n" +
-		"Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode/QR-Code-Aufklebern aus dem beigefügten Bogen.\n" +
-		"Die Rechnung senden Sie bitte an die oben angegebene Anschrift.\n\n" +
-		"Bestellte Titel:"
-	p.MultiCell(0, 5, tr(bodyText), "", "L", false)
+	p.MultiCell(0, 5, tr(bestellAnschreibenText(mitBarcodebogen)), "", "L", false)
 	p.Ln(6)
 
 	// Table headers

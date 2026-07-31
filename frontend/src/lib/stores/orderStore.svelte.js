@@ -186,8 +186,21 @@ class OrderStore {
 		this.showDropdown = false;
 	}
 
-	/** @param {any} book */
-	addToCart(book, menge = 1, withBarcodes = false) {
+	/**
+	 * Ohne dritten Parameter folgt die Barcode-Wahl dem Schalter "Barcodes mitschicken"
+	 * im Warenkorb — der Vorgabewert war `false`, und das war der Grund, warum eine
+	 * Bestellung ohne Barcodebogen hinausging, obwohl der Schalter an war:
+	 *
+	 * Der Bestellbedarf (die tägliche Arbeitsfläche) ruft addToCart mit EINEM Argument
+	 * auf, die Position landete also immer mit generate_barcodes: false im Warenkorb.
+	 * Beim Absenden wird der Schalter nur als Sperre angewandt (`schalter ? wert : false`)
+	 * — er konnte damit abschalten, aber niemals einschalten. Wer über den Bestellbedarf
+	 * bestellte, bekam nie Barcodes, egal was der Schalter sagte.
+	 * @param {any} book
+	 * @param {number} menge
+	 * @param {boolean} withBarcodes
+	 */
+	addToCart(book, menge = 1, withBarcodes = this.attachBarcodes) {
 		// Im Cart liegt immer die titel_id — der Duplikat-Check muss denselben Schlüssel nutzen
 		const key = book.titel_id ?? book.id;
 		const isbn = book.isbn ?? book.ISBN ?? '';
