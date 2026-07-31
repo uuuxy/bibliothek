@@ -174,7 +174,7 @@ func TestExtendLoanHandler(t *testing.T) {
 				// For error cases we also want to decode
 				var resp map[string]interface{}
 				if rec.Body.Len() > 0 {
-						_ = json.NewDecoder(rec.Body).Decode(&resp)
+					_ = json.NewDecoder(rec.Body).Decode(&resp) //nolint:errcheck // Error cases don't strictly require JSON
 				}
 				tt.verify(t, resp)
 			}
