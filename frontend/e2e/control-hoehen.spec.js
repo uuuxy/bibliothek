@@ -9,7 +9,7 @@
 // Ausdruck (class={inputClass}). Statisch war die Inventur nachweislich falsch —
 // gemessen wird deshalb offsetHeight an der laufenden Anwendung.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedSQL } from './helpers.js';
 
 const CONTROL_HOEHE = 36; // identisch zu Button size="md" (h-9)
 
@@ -126,6 +126,22 @@ test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
 // Vergleich prüft der Test oben nicht: Er würde auch grün bleiben, wenn beide
 // gemeinsam auf 40 px wanderten.
 test('Feld und Button stehen in derselben Werkzeugleiste auf einer Linie', async ({ page }) => {
+
+	const suffix = Date.now().toString(36);
+	seedSQL(`
+        WITH s AS (
+            INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+            VALUES ('E2E', 'Hoehen-${suffix}', '8M', 'S-${suffix}', 2030) RETURNING id
+        ), t AS (
+            INSERT INTO buecher_titel (titel) VALUES ('E2E-Hoehen-${suffix}') RETURNING id
+        ), e AS (
+            INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+            SELECT id, 'B-${suffix}', true FROM t RETURNING id
+        )
+        INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, ausgeliehen_am, rueckgabe_frist)
+        SELECT e.id, s.id, (SELECT id FROM benutzer ORDER BY erstellt_am LIMIT 1), NOW() - INTERVAL '30 days', NOW() - INTERVAL '10 days' FROM e, s;
+    `);
+
 	await uiLogin(page);
 	await page.goto('/mahnwesen');
 
