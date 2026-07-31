@@ -7,7 +7,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from '../apiFetch.js';
 import { toastStore } from './toastStore.svelte.js';
 
 /** @typedef {{ id: string, name: string, email: string, customerNumber: string }} Supplier */
-/** @typedef {{ id: string, titel: string, autor: string, isbn: string, verlag: string, cover_url: string, menge: number, preis: number, generate_barcodes: boolean }} CartItem */
+/** @typedef {{ id: string, titel: string, autor: string, isbn: string, verlag: string, cover_url: string, menge: number, preis: number, preis_vorschlag: number, generate_barcodes: boolean }} CartItem */
 
 class OrderStore {
 	/** @type {Supplier[]} */
@@ -204,10 +204,19 @@ class OrderStore {
 		// Im Cart liegt immer die titel_id — der Duplikat-Check muss denselben Schlüssel nutzen
 		const key = book.titel_id ?? book.id;
 		const isbn = book.isbn ?? book.ISBN ?? '';
+		// Der DNB-Ladenpreis (MARC21 020 $c) als VORSCHLAG. Er wird mitgeführt, damit der
+		// Warenkorb einen selbst getippten Preis von einem übernommenen unterscheiden kann.
+		const vorschlag = Number(book.preis_vorschlag) || 0;
 		const existing = this.cart.find((item) => item.id === key || (isbn && item.isbn === isbn));
 		if (existing) {
 			existing.menge += menge;
 			if (withBarcodes) existing.generate_barcodes = true;
+			// Einen bereits erfassten Preis NICHT überschreiben: Wer ihn getippt hat, kennt
+			// den Schulpreis — der Vorschlag ist nur der Ladenpreis bei Erscheinen.
+			if (!existing.preis && vorschlag) {
+				existing.preis = vorschlag;
+				existing.preis_vorschlag = vorschlag;
+			}
 		} else {
 			this.cart.push({
 				id: key,
@@ -217,7 +226,8 @@ class OrderStore {
 				verlag: book.verlag ?? '',
 				cover_url: book.cover_url ?? '',
 				menge,
-				preis: 0.0,
+				preis: vorschlag,
+				preis_vorschlag: vorschlag,
 				generate_barcodes: withBarcodes
 			});
 		}

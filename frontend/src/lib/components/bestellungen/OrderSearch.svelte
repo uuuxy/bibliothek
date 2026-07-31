@@ -27,7 +27,10 @@
 						autor: localBook.autor,
 						isbn: localBook.isbn,
 						verlag: localBook.verlag,
-						cover_url: localBook.cover_url
+						cover_url: localBook.cover_url,
+						// Der Preisvorschlag steht am DNB-Treffer, nicht am eben angelegten
+						// lokalen Titel — sonst ginge er beim Umweg über /aus-isbn verloren.
+						preis_vorschlag: book.preis_vorschlag
 					});
 				} else {
 					toastStore.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');

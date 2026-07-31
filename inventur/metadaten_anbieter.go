@@ -64,6 +64,9 @@ type marcBibDaten struct {
 	isbn               string
 	genres             []string
 	zielgruppe         string
+	// preis ist der Ladenpreis aus MARC21 020 $c — ein VORSCHLAG, keine Tatsache:
+	// Er gilt zum Erscheinungszeitpunkt und ist nicht der Schulpreis.
+	preis float64
 }
 
 // verarbeiteFeld leitet ein Datafield an den passenden Tag-Handler weiter.
@@ -84,9 +87,19 @@ func (b *marcBibDaten) verarbeiteFeld(feld marcDatafield) {
 	}
 }
 
-// verarbeiteISBN liest die ISBN aus Tag 020 $a (letzter gültiger Wert gewinnt).
+// verarbeiteISBN liest die ISBN aus Tag 020 $a (letzter gültiger Wert gewinnt) und
+// nebenbei den Ladenpreis aus $c. Der stand bisher ungenutzt in jeder DNB-Antwort.
+//
+// Der ERSTE brauchbare Preis gewinnt, nicht der letzte: Die DNB liefert zu einer ISBN
+// mehrere Sätze (Auflagen), die neueren zuerst. Bei der Alexander Gesamtausgabe steht im
+// ersten Satz "EUR 27.00", in einem späteren "DM 42.00, EUR 21.47" — der ältere darf den
+// jüngeren nicht überschreiben.
 func (b *marcBibDaten) verarbeiteISBN(subfelder []marcSubfield) {
 	for _, unterFeld := range subfelder {
+		if unterFeld.Code == "c" && b.preis == 0 {
+			b.preis = preisAusVerfuegbarkeit(unterFeld.Value)
+			continue
+		}
 		if unterFeld.Code != "a" {
 			continue
 		}
@@ -229,6 +242,7 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 		Verlag:       akk.verlag,
 		Jahr:         akk.jahr,
 		Zielgruppe:   akk.zielgruppe,
+		Preis:        akk.preis,
 		BibKategorie: leiteBibKategorieAb(akk.genres, akk.zielgruppe),
 	}, nil
 }
@@ -321,6 +335,7 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 			Autor:  finalerAutor,
 			Verlag: akk.verlag,
 			Jahr:   akk.jahr,
+			Preis:  akk.preis,
 		})
 	}
 

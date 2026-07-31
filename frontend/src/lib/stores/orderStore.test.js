@@ -88,6 +88,39 @@ describe('orderStore.addToCart', () => {
 		orderStore.attachBarcodes = true;
 	});
 
+	// Der DNB-Preisvorschlag (MARC21 020 $c). Er fuellt das Preisfeld vor, damit aus
+	// "jeden Preis tippen" ein "pruefen und korrigieren" wird — uebernimmt aber nie
+	// stillschweigend einen bereits erfassten Preis.
+	it('uebernimmt den DNB-Preisvorschlag in den Warenkorb', () => {
+		orderStore.addToCart({
+			id: 'p1',
+			titel: 'Atlas',
+			autor: 'K',
+			isbn: '978-9',
+			preis_vorschlag: 27
+		});
+		expect(orderStore.cart[0].preis).toBe(27);
+		expect(orderStore.cart[0].preis_vorschlag).toBe(27);
+	});
+
+	it('ohne Vorschlag bleibt der Preis bei 0', () => {
+		orderStore.addToCart({ id: 'p2', titel: 'Atlas', autor: 'K', isbn: '978-8' });
+		expect(orderStore.cart[0].preis).toBe(0);
+	});
+
+	it('ueberschreibt einen bereits erfassten Preis nicht', () => {
+		orderStore.addToCart({ id: 'p3', titel: 'Atlas', autor: 'K', isbn: '978-7' });
+		orderStore.cart[0].preis = 19.5; // von Hand erfasster Schulpreis
+		orderStore.addToCart({
+			id: 'p3',
+			titel: 'Atlas',
+			autor: 'K',
+			isbn: '978-7',
+			preis_vorschlag: 27
+		});
+		expect(orderStore.cart[0].preis).toBe(19.5);
+	});
+
 	it('setzt den Such-Zustand nach dem Hinzufügen zurück', () => {
 		orderStore.searchQuery = 'faust';
 		orderStore.searchResults = [{ titel: 'x' }];

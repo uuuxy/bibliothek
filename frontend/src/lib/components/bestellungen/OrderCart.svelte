@@ -88,6 +88,18 @@
 							>
 						</div>
 						<div class="flex items-center gap-1.5">
+							<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unveraendert ist.
+							     Er ist der DNB-Ladenpreis bei Erscheinen — NICHT der Schulpreis, den die
+							     Schule tatsaechlich zahlt. Wer ihn ueberschreibt, verliert das Abzeichen
+							     und damit die Erinnerung daran, dass hier geraten wurde. -->
+							{#if item.preis_vorschlag > 0 && Number(item.preis) === item.preis_vorschlag}
+								<span
+									class="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded"
+									title="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis pruefen"
+								>
+									DNB
+								</span>
+							{/if}
 							<input
 								type="number"
 								step="0.01"

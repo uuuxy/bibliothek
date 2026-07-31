@@ -140,6 +140,11 @@ type OrderSearchItem struct {
 	Source       string `json:"source"`
 	CurrentStock int    `json:"current_stock,omitempty"`
 	IsDuplicate  bool   `json:"is_duplicate,omitempty"`
+	// PreisVorschlag ist der DNB-Ladenpreis (MARC21 020 $c), 0 = keiner ermittelbar.
+	// Ausdruecklich ein VORSCHLAG: Er gilt zum Erscheinungszeitpunkt und ist nicht der
+	// Schulpreis. Die Oberflaeche fuellt damit das Preisfeld vor, uebernimmt ihn aber
+	// nie ungefragt als erfasste Ausgabe.
+	PreisVorschlag float64 `json:"preis_vorschlag,omitempty"`
 }
 
 // SearchOrders searches local DB and DNB for book orders.
@@ -256,13 +261,14 @@ func baueDNBSuchItem(dr inventur.MetadatenErgebnis, existingISBNs map[string]str
 	}
 
 	return OrderSearchItem{
-		Titel:       dr.Titel,
-		Autor:       dr.Autor,
-		ISBN:        dr.ISBN,
-		Verlag:      dr.Verlag,
-		CoverURL:    coverURL,
-		Source:      "dnb",
-		IsDuplicate: existsLocally,
+		Titel:          dr.Titel,
+		Autor:          dr.Autor,
+		ISBN:           dr.ISBN,
+		Verlag:         dr.Verlag,
+		CoverURL:       coverURL,
+		Source:         "dnb",
+		IsDuplicate:    existsLocally,
+		PreisVorschlag: dr.Preis,
 	}
 }
 
