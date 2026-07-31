@@ -15,6 +15,7 @@
 	 * @property {number} maxOverdueItems
 	 * @property {boolean} bestellbedarfWarnungAktiv
 	 * @property {number} bestellbedarfSchwelle
+	 * @property {boolean} preiseErfassen
 	 */
 
 	/** @type {Props} */
@@ -28,7 +29,8 @@
 		maxOverdueDays = $bindable(),
 		maxOverdueItems = $bindable(),
 		bestellbedarfWarnungAktiv = $bindable(),
-		bestellbedarfSchwelle = $bindable()
+		bestellbedarfSchwelle = $bindable(),
+		preiseErfassen = $bindable()
 	} = $props();
 
 	let saving = $state(false);
@@ -46,7 +48,8 @@
 				max_overdue_days: maxOverdueDays,
 				max_overdue_items: maxOverdueItems,
 				bestellbedarf_warnung_aktiv: bestellbedarfWarnungAktiv,
-				bestellbedarf_schwelle: bestellbedarfSchwelle
+				bestellbedarf_schwelle: bestellbedarfSchwelle,
+				preise_erfassen: preiseErfassen
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
 		} catch {
@@ -170,6 +173,32 @@
 				/>
 			</div>
 		{/if}
+	</section>
+
+	<!-- Preiserfassung: entscheidet, ob das Bestellwesen ueberhaupt mit Geld arbeitet. -->
+	<section class="border-b border-slate-200 pb-8">
+		<div class="flex items-start justify-between gap-4">
+			{@render sectionHeader(
+				'Preise im Bestellwesen',
+				'An = Preisfeld im Warenkorb, Betragsspalten in der Bestellhistorie, Berichte mit Summen. Aus = die Bestellhistorie und alle Berichte zählen Exemplare statt Euro. Bereits erfasste Beträge bleiben gespeichert und erscheinen wieder, sobald der Schalter zurückgelegt wird.'
+			)}
+			<button
+				type="button"
+				onclick={() => (preiseErfassen = !preiseErfassen)}
+				class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {preiseErfassen
+					? 'bg-emerald-500'
+					: 'bg-slate-200'}"
+				role="switch"
+				aria-checked={preiseErfassen}
+				aria-label="Preise im Bestellwesen umschalten"
+			>
+				<span
+					class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {preiseErfassen
+						? 'translate-x-6'
+						: 'translate-x-0'}"
+				></span>
+			</button>
+		</div>
 	</section>
 
 	<div class="flex justify-end">

@@ -1,5 +1,6 @@
 <script>
 	import { localISO, lastOfMonth } from '../../utils/dates.js';
+	import { orderStore } from '../../stores/orderStore.svelte.js';
 
 	/** @type {{ suppliers?: { id: string, name: string }[] }} */
 	let { suppliers = [] } = $props();
@@ -38,23 +39,48 @@
 	// Jahres-Optionen: aktuelles Jahr + 4 zurück
 	const yearOptions = Array.from({ length: 5 }, (_, i) => String(now.getFullYear() - i));
 
-	const berichtOptionen = [
-		{
-			value: 'monat',
-			label: 'Monatsbericht',
-			desc: 'Alle Bestellungen eines Monats mit Titeln und Summe'
-		},
-		{
-			value: 'jahr',
-			label: 'Jahresbericht',
-			desc: 'Monatliche Übersicht + Aufteilung nach Lieferant'
-		},
-		{
-			value: 'lieferant',
-			label: 'Lieferantenabrechnung',
-			desc: 'Alle Bestellungen bei einem Lieferanten in einem Zeitraum'
-		}
-	];
+	// Die Beschriftungen folgen dem Schalter "Preise im Bestellwesen".
+	//
+	// Ohne Preise waere "Lieferantenabrechnung" schlicht falsch — abgerechnet wird nichts,
+	// der Bericht listet dann Mengen. Und ein "Monatsbericht ... mit Summe" verspricht eine
+	// Summe, die im PDF nicht mehr steht. Die Auswahl muss beschreiben, was herauskommt.
+	const berichtOptionen = $derived(
+		orderStore.preiseErfassen
+			? [
+					{
+						value: 'monat',
+						label: 'Monatsbericht',
+						desc: 'Alle Bestellungen eines Monats mit Titeln und Summe'
+					},
+					{
+						value: 'jahr',
+						label: 'Jahresbericht',
+						desc: 'Monatliche Übersicht + Aufteilung nach Lieferant'
+					},
+					{
+						value: 'lieferant',
+						label: 'Lieferantenabrechnung',
+						desc: 'Alle Bestellungen bei einem Lieferanten in einem Zeitraum'
+					}
+				]
+			: [
+					{
+						value: 'monat',
+						label: 'Monatsbericht',
+						desc: 'Alle Bestellungen eines Monats mit Titeln und Exemplarzahlen'
+					},
+					{
+						value: 'jahr',
+						label: 'Jahresbericht',
+						desc: 'Monatliche Übersicht + Aufteilung nach Lieferant (Mengen)'
+					},
+					{
+						value: 'lieferant',
+						label: 'Lieferantenübersicht',
+						desc: 'Alle Bestellungen bei einem Lieferanten in einem Zeitraum'
+					}
+				]
+	);
 
 	let rangeInvalid = $derived(typ === 'lieferant' && vonDatum > bisDatum);
 	let canDownload = $derived(!rangeInvalid && (typ !== 'lieferant' || lieferantId !== ''));
@@ -84,7 +110,7 @@
 			von: vonDatum,
 			bis: bisDatum,
 			lieferant_id: lieferantId,
-			titel: `Lieferantenabrechnung: ${name}`
+			titel: `${orderStore.preiseErfassen ? 'Lieferantenabrechnung' : 'Lieferantenübersicht'}: ${name}`
 		});
 		return `${base}?${params}`;
 	});

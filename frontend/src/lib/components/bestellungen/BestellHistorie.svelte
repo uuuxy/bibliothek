@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { apiGet } from '../../apiFetch.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 	import { Printer, BookOpen } from '@lucide/svelte';
 
@@ -17,6 +18,7 @@
 	});
 
 	let gesamtsumme = $derived(bestellungen.reduce((sum, b) => sum + b.gesamtbetrag, 0));
+	let gesamtExemplare = $derived(bestellungen.reduce((sum, b) => sum + b.anzahl_exemplare, 0));
 
 	/** @param {number} n */
 	function euro(n) {
@@ -74,10 +76,18 @@
 				Alle aufgegebenen Bestellungen — automatisch erfasst beim Bestellen
 			</p>
 		</div>
+		<!-- Ohne Preiserfassung ist "Gesamtausgaben 0,00 €" keine Auskunft, sondern eine
+		     falsche: Die Schule hat ausgegeben, nur steht es nirgends. Dann lieber die Zahl
+		     nennen, die stimmt. -->
 		{#if bestellungen.length > 0}
 			<div class="text-right">
-				<div class="text-xs text-slate-400 font-semibold">Gesamtausgaben</div>
-				<div class="text-2xl font-black text-slate-800">{euro(gesamtsumme)}</div>
+				{#if orderStore.preiseErfassen}
+					<div class="text-xs text-slate-400 font-semibold">Gesamtausgaben</div>
+					<div class="text-2xl font-black text-slate-800">{euro(gesamtsumme)}</div>
+				{:else}
+					<div class="text-xs text-slate-400 font-semibold">Bestellte Exemplare</div>
+					<div class="text-2xl font-black text-slate-800">{gesamtExemplare}</div>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -103,7 +113,8 @@
 						<th class="px-3 py-2 text-left font-semibold">Datum</th>
 						<th class="px-3 py-2 text-left font-semibold">Lieferant</th>
 						<th class="px-3 py-2 text-right font-semibold">Exemplare</th>
-						<th class="px-3 py-2 text-right font-semibold">Betrag</th>
+						{#if orderStore.preiseErfassen}<th class="px-3 py-2 text-right font-semibold">Betrag</th
+							>{/if}
 						<th class="w-8 px-3 py-2"><span class="sr-only">Positionen</span></th>
 					</tr>
 				</thead>
@@ -135,11 +146,13 @@
 							<td class="px-3 py-2 text-right whitespace-nowrap text-slate-700 tabular-nums">
 								{b.anzahl_exemplare}
 							</td>
-							<td
-								class="px-3 py-2 text-right font-bold whitespace-nowrap text-slate-900 tabular-nums"
-							>
-								{euro(b.gesamtbetrag)}
-							</td>
+							{#if orderStore.preiseErfassen}
+								<td
+									class="px-3 py-2 text-right font-bold whitespace-nowrap text-slate-900 tabular-nums"
+								>
+									{euro(b.gesamtbetrag)}
+								</td>
+							{/if}
 							<td class="px-3 py-2 text-right">
 								<span
 									aria-hidden="true"
@@ -153,7 +166,10 @@
 						<!-- Positionen -->
 						{#if expandedId === b.id}
 							<tr id="positionen-{b.id}">
-								<td colspan="5" class="border-t border-slate-100 bg-slate-50/40 px-5 py-4">
+								<td
+									colspan={orderStore.preiseErfassen ? 5 : 4}
+									class="border-t border-slate-100 bg-slate-50/40 px-5 py-4"
+								>
 									{#if b.positionen.length === 0}
 										<p class="text-sm text-slate-400 italic">Keine Positionen gespeichert.</p>
 									{:else}
@@ -163,8 +179,10 @@
 													<th class="pb-1.5 text-left font-semibold">Titel</th>
 													<th class="pb-1.5 text-left font-semibold">ISBN</th>
 													<th class="pb-1.5 text-right font-semibold">Menge</th>
-													<th class="pb-1.5 text-right font-semibold">Einzelpreis</th>
-													<th class="pb-1.5 text-right font-semibold">Gesamt</th>
+													{#if orderStore.preiseErfassen}
+														<th class="pb-1.5 text-right font-semibold">Einzelpreis</th>
+														<th class="pb-1.5 text-right font-semibold">Gesamt</th>
+													{/if}
 													<th class="pb-1.5 text-right font-semibold"
 														><span class="sr-only">Aktionen</span></th
 													>
@@ -178,12 +196,14 @@
 															>{p.isbn || '—'}</td
 														>
 														<td class="py-1.5 text-right text-slate-700 tabular-nums">{p.menge}</td>
-														<td class="py-1.5 text-right text-slate-700 tabular-nums"
-															>{euro(p.einzelpreis)}</td
-														>
-														<td class="py-1.5 text-right font-bold text-slate-800 tabular-nums"
-															>{euro(p.gesamtpreis)}</td
-														>
+														{#if orderStore.preiseErfassen}
+															<td class="py-1.5 text-right text-slate-700 tabular-nums"
+																>{euro(p.einzelpreis)}</td
+															>
+															<td class="py-1.5 text-right font-bold text-slate-800 tabular-nums"
+																>{euro(p.gesamtpreis)}</td
+															>
+														{/if}
 														<!-- Beide Verweise nur, wenn sie auch irgendwohin führen: der Titelsatz
 														     nur bei vorhandener titel_id (die Bestellung überlebt den Titel,
 														     ON DELETE SET NULL), der Nachdruck nur bei offenen Etiketten. -->
@@ -217,17 +237,22 @@
 													</tr>
 												{/each}
 											</tbody>
-											<tfoot>
-												<tr class="border-t-2 border-slate-200">
-													<td colspan="4" class="pt-1.5 text-right text-sm font-bold text-slate-600"
-														>Summe</td
-													>
-													<td class="pt-1.5 text-right font-black text-slate-900 tabular-nums"
-														>{euro(b.gesamtbetrag)}</td
-													>
-													<td></td>
-												</tr>
-											</tfoot>
+											<!-- Ohne Preise gibt es keine Summenzeile: Eine Tabelle ohne
+											     Betragsspalten braucht keinen Abschluss, der eine Null nennt. -->
+											{#if orderStore.preiseErfassen}
+												<tfoot>
+													<tr class="border-t-2 border-slate-200">
+														<td
+															colspan="4"
+															class="pt-1.5 text-right text-sm font-bold text-slate-600">Summe</td
+														>
+														<td class="pt-1.5 text-right font-black text-slate-900 tabular-nums"
+															>{euro(b.gesamtbetrag)}</td
+														>
+														<td></td>
+													</tr>
+												</tfoot>
+											{/if}
 										</table>
 									{/if}
 								</td>

@@ -21,6 +21,17 @@ type SystemEinstellungen struct {
 	// pauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.
 	BestellbedarfWarnungAktiv bool `json:"bestellbedarf_warnung_aktiv"`
 	BestellbedarfSchwelle     int  `json:"bestellbedarf_schwelle"`
+	// PreiseErfassen entscheidet, ob das Bestellwesen mit Geld arbeitet.
+	//
+	// Aus heisst: kein Preisfeld im Warenkorb, keine Betragsspalten in der Historie, und
+	// die Berichte zaehlen Exemplare statt Euro zu summieren. Der Schalter steuert
+	// ERFASSUNG UND ANZEIGE, nicht die Daten — bereits erfasste Betraege bleiben in der
+	// Datenbank und tauchen wieder auf, sobald er zurueckgelegt wird.
+	//
+	// Anlass: Ohne gepflegte Preise summieren Bestellhistorie und alle drei Berichte
+	// Nullen. Spalten voller 0,00 EUR sind schlimmer als keine Spalten — sie sehen aus
+	// wie ein Nachweis und sind keiner.
+	PreiseErfassen bool `json:"preise_erfassen"`
 	// School identity — used in PDF letter headers (set once via settings UI).
 	SchuleName    string `json:"schule_name"`
 	SchuleStrasse string `json:"schule_strasse"`
@@ -57,6 +68,9 @@ func standardEinstellungen() *SystemEinstellungen {
 		// ruhigerer Startwert — der Betreiber justiert sie in den Einstellungen.
 		BestellbedarfWarnungAktiv: true,
 		BestellbedarfSchwelle:     3,
+		// An als Vorgabe: Das ist das bisherige Verhalten, und wer Preise fuehrt,
+		// soll sie nach einem Update nicht ploetzlich vermissen.
+		PreiseErfassen: true,
 	}
 }
 
@@ -108,6 +122,10 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		settings.BestellbedarfWarnungAktiv = val != nil && *val == "true"
 	case "bestellbedarf_schwelle":
 		setzeIntEinstellung(val, &settings.BestellbedarfSchwelle)
+	case "preise_erfassen":
+		// Gegen "false" statt fuer "true": Die Vorgabe ist AN, ein fehlender oder
+		// unlesbarer Wert darf die Preise also nicht abschalten.
+		settings.PreiseErfassen = val == nil || *val != "false"
 	case "schule_name":
 		setzeStringRoh(val, &settings.SchuleName)
 	case "schule_strasse":
@@ -210,6 +228,10 @@ func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
 	if req.BestellbedarfWarnungAktiv {
 		bestellAktiv = "true"
 	}
+	preiseErfassen := "false"
+	if req.PreiseErfassen {
+		preiseErfassen = "true"
+	}
 
 	pairs := [][2]string{
 		{"ferien_leseclub_aktiv", aktiv},
@@ -222,6 +244,7 @@ func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
 		{"max_overdue_items", maxOverdueItems},
 		{"bestellbedarf_warnung_aktiv", bestellAktiv},
 		{"bestellbedarf_schwelle", bestellSchwelle},
+		{"preise_erfassen", preiseErfassen},
 	}
 
 	// Schul-Identität (PDF-Briefkopf) getrennt behandeln: Diese Felder haben

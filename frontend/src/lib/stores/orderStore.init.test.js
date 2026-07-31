@@ -31,12 +31,14 @@ describe('orderStore.init – Ladeverhalten', () => {
 		vi.useRealTimers();
 	});
 
-	it('lädt beim ersten Aufruf alle drei Datenquellen', async () => {
+	// Vier, nicht drei: Neben Lieferanten, Zulauf und Bestellbedarf laedt der Store die
+	// Anzeige-Konfiguration des Bestellwesens (ob mit Preisen gearbeitet wird).
+	it('lädt beim ersten Aufruf alle vier Datenquellen', async () => {
 		const { store, apiGet } = await frischerStore();
 
 		await store.init();
 
-		expect(apiGet).toHaveBeenCalledTimes(3);
+		expect(apiGet).toHaveBeenCalledTimes(4);
 		expect(apiGet).toHaveBeenCalledWith('/api/bestellungen');
 	});
 
@@ -62,7 +64,7 @@ describe('orderStore.init – Ladeverhalten', () => {
 
 		vi.advanceTimersByTime(61_000);
 		await store.init();
-		await vi.waitFor(() => expect(apiGet).toHaveBeenCalledTimes(3));
+		await vi.waitFor(() => expect(apiGet).toHaveBeenCalledTimes(4));
 	});
 
 	// Ein Fehlschlag ist keine Frische: Wer offline den Tab öffnete, soll beim nächsten
@@ -77,7 +79,7 @@ describe('orderStore.init – Ladeverhalten', () => {
 
 		await store.init(); // direkt danach — muss erneut laden
 
-		expect(apiGet).toHaveBeenCalledTimes(3);
+		expect(apiGet).toHaveBeenCalledTimes(4);
 	});
 
 	// Veraltete Daten dürfen die Ansicht nicht blockieren: init() kehrt sofort zurück,

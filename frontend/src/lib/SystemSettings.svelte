@@ -50,6 +50,8 @@
 	let maxOverdueItems = $state(1);
 	let bestellbedarfWarnungAktiv = $state(true);
 	let bestellbedarfSchwelle = $state(3);
+	// Vorgabe AN — wie im Backend: Ein fehlender Wert darf die Preise nicht abschalten.
+	let preiseErfassen = $state(true);
 
 	// --- LOGIC ---
 
@@ -66,6 +68,7 @@
 			maxOverdueItems = data.max_overdue_items ?? 1;
 			bestellbedarfWarnungAktiv = data.bestellbedarf_warnung_aktiv ?? true;
 			bestellbedarfSchwelle = data.bestellbedarf_schwelle ?? 3;
+			preiseErfassen = data.preise_erfassen ?? true;
 		} catch {
 			/* use defaults */
 		}
@@ -121,6 +124,7 @@
 					bind:maxOverdueItems
 					bind:bestellbedarfWarnungAktiv
 					bind:bestellbedarfSchwelle
+					bind:preiseErfassen
 				/>
 
 				<!-- TAB: TEAM & RECHTE -->

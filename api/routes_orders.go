@@ -2,10 +2,16 @@ package api
 
 import (
 	"net/http"
+
+	"bibliothek/repository"
 )
 
 func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService, pdfSvc *PDFService) {
 	// Bestellungen & Lieferanten
+	// Anzeige-Regeln des Bestellwesens (z. B. ob mit Preisen gearbeitet wird).
+	// view_orders statt manage_users: Wer bestellen darf, muss dafuer keine
+	// Benutzerverwaltungsrechte bekommen (siehe bestellkonfiguration.go).
+	mux.Handle("GET /api/bestellungen/konfiguration", s.RequirePermission("view_orders")(s.BestellKonfigurationHandler(repository.NewSystemSettingsRepository(s.DB.Pool))))
 	mux.Handle("GET /api/bestellungen", s.RequirePermission("view_orders")(s.GetReordersHandler()))
 	mux.Handle("GET /api/bestellungen/pdf", s.RequirePermission("view_orders")(s.ExportReordersPDFHandler()))
 	mux.Handle("GET /api/bestellhistorie", s.RequirePermission("view_orders")(s.GetBestellhistorieHandler()))

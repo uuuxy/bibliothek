@@ -22,6 +22,15 @@ class OrderStore {
 	submitting = $state(false);
 	/** Globaler Schalter „Barcodes mitschicken" */
 	attachBarcodes = $state(true);
+	/**
+	 * Arbeitet das Bestellwesen mit Preisen? Systemeinstellung, nicht Sitzungswahl —
+	 * geladen aus /api/bestellungen/konfiguration.
+	 *
+	 * Vorgabe AN wie im Backend: Waere sie AUS, verschwaenden Preisfeld und Betraege fuer
+	 * einen Wimpernschlag, bis die Antwort da ist — ein Flackern, das wie ein Datenverlust
+	 * aussieht.
+	 */
+	preiseErfassen = $state(true);
 
 	searchQuery = $state('');
 	/** @type {any[]} */
@@ -74,7 +83,8 @@ class OrderStore {
 		const ergebnisse = await Promise.all([
 			this.loadSuppliers(),
 			this.loadIncomingShipments(),
-			this.loadRecommendations()
+			this.loadRecommendations(),
+			this.loadKonfiguration()
 		]);
 		// Nur vollen Erfolg als "frisch" stempeln: Nach einem Netzwerkfehler soll der
 		// nächste Mount sofort erneut laden, nicht 60 Sekunden leere Listen zeigen.
@@ -98,6 +108,16 @@ class OrderStore {
 			this.selectedSupplierId = this.suppliers[0]?.id ?? '';
 		}
 		return ok;
+	}
+
+	async loadKonfiguration() {
+		try {
+			const daten = await apiGet('/api/bestellungen/konfiguration');
+			this.preiseErfassen = daten?.preise_erfassen ?? true;
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	async loadIncomingShipments() {
@@ -232,6 +252,42 @@ class OrderStore {
 			});
 		}
 		this.resetSearch();
+		// Ohne mitgelieferten Vorschlag (Weg ueber den Bestellbedarf) einen nachladen.
+		// Bewusst hier und nicht beim Laden der Liste: Der Bestellbedarf umfasst hunderte
+		// Titel, das waeren hunderte DNB-Abfragen bei jedem Oeffnen der Ansicht — fuer
+		// Preise, die fast alle niemand braucht.
+		if (!vorschlag) void this.#ladePreisvorschlag(key, isbn);
+	}
+
+	/**
+	 * Holt den DNB-Ladenpreis zu einer ISBN nach und traegt ihn nach, falls im Warenkorb
+	 * noch kein Preis steht.
+	 *
+	 * Nutzt die vorhandene Bestellsuche: Sie fragt fuer eine ISBN ohnehin die DNB ab und
+	 * liefert preis_vorschlag mit. Ein zweiter Endpunkt fuer dieselbe Auskunft waere eine
+	 * Dopplung, die frueher oder spaeter anders antwortet als die erste.
+	 *
+	 * Still im Fehlerfall: Ein fehlender Vorschlag ist kein Problem, das den Benutzer
+	 * etwas angeht — er tippt den Preis dann wie bisher selbst.
+	 * @param {string} key @param {string} isbn
+	 */
+	async #ladePreisvorschlag(key, isbn) {
+		if (!isbn || !this.preiseErfassen) return;
+		try {
+			const treffer = await apiPost('/api/bestellungen/suche', { query: isbn });
+			const vorschlag = Number(
+				(treffer || []).find((/** @type {any} */ t) => t.preis_vorschlag > 0)?.preis_vorschlag
+			);
+			if (!vorschlag) return;
+			const pos = this.cart.find((i) => i.id === key);
+			// Nur eintragen, wenn inzwischen niemand selbst etwas erfasst hat.
+			if (pos && !pos.preis) {
+				pos.preis = vorschlag;
+				pos.preis_vorschlag = vorschlag;
+			}
+		} catch {
+			/* ohne Vorschlag weiterarbeiten */
+		}
 	}
 
 	/** @param {number} idx */
@@ -249,7 +305,10 @@ class OrderStore {
 				items: this.cart.map((item) => ({
 					titel_id: item.id,
 					menge: item.menge,
-					preis: Number(item.preis) || 0,
+					// Ohne Preiserfassung wird auch nichts erfasst. Sonst wanderte der
+					// DNB-Vorschlag in die Bestellhistorie, obwohl das Preisfeld gar nicht
+					// sichtbar war — ein Betrag, den nie jemand gesehen oder bestaetigt hat.
+					preis: this.preiseErfassen ? Number(item.preis) || 0 : 0,
 					generate_barcodes: this.attachBarcodes ? item.generate_barcodes : false
 				}))
 			});

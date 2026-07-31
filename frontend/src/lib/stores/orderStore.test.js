@@ -25,6 +25,34 @@ function resetStore() {
 	orderStore.showDropdown = false;
 }
 
+// Seit dem DNB-Preisvorschlag loest addToCart im Hintergrund eine Suche ueber
+// /api/bestellungen/suche aus. Die Zusicherungen sprechen deshalb den Bestell-Endpunkt
+// ausdruecklich an, statt sich auf die Aufrufreihenfolge zu verlassen — sonst prueft ein
+// Test auf "die Bestellung" und meint in Wahrheit die Preisabfrage.
+
+/** @param {any} mock Wurde eine BESTELLUNG abgesetzt? */
+function hatBestellungGesendet(mock) {
+	return mock.mock.calls.some((/** @type {any[]} */ args) => args[0] === '/api/bestellungen');
+}
+
+/** @param {any} mock Das Payload der abgesetzten BESTELLUNG. */
+function bestellPayload(mock) {
+	return mock.mock.calls.find((/** @type {any[]} */ args) => args[0] === '/api/bestellungen')?.[1];
+}
+
+/**
+ * Antwort NUR fuer den Bestell-Endpunkt festlegen. mockResolvedValueOnce waere von der
+ * Reihenfolge abhaengig — die Preisabfrage im Hintergrund wuerde sie aufbrauchen.
+ * @param {any} antwort @param {boolean} [scheitert]
+ */
+function bestellAntwort(antwort, scheitert = false) {
+	apiPostMock.mockImplementation(async (/** @type {string} */ url) => {
+		if (url !== '/api/bestellungen') return [];
+		if (scheitert) throw antwort;
+		return antwort;
+	});
+}
+
 describe('orderStore.addToCart', () => {
 	beforeEach(() => {
 		resetStore();
@@ -163,16 +191,16 @@ describe('orderStore.submitOrder', () => {
 		orderStore.selectedSupplierId = '';
 		orderStore.addToCart({ id: 'a', titel: 'A', autor: '', isbn: '1' });
 		await orderStore.submitOrder();
-		expect(apiPost).not.toHaveBeenCalled();
+		expect(hatBestellungGesendet(apiPost)).toBe(false);
 
 		orderStore.selectedSupplierId = 's1';
 		orderStore.cart = [];
 		await orderStore.submitOrder();
-		expect(apiPost).not.toHaveBeenCalled();
+		expect(hatBestellungGesendet(apiPost)).toBe(false);
 	});
 
 	it('baut das Payload korrekt und leert den Warenkorb', async () => {
-		apiPostMock.mockResolvedValueOnce({ status: 'success', message: 'ok', ordered_qty: 2 });
+		bestellAntwort({ status: 'success', message: 'ok', ordered_qty: 2 });
 		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 2, true);
 		orderStore.cart[0].preis = /** @type {any} */ ('9.90');
 
@@ -187,18 +215,18 @@ describe('orderStore.submitOrder', () => {
 	});
 
 	it('unterdrückt generate_barcodes, wenn der globale Schalter aus ist', async () => {
-		apiPostMock.mockResolvedValueOnce({ status: 'success' });
+		bestellAntwort({ status: 'success' });
 		orderStore.attachBarcodes = false;
 		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' }, 1, true);
 
 		await orderStore.submitOrder();
 
-		const payload = apiPostMock.mock.calls[0][1];
+		const payload = bestellPayload(apiPostMock);
 		expect(payload.items[0].generate_barcodes).toBe(false);
 	});
 
 	it('behält den Warenkorb bei einem API-Fehler', async () => {
-		apiPostMock.mockRejectedValueOnce(new Error('boom'));
+		bestellAntwort(new Error('boom'), true);
 		orderStore.addToCart({ id: 't1', titel: 'A', autor: '', isbn: '1' });
 
 		await orderStore.submitOrder();

@@ -87,28 +87,30 @@
 								>+</button
 							>
 						</div>
-						<div class="flex items-center gap-1.5">
-							<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unveraendert ist.
+						{#if orderStore.preiseErfassen}
+							<div class="flex items-center gap-1.5">
+								<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unveraendert ist.
 							     Er ist der DNB-Ladenpreis bei Erscheinen — NICHT der Schulpreis, den die
 							     Schule tatsaechlich zahlt. Wer ihn ueberschreibt, verliert das Abzeichen
 							     und damit die Erinnerung daran, dass hier geraten wurde. -->
-							{#if item.preis_vorschlag > 0 && Number(item.preis) === item.preis_vorschlag}
-								<span
-									class="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded"
-									title="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis pruefen"
-								>
-									DNB
-								</span>
-							{/if}
-							<input
-								type="number"
-								step="0.01"
-								bind:value={item.preis}
-								aria-label="Preis"
-								class="w-20 px-2 py-1 border border-slate-200 rounded-lg text-right text-sm font-semibold text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-							/>
-							<span class="text-sm font-semibold text-slate-400">€</span>
-						</div>
+								{#if item.preis_vorschlag > 0 && Number(item.preis) === item.preis_vorschlag}
+									<span
+										class="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded"
+										title="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis pruefen"
+									>
+										DNB
+									</span>
+								{/if}
+								<input
+									type="number"
+									step="0.01"
+									bind:value={item.preis}
+									aria-label="Preis"
+									class="w-20 px-2 py-1 border border-slate-200 rounded-lg text-right text-sm font-semibold text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+								/>
+								<span class="text-sm font-semibold text-slate-400">€</span>
+							</div>
+						{/if}
 					</div>
 				</div>
 			{/each}
@@ -116,11 +118,18 @@
 
 		<!-- Footer: Summe + CTA -->
 		<div class="pt-3 mt-1 border-t border-slate-100 space-y-3">
+			<!-- Ohne Preiserfassung stuende hier dauerhaft 0,00 €: eine Summe, die wie ein
+			     Betrag aussieht und keiner ist. Dann lieber die Menge, die feststeht. -->
 			<div class="flex items-center justify-between">
-				<span class="text-sm font-semibold text-slate-500">Gesamt</span>
-				<span class="text-xl font-bold text-slate-900 tabular-nums"
-					>{orderStore.total.toFixed(2).replace('.', ',')} €</span
-				>
+				{#if orderStore.preiseErfassen}
+					<span class="text-sm font-semibold text-slate-500">Gesamt</span>
+					<span class="text-xl font-bold text-slate-900 tabular-nums"
+						>{orderStore.total.toFixed(2).replace('.', ',')} €</span
+					>
+				{:else}
+					<span class="text-sm font-semibold text-slate-500">Exemplare</span>
+					<span class="text-xl font-bold text-slate-900 tabular-nums">{orderStore.totalQty}</span>
+				{/if}
 			</div>
 			<label
 				class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 border border-slate-200 rounded-xl select-none"

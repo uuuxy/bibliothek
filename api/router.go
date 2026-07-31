@@ -20,6 +20,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -243,6 +244,22 @@ func spaHandler(frontendRoot *os.Root) http.HandlerFunc {
 				return
 			}
 		}
+
+		// Ein unbekannter /api/-Pfad ist ein Fehler, keine Seite.
+		//
+		// Vorher bekam auch er die App-Shell: Ein vertippter, umbenannter oder mit der
+		// falschen Methode aufgerufener Endpunkt antwortete mit "200 text/html", und der
+		// Aufrufer scheiterte erst beim JSON-Parsen — mit einer Meldung, die nichts mit der
+		// Ursache zu tun hat. Beim Suchen nach dem Berichte-Fehler hat genau das die
+		// Diagnose fast in die falsche Richtung geschickt.
+		//
+		// Die App-Shell bleibt fuer alles andere richtig: /schuelerdatei, /bestellungen und
+		// jede andere Route der Oberflaeche existiert nur im Browser.
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("unbekannter Endpunkt: %s %s", r.Method, r.URL.Path))
+			return
+		}
+
 		// SPA-Fallback: alle unbekannten Pfade auf die App-Shell
 		http.ServeFileFS(w, r, frontendRoot.FS(), "index.html")
 	}
