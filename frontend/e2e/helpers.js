@@ -32,7 +32,7 @@ export async function uiLogin(page, asEmail = ADMIN_EMAIL) {
 	await expect(password).toHaveValue(ADMIN_PASSWORD);
 
 	await page.getByRole('button', { name: 'Anmelden' }).click();
-	await page.getByRole('button', { name: 'Abmelden' }).waitFor();
+	await page.getByRole('button', { name: 'Abmelden' }).first().waitFor();
 }
 
 /**
