@@ -118,12 +118,12 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clear any lingering mock expectations
-			mock.ExpectationsWereMet() // Not ideal, but ensures state is clear. Wait, pgxmock doesn't have an easy reset.
-
+			_ = mock.ExpectationsWereMet()
 			tt.setupMock()
 
-			body, _ := json.Marshal(tt.payload)
+			body, err := json.Marshal(tt.payload)
+			assert.NoError(t, err)
+
 			req := httptest.NewRequest(http.MethodPost, "/global-extend", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -133,8 +133,8 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			assert.Contains(t, w.Body.String(), tt.expectedBody)
 
-			// We suppress rollback unfulfilled errors here because the defer SafeRollback mechanism will just return and do nothing when it is already committed, but pgxmock logs a message anyway
-			_ = mock.ExpectationsWereMet()
+			err = mock.ExpectationsWereMet()
+			assert.NoError(t, err)
 		})
 	}
 }
