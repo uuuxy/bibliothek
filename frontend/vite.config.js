@@ -14,7 +14,27 @@ export default defineConfig({
 			registerType: 'autoUpdate',
 			injectRegister: 'auto',
 			workbox: {
-				globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+				globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+				// Der Service Worker beantwortet JEDE Navigation aus dem Cache mit der
+				// App-Shell — das ist der Sinn einer SPA-PWA, aber nur für Pfade, die auch
+				// die App meinen.
+				//
+				// Ohne diese Liste traf es auch die Server-Antworten: Ein Klick auf "PDF
+				// herunterladen" ist eine Navigation (target="_blank"), der Service Worker
+				// gab statt des Berichts die App-Shell zurück, die SPA startete auf
+				// /api/bestellhistorie/bericht, fand den Pfad nicht in tabToPath und landete
+				// auf ihrem Standard-Reiter. Für den Benutzer: "Ich klicke auf Herunterladen
+				// und lande in der Ausleihe."
+				//
+				// Der Unterschied war von aussen kaum zu sehen, weil dieselbe URL per fetch
+				// weiterhin das PDF lieferte — nur die Navigation nicht.
+				navigateFallbackDenylist: [
+					/^\/api\//,
+					/^\/uploads\//,
+					/^\/events$/,
+					/^\/health$/,
+					/^\/swagger/
+				]
 			},
 			manifest: {
 				name: 'Schulbibliothek-Verwaltungssystem',

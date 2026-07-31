@@ -42,22 +42,34 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	await page.getByRole('button', { name: 'Verlust oder Schaden melden' }).first().click();
 	await page.locator('#damage-reason').fill('E2E Wasserschaden');
 	await page.locator('#damage-amount').fill('12.50');
+
+	// Geprüft wird die ANTWORT, die im Fenster ankommt, nicht dessen Adresse.
+	//
+	// Vorher stand hier eine Zusicherung auf popup.url(). Die war grün, während die
+	// Funktion kaputt war: Der Service Worker beantwortete die Navigation aus dem Cache
+	// mit der App-Shell — der Benutzer sah die Ausleihe statt des Elternbriefs, aber die
+	// Adresse des Fensters lautete weiterhin auf /pdf. Der begleitende page.request.get
+	// deckte es nicht auf, weil ein fetch am Service Worker vorbeiging.
+	/** @type {{ url: string, typ: string }[]} */
+	const antworten = [];
+	page.context().on('response', (r) => {
+		if (r.url().includes('/api/schadensfaelle/') && r.url().endsWith('/pdf')) {
+			antworten.push({ url: r.url(), typ: r.headers()['content-type'] ?? '' });
+		}
+	});
+
 	const popupPromise = page.waitForEvent('popup');
 	await page.getByRole('button', { name: 'Melden & PDF generieren' }).click();
 	const popup = await popupPromise;
 
-	// popup.url() sofort auszulesen war der Grund, warum dieser Test unter Last
-	// gelegentlich umfiel: Das popup-Ereignis feuert, sobald das Fenster existiert —
-	// die Adresse steht erst, wenn die Navigation übernommen hat. Bis dahin liefert
-	// url() "about:blank". Allein lief der Test deshalb immer durch, im vollen Lauf
-	// (Backend erzeugt gleichzeitig das PDF) reichte die Zeit manchmal nicht.
 	await expect
-		.poll(() => popup.url(), { message: 'Elternbrief-Popup öffnet das PDF' })
-		.toContain('/pdf');
-	const elternbriefURL = popup.url();
+		.poll(() => antworten.length, { message: 'Elternbrief-Antwort trifft ein' })
+		.toBeGreaterThan(0);
+	expect(antworten[0].typ, 'Elternbrief ist ein PDF').toContain('application/pdf');
+	const elternbriefURL = antworten[0].url;
 	await popup.close();
 
-	// Ein geöffnetes Fenster ist noch kein Elternbrief — die Route muss auch liefern.
+	// Und die Route liefert auch beim direkten Abruf.
 	const elternbrief = await page.request.get(elternbriefURL);
 	expect(elternbrief.status(), 'Elternbrief-PDF').toBe(200);
 	expect(elternbrief.headers()['content-type']).toContain('application/pdf');
