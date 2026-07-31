@@ -106,26 +106,7 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 // Fehlende Metadaten (Titel, Autor, Cover) werden, falls ISBN vorhanden, automatisch
 // über den MetadataClient via OpenLibrary-API im Hintergrund ergänzt, um Arbeit zu sparen.
 func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, anfrage *http.Request) {
-	var eingabe struct {
-		ISBN                    string         `json:"isbn"`
-		Fach                    string         `json:"subject"`
-		KlassenStufe            int16          `json:"gradeLevel"`
-		Schulzweig              string         `json:"track"`
-		Bestand                 int            `json:"stock"`
-		Titel                   string         `json:"title"`
-		Autor                   string         `json:"author"`
-		CoverURL                string         `json:"coverUrl"`
-		ZaehlDatum              *string        `json:"lastCounted"`
-		Medientyp               string         `json:"medientyp"`
-		JahrgangVon             int            `json:"jahrgangVon"`
-		JahrgangBis             int            `json:"jahrgangBis"`
-		Untertitel              string         `json:"untertitel"`
-		Verlag                  string         `json:"verlag"`
-		Erscheinungsjahr        int            `json:"erscheinungsjahr"`
-		Beschreibung            string         `json:"beschreibung"`
-		Signatur                string         `json:"signatur"`
-		ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
-	}
+	var eingabe BuchEingabe
 
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
 		writeError(antwort, http.StatusBadRequest, "ungültiges JSON")

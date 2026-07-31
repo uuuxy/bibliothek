@@ -9,28 +9,6 @@ import (
 	"strings"
 )
 
-// BuchAktualisierenAnfrage repräsentiert die erwartete JSON-Struktur für das Aktualisieren eines Buches.
-type BuchAktualisierenAnfrage struct {
-	ISBN                    string         `json:"isbn"`
-	Titel                   string         `json:"title"`
-	Autor                   string         `json:"author"`
-	CoverURL                string         `json:"coverUrl"`
-	Fach                    string         `json:"subject"`
-	KlassenStufe            int16          `json:"gradeLevel"`
-	Schulzweig              string         `json:"track"`
-	Bestand                 int            `json:"stock"`
-	ZaehlDatum              *string        `json:"lastCounted"`
-	Medientyp               string         `json:"medientyp"`
-	JahrgangVon             int            `json:"jahrgangVon"`
-	JahrgangBis             int            `json:"jahrgangBis"`
-	Untertitel              string         `json:"untertitel"`
-	Verlag                  string         `json:"verlag"`
-	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
-	Beschreibung            string         `json:"beschreibung"`
-	Signatur                string         `json:"signatur"`
-	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
-}
-
 // BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch.
 func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWriter, anfrage *http.Request) {
 	teile := strings.Split(strings.Trim(anfrage.URL.Path, "/"), "/")
@@ -45,7 +23,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		return
 	}
 
-	var eingabe BuchAktualisierenAnfrage
+	var eingabe BuchEingabe
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
 		writeError(antwort, http.StatusBadRequest, "ungültiges JSON")
 		return
@@ -99,7 +77,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 
 // bereinigeUndValidiereBuchEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.
 // Es gibt einen Fehler zurück, der als HTTP-Fehlermeldung an den Client gesendet werden kann.
-func bereinigeUndValidiereBuchEingabe(eingabe *BuchAktualisierenAnfrage) error {
+func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	eingabe.ISBN = strings.TrimSpace(eingabe.ISBN)
 	eingabe.Titel = strings.TrimSpace(eingabe.Titel)
 	eingabe.Autor = strings.TrimSpace(eingabe.Autor)
@@ -129,7 +107,7 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchAktualisierenAnfrage) error {
 
 // ergaenzeFehlendeMetadatenFuerAktualisierung sucht nach fehlenden Buchinformationen
 // über den Metadaten-Handler und setzt Standardwerte ("Unbekannter Titel/Autor"), falls nichts gefunden wird.
-func ergaenzeFehlendeMetadatenFuerAktualisierung(ctx context.Context, handler *APIHandler, eingabe *BuchAktualisierenAnfrage) {
+func ergaenzeFehlendeMetadatenFuerAktualisierung(ctx context.Context, handler *APIHandler, eingabe *BuchEingabe) {
 	if eingabe.Titel == "" || eingabe.Autor == "" || eingabe.CoverURL == "" {
 		nachschlagen, _ := handler.metadaten.SucheNachISBN(ctx, eingabe.ISBN)  //nolint:errcheck
 		if nachschlagen != nil {
