@@ -487,7 +487,9 @@ func insertExemplare(ctx context.Context, tx pgx.Tx, data exemplarInsert, barcod
 	}
 
 	br := tx.SendBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		_ = br.Close()
+	}()
 
 	for i, bc := range barcodes {
 		if _, err := br.Exec(); err != nil {
