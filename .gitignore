@@ -65,3 +65,6 @@ frontend/lint_results.json
 .scannerwork/
 /sonarqube_*.json
 /issues_page_*.json
+docker-compose.grafana.yml
+prometheus.yml
+grafana-provisioning/
