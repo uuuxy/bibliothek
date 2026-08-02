@@ -16,7 +16,7 @@
 		<img
 			src={logoUrl}
 			alt="Bibliosys Logo"
-			class="w-20 h-20 object-contain"
+			class="w-24 h-24 object-contain"
 		/>
 		<div class="text-center space-y-1.5">
 			<h2 class="text-base font-bold text-slate-800">Webmail-Login erforderlich</h2>
