@@ -34,7 +34,9 @@ test('Haken „Händler beklebt" kommt in der Datenbank an und überlebt das Bea
 	await page.getByLabel('Name').fill(name);
 	await page.getByLabel('E-Mail').fill(`b${s}@example.invalid`);
 	await page.getByLabel('Kundennummer').fill(`K-${s}`);
-	await page.getByRole('checkbox', { name: /Händler beklebt die Bücher/ }).check();
+	// Ein Zustand, kein Auswahlpunkt: Die Oberfläche zeigt hier einen M3-Schalter
+	// (role="switch"), kein Häkchen.
+	await page.getByRole('switch', { name: 'Händler beklebt die Bücher' }).click();
 	await page.getByRole('button', { name: 'Lieferanten speichern' }).click();
 
 	// 1. Der Haken erreicht die Datenbank — nicht nur die Oberfläche.

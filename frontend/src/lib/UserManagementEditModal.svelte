@@ -2,6 +2,7 @@
 	import { AlertTriangle } from '@lucide/svelte';
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
+	import Switch from './components/ui/Switch.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -89,14 +90,17 @@
 			</select>
 		</div>
 		{#if isEditingUser}
+			<!-- Vorher ein peer-checked-Nachbau OHNE zugänglichen Namen: Der Screenreader las
+			     „Kontrollkästchen", die danebenstehende Erklärung gehörte niemandem. -->
 			<div class="flex items-center gap-3 py-1.5">
-				<label class="relative inline-flex items-center cursor-pointer">
-					<input type="checkbox" bind:checked={userForm.aktiv} class="sr-only peer" />
-					<div
-						class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-					></div>
+				<Switch
+					id="benutzer-aktiv"
+					bind:checked={userForm.aktiv}
+					label="Benutzerkonto ist aktiv"
+				/>
+				<label for="benutzer-aktiv" class="cursor-pointer text-xs font-bold text-slate-600">
+					Benutzerkonto ist aktiv
 				</label>
-				<span class="text-xs font-bold text-slate-600">Benutzerkonto ist aktiv</span>
 			</div>
 		{/if}
 		<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

@@ -1,5 +1,6 @@
 <script>
 	import Button from '../ui/Button.svelte';
+	import Switch from '../ui/Switch.svelte';
 
 	let { suppliers, onAddSupplier, onEditSupplier, onRemoveSupplier } = $props();
 
@@ -80,19 +81,19 @@
 					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
 				/>
 			</div>
-			<!-- Diese Einstellung entscheidet, ob die gelieferten Exemplare auf der
-			     Nachdruck-Liste landen. Deshalb steht die Folge im Klartext daneben und nicht
-			     nur ein Häkchen: „Barcodes" allein liest jeder anders. -->
-			<label class="flex cursor-pointer gap-2.5 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
-				<input type="checkbox" bind:checked={newMitBarcode} class="mt-0.5 h-4 w-4 shrink-0" />
-				<span class="text-sm">
+			<!-- Ein Zustand, kein Auswahlpunkt — deshalb ein Schalter und kein Häkchen (M3).
+			     Die Folge steht im Klartext daneben: „Barcodes" allein liest jeder anders, und
+			     diese Einstellung entscheidet, ob Exemplare auf der Nachdruck-Liste landen. -->
+			<div class="flex items-start justify-between gap-4 pt-1">
+				<label for="mit-barcode" class="cursor-pointer text-sm">
 					<span class="block font-semibold text-slate-700">Händler beklebt die Bücher</span>
-					<span class="block text-xs text-slate-500">
+					<span class="mt-0.5 block text-xs text-slate-500">
 						Der Barcodebogen geht wie bisher mit der Bestellung mit. Die Exemplare gelten dann
 						als beklebt und erscheinen nicht auf der Liste der fehlenden Etiketten.
 					</span>
-				</span>
-			</label>
+				</label>
+				<Switch id="mit-barcode" bind:checked={newMitBarcode} label="Händler beklebt die Bücher" />
+			</div>
 			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
 		</form>
 	</div>
@@ -110,7 +111,7 @@
 						<th class="py-2.5">Name</th>
 						<th class="py-2.5">E-Mail</th>
 						<th class="py-2.5">Kundennummer</th>
-						<th class="py-2.5">Etiketten</th>
+						<th class="py-2.5">Etikettendruck</th>
 						<th class="py-2.5 text-right">Aktionen</th>
 					</tr>
 				</thead>
@@ -140,10 +141,10 @@
 									/></td
 								>
 								<td class="py-2 pr-2">
-									<label class="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
-										<input type="checkbox" bind:checked={editMitBarcode} class="h-4 w-4 shrink-0" />
-										Händler beklebt
-									</label>
+									<Switch
+										bind:checked={editMitBarcode}
+										label="Händler beklebt die Bücher ({s.name})"
+									/>
 								</td>
 								<td class="py-2 text-right whitespace-nowrap">
 									<button
@@ -163,17 +164,18 @@
 								<td class="py-3 font-bold text-slate-800">{s.name}</td>
 								<td class="py-3 text-slate-600">{s.email}</td>
 								<td class="py-3 text-slate-600">{s.customerNumber}</td>
-								<td class="py-3">
-									{#if s.liefert_mit_barcode}
-										<span
-											class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
-											data-tip="Die Bücher kommen beklebt an und stehen nicht auf der Nachdruck-Liste"
-										>
-											Händler beklebt
-										</span>
-									{:else}
-										<span class="text-xs text-slate-400">wir drucken</span>
-									{/if}
+								<!-- Zwei Werte, eine Sprache: Wer die Etiketten druckt. Vorher standen hier
+								     ein grüner Chip gegen graue Kleinschrift — zwei Darstellungen für EINE
+								     Ja/Nein-Angabe. Und „wir drucken" in jeder Zeile ließ das Auge viermal
+								     lesen, um nichts zu erfahren; auffallen soll die Abweichung. -->
+								<td class="py-3 text-slate-600">
+									<span
+										data-tip={s.liefert_mit_barcode
+											? 'Die Bücher kommen beklebt an und stehen nicht auf der Nachdruck-Liste'
+											: 'Die Etiketten druckt die Bibliothek selbst im Druck-Center'}
+									>
+										{s.liefert_mit_barcode ? 'Händler' : 'Bibliothek'}
+									</span>
 								</td>
 								<td class="py-3 text-right whitespace-nowrap">
 									<button

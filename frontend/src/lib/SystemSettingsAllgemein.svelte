@@ -2,6 +2,7 @@
 	import { apiPut } from './apiFetch.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import SettingField from './components/settings/SettingField.svelte';
+	import Switch from './components/ui/Switch.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -182,22 +183,7 @@
 				'Preise im Bestellwesen',
 				'An = Preisfeld im Warenkorb, Betragsspalten in der Bestellhistorie, Berichte mit Summen. Aus = die Bestellhistorie und alle Berichte zählen Exemplare statt Euro. Bereits erfasste Beträge bleiben gespeichert und erscheinen wieder, sobald der Schalter zurückgelegt wird.'
 			)}
-			<button
-				type="button"
-				onclick={() => (preiseErfassen = !preiseErfassen)}
-				class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 {preiseErfassen
-					? 'bg-emerald-500'
-					: 'bg-slate-200'}"
-				role="switch"
-				aria-checked={preiseErfassen}
-				aria-label="Preise im Bestellwesen umschalten"
-			>
-				<span
-					class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {preiseErfassen
-						? 'translate-x-6'
-						: 'translate-x-0'}"
-				></span>
-			</button>
+			<Switch bind:checked={preiseErfassen} label="Preise im Bestellwesen umschalten" />
 		</div>
 	</section>
 
