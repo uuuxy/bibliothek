@@ -35,8 +35,8 @@
 			>
 				{#if !uiStore.isSidebarCollapsed}
 					<div class="flex items-center gap-3 overflow-hidden">
-						<img src={logoUrl} alt="Logo" class="w-10 h-10 object-contain shrink-0 animate-fade-in" />
-						<span class="font-bold text-slate-800 tracking-tight text-lg animate-fade-in">Bibliosys</span>
+						<img src={logoUrl} alt="Logo" class="w-12 h-12 object-contain shrink-0 animate-fade-in" />
+						<span class="font-bold text-slate-800 tracking-tight text-xl animate-fade-in">Bibliosys</span>
 					</div>
 					<button
 						onclick={() => (uiStore.isSidebarCollapsed = true)}
