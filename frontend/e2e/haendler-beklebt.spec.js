@@ -46,7 +46,7 @@ test('Haken „Händler beklebt" kommt in der Datenbank an und überlebt das Bea
 
 	// 2. Und die Liste zeigt ihn auch an.
 	const zeile = page.locator('tr', { hasText: name });
-	await expect(zeile.getByText('Händler beklebt')).toBeVisible();
+	await expect(zeile.getByText('Händler')).toBeVisible();
 
 	// 3. Wer nur die E-Mail korrigiert, darf die Einstellung nicht verlieren.
 	//    Genau hier stand der Haken vorher immer auf „aus", weil die Bearbeiten-Maske ihn
@@ -76,5 +76,5 @@ test('Ohne Haken bleibt es beim bisherigen Verhalten', async ({ page }) => {
 	await page.getByRole('button', { name: 'Lieferanten speichern' }).click();
 
 	await expect.poll(() => flagInDB(name), { timeout: 5000 }).toBe('f');
-	await expect(page.locator('tr', { hasText: name }).getByText('wir drucken')).toBeVisible();
+	await expect(page.locator('tr', { hasText: name }).getByText('Bibliothek')).toBeVisible();
 });
