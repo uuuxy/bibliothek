@@ -5,6 +5,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"bibliothek/apierrors"
@@ -22,9 +23,21 @@ type AuditLogEntry struct {
 	BearbeiterNachname string    `json:"bearbeiter_nachname"`
 }
 
+// auditLogMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge.
+//
+// Vorher holte die Abfrage die GESAMTE Tabelle. Auf dem Prüfstand mit 247.000 Zeilen
+// waren das 72 MB JSON in einer Antwort: Der Server lieferte sie in 0,6 s, aber der
+// Browser musste sie parsen und ebenso viele Tabellenzeilen bauen — die Seite kam nicht
+// mehr zum Vorschein, der E2E-Test lief in den Timeout. Das Logbuch wächst im Betrieb
+// unbegrenzt weiter, der Fall tritt also zwangsläufig ein.
+//
+// 1000 wie beim Schwester-Endpunkt GetAdminAuditLogsHandler — der hatte die Grenze von
+// Anfang an, dieser war der Ausreißer.
+const auditLogMaxZeilen = 1000
+
 // GetAuditLogsHandler returns logs of immutable security events.
 // @Summary      Get audit logs
-// @Description  Retrieves all immutable records in the system's audit trail, including deletions and cancellations.
+// @Description  Retrieves the most recent 1000 records of the system's audit trail, newest first.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -40,7 +53,7 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 			FROM audit_log l
 			JOIN benutzer b ON l.bearbeiter_id = b.id
 			ORDER BY l.timestamp DESC
-		`
+			LIMIT ` + strconv.Itoa(auditLogMaxZeilen)
 		rows, err := s.DB.Pool.Query(ctx, query)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

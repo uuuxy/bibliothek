@@ -563,6 +563,11 @@ CREATE TABLE audit_log (
     kontext TEXT DEFAULT NULL
 );
 
+-- /api/audit liest die jüngsten 1000 Zeilen (ORDER BY timestamp DESC LIMIT 1000).
+-- Ohne diesen Index sortiert Postgres dafür die ganze Tabelle — die im Betrieb
+-- unbegrenzt wächst. Siehe Migration 057.
+CREATE INDEX idx_audit_log_timestamp_desc ON audit_log (timestamp DESC);
+
 -- Table: audit_logs (Admin-spezifische Eingriffe)
 CREATE TABLE audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -716,7 +721,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('053_inventur_scope_filter.sql'),
 ('054_schueler_namenssuche_unaccent.sql'),
 ('055_helfer_katalogzugriff.sql'),
-('056_lieferant_liefert_mit_barcode.sql')
+('056_lieferant_liefert_mit_barcode.sql'),
+('057_audit_log_timestamp_index.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

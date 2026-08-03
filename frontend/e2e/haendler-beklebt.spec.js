@@ -44,9 +44,11 @@ test('Haken „Händler beklebt" kommt in der Datenbank an und überlebt das Bea
 		.poll(() => flagInDB(name), { timeout: 5000, message: 'Haken muss gespeichert sein' })
 		.toBe('t');
 
-	// 2. Und die Liste zeigt ihn auch an.
+	// 2. Und die Liste zeigt ihn auch an — in der Spalte „Etikettendruck" steht, WER druckt.
+	//    Bewusst zwei gleichwertige Wörter statt Chip gegen graue Kleinschrift: eine
+	//    Ja/Nein-Angabe verdient eine Darstellung, nicht zwei.
 	const zeile = page.locator('tr', { hasText: name });
-	await expect(zeile.getByText('Händler beklebt')).toBeVisible();
+	await expect(zeile.getByText('Händler', { exact: true })).toBeVisible();
 
 	// 3. Wer nur die E-Mail korrigiert, darf die Einstellung nicht verlieren.
 	//    Genau hier stand der Haken vorher immer auf „aus", weil die Bearbeiten-Maske ihn
@@ -76,5 +78,7 @@ test('Ohne Haken bleibt es beim bisherigen Verhalten', async ({ page }) => {
 	await page.getByRole('button', { name: 'Lieferanten speichern' }).click();
 
 	await expect.poll(() => flagInDB(name), { timeout: 5000 }).toBe('f');
-	await expect(page.locator('tr', { hasText: name }).getByText('wir drucken')).toBeVisible();
+	await expect(
+		page.locator('tr', { hasText: name }).getByText('Bibliothek', { exact: true })
+	).toBeVisible();
 });

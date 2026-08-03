@@ -36,7 +36,18 @@
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print">
-	<div class="flex items-center justify-end">
+	<div class="flex items-center justify-between gap-4">
+		<!-- Der Server liefert nur die jüngsten 1000 Zeilen. Ohne diesen Hinweis sieht ein
+		     gekapptes Logbuch aus wie ein vollständiges — und wer einen älteren Vorgang
+		     sucht und nicht findet, schlösse daraus, er sei nie protokolliert worden. -->
+		{#if logs.length >= 1000}
+			<p class="text-xs text-slate-500">
+				Die <strong class="font-semibold">1000</strong> jüngsten Einträge. Ältere Vorgänge sind
+				protokolliert, aber hier nicht sichtbar.
+			</p>
+		{:else}
+			<span></span>
+		{/if}
 		<Button variant="secondary" onclick={fetchLogs}>🔄 Aktualisieren</Button>
 	</div>
 
