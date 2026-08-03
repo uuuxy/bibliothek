@@ -143,6 +143,11 @@ export function useUnifiedInventory() {
 		}
 	}
 
+	/** Fehlbestand der zuletzt abgeschlossenen Inventur — bleibt stehen, bis er
+	 *  ausdruecklich geschlossen wird. */
+	let fehlbestand = $state.raw(/** @type {any[]} */ ([]));
+	let fehlbestandLabel = $state('');
+
 	async function finishInventory() {
 		const r = await schliesseAb(sessionId);
 		if (r.ok) {
@@ -150,6 +155,14 @@ export function useUnifiedInventory() {
 				`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`,
 				'success'
 			);
+			// Den Fehlbestand VOR dem Zuruecksetzen sichern.
+			//
+			// Vorher endete der Abschluss mit einer Zahl im Toast, und die Liste war weg —
+			// mit „47 Bücher verloren" kann niemand ins Regal gehen und nachsehen, ob eines
+			// davon nur falsch einsortiert war. Rekonstruieren liess sie sich danach auch
+			// nicht: Durch die Aussonderung fallen die Exemplare aus dem Scope.
+			fehlbestand = r.data.fehlbestand ?? [];
+			fehlbestandLabel = stats.label;
 			resetToIdle();
 			await loadOffeneSessions();
 		} else {
@@ -157,6 +170,13 @@ export function useUnifiedInventory() {
 		}
 	}
 
+	function fehlbestandSchliessen() {
+		fehlbestand = [];
+		fehlbestandLabel = '';
+	}
+
+	// Achtung: raeumt bewusst NICHT den Fehlbestand weg — der Bericht soll den Abschluss
+	// ueberleben, sonst waere er im selben Moment wieder verschwunden.
 	function resetToIdle() {
 		status = 'idle';
 		sessionId = '';
@@ -171,6 +191,13 @@ export function useUnifiedInventory() {
 	}
 
 	return {
+		get fehlbestand() {
+			return fehlbestand;
+		},
+		get fehlbestandLabel() {
+			return fehlbestandLabel;
+		},
+		fehlbestandSchliessen,
 		get status() {
 			return status;
 		},

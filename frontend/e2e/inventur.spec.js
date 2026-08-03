@@ -43,6 +43,30 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 		await page.getByRole('button', { name: 'Ja, unwiderruflich abschließen' }).click();
 		await expect(page.getByRole('button', { name: 'Neue Bestandsprüfung starten' })).toBeVisible();
 
+		// Der Fehlbestandsbericht steht da — und nennt das FEHLENDE Buch, nicht nur eine Zahl.
+		//
+		// Vorher endete die Inventur mit „1 Bücher wurden als verloren markiert" im Toast,
+		// der nach Sekunden verschwand. Damit kann niemand ins Regal gehen und nachsehen, ob
+		// das Buch nur falsch einsortiert war. Rekonstruieren liess sich die Liste auch
+		// nicht: Durch die Aussonderung fallen die Exemplare aus dem Scope, nach dem
+		// gerechnet wird.
+		const bericht = page.getByRole('heading', { name: /Fehlbestand/ });
+		await expect(bericht, 'Nach dem Abschluss muss der Fehlbestand sichtbar sein').toBeVisible();
+		await expect(
+			page.getByText(`B-INVB-${suffix}`),
+			'das nicht gescannte Exemplar gehoert in den Bericht'
+		).toBeVisible();
+		await expect(
+			page.getByText(`B-INVA-${suffix}`),
+			'das gescannte Exemplar darf NICHT im Bericht stehen'
+		).toHaveCount(0);
+		// Die Signatur traegt die Sortierung — ohne sie ist die Liste im Regal unbrauchbar.
+		await expect(page.getByText(sigName).first()).toBeVisible();
+
+		// Und er bleibt stehen, bis er ausdruecklich geschlossen wird.
+		await page.getByRole('button', { name: 'Fehlbestandsbericht schließen' }).click();
+		await expect(bericht).toHaveCount(0);
+
 		// DB-Beweis: A unangetastet, B ausgesondert mit Inventur-Notiz
 		expect(
 			querySQL(

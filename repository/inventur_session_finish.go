@@ -57,26 +57,54 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 	bedingung, args := scope.Bedingung(1)
 	sessionIdx := len(args) + 1
 	args = append(args, sessionID)
+	// Die gebuchten Verluste werden zugleich MITGESCHRIEBEN, nicht nur gezählt.
+	//
+	// Vorher gab dieser Aufruf allein eine Zahl zurück: „47 Verluste". Welche 47, erfuhr
+	// niemand — und danach war es auch nicht mehr herleitbar, weil die Exemplare durch die
+	// Aussonderung aus der Scope-Bedingung fallen. Damit liess sich weder nachsehen, ob ein
+	// Buch wirklich fehlt oder nur im falschen Regal stand, noch eine Liste zum Nachsuchen
+	// ausdrucken.
+	//
+	// Titel, Autor und Signatur werden als ABSCHRIFT übernommen (siehe Migration 059):
+	// Der Bericht muss auch dann noch lesbar sein, wenn Exemplar oder Titel später
+	// endgültig gelöscht werden — und genau dann braucht man ihn, wenn jemand nachfragt.
+	// Gezaehlt wird die AUSSONDERUNG, nicht die Mitschrift.
+	//
+	// Der erste Entwurf las tag.RowsAffected() des Gesamt-Statements — das ist bei einem
+	// abschliessenden INSERT dessen Zeilenzahl, nicht die des UPDATE. Solange beide gleich
+	// sind, faellt das nicht auf; ueberspringt ON CONFLICT je eine Zeile, meldete die
+	// Inventur weniger Verluste, als sie tatsaechlich gebucht hat. Deshalb liefert das
+	// abschliessende SELECT die Zahl aus dem UPDATE-CTE.
 	query := fmt.Sprintf(`
-		UPDATE buecher_exemplare e
-		SET ist_ausleihbar = false,
-		    ist_ausgesondert = true,
-		    aussonderung_grund = 'VERLUST',
-		    zustand_notiz = 'Verlust bei Inventur',
-		    aktualisiert_am = CURRENT_TIMESTAMP
-		FROM buecher_titel t
-		WHERE e.titel_id = t.id
-		  AND %s
-		  AND NOT EXISTS (
-		      SELECT 1 FROM inventur_erfassungen ie
-		      WHERE ie.session_id = $%d AND ie.exemplar_id = e.id
-		  )
-	`, bedingung, sessionIdx)
-	tag, err := r.db.Exec(ctx, query, args...)
-	if err != nil {
+		WITH verloren AS (
+			UPDATE buecher_exemplare e
+			SET ist_ausleihbar = false,
+			    ist_ausgesondert = true,
+			    aussonderung_grund = 'VERLUST',
+			    zustand_notiz = 'Verlust bei Inventur',
+			    aktualisiert_am = CURRENT_TIMESTAMP
+			FROM buecher_titel t
+			WHERE e.titel_id = t.id
+			  AND %s
+			  AND NOT EXISTS (
+			      SELECT 1 FROM inventur_erfassungen ie
+			      WHERE ie.session_id = $%d AND ie.exemplar_id = e.id
+			  )
+			RETURNING e.id, e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, t.signature_id
+		), mitschrift AS (
+			INSERT INTO inventur_verluste (session_id, exemplar_id, barcode_id, titel, autor, signatur)
+			SELECT $%d, v.id, v.barcode_id, v.titel, v.autor, coalesce(s.name, '')
+			FROM verloren v
+			LEFT JOIN signatures s ON s.id = v.signature_id
+			ON CONFLICT DO NOTHING
+			RETURNING 1
+		)
+		SELECT (SELECT count(*) FROM verloren)
+	`, bedingung, sessionIdx, sessionIdx)
+	var verloren int
+	if err := r.db.QueryRow(ctx, query, args...).Scan(&verloren); err != nil {
 		return 0, fmt.Errorf("verluste markieren fehlgeschlagen: %w", err)
 	}
-	verloren := int(tag.RowsAffected())
 
 	if _, err := r.db.Exec(ctx, `
 		UPDATE inventur_sessions
@@ -86,6 +114,44 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 		return 0, fmt.Errorf("session abschliessen fehlgeschlagen: %w", err)
 	}
 	return verloren, nil
+}
+
+// InventurVerlust ist eine Zeile des Fehlbestandsberichts.
+type InventurVerlust struct {
+	BarcodeID string `json:"barcode_id"`
+	Titel     string `json:"titel"`
+	Autor     string `json:"autor"`
+	Signatur  string `json:"signatur"`
+	GebuchtAm string `json:"gebucht_am"`
+}
+
+// LadeInventurVerluste liefert den Fehlbestand einer abgeschlossenen Session.
+//
+// Sortiert nach Signatur und Titel — das ist die Reihenfolge, in der man mit der Liste
+// durchs Regal geht. Nach Barcode oder Buchungszeit sortiert wäre sie zum Nachsuchen
+// unbrauchbar, weil man dann kreuz und quer laufen müsste.
+func (r *InventoryRepository) LadeInventurVerluste(ctx context.Context, sessionID string) ([]InventurVerlust, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT barcode_id, titel, autor, signatur, to_char(gebucht_am, 'YYYY-MM-DD"T"HH24:MI:SSOF')
+		FROM inventur_verluste
+		WHERE session_id = $1
+		ORDER BY signatur, titel, barcode_id
+	`, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("fehlbestand laden fehlgeschlagen: %w", err)
+	}
+	defer rows.Close()
+
+	// Nie nil: Eine leere Liste muss beim Client als [] ankommen.
+	liste := make([]InventurVerlust, 0)
+	for rows.Next() {
+		var v InventurVerlust
+		if err := rows.Scan(&v.BarcodeID, &v.Titel, &v.Autor, &v.Signatur, &v.GebuchtAm); err != nil {
+			return nil, fmt.Errorf("fehlbestand lesen fehlgeschlagen: %w", err)
+		}
+		liste = append(liste, v)
+	}
+	return liste, rows.Err()
 }
 
 // AbortInventurSession verwirft eine Session ohne Verlustbuchung — für abgebrochene

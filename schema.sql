@@ -730,7 +730,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('055_helfer_katalogzugriff.sql'),
 ('056_lieferant_liefert_mit_barcode.sql'),
 ('057_audit_log_timestamp_index.sql'),
-('058_lieferant_ist_standard.sql')
+('058_lieferant_ist_standard.sql'),
+('059_inventur_verluste.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -814,6 +815,22 @@ CREATE TABLE IF NOT EXISTS inventur_sessions (
                AND (scope_type <> 'signature' OR signature_id IS NOT NULL)
                AND (scope_type <> 'filter' OR scope_subject IS NOT NULL OR scope_grade IS NOT NULL))
 );
+
+-- Abschrift der bei einem Inventur-Abschluss als Verlust gebuchten Exemplare.
+-- Grundlage des Fehlbestandsberichts (Migration 059). Die Textspalten sind Abschrift,
+-- damit der Bericht auch nach einer Bereinigung lesbar bleibt.
+CREATE TABLE inventur_verluste (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL REFERENCES inventur_sessions(id) ON DELETE CASCADE,
+    exemplar_id UUID REFERENCES buecher_exemplare(id) ON DELETE SET NULL,
+    barcode_id TEXT NOT NULL,
+    titel TEXT NOT NULL,
+    autor TEXT NOT NULL DEFAULT '',
+    signatur TEXT NOT NULL DEFAULT '',
+    gebucht_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_inventur_verluste_session ON inventur_verluste (session_id);
+CREATE UNIQUE INDEX idx_inventur_verluste_einmalig ON inventur_verluste (session_id, exemplar_id) WHERE exemplar_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS inventur_erfassungen (
     session_id  UUID NOT NULL REFERENCES inventur_sessions(id) ON DELETE CASCADE,

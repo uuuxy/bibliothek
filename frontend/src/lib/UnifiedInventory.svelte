@@ -5,6 +5,7 @@
 	import InventoryStartModal from './components/InventoryStartModal.svelte';
 	import InventoryFinishModal from './components/InventoryFinishModal.svelte';
 	import Button from './components/ui/Button.svelte';
+	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
 
 	const inventoryState = useUnifiedInventory();
 
@@ -46,6 +47,17 @@
 </script>
 
 <div class="max-w-4xl mx-auto w-full p-4 md:p-6 space-y-6 animate-fade-in">
+	<!-- Steht GANZ OBEN und ueberlebt das Zuruecksetzen: Der Bericht ist das Ergebnis der
+	     Arbeit, nicht eine Randnotiz. Vorher endete eine Inventur mit einer Zahl im Toast,
+	     die drei Sekunden spaeter weg war. -->
+	{#if inventoryState.fehlbestand.length > 0}
+		<FehlbestandBericht
+			eintraege={inventoryState.fehlbestand}
+			label={inventoryState.fehlbestandLabel}
+			onSchliessen={inventoryState.fehlbestandSchliessen}
+		/>
+	{/if}
+
 	{#if inventoryState.status === 'idle'}
 		<div class="p-12 text-center flex flex-col items-center justify-center space-y-6">
 			<div class="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center">
