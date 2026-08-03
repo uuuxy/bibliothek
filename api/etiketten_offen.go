@@ -32,6 +32,11 @@ type ExemplarOhneEtikett struct {
 	Titel      string `json:"titel"`
 	Autor      string `json:"autor"`
 	ErworbenAm string `json:"erworben_am"`
+
+	// EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen
+	// kann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht
+	// nicht unterscheiden, welche Zeile noch ein Etikett braucht.
+	EtikettGedruckt bool `json:"etikett_gedruckt"`
 }
 
 // EtikettenOffenHandler listet Exemplare, deren Barcode-Etikett noch nicht gedruckt wurde.
@@ -44,21 +49,40 @@ type ExemplarOhneEtikett struct {
 // Sortiert wird NEUESTE ZUERST. Das ist der praktische Fall: Gesucht wird die Lieferung von
 // gestern, nicht ein Exemplar von 2019.
 //
+// Mit status=erledigt oder status=alle zeigt sie zusätzlich Exemplare, die bereits als
+// gedruckt vermerkt sind. Das ist der Weg zurück: Nach einem Papierstau oder einem zu weit
+// gefassten Altbestands-Stichtag sind Exemplare als erledigt vermerkt, ohne dass ein
+// Etikett existiert — vorher waren sie damit dauerhaft aus der Liste verschwunden.
+//
 // @Summary      Exemplare ohne gedrucktes Etikett
 // @Tags         books
 // @Produce      json
-// @Param        q  query     string  false  "Filter über Titel oder Barcode"
+// @Param        q       query   string  false  "Filter über Titel oder Barcode"
+// @Param        status  query   string  false  "offen (Vorgabe) | erledigt | alle"
 // @Success      200  {array}  ExemplarOhneEtikett
 // @Router       /exemplare/etiketten-offen [get]
 func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		suche := strings.TrimSpace(r.URL.Query().Get("q"))
 
+		// Vorgabe bleibt "offen": Die Liste heisst „Fehlende Etiketten" und soll ohne
+		// Zutun genau das zeigen. Die anderen Stufen sind Werkzeug, nicht Alltag.
+		var statusBedingung string
+		switch r.URL.Query().Get("status") {
+		case "erledigt":
+			statusBedingung = `e.etikett_gedruckt = true AND e.ist_ausgesondert = false`
+		case "alle":
+			statusBedingung = `e.ist_ausgesondert = false`
+		default:
+			statusBedingung = etikettenOffenBedingung
+		}
+
 		rows, err := s.DB.Pool.Query(r.Context(), `
-			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY-MM-DD')
+			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY-MM-DD'),
+			       e.etikett_gedruckt
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE `+etikettenOffenBedingung+`
+			WHERE `+statusBedingung+`
 			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%')
 			ORDER BY e.erworben_am DESC, e.erstellt_am DESC, e.barcode_id
 			LIMIT $2
@@ -73,7 +97,7 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 		liste := make([]ExemplarOhneEtikett, 0)
 		for rows.Next() {
 			var e ExemplarOhneEtikett
-			if err := rows.Scan(&e.BarcodeID, &e.Titel, &e.Autor, &e.ErworbenAm); err != nil {
+			if err := rows.Scan(&e.BarcodeID, &e.Titel, &e.Autor, &e.ErworbenAm, &e.EtikettGedruckt); err != nil {
 				return apierrors.Internal("Fehler beim Lesen der offenen Etiketten", err)
 			}
 			liste = append(liste, e)
@@ -229,6 +253,55 @@ func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": tag.RowsAffected()})
+		return nil
+	})
+}
+
+// EtikettenZuruecksetzenHandler nimmt den Vermerk „Etikett gedruckt" wieder zurück.
+//
+// Der Weg zurück, den es bis hierher nicht gab. Alle drei Wege setzten das Kennzeichen nur
+// in eine Richtung: der Stapeldruck, der Einzeldruck aus der Buchakte und das einmalige
+// Aufräumen des Altbestands. Ging dabei etwas schief, war das Exemplar dauerhaft aus der
+// Liste verschwunden — und niemand konnte es zurückholen.
+//
+// Die beiden Fälle aus dem Betrieb:
+//
+//  1. PAPIERSTAU. Der Druck wird gegengebucht, sobald das PDF erzeugt ist (siehe
+//     markEtikettGedruckt) — ob das Etikett wirklich aus dem Drucker kam, weiss das
+//     Programm nicht. Bleibt der Bogen im Gerät, gelten die Exemplare als erledigt.
+//  2. ZU WEITER STICHTAG. Beim Altbestand-Aufräumen einen zu späten Tag gewählt, und die
+//     frische Lieferung ohne Etikett verschwindet mit. Diese Aktion war deshalb bisher
+//     ausdrücklich als unumkehrbar dokumentiert (docs/abnahme_checkliste.md, Flow 4).
+//
+// Damit ist sie es nicht mehr — und das macht auch das Markieren von Hand erst
+// unbedenklich: Keine der beiden Richtungen ist noch eine Einbahnstrasse.
+//
+// @Summary      Etiketten wieder als offen markieren
+// @Tags         books
+// @Accept       json
+// @Success      200  {object}  map[string]int
+// @Router       /exemplare/etiketten-zuruecksetzen [post]
+func (s *Server) EtikettenZuruecksetzenHandler() http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		var req EtikettenGedrucktRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return nil
+		}
+		if len(req.BarcodeIDs) == 0 {
+			return apierrors.BadRequest("keine Exemplare angegeben", nil)
+		}
+
+		// Ausgesonderte bleiben aussen vor: Für ein Buch, das nicht mehr im Regal steht,
+		// wäre ein Etikett immer falsch — dieselbe Regel wie in etikettenOffenBedingung.
+		tag, err := s.DB.Pool.Exec(r.Context(), `
+			UPDATE buecher_exemplare SET etikett_gedruckt = false, aktualisiert_am = CURRENT_TIMESTAMP
+			WHERE barcode_id = ANY($1) AND etikett_gedruckt = true AND ist_ausgesondert = false
+		`, req.BarcodeIDs)
+		if err != nil {
+			return apierrors.Internal("Fehler beim Zurücksetzen der Etiketten", err)
+		}
+
+		RespondJSON(w, http.StatusOK, map[string]int64{"zurueckgesetzt": tag.RowsAffected()})
 		return nil
 	})
 }

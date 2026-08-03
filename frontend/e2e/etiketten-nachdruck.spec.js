@@ -260,3 +260,50 @@ test('Altbestand aufräumen vermerkt nur Exemplare bis zum Stichtag', async ({ p
 		querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-NEU-${s}'`)
 	).toBe('f');
 });
+
+// Der Weg zurück — beide Richtungen von Hand, ohne zu drucken.
+//
+// Vorher setzten alle drei Wege das Kennzeichen nur in EINE Richtung: Stapeldruck,
+// Einzeldruck aus der Buchakte und das Altbestand-Aufräumen. Blieb der Bogen im Drucker
+// stecken oder war der Stichtag zu weit gefasst, galten Exemplare als erledigt, ohne dass
+// ein Etikett am Buch klebte — und sie waren dauerhaft aus der Liste verschwunden.
+//
+// Belegt wird am Datenbankzustand, nicht an der Meldung: Ob ein Exemplar wieder auf der
+// Liste erscheint, entscheidet allein etikett_gedruckt.
+test('Etiketten von Hand vermerken und wieder öffnen', async ({ page }) => {
+	const s = uniqueSuffix();
+	const titel = `E2E-Hand ${s}`;
+	seedSQL(`
+		WITH t AS (INSERT INTO buecher_titel (titel, autor) VALUES ('${titel}', 'Hand') RETURNING id)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT id, 'E2E-HAND-${s}', false, CURRENT_DATE FROM t;
+	`);
+
+	const flag = () =>
+		querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-HAND-${s}'`).trim();
+	expect(flag(), 'Ausgangslage: Etikett steht aus').toBe('f');
+
+	await uiLogin(page);
+	await page.getByTitle('Druck-Center').click();
+	await page.getByRole('button', { name: /Fehlende Etiketten/ }).click();
+
+	// 1. Von Hand als erledigt vermerken — ohne Druck.
+	await page.getByPlaceholder(/Nach Titel oder Barcode filtern/).fill(titel);
+	const zeile = page.locator('tr', { hasText: titel });
+	await zeile.first().waitFor();
+	await zeile.getByRole('checkbox').check();
+	await page.getByRole('button', { name: /als erledigt vermerken/ }).click();
+	await expect.poll(flag, { timeout: 5000, message: 'Vermerk muss ankommen' }).toBe('t');
+
+	// Und damit ist es aus der Liste „Offen" verschwunden.
+	await expect(page.locator('tr', { hasText: titel })).toHaveCount(0);
+
+	// 2. Der Notfallweg: wieder öffnen. Ohne die Ansicht „Erledigt" wäre das Exemplar
+	//    unerreichbar — man kann nur zurückholen, was man sehen kann.
+	await page.getByRole('button', { name: 'Erledigt', exact: true }).click();
+	const zeile2 = page.locator('tr', { hasText: titel });
+	await zeile2.first().waitFor();
+	await zeile2.getByRole('checkbox').check();
+	await page.getByRole('button', { name: /wieder als offen vermerken/ }).click();
+	await expect.poll(flag, { timeout: 5000, message: 'Zurücksetzen muss ankommen' }).toBe('f');
+});
