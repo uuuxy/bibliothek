@@ -8,6 +8,7 @@
 	let newEmail = $state('');
 	let newCustNum = $state('');
 	let newMitBarcode = $state(false);
+	let newIstStandard = $state(false);
 
 	/** @type {string|null} */
 	let editingId = $state(null);
@@ -15,18 +16,20 @@
 	let editEmail = $state('');
 	let editCustNum = $state('');
 	let editMitBarcode = $state(false);
+	let editIstStandard = $state(false);
 
 	/** @param {SubmitEvent} e */
 	function handleSubmit(e) {
 		e.preventDefault();
-		onAddSupplier(newName, newEmail, newCustNum, newMitBarcode);
+		onAddSupplier(newName, newEmail, newCustNum, newMitBarcode, newIstStandard);
 		newName = '';
 		newEmail = '';
 		newCustNum = '';
 		newMitBarcode = false;
+		newIstStandard = false;
 	}
 
-	/** @param {{ id: string, name: string, email: string, customerNumber: string, liefert_mit_barcode?: boolean }} s */
+	/** @param {{ id: string, name: string, email: string, customerNumber: string, liefert_mit_barcode?: boolean, ist_standard?: boolean }} s */
 	function startEdit(s) {
 		editingId = s.id;
 		editName = s.name;
@@ -35,6 +38,7 @@
 		// Ohne diese Zeile stünde beim Bearbeiten immer „aus" im Feld, und wer nur die
 		// E-Mail korrigiert, schaltete die Beklebung des Händlers still ab.
 		editMitBarcode = s.liefert_mit_barcode ?? false;
+		editIstStandard = s.ist_standard ?? false;
 	}
 
 	function cancelEdit() {
@@ -43,7 +47,7 @@
 
 	async function saveEdit() {
 		if (!editingId) return;
-		await onEditSupplier(editingId, editName, editEmail, editCustNum, editMitBarcode);
+		await onEditSupplier(editingId, editName, editEmail, editCustNum, editMitBarcode, editIstStandard);
 		editingId = null;
 	}
 </script>
@@ -94,6 +98,20 @@
 				</label>
 				<Switch id="mit-barcode" bind:checked={newMitBarcode} label="Händler beklebt die Bücher" />
 			</div>
+			<div class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4">
+				<label for="ist-standard" class="cursor-pointer text-sm">
+					<span class="block font-semibold text-slate-700">Voreingestellt beim Bestellen</span>
+					<span class="mt-0.5 block text-xs text-slate-500">
+						Dieser Lieferant ist im Bestellformular vorausgewählt. Es kann immer nur einer sein
+						— der bisherige verliert die Einstellung.
+					</span>
+				</label>
+				<Switch
+					id="ist-standard"
+					bind:checked={newIstStandard}
+					label="Voreingestellt beim Bestellen"
+				/>
+			</div>
 			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
 		</form>
 	</div>
@@ -112,6 +130,7 @@
 						<th class="py-2.5">E-Mail</th>
 						<th class="py-2.5">Kundennummer</th>
 						<th class="py-2.5">Etikettendruck</th>
+						<th class="py-2.5">Vorauswahl</th>
 						<th class="py-2.5 text-right">Aktionen</th>
 					</tr>
 				</thead>
@@ -146,6 +165,12 @@
 										label="Händler beklebt die Bücher ({s.name})"
 									/>
 								</td>
+								<td class="py-2 pr-2">
+									<Switch
+										bind:checked={editIstStandard}
+										label="Voreingestellt beim Bestellen ({s.name})"
+									/>
+								</td>
 								<td class="py-2 text-right whitespace-nowrap">
 									<button
 										onclick={saveEdit}
@@ -176,6 +201,20 @@
 									>
 										{s.liefert_mit_barcode ? 'Händler' : 'Bibliothek'}
 									</span>
+								</td>
+								<!-- Nur die Abweichung wird benannt. „Nein" in jeder Zeile wäre wieder das
+								     Rauschen, das wir bei der Etikettenspalte schon entfernt haben. -->
+								<td class="py-3">
+									{#if s.ist_standard}
+										<span
+											class="text-sm font-semibold text-slate-700"
+											data-tip="Beim Bestellen ist dieser Lieferant vorausgewählt"
+										>
+											Standard
+										</span>
+									{:else}
+										<span class="text-sm text-slate-300">—</span>
+									{/if}
 								</td>
 								<td class="py-3 text-right whitespace-nowrap">
 									<button

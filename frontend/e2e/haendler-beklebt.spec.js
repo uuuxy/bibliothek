@@ -82,3 +82,48 @@ test('Ohne Haken bleibt es beim bisherigen Verhalten', async ({ page }) => {
 		page.locator('tr', { hasText: name }).getByText('Bibliothek', { exact: true })
 	).toBeVisible();
 });
+
+// Standardlieferant: Wer immer beim selben Händler bestellt, soll ihn nicht jedes Mal
+// neu auswählen müssen — einmal vergessen heisst, die Bestellung geht an den falschen raus.
+//
+// Vorher gewann schlicht der alphabetisch erste (die Liste kommt mit ORDER BY name).
+// Deshalb heisst der Testlieferant hier absichtlich mit "Z" — wäre die Vorauswahl
+// wirkungslos, stünde ein anderer im Feld, und der Test wäre rot.
+test('Der Standardlieferant ist beim Bestellen vorausgewählt', async ({ page }) => {
+	const s = uniqueSuffix();
+	const name = `ZZZ-Standard-${s}`;
+	await uiLogin(page);
+	await zuLieferanten(page);
+
+	await page.getByLabel('Name').fill(name);
+	await page.getByLabel('E-Mail').fill(`std${s}@example.invalid`);
+	await page.getByLabel('Kundennummer').fill(`K-STD-${s}`);
+	await page.getByRole('switch', { name: 'Voreingestellt beim Bestellen' }).click();
+	await page.getByRole('button', { name: 'Lieferanten speichern' }).click();
+
+	// 1. In der Datenbank steht genau einer — die Invariante, auf der alles beruht.
+	await expect
+		.poll(() => querySQL(`SELECT count(*) FROM lieferanten WHERE ist_standard`).trim(), {
+			timeout: 5000,
+			message: 'Es darf immer nur einen Standardlieferanten geben'
+		})
+		.toBe('1');
+	expect(
+		querySQL(`SELECT name FROM lieferanten WHERE ist_standard`).trim(),
+		'und zwar der gerade gesetzte'
+	).toBe(name);
+
+	// 2. Und das Bestellformular übernimmt ihn — sonst wäre die Einstellung Zierrat.
+	//
+	// Bewusst nach einem Neuladen: Die Vorauswahl greift beim Aufbau des Bestellwesens,
+	// nicht mitten in der Arbeit. Eine schon getroffene Auswahl bleibt stehen — sonst
+	// wechselte jemandem, der gerade einen Warenkorb füllt, unter der Hand der Lieferant.
+	await page.goto('/bestellungen');
+	const auswahl = page.locator('select#supplier');
+	await auswahl.waitFor();
+	await expect(
+		auswahl,
+		'Das Bestellformular muss den hinterlegten Standardlieferanten vorauswählen'
+	).toHaveValue(querySQL(`SELECT id FROM lieferanten WHERE ist_standard`).trim());
+	await expect(auswahl).toContainText(name);
+});

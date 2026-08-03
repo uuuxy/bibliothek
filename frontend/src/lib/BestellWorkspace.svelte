@@ -190,10 +190,10 @@
 	{#if activeTab === 'lieferanten'}
 		<SupplierManager
 			suppliers={orderStore.suppliers}
-			onAddSupplier={(name, email, customerNumber, liefertMitBarcode) =>
-				orderStore.addSupplier(name, email, customerNumber, liefertMitBarcode)}
-			onEditSupplier={(id, name, email, customerNumber, liefertMitBarcode) =>
-				orderStore.editSupplier(id, name, email, customerNumber, liefertMitBarcode)}
+			onAddSupplier={(name, email, customerNumber, liefertMitBarcode, istStandard) =>
+				orderStore.addSupplier(name, email, customerNumber, liefertMitBarcode, istStandard)}
+			onEditSupplier={(id, name, email, customerNumber, liefertMitBarcode, istStandard) =>
+				orderStore.editSupplier(id, name, email, customerNumber, liefertMitBarcode, istStandard)}
 			onRemoveSupplier={(id) => orderStore.removeSupplier(id)}
 		/>
 	{/if}

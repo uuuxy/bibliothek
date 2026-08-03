@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 )
 
 // SupplierResponse represents the supplier data sent to the client.
@@ -18,6 +20,9 @@ type SupplierResponse struct {
 
 	// LiefertMitBarcode: Händler beklebt die Bücher vor der Lieferung mit unseren Barcodes.
 	LiefertMitBarcode bool `json:"liefert_mit_barcode"`
+
+	// IstStandard: Vorauswahl im Bestellformular. Höchstens einer trägt true.
+	IstStandard bool `json:"ist_standard"`
 }
 
 // CreateSupplierRequest holds the payload for creating a new supplier.
@@ -29,6 +34,36 @@ type CreateSupplierRequest struct {
 	// LiefertMitBarcode ist bewusst ein einfaches bool und kein *bool: Fehlt das Feld,
 	// gilt false — das bisherige Verhalten, bei dem wir selbst etikettieren.
 	LiefertMitBarcode bool `json:"liefert_mit_barcode"`
+
+	// IstStandard: Vorauswahl im Bestellformular.
+	IstStandard bool `json:"ist_standard"`
+}
+
+// setzeStandardLieferant macht genau einen Lieferanten zur Vorauswahl.
+//
+// Die REIHENFOLGE ist der Schutz, nicht nur Kosmetik: Der Teil-Index
+// idx_lieferanten_ein_standard lässt nur eine Zeile mit true zu. Würde erst der neue
+// gesetzt und danach der alte geräumt, bräche das UPDATE mit einer
+// Unique-Verletzung ab — und zwar erst beim zweiten Wechsel, also lange nach dem
+// Einbau. Deshalb zuerst räumen, dann setzen, beides in derselben Transaktion.
+//
+// Ohne Transaktion bliebe zwischen den beiden Schritten ein Moment ohne
+// Standardlieferanten; an mehreren Arbeitsplätzen gleichzeitig ist das kein
+// theoretischer Fall (siehe docs zum Mehrplatzbetrieb).
+func setzeStandardLieferant(ctx context.Context, pool db.PgxPoolIface, id string) error {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	if _, err := tx.Exec(ctx, `UPDATE lieferanten SET ist_standard = false WHERE ist_standard AND id <> $1`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `UPDATE lieferanten SET ist_standard = true WHERE id = $1`, id); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // ListSuppliersHandler returns a list of all suppliers.
@@ -36,7 +71,13 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		rows, err := s.DB.Pool.Query(ctx, "SELECT id, name, email, kundennummer, erstellt_am, liefert_mit_barcode FROM lieferanten ORDER BY name ASC")
+		// Der Standardlieferant zuerst: Das Bestellformular nimmt sonst den alphabetisch
+		// ersten, und die Vorauswahl bliebe wirkungslos.
+		rows, err := s.DB.Pool.Query(ctx, `
+			SELECT id, name, email, kundennummer, erstellt_am, liefert_mit_barcode, ist_standard
+			FROM lieferanten
+			ORDER BY ist_standard DESC, name ASC
+		`)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -46,7 +87,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 		suppliers := []SupplierResponse{}
 		for rows.Next() {
 			var sup SupplierResponse
-			if err := rows.Scan(&sup.ID, &sup.Name, &sup.Email, &sup.CustomerNumber, &sup.ErstelltAm, &sup.LiefertMitBarcode); err != nil {
+			if err := rows.Scan(&sup.ID, &sup.Name, &sup.Email, &sup.CustomerNumber, &sup.ErstelltAm, &sup.LiefertMitBarcode, &sup.IstStandard); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -88,6 +129,16 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			return
 		}
 
+		// Bewusst NICHT im INSERT: Wäre schon ein anderer Lieferant Standard, bräche der
+		// Teil-Index den Anlegevorgang ab. Erst anlegen, dann umschalten — dabei räumt
+		// setzeStandardLieferant den bisherigen weg.
+		if req.IstStandard {
+			if err := setzeStandardLieferant(ctx, s.DB.Pool, newID); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
 		RespondJSON(w, http.StatusCreated, SupplierResponse{
 			ID:                newID,
 			Name:              req.Name,
@@ -95,6 +146,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			CustomerNumber:    req.CustomerNumber,
 			ErstelltAm:        erstelltAm,
 			LiefertMitBarcode: req.LiefertMitBarcode,
+			IstStandard:       req.IstStandard,
 		})
 	}
 }
@@ -131,12 +183,24 @@ func (s *Server) UpdateSupplierHandler() http.HandlerFunc {
 			return
 		}
 
+		// Der Haken wird nur GESETZT, nie hier entfernt: Das Wegnehmen geschieht dadurch,
+		// dass ein anderer Lieferant Standard wird. Ein Bestellwesen ganz ohne Vorauswahl
+		// wäre der Zustand von vorher — dafür gibt es keinen Anlass, und ein versehentlich
+		// entfernter Haken beim Korrigieren einer E-Mail wäre ein stiller Rückschritt.
+		if req.IstStandard {
+			if err := setzeStandardLieferant(ctx, s.DB.Pool, id); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
 		RespondJSON(w, http.StatusOK, SupplierResponse{
 			ID:                id,
 			Name:              req.Name,
 			Email:             req.Email,
 			CustomerNumber:    req.CustomerNumber,
 			LiefertMitBarcode: req.LiefertMitBarcode,
+			IstStandard:       req.IstStandard,
 		})
 	}
 }

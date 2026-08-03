@@ -104,8 +104,14 @@ class OrderStore {
 			ok = false;
 		}
 		// Auswahl per ID stabil halten; Index-basierte Auswahl kippt bei Reload/Umsortierung
+		//
+		// Vorgewaehlt wird der als Standard hinterlegte Lieferant. Vorher gewann schlicht der
+		// alphabetisch erste (die Liste kommt mit ORDER BY name) — wer immer beim selben
+		// Haendler bestellt, musste ihn also jedes Mal neu auswaehlen, und einmal vergessen
+		// heisst, die Bestellung geht an den falschen raus.
 		if (!this.suppliers.some((s) => s.id === this.selectedSupplierId)) {
-			this.selectedSupplierId = this.suppliers[0]?.id ?? '';
+			const standard = this.suppliers.find((s) => s.ist_standard);
+			this.selectedSupplierId = (standard ?? this.suppliers[0])?.id ?? '';
 		}
 		return ok;
 	}
@@ -138,15 +144,16 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] */
-	async addSupplier(name, email, customerNumber, liefertMitBarcode = false) {
+	/** @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] @param {boolean} [istStandard] */
+	async addSupplier(name, email, customerNumber, liefertMitBarcode = false, istStandard = false) {
 		if (!name || !email || !customerNumber) return;
 		try {
 			await apiPost('/api/lieferanten', {
 				name,
 				email,
 				customerNumber,
-				liefert_mit_barcode: liefertMitBarcode
+				liefert_mit_barcode: liefertMitBarcode,
+				ist_standard: istStandard
 			});
 			await this.loadSuppliers();
 		} catch {
@@ -154,14 +161,15 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] */
-	async editSupplier(id, name, email, customerNumber, liefertMitBarcode = false) {
+	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] @param {boolean} [istStandard] */
+	async editSupplier(id, name, email, customerNumber, liefertMitBarcode = false, istStandard = false) {
 		try {
 			await apiPut(`/api/lieferanten/${id}`, {
 				name,
 				email,
 				customerNumber,
-				liefert_mit_barcode: liefertMitBarcode
+				liefert_mit_barcode: liefertMitBarcode,
+				ist_standard: istStandard
 			});
 			await this.loadSuppliers();
 			toastStore.addToast('Lieferant aktualisiert.', 'success');

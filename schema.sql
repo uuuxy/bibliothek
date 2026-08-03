@@ -589,8 +589,15 @@ CREATE TABLE lieferanten (
     -- Händler beklebt die Bücher vor der Lieferung mit UNSEREN Barcodes. Der Barcodebogen
     -- geht weiterhin mit dem Bestellbrief mit; die Exemplare gelten sofort als beklebt und
     -- erscheinen nicht auf der Nachdruck-Liste (Migration 056).
-    liefert_mit_barcode BOOLEAN NOT NULL DEFAULT false
+    liefert_mit_barcode BOOLEAN NOT NULL DEFAULT false,
+    -- Vorauswahl im Bestellformular (Migration 058).
+    ist_standard BOOLEAN NOT NULL DEFAULT false
 );
+
+-- Höchstens EIN Standardlieferant. Der Teil-Index lässt nur eine Zeile mit true zu;
+-- zwei Standardlieferanten wären ein stiller Fehler, bei dem die Sortierung entschiede,
+-- welcher gewinnt.
+CREATE UNIQUE INDEX idx_lieferanten_ein_standard ON lieferanten (ist_standard) WHERE ist_standard;
 
 
 -- Table: bestellungen_verlauf (Order history — one record per submitted order)
@@ -722,7 +729,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('054_schueler_namenssuche_unaccent.sql'),
 ('055_helfer_katalogzugriff.sql'),
 ('056_lieferant_liefert_mit_barcode.sql'),
-('057_audit_log_timestamp_index.sql')
+('057_audit_log_timestamp_index.sql'),
+('058_lieferant_ist_standard.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
