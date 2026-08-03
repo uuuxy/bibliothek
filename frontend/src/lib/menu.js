@@ -72,6 +72,7 @@ export const menuGroups = [
 		name: 'Bibliothek',
 		items: [
 			{ id: 'media_catalog', label: 'Medienkatalog', icon: 'catalog', permission: 'view_books' },
+			{ id: 'signaturen', label: 'Signaturen', icon: 'book', permission: 'view_books' },
 			{ id: 'druck-center', label: 'Druck-Center', icon: 'printer', permission: 'edit_books' }
 		]
 	},

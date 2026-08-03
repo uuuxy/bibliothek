@@ -14,9 +14,12 @@ import (
 // Zählung, Scan-Warnung und Verlustbuchung leiten sich alle hieraus ab, damit die drei
 // nie auseinanderlaufen (früher lag das Prädikat 3× dupliziert im Repo).
 type InventurScope struct {
-	SignatureID *int
-	Subject     *string
-	Grade       *int
+	// Signatur ist ein PRÄFIX von buecher_titel.signatur, kein Fremdschlüssel
+	// (Migration 060). Die frühere signature_id zeigte auf eine Tabelle, die
+	// niemand pflegte — der Scope traf damit null Exemplare.
+	Signatur *string
+	Subject  *string
+	Grade    *int
 }
 
 // dimensionen liefert die gesetzten Scope-Dimensionen als Einzelbedingungen (Aliasse
@@ -25,9 +28,9 @@ func (s InventurScope) dimensionen(start int) ([]string, []any) {
 	var conds []string
 	var args []any
 	idx := start
-	if s.SignatureID != nil {
-		conds = append(conds, fmt.Sprintf("t.signature_id = $%d", idx))
-		args = append(args, *s.SignatureID)
+	if s.Signatur != nil {
+		conds = append(conds, SignaturPraefixBedingung("t.signatur", idx))
+		args = append(args, *s.Signatur)
 		idx++
 	}
 	if s.Subject != nil {

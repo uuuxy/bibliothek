@@ -22,21 +22,14 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 	ctx := context.Background()
 
 	// Ein Titel mit Signatur, damit der Bericht auch die Regalangabe trägt — danach
-	// sortiert man beim Nachsuchen.
-	var signaturID int
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO signatures (name, description) VALUES ('LMF Deu 7', 'Deutsch 7')
-		ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description
-		RETURNING id
-	`).Scan(&signaturID); err != nil {
-		t.Fatalf("Signatur anlegen: %v", err)
-	}
-
+	// sortiert man beim Nachsuchen. Quelle ist buecher_titel.signatur, der Text vom
+	// Buchrücken: Die Abschrift lief früher über einen Join auf die nie gepflegte
+	// Tabelle `signatures` und war deshalb immer leer (Migration 060).
 	var titelID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_titel (titel, autor, signature_id) VALUES ('Deutschbuch 7', 'Biermann', $1)
+		INSERT INTO buecher_titel (titel, autor, signatur) VALUES ('Deutschbuch 7', 'Biermann', 'LMF Deu 7')
 		RETURNING id
-	`, signaturID).Scan(&titelID); err != nil {
+	`).Scan(&titelID); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 

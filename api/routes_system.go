@@ -1,8 +1,8 @@
 package api
 
 import (
-	"bibliothek/repository"
 	"bibliothek/db"
+	"bibliothek/repository"
 	"net/http"
 )
 
@@ -53,6 +53,11 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// Lookups
 	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
+	// Das Vokabular, aus dem das Buchformular die Signatur vorschlägt. War bisher nur
+	// lesbar — es gab keinen Weg, es zu füllen, obwohl der Vorschlag davon abhängt.
+	mux.Handle("POST /api/systematics", s.RequirePermission("edit_books")(s.CreateSystematikHandler()))
+	mux.Handle("PUT /api/systematics/{id}", s.RequirePermission("edit_books")(s.UpdateSystematikHandler()))
+	mux.Handle("DELETE /api/systematics/{id}", s.RequirePermission("edit_books")(s.DeleteSystematikHandler()))
 	mux.Handle("GET /api/faecher", s.RequirePermission("view_books")(s.GetFaecherHandler()))
 	mux.Handle("GET /api/readergroups", s.RequirePermission("view_students")(s.GetReaderGroupsHandler()))
 
@@ -64,9 +69,11 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.BarcodeHandler()))
 	mux.Handle("GET /api/print/etikett/{id}", s.RequirePermission("view_books")(s.PrintErsatzEtikettHandler()))
 
-	// Signaturen (Master Data Management)
-	mux.Handle("GET /api/signatures", s.RequirePermission("view_books")(s.GetSignaturesHandler()))
-	mux.Handle("POST /api/signatures", s.RequirePermission("manage_users")(s.CreateSignatureHandler()))
+	// Signaturen — abgeleitet aus buecher_titel.signatur, nicht aus einer Stammtabelle.
+	// Die frühere Tabelle `signatures` (samt GET/POST /api/signatures) ist mit
+	// Migration 060 entfallen: Sie kannte Namen, die an keinem Buch hingen.
+	mux.Handle("GET /api/signaturen", s.RequirePermission("view_books")(s.GetSignaturenHandler()))
+	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.GetSignaturBuecherHandler()))
 
 	// Real-time Events. perform_actions statt view_students: den SSE-Stream öffnet jeder
 	// eingeloggte Client (authStore + Kiosk-Omnibox). Gehörte er weiter zu view_students,

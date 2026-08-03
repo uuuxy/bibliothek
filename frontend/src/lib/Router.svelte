@@ -9,6 +9,7 @@
 	import BestellWorkspace from './BestellWorkspace.svelte';
 	import UnifiedInventory from './UnifiedInventory.svelte';
 	import MediaCatalog from './MediaCatalog.svelte';
+	import SignaturenView from './SignaturenView.svelte';
 	import StatsDashboard from './StatsDashboard.svelte';
 	import StudentDirectory from './StudentDirectory.svelte';
 	import Schulklassen from './Schulklassen.svelte';
@@ -34,6 +35,7 @@
 		schulklassen: '/schulklassen',
 		orders: '/bestellungen',
 		media_catalog: '/katalog',
+		signaturen: '/signaturen',
 		graduates: '/abgaenger',
 		stats: '/statistiken',
 		mahnwesen: '/mahnwesen',
@@ -184,6 +186,8 @@
 		<div class="w-full animate-fade-in h-full"><DruckCenter /></div>
 	{:else if uiStore.activeTab === 'media_catalog'}
 		<div class="w-full animate-fade-in"><MediaCatalog /></div>
+	{:else if uiStore.activeTab === 'signaturen'}
+		<div class="w-full animate-fade-in"><SignaturenView /></div>
 	{:else if uiStore.activeTab === 'inventory'}
 		<div class="w-full animate-fade-in"><UnifiedInventory /></div>
 	{:else if uiStore.activeTab === 'students_dir'}

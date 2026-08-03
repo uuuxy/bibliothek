@@ -17,7 +17,7 @@ func TestReportDamageRace(t *testing.T) {
 	ctx := context.Background()
 	repo := NewDamageRepository(pool)
 
-	_, ex := seedSignaturMitExemplaren(t, pool, "RaceTest", 1)
+	ex := seedSignaturMitExemplaren(t, pool, "RaceTest", 1)
 	copyID := ex[0]
 	schuelerA := seedSchueler(t, pool, "RACE-A", "Anna", "7a")
 	schuelerB := seedSchueler(t, pool, "RACE-B", "Ben", "7b")
@@ -57,7 +57,7 @@ func TestReportDamageNormalfall(t *testing.T) {
 	ctx := context.Background()
 	repo := NewDamageRepository(pool)
 
-	_, ex := seedSignaturMitExemplaren(t, pool, "NormalTest", 1)
+	ex := seedSignaturMitExemplaren(t, pool, "NormalTest", 1)
 	copyID := ex[0]
 	schueler := seedSchueler(t, pool, "NORM-A", "Cora", "8a")
 	bearbeiter := seedBearbeiter(t, pool)
@@ -86,7 +86,7 @@ func TestReportDamageIdempotent(t *testing.T) {
 	ctx := context.Background()
 	repo := NewDamageRepository(pool)
 
-	_, ex := seedSignaturMitExemplaren(t, pool, "IdemTest", 1)
+	ex := seedSignaturMitExemplaren(t, pool, "IdemTest", 1)
 	copyID := ex[0]
 	schueler := seedSchueler(t, pool, "IDEM-A", "Dora", "9a")
 	bearbeiter := seedBearbeiter(t, pool)

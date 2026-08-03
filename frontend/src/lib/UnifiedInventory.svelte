@@ -36,7 +36,7 @@
 	});
 
 	onMount(async () => {
-		await inventoryState.loadSignatures();
+		await inventoryState.loadSignaturen();
 		await inventoryState.loadFaecher();
 		await inventoryState.loadOffeneSessions();
 	});

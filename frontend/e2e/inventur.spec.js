@@ -12,12 +12,14 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 	const sigName = `E2E-INV-${suffix}`;
 
 	try {
+		// Die Signatur steht als TEXT am Titel (buecher_titel.signatur) — sie ist das,
+		// was physisch auf dem Buchrücken klebt. Der frühere Fremdschlüssel auf die
+		// Tabelle `signatures` ist mit Migration 060 entfallen: Er wurde nie gepflegt,
+		// weshalb die Signatur-Inventur in Wahrheit null Exemplare traf.
 		seedSQL(`
-            WITH sig AS (
-                INSERT INTO signatures (name) VALUES ('${sigName}') RETURNING id
-            ), t AS (
-                INSERT INTO buecher_titel (titel, signature_id)
-                SELECT 'E2E-Inventurbuch-${suffix}', id FROM sig RETURNING id
+            WITH t AS (
+                INSERT INTO buecher_titel (titel, signatur)
+                VALUES ('E2E-Inventurbuch-${suffix}', '${sigName}') RETURNING id
             )
             INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
             SELECT id, b, true FROM t, unnest(ARRAY['B-INVA-${suffix}', 'B-INVB-${suffix}']) AS b;
@@ -28,7 +30,7 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 
 		// Scope: nur die Test-Signatur
 		await page.getByText('Nur bestimmte Signatur').click();
-		await page.locator('select').selectOption({ label: sigName });
+		await page.getByLabel('Signatur auswählen').fill(sigName);
 		await page.getByRole('button', { name: 'Inventur Starten' }).click();
 
 		// Exemplar A scannen → als erfasst bestätigt
@@ -82,7 +84,6 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 		seedSQL(`
             DELETE FROM buecher_exemplare WHERE barcode_id IN ('B-INVA-${suffix}', 'B-INVB-${suffix}');
             DELETE FROM buecher_titel WHERE titel = 'E2E-Inventurbuch-${suffix}';
-            DELETE FROM signatures WHERE name = '${sigName}';
         `);
 	}
 });

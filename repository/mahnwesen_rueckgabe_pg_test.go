@@ -14,7 +14,7 @@ func TestQueryUeberfaellige_ZurueckgegebeneRausfiltern(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	_, ex := seedSignaturMitExemplaren(t, pool, "MahnTest", 2)
+	ex := seedSignaturMitExemplaren(t, pool, "MahnTest", 2)
 	schueler := seedSchueler(t, pool, "M-1", "Tom", "7a")
 	bearbeiter := seedBearbeiter(t, pool)
 

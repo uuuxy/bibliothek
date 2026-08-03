@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -16,8 +15,8 @@ var ErrInventurLaeuftBereits = errors.New("für diesen Bereich läuft bereits ei
 // InventurSession beschreibt eine laufende oder abgeschlossene Inventur.
 type InventurSession struct {
 	ID           string
-	ScopeType    string // "global" | "signature" | "filter"
-	SignatureID  *int
+	ScopeType    string  // "global" | "signature" | "filter"
+	Signatur     *string // 'signature'-Scope: Präfix von buecher_titel.signatur
 	Subject      *string // 'filter'-Scope: Fach
 	Grade        *int    // 'filter'-Scope: Klasse
 	ScopeLabel   string
@@ -30,7 +29,7 @@ type InventurSession struct {
 // Scope leitet aus den gespeicherten Feldern den auswertbaren InventurScope ab —
 // die eine Quelle für Zählung, Scan-Warnung und Verlustbuchung (siehe inventur_scope.go).
 func (s InventurSession) Scope() InventurScope {
-	return InventurScope{SignatureID: s.SignatureID, Subject: s.Subject, Grade: s.Grade}
+	return InventurScope{Signatur: s.Signatur, Subject: s.Subject, Grade: s.Grade}
 }
 
 // CreateInventurSession legt eine neue Session an. Der partielle Unique-Index aus
@@ -44,11 +43,11 @@ func (r *InventoryRepository) CreateInventurSession(ctx context.Context, scopeTy
 
 	var s InventurSession
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO inventur_sessions (scope_type, signature_id, scope_subject, scope_grade, scope_label, gestartet_von)
+		INSERT INTO inventur_sessions (scope_type, scope_signatur, scope_subject, scope_grade, scope_label, gestartet_von)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, scope_type, signature_id, scope_subject, scope_grade, scope_label, gestartet_am::text
-	`, scopeType, scope.SignatureID, scope.Subject, scope.Grade, scopeLabel, benutzerPtr).
-		Scan(&s.ID, &s.ScopeType, &s.SignatureID, &s.Subject, &s.Grade, &s.ScopeLabel, &s.GestartetAm)
+		RETURNING id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label, gestartet_am::text
+	`, scopeType, scope.Signatur, scope.Subject, scope.Grade, scopeLabel, benutzerPtr).
+		Scan(&s.ID, &s.ScopeType, &s.Signatur, &s.Subject, &s.Grade, &s.ScopeLabel, &s.GestartetAm)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -57,20 +56,6 @@ func (r *InventoryRepository) CreateInventurSession(ctx context.Context, scopeTy
 		return nil, fmt.Errorf("inventur-session anlegen fehlgeschlagen: %w", err)
 	}
 	return &s, nil
-}
-
-// SignaturBezeichnung liefert den Anzeigenamen einer Signatur (für das Scope-Label
-// einer Session). Leerer String, wenn die Signatur nicht existiert.
-func (r *InventoryRepository) SignaturBezeichnung(ctx context.Context, signatureID int) (string, error) {
-	var name string
-	err := r.db.QueryRow(ctx, `SELECT name FROM signatures WHERE id = $1`, signatureID).Scan(&name)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return "", nil
-	}
-	if err != nil {
-		return "", fmt.Errorf("signatur-name laden fehlgeschlagen: %w", err)
-	}
-	return name, nil
 }
 
 // ZaehleScope liefert die Anzahl physisch erwartbarer Exemplare im Scope.
@@ -95,12 +80,12 @@ func (r *InventoryRepository) ZaehleScope(ctx context.Context, scope InventurSco
 func (r *InventoryRepository) LadeInventurSession(ctx context.Context, id string) (*InventurSession, error) {
 	var s InventurSession
 	err := r.db.QueryRow(ctx, `
-		SELECT id, scope_type, signature_id, scope_subject, scope_grade, scope_label,
+		SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
 		       gestartet_von::text, gestartet_am::text,
 		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = $1)
 		FROM inventur_sessions
 		WHERE id = $1 AND abgeschlossen_am IS NULL
-	`, id).Scan(&s.ID, &s.ScopeType, &s.SignatureID, &s.Subject, &s.Grade, &s.ScopeLabel,
+	`, id).Scan(&s.ID, &s.ScopeType, &s.Signatur, &s.Subject, &s.Grade, &s.ScopeLabel,
 		&s.GestartetVon, &s.GestartetAm, &s.Erfasst)
 	if err != nil {
 		return nil, err
@@ -126,7 +111,7 @@ func (r *InventoryRepository) GetInventurSession(ctx context.Context, id string)
 // niemand versehentlich in einen fremden, bereits laufenden Scope startet).
 func (r *InventoryRepository) ListOffeneInventurSessions(ctx context.Context) ([]InventurSession, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT s.id, s.scope_type, s.signature_id, s.scope_subject, s.scope_grade, s.scope_label,
+		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text,
 		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id)
 		FROM inventur_sessions s
@@ -141,7 +126,7 @@ func (r *InventoryRepository) ListOffeneInventurSessions(ctx context.Context) ([
 	sessions := make([]InventurSession, 0)
 	for rows.Next() {
 		var s InventurSession
-		if err := rows.Scan(&s.ID, &s.ScopeType, &s.SignatureID, &s.Subject, &s.Grade, &s.ScopeLabel,
+		if err := rows.Scan(&s.ID, &s.ScopeType, &s.Signatur, &s.Subject, &s.Grade, &s.ScopeLabel,
 			&s.GestartetVon, &s.GestartetAm, &s.Erfasst); err != nil {
 			return nil, fmt.Errorf("session-zeile unlesbar: %w", err)
 		}

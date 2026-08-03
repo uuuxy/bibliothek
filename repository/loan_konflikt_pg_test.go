@@ -21,7 +21,7 @@ func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	_, ex := seedSignaturMitExemplaren(t, pool, "Konflikt", 1)
+	ex := seedSignaturMitExemplaren(t, pool, "Konflikt", 1)
 	ersterSchueler := seedSchueler(t, pool, "KFL-1", "Anna", "7a")
 	zweiterSchueler := seedSchueler(t, pool, "KFL-2", "Bernd", "7a")
 	bearbeiter := seedBearbeiter(t, pool)
@@ -71,7 +71,7 @@ func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	_, ex := seedSignaturMitExemplaren(t, pool, "KonfliktFrei", 1)
+	ex := seedSignaturMitExemplaren(t, pool, "KonfliktFrei", 1)
 	schueler := seedSchueler(t, pool, "KFL-3", "Clara", "7a")
 	bearbeiter := seedBearbeiter(t, pool)
 	frist := time.Now().AddDate(0, 0, 21)

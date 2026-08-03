@@ -70,6 +70,12 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 	// endgültig gelöscht werden — und genau dann braucht man ihn, wenn jemand nachfragt.
 	// Gezaehlt wird die AUSSONDERUNG, nicht die Mitschrift.
 	//
+	// Die Signatur kam zunaechst per Join auf die Tabelle `signatures` ueber
+	// t.signature_id — eine Spalte, die ausser Migration 021 nie jemand geschrieben hat.
+	// Die Abschrift war damit IMMER leer, und ausgerechnet die Sortierung "nach Signatur",
+	// mit der man mit dem Zettel durchs Regal laeuft, sortierte nach nichts. Quelle ist
+	// jetzt t.signatur, der Text vom Buchruecken (Migration 060).
+	//
 	// Der erste Entwurf las tag.RowsAffected() des Gesamt-Statements — das ist bei einem
 	// abschliessenden INSERT dessen Zeilenzahl, nicht die des UPDATE. Solange beide gleich
 	// sind, faellt das nicht auf; ueberspringt ON CONFLICT je eine Zeile, meldete die
@@ -90,12 +96,12 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 			      SELECT 1 FROM inventur_erfassungen ie
 			      WHERE ie.session_id = $%d AND ie.exemplar_id = e.id
 			  )
-			RETURNING e.id, e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, t.signature_id
+			RETURNING e.id, e.barcode_id, t.titel, coalesce(t.autor, '') AS autor,
+			          coalesce(btrim(t.signatur), '') AS signatur
 		), mitschrift AS (
 			INSERT INTO inventur_verluste (session_id, exemplar_id, barcode_id, titel, autor, signatur)
-			SELECT $%d, v.id, v.barcode_id, v.titel, v.autor, coalesce(s.name, '')
+			SELECT $%d, v.id, v.barcode_id, v.titel, v.autor, v.signatur
 			FROM verloren v
-			LEFT JOIN signatures s ON s.id = v.signature_id
 			ON CONFLICT DO NOTHING
 			RETURNING 1
 		)

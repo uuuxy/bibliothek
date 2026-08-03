@@ -16,25 +16,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// seedSignaturMitExemplar legt eine Signatur samt Titel und einem ausleihbaren Exemplar an
-// und liefert signature_id und exemplar_id. Der Signaturname wird eindeutig gehalten
-// (signatures.name ist UNIQUE, die Tabelle wird zwischen Tests nicht geleert).
-func seedSignaturMitExemplar(t *testing.T, pool *pgxpool.Pool, sigName, barcode string) (int, string) {
+// seedSignaturMitExemplar legt einen Titel unter der Signatur samt einem ausleihbaren
+// Exemplar an und liefert die exemplar_id. Die Signatur ist seit Migration 060 der Text
+// auf dem Buchrücken (buecher_titel.signatur), kein Fremdschlüssel mehr.
+func seedSignaturMitExemplar(t *testing.T, pool *pgxpool.Pool, signatur, barcode string) string {
 	t.Helper()
-	ctx := context.Background()
-	var sigID int
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO signatures (name) VALUES ($1) RETURNING id`, sigName).Scan(&sigID); err != nil {
-		t.Fatalf("Signatur %q anlegen: %v", sigName, err)
-	}
 	var titelID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel, signature_id) VALUES ($1, $2) RETURNING id`,
-		sigName+"-Buch", sigID).Scan(&titelID); err != nil {
+	if err := pool.QueryRow(context.Background(),
+		`INSERT INTO buecher_titel (titel, signatur) VALUES ($1, $2) RETURNING id`,
+		signatur+"-Buch", signatur).Scan(&titelID); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
-	exID := exemplar(t, pool, titelID, barcode, true, "")
-	return sigID, exID
+	return exemplar(t, pool, titelID, barcode, true, "")
 }
 
 // TestInventurScan_FremderScopeNichtErfasst sichert #3 (Cross-Contamination) ab: Ein Buch
@@ -53,11 +46,12 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	barcodeMathe := "B-M-" + suffix
 	barcodeDeutsch := "B-D-" + suffix
-	sigDeutsch, _ := seedSignaturMitExemplar(t, pool, "INV-Deutsch-"+suffix, barcodeDeutsch)
-	_, exMathe := seedSignaturMitExemplar(t, pool, "INV-Mathe-"+suffix, barcodeMathe)
+	sigDeutsch := "INV-Deutsch-" + suffix
+	seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeDeutsch)
+	exMathe := seedSignaturMitExemplar(t, pool, "INV-Mathe-"+suffix, barcodeMathe)
 
 	invRepo := repository.NewInventoryRepository(pool)
-	session, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{SignatureID: &sigDeutsch}, "Deutsch", "")
+	session, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigDeutsch}, "Deutsch", "")
 	if err != nil {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}

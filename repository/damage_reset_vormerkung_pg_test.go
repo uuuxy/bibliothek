@@ -14,7 +14,7 @@ func TestReportDamage_ResetsAbholbereiteVormerkung(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	_, ex := seedSignaturMitExemplaren(t, pool, "DmgVorm", 1)
+	ex := seedSignaturMitExemplaren(t, pool, "DmgVorm", 1)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
 	schueler := seedSchueler(t, pool, "DV-1", "Mia", "7a")
 	bearbeiter := seedBearbeiter(t, pool)

@@ -63,7 +63,7 @@ func (s *Server) InventurFinishHandler() http.HandlerFunc {
 		invRepo := repository.NewInventoryRepository(tx)
 
 		// Session in derselben Transaktion sperren/prüfen: verhindert doppelten
-		// Abschluss und liefert die signature_id für den Scope des Verlust-Updates.
+		// Abschluss und liefert den gespeicherten Scope für das Verlust-Update.
 		session, err := invRepo.LadeInventurSession(ctx, req.SessionID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,17 +14,30 @@ import (
 // InventurStartRequest holds the parameters needed to define the scope
 // of a new physical stock-take (inventory).
 type InventurStartRequest struct {
-	Type        string  `json:"type"`                   // "global" | "signature" | "filter"
-	SignatureID *int    `json:"signature_id,omitempty"` // bei "signature"
-	Subject     *string `json:"subject,omitempty"`      // bei "filter": Fach (buecher_titel.subject)
-	Grade       *int    `json:"grade,omitempty"`        // bei "filter": Klasse (Jahrgangsbereich enthält)
+	Type string `json:"type"` // "global" | "signature" | "filter"
+	// Signatur ist bei "signature" ein Präfix von buecher_titel.signatur, also eine
+	// Regaladresse: "BIB Deu" erfasst auch "BIB Deu 5 KRÜ" (Migration 060). Früher
+	// stand hier eine signature_id auf eine Tabelle, die niemand pflegte.
+	Signatur *string `json:"signatur,omitempty"`
+	Subject  *string `json:"subject,omitempty"` // bei "filter": Fach (buecher_titel.subject)
+	Grade    *int    `json:"grade,omitempty"`   // bei "filter": Klasse (Jahrgangsbereich enthält)
+}
+
+// signaturNormalisiert liefert die getrimmte Signatur — eine Quelle für Label und Scope,
+// damit das Label nie einen anderen Bereich benennt, als die Session tatsächlich erfasst.
+func (req InventurStartRequest) signaturNormalisiert() string {
+	if req.Signatur == nil {
+		return ""
+	}
+	return strings.TrimSpace(*req.Signatur)
 }
 
 // scope leitet den auswertbaren Scope aus dem Request ab.
 func (req InventurStartRequest) scope() repository.InventurScope {
 	switch req.Type {
 	case "signature":
-		return repository.InventurScope{SignatureID: req.SignatureID}
+		sig := req.signaturNormalisiert()
+		return repository.InventurScope{Signatur: &sig}
 	case "filter":
 		return repository.InventurScope{Subject: req.Subject, Grade: req.Grade}
 	default:
@@ -47,8 +59,10 @@ func validateInventurStart(w http.ResponseWriter, req InventurStartRequest) bool
 	case "global":
 		return true
 	case "signature":
-		if req.SignatureID == nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signature_id is required when type is 'signature'"))
+		// Leerstring abweisen: Er wäre ein Präfix JEDER Signatur und machte aus der
+		// Regal-Inventur unbemerkt eine Gesamtinventur.
+		if req.signaturNormalisiert() == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("signatur ist erforderlich, wenn type 'signature' ist"))
 			return false
 		}
 		return true
@@ -64,15 +78,16 @@ func validateInventurStart(w http.ResponseWriter, req InventurStartRequest) bool
 	}
 }
 
-// scopeLabelFuer bestimmt die Anzeigebezeichnung des Inventur-Scopes.
-func scopeLabelFuer(ctx context.Context, invRepo *repository.InventoryRepository, req InventurStartRequest) (string, error) {
+// scopeLabelFuer bestimmt die Anzeigebezeichnung des Inventur-Scopes. Seit Migration 060
+// braucht der Signatur-Fall keinen DB-Zugriff mehr: Die Signatur IST ihre Bezeichnung.
+func scopeLabelFuer(req InventurStartRequest) string {
 	switch req.Type {
 	case "signature":
-		return invRepo.SignaturBezeichnung(ctx, *req.SignatureID)
+		return "Signatur " + req.signaturNormalisiert()
 	case "filter":
-		return filterLabel(req), nil
+		return filterLabel(req)
 	default:
-		return "Gesamtbestand", nil
+		return "Gesamtbestand"
 	}
 }
 
@@ -127,13 +142,7 @@ func (s *Server) InventurStartHandler() http.HandlerFunc {
 
 		invRepo := repository.NewInventoryRepository(s.DB.Pool)
 
-		label, err := scopeLabelFuer(ctx, invRepo, req)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		session, err := invRepo.CreateInventurSession(ctx, req.Type, req.scope(), label, benutzerID)
+		session, err := invRepo.CreateInventurSession(ctx, req.Type, req.scope(), scopeLabelFuer(req), benutzerID)
 		if err != nil {
 			if errors.Is(err, repository.ErrInventurLaeuftBereits) {
 				apierrors.SendHTTPError(w, http.StatusConflict, err)

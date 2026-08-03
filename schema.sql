@@ -387,6 +387,10 @@ CREATE INDEX idx_buecher_titel_suchnorm_trgm ON buecher_titel USING gin (suchnor
 CREATE INDEX idx_buecher_autor_suchnorm_trgm ON buecher_titel USING gin (suchnorm(autor) gin_trgm_ops);
 CREATE INDEX idx_buecher_isbn_lower_trgm ON buecher_titel USING gin (lower(isbn) gin_trgm_ops);
 CREATE INDEX idx_buecher_signatur_lower_trgm ON buecher_titel USING gin (lower(signatur) gin_trgm_ops);
+-- Trägt die Signaturliste (DISTINCT) und den Gleichheitsteil des Inventur-Scopes
+-- (Migration 060).
+CREATE INDEX idx_buecher_titel_signatur ON buecher_titel (btrim(signatur))
+    WHERE COALESCE(btrim(signatur), '') <> '';
 CREATE INDEX idx_buecher_isbn_normalisiert ON buecher_titel (replace(isbn, '-', ''));
 
 CREATE TRIGGER trg_buecher_titel_aktualisiert_am
@@ -731,7 +735,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('056_lieferant_liefert_mit_barcode.sql'),
 ('057_audit_log_timestamp_index.sql'),
 ('058_lieferant_ist_standard.sql'),
-('059_inventur_verluste.sql')
+('059_inventur_verluste.sql'),
+('060_signatur_scope_text.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -785,24 +790,19 @@ ALTER TABLE buecher_titel
     ADD COLUMN IF NOT EXISTS jahrgang_von INTEGER NOT NULL DEFAULT 5,
     ADD COLUMN IF NOT EXISTS jahrgang_bis INTEGER NOT NULL DEFAULT 10;
 
-CREATE TABLE IF NOT EXISTS signatures (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) UNIQUE NOT NULL,
-    description TEXT
-);
-
-ALTER TABLE buecher_titel
-    ADD COLUMN IF NOT EXISTS signature_id INT REFERENCES signatures(id) ON DELETE RESTRICT;
-
 -- Inventur als Sessions (siehe Migration 045). Jede Inventur hat eigenen Scope und
 -- session-gebundenen Fortschritt; damit ist Parallelbetrieb ohne gegenseitiges
 -- Überschreiben möglich.
+--
+-- Der Signatur-Scope ist ein PRÄFIX von buecher_titel.signatur (Migration 060),
+-- kein Fremdschlüssel: Eine Signatur ist eine Regaladresse, eine kürzere Adresse
+-- meint einen größeren Regalbereich. Die frühere Tabelle `signatures` samt
+-- buecher_titel.signature_id ist entfallen — sie wurde nie gepflegt und ließ die
+-- Signatur-Inventur ins Leere laufen.
 CREATE TABLE IF NOT EXISTS inventur_sessions (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     scope_type        VARCHAR(20) NOT NULL,
-    -- ON DELETE CASCADE (nicht SET NULL): sonst verletzt das Löschen einer Signatur
-    -- den chk_inv_session_scope unten (Signatur-Session braucht signature_id).
-    signature_id      INT REFERENCES signatures(id) ON DELETE CASCADE,
+    scope_signatur    TEXT,                             -- 'signature'-Scope: Präfix von buecher_titel.signatur
     scope_subject     TEXT,                             -- 'filter'-Scope: Fach (buecher_titel.subject)
     scope_grade       SMALLINT,                         -- 'filter'-Scope: Klasse (jahrgang_von..bis enthält)
     scope_label       VARCHAR(255) NOT NULL DEFAULT '',
@@ -812,7 +812,7 @@ CREATE TABLE IF NOT EXISTS inventur_sessions (
     verloren_gemeldet INT,
     CONSTRAINT chk_inv_session_scope
         CHECK (scope_type IN ('global', 'signature', 'filter')
-               AND (scope_type <> 'signature' OR signature_id IS NOT NULL)
+               AND (scope_type <> 'signature' OR COALESCE(btrim(scope_signatur), '') <> '')
                AND (scope_type <> 'filter' OR scope_subject IS NOT NULL OR scope_grade IS NOT NULL))
 );
 
@@ -843,7 +843,7 @@ CREATE TABLE IF NOT EXISTS inventur_erfassungen (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_global
     ON inventur_sessions ((true)) WHERE abgeschlossen_am IS NULL AND scope_type = 'global';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_signature
-    ON inventur_sessions (signature_id) WHERE abgeschlossen_am IS NULL AND scope_type = 'signature';
+    ON inventur_sessions (btrim(scope_signatur)) WHERE abgeschlossen_am IS NULL AND scope_type = 'signature';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_inv_session_offen_filter
     ON inventur_sessions (coalesce(scope_subject, ''), coalesce(scope_grade, -1))
     WHERE abgeschlossen_am IS NULL AND scope_type = 'filter';

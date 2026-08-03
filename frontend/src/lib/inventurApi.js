@@ -24,7 +24,7 @@ export async function ladeOffeneSessions() {
 
 /**
  * Neue Session eröffnen.
- * @param {{type: string, signature_id?: number, subject?: string, grade?: number}} payload
+ * @param {{type: string, signatur?: string, subject?: string, grade?: number}} payload
  */
 export async function starteSession(payload) {
 	const res = await apiFetch('/api/inventur/start', {

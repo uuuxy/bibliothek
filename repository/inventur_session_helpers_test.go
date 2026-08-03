@@ -7,16 +7,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func deutschSignaturID(t *testing.T, pool *pgxpool.Pool) int {
-	t.Helper()
-	var id int
-	if err := pool.QueryRow(context.Background(),
-		`SELECT id FROM signatures WHERE name = 'Deutsch'`).Scan(&id); err != nil {
-		t.Fatalf("Deutsch-Signatur-ID: %v", err)
-	}
-	return id
-}
-
 func erfassungsZahl(t *testing.T, pool *pgxpool.Pool, sessionID string) int {
 	t.Helper()
 	var n int

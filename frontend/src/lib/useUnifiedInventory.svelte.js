@@ -18,8 +18,10 @@ export function useUnifiedInventory() {
 	let status = $state('idle'); // 'idle' | 'active'
 	let sessionId = $state('');
 	let scopeType = $state('global');
-	let selectedSignatureId = $state('');
-	let signatures = $state(/** @type {any[]} */ ([]));
+	// Die Signatur ist der Text vom Buchruecken, kein Fremdschluessel mehr. Sie wirkt
+	// als Praefix: "BIB Deu" erfasst auch "BIB Deu 5 KRUE" (Migration 060).
+	let selectedSignatur = $state('');
+	let signaturen = $state(/** @type {any[]} */ ([]));
 	// Filter-Scope: gezielte Teil-Inventur nach Fach und/oder Klasse ("nur Mathe, Kl. 5").
 	let selectedFach = $state('');
 	let selectedGrade = $state('');
@@ -33,12 +35,12 @@ export function useUnifiedInventory() {
 	let showFinishModal = $state(false);
 	let errorMessage = $state('');
 
-	async function loadSignatures() {
+	async function loadSignaturen() {
 		try {
-			const res = await apiFetch('/api/signatures');
-			if (res.ok) signatures = await res.json();
+			const res = await apiFetch('/api/signaturen');
+			if (res.ok) signaturen = (await res.json()) || [];
 		} catch (e) {
-			console.error('Failed to load signatures', e);
+			console.error('Failed to load signaturen', e);
 		}
 	}
 
@@ -59,11 +61,11 @@ export function useUnifiedInventory() {
 		errorMessage = '';
 		const payload = { type: scopeType };
 		if (scopeType === 'signature') {
-			if (!selectedSignatureId) {
+			if (!selectedSignatur.trim()) {
 				errorMessage = 'Bitte wähle eine Signatur aus.';
 				return;
 			}
-			payload.signature_id = Number(selectedSignatureId);
+			payload.signatur = selectedSignatur.trim();
 		} else if (scopeType === 'filter') {
 			if (!selectedFach && !selectedGrade) {
 				errorMessage = 'Bitte wähle mindestens ein Fach oder eine Klasse.';
@@ -207,14 +209,14 @@ export function useUnifiedInventory() {
 		set scopeType(v) {
 			scopeType = v;
 		},
-		get selectedSignatureId() {
-			return selectedSignatureId;
+		get selectedSignatur() {
+			return selectedSignatur;
 		},
-		set selectedSignatureId(v) {
-			selectedSignatureId = v;
+		set selectedSignatur(v) {
+			selectedSignatur = v;
 		},
-		get signatures() {
-			return signatures;
+		get signaturen() {
+			return signaturen;
 		},
 		get selectedFach() {
 			return selectedFach;
@@ -265,7 +267,7 @@ export function useUnifiedInventory() {
 			return errorMessage;
 		},
 		clearError,
-		loadSignatures,
+		loadSignaturen,
 		loadFaecher,
 		loadOffeneSessions,
 		startInventory,

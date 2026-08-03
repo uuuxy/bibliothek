@@ -102,7 +102,7 @@ func resetInventurDaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
 		TRUNCATE inventur_erfassungen, inventur_sessions, schadensfaelle, ausleihen,
-		         buecher_exemplare, buecher_titel, signatures, schueler, benutzer
+		         buecher_exemplare, buecher_titel, schueler, benutzer
 		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {
@@ -110,34 +110,30 @@ func resetInventurDaten(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-// seedSignaturMitExemplaren legt eine Signatur mit n ausleihbaren Exemplaren an und
-// liefert Signatur-ID und die Exemplar-IDs.
-func seedSignaturMitExemplaren(t *testing.T, pool *pgxpool.Pool, name string, n int) (int, []string) {
+// seedSignaturMitExemplaren legt n ausleihbare Exemplare unter der Signatur an und
+// liefert die Exemplar-IDs. Die Signatur ist seit Migration 060 der Text auf dem
+// Buchrücken (buecher_titel.signatur), kein Fremdschlüssel mehr.
+func seedSignaturMitExemplaren(t *testing.T, pool *pgxpool.Pool, signatur string, n int) []string {
 	t.Helper()
 	ctx := context.Background()
-
-	var sigID int
-	if err := pool.QueryRow(ctx, `INSERT INTO signatures (name) VALUES ($1) RETURNING id`, name).Scan(&sigID); err != nil {
-		t.Fatalf("Signatur %q anlegen: %v", name, err)
-	}
 
 	ids := make([]string, 0, n)
 	for i := 0; i < n; i++ {
 		var titelID string
 		if err := pool.QueryRow(ctx,
-			`INSERT INTO buecher_titel (titel, signature_id) VALUES ($1, $2) RETURNING id`,
-			fmt.Sprintf("%s-Buch-%d", name, i), sigID).Scan(&titelID); err != nil {
+			`INSERT INTO buecher_titel (titel, signatur) VALUES ($1, $2) RETURNING id`,
+			fmt.Sprintf("%s-Buch-%d", signatur, i), signatur).Scan(&titelID); err != nil {
 			t.Fatalf("Titel anlegen: %v", err)
 		}
 		var exID string
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-			titelID, fmt.Sprintf("BC-%s-%d", name, i)).Scan(&exID); err != nil {
+			titelID, fmt.Sprintf("BC-%s-%d", signatur, i)).Scan(&exID); err != nil {
 			t.Fatalf("Exemplar anlegen: %v", err)
 		}
 		ids = append(ids, exID)
 	}
-	return sigID, ids
+	return ids
 }
 
 // seedFachExemplar legt einen Titel mit Fach (subject) + Jahrgangsbereich und genau
