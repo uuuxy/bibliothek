@@ -25,6 +25,25 @@ export const icons = {
  */
 
 /**
+ * Prüft ein einzelnes Recht. Die EINE Stelle, an der die Regel steht: Admin darf
+ * alles, sonst entscheidet die Rechteliste aus role_permissions ('*' = alles).
+ *
+ * Bewusst geteilt mit canSeeItem — eine Ansicht, die ihre Rechteprüfung selbst
+ * nachbaut, weicht beim nächsten Rollen-Feinschliff still von der Navigation ab:
+ * Der Menüpunkt wäre dann sichtbar und die Aktion darin gesperrt, oder umgekehrt.
+ *
+ * @param {any} currentUser
+ * @param {string} permission
+ * @returns {boolean}
+ */
+export function hatRecht(currentUser, permission) {
+	if (!currentUser) return false;
+	if ((currentUser.rolle || '').toLowerCase() === 'admin') return true;
+	const perms = currentUser.permissions || [];
+	return perms.includes('*') || perms.includes(permission);
+}
+
+/**
  * Determines whether a menu item should be visible for the given user.
  *
  * @param {MenuItem} item
@@ -44,11 +63,6 @@ export function canSeeItem(item, currentUser) {
 	// Admin hat implizit alle Rechte.
 	if (r === 'admin') return true;
 
-	// Sichtbarkeit richtet sich strikt nach den im PermissionManager freigeschalteten
-	// Rechten. currentUser.permissions stammt direkt aus der role_permissions-Tabelle
-	// (siehe LoginHandler) — der Admin steuert damit pro Rolle exakt, was sichtbar ist.
-	const perms = currentUser.permissions || [];
-
 	// Punkte ohne Permission-Anforderung sind allgemeine Theken-Werkzeuge (z. B. Kiosk).
 	if (!item.permission) {
 		if (item.roles) return item.roles.includes(r);
@@ -57,7 +71,7 @@ export function canSeeItem(item, currentUser) {
 		return r !== 'lehrer';
 	}
 
-	return perms.includes('*') || perms.includes(item.permission);
+	return hatRecht(currentUser, item.permission);
 }
 
 export const menuGroups = [

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { apiGet } from './apiFetch.js';
 	import { authStore } from './stores/authStore.svelte.js';
+	import { hatRecht } from './menu.js';
 	import SignaturRegal from './components/signaturen/SignaturRegal.svelte';
 	import SystematikVerwaltung from './components/signaturen/SystematikVerwaltung.svelte';
 
@@ -10,12 +11,7 @@
 	let suche = $state('');
 	let gewaehlt = $state('');
 
-	const darfPflegen = $derived(
-		authStore.currentUser?.rolle === 'admin' ||
-			(authStore.currentUser?.permissions || []).some(
-				(/** @type {string} */ p) => p === '*' || p === 'edit_books'
-			)
-	);
+	const darfPflegen = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	const gefiltert = $derived(
 		signaturen.filter((s) => s.signatur.toLowerCase().includes(suche.trim().toLowerCase()))

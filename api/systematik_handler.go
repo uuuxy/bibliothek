@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -146,7 +147,7 @@ func (s *Server) UpdateSystematikHandler() http.HandlerFunc {
 			return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
 		}
 
-		betroffen, err := s.zaehleTitelMitFach(r, alteBezeichnung)
+		betroffen, err := s.zaehleTitelMitFach(r.Context(), alteBezeichnung)
 		if err != nil {
 			return err
 		}
@@ -190,7 +191,7 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 			return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
 		}
 
-		betroffen, err := s.zaehleTitelMitFach(r, bezeichnung)
+		betroffen, err := s.zaehleTitelMitFach(r.Context(), bezeichnung)
 		if err != nil {
 			return err
 		}
@@ -211,9 +212,9 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 }
 
 // zaehleTitelMitFach zählt Titel, deren Fach (subject) auf die Bezeichnung zeigt.
-func (s *Server) zaehleTitelMitFach(r *http.Request, bezeichnung string) (int, error) {
+func (s *Server) zaehleTitelMitFach(ctx context.Context, bezeichnung string) (int, error) {
 	var anzahl int
-	err := s.DB.Pool.QueryRow(r.Context(),
+	err := s.DB.Pool.QueryRow(ctx,
 		`SELECT count(*) FROM buecher_titel WHERE btrim(COALESCE(subject, '')) = btrim($1)`,
 		bezeichnung).Scan(&anzahl)
 	if err != nil {

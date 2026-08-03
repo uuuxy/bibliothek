@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -101,7 +102,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 
 	// 2) Regalansicht: Praefix trifft Basis + Unterfach, aber nicht den Nachbarn ohne Grenze.
 	rec = httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur="+urlWert(basis), nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur="+url.QueryEscape(basis), nil)
 	srv.GetSignaturBuecherHandler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Regalansicht: Status %d", rec.Code)
@@ -130,17 +131,4 @@ func TestSignaturenEndpunkte(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("leere Signatur: erwartet 400, war %d", rec.Code)
 	}
-}
-
-// urlWert kodiert einen Query-Wert (Leerzeichen!) fuer die Test-Requests.
-func urlWert(s string) string {
-	out := ""
-	for _, r := range s {
-		if r == ' ' {
-			out += "%20"
-			continue
-		}
-		out += string(r)
-	}
-	return out
 }
