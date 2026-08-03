@@ -13,3 +13,6 @@
 ## 2026-07-27 - Added focus visible styles to UI Button
 **Learning:** Interactive components like Button.svelte were missing explicit focus states for keyboard navigation, reducing accessibility.
 **Action:** Always add 'focus-visible:ring-2 focus-visible:outline-none' to base interactive components so that keyboard users receive visual feedback.
+## 2026-07-27 - Added aria-label to auth inputs
+**Learning:** Found that custom password and email inputs in `Login.svelte` lacked proper internal `aria-label` attributes, relying only on placeholder text which some screen readers might not announce reliably without a corresponding visible label or aria-label.
+**Action:** Always ensure that structural, standalone form inputs have a clear `aria-label` (e.g., "E-Mail" or "Passwort") if an explicit `<label for="...">` is not provided.
