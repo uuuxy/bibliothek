@@ -57,6 +57,53 @@
 		printQueue.copies = printSuggestion;
 		printSuggestion = null;
 	}
+
+	/**
+	 * Höhe der Bestellspalte, damit sie nie unter den Fensterrand wächst.
+	 *
+	 * Aus dem Betrieb gemeldet als „Bestellung abgeschnitten": Die Spalte klebt beim
+	 * Scrollen (sticky). Füllt sich der Warenkorb, wird sie höher als das Fenster — bei
+	 * 1366×700 gemessen 1427 px, also 979 px unter dem Rand. Der Absenden-Knopf war dann
+	 * nur noch zu erreichen, indem man die 105 Titel der Bedarfsliste daneben
+	 * durchscrollte, bis der klebende Rahmen endete.
+	 *
+	 * Warum gemessen statt einer festen CSS-Grenze: Ein calc(100vh - fester Abzug) kann
+	 * nicht stimmen, weil der Anfang der Spalte wandert — mit eingeblendetem
+	 * Backup-Banner beginnt sie rund 80 px tiefer, und beim Scrollen wandert sie nach
+	 * oben, bis sie klebt. Ein Versuch mit 8rem Abzug liess immer noch 125 px überstehen.
+	 * Deshalb rechnet die Spalte mit ihrem tatsächlichen Abstand zum oberen Rand.
+	 */
+	/** @type {HTMLElement|undefined} */
+	let rail = $state();
+	let railMaxHeight = $state('');
+
+	$effect(() => {
+		if (!rail) return;
+		const messen = () => {
+			if (!rail) return;
+			const oben = rail.getBoundingClientRect().top;
+			// 8 px Luft unten, damit die Spalte nicht am Rand klebt.
+			railMaxHeight = `${Math.max(240, Math.round(window.innerHeight - oben - 8))}px`;
+		};
+		messen();
+		// Beim Scrollen wandert der Anfang, bis die Spalte klebt — dann wird mehr Platz frei.
+		window.addEventListener('scroll', messen, true);
+		window.addEventListener('resize', messen);
+
+		// Und wenn sich das Layout ÜBER der Spalte ändert. Ohne das rechnete der Effekt nur
+		// einmal beim Einhängen — zu einem Zeitpunkt, an dem der Backup-Hinweis und der
+		// Wareneingangs-Streifen noch nicht standen. Die Spalte begann danach rund 100 px
+		// tiefer, behielt aber die zu grosszügige Höhe und ragte wieder unter den Rand.
+		const beobachter = new ResizeObserver(messen);
+		beobachter.observe(document.body);
+		beobachter.observe(rail);
+
+		return () => {
+			window.removeEventListener('scroll', messen, true);
+			window.removeEventListener('resize', messen);
+			beobachter.disconnect();
+		};
+	});
 </script>
 
 <div class="w-full h-full text-slate-800 font-sans flex flex-col gap-6">
@@ -117,8 +164,21 @@
 						/>
 					</div>
 
-					<!-- RAIL: die Bestellung wächst sichtbar mit, bleibt beim Scrollen stehen -->
-					<div class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-2">
+					<!-- RAIL: die Bestellung wächst sichtbar mit, bleibt beim Scrollen stehen.
+					     Aus dem Betrieb gemeldet als „Bestellung abgeschnitten". Gemessen bei
+					     1366×700 mit fünf Positionen im Korb: Die Spalte wurde 1288 px hoch und
+					     ragte 826 px unter den Fensterrand — der Absenden-Knopf war nur noch zu
+					     erreichen, indem man die ganze Bestellbedarfs-Liste daneben (105 Titel)
+					     nach unten scrollte, bis der klebende Rahmen endete. Erreichbar im
+					     technischen Sinn, unbrauchbar im täglichen.
+					     Höhengrenze plus eigener Scrollbalken: Wird die Spalte zu hoch, scrollt sie
+					     in sich selbst. Der Warenkorb bleibt damit dort bedienbar, wo er steht.
+					     Verankert im E2E-Gate e2e/bestellung-erreichbar.spec.js. -->
+					<div
+						bind:this={rail}
+						style:--rail-max={railMaxHeight}
+						class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-2 lg:max-h-(--rail-max) lg:overflow-y-auto"
+					>
 						<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} {offeneEtiketten} />
 						<OrderCreationPanel />
 					</div>
