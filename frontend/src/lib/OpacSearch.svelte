@@ -1,5 +1,7 @@
 <script>
 	import { BookOpen } from '@lucide/svelte';
+	import LogoRelief from './components/ui/LogoRelief.svelte';
+
 	let query = $state('');
 	/** @type {any[]} */
 	let results = $state.raw([]);
@@ -35,10 +37,12 @@
 	}
 </script>
 
-<div class="min-h-screen bg-slate-50 flex flex-col">
+<div class="min-h-screen bg-slate-50 flex flex-col relative overflow-x-hidden">
+	<LogoRelief />
+
 	<!-- Header -->
 	<header
-		class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs"
+		class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs relative z-10"
 	>
 		<div class="flex items-center gap-3">
 			<BookOpen class="h-5 w-5" aria-hidden="true" />
@@ -55,7 +59,7 @@
 	</header>
 
 	<!-- Search bar -->
-	<div class="w-full max-w-4xl mx-auto px-6 pt-10 pb-6 space-y-4">
+	<div class="w-full max-w-4xl mx-auto px-6 pt-10 pb-6 space-y-4 relative z-10">
 		<div class="relative">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -88,7 +92,7 @@
 	</div>
 
 	<!-- Results / empty states -->
-	<div class="flex-1 w-full max-w-4xl mx-auto px-6 pb-10">
+	<div class="flex-1 w-full max-w-4xl mx-auto px-6 pb-10 relative z-10">
 		{#if results.length > 0}
 			<p class="text-xs text-slate-400 font-medium mb-4">{results.length} Treffer</p>
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -147,7 +151,9 @@
 			</div>
 		{:else if !searched}
 			<div class="text-center py-20 text-slate-300 select-none">
-				<BookOpen class="h-5 w-5" aria-hidden="true" />
+				<!-- mx-auto ist nötig: Tailwinds Preflight setzt svg auf display:block, damit
+				     greift das text-center des Containers nicht — das Symbol klebte links. -->
+				<BookOpen class="h-10 w-10 mx-auto mb-3" aria-hidden="true" />
 				<p class="text-xl font-semibold text-slate-400">Suche nach einem Buch</p>
 				<p class="text-sm text-slate-300 mt-1">Titel, Autor oder ISBN eingeben</p>
 			</div>

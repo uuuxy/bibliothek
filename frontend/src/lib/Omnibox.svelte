@@ -9,6 +9,7 @@
 	import OmniboxVormerkungAlert from './components/OmniboxVormerkungAlert.svelte';
 	import OmniboxBlockAlert from './components/OmniboxBlockAlert.svelte';
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
+	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 
@@ -143,15 +144,26 @@
 
 <!-- ── Offline / Queue banner was replaced by global OfflineIndicator ── -->
 
-<!-- Harter Zustandswechsel statt animiertem Layout: Das frühere transition-all
-     duration-500 animierte min-height und max-width eine halbe Sekunde lang bei
-     jedem Scan. Bei drei Vorgängen pro Minute ist das keine Politur, sondern Wartezeit. -->
-<div
-	class="w-full mx-auto {omniboxStore.isActive
-		? 'w-full pt-4 justify-start'
-		: 'max-w-2xl min-h-[60vh] justify-center'} flex flex-col items-center space-y-6"
->
-	<div class="w-full {omniboxStore.isActive ? 'sticky -top-4 z-30 bg-slate-50 py-4' : ''}">
+<!-- Die Suchleiste ist oben ANGEDOCKT und bleibt es (Material 3): Sie ist ein
+     persistentes Element, aus dem die Ergebnisse aufklappen — sie wechselt nicht selbst
+     die Position. Vorher stand sie im Ruhezustand mittig (min-h-[60vh] justify-center)
+     und sprang beim ersten Scan nach oben. Schon die frühere Animation dieses Sprungs
+     war Wartezeit; der Sprung selbst ist es auch, nur kürzer. Ein Feld, das man mit dem
+     Scanner blind bedient, darf seinen Platz nicht wechseln.
+     Der äußere Container trägt nur die Positionierung für das Relief. -->
+<div class="relative flex flex-1 flex-col w-full overflow-x-hidden">
+	{#if !omniboxStore.isActive}
+		<!-- Nur im Ruhezustand: Sobald ein Konto geladen ist, füllt der Inhalt die Fläche,
+		     und ein Wasserzeichen dahinter wäre Unruhe statt Dekoration. -->
+		<LogoRelief />
+	{/if}
+
+	<!-- relative z-10: Das Relief ist absolut positioniert und läge sonst optisch ÜBER
+	     diesem Inhalt (positionierte Elemente malen über nicht-positionierte). -->
+	<div
+		class="relative z-10 w-full mx-auto flex flex-1 flex-col items-center space-y-6 pt-4 justify-start"
+	>
+		<div class="w-full sticky -top-4 z-30 bg-slate-50 py-4">
 		<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst rounded-full und
 		     bewusst 48 px statt der 36-px-Control-Höhe — das Scanfeld ist das globale Werkzeug
 		     des Kiosks und soll sich von den eckigen Datenfeldern abheben. Der Container trägt
@@ -241,6 +253,7 @@
 			}}
 		/>
 	{/if}
+	</div>
 </div>
 
 <!-- Toasts laufen ausschließlich über ToastContainer.svelte (global eingehängt).
@@ -252,41 +265,29 @@
 <OmniboxBlockAlert onReload={() => studentProfileComponent?.reloadProfile()} />
 
 <style>
-	/* ── Shake animation ─────────────────────────────────────── */
+	/* ── Shake animation ───────────────────────────────────────
+	   Eine Variante, nicht mehr zwei. Vorher gab es `shake` (scale 1.05) für die mittige
+	   Ruhelage und `activeShake` (scale 1) für die angedockte — ausgewählt über den
+	   Selektor `:global(.pt-4) .animate-shake`, also über das Vorhandensein einer
+	   Utility-Klasse. Ein Umbenennen dieser Klasse hätte die Animation still auf die
+	   falsche Variante geworfen. Seit die Leiste dauerhaft oben andockt, gibt es nur noch
+	   einen Zustand: ohne Skalierung — eine angedockte Leiste soll nicht aufpumpen. */
 	@keyframes shake {
 		0%,
 		100% {
-			transform: translate(0, 0) scale(1.05);
+			transform: translate(0, 0);
 		}
 		15%,
 		45%,
 		75% {
-			transform: translate(-8px, 0) scale(1.05);
+			transform: translate(-8px, 0);
 		}
 		30%,
 		60% {
-			transform: translate(8px, 0) scale(1.05);
-		}
-	}
-	@keyframes activeShake {
-		0%,
-		100% {
-			transform: translate(0, 0) scale(1);
-		}
-		15%,
-		45%,
-		75% {
-			transform: translate(-8px, 0) scale(1);
-		}
-		30%,
-		60% {
-			transform: translate(8px, 0) scale(1);
+			transform: translate(8px, 0);
 		}
 	}
 	.animate-shake {
 		animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-	}
-	:global(.pt-4) .animate-shake {
-		animation: activeShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 	}
 </style>
