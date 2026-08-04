@@ -12,13 +12,12 @@
  */
 
 import { mount } from 'svelte';
-import '@fontsource/inter/300.css';
-import '@fontsource/inter/400.css';
-import '@fontsource/inter/500.css';
-import '@fontsource/inter/600.css';
-import '@fontsource/inter/700.css';
-import '@fontsource/inter/800.css';
-import '@fontsource/inter/900.css';
+// Die Schrift wird in app.css eingebunden (Roboto, nur Latein 400 und 500).
+// Hier standen bis zum 04.08.2026 SIEBEN Inter-Schnitte (300–900), und jede
+// dieser CSS-Dateien zieht ALLE Zeichensätze mit — Latein, Latein erweitert,
+// Kyrillisch, Griechisch, Vietnamesisch. Gemessen im Build: 51 Schriftdateien,
+// 776 KB, die bei jedem Aufruf mit ausgeliefert wurden, obwohl die Anwendung
+// deutschsprachig ist und Material 3 nur zwei Stärken benutzt.
 import './app.css';
 import App from './App.svelte';
 // @ts-expect-error  virtual:pwa-register wird erst von vite-plugin-pwa zur Bauzeit erzeugt

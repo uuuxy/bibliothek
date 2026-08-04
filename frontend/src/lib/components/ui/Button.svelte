@@ -35,12 +35,13 @@
 		lg: 'h-10 px-4 text-sm'
 	};
 
-	// rounded-md (4 px) statt rounded-full: Die Pille war das deutlichste
-	// Consumer-App-Signal der Anwendung — ausgerechnet in der Komponente, die als
-	// Referenz für alle anderen dient. Pillen bleiben Badges und Segmented Controls
-	// vorbehalten, wo die Form eine Bedeutung trägt.
+	// rounded-full: In Material 3 IST der Button eine Pille — das ist keine
+	// Verspieltheit, sondern die Rollen-Zuordnung der M3-Shape-Skala (Menüs 4 px,
+	// Chips 8, Karten 12, Dialoge 28, Buttons voll). Die frühere Entscheidung
+	// gegen die Pille stammt aus der Zeit vor dem M3-Ziel und ist am 04.08.2026
+	// ausdrücklich zurückgenommen worden.
 	const baseClasses =
-		'm3-state inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+		'm3-state inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
 
 	// Farb-Utilities des Aufrufers ERSETZEN die der Variante, statt mit ihnen zu konkurrieren.
 	//
