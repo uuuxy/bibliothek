@@ -83,3 +83,6 @@ leser*.csv
 exemplar*.csv
 titel*.csv
 personen*.csv
+
+# Coverage-Report für den SonarQube-Scan (scripts/sonar_scan.sh)
+coverage.out
