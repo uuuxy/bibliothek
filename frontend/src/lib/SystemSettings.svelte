@@ -52,6 +52,14 @@
 	let bestellbedarfSchwelle = $state(3);
 	// Vorgabe AN — wie im Backend: Ein fehlender Wert darf die Preise nicht abschalten.
 	let preiseErfassen = $state(true);
+	// Schul-Stammdaten. Sie lagen bis zum 04.08.2026 nur in der Datenbank und wurden von
+	// fünf PDF-Generatoren als Briefkopf gelesen — einstellen konnte man sie nirgends.
+	// Auf dem Buchetikett stand ersatzweise fest "Schulbibliothek" im Code.
+	let schuleName = $state('');
+	let schuleStrasse = $state('');
+	let schulePLZ = $state('');
+	let schuleOrt = $state('');
+	let etikettEigentumsvermerk = $state('');
 
 	// --- LOGIC ---
 
@@ -69,6 +77,11 @@
 			bestellbedarfWarnungAktiv = data.bestellbedarf_warnung_aktiv ?? true;
 			bestellbedarfSchwelle = data.bestellbedarf_schwelle ?? 3;
 			preiseErfassen = data.preise_erfassen ?? true;
+			schuleName = data.schule_name ?? '';
+			schuleStrasse = data.schule_strasse ?? '';
+			schulePLZ = data.schule_plz ?? '';
+			schuleOrt = data.schule_ort ?? '';
+			etikettEigentumsvermerk = data.etikett_eigentumsvermerk ?? '';
 		} catch {
 			/* use defaults */
 		}
@@ -125,6 +138,11 @@
 					bind:bestellbedarfWarnungAktiv
 					bind:bestellbedarfSchwelle
 					bind:preiseErfassen
+					bind:schuleName
+					bind:schuleStrasse
+					bind:schulePLZ
+					bind:schuleOrt
+					bind:etikettEigentumsvermerk
 				/>
 
 				<!-- TAB: TEAM & RECHTE -->

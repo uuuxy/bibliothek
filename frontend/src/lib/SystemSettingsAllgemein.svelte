@@ -17,6 +17,11 @@
 	 * @property {boolean} bestellbedarfWarnungAktiv
 	 * @property {number} bestellbedarfSchwelle
 	 * @property {boolean} preiseErfassen
+	 * @property {string} schuleName
+	 * @property {string} schuleStrasse
+	 * @property {string} schulePLZ
+	 * @property {string} schuleOrt
+	 * @property {string} etikettEigentumsvermerk
 	 */
 
 	/** @type {Props} */
@@ -31,7 +36,12 @@
 		maxOverdueItems = $bindable(),
 		bestellbedarfWarnungAktiv = $bindable(),
 		bestellbedarfSchwelle = $bindable(),
-		preiseErfassen = $bindable()
+		preiseErfassen = $bindable(),
+		schuleName = $bindable(),
+		schuleStrasse = $bindable(),
+		schulePLZ = $bindable(),
+		schuleOrt = $bindable(),
+		etikettEigentumsvermerk = $bindable()
 	} = $props();
 
 	let saving = $state(false);
@@ -50,7 +60,12 @@
 				max_overdue_items: maxOverdueItems,
 				bestellbedarf_warnung_aktiv: bestellbedarfWarnungAktiv,
 				bestellbedarf_schwelle: bestellbedarfSchwelle,
-				preise_erfassen: preiseErfassen
+				preise_erfassen: preiseErfassen,
+				schule_name: schuleName,
+				schule_strasse: schuleStrasse,
+				schule_plz: schulePLZ,
+				schule_ort: schuleOrt,
+				etikett_eigentumsvermerk: etikettEigentumsvermerk
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
 		} catch {
@@ -70,6 +85,61 @@
 			{/if}
 		</div>
 	{/snippet}
+
+	<!-- Schule.
+	     Steht ganz oben, weil es Stammdatum ist: Der Name erscheint auf jedem Buchetikett
+	     und im Briefkopf von Mahnung, Bestellung und allen Berichten. Bis zum 04.08.2026
+	     ließ er sich nirgends eintragen — die Felder lagen nur in der Datenbank, und auf
+	     dem Etikett stand ersatzweise fest "Schulbibliothek". -->
+	<section class="border-b border-slate-200 pb-8">
+		{@render sectionHeader(
+			'Schule',
+			'Erscheint auf jedem Buchetikett und als Briefkopf in Mahnungen, Bestellungen und Berichten. Ein leer gelassenes Feld bleibt unverändert — bereits gespeicherte Angaben werden nicht gelöscht.'
+		)}
+		<div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+			<SettingField
+				bind:value={schuleName}
+				label="Name der Schule"
+				type="text"
+				maxlength={120}
+				placeholder="Philipp-Reis-Schule, Friedrichsdorf"
+				hint="Erste Zeile auf dem Buchetikett."
+			/>
+			<SettingField
+				bind:value={etikettEigentumsvermerk}
+				label="Eigentumsvermerk"
+				type="text"
+				maxlength={80}
+				placeholder="Eigentum des Landes Hessen"
+				hint="Letzte Zeile auf dem Buchetikett. Leer lassen für die Vorgabe."
+			/>
+			<SettingField
+				bind:value={schuleStrasse}
+				label="Straße und Hausnummer"
+				type="text"
+				maxlength={120}
+				placeholder="Hoher Weg 29"
+			/>
+			<div class="grid grid-cols-3 gap-4">
+				<SettingField
+					bind:value={schulePLZ}
+					label="PLZ"
+					type="text"
+					maxlength={10}
+					placeholder="61381"
+				/>
+				<div class="col-span-2">
+					<SettingField
+						bind:value={schuleOrt}
+						label="Ort"
+						type="text"
+						maxlength={80}
+						placeholder="Friedrichsdorf"
+					/>
+				</div>
+			</div>
+		</div>
+	</section>
 
 	<!-- Ferien-Leseclub -->
 	<section class="border-b border-slate-200 pb-8">

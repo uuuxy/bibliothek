@@ -37,7 +37,16 @@ type SystemEinstellungen struct {
 	SchuleStrasse string `json:"schule_strasse"`
 	SchulePLZ     string `json:"schule_plz"`
 	SchuleOrt     string `json:"schule_ort"`
+	// EtikettEigentumsvermerk steht als letzte Zeile auf jedem Buchetikett
+	// ("Eigentum des Landes Hessen"). Konfigurierbar und nicht fest verdrahtet, weil
+	// der Träger je nach Bundesland und Schulform ein anderer ist — und weil ein
+	// Eigentumsvermerk, der nicht stimmt, schlechter ist als keiner.
+	EtikettEigentumsvermerk string `json:"etikett_eigentumsvermerk"`
 }
+
+// StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.
+// Die Vorgabe passt zum Betreiber dieses Systems; jede Schule kann sie überschreiben.
+const StandardEigentumsvermerk = "Eigentum des Landes Hessen"
 
 // SystemSettingsRepository defines operations for managing global system settings.
 type SystemSettingsRepository interface {
@@ -134,6 +143,8 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeStringRoh(val, &settings.SchulePLZ)
 	case "schule_ort":
 		setzeStringRoh(val, &settings.SchuleOrt)
+	case "etikett_eigentumsvermerk":
+		setzeStringRoh(val, &settings.EtikettEigentumsvermerk)
 	}
 }
 
@@ -258,6 +269,7 @@ func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
 		{"schule_strasse", req.SchuleStrasse},
 		{"schule_plz", req.SchulePLZ},
 		{"schule_ort", req.SchuleOrt},
+		{"etikett_eigentumsvermerk", req.EtikettEigentumsvermerk},
 	} {
 		if f[1] != "" {
 			pairs = append(pairs, f)

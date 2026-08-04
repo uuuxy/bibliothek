@@ -27,6 +27,21 @@ type BarcodeLabelDetail struct {
 	Titel     string
 	Autor     string
 	ISBN      string
+	// AnschaffungsJahr ist das Jahr aus buecher_exemplare.erworben_am und steht als
+	// "Ansch.J. 2016" auf dem Etikett. Leer = Zeile entfällt (etwa bei Vorab-Etiketten
+	// für eine Bestellung, deren Exemplare es noch gar nicht gibt).
+	AnschaffungsJahr string
+}
+
+// EtikettKopf trägt die schulweiten Angaben, die auf JEDEM Etikett stehen — sie kommen
+// aus den Systemeinstellungen und nicht aus dem einzelnen Exemplar.
+//
+// Bis zum 04.08.2026 stand hier fest "Schulbibliothek" im Code. Das ist auf einem
+// Buchetikett die falsche Angabe: Es soll die Schule benennen, der das Buch gehört,
+// und im Verlustfall den Weg zurück zeigen.
+type EtikettKopf struct {
+	Schulname        string // z. B. "Philipp-Reis-Schule, Friedrichsdorf"
+	Eigentumsvermerk string // z. B. "Eigentum des Landes Hessen"
 }
 
 // barcodebogenSatz ist die Anweisung an den Lieferanten, die Exemplare vorab zu

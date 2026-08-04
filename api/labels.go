@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // parseLabelParams liest Format, Startposition und QR-Flag aus den Query-Parametern
@@ -29,10 +30,12 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 	return formatId, startPos, isQR
 }
 
-// queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor) eines Titels.
+// queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr) eines Titels.
 func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabelDetail, error) {
+	// erworben_am ist NOT NULL mit Vorgabe CURRENT_DATE — to_char liefert also immer
+	// vier Ziffern und nie NULL.
 	query := `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, '')
+		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.titel_id = $1
@@ -47,7 +50,7 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 	var items []BarcodeLabelDetail
 	for rows.Next() {
 		var item BarcodeLabelDetail
-		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor); err == nil {
+		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr); err == nil {
 			items = append(items, item)
 		}
 	}
@@ -55,6 +58,26 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 		return nil, fmt.Errorf("datenbankfehler: %w", err)
 	}
 	return items, nil
+}
+
+// etikettKopf lädt Schulname und Eigentumsvermerk aus den Systemeinstellungen.
+//
+// Fehlt der Schulname, bleibt die Zeile LEER statt auf einen erfundenen Wert
+// zurückzufallen: Ein Etikett, das die falsche Schule nennt, führt ein gefundenes Buch
+// in die Irre. Der Eigentumsvermerk hat dagegen eine sinnvolle Vorgabe, weil er für
+// alle Bücher desselben Trägers gleich lautet.
+func (s *Server) etikettKopf(ctx context.Context) EtikettKopf {
+	kopf := EtikettKopf{Eigentumsvermerk: repository.StandardEigentumsvermerk}
+	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil {
+		log.Printf("Etiketten: Einstellungen nicht lesbar, drucke ohne Schulnamen: %v", err)
+		return kopf
+	}
+	kopf.Schulname = settings.SchuleName
+	if settings.EtikettEigentumsvermerk != "" {
+		kopf.Eigentumsvermerk = settings.EtikettEigentumsvermerk
+	}
+	return kopf
 }
 
 // LabelsHandler returns a handler that generates an A4 PDF containing 3x8 Avery labels
@@ -80,7 +103,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		pdf, err := GenerateLabelsPDF(formatId, startPos, isQR, items)
+		pdf, err := GenerateLabelsPDF(formatId, startPos, isQR, items, s.etikettKopf(ctx))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
@@ -92,6 +115,53 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 		if err := pdf.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des PDFs: %v", err)
 		}
+	}
+}
+
+// ergaenzeAnschaffungsjahr füllt das Anschaffungsjahr aus der Datenbank nach.
+//
+// Der Nachdruck-Dialog schickt nur Barcode, Titel und Autor — das Jahr stünde sonst nie
+// auf einem nachgedruckten Etikett. Es dem Client mitzugeben wäre der falsche Weg: Es
+// ist Serverwissen, und ein Feld, das die Oberfläche mitschicken MUSS, wird irgendwann
+// vergessen (dieselbe Klasse Fehler hat hier schon Buchdaten still verschluckt).
+//
+// Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben ohne Jahr —
+// beim Vorab-Druck für eine Bestellung existieren die Exemplare noch gar nicht, dort
+// ist das der richtige Zustand und kein Fehler.
+func (s *Server) ergaenzeAnschaffungsjahr(ctx context.Context, items []BarcodeLabelDetail) {
+	barcodes := make([]string, 0, len(items))
+	for i := range items {
+		if items[i].BarcodeID != "" {
+			barcodes = append(barcodes, items[i].BarcodeID)
+		}
+	}
+	if len(barcodes) == 0 {
+		return
+	}
+
+	rows, err := s.DB.Pool.Query(ctx,
+		`SELECT barcode_id, to_char(erworben_am, 'YYYY') FROM buecher_exemplare WHERE barcode_id = ANY($1)`,
+		barcodes)
+	if err != nil {
+		log.Printf("Etiketten: Anschaffungsjahr nicht ermittelbar, drucke ohne: %v", err)
+		return
+	}
+	defer rows.Close()
+
+	jahre := make(map[string]string, len(barcodes))
+	for rows.Next() {
+		var barcode, jahr string
+		if err := rows.Scan(&barcode, &jahr); err == nil {
+			jahre[barcode] = jahr
+		}
+	}
+	if err := rows.Err(); err != nil {
+		log.Printf("Etiketten: Anschaffungsjahr unvollständig gelesen: %v", err)
+		return
+	}
+
+	for i := range items {
+		items[i].AnschaffungsJahr = jahre[items[i].BarcodeID]
 	}
 }
 
@@ -116,7 +186,10 @@ func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		pdf, err := GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, req.Items)
+		ctx := r.Context()
+		s.ergaenzeAnschaffungsjahr(ctx, req.Items)
+
+		pdf, err := GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, req.Items, s.etikettKopf(ctx))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return

@@ -48,14 +48,45 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 }
 
 // zeichneBarcodeLabel rendert ein Etikett mit 1D-Barcode (Code39/Code128).
-func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel string, pos labelPos) {
-	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(pos.X, pos.Y+4)
-	pdf.CellFormat(format.LabelWidth, 4, tr("Schulbibliothek"), "", 0, "C", false, 0, "")
+// zeichneBarcodeLabel setzt das Buchetikett nach der Vorlage, die in der Bibliothek
+// seit Jahren an den Büchern klebt:
+//
+//	Philipp-Reis-Schule, Friedrichsdorf   ← fett, Schulname aus den Einstellungen
+//	Seydlitz - Geographie Gymnasium       ← fett, Titel
+//	Ansch.J. 2016                         ← Anschaffungsjahr
+//	[ Barcode ]
+//	Exemplar-Nr.: 82347
+//	Eigentum des Landes Hessen
+//
+// Vorher standen dort drei Angaben: ein fest verdrahtetes "Schulbibliothek", der Titel
+// und die nackte Nummer. Der Eigentumsvermerk fehlte ganz — bei einem Buch, das dem
+// Land gehört und über Jahre durch Schülerhände geht, ist er der Grund, warum es
+// zurückkommt.
+//
+// Auf dem kleinen Format (21,2 mm) ist für sechs Zeilen kein Platz. Dort entfallen
+// Anschaffungsjahr und Eigentumsvermerk — lieber weniger Angaben als übereinander
+// gedruckte.
+func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel string, kopf EtikettKopf, pos labelPos) {
+	grossesEtikett := format.LabelHeight >= 30
 
-	pdf.SetFont("Arial", "", 8)
-	pdf.SetXY(pos.X, pos.Y+8)
-	pdf.CellFormat(format.LabelWidth, 4, tr(titel), "", 0, "C", false, 0, "")
+	y := pos.Y + 2.5
+	pdf.SetFont("Arial", "B", 8)
+	pdf.SetXY(pos.X, y)
+	pdf.CellFormat(format.LabelWidth, 3.5, tr(kuerzeAufZeichen(kopf.Schulname, 42)), "", 0, "C", false, 0, "")
+
+	y += 3.5
+	pdf.SetXY(pos.X, y)
+	pdf.CellFormat(format.LabelWidth, 3.5, tr(titel), "", 0, "C", false, 0, "")
+
+	if grossesEtikett && item.AnschaffungsJahr != "" {
+		y += 3.5
+		pdf.SetFont("Arial", "", 7)
+		pdf.SetXY(pos.X, y)
+		pdf.CellFormat(format.LabelWidth, 3, tr("Ansch.J. "+item.AnschaffungsJahr), "", 0, "C", false, 0, "")
+		y += 3
+	} else {
+		y += 3.5
+	}
 
 	bcWidth := 40.0
 	bcHeight := 10.0
@@ -72,17 +103,26 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 		pdf.RegisterImageOptionsReader(imgName, opt, imgReader)
 
 		bcX := pos.X + (format.LabelWidth-bcWidth)/2
-		bcY := pos.Y + 14
-		pdf.ImageOptions(imgName, bcX, bcY, bcWidth, bcHeight, false, opt, 0, "")
+		pdf.ImageOptions(imgName, bcX, y+1, bcWidth, bcHeight, false, opt, 0, "")
 	}
+	y += bcHeight + 1.5
 
-	pdf.SetFont("Courier", "B", 10)
-	textY := pos.Y + 26
-	if format.LabelHeight < 30 {
-		textY = pos.Y + 23
+	// Die Nummer unter dem Barcode ist DIESELBE, die der Barcode trägt — die Beschriftung
+	// benennt sie nur, damit sie ohne Scanner ablesbar ist (etwa auf der Mahnliste).
+	pdf.SetFont("Courier", "B", 9)
+	pdf.SetXY(pos.X, y)
+	beschriftung := item.BarcodeID
+	if grossesEtikett {
+		beschriftung = "Exemplar-Nr.: " + item.BarcodeID
 	}
-	pdf.SetXY(pos.X, textY)
-	pdf.CellFormat(format.LabelWidth, 4, tr(item.BarcodeID), "", 0, "C", false, 0, "")
+	pdf.CellFormat(format.LabelWidth, 3.5, tr(beschriftung), "", 0, "C", false, 0, "")
+
+	if grossesEtikett && kopf.Eigentumsvermerk != "" {
+		y += 4.5
+		pdf.SetFont("Arial", "", 7)
+		pdf.SetXY(pos.X, y)
+		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufZeichen(kopf.Eigentumsvermerk, 45)), "", 0, "C", false, 0, "")
+	}
 }
 
 // GenerateLabelsPDF creates a standardized A4 PDF label sheet.
@@ -90,7 +130,8 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 // startPosition: 1-based index to start printing on the first page (to skip used labels)
 // isQR: if true, a QR code is generated instead of a 1D Code39 barcode.
 // items: the labels to print.
-func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []BarcodeLabelDetail) (*gofpdf.Fpdf, error) {
+// kopf: schulweite Angaben (Schulname, Eigentumsvermerk) aus den Systemeinstellungen.
+func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []BarcodeLabelDetail, kopf EtikettKopf) (*gofpdf.Fpdf, error) {
 	format, _ := GetLabelFormat(formatId)
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
@@ -130,7 +171,7 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Ba
 		if isQR {
 			zeichneQRLabel(pdf, tr, format, item, titel, autor, labelPos{X: x, Y: y})
 		} else {
-			zeichneBarcodeLabel(pdf, tr, format, item, titel, labelPos{X: x, Y: y})
+			zeichneBarcodeLabel(pdf, tr, format, item, titel, kopf, labelPos{X: x, Y: y})
 		}
 	}
 
