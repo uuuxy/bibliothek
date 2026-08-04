@@ -5,61 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
-
-	"bibliothek/pkg/safego"
 )
-
-// StarteHintergrundAktualisierung lädt automatisch fehlende Cover und Kategorien
-// für bestehende Bücher im Hintergrund nach. Wird beim Server-Start einmalig
-// als Goroutine gestartet und respektiert den übergebenen Context für Abbruch.
-func StarteHintergrundAktualisierung(ctx context.Context, repo *BookRepository, metadatenClient *MetadatenClient) {
-	time.Sleep(5 * time.Second) // Server starten lassen
-	log.Println("Starte automatische Cover- und Kategorie-Aktualisierung im Hintergrund...")
-
-	books, err := repo.ListBooks(ctx, "", nil, "")
-	if err != nil {
-		log.Printf("Fehler beim Laden der Bücher für Update: %v", err)
-		return
-	}
-
-	updatedCovers := 0
-	updatedCategories := 0
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, 10)
-	var mu sync.Mutex
-
-	var cache sync.Map
-
-	for _, b := range books {
-		if ctx.Err() != nil {
-			break
-		}
-
-		if !brauchtAktualisierung(b) {
-			continue
-		}
-
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(b Book) {
-			defer wg.Done()
-			defer func() { <-sem }()
-			defer safego.Guard("metadaten-batch-update")
-
-			coverUpdated, catUpdated := aktualisiereEinzelnesBuch(ctx, repo, metadatenClient, b, &cache)
-			mu.Lock()
-			updatedCovers += coverUpdated
-			updatedCategories += catUpdated
-			mu.Unlock()
-
-			time.Sleep(1 * time.Second) // Rate limiting
-		}(b)
-	}
-
-	wg.Wait()
-	log.Printf("Automatische Aktualisierung abgeschlossen. %d Cover und %d Kategorien aktualisiert.", updatedCovers, updatedCategories)
-}
 
 const openLibraryLeeresCover = "https://covers.openlibrary.org/b/isbn/-L.jpg"
 
@@ -85,7 +31,7 @@ func brauchtAktualisierung(b Book) bool {
 // nil bedeutet: kein Treffer bzw. Fehler beim Nachschlagen.
 func ladeMetadaten(ctx context.Context, client *MetadatenClient, isbn string, cache *sync.Map) *MetadatenErgebnis {
 	if cachedVal, ok := cache.Load(isbn); ok {
-		return cachedVal.(*MetadatenErgebnis)  //nolint:errcheck
+		return cachedVal.(*MetadatenErgebnis) //nolint:errcheck
 	}
 	nachschlagen, err := client.SucheNachISBN(ctx, isbn)
 	if err != nil || nachschlagen == nil {
@@ -123,7 +69,7 @@ func aktualisiereKategorie(ctx context.Context, repo *BookRepository, b Book, na
 	newGrade := b.GradeLevel
 	if b.GradeLevel == 0 && nachschlagen.KlassenStufe != "" {
 		var parsedGrade int
-		_, _ = fmt.Sscanf(nachschlagen.KlassenStufe, "%d", &parsedGrade)  //nolint:errcheck
+		_, _ = fmt.Sscanf(nachschlagen.KlassenStufe, "%d", &parsedGrade) //nolint:errcheck
 		if parsedGrade >= 5 && parsedGrade <= 13 {
 			newGrade = int16(parsedGrade)
 		}
@@ -137,13 +83,4 @@ func aktualisiereKategorie(ctx context.Context, repo *BookRepository, b Book, na
 	}
 	log.Printf("Kategorie/Klasse für ISBN %s aktualisiert (%s, Kl. %d)", b.ISBN, newSubject, newGrade)
 	return 1
-}
-
-// aktualisiereEinzelnesBuch aktualisiert Cover und Kategorie für ein einzelnes Buch.
-func aktualisiereEinzelnesBuch(ctx context.Context, repo *BookRepository, client *MetadatenClient, b Book, cache *sync.Map) (coverUpdated int, catUpdated int) {
-	nachschlagen := ladeMetadaten(ctx, client, b.ISBN, cache)
-	if nachschlagen == nil {
-		return 0, 0
-	}
-	return aktualisiereCover(ctx, repo, b, nachschlagen), aktualisiereKategorie(ctx, repo, b, nachschlagen)
 }

@@ -251,45 +251,7 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 // Aktuell wird diese Methode faktisch intern übersprungen (ausgeklammert im Router),
 // aber bleibt als Backup bestehen.
 /*
-func (client *MetadatenClient) sucheLobid(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
-	url := fmt.Sprintf("https://lobid.org/resources/search?q=isbn:%s&format=json", isbn)
-	koerper, fehler := client.holeInhalt(kontext, url)
-	if fehler != nil {
-		return nil, fehler
-	}
-
-	var nutzlast struct {
-		Member []struct {
-			Title        string `json:"title"`
-			Contribution []struct {
-				Agent struct {
-					Label string `json:"label"`
-				} `json:"agent"`
-			} `json:"contribution"`
-		} `json:"member"`
-	}
-
-	if fehler := json.Unmarshal(koerper, &nutzlast); fehler != nil {
-		return nil, fehler
-	}
-
-	if len(nutzlast.Member) == 0 {
-		return nil, fmt.Errorf("nicht gefunden")
-	}
-
-	eintrag := nutzlast.Member[0]
-	autor := ""
-	if len(eintrag.Contribution) > 0 {
-		autor = eintrag.Contribution[0].Agent.Label
-	}
-
-	return &MetadatenErgebnis{
-		ISBN:  isbn,
-		Titel: eintrag.Title,
-		Autor: autor,
-	}, nil
-}
-*/
+ */
 
 func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
 	trimmed := strings.TrimSpace(query)

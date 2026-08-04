@@ -8,7 +8,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -366,11 +365,4 @@ func rotateBackups(dir string, maxKeep int) {
 			log.Printf("Backup rotation: deleted old backup %s", f)
 		}
 	}
-}
-
-// BackupKeyFingerprint gibt einen kurzen Hex-Fingerabdruck des Verschlüsselungsschlüssels für Protokollierungs-/Audit-Zwecke zurück.
-// Protokolliert NIEMALS den tatsächlichen Schlüssel – nur einen SHA-256-Fingerabdruck davon.
-func BackupKeyFingerprint(encKey string) string {
-	h := sha256.Sum256([]byte(encKey))
-	return hex.EncodeToString(h[:4]) // 8 hex chars = 32 bits, sufficient for audit identity
 }
