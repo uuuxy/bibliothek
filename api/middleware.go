@@ -19,7 +19,46 @@ import (
 	"bibliothek/apierrors"
 )
 
+// LangLaufendeFrist gilt für Vorgänge, die naturgemäß Minuten dauern: Katalog- und
+// Schülerimporte berühren zehntausende Zeilen in einer Transaktion.
+//
+// 5 Minuten, abgestimmt auf das Upload-Limit des Frontends (apiFetch.js) und auf Caddys
+// response_header_timeout. Alle drei müssen dieselbe Frist meinen — läuft die kürzeste
+// vorne weg, bricht der Vorgang dort ab, wo niemand die Meldung sieht.
+const LangLaufendeFrist = 5 * time.Minute
+
+// langLaufendePfade sind die Endpunkte, für die LangLaufendeFrist gilt.
+//
+// Sie standen zuvor unter demselben 15-Sekunden-Limit wie ein Barcode-Scan. Der
+// Littera-Import (11.076 Titel, 61.580 Exemplare im echten Altbestand) kann darunter
+// nicht durchlaufen: Der Server brach nach 15 s am DB-Kontext ab, während der Browser
+// noch 5 Minuten wartete. Der Abbruch traf also mitten in die Transaktion, ohne dass
+// vorne jemand etwas davon sah.
+var langLaufendePfade = []string{
+	"/api/import/",          // Littera-Katalogimport
+	"/api/admin/import-",    // Bestandsimport
+	"/api/admin/sync-",      // Cover-Abgleich über den ganzen Bestand
+	"/api/lusd/",            // LUSD-Vorschau und -Import (ganze Jahrgänge)
+	"/api/admin/mahnungen/", // Sammeldruck über alle Klassen
+}
+
+// RequestFrist bestimmt die Frist für einen Pfad. Ausgelagert, damit die Zuordnung
+// ohne HTTP-Aufbau prüfbar ist — eine Ausnahmeliste, die man nur im Betrieb testen
+// kann, ist genau die Sorte Schutz, die man irrtümlich für wirksam hält.
+func RequestFrist(pfad string, standard time.Duration) time.Duration {
+	for _, praefix := range langLaufendePfade {
+		if strings.HasPrefix(pfad, praefix) {
+			return LangLaufendeFrist
+		}
+	}
+	return standard
+}
+
 // TimeoutMiddleware wraps the request with a context timeout.
+//
+// Der SSE-Stream bleibt ohne Frist — er ist definitionsgemäß offen. Alles andere bekommt
+// eine, auch die langen Vorgänge: Ein Request ganz ohne Frist hängt im Zweifel für immer
+// und hält eine Datenbankverbindung fest.
 func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +66,7 @@ func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			ctx, cancel := context.WithTimeout(r.Context(), timeout)
+			ctx, cancel := context.WithTimeout(r.Context(), RequestFrist(r.URL.Path, timeout))
 			defer cancel()
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

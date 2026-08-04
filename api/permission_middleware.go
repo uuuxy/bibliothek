@@ -115,9 +115,15 @@ func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permis
 // has the required permission dynamically defined in the database.
 func (s *Server) RequirePermission(permission string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Die UUID-Prüfung sitzt hier und NICHT mehr global um den Mux herum.
+		//
+		// Global gelegt las sie r.PathValue("id"), bevor der ServeMux die Route
+		// aufgelöst hatte — der Wert war dort immer leer, die Prüfung lief also nie
+		// (Audit-Befund vom 01.08.2026, belegt in middleware_frist_test.go). An dieser
+		// Stelle ist die Route bereits getroffen und PathValue gefüllt.
+		return ValidateUUIDParamsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			s.pruefeBerechtigung(w, r, next, permission)
-		})
+		}))
 	}
 }
 

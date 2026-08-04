@@ -27,6 +27,12 @@
 	// Map dupliziert im Routing-$effect und im popstate-Handler — dadurch wurde ein
 	// neu ergänzter Tab (lehrer_portal) in beiden Kopien vergessen, seine URL nie
 	// gesetzt/wiederhergestellt, und ein Refresh warf den Lehrer aus dem Portal.
+	//
+	// media_catalog liegt auf /medienkatalog und NICHT auf dem Pfad des öffentlichen
+	// OPAC. Solange beide denselben beanspruchten, landete ein angemeldeter Benutzer
+	// nach F5 im öffentlichen Katalog — und die UI-Gates (control-hoehen,
+	// icon-trefferflaechen) vermaßen still den OPAC statt des internen Katalogs.
+	// Audit-Befund vom 01.08.2026.
 	/** @type {Record<string, string>} */
 	const tabToPath = {
 		settings: '/einstellungen',
@@ -34,7 +40,7 @@
 		students_dir: '/schuelerdatei',
 		schulklassen: '/schulklassen',
 		orders: '/bestellungen',
-		media_catalog: '/katalog',
+		media_catalog: '/medienkatalog',
 		signaturen: '/signaturen',
 		graduates: '/abgaenger',
 		stats: '/statistiken',
@@ -56,9 +62,9 @@
 	 * @param {string} path
 	 */
 	function applyPathToState(path) {
-		if (path.startsWith('/katalog/buch/')) {
+		if (path.startsWith('/medienkatalog/buch/')) {
 			uiStore.activeTab = 'book_detail';
-			appState.activeBookId = path.replace('/katalog/buch/', '');
+			appState.activeBookId = path.replace('/medienkatalog/buch/', '');
 			return;
 		}
 		const statsKind = path.startsWith('/statistiken/') && path.replace('/statistiken/', '');
@@ -74,7 +80,7 @@
 	/** Zielpfad für den aktuellen Tab — inkl. der parametrisierten Sonderrouten. */
 	function currentTargetPath() {
 		if (uiStore.activeTab === 'book_detail' && appState.activeBookId) {
-			return `/katalog/buch/${appState.activeBookId}`;
+			return `/medienkatalog/buch/${appState.activeBookId}`;
 		}
 		if (uiStore.activeTab === 'stats_detail') {
 			return `/statistiken/${uiStore.statsDetailKind}`;
@@ -84,7 +90,7 @@
 
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
-		// öffnen (book_detail → BookAkte via bookId, inkl. Deep-Link /katalog/buch/{id}) —
+		// öffnen (book_detail → BookAkte via bookId, inkl. Deep-Link /medienkatalog/buch/{id}) —
 		// NICHT den allgemeinen Medienkatalog.
 		if (!book?.id) return;
 		appState.activeBookId = book.id;
@@ -102,7 +108,10 @@
 				if (uiStore.activeTab !== 'kiosk' && uiStore.activeTab !== 'media_catalog') {
 					uiStore.activeTab = 'kiosk';
 				}
-				if (path !== '/' && path !== '/kiosk' && path !== '/katalog') {
+				// /medienkatalog: der Helfer darf den internen Katalog sehen (Zeile darüber).
+				// Solange hier '/katalog' stand, wurde er von genau dort auf den Kiosk
+				// zurückgeworfen — der Pfad, den er behalten durfte, war der des OPAC.
+				if (path !== '/' && path !== '/kiosk' && path !== '/medienkatalog') {
 					window.history.replaceState(null, '', '/kiosk');
 				}
 			} else {

@@ -201,7 +201,11 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// dass z. B. ein LEHRER seine im PermissionManager gewährten Rechte (view_students etc.) nicht
 	// nutzen konnte. Autorisierung erfolgt nun einheitlich über RequirePermission/RequireRoles.
 	sentryMiddleware := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(ValidateUUIDParamsMiddleware(mux)))))))))))
+	// ValidateUUIDParamsMiddleware steht hier NICHT mehr: Von außen um den Mux gelegt
+	// las sie r.PathValue("id"), bevor die Route aufgelöst war — der Wert ist dort immer
+	// leer, die Prüfung lief also nie (Audit-Befund 01.08.2026). Sie sitzt jetzt in
+	// RequirePermission, also hinter dem Routing, wo PathValue gefüllt ist.
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(mux))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

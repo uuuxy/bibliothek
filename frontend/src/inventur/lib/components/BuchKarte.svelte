@@ -85,7 +85,7 @@
 	<!-- Quick-Edit Stift-Icon (sichtbar beim Hover) -->
 	{#if onEditClick}
 		<button
-			class="absolute top-2 right-2 z-10 p-1.5 rounded-lg bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm cursor-pointer"
+			class="absolute top-2 right-2 z-10 p-2 rounded-lg bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm cursor-pointer"
 			onclick={(e) => {
 				e.stopPropagation();
 				onEditClick();
@@ -93,7 +93,10 @@
 			title="Schnell bearbeiten"
 			aria-label="Buch schnell bearbeiten"
 		>
-			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<!-- p-2 + 16 px Symbol = 32×32 Trefferfläche. Vorher p-1.5 + 14 px = 28×28 und damit
+			     unter der Mindestgröße — fiel nicht auf, solange das Gate den öffentlichen OPAC
+			     statt des internen Katalogs vermaß (Pfadkollision /katalog). -->
+			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
 					stroke-linecap="round"
 					stroke-linejoin="round"

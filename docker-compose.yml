@@ -67,9 +67,16 @@ services:
       - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
       - SMTP_SENDER=${SMTP_FROM}
-      - SMTP_TO=${SMTP_TO}
+      # Backup-Variablen MÜSSEN hier stehen: Compose reicht ohne env_file ausschließlich
+      # die hier gelisteten Schlüssel durch. Sie fehlten — der nächtliche Backup-Job fand
+      # deshalb im Container nie einen Schlüssel und übersprang sich STILL (jobs/backup.go),
+      # obwohl BACKUP_ENCRYPTION_KEY in der .env stand. Ein Backup, das lautlos ausfällt,
+      # merkt man erst, wenn man es braucht.
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+      - BACKUP_DIR=${BACKUP_DIR:-/app/backups}
     volumes:
       - bibliothek_uploads:/app/uploads
+      - bibliothek_backups:/app/backups
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -78,6 +85,8 @@ services:
 volumes:
   postgres_data:
   bibliothek_uploads:
+  # Benanntes Volume, damit die verschlüsselten Dumps einen Container-Neubau überleben.
+  bibliothek_backups:
 
 networks:
   default:

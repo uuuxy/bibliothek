@@ -101,10 +101,18 @@
 									{log.datensatz_id}
 								</td>
 								<td class="p-4.5">
-									<span class="font-medium text-slate-700"
-										>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
-									>
-									<span class="block text-[10px] text-slate-400">{log.bearbeiter_id}</span>
+									<!-- Systemgesteuerte Vorgänge haben keinen Bearbeiter. Sie als leere
+									     Zelle zu zeigen wäre von einem Datenfehler nicht zu unterscheiden;
+									     sie werden deshalb ausdrücklich als „System" benannt. -->
+									{#if log.akteur === 'SYSTEM' || !log.bearbeiter_id}
+										<span class="font-medium text-slate-500 italic">System</span>
+										<span class="block text-[10px] text-slate-400">automatischer Vorgang</span>
+									{:else}
+										<span class="font-medium text-slate-700"
+											>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
+										>
+										<span class="block text-[10px] text-slate-400">{log.bearbeiter_id}</span>
+									{/if}
 								</td>
 							</tr>
 						{/each}

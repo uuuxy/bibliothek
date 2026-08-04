@@ -117,6 +117,7 @@
 						/>
 					</svg>
 					<input
+						id="katalog-suchfeld"
 						type="text"
 						bind:value={searchQuery}
 						aria-label="Suchen nach Titel, Fach, Klasse oder Autor"

@@ -21,6 +21,10 @@ type AuditLogEntry struct {
 	BearbeiterID       string    `json:"bearbeiter_id"`
 	BearbeiterVorname  string    `json:"bearbeiter_vorname"`
 	BearbeiterNachname string    `json:"bearbeiter_nachname"`
+	// Akteur unterscheidet 'USER' von 'SYSTEM'. Ohne dieses Feld stünde eine
+	// Systemaktion in der Anzeige als Eintrag ganz ohne Urheber da — nicht
+	// unterscheidbar von einem Datenfehler.
+	Akteur string `json:"akteur"`
 }
 
 // auditLogMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge.
@@ -48,10 +52,22 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		// LEFT JOIN, nicht JOIN: Systemgesteuerte Vorgänge (DSGVO-Bereinigung, Backups,
+		// automatische Sperren) schreiben ohne bearbeiter_id und mit akteur='SYSTEM'
+		// (repository/audit_system.go). Der frühere Inner Join hat genau diese Zeilen
+		// aussortiert — ein Prüfprotokoll, das ausgerechnet die unbeaufsichtigten
+		// Aktionen verschweigt, ist das Gegenteil von dem, wofür es geführt wird.
+		//
+		// COALESCE ist dabei Pflicht, nicht Kosmetik: bearbeiter_id, vorname und nachname
+		// sind ab jetzt nullbar, die Go-Felder sind es nicht — ohne COALESCE stünde hier
+		// ein "cannot scan NULL" statt des Logbuchs.
 		query := `
-			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp, l.bearbeiter_id, b.vorname, b.nachname
+			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp,
+			       COALESCE(l.bearbeiter_id::text, ''),
+			       COALESCE(b.vorname, ''), COALESCE(b.nachname, ''),
+			       l.akteur
 			FROM audit_log l
-			JOIN benutzer b ON l.bearbeiter_id = b.id
+			LEFT JOIN benutzer b ON l.bearbeiter_id = b.id
 			ORDER BY l.timestamp DESC
 			LIMIT ` + strconv.Itoa(auditLogMaxZeilen)
 		rows, err := s.DB.Pool.Query(ctx, query)
@@ -64,7 +80,8 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 		logs := []AuditLogEntry{}
 		for rows.Next() {
 			var l AuditLogEntry
-			err := rows.Scan(&l.ID, &l.Tabelle, &l.Aktion, &l.DatensatzID, &l.Timestamp, &l.BearbeiterID, &l.BearbeiterVorname, &l.BearbeiterNachname)
+			err := rows.Scan(&l.ID, &l.Tabelle, &l.Aktion, &l.DatensatzID, &l.Timestamp,
+				&l.BearbeiterID, &l.BearbeiterVorname, &l.BearbeiterNachname, &l.Akteur)
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return

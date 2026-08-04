@@ -19,7 +19,7 @@ const SCREENS = [
 	['Schülerdatei', '/schuelerdatei'],
 	['Schulklassen', '/schulklassen'],
 	['Bestellungen', '/bestellungen'],
-	['Katalog', '/katalog'],
+	['Katalog', '/medienkatalog'],
 	['Abgänger', '/abgaenger'],
 	['Statistiken', '/statistiken'],
 	['Mahnwesen', '/mahnwesen'],
@@ -47,6 +47,13 @@ const AUSNAHMEN = [
 	{
 		kennung: 'omnibox-input',
 		grund: 'füllt die 48-px-Scan-Pille (h-full); die Pille ist das Bedienelement, nicht das Feld'
+	},
+	{
+		kennung: 'katalog-suchfeld',
+		grund:
+			'Medienkatalog-Suchpille: dieselbe Bauart wie die Omnibox — der Container ist h-12 und ' +
+			'trägt Rahmen, Fläche und Fokus, das Feld selbst h-full und nichts. Fiel bis zur ' +
+			'Auflösung der /katalog-Pfadkollision nie auf, weil dieser Test den öffentlichen OPAC maß.'
 	}
 ];
 

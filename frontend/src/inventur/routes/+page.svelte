@@ -35,7 +35,7 @@
 	function navigateToDetail(book) {
 		appState.activeBookId = book.id;
 		appState.selectedBook = book;
-		window.history.pushState(null, '', `/katalog/buch/${book.id}`);
+		window.history.pushState(null, '', `/medienkatalog/buch/${book.id}`);
 		// Signal App.svelte to switch to book_detail tab via popstate trick
 		window.dispatchEvent(new PopStateEvent('popstate'));
 	}

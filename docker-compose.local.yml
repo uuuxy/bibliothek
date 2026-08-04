@@ -44,7 +44,6 @@ services:
       - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
       - SMTP_SENDER=${SMTP_FROM}
-      - SMTP_TO=${SMTP_TO}
     volumes:
       - bibliothek_uploads_local:/app/uploads
     depends_on:

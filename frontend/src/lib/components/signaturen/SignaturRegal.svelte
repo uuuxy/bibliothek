@@ -41,7 +41,7 @@
 	});
 
 	// Gleicher Weg wie im Medienkatalog: über appState.activeBookId, damit der
-	// Deep-Link /katalog/buch/{id} und der Zurück-Knopf funktionieren.
+	// Deep-Link /medienkatalog/buch/{id} und der Zurück-Knopf funktionieren.
 	/** @param {string} titelId */
 	function oeffneBuch(titelId) {
 		appState.activeBookId = titelId;

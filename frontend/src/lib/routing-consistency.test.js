@@ -38,7 +38,14 @@ function findUnrenderableTabs({ routerSrc, menuSrc, assignmentSrcs }) {
 		[...routerSrc.matchAll(/uiStore\.activeTab === '([^']+)'/g)].map((m) => m[1])
 	);
 
-	const tabToPathBlock = routerSrc.match(/const tabToPath = \{([\s\S]*?)\};/)?.[1] ?? '';
+	// Kommentare VOR dem Zerlegen entfernen. Ohne das liest das Schlüssel-Muster jedes
+	// „wort:" in einem Kommentar als Tab-Namen — ein erklärender Halbsatz im Block hat
+	// den Test schon einmal mit einem erfundenen Tab rot gemacht. Ein Gate, das an der
+	// Wortwahl eines Kommentars scheitert, misst nicht mehr das, was es soll.
+	const tabToPathBlock = (routerSrc.match(/const tabToPath = \{([\s\S]*?)\};/)?.[1] ?? '').replace(
+		/\/\/[^\n]*/g,
+		''
+	);
 	const tabKeys = [...tabToPathBlock.matchAll(/(?:'([\w-]+)'|(\w[\w-]*))\s*:/g)].map(
 		(m) => m[1] || m[2]
 	);
