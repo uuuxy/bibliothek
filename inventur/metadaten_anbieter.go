@@ -247,12 +247,6 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	}, nil
 }
 
-// sucheLobid fragt das nordrhein-westfälische Bibliotheksnetzwerk ab.
-// Aktuell wird diese Methode faktisch intern übersprungen (ausgeklammert im Router),
-// aber bleibt als Backup bestehen.
-/*
- */
-
 func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
 	trimmed := strings.TrimSpace(query)
 	if trimmed == "" {

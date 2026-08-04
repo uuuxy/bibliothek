@@ -325,9 +325,121 @@ func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders
 	p.Ln(10)
 }
 
+// berichtSpalten sind die Spaltenbreiten der Positionstabelle. Sie hängen davon ab, ob
+// der Bericht Preise ausweist: Ohne Preisspalten verteilen sich Titel/ISBN/Menge auf
+// dieselben 170 mm.
+type berichtSpalten struct {
+	Titel, ISBN, Menge float64
+	TitelKuerzung      int // Zeichen, nicht Bytes — Umlaute zählen einfach
+}
+
+func spaltenFuerBericht(mitPreisen bool) berichtSpalten {
+	if mitPreisen {
+		return berichtSpalten{Titel: 83, ISBN: 33, Menge: 14, TitelKuerzung: 62}
+	}
+	// Breitere Titelspalte trägt mehr Text.
+	return berichtSpalten{Titel: 103, ISBN: 43, Menge: 24, TitelKuerzung: 78}
+}
+
+// berichtRahmen bündelt die Angaben, die für den GANZEN Bericht gelten. Vorher standen
+// sie als fünf Einzelparameter in der Signatur (S107: 8 Parameter) — und dieselbe Liste
+// hätte jeder ausgelagerte Helfer erneut durchreichen müssen.
+type berichtRahmen struct {
+	Von, Bis        time.Time
+	GesamtBetrag    float64
+	GesamtExemplare int
+	MitPreisen      bool
+}
+
+// zeichneBestellKopf setzt die Kopfzeile einer einzelnen Bestellung (Datum, Lieferant,
+// Kundennummer).
+func zeichneBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o berichtOrder) {
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(235, 235, 245)
+	header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
+		o.Bestelldatum.Format(dateFormatDE), o.LieferantName, o.Kundennummer)
+	p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
+	p.SetFillColor(255, 255, 255)
+}
+
+// zeichneSpaltenkoepfe setzt die Überschriftenzeile der Positionstabelle.
+func zeichneSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string, s berichtSpalten, mitPreisen bool) {
+	p.SetFont("Arial", "B", 8)
+	p.SetFillColor(245, 245, 245)
+	p.CellFormat(s.Titel, 6, tr("Titel"), "1", 0, "L", true, 0, "")
+	p.CellFormat(s.ISBN, 6, tr("ISBN"), "1", 0, "C", true, 0, "")
+	if mitPreisen {
+		p.CellFormat(s.Menge, 6, tr("Menge"), "1", 0, "C", true, 0, "")
+		p.CellFormat(20, 6, tr("Einzelpr."), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 6, tr("Gesamt"), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(s.Menge, 6, tr("Menge"), "1", 1, "C", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+}
+
+// zeichnePositionen setzt die Titelzeilen einer Bestellung, mit Seitenumbruch am Fuß.
+func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []berichtPosition, s berichtSpalten, mitPreisen bool) {
+	p.SetFont("Arial", "", 8)
+	for _, pos := range positionen {
+		if p.GetY() > 265 {
+			p.AddPage()
+		}
+		isbn := pos.ISBN
+		if isbn == "" {
+			isbn = "—"
+		}
+		p.CellFormat(s.Titel, 5, tr(kuerzeAufZeichen(pos.TitelName, s.TitelKuerzung)), "1", 0, "L", false, 0, "")
+		p.CellFormat(s.ISBN, 5, tr(isbn), "1", 0, "C", false, 0, "")
+		if mitPreisen {
+			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
+			p.CellFormat(20, 5, tr(euroStr(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
+			p.CellFormat(20, 5, tr(euroStr(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
+		} else {
+			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 1, "C", false, 0, "")
+		}
+	}
+}
+
+// zeichneBestellSumme setzt die Abschlusszeile einer einzelnen Bestellung.
+func zeichneBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o berichtOrder, mitPreisen bool) {
+	p.SetFont("Arial", "B", 8)
+	p.SetFillColor(235, 235, 245)
+	if mitPreisen {
+		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%d Exemplare)", o.AnzahlExemplare)), "LBR", 0, "R", true, 0, "")
+		p.CellFormat(20, 6, tr(euroStr(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(170, 6, tr(fmt.Sprintf("Summe: %d Exemplare", o.AnzahlExemplare)), "LBR", 1, "R", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+	p.Ln(5)
+}
+
+// zeichneGesamtsumme setzt die Schlusszeile über alle Bestellungen des Zeitraums.
+func zeichneGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r berichtRahmen) {
+	p.Ln(4)
+	p.SetFont("Arial", "B", 11)
+	p.SetFillColor(220, 230, 255)
+	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(dateFormatDE), r.Bis.Format(dateFormatDE))
+	if r.MitPreisen {
+		p.CellFormat(150, 9, tr("Gesamtbetrag "+zeitraum), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 9, tr(euroStr(r.GesamtBetrag)), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(150, 9, tr("Gesamt "+zeitraum), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 9, fmt.Sprintf("%d", r.GesamtExemplare), "1", 1, "R", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+}
+
 // zeichneDetailliste rendert die Bestellungen mit ihren Positionen und den
 // Gesamtbetrag.
-func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, von, bis time.Time, gesamtBetrag float64, gesamtExemplare int, mitPreisen bool) {
+//
+// Die vier Abschnitte (Kopf, Spaltenköpfe, Positionen, Summe) liegen bewusst als
+// EIGENSTÄNDIGE Funktionen daneben und nicht als Closures darin: In Go zählt eine
+// Closure als zusätzliche Verschachtelungsebene, ein Auslagern nach innen hätte die
+// kognitive Komplexität also nicht gesenkt (Projekt-Erfahrung aus früheren
+// S3776-Refactorings).
+func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, r berichtRahmen) {
 	if len(orders) == 0 {
 		p.SetFont("Arial", "I", 10)
 		p.SetTextColor(120, 120, 120)
@@ -340,86 +452,18 @@ func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []bericht
 	p.Cell(0, 8, tr("Bestellungen im Detail"))
 	p.Ln(8)
 
+	spalten := spaltenFuerBericht(r.MitPreisen)
 	for _, o := range orders {
 		if p.GetY() > 240 {
 			p.AddPage()
 		}
-		// Bestellkopf
-		p.SetFont("Arial", "B", 9)
-		p.SetFillColor(235, 235, 245)
-		header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
-			o.Bestelldatum.Format(dateFormatDE), o.LieferantName, o.Kundennummer)
-		p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
-		p.SetFillColor(255, 255, 255)
-
-		// Spaltenköpfe
-		p.SetFont("Arial", "B", 8)
-		p.SetFillColor(245, 245, 245)
-		// Ohne Preise verteilen sich Titel/ISBN/Menge auf dieselben 170 mm.
-		bTitel, bISBN, bMenge := 83.0, 33.0, 14.0
-		if !mitPreisen {
-			bTitel, bISBN, bMenge = 103.0, 43.0, 24.0
-		}
-		p.CellFormat(bTitel, 6, tr("Titel"), "1", 0, "L", true, 0, "")
-		p.CellFormat(bISBN, 6, tr("ISBN"), "1", 0, "C", true, 0, "")
-		if mitPreisen {
-			p.CellFormat(bMenge, 6, tr("Menge"), "1", 0, "C", true, 0, "")
-			p.CellFormat(20, 6, tr("Einzelpr."), "1", 0, "R", true, 0, "")
-			p.CellFormat(20, 6, tr("Gesamt"), "1", 1, "R", true, 0, "")
-		} else {
-			p.CellFormat(bMenge, 6, tr("Menge"), "1", 1, "C", true, 0, "")
-		}
-		p.SetFillColor(255, 255, 255)
-
-		p.SetFont("Arial", "", 8)
-		for _, pos := range o.Positionen {
-			if p.GetY() > 265 {
-				p.AddPage()
-			}
-			isbn := pos.ISBN
-			if isbn == "" {
-				isbn = "—"
-			}
-			kuerzung := 62
-			if !mitPreisen {
-				kuerzung = 78 // breitere Titelspalte traegt mehr Text
-			}
-			p.CellFormat(bTitel, 5, tr(kuerzeAufZeichen(pos.TitelName, kuerzung)), "1", 0, "L", false, 0, "")
-			p.CellFormat(bISBN, 5, tr(isbn), "1", 0, "C", false, 0, "")
-			if mitPreisen {
-				p.CellFormat(bMenge, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
-				p.CellFormat(20, 5, tr(euroStr(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
-				p.CellFormat(20, 5, tr(euroStr(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
-			} else {
-				p.CellFormat(bMenge, 5, fmt.Sprintf("%d", pos.Menge), "1", 1, "C", false, 0, "")
-			}
-		}
-
-		// Summe der Bestellung
-		p.SetFont("Arial", "B", 8)
-		p.SetFillColor(235, 235, 245)
-		if mitPreisen {
-			p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%d Exemplare)", o.AnzahlExemplare)), "LBR", 0, "R", true, 0, "")
-			p.CellFormat(20, 6, tr(euroStr(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
-		} else {
-			p.CellFormat(170, 6, tr(fmt.Sprintf("Summe: %d Exemplare", o.AnzahlExemplare)), "LBR", 1, "R", true, 0, "")
-		}
-		p.SetFillColor(255, 255, 255)
-		p.Ln(5)
+		zeichneBestellKopf(p, tr, o)
+		zeichneSpaltenkoepfe(p, tr, spalten, r.MitPreisen)
+		zeichnePositionen(p, tr, o.Positionen, spalten, r.MitPreisen)
+		zeichneBestellSumme(p, tr, o, r.MitPreisen)
 	}
 
-	// Gesamtbetrag
-	p.Ln(4)
-	p.SetFont("Arial", "B", 11)
-	p.SetFillColor(220, 230, 255)
-	if mitPreisen {
-		p.CellFormat(150, 9, tr(fmt.Sprintf("Gesamtbetrag %s – %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))), "1", 0, "R", true, 0, "")
-		p.CellFormat(20, 9, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
-	} else {
-		p.CellFormat(150, 9, tr(fmt.Sprintf("Gesamt %s – %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))), "1", 0, "R", true, 0, "")
-		p.CellFormat(20, 9, fmt.Sprintf("%d", gesamtExemplare), "1", 1, "R", true, 0, "")
-	}
-	p.SetFillColor(255, 255, 255)
+	zeichneGesamtsumme(p, tr, r)
 }
 
 // generateBestellBerichtPDF baut den Bericht.
@@ -487,7 +531,11 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 	}
 
 	// Detailliste
-	zeichneDetailliste(p, tr, orders, von, bis, gesamtBetrag, gesamtExemplare, mitPreisen)
+	zeichneDetailliste(p, tr, orders, berichtRahmen{
+		Von: von, Bis: bis,
+		GesamtBetrag: gesamtBetrag, GesamtExemplare: gesamtExemplare,
+		MitPreisen: mitPreisen,
+	})
 
 	var buf bytes.Buffer
 	if err := p.Output(&buf); err != nil {
