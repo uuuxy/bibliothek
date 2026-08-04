@@ -129,3 +129,52 @@ func TestCSRFMiddlewareLaesstLesendeDurchUndSetztDasCookie(t *testing.T) {
 		t.Errorf("kein %s-Cookie in der Antwort: %q", csrfCookieName, rec.Header().Get("Set-Cookie"))
 	}
 }
+
+func TestCSRFMiddlewareUeberspringtCSRFTokenEndpunkt(t *testing.T) {
+	s := &Server{}
+	mw := s.CSRFMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
+	rec := httptest.NewRecorder()
+	mw.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET wurde blockiert: Status %d", rec.Code)
+	}
+	if rec.Header().Get("Set-Cookie") != "" {
+		t.Errorf("Middleware darf beim Endpunkt /api/csrf-token kein Cookie setzen, gefunden: %q", rec.Header().Get("Set-Cookie"))
+	}
+}
+
+func TestCSRFMiddlewareLeeresToken(t *testing.T) {
+	s := &Server{}
+	mw := s.CSRFMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	t.Run("Leerer Header", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPut, "/api/admin/permissions", strings.NewReader("{}"))
+		req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "tok-42"})
+		req.Header.Set("X-CSRF-Token", "   ") // leer nach Trim
+		rec := httptest.NewRecorder()
+		mw.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("Erwartet 403 bei leerem Header, erhalten %d", rec.Code)
+		}
+	})
+
+	t.Run("Leeres Cookie", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPut, "/api/admin/permissions", strings.NewReader("{}"))
+		req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "   "}) // leer nach Trim
+		req.Header.Set("X-CSRF-Token", "tok-42")
+		rec := httptest.NewRecorder()
+		mw.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("Erwartet 403 bei leerem Cookie, erhalten %d", rec.Code)
+		}
+	})
+}
