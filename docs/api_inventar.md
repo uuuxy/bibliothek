@@ -18,7 +18,7 @@
 - `/api/bestellungen/konfiguration.`
 - `/api/test`
 
-## Alle registrierten Routen (161)
+## Alle registrierten Routen (159)
 
 - `/`
 - `/api/admin`
@@ -41,7 +41,6 @@
 - `DELETE /api/schueler/{id}`
 - `DELETE /api/systematics/{id}`
 - `DELETE /api/vormerkungen/{id}`
-- `GET /admin/dashboard`
 - `GET /api/abgaenger`
 - `GET /api/abgaenger/pdf`
 - `GET /api/admin/`
@@ -100,10 +99,10 @@
 - `GET /api/schadensfaelle/{id}/pdf`
 - `GET /api/schueler`
 - `GET /api/schueler/deleted`
+- `GET /api/schueler/{barcode_id}/photo`
 - `GET /api/schueler/{id}`
 - `GET /api/schueler/{id}/dsgvo-auskunft`
 - `GET /api/schueler/{id}/dsgvo-auskunft/pdf`
-- `GET /api/schueler/{id}/photo`
 - `GET /api/search`
 - `GET /api/signaturen`
 - `GET /api/signaturen/buecher`
@@ -115,7 +114,6 @@
 - `GET /health`
 - `GET /swagger`
 - `GET /swagger/`
-- `GET /teacher/dashboard`
 - `GET /uploads/`
 - `PATCH /api/admin/ausleihen/{id}/faelligkeit`
 - `PATCH /api/admin/students/{id}/lock`
