@@ -15,7 +15,20 @@
 //    am grossen Bildschirm eingeklappt und danach am Tablet weitergearbeitet hat — ohne
 //    Fehlermeldung, ohne sichtbaren Weg zurück.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedBestellbedarf } from './helpers.js';
+
+// Bedarf selbst mitbringen — siehe seedBestellbedarf(): ohne den Schalter
+// `bestellbedarf_warnung_aktiv` ist die Liste leer, und dann gibt es nichts in den Korb
+// zu legen. Der Test prüfte sonst eine Spalte, die er nie gefüllt hat.
+/** @type {(() => void) | undefined} */
+let aufraeumen;
+test.beforeEach(() => {
+	aufraeumen = seedBestellbedarf(2);
+});
+test.afterEach(() => {
+	aufraeumen?.();
+	aufraeumen = undefined;
+});
 
 const BREIT = { width: 1600, height: 1000 };
 const TABLET = { width: 900, height: 1000 };

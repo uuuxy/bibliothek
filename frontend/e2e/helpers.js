@@ -102,6 +102,55 @@ export function querySQL(sql) {
 		.trim();
 }
 
+/**
+ * Stellt her, dass die Bestellbedarfs-Liste gefüllt ist — Voraussetzung für jeden
+ * Test, der im Bestell-Bildschirm auf „+ zur Bestellung hinzufügen" klickt.
+ *
+ * Warum das nötig ist: Die Liste hing an ZWEI Bedingungen, die beide außerhalb des
+ * Tests lagen. `bestellbedarf_warnung_aktiv` ist ein Schalter in den Einstellungen —
+ * steht er aus, liefert /api/bestellungen eine LEERE Liste, ganz gleich wie der
+ * Bestand aussieht. Genau das war am 04.08.2026 der Fall: Zwei Specs waren rot, ohne
+ * dass am Code etwas fehlte, und die Oberfläche meldete dabei „Kein Titel liegt unter
+ * der Bestellbedarf-Schwelle" — was in die falsche Richtung zeigt.
+ *
+ * Deshalb wird hier beides gesetzt: der Schalter an UND eigene Titel angelegt. Der
+ * Bestand der Datenbank ist damit egal.
+ *
+ * Ein Titel zählt als Bedarf, wenn er LMF ist (`^lmf[ -]`, siehe pkg/lmf) und weniger
+ * nicht ausgesonderte Exemplare hat als die Schwelle. Die angelegten Titel haben gar
+ * keine — sie stehen damit zugleich ganz oben, weil die Liste nach Fehlbestand sortiert.
+ *
+ * @param {number} [anzahl] wie viele Titel sicher in der Liste stehen sollen
+ * @returns {() => void} Aufräumen: Titel weg, Schalter zurück auf den alten Wert
+ */
+export function seedBestellbedarf(anzahl = 8) {
+	const marke = `E2E-Bedarf-${uniqueSuffix()}`;
+	const schalterVorher = querySQL(
+		`SELECT wert FROM system_einstellungen WHERE schluessel = 'bestellbedarf_warnung_aktiv'`
+	);
+
+	seedSQL(`
+		INSERT INTO system_einstellungen (schluessel, wert)
+		VALUES ('bestellbedarf_warnung_aktiv', 'true')
+		ON CONFLICT (schluessel) DO UPDATE SET wert = 'true';
+
+		INSERT INTO buecher_titel (titel, autor, meldebestand)
+		SELECT 'LMF-${marke} ' || g, 'E2E', 30 FROM generate_series(1, ${anzahl}) g;
+	`);
+
+	return () => {
+		seedSQL(`
+			DELETE FROM buecher_titel WHERE titel LIKE 'LMF-${marke} %';
+			${
+				schalterVorher
+					? `UPDATE system_einstellungen SET wert = '${schalterVorher}'
+					   WHERE schluessel = 'bestellbedarf_warnung_aktiv';`
+					: `DELETE FROM system_einstellungen WHERE schluessel = 'bestellbedarf_warnung_aktiv';`
+			}
+		`);
+	};
+}
+
 /** 8×8-PNG, damit ein Test ein ECHTES Bild bekommt. Die Größe ist der Punkt: Der
  *  Cover-Proxy liefert bei jedem Fehler ein 1×1-GIF mit Status 200 aus, ein Test gegen
  *  "Bild geladen" ginge daran vorbei. Nur naturalWidth > 1 trennt beides. */

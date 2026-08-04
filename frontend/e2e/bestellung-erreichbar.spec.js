@@ -16,7 +16,21 @@
 // OHNE die Seite zu verlassen, an der man gerade arbeitet. Der Warenkorb bringt dafür
 // seinen eigenen Scrollbalken mit; die Seite darunter bleibt stehen.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedBestellbedarf } from './helpers.js';
+
+// Der Test bringt seinen Bedarf selbst mit, statt ihn vorauszusetzen. Vorher war er rot,
+// sobald in den Einstellungen die Bestellbedarfs-Warnung ausgeschaltet war — dann liefert
+// /api/bestellungen IMMER eine leere Liste, unabhängig vom Bestand. Ein Gate, das an der
+// Datenlage hängt, wandert zwischen grün und rot, ohne dass jemand Code angefasst hat.
+/** @type {(() => void) | undefined} */
+let aufraeumen;
+test.beforeEach(() => {
+	aufraeumen = seedBestellbedarf();
+});
+test.afterEach(() => {
+	aufraeumen?.();
+	aufraeumen = undefined;
+});
 
 /** Schul-PCs sind kurz. Die erste Größe ist der gemeldete Fall. */
 const FENSTER = [
