@@ -71,9 +71,14 @@
 					{/if}
 				</h2>
 				{#if kritischeAnzahl}
+					<!-- Eine Aussage, nicht zwei. Vorher stand hier „{'{n}'}× komplett fehlend · 0 Exemplare":
+					     Beides beschreibt DENSELBEN Zustand (gesamt_bestand === 0), las sich aber wie zwei
+					     verschiedene Kennzahlen — und die „0" war eine feste Null im Markup, kein Messwert.
+					     Der Bezug auf die Gesamtzahl sagt stattdessen etwas Neues: wie groß der Notfall
+					     innerhalb der Liste ist. -->
 					<p class="text-[13px] font-semibold text-rose-600 mt-1 flex items-center gap-1.5">
-						<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-						{kritischeAnzahl}× komplett fehlend · 0 Exemplare
+						<span class="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true"></span>
+						{kritischeAnzahl} von {recommendations.length} Titeln ohne ein einziges Exemplar
 					</p>
 				{:else if recommendations.length}
 					<p class="text-[13px] text-slate-400 mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
@@ -139,6 +144,24 @@
 			<p class="text-sm font-medium">Kein Treffer für <em>„{filter}"</em></p>
 		</div>
 	{:else}
+		<!-- Spaltenkopf. Die Zahlenspalte war bisher NUR über ein title-Attribut erklärt — ein
+		     Hover-Tooltip, der beim ersten Hinsehen unsichtbar ist und auf Tablets gar nicht
+		     erreichbar. Auf 332 Zeilen standen damit unbeschriftete Zahlen.
+		     Der Kopf steht AUSSERHALB des Scroll-Containers: Die Liste scrollt in sich selbst,
+		     die Beschriftung bleibt deshalb stehen, ohne sticky und ohne z-index-Fragen.
+		     Die Beschriftung ist breiter als die Zahlen darunter — beide enden aber an
+		     derselben Kante, weil auf beide dieselbe Lücke und die 36-px-Knopfspalte folgen.
+		     Das ist die übliche Ausrichtung einer Zahlenspalte und kostet den Titeln keine
+		     Breite, was eine feste Spaltenbreite getan hätte. -->
+		<div
+			class="flex items-center gap-3 px-6 py-2 border-b border-slate-100 bg-slate-50/60 text-[10px] font-semibold uppercase tracking-wider text-slate-400 select-none"
+		>
+			<span class="w-4 shrink-0" aria-hidden="true"></span>
+			<span class="flex-1 min-w-0">Titel</span>
+			<span class="text-right">Verfügbar / Bestand</span>
+			<span class="w-9 shrink-0" aria-hidden="true"></span>
+		</div>
+
 		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] px-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
 				<div

@@ -12,14 +12,22 @@
         und gedruckt werden können.
 
      Bewusst KEIN zweiter Druckweg für Stufe 2: Der Hinweis verlinkt die vorhandene
-     Liste, statt sie hier ein zweites Mal zu bauen. -->
+     Liste, statt sie hier ein zweites Mal zu bauen.
+
+     FORM (04.08.2026): Derselbe Statusstreifen wie IncomingShipments — gleiche Höhe,
+     gleicher Symbolkreis, gleicher Knopf rechts. Beide sagen dasselbe: „hier wartet eine
+     Aufgabe, die nichts mit der Bestellung zu tun hat, an der du gerade schreibst."
+     Vorher war dieser Hinweis eine hohe Karte IN der Bestellspalte und stand damit über
+     dem Warenkorb, zu dem er nicht gehört. Deshalb gibt es jetzt auch einen Leerzustand:
+     Ohne ihn risse der Statusstreifen oben eine Lücke, sobald nichts aussteht. -->
 <script>
-	import { AlertTriangle, Printer, ArrowRight } from '@lucide/svelte';
-	import Button from '../ui/Button.svelte';
+	import { AlertTriangle, Printer, ArrowRight, CircleCheck } from '@lucide/svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 
 	/** @type {{ printSuggestion: any[] | null, onPrint: () => void, offeneEtiketten?: number }} */
 	let { printSuggestion, onPrint, offeneEtiketten = 0 } = $props();
+
+	let stufe = $derived(printSuggestion ? 'lieferung' : offeneEtiketten > 0 ? 'offen' : 'leer');
 
 	function zumNachdruck() {
 		uiStore.requestedDruckCenterTab = 'nachdruck';
@@ -27,42 +35,62 @@
 	}
 </script>
 
-{#if printSuggestion}
+<div
+	class="rounded-2xl border px-4 py-3 flex items-center gap-3 transition-colors no-print {stufe ===
+	'lieferung'
+		? 'bg-amber-50 border-amber-200'
+		: stufe === 'offen'
+			? 'bg-white border-slate-200/80 shadow-sm'
+			: 'bg-slate-50/60 border-slate-200/60 border-dashed'}"
+>
 	<div
-		class="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-2xs space-y-3.5 text-left animate-fade-in no-print"
+		class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 {stufe === 'lieferung'
+			? 'bg-amber-100 text-amber-700'
+			: stufe === 'offen'
+				? 'bg-blue-50 text-blue-600'
+				: 'bg-slate-100 text-slate-400'}"
 	>
-		<div class="flex items-start gap-2.5">
-			<AlertTriangle class="h-4 w-4" aria-hidden="true" />
-			<div>
-				<h3 class="text-xs font-medium text-amber-800">Etikettendruck erforderlich</h3>
-				<p class="text-xs text-amber-700 font-medium leading-relaxed mt-1">
-					Es gibt {printSuggestion.length} Exemplare in dieser freigegebenen Lieferung, für die noch keine
-					Barcode-Etiketten gedruckt wurden (z.B. Amazon-Bestellung).
-				</p>
-			</div>
-		</div>
-		<Button size="sm" onclick={onPrint} class="w-full">
-			<Printer class="h-4 w-4" aria-hidden="true" /> Etiketten für diese Lieferung drucken
-		</Button>
+		{#if stufe === 'lieferung'}
+			<AlertTriangle class="h-5 w-5" aria-hidden="true" />
+		{:else if stufe === 'offen'}
+			<Printer class="h-5 w-5" aria-hidden="true" />
+		{:else}
+			<CircleCheck class="h-5 w-5" aria-hidden="true" />
+		{/if}
 	</div>
-{:else if offeneEtiketten > 0}
-	<div
-		class="bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-2xs space-y-3.5 text-left animate-fade-in no-print"
-	>
-		<div class="flex items-start gap-2.5">
-			<Printer class="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
-			<div>
-				<h3 class="text-xs font-medium text-slate-700">Etiketten stehen aus</h3>
-				<p class="text-xs text-slate-500 font-medium leading-relaxed mt-1">
-					{offeneEtiketten}
-					{offeneEtiketten === 1 ? 'Exemplar hat' : 'Exemplare haben'} noch kein Barcode-Etikett — auch
-					aus früheren Lieferungen.
-				</p>
+
+	<!-- Direkt auf den Wert geprüft statt auf die abgeleitete Stufe: Über `stufe` kann der
+	     Typprüfer nicht verengen, printSuggestion bliebe „möglicherweise null". -->
+	{#if printSuggestion}
+		<div class="min-w-0 flex-1">
+			<div class="text-sm font-bold text-amber-900">Etiketten für diese Lieferung</div>
+			<div class="text-xs text-amber-700">
+				{printSuggestion.length}
+				{printSuggestion.length === 1 ? 'Exemplar' : 'Exemplare'} ohne Barcode-Etikett
 			</div>
 		</div>
-		<Button size="sm" variant="secondary" onclick={zumNachdruck} class="w-full">
-			Im Druck-Center nachdrucken
+		<button
+			onclick={onPrint}
+			class="shrink-0 flex items-center gap-1.5 py-2 px-3.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+		>
+			<Printer class="h-4 w-4" aria-hidden="true" />
+			Drucken
+		</button>
+	{:else if offeneEtiketten > 0}
+		<div class="min-w-0 flex-1">
+			<div class="text-sm font-bold text-slate-900">
+				{offeneEtiketten} Etiketten stehen aus
+			</div>
+			<div class="text-xs text-slate-500">auch aus früheren Lieferungen</div>
+		</div>
+		<button
+			onclick={zumNachdruck}
+			class="shrink-0 flex items-center gap-1.5 py-2 px-3.5 bg-slate-900 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+		>
+			Nachdrucken
 			<ArrowRight class="h-4 w-4" aria-hidden="true" />
-		</Button>
-	</div>
-{/if}
+		</button>
+	{:else}
+		<div class="text-sm text-slate-400 font-medium">Alle Etiketten gedruckt</div>
+	{/if}
+</div>

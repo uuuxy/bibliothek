@@ -1,9 +1,11 @@
 // Gate gegen die abgeschnittene Bestellung.
 //
-// Aus dem Betrieb gemeldet: „Bestellung abgeschnitten." Die rechte Spalte (Hinweis auf
-// offene Etiketten + Warenkorb) klebt beim Scrollen fest. Füllt sich der Korb, wächst sie
-// über den Fensterrand hinaus — bei 1366×700 gemessen 1288 px hoch, 826 px davon unter
-// dem sichtbaren Bereich.
+// Aus dem Betrieb gemeldet: „Bestellung abgeschnitten." Die rechte Spalte klebt beim
+// Scrollen fest. Füllt sich der Korb, wächst sie über den Fensterrand hinaus — bei
+// 1366×700 gemessen 1288 px hoch, 826 px davon unter dem sichtbaren Bereich.
+// (Seit 04.08.2026 trägt die Spalte nur noch den Warenkorb; der Hinweis auf offene
+// Etiketten steht oben bei den anderen offenen Aufgaben. Sie wird dadurch niedriger,
+// nicht höher — der geprüfte Fall bleibt derselbe.)
 //
 // Sie war nicht unerreichbar: Wer die Bestellbedarfs-Liste daneben (105 Titel) weit genug
 // nach unten scrollt, schiebt den klebenden Rahmen irgendwann hoch. Genau daran ist die

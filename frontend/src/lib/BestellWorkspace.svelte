@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { ChevronLeft } from '@lucide/svelte';
 	import { apiGet } from './apiFetch.js';
 	import { orderStore } from './stores/orderStore.svelte.js';
 	import { printQueue } from './stores/printQueue.svelte.js';
@@ -17,6 +18,18 @@
 
 	let activeTab = $state('bestellungen');
 	let showWareneingang = $state(false);
+
+	// Bestellspalte ein-/ausklappbar. Sie belegt ein Drittel der Breite, auch wenn der
+	// Warenkorb leer ist — währenddaneben Titel wie „LMF-Bigalke/Köhler: Mathematik —
+	// Hessen — Ausgabe 2016/Grundkurs 2. Halbjahr — Band Q2" abgeschnitten werden.
+	//
+	// Bewusst OFFEN als Vorgabe: Wer die Seite kennt, soll sie unverändert vorfinden, und
+	// das E2E-Gate (bestellung-erreichbar.spec.js) prüft genau diesen Zustand.
+	// Bewusst NICHT gespeichert: Ein Wert für die Fensteraufteilung gehört weder in den
+	// localStorage (mehrere Arbeitsplätze) noch als geteilter Zustand ins Backend — an
+	// zwei Bildschirmen mit verschiedenen Grössen wäre „meine Breite" die falsche Vorgabe.
+	// Der Zustand gilt deshalb für die Sitzung.
+	let railOffen = $state(true);
 	let showGreenFade = $state(false);
 	/** @type {any[] | null} Exemplare der letzten Einbuchung ohne gedrucktes Etikett */
 	let printSuggestion = $state(null);
@@ -148,23 +161,40 @@
 			/>
 		{:else}
 			<div class="flex flex-col gap-5">
-				<!-- Wareneingang als schlanker Statusstreifen über der Arbeitsfläche -->
-				<IncomingShipments
-					incomingShipments={orderStore.incomingShipments}
-					{showGreenFade}
-					onOpenWareneingang={() => (showWareneingang = true)}
-				/>
+				<!-- OFFENE AUFGABEN: zwei gleichwertige Statusstreifen nebeneinander.
+				     Beide sagen dasselbe — „hier wartet etwas, das nichts mit der Bestellung zu
+				     tun hat, an der du gerade schreibst". Der Etiketten-Hinweis stand vorher als
+				     hohe Karte IN der Bestellspalte und damit über dem Warenkorb, zu dem er nicht
+				     gehört: Der Wareneingang lag oben, die Etiketten rechts — dieselbe Art
+				     Aufgabe an zwei Orten. -->
+				<div class="grid gap-4 sm:grid-cols-2">
+					<IncomingShipments
+						incomingShipments={orderStore.incomingShipments}
+						{showGreenFade}
+						onOpenWareneingang={() => (showWareneingang = true)}
+					/>
+					<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} {offeneEtiketten} />
+				</div>
 
 				<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-					<!-- HERO: der Bestellbedarf ist die tägliche Arbeitsfläche -->
-					<div class="lg:col-span-7 xl:col-span-8 min-w-0">
+					<!-- HERO: der Bestellbedarf ist die tägliche Arbeitsfläche.
+					     Die Spaltenbreiten stehen je Zustand VOLLSTÄNDIG da (lg und xl), statt sich
+					     auf die Reihenfolge im class-Attribut zu verlassen: Bei Utilities gleicher
+					     Spezifität entscheidet die Reihenfolge im Stylesheet, nicht die im Markup. -->
+					<div
+						class="min-w-0 {railOffen
+							? 'lg:col-span-7 xl:col-span-8'
+							: 'lg:col-span-11 xl:col-span-11'}"
+					>
 						<OrderRecommendations
 							recommendations={orderStore.recommendations}
 							onAddToCart={(book) => orderStore.addToCart(book)}
 						/>
 					</div>
 
-					<!-- RAIL: die Bestellung wächst sichtbar mit, bleibt beim Scrollen stehen.
+					<!-- RAIL: die Bestellung wächst sichtbar mit, bleibt beim Scrollen stehen. Der
+					     Etiketten-Hinweis ist raus (steht jetzt oben bei den offenen Aufgaben) — die
+					     Spalte trägt damit nur noch EINE Sache: die Bestellung, die man gerade schreibt.
 					     Aus dem Betrieb gemeldet als „Bestellung abgeschnitten". Gemessen bei
 					     1366×700 mit fünf Positionen im Korb: Die Spalte wurde 1288 px hoch und
 					     ragte 826 px unter den Fensterrand — der Absenden-Knopf war nur noch zu
@@ -176,11 +206,45 @@
 					     Verankert im E2E-Gate e2e/bestellung-erreichbar.spec.js. -->
 					<div
 						bind:this={rail}
+						id="bestellspalte"
 						style:--rail-max={railMaxHeight}
-						class="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-2 lg:max-h-(--rail-max) lg:overflow-y-auto"
+						class="space-y-3 lg:sticky lg:top-2 lg:max-h-(--rail-max) lg:overflow-y-auto {railOffen
+							? 'lg:col-span-5 xl:col-span-4'
+							: 'lg:col-span-1 xl:col-span-1'}"
 					>
-						<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} {offeneEtiketten} />
-						<OrderCreationPanel />
+						{#if !railOffen}
+							<!-- Eingeklappt: ein beschrifteter Streifen, kein stummes Rechteck. Die Zahl
+							     im Korb bleibt sichtbar — sonst müsste man aufklappen, um zu sehen, ob
+							     überhaupt etwas drin ist. -->
+							<button
+								onclick={() => (railOffen = true)}
+								aria-label="Bestellspalte ausklappen"
+								aria-expanded="false"
+								aria-controls="bestellpanel"
+								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-2xl border border-slate-200 bg-white shadow-sm hover:border-blue-400 hover:bg-blue-50/40 transition-colors cursor-pointer"
+							>
+								<ChevronLeft class="h-4 w-4 text-slate-400" aria-hidden="true" />
+								<span
+									class="text-xs font-bold text-slate-600 tracking-wide"
+									style="writing-mode: vertical-rl">Deine Bestellung</span
+								>
+								{#if orderStore.totalQty > 0}
+									<span
+										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-bold px-1.5 tabular-nums"
+										>{orderStore.totalQty}</span
+									>
+								{/if}
+							</button>
+						{/if}
+
+						<!-- Das Panel bleibt eingehängt und wird nur verborgen: Beim Aus- und
+						     Wiedereinhängen gingen Lieferantenwahl und Suchfeld verloren.
+						     max-lg:block, weil unterhalb von lg gar nicht nebeneinander gelegt wird —
+						     ohne das wäre die Bestellung auf dem Tablet verschwunden, nachdem jemand
+						     am grossen Bildschirm eingeklappt hat. -->
+						<div id="bestellpanel" class={railOffen ? '' : 'hidden max-lg:block'}>
+							<OrderCreationPanel onCollapse={() => (railOffen = false)} />
+						</div>
 					</div>
 				</div>
 			</div>
