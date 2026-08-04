@@ -62,12 +62,15 @@ func TestEchterAltbestand(t *testing.T) {
 		len(titel), len(exemplare), len(signaturen), len(abweichend))
 
 	pruefeAutorenAbdeckung(t, basis, titel)
-	pruefeLeserEinordnung(t, basis)
+	leser := pruefeLeserEinordnung(t, basis)
+	pruefeAusleihen(t, basis, leser, exemplare)
 }
 
 // pruefeLeserEinordnung belegt, dass die Weiche Schüler/Lehrkraft am echten Bestand
 // greift — und dass keine Lehrkraft in der Schuelermenge landet.
-func pruefeLeserEinordnung(t *testing.T, basis string) {
+// Liefert die gelesenen Leser zurück, damit die Ausleih-Prüfung sie mitverwenden kann,
+// ohne die Datei ein zweites Mal zu lesen.
+func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 	t.Helper()
 
 	gf, err := os.Open(filepath.Join(basis, "leser_ug.csv")) //nolint:gosec // Testumgebung
@@ -103,18 +106,18 @@ func pruefeLeserEinordnung(t *testing.T, basis string) {
 	// in der Zieltabelle NOT NULL — eine leere Klasse waere ein Schreibfehler.
 	for _, s := range schueler {
 		if s.Klasse == "" {
-			t.Fatalf("Schueler %s ohne Klasse — schueler.klasse ist NOT NULL", s.Lesernummer)
+			t.Fatalf("Schueler (ID %s) ohne Klasse — schueler.klasse ist NOT NULL", s.ID)
 		}
 	}
 
 	// Und die Gegenprobe: keine Lehrkraft in der Schuelermenge.
 	lehrerNummern := map[string]bool{}
 	for _, l := range lehrkraefte {
-		lehrerNummern[l.Lesernummer] = true
+		lehrerNummern[l.ID] = true
 	}
 	for _, s := range schueler {
-		if lehrerNummern[s.Lesernummer] {
-			t.Errorf("Lesernummer %s steht in beiden Mengen", s.Lesernummer)
+		if lehrerNummern[s.ID] {
+			t.Errorf("Leser-ID %s steht in beiden Mengen", s.ID)
 		}
 	}
 
@@ -143,6 +146,74 @@ func pruefeLeserEinordnung(t *testing.T, basis string) {
 	}
 	t.Logf("Abgangsjahr: fuer alle %d Schueler ableitbar, davon %d in einer Abschlussklasse (9H/10R/13)",
 		len(schueler), abschlussklassen)
+
+	return leser
+}
+
+// pruefeAusleihen belegt, dass jede Ausleihe ihr Exemplar UND ihren Entleiher findet.
+// Eine Ausleihe ins Leere waere beim Schreiben ein Fremdschluesselfehler — und der
+// bricht den Import mitten in der Transaktion ab.
+func pruefeAusleihen(t *testing.T, basis string, leser []Leser, exemplare []Exemplar) {
+	t.Helper()
+
+	vf, err := os.Open(filepath.Join(basis, "verleih.csv")) //nolint:gosec // Testumgebung
+	if err != nil {
+		t.Skipf("verleih.csv fehlt — Ausleih-Pruefung uebersprungen: %v", err)
+	}
+	t.Cleanup(func() { _ = vf.Close() }) //nolint:errcheck // Testaufraeumen
+
+	ausleihen, err := LeseAusleihen(vf)
+	if err != nil {
+		t.Fatalf("Ausleihen lesen: %v", err)
+	}
+	if len(ausleihen) == 0 {
+		t.Fatal("keine Ausleihen gelesen")
+	}
+
+	bekannteExemplare := make(map[string]bool, len(exemplare))
+	for _, e := range exemplare {
+		bekannteExemplare[e.ID] = true
+	}
+	bekannteLeser := make(map[string]bool, len(leser))
+	for _, l := range leser {
+		bekannteLeser[l.ID] = true
+	}
+
+	ohneExemplar, ohneLeser, ohneDatum := 0, 0, 0
+	for _, a := range ausleihen {
+		if !bekannteExemplare[a.ExemplarID] {
+			ohneExemplar++
+		}
+		if !bekannteLeser[a.LeserID] {
+			ohneLeser++
+		}
+		if a.AusgeliehenAm.IsZero() {
+			ohneDatum++
+		}
+	}
+	// Der Entleiher MUSS immer gefunden werden: Verleih.Leser zeigt auf
+	// Leser.Buchungsnummer. Waere hier auch nur eine Zeile offen, haette man den
+	// falschen Schluessel erwischt (ueber Lesernummer treffen nur 792 von 15.615).
+	if ohneLeser > 0 {
+		t.Errorf("%d Ausleihen finden ihren Entleiher nicht — falscher Fremdschluessel?", ohneLeser)
+	}
+
+	// Beim Exemplar ist eine verschwindende Zahl Datenfehler in Littera, kein
+	// Zuordnungsfehler. Ein nennenswerter Anteil waere dagegen der falsche Schluessel
+	// (ueber Exemplarnummer treffen nur 7.985 von 15.615).
+	if ohneExemplar*1000 > len(ausleihen) {
+		t.Errorf("%d von %d Ausleihen finden ihr Exemplar nicht — das ist zu viel fuer Datenfehler",
+			ohneExemplar, len(ausleihen))
+	} else if ohneExemplar > 0 {
+		t.Logf("%d von %d Ausleihen ohne Exemplar — Datenfehler im Altbestand, beim Import zu melden",
+			ohneExemplar, len(ausleihen))
+	}
+	if ohneDatum > 0 {
+		t.Errorf("%d Ausleihen ohne lesbares Verleihdatum", ohneDatum)
+	}
+
+	t.Logf("Ausleihen: %d gesamt, %d offen, %d ohne Frist (rueckgabe_frist ist NOT NULL)",
+		len(ausleihen), len(NurOffene(ausleihen)), len(OhneFrist(ausleihen)))
 }
 
 // pruefeAutorenAbdeckung belegt, dass die Aufloesung ueber Personen/Personen_Zuordnung

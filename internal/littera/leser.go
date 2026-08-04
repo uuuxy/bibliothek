@@ -41,8 +41,19 @@ type Lesergruppe struct {
 }
 
 // Leser ist eine Person aus dem Littera-Altbestand.
+//
+// ACHTUNG, zwei Nummern mit verschiedenen Aufgaben:
+//
+//   - ID = `Buchungsnummer` ist der INTERNE Schlüssel. Darauf zeigt `Verleih.Leser` —
+//     gemessen: 15.615 von 15.615 Ausleihen treffen darüber, über `Lesernummer` nur 792.
+//   - Lesernummer ist die Ausweisnummer, die der Schüler in der Hand hält. Sie gehört
+//     nach `schueler.barcode_id`, taugt aber NICHT zum Verknüpfen der Ausleihen.
+//
+// Wer die beiden verwechselt, hängt die Ausleihen an die falschen Personen — und das
+// fällt erst auf, wenn ein Schüler die Bücher eines anderen zurückbringen soll.
 type Leser struct {
-	Lesernummer  string
+	ID           string // Buchungsnummer — Ziel des Fremdschlüssels in Verleih
+	Lesernummer  string // Ausweisnummer → schueler.barcode_id
 	Vorname      string
 	Nachname     string
 	Klasse       string
@@ -111,13 +122,14 @@ func LeseLeser(r io.Reader, gruppen map[string]Lesergruppe) ([]Leser, error) {
 
 	leser := make([]Leser, 0, len(zeilen))
 	for _, z := range zeilen {
-		nummer := strings.TrimSpace(z["Lesernummer"])
-		if nummer == "" {
-			continue
+		id := strings.TrimSpace(z["Buchungsnummer"])
+		if id == "" {
+			continue // ohne internen Schlüssel lässt sich keine Ausleihe zuordnen
 		}
 		gruppe := gruppen[strings.TrimSpace(z["Lesergruppe"])]
 		leser = append(leser, Leser{
-			Lesernummer:  nummer,
+			ID:           id,
+			Lesernummer:  strings.TrimSpace(z["Lesernummer"]),
 			Vorname:      strings.TrimSpace(z["Vorname"]),
 			Nachname:     strings.TrimSpace(z["Nachname"]),
 			Klasse:       gruppe.Klasse,

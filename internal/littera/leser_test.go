@@ -54,13 +54,15 @@ func TestArtAusUntergruppe(t *testing.T) {
 	}
 }
 
+// Buchungsnummer ist der INTERNE Schluessel (Ziel von Verleih.Leser), Lesernummer die
+// Ausweisnummer. Die letzte Zeile hat keine Buchungsnummer — sie faellt heraus.
 const leserCSV = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe,Geburtsdatum,eMail,Adresse,PLZ,Ort
 1,1001,"Anna","Schuelerin",22,"05/03/95 00:00:00","","Hauptstr. 1","61250","Usingen"
 2,1002,"Bert","Oberstufe",71,"01/01/93 00:00:00","",,"61250","Usingen"
 3,1003,"Clara","Lehrkraft",91,,"c.lehrkraft@schule.de",,,
 4,1004,"Dora","Ehemalig",95,,,,,
 5,1005,"Erik","Fachbereich",97,,,,,
-6,,"Ohne","Nummer",22,,,,,
+,1006,"Ohne","Schluessel",22,,,,,
 `
 
 func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
@@ -73,13 +75,19 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 		t.Fatalf("Leser: %v", err)
 	}
 
-	// Die Zeile ohne Lesernummer faellt raus — ohne Schluessel keine Ausleihzuordnung.
+	// Die Zeile ohne Buchungsnummer faellt raus — ohne internen Schluessel laesst sich
+	// keine Ausleihe zuordnen.
 	if len(leser) != 5 {
 		t.Fatalf("erwartet 5 Leser, waren %d", len(leser))
 	}
 
 	if leser[0].Klasse != "07H1" || leser[0].Art != ArtSchueler {
 		t.Errorf("Schuelerin falsch eingeordnet: %+v", leser[0])
+	}
+	// Beide Nummern muessen getrennt ankommen: ID verknuepft die Ausleihen,
+	// Lesernummer wird zum Ausweis-Barcode.
+	if leser[0].ID != "1" || leser[0].Lesernummer != "1001" {
+		t.Errorf("Schluessel vertauscht: ID=%q Lesernummer=%q", leser[0].ID, leser[0].Lesernummer)
 	}
 	if leser[1].Art != ArtSchueler {
 		t.Errorf("Oberstufenschueler muss ArtSchueler sein, war %d", leser[1].Art)
@@ -116,8 +124,8 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 // einsortierte.
 func TestUnbekannteArtWirdNichtZuSchueler(t *testing.T) {
 	gruppen := map[string]Lesergruppe{"98": {Klasse: "Ausl", Art: ArtUnbekannt}}
-	const csv = `Lesernummer,Vorname,Nachname,Lesergruppe
-2001,"Unklar","Fall",98
+	const csv = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe
+50,2001,"Unklar","Fall",98
 `
 	leser, err := LeseLeser(strings.NewReader(csv), gruppen)
 	if err != nil {
@@ -134,8 +142,8 @@ func TestUnbekannteArtWirdNichtZuSchueler(t *testing.T) {
 // TestLeserOhneGruppe: Ein Leser, dessen Lesergruppe nicht auflösbar ist, bekommt
 // weder Klasse noch Art — und faellt damit aus jeder Schreibmenge heraus.
 func TestLeserOhneGruppe(t *testing.T) {
-	const csv = `Lesernummer,Vorname,Nachname,Lesergruppe
-3001,"Ohne","Gruppe",9999
+	const csv = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe
+51,3001,"Ohne","Gruppe",9999
 `
 	leser, err := LeseLeser(strings.NewReader(csv), map[string]Lesergruppe{})
 	if err != nil {
