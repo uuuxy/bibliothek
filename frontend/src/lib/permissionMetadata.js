@@ -16,6 +16,11 @@ export const permissionsMetadata = [
 				desc: 'Ermöglicht das manuelle Anlegen neuer Schüler'
 			},
 			{
+				key: 'edit_students',
+				label: 'Schülerdaten ändern',
+				desc: 'Erlaubt das Bearbeiten der Stammdaten, das Sperren/Entsperren und das Melden von Buchschäden'
+			},
+			{
 				key: 'delete_students',
 				label: 'Schüler löschen',
 				desc: 'Erlaubt das Entfernen von Schülern aus der Datenbank'
@@ -55,6 +60,11 @@ export const permissionsMetadata = [
 				key: 'inventory_scan',
 				label: 'Inventur durchführen',
 				desc: 'Ermöglicht das Einscannen von Büchern während einer aktiven Inventur'
+			},
+			{
+				key: 'manage_inventory',
+				label: 'Bestand verwalten (Import, Inventur-Abschluss)',
+				desc: 'Startet und schließt Inventuren ab, führt Littera- und Bestandsimporte aus und gleicht Cover ab. Steuert außerdem die LMF-Aktionen im Menü.'
 			}
 		]
 	},

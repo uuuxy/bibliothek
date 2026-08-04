@@ -36,7 +36,10 @@
 			const data = await res.json();
 
 			/** @type {Record<string, Record<string, boolean>>} */
-			const newState = { admin: {}, mitarbeiter: {}, lehrer: {} };
+			// helfer gehoert dazu: Das Backend liefert die Rechte dieser Rolle mit, ohne
+			// den Eintrag hier blieb ihre Spalte in der Oberflaeche leer und wirkte, als
+			// haette der Helfer gar keine Rechte.
+			const newState = { admin: {}, mitarbeiter: {}, lehrer: {}, helfer: {} };
 			data.forEach((/** @type {any} */ item) => {
 				if (!newState[item.role]) newState[item.role] = {};
 				newState[item.role][item.permission] = item.allowed;

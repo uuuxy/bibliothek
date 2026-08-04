@@ -10,8 +10,14 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.ListStudentsHandler(studentRepo)))
 	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.GetStudentProfileHandler(studentRepo)))
 	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
-	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("create_students")(s.PatchStudentHandler()))
-	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("create_students")(s.LockStudentHandler()))
+	// Ändern und Sperren hängen an edit_students, nicht mehr an create_students:
+	// Stammdaten pflegen ist nicht dasselbe wie jemanden neu anlegen, und
+	// edit_students war zwar geseedet und an /api/damage/report gebunden, in der
+	// Rechte-Oberfläche aber gar nicht sichtbar (Audit-Befund 01.08.2026).
+	// Ungefährlich: Beide Rechte sind für alle Rollen identisch geseedet
+	// (ADMIN/MITARBEITER ja, LEHRER/HELFER nein) — niemand gewinnt oder verliert Zugriff.
+	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("edit_students")(s.PatchStudentHandler()))
+	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("edit_students")(s.LockStudentHandler()))
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
 
 	// DSGVO-Betroffenenauskunft (Art. 15) — bewusst nur für Admins (manage_users):
@@ -36,8 +42,14 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_users")(s.DeleteKlassenMappingHandler()))
 
 	// LUSD Import
-	mux.Handle("POST /api/lusd/preview", s.RequirePermission("manage_users")(s.PostLusdPreviewHandler()))
-	mux.Handle("POST /api/lusd/import", s.RequirePermission("manage_users")(s.PostLusdImportHandler()))
+	// import_students statt manage_users: Das Recht war geseedet und in der
+	// Rechte-Oberfläche als „LUSD / CSV Import" sichtbar — steuerte aber KEINEN
+	// einzigen Endpunkt (Audit-Befund 01.08.2026). Ein Schalter, der nichts schaltet,
+	// ist schlimmer als keiner: Er behauptet eine Einstellung, die es nicht gibt.
+	// Identisch geseedet zu manage_users für ADMIN und MITARBEITER, LEHRER und HELFER
+	// bleiben ausgeschlossen — die Zuordnung ändert sich also für niemanden.
+	mux.Handle("POST /api/lusd/preview", s.RequirePermission("import_students")(s.PostLusdPreviewHandler()))
+	mux.Handle("POST /api/lusd/import", s.RequirePermission("import_students")(s.PostLusdImportHandler()))
 
 	// Promotion
 	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_users")(s.PromoteStudentsHandler()))

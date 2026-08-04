@@ -4,7 +4,6 @@
 	import { appState } from '../inventur/lib/store.svelte.js';
 
 	import Omnibox from './Omnibox.svelte';
-	import BookDetails from './BookDetails.svelte';
 	import BookAkte from './BookAkte.svelte';
 	import BestellWorkspace from './BestellWorkspace.svelte';
 	import UnifiedInventory from './UnifiedInventory.svelte';
@@ -174,10 +173,12 @@
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
 			<Omnibox onSelectBook={handleSelectBook} role={authStore.currentUser?.rolle} />
 		</div>
-	{:else if uiStore.activeTab === 'books'}
-		<div class="w-full animate-fade-in">
-			<BookDetails title={uiStore.selectedBook || undefined} />
-		</div>
+<!-- Der Zweig activeTab === 'books' ist entfallen: Ihn hat nie jemand gesetzt (kein
+     tabToPath-Eintrag, kein Menüpunkt, keine Zuweisung im Code). Er war seit Langem
+     unerreichbar und hielt BookDetails samt uiStore.selectedBook künstlich am Leben —
+     die Buchansicht läuft über 'book_detail' und appState.activeBookId.
+     Der Routing-Test prüft nur die Gegenrichtung (jedes Ziel wird gerendert), deshalb
+     fiel es dort nicht auf. Audit-Befund vom 01.08.2026. -->
 	{:else if uiStore.activeTab === 'orders'}
 		<div class="w-full animate-fade-in"><BestellWorkspace /></div>
 	{:else if uiStore.activeTab === 'stats'}

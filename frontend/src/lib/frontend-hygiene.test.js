@@ -52,8 +52,6 @@ const EMOJI_BESTAND = [
 	'src/lib/AdminAuditLog.svelte',
 	'src/lib/AuditLog.svelte',
 	'src/lib/BookAkteMeta.svelte',
-	'src/lib/BookCopiesManager.svelte',
-	'src/lib/BookDetails.svelte',
 	'src/lib/Monitor.svelte',
 	'src/lib/OpacSearch.svelte',
 	'src/lib/PermissionManager.svelte',

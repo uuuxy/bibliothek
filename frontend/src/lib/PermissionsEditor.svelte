@@ -33,7 +33,7 @@
 				readonly
 			/>
 			<div
-				class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500/20"
+				class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500/20"
 			></div>
 			{#if isUpdating}
 				<div class="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
@@ -74,13 +74,18 @@
 								<label class="relative inline-flex items-center opacity-60 cursor-not-allowed">
 									<input type="checkbox" checked disabled class="sr-only peer" />
 									<div
-										class="w-10 h-6 bg-blue-100 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+										class="w-10 h-6 bg-blue-100 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
 									></div>
 								</label>
 							</div>
 
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}
 							{@render roleToggle(item, 'LEHRER', 'lehrer')}
+							<!-- HELFER fehlte hier: Das Backend fuehrt und liefert die Rechte dieser
+							     Rolle (seed.go, user_admin_permissions.go), aendern liess sie sich
+							     ueber die Oberflaeche aber nicht — sie war nur ueber die Vorgabe im
+							     Seed steuerbar. Audit-Befund vom 01.08.2026. -->
+							{@render roleToggle(item, 'HELFER', 'helfer')}
 						</div>
 					</div>
 				{/each}

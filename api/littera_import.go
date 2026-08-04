@@ -124,7 +124,7 @@ func (s *Server) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, co
 		return
 	}
 
-	s.logImportAudit(r, "LUSD_IMPORT", fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount))
+	s.logImportAudit(r, "LITTERA_IMPORT", fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount))
 
 	RespondJSON(w, http.StatusOK, map[string]interface{}{
 		"imported_count":       importedCount,
@@ -166,7 +166,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		s.logImportAudit(r, "LUSD_IMPORT", fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount))
+		s.logImportAudit(r, "LITTERA_IMPORT", fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitlesCount, importedCopiesCount))
 
 		importType := "csv"
 		if isXLSX {
