@@ -39,7 +39,15 @@
 		await inventoryState.loadSignaturen();
 		await inventoryState.loadFaecher();
 		await inventoryState.loadOffeneSessions();
+		await inventoryState.loadAbgeschlosseneInventuren();
 	});
+
+	/** @param {string} iso */
+	function datumKurz(iso) {
+		const d = new Date(iso);
+		if (Number.isNaN(d.getTime())) return iso;
+		return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+	}
 
 	function focusInput() {
 		if (barcodeInputEl) barcodeInputEl.focus();
@@ -133,6 +141,45 @@
 									Verwerfen
 								</Button>
 							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Frühere Inventuren.
+			     Der Fehlbestandsbericht entstand bisher nur aus der Antwort des Abschlusses
+			     und lebte im Arbeitsspeicher DIESES Browsers: Neu laden — weg. Der Kollege am
+			     zweiten Arbeitsplatz, der mit der Liste ins Regal geht, sah ihn nie. Die Daten
+			     liegen dauerhaft auf dem Server; hier ist der Weg zurück zu ihnen. -->
+			{#if inventoryState.abgeschlosseneInventuren.length > 0}
+				<div class="w-full max-w-lg mx-auto text-left space-y-2 pt-4">
+					<h4 class="text-sm font-semibold text-slate-500">Frühere Inventuren</h4>
+					{#each inventoryState.abgeschlosseneInventuren as inventur (inventur.session_id)}
+						<div
+							class="flex items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-lg"
+						>
+							<div class="min-w-0">
+								<div class="font-semibold text-slate-800 truncate">{inventur.label}</div>
+								<div class="text-xs text-slate-500">
+									{datumKurz(inventur.abgeschlossen_am)} · {inventur.erfasst} erfasst ·
+									{#if inventur.verluste > 0}
+										<span class="text-rose-600 font-semibold"
+											>{inventur.verluste} fehlend</span
+										>
+									{:else}
+										vollständig
+									{/if}
+								</div>
+							</div>
+							<Button
+								variant="secondary"
+								size="sm"
+								class="shrink-0"
+								disabled={inventoryState.ladeFruehereLaeuft}
+								onclick={() => inventoryState.zeigeFrueherenFehlbestand(inventur)}
+							>
+								Fehlbestand
+							</Button>
 						</div>
 					{/each}
 				</div>

@@ -18,6 +18,59 @@ type InventurSessionDTO struct {
 	Erwartet    int    `json:"erwartet"`
 }
 
+// AbgeschlosseneInventurDTO ist die Frontend-Sicht auf eine fertige Inventur. Sie
+// trägt nur, was für die Auswahl nötig ist: wann, welcher Bereich, wie viele Verluste.
+type AbgeschlosseneInventurDTO struct {
+	SessionID       string `json:"session_id"`
+	Label           string `json:"label"`
+	AbgeschlossenAm string `json:"abgeschlossen_am"`
+	Erfasst         int    `json:"erfasst"`
+	Verluste        int    `json:"verluste"`
+}
+
+// ListAbgeschlosseneInventurenHandler liefert die zuletzt abgeschlossenen Inventuren.
+//
+// Sie sind der fehlende Schlüssel zu GET /api/inventur/fehlbestand: Der Endpunkt
+// verlangt eine session_id, und die war aus der Oberfläche nicht zu bekommen, weil die
+// Session-Liste nur laufende Inventuren zeigt. Der Fehlbestand lag damit ausschließlich
+// im Arbeitsspeicher des Browsers, der die Inventur abgeschlossen hatte — nach einem
+// Neuladen oder an einem zweiten Arbeitsplatz war er weg, obwohl die Daten in
+// inventur_verluste dauerhaft gespeichert sind.
+//
+// @Summary      List completed inventory sessions
+// @Tags         inventory
+// @Produce      json
+// @Success      200   {array}   AbgeschlosseneInventurDTO
+// @Failure      500   {object}  map[string]string
+// @Router       /inventur/abgeschlossen [get]
+func (s *Server) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		invRepo := repository.NewInventoryRepository(s.DB.Pool)
+
+		sessions, err := invRepo.ListAbgeschlosseneInventurSessions(r.Context(), 10)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		out := make([]AbgeschlosseneInventurDTO, 0, len(sessions))
+		for i := range sessions {
+			abgeschlossen := ""
+			if sessions[i].AbgeschlossenAm != nil {
+				abgeschlossen = *sessions[i].AbgeschlossenAm
+			}
+			out = append(out, AbgeschlosseneInventurDTO{
+				SessionID:       sessions[i].ID,
+				Label:           sessions[i].ScopeLabel,
+				AbgeschlossenAm: abgeschlossen,
+				Erfasst:         sessions[i].Erfasst,
+				Verluste:        sessions[i].Verluste,
+			})
+		}
+		RespondJSON(w, http.StatusOK, out)
+	}
+}
+
 // ListInventurSessionsHandler liefert alle laufenden Inventur-Sessions. Das Frontend
 // zeigt sie an, damit eine Lehrkraft eine bereits laufende Inventur fortsetzt, statt
 // (vergeblich) eine zweite im selben Scope zu starten.

@@ -88,6 +88,30 @@ export async function schliesseAb(sessionId) {
 	return auswerten(res);
 }
 
+/**
+ * Zuletzt abgeschlossene Inventuren laden — die Auswahl, über die man einen früheren
+ * Fehlbestand wieder aufruft.
+ *
+ * Ohne sie war der Bericht flüchtig: Er entstand nur aus der Antwort von schliesseAb()
+ * und lebte im Arbeitsspeicher des Browsers. Ein Neuladen oder ein Wechsel an einen
+ * anderen Arbeitsplatz — und die Liste der fehlenden Bücher war weg, obwohl der Server
+ * sie dauerhaft gespeichert hat.
+ */
+export async function ladeAbgeschlosseneInventuren() {
+	const res = await apiFetch('/api/inventur/abgeschlossen');
+	if (!res.ok) return [];
+	return (await res.json().catch(() => [])) || [];
+}
+
+/**
+ * Fehlbestand einer bereits abgeschlossenen Inventur nachladen.
+ * @param {string} sessionId
+ */
+export async function ladeFehlbestand(sessionId) {
+	const res = await apiFetch(`/api/inventur/fehlbestand?session_id=${encodeURIComponent(sessionId)}`);
+	return auswerten(res);
+}
+
 /** @param {string} sessionId */
 export async function brichAb(sessionId) {
 	const res = await apiFetch('/api/inventur/abort', {

@@ -32,6 +32,9 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	mux.Handle("POST /api/inventur/scan", s.RequirePermission("inventory_scan")(s.InventurScanHandler()))
 	mux.Handle("POST /api/inventur/finish", s.RequirePermission("manage_inventory")(s.InventurFinishHandler()))
 	// Der Fehlbestand einer bereits abgeschlossenen Inventur — zum Nachsuchen und Ausdrucken.
+	// Beide gehören zusammen: /abgeschlossen liefert die session_id, /fehlbestand die
+	// Liste dazu. Ohne die erste war die zweite aus der Oberfläche nicht erreichbar.
+	mux.Handle("GET /api/inventur/abgeschlossen", s.RequirePermission("manage_inventory")(s.ListAbgeschlosseneInventurenHandler()))
 	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("manage_inventory")(s.InventurFehlbestandHandler()))
 	mux.Handle("POST /api/inventur/abort", s.RequirePermission("manage_inventory")(s.InventurAbortHandler()))
 

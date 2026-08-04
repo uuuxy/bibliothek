@@ -2,6 +2,8 @@ import { apiFetch } from './apiFetch.js';
 import { toastStore } from './stores/toastStore.svelte.js';
 import {
 	ladeOffeneSessions,
+	ladeAbgeschlosseneInventuren,
+	ladeFehlbestand,
 	starteSession,
 	scanne,
 	schliesseAb,
@@ -167,6 +169,9 @@ export function useUnifiedInventory() {
 			fehlbestandLabel = stats.label;
 			resetToIdle();
 			await loadOffeneSessions();
+			// Die gerade beendete Inventur gehört sofort in die Auswahl früherer Läufe —
+			// sonst müsste man die Seite neu laden, um sie dort zu finden.
+			await loadAbgeschlosseneInventuren();
 		} else {
 			toastStore.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
 		}
@@ -175,6 +180,37 @@ export function useUnifiedInventory() {
 	function fehlbestandSchliessen() {
 		fehlbestand = [];
 		fehlbestandLabel = '';
+	}
+
+	// Frühere Inventuren: Der Bericht oben entstand bisher NUR aus der Antwort von
+	// schliesseAb() und lebte damit im Arbeitsspeicher dieses einen Browsers. Ein
+	// Neuladen — oder der Kollege am zweiten Arbeitsplatz, der ins Regal geht — sah ihn
+	// nie. Der Server hat die Liste dauerhaft (inventur_verluste); hier ist der Weg
+	// zurück zu ihr.
+	let abgeschlosseneInventuren = $state.raw(/** @type {any[]} */ ([]));
+	let ladeFruehereLaeuft = $state(false);
+
+	async function loadAbgeschlosseneInventuren() {
+		abgeschlosseneInventuren = await ladeAbgeschlosseneInventuren();
+	}
+
+	/** @param {{session_id: string, label: string, abgeschlossen_am: string}} inventur */
+	async function zeigeFrueherenFehlbestand(inventur) {
+		ladeFruehereLaeuft = true;
+		try {
+			const r = await ladeFehlbestand(inventur.session_id);
+			if (!r.ok) {
+				toastStore.addToast(r.error || 'Fehlbestand konnte nicht geladen werden.', 'error');
+				return;
+			}
+			fehlbestand = r.data ?? [];
+			fehlbestandLabel = inventur.label;
+			if (fehlbestand.length === 0) {
+				toastStore.addToast('Diese Inventur war vollständig — kein Fehlbestand.', 'success');
+			}
+		} finally {
+			ladeFruehereLaeuft = false;
+		}
 	}
 
 	// Achtung: raeumt bewusst NICHT den Fehlbestand weg — der Bericht soll den Abschluss
@@ -200,6 +236,14 @@ export function useUnifiedInventory() {
 			return fehlbestandLabel;
 		},
 		fehlbestandSchliessen,
+		get abgeschlosseneInventuren() {
+			return abgeschlosseneInventuren;
+		},
+		get ladeFruehereLaeuft() {
+			return ladeFruehereLaeuft;
+		},
+		loadAbgeschlosseneInventuren,
+		zeigeFrueherenFehlbestand,
 		get status() {
 			return status;
 		},

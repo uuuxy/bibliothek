@@ -24,6 +24,9 @@ type InventurSession struct {
 	GestartetAm  string
 	Erwartet     int // physisch erwartbare Exemplare im Scope (dynamisch)
 	Erfasst      int // in dieser Session gescannte Exemplare
+	// Nur bei abgeschlossenen Sessions gefüllt (ListAbgeschlosseneInventurSessions):
+	AbgeschlossenAm *string
+	Verluste        int // beim Abschluss gebuchte Fehlbestände (inventur_verluste)
 }
 
 // Scope leitet aus den gespeicherten Feldern den auswertbaren InventurScope ab —
@@ -105,6 +108,46 @@ func (r *InventoryRepository) GetInventurSession(ctx context.Context, id string)
 	}
 	s.Erwartet = erwartet
 	return s, nil
+}
+
+// ListAbgeschlosseneInventurSessions liefert die zuletzt abgeschlossenen Inventuren
+// samt Anzahl gebuchter Verluste — die Auswahlliste, über die man den Fehlbestand
+// einer früheren Inventur wieder aufrufen kann.
+//
+// Ohne sie war GET /api/inventur/fehlbestand unerreichbar: Der Endpunkt braucht eine
+// session_id, und die einzige Session-Liste filterte auf abgeschlossen_am IS NULL —
+// eine fertige Inventur tauchte dort also nie auf. Der Bericht existierte damit nur im
+// Arbeitsspeicher des Browsers, der "Abschließen" gedrückt hatte, und war nach einem
+// Neuladen oder an einem anderen Arbeitsplatz weg.
+func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Context, limit int) ([]InventurSession, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 10
+	}
+	rows, err := r.db.Query(ctx, `
+		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
+		       s.gestartet_von::text, s.gestartet_am::text, s.abgeschlossen_am::text,
+		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id),
+		       (SELECT count(*) FROM inventur_verluste   WHERE session_id = s.id)
+		FROM inventur_sessions s
+		WHERE s.abgeschlossen_am IS NOT NULL
+		ORDER BY s.abgeschlossen_am DESC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("abgeschlossene sessions laden fehlgeschlagen: %w", err)
+	}
+	defer rows.Close()
+
+	sessions := make([]InventurSession, 0)
+	for rows.Next() {
+		var s InventurSession
+		if err := rows.Scan(&s.ID, &s.ScopeType, &s.Signatur, &s.Subject, &s.Grade, &s.ScopeLabel,
+			&s.GestartetVon, &s.GestartetAm, &s.AbgeschlossenAm, &s.Erfasst, &s.Verluste); err != nil {
+			return nil, fmt.Errorf("session-zeile unlesbar: %w", err)
+		}
+		sessions = append(sessions, s)
+	}
+	return sessions, rows.Err()
 }
 
 // ListOffeneInventurSessions liefert alle laufenden Sessions (für die Anzeige, damit
