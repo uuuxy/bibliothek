@@ -29,6 +29,7 @@
 				id="login-email"
 				type="email"
 				autocomplete="email"
+				aria-label="E-Mail"
 				bind:value={authStore.loginEmail}
 				class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
 				placeholder="name@philipp-reis-schule.de"
@@ -37,6 +38,7 @@
 				id="login-password"
 				type="password"
 				autocomplete="current-password"
+				aria-label="Passwort"
 				bind:value={authStore.loginPassword}
 				class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
 				placeholder="Passwort"

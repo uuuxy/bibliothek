@@ -474,16 +474,25 @@ func insertExemplare(ctx context.Context, tx pgx.Tx, data exemplarInsert, barcod
 	barcodes := nextBarcodes(*barcodeSeq, data.Medium.Anzahl)
 	*barcodeSeq += data.Medium.Anzahl
 
-	copiesOK := 0
 	for _, bc := range barcodes {
 		if !validateBarcode(bc) {
-			return copiesOK, fmt.Errorf(
+			return 0, fmt.Errorf(
 				"%w: erzeugter Barcode %q entspricht nicht dem Muster B-<Ziffern>", errZeile, bc)
 		}
-		if _, err := tx.Exec(ctx, sqlInsertExemplar, data.TitelID, bc, data.ErstelltAm); err != nil {
-			return copiesOK, fmt.Errorf("beim Exemplar mit Barcode %s: %w", bc, err)
-		}
-		copiesOK++
 	}
-	return copiesOK, nil
+
+	batch := &pgx.Batch{}
+	for _, bc := range barcodes {
+		batch.Queue(sqlInsertExemplar, data.TitelID, bc, data.ErstelltAm)
+	}
+
+	br := tx.SendBatch(ctx, batch)
+	defer func() { _ = br.Close() }() //nolint:errcheck
+
+	for i, bc := range barcodes {
+		if _, err := br.Exec(); err != nil {
+			return i, fmt.Errorf("beim Exemplar mit Barcode %s: %w", bc, err)
+		}
+	}
+	return len(barcodes), nil
 }
