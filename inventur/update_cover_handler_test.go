@@ -71,25 +71,46 @@ func TestHandleUpdateCover(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "UpdateBookMetadata Error",
+			// Der Befund: Vorher genügte das https://-Präfix, jede beliebige Fremd-URL
+			// ließ sich dauerhaft in cover_url schreiben. Geladen wird sie anschließend
+			// von jedem Browser, der Katalog oder Monitor öffnet.
+			name:           "Fremder HTTPS-Host wird abgelehnt",
 			method:         http.MethodPut,
 			path:           "/api/books/123/cover",
-			body:           map[string]any{"coverUrl": "https://example.com/cover.jpg"},
+			body:           map[string]any{"coverUrl": "https://angreifer.example/zaehler.jpg"},
+			setupMock:      func(m pgxmock.PgxPoolIface) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			// Allowlist-Name im String, fremder Host in Wahrheit — der Vergleich muss
+			// über url.Hostname() laufen, nicht über strings.Contains.
+			name:           "Allowlist-Host als Subdomain eines Angreifers",
+			method:         http.MethodPut,
+			path:           "/api/books/123/cover",
+			body:           map[string]any{"coverUrl": "https://covers.openlibrary.org.angreifer.example/x.jpg"},
+			setupMock:      func(m pgxmock.PgxPoolIface) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:   "UpdateBookMetadata Error",
+			method: http.MethodPut,
+			path:   "/api/books/123/cover",
+			body:   map[string]any{"coverUrl": "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", "https://example.com/cover.jpg", "123").
+					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "123").
 					WillReturnError(ErrBookNotFound)
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name:           "GetBookByID Error",
-			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
-			body:           map[string]any{"coverUrl": "https://example.com/cover.jpg"},
+			name:   "GetBookByID Error",
+			method: http.MethodPut,
+			path:   "/api/books/123/cover",
+			body:   map[string]any{"coverUrl": "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", "https://example.com/cover.jpg", "123").
+					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "123").
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
@@ -99,13 +120,13 @@ func TestHandleUpdateCover(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name:           "Success HTTPS",
-			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
-			body:           map[string]any{"coverUrl": "https://example.com/cover.jpg"},
+			name:   "Success HTTPS",
+			method: http.MethodPut,
+			path:   "/api/books/123/cover",
+			body:   map[string]any{"coverUrl": "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", "https://example.com/cover.jpg", "123").
+					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "123").
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
@@ -113,16 +134,16 @@ func TestHandleUpdateCover(t *testing.T) {
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
 					}).AddRow(
-						"123", "9781234567890", "Test Title", "Test Author", "", "https://example.com/cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
+						"123", "9781234567890", "Test Title", "Test Author", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
 					))
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "Success Local Uploads",
-			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
-			body:           map[string]any{"coverUrl": "/uploads/cover.jpg"},
+			name:   "Success Local Uploads",
+			method: http.MethodPut,
+			path:   "/api/books/123/cover",
+			body:   map[string]any{"coverUrl": "/uploads/cover.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
 					WithArgs("", "", "/uploads/cover.jpg", "123").

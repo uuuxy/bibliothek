@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 	"net/http"
 
@@ -39,14 +38,12 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	// Smart Scanner (Tresen-Weiche) — Teil der Kiosk-Kernfunktion, siehe /api/action.
 	mux.Handle("GET /api/scan", s.RequirePermission("perform_actions")(s.SmartScanHandler()))
 
-	// Demo Dashboards
-	adminDashboard := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpresp.Write(w, []byte("Access granted: Welcome to the Admin Dashboard."))
-	})
-	mux.Handle("GET /admin/dashboard", s.Auth.RequireRoles("admin")(adminDashboard))
-
-	teacherZone := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpresp.Write(w, []byte("Access granted: Welcome to the Teacher Zone."))
-	})
-	mux.Handle("GET /teacher/dashboard", s.Auth.RequireRoles("admin", "lehrer")(teacherZone))
+	// Hier standen bis zum 04.08.2026 zwei "Demo Dashboards": GET /admin/dashboard und
+	// GET /teacher/dashboard, die nichts taten außer einen englischen Satz auszugeben
+	// ("Access granted: Welcome to the Admin Dashboard."). Die Oberfläche ist eine SPA —
+	// ihre Bildschirme leben unter / im Frontend, nicht hinter eigenen Server-Routen.
+	// Die beiden waren korrekt rollengeschützt und damit harmlos, aber sie waren
+	// Angriffsfläche ohne Gegenwert und der einzige Ort, an dem die Autorisierung noch
+	// über Rollennamen statt über das konfigurierbare role_permissions-System lief.
+	// Ersatzlos entfernt.
 }

@@ -88,22 +88,34 @@ func (s *Server) CSRFTokenHandler() http.HandlerFunc {
 // den SMTP-Host mitsamt gespeicherter Zugangsdaten auf einen fremden Server
 // umzubiegen. Getragen hat das allein SameSite=Strict am Sitzungscookie: Die zweite
 // Schranke, die diese Datei verspricht, fehlte für die größte Angriffsfläche.
+// /login gehört seit dem 04.08.2026 dazu. Es liegt als einziger mutierender Endpunkt
+// nicht unter /api/ und fiel deshalb still aus der Prüfung — klassisches Login-CSRF:
+// Eine fremde Seite kann ein Formular mit enctype="text/plain" abschicken, dessen Body
+// als JSON durchgeht (kein Preflight, keine CORS-Hürde), und das Opfer damit in die
+// Sitzung eines ANGREIFER-Kontos anmelden. Alles, was es danach am Tresen scannt,
+// landet in dessen Konto. SameSite=Strict verhindert das nicht: Es regelt das SENDEN
+// von Cookies, nicht das Setzen durch die Antwort.
 func istAPIPfad(path string) bool {
-	return strings.HasPrefix(path, "/api/") || path == "/login/barcode"
+	return strings.HasPrefix(path, "/api/") || path == "/login"
 }
 
 // istPruefungsAusnahme nennt die mutierenden Pfade, die ohne Token durchmüssen —
 // jeder mit seinem Grund, damit die Liste nicht wieder unbemerkt wächst:
 //
-//   - /login/barcode: Vor dem Login gibt es keine Sitzung, die sich missbrauchen ließe.
 //   - /api/auth/logout: Der Aufruf löscht nur das eigene Cookie; ein erzwungenes
 //     Abmelden ist die Obergrenze des Schadens, und ein abgelaufenes Token darf sich
 //     nicht am fehlenden CSRF-Cookie festhaken.
 //   - /api/auth/refresh: Läuft im Frontend absichtlich ohne apiFetch (authStore), also
 //     ohne Header — und erneuert nur eine Sitzung, die der Browser schon hat.
+//
+// Hier stand außerdem /login/barcode mit der Begründung "vor dem Login gibt es keine
+// Sitzung". Diese Route existiert im gesamten Repository nicht: kein mux.Handle, kein
+// Aufruf im Frontend, und validateLoginCredentials verlangt zwingend E-Mail UND
+// Passwort — die Felder barcode_id/pin in LoginRequest wertet niemand aus. Eine
+// Ausnahme für einen Pfad, den es nicht gibt, schützt nichts und würde scharf, sobald
+// jemand die Route anlegt. Entfernt.
 func istPruefungsAusnahme(path string) bool {
-	return path == "/login/barcode" ||
-		path == "/api/auth/logout" ||
+	return path == "/api/auth/logout" ||
 		path == "/api/auth/refresh"
 }
 

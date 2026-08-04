@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+// starkerTestSchluessel erfüllt jobs.MinBackupSchluesselLaenge. Die Tests standen
+// vorher auf "test-key" (8 Zeichen) — seit der Wächter kurze Passphrasen meldet, wäre
+// das in jedem Fall "warning" gewesen und hätte die Alters-Schwellen verdeckt.
+const starkerTestSchluessel = "ein-hinreichend-langer-testschluessel-32+"
+
 func doBackupStatus(t *testing.T) *httptest.ResponseRecorder {
 	t.Helper()
 	s := &Server{}
@@ -46,7 +51,7 @@ func TestBackupStatus_MissingKeyIsCritical(t *testing.T) {
 
 func TestBackupStatus_EmptyDirIsCriticalNotCrash(t *testing.T) {
 	t.Setenv("BACKUP_DIR", t.TempDir()) // leer
-	t.Setenv("BACKUP_ENCRYPTION_KEY", "test-key")
+	t.Setenv("BACKUP_ENCRYPTION_KEY", starkerTestSchluessel)
 
 	rec := doBackupStatus(t)
 	if rec.Code != http.StatusOK {
@@ -60,11 +65,42 @@ func TestBackupStatus_EmptyDirIsCriticalNotCrash(t *testing.T) {
 
 func TestBackupStatus_MissingDirIsCriticalNotCrash(t *testing.T) {
 	t.Setenv("BACKUP_DIR", filepath.Join(t.TempDir(), "gibt-es-nicht"))
-	t.Setenv("BACKUP_ENCRYPTION_KEY", "test-key")
+	t.Setenv("BACKUP_ENCRYPTION_KEY", starkerTestSchluessel)
 
 	rec := doBackupStatus(t)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"status":"critical"`) {
 		t.Errorf("fehlendes Verzeichnis = sauberer critical: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// Der AES-Schlüssel wird per SHA-256 aus der Passphrase abgeleitet — schnell, also
+// offline gut durchprobierbar. Eine kurze Passphrase ist damit das schwache Glied.
+// Das Format bleibt unverändert (sonst wären alte Backups unlesbar); stattdessen
+// meldet der Wächter den Zustand ins Admin-Dashboard.
+func TestBackupStatus_KurzerSchluesselIstWarnung(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("BACKUP_DIR", dir)
+	t.Setenv("BACKUP_ENCRYPTION_KEY", "kurz123")
+	writeBackupFile(t, dir, time.Hour) // frisch — ohne die Schlüsselprüfung wäre das "ok"
+
+	body := doBackupStatus(t).Body.String()
+	if !strings.Contains(body, `"status":"warning"`) {
+		t.Errorf("kurze Passphrase muss warnen, Body: %s", body)
+	}
+	if !strings.Contains(body, `"encryption_key_weak":true`) {
+		t.Errorf("encryption_key_weak fehlt oder ist false, Body: %s", body)
+	}
+}
+
+// Gegenprobe: Ein fehlendes Backup bleibt critical und wird von der Schlüsselwarnung
+// nicht auf "warning" heruntergestuft.
+func TestBackupStatus_KurzerSchluesselStuftCriticalNichtHerab(t *testing.T) {
+	t.Setenv("BACKUP_DIR", t.TempDir()) // leer
+	t.Setenv("BACKUP_ENCRYPTION_KEY", "kurz123")
+
+	body := doBackupStatus(t).Body.String()
+	if !strings.Contains(body, `"status":"critical"`) {
+		t.Errorf("kein Backup bleibt critical, Body: %s", body)
 	}
 }
 
@@ -80,7 +116,7 @@ func TestBackupStatus_Thresholds(t *testing.T) {
 	for _, c := range cases {
 		dir := t.TempDir()
 		t.Setenv("BACKUP_DIR", dir)
-		t.Setenv("BACKUP_ENCRYPTION_KEY", "test-key")
+		t.Setenv("BACKUP_ENCRYPTION_KEY", starkerTestSchluessel)
 		writeBackupFile(t, dir, c.age)
 
 		body := doBackupStatus(t).Body.String()

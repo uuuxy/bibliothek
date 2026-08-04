@@ -4,7 +4,7 @@
  * bleiben die Date-Instanzen hier lokal und kurzlebig (im .svelte.js-Store würden sie
  * gegen svelte/prefer-svelte-reactivity laufen), und die Formatierung ist für sich testbar.
  *
- * @typedef {{ last_backup_at: string | null, encryption_key_set: boolean, status: 'ok'|'warning'|'critical' }} BackupStatus
+ * @typedef {{ last_backup_at: string | null, encryption_key_set: boolean, encryption_key_weak?: boolean, status: 'ok'|'warning'|'critical' }} BackupStatus
  */
 
 /**
@@ -16,6 +16,10 @@ export function backupMessage(s) {
 	if (!s) return '';
 	if (!s.encryption_key_set) return 'Backup-Verschlüsselungs-Key fehlt';
 	if (!s.last_backup_at) return 'Noch kein Backup vorhanden';
+	// Nur melden, wenn die Sicherungen ansonsten laufen — steht der Job still, ist das
+	// die dringendere Nachricht und sie hat Vorrang (Alters-Zweige weiter unten).
+	if (s.encryption_key_weak && s.status === 'warning')
+		return 'Backup-Schlüssel zu kurz';
 
 	const lastMs = Date.parse(s.last_backup_at);
 	if (Number.isNaN(lastMs)) return 'Backup-Zeitpunkt unlesbar';
@@ -50,5 +54,7 @@ export function backupHint(s) {
 		return 'Ohne Schlüssel überspringt der nächtliche Job jedes Backup. Schlüssel in den Einstellungen unter Datenverwaltung hinterlegen.';
 	if (!s.last_backup_at)
 		return 'Es liegt noch kein Sicherungsstand vor. Backup in den Einstellungen unter Datenverwaltung anstoßen.';
+	if (s.encryption_key_weak && s.status === 'warning')
+		return 'Die Sicherungen laufen, sind aber mit einer kurzen Passphrase verschlüsselt und dadurch leichter zu knacken. Längeren Schlüssel (mindestens 32 Zeichen) hinterlegen; bereits erstellte Backups bleiben mit dem alten Schlüssel lesbar.';
 	return 'Der nächtliche Job läuft nicht wie erwartet. Stand und Konfiguration in den Einstellungen unter Datenverwaltung prüfen.';
 }

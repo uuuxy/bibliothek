@@ -1,4 +1,5 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
+import { apiFetch } from '../apiFetch.js';
 
 class AuthStore {
 	isLoggedIn = $state(false);
@@ -120,10 +121,20 @@ class AuthStore {
 		this.isLoggingIn = true;
 
 		try {
-			const res = await fetch('/login', {
+			// apiFetch statt fetch: POST /login unterliegt seit dem 04.08.2026 der
+			// CSRF-Prüfung (api/csrf.go) und braucht den X-CSRF-Token-Header. apiFetch
+			// holt das Token notfalls selbst per Bootstrap (/api/csrf-token), es geht also
+			// auch beim allerersten Seitenaufruf ohne vorheriges Cookie.
+			//
+			// timeoutMs bewusst über dem Standard von 10 s für Mutationen: Die Anmeldung
+			// wartet auf den IMAP-Server der Schule, und AuthenticateIMAP räumt dem
+			// selbst 15 s ein. Mit dem Standardwert hätte apiFetch eine langsame, aber
+			// erfolgreiche Anmeldung als "Netzwerk-Timeout" abgebrochen.
+			const res = await apiFetch('/login', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email: this.loginEmail, password: this.loginPassword })
+				body: JSON.stringify({ email: this.loginEmail, password: this.loginPassword }),
+				timeoutMs: 20000
 			});
 			if (!res.ok) {
 				let msg = 'Login fehlgeschlagen';

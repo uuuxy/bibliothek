@@ -34,9 +34,14 @@ func (handler *APIHandler) handleUpdateCover(writer http.ResponseWriter, request
 		return
 	}
 
-	// Sicherheits-Validierung: Nur HTTPS-URLs und lokale Uploads erlauben
-	if !strings.HasPrefix(coverURL, "https://") && !strings.HasPrefix(coverURL, "/uploads/") {
-		writeError(writer, http.StatusBadRequest, "coverUrl muss mit https:// oder /uploads/ beginnen")
+	// Sicherheits-Validierung: lokale Uploads oder HTTPS von einem der bekannten
+	// Cover-Anbieter. Das reine https://-Präfix genügte nicht — es ließ jede beliebige
+	// Fremd-URL dauerhaft in die Datenbank schreiben, und die lädt anschließend jeder
+	// Browser, der den Katalog oder den Monitor öffnet. Die Liste steht in
+	// cover_herkunft.go und ist dieselbe, die auch der Download-Pfad benutzt.
+	if !strings.HasPrefix(coverURL, "/uploads/") && !IstErlaubteCoverHerkunft(coverURL) {
+		writeError(writer, http.StatusBadRequest,
+			"coverUrl muss mit /uploads/ beginnen oder von einem bekannten Cover-Anbieter stammen (DNB, OpenLibrary, Google Books)")
 		return
 	}
 

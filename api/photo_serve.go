@@ -15,7 +15,9 @@ func (s *Server) ServeStudentPhotoHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		barcodeID := strings.TrimSpace(r.PathValue("id"))
+		// {barcode_id}, nicht {id}: siehe Routen-Registrierung in routes_students.go —
+		// unter dem Namen "id" hätte die UUID-Prüfung jeden Barcode abgewiesen.
+		barcodeID := strings.TrimSpace(r.PathValue("barcode_id"))
 		if barcodeID == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("fehlende schueler_id/barcode_id"))
 			return

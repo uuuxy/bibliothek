@@ -31,9 +31,20 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Endgültig löschen (DSGVO-Purge): getrennte, stärkere Berechtigung als Soft-Delete.
 	mux.Handle("DELETE /api/schueler/deleted/{id}", s.RequirePermission("manage_users")(s.PurgeStudentHandler(auditRepo)))
 
-	// Photos
+	// Photos — die beiden Richtungen sprechen bewusst UNTERSCHIEDLICHE Kennungen an:
+	// hochgeladen wird über die Schüler-UUID (der Aufrufer kennt den Datensatz),
+	// ausgeliefert über den Barcode. Letzteres ist kein Zufall: resolveFotoURL
+	// (api/student_profile.go), student_profile_queries.go und photo_service.go bauen
+	// die Bild-URL alle drei als /api/schueler/<barcode>/photo, und das Frontend rendert
+	// sie unverändert als <img src>.
+	//
+	// Deshalb heißt der Platzhalter im GET {barcode_id} und nicht {id}: Die globale
+	// ValidateUUIDParamsMiddleware prüft ausschließlich einen Parameter namens "id" und
+	// wies jeden echten Barcode (z. B. "S-abg1-ms3p7309e19de436") mit 400 "ungültiges
+	// UUID Format" ab — verifiziert am laufenden System. Kein einziges Schülerfoto wurde
+	// je ausgeliefert; die URL blieb dieselbe, nur die Prüfung passte nicht zu ihr.
 	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.UploadStudentPhotoHandler()))
-	mux.Handle("GET /api/schueler/{id}/photo", s.RequirePermission("view_students")(s.ServeStudentPhotoHandler()))
+	mux.Handle("GET /api/schueler/{barcode_id}/photo", s.RequirePermission("view_students")(s.ServeStudentPhotoHandler()))
 
 	// Klassen
 	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler(studentRepo)))

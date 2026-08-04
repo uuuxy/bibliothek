@@ -12,7 +12,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,16 +37,8 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 		return nil
 	}
 
-	parsed, urlErr := url.Parse(coverURL)
-	if urlErr != nil {
-		log.Printf("Ungültige Cover-URL: %s", coverURL)
-		return nil
-	}
-	switch parsed.Hostname() {
-	case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org", "books.google.com", "books.google.de":
-		// Erlaubte Hosts
-	default:
-		log.Printf("SSRF Schutz: Cover-URL Hostname %s ist nicht in der Whitelist", parsed.Hostname())
+	if !IstErlaubteCoverHerkunft(coverURL) {
+		log.Printf("SSRF Schutz: Cover-URL %s stammt nicht von einem erlaubten Host", coverURL)
 		return nil
 	}
 

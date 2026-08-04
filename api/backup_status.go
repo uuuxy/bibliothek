@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"bibliothek/jobs"
 )
 
 const (
@@ -23,9 +25,10 @@ const (
 
 // BackupStatusResponse beschreibt den Zustand der nächtlichen Datenbank-Backups.
 type BackupStatusResponse struct {
-	LastBackupAt     *time.Time `json:"last_backup_at"` // RFC3339; null = noch nie
-	EncryptionKeySet bool       `json:"encryption_key_set"`
-	Status           string     `json:"status"` // "ok" | "warning" | "critical"
+	LastBackupAt      *time.Time `json:"last_backup_at"` // RFC3339; null = noch nie
+	EncryptionKeySet  bool       `json:"encryption_key_set"`
+	EncryptionKeyWeak bool       `json:"encryption_key_weak"` // gesetzt, aber zu kurz für die SHA-256-Ableitung
+	Status            string     `json:"status"`              // "ok" | "warning" | "critical"
 }
 
 // newestBackupTime liefert den ModTime der jüngsten Backup-Datei oder nil,
@@ -53,7 +56,10 @@ func newestBackupTime(dir string) *time.Time {
 }
 
 // computeBackupStatus wendet die Schwellen an — als reine Funktion testbar.
-func computeBackupStatus(keySet bool, last *time.Time, now time.Time) string {
+//
+// keyWeak stuft auf "warning" hoch, überschreibt aber niemals ein "critical": Ein
+// fehlendes Backup wiegt schwerer als ein schwach abgeleitetes.
+func computeBackupStatus(keySet, keyWeak bool, last *time.Time, now time.Time) string {
 	if !keySet || last == nil {
 		return "critical"
 	}
@@ -62,6 +68,8 @@ func computeBackupStatus(keySet bool, last *time.Time, now time.Time) string {
 	case age > backupCriticalAge:
 		return "critical"
 	case age > backupWarnAge:
+		return "warning"
+	case keyWeak:
 		return "warning"
 	default:
 		return "ok"
@@ -72,7 +80,9 @@ func computeBackupStatus(keySet bool, last *time.Time, now time.Time) string {
 // GET /api/admin/system/backup-status
 func (s *Server) BackupStatusHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		keySet := os.Getenv("BACKUP_ENCRYPTION_KEY") != ""
+		encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
+		keySet := encKey != ""
+		keyWeak := jobs.SchluesselIstSchwach(encKey)
 
 		dir := os.Getenv("BACKUP_DIR")
 		if dir == "" {
@@ -81,9 +91,10 @@ func (s *Server) BackupStatusHandler() http.HandlerFunc {
 		last := newestBackupTime(dir)
 
 		RespondJSON(w, http.StatusOK, BackupStatusResponse{
-			LastBackupAt:     last,
-			EncryptionKeySet: keySet,
-			Status:           computeBackupStatus(keySet, last, time.Now()),
+			LastBackupAt:      last,
+			EncryptionKeySet:  keySet,
+			EncryptionKeyWeak: keyWeak,
+			Status:            computeBackupStatus(keySet, keyWeak, last, time.Now()),
 		})
 	}
 }

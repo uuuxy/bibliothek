@@ -30,6 +30,28 @@ func escapePgPass(s string) string {
 	return strings.ReplaceAll(s, ":", "\\:")
 }
 
+// MinBackupSchluesselLaenge ist die Mindestlänge der Backup-Passphrase.
+//
+// Der AES-Schlüssel wird per SHA-256 aus der Passphrase abgeleitet — einer schnellen
+// Hashfunktion, keiner rechenintensiven KDF (argon2id/scrypt). Wer eine Backup-Datei
+// in die Hände bekommt, kann Kandidaten also mit sehr hoher Rate durchprobieren. Bei
+// einer langen, zufälligen Passphrase ist das trotzdem aussichtslos; bei einem
+// gemerkten Wort ist es eine Frage von Minuten.
+//
+// Die KDF selbst bleibt bewusst unverändert: Sie ist das Dateiformat. Ein Wechsel
+// würde jedes bereits erstellte Backup unwiederbringlich unlesbar machen
+// (cmd/restore-backup leitet identisch ab), und ein Sicherungssystem, dessen alte
+// Stände man nicht mehr öffnen kann, ist schlimmer als eine schwächere Ableitung.
+// Stattdessen wird die Passphrase-Länge geprüft und im Admin-Dashboard gemeldet.
+const MinBackupSchluesselLaenge = 32
+
+// SchluesselIstSchwach meldet, ob die Backup-Passphrase zu kurz ist, um die schnelle
+// SHA-256-Ableitung auszugleichen. Ein leerer Schlüssel gilt hier NICHT als schwach —
+// das ist der separate, schwerwiegendere Fall "gar kein Backup".
+func SchluesselIstSchwach(schluessel string) bool {
+	return schluessel != "" && len(schluessel) < MinBackupSchluesselLaenge
+}
+
 // BackupJob führt tägliche verschlüsselte PostgreSQL-Datenbank-Backups durch.
 // Es ruft pg_dump auf (muss im PATH sein), komprimiert mit gzip und
 // verschlüsselt mit AES-256-GCM unter Verwendung eines Schlüssels, der aus BACKUP_ENCRYPTION_KEY abgeleitet wird.
@@ -99,6 +121,14 @@ func resolveBackupEnv() (encKey, dsn, backupDir string, ok bool) {
 	if encKey == "" {
 		log.Println("Backup: BACKUP_ENCRYPTION_KEY not set – skipping encrypted backup")
 		return "", "", "", false
+	}
+	// Warnen, aber weitermachen: Ein Backup mit kurzer Passphrase ist deutlich besser
+	// als gar keins. Sichtbar wird der Zustand über /api/admin/system/backup-status
+	// im Admin-Dashboard — ein Logeintrag allein liest niemand.
+	if SchluesselIstSchwach(encKey) {
+		log.Printf("Backup: BACKUP_ENCRYPTION_KEY ist nur %d Zeichen lang (empfohlen: >= %d) – "+
+			"die Ableitung per SHA-256 ist schnell, kurze Passphrasen sind offline angreifbar",
+			len(encKey), MinBackupSchluesselLaenge)
 	}
 
 	dsn = os.Getenv("DATABASE_URL")

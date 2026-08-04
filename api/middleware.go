@@ -151,7 +151,12 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		if allowedOrigin != "" && origin == allowedOrigin {
 			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			// X-CSRF-Token gehört zwingend dazu: Ohne den Header in dieser Liste
+			// scheitert bei gesetztem ALLOWED_ORIGIN jede mutierende Cross-Origin-Anfrage
+			// schon am Preflight — die CSRF-Härtung hätte das Frontend ausgesperrt statt
+			// Angreifer. Im Same-Origin-Betrieb hinter Caddy fällt das nicht auf, weil
+			// es dort gar keinen Preflight gibt.
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Vary", "Origin")
 		}
