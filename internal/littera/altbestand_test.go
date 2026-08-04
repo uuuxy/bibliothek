@@ -62,6 +62,65 @@ func TestEchterAltbestand(t *testing.T) {
 		len(titel), len(exemplare), len(signaturen), len(abweichend))
 
 	pruefeAutorenAbdeckung(t, basis, titel)
+	pruefeLeserEinordnung(t, basis)
+}
+
+// pruefeLeserEinordnung belegt, dass die Weiche Schüler/Lehrkraft am echten Bestand
+// greift — und dass keine Lehrkraft in der Schuelermenge landet.
+func pruefeLeserEinordnung(t *testing.T, basis string) {
+	t.Helper()
+
+	gf, err := os.Open(filepath.Join(basis, "leser_ug.csv")) //nolint:gosec // Testumgebung
+	if err != nil {
+		t.Skipf("leser_ug.csv fehlt — Leser-Pruefung uebersprungen: %v", err)
+	}
+	t.Cleanup(func() { _ = gf.Close() }) //nolint:errcheck // Testaufraeumen
+	gruppen, err := LeseLesergruppen(gf)
+	if err != nil {
+		t.Fatalf("Lesergruppen: %v", err)
+	}
+
+	lf, err := os.Open(filepath.Join(basis, "leser.csv")) //nolint:gosec // Testumgebung
+	if err != nil {
+		t.Skipf("leser.csv fehlt — Leser-Pruefung uebersprungen: %v", err)
+	}
+	t.Cleanup(func() { _ = lf.Close() }) //nolint:errcheck // Testaufraeumen
+	leser, err := LeseLeser(lf, gruppen)
+	if err != nil {
+		t.Fatalf("Leser lesen: %v", err)
+	}
+
+	schueler := NurArt(leser, ArtSchueler)
+	lehrkraefte := NurArt(leser, ArtLehrkraft)
+	abgegangen := NurArt(leser, ArtAbgegangen)
+
+	if len(schueler) == 0 || len(lehrkraefte) == 0 {
+		t.Fatalf("Einordnung greift nicht: %d Schueler, %d Lehrkraefte",
+			len(schueler), len(lehrkraefte))
+	}
+
+	// Die eigentliche Zusicherung: Jeder Schueler hat eine Klasse. schueler.klasse ist
+	// in der Zieltabelle NOT NULL — eine leere Klasse waere ein Schreibfehler.
+	for _, s := range schueler {
+		if s.Klasse == "" {
+			t.Fatalf("Schueler %s ohne Klasse — schueler.klasse ist NOT NULL", s.Lesernummer)
+		}
+	}
+
+	// Und die Gegenprobe: keine Lehrkraft in der Schuelermenge.
+	lehrerNummern := map[string]bool{}
+	for _, l := range lehrkraefte {
+		lehrerNummern[l.Lesernummer] = true
+	}
+	for _, s := range schueler {
+		if lehrerNummern[s.Lesernummer] {
+			t.Errorf("Lesernummer %s steht in beiden Mengen", s.Lesernummer)
+		}
+	}
+
+	t.Logf("Leser: %d gesamt — %d Schueler, %d Lehrkraefte, %d abgegangen, %d sonstige, %d unklar",
+		len(leser), len(schueler), len(lehrkraefte), len(abgegangen),
+		len(NurArt(leser, ArtSonstige)), len(NurArt(leser, ArtUnbekannt)))
 }
 
 // pruefeAutorenAbdeckung belegt, dass die Aufloesung ueber Personen/Personen_Zuordnung

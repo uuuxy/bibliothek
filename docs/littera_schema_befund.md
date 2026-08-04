@@ -55,11 +55,25 @@ Gymnasialzweig). Auflösbar für **1.991 von 1.991** Lesern.
 Die naheliegende Quelle `LeserSchueler` (705 Zeilen mit `Jahrgang`, `Abgang`,
 `Klassenlehrer`) ist **komplett leer** — alle Werte 0. Nicht darauf bauen.
 
-> **Vor dem Schreibpfad zwingend beachten:** `Leser` mischt drei Personengruppen.
-> Unter den „Klassen" stehen `Lehrerin` (98), `Lehrer` (60) und `Ab` = „Abgegangen"
-> (71) neben den echten Klassen. Ein Import aller 1.991 Zeilen nach `schueler` würde
-> **Lehrkräfte in die Schülerdatei schreiben**. Die Untergruppe muss also filtern, nicht
-> nur die Klasse liefern.
+**Die Weiche steht in den Daten, sie muss nicht geraten werden:**
+`Leser_UG.Untergruppe` unterscheidet die Personengruppen. Umgesetzt in `LeserArt`:
+
+| Untergruppe | Art | Ziel |
+|---|---|---|
+| `Schüler`, **`Sekundarstufe II`** | `ArtSchueler` | `schueler` |
+| `Lehrer`, `Lehrerin` | `ArtLehrkraft` | `benutzer` mit Rolle `lehrer` |
+| `Abgegangen` | `ArtAbgegangen` | `schueler` mit `ist_abgaenger` |
+| `Praktikant`, `Sekretärin`, `Fachbereich …` | `ArtSonstige` | kein Schüler |
+| alles andere (`IMPORT`, `U-plus`, `Im Ausland`, `UNDEF`) | `ArtUnbekannt` | **nicht schreiben** |
+
+`Sekundarstufe II` ist der Fall, den man leicht übersieht: eine eigene Untergruppe,
+aber die Oberstufenklassen (11T1, 12T3, 13T5) sind selbstverständlich Schüler.
+
+Gemessen am Altbestand: **1.720 Schüler · 158 Lehrkräfte · 71 abgegangen · 20 sonstige ·
+22 unklar** — und jeder der 1.720 Schüler hat eine Klasse (`schueler.klasse` ist NOT NULL,
+ein Test sichert das ab). Unklare Zeilen werden bewusst **nicht** stillschweigend zu
+Schülern: Bei Personendaten ist eine ausgelassene Zeile das kleinere Übel als eine
+falsch einsortierte.
 
 Feldbelegung, gemessen: Nachname 1.991 · Vorname 1.980 · Geburtsdatum 1.924 ·
 Adresse 1.927 · Anmeldedatum 834 · **eMail nur 3** · Abmeldedatum 0.
@@ -126,11 +140,11 @@ Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
   Normalfall (6.178 Titel haben genau zwei) und werden in Erfassungsreihenfolge mit
   `; ` verbunden, nicht alphabetisch: Der Erstgenannte ist der Hauptverfasser.
 * **Medienart — erledigt** (`MedienartNamen`, gleiche Bauart wie `Verlag`).
-* **Leser und Ausleihen**: Feldzuordnung steht und ist an den Daten geprüft (siehe oben),
-  der Lesepfad ist noch nicht gebaut. Die drei Stolpersteine sind benannt: Klasse nur
-  über `Leser_UG`, Lehrkräfte und Abgänger aussortieren, `LeserSchueler` ist leer.
-  `schueler.klasse` und `schueler.abgaenger_jahr` sind NOT NULL — für beide braucht es
-  eine bewusste Regel, bevor geschrieben wird.
+* **Leser — erledigt** (`LeseLeser`, `LeseLesergruppen`, `NurArt`): Einordnung nach
+  `LeserArt`, Klasse aus `Leser_UG`. Offen bleibt nur `schueler.abgaenger_jahr` (NOT NULL):
+  Littera führt `Abmeldedatum` — im Altbestand bei **0 von 1.991** gefüllt. Der Wert muss
+  also aus der Klassenstufe abgeleitet werden (z. B. Jahrgang aus `07H1` + Schuljahr).
+* **Ausleihen**: Feldzuordnung steht (siehe oben), Lesepfad noch nicht gebaut.
 * **Schreibpfad nach Postgres**: noch offen. Empfehlung, keinen zweiten zu bauen —
   `cmd/migrate/pg_writer.go` ist bereits gehärtet (Savepoints je Titel,
   Barcode-Prüfung, Fehlerklassen) und braucht nur einen anderen Leser davor.
