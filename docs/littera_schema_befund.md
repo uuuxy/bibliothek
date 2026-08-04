@@ -67,18 +67,40 @@ Zwei Folgerungen:
    hierarchisch am Leerzeichen aufgebaut (`LMF` → `LMF Bio` → `LMF Bio 11`), genau die
    Grenze, nach der `repository.SignaturPraefixBedingung` schneidet.
 
-2. **Unser `buecher_titel.signatur` liegt am Titel — Littera am Exemplar.** Gemessen:
-   Bei **98 von 10.454** Titeln (0,9 %) unterscheiden sich die Signaturen der Exemplare
-   untereinander. Für 99 % ist die Titel-Ebene verlustfrei; für diese 98 muss der Import
-   entscheiden (häufigsten Wert nehmen und die Abweichungen protokollieren — nicht still
-   den ersten nehmen).
+2. **Unser `buecher_titel.signatur` liegt am Titel — Littera am Exemplar.** Gemessen
+   über den fertigen Lesepfad: Bei **72 von 10.422** Titeln mit Signatur (0,7 %)
+   unterscheiden sich die Exemplar-Signaturen untereinander. (Eine frühere Rohzählung
+   ergab 98 — sie zählte den Platzhalter `0` als eigenen Wert mit; `SignaturAus`
+   verwirft ihn.) Für 99,3 % ist die Titel-Ebene verlustfrei; für die übrigen nimmt
+   `SignaturJeTitel` den häufigsten Wert und meldet den Titel als abweichend, statt
+   still den ersten zu nehmen.
 
-## Werkzeuglage
+## Werkzeuglage — das vorhandene Werkzeug hat nie gegen echte Daten gelaufen
 
-`cmd/littera_migration` zielt bereits auf Access, nutzt aber ODBC mit dem Treiber
-„Microsoft Access Driver (*.mdb, *.accdb)" — **den gibt es nur unter Windows**. Auf dem
-Mac und im Container läuft das nicht. `cmd/migrate` liest MySQL und passt gar nicht.
+`cmd/littera_migration` fragt ab:
 
-Empfehlung: Die Tabellen mit `mdb-export` nach CSV ziehen (plattformunabhängig, hier
-erprobt) und den vorhandenen CSV-/Tabellen-Importpfad nutzen, statt einen ODBC-Zwang
-einzubauen, der nur auf einem Windows-Rechner erfüllbar ist.
+```sql
+SELECT TitelID, Titel, Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL
+SELECT ExemplarID, TitelID, Barcode, ErworbenAm FROM EXEMPLARE
+```
+
+**Von diesen Spalten existiert einzig `ISBN`.** Der Kommentar im Werkzeug sagt es offen:
+„Wir nehmen hier Standardnamen an." Es ist ein Gerüst, das nie angepasst wurde — gegen
+eine echte Littera-Datei bricht es bei der ersten Abfrage ab. Dazu kommt der ODBC-Zwang
+(Treiber nur unter Windows), der es auf dem Arbeitsrechner und im Container ohnehin
+unbrauchbar macht.
+
+Ersetzt durch `internal/littera`: liest die `mdb-export`-CSVs (plattformunabhängig),
+bildet auf die echten Spaltennamen ab und ist ohne Datenbank testbar. Gegen den
+Altbestand belegt: **10.732 Titel, 61.520 Exemplare, 0 verwaiste Exemplare** — jedes
+Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
+`LITTERA_CSV_DIR` (wie die PG-Tests an `TEST_DATABASE_URL`).
+
+### Noch offen für den vollständigen Import
+
+* **Autoren**: Nur 2.877 von 10.732 Titeln haben eine `Verfasserangabe`. Die saubere
+  Quelle sind vermutlich die Tabellen `Personen` / `Personen_Zuordnung` — noch nicht
+  ausgewertet.
+* **Leser und Ausleihen**: Zuordnung steht (siehe oben), Lesepfad noch nicht gebaut.
+* **Medienart** (`Titel.Medienart`, Zahl) muss wie `Verlag` über die Nachschlagetabelle
+  aufgelöst werden.
