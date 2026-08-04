@@ -21,6 +21,67 @@
 	--font-weight-semibold: 500;
 	--font-weight-bold: 600;
 
+	/* ── Typo-Skala (Material 3) ──────────────────────────────────────────────
+	   Gezählt: 978 Schriftgrößen, davon 86 frei gewählte Pixelwerte
+	   (text-[10px] 63×, [11px] 13×, [9px] 5×, [8px] 5×), die an jeder Skala
+	   vorbeigehen. Der Rest lag auf Tailwind-Standardgrößen ohne Zeilenhöhe und
+	   ohne Laufweite.
+
+	   M3 definiert je Stufe DREI Werte: Größe, Zeilenhöhe und Laufweite. Die
+	   Laufweite ist der unscheinbarste und wirksamste — kleine Schrift bekommt
+	   mehr Luft (0,5 px bei 12 px), große weniger. Ohne sie wirkt M3-Typografie
+	   „fast richtig", und genau das war hier der Fall.
+
+	   Zuordnung auf die vorhandenen Klassennamen (wieder die Skala statt der
+	   Aufrufe): xs→body-small, sm→body-medium, base→body-large, lg→title-large,
+	   xl→headline-small, 2xl→headline-medium, 3xl→headline-large,
+	   4xl→display-small.
+
+	   Die 86 Pixelwerte bleiben davon UNBERÜHRT — sie sind literal und lassen
+	   sich nicht über die Skala einfangen. Sie einzeln abzulösen ist eigene
+	   Arbeit und steht noch aus. */
+	--text-xs: 0.75rem; /* 12 px — body-small */
+	--text-xs--line-height: 1rem;
+	--text-xs--letter-spacing: 0.03125rem;
+	--text-sm: 0.875rem; /* 14 px — body-medium */
+	--text-sm--line-height: 1.25rem;
+	--text-sm--letter-spacing: 0.015625rem;
+	--text-base: 1rem; /* 16 px — body-large */
+	--text-base--line-height: 1.5rem;
+	--text-base--letter-spacing: 0.03125rem;
+	--text-lg: 1.375rem; /* 22 px — title-large */
+	--text-lg--line-height: 1.75rem;
+	--text-lg--letter-spacing: 0rem;
+	--text-xl: 1.5rem; /* 24 px — headline-small */
+	--text-xl--line-height: 2rem;
+	--text-xl--letter-spacing: 0rem;
+	--text-2xl: 1.75rem; /* 28 px — headline-medium */
+	--text-2xl--line-height: 2.25rem;
+	--text-2xl--letter-spacing: 0rem;
+	--text-3xl: 2rem; /* 32 px — headline-large */
+	--text-3xl--line-height: 2.5rem;
+	--text-3xl--letter-spacing: 0rem;
+	--text-4xl: 2.25rem; /* 36 px — display-small */
+	--text-4xl--line-height: 2.75rem;
+	--text-4xl--letter-spacing: 0rem;
+
+	/* ── Laufweite ────────────────────────────────────────────────────────────
+	   32 lokale Überschreibungen fanden sich, die die Skala oben aushebeln —
+	   12× tracking-tight (bei 22 px gemessen: −0,55 px), 20× wide/wider/widest.
+	   M3 benutzt NIE negative Laufweite: Enger gesetzte Überschriften sind ein
+	   Merkmal amerikanischer Marketing-Typografie, nicht von Material.
+
+	   tracking-tight wird deshalb auf 0 gesetzt statt in zwölf Dateien entfernt
+	   zu werden — die Klasse darf stehen bleiben, sie richtet nur keinen Schaden
+	   mehr an. Die wide-Stufen bleiben erhalten und rücken auf M3-Werte: Sie
+	   stehen an Versalien-Labels, wo M3 selbst mehr Luft vorsieht. */
+	--tracking-tighter: 0rem;
+	--tracking-tight: 0rem;
+	--tracking-normal: 0rem;
+	--tracking-wide: 0.03125rem;
+	--tracking-wider: 0.0625rem;
+	--tracking-widest: 0.09375rem;
+
 	/* ── Eckenradien ──────────────────────────────────────────────────────────
 	   Zusammengestauchte Skala für ein Verwaltungswerkzeug. Das Audit fand 18
 	   verschiedene Radius-Werte in 763 Vorkommen; die großen (rounded-xl 12 px,
