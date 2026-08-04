@@ -63,6 +63,42 @@ func TestUUIDPruefungGreiftNurBeimParameterID(t *testing.T) {
 	}
 }
 
+// Die Prüfung deckt jetzt auch {schueler_id} und {ausleihe_id} ab (beide Spalten sind
+// laut schema.sql UUID). Entscheidend ist die Gegenprobe: Parameter, die KEINE UUID
+// tragen, dürfen nicht mitgeprüft werden — sonst wiederholt sich der Foto-Fehler an
+// anderer Stelle. {klasse} ist ein Klassenname, {barcode_id} ein Barcode.
+func TestUUIDPruefungDecktNurEchteUUIDParameterAb(t *testing.T) {
+	faelle := []struct {
+		name      string
+		muster    string
+		pfad      string
+		willBlock bool
+	}{
+		{"schueler_id mit Unsinn wird geprüft", "GET /api/print/rechnung/{schueler_id}", "/api/print/rechnung/keine-uuid", true},
+		{"schueler_id mit UUID kommt durch", "GET /api/print/rechnung/{schueler_id}", "/api/print/rechnung/11111111-2222-3333-4444-555555555555", false},
+		{"ausleihe_id mit Unsinn wird geprüft", "POST /api/ausleihen/{ausleihe_id}/x", "/api/ausleihen/keine-uuid/x", true},
+		{"klasse bleibt unangetastet", "DELETE /api/klassen-mapping/{klasse}", "/api/klassen-mapping/5b", false},
+		{"barcode_id bleibt unangetastet", "GET /api/schueler/{barcode_id}/photo", "/api/schueler/S-abg1-ms3p7309e19de436/photo", false},
+	}
+
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			mux := http.NewServeMux()
+			mux.Handle(f.muster, ValidateUUIDParamsMiddleware(http.HandlerFunc(
+				func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })))
+
+			methode := strings.Fields(f.muster)[0]
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, httptest.NewRequest(methode, f.pfad, nil))
+
+			blockiert := rec.Code == http.StatusBadRequest
+			if blockiert != f.willBlock {
+				t.Errorf("%s → Status %d (blockiert=%v); want blockiert=%v", f.pfad, rec.Code, blockiert, f.willBlock)
+			}
+		})
+	}
+}
+
 // Upload und Auslieferung liegen auf demselben Pfad, tragen aber verschiedene
 // Platzhalternamen. Go's ServeMux paniked bei kollidierenden Mustern — dieser Test
 // belegt, dass die Kombination zulässig ist und beide Methoden ihr Ziel finden.

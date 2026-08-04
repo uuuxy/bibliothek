@@ -184,12 +184,28 @@ var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4
 
 // ValidateUUIDParamsMiddleware intercepts requests and validates {id} path parameters
 // against a standard UUID format before they hit the database.
+// uuidPfadParameter nennt die Pfad-Parameter, deren Wert IMMER eine UUID ist —
+// namentlich und abschließend, nicht nach einem Namensmuster.
+//
+// Ein Muster wie "alles was auf _id endet" wäre hier gefährlich: {barcode_id} endet
+// genauso auf _id, trägt aber einen Barcode (VARCHAR(100), z. B. "S-abg1-ms3p73…").
+// Genau diese Verwechslung hat das Foto-GET lahmgelegt — es hieß {id}, und die
+// Prüfung wies damit jeden Barcode mit 400 ab, bevor der Handler lief. Kein einziges
+// Schülerfoto wurde je ausgeliefert. Deshalb steht hier eine Liste, die man nur
+// erweitert, wenn die dahinterliegende Spalte nachweislich UUID ist.
+//
+// Belegt in schema.sql: schueler.id (Zeile 151) und ausleihen.id (Zeile 458) sind
+// UUID. {klasse} ist ein Klassenname und gehört bewusst NICHT dazu.
+var uuidPfadParameter = []string{"id", "schueler_id", "ausleihe_id"}
+
 func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id != "" && !uuidRegex.MatchString(id) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges UUID Format im Pfadparameter"))
-			return
+		for _, name := range uuidPfadParameter {
+			wert := r.PathValue(name)
+			if wert != "" && !uuidRegex.MatchString(wert) {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges UUID Format im Pfadparameter"))
+				return
+			}
 		}
 		next.ServeHTTP(w, r)
 	})

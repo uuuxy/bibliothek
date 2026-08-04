@@ -28,10 +28,13 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 
 	// Define expected headers and their expected values
 	expectedHeaders := map[string]string{
-		"X-Content-Type-Options":    "nosniff",
-		"X-Frame-Options":           "DENY",
-		"X-XSS-Protection":          "1; mode=block",
-		"Content-Security-Policy":   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors 'none'; form-action 'self';",
+		"X-Content-Type-Options": "nosniff",
+		"X-Frame-Options":        "DENY",
+		"X-XSS-Protection":       "1; mode=block",
+		// base-uri und object-src sind seit dem 04.08.2026 dabei. base-uri fällt NICHT auf
+		// default-src zurück — ohne die Direktive kann ein eingeschleustes <base href>
+		// jede relative URL der SPA umbiegen.
+		"Content-Security-Policy":   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';",
 		"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 		"Referrer-Policy":           "strict-origin-when-cross-origin",
 		"Permissions-Policy":        "geolocation=(), microphone=(), camera=(self)",

@@ -39,8 +39,24 @@ services:
       - DB_HOST=postgres-db
       # Vertrauenswürdige Proxy-Netze für die echte Client-IP (Rate-Limiting,
       # Login-Brute-Force, Audit-Logs). Default = private Docker-Netze, damit die
-      # von Caddy angehängte X-Forwarded-For-Client-IP ausgewertet wird. Siehe
-      # .env.example. Bei bekanntem caddy_global_net-Subnetz enger fassen.
+      # von Caddy angehängte X-Forwarded-For-Client-IP ausgewertet wird.
+      #
+      # Der Default ist bewusst weit, und er bleibt es: Das echte Subnetz von
+      # caddy_global_net vergibt der Docker-Daemon des JEWEILIGEN Hosts. Auf dem
+      # Entwicklungsrechner ist es 172.19.0.0/16 (geprüft), auf dem Schulserver kann
+      # es ein anderes sein. Ein hier fest eingetragener Wert, der dort nicht passt,
+      # fällt nicht als Fehler auf — er lässt still jede Client-IP auf die Proxy-
+      # Adresse zusammenfallen, und damit werden Rate-Limiting und Audit-Log
+      # wertlos, ohne dass irgendwo etwas rot wird.
+      #
+      # Enger fassen lohnt sich trotzdem. Auf dem Zielhost ermitteln mit:
+      #   docker network inspect caddy_global_net \
+      #     --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
+      # und das Ergebnis in der .env als TRUSTED_PROXIES eintragen.
+      #
+      # Bis dahin trägt die Absicherung das Port-Binding: Das Backend lauscht nur auf
+      # 127.0.0.1 (siehe oben), erreichbar ist es also ausschließlich über Caddy im
+      # Docker-Netz. Ein gefälschter X-Forwarded-For von außen kommt gar nicht erst an.
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
       # ── Sicherheit / Secrets ────────────────────────────────────────────────
       # Test-/Pilotphase (Standard): Der Stack startet auch mit den Default-Secrets.

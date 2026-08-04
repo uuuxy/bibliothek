@@ -191,7 +191,20 @@ func (s *Server) registerFrontendRoutes(mux *http.ServeMux) {
 
 func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// Wrap mux in logging, rate limiting, HTTPS redirect, body size limit and RBAC blocking middlewares
-	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024) // 100MB limit
+	// 100 MB — bewusst großzügig und bewusst global.
+	//
+	// Die Zahl klingt nach Speicherrisiko, ist aber keins: MaxBodySizeMiddleware setzt
+	// http.MaxBytesReader, und der BEGRENZT nur, wie viel ein Handler lesen darf. Er
+	// puffert nichts. Wer 100 MB schickt, ohne dass ein Handler sie liest, belegt keinen
+	// Speicher; wer mehr schickt, bekommt einen Lesefehler.
+	//
+	// Kleiner setzen wäre riskanter als es aussieht: Über diesen einen Wert laufen auch
+	// der Littera-Import, der Bestands-Import und der Excel-Katalogimport. Ein zu enger
+	// Wert bricht sie mitten im Lauf, und zwar mit einer Meldung, die nicht nach
+	// "Datei zu groß" klingt. Eine getrennte, kleinere Grenze für alles außer den
+	// Import-Routen wäre der saubere Weg — dafür muss aber jede Upload-Route einzeln
+	// belegt sein, sonst bricht genau die eine, die man übersehen hat.
+	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024)
 	rateLimiter := RateLimitMiddleware(50)
 	timeoutLimiter := TimeoutMiddleware(15 * time.Second)
 
