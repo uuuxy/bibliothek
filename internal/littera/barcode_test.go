@@ -96,3 +96,55 @@ func TestStandardOptionenSchuljahr(t *testing.T) {
 		}
 	}
 }
+
+// TestEtikettBarcode rechnet gegen ZWEI echte Bücher aus dem Regal der Schule.
+//
+// Diese beiden Zeilen sind der einzige Beleg, dass der Import scannbare Barcodes
+// schreibt. Vorher stand dort die nackte Exemplarnummer — kein einziges der 61.520
+// Exemplare wäre am Scanner auffindbar gewesen, und gemerkt hätte man es erst an der
+// Theke.
+func TestEtikettBarcode(t *testing.T) {
+	faelle := []struct {
+		exemplarnummer string
+		erwartet       string
+	}{
+		{"105785", "1057850039567"}, // Zeitreise, Ansch.-J. 2022
+		{"110815", "1108150039563"},
+		// Die Altbestandsnummern sind kürzer und werden links mit Nullen gefüllt.
+		{"808", "0008080039569"},
+		{"61512", "0615120039566"},
+	}
+	for _, f := range faelle {
+		got, ok := EtikettBarcode(f.exemplarnummer, "395")
+		if !ok {
+			t.Errorf("Exemplarnummer %q ergab keinen Barcode", f.exemplarnummer)
+			continue
+		}
+		if got != f.erwartet {
+			t.Errorf("Exemplarnummer %q → %q, erwartet %q", f.exemplarnummer, got, f.erwartet)
+		}
+		if len(got) != 13 {
+			t.Errorf("EAN-13 muss 13 Stellen haben, %q hat %d", got, len(got))
+		}
+		if p := EAN13Pruefziffer(got[:12]); string('0'+rune(p)) != got[12:] {
+			t.Errorf("%q trägt eine falsche Prüfziffer", got)
+		}
+	}
+}
+
+// TestEtikettBarcodeLehntUnpassendesAb: ein falscher Barcode ist schlimmer als gar
+// keiner — dann steht das Buch unter einer Nummer, die es nirgends gibt.
+func TestEtikettBarcodeLehntUnpassendesAb(t *testing.T) {
+	faelle := []struct{ nummer, bib string }{
+		{"", "395"},         // keine Exemplarnummer
+		{"1234567", "395"},  // passt nicht in sechs Stellen
+		{"12A456", "395"},   // keine reine Ziffernfolge
+		{"105785", ""},      // keine Bibliotheksnummer
+		{"105785", "12345"}, // Bibliotheksnummer zu lang
+	}
+	for _, f := range faelle {
+		if got, ok := EtikettBarcode(f.nummer, f.bib); ok {
+			t.Errorf("(%q, %q) hätte abgelehnt werden müssen, ergab %q", f.nummer, f.bib, got)
+		}
+	}
+}

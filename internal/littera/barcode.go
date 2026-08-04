@@ -79,3 +79,75 @@ func entschluesseleZiffer(s string) (int, bool) {
 	}
 	return 0, false
 }
+
+// Das Etikett am Buch trägt eine EAN-13, nicht die nackte Exemplarnummer.
+//
+// Gemessen an zwei echten Büchern der Schule:
+//
+//	Exemplar-Nr. 105785  →  1057850039567
+//	Exemplar-Nr. 110815  →  1108150039563
+//
+// Aufbau (beide Male identisch, Prüfziffer jeweils verifiziert):
+//
+//	1 0 5 7 8 5   0   0 3 9 5   6   7
+//	└─ 105785 ─┘  ↑   └─ 0395 ┘ ↑   ↑
+//	Exemplarnr.   │   Bibl.-Nr. │   EAN-13-Prüfziffer
+//	6-stellig     └── konstant ─┘
+//
+// Warum das hier steht und nicht „nimm Exemplar.Exemplarnummer": Der Import schrieb
+// zuerst die nackte Nummer nach buecher_exemplare.barcode_id. Kein einziges der 61.520
+// Exemplare wäre damit am Scanner auffindbar gewesen — und aufgefallen wäre es erst an
+// der Theke. Dieselbe Falle wie beim Schülerausweis, wo unter dem Strichcode „[0395] 37"
+// steht, der Scanner aber „B97601826457" liefert.
+//
+// Die Stellen 7 und 12 sind aus zwei Proben als konstant abgeleitet, nicht aus einer
+// Littera-Dokumentation. Liefert ein drittes Buch etwas anderes, gehören sie
+// parametrisiert — der Aufbau steht deshalb hier an einer Stelle und nicht verstreut.
+const (
+	etikettFuellerVorne  = "0" // Stelle 7, zwischen Exemplarnummer und Bibliotheksnummer
+	etikettFuellerHinten = "6" // Stelle 12, vor der Prüfziffer
+	etikettExemplarLen   = 6
+	etikettBibLen        = 4
+)
+
+// EtikettBarcode baut den Wert, den ein Scanner vom Buchetikett liest.
+//
+// ok ist false, wenn die Nummern nicht in das Muster passen (zu lang oder nicht
+// numerisch). Dann darf niemand raten: Ein falscher Barcode ist schlimmer als gar keiner,
+// weil das Buch dann unter einer Nummer steht, die es nirgends gibt.
+func EtikettBarcode(exemplarnummer, bibliotheksnummer string) (string, bool) {
+	nr, nrOK := zifferngefuellt(exemplarnummer, etikettExemplarLen)
+	bib, bibOK := zifferngefuellt(bibliotheksnummer, etikettBibLen)
+	if !nrOK || !bibOK {
+		return "", false
+	}
+	rumpf := nr + etikettFuellerVorne + bib + etikettFuellerHinten
+	return rumpf + string('0'+rune(EAN13Pruefziffer(rumpf))), true
+}
+
+// EAN13Pruefziffer rechnet die Prüfziffer über die ersten zwölf Stellen.
+func EAN13Pruefziffer(zwoelf string) int {
+	summe := 0
+	for i, r := range zwoelf {
+		gewicht := 1
+		if i%2 == 1 {
+			gewicht = 3
+		}
+		summe += int(r-'0') * gewicht
+	}
+	return (10 - summe%10) % 10
+}
+
+// zifferngefuellt prüft auf reine Ziffern und füllt links mit Nullen auf.
+func zifferngefuellt(wert string, laenge int) (string, bool) {
+	wert = strings.TrimSpace(wert)
+	if wert == "" || len(wert) > laenge {
+		return "", false
+	}
+	for _, r := range wert {
+		if r < '0' || r > '9' {
+			return "", false
+		}
+	}
+	return strings.Repeat("0", laenge-len(wert)) + wert, true
+}

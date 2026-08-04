@@ -56,12 +56,14 @@ type Titel struct {
 //     Kandidat für `buecher_exemplare.barcode_id` (siehe BarcodeInhalt).
 type Exemplar struct {
 	ID             string // Buchungsnummer — Ziel des Fremdschlüssels in Verleih
-	Exemplarnummer string // die Nummer auf dem Etikett
-	TitelID        string // Fremdschlüssel auf Titel.Buchungsnummer
-	Barcode        string // Litteras Druckzeichenkette, NICHT der Scanwert (siehe BarcodeInhalt)
-	Signatur       string // Sig1 + Sig2, zusammengesetzt
-	Zugangsdatum   string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
-	Preis          float64
+	Exemplarnummer string // die Nummer, die im Klartext auf dem Etikett steht
+	// Bibliotheksnummer geht in den EAN-13 des Etiketts ein (siehe EtikettBarcode).
+	Bibliotheksnummer string
+	TitelID           string // Fremdschlüssel auf Titel.Buchungsnummer
+	Barcode           string // Litteras Druckzeichenkette, NICHT der Scanwert (siehe BarcodeInhalt)
+	Signatur          string // Sig1 + Sig2, zusammengesetzt
+	Zugangsdatum      string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
+	Preis             float64
 }
 
 // leseTabelle liest eine mdb-export-CSV in Zeilen-Abbildungen (Spaltenname → Wert).
@@ -187,13 +189,14 @@ func LeseExemplare(r io.Reader) ([]Exemplar, error) {
 			continue // ein Exemplar ohne Titel ist im Katalog nicht darstellbar
 		}
 		exemplare = append(exemplare, Exemplar{
-			ID:             id,
-			Exemplarnummer: strings.TrimSpace(z["Exemplarnummer"]),
-			TitelID:        titelID,
-			Barcode:        strings.TrimSpace(z["Barcode"]),
-			Signatur:       SignaturAus(z["Sig1"], z["Sig2"]),
-			Zugangsdatum:   strings.TrimSpace(z["Zugangsdatum"]),
-			Preis:          preisAus(z["Preis"]),
+			ID:                id,
+			Exemplarnummer:    strings.TrimSpace(z["Exemplarnummer"]),
+			Bibliotheksnummer: strings.TrimSpace(z["Bibliotheksnummer"]),
+			TitelID:           titelID,
+			Barcode:           strings.TrimSpace(z["Barcode"]),
+			Signatur:          SignaturAus(z["Sig1"], z["Sig2"]),
+			Zugangsdatum:      strings.TrimSpace(z["Zugangsdatum"]),
+			Preis:             preisAus(z["Preis"]),
 		})
 	}
 	return exemplare, nil

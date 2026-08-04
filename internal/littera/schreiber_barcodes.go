@@ -20,7 +20,9 @@ import (
 //
 // Auch der VORHANDENE Bestand wird eingelesen. Läuft der Import in eine Datenbank, in der
 // schon Exemplare stehen, wäre jede Überschneidung sonst ein Titelverlust.
-func (s *Schreiber) klaereBarcodes(ctx context.Context, exemplare []Exemplar) (map[string]string, error) {
+func (s *Schreiber) klaereBarcodes(
+	ctx context.Context, exemplare []Exemplar, fremd map[string]string,
+) (map[string]string, error) {
 	belegt, err := s.vorhandeneBarcodes(ctx)
 	if err != nil {
 		return nil, err
@@ -30,7 +32,7 @@ func (s *Schreiber) klaereBarcodes(ctx context.Context, exemplare []Exemplar) (m
 	var brauchtNeue []Exemplar
 
 	for _, e := range exemplare {
-		wunsch := s.barcodeWunsch(e)
+		wunsch := s.barcodeWunsch(e, fremd[e.ID])
 		switch {
 		case wunsch == "":
 			brauchtNeue = append(brauchtNeue, e)
@@ -51,16 +53,32 @@ func (s *Schreiber) klaereBarcodes(ctx context.Context, exemplare []Exemplar) (m
 }
 
 // barcodeWunsch liefert die gewünschte Nummer oder "" für „bitte neu vergeben".
-func (s *Schreiber) barcodeWunsch(e Exemplar) string {
+//
+// Geliefert wird der Wert, den ein SCANNER vom Etikett liest — also der EAN-13, nicht die
+// im Klartext daneben gedruckte Exemplarnummer. Steht in Litteras FremdBarcode ein
+// Ersatzetikett, gewinnt das.
+func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 	if s.opt.Barcodes != BarcodeLittera {
 		return ""
 	}
-	if len(e.Exemplarnummer) > uebernahme.MaxBarcode {
+	nummer, ok := EtikettBarcode(e.Exemplarnummer, e.Bibliotheksnummer)
+	if !ok {
 		s.prot.Warnung(e.ID, e.Exemplarnummer,
-			"Exemplarnummer ist länger als die Spalte barcode_id – neue Nummer aus barcode_seq")
+			"aus Exemplar- und Bibliotheksnummer lässt sich kein Etikett-Barcode bilden – "+
+				"neue Nummer aus barcode_seq, das Buch braucht ein neues Etikett")
 		return ""
 	}
-	return e.Exemplarnummer
+	// Ein hinterlegter Fremdbarcode gewinnt: Dann klebt ein Ersatzetikett am Buch, und
+	// der gerechnete EAN-13 stünde nirgends.
+	if fremd != "" {
+		nummer = fremd
+	}
+	if len(nummer) > uebernahme.MaxBarcode {
+		s.prot.Warnung(e.ID, nummer,
+			"Barcode ist länger als die Spalte barcode_id – neue Nummer aus barcode_seq")
+		return ""
+	}
+	return nummer
 }
 
 func (s *Schreiber) vorhandeneBarcodes(ctx context.Context) (map[string]bool, error) {

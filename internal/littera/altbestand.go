@@ -23,6 +23,15 @@ type Altbestand struct {
 	// Signaturen tragen. Sie werden übernommen (häufigster Wert gewinnt), stehen aber
 	// hier, damit der Bericht sie nennen kann.
 	SignaturAbweichend []string
+
+	// Ausweisnummern bildet Leser.Buchungsnummer → Barcode des Schülerausweises ab,
+	// Fremdbarcodes Exemplar.Buchungsnummer → Barcode am Buch. Beide stammen aus
+	// Littera-Tabellen für FREMDE Nummern (siehe fremdnummern.go) und sind leer, wenn die
+	// Schule keine herstellerbedruckten Ausweise oder Ersatzetiketten benutzt.
+	Ausweisnummern map[string]string
+	Fremdbarcodes  map[string]string
+	// AusweisMehrfach nennt Leser mit mehr als einer hinterlegten Karte.
+	AusweisMehrfach []string
 }
 
 // Dateien sind die mdb-export-Ausgaben, die LeseAltbestand erwartet.
@@ -46,6 +55,11 @@ const (
 	DateiLeser             = "leser.csv"
 	DateiLeserUG           = "leser_ug.csv"
 	DateiVerleih           = "verleih.csv"
+	// Die beiden Fremdnummern-Tabellen sind OPTIONAL: In einer Installation ohne
+	// herstellerbedruckte Ausweise sind sie leer, und mdb-export erzeugt die Dateien
+	// dann gar nicht erst. Fehlen sie, läuft der Import mit den Littera-eigenen Nummern.
+	DateiFremdLeserNummer = "fremdlesernummer.csv"
+	DateiFremdBarcode     = "fremdbarcode.csv"
 )
 
 // LeseAltbestand liest alle Tabellen aus einem Verzeichnis mit mdb-export-CSVs.
@@ -76,8 +90,57 @@ func LeseAltbestand(verzeichnis string) (*Altbestand, error) {
 		return nil, err
 	}
 
+	if err = leseFremdnummern(verzeichnis, ab); err != nil {
+		return nil, err
+	}
+
 	ab.Signaturen, ab.SignaturAbweichend = SignaturJeTitel(ab.Exemplare)
 	return ab, nil
+}
+
+// leseFremdnummern liest die beiden optionalen Tabellen mit herstellereigenen Barcodes.
+//
+// Eine fehlende Datei ist hier ausdrücklich kein Fehler — anders als bei den
+// Nachschlagetabellen, deren Fehlen still „11" statt „Klett" in den Katalog schriebe.
+// Ist eine Datei aber DA und unlesbar, bricht der Lauf ab: Dann stimmt etwas mit dem
+// Export nicht, und stillschweigend auf die Littera-Nummern zurückzufallen hieße, die
+// Etiketten zu ignorieren, die tatsächlich an Karte und Buch kleben.
+func leseFremdnummern(verzeichnis string, ab *Altbestand) error {
+	ab.Ausweisnummern = map[string]string{}
+	ab.Fremdbarcodes = map[string]string{}
+
+	if vorhanden(verzeichnis, DateiFremdLeserNummer) {
+		erg, err := mitDatei(verzeichnis, DateiFremdLeserNummer, leseAusweisPaare)
+		if err != nil {
+			return err
+		}
+		ab.Ausweisnummern, ab.AusweisMehrfach = erg.nummern, erg.mehrfach
+	}
+	if vorhanden(verzeichnis, DateiFremdBarcode) {
+		barcodes, err := mitDatei(verzeichnis, DateiFremdBarcode, LeseFremdbarcodes)
+		if err != nil {
+			return err
+		}
+		ab.Fremdbarcodes = barcodes
+	}
+	return nil
+}
+
+// ausweispaare bündelt die zwei Rückgabewerte von LeseAusweisnummern, damit mitDatei
+// (das genau einen Wert liefert) sie durchreichen kann.
+type ausweispaare struct {
+	nummern  map[string]string
+	mehrfach []string
+}
+
+func leseAusweisPaare(r io.Reader) (ausweispaare, error) {
+	nummern, mehrfach, err := LeseAusweisnummern(r)
+	return ausweispaare{nummern: nummern, mehrfach: mehrfach}, err
+}
+
+func vorhanden(verzeichnis, name string) bool {
+	_, err := os.Stat(filepath.Join(verzeichnis, name))
+	return err == nil
 }
 
 func leseAutoren(verzeichnis string, ab *Altbestand) error {

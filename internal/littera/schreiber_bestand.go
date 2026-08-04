@@ -62,7 +62,7 @@ func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (Bestan
 		return bericht, err
 	}
 
-	barcodes, err := s.klaereBarcodes(ctx, ab.Exemplare)
+	barcodes, err := s.klaereBarcodes(ctx, ab.Exemplare, ab.Fremdbarcodes)
 	if err != nil {
 		return bericht, err
 	}

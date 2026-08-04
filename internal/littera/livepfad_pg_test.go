@@ -64,7 +64,7 @@ func TestUebernommeneDatenUeberDenLivePfad(t *testing.T) {
 	// Und der Katalogpfad: Ein Exemplar, das die Anwendung nicht über seinen Barcode
 	// findet, ist an der Theke wertlos — egal wie sauber es in der Tabelle steht.
 	books := repository.NewBookRepository(pool)
-	kopie, err := books.GetCopyByBarcode(ctx, "N1")
+	kopie, err := books.GetCopyByBarcode(ctx, etikett(t, "101"))
 	if err != nil {
 		t.Fatalf("die Anwendung kann das übernommene Exemplar nicht über den Barcode lesen: %v", err)
 	}

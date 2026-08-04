@@ -3,6 +3,7 @@ package littera
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -19,8 +20,8 @@ func bestand(titel ...Titel) *Altbestand {
 	for _, t := range titel {
 		ab.Titel = append(ab.Titel, t)
 		ab.Exemplare = append(ab.Exemplare, Exemplar{
-			ID: "E" + t.ID, Exemplarnummer: "N" + t.ID, TitelID: t.ID,
-			Zugangsdatum: "05/03/07", Signatur: "Ea 1 / Xyz",
+			ID: "E" + t.ID, Exemplarnummer: "10" + t.ID, Bibliotheksnummer: testBibliothek,
+			TitelID: t.ID, Zugangsdatum: "05/03/07", Signatur: "Ea 1 / Xyz",
 		})
 		ab.Signaturen[t.ID] = "Ea 1 / Xyz"
 	}
@@ -29,6 +30,20 @@ func bestand(titel ...Titel) *Altbestand {
 
 func titel(id, name, isbn string) Titel {
 	return Titel{ID: id, Haupttitel: name, ISBN: isbn, VerlagID: "1", MedienartID: "1", Erscheinungsjahr: 2007}
+}
+
+// testBibliothek ist die Bibliotheksnummer der Schule; sie geht in jeden Etikett-Barcode
+// ein (siehe EtikettBarcode).
+const testBibliothek = "395"
+
+// etikett liefert den Barcode, den ein Scanner bei dieser Exemplarnummer lesen würde.
+func etikett(t *testing.T, exemplarnummer string) string {
+	t.Helper()
+	bc, ok := EtikettBarcode(exemplarnummer, testBibliothek)
+	if !ok {
+		t.Fatalf("Testdaten: aus %q lässt sich kein Etikett bilden", exemplarnummer)
+	}
+	return bc
 }
 
 // Gültige ISBN-13 (Prüfziffer stimmt) — mit einer ungültigen liefe der Testfall an der
@@ -88,10 +103,10 @@ func TestTitelKommtGanzOderGarNicht(t *testing.T) {
 
 	ab := bestand(titel("7", "Dreibändiges Werk", ""))
 	ab.Exemplare = append(ab.Exemplare,
-		Exemplar{ID: "E7b", Exemplarnummer: "STOLPERT", TitelID: "7"},
-		Exemplar{ID: "E7c", Exemplarnummer: "N7c", TitelID: "7"})
+		Exemplar{ID: "E7b", Exemplarnummer: "700", Bibliotheksnummer: testBibliothek, TitelID: "7"},
+		Exemplar{ID: "E7c", Exemplarnummer: "701", Bibliotheksnummer: testBibliothek, TitelID: "7"})
 	// Das ZWEITE von drei Exemplaren scheitert — der Titel selbst steht dann schon.
-	erzwingeZeilenfehler(t, pool, "buecher_exemplare", "barcode_id", "STOLPERT")
+	erzwingeZeilenfehler(t, pool, "buecher_exemplare", "barcode_id", etikett(t, "700"))
 
 	bericht, err := s.SchreibeBestand(context.Background(), ab)
 	if err != nil {
@@ -116,7 +131,8 @@ func TestStockEntsprichtDenExemplaren(t *testing.T) {
 	ab := bestand(titel("9", "Klassensatz", ""))
 	for i := range 4 {
 		ab.Exemplare = append(ab.Exemplare, Exemplar{
-			ID: "E9-" + string(rune('a'+i)), Exemplarnummer: "N9-" + string(rune('a'+i)), TitelID: "9"})
+			ID:             "E9-" + string(rune('a'+i)),
+			Exemplarnummer: strconv.Itoa(900 + i), Bibliotheksnummer: testBibliothek, TitelID: "9"})
 	}
 
 	if _, err := s.SchreibeBestand(context.Background(), ab); err != nil {
@@ -185,8 +201,9 @@ func TestVorhandeneISBNKollidiertNicht(t *testing.T) {
 }
 
 // TestBarcodeAusLitteraBleibtErhalten: die Etiketten kleben schon auf 61.520 Büchern.
-// Würde der Import neue Nummern vergeben, wäre der gesamte Bestand bis zur Neubeklebung
-// nicht scannbar.
+// Geschrieben werden muss der Wert, den der SCANNER liest — der EAN-13 — und nicht die
+// Exemplarnummer, die im Klartext danebensteht. Sonst wäre der ganze Bestand bis zur
+// Neubeklebung nicht auffindbar.
 func TestBarcodeAusLitteraBleibtErhalten(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -200,8 +217,8 @@ func TestBarcodeAusLitteraBleibtErhalten(t *testing.T) {
 		`SELECT barcode_id FROM buecher_exemplare`).Scan(&barcode); err != nil {
 		t.Fatalf("Abfrage: %v", err)
 	}
-	if barcode != "N1" {
-		t.Errorf("die Littera-Exemplarnummer erwartet, gespeichert: %q", barcode)
+	if erwartet := etikett(t, "101"); barcode != erwartet {
+		t.Errorf("den Etikett-Barcode %q erwartet, gespeichert: %q", erwartet, barcode)
 	}
 }
 
@@ -245,7 +262,8 @@ func TestDoppelterBarcodeWeichtAus(t *testing.T) {
 
 	ab := bestand(titel("1", "Ein Buch", ""))
 	ab.Exemplare = append(ab.Exemplare,
-		Exemplar{ID: "E1b", Exemplarnummer: "N1", TitelID: "1"}) // dieselbe Nummer wie E1
+		Exemplar{ID: "E1b", Exemplarnummer: "101", Bibliotheksnummer: testBibliothek,
+			TitelID: "1"}) // dieselbe Nummer wie E1
 
 	bericht, err := s.SchreibeBestand(context.Background(), ab)
 	if err != nil {

@@ -26,12 +26,25 @@ go run ./cmd/littera-altbestand -csv ./littera-export -db "$DATABASE_URL"
 legen Schüler an, die heute Mitte dreißig sind, und melden ein Viertel des Bestands als
 verliehen. Für einen aktuellen Export sind beide Schalter richtig.
 
-**Barcodes:** `-barcodes littera` (Vorgabe) übernimmt Litteras Exemplarnummer — genau die
-Nummer, die auf den vorhandenen Etiketten steht (belegt in `littera.BarcodeInhalt`:
-61.520 von 61.520 aus der Druckzeichenkette rekonstruiert). Der Bestand bleibt damit ohne
-Neubeklebung scannbar, sofern die Lesegeräte den Zifferninhalt liefern — das ist an einem
-echten Buch zu prüfen. `-barcodes neu` vergibt stattdessen frische `B-XXXXX` aus
-`barcode_seq`, derselben Sequenz, aus der die Anwendung ihre Barcodes zieht.
+**Barcodes:** `-barcodes littera` (Vorgabe) schreibt den Wert, den ein Scanner vom
+Buchetikett liest — eine **EAN-13**, nicht die daneben gedruckte Exemplarnummer:
+
+```
+1 0 5 7 8 5   0   0 3 9 5   6   7      Exemplar-Nr. 105785 → 1057850039567
+└─ Exemplarnr └─ Bibl.-Nr ─┘   └ Prüfziffer
+   6-stellig       0395
+```
+
+Gemessen an zwei echten Büchern der Schule, Prüfziffer jeweils verifiziert (siehe
+`littera.EtikettBarcode`). Der Bestand bleibt damit ohne Neubeklebung scannbar.
+`-barcodes neu` vergibt stattdessen frische `B-XXXXX` aus `barcode_seq` — derselben
+Sequenz, aus der die Anwendung ihre Barcodes zieht — und setzt voraus, dass jedes Buch
+ein neues Etikett bekommt.
+
+Trägt Litteras Tabelle `FremdBarcode` für ein Exemplar ein Ersatzetikett, gewinnt das
+gegen die gerechnete EAN-13. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
+die Nummer des Kartenherstellers (`B97601826457`), und die steht in keinem Stammdatenfeld.
+Beide Dateien sind optional; fehlen sie, rechnet der Import mit den Littera-Nummern.
 
 **Härtung:** Ein Savepoint je Datensatz (`internal/uebernahme`), Postgres-Fehler nach
 SQLSTATE eingeordnet, Abwertungen (verworfene ISBN, gekürztes Feld) getrennt von
