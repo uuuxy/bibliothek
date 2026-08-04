@@ -26,7 +26,10 @@ func TestUpdateMailTemplateHandler_Success(t *testing.T) {
 		"betreff":   "Neuer Betreff",
 		"text_body": "Neuer Text",
 	}
-	bodyBytes, _ := json.Marshal(reqBody)
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("Anfrage kodieren: %v", err)
+	}
 	req := httptest.NewRequest(http.MethodPut, "/api/mail-templates/mahnung_1", bytes.NewReader(bodyBytes))
 	req.SetPathValue("id", "mahnung_1")
 	req.Header.Set("Content-Type", "application/json")
@@ -62,7 +65,10 @@ func TestUpdateMailTemplateHandler_MissingID(t *testing.T) {
 		"betreff":   "Neuer Betreff",
 		"text_body": "Neuer Text",
 	}
-	bodyBytes, _ := json.Marshal(reqBody)
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("Anfrage kodieren: %v", err)
+	}
 	req := httptest.NewRequest(http.MethodPut, "/api/mail-templates/", bytes.NewReader(bodyBytes))
 	// Kein PathValue("id") gesetzt oder leer
 	req.SetPathValue("id", "")
@@ -108,7 +114,10 @@ func TestUpdateMailTemplateHandler_DBError(t *testing.T) {
 		"betreff":   "Neuer Betreff",
 		"text_body": "Neuer Text",
 	}
-	bodyBytes, _ := json.Marshal(reqBody)
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("Anfrage kodieren: %v", err)
+	}
 	req := httptest.NewRequest(http.MethodPut, "/api/mail-templates/mahnung_1", bytes.NewReader(bodyBytes))
 	req.SetPathValue("id", "mahnung_1")
 	req.Header.Set("Content-Type", "application/json")

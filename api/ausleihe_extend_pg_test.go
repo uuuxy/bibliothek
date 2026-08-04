@@ -26,6 +26,22 @@ func (m *mockSystemSettingsRepo) SaveSettings(ctx context.Context, req *reposito
 	return nil
 }
 
+// pruefeFristAbHeute belegt, dass die neue Frist tage Tage in der Zukunft liegt.
+//
+// Bewusst mit Toleranz statt auf die Sekunde: Die Datenbank setzt CURRENT_TIMESTAMP,
+// der Test liest die Uhr des Testprozesses — auf die Sekunde gleich sind die nie.
+// Ein Tag Spielraum trennt "richtig gerechnet" sicher von "falsche Grundlage
+// genommen" (dort läge die Abweichung bei Jahren).
+func pruefeFristAbHeute(t *testing.T, frist time.Time, tage int) {
+	t.Helper()
+	erwartet := time.Now().UTC().AddDate(0, 0, tage)
+	abweichung := frist.Sub(erwartet)
+	if abweichung < -24*time.Hour || abweichung > 24*time.Hour {
+		t.Errorf("Frist falsch: erwartet rund %v (heute + %d Tage), war %v — Abweichung %v",
+			erwartet.Format("2006-01-02"), tage, frist.Format("2006-01-02"), abweichung)
+	}
+}
+
 func TestExtendLoanHandler(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
@@ -71,13 +87,12 @@ func TestExtendLoanHandler(t *testing.T) {
 					t.Errorf("Expected success=true, got %v", resp["success"])
 				}
 
-				// Verify DB state
+				// Die Verlaengerung rechnet ab GREATEST(alte Frist, jetzt) — siehe
+				// api/ausleihe.go. Bei einer laengst ueberfaelligen Ausleihe (hier 2023)
+				// ist das HEUTE, nicht die alte Frist: Sonst käme eine Verlaengerung
+				// heraus, die im Moment der Buchung schon wieder abgelaufen ist.
 				newFrist := fristVon(t, pool, ausleiheNormal)
-				expectedFrist := alteFrist.AddDate(0, 0, 14)
-
-				if !newFrist.Equal(expectedFrist) {
-					t.Errorf("Frist not updated correctly. Expected %v, got %v", expectedFrist, newFrist)
-				}
+				pruefeFristAbHeute(t, newFrist, 14)
 			},
 		},
 		{
@@ -86,13 +101,10 @@ func TestExtendLoanHandler(t *testing.T) {
 			extensionDays:  0, // Will trigger fallback to 28
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]interface{}) {
-				// The previous frist was alteFrist + 14, now it will be THAT + 28
+				// Der vorige Fall hat die Frist bereits auf heute+14 gesetzt. Die liegt
+				// jetzt in der ZUKUNFT, also rechnet GREATEST ab ihr: heute+14+28.
 				newFrist := fristVon(t, pool, ausleiheNormal)
-				expectedFrist := alteFrist.AddDate(0, 0, 14+28)
-
-				if !newFrist.Equal(expectedFrist) {
-					t.Errorf("Frist not updated correctly with fallback. Expected %v, got %v", expectedFrist, newFrist)
-				}
+				pruefeFristAbHeute(t, newFrist, 14+28)
 			},
 		},
 		{
