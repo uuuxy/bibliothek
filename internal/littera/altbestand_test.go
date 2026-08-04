@@ -121,6 +121,28 @@ func pruefeLeserEinordnung(t *testing.T, basis string) {
 	t.Logf("Leser: %d gesamt — %d Schueler, %d Lehrkraefte, %d abgegangen, %d sonstige, %d unklar",
 		len(leser), len(schueler), len(lehrkraefte), len(abgegangen),
 		len(NurArt(leser, ArtSonstige)), len(NurArt(leser, ArtUnbekannt)))
+
+	// schueler.abgaenger_jahr ist NOT NULL. Jeder Schueler, der geschrieben werden
+	// soll, braucht also einen Wert — sonst bricht der Import auf halber Strecke ab.
+	const schuljahrEnde = 2027
+	ohneJahr, abschlussklassen := 0, 0
+	unbekannteKlassen := map[string]int{}
+	for _, s := range schueler {
+		if _, ok := AbgaengerJahr(s.Klasse, schuljahrEnde); !ok {
+			ohneJahr++
+			unbekannteKlassen[s.Klasse]++
+			continue
+		}
+		if IstAbschlussklasse(s.Klasse) {
+			abschlussklassen++
+		}
+	}
+	if ohneJahr > 0 {
+		t.Errorf("%d Schueler ohne ableitbares Abgangsjahr (Klassen: %v) — abgaenger_jahr ist NOT NULL",
+			ohneJahr, unbekannteKlassen)
+	}
+	t.Logf("Abgangsjahr: fuer alle %d Schueler ableitbar, davon %d in einer Abschlussklasse (9H/10R/13)",
+		len(schueler), abschlussklassen)
 }
 
 // pruefeAutorenAbdeckung belegt, dass die Aufloesung ueber Personen/Personen_Zuordnung

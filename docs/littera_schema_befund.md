@@ -141,9 +141,15 @@ Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
   `; ` verbunden, nicht alphabetisch: Der Erstgenannte ist der Hauptverfasser.
 * **Medienart — erledigt** (`MedienartNamen`, gleiche Bauart wie `Verlag`).
 * **Leser — erledigt** (`LeseLeser`, `LeseLesergruppen`, `NurArt`): Einordnung nach
-  `LeserArt`, Klasse aus `Leser_UG`. Offen bleibt nur `schueler.abgaenger_jahr` (NOT NULL):
-  Littera führt `Abmeldedatum` — im Altbestand bei **0 von 1.991** gefüllt. Der Wert muss
-  also aus der Klassenstufe abgeleitet werden (z. B. Jahrgang aus `07H1` + Schuljahr).
+  `LeserArt`, Klasse aus `Leser_UG`.
+* **Abgangsjahr — erledigt** (`AbgaengerJahr`, `IstAbschlussklasse`). `schueler.abgaenger_jahr`
+  ist NOT NULL, Litteras `Abmeldedatum` aber bei **0 von 1.991** gefüllt — der Wert wird
+  aus der Klasse gerechnet. Die Abschlussklassen sind **9H, 10R und 13**; die Regel ist
+  nicht neu erfunden, sondern aus `api/student_promotion.go` (`is_graduating`) übernommen,
+  damit Import und Schuljahreswechsel dieselbe Aussage treffen. Die Förderstufe rechnet
+  bewusst mit dem längsten Weg (13): Ein zu frühes Abgangsjahr würde einen Schüler
+  archivieren, der noch zur Schule geht; ein zu spätes zieht der Versetzungslauf nach.
+  Am Altbestand: für **alle 1.720 Schüler ableitbar**, davon 232 in einer Abschlussklasse.
 * **Ausleihen**: Feldzuordnung steht (siehe oben), Lesepfad noch nicht gebaut.
 * **Schreibpfad nach Postgres**: noch offen. Empfehlung, keinen zweiten zu bauen —
   `cmd/migrate/pg_writer.go` ist bereits gehärtet (Savepoints je Titel,

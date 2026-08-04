@@ -68,3 +68,18 @@ frontend/lint_results.json
 docker-compose.grafana.yml
 prometheus.yml
 grafana-provisioning/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Littera-Altbestand: enthält Schülerdaten (Namen, Geburtsdaten, Adressen)
+# ─────────────────────────────────────────────────────────────────────────────
+# Diese Dateien gehören AUSSCHLIESSLICH auf den lokalen Rechner. Der Lesepfad
+# (internal/littera) arbeitet mit CSV-Exporten aus mdb-export; sein Lauf gegen
+# echte Daten hängt an LITTERA_CSV_DIR und zeigt bewusst auf ein Verzeichnis
+# ausserhalb des Projekts. Testfixtures im Code sind erfundene Namen.
+*.mdb
+*.accdb
+littera*.csv
+leser*.csv
+exemplar*.csv
+titel*.csv
+personen*.csv
