@@ -1,18 +1,24 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-07-22. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-08-04. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
+- `GET /api/dinge/{id}`
+- `GET /api/inventur/fehlbestand`
 - `GET /api/schueler/{id}/dsgvo-auskunft`
+- `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/defekt`
+- `POST /api/buecher/exemplare/{id}/schadensnotiz`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
+- `/api/bestellungen/konfiguration.`
+- `/api/test`
 
-## Alle registrierten Routen (147)
+## Alle registrierten Routen (161)
 
 - `/`
 - `/api/admin`
@@ -33,6 +39,7 @@
 - `DELETE /api/lieferanten/{id}`
 - `DELETE /api/schueler/deleted/{id}`
 - `DELETE /api/schueler/{id}`
+- `DELETE /api/systematics/{id}`
 - `DELETE /api/vormerkungen/{id}`
 - `GET /admin/dashboard`
 - `GET /api/abgaenger`
@@ -51,6 +58,7 @@
 - `GET /api/bestellhistorie`
 - `GET /api/bestellhistorie/bericht`
 - `GET /api/bestellungen`
+- `GET /api/bestellungen/konfiguration`
 - `GET /api/bestellungen/pdf`
 - `GET /api/bestellungen/zulauf`
 - `GET /api/books`
@@ -62,8 +70,13 @@
 - `GET /api/class-books`
 - `GET /api/csrf-token`
 - `GET /api/dashboard/summary`
+- `GET /api/dinge/{id}`
 - `GET /api/einstellungen`
+- `GET /api/exemplare/etiketten-offen`
+- `GET /api/exemplare/etiketten-offen/anzahl`
+- `GET /api/faecher`
 - `GET /api/images/cover`
+- `GET /api/inventur/fehlbestand`
 - `GET /api/inventur/sessions`
 - `GET /api/klassen`
 - `GET /api/klassen-mapping`
@@ -92,7 +105,8 @@
 - `GET /api/schueler/{id}/dsgvo-auskunft/pdf`
 - `GET /api/schueler/{id}/photo`
 - `GET /api/search`
-- `GET /api/signatures`
+- `GET /api/signaturen`
+- `GET /api/signaturen/buecher`
 - `GET /api/statistiken`
 - `GET /api/subjects`
 - `GET /api/systematics`
@@ -106,6 +120,7 @@
 - `PATCH /api/admin/ausleihen/{id}/faelligkeit`
 - `PATCH /api/admin/students/{id}/lock`
 - `PATCH /api/schueler/{id}`
+- `POST /api/abgaenger/mail`
 - `POST /api/action`
 - `POST /api/action/batch`
 - `POST /api/admin/`
@@ -129,6 +144,9 @@
 - `POST /api/buecher/exemplare/{id}/defekt`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/damage/report`
+- `POST /api/exemplare/etiketten-altbestand`
+- `POST /api/exemplare/etiketten-gedruckt`
+- `POST /api/exemplare/etiketten-zuruecksetzen`
 - `POST /api/import/littera`
 - `POST /api/inventur/abort`
 - `POST /api/inventur/finish`
@@ -145,9 +163,10 @@
 - `POST /api/schueler`
 - `POST /api/schueler/{id}/photo`
 - `POST /api/schueler/{id}/restore`
-- `POST /api/signatures`
 - `POST /api/students/promote`
+- `POST /api/systematics`
 - `POST /api/vormerkungen`
+- `POST /extend/`
 - `POST /login`
 - `PUT /api/admin/`
 - `PUT /api/admin/permissions`
@@ -161,3 +180,4 @@
 - `PUT /api/lieferanten/{id}`
 - `PUT /api/mail-templates/{id}`
 - `PUT /api/reservierungen/klassensatz/{id}/erledigen`
+- `PUT /api/systematics/{id}`

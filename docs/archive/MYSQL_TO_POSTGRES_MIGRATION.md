@@ -1,5 +1,14 @@
 # MySQL → PostgreSQL Migration
 
+> **Archiviert.** Der hier beschriebene MySQL-Dump wurde nie geliefert — das Sekretariat
+> stellte MS-Access-Dateien bereit (siehe [littera_schema_befund.md](../littera_schema_befund.md)).
+> Der tatsächlich benutzte Weg ist `cmd/littera-altbestand`, dokumentiert in
+> [SCRIPTS.md](../SCRIPTS.md). Die Härtung des Schreibpfads (Savepoint je Datensatz,
+> Fehlerklassen, ISBN-Prüfung) ist inzwischen nach `internal/uebernahme` herausgelöst und
+> wird von beiden Werkzeugen benutzt.
+>
+> `cmd/migrate` existiert weiter, hat aber keine bekannte Datenquelle mehr.
+
 Dieses Dokument beschreibt das isolierte Migrations-Skript unter [cmd/migrate/main.go](../../cmd/migrate/main.go).
 
 ## Zweck
@@ -72,7 +81,9 @@ Das Skript prüft während des Imports:
 - doppelte ISBNs im laufenden Import
 - gültige Barcode-Formate
 
-Ungültige Einträge werden nicht importiert, sondern in `migration_errors.log` protokolliert.
+Ungültige Einträge werden **abgewertet übernommen**, nicht verworfen: Eine kaputte oder
+doppelte ISBN kostet die ISBN, nicht das Buch. Was dabei abgewertet wurde (WARNUNG) und was
+tatsächlich fehlt (FEHLER), steht getrennt in `migration_errors.log`.
 
 ## Fehlerbehandlung
 

@@ -37,6 +37,32 @@ Zwei Regeln dazu:
 
 ---
 
+## Erledigt (2026-08-04) — Littera-Schreibpfad
+
+Fünf Funde, alle derselben Machart wie am 30.07.: Etwas behauptete etwas, und die
+Behauptung war nie gegen die Wirklichkeit gehalten worden. Nur diesmal war die
+Wirklichkeit nicht der Code, sondern **das Buch im Regal**.
+
+| Fund | Was es behauptete | Was stimmte |
+|---|---|---|
+| `barcode_id` aus der Exemplarnummer | „Auf dem Etikett steht die Exemplarnummer" | Der Scanner liest eine EAN-13: aufgedruckt `105785`, gescannt `1057850039567`. Keines der 61.520 Exemplare wäre auffindbar gewesen — gemerkt hätte man es an der Theke. |
+| Schülerausweis `[0395] 37` | Der Aufdruck ist der Scanwert | Gescannt kommt `B97601826457`, die Nummer des Kartenherstellers. Sie steht in keinem Stammdatenfeld, nur in Litteras `FremdLeserNummer`. |
+| „10.002 Titel mit Autor (93 %)" | Autorenabdeckung | Mitgezählt waren Standortvermerke, die als Personen erfasst sind: `Buchbestand Bibliothek` allein auf 6.711 Titeln. Bei 7.131 Titeln stünde ein Regalvermerk in der Autorenangabe. Echt sind 9.029 (84 %). |
+| Geburtsdaten aus Littera | Jahrgänge der Personen | Gos Jahrhundertgrenze liegt bei 69: 69 Lehrkräfte der Jahrgänge 1946–1968 kamen als **2046–2068** an. |
+| Präfixlose Omnibox-Auflösung | Buch → Schüler → Suche | Lehrkräfte stehen in `benutzer`, nicht in `schueler`. Ein gescannter Lehrerausweis lief bis in die Volltextsuche. Die passende Abfrage gab es längst — sie hing allein hinter `L-` und ließ sich als rohes SQL am Pool nicht testen. |
+
+**Merksatz dieses Tages:** Aufdruck, Datenbankspalte und Scanwert sind drei verschiedene
+Dinge. Für jede Barcode-Quelle einmal real in einen Texteditor scannen, bevor irgendetwas
+nach `barcode_id` geschrieben wird.
+
+Dazu, aus demselben Lauf und nicht kleiner: **`npm ci` lief gegen das committete Lockfile
+gar nicht durch** (`typescript@^7` gegen `typescript-eslint@8.65`, das `<6.1.0` verlangt).
+Lokal war ESLint grün, weil `node_modules` älter war als das Lockfile — auf einem frischen
+Klon oder in CI wäre es rot gewesen. Ein grünes Gate beweist nichts über das, was im Repo
+steht, wenn die Umgebung abgedriftet ist.
+
+Stand: 2026-08-04
+
 ## Erledigt (2026-07-30)
 
 Alle fünf Funde eines Tages waren dieselbe Art Fehler — etwas behauptete zu

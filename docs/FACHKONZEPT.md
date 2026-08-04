@@ -6,7 +6,23 @@ Beschreibt die funktionale Business-Logik der Bibliothekssoftware auf Basis der 
 
 ## 1. Zentrale Scanner-Omnibox (Kiosk)
 
-Die Software nutzt ein eingabefokussiertes Kiosk-Design für die Ausleihe und Rückgabe. Ein einziges Eingabefeld (Omnibox) verarbeitet alle Scans anhand spezifischer Präfixe:
+Die Software nutzt ein eingabefokussiertes Kiosk-Design für die Ausleihe und Rückgabe. Ein
+einziges Eingabefeld (Omnibox) verarbeitet alle Scans.
+
+**Der Normalfall ist ohne Präfix.** Die Ausweise und Buchetiketten aus dem Littera-
+Altbestand tragen nackte Nummern und dürfen nicht neu gedruckt werden; ein Scan wird
+deshalb der Reihe nach aufgelöst:
+
+```
+Buch-Exemplar → Schülerausweis → Lehrerausweis → Volltextsuche im Katalog
+```
+
+Das geht auf, weil die Formen verschieden sind: Buchetiketten liefern eine 13-stellige
+EAN-13, Schülerausweise die Nummer ihres Kartenherstellers. Die Vorgängersoftware Littera
+kennt überhaupt keine Präfixe — sie hat getrennte Suchfelder, wir haben eines für alles.
+
+**Präfixe sind eine Abkürzung**, kein Muss. Sie überspringen die Auflösung und sprechen
+den Bereich direkt an:
 
 - **`S-[Barcode]` (Schüler):** Lädt das Konto eines Schülers (inkl. offener Ausleihen, Mahnungen und Sperren).
 - **`L-[Barcode]` (Lehrer):** Lädt das Konto eines Lehrers (Handapparat).
@@ -155,7 +171,7 @@ Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_s
 1. **Admin (`admin`):** Uneingeschränkter Zugriff auf alle Systembereiche, Einstellungen, Audits und Datenschutz-Routinen.
 2. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Schülerverwaltung, darf aber keine Systemeinstellungen ändern.
 3. **Lehrer (`lehrer`):** Eingeschränkter Zugriff. Kann den eigenen Handapparat verwalten, Klassensätze reservieren und den Katalog durchsuchen. Hat keinen Zugriff auf sensible Schüler- oder Mahndaten.
-4. **Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kann ausschließlich in die Kiosk-Ansicht (Omnibox) gelangen, um einfache Rückgaben oder Scans durchzuführen.
+4. **Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (Entscheidung vom 30.07.2026, Migration 055): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zu Personendaten zieht weiterhin `view_students`.
 
 ---
 

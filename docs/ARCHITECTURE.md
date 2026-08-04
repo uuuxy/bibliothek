@@ -1,6 +1,6 @@
 # Systemarchitektur & technische Konzepte
 
-> Zuletzt aktualisiert: 2026-06-24
+> Zuletzt aktualisiert: 2026-08-04
 
 ---
 
@@ -39,6 +39,22 @@ HTTP Request
                   ▼
            PostgreSQL 15/16
 ```
+
+### Neben der Anfragekette: die Einmal-Werkzeuge
+
+Die Altbestandsübernahme läuft nicht über diese Schichten, sondern als eigenes Kommando
+gegen dieselbe Datenbank. Sie hat deshalb einen eigenen kleinen Unterbau:
+
+| Paket | Aufgabe |
+|---|---|
+| `internal/littera` | Liest den Littera-Export (`mdb-export`-CSVs), bildet ihn auf die Begriffe dieser Anwendung ab und schreibt ihn — Bestand, Personen, Ausleihen |
+| `internal/uebernahme` | Das Gemeinsame jeder Übernahme: Savepoint je Datensatz, Einordnung von Postgres-Fehlern nach SQLSTATE, ISBN-Prüfung, Spaltenbreiten, Protokoll mit getrennten Zählern für Abwertung und Ausfall |
+| `cmd/littera-altbestand` | Das Kommando davor (siehe [SCRIPTS.md](SCRIPTS.md)) |
+
+Warum das ein eigenes Paket ist und nicht in `cmd/` liegt: Die Härtung entstand in
+`cmd/migrate` und wurde dort gegen echtes PostgreSQL erarbeitet. Eine zweite Kopie für
+Littera hätte bedeutet, dass die zweite Fassung dieselben Fehler noch einmal macht — der
+fehlende Savepoint war jahrelang unbemerkt und kostete im Fehlerfall ganze Batches.
 
 ---
 

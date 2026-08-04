@@ -8,7 +8,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 | Komponente | Technologie |
 |---|---|
-| Backend | Go 1.26.4+, `net/http`, `pgx/v5` |
+| Backend | Go 1.26.5+, `net/http`, `pgx/v5` |
 | Frontend | Svelte 5 (Runes), Tailwind CSS, Vite |
 | Datenbank | PostgreSQL 15/16 |
 | Echtzeit | Server-Sent Events (SSE) |
@@ -18,11 +18,12 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 ## Hauptfunktionen
 
-- **Zentrale Omnibox (Scanner-Dispatcher):** Ein Eingabefeld verarbeitet Barcode-Scans und ordnet Aktionen anhand von Präfixen (`S-` Schüler, `L-` Lehrer, `B-` Buch, `G-` Gerät) zu.
+- **Zentrale Omnibox (Scanner-Dispatcher):** Ein Eingabefeld verarbeitet alle Barcode-Scans. Ohne Präfix wird in der Reihenfolge Buch → Schülerausweis → Lehrerausweis → Volltextsuche aufgelöst — die Ausweise aus dem Littera-Altbestand tragen nackte Nummern und dürfen nicht neu gedruckt werden. Die Präfixe `S-`, `L-`, `B-`, `G-` sind eine Abkürzung, keine Voraussetzung.
 - **Fristenberechnung:** Berücksichtigung von LMF-Büchern (Stichtag 31. Juli), Sonderbeständen (CDs, DVDs, Hörbücher) und Ferien-Leseclub.
 - **Audit-Trail:** Append-Only-Ereignisprotokollierung für administrative Aktionen.
 - **Datenschutz-Funktionen:** Löschroutinen für Schulabgänger, AES-256-Verschlüsselung für Schülerfotos.
 - **LUSD-Schnittstelle:** Import von Schülerdaten aus dem LUSD-System.
+- **Littera-Altbestandsübernahme:** Titel, Exemplare, Personen und offene Ausleihen aus der Vorgängersoftware — mit Savepoint je Datensatz und Abgleich gegen den tatsächlichen Zeilenzuwachs (`cmd/littera-altbestand`).
 - **Hardware-Verwaltung:** Ausleihe von Laptops/Tablets inklusive Zubehör-Checklisten.
 - **Druck-Center:** Erstellung von Barcode-Etiketten und Schülerausweisen.
 - **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Lehrer (konfigurierbare Rechte) und Mitarbeiter.
@@ -37,21 +38,26 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Schichtenarchitektur, Concurrency-Modell, Datenbankdesign, Frontend |
 | [SECURITY.md](SECURITY.md) | Sicherheitskonzept, DSGVO, Schutzmaßnahmen |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups |
-| [SCRIPTS.md](SCRIPTS.md) | CLI-Werkzeuge und Migrationen |
-| [CHANGELOG.md](CHANGELOG.md) | Änderungshistorie |
+| [SCRIPTS.md](SCRIPTS.md) | CLI-Werkzeuge: Littera-Altbestand, Foto-Migration, Backup, Deployment, Lasttest |
 | [invarianten.md](invarianten.md) | Invarianten-Katalog: was immer gelten muss und auf welcher Ebene es durchgesetzt ist |
+| [befunde.md](befunde.md) | Befund-Register: was aufgefallen ist, was davon erledigt wurde |
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
-| [runbook_sekretariat.md](runbook_sekretariat.md) | Erste-Hilfe-Runbook fürs Ausleih-Pult |
 | [master_fahrplan.md](master_fahrplan.md) | Status-Dokument: erledigt / offen / Parkdeck |
-| [api_inventar.md](api_inventar.md) | Generiertes Routen-Inventar (`scripts/api_inventar.sh`) |
-| [archive/](archive/) | Abgeschlossene Migrations-Doku (MySQL → PostgreSQL) |
+| [abnahme_checkliste.md](abnahme_checkliste.md) | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz) |
+| [littera_schema_befund.md](littera_schema_befund.md) | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen |
+| [api_inventar.md](api_inventar.md) | Generiertes Routen-Inventar (`./scripts/api_inventar.sh`) |
+| [loadtest_report.md](loadtest_report.md) | Lasttest-Protokoll vom 02.08.2026 (6 h, k6) |
+| [archive/](archive/) | Abgelegte Doku zu Wegen, die nicht beschritten wurden |
+
+> Eine Änderungshistorie gibt es bewusst nicht als Datei — `git log` ist ausführlicher und
+> kann nicht veralten.
 
 ---
 
 ## Schnellstart (lokal)
 
 ### Voraussetzungen
-- Go 1.26.4+
+- Go 1.26.5+
 - Node.js (npm)
 - PostgreSQL (lokal oder via Docker)
 
