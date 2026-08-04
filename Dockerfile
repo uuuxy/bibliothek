@@ -55,8 +55,19 @@ RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main main.go
 FROM alpine:3.21
 WORKDIR /app
 
-# Install ca-certificates for secure outgoing connections (e.g. cover APIs)
-RUN apk --no-cache add ca-certificates tzdata
+# ca-certificates: sichere ausgehende Verbindungen (Cover-/Metadaten-APIs).
+#
+# postgresql-client: liefert pg_dump, das jobs/backup.go per exec aufruft. Ohne das
+# Paket schlug JEDER nächtliche Backup-Lauf bereits beim Start des Prozesses fehl
+# ("executable file not found in $PATH") — auch mit korrekt gesetztem
+# BACKUP_ENCRYPTION_KEY. Das Backup war damit im Container-Betrieb nie möglich,
+# und der Wächter in api/backup_status.go stand dauerhaft auf "critical", ohne dass
+# das Setzen des Schlüssels daran etwas geändert hätte.
+#
+# Alpine 3.21 liefert hier pg_dump 17. Das ist Absicht: Der Prod-Stack fährt
+# postgres:15, der lokale postgres:16 — ein pg_dump darf jeden ÄLTEREN Server
+# dumpen, aber keinen neueren. Der neueste Client bedient also beide.
+RUN apk --no-cache add ca-certificates tzdata postgresql-client
 
 # Copy database schema file (for reference / first-run init)
 COPY schema.sql ./
@@ -82,9 +93,14 @@ USER appuser
 EXPOSE 8081
 
 # Environment variables defaults
+#
+# COOKIE_SECURE steht hier bewusst NICHT mehr: Ein im Image gebackenes "false" ist
+# ein gesetzter Wert, und ermittleCookieSecure() (main.go) greift seine sichere
+# Vorgabe nur bei NICHT gesetzter Variable. Wer das Image ohne Compose startete,
+# verlor damit still das Secure-Flag am Sitzungscookie. Ungesetzt gelassen liefert
+# APP_ENV=local/development/test weiterhin false, alles andere true.
 ENV PORT=8081
 ENV DATABASE_URL=""
-ENV COOKIE_SECURE="false"
 
 HEALTHCHECK --interval=30s --timeout=3s CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/health || exit 1
 

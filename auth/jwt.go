@@ -133,28 +133,42 @@ func (a *Authenticator) VerifyToken(tokenString string) (*Claims, error) {
 	// nicht (er hat sich nie ausgeloggt) — er behielte sonst bis zum natürlichen Ablauf des
 	// (12h-)Tokens vollen Zugriff. Deshalb bei JEDER Verifikation den aktuellen DB-Status
 	// prüfen. Eigener Timeout-Context wie in IsBlacklisted (unabhängig vom Request-Kontext).
-	if err := a.pruefeKontoAktiv(claims.UserID); err != nil {
+	rolle, err := a.ladeKontoStatus(claims.UserID)
+	if err != nil {
 		return nil, err
 	}
+
+	// Die Rolle aus der DB überschreibt die im Token signierte. Genau hier lag eine
+	// Lücke: Deaktivieren wirkte sofort, eine HERABSTUFUNG aber nicht. Ein zum HELFER
+	// zurückgestufter Admin behielt seine Admin-Rechte, weil die Autorisierung
+	// (api.RequirePermission) claims.Rolle auswertet — bis zu 12 h lang, und über den
+	// Sliding-Refresh, der die alte Rolle in jedes Folgetoken weiterschrieb, faktisch
+	// unbegrenzt. Der DB-Treffer dafür kostet nichts extra: Diese Abfrage lief für den
+	// aktiv-Status ohnehin schon bei jedem Request.
+	claims.Rolle = rolle
 
 	return claims, nil
 }
 
-// pruefeKontoAktiv stellt sicher, dass das Konto zum Zeitpunkt des Requests noch existiert
-// und aktiv ist. Fail-closed wie die Blacklist: bei DB-Fehler wird der Zugriff verweigert.
-func (a *Authenticator) pruefeKontoAktiv(userID string) error {
+// ladeKontoStatus stellt sicher, dass das Konto zum Zeitpunkt des Requests noch existiert
+// und aktiv ist, und liefert dessen AKTUELLE Rolle zurück.
+// Fail-closed wie die Blacklist: bei DB-Fehler wird der Zugriff verweigert.
+func (a *Authenticator) ladeKontoStatus(userID string) (Role, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	var aktiv bool
-	if err := a.pool.QueryRow(ctx, `SELECT aktiv FROM benutzer WHERE id = $1`, userID).Scan(&aktiv); err != nil {
+	var rolle string
+	if err := a.pool.QueryRow(ctx, `SELECT aktiv, rolle FROM benutzer WHERE id = $1`, userID).Scan(&aktiv, &rolle); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return errors.New("user account no longer exists")
+			return "", errors.New("user account no longer exists")
 		}
-		return errors.New("account status could not be verified")
+		return "", errors.New("account status could not be verified")
 	}
 	if !aktiv {
-		return errors.New("user account is deactivated")
+		return "", errors.New("user account is deactivated")
 	}
-	return nil
+	// Großschreibung wie die Role-Konstanten; role_permissions vergleicht zwar per
+	// UPPER(), der Admin-Bypass in RequirePermission aber per EqualFold auf diesen Wert.
+	return Role(strings.ToUpper(strings.TrimSpace(rolle))), nil
 }

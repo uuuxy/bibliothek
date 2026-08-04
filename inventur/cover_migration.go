@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/db"
+	"bibliothek/pkg/safehttp"
 	"context"
 	"fmt"
 	"log"
@@ -100,7 +101,21 @@ func migriereEinzelnesCover(ctx context.Context, client *http.Client, database d
 
 // RunCoverMigration lädt alle Cover, die noch als externe HTTP-Links (z.B. OpenLibrary) in der DB stehen,
 // einzeln herunter und aktualisiert die Datenbank auf den lokalen "/uploads/..." Pfad.
+//
+// Der HTTP-Client kommt aus pkg/safehttp: Die Migration folgt Cover-Links aus
+// Altbeständen und fremden Metadaten. Ein Redirect auf ein internes Ziel darf der
+// Server nicht ausführen.
 func RunCoverMigration(db db.PgxPoolIface) {
+	runCoverMigrationMitClient(db, safehttp.NeuerClient(10*time.Second))
+}
+
+// runCoverMigrationMitClient ist die Naht für Tests. Vorher gab es sie nicht, weil
+// der Produktionscode &http.Client{Timeout: …} OHNE Transport baute — der Test tauschte
+// deshalb http.DefaultTransport global aus. Das funktionierte nur, solange die
+// Produktion keinen eigenen Transport setzt; mit dem gehärteten Client (der genau das
+// tut) hätte der Test unbemerkt echte Netz-Requests abgesetzt. Client hier explizit
+// hereinreichen statt ein Global umzubiegen.
+func runCoverMigrationMitClient(db db.PgxPoolIface, client *http.Client) {
 	log.Println("=== Starte automatische Cover-Migration ===")
 	ctx := context.Background()
 
@@ -112,7 +127,6 @@ func RunCoverMigration(db db.PgxPoolIface) {
 
 	log.Printf("Es wurden %d Bücher mit externen Covern gefunden. Starte Download...", len(books))
 
-	client := &http.Client{Timeout: 10 * time.Second}
 	erfolgreich := 0
 	fehlerhaft := 0
 

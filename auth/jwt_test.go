@@ -68,7 +68,7 @@ func TestVerifyToken_RealtimeRevocation(t *testing.T) {
 		a, mock := newTestAuthenticator(t, 12*time.Hour)
 		token := newToken(t, a)
 		expectNotBlacklisted(mock)
-		mock.ExpectQuery(`SELECT aktiv FROM benutzer`).
+		mock.ExpectQuery(`SELECT aktiv, rolle FROM benutzer`).
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnError(pgx.ErrNoRows)
 

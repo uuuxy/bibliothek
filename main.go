@@ -220,6 +220,13 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 		}
 	}
 
+	// Anmeldekonfiguration früh prüfen: Ein fehlender oder auf "mock" stehender
+	// IMAP_HOST ist kein Detail, das beim ersten Login auffallen darf — im einen Fall
+	// kann sich niemand anmelden, im anderen jeder.
+	if err := auth.PruefeIMAPKonfiguration(); err != nil {
+		log.Fatalf("FATAL: %v", err)
+	}
+
 	port = os.Getenv("PORT")
 	if port == "" {
 		log.Fatalf("FATAL: PORT environment variable is required and cannot be empty")

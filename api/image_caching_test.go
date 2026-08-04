@@ -58,36 +58,6 @@ func TestBaueSichereCoverURL(t *testing.T) {
 	}
 }
 
-func TestVerbieteInterneZieladressen(t *testing.T) {
-	tests := []struct {
-		name    string
-		address string
-		blocked bool
-	}{
-		{"Öffentliche IPv4", "93.184.216.34:443", false},
-		{"Öffentliche IPv6", "[2606:2800:220:1:248:1893:25c8:1946]:443", false},
-		{"Loopback IPv4", "127.0.0.1:443", true},
-		{"Loopback IPv6", "[::1]:443", true},
-		{"Loopback als IPv4-in-IPv6", "[::ffff:127.0.0.1]:443", true},
-		{"Privat 10/8", "10.0.0.5:80", true},
-		{"Privat 172.16/12", "172.16.0.1:80", true},
-		{"Privat 192.168/16", "192.168.1.10:443", true},
-		{"Link-Local (Cloud-Metadaten)", "169.254.169.254:80", true},
-		{"IPv6 Unique Local", "[fd00::1]:443", true},
-		{"Unspezifiziert", "0.0.0.0:80", true},
-		{"Keine IP", "example.com:80", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := verbieteInterneZieladressen("tcp4", tt.address, nil)
-			if blocked := err != nil; blocked != tt.blocked {
-				t.Errorf("verbieteInterneZieladressen(%q) blocked = %v (err: %v); want %v", tt.address, blocked, err, tt.blocked)
-			}
-		})
-	}
-}
-
 // Diese Fälle enden alle vor dem Dateisystem-Zugriff des Handlers — statt eines
 // Fehlers muss das transparente Fallback-GIF kommen (kein Browser-Konsolen-Spam).
 func TestServeCoverImage_FallbackOhneDownload(t *testing.T) {

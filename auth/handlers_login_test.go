@@ -14,6 +14,16 @@ import (
 
 const benutzerSelect = `SELECT id, rolle, vorname, nachname, aktiv`
 
+// aktiviereMockIMAP schaltet den IMAP-Mock für einen Test frei. APP_ENV gehört
+// zwingend dazu: Der Mock akzeptiert jedes Passwort und ist deshalb seit dem
+// Audit-Fix nur noch in local/development/test erlaubt — ohne APP_ENV würde
+// AuthenticateIMAP hier ablehnen und jeder Login-Test liefe ins Leere.
+func aktiviereMockIMAP(t *testing.T) {
+	t.Helper()
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("IMAP_HOST", "mock")
+}
+
 func doLogin(t *testing.T, a *Authenticator, mock pgxmock.PgxPoolIface, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(body))
@@ -24,7 +34,7 @@ func doLogin(t *testing.T, a *Authenticator, mock pgxmock.PgxPoolIface, body str
 }
 
 func TestLoginHandler_MissingCredentialsReturn400(t *testing.T) {
-	t.Setenv("IMAP_HOST", "mock")
+	aktiviereMockIMAP(t)
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 
 	if rec := doLogin(t, a, mock, `{"password":"x"}`); rec.Code != http.StatusBadRequest {
@@ -38,7 +48,7 @@ func TestLoginHandler_MissingCredentialsReturn400(t *testing.T) {
 func TestLoginHandler_UnknownUserReturns401(t *testing.T) {
 	// Mock-IMAP akzeptiert jedes Passwort — die Ablehnung muss aus der DB kommen
 	// (IMAP-Konto existiert, aber kein registrierter Bibliotheks-Benutzer).
-	t.Setenv("IMAP_HOST", "mock")
+	aktiviereMockIMAP(t)
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
@@ -55,7 +65,7 @@ func TestLoginHandler_UnknownUserReturns401(t *testing.T) {
 }
 
 func TestLoginHandler_DeactivatedUserReturns403(t *testing.T) {
-	t.Setenv("IMAP_HOST", "mock")
+	aktiviereMockIMAP(t)
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
@@ -70,7 +80,7 @@ func TestLoginHandler_DeactivatedUserReturns403(t *testing.T) {
 }
 
 func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
-	t.Setenv("IMAP_HOST", "mock")
+	aktiviereMockIMAP(t)
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
@@ -117,7 +127,7 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 func TestLoginHandler_BruteForceLimiterBlocksSixthAttempt(t *testing.T) {
 	// Der Limiter drosselt pro (E-Mail|IP) — 5 Fehlversuche, dann 429.
 	// Eindeutige E-Mail, da der Limiter prozessweit global ist.
-	t.Setenv("IMAP_HOST", "mock")
+	aktiviereMockIMAP(t)
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 
 	email := fmt.Sprintf("brute-%d@schule.de", time.Now().UnixNano())

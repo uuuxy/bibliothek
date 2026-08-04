@@ -9,7 +9,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
+      # Nur an localhost binden — wie das Backend eine Zeile tiefer. "5434:5432"
+      # veröffentlichte den Port auf ALLEN Interfaces: Wer den Host im Netz
+      # erreichte, sprach mit dem DSN aus der .env direkt die Datenbank an, vorbei
+      # an jeder Rolle, jedem Audit-Log und jeder Anonymisierung — inklusive aller
+      # Schüler- und Ausleihdaten. Das Backend braucht diesen Port nicht (es geht
+      # über das Docker-Netz an postgres-db:5432); er existiert nur für Werkzeuge
+      # auf dem Server selbst. Von einem anderen Rechner aus: SSH-Tunnel.
+      - "127.0.0.1:5434:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bibliothek}"]
       interval: 5s
@@ -58,7 +65,13 @@ services:
       # Nur überschreiben, wenn die Anwendung ausschließlich über HTTP im LAN läuft.
       - COOKIE_SECURE=${COOKIE_SECURE:-true}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
-      - IMAP_HOST=${IMAP_HOST:-mock}
+      # KEIN Default: "mock" ließ AuthenticateIMAP jedes Passwort für jede in
+      # benutzer vorhandene E-Mail durchwinken (auth/imap.go). Als Compose-Default
+      # stand damit in diesem Prod-Stack die Anmeldung faktisch offen, sofern
+      # niemand die Variable bewusst überschrieb. Fehlt sie jetzt, startet der
+      # Stack gar nicht erst. Der Server verweigert den Start zusätzlich, wenn
+      # außerhalb von APP_ENV=local/development/test doch "mock" gesetzt wird.
+      - IMAP_HOST=${IMAP_HOST:?IMAP_HOST muss gesetzt sein - der Wert mock akzeptiert JEDES Passwort und ist nur lokal erlaubt}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}

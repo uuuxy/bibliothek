@@ -4,6 +4,7 @@ import (
 	"bibliothek/pkg/closeutil"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -84,16 +85,60 @@ func loginIMAP(ctx context.Context, c *client.Client, conn net.Conn, email, pass
 	}
 }
 
+// istLokaleUmgebung meldet, ob APP_ENV eine Entwicklungs- oder Testumgebung
+// bezeichnet. Nur dort darf der IMAP-Mock greifen.
+func istLokaleUmgebung() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV"))) {
+	case "local", "development", "test":
+		return true
+	default:
+		return false
+	}
+}
+
+// PruefeIMAPKonfiguration validiert IMAP_HOST beim Serverstart, damit eine
+// unbrauchbare oder gefährliche Anmeldekonfiguration sofort auffällt und nicht
+// erst beim ersten Login-Versuch eines Nutzers.
+//
+// Zwei Fälle werden abgelehnt:
+//
+//   - leer: Vorher fiel der Code still auf imap.philipp-reis-schule.de zurück.
+//     Ein "go run" ohne Umgebung sprach damit unbeabsichtigt den Produktiv-IMAP
+//     der Schule an — echte Verbindungen, echte Login-Versuche.
+//   - "mock" außerhalb von APP_ENV=local/development/test: Der Mock akzeptiert
+//     JEDES Passwort für jede in benutzer eingetragene E-Mail. In einer Umgebung,
+//     die sich production nennt, ist das keine Konfiguration, sondern eine offene Tür.
+func PruefeIMAPKonfiguration() error {
+	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
+	if host == "" {
+		return errors.New("IMAP_HOST ist nicht gesetzt — ohne Mailserver ist keine Anmeldung möglich (lokal: IMAP_HOST=mock mit APP_ENV=local)")
+	}
+	if host == "mock" && !istLokaleUmgebung() {
+		return fmt.Errorf("IMAP_HOST=mock akzeptiert jedes Passwort und ist nur mit APP_ENV=local/development/test zulässig (aktuell: APP_ENV=%q)", os.Getenv("APP_ENV"))
+	}
+	return nil
+}
+
 // AuthenticateIMAP connects to the IMAP server and verifies credentials.
 // It uses implicit TLS on port 993 as successfully implemented in schul-orga.
 func AuthenticateIMAP(email, password string) error {
-	host := os.Getenv("IMAP_HOST")
+	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
+
+	// Kein stiller Rückfall mehr auf den Schulserver: Ohne konfigurierten Host
+	// wird nicht geraten, sondern abgelehnt. Siehe PruefeIMAPKonfiguration.
 	if host == "" {
-		host = "imap.philipp-reis-schule.de"
+		slog.Error("IMAP_HOST ist nicht gesetzt — Anmeldung wird abgelehnt")
+		return fmt.Errorf("anmeldung fehlgeschlagen")
 	}
 
-	// MOCK-MODUS für lokale Entwicklung
+	// MOCK-MODUS für lokale Entwicklung — zweite Schranke hinter dem Startup-Check
+	// in PruefeIMAPKonfiguration, falls die Variable zur Laufzeit gesetzt wird.
 	if host == "mock" {
+		if !istLokaleUmgebung() {
+			slog.Error("IMAP_HOST=mock außerhalb der lokalen Entwicklung — Anmeldung wird abgelehnt",
+				"app_env", os.Getenv("APP_ENV"))
+			return fmt.Errorf("anmeldung fehlgeschlagen")
+		}
 		slog.Warn("⚠️  IMAP MOCK-MODUS AKTIV: Jedes Passwort wird akzeptiert! NUR für lokale Entwicklung verwenden!")
 		return nil
 	}

@@ -275,9 +275,12 @@ func TestRunCoverMigration(t *testing.T) {
 		}
 	}()
 
-	// Replace http.DefaultTransport
-	originalTransport := http.DefaultTransport
-	http.DefaultTransport = &mockCoverTransport{
+	// Client mit Attrappen-Transport direkt hereinreichen. Vorher bog dieser Test
+	// http.DefaultTransport global um — das wirkte nur, weil der Produktionscode
+	// seinen Client ohne eigenen Transport baute. Seit die Migration den gehärteten
+	// Client aus pkg/safehttp nutzt (der einen Transport SETZT), liefe der Test sonst
+	// gegen das echte Internet, ohne dass es jemandem auffiele.
+	testClient := &http.Client{Transport: &mockCoverTransport{
 		roundTripFunc: func(req *http.Request) (*http.Response, error) {
 			if req.Method == http.MethodHead {
 				return &http.Response{
@@ -305,8 +308,7 @@ func TestRunCoverMigration(t *testing.T) {
 				Header:     h,
 			}, nil
 		},
-	}
-	defer func() { http.DefaultTransport = originalTransport }()
+	}}
 
 	mock.ExpectQuery("SELECT id, isbn, cover_url, titel AS title FROM buecher_titel WHERE cover_url LIKE 'http%'").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "cover_url", "title"}).
@@ -317,7 +319,7 @@ func TestRunCoverMigration(t *testing.T) {
 		WithArgs(pgxmock.AnyArg(), "1").
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	RunCoverMigration(mock)
+	runCoverMigrationMitClient(mock, testClient)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)

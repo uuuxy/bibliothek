@@ -90,12 +90,12 @@ func TestAuthRateLimit_ProxyClientsAreCountedIndependently(t *testing.T) {
 
 	const proxy = "172.18.0.5:40000"
 
-	// Angreifer verbrennt seine 5 Versuche und wird gesperrt.
-	if got := failN(t, proxy, "203.0.113.9", 5); got != http.StatusUnauthorized {
-		t.Fatalf("5. Versuch des Angreifers: Status %d; want 401 (noch nicht gesperrt)", got)
+	// Angreifer verbrennt sein Kontingent und wird gesperrt.
+	if got := failN(t, proxy, "203.0.113.9", maxLoginFehlversucheProIP); got != http.StatusUnauthorized {
+		t.Fatalf("letzter erlaubter Versuch des Angreifers: Status %d; want 401 (noch nicht gesperrt)", got)
 	}
 	if got := failN(t, proxy, "203.0.113.9", 1); got != http.StatusTooManyRequests {
-		t.Fatalf("6. Versuch des Angreifers: Status %d; want 429 (gesperrt)", got)
+		t.Fatalf("Versuch über dem Limit: Status %d; want 429 (gesperrt)", got)
 	}
 
 	// Ein anderer, unbeteiligter Nutzer hinter demselben Proxy darf sich
@@ -114,11 +114,41 @@ func TestAuthRateLimit_UntrustedPeerCannotSpoofXFF(t *testing.T) {
 
 	const attacker = "203.0.113.50:40000"
 
-	// Trotz rotierender, gefälschter XFF-Werte zählt nur die echte Peer-IP.
-	failN(t, attacker, "1.1.1.1", 3)
-	failN(t, attacker, "2.2.2.2", 2)
+	// Trotz rotierender, gefälschter XFF-Werte zählt nur die echte Peer-IP: Die
+	// Versuche addieren sich über alle XFF-Identitäten hinweg zum selben Zähler.
+	failN(t, attacker, "1.1.1.1", maxLoginFehlversucheProIP-10)
+	failN(t, attacker, "2.2.2.2", 10)
 	if got := failN(t, attacker, "3.3.3.3", 1); got != http.StatusTooManyRequests {
-		t.Fatalf("Angreifer nach 6 Versuchen: Status %d; want 429 (XFF-Spoof wirkungslos)", got)
+		t.Fatalf("Angreifer über dem Limit: Status %d; want 429 (XFF-Spoof wirkungslos)", got)
+	}
+}
+
+// Der Befund aus dem Audit: Die IP-Schicht sperrte nach 5 Fehlversuchen — und in
+// einer Schule hinter EINER NAT-Adresse ist das die IP aller. Fünf Vertipper eines
+// Kollegen legten damit den Login des gesamten Standorts für 15 Minuten lahm,
+// obwohl der Handler bewusst pro (E-Mail|IP) drosselt.
+//
+// Der Test hält die Grenze fest, ab der Aussperrung eintritt: deutlich oberhalb
+// dessen, was ein Standort an ehrlichen Vertippern produziert.
+func TestAuthRateLimit_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testing.T) {
+	clientip.Configure([]string{"172.16.0.0/12"})
+	t.Cleanup(func() { clientip.Configure(nil) })
+	resetLoginState()
+
+	const proxy = "172.18.0.5:40000"
+	const nat = "203.0.113.9" // eine einzige NAT-IP für die ganze Schule
+
+	// Ein Dutzend Fehlversuche über den Tag verteilt — mehrere Nutzer, ein Standort.
+	if got := failN(t, proxy, nat, 12); got != http.StatusUnauthorized {
+		t.Fatalf("12 Fehlversuche vom Schulstandort: Status %d; want 401 — der Standort darf "+
+			"nicht gesperrt werden, sonst kommt niemand mehr rein", got)
+	}
+
+	// Gegenprobe: Ein Skript, das den Standort als Tarnung nutzt, läuft weiterhin
+	// in die Sperre. Ohne diese Zusicherung wäre die Schicht wirkungslos statt weit.
+	failN(t, proxy, nat, maxLoginFehlversucheProIP)
+	if got := failN(t, proxy, nat, 1); got != http.StatusTooManyRequests {
+		t.Fatalf("Credential-Stuffing über dem Limit: Status %d; want 429", got)
 	}
 }
 
@@ -150,10 +180,10 @@ func TestAuthRateLimit_SuccessResetsCounter(t *testing.T) {
 	do("")   // 1 Fehlversuch
 	do("")   // 2
 	do("ok") // Erfolg setzt den Zähler zurück
-	for i := 0; i < 5; i++ {
-		do("") // wieder 5 Fehlversuche nötig
+	for i := 0; i < maxLoginFehlversucheProIP; i++ {
+		do("") // das volle Kontingent ist wieder nötig
 	}
 	if got := do(""); got != http.StatusTooManyRequests {
-		t.Fatalf("nach Reset + 5 Fehlversuchen: Status %d; want 429", got)
+		t.Fatalf("nach Reset + vollem Kontingent an Fehlversuchen: Status %d; want 429", got)
 	}
 }

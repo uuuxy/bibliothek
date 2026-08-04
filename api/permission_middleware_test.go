@@ -32,14 +32,16 @@ func setupRBAC(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 }
 
 // expectBlacklistPass erwartet die beiden Prüfungen in VerifyToken bei gültigem Token:
-// die Blacklist ("nicht widerrufen") und direkt danach den aktiv-Status des Kontos ("aktiv").
-func expectBlacklistPass(mock pgxmock.PgxPoolIface) {
+// die Blacklist ("nicht widerrufen") und direkt danach Kontostatus samt AKTUELLER Rolle.
+// Die Rolle muss mitgeliefert werden, weil VerifyToken sie über die im Token signierte
+// schreibt — die Autorisierung folgt der Datenbank, nicht dem Token.
+func expectBlacklistPass(mock pgxmock.PgxPoolIface, rolle auth.Role) {
 	mock.ExpectQuery("revoked_tokens").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
-	mock.ExpectQuery("SELECT aktiv FROM benutzer").
+	mock.ExpectQuery("SELECT aktiv, rolle FROM benutzer").
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"aktiv"}).AddRow(true))
+		WillReturnRows(pgxmock.NewRows([]string{"aktiv", "rolle"}).AddRow(true, string(rolle)))
 }
 
 func reqWithToken(t *testing.T, s *Server, role auth.Role) *http.Request {
@@ -84,7 +86,7 @@ func TestRequirePermission_AdminBypassesCheck(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock)
+	expectBlacklistPass(mock, auth.RoleAdmin)
 	// KEINE role_permissions-Abfrage erwartet — Admin hat implizit alle Rechte.
 
 	req := reqWithToken(t, s, auth.RoleAdmin)
@@ -102,7 +104,7 @@ func TestRequirePermission_GrantedAllowsAccess(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock)
+	expectBlacklistPass(mock, auth.RoleLehrer)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(true))
@@ -127,9 +129,9 @@ func TestRequirePermission_DeactivatedUserUnauthorized(t *testing.T) {
 	mock.ExpectQuery("revoked_tokens").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
-	mock.ExpectQuery("SELECT aktiv FROM benutzer").
+	mock.ExpectQuery("SELECT aktiv, rolle FROM benutzer").
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"aktiv"}).AddRow(false))
+		WillReturnRows(pgxmock.NewRows([]string{"aktiv", "rolle"}).AddRow(false, string(auth.RoleLehrer)))
 
 	req := reqWithToken(t, s, auth.RoleLehrer)
 	rr, reached := serve(s, "buch.ausleihen", req)
@@ -146,7 +148,7 @@ func TestRequirePermission_ExplicitlyDeniedForbidden(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock)
+	expectBlacklistPass(mock, auth.RoleLehrer)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(false))
@@ -166,7 +168,7 @@ func TestRequirePermission_NoRowForbidden(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock)
+	expectBlacklistPass(mock, auth.RoleLehrer)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
@@ -186,7 +188,7 @@ func TestRequirePermission_TransientDBErrorIsServerError(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock)
+	expectBlacklistPass(mock, auth.RoleLehrer)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(errors.New("connection reset"))
@@ -208,13 +210,13 @@ func TestRequirePermission_DenyDecisionIsCached(t *testing.T) {
 	defer mock.Close()
 
 	// Erster Request: Blacklist + role_permissions (false) → 403, Entscheidung wird gecacht.
-	expectBlacklistPass(mock)
+	expectBlacklistPass(mock, auth.RoleLehrer)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(false))
 
 	// Zweiter Request: NUR Blacklist erwartet — role_permissions kommt aus dem Cache.
-	expectBlacklistPass(mock)
+	expectBlacklistPass(mock, auth.RoleLehrer)
 
 	for i := 0; i < 2; i++ {
 		req := reqWithToken(t, s, auth.RoleLehrer)

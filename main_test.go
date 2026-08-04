@@ -27,6 +27,7 @@ func setupSuccessEnv() {
 	setenv("PORT", "8080")
 	setenv("COOKIE_SECURE", "true")
 	setenv("ENFORCE_PROD_SECRETS", "false")
+	setenv("IMAP_HOST", "imap.example.test")
 }
 
 func restoreEnv(originalEnv []string) {
@@ -117,5 +118,27 @@ func TestLoadConfig_EnforceProdSecrets_KnownAES(t *testing.T) {
 		setupSuccessEnv()
 		setenv("APP_ENCRYPTION_KEY", "super-secure-aes-key-32-chars-ok")
 		setenv("ENFORCE_PROD_SECRETS", "true")
+	})
+}
+
+// Der IMAP-Mock akzeptiert jedes Passwort für jede in benutzer eingetragene
+// E-Mail. Als Compose-Default stand damit die Anmeldung offen, sobald jemand
+// den Stack ohne eigenes IMAP_HOST hochfuhr. Außerhalb von local/development/test
+// muss der Start deshalb scheitern — nicht warnen.
+func TestLoadConfig_MockIMAPInProduktionVerweigertStart(t *testing.T) {
+	testFatal(t, "TestLoadConfig_MockIMAPInProduktionVerweigertStart", func() {
+		setupSuccessEnv()
+		setenv("APP_ENV", "production")
+		setenv("IMAP_HOST", "mock")
+	})
+}
+
+// Gegenprobe zum stillen Rückfall auf imap.philipp-reis-schule.de: Ohne
+// IMAP_HOST wurde vorher der Produktiv-Mailserver der Schule angesprochen —
+// aus jedem "go run" heraus. Jetzt startet der Server erst gar nicht.
+func TestLoadConfig_FehlenderIMAPHostVerweigertStart(t *testing.T) {
+	testFatal(t, "TestLoadConfig_FehlenderIMAPHostVerweigertStart", func() {
+		setupSuccessEnv()
+		unsetenv("IMAP_HOST")
 	})
 }

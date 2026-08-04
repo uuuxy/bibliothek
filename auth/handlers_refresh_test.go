@@ -38,9 +38,15 @@ func expectNotBlacklisted(mock pgxmock.PgxPoolIface) {
 // expectKontoAktiv erwartet die aktiv-Prüfung in VerifyToken (nach der Blacklist, nur bei
 // gültigem Token) und meldet den gewünschten Kontostatus zurück.
 func expectKontoAktiv(mock pgxmock.PgxPoolIface, aktiv bool) {
-	mock.ExpectQuery(`SELECT aktiv FROM benutzer`).
+	expectKontoStatus(mock, aktiv, RoleAdmin)
+}
+
+// expectKontoStatus erwartet die Konto-Abfrage in VerifyToken und liefert zusätzlich
+// die Rolle, die dort die im Token signierte überschreibt.
+func expectKontoStatus(mock pgxmock.PgxPoolIface, aktiv bool, rolle Role) {
+	mock.ExpectQuery(`SELECT aktiv, rolle FROM benutzer`).
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"aktiv"}).AddRow(aktiv))
+		WillReturnRows(pgxmock.NewRows([]string{"aktiv", "rolle"}).AddRow(aktiv, string(rolle)))
 }
 
 func doRefresh(t *testing.T, a *Authenticator, cookie *http.Cookie) *httptest.ResponseRecorder {
@@ -105,7 +111,7 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 	expectNotBlacklisted(mock)
-	expectKontoAktiv(mock, true)
+	expectKontoStatus(mock, true, RoleMitarbeiter)
 
 	rec := doRefresh(t, a, &http.Cookie{Name: "session_token", Value: token})
 
@@ -124,15 +130,76 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 		t.Errorf("Session-Cookie muss HttpOnly sein")
 	}
 
-	// Das neue Token muss gültig sein und die Claims unverändert tragen.
+	// Das neue Token muss gültig sein und die Claims tragen (Rolle unverändert,
+	// weil die DB hier dieselbe Rolle meldet).
 	expectNotBlacklisted(mock)
-	expectKontoAktiv(mock, true)
+	expectKontoStatus(mock, true, RoleMitarbeiter)
 	claims, err := a.VerifyToken(cookies[0].Value)
 	if err != nil {
 		t.Fatalf("neues Token ungültig: %v", err)
 	}
 	if claims.UserID != "user-1" || claims.Rolle != RoleMitarbeiter {
 		t.Errorf("Claims nicht übernommen: %+v", claims)
+	}
+}
+
+// Regressionstest zur Rollen-Staleness: Wird ein Admin herabgestuft, wirkte das
+// bis zum Audit-Fix NICHT. Die Autorisierung liest claims.Rolle, und die stammte
+// aus dem bis zu 12 h gültigen Token — der Sliding-Refresh schrieb sie zusätzlich
+// in jedes Folgetoken fort. Deaktivieren wirkte sofort, Herabstufen nie.
+func TestRefreshTokenHandler_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
+	// Token wurde als ADMIN ausgestellt, Restlaufzeit 1h → Sliding Window greift.
+	issuer, _ := newTestAuthenticator(t, 1*time.Hour)
+	token, err := issuer.GenerateToken("user-1", "B-1", RoleAdmin)
+	if err != nil {
+		t.Fatalf("GenerateToken: %v", err)
+	}
+
+	// In der DB ist derselbe Benutzer inzwischen nur noch HELFER.
+	a, mock := newTestAuthenticator(t, 12*time.Hour)
+	expectNotBlacklisted(mock)
+	expectKontoStatus(mock, true, RoleHelfer)
+
+	rec := doRefresh(t, a, &http.Cookie{Name: "session_token", Value: token})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+	}
+
+	cookies := rec.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Fatalf("erwartet neues session_token-Cookie, bekam %+v", cookies)
+	}
+
+	expectNotBlacklisted(mock)
+	expectKontoStatus(mock, true, RoleHelfer)
+	claims, err := a.VerifyToken(cookies[0].Value)
+	if err != nil {
+		t.Fatalf("neues Token ungültig: %v", err)
+	}
+	if claims.Rolle != RoleHelfer {
+		t.Errorf("Refresh hat Rolle %q fortgeschrieben; want %q (aktuelle DB-Rolle)", claims.Rolle, RoleHelfer)
+	}
+}
+
+// Die Autorisierung wertet claims.Rolle aus. VerifyToken muss dort deshalb die
+// DB-Rolle liefern, nicht die im Token signierte — sonst greift jede
+// Rechteänderung erst beim nächsten Login.
+func TestVerifyToken_RolleKommtAusDerDatenbank(t *testing.T) {
+	a, mock := newTestAuthenticator(t, 12*time.Hour)
+	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+	if err != nil {
+		t.Fatalf("GenerateToken: %v", err)
+	}
+
+	expectNotBlacklisted(mock)
+	expectKontoStatus(mock, true, RoleHelfer)
+
+	claims, err := a.VerifyToken(token)
+	if err != nil {
+		t.Fatalf("VerifyToken: %v", err)
+	}
+	if claims.Rolle != RoleHelfer {
+		t.Errorf("claims.Rolle = %q; want %q (Token sagt ADMIN, die DB sagt HELFER)", claims.Rolle, RoleHelfer)
 	}
 }
 

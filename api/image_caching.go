@@ -8,18 +8,16 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
-	"net"
 	"net/http"
-	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/safehttp"
 
 	"github.com/chai2010/webp"
 )
@@ -94,33 +92,11 @@ func baueSichereCoverURL(urlStr string) (string, bool) {
 // Verbindungen zu nicht-öffentlichen IPs werden auf Dialer-Ebene abgelehnt — nach
 // der DNS-Auflösung und damit auch für jeden Redirect-Hop (OpenLibrary leitet z. B.
 // real auf archive.org um) und bei DNS-Rebinding. Dazu ein hartes Gesamt-Timeout.
-var coverHTTPClient = &http.Client{
-	Timeout: 20 * time.Second,
-	Transport: &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout: 10 * time.Second,
-			Control: verbieteInterneZieladressen,
-		}).DialContext,
-		TLSHandshakeTimeout: 10 * time.Second,
-	},
-}
-
-// verbieteInterneZieladressen lehnt Verbindungen zu Loopback-, privaten, Link-Local-,
-// Multicast- und unspezifizierten Adressen ab. Läuft als Dialer-Control nach der
-// DNS-Auflösung, address ist also immer eine aufgelöste IP:Port-Kombination.
-func verbieteInterneZieladressen(_, address string, _ syscall.RawConn) error {
-	addrPort, err := netip.ParseAddrPort(address)
-	if err != nil {
-		return fmt.Errorf("cover download: unerwartete Zieladresse %q: %w", address, err)
-	}
-	// Unmap: IPv4-in-IPv6 (::ffff:127.0.0.1) würde sonst an den Is*-Checks vorbeigehen.
-	addr := addrPort.Addr().Unmap()
-	if addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() ||
-		addr.IsLinkLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified() {
-		return fmt.Errorf("cover download: Ziel-IP %s ist nicht öffentlich", addr)
-	}
-	return nil
-}
+//
+// Die Umsetzung liegt seit dem Audit in pkg/safehttp, weil das Inventur-Modul für
+// seine Cover- und Metadaten-Abrufe denselben Schutz braucht und ihn vorher nicht
+// hatte — dort standen blanke http.Client{Timeout: …}.
+var coverHTTPClient = safehttp.NeuerClient(20 * time.Second)
 
 // holeUndKonvertiereCover lädt das Cover herunter und speichert es als WebP im
 // Cache-Verzeichnis. Bei Encode-/Close-Fehler wird die evtl. angefangene Datei

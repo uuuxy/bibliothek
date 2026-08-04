@@ -16,6 +16,22 @@ type failedAttempt struct {
 	firstFail time.Time
 }
 
+// maxLoginFehlversucheProIP ist die VOLUMETRISCHE Obergrenze dieser Middleware —
+// bewusst hoch, nicht als Konto-Schutz gedacht.
+//
+// Vorher standen hier 5. Das war dieselbe Zahl wie im Handler (auth/handlers.go),
+// nur mit dem entscheidenden Unterschied, dass der Handler pro (E-Mail|IP) zählt
+// und diese Schicht rein pro IP. In einer Schule, deren Geräte über EINE NAT-Adresse
+// herauskommen, genügten damit fünf Vertipper irgendeines Nutzers, um den Login für
+// ALLE anderen 15 Minuten lang zu sperren — die Härtung des Handlers auf (E-Mail|IP)
+// wurde von der äußeren Schicht wieder eingesammelt.
+//
+// Der Kontoschutz gegen gezieltes Raten liegt jetzt allein beim (E-Mail|IP)-Limiter
+// im Handler. Was hier bleibt, ist die Bremse gegen Credential-Stuffing, das sich
+// über viele Konten verteilt und den IMAP-Server der Schule flutet: 50 Fehlversuche
+// in 15 Minuten aus EINER Quelle erreicht kein normaler Standort, ein Skript sofort.
+const maxLoginFehlversucheProIP = 50
+
 var (
 	failedLogins      = make(map[string]*failedAttempt)
 	failedLoginsMutex sync.Mutex
@@ -44,7 +60,8 @@ func (w *statusWriter) WriteHeader(status int) {
 }
 
 // reserviereLoginVersuch prüft/aktualisiert den Fehlversuchszähler einer IP (unter Lock).
-// blocked=true bedeutet: die IP ist derzeit gesperrt (>=5 Versuche im 15-Minuten-Fenster).
+// blocked=true bedeutet: die IP ist derzeit gesperrt (siehe maxLoginFehlversucheProIP,
+// gezählt im 15-Minuten-Fenster).
 func reserviereLoginVersuch(ip string, now time.Time) (attempt *failedAttempt, blocked bool) {
 	failedLoginsMutex.Lock()
 	defer failedLoginsMutex.Unlock()
@@ -55,7 +72,7 @@ func reserviereLoginVersuch(ip string, now time.Time) (attempt *failedAttempt, b
 		if now.Sub(attempt.firstFail) > 15*time.Minute {
 			attempt.count = 0
 			attempt.firstFail = now
-		} else if attempt.count >= 5 {
+		} else if attempt.count >= maxLoginFehlversucheProIP {
 			return attempt, true
 		}
 		return attempt, false
@@ -93,12 +110,18 @@ func verzeichneLoginErgebnis(attempt *failedAttempt, status int, now time.Time) 
 	}
 }
 
-// AuthRateLimitMiddleware limits the number of failed authentication attempts to 5 per IP within 15 minutes.
-// Further requests within the window will be blocked with a 429 Too Many Requests response.
+// AuthRateLimitMiddleware begrenzt fehlgeschlagene Anmeldungen pro IP auf
+// maxLoginFehlversucheProIP innerhalb von 15 Minuten; weitere Versuche im Fenster
+// beantwortet sie mit 429.
+//
+// Sie ist die VOLUMETRISCHE Schranke. Der Schutz eines einzelnen Kontos gegen
+// gezieltes Raten sitzt im Login-Handler und zählt pro (E-Mail|IP) — siehe
+// maxLoginFehlversucheProIP für den Grund, warum beide Schichten unterschiedliche
+// Schwellen haben müssen.
 //
 // The IP is resolved via clientip so that requests behind the Caddy reverse
 // proxy are keyed on the real client — not on the single proxy address, which
-// would let five failed logins lock out every user (global denial of service).
+// would let a handful of failed logins lock out every user (global denial of service).
 func AuthRateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := clientip.FromRequest(r)

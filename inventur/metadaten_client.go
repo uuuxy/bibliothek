@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/isbnutil"
+	"bibliothek/pkg/safehttp"
 )
 
 // MetadatenClient ist der zentrale HTTP-Client zur Abfrage von Buchmetadaten
@@ -40,9 +41,15 @@ type MetadatenErgebnis struct {
 
 // NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,
 // um ewig ladende APIs zu unterbrechen.
+//
+// Der Client kommt aus pkg/safehttp und nicht mehr blank aus http.Client: Er spricht
+// mit fremden Servern (DNB, Google, OpenLibrary, lobid) und lädt über dieselbe Instanz
+// auch Cover herunter. Die Hostnamen-Allowlist in ladeCoverBytes prüft nur die URL,
+// die WIR bilden — wohin ein erlaubter Host per Redirect weiterschickt, sah sie nicht.
+// safehttp lehnt nicht-öffentliche Ziele auf Dialer-Ebene ab und damit bei jedem Hop.
 func NeuerMetadatenClient() *MetadatenClient {
 	return &MetadatenClient{
-		httpClient: &http.Client{Timeout: 8 * time.Second},
+		httpClient: safehttp.NeuerClient(8 * time.Second),
 	}
 }
 

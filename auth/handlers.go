@@ -344,7 +344,10 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			}
 		}
 
-		// Generate a fresh token with the same claims but a new expiry
+		// Neues Token mit frischer Laufzeit. claims.Rolle ist hier bereits die
+		// AKTUELLE Rolle aus der Datenbank — VerifyToken überschreibt die im alten
+		// Token signierte. Vorher schrieb der Refresh die alte Rolle fort und machte
+		// aus einer 12-Stunden-Staleness eine unbegrenzte.
 		newToken, err := authenticator.GenerateToken(claims.UserID, claims.BarcodeID, claims.Rolle)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

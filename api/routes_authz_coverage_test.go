@@ -28,6 +28,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		"/api/monitor/slides":    "öffentlicher Bibliotheks-Monitor (nur Buchdaten)",
 		"/api/images/cover":      "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in image_caching.go)",
 		"/api/csrf-token":        "CSRF-Bootstrap-Endpunkt",
+		"/uploads/":              "hochgeladene Cover-Bilder (öffentlich lesbar für Katalog/Monitor; Schülerfotos liegen NICHT hier, die stehen AES-verschlüsselt in der DB)",
 		"/api/auth/refresh":      "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/me":           "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/logout":       "Auth-Endpunkt",
@@ -85,4 +86,59 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		t.Fatalf("nur %d Routen erkannt — der Scanner greift vermutlich nicht mehr (erwartet >100). "+
 			"Registrierungs-Syntax/Regex prüfen.", geprueft)
 	}
+}
+
+// TestInventurDelegationIstWirklichGeschuetzt prüft die Annahme nach, auf der
+// Bedingung 2 des Gates oben beruht.
+//
+// Der Test oben wertet jede Zeile mit "invHandler" als geschützt — begründet damit,
+// der Inventur-Mux setze intern RequireViewBooks/RequireEditBooks. Für eine seiner
+// Routen stimmte das nicht: /uploads/ wird dort von einem nackten http.FileServer
+// bedient. Das Gate meldete also "geschützt" für einen Endpunkt, den es nie geprüft
+// hatte — ein grüner Test, dessen Grün nichts bedeutete.
+//
+// Statt der Zusicherung zu glauben, liest dieser Test die Registrierungen des
+// Inventur-Mux und verlangt für jede OHNE Autorisierungs-Wrapper einen bewussten
+// Eintrag auf der Public-Allowlist. Kommt dort eine ungeschützte Route hinzu, wird
+// dieser Test rot — nicht erst der Betrieb.
+func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
+	inhalt, err := os.ReadFile(filepath.Join("..", "inventur", "api_routen.go"))
+	if err != nil {
+		t.Fatalf("inventur/api_routen.go lesen: %v", err)
+	}
+
+	registrierung := regexp.MustCompile(`handler\.mux\.Handle(?:Func)?\("([^"]+)"`)
+	methodenPraefix := regexp.MustCompile(`^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) `)
+
+	geprueft := 0
+	for _, zeile := range strings.Split(string(inhalt), "\n") {
+		m := registrierung.FindStringSubmatch(zeile)
+		if m == nil {
+			continue
+		}
+		geprueft++
+		if strings.Contains(zeile, "config.Require") || strings.Contains(zeile, "adminH") {
+			continue
+		}
+		pfad := methodenPraefix.ReplaceAllString(m[1], "")
+		if _, ok := publicAllowlistInventur[pfad]; ok {
+			continue
+		}
+		t.Errorf("Inventur-Route %q trägt keinen Autorisierungs-Wrapper und steht nicht auf der "+
+			"Public-Allowlist.\n→ Das Gate in TestAlleRoutenSindGeschuetzt hält jede Delegation an "+
+			"invHandler pauschal für geschützt; diese Route wäre dort unbemerkt durchgerutscht.", m[1])
+	}
+
+	if geprueft < 5 {
+		t.Fatalf("nur %d Inventur-Registrierungen erkannt — der Scanner greift vermutlich nicht mehr "+
+			"(erwartet >10). Registrierungs-Syntax/Regex prüfen.", geprueft)
+	}
+}
+
+// publicAllowlistInventur nennt die Routen des Inventur-Mux, die bewusst ohne
+// Autorisierung ausgeliefert werden. JEDE Ergänzung ist eine Sicherheitsentscheidung.
+var publicAllowlistInventur = map[string]string{
+	"/uploads/": "hochgeladene Cover-Bilder, öffentlich lesbar für Katalog/Monitor. " +
+		"Kein Verzeichnislisting (neuteredFileSystem); Schülerfotos liegen nicht hier, " +
+		"sondern AES-verschlüsselt in der Datenbank.",
 }
