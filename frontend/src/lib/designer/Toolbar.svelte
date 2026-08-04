@@ -15,6 +15,7 @@
 	 */
 	import { idStore, addTextElement, addImageElements } from './idDesignerStore.svelte.js';
 	import Button from '../components/ui/Button.svelte';
+	import ToolbarAuswahl from './ToolbarAuswahl.svelte';
 
 	/**
 	 * @type {{
@@ -112,73 +113,19 @@
 		</Button>
 	</div>
 
-	<!-- Row 2: Class / barcode selectors -->
-	<div
-		class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4"
-	>
-		<div class="space-y-1">
-			<span class="text-xs font-medium text-slate-500">Klasse</span>
-			{#if classesList.length > 0}
-				<select
-					value={selectedKlasse}
-					onchange={(e) => onKlasse(/** @type {HTMLSelectElement} */ (e.currentTarget).value)}
-					class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
-				>
-					{#each classesList as kl, _i (_i)}
-						<option value={kl}>Klasse {kl}</option>
-					{/each}
-				</select>
-			{:else}
-				<div class="text-xs text-slate-400 font-medium py-2">
-					{loadingStudents ? 'Lade…' : 'Keine Klassen'}
-				</div>
-			{/if}
-		</div>
-
-		<div class="space-y-1">
-			<span class="text-xs font-medium text-slate-500">Barcode-Typ</span>
-			<select
-				value={barcodeType}
-				onchange={(e) =>
-					onBarcodeType(
-						/** @type {'code39'|'qr'} */ (/** @type {HTMLSelectElement} */ (e.currentTarget).value)
-					)}
-				class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
-			>
-				<option value="code39">Code39 (1D)</option>
-				<option value="qr">QR-Code (2D)</option>
-			</select>
-		</div>
-
-		<div class="space-y-1">
-			<span class="text-xs font-medium text-slate-500">Karten-Hintergrund</span>
-			<select
-				value={currentTheme}
-				onchange={(e) => setTheme(/** @type {HTMLSelectElement} */ (e.currentTarget).value)}
-				class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
-			>
-				{#each themes as t, _i (_i)}
-					<option value={t.value}>{t.name}</option>
-				{/each}
-			</select>
-		</div>
-
-		<div class="space-y-1">
-			<span class="text-xs font-medium text-slate-500">Zoom</span>
-			<div class="flex items-center gap-2">
-				<input
-					type="range"
-					min="80"
-					max="300"
-					step="5"
-					value={zoom}
-					oninput={(e) => onZoom(parseInt(/** @type {HTMLInputElement} */ (e.currentTarget).value))}
-					class="accent-blue-600 h-1 bg-slate-200 rounded-lg cursor-pointer flex-1"
-				/>
-				<span class="text-xs font-bold text-blue-600 w-10 text-right">{zoom}%</span>
-			</div>
-		</div>
-	</div>
+	<ToolbarAuswahl
+		{classesList}
+		{selectedKlasse}
+		{onKlasse}
+		{loadingStudents}
+		{barcodeType}
+		{onBarcodeType}
+		{currentTheme}
+		{themes}
+		{setTheme}
+		{zoom}
+		{onZoom}
+	/>
 
 	<!-- Row 3: Side tab + Add-element buttons -->
 	<div class="flex flex-wrap items-center gap-3">

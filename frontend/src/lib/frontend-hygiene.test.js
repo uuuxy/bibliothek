@@ -48,7 +48,6 @@ const EMOJI = /\p{Emoji_Presentation}|\p{Extended_Pictographic}️/u;
 // Wer eine Datei bereinigt, nimmt sie hier heraus. Der Test meldet beides:
 // neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 const EMOJI_BESTAND = [
-	'src/inventur/lib/components/admin/BuchEingabefelder.svelte',
 	'src/lib/AdminAuditLog.svelte',
 	'src/lib/AuditLog.svelte',
 	'src/lib/BookAkteMeta.svelte',

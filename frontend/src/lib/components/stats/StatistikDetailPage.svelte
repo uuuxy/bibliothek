@@ -5,6 +5,13 @@
 <script>
 	import { apiFetch } from '../../apiFetch.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import Select from '../ui/Select.svelte';
+
+	/** @param {string} alle @param {string[]} werte */
+	const mitAlle = (alle, werte) => [
+		{ value: 'alle', label: alle },
+		...werte.map((w) => ({ value: w, label: w }))
+	];
 
 	/** @typedef {{ id?: string, titel: string, autor: string, isbn?: string, cover_url?: string, fachbereich?: string, systematik?: string, erscheinungsjahr?: number, count?: number, letzte_aus?: string }} StatRow */
 
@@ -98,22 +105,18 @@
 				placeholder="Titel oder Autor…"
 				class="flex-1 min-w-40 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
 			/>
-			<select
+			<Select
 				bind:value={filterFach}
-				class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700"
+				options={mitAlle('Fachbereich: alle', fachOptionen)}
+				class="w-56"
 				aria-label="Nach Fachbereich filtern"
-			>
-				<option value="alle">Fachbereich: alle</option>
-				{#each fachOptionen as f, _i (_i)}<option value={f}>{f}</option>{/each}
-			</select>
-			<select
+			/>
+			<Select
 				bind:value={filterSystematik}
-				class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700"
+				options={mitAlle('Systematik: alle', systematikOptionen)}
+				class="w-56"
 				aria-label="Nach Systematik filtern"
-			>
-				<option value="alle">Systematik: alle</option>
-				{#each systematikOptionen as s, _i (_i)}<option value={s}>{s}</option>{/each}
-			</select>
+			/>
 		</div>
 		{#if !loading}
 			<p class="text-[11px] text-slate-400 font-medium">

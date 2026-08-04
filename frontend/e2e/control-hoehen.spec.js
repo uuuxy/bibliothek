@@ -86,8 +86,11 @@ async function warteAufStabileFelder(page) {
 		.toBe(true);
 }
 
+// `[role=combobox]` steht hier seit der Ablösung der nativen <select>: Ohne den
+// Zusatz hätte die Umstellung die Messmenge still verkleinert — der Test wäre grün
+// geblieben, gerade WEIL er die neuen Auswahlfelder nicht mehr gesehen hätte.
 const MESSEN = () =>
-	[...document.querySelectorAll('input, select')]
+	[...document.querySelectorAll('input, select, [role="combobox"]')]
 		.filter((el) => {
 			const t = (el.getAttribute('type') || 'text').toLowerCase();
 			if (

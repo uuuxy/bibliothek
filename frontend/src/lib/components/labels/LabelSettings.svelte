@@ -2,6 +2,9 @@
 	import { Printer } from '@lucide/svelte';
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
+	import LabelBarcodeSchritt from './LabelBarcodeSchritt.svelte';
+	import LabelLayoutOptionen from './LabelLayoutOptionen.svelte';
+	import Select from '../ui/Select.svelte';
 </script>
 
 <div class="lg:col-span-5 space-y-6 text-left">
@@ -82,26 +85,29 @@
 				<div class="grid grid-cols-2 gap-3">
 					<div class="space-y-1.5">
 						<span class="text-xs font-medium text-slate-500 block">Aus Klasse laden</span>
-						<select
+						<Select
 							bind:value={labelStore.selectedClass}
-							onchange={labelStore.handleClassChange}
-							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-						>
-							<option value="">-- Klasse wählen --</option>
-							{#each labelStore.classGroups as group, _i (_i)}
-								<option value={group.className}>{group.className}</option>
-							{/each}
-						</select>
+							options={labelStore.classGroups.map((/** @type {any} */ g) => ({
+								value: g.className,
+								label: g.className
+							}))}
+							onchange={() => labelStore.handleClassChange()}
+							placeholder="Klasse wählen"
+							aria-label="Aus Klasse laden"
+						/>
 					</div>
 
 					<div class="space-y-1.5">
 						<span class="text-xs font-medium text-slate-500 block">Buch aus Klasse</span>
-						<select
+						<Select
 							disabled={!labelStore.selectedClass}
-							onchange={(e) => {
-								const bookId = /** @type {any} */ (e.target).value;
+							options={labelStore.classBooks.map((/** @type {any} */ b) => ({
+								value: String(b.id),
+								label: b.title
+							}))}
+							onchange={(/** @type {string} */ id) => {
 								const book = labelStore.classBooks.find(
-									(/** @type {any} */ b) => String(b.id) === bookId
+									(/** @type {any} */ b) => String(b.id) === id
 								);
 								if (book) {
 									labelStore.selectBookTitle({
@@ -111,166 +117,16 @@
 									});
 								}
 							}}
-							class="w-full bg-slate-50 border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none"
-						>
-							<option value="">-- Buch wählen --</option>
-							{#each labelStore.classBooks as book, _i (_i)}
-								<option value={String(book.id)}>{book.title}</option>
-							{/each}
-						</select>
+							placeholder="Buch wählen"
+							aria-label="Buch aus Klasse"
+						/>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- Step 2: Barcodes & Mode -->
-		{#if labelStore.selectedTitle}
-			<div class="py-5 space-y-4 border-b border-slate-200">
-				<h3 class="text-xs text-blue-600 font-medium">2. Barcodes generieren</h3>
-
-				<!-- Selection mode -->
-				<div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/40 text-xs">
-					<button
-						onclick={() => (labelStore.generationMode = 'existing')}
-						class="flex-1 text-center py-1 rounded-md font-bold transition-all cursor-pointer {labelStore.generationMode ===
-						'existing'
-							? 'bg-white text-slate-800 shadow-xs'
-							: 'text-slate-500 hover:text-slate-700'}">Vorhandene Exemplare</button
-					>
-					<button
-						onclick={() => (labelStore.generationMode = 'new')}
-						class="flex-1 text-center py-1 rounded-md font-bold transition-all cursor-pointer {labelStore.generationMode ===
-						'new'
-							? 'bg-white text-slate-800 shadow-xs'
-							: 'text-slate-500 hover:text-slate-700'}">Neue Barcodes</button
-					>
-				</div>
-
-				{#if labelStore.generationMode === 'existing'}
-					<div class="space-y-2">
-						<span class="text-xs font-medium text-slate-500 block"
-							>Exemplare auswählen ({labelStore.existingCopies.length} gefunden)</span
-						>
-						{#if labelStore.loadingCopies}
-							<div class="flex items-center justify-center py-4">
-								<div
-									class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
-								></div>
-							</div>
-						{:else if labelStore.existingCopies.length === 0}
-							<p class="text-[11px] text-slate-500">
-								Keine physischen Exemplare in der Datenbank vorhanden.
-							</p>
-						{:else}
-							<div
-								class="max-h-40 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-50 p-2 space-y-1 bg-slate-50/50"
-							>
-								{#each labelStore.existingCopies as copy, _i (_i)}
-									<label
-										class="flex items-center space-x-3 text-xs text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg"
-									>
-										<input
-											type="checkbox"
-											bind:checked={copy.checked}
-											class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white"
-										/>
-										<span class="font-bold text-slate-800">{copy.barcode_id}</span>
-										<span class="text-[10px] text-slate-500 font-sans"
-											>({copy.zustand_notiz || 'Neuwertig'})</span
-										>
-									</label>
-								{/each}
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<!-- Generating new sequential labels -->
-					<div class="grid grid-cols-2 gap-3">
-						<div class="space-y-1.5">
-							<span class="text-xs font-medium text-slate-500 block">Menge</span>
-							<input
-								type="number"
-								min="1"
-								max="100"
-								bind:value={labelStore.newQuantity}
-								class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-							/>
-						</div>
-						<div class="space-y-1.5">
-							<span class="text-xs font-medium text-slate-500 block">Start-Ziffer (B-)</span>
-							<input
-								type="number"
-								min="1"
-								bind:value={labelStore.newStartNum}
-								class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-							/>
-						</div>
-					</div>
-				{/if}
-			</div>
-		{:else}
-			<!-- Platzhalter, damit die Schrittfolge nicht von 1 auf 3 springt (wirkt sonst
-			     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
-			<div class="py-5 space-y-2 border-b border-slate-200 opacity-60">
-				<h3 class="text-xs text-slate-400 font-medium">2. Barcodes generieren</h3>
-				<p class="text-[11px] text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
-			</div>
-		{/if}
+		<LabelBarcodeSchritt />
 	{/if}
 
-	<!-- Step 3: Print Layout settings -->
-	<div class="py-5 space-y-4 border-b border-slate-200">
-		<h3 class="text-xs text-blue-600 font-medium">3. Layout-Optionen</h3>
-
-		<div class="space-y-3.5">
-			<div class="space-y-1.5">
-				<span class="text-xs font-medium text-slate-500 block">Etikettenformat</span>
-				<select
-					bind:value={labelStore.formatId}
-					class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-				>
-					<option value="zweckform_l4760">Zweckform L4760 (3x7, 21 Etiketten)</option>
-					<option value="avery_3475">Avery 3475 (3x8, 24 Etiketten)</option>
-					<option value="standard_52">Kleine Barcodes (4x13, 52 Etiketten)</option>
-				</select>
-			</div>
-
-			<div class="space-y-1.5">
-				<span class="text-xs font-medium text-slate-500 block">Startposition auf dem A4-Bogen</span>
-				<div class="flex items-center gap-2">
-					<input
-						type="number"
-						min="1"
-						max={labelStore.maxPositions}
-						bind:value={labelStore.startPosition}
-						class="w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-					/>
-					<span class="text-[10px] text-slate-400">max. {labelStore.maxPositions}</span>
-				</div>
-				<p class="text-[10px] text-slate-400 mt-1">
-					Für angebrochene Bögen: Gibt an, auf welchem Feld der Druck starten soll.
-				</p>
-			</div>
-
-			<div class="space-y-1.5">
-				<span class="text-xs font-medium text-slate-500 block">Barcode-Ausgabe</span>
-				<select
-					bind:value={labelStore.barcodeType}
-					class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none"
-				>
-					<option value="code39">Code39 (1D Standard)</option>
-					<option value="qr">QR-Code (2D)</option>
-				</select>
-			</div>
-
-			<label class="flex items-center space-x-3 text-xs text-slate-705 cursor-pointer select-none">
-				<input
-					type="checkbox"
-					bind:checked={labelStore.labelBorder}
-					class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white"
-				/>
-				<span>Hilfsrahmen / Begrenzungslinien auf Etikett zeichnen</span>
-			</label>
-		</div>
-	</div>
+	<LabelLayoutOptionen />
 </div>

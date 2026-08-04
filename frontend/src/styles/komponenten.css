@@ -1,0 +1,105 @@
+@layer components {
+	/* ── State-Layer (Material 3) ─────────────────────────────────────────────
+	   M3 gibt Rückmeldung NICHT durch Farbwechsel, sondern durch eine
+	   durchscheinende Schicht über der unveränderten Fläche: 8 % bei Hover,
+	   10 % bei Fokus und beim Drücken. Genau das fehlte hier vollständig — die
+	   Anwendung tauschte stattdessen Farben (hover:bg-blue-700), was jede
+	   Variante einzeln festlegen muss und bei getönten Flächen schnell falsch
+	   aussieht.
+
+	   currentColor ist der Trick: Die Schicht nimmt die TEXTFARBE des Elements,
+	   also automatisch die passende „on-"-Rolle. Ein blauer Button bekommt eine
+	   weiße Schicht, ein weißer Button eine dunkle — ohne dass eine Variante
+	   etwas dazu sagen muss. Das ist auch die M3-Regel.
+
+	   ::after statt Hintergrundwechsel, damit Rand, Schatten und Beschriftung
+	   unberührt bleiben; pointer-events-none, damit die Schicht keine Klicks
+	   schluckt.
+
+	   Gilt für ALLE Buttons, nicht nur die gemeinsame Komponente. Im Browser
+	   gezählt: 145 rohe <button> gegen 135 Aufrufe von Button.svelte — ein
+	   State-Layer auf der Hälfte der Knöpfe wäre das Gegenteil von konsistent.
+	   Wer ihn nicht will (eigene Trefferfläche, transparente Overlays), setzt
+	   `no-state-layer` an das Element; die Ausnahme steht damit sichtbar an der
+	   Fundstelle statt als Sonderfall in dieser Datei. */
+	button:not(.no-state-layer),
+	.m3-state {
+		position: relative;
+		isolation: isolate;
+	}
+	button:not(.no-state-layer)::after,
+	.m3-state::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background-color: currentColor;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 120ms ease;
+	}
+	button:not(.no-state-layer):hover:not(:disabled)::after,
+	.m3-state:hover:not(:disabled)::after {
+		opacity: 0.08;
+	}
+	button:not(.no-state-layer):focus-visible:not(:disabled)::after,
+	.m3-state:focus-visible:not(:disabled)::after {
+		opacity: 0.1;
+	}
+	button:not(.no-state-layer):active:not(:disabled)::after,
+	.m3-state:active:not(:disabled)::after {
+		opacity: 0.1;
+	}
+
+	/* ── Icon-Buttons ─────────────────────────────────────────────────────────
+	   Dieselbe Geschichte wie bei den Feldhöhen, eine Stufe kleiner: Buttons, die
+	   nur ein Symbol tragen, hatten kein gemeinsames Maß. Im Browser gemessen
+	   ergab die Inventur vier verschiedene — 20×20 (Cover-Vorschau, ganz ohne
+	   Polsterung), 22×22 (Titelsatz in der Bestellhistorie), 30×30 (Navigation
+	   einklappen) und 38×28 (Banner schließen). Der beschriftete Nachbar daneben
+	   stand längst auf 36 px, und in der Bestellhistorie saß ein 14-px-Symbol in
+	   einer 22-px-Fläche — sichtbar zu klein und kaum zu treffen.
+
+	   Material 3 nennt für den Icon-Button „extra small" einen Container von
+	   32 dp. Das ist hier auch das praktische Maß: groß genug als Trefferfläche,
+	   klein genug, um eine dichte Tabellenzeile nicht auseinanderzuziehen (36 px
+	   wie bei den Feldern würde die Detailzeilen der Bestellhistorie strecken).
+
+	   Warum eine Komponenten-Klasse und KEINE base-Regel auf button:has(> svg):
+	   Eine base-Regel verliert gegen jede Utility — CoverPeek trägt ein
+	   explizites w-5 h-5 und wäre stillschweigend kleiner geblieben, also genau
+	   die Fundstelle, die am weitesten daneben lag. Und sie hätte Buttons
+	   getroffen, die ich nie angesehen habe. Die Klasse steht sichtbar an der
+	   Fundstelle, die Wirkung ist auf sie begrenzt.
+
+	   Verankert im E2E-Gate e2e/icon-trefferflaechen.spec.js (misst im Browser). */
+	.icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 2rem; /* 32 px */
+		min-height: 2rem;
+		/* Rund, wie der M3-Icon-Button: Er trägt genau ein Symbol, seine Trefferfläche
+		   ist ein Kreis um dieses Symbol. Vorher --radius-2xl, das jetzt 16 px wäre. */
+		border-radius: var(--radius-full);
+		cursor: pointer;
+		transition-property: color, background-color, border-color;
+		transition-duration: 150ms;
+	}
+}
+
+/* Card & Label layouts */
+.print-card-box {
+	width: 85.6mm;
+	height: 53.98mm;
+	position: relative;
+	overflow: hidden;
+}
+
+/* Zweckform L4760: 63.5 mm × 38.1 mm */
+.print-label-box {
+	width: 63.5mm;
+	height: 38.1mm;
+	position: relative;
+	overflow: hidden;
+}

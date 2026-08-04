@@ -2,6 +2,7 @@
 	import Modal from './Modal.svelte';
 	import { apiClient } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
+	import StudentFormFelder from './components/StudentFormFelder.svelte';
 
 	let { open = false, readerGroups = [], onclose, onsuccess } = $props();
 
@@ -113,87 +114,15 @@
 			</div>
 		{/if}
 
-		<label class="block text-xs font-medium text-slate-400"
-			>Vorname *
-			<input
-				type="text"
-				bind:value={newVorname}
-				placeholder="z.B. Max"
-				class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-			/>
-		</label>
-
-		<label class="block text-xs font-medium text-slate-400"
-			>Nachname *
-			<input
-				type="text"
-				bind:value={newNachname}
-				placeholder="z.B. Mustermann"
-				class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-			/>
-		</label>
-
-		<label class="block text-xs font-medium text-slate-400"
-			>Geburtsdatum
-			<input
-				type="date"
-				bind:value={newGeburtsdatum}
-				class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-			/>
-		</label>
-
-		<label class="block text-xs font-medium text-slate-400"
-			>Klasse *
-			<div class="mt-1.5 flex gap-2">
-				{#if !customKlasseInput}
-					<select
-						bind:value={newKlasse}
-						onchange={(e) => {
-							const sel = /** @type {HTMLSelectElement} */ (e.target);
-							if (sel && sel.value === '__custom__') {
-								customKlasseInput = true;
-								newKlasse = '';
-							}
-						}}
-						class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer font-sans"
-					>
-						<option value="">-- Lesergruppe / Klasse auswählen --</option>
-						{#each readerGroups as g, _i (_i)}
-							<option value={g.kuerzel}>{g.kuerzel} ({g.bezeichnung})</option>
-						{/each}
-						<option value="__custom__">Manuell eingeben...</option>
-					</select>
-				{:else}
-					<div class="relative w-full">
-						<input
-							type="text"
-							bind:value={newKlasse}
-							placeholder="z.B. 10b"
-							class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-						/>
-						<button
-							type="button"
-							onclick={() => {
-								customKlasseInput = false;
-								newKlasse = '';
-							}}
-							class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors bg-transparent border-none cursor-pointer"
-							>Auswahl</button
-						>
-					</div>
-				{/if}
-			</div>
-		</label>
-
-		<label class="block text-xs font-medium text-slate-400"
-			>Barcode-ID (optional)
-			<input
-				type="text"
-				bind:value={newBarcode}
-				placeholder="Wird automatisch generiert, wenn leer"
-				class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-			/>
-		</label>
+		<StudentFormFelder
+			bind:vorname={newVorname}
+			bind:nachname={newNachname}
+			bind:geburtsdatum={newGeburtsdatum}
+			bind:klasse={newKlasse}
+			bind:barcode={newBarcode}
+			bind:freieKlasse={customKlasseInput}
+			{readerGroups}
+		/>
 
 		<div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
 			<Button variant="secondary" onclick={handleClose} disabled={isSaving}>Abbrechen</Button>

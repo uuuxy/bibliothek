@@ -3,6 +3,14 @@
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Switch from './components/ui/Switch.svelte';
+	import Select from './components/ui/Select.svelte';
+
+	const ROLLEN = [
+		{ value: 'helfer', label: 'Helfer' },
+		{ value: 'mitarbeiter', label: 'Mitarbeiter' },
+		{ value: 'lehrer', label: 'Lehrer' },
+		{ value: 'admin', label: 'Administrator' }
+	];
 
 	/**
 	 * @typedef {Object} Props
@@ -78,16 +86,7 @@
 		)}
 		<div class="space-y-1.5">
 			<label for="rolle" class="block text-xs font-medium text-slate-400">Benutzer-Rolle</label>
-			<select
-				id="rolle"
-				bind:value={userForm.rolle}
-				class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-300 transition-all font-medium text-slate-800"
-			>
-				<option value="helfer">Helfer</option>
-				<option value="mitarbeiter">Mitarbeiter</option>
-				<option value="lehrer">Lehrer</option>
-				<option value="admin">Administrator</option>
-			</select>
+			<Select id="rolle" bind:value={userForm.rolle} options={ROLLEN} />
 		</div>
 		{#if isEditingUser}
 			<!-- Vorher ein peer-checked-Nachbau OHNE zugänglichen Namen: Der Screenreader las

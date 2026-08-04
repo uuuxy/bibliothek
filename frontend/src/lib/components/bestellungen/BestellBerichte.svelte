@@ -1,6 +1,8 @@
 <script>
-	import { localISO, lastOfMonth } from '../../utils/dates.js';
+	import { localISO } from '../../utils/dates.js';
+	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import Select from '../ui/Select.svelte';
 
 	/** @type {{ suppliers?: { id: string, name: string }[] }} */
 	let { suppliers = [] } = $props();
@@ -21,99 +23,25 @@
 	let vonDatum = $state(localISO(new Date(now.getFullYear(), now.getMonth(), 1)));
 	let bisDatum = $state(localISO(now));
 
-	const monthLabels = [
-		'Januar',
-		'Februar',
-		'März',
-		'April',
-		'Mai',
-		'Juni',
-		'Juli',
-		'August',
-		'September',
-		'Oktober',
-		'November',
-		'Dezember'
-	];
-
-	// Jahres-Optionen: aktuelles Jahr + 4 zurück
 	const yearOptions = Array.from({ length: 5 }, (_, i) => String(now.getFullYear() - i));
 
-	// Die Beschriftungen folgen dem Schalter "Preise im Bestellwesen".
-	//
-	// Ohne Preise waere "Lieferantenabrechnung" schlicht falsch — abgerechnet wird nichts,
-	// der Bericht listet dann Mengen. Und ein "Monatsbericht ... mit Summe" verspricht eine
-	// Summe, die im PDF nicht mehr steht. Die Auswahl muss beschreiben, was herauskommt.
-	const berichtOptionen = $derived(
-		orderStore.preiseErfassen
-			? [
-					{
-						value: 'monat',
-						label: 'Monatsbericht',
-						desc: 'Alle Bestellungen eines Monats mit Titeln und Summe'
-					},
-					{
-						value: 'jahr',
-						label: 'Jahresbericht',
-						desc: 'Monatliche Übersicht + Aufteilung nach Lieferant'
-					},
-					{
-						value: 'lieferant',
-						label: 'Lieferantenabrechnung',
-						desc: 'Alle Bestellungen bei einem Lieferanten in einem Zeitraum'
-					}
-				]
-			: [
-					{
-						value: 'monat',
-						label: 'Monatsbericht',
-						desc: 'Alle Bestellungen eines Monats mit Titeln und Exemplarzahlen'
-					},
-					{
-						value: 'jahr',
-						label: 'Jahresbericht',
-						desc: 'Monatliche Übersicht + Aufteilung nach Lieferant (Mengen)'
-					},
-					{
-						value: 'lieferant',
-						label: 'Lieferantenübersicht',
-						desc: 'Alle Bestellungen bei einem Lieferanten in einem Zeitraum'
-					}
-				]
-	);
+	const berichtOptionen = $derived(optionen(orderStore.preiseErfassen));
 
 	let rangeInvalid = $derived(typ === 'lieferant' && vonDatum > bisDatum);
 	let canDownload = $derived(!rangeInvalid && (typ !== 'lieferant' || lieferantId !== ''));
 
-	let downloadURL = $derived.by(() => {
-		const base = '/api/bestellhistorie/bericht';
-		if (typ === 'monat') {
-			const [y, m] = monatJahr.split('-');
-			const params = new URLSearchParams({
-				von: `${monatJahr}-01`,
-				bis: lastOfMonth(monatJahr),
-				titel: `Monatsbericht ${monthLabels[Number(m) - 1] ?? ''} ${y}`
-			});
-			return `${base}?${params}`;
-		}
-		if (typ === 'jahr') {
-			const params = new URLSearchParams({
-				von: `${jahr}-01-01`,
-				bis: `${jahr}-12-31`,
-				jahresansicht: 'true',
-				titel: `Jahresbericht ${jahr}`
-			});
-			return `${base}?${params}`;
-		}
-		const name = suppliers.find((s) => s.id === lieferantId)?.name ?? 'Lieferant';
-		const params = new URLSearchParams({
-			von: vonDatum,
-			bis: bisDatum,
-			lieferant_id: lieferantId,
-			titel: `${orderStore.preiseErfassen ? 'Lieferantenabrechnung' : 'Lieferantenübersicht'}: ${name}`
-		});
-		return `${base}?${params}`;
-	});
+	let downloadURL = $derived(
+		berichtURL({
+			typ,
+			monatJahr,
+			jahr,
+			vonDatum,
+			bisDatum,
+			lieferantId,
+			suppliers,
+			mitPreisen: orderStore.preiseErfassen
+		})
+	);
 </script>
 
 <div class="max-w-3xl space-y-8 overflow-y-auto">
@@ -157,15 +85,11 @@
 		{:else if typ === 'jahr'}
 			<div class="space-y-1.5">
 				<label class="block text-sm font-medium text-slate-700" for="jahr">Jahr</label>
-				<select
+				<Select
 					id="jahr"
 					bind:value={jahr}
-					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
-				>
-					{#each yearOptions as y, _i (_i)}
-						<option value={y}>{y}</option>
-					{/each}
-				</select>
+					options={yearOptions.map((/** @type {any} */ y) => ({ value: y, label: String(y) }))}
+				/>
 			</div>
 		{:else}
 			<div class="space-y-1.5">
@@ -173,15 +97,11 @@
 				{#if suppliers.length === 0}
 					<p class="text-sm text-slate-400 italic">Keine Lieferanten vorhanden.</p>
 				{:else}
-					<select
+					<Select
 						id="lieferant"
 						bind:value={lieferantId}
-						class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
-					>
-						{#each suppliers as s, _i (_i)}
-							<option value={s.id}>{s.name}</option>
-						{/each}
-					</select>
+						options={suppliers.map((/** @type {any} */ s) => ({ value: s.id, label: s.name }))}
+					/>
 				{/if}
 			</div>
 			<div class="grid grid-cols-2 gap-4">

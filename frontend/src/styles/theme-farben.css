@@ -1,0 +1,193 @@
+/* Die vierzehn Tailwind-Farbfamilien, umgebogen auf Material-3-Tonleitern.
+   Der Aufruf im Bauteil bleibt `bg-blue-600` — was dabei herauskommt, steht hier. */
+
+@theme {
+	/* ── Farben: Material-3-Tonleitern ────────────────────────────────────────
+	   Gezählt am 04.08.2026: 3.126 Farbfundstellen in VIERZEHN Familien (slate
+	   1.876, blue 492, rose 236, emerald 222, amber 116, red 59, dazu indigo,
+	   teal, zinc, violet, purple, orange, sky, green). Vierzehn Familien sind
+	   keine Designsprache, sondern vierzehn Einzelentscheidungen — und genau das
+	   sieht man der Anwendung an.
+
+	   Es gab bereits eine M3-Schicht (weiter unten, :root) mit richtigen
+	   Rollennamen, benutzt von ZWEI von 146 Bauteilen — und mit Smaragdgrün als
+	   --primary, während die Oberfläche durchgehend blau ist. Zwei Systeme, die
+	   gegeneinander liefen.
+
+	   Wieder die SKALA statt der Aufrufe (wie bei Radien und Schriftstärken):
+	   Die Klassennamen bleiben stehen, ihre Werte kommen aus den M3-Tonleitern.
+	   Damit wechseln alle 3.126 Fundstellen in einem Zugriff, ohne dass eine
+	   einzige Komponente angefasst wird. Die Helligkeitsordnung bleibt monoton
+	   (50 hell … 950 dunkel), sonst kippten Text und Fläche gegeneinander.
+
+	   Grundfarbe ist BLAU (Tonwert 40 = #0061A4), weil die Oberfläche blau ist.
+	   Die Nebenfamilien werden auf die nächstliegende Rolle zusammengelegt:
+	   indigo/violet/purple/sky → primary, teal/green → success, orange → warning,
+	   zinc/gray → neutral, red → error. */
+
+	/* Primary — M3-Tonleiter zur blauen Grundfarbe */
+	--color-blue-50: #f7f9ff;
+	--color-blue-100: #d0e4ff;
+	--color-blue-200: #9ccaff;
+	--color-blue-300: #6bb1f9;
+	--color-blue-400: #4a96dc;
+	--color-blue-500: #2a7cc0;
+	--color-blue-600: #0061a4;
+	--color-blue-700: #004880;
+	--color-blue-800: #00315e;
+	--color-blue-900: #001c38;
+	--color-blue-950: #001129;
+
+	/* indigo/violet/purple/sky waren Ausreißer ohne eigene Bedeutung → primary */
+	--color-indigo-50: #f7f9ff;
+	--color-indigo-100: #d0e4ff;
+	--color-indigo-200: #9ccaff;
+	--color-indigo-300: #6bb1f9;
+	--color-indigo-400: #4a96dc;
+	--color-indigo-500: #2a7cc0;
+	--color-indigo-600: #0061a4;
+	--color-indigo-700: #004880;
+	--color-indigo-800: #00315e;
+	--color-indigo-900: #001c38;
+	--color-violet-50: #f7f9ff;
+	--color-violet-100: #d0e4ff;
+	--color-violet-200: #9ccaff;
+	--color-violet-300: #6bb1f9;
+	--color-violet-400: #4a96dc;
+	--color-violet-500: #2a7cc0;
+	--color-violet-600: #0061a4;
+	--color-violet-700: #004880;
+	--color-violet-800: #00315e;
+	--color-violet-900: #001c38;
+	--color-purple-50: #f7f9ff;
+	--color-purple-100: #d0e4ff;
+	--color-purple-200: #9ccaff;
+	--color-purple-300: #6bb1f9;
+	--color-purple-400: #4a96dc;
+	--color-purple-500: #2a7cc0;
+	--color-purple-600: #0061a4;
+	--color-purple-700: #004880;
+	--color-purple-800: #00315e;
+	--color-purple-900: #001c38;
+	--color-sky-50: #f7f9ff;
+	--color-sky-100: #d0e4ff;
+	--color-sky-200: #9ccaff;
+	--color-sky-300: #6bb1f9;
+	--color-sky-400: #4a96dc;
+	--color-sky-500: #2a7cc0;
+	--color-sky-600: #0061a4;
+	--color-sky-700: #004880;
+	--color-sky-800: #00315e;
+	--color-sky-900: #001c38;
+
+	/* Neutral + Neutral-Variant — Flächen, Text, Linien */
+	--color-slate-50: #faf9fd;
+	--color-slate-100: #f1f0f4;
+	--color-slate-200: #e3e2e6;
+	--color-slate-300: #c2c7cf;
+	--color-slate-400: #909094;
+	--color-slate-500: #72777f;
+	--color-slate-600: #5a5f66;
+	--color-slate-700: #42474e;
+	--color-slate-800: #2f3033;
+	--color-slate-900: #1a1c1e;
+	--color-slate-950: #101214;
+	--color-gray-50: #faf9fd;
+	--color-gray-100: #f1f0f4;
+	--color-gray-200: #e3e2e6;
+	--color-gray-300: #c2c7cf;
+	--color-gray-400: #909094;
+	--color-gray-500: #72777f;
+	--color-gray-600: #5a5f66;
+	--color-gray-700: #42474e;
+	--color-gray-800: #2f3033;
+	--color-gray-900: #1a1c1e;
+	--color-zinc-50: #faf9fd;
+	--color-zinc-100: #f1f0f4;
+	--color-zinc-200: #e3e2e6;
+	--color-zinc-300: #c2c7cf;
+	--color-zinc-400: #909094;
+	--color-zinc-500: #72777f;
+	--color-zinc-600: #5a5f66;
+	--color-zinc-700: #42474e;
+	--color-zinc-800: #2f3033;
+	--color-zinc-900: #1a1c1e;
+
+	/* Error — M3-Fehlerpalette */
+	--color-rose-50: #fff8f7;
+	--color-rose-100: #ffdad6;
+	--color-rose-200: #ffb4ab;
+	--color-rose-300: #ff897d;
+	--color-rose-400: #ff5449;
+	--color-rose-500: #de3730;
+	--color-rose-600: #ba1a1a;
+	--color-rose-700: #93000a;
+	--color-rose-800: #690005;
+	--color-rose-900: #410002;
+	--color-red-50: #fff8f7;
+	--color-red-100: #ffdad6;
+	--color-red-200: #ffb4ab;
+	--color-red-300: #ff897d;
+	--color-red-400: #ff5449;
+	--color-red-500: #de3730;
+	--color-red-600: #ba1a1a;
+	--color-red-700: #93000a;
+	--color-red-800: #690005;
+	--color-red-900: #410002;
+
+	/* Erfolg — eigene Tonleiter im selben System (M3 kennt nur „error"; grün ist
+	   hier eine Hauszusage, keine Willkür: Rückgabe, Bestand ausreichend, Erfolg) */
+	--color-emerald-50: #f2fff0;
+	--color-emerald-100: #b7f5b9;
+	--color-emerald-200: #9cd89f;
+	--color-emerald-300: #81bc85;
+	--color-emerald-400: #67a06b;
+	--color-emerald-500: #4d8552;
+	--color-emerald-600: #346b39;
+	--color-emerald-700: #1a5324;
+	--color-emerald-800: #003910;
+	--color-emerald-900: #002106;
+	--color-green-50: #f2fff0;
+	--color-green-100: #b7f5b9;
+	--color-green-200: #9cd89f;
+	--color-green-300: #81bc85;
+	--color-green-400: #67a06b;
+	--color-green-500: #4d8552;
+	--color-green-600: #346b39;
+	--color-green-700: #1a5324;
+	--color-green-800: #003910;
+	--color-green-900: #002106;
+	--color-teal-50: #f2fff0;
+	--color-teal-100: #b7f5b9;
+	--color-teal-200: #9cd89f;
+	--color-teal-300: #81bc85;
+	--color-teal-400: #67a06b;
+	--color-teal-500: #4d8552;
+	--color-teal-600: #346b39;
+	--color-teal-700: #1a5324;
+	--color-teal-800: #003910;
+	--color-teal-900: #002106;
+
+	/* Warnung — Bernstein im selben System */
+	--color-amber-50: #fff8f2;
+	--color-amber-100: #ffdcc2;
+	--color-amber-200: #ffb77c;
+	--color-amber-300: #ee9f55;
+	--color-amber-400: #d0853c;
+	--color-amber-500: #b26c23;
+	--color-amber-600: #8f5300;
+	--color-amber-700: #6c3c00;
+	--color-amber-800: #4c2700;
+	--color-amber-900: #2e1500;
+	--color-orange-50: #fff8f2;
+	--color-orange-100: #ffdcc2;
+	--color-orange-200: #ffb77c;
+	--color-orange-300: #ee9f55;
+	--color-orange-400: #d0853c;
+	--color-orange-500: #b26c23;
+	--color-orange-600: #8f5300;
+	--color-orange-700: #6c3c00;
+	--color-orange-800: #4c2700;
+	--color-orange-900: #2e1500;
+
+}

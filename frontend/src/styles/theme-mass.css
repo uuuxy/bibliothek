@@ -1,0 +1,143 @@
+/* Maßskalen: Schriftfamilie, Typo-Stufen, Radien, Schatten.
+   Von app.css eingebunden — @theme wirkt aus einer eingebundenen Datei genauso,
+   die Datei bleibt dafür lesbar. */
+
+@theme {
+	--font-sans: 'Roboto', 'system-ui', sans-serif;
+
+	/* ── Schriftstärken ───────────────────────────────────────────────────────
+	   Gezählt: 596-mal font-bold/semibold gegen 138-mal font-medium und ACHTMAL
+	   font-normal. Wenn vier von fünf Textstellen betont sind, betont keine mehr —
+	   Tabellenkopf, Datenzelle, Zustand und Überschrift schreien gleich laut, und
+	   das Auge findet keinen Einstieg.
+
+	   Wieder die SKALA statt der Aufrufe (wie bei den Radien): Die Klassennamen
+	   bleiben stehen, ihre Bedeutung rückt eine Stufe herunter. Damit ändern sich
+	   596 Fundstellen in einem Zugriff, und die relative Ordnung bleibt erhalten —
+	   bold ist weiterhin stärker als semibold.
+
+	   Seit Roboto geladen wird (04.08.2026), gibt es nur noch ZWEI echte Schnitte:
+	   400 und 500. Genau die benutzt Material 3 auch — Hierarchie entsteht dort
+	   über Größe und Farbe, nicht über immer fettere Schrift. Ein font-bold, das
+	   auf 600 zeigt, gäbe es in Roboto gar nicht; der Browser müsste es
+	   synthetisch verzerren, und das sieht man.
+
+	   font-medium rückt deshalb auf 400 (Regular), semibold und bold auf 500
+	   (Medium). Das löst zugleich den ursprünglichen Befund ein: 596 betonte
+	   Stellen gegen 138 normale — wenn vier von fünf betont sind, betont keine
+	   mehr. */
+	--font-weight-medium: 400;
+	--font-weight-semibold: 500;
+	--font-weight-bold: 500;
+
+	/* ── Typo-Skala (Material 3) ──────────────────────────────────────────────
+	   Gezählt: 978 Schriftgrößen, davon 86 frei gewählte Pixelwerte
+	   (text-[10px] 63×, [11px] 13×, [9px] 5×, [8px] 5×), die an jeder Skala
+	   vorbeigehen. Der Rest lag auf Tailwind-Standardgrößen ohne Zeilenhöhe und
+	   ohne Laufweite.
+
+	   M3 definiert je Stufe DREI Werte: Größe, Zeilenhöhe und Laufweite. Die
+	   Laufweite ist der unscheinbarste und wirksamste — kleine Schrift bekommt
+	   mehr Luft (0,5 px bei 12 px), große weniger. Ohne sie wirkt M3-Typografie
+	   „fast richtig", und genau das war hier der Fall.
+
+	   Zuordnung auf die vorhandenen Klassennamen (wieder die Skala statt der
+	   Aufrufe): xs→body-small, sm→body-medium, base→body-large, lg→title-large,
+	   xl→headline-small, 2xl→headline-medium, 3xl→headline-large,
+	   4xl→display-small.
+
+	   Die 86 Pixelwerte bleiben davon UNBERÜHRT — sie sind literal und lassen
+	   sich nicht über die Skala einfangen. Sie einzeln abzulösen ist eigene
+	   Arbeit und steht noch aus. */
+	--text-xs: 0.75rem; /* 12 px — body-small */
+	--text-xs--line-height: 1rem;
+	--text-xs--letter-spacing: 0.03125rem;
+	--text-sm: 0.875rem; /* 14 px — body-medium */
+	--text-sm--line-height: 1.25rem;
+	--text-sm--letter-spacing: 0.015625rem;
+	--text-base: 1rem; /* 16 px — body-large */
+	--text-base--line-height: 1.5rem;
+	--text-base--letter-spacing: 0.03125rem;
+	--text-lg: 1.375rem; /* 22 px — title-large */
+	--text-lg--line-height: 1.75rem;
+	--text-lg--letter-spacing: 0rem;
+	--text-xl: 1.5rem; /* 24 px — headline-small */
+	--text-xl--line-height: 2rem;
+	--text-xl--letter-spacing: 0rem;
+	--text-2xl: 1.75rem; /* 28 px — headline-medium */
+	--text-2xl--line-height: 2.25rem;
+	--text-2xl--letter-spacing: 0rem;
+	--text-3xl: 2rem; /* 32 px — headline-large */
+	--text-3xl--line-height: 2.5rem;
+	--text-3xl--letter-spacing: 0rem;
+	--text-4xl: 2.25rem; /* 36 px — display-small */
+	--text-4xl--line-height: 2.75rem;
+	--text-4xl--letter-spacing: 0rem;
+
+	/* ── Laufweite ────────────────────────────────────────────────────────────
+	   32 lokale Überschreibungen fanden sich, die die Skala oben aushebeln —
+	   12× tracking-tight (bei 22 px gemessen: −0,55 px), 20× wide/wider/widest.
+	   M3 benutzt NIE negative Laufweite: Enger gesetzte Überschriften sind ein
+	   Merkmal amerikanischer Marketing-Typografie, nicht von Material.
+
+	   tracking-tight wird deshalb auf 0 gesetzt statt in zwölf Dateien entfernt
+	   zu werden — die Klasse darf stehen bleiben, sie richtet nur keinen Schaden
+	   mehr an. Die wide-Stufen bleiben erhalten und rücken auf M3-Werte: Sie
+	   stehen an Versalien-Labels, wo M3 selbst mehr Luft vorsieht. */
+	--tracking-tighter: 0rem;
+	--tracking-tight: 0rem;
+	--tracking-normal: 0rem;
+	--tracking-wide: 0.03125rem;
+	--tracking-wider: 0.0625rem;
+	--tracking-widest: 0.09375rem;
+
+	/* ── Eckenradien ──────────────────────────────────────────────────────────
+	   Zusammengestauchte Skala für ein Verwaltungswerkzeug. Das Audit fand 18
+	   verschiedene Radius-Werte in 763 Vorkommen; die großen (rounded-xl 12 px,
+	   -2xl 16 px, -3xl 24 px) gaben der Anwendung ihre verspielte Anmutung.
+
+	   Umdefiniert wird hier die SKALA, nicht der Aufruf: Damit ändern sich alle
+	   763 Fundstellen auf einmal, ohne eine einzige Komponente anzufassen — und
+	   die Klassennamen behalten ihre relative Ordnung (xl bleibt größer als lg).
+	   Ein Suchen-und-Ersetzen über alle rounded-* hätte dagegen auch die Pillen
+	   erwischt, die bei Badges und Segmented Controls richtig sind.
+
+	   --radius-full bleibt bewusst unangetastet: Avatare, Statuspunkte und
+	   Segmented Controls müssen rund bleiben.
+
+	   NEU 04.08.2026 — Material-3-Shape-Skala. Die gestauchte Skala war eine
+	   bewusste Entscheidung gegen ein verspieltes Werkzeug; sie wird hier
+	   ausdrücklich zurückgenommen, weil das Designziel M3 ist und die
+	   Verspieltheits-Sorge auf Nachfrage verworfen wurde.
+
+	   Google rundet NICHT überall gleich — das ist der eigentliche Punkt. M3 hat
+	   eine Skala mit fünf Stufen (4/8/12/16/28 px) plus Pille, und ordnet jeder
+	   BAUTEILROLLE eine davon zu: Menüs und Snackbars 4, Chips 8, Karten 12,
+	   Navigationsflächen 16, Dialoge 28 — und Buttons die Pille.
+
+	   Zuordnung auf die vorhandenen Klassennamen, gemessen an ihrer tatsächlichen
+	   Verwendung (163 rounded-full, 157 xl, 88 lg, 65 2xl, 36 md, 24 3xl):
+	   sm→extra-small, md→small, lg/xl→medium, 2xl→large, 3xl/4xl→extra-large.
+	   rounded-full bleibt unangetastet. */
+	--radius-xs: 2px;
+	--radius-sm: 4px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 12px;
+	--radius-2xl: 16px;
+	--radius-3xl: 28px;
+	--radius-4xl: 28px;
+
+	/* ── Schatten ─────────────────────────────────────────────────────────────
+	   235 Vorkommen auf sieben Stufen. Ein strenges Werkzeug braucht zwei
+	   Aussagen: „liegt auf der Fläche" und „schwebt darüber". Die Stufen bleiben
+	   als Klassen erhalten, rücken aber eng zusammen — sichtbar bleibt nur noch
+	   der Unterschied zwischen Karte und Overlay, nicht mehr fünf Abstufungen
+	   von Wolkigkeit dazwischen. */
+	--shadow-xs: 0 1px 1px rgb(15 23 42 / 0.04);
+	--shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+	--shadow-md: 0 1px 3px rgb(15 23 42 / 0.08);
+	--shadow-lg: 0 2px 6px rgb(15 23 42 / 0.09);
+	--shadow-xl: 0 4px 12px rgb(15 23 42 / 0.11);
+	--shadow-2xl: 0 8px 24px rgb(15 23 42 / 0.14);
+}

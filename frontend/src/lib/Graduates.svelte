@@ -1,11 +1,11 @@
 <script>
-	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
-	import Button from './components/ui/Button.svelte';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
-	import { Mail, Printer } from '@lucide/svelte';
+	import AbgaengerTabelle from './components/AbgaengerTabelle.svelte';
+	import AbgaengerKopfzeile from './components/AbgaengerKopfzeile.svelte';
+	import * as dienst from './abgaengerDienst.js';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function openProfile(student) {
@@ -48,26 +48,7 @@
 	async function printKontoauszuege() {
 		loadingKontoauszuege = true;
 		try {
-			// Ist eine Klasse gewählt, druckt der Laufzettel gezielt nur diese Klasse.
-			const endpoint = selectedKlasse
-				? `/api/abgaenger/pdf?klasse=${encodeURIComponent(selectedKlasse)}`
-				: '/api/abgaenger/pdf';
-			const response = await apiFetch(endpoint);
-			if (!response.ok) {
-				throw new Error('Failed to load PDF');
-			}
-
-			const blob = await response.blob();
-			const url = window.URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = selectedKlasse
-				? `Kontoauszuege_${selectedKlasse}.pdf`
-				: 'Kontoauszuege_Abgaenger.pdf';
-			document.body.appendChild(a);
-			a.click();
-			window.URL.revokeObjectURL(url);
-			a.remove();
+			await dienst.ladeKontoauszuege(selectedKlasse);
 		} catch (err) {
 			console.error('Kontoauszug load error:', err);
 		} finally {
@@ -108,23 +89,8 @@
 			return;
 		}
 		try {
-			const res = await apiFetch('/api/abgaenger/mail', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					klassen: auswahl.klassen,
-					override_email: auswahl.overrideEmail ?? ''
-				})
-			});
-			const json = await res.json();
-			// Die Server-Meldung wird durchgereicht, nicht selbst formuliert: nur sie weiß,
-			// an WEN die Auszüge tatsächlich gingen.
-			showToast(
-				res.ok
-					? (json.message ?? 'Kontoauszüge versendet.')
-					: (json.error ?? json.message ?? 'Versand fehlgeschlagen.'),
-				res.ok ? 'success' : 'error'
-			);
+			const { ok, meldung } = await dienst.sendeKontoauszuege(auswahl);
+			showToast(meldung, ok ? 'success' : 'error');
 		} catch (e) {
 			showToast(`Netzwerkfehler beim Versand: ${e}`, 'error');
 		}
@@ -133,9 +99,7 @@
 	// Fetch graduates list from backend api
 	async function fetchGraduates() {
 		try {
-			const res = await apiFetch('/api/abgaenger');
-			if (!res.ok) throw new Error('Fehler beim Laden');
-			graduates = await res.json();
+			graduates = await dienst.ladeAbgaenger();
 		} catch (err) {
 			console.error('Graduates error:', err);
 		} finally {
@@ -170,64 +134,16 @@
 </script>
 
 <div class="w-full space-y-6 text-slate-800">
-	<!-- Header Info: links Klassenfilter, rechts Laufzettel-Druck (der dem Filter folgt). -->
-	<div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
-		{#if !loading && graduates.length > 0}
-			<div class="flex items-center gap-3 min-w-0">
-				<label class="text-xs font-medium text-slate-500 shrink-0" for="grad-klasse">Klasse</label>
-				<select
-					id="grad-klasse"
-					bind:value={selectedKlasse}
-					class="bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-				>
-					<option value="">Alle Klassen ({graduates.length})</option>
-					{#each classes as k (k)}
-						<option value={k}>{k}</option>
-					{/each}
-				</select>
-				<span class="text-xs text-slate-400 shrink-0">{filteredGraduates.length} Abgänger</span>
-			</div>
-		{:else}
-			<div></div>
-		{/if}
-
-		<div class="flex items-center space-x-4 shrink-0">
-			<!-- Zwei Wege für dasselbe Dokument: ausdrucken (Papier bleibt der Notweg,
-			     wenn keine Lehrer-Adresse hinterlegt ist) oder an die Klassenleitungen mailen. -->
-			<Button
-				variant="secondary"
-				onclick={printKontoauszuege}
-				disabled={loadingKontoauszuege || graduates.length === 0}
-				class="no-print"
-			>
-				{#if loadingKontoauszuege}
-					<div
-						class="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"
-					></div>
-					Lade Daten…
-				{:else}
-					<Printer class="h-4 w-4" aria-hidden="true" />
-					{selectedKlasse ? `Kontoauszüge ${selectedKlasse}` : 'Kontoauszüge drucken'}
-				{/if}
-			</Button>
-			<Button
-				onclick={() => (versandOffen = true)}
-				disabled={graduates.length === 0}
-				class="no-print"
-				title="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
-			>
-				<Mail class="h-4 w-4" />
-				An Klassenleitungen mailen
-			</Button>
-			<div
-				class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 shrink-0"
-				title="Änderungen an allen Arbeitsplätzen sofort sichtbar (Live-Synchronisation)"
-			>
-				<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-				Live
-			</div>
-		</div>
-	</div>
+	<AbgaengerKopfzeile
+		bind:klasse={selectedKlasse}
+		klassen={classes}
+		gesamt={graduates.length}
+		gefiltert={filteredGraduates.length}
+		laedt={loading}
+		druckLaeuft={loadingKontoauszuege}
+		onDrucken={printKontoauszuege}
+		onMailen={() => (versandOffen = true)}
+	/>
 
 	{#if loading}
 		<div class="py-12 flex justify-center items-center">
@@ -235,82 +151,12 @@
 				class="w-8 h-8 border-2 border-t-blue-600 border-blue-100 rounded-full animate-spin"
 			></div>
 		</div>
-	{:else if graduates.length === 0}
-		<!-- Completed clearing UI state -->
-		<div class="py-12 text-center space-y-3 animate-fade-in">
-			<div
-				class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-8 w-8"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M5 13l4 4L19 7"
-					/>
-				</svg>
-			</div>
-			<h3 class="font-bold text-slate-800">Alle Abgänger entlastet!</h3>
-			<p class="text-xs text-slate-500 max-w-xs mx-auto">
-				Kein Abgänger hat mehr offene Lehrmittel oder unbezahlte Schadensfälle.
-			</p>
-		</div>
 	{:else}
-		<!-- Active list of graduates with dues -->
-		<div class="overflow-x-auto">
-			<table class="w-full text-left text-base border-collapse">
-				<thead>
-					<tr class="border-b border-slate-100 text-slate-500 text-sm">
-						<th class="py-2 px-4">Klasse</th>
-						<th class="py-2 px-4">Name</th>
-						<th class="py-2 px-4">Offene Bücher</th>
-						<th class="py-2 px-4">Sperr-Status</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-slate-50">
-					{#each filteredGraduates as student (student.id)}
-						<tr
-							onclick={() => openProfile(student)}
-							onkeydown={(e) => {
-								if (e.key === 'Enter' || e.key === ' ') {
-									e.preventDefault();
-									openProfile(student);
-								}
-							}}
-							tabindex="0"
-							role="button"
-							aria-label="Profil von {student.vorname} {student.nachname} (Klasse {student.klasse}) anzeigen"
-							class="hover:bg-slate-50/85 cursor-pointer transition-colors animate-slide-up focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
-						>
-							<td class="py-2 px-4 text-slate-500">{student.klasse}</td>
-							<td class="py-2 px-4 font-medium text-slate-800"
-								>{student.vorname} {student.nachname}</td
-							>
-							<td class="py-2 px-4 text-slate-600">
-								{student.offene_buecher}
-								{student.offene_buecher === 1 ? 'Buch' : 'Bücher'}
-								{#if student.ueberfaellig > 0}
-									<span class="font-medium text-rose-600">
-										· {student.ueberfaellig} überfällig
-									</span>
-								{/if}
-							</td>
-							<td class="py-2 px-4">
-								{#if student.ist_gesperrt}
-									<span class="text-xs font-medium text-rose-600">Sperre aktiv</span>
-								{/if}
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+		<AbgaengerTabelle
+			zeilen={filteredGraduates}
+			leer={graduates.length === 0}
+			onProfil={openProfile}
+		/>
 	{/if}
 </div>
 

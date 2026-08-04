@@ -4,6 +4,10 @@
 	import IsbnFeld from './IsbnFeld.svelte';
 	import BuchEingabefelderKategorisierung from './BuchEingabefelderKategorisierung.svelte';
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
+	import SignaturFeld from './SignaturFeld.svelte';
+	import Select from '../../../../lib/components/ui/Select.svelte';
+
+	const MEDIENTYPEN = ['Buch', 'CD', 'DVD'].map((m) => ({ value: m, label: m }));
 
 	let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
@@ -86,27 +90,7 @@
 		<label for="buch-medientyp" class="block text-sm font-medium text-slate-700 mb-1"
 			>Medientyp</label
 		>
-		<div class="relative">
-			<select
-				id="buch-medientyp"
-				bind:value={formular.medientyp}
-				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition appearance-none cursor-pointer"
-			>
-				<option value="Buch">Buch</option>
-				<option value="CD">CD</option>
-				<option value="DVD">DVD</option>
-			</select>
-			<div class="absolute right-3 top-3 pointer-events-none">
-				<svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M19 9l-7 7-7-7"
-					/>
-				</svg>
-			</div>
-		</div>
+		<Select id="buch-medientyp" bind:value={formular.medientyp} options={MEDIENTYPEN} />
 	</div>
 
 	<div>
@@ -148,51 +132,7 @@
 		<IsbnFeld bind:formular bind:wirdGescannt />
 	</div>
 
-	<!-- Signatur: steht physisch auf dem Buchrücken-Etikett — prominent und
-         bei Neuanlage Pflicht. Die DNB-Altersstufe füllt höchstens einen
-         "BIB …"-Vorschlag vor (IsbnFeld); hier entscheidet sich, ob das Buch
-         zur Littera-Systematik passt. -->
-	<div
-		class="rounded-xl border-2 p-4 transition-colors {signaturFehlt
-			? 'border-rose-300 bg-rose-50/40'
-			: 'border-emerald-200 bg-emerald-50/30'}"
-	>
-		<label
-			for="buch-signatur"
-			class="flex items-center gap-2 text-sm font-bold text-slate-800 mb-1"
-		>
-			🏷️ Signatur (Buchrücken)
-			{#if !formular.id}<span
-					class="text-xs font-medium px-1.5 py-0.5 rounded {signaturFehlt
-						? 'bg-rose-100 text-rose-700'
-						: 'bg-emerald-100 text-emerald-700'}">Pflicht</span
-				>{/if}
-		</label>
-		<input
-			id="buch-signatur"
-			type="text"
-			bind:value={formular.signatur}
-			placeholder={autorKuerzel
-				? `z. B. "${autorKuerzel}" (Belletristik) oder "LMF M"`
-				: 'z. B. LMF M, BIB ROM, Row …'}
-			aria-invalid={signaturFehlt}
-			class="w-full rounded-lg px-4 py-2.5 text-slate-900 outline-none transition border bg-white
-                   {signaturFehlt
-				? 'border-rose-400 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'
-				: 'border-emerald-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'}"
-		/>
-		{#if signaturFehlt}
-			<p class="mt-1.5 text-xs font-semibold text-rose-600">
-				Ohne Signatur kein Etikett — bitte Systematik-Kürzel eintragen (Speichern ist bis dahin
-				gesperrt).
-			</p>
-		{:else}
-			<p class="mt-1.5 text-xs text-slate-500">
-				Wird 1:1 auf das Rücken-Etikett gedruckt. Bestehende Littera-Signaturen werden von Importen
-				nie überschrieben.
-			</p>
-		{/if}
-	</div>
+	<SignaturFeld bind:formular {signaturFehlt} {autorKuerzel} />
 
 	<div class="grid grid-cols-2 gap-4">
 		<div>

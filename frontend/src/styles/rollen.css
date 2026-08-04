@@ -1,0 +1,46 @@
+/* ── M3-Rollen ────────────────────────────────────────────────────────────────
+   Die semantische Sprache für ALLES, was ab jetzt gebaut wird: `bg-surface`,
+   `text-on-surface-variant`, `border-outline-variant`. Die Tailwind-Namen oben
+   sind die Brücke für die 3.126 bestehenden Fundstellen; neue Bauteile sollen
+   diese Rollen benutzen, dann ist ein Farbwechsel künftig EINE Zeile. Die
+   on-*-Paare sind der Punkt: Sie garantieren den Kontrast, statt ihn an jeder
+   Fundstelle neu zu raten.
+
+   `static` ist hier Pflicht, nicht Geschmack: Tailwind 4 wirft Theme-Variablen
+   weg, die noch niemand benutzt. Im Browser gemessen kamen die Rollen als LEERER
+   String zurück — ein Token, das man nicht auslesen kann, ist keins. Mit static
+   stehen sie unabhängig von der Benutzung in :root. */
+@theme static {
+	--color-primary: #0061a4;
+	--color-on-primary: #ffffff;
+	--color-primary-container: #d0e4ff;
+	--color-on-primary-container: #001c38;
+	/* Sekundärrolle: In M3 markiert NICHT die Primärfarbe eine Auswahl, sondern der
+	   secondary-container — Menüeintrag, Navigationsziel, Filterchip. Ohne sie
+	   müsste jede Auswahl entweder mit primary schreien oder mit einem Grauton
+	   verstummen. Werte aus derselben Tonleiter wie oben (Quellfarbe #0061A4). */
+	--color-secondary: #535f70;
+	--color-secondary-container: #d7e3f8;
+	--color-on-secondary-container: #101c2b;
+	--color-surface: #faf9fd;
+	--color-on-surface: #1a1c1e;
+	--color-surface-variant: #dee3eb;
+	--color-on-surface-variant: #42474e;
+	--color-surface-container-lowest: #ffffff;
+	--color-surface-container-low: #f4f3f7;
+	--color-surface-container: #eeedf1;
+	--color-surface-container-high: #e8e7eb;
+	--color-surface-container-highest: #e3e2e6;
+	--color-outline: #72777f;
+	--color-outline-variant: #c2c7cf;
+	--color-error: #ba1a1a;
+	--color-on-error: #ffffff;
+	--color-error-container: #ffdad6;
+	--color-on-error-container: #410002;
+}
+
+body {
+	@apply font-sans;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+}

@@ -1,6 +1,7 @@
 <script>
-	import { appState } from '../inventur/lib/store.svelte.js';
 	import Button from './components/ui/Button.svelte';
+	import Select from './components/ui/Select.svelte';
+	import BorrowersListe from './components/BorrowersListe.svelte';
 
 	/** @type {{ borrowers: any[], book: any, onBack: () => void }} */
 	let { borrowers, book, onBack } = $props();
@@ -119,13 +120,12 @@
 {:else}
 	<!-- Filters -->
 	<div class="flex gap-3 mb-4">
-		<select
+		<Select
 			bind:value={filterKlasse}
+			options={availableKlassen.map((/** @type {string} */ k) => ({ value: k, label: k }))}
+			class="w-44"
 			aria-label="Nach Klasse filtern"
-			class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
-		>
-			{#each availableKlassen as k, _i (_i)}<option value={k}>{k}</option>{/each}
-		</select>
+		/>
 		<div class="relative flex-1 max-w-xs">
 			<svg
 				aria-hidden="true"
@@ -167,61 +167,5 @@
 		</Button>
 	</div>
 
-	<!-- List -->
-	<div class="w-full">
-		<ul class="divide-y divide-slate-50">
-			{#each filteredBorrowers as b, _i (_i)}
-				<li
-					class="px-5 py-3.5 hover:bg-slate-50 transition-colors flex items-center justify-between group"
-				>
-					<div class="flex items-center gap-3 min-w-0">
-						<div
-							class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0"
-						>
-							{b.schueler_name?.[0] ?? ''}{b.schueler_nachname?.[0] ?? ''}
-						</div>
-						<div class="min-w-0">
-							<button
-								onclick={() => {
-									appState.triggerStudentScan = b.schueler_barcode;
-									onBack();
-								}}
-								class="text-sm font-semibold text-slate-800 hover:text-indigo-600 text-left cursor-pointer truncate block"
-							>
-								{b.schueler_name}
-								{b.schueler_nachname}
-								<span class="text-xs font-normal text-slate-400 ml-1"
-									>({b.klasse || 'Unbekannt'})</span
-								>
-							</button>
-							<p class="text-xs text-slate-400 font-mono mt-0.5">Exemplar: {b.exemplar_barcode}</p>
-						</div>
-					</div>
-					<div class="text-right shrink-0 ml-4 flex gap-6 items-center">
-						<div class="text-right hidden sm:block">
-							<p class="text-[10px] font-medium text-slate-400">Ausgeliehen</p>
-							<p class="text-sm font-semibold text-slate-600">
-								{fmtDate(b.ausgeliehen_am)}
-							</p>
-						</div>
-						<div class="text-right">
-							<p class="text-[10px] font-medium text-slate-400">Rückgabe bis</p>
-							<p
-								class="text-sm font-bold {new Date(b.rueckgabe_frist) < new Date()
-									? 'text-rose-600'
-									: 'text-slate-700'}"
-							>
-								{fmtDate(b.rueckgabe_frist)}
-							</p>
-						</div>
-					</div>
-				</li>
-			{/each}
-		</ul>
-		{#if filteredBorrowers.length === 0}
-			<div class="py-8 text-center text-sm text-slate-400">
-				Keine Ausleihen entsprechen dem Filter.
-			</div>
-		{/if}
-	</div>
+	<BorrowersListe zeilen={filteredBorrowers} {onBack} {fmtDate} />
 {/if}

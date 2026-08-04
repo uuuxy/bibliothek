@@ -1,5 +1,8 @@
 <script>
 	import Button from '../../../lib/components/ui/Button.svelte';
+	import Select from '../../../lib/components/ui/Select.svelte';
+
+	const klassenstufen = [5, 6, 7, 8, 9, 10].map((g) => ({ value: g, label: String(g) }));
 	/**
 	 * @type {{
 	 *   data: any,
@@ -120,17 +123,18 @@
 						class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
 					/>
 				</label>
-				<label class="block text-xs font-semibold text-slate-400"
-					>Klassenstufe
-					<select
-						bind:value={grade}
-						class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+				<div>
+					<label for="isbn-klassenstufe" class="block text-xs font-semibold text-slate-400"
+						>Klassenstufe</label
 					>
-						{#each [5, 6, 7, 8, 9, 10] as g (g)}
-							<option value={g}>{g}</option>
-						{/each}
-					</select>
-				</label>
+					<Select
+						id="isbn-klassenstufe"
+						bind:value={grade}
+						options={klassenstufen}
+						placeholder="Klasse wählen"
+						class="mt-1.5 w-full"
+					/>
+				</div>
 			</div>
 			<label class="mt-4 block text-xs font-semibold text-slate-400"
 				>Bestand

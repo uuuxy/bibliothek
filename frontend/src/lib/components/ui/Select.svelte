@@ -1,26 +1,19 @@
 <!-- @component Select — Material-3-Auswahlfeld („exposed dropdown menu").
 
-     Ersetzt das native <select>. Warum überhaupt: Das Browser-Widget folgt keiner
-     Designsprache — es bringt Systemoptik, Systemschrift und einen Systempfeil mit,
-     und es SCHNEIDET lange Werte hart ab. Bei Lieferantennamen war genau das der
-     gemeldete Fall („Cornelsen ist abgeschnitten").
+     Ersetzt das native <select>. Warum überhaupt: Das Browser-Widget folgt
+     keiner Designsprache — Systemoptik, Systemschrift, Systempfeil — und es
+     SCHNEIDET lange Werte hart ab („Cornelsen ist abgeschnitten").
 
-     Zwei Dinge, die hier bewusst gelöst sind:
+     TASTATURBEDIENUNG ist hier Pflicht, kein Extra: Ein natives select kann
+     jeder ohne Maus bedienen; ein nachgebautes muss das auch. Pfeiltasten
+     wandern, Pos1/Ende springen, Enter und Leertaste wählen, Escape schließt
+     und gibt den Fokus zurück, Tippen springt zum ersten passenden Eintrag.
 
-     1. POSITION FIXED statt absolute. Die Liste öffnet sich regelmäßig in einem
-        Container mit overflow-y-auto (Formularspalten, Tabellen, Dialoge). Absolut
-        positioniert würde sie dort abgeschnitten — dieselbe Falle, die in CoverPeek
-        schon dokumentiert ist. Die Koordinaten kommen deshalb aus
-        getBoundingClientRect und werden beim Scrollen und bei Größenänderung neu
-        berechnet.
-
-     2. TASTATURBEDIENUNG. Ein natives select kann jeder ohne Maus bedienen; ein
-        nachgebautes muss das auch. Pfeiltasten wandern, Pos1/Ende springen, Enter
-        und Leertaste wählen, Escape schließt und gibt den Fokus zurück, Tippen
-        springt zum ersten passenden Eintrag. Ohne das wäre der Ersatz ein
-        Rückschritt, egal wie er aussieht. -->
+     Die Menüfläche liegt in SelectListe.svelte. -->
 <script>
-	import { ChevronDown, Check } from '@lucide/svelte';
+	import { ChevronDown } from '@lucide/svelte';
+	import SelectListe from './SelectListe.svelte';
+	import { berechneBox } from './selectGeometrie.js';
 
 	/**
 	 * @type {{
@@ -29,7 +22,8 @@
 	 *   id?: string,
 	 *   disabled?: boolean,
 	 *   placeholder?: string,
-	 *   class?: string,
+	 *   class?: string, // ERSETZT die Standardbreite w-full (sonst entschiede die
+	 *                   // Stylesheet-Reihenfolge über die Breite, nicht der Aufruf)
 	 *   'aria-label'?: string,
 	 *   onchange?: (wert: any) => void
 	 * }}
@@ -40,7 +34,7 @@
 		id = undefined,
 		disabled = false,
 		placeholder = 'Bitte wählen',
-		class: className = '',
+		class: className = 'w-full',
 		onchange = undefined,
 		...rest
 	} = $props();
@@ -60,17 +54,7 @@
 	let beschriftung = $derived(gewaehlt?.label ?? '');
 
 	function messen() {
-		if (!ausloeser) return;
-		const r = ausloeser.getBoundingClientRect();
-		// Nach unten, wenn Platz ist; sonst nach oben. 240 px ist die Höhengrenze der
-		// Liste (max-h-60), darunter würde sie aus dem Fenster ragen.
-		const untenPlatz = window.innerHeight - r.bottom;
-		const nachOben = untenPlatz < 240 && r.top > untenPlatz;
-		box = {
-			left: r.left,
-			top: nachOben ? Math.max(8, r.top - Math.min(240, options.length * 40 + 8) - 4) : r.bottom + 4,
-			breite: r.width
-		};
+		if (ausloeser) box = berechneBox(ausloeser, options.length);
 	}
 
 	function oeffnen() {
@@ -109,6 +93,16 @@
 		aktiv = i;
 	}
 
+	/** Tippen springt zum ersten passenden Eintrag — wie beim nativen select.
+	 * @param {string} zeichen */
+	function tippsprung(zeichen) {
+		suchpuffer += zeichen.toLowerCase();
+		clearTimeout(suchTimer);
+		suchTimer = setTimeout(() => (suchpuffer = ''), 600);
+		const treffer = options.findIndex((o) => o.label.toLowerCase().startsWith(suchpuffer));
+		if (treffer >= 0) aktiv = treffer;
+	}
+
 	/** @param {KeyboardEvent} e */
 	function taste(e) {
 		if (!offen) {
@@ -118,43 +112,23 @@
 			}
 			return;
 		}
-		switch (e.key) {
-			case 'Escape':
-				e.preventDefault();
-				schliessen();
-				return;
-			case 'ArrowDown':
-				e.preventDefault();
-				wandern(1);
-				return;
-			case 'ArrowUp':
-				e.preventDefault();
-				wandern(-1);
-				return;
-			case 'Home':
-				e.preventDefault();
-				aktiv = 0;
-				return;
-			case 'End':
-				e.preventDefault();
-				aktiv = options.length - 1;
-				return;
-			case 'Enter':
-			case ' ':
-				e.preventDefault();
-				waehlen(aktiv);
-				return;
-			case 'Tab':
-				schliessen(false);
-				return;
-		}
-		// Tippen springt zum ersten passenden Eintrag — wie beim nativen select.
-		if (e.key.length === 1) {
-			suchpuffer += e.key.toLowerCase();
-			clearTimeout(suchTimer);
-			suchTimer = setTimeout(() => (suchpuffer = ''), 600);
-			const treffer = options.findIndex((o) => o.label.toLowerCase().startsWith(suchpuffer));
-			if (treffer >= 0) aktiv = treffer;
+		const sprung = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+		if (sprung) {
+			e.preventDefault();
+			wandern(sprung);
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			schliessen();
+		} else if (e.key === 'Home' || e.key === 'End') {
+			e.preventDefault();
+			aktiv = e.key === 'Home' ? 0 : options.length - 1;
+		} else if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			waehlen(aktiv);
+		} else if (e.key === 'Tab') {
+			schliessen(false);
+		} else if (e.key.length === 1) {
+			tippsprung(e.key);
 		}
 	}
 
@@ -195,55 +169,32 @@
 	aria-controls={offen && id ? `${id}-liste` : undefined}
 	onclick={() => (offen ? schliessen() : oeffnen())}
 	onkeydown={taste}
-	class="h-9 w-full flex items-center gap-2 px-3 rounded-md border bg-white text-sm text-left transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 {offen
-		? 'border-blue-600'
-		: 'border-slate-300'} {className}"
+	class="flex h-9 cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40
+		{offen ? 'border-primary ring-1 ring-primary' : 'border-outline-variant'} {className}"
 	{...rest}
 >
 	<!-- truncate statt hartem Abschneiden: Der native Select kappte mitten im
 	     Zeichen, hier endet ein zu langer Wert sichtbar mit Auslassungspunkten. -->
-	<span class="flex-1 min-w-0 truncate {beschriftung ? 'text-slate-900' : 'text-slate-400'}">
+	<span class="min-w-0 flex-1 truncate {beschriftung ? '' : 'text-on-surface-variant'}">
 		{beschriftung || placeholder}
 	</span>
 	<ChevronDown
-		class="h-4 w-4 shrink-0 text-slate-500 transition-transform {offen ? 'rotate-180' : ''}"
+		class="h-4 w-4 shrink-0 text-on-surface-variant transition-transform {offen
+			? 'rotate-180'
+			: ''}"
 		aria-hidden="true"
 	/>
 </button>
 
 {#if offen}
-	<div
-		bind:this={liste}
-		id={id ? `${id}-liste` : undefined}
-		role="listbox"
-		tabindex="-1"
-		style="position:fixed; left:{box.left}px; top:{box.top}px; width:{box.breite}px; z-index:60;"
-		class="max-h-60 overflow-y-auto rounded-md border border-slate-200 bg-white shadow-xl py-1"
-	>
-		{#each options as o, i (o.value)}
-			<div
-				data-i={i}
-				role="option"
-				aria-selected={o.value === value}
-				aria-disabled={o.disabled || undefined}
-				tabindex="-1"
-				onclick={() => waehlen(i)}
-				onkeydown={() => {}}
-				onpointerenter={() => (aktiv = i)}
-				class="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer {o.disabled
-					? 'opacity-40 cursor-not-allowed'
-					: ''} {i === aktiv ? 'bg-slate-100' : ''} {o.value === value
-					? 'text-blue-700 font-semibold'
-					: 'text-slate-800'}"
-			>
-				<span class="flex-1 min-w-0 truncate">{o.label}</span>
-				{#if o.value === value}
-					<Check class="h-4 w-4 shrink-0" aria-hidden="true" />
-				{/if}
-			</div>
-		{/each}
-		{#if !options.length}
-			<div class="px-3 py-2 text-sm text-slate-400">Keine Auswahl verfügbar</div>
-		{/if}
-	</div>
+	<SelectListe
+		{options}
+		{value}
+		{aktiv}
+		{box}
+		{id}
+		onwaehlen={waehlen}
+		onaktiv={(i) => (aktiv = i)}
+		onelement={(el) => (liste = el)}
+	/>
 {/if}

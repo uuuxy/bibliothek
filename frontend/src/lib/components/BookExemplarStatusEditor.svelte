@@ -1,6 +1,12 @@
 <script>
 	import { showToast } from '../../inventur/lib/store.svelte.js';
 	import { apiClient } from '../apiFetch.js';
+	import Select from './ui/Select.svelte';
+
+	const STATUS = ['Verfügbar', 'Gesperrt (Defekt/Reserviert)', 'Verloren'].map((s) => ({
+		value: s,
+		label: s
+	}));
 
 	/**
 	 * Status-Editor eines Exemplars (Verfügbar / Gesperrt / Verloren).
@@ -49,14 +55,7 @@
 
 <div class="mt-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
 	<div class="flex items-center gap-2 mb-2">
-		<select
-			bind:value={editStatusType}
-			class="text-xs border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-		>
-			<option value="Verfügbar">Verfügbar</option>
-			<option value="Gesperrt (Defekt/Reserviert)">Gesperrt (Defekt/Reserviert)</option>
-			<option value="Verloren">Verloren</option>
-		</select>
+		<Select bind:value={editStatusType} options={STATUS} aria-label="Status des Exemplars" />
 	</div>
 	{#if editStatusType !== 'Verfügbar'}
 		<div class="mb-2">

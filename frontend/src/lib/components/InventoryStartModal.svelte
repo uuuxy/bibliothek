@@ -1,5 +1,11 @@
 <script>
 	import { slide } from 'svelte/transition';
+	import Select from './ui/Select.svelte';
+
+	const KLASSEN = [
+		{ value: '', label: 'Alle Klassen' },
+		...[5, 6, 7, 8, 9, 10, 11, 12, 13].map((g) => ({ value: g, label: `Klasse ${g}` }))
+	];
 
 	/**
 	 * @type {{
@@ -122,28 +128,21 @@
 			{#if state.scopeType === 'filter'}
 				<div transition:slide class="grid grid-cols-2 gap-3">
 					<div class="space-y-2">
-						<label class="block text-sm font-medium text-slate-700">Fach</label>
-						<select
+						<label for="inventur-fach" class="block text-sm font-medium text-slate-700">Fach</label>
+						<Select
+							id="inventur-fach"
 							bind:value={state.selectedFach}
-							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-						>
-							<option value="">Alle Fächer</option>
-							{#each state.faecher as fach, _i (_i)}
-								<option value={fach}>{fach}</option>
-							{/each}
-						</select>
+							options={[
+								{ value: '', label: 'Alle Fächer' },
+								...state.faecher.map((/** @type {string} */ f) => ({ value: f, label: f }))
+							]}
+						/>
 					</div>
 					<div class="space-y-2">
-						<label class="block text-sm font-medium text-slate-700">Klasse</label>
-						<select
-							bind:value={state.selectedGrade}
-							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+						<label for="inventur-klasse" class="block text-sm font-medium text-slate-700"
+							>Klasse</label
 						>
-							<option value="">Alle Klassen</option>
-							{#each [5, 6, 7, 8, 9, 10, 11, 12, 13] as g (g)}
-								<option value={g}>Klasse {g}</option>
-							{/each}
-						</select>
+						<Select id="inventur-klasse" bind:value={state.selectedGrade} options={KLASSEN} />
 					</div>
 				</div>
 			{/if}

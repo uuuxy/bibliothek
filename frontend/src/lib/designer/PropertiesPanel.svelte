@@ -1,25 +1,14 @@
 <script>
 	/**
 	 * @file PropertiesPanel.svelte
-	 * Dynamic properties inspector for the selected canvas element.
-	 *
-	 * Runes in use:
-	 *   $props()     — receives `selectedId` and `side`
-	 *   $derived     — resolves the live element object from the store
-	 *
-	 * The panel adapts its controls based on `el.type`:
-	 *   text / header / address / name / details / validity
-	 *     → fontFamily, fontSize, color, textAlign, fontWeight, content (where editable)
-	 *   image / logo
-	 *     → file upload, proportional-lock toggle
-	 *   photo
-	 *     → read-only info (webcam trigger is on the canvas element itself)
-	 *   barcode
-	 *     → barcodeType selector
-	 *   all
-	 *     → x, y, width, height (numeric inputs), visibility toggle, z-index controls
+	 * Eigenschaften des ausgewählten Ausweis-Elements. Was JEDES Element hat, steht
+	 * hier: Lage, Größe, Ebene, Sichtbarkeit. Die artspezifischen Teile hängen an
+	 * el.type — Schrift in PropertiesText, Bild-Upload weiter unten; photo und
+	 * barcode bringen ihre Bedienung am Element selbst mit.
 	 */
 	import { idStore, bringForward, sendBackward, removeElement } from './idDesignerStore.svelte.js';
+	import PropertiesText from './PropertiesText.svelte';
+	import ZahlenFeld from './ZahlenFeld.svelte';
 
 	/** @type {{ selectedId: string|null, side: 'front'|'back' }} */
 	const { selectedId, side } = $props();
@@ -124,18 +113,38 @@
 		<div class="space-y-2 pt-2 border-t border-slate-100">
 			<span class="text-xs font-medium text-slate-500 block">Position &amp; Größe</span>
 			<div class="grid grid-cols-2 gap-2">
-				{@render numInput('X (mm)', el.x, 0, 80, 0.5, (v) => {
-					el.x = v;
-				})}
-				{@render numInput('Y (mm)', el.y, 0, 50, 0.5, (v) => {
-					el.y = v;
-				})}
-				{@render numInput('Breite (mm)', el.width, 3, 85, 0.5, (v) => {
-					el.width = v;
-				})}
-				{@render numInput('Höhe (mm)', el.height, 2, 53, 0.5, (v) => {
-					el.height = v;
-				})}
+				<ZahlenFeld
+					label="X (mm)"
+					value={el.x}
+					min={0}
+					max={80}
+					step={0.5}
+					onInput={(v) => (el.x = v)}
+				/>
+				<ZahlenFeld
+					label="Y (mm)"
+					value={el.y}
+					min={0}
+					max={50}
+					step={0.5}
+					onInput={(v) => (el.y = v)}
+				/>
+				<ZahlenFeld
+					label="Breite (mm)"
+					value={el.width}
+					min={3}
+					max={85}
+					step={0.5}
+					onInput={(v) => (el.width = v)}
+				/>
+				<ZahlenFeld
+					label="Höhe (mm)"
+					value={el.height}
+					min={2}
+					max={53}
+					step={0.5}
+					onInput={(v) => (el.height = v)}
+				/>
 			</div>
 		</div>
 
@@ -154,68 +163,8 @@
 			>
 		</div>
 
-		<!-- Text style panel -->
 		{#if isTextType && el.style}
-			<div class="space-y-3 pt-2 border-t border-slate-100">
-				<span class="text-xs font-medium text-slate-500 block">Textformatierung</span>
-
-				{#if !isDynamic}
-					<div class="space-y-1">
-						<span class="text-xs text-slate-400 font-medium block">Inhalt</span>
-						<input
-							type="text"
-							bind:value={el.content}
-							class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-						/>
-					</div>
-				{/if}
-
-				<div class="space-y-1">
-					<span class="text-xs text-slate-400 font-medium block">Schriftart</span>
-					<select
-						bind:value={el.style.fontFamily}
-						class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none"
-					>
-						{#each fontFamilies as ff, _i (_i)}
-							<option value={ff.value}>{ff.label}</option>
-						{/each}
-					</select>
-				</div>
-
-				<div class="grid grid-cols-2 gap-2">
-					{@render numInput('Größe (pt)', el.style.fontSize, 4, 20, 0.5, (v) => {
-						el.style.fontSize = v;
-					})}
-					<div class="space-y-1">
-						<span class="text-xs text-slate-400 font-medium block">Farbe</span>
-						<input
-							type="color"
-							bind:value={el.style.color}
-							class="w-full h-8 rounded-xl border border-slate-200 cursor-pointer bg-white px-1"
-						/>
-					</div>
-				</div>
-
-				<div class="grid grid-cols-3 gap-1">
-					{@render alignBtn(el, 'left', '⬅')}
-					{@render alignBtn(el, 'center', '↔')}
-					{@render alignBtn(el, 'right', '➡')}
-				</div>
-
-				<label class="flex items-center gap-2 cursor-pointer">
-					<input
-						type="checkbox"
-						checked={el.style.fontWeight === 'bold'}
-						onchange={(e) => {
-							el.style.fontWeight = /** @type {HTMLInputElement} */ (e.currentTarget).checked
-								? 'bold'
-								: 'normal';
-						}}
-						class="rounded border-slate-300 text-blue-600"
-					/>
-					<span class="text-xs text-slate-600 font-medium">Fett</span>
-				</label>
-			</div>
+			<PropertiesText {el} istDynamisch={isDynamic} schriften={fontFamilies} />
 		{/if}
 
 		<!-- Image panel -->
@@ -240,31 +189,3 @@
 		{/if}
 	{/if}
 </div>
-
-{#snippet numInput(label, value, min, max, step, onInput)}
-	<div class="space-y-1">
-		<span class="text-xs text-slate-400 font-medium block">{label}</span>
-		<input
-			type="number"
-			{min}
-			{max}
-			{step}
-			value={Math.round(value * 10) / 10}
-			oninput={(e) =>
-				onInput(parseFloat(/** @type {HTMLInputElement} */ (e.currentTarget).value) || 0)}
-			class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-		/>
-	</div>
-{/snippet}
-
-{#snippet alignBtn(el, align, icon)}
-	<button
-		onclick={() => {
-			el.style.textAlign = align;
-		}}
-		class="py-1 rounded-lg text-sm transition-colors {el.style?.textAlign === align
-			? 'bg-blue-600 text-white'
-			: 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
-		title={align}>{icon}</button
-	>
-{/snippet}

@@ -1,0 +1,28 @@
+@layer base {
+	/* ── Control-Höhe ─────────────────────────────────────────────────────────
+	   Gemessen im Browser über alle Bildschirme: SECHZEHN verschiedene Feldhöhen
+	   zwischen 22 und 62 px, während die Buttons längst geschlossen auf 36 px
+	   standen. Neben jedem Button saß damit ein Feld auf einer eigenen
+	   Grundlinie — am deutlichsten in den Werkzeugleisten (Suchfeld 38 px neben
+	   Button 36 px) und im Druck-Center (34/35 px).
+
+	   Wie bei den Radien wird die REGEL zentral gesetzt, statt 124 Fundstellen
+	   anzufassen: ein base-Layer-Selektor auf alle einzeiligen Felder. Die
+	   py-Utilities dürfen stehen bleiben — bei border-box bestimmen sie dann nur
+	   noch die vertikale Textlage, nicht mehr die Höhe.
+
+	   Warum base und nicht eine Utility an jedem Feld: Utilities gewinnen gegen
+	   base, unabhängig von der Spezifität. Genau das ist hier erwünscht —
+	   Scan-, Hero- und Pillen-Felder tragen ein explizites h-auto bzw. h-*, die
+	   Ausnahme steht sichtbar an der Fundstelle statt als Sonderfall in dieser
+	   Datei. Mehrzeiliges (textarea) und Schalter (checkbox/radio) bleiben
+	   ausgenommen, weil ihre Höhe eine andere Bedeutung trägt.
+
+	   Verankert im E2E-Gate e2e/control-hoehen.spec.js (misst offsetHeight). */
+	input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not(
+			[type='color']
+		):not([type='hidden']):not([type='submit']):not([type='button']),
+	select {
+		height: 2.25rem; /* 36 px — dieselbe Control-Höhe wie Button size="md" (h-9) */
+	}
+}

@@ -5,6 +5,16 @@
 	import ClassAssignmentDialog from './ClassAssignmentDialog.svelte';
 	import KlassenKarte from './KlassenKarte.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import Select from '../../../../lib/components/ui/Select.svelte';
+
+	const ZWEIGE = [
+		{ value: '', label: 'Alle anzeigen' },
+		...['G', 'R', 'H', 'F'].map((z) => ({ value: z, label: `Nur ${z}-Klassen` }))
+	];
+	const SORTIERUNG = [
+		{ value: 'asc', label: 'Aufsteigend 5-10' },
+		{ value: 'desc', label: 'Absteigend 10-5' }
+	];
 
 	/** @type {any[]} */
 	let classGroups = $state([]);
@@ -65,26 +75,21 @@
 		<h2 class="text-xl font-bold text-slate-800 font-sans">Klassenübersicht</h2>
 
 		<div class="flex gap-4 items-center">
-			<select
+			<Select
 				bind:value={filterBranch}
-				onchange={loadGroups}
-				class="bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm cursor-pointer"
-			>
-				<option value="">Alle anzeigen</option>
-				<option value="G">Nur G-Klassen</option>
-				<option value="R">Nur R-Klassen</option>
-				<option value="H">Nur H-Klassen</option>
-				<option value="F">Nur F-Klassen</option>
-			</select>
+				options={ZWEIGE}
+				onchange={() => loadGroups()}
+				class="w-44"
+				aria-label="Klassen nach Zweig filtern"
+			/>
 
-			<select
+			<Select
 				bind:value={sortOrder}
-				onchange={loadGroups}
-				class="bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm cursor-pointer"
-			>
-				<option value="asc">Aufsteigend 5-10</option>
-				<option value="desc">Absteigend 10-5</option>
-			</select>
+				options={SORTIERUNG}
+				onchange={() => loadGroups()}
+				class="w-48"
+				aria-label="Sortierung"
+			/>
 
 			<Button
 				onclick={() => {
