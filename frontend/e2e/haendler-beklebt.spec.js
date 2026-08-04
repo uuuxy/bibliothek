@@ -119,11 +119,15 @@ test('Der Standardlieferant ist beim Bestellen vorausgewählt', async ({ page })
 	// nicht mitten in der Arbeit. Eine schon getroffene Auswahl bleibt stehen — sonst
 	// wechselte jemandem, der gerade einen Warenkorb füllt, unter der Hand der Lieferant.
 	await page.goto('/bestellungen');
-	const auswahl = page.locator('select#supplier');
+	// Über die ROLLE gesucht, nicht über das Element: Die Lieferantenauswahl ist seit
+	// dem 04.08.2026 kein natives <select> mehr, sondern die M3-Komponente
+	// (button[role=combobox] + listbox). Der alte Selektor `select#supplier` prüfte die
+	// Bauart statt das Verhalten und wurde beim Austausch rot, obwohl die Vorauswahl
+	// weiterhin stimmte. Die Rolle bleibt dieselbe, egal womit sie gebaut ist.
+	const auswahl = page.locator('#supplier[role="combobox"]');
 	await auswahl.waitFor();
 	await expect(
 		auswahl,
 		'Das Bestellformular muss den hinterlegten Standardlieferanten vorauswählen'
-	).toHaveValue(querySQL(`SELECT id FROM lieferanten WHERE ist_standard`).trim());
-	await expect(auswahl).toContainText(name);
+	).toContainText(name);
 });

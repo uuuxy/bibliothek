@@ -3,6 +3,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Select from '../ui/Select.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 
 	/** @type {any} */
@@ -62,15 +63,15 @@
 <div class="space-y-4">
 	<div class="space-y-1.5">
 		<label for="supplier" class="block text-xs font-medium text-slate-500">Lieferant</label>
-		<select
+		<Select
 			id="supplier"
 			bind:value={orderStore.selectedSupplierId}
-			class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-		>
-			{#each orderStore.suppliers as s, _i (_i)}<option value={s.id}
-					>{s.name} ({s.customerNumber})</option
-				>{/each}
-		</select>
+			options={orderStore.suppliers.map((s) => ({
+				value: s.id,
+				label: `${s.name} (${s.customerNumber})`
+			}))}
+			placeholder="Kein Lieferant angelegt"
+		/>
 	</div>
 	<div class="space-y-1.5 relative">
 		<label for="book" class="block text-xs font-medium text-slate-500"
