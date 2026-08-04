@@ -18,21 +18,21 @@
      angeschnittenes Zeichen wirkt gewollt, ein angeschnittenes Wort wirkt wie ein Fehler.
      Der Rahmen im Seitenverhältnis 97:66 zeigt deshalb nur das Sechseck; der Schriftzug
      liegt außerhalb und kann gar nicht erst halb im Bild landen. -->
+<!-- EINE Marke, nicht zwei (04.08.2026). Vorher standen hier zwei Reliefs in
+     unterschiedlicher Größe, Deckkraft und Drehung (8 % oben links, 5 % gedreht rechts).
+     Zwei Marken auf derselben Fläche lesen sich nicht als Signatur, sondern als Textur,
+     die sich nicht entschieden hat — und die Drehung machte aus der Dekoration ein zweites
+     Motiv, das um Aufmerksamkeit konkurriert. Eine große, gerade gesetzte Marke ist
+     ruhiger und wirkt gewollt.
+     Unten rechts verankert: Dort bleibt sie aus dem Weg: Suchfeld und Trefferliste
+     wachsen von oben links nach unten. -->
 <div class="absolute inset-0 z-0 pointer-events-none no-print overflow-hidden" aria-hidden="true">
-	<div class="absolute top-32 -left-24 w-80 md:w-100 aspect-97/66 overflow-hidden">
+	<div class="absolute -bottom-16 -right-20 w-96 md:w-150 aspect-97/66 overflow-hidden">
 		<img
 			src={logoUrl}
 			alt=""
 			aria-hidden="true"
-			class="logo-relief w-full opacity-[0.08] select-none"
-		/>
-	</div>
-	<div class="absolute top-80 -right-24 w-96 md:w-125 aspect-97/66 overflow-hidden -rotate-12">
-		<img
-			src={logoUrl}
-			alt=""
-			aria-hidden="true"
-			class="logo-relief w-full opacity-[0.05] select-none"
+			class="logo-relief w-full opacity-[0.06] select-none"
 		/>
 	</div>
 </div>

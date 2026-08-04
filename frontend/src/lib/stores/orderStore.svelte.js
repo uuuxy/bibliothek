@@ -109,8 +109,20 @@ class OrderStore {
 		// alphabetisch erste (die Liste kommt mit ORDER BY name) — wer immer beim selben
 		// Haendler bestellt, musste ihn also jedes Mal neu auswaehlen, und einmal vergessen
 		// heisst, die Bestellung geht an den falschen raus.
-		if (!this.suppliers.some((s) => s.id === this.selectedSupplierId)) {
-			const standard = this.suppliers.find((s) => s.ist_standard);
+		const standard = this.suppliers.find((s) => s.ist_standard);
+		const auswahlUngueltig = !this.suppliers.some((s) => s.id === this.selectedSupplierId);
+
+		// Der hinterlegte Standard muss auch dann greifen, wenn schon eine GÜLTIGE Auswahl
+		// steht. Vorher prüfte hier nur `auswahlUngueltig` — wer einen Lieferanten neu als
+		// Standard markierte, sah deshalb nichts passieren: Die Liste wurde neu geladen, die
+		// alte Auswahl war weiterhin gültig, und der frische Standard blieb wirkungslos. In
+		// der Datenbank stand er richtig, nur die Oberfläche folgte nicht. Ein Haken, der
+		// nichts tut, ist schlimmer als keiner — man verlässt sich darauf.
+		//
+		// Nur bei LEEREM Warenkorb: Mitten in einer angefangenen Bestellung darf der
+		// Lieferant nicht unter der Hand wechseln, sonst geht sie an den falschen raus.
+		const standardWeicht = standard && standard.id !== this.selectedSupplierId;
+		if (auswahlUngueltig || (this.cart.length === 0 && standardWeicht)) {
 			this.selectedSupplierId = (standard ?? this.suppliers[0])?.id ?? '';
 		}
 		return ok;

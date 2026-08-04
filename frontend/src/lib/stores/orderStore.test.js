@@ -290,3 +290,56 @@ describe('orderStore Suche', () => {
 		expect(orderStore.showDropdown).toBe(true);
 	});
 });
+
+// Der als Standard hinterlegte Lieferant muss auch dann greifen, wenn schon eine
+// GÜLTIGE Auswahl steht.
+//
+// Aus dem Betrieb gemeldet (zweimal): „Ich habe X als Standard angegeben, aber nichts
+// ändert sich." Die Ursache lag nicht im Backend — dort stand der Haken richtig — sondern
+// hier: loadSuppliers übernahm den Standard nur, wenn die bisherige Auswahl UNGÜLTIG war.
+// Nach dem Markieren wurde die Liste neu geladen, die alte Auswahl war weiterhin gültig,
+// und der frische Standard blieb wirkungslos. Ein Haken, der nichts tut, ist schlimmer als
+// keiner, weil man sich auf ihn verlässt und die Bestellung an den falschen Händler geht.
+describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
+	const LISTE = [
+		{ id: 's1', name: 'Cornelsen', customerNumber: 'C-1', ist_standard: false },
+		{ id: 's2', name: 'Westermann', customerNumber: 'W-2', ist_standard: true }
+	];
+
+	beforeEach(() => {
+		resetStore();
+		vi.mocked(apiGet).mockReset();
+		vi.mocked(apiGet).mockImplementation(async () => LISTE);
+	});
+
+	it('übernimmt den Standard, obwohl die bisherige Auswahl gültig ist', async () => {
+		orderStore.selectedSupplierId = 's1'; // gültig, aber nicht der Standard
+		await orderStore.loadSuppliers();
+		expect(orderStore.selectedSupplierId).toBe('s2');
+	});
+
+	it('lässt eine angefangene Bestellung unangetastet', async () => {
+		orderStore.selectedSupplierId = 's1';
+		orderStore.cart = [{ id: 'b1', titel: 'Buch', menge: 1, preis: 0 }];
+		await orderStore.loadSuppliers();
+		expect(
+			orderStore.selectedSupplierId,
+			'Mitten in einer Bestellung darf der Lieferant nicht unter der Hand wechseln'
+		).toBe('s1');
+	});
+
+	it('greift auch bei leerer Vorauswahl', async () => {
+		orderStore.selectedSupplierId = '';
+		await orderStore.loadSuppliers();
+		expect(orderStore.selectedSupplierId).toBe('s2');
+	});
+
+	it('nimmt den ersten, wenn kein Standard hinterlegt ist', async () => {
+		vi.mocked(apiGet).mockImplementation(async () =>
+			LISTE.map((s) => ({ ...s, ist_standard: false }))
+		);
+		orderStore.selectedSupplierId = '';
+		await orderStore.loadSuppliers();
+		expect(orderStore.selectedSupplierId).toBe('s1');
+	});
+});
