@@ -105,7 +105,7 @@
 							<td class="px-4 py-2 font-semibold text-slate-800">
 								{s.vorname}
 								{s.nachname}
-								<div class="text-[9px] text-slate-400 font-normal mt-0.5">{s.barcode_id}</div>
+								<div class="text-label-small text-slate-400 font-normal mt-0.5">{s.barcode_id}</div>
 							</td>
 							<td class="px-4 py-2 font-medium text-slate-600">
 								Kl. {s.klasse || 'N/A'}

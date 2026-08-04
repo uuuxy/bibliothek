@@ -159,7 +159,7 @@
 		size="sm"
 		type="button"
 		onclick={() => openDetail(analyse)}
-		class="shrink-0 gap-1 border-blue-100 bg-blue-50 text-[11px] text-blue-600 hover:bg-blue-100"
+		class="shrink-0 gap-1 border-blue-100 bg-blue-50 text-label-small text-blue-600 hover:bg-blue-100"
 		aria-label="{aktiveAnalyse.detailLabel} — Detailansicht öffnen"
 	>
 		Alle anzeigen
@@ -186,7 +186,7 @@
 
 {#snippet spaltenKopf(spalten)}
 	<thead class="sticky top-0 z-10 bg-white">
-		<tr class="text-[11px] font-medium text-slate-400">
+		<tr class="text-label-small font-medium text-slate-400">
 			{#each spalten as s (s.label)}
 				<th class="py-2 px-4 font-bold {s.right ? 'text-right' : 'text-left'}">{s.label}</th>
 			{/each}

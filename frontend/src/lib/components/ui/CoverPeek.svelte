@@ -152,7 +152,7 @@
 					<rect x="3" y="4" width="18" height="16" rx="2" />
 					<path stroke-linecap="round" d="M4 19L20 5" />
 				</svg>
-				<span class="text-[11px] leading-tight font-medium">Kein Coverbild hinterlegt</span>
+				<span class="text-label-small leading-tight font-medium">Kein Coverbild hinterlegt</span>
 			</div>
 		{:else}
 			{#if status === 'laedt'}

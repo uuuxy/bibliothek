@@ -54,7 +54,7 @@
 		/>
 	{:else}
 		<div
-			class="w-16 h-24 bg-slate-100 rounded border border-slate-200 flex items-center justify-center text-slate-400 text-[10px] text-center p-1 leading-tight"
+			class="w-16 h-24 bg-slate-100 rounded border border-slate-200 flex items-center justify-center text-slate-400 text-label-small text-center p-1 leading-tight"
 		>
 			Kein Cover
 		</div>

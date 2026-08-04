@@ -230,12 +230,12 @@
 			{#if selectedFile}
 				<div class="space-y-1">
 					<p class="text-xs font-bold text-slate-700 max-w-xs truncate">{selectedFile.name}</p>
-					<p class="text-[10px] text-slate-400">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+					<p class="text-label-small text-slate-400">{(selectedFile.size / 1024).toFixed(1)} KB</p>
 				</div>
 			{:else}
 				<div class="space-y-1">
 					<p class="text-xs font-bold text-slate-600">LUSD-CSV auswählen oder reinziehen</p>
-					<p class="text-[10px] text-slate-400 font-medium">
+					<p class="text-label-small text-slate-400 font-medium">
 						Unterstützt Komma- &amp; Semikolon-Trennung · erwartete Spalten: <code
 							>lusd_id, vorname, nachname, klasse</code
 						>

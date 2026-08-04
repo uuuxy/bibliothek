@@ -52,6 +52,17 @@
 	--text-xs: 0.75rem; /* 12 px — body-small */
 	--text-xs--line-height: 1rem;
 	--text-xs--letter-spacing: 0.03125rem;
+	/* label-small — die KLEINSTE Stufe, die Material 3 kennt: 11 px, 16 px Zeilenhöhe,
+	   0,5 px Laufweite. Sie ersetzt die 9-, 10- und 11-px-Größen, die vorher als
+	   `text-[10px]` an neunzig Stellen von Hand standen — drei Größen für dieselbe
+	   Aufgabe (Badge, Hilfszeile, Zähler), keine davon aus der Skala.
+
+	   Die zusätzliche Laufweite ist der Grund, warum M3 dafür eine eigene Rolle hat
+	   und nicht einfach `text-xs` kleiner macht: Unter 12 px braucht Text mehr Luft
+	   zwischen den Zeichen, sonst klebt er zusammen. */
+	--text-label-small: 0.6875rem; /* 11 px */
+	--text-label-small--line-height: 1rem;
+	--text-label-small--letter-spacing: 0.03125rem;
 	--text-sm: 0.875rem; /* 14 px — body-medium */
 	--text-sm--line-height: 1.25rem;
 	--text-sm--letter-spacing: 0.015625rem;

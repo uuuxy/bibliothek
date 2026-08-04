@@ -153,12 +153,12 @@
 			<span class="text-xs font-medium text-slate-500 flex-1">Ebene (z={el.zIndex})</span>
 			<button
 				onclick={() => bringForward(side, el.id)}
-				class="px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
+				class="px-2 py-1 text-label-small bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
 				title="Nach vorne">▲</button
 			>
 			<button
 				onclick={() => sendBackward(side, el.id)}
-				class="px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
+				class="px-2 py-1 text-label-small bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
 				title="Nach hinten">▼</button
 			>
 		</div>
@@ -175,7 +175,7 @@
 					type="file"
 					accept="image/*"
 					onchange={handleImageUpload}
-					class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+					class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
 				/>
 				<label class="flex items-center gap-2 cursor-pointer">
 					<input

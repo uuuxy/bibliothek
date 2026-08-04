@@ -124,7 +124,7 @@
 				Alle überfälligen
 			</button>
 			<div class="px-3 pt-2 pb-1">
-				<div class="text-[10px] font-semibold text-slate-400 mb-1.5">Ganze Klasse</div>
+				<div class="text-label-small font-semibold text-slate-400 mb-1.5">Ganze Klasse</div>
 				<div class="flex items-center gap-2">
 					<Select
 						bind:value={mahnwesenStore.selectedKlasse}

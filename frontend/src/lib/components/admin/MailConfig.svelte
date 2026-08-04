@@ -168,7 +168,7 @@
 						placeholder={hasPassword ? '•••••••• (Passwort ist hinterlegt)' : 'Passwort eingeben'}
 						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors placeholder:text-slate-400 w-full"
 					/>
-					<p class="text-[11px] text-slate-500 mt-2">
+					<p class="text-label-small text-slate-500 mt-2">
 						Aus Sicherheitsgründen wird das gespeicherte Passwort hier nicht angezeigt. Leer lassen,
 						um es nicht zu ändern.
 					</p>

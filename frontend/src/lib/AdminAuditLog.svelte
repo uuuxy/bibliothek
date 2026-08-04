@@ -89,7 +89,7 @@
 								</td>
 								<td class="p-4">
 									<pre
-										class="text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap font-mono max-w-md overflow-x-auto">{JSON.stringify(
+										class="text-label-small text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap font-mono max-w-md overflow-x-auto">{JSON.stringify(
 											log.details,
 											null,
 											2

@@ -164,7 +164,7 @@
 								</span>
 							{:else}
 								<span
-									class="shrink-0 text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold uppercase"
+									class="shrink-0 text-label-small bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold uppercase"
 								>
 									NEU
 								</span>

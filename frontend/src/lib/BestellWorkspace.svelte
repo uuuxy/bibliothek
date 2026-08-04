@@ -145,7 +145,7 @@
 			Klassensatz-Reservierungen
 			{#if uiStore.pendingReservierungen > 0}
 				<span
-					class="min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-bold px-1"
+					class="min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-label-small font-bold px-1"
 					>{uiStore.pendingReservierungen}</span
 				>
 			{/if}
@@ -230,7 +230,7 @@
 								>
 								{#if orderStore.totalQty > 0}
 									<span
-										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-bold px-1.5 tabular-nums"
+										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white text-label-small font-bold px-1.5 tabular-nums"
 										>{orderStore.totalQty}</span
 									>
 								{/if}

@@ -146,7 +146,7 @@
 									{/each}
 									{#if schueler.medien.length > 3}
 										<div
-											class="w-8 h-10 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 shadow-sm z-10"
+											class="w-8 h-10 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-label-small font-bold text-slate-600 shadow-sm z-10"
 										>
 											+{schueler.medien.length - 3}
 										</div>
@@ -240,7 +240,7 @@
 						class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
 					/>
 					{#if !mahnwesenStore.modalEmail.trim()}
-						<p class="text-[10px] text-slate-400 mt-1">
+						<p class="text-label-small text-slate-400 mt-1">
 							Die Adresse wird aus dem Klassenlehrer-Mapping vorausgefüllt, kann aber geändert
 							werden.
 						</p>

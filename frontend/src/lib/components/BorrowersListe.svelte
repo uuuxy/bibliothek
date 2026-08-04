@@ -45,13 +45,13 @@
 				</div>
 				<div class="text-right shrink-0 ml-4 flex gap-6 items-center">
 					<div class="text-right hidden sm:block">
-						<p class="text-[10px] font-medium text-slate-400">Ausgeliehen</p>
+						<p class="text-label-small font-medium text-slate-400">Ausgeliehen</p>
 						<p class="text-sm font-semibold text-slate-600">
 							{fmtDate(b.ausgeliehen_am)}
 						</p>
 					</div>
 					<div class="text-right">
-						<p class="text-[10px] font-medium text-slate-400">Rückgabe bis</p>
+						<p class="text-label-small font-medium text-slate-400">Rückgabe bis</p>
 						<p
 							class="text-sm font-bold {new Date(b.rueckgabe_frist) < new Date()
 								? 'text-rose-600'

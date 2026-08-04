@@ -42,7 +42,7 @@
 						></div>
 					</div>
 				{:else if labelStore.existingCopies.length === 0}
-					<p class="text-[11px] text-slate-500">
+					<p class="text-label-small text-slate-500">
 						Keine physischen Exemplare in der Datenbank vorhanden.
 					</p>
 				{:else}
@@ -59,7 +59,7 @@
 									class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white"
 								/>
 								<span class="font-bold text-slate-800">{copy.barcode_id}</span>
-								<span class="text-[10px] text-slate-500 font-sans"
+								<span class="text-label-small text-slate-500 font-sans"
 									>({copy.zustand_notiz || 'Neuwertig'})</span
 								>
 							</label>
@@ -97,6 +97,6 @@
 	     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
 	<div class="py-5 space-y-2 border-b border-slate-200 opacity-60">
 		<h3 class="text-xs text-slate-400 font-medium">2. Barcodes generieren</h3>
-		<p class="text-[11px] text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
+		<p class="text-label-small text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
 	</div>
 {/if}

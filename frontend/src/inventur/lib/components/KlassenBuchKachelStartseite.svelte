@@ -204,12 +204,12 @@
 		>
 			{book.title}
 		</h3>
-		<p class="text-[9px] text-slate-400 mb-2 truncate">
+		<p class="text-label-small text-slate-400 mb-2 truncate">
 			{book.isbn || '-'}
 		</p>
 		<div class="flex items-center gap-1.5">
 			<span class="w-2 h-2 rounded-full {getStockColor(book.verfuegbar)}"></span>
-			<span class="text-[10px] font-bold text-slate-500"
+			<span class="text-label-small font-bold text-slate-500"
 				>{book.verfuegbar}{#if book.gesamt !== undefined}/{book.gesamt}{/if} Stück</span
 			>
 		</div>

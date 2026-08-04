@@ -232,7 +232,7 @@
 														<span class="animate-fade-in flex-1 text-left">{item.label}</span>
 														{#if item.id === 'orders' && uiStore.pendingReservierungen > 0}
 															<span
-																class="ml-auto min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-bold px-1"
+																class="ml-auto min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-label-small font-bold px-1"
 																>{uiStore.pendingReservierungen}</span
 															>
 														{/if}
@@ -369,7 +369,7 @@
 												<span class="animate-fade-in flex-1 text-left">{item.label}</span>
 												{#if item.id === 'orders' && uiStore.pendingReservierungen > 0}
 													<span
-														class="ml-auto min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-bold px-1"
+														class="ml-auto min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-label-small font-bold px-1"
 														>{uiStore.pendingReservierungen}</span
 													>
 												{/if}
@@ -413,7 +413,7 @@
 								{authStore.currentUser.vorname}
 								{authStore.currentUser.nachname}
 							</span>
-							<span class="text-[10px] text-slate-500 font-medium capitalize mt-0.5">
+							<span class="text-label-small text-slate-500 font-medium capitalize mt-0.5">
 								Rolle: {authStore.currentUser.rolle}
 							</span>
 						{/if}
@@ -432,7 +432,7 @@
 				</div>
 				<div class="px-4 pb-4 text-center no-print animate-fade-in shrink-0">
 					<div
-						class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-emerald-50 border border-emerald-100/50 text-emerald-700 text-[10px] font-semibold tracking-wide"
+						class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-emerald-50 border border-emerald-100/50 text-emerald-700 text-label-small font-semibold tracking-wide"
 					>
 						<span>🛡️ DSGVO anonymisiert</span>
 					</div>

@@ -138,7 +138,7 @@
 				{book.title}
 			</h2>
 			<button
-				class="text-[11px] text-slate-400 mb-4 tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
+				class="text-label-small text-slate-400 mb-4 tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
 				onclick={(e) => {
 					e.stopPropagation();
 					copyIsbn(book.isbn);
@@ -153,7 +153,7 @@
 				>
 				{#if book.isbn}
 					{#if copied}
-						<span class="text-blue-600 text-[10px] font-sans font-bold">Kopiert!</span>
+						<span class="text-blue-600 text-label-small font-sans font-bold">Kopiert!</span>
 					{:else}
 						<svg
 							class="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover/isbn:opacity-100 transition-opacity"
@@ -174,7 +174,7 @@
 			<div class="flex flex-wrap gap-1.5 mb-4">
 				{#if book.subject}
 					<span
-						class="{getSubjectColor(book.subject)} text-[10px] font-bold px-2 py-0.5 rounded-md"
+						class="{getSubjectColor(book.subject)} text-label-small font-bold px-2 py-0.5 rounded-md"
 					>
 						{book.subject}
 					</span>
@@ -182,14 +182,14 @@
 				<!-- Klasse 0 = nicht zugeordnet: kein Badge statt einer sinnlosen „Klasse 0". -->
 				{#if book.gradeLevel}
 					<span
-						class="bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md"
+						class="bg-slate-50 border border-slate-200 text-slate-600 text-label-small font-bold px-2 py-0.5 rounded-md"
 					>
 						Klasse {book.gradeLevel}
 					</span>
 				{/if}
 				{#if book.track}
 					<span
-						class="bg-cyan-50 border border-cyan-200 text-cyan-700 text-[10px] font-bold px-2 py-0.5 rounded-md"
+						class="bg-cyan-50 border border-cyan-200 text-cyan-700 text-label-small font-bold px-2 py-0.5 rounded-md"
 					>
 						{book.track}
 					</span>
@@ -199,7 +199,7 @@
 
 		<div class="space-y-4">
 			<div
-				class="inline-flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-[10px] text-slate-500 font-medium"
+				class="inline-flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-label-small text-slate-500 font-medium"
 			>
 				<svg
 					class="w-3.5 h-3.5 text-slate-400"

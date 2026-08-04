@@ -85,7 +85,7 @@
 							{ex.barcode_id}
 						</span>
 						<span
-							class="text-[10px] font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar
+							class="text-label-small font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar
 								? 'bg-rose-50 text-rose-700 border border-rose-100'
 								: !ex.ist_verfuegbar
 									? 'bg-amber-50 text-amber-700 border border-amber-100'
@@ -94,7 +94,7 @@
 							{!ex.ist_ausleihbar ? 'Gesperrt' : !ex.ist_verfuegbar ? 'Ausgeliehen' : 'Verfügbar'}
 						</span>
 						{#if ex.zustand_notiz}
-							<span class="text-[10px] text-slate-500 truncate max-w-37.5" title={ex.zustand_notiz}
+							<span class="text-label-small text-slate-500 truncate max-w-37.5" title={ex.zustand_notiz}
 								>{ex.zustand_notiz}</span
 							>
 						{/if}

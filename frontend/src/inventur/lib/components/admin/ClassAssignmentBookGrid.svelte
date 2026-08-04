@@ -65,7 +65,7 @@
 			class="h-full grow text-base sm:text-xl w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-slate-900 placeholder:text-slate-400 font-medium"
 		/>
 		<span
-			class="ml-2 sm:ml-4 text-[10px] sm:text-xs font-bold text-slate-500 bg-black/5 px-2 py-1 sm:px-3 sm:py-1 rounded-full whitespace-nowrap"
+			class="ml-2 sm:ml-4 text-label-small sm:text-xs font-bold text-slate-500 bg-black/5 px-2 py-1 sm:px-3 sm:py-1 rounded-full whitespace-nowrap"
 			>{filteredBooks.length} Treffer</span
 		>
 	</div>

@@ -64,7 +64,7 @@
 										class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 transition-colors flex flex-col gap-0.5 cursor-pointer"
 									>
 										<span class="text-xs font-bold text-slate-900">{r.titel}</span>
-										<span class="text-[10px] text-slate-500"
+										<span class="text-label-small text-slate-500"
 											>{r.autor || 'Unbekannt'} · {r.verlag || 'Kein Verlag'}</span
 										>
 									</button>

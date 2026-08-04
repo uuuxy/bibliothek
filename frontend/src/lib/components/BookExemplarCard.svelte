@@ -83,14 +83,14 @@
 					}}
 				/>
 				<div class="mt-1 flex gap-2">
-					<Button variant="secondary" size="sm" onclick={generateInternalId} class="text-[10px]">
+					<Button variant="secondary" size="sm" onclick={generateInternalId} class="text-label-small">
 						Interne ID generieren
 					</Button>
-					<Button size="sm" onclick={saveBarcode} class="text-[10px]">Speichern</Button>
+					<Button size="sm" onclick={saveBarcode} class="text-label-small">Speichern</Button>
 				</div>
 				{#if barcodeError}
 					<p
-						class="text-[10px] text-rose-600 mt-1 absolute -bottom-4 left-0 truncate w-full"
+						class="text-label-small text-rose-600 mt-1 absolute -bottom-4 left-0 truncate w-full"
 						title={barcodeError}
 					>
 						{barcodeError}
@@ -182,7 +182,7 @@
 		{/if}
 		<div class="flex items-center gap-2">
 			<span
-				class="text-[10px] font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar
+				class="text-label-small font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar
 					? 'bg-rose-50 text-rose-700 border border-rose-100'
 					: !ex.ist_verfuegbar
 						? 'bg-amber-50 text-amber-700 border border-amber-100'

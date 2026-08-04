@@ -36,9 +36,9 @@
 					bind:value={labelStore.startPosition}
 					class="w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 				/>
-				<span class="text-[10px] text-slate-400">max. {labelStore.maxPositions}</span>
+				<span class="text-label-small text-slate-400">max. {labelStore.maxPositions}</span>
 			</div>
-			<p class="text-[10px] text-slate-400 mt-1">
+			<p class="text-label-small text-slate-400 mt-1">
 				Für angebrochene Bögen: Gibt an, auf welchem Feld der Druck starten soll.
 			</p>
 		</div>

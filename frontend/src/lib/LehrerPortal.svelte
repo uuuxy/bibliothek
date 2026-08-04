@@ -210,12 +210,12 @@
 							</h3>
 							<p class="text-xs text-slate-500 mt-0.5">{book.autor ?? book.author ?? ''}</p>
 							{#if book.isbn}
-								<p class="text-[10px] text-slate-400 mt-1">ISBN {book.isbn}</p>
+								<p class="text-label-small text-slate-400 mt-1">ISBN {book.isbn}</p>
 							{/if}
 							{#if book.verfuegbare_exemplare != null}
 								<p class="text-xs mt-1.5">
 									<span
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold {book.verfuegbare_exemplare >
+										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-small font-semibold {book.verfuegbare_exemplare >
 										0
 											? 'bg-emerald-50 text-emerald-700'
 											: 'bg-rose-50 text-rose-600'}"

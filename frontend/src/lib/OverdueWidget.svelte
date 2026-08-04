@@ -65,8 +65,8 @@
 
 		{#if hatMahnungen}
 			<div class="flex items-baseline justify-between gap-2 mt-5 mb-2.5">
-				<h4 class="text-[11px] font-medium text-slate-400">Verteilung nach Dauer</h4>
-				<span class="text-[11px] text-slate-400 shrink-0"
+				<h4 class="text-label-small font-medium text-slate-400">Verteilung nach Dauer</h4>
+				<span class="text-label-small text-slate-400 shrink-0"
 					>längste: {summary.max_tage_overdue} Tage</span
 				>
 			</div>

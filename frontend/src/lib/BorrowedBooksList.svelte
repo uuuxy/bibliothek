@@ -143,7 +143,7 @@
 									</h4>
 									{#if isLMF}
 										<span
-											class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase"
+											class="px-1.5 py-0.5 rounded text-label-small font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase"
 											>LMF</span
 										>
 									{/if}

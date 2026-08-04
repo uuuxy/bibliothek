@@ -74,16 +74,16 @@
 	<div class="flex items-center justify-between">
 		<button
 			onclick={onDone}
-			class="text-[10px] text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
+			class="text-label-small text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
 			>Abbrechen</button
 		>
 		<button
 			onclick={saveStatus}
-			class="text-[10px] bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold cursor-pointer"
+			class="text-label-small bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold cursor-pointer"
 			>Speichern</button
 		>
 	</div>
 	{#if statusError}
-		<p class="text-[10px] text-rose-600 mt-1">{statusError}</p>
+		<p class="text-label-small text-rose-600 mt-1">{statusError}</p>
 	{/if}
 </div>

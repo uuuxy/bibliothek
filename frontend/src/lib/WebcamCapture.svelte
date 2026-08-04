@@ -157,7 +157,7 @@
 			</div>
 
 			<div class="flex items-center justify-between pt-2">
-				<span class="text-[10px] text-zinc-500">1080p Stream · Automatischer 3:4 Zuschnitt</span>
+				<span class="text-label-small text-zinc-500">1080p Stream · Automatischer 3:4 Zuschnitt</span>
 				<button
 					onclick={capturePhoto}
 					disabled={isCapturing}

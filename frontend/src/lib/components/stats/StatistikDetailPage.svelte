@@ -119,7 +119,7 @@
 			/>
 		</div>
 		{#if !loading}
-			<p class="text-[11px] text-slate-400 font-medium">
+			<p class="text-label-small text-slate-400 font-medium">
 				{gefiltert.length} von {items.length} Einträgen
 			</p>
 		{/if}

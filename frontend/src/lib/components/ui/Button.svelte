@@ -52,7 +52,7 @@
 	// Klassenkarte, Stammdaten, Buch-Akte, Offline-Banner, Mahnwesen), alle unbemerkt.
 	//
 	// Nur Basisfarben werden ersetzt; Zustandsvarianten (hover:, disabled:, focus-within:)
-	// bleiben stehen, und Größenangaben wie text-[10px] gelten nicht als Farbe.
+	// bleiben stehen, und Größenangaben (text-label-small, text-sm) gelten nicht als Farbe.
 	const FARBE =
 		/^(bg|border|ring|text)-(slate|gray|zinc|blue|indigo|emerald|green|amber|orange|rose|red|white|black|transparent)/;
 	const familie = (/** @type {string} */ c) => c.split('-')[0];

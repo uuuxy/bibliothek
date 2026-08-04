@@ -45,7 +45,7 @@
 							<p class="text-xs text-slate-400 truncate font-mono">{item.isbn || '—'}</p>
 							{#if item.generate_barcodes}
 								<div
-									class="text-[10px] font-bold text-blue-600 mt-1 flex items-center gap-1 bg-blue-50 w-fit px-1.5 py-0.5 rounded-md"
+									class="text-label-small font-bold text-blue-600 mt-1 flex items-center gap-1 bg-blue-50 w-fit px-1.5 py-0.5 rounded-md"
 								>
 									🔖 {item.menge}
 									{item.menge === 1 ? 'Barcode' : 'Barcodes'}
@@ -95,7 +95,7 @@
 							     und damit die Erinnerung daran, dass hier geraten wurde. -->
 								{#if item.preis_vorschlag > 0 && Number(item.preis) === item.preis_vorschlag}
 									<span
-										class="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded"
+										class="text-label-small font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded"
 										title="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis pruefen"
 									>
 										DNB
@@ -157,7 +157,7 @@
 				{/if}
 			</Button>
 			{#if !orderStore.selectedSupplier}
-				<p class="text-[11px] text-center text-amber-600 font-medium">
+				<p class="text-label-small text-center text-amber-600 font-medium">
 					Bitte zuerst einen Lieferanten wählen.
 				</p>
 			{/if}
