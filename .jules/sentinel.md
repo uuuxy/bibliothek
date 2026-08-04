@@ -31,3 +31,8 @@
 **Vulnerability:** Path traversal vulnerability during PDF generation (`api/mahnwesen_pdf.go`) where a user-provided image path was read directly with `os.ReadFile`.
 **Learning:** `os.ReadFile` does not protect against traversing directories. Even if the input is sanitized (as it was partly done in `coverDateiPfad`), it relies on manual validation instead of OS-level scoping.
 **Prevention:** Use the `os.Root` API introduced in Go 1.24 (`os.OpenRoot(".")` and `root.Open(pfad)`) to enforce an OS-level sandbox root directory, which provides stronger guarantees against traversal attacks.
+
+## 2026-08-04 - Mitigate SSRF via Taint Analysis (G704) by Reconstructing URLs Securely
+**Vulnerability:** HIGH severity gosec warnings (G704) identified potential Server-Side Request Forgery (SSRF) via taint analysis in `inventur/cover_downloader.go` and `inventur/metadaten_client.go`. Although the hostname was validated against a strict allowlist using `url.Parse`, the HTTP request was subsequently made using the original, unmutated string input. This can be exploited through URL parsing differentials, where the validation step parses a different hostname than the HTTP client.
+**Learning:** Validating a URL string using `url.Parse` and then making an HTTP request using the raw, unmutated string is insecure. Gosec's taint analysis correctly flags this because the potentially tainted string is passed directly to `http.NewRequestWithContext`.
+**Prevention:** Always reconstruct the URL from the validated `url.Parse` components (e.g., `sichereURL := "https://" + allowedHost + "/" + strings.TrimPrefix(parsed.EscapedPath(), "/")`) before passing it to HTTP clients. This enforces consistency and prevents parsing differential attacks.

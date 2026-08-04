@@ -43,18 +43,26 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 		log.Printf("Ungültige Cover-URL: %s", coverURL)
 		return nil
 	}
+	var allowedHost string
 	switch parsed.Hostname() {
 	case "covers.openlibrary.org", "portal.dnb.de", "services.dnb.de", "www.googleapis.com", "openlibrary.org", "books.google.com", "books.google.de":
-		// Erlaubte Hosts
+		allowedHost = parsed.Hostname()
 	default:
 		log.Printf("SSRF Schutz: Cover-URL Hostname %s ist nicht in der Whitelist", parsed.Hostname())
 		return nil
 	}
 
+	// SSRF-Schutz: URL aus validierten Teilen neu aufbauen
+	sichereURL := "https://" + allowedHost + "/" + strings.TrimPrefix(parsed.EscapedPath(), "/")
+	if parsed.RawQuery != "" {
+		sichereURL += "?" + parsed.RawQuery
+	}
+
 	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)
+	// #nosec G704 - SSRF Schutz durch Neukonstruktion der URL
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sichereURL, nil)
 	if err != nil {
-		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", coverURL, err)
+		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", sichereURL, err)
 		return nil
 	}
 

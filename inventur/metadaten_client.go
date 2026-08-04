@@ -140,15 +140,23 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	if err != nil {
 		return nil, fmt.Errorf("SSRF Schutz: ungültige URL")
 	}
+	var allowedHost string
 	switch parsed.Hostname() {
 	case "services.dnb.de", "www.googleapis.com", "openlibrary.org", "covers.openlibrary.org", "portal.dnb.de":
-		// OK
+		allowedHost = parsed.Hostname()
 	default:
 		return nil, fmt.Errorf("SSRF Schutz: Hostname %s ist nicht in der Whitelist", parsed.Hostname())
 	}
 
+	// SSRF-Schutz: URL aus validierten Teilen neu aufbauen
+	sichereURL := "https://" + allowedHost + "/" + strings.TrimPrefix(parsed.EscapedPath(), "/")
+	if parsed.RawQuery != "" {
+		sichereURL += "?" + parsed.RawQuery
+	}
+
 	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
-	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, apiURL, nil)
+	// #nosec G704 - SSRF Schutz durch Neukonstruktion der URL
+	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, sichereURL, nil)
 	if fehler != nil {
 		return nil, fehler
 	}
