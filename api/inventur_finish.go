@@ -41,64 +41,66 @@ type InventurFinishResponse struct {
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/finish [post]
 func (s *Server) InventurFinishHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req InventurFinishRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-		if req.SessionID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
-			return
-		}
+	return s.handleInventurFinish
+}
 
-		ctx := r.Context()
-
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer db.SafeRollback(ctx, tx)
-
-		invRepo := repository.NewInventoryRepository(tx)
-
-		// Session in derselben Transaktion sperren/prüfen: verhindert doppelten
-		// Abschluss und liefert den gespeicherten Scope für das Verlust-Update.
-		session, err := invRepo.LadeInventurSession(ctx, req.SessionID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		count, err := invRepo.FinishInventurSession(ctx, session.ID, session.Scope())
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// In DERSELBEN Transaktion gelesen, vor dem Commit: Danach ist der Fehlbestand
-		// zwar dauerhaft gespeichert, aber ein Fehler beim Lesen dürfte den Abschluss
-		// nicht mehr zurückrollen — die Aussonderung wäre dann schon geschrieben.
-		fehlbestand, err := invRepo.LadeInventurVerluste(ctx, session.ID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		RespondJSON(w, http.StatusOK, InventurFinishResponse{
-			VerlorenGemeldet: count,
-			Fehlbestand:      fehlbestand,
-		})
+func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
+	var req InventurFinishRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
 	}
+	if req.SessionID == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("session_id fehlt"))
+		return
+	}
+
+	ctx := r.Context()
+
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	invRepo := repository.NewInventoryRepository(tx)
+
+	// Session in derselben Transaktion sperren/prüfen: verhindert doppelten
+	// Abschluss und liefert den gespeicherten Scope für das Verlust-Update.
+	session, err := invRepo.LadeInventurSession(ctx, req.SessionID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	count, err := invRepo.FinishInventurSession(ctx, session.ID, session.Scope())
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// In DERSELBEN Transaktion gelesen, vor dem Commit: Danach ist der Fehlbestand
+	// zwar dauerhaft gespeichert, aber ein Fehler beim Lesen dürfte den Abschluss
+	// nicht mehr zurückrollen — die Aussonderung wäre dann schon geschrieben.
+	fehlbestand, err := invRepo.LadeInventurVerluste(ctx, session.ID)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, InventurFinishResponse{
+		VerlorenGemeldet: count,
+		Fehlbestand:      fehlbestand,
+	})
 }
 
 // InventurFehlbestandHandler liefert den Fehlbestand einer bereits abgeschlossenen

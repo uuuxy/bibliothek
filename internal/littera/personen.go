@@ -109,6 +109,19 @@ func AutorenJeTitel(personen map[string]string, zuordnungen io.Reader) (map[stri
 		return nil, err
 	}
 
+	jeTitel := sammleVerfasserZuordnungen(zeilen)
+
+	autoren := make(map[string]string, len(jeTitel))
+	for titelID, liste := range jeTitel {
+		if namen := namenInErfassungsreihenfolge(liste, personen); len(namen) > 0 {
+			autoren[titelID] = strings.Join(namen, "; ")
+		}
+	}
+	return autoren, nil
+}
+
+// sammleVerfasserZuordnungen gruppiert die Verfasser-Zeilen nach Titel.
+func sammleVerfasserZuordnungen(zeilen []map[string]string) map[string][]autorZuordnung {
 	jeTitel := map[string][]autorZuordnung{}
 	for _, z := range zeilen {
 		if strings.TrimSpace(z["Funktion"]) != funktionVerfasser {
@@ -128,26 +141,25 @@ func AutorenJeTitel(personen map[string]string, zuordnungen io.Reader) (map[stri
 		}
 		jeTitel[titelID] = append(jeTitel[titelID], autorZuordnung{titelID, personID, lfd})
 	}
+	return jeTitel
+}
 
-	autoren := make(map[string]string, len(jeTitel))
-	for titelID, liste := range jeTitel {
-		sort.Slice(liste, func(i, j int) bool { return liste[i].lfd < liste[j].lfd })
+// namenInErfassungsreihenfolge löst die Zuordnungen eines Titels zu Klarnamen auf —
+// sortiert nach Buchungsnummer, ohne Dubletten und ohne Bestandsvermerke.
+func namenInErfassungsreihenfolge(liste []autorZuordnung, personen map[string]string) []string {
+	sort.Slice(liste, func(i, j int) bool { return liste[i].lfd < liste[j].lfd })
 
-		var namen []string
-		gesehen := map[string]bool{}
-		for _, z := range liste {
-			name := personen[z.personID]
-			if name == "" || gesehen[name] || bestandsmarken[name] {
-				continue // unbekannte Person, Dublette in der Zuordnung oder Bestandsvermerk
-			}
-			gesehen[name] = true
-			namen = append(namen, name)
+	var namen []string
+	gesehen := map[string]bool{}
+	for _, z := range liste {
+		name := personen[z.personID]
+		if name == "" || gesehen[name] || bestandsmarken[name] {
+			continue // unbekannte Person, Dublette in der Zuordnung oder Bestandsvermerk
 		}
-		if len(namen) > 0 {
-			autoren[titelID] = strings.Join(namen, "; ")
-		}
+		gesehen[name] = true
+		namen = append(namen, name)
 	}
-	return autoren, nil
+	return namen
 }
 
 // MitAutoren ergänzt die Titel um die aufgelösten Verfasser.

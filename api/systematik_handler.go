@@ -113,53 +113,55 @@ func (s *Server) CreateSystematikHandler() http.HandlerFunc {
 // @Failure      409   {object}  map[string]string
 // @Router       /systematics/{id} [put]
 func (s *Server) UpdateSystematikHandler() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		id := r.PathValue("id")
-		var req systematikRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return nil
-		}
-		req.normalisiert()
-		if err := req.pruefe(); err != nil {
-			return apierrors.BadRequest(err.Error(), err)
-		}
+	return apierrors.Wrap(s.handleUpdateSystematik)
+}
 
-		// Die alte Bezeichnung VOR dem Update lesen: Nur sie verbindet die Sachgruppe
-		// mit den Büchern (buecher_titel.subject hält sie als Text, ohne Fremdschlüssel).
-		var alteBezeichnung string
-		err := s.DB.Pool.QueryRow(r.Context(),
-			`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&alteBezeichnung)
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows") {
-				return apierrors.NotFound("Sachgruppe nicht gefunden", err)
-			}
-			return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
-		}
-
-		if _, err := s.DB.Pool.Exec(r.Context(), `
-			UPDATE systematik_kategorien
-			SET kuerzel = $2, bezeichnung = $3
-			WHERE id = $1::uuid
-		`, id, req.Kuerzel, req.Bezeichnung); err != nil {
-			if istUniqueVerletzung(err) {
-				return apierrors.Conflict("eine Sachgruppe mit diesem Kürzel existiert bereits", err)
-			}
-			return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
-		}
-
-		betroffen, err := s.zaehleTitelMitFach(r.Context(), alteBezeichnung)
-		if err != nil {
-			return err
-		}
-
-		RespondJSON(w, http.StatusOK, map[string]any{
-			"id":                id,
-			"kuerzel":           req.Kuerzel,
-			"bezeichnung":       req.Bezeichnung,
-			"titel_mit_altfach": betroffen,
-		})
+func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) error {
+	id := r.PathValue("id")
+	var req systematikRequest
+	if !DecodeAndValidate(w, r, &req) {
 		return nil
+	}
+	req.normalisiert()
+	if err := req.pruefe(); err != nil {
+		return apierrors.BadRequest(err.Error(), err)
+	}
+
+	// Die alte Bezeichnung VOR dem Update lesen: Nur sie verbindet die Sachgruppe
+	// mit den Büchern (buecher_titel.subject hält sie als Text, ohne Fremdschlüssel).
+	var alteBezeichnung string
+	err := s.DB.Pool.QueryRow(r.Context(),
+		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&alteBezeichnung)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows") {
+			return apierrors.NotFound("Sachgruppe nicht gefunden", err)
+		}
+		return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
+	}
+
+	if _, err := s.DB.Pool.Exec(r.Context(), `
+		UPDATE systematik_kategorien
+		SET kuerzel = $2, bezeichnung = $3
+		WHERE id = $1::uuid
+	`, id, req.Kuerzel, req.Bezeichnung); err != nil {
+		if istUniqueVerletzung(err) {
+			return apierrors.Conflict("eine Sachgruppe mit diesem Kürzel existiert bereits", err)
+		}
+		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
+	}
+
+	betroffen, err := s.zaehleTitelMitFach(r.Context(), alteBezeichnung)
+	if err != nil {
+		return err
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]any{
+		"id":                id,
+		"kuerzel":           req.Kuerzel,
+		"bezeichnung":       req.Bezeichnung,
+		"titel_mit_altfach": betroffen,
 	})
+	return nil
 }
 
 // DeleteSystematikHandler entfernt eine Sachgruppe — aber nicht unter den Büchern weg.

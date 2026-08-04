@@ -103,20 +103,34 @@ func (b *marcBibDaten) verarbeiteISBN(subfelder []marcSubfield) {
 		if unterFeld.Code != "a" {
 			continue
 		}
-		parts := strings.Fields(unterFeld.Value)
-		if len(parts) == 0 {
-			continue
-		}
-		var clean strings.Builder
-		for _, char := range parts[0] {
-			if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
-				clean.WriteRune(char)
-			}
-		}
-		if l := clean.Len(); l == 10 || l == 13 {
-			b.isbn = clean.String()
+		if nummer := bereinigeISBN(unterFeld.Value); nummer != "" {
+			b.isbn = nummer
 		}
 	}
+}
+
+// bereinigeISBN schält aus einem 020 $a die reine Nummer heraus und gibt "" zurück,
+// wenn nichts Gültiges übrig bleibt.
+//
+// Das Feld enthält regelmäßig Beiwerk („3-12-345678-9 kart. : EUR 24.90"), deshalb zählt
+// nur das erste Wort, und daraus nur Ziffern und das Prüfzeichen X. Was danach keine 10
+// oder 13 Stellen hat, ist keine ISBN — eine halb erkannte Nummer wäre schlimmer als gar
+// keine, weil sie im Katalog auf ein fremdes Buch zeigen könnte.
+func bereinigeISBN(wert string) string {
+	parts := strings.Fields(wert)
+	if len(parts) == 0 {
+		return ""
+	}
+	var clean strings.Builder
+	for _, char := range parts[0] {
+		if (char >= '0' && char <= '9') || char == 'X' || char == 'x' {
+			clean.WriteRune(char)
+		}
+	}
+	if l := clean.Len(); l == 10 || l == 13 {
+		return clean.String()
+	}
+	return ""
 }
 
 // verarbeiteTitel wertet Tag 245 aus. Im Titel versteckte Autoren (durch

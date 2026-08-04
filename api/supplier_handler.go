@@ -153,56 +153,58 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 
 // UpdateSupplierHandler updates name, email and customer number of an existing supplier.
 func (s *Server) UpdateSupplierHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing supplier ID"))
-			return
-		}
+	return s.handleUpdateSupplier
+}
 
-		var req CreateSupplierRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-		if req.Name == "" || req.Email == "" || req.CustomerNumber == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
-			return
-		}
+func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing supplier ID"))
+		return
+	}
 
-		ctx := r.Context()
-		tag, err := s.DB.Pool.Exec(ctx,
-			`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3, liefert_mit_barcode = $4 WHERE id = $5`,
-			req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode, id,
-		)
-		if err != nil {
+	var req CreateSupplierRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+	if req.Name == "" || req.Email == "" || req.CustomerNumber == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
+		return
+	}
+
+	ctx := r.Context()
+	tag, err := s.DB.Pool.Exec(ctx,
+		`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3, liefert_mit_barcode = $4 WHERE id = $5`,
+		req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode, id,
+	)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
+		return
+	}
+
+	// Der Haken wird nur GESETZT, nie hier entfernt: Das Wegnehmen geschieht dadurch,
+	// dass ein anderer Lieferant Standard wird. Ein Bestellwesen ganz ohne Vorauswahl
+	// wäre der Zustand von vorher — dafür gibt es keinen Anlass, und ein versehentlich
+	// entfernter Haken beim Korrigieren einer E-Mail wäre ein stiller Rückschritt.
+	if req.IstStandard {
+		if err := setzeStandardLieferant(ctx, s.DB.Pool, id); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if tag.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
-			return
-		}
-
-		// Der Haken wird nur GESETZT, nie hier entfernt: Das Wegnehmen geschieht dadurch,
-		// dass ein anderer Lieferant Standard wird. Ein Bestellwesen ganz ohne Vorauswahl
-		// wäre der Zustand von vorher — dafür gibt es keinen Anlass, und ein versehentlich
-		// entfernter Haken beim Korrigieren einer E-Mail wäre ein stiller Rückschritt.
-		if req.IstStandard {
-			if err := setzeStandardLieferant(ctx, s.DB.Pool, id); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-		}
-
-		RespondJSON(w, http.StatusOK, SupplierResponse{
-			ID:                id,
-			Name:              req.Name,
-			Email:             req.Email,
-			CustomerNumber:    req.CustomerNumber,
-			LiefertMitBarcode: req.LiefertMitBarcode,
-			IstStandard:       req.IstStandard,
-		})
 	}
+
+	RespondJSON(w, http.StatusOK, SupplierResponse{
+		ID:                id,
+		Name:              req.Name,
+		Email:             req.Email,
+		CustomerNumber:    req.CustomerNumber,
+		LiefertMitBarcode: req.LiefertMitBarcode,
+		IstStandard:       req.IstStandard,
+	})
 }
 
 // DeleteSupplierHandler removes a supplier.
