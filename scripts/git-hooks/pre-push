@@ -15,7 +15,7 @@ echo "🛡️ PRE-PUSH HOOK: Starte Tests & Security-Scans..."
 echo "======================================================"
 
 # 1. Go Tests
-echo "[1/4] Führe Go Tests aus..."
+echo "[1/5] Führe Go Tests aus..."
 if go test ./...; then
     echo -e "${GREEN}✓ Go Tests bestanden.${NC}"
 else
@@ -24,7 +24,7 @@ else
 fi
 
 # 2. npm audit (Frontend Dependency Security)
-echo "[2/4] Führe npm audit (Frontend) aus..."
+echo "[2/5] Führe npm audit (Frontend) aus..."
 cd frontend || exit 1
 if npm audit; then
     echo -e "${GREEN}✓ npm audit bestanden.${NC}"
@@ -34,7 +34,7 @@ fi
 cd ..
 
 # 3. govulncheck (Backend Dependency Security)
-echo "[3/4] Führe govulncheck (Backend) aus..."
+echo "[3/5] Führe govulncheck (Backend) aus..."
 if command -v govulncheck &> /dev/null; then
     if govulncheck ./...; then
         echo -e "${GREEN}✓ govulncheck bestanden.${NC}"
@@ -47,7 +47,7 @@ else
 fi
 
 # 4. Trivy (Container Security)
-echo "[4/4] Führe Trivy (Container) aus..."
+echo "[4/5] Führe Trivy (Container) aus..."
 if command -v trivy &> /dev/null; then
     if [ -f "Dockerfile" ]; then
         if trivy config Dockerfile; then
@@ -61,6 +61,18 @@ if command -v trivy &> /dev/null; then
     fi
 else
     echo -e "${YELLOW}⚠ trivy nicht installiert. Überspringe Scan.${NC}"
+fi
+
+# 5. deadcode (unerreichbarer Code)
+# Logik in scripts/deadcode_gate.sh — dort steht auch, warum es dieses Gate gibt.
+echo "[5/5] Führe deadcode (unerreichbarer Code) aus..."
+if ./scripts/deadcode_gate.sh; then
+    echo -e "${GREEN}✓ deadcode: kein unerreichbarer Code.${NC}"
+else
+    # Das Skript nennt den Grund selbst (unerreichbarer Code ODER Werkzeug fehlt)
+    # und schreibt ihn nach stderr. Es überspringt sich bewusst NIE still.
+    echo -e "${RED}✗ deadcode-Gate fehlgeschlagen! Push abgebrochen.${NC}"
+    exit 1
 fi
 
 echo -e "${GREEN}✅ Alle Pre-Push Checks bestanden! Code wird gepusht.${NC}"
