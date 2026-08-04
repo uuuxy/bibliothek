@@ -42,9 +42,29 @@ ein Import als offene Ausleihen würde tausende Bücher fälschlich als verliehe
 `Buchungsnummer` (Schlüssel) · `Titel` (FK) · `Barcode` → `barcode_id` ·
 `Zugangsdatum` → `erworben_am` · `Preis` · `Status` (Long) · `Sig1` + `Sig2` (siehe unten)
 
-### `Leser` → `schueler`
-`Lesernummer` · `Vorname` · `Nachname` · `eMail` · `Geburtsdatum` · `Anmeldedatum` ·
-Adressfelder (**DSGVO: nur übernehmen, was gebraucht wird**)
+### `Leser` → `schueler` — hier ist Vorsicht nötig
+
+`Lesernummer` · `Vorname` · `Nachname` · `Geburtsdatum` · `Anmeldedatum` · Adressfelder
+(**DSGVO: nur übernehmen, was gebraucht wird**)
+
+**Die Klasse steht nicht am Leser.** Sie kommt über `Leser.Lesergruppe` →
+`Leser_UG.KurzBez` (`10G4`, `06G3`, `05F1` = Jahrgang + Zweig + Zug); `Leser_UG.Obergruppe`
+→ `Leser_OG.Obergruppe` liefert den Schulzweig (Förderstufe, Hauptschul-, Realschul-,
+Gymnasialzweig). Auflösbar für **1.991 von 1.991** Lesern.
+
+Die naheliegende Quelle `LeserSchueler` (705 Zeilen mit `Jahrgang`, `Abgang`,
+`Klassenlehrer`) ist **komplett leer** — alle Werte 0. Nicht darauf bauen.
+
+> **Vor dem Schreibpfad zwingend beachten:** `Leser` mischt drei Personengruppen.
+> Unter den „Klassen" stehen `Lehrerin` (98), `Lehrer` (60) und `Ab` = „Abgegangen"
+> (71) neben den echten Klassen. Ein Import aller 1.991 Zeilen nach `schueler` würde
+> **Lehrkräfte in die Schülerdatei schreiben**. Die Untergruppe muss also filtern, nicht
+> nur die Klasse liefern.
+
+Feldbelegung, gemessen: Nachname 1.991 · Vorname 1.980 · Geburtsdatum 1.924 ·
+Adresse 1.927 · Anmeldedatum 834 · **eMail nur 3** · Abmeldedatum 0.
+Die Mahnung per E-Mail hat aus dieser Quelle also praktisch keine Grundlage —
+`eltern_email` muss aus LUSD kommen, nicht aus Littera.
 
 ### `Verleih` → `ausleihen`
 `Exemplar` (FK) · `Leser` (FK) · `Verleihdatum` · `Rückgabedatum` (Frist) ·
@@ -106,7 +126,11 @@ Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
   Normalfall (6.178 Titel haben genau zwei) und werden in Erfassungsreihenfolge mit
   `; ` verbunden, nicht alphabetisch: Der Erstgenannte ist der Hauptverfasser.
 * **Medienart — erledigt** (`MedienartNamen`, gleiche Bauart wie `Verlag`).
-* **Leser und Ausleihen**: Feldzuordnung steht (siehe oben), Lesepfad noch nicht gebaut.
+* **Leser und Ausleihen**: Feldzuordnung steht und ist an den Daten geprüft (siehe oben),
+  der Lesepfad ist noch nicht gebaut. Die drei Stolpersteine sind benannt: Klasse nur
+  über `Leser_UG`, Lehrkräfte und Abgänger aussortieren, `LeserSchueler` ist leer.
+  `schueler.klasse` und `schueler.abgaenger_jahr` sind NOT NULL — für beide braucht es
+  eine bewusste Regel, bevor geschrieben wird.
 * **Schreibpfad nach Postgres**: noch offen. Empfehlung, keinen zweiten zu bauen —
   `cmd/migrate/pg_writer.go` ist bereits gehärtet (Savepoints je Titel,
   Barcode-Prüfung, Fehlerklassen) und braucht nur einen anderen Leser davor.
