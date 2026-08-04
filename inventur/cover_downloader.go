@@ -37,15 +37,20 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 		return nil
 	}
 
-	if !IstErlaubteCoverHerkunft(coverURL) {
+	// Angefragt wird die NEU GEBAUTE URL, nicht die Eingabe: Geprüft hat url.Parse,
+	// losgeschickt hätte der HTTP-Client den rohen String — und wo sich beide Parser
+	// über ein Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den
+	// freigegebenen (Parsing Differential, gosec G704). Siehe pkg/coverquelle.
+	sichereURL, ok := SichereCoverURL(coverURL)
+	if !ok {
 		log.Printf("SSRF Schutz: Cover-URL %s stammt nicht von einem erlaubten Host", coverURL)
 		return nil
 	}
 
-	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, coverURL, nil)
+	// #nosec G107 - URL aus geprüften Teilen neu gebaut (Host aus der Allowlist-Konstante)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sichereURL, nil)
 	if err != nil {
-		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", coverURL, err)
+		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", sichereURL, err)
 		return nil
 	}
 

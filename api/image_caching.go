@@ -9,13 +9,12 @@ import (
 	_ "image/png"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/safehttp"
 
@@ -45,47 +44,14 @@ func serveCachedCover(w http.ResponseWriter, r *http.Request, root *os.Root, fil
 	http.ServeFileFS(w, r, root.FS(), fileName)
 }
 
-// erlaubteCoverHosts ist die Host-Allowlist für Cover-Downloads (SSRF-Schutz).
-var erlaubteCoverHosts = []string{
-	"covers.openlibrary.org",
-	"portal.dnb.de",
-	"services.dnb.de",
-	"www.googleapis.com",
-	"openlibrary.org",
-	"books.google.com",
-	"books.google.de",
-}
-
-// erlaubterCoverHost bildet einen Hostnamen auf die kanonische Allowlist-Konstante
-// ab; "" heißt: nicht erlaubt. Zurückgegeben wird bewusst das Listen-Element und
-// nicht die Eingabe, damit nachgelagerte URLs keinen ungeprüften Wert enthalten.
-func erlaubterCoverHost(hostname string) string {
-	for _, h := range erlaubteCoverHosts {
-		if hostname == h {
-			return h
-		}
-	}
-	return ""
-}
-
 // baueSichereCoverURL validiert die Cover-URL gegen die Host-Allowlist und baut sie
-// aus geprüften Teilen neu auf: Schema fest HTTPS, Host aus der Allowlist-Konstante —
-// nur Pfad und Query stammen aus der Eingabe und können Host wie Schema des Requests
-// nicht mehr beeinflussen (SSRF-Schutz).
+// aus geprüften Teilen neu auf.
+//
+// Liste und Neuaufbau liegen seit dem 04.08.2026 in pkg/coverquelle: Dieselbe Prüfung
+// braucht auch das Inventur-Modul (Cover-Download und Metadaten-Abruf), und die Liste
+// stand dort in eigenen Kopien, die bereits auseinandergelaufen waren.
 func baueSichereCoverURL(urlStr string) (string, bool) {
-	parsed, err := url.Parse(urlStr)
-	if err != nil {
-		return "", false
-	}
-	host := erlaubterCoverHost(parsed.Hostname())
-	if host == "" {
-		return "", false
-	}
-	sichereURL := "https://" + host + "/" + strings.TrimPrefix(parsed.EscapedPath(), "/")
-	if parsed.RawQuery != "" {
-		sichereURL += "?" + parsed.RawQuery
-	}
-	return sichereURL, true
+	return coverquelle.SichereURL(urlStr, coverquelle.CoverHosts)
 }
 
 // coverHTTPClient lädt Cover mit Schutzmaßnahmen, die http.DefaultClient fehlen:

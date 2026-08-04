@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/safehttp"
 )
@@ -143,19 +144,18 @@ func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *
 
 // holeInhalt ist eine HTTP-GET Wrapper-Funktion, die die Antwort einer API als Bytearray zurückliefert.
 func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string) ([]byte, error) {
-	parsed, err := url.Parse(apiURL)
-	if err != nil {
-		return nil, fmt.Errorf("SSRF Schutz: ungültige URL")
-	}
-	switch parsed.Hostname() {
-	case "services.dnb.de", "www.googleapis.com", "openlibrary.org", "covers.openlibrary.org", "portal.dnb.de":
-		// OK
-	default:
-		return nil, fmt.Errorf("SSRF Schutz: Hostname %s ist nicht in der Whitelist", parsed.Hostname())
+	// Angefragt wird die NEU GEBAUTE URL, nicht apiURL: Geprüft hätte url.Parse,
+	// losgeschickt worden wäre der rohe String. Wo sich die beiden Parser über ein
+	// Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den geprüften
+	// (Parsing Differential, gosec G704). Die Liste liegt in pkg/coverquelle und ist
+	// bewusst enger als die Cover-Liste.
+	sichereURL, ok := coverquelle.SichereURL(apiURL, coverquelle.MetadatenHosts)
+	if !ok {
+		return nil, fmt.Errorf("SSRF Schutz: Hostname ist nicht in der Whitelist: %s", apiURL)
 	}
 
-	// #nosec G107 - URL wird sicher aus internen Const/Whitelist generiert
-	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, apiURL, nil)
+	// #nosec G107 - URL aus geprüften Teilen neu gebaut (Host aus der Allowlist-Konstante)
+	anfrage, fehler := http.NewRequestWithContext(kontext, http.MethodGet, sichereURL, nil)
 	if fehler != nil {
 		return nil, fehler
 	}
