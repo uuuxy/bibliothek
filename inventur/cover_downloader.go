@@ -30,6 +30,11 @@ import (
 // sauberes 404, wenn kein Cover existiert). Daher NICHT auf einen Chrome-UA „aufrüsten".
 const coverFetchUserAgent = "Inventur/1.0"
 
+// openLibraryLeeresCover ist die URL, die OpenLibrary fuer eine ISBN OHNE Cover
+// liefert — ein 1x1-Platzhalter, kein Bild. Stand bis zum 04.08.2026 in
+// hintergrund_jobs.go; die Datei ist entfallen, die Konstante wird hier gebraucht.
+const openLibraryLeeresCover = "https://covers.openlibrary.org/b/isbn/-L.jpg"
+
 // ladeCoverBytes lädt die Bilddaten einer whitelisteten Cover-URL (SSRF-Schutz) und
 // verwirft Nicht-Bild-Antworten (Bot-Schranken-HTML). Liefert nil bei jedem Fehler.
 func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) []byte {
