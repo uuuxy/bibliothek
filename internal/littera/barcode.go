@@ -22,11 +22,15 @@ import (
 // Länge und Prüfzeichen. Zwei Alphabete für dieselben Ziffern, damit gleiche Ziffern
 // nebeneinander unterscheidbare Balken ergeben.
 //
-// Warum das hier steht statt „nimm einfach die Spalte Exemplarnummer": Ohne die
-// Längenangabe an vorletzter Stelle wäre die Nummer aus dem Etikett nicht eindeutig
-// rekonstruierbar — 81 und 810 ergäben beide `100000`. Diese Funktion belegt, dass die
-// Spalte `Exemplarnummer` wirklich das ist, was auf dem Buch klebt: gegen den Altbestand
-// stimmen 61.520 von 61.520 überein (siehe TestBarcodeInhaltTrifftExemplarnummer).
+// Wofür das heute noch gut ist: NICHT um zu wissen, was im Regal klebt — die Etiketten
+// der Schule sind inzwischen durchweg EAN-13 (siehe EtikettBarcode), die alte
+// Druckzeichenkette beschreibt eine abgelöste Generation. Es ist eine PRÜFUNG der Quelle:
+// Die EAN-13 wird aus `Exemplarnummer` gerechnet, also muss diese Spalte stimmen. Die
+// Druckzeichenkette trägt dieselbe Nummer unabhängig kodiert und dient als Gegenprobe —
+// am Altbestand stimmen 61.520 von 61.520 überein (siehe pruefeEtiketten).
+//
+// Ohne die Längenangabe an vorletzter Stelle wäre die Nummer übrigens nicht eindeutig
+// rekonstruierbar: 81 und 810 ergäben beide `100000`.
 var barcodeMuster = regexp.MustCompile(`^(\d) \*(.{6})#(.{4})(.)(.)\*$`)
 
 // barcodeZiffern bildet die Druckzeichen auf ihre Ziffer ab.

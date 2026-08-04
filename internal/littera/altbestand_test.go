@@ -68,13 +68,12 @@ func TestEchterAltbestand(t *testing.T) {
 	pruefeAusleihen(t, basis, leser, exemplare)
 }
 
-// pruefeEtiketten belegt, dass die Spalte `Exemplarnummer` wirklich das ist, was auf dem
-// Buch klebt.
+// pruefeEtiketten haelt die Spalte `Exemplarnummer` gegen Litteras Druckzeichenkette.
 //
-// Daran hängt die Entscheidung, ob der Bestand nach dem Umstieg ohne Neubeklebung
-// scannbar bleibt: Der Import schreibt diese Nummer nach buecher_exemplare.barcode_id.
-// Wäre die Annahme falsch, wären 61.520 Etiketten wertlos — und das fiele erst an der
-// Theke auf. Also wird die Druckzeichenkette entschlüsselt und gegengehalten.
+// Aus der Exemplarnummer rechnet EtikettBarcode den EAN-13, der auf dem Buch klebt —
+// stimmt die Spalte nicht, ist jeder geschriebene Barcode falsch, und gemerkt haette man
+// es erst an der Theke. Die Druckzeichenkette traegt dieselbe Nummer unabhaengig kodiert
+// und ist damit die einzige Gegenprobe, die ohne ein Buch in der Hand auskommt.
 func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 	t.Helper()
 

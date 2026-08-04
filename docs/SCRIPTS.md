@@ -36,7 +36,10 @@ Buchetikett liest — eine **EAN-13**, nicht die daneben gedruckte Exemplarnumme
 ```
 
 Gemessen an zwei echten Büchern der Schule, Prüfziffer jeweils verifiziert (siehe
-`littera.EtikettBarcode`). Der Bestand bleibt damit ohne Neubeklebung scannbar.
+`littera.EtikettBarcode`). Der Bestand bleibt damit ohne Neubeklebung scannbar. Eine
+zweite Etikettengeneration gibt es nicht mehr: Die alten Littera-Aufkleber (Zeichenkette
+für eine Barcode-Schrift, `8 *pkpööp#-c.bc-*`) sitzen auf Büchern, die nicht mehr im
+Regal stehen — bestätigt am 04.08.2026.
 `-barcodes neu` vergibt stattdessen frische `B-XXXXX` aus `barcode_seq` — derselben
 Sequenz, aus der die Anwendung ihre Barcodes zieht — und setzt voraus, dass jedes Buch
 ein neues Etikett bekommt.
