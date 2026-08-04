@@ -98,9 +98,15 @@ Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
 
 ### Noch offen für den vollständigen Import
 
-* **Autoren**: Nur 2.877 von 10.732 Titeln haben eine `Verfasserangabe`. Die saubere
-  Quelle sind vermutlich die Tabellen `Personen` / `Personen_Zuordnung` — noch nicht
-  ausgewertet.
-* **Leser und Ausleihen**: Zuordnung steht (siehe oben), Lesepfad noch nicht gebaut.
-* **Medienart** (`Titel.Medienart`, Zahl) muss wie `Verlag` über die Nachschlagetabelle
-  aufgelöst werden.
+* **Autoren — erledigt.** `Titel.Verfasserangabe` ist nur bei 2.877 von 10.732 Titeln
+  gefüllt (27 %). Die gepflegte Quelle sind `Personen` + `Personen_Zuordnung`, wobei
+  **`Funktion = 0` den Verfasser** bezeichnet (1 = Illustrator, 2 = Herausgeber … stehen
+  in `Personen_Funktionen`; die 0 fehlt dort, sie ist die Vorgabe). Damit steigt die
+  Abdeckung auf **10.002 von 10.732 (93 %)** — gemessen. Mehrfachverfasser sind der
+  Normalfall (6.178 Titel haben genau zwei) und werden in Erfassungsreihenfolge mit
+  `; ` verbunden, nicht alphabetisch: Der Erstgenannte ist der Hauptverfasser.
+* **Medienart — erledigt** (`MedienartNamen`, gleiche Bauart wie `Verlag`).
+* **Leser und Ausleihen**: Feldzuordnung steht (siehe oben), Lesepfad noch nicht gebaut.
+* **Schreibpfad nach Postgres**: noch offen. Empfehlung, keinen zweiten zu bauen —
+  `cmd/migrate/pg_writer.go` ist bereits gehärtet (Savepoints je Titel,
+  Barcode-Prüfung, Fehlerklassen) und braucht nur einen anderen Leser davor.

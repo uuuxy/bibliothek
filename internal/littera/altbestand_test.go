@@ -60,6 +60,64 @@ func TestEchterAltbestand(t *testing.T) {
 	}
 	t.Logf("Altbestand: %d Titel, %d Exemplare, %d mit Signatur, davon %d uneinheitlich",
 		len(titel), len(exemplare), len(signaturen), len(abweichend))
+
+	pruefeAutorenAbdeckung(t, basis, titel)
+}
+
+// pruefeAutorenAbdeckung belegt, dass die Aufloesung ueber Personen/Personen_Zuordnung
+// deutlich mehr Titel mit einem Autor versorgt als die Freitext-Verfasserangabe.
+//
+// Ohne sie waere der Katalog fuer die Autorensuche weitgehend blind: Nur gut ein
+// Viertel der Titel traegt eine Verfasserangabe.
+func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
+	t.Helper()
+
+	pf, err := os.Open(filepath.Join(basis, "personen.csv")) //nolint:gosec // Testumgebung
+	if err != nil {
+		t.Skipf("personen.csv fehlt — Autoren-Pruefung uebersprungen: %v", err)
+	}
+	t.Cleanup(func() { _ = pf.Close() }) //nolint:errcheck // Testaufraeumen
+
+	personen, err := LesePersonen(pf)
+	if err != nil {
+		t.Fatalf("Personen lesen: %v", err)
+	}
+
+	zf, err := os.Open(filepath.Join(basis, "personen_zuordnung.csv")) //nolint:gosec // Testumgebung
+	if err != nil {
+		t.Skipf("personen_zuordnung.csv fehlt — Autoren-Pruefung uebersprungen: %v", err)
+	}
+	t.Cleanup(func() { _ = zf.Close() }) //nolint:errcheck // Testaufraeumen
+
+	autoren, err := AutorenJeTitel(personen, zf)
+	if err != nil {
+		t.Fatalf("Zuordnung lesen: %v", err)
+	}
+
+	vorher := 0
+	for _, ti := range titel {
+		if ti.Autor != "" {
+			vorher++
+		}
+	}
+	nachher := 0
+	for _, ti := range MitAutoren(titel, autoren) {
+		if ti.Autor != "" {
+			nachher++
+		}
+	}
+
+	if nachher <= vorher {
+		t.Errorf("Aufloesung bringt nichts: vorher %d, nachher %d Titel mit Autor", vorher, nachher)
+	}
+	// Deutlich mehr als die Haelfte muss abgedeckt sein, sonst stimmt die
+	// Funktions-Auswahl (Verfasser = 0) nicht.
+	if nachher*2 < len(titel) {
+		t.Errorf("nur %d von %d Titeln haben einen Autor — Funktionsschluessel pruefen",
+			nachher, len(titel))
+	}
+	t.Logf("Autoren: %d von %d ueber Verfasserangabe, %d nach Personen-Aufloesung",
+		vorher, len(titel), nachher)
 }
 
 func ladeTitel(t *testing.T, pfad string) []Titel {
