@@ -55,6 +55,229 @@
 	--shadow-lg: 0 2px 6px rgb(15 23 42 / 0.09);
 	--shadow-xl: 0 4px 12px rgb(15 23 42 / 0.11);
 	--shadow-2xl: 0 8px 24px rgb(15 23 42 / 0.14);
+
+	/* ── Farben: Material-3-Tonleitern ────────────────────────────────────────
+	   Gezählt am 04.08.2026: 3.126 Farbfundstellen in VIERZEHN Familien (slate
+	   1.876, blue 492, rose 236, emerald 222, amber 116, red 59, dazu indigo,
+	   teal, zinc, violet, purple, orange, sky, green). Vierzehn Familien sind
+	   keine Designsprache, sondern vierzehn Einzelentscheidungen — und genau das
+	   sieht man der Anwendung an.
+
+	   Es gab bereits eine M3-Schicht (weiter unten, :root) mit richtigen
+	   Rollennamen, benutzt von ZWEI von 146 Bauteilen — und mit Smaragdgrün als
+	   --primary, während die Oberfläche durchgehend blau ist. Zwei Systeme, die
+	   gegeneinander liefen.
+
+	   Wieder die SKALA statt der Aufrufe (wie bei Radien und Schriftstärken):
+	   Die Klassennamen bleiben stehen, ihre Werte kommen aus den M3-Tonleitern.
+	   Damit wechseln alle 3.126 Fundstellen in einem Zugriff, ohne dass eine
+	   einzige Komponente angefasst wird. Die Helligkeitsordnung bleibt monoton
+	   (50 hell … 950 dunkel), sonst kippten Text und Fläche gegeneinander.
+
+	   Grundfarbe ist BLAU (Tonwert 40 = #0061A4), weil die Oberfläche blau ist.
+	   Die Nebenfamilien werden auf die nächstliegende Rolle zusammengelegt:
+	   indigo/violet/purple/sky → primary, teal/green → success, orange → warning,
+	   zinc/gray → neutral, red → error. */
+
+	/* Primary — M3-Tonleiter zur blauen Grundfarbe */
+	--color-blue-50: #f7f9ff;
+	--color-blue-100: #d0e4ff;
+	--color-blue-200: #9ccaff;
+	--color-blue-300: #6bb1f9;
+	--color-blue-400: #4a96dc;
+	--color-blue-500: #2a7cc0;
+	--color-blue-600: #0061a4;
+	--color-blue-700: #004880;
+	--color-blue-800: #00315e;
+	--color-blue-900: #001c38;
+	--color-blue-950: #001129;
+
+	/* indigo/violet/purple/sky waren Ausreißer ohne eigene Bedeutung → primary */
+	--color-indigo-50: #f7f9ff;
+	--color-indigo-100: #d0e4ff;
+	--color-indigo-200: #9ccaff;
+	--color-indigo-300: #6bb1f9;
+	--color-indigo-400: #4a96dc;
+	--color-indigo-500: #2a7cc0;
+	--color-indigo-600: #0061a4;
+	--color-indigo-700: #004880;
+	--color-indigo-800: #00315e;
+	--color-indigo-900: #001c38;
+	--color-violet-50: #f7f9ff;
+	--color-violet-100: #d0e4ff;
+	--color-violet-200: #9ccaff;
+	--color-violet-300: #6bb1f9;
+	--color-violet-400: #4a96dc;
+	--color-violet-500: #2a7cc0;
+	--color-violet-600: #0061a4;
+	--color-violet-700: #004880;
+	--color-violet-800: #00315e;
+	--color-violet-900: #001c38;
+	--color-purple-50: #f7f9ff;
+	--color-purple-100: #d0e4ff;
+	--color-purple-200: #9ccaff;
+	--color-purple-300: #6bb1f9;
+	--color-purple-400: #4a96dc;
+	--color-purple-500: #2a7cc0;
+	--color-purple-600: #0061a4;
+	--color-purple-700: #004880;
+	--color-purple-800: #00315e;
+	--color-purple-900: #001c38;
+	--color-sky-50: #f7f9ff;
+	--color-sky-100: #d0e4ff;
+	--color-sky-200: #9ccaff;
+	--color-sky-300: #6bb1f9;
+	--color-sky-400: #4a96dc;
+	--color-sky-500: #2a7cc0;
+	--color-sky-600: #0061a4;
+	--color-sky-700: #004880;
+	--color-sky-800: #00315e;
+	--color-sky-900: #001c38;
+
+	/* Neutral + Neutral-Variant — Flächen, Text, Linien */
+	--color-slate-50: #faf9fd;
+	--color-slate-100: #f1f0f4;
+	--color-slate-200: #e3e2e6;
+	--color-slate-300: #c2c7cf;
+	--color-slate-400: #909094;
+	--color-slate-500: #72777f;
+	--color-slate-600: #5a5f66;
+	--color-slate-700: #42474e;
+	--color-slate-800: #2f3033;
+	--color-slate-900: #1a1c1e;
+	--color-slate-950: #101214;
+	--color-gray-50: #faf9fd;
+	--color-gray-100: #f1f0f4;
+	--color-gray-200: #e3e2e6;
+	--color-gray-300: #c2c7cf;
+	--color-gray-400: #909094;
+	--color-gray-500: #72777f;
+	--color-gray-600: #5a5f66;
+	--color-gray-700: #42474e;
+	--color-gray-800: #2f3033;
+	--color-gray-900: #1a1c1e;
+	--color-zinc-50: #faf9fd;
+	--color-zinc-100: #f1f0f4;
+	--color-zinc-200: #e3e2e6;
+	--color-zinc-300: #c2c7cf;
+	--color-zinc-400: #909094;
+	--color-zinc-500: #72777f;
+	--color-zinc-600: #5a5f66;
+	--color-zinc-700: #42474e;
+	--color-zinc-800: #2f3033;
+	--color-zinc-900: #1a1c1e;
+
+	/* Error — M3-Fehlerpalette */
+	--color-rose-50: #fff8f7;
+	--color-rose-100: #ffdad6;
+	--color-rose-200: #ffb4ab;
+	--color-rose-300: #ff897d;
+	--color-rose-400: #ff5449;
+	--color-rose-500: #de3730;
+	--color-rose-600: #ba1a1a;
+	--color-rose-700: #93000a;
+	--color-rose-800: #690005;
+	--color-rose-900: #410002;
+	--color-red-50: #fff8f7;
+	--color-red-100: #ffdad6;
+	--color-red-200: #ffb4ab;
+	--color-red-300: #ff897d;
+	--color-red-400: #ff5449;
+	--color-red-500: #de3730;
+	--color-red-600: #ba1a1a;
+	--color-red-700: #93000a;
+	--color-red-800: #690005;
+	--color-red-900: #410002;
+
+	/* Erfolg — eigene Tonleiter im selben System (M3 kennt nur „error"; grün ist
+	   hier eine Hauszusage, keine Willkür: Rückgabe, Bestand ausreichend, Erfolg) */
+	--color-emerald-50: #f2fff0;
+	--color-emerald-100: #b7f5b9;
+	--color-emerald-200: #9cd89f;
+	--color-emerald-300: #81bc85;
+	--color-emerald-400: #67a06b;
+	--color-emerald-500: #4d8552;
+	--color-emerald-600: #346b39;
+	--color-emerald-700: #1a5324;
+	--color-emerald-800: #003910;
+	--color-emerald-900: #002106;
+	--color-green-50: #f2fff0;
+	--color-green-100: #b7f5b9;
+	--color-green-200: #9cd89f;
+	--color-green-300: #81bc85;
+	--color-green-400: #67a06b;
+	--color-green-500: #4d8552;
+	--color-green-600: #346b39;
+	--color-green-700: #1a5324;
+	--color-green-800: #003910;
+	--color-green-900: #002106;
+	--color-teal-50: #f2fff0;
+	--color-teal-100: #b7f5b9;
+	--color-teal-200: #9cd89f;
+	--color-teal-300: #81bc85;
+	--color-teal-400: #67a06b;
+	--color-teal-500: #4d8552;
+	--color-teal-600: #346b39;
+	--color-teal-700: #1a5324;
+	--color-teal-800: #003910;
+	--color-teal-900: #002106;
+
+	/* Warnung — Bernstein im selben System */
+	--color-amber-50: #fff8f2;
+	--color-amber-100: #ffdcc2;
+	--color-amber-200: #ffb77c;
+	--color-amber-300: #ee9f55;
+	--color-amber-400: #d0853c;
+	--color-amber-500: #b26c23;
+	--color-amber-600: #8f5300;
+	--color-amber-700: #6c3c00;
+	--color-amber-800: #4c2700;
+	--color-amber-900: #2e1500;
+	--color-orange-50: #fff8f2;
+	--color-orange-100: #ffdcc2;
+	--color-orange-200: #ffb77c;
+	--color-orange-300: #ee9f55;
+	--color-orange-400: #d0853c;
+	--color-orange-500: #b26c23;
+	--color-orange-600: #8f5300;
+	--color-orange-700: #6c3c00;
+	--color-orange-800: #4c2700;
+	--color-orange-900: #2e1500;
+
+}
+
+/* ── M3-Rollen ────────────────────────────────────────────────────────────────
+   Die semantische Sprache für ALLES, was ab jetzt gebaut wird: `bg-surface`,
+   `text-on-surface-variant`, `border-outline-variant`. Die Tailwind-Namen oben
+   sind die Brücke für die 3.126 bestehenden Fundstellen; neue Bauteile sollen
+   diese Rollen benutzen, dann ist ein Farbwechsel künftig EINE Zeile. Die
+   on-*-Paare sind der Punkt: Sie garantieren den Kontrast, statt ihn an jeder
+   Fundstelle neu zu raten.
+
+   `static` ist hier Pflicht, nicht Geschmack: Tailwind 4 wirft Theme-Variablen
+   weg, die noch niemand benutzt. Im Browser gemessen kamen die Rollen als LEERER
+   String zurück — ein Token, das man nicht auslesen kann, ist keins. Mit static
+   stehen sie unabhängig von der Benutzung in :root. */
+@theme static {
+	--color-primary: #0061a4;
+	--color-on-primary: #ffffff;
+	--color-primary-container: #d0e4ff;
+	--color-on-primary-container: #001c38;
+	--color-surface: #faf9fd;
+	--color-on-surface: #1a1c1e;
+	--color-surface-variant: #dee3eb;
+	--color-on-surface-variant: #42474e;
+	--color-surface-container-lowest: #ffffff;
+	--color-surface-container-low: #f4f3f7;
+	--color-surface-container: #eeedf1;
+	--color-surface-container-high: #e8e7eb;
+	--color-surface-container-highest: #e3e2e6;
+	--color-outline: #72777f;
+	--color-outline-variant: #c2c7cf;
+	--color-error: #ba1a1a;
+	--color-on-error: #ffffff;
+	--color-error-container: #ffdad6;
+	--color-on-error-container: #410002;
 }
 
 body {
@@ -93,6 +316,57 @@ body {
 }
 
 @layer components {
+	/* ── State-Layer (Material 3) ─────────────────────────────────────────────
+	   M3 gibt Rückmeldung NICHT durch Farbwechsel, sondern durch eine
+	   durchscheinende Schicht über der unveränderten Fläche: 8 % bei Hover,
+	   10 % bei Fokus und beim Drücken. Genau das fehlte hier vollständig — die
+	   Anwendung tauschte stattdessen Farben (hover:bg-blue-700), was jede
+	   Variante einzeln festlegen muss und bei getönten Flächen schnell falsch
+	   aussieht.
+
+	   currentColor ist der Trick: Die Schicht nimmt die TEXTFARBE des Elements,
+	   also automatisch die passende „on-"-Rolle. Ein blauer Button bekommt eine
+	   weiße Schicht, ein weißer Button eine dunkle — ohne dass eine Variante
+	   etwas dazu sagen muss. Das ist auch die M3-Regel.
+
+	   ::after statt Hintergrundwechsel, damit Rand, Schatten und Beschriftung
+	   unberührt bleiben; pointer-events-none, damit die Schicht keine Klicks
+	   schluckt. */
+	   Gilt für ALLE Buttons, nicht nur die gemeinsame Komponente. Im Browser
+	   gezählt: 145 rohe <button> gegen 135 Aufrufe von Button.svelte — ein
+	   State-Layer auf der Hälfte der Knöpfe wäre das Gegenteil von konsistent.
+	   Wer ihn nicht will (eigene Trefferfläche, transparente Overlays), setzt
+	   `no-state-layer` an das Element; die Ausnahme steht damit sichtbar an der
+	   Fundstelle statt als Sonderfall in dieser Datei. */
+	button:not(.no-state-layer),
+	.m3-state {
+		position: relative;
+		isolation: isolate;
+	}
+	button:not(.no-state-layer)::after,
+	.m3-state::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background-color: currentColor;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 120ms ease;
+	}
+	button:not(.no-state-layer):hover:not(:disabled)::after,
+	.m3-state:hover:not(:disabled)::after {
+		opacity: 0.08;
+	}
+	button:not(.no-state-layer):focus-visible:not(:disabled)::after,
+	.m3-state:focus-visible:not(:disabled)::after {
+		opacity: 0.1;
+	}
+	button:not(.no-state-layer):active:not(:disabled)::after,
+	.m3-state:active:not(:disabled)::after {
+		opacity: 0.1;
+	}
+
 	/* ── Icon-Buttons ─────────────────────────────────────────────────────────
 	   Dieselbe Geschichte wie bei den Feldhöhen, eine Stufe kleiner: Buttons, die
 	   nur ein Symbol tragen, hatten kein gemeinsames Maß. Im Browser gemessen
@@ -444,26 +718,32 @@ body {
 	}
 }
 
-/* Custom Design Tokens (Material 3 Expressive Inspired) */
+/* Material-3-Rollen als CSS-Variablen (Altbestand).
+   Diese Schicht war der erste Anlauf zu M3 und blieb bei ZWEI von 146 Bauteilen
+   stehen. Ihr --primary war Smaragdgrün, während die Oberfläche blau ist — zwei
+   Systeme, die gegeneinander liefen. Sie zeigt jetzt auf dieselbe blaue Tonleiter
+   wie die @theme-Skala oben, damit die beiden Bauteile nicht aus dem Rahmen
+   fallen. Für NEUES bitte die Rollen aus @theme benutzen (bg-surface,
+   text-on-surface-variant); dieser Block ist nur noch die Brücke. */
 :root {
-	--primary-50: #ecfdf5;
-	--primary-100: #d1fae5;
-	--primary-200: #a7f3d0;
-	--primary-500: #10b981;
-	--primary-600: #059669;
-	--primary-700: #047857;
-	--primary-800: #065f46;
-	--primary-900: #064e3b;
-	--primary-950: #022c22;
+	--primary-50: #f7f9ff;
+	--primary-100: #d0e4ff;
+	--primary-200: #9ccaff;
+	--primary-500: #2a7cc0;
+	--primary-600: #0061a4;
+	--primary-700: #004880;
+	--primary-800: #00315e;
+	--primary-900: #001c38;
+	--primary-950: #001129;
 
 	--surface-container-lowest: #ffffff;
-	--surface-container-low: #f8f6fa;
-	--surface-container: #f3f0f5;
-	--surface-container-high: #eeebf0;
-	--surface-variant: #5c556b;
+	--surface-container-low: #f4f3f7;
+	--surface-container: #eeedf1;
+	--surface-container-high: #e8e7eb;
+	--surface-variant: #42474e;
 
-	--error-50: #fff0f0;
-	--error-600: #dc2626;
+	--error-50: #fff8f7;
+	--error-600: #ba1a1a;
 }
 
 .bg-surface-container-low {

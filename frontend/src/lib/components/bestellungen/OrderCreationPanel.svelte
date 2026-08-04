@@ -23,9 +23,10 @@
 				<button
 					onclick={onCollapse}
 					aria-label="Bestellspalte einklappen"
+					data-tip="Bestellspalte einklappen"
 					aria-controls="bestellpanel"
 					aria-expanded="true"
-					class="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+					class="icon-btn hidden lg:inline-flex text-slate-400 hover:text-slate-700"
 				>
 					<ChevronRight class="h-4 w-4" aria-hidden="true" />
 				</button>

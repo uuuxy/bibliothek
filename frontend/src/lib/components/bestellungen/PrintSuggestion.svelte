@@ -69,9 +69,14 @@
 				{printSuggestion.length === 1 ? 'Exemplar' : 'Exemplare'} ohne Barcode-Etikett
 			</div>
 		</div>
+		<!-- Sichtbar kurz, zugänglich vollständig: Im Streifen ist „Drucken" neben der
+		     Überschrift eindeutig, vorgelesen wäre es das nicht. Das aria-label trägt
+		     deshalb den ganzen Satz — und ist zugleich der Vertrag, auf dem
+		     e2e/etiketten-druck.spec.js steht. -->
 		<button
 			onclick={onPrint}
-			class="shrink-0 flex items-center gap-1.5 py-2 px-3.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+			aria-label="Etiketten für diese Lieferung drucken"
+			class="shrink-0 flex items-center gap-1.5 py-2 px-3.5 bg-amber-600 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
 		>
 			<Printer class="h-4 w-4" aria-hidden="true" />
 			Drucken
@@ -85,7 +90,8 @@
 		</div>
 		<button
 			onclick={zumNachdruck}
-			class="shrink-0 flex items-center gap-1.5 py-2 px-3.5 bg-slate-900 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+			aria-label="Im Druck-Center nachdrucken"
+			class="shrink-0 flex items-center gap-1.5 py-2 px-3.5 bg-slate-900 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
 		>
 			Nachdrucken
 			<ArrowRight class="h-4 w-4" aria-hidden="true" />

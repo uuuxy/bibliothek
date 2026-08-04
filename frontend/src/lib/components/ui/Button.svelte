@@ -8,14 +8,18 @@
 	 * }} */
 	let { children, variant = 'primary', size = 'md', class: className = '', ...rest } = $props();
 
+	// Ohne hover:bg-*: Die Rückmeldung kommt jetzt aus dem State-Layer (.m3-state,
+	// siehe app.css) — eine Schicht in der Textfarbe über der UNVERÄNDERTEN Fläche,
+	// wie Material 3 es vorsieht. Vorher legte jede Variante ihren eigenen
+	// Hover-Farbwechsel fest; das musste sechsmal gepflegt werden und passte bei
+	// getönten Flächen (danger, success) ohnehin nie ganz.
 	const variants = {
-		primary: 'bg-blue-600 text-white hover:bg-blue-700 border-transparent shadow-sm',
-		secondary: 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm',
-		danger: 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100 shadow-sm',
-		'danger-solid': 'bg-rose-600 text-white hover:bg-rose-700 border-transparent shadow-sm',
-		success: 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 shadow-sm',
-		ghost:
-			'bg-transparent border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+		primary: 'bg-blue-600 text-white border-transparent shadow-sm',
+		secondary: 'bg-white border-slate-200 text-slate-700 shadow-sm',
+		danger: 'bg-rose-50 border-rose-200 text-rose-700 shadow-sm',
+		'danger-solid': 'bg-rose-600 text-white border-transparent shadow-sm',
+		success: 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm',
+		ghost: 'bg-transparent border-transparent text-slate-700'
 	};
 
 	// Feste Höhen statt reinem Padding: Nur so stehen Buttons neben Eingabefeldern und
@@ -36,7 +40,7 @@
 	// Referenz für alle anderen dient. Pillen bleiben Badges und Segmented Controls
 	// vorbehalten, wo die Form eine Bedeutung trägt.
 	const baseClasses =
-		'inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+		'm3-state inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
 
 	// Farb-Utilities des Aufrufers ERSETZEN die der Variante, statt mit ihnen zu konkurrieren.
 	//
