@@ -26,7 +26,7 @@ test('Mahnlauf: Auswahl und Override-Adresse landen im Request', async ({ page }
 	});
 
 	await page.goto('/mahnwesen');
-	await page.getByRole('button', { name: /Mahnlauf konfigurieren/ }).click();
+	await page.getByRole('button', { name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/ }).first().click();
 
 	// Auf den Dialog eingegrenzt: Die Mahnwesen-Tabelle dahinter bringt eigene
 	// Checkboxen mit, die sonst mitgezählt (und mit abgewählt) würden.
@@ -74,7 +74,7 @@ test('Mahnlauf: Abbrechen schickt nichts und vergisst die Eingaben', async ({ pa
 	});
 
 	await page.goto('/mahnwesen');
-	await page.getByRole('button', { name: /Mahnlauf konfigurieren/ }).click();
+	await page.getByRole('button', { name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/ }).first().click();
 
 	const dialog = page.getByRole('dialog');
 	const checkboxen = dialog.getByRole('checkbox');
@@ -88,7 +88,7 @@ test('Mahnlauf: Abbrechen schickt nichts und vergisst die Eingaben', async ({ pa
 
 	// Zweiter Anlauf: Der Dialog bleibt gemountet — ohne Reset trüge er die Abwahl und
 	// die fremde Adresse in den nächsten Lauf und verschickte still an jemand anderen.
-	await page.getByRole('button', { name: /Mahnlauf konfigurieren/ }).click();
+	await page.getByRole('button', { name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/ }).first().click();
 	await expect(dialog.getByRole('button', { name: /anmahnen$/ })).toContainText(`${anzahl}`);
 	await expect(dialog.getByLabel(/Alternative Empfänger/)).toHaveValue('');
 });

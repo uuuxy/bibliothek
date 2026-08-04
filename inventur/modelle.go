@@ -38,3 +38,25 @@ type ClassBookAssignment struct {
 	Track     string `json:"track" db:"track"`
 	CoverURL  string `json:"coverUrl" db:"cover_url"`
 }
+
+// BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
+type BuchEingabe struct {
+	ISBN                    string         `json:"isbn"`
+	Fach                    string         `json:"subject"`
+	KlassenStufe            int16          `json:"gradeLevel"`
+	Schulzweig              string         `json:"track"`
+	Bestand                 int            `json:"stock"`
+	Titel                   string         `json:"title"`
+	Autor                   string         `json:"author"`
+	CoverURL                string         `json:"coverUrl"`
+	ZaehlDatum              *string        `json:"lastCounted"`
+	Medientyp               string         `json:"medientyp"`
+	JahrgangVon             int            `json:"jahrgangVon"`
+	JahrgangBis             int            `json:"jahrgangBis"`
+	Untertitel              string         `json:"untertitel"`
+	Verlag                  string         `json:"verlag"`
+	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
+	Beschreibung            string         `json:"beschreibung"`
+	Signatur                string         `json:"signatur"`
+	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
+}
