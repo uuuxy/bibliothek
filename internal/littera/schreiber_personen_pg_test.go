@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"bibliothek/repository"
 )
 
 func leser(id, nummer, klasse string, art LeserArt) Leser {
@@ -128,10 +130,10 @@ func TestLehrkraftOhneMailBekommtUnzustellbarenPlatzhalter(t *testing.T) {
 		if !strings.HasSuffix(mail, ".invalid") {
 			t.Errorf("der Platzhalter muss unzustellbar sein (.invalid), gefunden: %q", mail)
 		}
-		// Vorgabe: inaktiv. Die Anmeldung läuft über den Barcode — 158 aktive Konten aus
-		// einem Altbestand wären 158 Zugänge für Leute, die vielleicht längst weg sind.
-		if aktiv {
-			t.Errorf("Lehrkräfte müssen ohne -lehrer-aktiv inaktiv angelegt werden: %q", mail)
+		// aktiv=true ist nötig, damit die Omnibox den Ausweis findet — die Lehrer-Abfrage
+		// filtert auf aktiv. Den Login sperrt die unzustellbare Adresse, nicht dieses Flag.
+		if !aktiv {
+			t.Errorf("Lehrkräfte müssen als Entleiher auffindbar sein (aktiv=true): %q", mail)
 		}
 		adressen = append(adressen, mail)
 	}
@@ -216,5 +218,36 @@ func TestAdressenWerdenNichtUebernommen(t *testing.T) {
 		WHERE strasse IS NOT NULL OR plz IS NOT NULL OR ort IS NOT NULL OR eltern_email IS NOT NULL`)
 	if n != 0 {
 		t.Errorf("Anschrift und Eltern-Mail dürfen nicht aus Littera kommen, gefunden: %d Zeilen", n)
+	}
+}
+
+// TestImportierteLehrkraftIstAmScannerAuffindbar schliesst den Kreis zwischen Import und
+// Ausleihpfad: Die Omnibox filtert Lehrkraefte auf aktiv=true. Legte der Import sie
+// inaktiv an, waere jeder gedruckte Lehrerausweis wertlos — und gemerkt haette man es
+// erst an der Theke.
+//
+// Der Login bleibt trotzdem gesperrt: Er laeuft ausschliesslich ueber IMAP gegen den
+// Schul-Mailserver, und die Platzhalter-Adresse gibt es dort nicht.
+func TestImportierteLehrkraftIstAmScannerAuffindbar(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+
+	l := leser("2", "B97601826458", "", ArtLehrkraft)
+	if _, err := s.SchreibePersonen(context.Background(), &Altbestand{Leser: []Leser{l}}); err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+
+	// Genau die Abfrage, die die Omnibox stellt.
+	lehrkraft, err := repository.NewUserRepository(pool).
+		GetLehrerByBarcode(context.Background(), "B97601826458")
+	if err != nil {
+		t.Fatalf("Lehrer-Abfrage: %v", err)
+	}
+	if lehrkraft == nil {
+		t.Fatal("die importierte Lehrkraft ist ueber ihren Ausweis nicht auffindbar")
+	}
+	if lehrkraft.Nachname != "Nach2" {
+		t.Errorf("falsche Lehrkraft geladen: %+v", lehrkraft)
 	}
 }

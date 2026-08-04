@@ -28,9 +28,13 @@ const (
 // Optionen steuern den Lauf. Die Vorgaben stehen in StandardOptionen.
 type Optionen struct {
 	Barcodes      Barcodequelle
-	BatchGroesse  int  // Titel je Transaktion
-	SchuljahrEnde int  // Jahr, in dem das laufende Schuljahr endet (2026/27 → 2027)
-	LehrerAktiv   bool // Lehrkräfte als aktive Benutzer anlegen
+	BatchGroesse  int // Titel je Transaktion
+	SchuljahrEnde int // Jahr, in dem das laufende Schuljahr endet (2026/27 → 2027)
+	// LehrerInaktiv legt Lehrkräfte auf aktiv=false. Das ist die AUSNAHME, nicht die
+	// Vorgabe: Die Ausweis-Abfrage der Omnibox verlangt aktiv=true, eine inaktive
+	// Lehrkraft wäre also am Scanner unauffindbar. Den Login sperrt ohnehin schon die
+	// Platzhalter-Adresse (siehe schreiber_personen.go).
+	LehrerInaktiv bool
 	Jetzt         time.Time
 }
 
@@ -47,7 +51,7 @@ func StandardOptionen(jetzt time.Time) Optionen {
 		Barcodes:      BarcodeLittera,
 		BatchGroesse:  200,
 		SchuljahrEnde: schuljahrEnde,
-		LehrerAktiv:   false,
+		LehrerInaktiv: false,
 		Jetzt:         jetzt,
 	}
 }

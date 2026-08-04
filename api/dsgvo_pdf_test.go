@@ -32,10 +32,10 @@ func TestGenerateDsgvoAuskunftPDF(t *testing.T) {
 			ElternEmail: "eltern@example.org", IstGesperrt: true, IsManuallyBlocked: true,
 			BlockReason: &sperrgrund, ErstelltAm: time.Now(), AktualisiertAm: time.Now(),
 		},
-		foto:      DsgvoFoto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
-		ausleihen: []DsgvoAusleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
-		schaeden:  []DsgvoSchadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
-		vormerkungen: []DsgvoVormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
+		foto:           DsgvoFoto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
+		ausleihen:      []DsgvoAusleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
+		schaeden:       []DsgvoSchadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
+		vormerkungen:   []DsgvoVormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
 		auditEintraege: []DsgvoAuditEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
 	}
 

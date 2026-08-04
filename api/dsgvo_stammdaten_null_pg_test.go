@@ -11,7 +11,7 @@ import (
 // Kontaktfelder (strasse, hausnummer, plz, ort, eltern_email) in nicht-nullbare
 // Go-strings. Ein Schüler OHNE erfasste Adresse ließ die Auskunft mit HTTP 500
 // "Fehler beim Laden der Stammdaten" abstürzen — das betraf jeden realen Schüler
-// ohne Adresse, nicht nur Demo-Daten. Der COALESCE(...,'')-Fix macht NULL → ''.
+// ohne Adresse, nicht nur Demo-Daten. Der COALESCE(...,”)-Fix macht NULL → ”.
 //
 // pgxmock kann das nicht prüfen (es führt kein SQL aus, COALESCE würde umgangen) —
 // daher ein echter PG-Integrationstest, gated auf TEST_DATABASE_URL.

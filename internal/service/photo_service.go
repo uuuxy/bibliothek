@@ -30,7 +30,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	// 2. Decode base64 image data
 	base64Data := strings.TrimPrefix(base64DataStr, "data:image/jpeg;base64,")
 	base64Data = strings.TrimPrefix(base64Data, "data:image/png;base64,")
-	
+
 	imgBytes, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
 		return "", fmt.Errorf("ungültiges base64-format: %w", err)

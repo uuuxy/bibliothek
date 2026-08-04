@@ -73,6 +73,7 @@ type defaultOmniboxService struct {
 	pool        db.PgxPoolIface
 	studentRepo repository.StudentRepository
 	bookRepo    repository.BookRepository
+	userRepo    repository.UserRepository
 	loanRepo    repository.LoanRepository
 	loanSvc     LoanService
 	deviceSvc   DeviceService
@@ -83,6 +84,7 @@ func NewOmniboxService(
 	pool db.PgxPoolIface,
 	studentRepo repository.StudentRepository,
 	bookRepo repository.BookRepository,
+	userRepo repository.UserRepository,
 	loanRepo repository.LoanRepository,
 	loanSvc LoanService,
 	deviceSvc DeviceService,
@@ -91,6 +93,7 @@ func NewOmniboxService(
 		pool:        pool,
 		studentRepo: studentRepo,
 		bookRepo:    bookRepo,
+		userRepo:    userRepo,
 		loanRepo:    loanRepo,
 		loanSvc:     loanSvc,
 		deviceSvc:   deviceSvc,
@@ -125,13 +128,24 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 }
 
 // resolveOhnePraefix löst einen Barcode/eine Query ohne bekanntes Präfix auf.
-// Auflösungsreihenfolge: Buch → Schülerausweis → Volltextsuche.
-// Die Littera-Altbestand-Ausweise tragen nackte Nummern ohne "S-"-Präfix und dürfen
-// nicht neu etikettiert werden; ihre Nummernkreise überschneiden sich nicht mit den
-// (kürzeren) Littera-Mediennummern, daher ist die Reihenfolge deterministisch.
-// GetCopyByBarcode/GetByBarcode liefern bei Nichttreffer (nil, nil); ein non-nil Fehler
-// ist daher ein echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als
-// "nicht gefunden" zu verschlucken.
+// Auflösungsreihenfolge: Buch → Schülerausweis → Lehrerausweis → Volltextsuche.
+//
+// Die Präfixe S-/L-/B-/G- sind eine Abkürzung, keine Voraussetzung: Littera kennt sie
+// nicht, und die Ausweise aus dem Altbestand tragen nackte Nummern. Ein Schülerausweis
+// liefert gemessen `B97601826457` (Nummer des Kartenherstellers), ein Buchetikett eine
+// 13-stellige EAN-13 — die Formen sind verschieden genug, dass die Reihenfolge hier
+// eindeutig entscheidet.
+//
+// Die Lehrer-Stufe fehlte lange, und das war kein bewusster Ausschluss: Lehrkräfte
+// stehen bei uns in `benutzer`, Schüler in `schueler`. Ein gescannter Lehrerausweis lief
+// deshalb bis in die Volltextsuche und meldete „keine Treffer" — obwohl handleTeacherAction
+// die passende Abfrage längst hatte, nur eben allein hinter dem L--Präfix. In Littera
+// gibt es diesen Unterschied nicht; die Karte ist dieselbe, nur der Aufdruck lautet
+// „Lehrerausweis".
+//
+// Die Lookups liefern bei Nichttreffer (nil, nil); ein non-nil Fehler ist daher ein
+// echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als "nicht gefunden" zu
+// verschlucken.
 func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, q OmniboxQuery, resp *OmniboxResult) error {
 	copy, lookupErr := s.bookRepo.GetCopyByBarcode(ctx, q.Query)
 	if lookupErr != nil {
@@ -147,6 +161,16 @@ func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, q Omnibo
 	}
 	if student != nil {
 		return s.handleStudentAction(ctx, q.Query, resp)
+	}
+
+	// handleTeacherAction meldet ErrNotFound, wenn kein Lehrerausweis passt — das ist
+	// hier kein Fehler, sondern der Übergang zur Volltextsuche.
+	teacherErr := s.handleTeacherAction(ctx, q.Query, resp)
+	if teacherErr == nil {
+		return nil
+	}
+	if !errors.Is(teacherErr, ErrNotFound) {
+		return teacherErr
 	}
 	return s.handleSearchAction(ctx, q.Query, resp)
 }
@@ -182,21 +206,22 @@ func (s *defaultOmniboxService) handleStudentAction(ctx context.Context, query s
 }
 
 // handleTeacherAction lädt die Lehrerdaten bei Scan eines Lehrer-Barcodes.
+// handleTeacherAction lädt eine Lehrkraft über ihren Ausweis.
+//
+// Die Abfrage lag früher als rohes SQL direkt an diesem Service. Sie ist ins
+// UserRepository gewandert, als die Lehrer-Stufe in die präfixlose Auflösung kam: Solange
+// sie nur hinter dem L--Präfix hing, fiel nicht auf, dass sie sich — anders als Buch und
+// Schüler — nicht durch ein Stub-Repository ersetzen ließ und damit ungetestet blieb.
 func (s *defaultOmniboxService) handleTeacherAction(ctx context.Context, query string, resp *OmniboxResult) error {
-	var teacher repository.User
-	// benutzer.rolle ist das ENUM benutzer_rolle ('admin','lehrer','mitarbeiter') — kleingeschrieben.
-	// rolle::text vergleicht cast-sicher und vermeidet "invalid input value for enum" bei Großschreibung.
-	err := s.pool.QueryRow(ctx, "SELECT id, barcode_id, vorname, nachname, rolle FROM benutzer WHERE barcode_id = $1 AND LOWER(rolle::text) = 'lehrer' AND aktiv = true LIMIT 1", query).
-		Scan(&teacher.ID, &teacher.BarcodeID, &teacher.Vorname, &teacher.Nachname, &teacher.Rolle)
+	teacher, err := s.userRepo.GetLehrerByBarcode(ctx, query)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("%w: Lehrer-Barcode %s nicht gefunden", ErrNotFound, query)
-		}
-		// Propagate real DB errors (timeout, connection loss, etc.) as-is → becomes HTTP 500
 		return fmt.Errorf("datenbankfehler beim Laden des Lehrers: %w", err)
 	}
+	if teacher == nil {
+		return fmt.Errorf("%w: Lehrer-Barcode %s nicht gefunden", ErrNotFound, query)
+	}
 	resp.Type = "teacher"
-	resp.Teacher = &teacher
+	resp.Teacher = teacher
 	return nil
 }
 

@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"testing"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"testing"
 )
 
 type mockDB struct{}
@@ -36,21 +36,21 @@ func BenchmarkSaveSettings(b *testing.B) {
 	repo := NewSystemSettingsRepository(&mockDB{})
 	ctx := context.Background()
 	settings := &SystemEinstellungen{
-		FerienLeseclubAktiv: true,
-		LmfStichtag: "08-01",
+		FerienLeseclubAktiv:  true,
+		LmfStichtag:          "08-01",
 		MaxAusleihenSchueler: 10,
-		FristBuchTage: 30,
-		FristMedienTage: 14,
-		MaxOverdueDays: 20,
-		MaxOverdueItems: 5,
-		SchuleName: "Test School",
-		SchuleStrasse: "Test Street 1",
-		SchulePLZ: "12345",
-		SchuleOrt: "Test City",
+		FristBuchTage:        30,
+		FristMedienTage:      14,
+		MaxOverdueDays:       20,
+		MaxOverdueItems:      5,
+		SchuleName:           "Test School",
+		SchuleStrasse:        "Test Street 1",
+		SchulePLZ:            "12345",
+		SchuleOrt:            "Test City",
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = repo.SaveSettings(ctx, settings)  //nolint:errcheck
+		_ = repo.SaveSettings(ctx, settings) //nolint:errcheck
 	}
 }

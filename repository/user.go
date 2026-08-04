@@ -2,8 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // UserRepository definiert die Datenbankoperationen zur Verwaltung von Systembenutzern (Lehrer, Admins, Helfer).
@@ -24,6 +28,11 @@ type UserRepository interface {
 
 	// UpdateUser aktualisiert die Daten eines bestehenden Systembenutzers.
 	UpdateUser(ctx context.Context, p UpdateUserParams) error
+
+	// GetLehrerByBarcode sucht eine AKTIVE Lehrkraft anhand ihres Ausweis-Barcodes.
+	// Kein Treffer liefert (nil, nil) — wie GetCopyByBarcode und GetByBarcode, damit die
+	// Omnibox „nicht gefunden" von einem echten Datenbankfehler unterscheiden kann.
+	GetLehrerByBarcode(ctx context.Context, barcode string) (*User, error)
 }
 
 // postgresUserRepo implementiert das UserRepository für PostgreSQL.
@@ -34,6 +43,27 @@ type postgresUserRepo struct {
 // NewUserRepository erzeugt eine neue Instanz des PostgreSQL-basierten UserRepositorys.
 func NewUserRepository(pool db.PgxPoolIface) UserRepository {
 	return &postgresUserRepo{pool: pool}
+}
+
+// GetLehrerByBarcode sucht eine aktive Lehrkraft über ihren Ausweis.
+//
+// rolle ist das ENUM benutzer_rolle ('admin','lehrer','mitarbeiter','helfer') und wird
+// kleingeschrieben verglichen; rolle::text vermeidet „invalid input value for enum".
+func (r *postgresUserRepo) GetLehrerByBarcode(ctx context.Context, barcode string) (*User, error) {
+	var u User
+	err := r.pool.QueryRow(ctx, `
+		SELECT id, coalesce(barcode_id, ''), vorname, nachname, rolle
+		FROM benutzer
+		WHERE barcode_id = $1 AND lower(rolle::text) = 'lehrer' AND aktiv = true
+		LIMIT 1
+	`, barcode).Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Rolle)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("konnte die Lehrkraft über ihren Barcode nicht lesen: %w", err)
+	}
+	return &u, nil
 }
 
 // GetUsers fragt alle registrierten Benutzer ab.

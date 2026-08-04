@@ -46,9 +46,9 @@ type ShelfWarmer struct {
 // bestandKennzahlen bündelt alle aggregierten Zahlen aus EINEM Scan über
 // buecher_exemplare (statt mehrerer Subselects pro Kennzahl).
 type bestandKennzahlen struct {
-	GesamtBestand      int
-	AktiverBestand     int // physisch vorhanden = nicht ausgesondert
-	AktuellVerliehen   int
+	GesamtBestand    int
+	AktiverBestand   int // physisch vorhanden = nicht ausgesondert
+	AktuellVerliehen int
 	// VerloreneExemplare: nur echte Abgänge (aussonderung_grund VERLUST oder
 	// BESCHAEDIGUNG). Bewusst Aussortiertes und Bestandskorrekturen zählen nicht.
 	VerloreneExemplare int

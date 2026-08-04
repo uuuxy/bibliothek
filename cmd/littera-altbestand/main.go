@@ -57,7 +57,7 @@ type schalter struct {
 	barcodes       string
 	batch          int
 	schuljahrEnde  int
-	lehrerAktiv    bool
+	lehrerInaktiv  bool
 	erzwingen      bool
 }
 
@@ -103,8 +103,9 @@ func lies() schalter {
 	flag.IntVar(&s.batch, "batch", 200, "Datensätze je Transaktion")
 	flag.IntVar(&s.schuljahrEnde, "schuljahr-ende", 0,
 		"Jahr, in dem das laufende Schuljahr endet (0 = aus dem heutigen Datum)")
-	flag.BoolVar(&s.lehrerAktiv, "lehrer-aktiv", false,
-		"Lehrkräfte als aktive Benutzer anlegen (Vorgabe: inaktiv, weil die Anmeldung über den Barcode läuft)")
+	flag.BoolVar(&s.lehrerInaktiv, "lehrer-inaktiv", false,
+		"Lehrkräfte auf aktiv=false setzen; sie sind dann am Scanner NICHT auffindbar "+
+			"(den Login sperrt ohnehin die Platzhalter-Adresse)")
 	flag.BoolVar(&s.erzwingen, "erzwingen", false,
 		"trotz vorhandener Littera-Daten in der Zieldatenbank laufen (legt sie ein zweites Mal an)")
 	flag.Parse()
@@ -181,7 +182,7 @@ func optionen(s schalter) littera.Optionen {
 	opt := littera.StandardOptionen(time.Now())
 	opt.Barcodes = littera.Barcodequelle(s.barcodes)
 	opt.BatchGroesse = s.batch
-	opt.LehrerAktiv = s.lehrerAktiv
+	opt.LehrerInaktiv = s.lehrerInaktiv
 	if s.schuljahrEnde > 0 {
 		opt.SchuljahrEnde = s.schuljahrEnde
 	}

@@ -80,7 +80,7 @@ func (s *Server) Routes() http.Handler {
 
 	loanSvc := service.NewLoanService(s.DB.Pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(s.DB.Pool, studentRepo, loanRepo, auditRepo)
-	omniboxSvc := service.NewOmniboxService(s.DB.Pool, studentRepo, bookRepo, loanRepo, loanSvc, deviceSvc)
+	omniboxSvc := service.NewOmniboxService(s.DB.Pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
 	orderSvc := NewOrderService(s.DB, bookRepo)
 	pdfSvc := NewPDFService()
 

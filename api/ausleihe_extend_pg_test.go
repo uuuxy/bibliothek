@@ -98,7 +98,7 @@ func TestExtendLoanHandler(t *testing.T) {
 		{
 			name:           "Happy Path - Falls back to 28 days if interval missing",
 			ausleiheID:     ausleiheNormal, // Using same loan is fine, we just update it again
-			extensionDays:  0, // Will trigger fallback to 28
+			extensionDays:  0,              // Will trigger fallback to 28
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]interface{}) {
 				// Der vorige Fall hat die Frist bereits auf heute+14 gesetzt. Die liegt
@@ -134,14 +134,14 @@ func TestExtendLoanHandler(t *testing.T) {
 			ausleiheID:     "99999999-9999-9999-9999-999999999999",
 			extensionDays:  28,
 			expectedStatus: http.StatusNotFound,
-			verify: func(t *testing.T, resp map[string]interface{}) {},
+			verify:         func(t *testing.T, resp map[string]interface{}) {},
 		},
 		{
 			name:           "Error - Loan already returned",
 			ausleiheID:     ausleiheReturned,
 			extensionDays:  28,
 			expectedStatus: http.StatusNotFound,
-			verify: func(t *testing.T, resp map[string]interface{}) {},
+			verify:         func(t *testing.T, resp map[string]interface{}) {},
 		},
 	}
 

@@ -56,6 +56,12 @@ const sqlSchuelerEinfuegen = `
 // leer. Ein Platzhalter muss also her, und er muss unzustellbar sein: .invalid ist nach
 // RFC 2606 dauerhaft reserviert und wird von keinem Mailserver aufgelöst. Ein erfundener
 // Wert unter der Schuldomäne ginge dagegen irgendwann an eine echte, fremde Person.
+//
+// DIESE Adresse ist auch der Grund, warum importierte Lehrkräfte trotzdem aktiv=true
+// bekommen dürfen: Die Anmeldung läuft ausschließlich über IMAP gegen den Schul-
+// Mailserver (auth/handlers.go), und littera-4908@littera.invalid gibt es dort nicht.
+// Login und Ausweis sind damit über das richtige Feld getrennt — nicht über aktiv, das
+// die Omnibox für die Ausweis-Suche braucht.
 const platzhalterDomain = "@littera.invalid"
 
 const sqlBenutzerEinfuegen = `
@@ -269,7 +275,7 @@ func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser
 		uebernahme.Nullbar(p.ausweis(l)),
 		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
 		p.kuerze(l, "nachname", l.Nachname, uebernahme.MaxMedientyp),
-		p.mailadresse(l), p.s.opt.LehrerAktiv, p.s.opt.Jetzt,
+		p.mailadresse(l), !p.s.opt.LehrerInaktiv, p.s.opt.Jetzt,
 	).Scan(&id)
 	if err != nil {
 		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)

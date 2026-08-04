@@ -64,6 +64,12 @@ DELETE FROM schueler  WHERE lusd_id LIKE 'littera:%';
 DELETE FROM benutzer  WHERE rolle = 'lehrer' AND email LIKE '%@littera.invalid';
 ```
 
+**Lehrkräfte** werden mit `aktiv = true` angelegt — die Ausweis-Abfrage der Omnibox
+filtert darauf, eine inaktive Lehrkraft wäre am Scanner unauffindbar. Den Login sperrt
+statt dessen die Adresse: Anmeldung geht ausschließlich über IMAP gegen den Schul-Mail-
+server, und `littera-4908@littera.invalid` gibt es dort nicht. `-lehrer-inaktiv` kehrt das
+um, macht die Karten aber wertlos.
+
 **Rückgabewerte:** 0 vollständig · 1 abgebrochen · 2 unvollständig (Details im Protokoll).
 
 > Das frühere `cmd/littera_migration` ist entfallen. Es fragte `SELECT TitelID, Titel,
