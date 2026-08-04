@@ -3,6 +3,7 @@ package littera
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -61,9 +62,46 @@ func TestEchterAltbestand(t *testing.T) {
 	t.Logf("Altbestand: %d Titel, %d Exemplare, %d mit Signatur, davon %d uneinheitlich",
 		len(titel), len(exemplare), len(signaturen), len(abweichend))
 
+	pruefeEtiketten(t, exemplare)
 	pruefeAutorenAbdeckung(t, basis, titel)
 	leser := pruefeLeserEinordnung(t, basis)
 	pruefeAusleihen(t, basis, leser, exemplare)
+}
+
+// pruefeEtiketten belegt, dass die Spalte `Exemplarnummer` wirklich das ist, was auf dem
+// Buch klebt.
+//
+// Daran hängt die Entscheidung, ob der Bestand nach dem Umstieg ohne Neubeklebung
+// scannbar bleibt: Der Import schreibt diese Nummer nach buecher_exemplare.barcode_id.
+// Wäre die Annahme falsch, wären 61.520 Etiketten wertlos — und das fiele erst an der
+// Theke auf. Also wird die Druckzeichenkette entschlüsselt und gegengehalten.
+func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
+	t.Helper()
+
+	abweichend, unlesbar := 0, 0
+	var beispiel string
+	for _, e := range exemplare {
+		nummer, _, ok := BarcodeInhalt(e.Barcode)
+		if !ok {
+			unlesbar++
+			continue
+		}
+		if nummer != e.Exemplarnummer {
+			abweichend++
+			if beispiel == "" {
+				beispiel = e.Barcode + " → " + nummer + ", Spalte sagt " + e.Exemplarnummer
+			}
+		}
+	}
+	if unlesbar > 0 {
+		t.Errorf("%d Etiketten folgen nicht dem bekannten Muster – die Entschluesselung stimmt nicht", unlesbar)
+	}
+	if abweichend > 0 {
+		t.Errorf("%d Etiketten tragen eine ANDERE Nummer als die Spalte Exemplarnummer (%s) – "+
+			"barcode_id waere dann falsch", abweichend, beispiel)
+	}
+	t.Logf("Etiketten: %d von %d entschluesselt und mit der Exemplarnummer deckungsgleich",
+		len(exemplare)-unlesbar-abweichend, len(exemplare))
 }
 
 // pruefeLeserEinordnung belegt, dass die Weiche Schüler/Lehrkraft am echten Bestand
@@ -268,6 +306,24 @@ func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
 		t.Errorf("nur %d von %d Titeln haben einen Autor — Funktionsschluessel pruefen",
 			nachher, len(titel))
 	}
+	// Und die Gegenprobe auf die QUALITAET: Das Verfasserfeld wurde in dieser Bibliothek
+	// jahrelang auch zum Kennzeichnen des Bestands benutzt. Ohne bestandsmarken stuende
+	// bei 7.131 Titeln „Buchbestand Bibliothek" mitten in der Autorenangabe — eine hohe
+	// Abdeckung, die im Katalog schlicht falsch ist.
+	verschmutzt := 0
+	for _, ti := range MitAutoren(titel, autoren) {
+		for _, teil := range strings.Split(ti.Autor, "; ") {
+			if bestandsmarken[teil] {
+				verschmutzt++
+				break
+			}
+		}
+	}
+	if verschmutzt > 0 {
+		t.Errorf("%d Titel tragen einen Bestandsvermerk im Autorenfeld – bestandsmarken greift nicht",
+			verschmutzt)
+	}
+
 	t.Logf("Autoren: %d von %d ueber Verfasserangabe, %d nach Personen-Aufloesung",
 		vorher, len(titel), nachher)
 }

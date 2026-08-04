@@ -15,6 +15,51 @@ import (
 // Altbestand entfallen 19.191 von 20.562 Zuordnungen auf die 0.
 const funktionVerfasser = "0"
 
+// bestandsmarken sind Einträge aus `Personen`, die keine Personen sind.
+//
+// In der Bibliothek wurde das Verfasserfeld über Jahre auch zum Kennzeichnen des
+// Bestands benutzt. Für Littera ist das nicht unterscheidbar — die Tabelle `Personen`
+// hat außer dem Namen kein Merkmal, und diese Einträge tragen dieselben Flags wie
+// „Neebe, Reinhard". Erst der Blick in den geschriebenen Katalog zeigt es:
+//
+//	Buchbestand Bibliothek   6.711 Titel
+//	Bibliothek                 760
+//	Klassensatz/Bibliothek     584
+//	LMF                        363
+//	U plus                     202
+//
+// Ohne diese Liste stünde bei 7.131 Titeln ein Standortvermerk mitten in der
+// Autorenangabe („Shaw, George Bernard; Buchbestand Bibliothek") und bei 1.486 stünde er
+// als einziger Autor da. Verloren geht dabei nichts: Der Standort steht in der Signatur,
+// LMF-Bestand ist dort am Präfix erkennbar (24.630 Exemplare).
+var bestandsmarken = map[string]bool{
+	"Buchbestand Bibliothek": true,
+	"Bibliothek":             true,
+	"Klassensatz/Bibliothek": true,
+	"LMF":                    true,
+	"U plus":                 true,
+}
+
+// ohneBestandsmarken räumt eine Autorenangabe auf.
+//
+// Nötig auch für den Freitext `Titel.Verfasserangabe`, nicht nur für die
+// Personen-Zuordnung: Dort stehen dieselben Vermerke, teils allein („Bibliothek"), teils
+// zwischen echten Namen („Stefan Wolf ; Bibliothek"). Getrennt wird an „;", weil Littera
+// beide Quellen so schreibt.
+func ohneBestandsmarken(autor string) string {
+	if autor == "" {
+		return ""
+	}
+	var behalten []string
+	for _, teil := range strings.Split(autor, ";") {
+		teil = strings.TrimSpace(teil)
+		if teil != "" && !bestandsmarken[teil] {
+			behalten = append(behalten, teil)
+		}
+	}
+	return strings.Join(behalten, "; ")
+}
+
 // LesePersonen liest die Tabelle `Personen` als Schlüssel → Name.
 //
 // Die Namen stehen in Katalogform („Neebe, Reinhard"), teils auch nur als Nachname
@@ -92,8 +137,8 @@ func AutorenJeTitel(personen map[string]string, zuordnungen io.Reader) (map[stri
 		gesehen := map[string]bool{}
 		for _, z := range liste {
 			name := personen[z.personID]
-			if name == "" || gesehen[name] {
-				continue // unbekannte Person oder Dublette in der Zuordnung
+			if name == "" || gesehen[name] || bestandsmarken[name] {
+				continue // unbekannte Person, Dublette in der Zuordnung oder Bestandsvermerk
 			}
 			gesehen[name] = true
 			namen = append(namen, name)

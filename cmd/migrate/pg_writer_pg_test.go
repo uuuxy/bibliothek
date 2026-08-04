@@ -80,7 +80,7 @@ func TestBatchUeberlebtEinzelnenZeilenfehler(t *testing.T) {
 	}
 
 	seq := 0
-	res, err := insertBatch(context.Background(), pool, batch, map[string]int{}, el, &seq)
+	res, err := insertBatch(context.Background(), pool, batch, map[string]string{}, el, &seq)
 	if err != nil {
 		t.Fatalf("Ein Datensatzfehler darf den Batch nicht abbrechen, meldete aber: %v", err)
 	}
@@ -104,8 +104,8 @@ func TestBatchUeberlebtEinzelnenZeilenfehler(t *testing.T) {
 		t.Errorf("der kollidierende Titel darf nicht in der Datenbank stehen, gefunden: %d", n)
 	}
 
-	if el.failures != 1 || el.warnings != 0 {
-		t.Errorf("genau 1 FEHLER und 0 WARNUNGEN erwartet, gezählt: %d/%d", el.failures, el.warnings)
+	if el.FehlerAnzahl() != 1 || el.Warnungen() != 0 {
+		t.Errorf("genau 1 FEHLER und 0 WARNUNGEN erwartet, gezählt: %d/%d", el.FehlerAnzahl(), el.Warnungen())
 	}
 
 	// Das Protokoll muss die Ursache benennen, nicht nur den Ausfall — dafür existiert
@@ -133,7 +133,7 @@ func TestTitelKommtGanzOderGarNicht(t *testing.T) {
 	batch := []mysqlMedium{quellzeile(7, "Dreibändiges Werk", "", 3)}
 
 	seq := 0
-	res, err := insertBatch(context.Background(), pool, batch, map[string]int{}, el, &seq)
+	res, err := insertBatch(context.Background(), pool, batch, map[string]string{}, el, &seq)
 	if err != nil {
 		t.Fatalf("Barcode-Kollision ist ein Datensatzfehler, kein Abbruch: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestISBNReservierungWirdBeiRuecknahmeFrei(t *testing.T) {
 	}
 
 	seq := 0
-	seen := map[string]int{}
+	seen := map[string]string{}
 	res, err := insertBatch(context.Background(), pool, batch, seen, el, &seq)
 	if err != nil {
 		t.Fatalf("unerwarteter Abbruch: %v", err)
@@ -207,16 +207,16 @@ func TestFatalerFehlerBrichtAbStattZuLuegen(t *testing.T) {
 		quellzeile(22, "Zwei", "", 1),
 	}
 	seq := 0
-	res, err := insertBatch(ctx, pool, batch, map[string]int{}, el, &seq)
+	res, err := insertBatch(ctx, pool, batch, map[string]string{}, el, &seq)
 	if err == nil {
 		t.Fatal("abgebrochener Kontext muss einen Fehler liefern, kein stilles Überspringen")
 	}
 	if res.Titel != 0 || res.Exemplare != 0 {
 		t.Errorf("bei Abbruch darf nichts als übernommen gemeldet werden, gemeldet: %+v", res)
 	}
-	if el.failures != 0 {
+	if el.FehlerAnzahl() != 0 {
 		t.Errorf("ein Abbruch ist kein Datensatzfehler und darf keine FEHLER-Zeilen erzeugen, "+
-			"gezählt: %d", el.failures)
+			"gezählt: %d", el.FehlerAnzahl())
 	}
 }
 
@@ -233,7 +233,7 @@ func TestUeberlangeFelderWerdenGekuerztStattVerloren(t *testing.T) {
 	batch := []mysqlMedium{quellzeile(31, langerTitel, "", 1)}
 
 	seq := 0
-	res, err := insertBatch(context.Background(), pool, batch, map[string]int{}, el, &seq)
+	res, err := insertBatch(context.Background(), pool, batch, map[string]string{}, el, &seq)
 	if err != nil {
 		t.Fatalf("unerwarteter Abbruch: %v", err)
 	}
@@ -252,8 +252,8 @@ func TestUeberlangeFelderWerdenGekuerztStattVerloren(t *testing.T) {
 	if !strings.HasPrefix(gespeichert, "ÄÄÄ") {
 		t.Errorf("die Kürzung hat die Umlaute zerlegt: %q", gespeichert[:12])
 	}
-	if el.warnings != 1 || el.failures != 0 {
-		t.Errorf("Kürzung ist eine WARNUNG, kein FEHLER; gezählt: %d/%d", el.warnings, el.failures)
+	if el.Warnungen() != 1 || el.FehlerAnzahl() != 0 {
+		t.Errorf("Kürzung ist eine WARNUNG, kein FEHLER; gezählt: %d/%d", el.Warnungen(), el.FehlerAnzahl())
 	}
 	if text := protokoll(); !strings.Contains(text, "WARNUNG") || !strings.Contains(text, "titel war 300 Zeichen") {
 		t.Errorf("Protokoll benennt die Kürzung nicht nachvollziehbar:\n%s", text)

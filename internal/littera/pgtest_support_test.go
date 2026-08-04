@@ -1,4 +1,4 @@
-package main
+package littera
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"bibliothek/internal/uebernahme"
 
@@ -16,20 +17,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Tests in diesem Paket laufen gegen ECHTES PostgreSQL, und das ist keine Kür:
-// Der Fehler, den sie absichern, existiert ausschließlich dort. Postgres versetzt eine
-// Transaktion beim ersten Fehler in den Abbruchzustand (SQLSTATE 25P02) — ein Mock kennt
-// diesen Zustand nicht und lässt jedes `continue` in der Schleife plausibel aussehen.
-// Genau deshalb ist der Datenverlust in cmd/migrate jahrelang unbemerkt geblieben.
+// Die Schreibpfad-Tests laufen gegen ECHTES PostgreSQL, und das ist keine Kür: Was hier
+// abgesichert wird — Savepoint je Datensatz, Verhalten bei 23505, partielle Unique-Indizes
+// wie uniq_ausleihen_aktiv_exemplar — existiert nur dort. Ein Mock kennt weder den
+// Abbruchzustand einer Transaktion (25P02) noch die Constraints aus schema.sql und ließe
+// jeden Datenverlust plausibel aussehen.
 //
-// Ohne TEST_DATABASE_URL werden sie übersprungen. In CI setzt der Workflow die Variable
-// auf einen Postgres-Service-Container.
+// Ohne TEST_DATABASE_URL werden sie übersprungen; in CI setzt der Workflow die Variable.
 
 const testDBEnvVar = "TEST_DATABASE_URL"
 
-// testDBLockKey serialisiert die Test-DB-Nutzung über db/, repository/, api/ und
-// cmd/migrate/ — alle teilen sich EINE Test-DB, und `go test ./...` startet ihre Binaries
-// parallel. Ohne den Lock kollidieren gleichzeitige DROP SCHEMA (Deadlock). Wert identisch
+// testDBLockKey serialisiert die Test-DB-Nutzung über db/, repository/, api/, cmd/migrate/
+// und internal/littera/ — alle teilen sich EINE Test-DB, und `go test ./...` startet ihre
+// Binaries parallel. Ohne den Lock kollidieren gleichzeitige DROP SCHEMA. Wert identisch
 // in allen Paketen halten.
 const testDBLockKey int64 = 0x42DB0001
 
@@ -40,7 +40,6 @@ var (
 	lockConn   *pgx.Conn // hält den Lock bis Prozessende
 )
 
-// pgTestPool liefert den gemeinsamen Test-Pool mit geladenem schema.sql.
 func pgTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 
@@ -48,7 +47,6 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 	if dsn == "" {
 		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", testDBEnvVar)
 	}
-
 	pgTestOnce.Do(func() { pgTestDB, pgTestErr = baueTestDB(dsn) })
 	if pgTestErr != nil {
 		t.Fatalf("Test-DB konnte nicht vorbereitet werden: %v", pgTestErr)
@@ -56,10 +54,6 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 	return pgTestDB
 }
 
-// schemaPfad wird über runtime.Caller aufgelöst statt relativ zum Arbeitsverzeichnis:
-// die Tests wechseln per t.Chdir in ein temporäres Verzeichnis, damit das Fehlerprotokoll
-// nicht im Repository landet. Ein relativer Pfad wäre danach kaputt — je nach
-// Ausführungsreihenfolge, also mal grün und mal rot.
 func schemaPfad() string {
 	_, dieseDatei, _, _ := runtime.Caller(0)
 	return filepath.Join(filepath.Dir(dieseDatei), "..", "..", "schema.sql")
@@ -88,7 +82,6 @@ func baueTestDB(dsn string) (*pgxpool.Pool, error) {
 		pool.Close()
 		return nil, err
 	}
-
 	if _, err := pool.Exec(ctx, `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`); err != nil {
 		return nil, err
 	}
@@ -117,36 +110,53 @@ func pruefeTestDatenbank(ctx context.Context, pool *pgxpool.Pool) error {
 	return nil
 }
 
-// leereBestand setzt Titel und Exemplare zurück. Anders als in db/ ist kein Rollback um
-// den Testfall möglich: insertBatch öffnet seine eigene Transaktion, und genau deren
+// leereAlles setzt die vom Schreibpfad berührten Tabellen zurück. Ein Rollback um den
+// Testfall ist nicht möglich: Der Schreiber öffnet eigene Transaktionen, und genau deren
 // COMMIT ist hier der Prüfgegenstand.
-func leereBestand(t *testing.T, pool *pgxpool.Pool) {
+func leereAlles(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
-	if _, err := pool.Exec(context.Background(),
-		`TRUNCATE buecher_exemplare, buecher_titel RESTART IDENTITY CASCADE`); err != nil {
-		t.Fatalf("Bestand konnte nicht geleert werden: %v", err)
+	_, err := pool.Exec(context.Background(),
+		`TRUNCATE ausleihen, buecher_exemplare, buecher_titel, schueler, benutzer RESTART IDENTITY CASCADE`)
+	if err != nil {
+		t.Fatalf("Tabellen konnten nicht geleert werden: %v", err)
 	}
 }
 
-// testLogger legt das Fehlerprotokoll in einem temporären Verzeichnis an und liefert eine
-// Funktion, die es geleert zurückliest — das Protokoll ist gepuffert, ungeflusht steht
-// dort nichts.
-func testLogger(t *testing.T) (*uebernahme.Protokoll, func() string) {
+// testSchreiber baut einen Schreiber mit Protokoll in einem temporären Verzeichnis und
+// liefert eine Funktion, die das Protokoll geleert zurückliest.
+func testSchreiber(t *testing.T, pool *pgxpool.Pool, anpassen func(*Optionen)) (*Schreiber, func() string) {
 	t.Helper()
-	pfad := filepath.Join(t.TempDir(), "migration_errors.log")
-	el, err := newErrLoggerAt(pfad)
+	pfad := filepath.Join(t.TempDir(), "littera_import.log")
+	prot, err := uebernahme.NeuesProtokoll(pfad, "littera_id")
 	if err != nil {
-		t.Fatalf("Fehlerprotokoll konnte nicht angelegt werden: %v", err)
+		t.Fatalf("Protokoll: %v", err)
 	}
-	t.Cleanup(el.Schliessen)
-	return el, func() string {
-		if err := el.Leeren(); err != nil {
-			t.Fatalf("Fehlerprotokoll konnte nicht geschrieben werden: %v", err)
+	t.Cleanup(prot.Schliessen)
+
+	opt := StandardOptionen(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC))
+	opt.BatchGroesse = 3 // klein, damit die Tests mehrere Transaktionen durchlaufen
+	if anpassen != nil {
+		anpassen(&opt)
+	}
+
+	lies := func() string {
+		if err := prot.Leeren(); err != nil {
+			t.Fatalf("Protokoll schreiben: %v", err)
 		}
 		b, err := os.ReadFile(pfad) // #nosec G304 - Pfad aus t.TempDir()
 		if err != nil {
-			t.Fatalf("Fehlerprotokoll konnte nicht gelesen werden: %v", err)
+			t.Fatalf("Protokoll lesen: %v", err)
 		}
 		return string(b)
 	}
+	return NeuerSchreiber(pool, prot, opt), lies
+}
+
+func zaehle(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(), sql, args...).Scan(&n); err != nil {
+		t.Fatalf("Zählung (%s): %v", sql, err)
+	}
+	return n
 }

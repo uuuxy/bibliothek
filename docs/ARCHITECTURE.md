@@ -169,7 +169,7 @@ if err := rows.Err(); err != nil {
 | `emersion/go-imap` | IMAP für E-Mail-Eingang |
 
 ### Build-Tags
-- `//go:build odbc` — isoliert die `cmd/littera_migration`-ODBC-Abhängigkeit; Standardbuild (`go build ./...`) benötigt kein `unixODBC`
+- keine. Der frühere `//go:build odbc` für `cmd/littera_migration` ist mit dem Werkzeug entfallen; der Littera-Altbestand kommt jetzt über `mdb-export`-CSVs (`cmd/littera-altbestand`) und braucht kein `unixODBC`.
 
 ---
 

@@ -2,16 +2,60 @@
 
 ---
 
-## 1. LITTERA-Import (`cmd/littera_migration`)
+## 1. LITTERA-Altbestand (`cmd/littera-altbestand`)
 
-Migriert Altbestände aus LITTERA-Exporten in die neue Datenbankstruktur.
+Überträgt den Littera-Altbestand nach PostgreSQL. Quelle sind `mdb-export`-CSVs, nicht
+die Access-Datei selbst: Deren ODBC-Treiber gibt es nur unter Windows.
 
-- **Funktionsweise:** Verarbeitet CSV-Dumps der LITTERA-Software (Titelinformationen + Barcodes physischer Exemplare).
-- **Build-Tag:** Benötigt `unixODBC`. Standard-Build schließt dieses Tool aus — kein ODBC auf dem Server nötig:
-  ```bash
-  go build -tags odbc ./cmd/littera_migration/...
-  ```
-- **Architektur:** Transaktionaler Import — Buchtitel (`buecher_titel`) und Exemplare (`buecher_exemplare`) werden atomar angelegt.
+```bash
+# 1. Export erzeugen (mdbtools, plattformunabhängig)
+for t in Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih; do
+  mdb-export littera_sav.mdb "$t" > "littera-export/$(echo "$t" | tr 'A-Z' 'a-z').csv"
+done
+
+# 2. Trockenlauf – liest und berichtet, schreibt nichts
+go run ./cmd/littera-altbestand -csv ./littera-export -trocken
+
+# 3. Übernahme
+go run ./cmd/littera-altbestand -csv ./littera-export -db "$DATABASE_URL"
+```
+
+**Was übernommen wird**, steuern `-bestand` (Vorgabe an), `-personen` und `-ausleihen`
+(Vorgabe aus). Die Vorgabe ist Absicht: Der geprüfte Export ist ein Stand von 2010
+(Schüler-Geburtsjahre 1989–2001, letzte Ausleihe 2010). Personen und Ausleihen daraus
+legen Schüler an, die heute Mitte dreißig sind, und melden ein Viertel des Bestands als
+verliehen. Für einen aktuellen Export sind beide Schalter richtig.
+
+**Barcodes:** `-barcodes littera` (Vorgabe) übernimmt Litteras Exemplarnummer — genau die
+Nummer, die auf den vorhandenen Etiketten steht (belegt in `littera.BarcodeInhalt`:
+61.520 von 61.520 aus der Druckzeichenkette rekonstruiert). Der Bestand bleibt damit ohne
+Neubeklebung scannbar, sofern die Lesegeräte den Zifferninhalt liefern — das ist an einem
+echten Buch zu prüfen. `-barcodes neu` vergibt stattdessen frische `B-XXXXX` aus
+`barcode_seq`, derselben Sequenz, aus der die Anwendung ihre Barcodes zieht.
+
+**Härtung:** Ein Savepoint je Datensatz (`internal/uebernahme`), Postgres-Fehler nach
+SQLSTATE eingeordnet, Abwertungen (verworfene ISBN, gekürztes Feld) getrennt von
+Ausfällen protokolliert nach `littera_import.log`. Nach jedem Abschnitt wird die gemeldete
+Zahl gegen den tatsächlichen Zeilenzuwachs gehalten.
+
+**Wiederholung:** Ein zweiter Lauf wird abgelehnt — es gibt keinen natürlichen Schlüssel,
+an dem Postgres die Dublette erkennen könnte. Zum Aufräumen:
+
+```sql
+DELETE FROM ausleihen a USING buecher_exemplare e
+  WHERE a.exemplar_id = e.id AND e.erweiterte_eigenschaften ? 'littera_id';
+DELETE FROM buecher_exemplare WHERE erweiterte_eigenschaften ? 'littera_id';
+DELETE FROM buecher_titel     WHERE erweiterte_eigenschaften ? 'littera_id';
+DELETE FROM ausleihen WHERE schueler_id IN (SELECT id FROM schueler WHERE lusd_id LIKE 'littera:%');
+DELETE FROM schueler  WHERE lusd_id LIKE 'littera:%';
+DELETE FROM benutzer  WHERE rolle = 'lehrer' AND email LIKE '%@littera.invalid';
+```
+
+**Rückgabewerte:** 0 vollständig · 1 abgebrochen · 2 unvollständig (Details im Protokoll).
+
+> Das frühere `cmd/littera_migration` ist entfallen. Es fragte `SELECT TitelID, Titel,
+> Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL` ab — von diesen Spalten existiert in
+> einer echten Littera-Datei einzig `ISBN`. Es ist nie gegen echte Daten gelaufen.
 
 ---
 

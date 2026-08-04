@@ -37,11 +37,34 @@ func DatumAus(roh string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
+// GeburtsdatumAus liest ein Geburtsdatum und holt es zurück in die Vergangenheit.
+//
+// Die Jahrhundertgrenze bei „06" liegt in Go fest auf 69: 69–99 werden 19xx, 00–68
+// werden 20xx. Für Ausleihdaten stimmt das, für Geburtsdaten nicht. Gemessen am
+// Altbestand landen 69 Personen — Lehrkräfte der Jahrgänge 1946 bis 1968 — dadurch in
+// den Jahren 2046 bis 2068.
+//
+// Ein Geburtsdatum in der Zukunft ist immer falsch, also wird ein Jahrhundert abgezogen.
+// jetzt wird übergeben, damit der Test nicht von der Systemuhr abhängt.
+func GeburtsdatumAus(roh string, jetzt time.Time) (time.Time, bool) {
+	t, ok := DatumAus(roh)
+	if !ok {
+		return time.Time{}, false
+	}
+	if t.After(jetzt) {
+		t = t.AddDate(-100, 0, 0)
+	}
+	return t, true
+}
+
 // Ausleihe ist eine Zeile aus der Littera-Tabelle `Verleih`.
 type Ausleihe struct {
-	ID             string
-	ExemplarID     string // FK auf Exemplar.Buchungsnummer
-	LeserID        string // FK auf Leser.Lesernummer — Schüler ODER Lehrkraft
+	ID         string
+	ExemplarID string // FK auf Exemplar.Buchungsnummer
+	// LeserID zeigt auf Leser.BUCHUNGSNUMMER, nicht auf die Lesernummer — siehe die
+	// Warnung am Typ Leser. Über die Lesernummer träfen nur 792 von 15.615 Ausleihen.
+	LeserID string
+
 	AusgeliehenAm  time.Time
 	Frist          time.Time // Rückgabedatum = die Frist, nicht die Rückgabe
 	RueckgabeAm    time.Time // IstRückgabedatum — nur gesetzt, wenn zurückgegeben

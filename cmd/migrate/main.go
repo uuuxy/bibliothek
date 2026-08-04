@@ -37,6 +37,8 @@ import (
 	"os"
 	"time"
 
+	"bibliothek/internal/uebernahme"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -80,7 +82,7 @@ func run() int {
 		log.Printf("FEHLER: Fehlerprotokoll konnte nicht geöffnet werden: %v", err)
 		return exitAbgebrochen
 	}
-	defer el.close()
+	defer el.Schliessen()
 
 	mysqlDB, err := connectMySQL(ctx, mysqlDSN)
 	if err != nil {
@@ -114,7 +116,7 @@ func run() int {
 	defer pgPool.Close()
 
 	bericht := fuehreUebernahmeDurch(ctx, pgPool, titles, el)
-	bericht.Warnungen, bericht.Fehler = el.warnings, el.failures
+	bericht.Warnungen, bericht.Fehler = el.Warnungen(), el.FehlerAnzahl()
 	printSummary(bericht)
 	return bericht.exitCode()
 }
@@ -194,15 +196,15 @@ func connectPostgres(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 // doDryRun prüft die Quelldaten, ohne zu schreiben — inklusive der Freitextlängen, denn
 // überlange Felder sind neben doppelten ISBNs der zweite Grund, aus dem eine Übernahme
 // Datensätze abwertet. Wer den Trockenlauf macht, will beides vorher wissen.
-func doDryRun(titles []mysqlMedium, el *errLogger) {
+func doDryRun(titles []mysqlMedium, el *uebernahme.Protokoll) {
 	log.Println("DRY-RUN: Validiere Datensätze ohne Schreibzugriff auf PostgreSQL …")
-	seenISBNs := make(map[string]int)
+	seenISBNs := make(map[string]string)
 	for _, m := range titles {
-		klaerISBN(m, seenISBNs, el)
+		uebernahme.KlaereISBN(el, quellID(m), isbnRoh(m), seenISBNs)
 		kuerzeFelder(el, m)
 	}
 	// #nosec G706
-	log.Printf("DRY-RUN abgeschlossen: %d Anmerkungen → %s", el.warnings, errorLogPath)
+	log.Printf("DRY-RUN abgeschlossen: %d Anmerkungen → %s", el.Warnungen(), errorLogPath)
 }
 
 // fuehreUebernahmeDurch klammert den eigentlichen Import zwischen zwei Zählungen des
@@ -210,7 +212,7 @@ func doDryRun(titles []mysqlMedium, el *errLogger) {
 // Fehlerklasse, die diese Datei nötig gemacht hat: eine Zahl im Abschlussbericht, die
 // niemand je gegen die Datenbank gehalten hat.
 func fuehreUebernahmeDurch(
-	ctx context.Context, pgPool *pgxpool.Pool, titles []mysqlMedium, el *errLogger,
+	ctx context.Context, pgPool *pgxpool.Pool, titles []mysqlMedium, el *uebernahme.Protokoll,
 ) abschlussbericht {
 	bericht := abschlussbericht{QuellTitel: len(titles)}
 
@@ -254,7 +256,7 @@ func zaehleBestand(ctx context.Context, pool *pgxpool.Pool) (titel, exemplare in
 // sondern die Verbindung oder die Transaktion selbst. Weiterzulaufen hieße, Tausende
 // Zeilen „übersprungen" zu protokollieren, die in Wahrheit nie versucht wurden.
 func doImport(
-	ctx context.Context, pgPool *pgxpool.Pool, titles []mysqlMedium, el *errLogger, bericht *abschlussbericht,
+	ctx context.Context, pgPool *pgxpool.Pool, titles []mysqlMedium, el *uebernahme.Protokoll, bericht *abschlussbericht,
 ) {
 	barcodeSeq, err := highestBarcodeSeq(ctx, pgPool)
 	if err != nil {
@@ -265,7 +267,7 @@ func doImport(
 	// #nosec G706
 	log.Printf("Höchster vorhandener Barcode: B-%05d → Nächster: B-%05d", barcodeSeq, barcodeSeq+1)
 
-	seenISBNs := make(map[string]int)
+	seenISBNs := make(map[string]string)
 	totalBatches := int(math.Ceil(float64(len(titles)) / float64(*batchSize)))
 
 	for i := 0; i < len(titles); i += *batchSize {

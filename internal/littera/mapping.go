@@ -1,13 +1,13 @@
 // Package littera liest einen Littera-Altbestand und bildet ihn auf die Begriffe
 // dieser Anwendung ab.
 //
-// Warum CSV und nicht ODBC: Das vorhandene Werkzeug cmd/littera_migration spricht die
+// Warum CSV und nicht ODBC: Das frühere Werkzeug cmd/littera_migration sprach die
 // Access-Datei über den Treiber „Microsoft Access Driver (*.mdb, *.accdb)" an — den gibt
 // es nur unter Windows. Weder der Rechner, auf dem gearbeitet wird, noch der Container,
 // in dem die Anwendung läuft, können ihn laden. `mdb-export` erzeugt aus derselben Datei
 // CSV, läuft überall, und das Ergebnis lässt sich als Textdatei prüfen und versionieren.
 //
-// Warum überhaupt neu: Die Abfragen im alten Werkzeug lauten
+// Warum überhaupt neu: Die Abfragen im alten Werkzeug lauteten
 // `SELECT TitelID, Titel, Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL`. Keine dieser
 // Spalten existiert — bis auf ISBN. Der Kommentar dort sagt es offen („Wir nehmen hier
 // Standardnamen an"): Es ist ein Gerüst, das nie an eine echte Littera-Datei angepasst
@@ -41,19 +41,27 @@ type Titel struct {
 	Untertitel       string
 	Autor            string
 	ISBN             string
-	VerlagID         string
+	VerlagID         string // Schlüssel auf Verlag.Buchungsnummer, kein Freitext
+	MedienartID      string // Schlüssel auf Medienart.Buchungsnummer, kein Freitext
 	Erscheinungsjahr int
 	Beschreibung     string
 }
 
 // Exemplar ist ein physisches Stück aus der Littera-Tabelle `Exemplar`.
+//
+// Zwei Nummern, wie beim Leser — und wieder mit verschiedenen Aufgaben:
+//
+//   - ID = `Buchungsnummer` ist der interne Schlüssel. Darauf zeigt `Verleih.Exemplar`.
+//   - Exemplarnummer ist die Nummer, die auf dem Etikett am Buch steht. Sie ist der
+//     Kandidat für `buecher_exemplare.barcode_id` (siehe BarcodeInhalt).
 type Exemplar struct {
-	ID           string // Buchungsnummer
-	TitelID      string // Fremdschlüssel auf Titel.Buchungsnummer
-	Barcode      string
-	Signatur     string // Sig1 + Sig2, zusammengesetzt
-	Zugangsdatum string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
-	Preis        float64
+	ID             string // Buchungsnummer — Ziel des Fremdschlüssels in Verleih
+	Exemplarnummer string // die Nummer auf dem Etikett
+	TitelID        string // Fremdschlüssel auf Titel.Buchungsnummer
+	Barcode        string // Litteras Druckzeichenkette, NICHT der Scanwert (siehe BarcodeInhalt)
+	Signatur       string // Sig1 + Sig2, zusammengesetzt
+	Zugangsdatum   string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
+	Preis          float64
 }
 
 // leseTabelle liest eine mdb-export-CSV in Zeilen-Abbildungen (Spaltenname → Wert).
@@ -111,6 +119,7 @@ func LeseTitel(r io.Reader) ([]Titel, error) {
 			Autor:            autorAus(z),
 			ISBN:             strings.TrimSpace(z["ISBN"]),
 			VerlagID:         strings.TrimSpace(z["Verlag"]),
+			MedienartID:      strings.TrimSpace(z["Medienart"]),
 			Erscheinungsjahr: jahrAus(z["Erscheinungsjahr"]),
 			Beschreibung:     strings.TrimSpace(z["Annotation"]),
 		})
@@ -124,11 +133,14 @@ func LeseTitel(r io.Reader) ([]Titel, error) {
 // `Verfasserangabe` trägt den Namen in Lesefassung („Reinhard Neebe"), und
 // `Haupteintrag` wiederholt bei Sachbüchern schlicht den Titel — der taugt deshalb
 // NICHT als Rückfall, sonst stünde der Buchtitel im Autorenfeld.
+//
+// Bestandsvermerke fliegen raus (siehe ohneBestandsmarken): In 2.316 Titeln steht in
+// diesem Freitextfeld „Buchbestand Bibliothek" oder „LMF" statt oder neben einem Namen.
 func autorAus(z map[string]string) string {
-	if v := strings.TrimSpace(z["Verfasserangabe"]); v != "" {
+	if v := ohneBestandsmarken(strings.TrimSpace(z["Verfasserangabe"])); v != "" {
 		return v
 	}
-	return strings.TrimSpace(z["Urheber"])
+	return ohneBestandsmarken(strings.TrimSpace(z["Urheber"]))
 }
 
 // jahrAus wandelt das als TEXT geführte Erscheinungsjahr in eine Zahl.
@@ -175,12 +187,13 @@ func LeseExemplare(r io.Reader) ([]Exemplar, error) {
 			continue // ein Exemplar ohne Titel ist im Katalog nicht darstellbar
 		}
 		exemplare = append(exemplare, Exemplar{
-			ID:           id,
-			TitelID:      titelID,
-			Barcode:      strings.TrimSpace(z["Barcode"]),
-			Signatur:     SignaturAus(z["Sig1"], z["Sig2"]),
-			Zugangsdatum: strings.TrimSpace(z["Zugangsdatum"]),
-			Preis:        preisAus(z["Preis"]),
+			ID:             id,
+			Exemplarnummer: strings.TrimSpace(z["Exemplarnummer"]),
+			TitelID:        titelID,
+			Barcode:        strings.TrimSpace(z["Barcode"]),
+			Signatur:       SignaturAus(z["Sig1"], z["Sig2"]),
+			Zugangsdatum:   strings.TrimSpace(z["Zugangsdatum"]),
+			Preis:          preisAus(z["Preis"]),
 		})
 	}
 	return exemplare, nil

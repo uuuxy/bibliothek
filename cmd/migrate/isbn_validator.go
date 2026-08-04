@@ -5,76 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
-	"strings"
-	"unicode"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var reNonDigit = regexp.MustCompile(`[^0-9Xx]`)
 var reBarcodeNum = regexp.MustCompile(`^B-(\d+)$`)
-
-// normalizeISBN strips hyphens/spaces and upper-cases X.
-func normalizeISBN(raw string) string {
-	s := reNonDigit.ReplaceAllString(raw, "")
-	return strings.ToUpper(s)
-}
-
-// validateISBN13 checks the ISBN-13 check digit.
-func validateISBN13(isbn string) bool {
-	if len(isbn) != 13 {
-		return false
-	}
-	sum := 0
-	for i, ch := range isbn {
-		if !unicode.IsDigit(ch) {
-			return false
-		}
-		d := int(ch - '0')
-		if i%2 == 0 {
-			sum += d
-		} else {
-			sum += d * 3
-		}
-	}
-	return sum%10 == 0
-}
-
-// validateISBN10 checks the ISBN-10 check digit.
-func validateISBN10(isbn string) bool {
-	if len(isbn) != 10 {
-		return false
-	}
-	sum := 0
-	for i, ch := range isbn {
-		var d int
-		if i == 9 && (ch == 'X' || ch == 'x') {
-			d = 10
-		} else if unicode.IsDigit(ch) {
-			d = int(ch - '0')
-		} else {
-			return false
-		}
-		sum += d * (10 - i)
-	}
-	return sum%11 == 0
-}
-
-// validateISBN returns (normalised, ok).
-func validateISBN(raw string) (string, bool) {
-	if raw == "" {
-		return "", true // NULL ISBN is allowed
-	}
-	n := normalizeISBN(raw)
-	switch len(n) {
-	case 10:
-		return n, validateISBN10(n)
-	case 13:
-		return n, validateISBN13(n)
-	default:
-		return n, false
-	}
-}
 
 // highestBarcodeSeq liest die höchste bereits vergebene B-XXXXX-Nummer aus PostgreSQL.
 //
