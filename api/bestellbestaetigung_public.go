@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -29,7 +31,11 @@ type OeffentlichePosition struct {
 
 // OeffentlicheBestellung ist die Ansicht hinter dem Link.
 type OeffentlicheBestellung struct {
-	SchuleName      string                 `json:"schule_name"`
+	SchuleName string `json:"schule_name"`
+	// SchuleAnschrift steht unter dem Namen. Für einen Empfänger, der diesen Link aus
+	// einer Mail öffnet, ist die Absenderangabe der einzige Beleg, wessen Bestellung er
+	// vor sich hat — die Seite verlangt ja bewusst keine Anmeldung.
+	SchuleAnschrift string                 `json:"schule_anschrift"`
 	LieferantName   string                 `json:"lieferant_name"`
 	Kundennummer    string                 `json:"kundennummer"`
 	Bestelldatum    time.Time              `json:"bestelldatum"`
@@ -128,6 +134,7 @@ func (s *Server) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	// Der Schulname sagt dem Lieferanten, wessen Bestellung er vor sich hat — bei
 	// mehreren Schulen im selben Postfach ist das keine Zierde, sondern die Zuordnung.
 	a.SchuleName = s.etikettKopf(ctx).Schulname
+	a.SchuleAnschrift = s.schulAnschrift(ctx)
 	return &a, nil
 }
 
@@ -171,4 +178,22 @@ func (s *Server) OeffentlichBestaetigenHandler() http.HandlerFunc {
 
 		RespondJSON(w, http.StatusOK, map[string]any{"status": "success"})
 	}
+}
+
+// schulAnschrift baut die einzeilige Anschrift aus den Systemeinstellungen. Leere Felder
+// fallen samt Trenner weg — eine Zeile wie „, 61381" wäre schlechter als keine.
+func (s *Server) schulAnschrift(ctx context.Context) string {
+	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil {
+		return ""
+	}
+	teile := []string{}
+	if strasse := strings.TrimSpace(settings.SchuleStrasse); strasse != "" {
+		teile = append(teile, strasse)
+	}
+	ortszeile := strings.TrimSpace(settings.SchulePLZ + " " + settings.SchuleOrt)
+	if ortszeile != "" {
+		teile = append(teile, ortszeile)
+	}
+	return strings.Join(teile, " · ")
 }

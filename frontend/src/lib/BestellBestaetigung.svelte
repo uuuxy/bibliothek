@@ -7,6 +7,7 @@
 	// geben, sonst müsste der Lieferant ein Geheimnis verwalten.
 	import { apiFetch } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
+	import { Check } from '@lucide/svelte';
 
 	const token = window.location.pathname.replace(/^\/bestellung\//, '').replace(/\/+$/, '');
 
@@ -88,6 +89,11 @@
 			.join(' · ')
 	);
 
+	// Die ISBN-Spalte erscheint nur, wenn wenigstens eine Position eine trägt. Sonst stand
+	// dort eine leere Spalte, und auf dem Handy klebten die Überschriften als „ISBNMenge"
+	// aneinander. Ein Lieferant öffnet so einen Link oft am Telefon.
+	let zeigeISBN = $derived(bestellung?.positionen?.some((/** @type {any} */ p) => p.isbn) ?? false);
+
 	/** @param {string} iso */
 	function datum(iso) {
 		return new Date(iso).toLocaleDateString('de-DE', {
@@ -103,7 +109,7 @@
 		{#if zustand === 'laedt'}
 			<p class="text-center text-slate-400">Bestellung wird geladen …</p>
 		{:else if zustand === 'ungueltig'}
-			<div class="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+			<div class="rounded-2xl bg-white p-8 text-center shadow-sm">
 				<h1 class="text-lg font-bold text-slate-800">Dieser Link ist nicht mehr gültig</h1>
 				<p class="mt-2 text-sm text-slate-500">
 					Bestätigungs-Links laufen nach einiger Zeit ab und gehören immer zu genau einer
@@ -111,11 +117,14 @@
 				</p>
 			</div>
 		{:else}
-			<div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+			<div class="rounded-2xl bg-white p-8 shadow-sm">
 				<p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">
 					{bestellung.schule_name || 'Schulbibliothek'}
 				</p>
-				<h1 class="mt-1 text-xl font-bold text-slate-800">
+				{#if bestellung.schule_anschrift}
+					<p class="text-xs text-slate-400">{bestellung.schule_anschrift}</p>
+				{/if}
+				<h1 class="mt-2 text-xl font-bold text-slate-800">
 					Bestellung vom {datum(bestellung.bestelldatum)}
 				</h1>
 				<!-- Eine Zeichenkette statt zusammengesetzter Markup-Schnipsel: Zwischen
@@ -126,16 +135,16 @@
 				<table class="mt-6 w-full text-left text-sm">
 					<thead>
 						<tr class="border-b border-slate-200 text-xs font-semibold text-slate-500">
-							<th class="py-2">Titel</th>
-							<th class="py-2">ISBN</th>
+							<th class="py-2 pr-3">Titel</th>
+							{#if zeigeISBN}<th class="py-2 pr-3">ISBN</th>{/if}
 							<th class="py-2 text-right">Menge</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-100">
 						{#each bestellung.positionen as p (p.titel_name + p.isbn)}
 							<tr>
-								<td class="py-2 font-medium text-slate-700">{p.titel_name}</td>
-								<td class="py-2 text-slate-500">{p.isbn}</td>
+								<td class="py-2 pr-3 font-medium text-slate-700">{p.titel_name}</td>
+								{#if zeigeISBN}<td class="py-2 pr-3 text-slate-500">{p.isbn}</td>{/if}
 								<td class="py-2 text-right text-slate-700">{p.menge}</td>
 							</tr>
 						{/each}
@@ -144,7 +153,7 @@
 			</div>
 
 			{#if bestellung.etiketten_vorhanden}
-				<div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+				<div class="rounded-2xl bg-white p-8 shadow-sm">
 					<h2 class="text-base font-bold text-slate-800">Etiketten drucken</h2>
 					<p class="mt-1 text-sm text-slate-500">
 						Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail — Sie wählen nur
@@ -152,16 +161,24 @@
 					</p>
 					<div class="mt-4 flex flex-wrap gap-3">
 						<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('klein')}>
+							{#if geoeffneteGroesse === 'klein'}<Check size={16} aria-hidden="true" />{/if}
 							Kleine Etiketten (Bogen A4)
 						</Button>
 						<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>
+							{#if geoeffneteGroesse === 'gross'}<Check size={16} aria-hidden="true" />{/if}
 							Große Lernmittel-Etiketten
 						</Button>
 					</div>
+					{#if geoeffneteGroesse}
+						<p class="mt-3 text-xs text-slate-500">
+							Der Bogen wurde in einem neuen Tab geöffnet. Erscheint er nicht, ist er vom Browser
+							blockiert worden — dann bitte den Knopf erneut drücken.
+						</p>
+					{/if}
 				</div>
 			{/if}
 
-			<div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+			<div class="rounded-2xl bg-white p-8 shadow-sm">
 				{#if bestellung.bestaetigt_am}
 					<h2 class="text-base font-bold text-emerald-700">Bestellung bestätigt</h2>
 					<p class="mt-1 text-sm text-slate-500">
@@ -182,6 +199,9 @@
 					</Button>
 				{/if}
 			</div>
+			<p class="pb-4 text-center text-xs text-slate-400">
+				Fragen zu dieser Bestellung? Antworten Sie einfach auf die Bestellmail der Schulbibliothek.
+			</p>
 		{/if}
 	</div>
 </div>
