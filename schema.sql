@@ -640,6 +640,11 @@ CREATE TABLE bestellungen_verlauf (
         CHECK (bestaetigt_durch IS NULL OR bestaetigt_durch IN ('lieferant', 'bibliothek'))
 );
 
+-- Neueste Bestellungen (Historie mit LIMIT) und Zeitraumfilter (Bestellbericht).
+-- Ohne ihn liest Postgres für die 200 neuesten Zeilen die ganze Tabelle (Migration 064).
+CREATE INDEX idx_bestellungen_verlauf_datum
+    ON bestellungen_verlauf (bestelldatum DESC);
+
 -- Teil-Index: Bestellungen ohne Link tragen NULL, das darf beliebig oft vorkommen. Er
 -- ist zugleich der Zugriffspfad der öffentlichen Seite, die nur den Hash kennt.
 CREATE UNIQUE INDEX idx_bestellungen_token_hash
@@ -672,6 +677,13 @@ ALTER TABLE buecher_exemplare
 CREATE INDEX idx_buecher_exemplare_bestellung
     ON buecher_exemplare (bestellung_id)
     WHERE bestellung_id IS NOT NULL;
+
+-- Exemplare ohne gedrucktes Etikett je Titel (Migration 064). Die Bedingung muss
+-- wortgleich zu etikettenOffenBedingung (api/etiketten_offen.go) bleiben — sonst kann
+-- Postgres den Teil-Index nicht mehr verwenden, und er wird still nutzlos.
+CREATE INDEX idx_buecher_exemplare_etikett_offen
+    ON buecher_exemplare (titel_id)
+    WHERE etikett_gedruckt = false AND ist_ausgesondert = false;
 
 
 -- Table: vormerkungen (Individual book reservations / waitlist)
@@ -783,7 +795,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('060_signatur_scope_text.sql'),
 ('061_inventur_verluste_gefunden.sql'),
 ('062_lieferant_bestellbestaetigung.sql'),
-('063_bestellbestaetigung_link.sql')
+('063_bestellbestaetigung_link.sql'),
+('064_bestellungen_datum_index.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
