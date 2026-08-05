@@ -229,18 +229,30 @@
 						</div>
 
 						<!-- Action -->
-						<div class="shrink-0 flex flex-col items-end justify-between">
+						<!-- Die Bestätigung ERSETZT den Knopf nicht: Eine Lehrkraft, die denselben
+						     Titel für 8a bestellt hat, braucht ihn direkt danach für 8b. Vorher blieb
+						     „✓ Gesendet" für immer stehen und der einzige Weg zurück war ein Reload —
+						     ausgerechnet toggleForm, das den Zustand aufräumt, war nicht mehr
+						     erreichbar. -->
+						<div class="shrink-0 flex flex-col items-end justify-between gap-2">
 							{#if form.success}
-								<span class="text-xs text-emerald-600 font-semibold">✓ Gesendet</span>
-							{:else}
-								<Button
-									variant={form.open ? 'secondary' : 'primary'}
-									size="sm"
-									onclick={() => toggleForm(titelId)}
+								<span class="text-xs text-emerald-600 font-semibold" title={form.success}
+									>✓ Gesendet</span
 								>
-									{form.open ? 'Abbrechen' : 'Klassensatz reservieren'}
-								</Button>
 							{/if}
+							<Button
+								variant={form.open || form.success ? 'secondary' : 'primary'}
+								size="sm"
+								onclick={() => toggleForm(titelId)}
+							>
+								{#if form.open}
+									Abbrechen
+								{:else if form.success}
+									Weitere Klasse reservieren
+								{:else}
+									Klassensatz reservieren
+								{/if}
+							</Button>
 						</div>
 					</div>
 

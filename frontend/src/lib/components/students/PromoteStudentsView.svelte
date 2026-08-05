@@ -4,7 +4,6 @@
 <script>
 	import { AlertTriangle, CircleCheck } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 
 	/** @typedef {{ promoted_count: number, archived_count: number, dry_run: boolean }} PromoteStudentsResponse */
@@ -74,19 +73,21 @@
 		}
 	}
 
+	// Rückmeldung läuft NUR über die Banner in dieser Ansicht — kein zusätzlicher Toast.
+	// Beides zusammen zeigte dieselbe Meldung doppelt (im Erfolgs- wie im Fehlerfall).
+	// Die Ansicht ist kurz, die Banner stehen direkt beim Vorgang, und der Ergebnisblock
+	// bleibt bis „Fertig" stehen — ein Toast, der nach Sekunden verschwindet, kann für
+	// einen irreversiblen Massenvorgang ohnehin nicht der tragende Kanal sein.
 	async function executePromotion() {
 		if (loading) return;
 		loading = true;
 		errorMessage = null;
 		try {
 			result = await callPromote({ confirm: true });
-			awaitingConfirmation = false;
-			toastStore.addToast('Schuljahreswechsel erfolgreich durchgeführt.', 'success');
 		} catch (err) {
 			errorMessage = /** @type {any} */ (err).message || String(err);
-			awaitingConfirmation = false;
-			toastStore.addToast(errorMessage, 'error');
 		} finally {
+			awaitingConfirmation = false;
 			loading = false;
 		}
 	}

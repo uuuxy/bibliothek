@@ -52,38 +52,37 @@
 			canvas.height = targetHeight;
 			const ctx = canvas.getContext('2d');
 
-			if (ctx) {
-				// Draw cropped area from video stream
-				ctx.drawImage(
-					videoEl,
-					startX,
-					0,
-					targetWidth,
-					targetHeight,
-					0,
-					0,
-					targetWidth,
-					targetHeight
-				);
-
-				// Export high-quality JPEG
-				const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-
-				// Upload to backend
-				const res = await apiClient.post(`/api/schueler/${studentId}/photo`, {
-					photo_data: dataUrl
-				});
-
-				if (!res.ok) {
-					throw new Error((await res.text()) || 'Upload fehlgeschlagen');
-				}
-
-				const data = await res.json();
-				onCapture(data.url);
+			// Fehlender 2D-Kontext war vorher der einzige Weg, der still endete: kein Foto,
+			// keine Meldung, Knopf für immer grau. Lieber eine Fehlermeldung mit
+			// „Erneut versuchen" als ein Dialog, in dem nichts mehr passiert.
+			if (!ctx) {
+				throw new Error('Zeichenfläche nicht verfügbar');
 			}
+
+			// Draw cropped area from video stream
+			ctx.drawImage(videoEl, startX, 0, targetWidth, targetHeight, 0, 0, targetWidth, targetHeight);
+
+			// Export high-quality JPEG
+			const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+			// Upload to backend
+			const res = await apiClient.post(`/api/schueler/${studentId}/photo`, {
+				photo_data: dataUrl
+			});
+
+			if (!res.ok) {
+				throw new Error((await res.text()) || 'Upload fehlgeschlagen');
+			}
+
+			const data = await res.json();
+			onCapture(data.url);
 		} catch (err) {
 			const error = /** @type {any} */ (err);
 			errorMsg = 'Aufnahme fehlgeschlagen: ' + error.message;
+		} finally {
+			// Auch im Erfolgsfall zurücksetzen. Heute schließt der Aufrufer das Overlay
+			// direkt danach, die Komponente verschwindet also ohnehin — aber daran darf
+			// der Aufnahmeknopf nicht hängen.
 			isCapturing = false;
 		}
 	}
@@ -157,7 +156,9 @@
 			</div>
 
 			<div class="flex items-center justify-between pt-2">
-				<span class="text-label-small text-zinc-500">1080p Stream · Automatischer 3:4 Zuschnitt</span>
+				<span class="text-label-small text-zinc-500"
+					>1080p Stream · Automatischer 3:4 Zuschnitt</span
+				>
 				<button
 					onclick={capturePhoto}
 					disabled={isCapturing}

@@ -33,6 +33,10 @@
 	// Create / Edit modal state
 	let showUserModal = $state(false);
 	let isEditingUser = $state(false);
+	// Kein Passwortfeld: Staff-Logins laufen über den Schul-Mailserver (IMAP) bzw.
+	// Barcode/PIN — es gibt keine lokale Passwortspalte. Das Formular schickte hier lange
+	// ein `password` mit, das immer leer war und serverseitig verworfen wurde; das
+	// Gegenstück in UpdateUserRequest ist bereits entfernt.
 	/** @type {any} */
 	let userForm = $state({
 		id: '',
@@ -41,8 +45,7 @@
 		nachname: '',
 		email: '',
 		rolle: 'mitarbeiter',
-		aktiv: true,
-		password: ''
+		aktiv: true
 	});
 	let submittingUser = $state(false);
 
@@ -98,8 +101,7 @@
 				nachname: userForm.nachname,
 				email: userForm.email,
 				rolle: userForm.rolle,
-				aktiv: userForm.aktiv,
-				password: userForm.password
+				aktiv: userForm.aktiv
 			};
 			const res = await apiFetch(url, {
 				method,
@@ -154,8 +156,7 @@
 			nachname: '',
 			email: '',
 			rolle: 'mitarbeiter',
-			aktiv: true,
-			password: ''
+			aktiv: true
 		};
 		error = null;
 		showUserModal = true;
@@ -171,8 +172,7 @@
 			nachname: user.nachname,
 			email: user.email,
 			rolle: user.rolle,
-			aktiv: user.aktiv,
-			password: ''
+			aktiv: user.aktiv
 		};
 		error = null;
 		showUserModal = true;
