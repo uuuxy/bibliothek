@@ -37,6 +37,9 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	mux.Handle("GET /api/inventur/abgeschlossen", s.RequirePermission("manage_inventory")(s.ListAbgeschlosseneInventurenHandler()))
 	mux.Handle("GET /api/inventur/fehlbestand", s.RequirePermission("manage_inventory")(s.InventurFehlbestandHandler()))
 	mux.Handle("POST /api/inventur/abort", s.RequirePermission("manage_inventory")(s.InventurAbortHandler()))
+	// Handlungsspielraum für den Fehlbestandsbericht: wiedergefunden oder endgültig weg.
+	mux.Handle("POST /api/buecher/exemplare/{id}/gefunden", s.RequirePermission("manage_inventory")(s.InventurVerlustGefundenHandler()))
+	mux.Handle("POST /api/buecher/exemplare/verlust-endgueltig-loeschen", s.RequirePermission("manage_inventory")(s.InventurVerlusteLoeschenHandler()))
 
 	// Smart Scanner (Tresen-Weiche) — Teil der Kiosk-Kernfunktion, siehe /api/action.
 	mux.Handle("GET /api/scan", s.RequirePermission("perform_actions")(s.SmartScanHandler()))

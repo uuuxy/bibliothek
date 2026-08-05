@@ -124,11 +124,19 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 
 // InventurVerlust ist eine Zeile des Fehlbestandsberichts.
 type InventurVerlust struct {
-	BarcodeID string `json:"barcode_id"`
-	Titel     string `json:"titel"`
-	Autor     string `json:"autor"`
-	Signatur  string `json:"signatur"`
-	GebuchtAm string `json:"gebucht_am"`
+	// ExemplarID kann fehlen (leerer String): Das FK-Feld geht bei einer endgültigen
+	// Löschung des Exemplars auf NULL (Migration 059, ON DELETE SET NULL) — die
+	// Textspalten bleiben trotzdem lesbar. Ohne ExemplarID sind "Gefunden" und
+	// "endgültig löschen" nicht mehr möglich, das Exemplar ist ja schon weg.
+	ExemplarID string `json:"exemplar_id,omitempty"`
+	BarcodeID  string `json:"barcode_id"`
+	Titel      string `json:"titel"`
+	Autor      string `json:"autor"`
+	Signatur   string `json:"signatur"`
+	GebuchtAm  string `json:"gebucht_am"`
+	// GefundenAm ist gesetzt, sobald das Exemplar beim Nachsuchen wiedergefunden und
+	// über den "Gefunden"-Knopf zurück in Umlauf gebracht wurde (Migration 061).
+	GefundenAm string `json:"gefunden_am,omitempty"`
 }
 
 // LadeInventurVerluste liefert den Fehlbestand einer abgeschlossenen Session.
@@ -138,7 +146,9 @@ type InventurVerlust struct {
 // unbrauchbar, weil man dann kreuz und quer laufen müsste.
 func (r *InventoryRepository) LadeInventurVerluste(ctx context.Context, sessionID string) ([]InventurVerlust, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT barcode_id, titel, autor, signatur, to_char(gebucht_am, 'YYYY-MM-DD"T"HH24:MI:SSOF')
+		SELECT coalesce(exemplar_id::text, ''), barcode_id, titel, autor, signatur,
+		       to_char(gebucht_am, 'YYYY-MM-DD"T"HH24:MI:SSOF'),
+		       coalesce(to_char(gefunden_am, 'YYYY-MM-DD"T"HH24:MI:SSOF'), '')
 		FROM inventur_verluste
 		WHERE session_id = $1
 		ORDER BY signatur, titel, barcode_id
@@ -152,7 +162,7 @@ func (r *InventoryRepository) LadeInventurVerluste(ctx context.Context, sessionI
 	liste := make([]InventurVerlust, 0)
 	for rows.Next() {
 		var v InventurVerlust
-		if err := rows.Scan(&v.BarcodeID, &v.Titel, &v.Autor, &v.Signatur, &v.GebuchtAm); err != nil {
+		if err := rows.Scan(&v.ExemplarID, &v.BarcodeID, &v.Titel, &v.Autor, &v.Signatur, &v.GebuchtAm, &v.GefundenAm); err != nil {
 			return nil, fmt.Errorf("fehlbestand lesen fehlgeschlagen: %w", err)
 		}
 		liste = append(liste, v)

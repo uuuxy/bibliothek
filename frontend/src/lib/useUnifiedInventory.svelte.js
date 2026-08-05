@@ -1,15 +1,7 @@
 import { apiFetch } from './apiFetch.js';
 import { toastStore } from './stores/toastStore.svelte.js';
-import {
-	ladeOffeneSessions,
-	ladeAbgeschlosseneInventuren,
-	ladeFehlbestand,
-	starteSession,
-	scanne,
-	schliesseAb,
-	brichAb,
-	deuteScanErgebnis
-} from './inventurApi.js';
+import { ladeOffeneSessions, starteSession, scanne, schliesseAb, brichAb, deuteScanErgebnis } from './inventurApi.js';
+import { useFehlbestand } from './useFehlbestand.svelte.js';
 
 /**
  * Hook für die Inventur. Der Fortschritt ist seit dem Session-Umbau an eine
@@ -36,6 +28,8 @@ export function useUnifiedInventory() {
 	let showStartModal = $state(false);
 	let showFinishModal = $state(false);
 	let errorMessage = $state('');
+
+	const fb = useFehlbestand();
 
 	async function loadSignaturen() {
 		try {
@@ -147,11 +141,6 @@ export function useUnifiedInventory() {
 		}
 	}
 
-	/** Fehlbestand der zuletzt abgeschlossenen Inventur — bleibt stehen, bis er
-	 *  ausdruecklich geschlossen wird. */
-	let fehlbestand = $state.raw(/** @type {any[]} */ ([]));
-	let fehlbestandLabel = $state('');
-
 	async function finishInventory() {
 		const r = await schliesseAb(sessionId);
 		if (r.ok) {
@@ -165,51 +154,14 @@ export function useUnifiedInventory() {
 			// mit „47 Bücher verloren" kann niemand ins Regal gehen und nachsehen, ob eines
 			// davon nur falsch einsortiert war. Rekonstruieren liess sie sich danach auch
 			// nicht: Durch die Aussonderung fallen die Exemplare aus dem Scope.
-			fehlbestand = r.data.fehlbestand ?? [];
-			fehlbestandLabel = stats.label;
+			fb.setzeFehlbestand(r.data.fehlbestand ?? [], stats.label);
 			resetToIdle();
 			await loadOffeneSessions();
 			// Die gerade beendete Inventur gehört sofort in die Auswahl früherer Läufe —
 			// sonst müsste man die Seite neu laden, um sie dort zu finden.
-			await loadAbgeschlosseneInventuren();
+			await fb.loadAbgeschlosseneInventuren();
 		} else {
 			toastStore.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
-		}
-	}
-
-	function fehlbestandSchliessen() {
-		fehlbestand = [];
-		fehlbestandLabel = '';
-	}
-
-	// Frühere Inventuren: Der Bericht oben entstand bisher NUR aus der Antwort von
-	// schliesseAb() und lebte damit im Arbeitsspeicher dieses einen Browsers. Ein
-	// Neuladen — oder der Kollege am zweiten Arbeitsplatz, der ins Regal geht — sah ihn
-	// nie. Der Server hat die Liste dauerhaft (inventur_verluste); hier ist der Weg
-	// zurück zu ihr.
-	let abgeschlosseneInventuren = $state.raw(/** @type {any[]} */ ([]));
-	let ladeFruehereLaeuft = $state(false);
-
-	async function loadAbgeschlosseneInventuren() {
-		abgeschlosseneInventuren = await ladeAbgeschlosseneInventuren();
-	}
-
-	/** @param {{session_id: string, label: string, abgeschlossen_am: string}} inventur */
-	async function zeigeFrueherenFehlbestand(inventur) {
-		ladeFruehereLaeuft = true;
-		try {
-			const r = await ladeFehlbestand(inventur.session_id);
-			if (!r.ok) {
-				toastStore.addToast(r.error || 'Fehlbestand konnte nicht geladen werden.', 'error');
-				return;
-			}
-			fehlbestand = r.data ?? [];
-			fehlbestandLabel = inventur.label;
-			if (fehlbestand.length === 0) {
-				toastStore.addToast('Diese Inventur war vollständig — kein Fehlbestand.', 'success');
-			}
-		} finally {
-			ladeFruehereLaeuft = false;
 		}
 	}
 
@@ -230,20 +182,22 @@ export function useUnifiedInventory() {
 
 	return {
 		get fehlbestand() {
-			return fehlbestand;
+			return fb.fehlbestand;
 		},
 		get fehlbestandLabel() {
-			return fehlbestandLabel;
+			return fb.fehlbestandLabel;
 		},
-		fehlbestandSchliessen,
+		fehlbestandSchliessen: fb.fehlbestandSchliessen,
+		fehlbestandGefunden: fb.fehlbestandGefunden,
+		fehlbestandEndgueltigLoeschen: fb.fehlbestandEndgueltigLoeschen,
 		get abgeschlosseneInventuren() {
-			return abgeschlosseneInventuren;
+			return fb.abgeschlosseneInventuren;
 		},
 		get ladeFruehereLaeuft() {
-			return ladeFruehereLaeuft;
+			return fb.ladeFruehereLaeuft;
 		},
-		loadAbgeschlosseneInventuren,
-		zeigeFrueherenFehlbestand,
+		loadAbgeschlosseneInventuren: fb.loadAbgeschlosseneInventuren,
+		zeigeFrueherenFehlbestand: fb.zeigeFrueherenFehlbestand,
 		get status() {
 			return status;
 		},

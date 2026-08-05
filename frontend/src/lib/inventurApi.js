@@ -121,3 +121,23 @@ export async function brichAb(sessionId) {
 	});
 	return auswerten(res);
 }
+
+/** Ein als Verlust gebuchtes Exemplar wurde beim Nachsuchen gefunden — zurück in Umlauf.
+ * @param {string} exemplarId */
+export async function meldeVerlustGefunden(exemplarId) {
+	const res = await apiFetch(`/api/buecher/exemplare/${encodeURIComponent(exemplarId)}/gefunden`, {
+		method: 'POST'
+	});
+	return auswerten(res);
+}
+
+/** Verlust-Exemplare unwiderruflich löschen.
+ * @param {string[]} exemplarIds */
+export async function loescheVerlustEndgueltig(exemplarIds) {
+	const res = await apiFetch('/api/buecher/exemplare/verlust-endgueltig-loeschen', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ exemplar_ids: exemplarIds })
+	});
+	return auswerten(res);
+}

@@ -736,7 +736,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('057_audit_log_timestamp_index.sql'),
 ('058_lieferant_ist_standard.sql'),
 ('059_inventur_verluste.sql'),
-('060_signatur_scope_text.sql')
+('060_signatur_scope_text.sql'),
+('061_inventur_verluste_gefunden.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -827,7 +828,9 @@ CREATE TABLE inventur_verluste (
     titel TEXT NOT NULL,
     autor TEXT NOT NULL DEFAULT '',
     signatur TEXT NOT NULL DEFAULT '',
-    gebucht_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    gebucht_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Migration 061: wann ein gebuchter Verlust beim Nachsuchen doch gefunden wurde.
+    gefunden_am TIMESTAMP WITH TIME ZONE
 );
 CREATE INDEX idx_inventur_verluste_session ON inventur_verluste (session_id);
 CREATE UNIQUE INDEX idx_inventur_verluste_einmalig ON inventur_verluste (session_id, exemplar_id) WHERE exemplar_id IS NOT NULL;

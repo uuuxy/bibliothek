@@ -63,6 +63,8 @@
 			eintraege={inventoryState.fehlbestand}
 			label={inventoryState.fehlbestandLabel}
 			onSchliessen={inventoryState.fehlbestandSchliessen}
+			onGefunden={inventoryState.fehlbestandGefunden}
+			onEndgueltigLoeschen={inventoryState.fehlbestandEndgueltigLoeschen}
 		/>
 	{/if}
 
