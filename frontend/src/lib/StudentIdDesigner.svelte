@@ -35,9 +35,12 @@
 	/** @type {any} */
 	let saveTimer = null;
 
+	// Max Mustermann statt eines beliebig klingenden Namens: Platzhalter-Vorschau soll auf
+	// den ersten Blick als Platzhalter erkennbar sein, passend zu PLATZHALTER_SCHULNAME
+	// ("Musterstadt").
 	const mockStudents = [
-		{ id: 's1', barcode_id: 'S-10041', vorname: 'Maximilian', nachname: 'Schmidt', klasse: '9a' },
-		{ id: 's2', barcode_id: 'S-10042', vorname: 'Sophie', nachname: 'Fischer', klasse: '9a' }
+		{ id: 's1', barcode_id: 'S-10041', vorname: 'Max', nachname: 'Mustermann', klasse: '9a' },
+		{ id: 's2', barcode_id: 'S-10042', vorname: 'Erika', nachname: 'Musterfrau', klasse: '9a' }
 	];
 
 	const previewStudent = $derived(previewStudents[0] ?? mockStudents[0]);

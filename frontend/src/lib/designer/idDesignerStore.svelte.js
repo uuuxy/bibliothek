@@ -46,82 +46,82 @@ export const PLATZHALTER_ADRESSE = 'Musterstraße 12, 12345 Musterstadt';
 /** @returns {any[]} */
 export function defaultFrontElements() {
 	return [
+		// Kopfblock als klassisches Briefkopf-Layout: Textspalte links (Schule → Dokumenttyp
+		// → zweisprachige Unterzeile → Adresse), Logo als Anker rechts oben daneben. Vorher
+		// stand "Schülerausweis" gut versteckt neben dem Barcode; das Dokument nannte
+		// nirgends prominent, WAS es eigentlich ist.
 		{
 			id: 'header',
 			type: 'header',
 			content: PLATZHALTER_SCHULNAME,
 			x: 5,
-			y: 4,
-			width: 75,
-			height: 7,
+			y: 3,
+			width: 58,
+			height: 5,
 			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(8, '#1e293b', 'center', 'bold')
-		},
-		{
-			id: 'address',
-			type: 'address',
-			content: PLATZHALTER_ADRESSE,
-			x: 30,
-			y: 8,
-			width: 50,
-			height: 7,
-			zIndex: 1,
-			show: true,
-			proportional: false,
-			style: textStyle(7, '#475569', 'left', 'normal')
-		},
-		{
-			id: 'logo',
-			type: 'logo',
-			content: '',
-			x: 68,
-			y: 12,
-			width: 12,
-			height: 12,
-			zIndex: 2,
-			show: true,
-			proportional: true
+			style: textStyle(7.5, '#1e293b', 'left', 'bold')
 		},
 		{
 			id: 'title',
 			type: 'text',
 			content: 'Schülerausweis',
-			x: 60,
-			y: 25,
-			width: 20,
-			height: 6,
-			// zIndex 2 statt 1: Die Boxen von name/details/validity sind volle 50 mm breit
-			// (Rücksicht auf lange Namen) und reichen bis x=80, auch wenn ihr Text kürzer
-			// ist. Mit gleichem zIndex würde ein Klick auf den sichtbaren Text hier den
-			// unsichtbaren details/validity-Bereich treffen statt Titel/Unterzeile selbst.
-			zIndex: 2,
+			x: 5,
+			y: 8,
+			width: 58,
+			height: 4.5,
+			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(6.5, '#1e293b', 'center', 'bold')
+			style: textStyle(6.5, '#2563eb', 'left', 'bold')
 		},
 		{
 			id: 'subtitle',
 			type: 'text',
 			content: 'School ID · Carné Escolar',
-			x: 60,
-			y: 31,
-			width: 20,
-			height: 9,
-			zIndex: 2,
+			x: 5,
+			y: 12.3,
+			width: 58,
+			height: 3,
+			zIndex: 1,
 			show: true,
 			proportional: false,
-			style: textStyle(4.5, '#64748b', 'center', 'normal')
+			style: textStyle(4, '#94a3b8', 'left', 'normal')
+		},
+		{
+			id: 'address',
+			type: 'address',
+			content: PLATZHALTER_ADRESSE,
+			x: 5,
+			y: 15.5,
+			width: 58,
+			height: 4,
+			zIndex: 1,
+			show: true,
+			proportional: false,
+			style: textStyle(5.5, '#64748b', 'left', 'normal')
+		},
+		{
+			id: 'logo',
+			type: 'logo',
+			content: '',
+			x: 65,
+			y: 3,
+			width: 15,
+			height: 13,
+			zIndex: 2,
+			show: true,
+			proportional: true
 		},
 		{
 			id: 'photo',
 			type: 'photo',
 			content: '',
 			x: 5,
-			y: 12,
+			y: 21,
 			width: 22,
-			height: 28,
+			height: 25,
 			zIndex: 2,
 			show: true,
 			proportional: true
@@ -131,9 +131,9 @@ export function defaultFrontElements() {
 			type: 'name',
 			content: '',
 			x: 30,
-			y: 14,
+			y: 21,
 			width: 50,
-			height: 10,
+			height: 8,
 			zIndex: 1,
 			show: true,
 			proportional: false,
@@ -144,9 +144,9 @@ export function defaultFrontElements() {
 			type: 'details',
 			content: '',
 			x: 30,
-			y: 21,
+			y: 29,
 			width: 50,
-			height: 8,
+			height: 6,
 			zIndex: 1,
 			show: true,
 			proportional: false,
@@ -157,9 +157,9 @@ export function defaultFrontElements() {
 			type: 'validity',
 			content: '',
 			x: 30,
-			y: 27,
+			y: 35,
 			width: 50,
-			height: 6,
+			height: 5,
 			zIndex: 1,
 			show: true,
 			proportional: false,
@@ -170,9 +170,9 @@ export function defaultFrontElements() {
 			type: 'barcode',
 			content: '',
 			x: 30,
-			y: 34,
+			y: 41,
 			width: 30,
-			height: 14,
+			height: 11,
 			zIndex: 1,
 			show: true,
 			proportional: true
