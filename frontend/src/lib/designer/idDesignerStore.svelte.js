@@ -85,6 +85,36 @@ export function defaultFrontElements() {
 			proportional: true
 		},
 		{
+			id: 'title',
+			type: 'text',
+			content: 'Schülerausweis',
+			x: 60,
+			y: 25,
+			width: 20,
+			height: 6,
+			// zIndex 2 statt 1: Die Boxen von name/details/validity sind volle 50 mm breit
+			// (Rücksicht auf lange Namen) und reichen bis x=80, auch wenn ihr Text kürzer
+			// ist. Mit gleichem zIndex würde ein Klick auf den sichtbaren Text hier den
+			// unsichtbaren details/validity-Bereich treffen statt Titel/Unterzeile selbst.
+			zIndex: 2,
+			show: true,
+			proportional: false,
+			style: textStyle(6.5, '#1e293b', 'center', 'bold')
+		},
+		{
+			id: 'subtitle',
+			type: 'text',
+			content: 'School ID · Carné Escolar',
+			x: 60,
+			y: 31,
+			width: 20,
+			height: 9,
+			zIndex: 2,
+			show: true,
+			proportional: false,
+			style: textStyle(4.5, '#64748b', 'center', 'normal')
+		},
+		{
 			id: 'photo',
 			type: 'photo',
 			content: '',
