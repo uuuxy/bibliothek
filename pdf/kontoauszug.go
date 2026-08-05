@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/johnfercher/maroto/v2"
-	"github.com/johnfercher/maroto/v2/pkg/components/code"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/page"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
@@ -101,19 +100,16 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, m
 		))
 	}
 
-	// Tabellenzeilen: Barcode-Bild zum Scannen, darunter die lesbare Nummer.
+	// Nur die lesbare Barcode-Nummer, kein Scan-Bild: Der Kontoauszug ist ein
+	// Info-Auszug zum Lesen, nicht zum Einscannen an der Ausleihe — das gedruckte
+	// Barcode-Bild je Zeile war totes Gewicht auf dem Blatt.
 	for _, buch := range buecher {
 		rows = append(rows,
-			row.New(12).Add(
+			row.New(8).Add(
 				col.New(5).Add(text.New(buch.Titel, props.Text{Size: 10})),
-				code.NewBarCol(3, buch.Barcode, props.Barcode{Center: true, Percent: 90}),
+				col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 10, Align: align.Center})),
 				col.New(2).Add(text.New(buch.Ausleihdatum.Format(dateFormatDE), props.Text{Size: 10})),
 				col.New(2).Add(text.New(buch.Rueckgabedatum.Format(dateFormatDE), props.Text{Size: 10})),
-			),
-			row.New(5).Add(
-				col.New(5),
-				col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 8, Align: align.Center})),
-				col.New(4),
 			),
 		)
 	}
