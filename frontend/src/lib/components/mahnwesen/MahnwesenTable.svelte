@@ -128,33 +128,18 @@
 								</span>
 							</td>
 							<td class="px-4 py-2">
-								<div class="flex -space-x-2">
-									{#each schueler.medien.slice(0, 3) as medium, _i (_i)}
-										{#if medium.cover_url}
-											<img
-												src={medium.cover_url}
-												alt="Cover"
-												class="w-8 h-10 rounded-md border-2 border-white object-cover shadow-sm"
-												loading="lazy"
-												title={medium.titel}
-											/>
-										{:else}
-											<div
-												class="w-8 h-10 rounded-md border-2 border-white bg-slate-200 shadow-sm flex items-center justify-center text-[8px] text-slate-500 font-bold"
-												title={medium.titel}
-											>
-												?
-											</div>
-										{/if}
-									{/each}
-									{#if schueler.medien.length > 3}
-										<div
-											class="w-8 h-10 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-label-small font-bold text-slate-600 shadow-sm z-10"
-										>
-											+{schueler.medien.length - 3}
-										</div>
-									{/if}
-								</div>
+								<!-- Text statt Cover-Stapel: Ab drei, vier überfälligen Büchern wurde die
+								     Reihe aus Miniaturen plus "+N"-Badge selbst zur Ratearbeit — welches
+								     Cover zu welchem Titel gehört, war ohnehin nicht zu erkennen. Wie bei
+								     Abgänger zählt hier nur, WIE VIELE es sind; der Titeltext im title-
+								     Attribut bleibt für den Hover-Fall erhalten. -->
+								<span
+									class="text-sm text-slate-600"
+									title={schueler.medien.map((m) => m.titel).join(', ')}
+								>
+									{schueler.medien.length}
+									{schueler.medien.length === 1 ? 'Buch' : 'Bücher'}
+								</span>
 							</td>
 							<!-- Ein Farbträger je Zeile, und Farbe nur für die AUSNAHME. Auf diesem
 							     Bildschirm ist alles überfällig — die erste Erinnerung ist der Normalfall
