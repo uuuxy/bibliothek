@@ -28,6 +28,13 @@ func buchMitTitel(titel string) *repository.BookCopy {
 	return &repository.BookCopy{Titel: titel, Medientyp: "Buch", IstAusleihbar: true}
 }
 
+// buchMitSignatur bildet den Regelfall der manuellen Neuanlage über die
+// Admin-Oberfläche ab: Der Titel bleibt Klartext, das LMF-Kennzeichen steht nur in
+// der Signatur (Auto-Vorschlag "LMF <Kürzel>").
+func buchMitSignatur(titel, signatur string) *repository.BookCopy {
+	return &repository.BookCopy{Titel: titel, Signatur: signatur, Medientyp: "Buch", IstAusleihbar: true}
+}
+
 // --- Ausleihlimit (max_ausleihen_schueler) ---
 
 func TestPruefeAusleihlimit_ErreichtesLimitBlockiert(t *testing.T) {
@@ -65,6 +72,24 @@ func TestPruefeAusleihlimit_LMFBuchIstAusgenommen(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("LMF-Buch soll trotz überschrittenem Limit durchgehen, bekam: %v", err)
+	}
+}
+
+func TestPruefeAusleihlimit_LMFNurInSignaturIstAusgenommen(t *testing.T) {
+	// Von Hand über die Admin-Oberfläche angelegte Schulbücher tragen das
+	// LMF-Kennzeichen nur in der Signatur, nicht im Titel — das darf sie nicht ins
+	// Ausleihlimit laufen lassen (der Fehler, den diese Prüfung ursprünglich beheben
+	// sollte, nur über den anderen Weg ins System gekommen).
+	svc, _, mock := newValidationService(t, nil)
+	defer mock.Close()
+	expectSettings(mock, "5")
+
+	err := svc.pruefeSchuelerAusleihlimit(
+		context.Background(), schuelerCtx("s1"), buchMitSignatur("Mathematik Neue Wege 9", "LMF Ma"), 10, false,
+	)
+
+	if err != nil {
+		t.Errorf("LMF-Buch (Kennzeichen nur in Signatur) soll trotz überschrittenem Limit durchgehen, bekam: %v", err)
 	}
 }
 

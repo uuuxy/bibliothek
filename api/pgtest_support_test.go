@@ -119,6 +119,20 @@ func titelMitMeldebestand(t *testing.T, pool *pgxpool.Pool, titel string, meldeb
 	return id
 }
 
+// titelMitSignatur legt einen Titel mit expliziter Signatur an — für Fälle, in denen
+// das LMF-Kennzeichen (anders als bei titelMitMeldebestand) nicht im Titel steht,
+// sondern nur in der Signatur.
+func titelMitSignatur(t *testing.T, pool *pgxpool.Pool, titel, signatur string, meldebestand int) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(),
+		`INSERT INTO buecher_titel (titel, signatur, meldebestand) VALUES ($1, $2, $3) RETURNING id`,
+		titel, signatur, meldebestand).Scan(&id); err != nil {
+		t.Fatalf("Titel mit Signatur anlegen: %v", err)
+	}
+	return id
+}
+
 // exemplar legt ein Exemplar mit Verleih-/Aussonderungsstatus und Notiz an.
 func exemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string, ausleihbar bool, notiz string) string {
 	t.Helper()

@@ -80,9 +80,9 @@ func resolveListLimit(raw string) int {
 func resolveBestandsFilter(typ string) (fragment string, normalized string) {
 	switch typ {
 	case "lmf":
-		return "AND " + lmf.SQLBedingung("t.titel"), "lmf"
+		return "AND " + lmf.SQLBedingung("t.titel", "t.signatur"), "lmf"
 	case "freihand":
-		return "AND NOT (" + lmf.SQLBedingung("t.titel") + ")", "freihand"
+		return "AND NOT (" + lmf.SQLBedingung("t.titel", "t.signatur") + ")", "freihand"
 	default:
 		return "", "alle"
 	}

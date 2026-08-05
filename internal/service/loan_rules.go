@@ -143,9 +143,9 @@ func applyEinstellung(settings *SystemEinstellungen, key, value string) {
 	}
 }
 
-// calculateDueDate berechnet das Rückgabedatum auf Basis von Titel, Medientyp und
-// den definierten Standardfristen.
-func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage, additionalYears int) time.Time {
+// calculateDueDate berechnet das Rückgabedatum auf Basis von Titel, Signatur,
+// Medientyp und den definierten Standardfristen.
+func calculateDueDate(titel, signatur, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage, additionalYears int) time.Time {
 	// In Schul-Zeitzone rechnen, damit sowohl der Jahreswechsel-Stichtag (August)
 	// als auch das "Ende des Tages" (23:59:59) deterministisch sind — unabhängig
 	// von der Server-Zeitzone. now.Location() ist dadurch schoolLocation().
@@ -155,7 +155,7 @@ func calculateDueDate(titel, medientyp, lmfStichtag string, fristBuchTage, frist
 	// Schulbücher (erkennbar am LMF-Kennzeichen im Titel) werden für das gesamte Schuljahr
 	// ausgeliehen. Sie müssen spätestens am definierten Stichtag (standardmäßig 31. Juli)
 	// zurückgegeben werden.
-	if lmf.IstTitel(titel) {
+	if lmf.IstSchulbuch(titel, signatur) {
 		year := now.Year()
 		// Wenn wir uns bereits im oder nach dem August befinden (neues Schuljahr),
 		// liegt der Stichtag im nächsten Kalenderjahr.
@@ -234,10 +234,10 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 
 	if err != nil {
 		// Bei einem Datenbankfehler greifen wir auf feste Notfall-Standardwerte zurück
-		return calculateDueDate(copy.Titel, copy.Medientyp, "07-31", 21, 7, additionalYears), nil
+		return calculateDueDate(copy.Titel, copy.Signatur, copy.Medientyp, "07-31", 21, 7, additionalYears), nil
 	}
 
-	isLMF := lmf.IstTitel(copy.Titel)
+	isLMF := lmf.IstSchulbuch(copy.Titel, copy.Signatur)
 
 	// Leseclub-Regel: Falls die Ferien-Leseclub-Aktion aktiv ist und ein Zieldatum konfiguriert wurde,
 	// erhalten alle regulären Buchbestände (ausgenommen LMF-Schulbücher) dieses Zieldatum als Frist.
@@ -250,5 +250,5 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 	}
 
 	// Reguläre Fristenberechnung
-	return calculateDueDate(copy.Titel, copy.Medientyp, settings.LmfStichtag, settings.FristBuchTage, settings.FristMedienTage, additionalYears), nil
+	return calculateDueDate(copy.Titel, copy.Signatur, copy.Medientyp, settings.LmfStichtag, settings.FristBuchTage, settings.FristMedienTage, additionalYears), nil
 }

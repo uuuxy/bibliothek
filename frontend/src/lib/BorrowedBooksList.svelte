@@ -106,7 +106,13 @@
 		</thead>
 		<tbody class="divide-y divide-slate-100">
 			{#each books as book (book.id || book.barcode_id || Math.random())}
-				{@const isLMF = book.titel?.toLowerCase().startsWith('lmf-')}
+				<!-- Titel UND Signatur prüfen: Bei manuell angelegten Schulbüchern steht das
+				     LMF-Kennzeichen meist nur in der Signatur (Auto-Vorschlag "LMF <Kürzel>"),
+				     der Titel bleibt Klartext. Titel-only übersah bislang genau diese Bücher. -->
+				{@const isLMF =
+					book.titel?.toLowerCase().startsWith('lmf-') ||
+					book.titel?.toLowerCase().startsWith('lmf ') ||
+					/^lmf[ -]/i.test(book.signatur ?? '')}
 				{@const isOverdue = mode === 'loans' && new Date(book.rueckgabe_frist) < new Date()}
 				<!-- Miniatur und Großansicht ziehen ihre Quelle aus derselben Funktion. Vorher lud
 				     die Miniatur den Pfad direkt, die Großansicht dagegen über den Cover-Proxy —

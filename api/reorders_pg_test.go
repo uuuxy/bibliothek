@@ -103,6 +103,37 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 	}
 }
 
+// TestQueryReorders_LMFNurInSignatur sichert den Signatur-Fix ab (05.08.2026): Der
+// Regelfall bei manueller Neuanlage über die Admin-Oberfläche ist ein Klartext-Titel
+// ("Mathematik Neue Wege 9") mit dem LMF-Kennzeichen NUR in der Signatur
+// ("LMF Ma" — Auto-Vorschlag). Vor dieser Änderung prüfte queryReorders ausschliesslich
+// den Titel und liess solche Bücher nie unter die Bestellbedarf-Schwelle fallen, egal
+// wie knapp der Bestand war.
+func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	tID := titelMitSignatur(t, pool, "Mathematik Neue Wege 9", "LMF Ma", 5)
+	for i := 0; i < 3; i++ {
+		exemplar(t, pool, tID, barcodeN("S", i), true, "")
+	}
+
+	reorders, err := srv.queryReorders(ctx, reorderFilterFragmentLMF(), 5)
+	if err != nil {
+		t.Fatalf("queryReorders: %v", err)
+	}
+
+	got := map[string]ReorderTitle{}
+	for _, r := range reorders {
+		got[r.Titel] = r
+	}
+	if _, drin := got["Mathematik Neue Wege 9"]; !drin {
+		t.Error("LMF-Kennzeichen nur in der Signatur wurde nicht erkannt — Titel fehlt in der Bestellbedarf-Liste")
+	}
+}
+
 // reorderFilterFragmentLMF liefert das Default-(LMF-)Filterfragment ohne HTTP-Request.
 func reorderFilterFragmentLMF() string {
 	frag, _ := resolveBestandsFilter("lmf")

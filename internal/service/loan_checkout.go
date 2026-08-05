@@ -32,7 +32,7 @@ func (s *defaultLoanService) zaehleAktiveSchuelerAusleihen(ctx context.Context, 
 		WHERE a.schueler_id = $1
 		  AND a.rueckgabe_am IS NULL
 		  AND NOT (%s)
-	`, lmf.SQLBedingung("bt.titel"))
+	`, lmf.SQLBedingung("bt.titel", "bt.signatur"))
 	err := tx.QueryRow(ctx, query, chkCtx.borrowerID).Scan(&count)
 	return count, err
 }
@@ -62,7 +62,7 @@ func (s *defaultLoanService) pruefeSchuelerAusleihlimit(ctx context.Context, chk
 	if err != nil {
 		return err
 	}
-	isLMF := lmf.IstTitel(copy.Titel)
+	isLMF := lmf.IstSchulbuch(copy.Titel, copy.Signatur)
 	if !isLMF && activeLoansCount >= settings.MaxAusleihenSchueler && !isReturningThis {
 		return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell: %d)", ErrBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
 	}

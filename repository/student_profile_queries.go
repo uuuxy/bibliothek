@@ -31,7 +31,8 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			coalesce(t.autor, ''), 
 			coalesce(t.isbn, ''),
 			coalesce(t.cover_url, ''),
-			a.ausgeliehen_am, 
+			coalesce(t.signatur, ''),
+			a.ausgeliehen_am,
 			a.rueckgabe_frist
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
@@ -56,6 +57,7 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			&b.Autor,
 			&b.ISBN,
 			&b.CoverURL,
+			&b.Signatur,
 			&b.AusgeliehenAm,
 			&b.RueckgabeFrist,
 		); err != nil {

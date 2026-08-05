@@ -16,8 +16,11 @@ type BorrowedBook struct {
 	// ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein
 	// Cover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den
 	// Cover-Proxy) — und das ist bei importierten Beständen der Normalfall.
-	ISBN           string    `json:"isbn,omitempty"`
-	CoverURL       string    `json:"cover_url,omitempty"`
+	ISBN     string `json:"isbn,omitempty"`
+	CoverURL string `json:"cover_url,omitempty"`
+	// Signatur wird gebraucht, um LMF-Titel zu erkennen (lmf.IstSchulbuch prüft
+	// Titel UND Signatur — die manuelle Neuanlage trägt das Kennzeichen oft nur hier).
+	Signatur       string    `json:"signatur,omitempty"`
 	AusgeliehenAm  time.Time `json:"ausgeliehen_am"`
 	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
 }

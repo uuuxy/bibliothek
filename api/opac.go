@@ -74,7 +74,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		//
 		// Nur diese eine öffentliche Suche filtert. Verwaltung, Inventur, Bestellwesen
 		// und die Klassensatz-Reservierung müssen die Bücher weiter finden.
-		var searchConditions = []string{"NOT (" + lmf.SQLBedingung("bt.titel") + ")"}
+		var searchConditions = []string{"NOT (" + lmf.SQLBedingung("bt.titel", "bt.signatur") + ")"}
 
 		if q != "" {
 			args = append(args, q)

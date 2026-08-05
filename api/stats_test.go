@@ -15,8 +15,8 @@ func TestResolveBestandsFilter(t *testing.T) {
 	cases := []struct {
 		in, wantFragment, wantName string
 	}{
-		{"lmf", "AND LOWER(t.titel) ~ '^lmf[ -]'", "lmf"},
-		{"freihand", "AND NOT (LOWER(t.titel) ~ '^lmf[ -]')", "freihand"},
+		{"lmf", "AND (LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]')", "lmf"},
+		{"freihand", "AND NOT ((LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]'))", "freihand"},
 		{"", "", "alle"},
 		{"kaputt", "", "alle"}, // unbekannte Werte fallen sicher auf Gesamtbestand zurück
 	}

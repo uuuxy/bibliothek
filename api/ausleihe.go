@@ -234,7 +234,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			  AND s.ist_gesperrt = false
 			  AND COALESCE(s.is_manually_blocked, false) = false
 			  AND s.klasse = $2
-			  AND ` + lmf.SQLBedingung("t.titel") + `
+			  AND ` + lmf.SQLBedingung("t.titel", "t.signatur") + `
 		`
 		tag, err := tx.Exec(ctx, q, newDate, req.Klasse)
 		if err != nil {
