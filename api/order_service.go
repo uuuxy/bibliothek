@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
 
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -229,6 +231,11 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 				Autor:     title.Autor,
 				ISBN:      title.ISBN,
 				Signatur:  title.Signatur,
+				// „Ansch.J." steht auf der physischen Etikettenvorlage der Schule. Die
+				// Exemplare entstehen in dieser Transaktion mit erworben_am = heute, das Jahr
+				// ist also schon bekannt — und stimmt damit mit dem überein, was die
+				// Lieferantenseite später aus der Datenbank liest.
+				AnschaffungsJahr: strconv.Itoa(time.Now().Year()),
 			})
 		}
 	}

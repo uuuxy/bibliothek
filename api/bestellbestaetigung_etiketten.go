@@ -24,7 +24,8 @@ import (
 // Bibliothek selbst, und beide würden dasselbe Buch bekleben.
 func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) ([]BarcodeLabelDetail, error) {
 	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.signatur, '')
+		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.signatur, ''),
+		       to_char(e.erworben_am, 'YYYY')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.bestellung_id = $1
@@ -42,11 +43,13 @@ func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) 
 	etiketten := []BarcodeLabelDetail{}
 	for rows.Next() {
 		var d BarcodeLabelDetail
-		if err := rows.Scan(&d.BarcodeID, &d.Titel, &d.Autor, &d.ISBN, &d.Signatur); err != nil {
+		if err := rows.Scan(&d.BarcodeID, &d.Titel, &d.Autor, &d.ISBN, &d.Signatur, &d.AnschaffungsJahr); err != nil {
 			return nil, err
 		}
-		// AnschaffungsJahr bleibt leer — genau wie im Mailanhang, der zum Bestellzeitpunkt
-		// entsteht. Sonst trüge derselbe Barcode auf zwei Wegen unterschiedliche Etiketten.
+		// Das Anschaffungsjahr gehört auf das Etikett: Auf der physischen Vorlage der Schule
+		// steht es als „Ansch.J. 2022" unter dem Titel. Es blieb hier zunächst leer, um dem
+		// Mailanhang zu gleichen — das war der falsche Bezugspunkt, also trägt jetzt auch der
+		// Anhang das Jahr (api/order_service.go).
 		etiketten = append(etiketten, d)
 	}
 	return etiketten, rows.Err()

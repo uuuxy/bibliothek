@@ -5,7 +5,9 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
+	"time"
 
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -64,6 +66,22 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	if len(etiketten) != 3 {
 		t.Fatalf("Etiketten = %d, want 3 (nur Positionen mit Vorab-Barcode)", len(etiketten))
 	}
+	// „Ansch.J." steht auf der physischen Etikettenvorlage der Schule (Foto vom
+	// Lernmittel-Etikett: Schulname / Titel / Ansch.J. / Barcode / Exemplar-Nr. /
+	// Eigentumsvermerk / Ausleihtabelle). Es fehlte hier zunächst, weil das Etikett dem
+	// Mailanhang gleichen sollte — der trug es aber selbst nicht. Beide Wege tragen es jetzt.
+	jahr := strconv.Itoa(time.Now().Year())
+	for _, e := range etiketten {
+		if e.AnschaffungsJahr != jahr {
+			t.Fatalf("Etikett der Seite trägt Anschaffungsjahr %q, want %q", e.AnschaffungsJahr, jahr)
+		}
+	}
+	for _, e := range res.Labels {
+		if e.AnschaffungsJahr != jahr {
+			t.Fatalf("Etikett des Mailanhangs trägt Anschaffungsjahr %q, want %q", e.AnschaffungsJahr, jahr)
+		}
+	}
+
 	if len(etiketten) != len(res.Labels) {
 		t.Fatalf("Seite zeigt %d Etiketten, die Bestellmail enthielt %d — beide Wege müssen dieselben sein",
 			len(etiketten), len(res.Labels))
