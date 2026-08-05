@@ -31,6 +31,9 @@ type BarcodeLabelDetail struct {
 	// "Ansch.J. 2016" auf dem Etikett. Leer = Zeile entfällt (etwa bei Vorab-Etiketten
 	// für eine Bestellung, deren Exemplare es noch gar nicht gibt).
 	AnschaffungsJahr string
+	// Signatur ist buecher_titel.signatur (z. B. "LMF-Deutsch 5"). Leer = Zeile entfällt,
+	// genau wie bei AnschaffungsJahr.
+	Signatur string
 }
 
 // EtikettKopf trägt die schulweiten Angaben, die auf JEDEM Etikett stehen — sie kommen
@@ -131,72 +134,6 @@ func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, mitBarc
 
 	var buf bytes.Buffer
 	if err := p.Output(&buf); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// GenerateBarcodeSheetPDF generates a grid of QR code labels on A4 PDF format.
-func GenerateBarcodeSheetPDF(labels []BarcodeLabelDetail) ([]byte, error) {
-	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.AddPage()
-	pdf.SetMargins(10, 15, 10)
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
-
-	pdf.SetFont("Arial", "B", 14)
-	pdf.Cell(0, 10, tr("Barcode-Aufkleber für Buchlieferung (Vorab-Beklebung)"))
-	pdf.Ln(6)
-	pdf.SetFont("Arial", "", 9)
-	pdf.SetTextColor(100, 100, 100)
-	pdf.Cell(0, 4, tr(fmt.Sprintf("Generiert am %s · Gesamtanzahl: %d", time.Now().Format("02.01.2006"), len(labels))))
-	pdf.SetTextColor(0, 0, 0)
-	pdf.Ln(10)
-
-	colWidth := 60.0
-	rowHeight := 35.0
-	cols := 3
-	margin := 10.0
-
-	for idx, label := range labels {
-		colIdx := idx % cols
-		rowIdx := (idx / cols) % 7
-
-		if idx > 0 && colIdx == 0 && idx%21 == 0 {
-			pdf.AddPage()
-		}
-
-		x := margin + float64(colIdx)*(colWidth+5)
-		y := 25.0 + float64(rowIdx)*(rowHeight+5)
-
-		pdf.Rect(x, y, colWidth, rowHeight, "D")
-
-		pdf.SetFont("Arial", "B", 8)
-		pdf.SetXY(x+2, y+3)
-		pdf.Cell(colWidth-4, 4, tr(label.Titel))
-
-		pdf.SetFont("Arial", "", 7)
-		pdf.SetXY(x+2, y+7)
-		pdf.Cell(colWidth-4, 4, tr(label.Autor))
-
-		// Generate dynamic 1D Code39 barcode PNG
-		barcodeImg, err := GenerateBarcodePNG(label.BarcodeID, false, 250, 70)
-		if err == nil {
-			imgReader := bytes.NewReader(barcodeImg)
-			pdf.RegisterImageOptionsReader(label.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, imgReader)
-			bcWidth := 40.0
-			bcHeight := 10.0
-			bcX := x + (colWidth-bcWidth)/2
-			bcY := y + 14.0
-			pdf.Image(label.BarcodeID, bcX, bcY, bcWidth, bcHeight, false, "", 0, "")
-		}
-
-		pdf.SetFont("Courier", "B", 10)
-		pdf.SetXY(x+2, y+27)
-		pdf.CellFormat(colWidth-4, 4, tr(label.BarcodeID), "", 0, "C", false, 0, "")
-	}
-
-	var buf bytes.Buffer
-	if err := pdf.Output(&buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

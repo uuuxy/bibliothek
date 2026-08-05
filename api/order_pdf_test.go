@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -22,16 +23,55 @@ func TestPDFGeneration(t *testing.T) {
 	}
 
 	labels := []BarcodeLabelDetail{
-		{BarcodeID: "B-10001", Titel: "Test Buch 1", Autor: "Autor 1"},
+		{BarcodeID: "B-10001", Titel: "Test Buch 1", Autor: "Autor 1", Signatur: "LMF-Deutsch 5"},
 		{BarcodeID: "B-10002", Titel: "Test Buch 2", Autor: "Autor 2"},
 	}
 
-	barcodePDF, err := GenerateBarcodeSheetPDF(labels)
+	kopf := EtikettKopf{Schulname: "Testbibliothek", Eigentumsvermerk: "Eigentum des Landes Hessen"}
+	labelDoc, err := GenerateLabelsPDF("zweckform_l4760", 1, false, labels, kopf)
 	if err != nil {
-		t.Fatalf("Failed to generate barcode PDF: %v", err)
+		t.Fatalf("Failed to generate label PDF: %v", err)
 	}
-	if len(barcodePDF) == 0 {
-		t.Error("Generated barcode PDF is empty")
+	var buf bytes.Buffer
+	if err := labelDoc.Output(&buf); err != nil {
+		t.Fatalf("Failed to output label PDF: %v", err)
+	}
+	if buf.Len() == 0 {
+		t.Error("Generated label PDF is empty")
+	}
+}
+
+// Naacher & Co. bekommen zusätzlich zum kleinen das große Lernmittel-Etikett
+// mitgeschickt, damit sie selbst wählen können, welches sie drucken.
+func TestGenerateLernmittelEtikettenPDF(t *testing.T) {
+	items := []BarcodeLabelDetail{
+		{BarcodeID: "B-10001", Titel: "Test Buch 1", AnschaffungsJahr: "2024", Signatur: "LMF-Deutsch 5"},
+		{BarcodeID: "B-10002", Titel: "Test Buch 2"},
+	}
+	kopf := EtikettKopf{Schulname: "Testbibliothek", Eigentumsvermerk: "Eigentum des Landes Hessen"}
+
+	pdfBytes, err := GenerateLernmittelEtikettenPDF(items, kopf)
+	if err != nil {
+		t.Fatalf("Failed to generate Lernmittel-Etikett PDF: %v", err)
+	}
+	if len(pdfBytes) == 0 {
+		t.Error("Generated Lernmittel-Etikett PDF is empty")
+	}
+}
+
+func TestZweiteZeile(t *testing.T) {
+	cases := []struct {
+		jahr, signatur, want string
+	}{
+		{"2016", "LMF-Deutsch 5", "Ansch.J. 2016 · LMF-Deutsch 5"},
+		{"2016", "", "Ansch.J. 2016"},
+		{"", "LMF-Deutsch 5", "LMF-Deutsch 5"},
+		{"", "", ""},
+	}
+	for _, c := range cases {
+		if got := zweiteZeile(c.jahr, c.signatur); got != c.want {
+			t.Errorf("zweiteZeile(%q, %q) = %q, want %q", c.jahr, c.signatur, got, c.want)
+		}
 	}
 }
 

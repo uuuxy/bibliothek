@@ -595,7 +595,11 @@ CREATE TABLE lieferanten (
     -- erscheinen nicht auf der Nachdruck-Liste (Migration 056).
     liefert_mit_barcode BOOLEAN NOT NULL DEFAULT false,
     -- Vorauswahl im Bestellformular (Migration 058).
-    ist_standard BOOLEAN NOT NULL DEFAULT false
+    ist_standard BOOLEAN NOT NULL DEFAULT false,
+    -- Lieferant bietet nach der Bestellung eine eigene Etikettengrößen-Wahl + Bestätigung
+    -- an (z. B. Naacher). Rein informativ — Bibliosys erzeugt hierfür keine Etiketten
+    -- (Migration 062).
+    bietet_bestellbestaetigung BOOLEAN NOT NULL DEFAULT false
 );
 
 -- Höchstens EIN Standardlieferant. Der Teil-Index lässt nur eine Zeile mit true zu;
@@ -606,14 +610,22 @@ CREATE UNIQUE INDEX idx_lieferanten_ein_standard ON lieferanten (ist_standard) W
 
 -- Table: bestellungen_verlauf (Order history — one record per submitted order)
 CREATE TABLE bestellungen_verlauf (
-    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    lieferant_id     UUID REFERENCES lieferanten(id) ON DELETE SET NULL,
-    lieferant_name   TEXT NOT NULL,
-    lieferant_email  TEXT NOT NULL,
-    kundennummer     TEXT NOT NULL DEFAULT '',
-    bestelldatum     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    gesamtbetrag     DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    anzahl_exemplare INTEGER NOT NULL DEFAULT 0
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lieferant_id       UUID REFERENCES lieferanten(id) ON DELETE SET NULL,
+    lieferant_name     TEXT NOT NULL,
+    lieferant_email    TEXT NOT NULL,
+    kundennummer       TEXT NOT NULL DEFAULT '',
+    bestelldatum       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    gesamtbetrag       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    anzahl_exemplare   INTEGER NOT NULL DEFAULT 0,
+    -- Zeitpunkt der externen Bestellbestätigung durch den Lieferanten (z. B. über den
+    -- Naacher-Link). NULL = noch nicht bestätigt (Migration 062).
+    bestaetigt_am      TIMESTAMPTZ,
+    -- Beim Bestätigen gewählte Etikettengröße ('klein'/'gross'), NULL solange
+    -- unbestätigt (Migration 062).
+    etiketten_groesse  TEXT
+        CONSTRAINT bestellungen_verlauf_etiketten_groesse_check
+        CHECK (etiketten_groesse IS NULL OR etiketten_groesse IN ('klein', 'gross'))
 );
 
 -- Table: bestellungen_positionen (Line items per order)
@@ -737,7 +749,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('058_lieferant_ist_standard.sql'),
 ('059_inventur_verluste.sql'),
 ('060_signatur_scope_text.sql'),
-('061_inventur_verluste_gefunden.sql')
+('061_inventur_verluste_gefunden.sql'),
+('062_lieferant_bestellbestaetigung.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

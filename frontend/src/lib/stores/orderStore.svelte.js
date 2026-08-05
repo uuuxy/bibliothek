@@ -157,7 +157,14 @@ class OrderStore {
 	}
 
 	/** @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] @param {boolean} [istStandard] */
-	async addSupplier(name, email, customerNumber, liefertMitBarcode = false, istStandard = false) {
+	async addSupplier(
+		name,
+		email,
+		customerNumber,
+		liefertMitBarcode = false,
+		istStandard = false,
+		bietetBestellbestaetigung = false
+	) {
 		if (!name || !email || !customerNumber) return;
 		try {
 			await apiPost('/api/lieferanten', {
@@ -165,7 +172,8 @@ class OrderStore {
 				email,
 				customerNumber,
 				liefert_mit_barcode: liefertMitBarcode,
-				ist_standard: istStandard
+				ist_standard: istStandard,
+				bietet_bestellbestaetigung: bietetBestellbestaetigung
 			});
 			await this.loadSuppliers();
 		} catch {
@@ -174,14 +182,23 @@ class OrderStore {
 	}
 
 	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] @param {boolean} [istStandard] */
-	async editSupplier(id, name, email, customerNumber, liefertMitBarcode = false, istStandard = false) {
+	async editSupplier(
+		id,
+		name,
+		email,
+		customerNumber,
+		liefertMitBarcode = false,
+		istStandard = false,
+		bietetBestellbestaetigung = false
+	) {
 		try {
 			await apiPut(`/api/lieferanten/${id}`, {
 				name,
 				email,
 				customerNumber,
 				liefert_mit_barcode: liefertMitBarcode,
-				ist_standard: istStandard
+				ist_standard: istStandard,
+				bietet_bestellbestaetigung: bietetBestellbestaetigung
 			});
 			await this.loadSuppliers();
 			toastStore.addToast('Lieferant aktualisiert.', 'success');

@@ -17,6 +17,11 @@ type Supplier struct {
 	// ja dafür. Die Exemplare entstehen dann aber bereits als „Etikett vorhanden" und
 	// erscheinen nicht auf der Nachdruck-Liste (siehe api/order_service.go).
 	LiefertMitBarcode bool
+
+	// BietetBestellbestaetigung: Der Händler bietet nach der Bestellung eine eigene
+	// Etikettengrößen-Wahl + Bestätigung an (z. B. Naacher). Steuert, ob beim Bestellen
+	// zusätzlich das große Lernmittel-Etikett mitgeschickt wird (siehe api/pdf_service.go).
+	BietetBestellbestaetigung bool
 }
 
 // SupplierRepository definiert die Datenbank-Zugriffe für Lieferanten.
@@ -38,10 +43,10 @@ func (r *pgSupplierRepository) GetSupplierByID(ctx context.Context, id string) (
 	var s Supplier
 	s.ID = id
 	err := r.db.QueryRow(ctx, `
-		SELECT name, email, kundennummer, liefert_mit_barcode
+		SELECT name, email, kundennummer, liefert_mit_barcode, bietet_bestellbestaetigung
 		FROM lieferanten
 		WHERE id = $1
-	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer, &s.LiefertMitBarcode)
+	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer, &s.LiefertMitBarcode, &s.BietetBestellbestaetigung)
 	if err != nil {
 		return nil, err
 	}

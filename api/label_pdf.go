@@ -47,13 +47,31 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 	pdf.CellFormat(format.LabelWidth-4, 4, tr(item.BarcodeID), "", 0, "C", false, 0, "")
 }
 
+// zweiteZeile kombiniert Anschaffungsjahr und Signatur auf EINER Zeile
+// ("Ansch.J. 2016 · LMF-Deutsch 5"), statt für die Signatur eine eigene siebte Zeile zu
+// verlangen. Die physischen Formate (Zweckform L4760: 38,1 mm, Avery 3475: 37 mm) sind
+// randvoll — der bestehende Inhalt füllt schon rund 35 mm, eine zusätzliche volle Zeile
+// hätte das Etikett über seine Klebefläche hinaus wachsen lassen.
+func zweiteZeile(jahr, signatur string) string {
+	switch {
+	case jahr != "" && signatur != "":
+		return "Ansch.J. " + jahr + " · " + signatur
+	case jahr != "":
+		return "Ansch.J. " + jahr
+	case signatur != "":
+		return signatur
+	default:
+		return ""
+	}
+}
+
 // zeichneBarcodeLabel rendert ein Etikett mit 1D-Barcode (Code39/Code128).
 // zeichneBarcodeLabel setzt das Buchetikett nach der Vorlage, die in der Bibliothek
 // seit Jahren an den Büchern klebt:
 //
 //	Philipp-Reis-Schule, Friedrichsdorf   ← fett, Schulname aus den Einstellungen
 //	Seydlitz - Geographie Gymnasium       ← fett, Titel
-//	Ansch.J. 2016                         ← Anschaffungsjahr
+//	Ansch.J. 2016 · LMF-Deutsch 5         ← Anschaffungsjahr · Signatur
 //	[ Barcode ]
 //	Exemplar-Nr.: 82347
 //	Eigentum des Landes Hessen
@@ -64,8 +82,8 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 // zurückkommt.
 //
 // Auf dem kleinen Format (21,2 mm) ist für sechs Zeilen kein Platz. Dort entfallen
-// Anschaffungsjahr und Eigentumsvermerk — lieber weniger Angaben als übereinander
-// gedruckte.
+// Anschaffungsjahr/Signatur und Eigentumsvermerk — lieber weniger Angaben als
+// übereinander gedruckte.
 func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel string, kopf EtikettKopf, pos labelPos) {
 	grossesEtikett := format.LabelHeight >= 30
 
@@ -78,11 +96,12 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 	pdf.SetXY(pos.X, y)
 	pdf.CellFormat(format.LabelWidth, 3.5, tr(titel), "", 0, "C", false, 0, "")
 
-	if grossesEtikett && item.AnschaffungsJahr != "" {
+	zeile2 := zweiteZeile(item.AnschaffungsJahr, item.Signatur)
+	if grossesEtikett && zeile2 != "" {
 		y += 3.5
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.LabelWidth, 3, tr("Ansch.J. "+item.AnschaffungsJahr), "", 0, "C", false, 0, "")
+		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufZeichen(zeile2, 45)), "", 0, "C", false, 0, "")
 		y += 3
 	} else {
 		y += 3.5

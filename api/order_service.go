@@ -35,6 +35,9 @@ type OrderResult struct {
 	Labels         []BarcodeLabelDetail
 	SummaryItems   []OrderedItem
 	TotalAllocated int
+	// BietetBestellbestaetigung: siehe repository.Supplier — steuert, ob DispatchOrderEmail
+	// zusätzlich das große Lernmittel-Etikett anhängt.
+	BietetBestellbestaetigung bool
 }
 
 type bestellungPosition struct {
@@ -110,12 +113,13 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	}
 
 	return &OrderResult{
-		SupplierName:   supplier.Name,
-		SupplierEmail:  supplier.Email,
-		CustomerNumber: supplier.Kundennummer,
-		Labels:         labels,
-		SummaryItems:   orderSummaryItems,
-		TotalAllocated: totalAllocated,
+		SupplierName:              supplier.Name,
+		SupplierEmail:             supplier.Email,
+		CustomerNumber:            supplier.Kundennummer,
+		Labels:                    labels,
+		SummaryItems:              orderSummaryItems,
+		TotalAllocated:            totalAllocated,
+		BietetBestellbestaetigung: supplier.BietetBestellbestaetigung,
 	}, nil
 }
 
@@ -192,6 +196,7 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 				Titel:     title.Titel,
 				Autor:     title.Autor,
 				ISBN:      title.ISBN,
+				Signatur:  title.Signatur,
 			})
 		}
 	}

@@ -1,11 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/repository"
 )
 
 // PDFService handles the generation of PDF documents and email dispatch.
@@ -19,11 +21,17 @@ func NewPDFService() *PDFService {
 // DispatchOrderEmail generates the necessary PDFs and sends the order email to the supplier.
 // Betreff (subject) und Text (body) werden vom Aufrufer bereits aus der Vorlage
 // BESTELLUNG_HAENDLER aufgelöst übergeben, damit dieser Service DB-frei bleibt.
+//
+// bietetBestellbestaetigung: Lieferanten wie Naacher etikettieren selbst und lassen den
+// Auftraggeber danach über einen eigenen Link die Etikettengröße wählen (klein/groß).
+// Damit er wählen kann, bekommt er BEIDE fertigen Etikettenformate mitgeschickt statt
+// nur des kleinen — Bibliosys entscheidet die Größe nicht vorab.
 func (s *PDFService) DispatchOrderEmail(
 	supplierEmail, subject, body string,
 	summaryItems []OrderedItem,
 	labels []BarcodeLabelDetail,
 	generateBarcodes bool,
+	bietetBestellbestaetigung bool,
 	schule pdf.SchuleInfo,
 ) error {
 	// Eine Bedingung, an der ALLES hängt: der Bogen, die CSV und der Satz im Anschreiben,
@@ -36,16 +44,34 @@ func (s *PDFService) DispatchOrderEmail(
 		return err
 	}
 
+	kopf := EtikettKopf{Schulname: schule.Name, Eigentumsvermerk: repository.StandardEigentumsvermerk}
+
 	var barcodePDF []byte
 	var barcodeCSV []byte
+	var lernmittelPDF []byte
 	if mitBarcodebogen {
-		barcodePDF, err = GenerateBarcodeSheetPDF(labels)
-		if err != nil {
+		// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
+		// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
+		// diese Angaben.
+		labelDoc, err2 := GenerateLabelsPDF("zweckform_l4760", 1, false, labels, kopf)
+		if err2 != nil {
+			return err2
+		}
+		var labelBuf bytes.Buffer
+		if err := labelDoc.Output(&labelBuf); err != nil {
 			return err
 		}
+		barcodePDF = labelBuf.Bytes()
+
 		barcodeCSV, err = GenerateBarcodeCSV(labels)
 		if err != nil {
 			return err
+		}
+		if bietetBestellbestaetigung {
+			lernmittelPDF, err = GenerateLernmittelEtikettenPDF(labels, kopf)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -59,7 +85,7 @@ func (s *PDFService) DispatchOrderEmail(
 
 	if mitBarcodebogen {
 		attachments = append(attachments, MailAttachment{
-			Name:        fmt.Sprintf("barcode_bogen_%s.pdf", time.Now().Format(dateFormatISO)),
+			Name:        fmt.Sprintf("etiketten_klein_%s.pdf", time.Now().Format(dateFormatISO)),
 			ContentType: "application/pdf",
 			Data:        barcodePDF,
 		})
@@ -68,6 +94,13 @@ func (s *PDFService) DispatchOrderEmail(
 			ContentType: "text/csv",
 			Data:        barcodeCSV,
 		})
+		if bietetBestellbestaetigung {
+			attachments = append(attachments, MailAttachment{
+				Name:        fmt.Sprintf("etiketten_gross_%s.pdf", time.Now().Format(dateFormatISO)),
+				ContentType: "application/pdf",
+				Data:        lernmittelPDF,
+			})
+		}
 	}
 
 	mailReq := MailRequest{

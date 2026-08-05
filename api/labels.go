@@ -30,12 +30,12 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 	return formatId, startPos, isQR
 }
 
-// queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr) eines Titels.
+// queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
 func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabelDetail, error) {
 	// erworben_am ist NOT NULL mit Vorgabe CURRENT_DATE — to_char liefert also immer
 	// vier Ziffern und nie NULL.
 	query := `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY')
+		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, '')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.titel_id = $1
@@ -50,7 +50,7 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 	var items []BarcodeLabelDetail
 	for rows.Next() {
 		var item BarcodeLabelDetail
-		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr); err == nil {
+		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr, &item.Signatur); err == nil {
 			items = append(items, item)
 		}
 	}

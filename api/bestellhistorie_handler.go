@@ -39,6 +39,17 @@ type BestellVerlaufResponse struct {
 	Gesamtbetrag    float64                   `json:"gesamtbetrag"`
 	AnzahlExemplare int                       `json:"anzahl_exemplare"`
 	Positionen      []BestellPositionResponse `json:"positionen"`
+
+	// BietetBestellbestaetigung: Lieferant dieser Bestellung bietet den externen
+	// Bestätigungsschritt an (z. B. Naacher) — steuert, ob die Oberfläche den
+	// Bestätigen-Schritt überhaupt anzeigt. false, wenn der Lieferant inzwischen
+	// gelöscht wurde (COALESCE gegen lieferant_id IS NULL).
+	BietetBestellbestaetigung bool `json:"bietet_bestellbestaetigung"`
+	// BestaetigtAm: Zeitpunkt der externen Bestätigung, NULL solange unbestätigt.
+	BestaetigtAm *time.Time `json:"bestaetigt_am,omitempty"`
+	// EtikettenGroesse: beim Bestätigen gewählte Größe ('klein'/'gross'), NULL solange
+	// unbestätigt.
+	EtikettenGroesse *string `json:"etiketten_groesse,omitempty"`
 }
 
 // GetBestellhistorieHandler returns all past orders with their line items, newest first.
@@ -69,10 +80,15 @@ func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 // ladeBestellhistorie lädt alle Bestellköpfe (neueste zuerst) und einen Index
 // Bestell-ID → Position im Slice für das spätere Zuordnen der Positionen.
 func (s *Server) ladeBestellhistorie(ctx context.Context) ([]BestellVerlaufResponse, map[string]int, error) {
+	// LEFT JOIN + COALESCE: eine Bestellung überlebt ihren gelöschten Lieferanten als
+	// Beleg (lieferant_id ON DELETE SET NULL) — dann gilt bietet_bestellbestaetigung=false.
 	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT id, lieferant_name, lieferant_email, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare
-		FROM bestellungen_verlauf
-		ORDER BY bestelldatum DESC
+		SELECT b.id, b.lieferant_name, b.lieferant_email, b.kundennummer, b.bestelldatum,
+		       b.gesamtbetrag, b.anzahl_exemplare, coalesce(l.bietet_bestellbestaetigung, false),
+		       b.bestaetigt_am, b.etiketten_groesse
+		FROM bestellungen_verlauf b
+		LEFT JOIN lieferanten l ON l.id = b.lieferant_id
+		ORDER BY b.bestelldatum DESC
 	`)
 	if err != nil {
 		return nil, nil, err
@@ -85,7 +101,8 @@ func (s *Server) ladeBestellhistorie(ctx context.Context) ([]BestellVerlaufRespo
 	for rows.Next() {
 		var o BestellVerlaufResponse
 		if err := rows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
-			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare); err != nil {
+			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.BietetBestellbestaetigung,
+			&o.BestaetigtAm, &o.EtikettenGroesse); err != nil {
 			return nil, nil, err
 		}
 		o.Positionen = []BestellPositionResponse{}

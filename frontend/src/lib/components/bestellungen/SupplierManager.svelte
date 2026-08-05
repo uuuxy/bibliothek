@@ -9,6 +9,7 @@
 	let newCustNum = $state('');
 	let newMitBarcode = $state(false);
 	let newIstStandard = $state(false);
+	let newBietetBestaetigung = $state(false);
 
 	/** @type {string|null} */
 	let editingId = $state(null);
@@ -17,19 +18,21 @@
 	let editCustNum = $state('');
 	let editMitBarcode = $state(false);
 	let editIstStandard = $state(false);
+	let editBietetBestaetigung = $state(false);
 
 	/** @param {SubmitEvent} e */
 	function handleSubmit(e) {
 		e.preventDefault();
-		onAddSupplier(newName, newEmail, newCustNum, newMitBarcode, newIstStandard);
+		onAddSupplier(newName, newEmail, newCustNum, newMitBarcode, newIstStandard, newBietetBestaetigung);
 		newName = '';
 		newEmail = '';
 		newCustNum = '';
 		newMitBarcode = false;
 		newIstStandard = false;
+		newBietetBestaetigung = false;
 	}
 
-	/** @param {{ id: string, name: string, email: string, customerNumber: string, liefert_mit_barcode?: boolean, ist_standard?: boolean }} s */
+	/** @param {{ id: string, name: string, email: string, customerNumber: string, liefert_mit_barcode?: boolean, ist_standard?: boolean, bietet_bestellbestaetigung?: boolean }} s */
 	function startEdit(s) {
 		editingId = s.id;
 		editName = s.name;
@@ -39,6 +42,7 @@
 		// E-Mail korrigiert, schaltete die Beklebung des Händlers still ab.
 		editMitBarcode = s.liefert_mit_barcode ?? false;
 		editIstStandard = s.ist_standard ?? false;
+		editBietetBestaetigung = s.bietet_bestellbestaetigung ?? false;
 	}
 
 	function cancelEdit() {
@@ -47,7 +51,15 @@
 
 	async function saveEdit() {
 		if (!editingId) return;
-		await onEditSupplier(editingId, editName, editEmail, editCustNum, editMitBarcode, editIstStandard);
+		await onEditSupplier(
+			editingId,
+			editName,
+			editEmail,
+			editCustNum,
+			editMitBarcode,
+			editIstStandard,
+			editBietetBestaetigung
+		);
 		editingId = null;
 	}
 </script>
@@ -112,6 +124,27 @@
 					label="Voreingestellt beim Bestellen"
 				/>
 			</div>
+			<!-- Lieferanten wie Naacher etikettieren selbst: Sie bekommen zusätzlich das große
+			     Lernmittel-Etikett mitgeschickt und wählen über ihren eigenen Link die Größe.
+			     Bibliosys bekommt davon keine automatische Rückmeldung — die Bestellhistorie
+			     zeigt dafür einen manuellen Bestätigen-Schritt. -->
+			<div class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4">
+				<label for="bietet-bestaetigung" class="cursor-pointer text-sm">
+					<span class="block font-semibold text-slate-700">
+						Lieferant bestätigt Bestellung selbst
+					</span>
+					<span class="mt-0.5 block text-xs text-slate-500">
+						Etikettiert selbst (z. B. Naacher) — bekommt zusätzlich das große
+						Lernmittel-Etikett mitgeschickt. In der Bestellhistorie kann dann
+						nachgetragen werden, welche Größe gewählt und die Bestellung bestätigt wurde.
+					</span>
+				</label>
+				<Switch
+					id="bietet-bestaetigung"
+					bind:checked={newBietetBestaetigung}
+					label="Lieferant bestätigt Bestellung selbst"
+				/>
+			</div>
 			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
 		</form>
 	</div>
@@ -131,6 +164,7 @@
 						<th class="py-2.5">Kundennummer</th>
 						<th class="py-2.5">Etikettendruck</th>
 						<th class="py-2.5">Vorauswahl</th>
+						<th class="py-2.5">Bestellbestätigung</th>
 						<th class="py-2.5 text-right">Aktionen</th>
 					</tr>
 				</thead>
@@ -169,6 +203,12 @@
 									<Switch
 										bind:checked={editIstStandard}
 										label="Voreingestellt beim Bestellen ({s.name})"
+									/>
+								</td>
+								<td class="py-2 pr-2">
+									<Switch
+										bind:checked={editBietetBestaetigung}
+										label="Lieferant bestätigt Bestellung selbst ({s.name})"
 									/>
 								</td>
 								<td class="py-2 text-right whitespace-nowrap">
@@ -211,6 +251,18 @@
 											data-tip="Beim Bestellen ist dieser Lieferant vorausgewählt"
 										>
 											Standard
+										</span>
+									{:else}
+										<span class="text-sm text-slate-300">—</span>
+									{/if}
+								</td>
+								<td class="py-3">
+									{#if s.bietet_bestellbestaetigung}
+										<span
+											class="text-sm font-semibold text-slate-700"
+											data-tip="Bekommt zusätzlich das große Lernmittel-Etikett und zeigt den Bestätigen-Schritt in der Bestellhistorie"
+										>
+											Extern
 										</span>
 									{:else}
 										<span class="text-sm text-slate-300">—</span>

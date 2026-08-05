@@ -81,7 +81,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		betreff, textBody := s.loadBestellTemplate(ctx)
 		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels))
 
-		if err := pdfSvc.DispatchOrderEmail(res.SupplierEmail, subject, body, res.SummaryItems, res.Labels, anyBarcodesGenerated, schule); err != nil {
+		if err := pdfSvc.DispatchOrderEmail(res.SupplierEmail, subject, body, res.SummaryItems, res.Labels, anyBarcodesGenerated, res.BietetBestellbestaetigung, schule); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
 				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
