@@ -1,5 +1,5 @@
 <script>
-	import { apiPost } from '../../apiFetch.js';
+	import { apiPost, apiPut } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -11,6 +11,11 @@
 	let stagedMenge = $state(1);
 	let stagedGenerateBarcodes = $state(true);
 	let resolvingDnb = $state(false);
+	// Vergleichswert, um beim Bestätigen zu erkennen, ob die Signatur tatsächlich
+	// bearbeitet wurde — unverändert übernommen wird nie ein zusätzlicher Request
+	// ausgelöst (weder für einen unangetasteten Vorschlag noch für eine bereits
+	// vorhandene Signatur).
+	let stagedSignaturBeiStart = $state('');
 
 	let localResults = $derived(orderStore.searchResults.filter((r) => r.source === 'local'));
 	let dnbResults = $derived(orderStore.searchResults.filter((r) => r.source === 'dnb'));
@@ -29,6 +34,9 @@
 						isbn: localBook.isbn,
 						verlag: localBook.verlag,
 						cover_url: localBook.cover_url,
+						// exists=false: signatur ist hier nur ein VORSCHLAG aus der DNB-
+						// Genre-/Altersheuristik (leer, wenn keine Kategorie erkannt wurde).
+						signatur: localBook.signatur ?? '',
 						// Der Preisvorschlag steht am DNB-Treffer, nicht am eben angelegten
 						// lokalen Titel — sonst ginge er beim Umweg über /aus-isbn verloren.
 						preis_vorschlag: book.preis_vorschlag
@@ -51,10 +59,25 @@
 		stagedBook = book;
 		stagedMenge = 1;
 		stagedGenerateBarcodes = true;
+		stagedSignaturBeiStart = book.signatur ?? '';
 		orderStore.resetSearch();
 	}
 
-	function confirmAddToCart() {
+	async function confirmAddToCart() {
+		// Signatur nur speichern, wenn tatsächlich bearbeitet — ein unangetasteter
+		// Vorschlag steht bereits so in der DB (aus /aus-isbn), eine unangetastete
+		// vorhandene Signatur soll erst recht nicht neu geschrieben werden.
+		const neueSignatur = (stagedBook.signatur ?? '').trim();
+		if (neueSignatur !== stagedSignaturBeiStart) {
+			try {
+				await apiPut(`/api/buecher/titel/${stagedBook.id}/signatur`, { signatur: neueSignatur });
+			} catch {
+				toastStore.addToast(
+					'Signatur konnte nicht gespeichert werden — Titel wird trotzdem bestellt.',
+					'error'
+				);
+			}
+		}
 		orderStore.addToCart(stagedBook, stagedMenge, stagedGenerateBarcodes);
 		stagedBook = null;
 	}
@@ -217,6 +240,22 @@
 				<div class="font-bold text-slate-900 text-sm truncate">{stagedBook.titel}</div>
 				<div class="text-xs text-slate-500 truncate">{stagedBook.autor}</div>
 			</div>
+		</div>
+
+		<div class="space-y-1">
+			<label for="stagedSignaturInput" class="text-xs font-medium text-slate-500">
+				Signatur
+				{#if !stagedSignaturBeiStart}
+					<span class="text-amber-600 font-normal">(Vorschlag, bitte prüfen)</span>
+				{/if}
+			</label>
+			<input
+				id="stagedSignaturInput"
+				type="text"
+				bind:value={stagedBook.signatur}
+				placeholder="z. B. BIB Jugendbuch"
+				class="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+			/>
 		</div>
 
 		<div class="flex items-center justify-between gap-3">

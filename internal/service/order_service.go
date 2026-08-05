@@ -137,6 +137,10 @@ type OrderSearchItem struct {
 	ISBN         string `json:"isbn"`
 	Verlag       string `json:"verlag,omitempty"`
 	CoverURL     string `json:"cover_url,omitempty"`
+	// Signatur ist nur bei source="local" gesetzt — die Regalsignatur eines bereits
+	// katalogisierten Titels. DNB-Treffer haben noch keinen lokalen Titel und damit
+	// keine Signatur; die entsteht erst als Vorschlag beim Anlegen über /aus-isbn.
+	Signatur     string `json:"signatur,omitempty"`
 	Source       string `json:"source"`
 	CurrentStock int    `json:"current_stock,omitempty"`
 	IsDuplicate  bool   `json:"is_duplicate,omitempty"`
@@ -162,6 +166,7 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 	localQuery := `
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''),
 		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
+		       coalesce(t.signatur, ''),
 		       COUNT(e.id) AS current_stock
 		FROM buecher_titel t
 		LEFT JOIN buecher_exemplare e ON e.titel_id = t.id AND e.ist_ausgesondert = false
@@ -183,7 +188,7 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 	for rows.Next() {
 		var item OrderSearchItem
 		item.Source = "local"
-		if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.CurrentStock); errScan == nil {
+		if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.Signatur, &item.CurrentStock); errScan == nil {
 			results = append(results, item)
 		}
 	}

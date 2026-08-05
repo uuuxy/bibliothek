@@ -8,6 +8,9 @@ import (
 func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.BookRepository, auditRepo repository.AuditRepository) {
 	// ── BUECHER (Titles & Copies) ──
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.DeleteTitleHandler(auditRepo)))
+	// Bestellkorb-Korrektur der Signatur (create_orders, nicht edit_books — dieselbe
+	// Berechtigung wie das Anlegen des Titels über /aus-isbn, siehe api/isbn_handler.go).
+	mux.Handle("PUT /api/buecher/titel/{id}/signatur", s.RequirePermission("create_orders")(s.UpdateTitelSignaturHandler()))
 
 	// Exemplare (Copies)
 	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
