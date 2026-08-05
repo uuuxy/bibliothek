@@ -1,7 +1,7 @@
-import { apiFetch } from './apiFetch.js';
 import { toastStore } from './stores/toastStore.svelte.js';
-import { ladeOffeneSessions, starteSession, scanne, schliesseAb, brichAb, deuteScanErgebnis } from './inventurApi.js';
+import { scanne, schliesseAb, deuteScanErgebnis } from './inventurApi.js';
 import { useFehlbestand } from './useFehlbestand.svelte.js';
+import { useInventurSession } from './useInventurSession.svelte.js';
 
 /**
  * Hook für die Inventur. Der Fortschritt ist seit dem Session-Umbau an eine
@@ -9,111 +9,15 @@ import { useFehlbestand } from './useFehlbestand.svelte.js';
  * laufen, ohne sich zu überschreiben.
  */
 export function useUnifiedInventory() {
-	let status = $state('idle'); // 'idle' | 'active'
-	let sessionId = $state('');
-	let scopeType = $state('global');
-	// Die Signatur ist der Text vom Buchruecken, kein Fremdschluessel mehr. Sie wirkt
-	// als Praefix: "BIB Deu" erfasst auch "BIB Deu 5 KRUE" (Migration 060).
-	let selectedSignatur = $state('');
-	let signaturen = $state(/** @type {any[]} */ ([]));
-	// Filter-Scope: gezielte Teil-Inventur nach Fach und/oder Klasse ("nur Mathe, Kl. 5").
-	let selectedFach = $state('');
-	let selectedGrade = $state('');
-	let faecher = $state(/** @type {string[]} */ ([]));
-	let offeneSessions = $state(/** @type {any[]} */ ([]));
-	let stats = $state({ erwartet: 0, erfasst: 0, label: '' });
 	let lastScan = $state(/** @type {any} */ (null));
 	let barcodeInput = $state('');
 	let isScanning = $state(false);
-	let showStartModal = $state(false);
 	let showFinishModal = $state(false);
-	let errorMessage = $state('');
 
 	const fb = useFehlbestand();
-
-	async function loadSignaturen() {
-		try {
-			const res = await apiFetch('/api/signaturen');
-			if (res.ok) signaturen = (await res.json()) || [];
-		} catch (e) {
-			console.error('Failed to load signaturen', e);
-		}
-	}
-
-	async function loadFaecher() {
-		try {
-			const res = await apiFetch('/api/faecher');
-			if (res.ok) faecher = (await res.json()) || [];
-		} catch (e) {
-			console.error('Failed to load faecher', e);
-		}
-	}
-
-	async function loadOffeneSessions() {
-		offeneSessions = await ladeOffeneSessions();
-	}
-
-	async function startInventory() {
-		errorMessage = '';
-		const payload = { type: scopeType };
-		if (scopeType === 'signature') {
-			if (!selectedSignatur.trim()) {
-				errorMessage = 'Bitte wähle eine Signatur aus.';
-				return;
-			}
-			payload.signatur = selectedSignatur.trim();
-		} else if (scopeType === 'filter') {
-			if (!selectedFach && !selectedGrade) {
-				errorMessage = 'Bitte wähle mindestens ein Fach oder eine Klasse.';
-				return;
-			}
-			if (selectedFach) payload.subject = selectedFach;
-			if (selectedGrade) payload.grade = Number(selectedGrade);
-		}
-
-		const r = await starteSession(payload);
-		if (r.ok) {
-			sessionId = r.data.session_id;
-			stats = { erwartet: r.data.erwartet, erfasst: 0, label: r.data.label };
-			lastScan = null;
-			status = 'active';
-			showStartModal = false;
-			return;
-		}
-		if (r.status === 409) {
-			// Für diesen Bereich läuft bereits eine Inventur — statt sie zu überschreiben
-			// (der alte Datenverlust-Bug), die laufende anzeigen und zum Fortsetzen anbieten.
-			errorMessage =
-				'Für diesen Bereich läuft bereits eine Inventur. Unten fortsetzen oder verwerfen.';
-			await loadOffeneSessions();
-			showStartModal = false;
-			return;
-		}
-		errorMessage = r.error || 'Fehler beim Starten der Inventur.';
-	}
-
-	/** @param {any} session laufende Session aus offeneSessions */
-	function resumeSession(session) {
-		sessionId = session.session_id;
-		stats = { erwartet: session.erwartet, erfasst: session.erfasst, label: session.label };
-		lastScan = null;
-		errorMessage = '';
-		status = 'active';
-	}
-
-	/** @param {any} session */
-	async function verwerfeSession(session) {
-		errorMessage = '';
-		await brichAb(session.session_id);
-		await loadOffeneSessions();
-	}
-
-	// errorMessage wird an zwei Stellen angezeigt (Start-Modal + Hauptschirm). Ohne diesen
-	// Reset blieb eine modal-lokale Meldung (z. B. „Bitte wähle eine Signatur aus.“) nach
-	// dem Abbrechen kontextlos als Banner auf dem Hauptschirm stehen.
-	function clearError() {
-		errorMessage = '';
-	}
+	// onActivate: Start/Fortsetzen einer Session gehört zu useInventurSession, aber
+	// lastScan bleibt hier — es ist Zustand des Scan-Bildschirms, nicht der Session.
+	const session = useInventurSession({ onActivate: () => (lastScan = null) });
 
 	/** @param {string} barcodeVal @param {Function} [focusInput] */
 	async function handleScan(barcodeVal, focusInput) {
@@ -123,9 +27,9 @@ export function useUnifiedInventory() {
 		barcodeInput = '';
 
 		try {
-			const r = await scanne(sessionId, barcode);
+			const r = await scanne(session.sessionId, barcode);
 			const ergebnis = deuteScanErgebnis(r, barcode);
-			if (ergebnis.zaehlen) stats.erfasst++;
+			if (ergebnis.zaehlen) session.stats.erfasst++;
 			lastScan = ergebnis.lastScan;
 		} catch (e) {
 			console.error('Scan fehlgeschlagen:', e);
@@ -142,7 +46,7 @@ export function useUnifiedInventory() {
 	}
 
 	async function finishInventory() {
-		const r = await schliesseAb(sessionId);
+		const r = await schliesseAb(session.sessionId);
 		if (r.ok) {
 			toastStore.addToast(
 				`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`,
@@ -154,9 +58,13 @@ export function useUnifiedInventory() {
 			// mit „47 Bücher verloren" kann niemand ins Regal gehen und nachsehen, ob eines
 			// davon nur falsch einsortiert war. Rekonstruieren liess sie sich danach auch
 			// nicht: Durch die Aussonderung fallen die Exemplare aus dem Scope.
-			fb.setzeFehlbestand(r.data.fehlbestand ?? [], stats.label);
-			resetToIdle();
-			await loadOffeneSessions();
+			fb.setzeFehlbestand(r.data.fehlbestand ?? [], session.stats.label);
+			// Achtung: raeumt bewusst NICHT den Fehlbestand weg — der Bericht soll den
+			// Abschluss ueberleben, sonst waere er im selben Moment wieder verschwunden.
+			session.resetToIdle();
+			showFinishModal = false;
+			lastScan = null;
+			await session.loadOffeneSessions();
 			// Die gerade beendete Inventur gehört sofort in die Auswahl früherer Läufe —
 			// sonst müsste man die Seite neu laden, um sie dort zu finden.
 			await fb.loadAbgeschlosseneInventuren();
@@ -165,19 +73,9 @@ export function useUnifiedInventory() {
 		}
 	}
 
-	// Achtung: raeumt bewusst NICHT den Fehlbestand weg — der Bericht soll den Abschluss
-	// ueberleben, sonst waere er im selben Moment wieder verschwunden.
-	function resetToIdle() {
-		status = 'idle';
-		sessionId = '';
-		showFinishModal = false;
-		stats = { erwartet: 0, erfasst: 0, label: '' };
-		lastScan = null;
-	}
-
 	function getProgressPercent() {
-		if (stats.erwartet === 0) return 0;
-		return Math.min(100, Math.round((stats.erfasst / stats.erwartet) * 100));
+		if (session.stats.erwartet === 0) return 0;
+		return Math.min(100, Math.round((session.stats.erfasst / session.stats.erwartet) * 100));
 	}
 
 	return {
@@ -199,43 +97,43 @@ export function useUnifiedInventory() {
 		loadAbgeschlosseneInventuren: fb.loadAbgeschlosseneInventuren,
 		zeigeFrueherenFehlbestand: fb.zeigeFrueherenFehlbestand,
 		get status() {
-			return status;
+			return session.status;
 		},
 		get scopeType() {
-			return scopeType;
+			return session.scopeType;
 		},
 		set scopeType(v) {
-			scopeType = v;
+			session.scopeType = v;
 		},
 		get selectedSignatur() {
-			return selectedSignatur;
+			return session.selectedSignatur;
 		},
 		set selectedSignatur(v) {
-			selectedSignatur = v;
+			session.selectedSignatur = v;
 		},
 		get signaturen() {
-			return signaturen;
+			return session.signaturen;
 		},
 		get selectedFach() {
-			return selectedFach;
+			return session.selectedFach;
 		},
 		set selectedFach(v) {
-			selectedFach = v;
+			session.selectedFach = v;
 		},
 		get selectedGrade() {
-			return selectedGrade;
+			return session.selectedGrade;
 		},
 		set selectedGrade(v) {
-			selectedGrade = v;
+			session.selectedGrade = v;
 		},
 		get faecher() {
-			return faecher;
+			return session.faecher;
 		},
 		get offeneSessions() {
-			return offeneSessions;
+			return session.offeneSessions;
 		},
 		get stats() {
-			return stats;
+			return session.stats;
 		},
 		get lastScan() {
 			return lastScan;
@@ -250,10 +148,10 @@ export function useUnifiedInventory() {
 			return isScanning;
 		},
 		get showStartModal() {
-			return showStartModal;
+			return session.showStartModal;
 		},
 		set showStartModal(v) {
-			showStartModal = v;
+			session.showStartModal = v;
 		},
 		get showFinishModal() {
 			return showFinishModal;
@@ -262,15 +160,15 @@ export function useUnifiedInventory() {
 			showFinishModal = v;
 		},
 		get errorMessage() {
-			return errorMessage;
+			return session.errorMessage;
 		},
-		clearError,
-		loadSignaturen,
-		loadFaecher,
-		loadOffeneSessions,
-		startInventory,
-		resumeSession,
-		verwerfeSession,
+		clearError: session.clearError,
+		loadSignaturen: session.loadSignaturen,
+		loadFaecher: session.loadFaecher,
+		loadOffeneSessions: session.loadOffeneSessions,
+		startInventory: session.startInventory,
+		resumeSession: session.resumeSession,
+		verwerfeSession: session.verwerfeSession,
 		handleScan,
 		finishInventory,
 		getProgressPercent
