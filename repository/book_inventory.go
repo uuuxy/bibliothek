@@ -206,12 +206,15 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur, aktualisiert_am)
 		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''), CURRENT_TIMESTAMP)
 	`
+	// autor/verlag/erscheinungsjahr sind wie signatur/isbn per COALESCE geschützt:
+	// eine Quelle ohne diese Angabe (z. B. MAB-Exporte ohne Autor-Feld) darf einen
+	// bereits bekannten, besseren Wert nicht stillschweigend leeren.
 	const qUpdate = `
 		UPDATE buecher_titel SET
 			titel = $2,
-			autor = $3,
-			verlag = $4,
-			erscheinungsjahr = NULLIF($5, 0),
+			autor = COALESCE(NULLIF($3, ''), autor),
+			verlag = COALESCE(NULLIF($4, ''), verlag),
+			erscheinungsjahr = COALESCE(NULLIF($5, 0), erscheinungsjahr),
 			signatur = COALESCE(NULLIF($6, ''), signatur),
 			isbn = COALESCE(isbn, NULLIF($7, '')),
 			aktualisiert_am = CURRENT_TIMESTAMP
