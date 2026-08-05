@@ -67,7 +67,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get Laufzettel PDF",
+                "summary": "Get Kontoauszug PDF",
                 "responses": {}
             }
         },
@@ -161,7 +161,7 @@ const docTemplate = `{
         },
         "/audit": {
             "get": {
-                "description": "Retrieves all immutable records in the system's audit trail, including deletions and cancellations.",
+                "description": "Retrieves the most recent 1000 records of the system's audit trail, newest first.",
                 "consumes": [
                     "application/json"
                 ],
@@ -229,7 +229,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Registers a new system user (admin, teacher, staff) with hashed password and role assignments.",
+                "description": "Registers a new system user (admin, teacher, staff) with role assignments. Login erfolgt über IMAP/Barcode, nicht über ein lokales Passwort.",
                 "consumes": [
                     "application/json"
                 ],
@@ -284,7 +284,7 @@ const docTemplate = `{
         },
         "/benutzer/{id}": {
             "put": {
-                "description": "Modifies an existing user's properties, role, active status, or password.",
+                "description": "Modifies an existing user's properties, role, or active status.",
                 "consumes": [
                     "application/json"
                 ],
@@ -402,6 +402,30 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/bestellungen/konfiguration": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Anzeige-Regeln des Bestellwesens",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.BestellKonfiguration"
+                        }
+                    }
+                }
+            }
+        },
+        "/buecher/exemplare/verlust-endgueltig-loeschen": {
+            "post": {
+                "responses": {}
             }
         },
         "/buecher/exemplare/{id}": {
@@ -588,6 +612,11 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/buecher/exemplare/{id}/gefunden": {
+            "post": {
+                "responses": {}
             }
         },
         "/buecher/exemplare/{id}/schadensnotiz": {
@@ -839,21 +868,441 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/inventur/finish": {
+        "/buecher/titel/{id}/signatur": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Update a title's signatur (shelf mark)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Title ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New signatur",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateTitelSignaturRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/einstellungen": {
             "post": {
-                "description": "Marks all 'ausstehend' books as 'verloren' and resets inventory states.",
+                "description": "Retrieves global configuration values like loan limits, grace periods, and feature flags.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get system settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repository.SystemEinstellungen"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/einstellungen/speichern": {
+            "post": {
+                "description": "Saves global configuration values. Requires admin privileges.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Update system settings",
+                "parameters": [
+                    {
+                        "description": "Updated settings",
+                        "name": "settings",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/repository.SystemEinstellungen"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/exemplare/etiketten-altbestand": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Etiketten des Altbestands als gedruckt vermerken",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/exemplare/etiketten-gedruckt": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Etiketten als gedruckt markieren",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/exemplare/etiketten-offen": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Exemplare ohne gedrucktes Etikett",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter über Titel oder Barcode",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "offen (Vorgabe) | erledigt | alle",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.ExemplarOhneEtikett"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/exemplare/etiketten-offen/anzahl": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Anzahl der Exemplare ohne gedrucktes Etikett",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/exemplare/etiketten-zuruecksetzen": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Etiketten wieder als offen markieren",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inventur/abgeschlossen": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "inventory"
                 ],
-                "summary": "Finalize inventory",
+                "summary": "List completed inventory sessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.AbgeschlosseneInventurDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inventur/abort": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Abort an inventory session",
+                "parameters": [
+                    {
+                        "description": "Session to abort",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.InventurAbortRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inventur/fehlbestand": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventur"
+                ],
+                "summary": "Fehlbestand einer abgeschlossenen Inventur",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session",
+                        "name": "session_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.InventurVerlust"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inventur/finish": {
+            "post": {
+                "description": "Marks scope items not scanned in this session as lost and closes it.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Finalize an inventory session",
+                "parameters": [
+                    {
+                        "description": "Session to finalize",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.InventurFinishRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.InventurFinishResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "500": {
@@ -870,7 +1319,7 @@ const docTemplate = `{
         },
         "/inventur/scan": {
             "post": {
-                "description": "Records that a physical copy was physically present during a stock-take.",
+                "description": "Records that a physical copy was present, bound to the given session.",
                 "consumes": [
                     "application/json"
                 ],
@@ -883,7 +1332,7 @@ const docTemplate = `{
                 "summary": "Scan a copy during inventory",
                 "parameters": [
                     {
-                        "description": "Barcode to check in",
+                        "description": "Session and barcode",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -938,9 +1387,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/inventur/sessions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "List running inventory sessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.InventurSessionDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/inventur/start": {
             "post": {
-                "description": "Resets old inventory states and sets 'ausstehend' for the chosen scope.",
+                "description": "Opens a new inventory session for the chosen scope (global, per signature, or a Fach/Klasse filter).",
                 "consumes": [
                     "application/json"
                 ],
@@ -971,6 +1451,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1027,7 +1516,7 @@ const docTemplate = `{
         },
         "/schueler": {
             "get": {
-                "description": "Retrieves students, optionally filtered by a specific school class, along with loan counts.",
+                "description": "Retrieves students, optionally filtered by a specific school class or a search term, along with loan counts.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1044,6 +1533,12 @@ const docTemplate = `{
                         "description": "School class to filter by",
                         "name": "klasse",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term (name or barcode); searches server-side over all students",
+                        "name": "q",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1052,8 +1547,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "object",
-                                "additionalProperties": true
+                                "$ref": "#/definitions/repository.StudentListStat"
                             }
                         }
                     },
@@ -1257,24 +1751,89 @@ const docTemplate = `{
                 }
             }
         },
-        "/students/promote": {
-            "post": {
-                "description": "Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H, 10R, 13) automatisch als Abgänger.",
-                "consumes": [
-                    "application/json"
-                ],
+        "/schueler/{id}/dsgvo-auskunft": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "schueler"
+                    "students"
                 ],
-                "summary": "Automatische Versetzung (Schuljahreswechsel)",
+                "summary": "DSGVO-Betroffenenauskunft (Art. 15) für einen Schüler",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.PromoteStudentsResponse"
+                            "$ref": "#/definitions/api.DsgvoAuskunftResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schueler/{id}/dsgvo-auskunft/pdf": {
+            "get": {
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "students"
+                ],
+                "summary": "DSGVO-Betroffenenauskunft (Art. 15) als PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/signaturen": {
+            "get": {
+                "description": "Returns the signatures that actually occur on titles, with title and copy counts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "List signatures in stock",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.SignaturGruppe"
+                            }
                         }
                     },
                     "500": {
@@ -1289,16 +1848,315 @@ const docTemplate = `{
                 }
             }
         },
-        "/transactions/recent": {
+        "/signaturen/buecher": {
             "get": {
-                "responses": {}
+                "description": "Returns titles whose signature matches the given prefix, in shelf order.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "List books under a signature",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Signature prefix",
+                        "name": "signatur",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SignaturBuecherResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/students/promote": {
+            "post": {
+                "description": "Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H, 10R, 13) automatisch als Abgänger. Erfordert { \"confirm\": true } im Body; { \"dry_run\": true } liefert eine exakte Vorschau ohne Änderungen.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schueler"
+                ],
+                "summary": "Automatische Versetzung (Schuljahreswechsel)",
+                "parameters": [
+                    {
+                        "description": "Bestätigung",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.promoteStudentsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.PromoteStudentsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/systematics": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Create a systematic category",
+                "parameters": [
+                    {
+                        "description": "Category",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.systematikRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/systematics/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Update a systematic category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Category",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.systematikRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Delete a systematic category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
+        "api.AbgeschlosseneInventurDTO": {
+            "type": "object",
+            "properties": {
+                "abgeschlossen_am": {
+                    "type": "string"
+                },
+                "erfasst": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "verluste": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.AuditLogEntry": {
             "type": "object",
             "properties": {
+                "akteur": {
+                    "description": "Akteur unterscheidet 'USER' von 'SYSTEM'. Ohne dieses Feld stünde eine\nSystemaktion in der Anzeige als Eintrag ganz ohne Urheber da — nicht\nunterscheidbar von einem Datenfehler.",
+                    "type": "string"
+                },
                 "aktion": {
                     "type": "string"
                 },
@@ -1345,32 +2203,11 @@ const docTemplate = `{
                 }
             }
         },
-        "api.BorrowedBook": {
+        "api.BestellKonfiguration": {
             "type": "object",
             "properties": {
-                "ausgeliehen_am": {
-                    "type": "string"
-                },
-                "ausleihe_id": {
-                    "type": "string"
-                },
-                "autor": {
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "rueckgabe_frist": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
+                "preise_erfassen": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1434,6 +2271,260 @@ const docTemplate = `{
                 }
             }
         },
+        "api.DsgvoAuditEintrag": {
+            "type": "object",
+            "properties": {
+                "akteur": {
+                    "type": "string"
+                },
+                "aktion": {
+                    "type": "string"
+                },
+                "details": {
+                    "description": "swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das\nswag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die\nGenerierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb\nkomplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).",
+                    "type": "object"
+                },
+                "kontext": {
+                    "type": "string"
+                },
+                "zeitpunkt": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.DsgvoAuskunftResponse": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "auskunft_erstellt_am": {
+                    "type": "string"
+                },
+                "ausleihhistorie": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DsgvoAusleihe"
+                    }
+                },
+                "ausweisfoto": {
+                    "$ref": "#/definitions/api.DsgvoFoto"
+                },
+                "protokolleintraege": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DsgvoAuditEintrag"
+                    }
+                },
+                "schadensfaelle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DsgvoSchadensfall"
+                    }
+                },
+                "stammdaten": {
+                    "$ref": "#/definitions/api.DsgvoStammdaten"
+                },
+                "verarbeitungsangaben": {
+                    "$ref": "#/definitions/api.DsgvoVerarbeitungsangaben"
+                },
+                "vormerkungen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DsgvoVormerkung"
+                    }
+                }
+            }
+        },
+        "api.DsgvoAusleihe": {
+            "type": "object",
+            "properties": {
+                "ausgeliehen_am": {
+                    "type": "string"
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "gegenstand": {
+                    "type": "string"
+                },
+                "ist_handapparat": {
+                    "type": "boolean"
+                },
+                "rueckgabe_am": {
+                    "type": "string"
+                },
+                "rueckgabe_frist": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.DsgvoFoto": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "type": "string"
+                },
+                "hinweis": {
+                    "type": "string"
+                },
+                "vorhanden": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.DsgvoSchadensfall": {
+            "type": "object",
+            "properties": {
+                "beschreibung": {
+                    "type": "string"
+                },
+                "betrag_eur": {
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "ist_bezahlt": {
+                    "type": "boolean"
+                },
+                "storniert_am": {
+                    "type": "string"
+                },
+                "stornierungsgrund": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.DsgvoStammdaten": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "eltern_email": {
+                    "type": "string"
+                },
+                "erfasst_am": {
+                    "type": "string"
+                },
+                "geburtsdatum": {
+                    "type": "string"
+                },
+                "geloescht_am": {
+                    "type": "string"
+                },
+                "hausnummer": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ist_abgaenger": {
+                    "type": "boolean"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "lusd_id": {
+                    "type": "string"
+                },
+                "manuell_gesperrt": {
+                    "type": "boolean"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "ort": {
+                    "type": "string"
+                },
+                "plz": {
+                    "type": "string"
+                },
+                "sperrgrund": {
+                    "type": "string"
+                },
+                "strasse": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                },
+                "zuletzt_aktualisiert_am": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.DsgvoVerarbeitungsangaben": {
+            "type": "object",
+            "properties": {
+                "betroffenenrechte": {
+                    "type": "string"
+                },
+                "empfaenger": {
+                    "type": "string"
+                },
+                "herkunft_der_daten": {
+                    "type": "string"
+                },
+                "rechtsgrundlage": {
+                    "type": "string"
+                },
+                "speicherdauer": {
+                    "type": "string"
+                },
+                "zwecke": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.DsgvoVormerkung": {
+            "type": "object",
+            "properties": {
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "notiz": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ExemplarOhneEtikett": {
+            "type": "object",
+            "properties": {
+                "autor": {
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "erworben_am": {
+                    "type": "string"
+                },
+                "etikett_gedruckt": {
+                    "description": "EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen\nkann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht\nnicht unterscheiden, welche Zeile noch ein Etikett braucht.",
+                    "type": "boolean"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
         "api.GraduateDetail": {
             "type": "object",
             "properties": {
@@ -1466,9 +2557,32 @@ const docTemplate = `{
                 }
             }
         },
+        "api.InventurAbortRequest": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.InventurFinishRequest": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
         "api.InventurFinishResponse": {
             "type": "object",
             "properties": {
+                "fehlbestand": {
+                    "description": "Fehlbestand nennt die betroffenen Exemplare, nicht nur ihre Anzahl. Vorher stand\nhier allein die Zahl — mit „47 Verluste\" kann niemand ins Regal gehen und nachsehen.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.InventurVerlust"
+                    }
+                },
                 "verloren_gemeldet": {
                     "type": "integer"
                 }
@@ -1478,6 +2592,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "barcode_id": {
+                    "type": "string"
+                },
+                "session_id": {
                     "type": "string"
                 }
             }
@@ -1492,7 +2609,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "description": "e.g. \"erfasst\"",
                     "type": "string"
                 },
                 "titel": {
@@ -1506,14 +2622,46 @@ const docTemplate = `{
                 }
             }
         },
+        "api.InventurSessionDTO": {
+            "type": "object",
+            "properties": {
+                "erfasst": {
+                    "type": "integer"
+                },
+                "erwartet": {
+                    "type": "integer"
+                },
+                "gestartet_am": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
         "api.InventurStartRequest": {
             "type": "object",
             "properties": {
-                "signature_id": {
+                "grade": {
+                    "description": "bei \"filter\": Klasse (Jahrgangsbereich enthält)",
                     "type": "integer"
                 },
+                "signatur": {
+                    "description": "Signatur ist bei \"signature\" ein Präfix von buecher_titel.signatur, also eine\nRegaladresse: \"BIB Deu\" erfasst auch \"BIB Deu 5 KRÜ\" (Migration 060). Früher\nstand hier eine signature_id auf eine Tabelle, die niemand pflegte.",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "bei \"filter\": Fach (buecher_titel.subject)",
+                    "type": "string"
+                },
                 "type": {
-                    "description": "\"global\" or \"signature\"",
+                    "description": "\"global\" | \"signature\" | \"filter\"",
                     "type": "string"
                 }
             }
@@ -1524,7 +2672,13 @@ const docTemplate = `{
                 "erwartet": {
                     "type": "integer"
                 },
+                "label": {
+                    "type": "string"
+                },
                 "scope": {
+                    "type": "string"
+                },
+                "session_id": {
                     "type": "string"
                 }
             }
@@ -1546,10 +2700,73 @@ const docTemplate = `{
         "api.PromoteStudentsResponse": {
             "type": "object",
             "properties": {
-                "neue_abgaenger": {
+                "archived_count": {
                     "type": "integer"
                 },
-                "versetzte_schueler": {
+                "dry_run": {
+                    "type": "boolean"
+                },
+                "promoted_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.SignaturBuch": {
+            "type": "object",
+            "properties": {
+                "autor": {
+                    "type": "string"
+                },
+                "exemplare": {
+                    "type": "integer"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "signatur": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "titel_id": {
+                    "type": "string"
+                },
+                "verliehen": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.SignaturBuecherResponse": {
+            "type": "object",
+            "properties": {
+                "buecher": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.SignaturBuch"
+                    }
+                },
+                "gekappt": {
+                    "type": "boolean"
+                },
+                "gesamt": {
+                    "type": "integer"
+                },
+                "signatur": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SignaturGruppe": {
+            "type": "object",
+            "properties": {
+                "exemplare": {
+                    "type": "integer"
+                },
+                "signatur": {
+                    "type": "string"
+                },
+                "titel": {
                     "type": "integer"
                 }
             }
@@ -1563,10 +2780,16 @@ const docTemplate = `{
                 "barcode_id": {
                     "type": "string"
                 },
+                "block_reason": {
+                    "type": "string"
+                },
+                "eltern_email": {
+                    "type": "string"
+                },
                 "entliehene_buecher": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.BorrowedBook"
+                        "$ref": "#/definitions/repository.BorrowedBook"
                     }
                 },
                 "foto_url": {
@@ -1575,8 +2798,17 @@ const docTemplate = `{
                 "geburtsdatum": {
                     "type": "string"
                 },
+                "has_open_damages": {
+                    "type": "boolean"
+                },
+                "hausnummer": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
+                },
+                "is_manually_blocked": {
+                    "type": "boolean"
                 },
                 "ist_gesperrt": {
                     "type": "boolean"
@@ -1590,7 +2822,16 @@ const docTemplate = `{
                 "nachname": {
                     "type": "string"
                 },
+                "ort": {
+                    "type": "string"
+                },
+                "plz": {
+                    "type": "string"
+                },
                 "status": {
+                    "type": "string"
+                },
+                "strasse": {
                     "type": "string"
                 },
                 "vorname": {
@@ -1634,6 +2875,14 @@ const docTemplate = `{
                 }
             }
         },
+        "api.UpdateTitelSignaturRequest": {
+            "type": "object",
+            "properties": {
+                "signatur": {
+                    "type": "string"
+                }
+            }
+        },
         "api.UpdateUserRequest": {
             "type": "object",
             "required": [
@@ -1653,10 +2902,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "nachname": {
-                    "type": "string"
-                },
-                "password": {
-                    "description": "nur gehasht, wenn nicht leer",
                     "type": "string"
                 },
                 "rolle": {
@@ -1698,6 +2943,191 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.promoteStudentsRequest": {
+            "type": "object",
+            "properties": {
+                "confirm": {
+                    "type": "boolean"
+                },
+                "dry_run": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.systematikRequest": {
+            "type": "object",
+            "properties": {
+                "bezeichnung": {
+                    "type": "string"
+                },
+                "kuerzel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.BorrowedBook": {
+            "type": "object",
+            "properties": {
+                "ausgeliehen_am": {
+                    "type": "string"
+                },
+                "ausleihe_id": {
+                    "type": "string"
+                },
+                "autor": {
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
+                    "type": "string"
+                },
+                "rueckgabe_frist": {
+                    "type": "string"
+                },
+                "signatur": {
+                    "description": "Signatur wird gebraucht, um LMF-Titel zu erkennen (lmf.IstSchulbuch prüft\nTitel UND Signatur — die manuelle Neuanlage trägt das Kennzeichen oft nur hier).",
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.InventurVerlust": {
+            "type": "object",
+            "properties": {
+                "autor": {
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "exemplar_id": {
+                    "description": "ExemplarID kann fehlen (leerer String): Das FK-Feld geht bei einer endgültigen\nLöschung des Exemplars auf NULL (Migration 059, ON DELETE SET NULL) — die\nTextspalten bleiben trotzdem lesbar. Ohne ExemplarID sind \"Gefunden\" und\n\"endgültig löschen\" nicht mehr möglich, das Exemplar ist ja schon weg.",
+                    "type": "string"
+                },
+                "gebucht_am": {
+                    "type": "string"
+                },
+                "gefunden_am": {
+                    "description": "GefundenAm ist gesetzt, sobald das Exemplar beim Nachsuchen wiedergefunden und\nüber den \"Gefunden\"-Knopf zurück in Umlauf gebracht wurde (Migration 061).",
+                    "type": "string"
+                },
+                "signatur": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.StudentListStat": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "ausgeliehen_count": {
+                    "type": "integer"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "foto_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "ueberfaellig_count": {
+                    "type": "integer"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.SystemEinstellungen": {
+            "type": "object",
+            "properties": {
+                "bestellbedarf_schwelle": {
+                    "type": "integer"
+                },
+                "bestellbedarf_warnung_aktiv": {
+                    "description": "Bestellbedarf: ob überhaupt gewarnt wird und ab welcher Exemplarzahl ein\n(LMF-)Titel als Bestellbedarf gilt (gesamt \u003c Schwelle). Löst den früheren\npauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.",
+                    "type": "boolean"
+                },
+                "etikett_eigentumsvermerk": {
+                    "description": "EtikettEigentumsvermerk steht als letzte Zeile auf jedem Buchetikett\n(\"Eigentum des Landes Hessen\"). Konfigurierbar und nicht fest verdrahtet, weil\nder Träger je nach Bundesland und Schulform ein anderer ist — und weil ein\nEigentumsvermerk, der nicht stimmt, schlechter ist als keiner.",
+                    "type": "string"
+                },
+                "ferien_leseclub_aktiv": {
+                    "type": "boolean"
+                },
+                "ferien_leseclub_zieldatum": {
+                    "description": "ISO date string \"YYYY-MM-DD\" or null",
+                    "type": "string"
+                },
+                "frist_buch_tage": {
+                    "type": "integer"
+                },
+                "frist_medien_tage": {
+                    "type": "integer"
+                },
+                "lmf_stichtag": {
+                    "description": "\"MM-DD\" format, e.g. \"07-31\"",
+                    "type": "string"
+                },
+                "max_ausleihen_schueler": {
+                    "type": "integer"
+                },
+                "max_overdue_days": {
+                    "type": "integer"
+                },
+                "max_overdue_items": {
+                    "type": "integer"
+                },
+                "oeffentliche_adresse": {
+                    "description": "OeffentlicheAdresse ist die Adresse, unter der DRITTE dieses System erreichen —\nz. B. \"https://bibliothek.schule.de\". Aus ihr entsteht der Bestätigungs-Link, den\nder Lieferant mit der Bestellmail bekommt.\n\nDer Server kennt sie nicht von selbst: Hinter einem Reverse-Proxy sieht er nur\nseinen internen Namen, und ein Link auf \"localhost:8080\" wäre beim Lieferanten\nwertlos. Zeiger statt String, damit die Unterscheidung \"nicht mitgeschickt\"\n(nil, Wert bleibt) und \"geleert\" (\"\") erhalten bleibt — sonst löscht jedes\nSpeichern einer anderen Einstellungs-Sektion still den Link-Versand.",
+                    "type": "string"
+                },
+                "preise_erfassen": {
+                    "description": "PreiseErfassen entscheidet, ob das Bestellwesen mit Geld arbeitet.\n\nAus heisst: kein Preisfeld im Warenkorb, keine Betragsspalten in der Historie, und\ndie Berichte zaehlen Exemplare statt Euro zu summieren. Der Schalter steuert\nERFASSUNG UND ANZEIGE, nicht die Daten — bereits erfasste Betraege bleiben in der\nDatenbank und tauchen wieder auf, sobald er zurueckgelegt wird.\n\nAnlass: Ohne gepflegte Preise summieren Bestellhistorie und alle drei Berichte\nNullen. Spalten voller 0,00 EUR sind schlimmer als keine Spalten — sie sehen aus\nwie ein Nachweis und sind keiner.",
+                    "type": "boolean"
+                },
+                "schule_name": {
+                    "description": "School identity — used in PDF letter headers (set once via settings UI).",
+                    "type": "string"
+                },
+                "schule_ort": {
+                    "type": "string"
+                },
+                "schule_plz": {
+                    "type": "string"
+                },
+                "schule_strasse": {
                     "type": "string"
                 }
             }

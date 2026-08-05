@@ -26,7 +26,9 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 - **Littera-Altbestandsübernahme:** Titel, Exemplare, Personen und offene Ausleihen aus der Vorgängersoftware — mit Savepoint je Datensatz und Abgleich gegen den tatsächlichen Zeilenzuwachs (`cmd/littera-altbestand`).
 - **Hardware-Verwaltung:** Ausleihe von Laptops/Tablets inklusive Zubehör-Checklisten.
 - **Druck-Center:** Erstellung von Barcode-Etiketten und Schülerausweisen.
-- **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Lehrer (konfigurierbare Rechte) und Mitarbeiter.
+- **Bestellwesen:** Bedarfsvorschläge aus dem Bestand, Bestellmail an den Händler samt Barcodebogen, Wareneingang — und für Händler, die selbst etikettieren, ein Bestätigungs-Link, über den der Lieferant seine Etiketten druckt und die Bestellung selbst bestätigt.
+- **Inventur:** Session-gebundene Bestandsaufnahme mit Scanner, Fehlbestandsliste und Aufarbeitung.
+- **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Lehrer (konfigurierbare Rechte), Mitarbeiter und Helfer (Kiosk-Betrieb ohne Schülerrechte).
 
 ---
 
@@ -43,6 +45,8 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [befunde.md](befunde.md) | Befund-Register: was aufgefallen ist, was davon erledigt wurde |
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
 | [master_fahrplan.md](master_fahrplan.md) | Status-Dokument: erledigt / offen / Parkdeck |
+| [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
+| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 43 von 126) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 | [abnahme_checkliste.md](abnahme_checkliste.md) | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz) |
 | [littera_schema_befund.md](littera_schema_befund.md) | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen |
 | [api_inventar.md](api_inventar.md) | Generiertes Routen-Inventar (`./scripts/api_inventar.sh`) |

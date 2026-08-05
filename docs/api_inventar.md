@@ -1,24 +1,26 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-08-04. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-08-05. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
 - `GET /api/dinge/{id}`
-- `GET /api/inventur/fehlbestand`
+- `GET /api/public/bestellung/{token}/etiketten/{groesse}`
 - `GET /api/schueler/{id}/dsgvo-auskunft`
 - `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/defekt`
+- `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
+- `POST /api/public/bestellung/{token}/bestaetigen`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 - `/api/bestellungen/konfiguration.`
 - `/api/test`
 
-## Alle registrierten Routen (159)
+## Alle registrierten Routen (168)
 
 - `/`
 - `/api/admin`
@@ -75,6 +77,7 @@
 - `GET /api/exemplare/etiketten-offen/anzahl`
 - `GET /api/faecher`
 - `GET /api/images/cover`
+- `GET /api/inventur/abgeschlossen`
 - `GET /api/inventur/fehlbestand`
 - `GET /api/inventur/sessions`
 - `GET /api/klassen`
@@ -90,6 +93,8 @@
 - `GET /api/print/kontoauszug/{schueler_id}`
 - `GET /api/print/mahnung/klasse/{klasse}`
 - `GET /api/print/rechnung/{schueler_id}`
+- `GET /api/public/bestellung/{token}`
+- `GET /api/public/bestellung/{token}/etiketten/{groesse}`
 - `GET /api/public/opac/suche`
 - `GET /api/readergroups`
 - `GET /api/reports/overdue-pdf`
@@ -138,8 +143,10 @@
 - `POST /api/books/`
 - `POST /api/books/import`
 - `POST /api/buecher/aus-isbn`
+- `POST /api/buecher/exemplare/verlust-endgueltig-loeschen`
 - `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/defekt`
+- `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/damage/report`
 - `POST /api/exemplare/etiketten-altbestand`
@@ -157,6 +164,7 @@
 - `POST /api/mahnwesen/senden`
 - `POST /api/mail/send-bulk-overdue`
 - `POST /api/print/labels`
+- `POST /api/public/bestellung/{token}/bestaetigen`
 - `POST /api/reservierungen/klassensatz`
 - `POST /api/schueler`
 - `POST /api/schueler/{id}/photo`
@@ -171,9 +179,12 @@
 - `PUT /api/admin/settings/mail`
 - `PUT /api/ausweis-layout`
 - `PUT /api/benutzer/{id}`
+- `PUT /api/bestellungen/{id}/bestaetigen`
+- `PUT /api/bestellungen/{id}/bestaetigungs-link`
 - `PUT /api/books/`
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`
+- `PUT /api/buecher/titel/{id}/signatur`
 - `PUT /api/einstellungen`
 - `PUT /api/lieferanten/{id}`
 - `PUT /api/mail-templates/{id}`

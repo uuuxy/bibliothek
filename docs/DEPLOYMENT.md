@@ -27,6 +27,12 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `ENFORCE_PROD_SECRETS` | Harte Start-Verweigerung bei Default-Secrets | Standard: `false` (Testphase) |
 | `COOKIE_SECURE` | `true` hinter TLS-Proxy (Caddy) | Standard: `false` |
 | `PORT` | HTTP-Port des Backends | Pflicht |
+| `IMAP_HOST` | IMAP-Server der Schule — die Anmeldung prüft Zugangsdaten dagegen | **Pflicht.** Ohne diese Variable bricht der Start ab (`FATAL: IMAP_HOST ist nicht gesetzt`); lokal `IMAP_HOST=mock` zusammen mit `APP_ENV=local` |
+| `IMAP_PORT` | IMAP-Port | Standard: 993 |
+| `ALLOWED_ORIGIN` | Erlaubte Herkunft für CORS (die Frontend-Adresse der Schule) | Empfohlen in Produktion |
+| `TRUSTED_PROXIES` | CIDRs/IPs, deren `X-Forwarded-For` geglaubt wird (Rate-Limit, Login-Brute-Force, Audit-Log) | Ohne sie gilt **nur Loopback** als vertrauenswürdig — hinter Caddy auf einem anderen Host also nötig |
+| `BACKUP_DIR` | Zielverzeichnis der automatischen Backups | Standard siehe [resilience_and_recovery.md](resilience_and_recovery.md) |
+| `BACKUP_ENCRYPTION_KEY` | AES-256-Schlüssel der Backups | **Ohne ihn läuft kein Backup** — der Job überspringt still |
 | `SMTP_HOST` | SMTP-Server | Optional (Mahnwesen) |
 | `SMTP_PORT` | SMTP-Port | Standard: 587 |
 | `SMTP_USER` | SMTP-Benutzername | Optional |
@@ -35,6 +41,14 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `SMTP_ALLOW_INSECURE_TLS` | TLS-Zertifikatsprüfung deaktivieren | Nur für Legacy-SMTP-Server |
 | `INITIAL_ADMIN_EMAIL` | E-Mail des initialen Admins | Standard: pflasch@philipp-reis-schule.de |
 | `SENTRY_DSN` | Sentry Error Tracking | Optional |
+
+**Nicht als Variable, sondern in der Oberfläche:** Mail-Zugangsdaten und die **Öffentliche
+Adresse** (Einstellungen → Allgemein) leben in der Datenbank. Die `SMTP_*`-Variablen werden
+beim ersten Start einmalig übernommen und sind danach nur noch Rückfall — beim Debuggen
+also die DB-Zeile ansehen, nicht die `.env`. Die Öffentliche Adresse (z. B.
+`https://bibliothek.schule.de`) ist die Grundlage des Bestätigungs-Links an Lieferanten;
+ohne sie verschickt das System Bestellungen ohne Link. Der Server kann sie nicht erraten:
+Hinter dem Reverse-Proxy sieht er nur seinen internen Namen.
 
 ---
 

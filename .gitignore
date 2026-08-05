@@ -86,3 +86,8 @@ personen*.csv
 
 # Coverage-Report für den SonarQube-Scan (scripts/sonar_scan.sh)
 coverage.out
+
+# Swagger: nur docs.go wird ausgeliefert (der Server bettet es ein). swagger.json/yaml
+# sind Nebenprodukte derselben Generierung und würden bei jedem Lauf Diff-Rauschen erzeugen.
+docs/swagger.json
+docs/swagger.yaml

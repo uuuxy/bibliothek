@@ -76,11 +76,15 @@ type DsgvoVormerkung struct {
 
 // DsgvoAuditEintrag ist ein Protokolleintrag, der den Schülerdatensatz betrifft.
 type DsgvoAuditEintrag struct {
-	Aktion    string          `json:"aktion"`
-	Akteur    string          `json:"akteur"`
-	Zeitpunkt time.Time       `json:"zeitpunkt"`
-	Kontext   *string         `json:"kontext"`
-	Details   json.RawMessage `json:"details"`
+	Aktion    string    `json:"aktion"`
+	Akteur    string    `json:"akteur"`
+	Zeitpunkt time.Time `json:"zeitpunkt"`
+	Kontext   *string   `json:"kontext"`
+	// swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das
+	// swag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die
+	// Generierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb
+	// komplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).
+	Details json.RawMessage `json:"details" swaggertype:"object"`
 }
 
 // DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 lit. a–d, g DSGVO.
@@ -267,16 +271,6 @@ func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]Dsg
 	return out, rows.Err()
 }
 
-// DsgvoAuskunftHandler stellt die vollständige Betroffenenauskunft nach
-// Art. 15 DSGVO für einen Schüler zusammen. Die Erteilung selbst wird im
-// Audit-Log protokolliert (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
-// @Summary      DSGVO-Betroffenenauskunft (Art. 15) für einen Schüler
-// @Tags         students
-// @Produce      json
-// @Param        id   path      string  true  "Student ID (UUID)"
-// @Success      200  {object}  DsgvoAuskunftResponse
-// @Failure      404  {object}  map[string]string
-// @Router       /schueler/{id}/dsgvo-auskunft [get]
 // dsgvoDaten bündelt alle personenbezogenen Daten eines Schülers für die Auskunft.
 type dsgvoDaten struct {
 	stammdaten     *DsgvoStammdaten
@@ -347,6 +341,20 @@ func (s *Server) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 	}
 }
 
+// DsgvoAuskunftHandler stellt die vollständige Betroffenenauskunft nach
+// Art. 15 DSGVO für einen Schüler zusammen. Die Erteilung selbst wird im
+// Audit-Log protokolliert (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
+//
+// Der Annotationsblock stand bis zum 05.08.2026 rund 70 Zeilen weiter oben — über einem
+// Struct statt über diesem Handler. swag ordnet Annotationen der FOLGENDEN Deklaration
+// zu, hat den Block deshalb übergangen, und der Endpunkt fehlte in der Swagger-Datei.
+// @Summary      DSGVO-Betroffenenauskunft (Art. 15) für einen Schüler
+// @Tags         students
+// @Produce      json
+// @Param        id   path      string  true  "Student ID (UUID)"
+// @Success      200  {object}  DsgvoAuskunftResponse
+// @Failure      404  {object}  map[string]string
+// @Router       /schueler/{id}/dsgvo-auskunft [get]
 func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

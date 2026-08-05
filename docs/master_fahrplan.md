@@ -1,6 +1,6 @@
 # Master-Fahrplan: Offene Punkte bis Go-Live
 
-> Stand **2026-08-04**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
+> Stand **2026-08-05**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
 > als jede gepflegte Liste. Radar-Referenz: [`api_inventar.md`](api_inventar.md)
 > (neu erzeugen mit `./scripts/api_inventar.sh`).
 
@@ -12,8 +12,13 @@ Der Schreibpfad ist fertig, gehärtet und gegen echtes PostgreSQL bewiesen
 ([SCRIPTS.md](SCRIPTS.md), Befunde in [littera_schema_befund.md](littera_schema_befund.md)).
 Was fehlt, ist die Quelle:
 
+- [x] **Titelkatalog gelöst (Stand 05.08.2026):** In `~/Developer/littera import/` liegt
+      ein MAB-Export `katalogisat.xml` von **Juni 2026** mit 13.708 Titeln, der über den
+      bestehenden Import direkt nutzbar ist. Damit fehlt für den Katalog nichts mehr —
+      offen sind nur noch **Leser und laufende Ausleihen** (nächster Punkt).
 - [ ] **Frisches Backup aus dem laufenden Littera** (Dienstprogramme → Datensicherung,
-      ~100 MB+). Die vorliegende `littera_sav.mdb` ist ein Stand von **2010** — belegt an
+      ~100 MB+) — für Leser, Ausweisnummern und offene Ausleihen; der MAB-Export enthält
+      sie nicht. Die vorliegende `littera_sav.mdb` ist ein Stand von **2010** — belegt an
       Leser 37: letzte Bewegung 11.11.2010 in der Datei gegen letzte Ausleihe 17.06.2026
       im laufenden LITTERA 5.4. Ein Buch von 2022 trägt Exemplar-Nr. 105785, die Datei
       hört bei 61.520 auf. **Es fehlen zwölf Jahre**, alle aktuellen Schüler und alle

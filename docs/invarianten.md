@@ -121,12 +121,19 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 | Nur Positionen mit Menge > 0 werden bestellt | 🟡 Go-Guard | `api/order_service.go` (`verarbeiteBestellItem`) |
 | **[G4]** `menge ≥ 1`, `einzelpreis ≥ 0`, `gesamtbetrag ≥ 0`, `anzahl_exemplare ≥ 0` | 🟢 4 CHECKs | `migrations/039` |
 | Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Default `?type=lmf` + Test | `reorders.go`, `reorders_test.go` |
+| Bestätigung einer Bestellung gilt genau einmal | 🟢 `WHERE bestaetigt_am IS NULL` (409 statt Überschreiben) | `api/bestellbestaetigung_handler.go` (`bestaetigeBestellung`) |
+| Höchstens ein Standard-Lieferant | 🟢 Partieller Unique-Index | `migrations/058` |
+| Ein Bestätigungs-Token gehört zu genau einer Bestellung, gespeichert nur als Hash | 🟢 Partieller Unique-Index auf `bestaetigungs_token_hash` | `migrations/063` |
+| Die Etikettenseite des Links zeigt nur Exemplare DIESER Bestellung mit Vorab-Barcode | 🟡 SQL-Filter + PG-Test | `api/bestellbestaetigung_etiketten.go`, `bestellbestaetigung_ablauf_pg_test.go` |
 
-**Hinweis zum Bestellbedarf:** Ohne die LMF-Vorauswahl bestand die Liste zu ~99% aus
-Titeln, die niemand nachbestellen will (gemessen: 12.079 von 12.707 Titeln), weil alle
-Titel den Default-Meldebestand 5 tragen, der Median aber bei 1 Exemplar liegt. **Offen
-für den Betreiber:** ob `meldebestand` je Lernmittel-Titel gepflegt wird — der Default 5
-ist eine Annahme, kein Beschluss.
+**Hinweis zum Bestellbedarf (aktualisiert 05.08.2026):** Ohne die LMF-Vorauswahl bestand
+die Liste zu ~99% aus Titeln, die niemand nachbestellen will (gemessen: 12.079 von 12.707
+Titeln), weil alle Titel den Default-Meldebestand 5 tragen, der Median aber bei 1 Exemplar
+liegt. **Entschieden:** Die frühere offene Frage („wird `meldebestand` je Titel gepflegt?")
+ist gegenstandslos — der Auslöser ist jetzt die Einstellung `bestellbedarf_schwelle`
+(Vorgabe 3, in der Oberfläche änderbar, abschaltbar über
+`bestellbedarf_warnung_aktiv`). `meldebestand` wird nur noch informativ mitgeliefert und
+löst nichts mehr aus (`api/reorders.go`).
 
 ---
 

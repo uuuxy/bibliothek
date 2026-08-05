@@ -32,7 +32,50 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 - `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
 - `lehrer`: Granulare Rechte — jede Berechtigung muss explizit durch einen Admin freigeschaltet werden.
 - `mitarbeiter`: Grundrechte für den Tresen-Betrieb.
-- Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `lehrer`, `mitarbeiter`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
+- `helfer`: Kiosk-/Tresenbetrieb ohne die breiten Schülerrechte (Migration 042) — Scannen, Ausleihe, Rückgabe, Katalogzugriff, aber keine Schülerlisten und kein Mahnwesen.
+- Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `lehrer`, `mitarbeiter`, `helfer`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
+
+### Endpunkte ohne Anmeldung
+Ein Test erzwingt die Vollständigkeit dieser Liste: `TestAlleRoutenSindGeschuetzt`
+(`api/routes_authz_coverage_test.go`) lässt jede registrierte Route ohne
+`RequirePermission`/`RequireRoles` fehlschlagen, solange sie nicht mit Begründung auf der
+Allowlist steht. Eine ungeschützte Route kann also nicht unbemerkt live gehen.
+
+Bewusst öffentlich sind:
+
+| Endpunkt | Warum unbedenklich |
+|---|---|
+| `GET /api/public/opac/suche` | Katalogsuche: Titel/Autor/Verfügbarkeit, keine personenbezogenen Daten. LMF-Schulbücher sind ausgefiltert. |
+| `GET /api/monitor/slides` | Bibliotheks-Monitor, nur Buchdaten. |
+| `GET /api/images/cover`, `/uploads/` | Cover-Bilder (SSRF-Host-Allowlist). Schülerfotos liegen **nicht** hier, sondern AES-verschlüsselt in der Datenbank. |
+| `GET /api/csrf-token`, `/api/auth/*`, `POST /login` | Bootstrap bzw. selbst-authentifizierend. |
+| `GET /api/public/bestellung/{token}` + `/etiketten/{groesse}` + `POST …/bestaetigen` | Bestätigungs-Link an den Lieferanten — siehe unten. |
+
+**Der Bestätigungs-Link ist der einzige schreibende Zugang ohne Anmeldung.** Sein
+Zuschnitt begrenzt den Schaden:
+
+- **Der Token ist der Ausweis:** 32 Byte aus `crypto/rand` (256 Bit), Base64-URL. Raten ist
+  ausgeschlossen; der globale Rate-Limiter steht zusätzlich davor.
+- **In der Datenbank nur der SHA-256** (`bestellungen_verlauf.bestaetigungs_token_hash`,
+  Migration 063). Ein DB-Auszug oder ein entwendetes Backup enthält keine benutzbaren
+  Links. Kein langsamer KDF nötig — die Eingabe ist bereits 256 Bit Zufall, es gibt nichts
+  zu erraten.
+- **Kein Passwort davor, bewusst:** Der Lieferant müsste sonst ein Geheimnis verwalten;
+  das würde den Ablauf entwerten, den der Link erst möglich macht.
+- **Reichweite:** genau eine Bestellung. Sichtbar sind Lieferant, Datum, Kundennummer und
+  Titelzeilen — dieselben Angaben, die der Lieferant ohnehin als Mailanhang hat. Keine
+  Schülerdaten, keine Preise, kein Zugriff auf den Bestand.
+- **Einmalig und atomar:** Bestätigen läuft über `WHERE bestaetigt_am IS NULL`; der zweite
+  Klick bekommt 409 statt eines stillen Überschreibens.
+- **Ablauf und Rückruf:** 180 Tage gültig; ein neu erzeugter Link entwertet den alten sofort.
+- **Ungültig ist immer 404** — abgelaufen, zurückgezogen und nie existiert sehen von außen
+  gleich aus, sonst verriete die Antwort, dass ein geratener Token einmal echt war.
+- **Nicht in Logfiles:** Der Token steht im Pfad, also maskiert `maskiereToken`
+  (`api/middleware.go`) ihn in beiden Logzeilen — Request-Log und 500er-Stacktrace. Ohne
+  das hätte ein weitergereichtes Logfile funktionierende Links enthalten und die
+  Hash-Speicherung entwertet (gefunden im Smoke-Test am laufenden Server, 05.08.2026).
+- **CSRF gilt weiter:** Die Seite nutzt den normalen Double-Submit-Weg; ein POST ohne
+  `X-CSRF-Token` wird mit 403 abgewiesen (nachgewiesen am laufenden Server).
 
 ---
 

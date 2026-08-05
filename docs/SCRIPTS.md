@@ -150,3 +150,39 @@ if err := imageutil.GuardImageDimensions(r.Body, 50_000_000); err != nil {
 }
 ```
 Liest nur den Bild-Header (`image.DecodeConfig`) — ohne volle RAM-Allokation. Limit: 50 Megapixel.
+
+---
+
+## 7. Übrige Skripte in `scripts/` (Kurzübersicht)
+
+Bis zum 05.08.2026 beschrieb dieses Dokument nur die großen Werkzeuge; die folgenden
+Skripte lagen undokumentiert im Verzeichnis. Sie sind bewusst kurz gehalten — der
+ausführliche Kommentar steht jeweils im Dateikopf.
+
+### Qualitäts-Gates (lokal, es gibt dafür keinen CI-Job)
+
+| Skript | Zweck |
+|---|---|
+| `api_inventar.sh` | Erzeugt `docs/api_inventar.md`: alle registrierten Go-Routen, alle `/api/`-Aufrufer im Frontend und den Abgleich in beide Richtungen (tote Handler / Geister-Aufrufe). |
+| `deadcode_gate.sh` | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen. |
+| `sonar_scan.sh` | SonarQube-Analyse **inklusive** Coverage. Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. |
+| `install-hooks.sh` | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`. |
+
+### Datenbank-Helfer
+
+| Skript | Zweck | Vorsicht |
+|---|---|---|
+| `seed_demo.sql` | Realistischer Demo-Datensatz für Pilot und Schulung. | Nur auf Test-/Demo-Datenbanken. |
+| `seed_loadtest.sql` | Datenbestand für den k6-Lasttest. | Nur auf Wegwerf-Datenbanken. |
+| `tabula_rasa.sql` | Bereinigt die Datenbank für den Echtbetrieb (Bewegungsdaten raus). | **Löscht Daten.** Vorher Backup. |
+| `repair_titel_dubletten.sql` | Räumt Titel-Dubletten aus dem Import auf. | Vorher Backup, Ergebnis prüfen. |
+| `repair_titel_ortssuffix.sql` | Entfernt Ortssuffixe aus Titelfeldern (Import-Artefakt). | Vorher Backup. |
+| `signatur_report.sql` | Report zur Signatur-Harmonisierung nach Littera-Import (Migration 038). | Nur lesend. |
+
+### Einmal-Werkzeuge (`//go:build ignore`, per `go run` gestartet)
+
+| Skript | Zweck |
+|---|---|
+| `import_isbns.go` | Nachträglicher ISBN-Import in bestehende Titel. |
+| `migrate_photos.go` | Überträgt Schülerfotos aus Dateien (`<barcode>.jpg`) in die verschlüsselte Ablage. |
+| `monitor_stats.sh` | Protokolliert Systemkennzahlen über ~6 Stunden (Begleitung von Lasttests). |

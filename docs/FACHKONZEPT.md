@@ -104,9 +104,15 @@ Die Inventur findet im laufenden Betrieb statt, ohne dass die Bibliothek zwingen
 
 Die Software verwaltet Bedarfe und Lieferungen:
 
-- **Meldebestand:** Titel haben einen Meldebestand. Sinkt der Bestand darunter, schlägt das System den Titel zur Nachbestellung vor.
+- **Bestellbedarf:** Ein Titel gilt als Bedarf, wenn sein Gesamtbestand unter der Schwelle aus den Systemeinstellungen liegt (`bestellbedarf_schwelle`, Vorgabe 3). Die Spalte `meldebestand` am Titel wird nur noch **informativ** mitgeliefert und löst nichts mehr aus — ihr pauschaler Default 5 meldete früher fast jeden Titel. Die Warnung selbst lässt sich abschalten (`bestellbedarf_warnung_aktiv`).
 - **Fokus auf Lernmittelfreiheit (LMF):** Die Bedarfsvorschläge sind standardmäßig auf LMF-Medien (Schulbücher) gefiltert. Freihand-Exemplare (Lese-Einzelstücke) werden in der Regel nicht nachbestellt.
-- **Zulauf:** Erstellte Bestellungen (mit Lieferant, Preis, Menge) tauchen im Wareneingang auf. Beim Eintreffen der Pakete generiert das System aus der Bestellposition direkt die passenden Buch-Exemplare inklusive Barcode-Nummern.
+- **Exemplare entstehen beim BESTELLEN, nicht beim Eintreffen:** Mit dem Absenden legt das System die Exemplare samt Barcode-Nummern an und markiert sie als „Im Zulauf". Nur so kann der Barcodebogen mit der Bestellung mitgehen. Der Wareneingang bucht diese Exemplare später frei — er erzeugt sie nicht.
+- **Lieferanten-Eigenschaften** (Lieferantenverwaltung, je Händler schaltbar):
+  - *Händler beklebt die Bücher:* Der Barcodebogen geht mit; die Exemplare gelten sofort als etikettiert und erscheinen nicht auf der Nachdruck-Liste.
+  - *Voreingestellt beim Bestellen:* Vorauswahl im Bestellformular, höchstens ein Händler (DB-seitig erzwungen).
+  - *Lieferant bestätigt Bestellung selbst:* siehe nächster Punkt.
+- **Bestätigungs-Link an den Lieferanten:** Händler, die selbst etikettieren (z. B. Naacher), bekommen mit der Bestellmail einen von Bibliosys erzeugten Link. Dahinter liegt eine Seite ohne Login, auf der der Lieferant die Etiketten dieser Bestellung in klein oder groß druckt (identisch zum Mailanhang) und die Bestellung **einmalig** bestätigt. Die Bestätigung erscheint automatisch in der Bestellhistorie und ist dort von einem manuellen Nachtrag aus der Bibliothek unterscheidbar. Voraussetzung ist die **Öffentliche Adresse** in den Einstellungen — fehlt sie, geht die Bestellung ohne Link raus. Sicherheitszuschnitt: 256-Bit-Token, in der Datenbank nur als Hash, 180 Tage gültig, jederzeit durch einen neuen ersetzbar (der alte stirbt dabei). Details in [SECURITY.md](SECURITY.md).
+- **Preise sind optional:** Ist „Preise erfassen" aus, arbeitet das ganze Bestellwesen ohne Geldbeträge — kein Preisfeld, keine Betragsspalten, Berichte zählen Exemplare statt Euro zu summieren.
 
 ---
 
