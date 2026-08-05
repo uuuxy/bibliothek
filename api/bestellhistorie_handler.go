@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"bibliothek/apierrors"
@@ -59,12 +60,32 @@ type BestellVerlaufResponse struct {
 	LinkAktiv bool `json:"link_aktiv"`
 }
 
-// GetBestellhistorieHandler returns all past orders with their line items, newest first.
+// bestellhistorieStandardLimit / -MaxLimit deckeln die Liste.
+//
+// Ohne Grenze lieferte dieser Endpunkt ALLE Bestellungen samt Positionen: auf einer
+// gewachsenen Datenbank (5.257 Bestellungen) waren das 2,45 MB und 3,9 Sekunden, und es
+// wird jedes Schuljahr mehr. Dieselbe Bugklasse hatte das Audit-Log (247k Zeilen, 72 MB).
+//
+// Die Summen im Kopf der Oberfläche dürfen davon NICHT abhängen — sie kommen aus
+// /api/bestellhistorie/uebersicht und zählen weiterhin alles.
+const (
+	bestellhistorieStandardLimit = 200
+	bestellhistorieMaxLimit      = 500
+)
+
+// GetBestellhistorieHandler returns the most recent orders with their line items.
 func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		orders, orderIndex, err := s.ladeBestellhistorie(ctx)
+		limit := bestellhistorieStandardLimit
+		if roh := r.URL.Query().Get("limit"); roh != "" {
+			if n, err := strconv.Atoi(roh); err == nil && n > 0 {
+				limit = min(n, bestellhistorieMaxLimit)
+			}
+		}
+
+		orders, orderIndex, err := s.ladeBestellhistorie(ctx, limit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -86,7 +107,7 @@ func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 
 // ladeBestellhistorie lädt alle Bestellköpfe (neueste zuerst) und einen Index
 // Bestell-ID → Position im Slice für das spätere Zuordnen der Positionen.
-func (s *Server) ladeBestellhistorie(ctx context.Context) ([]BestellVerlaufResponse, map[string]int, error) {
+func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellVerlaufResponse, map[string]int, error) {
 	// LEFT JOIN + COALESCE: eine Bestellung überlebt ihren gelöschten Lieferanten als
 	// Beleg (lieferant_id ON DELETE SET NULL) — dann gilt bietet_bestellbestaetigung=false.
 	rows, err := s.DB.Pool.Query(ctx, `
@@ -98,7 +119,8 @@ func (s *Server) ladeBestellhistorie(ctx context.Context) ([]BestellVerlaufRespo
 		FROM bestellungen_verlauf b
 		LEFT JOIN lieferanten l ON l.id = b.lieferant_id
 		ORDER BY b.bestelldatum DESC
-	`)
+		LIMIT $1
+	`, limit)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -136,11 +158,9 @@ func (s *Server) ladeBestellhistoriePositionen(ctx context.Context, orders []Bes
 		       (SELECT count(*) FROM buecher_exemplare e
 		         WHERE e.titel_id = p.titel_id AND `+etikettenOffenBedingung+`)
 		FROM bestellungen_positionen p
-		WHERE p.bestellung_id = ANY(
-			SELECT id FROM bestellungen_verlauf ORDER BY bestelldatum DESC
-		)
+		WHERE p.bestellung_id = ANY($1)
 		ORDER BY p.bestellung_id, p.titel_name
-	`)
+	`, geladeneIDs(orderIndex))
 	if err != nil {
 		return err
 	}
@@ -159,4 +179,17 @@ func (s *Server) ladeBestellhistoriePositionen(ctx context.Context, orders []Bes
 		}
 	}
 	return posRows.Err()
+}
+
+// geladeneIDs liefert die IDs der tatsächlich geladenen Bestellungen.
+//
+// Die Positionen-Abfrage holte vorher die Positionen ALLER Bestellungen der Datenbank
+// (Unterabfrage ohne Grenze) und warf die überzähligen beim Zuordnen weg. Mit dem Limit
+// oben wäre das der teuerste Teil der Anfrage geblieben.
+func geladeneIDs(orderIndex map[string]int) []string {
+	ids := make([]string, 0, len(orderIndex))
+	for id := range orderIndex {
+		ids = append(ids, id)
+	}
+	return ids
 }

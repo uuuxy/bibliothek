@@ -1,13 +1,15 @@
 <script>
-	// Der Bestätigungs-Zustand einer Bestellung in der Historie.
+	// Der Bestätigungs-Zustand einer Bestellung in der aufgeklappten Zeile.
 	//
-	// Der Regelweg läuft über den Link, den Bibliosys mit der Bestellmail verschickt:
-	// Der Lieferant druckt dort seine Etiketten und bestätigt selbst. Deshalb zeigt
-	// dieser Block zuerst, ob ein Link unterwegs ist — und erst danach den manuellen
-	// Nachtrag, der nur noch Rückfallebene ist (telefonische Zusage o. Ä.).
+	// Aufbau nach Material 3: EIN Zustand, EINE Hauptaussage, EINE Hauptaktion. Der
+	// bestätigte Fall ist ein getönter Container (success) — er meldet ein Ergebnis und
+	// braucht keinen Knopf. Der offene Fall nennt zuerst, worauf gewartet wird, dann die
+	// Aktion; der manuelle Nachtrag steht darunter als ruhige zweite Ebene, weil er nur
+	// noch Rückfallebene ist, seit der Lieferant selbst bestätigen kann.
 	import { apiPut } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import { CheckCircle2, Clock, Copy, Check } from '@lucide/svelte';
 
 	let { b, onAktualisieren } = $props();
 
@@ -17,6 +19,29 @@
 	// neuen — der alte stirbt dabei.
 	let neuerLink = $state('');
 	let kopiert = $state(false);
+
+	// Zusatzzeile als EIN String: Aneinandergereihte {#if}-Blöcke verlieren im Markup ihre
+	// Leerzeichen — im Browser stand „05. August 2026· über den Link".
+	let quittungsdetails = $derived(
+		[
+			b.bestaetigt_am ? langdatum(b.bestaetigt_am) : null,
+			b.bestaetigt_durch === 'lieferant' ? 'über den zugeschickten Link' : null,
+			b.etiketten_groesse
+				? `${b.etiketten_groesse === 'gross' ? 'große' : 'kleine'} Etiketten`
+				: null
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
+
+	/** @param {string} iso */
+	function langdatum(iso) {
+		return new Date(iso).toLocaleDateString('de-DE', {
+			day: '2-digit',
+			month: 'long',
+			year: 'numeric'
+		});
+	}
 
 	async function linkErzeugen() {
 		laeuft = true;
@@ -56,55 +81,69 @@
 	}
 </script>
 
-<div class="mb-3 space-y-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-	{#if b.bestaetigt_am}
-		<span class="text-sm font-semibold text-emerald-700">
-			✓ {b.bestaetigt_durch === 'lieferant'
-				? 'Vom Lieferanten über den Link bestätigt'
-				: 'Bestätigung von der Bibliothek nachgetragen'}
-			{#if b.etiketten_groesse}
-				({b.etiketten_groesse === 'gross' ? 'große' : 'kleine'} Etiketten)
-			{/if}
-		</span>
-	{:else}
-		<div class="flex flex-wrap items-center justify-between gap-3">
-			{#if b.link_aktiv}
-				<span class="text-sm font-medium text-slate-500">
-					Bestätigungs-Link ist beim Lieferanten — er wählt seine Etiketten und bestätigt selbst.
-				</span>
-			{:else}
-				<span class="text-sm font-medium text-slate-500">
-					Für diese Bestellung ist kein gültiger Link unterwegs.
-				</span>
-			{/if}
+{#if b.bestaetigt_am}
+	<!-- Getönter Container statt Kasten mit Rahmen: In M3 trägt ein erledigter Zustand
+	     Fläche, keine Umrandung. -->
+	<div class="mb-3 flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
+		<CheckCircle2 size={20} class="mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
+		<div>
+			<p class="text-sm font-semibold">
+				{b.bestaetigt_durch === 'lieferant'
+					? 'Der Lieferant hat die Bestellung bestätigt'
+					: 'Bestätigung in der Bibliothek nachgetragen'}
+			</p>
+			<p class="mt-0.5 text-xs text-emerald-800">{quittungsdetails}</p>
+		</div>
+	</div>
+{:else}
+	<div class="mb-3 rounded-xl border border-slate-200 bg-white">
+		<div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+			<div class="flex items-start gap-3">
+				<Clock size={20} class="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
+				<div>
+					<p class="text-sm font-semibold text-slate-800">Warten auf den Händler</p>
+					<p class="mt-0.5 text-xs text-slate-500">
+						{b.link_aktiv
+							? 'Der Bestätigungs-Link ging mit der Bestellmail raus. Sobald der Händler dort bestätigt, erscheint es hier von selbst.'
+							: 'Für diese Bestellung ist kein gültiger Link unterwegs.'}
+					</p>
+				</div>
+			</div>
 			<Button variant="secondary" size="sm" disabled={laeuft} onclick={linkErzeugen}>
 				{b.link_aktiv ? 'Neuen Link erzeugen' : 'Link erzeugen'}
 			</Button>
 		</div>
 
 		{#if neuerLink}
-			<div class="rounded-lg bg-slate-50 px-3 py-2.5">
-				<p class="text-xs font-medium text-slate-500">
-					Nur jetzt sichtbar — gespeichert wird der Link nicht, ein früherer ist ab sofort ungültig.
+			<div class="mx-4 mb-3 rounded-lg bg-blue-50 px-3 py-2.5">
+				<p class="text-xs font-medium text-blue-900">
+					Nur jetzt sichtbar — gespeichert wird der Link nicht. Ein früherer ist ab sofort ungültig.
 				</p>
 				<div class="mt-1.5 flex items-center gap-2">
 					<input
 						readonly
 						value={neuerLink}
-						class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-mono text-xs text-slate-700"
+						aria-label="Bestätigungs-Link"
+						class="w-full rounded-lg border border-blue-200 bg-white px-2 py-1.5 font-mono text-xs text-slate-700"
 					/>
 					<Button variant="secondary" size="sm" onclick={kopieren}>
+						{#if kopiert}<Check size={14} aria-hidden="true" />{:else}<Copy
+								size={14}
+								aria-hidden="true"
+							/>{/if}
 						{kopiert ? 'Kopiert' : 'Kopieren'}
 					</Button>
 				</div>
 			</div>
 		{/if}
 
-		<div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-2">
-			<span class="text-xs text-slate-400">
-				Rückfallebene, falls der Lieferant anders zusagt — Größe hier nachtragen:
-			</span>
-			<div class="flex items-center gap-2">
+		<!-- Zweite Ebene, bewusst leiser: Seit der Lieferant selbst bestätigt, ist der
+		     Nachtrag nur noch für den Sonderfall da (telefonische Zusage). -->
+		<div
+			class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-2"
+		>
+			<span class="text-xs text-slate-400">Hat der Händler anders zugesagt? Hier nachtragen:</span>
+			<div class="flex items-center gap-1">
 				<Button variant="ghost" size="sm" disabled={laeuft} onclick={() => nachtragen('klein')}>
 					Kleine Etiketten
 				</Button>
@@ -113,5 +152,5 @@
 				</Button>
 			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}

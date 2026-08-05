@@ -5,7 +5,8 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
-	import { Printer, BookOpen } from '@lucide/svelte';
+	import { Printer, BookOpen, CheckCircle2, Clock } from '@lucide/svelte';
+	import StatusChip from '../ui/StatusChip.svelte';
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
@@ -13,15 +14,37 @@
 	/** @type {string|null} */
 	let expandedId = $state(null);
 
+	/** @type {{gesamt: number, gesamtbetrag: number, gesamt_exemplare: number, offene_bestaetigungen: number}} */
+	let uebersicht = $state({
+		gesamt: 0,
+		gesamtbetrag: 0,
+		gesamt_exemplare: 0,
+		offene_bestaetigungen: 0
+	});
+
 	async function ladeBestellungen() {
-		bestellungen = (await apiGet('/api/bestellhistorie')) || [];
+		// Zwei Anfragen mit Absicht: Die Liste ist auf die neuesten Bestellungen gedeckelt
+		// (sonst 2,45 MB und rund vier Sekunden auf einer gewachsenen Datenbank), die
+		// Kennzahlen im Kopf zählen aber weiterhin ALLE. Würden sie aus den geladenen Zeilen
+		// gerechnet, stünde dort nach dem Deckeln eine zu kleine Zahl — die aussieht wie eine
+		// Gesamtsumme.
+		const [liste, summen] = await Promise.all([
+			apiGet('/api/bestellhistorie'),
+			apiGet('/api/bestellhistorie/uebersicht')
+		]);
+		bestellungen = liste || [];
+		if (summen) uebersicht = summen;
 		loading = false;
 	}
 
 	onMount(ladeBestellungen);
 
-	let gesamtsumme = $derived(bestellungen.reduce((sum, b) => sum + b.gesamtbetrag, 0));
-	let gesamtExemplare = $derived(bestellungen.reduce((sum, b) => sum + b.anzahl_exemplare, 0));
+	let gesamtsumme = $derived(uebersicht.gesamtbetrag);
+	let gesamtExemplare = $derived(uebersicht.gesamt_exemplare);
+	// Serverseitig gezählt: Eine wartende Bestellung darf nicht deshalb unsichtbar bleiben,
+	// weil sie hinter dem Listen-Limit liegt.
+	let offeneBestaetigungen = $derived(uebersicht.offene_bestaetigungen);
+	let gekappt = $derived(uebersicht.gesamt > bestellungen.length);
 
 	/** @param {number} n */
 	function euro(n) {
@@ -35,6 +58,13 @@
 			month: '2-digit',
 			year: 'numeric'
 		});
+	}
+
+	// Im Chip zählt Kürze: „05.08." genügt neben dem Wort „Bestätigt", das Jahr steht
+	// bereits in der Datumsspalte derselben Zeile.
+	/** @param {string} iso */
+	function kurzdatum(iso) {
+		return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 	}
 
 	/** @param {string} id */
@@ -78,6 +108,17 @@
 			<p class="text-sm text-slate-500 mt-0.5">
 				Alle aufgegebenen Bestellungen — automatisch erfasst beim Bestellen
 			</p>
+			<!-- Nur wenn wirklich etwas aussteht. „Alles bestätigt" jeden Tag zu lesen, wäre
+			     dieselbe Zeile ohne Nachricht — auffallen soll die Abweichung. Wer den Satz
+			     sieht, weiß ohne Scrollen, dass in der Statusspalte etwas auf ihn wartet. -->
+			{#if offeneBestaetigungen > 0}
+				<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-amber-700">
+					<Clock size={15} aria-hidden="true" />
+					{offeneBestaetigungen === 1
+						? '1 Bestellung wartet noch auf die Bestätigung des Händlers'
+						: `${offeneBestaetigungen} Bestellungen warten noch auf die Bestätigung des Händlers`}
+				</p>
+			{/if}
 		</div>
 		<!-- Ohne Preiserfassung ist "Gesamtausgaben 0,00 €" keine Auskunft, sondern eine
 		     falsche: Die Schule hat ausgegeben, nur steht es nirgends. Dann lieber die Zahl
@@ -115,6 +156,10 @@
 					<tr class="border-b border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-400">
 						<th class="px-3 py-2 text-left font-semibold">Datum</th>
 						<th class="px-3 py-2 text-left font-semibold">Lieferant</th>
+						<!-- Eigene Spalte, weil der Status vorher IN der Lieferantenzelle stand: Die
+						     trägt max-w-0 + truncate, und das Chip wurde auf wenige Pixel zerquetscht —
+						     die Angabe war da, aber nicht lesbar. -->
+						<th class="px-3 py-2 text-left font-semibold">Bestätigung</th>
 						<th class="px-3 py-2 text-right font-semibold">Exemplare</th>
 						{#if orderStore.preiseErfassen}<th class="px-3 py-2 text-right font-semibold">Betrag</th
 							>{/if}
@@ -141,24 +186,32 @@
 								{datum(b.bestelldatum)}
 							</td>
 							<td class="max-w-0 px-3 py-2">
-								<span class="flex items-center gap-1.5 truncate font-semibold text-slate-800">
-									{b.lieferant_name}
-									{#if b.bietet_bestellbestaetigung}
-										<span
-											class="shrink-0 rounded px-1.5 py-0.5 text-label-small font-bold uppercase {b.bestaetigt_am
-												? 'bg-emerald-50 text-emerald-700'
-												: 'bg-amber-50 text-amber-700'}"
-											data-tip={b.bestaetigt_am
-												? 'Vom Lieferanten bestätigt'
-												: 'Bestätigung durch Lieferanten steht noch aus — Zeile aufklappen'}
-										>
-											{b.bestaetigt_am ? 'Bestätigt' : 'Offen'}
-										</span>
-									{/if}
-								</span>
+								<span class="block truncate font-semibold text-slate-800">{b.lieferant_name}</span>
 								<span class="block truncate text-xs text-slate-400">
 									{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
 								</span>
+							</td>
+							<!-- Nur Lieferanten mit dem externen Schritt tragen hier etwas. Ein „—" in
+							     jeder anderen Zeile wäre Rauschen: Auffallen soll die Abweichung. -->
+							<td class="px-3 py-2 whitespace-nowrap">
+								{#if b.bietet_bestellbestaetigung && b.bestaetigt_am}
+									<StatusChip
+										ton="erfolg"
+										icon={CheckCircle2}
+										text="Bestätigt"
+										detail={kurzdatum(b.bestaetigt_am)}
+										tip={b.bestaetigt_durch === 'lieferant'
+											? 'Der Lieferant hat die Bestellung über den Link bestätigt'
+											: 'Bestätigung wurde in der Bibliothek von Hand nachgetragen'}
+									/>
+								{:else if b.bietet_bestellbestaetigung}
+									<StatusChip
+										ton="warten"
+										icon={Clock}
+										text="Wartet auf Händler"
+										tip="Der Lieferant hat die Bestellung noch nicht über den Link bestätigt"
+									/>
+								{/if}
 							</td>
 							<td class="px-3 py-2 text-right whitespace-nowrap text-slate-700 tabular-nums">
 								{b.anzahl_exemplare}
@@ -184,7 +237,7 @@
 						{#if expandedId === b.id}
 							<tr id="positionen-{b.id}">
 								<td
-									colspan={orderStore.preiseErfassen ? 5 : 4}
+									colspan={orderStore.preiseErfassen ? 6 : 5}
 									class="border-t border-slate-100 bg-slate-50/40 px-5 py-4"
 								>
 									<!-- Lieferanten wie Naacher etikettieren selbst: Sie bekommen mit der
@@ -286,5 +339,12 @@
 				</tbody>
 			</table>
 		</div>
+		<!-- Ehrlich sagen, dass die Liste nicht alles zeigt. Ohne den Satz sucht jemand eine
+		     ältere Bestellung, findet sie nicht und hält sie für gelöscht. -->
+		{#if gekappt}
+			<p class="text-center text-xs text-slate-400">
+				Neueste {bestellungen.length} von {uebersicht.gesamt} Bestellungen — ältere stehen im Bericht.
+			</p>
+		{/if}
 	{/if}
 </div>

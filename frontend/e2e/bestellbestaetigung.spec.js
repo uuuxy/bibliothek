@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { seedSQL, querySQL, uniqueSuffix, uiLogin } from './helpers.js';
 
 // Der Bestätigungs-Link, den der Lieferant aus der Bestellmail öffnet.
 //
@@ -95,4 +95,28 @@ test('Ein abgelaufener Link ist tot — auch wenn die Bestellung existiert', asy
 
 	await page.goto(`/bestellung/${token}`);
 	await expect(page.getByText('Dieser Link ist nicht mehr gültig')).toBeVisible();
+});
+
+// Der Kreis schliesst sich erst hier: Was nützt die Bestätigung des Händlers, wenn sie im
+// Haus niemand sieht? Vorher stand der Status IN der Lieferantenspalte, die truncate
+// trägt — das Chip war auf wenige Pixel zerquetscht und praktisch unlesbar.
+test('Die Bestellung erscheint im Haus als bestätigt — ohne die Zeile aufzuklappen', async ({
+	page
+}) => {
+	const token = `E2E-SICHT-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+
+	// Der Händler bestätigt über seinen Link.
+	await page.goto(`/bestellung/${token}`);
+	await page.getByRole('button', { name: 'Bestellung jetzt bestätigen' }).click();
+	await expect(page.getByRole('heading', { name: 'Bestellung bestätigt' })).toBeVisible();
+
+	// Und die Bibliothek sieht es in der Bestellhistorie, in der eingeklappten Zeile.
+	await uiLogin(page);
+	await page.getByTitle('Bestellungen').click();
+	await page.getByRole('button', { name: 'Bestellhistorie', exact: true }).click();
+
+	const zeile = page.locator('tbody tr', { hasText: `K-${s}` }).first();
+	await expect(zeile).toContainText('Bestätigt');
+	await expect(zeile.getByText('Wartet auf Händler')).toHaveCount(0);
 });
