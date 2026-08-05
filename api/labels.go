@@ -118,17 +118,32 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 	}
 }
 
-// ergaenzeAnschaffungsjahr füllt das Anschaffungsjahr aus der Datenbank nach.
+// serverEtikettFelder sind die Etikettenangaben, die der Server selbst kennt und
+// deshalb niemals vom Client entgegennimmt.
+type serverEtikettFelder struct {
+	jahr     string
+	signatur string
+}
+
+// ergaenzeServerfelder füllt die Etikettenfelder nach, die NICHT aus der Anfrage
+// stammen: Anschaffungsjahr und Signatur.
 //
-// Der Nachdruck-Dialog schickt nur Barcode, Titel und Autor — das Jahr stünde sonst nie
+// Der Nachdruck-Dialog schickt nur Barcode, Titel und Autor — beides stünde sonst nie
 // auf einem nachgedruckten Etikett. Es dem Client mitzugeben wäre der falsche Weg: Es
 // ist Serverwissen, und ein Feld, das die Oberfläche mitschicken MUSS, wird irgendwann
 // vergessen (dieselbe Klasse Fehler hat hier schon Buchdaten still verschluckt).
 //
-// Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben ohne Jahr —
+// Genau das ist der Signatur passiert: Diese Nachfüllung gab es zuerst nur fürs Jahr,
+// also trug dasselbe Buch je nach Druckweg einen anderen Aufkleber — über
+// GET /api/buecher/titel/{id}/etiketten mit Signatur, über POST /api/print/labels ohne.
+// Wer hier ein Feld ergänzt, ergänzt es auch in queryLabelItems und
+// ladeBestellEtiketten; TestEtikettenWegeDruckenDasselbe hält die Wege am fertigen PDF
+// zusammen.
+//
+// Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben unangetastet —
 // beim Vorab-Druck für eine Bestellung existieren die Exemplare noch gar nicht, dort
 // ist das der richtige Zustand und kein Fehler.
-func (s *Server) ergaenzeAnschaffungsjahr(ctx context.Context, items []BarcodeLabelDetail) {
+func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelDetail) {
 	barcodes := make([]string, 0, len(items))
 	for i := range items {
 		if items[i].BarcodeID != "" {
@@ -139,29 +154,36 @@ func (s *Server) ergaenzeAnschaffungsjahr(ctx context.Context, items []BarcodeLa
 		return
 	}
 
-	rows, err := s.DB.Pool.Query(ctx,
-		`SELECT barcode_id, to_char(erworben_am, 'YYYY') FROM buecher_exemplare WHERE barcode_id = ANY($1)`,
-		barcodes)
+	rows, err := s.DB.Pool.Query(ctx, `
+		SELECT e.barcode_id, to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, '')
+		FROM buecher_exemplare e
+		JOIN buecher_titel t ON e.titel_id = t.id
+		WHERE e.barcode_id = ANY($1)
+	`, barcodes)
 	if err != nil {
-		log.Printf("Etiketten: Anschaffungsjahr nicht ermittelbar, drucke ohne: %v", err)
+		log.Printf("Etiketten: Serverfelder nicht ermittelbar, drucke ohne: %v", err)
 		return
 	}
 	defer rows.Close()
 
-	jahre := make(map[string]string, len(barcodes))
+	bekannt := make(map[string]serverEtikettFelder, len(barcodes))
 	for rows.Next() {
-		var barcode, jahr string
-		if err := rows.Scan(&barcode, &jahr); err == nil {
-			jahre[barcode] = jahr
+		var barcode string
+		var felder serverEtikettFelder
+		if err := rows.Scan(&barcode, &felder.jahr, &felder.signatur); err == nil {
+			bekannt[barcode] = felder
 		}
 	}
 	if err := rows.Err(); err != nil {
-		log.Printf("Etiketten: Anschaffungsjahr unvollständig gelesen: %v", err)
+		log.Printf("Etiketten: Serverfelder unvollständig gelesen: %v", err)
 		return
 	}
 
 	for i := range items {
-		items[i].AnschaffungsJahr = jahre[items[i].BarcodeID]
+		if felder, ok := bekannt[items[i].BarcodeID]; ok {
+			items[i].AnschaffungsJahr = felder.jahr
+			items[i].Signatur = felder.signatur
+		}
 	}
 }
 
@@ -187,7 +209,7 @@ func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		s.ergaenzeAnschaffungsjahr(ctx, req.Items)
+		s.ergaenzeServerfelder(ctx, req.Items)
 
 		pdf, err := GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, req.Items, s.etikettKopf(ctx))
 		if err != nil {
