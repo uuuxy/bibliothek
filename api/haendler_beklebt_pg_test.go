@@ -102,6 +102,38 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	}
 }
 
+// Die Etiketten im Lieferanten-Mailanhang entstehen aus ProcessOrder, NICHT aus dem
+// Druck-Center-Pfad (queryLabelItems) — die Signatur muss deshalb hier ankommen, über
+// die echte Kette GetTitleByIDTx → BarcodeLabelDetail. Ein Unit-Test, der Signatur
+// direkt ans Struct schreibt, beweist das nicht (siehe Memory
+// verify-audit-fixes-over-live-path: genau so blieb sie im Mailanhang unbemerkt leer).
+func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
+
+	lieferant := haendler(t, pool, "MitSignatur", false)
+	titel := titelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
+
+	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		SupplierID: lieferant,
+		Items:      []OrderItemRequest{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
+	})
+	if err != nil {
+		t.Fatalf("Bestellung: %v", err)
+	}
+
+	if len(res.Labels) != 1 {
+		t.Fatalf("Labels = %d, erwartet 1", len(res.Labels))
+	}
+	if got := res.Labels[0].Signatur; got != "LMF-Deutsch 5" {
+		t.Errorf("Label-Signatur = %q, erwartet %q — der Mailanhang an den Lieferanten bliebe ohne Signatur", got, "LMF-Deutsch 5")
+	}
+}
+
 // Ohne erzeugten Barcode steht für die Position nichts auf dem Bogen — der Händler kann
 // nichts aufkleben, also bleibt das Etikett unsere Aufgabe, auch wenn er sonst beklebt.
 func TestProcessOrder_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {

@@ -15,10 +15,12 @@
 	/** @type {string|null} Bestellung, deren Bestätigen-Anfrage gerade läuft. */
 	let bestaetigenLaufend = $state(null);
 
-	onMount(async () => {
+	async function ladeBestellungen() {
 		bestellungen = (await apiGet('/api/bestellhistorie')) || [];
 		loading = false;
-	});
+	}
+
+	onMount(ladeBestellungen);
 
 	/**
 	 * Trägt den externen Bestätigungsschritt nach (z. B. nachdem Naacher über seinen
@@ -34,6 +36,11 @@
 			await apiPut(`/api/bestellungen/${b.id}/bestaetigen`, { etiketten_groesse: groesse });
 			b.bestaetigt_am = new Date().toISOString();
 			b.etiketten_groesse = groesse;
+		} catch {
+			// Fehler-Toast kommt bereits aus apiFetch. Statt den Zustand zu raten, neu vom
+			// Backend laden: Ein 409 heißt, ein anderer Arbeitsplatz hat parallel bestätigt
+			// (Multi-PC-Betrieb) — die Zeile zeigte sonst weiter "Offen" mit toten Buttons.
+			await ladeBestellungen().catch(() => {});
 		} finally {
 			bestaetigenLaufend = null;
 		}
