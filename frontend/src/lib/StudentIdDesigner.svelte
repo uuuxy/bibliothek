@@ -35,15 +35,32 @@
 	/** @type {any} */
 	let saveTimer = null;
 
-	// Max Mustermann statt eines beliebig klingenden Namens: Platzhalter-Vorschau soll auf
-	// den ersten Blick als Platzhalter erkennbar sein, passend zu PLATZHALTER_SCHULNAME
-	// ("Musterstadt").
+	// Fallback für den Druck-Stapel (PrintPreview), falls die gewählte Klasse leer ist oder
+	// /api/schueler fehlschlägt — Max Mustermann statt eines beliebig klingenden Namens,
+	// passend zu PLATZHALTER_SCHULNAME ("Musterstadt").
 	const mockStudents = [
 		{ id: 's1', barcode_id: 'S-10041', vorname: 'Max', nachname: 'Mustermann', klasse: '9a' },
 		{ id: 's2', barcode_id: 'S-10042', vorname: 'Erika', nachname: 'Musterfrau', klasse: '9a' }
 	];
 
-	const previewStudent = $derived(previewStudents[0] ?? mockStudents[0]);
+	// Die Design-Leinwand (CanvasArea) zeigt IMMER diesen Platzhalter, unabhängig davon,
+	// welche Klasse gerade im Dropdown gewählt ist. Vorher zeigte sie previewStudents[0] —
+	// den ersten echten Schüler der gewählten Klasse. Das hieß: Um im Designer einen
+	// hübschen Platzhalternamen zu sehen, musste man einen echten Schüler-Datensatz
+	// umbenennen. Die Klassenauswahl bleibt trotzdem nötig — sie steuert, welche echten
+	// Schüler in PrintPreview/"Vorderseiten drucken" landen, das ist der tatsächliche
+	// Druck-Stapel, nicht die Bearbeitungsvorschau.
+	const PLATZHALTER_STUDENT = {
+		id: 'placeholder',
+		barcode_id: 'DEMO-S-001',
+		vorname: 'Max',
+		nachname: 'Mustermann',
+		klasse: '9a'
+	};
+	const previewStudent = $derived({
+		...PLATZHALTER_STUDENT,
+		klasse: selectedKlasse || PLATZHALTER_STUDENT.klasse
+	});
 
 	async function loadClasses() {
 		try {
@@ -149,7 +166,7 @@
 	 * schreibt das Ergebnis anschließend zentral — die Rückfrage ist deshalb Pflicht:
 	 * Der Schritt trifft ALLE Arbeitsplätze, nicht nur diesen Browser.
 	 */
-	function zuruecksetzen() {
+	async function zuruecksetzen() {
 		const ok = window.confirm(
 			'Ausweis-Design auf die Standardwerte zurücksetzen?\n\n' +
 				'Alle eigenen Anpassungen an Vorder- und Rückseite gehen verloren — ' +
@@ -158,6 +175,11 @@
 		if (!ok) return;
 		resetDesign();
 		selectedId = null;
+		// resetDesign() setzt den Kopf zurück auf PLATZHALTER_SCHULNAME. heileSchulstammdaten()
+		// lief bisher nur einmal beim Laden — ohne diesen erneuten Aufruf hätte "Standardwerte
+		// wiederherstellen" einen bereits geheilten echten Schulnamen wieder auf den
+		// Platzhalter zurückgeworfen, ohne dass er sich von selbst erneut heilt.
+		await heileSchulstammdaten();
 	}
 
 	function triggerPrint() {
