@@ -13,17 +13,17 @@
 		<h3 class="text-xs text-blue-600 font-medium">2. Barcodes generieren</h3>
 
 		<!-- Selection mode -->
-		<div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/40 text-xs">
+		<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40 text-xs">
 			<button
 				onclick={() => (labelStore.generationMode = 'existing')}
-				class="flex-1 text-center py-1 rounded-md font-bold transition-all cursor-pointer {labelStore.generationMode ===
+				class="flex-1 text-center py-1.5 rounded-lg font-bold transition-all cursor-pointer {labelStore.generationMode ===
 				'existing'
 					? 'bg-white text-slate-800 shadow-xs'
 					: 'text-slate-500 hover:text-slate-700'}">Vorhandene Exemplare</button
 			>
 			<button
 				onclick={() => (labelStore.generationMode = 'new')}
-				class="flex-1 text-center py-1 rounded-md font-bold transition-all cursor-pointer {labelStore.generationMode ===
+				class="flex-1 text-center py-1.5 rounded-lg font-bold transition-all cursor-pointer {labelStore.generationMode ===
 				'new'
 					? 'bg-white text-slate-800 shadow-xs'
 					: 'text-slate-500 hover:text-slate-700'}">Neue Barcodes</button
@@ -77,7 +77,7 @@
 						min="1"
 						max="100"
 						bind:value={labelStore.newQuantity}
-						class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+						class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 					/>
 				</div>
 				<div class="space-y-1.5">
@@ -86,7 +86,7 @@
 						type="number"
 						min="1"
 						bind:value={labelStore.newStartNum}
-						class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+						class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 					/>
 				</div>
 			</div>

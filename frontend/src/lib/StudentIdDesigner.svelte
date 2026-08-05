@@ -9,7 +9,8 @@
 		idStore,
 		applyDesign,
 		serializeDesign,
-		resetDesign
+		resetDesign,
+		wendeSchulstammdatenAn
 	} from './designer/idDesignerStore.svelte.js';
 	import CanvasArea from './designer/CanvasArea.svelte';
 	import PropertiesPanel from './designer/PropertiesPanel.svelte';
@@ -91,6 +92,27 @@
 			console.error('Ausweis-Design konnte nicht geladen werden:', e);
 		} finally {
 			designLoaded = true;
+		}
+		// NACH applyDesign(): Sonst überschreibt das geladene Design (auch ein Design,
+		// das den Platzhalter noch trägt) die geheilten Werte sofort wieder.
+		await heileSchulstammdaten();
+	}
+
+	// /api/einstellungen verlangt manage_users — wer den Ausweis-Designer nur zum
+	// Drucken öffnet (view_students reicht dafür), bekäme sonst ein sichtbares
+	// Berechtigungs-Toast für eine reine Komfortfunktion. Deshalb roh über apiFetch
+	// und bei jedem Fehler (auch 403) still nichts tun, wie bei loadClasses/loadStudents.
+	async function heileSchulstammdaten() {
+		try {
+			const res = await apiFetch('/api/einstellungen');
+			if (!res.ok) return;
+			const data = await res.json();
+			const adresse = [data.schule_strasse, [data.schule_plz, data.schule_ort].filter(Boolean).join(' ')]
+				.filter(Boolean)
+				.join(', ');
+			wendeSchulstammdatenAn(data.schule_name ?? '', adresse);
+		} catch {
+			/* Komfortfunktion — Platzhalter bleibt stehen */
 		}
 	}
 

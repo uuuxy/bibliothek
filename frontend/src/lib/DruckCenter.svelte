@@ -47,8 +47,12 @@
 	</div>
 
 	<div class="flex-1 overflow-y-auto">
+		<!-- Alle drei Reiter tragen dasselbe px-8 py-6 wie die Tab-Leiste darüber — vorher
+		     bekam nur "Fehlende Etiketten" dieses Padding, die anderen beiden Reiter waren
+		     komplett randlos und nur zufällig ähnlich weit eingerückt wie die Tab-Leiste
+		     (deren max-w-6xl mx-auto bei anderer Fensterbreite auseinandergelaufen wäre). -->
 		{#if activeTab === 'labels'}
-			<div class="animate-fade-in h-full">
+			<div class="animate-fade-in h-full px-8 py-6">
 				<LabelPrinter />
 			</div>
 		{:else if activeTab === 'nachdruck'}
@@ -59,7 +63,7 @@
 				<EtikettenNachdruck onUebergeben={() => (activeTab = 'labels')} />
 			</div>
 		{:else}
-			<div class="animate-fade-in h-full">
+			<div class="animate-fade-in h-full px-8 py-6">
 				<StudentIdDesigner />
 			</div>
 		{/if}

@@ -36,13 +36,20 @@ function textStyle(fontSize = 7, color = '#1e293b', textAlign = 'left', fontWeig
 	return { fontFamily: 'inherit', fontSize, color, textAlign, fontWeight };
 }
 
+// Platzhalter für Schulname/-adresse, solange niemand die echten Schul-Stammdaten
+// (Einstellungen → Allgemein) hinterlegt hat oder der Ausweis-Designer sie noch nicht
+// laden konnte. wendeSchulstammdatenAn() ersetzt GENAU diesen Text — nie einen davon
+// abweichenden, von jemandem bereits selbst eingetragenen Text.
+export const PLATZHALTER_SCHULNAME = 'STÄDTISCHES GYMNASIUM MUSTERSTADT';
+export const PLATZHALTER_ADRESSE = 'Musterstraße 12, 12345 Musterstadt';
+
 /** @returns {any[]} */
 export function defaultFrontElements() {
 	return [
 		{
 			id: 'header',
 			type: 'header',
-			content: 'STÄDTISCHES GYMNASIUM MUSTERSTADT',
+			content: PLATZHALTER_SCHULNAME,
 			x: 5,
 			y: 4,
 			width: 75,
@@ -55,7 +62,7 @@ export function defaultFrontElements() {
 		{
 			id: 'address',
 			type: 'address',
-			content: 'Musterstraße 12, 12345 Musterstadt',
+			content: PLATZHALTER_ADRESSE,
 			x: 30,
 			y: 8,
 			width: 50,
@@ -242,6 +249,34 @@ export function resetDesign() {
 	idStore.front.theme = FRONT_THEME_DEFAULT;
 	idStore.back.elements = defaultBackElements();
 	idStore.back.theme = BACK_THEME_DEFAULT;
+}
+
+/**
+ * Ersetzt den Platzhalter-Schulnamen/-adresse auf der Vorderseite durch die echten
+ * Schul-Stammdaten (Einstellungen → Allgemein), sobald sie geladen werden konnten.
+ *
+ * Läuft nach JEDEM Laden — nicht nur beim allerersten Start: Ein bereits zentral
+ * gespeichertes Design (z. B. weil beim Go-Live niemand den Kopf angepasst hat, bevor
+ * das Design das erste Mal gespeichert wurde) trägt den Platzhalter sonst für immer
+ * weiter, weil applyDesign() ihn aus der DB lädt statt aus defaultFrontElements().
+ *
+ * Rührt NIE einen Wert an, der vom Platzhalter abweicht — wer den Kopf bereits selbst
+ * beschriftet hat (auch mit demselben Wortlaut wie eine andere Schule), wird nicht
+ * überschrieben. Leere Schul-Stammdaten (Einstellungen selbst noch nicht ausgefüllt)
+ * lassen den Platzhalter bewusst stehen statt ihn durch eine leere Zeile zu ersetzen.
+ *
+ * @param {string} schuleName
+ * @param {string} adresse
+ */
+export function wendeSchulstammdatenAn(schuleName, adresse) {
+	const header = idStore.front.elements.find((e) => e.id === 'header');
+	if (header && schuleName && header.content === PLATZHALTER_SCHULNAME) {
+		header.content = schuleName;
+	}
+	const address = idStore.front.elements.find((e) => e.id === 'address');
+	if (address && adresse && address.content === PLATZHALTER_ADRESSE) {
+		address.content = adresse;
+	}
 }
 
 // ---------------------------------------------------------------------------

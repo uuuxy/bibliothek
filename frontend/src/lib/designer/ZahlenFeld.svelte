@@ -24,6 +24,6 @@
 		value={Math.round(value * 10) / 10}
 		oninput={(e) =>
 			onInput(parseFloat(/** @type {HTMLInputElement} */ (e.currentTarget).value) || 0)}
-		class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+		class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
 	/>
 </div>

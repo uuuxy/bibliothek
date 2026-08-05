@@ -17,6 +17,9 @@
 	import Button from '../components/ui/Button.svelte';
 	import ToolbarAuswahl from './ToolbarAuswahl.svelte';
 
+	/** @type {HTMLInputElement | undefined} */
+	let bildUploadEl = $state();
+
 	/**
 	 * @type {{
 	 *   zoom: number, onZoom: (v: number) => void,
@@ -140,19 +143,20 @@
 
 		<Button variant="secondary" size="sm" onclick={() => addTextElement(side)}>+ Text</Button>
 
-		<!-- Multi-image upload -->
-		<label
-			class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
-		>
-			+ Bild(er)
-			<input
-				type="file"
-				accept="image/*"
-				multiple
-				class="sr-only"
-				onchange={handleMultiImageUpload}
-			/>
-		</label>
+		<!-- Multi-image upload: die eigentliche Auswahl-Fläche ist die geteilte Button-
+		     Komponente (dieselbe Pillenform/Höhe wie "+ Text" daneben, statt eines eigens
+		     gestylten <label>, das bei jeder Änderung an Button.svelte hätte auseinanderlaufen
+		     können); das <input type="file"> bleibt unsichtbar und wird nur programmatisch
+		     ausgelöst. -->
+		<Button variant="secondary" size="sm" onclick={() => bildUploadEl?.click()}>+ Bild(er)</Button>
+		<input
+			bind:this={bildUploadEl}
+			type="file"
+			accept="image/*"
+			multiple
+			class="sr-only"
+			onchange={handleMultiImageUpload}
+		/>
 
 		{#if previewStudent}
 			<span class="text-xs text-slate-500 font-medium ml-auto">
