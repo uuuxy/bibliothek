@@ -418,6 +418,10 @@ CREATE TABLE buecher_exemplare (
     etikett_gedruckt BOOLEAN NOT NULL DEFAULT false,   -- True if barcode label has been printed
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf position, condition details)
     einkaufspreis DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    -- Bestellung, aus der dieses Exemplar entstanden ist (Migration 063). Der
+    -- Fremdschlüssel steht weiter unten: bestellungen_verlauf entsteht erst nach
+    -- dieser Tabelle. NULL bei Altbestand und Handanlage.
+    bestellung_id UUID,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -625,8 +629,22 @@ CREATE TABLE bestellungen_verlauf (
     -- unbestätigt (Migration 062).
     etiketten_groesse  TEXT
         CONSTRAINT bestellungen_verlauf_etiketten_groesse_check
-        CHECK (etiketten_groesse IS NULL OR etiketten_groesse IN ('klein', 'gross'))
+        CHECK (etiketten_groesse IS NULL OR etiketten_groesse IN ('klein', 'gross')),
+    -- Bestätigungs-Link an den Lieferanten (Migration 063). Gespeichert wird NUR der
+    -- SHA-256 des Tokens: Ein Datenbank-Auszug enthält damit keine benutzbaren Links.
+    bestaetigungs_token_hash TEXT,
+    token_gueltig_bis  TIMESTAMPTZ,
+    -- 'lieferant' = über den Link bestätigt, 'bibliothek' = manuell nachgetragen.
+    bestaetigt_durch   TEXT
+        CONSTRAINT bestellungen_verlauf_bestaetigt_durch_check
+        CHECK (bestaetigt_durch IS NULL OR bestaetigt_durch IN ('lieferant', 'bibliothek'))
 );
+
+-- Teil-Index: Bestellungen ohne Link tragen NULL, das darf beliebig oft vorkommen. Er
+-- ist zugleich der Zugriffspfad der öffentlichen Seite, die nur den Hash kennt.
+CREATE UNIQUE INDEX idx_bestellungen_token_hash
+    ON bestellungen_verlauf (bestaetigungs_token_hash)
+    WHERE bestaetigungs_token_hash IS NOT NULL;
 
 -- Table: bestellungen_positionen (Line items per order)
 CREATE TABLE bestellungen_positionen (
@@ -636,10 +654,24 @@ CREATE TABLE bestellungen_positionen (
     titel_name    TEXT NOT NULL,
     isbn          TEXT NOT NULL DEFAULT '',
     menge         INTEGER NOT NULL,
-    einzelpreis   DECIMAL(10,2) NOT NULL DEFAULT 0.00
+    einzelpreis   DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    -- Stand diese Position auf dem Barcodebogen der Bestellmail? Steuert, welche
+    -- Etiketten die öffentliche Bestätigungsseite druckt (Migration 063).
+    mit_vorab_barcode BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_bestellpositionen_bestellung ON bestellungen_positionen(bestellung_id);
+
+-- Nachgereichter Fremdschlüssel: buecher_exemplare.bestellung_id (Migration 063). Er
+-- kann erst hier stehen, weil die Exemplar-Tabelle weiter oben angelegt wird. ON DELETE
+-- SET NULL — das Exemplar überlebt eine gelöschte Bestellung, es steht ja im Regal.
+ALTER TABLE buecher_exemplare
+    ADD CONSTRAINT buecher_exemplare_bestellung_fkey
+    FOREIGN KEY (bestellung_id) REFERENCES bestellungen_verlauf(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_buecher_exemplare_bestellung
+    ON buecher_exemplare (bestellung_id)
+    WHERE bestellung_id IS NOT NULL;
 
 
 -- Table: vormerkungen (Individual book reservations / waitlist)
@@ -750,7 +782,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('059_inventur_verluste.sql'),
 ('060_signatur_scope_text.sql'),
 ('061_inventur_verluste_gefunden.sql'),
-('062_lieferant_bestellbestaetigung.sql')
+('062_lieferant_bestellbestaetigung.sql'),
+('063_bestellbestaetigung_link.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

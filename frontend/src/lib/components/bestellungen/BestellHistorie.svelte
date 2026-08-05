@@ -1,19 +1,17 @@
 <script>
 	import { onMount } from 'svelte';
-	import { apiGet, apiPut } from '../../apiFetch.js';
+	import { apiGet } from '../../apiFetch.js';
+	import BestellStatusBlock from './BestellStatusBlock.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 	import { Printer, BookOpen } from '@lucide/svelte';
-	import Button from '../ui/Button.svelte';
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
 	let loading = $state(true);
 	/** @type {string|null} */
 	let expandedId = $state(null);
-	/** @type {string|null} Bestellung, deren Bestätigen-Anfrage gerade läuft. */
-	let bestaetigenLaufend = $state(null);
 
 	async function ladeBestellungen() {
 		bestellungen = (await apiGet('/api/bestellhistorie')) || [];
@@ -21,30 +19,6 @@
 	}
 
 	onMount(ladeBestellungen);
-
-	/**
-	 * Trägt den externen Bestätigungsschritt nach (z. B. nachdem Naacher über seinen
-	 * eigenen Link die Etikettengröße gewählt und die Bestellung bestätigt hat).
-	 * Kein window.confirm — reine Status-Notiz, nicht destruktiv, jederzeit erkennbar
-	 * am Badge.
-	 * @param {any} b
-	 * @param {'klein'|'gross'} groesse
-	 */
-	async function bestaetigen(b, groesse) {
-		bestaetigenLaufend = b.id;
-		try {
-			await apiPut(`/api/bestellungen/${b.id}/bestaetigen`, { etiketten_groesse: groesse });
-			b.bestaetigt_am = new Date().toISOString();
-			b.etiketten_groesse = groesse;
-		} catch {
-			// Fehler-Toast kommt bereits aus apiFetch. Statt den Zustand zu raten, neu vom
-			// Backend laden: Ein 409 heißt, ein anderer Arbeitsplatz hat parallel bestätigt
-			// (Multi-PC-Betrieb) — die Zeile zeigte sonst weiter "Offen" mit toten Buttons.
-			await ladeBestellungen().catch(() => {});
-		} finally {
-			bestaetigenLaufend = null;
-		}
-	}
 
 	let gesamtsumme = $derived(bestellungen.reduce((sum, b) => sum + b.gesamtbetrag, 0));
 	let gesamtExemplare = $derived(bestellungen.reduce((sum, b) => sum + b.anzahl_exemplare, 0));
@@ -213,43 +187,12 @@
 									colspan={orderStore.preiseErfassen ? 5 : 4}
 									class="border-t border-slate-100 bg-slate-50/40 px-5 py-4"
 								>
-									<!-- Naacher & Co. bestätigen die Bestellung über ihren eigenen Link — davon
-									     kommt bei uns keine automatische Rückmeldung an. Dieser Block trägt den
-									     Status manuell nach, sichtbar am Badge. -->
+									<!-- Lieferanten wie Naacher etikettieren selbst: Sie bekommen mit der
+									     Bestellmail einen Link von uns, wählen dort ihre Etiketten und
+									     bestätigen die Bestellung. Der Block zeigt diesen Zustand und hält
+									     den manuellen Nachtrag als Rückfallebene bereit. -->
 									{#if b.bietet_bestellbestaetigung}
-										<div
-											class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
-										>
-											{#if b.bestaetigt_am}
-												<span class="text-sm font-semibold text-emerald-700">
-													✓ Bestellung bestätigt ({b.etiketten_groesse === 'gross'
-														? 'Große'
-														: 'Kleine'} Etiketten)
-												</span>
-											{:else}
-												<span class="text-sm font-medium text-slate-500">
-													Lieferant bestätigt selbst — Größe hier nachtragen, sobald bekannt:
-												</span>
-												<div class="flex items-center gap-2">
-													<Button
-														variant="secondary"
-														size="sm"
-														disabled={bestaetigenLaufend === b.id}
-														onclick={() => bestaetigen(b, 'klein')}
-													>
-														Kleine Etiketten
-													</Button>
-													<Button
-														variant="secondary"
-														size="sm"
-														disabled={bestaetigenLaufend === b.id}
-														onclick={() => bestaetigen(b, 'gross')}
-													>
-														Große Etiketten
-													</Button>
-												</div>
-											{/if}
-										</div>
+										<BestellStatusBlock {b} onAktualisieren={ladeBestellungen} />
 									{/if}
 									{#if b.positionen.length === 0}
 										<p class="text-sm text-slate-400 italic">Keine Positionen gespeichert.</p>

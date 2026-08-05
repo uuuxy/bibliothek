@@ -60,6 +60,10 @@
 	let schulePLZ = $state('');
 	let schuleOrt = $state('');
 	let etikettEigentumsvermerk = $state('');
+	// Adresse, unter der DRITTE das System erreichen — Grundlage des Bestätigungs-Links
+	// an den Lieferanten. Der Server kennt sie nicht selbst (hinter dem Reverse-Proxy
+	// sieht er nur seinen internen Namen).
+	let oeffentlicheAdresse = $state('');
 
 	// --- LOGIC ---
 
@@ -82,6 +86,7 @@
 			schulePLZ = data.schule_plz ?? '';
 			schuleOrt = data.schule_ort ?? '';
 			etikettEigentumsvermerk = data.etikett_eigentumsvermerk ?? '';
+			oeffentlicheAdresse = data.oeffentliche_adresse ?? '';
 		} catch {
 			/* use defaults */
 		}
@@ -143,6 +148,7 @@
 					bind:schulePLZ
 					bind:schuleOrt
 					bind:etikettEigentumsvermerk
+					bind:oeffentlicheAdresse
 				/>
 
 				<!-- TAB: TEAM & RECHTE -->

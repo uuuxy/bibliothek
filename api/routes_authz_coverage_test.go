@@ -28,16 +28,24 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		"/api/monitor/slides":    "öffentlicher Bibliotheks-Monitor (nur Buchdaten)",
 		"/api/images/cover":      "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in image_caching.go)",
 		"/api/csrf-token":        "CSRF-Bootstrap-Endpunkt",
-		"/uploads/":              "hochgeladene Cover-Bilder (öffentlich lesbar für Katalog/Monitor; Schülerfotos liegen NICHT hier, die stehen AES-verschlüsselt in der DB)",
-		"/api/auth/refresh":      "Auth-Endpunkt (validiert das Token selbst)",
-		"/api/auth/me":           "Auth-Endpunkt (validiert das Token selbst)",
-		"/api/auth/logout":       "Auth-Endpunkt",
-		"/login":                 "Login (Rate-Limit-Middleware, es existiert noch kein Token)",
-		"/health":                "Health-Check",
-		"/swagger/":              "API-Doku (nur bei APP_ENV=local/development registriert)",
-		"/swagger":               "API-Doku (nur bei APP_ENV=local/development registriert)",
-		"/favicon.ico":           "statisches Asset",
-		"/":                      "SPA-Fallback (statisches Frontend)",
+		// Bestätigungs-Link an den Lieferanten (Migration 063). Kein Login, aber auch kein
+		// offener Endpunkt: Der 256-Bit-Token aus der Bestellmail ist der Ausweis und
+		// öffnet ausschließlich SEINE Bestellung. Sichtbar sind Lieferant, Datum,
+		// Kundennummer und Titelzeilen — dieselben Angaben, die der Lieferant ohnehin als
+		// Mailanhang hat; keine PII, keine Preise, kein Zugriff auf den Bestand.
+		"/api/public/bestellung/{token}":                     "Bestätigungs-Link: Bestellansicht des Lieferanten (Token = Ausweis, nur diese Bestellung)",
+		"/api/public/bestellung/{token}/etiketten/{groesse}": "Bestätigungs-Link: Etikettenbogen dieser Bestellung (identisch zum Mailanhang)",
+		"/api/public/bestellung/{token}/bestaetigen":         "Bestätigungs-Link: einmalige Bestätigung durch den Lieferanten (atomar, danach 409)",
+		"/uploads/":         "hochgeladene Cover-Bilder (öffentlich lesbar für Katalog/Monitor; Schülerfotos liegen NICHT hier, die stehen AES-verschlüsselt in der DB)",
+		"/api/auth/refresh": "Auth-Endpunkt (validiert das Token selbst)",
+		"/api/auth/me":      "Auth-Endpunkt (validiert das Token selbst)",
+		"/api/auth/logout":  "Auth-Endpunkt",
+		"/login":            "Login (Rate-Limit-Middleware, es existiert noch kein Token)",
+		"/health":           "Health-Check",
+		"/swagger/":         "API-Doku (nur bei APP_ENV=local/development registriert)",
+		"/swagger":          "API-Doku (nur bei APP_ENV=local/development registriert)",
+		"/favicon.ico":      "statisches Asset",
+		"/":                 "SPA-Fallback (statisches Frontend)",
 	}
 
 	registrierung := regexp.MustCompile(`mux\.Handle(?:Func)?\("([^"]+)"`)

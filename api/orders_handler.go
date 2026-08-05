@@ -79,7 +79,14 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		}
 
 		betreff, textBody := s.loadBestellTemplate(ctx)
-		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels))
+		// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht
+		// dann wie bisher raus, nur ohne Bestätigungsschritt. Ein Link auf den internen
+		// Servernamen wäre beim Lieferanten wertlos und sähe trotzdem echt aus.
+		link := ""
+		if settings.OeffentlicheAdresse != nil {
+			link = bestaetigungsLink(*settings.OeffentlicheAdresse, res.BestaetigungsToken)
+		}
+		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link)
 
 		if err := pdfSvc.DispatchOrderEmail(res.SupplierEmail, subject, body, res.SummaryItems, res.Labels, anyBarcodesGenerated, res.BietetBestellbestaetigung, schule); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{
@@ -143,14 +150,34 @@ func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody str
 }
 
 // resolveBestellMail ersetzt die Platzhalter der Bestellvorlage in Betreff und Text.
-func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int) (subject, body string) {
+//
+// link ist der Bestätigungs-Link für Lieferanten, die selbst etikettieren; er ist leer,
+// wenn dieser Lieferant keinen bekommt oder keine öffentliche Adresse hinterlegt ist.
+func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string) (subject, body string) {
 	replacer := strings.NewReplacer(
 		"{{.Datum}}", time.Now().Format(dateFormatDE),
 		"{{.Kundennummer}}", kundennummer,
 		"{{.AnzahlTitel}}", strconv.Itoa(anzahlTitel),
 		"{{.AnzahlExemplare}}", strconv.Itoa(anzahlExemplare),
+		"{{.BestaetigungsLink}}", link,
 	)
-	return replacer.Replace(betreff), replacer.Replace(textBody)
+	return replacer.Replace(betreff), ergaenzeLinkAbsatz(replacer.Replace(textBody), textBody, link)
+}
+
+// linkAbsatz ist der Textblock, der den Link trägt, wenn die Vorlage ihn nicht selbst
+// platziert. Die Vorlage ist frei editierbar (Vorlagen-Editor) — ein Lieferant, der den
+// Link nicht bekommt, weil jemand den Platzhalter beim Umformulieren verloren hat, wäre
+// ein stiller Ausfall des ganzen Ablaufs.
+const linkAbsatz = "\n\nEtiketten wählen, drucken und Bestellung bestätigen:\n%s\n\nDer Link ist %d Tage gültig und gehört nur zu dieser Bestellung."
+
+// ergaenzeLinkAbsatz hängt den Link an, falls die Vorlage keinen Platzhalter dafür hat.
+// Geprüft wird die ROHE Vorlage, nicht der aufgelöste Text: Nach dem Ersetzen ist nicht
+// mehr zu sehen, ob der Platzhalter je da war.
+func ergaenzeLinkAbsatz(aufgeloest, rohesTemplate, link string) string {
+	if link == "" || strings.Contains(rohesTemplate, "{{.BestaetigungsLink}}") {
+		return aufgeloest
+	}
+	return aufgeloest + fmt.Sprintf(linkAbsatz, link, TokenGueltigkeitTage)
 }
 
 // GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,

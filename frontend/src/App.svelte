@@ -1,6 +1,7 @@
 <script>
 	import OpacSearch from './lib/OpacSearch.svelte';
 	import Monitor from './lib/Monitor.svelte';
+	import BestellBestaetigung from './lib/BestellBestaetigung.svelte';
 
 	import { authStore } from './lib/stores/authStore.svelte.js';
 	import { uiStore } from './lib/stores/uiStore.svelte.js';
@@ -85,6 +86,11 @@
 		<OpacSearch />
 	{:else if _currentPath === '/monitor'}
 		<Monitor />
+	{:else if _currentPath.startsWith('/bestellung/')}
+		<!-- Bestätigungs-Link an den Lieferanten: Der Token steht IM Pfad, deshalb ein
+		     Präfix-Vergleich statt Gleichheit. Muss vor dem Login-Zweig stehen — der
+		     Lieferant hat kein Konto und darf keinen Anmeldebildschirm sehen. -->
+		<BestellBestaetigung />
 	{:else}
 		{#if authStore.isLoggedIn && !authStore.heartbeatOk}
 			<div

@@ -224,6 +224,30 @@ func (r *statusRecorder) Flush() {
 }
 
 // LoggingMiddleware records the HTTP status and prints the exact stack trace for 500 errors.
+// tokenPfade sind die einzigen Pfade, die ein Geheimnis TRAGEN: Im Bestätigungs-Link an
+// den Lieferanten steht der Token in der Adresse — sowohl beim Aufruf der Seite selbst
+// als auch bei ihren API-Aufrufen. Die längere Variante steht zuerst, damit sie greift.
+var tokenPfade = []string{"/api/public/bestellung/", "/bestellung/"}
+
+// maskiereToken schneidet den Bestätigungs-Token aus einem Pfad, bevor er ins Log geht.
+//
+// Ein Logfile wird weitergereicht, in Tickets gehängt und selten so geschützt wie die
+// Datenbank. Ein Token darin wäre ein funktionierender Link — genau das, was die
+// Hash-Speicherung in der Datenbank verhindern soll.
+func maskiereToken(pfad string) string {
+	for _, praefix := range tokenPfade {
+		if !strings.HasPrefix(pfad, praefix) {
+			continue
+		}
+		rest := strings.TrimPrefix(pfad, praefix)
+		if i := strings.Index(rest, "/"); i >= 0 {
+			return praefix + "***" + rest[i:]
+		}
+		return praefix + "***"
+	}
+	return pfad
+}
+
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		recorder := &statusRecorder{
@@ -234,7 +258,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(recorder, r)
 
 		if recorder.status >= 500 {
-			log.Printf("HTTP 500 ERROR on %s %s - STACKTRACE:\n%s", r.Method, r.URL.Path, string(debug.Stack()))
+			log.Printf("HTTP 500 ERROR on %s %s - STACKTRACE:\n%s", r.Method, maskiereToken(r.URL.Path), string(debug.Stack()))
 		}
 	})
 }

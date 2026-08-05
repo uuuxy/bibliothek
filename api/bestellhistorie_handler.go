@@ -50,6 +50,13 @@ type BestellVerlaufResponse struct {
 	// EtikettenGroesse: beim Bestätigen gewählte Größe ('klein'/'gross'), NULL solange
 	// unbestätigt.
 	EtikettenGroesse *string `json:"etiketten_groesse,omitempty"`
+	// BestaetigtDurch unterscheidet die beiden Wege: 'lieferant' = über den verschickten
+	// Link selbst bestätigt, 'bibliothek' = hier von Hand nachgetragen. Ohne diese
+	// Unterscheidung sähe eine Vermutung aus wie eine Rückmeldung.
+	BestaetigtDurch *string `json:"bestaetigt_durch,omitempty"`
+	// LinkAktiv: Für diese Bestellung ist ein gültiger Bestätigungs-Link unterwegs. Der
+	// Link selbst kann hier nicht stehen — gespeichert ist nur sein Hash.
+	LinkAktiv bool `json:"link_aktiv"`
 }
 
 // GetBestellhistorieHandler returns all past orders with their line items, newest first.
@@ -85,7 +92,9 @@ func (s *Server) ladeBestellhistorie(ctx context.Context) ([]BestellVerlaufRespo
 	rows, err := s.DB.Pool.Query(ctx, `
 		SELECT b.id, b.lieferant_name, b.lieferant_email, b.kundennummer, b.bestelldatum,
 		       b.gesamtbetrag, b.anzahl_exemplare, coalesce(l.bietet_bestellbestaetigung, false),
-		       b.bestaetigt_am, b.etiketten_groesse
+		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
+		       (b.bestaetigungs_token_hash IS NOT NULL
+		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now()))
 		FROM bestellungen_verlauf b
 		LEFT JOIN lieferanten l ON l.id = b.lieferant_id
 		ORDER BY b.bestelldatum DESC
@@ -102,7 +111,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context) ([]BestellVerlaufRespo
 		var o BestellVerlaufResponse
 		if err := rows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
 			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.BietetBestellbestaetigung,
-			&o.BestaetigtAm, &o.EtikettenGroesse); err != nil {
+			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv); err != nil {
 			return nil, nil, err
 		}
 		o.Positionen = []BestellPositionResponse{}

@@ -38,6 +38,12 @@ type OrderResult struct {
 	// BietetBestellbestaetigung: siehe repository.Supplier — steuert, ob DispatchOrderEmail
 	// zusätzlich das große Lernmittel-Etikett anhängt.
 	BietetBestellbestaetigung bool
+	// BestellungID der soeben geschriebenen Bestellung.
+	BestellungID string
+	// BestaetigungsToken ist der KLARTEXT-Token für den Link in der Bestellmail. In der
+	// Datenbank liegt nur sein Hash; wer ihn hier nicht mitnimmt, kann ihn nie wieder
+	// erfahren. Leer, wenn der Lieferant keinen Bestätigungsschritt hat.
+	BestaetigungsToken string
 }
 
 type bestellungPosition struct {
@@ -46,6 +52,11 @@ type bestellungPosition struct {
 	isbn      string
 	menge     int
 	preis     float64
+	// mitVorabBarcode hält fest, ob diese Position auf dem Barcodebogen der Bestellmail
+	// stand. Ohne diese Angabe könnte die Etikettenseite des Lieferanten-Links nicht
+	// dieselbe Auswahl drucken wie der Mailanhang — sie würde auch Exemplare mitdrucken,
+	// die bewusst ohne Vorab-Etikett bestellt wurden.
+	mitVorabBarcode bool
 }
 
 // bestellItemResult bündelt die aus einer einzelnen Bestellposition erzeugten Daten.
@@ -66,6 +77,16 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 			return nil, errors.New("supplier not found")
 		}
 		return nil, err
+	}
+
+	// Der Bestätigungs-Link entsteht NUR für Lieferanten, die selbst etikettieren und
+	// bestätigen. Alle anderen bekämen eine Seite, auf der es nichts zu tun gibt.
+	var token, tokenHash string
+	if supplier.BietetBestellbestaetigung {
+		token, tokenHash, err = neuerBestaetigungsToken()
+		if err != nil {
+			return nil, fmt.Errorf("bestaetigungs-token: %w", err)
+		}
 	}
 
 	tx, err := s.db.Pool.Begin(ctx)
@@ -95,15 +116,23 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		totalAllocated += res.position.menge
 	}
 
+	// REIHENFOLGE: Bestellkopf VOR den Exemplaren. Die Exemplare tragen seit Migration 063
+	// ihre bestellung_id, und die gibt es erst, wenn der Kopf geschrieben ist. Der Tausch
+	// ist unbedenklich, weil keine der beiden Einfügungen die andere liest — die Barcodes
+	// sind oben in der Schleife bereits reserviert, und der Kopf zählt nur die dort
+	// errechneten Summen.
+	bestellungID, err := s.insertBestellverlauf(ctx, tx, req, supplier, gesamtbetrag, totalAllocated, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	for i := range copyInserts {
+		copyInserts[i].BestellungID = bestellungID
+	}
+
 	if err := s.bookRepo.BulkInsertCopiesTx(ctx, tx, copyInserts); err != nil {
 		return nil, fmt.Errorf("bulk insert error: %w", err)
 	}
 
-	// Bestellverlauf + Positionen in derselben Transaktion mitschreiben
-	bestellungID, err := s.insertBestellverlauf(ctx, tx, req, supplier, gesamtbetrag, totalAllocated)
-	if err != nil {
-		return nil, err
-	}
 	if err := s.insertBestellpositionen(ctx, tx, bestellungID, positionen); err != nil {
 		return nil, err
 	}
@@ -120,6 +149,8 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		SummaryItems:              orderSummaryItems,
 		TotalAllocated:            totalAllocated,
 		BietetBestellbestaetigung: supplier.BietetBestellbestaetigung,
+		BestellungID:              bestellungID,
+		BestaetigungsToken:        token,
 	}, nil
 }
 
@@ -149,11 +180,12 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 			Menge:  item.Menge,
 		},
 		position: bestellungPosition{
-			titelID:   item.TitelID,
-			titelName: title.Titel,
-			isbn:      title.ISBN,
-			menge:     item.Menge,
-			preis:     item.Preis,
+			titelID:         item.TitelID,
+			titelName:       title.Titel,
+			isbn:            title.ISBN,
+			menge:           item.Menge,
+			preis:           item.Preis,
+			mitVorabBarcode: item.GenerateBarcodes,
 		},
 		betrag: float64(item.Menge) * item.Preis,
 	}
@@ -205,15 +237,21 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 }
 
 // insertBestellverlauf schreibt den Bestellkopf und liefert die erzeugte Bestell-ID.
-func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, gesamtbetrag float64, totalAllocated int) (string, error) {
+//
+// tokenHash ist leer, wenn dieser Lieferant keinen Bestätigungs-Link bekommt; NULLIF
+// macht daraus ein SQL-NULL, damit der Teil-Index (Migration 063) nicht zwei Bestellungen
+// ohne Link als Dublette ablehnt.
+func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, gesamtbetrag float64, totalAllocated int, tokenHash string) (string, error) {
 	var bestellungID string
 	err := tx.QueryRow(ctx, `
 		INSERT INTO bestellungen_verlauf
-			(lieferant_id, lieferant_name, lieferant_email, kundennummer, gesamtbetrag, anzahl_exemplare)
-		VALUES ($1, $2, $3, $4, $5, $6)
+			(lieferant_id, lieferant_name, lieferant_email, kundennummer, gesamtbetrag, anzahl_exemplare,
+			 bestaetigungs_token_hash, token_gueltig_bis)
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''),
+		        CASE WHEN $7 = '' THEN NULL ELSE now() + make_interval(days => $8) END)
 		RETURNING id`,
 		req.SupplierID, supplier.Name, supplier.Email, supplier.Kundennummer,
-		gesamtbetrag, totalAllocated,
+		gesamtbetrag, totalAllocated, tokenHash, TokenGueltigkeitTage,
 	).Scan(&bestellungID)
 	if err != nil {
 		return "", fmt.Errorf("bestellverlauf insert: %w", err)
@@ -230,7 +268,7 @@ func (s *OrderService) insertBestellpositionen(ctx context.Context, tx pgx.Tx, b
 	copyRows := make([][]any, 0, len(positionen))
 	for _, pos := range positionen {
 		copyRows = append(copyRows, []any{
-			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis,
+			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis, pos.mitVorabBarcode,
 		})
 	}
 
@@ -238,7 +276,7 @@ func (s *OrderService) insertBestellpositionen(ctx context.Context, tx pgx.Tx, b
 	if _, err := tx.CopyFrom(
 		ctx,
 		pgx.Identifier{"bestellungen_positionen"},
-		[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis"},
+		[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis", "mit_vorab_barcode"},
 		pgx.CopyFromRows(copyRows),
 	); err != nil {
 		return fmt.Errorf("position bulk insert: %w", err)

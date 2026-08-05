@@ -71,6 +71,11 @@ type BookCopyInsert struct {
 	EtikettGedruckt bool
 	// Einkaufspreis speichert den Netto-Anschaffungspreis des Exemplars.
 	Einkaufspreis float64
+	// BestellungID verweist auf die Bestellung, aus der das Exemplar entstanden ist.
+	// Leer bei Handanlage und Import — dann wird NULL geschrieben. Der Verweis trägt die
+	// Etikettenseite des Lieferanten-Links: Sie muss genau die Exemplare DIESER Lieferung
+	// drucken, nicht alle Exemplare des Titels.
+	BestellungID string
 }
 
 // pgBookRepository implementiert das BookRepository für PostgreSQL.

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -64,21 +65,15 @@ func (s *Server) BestaetigenBestellungHandler() http.HandlerFunc {
 			return
 		}
 
-		// bestaetigt_am IS NULL macht das Nachtragen atomar: Bestätigen zwei Arbeitsplätze
-		// gleichzeitig (Multi-PC-Betrieb), gewinnt genau einer — der andere bekommt 409,
-		// statt die bereits eingetragene Größe still zu überschreiben. Eine getrennte
-		// Vorab-Prüfung hätte zwischen SELECT und UPDATE ein Wettlauf-Fenster.
-		tag, err := s.DB.Pool.Exec(ctx, `
-			UPDATE bestellungen_verlauf SET bestaetigt_am = now(), etiketten_groesse = $1
-			WHERE id = $2 AND bestaetigt_am IS NULL
-		`, req.EtikettenGroesse, id)
+		// 'bibliothek' hält fest, dass hier jemand aus dem Haus nachgetragen hat. Über den
+		// Link bestätigt der Lieferant selbst und die Spalte trägt 'lieferant' — dieselbe
+		// Statuszeile, aber eine andere Aussage.
+		bereits, err := s.bestaetigeBestellung(ctx, id, req.EtikettenGroesse, "bibliothek")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		// Kein Löschpfad für bestellungen_verlauf existiert — 0 betroffene Zeilen nach der
-		// Existenzprüfung oben heißt daher immer: schon bestätigt.
-		if tag.RowsAffected() == 0 {
+		if bereits {
 			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("bestellung ist bereits bestaetigt"))
 			return
 		}
@@ -88,4 +83,29 @@ func (s *Server) BestaetigenBestellungHandler() http.HandlerFunc {
 			"etiketten_groesse": req.EtikettenGroesse,
 		})
 	}
+}
+
+// bestaetigeBestellung trägt die Bestätigung ein und meldet über bereits=true, dass sie
+// schon vorlag. Beide Wege — Link und manueller Nachtrag — laufen hier durch, damit es
+// nur EINE Stelle gibt, an der der Zustand kippt.
+//
+// bestaetigt_am IS NULL macht das atomar: Bestätigen der Lieferant und die Bibliothek
+// gleichzeitig (oder zwei Arbeitsplätze im Multi-PC-Betrieb), gewinnt genau einer — der
+// andere bekommt 409, statt den Eintrag still zu überschreiben. Eine getrennte
+// Vorab-Prüfung hätte zwischen SELECT und UPDATE ein Wettlauf-Fenster.
+//
+// groesse darf leer sein: Über den Link ist die Etikettengröße nur eine Notiz, kein
+// Pflichtfeld. NULLIF hält die Spalte dann auf NULL, wie es der CHECK verlangt.
+func (s *Server) bestaetigeBestellung(ctx context.Context, bestellungID, groesse, durch string) (bereits bool, err error) {
+	tag, err := s.DB.Pool.Exec(ctx, `
+		UPDATE bestellungen_verlauf
+		SET bestaetigt_am = now(), etiketten_groesse = NULLIF($1, ''), bestaetigt_durch = $2
+		WHERE id = $3 AND bestaetigt_am IS NULL
+	`, groesse, durch, bestellungID)
+	if err != nil {
+		return false, err
+	}
+	// Kein Löschpfad für bestellungen_verlauf existiert — 0 betroffene Zeilen nach der
+	// Existenzprüfung des Aufrufers heißt daher immer: schon bestätigt.
+	return tag.RowsAffected() == 0, nil
 }

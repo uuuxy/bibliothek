@@ -42,6 +42,16 @@ type SystemEinstellungen struct {
 	// der Träger je nach Bundesland und Schulform ein anderer ist — und weil ein
 	// Eigentumsvermerk, der nicht stimmt, schlechter ist als keiner.
 	EtikettEigentumsvermerk string `json:"etikett_eigentumsvermerk"`
+	// OeffentlicheAdresse ist die Adresse, unter der DRITTE dieses System erreichen —
+	// z. B. "https://bibliothek.schule.de". Aus ihr entsteht der Bestätigungs-Link, den
+	// der Lieferant mit der Bestellmail bekommt.
+	//
+	// Der Server kennt sie nicht von selbst: Hinter einem Reverse-Proxy sieht er nur
+	// seinen internen Namen, und ein Link auf "localhost:8080" wäre beim Lieferanten
+	// wertlos. Zeiger statt String, damit die Unterscheidung "nicht mitgeschickt"
+	// (nil, Wert bleibt) und "geleert" ("") erhalten bleibt — sonst löscht jedes
+	// Speichern einer anderen Einstellungs-Sektion still den Link-Versand.
+	OeffentlicheAdresse *string `json:"oeffentliche_adresse"`
 }
 
 // StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.
@@ -145,6 +155,11 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeStringRoh(val, &settings.SchuleOrt)
 	case "etikett_eigentumsvermerk":
 		setzeStringRoh(val, &settings.EtikettEigentumsvermerk)
+	case "oeffentliche_adresse":
+		if val != nil {
+			v := *val
+			settings.OeffentlicheAdresse = &v
+		}
 	}
 }
 
@@ -256,6 +271,13 @@ func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
 		{"bestellbedarf_warnung_aktiv", bestellAktiv},
 		{"bestellbedarf_schwelle", bestellSchwelle},
 		{"preise_erfassen", preiseErfassen},
+	}
+
+	// nil heißt "diese Sektion kennt das Feld nicht" und lässt den gespeicherten Wert in
+	// Ruhe; "" heißt ausdrücklich "leeren" und schaltet den Link-Versand ab. Ein reiner
+	// String könnte beides nicht unterscheiden.
+	if req.OeffentlicheAdresse != nil {
+		pairs = append(pairs, [2]string{"oeffentliche_adresse", *req.OeffentlicheAdresse})
 	}
 
 	// Schul-Identität (PDF-Briefkopf) getrennt behandeln: Diese Felder haben

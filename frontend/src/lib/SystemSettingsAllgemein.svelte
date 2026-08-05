@@ -22,6 +22,7 @@
 	 * @property {string} schulePLZ
 	 * @property {string} schuleOrt
 	 * @property {string} etikettEigentumsvermerk
+	 * @property {string} oeffentlicheAdresse
 	 */
 
 	/** @type {Props} */
@@ -41,7 +42,8 @@
 		schuleStrasse = $bindable(),
 		schulePLZ = $bindable(),
 		schuleOrt = $bindable(),
-		etikettEigentumsvermerk = $bindable()
+		etikettEigentumsvermerk = $bindable(),
+		oeffentlicheAdresse = $bindable()
 	} = $props();
 
 	let saving = $state(false);
@@ -65,7 +67,10 @@
 				schule_strasse: schuleStrasse,
 				schule_plz: schulePLZ,
 				schule_ort: schuleOrt,
-				etikett_eigentumsvermerk: etikettEigentumsvermerk
+				etikett_eigentumsvermerk: etikettEigentumsvermerk,
+				// Immer mitgeschickt, auch leer: Für dieses Feld heisst leer ausdrücklich
+				// "abschalten" (dann verschickt das System keine Bestätigungs-Links mehr).
+				oeffentliche_adresse: oeffentlicheAdresse
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
 		} catch {
@@ -119,6 +124,18 @@
 				type="text"
 				maxlength={120}
 				placeholder="Hoher Weg 29"
+			/>
+			<!-- Keine Kosmetik: Aus dieser Adresse entsteht der Bestätigungs-Link, den
+			     Lieferanten mit der Bestellmail bekommen. Fehlt sie, geht die Bestellung
+			     ohne Link raus — der Server kann sie nicht erraten, weil er hinter einem
+			     Reverse-Proxy nur seinen internen Namen sieht. -->
+			<SettingField
+				bind:value={oeffentlicheAdresse}
+				label="Öffentliche Adresse"
+				type="text"
+				maxlength={200}
+				placeholder="https://bibliothek.schule.de"
+				hint="Adresse, unter der Lieferanten das System von außen erreichen. Grundlage des Bestätigungs-Links in der Bestellmail; leer = keine Links verschicken."
 			/>
 			<div class="grid grid-cols-3 gap-4">
 				<SettingField

@@ -222,8 +222,13 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)
+		//
+		// maskiereToken: Der Bestätigungs-Link an den Lieferanten trägt sein Geheimnis IM
+		// Pfad. Ohne die Maskierung stünde jeder verschickte Link im Klartext in dieser
+		// Zeile — und damit in einem Logfile, das weitergereicht und in Tickets gehängt
+		// wird. Das hätte die Hash-Speicherung in der Datenbank wieder entwertet.
 		// #nosec G706
-		log.Printf("Incoming Request: %s %s", r.Method, r.URL.Path)
+		log.Printf("Incoming Request: %s %s", r.Method, maskiereToken(r.URL.Path))
 		globalHandler.ServeHTTP(w, r)
 	})
 }
