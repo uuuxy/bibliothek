@@ -195,7 +195,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Datenminimierung: In der Mail an die 5A hat der Name aus der 6B nichts zu suchen.
 	// Der Anhang ist das Mahn-PDF; die Namen stehen dort komprimiert, deshalb wird der
 	// PDF-Inhalt gelesen und nicht der Rohtext.
-	texte := strings.Join(etikettTexte(t, pdfAusMail(t, nachricht)), "\n")
+	texte := strings.Join(pdfTexte(t, pdfAusMail(t, nachricht)), "\n")
 	if !strings.Contains(texte, "Anna") {
 		t.Errorf("die gemahnte Schülerin steht nicht im PDF:\n%s", texte)
 	}

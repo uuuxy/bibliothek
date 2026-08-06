@@ -127,7 +127,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	if bogen.Code != http.StatusOK {
 		t.Fatalf("Etikettenbogen über den Link: Status %d", bogen.Code)
 	}
-	gedruckt := barcodesAus(strings.Join(etikettTexte(t, bogen.Body.Bytes()), "\n"))
+	gedruckt := barcodesAus(strings.Join(pdfTexte(t, bogen.Body.Bytes()), "\n"))
 	if strings.Join(gedruckt, ",") != strings.Join(ausMail, ",") {
 		t.Fatalf("auf dem Bogen stehen %v, bestellt wurden %v", gedruckt, ausMail)
 	}

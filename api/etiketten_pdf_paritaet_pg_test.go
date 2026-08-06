@@ -16,20 +16,30 @@ import (
 )
 
 // tjText findet die gezeichneten Textstücke im Inhaltsstrom: `(Ansch.J. 2016 · LMF-Deutsch 5)Tj`.
-var tjText = regexp.MustCompile(`\(((?:\\.|[^()\\])*)\)Tj`)
+//
+// `\s*` vor dem Tj, weil nicht jeder Erzeuger gleich schreibt: gofpdf setzt `)Tj`, maroto
+// (Kontoauszug der Abgänger) `) Tj`. Ohne diese drei Zeichen fand der Leser in einem
+// maroto-PDF NICHTS und meldete eine leere Seite — der Test hätte daraus geschlossen, auf
+// dem Blatt stehe nichts, statt zu merken, dass er nur nicht hinsehen kann.
+var tjText = regexp.MustCompile(`\(((?:\\.|[^()\\])*)\)\s*Tj`)
 
-// etikettTexte liest heraus, was auf dem Bogen wirklich GEDRUCKT wird.
+// pdfTexte liest heraus, was auf einem erzeugten PDF wirklich GEDRUCKT wird.
 //
 // Der Umweg über das fertige PDF ist Absicht. Beide bisherigen Etiketten-Bugs waren an
 // den Zwischenschichten grün: Das Feld stand im Struct, die Abfrage lieferte es — nur
 // gezeichnet wurde es nicht bzw. kam auf dem zweiten Weg nie im Struct an. Erst der
 // Inhaltsstrom beantwortet die Frage, die die Bibliothek stellt: Was klebt am Buch?
 //
-// gofpdf komprimiert die Ströme (FlateDecode); im Rohbyte-PDF steht der Text deshalb
-// nicht. Nach dem Inflaten liegt er als `(…)Tj` vor. Sonderzeichen bleiben in der
+// gofpdf komprimiert die Ströme meistens (FlateDecode); im Rohbyte-PDF steht der Text
+// dann nicht. Nach dem Inflaten liegt er als `(…)Tj` vor. Sonderzeichen bleiben in der
 // Kodierung des Erzeugers (Windows-1252) — für den Vergleich zweier Bögen und die Suche
 // nach ASCII-Signaturen ist das gleichgültig, beide Seiten werden gleich behandelt.
-func etikettTexte(t *testing.T, roh []byte) []string {
+//
+// „Meistens" ist der Grund für den Rückfall auf die Rohbytes: Der Kontoauszug der
+// Abgänger kommt UNKOMPRIMIERT aus dem Generator. Ohne diesen Zweig war der Leser für ihn
+// blind und brach mit „kein lesbarer Inhaltsstrom" ab — was nach kaputtem PDF aussieht,
+// aber nur hiess, dass der Leser eine Bauform nicht kannte.
+func pdfTexte(t *testing.T, roh []byte) []string {
 	t.Helper()
 
 	var inhalt bytes.Buffer
@@ -57,6 +67,10 @@ func etikettTexte(t *testing.T, roh []byte) []string {
 			if closeErr := zr.Close(); closeErr != nil {
 				t.Fatalf("Inhaltsstrom nicht sauber abgeschlossen: %v", closeErr)
 			}
+		} else {
+			// Unkomprimiert (oder Schrift/Bild): roh mitnehmen. Der Tj-Ausdruck unten
+			// entscheidet, ob etwas Gedrucktes darin steht — Binärmüll trifft er nicht.
+			inhalt.Write(body[:j])
 		}
 		// Hinter das "endstream", nicht davor. Mit rest = body[j:] fand der nächste
 		// Durchlauf das "stream" IN "endstream" wieder, las ab dort Unsinn, den zlib
@@ -145,8 +159,8 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 		t.Fatalf("Druck-Center-Weg: Status %d — %s", recPost.Code, recPost.Body.String())
 	}
 
-	buchformular := etikettTexte(t, recGet.Body.Bytes())
-	druckzentrum := etikettTexte(t, recPost.Body.Bytes())
+	buchformular := pdfTexte(t, recGet.Body.Bytes())
+	druckzentrum := pdfTexte(t, recPost.Body.Bytes())
 
 	// Erst die Gegenprobe gegen den stillen Durchmarsch: Stünde die Signatur auf KEINEM
 	// der beiden Bögen, wären sie immer noch gleich — und der Vergleich unten grün,
