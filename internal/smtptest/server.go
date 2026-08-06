@@ -39,12 +39,17 @@ type Sitzung struct {
 	Nachricht  string
 }
 
-// Starte nimmt genau eine Sitzung an und spricht das Minimum an SMTP, das ein
-// Client ohne Authentifizierung braucht. Bewusst ohne STARTTLS/AUTH in der
-// EHLO-Antwort: Damit bleibt der Ablauf der schlichte Klartext-Versand, den ein
-// Relay im Schulnetz auch fährt, und der Test hängt nicht an einem Testzertifikat.
+// Starte nimmt Sitzungen an und spricht das Minimum an SMTP, das ein Client ohne
+// Authentifizierung braucht. Bewusst ohne STARTTLS/AUTH in der EHLO-Antwort: Damit
+// bleibt der Ablauf der schlichte Klartext-Versand, den ein Relay im Schulnetz auch
+// fährt, und der Test hängt nicht an einem Testzertifikat.
 //
-// Der Kanal liefert die Sitzung, sobald der Client fertig ist.
+// Der Kanal liefert jede Sitzung, sobald ihr Client fertig ist.
+//
+// JEDE Verbindung wird bedient, nicht nur die erste. Vorher nahm der Server genau eine
+// an — ein Test, der prüft "es geht GENAU EINE Mail raus", blieb dann beim zweiten
+// Versuch stehen statt fehlzuschlagen: Der Client wartete ewig auf ein 220, das niemand
+// mehr schickte. Ein hängender Test ist kein rotes Gate, sondern ein abgelaufenes.
 func Starte(t *testing.T, verhalten Verhalten) (host, port string, sitzungen <-chan Sitzung) {
 	t.Helper()
 
@@ -54,8 +59,10 @@ func Starte(t *testing.T, verhalten Verhalten) (host, port string, sitzungen <-c
 	}
 	t.Cleanup(func() { _ = ln.Close() }) //nolint:errcheck // Test-Listener
 
-	ch := make(chan Sitzung, 1)
-	go bediene(ln, verhalten, ch)
+	// Gepuffert: Der Server soll weiterarbeiten können, auch wenn der Test die
+	// Nachrichten erst später (oder gar nicht) abholt.
+	ch := make(chan Sitzung, 8)
+	go lausche(ln, verhalten, ch)
 
 	_, p, err := net.SplitHostPort(ln.Addr().String())
 	if err != nil {
@@ -82,11 +89,19 @@ func GeschlossenerPort(t *testing.T) (host, port string) {
 	return "127.0.0.1", p
 }
 
-func bediene(ln net.Listener, verhalten Verhalten, ch chan<- Sitzung) {
-	conn, err := ln.Accept()
-	if err != nil {
-		return
+// lausche bedient jede eingehende Verbindung, bis der Listener geschlossen wird
+// (t.Cleanup am Ende des Tests).
+func lausche(ln net.Listener, verhalten Verhalten, ch chan<- Sitzung) {
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		go bediene(conn, verhalten, ch)
 	}
+}
+
+func bediene(conn net.Conn, verhalten Verhalten, ch chan<- Sitzung) {
 	defer func() { _ = conn.Close() }() //nolint:errcheck // Testverbindung
 
 	leser := bufio.NewReader(conn)
