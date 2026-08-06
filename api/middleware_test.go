@@ -30,6 +30,29 @@ func TestHTTPSRedirectMiddleware(t *testing.T) {
 		}
 	})
 
+	// Die Sonde des Containers spricht Klartext-HTTP gegen 127.0.0.1 und trägt weder TLS
+	// noch X-Forwarded-Proto. Wird sie umgeleitet, folgt busybox-wget der 301 auf https://
+	// und scheitert am TLS-Handshake gegen den Klartext-Port ("wrong version number") —
+	// in Produktion also immer, lokal (CookieSecure=false) nie. Der Container galt damit
+	// dauerhaft als unhealthy, und jede Entscheidung, die daran hing, war blind.
+	t.Run("health probe is never redirected", func(t *testing.T) {
+		_ = os.Setenv("ALLOWED_ORIGIN", "https://bibliothek.schule.de") //nolint:errcheck
+		req := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:8083/health", nil)
+		rr := httptest.NewRecorder()
+
+		durchgelassen := false
+		handler := s.HTTPSRedirectMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			durchgelassen = true
+			w.WriteHeader(http.StatusOK)
+		}))
+		handler.ServeHTTP(rr, req)
+
+		if !durchgelassen || rr.Code != http.StatusOK {
+			t.Errorf("Health-Sonde wurde umgeleitet (Status %d, Location %q) — der Container "+
+				"meldet sich damit dauerhaft als unhealthy", rr.Code, rr.Header().Get("Location"))
+		}
+	})
+
 	t.Run("no ALLOWED_ORIGIN fallback to invalid r.Host rejects", func(t *testing.T) {
 		_ = os.Setenv("ALLOWED_ORIGIN", "") //nolint:errcheck
 		req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", nil)

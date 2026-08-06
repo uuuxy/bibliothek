@@ -94,6 +94,26 @@ func (s *Server) HTTPSRedirectMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		// /health wird NIE umgeleitet.
+		//
+		// Die Sonde kommt aus dem Container selbst (Docker HEALTHCHECK, wget gegen
+		// 127.0.0.1) und damit ohne TLS und ohne X-Forwarded-Proto. Mit Umleitung bekam
+		// sie eine 301 auf https://127.0.0.1:PORT, versuchte dort einen TLS-Handshake
+		// gegen den Klartext-Port und scheiterte mit "wrong version number" — in
+		// Produktion (COOKIE_SECURE=true) also IMMER, während lokal (false) alles grün
+		// aussah. Der Container galt seitdem dauerhaft als unhealthy: Alles, was daran
+		// hängt (Neustart-Regeln, depends_on: service_healthy, das Deploy-Skript), traf
+		// seine Entscheidungen auf einer Anzeige, die nie stimmte.
+		//
+		// Unbedenklich: Die Antwort ist {"status":"healthy"} — kein Geheimnis, keine
+		// Sitzung, kein Cookie. Es gibt hier nichts, was eine Klartext-Verbindung
+		// preisgeben könnte.
+		if r.URL.Path == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 		if !isHTTPS {
 			allowedOrigin := os.Getenv("ALLOWED_ORIGIN")

@@ -11,11 +11,18 @@ import (
 
 // TokenGueltigkeit begrenzt, wie lange ein Bestätigungs-Link lebt.
 //
-// Ein Link ohne Ablauf bleibt für immer in einem fremden Postfach gültig — auch wenn
-// der Mitarbeiter dort längst gewechselt hat oder die Mail weitergeleitet wurde. Ein
-// halbes Jahr ist großzügig genug für jeden realen Liefervorgang (Schulbuchbestellungen
-// laufen über Wochen, nicht Stunden) und kurz genug, dass Altlasten von selbst sterben.
-const TokenGueltigkeitTage = 180
+// Ein Link ohne Ablauf bleibt für immer in einem fremden Postfach gültig — auch wenn der
+// Mitarbeiter dort längst gewechselt hat oder die Mail weitergeleitet wurde. Der Link IST
+// das Geheimnis: Wer ihn hat, bestätigt die Bestellung.
+//
+// Drei Wochen decken den realen Vorgang ab — der Händler bekommt die Bestellung, druckt
+// die Etiketten, beklebt und bestätigt; das dauert Tage, nicht Monate. Vorher standen hier
+// 180 Tage: ein halbes Jahr, in dem ein weitergeleiteter Link gültig blieb, ohne dass
+// irgendjemand ihn noch auf dem Schirm hatte.
+//
+// Läuft er doch einmal ab, ist das kein Verlust: Die Bestellhistorie erzeugt zu jeder
+// offenen Bestellung einen neuen Link ("Link erzeugen"), und der alte stirbt dabei.
+const TokenGueltigkeitTage = 21
 
 // TokenGueltigkeit ist dieselbe Frist als Zeitspanne — für Tests und Anzeige.
 const TokenGueltigkeit = TokenGueltigkeitTage * 24 * time.Hour
