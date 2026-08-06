@@ -13,9 +13,17 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept | Ja — reine Hoffnung |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-07-15
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-08-06
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
+
+> **Fundstellen werden benannt, nicht gezählt.** Die Spalte nennt Constraint-, Index-
+> und Spaltennamen — keine Zeilennummern. Bis zum 06.08.2026 stand dort `schema.sql:NNN`;
+> alle 21 Verweise zeigten nach dem Wachstum der Datei auf etwas anderes als gemeint
+> (`check_return_date` war als `:370` notiert und stand auf `:499`). Die Invarianten selbst
+> stimmten — nur der Weg dorthin war falsch, und das fällt beim Lesen nicht auf.
+> `docs/invarianten_fundstellen_test.go` prüft jetzt, dass jeder genannte Name in
+> `schema.sql` wirklich existiert.
 
 ---
 
@@ -23,10 +31,10 @@ Postgres abgesichert).
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Höchstens **eine aktive** Ausleihe je Exemplar/Gerät | 🟢 partieller Unique-Index | `schema.sql:380` |
-| Genau **ein Entleiher** (Schüler XOR Benutzer) oder beide NULL (anonymisiert) | 🟢 `check_loan_borrower` | `schema.sql:357` |
-| Genau **ein Objekt** (Exemplar XOR Gerät) | 🟢 `check_loan_item` | `schema.sql:364` |
-| Rückgabe nie vor Ausleihe | 🟢 `check_return_date` | `schema.sql:370` |
+| Höchstens **eine aktive** Ausleihe je Exemplar/Gerät | 🟢 partieller Unique-Index | `uniq_ausleihen_aktiv_exemplar`, `uniq_ausleihen_aktiv_geraet` |
+| Genau **ein Entleiher** (Schüler XOR Benutzer) oder beide NULL (anonymisiert) | 🟢 CHECK | `check_loan_borrower` |
+| Genau **ein Objekt** (Exemplar XOR Gerät) | 🟢 CHECK | `check_loan_item` |
+| Rückgabe nie vor Ausleihe | 🟢 CHECK | `check_return_date` |
 | Gesperrte/manuell blockierte Schüler leihen nicht | 🟡 mit Override + Audit | `internal/service/loan_checkout_validation.go:48` |
 | Überfällig-Automatik: ≥ `MaxOverdueItems` sperrt | 🟡 | `internal/service/loan_checkout_validation.go:107` |
 | Ausleih-Limit `max_ausleihen_schueler` (LMF + eigene Rückgabe ausgenommen) | 🟡 **jetzt getestet** (88,9 %) | `internal/service/loan_checkout.go:55`, `loan_checkout_test.go` |
@@ -48,12 +56,12 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Barcode eindeutig | 🟢 UNIQUE NOT NULL | `schema.sql:129` |
-| Name + Geburtsdatum eindeutig | 🟢 Unique-Index (coalesce GebDat) | `schema.sql:153` |
-| LUSD-ID eindeutig **unter aktiven** (Soft-Delete gibt sie frei) | 🟢 partieller Unique-Index | `schema.sql:156` |
-| `abgaenger_jahr` immer gesetzt | 🟢 NOT NULL | `schema.sql:134` |
+| Barcode eindeutig **unter aktiven** (Soft-Delete gibt ihn zum Recycling frei) | 🟢 NOT NULL + partieller Unique-Index | `schueler.barcode_id`, `uniq_schueler_barcode_active` |
+| Name + Geburtsdatum eindeutig — **nur bei bekanntem Geburtsdatum** (sonst wären namensgleiche Schüler ohne Datum Duplikate: Zwillings-Blockade, Migration 048) | 🟢 partieller Unique-Index | `unique_schueler_name_gebdatum` |
+| LUSD-ID eindeutig **unter aktiven** (Soft-Delete gibt sie frei) | 🟢 partieller Unique-Index | `uniq_schueler_lusd_id_active` |
+| `abgaenger_jahr` immer gesetzt | 🟢 NOT NULL | `schueler.abgaenger_jahr` |
 | **Gesperrt ⇒ Sperrgrund vorhanden** (kein grundloser „Zombie-Sperre"-Zustand; Personal sieht immer das *warum*). Automatische Sperr-Pfade setzen den Grund mit; `is_manually_blocked` läuft separat | 🟢 `chk_schueler_block_reason` | `schema.sql`, Migration 047, `lusd_apply.go`, `student_promotion.go` |
-| **[G1] Adress-/Kontaktdaten** aus LUSD importiert, Zweck Rechnung/Mahnung, bei Anonymisierung gelöscht | 🟢 **entschieden (B)** — Import + Löschung umgesetzt | `lusd_apply.go`, `schema.sql:127` |
+| **[G1] Adress-/Kontaktdaten** aus LUSD importiert, Zweck Rechnung/Mahnung, bei Anonymisierung gelöscht | 🟢 **entschieden (B)** — Import + Löschung umgesetzt | `lusd_apply.go`, `schueler.strasse`/`plz`/`ort`/`eltern_email` |
 | **DSGVO-Retention-Kette schliesst:** Abgänger mit offenen Vorgängen → gesperrt (Name bleibt); nach Rückgabe/Bezahlung → nach Karenzzeit endgültig gelöscht | 🟡 `abgaenger_jahr` aufs Abgangsjahr + Cronjob `PurgeAbgaenger` (echte Löschung, nicht Soft-Delete) | `lusd_apply.go`, `jobs/cron.go`, `repository/audit_users.go` |
 | Manuelles Löschen: Soft-Delete (Papierkorb, `DeleteStudent`) vs. endgültig (`PurgeStudent`, Recht `manage_users`) sind getrennt | 🟡 Restore hebt Lösch-Sperre auf; Purge blockiert bei offenen Vorgängen | `api/student_deleted.go`, `repository/audit_users.go` |
 
@@ -69,9 +77,9 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| ISBN eindeutig (wo gesetzt) | 🟢 UNIQUE | `schema.sql:246` |
-| Exemplar-Barcode eindeutig | 🟢 UNIQUE NOT NULL | `schema.sql:291` |
-| Exemplar hängt an existierendem Titel | 🟢 FK ON DELETE CASCADE | `schema.sql:290` |
+| ISBN eindeutig (wo gesetzt) | 🟢 UNIQUE | `buecher_titel.isbn` |
+| Exemplar-Barcode eindeutig | 🟢 UNIQUE NOT NULL | `buecher_exemplare.barcode_id` |
+| Exemplar hängt an existierendem Titel | 🟢 FK ON DELETE CASCADE | `buecher_exemplare.titel_id` |
 | **[G4]** `grade_level` 0–13, `stock` ≥ 0 | 🟢 `chk_grade_level_bereich`, `chk_stock_nonneg` | `migrations/039`, `migrations/040` |
 | **[G3]** Aussonderungs-Grund strukturiert: im Umlauf = NULL, ausgesondert = genau ein Wert aus {VERLUST, BESCHAEDIGUNG, AUSSORTIERT, BESTANDSKORREKTUR} | 🟢 `chk_aussonderung_grund` | `migrations/043` |
 | **[G2]** `cover_status` ∈ {PENDING, FOUND, FAILED, NOT_FOUND} | 🟢 `chk_cover_status` | `migrations/041` |
@@ -83,9 +91,9 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Betrag ≥ 0 | 🟢 `check_positive_amount` | `schema.sql:397` |
-| Genau ein Verantwortlicher (Schüler XOR Benutzer) oder beide NULL | 🟢 `check_damage_responsible` | `schema.sql:409` |
-| Genau ein betroffenes Objekt | 🟢 `check_damage_item` | `schema.sql:416` |
+| Betrag ≥ 0 | 🟢 CHECK | `check_positive_amount` |
+| Genau ein Verantwortlicher (Schüler XOR Benutzer) oder beide NULL | 🟢 CHECK | `check_damage_responsible` |
+| Genau ein betroffenes Objekt | 🟢 CHECK | `check_damage_item` |
 | Stornierung revisionssicher (wer/wann/warum) | 🟡 Spalten `storniert_*` + Audit | `repository/audit_system.go` (`StornierungGebuehr`) |
 
 ---
@@ -94,9 +102,9 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Ein Schüler merkt einen Titel höchstens einmal vor | 🟢 `UNIQUE(titel_id, schueler_id)` | `schema.sql:502` |
+| Ein Schüler merkt einen Titel höchstens einmal vor | 🟢 UNIQUE | `vormerkungen (titel_id, schueler_id)` |
 | **[G2]** Status ∈ {`wartend`, `abholbereit`} | 🟢 `chk_vormerkung_status` | `migrations/040` |
-| Bereitgestelltes Exemplar existiert | 🟢 FK ON DELETE SET NULL | `schema.sql:500` |
+| Bereitgestelltes Exemplar existiert | 🟢 FK ON DELETE SET NULL | `vormerkungen.bereitgestellt_exemplar_id` |
 
 **Hinweis:** Das Vokabular ist bewusst zweiwertig — erfüllte Vormerkungen werden
 **gelöscht**, nicht auf einen Endstatus gesetzt (geprüft vor Migration 040).
@@ -107,8 +115,8 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Hängt an existierendem Titel | 🟢 FK CASCADE | `schema.sql:511` |
-| Lebenszyklus offen/erledigt | 🟡 Boolean `erledigt` | `schema.sql:516` |
+| Hängt an existierendem Titel | 🟢 FK CASCADE | `klassensatz_reservierungen.titel_id` |
+| Lebenszyklus offen/erledigt | 🟡 Boolean | `klassensatz_reservierungen.erledigt` |
 | **[G4]** `anzahl ≥ 1` | 🟢 `chk_ksr_anzahl_positiv` | `migrations/039` |
 
 ---
@@ -117,7 +125,7 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| Position hängt an existierender Bestellung | 🟢 FK CASCADE | `schema.sql:481` |
+| Position hängt an existierender Bestellung | 🟢 FK CASCADE | `bestellungen_positionen.bestellung_id` |
 | Nur Positionen mit Menge > 0 werden bestellt | 🟡 Go-Guard | `api/order_service.go` (`verarbeiteBestellItem`) |
 | **[G4]** `menge ≥ 1`, `einzelpreis ≥ 0`, `gesamtbetrag ≥ 0`, `anzahl_exemplare ≥ 0` | 🟢 4 CHECKs | `migrations/039` |
 | Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Default `?type=lmf` + Test | `reorders.go`, `reorders_test.go` |
@@ -151,7 +159,7 @@ löst nichts mehr aus (`api/reorders.go`).
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| `benutzer.rolle` ∈ Enum (inkl. `helfer` seit Migration 042) | 🟢 `benutzer_rolle` ENUM (kleingeschr.) | `schema.sql:15`, `migrations/042` |
+| `benutzer.rolle` ∈ Enum (inkl. `helfer` seit Migration 042) | 🟢 ENUM (kleingeschr.) | `benutzer_rolle`, `migrations/042` |
 | **[G5]** **Genau eine** Quelle für die Rolle eines Benutzers: `benutzer.rolle` | 🟢 Legacy-Tabelle entfernt + Test verhindert Rückkehr | `migrations/044`, `rollen_vokabular_pg_test.go` |
 | Welche Rechte eine Rolle hat: `role_permissions` (GROSS; Middleware mappt per `UPPER()`) | 🟡 konfigurierbar (bewusst) | `permission_middleware.go:83` |
 | Login-Rate-Limit je echter Client-IP (nicht Proxy) | 🟢/🟡 `pkg/clientip` + `TRUSTED_PROXIES` | `middleware_ratelimit.go` |
@@ -171,7 +179,7 @@ löst nichts mehr aus (`api/reorders.go`).
 
 | # | Lücke | Schwere | Soll-Durchsetzung | Blockiert durch |
 |---|---|---|---|---|
-| ~~**G1**~~ | **ERLEDIGT (Entscheidung B, 2026-07-15):** LUSD importiert jetzt Anschrift + `eltern_email` (optional). Zweck Rechnung/Mahnung; Anonymisierung bei Abgang löscht die Daten. Kommentar korrigiert. ~~**Offen:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis dokumentieren (Betreiber).~~ **ERLEDIGT: In `docs/SECURITY.md` dokumentiert.** | erledigt | `lusd_apply.go`, `lusd_parser.go`, `schema.sql:127` | — |
+| ~~**G1**~~ | **ERLEDIGT (Entscheidung B, 2026-07-15):** LUSD importiert jetzt Anschrift + `eltern_email` (optional). Zweck Rechnung/Mahnung; Anonymisierung bei Abgang löscht die Daten. Kommentar korrigiert. ~~**Offen:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis dokumentieren (Betreiber).~~ **ERLEDIGT: In `docs/SECURITY.md` dokumentiert.** | erledigt | `lusd_apply.go`, `lusd_parser.go`, `schueler.strasse`/`eltern_email` | — |
 | ~~**G4a**~~ | ~~`stock`, `meldebestand`, `einkaufspreis`, `menge`, `einzelpreis`, `gesamtbetrag`, `anzahl` ohne DB-Wertebereich~~ **ERLEDIGT (Migration 039):** Non-Negativitäts-/Positivitäts-CHECKs, in CI gegen echtes PG geprüft. | 🟢 erledigt | `migrations/039_wertebereich_constraints.sql` | — |
 | ~~**G2**~~ | **ERLEDIGT:** `vormerkungen.status` (Migration 040), `cover_status` (Migration 041 — die vermutete inkonsistente Schreibung war ein Grep-Artefakt aus JSON-Responses; Vokabular ist durchgängig GROSS). **Dauerhaft ohne CHECK (Beschluss):** `medientyp` — offenes, frei eingebbares Vokabular. *Hinweis:* `inventur_status` (früher `chk_inventur_status`) entfiel mit Migration 045 — der Inventur-Zustand ist jetzt session-gebunden statt eine globale Spalte. | 🟢 erledigt | `migrations/040`, `migrations/041`, `migrations/045` | — |
 | ~~**G4b**~~ | **ERLEDIGT:** `grade_level` = 0–13 (0 = unkategorisiert, 5–13 kooperative Gesamtschule inkl. Oberstufe), NULL erlaubt. Deckt sich mit App-Validierung. **Nebenbefund gefixt:** `parseKlassenStufe` klemmte fälschlich bei 10 → Jahrgang 11–13 wurde beim Import als 5 einsortiert; jetzt 5–13. | 🟢 erledigt | `migrations/040`, `import_verarbeitung_zeilen.go` | — |

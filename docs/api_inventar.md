@@ -17,8 +17,6 @@
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
-- `/api/bestellungen/konfiguration.`
-- `/api/test`
 
 ## Alle registrierten Routen (169)
 

@@ -79,6 +79,31 @@ um, macht die Karten aber wertlos.
 > Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL` ab — von diesen Spalten existiert in
 > einer echten Littera-Datei einzig `ISBN`. Es ist nie gegen echte Daten gelaufen.
 
+### 1a. Katalogisat aus dem MAB2-Export (`cmd/littera-import`)
+
+Der zweite Weg in denselben Bestand — und für den Titelkatalog inzwischen der bessere.
+Quelle ist kein Access-Backup, sondern ein **MAB2-Katalogisat (XML)**, das Littera selbst
+ausgibt. Der Unterschied ist die Aktualität: Die vorliegende `littera_sav.mdb` ist ein
+Stand von 2010, `katalogisat.xml` von Juni 2026 mit 13.708 Titeln.
+
+```bash
+# Trockenlauf gibt es hier nicht — der Import läuft in EINER Transaktion,
+# ein Fehler rollt alles zurück. Vorher ein Backup ziehen.
+go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
+```
+
+- `-file` (Pflicht): Pfad zur Katalogisat-XML. `-db` fällt auf `$DATABASE_URL` zurück.
+- Läuft über **denselben** Service-Pfad wie `POST /api/import/littera` — es gibt also
+  keine zweite Importlogik, die eigene Fehler machen könnte.
+- **Keine Dubletten bei Re-Imports:** Titel werden über ISBN oder Titel gegen den Bestand
+  gematcht. Der Lauf ist damit wiederholbar.
+- Signaturen landen in `buecher_titel.signatur` (der echten Spalte), LMF-Bestand wird über
+  das Präfix `LMF-` geflaggt.
+- Zeitlimit 10 Minuten: ~15.000 Titel brauchen gegen eine entfernte Datenbank Minuten,
+  nicht Sekunden.
+- **Rückgabewerte:** 0 erfolgreich · 1 abgebrochen (fehlende Datei, DB nicht erreichbar,
+  Importfehler). Die Zahl verarbeiteter Titel steht als `verarbeitete_titel` im JSON-Log.
+
 ---
 
 ## 2. Foto-Migration (`cmd/migrate-fotos`)
@@ -243,8 +268,22 @@ vor dem `DROP SCHEMA`).
 | Skript | Zweck |
 |---|---|
 | `import_isbns.go` | Nachträglicher ISBN-Import in bestehende Titel. |
-| `migrate_photos.go` | Überträgt Schülerfotos aus Dateien (`<barcode>.jpg`) in die verschlüsselte Ablage. |
+| `migrate_photos.go` | Überträgt Schülerfotos aus Dateien (Dateiname = Barcode plus `.jpg`) in die verschlüsselte Ablage. |
 | `monitor_stats.sh` | Protokolliert Systemkennzahlen über ~6 Stunden (Begleitung von Lasttests). |
+
+### Testdaten-Generator (`cmd/seed`)
+
+Füllt eine Datenbank mit Test-Admin, Schülern, Titeln und Exemplaren — die Vorstufe zum
+k6-Lasttest (Abschnitt 5). Liest `DATABASE_URL` aus der Umgebung, kennt keine Flags und
+fragt **nicht** nach, bevor es schreibt:
+
+```bash
+DATABASE_URL="postgres://…/bibliothek_test" go run ./cmd/seed
+```
+
+> **Nur auf Wegwerf-Datenbanken.** Das Werkzeug legt Massendaten an und prüft vorher
+> nicht, ob die Zieldatenbank leer ist. Auf einem Echtbestand vermischen sich Testdaten
+> unrettbar mit echten Schülern.
 
 ## `pruefe_secrets.sh` — Konfigurationsprüfung vor dem Deploy
 

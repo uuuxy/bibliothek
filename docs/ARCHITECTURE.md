@@ -1,6 +1,6 @@
 # Systemarchitektur & technische Konzepte
 
-> Zuletzt aktualisiert: 2026-08-04
+> Zuletzt aktualisiert: 2026-08-06
 
 ---
 
@@ -11,9 +11,21 @@ HTTP Request
      │
      ▼
 ┌─────────────────────────────────────┐
-│  Middleware-Kette (api/)            │
-│  Rate-Limiter → Auth (JWT) →        │
-│  CSRF → RBAC → Security-Header      │
+│  Globale Middleware-Kette (api/)    │
+│  PanicRecovery → Sentry →           │
+│  Security-Header → CORS → Logging → │
+│  HTTPS-Redirect → Lesefrist →       │
+│  Body-Limit → Timeout →             │
+│  Rate-Limiter → CSRF → UUID-Check   │
+└─────────────────┬───────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────┐
+│  Auth (JWT) + RBAC                  │
+│  NICHT global, sondern als Wrapper  │
+│  pro Route: RequirePermission(…) /  │
+│  RequireRoles(…) — siehe            │
+│  routes_authz_coverage_test.go      │
 └─────────────────┬───────────────────┘
                   │
                   ▼
@@ -68,14 +80,17 @@ Bis zu 8 Kiosk-Stationen arbeiten zeitgleich. Das System verhindert Race Conditi
 
 ### 2. Datenintegrität durch Unique-Partial-Index
 ```sql
--- Migration 033 — verhindert zwei aktive Ausleihen auf demselben Exemplar
-CREATE UNIQUE INDEX unique_active_loan
+-- migrations/033_unique_active_loan.sql — verhindert zwei aktive Ausleihen
+-- auf demselben Exemplar bzw. Gerät. Beide Indizes liegen auf DERSELBEN
+-- Tabelle: ausleihen trägt exemplar_id und geraet_id nebeneinander
+-- (check_loan_item erzwingt, dass genau eine der beiden gesetzt ist).
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_exemplar
     ON ausleihen (exemplar_id)
-    WHERE rueckgabe_am IS NULL;
+    WHERE rueckgabe_am IS NULL AND exemplar_id IS NOT NULL;
 
-CREATE UNIQUE INDEX unique_active_device_loan
-    ON geraete_ausleihen (geraet_id)
-    WHERE rueckgabe_am IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_geraet
+    ON ausleihen (geraet_id)
+    WHERE rueckgabe_am IS NULL AND geraet_id IS NOT NULL;
 ```
 - Schützt auch gegen TOCTOU-Race bei Idempotenz-Keys (atomare DB-Ebene, nicht nur Applikationsebene)
 - Unique-Verletzung wird zu HTTP 409 Conflict gemappt (`mapLoanCreateErr`)

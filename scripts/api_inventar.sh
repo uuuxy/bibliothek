@@ -16,8 +16,21 @@ grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" \
   | tr -d '"' | sed 's/^ *//' | sort -u > "$TMP/go_routes.txt"
 
 # 2. Frontend-Aufrufe (Literale und Template-Strings)
+#
+# Zwei Ausschlüsse, beide aus falschen Alarmen am 06.08.2026 entstanden — der Abschnitt
+# "Geister-Aufrufe" meldete zwei Bugs, die keine waren:
+#
+#   --exclude=*.test.js/*.spec.js : `/api/test` stammte aus apiFetch.test.js, also aus
+#       einem erfundenen Pfad in einem Unit-Test. Testdateien rufen keine echten Routen.
+#
+#   sed 's/[.,;:)]*$//' : `/api/bestellungen/konfiguration.` stammte aus einem KOMMENTAR
+#       ("geladen aus /api/bestellungen/konfiguration.") — der Satzpunkt wurde Teil des
+#       Pfades, weil '.' in der Zeichenklasse steht. Die Route existiert und ist geschützt.
+#
+# Ein Register, das Fehlalarm schlägt, wird nach dem zweiten Mal nicht mehr gelesen.
 grep -rhoE '(/api/[A-Za-z0-9_/${}.?=&-]*)' frontend/src --include="*.js" --include="*.svelte" \
-  | sed 's/[?].*$//' | sort -u > "$TMP/fe_calls.txt"
+  --exclude="*.test.js" --exclude="*.spec.js" \
+  | sed 's/[?].*$//' | sed 's/[.,;:)]*$//' | sort -u > "$TMP/fe_calls.txt"
 
 # 3. Abgleich
 python3 - "$TMP" <<'EOF' > "$TMP/abgleich.txt"
