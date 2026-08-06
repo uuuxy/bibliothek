@@ -194,7 +194,7 @@
 							<!-- Nur Lieferanten mit dem externen Schritt tragen hier etwas. Ein „—" in
 							     jeder anderen Zeile wäre Rauschen: Auffallen soll die Abweichung. -->
 							<td class="px-3 py-2 whitespace-nowrap">
-								{#if b.bietet_bestellbestaetigung && b.bestaetigt_am}
+								{#if b.mit_bestaetigung && b.bestaetigt_am}
 									<StatusChip
 										ton="erfolg"
 										icon={CheckCircle2}
@@ -204,7 +204,7 @@
 											? 'Der Lieferant hat die Bestellung über den Link bestätigt'
 											: 'Bestätigung wurde in der Bibliothek von Hand nachgetragen'}
 									/>
-								{:else if b.bietet_bestellbestaetigung}
+								{:else if b.mit_bestaetigung}
 									<StatusChip
 										ton="warten"
 										icon={Clock}
@@ -244,7 +244,7 @@
 									     Bestellmail einen Link von uns, wählen dort ihre Etiketten und
 									     bestätigen die Bestellung. Der Block zeigt diesen Zustand und hält
 									     den manuellen Nachtrag als Rückfallebene bereit. -->
-									{#if b.bietet_bestellbestaetigung}
+									{#if b.mit_bestaetigung}
 										<BestellStatusBlock {b} onAktualisieren={ladeBestellungen} />
 									{/if}
 									{#if b.positionen.length === 0}

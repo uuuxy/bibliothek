@@ -594,28 +594,18 @@ CREATE TABLE lieferanten (
     email VARCHAR(255) NOT NULL,
     kundennummer VARCHAR(100) NOT NULL,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    -- Händler beklebt die Bücher vor der Lieferung mit UNSEREN Barcodes. Der Barcodebogen
-    -- geht weiterhin mit dem Bestellbrief mit; die Exemplare gelten sofort als beklebt und
-    -- erscheinen nicht auf der Nachdruck-Liste (Migration 056).
-    liefert_mit_barcode BOOLEAN NOT NULL DEFAULT false,
-    -- Vorauswahl im Bestellformular (Migration 058).
-    ist_standard BOOLEAN NOT NULL DEFAULT false,
-    -- Lieferant bietet nach der Bestellung eine eigene Etikettengrößen-Wahl + Bestätigung
-    -- an (z. B. Naacher). Rein informativ — Bibliosys erzeugt hierfür keine Etiketten
-    -- (Migration 062).
-    bietet_bestellbestaetigung BOOLEAN NOT NULL DEFAULT false
+    -- Der EINE Händler, über den die Schule bestellt (Migration 066, vorher drei einzelne
+    -- Schalter): im Bestellformular vorausgewählt, bekommt statt der reinen Bestellmail
+    -- den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst —
+    -- seine Exemplare stehen deshalb nicht auf der Nachdruck-Liste. Alle anderen Händler
+    -- bekommen einfach nur die Bestellmail.
+    ist_hauptlieferant BOOLEAN NOT NULL DEFAULT false
 );
 
--- Höchstens EIN Standardlieferant. Der Teil-Index lässt nur eine Zeile mit true zu;
--- zwei Standardlieferanten wären ein stiller Fehler, bei dem die Sortierung entschiede,
--- welcher gewinnt.
-CREATE UNIQUE INDEX idx_lieferanten_ein_standard ON lieferanten (ist_standard) WHERE ist_standard;
-
--- Höchstens EINER bekommt den Bestelllink (Migration 065). Über den Link wählt der
--- Händler die Etikettengröße und bestätigt die Bestellung. Zwei Händler mit Link zur
--- selben Bestellung wären ein stiller Fehler: Wer zuerst bestätigt, gewinnt, der andere
--- läuft in ein 409.
-CREATE UNIQUE INDEX idx_lieferanten_ein_bestelllink ON lieferanten (bietet_bestellbestaetigung) WHERE bietet_bestellbestaetigung;
+-- Höchstens EINER. Zwei Hauptlieferanten wären ein stiller Fehler: Beide bekämen den Link
+-- zur selben Bestellung, wer zuerst bestätigt, gewinnt — und bei der Vorauswahl entschiede
+-- die Sortierung, welcher im Formular steht. Der Teil-Index lässt nur eine Zeile mit true zu.
+CREATE UNIQUE INDEX idx_lieferanten_ein_hauptlieferant ON lieferanten (ist_hauptlieferant) WHERE ist_hauptlieferant;
 
 
 -- Table: bestellungen_verlauf (Order history — one record per submitted order)
@@ -803,7 +793,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('062_lieferant_bestellbestaetigung.sql'),
 ('063_bestellbestaetigung_link.sql'),
 ('064_bestellungen_datum_index.sql'),
-('065_lieferant_ein_bestelllink.sql')
+('065_lieferant_ein_bestelllink.sql'),
+('066_lieferant_hauptlieferant.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

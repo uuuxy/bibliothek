@@ -23,13 +23,29 @@ import (
 // ohnehin die Stelle, an der entschieden wird; hier wird sie direkt geprüft.
 
 // haendler legt einen Lieferanten an und gibt seine ID zurück.
-func haendler(t *testing.T, pool *pgxpool.Pool, name string, beklebt bool) string {
+//
+// istHaupt macht ihn zum Hauptlieferanten: bekommt den Bestelllink, beklebt die Bücher
+// selbst, ist beim Bestellen vorausgewählt. Vor Migration 066 waren das drei einzelne
+// Spalten und entsprechend zwei Testhelfer.
+//
+// Erst räumen, dann setzen — genau wie setzeHauptlieferant im Handler. Hauptlieferant darf
+// höchstens EINER sein (idx_lieferanten_ein_hauptlieferant), und resetBestandsdaten leert
+// die Lieferanten bewusst nicht. Ohne das Räumen kollidierte der zweite Test im selben
+// Paketlauf: einzeln grün, in der Suite rot.
+func haendler(t *testing.T, pool *pgxpool.Pool, name string, istHaupt bool) string {
 	t.Helper()
+	ctx := context.Background()
+	if istHaupt {
+		if _, err := pool.Exec(ctx,
+			`UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`); err != nil {
+			t.Fatalf("bisherigen Hauptlieferanten räumen: %v", err)
+		}
+	}
 	var id string
-	err := pool.QueryRow(context.Background(), `
-		INSERT INTO lieferanten (name, email, kundennummer, liefert_mit_barcode)
+	err := pool.QueryRow(ctx, `
+		INSERT INTO lieferanten (name, email, kundennummer, ist_hauptlieferant)
 		VALUES ($1, $2, $3, $4) RETURNING id
-	`, name, name+"@example.invalid", "K-"+name, beklebt).Scan(&id)
+	`, name, name+"@example.invalid", "K-"+name, istHaupt).Scan(&id)
 	if err != nil {
 		t.Fatalf("Lieferant %s anlegen: %v", name, err)
 	}

@@ -61,7 +61,7 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher", true)
+	lieferant := haendler(t, pool, "Naacher", true)
 	bestellungID, token := bestellungMitToken(t, pool, lieferant, TokenGueltigkeitTage)
 
 	rec := getOeffentlicheBestellung(srv, token)
@@ -101,7 +101,7 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 	resetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher", true)
+	lieferant := haendler(t, pool, "Naacher", true)
 	_, token := bestellungMitToken(t, pool, lieferant, TokenGueltigkeitTage)
 
 	if rec := postOeffentlichBestaetigen(srv, token, `{}`); rec.Code != http.StatusOK {
@@ -120,7 +120,7 @@ func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
 	resetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher", true)
+	lieferant := haendler(t, pool, "Naacher", true)
 	_, abgelaufen := bestellungMitToken(t, pool, lieferant, -1)
 
 	faelle := map[string]string{
@@ -147,7 +147,7 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher", true)
+	lieferant := haendler(t, pool, "Naacher", true)
 	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, TokenGueltigkeitTage)
 
 	if _, err := pool.Exec(ctx,

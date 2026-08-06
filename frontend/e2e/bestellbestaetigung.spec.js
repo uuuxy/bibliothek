@@ -15,14 +15,14 @@ import { seedSQL, querySQL, uniqueSuffix, uiLogin } from './helpers.js';
 function seedBestellungMitLink(token, { gueltigTage = 30 } = {}) {
 	const s = uniqueSuffix();
 	seedSQL(`
-		-- Erst räumen, dann setzen — genau wie setzeBestelllinkLieferant im Handler.
-		-- Den Bestelllink darf höchstens EINER tragen (idx_lieferanten_ein_bestelllink,
-		-- Migration 065); ohne diese Zeile bräche schon der zweite Seed in dieser Datei
+		-- Erst räumen, dann setzen — genau wie setzeHauptlieferant im Handler.
+		-- Hauptlieferant darf höchstens EINER sein (idx_lieferanten_ein_hauptlieferant,
+		-- Migration 066); ohne diese Zeile bräche schon der zweite Seed in dieser Datei
 		-- mit einer Unique-Verletzung ab.
-		UPDATE lieferanten SET bietet_bestellbestaetigung = false WHERE bietet_bestellbestaetigung;
+		UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant;
 
 		WITH l AS (
-			INSERT INTO lieferanten (name, email, kundennummer, bietet_bestellbestaetigung)
+			INSERT INTO lieferanten (name, email, kundennummer, ist_hauptlieferant)
 			VALUES ('E2E-Naacher ${s}', 'e2e-${s}@example.invalid', 'K-${s}', true)
 			RETURNING id
 		),

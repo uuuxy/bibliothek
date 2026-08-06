@@ -12,16 +12,21 @@ type Supplier struct {
 	Email        string
 	Kundennummer string
 
-	// LiefertMitBarcode: Der Händler beklebt die Bücher vor der Lieferung mit UNSEREN
-	// Barcodes. Der Barcodebogen geht weiterhin mit dem Bestellbrief mit — er braucht ihn
-	// ja dafür. Die Exemplare entstehen dann aber bereits als „Etikett vorhanden" und
-	// erscheinen nicht auf der Nachdruck-Liste (siehe api/order_service.go).
-	LiefertMitBarcode bool
-
-	// BietetBestellbestaetigung: Der Händler bietet nach der Bestellung eine eigene
-	// Etikettengrößen-Wahl + Bestätigung an (z. B. Naacher). Steuert, ob beim Bestellen
-	// zusätzlich das große Lernmittel-Etikett mitgeschickt wird (siehe api/pdf_service.go).
-	BietetBestellbestaetigung bool
+	// IstHauptlieferant: Der EINE Händler, über den die Schule bestellt (z. B. Naacher).
+	// Er bekommt statt der reinen Bestellmail den Bestelllink, wählt darüber die
+	// Etikettengröße, beklebt die Bücher selbst und bestätigt damit die Bestellung.
+	// Deshalb hängen drei Dinge an diesem einen Merkmal:
+	//
+	//   - der Bestätigungs-Token und das große Lernmittel-Etikett im Mailanhang
+	//     (api/order_service.go, api/pdf_service.go),
+	//   - die Exemplare entstehen als „Etikett vorhanden" und stehen nicht auf der
+	//     Nachdruck-Liste (api/order_service.go),
+	//   - die Vorauswahl im Bestellformular.
+	//
+	// Vorher waren das drei einzelne Schalter. Sie beschrieben denselben Händler, mussten
+	// aber einzeln gesetzt werden — und „Bestelllink, aber nicht beklebt" hiess: Der
+	// Händler beklebt, die Bibliothek druckt trotzdem noch einmal. Siehe Migration 066.
+	IstHauptlieferant bool
 }
 
 // SupplierRepository definiert die Datenbank-Zugriffe für Lieferanten.
@@ -43,10 +48,10 @@ func (r *pgSupplierRepository) GetSupplierByID(ctx context.Context, id string) (
 	var s Supplier
 	s.ID = id
 	err := r.db.QueryRow(ctx, `
-		SELECT name, email, kundennummer, liefert_mit_barcode, bietet_bestellbestaetigung
+		SELECT name, email, kundennummer, ist_hauptlieferant
 		FROM lieferanten
 		WHERE id = $1
-	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer, &s.LiefertMitBarcode, &s.BietetBestellbestaetigung)
+	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer, &s.IstHauptlieferant)
 	if err != nil {
 		return nil, err
 	}

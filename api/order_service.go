@@ -37,9 +37,9 @@ type OrderResult struct {
 	Labels         []BarcodeLabelDetail
 	SummaryItems   []OrderedItem
 	TotalAllocated int
-	// BietetBestellbestaetigung: siehe repository.Supplier — steuert, ob DispatchOrderEmail
+	// IstHauptlieferant: siehe repository.Supplier — steuert, ob DispatchOrderEmail
 	// zusätzlich das große Lernmittel-Etikett anhängt.
-	BietetBestellbestaetigung bool
+	IstHauptlieferant bool
 	// BestellungID der soeben geschriebenen Bestellung.
 	BestellungID string
 	// BestaetigungsToken ist der KLARTEXT-Token für den Link in der Bestellmail. In der
@@ -81,10 +81,11 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		return nil, err
 	}
 
-	// Der Bestätigungs-Link entsteht NUR für Lieferanten, die selbst etikettieren und
-	// bestätigen. Alle anderen bekämen eine Seite, auf der es nichts zu tun gibt.
+	// Der Bestätigungs-Link entsteht NUR für den Hauptlieferanten, der selbst etikettiert
+	// und bestätigt. Alle anderen bekämen eine Seite, auf der es nichts zu tun gibt —
+	// für sie bleibt es bei der reinen Bestellmail.
 	var token, tokenHash string
-	if supplier.BietetBestellbestaetigung {
+	if supplier.IstHauptlieferant {
 		token, tokenHash, err = neuerBestaetigungsToken()
 		if err != nil {
 			return nil, fmt.Errorf("bestaetigungs-token: %w", err)
@@ -144,15 +145,15 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	}
 
 	return &OrderResult{
-		SupplierName:              supplier.Name,
-		SupplierEmail:             supplier.Email,
-		CustomerNumber:            supplier.Kundennummer,
-		Labels:                    labels,
-		SummaryItems:              orderSummaryItems,
-		TotalAllocated:            totalAllocated,
-		BietetBestellbestaetigung: supplier.BietetBestellbestaetigung,
-		BestellungID:              bestellungID,
-		BestaetigungsToken:        token,
+		SupplierName:       supplier.Name,
+		SupplierEmail:      supplier.Email,
+		CustomerNumber:     supplier.Kundennummer,
+		Labels:             labels,
+		SummaryItems:       orderSummaryItems,
+		TotalAllocated:     totalAllocated,
+		IstHauptlieferant:  supplier.IstHauptlieferant,
+		BestellungID:       bestellungID,
+		BestaetigungsToken: token,
 	}, nil
 }
 
@@ -210,7 +211,7 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 	// Beide Bedingungen müssen zutreffen: Ohne erzeugten Barcode steht für diese Position
 	// nichts auf dem Barcodebogen, der Händler kann also nichts aufkleben — dann bleibt das
 	// Etikett unsere Aufgabe, auch wenn er sonst beklebt liefert.
-	beklebtGeliefert := supplier.LiefertMitBarcode && item.GenerateBarcodes
+	beklebtGeliefert := supplier.IstHauptlieferant && item.GenerateBarcodes
 
 	for i := 0; i < item.Menge; i++ {
 		barcodeID := barcodes[i]

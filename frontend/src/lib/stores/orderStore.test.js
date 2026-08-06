@@ -302,8 +302,8 @@ describe('orderStore Suche', () => {
 // keiner, weil man sich auf ihn verlässt und die Bestellung an den falschen Händler geht.
 describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
 	const LISTE = [
-		{ id: 's1', name: 'Cornelsen', customerNumber: 'C-1', ist_standard: false },
-		{ id: 's2', name: 'Westermann', customerNumber: 'W-2', ist_standard: true }
+		{ id: 's1', name: 'Cornelsen', customerNumber: 'C-1', ist_hauptlieferant: false },
+		{ id: 's2', name: 'Westermann', customerNumber: 'W-2', ist_hauptlieferant: true }
 	];
 
 	beforeEach(() => {
@@ -336,7 +336,7 @@ describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
 
 	it('nimmt den ersten, wenn kein Standard hinterlegt ist', async () => {
 		vi.mocked(apiGet).mockImplementation(async () =>
-			LISTE.map((s) => ({ ...s, ist_standard: false }))
+			LISTE.map((s) => ({ ...s, ist_hauptlieferant: false }))
 		);
 		orderStore.selectedSupplierId = '';
 		await orderStore.loadSuppliers();

@@ -109,7 +109,7 @@ class OrderStore {
 		// alphabetisch erste (die Liste kommt mit ORDER BY name) — wer immer beim selben
 		// Haendler bestellt, musste ihn also jedes Mal neu auswaehlen, und einmal vergessen
 		// heisst, die Bestellung geht an den falschen raus.
-		const standard = this.suppliers.find((s) => s.ist_standard);
+		const standard = this.suppliers.find((s) => s.ist_hauptlieferant);
 		const auswahlUngueltig = !this.suppliers.some((s) => s.id === this.selectedSupplierId);
 
 		// Der hinterlegte Standard muss auch dann greifen, wenn schon eine GÜLTIGE Auswahl
@@ -156,24 +156,15 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] @param {boolean} [istStandard] */
-	async addSupplier(
-		name,
-		email,
-		customerNumber,
-		liefertMitBarcode = false,
-		istStandard = false,
-		bietetBestellbestaetigung = false
-	) {
+	/** @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [istHauptlieferant] */
+	async addSupplier(name, email, customerNumber, istHauptlieferant = false) {
 		if (!name || !email || !customerNumber) return;
 		try {
 			await apiPost('/api/lieferanten', {
 				name,
 				email,
 				customerNumber,
-				liefert_mit_barcode: liefertMitBarcode,
-				ist_standard: istStandard,
-				bietet_bestellbestaetigung: bietetBestellbestaetigung
+				ist_hauptlieferant: istHauptlieferant
 			});
 			await this.loadSuppliers();
 		} catch {
@@ -181,24 +172,14 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [liefertMitBarcode] @param {boolean} [istStandard] */
-	async editSupplier(
-		id,
-		name,
-		email,
-		customerNumber,
-		liefertMitBarcode = false,
-		istStandard = false,
-		bietetBestellbestaetigung = false
-	) {
+	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [istHauptlieferant] */
+	async editSupplier(id, name, email, customerNumber, istHauptlieferant = false) {
 		try {
 			await apiPut(`/api/lieferanten/${id}`, {
 				name,
 				email,
 				customerNumber,
-				liefert_mit_barcode: liefertMitBarcode,
-				ist_standard: istStandard,
-				bietet_bestellbestaetigung: bietetBestellbestaetigung
+				ist_hauptlieferant: istHauptlieferant
 			});
 			await this.loadSuppliers();
 			toastStore.addToast('Lieferant aktualisiert.', 'success');

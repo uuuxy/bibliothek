@@ -7,49 +7,34 @@
 	let newName = $state('');
 	let newEmail = $state('');
 	let newCustNum = $state('');
-	let newMitBarcode = $state(false);
-	let newIstStandard = $state(false);
-	let newBietetBestaetigung = $state(false);
+	let newIstHaupt = $state(false);
 
 	/** @type {string|null} */
 	let editingId = $state(null);
 	let editName = $state('');
 	let editEmail = $state('');
 	let editCustNum = $state('');
-	let editMitBarcode = $state(false);
-	let editIstStandard = $state(false);
-	let editBietetBestaetigung = $state(false);
+	let editIstHaupt = $state(false);
 
 	/** @param {SubmitEvent} e */
 	function handleSubmit(e) {
 		e.preventDefault();
-		onAddSupplier(
-			newName,
-			newEmail,
-			newCustNum,
-			newMitBarcode,
-			newIstStandard,
-			newBietetBestaetigung
-		);
+		onAddSupplier(newName, newEmail, newCustNum, newIstHaupt);
 		newName = '';
 		newEmail = '';
 		newCustNum = '';
-		newMitBarcode = false;
-		newIstStandard = false;
-		newBietetBestaetigung = false;
+		newIstHaupt = false;
 	}
 
-	/** @param {{ id: string, name: string, email: string, customerNumber: string, liefert_mit_barcode?: boolean, ist_standard?: boolean, bietet_bestellbestaetigung?: boolean }} s */
+	/** @param {{ id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean }} s */
 	function startEdit(s) {
 		editingId = s.id;
 		editName = s.name;
 		editEmail = s.email;
 		editCustNum = s.customerNumber;
 		// Ohne diese Zeile stünde beim Bearbeiten immer „aus" im Feld, und wer nur die
-		// E-Mail korrigiert, schaltete die Beklebung des Händlers still ab.
-		editMitBarcode = s.liefert_mit_barcode ?? false;
-		editIstStandard = s.ist_standard ?? false;
-		editBietetBestaetigung = s.bietet_bestellbestaetigung ?? false;
+		// E-Mail korrigiert, degradierte den Hauptlieferanten still zum normalen Händler.
+		editIstHaupt = s.ist_hauptlieferant ?? false;
 	}
 
 	function cancelEdit() {
@@ -58,15 +43,7 @@
 
 	async function saveEdit() {
 		if (!editingId) return;
-		await onEditSupplier(
-			editingId,
-			editName,
-			editEmail,
-			editCustNum,
-			editMitBarcode,
-			editIstStandard,
-			editBietetBestaetigung
-		);
+		await onEditSupplier(editingId, editName, editEmail, editCustNum, editIstHaupt);
 		editingId = null;
 	}
 </script>
@@ -104,51 +81,31 @@
 					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
 				/>
 			</div>
-			<!-- Ein Zustand, kein Auswahlpunkt — deshalb ein Schalter und kein Häkchen (M3).
-			     Die Folge steht im Klartext daneben: „Barcodes" allein liest jeder anders, und
-			     diese Einstellung entscheidet, ob Exemplare auf der Nachdruck-Liste landen. -->
-			<div class="flex items-start justify-between gap-4 pt-1">
-				<label for="mit-barcode" class="cursor-pointer text-sm">
-					<span class="block font-semibold text-slate-700">Händler beklebt die Bücher</span>
-					<span class="mt-0.5 block text-xs text-slate-500">
-						Der Barcodebogen geht wie bisher mit der Bestellung mit. Die Exemplare gelten dann als
-						beklebt und erscheinen nicht auf der Liste der fehlenden Etiketten.
-					</span>
-				</label>
-				<Switch id="mit-barcode" bind:checked={newMitBarcode} label="Händler beklebt die Bücher" />
-			</div>
+			<!-- EIN Schalter statt drei. Vorher standen hier „beklebt die Bücher",
+			     „voreingestellt beim Bestellen" und „bekommt den Bestelllink" einzeln — drei
+			     Haken für eine einzige Tatsache aus dem Schulalltag, und eine Kombination davon
+			     war eine stille Falle: Bestelllink ohne „beklebt" hiess, der Händler klebt und
+			     die Bibliothek druckt trotzdem noch einmal. Siehe Migration 066. -->
 			<div class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4">
-				<label for="ist-standard" class="cursor-pointer text-sm">
-					<span class="block font-semibold text-slate-700">Voreingestellt beim Bestellen</span>
+				<label for="ist-hauptlieferant" class="cursor-pointer text-sm">
+					<span class="block font-semibold text-slate-700">Hauptlieferant der Schule</span>
 					<span class="mt-0.5 block text-xs text-slate-500">
-						Dieser Lieferant ist im Bestellformular vorausgewählt. Es kann immer nur einer sein —
-						der bisherige verliert die Einstellung.
+						Beim Bestellen vorausgewählt. Bekommt statt der reinen Bestellmail einen Link: wählt
+						darüber große oder kleine Etiketten, beklebt die Bücher selbst und bestätigt damit die
+						Bestellung — die Bestätigung erscheint automatisch in der Bestellhistorie. Seine Bücher
+						stehen deshalb nicht auf der Nachdruck-Liste. Es kann immer nur einer sein; der
+						bisherige wird zum normalen Händler.
 					</span>
 				</label>
 				<Switch
-					id="ist-standard"
-					bind:checked={newIstStandard}
-					label="Voreingestellt beim Bestellen"
+					id="ist-hauptlieferant"
+					bind:checked={newIstHaupt}
+					label="Hauptlieferant der Schule"
 				/>
 			</div>
-			<!-- Der Bestelllink geht an genau EINEN Händler (Teil-Index
-			     idx_lieferanten_ein_bestelllink, Migration 065). Zwei Händler mit Link zur selben
-			     Bestellung wären ein stiller Fehler: Wer zuerst bestätigt, gewinnt. -->
-			<div class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4">
-				<label for="bietet-bestaetigung" class="cursor-pointer text-sm">
-					<span class="block font-semibold text-slate-700">Bekommt den Bestelllink</span>
-					<span class="mt-0.5 block text-xs text-slate-500">
-						Der Händler wählt über den Link selbst, ob er große oder kleine Etiketten druckt, und
-						bestätigt damit die Bestellung — die Bestätigung erscheint automatisch in der
-						Bestellhistorie. Es kann immer nur einer sein; der bisherige verliert den Link.
-					</span>
-				</label>
-				<Switch
-					id="bietet-bestaetigung"
-					bind:checked={newBietetBestaetigung}
-					label="Bekommt den Bestelllink"
-				/>
-			</div>
+			<p class="text-xs text-slate-500">
+				Alle anderen Lieferanten bekommen einfach nur die Bestellmail.
+			</p>
 			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
 		</form>
 	</div>
@@ -172,13 +129,12 @@
 							<th class="py-2.5">Name</th>
 							<th class="py-2.5">E-Mail</th>
 							<th class="py-2.5">Kundennummer</th>
-							<th class="py-2.5">Etikettendruck</th>
-							<th class="py-2.5">Vorauswahl</th>
-							<th class="py-2.5">Bestelllink</th>
-							<!-- Klebt am rechten Rand des Scrollbereichs: Sieben Spalten sind breiter als
-							     der Platz, den die Tabelle bekommt. Ohne sticky steht "Bearbeiten" hinter
-							     dem sichtbaren Rand — der Knopf ist dann zwar im DOM, aber niemand findet
-							     ihn (gemessen: rechte Kante 1620 px bei 1280 px Fenster). -->
+							<th class="py-2.5">Rolle</th>
+							<!-- Klebt am rechten Rand des Scrollbereichs: Die Tabelle kann breiter werden
+							     als der Platz, den sie bekommt (lange Lieferantennamen). Ohne sticky steht
+							     "Bearbeiten" hinter dem sichtbaren Rand — der Knopf ist dann zwar im DOM,
+							     aber niemand findet ihn (gemessen: rechte Kante 1620 px bei 1280 px
+							     Fenster). -->
 							<th class="py-2.5 text-right sticky right-0 bg-white">Aktionen</th>
 						</tr>
 					</thead>
@@ -209,20 +165,8 @@
 									>
 									<td class="py-2 pr-2">
 										<Switch
-											bind:checked={editMitBarcode}
-											label="Händler beklebt die Bücher ({s.name})"
-										/>
-									</td>
-									<td class="py-2 pr-2">
-										<Switch
-											bind:checked={editIstStandard}
-											label="Voreingestellt beim Bestellen ({s.name})"
-										/>
-									</td>
-									<td class="py-2 pr-2">
-										<Switch
-											bind:checked={editBietetBestaetigung}
-											label="Bekommt den Bestelllink ({s.name})"
+											bind:checked={editIstHaupt}
+											label="Hauptlieferant der Schule ({s.name})"
 										/>
 									</td>
 									<td class="py-2 text-right whitespace-nowrap sticky right-0 bg-blue-50">
@@ -243,43 +187,19 @@
 									<td class="py-3 font-bold text-slate-800">{s.name}</td>
 									<td class="py-3 text-slate-600">{s.email}</td>
 									<td class="py-3 text-slate-600">{s.customerNumber}</td>
-									<!-- Zwei Werte, eine Sprache: Wer die Etiketten druckt. Vorher standen hier
-								     ein grüner Chip gegen graue Kleinschrift — zwei Darstellungen für EINE
-								     Ja/Nein-Angabe. Und „wir drucken" in jeder Zeile ließ das Auge viermal
-								     lesen, um nichts zu erfahren; auffallen soll die Abweichung. -->
-									<td class="py-3 text-slate-600">
-										<span
-											data-tip={s.liefert_mit_barcode
-												? 'Die Bücher kommen beklebt an und stehen nicht auf der Nachdruck-Liste'
-												: 'Die Etiketten druckt die Bibliothek selbst im Druck-Center'}
-										>
-											{s.liefert_mit_barcode ? 'Händler' : 'Bibliothek'}
-										</span>
-									</td>
-									<!-- Nur die Abweichung wird benannt. „Nein" in jeder Zeile wäre wieder das
-								     Rauschen, das wir bei der Etikettenspalte schon entfernt haben. -->
+									<!-- Nur die Abweichung wird benannt. „Bestellmail" in jeder Zeile wäre
+								     Rauschen: Es ließe das Auge jede Zeile lesen, um nichts zu erfahren.
+								     Auffallen soll die eine Zeile, die anders ist. -->
 									<td class="py-3">
-										{#if s.ist_standard}
+										{#if s.ist_hauptlieferant}
 											<span
 												class="text-sm font-semibold text-slate-700"
-												data-tip="Beim Bestellen ist dieser Lieferant vorausgewählt"
+												data-tip="Vorausgewählt beim Bestellen, bekommt den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst"
 											>
-												Standard
+												Hauptlieferant
 											</span>
 										{:else}
-											<span class="text-sm text-slate-300">—</span>
-										{/if}
-									</td>
-									<td class="py-3">
-										{#if s.bietet_bestellbestaetigung}
-											<span
-												class="text-sm font-semibold text-slate-700"
-												data-tip="Wählt über den Link die Etikettengröße und bestätigt die Bestellung selbst"
-											>
-												Bestelllink
-											</span>
-										{:else}
-											<span class="text-sm text-slate-300">—</span>
+											<span class="text-sm text-slate-300">nur Bestellmail</span>
 										{/if}
 									</td>
 									<td class="py-3 text-right whitespace-nowrap sticky right-0 bg-white">

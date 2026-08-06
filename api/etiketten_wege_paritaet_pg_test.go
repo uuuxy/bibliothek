@@ -33,7 +33,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher-Paritaet", true)
+	lieferant := haendler(t, pool, "Naacher-Paritaet", true)
 	titel := titelMitMeldebestand(t, pool, "LMF-Paritaet", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{

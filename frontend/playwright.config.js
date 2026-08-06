@@ -5,8 +5,11 @@ import { defineConfig, devices } from '@playwright/test';
 // (Backend inkl. gebautem Frontend auf :8084, Mock-IMAP akzeptiert jedes Passwort.)
 export default defineConfig({
 	testDir: './e2e',
-	// Räumt die von den Flows angelegten Testlieferanten ab — ohne das wuchs die
-	// Lieferantenliste mit jedem Lauf (zuletzt 224 Testeinträge gegen 3 echte).
+	// Merkt sich den Hauptlieferanten und räumt die von den Flows angelegten
+	// Testlieferanten wieder ab. Ohne das wuchs die Lieferantenliste mit jedem Lauf
+	// (zuletzt 224 Testeinträge gegen 3 echte) und die Rolle des Hauptlieferanten war
+	// nach jedem Lauf verschwunden.
+	globalSetup: './e2e/global-setup.js',
 	globalTeardown: './e2e/global-teardown.js',
 	timeout: 30_000,
 	fullyParallel: false, // Flows teilen sich eine DB — seriell bleiben

@@ -41,11 +41,17 @@ type BestellVerlaufResponse struct {
 	AnzahlExemplare int                       `json:"anzahl_exemplare"`
 	Positionen      []BestellPositionResponse `json:"positionen"`
 
-	// BietetBestellbestaetigung: Lieferant dieser Bestellung bietet den externen
-	// Bestätigungsschritt an (z. B. Naacher) — steuert, ob die Oberfläche den
-	// Bestätigen-Schritt überhaupt anzeigt. false, wenn der Lieferant inzwischen
-	// gelöscht wurde (COALESCE gegen lieferant_id IS NULL).
-	BietetBestellbestaetigung bool `json:"bietet_bestellbestaetigung"`
+	// MitBestaetigung: DIESE Bestellung ist mit einem Bestätigungs-Link rausgegangen —
+	// sie hat einen Token bekommen. Steuert, ob die Oberfläche den Bestätigen-Schritt
+	// überhaupt anzeigt.
+	//
+	// Bewusst am Token der Bestellung und NICHT am heutigen Merkmal des Lieferanten:
+	// Hauptlieferant darf nur einer sein (Migration 066). Zöge die Zahl über den
+	// Lieferanten, verlören alle offenen Bestellungen des bisherigen Hauptlieferanten in
+	// dem Moment ihren Bestätigen-Schritt, in dem jemand anderes den Link bekommt —
+	// obwohl sie mit Link rausgegangen sind und weiter auf Bestätigung warten. Der Token
+	// bleibt, was er ist. Dieselbe Regel nutzt die Übersicht (bestellhistorie_uebersicht.go).
+	MitBestaetigung bool `json:"mit_bestaetigung"`
 	// BestaetigtAm: Zeitpunkt der externen Bestätigung, NULL solange unbestätigt.
 	BestaetigtAm *time.Time `json:"bestaetigt_am,omitempty"`
 	// EtikettenGroesse: beim Bestätigen gewählte Größe ('klein'/'gross'), NULL solange
@@ -108,16 +114,17 @@ func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 // ladeBestellhistorie lädt alle Bestellköpfe (neueste zuerst) und einen Index
 // Bestell-ID → Position im Slice für das spätere Zuordnen der Positionen.
 func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellVerlaufResponse, map[string]int, error) {
-	// LEFT JOIN + COALESCE: eine Bestellung überlebt ihren gelöschten Lieferanten als
-	// Beleg (lieferant_id ON DELETE SET NULL) — dann gilt bietet_bestellbestaetigung=false.
+	// Kein JOIN auf lieferanten mehr nötig: Beide Bestätigungs-Angaben stehen an der
+	// Bestellung selbst. Das ist auch der Grund, warum eine Bestellung ihren gelöschten
+	// Lieferanten als vollständiger Beleg überlebt (lieferant_id ON DELETE SET NULL).
 	rows, err := s.DB.Pool.Query(ctx, `
 		SELECT b.id, b.lieferant_name, b.lieferant_email, b.kundennummer, b.bestelldatum,
-		       b.gesamtbetrag, b.anzahl_exemplare, coalesce(l.bietet_bestellbestaetigung, false),
+		       b.gesamtbetrag, b.anzahl_exemplare,
+		       b.bestaetigungs_token_hash IS NOT NULL,
 		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
 		       (b.bestaetigungs_token_hash IS NOT NULL
 		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now()))
 		FROM bestellungen_verlauf b
-		LEFT JOIN lieferanten l ON l.id = b.lieferant_id
 		ORDER BY b.bestelldatum DESC
 		LIMIT $1
 	`, limit)
@@ -132,7 +139,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellV
 	for rows.Next() {
 		var o BestellVerlaufResponse
 		if err := rows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
-			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.BietetBestellbestaetigung,
+			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.MitBestaetigung,
 			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv); err != nil {
 			return nil, nil, err
 		}

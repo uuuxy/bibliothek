@@ -29,7 +29,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher", true)
+	lieferant := haendler(t, pool, "Naacher", true)
 	mitBarcode := titelMitMeldebestand(t, pool, "LMF-Mit-Barcode", 0)
 	ohneBarcode := titelMitMeldebestand(t, pool, "LMF-Ohne-Barcode", 0)
 
@@ -115,7 +115,7 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Normalo", false)
+	lieferant := haendler(t, pool, "Normalo", false)
 	titel := titelMitMeldebestand(t, pool, "LMF-Normal", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{

@@ -17,6 +17,33 @@ type BestaetigenRequest struct {
 	EtikettenGroesse string `json:"etiketten_groesse"`
 }
 
+// bestellungImBestaetigungsweg beantwortet für BEIDE Bestätigungs-Handler dieselbe Frage:
+// Gehört diese Bestellung überhaupt zum Bestätigungs-Weg?
+//
+// Zwei Wege führen dorthin, und beide zählen:
+//
+//   - Die Bestellung IST mit einem Link rausgegangen (Token vorhanden). Daran ändert ein
+//     späterer Wechsel des Hauptlieferanten nichts — sie wartet weiter auf Bestätigung.
+//     Über das heutige Merkmal des Lieferanten gefragt, verlöre sie ihren Bestätigen-
+//     Schritt in dem Moment, in dem jemand anderes Hauptlieferant wird.
+//   - Ihr Lieferant ist der heutige Hauptlieferant, die Bestellung hat aber noch keinen
+//     Link — der Fall, für den es NeuerBestaetigungsLinkHandler gibt (beim Bestellen war
+//     noch keine öffentliche Adresse hinterlegt).
+//
+// COALESCE gegen lieferant_id IS NULL (ON DELETE SET NULL, Migration 037): Eine Bestellung
+// überlebt den gelöschten Lieferanten als Beleg, ein NULL-Scan in bool würde das sonst mit
+// einem 500 abbrechen (siehe Memory NULL-Scan-Bugklasse).
+func (s *Server) bestellungImBestaetigungsweg(ctx context.Context, id string) (bool, error) {
+	var ok bool
+	err := s.DB.Pool.QueryRow(ctx, `
+		SELECT b.bestaetigungs_token_hash IS NOT NULL OR coalesce(l.ist_hauptlieferant, false)
+		FROM bestellungen_verlauf b
+		LEFT JOIN lieferanten l ON l.id = b.lieferant_id
+		WHERE b.id = $1
+	`, id).Scan(&ok)
+	return ok, err
+}
+
 // BestaetigenBestellungHandler trägt einen rein externen Vorgang nach: Lieferanten wie
 // Naacher wählen über ihren eigenen Link die Etikettengröße und bestätigen die
 // Bestellung selbst — Bibliosys bekommt davon keine automatische Rückmeldung. Dieser
@@ -41,16 +68,7 @@ func (s *Server) BestaetigenBestellungHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		var bietetBestellbestaetigung bool
-		// COALESCE gegen lieferant_id IS NULL (ON DELETE SET NULL, Migration 037) — eine
-		// Bestellung überlebt den gelöschten Lieferanten als Beleg, ein NULL-Scan in *bool
-		// würde diesen sonst mit einem 500 abbrechen (siehe Memory NULL-Scan-Bugklasse).
-		err := s.DB.Pool.QueryRow(ctx, `
-			SELECT coalesce(l.bietet_bestellbestaetigung, false)
-			FROM bestellungen_verlauf b
-			LEFT JOIN lieferanten l ON l.id = b.lieferant_id
-			WHERE b.id = $1
-		`, id).Scan(&bietetBestellbestaetigung)
+		imBestaetigungsweg, err := s.bestellungImBestaetigungsweg(ctx, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
@@ -60,8 +78,8 @@ func (s *Server) BestaetigenBestellungHandler() http.HandlerFunc {
 			return
 		}
 
-		if !bietetBestellbestaetigung {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("dieser lieferant bietet keine bestellbestaetigung an"))
+		if !imBestaetigungsweg {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("diese bestellung hat keinen bestaetigungsschritt"))
 			return
 		}
 

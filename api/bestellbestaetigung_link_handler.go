@@ -32,15 +32,7 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		var bietet bool
-		// COALESCE gegen lieferant_id IS NULL (ON DELETE SET NULL): Eine Bestellung
-		// überlebt ihren gelöschten Lieferanten als Beleg.
-		err := s.DB.Pool.QueryRow(ctx, `
-			SELECT coalesce(l.bietet_bestellbestaetigung, false)
-			FROM bestellungen_verlauf b
-			LEFT JOIN lieferanten l ON l.id = b.lieferant_id
-			WHERE b.id = $1
-		`, id).Scan(&bietet)
+		bietet, err := s.bestellungImBestaetigungsweg(ctx, id)
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
 			return
@@ -50,7 +42,7 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 			return
 		}
 		if !bietet {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("dieser Lieferant hat keinen Bestätigungsschritt"))
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("diese Bestellung hat keinen Bestätigungsschritt"))
 			return
 		}
 

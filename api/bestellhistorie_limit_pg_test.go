@@ -58,8 +58,8 @@ func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 
 	vorher := holeUebersicht(t, srv)
 
-	mitBestaetigung := haendlerMitBestaetigung(t, pool, "Naacher-Uebersicht", true)
-	ohneBestaetigung := haendlerMitBestaetigung(t, pool, "Normalo-Uebersicht", false)
+	mitBestaetigung := haendler(t, pool, "Naacher-Uebersicht", true)
+	ohneBestaetigung := haendler(t, pool, "Normalo-Uebersicht", false)
 
 	// Drei wartende, eine bestätigte, zwei ohne den externen Schritt.
 	for i := 0; i < 3; i++ {
@@ -101,7 +101,7 @@ func TestBestellhistorie_MaxLimitIstNichtVerhandelbar(t *testing.T) {
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher-Masse", true)
+	lieferant := haendler(t, pool, "Naacher-Masse", true)
 	// In einer Anweisung, damit der Test schnell bleibt: mehr Zeilen als die Obergrenze.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare)
@@ -127,7 +127,7 @@ func TestBestellhistorie_PositionenNurFuerGeladeneBestellungen(t *testing.T) {
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendlerMitBestaetigung(t, pool, "Naacher-Positionen", true)
+	lieferant := haendler(t, pool, "Naacher-Positionen", true)
 	for i := 0; i < 3; i++ {
 		id := bestellungFuerLieferant(t, pool, lieferant)
 		if _, err := pool.Exec(ctx, `
