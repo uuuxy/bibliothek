@@ -147,21 +147,67 @@ fi
 # ── Schritt 4: Health-Check ───────────────────────────────────────────────────
 log_step "Schritt 4: Warte auf Gesundheitsprüfung"
 
-log_info "Warte bis der Web-Container healthy ist (max. 60 Sekunden)..."
+APP_CONTAINER="bibliothek-backend"
+HEALTH_TIMEOUT=120
+
+# Zwei Quellen, weil keine für sich allein genügt:
+#
+#  1. Der Docker-Healthcheck. Die genauere Auskunft — er läuft im Container —, aber er
+#     braucht Anlauf, und ein Container ohne Healthcheck liefert hier gar nichts.
+#  2. Die Anwendung selbst über /health. Sie beantwortet die Frage, auf die es ankommt:
+#     Kommt jemand rein?
+#
+# Am 06.08.2026 hat dieser Schritt zwei einwandfreie Updates hintereinander als
+# FEHLGESCHLAGEN gemeldet — samt Rollback-Anleitung —, während die Anwendung längst lief
+# und /health von aussen mit 200 antwortete. Die Prüfung hing allein an Quelle 1, und der
+# Hinweistext nannte obendrein einen Container ("bibliothek-web"), den es nicht gibt: Wer
+# der Anleitung folgte, bekam eine leere Ausgabe und stand vor einem Rollback, den niemand
+# brauchte. Ein Alarm, der bei jedem gesunden Lauf losgeht, erzieht nur dazu, ihn zu
+# überhören — und dann fehlt er, wenn er zählt.
+docker_health() {
+    local status
+    status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}ohne-healthcheck{{end}}' \
+        "${APP_CONTAINER}" 2>/dev/null | head -1)"
+    echo "${status:-unbekannt}"
+}
+
+# HTTP-Gegenprobe im Container: Der Port steht in dessen eigener Umgebung, damit hier
+# keine zweite Wahrheit über die Portnummer entsteht.
+app_antwortet() {
+    local port
+    port="$(docker inspect --format='{{range .Config.Env}}{{println .}}{{end}}' "${APP_CONTAINER}" 2>/dev/null |
+        sed -n 's/^PORT=//p' | head -1)"
+    [ -n "${port}" ] || return 1
+    docker exec "${APP_CONTAINER}" wget --no-verbose --tries=1 --spider \
+        "http://127.0.0.1:${port}/health" >/dev/null 2>&1
+}
+
+log_info "Warte auf die Anwendung (max. ${HEALTH_TIMEOUT} Sekunden)..."
 WAIT=0
-until docker inspect --format='{{.State.Health.Status}}' bibliothek-backend 2>/dev/null | grep -q "healthy"; do
+while true; do
+    STATUS="$(docker_health)"
+    if [ "${STATUS}" = "healthy" ]; then
+        log_ok "Anwendung ist healthy und läuft."
+        break
+    fi
+    if app_antwortet; then
+        log_ok "Anwendung antwortet auf /health (Docker-Status: ${STATUS})."
+        break
+    fi
+
     sleep 3
     WAIT=$((WAIT + 3))
-    if [ ${WAIT} -ge 60 ]; then
-        log_error "Web-Container ist nach 60 Sekunden nicht healthy!"
-        log_error "Prüfe Logs: docker logs bibliothek-web --tail 50"
+    if [ ${WAIT} -ge ${HEALTH_TIMEOUT} ]; then
+        log_error "Anwendung meldet sich nach ${HEALTH_TIMEOUT}s weder als healthy noch über /health."
+        log_error "Zustand:  docker inspect --format='{{json .State.Health}}' ${APP_CONTAINER}"
+        log_error "Logs:     docker logs ${APP_CONTAINER} --tail 50"
+        echo ""
+        docker logs "${APP_CONTAINER}" --tail 20 2>&1 | sed 's/^/    /'
         print_rollback_instructions
         exit 1
     fi
-    log_info "  ... noch ${WAIT}s gewartet"
+    log_info "  ... noch ${WAIT}s gewartet (Docker-Status: ${STATUS})"
 done
-
-log_ok "Anwendung ist healthy und läuft."
 
 # ── Schritt 5: Alte Backups aufräumen ─────────────────────────────────────────
 log_step "Schritt 5: Alte Backups aufräumen (älter als ${BACKUP_RETENTION_DAYS} Tage)"

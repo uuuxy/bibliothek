@@ -102,7 +102,17 @@ EXPOSE 8081
 ENV PORT=8081
 ENV DATABASE_URL=""
 
-HEALTHCHECK --interval=30s --timeout=3s CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/health || exit 1
+# Zwei Änderungen gegenüber "--interval=30s ... http://localhost":
+#
+#  * 127.0.0.1 statt localhost. Busybox-wget nimmt die erste Adresse, die die Auflösung
+#    liefert — auf Hosts mit IPv6 im Container ist das ::1, und wenn dort niemand
+#    lauscht, gilt der Container als krank, obwohl die Anwendung über IPv4 tadellos
+#    antwortet. Die Adresse ist hier bekannt; sie muss nicht aufgelöst werden.
+#  * start-period + kürzeres Intervall. Ohne start-period beginnt die erste Prüfung
+#    erst nach einem vollen Intervall; bis dahin steht "starting", und ein Deploy-Skript,
+#    das 60 s wartet, sieht ein gesundes System nie grün werden.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:$PORT/health || exit 1
 
 # Run the single-binary application
 CMD ["./main"]
