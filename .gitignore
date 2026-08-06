@@ -21,6 +21,12 @@ uploads/
 
 # Environment configurations
 .env
+# Auch die Sicherungskopien: Beim Schlüsselwechsel entsteht eine .env.bak-<datum>, und
+# die enthält dieselben Geheimnisse wie das Original (am 06.08.2026 wäre eine davon
+# beinahe mitcommittet worden).
+.env.bak*
+.env.backup*
+.env.*.bak
 *.local
 frontend/*.local
 

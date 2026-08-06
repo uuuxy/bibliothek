@@ -245,3 +245,22 @@ vor dem `DROP SCHEMA`).
 | `import_isbns.go` | Nachträglicher ISBN-Import in bestehende Titel. |
 | `migrate_photos.go` | Überträgt Schülerfotos aus Dateien (`<barcode>.jpg`) in die verschlüsselte Ablage. |
 | `monitor_stats.sh` | Protokolliert Systemkennzahlen über ~6 Stunden (Begleitung von Lasttests). |
+
+## `pruefe_secrets.sh` — Konfigurationsprüfung vor dem Deploy
+
+```bash
+./scripts/pruefe_secrets.sh                 # nutzt ./.env
+./scripts/pruefe_secrets.sh /opt/bibliothek/.env
+```
+
+Liest eine `.env` und meldet die Fehlkonfigurationen, die **still** bleiben: bekannte
+Default-Secrets aus dem Repository, fehlender `BACKUP_ENCRYPTION_KEY` (der nächtliche Job
+überspringt sich dann kommentarlos), `IMAP_HOST=mock` (akzeptiert jedes Passwort),
+ungesetztes `ENFORCE_PROD_SECRETS` oder `COOKIE_SECURE`.
+
+Das Skript **ändert nichts**. Exit-Code 0 = sauber, 1 = kritischer Befund.
+
+Bei einem Treffer auf `APP_ENCRYPTION_KEY` den Schlüssel **nicht einfach ersetzen** —
+Schülerfotos und das SMTP-Passwort wären verloren. Der Weg mit Umschlüsselung steht in
+[SECURITY.md](SECURITY.md#app_encryption_key-wechseln).
+

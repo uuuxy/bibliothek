@@ -54,8 +54,16 @@ services:
       - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
       - SMTP_SENDER=${SMTP_FROM}
+      # Diese Zeilen sind Pflicht, nicht Kür: Compose reicht ohne env_file AUSSCHLIESSLICH
+      # die hier gelisteten Schlüssel in den Container. Sie fehlten — der Backup-Job fand
+      # deshalb im Container nie einen Schlüssel und übersprang sich STILL, obwohl
+      # BACKUP_ENCRYPTION_KEY in der .env stand. Im Prod-Compose war genau das schon
+      # einmal derselbe Fehler.
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+      - BACKUP_DIR=${BACKUP_DIR:-/app/backups}
     volumes:
       - bibliothek_uploads_local:/app/uploads
+      - bibliothek_backups_local:/app/backups
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -66,6 +74,8 @@ services:
 volumes:
   postgres_data_local:
   bibliothek_uploads_local:
+  # Benanntes Volume, damit die verschlüsselten Dumps einen Container-Neubau überleben.
+  bibliothek_backups_local:
 
 networks:
   default: {}

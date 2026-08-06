@@ -96,6 +96,11 @@ FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheime
 JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.
 ```
 
+**Prüfen statt hoffen:** `./scripts/pruefe_secrets.sh /pfad/zur/.env` liest die Datei,
+ändert nichts und meldet genau die Fehlkonfigurationen, die im Betrieb still bleiben —
+Default-Secrets, fehlender Backup-Schlüssel, `IMAP_HOST=mock`, offene Produktionsschalter.
+Exit-Code 1 bei kritischem Befund, damit es sich in ein Deploy-Skript hängen lässt.
+
 **Checkliste vor dem ersten echten Prod-Deploy:** `ENFORCE_PROD_SECRETS=true` setzen und dazu echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS).
 
 > **`APP_ENCRYPTION_KEY` auf einem System mit Bestand ändern?** Nicht einfach
