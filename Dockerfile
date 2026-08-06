@@ -98,9 +98,24 @@ COPY --from=backend-builder /app/rotate-encryption-key .
 # Copy built Svelte static files
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Create non-privileged user, create uploads dir to inherit permissions, and give ownership
+# Create non-privileged user, create the volume mount points, and give ownership.
+#
+# BEIDE Verzeichnisse müssen hier existieren — /app/uploads UND /app/backups. Docker
+# übernimmt beim ersten Mounten eines leeren Named Volume Inhalt UND Eigentümer aus dem
+# Image. Fehlt das Verzeichnis im Image, legt Docker es selbst an: als root. Der Container
+# läuft aber als appuser (uid 1000) und kann dann nie hineinschreiben.
+#
+# Genau das war auf der Produktion der Fall (gefunden am 06.08.2026): /app/backups fehlte
+# hier, das Volume gehörte root:root mit drwxr-xr-x, und der nächtliche Backup-Job scheiterte
+# seit Anlegen des Volumes am 04.08. an "permission denied". BACKUP_ENCRYPTION_KEY war
+# gesetzt, pg_dump lag im Image — es fehlte nur das Schreibrecht. Der Job protokolliert den
+# Fehler (jobs/backup.go: "writing backup file failed"), aber jeder Container-Neustart
+# verwischt die Logzeile, und niemand liest sie.
+#
+# /app/uploads funktionierte deshalb, weil es hier steht. Der Unterschied zwischen beiden
+# war eine vergessene Zeile, kein Konzept.
 RUN adduser -D appuser && \
-    mkdir -p /app/uploads/fotos && \
+    mkdir -p /app/uploads/fotos /app/backups && \
     chown -R appuser:appuser /app
 
 # Switch context

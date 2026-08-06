@@ -111,6 +111,43 @@ jobs:
       - name: Build Docker image for scanning
         run: docker build -t bibliothek:scan .
 
+      # Gate gegen Laufzeitfehler, die kein Go-Test sehen kann.
+      #
+      # Anlass (06.08.2026): /app/backups fehlte im Dockerfile. Docker legte das
+      # Verzeichnis beim Mounten des Named Volume selbst an — als root. Der Container
+      # läuft als appuser, und der nächtliche Backup-Job scheiterte seit dem 04.08. an
+      # "permission denied". Auf der Produktion existierte dadurch KEIN einziges
+      # verschlüsseltes Backup. BACKUP_ENCRYPTION_KEY war gesetzt, pg_dump lag im Image,
+      # der Code war richtig — es fehlte ein Schreibrecht, das nur im echten Container
+      # sichtbar wird.
+      #
+      # Geprüft wird gegen ein FRISCHES Volume, weil genau das der Zustand auf einem neu
+      # aufgesetzten Server ist.
+      - name: Container-Smoke — Schreibrechte und Laufzeitwerkzeuge
+        run: |
+          set -euo pipefail
+          docker volume rm -f biblio-ci-backups biblio-ci-uploads 2>/dev/null || true
+
+          echo "→ Läuft der Container unprivilegiert?"
+          docker run --rm bibliothek:scan id | tee /dev/stderr | grep -q "uid=1000(appuser)"
+
+          echo "→ Sind die Werkzeuge da, die der Code per exec.Command aufruft?"
+          docker run --rm bibliothek:scan sh -c 'command -v pg_dump'
+
+          echo "→ Ist jedes Volume-Ziel für appuser beschreibbar?"
+          docker run --rm \
+            -v biblio-ci-backups:/app/backups \
+            -v biblio-ci-uploads:/app/uploads \
+            bibliothek:scan sh -c '
+              set -e
+              for d in /app/backups /app/uploads; do
+                touch "$d/.ci-probe" || { echo "FEHLER: $d ist für appuser nicht beschreibbar"; ls -ld "$d"; exit 1; }
+                rm -f "$d/.ci-probe"
+                echo "  ok: $d"
+              done'
+
+          docker volume rm -f biblio-ci-backups biblio-ci-uploads
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
