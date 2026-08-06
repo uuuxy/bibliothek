@@ -131,25 +131,22 @@
 					label="Voreingestellt beim Bestellen"
 				/>
 			</div>
-			<!-- Lieferanten wie Naacher etikettieren selbst: Sie bekommen zusätzlich das große
-			     Lernmittel-Etikett mitgeschickt und wählen über ihren eigenen Link die Größe.
-			     Bibliosys bekommt davon keine automatische Rückmeldung — die Bestellhistorie
-			     zeigt dafür einen manuellen Bestätigen-Schritt. -->
+			<!-- Der Bestelllink geht an genau EINEN Händler (Teil-Index
+			     idx_lieferanten_ein_bestelllink, Migration 065). Zwei Händler mit Link zur selben
+			     Bestellung wären ein stiller Fehler: Wer zuerst bestätigt, gewinnt. -->
 			<div class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4">
 				<label for="bietet-bestaetigung" class="cursor-pointer text-sm">
-					<span class="block font-semibold text-slate-700">
-						Lieferant bestätigt Bestellung selbst
-					</span>
+					<span class="block font-semibold text-slate-700">Bekommt den Bestelllink</span>
 					<span class="mt-0.5 block text-xs text-slate-500">
-						Etikettiert selbst (z. B. Naacher) — bekommt zusätzlich das große Lernmittel-Etikett
-						mitgeschickt. In der Bestellhistorie kann dann nachgetragen werden, welche Größe gewählt
-						und die Bestellung bestätigt wurde.
+						Der Händler wählt über den Link selbst, ob er große oder kleine Etiketten druckt, und
+						bestätigt damit die Bestellung — die Bestätigung erscheint automatisch in der
+						Bestellhistorie. Es kann immer nur einer sein; der bisherige verliert den Link.
 					</span>
 				</label>
 				<Switch
 					id="bietet-bestaetigung"
 					bind:checked={newBietetBestaetigung}
-					label="Lieferant bestätigt Bestellung selbst"
+					label="Bekommt den Bestelllink"
 				/>
 			</div>
 			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
@@ -177,7 +174,7 @@
 							<th class="py-2.5">Kundennummer</th>
 							<th class="py-2.5">Etikettendruck</th>
 							<th class="py-2.5">Vorauswahl</th>
-							<th class="py-2.5">Bestellbestätigung</th>
+							<th class="py-2.5">Bestelllink</th>
 							<!-- Klebt am rechten Rand des Scrollbereichs: Sieben Spalten sind breiter als
 							     der Platz, den die Tabelle bekommt. Ohne sticky steht "Bearbeiten" hinter
 							     dem sichtbaren Rand — der Knopf ist dann zwar im DOM, aber niemand findet
@@ -225,7 +222,7 @@
 									<td class="py-2 pr-2">
 										<Switch
 											bind:checked={editBietetBestaetigung}
-											label="Lieferant bestätigt Bestellung selbst ({s.name})"
+											label="Bekommt den Bestelllink ({s.name})"
 										/>
 									</td>
 									<td class="py-2 text-right whitespace-nowrap sticky right-0 bg-blue-50">
@@ -277,9 +274,9 @@
 										{#if s.bietet_bestellbestaetigung}
 											<span
 												class="text-sm font-semibold text-slate-700"
-												data-tip="Bekommt zusätzlich das große Lernmittel-Etikett und zeigt den Bestätigen-Schritt in der Bestellhistorie"
+												data-tip="Wählt über den Link die Etikettengröße und bestätigt die Bestellung selbst"
 											>
-												Extern
+												Bestelllink
 											</span>
 										{:else}
 											<span class="text-sm text-slate-300">—</span>

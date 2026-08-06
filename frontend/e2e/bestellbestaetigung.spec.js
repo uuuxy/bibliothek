@@ -15,6 +15,12 @@ import { seedSQL, querySQL, uniqueSuffix, uiLogin } from './helpers.js';
 function seedBestellungMitLink(token, { gueltigTage = 30 } = {}) {
 	const s = uniqueSuffix();
 	seedSQL(`
+		-- Erst räumen, dann setzen — genau wie setzeBestelllinkLieferant im Handler.
+		-- Den Bestelllink darf höchstens EINER tragen (idx_lieferanten_ein_bestelllink,
+		-- Migration 065); ohne diese Zeile bräche schon der zweite Seed in dieser Datei
+		-- mit einer Unique-Verletzung ab.
+		UPDATE lieferanten SET bietet_bestellbestaetigung = false WHERE bietet_bestellbestaetigung;
+
 		WITH l AS (
 			INSERT INTO lieferanten (name, email, kundennummer, bietet_bestellbestaetigung)
 			VALUES ('E2E-Naacher ${s}', 'e2e-${s}@example.invalid', 'K-${s}', true)

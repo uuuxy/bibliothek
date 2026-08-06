@@ -12,11 +12,23 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// haendlerMitBestaetigung legt einen Lieferanten mit/ohne bietet_bestellbestaetigung an.
+// haendlerMitBestaetigung legt einen Lieferanten mit/ohne Bestelllink an.
+//
+// Erst räumen, dann setzen — genau wie setzeBestelllinkLieferant im Handler. Den
+// Bestelllink darf höchstens EINER tragen (idx_lieferanten_ein_bestelllink, Migration
+// 065), und resetBestandsdaten leert die Lieferanten bewusst nicht. Ohne das Räumen
+// kollidierte der zweite Test im selben Paketlauf — grün einzeln, rot in der Suite.
 func haendlerMitBestaetigung(t *testing.T, pool *pgxpool.Pool, name string, bietetBestaetigung bool) string {
 	t.Helper()
+	ctx := context.Background()
+	if bietetBestaetigung {
+		if _, err := pool.Exec(ctx,
+			`UPDATE lieferanten SET bietet_bestellbestaetigung = false WHERE bietet_bestellbestaetigung`); err != nil {
+			t.Fatalf("bisherigen Bestelllink-Lieferanten räumen: %v", err)
+		}
+	}
 	var id string
-	err := pool.QueryRow(context.Background(), `
+	err := pool.QueryRow(ctx, `
 		INSERT INTO lieferanten (name, email, kundennummer, bietet_bestellbestaetigung)
 		VALUES ($1, $2, $3, $4) RETURNING id
 	`, name, name+"@example.invalid", "K-"+name, bietetBestaetigung).Scan(&id)
@@ -27,12 +39,23 @@ func haendlerMitBestaetigung(t *testing.T, pool *pgxpool.Pool, name string, biet
 }
 
 // bestellungFuerLieferant legt eine bestellungen_verlauf-Zeile für den Test an.
+//
+// Den Bestätigungs-Token bekommt die Bestellung genau dann, wenn der Lieferant den
+// Bestelllink trägt — dieselbe Kopplung wie in insertBestellverlauf. Ohne sie prüfte der
+// Test einen Zustand, den der Produktivcode nie erzeugt: eine Bestellung bei einem
+// Bestelllink-Händler, die selbst gar keinen Link bekommen hat.
 func bestellungFuerLieferant(t *testing.T, pool *pgxpool.Pool, lieferantID string) string {
 	t.Helper()
 	var id string
 	err := pool.QueryRow(context.Background(), `
-		INSERT INTO bestellungen_verlauf (lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare)
-		VALUES ($1, 'Test-Lieferant', 'test@example.invalid', 'K-1', 3) RETURNING id
+		INSERT INTO bestellungen_verlauf
+			(lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare,
+			 bestaetigungs_token_hash, token_gueltig_bis)
+		SELECT $1, 'Test-Lieferant', 'test@example.invalid', 'K-1', 3,
+		       CASE WHEN l.bietet_bestellbestaetigung THEN encode(sha256(gen_random_uuid()::text::bytea), 'hex') END,
+		       CASE WHEN l.bietet_bestellbestaetigung THEN now() + make_interval(days => 30) END
+		FROM lieferanten l WHERE l.id = $1
+		RETURNING id
 	`, lieferantID).Scan(&id)
 	if err != nil {
 		t.Fatalf("Bestellung anlegen: %v", err)

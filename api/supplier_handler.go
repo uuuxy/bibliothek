@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -60,16 +61,63 @@ type CreateSupplierRequest struct {
 // Standardlieferanten; an mehreren Arbeitsplätzen gleichzeitig ist das kein
 // theoretischer Fall (siehe docs zum Mehrplatzbetrieb).
 func setzeStandardLieferant(ctx context.Context, pool db.PgxPoolIface, id string) error {
+	return setzeExklusivesMerkmal(ctx, pool, merkmalStandard, id)
+}
+
+// setzeBestelllinkLieferant bestimmt den einen Lieferanten, der den Bestelllink bekommt.
+// Über diesen Link wählt er die Etikettengröße und bestätigt die Bestellung selbst.
+func setzeBestelllinkLieferant(ctx context.Context, pool db.PgxPoolIface, id string) error {
+	return setzeExklusivesMerkmal(ctx, pool, merkmalBestelllink, id)
+}
+
+// exklusivesMerkmal ist eine Eigenschaft, die höchstens EIN Lieferant tragen darf. Beide
+// Werte sind Konstanten aus diesem Paket und stammen nie aus einer Anfrage.
+type exklusivesMerkmal string
+
+const (
+	merkmalStandard    exklusivesMerkmal = "ist_standard"
+	merkmalBestelllink exklusivesMerkmal = "bietet_bestellbestaetigung"
+)
+
+// setzeExklusivesMerkmal gibt das Merkmal genau einem Lieferanten und nimmt es allen
+// anderen — in dieser Reihenfolge, in einer Transaktion.
+//
+// Die REIHENFOLGE ist der Schutz, nicht nur Kosmetik: Die Teil-Indizes
+// idx_lieferanten_ein_standard bzw. idx_lieferanten_ein_bestelllink lassen nur eine Zeile
+// mit true zu. Würde erst der neue gesetzt und danach der alte geräumt, bräche das UPDATE
+// mit einer Unique-Verletzung ab — und zwar erst beim zweiten Wechsel, also lange nach dem
+// Einbau. Deshalb zuerst räumen, dann setzen, beides in derselben Transaktion.
+//
+// Ohne Transaktion bliebe zwischen den beiden Schritten ein Moment ohne Träger; an
+// mehreren Arbeitsplätzen gleichzeitig ist das kein theoretischer Fall (siehe docs zum
+// Mehrplatzbetrieb).
+//
+// Das SQL steht je Merkmal wörtlich da, statt den Spaltennamen in einen String zu
+// formatieren: Eine zusammengesetzte Abfrage wäre hier zwar ungefährlich, aber sie nimmt
+// jedem Leser (und jedem Linter) die Möglichkeit, das ohne Nachdenken zu sehen.
+func setzeExklusivesMerkmal(ctx context.Context, pool db.PgxPoolIface, merkmal exklusivesMerkmal, id string) error {
+	var raeumen, setzen string
+	switch merkmal {
+	case merkmalStandard:
+		raeumen = `UPDATE lieferanten SET ist_standard = false WHERE ist_standard AND id <> $1`
+		setzen = `UPDATE lieferanten SET ist_standard = true WHERE id = $1`
+	case merkmalBestelllink:
+		raeumen = `UPDATE lieferanten SET bietet_bestellbestaetigung = false WHERE bietet_bestellbestaetigung AND id <> $1`
+		setzen = `UPDATE lieferanten SET bietet_bestellbestaetigung = true WHERE id = $1`
+	default:
+		return fmt.Errorf("unbekanntes exklusives Lieferanten-Merkmal %q", merkmal)
+	}
+
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	if _, err := tx.Exec(ctx, `UPDATE lieferanten SET ist_standard = false WHERE ist_standard AND id <> $1`, id); err != nil {
+	if _, err := tx.Exec(ctx, raeumen, id); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(ctx, `UPDATE lieferanten SET ist_standard = true WHERE id = $1`, id); err != nil {
+	if _, err := tx.Exec(ctx, setzen, id); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -129,20 +177,27 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 		var newID string
 		var erstelltAm time.Time
 		err := s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO lieferanten (name, email, kundennummer, liefert_mit_barcode, bietet_bestellbestaetigung)
-			VALUES ($1, $2, $3, $4, $5)
+			INSERT INTO lieferanten (name, email, kundennummer, liefert_mit_barcode)
+			VALUES ($1, $2, $3, $4)
 			RETURNING id, erstellt_am
-		`, req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode, req.BietetBestellbestaetigung).Scan(&newID, &erstelltAm)
+		`, req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode).Scan(&newID, &erstelltAm)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Bewusst NICHT im INSERT: Wäre schon ein anderer Lieferant Standard, bräche der
-		// Teil-Index den Anlegevorgang ab. Erst anlegen, dann umschalten — dabei räumt
-		// setzeStandardLieferant den bisherigen weg.
+		// Beide exklusiven Merkmale bewusst NICHT im INSERT: Trägt sie schon ein anderer
+		// Lieferant, bräche der jeweilige Teil-Index den Anlegevorgang ab — der neue
+		// Lieferant wäre gar nicht erst entstanden, nur weil ein Haken gesetzt war. Erst
+		// anlegen, dann umschalten; dabei räumt der Setzer den bisherigen Träger weg.
 		if req.IstStandard {
 			if err := setzeStandardLieferant(ctx, s.DB.Pool, newID); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+		if req.BietetBestellbestaetigung {
+			if err := setzeBestelllinkLieferant(ctx, s.DB.Pool, newID); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -184,8 +239,8 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	tag, err := s.DB.Pool.Exec(ctx,
-		`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3, liefert_mit_barcode = $4, bietet_bestellbestaetigung = $5 WHERE id = $6`,
-		req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode, req.BietetBestellbestaetigung, id,
+		`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3, liefert_mit_barcode = $4 WHERE id = $5`,
+		req.Name, req.Email, req.CustomerNumber, req.LiefertMitBarcode, id,
 	)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -205,6 +260,21 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
+	}
+
+	// Beim Bestelllink ist das ABSCHALTEN dagegen erlaubt — anders als beim Standard.
+	// „Kein Standardlieferant" wäre ein Rückschritt, „kein Händler mit Bestelllink" ist
+	// ein völlig normaler Betriebszustand: Wer aufhört, über Naacher zu bestellen, muss
+	// den Link auch wieder loswerden können, ohne ihn erst jemand anderem zu geben.
+	if req.BietetBestellbestaetigung {
+		if err := setzeBestelllinkLieferant(ctx, s.DB.Pool, id); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+	} else if _, err := s.DB.Pool.Exec(ctx,
+		`UPDATE lieferanten SET bietet_bestellbestaetigung = false WHERE id = $1`, id); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
 	}
 
 	RespondJSON(w, http.StatusOK, SupplierResponse{

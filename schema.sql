@@ -611,6 +611,12 @@ CREATE TABLE lieferanten (
 -- welcher gewinnt.
 CREATE UNIQUE INDEX idx_lieferanten_ein_standard ON lieferanten (ist_standard) WHERE ist_standard;
 
+-- Höchstens EINER bekommt den Bestelllink (Migration 065). Über den Link wählt der
+-- Händler die Etikettengröße und bestätigt die Bestellung. Zwei Händler mit Link zur
+-- selben Bestellung wären ein stiller Fehler: Wer zuerst bestätigt, gewinnt, der andere
+-- läuft in ein 409.
+CREATE UNIQUE INDEX idx_lieferanten_ein_bestelllink ON lieferanten (bietet_bestellbestaetigung) WHERE bietet_bestellbestaetigung;
+
 
 -- Table: bestellungen_verlauf (Order history — one record per submitted order)
 CREATE TABLE bestellungen_verlauf (
@@ -796,7 +802,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('061_inventur_verluste_gefunden.sql'),
 ('062_lieferant_bestellbestaetigung.sql'),
 ('063_bestellbestaetigung_link.sql'),
-('064_bestellungen_datum_index.sql')
+('064_bestellungen_datum_index.sql'),
+('065_lieferant_ein_bestelllink.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

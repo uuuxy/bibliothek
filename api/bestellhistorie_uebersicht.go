@@ -25,13 +25,23 @@ func (s *Server) GetBestellhistorieUebersichtHandler() http.HandlerFunc {
 		var u BestellhistorieUebersicht
 		// Eine Abfrage, vier Zahlen: Aggregate über den Bestellkopf sind billig, die teure
 		// Seite waren die Positionen — und die braucht die Übersicht nicht.
+		//
+		// „Wartet auf Bestätigung" hängt am TOKEN der Bestellung, nicht am heutigen Haken
+		// des Lieferanten. Der Token entsteht beim Bestellen genau dann, wenn der Lieferant
+		// den Bestelllink trägt (insertBestellverlauf), und bleibt danach unverändert —
+		// die Bestellung IST mit Link rausgegangen, daran ändert sich später nichts.
+		//
+		// Über den Haken gezählt, verschwänden diese Bestellungen still aus der Zahl,
+		// sobald der Bestelllink an einen anderen Händler wandert: Genau eine Zeile hält
+		// ihn (idx_lieferanten_ein_bestelllink), also verliert ihn der bisherige dabei —
+		// samt seiner offenen Bestellungen, auf deren Bestätigung weiterhin gewartet wird.
+		// Die Listenansicht rechnet aus demselben Grund schon länger über den Token.
 		err := s.DB.Pool.QueryRow(r.Context(), `
 			SELECT count(*), coalesce(sum(b.gesamtbetrag), 0), coalesce(sum(b.anzahl_exemplare), 0),
 			       count(*) FILTER (
-			           WHERE b.bestaetigt_am IS NULL AND coalesce(l.bietet_bestellbestaetigung, false)
+			           WHERE b.bestaetigt_am IS NULL AND b.bestaetigungs_token_hash IS NOT NULL
 			       )
 			FROM bestellungen_verlauf b
-			LEFT JOIN lieferanten l ON l.id = b.lieferant_id
 		`).Scan(&u.Gesamt, &u.Gesamtbetrag, &u.GesamtExemplare, &u.OffeneBestaetigungen)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
