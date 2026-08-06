@@ -66,14 +66,49 @@ Repository nachzulesen ist:
 ```bash
 cd /opt/bibliothek
 
-# Zufällige Geheimnisse direkt in die .env schreiben
+# Zufällige Geheimnisse direkt in die .env schreiben.
+# ÜBERALL -hex, NIRGENDS -base64 — die Begründung steht direkt darunter.
 {
-  echo "POSTGRES_PASSWORD=$(openssl rand -base64 24)"
+  echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
   echo "JWT_SECRET=$(openssl rand -hex 32)"
   echo "APP_ENCRYPTION_KEY=$(openssl rand -hex 32)"      # 64 Hex = 32 Byte
-  echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -base64 32)"
+  echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -hex 32)"
 } >> .env
 ```
+
+> **Warum `-hex` und nicht `-base64`?** `POSTGRES_PASSWORD` landet unverändert in der
+> `DATABASE_URL`:
+>
+> ```
+> postgres://postgres:PASSWORT@postgres-db:5432/bibliothek?sslmode=disable
+> ```
+>
+> Base64 erzeugt `/`, `+` und `=`. Ein `/` im Passwort beendet für den URL-Parser den
+> Host-Teil, ein `+` verschiebt den Rest — der Server startet dann nicht mehr:
+>
+> ```
+> failed to parse as URL (invalid port ":sGWO+wgLlTIj" after host)
+> ```
+>
+> Genau das ist am 06.08.2026 auf der Produktion passiert: Der Passwortwechsel lief
+> scheinbar sauber durch (`ALTER ROLE`, Container „Started", `pruefe_secrets.sh` meldete
+> **alles grün**) — und die Anwendung war trotzdem unten. Die Konfigurationsprüfung liest
+> die Datei, nicht die Verbindung; sie kann diesen Fehler nicht sehen.
+>
+> `-hex` liefert nur `0-9a-f` und ist in jeder URL unverändert gültig. Für die anderen
+> Werte wäre Base64 unschädlich, aber eine Regel ohne Ausnahme ist leichter zu befolgen
+> als eine mit.
+
+**Nach jedem Passwortwechsel am Live-Pfad prüfen, nicht an der Datei** — sonst wiederholt
+sich genau der Fall oben:
+
+```bash
+docker compose up -d
+docker logs bibliothek-backend --since 2m 2>&1 | grep -iE "pool|error|fatal"
+curl -s -o /dev/null -w "health: %{http_code}\n" https://DEINE-DOMAIN/health
+```
+
+Richtig ist: `Database connection pool successfully initialized.` und `health: 200`.
 
 Den Rest von Hand ergänzen — das sind Einstellungen, keine Geheimnisse:
 

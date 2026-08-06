@@ -67,6 +67,23 @@ mindestlaenge() {
 	esac
 }
 
+# zerlegt_die_dsn meldet Zeichen, die in einer URL eine Bedeutung haben. POSTGRES_PASSWORD
+# landet unverändert in postgres://postgres:PASSWORT@postgres-db:5432/bibliothek — ein "/"
+# beendet dort den Host-Teil, ein "+" verschiebt den Rest, ein "@" trennt Anmeldedaten von
+# Host.
+#
+# Anlass (06.08.2026): Ein Passwortwechsel mit `openssl rand -base64 24` erzeugte "/" und
+# "+". ALTER ROLE lief durch, der Container meldete "Started", und DIESES Skript meldete
+# "Alles in Ordnung" — die Anwendung war trotzdem unten:
+#   failed to parse as URL (invalid port ":sGWO+wgLlTIj" after host)
+# Eine Konfigurationsprüfung, die nur Länge und Bekanntheit misst, sieht so etwas nicht.
+zerlegt_die_dsn() {
+	case "$1" in
+	*/* | *+* | *@* | *\?* | *\#* | *%*) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
 for var in JWT_SECRET APP_ENCRYPTION_KEY POSTGRES_PASSWORD; do
 	wert="$(lies "$var")"
 	min="$(mindestlaenge "$var")"
@@ -79,6 +96,9 @@ for var in JWT_SECRET APP_ENCRYPTION_KEY POSTGRES_PASSWORD; do
 	elif [ "${#wert}" -lt "$min" ]; then
 		kritisch "$var ist nur ${#wert} Zeichen lang (erwartet: >= $min)" \
 			"Gesetzt heißt nicht sicher — ein kurzes Geheimnis ist ratbar."
+	elif [ "$var" = "POSTGRES_PASSWORD" ] && zerlegt_die_dsn "$wert"; then
+		kritisch "POSTGRES_PASSWORD enthält ein Zeichen, das die DATABASE_URL zerlegt" \
+			"Das Passwort steht unverändert in postgres://postgres:PASSWORT@host:5432/db. Die Zeichen / + @ ? # beenden dort den Host- oder Passwortteil, und der Server startet nicht mehr ('failed to parse as URL'). Neu erzeugen mit: openssl rand -hex 24"
 	else
 		gut "$var ist gesetzt (${#wert} Zeichen)"
 	fi
