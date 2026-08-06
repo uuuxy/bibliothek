@@ -193,7 +193,7 @@
 	{@const isBarcode =
 		el.type === 'barcode' || (typeof el.content === 'string' && el.content.includes('{{barcode}}'))}
 	{@const isText =
-		!isBarcode && ['header', 'address', 'name', 'details', 'validity', 'text'].includes(el.type)}
+		!isBarcode && ['header', 'address', 'name', 'validity', 'text'].includes(el.type)}
 	{@const isImage = !isBarcode && (el.type === 'image' || el.type === 'logo')}
 	{@const isPhoto = !isBarcode && el.type === 'photo'}
 
@@ -224,8 +224,6 @@
 			>
 				{#if el.type === 'name'}
 					{student ? `${student.vorname} ${student.nachname}` : 'Max Mustermann'}
-				{:else if el.type === 'details'}
-					{student ? `Klasse: ${student.klasse}` : 'Klasse: 9a'}
 				{:else if el.type === 'validity'}
 					{`Gültig bis: 31.07.${student?.abgaenger_jahr ?? '–'}`}
 				{:else}

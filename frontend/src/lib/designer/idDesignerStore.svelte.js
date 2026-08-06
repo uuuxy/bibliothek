@@ -7,7 +7,7 @@
  *
  * --- Element Schema ---
  * id          string   unique within the side
- * type        string   'text'|'name'|'details'|'validity'|'header'|'address'|
+ * type        string   'text'|'name'|'validity'|'header'|'address'|
  *                      'image'|'logo'|'photo'|'barcode'
  * content     string   static text or base64 data-url (image)
  * x, y        number   position in mm from top-left
@@ -138,19 +138,6 @@ export function defaultFrontElements() {
 			show: true,
 			proportional: false,
 			style: textStyle(10, '#0f172a', 'left', 'bold')
-		},
-		{
-			id: 'details',
-			type: 'details',
-			content: '',
-			x: 30,
-			y: 29,
-			width: 50,
-			height: 6,
-			zIndex: 1,
-			show: true,
-			proportional: false,
-			style: textStyle(8, '#475569', 'left', 'normal')
 		},
 		{
 			id: 'validity',
@@ -444,7 +431,20 @@ export function applyDesign(data) {
 function applySeite(ziel, quelle) {
 	if (!quelle || typeof quelle !== 'object') return;
 	if (Array.isArray(quelle.elements)) {
-		ziel.elements = quelle.elements;
+		// Die Klassenzeile ('details') wird beim Laden ENTFERNT, nicht nur ausgeblendet.
+		//
+		// Ein Ausweis mit Klasse müsste jedes Schuljahr neu gedruckt werden — für eine
+		// Karte, die sonst die ganze Schulzeit gilt, ist das sinnlos. Der Ausweis trägt
+		// deshalb Name, Foto und Barcode; die Klasse steht im System, wo sie sich ohne
+		// Nachdruck ändern lässt.
+		//
+		// Der Filter muss hier stehen und nicht nur in defaultFrontElements(): Das Design
+		// wird zentral gespeichert (alle Arbeitsplätze teilen eines). Eine geänderte
+		// Vorgabe erreicht eine laufende Installation nie, weil applyDesign() die
+		// Elemente aus der Datenbank lädt. Ohne diese Zeile trüge jede bestehende
+		// Installation die Klassenzeile für immer weiter — derselbe Weg, auf dem schon
+		// der Musterstadt-Kopf hängenblieb.
+		ziel.elements = quelle.elements.filter((/** @type {any} */ el) => el?.type !== 'details');
 	}
 	if (typeof quelle.theme === 'string' && quelle.theme.trim() !== '') {
 		ziel.theme = quelle.theme;

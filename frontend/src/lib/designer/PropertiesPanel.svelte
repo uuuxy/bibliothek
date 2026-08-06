@@ -23,10 +23,10 @@
 	);
 
 	const isTextType = $derived(
-		el && ['header', 'address', 'name', 'details', 'validity', 'text'].includes(el.type)
+		el && ['header', 'address', 'name', 'validity', 'text'].includes(el.type)
 	);
 	const isImageType = $derived(el && (el.type === 'image' || el.type === 'logo'));
-	const isDynamic = $derived(el && ['name', 'details', 'validity'].includes(el.type));
+	const isDynamic = $derived(el && ['name', 'validity'].includes(el.type));
 
 	const fontFamilies = [
 		{ label: 'System (Standard)', value: 'inherit' },
@@ -76,7 +76,7 @@
 	{:else}
 		<div class="flex items-center justify-between">
 			<h3 class="text-xs font-medium text-slate-600">{el.id}</h3>
-			{#if !['header', 'address', 'logo', 'photo', 'name', 'details', 'validity', 'barcode'].includes(el.id)}
+			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
 				<button
 					onclick={handleDelete}
 					class="text-slate-300 hover:text-rose-500 transition-colors p-1"
