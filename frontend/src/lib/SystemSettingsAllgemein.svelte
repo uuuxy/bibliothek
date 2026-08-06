@@ -99,16 +99,27 @@
 	<section class="border-b border-slate-200 pb-8">
 		{@render sectionHeader(
 			'Schule',
-			'Erscheint auf jedem Buchetikett und als Briefkopf in Mahnungen, Bestellungen und Berichten. Ein leer gelassenes Feld bleibt unverändert — bereits gespeicherte Angaben werden nicht gelöscht.'
+			'Erscheint auf jedem Buchetikett, auf dem Schülerausweis und als Briefkopf in Mahnungen, Bestellungen und Berichten. Grauer Text ist ein Beispiel, kein gespeicherter Wert — steht hier nichts Schwarzes, ist das Feld leer. Ein leer gelassenes Feld bleibt beim Speichern unverändert; bereits gespeicherte Angaben werden nicht gelöscht.'
 		)}
+		<!-- Platzhalter bewusst als Musterdaten, NICHT als die echten Schuldaten.
+		     Bis zum 06.08.2026 stand hier "Philipp-Reis-Schule, Friedrichsdorf",
+		     "Hoher Weg 29", "61381" und "Friedrichsdorf" — also genau das, was
+		     eingetragen gehört. Zusammen mit dem Hinweis "leer lassen ändert nichts"
+		     las sich das Formular wie ausgefüllt, und niemand trug etwas ein. In der
+		     Datenbank standen bis dahin leere Strings, und der Schülerausweis zeigte
+		     weiter "STÄDTISCHES GYMNASIUM MUSTERSTADT" — die Selbstheilung
+		     (wendeSchulstammdatenAn) ersetzt den Musterkopf nur, wenn ein Schulname
+		     hinterlegt IST. Ein Platzhalter, der aussieht wie ein Wert, ist kein Hinweis,
+		     sondern eine Falle. Die Muster hier spiegeln jetzt den Ausweis-Platzhalter,
+		     damit die Verbindung erkennbar ist. -->
 		<div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
 			<SettingField
 				bind:value={schuleName}
 				label="Name der Schule"
 				type="text"
 				maxlength={120}
-				placeholder="Philipp-Reis-Schule, Friedrichsdorf"
-				hint="Erste Zeile auf dem Buchetikett."
+				placeholder="z. B. Städtisches Gymnasium Musterstadt"
+				hint="Erste Zeile auf dem Buchetikett und Kopfzeile des Schülerausweises."
 			/>
 			<SettingField
 				bind:value={etikettEigentumsvermerk}
@@ -123,7 +134,7 @@
 				label="Straße und Hausnummer"
 				type="text"
 				maxlength={120}
-				placeholder="Hoher Weg 29"
+				placeholder="z. B. Musterstraße 12"
 			/>
 			<!-- Keine Kosmetik: Aus dieser Adresse entsteht der Bestätigungs-Link, den
 			     Lieferanten mit der Bestellmail bekommen. Fehlt sie, geht die Bestellung
@@ -143,7 +154,7 @@
 					label="PLZ"
 					type="text"
 					maxlength={10}
-					placeholder="61381"
+					placeholder="12345"
 				/>
 				<div class="col-span-2">
 					<SettingField
@@ -151,7 +162,7 @@
 						label="Ort"
 						type="text"
 						maxlength={80}
-						placeholder="Friedrichsdorf"
+						placeholder="Musterstadt"
 					/>
 				</div>
 			</div>
