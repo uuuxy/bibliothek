@@ -11,6 +11,7 @@
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
+	import { abonniere } from './liveEvents.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 
 	let { onSelectBook, role = '' } = $props();
@@ -48,11 +49,13 @@
 	});
 
 	onMount(() => {
-		// SSE für Live-Aktualisierung des Schülerprofils
-		const source = new EventSource('/events');
-		source.addEventListener('action', (e) => {
+		// Live-Aktualisierung des Schülerprofils: nur abonnieren, nicht verbinden.
+		// Die Leitung gehört der Sitzung (liveEvents.js, aufgebaut vom Auth-Store) —
+		// eine eigene aufzumachen hiesse, sie beim Verlassen der Ansicht auch wieder
+		// zuzumachen, und das nähme sie allen anderen weg.
+		const abmelden = abonniere('action', (e) => {
 			try {
-				const actionData = JSON.parse(/** @type {any} */ (e).data);
+				const actionData = JSON.parse(e.data);
 				if (omniboxStore.activeStudent && actionData.student_id === omniboxStore.activeStudent.id) {
 					studentProfileComponent?.reloadProfile();
 				}
@@ -63,9 +66,7 @@
 
 		// Offline / Online Erkennung is now handled globally in offlineSync.svelte.js
 
-		return () => {
-			source.close();
-		};
+		return abmelden;
 	});
 
 	$effect(() => {
@@ -164,95 +165,97 @@
 		class="relative z-10 w-full mx-auto flex flex-1 flex-col items-center space-y-6 pt-4 justify-start"
 	>
 		<div class="w-full sticky -top-4 z-30 bg-slate-50 py-4">
-		<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst rounded-full und
+			<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst rounded-full und
 		     bewusst 48 px statt der 36-px-Control-Höhe — das Scanfeld ist das globale Werkzeug
 		     des Kiosks und soll sich von den eckigen Datenfeldern abheben. Der Container trägt
 		     Fläche, Rahmen und Fokus; Lupe, Feld und Kamera-Knopf sind seine Flex-Kinder.
 		     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
-		<form
-			onsubmit={(e) => omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
-			class="group relative flex items-center w-full h-12 px-5 rounded-full border transition-colors no-print {omniboxStore.isShaking
-				? 'animate-shake'
-				: ''} {farbZustand}"
-		>
-			<OmniboxInput
-				bind:queryVal={omniboxStore.queryVal}
-				isDropdownOpen={omniboxStore.isDropdownOpen}
-				totalDropdownItems={omniboxStore.totalDropdownItems}
-				isActive={omniboxStore.isActive}
-				showCamera={omniboxStore.showCamera}
-				onInput={omniboxStore.handleInput}
-				onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
-				onIndexChange={(idx) => (omniboxStore.selectedDropdownIndex = idx)}
-				onEscape={() => (omniboxStore.isDropdownOpen = false)}
-				onToggleCamera={omniboxStore.showCamera ? stopCamera : startCamera}
-			/>
-
-			{#if omniboxStore.isDropdownOpen && omniboxStore.totalDropdownItems > 0}
-				<OmniboxResults
-					unifiedSearchResults={omniboxStore.unifiedSearchResults}
-					selectedDropdownIndex={omniboxStore.selectedDropdownIndex}
-					onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
-				/>
-			{/if}
-		</form>
-
-		{#if omniboxStore.errorMessage}
-			<div class="mt-3 p-3 bg-red-600 text-white text-center">
-				{omniboxStore.errorMessage}
-			</div>
-		{/if}
-	</div>
-
-	<!-- HTML5 Kamera-Scanner (Mobile) -->
-	{#if omniboxStore.showCamera}
-		<CameraScanner
-			{stopCamera}
-			bind:queryVal={omniboxStore.queryVal}
-			submitAction={(e) =>
-				omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
-		/>
-	{/if}
-
-	{#if omniboxStore.activeStudent}
-		{#if omniboxStore.lastFremdrueckgabe}
-			<!-- Eine Betonung, nicht vier: Der entscheidende Teil ist, auf wen NICHT
-			     gebucht wurde. Wenn jedes zweite Wort fett ist, betont keines mehr. -->
-			<div
-				class="w-full max-w-xl p-3 bg-amber-50 border border-amber-100 text-amber-800 text-xs flex items-center space-x-2 no-print mb-2"
+			<form
+				onsubmit={(e) =>
+					omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
+				class="group relative flex items-center w-full h-12 px-5 rounded-full border transition-colors no-print {omniboxStore.isShaking
+					? 'animate-shake'
+					: ''} {farbZustand}"
 			>
-				<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
-				<span
-					>Fremdrückgabe: Buch war auf {omniboxStore.lastFremdrueckgabe.vorbesitzerName} verbucht und
-					wurde dort zurückgegeben —
-					<strong class="font-medium">nicht auf {omniboxStore.activeStudent.vorname} gebucht</strong
-					>. Erneut scannen, um es auszuleihen.</span
-				>
-			</div>
+				<OmniboxInput
+					bind:queryVal={omniboxStore.queryVal}
+					isDropdownOpen={omniboxStore.isDropdownOpen}
+					totalDropdownItems={omniboxStore.totalDropdownItems}
+					isActive={omniboxStore.isActive}
+					showCamera={omniboxStore.showCamera}
+					onInput={omniboxStore.handleInput}
+					onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
+					onIndexChange={(idx) => (omniboxStore.selectedDropdownIndex = idx)}
+					onEscape={() => (omniboxStore.isDropdownOpen = false)}
+					onToggleCamera={omniboxStore.showCamera ? stopCamera : startCamera}
+				/>
+
+				{#if omniboxStore.isDropdownOpen && omniboxStore.totalDropdownItems > 0}
+					<OmniboxResults
+						unifiedSearchResults={omniboxStore.unifiedSearchResults}
+						selectedDropdownIndex={omniboxStore.selectedDropdownIndex}
+						onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
+					/>
+				{/if}
+			</form>
+
+			{#if omniboxStore.errorMessage}
+				<div class="mt-3 p-3 bg-red-600 text-white text-center">
+					{omniboxStore.errorMessage}
+				</div>
+			{/if}
+		</div>
+
+		<!-- HTML5 Kamera-Scanner (Mobile) -->
+		{#if omniboxStore.showCamera}
+			<CameraScanner
+				{stopCamera}
+				bind:queryVal={omniboxStore.queryVal}
+				submitAction={(e) =>
+					omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
+			/>
 		{/if}
-		<StudentProfile
-			bind:this={studentProfileComponent}
-			student={omniboxStore.activeStudent}
-			{role}
-			defaultTab="ausleihen"
-			onDeselect={() => {
-				omniboxStore.activeStudent = null;
-				omniboxStore.lastFremdrueckgabe = null;
-			}}
-			onReturnClick={(barcode) => {
-				omniboxStore.queryVal = barcode;
-				omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile());
-			}}
-		/>
-	{:else if omniboxStore.activeTeacher}
-		<OmniboxTeacherCard
-			teacher={omniboxStore.activeTeacher}
-			onDeselect={() => {
-				omniboxStore.activeTeacher = null;
-				omniboxStore.lastFremdrueckgabe = null;
-			}}
-		/>
-	{/if}
+
+		{#if omniboxStore.activeStudent}
+			{#if omniboxStore.lastFremdrueckgabe}
+				<!-- Eine Betonung, nicht vier: Der entscheidende Teil ist, auf wen NICHT
+			     gebucht wurde. Wenn jedes zweite Wort fett ist, betont keines mehr. -->
+				<div
+					class="w-full max-w-xl p-3 bg-amber-50 border border-amber-100 text-amber-800 text-xs flex items-center space-x-2 no-print mb-2"
+				>
+					<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+					<span
+						>Fremdrückgabe: Buch war auf {omniboxStore.lastFremdrueckgabe.vorbesitzerName} verbucht und
+						wurde dort zurückgegeben —
+						<strong class="font-medium"
+							>nicht auf {omniboxStore.activeStudent.vorname} gebucht</strong
+						>. Erneut scannen, um es auszuleihen.</span
+					>
+				</div>
+			{/if}
+			<StudentProfile
+				bind:this={studentProfileComponent}
+				student={omniboxStore.activeStudent}
+				{role}
+				defaultTab="ausleihen"
+				onDeselect={() => {
+					omniboxStore.activeStudent = null;
+					omniboxStore.lastFremdrueckgabe = null;
+				}}
+				onReturnClick={(barcode) => {
+					omniboxStore.queryVal = barcode;
+					omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile());
+				}}
+			/>
+		{:else if omniboxStore.activeTeacher}
+			<OmniboxTeacherCard
+				teacher={omniboxStore.activeTeacher}
+				onDeselect={() => {
+					omniboxStore.activeTeacher = null;
+					omniboxStore.lastFremdrueckgabe = null;
+				}}
+			/>
+		{/if}
 	</div>
 </div>
 

@@ -6,6 +6,7 @@
 	import AbgaengerTabelle from './components/AbgaengerTabelle.svelte';
 	import AbgaengerKopfzeile from './components/AbgaengerKopfzeile.svelte';
 	import * as dienst from './abgaengerDienst.js';
+	import { abonniere } from './liveEvents.js';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function openProfile(student) {
@@ -111,12 +112,10 @@
 		// Initial fetch
 		fetchGraduates();
 
-		// Listen to Go SSE events for instant UI synchronization
-		const source = new EventSource('/events');
-
-		// When a book is returned or transferred via the Omnibox,
-		// refetch the graduates list to verify if the student is cleared.
-		source.addEventListener('action', (e) => {
+		// Live-Abgleich über die gemeinsame Leitung (liveEvents.js): Wird an einem
+		// anderen Arbeitsplatz ein Buch zurückgegeben, muss der Abgänger hier von
+		// selbst aus der Liste fallen.
+		const abmelden = abonniere('action', (e) => {
 			try {
 				const actionData = JSON.parse(e.data);
 				if (actionData.event === 'rueckgabe' || actionData.event === 'fremdrueckgabe') {
@@ -127,9 +126,7 @@
 			}
 		});
 
-		return () => {
-			source.close();
-		};
+		return abmelden;
 	});
 </script>
 

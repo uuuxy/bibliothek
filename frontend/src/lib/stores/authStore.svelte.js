@@ -1,5 +1,6 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
 import { apiFetch } from '../apiFetch.js';
+import { abonniere, trenne, verbinde } from '../liveEvents.js';
 
 class AuthStore {
 	isLoggedIn = $state(false);
@@ -10,12 +11,13 @@ class AuthStore {
 	lastHeartbeatTime = $state(Date.now());
 	loginEmail = $state('');
 	loginPassword = $state('');
-	sseSource = $state(/** @type {any} */ (null));
 	loginError = $state(/** @type {string | null} */ (null));
 	isLoggingIn = $state(false);
 
 	/** @type {ReturnType<typeof setInterval> | null} */
 	#refreshTimer = null;
+	/** @type {Array<() => void>} Abmeldungen der Herzschlag-Zuhörer. */
+	#abmeldungen = [];
 
 	// Sliding Session: Der Server erneuert das Cookie erst bei <50% Restlaufzeit
 	// (12h-Token → Erneuerung frühestens nach 6h). Der 30-Minuten-Tick ist also
@@ -42,26 +44,21 @@ class AuthStore {
 		}
 	}
 
+	// Die Verbindung selbst gehört liveEvents.js — hier hängt nur der Herzschlag daran.
+	//
+	// Frische kommt ausschließlich von echten Server-Signalen (connected/ping). Ob wir
+	// offline sind, entscheidet allein der 25s-Checker in App.svelte — ein transienter
+	// Fehler (Druckdialog, Standby, Netzwechsel) darf das Vollbild-Overlay nicht sofort
+	// auslösen.
 	connectSSE() {
-		if (this.sseSource) this.sseSource.close();
-		const source = new EventSource('/events');
-		this.sseSource = source;
-		// Frische kommt ausschließlich von echten Server-Signalen (connected/ping).
-		// Ob wir offline sind, entscheidet allein der 25s-Checker in App.svelte —
-		// ein transienter onerror (Druckdialog, Sleep, Reconnect-Race) darf das
-		// Vollbild-Overlay nicht sofort auslösen.
+		verbinde();
+		if (this.#abmeldungen.length > 0) return; // Zuhörer hängen schon.
+
 		const markAlive = () => {
 			this.lastHeartbeatTime = Date.now();
 			this.heartbeatOk = true;
 		};
-		source.addEventListener('connected', markAlive);
-		source.addEventListener('ping', markAlive);
-		source.onerror = () => {
-			// Nur neu verbinden — keine Zustandsänderung (siehe oben)
-			setTimeout(() => {
-				if (this.isLoggedIn) this.connectSSE();
-			}, 2000);
-		};
+		this.#abmeldungen.push(abonniere('connected', markAlive), abonniere('ping', markAlive));
 	}
 
 	/**
@@ -178,10 +175,12 @@ class AuthStore {
 		appState.adminAuthenticated = false;
 		appState.guestAuthenticated = false;
 		this.stopSessionRefresh();
-		if (this.sseSource) {
-			this.sseSource.close();
-			this.sseSource = null;
-		}
+		// Verbindung UND jeden geplanten Wiederaufbau beenden: Nach der Abmeldung
+		// antwortet /events nur noch mit 401, und ein weiterlaufender Wiederaufbau
+		// klopfte im Hintergrund weiter an.
+		trenne();
+		for (const abmelden of this.#abmeldungen) abmelden();
+		this.#abmeldungen = [];
 		if (onLogoutCallback) onLogoutCallback();
 	}
 }
