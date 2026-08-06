@@ -42,12 +42,25 @@ COPY mailservice/ ./mailservice/
 COPY pdf/ ./pdf/
 COPY internal/ ./internal/
 COPY pkg/ ./pkg/
+COPY cmd/ ./cmd/
 
 # Install build-base for WebP CGO compilation
 RUN apk add --no-cache build-base
 
 # Compile static Go binary with CGO enabled
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main main.go
+
+# Der Schlüsselwechsel gehört dorthin, wo die Daten sind.
+#
+# Ohne dieses Binary war das Werkzeug auf dem Server nicht ausführbar: Der Runner
+# enthält kein Go, und cmd/ lag nicht einmal im Build-Kontext. Ein Werkzeug, das man
+# genau dort nicht starten kann, wo man es braucht, ist keines — aufgefallen beim
+# ersten echten Einsatz auf dem Schulserver am 06.08.2026.
+#
+# Kein zusätzliches Risiko: Das Kommando liest APP_ENCRYPTION_KEY aus der Umgebung,
+# die im Container ohnehin gesetzt ist. Wer eine Shell im Container hat, hat den
+# Schlüssel bereits.
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o rotate-encryption-key ./cmd/rotate-encryption-key
 
 # ==============================================================================
 # Stage 3: Runner container
@@ -77,6 +90,10 @@ COPY migrations/ ./migrations/
 
 # Copy compiled Go binary
 COPY --from=backend-builder /app/main .
+
+# Wartungswerkzeug: Schlüsselwechsel ohne Datenverlust (docs/SECURITY.md).
+#   docker compose exec backend ./rotate-encryption-key -neu <neu> -pruefen
+COPY --from=backend-builder /app/rotate-encryption-key .
 
 # Copy built Svelte static files
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist

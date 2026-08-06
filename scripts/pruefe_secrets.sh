@@ -55,13 +55,30 @@ ist_bekannter_default() {
 
 echo "── Geheimnisse ──────────────────────────────────────────"
 
+# Mindestlängen. Ein gesetzter, aber kurzer Wert ist KEIN erledigter Punkt — genau das
+# verdeckte die erste Fassung dieses Skripts: Ein sechsstelliges Datenbankpasswort auf
+# dem Schulserver bekam ein grünes Häkchen, nur weil es kein bekannter Default war.
+mindestlaenge() {
+	case "$1" in
+	JWT_SECRET) echo 32 ;;         # HMAC-Schlüssel, main.go verlangt >= 32
+	APP_ENCRYPTION_KEY) echo 32 ;; # AES-256: exakt 32 Byte oder 64 Hex-Zeichen
+	POSTGRES_PASSWORD) echo 16 ;;  # kein harter Zwang im Code, aber alles darunter ist ratbar
+	*) echo 0 ;;
+	esac
+}
+
 for var in JWT_SECRET APP_ENCRYPTION_KEY POSTGRES_PASSWORD; do
 	wert="$(lies "$var")"
+	min="$(mindestlaenge "$var")"
 	if [ -z "$wert" ]; then
-		kritisch "$var ist nicht gesetzt" "Compose setzt dann seinen Default ein — siehe docker-compose.yml."
+		kritisch "$var ist nicht gesetzt" \
+			"Compose setzt dann seinen Default ein — der steht öffentlich im Repository (docker-compose.yml). Bei APP_ENCRYPTION_KEY heißt das: Schülerfotos und das SMTP-Passwort sind mit einem bekannten Schlüssel verschlüsselt."
 	elif ist_bekannter_default "$wert"; then
 		kritisch "$var nutzt einen bekannten Default-Wert" \
 			"Dieser Wert steht öffentlich im Repository. Bei APP_ENCRYPTION_KEY NICHT einfach ersetzen — sonst sind Schülerfotos und das SMTP-Passwort verloren. Weg: docs/SECURITY.md (cmd/rotate-encryption-key)."
+	elif [ "${#wert}" -lt "$min" ]; then
+		kritisch "$var ist nur ${#wert} Zeichen lang (erwartet: >= $min)" \
+			"Gesetzt heißt nicht sicher — ein kurzes Geheimnis ist ratbar."
 	else
 		gut "$var ist gesetzt (${#wert} Zeichen)"
 	fi

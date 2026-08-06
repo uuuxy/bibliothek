@@ -315,22 +315,43 @@ Dafür gibt es `cmd/rotate-encryption-key`. Es entschlüsselt jeden Datensatz mi
 und verschlüsselt ihn mit dem neuen Schlüssel, alles in **einer** Transaktion: Entweder
 ist am Ende alles umgeschlüsselt oder nichts.
 
+**Auf dem Server** (kein Go nötig — das Binary liegt seit dem 06.08.2026 im Image, und
+im Container sind `APP_ENCRYPTION_KEY` und `DATABASE_URL` bereits gesetzt):
+
 ```bash
+cd /opt/bibliothek
+
 # 0. Backup ziehen. Immer.
+docker compose exec -T postgres-db pg_dump -U postgres bibliothek > vor-rotation.sql
 
 # 1. Neuen Schlüssel vorschlagen lassen
-go run ./cmd/rotate-encryption-key
+docker compose exec backend ./rotate-encryption-key
 
 # 2. Probelauf — liest und rechnet alles durch, schreibt nichts
-APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… \
-  go run ./cmd/rotate-encryption-key -neu <neu> -pruefen
+docker compose exec backend ./rotate-encryption-key -neu <neu> -pruefen
 
 # 3. Echter Lauf
-APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… \
-  go run ./cmd/rotate-encryption-key -neu <neu>
+docker compose exec backend ./rotate-encryption-key -neu <neu>
 
-# 4. <neu> in die .env eintragen, Stack neu starten
+# 4. <neu> in die .env eintragen und neu starten — SOFORT, siehe Warnung unten
+echo "APP_ENCRYPTION_KEY=<neu>" >> .env
+docker compose up -d backend
 ```
+
+**Lokal / ohne Container:**
+
+```bash
+APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu> -pruefen
+APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu>
+```
+
+> **Reihenfolge beachten, wenn zugleich `ENFORCE_PROD_SECRETS=true` gesetzt werden soll:**
+> erst rotieren, dann den Schlüssel in die `.env`, **dann** den Schalter. Andersherum
+> verweigert der Server den Start, weil er noch den bekannten Default vorfindet.
+
+> **Steht `APP_ENCRYPTION_KEY` gar nicht in der `.env`?** Dann ist der alte Schlüssel der
+> Compose-Default `super-secure-aes-key-32-chars-ok` — im Container ist er als
+> Umgebungsvariable gesetzt, das Kommando findet ihn also von selbst.
 
 Zwischen Schritt 3 und 4 läuft die Anwendung mit dem alten Schlüssel und kann die Daten
 **nicht** lesen — die beiden Schritte gehören unmittelbar zusammen.
