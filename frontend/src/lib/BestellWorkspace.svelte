@@ -13,6 +13,7 @@
 	import SupplierManager from './components/bestellungen/SupplierManager.svelte';
 	import BestellHistorie from './components/bestellungen/BestellHistorie.svelte';
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
+	import BestelllinkHinweis from './components/bestellungen/BestelllinkHinweis.svelte';
 	import PrintSuggestion from './components/bestellungen/PrintSuggestion.svelte';
 	import KlassensatzReservierungen from './components/bestellungen/KlassensatzReservierungen.svelte';
 
@@ -49,6 +50,11 @@
 
 	onMount(() => {
 		orderStore.init();
+		// Zusätzlich zu init(): Das Laden dort ist 60 Sekunden lang gecacht. Wer die
+		// öffentliche Adresse gerade in den Einstellungen nachgetragen hat und zurückkommt,
+		// stünde sonst vor einem Hinweis, der bereits erledigt ist — und würde ihn beim
+		// nächsten Mal nicht mehr ernst nehmen.
+		orderStore.loadKonfiguration();
 		ladeOffeneEtiketten();
 	});
 
@@ -120,6 +126,10 @@
 </script>
 
 <div class="w-full h-full text-slate-800 font-sans flex flex-col gap-6">
+	<!-- Über den Reitern und nicht in einem von ihnen: Die fehlende Adresse betrifft das
+	     Bestellen (Mail ohne Link) UND die Historie (Bestätigung, die nie kommt). -->
+	<BestelllinkHinweis />
+
 	<!-- Tab-Bar: reine Navigation, keine Aktionen -->
 	<div class="flex items-end gap-6 border-b border-slate-200 shrink-0">
 		{#snippet tab(id, label)}

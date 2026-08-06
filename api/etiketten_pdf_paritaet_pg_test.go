@@ -58,7 +58,12 @@ func etikettTexte(t *testing.T, roh []byte) []string {
 				t.Fatalf("Inhaltsstrom nicht sauber abgeschlossen: %v", closeErr)
 			}
 		}
-		rest = body[j:]
+		// Hinter das "endstream", nicht davor. Mit rest = body[j:] fand der nächste
+		// Durchlauf das "stream" IN "endstream" wieder, las ab dort Unsinn, den zlib
+		// verwarf — und übersprang dabei den echten nächsten Strom. Gelesen wurde damit
+		// immer nur die ERSTE Seite: Ein Bogen mit einem Etikett und ein Bogen mit
+		// hundert sahen für diesen Test gleich aus.
+		rest = body[j+len("endstream"):]
 	}
 	if inhalt.Len() == 0 {
 		t.Fatalf("kein lesbarer Inhaltsstrom im PDF (%d Bytes) — Textextraktion kaputt, "+

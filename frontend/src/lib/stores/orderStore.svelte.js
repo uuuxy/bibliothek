@@ -31,6 +31,15 @@ class OrderStore {
 	 * aussieht.
 	 */
 	preiseErfassen = $state(true);
+	/**
+	 * Es gibt einen Hauptlieferanten, aber keine öffentliche Adresse — seine Bestellmails
+	 * gehen ohne Bestätigungs-Link raus.
+	 *
+	 * Vorgabe AUS, entgegengesetzt zu preiseErfassen: Eine Warnung, die für einen
+	 * Wimpernschlag aufblitzt und dann verschwindet, ist schlimmer als keine — man sucht
+	 * danach.
+	 */
+	bestelllinkOhneAdresse = $state(false);
 
 	searchQuery = $state('');
 	/** @type {any[]} */
@@ -132,6 +141,7 @@ class OrderStore {
 		try {
 			const daten = await apiGet('/api/bestellungen/konfiguration');
 			this.preiseErfassen = daten?.preise_erfassen ?? true;
+			this.bestelllinkOhneAdresse = daten?.bestelllink_ohne_adresse ?? false;
 			return true;
 		} catch {
 			return false;

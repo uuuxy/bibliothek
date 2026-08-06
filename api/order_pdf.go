@@ -47,20 +47,47 @@ type EtikettKopf struct {
 	Eigentumsvermerk string // z. B. "Eigentum des Landes Hessen"
 }
 
+// etikettenWeg beschreibt, WIE der Lieferant an die Aufkleber kommt. Er entscheidet über
+// EINEN Satz im Anschreiben — und dieser Satz darf niemals etwas anderes behaupten als
+// das, was der Lieferant tatsächlich vor sich hat.
+type etikettenWeg int
+
+const (
+	// ohneEtiketten: Für diese Bestellung wurden keine Vorab-Barcodes erzeugt. Dann steht
+	// im Brief auch keine Klebeanweisung.
+	ohneEtiketten etikettenWeg = iota
+	// bogenLiegtBei: Der fertige Etikettenbogen hängt als PDF an der Mail.
+	bogenLiegtBei
+	// bogenHinterLink: Die Etiketten stehen hinter dem Bestätigungs-Link, wo der
+	// Hauptlieferant die Größe selbst wählt. Der Mail liegt dann bewusst KEIN Bogen bei
+	// (siehe bestellAnhaenge).
+	bogenHinterLink
+)
+
 // barcodebogenSatz ist die Anweisung an den Lieferanten, die Exemplare vorab zu
 // bekleben. Sie darf nur im Brief stehen, wenn der Bogen der E-Mail auch beiliegt.
 const barcodebogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode/QR-Code-Aufklebern aus dem beigefügten Bogen.\n"
+
+// linkbogenSatz ersetzt den Satz oben, wenn der Bogen nicht beiliegt, sondern hinter dem
+// Bestätigungs-Link steht. Er nennt den Weg dorthin — ein Brief, der auf eine "beigefügte"
+// Anlage verweist, die es nicht gibt, kostet die Lieferung eine Rückfrage.
+const linkbogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit den Barcode/QR-Code-Aufklebern. Den Etikettenbogen rufen Sie über den Link in dieser E-Mail ab; dort wählen Sie zwischen kleinen und großen Etiketten.\n"
 
 // bestellAnschreibenText baut den Fliesstext des Anschreibens.
 //
 // Eigene Funktion, damit der Satz mit dem "beigefügten Bogen" prüfbar ist, ohne ein
 // erzeugtes PDF wieder auseinanderzunehmen: Genau dieser Satz stand vorher bedingungslos
 // im Brief und verwies auf eine Anlage, die oft nicht existierte.
-func bestellAnschreibenText(mitBarcodebogen bool) string {
+func bestellAnschreibenText(weg etikettenWeg) string {
 	text := "Sehr geehrte Damen und Herren,\n\n" +
 		"hiermit bestellen wir für unsere Schulbibliothek die nachfolgend aufgeführten Buchtitel zur Lieferung.\n"
-	if mitBarcodebogen {
+	switch weg {
+	case bogenLiegtBei:
 		text += barcodebogenSatz
+	case bogenHinterLink:
+		text += linkbogenSatz
+	case ohneEtiketten:
+		// Keine Klebeanweisung — es gibt nichts zu kleben.
 	}
 	return text + "Die Rechnung senden Sie bitte an die oben angegebene Anschrift.\n\n" +
 		"Bestellte Titel:"
@@ -68,11 +95,11 @@ func bestellAnschreibenText(mitBarcodebogen bool) string {
 
 // GenerateOrderSummaryPDF generates a PDF cover letter ("Bestellanschreiben") containing the table of ordered book titles.
 //
-// mitBarcodebogen entscheidet über EINEN Satz im Anschreiben — den mit dem "beigefügten
-// Bogen". Er stand vorher immer drin, auch wenn der Bogen gar nicht mitgeschickt wurde.
-// Der Lieferant bekam damit eine Anweisung auf etwas, das der E-Mail nicht beilag: Er
-// kann sie nur ignorieren oder nachfragen, beides kostet die Lieferung Zeit.
-func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, mitBarcodebogen bool) ([]byte, error) {
+// weg entscheidet über EINEN Satz im Anschreiben — den mit dem Etikettenbogen. Er stand
+// vorher immer drin, auch wenn der Bogen gar nicht mitgeschickt wurde. Der Lieferant bekam
+// damit eine Anweisung auf etwas, das der E-Mail nicht beilag: Er kann sie nur ignorieren
+// oder nachfragen, beides kostet die Lieferung Zeit.
+func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, weg etikettenWeg) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.AddPage()
 	p.SetMargins(20, 20, 20)
@@ -105,7 +132,7 @@ func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, mitBarc
 
 	// Letter Body Text
 	p.SetFont("Arial", "", 10)
-	p.MultiCell(0, 5, tr(bestellAnschreibenText(mitBarcodebogen)), "", "L", false)
+	p.MultiCell(0, 5, tr(bestellAnschreibenText(weg)), "", "L", false)
 	p.Ln(6)
 
 	// Table headers

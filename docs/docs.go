@@ -2206,6 +2206,10 @@ const docTemplate = `{
         "api.BestellKonfiguration": {
             "type": "object",
             "properties": {
+                "bestelllink_ohne_adresse": {
+                    "description": "BestelllinkOhneAdresse: Es gibt einen Hauptlieferanten, aber keine öffentliche\nAdresse — seine Bestellmails gehen also ohne Bestätigungs-Link raus.\n\nBeides zusammen ergibt erst die Aussage: Ohne Hauptlieferant verschickt das System\ngar keine Links, dann fehlt auch nichts. Die Oberfläche soll das VOR dem Bestellen\nsagen können, nicht erst als Warnung hinterher (siehe bestellVersandMeldung).",
+                    "type": "boolean"
+                },
                 "preise_erfassen": {
                     "type": "boolean"
                 }

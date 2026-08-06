@@ -32,6 +32,7 @@ type Supplier struct {
 // SupplierRepository definiert die Datenbank-Zugriffe für Lieferanten.
 type SupplierRepository interface {
 	GetSupplierByID(ctx context.Context, id string) (*Supplier, error)
+	HatHauptlieferant(ctx context.Context) (bool, error)
 }
 
 type pgSupplierRepository struct {
@@ -41,6 +42,17 @@ type pgSupplierRepository struct {
 // NewSupplierRepository erstellt eine neue Instanz des SupplierRepositorys.
 func NewSupplierRepository(pool db.PgxPoolIface) SupplierRepository {
 	return &pgSupplierRepository{db: pool}
+}
+
+// HatHauptlieferant meldet, ob überhaupt ein Hauptlieferant eingerichtet ist.
+//
+// Nur diese eine Frage, kein geladener Datensatz: Die Oberfläche braucht sie, um den
+// Hinweis auf die fehlende öffentliche Adresse zu zeigen — der ergibt ohne Hauptlieferant
+// keinen Sinn, weil dann ohnehin niemand einen Bestätigungs-Link bekäme.
+func (r *pgSupplierRepository) HatHauptlieferant(ctx context.Context) (bool, error) {
+	var vorhanden bool
+	err := r.db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM lieferanten WHERE ist_hauptlieferant)`).Scan(&vorhanden)
+	return vorhanden, err
 }
 
 // GetSupplierByID lädt einen Lieferanten anhand seiner ID.

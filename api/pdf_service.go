@@ -18,101 +18,142 @@ func NewPDFService() *PDFService {
 	return &PDFService{}
 }
 
-// DispatchOrderEmail generates the necessary PDFs and sends the order email to the supplier.
-// Betreff (subject) und Text (body) werden vom Aufrufer bereits aus der Vorlage
-// BESTELLUNG_HAENDLER aufgelöst übergeben, damit dieser Service DB-frei bleibt.
+// BestellMail bündelt alles, was die Bestellmail an den Lieferanten braucht.
 //
-// bietetBestellbestaetigung: Lieferanten wie Naacher etikettieren selbst und lassen den
-// Auftraggeber danach über einen eigenen Link die Etikettengröße wählen (klein/groß).
-// Damit er wählen kann, bekommt er BEIDE fertigen Etikettenformate mitgeschickt statt
-// nur des kleinen — Bibliosys entscheidet die Größe nicht vorab.
-func (s *PDFService) DispatchOrderEmail(
-	supplierEmail, subject, body string,
-	summaryItems []OrderedItem,
-	labels []BarcodeLabelDetail,
-	generateBarcodes bool,
-	bietetBestellbestaetigung bool,
-	schule pdf.SchuleInfo,
-) error {
-	// Eine Bedingung, an der ALLES hängt: der Bogen, die CSV und der Satz im Anschreiben,
-	// der auf den Bogen verweist. Vorher stand der Satz unabhängig davon im Brief — der
-	// Lieferant wurde auf eine Anlage hingewiesen, die nicht existierte.
-	mitBarcodebogen := generateBarcodes && len(labels) > 0
+// Als Struct und nicht als Parameterreihe: Die Mail hängt an drei unabhängigen Wahrheiten
+// (Vorab-Barcodes ja/nein, Hauptlieferant ja/nein, Link ja/nein), und drei aufeinander
+// folgende bool-Argumente im Aufruf sind genau die Sorte Stelle, an der eine Vertauschung
+// niemandem auffällt — die Mail geht ja trotzdem raus.
+type BestellMail struct {
+	Empfaenger string
+	// Betreff und Text sind bereits aus der Vorlage BESTELLUNG_HAENDLER aufgelöst,
+	// damit dieser Service DB-frei bleibt.
+	Betreff    string
+	Text       string
+	Positionen []OrderedItem
+	Etiketten  []BarcodeLabelDetail
+	// MitVorabBarcodes: Für mindestens eine Position wurden Barcodes reserviert.
+	MitVorabBarcodes bool
+	// IstHauptlieferant: Der Händler beklebt die Bücher selbst und wählt dafür die
+	// Etikettengröße — er bekommt deshalb BEIDE Formate statt nur des kleinen.
+	IstHauptlieferant bool
+	// MitBestaetigungsLink: In der Mail steht der Link auf die Bestellseite. Dann liegen
+	// die Etikettenbögen DORT und nicht an der Mail — siehe bestellAnhaenge.
+	MitBestaetigungsLink bool
+	Schule               pdf.SchuleInfo
+}
 
-	summaryPDF, err := GenerateOrderSummaryPDF(summaryItems, schule, mitBarcodebogen)
+// DispatchOrderEmail erzeugt die PDFs und verschickt die Bestellmail an den Lieferanten.
+func (s *PDFService) DispatchOrderEmail(m BestellMail) error {
+	anhaenge, err := bestellAnhaenge(m)
 	if err != nil {
 		return err
 	}
 
-	kopf := EtikettKopf{Schulname: schule.Name, Eigentumsvermerk: repository.StandardEigentumsvermerk}
-
-	var barcodePDF []byte
-	var barcodeCSV []byte
-	var lernmittelPDF []byte
-	if mitBarcodebogen {
-		// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
-		// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
-		// diese Angaben.
-		labelDoc, err2 := GenerateLabelsPDF("zweckform_l4760", 1, false, labels, kopf)
-		if err2 != nil {
-			return err2
-		}
-		var labelBuf bytes.Buffer
-		if err := labelDoc.Output(&labelBuf); err != nil {
-			return err
-		}
-		barcodePDF = labelBuf.Bytes()
-
-		barcodeCSV, err = GenerateBarcodeCSV(labels)
-		if err != nil {
-			return err
-		}
-		if bietetBestellbestaetigung {
-			lernmittelPDF, err = GenerateLernmittelEtikettenPDF(labels, kopf)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	attachments := []MailAttachment{
-		{
-			Name:        fmt.Sprintf("bestellanschreiben_%s.pdf", time.Now().Format(dateFormatISO)),
-			ContentType: "application/pdf",
-			Data:        summaryPDF,
-		},
-	}
-
-	if mitBarcodebogen {
-		attachments = append(attachments, MailAttachment{
-			Name:        fmt.Sprintf("etiketten_klein_%s.pdf", time.Now().Format(dateFormatISO)),
-			ContentType: "application/pdf",
-			Data:        barcodePDF,
-		})
-		attachments = append(attachments, MailAttachment{
-			Name:        fmt.Sprintf("barcode_mapping_%s.csv", time.Now().Format(dateFormatISO)),
-			ContentType: "text/csv",
-			Data:        barcodeCSV,
-		})
-		if bietetBestellbestaetigung {
-			attachments = append(attachments, MailAttachment{
-				Name:        fmt.Sprintf("etiketten_gross_%s.pdf", time.Now().Format(dateFormatISO)),
-				ContentType: "application/pdf",
-				Data:        lernmittelPDF,
-			})
-		}
-	}
-
 	mailReq := MailRequest{
-		To:          supplierEmail,
-		Subject:     subject,
-		Body:        body,
-		Attachments: attachments,
+		To:          m.Empfaenger,
+		Subject:     m.Betreff,
+		Body:        m.Text,
+		Attachments: anhaenge,
 	}
 
 	if err := SendEmail(mailReq); err != nil {
-		log.Printf("Failed to send order email to %s: %v", supplierEmail, err)
+		log.Printf("Failed to send order email to %s: %v", m.Empfaenger, err)
 		return err
 	}
 	return nil
+}
+
+// bestellAnhaenge stellt die Anlagen der Bestellmail zusammen.
+//
+// Die Etikettenbögen sind der springende Punkt. Geht ein Bestätigungs-Link mit, hängen
+// sie NICHT an der Mail: Der Händler holt sie über den Link, und genau dieser Weg trägt
+// die Bestätigung, die in der Bestellhistorie erscheint. Lägen die fertigen Bögen daneben
+// im Postfach, druckte er sie von dort — und die Schule wartete auf eine Bestätigung, die
+// nie kommt, obwohl die Bücher längst beklebt unterwegs sind.
+//
+// Ohne Link bleibt es beim alten Weg (Rückfallebene): Der Bogen MUSS dann beiliegen,
+// sonst kann der Händler gar nicht bekleben.
+func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
+	mitBarcodebogen := m.MitVorabBarcodes && len(m.Etiketten) > 0
+
+	// Eine Entscheidung, an der ALLES hängt: die Bögen, die CSV und der Satz im
+	// Anschreiben, der auf sie verweist. Vorher stand der Satz unabhängig davon im
+	// Brief — der Lieferant wurde auf eine Anlage hingewiesen, die nicht existierte.
+	weg := ohneEtiketten
+	switch {
+	case mitBarcodebogen && m.MitBestaetigungsLink:
+		weg = bogenHinterLink
+	case mitBarcodebogen:
+		weg = bogenLiegtBei
+	}
+
+	summaryPDF, err := GenerateOrderSummaryPDF(m.Positionen, m.Schule, weg)
+	if err != nil {
+		return nil, err
+	}
+	anhaenge := []MailAttachment{
+		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: "application/pdf", Data: summaryPDF},
+	}
+	if !mitBarcodebogen {
+		return anhaenge, nil
+	}
+
+	// Die Barcode-Liste geht in beiden Fällen mit: Sie ist die Zuordnung Barcode↔Titel für
+	// die Warenwirtschaft des Händlers, kein Druckerzeugnis — der Link ersetzt sie nicht.
+	barcodeCSV, err := GenerateBarcodeCSV(m.Etiketten)
+	if err != nil {
+		return nil, err
+	}
+	anhaenge = append(anhaenge,
+		MailAttachment{Name: datiertName("barcode_mapping", "csv"), ContentType: "text/csv", Data: barcodeCSV})
+
+	if weg == bogenHinterLink {
+		return anhaenge, nil
+	}
+
+	boegen, err := etikettenboegen(m.Etiketten, m.Schule, m.IstHauptlieferant)
+	if err != nil {
+		return nil, err
+	}
+	return append(anhaenge, boegen...), nil
+}
+
+// etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für
+// den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett — er
+// wählt die Größe, Bibliosys entscheidet sie nicht vorab.
+func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHauptlieferant bool) ([]MailAttachment, error) {
+	kopf := EtikettKopf{Schulname: schule.Name, Eigentumsvermerk: repository.StandardEigentumsvermerk}
+
+	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
+	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
+	// diese Angaben.
+	labelDoc, err := GenerateLabelsPDF("zweckform_l4760", 1, false, labels, kopf)
+	if err != nil {
+		return nil, err
+	}
+	var labelBuf bytes.Buffer
+	if err := labelDoc.Output(&labelBuf); err != nil {
+		return nil, err
+	}
+	boegen := []MailAttachment{
+		{Name: datiertName("etiketten_klein", "pdf"), ContentType: "application/pdf", Data: labelBuf.Bytes()},
+	}
+
+	if !istHauptlieferant {
+		return boegen, nil
+	}
+
+	lernmittelPDF, err := GenerateLernmittelEtikettenPDF(labels, kopf)
+	if err != nil {
+		return nil, err
+	}
+	return append(boegen,
+		MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: "application/pdf", Data: lernmittelPDF}), nil
+}
+
+// datiertName baut den Dateinamen einer Anlage — das Datum steht im Postfach des Händlers
+// zwischen allen anderen Bestellungen und ist dort die einzige Unterscheidung.
+func datiertName(basis, endung string) string {
+	return fmt.Sprintf("%s_%s.%s", basis, time.Now().Format(dateFormatISO), endung)
 }

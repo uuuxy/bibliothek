@@ -1,14 +1,11 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -88,7 +85,17 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		}
 		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link)
 
-		if err := pdfSvc.DispatchOrderEmail(res.SupplierEmail, subject, body, res.SummaryItems, res.Labels, anyBarcodesGenerated, res.IstHauptlieferant, schule); err != nil {
+		if err := pdfSvc.DispatchOrderEmail(BestellMail{
+			Empfaenger:           res.SupplierEmail,
+			Betreff:              subject,
+			Text:                 body,
+			Positionen:           res.SummaryItems,
+			Etiketten:            res.Labels,
+			MitVorabBarcodes:     anyBarcodesGenerated,
+			IstHauptlieferant:    res.IstHauptlieferant,
+			MitBestaetigungsLink: link != "",
+			Schule:               schule,
+		}); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
 				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
@@ -97,9 +104,10 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			return
 		}
 
+		status, meldung := bestellVersandMeldung(res.SupplierName, res.IstHauptlieferant && link == "")
 		RespondJSON(w, http.StatusOK, map[string]any{
-			"status":      "success",
-			"message":     fmt.Sprintf("Bestellung erfolgreich per E-Mail an %s gesendet.", res.SupplierName),
+			"status":      status,
+			"message":     meldung,
 			"ordered_qty": res.TotalAllocated,
 		})
 	}
@@ -129,55 +137,6 @@ func hatVorabBarcodes(items []OrderItemRequest) bool {
 		}
 	}
 	return false
-}
-
-// bestellMailFallback* ist der Standardtext, falls die Vorlage BESTELLUNG_HAENDLER
-// fehlt oder ein Feld leer ist — so bleibt der Bestellversand immer versandfähig
-// (identisch zum früher hartkodierten Text in pdf_service.go).
-const (
-	bestellMailFallbackBetreff = "Buchbestellung Schulbibliothek - {{.Datum}} (Kundennummer {{.Kundennummer}})"
-	bestellMailFallbackBody    = "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nBestellte Titel: {{.AnzahlTitel}}\nGesamtanzahl Exemplare: {{.AnzahlExemplare}}\n\nMit freundlichen Grüßen,\nSchulbibliothek"
-)
-
-// loadBestellTemplate lädt die Händler-Bestellvorlage aus der Datenbank; fehlt sie
-// oder ist ein Feld leer, greift der hartkodierte Fallback.
-func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody string) {
-	err := s.DB.Pool.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = 'BESTELLUNG_HAENDLER'").Scan(&betreff, &textBody)
-	if err != nil || betreff == "" || textBody == "" {
-		return bestellMailFallbackBetreff, bestellMailFallbackBody
-	}
-	return betreff, textBody
-}
-
-// resolveBestellMail ersetzt die Platzhalter der Bestellvorlage in Betreff und Text.
-//
-// link ist der Bestätigungs-Link für Lieferanten, die selbst etikettieren; er ist leer,
-// wenn dieser Lieferant keinen bekommt oder keine öffentliche Adresse hinterlegt ist.
-func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string) (subject, body string) {
-	replacer := strings.NewReplacer(
-		"{{.Datum}}", time.Now().Format(dateFormatDE),
-		"{{.Kundennummer}}", kundennummer,
-		"{{.AnzahlTitel}}", strconv.Itoa(anzahlTitel),
-		"{{.AnzahlExemplare}}", strconv.Itoa(anzahlExemplare),
-		"{{.BestaetigungsLink}}", link,
-	)
-	return replacer.Replace(betreff), ergaenzeLinkAbsatz(replacer.Replace(textBody), textBody, link)
-}
-
-// linkAbsatz ist der Textblock, der den Link trägt, wenn die Vorlage ihn nicht selbst
-// platziert. Die Vorlage ist frei editierbar (Vorlagen-Editor) — ein Lieferant, der den
-// Link nicht bekommt, weil jemand den Platzhalter beim Umformulieren verloren hat, wäre
-// ein stiller Ausfall des ganzen Ablaufs.
-const linkAbsatz = "\n\nEtiketten wählen, drucken und Bestellung bestätigen:\n%s\n\nDer Link ist %d Tage gültig und gehört nur zu dieser Bestellung."
-
-// ergaenzeLinkAbsatz hängt den Link an, falls die Vorlage keinen Platzhalter dafür hat.
-// Geprüft wird die ROHE Vorlage, nicht der aufgelöste Text: Nach dem Ersetzen ist nicht
-// mehr zu sehen, ob der Platzhalter je da war.
-func ergaenzeLinkAbsatz(aufgeloest, rohesTemplate, link string) string {
-	if link == "" || strings.Contains(rohesTemplate, "{{.BestaetigungsLink}}") {
-		return aufgeloest
-	}
-	return aufgeloest + fmt.Sprintf(linkAbsatz, link, TokenGueltigkeitTage)
 }
 
 // GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,

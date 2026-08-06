@@ -14,7 +14,7 @@ func TestPDFGeneration(t *testing.T) {
 		{Titel: "Test Buch 2", Autor: "Autor 2", ISBN: "789-012", Menge: 2},
 	}
 
-	summaryPDF, err := GenerateOrderSummaryPDF(items, pdf.SchuleInfo{Name: "Testbibliothek"}, true)
+	summaryPDF, err := GenerateOrderSummaryPDF(items, pdf.SchuleInfo{Name: "Testbibliothek"}, bogenLiegtBei)
 	if err != nil {
 		t.Fatalf("Failed to generate summary PDF: %v", err)
 	}
@@ -79,17 +79,29 @@ func TestZweiteZeile(t *testing.T) {
 // Barcode-Aufklebern — auch dann, wenn der E-Mail gar keiner beilag. Der Lieferant kann
 // eine solche Anweisung nur ignorieren oder nachfragen; beides kostet die Lieferung Zeit.
 func TestBestellAnschreibenNenntBarcodebogenNurWennErBeiliegt(t *testing.T) {
-	mit := bestellAnschreibenText(true)
+	mit := bestellAnschreibenText(bogenLiegtBei)
 	if !strings.Contains(mit, barcodebogenSatz) {
 		t.Error("Mit Bogen: Der Hinweis auf die Aufkleber fehlt im Anschreiben")
 	}
 
-	ohne := bestellAnschreibenText(false)
+	ohne := bestellAnschreibenText(ohneEtiketten)
 	if strings.Contains(ohne, barcodebogenSatz) {
 		t.Error("Ohne Bogen: Das Anschreiben verweist auf eine Anlage, die nicht existiert")
 	}
 
-	// Der Rest des Briefes bleibt in beiden Fällen gleich — es faellt genau ein Satz weg.
+	// Dritter Fall, seit die Etiketten hinter dem Bestätigungs-Link liegen: Der Brief muss
+	// dann den LINK nennen. Bliebe hier der Satz vom "beigefügten Bogen" stehen, suchte der
+	// Händler eine Anlage, die es nicht gibt — und der Link, der die Bestätigung trägt,
+	// bliebe ungeklickt.
+	ueberLink := bestellAnschreibenText(bogenHinterLink)
+	if strings.Contains(ueberLink, barcodebogenSatz) {
+		t.Error("Bogen hinter dem Link: Das Anschreiben verweist trotzdem auf eine beigefügte Anlage")
+	}
+	if !strings.Contains(ueberLink, "Link in dieser E-Mail") {
+		t.Error("Bogen hinter dem Link: Das Anschreiben sagt nicht, wo der Händler die Etiketten bekommt")
+	}
+
+	// Der Rest des Briefes bleibt in allen Fällen gleich — es faellt genau ein Satz weg.
 	for _, satz := range []string{"Sehr geehrte Damen und Herren", "Die Rechnung senden Sie bitte", "Bestellte Titel:"} {
 		if !strings.Contains(ohne, satz) {
 			t.Errorf("Ohne Bogen: %q fehlt im Anschreiben", satz)
