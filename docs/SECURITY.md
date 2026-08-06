@@ -315,34 +315,58 @@ Dafür gibt es `cmd/rotate-encryption-key`. Es entschlüsselt jeden Datensatz mi
 und verschlüsselt ihn mit dem neuen Schlüssel, alles in **einer** Transaktion: Entweder
 ist am Ende alles umgeschlüsselt oder nichts.
 
-**Auf dem Server** (kein Go nötig — das Binary liegt seit dem 06.08.2026 im Image, und
-im Container sind `APP_ENCRYPTION_KEY` und `DATABASE_URL` bereits gesetzt):
+**Kein Platzhalter in den Befehlen.** Der Schlüssel steht in einer Shell-Variablen, und
+zwar aus einem konkreten Grund: Eine Anleitung mit `<neu>` wurde am 06.08.2026 wörtlich
+eingefügt. Die beiden Rotationsbefehle scheiterten harmlos an der bash-Syntax — die Zeile
+`echo "APP_ENCRYPTION_KEY=<neu>" >> .env` lief aber durch, schrieb fünf Zeichen in die
+`.env`, und der Server verweigerte beim nächsten Start den Dienst (Längenprüfung in
+`main.go`). Die Anwendung war unten, bis die Zeile wieder entfernt war.
+
+**Auf dem Server** (kein Go nötig — das Binary liegt im Image, und im Container sind
+`APP_ENCRYPTION_KEY` und `DATABASE_URL` bereits gesetzt). Alles in **derselben**
+Shell-Sitzung ausführen, damit `$NEU` erhalten bleibt:
 
 ```bash
 cd /opt/bibliothek
 
 # 0. Backup ziehen. Immer.
 docker compose exec -T postgres-db pg_dump -U postgres bibliothek > vor-rotation.sql
+ls -lh vor-rotation.sql
 
-# 1. Neuen Schlüssel vorschlagen lassen
-docker compose exec backend ./rotate-encryption-key
+# 1. Schlüssel erzeugen und merken
+NEU=$(openssl rand -hex 32)
+echo "Neuer Schlüssel: $NEU"
 
 # 2. Probelauf — liest und rechnet alles durch, schreibt nichts
-docker compose exec backend ./rotate-encryption-key -neu <neu> -pruefen
+docker compose exec -T backend ./rotate-encryption-key -neu "$NEU" -pruefen
+```
 
-# 3. Echter Lauf
-docker compose exec backend ./rotate-encryption-key -neu <neu>
+Erst wenn dort **„Probelauf erfolgreich"** steht, weiter — und die nächsten drei Zeilen
+zusammen absenden, weil die Anwendung dazwischen nicht lesen kann:
 
-# 4. <neu> in die .env eintragen und neu starten — SOFORT, siehe Warnung unten
-echo "APP_ENCRYPTION_KEY=<neu>" >> .env
+```bash
+docker compose exec -T backend ./rotate-encryption-key -neu "$NEU"
+echo "APP_ENCRYPTION_KEY=$NEU" >> .env
 docker compose up -d backend
 ```
+
+Kontrolle:
+
+```bash
+./scripts/pruefe_secrets.sh          # APP_ENCRYPTION_KEY muss grün sein
+grep -c APP_ENCRYPTION_KEY .env      # genau 1
+```
+
+Und die Prüfung, die kein Skript ersetzt: in der Oberfläche einen Schüler **mit Foto**
+öffnen. Erscheint das Bild, ist die Umschlüsselung wirklich durch — nicht nur laut
+Logzeile.
 
 **Lokal / ohne Container:**
 
 ```bash
-APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu> -pruefen
-APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -neu <neu>
+NEU=$(openssl rand -hex 32)
+APP_ENCRYPTION_KEY=<alter-schluessel> DATABASE_URL=… \
+  go run ./cmd/rotate-encryption-key -neu "$NEU" -pruefen
 ```
 
 > **Reihenfolge beachten, wenn zugleich `ENFORCE_PROD_SECRETS=true` gesetzt werden soll:**
@@ -353,8 +377,29 @@ APP_ENCRYPTION_KEY=<alt> DATABASE_URL=… go run ./cmd/rotate-encryption-key -ne
 > Compose-Default `super-secure-aes-key-32-chars-ok` — im Container ist er als
 > Umgebungsvariable gesetzt, das Kommando findet ihn also von selbst.
 
-Zwischen Schritt 3 und 4 läuft die Anwendung mit dem alten Schlüssel und kann die Daten
-**nicht** lesen — die beiden Schritte gehören unmittelbar zusammen.
+#### Wenn der Server nach einem Schlüsselwechsel nicht mehr startet
+
+Symptom: Caddy liefert **502**, `docker compose up -d backend` meldet trotzdem „Started".
+Der Container startet, der Prozess beendet sich sofort — `main.go` prüft die Schlüssellänge
+und bricht mit `FATAL` ab, wenn sie nicht genau 32 oder 64 beträgt.
+
+```bash
+docker compose logs --tail=20 backend     # zeigt die FATAL-Zeile
+grep -n APP_ENCRYPTION_KEY .env           # steht dort ein unbrauchbarer Wert?
+```
+
+Ist der Wert kaputt und wurde **noch nicht** rotiert, genügt es, die Zeile zu entfernen —
+dann greift wieder der Compose-Default und die Daten sind lesbar wie zuvor:
+
+```bash
+sed -i '/^APP_ENCRYPTION_KEY=/d' .env
+docker compose up -d backend
+```
+
+Wurde bereits rotiert, darf die Zeile **nicht** gelöscht werden: Dann muss der richtige
+neue Schlüssel hinein (er steht im Scrollback des Rotationslaufs, den das Kommando
+ausdrücklich ausgibt). Im Notfall führt der Weg über `vor-rotation.sql` und
+`cmd/restore-backup`.
 
 ### Adressdaten (DSGVO vs. Mahnwesen)
 Adressspalten (`strasse`, `plz`, `ort`) und `eltern_email` werden für das Mahnwesen (Briefversand für Schadens-Rechnungen und E-Mail für Mahnungen) benötigt und sind **bewusst vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der Adressspalten blockiert hätte — dieser wurde entfernt, da die Daten fachlich essenziell sind.
