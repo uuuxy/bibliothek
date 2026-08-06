@@ -83,11 +83,20 @@ func realIP(r *http.Request) string {
 }
 
 // LoginRequest represents the payload for login.
+//
+// NUR E-Mail und Passwort. Hier standen früher zusätzlich barcode_id und pin:
+//
+//   - pin wurde nie gelesen. validateLoginCredentials verlangt E-Mail und Passwort und
+//     steigt sonst aus — einen Barcode/PIN-Anmeldeweg gibt es nicht, der Kiosk scannt
+//     Ausweise, meldet damit aber niemanden an.
+//   - barcode_id wurde gelesen und wanderte ungeprüft in die Claims des Session-Tokens.
+//     Niemand hat den Wert je ausgewertet, ein Loch war es also nicht. Aber ein
+//     signiertes Token, das eine vom Client behauptete Kennung trägt, ist eine Falle für
+//     den Nächsten, der ihr glaubt: Signiert heisst geprüft, sonst wäre die Signatur
+//     sinnlos. Der Barcode kommt jetzt aus der benutzer-Tabelle.
 type LoginRequest struct {
-	BarcodeID string `json:"barcode_id,omitempty"`
-	Email     string `json:"email,omitempty"`
-	Password  string `json:"password,omitempty"`
-	PIN       string `json:"pin,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // LoginResponse represents the response containing user information upon successful authentication.
@@ -100,7 +109,7 @@ type LoginResponse struct {
 }
 
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
-// Supports both email/password (with local DB or school IMAP verification) and barcode/PIN login.
+// Anmeldung ausschliesslich per E-Mail/Passwort gegen den Schul-Mailserver (IMAP).
 func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		clientIP := realIP(r)
@@ -144,7 +153,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		}
 
 		role := Role(user.roleStr)
-		token, err := authenticator.GenerateToken(user.id, req.BarcodeID, role)
+		token, err := authenticator.GenerateToken(user.id, user.barcodeID, role)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -179,11 +188,13 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 
 // loginUser bündelt die aus der benutzer-Tabelle geladenen Login-Felder.
 type loginUser struct {
-	id       string
-	roleStr  string
-	vorname  string
-	nachname string
-	aktiv    bool
+	id string
+	// barcodeID kommt aus der benutzer-Tabelle, NICHT aus der Anfrage — siehe LoginRequest.
+	barcodeID string
+	roleStr   string
+	vorname   string
+	nachname  string
+	aktiv     bool
 }
 
 // validateLoginCredentials erzwingt das Vorhandensein von E-Mail und Passwort.
@@ -212,12 +223,12 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 	// IMAP succeeded, check if the user is registered in our local DB
 	var u loginUser
 	query := `
-		SELECT id, rolle, vorname, nachname, aktiv
+		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv
 		FROM benutzer
 		WHERE LOWER(email) = LOWER($1)
 		LIMIT 1
 	`
-	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv); err != nil {
+	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv); err != nil {
 		return loginUser{}, false
 	}
 	return u, true

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,7 +13,10 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-const benutzerSelect = `SELECT id, rolle, vorname, nachname, aktiv`
+// Bewusst nur der Tabellenteil: pgxmock vergleicht per REGEX, und die Spaltenliste
+// enthält seit dem Barcode-aus-der-DB ein coalesce(...) — die Klammern wären dort
+// Regex-Gruppen und träfen den echten SQL-Text nicht mehr.
+const benutzerSelect = `FROM benutzer`
 
 // aktiviereMockIMAP schaltet den IMAP-Mock für einen Test frei. APP_ENV gehört
 // zwingend dazu: Der Mock akzeptiert jedes Passwort und ist deshalb seit dem
@@ -53,7 +57,7 @@ func TestLoginHandler_UnknownUserReturns401(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("unbekannt@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv"}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}))
 
 	rec := doLogin(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
@@ -70,8 +74,8 @@ func TestLoginHandler_DeactivatedUserReturns403(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("inaktiv@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv"}).
-			AddRow("u-1", "mitarbeiter", "Ex", "Kollege", false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
+			AddRow("u-1", "BC-TEST", "mitarbeiter", "Ex", "Kollege", false))
 
 	rec := doLogin(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusForbidden {
@@ -85,8 +89,8 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("pflasch@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv"}).
-			AddRow("u-admin", "admin", "Peter", "Flasch", true))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
+			AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true))
 
 	rec := doLogin(t, a, mock, `{"email":"pflasch@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusOK {
@@ -136,7 +140,7 @@ func TestLoginHandler_BruteForceLimiterBlocksSixthAttempt(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		mock.ExpectQuery(benutzerSelect).
 			WithArgs(email).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv"}))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}))
 		if rec := doLogin(t, a, mock, body); rec.Code != http.StatusUnauthorized {
 			t.Fatalf("Versuch %d: erwartet 401, bekam %d", i, rec.Code)
 		}
@@ -149,5 +153,59 @@ func TestLoginHandler_BruteForceLimiterBlocksSixthAttempt(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen (6. Versuch hätte die DB nicht erreichen dürfen): %v", err)
+	}
+}
+
+// Der Barcode im Session-Token kommt aus der DATENBANK, nicht aus der Anmeldung.
+//
+// Vorher trug LoginRequest ein Feld barcode_id, und dessen Wert wanderte ungeprüft in die
+// Claims: Wer sich anmeldete, bestimmte selbst, welche Ausweisnummer sein signiertes
+// Token behauptet. Ausgewertet hat den Wert niemand — ein Loch war es also nicht. Aber
+// eine signierte Kennung, die nie jemand geprüft hat, ist genau die Art Zusicherung, auf
+// die sich der nächste Aufrufer verlässt, ohne nachzusehen.
+//
+// Der Test schickt die Kennung eines anderen mit und liest die Claims aus dem Cookie.
+func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
+	aktiviereMockIMAP(t)
+	a, mock := newTestAuthenticator(t, 12*time.Hour)
+
+	mock.ExpectQuery(benutzerSelect).
+		WithArgs("pflasch@schule.de").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
+			AddRow("u-admin", "BC-ECHT", "admin", "Peter", "Flasch", true))
+
+	rec := doLogin(t, a, mock,
+		`{"email":"pflasch@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+	}
+
+	cookies := rec.Result().Cookies()
+	if len(cookies) == 0 {
+		t.Fatal("kein Session-Cookie gesetzt")
+	}
+	// Nutzlast direkt lesen statt über VerifyToken: Das prüft zusätzlich Sperrliste und
+	// Kontostatus gegen die DB und bräuchte hier Mock-Erwartungen, die mit der Frage
+	// nichts zu tun haben. Interessiert, WAS im signierten Token steht.
+	teile := strings.Split(cookies[0].Value, ".")
+	if len(teile) != 3 {
+		t.Fatalf("kein JWT im Cookie: %q", cookies[0].Value)
+	}
+	roh, err := base64.RawURLEncoding.DecodeString(teile[1])
+	if err != nil {
+		t.Fatalf("Nutzlast nicht dekodierbar: %v", err)
+	}
+	var claims struct {
+		BarcodeID string `json:"barcode_id"`
+	}
+	if err := json.Unmarshal(roh, &claims); err != nil {
+		t.Fatalf("Nutzlast nicht lesbar: %v", err)
+	}
+	if claims.BarcodeID == "BC-FREMD" {
+		t.Fatal("die vom Client behauptete Ausweisnummer steht im signierten Token — " +
+			"der Barcode gehört aus der benutzer-Tabelle geladen, nicht aus der Anfrage")
+	}
+	if claims.BarcodeID != "BC-ECHT" {
+		t.Errorf("Barcode im Token = %q, erwartet den aus der Datenbank (BC-ECHT)", claims.BarcodeID)
 	}
 }

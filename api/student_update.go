@@ -124,12 +124,6 @@ func (b *updateBuilder) addInt(spalte string, wert *int) {
 	}
 }
 
-func (b *updateBuilder) addBool(spalte string, wert *bool) {
-	if wert != nil {
-		b.add(spalte, *wert)
-	}
-}
-
 // build hängt die gesammelten SET-Zuweisungen (nummeriert ab $1) und die
 // WHERE-Bedingung an prefix an und liefert Query samt Argumentliste.
 func (b *updateBuilder) build(prefix, idValue string) (string, []interface{}) {
@@ -200,9 +194,20 @@ type patchStudentRequest struct {
 	BarcodeID         *string `json:"barcode_id"`
 	AbgaengerJahr     *int    `json:"abgaenger_jahr"`
 	Geburtsdatum      *string `json:"geburtsdatum"`
-	IsManuallyBlocked *bool   `json:"is_manually_blocked"`
-	BlockReason       *string `json:"block_reason"`
-	Strasse           *string `json:"strasse"`
+	// KEINE Sperrfelder hier. Sperren und Entsperren läuft ausschliesslich über
+	// PATCH /api/admin/students/{id}/lock (api/student_lock.go) — und das aus zwei
+	// Gründen, die dieser Weg beide nicht erfüllte:
+	//
+	//   - Der Sperr-Endpunkt verlangt einen GRUND. Über diesen PATCH gesetzt, lief eine
+	//     Sperre ohne Grund in chk_schueler_block_reason und kam als 500 „Ein interner
+	//     Datenbankfehler ist aufgetreten" zurück (der Sanitizer ersetzt jede 500-Meldung).
+	//     Derselbe Vorgang, eine Tür weiter: 400 mit dem Satz, was zu tun ist.
+	//   - Beim ENTSPERREN räumt der Sperr-Endpunkt den Grund nur weg, wenn keine
+	//     Systemsperre mehr besteht. Dieser PATCH liess ihn schlicht stehen.
+	//
+	// Zwei Türen zu demselben Zustand, von denen nur eine die Regeln kennt, sind keine
+	// Bequemlichkeit — die falsche Tür geht irgendwann auf.
+	Strasse *string `json:"strasse"`
 	Hausnummer        *string `json:"hausnummer"`
 	Plz               *string `json:"plz"`
 	Ort               *string `json:"ort"`
@@ -236,8 +241,6 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 		b.add("geburtsdatum", parsedDate)
 	}
 
-	b.addBool("is_manually_blocked", req.IsManuallyBlocked)
-	b.addStr("block_reason", req.BlockReason)
 	// Postanschrift & Elternkontakt (Stammdaten): nur bei vorhandenem Feld ändern.
 	b.addStr("strasse", req.Strasse)
 	b.addStr("hausnummer", req.Hausnummer)
