@@ -1,4 +1,6 @@
 <script>
+	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
+
 	/**
 	 * @type {{
 	 *   book: {
@@ -33,16 +35,7 @@
 
 	$effect(() => {
 		const candidates = [];
-		if (book?.coverUrl) {
-			candidates.push(book.coverUrl);
-		}
-		if (book?.isbn) {
-			const cleanIsbn = book.isbn.replace(/[- ]/g, '');
-			candidates.push(
-				`https://books.google.com/books/content?id=&vid=ISBN:${cleanIsbn}&printsec=frontcover&img=1&zoom=1`
-			);
-			candidates.push(`https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`);
-		}
+		candidates.push(...coverKandidaten(book?.coverUrl, book?.isbn));
 		coverCandidates = candidates;
 		currentCandidateIndex = 0;
 		coverFailed = candidates.length === 0;

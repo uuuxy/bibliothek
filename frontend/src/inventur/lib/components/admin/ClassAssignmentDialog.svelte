@@ -101,15 +101,27 @@
 	}
 </script>
 
+<!-- Escape schliesst den Dialog; vorher gab es dafuer keinen Weg ausser dem Klick auf den
+     Hintergrund, den man mit der Tastatur nicht erreicht. `isOpen` wird im Handler
+     geprueft, weil <svelte:window> auf der obersten Ebene stehen muss. -->
+<svelte:window
+	onkeydown={(e) => {
+		if (isOpen && e.key === 'Escape') onClose();
+	}}
+/>
+
 {#if isOpen}
+	<!-- role="presentation": Der Hintergrund ist Dekoration. Das Schliessen per Klick
+	     darauf ist eine Maus-Bequemlichkeit, der Dialog selbst traegt die Semantik. -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200"
+		role="presentation"
 		onclick={(e) => {
 			if (e.target === e.currentTarget) onClose();
 		}}
 	>
 		<div
-			class="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full lg:w-[1200px] max-w-[100vw] lg:max-w-[90vw] h-dvh sm:h-[90vh] lg:h-[850px] max-h-dvh lg:max-h-[95vh] p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
+			class="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full lg:w-300 max-w-[100vw] lg:max-w-[90vw] h-dvh sm:h-[90vh] lg:h-212.5 max-h-dvh lg:max-h-[95vh] p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
 		>
 			<!-- Background Particles -->
 			<div class="absolute inset-0 opacity-40 pointer-events-none">

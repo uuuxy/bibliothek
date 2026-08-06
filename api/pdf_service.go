@@ -93,7 +93,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 		return nil, err
 	}
 	anhaenge := []MailAttachment{
-		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: "application/pdf", Data: summaryPDF},
+		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: contentTypePDF, Data: summaryPDF},
 	}
 	if !mitBarcodebogen {
 		return anhaenge, nil
@@ -137,7 +137,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHaup
 		return nil, err
 	}
 	boegen := []MailAttachment{
-		{Name: datiertName("etiketten_klein", "pdf"), ContentType: "application/pdf", Data: labelBuf.Bytes()},
+		{Name: datiertName("etiketten_klein", "pdf"), ContentType: contentTypePDF, Data: labelBuf.Bytes()},
 	}
 
 	if !istHauptlieferant {
@@ -149,7 +149,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHaup
 		return nil, err
 	}
 	return append(boegen,
-		MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: "application/pdf", Data: lernmittelPDF}), nil
+		MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: contentTypePDF, Data: lernmittelPDF}), nil
 }
 
 // datiertName baut den Dateinamen einer Anlage — das Datum steht im Postfach des Händlers

@@ -15,6 +15,9 @@ type BestaetigenRequest struct {
 	// EtikettenGroesse: welche Etikettengröße der Lieferant (laut externer Rückmeldung,
 	// z. B. per Naacher-Link) letztlich gewählt/gedruckt hat.
 	EtikettenGroesse string `json:"etiketten_groesse"`
+	// EtikettenFormat: bei 'klein' zusätzlich das Bogenraster (siehe LabelFormatAuswahl).
+	// Optional — wer nachträgt, weiß es nicht immer.
+	EtikettenFormat string `json:"etiketten_format"`
 }
 
 // bestellungImBestaetigungsweg beantwortet für BEIDE Bestätigungs-Handler dieselbe Frage:
@@ -50,57 +53,71 @@ func (s *Server) bestellungImBestaetigungsweg(ctx context.Context, id string) (b
 // Endpunkt lässt jemanden aus der Bibliothek diesen Status manuell nachtragen, damit er
 // in der Bestellhistorie sichtbar ist.
 func (s *Server) BestaetigenBestellungHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing bestellung id"))
-			return
-		}
+	return s.bestaetigenBestellung
+}
 
-		var req BestaetigenRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-		if req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
-			return
-		}
-
-		ctx := r.Context()
-
-		imBestaetigungsweg, err := s.bestellungImBestaetigungsweg(ctx, id)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if !imBestaetigungsweg {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("diese bestellung hat keinen bestaetigungsschritt"))
-			return
-		}
-
-		// 'bibliothek' hält fest, dass hier jemand aus dem Haus nachgetragen hat. Über den
-		// Link bestätigt der Lieferant selbst und die Spalte trägt 'lieferant' — dieselbe
-		// Statuszeile, aber eine andere Aussage.
-		bereits, err := s.bestaetigeBestellung(ctx, id, req.EtikettenGroesse, "bibliothek")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if bereits {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("bestellung ist bereits bestaetigt"))
-			return
-		}
-
-		RespondJSON(w, http.StatusOK, map[string]any{
-			"status":            "success",
-			"etiketten_groesse": req.EtikettenGroesse,
-		})
+// bestaetigenBestellung steht auf der obersten Ebene und nicht als Closure in
+// BestaetigenBestellungHandler.
+//
+// Das ist keine Stilfrage: Für die Cognitive-Complexity-Messung zählt eine Closure als
+// eigene Verschachtelungsebene, und dadurch wiegt jedes `if` in diesem Rumpf eins mehr.
+// Als Closure kam die Funktion auf 18 und riss die Schwelle von 15 — obwohl sie nichts
+// weiter tut als sechs Vorbedingungen der Reihe nach abzuräumen. Verschoben, nicht
+// zerschnitten: Die Abfolge bleibt am Stück lesbar (vgl. die übrigen Handler).
+func (s *Server) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing bestellung id"))
+		return
 	}
+
+	var req BestaetigenRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+	if req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
+		return
+	}
+	if !istBekanntesEtikettFormat(req.EtikettenFormat) {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
+		return
+	}
+
+	ctx := r.Context()
+
+	imBestaetigungsweg, err := s.bestellungImBestaetigungsweg(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if !imBestaetigungsweg {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("diese bestellung hat keinen bestaetigungsschritt"))
+		return
+	}
+
+	// 'bibliothek' hält fest, dass hier jemand aus dem Haus nachgetragen hat. Über den
+	// Link bestätigt der Lieferant selbst und die Spalte trägt 'lieferant' — dieselbe
+	// Statuszeile, aber eine andere Aussage.
+	bereits, err := s.bestaetigeBestellung(ctx, id, req.EtikettenGroesse, req.EtikettenFormat, "bibliothek")
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if bereits {
+		apierrors.SendHTTPError(w, http.StatusConflict, errors.New("bestellung ist bereits bestaetigt"))
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]any{
+		"status":            "success",
+		"etiketten_groesse": req.EtikettenGroesse,
+	})
 }
 
 // bestaetigeBestellung trägt die Bestätigung ein und meldet über bereits=true, dass sie
@@ -114,12 +131,13 @@ func (s *Server) BestaetigenBestellungHandler() http.HandlerFunc {
 //
 // groesse darf leer sein: Über den Link ist die Etikettengröße nur eine Notiz, kein
 // Pflichtfeld. NULLIF hält die Spalte dann auf NULL, wie es der CHECK verlangt.
-func (s *Server) bestaetigeBestellung(ctx context.Context, bestellungID, groesse, durch string) (bereits bool, err error) {
+func (s *Server) bestaetigeBestellung(ctx context.Context, bestellungID, groesse, format, durch string) (bereits bool, err error) {
 	tag, err := s.DB.Pool.Exec(ctx, `
 		UPDATE bestellungen_verlauf
-		SET bestaetigt_am = now(), etiketten_groesse = NULLIF($1, ''), bestaetigt_durch = $2
-		WHERE id = $3 AND bestaetigt_am IS NULL
-	`, groesse, durch, bestellungID)
+		SET bestaetigt_am = now(), etiketten_groesse = NULLIF($1, ''),
+		    etiketten_format = NULLIF($2, ''), bestaetigt_durch = $3
+		WHERE id = $4 AND bestaetigt_am IS NULL
+	`, groesse, format, durch, bestellungID)
 	if err != nil {
 		return false, err
 	}

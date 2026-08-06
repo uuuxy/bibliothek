@@ -1,5 +1,6 @@
 <script>
 	import { getSubjectColor, getStockDotColor, formatDate } from '../bookHelpers.js';
+	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
 	import BuchKarteCover from './BuchKarteCover.svelte';
 
 	/**
@@ -62,25 +63,33 @@
 
 	$effect(() => {
 		const candidates = [];
-		if (book?.coverUrl) {
-			candidates.push(book.coverUrl);
-		}
-		if (book?.isbn) {
-			const cleanIsbn = book.isbn.replace(/[- ]/g, '');
-			candidates.push(
-				`https://books.google.com/books/content?id=&vid=ISBN:${cleanIsbn}&printsec=frontcover&img=1&zoom=1`
-			);
-			candidates.push(`https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`);
-		}
+		candidates.push(...coverKandidaten(book?.coverUrl, book?.isbn));
 		coverCandidates = candidates;
 		currentCandidateIndex = 0;
 		coverFailed = candidates.length === 0;
 	});
 </script>
 
-<article
+<!-- role="button" + tabindex + Tastaturweg: Die ganze Karte ist anklickbar, war aber
+     ausschliesslich mit der Maus erreichbar. Die Pruefung auf currentTarget haelt die
+     inneren Schaltflaechen (Quick-Edit) heraus — deren Enter darf nicht zusaetzlich die
+     Karte oeffnen. -->
+<!-- <div> statt <article>: Ein <article> ist nicht-interaktiv und darf laut ARIA keine
+     Button-Rolle tragen — der Svelte-Compiler weist das zu Recht ab. Zwischen "korrekte
+     Dokumentgliederung" und "mit der Tastatur bedienbar" ist Letzteres wichtiger; die
+     Karte IST eine Schaltflaeche, kein eigenstaendiger Artikel. -->
+<div
 	class="bg-white rounded-2xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm cursor-pointer relative"
+	role="button"
+	tabindex="0"
 	{onclick}
+	onkeydown={(e) => {
+		if (e.target !== e.currentTarget) return;
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			onclick?.(e);
+		}
+	}}
 >
 	<!-- Quick-Edit Stift-Icon (sichtbar beim Hover) -->
 	{#if onEditClick}
@@ -231,4 +240,4 @@
 			</div>
 		</div>
 	</div>
-</article>
+</div>

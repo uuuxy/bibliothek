@@ -208,7 +208,11 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	rateLimiter := RateLimitMiddleware(50)
 	timeoutLimiter := TimeoutMiddleware(15 * time.Second)
 
-	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> ValidateUUIDParams -> Mux
+	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> Lesefrist -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> ValidateUUIDParams -> Mux
+	//
+	// ErweitereLesefristFuerLangeUploads steht VOR dem BodyLimiter und damit vor jedem
+	// Lesen des Rumpfes — danach gesetzt käme die Frist zu spät. Sie hebt die strenge
+	// serverweite ReadTimeout (main.go) für die Import-Endpunkte an.
 	// Hinweis: Die frühere RBACBlockMiddleware (hartkodierte Pfad-Allowlist für LEHRER/HELFER)
 	// wurde entfernt. Sie überstimmte das konfigurierbare role_permissions-System und sorgte dafür,
 	// dass z. B. ein LEHRER seine im PermissionManager gewährten Rechte (view_students etc.) nicht
@@ -218,7 +222,7 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// las sie r.PathValue("id"), bevor die Route aufgelöst war — der Wert ist dort immer
 	// leer, die Prüfung lief also nie (Audit-Befund 01.08.2026). Sie sitzt jetzt in
 	// RequirePermission, also hinter dem Routing, wo PathValue gefüllt ist.
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(mux))))))))))
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(ErweitereLesefristFuerLangeUploads(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(mux)))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

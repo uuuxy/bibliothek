@@ -102,8 +102,16 @@ if [ "${SKIP_BACKUP}" = "true" ]; then
 else
     log_info "Erstelle Backup → ${BACKUP_FILE}"
 
-    if docker exec "${DB_CONTAINER}" pg_dump -U "${DB_USER}" -d "${DB_NAME}" --no-password \
-        | gzip > "${BACKUP_FILE}"; then
+    # umask im Subshell, NICHT chmod danach: Dieses Backup ist ein unverschlüsselter
+    # Volldump — jeder Schülername, jede Adresse, jede Ausleihe im Klartext. Mit einem
+    # nachgereichten chmod läge die Datei zwischen Anlegen und Rechtesetzen für alle
+    # lesbar auf der Platte, und genau in dieser Zeit wird sie beschrieben.
+    # Verschlüsseln wäre der stärkere Schritt, würde aber den dokumentierten
+    # Rollback-Weg brechen (gunzip | psql, siehe print_rollback_instructions und
+    # docs/resilience_and_recovery.md 2b) — das verschlüsselte Backup liefert der
+    # nächtliche Job, siehe jobs/backup.go.
+    if (umask 077; docker exec "${DB_CONTAINER}" pg_dump -U "${DB_USER}" -d "${DB_NAME}" --no-password \
+        | gzip > "${BACKUP_FILE}"); then
 
         BACKUP_SIZE="$(du -sh "${BACKUP_FILE}" | cut -f1)"
         log_ok "Backup erfolgreich: ${BACKUP_FILE} (${BACKUP_SIZE})"

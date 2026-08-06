@@ -10,51 +10,36 @@ import (
 func TestGetMasterKey(t *testing.T) {
 	tests := []struct {
 		name       string
-		envKey     string
-		appEnvKey  string
+		key        string
 		wantLen    int
 		wantErr    bool
 		wantErrMsg string
 	}{
 		{
-			name:       "Missing env vars",
-			envKey:     "",
-			appEnvKey:  "",
+			name:       "nicht gesetzt",
+			key:        "",
 			wantErr:    true,
 			wantErrMsg: "nicht gesetzt",
 		},
 		{
-			name:      "32-byte string in ENCRYPTION_KEY",
-			envKey:    "12345678901234567890123456789012",
-			appEnvKey: "",
-			wantLen:   32,
-			wantErr:   false,
+			name:    "32-Byte-Klartext",
+			key:     "12345678901234567890123456789012",
+			wantLen: 32,
 		},
 		{
-			name:      "32-byte string in APP_ENCRYPTION_KEY",
-			envKey:    "",
-			appEnvKey: "12345678901234567890123456789012",
-			wantLen:   32,
-			wantErr:   false,
+			name:    "64 Hex-Zeichen",
+			key:     hex.EncodeToString([]byte("12345678901234567890123456789012")),
+			wantLen: 32,
 		},
 		{
-			name:      "64-byte hex string in ENCRYPTION_KEY",
-			envKey:    hex.EncodeToString([]byte("12345678901234567890123456789012")),
-			appEnvKey: "",
-			wantLen:   32,
-			wantErr:   false,
-		},
-		{
-			name:       "Invalid hex string",
-			envKey:     "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ",
-			appEnvKey:  "",
+			name:       "kaputtes Hex",
+			key:        "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ",
 			wantErr:    true,
 			wantErrMsg: "ungültiges Hex-Format",
 		},
 		{
-			name:       "Invalid length string",
-			envKey:     "short",
-			appEnvKey:  "",
+			name:       "falsche Länge",
+			key:        "short",
 			wantErr:    true,
 			wantErrMsg: "muss genau 32 Zeichen",
 		},
@@ -62,28 +47,16 @@ func TestGetMasterKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.envKey != "" {
-				t.Setenv("ENCRYPTION_KEY", tt.envKey)
-			} else {
-				t.Setenv("ENCRYPTION_KEY", "")
-			}
-
-			if tt.appEnvKey != "" {
-				t.Setenv("APP_ENCRYPTION_KEY", tt.appEnvKey)
-			} else {
-				t.Setenv("APP_ENCRYPTION_KEY", "")
-			}
+			t.Setenv(SchluesselVariable, tt.key)
 
 			key, err := GetMasterKey()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetMasterKey() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-
 			if tt.wantErr && !strings.Contains(err.Error(), tt.wantErrMsg) {
 				t.Errorf("GetMasterKey() error = %v, wantErrMsg %v", err, tt.wantErrMsg)
 			}
-
 			if !tt.wantErr && len(key) != tt.wantLen {
 				t.Errorf("GetMasterKey() len = %v, want %v", len(key), tt.wantLen)
 			}
@@ -91,9 +64,35 @@ func TestGetMasterKey(t *testing.T) {
 	}
 }
 
+// Das Gate gegen die zweite Tür: ENCRYPTION_KEY wurde bis zum 06.08.2026 VORRANGIG
+// gelesen und umging damit jede Startprüfung (Länge, Hex-Form, Default-Erkennung unter
+// ENFORCE_PROD_SECRETS). Verschlüsselt worden wäre dann mit einem anderen Schlüssel als
+// dem geprüften — Schülerfotos und das gespeicherte SMTP-Passwort wären still
+// unlesbar geworden.
+//
+// Fällt dieser Test, ist der Zweitname zurück.
+func TestGetMasterKeyIgnoriertDenAltnamen(t *testing.T) {
+	t.Setenv(AltName, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	t.Setenv(SchluesselVariable, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+
+	key, err := GetMasterKey()
+	if err != nil {
+		t.Fatalf("GetMasterKey() error = %v", err)
+	}
+	if string(key) != "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" {
+		t.Fatalf("GetMasterKey() nahm %q — der Altname %s gewinnt wieder", key, AltName)
+	}
+
+	// Und ohne den gültigen Namen trägt der Altname gar nichts.
+	t.Setenv(SchluesselVariable, "")
+	if _, err := GetMasterKey(); err == nil {
+		t.Fatalf("%s allein hat gereicht — er wird noch gelesen", AltName)
+	}
+}
+
 func TestEncryptDecrypt(t *testing.T) {
 	// Set a valid 32-byte key for encryption/decryption tests
-	t.Setenv("ENCRYPTION_KEY", "12345678901234567890123456789012")
+	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
 
 	plaintext := []byte("secret message")
 
@@ -119,7 +118,7 @@ func TestEncryptDecrypt(t *testing.T) {
 
 func TestDecryptErrors(t *testing.T) {
 	// Set a valid 32-byte key
-	t.Setenv("ENCRYPTION_KEY", "12345678901234567890123456789012")
+	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
 
 	t.Run("Short ciphertext", func(t *testing.T) {
 		shortCiphertext := []byte("short")
@@ -149,7 +148,7 @@ func TestDecryptErrors(t *testing.T) {
 
 func TestEncryptDecryptNoKey(t *testing.T) {
 	// Ensure no key is set
-	t.Setenv("ENCRYPTION_KEY", "")
+	t.Setenv(SchluesselVariable, "")
 	t.Setenv("APP_ENCRYPTION_KEY", "")
 
 	plaintext := []byte("secret message")

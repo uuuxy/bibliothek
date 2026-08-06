@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import { coverSrc } from './utils/coverSrc.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
 	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
@@ -229,9 +230,9 @@
 				<tr class="hover:bg-slate-50 transition-colors">
 					<td class="py-2 px-4">
 						<div class="flex items-center gap-3 min-w-0">
-							{#if book.cover_url}
+							{#if coverSrc(book.cover_url, book.isbn)}
 								<img
-									src={book.cover_url}
+									src={coverSrc(book.cover_url, book.isbn)}
 									alt=""
 									class="w-8 aspect-3/4 object-cover rounded shadow-xs border border-slate-100 shrink-0"
 								/>

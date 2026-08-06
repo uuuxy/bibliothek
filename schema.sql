@@ -626,6 +626,11 @@ CREATE TABLE bestellungen_verlauf (
     etiketten_groesse  TEXT
         CONSTRAINT bestellungen_verlauf_etiketten_groesse_check
         CHECK (etiketten_groesse IS NULL OR etiketten_groesse IN ('klein', 'gross')),
+    -- Bogenraster der KLEINEN Etiketten, das der Lieferant beim Drucken gewaehlt hat
+    -- (z. B. 'zweckform_l4760'), NULL wenn nicht angegeben (Migration 067).
+    -- Bewusst OHNE CHECK: Die gueltigen Werte stehen in api/label_formats.go und wachsen;
+    -- geprueft wird an der Eingangstuer (istBekanntesEtikettFormat, 400 statt 500).
+    etiketten_format   TEXT,
     -- Bestätigungs-Link an den Lieferanten (Migration 063). Gespeichert wird NUR der
     -- SHA-256 des Tokens: Ein Datenbank-Auszug enthält damit keine benutzbaren Links.
     bestaetigungs_token_hash TEXT,
@@ -794,7 +799,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('063_bestellbestaetigung_link.sql'),
 ('064_bestellungen_datum_index.sql'),
 ('065_lieferant_ein_bestelllink.sql'),
-('066_lieferant_hauptlieferant.sql')
+('066_lieferant_hauptlieferant.sql'),
+('067_bestellbestaetigung_etikettenformat.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

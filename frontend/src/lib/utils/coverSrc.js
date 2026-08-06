@@ -36,3 +36,36 @@ export function coverSrc(coverUrl, isbn) {
 	if (!key) return '';
 	return `/api/images/cover?isbn=${encodeURIComponent(key)}&url=${encodeURIComponent(url)}`;
 }
+
+/**
+ * Reihenfolge der Cover-Quellen für die Kachel-Ansichten: erst das gespeicherte Cover,
+ * dann Google Books, dann OpenLibrary. Die Aufrufer probieren sie per onerror durch.
+ *
+ * Auch das war „die Entscheidung, die an vier Stellen einzeln getroffen wurde" —
+ * BuchKarte, KlassenBuchKachel, KlassenBuchKachelStartseite und IsbnLookupDialog
+ * bauten dieselbe Liste je selbst, und alle vier setzten die fremden Adressen DIREKT
+ * ins src. Damit meldete sich der Browser jedes Nutzers bei Google und OpenLibrary und
+ * gab dabei preis, welche ISBNs die Schule gerade ansieht. Jede Adresse läuft jetzt
+ * über coverSrc und damit über den eigenen Proxy.
+ *
+ * @param {string} [coverUrl] Gespeichertes Cover (lokal oder extern)
+ * @param {string} [isbn]
+ * @returns {string[]} Nicht-leere Bildquellen, gleiche Herkunft (Server oder Proxy)
+ */
+export function coverKandidaten(coverUrl, isbn) {
+	const kandidaten = [];
+	const gespeichert = coverSrc(coverUrl, isbn);
+	if (gespeichert) kandidaten.push(gespeichert);
+
+	const sauber = (isbn ?? '').replace(/[- ]/g, '').trim();
+	if (sauber) {
+		kandidaten.push(
+			coverSrc(
+				`https://books.google.com/books/content?id=&vid=ISBN:${sauber}&printsec=frontcover&img=1&zoom=1`,
+				sauber
+			)
+		);
+		kandidaten.push(coverSrc(`https://covers.openlibrary.org/b/isbn/${sauber}-L.jpg`, sauber));
+	}
+	return kandidaten.filter(Boolean);
+}

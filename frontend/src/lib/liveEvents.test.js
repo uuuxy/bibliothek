@@ -154,7 +154,7 @@ describe('liveEvents', () => {
 			const vorher = FakeEventSource.instanzen.length;
 			FakeEventSource.letzte.scheitert();
 			vi.advanceTimersByTime(Math.min(erwartet, 30000));
-			expect(FakeEventSource.instanzen.length).toBe(vorher + 1);
+			expect(FakeEventSource.instanzen).toHaveLength(vorher + 1);
 			erwartet = Math.min(erwartet * 2, 30000);
 		}
 	});

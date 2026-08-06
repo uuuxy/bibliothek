@@ -1,5 +1,6 @@
 <script>
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import { coverSrc } from '../../../../lib/utils/coverSrc.js';
 	let {
 		selectedClasses = [],
 		selectedBookIds = new Set(),
@@ -41,15 +42,46 @@
 	}
 
 	/**
+	 * Ersatzcover über OpenLibrary — aber über den eigenen Proxy, nicht per Hotlink.
+	 *
+	 * Vorher stand hier die openlibrary.org-URL direkt im src. Damit meldete sich der
+	 * Browser JEDER Lehrkraft bei jedem Öffnen dieser Ansicht bei einem Dritten und
+	 * übermittelte dabei, welche ISBNs die Schule gerade einer Klasse zuteilt. Der
+	 * Cover-Proxy (/api/images/cover) holt dasselbe Bild serverseitig, hat
+	 * covers.openlibrary.org auf seiner Allowlist und legt das Ergebnis lokal ab —
+	 * der Browser spricht nur noch mit dem eigenen Server.
+	 *
+	 * Das ist zugleich die Voraussetzung dafür, dass die Content-Security-Policy
+	 * img-src ohne https: auskommt (siehe internal/middleware/security.go).
+	 *
 	 * @param {string|number|null|undefined} isbn
 	 */
 	function fallbackCover(isbn) {
 		if (!isbn) return '';
 		const cleaned = String(isbn).replace(/[^0-9Xx]/g, '');
 		if (!cleaned) return '';
-		return `https://covers.openlibrary.org/b/isbn/${cleaned}-M.jpg`;
+		return coverSrc(`https://covers.openlibrary.org/b/isbn/${cleaned}-M.jpg`, cleaned);
 	}
 </script>
+
+<!-- Stand zweimal wortgleich im Markup (Ersatz hinter dem <img> und Buch ohne
+     Cover). Der Aufrufer bestimmt nur noch die Sichtbarkeit. -->
+{#snippet buchPlatzhalter(anzeige)}
+	<div class="w-full h-full {anzeige} items-center justify-center bg-slate-100 text-slate-300">
+		<svg
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+			><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg
+		>
+	</div>
+{/snippet}
 
 <div
 	class="px-4 sm:px-6 py-4 sm:py-6 border-b border-surface-variant/20 flex items-center justify-between"
@@ -83,15 +115,16 @@
 		</div>
 	{:else}
 		{#each selectedBooksList as book (book.id)}
-			{@const primaryCoverUrl = book.coverUrl || ''}
+			{@const primaryCoverUrl = coverSrc(book.coverUrl, book.isbn)}
 			{@const fallbackCoverUrl = fallbackCover(book.isbn)}
 			{@const coverUrl = primaryCoverUrl || fallbackCoverUrl}
 			<div
 				class="flex items-center gap-3.5 hover:bg-emerald-50 p-2 rounded-xl transition-colors group"
 			>
-				<div
-					class="w-10 h-14 rounded overflow-hidden shrink-0 bg-surface-container shadow-sm bg-white"
-				>
+				<!-- Nur EIN bg-: Das zusätzliche bg-white war wirkungslos, weil
+				     .bg-surface-container aus altlasten.css im Bundle dahinter landet
+				     (gemessen: rgb(238,237,241)). Siehe docs/SECURITY.md. -->
+				<div class="w-10 h-14 rounded overflow-hidden shrink-0 bg-surface-container shadow-sm">
 					{#if coverUrl}
 						<img
 							src={coverUrl}
@@ -104,35 +137,9 @@
 							class="w-full h-full object-cover"
 							onerror={handleImageError}
 						/>
-						<div
-							class="w-full h-full hidden items-center justify-center bg-slate-100 text-slate-300"
-						>
-							<svg
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg
-							>
-						</div>
+						{@render buchPlatzhalter('hidden')}
 					{:else}
-						<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
-							<svg
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg
-							>
-						</div>
+						{@render buchPlatzhalter('flex')}
 					{/if}
 				</div>
 				<p class="font-medium text-slate-800 grow truncate leading-tight">

@@ -9,6 +9,7 @@ package mailservice
 
 import (
 	"crypto/tls"
+	"errors"
 	"log"
 	"net/smtp"
 	"os"
@@ -43,7 +44,7 @@ func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, 
 	if err := c.Hello("localhost"); err != nil {
 		return BeschreibeSMTPFehler(adresse, err)
 	}
-	if err := starttlsWennMoeglich(c, konfig.Host); err != nil {
+	if err := sichereVerbindung(c, konfig.Host); err != nil {
 		return BeschreibeSMTPFehler(adresse, err)
 	}
 	if err := authentifiziere(c, konfig.Auth()); err != nil {
@@ -67,15 +68,38 @@ func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, 
 	return nil
 }
 
-// starttlsWennMoeglich führt bei Server-Unterstützung ein verifiziertes STARTTLS-Upgrade
-// durch. Das Zertifikat wird gegen den konfigurierten Host VERIFIZIERT — ohne Verifikation
-// könnte ein MITM beim Upgrade ein beliebiges Zertifikat vorlegen und sowohl die SMTP-AUTH-
-// Zugangsdaten als auch den Mailinhalt (Schülernamen, Mahndaten, Elternadressen) mitlesen.
-// Escape-Hatch nur für Legacy-Server mit Self-Signed-Zertifikat via Env.
-func starttlsWennMoeglich(c *smtp.Client, host string) error {
-	ok, _ := c.Extension("STARTTLS")
-	if !ok {
-		return nil
+// ErrSMTPKlartext meldet, dass der Server kein STARTTLS anbietet und der Versand
+// deshalb unterblieben ist. Eigener Fehlerwert, damit der Betrieb die Ursache in der
+// Oberfläche erkennt statt eines allgemeinen Verbindungsfehlers.
+var ErrSMTPKlartext = errors.New("SMTP-Server bietet kein STARTTLS an — Versand abgebrochen, weil die Nachricht sonst im Klartext über das Netz ginge (Ausnahme: SMTP_ALLOW_PLAINTEXT=true)")
+
+// sichereVerbindung hebt die Sitzung auf TLS und bricht ab, wenn das nicht geht.
+//
+// Das Zertifikat wird gegen den konfigurierten Host VERIFIZIERT — ohne Verifikation
+// könnte ein MITM beim Upgrade ein beliebiges Zertifikat vorlegen und sowohl die
+// SMTP-AUTH-Zugangsdaten als auch den Mailinhalt (Schülernamen, Mahndaten,
+// Elternadressen) mitlesen. Escape-Hatch für Legacy-Server mit Self-Signed-Zertifikat:
+// SMTP_ALLOW_INSECURE_TLS.
+//
+// Bietet der Server gar kein STARTTLS an, galt hier bisher "dann eben ohne" — die
+// Funktion hieß starttlsWennMoeglich und gab in diesem Fall nil zurück. Damit hing die
+// Vertraulichkeit jeder Mahnung am Wohlwollen der Gegenstelle: Ein Server, der die
+// Erweiterung nicht ankündigt (falsch konfiguriert, oder ein MITM, der sie aus der
+// EHLO-Antwort streicht — "STARTTLS stripping"), bekam Mahntexte mit Schülernamen und
+// Elternadressen im Klartext. Die AUTH-Zugangsdaten waren dabei nie in Gefahr:
+// smtp.PlainAuth verweigert die Übertragung über eine unverschlüsselte Verbindung von
+// sich aus. Der Inhalt aber schon, und bei einem Relay ohne Zugangsdaten (Versand nach
+// IP, im Schulnetz üblich) fiel diese Bremse ganz weg.
+//
+// Geprüft am 06.08.2026: srv1.philipp-reis-schule.de bietet STARTTLS auf 25 und 587 an
+// (EHLO-Probe, ohne Anmeldung). Für den Schulbetrieb ändert die Erzwingung also nichts.
+func sichereVerbindung(c *smtp.Client, host string) error {
+	if ok, _ := c.Extension("STARTTLS"); !ok {
+		if os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true" {
+			log.Printf("mail: WARNUNG — %s bietet kein STARTTLS an, SMTP_ALLOW_PLAINTEXT=true erlaubt den Klartextversand. Mailinhalte (Schülernamen, Elternadressen) gehen unverschlüsselt über das Netz.", host)
+			return nil
+		}
+		return ErrSMTPKlartext
 	}
 	config := &tls.Config{
 		ServerName:         host,

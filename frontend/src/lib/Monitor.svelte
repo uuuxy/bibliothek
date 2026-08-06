@@ -1,6 +1,7 @@
 <script>
 	import { Flame, Sparkles, Star } from '@lucide/svelte';
 	import { apiFetch } from './apiFetch.js';
+	import { coverSrc } from './utils/coverSrc.js';
 	import { onMount, onDestroy } from 'svelte';
 
 	/** @type {{buch_des_monats: any, neu_eingetroffen: any[], beliebt: any[]} | null} */
@@ -76,9 +77,9 @@
 					><Star class="h-4 w-4" aria-hidden="true" /> Buch des Monats</span
 				>
 				{#if slides.buch_des_monats}
-					{#if slides.buch_des_monats.cover_url}
+					{#if coverSrc(slides.buch_des_monats.cover_url, slides.buch_des_monats.isbn)}
 						<img
-							src={slides.buch_des_monats.cover_url}
+							src={coverSrc(slides.buch_des_monats.cover_url, slides.buch_des_monats.isbn)}
 							alt="Cover"
 							class="w-48 h-64 object-cover rounded-2xl shadow-2xl ring-4 ring-amber-400/30"
 						/>
@@ -115,9 +116,9 @@
 								class:scale-110={i === coverIndex}
 								class:opacity-50={i !== coverIndex}
 							>
-								{#if book.cover_url}
+								{#if coverSrc(book.cover_url, book.isbn)}
 									<img
-										src={book.cover_url}
+										src={coverSrc(book.cover_url, book.isbn)}
 										alt="Cover"
 										class="rounded-xl shadow-lg object-cover transition-all duration-500
                            {i === coverIndex ? 'w-32 h-44' : 'w-20 h-28'}"
@@ -162,9 +163,9 @@
 						{#each slides.beliebt as book, i (i)}
 							<li class="flex items-center gap-4 bg-slate-800/60 rounded-2xl p-3 shadow-md">
 								<span class="text-2xl font-black w-8 text-center text-slate-500">#{i + 1}</span>
-								{#if book.cover_url}
+								{#if coverSrc(book.cover_url, book.isbn)}
 									<img
-										src={book.cover_url}
+										src={coverSrc(book.cover_url, book.isbn)}
 										alt="Cover"
 										class="w-12 h-16 object-cover rounded-xl shadow"
 									/>

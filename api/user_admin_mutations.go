@@ -1,61 +1,13 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	"bibliothek/apierrors"
-	"bibliothek/auth"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
-
-// normalisiereBenutzerRolle bildet die Eingaberolle auf einen gültigen DB-Enum-Wert
-// ab; unbekannte Rollen werden auf "mitarbeiter" zurückgesetzt.
-func normalisiereBenutzerRolle(rolle string) string {
-	dbEnumRole := strings.ToLower(rolle)
-	if dbEnumRole != "admin" && dbEnumRole != "lehrer" && dbEnumRole != "mitarbeiter" && dbEnumRole != "helfer" {
-		dbEnumRole = "mitarbeiter"
-	}
-	return dbEnumRole
-}
-
-// pruefeEmailEindeutig prüft die E-Mail-Eindeutigkeit (excludeID leer bei Neuanlage,
-// sonst die eigene ID). Bei Konflikt oder DB-Fehler wird die HTTP-Antwort direkt
-// geschrieben und false zurückgegeben.
-func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, email, excludeID string) bool {
-	exists, err := userRepo.CheckEmailExists(ctx, email, excludeID)
-	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return false
-	}
-	if exists {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
-		return false
-	}
-	return true
-}
-
-// pruefeBarcodeEindeutig liefert den optionalen Barcode-Pointer und validiert dessen
-// Eindeutigkeit. Ist kein Barcode gesetzt, wird (nil, true) geliefert. Bei Konflikt
-// oder DB-Fehler wird die HTTP-Antwort direkt geschrieben (ok=false).
-func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, barcodeID, excludeID, konfliktMsg string) (barcode *string, ok bool) {
-	if barcodeID == "" {
-		return nil, true
-	}
-	exists, err := userRepo.CheckBarcodeExists(ctx, barcodeID, excludeID)
-	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return nil, false
-	}
-	if exists {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(konfliktMsg))
-		return nil, false
-	}
-	return &barcodeID, true
-}
 
 // CreateUserRequest holds payload data for user creation.
 type CreateUserRequest struct {
@@ -87,6 +39,12 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
+			return
+		}
+
+		// Einen Administrator darf nur ein Administrator anlegen (siehe
+		// user_admin_eskalation.go).
+		if !pruefeAdminVergabe(w, r, req.Rolle) {
 			return
 		}
 
@@ -157,12 +115,20 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 			return
 		}
 
-		// Prevent admin self-demotion or self-deactivation
-		if !pruefeAdminSelbstschutz(w, r, id, req) {
+		ctx := r.Context()
+
+		// Reihenfolge ist Absicht: erst die eigene Rolle/Aktivierung schützen, dann die
+		// Vergabe der Admin-Rolle, dann den Schutz bestehender Admin-Konten. Alle drei
+		// laufen VOR jedem Schreibzugriff (siehe user_admin_eskalation.go).
+		if !pruefeSelbstschutz(w, r, id, req.Rolle, req.Aktiv) {
 			return
 		}
-
-		ctx := r.Context()
+		if !pruefeAdminVergabe(w, r, req.Rolle) {
+			return
+		}
+		if !pruefeAdminZiel(ctx, w, r, userRepo, id) {
+			return
+		}
 
 		if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, id) {
 			return
@@ -184,75 +150,6 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 		}
 
 		InvalidatePermissionCache()
-
-		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Write(w, []byte(`{"status":"success"}`))
-	}
-}
-
-// pruefeAdminSelbstschutz verhindert, dass ein Admin die eigene Rolle herabstuft
-// oder das eigene Konto deaktiviert. Bei einem Verstoß wird die HTTP-Antwort direkt
-// geschrieben und false zurückgegeben.
-func pruefeAdminSelbstschutz(w http.ResponseWriter, r *http.Request, id string, req UpdateUserRequest) bool {
-	claims, ok := auth.GetClaims(r.Context())
-	if !ok || claims.UserID != id {
-		return true
-	}
-	if strings.ToUpper(req.Rolle) != "ADMIN" {
-		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigene Admin-Rolle kann nicht herabgestuft werden"))
-		return false
-	}
-	if !req.Aktiv {
-		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
-		return false
-	}
-	return true
-}
-
-// DeleteUserHandler deletes a user and logs it in the audit log.
-// @Summary      Delete user
-// @Description  Deletes a system user by their ID and registers the deletion in the audit log.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "User ID (UUID)"
-// @Success      200  {object}  map[string]string
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /benutzer/{id} [delete]
-func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
-			return
-		}
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
-			return
-		}
-
-		// Prevent self-deletion
-		if id == claims.UserID {
-			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
-			return
-		}
-
-		ctx := r.Context()
-
-		err := auditRepo.DeleteUser(ctx, id, claims.UserID)
-		if err != nil {
-			// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
-			// Der Admin muss die Bücher erst zurückbuchen.
-			if errors.Is(err, repository.ErrUserHasActiveLoans) {
-				apierrors.SendHTTPError(w, http.StatusConflict, err)
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
 
 		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Write(w, []byte(`{"status":"success"}`))

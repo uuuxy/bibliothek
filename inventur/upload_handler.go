@@ -13,7 +13,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -95,10 +94,10 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 	if abfrageErr == nil && altesBook != nil && strings.HasPrefix(altesBook.CoverURL, "/uploads/") {
 		filename := filepath.Base(altesBook.CoverURL)
 		if filename != "" && filename != "/" && filename != "." {
-			cleanDir := filepath.Clean("uploads")
-			alterPfad := filepath.Clean(filepath.Join(cleanDir, filename))
-			if strings.HasPrefix(alterPfad, cleanDir+string(filepath.Separator)) {
-				_ = os.Remove(alterPfad) //nolint:errcheck // Fehler ignorieren (Datei existiert ggf. nicht mehr)
+			// Fehler bewusst nur protokollieren: Das alte Cover aufzuräumen darf den
+			// Upload des neuen nicht scheitern lassen.
+			if err := loescheUploadDatei(filename); err != nil {
+				log.Printf("cover-upload: altes Cover konnte nicht entfernt werden: %v", err)
 			}
 		}
 	}
@@ -209,24 +208,10 @@ func readCoverUpload(writer http.ResponseWriter, request *http.Request, id strin
 // serverseitig generierten (traversal-geschützten) Pfad und liefert die öffentliche
 // Cover-URL. ok=false: die Fehlerantwort wurde bereits geschrieben.
 func saveCoverFile(writer http.ResponseWriter, id string, finalBytes []byte, saveExt string) (string, bool) {
-	if err := os.MkdirAll("uploads", 0750); err != nil {
-		log.Printf("cover-upload: mkdir uploads failed for book %s: %v", logger.SanitizeLog(id), err)
-		writeError(writer, http.StatusInternalServerError, "uploads-verzeichnis konnte nicht erstellt werden")
-		return "", false
-	}
-
-	cleanDir := filepath.Clean("uploads")
 	filename := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), saveExt)
-	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
 
-	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
-		writeError(writer, http.StatusBadRequest, "invalid file path")
-		return "", false
-	}
-
-	// #nosec G304 - filename is safely generated on the server side
-	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
-		log.Printf("cover-upload: write file failed for book %s (%s): %v", logger.SanitizeLog(id), logger.SanitizeLog(savePath), err)
+	if err := schreibeUploadDatei(filename, finalBytes); err != nil {
+		log.Printf("cover-upload: speichern fehlgeschlagen für Buch %s: %v", logger.SanitizeLog(id), err)
 		writeError(writer, http.StatusInternalServerError, "fehler beim speichern")
 		return "", false
 	}

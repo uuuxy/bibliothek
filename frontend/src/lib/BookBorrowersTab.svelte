@@ -2,6 +2,8 @@
 	import Button from './components/ui/Button.svelte';
 	import Select from './components/ui/Select.svelte';
 	import BorrowersListe from './components/BorrowersListe.svelte';
+	import { baueAusleiherDruckHtml } from './utils/ausleiherDruck.js';
+	import { fmtDateDE as fmtDate } from './utils/dates.js';
 
 	/** @type {{ borrowers: any[], book: any, onBack: () => void }} */
 	let { borrowers, book, onBack } = $props();
@@ -26,16 +28,6 @@
 		})
 	);
 
-	/** @param {string} d */
-	function fmtDate(d) {
-		if (!d) return '-';
-		try {
-			return new Date(d).toLocaleDateString('de-DE');
-		} catch {
-			return d;
-		}
-	}
-
 	function printAusleiher() {
 		const printWindow = window.open('', '_blank', 'width=800,height=600');
 		if (!printWindow) {
@@ -43,65 +35,21 @@
 			return;
 		}
 
-		const printDate = new Date().toLocaleDateString('de-DE');
-		let html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Mahnliste: ${book?.title || 'Buch'}</title>
-        <style>
-          body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; color: #1e293b; }
-          h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-          p.meta { margin: 0 0 1.5rem 0; color: #64748b; font-size: 0.875rem; }
-          table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-          th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
-          th { background: #f8fafc; font-weight: 600; font-size: 0.875rem; color: #475569; }
-          .overdue { color: #e11d48; font-weight: bold; }
-          @media print { @page { margin: 1cm; } }
-        </style>
-      </head>
-      <body>
-        <h1>Ausleiher-Liste: ${book?.title || 'Buch'}</h1>
-        <p class="meta">Erstellt am: ${printDate} | Filter: Klasse ${filterKlasse}</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Schüler/in</th>
-              <th>Klasse</th>
-              <th>Exemplar</th>
-              <th>Ausgeliehen am</th>
-              <th>Rückgabe bis</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-
-		for (const b of filteredBorrowers) {
-			const isOverdue = new Date(b.rueckgabe_frist) < new Date();
-			html += `
-        <tr>
-          <td>${b.schueler_name} ${b.schueler_nachname}</td>
-          <td>${b.klasse || '-'}</td>
-          <td style="font-family: monospace; font-size: 0.875rem;">${b.exemplar_barcode}</td>
-          <td>${fmtDate(b.ausgeliehen_am)}</td>
-          <td class="${isOverdue ? 'overdue' : ''}">${fmtDate(b.rueckgabe_frist)}</td>
-        </tr>
-      `;
-		}
-
-		html += `
-          </tbody>
-        </table>
-        \x3Cscript>
-          window.onload = () => { setTimeout(() => window.print(), 200); }
-        \x3C/script>
-      </body>
-      </html>
-    `;
-
 		printWindow.document.open();
-		printWindow.document.write(html);
+		printWindow.document.write(baueAusleiherDruckHtml(filteredBorrowers, book, filterKlasse));
 		printWindow.document.close();
+
+		// Drucken wird VON HIER angestoßen, nicht mehr von einem <script> im geschriebenen
+		// Dokument. Der Grund ist keine Stilfrage: Ein per window.open('') erzeugtes
+		// about:blank erbt die CSP des Openers, und die erlaubt nur script-src 'self'.
+		// Das eingebettete Skript wurde also nie ausgeführt — das Fenster ging auf und
+		// blieb stehen, drucken musste man von Hand (gemessen am 06.08.2026).
+		//
+		// Aus dem Opener heraus ist es kein Inline-Skript mehr, sondern ein gewöhnlicher
+		// Aufruf auf dem gleichen Origin. document.write ist synchron und das Dokument
+		// enthält keine nachzuladenden Ressourcen, deshalb steht der Inhalt hier bereits.
+		printWindow.focus();
+		printWindow.print();
 	}
 </script>
 

@@ -66,7 +66,7 @@ func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 		bestellungFuerLieferant(t, pool, mitBestaetigung)
 	}
 	bestaetigte := bestellungFuerLieferant(t, pool, mitBestaetigung)
-	if _, err := srv.bestaetigeBestellung(ctx, bestaetigte, "", "lieferant"); err != nil {
+	if _, err := srv.bestaetigeBestellung(ctx, bestaetigte, "", "", "lieferant"); err != nil {
 		t.Fatalf("bestätigen: %v", err)
 	}
 	for i := 0; i < 2; i++ {

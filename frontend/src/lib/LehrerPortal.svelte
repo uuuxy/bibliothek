@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import { coverSrc } from './utils/coverSrc.js';
 	import Button from './components/ui/Button.svelte';
 	/** @type {{ user: any }} */
 	let { user } = $props();
@@ -178,9 +179,9 @@
 						<div
 							class="w-16 h-20 rounded-xl bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center"
 						>
-							{#if book.cover_url}
+							{#if coverSrc(book.cover_url, book.isbn)}
 								<img
-									src={book.cover_url}
+									src={coverSrc(book.cover_url, book.isbn)}
 									alt="Cover"
 									class="w-full h-full object-cover"
 									loading="lazy"

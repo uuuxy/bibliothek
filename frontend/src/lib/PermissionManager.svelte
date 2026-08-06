@@ -72,7 +72,17 @@
 				allowed: newVal
 			});
 
-			if (!res.ok) throw new Error('Fehler beim Speichern der Berechtigung.');
+			// Die Begründung des Servers durchreichen statt sie durch einen Einheitssatz zu
+			// ersetzen. Seit die Rechte-Matrix Administratoren vorbehalten ist, ist genau
+			// diese Begründung die Information, die zählt ("nur ein Administrator"), und
+			// ein 400 nennt die unbekannte Rolle/Rechte-Kombination beim Namen.
+			if (!res.ok) {
+				const grund = await res
+					.json()
+					.then((/** @type {any} */ d) => d?.error)
+					.catch(() => null);
+				throw new Error(grund || 'Fehler beim Speichern der Berechtigung.');
+			}
 			permissionsState[role][permission] = newVal;
 
 			showToast('Rechte erfolgreich aktualisiert.');

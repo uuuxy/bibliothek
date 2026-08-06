@@ -31,7 +31,7 @@ func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 
 		pdf := baueBestelllistePDF(reorders, settings.BestellbedarfSchwelle)
 
-		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set("Content-Disposition", "attachment; filename=bestellliste.pdf")
 		if err := pdf.Output(w); err != nil {
 			log.Printf("Bestellliste: PDF stream output failed: %v", err)

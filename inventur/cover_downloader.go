@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/imageutil"
 	"bytes"
 	"context"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -94,21 +94,10 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 // generierten (traversal-geschützten) Pfad in uploads/ und liefert den öffentlichen
 // Pfad; "" bei Fehler.
 func speichereCoverDatei(finalBytes []byte, isbn, saveExt string) string {
-	if err := os.MkdirAll("uploads", 0750); err != nil {
-		log.Printf("Cover-Download: uploads-Verzeichnis konnte nicht angelegt werden: %v", err)
-		return ""
-	}
-	cleanDir := filepath.Clean("uploads")
 	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
-	savePath := filepath.Clean(filepath.Join(cleanDir, filename))
 
-	if !strings.HasPrefix(savePath, cleanDir+string(filepath.Separator)) {
-		log.Printf("Path traversal attempt in cover downloader: %s", isbn)
-		return ""
-	}
-
-	if err := os.WriteFile(savePath, finalBytes, 0600); err != nil {
-		log.Printf("Fehler beim lokalen Speichern von %s: %v", savePath, err)
+	if err := schreibeUploadDatei(filename, finalBytes); err != nil {
+		log.Printf("Cover-Download: %v", err)
 		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
 	}
 
@@ -126,7 +115,15 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 		return ""
 	}
 
-	// Sicherheit: Bild direkt decodieren
+	// Erst den Bild-Header prüfen, dann dekodieren: Die 10-MB-Grenze in ladeCoverBytes
+	// begrenzt die Leitung, nicht den Speicher — ein stark komprimiertes Riesenbild ist
+	// klein auf der Leitung und groß im RAM (30000×30000 ≈ 3,6 GB). GuardImageDimensions
+	// liest nur den Header und allokiert keine Pixeldaten.
+	if err := imageutil.GuardImageDimensions(fileBytes); err != nil {
+		log.Printf("Cover-Download: Bild abgelehnt (%s): %v", coverURL, err)
+		return ""
+	}
+
 	img, _, err := image.Decode(bytes.NewReader(fileBytes))
 	if err != nil {
 		return ""

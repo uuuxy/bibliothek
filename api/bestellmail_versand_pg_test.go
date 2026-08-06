@@ -33,6 +33,9 @@ import (
 // Nachricht. Der Kanal nimmt genau eine Sitzung an.
 func mailAbfangen(t *testing.T) <-chan smtptest.Sitzung {
 	t.Helper()
+	// Der Testserver kündigt kein STARTTLS an; sichereVerbindung bräche den Versand
+	// sonst ab. Dass die Erzwingung wirkt, prüft mailservice.
+	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
 	alterLader := smtpKonfigLader

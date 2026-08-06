@@ -56,17 +56,30 @@
 	}
 </script>
 
+<!-- Escape schliesst; vorher fuehrte nur der Klick auf den Hintergrund heraus. -->
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape') onClose();
+	}}
+/>
+
 <div
 	class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
 	role="presentation"
-	onclick={onClose}
+	onclick={(e) => {
+		// Der Treffer-Vergleich ersetzt das stopPropagation, das vorher am Dialog hing.
+		// Dort machte es das Dialog-Element zu einem Klickziel und verlangte damit
+		// tabindex und einen Tastaturweg — fuer einen Handler, der nichts tut, ausser
+		// ein Ereignis aufzuhalten. Hier gefragt ist ohnehin nur: Wurde der Hintergrund
+		// selbst getroffen?
+		if (e.target === e.currentTarget) onClose();
+	}}
 >
 	<div
 		class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Klasse zuweisen"
-		onclick={(e) => e.stopPropagation()}
 	>
 		<h3 class="text-lg font-bold text-slate-900">Klasse zuweisen</h3>
 		<p class="text-sm text-slate-500">

@@ -1,6 +1,7 @@
 <script>
 	import { BookOpen } from '@lucide/svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
+	import { coverSrc } from './utils/coverSrc.js';
 
 	let query = $state('');
 	/** @type {any[]} */
@@ -75,6 +76,11 @@
 					d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
 				/>
 			</svg>
+			<!-- svelte-ignore a11y_autofocus -->
+			<!-- Bewusst behalten: Der OPAC steht als Katalog-Terminal im Raum, und dieses Feld
+			     ist der einzige Zweck der Seite. Ohne Fokus tippt der erste Anschlag ins Leere
+			     — beim Barcode-Scanner heisst das, dass der Scan verloren geht, ohne dass
+			     jemand einen Fehler sieht. -->
 			<input
 				type="search"
 				bind:value={query}
@@ -104,8 +110,12 @@
 						<div
 							class="h-52 bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center relative overflow-hidden"
 						>
-							{#if book.cover_url}
-								<img src={book.cover_url} alt="Buchcover" class="h-full w-full object-cover" />
+							{#if coverSrc(book.cover_url, book.isbn)}
+								<img
+									src={coverSrc(book.cover_url, book.isbn)}
+									alt="Buchcover"
+									class="h-full w-full object-cover"
+								/>
 							{:else}
 								<span class="text-5xl font-extrabold text-slate-300 select-none">
 									{book.titel.charAt(0).toUpperCase()}

@@ -1,6 +1,7 @@
 import { appState } from '../inventur/lib/store.svelte.js';
 import { uiStore } from './stores/uiStore.svelte.js';
 import { apiFetch } from './apiFetch.js';
+import { coverKandidaten } from './utils/coverSrc.js';
 
 /**
  * Liefert das geparste JSON eines erfüllten, erfolgreichen Promise.allSettled-Ergebnisses,
@@ -46,15 +47,7 @@ export function useBookAkte() {
 			}
 		}
 
-		const candidates = [];
-		if (book?.coverUrl) candidates.push(book.coverUrl);
-		if (book?.isbn) {
-			const clean = book.isbn.replace(/[- ]/g, '');
-			candidates.push(
-				`https://books.google.com/books/content?id=&vid=ISBN:${clean}&printsec=frontcover&img=1&zoom=1`,
-				`https://covers.openlibrary.org/b/isbn/${clean}-L.jpg`
-			);
-		}
+		const candidates = coverKandidaten(book?.coverUrl, book?.isbn);
 		coverCandidates = candidates;
 		currentCandidateIndex = 0;
 		coverFailed = candidates.length === 0;

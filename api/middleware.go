@@ -42,6 +42,14 @@ var langLaufendePfade = []string{
 	"/api/admin/mahnungen/", // Sammeldruck über alle Klassen
 }
 
+// StandardLesefrist ist die Frist, in der eine gewöhnliche Anfrage vollständig
+// eingelesen sein muss (Kopf UND Rumpf). Sie steht am http.Server als ReadTimeout.
+//
+// 30 Sekunden sind für jede normale Anfrage dieser Anwendung reichlich — der größte
+// gewöhnliche Rumpf ist ein Foto-Upload. Die Import-Endpunkte brauchen mehr und holen
+// es sich in ErweitereLesefristFuerLangeUploads.
+const StandardLesefrist = 30 * time.Second
+
 // RequestFrist bestimmt die Frist für einen Pfad. Ausgelagert, damit die Zuordnung
 // ohne HTTP-Aufbau prüfbar ist — eine Ausnahmeliste, die man nur im Betrieb testen
 // kann, ist genau die Sorte Schutz, die man irrtümlich für wirksam hält.
@@ -52,6 +60,31 @@ func RequestFrist(pfad string, standard time.Duration) time.Duration {
 		}
 	}
 	return standard
+}
+
+// ErweitereLesefristFuerLangeUploads hebt die Lesefrist der Verbindung für genau die
+// Endpunkte an, die große Dateien entgegennehmen.
+//
+// Sie ist die Gegenseite von ReadTimeout am Server: Ohne diese Middleware müsste die
+// serverweite Frist so großzügig sein wie der langsamste Import (100 MB Littera-Datei
+// über eine Schulleitung) — und damit wäre sie für die 200 anderen Endpunkte wirkungslos.
+// Umgekehrt bräche eine strenge serverweite Frist mitten in den Upload, den niemand
+// abbrechen will. Also: streng als Vorgabe, großzügig für die fünf bekannten Pfade,
+// dieselbe Liste wie bei der Bearbeitungsfrist (langLaufendePfade).
+//
+// Schlägt das Setzen der Frist fehl (ResponseWriter ohne SetReadDeadline, z. B. in
+// manchen Testaufbauten), läuft die Anfrage weiter — die serverweite Frist gilt dann
+// unverändert. Ein Upload, der daran scheitert, ist ein sichtbarer Fehler; ein
+// abgewiesener Request wegen eines fehlenden Optionalinterfaces wäre ein Rätsel.
+func ErweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if RequestFrist(r.URL.Path, StandardLesefrist) != StandardLesefrist {
+			if err := http.NewResponseController(w).SetReadDeadline(time.Now().Add(LangLaufendeFrist)); err != nil {
+				log.Printf("Lesefrist für %s nicht verlängerbar, es gilt die Vorgabe: %v", r.URL.Path, err)
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // TimeoutMiddleware wraps the request with a context timeout.
@@ -78,7 +111,12 @@ func PanicRecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, r.URL.Path, err)
+				// maskiereToken auch hier: Der Bestätigungs-Token steht im Pfad, und ein
+				// Panic auf der Lieferantenseite schreibt genau diesen Pfad ins Log. Die
+				// 500er-Zeile in LoggingMiddleware maskierte bereits, diese nicht — ein
+				// weitergereichtes Logfile hätte damit weiter funktionierende Links
+				// enthalten und die Hash-Speicherung in der Datenbank entwertet.
+				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, maskiereToken(r.URL.Path), err)
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
 			}
 		}()

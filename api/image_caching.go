@@ -1,25 +1,86 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/imageutil"
 	"bibliothek/pkg/safehttp"
 
 	"github.com/chai2010/webp"
 )
+
+// maxCoverBytes begrenzt, wie viel von einer fremden Antwort überhaupt in den Speicher
+// gelesen wird. Ohne diese Grenze bestimmt der fremde Server, wie viel RAM ein einzelner
+// Aufruf dieses Endpunkts kostet — und der Endpunkt ist öffentlich. 10 MB sind für ein
+// Buchcover großzügig; dieselbe Grenze gilt im Cover-Downloader des Inventur-Moduls.
+const maxCoverBytes = 10 << 20
+
+// coverDownloadsProSekunde begrenzt NUR den teuren Zweig dieses Endpunkts: den
+// Cache-Fehltreffer, der einen fremden Download samt vollständiger Bilddekodierung
+// auslöst. Ausgelieferte Cache-Treffer bleiben ungebremst — sie sind ein Datei-Read,
+// und ein Katalogaufruf lädt dutzende davon gleichzeitig (genau deshalb steht der
+// Pfad in der Ausnahmeliste des globalen Limiters, siehe rate_limit.go).
+//
+// Ohne diese Bremse war der einzige unauthentifizierte Endpunkt der Anwendung, der
+// eine ausgehende Verbindung und ein image.Decode auslöst, vollständig unbegrenzt:
+// ein Aufruf = ein Download + eine Dekodierung, beliebig oft parallel.
+// 30/s pro IP trägt den Erstaufruf einer Katalogseite (24 Kacheln) in einem Zug.
+const coverDownloadsProSekunde = 30
+
+// coverDownloadLimiter bremst die Fehltreffer pro Client-IP.
+var coverDownloadLimiter = newIPRateLimiter(coverDownloadsProSekunde)
+
+// istCoverCacheSchluessel prüft den vom Aufrufer gewählten Cache-Namen, bevor daraus
+// ein Dateiname wird.
+//
+// Der Wert kommt aus buecher_titel.isbn und wurde ohne Prüfung zum Dateinamen im
+// Cache-Verzeichnis. Zulässig sind Ziffern, Trennstriche und ein abschließendes X
+// (ISBN-10-Prüfziffer) — genau die Zeichen, die eine ISBN oder EAN haben kann.
+//
+// Bewusst NICHT über isbnutil.CleanISBN geprüft, obwohl das naheliegt: Der Reiniger
+// entfernt auch Leerzeichen, weil er ISBNs VERGLEICHBAR machen soll. Hier geht es um
+// einen Dateinamen, und "9783161 84100" wäre danach gültig gewesen. Zwei verschiedene
+// Fragen an dieselbe Zeichenkette (ist das dieselbe ISBN? / darf das ein Dateiname
+// sein?) vertragen keine gemeinsame Antwort.
+//
+// Das ist Hygiene, keine Mengenbegrenzung: Gegen das Vollschreiben der Platte hilft
+// die Download-Bremse oben, nicht diese Prüfung. Sie hält nur alles fern, was
+// erkennbar keine Bestellnummer ist, und hält die Dateinamen vorhersagbar.
+func istCoverCacheSchluessel(s string) bool {
+	if s == "" || len(s) > 17 {
+		return false
+	}
+	stellen := 0
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case c >= '0' && c <= '9':
+			stellen++
+		case c == '-':
+			// Trennstriche zählen nicht als Stelle.
+		case (c == 'X' || c == 'x') && i == len(s)-1:
+			stellen++
+		default:
+			return false
+		}
+	}
+	return stellen >= 8 && stellen <= 14
+}
 
 // coverFallbackGIF ist ein transparentes 1x1-GIF, das bei Fehlern ausgeliefert
 // wird, um Browser-Konsolen-Spam zu vermeiden.
@@ -83,7 +144,34 @@ func holeUndKonvertiereCover(ctx context.Context, root *os.Root, urlStr, fileNam
 		return fmt.Errorf("cover download: unerwarteter Status %d", resp.StatusCode)
 	}
 
-	img, _, err := image.Decode(resp.Body)
+	// Nicht-Bild-Antworten sofort verwerfen: Bot-Schranken (DNB/Anubis) liefern bei
+	// unerwartetem User-Agent HTTP 200 mit einer HTML-Challenge. Gleiche Prüfung wie im
+	// Cover-Downloader des Inventur-Moduls.
+	if ct := resp.Header.Get(headerContentType); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
+		return fmt.Errorf("cover download: Nicht-Bild-Antwort (%s)", ct)
+	}
+
+	// Erst begrenzt einlesen, dann den Header prüfen, dann dekodieren — in dieser
+	// Reihenfolge, weil jeder Schritt den nächsten teurer macht:
+	//   image.Decode direkt auf resp.Body hätte die Größe der Pixelmatrix vollständig
+	//   dem fremden Server überlassen. Ein 30000×30000-PNG sind wenige hundert KB auf
+	//   der Leitung und rund 3,6 GB im Speicher dieses Prozesses. Der Endpunkt ist
+	//   öffentlich, und covers.openlibrary.org steht zwar auf der Allowlist, wird aber
+	//   von Freiwilligen befüllt — die Allowlist begrenzt das Ziel, nicht den Inhalt.
+	// GuardImageDimensions liest dafür nur den Bild-Header (image.DecodeConfig
+	// allokiert keine Pixeldaten).
+	rohBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxCoverBytes+1))
+	if err != nil {
+		return err
+	}
+	if len(rohBytes) > maxCoverBytes {
+		return fmt.Errorf("cover download: Antwort überschreitet %d MB", maxCoverBytes>>20)
+	}
+	if err := imageutil.GuardImageDimensions(rohBytes); err != nil {
+		return err
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(rohBytes))
 	if err != nil {
 		return err
 	}
@@ -124,6 +212,12 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Der Cache-Name wird gleich zum Dateinamen — vor allem anderen prüfen.
+	if !istCoverCacheSchluessel(isbn) {
+		serveCoverFallback(w)
+		return
+	}
+
 	// SSRF-Schutz: URL aus validierten Teilen neu aufbauen
 	sichereURL, ok := baueSichereCoverURL(urlStr)
 	if !ok {
@@ -156,6 +250,15 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 	// Serve cached version if it exists
 	if _, err := root.Stat(fileName); err == nil {
 		serveCachedCover(w, r, root, fileName)
+		return
+	}
+
+	// Ab hier wird es teuer: fremder Download plus vollständige Dekodierung. Nur dieser
+	// Zweig ist gebremst — und er antwortet im Grenzfall mit dem Fallback-GIF statt mit
+	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
+	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
+	if !coverDownloadLimiter.allow(getIP(r)) {
+		serveCoverFallback(w)
 		return
 	}
 

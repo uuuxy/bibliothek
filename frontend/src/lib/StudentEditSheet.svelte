@@ -31,12 +31,17 @@
 		}, 3000);
 	}
 
+	// Getter statt Werte: So liest der Hook bei jedem Zugriff das aktuelle Prop. Direkt
+	// übergeben wären es Schnappschüsse vom Aufbau der Komponente — `save()` hätte das
+	// PATCH dann an den zuvor geöffneten Schüler geschickt. Siehe useStudentEditForm.
 	const { formData, saving, syncData, save } = useStudentEditForm({
-		student,
-		onSave,
+		getStudent: () => student,
+		onSave: () => onSave(),
 		showSnackbar
 	});
 
+	// Der Effekt verfolgt `student` über den Getter in syncData — wechselt das Prop,
+	// wird das Formular neu befüllt statt die alten Werte zu behalten.
 	$effect(() => {
 		syncData();
 	});

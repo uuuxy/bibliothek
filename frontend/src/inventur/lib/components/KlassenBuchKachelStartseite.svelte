@@ -1,4 +1,6 @@
 <script>
+	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
+
 	/**
 	 * @type {{
 	 *   book: {
@@ -28,16 +30,7 @@
 
 	$effect(() => {
 		const candidates = [];
-		if (book?.coverUrl) {
-			candidates.push(book.coverUrl);
-		}
-		if (book?.isbn) {
-			const cleanIsbn = book.isbn.replace(/[- ]/g, '');
-			candidates.push(
-				`https://books.google.com/books/content?id=&vid=ISBN:${cleanIsbn}&printsec=frontcover&img=1&zoom=1`
-			);
-			candidates.push(`https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`);
-		}
+		candidates.push(...coverKandidaten(book?.coverUrl, book?.isbn));
 		coverCandidates = candidates;
 		currentCandidateIndex = 0;
 		coverFailed = candidates.length === 0;
@@ -145,9 +138,20 @@
 	}
 </script>
 
+<!-- Anklickbare Kachel: Rolle, Fokus und Tastaturweg, damit sie nicht nur mit der Maus
+     erreichbar ist. -->
 <div
 	class="snap-start shrink-0 w-40 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-2xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between"
+	role="button"
+	tabindex="0"
 	{onclick}
+	onkeydown={(e) => {
+		if (e.target !== e.currentTarget) return;
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			onclick?.(e);
+		}
+	}}
 >
 	<div class="w-full aspect-2/3 rounded-xl overflow-hidden shadow-sm mb-3 relative bg-slate-50">
 		{#if coverSrc && !coverFailed}

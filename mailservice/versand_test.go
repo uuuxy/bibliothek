@@ -12,8 +12,67 @@ func testKonfig(host, port string) SMTPKonfig {
 	return SMTPKonfig{Host: host, Port: port, Absender: "bibliothek@schule.de"}
 }
 
+// erlaubeKlartext schaltet für einen Test die Klartext-Ausnahme frei.
+//
+// Der Test-Server (internal/smtptest) kündigt bewusst kein STARTTLS an — er soll die
+// SMTP-Ablaufe prüfen, nicht TLS. Seit sichereVerbindung den Versand ohne STARTTLS
+// abbricht, brauchen genau deshalb alle Ablauf-Tests diese Ausnahme. Dass die
+// Erzwingung selbst wirkt, prüft TestVersendeUeberSMTPBrichtOhneSTARTTLSAb — sonst
+// hätte man sie hier nur wegkonfiguriert.
+func erlaubeKlartext(t *testing.T) {
+	t.Helper()
+	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
+}
+
+// Das Gate: Ein Server ohne STARTTLS bekommt keine Nachricht zu sehen.
+//
+// Ohne diesen Test wäre die Erzwingung nicht belegt — alle anderen Tests laufen mit
+// gesetzter Ausnahme, und ein versehentliches Zurückdrehen auf "dann eben ohne" fiele
+// nirgends auf.
+func TestVersendeUeberSMTPBrichtOhneSTARTTLSAb(t *testing.T) {
+	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
+
+	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
+	if err == nil {
+		t.Fatal("Versand über eine Klartextverbindung wurde als erfolgreich gemeldet")
+	}
+	if !errors.Is(err, ErrSMTPKlartext) {
+		t.Errorf("Fehler = %v, want ErrSMTPKlartext", err)
+	}
+	// Der Marker entscheidet über den HTTP-Status (502 statt neutralisierter 500) —
+	// ohne ihn erreicht die Begründung den Admin im Formular nicht.
+	if !errors.Is(err, ErrSMTPVersand) {
+		t.Errorf("Fehler trägt den Marker nicht (→ falscher HTTP-Status): %v", err)
+	}
+
+	// Und der Server hat den Mailtext nie gesehen: Der Abbruch liegt vor DATA.
+	select {
+	case sitzung := <-sitzungen:
+		t.Fatalf("Server hat trotz Abbruch eine Nachricht empfangen: %q", sitzung.Nachricht)
+	default:
+	}
+}
+
+// Die Gegenprobe zum Gate: Mit gesetzter Ausnahme geht der Versand durch — der
+// Escape-Hatch für ein Legacy-Relay im Schulnetz ist erreichbar und nicht nur
+// dokumentiert.
+func TestVersendeUeberSMTPErlaubtKlartextMitAusnahme(t *testing.T) {
+	erlaubeKlartext(t)
+	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
+
+	if err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n")); err != nil {
+		t.Fatalf("Versand mit SMTP_ALLOW_PLAINTEXT=true fehlgeschlagen: %v", err)
+	}
+	if sitzung := <-sitzungen; !strings.Contains(sitzung.Nachricht, "Inhalt") {
+		t.Errorf("Nachricht kam nicht an: %q", sitzung.Nachricht)
+	}
+}
+
 // Der Normalfall — und zugleich der Beleg, dass genau ein Empfänger im Envelope steht.
 func TestVersendeUeberSMTPStelltZu(t *testing.T) {
+	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
 	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
@@ -40,6 +99,7 @@ func TestVersendeUeberSMTPStelltZu(t *testing.T) {
 // kosmetischer Fehler. Vorher gab der Code genau hier einen Fehler zurück, weil er
 // das Ergebnis von QUIT durchreichte.
 func TestVersendeUeberSMTPWertetAbbruchNachAnnahmeAlsZugestellt(t *testing.T) {
+	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.BrichtVorQuitAb)
 
 	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
@@ -57,6 +117,7 @@ func TestVersendeUeberSMTPWertetAbbruchNachAnnahmeAlsZugestellt(t *testing.T) {
 // Die Gegenprobe: Weist der Server die Nachricht ab, ist das ein Fehlschlag — mit
 // Marker (→ HTTP 502) und der Serverantwort im Klartext.
 func TestVersendeUeberSMTPMeldetAbweisung(t *testing.T) {
+	erlaubeKlartext(t)
 	host, port, _ := smtptest.Starte(t, smtptest.LehntNachrichtAb)
 
 	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
@@ -125,6 +186,7 @@ func TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb(t *testing.T) {
 // (TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb). Fällt dieser Test hier, ist die
 // Einschätzung "Fließtext ist ungefährlich" nicht mehr gedeckt.
 func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
+	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
 	// Ein Text, wie ihn ein Angreifer in eine Vorlage oder einen Namen schreiben würde.

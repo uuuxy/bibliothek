@@ -4,6 +4,7 @@
      Lädt die volle Liste selbst (limit=100); alle Filter laufen rein clientseitig. -->
 <script>
 	import { apiFetch } from '../../apiFetch.js';
+	import { coverSrc } from '../../utils/coverSrc.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 
@@ -141,9 +142,9 @@
 			     heissen und beide ohne ISBN sein (doppelter Key = Absturz der Ansicht). -->
 			{#each gefiltert as row (row.id)}
 				<li class="py-3.5 flex items-center gap-4">
-					{#if row.cover_url}
+					{#if coverSrc(row.cover_url, row.isbn)}
 						<img
-							src={row.cover_url}
+							src={coverSrc(row.cover_url, row.isbn)}
 							alt=""
 							class="w-9 aspect-3/4 object-cover rounded-sm border border-slate-100 shrink-0"
 						/>

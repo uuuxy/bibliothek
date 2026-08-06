@@ -28,6 +28,7 @@ import (
 	"bibliothek/api"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/crypto"
 	"bibliothek/internal/service"
 	"bibliothek/jobs"
 	"bibliothek/pkg/clientip"
@@ -50,9 +51,29 @@ import (
 
 func startServer(port string, server *api.Server) *http.Server {
 	httpServer := &http.Server{
-		Addr:              ":" + port,
-		Handler:           server.Routes(),
+		Addr:    ":" + port,
+		Handler: server.Routes(),
+
+		// ReadHeaderTimeout begrenzt das Senden der Kopfzeilen. Es begrenzt NICHT das
+		// Senden des Rumpfes: Wer korrekte Header schickt, "Content-Length: 10000000"
+		// ankündigt und danach ein Byte pro Minute nachreicht, hielt bisher Verbindung,
+		// Goroutine und ggf. eine Datenbankverbindung beliebig lange fest. Die
+		// TimeoutMiddleware half dagegen nicht — ein Kontext-Deadline bricht kein
+		// blockierendes Read auf der Verbindung ab.
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       api.StandardLesefrist,
+
+		// IdleTimeout gilt zwischen zwei Anfragen derselben Keep-Alive-Verbindung.
+		// Ohne den Wert übernimmt Go hier ReadTimeout — was funktioniert, aber die
+		// beiden Fristen aneinanderkettet; getrennt gesetzt bleibt jede änderbar.
+		IdleTimeout: 120 * time.Second,
+
+		// BEWUSST KEIN WriteTimeout: Es gilt für die gesamte Antwort, und der
+		// SSE-Stream (/events) ist definitionsgemäß eine Antwort, die nie endet. Ein
+		// globaler Wert würde jede Live-Verbindung nach Ablauf kappen — die Oberfläche
+		// verlöre reihum ihre Aktualisierung, ohne dass ein Fehler sichtbar würde.
+		// Die Schreibrichtung begrenzt stattdessen Caddy (write_timeout 600s) und für
+		// die Bearbeitungsdauer die TimeoutMiddleware (api.RequestFrist).
 	}
 
 	// Start server asynchronously
@@ -191,9 +212,20 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 		log.Fatalf("FATAL: JWT_SECRET environment variable must be at least 32 characters long for security")
 	}
 
-	aesKey := os.Getenv("APP_ENCRYPTION_KEY")
+	aesKey := os.Getenv(crypto.SchluesselVariable)
 	if len(aesKey) != 32 && len(aesKey) != 64 {
-		log.Fatalf("FATAL: APP_ENCRYPTION_KEY must be exactly 32 bytes (or 64 hex characters) long")
+		log.Fatalf("FATAL: %s must be exactly 32 bytes (or 64 hex characters) long", crypto.SchluesselVariable)
+	}
+
+	// Der frühere Zweitname darf nicht still danebenstehen. internal/crypto las ihn bis
+	// zum 06.08.2026 VORRANGIG — an allen Prüfungen dieser Funktion vorbei. Er wird jetzt
+	// nicht mehr gelesen; wer ihn gesetzt hat, erwartet aber, dass er gilt. Also lieber
+	// hier laut abbrechen als verschlüsseln, womit der Betrieb nicht rechnet.
+	if alt := os.Getenv(crypto.AltName); alt != "" && alt != aesKey {
+		log.Fatalf("FATAL: %s ist gesetzt und weicht von %s ab. Der Zweitname wird nicht mehr gelesen — "+
+			"bitte %s entfernen und ausschließlich %s setzen. Achtung: Mit dem falschen Schlüssel sind "+
+			"Schülerfotos und das gespeicherte SMTP-Passwort nicht mehr entschlüsselbar.",
+			crypto.AltName, crypto.SchluesselVariable, crypto.AltName, crypto.SchluesselVariable)
 	}
 
 	// Sicherheit: Die im Repo committeten Default-Secrets dürfen im echten Produktionsbetrieb

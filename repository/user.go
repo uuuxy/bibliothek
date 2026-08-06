@@ -29,6 +29,15 @@ type UserRepository interface {
 	// UpdateUser aktualisiert die Daten eines bestehenden Systembenutzers.
 	UpdateUser(ctx context.Context, p UpdateUserParams) error
 
+	// GetRolleByID liefert die AKTUELL gespeicherte Rolle eines Benutzers in
+	// Großschreibung. Kein Treffer ergibt ("", nil).
+	//
+	// Die Rolle aus dem Request-Rumpf taugt dafür nicht: Wer einen Admin-Datensatz
+	// bearbeitet, schickt selbst mit, welche Rolle daraus werden soll. Ob das Ziel
+	// HEUTE ein Admin ist — und die Bearbeitung damit Admin-Rechte des Aufrufers
+	// verlangt — steht nur in der Datenbank.
+	GetRolleByID(ctx context.Context, id string) (string, error)
+
 	// GetLehrerByBarcode sucht eine AKTIVE Lehrkraft anhand ihres Ausweis-Barcodes.
 	// Kein Treffer liefert (nil, nil) — wie GetCopyByBarcode und GetByBarcode, damit die
 	// Omnibox „nicht gefunden" von einem echten Datenbankfehler unterscheiden kann.
@@ -150,4 +159,19 @@ func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) e
 	`
 	_, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID)
 	return err
+}
+
+// GetRolleByID liest die gespeicherte Rolle eines Benutzers.
+//
+// rolle::text wie in GetLehrerByBarcode — die Spalte ist das ENUM benutzer_rolle.
+func (r *postgresUserRepo) GetRolleByID(ctx context.Context, id string) (string, error) {
+	var rolle string
+	err := r.pool.QueryRow(ctx, `SELECT UPPER(rolle::text) FROM benutzer WHERE id = $1`, id).Scan(&rolle)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("konnte die Rolle des Benutzers nicht lesen: %w", err)
+	}
+	return rolle, nil
 }

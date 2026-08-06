@@ -26,7 +26,14 @@ services:
       dockerfile: Dockerfile
     container_name: bibliothek-backend-local
     ports:
-      - "8084:8084" # Lokaler Zugriff unter http://localhost:8084
+      # Nur an localhost — aus demselben Grund wie beim Datenbank-Port oben, hier aber
+      # dringender: Dieser Stack läuft mit IMAP_HOST=mock, und mock lässt JEDES Passwort
+      # für JEDE in benutzer vorhandene E-Mail durch (auth/imap.go). Mit "8084:8084" war
+      # dieser Login im gesamten Schul-/Heimnetz erreichbar — auf einem Arbeitsplatz, an
+      # dem parallel echte Daten liegen, ist das eine offene Tür.
+      # Caddy erreicht den Container weiterhin über das Docker-Netz
+      # (caddy_global_net), nicht über diesen veröffentlichten Port.
+      - "127.0.0.1:8084:8084" # Lokaler Zugriff unter http://localhost:8084
     environment:
       - PORT=8084
       - DB_HOST=postgres-db

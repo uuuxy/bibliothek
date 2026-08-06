@@ -22,10 +22,24 @@ backups/backup_<ZEITSTEMPEL>.sql.gz.enc
 > direkt — sie müssen zuerst mit dem `restore-backup`-Tool entschlüsselt werden (siehe Abschnitt 2a).
 > Ohne den originalen `BACKUP_ENCRYPTION_KEY` ist ein verschlüsseltes Backup **nicht** wiederherstellbar.
 
-### 1b. Manuelles unverschlüsseltes Skript (Optional)
-`scripts/backup.sh` erzeugt eine unverschlüsselte `.sql.gz`-Datei (`backups/bibliothek_backup_<DATUM>.sql.gz`,
-7-Tage-Rotation) — führt `pg_dump` per `docker exec` im DB-Container aus (z. B. für schnelle Ad-hoc-Sicherungen).
-Beispiel-Crontab:
+### 1b. Unverschlüsselte Dumps — zwei Wege, nicht einer
+
+> ⚠️ Beide Dateien enthalten **jeden Schülernamen, jede Adresse und jede Ausleihe im
+> Klartext**. Sie werden seit dem 06.08.2026 mit `0600` angelegt (`umask` im Subshell,
+> nicht `chmod` danach — sonst läge die Datei genau während des Schreibens für alle
+> lesbar da). Das Verzeichnis `backups/` gehört damit zum schutzbedürftigen Bestand.
+
+**`scripts/backup.sh`** — Ad-hoc-Sicherung, `backups/bibliothek_backup_<DATUM>.sql.gz`,
+7-Tage-Rotation, `pg_dump` per `docker exec` im DB-Container.
+Seit dem 06.08.2026 mit `pipefail`: Ohne ihn lieferte die Pipe den Status von `gzip`, und
+`gzip` gelingt auch dann, wenn `pg_dump` abgebrochen ist — das Skript meldete „Backup
+erfolgreich" und legte eine gzip-Datei mit einer Fehlermeldung darin ab.
+
+**`./update.sh`** — legt vor **jedem** Deploy automatisch `backups/backup_<ZEITSTEMPEL>.sql.gz`
+an (30-Tage-Rotation) und nennt diese Datei in seiner Rollback-Anleitung. Dieser Weg war
+hier bis zum 06.08.2026 gar nicht dokumentiert, obwohl er der häufigste ist.
+
+Beispiel-Crontab für den Ad-hoc-Weg:
 
 ```bash
 0 2 * * * /Pfad/zu/Bibliothek/scripts/backup.sh >> /Pfad/zu/Bibliothek/backups/backup.log 2>&1

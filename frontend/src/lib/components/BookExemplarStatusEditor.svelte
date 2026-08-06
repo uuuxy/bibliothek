@@ -15,6 +15,10 @@
 	 */
 	let { ex, onDone } = $props();
 
+	// Der Compiler schlaegt hier $derived vor ("captures the initial value of ex").
+	// BEWUSST NICHT: Das sind Arbeitskopien im Editor. Als $derived wuerde jede
+	// Aenderung an ex die Eingabe des Benutzers ueberschreiben — genau das, was ein
+	// Formular nicht tun darf. Einmal aus dem Prop befuellen ist hier richtig.
 	let editStatusType = $state(
 		ex.ist_ausleihbar
 			? 'Verfügbar'

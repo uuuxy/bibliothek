@@ -65,6 +65,8 @@ func fehlermeldung(t *testing.T, rec *httptest.ResponseRecorder) string {
 // Der eigentliche Beweis: 200 bedeutet, dass eine Nachricht wirklich über SMTP
 // hinausgegangen ist — mit genau einem Empfänger und ohne geschmuggelte Kopfzeile.
 func TestPostTestMail_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
+	// Testserver ohne STARTTLS — siehe mailservice.sichereVerbindung.
+	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 	s, mock := mailTestServer(t)
 	erwarteMailKonfig(mock, host, port, "bibliothek@schule.de")
@@ -121,6 +123,8 @@ func TestPostTestMail_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 // Deshalb steht hier die Umgebung absichtlich auf einem falschen Server: Landet die
 // Mail trotzdem beim Fake-SMTP aus der Datenbank, ist die Frage beantwortet.
 func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
+	// Testserver ohne STARTTLS — siehe mailservice.sichereVerbindung.
+	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
 	t.Setenv("SMTP_HOST", "sollte-nicht-benutzt-werden.invalid")

@@ -66,6 +66,24 @@ func (s *Server) OeffentlicheEtikettenHandler() http.HandlerFunc {
 			return
 		}
 
+		// Der Etikettenbogen des Lieferanten muss zu SEINEN Bögen passen, nicht zu unseren:
+		// Er klebt die Etiketten auf sein eigenes Material, und davon gibt es verschiedene
+		// Rastergrößen. Bis zum 06.08.2026 stand hier fest "zweckform_l4760" — wer andere
+		// Bögen im Drucker hatte, bekam einen Ausdruck, der daneben liegt.
+		//
+		// Unbekannte Werte werden ABGEWIESEN und nicht still auf die Vorgabe gedreht:
+		// Sonst druckt der Lieferant nach einem Tippfehler im falschen Raster und merkt es
+		// erst am verschnittenen Bogen. Leer heißt weiterhin Vorgabe.
+		format := r.URL.Query().Get("format")
+		if format == "" {
+			format = StandardLabelFormat
+		}
+		if _, bekannt := GetLabelFormat(format); !bekannt {
+			apierrors.SendHTTPError(w, http.StatusBadRequest,
+				fmt.Errorf("unbekanntes Etikettenformat %q", format))
+			return
+		}
+
 		bestellungID, err := s.bestellungPerToken(ctx, r.PathValue("token"))
 		if err != nil {
 			sendeTokenFehler(w, err)
@@ -82,13 +100,13 @@ func (s *Server) OeffentlicheEtikettenHandler() http.HandlerFunc {
 			return
 		}
 
-		daten, err := s.baueEtikettenPDF(ctx, groesse, etiketten)
+		daten, err := s.baueEtikettenPDF(ctx, groesse, format, etiketten)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		w.Header().Set(headerContentType, "application/pdf")
+		w.Header().Set(headerContentType, contentTypePDF)
 		// inline: Der Lieferant soll den Bogen im Browser sehen und direkt drucken können.
 		w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", groesse))
 		httpresp.Write(w, daten)
@@ -96,14 +114,17 @@ func (s *Server) OeffentlicheEtikettenHandler() http.HandlerFunc {
 }
 
 // baueEtikettenPDF erzeugt den Bogen in der gewünschten Größe.
-func (s *Server) baueEtikettenPDF(ctx context.Context, groesse string, etiketten []BarcodeLabelDetail) ([]byte, error) {
+//
+// format gilt nur für "klein" — das große Lernmittel-Etikett hat ein festes Raster
+// (2×2 auf A4) und wird ausgeschnitten, nicht auf vorgestanzte Bögen gedruckt.
+func (s *Server) baueEtikettenPDF(ctx context.Context, groesse, format string, etiketten []BarcodeLabelDetail) ([]byte, error) {
 	kopf := s.etikettKopf(ctx)
 
 	if groesse == "gross" {
 		return GenerateLernmittelEtikettenPDF(etiketten, kopf)
 	}
 
-	doc, err := GenerateLabelsPDF("zweckform_l4760", 1, false, etiketten, kopf)
+	doc, err := GenerateLabelsPDF(format, 1, false, etiketten, kopf)
 	if err != nil {
 		return nil, err
 	}

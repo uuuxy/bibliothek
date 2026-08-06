@@ -131,13 +131,15 @@
 <div
 	class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
 >
+	<!-- Ausgeschriebenes Schluss-Tag: <video /> ist kein void-Element, die selbstschliessende
+	     Form ist mehrdeutig und wird von Svelte angemahnt. -->
 	<video
 		bind:this={videoEl}
 		autoplay
 		playsinline
 		muted
 		class="absolute inset-0 h-full w-full object-cover"
-	/>
+	></video>
 	<!-- Scan-Rahmen Overlay -->
 	{#if scanning}
 		<div class="absolute inset-0 flex items-center justify-center pointer-events-none">

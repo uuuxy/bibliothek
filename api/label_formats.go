@@ -53,12 +53,69 @@ var labelFormats = map[string]LabelFormat{
 	},
 }
 
+// StandardLabelFormat ist die Vorgabe, wenn nichts (Brauchbares) gewählt wurde.
+const StandardLabelFormat = "zweckform_l4760"
+
+// labelFormatReihenfolge legt fest, in welcher Reihenfolge die Formate angeboten werden.
+//
+// Nötig, weil eine Go-Map keine stabile Reihenfolge hat: Ohne diese Liste stünden die
+// Formate in jedem Aufruf anders in der Auswahl, und der Lieferant müsste jedes Mal neu
+// suchen, was er beim letzten Mal genommen hat.
+var labelFormatReihenfolge = []string{"zweckform_l4760", "avery_3475", "standard_52"}
+
 // GetLabelFormat retrieves the layout parameters for a given format ID.
 // If not found, it returns the default "zweckform_l4760" format.
 func GetLabelFormat(id string) (LabelFormat, bool) {
 	fmt, ok := labelFormats[id]
 	if !ok {
-		return labelFormats["zweckform_l4760"], false
+		return labelFormats[StandardLabelFormat], false
 	}
 	return fmt, true
+}
+
+// istBekanntesEtikettFormat prüft eine OPTIONALE Formatangabe aus einem Request.
+//
+// Leer ist gültig und heißt „nicht angegeben" — die Angabe ist überall freiwillig.
+// Ein gesetzter, aber unbekannter Wert wird abgewiesen statt auf die Vorgabe gedreht:
+// GetLabelFormat liefert bei Unbekanntem stillschweigend zweckform_l4760 zurück, und
+// genau dieses stille Umbiegen soll an der Eingangstür nicht passieren.
+func istBekanntesEtikettFormat(id string) bool {
+	if id == "" {
+		return true
+	}
+	_, bekannt := GetLabelFormat(id)
+	return bekannt
+}
+
+// EtikettFormatAuswahl ist ein Format, wie es in einer Auswahlliste erscheint.
+type EtikettFormatAuswahl struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	ProSeite int    `json:"pro_seite"`
+	Spalten  int    `json:"spalten"`
+	Zeilen   int    `json:"zeilen"`
+}
+
+// LabelFormatAuswahl liefert die anbietbaren Formate in fester Reihenfolge.
+//
+// Es gibt sie, damit die Liste EINE Quelle hat. Vorher stand sie zusätzlich als
+// hartcodiertes Array im Frontend (LabelLayoutOptionen.svelte) — zwei Listen über
+// dieselben Etikettenbögen, und die zweite erfährt es nicht, wenn hier ein Format
+// dazukommt oder sich ein Name ändert.
+func LabelFormatAuswahl() []EtikettFormatAuswahl {
+	auswahl := make([]EtikettFormatAuswahl, 0, len(labelFormatReihenfolge))
+	for _, id := range labelFormatReihenfolge {
+		f, ok := labelFormats[id]
+		if !ok {
+			continue
+		}
+		auswahl = append(auswahl, EtikettFormatAuswahl{
+			ID:       f.FormatID,
+			Name:     f.Name,
+			ProSeite: f.Cols * f.Rows,
+			Spalten:  f.Cols,
+			Zeilen:   f.Rows,
+		})
+	}
+	return auswahl
 }

@@ -44,6 +44,13 @@ type OeffentlicheBestellung struct {
 	// EtikettenVorhanden: Standen Positionen mit Vorab-Barcode in dieser Bestellung?
 	// Ohne sie zeigt die Seite keine Druckknöpfe, statt leere PDFs anzubieten.
 	EtikettenVorhanden bool `json:"etiketten_vorhanden"`
+	// EtikettenFormate sind die Bogenraster, unter denen der Lieferant für die KLEINEN
+	// Etiketten wählen kann — er druckt auf sein eigenes Material, und davon gibt es
+	// verschiedene. Die Liste kommt aus dem Backend, damit ein neues Format nicht an
+	// zwei Stellen nachgetragen werden muss.
+	EtikettenFormate []EtikettFormatAuswahl `json:"etiketten_formate"`
+	// EtikettenFormatVorgabe ist die Vorauswahl der Seite.
+	EtikettenFormatVorgabe string `json:"etiketten_format_vorgabe"`
 	// BestaetigtAm ist NULL, solange niemand bestätigt hat — die Seite entscheidet daran,
 	// ob sie den Bestätigen-Knopf oder die Quittung zeigt.
 	BestaetigtAm *time.Time `json:"bestaetigt_am,omitempty"`
@@ -135,6 +142,8 @@ func (s *Server) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	// mehreren Schulen im selben Postfach ist das keine Zierde, sondern die Zuordnung.
 	a.SchuleName = s.etikettKopf(ctx).Schulname
 	a.SchuleAnschrift = s.schulAnschrift(ctx)
+	a.EtikettenFormate = LabelFormatAuswahl()
+	a.EtikettenFormatVorgabe = StandardLabelFormat
 	return &a, nil
 }
 
@@ -144,6 +153,10 @@ type OeffentlichBestaetigenRequest struct {
 	// nicht, der Lieferant druckt selbst. Die Seite schickt mit, was sie geladen hat —
 	// mehr als eine Notiz in der Historie ist es nicht, und ein leerer Wert ist erlaubt.
 	EtikettenGroesse string `json:"etiketten_groesse"`
+	// EtikettenFormat ist ebenfalls OPTIONAL und nur bei 'klein' aussagekräftig: auf
+	// welchem Bogenraster der Lieferant gedruckt hat. Für die Bibliothek ist das die
+	// Antwort auf "wie sehen die Aufkleber aus, die gleich ankommen?".
+	EtikettenFormat string `json:"etiketten_format"`
 }
 
 // OeffentlichBestaetigenHandler nimmt die Bestätigung des Lieferanten entgegen.
@@ -165,8 +178,12 @@ func (s *Server) OeffentlichBestaetigenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
 			return
 		}
+		if !istBekanntesEtikettFormat(req.EtikettenFormat) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
+			return
+		}
 
-		bereits, err := s.bestaetigeBestellung(ctx, bestellungID, req.EtikettenGroesse, "lieferant")
+		bereits, err := s.bestaetigeBestellung(ctx, bestellungID, req.EtikettenGroesse, req.EtikettenFormat, "lieferant")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

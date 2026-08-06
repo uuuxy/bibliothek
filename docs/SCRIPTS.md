@@ -90,29 +90,51 @@ Migriert unverschlüsselte Bilddateien vom Dateisystem in die Datenbank.
 
 ---
 
-## 3. Datenbank-Backup (`scripts/backup.sh` / `jobs/backup.go`)
+## 3. Datenbank-Backup (`jobs/backup.go` / `scripts/backup.sh`)
 
-Periodische Datenbank-Backups.
+Es gibt **zwei Pipelines**, und nur eine verschlüsselt. Hier stand bis zum 06.08.2026
+eine gemeinsame Zeile für beide — sie beschrieb den automatischen Weg und ließ den
+manuellen sicherer aussehen, als er ist.
 
-- **Manuell:** `./scripts/backup.sh`
-- **Automatisch:** Täglich 02:30 Uhr via internem Scheduler (`jobs/cron.go`)
-- **Pipeline:** `pg_dump → gzip → AES-GCM-Verschlüsselung (Zufalls-Nonce) → 0600 auf Disk`
-- **Rotation:** Älteste Dateien werden nach Ablauf des Aufbewahrungsfensters gelöscht.
+| | Automatisch (`jobs/backup.go`) | Manuell (`scripts/backup.sh`) | Vor jedem Deploy (`./update.sh`) |
+|---|---|---|---|
+| Auslöser | Täglich 02:30 via `jobs/cron.go` | `./scripts/backup.sh` | Schritt 1 von `./update.sh` |
+| Pipeline | `pg_dump → gzip → AES-GCM` | `pg_dump → gzip` | `pg_dump → gzip` |
+| Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`) | **nein** | **nein** |
+| Dateirechte | 0600 | 0600 (seit 06.08.2026) | 0600 (seit 06.08.2026) |
+| Rotation | letzte 14 | 7 Tage | 30 Tage |
+| Dateiname | `backup_<Zeitstempel>.sql.gz.enc` | `bibliothek_backup_<Datum>.sql.gz` | `backup_<Zeitstempel>.sql.gz` |
+
+Die beiden unverschlüsselten Wege bleiben unverschlüsselt, damit `zcat … | psql` im
+Notfall ohne Schlüssel funktioniert — ihr Preis ist, dass `backups/` schutzbedürftig
+ist. Wiederherstellung und Restore-Probe: [resilience_and_recovery.md](resilience_and_recovery.md).
 
 ---
 
-## 4. Deployment (`scripts/deploy.sh`)
+## 4. Deployment (`./update.sh`)
 
-Automatisiert das Produktions-Deployment auf dem Hetzner-Server.
+**Der Weg, der benutzt wird.** Auf dem Server:
 
 ```bash
-./scripts/deploy.sh
+git pull && ./update.sh
 ```
 
-Führt aus:
-1. `git pull` (aktuellsten Stand ziehen)
-2. `docker compose up -d --build` (Container neu bauen, Zero-Downtime für andere Dienste)
-3. Prüft ob Caddy-Konfiguration den Domain-Block enthält, hängt ihn ggf. an
+`git pull` zuerst und getrennt, weil `update.sh` sich sonst in der gerade laufenden
+Fassung selbst aktualisiert.
+
+Führt aus: Backup (siehe oben) → `git pull` → `docker compose up -d --build` →
+Gesundheitsprüfung (Docker-Status **und** `/health` im Container) → alte Backups
+aufräumen. Bei Fehlschlag: Abbruch mit Rollback-Anleitung, die auf das eben erzeugte
+Backup zeigt.
+
+`scripts/deploy.sh` ist der ältere, schlankere Weg (`git pull` →
+`docker compose up -d --build` → prüft, ob der Domain-Block im Caddyfile steht, und
+hängt ihn ggf. an). Er macht **kein** Backup und **keine** Gesundheitsprüfung.
+
+`./update_caddy.sh` schreibt die Caddy-Konfiguration des Servers neu
+(`/root/caddy/Caddyfile`, alle Dienste des Hosts) und startet Caddy neu. Die Datei
+`Caddyfile` im Repo-Root ist nur eine Vorlage zum Nachschlagen — sie wird nirgends
+ausgeliefert.
 
 ---
 
@@ -165,8 +187,45 @@ ausführliche Kommentar steht jeweils im Dateikopf.
 |---|---|
 | `api_inventar.sh` | Erzeugt `docs/api_inventar.md`: alle registrierten Go-Routen, alle `/api/`-Aufrufer im Frontend und den Abgleich in beide Richtungen (tote Handler / Geister-Aufrufe). |
 | `deadcode_gate.sh` | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen. |
-| `sonar_scan.sh` | SonarQube-Analyse **inklusive** Coverage. Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. |
+| `sonar_scan.sh` | SonarQube-Analyse **inklusive** Coverage. Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund 13 Punkte zu niedrig. |
 | `install-hooks.sh` | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`. |
+| `../security-scan.sh` | Sammel-Scan im **Repo-Root**: `gosec` (SAST), `trivy fs` (Abhängigkeiten/Konfiguration), OWASP-ZAP-API-Scan gegen `/swagger/doc.json`. Der ZAP-Teil braucht einen laufenden Server, Docker und `ADMIN_TOKEN` — er ist kein stiller Durchläufer, sondern eine bewusste Sitzung. |
+
+#### Warum die Coverage niedriger aussieht, als sie ist
+
+Gemessen am 06.08.2026, dreimal dieselbe Codebasis:
+
+| Lauf | Gesamtabdeckung |
+|---|---|
+| `go test ./...` ohne Datenbank | **32,5 %** |
+| … mit `TEST_DATABASE_URL` | **45,2 %** |
+| … und ohne die Fremddatei aus `node_modules` | **45,9 %** |
+
+Zwei Messfehler, kein Codefehler:
+
+1. **58 Dateien `*_pg_test.go` überspringen sich ohne Datenbank** — still, mit „ok" in
+   der Ausgabe. Ihr Produktivcode zählt dann als ungedeckt. Das sind rund 13 Punkte.
+2. **`frontend/node_modules/flatted/golang/pkg/flatted/flatted.go`** ist eine fremde
+   Go-Datei in einem JS-Paket. `go list ./...` führt sie als Projektpaket — Go kennt
+   `node_modules` nicht als Sonderfall. 115 ungedeckte Zeilen im Profil.
+   `sonar_scan.sh` filtert sie seit dem 06.08.2026 über `go list | grep -v node_modules`.
+
+**100 % sind kein Ziel und wären kein gutes.** Der Rest verteilt sich so: `cmd/*`
+(sechs CLI-Werkzeuge, 0 %) und `internal/smtptest` (Testserver, wird von Tests benutzt
+statt getestet) sind strukturell ungedeckt und sollen es bleiben. Das Quality Gate misst
+deshalb **neuen** Code gegen 80 % — die richtige Frage ist nicht „wie hoch ist die Zahl",
+sondern „ist das, was ich gerade geändert habe, abgesichert".
+
+Echte Zahlen erzeugen:
+```bash
+docker run -d --name biblio-test-pg -e POSTGRES_PASSWORD=test \
+  -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:16-alpine
+export TEST_DATABASE_URL="postgres://postgres:test@localhost:55432/bibliothek_test?sslmode=disable"
+SONAR_TOKEN=sqp_… ./scripts/sonar_scan.sh
+docker rm -f biblio-test-pg
+```
+Der DB-Name **muss** „test" enthalten (Sicherheits-Notbremse in `pgtest_support_test.go`
+vor dem `DROP SCHEMA`).
 
 ### Datenbank-Helfer
 

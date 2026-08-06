@@ -12,6 +12,23 @@ export function localISO(d) {
 }
 
 /**
+ * Datum in deutscher Schreibweise; '-' für leere Werte, Rohwert für unlesbare.
+ * Ausgabe ist Anzeigetext — wer sie in zusammengebautes HTML setzt, maskiert sie
+ * trotzdem (siehe utils/escapeHtml.js), denn der Rohwert-Zweig reicht die Eingabe
+ * unverändert durch.
+ * @param {string} d
+ * @returns {string}
+ */
+export function fmtDateDE(d) {
+	if (!d) return '-';
+	try {
+		return new Date(d).toLocaleDateString('de-DE');
+	} catch {
+		return d;
+	}
+}
+
+/**
  * Letzter Tag eines Monats als YYYY-MM-DD.
  * @param {string} yyyyMM z. B. "2026-02"
  */

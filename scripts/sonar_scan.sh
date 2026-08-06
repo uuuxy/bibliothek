@@ -33,11 +33,38 @@ if [ -z "${SONAR_TOKEN:-}" ]; then
 	exit 1
 fi
 
-# Schritt 1: Coverage erzeugen. Laeuft die volle Suite; die auf TEST_DATABASE_URL
-# gegateten PG-Tests ueberspringen sich ohne Datenbank von selbst und senken damit die
-# gemeldete Abdeckung — wer die echten Zahlen will, setzt TEST_DATABASE_URL vorher.
-echo "[1/2] Erzeuge Go-Coverage..."
-go test ./... -coverprofile=coverage.out
+# Schritt 1: Coverage erzeugen.
+#
+# ZWEI Messfehler lauern hier, beide gemessen am 06.08.2026:
+#
+#  1. Die auf TEST_DATABASE_URL gegateten *_pg_test.go (58 Dateien!) ueberspringen sich
+#     ohne Datenbank STILL. Ihr Code zaehlt dann als ungedeckt, und die Gesamtabdeckung
+#     faellt von 45,2 % auf 32,5 % — ohne dass sich am Code irgendetwas geaendert haette.
+#     Das Skript sagt darum jetzt an, in welchem Modus es misst, statt eine Zahl
+#     auszuliefern, deren Zustandekommen niemand sieht.
+#
+#  2. frontend/node_modules/flatted/golang/pkg/flatted/flatted.go ist eine fremde
+#     Go-Datei in einem JS-Paket. `go list ./...` fuehrt sie als
+#     "bibliothek/frontend/node_modules/..." — Go kennt node_modules nicht als
+#     Sonderfall. Sie landete mit 115 ungedeckten Zeilen im Profil und drueckte die
+#     Quote. sonar-project.properties schliesst sie vom SCAN aus, aber nicht aus dem
+#     COVERAGE-Report, den derselbe Scan hochlaedt.
+if [ -n "${TEST_DATABASE_URL:-}" ]; then
+	echo "[1/2] Erzeuge Go-Coverage — MIT PostgreSQL-Integrationstests."
+else
+	echo "[1/2] Erzeuge Go-Coverage — OHNE PostgreSQL-Integrationstests." >&2
+	echo "      TEST_DATABASE_URL ist nicht gesetzt; 58 *_pg_test.go-Dateien ueberspringen" >&2
+	echo "      sich und zaehlen als ungedeckt (rund 13 Prozentpunkte weniger)." >&2
+	echo "      Echte Zahlen (siehe docs/SCRIPTS.md):" >&2
+	echo "        docker run -d --name biblio-test-pg -e POSTGRES_PASSWORD=test \\" >&2
+	echo "          -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:16-alpine" >&2
+	echo "        export TEST_DATABASE_URL=postgres://postgres:test@localhost:55432/bibliothek_test?sslmode=disable" >&2
+fi
+
+# go list statt ./... — nur so bleibt die Fremddatei aus node_modules draussen.
+PAKETE="$(go list ./... | grep -v '/node_modules/')"
+# shellcheck disable=SC2086 # Paketliste soll in Woerter zerfallen
+go test $PAKETE -coverprofile=coverage.out
 
 # Schritt 2: Analyse. sonar-project.properties liefert projectKey, Ausschluesse und den
 # Pfad zum Coverage-Report — deshalb stehen hier nur Host und Quellen.

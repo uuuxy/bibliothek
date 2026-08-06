@@ -17,6 +17,11 @@ type MonitorTitel struct {
 	Titel    string `json:"titel"`
 	Autor    string `json:"autor"`
 	CoverURL string `json:"cover_url"`
+	// ISBN dient allein als Cache-Schlüssel des Cover-Proxys (/api/images/cover).
+	// Ohne sie müsste der Monitor eine externe Cover-URL direkt einbinden — genau
+	// das Hotlinking, das die Content-Security-Policy seit dem 06.08.2026 nicht
+	// mehr zulässt (img-src ohne https:).
+	ISBN string `json:"isbn"`
 }
 
 // MonitorSlides is the full response for the public info monitor.
@@ -33,16 +38,16 @@ func (s *Server) queryBuchDesMonats(ctx context.Context, w http.ResponseWriter) 
 	// Buch des Monats: most borrowed title in the last 30 days that has a cover.
 	var bm MonitorTitel
 	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,'')
+		SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,''), COALESCE(bt.isbn,'')
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
 		JOIN buecher_titel bt ON bt.id = e.titel_id
 		WHERE a.ausgeliehen_am >= NOW() - INTERVAL '30 days'
 		  AND bt.cover_url IS NOT NULL AND bt.cover_url <> ''
-		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url
+		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn
 		ORDER BY COUNT(*) DESC
 		LIMIT 1
-	`).Scan(&bm.ID, &bm.Titel, &bm.Autor, &bm.CoverURL)
+	`).Scan(&bm.ID, &bm.Titel, &bm.Autor, &bm.CoverURL, &bm.ISBN)
 
 	if err == nil {
 		return &bm, true
@@ -56,11 +61,11 @@ func (s *Server) queryBuchDesMonats(ctx context.Context, w http.ResponseWriter) 
 	// Fallback: the most recently added title with a cover.
 	var fb MonitorTitel
 	err = s.DB.Pool.QueryRow(ctx, `
-		SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,'')
+		SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,''), COALESCE(isbn,'')
 		FROM buecher_titel
 		WHERE cover_url IS NOT NULL AND cover_url <> ''
 		ORDER BY erstellt_am DESC LIMIT 1
-	`).Scan(&fb.ID, &fb.Titel, &fb.Autor, &fb.CoverURL)
+	`).Scan(&fb.ID, &fb.Titel, &fb.Autor, &fb.CoverURL, &fb.ISBN)
 
 	if err == nil {
 		return &fb, true
@@ -88,7 +93,7 @@ func (s *Server) queryMonitorListe(ctx context.Context, w http.ResponseWriter, q
 	liste := []MonitorTitel{}
 	for rows.Next() {
 		var t MonitorTitel
-		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.CoverURL); err != nil {
+		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.CoverURL, &t.ISBN); err != nil {
 			log.Printf("DB Error in Monitor (Scan %s): %v", sektion, err)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 			return nil, false
@@ -121,7 +126,7 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 
 		// Neu eingetroffen: last 10 titles added with a cover.
 		neu, ok := s.queryMonitorListe(ctx, w, `
-			SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,'')
+			SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,''), COALESCE(isbn,'')
 			FROM buecher_titel
 			WHERE cover_url IS NOT NULL AND cover_url <> ''
 			ORDER BY erstellt_am DESC
@@ -134,12 +139,12 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 
 		// Beliebt: top 5 titles by loan count in the last 7 days.
 		beliebt, ok := s.queryMonitorListe(ctx, w, `
-			SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,'')
+			SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,''), COALESCE(bt.isbn,'')
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON e.id = a.exemplar_id
 			JOIN buecher_titel bt ON bt.id = e.titel_id
 			WHERE a.ausgeliehen_am >= NOW() - INTERVAL '7 days'
-			GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url
+			GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn
 			ORDER BY COUNT(*) DESC
 			LIMIT 5
 		`, "Beliebt")

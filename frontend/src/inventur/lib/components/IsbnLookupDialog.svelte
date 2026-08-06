@@ -1,6 +1,8 @@
 <script>
 	import Button from '../../../lib/components/ui/Button.svelte';
 	import Select from '../../../lib/components/ui/Select.svelte';
+	// Alias: coverSrc ist in dieser Komponente bereits der Name des Anzeige-Zustands.
+	import { coverSrc as proxyCover } from '../../../lib/utils/coverSrc.js';
 
 	const klassenstufen = [5, 6, 7, 8, 9, 10].map((g) => ({ value: g, label: String(g) }));
 	/**
@@ -22,7 +24,8 @@
 	 * @param {string} isbn
 	 */
 	function fallbackCover(isbn) {
-		return isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : '';
+		// Über den eigenen Proxy statt per Hotlink — siehe utils/coverSrc.js.
+		return isbn ? proxyCover(`https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`, isbn) : '';
 	}
 
 	function onCoverError() {

@@ -26,7 +26,7 @@ func (f *dummyFile) Close() error {
 }
 
 func TestEncryptUpload(t *testing.T) {
-	t.Setenv("ENCRYPTION_KEY", "12345678901234567890123456789012")
+	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
 
 	t.Run("nil file", func(t *testing.T) {
 		_, err := EncryptUpload(nil)
@@ -67,7 +67,7 @@ func TestEncryptUpload(t *testing.T) {
 }
 
 func TestDecryptAndServe(t *testing.T) {
-	t.Setenv("ENCRYPTION_KEY", "12345678901234567890123456789012")
+	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
 
 	t.Run("empty ciphertext", func(t *testing.T) {
 		rec := httptest.NewRecorder()

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -82,16 +84,40 @@ func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 			return
 		}
 
+		// Wer Konten verwaltet, definiert damit nicht, was Rollen dürfen.
+		//
+		// Vorher genügte manage_users, und das schloss den Kreis: Der Endpunkt konnte der
+		// EIGENEN Rolle jedes beliebige Recht zuschalten — audit_logs, delete_students,
+		// und bis zum 06.08.2026 auch manage_users für weitere Rollen. Ein delegiertes
+		// Verwaltungsrecht wuchs so in einem Schritt zu vollem Zugriff aus. Die Rechte-
+		// Matrix ist Konfiguration des Systems, nicht Tagesgeschäft der Kontoverwaltung.
+		if !aufruferIstAdmin(r) {
+			apierrors.SendHTTPError(w, http.StatusForbidden,
+				errors.New("die Rechte-Matrix kann nur ein Administrator ändern"))
+			return
+		}
+
 		ctx := r.Context()
 
 		query := `
-			UPDATE role_permissions 
-			SET allowed = $1 
+			UPDATE role_permissions
+			SET allowed = $1
 			WHERE UPPER(role) = UPPER($2) AND permission = $3
 		`
-		_, err := s.DB.Pool.Exec(ctx, query, req.Allowed, strings.ToUpper(req.Role), req.Permission)
+		tag, err := s.DB.Pool.Exec(ctx, query, req.Allowed, strings.ToUpper(req.Role), req.Permission)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Kein Treffer heißt: Rolle oder Recht gibt es nicht. Ohne diese Prüfung
+		// aktualisierte der Endpunkt null Zeilen und meldete trotzdem "success" — ein
+		// Tippfehler im Rechtenamen sah in der Oberfläche aus wie ein gesetzter Haken,
+		// blieb in der Datenbank aber wirkungslos. Genau die Bugklasse "still verworfen,
+		// trotzdem 200", die dieses Projekt schon mehrfach getroffen hat.
+		if tag.RowsAffected() == 0 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest,
+				fmt.Errorf("unbekannte Kombination aus Rolle %q und Recht %q — nichts geändert", req.Role, req.Permission))
 			return
 		}
 

@@ -2,13 +2,29 @@ import { apiClient } from './apiFetch.js';
 
 /**
  * Custom hook to manage the state and submission of the student edit form.
+ *
+ * `getStudent` ist bewusst ein GETTER und kein Wert. Vorher stand hier
+ * `{ student, … }`: Das Destrukturieren nimmt einen Schnappschuss des Props, und der
+ * Hook arbeitete danach dauerhaft mit dem Schüler, der beim Aufbau der Komponente
+ * gerade aktuell war. Zwei Folgen, beide still:
+ *
+ *   1. `syncData()` füllte das Formular erneut mit den ALTEN Daten, wenn der Aufrufer
+ *      dieselbe Komponente mit einem anderen Schüler weiterverwendete.
+ *   2. `save()` schickte das PATCH an `/api/schueler/<alte-id>` — die Eingaben landeten
+ *      am falschen Datensatz, mit Erfolgsmeldung.
+ *
+ * Der Svelte-Compiler warnte darauf hin ("This reference only captures the initial
+ * value of `student`"). Über einen Getter liest der Hook bei jedem Zugriff den
+ * aktuellen Wert, und ein `$effect`, der `syncData()` aufruft, verfolgt das Prop
+ * dadurch auch richtig.
+ *
  * @param {Object} props
- * @param {any} props.student - The student object to initialize form data
+ * @param {() => any} props.getStudent - Liefert den aktuell bearbeiteten Schüler
  * @param {() => void} props.onSave - Callback when the save is successful
  * @param {(msg: string, type: 'success' | 'error') => void} props.showSnackbar - Callback to show notifications
  * @returns {{ formData: any, saving: boolean, syncData: () => void, save: () => Promise<void> }}
  */
-export function useStudentEditForm({ student, onSave, showSnackbar }) {
+export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 	let saving = $state(false);
 
 	let formData = $state({
@@ -31,6 +47,7 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
 	 * Call this in an $effect when the student prop changes.
 	 */
 	function syncData() {
+		const student = getStudent();
 		if (!student) return;
 		formData.vorname = student.vorname || '';
 		formData.nachname = student.nachname || '';
@@ -50,6 +67,11 @@ export function useStudentEditForm({ student, onSave, showSnackbar }) {
 	 * Submits the form data to the server.
 	 */
 	async function save() {
+		const student = getStudent();
+		if (!student?.id) {
+			showSnackbar('Kein Schüler ausgewählt.', 'error');
+			return;
+		}
 		saving = true;
 		try {
 			const payload = {

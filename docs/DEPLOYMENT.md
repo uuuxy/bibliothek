@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-06-24
+> Zuletzt aktualisiert: 2026-08-06
 
 ---
 
@@ -22,10 +22,10 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL-DSN | Pflicht |
 | `JWT_SECRET` | HMAC-Signatur-Schlüssel | Pflicht, ≥ 32 Zeichen |
-| `APP_ENCRYPTION_KEY` | AES-256-Schlüssel für Schülerfotos | Pflicht, genau 32 Bytes |
+| `APP_ENCRYPTION_KEY` | AES-256-Schlüssel für Schülerfotos **und** das gespeicherte SMTP-Passwort | Pflicht, genau 32 Bytes (oder 64 Hex-Zeichen). **Der einzige gültige Name** — `ENCRYPTION_KEY` wurde bis zum 06.08.2026 vorrangig gelesen und umging dabei jede Startprüfung; der Server bricht jetzt ab, wenn er abweichend gesetzt ist |
 | `APP_ENV` | Umgebung (`production` / `local`) — steuert Cookie-Secure & Swagger | Standard: `production` |
 | `ENFORCE_PROD_SECRETS` | Harte Start-Verweigerung bei Default-Secrets | Standard: `false` (Testphase) |
-| `COOKIE_SECURE` | `true` hinter TLS-Proxy (Caddy) | Standard: `false` |
+| `COOKIE_SECURE` | `true` hinter TLS-Proxy (Caddy) | Standard: **`true`**, außerhalb von `APP_ENV=local/development/test`. Nicht gesetzt → `true` mit Warnung im Log; unlesbarer Wert → harter Abbruch (`ermittleCookieSecure`). `docker-compose.yml` setzt zusätzlich `${COOKIE_SECURE:-true}` |
 | `PORT` | HTTP-Port des Backends | Pflicht |
 | `IMAP_HOST` | IMAP-Server der Schule — die Anmeldung prüft Zugangsdaten dagegen | **Pflicht.** Ohne diese Variable bricht der Start ab (`FATAL: IMAP_HOST ist nicht gesetzt`); lokal `IMAP_HOST=mock` zusammen mit `APP_ENV=local` |
 | `IMAP_PORT` | IMAP-Port | Standard: 993 |
@@ -33,12 +33,14 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `TRUSTED_PROXIES` | CIDRs/IPs, deren `X-Forwarded-For` geglaubt wird (Rate-Limit, Login-Brute-Force, Audit-Log) | Ohne sie gilt **nur Loopback** als vertrauenswürdig — hinter Caddy auf einem anderen Host also nötig |
 | `BACKUP_DIR` | Zielverzeichnis der automatischen Backups | Standard siehe [resilience_and_recovery.md](resilience_and_recovery.md) |
 | `BACKUP_ENCRYPTION_KEY` | AES-256-Schlüssel der Backups | **Ohne ihn läuft kein Backup** — der Job überspringt still |
+| `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_USE_SSL` | Optionaler Offsite-Upload der verschlüsselten Backups (`jobs/backup.go`) | Nur gemeinsam sinnvoll; fehlt eine, unterbleibt der Upload |
 | `SMTP_HOST` | SMTP-Server | Optional (Mahnwesen) |
 | `SMTP_PORT` | SMTP-Port | Standard: 587 |
 | `SMTP_USER` | SMTP-Benutzername | Optional |
 | `SMTP_PASSWORD` | SMTP-Passwort | Optional |
 | `SMTP_FROM` | Absender-Adresse | Optional |
-| `SMTP_ALLOW_INSECURE_TLS` | TLS-Zertifikatsprüfung deaktivieren | Nur für Legacy-SMTP-Server |
+| `SMTP_ALLOW_INSECURE_TLS` | TLS-Zertifikatsprüfung deaktivieren (TLS bleibt) | Nur für Legacy-SMTP-Server |
+| `SMTP_ALLOW_PLAINTEXT` | Versand **ganz ohne** TLS erlauben, wenn der Server kein STARTTLS anbietet | Nur für ein Legacy-Relay. Ohne diese Variable bricht der Versand in dem Fall ab, statt Mahntexte im Klartext zu schicken |
 | `INITIAL_ADMIN_EMAIL` | E-Mail des initialen Admins | Standard: pflasch@philipp-reis-schule.de |
 | `SENTRY_DSN` | Sentry Error Tracking | Optional |
 
@@ -66,6 +68,11 @@ APP_ENCRYPTION_KEY=<genau-32-bytes-aes-schluessel>
 APP_ENV=production
 ENFORCE_PROD_SECRETS=true   # erst beim echten Prod-Deploy scharf schalten
 COOKIE_SECURE=true
+# OHNE diesen Schlüssel werden KEINE Backups erstellt — der nächtliche Job
+# überspringt sich (jobs/backup.go). Das fällt sonst erst auf, wenn man ein Backup
+# BRAUCHT. Mindestens 32 Zeichen: Die Ableitung läuft per SHA-256, kurze Passphrasen
+# sind an einer entwendeten Backup-Datei offline angreifbar.
+BACKUP_ENCRYPTION_KEY=<mindestens-32-zeichen-passphrase>
 SMTP_HOST=smtp.example.com
 SMTP_USER=user@example.com
 SMTP_PASSWORD=<smtp-passwort>
@@ -89,7 +96,16 @@ FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheime
 JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.
 ```
 
-**Checkliste vor dem ersten echten Prod-Deploy:** `ENFORCE_PROD_SECRETS=true` setzen und dazu echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS).
+**Checkliste vor dem ersten echten Prod-Deploy:** `ENFORCE_PROD_SECRETS=true` setzen und dazu echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS).
+
+> **`APP_ENCRYPTION_KEY` auf einem System mit Bestand ändern?** Nicht einfach
+> überschreiben — Schülerfotos und das gespeicherte SMTP-Passwort sind damit
+> verschlüsselt und wären danach verloren. Der Weg mit Umschlüsselung steht in
+> [SECURITY.md](SECURITY.md#app_encryption_key-wechseln) (`cmd/rotate-encryption-key`).
+
+> **Fehlt `BACKUP_ENCRYPTION_KEY`,** protokolliert der Server das beim Start
+> (`ACHTUNG: … es werden KEINE Datenbank-Backups erstellt`) und das Admin-Dashboard
+> meldet den Backup-Status als `critical`.
 
 ### 2.3 Docker Compose starten
 
@@ -102,12 +118,20 @@ docker compose --env-file .env up -d --build
 
 ### 2.4 Deployment-Skript
 
-Das Skript `scripts/deploy.sh` automatisiert den Prozess:
+Der übliche Weg auf dem Server ist `./update.sh`:
 ```bash
-./scripts/deploy.sh
+git pull && ./update.sh
 ```
+`git pull` zuerst und getrennt, weil das Skript sich sonst in der gerade laufenden
+Fassung selbst aktualisiert.
 
-Führt aus: `git pull` → `docker compose up -d --build` → ggf. Caddy-Neuladung.
+Führt aus: **Backup** → `git pull` → `docker compose up -d --build` →
+**Gesundheitsprüfung** → alte Backups aufräumen. Bei Fehlschlag bricht es ab und gibt
+eine Rollback-Anleitung samt Pfad zum eben erzeugten Backup aus.
+
+`scripts/deploy.sh` ist der ältere, schlankere Weg (`git pull` →
+`docker compose up -d --build` → Caddy-Block prüfen/ergänzen) — **ohne** Backup und
+**ohne** Gesundheitsprüfung. Details zu beiden: [SCRIPTS.md](SCRIPTS.md).
 
 ---
 
@@ -183,6 +207,14 @@ Manuelles Backup:
 ./scripts/backup.sh
 ```
 
+**Achtung — zwei Wege legen UNVERSCHLÜSSELTE Dumps ab:** `scripts/backup.sh` (7 Tage
+Rotation) und `./update.sh` vor jedem Deploy (30 Tage, `backups/backup_<Zeitstempel>.sql.gz`).
+Beide enthalten jeden Schülernamen, jede Adresse und jede Ausleihe im Klartext und werden
+seit dem 06.08.2026 mit `0600` angelegt. Das Verzeichnis `backups/` gehört damit zum
+schutzbedürftigen Bestand — es ist **kein** Ersatz für das verschlüsselte Backup und
+darf nicht mit ausgeliefert oder weitergereicht werden. Details:
+[resilience_and_recovery.md](resilience_and_recovery.md).
+
 ### Backup-Umfang: nur die Datenbank (bewusste Entscheidung, 11.07.2026)
 
 Das `uploads/`-Volume (Buchcover als lokale WebP-Dateien) wird **absichtlich nicht**
@@ -209,13 +241,29 @@ wegsichern — Pflicht ist es nicht.
 
 ## 7. Health Check & Monitoring
 
-Der Docker-Container enthält einen eingebauten Health Check:
+Es gibt **zwei** Health Checks, und sie prüfen Verschiedenes. Hier stand bis zum
+06.08.2026 nur der Datenbank-Check, ausgegeben als wäre es der des Anwendungscontainers.
+
+**Anwendung** — im `Dockerfile` (nicht in der Compose-Datei):
+```dockerfile
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:$PORT/health || exit 1
+```
+`--start-period=30s` ist nötig, weil beim ersten Start die Migrationen laufen; ohne sie
+galt der Container in dieser Zeit als krank. Die Sonde spricht bewusst `127.0.0.1`
+im Container an — über den öffentlichen Namen hätte sie die HTTPS-Umleitung getroffen
+und wäre an der 301 gescheitert (Commit `ea5bf6d`).
+
+**Datenbank** — in `docker-compose.yml` beim Dienst `postgres-db`:
 ```yaml
 healthcheck:
-  test: ["CMD-SHELL", "pg_isready -U postgres -d bibliothek"]
-  interval: 5s
-  timeout: 5s
-  retries: 5
+  test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bibliothek}"]
 ```
+Er ist die Bedingung für `depends_on: service_healthy` — das Backend startet erst, wenn
+die Datenbank Anfragen annimmt.
+
+`./update.sh` fragt beim Deploy **beide Quellen** ab (Docker-Status *und* `/health` im
+Container), weil keine für sich genügt: Der Docker-Status braucht Anlauf, und ein
+Container ohne Healthcheck liefert dort gar nichts.
 
 Optional: Sentry-Integration für Error-Tracking via `SENTRY_DSN`.

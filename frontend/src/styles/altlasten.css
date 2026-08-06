@@ -16,25 +16,24 @@
 	--primary-900: #001c38;
 	--primary-950: #001129;
 
-	--surface-container-lowest: #ffffff;
-	--surface-container-low: #f4f3f7;
-	--surface-container: #eeedf1;
-	--surface-container-high: #e8e7eb;
 	--surface-variant: #42474e;
 
 	--error-50: #fff8f7;
 	--error-600: #ba1a1a;
 }
 
-.bg-surface-container-low {
-	background-color: var(--surface-container-low);
-}
-.bg-surface-container {
-	background-color: var(--surface-container);
-}
-.bg-surface-container-high {
-	background-color: var(--surface-container-high);
-}
+/* Die drei .bg-surface-container*-Klassen standen bis zum 06.08.2026 hier und waren
+   Dubletten: Dieselben Namen erzeugt Tailwind aus den @theme-Rollen (styles/rollen.css)
+   mit identischen Werten. Weil diese Datei im Bundle HINTER Tailwinds Utilities landet,
+   gewannen die Kopien — und überstimmten damit jede andere Hintergrund-Utility am selben
+   Element, ohne dass man das dem class-Attribut ansah (Fund in ClassAssignmentSummary:
+   ein zusätzliches bg-white war schlicht wirkungslos).
+
+   Die verbliebenen Klassen bleiben nötig: primary-* kennt das @theme nicht, und
+   surface-variant hat hier bewusst einen ANDEREN Wert (#42474e) als die gleichnamige
+   Rolle (#dee3eb). Wer sie abräumt, ändert die Darstellung — das ist eine
+   Design-Entscheidung, kein Aufräumen. */
+
 .text-primary-900 {
 	color: var(--primary-900);
 }

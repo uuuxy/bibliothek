@@ -46,10 +46,9 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
 | [master_fahrplan.md](master_fahrplan.md) | Status-Dokument: erledigt / offen / Parkdeck |
 | [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
-| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 43 von 126) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
+| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 54 von 169) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 | [abnahme_checkliste.md](abnahme_checkliste.md) | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz) |
 | [littera_schema_befund.md](littera_schema_befund.md) | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen |
-| [api_inventar.md](api_inventar.md) | Generiertes Routen-Inventar (`./scripts/api_inventar.sh`) |
 | [loadtest_report.md](loadtest_report.md) | Lasttest-Protokoll vom 02.08.2026 (6 h, k6) |
 | [archive/](archive/) | Abgelegte Doku zu Wegen, die nicht beschritten wurden |
 
@@ -117,7 +116,7 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Brute-Force-Schutz: `email|ip`-Composite-Key
 - CSRF: Double-Submit Cookie
 - AES-256-GCM für Schülerfotos
-- SMTP mit TLS-Zertifikatsprüfung
+- SMTP: STARTTLS erzwungen, mit Zertifikatsprüfung
 - CSV-Formel-Injection-Schutz (OWASP CWE-1236)
 - Decompression-Bomb-Guard bei Bild-Uploads
 - Produktions-Secret-Guard (Server startet nicht mit Default-Secrets)

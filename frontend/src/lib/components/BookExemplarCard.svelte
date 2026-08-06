@@ -55,17 +55,34 @@
 	}
 </script>
 
+<!-- Auswahl per Tastatur, nicht nur per Maus. Die Pruefung auf currentTarget ist hier
+     wichtig: In der Karte liegt das Barcode-Eingabefeld, dessen Enter das Speichern
+     ausloest — ohne die Pruefung wuerde derselbe Tastendruck zusaetzlich die Auswahl
+     umschalten. -->
 <div
 	class="bg-white rounded-xl border p-4 shadow-sm transition-colors cursor-pointer {selected
 		? 'border-blue-500 bg-blue-50/30 ring-1 ring-blue-500'
 		: 'border-slate-200 hover:border-slate-300'}"
+	role="button"
+	tabindex="0"
+	aria-pressed={selected}
 	onclick={() => {
 		if (appState.adminAuthenticated) onToggleSelect();
+	}}
+	onkeydown={(e) => {
+		if (e.target !== e.currentTarget) return;
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			if (appState.adminAuthenticated) onToggleSelect();
+		}
 	}}
 >
 	<div class="flex items-start justify-between mb-3">
 		{#if editingBarcode}
 			<div class="flex-1 mr-2 relative">
+				<!-- svelte-ignore a11y_autofocus -->
+				<!-- Bewusst behalten: Das Feld erscheint erst auf Klick und ersetzt an dieser
+				     Stelle den Barcode. Wer es oeffnet, will sofort tippen oder scannen. -->
 				<input
 					type="text"
 					bind:value={editBarcodeValue}

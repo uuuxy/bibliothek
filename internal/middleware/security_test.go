@@ -34,7 +34,10 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		// base-uri und object-src sind seit dem 04.08.2026 dabei. base-uri fällt NICHT auf
 		// default-src zurück — ohne die Direktive kann ein eingeschleustes <base href>
 		// jede relative URL der SPA umbiegen.
-		"Content-Security-Policy":   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';",
+		// img-src ohne https: seit dem 06.08.2026: Bilder von beliebigen fremden Hosts
+		// waren der Abflusskanal für eingeschleustes Markup (gemessen im Druckfenster).
+		// Cover laufen seitdem ausnahmslos über den eigenen Proxy.
+		"Content-Security-Policy":   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';",
 		"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 		"Referrer-Policy":           "strict-origin-when-cross-origin",
 		"Permissions-Policy":        "geolocation=(), microphone=(), camera=(self)",

@@ -1,4 +1,6 @@
 <script>
+	import { coverSrc } from './utils/coverSrc.js';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} profile
@@ -53,9 +55,9 @@
 					{#each profile.entliehene_buecher as book, _i (_i)}
 						<tr>
 							<td class="py-3 px-2">
-								{#if book.cover_url}
+								{#if coverSrc(book.cover_url, book.isbn)}
 									<img
-										src={book.cover_url}
+										src={coverSrc(book.cover_url, book.isbn)}
 										alt="Cover"
 										class="w-8 h-12 object-cover rounded shadow-sm"
 									/>

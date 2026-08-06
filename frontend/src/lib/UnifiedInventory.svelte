@@ -9,9 +9,18 @@
 
 	const inventoryState = useUnifiedInventory();
 
-	let startDialog;
-	let finishDialog;
-	let barcodeInputEl;
+	// $state, nicht `let`: Diese drei werden per bind:this gefüllt, und alle drei werden
+	// unten in einem $effect gelesen. Ohne $state ist die Zuweisung durch bind:this nicht
+	// reaktiv — der Effekt läuft dann genau einmal, nämlich bevor das Element existiert,
+	// und danach nie wieder.
+	//
+	// Beim Barcode-Feld ist das der teure Fall: Es wird erst gerendert, wenn die Inventur
+	// auf 'active' steht. Der Effekt darunter feuerte also mit barcodeInputEl === undefined,
+	// tat nichts, und wurde nie erneut ausgelöst — das Feld blieb ohne Fokus und jeder Scan
+	// lief ins Leere, ohne dass irgendwo ein Fehler erschien.
+	let startDialog = $state();
+	let finishDialog = $state();
+	let barcodeInputEl = $state();
 
 	$effect(() => {
 		if (inventoryState.showStartModal && startDialog) {

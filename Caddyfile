@@ -1,4 +1,27 @@
+# Nur der Bibliotheks-Block, zum Nachschlagen und Hineinkopieren.
+#
+# MASSGEBLICH IST DIESE DATEI NICHT: Auf dem Schulserver liegt die Caddy-Konfiguration
+# unter /root/caddy/Caddyfile und wird von update_caddy.sh geschrieben — dort stehen
+# alle Dienste des Hosts (schul-orga, inventur, bibliothek) in EINER Datei. Wer hier
+# etwas ändert, ändert am laufenden Betrieb nichts.
+#
+# Das Ziel stand bis zum 06.08.2026 auf "bibliothek-backend-local:8083" und zeigte
+# damit ins Leere: Diesen Container legt nur docker-compose.local.yml an, und der
+# lauscht auf 8084. Der Produktionsstack (docker-compose.yml) heisst
+# "bibliothek-backend" und lauscht auf 8083. Eine Vorlage, die niemand ausprobiert,
+# faellt erst auf, wenn jemand sie im Ernstfall benutzt.
 flasch3.herzog-dupont.de {
 	tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
-	reverse_proxy bibliothek-backend-local:8083
+
+	reverse_proxy bibliothek-backend:8083 {
+		# Fristen wie in update_caddy.sh. Sie muessen zur Anwendung passen:
+		# LangLaufendeFrist (api/middleware.go) sind 5 Minuten fuer Importe, und der
+		# SSE-Stream (/events) laeuft dauerhaft — laeuft die kuerzeste Frist vorne weg,
+		# bricht der Vorgang dort ab, wo niemand die Meldung sieht.
+		transport http {
+			response_header_timeout 300s
+			read_timeout 600s
+			write_timeout 600s
+		}
+	}
 }
