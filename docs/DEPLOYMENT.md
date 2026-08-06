@@ -32,7 +32,7 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `ALLOWED_ORIGIN` | Erlaubte Herkunft für CORS (die Frontend-Adresse der Schule) | Empfohlen in Produktion |
 | `TRUSTED_PROXIES` | CIDRs/IPs, deren `X-Forwarded-For` geglaubt wird (Rate-Limit, Login-Brute-Force, Audit-Log) | Ohne sie gilt **nur Loopback** als vertrauenswürdig — hinter Caddy auf einem anderen Host also nötig |
 | `BACKUP_DIR` | Zielverzeichnis der automatischen Backups | Standard siehe [resilience_and_recovery.md](resilience_and_recovery.md) |
-| `BACKUP_ENCRYPTION_KEY` | AES-256-Schlüssel der Backups | **Ohne ihn läuft kein Backup** — der Job überspringt still |
+| `BACKUP_ENCRYPTION_KEY` | AES-256-Schlüssel der Backups | **Ohne ihn läuft kein Backup** — der Job überspringt sich mit einer Logzeile; sichtbar wird das im Admin-Dashboard über `/api/admin/system/backup-status` |
 | `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_USE_SSL` | Optionaler Offsite-Upload der verschlüsselten Backups (`jobs/backup.go`) | Nur gemeinsam sinnvoll; fehlt eine, unterbleibt der Upload |
 | `SMTP_HOST` | SMTP-Server | Optional (Mahnwesen) |
 | `SMTP_PORT` | SMTP-Port | Standard: 587 |
@@ -58,25 +58,51 @@ Hinter dem Reverse-Proxy sieht er nur seinen internen Namen.
 
 ### 2.1 `.env`-Datei anlegen
 
-Auf dem Server eine `.env`-Datei (nicht im Repo) anlegen:
+Auf dem Server eine `.env`-Datei (nicht im Repo) anlegen. **Die Geheimnisse werden
+erzeugt, nicht abgetippt** — ein wörtlich übernommenes `<mindestens-32-zeichen-…>` ist
+43 Zeichen lang, besteht damit jede Längenprüfung und ist zugleich ein Wert, der in diesem
+Repository nachzulesen ist:
+
+```bash
+cd /opt/bibliothek
+
+# Zufällige Geheimnisse direkt in die .env schreiben
+{
+  echo "POSTGRES_PASSWORD=$(openssl rand -base64 24)"
+  echo "JWT_SECRET=$(openssl rand -hex 32)"
+  echo "APP_ENCRYPTION_KEY=$(openssl rand -hex 32)"      # 64 Hex = 32 Byte
+  echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -base64 32)"
+} >> .env
+```
+
+Den Rest von Hand ergänzen — das sind Einstellungen, keine Geheimnisse:
 
 ```bash
 # /opt/bibliothek/.env
-POSTGRES_PASSWORD=<sicheres-passwort>
-JWT_SECRET=<mindestens-32-zeichen-geheimes-jwt-secret>
-APP_ENCRYPTION_KEY=<genau-32-bytes-aes-schluessel>
 APP_ENV=production
 ENFORCE_PROD_SECRETS=true   # erst beim echten Prod-Deploy scharf schalten
 COOKIE_SECURE=true
-# OHNE diesen Schlüssel werden KEINE Backups erstellt — der nächtliche Job
-# überspringt sich (jobs/backup.go). Das fällt sonst erst auf, wenn man ein Backup
-# BRAUCHT. Mindestens 32 Zeichen: Die Ableitung läuft per SHA-256, kurze Passphrasen
-# sind an einer entwendeten Backup-Datei offline angreifbar.
-BACKUP_ENCRYPTION_KEY=<mindestens-32-zeichen-passphrase>
 SMTP_HOST=smtp.example.com
 SMTP_USER=user@example.com
-SMTP_PASSWORD=<smtp-passwort>
 SMTP_FROM=bibliothek@schule.de
+```
+
+`SMTP_PASSWORD` gehört ebenfalls hinein, wird aber nicht erzeugt, sondern vom Mailserver
+vorgegeben. Es steht nur für die Erstbefüllung in der `.env`: Ab dem ersten Start ist die
+Einstellung in der Oberfläche maßgeblich (`mail_settings_config`).
+
+> **`BACKUP_ENCRYPTION_KEY` nicht vergessen** — ohne ihn werden **keine** Backups erstellt;
+> der nächtliche Job überspringt sich mit einer Logzeile (`jobs/backup.go`). Das fällt
+> sonst erst auf, wenn man ein Backup braucht. Mindestens 32 Zeichen: Die Ableitung läuft
+> per SHA-256, kurze Passphrasen sind an einer entwendeten Backup-Datei offline angreifbar.
+> Und: Diesen Schlüssel **aufbewahren**, außerhalb des Servers. Ohne ihn ist kein
+> verschlüsseltes Backup wiederherstellbar.
+
+Kontrolle, bevor der Stack startet:
+
+```bash
+./scripts/pruefe_secrets.sh          # alles grün?
+grep -c '^JWT_SECRET=' .env          # genau 1
 ```
 
 ### 2.2 Secret Guard (per Schalter einschaltbar)
@@ -199,7 +225,8 @@ Migrationen laufen **automatisch beim Serverstart** (`database.RunMigrations`). 
 
 ## 6. Backup & Recovery
 
-Automatischer Backup-Cronjob täglich um 02:30 Uhr (konfigurierbar in `jobs/cron.go`):
+Automatischer Backup-Cronjob täglich um **02:30 UTC** (konfigurierbar in `jobs/cron.go`) —
+in Deutschland also 03:30 Winter- bzw. 04:30 Sommerzeit:
 
 ```
 pg_dump → gzip → AES-GCM-Verschlüsselung (Zufalls-Nonce) → 0600 auf Disk

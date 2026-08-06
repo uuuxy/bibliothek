@@ -44,7 +44,9 @@ Was fehlt, ist die Quelle:
 
 - [ ] **Prod-Secrets**: `ENFORCE_PROD_SECRETS=true` plus echte `JWT_SECRET`,
       `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`.
-      **Ohne `BACKUP_ENCRYPTION_KEY` läuft kein Backup** — der Job überspringt still.
+      **Ohne `BACKUP_ENCRYPTION_KEY` läuft kein Backup** — der Job überspringt sich mit
+      einer Logzeile. Nach dem Setzen einmal `/api/admin/system/backup-status` im
+      Admin-Dashboard ansehen, statt der Logzeile zu vertrauen.
 - [ ] **Schul-IMAP** (`IMAP_HOST`, Login) und **SMTP-Zugangsdaten** (ohne sie versendet das
       Mahnwesen nichts). Für Mail gilt seit 30.07.2026 eine einzige Quelle: die Einstellung
       in der Oberfläche (`mail_settings_config`); die `SMTP_*`-Variablen werden beim ersten

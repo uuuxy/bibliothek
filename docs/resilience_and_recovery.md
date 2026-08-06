@@ -52,42 +52,112 @@ Allgemeine Schritte: (1) Anwendung stoppen, (2) Backup auswählen, (3) Datenbank
 
 > Der Backup-Restore-Round-Trip (Verschlüsselung ↔ Entschlüsselung) ist durch automatisierte Tests
 > abgesichert: `go test ./jobs/ -run TestBackupRestore`. Vor einem produktiven Go-Live sollte zusätzlich
-> **einmal** ein echtes Restore in eine Wegwerf-Datenbank durchgespielt werden (siehe 2c).
+> **einmal** ein echtes Restore in eine Wegwerf-Datenbank durchgespielt werden (siehe 2e).
+
+> **Kein Platzhalter in den Befehlen.** Dateiname und Schlüssel stehen in Shell-Variablen.
+> Eine Anleitung mit spitzen Klammern wurde am 06.08.2026 wörtlich eingefügt und legte die
+> Produktion lahm ([SECURITY.md](SECURITY.md), Abschnitt „`APP_ENCRYPTION_KEY` wechseln").
+> Hier wöge derselbe Fehler schwerer: Wer `dropdb` ausführt und **erst danach** merkt, dass
+> der Restore-Befehl nicht läuft, steht vor einer leeren Datenbank.
+>
+> **Deshalb die Reihenfolge unten: erst entschlüsseln und prüfen, dann löschen.**
 
 ### 2a. Verschlüsseltes `.sql.gz.enc`-Backup (Abschnitt 1a)
 
+Alles in **derselben** Shell-Sitzung, damit `$KEY` und `$DUMP` erhalten bleiben.
+
 ```bash
-# 0. Restore-Tool bauen (einmalig)
+# 0. Restore-Tool bauen (einmalig; im Container liegt es bereits im Image)
 go build -o restore-backup ./cmd/restore-backup
 
-# 1. Datenbank leeren/neu anlegen (ACHTUNG: löscht alle aktuellen Daten!)
+# 1. Backup auswählen — neuestes verschlüsseltes Backup
+ENC=$(ls -t backups/backup_*.sql.gz.enc | head -1)
+echo "Verwende: $ENC"
+
+# 2. Schlüssel setzen (der ORIGINALE aus der Zeit des Backups)
+read -rsp "BACKUP_ENCRYPTION_KEY: " KEY; echo
+
+# 3. Entschlüsseln in eine Datei — noch wird nichts gelöscht
+DUMP=wiederherstellung.sql
+BACKUP_ENCRYPTION_KEY="$KEY" ./restore-backup "$ENC" "$DUMP"
+
+# 4. Gegenprobe VOR dem Löschen: hat die Datei Inhalt und sieht sie aus wie ein pg_dump?
+ls -lh "$DUMP"
+head -5 "$DUMP"
+grep -c "CREATE TABLE" "$DUMP"     # muss deutlich > 0 sein
+```
+
+Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:
+
+```bash
+# 5. Sicherheitsnetz: aktuellen Stand wegsichern (der Rückweg, falls der Restore misslingt)
+pg_dump -U postgres bibliothek > vor-restore.sql
+ls -lh vor-restore.sql
+
+# 6. Datenbank neu anlegen und einspielen
 dropdb -U postgres bibliothek
 createdb -U postgres bibliothek
-
-# 2. Entschlüsseln + dekomprimieren + direkt einspielen
-BACKUP_ENCRYPTION_KEY="<originaler-schluessel>" \
-  ./restore-backup backups/backup_<ZEITSTEMPEL>.sql.gz.enc | psql -U postgres -d bibliothek
-
-# Alternativ: erst in eine Datei entschlüsseln, dann einspielen
-BACKUP_ENCRYPTION_KEY="<…>" ./restore-backup backups/backup_<…>.sql.gz.enc wiederherstellung.sql
-psql -U postgres -d bibliothek -f wiederherstellung.sql
+psql -U postgres -d bibliothek -f "$DUMP"
 ```
 
 ### 2b. Unverschlüsseltes `.sql.gz`-Backup (Abschnitt 1b)
 
 ```bash
+GZ=$(ls -t backups/bibliothek_backup_*.sql.gz | head -1)
+echo "Verwende: $GZ"
+zcat "$GZ" | head -5                 # Gegenprobe: echter SQL-Text, keine Fehlermeldung
+
+pg_dump -U postgres bibliothek > vor-restore.sql   # Rückweg
 dropdb -U postgres bibliothek
 createdb -U postgres bibliothek
-zcat backups/bibliothek_backup_<…>.sql.gz | psql -U postgres -d bibliothek
+zcat "$GZ" | psql -U postgres -d bibliothek
 ```
 
-### 2c. Restore-Probe vor Go-Live (dringend empfohlen)
-Ein Backup, das nie zurückgespielt wurde, ist kein verlässliches Backup. Einmal gefahrlos verifizieren:
+> Die Gegenprobe mit `head` ist hier nicht Zierde: `scripts/backup.sh` legte vor dem
+> 06.08.2026 ohne `pipefail` auch dann eine gzip-Datei an, wenn `pg_dump` abgebrochen war —
+> darin steht dann eine Fehlermeldung statt eines Dumps (Abschnitt 1b).
+
+### 2c. Der Rückweg
+
+Misslingt der Restore, führt `vor-restore.sql` aus Schritt 5 zurück auf den Stand von
+vorher:
 
 ```bash
+dropdb -U postgres bibliothek
+createdb -U postgres bibliothek
+psql -U postgres -d bibliothek -f vor-restore.sql
+```
+
+Danach die Anwendung neu starten. Ist auch das nicht möglich, bleibt das nächstältere
+verschlüsselte Backup — es liegen 14 Stück vor (Abschnitt 1a).
+
+### 2d. Aufräumen — erst nach bestätigter Wiederherstellung
+
+`wiederherstellung.sql` und `vor-restore.sql` sind **unverschlüsselte** Dumps mit jedem
+Schülernamen, jeder Adresse und jeder Ausleihe im Klartext (dieselbe Warnung wie in
+Abschnitt 1b). Sie sind Arbeitsmaterial, kein Backup.
+
+Solange die Wiederherstellung nicht bestätigt ist, `vor-restore.sql` **behalten** — es ist
+der einzige Weg zurück. Läuft die Anwendung wieder und ist stichprobenartig geprüft:
+
+```bash
+shred -u wiederherstellung.sql vor-restore.sql 2>/dev/null \
+  || rm -f wiederherstellung.sql vor-restore.sql
+```
+
+### 2e. Restore-Probe vor Go-Live (dringend empfohlen)
+
+Ein Backup, das nie zurückgespielt wurde, ist kein verlässliches Backup. Diese Probe fasst
+die Produktivdatenbank **nicht** an:
+
+```bash
+ENC=$(ls -t backups/backup_*.sql.gz.enc | head -1)
+read -rsp "BACKUP_ENCRYPTION_KEY: " KEY; echo
+
 createdb -U postgres bibliothek_restore_test
-BACKUP_ENCRYPTION_KEY="<…>" ./restore-backup backups/backup_<…>.sql.gz.enc \
+BACKUP_ENCRYPTION_KEY="$KEY" ./restore-backup "$ENC" \
   | psql -U postgres -d bibliothek_restore_test
+
 # Stichprobe, danach Wegwerf-DB entfernen:
 psql -U postgres -d bibliothek_restore_test -c "SELECT count(*) FROM schueler;"
 dropdb -U postgres bibliothek_restore_test

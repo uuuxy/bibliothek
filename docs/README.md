@@ -97,8 +97,12 @@ npm run dev
 ## Systemarchitektur (Kurzübersicht)
 
 ```
-Middleware (Rate-Limit → Auth → CSRF → RBAC)
+Globale Kette (api/router.go): Security-Header → CORS → Body-Limit → Timeout
+                               → Rate-Limit → CSRF
         │
+        ▼
+Pro Route: RequirePermission(...) / RequireRoles(...)   ← Auth + RBAC sitzen hier,
+        │                                                 nicht in der globalen Kette
         ▼
 Handler (api/) → Service (internal/service/) → Repository (repository/)
         │                                               │
@@ -119,6 +123,9 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 - SMTP: STARTTLS erzwungen, mit Zertifikatsprüfung
 - CSV-Formel-Injection-Schutz (OWASP CWE-1236)
 - Decompression-Bomb-Guard bei Bild-Uploads
-- Produktions-Secret-Guard (Server startet nicht mit Default-Secrets)
+- Produktions-Secret-Guard: **muss scharf geschaltet werden** — mit `ENFORCE_PROD_SECRETS=true`
+  verweigert der Server den Start bei bekannten Default-Secrets. Der Standard ist `false`
+  (Testphase), damit der Stack ohne Konfiguration hochkommt; vor dem echten Prod-Deploy
+  gehört der Schalter gesetzt ([DEPLOYMENT.md](DEPLOYMENT.md#22-secret-guard-per-schalter-einschaltbar))
 
 Details: [SECURITY.md](SECURITY.md)

@@ -365,7 +365,9 @@ Logzeile.
 
 ```bash
 NEU=$(openssl rand -hex 32)
-APP_ENCRYPTION_KEY=<alter-schluessel> DATABASE_URL=… \
+read -rsp "Alter APP_ENCRYPTION_KEY: " ALT; echo
+
+APP_ENCRYPTION_KEY="$ALT" DATABASE_URL="$DATABASE_URL" \
   go run ./cmd/rotate-encryption-key -neu "$NEU" -pruefen
 ```
 
