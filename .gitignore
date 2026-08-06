@@ -19,6 +19,12 @@ frontend/dist-ssr/
 # User uploads & data
 uploads/
 
+# Editor-Sicherungen. docker-compose.yml.save und .env.save entstanden auf der
+# Produktion ungefragt und tragen denselben Inhalt wie das Original — im Fall von
+# .env.save hieß das: JWT_SECRET, SMTP_PASSWORD und POSTGRES_PASSWORD im Klartext.
+*.save
+*.save.[0-9]*
+
 # Environment configurations
 #
 # Erlaubnisliste statt Aufzählung: ALLES was .env heißt ist ignoriert, und nur
@@ -47,10 +53,31 @@ frontend/*.local
 Thumbs.db
 
 # Database Backups & Archives
+#
+# Die *.sql-Regel gab es schon; sie greift aber NUR bei der Endung .sql. Die echten
+# Sicherungen heißen .sql.gz und .sql.gz.enc und waren damit von keiner Regel erfasst.
+#
+# Auf der Produktion lagen am 06.08.2026 **82 Dateien mit 174 MB** in backups/ —
+# unverschlüsselte pg_dumps, angelegt von update.sh vor jedem Deploy und von
+# scripts/backup.sh. Jede enthält die komplette schueler-Tabelle: Klarnamen, Adressen
+# und Ausleihhistorie von Minderjährigen (siehe die Warnung in
+# docs/resilience_and_recovery.md, Abschnitt 1b). `git status` führte backups/ als
+# untracked auf — ein `git add .` hätte diese Daten in ein öffentliches Repository
+# geschoben. Die Doku wusste, dass die Dateien schutzbedürftig sind; .gitignore nicht.
 *.sql
 !schema.sql
 !migrations/
 !migrations/*.sql
+backups/
+*.sql.gz
+*.sql.gz.enc
+# Arbeitsdateien der Wiederherstellung und der Schlüsselwechsel
+# (docs/resilience_and_recovery.md 2a/2c, docs/SECURITY.md). Sie entstehen im
+# Wurzelverzeichnis und tragen denselben Klartext wie die Dumps.
+/vor-restore.sql
+/wiederherstellung.sql
+/vor-pw-wechsel.sql
+/vor-rotation.sql
 *.zip
 
 certs/
