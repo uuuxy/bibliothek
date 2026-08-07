@@ -131,7 +131,7 @@
 			onclick={onSave}
 			disabled={speichernGesperrt}
 			title={speichernGesperrt ? 'Signatur eintragen, um zu speichern' : undefined}
-			class="px-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300"
+			class="px-5 bg-emerald-600 hover:bg-emerald-700"
 		>
 			Speichern
 		</Button>

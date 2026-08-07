@@ -174,7 +174,7 @@
 	<Button
 		disabled={selectedClasses.length === 0 || (!isUpdate && selectedBookIds.size === 0) || isSaving}
 		onclick={(e) => onsave(e)}
-		class="h-auto w-full p-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:opacity-100 text-base tracking-wide shadow-lg"
+		class="h-auto w-full p-5 bg-emerald-600 hover:bg-emerald-700 text-base tracking-wide shadow-lg"
 	>
 		<svg
 			fill="none"

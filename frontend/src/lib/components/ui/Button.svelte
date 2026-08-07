@@ -40,8 +40,25 @@
 	// Chips 8, Karten 12, Dialoge 28, Buttons voll). Die frühere Entscheidung
 	// gegen die Pille stammt aus der Zeit vor dem M3-Ziel und ist am 04.08.2026
 	// ausdrücklich zurückgenommen worden.
-	const baseClasses =
-		'm3-state inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+	// Deaktiviert: EIN Zustand für alle Varianten, nach Material 3 — Fläche in der
+	// Textfarbe bei 12 %, Beschriftung bei 38 %. Kein Rahmen, kein Schatten: Ein
+	// abgeschalteter Knopf soll flach wirken, nicht wie ein bedienbarer mit Schleier.
+	//
+	// Vorher stand hier `disabled:opacity-50`, und weil das nur blass macht statt
+	// umzufärben, hat sich jede Ansicht ihren eigenen Zustand gebaut. Gemessen am
+	// 07.08.2026: 21 Fundstellen mit VIER Opazitäten (40/50/60/100) und DREI
+	// Flächenfarben. Sichtbar wurde es als Farbunterschied zwischen zwei Bildschirmen —
+	// "Anlegen" (Signaturen) war blaues Primary bei 50 %, "A4-Bogen drucken"
+	// (Druck-Center) grau bei voller Deckkraft. Zwei Knöpfe, derselbe Zustand, zwei
+	// Aussagen.
+	//
+	// !-Präfix, weil die Varianten-Klassen (bg-blue-600 …) dieselbe Spezifität haben und
+	// bei gleicher Spezifität die Stylesheet-Reihenfolge entscheidet, nicht die im
+	// class-Attribut — dieselbe Falle wie bei den Farb-Overrides weiter unten.
+	const disabledClasses =
+		'disabled:cursor-not-allowed disabled:!bg-on-surface/[0.12] disabled:!text-on-surface/[0.38] disabled:!border-transparent disabled:!shadow-none';
+
+	const baseClasses = `m3-state inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-full cursor-pointer ${disabledClasses} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`;
 
 	// Farb-Utilities des Aufrufers ERSETZEN die der Variante, statt mit ihnen zu konkurrieren.
 	//
