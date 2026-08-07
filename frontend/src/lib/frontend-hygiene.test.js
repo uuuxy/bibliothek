@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join, relative, basename } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, basename } from 'node:path';
+import {
+	srcRoot,
+	repoFrontend,
+	sammleQuelldateien,
+	relPfad,
+	vergleicheMitBestand
+} from './hygiene-quellen.js';
 
 // Drei Struktur-Invarianten der Oberfläche, die sich objektiv entscheiden lassen —
 // im Gegensatz zu Radien, Schatten und Schriftstärken, die Ermessensfragen sind
@@ -12,23 +18,6 @@ import { dirname, join, relative, basename } from 'node:path';
 //
 // Frei, deterministisch, Millisekunden — wie routing-consistency.test.js. Und im
 // Gegensatz zum Git-Hook läuft es auf JEDEM Arbeitsplatz, weil es im Repo liegt.
-
-const libDir = dirname(fileURLToPath(import.meta.url));
-const srcRoot = join(libDir, '..');
-const repoFrontend = join(srcRoot, '..');
-
-/** @param {string} p @returns {string[]} */
-function sammleQuelldateien(p) {
-	/** @type {string[]} */
-	const out = [];
-	for (const entry of readdirSync(p)) {
-		if (entry === 'node_modules') continue;
-		const full = join(p, entry);
-		if (statSync(full).isDirectory()) out.push(...sammleQuelldateien(full));
-		else if (/\.(svelte|js)$/.test(entry) && !entry.endsWith('.test.js')) out.push(full);
-	}
-	return out;
-}
 
 // Ein Emoji ist ein Zeichen, das von sich aus bunt dargestellt wird
 // (Emoji_Presentation), oder ein Piktogramm, das per Variationsselektor U+FE0F
@@ -93,9 +82,6 @@ const EMOJI_BESTAND = [
 	'src/lib/permissionMetadata.js'
 ];
 
-/** @param {string} f */
-const relPfad = (f) => relative(repoFrontend, f).split('\\').join('/');
-
 describe('Oberflächen-Hygiene', () => {
 	it('führt keine neuen Emojis ein (Icons kommen aus @lucide/svelte)', () => {
 		const betroffen = sammleQuelldateien(srcRoot)
@@ -103,9 +89,7 @@ describe('Oberflächen-Hygiene', () => {
 			.map(relPfad)
 			.sort();
 
-		const bestand = [...EMOJI_BESTAND].sort();
-		const neu = betroffen.filter((f) => !bestand.includes(f));
-		const inzwischenSauber = bestand.filter((f) => !betroffen.includes(f));
+		const { neu, inzwischenSauber } = vergleicheMitBestand(betroffen, [...EMOJI_BESTAND].sort());
 
 		expect(
 			neu,
@@ -124,9 +108,7 @@ describe('Oberflächen-Hygiene', () => {
 			.map(relPfad)
 			.sort();
 
-		const bestand = [...ZEICHNUNGEN].sort();
-		const neu = betroffen.filter((f) => !bestand.includes(f));
-		const inzwischenSauber = bestand.filter((f) => !betroffen.includes(f));
+		const { neu, inzwischenSauber } = vergleicheMitBestand(betroffen, [...ZEICHNUNGEN].sort());
 
 		expect(
 			neu,
