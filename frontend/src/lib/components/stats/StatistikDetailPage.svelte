@@ -7,6 +7,7 @@
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
+	import PageShell from '../layout/PageShell.svelte';
 
 	/** @param {string} alle @param {string[]} werte */
 	const mitAlle = (alle, werte) => [
@@ -75,7 +76,7 @@
 	);
 </script>
 
-<div class="w-full max-w-4xl mx-auto px-6 pt-6 pb-10 text-slate-800">
+<PageShell breite="inhalt">
 	<!-- Zurück zur Statistik-Übersicht -->
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}
@@ -176,4 +177,4 @@
 			{/each}
 		</ul>
 	{/if}
-</div>
+</PageShell>

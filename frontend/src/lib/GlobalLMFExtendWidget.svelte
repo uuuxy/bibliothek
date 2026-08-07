@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
+	import Sheet from './components/layout/Sheet.svelte';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -63,7 +64,7 @@
 	}
 </script>
 
-<div class="p-6 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-5">
+<Sheet class="space-y-5 p-6">
 	<div>
 		<h3 class="text-base font-bold text-slate-900">LMF-Massenverlängerung (Klasse)</h3>
 		<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">
@@ -112,4 +113,4 @@
 			{isExtending ? 'Wird verarbeitet...' : 'Klassen-LMF global verlängern'}
 		</Button>
 	</div>
-</div>
+</Sheet>

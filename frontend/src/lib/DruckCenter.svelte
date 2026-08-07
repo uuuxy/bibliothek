@@ -16,7 +16,7 @@
 	});
 </script>
 
-<div class="w-full flex flex-col h-full bg-slate-50">
+<div class="w-full flex flex-col h-full">
 	<div class="px-8 pt-6 pb-4 border-b border-slate-200 bg-white shadow-sm shrink-0">
 		<div class="max-w-6xl mx-auto flex gap-6">
 			<button

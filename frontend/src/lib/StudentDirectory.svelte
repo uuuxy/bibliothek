@@ -8,7 +8,7 @@
 	import ActiveStudentList from './components/students/ActiveStudentList.svelte';
 	import DeletedStudentList from './components/students/DeletedStudentList.svelte';
 	import StudentDirectoryToolbar from './components/students/StudentDirectoryToolbar.svelte';
-	import PageContainer from './components/layout/PageContainer.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 	import AuswahlAktionsleiste from './components/students/AuswahlAktionsleiste.svelte';
 	import StudentBatchPrint from './components/students/StudentBatchPrint.svelte';
 	import { idStore } from './designer/idDesignerStore.svelte.js';
@@ -155,7 +155,7 @@
 	});
 </script>
 
-<div class="w-full h-full flex flex-col text-slate-800 bg-slate-50">
+<div class="w-full h-full flex flex-col text-on-surface">
 	{#if activeStudent}
 		<div class="animate-fade-in flex-1 overflow-y-auto">
 			<StudentProfile
@@ -170,9 +170,11 @@
 			/>
 		</div>
 	{:else}
-		<!-- Tab Navigation Header -->
-		<div class="px-8 pt-6 pb-0 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
-			<div class="max-w-6xl mx-auto flex gap-6">
+		<!-- Reiter liegen auf der Leinwand, nicht in einem eigenen weissen Balken — wie im
+		     Mahnwesen und im Medienkatalog. Der Balken war die letzte Stelle, an der diese
+		     Seite ihre eigene Flaeche mitbrachte. -->
+		<div class="border-outline-variant shrink-0 border-b">
+			<div class="mx-auto flex max-w-6xl gap-6">
 				{#snippet tabButton(id, label, activeColorClass)}
 					<button
 						onclick={() => (activeTab = id)}
@@ -194,7 +196,7 @@
 
 		<!-- Tab Content -->
 		<div class="flex-1 overflow-y-auto py-8 w-full">
-			<PageContainer>
+			<PageShell breite="inhalt">
 				{#if activeTab === 'active'}
 					<div class="w-full no-print animate-fade-in">
 						<StudentDirectoryToolbar
@@ -243,7 +245,7 @@
 						/>
 					</div>
 				{/if}
-			</PageContainer>
+			</PageShell>
 		</div>
 	{/if}
 </div>

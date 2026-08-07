@@ -9,6 +9,8 @@
 	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
+	import PageShell from './components/layout/PageShell.svelte';
+	import Sheet from './components/layout/Sheet.svelte';
 
 	// --- STATE ---
 	let loading = $state(true);
@@ -98,7 +100,7 @@
 	});
 </script>
 
-<div class="max-w-6xl mx-auto w-full space-y-6 text-slate-800 font-sans antialiased pb-20 pt-6">
+<PageShell breite="inhalt">
 	<!-- Header -->
 	<div class="space-y-6">
 		<!-- Tabs -->
@@ -127,8 +129,9 @@
 			></div>
 		</div>
 	{:else}
-		<!-- Tab Content -->
-		<div class="pt-2 animate-fade-in">
+		<!-- Tab Content: liegt wie ueberall sonst in einer Karte auf der Leinwand. Vorher
+		     schwebte das Formular direkt auf der Flaeche — als einzige Seite der App. -->
+		<Sheet class="animate-fade-in p-6">
 			<!-- TAB: ALLGEMEIN -->
 			{#if activeTab === 'Allgemein'}
 				<SystemSettingsAllgemein
@@ -177,6 +180,6 @@
 					<MailTemplates />
 				</section>
 			{/if}
-		</div>
+		</Sheet>
 	{/if}
-</div>
+</PageShell>

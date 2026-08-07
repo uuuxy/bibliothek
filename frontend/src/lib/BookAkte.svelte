@@ -7,6 +7,7 @@
 	import BookAkteMeta from './BookAkteMeta.svelte';
 	import { useBookAkte } from './useBookAkte.svelte.js';
 	import Button from './components/ui/Button.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	/** @type {{ bookId: string | null, onBack: () => void }} */
 	let { bookId, onBack } = $props();
@@ -18,7 +19,7 @@
 	});
 </script>
 
-<div class="w-full max-w-6xl mx-auto space-y-6 animate-fade-in">
+<PageShell breite="inhalt">
 	<!-- Back Button + Breadcrumb -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-3">
@@ -141,4 +142,4 @@
 			>
 		</div>
 	{/if}
-</div>
+</PageShell>

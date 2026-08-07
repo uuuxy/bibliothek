@@ -8,6 +8,7 @@
 <script>
 	import { apiFetch } from '../../apiFetch.js';
 	import { onMount } from 'svelte';
+	import Sheet from '../layout/Sheet.svelte';
 
 	let { onRestoreSuccess = () => {} } = $props();
 
@@ -46,7 +47,7 @@
 	});
 </script>
 
-<div class="w-full border-l-2 border-rose-300">
+<Sheet class="border-l-4 border-l-rose-400">
 	<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
 		<h3 class="text-base font-bold text-rose-800 flex items-center gap-2">
 			<svg
@@ -149,4 +150,4 @@
 			</table>
 		</div>
 	{/if}
-</div>
+</Sheet>

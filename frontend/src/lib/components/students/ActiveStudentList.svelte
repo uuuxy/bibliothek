@@ -6,6 +6,8 @@
   Sie zeigt ein Profilbild, den Namen, die Klasse, die Anzahl der ausgeliehenen Bücher und den Status an.
 -->
 <script>
+	import Sheet from '../layout/Sheet.svelte';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {any[]} filteredStudents
@@ -71,7 +73,7 @@
 	</div>
 {/snippet}
 
-<div class="w-full">
+<Sheet>
 	{#if loading}
 		<div class="py-16 flex justify-center items-center">
 			<div
@@ -197,4 +199,4 @@
 			</table>
 		</div>
 	{/if}
-</div>
+</Sheet>

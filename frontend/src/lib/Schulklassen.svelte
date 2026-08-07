@@ -5,8 +5,9 @@
 	// sich nur noch um Buch-Metadaten. Der eigentliche Klassen-Flow steckt unverändert in
 	// KlassenUebersicht (Liste, „Klasse hinzufügen", Zuweisungs-Dialog).
 	import KlassenUebersicht from '../inventur/lib/components/admin/KlassenUebersicht.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 </script>
 
-<div class="w-full max-w-6xl mx-auto px-4 py-6">
+<PageShell breite="inhalt">
 	<KlassenUebersicht />
-</div>
+</PageShell>

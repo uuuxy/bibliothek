@@ -6,7 +6,7 @@
 <script lang="ts">
 	import LitteraImportWidget from '../../LitteraImportWidget.svelte';
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
-	import PageContainer from '../layout/PageContainer.svelte';
+	import PageShell from '../layout/PageShell.svelte';
 	import LusdImportView from '../students/LusdImportView.svelte';
 	import PromoteStudentsView from '../students/PromoteStudentsView.svelte';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
@@ -252,7 +252,7 @@
 	</div>
 {/snippet}
 
-<PageContainer>
+<PageShell breite="inhalt">
 	<div class="space-y-8">
 		<div>
 			<h2 class="text-xl font-bold text-slate-950">Datenverwaltung</h2>
@@ -301,4 +301,4 @@
 			</div>
 		</div>
 	</div>
-</PageContainer>
+</PageShell>

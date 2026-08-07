@@ -80,7 +80,7 @@
 </script>
 
 <main
-	class="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-slate-200 selection:text-slate-900"
+	class="min-h-screen bg-surface text-on-surface font-sans selection:bg-slate-200 selection:text-slate-900"
 >
 	{#if _currentPath === '/katalog'}
 		<OpacSearch />
@@ -116,9 +116,7 @@
 		{:else}
 			<div class="h-screen flex w-full overflow-hidden">
 				<Sidebar />
-				<div
-					class="flex-1 flex flex-col min-w-0 bg-surface-container-lowest px-4 md:px-8 py-6 w-full overflow-y-auto"
-				>
+				<div class="flex-1 flex flex-col min-w-0 px-4 md:px-8 py-6 w-full overflow-y-auto">
 					<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
 					     nicht in der Navigation. Nur Admins können das Problem beheben. -->
 					{#if authStore.currentUser?.rolle === 'admin'}

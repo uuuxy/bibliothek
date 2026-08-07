@@ -2,6 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { coverSrc } from './utils/coverSrc.js';
 	import Button from './components/ui/Button.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 	/** @type {{ user: any }} */
 	let { user } = $props();
 
@@ -129,7 +130,7 @@
 	}
 </script>
 
-<div class="max-w-4xl mx-auto space-y-8">
+<PageShell breite="inhalt">
 	<!-- Header -->
 	<div>
 		<h1 class="text-2xl font-bold text-slate-800">Mein Lehrerportal</h1>
@@ -357,4 +358,4 @@
 			<p class="text-sm font-medium">Gib einen Suchbegriff ein, um Bücher zu finden.</p>
 		</div>
 	{/if}
-</div>
+</PageShell>

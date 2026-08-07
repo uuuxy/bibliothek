@@ -31,7 +31,7 @@
 	onMount(ladeSignaturen);
 </script>
 
-<div class="p-6 space-y-6 w-full">
+<div class="space-y-6 w-full">
 	<div>
 		<h1 class="text-2xl font-bold text-slate-900">Signaturen</h1>
 		<p class="text-sm text-slate-500 mt-1">

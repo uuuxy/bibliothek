@@ -80,7 +80,7 @@
 {/snippet}
 
 <aside
-	class="border-outline-variant flex shrink-0 flex-col justify-between border-r bg-white
+	class="border-outline-variant flex shrink-0 flex-col justify-between border-r bg-surface
 		no-print h-screen transition-all duration-300 {zu ? 'w-16' : 'w-64'}"
 >
 	<div class="flex h-full flex-col justify-between overflow-y-auto">
