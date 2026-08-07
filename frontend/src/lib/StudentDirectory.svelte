@@ -9,6 +9,10 @@
 	import DeletedStudentList from './components/students/DeletedStudentList.svelte';
 	import StudentDirectoryToolbar from './components/students/StudentDirectoryToolbar.svelte';
 	import PageContainer from './components/layout/PageContainer.svelte';
+	import AuswahlAktionsleiste from './components/students/AuswahlAktionsleiste.svelte';
+	import StudentBatchPrint from './components/students/StudentBatchPrint.svelte';
+	import { idStore } from './designer/idDesignerStore.svelte.js';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	// Props (Svelte 5)
 	let { role = '' } = $props();
@@ -41,6 +45,52 @@
 	/** Muss zu ListStudentsWithStatsLimit im Backend passen: Erreicht die ungefilterte
 	 *  Liste diese Länge, ist sie gekappt und die Ansicht sagt das auch. */
 	const LISTEN_GRENZE = 500;
+
+	// Markierte Schüler für den Ausweis-Stapeldruck. Set statt Array: Das Ankreuzen
+	// fragt bei jeder Zeile "ist die dabei?" — das ist der Zugriff, den ein Set kann.
+	//
+	// SvelteSet statt Set: Ein einfaches Set ist für Svelte 5 ein undurchsichtiger Wert;
+	// .add()/.delete() lösten kein Neuzeichnen aus, und die Haken blieben beim Klicken
+	// stehen. SvelteSet macht die Mitgliedschaft selbst reaktiv.
+	const auswahl = new SvelteSet();
+	const markierte = $derived(students.filter((/** @type {any} */ s) => auswahl.has(s.id)));
+	// Karten ohne ableitbares Ablaufjahr würden "31.07.–" tragen. Der Balken sagt das
+	// VOR dem Druck, nicht der fertige Stapel hinterher.
+	const ohneDatum = $derived(
+		markierte.filter((/** @type {any} */ s) => s.ausweis_gueltig_bis == null).length
+	);
+
+	/** @param {string} id */
+	function toggle(id) {
+		if (!auswahl.delete(id)) auswahl.add(id);
+	}
+
+	function toggleAlle() {
+		// Bezugsgröße ist die ANGEZEIGTE Liste, nicht der Gesamtbestand: Wer nach "7H"
+		// sucht und "alle" ankreuzt, meint die Treffer vor sich — nicht 875 Schüler.
+		const alle = markierte.length === students.length;
+		auswahl.clear();
+		if (!alle) {
+			for (const s of students) auswahl.add(s.id);
+		}
+	}
+
+	// Druckt den markierten Stapel. Karten- oder A4-Modus kommt aus dem gespeicherten
+	// Ausweis-Design (idStore.printMode) — der Designer legt fest WIE, diese Ansicht WER.
+	function druckeAuswahl() {
+		const a4 = idStore.printMode === 'a4';
+		const style = document.createElement('style');
+		style.textContent = a4
+			? '@media print { @page { size: A4; margin: 0; } }'
+			: '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
+		document.head.appendChild(style);
+		document.body.setAttribute('data-print-mode', a4 ? 'a4' : 'card');
+		document.body.setAttribute('data-print-side', 'front');
+		window.print();
+		document.head.removeChild(style);
+		document.body.removeAttribute('data-print-mode');
+		document.body.removeAttribute('data-print-side');
+	}
 
 	async function loadStudents() {
 		loading = true;
@@ -157,10 +207,20 @@
 							oncreate={() => (showCreateModal = true)}
 						/>
 
+						<AuswahlAktionsleiste
+							anzahl={markierte.length}
+							{ohneDatum}
+							onDrucken={druckeAuswahl}
+							onLeeren={() => auswahl.clear()}
+						/>
+
 						<div class="mt-6">
 							<ActiveStudentList
 								filteredStudents={students}
 								loading={loading || sucheLaeuft}
+								{auswahl}
+								onToggle={toggle}
+								onToggleAlle={toggleAlle}
 								onSelectStudent={(s) => {
 									// Selbst gesucht und angeklickt = Datenpflege-Absicht.
 									profilReiter = 'stammdaten';
@@ -194,3 +254,12 @@
 	onclose={() => (showCreateModal = false)}
 	onsuccess={handleStudentCreated}
 />
+
+<!-- Die Druckfläche steht AUSSERHALB des .no-print-Wrappers oben, sonst blendet die
+     Druck-CSS sie mit dem Rest der Ansicht aus und der Ausdruck bliebe leer (dieselbe
+     Anordnung wie StudentPrintCard im Profil).
+     Nur rendern, wenn wirklich markiert ist: Sonst hinge an jeder Schülerdatei ein
+     unsichtbarer Kartensatz im DOM. -->
+{#if markierte.length > 0}
+	<StudentBatchPrint students={markierte} />
+{/if}

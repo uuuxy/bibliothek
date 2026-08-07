@@ -6,7 +6,33 @@
   Sie zeigt ein Profilbild, den Namen, die Klasse, die Anzahl der ausgeliehenen Bücher und den Status an.
 -->
 <script>
-	let { filteredStudents = [], loading = false, onSelectStudent = () => {} } = $props();
+	/**
+	 * @typedef {Object} Props
+	 * @property {any[]} filteredStudents
+	 * @property {boolean} loading
+	 * @property {(s: any) => void} onSelectStudent
+	 * @property {Set<string>} [auswahl]    markierte Schüler-IDs (Ausweis-Stapeldruck)
+	 * @property {(id: string) => void} [onToggle]
+	 * @property {() => void} [onToggleAlle]
+	 */
+	/** @type {Props} */
+	let {
+		filteredStudents = [],
+		loading = false,
+		onSelectStudent = () => {},
+		auswahl = new Set(),
+		onToggle,
+		onToggleAlle
+	} = $props();
+
+	// Die Auswahlspalte erscheint nur, wenn der Aufrufer sie auch verarbeitet. So bleibt
+	// die Liste woanders (Kiosk, Abgänger) unverändert schmal.
+	const auswaehlbar = $derived(typeof onToggle === 'function');
+	const alleGewaehlt = $derived(
+		filteredStudents.length > 0 &&
+			filteredStudents.every((/** @type {any} */ s) => auswahl.has(s.id))
+	);
+	const teilweise = $derived(auswahl.size > 0 && !alleGewaehlt);
 </script>
 
 {#snippet avatar(s)}
@@ -76,6 +102,18 @@
 			<table class="w-full text-base text-slate-700">
 				<thead class="border-b border-slate-200 text-sm font-semibold text-slate-500 font-sans">
 					<tr>
+						{#if auswaehlbar}
+							<th class="px-4 py-2 w-10">
+								<input
+									type="checkbox"
+									checked={alleGewaehlt}
+									indeterminate={teilweise}
+									onchange={onToggleAlle}
+									aria-label="Alle angezeigten Schüler für den Ausweisdruck markieren"
+									class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-blue-600"
+								/>
+							</th>
+						{/if}
 						<th class="px-4 py-2 w-16">Foto</th>
 						<th class="px-4 py-2">Name</th>
 						<th class="px-4 py-2 w-24">Klasse</th>
@@ -99,6 +137,20 @@
 							aria-label="Profil von {s.vorname} {s.nachname} (Klasse {s.klasse || 'N/A'}) anzeigen"
 							class="hover:bg-slate-50/50 cursor-pointer transition-colors group focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
 						>
+							{#if auswaehlbar}
+								<!-- stopPropagation: Die gesamte Zeile oeffnet das Profil. Ohne das
+								     wuerde jedes Ankreuzen den Bildschirm wechseln — und die
+								     Markierung waere weg, bevor man die zweite setzen kann. -->
+								<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
+									<input
+										type="checkbox"
+										checked={auswahl.has(s.id)}
+										onchange={() => onToggle?.(s.id)}
+										aria-label="{s.vorname} {s.nachname} für den Ausweisdruck markieren"
+										class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-blue-600"
+									/>
+								</td>
+							{/if}
 							<td class="px-4 py-2">
 								{@render avatar(s)}
 							</td>
