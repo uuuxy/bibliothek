@@ -21,8 +21,7 @@ const SCREENS = [
 ];
 
 /** Sichtbare Buttons, deren Inhalt praktisch nur ein Symbol ist. */
-const SYMBOL_BUTTONS =
-	'button:has(svg), [role="button"]:has(svg)';
+const SYMBOL_BUTTONS = 'button:has(svg), [role="button"]:has(svg)';
 
 /**
  * @param {import('@playwright/test').Page} page
@@ -64,7 +63,9 @@ async function pruefeBildschirm(page, name, fehler) {
 		}
 		// Wegfahren, sonst bleibt die Blase für das nächste Symbol stehen.
 		await page.mouse.move(0, 0);
-		await expect(blase).toBeHidden({ timeout: 2000 }).catch(() => {});
+		await expect(blase)
+			.toBeHidden({ timeout: 2000 })
+			.catch(() => {});
 	}
 	return geprueft;
 }

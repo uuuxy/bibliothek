@@ -111,7 +111,7 @@ func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName s
 	if err != nil {
 		return fmt.Errorf("transaktion konnte nicht gestartet werden: %w", err)
 	}
-	defer func() { _ = tx.Rollback(ctx) }()  //nolint:errcheck
+	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
 
 	// If there's an old class name, delete it.
 	if oldClassName != "" {

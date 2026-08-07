@@ -280,7 +280,9 @@ test('Etiketten von Hand vermerken und wieder öffnen', async ({ page }) => {
 	`);
 
 	const flag = () =>
-		querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-HAND-${s}'`).trim();
+		querySQL(
+			`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-HAND-${s}'`
+		).trim();
 	expect(flag(), 'Ausgangslage: Etikett steht aus').toBe('f');
 
 	await uiLogin(page);

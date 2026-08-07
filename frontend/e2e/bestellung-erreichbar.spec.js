@@ -102,7 +102,7 @@ for (const [breite, hoehe] of FENSTER) {
 						`BestellWorkspace.svelte).`
 				}
 			)
-			.toBeLessThanOrEqual(hoehe)
+			.toBeLessThanOrEqual(hoehe);
 
 		// Gemessen wird die Geometrie der RAIL-Spalte selbst, nicht ein Scroll-Weg.
 		//

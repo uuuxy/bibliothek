@@ -131,12 +131,12 @@ func addExemplarToGroup(group *ShipmentGroup, titelID, titel, isbn, coverURL, ex
 }
 
 type OrderSearchItem struct {
-	ID           string `json:"id,omitempty"`
-	Titel        string `json:"titel"`
-	Autor        string `json:"autor"`
-	ISBN         string `json:"isbn"`
-	Verlag       string `json:"verlag,omitempty"`
-	CoverURL     string `json:"cover_url,omitempty"`
+	ID       string `json:"id,omitempty"`
+	Titel    string `json:"titel"`
+	Autor    string `json:"autor"`
+	ISBN     string `json:"isbn"`
+	Verlag   string `json:"verlag,omitempty"`
+	CoverURL string `json:"cover_url,omitempty"`
 	// Signatur ist nur bei source="local" gesetzt — die Regalsignatur eines bereits
 	// katalogisierten Titels. DNB-Treffer haben noch keinen lokalen Titel und damit
 	// keine Signatur; die entsteht erst als Vorschlag beim Anlegen über /aus-isbn.

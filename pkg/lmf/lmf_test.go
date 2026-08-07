@@ -14,7 +14,7 @@ func TestIstSchulbuch(t *testing.T) {
 		{"LMF Deutsch 5", "", true},   // nur Leerzeichen als Trenner
 		{"  lmf-Mathe", "", true},     // führender Whitespace
 		{"Der kleine Hobbit", "", false},
-		{"LMFP-Roman", "", false},  // kein Trenner nach lmf
+		{"LMFP-Roman", "", false},      // kein Trenner nach lmf
 		{"lmfao Witzebuch", "", false}, // kein Trenner nach lmf
 		{"", "", false},
 		{"lmf", "", false}, // Kürzel allein ohne Trenner/Rest

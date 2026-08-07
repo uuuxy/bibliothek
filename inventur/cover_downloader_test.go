@@ -1,17 +1,17 @@
 package inventur
 
 import (
-	"image"
-	"image/color"
-	"image/png"
-	"os"
-	"path/filepath"
-	"strings"
 	"bytes"
 	"context"
 	"errors"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -122,7 +122,6 @@ func TestLadeCoverBytes(t *testing.T) {
 		}
 	})
 }
-
 
 func TestSpeichereCoverDatei(t *testing.T) {
 	// Clean up uploads dir if it exists

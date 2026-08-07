@@ -2,10 +2,10 @@ package inventur
 
 // Book bildet die Tabelle buecher_titel im Code ab.
 type Book struct {
-	ID                      string         `json:"id" db:"id"`
-	ISBN                    string         `json:"isbn" db:"isbn"`
-	Title                   string         `json:"title" db:"title"`
-	Author                  string         `json:"author" db:"author"`
+	ID     string `json:"id" db:"id"`
+	ISBN   string `json:"isbn" db:"isbn"`
+	Title  string `json:"title" db:"title"`
+	Author string `json:"author" db:"author"`
 	// Signatur steht physisch auf dem Buchrücken-Etikett (Littera-Systematik,
 	// z. B. "Bio 5" oder "Row") — Importe dürfen befüllte Werte NIE leeren.
 	Signatur                string         `json:"signatur" db:"signatur"`

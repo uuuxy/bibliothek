@@ -187,13 +187,13 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 
 // patchStudentRequest bündelt die optional aktualisierbaren Stammdatenfelder (nil = unverändert).
 type patchStudentRequest struct {
-	Vorname           *string `json:"vorname"`
-	Nachname          *string `json:"nachname"`
-	Klasse            *string `json:"klasse"`
-	LusdID            *string `json:"lusd_id"`
-	BarcodeID         *string `json:"barcode_id"`
-	AbgaengerJahr     *int    `json:"abgaenger_jahr"`
-	Geburtsdatum      *string `json:"geburtsdatum"`
+	Vorname       *string `json:"vorname"`
+	Nachname      *string `json:"nachname"`
+	Klasse        *string `json:"klasse"`
+	LusdID        *string `json:"lusd_id"`
+	BarcodeID     *string `json:"barcode_id"`
+	AbgaengerJahr *int    `json:"abgaenger_jahr"`
+	Geburtsdatum  *string `json:"geburtsdatum"`
 	// KEINE Sperrfelder hier. Sperren und Entsperren läuft ausschliesslich über
 	// PATCH /api/admin/students/{id}/lock (api/student_lock.go) — und das aus zwei
 	// Gründen, die dieser Weg beide nicht erfüllte:
@@ -207,11 +207,11 @@ type patchStudentRequest struct {
 	//
 	// Zwei Türen zu demselben Zustand, von denen nur eine die Regeln kennt, sind keine
 	// Bequemlichkeit — die falsche Tür geht irgendwann auf.
-	Strasse *string `json:"strasse"`
-	Hausnummer        *string `json:"hausnummer"`
-	Plz               *string `json:"plz"`
-	Ort               *string `json:"ort"`
-	ElternEmail       *string `json:"eltern_email"`
+	Strasse     *string `json:"strasse"`
+	Hausnummer  *string `json:"hausnummer"`
+	Plz         *string `json:"plz"`
+	Ort         *string `json:"ort"`
+	ElternEmail *string `json:"eltern_email"`
 }
 
 // baueSchuelerUpdate erzeugt aus dem PATCH-Request den dynamischen updateBuilder (inkl.

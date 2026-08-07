@@ -141,7 +141,9 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 	await page.getByRole('button', { name: 'Navigation einklappen' }).click();
 	await page.getByRole('button', { name: 'Navigation ausklappen' }).waitFor();
 	for (const t of await zuKleine(page)) {
-		zuKlein.push(`Navigation eingeklappt: "${t.label}" ist ${t.breite}×${t.hoehe} px [${t.klassen}]`);
+		zuKlein.push(
+			`Navigation eingeklappt: "${t.label}" ist ${t.breite}×${t.hoehe} px [${t.klassen}]`
+		);
 	}
 
 	// Selbstschutz: Bricht eine Navigation oder ein Selektor, misst der Test still

@@ -10,8 +10,27 @@ echo "================================================"
 echo "⚡ PRE-COMMIT HOOK: Starte schnelle Code-Checks..."
 echo "================================================"
 
-# 1. ESLint (Frontend)
-echo "[1/2] Führe ESLint (Frontend) aus..."
+# 1. Formatierung (beide Baeume)
+# Beide hatten ein Format-Werkzeug und keinen Prueflauf — und beide waren abgedriftet
+# (8 Dateien im Frontend, 11 im Backend, Stand 07.08.2026). Formatierungsrauschen in
+# einem Diff kostet bei JEDEM spaeteren Review Aufmerksamkeit, die dem Inhalt fehlt.
+echo "[1/3] Prüfe Formatierung (prettier + gofmt)..."
+cd frontend || exit 1
+if ! npx prettier --check src/ e2e/ --log-level warn; then
+    echo -e "${RED}✗ Frontend nicht formatiert. Beheben: cd frontend && npm run format${NC}"
+    exit 1
+fi
+cd ..
+UNFORMATIERT=$(gofmt -l $(find . -name '*.go' -not -path './vendor/*' -not -path './docs/*') 2>/dev/null)
+if [ -n "$UNFORMATIERT" ]; then
+    echo -e "${RED}✗ Backend nicht formatiert. Beheben: gofmt -w <Datei>${NC}"
+    echo "$UNFORMATIERT"
+    exit 1
+fi
+echo -e "${GREEN}✓ Formatierung bestanden.${NC}"
+
+# 2. ESLint (Frontend)
+echo "[2/3] Führe ESLint (Frontend) aus..."
 cd frontend || exit 1
 if npx eslint . --quiet; then
     echo -e "${GREEN}✓ ESLint bestanden.${NC}"
@@ -21,8 +40,8 @@ else
 fi
 cd ..
 
-# 2. golangci-lint (Backend)
-echo "[2/2] Führe golangci-lint (Backend) aus..."
+# 3. golangci-lint (Backend)
+echo "[3/3] Führe golangci-lint (Backend) aus..."
 if golangci-lint run ./...; then
     echo -e "${GREEN}✓ golangci-lint bestanden.${NC}"
 else

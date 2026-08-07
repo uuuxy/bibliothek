@@ -141,7 +141,11 @@ test('Feld und Button stehen in derselben Werkzeugleiste auf einer Linie', async
 
 	const feld = page.getByPlaceholder('Schüler oder Klasse suchen …');
 	// Zugänglicher Name = aria-label, nicht die Beschriftung „Alle anmahnen".
-	const button = page.getByRole('button', { name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/ }).first();
+	const button = page
+		.getByRole('button', {
+			name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/
+		})
+		.first();
 	await feld.waitFor();
 	await button.waitFor();
 

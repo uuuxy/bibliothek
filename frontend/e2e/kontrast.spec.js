@@ -47,10 +47,13 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 			const leuchtdichte = (/** @type {string} */ rgb) => {
 				const teile = rgb.match(/[\d.]+/g);
 				if (!teile) return null;
-				const [r, g, b] = teile.map(Number).slice(0, 3).map((v) => {
-					const c = v / 255;
-					return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-				});
+				const [r, g, b] = teile
+					.map(Number)
+					.slice(0, 3)
+					.map((v) => {
+						const c = v / 255;
+						return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+					});
 				return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 			};
 

@@ -16,7 +16,8 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 // 07.08.2026 den längsten Mittelstufenweg und damit sehr wohl ein Datum.
 test.describe('Ausweis-Stapeldruck', () => {
 	const marke = uniqueSuffix().slice(0, 6);
-	const schuljahrEnde = new Date().getMonth() >= 7 ? new Date().getFullYear() + 1 : new Date().getFullYear();
+	const schuljahrEnde =
+		new Date().getMonth() >= 7 ? new Date().getFullYear() + 1 : new Date().getFullYear();
 
 	test.beforeEach(() => {
 		seedSQL(`

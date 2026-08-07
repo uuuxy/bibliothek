@@ -109,7 +109,7 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 // über den Metadaten-Handler und setzt Standardwerte ("Unbekannter Titel/Autor"), falls nichts gefunden wird.
 func ergaenzeFehlendeMetadatenFuerAktualisierung(ctx context.Context, handler *APIHandler, eingabe *BuchEingabe) {
 	if eingabe.Titel == "" || eingabe.Autor == "" || eingabe.CoverURL == "" {
-		nachschlagen, _ := handler.metadaten.SucheNachISBN(ctx, eingabe.ISBN)  //nolint:errcheck
+		nachschlagen, _ := handler.metadaten.SucheNachISBN(ctx, eingabe.ISBN) //nolint:errcheck
 		if nachschlagen != nil {
 			if eingabe.Titel == "" {
 				eingabe.Titel = strings.TrimSpace(nachschlagen.Titel)
