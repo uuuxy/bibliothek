@@ -34,6 +34,14 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"7G1", 2030, "Gymnasialzweig: Ausweis bis Ende Mittelstufe, nicht bis 13"},
 		{"8G2", 2029, "Jahrgang 8 → Ende 10"},
 		{"10R2", 2027, "Abschlussjahrgang selbst"},
+		{"10G2", 2027, "Gymnasialzweig im Abschlussjahrgang der Mittelstufe"},
+
+		// Freiwilliges 10. Hauptschuljahr (Weg zum Mittleren Abschluss). Der
+		// Hauptschulzweig endet regulär mit 9 — ein Zehntklässler darin ist trotzdem
+		// kein Datenfehler. Vorher lieferte das KEIN Datum, ausgerechnet im Jahr, in
+		// dem ein neuer Ausweis fällig ist.
+		{"10H1", 2027, "10. Hauptschuljahr: gilt bis zum Ende dieses Jahrgangs"},
+		{"11H1", 2027, "auch darüber hinaus wird kein Datum in der Vergangenheit erzeugt"},
 
 		// Oberstufe (Hessen G9): E = Jahrgang 11, Q1/Q2 = 12, Q3/Q4 = 13,
 		// Abitur am Ende von 13.
@@ -77,7 +85,6 @@ func TestUnbekannteKlassenWerdenNichtGeraten(t *testing.T) {
 		"7X1",        // unbekannter Zweig
 		"0F1",        // Jahrgang 0
 		"14G1",       // Jahrgang jenseits der Schulzeit
-		"11H1",       // Hauptschüler oberhalb seines Abschlussjahrgangs
 		"Klasse 7H1", // Text vor dem Jahrgang
 	}
 	for _, k := range unbekannt {

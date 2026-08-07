@@ -112,10 +112,21 @@ func AblaufJahrgang(klasse string) (ablauf int, aktuell int, ok bool) {
 	if !treffer {
 		return 0, 0, false
 	}
-	// Ein Schüler, der bereits ÜBER dem Abschlussjahrgang liegt (Datenfehler oder eine
-	// Klasse, die es so nicht geben dürfte), bekäme sonst ein Datum in der Vergangenheit.
+	// Liegt der Jahrgang ÜBER dem Regelabschluss des Zweigs, gilt der Jahrgang.
+	//
+	// Der Fall ist nicht theoretisch: "10H1" ist das freiwillige 10. Hauptschuljahr auf
+	// dem Weg zum Mittleren Abschluss. Der Hauptschulzweig endet regulär mit 9, ein
+	// Zehntklässler darin ist also kein Datenfehler, sondern ein regulärer Bildungsweg.
+	//
+	// Vorher wurde hier abgelehnt, und der Ausweis eines 10H-Schülers hatte KEIN Datum —
+	// ausgerechnet in dem Jahr, in dem er einen neuen braucht. Gerechnet wird jetzt bis
+	// zum Ende des Jahrgangs, in dem er tatsächlich steckt. Das ist die Aussage, die
+	// immer stimmt: Wer in Jahrgang X ist, beendet mindestens dieses Schuljahr.
+	//
+	// Nach unten bleibt es abgesichert — ein Jahrgang außerhalb 1..13 ist oben schon
+	// aussortiert, ein Datum in der Vergangenheit kann so nicht entstehen.
 	if jahrgang > abschluss {
-		return 0, 0, false
+		abschluss = jahrgang
 	}
 	return abschluss, jahrgang, true
 }
