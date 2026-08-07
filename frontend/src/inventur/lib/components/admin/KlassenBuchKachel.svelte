@@ -1,5 +1,6 @@
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
+	import { Pencil } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -197,14 +198,7 @@
 			<div
 				class="bg-blue-600 text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
 			>
-				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-					></path></svg
-				>
+				<Pencil class="w-4 h-4" aria-hidden="true" />
 				<span>Bearbeiten</span>
 			</div>
 		</div>

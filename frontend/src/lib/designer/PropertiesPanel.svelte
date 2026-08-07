@@ -9,6 +9,7 @@
 	import { idStore, bringForward, sendBackward, removeElement } from './idDesignerStore.svelte.js';
 	import PropertiesText from './PropertiesText.svelte';
 	import ZahlenFeld from './ZahlenFeld.svelte';
+	import { MousePointer2, Trash2 } from '@lucide/svelte';
 
 	/** @type {{ selectedId: string|null, side: 'front'|'back' }} */
 	const { selectedId, side } = $props();
@@ -59,18 +60,7 @@
 >
 	{#if !el}
 		<div class="flex flex-col items-center justify-center py-12 text-center gap-3">
-			<svg
-				class="w-10 h-10 text-slate-200"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="1"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"
-				/></svg
-			>
+			<MousePointer2 class="w-10 h-10 text-slate-200" aria-hidden="true" />
 			<span class="text-xs text-slate-400 font-medium">Element auf der Karte anklicken</span>
 		</div>
 	{:else}
@@ -82,18 +72,7 @@
 					class="text-slate-300 hover:text-rose-500 transition-colors p-1"
 					title="Element löschen"
 				>
-					<svg
-						class="w-4 h-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						stroke-width="2"
-						><path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-						/></svg
-					>
+					<Trash2 class="w-4 h-4" aria-hidden="true" />
 				</button>
 			{/if}
 		</div>

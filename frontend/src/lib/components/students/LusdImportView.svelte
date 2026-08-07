@@ -2,7 +2,7 @@
      Go-Handler sind zustandslos (keine Preview-Session), daher wird dieselbe Datei bei
      „Import finalisieren“ erneut an /api/lusd/import gesendet. -->
 <script>
-	import { AlertTriangle, CircleCheck } from '@lucide/svelte';
+	import { AlertTriangle, ChevronRight, CircleCheck } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -142,18 +142,10 @@
 			class="flex items-center justify-between py-3 cursor-pointer select-none marker:content-none [&::-webkit-details-marker]:hidden"
 		>
 			<div class="min-w-0 flex items-center gap-2">
-				<svg
+				<ChevronRight
 					class="w-3 h-3 text-slate-400 shrink-0 transition-transform group-open:rotate-90"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M9 5l7 7-7 7"
-					/></svg
-				>
+					aria-hidden="true"
+				/>
 				<div class="min-w-0">
 					<p class="text-sm font-bold text-slate-800">{section.label}</p>
 					<p class="text-xs text-slate-500 mt-0.5">{section.hint}</p>

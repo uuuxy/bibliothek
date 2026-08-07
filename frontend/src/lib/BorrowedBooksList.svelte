@@ -2,7 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { showToast } from '../inventur/lib/store.svelte.js';
-	import { AlertTriangle, CalendarPlus, Loader2, Undo2 } from '@lucide/svelte';
+	import { AlertTriangle, CalendarPlus, Check, Loader2, Pencil, Undo2, X } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import CoverPeek from './components/ui/CoverPeek.svelte';
 	import { coverSrc } from './utils/coverSrc.js';
@@ -182,19 +182,7 @@
 										title="Speichern"
 										aria-label="Rückgabedatum speichern"
 									>
-										<svg
-											class="w-4 h-4"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											aria-hidden="true"
-											><path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2.5"
-												d="M5 13l4 4L19 7"
-											/></svg
-										>
+										<Check class="w-4 h-4" aria-hidden="true" />
 									</button>
 									<button
 										onclick={() => (editingId = null)}
@@ -203,19 +191,7 @@
 										title="Abbrechen"
 										aria-label="Bearbeiten abbrechen"
 									>
-										<svg
-											class="w-4 h-4"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											aria-hidden="true"
-											><path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2.5"
-												d="M6 18L18 6M6 6l12 12"
-											/></svg
-										>
+										<X class="w-4 h-4" aria-hidden="true" />
 									</button>
 								</div>
 							{:else}
@@ -230,19 +206,7 @@
 										title="Datum bearbeiten"
 										aria-label="Rückgabedatum bearbeiten"
 									>
-										<svg
-											class="w-3.5 h-3.5"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											aria-hidden="true"
-											><path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-											/></svg
-										>
+										<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
 									</button>
 								</div>
 								<div class="text-xs font-normal text-slate-600 mt-0.5">
@@ -310,18 +274,7 @@
 									</Button>
 								{/if}
 							{:else if mode === 'scans'}
-								<svg
-									class="w-5 h-5 text-emerald-500"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									><path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2.5"
-										d="M5 13l4 4L19 7"
-									/></svg
-								>
+								<Check class="w-5 h-5 text-emerald-500" aria-hidden="true" />
 							{/if}
 						</div>
 					</td>

@@ -8,6 +8,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import { Check } from '@lucide/svelte';
 
 	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erstellt_am: string }} KlassensatzReservierung */
 
@@ -121,14 +122,7 @@
 					onclick={() => requestConfirm(r.id)}
 					class="px-3 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
 				>
-					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-						><path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M5 13l4 4L19 7"
-						/></svg
-					>
+					<Check class="w-3.5 h-3.5" aria-hidden="true" />
 					Abschließen
 				</button>
 			{/if}

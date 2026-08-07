@@ -3,6 +3,7 @@
 	import Snackbar from './components/ui/Snackbar.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { useStudentEditForm } from './useStudentEditForm.svelte.js';
+	import { Check, ChevronLeft } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -64,14 +65,7 @@
 				class="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-slate-50
                text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
 			>
-				<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2.5"
-						d="M15 19l-7-7 7-7"
-					/>
-				</svg>
+				<ChevronLeft class="w-5 h-5" aria-hidden="true" />
 			</button>
 
 			<div class="min-w-0">
@@ -91,14 +85,7 @@
 					></div>
 					Speichert…
 				{:else}
-					<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2.5"
-							d="M5 13l4 4L19 7"
-						/>
-					</svg>
+					<Check class="w-4 h-4" aria-hidden="true" />
 					Speichern
 				{/if}
 			</Button>

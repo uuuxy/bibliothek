@@ -1,4 +1,5 @@
 <script>
+	import { TriangleAlert } from '@lucide/svelte';
 	/**
 	 * @type {{
 	 *   dialogEl: HTMLDialogElement | undefined,
@@ -17,19 +18,7 @@
 	<div class="bg-white w-full">
 		<div class="p-6 border-b border-slate-100 flex items-center space-x-3">
 			<div class="p-2 bg-red-100 text-red-600 rounded-full">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="2"
-					stroke="currentColor"
-					class="w-6 h-6"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-					/></svg
-				>
+				<TriangleAlert class="w-6 h-6" aria-hidden="true" />
 			</div>
 			<div>
 				<h2 class="text-xl font-bold text-slate-900">Inventur abschließen?</h2>

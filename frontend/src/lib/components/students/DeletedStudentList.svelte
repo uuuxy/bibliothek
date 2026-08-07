@@ -9,6 +9,7 @@
 	import { apiFetch } from '../../apiFetch.js';
 	import { onMount } from 'svelte';
 	import Sheet from '../layout/Sheet.svelte';
+	import { Trash2, Undo2 } from '@lucide/svelte';
 
 	let { onRestoreSuccess = () => {} } = $props();
 
@@ -50,17 +51,7 @@
 <Sheet class="border-l-4 border-l-rose-400">
 	<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
 		<h3 class="text-base font-bold text-rose-800 flex items-center gap-2">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-5 w-5"
-				viewBox="0 0 20 20"
-				fill="currentColor"
-				><path
-					fill-rule="evenodd"
-					d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-					clip-rule="evenodd"
-				/></svg
-			>
+			<Trash2 class="h-5 w-5" aria-hidden="true" />
 			Gelöschte Schüler (Papierkorb)
 		</h3>
 	</div>
@@ -74,20 +65,7 @@
 		</div>
 	{:else if deletedStudents.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-10 w-10 text-slate-300"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				aria-hidden="true"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="1.5"
-					d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-				/></svg
-			>
+			<Trash2 class="h-10 w-10 text-slate-300" aria-hidden="true" />
 			<span class="text-xs font-semibold">Der Papierkorb ist leer.</span>
 		</div>
 	{:else}
@@ -128,20 +106,7 @@
 									aria-label="Wiederherstellen"
 									class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors shadow-sm cursor-pointer"
 								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4.5 w-4.5"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-										stroke-width="2.5"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-										/>
-									</svg>
+									<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
 								</button>
 							</td>
 						</tr>

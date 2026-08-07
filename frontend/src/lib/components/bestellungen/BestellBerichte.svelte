@@ -3,6 +3,7 @@
 	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Select from '../ui/Select.svelte';
+	import { Printer } from '@lucide/svelte';
 
 	/** @type {{ suppliers?: { id: string, name: string }[] }} */
 	let { suppliers = [] } = $props();
@@ -145,20 +146,7 @@
 				? 'bg-blue-600 hover:bg-blue-700 text-white'
 				: 'bg-slate-200 text-slate-400 pointer-events-none'}"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-4 w-4 shrink-0"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-				/>
-			</svg>
+			<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
 			PDF herunterladen
 		</a>
 		<p class="text-xs text-slate-400">

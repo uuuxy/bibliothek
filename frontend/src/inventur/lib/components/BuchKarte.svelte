@@ -2,6 +2,7 @@
 	import { getSubjectColor, getStockDotColor, formatDate } from '../bookHelpers.js';
 	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
 	import BuchKarteCover from './BuchKarteCover.svelte';
+	import { Clock, Copy, SquarePen } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -105,14 +106,7 @@
 			<!-- p-2 + 16 px Symbol = 32×32 Trefferfläche. Vorher p-1.5 + 14 px = 28×28 und damit
 			     unter der Mindestgröße — fiel nicht auf, solange das Gate den öffentlichen OPAC
 			     statt des internen Katalogs vermaß (Pfadkollision /katalog). -->
-			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-				/>
-			</svg>
+			<SquarePen class="w-4 h-4" aria-hidden="true" />
 		</button>
 	{/if}
 	{#if coverSrc && !coverFailed}
@@ -164,18 +158,10 @@
 					{#if copied}
 						<span class="text-blue-600 text-label-small font-sans font-bold">Kopiert!</span>
 					{:else}
-						<svg
+						<Copy
 							class="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover/isbn:opacity-100 transition-opacity"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-							></path></svg
-						>
+							aria-hidden="true"
+						/>
 					{/if}
 				{/if}
 			</button>
@@ -212,19 +198,7 @@
 			<div
 				class="inline-flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-label-small text-slate-500 font-medium"
 			>
-				<svg
-					class="w-3.5 h-3.5 text-slate-400"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					xmlns="http://www.w3.org/2000/svg"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-					></path></svg
-				>
+				<Clock class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
 				<span>
 					Zuletzt geprüft: {formatDate(book.lastCounted) || 'Unbekannt'}
 				</span>

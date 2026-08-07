@@ -8,6 +8,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
+	import { ChevronDown } from '@lucide/svelte';
 
 	let offen = $state(false);
 	let anker = $state(/** @type {HTMLElement | null} */ (null));
@@ -90,16 +91,10 @@
 			data-tip="Weitere Druck- und Export-Optionen"
 			class="rounded-l-none border-l-white/25 px-2"
 		>
-			<svg
+			<ChevronDown
 				class="h-3.5 w-3.5 transition-transform {offen ? 'rotate-180' : ''}"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2.5"
 				aria-hidden="true"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-			</svg>
+			/>
 		</Button>
 	</div>
 

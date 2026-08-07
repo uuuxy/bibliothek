@@ -14,6 +14,7 @@
         beim Bestandsabgleich im Raum wäre das Feature sonst nicht erreichbar. -->
 <script>
 	import { coverSrc } from '../../utils/coverSrc.js';
+	import { Image, Slash } from '@lucide/svelte';
 
 	/** children ist der Auslöser. Ohne Angabe erscheint das Bild-Symbol (Bestellliste,
 	 *  wo kein Cover in der Zeile steht). Mit Angabe wird der übergebene Inhalt selbst
@@ -117,17 +118,7 @@
 	{#if children}
 		{@render children()}
 	{:else}
-		<svg
-			class="w-4 h-4"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			stroke-width="1.8"
-			aria-hidden="true"
-		>
-			<rect x="3" y="4" width="18" height="16" rx="2" />
-			<path stroke-linecap="round" stroke-linejoin="round" d="M3 15l5-4 4 3 3-2 6 4" />
-		</svg>
+		<Image class="w-4 h-4" aria-hidden="true" />
 	{/if}
 </button>
 
@@ -141,17 +132,7 @@
 			<div
 				class="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3 text-center text-slate-400"
 			>
-				<svg
-					class="w-6 h-6"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-					stroke-width="1.5"
-					aria-hidden="true"
-				>
-					<rect x="3" y="4" width="18" height="16" rx="2" />
-					<path stroke-linecap="round" d="M4 19L20 5" />
-				</svg>
+				<Slash class="w-6 h-6" aria-hidden="true" />
 				<span class="text-label-small leading-tight font-medium">Kein Coverbild hinterlegt</span>
 			</div>
 		{:else}

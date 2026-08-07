@@ -1,5 +1,5 @@
 <script>
-	import { RotateCcw } from '@lucide/svelte';
+	import { Camera, Lock, RotateCcw, X } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
 	import Button from './components/ui/Button.svelte';
@@ -104,15 +104,7 @@
 		class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-full transition-colors cursor-pointer"
 		title="Schüler schließen (ESC)"
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			class="w-5 h-5"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			stroke-width="2"
-			><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg
-		>
+		<X class="w-5 h-5" aria-hidden="true" />
 	</button>
 
 	<!-- Foto -->
@@ -140,24 +132,7 @@
 			class="absolute bottom-1 right-1 p-2 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white backdrop-blur-md transition-all cursor-pointer border border-white/20"
 			title="Passbild aufnehmen"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-4 w-4"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
-				aria-hidden="true"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-				/><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-				/></svg
-			>
+			<Camera class="h-4 w-4" aria-hidden="true" />
 		</button>
 	</div>
 
@@ -167,14 +142,7 @@
 			<span
 				class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-rose-100 text-rose-700 border border-rose-200 mb-1"
 			>
-				<svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-					/></svg
-				>
+				<Lock class="w-3 h-3 mr-1" aria-hidden="true" />
 				Ausleihe gesperrt
 			</span>
 		{/if}

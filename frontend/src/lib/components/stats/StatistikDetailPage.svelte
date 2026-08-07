@@ -8,6 +8,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import PageShell from '../layout/PageShell.svelte';
+	import { ChevronLeft } from '@lucide/svelte';
 
 	/** @param {string} alle @param {string[]} werte */
 	const mitAlle = (alle, werte) => [
@@ -82,14 +83,7 @@
 		onclick={() => (uiStore.activeTab = 'stats')}
 		class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer mb-5"
 	>
-		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-			><path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2.5"
-				d="M15 19l-7-7 7-7"
-			/></svg
-		>
+		<ChevronLeft class="w-4 h-4" aria-hidden="true" />
 		Statistik
 	</button>
 

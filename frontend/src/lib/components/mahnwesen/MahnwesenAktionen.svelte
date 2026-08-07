@@ -15,6 +15,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import MahnwesenDruckMenue from './MahnwesenDruckMenue.svelte';
+	import { Mail, Printer, RefreshCw, X } from '@lucide/svelte';
 
 	/** @type {{ onMahnlauf: () => void }} */
 	let { onMahnlauf } = $props();
@@ -35,16 +36,7 @@
 		title="Auswahl aufheben"
 		class="px-2 text-slate-500 hover:text-slate-700"
 	>
-		<svg
-			class="h-4 w-4"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			stroke-width="2.5"
-			aria-hidden="true"
-		>
-			<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-		</svg>
+		<X class="h-4 w-4" aria-hidden="true" />
 	</Button>
 	<span class="text-sm font-semibold text-slate-700"
 		>{mahnwesenStore.selectedIds.size} ausgewählt</span
@@ -55,20 +47,7 @@
 				class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"
 			></div>
 		{:else}
-			<svg
-				class="h-4 w-4"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
-				aria-hidden="true"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-				/>
-			</svg>
+			<Printer class="h-4 w-4" aria-hidden="true" />
 		{/if}
 		Mahnbriefe drucken
 	</Button>
@@ -108,20 +87,7 @@
 		title="Neu laden"
 		class="px-2 text-slate-500 hover:text-slate-700"
 	>
-		<svg
-			class="h-4 w-4"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			stroke-width="2"
-			aria-hidden="true"
-		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-			/>
-		</svg>
+		<RefreshCw class="h-4 w-4" aria-hidden="true" />
 	</Button>
 
 	<MahnwesenDruckMenue />
@@ -134,20 +100,7 @@
 			aria-label="Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden"
 			class="shrink-0"
 		>
-			<svg
-				class="h-4 w-4"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
-				aria-hidden="true"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-				/>
-			</svg>
+			<Mail class="h-4 w-4" aria-hidden="true" />
 			Alle anmahnen
 		</Button>
 	{/if}

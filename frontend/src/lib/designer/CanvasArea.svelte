@@ -15,6 +15,7 @@
 	 */
 	import { onDestroy } from 'svelte';
 	import { idStore } from './idDesignerStore.svelte.js';
+	import { User } from '@lucide/svelte';
 
 	/** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string }} */
 	const { side, selectedId, onSelect, student, zoom, barcodeType } = $props();
@@ -250,19 +251,10 @@
 			<div
 				class="w-full h-full border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center overflow-hidden rounded-sm text-slate-400"
 			>
-				<svg
+				<User
 					class="w-1/2 h-1/2 max-h-12 max-w-12 mb-1 opacity-40 pointer-events-none"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="1.5"
-						d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-					/>
-				</svg>
+					aria-hidden="true"
+				/>
 				<span class="text-[5px] font-medium pointer-events-none">PASSBILD</span>
 			</div>
 		{:else if isBarcode}

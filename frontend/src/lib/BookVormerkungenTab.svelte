@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import Button from './components/ui/Button.svelte';
+	import { Clock, Trash2 } from '@lucide/svelte';
 
 	/** @type {{ vormerkungen: any[], book: any }} */
 	let { vormerkungen = $bindable(), book } = $props();
@@ -151,14 +152,7 @@
 		<div
 			class="py-12 flex flex-col items-center text-slate-400 gap-3 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50"
 		>
-			<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="1.5"
-					d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-				/></svg
-			>
+			<Clock class="w-10 h-10" aria-hidden="true" />
 			<p class="font-medium text-sm">Keine ausstehenden Vormerkungen für diesen Titel.</p>
 		</div>
 	{:else}
@@ -194,14 +188,7 @@
 									class="text-rose-600 hover:text-rose-700 font-semibold p-2 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
 									title="Vormerkung löschen"
 								>
-									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-										><path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-										/></svg
-									>
+									<Trash2 class="w-4 h-4" aria-hidden="true" />
 								</button>
 							</td>
 						</tr>

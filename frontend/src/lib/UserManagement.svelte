@@ -1,5 +1,5 @@
 <script>
-	import { AlertTriangle } from '@lucide/svelte';
+	import { AlertTriangle, Check } from '@lucide/svelte';
 	/**
 	 * UserManagement — self-contained component for staff user CRUD.
 	 *
@@ -213,16 +213,7 @@
 	<div
 		class="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold shadow-lg animate-slide-up flex items-center gap-2"
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			class="h-4 w-4 text-emerald-600"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			stroke-width="2.5"
-		>
-			<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-		</svg>
+		<Check class="h-4 w-4 text-emerald-600" aria-hidden="true" />
 		<span>{successMessage}</span>
 	</div>
 {/if}

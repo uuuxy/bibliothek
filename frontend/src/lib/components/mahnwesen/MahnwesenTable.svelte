@@ -2,6 +2,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import { Mail, X } from '@lucide/svelte';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function openProfile(schuelerId) {
@@ -104,20 +105,7 @@
 											title="Keine Eltern-E-Mail hinterlegt"
 											aria-label="Keine Eltern-E-Mail hinterlegt"
 										>
-											<svg
-												class="h-3.5 w-3.5"
-												fill="none"
-												viewBox="0 0 24 24"
-												stroke="currentColor"
-												stroke-width="1.8"
-											>
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-												/>
-												<path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
-											</svg>
+											<Mail class="h-3.5 w-3.5" aria-hidden="true" />
 										</span>
 									{/if}
 								</div>
@@ -198,16 +186,7 @@
 					aria-label="Modal schließen"
 					class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-4 w-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						stroke-width="2.5"
-					>
-						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-					</svg>
+					<X class="h-4 w-4" aria-hidden="true" />
 				</button>
 			</div>
 
@@ -258,20 +237,7 @@
 							class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"
 						></div>
 					{:else}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-3.5 w-3.5"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2.5"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-							/>
-						</svg>
+						<Mail class="h-3.5 w-3.5" aria-hidden="true" />
 					{/if}
 					Senden
 				</Button>

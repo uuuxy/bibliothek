@@ -7,6 +7,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { backupStatus } from '../../stores/backupStatus.svelte.js';
+	import { Check } from '@lucide/svelte';
 
 	/** @type {{ collapsed?: boolean }} */
 	let { collapsed = false } = $props();
@@ -29,14 +30,7 @@
 		<div
 			class="flex items-center gap-1.5 px-4 py-2 text-label-small font-semibold text-emerald-700"
 		>
-			<svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2.5"
-					d="M5 13l4 4L19 7"
-				/></svg
-			>
+			<Check class="h-3 w-3 shrink-0" aria-hidden="true" />
 			{backupStatus.message}
 		</div>
 	{/if}

@@ -6,6 +6,7 @@
 <script>
 	import Select from '../../../lib/components/ui/Select.svelte';
 	import KlassenSuchfeld from './KlassenSuchfeld.svelte';
+	import { Search } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -114,20 +115,10 @@
 					class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:shadow-md focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
 					id="filter-suche"
 				>
-					<svg
+					<Search
 						class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
 						aria-hidden="true"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-						/>
-					</svg>
+					/>
 					<input
 						id="katalog-suchfeld"
 						type="text"

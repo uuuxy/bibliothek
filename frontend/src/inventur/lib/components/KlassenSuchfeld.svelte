@@ -5,6 +5,7 @@
      150-ms-Verzug beim Verlassen ist Absicht: Ohne ihn schließt die Liste, bevor
      der Klick auf einen Eintrag ankommt. -->
 <script>
+	import { ChevronDown } from '@lucide/svelte';
 	/**
 	 * @type {{
 	 *   klasseSearchQuery: string,
@@ -35,14 +36,10 @@
 		<div
 			class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400"
 		>
-			<svg
+			<ChevronDown
 				class="h-5 w-5 transition-transform duration-200 {isKlasseDropdownOpen ? 'rotate-180' : ''}"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-			</svg>
+				aria-hidden="true"
+			/>
 		</div>
 		{#if isKlasseDropdownOpen && filteredKlassenList.length > 0}
 			<ul

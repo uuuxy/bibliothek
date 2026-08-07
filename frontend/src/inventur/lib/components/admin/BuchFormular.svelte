@@ -6,6 +6,7 @@
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import { BookOpen, Printer, X } from '@lucide/svelte';
 
 	let { formular = $bindable(), onClose, onSave, onCoverUpload, onAssignClass } = $props();
 
@@ -64,14 +65,7 @@
 			class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"
 			aria-label="Schließen"
 		>
-			<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M6 18L18 6M6 6l12 12"
-				/>
-			</svg>
+			<X class="w-6 h-6" aria-hidden="true" />
 		</button>
 	</div>
 
@@ -96,14 +90,7 @@
 				class="px-5"
 				title="A4 Zweckform Etikettenbogen für dieses Buch generieren"
 			>
-				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-					/></svg
-				>
+				<Printer class="w-4 h-4" aria-hidden="true" />
 				Barcodes drucken
 			</Button>
 			<Button
@@ -113,14 +100,7 @@
 				class="mr-auto px-5"
 				title="Dieses Buch einer Schulklasse zuweisen"
 			>
-				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-					/></svg
-				>
+				<BookOpen class="w-4 h-4" aria-hidden="true" />
 				Klasse zuweisen
 			</Button>
 		{/if}

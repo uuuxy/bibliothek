@@ -2,6 +2,7 @@
      einschließlich des leeren Falls („alle entlastet"). Beides gehört zusammen:
      Es ist derselbe Bildschirmbereich in zwei Zuständen. -->
 <script>
+	import { Check } from '@lucide/svelte';
 	/** @type {{ zeilen: any[], leer: boolean, onProfil: (student: any) => void }} */
 	let { zeilen, leer, onProfil } = $props();
 </script>
@@ -11,15 +12,7 @@
 		<div
 			class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-8 w-8"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-			</svg>
+			<Check class="h-8 w-8" aria-hidden="true" />
 		</div>
 		<h3 class="font-bold text-slate-800">Alle Abgänger entlastet!</h3>
 		<p class="text-xs text-slate-500 max-w-xs mx-auto">

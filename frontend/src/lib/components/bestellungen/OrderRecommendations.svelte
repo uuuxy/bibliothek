@@ -1,5 +1,5 @@
 <script>
-	import { CircleCheck } from '@lucide/svelte';
+	import { CircleCheck, Plus, Printer, Search } from '@lucide/svelte';
 	import CoverPeek from '../ui/CoverPeek.svelte';
 
 	let { recommendations, onAddToCart } = $props();
@@ -92,19 +92,7 @@
 				download
 				class="shrink-0 flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl transition-colors"
 			>
-				<svg
-					class="h-4 w-4 shrink-0"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-					stroke-width="2"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-					/>
-				</svg>
+				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
 				<span class="hidden sm:inline">PDF-Bestellliste</span>
 			</a>
 		</div>
@@ -112,19 +100,10 @@
 		{#if recommendations.length}
 			<!-- Schnellfilter -->
 			<div class="relative mt-4">
-				<svg
+				<Search
 					class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-					stroke-width="2"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-					/>
-				</svg>
+					aria-hidden="true"
+				/>
 				<input
 					type="search"
 					bind:value={filter}
@@ -209,15 +188,7 @@
 						data-tip="Zur Bestellung hinzufügen"
 						class="shrink-0 w-9 h-9 rounded-full border border-slate-200 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 active:scale-90 transition-all cursor-pointer"
 					>
-						<svg
-							class="w-4 h-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2.5"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
-						</svg>
+						<Plus class="w-4 h-4" aria-hidden="true" />
 					</button>
 				</div>
 			{/each}

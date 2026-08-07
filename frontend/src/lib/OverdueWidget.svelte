@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
+	import { ChevronRight, CircleCheck } from '@lucide/svelte';
 
 	/** aktuellVerliehen: laufende Ausleihen — Basis für die neutrale Überfälligkeitsquote.
 	 * @type {{ aktuellVerliehen?: number }} */
@@ -91,19 +92,7 @@
 			</div>
 		{:else}
 			<div class="flex-1 flex items-center gap-2 text-slate-500 text-sm">
-				<svg
-					class="w-5 h-5 shrink-0 text-emerald-500"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					aria-hidden="true"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-					/></svg
-				>
+				<CircleCheck class="w-5 h-5 shrink-0 text-emerald-500" aria-hidden="true" />
 				Keine überfälligen Ausleihen.
 			</div>
 		{/if}
@@ -115,19 +104,7 @@
 			aria-label="Zum Mahnwesen — überfällige Ausleihen bearbeiten"
 		>
 			Im Mahnwesen bearbeiten
-			<svg
-				class="w-3.5 h-3.5"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-				aria-hidden="true"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2.5"
-					d="M9 5l7 7-7 7"
-				/></svg
-			>
+			<ChevronRight class="w-3.5 h-3.5" aria-hidden="true" />
 		</button>
 	</div>
 {/if}

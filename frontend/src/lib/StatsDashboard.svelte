@@ -6,6 +6,7 @@
 	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
 	import Button from './components/ui/Button.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
+	import { ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
 
 	// State Runes (Svelte 5)
 	/** @type {any} */
@@ -102,14 +103,7 @@
 
 {#snippet warnIcon(klasse)}
 	<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
-	<svg class={klasse} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-		<path
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			stroke-width="2"
-			d="M12 9v3.75m0 3.75h.01M10.29 3.86l-8.48 14.7A1.5 1.5 0 003.11 21h17.78a1.5 1.5 0 001.3-2.44l-8.48-14.7a1.5 1.5 0 00-2.6 0z"
-		/>
-	</svg>
+	<TriangleAlert class="w-5 h-5" aria-hidden="true" />
 {/snippet}
 
 <!-- Segmented Control (Material 3): eine Pillen-Gruppe, aktives Segment als weiße Kapsel.
@@ -165,14 +159,7 @@
 		aria-label="{aktiveAnalyse.detailLabel} — Detailansicht öffnen"
 	>
 		Alle anzeigen
-		<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-			><path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2.5"
-				d="M9 5l7 7-7 7"
-			/></svg
-		>
+		<ChevronRight class="w-3 h-3" aria-hidden="true" />
 	</Button>
 {/snippet}
 
@@ -203,19 +190,7 @@
 
 {#snippet keineLadenhueter()}
 	<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün. -->
-	<svg
-		class="w-7 h-7 mx-auto mb-2 text-emerald-500"
-		fill="none"
-		stroke="currentColor"
-		viewBox="0 0 24 24"
-		aria-hidden="true"
-		><path
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			stroke-width="2"
-			d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-		/></svg
-	>
+	<CircleCheck class="w-7 h-7 mx-auto mb-2 text-emerald-500" aria-hidden="true" />
 	Keine Ladenhüter — der Bestand ist in Bewegung.
 {/snippet}
 

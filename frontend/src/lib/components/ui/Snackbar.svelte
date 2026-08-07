@@ -1,4 +1,5 @@
 <script>
+	import { Check, CircleAlert } from '@lucide/svelte';
 	/**
 	 * @typedef {Object} Props
 	 * @property {{msg: string, type: 'success' | 'error'} | null} snackbar - The snackbar state object
@@ -18,33 +19,9 @@
            {snackbar.type === 'error' ? 'bg-rose-700 text-white' : 'bg-slate-900 text-white'}"
 	>
 		{#if snackbar.type === 'error'}
-			<svg
-				class="w-4 h-4 shrink-0 text-rose-300"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2.5"
-					d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-				/>
-			</svg>
+			<CircleAlert class="w-4 h-4 shrink-0 text-rose-300" aria-hidden="true" />
 		{:else}
-			<svg
-				class="w-4 h-4 shrink-0 text-emerald-400"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2.5"
-					d="M5 13l4 4L19 7"
-				/>
-			</svg>
+			<Check class="w-4 h-4 shrink-0 text-emerald-400" aria-hidden="true" />
 		{/if}
 		{snackbar.msg}
 	</div>

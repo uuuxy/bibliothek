@@ -7,6 +7,7 @@
 	import Button from './components/ui/Button.svelte';
 	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
+	import { Check, ClipboardCheck, Plus, ScanBarcode, TriangleAlert, X } from '@lucide/svelte';
 
 	const inventoryState = useUnifiedInventory();
 
@@ -85,20 +86,7 @@
 	{#if inventoryState.status === 'idle'}
 		<div class="p-12 text-center flex flex-col items-center justify-center space-y-6">
 			<div class="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="1.5"
-					stroke="currentColor"
-					class="w-10 h-10"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75"
-					/>
-				</svg>
+				<ClipboardCheck class="w-10 h-10" aria-hidden="true" />
 			</div>
 			<div>
 				<h3 class="text-xl font-bold text-slate-900">Keine Inventur aktiv</h3>
@@ -108,16 +96,7 @@
 				</p>
 			</div>
 			<Button size="lg" onclick={() => (inventoryState.showStartModal = true)} class="px-6">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="2"
-					stroke="currentColor"
-					class="w-5 h-5"
-				>
-					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-				</svg>
+				<Plus class="w-5 h-5" aria-hidden="true" />
 				<span>Neue Bestandsprüfung starten</span>
 			</Button>
 
@@ -230,25 +209,7 @@
 				class="relative"
 			>
 				<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="1.5"
-						stroke="currentColor"
-						class="w-6 h-6 text-slate-400"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
-						/>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"
-						/>
-					</svg>
+					<ScanBarcode class="w-6 h-6 text-slate-400" aria-hidden="true" />
 				</div>
 				<input
 					bind:this={barcodeInputEl}
@@ -281,51 +242,15 @@
 					<div class="flex items-start space-x-4">
 						{#if inventoryState.lastScan.success && inventoryState.lastScan.warnings.length === 0}
 							<div class="p-2 bg-emerald-100 rounded-full text-emerald-600 shrink-0">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="2"
-									stroke="currentColor"
-									class="w-6 h-6"
-									><path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M4.5 12.75l6 6 9-13.5"
-									/></svg
-								>
+								<Check class="w-6 h-6" aria-hidden="true" />
 							</div>
 						{:else if !inventoryState.lastScan.success}
 							<div class="p-2 bg-red-100 rounded-full text-red-600 shrink-0">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="2"
-									stroke="currentColor"
-									class="w-6 h-6"
-									><path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M6 18L18 6M6 6l12 12"
-									/></svg
-								>
+								<X class="w-6 h-6" aria-hidden="true" />
 							</div>
 						{:else}
 							<div class="p-2 bg-amber-100 rounded-full text-amber-600 shrink-0">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="2"
-									stroke="currentColor"
-									class="w-6 h-6"
-									><path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-									/></svg
-								>
+								<TriangleAlert class="w-6 h-6" aria-hidden="true" />
 							</div>
 						{/if}
 

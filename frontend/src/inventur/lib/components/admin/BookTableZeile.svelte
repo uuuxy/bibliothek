@@ -1,5 +1,6 @@
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
+	import { ChevronRight, Menu } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -92,14 +93,10 @@
 >
 	<td class="px-6 py-3" onclick={(event) => event.stopPropagation()}>
 		<div class="flex items-center gap-2">
-			<svg
+			<Menu
 				class="w-4 h-4 text-slate-300 cursor-grab active:cursor-grabbing hover:text-slate-500"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-			</svg>
+				aria-hidden="true"
+			/>
 			<input
 				type="checkbox"
 				aria-label="Buch auswählen"
@@ -198,13 +195,9 @@
 	</td>
 
 	<td class="px-6 py-3 text-right">
-		<svg
+		<ChevronRight
 			class="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-		>
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-		</svg>
+			aria-hidden="true"
+		/>
 	</td>
 </tr>

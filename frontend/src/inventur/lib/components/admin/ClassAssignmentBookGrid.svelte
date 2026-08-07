@@ -1,4 +1,5 @@
 <script>
+	import { Book, Check } from '@lucide/svelte';
 	let { books = [], selectedBookIds = $bindable(new Set()) } = $props();
 
 	let searchQuery = $state('');
@@ -88,16 +89,7 @@
 				<div
 					class="absolute top-4 right-4 z-10 bg-primary-600 text-white p-1.5 rounded-full shadow-lg border-2 border-white animate-in zoom-in-50 duration-200"
 				>
-					<svg
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg
-					>
+					<Check class="w-5 h-5" aria-hidden="true" />
 				</div>
 			{/if}
 
@@ -111,31 +103,11 @@
 						onerror={handleImageError}
 					/>
 					<div class="w-full h-full hidden items-center justify-center bg-slate-100 text-slate-300">
-						<svg
-							width="48"
-							height="48"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg
-						>
+						<Book class="w-5 h-5" aria-hidden="true" />
 					</div>
 				{:else}
 					<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
-						<svg
-							width="48"
-							height="48"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg
-						>
+						<Book class="w-5 h-5" aria-hidden="true" />
 					</div>
 				{/if}
 				<div

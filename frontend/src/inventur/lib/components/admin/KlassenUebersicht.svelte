@@ -1,5 +1,5 @@
 <script>
-	import { BookOpen } from '@lucide/svelte';
+	import { BookOpen, Plus } from '@lucide/svelte';
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
 	import ClassAssignmentDialog from './ClassAssignmentDialog.svelte';
@@ -95,14 +95,7 @@
 					isManaging = true;
 				}}
 			>
-				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 4v16m8-8H4"
-					/></svg
-				>
+				<Plus class="w-4 h-4" aria-hidden="true" />
 				Klasse hinzufügen
 			</Button>
 		</div>

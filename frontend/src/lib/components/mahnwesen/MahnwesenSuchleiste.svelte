@@ -4,24 +4,15 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Select from '../ui/Select.svelte';
+	import { Search } from '@lucide/svelte';
 </script>
 
 <div class="flex items-center gap-3 mt-4 print:hidden">
 	<div class="relative flex-1 max-w-sm">
-		<svg
+		<Search
 			class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			stroke-width="2"
 			aria-hidden="true"
-		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
-			/>
-		</svg>
+		/>
 		<input
 			type="search"
 			bind:value={mahnwesenStore.searchQuery}

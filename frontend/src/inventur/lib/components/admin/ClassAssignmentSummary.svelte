@@ -1,6 +1,7 @@
 <script>
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { coverSrc } from '../../../../lib/utils/coverSrc.js';
+	import { Book, Save, Table } from '@lucide/svelte';
 	let {
 		selectedClasses = [],
 		selectedBookIds = new Set(),
@@ -68,18 +69,7 @@
      Cover). Der Aufrufer bestimmt nur noch die Sichtbarkeit. -->
 {#snippet buchPlatzhalter(anzeige)}
 	<div class="w-full h-full {anzeige} items-center justify-center bg-slate-100 text-slate-300">
-		<svg
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			aria-hidden="true"
-			><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg
-		>
+		<Book class="w-5 h-5" aria-hidden="true" />
 	</div>
 {/snippet}
 
@@ -97,20 +87,7 @@
 >
 	{#if selectedBooksList.length === 0}
 		<div class="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-			<svg
-				width="48"
-				height="48"
-				class="text-slate-400 mb-4"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18" /><path
-					d="M9 21V9"
-				/></svg
-			>
+			<Table class="text-slate-400 mb-4" aria-hidden="true" />
 			<p class="text-sm font-medium text-slate-500">Deine Auswahl ist noch leer</p>
 		</div>
 	{:else}
@@ -176,20 +153,7 @@
 		onclick={(e) => onsave(e)}
 		class="h-auto w-full p-5 bg-emerald-600 hover:bg-emerald-700 text-base tracking-wide shadow-lg"
 	>
-		<svg
-			fill="none"
-			height="24"
-			stroke="currentColor"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			stroke-width="2"
-			viewBox="0 0 24 24"
-			width="24"
-			xmlns="http://www.w3.org/2000/svg"
-			><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline
-				points="17 21 17 13 7 13 7 21"
-			></polyline><polyline points="7 3 7 8 15 8"></polyline></svg
-		>
+		<Save class="w-5 h-5" aria-hidden="true" />
 		{isSaving ? 'SPEICHERT...' : 'AUSWAHL SPEICHERN'}
 	</Button>
 </footer>

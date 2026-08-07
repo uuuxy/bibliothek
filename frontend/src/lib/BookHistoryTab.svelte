@@ -1,4 +1,5 @@
 <script>
+	import { Clock } from '@lucide/svelte';
 	/** @type {{ history: any[] }} */
 	let { history } = $props();
 
@@ -15,14 +16,7 @@
 
 {#if history.length === 0}
 	<div class="py-16 flex flex-col items-center text-slate-400 gap-3">
-		<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-			><path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="1.5"
-				d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-			/></svg
-		>
+		<Clock class="w-10 h-10" aria-hidden="true" />
 		<p class="font-semibold text-sm">Noch keine Ausleihen in der Datenbank vorhanden.</p>
 	</div>
 {:else}

@@ -1,4 +1,5 @@
 <script>
+	import { Users } from '@lucide/svelte';
 	let { selectedClasses = $bindable([]) } = $props();
 
 	const classInput = $state({ value: '' });
@@ -49,21 +50,7 @@
 	class="flex flex-wrap items-center gap-2 border border-surface-variant/20 rounded-xl p-2 px-4 w-full sm:w-fit min-w-0 sm:min-w-75 bg-white hover:border-emerald-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 transition-all cursor-text shadow-sm mb-4 sm:mb-6"
 >
 	<!-- Group Icon -->
-	<svg
-		xmlns="http://www.w3.org/2000/svg"
-		width="20"
-		height="20"
-		viewBox="0 0 24 24"
-		fill="none"
-		stroke="currentColor"
-		stroke-width="2"
-		stroke-linecap="round"
-		stroke-linejoin="round"
-		class="text-slate-500 mr-1"
-		><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"
-		></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"
-		></path></svg
-	>
+	<Users class="text-slate-500 mr-1" aria-hidden="true" />
 
 	{#each selectedClasses as selectedClass (selectedClass)}
 		<span
