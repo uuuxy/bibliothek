@@ -8,6 +8,7 @@
 	import AbgaengerKopfzeile from './components/AbgaengerKopfzeile.svelte';
 	import * as dienst from './abgaengerDienst.js';
 	import { abonniere } from './liveEvents.js';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function openProfile(student) {
@@ -131,7 +132,11 @@
 	});
 </script>
 
-<div class="w-full space-y-6 text-slate-800">
+<PageShell
+	breite="voll"
+	titel="Abgänger"
+	beschreibung="Schülerinnen und Schüler, die die Schule verlassen — mit offenen Büchern."
+>
 	<AbgaengerKopfzeile
 		bind:klasse={selectedKlasse}
 		klassen={classes}
@@ -158,7 +163,7 @@
 			/>
 		</Sheet>
 	{/if}
-</div>
+</PageShell>
 
 <!-- Auf oberster Ebene: Der Dialog ist ein Overlay und gehört nicht in die Werkzeugleiste. -->
 <KlassenVersandDialog

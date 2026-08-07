@@ -62,6 +62,25 @@ describe('Seitengeruest', () => {
 		// Ohne diese Zusicherung waere ein umbenannter Router ein still gruener Test.
 		expect(routenKomponenten().length).toBeGreaterThan(10);
 	});
+
+	// Blinder Fleck des Tests darueber: Er prueft die Routen-KOMPONENTEN. Die Huelle, in
+	// die Router.svelte sie stellt, sah er nie — und genau dort stand fuer LMF-Aktionen
+	// ein `p-6 max-w-6xl mx-auto`, also eine vierte Inhaltsbreite an der einzigen Stelle,
+	// die niemand als Seite liest.
+	it('stellt jede Route in dieselbe Huelle', () => {
+		const quelle = readFileSync(ROUTER, 'utf8');
+		const markup = quelle.slice(quelle.lastIndexOf('</script>') + 1);
+		const gefunden = [...markup.matchAll(/<div class="[^"]*"/g)]
+			.map((m) => m[0])
+			.filter((tag) => /\bmax-w-|\bbg-|\bp-\d|\bpx-\d|\bpy-\d/.test(tag));
+
+		expect(
+			gefunden,
+			'Router.svelte gibt einer Route eine eigene Breite, Flaeche oder Polsterung.\n' +
+				'Die Huelle ist fuer alle Routen gleich; Breite und Kopf gehoeren in PageShell:\n  ' +
+				gefunden.join('\n  ')
+		).toEqual([]);
+	});
 });
 
 // ── Form-Skala ───────────────────────────────────────────────────────────────

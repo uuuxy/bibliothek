@@ -2,14 +2,21 @@
 	import AuditLog from './AuditLog.svelte';
 	import AdminAuditLog from './AdminAuditLog.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	let activeTab = $state('system');
 	const isAdmin = $derived(authStore.currentUser?.rolle === 'admin');
 </script>
 
-<div class="w-full flex flex-col h-full">
-	<div class="px-8 pt-6 pb-4 border-b border-slate-200 bg-white shadow-sm shrink-0">
-		<div class="max-w-6xl mx-auto flex gap-6">
+<PageShell
+	breite="voll"
+	titel="System-Logs"
+	beschreibung="Protokoll aller administrativen Aktionen."
+>
+	<!-- Reiter auf der Leinwand, nicht in einem eigenen weissen Balken — wie Mahnwesen,
+	     Medienkatalog und Schuelerdatei. -->
+	<div class="border-outline-variant shrink-0 border-b">
+		<div class="mx-auto flex max-w-6xl gap-6">
 			<button
 				onclick={() => (activeTab = 'system')}
 				class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'system'
@@ -42,4 +49,4 @@
 			</div>
 		{/if}
 	</div>
-</div>
+</PageShell>

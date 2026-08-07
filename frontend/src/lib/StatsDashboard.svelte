@@ -5,6 +5,7 @@
 	import OverdueWidget from './OverdueWidget.svelte';
 	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
 	import Button from './components/ui/Button.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	// State Runes (Svelte 5)
 	/** @type {any} */
@@ -309,7 +310,11 @@
      flex-1/min-h-0 statt min-h-full: Die Deckelung braucht eine DEFINITE Höhe. min-height:100%
      setzt nur eine Untergrenze — die Card unten wäre trotzdem auf Inhaltshöhe gewachsen und
      hätte die Seite wieder scrollen lassen. Die Höhe kommt aus der Flex-Kette des Routers. -->
-<div class="w-full flex-1 min-h-0 text-on-surface flex flex-col">
+<PageShell
+	breite="voll"
+	titel="Statistiken"
+	beschreibung="Bestand, Ausleihen und Verluste im Überblick."
+>
 	<div class="flex-1 min-h-0 flex flex-col gap-4">
 		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
 		<div class="shrink-0 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
@@ -407,4 +412,4 @@
 			</div>
 		{/if}
 	</div>
-</div>
+</PageShell>

@@ -8,6 +8,10 @@
 	import PageShell from './components/layout/PageShell.svelte';
 </script>
 
-<PageShell breite="inhalt">
+<PageShell
+	breite="inhalt"
+	titel="Schulklassen"
+	beschreibung="Klassen anlegen, umbenennen und ihnen Klassensätze zuweisen."
+>
 	<KlassenUebersicht />
 </PageShell>

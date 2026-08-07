@@ -31,7 +31,9 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 	// (es ist NICHT die Startseite — auch Lehrkräfte landen zuerst im Standard-Tab).
 	await uiLogin(page, LEHRER_EMAIL);
 	await page.getByTitle('Mein Portal').click();
-	await expect(page.getByRole('heading', { name: 'Mein Lehrerportal' })).toBeVisible();
+	// Der Seitentitel folgt seit dem Geruest-Umbau der Navigation: Der Menuepunkt heisst
+	// 'Mein Portal', die Ueberschrift jetzt auch (vorher 'Mein Lehrerportal').
+	await expect(page.getByRole('heading', { name: 'Mein Portal' })).toBeVisible();
 
 	// Buch suchen (debounced Suchfeld)
 	await page.getByPlaceholder('Titel, Autor oder ISBN suchen …').fill(`E2E Lehrerwunsch ${s}`);

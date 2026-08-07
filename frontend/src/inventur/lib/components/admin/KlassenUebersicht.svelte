@@ -70,10 +70,8 @@
 	}
 </script>
 
-<div class="space-y-10 py-6">
-	<div class="flex justify-between items-center px-2">
-		<h2 class="text-xl font-bold text-slate-800 font-sans">Klassenübersicht</h2>
-
+<div class="space-y-10">
+	<div class="flex justify-end items-center px-2">
 		<div class="flex gap-4 items-center">
 			<Select
 				bind:value={filterBranch}

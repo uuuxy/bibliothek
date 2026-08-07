@@ -213,9 +213,7 @@
 	{:else if uiStore.activeTab === 'lehrer_portal'}
 		<div class="w-full animate-fade-in"><LehrerPortal user={authStore.currentUser} /></div>
 	{:else if uiStore.activeTab === 'lmf_actions'}
-		<div class="w-full animate-fade-in p-6 max-w-6xl mx-auto">
-			<GlobalLMFExtendWidget />
-		</div>
+		<div class="w-full animate-fade-in"><GlobalLMFExtendWidget /></div>
 	{:else if uiStore.activeTab === 'settings'}
 		<div class="w-full animate-fade-in"><SystemSettings /></div>
 	{:else if uiStore.activeTab === 'book_detail'}

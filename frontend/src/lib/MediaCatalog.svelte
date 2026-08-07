@@ -2,6 +2,7 @@
 	import InventurCatalog from '../inventur/routes/+page.svelte';
 	import InventurAdmin from '../inventur/routes/admin/+page.svelte';
 	import { appState } from '../inventur/lib/store.svelte.js';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	let activeView = $state('catalog'); // "catalog" | "admin"
 
@@ -13,7 +14,11 @@
 	});
 </script>
 
-<div class="w-full space-y-6">
+<PageShell
+	breite="voll"
+	titel="Medienkatalog"
+	beschreibung="Alle Titel und Exemplare durchsuchen und pflegen."
+>
 	<!-- Google-style underline Tabs -->
 	<div class="border-b border-slate-200">
 		<nav class="flex gap-6" aria-label="Medienkatalog Navigation">
@@ -56,4 +61,4 @@
 			<InventurAdmin />
 		{/if}
 	</div>
-</div>
+</PageShell>

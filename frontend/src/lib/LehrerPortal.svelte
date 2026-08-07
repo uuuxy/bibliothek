@@ -130,15 +130,11 @@
 	}
 </script>
 
-<PageShell breite="inhalt">
-	<!-- Header -->
-	<div>
-		<h1 class="text-2xl font-bold text-slate-800">Mein Lehrerportal</h1>
-		<p class="text-sm text-slate-500 mt-1">
-			Suche im Bibliothekskatalog und reserviere Klassensätze für deinen Unterricht.
-		</p>
-	</div>
-
+<PageShell
+	breite="inhalt"
+	titel="Mein Portal"
+	beschreibung="Im Katalog suchen und Klassensätze für den Unterricht reservieren."
+>
 	<!-- Search bar -->
 	<div class="relative">
 		<svg

@@ -76,7 +76,7 @@
 	);
 </script>
 
-<PageShell breite="inhalt">
+<PageShell breite="inhalt" titel={title} beschreibung={hint}>
 	<!-- Zurück zur Statistik-Übersicht -->
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}
@@ -93,12 +93,7 @@
 		Statistik
 	</button>
 
-	<header class="border-b border-slate-100 pb-5 mb-5 space-y-4">
-		<div>
-			<h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">{title}</h1>
-			<p class="text-xs text-slate-500 mt-1">{hint}</p>
-		</div>
-
+	<header class="space-y-4">
 		<!-- Lokale Filterzeile -->
 		<div class="flex flex-wrap items-center gap-3">
 			<input

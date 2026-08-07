@@ -64,7 +64,11 @@
 	}
 </script>
 
-<PageShell breite="inhalt">
+<PageShell
+	breite="inhalt"
+	titel="Inventur"
+	beschreibung="Bestand prüfen, Fehlbestand melden und frühere Läufe nachschlagen."
+>
 	<!-- Steht GANZ OBEN und ueberlebt das Zuruecksetzen: Der Bericht ist das Ergebnis der
 	     Arbeit, nicht eine Randnotiz. Vorher endete eine Inventur mit einer Zahl im Toast,
 	     die drei Sekunden spaeter weg war. -->

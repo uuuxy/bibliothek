@@ -6,7 +6,6 @@
 <script lang="ts">
 	import LitteraImportWidget from '../../LitteraImportWidget.svelte';
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
-	import PageShell from '../layout/PageShell.svelte';
 	import LusdImportView from '../students/LusdImportView.svelte';
 	import PromoteStudentsView from '../students/PromoteStudentsView.svelte';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
@@ -252,53 +251,51 @@
 	</div>
 {/snippet}
 
-<PageShell breite="inhalt">
-	<div class="space-y-8">
+<div class="space-y-8">
+	<div>
+		<h2 class="text-xl font-bold text-slate-950">Datenverwaltung</h2>
+		<p class="text-xs text-slate-500 mt-1">
+			Hier können Sie den gesamten Medienbestand exportieren oder neue Daten importieren.
+		</p>
+	</div>
+
+	<div class="grid grid-cols-1 gap-8">
+		<!-- Import Card -->
+		{@render adminCard(
+			'Daten importieren',
+			'Aktualisieren Sie den Bestand via MAB2-XML oder legen Sie neue Titel und Exemplare via Excel/CSV an.',
+			'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12',
+			importContent
+		)}
+
+		<!-- Export Card -->
+		{@render adminCard(
+			'Daten exportieren',
+			'Exportieren Sie den aktuellen Medien- und Buchbestand vollständig als CSV-Datei zur weiteren Bearbeitung oder Archivierung.',
+			'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
+			exportContent
+		)}
+	</div>
+
+	<div class="pt-8 border-t border-slate-200">
+		<OfflineSicherungenEinspielen />
+	</div>
+
+	<!-- Schuljahreswechsel: Schüler-Stammdaten (LUSD) + Versetzungs-Batch. Bewusst
+		     AUßERHALB der Schatten-Kacheln oben, damit das eigene Edge-to-Edge-Listen-
+		     Design beider Komponenten nicht in einer Kachel-in-Kachel verschachtelt wird. -->
+	<div class="pt-8 border-t border-slate-200 space-y-10">
 		<div>
-			<h2 class="text-xl font-bold text-slate-950">Datenverwaltung</h2>
+			<h2 class="text-xl font-bold text-slate-950">Schuljahreswechsel & Import</h2>
 			<p class="text-xs text-slate-500 mt-1">
-				Hier können Sie den gesamten Medienbestand exportieren oder neue Daten importieren.
+				LUSD-Datenabgleich und automatische Klassen-Versetzung für das Ende des Schuljahres.
 			</p>
 		</div>
 
-		<div class="grid grid-cols-1 gap-8">
-			<!-- Import Card -->
-			{@render adminCard(
-				'Daten importieren',
-				'Aktualisieren Sie den Bestand via MAB2-XML oder legen Sie neue Titel und Exemplare via Excel/CSV an.',
-				'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12',
-				importContent
-			)}
+		<LusdImportView />
 
-			<!-- Export Card -->
-			{@render adminCard(
-				'Daten exportieren',
-				'Exportieren Sie den aktuellen Medien- und Buchbestand vollständig als CSV-Datei zur weiteren Bearbeitung oder Archivierung.',
-				'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
-				exportContent
-			)}
-		</div>
-
-		<div class="pt-8 border-t border-slate-200">
-			<OfflineSicherungenEinspielen />
-		</div>
-
-		<!-- Schuljahreswechsel: Schüler-Stammdaten (LUSD) + Versetzungs-Batch. Bewusst
-		     AUßERHALB der Schatten-Kacheln oben, damit das eigene Edge-to-Edge-Listen-
-		     Design beider Komponenten nicht in einer Kachel-in-Kachel verschachtelt wird. -->
-		<div class="pt-8 border-t border-slate-200 space-y-10">
-			<div>
-				<h2 class="text-xl font-bold text-slate-950">Schuljahreswechsel & Import</h2>
-				<p class="text-xs text-slate-500 mt-1">
-					LUSD-Datenabgleich und automatische Klassen-Versetzung für das Ende des Schuljahres.
-				</p>
-			</div>
-
-			<LusdImportView />
-
-			<div class="pt-8 border-t border-slate-100">
-				<PromoteStudentsView />
-			</div>
+		<div class="pt-8 border-t border-slate-100">
+			<PromoteStudentsView />
 		</div>
 	</div>
-</PageShell>
+</div>

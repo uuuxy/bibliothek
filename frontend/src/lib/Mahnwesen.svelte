@@ -2,7 +2,16 @@
 	import { mahnwesenStore } from './stores/mahnwesen.svelte.js';
 	import { offlineSync } from './stores/offlineSync.svelte.js';
 	import MahnwesenFilters from './components/mahnwesen/MahnwesenFilters.svelte';
+	import MahnwesenAktionen from './components/mahnwesen/MahnwesenAktionen.svelte';
 	import MahnwesenTable from './components/mahnwesen/MahnwesenTable.svelte';
+	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
+
+	// „Alle anmahnen" lief frueher gegen ein window.confirm: alles oder nichts, immer an
+	// die hinterlegten Klassenleitungen. Der Dialog steht jetzt als Tuersteher davor —
+	// und auf OBERSTER Ebene, nicht in der Aktionszeile: Ein Overlay hat in einem
+	// Flex-Container mit print:hidden nichts verloren.
+	let mahnlaufOffen = $state(false);
 
 	$effect(() => {
 		if (offlineSync.pendingCount === 0) {
@@ -91,14 +100,32 @@
 			</div>
 		</div>
 	{:else}
-		<div class="animate-fade-in flex-1 flex flex-col w-full">
-			<!-- Header und Filter -->
+		<PageShell
+			titel="Mahnwesen"
+			beschreibung="Überfällige Ausleihen nach Klassen sortiert."
+			aktionen={aktionsleiste}
+		>
 			<MahnwesenFilters />
-
-			<!-- Tabellen und Modals -->
-			<div class="w-full">
-				<MahnwesenTable />
-			</div>
-		</div>
+			<MahnwesenTable />
+		</PageShell>
 	{/if}
 </div>
+
+{#snippet aktionsleiste()}
+	<MahnwesenAktionen onMahnlauf={() => (mahnlaufOffen = true)} />
+{/snippet}
+
+<KlassenVersandDialog
+	open={mahnlaufOffen}
+	titel="Mahnlauf konfigurieren"
+	variant="danger-solid"
+	beschreibung="Wähle die Klassen aus, für die Mahnungen generiert werden sollen."
+	aktion="anmahnen"
+	hinweis="Leer lassen = an die regulären Klassenleitungen. Der Namensteil genügt, die Schul-Domäne wird ergänzt."
+	klassen={mahnwesenStore.klassen}
+	onclose={() => (mahnlaufOffen = false)}
+	onconfirm={(auswahl) => {
+		mahnlaufOffen = false;
+		mahnwesenStore.sendBulkOverdueMails(auswahl);
+	}}
+/>

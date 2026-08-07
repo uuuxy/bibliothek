@@ -170,83 +170,84 @@
 			/>
 		</div>
 	{:else}
-		<!-- Reiter liegen auf der Leinwand, nicht in einem eigenen weissen Balken — wie im
-		     Mahnwesen und im Medienkatalog. Der Balken war die letzte Stelle, an der diese
-		     Seite ihre eigene Flaeche mitbrachte. -->
-		<div class="border-outline-variant shrink-0 border-b">
-			<div class="mx-auto flex max-w-6xl gap-6">
-				{#snippet tabButton(id, label, activeColorClass)}
-					<button
-						onclick={() => (activeTab = id)}
-						class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === id
-							? activeColorClass
-							: 'border-transparent text-slate-500 hover:text-slate-800'}"
-					>
-						{label}
-					</button>
-				{/snippet}
+		<PageShell
+			breite="inhalt"
+			titel="Schülerdatei"
+			beschreibung="Stammdaten, Ausleihen und Ausweise der Schülerinnen und Schüler."
+		>
+			<!-- Reiter liegen auf der Leinwand, nicht in einem eigenen weissen Balken — wie im
+			     Mahnwesen und im Medienkatalog. -->
+			<div class="border-outline-variant shrink-0 border-b">
+				<div class="flex gap-6">
+					{#snippet tabButton(id, label, activeColorClass)}
+						<button
+							onclick={() => (activeTab = id)}
+							class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === id
+								? activeColorClass
+								: 'border-transparent text-slate-500 hover:text-slate-800'}"
+						>
+							{label}
+						</button>
+					{/snippet}
 
-				{@render tabButton('active', 'Aktive Schüler', 'border-blue-600 text-blue-700')}
-				{@render tabButton('graduates', 'Abgänger / Archiv', 'border-blue-600 text-blue-700')}
-				{#if role === 'admin'}
-					{@render tabButton('deleted', 'Papierkorb', 'border-rose-600 text-rose-700')}
-				{/if}
+					{@render tabButton('active', 'Aktive Schüler', 'border-blue-600 text-blue-700')}
+					{@render tabButton('graduates', 'Abgänger / Archiv', 'border-blue-600 text-blue-700')}
+					{#if role === 'admin'}
+						{@render tabButton('deleted', 'Papierkorb', 'border-rose-600 text-rose-700')}
+					{/if}
+				</div>
 			</div>
-		</div>
 
-		<!-- Tab Content -->
-		<div class="flex-1 overflow-y-auto py-8 w-full">
-			<PageShell breite="inhalt">
-				{#if activeTab === 'active'}
-					<div class="w-full no-print animate-fade-in">
-						<StudentDirectoryToolbar
-							bind:searchQuery
-							{role}
-							trefferzahl={students.length}
-							suchend={searchQuery.trim().length > 0}
-							gekuerzt={!searchQuery.trim() && students.length >= LISTEN_GRENZE}
-							onsearch={sucheAngestossen}
-							oncreate={() => (showCreateModal = true)}
-						/>
+			<!-- Tab Content -->
+			{#if activeTab === 'active'}
+				<div class="w-full no-print animate-fade-in">
+					<StudentDirectoryToolbar
+						bind:searchQuery
+						{role}
+						trefferzahl={students.length}
+						suchend={searchQuery.trim().length > 0}
+						gekuerzt={!searchQuery.trim() && students.length >= LISTEN_GRENZE}
+						onsearch={sucheAngestossen}
+						oncreate={() => (showCreateModal = true)}
+					/>
 
-						<AuswahlAktionsleiste
-							anzahl={markierte.length}
-							{ohneDatum}
-							onDrucken={druckeAuswahl}
-							onLeeren={() => auswahl.clear()}
-						/>
+					<AuswahlAktionsleiste
+						anzahl={markierte.length}
+						{ohneDatum}
+						onDrucken={druckeAuswahl}
+						onLeeren={() => auswahl.clear()}
+					/>
 
-						<div class="mt-6">
-							<ActiveStudentList
-								filteredStudents={students}
-								loading={loading || sucheLaeuft}
-								{auswahl}
-								onToggle={toggle}
-								onToggleAlle={toggleAlle}
-								onSelectStudent={(s) => {
-									// Selbst gesucht und angeklickt = Datenpflege-Absicht.
-									profilReiter = 'stammdaten';
-									activeStudent = s;
-								}}
-							/>
-						</div>
-					</div>
-				{:else if activeTab === 'graduates'}
-					<div class="w-full animate-fade-in">
-						<Graduates />
-					</div>
-				{:else if activeTab === 'deleted'}
-					<div class="w-full animate-fade-in space-y-6">
-						<DeletedStudentList
-							onRestoreSuccess={() => {
-								loadStudents();
-								loadClasses();
+					<div class="mt-6">
+						<ActiveStudentList
+							filteredStudents={students}
+							loading={loading || sucheLaeuft}
+							{auswahl}
+							onToggle={toggle}
+							onToggleAlle={toggleAlle}
+							onSelectStudent={(s) => {
+								// Selbst gesucht und angeklickt = Datenpflege-Absicht.
+								profilReiter = 'stammdaten';
+								activeStudent = s;
 							}}
 						/>
 					</div>
-				{/if}
-			</PageShell>
-		</div>
+				</div>
+			{:else if activeTab === 'graduates'}
+				<div class="w-full animate-fade-in">
+					<Graduates />
+				</div>
+			{:else if activeTab === 'deleted'}
+				<div class="w-full animate-fade-in space-y-6">
+					<DeletedStudentList
+						onRestoreSuccess={() => {
+							loadStudents();
+							loadClasses();
+						}}
+					/>
+				</div>
+			{/if}
+		</PageShell>
 	{/if}
 </div>
 

@@ -5,6 +5,7 @@
 	import { orderStore } from './stores/orderStore.svelte.js';
 	import { printQueue } from './stores/printQueue.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	import OrderCreationPanel from './components/bestellungen/OrderCreationPanel.svelte';
 	import IncomingShipments from './components/bestellungen/IncomingShipments.svelte';
@@ -125,7 +126,11 @@
 	});
 </script>
 
-<div class="w-full h-full text-slate-800 font-sans flex flex-col gap-6">
+<PageShell
+	breite="voll"
+	titel="Bestellungen"
+	beschreibung="Bedarf erfassen, bestellen und Zulauf verbuchen."
+>
 	<!-- Über den Reitern und nicht in einem von ihnen: Die fehlende Adresse betrifft das
 	     Bestellen (Mail ohne Link) UND die Historie (Bestätigung, die nie kommt). -->
 	<BestelllinkHinweis />
@@ -283,4 +288,4 @@
 	{#if activeTab === 'klassensaetze'}
 		<KlassensatzReservierungen />
 	{/if}
-</div>
+</PageShell>

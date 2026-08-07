@@ -86,7 +86,7 @@ const SVG_BESTAND = [
 	'src/lib/components/bestellungen/OrderCart.svelte',
 	'src/lib/components/bestellungen/OrderRecommendations.svelte',
 	'src/lib/components/mahnwesen/MahnwesenDruckMenue.svelte',
-	'src/lib/components/mahnwesen/MahnwesenFilters.svelte',
+	'src/lib/components/mahnwesen/MahnwesenAktionen.svelte',
 	'src/lib/components/mahnwesen/MahnwesenSuchleiste.svelte',
 	'src/lib/components/mahnwesen/MahnwesenTable.svelte',
 	'src/lib/components/stats/StatistikDetailPage.svelte',

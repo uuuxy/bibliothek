@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
 	import Sheet from './components/layout/Sheet.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -64,53 +65,59 @@
 	}
 </script>
 
-<Sheet class="space-y-5 p-6">
-	<div>
-		<h3 class="text-base font-bold text-slate-900">LMF-Massenverlängerung (Klasse)</h3>
-		<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">
-			Verlängert alle aktiven LMF-Ausleihen (Schulbücher) einer bestimmten Klasse auf ein neues
-			fixes Rückgabedatum.
-		</p>
-	</div>
-
-	<div class="flex items-end gap-4 flex-wrap">
+<PageShell
+	breite="inhalt"
+	titel="LMF-Aktionen"
+	beschreibung="Lernmittelfreiheit: Leihfristen aller ausgegebenen Schulbücher gemeinsam verlängern."
+>
+	<Sheet class="space-y-5 p-6">
 		<div>
-			<label for="extendKlasse" class="text-xs font-semibold text-slate-600 block mb-1"
-				>Klasse (z.B. 10b)</label
-			>
-			<input
-				id="extendKlasse"
-				type="text"
-				list="lmf-klassen-vorschlaege"
-				bind:value={klasse}
-				placeholder="10b"
-				class="w-32 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
-			/>
-			<datalist id="lmf-klassen-vorschlaege">
-				{#each klassenVorschlaege as k (k)}
-					<option value={k}></option>
-				{/each}
-			</datalist>
+			<h3 class="text-base font-bold text-slate-900">LMF-Massenverlängerung (Klasse)</h3>
+			<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">
+				Verlängert alle aktiven LMF-Ausleihen (Schulbücher) einer bestimmten Klasse auf ein neues
+				fixes Rückgabedatum.
+			</p>
 		</div>
 
-		<div>
-			<label for="extendDatum" class="text-xs font-semibold text-slate-600 block mb-1"
-				>Neues Rückgabedatum</label
-			>
-			<input
-				id="extendDatum"
-				type="date"
-				bind:value={neuesDatum}
-				class="w-48 h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
-			/>
-		</div>
+		<div class="flex items-end gap-4 flex-wrap">
+			<div>
+				<label for="extendKlasse" class="text-xs font-semibold text-slate-600 block mb-1"
+					>Klasse (z.B. 10b)</label
+				>
+				<input
+					id="extendKlasse"
+					type="text"
+					list="lmf-klassen-vorschlaege"
+					bind:value={klasse}
+					placeholder="10b"
+					class="w-32 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
+				/>
+				<datalist id="lmf-klassen-vorschlaege">
+					{#each klassenVorschlaege as k (k)}
+						<option value={k}></option>
+					{/each}
+				</datalist>
+			</div>
 
-		<Button
-			onclick={handleGlobalExtend}
-			disabled={isExtending || !klasse.trim() || !neuesDatum}
-			class="px-6"
-		>
-			{isExtending ? 'Wird verarbeitet...' : 'Klassen-LMF global verlängern'}
-		</Button>
-	</div>
-</Sheet>
+			<div>
+				<label for="extendDatum" class="text-xs font-semibold text-slate-600 block mb-1"
+					>Neues Rückgabedatum</label
+				>
+				<input
+					id="extendDatum"
+					type="date"
+					bind:value={neuesDatum}
+					class="w-48 h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
+				/>
+			</div>
+
+			<Button
+				onclick={handleGlobalExtend}
+				disabled={isExtending || !klasse.trim() || !neuesDatum}
+				class="px-6"
+			>
+				{isExtending ? 'Wird verarbeitet...' : 'Klassen-LMF global verlängern'}
+			</Button>
+		</div>
+	</Sheet>
+</PageShell>

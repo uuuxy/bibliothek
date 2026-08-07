@@ -5,6 +5,7 @@
 	import { hatRecht } from './menu.js';
 	import SignaturRegal from './components/signaturen/SignaturRegal.svelte';
 	import SystematikVerwaltung from './components/signaturen/SystematikVerwaltung.svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
@@ -31,7 +32,11 @@
 	onMount(ladeSignaturen);
 </script>
 
-<div class="space-y-6 w-full">
+<PageShell
+	breite="voll"
+	titel="Signaturen"
+	beschreibung="Die Regaladresse auf dem Buchrücken — als Präfix gelesen."
+>
 	<div>
 		<h1 class="text-2xl font-bold text-slate-900">Signaturen</h1>
 		<p class="text-sm text-slate-500 mt-1">
@@ -90,4 +95,4 @@
 	{#if darfPflegen}
 		<SystematikVerwaltung onChanged={ladeSignaturen} />
 	{/if}
-</div>
+</PageShell>
