@@ -8,6 +8,10 @@
   richtig, die Schuelerdatei gar nicht und taeuschte es stattdessen mit einem getoenten
   Seitenhintergrund vor). Hier steht es EINMAL.
 
+  Radius 12 px (`rounded-xl`): In der M3-Shape-Skala ist das die KARTEN-Rolle. 16 px
+  (`rounded-2xl`) gehoert Navigationsflaechen, 28 px den Dialogen — die Zuordnung steht
+  in styles/theme-mass.css. Diese Komponente stand zuerst selbst auf 16 px.
+
   `class` ist fuer Layout gedacht (Abstaende, Ueberlauf) — keine Flaechenfarben:
   Utilities gleicher Spezifitaet entscheidet die Stylesheet-Reihenfolge, nicht das
   class-Attribut, ein `bg-*` von aussen wirkt hier also nicht zuverlaessig.
@@ -17,7 +21,7 @@
 </script>
 
 <div
-	class="bg-surface-container-lowest border-outline-variant overflow-hidden rounded-2xl border shadow-sm {klasse}"
+	class="bg-surface-container-lowest border-outline-variant overflow-hidden rounded-xl border shadow-sm {klasse}"
 >
 	{@render children()}
 </div>

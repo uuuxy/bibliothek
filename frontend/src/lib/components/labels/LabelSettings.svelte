@@ -56,7 +56,7 @@
 					{#if labelStore.searchResults.length > 0}
 						<div class="relative">
 							<div
-								class="absolute left-0 right-0 mt-1 bg-white border border-slate-100 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto divide-y divide-slate-50"
+								class="absolute left-0 right-0 mt-1 bg-surface-container rounded-sm shadow-xl z-20 max-h-48 overflow-y-auto divide-y divide-slate-50"
 							>
 								{#each labelStore.searchResults as r, _i (_i)}
 									<button

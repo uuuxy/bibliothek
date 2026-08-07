@@ -19,7 +19,7 @@
 		class="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
 		transition:fade
 	>
-		<div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
+		<div class="bg-white p-6 rounded-3xl shadow-xl w-full max-w-md relative">
 			<button
 				onclick={() => (isScanning = false)}
 				class="absolute top-4 right-4 text-slate-500 hover:text-slate-800"

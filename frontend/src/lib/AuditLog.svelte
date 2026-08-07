@@ -63,7 +63,7 @@
 		</div>
 	{:else if logs.length === 0}
 		<div
-			class="p-12 rounded-2xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
+			class="p-12 rounded-xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
 		>
 			<span class="text-2xl block mb-2">📜</span>
 			Keine Audit-Einträge vorhanden.

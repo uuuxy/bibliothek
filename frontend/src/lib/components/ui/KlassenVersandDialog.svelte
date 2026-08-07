@@ -176,7 +176,7 @@
 				bind:value={overrideEmail}
 				placeholder="z. B. mueller"
 				aria-invalid={!emailOk}
-				class="w-full h-9 px-3 mt-1 bg-white border rounded-md text-sm outline-none focus:ring-1 {emailOk
+				class="w-full h-9 px-3 mt-1 bg-white border rounded-xl text-sm outline-none focus:ring-1 {emailOk
 					? 'border-slate-300 focus:border-blue-600 focus:ring-blue-600'
 					: 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'}"
 			/>

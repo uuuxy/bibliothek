@@ -231,7 +231,7 @@
 								aria-label="Bestellspalte ausklappen"
 								aria-expanded="false"
 								aria-controls="bestellpanel"
-								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-2xl border border-slate-200 bg-white shadow-sm hover:border-blue-400 hover:bg-blue-50/40 transition-colors cursor-pointer"
+								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-400 hover:bg-blue-50/40 transition-colors cursor-pointer"
 							>
 								<ChevronLeft class="h-4 w-4 text-slate-400" aria-hidden="true" />
 								<span

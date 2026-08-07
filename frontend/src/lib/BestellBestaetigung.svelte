@@ -133,7 +133,7 @@
 		{#if zustand === 'laedt'}
 			<p class="text-center text-slate-400">Bestellung wird geladen …</p>
 		{:else if zustand === 'ungueltig'}
-			<div class="rounded-2xl bg-white p-8 text-center shadow-sm">
+			<div class="rounded-xl bg-white p-8 text-center shadow-sm">
 				<h1 class="text-lg font-bold text-slate-800">Dieser Link ist nicht mehr gültig</h1>
 				<p class="mt-2 text-sm text-slate-500">
 					Bestätigungs-Links laufen nach einiger Zeit ab und gehören immer zu genau einer
@@ -141,7 +141,7 @@
 				</p>
 			</div>
 		{:else}
-			<div class="rounded-2xl bg-white p-8 shadow-sm">
+			<div class="rounded-xl bg-white p-8 shadow-sm">
 				<p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">
 					{bestellung.schule_name || 'Schulbibliothek'}
 				</p>
@@ -177,7 +177,7 @@
 			</div>
 
 			{#if bestellung.etiketten_vorhanden}
-				<div class="rounded-2xl bg-white p-8 shadow-sm">
+				<div class="rounded-xl bg-white p-8 shadow-sm">
 					<h2 class="text-base font-bold text-slate-800">Etiketten drucken</h2>
 					<p class="mt-1 text-sm text-slate-500">
 						Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail — Sie wählen nur
@@ -225,7 +225,7 @@
 				</div>
 			{/if}
 
-			<div class="rounded-2xl bg-white p-8 shadow-sm">
+			<div class="rounded-xl bg-white p-8 shadow-sm">
 				{#if bestellung.bestaetigt_am}
 					<h2 class="text-base font-bold text-emerald-700">Bestellung bestätigt</h2>
 					<p class="mt-1 text-sm text-slate-500">

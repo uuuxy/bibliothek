@@ -55,7 +55,7 @@
 </script>
 
 <section
-	class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden"
+	class="bg-white rounded-xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden"
 >
 	<!-- Header -->
 	<header class="px-5 pt-5 pb-4 border-b border-slate-100">

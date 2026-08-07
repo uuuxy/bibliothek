@@ -110,7 +110,7 @@
 		/>
 		{#if orderStore.showDropdown && (localResults.length > 0 || dnbResults.length > 0)}
 			<div
-				class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-y-auto divide-y divide-slate-100"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl max-h-72 overflow-y-auto divide-y divide-slate-100"
 			>
 				{#if localResults.length > 0}
 					<div
@@ -199,7 +199,7 @@
 		{/if}
 		{#if orderStore.searchLoading}
 			<div
-				class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
 			>
 				<div
 					class="w-4 h-4 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin shrink-0"
@@ -208,7 +208,7 @@
 			</div>
 		{:else if resolvingDnb}
 			<div
-				class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
 			>
 				<div
 					class="w-4 h-4 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin shrink-0"
@@ -254,7 +254,7 @@
 				type="text"
 				bind:value={stagedBook.signatur}
 				placeholder="z. B. BIB Jugendbuch"
-				class="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+				class="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 			/>
 		</div>
 
@@ -266,7 +266,7 @@
 					type="number"
 					min="1"
 					bind:value={stagedMenge}
-					class="w-16 px-2 py-1.5 border border-slate-200 bg-white rounded-lg text-center font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+					class="w-16 px-2 py-1.5 border border-slate-200 bg-white rounded-xl text-center font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 				/>
 			</div>
 			<label class="flex items-center gap-2 cursor-pointer select-none">

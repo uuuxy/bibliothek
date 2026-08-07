@@ -108,7 +108,7 @@
 	}
 </script>
 
-<section class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+<section class="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
 	<div>
 		<h2 class="font-bold text-slate-900">Sachgruppen</h2>
 		<p class="text-sm text-slate-500 mt-0.5">

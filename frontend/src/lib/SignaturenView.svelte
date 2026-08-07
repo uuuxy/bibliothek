@@ -41,7 +41,7 @@
 	</div>
 
 	<div class="grid gap-6 lg:grid-cols-[20rem_1fr] items-start">
-		<section class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
+		<section class="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
 			<label for="sig-suche" class="block text-sm font-medium text-slate-700">
 				Signatur suchen
 			</label>
@@ -82,7 +82,7 @@
 			{/if}
 		</section>
 
-		<section class="bg-white border border-slate-200 rounded-2xl p-5 min-h-48">
+		<section class="bg-white border border-slate-200 rounded-xl p-5 min-h-48">
 			<SignaturRegal signatur={gewaehlt} />
 		</section>
 	</div>

@@ -162,7 +162,7 @@
 			<p class="font-medium text-sm">Keine ausstehenden Vormerkungen für diesen Titel.</p>
 		</div>
 	{:else}
-		<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+		<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 			<table class="w-full text-left text-sm whitespace-nowrap">
 				<thead class="bg-slate-50 text-slate-500 text-xs font-medium">
 					<tr>

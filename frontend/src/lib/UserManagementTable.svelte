@@ -24,7 +24,7 @@
 		Keine Systembenutzer gefunden.
 	</div>
 {:else}
-	<div class="border border-slate-100 bg-white rounded-3xl overflow-hidden shadow-xs">
+	<div class="border border-slate-100 bg-white rounded-xl overflow-hidden shadow-xs">
 		<div class="overflow-x-auto">
 			<table class="w-full text-left border-collapse">
 				<thead>

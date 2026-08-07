@@ -48,7 +48,7 @@
 	<!-- Eigene Kontur nötig, seit der Arbeitsbereich selbst weiß ist (App.svelte):
 	     Vorher trug allein der Kontrast zum grauen Canvas die Karte, jetzt braucht sie
 	     Rand und Schatten wie jede andere Karte im Haus. -->
-	<div class="bg-white w-full pb-6 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+	<div class="bg-white w-full pb-6 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 		<div class="overflow-x-auto w-full">
 			<table class="w-full text-left text-sm whitespace-nowrap">
 				<thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
@@ -189,7 +189,7 @@
 			aria-hidden="true"
 		></div>
 		<div
-			class="relative bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-5"
+			class="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-5"
 		>
 			<div class="flex items-center justify-between">
 				<h2 class="text-base font-bold text-slate-800">Mahnliste per E-Mail senden</h2>

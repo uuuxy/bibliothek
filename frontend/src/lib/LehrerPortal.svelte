@@ -159,7 +159,7 @@
 			type="search"
 			bind:value={searchQuery}
 			placeholder="Titel, Autor oder ISBN suchen …"
-			class="h-auto w-full pl-12 pr-4 py-3 rounded-2xl bg-white border border-slate-200 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-800 placeholder-slate-400 transition-all"
+			class="h-auto w-full pl-12 pr-4 py-3 rounded-xl bg-white border border-slate-200 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-800 placeholder-slate-400 transition-all"
 		/>
 		{#if isSearching}
 			<div

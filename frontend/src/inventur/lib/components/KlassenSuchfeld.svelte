@@ -46,7 +46,7 @@
 		</div>
 		{#if isKlasseDropdownOpen && filteredKlassenList.length > 0}
 			<ul
-				class="absolute z-10 w-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto py-1"
+				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl max-h-60 overflow-y-auto py-1"
 			>
 				{#each filteredKlassenList as klasse (klasse)}
 					<li>
@@ -62,7 +62,7 @@
 			</ul>
 		{:else if isKlasseDropdownOpen && filteredKlassenList.length === 0}
 			<div
-				class="absolute z-10 w-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg py-4 px-5 text-slate-400 text-center text-sm"
+				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl py-4 px-5 text-slate-400 text-center text-sm"
 			>
 				Keine Klasse gefunden.
 			</div>

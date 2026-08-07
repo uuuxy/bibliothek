@@ -108,7 +108,7 @@
 			role="menu"
 			tabindex="-1"
 			transition:scale={{ duration: 130, start: 0.95, opacity: 0 }}
-			class="absolute right-0 top-full mt-2 w-72 origin-top-right bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-30"
+			class="absolute right-0 top-full mt-2 w-72 origin-top-right bg-surface-container rounded-sm shadow-xl p-2 z-30"
 		>
 			<div class="px-2 pt-1 pb-1 text-xs font-medium text-slate-400">Mahnbriefe an Eltern</div>
 			<button

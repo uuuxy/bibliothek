@@ -54,7 +54,7 @@
 <div class="flex flex-col w-full my-4" transition:fade={{ duration: 200 }}>
 	<!-- Drawer Header -->
 	<div
-		class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10 rounded-t-2xl"
+		class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10 rounded-t-3xl"
 	>
 		<h2 class="text-xl font-bold text-slate-900">
 			{formular.id ? 'Buch bearbeiten' : 'Neues Buch'}

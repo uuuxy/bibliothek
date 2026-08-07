@@ -36,7 +36,7 @@
 </script>
 
 <div
-	class="rounded-2xl border px-4 py-3 flex items-center gap-3 transition-colors no-print {stufe ===
+	class="rounded-xl border px-4 py-3 flex items-center gap-3 transition-colors no-print {stufe ===
 	'lieferung'
 		? 'bg-amber-50 border-amber-200'
 		: stufe === 'offen'

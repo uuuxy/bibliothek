@@ -110,7 +110,7 @@
      types with this name exist") — die Typisierung erzeugte zwei neue Fehler statt Sicherheit. -->
 <!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
 {#snippet adminCard(title: string, description: string, iconPath: string, contentSnippet: any)}
-	<div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/70 space-y-6">
+	<div class="bg-white rounded-xl p-8 shadow-sm border border-slate-200/70 space-y-6">
 		<div class="flex items-start gap-4">
 			<div class="p-3 bg-blue-50 text-blue-600 rounded-2xl">
 				<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

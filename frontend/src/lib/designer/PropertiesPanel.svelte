@@ -55,7 +55,7 @@
 </script>
 
 <div
-	class="w-full lg:w-80 bg-white border border-slate-100 p-5 rounded-2xl shadow-xl space-y-5 shrink-0 text-left overflow-y-auto max-h-[80vh]"
+	class="w-full lg:w-80 bg-white border border-slate-100 p-5 rounded-xl shadow-xl space-y-5 shrink-0 text-left overflow-y-auto max-h-[80vh]"
 >
 	{#if !el}
 		<div class="flex flex-col items-center justify-center py-12 text-center gap-3">

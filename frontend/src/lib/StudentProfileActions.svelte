@@ -151,7 +151,7 @@
 						role="menu"
 						tabindex="-1"
 						transition:scale={{ duration: 130, start: 0.95, opacity: 0 }}
-						class="absolute left-0 top-full mt-2 z-30 w-60 origin-top-left rounded-2xl bg-white border border-slate-200 shadow-xl p-1.5"
+						class="absolute left-0 top-full mt-2 z-30 w-60 origin-top-left rounded-sm bg-surface-container shadow-xl p-1.5"
 					>
 						{#each printOptions as opt (opt.side)}
 							{@const Icon = opt.icon}

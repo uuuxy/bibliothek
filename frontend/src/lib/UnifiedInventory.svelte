@@ -168,7 +168,7 @@
 					<h4 class="text-sm font-semibold text-slate-500">Frühere Inventuren</h4>
 					{#each inventoryState.abgeschlosseneInventuren as inventur (inventur.session_id)}
 						<div
-							class="flex items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-lg"
+							class="flex items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-xl"
 						>
 							<div class="min-w-0">
 								<div class="font-semibold text-slate-800 truncate">{inventur.label}</div>
@@ -253,7 +253,7 @@
 					bind:value={inventoryState.barcodeInput}
 					type="text"
 					placeholder="Barcode scannen..."
-					class="h-auto w-full pl-12 pr-4 py-4 bg-white border-2 border-blue-100 rounded-2xl shadow-sm text-lg font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+					class="h-auto w-full pl-12 pr-4 py-4 bg-white border-2 border-blue-100 rounded-xl shadow-sm text-lg font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
 					disabled={inventoryState.isScanning}
 				/>
 				{#if inventoryState.isScanning}

@@ -12,7 +12,7 @@
 	let { onCollapse = null } = $props();
 </script>
 
-<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+<div class="bg-white rounded-xl border border-slate-200/80 shadow-sm">
 	<div class="px-5 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between gap-2">
 		<h2 class="text-lg font-bold text-slate-900 tracking-tight">Deine Bestellung</h2>
 		<div class="flex items-center gap-2 shrink-0">

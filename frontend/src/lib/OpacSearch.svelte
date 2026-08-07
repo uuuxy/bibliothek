@@ -86,7 +86,7 @@
 				bind:value={query}
 				oninput={onInput}
 				placeholder="Titel, Autor oder ISBN eingeben …"
-				class="h-auto w-full pl-12 pr-12 py-4 text-lg border border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-2 focus:ring-slate-300 outline-none transition-shadow"
+				class="h-auto w-full pl-12 pr-12 py-4 text-lg border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-slate-300 outline-none transition-shadow"
 				autofocus
 			/>
 			{#if loading}
@@ -104,7 +104,7 @@
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 				{#each results as book (book.id)}
 					<div
-						class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+						class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col"
 					>
 						<!-- Cover area -->
 						<div

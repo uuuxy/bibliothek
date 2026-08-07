@@ -79,7 +79,7 @@
      Dokumentgliederung" und "mit der Tastatur bedienbar" ist Letzteres wichtiger; die
      Karte IST eine Schaltflaeche, kein eigenstaendiger Artikel. -->
 <div
-	class="bg-white rounded-2xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm cursor-pointer relative"
+	class="bg-white rounded-xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm cursor-pointer relative"
 	role="button"
 	tabindex="0"
 	{onclick}

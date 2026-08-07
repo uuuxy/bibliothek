@@ -76,7 +76,7 @@
 	}}
 >
 	<div
-		class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5"
+		class="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-5"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Klasse zuweisen"

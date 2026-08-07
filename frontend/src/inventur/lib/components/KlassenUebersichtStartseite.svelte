@@ -21,7 +21,7 @@
 </script>
 
 {#each filteredClasses as cls (cls.name)}
-	<section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-6">
+	<section class="bg-white rounded-xl p-6 shadow-sm border border-slate-200 mb-6">
 		<h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-3">
 			{cls.name}
 			<span

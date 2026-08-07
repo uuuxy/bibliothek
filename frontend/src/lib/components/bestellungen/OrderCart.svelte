@@ -71,7 +71,7 @@
 
 					<div class="flex items-center justify-between gap-2 pl-10">
 						<div
-							class="flex items-center border border-slate-200 bg-white rounded-lg overflow-hidden"
+							class="flex items-center border border-slate-200 bg-white rounded-xl overflow-hidden"
 						>
 							<button
 								aria-label="Menge verringern"
