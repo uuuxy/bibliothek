@@ -51,7 +51,7 @@
 					onclick={onLeeren}
 					aria-label="Markierung aufheben"
 					data-tip="Markierung aufheben"
-					class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+					class="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
 				>
 					<X class="h-4 w-4" />
 				</button>

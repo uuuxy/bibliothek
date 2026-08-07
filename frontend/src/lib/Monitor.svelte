@@ -193,7 +193,7 @@
 
 	<!-- Slide label bar -->
 	<div
-		class="bg-slate-800 px-6 py-3 flex items-center justify-between text-xs text-slate-400 font-semibold tracking-wide"
+		class="bg-slate-800 px-6 py-3 flex items-center justify-between text-xs text-slate-300 font-semibold tracking-wide"
 	>
 		<span>{slideLabels[currentSlide]}</span>
 		<span class="text-slate-600">Schulbibliothek</span>

@@ -80,13 +80,40 @@
 	--color-sky-800: #00315e;
 	--color-sky-900: #001c38;
 
-	/* Neutral + Neutral-Variant — Flächen, Text, Linien */
+	/* Neutral + Neutral-Variant — Flächen, Text, Linien
+	 *
+	 * 400 und 500 sind am 07.08.2026 abgedunkelt worden. Grund ist kein Geschmack,
+	 * sondern eine Messung im Browser über zehn Bildschirme: Diese beiden Töne trugen
+	 * fast den gesamten Sekundärtext der Anwendung und lagen dabei UNTER dem
+	 * WCAG-AA-Mindestkontrast von 4,5:1.
+	 *
+	 *   #909094 (400)   2,58–3,18:1   609 Textstellen
+	 *   #72777f (500)   3,66–4,51:1   674 Textstellen
+	 *
+	 * #72777f besteht rechnerisch auf REINEM Weiß (4,51:1) — nur steht in dieser
+	 * Anwendung kaum Text auf reinem Weiß. Auf surface (#faf9fd) sind es 4,30, auf
+	 * surface-container (#f1f0f4) noch 3,97. Die Prüfung gegen Weiß hätte "knapp
+	 * bestanden" gemeldet, während die Oberfläche durchfällt.
+	 *
+	 * Gewählt wurde der HELLSTE Ton, der auf allen Flächen der Anwendung besteht —
+	 * #61666e liefert auf surface-container-highest nur 4,48 und fällt damit knapp durch.
+	 *
+	 * Die Skala statt der Aufrufe: 510 Textstellen wechseln damit in einem Zugriff.
+	 * Zwei Stellen mussten vorher weichen, weil dort HELLER Text auf DUNKLER Fläche
+	 * steht (Monitor-Fußleiste, Auswahlleiste der Schülerdatei) — Abdunkeln hätte sie
+	 * unlesbar gemacht. Sie tragen jetzt slate-300.
+	 *
+	 * Dass 400 damit denselben Wert trägt wie 600, ist Absicht: Material 3 kennt für
+	 * Text auf einer Fläche genau ZWEI Rollen — on-surface und on-surface-variant. Eine
+	 * dritte, hellere Textstufe gab es hier nur, weil die Skala sie hergab; lesbar war
+	 * sie nie. Die M3-Rolle --color-outline (#72777f) bleibt davon unberührt, sie steht
+	 * in rollen.css und gilt weiterhin für Rahmen, wo 3:1 genügt. */
 	--color-slate-50: #faf9fd;
 	--color-slate-100: #f1f0f4;
 	--color-slate-200: #e3e2e6;
 	--color-slate-300: #c2c7cf;
-	--color-slate-400: #909094;
-	--color-slate-500: #72777f;
+	--color-slate-400: #5a5f66;
+	--color-slate-500: #4c5158;
 	--color-slate-600: #5a5f66;
 	--color-slate-700: #42474e;
 	--color-slate-800: #2f3033;
@@ -96,8 +123,8 @@
 	--color-gray-100: #f1f0f4;
 	--color-gray-200: #e3e2e6;
 	--color-gray-300: #c2c7cf;
-	--color-gray-400: #909094;
-	--color-gray-500: #72777f;
+	--color-gray-400: #5a5f66;
+	--color-gray-500: #4c5158;
 	--color-gray-600: #5a5f66;
 	--color-gray-700: #42474e;
 	--color-gray-800: #2f3033;
@@ -106,8 +133,8 @@
 	--color-zinc-100: #f1f0f4;
 	--color-zinc-200: #e3e2e6;
 	--color-zinc-300: #c2c7cf;
-	--color-zinc-400: #909094;
-	--color-zinc-500: #72777f;
+	--color-zinc-400: #5a5f66;
+	--color-zinc-500: #4c5158;
 	--color-zinc-600: #5a5f66;
 	--color-zinc-700: #42474e;
 	--color-zinc-800: #2f3033;

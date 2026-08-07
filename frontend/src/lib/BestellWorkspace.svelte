@@ -155,7 +155,7 @@
 			Klassensatz-Reservierungen
 			{#if uiStore.pendingReservierungen > 0}
 				<span
-					class="min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-500 text-white text-label-small font-bold px-1"
+					class="min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-600 text-white text-label-small font-bold px-1"
 					>{uiStore.pendingReservierungen}</span
 				>
 			{/if}

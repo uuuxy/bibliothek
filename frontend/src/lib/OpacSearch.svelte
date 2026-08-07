@@ -131,7 +131,7 @@
 									</span>
 								{:else}
 									<span
-										class="px-2 py-1 rounded-lg bg-rose-500 text-white text-xs font-bold shadow-sm"
+										class="px-2 py-1 rounded-lg bg-rose-600 text-white text-xs font-bold shadow-sm"
 									>
 										Ausgeliehen
 									</span>
