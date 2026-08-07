@@ -320,7 +320,7 @@ describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
 
 	it('lässt eine angefangene Bestellung unangetastet', async () => {
 		orderStore.selectedSupplierId = 's1';
-		orderStore.cart = [{ id: 'b1', titel: 'Buch', menge: 1, preis: 0 }];
+		orderStore.cart = [/** @type {any} */ ({ id: 'b1', titel: 'Buch', menge: 1, preis: 0 })];
 		await orderStore.loadSuppliers();
 		expect(
 			orderStore.selectedSupplierId,

@@ -119,8 +119,7 @@
 						{/each}
 					</datalist>
 					<p class="text-xs text-slate-500">
-						Erfasst alles, was mit dieser Signatur beginnt — „BIB Deu“ also auch „BIB Deu 5
-						KRÜ“.
+						Erfasst alles, was mit dieser Signatur beginnt — „BIB Deu“ also auch „BIB Deu 5 KRÜ“.
 					</p>
 				</div>
 			{/if}

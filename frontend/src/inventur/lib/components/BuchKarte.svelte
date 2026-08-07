@@ -20,7 +20,7 @@
 	 *     lastCounted: string,
 	 *     medientyp?: string
 	 *   },
-	 *   onclick?: () => void,
+	 *   onclick?: (event: Event) => void,
 	 *   onEditClick?: () => void
 	 * }}
 	 */
@@ -183,7 +183,9 @@
 			<div class="flex flex-wrap gap-1.5 mb-4">
 				{#if book.subject}
 					<span
-						class="{getSubjectColor(book.subject)} text-label-small font-bold px-2 py-0.5 rounded-md"
+						class="{getSubjectColor(
+							book.subject
+						)} text-label-small font-bold px-2 py-0.5 rounded-md"
 					>
 						{book.subject}
 					</span>

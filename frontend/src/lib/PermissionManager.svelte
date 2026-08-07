@@ -191,9 +191,3 @@
 		<UserManagement />
 	{/if}
 </div>
-
-<style>
-	.peer-checked\:bg-blue-600:checked + div {
-		background-color: rgb(37 99 235);
-	}
-</style>

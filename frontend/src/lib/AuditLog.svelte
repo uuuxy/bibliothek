@@ -42,8 +42,8 @@
 		     sucht und nicht findet, schlösse daraus, er sei nie protokolliert worden. -->
 		{#if logs.length >= 1000}
 			<p class="text-xs text-slate-500">
-				Die <strong class="font-semibold">1000</strong> jüngsten Einträge. Ältere Vorgänge sind
-				protokolliert, aber hier nicht sichtbar.
+				Die <strong class="font-semibold">1000</strong> jüngsten Einträge. Ältere Vorgänge sind protokolliert,
+				aber hier nicht sichtbar.
 			</p>
 		{:else}
 			<span></span>

@@ -70,11 +70,9 @@
 		</div>
 
 		{#if gekappt}
-			<p
-				class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2"
-			>
-				Es werden nur die ersten {buecher.length} Titel angezeigt. Grenze die Signatur weiter ein,
-				um den Rest zu sehen.
+			<p class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2">
+				Es werden nur die ersten {buecher.length} Titel angezeigt. Grenze die Signatur weiter ein, um
+				den Rest zu sehen.
 			</p>
 		{/if}
 
@@ -95,9 +93,7 @@
 							class="border-t border-slate-100 hover:bg-slate-50 cursor-pointer"
 							onclick={() => oeffneBuch(buch.titel_id)}
 						>
-							<td class="py-2 pr-3 font-mono whitespace-nowrap text-slate-900"
-								>{buch.signatur}</td
-							>
+							<td class="py-2 pr-3 font-mono whitespace-nowrap text-slate-900">{buch.signatur}</td>
 							<td class="py-2 pr-3 text-slate-900">{buch.titel}</td>
 							<td class="py-2 pr-3 text-slate-600">{buch.autor || '—'}</td>
 							<td class="py-2 pr-3 text-right text-slate-700">{buch.exemplare}</td>

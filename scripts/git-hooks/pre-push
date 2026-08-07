@@ -15,7 +15,7 @@ echo "🛡️ PRE-PUSH HOOK: Starte Tests & Security-Scans..."
 echo "======================================================"
 
 # 1. Go Tests
-echo "[1/5] Führe Go Tests aus..."
+echo "[1/6] Führe Go Tests aus..."
 if go test ./...; then
     echo -e "${GREEN}✓ Go Tests bestanden.${NC}"
 else
@@ -23,8 +23,22 @@ else
     exit 1
 fi
 
-# 2. npm audit (Frontend Dependency Security)
-echo "[2/5] Führe npm audit (Frontend) aus..."
+# 2. Typpruefung Frontend (svelte-check)
+# jsconfig.json setzt checkJs, und 200 von 256 Dateien tragen JSDoc-Typen — bis zum
+# 07.08.2026 hat die aber NIEMAND geprueft. Der erste Lauf fand 64 Meldungen, darunter
+# einen Typ, der seit Migration 066 falsch war (Supplier ohne ist_hauptlieferant).
+echo "[2/6] Führe svelte-check (Frontend-Typen) aus..."
+cd frontend || exit 1
+if npm run --silent check; then
+    echo -e "${GREEN}✓ svelte-check bestanden.${NC}"
+else
+    echo -e "${RED}✗ svelte-check fehlgeschlagen! Push abgebrochen.${NC}"
+    exit 1
+fi
+cd ..
+
+# 3. npm audit (Frontend Dependency Security)
+echo "[3/6] Führe npm audit (Frontend) aus..."
 cd frontend || exit 1
 if npm audit; then
     echo -e "${GREEN}✓ npm audit bestanden.${NC}"
@@ -33,8 +47,8 @@ else
 fi
 cd ..
 
-# 3. govulncheck (Backend Dependency Security)
-echo "[3/5] Führe govulncheck (Backend) aus..."
+# 4. govulncheck (Backend Dependency Security)
+echo "[4/6] Führe govulncheck (Backend) aus..."
 if command -v govulncheck &> /dev/null; then
     if govulncheck ./...; then
         echo -e "${GREEN}✓ govulncheck bestanden.${NC}"
@@ -46,8 +60,8 @@ else
     echo -e "${YELLOW}⚠ govulncheck nicht installiert. Überspringe Scan. (go install golang.org/x/vuln/cmd/govulncheck@latest)${NC}"
 fi
 
-# 4. Trivy (Container Security)
-echo "[4/5] Führe Trivy (Container) aus..."
+# 5. Trivy (Container Security)
+echo "[5/6] Führe Trivy (Container) aus..."
 if command -v trivy &> /dev/null; then
     if [ -f "Dockerfile" ]; then
         if trivy config Dockerfile; then
@@ -63,9 +77,9 @@ else
     echo -e "${YELLOW}⚠ trivy nicht installiert. Überspringe Scan.${NC}"
 fi
 
-# 5. deadcode (unerreichbarer Code)
+# 6. deadcode (unerreichbarer Code)
 # Logik in scripts/deadcode_gate.sh — dort steht auch, warum es dieses Gate gibt.
-echo "[5/5] Führe deadcode (unerreichbarer Code) aus..."
+echo "[6/6] Führe deadcode (unerreichbarer Code) aus..."
 if ./scripts/deadcode_gate.sh; then
     echo -e "${GREEN}✓ deadcode: kein unerreichbarer Code.${NC}"
 else

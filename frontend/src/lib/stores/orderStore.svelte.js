@@ -6,7 +6,7 @@
 import { apiGet, apiPost, apiPut, apiDelete } from '../apiFetch.js';
 import { toastStore } from './toastStore.svelte.js';
 
-/** @typedef {{ id: string, name: string, email: string, customerNumber: string }} Supplier */
+/** @typedef {{ id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean }} Supplier */
 /** @typedef {{ id: string, titel: string, autor: string, isbn: string, verlag: string, cover_url: string, menge: number, preis: number, preis_vorschlag: number, generate_barcodes: boolean }} CartItem */
 
 class OrderStore {

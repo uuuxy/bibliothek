@@ -92,11 +92,7 @@
 			<!-- Vorher ein peer-checked-Nachbau OHNE zugänglichen Namen: Der Screenreader las
 			     „Kontrollkästchen", die danebenstehende Erklärung gehörte niemandem. -->
 			<div class="flex items-center gap-3 py-1.5">
-				<Switch
-					id="benutzer-aktiv"
-					bind:checked={userForm.aktiv}
-					label="Benutzerkonto ist aktiv"
-				/>
+				<Switch id="benutzer-aktiv" bind:checked={userForm.aktiv} label="Benutzerkonto ist aktiv" />
 				<label for="benutzer-aktiv" class="cursor-pointer text-xs font-bold text-slate-600">
 					Benutzerkonto ist aktiv
 				</label>

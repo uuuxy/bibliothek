@@ -13,11 +13,7 @@
 		onsubmit={(e) => authStore.handleLogin(e, undefined)}
 		class="w-full max-w-md p-8 rounded-3xl bg-white border border-slate-100 shadow-xl flex flex-col items-center space-y-6 animate-fade-in no-print"
 	>
-		<img
-			src={logoUrl}
-			alt="Bibliosys Logo"
-			class="w-24 h-24 object-contain"
-		/>
+		<img src={logoUrl} alt="Bibliosys Logo" class="w-24 h-24 object-contain" />
 		<div class="text-center space-y-1.5">
 			<h2 class="text-base font-bold text-slate-800">Webmail-Login erforderlich</h2>
 			<p class="text-xs text-slate-400 font-medium">

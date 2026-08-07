@@ -17,7 +17,7 @@
 	 *     coverUrl: string
 	 *   },
 	 *   getStockColor: (stock: number) => string,
-	 *   onclick?: () => void
+	 *   onclick?: (event: Event) => void
 	 * }}
 	 */
 	let { book, getStockColor, onclick } = $props();

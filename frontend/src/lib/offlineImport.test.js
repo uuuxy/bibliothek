@@ -30,10 +30,14 @@ vi.mock('./apiFetch.js', () => ({
 
 /** Sicherungsdatei, wie exportQueueAsJSON sie schreibt: die rohen Queue-Objekte. */
 function sicherungsdatei(items) {
-	return {
-		name: 'offline_scans_backup_2026-07-29.json',
-		text: () => Promise.resolve(JSON.stringify(items))
-	};
+	// Absichtlich nur die zwei Felder, die der Import liest (name, text) — ein echtes
+	// File nachzubauen braucht acht weitere, die hier nichts pruefen wuerden.
+	return /** @type {File} */ (
+		/** @type {unknown} */ ({
+			name: 'offline_scans_backup_2026-07-29.json',
+			text: () => Promise.resolve(JSON.stringify(items))
+		})
+	);
 }
 
 describe('Einspielen einer Offline-Sicherung', () => {

@@ -57,10 +57,10 @@
 	let suchbegriff = $state('');
 
 	const fachOptionen = $derived(
-		[...new Set(items.map((i) => i.fachbereich).filter(Boolean))].sort()
+		[...new Set(items.map((i) => i.fachbereich).filter((v) => v !== undefined))].sort()
 	);
 	const systematikOptionen = $derived(
-		[...new Set(items.map((i) => i.systematik).filter(Boolean))].sort()
+		[...new Set(items.map((i) => i.systematik).filter((v) => v !== undefined))].sort()
 	);
 
 	const gefiltert = $derived(

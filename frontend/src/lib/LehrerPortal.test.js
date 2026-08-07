@@ -17,7 +17,6 @@ vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
  */
 const TITEL = 'Seydlitz Geographie';
 
-/** @param {any} body */
 function suchtreffer() {
 	return {
 		ok: true,
@@ -39,10 +38,13 @@ async function sucheUndOeffneFormular(screen) {
 describe('LehrerPortal', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
-		vi.mocked(apiFetch).mockImplementation(async (/** @type {string} */ url) =>
-			url.startsWith('/api/search')
-				? suchtreffer()
-				: { ok: true, text: async () => '', json: async () => ({}) }
+		vi.mocked(apiFetch).mockImplementation(
+			/** @type {any} */ (
+				async (/** @type {string} */ url) =>
+					url.startsWith('/api/search')
+						? suchtreffer()
+						: { ok: true, text: async () => '', json: async () => ({}) }
+			)
 		);
 	});
 
@@ -62,10 +64,13 @@ describe('LehrerPortal', () => {
 	});
 
 	it('meldet einen abgelehnten Versuch und blockiert den Knopf nicht', async () => {
-		vi.mocked(apiFetch).mockImplementation(async (/** @type {string} */ url) =>
-			url.startsWith('/api/search')
-				? suchtreffer()
-				: { ok: false, text: async () => 'Titel ist gesperrt.' }
+		vi.mocked(apiFetch).mockImplementation(
+			/** @type {any} */ (
+				async (/** @type {string} */ url) =>
+					url.startsWith('/api/search')
+						? suchtreffer()
+						: { ok: false, text: async () => 'Titel ist gesperrt.' }
+			)
 		);
 
 		const screen = render(LehrerPortal, { user: { klasse: '' } });

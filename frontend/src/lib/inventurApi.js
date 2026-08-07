@@ -12,7 +12,12 @@ async function auswerten(res) {
 	const body = await res.json().catch(() => ({}));
 	// `data` wird auch im Fehlerfall durchgereicht, damit der Hook strukturierte 409-Antworten
 	// (z. B. "ausser_scope" mit Titel + Warntext) auswerten kann, ohne HTTP-Details zu kennen.
-	return { ok: false, status: res.status, error: body.error || body.message || 'Unbekannter Fehler', data: body };
+	return {
+		ok: false,
+		status: res.status,
+		error: body.error || body.message || 'Unbekannter Fehler',
+		data: body
+	};
 }
 
 /** Laufende Sessions laden (für die "bereits laufend"-Anzeige). */
@@ -61,7 +66,12 @@ export function deuteScanErgebnis(r, barcode) {
 	if (r.ok) {
 		return {
 			zaehlen: true,
-			lastScan: { success: true, barcode: r.data.barcode_id, title: r.data.titel, warnings: r.data.warnungen || [] }
+			lastScan: {
+				success: true,
+				barcode: r.data.barcode_id,
+				title: r.data.titel,
+				warnings: r.data.warnungen || []
+			}
 		};
 	}
 	if (r.status === 409 && r.data?.status === 'ausser_scope') {
@@ -71,11 +81,16 @@ export function deuteScanErgebnis(r, barcode) {
 				success: true,
 				barcode: r.data.barcode_id || barcode,
 				title: r.data.titel || 'Buch',
-				warnings: r.data.warnungen?.length ? r.data.warnungen : ['Buch gehört nicht zum Scope dieser Inventur.']
+				warnings: r.data.warnungen?.length
+					? r.data.warnungen
+					: ['Buch gehört nicht zum Scope dieser Inventur.']
 			}
 		};
 	}
-	return { zaehlen: false, lastScan: { success: false, barcode, title: 'Unbekanntes Buch', warnings: [r.error] } };
+	return {
+		zaehlen: false,
+		lastScan: { success: false, barcode, title: 'Unbekanntes Buch', warnings: [r.error] }
+	};
 }
 
 /** @param {string} sessionId */
@@ -108,7 +123,9 @@ export async function ladeAbgeschlosseneInventuren() {
  * @param {string} sessionId
  */
 export async function ladeFehlbestand(sessionId) {
-	const res = await apiFetch(`/api/inventur/fehlbestand?session_id=${encodeURIComponent(sessionId)}`);
+	const res = await apiFetch(
+		`/api/inventur/fehlbestand?session_id=${encodeURIComponent(sessionId)}`
+	);
 	return auswerten(res);
 }
 

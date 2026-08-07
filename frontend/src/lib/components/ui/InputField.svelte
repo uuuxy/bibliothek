@@ -6,7 +6,7 @@
 	 * @property {string} [type] - HTML input type (e.g. text, date, number, email).
 	 * @property {string|number} value - The bound value.
 	 * @property {string} [placeholder] - Placeholder text.
-	 * @property {string|null} [maxlength] - Maximum string length.
+	 * @property {number|null} [maxlength] - Maximum string length (HTML-Attribut, Zahl).
 	 * @property {string} [extraClasses] - Additional utility classes for the input field.
 	 */
 

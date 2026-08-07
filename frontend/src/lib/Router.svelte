@@ -173,7 +173,7 @@
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
 			<Omnibox onSelectBook={handleSelectBook} role={authStore.currentUser?.rolle} />
 		</div>
-<!-- Der Zweig activeTab === 'books' ist entfallen: Ihn hat nie jemand gesetzt (kein
+		<!-- Der Zweig activeTab === 'books' ist entfallen: Ihn hat nie jemand gesetzt (kein
      tabToPath-Eintrag, kein Menüpunkt, keine Zuweisung im Code). Er war seit Langem
      unerreichbar und hielt BookDetails samt uiStore.selectedBook künstlich am Leben —
      die Buchansicht läuft über 'book_detail' und appState.activeBookId.

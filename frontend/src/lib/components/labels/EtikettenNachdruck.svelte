@@ -157,10 +157,7 @@
 			const daten = await apiPost('/api/exemplare/etiketten-zuruecksetzen', {
 				barcode_ids: barcodes
 			});
-			toastStore.addToast(
-				`${daten?.zurueckgesetzt ?? 0} wieder als offen vermerkt.`,
-				'success'
-			);
+			toastStore.addToast(`${daten?.zurueckgesetzt ?? 0} wieder als offen vermerkt.`, 'success');
 			await laden();
 		} catch {
 			toastStore.addToast('Zurücksetzen nicht möglich.', 'error');

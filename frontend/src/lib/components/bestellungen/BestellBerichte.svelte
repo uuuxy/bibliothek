@@ -8,7 +8,7 @@
 	let { suppliers = [] } = $props();
 
 	/** @type {"monat" | "jahr" | "lieferant"} */
-	let typ = $state('monat');
+	let typ = $state(/** @type {'monat' | 'jahr' | 'lieferant'} */ ('monat'));
 
 	const now = new Date();
 

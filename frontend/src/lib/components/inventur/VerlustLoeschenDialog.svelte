@@ -20,9 +20,9 @@
 	<div class="p-6 space-y-4">
 		<p class="text-sm text-slate-600">
 			{anzahl}
-			{anzahl === 1 ? 'Exemplar wird' : 'Exemplare werden'} unwiderruflich aus dem Katalog entfernt.
-			Der Fehlbestandsbericht selbst bleibt erhalten — nur die Datensätze der Exemplare sind danach
-			weg, das lässt sich nicht rückgängig machen.
+			{anzahl === 1 ? 'Exemplar wird' : 'Exemplare werden'} unwiderruflich aus dem Katalog entfernt. Der
+			Fehlbestandsbericht selbst bleibt erhalten — nur die Datensätze der Exemplare sind danach weg, das
+			lässt sich nicht rückgängig machen.
 		</p>
 		<div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
 			<Button variant="secondary" onclick={onClose} disabled={laeuft}>Abbrechen</Button>

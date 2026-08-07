@@ -65,10 +65,7 @@ describe('sortBooksBySubjectAndTitle', () => {
 	});
 
 	it('handles missing or undefined subjects gracefully', () => {
-		const books = [
-			{ title: 'Z Ohne Fach' },
-			{ subject: 'Mathe', title: 'A Mathe' }
-		];
+		const books = [{ title: 'Z Ohne Fach' }, { subject: 'Mathe', title: 'A Mathe' }];
 
 		const sorted = [...books].sort(sortBooksBySubjectAndTitle);
 

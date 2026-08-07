@@ -100,7 +100,12 @@
 					}}
 				/>
 				<div class="mt-1 flex gap-2">
-					<Button variant="secondary" size="sm" onclick={generateInternalId} class="text-label-small">
+					<Button
+						variant="secondary"
+						size="sm"
+						onclick={generateInternalId}
+						class="text-label-small"
+					>
 						Interne ID generieren
 					</Button>
 					<Button size="sm" onclick={saveBarcode} class="text-label-small">Speichern</Button>

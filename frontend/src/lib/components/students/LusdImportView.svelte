@@ -13,13 +13,13 @@
 	/** @type {{ onImported?: (result: LusdPreviewResult) => void }} */
 	let { onImported = () => {} } = $props();
 
-	/** @type {File | null} */ let selectedFile = $state(null);
-	/** @type {'upload' | 'preview' | 'done'} */ let stage = $state('upload');
+	let selectedFile = $state(/** @type {File | null} */ (null));
+	let stage = $state(/** @type {'upload' | 'preview' | 'done'} */ ('upload'));
 	let previewLoading = $state(false);
 	let importLoading = $state(false);
-	/** @type {LusdPreviewResult | null} */ let previewResult = $state(null);
-	/** @type {LusdPreviewResult | null} */ let importResult = $state(null);
-	/** @type {string | null} */ let errorMessage = $state(null);
+	let previewResult = $state(/** @type {LusdPreviewResult | null} */ (null));
+	let importResult = $state(/** @type {LusdPreviewResult | null} */ (null));
+	let errorMessage = $state(/** @type {string | null} */ (null));
 
 	const activeResult = $derived(stage === 'done' ? importResult : previewResult);
 	const summaryRows = $derived(

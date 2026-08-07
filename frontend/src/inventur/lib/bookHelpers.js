@@ -20,11 +20,11 @@ export const subjectColors = {
 };
 
 /**
- * @param {string} subject
+ * @param {string | null | undefined} subject
  * @returns {string}
  */
 export function getSubjectColor(subject) {
-	if (subject in subjectColors) {
+	if (subject && subject in subjectColors) {
 		return subjectColors[/** @type {keyof typeof subjectColors} */ (subject)];
 	}
 	return 'bg-slate-50 border border-slate-200 text-slate-600';
@@ -41,7 +41,7 @@ export function getStockDotColor(verfuegbar) {
 }
 
 /**
- * @param {string} subject
+ * @param {string | null | undefined} subject
  * @returns {string}
  */
 export function getSubjectGradient(subject) {
@@ -81,7 +81,7 @@ export function getSubjectGradient(subject) {
 }
 
 /**
- * @param {string} subject
+ * @param {string | null | undefined} subject
  * @returns {string}
  */
 export function getSpineGradient(subject) {
@@ -117,7 +117,7 @@ export function getSpineGradient(subject) {
 }
 
 /**
- * @param {string} dateString
+ * @param {string | null | undefined} dateString
  * @returns {string|null}
  */
 export function formatDate(dateString) {

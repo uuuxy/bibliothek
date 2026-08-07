@@ -18,8 +18,7 @@ export function backupMessage(s) {
 	if (!s.last_backup_at) return 'Noch kein Backup vorhanden';
 	// Nur melden, wenn die Sicherungen ansonsten laufen — steht der Job still, ist das
 	// die dringendere Nachricht und sie hat Vorrang (Alters-Zweige weiter unten).
-	if (s.encryption_key_weak && s.status === 'warning')
-		return 'Backup-Schlüssel zu kurz';
+	if (s.encryption_key_weak && s.status === 'warning') return 'Backup-Schlüssel zu kurz';
 
 	const lastMs = Date.parse(s.last_backup_at);
 	if (Number.isNaN(lastMs)) return 'Backup-Zeitpunkt unlesbar';

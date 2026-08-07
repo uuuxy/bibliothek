@@ -83,7 +83,8 @@ describe('Routing-Konsistenz (activeTab ↔ Router)', () => {
 
 	it('Checker meldet einen unbehandelten Tab (Negativ-Beweis)', () => {
 		const { unrenderable } = findUnrenderableTabs({
-			routerSrc: "uiStore.activeTab === 'a'\nuiStore.activeTab === 'b'\nconst tabToPath = { a: '/a' };",
+			routerSrc:
+				"uiStore.activeTab === 'a'\nuiStore.activeTab === 'b'\nconst tabToPath = { a: '/a' };",
 			menuSrc: "{ id: 'b' }",
 			assignmentSrcs: ["uiStore.activeTab = 'ghost'"]
 		});

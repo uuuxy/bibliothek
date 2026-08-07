@@ -77,9 +77,9 @@
 		<p class="flex items-start gap-1.5 text-xs leading-relaxed text-amber-700">
 			<AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 			<span>
-				Aus der Klasse {klasse ? `„${klasse}“` : ''} lässt sich kein Ablaufjahr ableiten — bitte
-				eintragen. Geraten wird hier nichts: Ein falsches Datum fällt erst auf, wenn die Karte an
-				der Ausleihe abgewiesen wird.
+				Aus der Klasse {klasse ? `„${klasse}“` : ''} lässt sich kein Ablaufjahr ableiten — bitte eintragen.
+				Geraten wird hier nichts: Ein falsches Datum fällt erst auf, wenn die Karte an der Ausleihe abgewiesen
+				wird.
 			</span>
 		</p>
 	{:else if abweichend}

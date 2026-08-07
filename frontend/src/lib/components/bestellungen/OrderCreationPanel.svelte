@@ -16,7 +16,9 @@
 	<div class="px-5 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between gap-2">
 		<h2 class="text-lg font-bold text-slate-900 tracking-tight">Deine Bestellung</h2>
 		<div class="flex items-center gap-2 shrink-0">
-			<span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium">Entwurf</span>
+			<span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium"
+				>Entwurf</span
+			>
 			{#if onCollapse}
 				<!-- Der Knopf sitzt IN der Kopfzeile, nicht darüber im Leerraum: Ein Bedienelement
 				     muss sichtbar zu dem gehören, was es bedient. -->

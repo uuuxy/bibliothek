@@ -103,6 +103,8 @@ describe('KlassenVersandDialog', () => {
 		await rerender({ open: true });
 
 		expect(beschriftung(senden(getByRole))).toBe('3 Klassen anmahnen');
-		expect(getByLabelText(/Alternative Empfänger/).value).toBe('');
+		expect(/** @type {HTMLInputElement} */ (getByLabelText(/Alternative Empfänger/)).value).toBe(
+			''
+		);
 	});
 });

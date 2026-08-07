@@ -11,7 +11,10 @@
 	let mahnlaufOffen = $state(false);
 
 	let countAlle = $derived(
-		mahnwesenStore.klassen.reduce((/** @type {number} */ sum, /** @type {any} */ k) => sum + k.schueler.length, 0)
+		mahnwesenStore.klassen.reduce(
+			(/** @type {number} */ sum, /** @type {any} */ k) => sum + k.schueler.length,
+			0
+		)
 	);
 </script>
 
@@ -175,4 +178,3 @@
 	<MahnwesenTabs />
 	<MahnwesenSuchleiste />
 {/if}
-

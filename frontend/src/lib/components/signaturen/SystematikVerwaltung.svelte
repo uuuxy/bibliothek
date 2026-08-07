@@ -112,8 +112,8 @@
 	<div>
 		<h2 class="font-bold text-slate-900">Sachgruppen</h2>
 		<p class="text-sm text-slate-500 mt-0.5">
-			Das Vokabular, aus dem das Buchformular die Signatur vorschlägt — aus „Deu“ wird
-			„BIB Deu“ bzw. „LMF Deu“.
+			Das Vokabular, aus dem das Buchformular die Signatur vorschlägt — aus „Deu“ wird „BIB Deu“
+			bzw. „LMF Deu“.
 		</p>
 	</div>
 
@@ -151,8 +151,8 @@
 		<p class="text-sm text-slate-500">Wird geladen …</p>
 	{:else if liste.length === 0}
 		<p class="text-sm text-slate-500">
-			Noch keine Sachgruppen. Ohne sie schlägt das Buchformular nur „BIB“ bzw. „LMF“ ohne
-			Fachkürzel vor.
+			Noch keine Sachgruppen. Ohne sie schlägt das Buchformular nur „BIB“ bzw. „LMF“ ohne Fachkürzel
+			vor.
 		</p>
 	{:else}
 		<div class="overflow-x-auto">

@@ -165,8 +165,8 @@
 						text-anchor="end"
 						dominant-baseline="middle"
 						class="fill-slate-400"
-						style="font-size:11px"
-						font-variant-numeric="tabular-nums">{t.val.toLocaleString('de-DE')}</text
+						style="font-size:11px; font-variant-numeric:tabular-nums"
+						>{t.val.toLocaleString('de-DE')}</text
 					>
 				{/each}
 

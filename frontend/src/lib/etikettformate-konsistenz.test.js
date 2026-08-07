@@ -21,7 +21,10 @@ const libDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(libDir, '..', '..', '..');
 
 const goQuelle = readFileSync(join(repoRoot, 'api', 'label_formats.go'), 'utf8');
-const optionenQuelle = readFileSync(join(libDir, 'components', 'labels', 'LabelLayoutOptionen.svelte'), 'utf8');
+const optionenQuelle = readFileSync(
+	join(libDir, 'components', 'labels', 'LabelLayoutOptionen.svelte'),
+	'utf8'
+);
 const storeQuelle = readFileSync(join(libDir, 'stores', 'labels.svelte.js'), 'utf8');
 
 /**
@@ -66,9 +69,10 @@ describe('Etikettenformate: Go-Liste und Oberfläche', () => {
 		for (const id of angeboten) {
 			// BARCODE_AUSGABE steht in derselben Datei; deren Werte sind keine Raster.
 			if (id === 'code39' || id === 'qr') continue;
-			expect(ids, `LabelLayoutOptionen.svelte bietet ${id} an, das Backend kennt es nicht`).toContain(
-				id
-			);
+			expect(
+				ids,
+				`LabelLayoutOptionen.svelte bietet ${id} an, das Backend kennt es nicht`
+			).toContain(id);
 		}
 	});
 

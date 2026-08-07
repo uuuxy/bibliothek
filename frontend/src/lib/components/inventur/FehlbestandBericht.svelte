@@ -78,8 +78,8 @@
 				</h2>
 				<p class="mt-0.5 text-sm text-slate-600">
 					{eintraege.length}
-					{eintraege.length === 1 ? 'Exemplar wurde' : 'Exemplare wurden'} als Verlust gebucht. Die
-					Liste ist nach Signatur sortiert — in der Reihenfolge lässt sich das Regal absuchen.
+					{eintraege.length === 1 ? 'Exemplar wurde' : 'Exemplare wurden'} als Verlust gebucht. Die Liste
+					ist nach Signatur sortiert — in der Reihenfolge lässt sich das Regal absuchen.
 					{#if offene.length !== eintraege.length}
 						<span class="font-medium text-emerald-700">
 							{eintraege.length - offene.length} bereits geklärt.
@@ -100,7 +100,12 @@
 					{offene.length} endgültig löschen
 				</Button>
 			{/if}
-			<Button variant="secondary" size="sm" onclick={drucken} data-tip="Liste zum Nachsuchen ausdrucken">
+			<Button
+				variant="secondary"
+				size="sm"
+				onclick={drucken}
+				data-tip="Liste zum Nachsuchen ausdrucken"
+			>
 				<Printer class="h-4 w-4" aria-hidden="true" />
 				Drucken
 			</Button>

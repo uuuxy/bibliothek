@@ -19,6 +19,7 @@
 	// BEWUSST NICHT: Das sind Arbeitskopien im Editor. Als $derived wuerde jede
 	// Aenderung an ex die Eingabe des Benutzers ueberschreiben — genau das, was ein
 	// Formular nicht tun darf. Einmal aus dem Prop befuellen ist hier richtig.
+	// svelte-ignore state_referenced_locally
 	let editStatusType = $state(
 		ex.ist_ausleihbar
 			? 'Verfügbar'
@@ -27,6 +28,7 @@
 				? 'Verloren'
 				: 'Gesperrt (Defekt/Reserviert)'
 	);
+	// svelte-ignore state_referenced_locally
 	let editStatusNote = $state(ex.zustand_notiz || '');
 	let statusError = $state('');
 

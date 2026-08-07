@@ -134,7 +134,7 @@
 {/snippet}
 
 <!-- KPI-Kachel: Zahl groß und dünn, Label winzig und fett (Material-3-Typografie). -->
-{#snippet kpi(label, value, hint, valueClass, status = null)}
+{#snippet kpi(label, value, hint, valueClass, status = /** @type {'warn' | null} */ (null))}
 	<div
 		class="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 flex flex-col justify-between gap-3 text-left"
 	>

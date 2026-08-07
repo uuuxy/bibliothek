@@ -16,14 +16,21 @@
 	import { berechneBox } from './selectGeometrie.js';
 
 	/**
+	 * `class` ERSETZT die Standardbreite w-full — sonst entschiede die
+	 * Stylesheet-Reihenfolge über die Breite, nicht der Aufruf.
+	 *
+	 * ACHTUNG, keine `//`-Kommentare in den Objekttyp schreiben: Der JSDoc-Parser
+	 * bricht dort ab. Genau das ist hier passiert — `aria-label` und `onchange`
+	 * standen HINTER einem solchen Kommentar und waren deshalb nie Teil des Typs,
+	 * also war jeder Aufruf, der sie übergibt, ein Fehler (14 Stück in 9 Dateien).
+	 *
 	 * @type {{
 	 *   value?: any,
 	 *   options?: Array<{ value: any, label: string, disabled?: boolean }>,
 	 *   id?: string,
 	 *   disabled?: boolean,
 	 *   placeholder?: string,
-	 *   class?: string, // ERSETZT die Standardbreite w-full (sonst entschiede die
-	 *                   // Stylesheet-Reihenfolge über die Breite, nicht der Aufruf)
+	 *   class?: string,
 	 *   'aria-label'?: string,
 	 *   onchange?: (wert: any) => void
 	 * }}

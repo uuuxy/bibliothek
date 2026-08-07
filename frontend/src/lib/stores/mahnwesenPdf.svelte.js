@@ -34,7 +34,10 @@ export function useMahnwesenPdf() {
 			}
 
 			if (ausleihIds.length === 0) {
-				toastStore.addToast('Keine überfälligen Medien für die ausgewählten Schüler gefunden.', 'info');
+				toastStore.addToast(
+					'Keine überfälligen Medien für die ausgewählten Schüler gefunden.',
+					'info'
+				);
 				return;
 			}
 

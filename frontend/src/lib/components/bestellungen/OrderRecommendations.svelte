@@ -32,8 +32,11 @@
 
 	// Nach einem Datenwechsel (z. B. Wareneingang) oder neuem Filter wieder von vorn.
 	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		(recommendations, filter);
+		// Nur gelesen, um die Abhaengigkeit herzustellen: Aendert sich die Liste oder der
+		// Filter, faengt die Anzeige wieder bei 60 Eintraegen an. `void` statt des
+		// Komma-Operators — den meldet die Typpruefung als wirkungslosen Ausdruck.
+		void recommendations;
+		void filter;
 		maxVisible = 60;
 	});
 

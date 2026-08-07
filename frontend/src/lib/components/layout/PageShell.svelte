@@ -18,8 +18,10 @@
 		titel = '',
 		/** Eine Zeile, die sagt, was die Seite zeigt. Nur zusammen mit `titel`. */
 		beschreibung = '',
-		/** Aktionen rechts im Kopf (Snippet). */
-		aktionen,
+		/** Aktionen rechts im Kopf (Snippet). Ohne Vorgabewert haelt die Typpruefung ein
+		 *  Snippet-Prop fuer PFLICHT — acht Seiten meldeten daraufhin "Property 'aktionen'
+		 *  is missing", obwohl der Kopf optional ist. */
+		aktionen = undefined,
 		/** 'voll' fuer Tabellen und Listen, 'inhalt' fuer Formulare und Detailseiten. */
 		breite = 'voll',
 		children

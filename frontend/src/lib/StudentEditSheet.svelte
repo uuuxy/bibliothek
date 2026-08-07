@@ -209,7 +209,7 @@
 					label="PLZ"
 					bind:value={formData.plz}
 					placeholder="12345"
-					maxlength="5"
+					maxlength={5}
 					extraClasses="font-mono"
 				/>
 				<InputField id="ort" label="Ort" bind:value={formData.ort} placeholder="Musterstadt" />

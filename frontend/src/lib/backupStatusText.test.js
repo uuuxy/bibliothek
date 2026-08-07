@@ -25,15 +25,15 @@ describe('backupMessage', () => {
 	});
 
 	it('nennt den fehlenden Schlüssel zuerst — ohne ihn läuft gar kein Backup', () => {
-		expect(backupMessage({ last_backup_at: null, encryption_key_set: false, status: 'critical' })).toBe(
-			'Backup-Verschlüsselungs-Key fehlt'
-		);
+		expect(
+			backupMessage({ last_backup_at: null, encryption_key_set: false, status: 'critical' })
+		).toBe('Backup-Verschlüsselungs-Key fehlt');
 	});
 
 	it('unterscheidet „noch nie" von „veraltet"', () => {
-		expect(backupMessage({ last_backup_at: null, encryption_key_set: true, status: 'critical' })).toBe(
-			'Noch kein Backup vorhanden'
-		);
+		expect(
+			backupMessage({ last_backup_at: null, encryption_key_set: true, status: 'critical' })
+		).toBe('Noch kein Backup vorhanden');
 	});
 
 	it('gibt einen unlesbaren Zeitpunkt zu, statt ihn zu verschlucken', () => {
@@ -43,7 +43,9 @@ describe('backupMessage', () => {
 	it('sagt „heute" für eine Sicherung vom selben Tag', () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date('2026-07-30T18:00:00'));
-		expect(backupMessage(status('2026-07-30T02:30:00'))).toMatch(/^Letztes Backup: heute \d{2}:\d{2}$/);
+		expect(backupMessage(status('2026-07-30T02:30:00'))).toMatch(
+			/^Letztes Backup: heute \d{2}:\d{2}$/
+		);
 	});
 
 	it('nennt bei älteren Sicherungen das Datum', () => {
@@ -84,7 +86,11 @@ describe('backupMessage', () => {
 describe('backupHint', () => {
 	it('gibt zu jeder Störung einen nächsten Schritt', () => {
 		const faelle = [
-			{ last_backup_at: null, encryption_key_set: false, status: /** @type {const} */ ('critical') },
+			{
+				last_backup_at: null,
+				encryption_key_set: false,
+				status: /** @type {const} */ ('critical')
+			},
 			{ last_backup_at: null, encryption_key_set: true, status: /** @type {const} */ ('critical') },
 			status('2026-07-01T02:00:00', 'warning')
 		];

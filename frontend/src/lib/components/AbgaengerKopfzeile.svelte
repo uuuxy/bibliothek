@@ -51,7 +51,12 @@
 	{/if}
 
 	<div class="flex items-center space-x-4 shrink-0">
-		<Button variant="secondary" onclick={onDrucken} disabled={druckLaeuft || gesamt === 0} class="no-print">
+		<Button
+			variant="secondary"
+			onclick={onDrucken}
+			disabled={druckLaeuft || gesamt === 0}
+			class="no-print"
+		>
 			{#if druckLaeuft}
 				<div
 					class="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"

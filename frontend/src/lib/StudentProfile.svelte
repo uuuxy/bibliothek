@@ -75,7 +75,9 @@
 			gueltigBisOverride = null;
 		}
 	});
-	const gueltigBisEffektiv = $derived(gueltigBisOverride ?? st.profile?.ausweis_gueltig_bis ?? null);
+	const gueltigBisEffektiv = $derived(
+		gueltigBisOverride ?? st.profile?.ausweis_gueltig_bis ?? null
+	);
 
 	/** @param {'front'|'back'|'both'} [side] Zu druckende Ausweisseite(n). */
 	function printCard(side = 'both') {

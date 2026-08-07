@@ -14,7 +14,7 @@
 			label: `${s.kuerzel} - ${s.bezeichnung}`
 		}))
 	]);
-	const klassen = klassenStufen.map((/** @type {string} */ k) => ({ value: k, label: k }));
+	const klassen = klassenStufen.map((/** @type {number} */ k) => ({ value: k, label: String(k) }));
 	const zweige = schulZweige.map((/** @type {string} */ z) => ({ value: z, label: z }));
 </script>
 

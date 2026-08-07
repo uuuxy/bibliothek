@@ -11,11 +11,15 @@ describe('bookHelpers', () => {
 	describe('getSubjectColor', () => {
 		it('returns correct color for known subject', () => {
 			expect(getSubjectColor('Mathe')).toBe('bg-blue-50 border border-blue-200 text-blue-700');
-			expect(getSubjectColor('Biologie')).toBe('bg-green-50 border border-green-200 text-green-700');
+			expect(getSubjectColor('Biologie')).toBe(
+				'bg-green-50 border border-green-200 text-green-700'
+			);
 		});
 
 		it('returns default color for unknown subject', () => {
-			expect(getSubjectColor('Unbekannt')).toBe('bg-slate-50 border border-slate-200 text-slate-600');
+			expect(getSubjectColor('Unbekannt')).toBe(
+				'bg-slate-50 border border-slate-200 text-slate-600'
+			);
 		});
 
 		it('returns default color for empty or undefined subject', () => {
@@ -42,7 +46,8 @@ describe('bookHelpers', () => {
 
 	describe('getSubjectGradient', () => {
 		it('returns correct gradient for Math variations', () => {
-			const expected = 'bg-linear-to-br from-blue-600 via-indigo-600 to-blue-700 border-blue-500/30';
+			const expected =
+				'bg-linear-to-br from-blue-600 via-indigo-600 to-blue-700 border-blue-500/30';
 			expect(getSubjectGradient('Math')).toBe(expected);
 			expect(getSubjectGradient('Mathematik')).toBe(expected);
 			expect(getSubjectGradient(' MATH ')).toBe(expected); // tests trim and case-insensitivity
@@ -55,11 +60,14 @@ describe('bookHelpers', () => {
 		});
 
 		it('returns default gradient for unknown subjects', () => {
-			expect(getSubjectGradient('Sport')).toBe('bg-linear-to-br from-slate-500 via-slate-600 to-slate-700 border-slate-400/30');
+			expect(getSubjectGradient('Sport')).toBe(
+				'bg-linear-to-br from-slate-500 via-slate-600 to-slate-700 border-slate-400/30'
+			);
 		});
 
 		it('returns default gradient for empty or null inputs', () => {
-			const expected = 'bg-linear-to-br from-slate-500 via-slate-600 to-slate-700 border-slate-400/30';
+			const expected =
+				'bg-linear-to-br from-slate-500 via-slate-600 to-slate-700 border-slate-400/30';
 			expect(getSubjectGradient(null)).toBe(expected);
 			expect(getSubjectGradient(undefined)).toBe(expected);
 			expect(getSubjectGradient('')).toBe(expected);

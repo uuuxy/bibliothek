@@ -117,6 +117,8 @@ describe('apiFetch error handling', () => {
 			throw error;
 		});
 
-		await expect(apiFetch('/api/test')).rejects.toThrow('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.');
+		await expect(apiFetch('/api/test')).rejects.toThrow(
+			'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'
+		);
 	});
 });

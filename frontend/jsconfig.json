@@ -17,7 +17,10 @@
 		 */
 		"sourceMap": true,
 		"esModuleInterop": true,
-		"types": ["vite/client"],
+		/* "node" ist noetig fuer die Ratschen-Tests und hygiene-quellen.js: Sie lesen den
+		   Quellbaum mit node:fs/node:path. Ohne den Eintrag meldet die Typpruefung dort
+		   "Cannot find name 'node:fs'" — ein Konfigurationsloch, kein Codefehler. */
+		"types": ["vite/client", "node"],
 		"skipLibCheck": true,
 		/**
 		 * Typecheck JS in `.svelte` and `.js` files by default.

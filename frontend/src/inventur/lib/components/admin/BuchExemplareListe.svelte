@@ -94,8 +94,9 @@
 							{!ex.ist_ausleihbar ? 'Gesperrt' : !ex.ist_verfuegbar ? 'Ausgeliehen' : 'Verfügbar'}
 						</span>
 						{#if ex.zustand_notiz}
-							<span class="text-label-small text-slate-500 truncate max-w-37.5" title={ex.zustand_notiz}
-								>{ex.zustand_notiz}</span
+							<span
+								class="text-label-small text-slate-500 truncate max-w-37.5"
+								title={ex.zustand_notiz}>{ex.zustand_notiz}</span
 							>
 						{/if}
 					</div>

@@ -175,9 +175,7 @@
 								<div class="text-xs text-slate-500">
 									{datumKurz(inventur.abgeschlossen_am)} · {inventur.erfasst} erfasst ·
 									{#if inventur.verluste > 0}
-										<span class="text-rose-600 font-semibold"
-											>{inventur.verluste} fehlend</span
-										>
+										<span class="text-rose-600 font-semibold">{inventur.verluste} fehlend</span>
 									{:else}
 										vollständig
 									{/if}

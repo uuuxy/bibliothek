@@ -26,7 +26,9 @@
 			</div>
 		{/if}
 	{:else if !backupStatus.needsAction}
-		<div class="flex items-center gap-1.5 px-4 py-2 text-label-small font-semibold text-emerald-700">
+		<div
+			class="flex items-center gap-1.5 px-4 py-2 text-label-small font-semibold text-emerald-700"
+		>
 			<svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 				><path
 					stroke-linecap="round"
