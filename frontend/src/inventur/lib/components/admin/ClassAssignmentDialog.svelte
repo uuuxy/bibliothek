@@ -5,6 +5,7 @@
 	import ClassAssignmentSelector from './ClassAssignmentSelector.svelte';
 	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
 	import ClassAssignmentSummary from './ClassAssignmentSummary.svelte';
+	import { X } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -177,19 +178,7 @@
 				onclick={onClose}
 				class="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-all duration-200 text-slate-400 z-20 cursor-pointer border-none bg-transparent"
 			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
-					></line></svg
-				>
+				<X class="w-4 h-4" aria-hidden="true" />
 			</button>
 		</div>
 	</div>

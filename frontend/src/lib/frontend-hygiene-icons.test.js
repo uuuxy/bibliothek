@@ -11,9 +11,9 @@ import { srcRoot, sammleQuelldateien, relPfad, vergleicheMitBestand } from './hy
 // erster Stelle Konsistenz; ein Symbolsatz, der an 67 Stellen nachgezeichnet wird,
 // ist genau das Gegenteil. Lucide liefert die Rolle EINMAL.
 //
-// Gemessen am 07.08.2026: 140 <svg> in 68 Dateien, 46 von 180 Komponenten nutzen
-// bereits Lucide. Die Liste ist ein Bestand, KEINE Erlaubnis — sie friert nur ein,
-// was schon da ist, damit nichts dazukommt, während der Tausch offen ist.
+// Gemessen am 07.08.2026: 140 <svg> in 68 Dateien, 46 von 180 Komponenten nutzten
+// Lucide. Nach dem Tausch am 08.08.2026: 7 <svg> in 4 Dateien, 105 von 182
+// Komponenten nutzen Lucide. Die Liste ist ein Bestand, KEINE Erlaubnis.
 const SVG = /<svg[\s>]/;
 
 // Echte Zeichnungen: Hier entsteht ein Bild, kein Symbol. Erkennbar am viewBox —
@@ -27,15 +27,17 @@ const ZEICHNUNGEN = [
 // Wer eine Datei auf Lucide umstellt, nimmt sie hier heraus. Der Test meldet
 // beides: neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 //
-// Ein Sonderfall, damit ihn niemand zweimal untersucht: BuchCoverUpload.svelte
-// zählt doppelt — ein Symbol UND ein Platzhalterbild als data:-URI im Attribut.
-// Nach dem Symboltausch bleibt die Datei deshalb zu Recht in der Liste.
+// Die drei Verbliebenen stehen hier aus STRUKTURELLEN Gründen, nicht aus Rückstand —
+// damit niemand sie ein zweites Mal untersucht:
+//   BuchCoverUpload       das <svg> steckt in einer data:-URI als Platzhalterbild,
+//                         ist also gar kein Bauteil-Symbol.
+//   DataManagement        rendert `d={iconPath}`: ein generischer Schnipsel, der
+//                         Pfad-STRINGS als Parameter nimmt.
+//   MahnwesenDruckMenue   dasselbe Muster mit `d={BRIEF}`.
+// Die beiden letzten umzustellen heißt, ihre Snippet-Signatur von „Pfad" auf
+// „Komponente" zu ändern — eine eigene Entscheidung, kein Nachziehen.
 const SVG_BESTAND = [
 	'src/inventur/lib/components/admin/BuchCoverUpload.svelte',
-	'src/inventur/lib/components/admin/ClassAssignmentBookGrid.svelte',
-	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte',
-	'src/inventur/lib/components/admin/ClassAssignmentSelector.svelte',
-	'src/inventur/lib/components/admin/ClassAssignmentSummary.svelte',
 	'src/lib/components/admin/DataManagement.svelte',
 	'src/lib/components/mahnwesen/MahnwesenDruckMenue.svelte'
 ];

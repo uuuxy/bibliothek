@@ -1,5 +1,5 @@
 <script>
-	import { Book, Check } from '@lucide/svelte';
+	import { Book, Check, Search } from '@lucide/svelte';
 	let { books = [], selectedBookIds = $bindable(new Set()) } = $props();
 
 	let searchQuery = $state('');
@@ -39,20 +39,10 @@
 	<div
 		class="bg-emerald-50 border border-surface-variant/10 rounded-full flex items-center px-4 sm:px-6 py-3 sm:py-4 shadow-sm hover:shadow-md transition-shadow group focus-within:ring-2 focus-within:ring-emerald-300"
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
+		<Search
 			class="text-slate-500 mr-2 sm:mr-4 group-focus-within:text-emerald-600 transition-colors hidden sm:block"
-			><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"
-			></line></svg
-		>
+			aria-hidden="true"
+		/>
 		<input
 			id="book-search-field"
 			name="book-search-field-hidden"
