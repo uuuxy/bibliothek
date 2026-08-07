@@ -43,6 +43,16 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"10H1", 2027, "10. Hauptschuljahr: gilt bis zum Ende dieses Jahrgangs"},
 		{"11H1", 2027, "auch darüber hinaus wird kein Datum in der Vergangenheit erzeugt"},
 
+		// Ohne erkennbaren Zweigbuchstaben gilt der längste Weg der Mittelstufe (10) —
+		// dieselbe Regel wie für die Förderstufe. Der Ausweis eines Hauptschülers gilt
+		// dann ein Jahr länger als nötig; das ist folgenlos, weil mit dem Abgang das
+		// Konto gesperrt wird. Andersherum würde eine gültige Karte abgewiesen.
+		{"10a", 2027, "Demo-/Kurzschema: Jahrgang 10 → Ende 10"},
+		{"5a", 2032, "Jahrgang 5 ohne Zweig → längster Mittelstufenweg"},
+		{"9d", 2028, "Jahrgang 9 ohne Zweig → Ende 10"},
+		{"7X1", 2030, "unbekannter Zweigbuchstabe wie kein Zweigbuchstabe"},
+		{"7", 2030, "Jahrgang ohne jeden Zusatz"},
+
 		// Oberstufe (Hessen G9): E = Jahrgang 11, Q1/Q2 = 12, Q3/Q4 = 13,
 		// Abitur am Ende von 13.
 		{"E1", 2029, "Einführungsphase ist Jahrgang 11 → zwei Jahre bis 13"},
@@ -78,11 +88,7 @@ func TestUnbekannteKlassenWerdenNichtGeraten(t *testing.T) {
 	unbekannt := []string{
 		"",           // leer
 		"   ",        // nur Leerzeichen
-		"5a",         // Demo-Schema ohne Zweigbuchstaben
-		"10c",        // dito
-		"7",          // Jahrgang ohne Zweig
 		"Vorkurs",    // kein Jahrgang
-		"7X1",        // unbekannter Zweig
 		"0F1",        // Jahrgang 0
 		"14G1",       // Jahrgang jenseits der Schulzeit
 		"Klasse 7H1", // Text vor dem Jahrgang

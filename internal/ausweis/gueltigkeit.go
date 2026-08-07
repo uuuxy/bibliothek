@@ -108,10 +108,7 @@ func AblaufJahrgang(klasse string) (ablauf int, aktuell int, ok bool) {
 		return 0, 0, false
 	}
 
-	abschluss, treffer := abschlussAusZweig(teile[2])
-	if !treffer {
-		return 0, 0, false
-	}
+	abschluss := abschlussAusZweig(teile[2])
 	// Liegt der Jahrgang ÜBER dem Regelabschluss des Zweigs, gilt der Jahrgang.
 	//
 	// Der Fall ist nicht theoretisch: "10H1" ist das freiwillige 10. Hauptschuljahr auf
@@ -151,22 +148,31 @@ func oberstufenJahrgang(k string) (int, bool) {
 
 // abschlussAusZweig liest den Bildungsgang aus dem ersten Buchstaben hinter dem
 // Jahrgang. Was dahinter steht, ist der Zug ("H1" → Hauptschulzweig, Zug 1).
-func abschlussAusZweig(zweigUndZug string) (int, bool) {
+//
+// Ist der Zweig NICHT erkennbar — kein Buchstabe ("10") oder ein unbekannter ("10a",
+// "7X1") —, gilt der längste Weg der Mittelstufe (Jahrgang 10).
+//
+// Das ist kein Raten, sondern dieselbe Regel, die für die Förderstufe ohnehin gilt:
+// Dort steht der Zweig noch nicht fest, und angesetzt wird der längste Weg. Der Fehler
+// kann damit nur in EINE Richtung gehen — der Ausweis eines Hauptschülers gilt ein Jahr
+// länger als nötig. Das ist folgenlos, denn mit dem Abgang wird das Konto ohnehin
+// gesperrt. Andersherum wäre es schlimm: Ein zu früh ablaufender Ausweis wird an der
+// Ausleihe abgewiesen, während der Schüler noch zur Schule geht.
+//
+// Bis zum 07.08.2026 lieferte ein unbekannter Zweig gar nichts. Formal war das sauber
+// ("nichts raten"), praktisch unbrauchbar: Auf dem Produktivsystem tragen 25 von 31
+// Klassen keinen Zweigbuchstaben (5a…10d), und damit hätte fast jeder Ausweis ein von
+// Hand eingetragenes Datum gebraucht. Eine Automatik, die im Alltag nie greift, ist
+// keine.
+func abschlussAusZweig(zweigUndZug string) int {
 	rest := strings.TrimSpace(zweigUndZug)
-	if rest == "" {
-		return 0, false
+	if rest != "" {
+		// []rune, damit ein Umlaut nicht zerschnitten wird.
+		if []rune(rest)[0] == 'H' {
+			return AbschlussHauptschule
+		}
 	}
-	// []rune, damit ein Umlaut nicht zerschnitten wird.
-	switch []rune(rest)[0] {
-	case 'H':
-		return AbschlussHauptschule, true
-	case 'F', 'R', 'G':
-		// Förderstufe (5/6) steht noch vor der Zweigwahl — angesetzt wird der längste
-		// Weg der Mittelstufe, sonst läuft der Ausweis eines künftigen Realschülers zu
-		// früh ab.
-		return AbschlussMittelstufe, true
-	}
-	return 0, false
+	return AbschlussMittelstufe
 }
 
 // GueltigBisJahr rechnet das Kalenderjahr aus, in dem der Ausweis abläuft.

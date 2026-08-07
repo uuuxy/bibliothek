@@ -9,8 +9,11 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 // trägt sie das richtige Ablaufjahr?
 //
 // Das Ablaufjahr kommt aus dem Bildungsgang (internal/ausweis): 7H1 endet mit Jahrgang 9,
-// 8G2 mit 10. Eine Klasse ohne Zweigbuchstaben (5a) liefert keins — dort muss die
-// Oberfläche vor dem Druck warnen, statt „31.07.–" zu drucken.
+// 8G2 mit 10. Eine Bezeichnung ohne erkennbaren Jahrgang ("Vorkurs") liefert keins —
+// dort muss die Oberfläche vor dem Druck warnen, statt „31.07.–" zu drucken.
+//
+// Bewusst NICHT "5a" als Warnfall: Klassen ohne Zweigbuchstaben bekommen seit dem
+// 07.08.2026 den längsten Mittelstufenweg und damit sehr wohl ein Datum.
 test.describe('Ausweis-Stapeldruck', () => {
 	const marke = uniqueSuffix().slice(0, 6);
 	const schuljahrEnde = new Date().getMonth() >= 7 ? new Date().getFullYear() + 1 : new Date().getFullYear();
@@ -20,7 +23,7 @@ test.describe('Ausweis-Stapeldruck', () => {
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 			VALUES ('STAPEL-H-${marke}', 'Hein', 'Stapel${marke}', '7H1', 2031),
 			       ('STAPEL-G-${marke}', 'Gerd', 'Stapel${marke}', '8G2', 2031),
-			       ('STAPEL-X-${marke}', 'Xena', 'Stapel${marke}', '5a',  2031);
+			       ('STAPEL-X-${marke}', 'Xena', 'Stapel${marke}', 'Vorkurs', 2031);
 		`);
 	});
 
@@ -47,7 +50,7 @@ test.describe('Ausweis-Stapeldruck', () => {
 		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
 		await expect(balken).toBeVisible();
 		await expect(balken).toContainText('3');
-		// Xena (5a) hat kein ableitbares Ablaufjahr — davor muss gewarnt werden.
+		// Xena ("Vorkurs") hat keinen erkennbaren Jahrgang — davor muss gewarnt werden.
 		await expect(balken).toContainText('1 davon ohne Ablaufjahr');
 
 		// Der Druckbereich trägt je markiertem Schüler eine Karte. Er ist am Bildschirm
@@ -60,7 +63,7 @@ test.describe('Ausweis-Stapeldruck', () => {
 		const inhalt = await druckbereich.innerText();
 		expect(inhalt).toContain(`31.07.${schuljahrEnde + 2}`); // 7H1: Jahrgang 7 → Ende 9
 		expect(inhalt).toContain(`31.07.${schuljahrEnde + 2}`); // 8G2: Jahrgang 8 → Ende 10
-		expect(inhalt).toContain('31.07.–'); // 5a: nicht ableitbar
+		expect(inhalt).toContain('31.07.–'); // Vorkurs: kein Jahrgang, nicht ableitbar
 
 		// Markierung aufheben räumt Balken UND Druckbereich ab — ein unsichtbar im DOM
 		// hängender Kartensatz wäre sonst der nächste Fehldruck.
