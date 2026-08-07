@@ -1,9 +1,11 @@
 package repository
 
 import (
-	"bibliothek/db"
 	"context"
 	"time"
+
+	"bibliothek/db"
+	"bibliothek/internal/ausweis"
 )
 
 // BorrowedBook represents a currently checked out book copy detail for the student.
@@ -38,6 +40,11 @@ type StudentListStat struct {
 	FotoURL           string `json:"foto_url"`
 	AusgeliehenCount  int    `json:"ausgeliehen_count"`
 	UeberfaelligCount int    `json:"ueberfaellig_count"`
+	// AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem
+	// Bildungsgang der Klasse gerechnet, NICHT aus AbgaengerJahr (siehe
+	// internal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,
+	// dann fragt der Druckdialog nach.
+	AusweisGueltigBis *int `json:"ausweis_gueltig_bis,omitempty"`
 }
 
 // Scanner kapselt die Scan-Schnittstelle von pgx.Row und pgx.Rows,
@@ -113,5 +120,21 @@ func scanStudentMitZusatz(row Scanner, zusatz ...any) (*Student, error) {
 	if err := row.Scan(append(ziele, zusatz...)...); err != nil {
 		return nil, err
 	}
+	s.AusweisGueltigBis = ausweisGueltigBis(s.Klasse)
 	return &s, nil
+}
+
+// ausweisGueltigBis rechnet die Ausweisgültigkeit aus der Klasse. Kein Datenbankfeld:
+// Die Regel darf sich ändern (Schulform, Zweigwechsel), ohne dass Altbestände
+// nachgezogen werden müssen — und ein gespeicherter Wert wäre nach jedem
+// Schuljahreswechsel still veraltet.
+//
+// Rückgabe nil bei einer Klassenbezeichnung, aus der sich nichts ableiten lässt. Der
+// Druckdialog fragt dann nach, statt ein Datum zu erfinden.
+func ausweisGueltigBis(klasse string) *int {
+	jahr, ok := ausweis.GueltigBisJahr(klasse, ausweis.SchuljahrEnde(time.Now()))
+	if !ok {
+		return nil
+	}
+	return &jahr
 }

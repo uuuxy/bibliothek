@@ -19,7 +19,23 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
+
+// SchuljahrEnde liefert das Jahr, in dem das zum Zeitpunkt jetzt laufende Schuljahr
+// endet (Schuljahr 2026/27 → 2027).
+//
+// Die Grenze liegt im August — dieselbe Auslegung wie im Versetzungslauf und im
+// Littera-Import (internal/littera/schreiber.go, StandardOptionen). Eine zweite
+// Auslegung wäre hier fatal: Sie verschöbe jeden Ausweis um genau ein Jahr, und zwar
+// nur zwischen August und Dezember.
+func SchuljahrEnde(jetzt time.Time) int {
+	jahr := jetzt.Year()
+	if jetzt.Month() >= time.August {
+		jahr++
+	}
+	return jahr
+}
 
 // klassenMuster zerlegt eine Klassenbezeichnung der Mittelstufe: führende Ziffern =
 // Jahrgang (führende Null erlaubt), danach Zweigbuchstabe und Zug.

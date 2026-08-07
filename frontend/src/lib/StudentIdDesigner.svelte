@@ -39,8 +39,22 @@
 	// /api/schueler fehlschlägt — Max Mustermann statt eines beliebig klingenden Namens,
 	// passend zu PLATZHALTER_SCHULNAME ("Musterstadt").
 	const mockStudents = [
-		{ id: 's1', barcode_id: 'S-10041', vorname: 'Max', nachname: 'Mustermann', klasse: '9a' },
-		{ id: 's2', barcode_id: 'S-10042', vorname: 'Erika', nachname: 'Musterfrau', klasse: '9a' }
+		{
+			id: 's1',
+			barcode_id: 'S-10041',
+			vorname: 'Max',
+			nachname: 'Mustermann',
+			klasse: '9R1',
+			ausweis_gueltig_bis: new Date().getFullYear() + 1
+		},
+		{
+			id: 's2',
+			barcode_id: 'S-10042',
+			vorname: 'Erika',
+			nachname: 'Musterfrau',
+			klasse: '9R1',
+			ausweis_gueltig_bis: new Date().getFullYear() + 1
+		}
 	];
 
 	// Die Design-Leinwand (CanvasArea) zeigt IMMER diesen Platzhalter, unabhängig davon,
@@ -50,12 +64,18 @@
 	// umbenennen. Die Klassenauswahl bleibt trotzdem nötig — sie steuert, welche echten
 	// Schüler in PrintPreview/"Vorderseiten drucken" landen, das ist der tatsächliche
 	// Druck-Stapel, nicht die Bearbeitungsvorschau.
+	// Das Gültigkeitsdatum ist hier bewusst ein Musterwert und wird NICHT aus der
+	// gewählten Klasse gerechnet: Die Leinwand zeigt, wie die Karte aussieht, nicht was
+	// auf einer bestimmten Karte steht. Das echte Datum kommt beim Drucken vom Server
+	// (schueler.ausweis_gueltig_bis, Regel in internal/ausweis) und lässt sich im
+	// Schülerprofil vor dem Druck überschreiben.
 	const PLATZHALTER_STUDENT = {
 		id: 'placeholder',
 		barcode_id: 'DEMO-S-001',
 		vorname: 'Max',
 		nachname: 'Mustermann',
-		klasse: '9a'
+		klasse: '9R1',
+		ausweis_gueltig_bis: new Date().getFullYear() + 1
 	};
 	const previewStudent = $derived({
 		...PLATZHALTER_STUDENT,

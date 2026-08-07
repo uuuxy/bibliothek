@@ -37,12 +37,17 @@ func bestimmeSchuelerStatus(student *repository.Student) string {
 
 // StudentProfileResponse returns master data (with photo_url) and currently borrowed books.
 type StudentProfileResponse struct {
-	ID                string                    `json:"id"`
-	BarcodeID         string                    `json:"barcode_id"`
-	Vorname           string                    `json:"vorname"`
-	Nachname          string                    `json:"nachname"`
-	Klasse            string                    `json:"klasse"`
-	AbgaengerJahr     int                       `json:"abgaenger_jahr"`
+	ID            string `json:"id"`
+	BarcodeID     string `json:"barcode_id"`
+	Vorname       string `json:"vorname"`
+	Nachname      string `json:"nachname"`
+	Klasse        string `json:"klasse"`
+	AbgaengerJahr int    `json:"abgaenger_jahr"`
+	// AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem
+	// Bildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.
+	// Der profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt
+	// die Karte "Gültig bis: 31.07.–", obwohl das Repository den Wert kennt.
+	AusweisGueltigBis *int                      `json:"ausweis_gueltig_bis,omitempty"`
 	IstGesperrt       bool                      `json:"ist_gesperrt"`
 	FotoURL           string                    `json:"foto_url"`
 	Geburtsdatum      *string                   `json:"geburtsdatum,omitempty"`
@@ -120,6 +125,7 @@ func (s *Server) GetStudentProfileHandler(
 			Nachname:          student.Nachname,
 			Klasse:            student.Klasse,
 			AbgaengerJahr:     student.AbgaengerJahr,
+			AusweisGueltigBis: student.AusweisGueltigBis,
 			IstGesperrt:       student.IstGesperrt,
 			FotoURL:           fotoURL,
 			Geburtsdatum:      student.Geburtsdatum,

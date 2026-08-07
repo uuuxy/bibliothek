@@ -53,7 +53,7 @@
 			{#if el.type === 'name' && student}
 				{student.vorname} {student.nachname}
 			{:else if el.type === 'validity' && student}
-				Gültig bis: 31.07.{student.abgaenger_jahr ?? '–'}
+				Gültig bis: 31.07.{student.ausweis_gueltig_bis ?? '–'}
 			{:else}
 				{el.content}
 			{/if}

@@ -56,6 +56,27 @@
 		st.fetchProfile(student?.id);
 	}
 
+	// Vom Bediener gesetztes Ablaufjahr. null = Vorschlag des Servers gilt.
+	//
+	// Bewusst NICHT gespeichert: Die Abweichung betrifft genau diesen einen Ausdruck
+	// (Wiederholer, Zweigwechsler, Ersatzausweis). Würde sie am Schüler hängen, müsste
+	// sie beim nächsten Schuljahreswechsel wieder aufgeräumt werden — und niemand wüsste
+	// mehr, warum sie dort steht. Beim Wechsel des Schülers fällt sie deshalb zurück.
+	let gueltigBisOverride = $state(/** @type {number|null} */ (null));
+	let zuletztGezeigteId = $state(/** @type {string|null} */ (null));
+	$effect(() => {
+		// Nur beim WECHSEL des Schülers zurücksetzen, nicht bei jedem Profil-Reload:
+		// st.fetchProfile() läuft auch nach einer Rückgabe oder Sperre. Würde die
+		// Abweichung dabei verworfen, verlöre man eine gerade getippte Jahreszahl,
+		// ohne dass etwas sichtbar passiert ist.
+		const id = st.profile?.id ?? null;
+		if (id !== zuletztGezeigteId) {
+			zuletztGezeigteId = id;
+			gueltigBisOverride = null;
+		}
+	});
+	const gueltigBisEffektiv = $derived(gueltigBisOverride ?? st.profile?.ausweis_gueltig_bis ?? null);
+
 	/** @param {'front'|'back'|'both'} [side] Zu druckende Ausweisseite(n). */
 	function printCard(side = 'both') {
 		const styleEl = document.createElement('style');
@@ -124,6 +145,8 @@
 						downloadRechnungPDF={st.downloadRechnungPDF}
 						showLockModal={() => (st.showLockModal = true)}
 						onPrint={printCard}
+						gueltigBis={gueltigBisEffektiv}
+						onGueltigBis={(jahr) => (gueltigBisOverride = jahr)}
 					/>
 				{/if}
 
@@ -198,7 +221,13 @@
 {/if}
 
 {#if st.profile}
-	<StudentPrintCard profile={st.profile} timestamp={st.timestamp} />
+	<!-- Die Abweichung wird hier auf das Profil gelegt, nicht in CardFace hineingereicht:
+	     CardFace rendert genau ein Feld (ausweis_gueltig_bis) und kennt keinen Sonderfall.
+	     So drucken Profil, Klassensatz und Designer nachweislich dieselbe Karte. -->
+	<StudentPrintCard
+		profile={{ ...st.profile, ausweis_gueltig_bis: gueltigBisEffektiv }}
+		timestamp={st.timestamp}
+	/>
 {/if}
 
 <StudentProfileDeleteModal

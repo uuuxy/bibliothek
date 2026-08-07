@@ -225,7 +225,7 @@
 				{#if el.type === 'name'}
 					{student ? `${student.vorname} ${student.nachname}` : 'Max Mustermann'}
 				{:else if el.type === 'validity'}
-					{`Gültig bis: 31.07.${student?.abgaenger_jahr ?? '–'}`}
+					{`Gültig bis: 31.07.${student?.ausweis_gueltig_bis ?? '–'}`}
 				{:else}
 					{el.content}
 				{/if}

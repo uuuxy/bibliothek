@@ -1,5 +1,6 @@
 <script>
 	import Button from './components/ui/Button.svelte';
+	import AusweisGueltigkeit from './components/AusweisGueltigkeit.svelte';
 	import { apiFetch } from './apiFetch.js';
 	import { idStore } from './designer/idDesignerStore.svelte.js';
 	import { scale } from 'svelte/transition';
@@ -25,6 +26,8 @@
 	 * @property {() => void} downloadRechnungPDF
 	 * @property {() => void} showLockModal
 	 * @property {(side: 'front'|'back'|'both') => void} onPrint
+	 * @property {number|null} gueltigBis        aktuell gewaehltes Ablaufjahr
+	 * @property {(jahr: number|null) => void} onGueltigBis
 	 */
 	/** @type {Props} */
 	let {
@@ -35,7 +38,9 @@
 		downloadKontoauszugPDF,
 		downloadRechnungPDF,
 		showLockModal,
-		onPrint
+		onPrint,
+		gueltigBis,
+		onGueltigBis
 	} = $props();
 
 	// Der Ausweis-Druck ist die Primäraktion. Gibt es eine gestaltete Rückseite, bietet
@@ -176,6 +181,16 @@
 				</Button>
 			{/if}
 		</div>
+
+		<!-- Das Ablaufjahr steht NEBEN dem Druckknopf, nicht hinter ihm in einem Dialog:
+		     Wer druckt, soll sehen, was auf die Karte kommt, bevor die Karte im Drucker
+		     liegt. Ein Bestaetigungsdialog haette denselben Wert erst nach dem Klick. -->
+		<AusweisGueltigkeit
+			vorschlag={profile.ausweis_gueltig_bis ?? null}
+			wert={gueltigBis}
+			klasse={profile.klasse ?? ''}
+			onWert={onGueltigBis}
+		/>
 
 		<!-- Kontoauszug: das (einzige) Ausleih-Dokument als archivierbares Server-PDF. -->
 		<Button

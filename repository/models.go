@@ -40,7 +40,15 @@ type Student struct {
 	// Klasse ist die aktuelle Klasse bzw. Kursstufe des Schülers (z. B. "07B").
 	Klasse string `json:"klasse"`
 	// AbgaengerJahr ist das Jahr, in dem der Schüler voraussichtlich die Schule verlässt.
+	// Steuert die DSGVO-Löschung und die Stapel-Archivierung — NICHT die Gültigkeit des
+	// Ausweises. Beide Zahlen fallen auseinander: Ein Gymnasialschüler bleibt bis
+	// Jahrgang 13, sein Ausweis gilt aber nur bis zum Ende der Mittelstufe.
 	AbgaengerJahr int `json:"abgaenger_jahr"`
+	// AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt (31.07.), aus
+	// dem Bildungsgang der Klasse gerechnet (internal/ausweis). Kein Datenbankfeld,
+	// sondern beim Lesen gesetzt. nil heißt: aus dieser Klassenbezeichnung nicht
+	// ableitbar — dann fragt der Druckdialog nach, statt ein Datum zu erfinden.
+	AusweisGueltigBis *int `json:"ausweis_gueltig_bis,omitempty"`
 	// IstGesperrt sperrt die Ausleihberechtigung des Schülers bei Verlusten oder offenen Gebühren.
 	IstGesperrt bool `json:"ist_gesperrt"`
 	// LusdID ist die Schüler-ID aus dem hessischen LUSD-System für automatisierte Abgleiche.

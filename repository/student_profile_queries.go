@@ -164,6 +164,10 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 		if s.BarcodeID != "" && s.HasFoto {
 			s.FotoURL = fmt.Sprintf("/api/schueler/%s/photo", s.BarcodeID)
 		}
+		// Wie in scanStudentMitZusatz: Die Ausweisgültigkeit wird beim Lesen gerechnet,
+		// nicht gespeichert. Der Klassensatz-Druck im Ausweis-Designer liest über diese
+		// Liste — ohne die Zeile trüge dort jede Karte "Gültig bis: –".
+		s.AusweisGueltigBis = ausweisGueltigBis(s.Klasse)
 		stats = append(stats, s)
 	}
 	return stats, rows.Err()
