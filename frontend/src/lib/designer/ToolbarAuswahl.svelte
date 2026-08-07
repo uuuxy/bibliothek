@@ -1,33 +1,24 @@
-<!-- @component ToolbarAuswahl — die vier Einstellungen der Ausweis-Werkstatt:
-     welche Klasse, welcher Barcode, welcher Kartenhintergrund, welche Vergrößerung.
+<!-- @component ToolbarAuswahl — die drei Einstellungen der Ausweis-Werkstatt:
+     welcher Barcode, welcher Kartenhintergrund, welche Vergrößerung.
      Eigene Datei, damit die Werkzeugleiste selbst nur noch die drei Reihen
-     zusammensetzt. -->
+     zusammensetzt.
+
+     Bis zum 06.08.2026 stand hier zusätzlich eine Klassenauswahl. Sie gehörte nie
+     hierher: Dieser Bildschirm gestaltet das Ausweis-Design, und das gilt zentral für
+     ALLE Arbeitsplätze. WER gedruckt wird, entscheidet seitdem die Schülerdatei
+     (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler sichtbar ist. -->
 <script>
 	import Select from '../components/ui/Select.svelte';
 
 	/**
 	 * @type {{
-	 *   classesList: string[], selectedKlasse: string, onKlasse: (k: string) => void,
-	 *   loadingStudents: boolean,
 	 *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
 	 *   currentTheme: string, themes: Array<{ value: string, name: string }>,
 	 *   setTheme: (v: string) => void,
 	 *   zoom: number, onZoom: (v: number) => void
 	 * }}
 	 */
-	let {
-		classesList,
-		selectedKlasse,
-		onKlasse,
-		loadingStudents,
-		barcodeType,
-		onBarcodeType,
-		currentTheme,
-		themes,
-		setTheme,
-		zoom,
-		onZoom
-	} = $props();
+	let { barcodeType, onBarcodeType, currentTheme, themes, setTheme, zoom, onZoom } = $props();
 
 	const BARCODE_TYPEN = [
 		{ value: 'code39', label: 'Code39 (1D)' },
@@ -36,27 +27,8 @@
 </script>
 
 <div
-	class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4"
+	class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4"
 >
-	<div class="space-y-1">
-		<span class="text-xs font-medium text-slate-500">Klasse</span>
-		{#if classesList.length > 0}
-			<Select
-				value={selectedKlasse}
-				options={classesList.map((/** @type {string} */ kl) => ({
-					value: kl,
-					label: `Klasse ${kl}`
-				}))}
-				onchange={(/** @type {string} */ wert) => onKlasse(wert)}
-				aria-label="Klasse für die Ausweise"
-			/>
-		{:else}
-			<div class="text-xs text-slate-400 font-medium py-2">
-				{loadingStudents ? 'Lade…' : 'Keine Klassen'}
-			</div>
-		{/if}
-	</div>
-
 	<div class="space-y-1">
 		<span class="text-xs font-medium text-slate-500">Barcode-Typ</span>
 		<Select

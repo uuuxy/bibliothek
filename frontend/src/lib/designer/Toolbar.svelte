@@ -7,8 +7,7 @@
 	 * Runes in use:
 	 *   $props()   — receives `zoom`, `onZoom`, `side`, `onSide`,
 	 *                `printMode`, `onPrintMode`, `printSide`, `onPrintSide`,
-	 *                `onPrint`, `classesList`, `selectedKlasse`, `onKlasse`,
-	 *                `barcodeType`, `onBarcodeType`, `loadingStudents`
+	 *                `onPrint`, `barcodeType`, `onBarcodeType`
 	 *
 	 * Element additions (text, multi-image) are handled directly here via
 	 * `addTextElement` and `addImageElements` from the shared store.
@@ -26,9 +25,7 @@
 	 *   side: 'front'|'back', onSide: (s: 'front'|'back') => void,
 	 *   printMode: 'card'|'a4', onPrintMode: (m: 'card'|'a4') => void,
 	 *   onPrint: () => void,
-	 *   classesList: string[], selectedKlasse: string, onKlasse: (k: string) => void,
 	 *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
-	 *   loadingStudents: boolean,
 	 *   previewStudent: any,
 	 * }}
 	 */
@@ -40,12 +37,8 @@
 		printMode,
 		onPrintMode,
 		onPrint,
-		classesList,
-		selectedKlasse,
-		onKlasse,
 		barcodeType,
 		onBarcodeType,
-		loadingStudents,
 		previewStudent
 	} = $props();
 
@@ -112,15 +105,11 @@
 		)}
 		<Button onclick={onPrint} class="px-5">
 			<Printer class="h-4 w-4" aria-hidden="true" />
-			{side === 'back' ? 'Rückseiten drucken' : 'Vorderseiten drucken'}
+			{side === 'back' ? 'Testdruck Rückseite' : 'Testdruck Vorderseite'}
 		</Button>
 	</div>
 
 	<ToolbarAuswahl
-		{classesList}
-		{selectedKlasse}
-		{onKlasse}
-		{loadingStudents}
 		{barcodeType}
 		{onBarcodeType}
 		{currentTheme}
@@ -159,9 +148,12 @@
 		/>
 
 		{#if previewStudent}
+			<!-- Ausdrücklich als Muster benannt: Hier stand früher ein echter Schüler aus
+			     der gewählten Klasse, und man konnte meinen, dieser Bildschirm drucke ihn.
+			     Gedruckt wird in der Schülerdatei. -->
 			<span class="text-xs text-slate-500 font-medium ml-auto">
-				Vorschau: {previewStudent.vorname}
-				{previewStudent.nachname} (Klasse {previewStudent.klasse})
+				Musterkarte: {previewStudent.vorname}
+				{previewStudent.nachname}
 			</span>
 		{/if}
 	</div>

@@ -13,18 +13,15 @@
 		wendeSchulstammdatenAn
 	} from './designer/idDesignerStore.svelte.js';
 	import CanvasArea from './designer/CanvasArea.svelte';
+	import PrintPreview from './designer/PrintPreview.svelte';
 	import PropertiesPanel from './designer/PropertiesPanel.svelte';
 	import Toolbar from './designer/Toolbar.svelte';
-	import PrintPreview from './designer/PrintPreview.svelte';
 
 	let selectedId = $state(/** @type {string|null} */ (null));
 	let side = $state(/** @type {"front"|"back"} */ ('front'));
 	let printMode = $state(/** @type {"card"|"a4"} */ ('card'));
 	let zoom = $state(150);
-	let classesList = $state.raw(/** @type {string[]} */ ([]));
-	let selectedKlasse = $state('');
-	let previewStudents = $state.raw(/** @type {any[]} */ ([]));
-	let loadingStudents = $state(false);
+	// Cache-Buster für die Barcode-Bilder des Testdrucks.
 	let timestamp = $state(Date.now());
 
 	// Zentrale Persistenz: erst nach dem initialen Laden auto-speichern, sonst würden
@@ -35,40 +32,20 @@
 	/** @type {any} */
 	let saveTimer = null;
 
-	// Fallback für den Druck-Stapel (PrintPreview), falls die gewählte Klasse leer ist oder
-	// /api/schueler fehlschlägt — Max Mustermann statt eines beliebig klingenden Namens,
-	// passend zu PLATZHALTER_SCHULNAME ("Musterstadt").
-	const mockStudents = [
-		{
-			id: 's1',
-			barcode_id: 'S-10041',
-			vorname: 'Max',
-			nachname: 'Mustermann',
-			klasse: '9R1',
-			ausweis_gueltig_bis: new Date().getFullYear() + 1
-		},
-		{
-			id: 's2',
-			barcode_id: 'S-10042',
-			vorname: 'Erika',
-			nachname: 'Musterfrau',
-			klasse: '9R1',
-			ausweis_gueltig_bis: new Date().getFullYear() + 1
-		}
-	];
-
-	// Die Design-Leinwand (CanvasArea) zeigt IMMER diesen Platzhalter, unabhängig davon,
-	// welche Klasse gerade im Dropdown gewählt ist. Vorher zeigte sie previewStudents[0] —
-	// den ersten echten Schüler der gewählten Klasse. Das hieß: Um im Designer einen
-	// hübschen Platzhalternamen zu sehen, musste man einen echten Schüler-Datensatz
-	// umbenennen. Die Klassenauswahl bleibt trotzdem nötig — sie steuert, welche echten
-	// Schüler in PrintPreview/"Vorderseiten drucken" landen, das ist der tatsächliche
-	// Druck-Stapel, nicht die Bearbeitungsvorschau.
-	// Das Gültigkeitsdatum ist hier bewusst ein Musterwert und wird NICHT aus der
-	// gewählten Klasse gerechnet: Die Leinwand zeigt, wie die Karte aussieht, nicht was
-	// auf einer bestimmten Karte steht. Das echte Datum kommt beim Drucken vom Server
-	// (schueler.ausweis_gueltig_bis, Regel in internal/ausweis) und lässt sich im
-	// Schülerprofil vor dem Druck überschreiben.
+	// Dieser Bildschirm lädt KEINE echten Schüler mehr.
+	//
+	// Bis zum 06.08.2026 hing hier eine Klassenauswahl, die per /api/schueler die Schüler
+	// der gewählten Klasse holte und daraus den Druckstapel baute. Das vermischte zwei
+	// Dinge: Hier entsteht das Design, und das gilt zentral für ALLE Arbeitsplätze — wer
+	// wessen Karte druckt, ist eine ganz andere Frage. Sie wird jetzt in der Schülerdatei
+	// beantwortet (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler
+	// sichtbar und überschreibbar ist.
+	//
+	// Die Leinwand zeigt deshalb immer denselben Platzhalter. Das Gültigkeitsdatum ist
+	// hier ein Musterwert und wird NICHT aus einer Klasse gerechnet: Der Bildschirm zeigt,
+	// wie die Karte AUSSIEHT, nicht was auf einer bestimmten Karte steht. Das echte Datum
+	// kommt beim Drucken vom Server (schueler.ausweis_gueltig_bis, Regel in
+	// internal/ausweis).
 	const PLATZHALTER_STUDENT = {
 		id: 'placeholder',
 		barcode_id: 'DEMO-S-001',
@@ -77,49 +54,9 @@
 		klasse: '9R1',
 		ausweis_gueltig_bis: new Date().getFullYear() + 1
 	};
-	const previewStudent = $derived({
-		...PLATZHALTER_STUDENT,
-		klasse: selectedKlasse || PLATZHALTER_STUDENT.klasse
-	});
-
-	async function loadClasses() {
-		try {
-			const res = await apiFetch('/api/klassen');
-			if (res.ok) {
-				classesList = await res.json();
-				if (classesList.length > 0) {
-					selectedKlasse = classesList[0];
-					await loadStudents(selectedKlasse);
-					return;
-				}
-			}
-		} catch {
-			/* network error — fall through to mocks */
-		}
-		previewStudents = mockStudents;
-	}
-
-	/** @param {string} klasse */
-	async function loadStudents(klasse) {
-		if (!klasse) return;
-		loadingStudents = true;
-		try {
-			const res = await apiFetch(`/api/schueler?klasse=${encodeURIComponent(klasse)}`);
-			if (res.ok) {
-				const data = await res.json();
-				previewStudents = data.length > 0 ? data : mockStudents;
-			} else {
-				previewStudents = mockStudents;
-			}
-		} catch {
-			previewStudents = mockStudents;
-		} finally {
-			loadingStudents = false;
-		}
-	}
+	const previewStudent = $derived({ ...PLATZHALTER_STUDENT });
 
 	onMount(() => {
-		loadClasses();
 		loadDesign();
 	});
 
@@ -147,7 +84,10 @@
 			const res = await apiFetch('/api/einstellungen');
 			if (!res.ok) return;
 			const data = await res.json();
-			const adresse = [data.schule_strasse, [data.schule_plz, data.schule_ort].filter(Boolean).join(' ')]
+			const adresse = [
+				data.schule_strasse,
+				[data.schule_plz, data.schule_ort].filter(Boolean).join(' ')
+			]
 				.filter(Boolean)
 				.join(', ');
 			wendeSchulstammdatenAn(data.schule_name ?? '', adresse);
@@ -253,17 +193,10 @@
 			printMode = m;
 		}}
 		onPrint={triggerPrint}
-		{classesList}
-		{selectedKlasse}
-		onKlasse={(k) => {
-			selectedKlasse = k;
-			loadStudents(k);
-		}}
 		barcodeType={idStore.barcodeType}
 		onBarcodeType={(t) => {
 			idStore.barcodeType = t;
 		}}
-		{loadingStudents}
 		{previewStudent}
 	/>
 
@@ -283,8 +216,8 @@
 	</div>
 </div>
 
-<PrintPreview
-	students={previewStudents.length > 0 ? previewStudents : mockStudents}
-	barcodeType={idStore.barcodeType}
-	{timestamp}
-/>
+<!-- Testdruck: EINE Karte mit dem Platzhalter, damit sich das Layout auf dem echten
+     Kartendrucker prüfen lässt, bevor ein Stapel echter Ausweise durchläuft.
+     Echte Schüler druckt dieser Bildschirm nicht mehr — das tut die Schülerdatei
+     (markieren → „Ausweise drucken"). -->
+<PrintPreview students={[previewStudent]} barcodeType={idStore.barcodeType} {timestamp} />
