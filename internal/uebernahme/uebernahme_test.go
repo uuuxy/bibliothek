@@ -110,6 +110,18 @@ func TestKuerzeLaesstPassendeWerteUnberuehrt(t *testing.T) {
 	}
 }
 
+func TestKuerzeKurzerString(t *testing.T) {
+	p := testProtokoll(t)
+
+	kurz := "Hallo"
+	if got := Kuerze(p, "1", "", "titel", kurz, MaxFreitext); got != kurz {
+		t.Error("ein kurzer Wert darf nicht angetastet werden")
+	}
+	if p.Warnungen() != 0 {
+		t.Errorf("keine Warnung erwartet, gezählt: %d", p.Warnungen())
+	}
+}
+
 // TestKlaereISBNWertetAbStattZuVerwerfen hält die Grundhaltung fest: eine kaputte oder
 // doppelte ISBN kostet die ISBN, nicht das Buch.
 func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
