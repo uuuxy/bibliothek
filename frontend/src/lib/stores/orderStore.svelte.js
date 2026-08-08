@@ -40,6 +40,8 @@ class OrderStore {
 	 * danach.
 	 */
 	bestelllinkOhneAdresse = $state(false);
+	/** Wurde die Bestellkonfiguration erfolgreich geladen? false = Aussage unbekannt. */
+	konfigurationGeladen = $state(false);
 
 	searchQuery = $state('');
 	/** @type {any[]} */
@@ -137,13 +139,38 @@ class OrderStore {
 		return ok;
 	}
 
+	/**
+	 * Anzeige-Regeln des Bestellwesens laden.
+	 *
+	 * DIE ZUWEISUNGEN STEHEN IM try, ABER DIE WERTE BLEIBEN BEI EINEM FEHLER STEHEN —
+	 * das ist der Unterschied zur vorherigen Fassung und er ist wichtig:
+	 * bestelllinkOhneAdresse steuert den Wächter über dem Bestellwesen
+	 * (BestelllinkHinweis). Scheiterte der Aufruf, blieb das Feld auf seinem
+	 * Anfangswert `false`, und der Hinweis verschwand — genau in dem Moment, in dem
+	 * das System eine Frage nicht beantworten kann, behauptete es „alles in Ordnung".
+	 * Wer dann bestellt, verschickt Mails ohne Bestätigungs-Link, und die
+	 * Bestellhistorie wartet auf eine Bestätigung, die niemand geben kann.
+	 *
+	 * Gefunden hat das die E2E-Suite am 08.08.2026: Der Server antwortete unter Last
+	 * mit 429 (Ratenbegrenzung, 50 Anfragen/s je IP — korrektes Verhalten), der
+	 * catch-Block schluckte es, der Wächter blieb unsichtbar. Im Testlauf sah das aus
+	 * wie ein sprunghafter Test; in der Anwendung ist es eine Warnung, die ausgerechnet
+	 * bei einer Störung ausfällt. Dieselbe Klasse wie der Bestelllink selbst, der
+	 * einmal still ausfiel, weil eine Einstellung fehlte.
+	 *
+	 * apiGet meldet den Fehler bereits als Toast — der Benutzer sieht also, dass etwas
+	 * nicht geladen wurde, statt eine stille Falschaussage zu bekommen.
+	 */
 	async loadKonfiguration() {
 		try {
 			const daten = await apiGet('/api/bestellungen/konfiguration');
 			this.preiseErfassen = daten?.preise_erfassen ?? true;
 			this.bestelllinkOhneAdresse = daten?.bestelllink_ohne_adresse ?? false;
+			this.konfigurationGeladen = true;
 			return true;
 		} catch {
+			// Bewusst KEIN Zurücksetzen: Ein unbekannter Zustand ist nicht „kein Problem".
+			this.konfigurationGeladen = false;
 			return false;
 		}
 	}

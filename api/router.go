@@ -210,7 +210,7 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// Import-Routen wäre der saubere Weg — dafür muss aber jede Upload-Route einzeln
 	// belegt sein, sonst bricht genau die eine, die man übersehen hat.
 	bodyLimiter := MaxBodySizeMiddleware(100 * 1024 * 1024)
-	rateLimiter := RateLimitMiddleware(50)
+	rateLimiter := RateLimitMiddleware(rateLimitAusUmgebung())
 	timeoutLimiter := TimeoutMiddleware(15 * time.Second)
 
 	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> Lesefrist -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> ValidateUUIDParams -> Mux

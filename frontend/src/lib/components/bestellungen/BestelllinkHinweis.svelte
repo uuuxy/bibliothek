@@ -22,6 +22,19 @@
 	const sichtbar = $derived(orderStore.bestelllinkOhneAdresse);
 	const istAdmin = $derived(authStore.currentUser?.rolle === 'admin');
 
+	// Dritter Zustand neben „alles gut" und „Adresse fehlt": Die Frage liess sich gar
+	// nicht beantworten. Bis zum 08.08.2026 gab es ihn nicht — loadKonfiguration fing den
+	// Fehler still ab, das Feld blieb auf seinem Anfangswert false, und dieser Waechter
+	// verschwand. Ausgerechnet bei einer Stoerung behauptete das Bestellwesen also
+	// „alles in Ordnung", und wer dann bestellte, verschickte Mails ohne
+	// Bestaetigungs-Link.
+	//
+	// Aufgefallen ist es, weil der Server unter der Last der E2E-Suite mit 429 antwortete
+	// (Ratenbegrenzung, korrektes Verhalten) — im Testlauf sah das aus wie ein
+	// sprunghafter Test. Der Toast aus apiFetch meldet die Stoerung zwar, aber er
+	// verschwindet; wer danach auf den Bildschirm sieht, braucht die Auskunft dort.
+	const ungeprueft = $derived(!orderStore.konfigurationGeladen);
+
 	function einstellungenOeffnen() {
 		uiStore.requestedSettingsTab = 'Allgemein';
 		uiStore.activeTab = 'settings';
@@ -53,5 +66,21 @@
 				<ArrowRight class="h-3.5 w-3.5" />
 			</Button>
 		{/if}
+	</div>
+{:else if ungeprueft}
+	<!-- Grauer Streifen statt gelbem: Das ist keine Fehlmeldung über die Anlage, sondern
+	     eine über diese Ansicht. Sie sagt, was sie nicht weiß, statt Ruhe vorzutäuschen. -->
+	<div
+		role="status"
+		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-slate-400 bg-white py-3 pr-4 pl-3.5 shadow-xs"
+	>
+		<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+		<div class="min-w-0 flex-1">
+			<p class="text-sm font-semibold text-slate-800">Bestell-Einstellungen nicht geladen</p>
+			<p class="mt-0.5 text-xs leading-relaxed text-slate-500">
+				Ob die Bestellmails einen Bestätigungs-Link tragen, konnte gerade nicht geprüft werden.
+				Seite neu laden — bleibt der Hinweis, vor dem Bestellen nachsehen.
+			</p>
+		</div>
 	</div>
 {/if}

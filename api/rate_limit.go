@@ -2,7 +2,10 @@ package api
 
 import (
 	"errors"
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -105,4 +108,34 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// rateLimitAusUmgebung liefert das Anfragen-pro-Sekunde-Budget je IP.
+//
+// Vorgabe 50 — der Produktionswert, unveraendert. Ueberschreibbar per RATE_LIMIT nur,
+// weil die E2E-Suite ein Sonderfall ist, den es in der Praxis nicht gibt: EIN Browser
+// auf EINER IP feuert ohne menschliche Pausen durch neunundneunzig Flows. Jeder
+// Seitenaufruf loest mehrere API-Anfragen aus, und seit die lokale Datenbank von 5.494
+// auf 2 Bestellungen geschrumpft ist, laden die Seiten so schnell, dass mehr davon in
+// dieselbe Sekunde fallen.
+//
+// Der Schaden war nicht der 429 — der ist richtig. Der Schaden war, dass das Frontend
+// ihn schluckte und der Warnhinweis ueber dem Bestellwesen verschwand (siehe
+// orderStore.loadKonfiguration). Das ist getrennt behoben. Diese Schraube macht nur den
+// Testlauf deterministisch, statt ihn an einer Zufaelligkeit scheitern zu lassen.
+//
+// Bewusst NICHT an APP_ENV gekoppelt: Eine Grenze, die sich je nach Umgebung selbst
+// verstellt, ist in dem Moment weg, in dem jemand APP_ENV falsch setzt. So steht der
+// abweichende Wert sichtbar in docker-compose.local.yml und nirgends sonst.
+func rateLimitAusUmgebung() int {
+	roh := os.Getenv("RATE_LIMIT")
+	if roh == "" {
+		return 50
+	}
+	n, err := strconv.Atoi(roh)
+	if err != nil || n <= 0 {
+		log.Printf("RATE_LIMIT=%q ist keine positive Zahl — es gilt die Vorgabe 50", roh)
+		return 50
+	}
+	return n
 }

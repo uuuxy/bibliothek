@@ -40,6 +40,11 @@ services:
       # Lokaler Entwicklungsmodus (APP_ENV=local): COOKIE_SECURE=false, Guard aus.
       # Das DB-Passwort kommt aus der .env (POSTGRES_PASSWORD) — kein committetes
       # Default-Secret mehr; siehe .env.example (cp .env.example .env).
+      # Nur im lokalen Stack: Die E2E-Suite feuert neunundneunzig Flows ohne Pause von
+      # EINER IP; der Produktionswert 50 Anfragen/s ist dafuer zu eng und liess je Lauf
+      # zufaellig einen Test in den Timeout laufen (429, vom Frontend still geschluckt —
+      # siehe orderStore.loadKonfiguration). Die Produktion behaelt ihre 50.
+      - RATE_LIMIT=${RATE_LIMIT:-500}
       - APP_ENV=local
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt - bitte .env aus .env.example anlegen (cp .env.example .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-local-dev-jwt-secret-min-32-characters}
