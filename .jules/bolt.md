@@ -19,3 +19,7 @@
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
 **Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
+
+## 2026-08-08 - Optimize N+1 Query in `searchLocalOrders` using CTE and `LEFT JOIN LATERAL`
+**Action:** Replaced a query that joined and grouped all rows matching a full-text search before limiting them to 50 rows. The optimized query uses a CTE (`WITH ... LIMIT 50`) to sort and limit the initial search results *before* using a `LEFT JOIN LATERAL` to aggregate the `current_stock` count only for those 50 rows.
+**Learning:** In queries involving complex joins (e.g., aggregating child records) combined with a `LIMIT`, a CTE can drastically improve performance by limiting the dataset early. Using `LEFT JOIN LATERAL` with `COUNT(id)` efficiently aggregates data per row directly in the `SELECT` phase, preventing N+1 execution of `COUNT` queries while avoiding heavy global aggregations.

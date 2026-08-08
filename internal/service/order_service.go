@@ -164,21 +164,29 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) []OrderSearchItem {
 	var results []OrderSearchItem
 	localQuery := `
-		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.verlag, ''),
-		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
-		       coalesce(t.signatur, ''),
-		       COUNT(e.id) AS current_stock
-		FROM buecher_titel t
-		LEFT JOIN buecher_exemplare e ON e.titel_id = t.id AND e.ist_ausgesondert = false
-		WHERE
-			t.search_vector @@ plainto_tsquery('german', $1)
-			OR t.titel ILIKE '%' || $1 || '%'
-			OR t.autor ILIKE '%' || $1 || '%'
-			OR t.isbn ILIKE '%' || $1 || '%'
-			OR replace(t.isbn, '-', '') = replace($1, '-', '')
-		GROUP BY t.id
-		ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
-		LIMIT 50
+		WITH matched_titels AS (
+			SELECT t.id, t.titel, t.autor, t.isbn, t.verlag, t.cover_url, t.signatur, t.search_vector
+			FROM buecher_titel t
+			WHERE
+				t.search_vector @@ plainto_tsquery('german', $1)
+				OR t.titel ILIKE '%' || $1 || '%'
+				OR t.autor ILIKE '%' || $1 || '%'
+				OR t.isbn ILIKE '%' || $1 || '%'
+				OR replace(t.isbn, '-', '') = replace($1, '-', '')
+			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
+			LIMIT 50
+		)
+		SELECT mt.id, mt.titel, coalesce(mt.autor, ''), coalesce(mt.isbn, ''), coalesce(mt.verlag, ''),
+		       COALESCE(NULLIF(mt.cover_url, ''), CASE WHEN mt.isbn IS NOT NULL AND mt.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(mt.isbn, '-', '') ELSE '' END),
+		       coalesce(mt.signatur, ''),
+		       COALESCE(e.current_stock, 0)
+		FROM matched_titels mt
+		LEFT JOIN LATERAL (
+			SELECT COUNT(id)::int AS current_stock
+			FROM buecher_exemplare
+			WHERE titel_id = mt.id AND ist_ausgesondert = false
+		) e ON true
+		ORDER BY ts_rank(mt.search_vector, plainto_tsquery('german', $1)) DESC, mt.titel ASC
 	`
 	rows, err := pool.Query(ctx, localQuery, query)
 	if err != nil {
