@@ -130,7 +130,6 @@ func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry)
 	if batch.Len() > 0 {
 		ctx := context.Background()
 		br := pool.SendBatch(ctx, batch)
-		defer br.Close()
 
 		for i := 0; i < batch.Len(); i++ {
 			var studentID string
@@ -147,6 +146,7 @@ func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry)
 				migrated++
 			}
 		}
+		_ = br.Close()
 	}
 
 	return processed, migrated
