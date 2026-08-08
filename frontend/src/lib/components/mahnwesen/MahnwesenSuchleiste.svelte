@@ -18,7 +18,7 @@
 			bind:value={mahnwesenStore.searchQuery}
 			placeholder="Schüler oder Klasse suchen …"
 			aria-label="Schüler oder Klasse suchen"
-			class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+			class="w-full h-9 pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
 		/>
 	</div>
 	<Select
