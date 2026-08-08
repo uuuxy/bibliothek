@@ -19,3 +19,9 @@
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
 **Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
+## 2026-08-08 - [Refactoring N+1 Query in class books delete]
+**Learning:** Found an N+1 issue in `class_books_handler.go` where `handleDeleteClassGroup` could potentially lead to N+1 queries if called in a loop or multiple items. The HTTP handler directly caused a single delete DB call. It was flagged as inefficient pattern in a loop context (if callers were doing so).
+**Action:** Changed the DB method `DeleteClassGroup` to accept a slice of class names and use `DELETE FROM class_books WHERE class_name = ANY($1)`, enabling batch delete.
+## 2026-08-08 - [Refactoring N+1 Query in class books delete]
+**Learning:** Found an N+1 issue in `class_books_handler.go` where `handleDeleteClassGroup` could potentially lead to N+1 queries if called in a loop or multiple items. The HTTP handler directly caused a single delete DB call. It was flagged as inefficient pattern in a loop context (if callers were doing so).
+**Action:** Changed the DB method `DeleteClassGroup` to accept a slice of class names and use `DELETE FROM class_books WHERE class_name = ANY($1)`, enabling batch delete.

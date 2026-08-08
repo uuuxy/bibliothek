@@ -94,17 +94,24 @@ func (handler *APIHandler) handleUpdateClassBooks(writer http.ResponseWriter, re
 }
 
 func (handler *APIHandler) handleDeleteClassGroup(writer http.ResponseWriter, request *http.Request) {
-	className := request.URL.Query().Get("className")
-	className = strings.TrimSpace(className)
+	queryNames := request.URL.Query()["className"]
+	var classNames []string
 
-	if className == "" {
+	for _, name := range queryNames {
+		trimmed := strings.TrimSpace(name)
+		if trimmed != "" {
+			classNames = append(classNames, trimmed)
+		}
+	}
+
+	if len(classNames) == 0 {
 		writeError(writer, http.StatusBadRequest, "klassenname fehlt")
 		return
 	}
 
-	err := handler.repo.DeleteClassGroup(request.Context(), className)
+	err := handler.repo.DeleteClassGroup(request.Context(), classNames)
 	if err != nil {
-		log.Printf("Fehler beim Löschen der Klassengruppe %s: %v", className, err)
+		log.Printf("Fehler beim Löschen der Klassengruppen %v: %v", classNames, err)
 		writeError(writer, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden")
 		return
 	}
