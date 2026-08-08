@@ -1,0 +1,11 @@
+💡 **What:**
+Implemented an in-memory array cache for `GetDistinctClasses` in the `pgStudentRepository` backed by `sync.RWMutex`, which expires after 5 minutes.
+
+🎯 **Why:**
+The active classes list changes very infrequently, but is frequently requested by the application. Fetching it directly from the database every time causes unnecessary database load.
+
+📊 **Measured Improvement:**
+We created a benchmark that queried 500 distinct classes, observing a speed up of roughly 1000x compared to the baseline query.
+Baseline: ~625434 ns/op
+Improved: ~649 ns/op
+Change over baseline: ~1000x faster

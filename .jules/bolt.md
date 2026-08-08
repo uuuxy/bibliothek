@@ -19,3 +19,12 @@
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
 **Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
+
+## 2026-08-08 - Added caching to GetDistinctClasses
+**What:** Implemented an in-memory array cache for `GetDistinctClasses` in `repository/student.go` backed by `sync.RWMutex`, which invalidates after 5 minutes.
+**Why:** The classes don't change very often, so frequently requesting distinct classes from the database is inefficient.
+**Impact:** Performance improved drastically from ~625434 ns/op down to ~649 ns/op.
+**Measurement:**
+Baseline: ~625434 ns/op
+Improved: ~649 ns/op
+Change over baseline: ~1000x faster

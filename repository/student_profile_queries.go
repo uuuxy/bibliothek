@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // HasPhoto checks if an encrypted photo exists for the student.
@@ -70,6 +71,15 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 
 // GetDistinctClasses returns a list of all active classes.
 func (repo *pgStudentRepository) GetDistinctClasses(ctx context.Context) ([]string, error) {
+	repo.cacheMutex.RLock()
+	if repo.classesCache != nil && time.Since(repo.classesCacheTime) < 5*time.Minute {
+		cached := make([]string, len(repo.classesCache))
+		copy(cached, repo.classesCache)
+		repo.cacheMutex.RUnlock()
+		return cached, nil
+	}
+	repo.cacheMutex.RUnlock()
+
 	rows, err := repo.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
 	if err != nil {
 		return nil, err
@@ -83,7 +93,17 @@ func (repo *pgStudentRepository) GetDistinctClasses(ctx context.Context) ([]stri
 			classes = append(classes, k)
 		}
 	}
-	return classes, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	repo.cacheMutex.Lock()
+	repo.classesCache = make([]string, len(classes))
+	copy(repo.classesCache, classes)
+	repo.classesCacheTime = time.Now()
+	repo.cacheMutex.Unlock()
+
+	return classes, nil
 }
 
 // ListStudentsWithStatsLimit ist die Obergrenze der ungefilterten Schülerdatei. Sie

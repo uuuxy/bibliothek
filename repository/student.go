@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"bibliothek/db"
@@ -94,7 +95,10 @@ type StudentRepository interface {
 
 // pgStudentRepository implementiert das StudentRepository für PostgreSQL.
 type pgStudentRepository struct {
-	db db.PgxPoolIface
+	db               db.PgxPoolIface
+	cacheMutex       sync.RWMutex
+	classesCache     []string
+	classesCacheTime time.Time
 }
 
 // NewStudentRepository erzeugt eine neue Instanz des PostgreSQL-basierten StudentRepositorys.
