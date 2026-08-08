@@ -19,3 +19,6 @@
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
 **Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
+## 2026-08-08 - DB Batching for N+1 Queries
+**Learning:** Use pgx.Batch to replace N+1 inserts inside loops.
+**Prevention:** Avoid N+1 database queries.

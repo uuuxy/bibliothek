@@ -83,75 +83,71 @@ func main() {
 // migriereAlleFotos verschlüsselt alle .jpg-Dateien im Verzeichnis und liefert die Zahl
 // gefundener und erfolgreich migrierter Fotos. Ausgelagert aus main, damit main flach bleibt.
 func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry) (processed, migrated int) {
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jpg") {
-			continue
-		}
-		processed++
-		if migriereFoto(pool, root, entry.Name()) {
-			migrated++
-		}
-	}
-	return processed, migrated
-}
-
-// migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =
-// "<barcode>.jpg") in schueler_fotos. Liefert true bei Erfolg; Fehler und fehlende
-// Schüler werden protokolliert und mit false quittiert.
-func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string) bool {
-	barcodeID := strings.TrimSuffix(name, filepath.Ext(name))
-
-	file, err := root.Open(name)
-	if err != nil {
-		slog.Error("Konnte Bild nicht öffnen", "file", name, "error", err)
-		return false
-	}
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-			slog.Error("Fehler beim Schließen der Datei", "file", name, "error", cerr)
-		}
-	}()
-
-	imgBytes, err := io.ReadAll(file)
-	if err != nil {
-		slog.Error("Konnte Bild nicht lesen", "file", name, "error", err)
-		return false
-	}
-
-	encryptedData, err := crypto.Encrypt(imgBytes)
-	if err != nil {
-		slog.Error("Konnte Bild nicht verschlüsseln", "file", name, "error", err)
-		return false
-	}
-
-	var studentID string
-	err = pool.QueryRow(context.Background(), "SELECT id FROM schueler WHERE barcode_id = $1", barcodeID).Scan(&studentID)
-	if err != nil {
-		if errorsIs(err, pgx.ErrNoRows) {
-			slog.Warn("Kein Schüler für Barcode gefunden (übersprungen)", "barcode", barcodeID)
-		} else {
-			slog.Error("DB Fehler beim Suchen des Schülers", "barcode", barcodeID, "error", err)
-		}
-		return false
-	}
+	batch := &pgx.Batch{}
 
 	query := `
 		INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
-		VALUES ($1, $2)
+		SELECT id, $2
+		FROM schueler WHERE barcode_id = $1
 		ON CONFLICT (schueler_id) DO UPDATE SET
 			foto_encrypted = EXCLUDED.foto_encrypted,
 			aktualisiert_am = CURRENT_TIMESTAMP
+		RETURNING schueler_id
 	`
-	_, err = pool.Exec(context.Background(), query, studentID, encryptedData)
-	if err != nil {
-		slog.Error("Fehler beim Einfügen in die Datenbank", "student_id", studentID, "error", err)
-		return false
+
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(name), ".jpg") {
+			continue
+		}
+		processed++
+
+		barcodeID := strings.TrimSuffix(name, filepath.Ext(name))
+
+		file, err := root.Open(name)
+		if err != nil {
+			slog.Error("Konnte Bild nicht öffnen", "file", name, "error", err)
+			continue
+		}
+		imgBytes, err := io.ReadAll(file)
+		if cerr := file.Close(); cerr != nil {
+			slog.Error("Fehler beim Schließen der Datei", "file", name, "error", cerr)
+		}
+		if err != nil {
+			slog.Error("Konnte Bild nicht lesen", "file", name, "error", err)
+			continue
+		}
+
+		encryptedData, err := crypto.Encrypt(imgBytes)
+		if err != nil {
+			slog.Error("Konnte Bild nicht verschlüsseln", "file", name, "error", err)
+			continue
+		}
+
+		batch.Queue(query, barcodeID, encryptedData)
 	}
 
-	slog.Info("Foto erfolgreich migriert", "barcode", barcodeID)
-	return true
-}
+	if batch.Len() > 0 {
+		ctx := context.Background()
+		br := pool.SendBatch(ctx, batch)
+		defer br.Close()
 
-func errorsIs(err error, target error) bool {
-	return err.Error() == target.Error()
+		for i := 0; i < batch.Len(); i++ {
+			var studentID string
+			err := br.QueryRow().Scan(&studentID)
+			if err != nil {
+				if err == pgx.ErrNoRows {
+					// Dies passiert, wenn das SELECT id ... WHERE barcode_id = $1 kein Ergebnis geliefert hat.
+					// Wir können nicht genau sagen, welcher Barcode das war, aber der Batch wird fortgesetzt.
+					slog.Warn("Foto übersprungen: Kein Schüler gefunden oder DB-Fehler")
+				} else {
+					slog.Error("Fehler beim Einfügen in die Datenbank", "error", err)
+				}
+			} else {
+				migrated++
+			}
+		}
+	}
+
+	return processed, migrated
 }
