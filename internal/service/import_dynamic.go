@@ -5,7 +5,6 @@ import (
 	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -332,7 +331,6 @@ func fuegeExemplareEin(ctx context.Context, tx pgx.Tx, copiesToInsert []importCo
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
 		VALUES ($1, $2, CURRENT_DATE, $3, NULLIF($4, ''))
 		ON CONFLICT (barcode_id) DO NOTHING
-		RETURNING id
 	`
 	for _, c := range copiesToInsert {
 		batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode, c.IstAusleihbar, c.ZustandNotiz)
@@ -340,18 +338,25 @@ func fuegeExemplareEin(ctx context.Context, tx pgx.Tx, copiesToInsert []importCo
 
 	bcr := tx.SendBatch(ctx, batchCopies)
 	importedCopiesCount := 0
+	skippedCount := 0
 	for i := 0; i < len(copiesToInsert); i++ {
-		var id string
-		err := bcr.QueryRow().Scan(&id)
+		ct, err := bcr.Exec()
 		if err == nil {
-			importedCopiesCount++
-		} else if errors.Is(err, pgx.ErrNoRows) {
-			// ON CONFLICT DO NOTHING liefert ErrNoRows zurück
-			log.Printf("Warnung: Exemplar mit Barcode '%s' (Titel-ID: %s) wurde übersprungen (bereits vorhanden)", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID)
+			if ct.RowsAffected() == 1 {
+				importedCopiesCount++
+			} else {
+				// ON CONFLICT DO NOTHING (0 rows affected)
+				skippedCount++
+			}
 		} else {
 			log.Printf("❌ Fehler beim Insert von Barcode '%s' (Titel-ID: %s): %v", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID, err)
 		}
 	}
+
+	if skippedCount > 0 {
+		log.Printf("Warnung: %d Exemplare wurden übersprungen (bereits vorhanden)", skippedCount)
+	}
+
 	if err := bcr.Close(); err != nil {
 		return 0, fmt.Errorf("failed to close copy insert batch: %w", err)
 	}

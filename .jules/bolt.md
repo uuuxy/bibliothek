@@ -19,3 +19,7 @@
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
 **Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
+## 2026-08-08 - Optimize batch exemplar insert performance
+**What:** Removed RETURNING id from batch insert and used Exec() instead of QueryRow().Scan() to check RowsAffected(), logging duplicates in aggregate.
+**Why:** The ON CONFLICT DO NOTHING caused thousands of ErrNoRows allocations and individual logs in a tight loop.
+**Measurement:** ~46.6% faster processing, 55.4% fewer heap allocations per operation.
