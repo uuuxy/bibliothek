@@ -91,8 +91,7 @@ export const menuGroups = [
 			},
 			{ id: 'graduates', label: 'Abgänger', icon: 'academic-cap', permission: 'view_graduates' },
 			{ id: 'orders', label: 'Bestellungen', icon: 'shopping-bag', permission: 'view_orders' },
-			{ id: 'inventory', label: 'Inventur', icon: 'clipboard', permission: 'inventory_scan' },
-			{ id: 'lmf_actions', label: 'LMF-Aktionen', icon: 'clock', permission: 'manage_inventory' }
+			{ id: 'inventory', label: 'Inventur', icon: 'clipboard', permission: 'inventory_scan' }
 		]
 	},
 	{
@@ -100,6 +99,20 @@ export const menuGroups = [
 		items: [
 			{ id: 'stats', label: 'Statistiken', icon: 'chart-bar', permission: 'view_stats' },
 			{ id: 'system-logs', label: 'System-Logs', icon: 'shield', permission: 'audit_logs' },
+			{
+				// Aus „Verwaltung" hierher verschoben (09.08.2026, auf Peters Ansage): Die
+				// Massenverlaengerung wird "fast nie" gebraucht, weil der LUSD-Import
+				// massgebend ist — er setzt Klasse und Abgaengerstatus, und daran haengen
+				// Fristen und Ausleihlimits ohnehin. In „Verwaltung" stand das Werkzeug
+				// zwischen den taeglichen Punkten (Schuelerdatei, Bestellungen, Inventur)
+				// und war dort praesenter als sein Nutzen. Das Recht bleibt unveraendert
+				// manage_inventory — die Gruppe entscheidet nur ueber die Einordnung im
+				// Menue, nicht darueber, wer den Punkt sieht (siehe canSeeItem oben).
+				id: 'lmf_actions',
+				label: 'LMF-Aktionen',
+				icon: 'clock',
+				permission: 'manage_inventory'
+			},
 			{
 				id: 'settings',
 				label: 'Einstellungen',
