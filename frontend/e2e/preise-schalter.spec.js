@@ -45,10 +45,16 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 	await expect(page.getByText('Gesamtausgaben')).toHaveCount(0);
 	await expect(page.getByText('Bestellte Exemplare')).toBeVisible();
 
-	// Aufgeklappte Position: keine Betragsspalten.
+	// Geöffnete Bestellung: keine Beträge an der Position.
+	//
+	// Geprüft wird der WERT, nicht mehr eine Spaltenüberschrift: Seit dem 08.08.2026
+	// führt die Zeile in die Detailansicht, und die stellt Einzel- und Gesamtpreis ohne
+	// Tabellenkopf neben den Titel. Der Wert ist ohnehin die schärfere Zusicherung —
+	// eine Überschrift kann stehen bleiben, während darunter Nullen stehen.
 	await page.getByRole('button', { name: new RegExp(`E2E-Preis-Lieferant ${s}`) }).click();
-	await expect(page.getByText(`E2E-Preis-Titel ${s}`)).toBeVisible();
-	await expect(page.getByRole('columnheader', { name: 'Einzelpreis' })).toHaveCount(0);
+	await expect(page.getByText(`E2E-Preis-Titel ${s}`).first()).toBeVisible();
+	await expect(page.getByText('21,25 €')).toHaveCount(0);
+	await expect(page.getByText('42,50 €')).toHaveCount(0);
 
 	// Berichte: "Lieferantenabrechnung" waere ohne Preise schlicht falsch — abgerechnet
 	// wird nichts.
@@ -63,7 +69,8 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 	await page.getByRole('button', { name: 'Bestellhistorie', exact: true }).click();
 	await expect(page.getByText('Gesamtausgaben')).toBeVisible();
 	await page.getByRole('button', { name: new RegExp(`E2E-Preis-Lieferant ${s}`) }).click();
-	await expect(page.getByRole('columnheader', { name: 'Einzelpreis' })).toBeVisible();
+	await expect(page.getByText('21,25 €')).toBeVisible();
+	await expect(page.getByText('42,50 €').first()).toBeVisible();
 });
 
 // Das PDF muss zur Oberfläche passen: Wer keine Beträge sieht, darf im Bericht keine

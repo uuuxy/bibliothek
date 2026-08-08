@@ -87,17 +87,16 @@ test('Jedes Symbol erklärt sich beim Überfahren', async ({ page }) => {
 		geprueft += await pruefeBildschirm(page, name, fehler);
 	}
 
-	// Die Bestellhistorie ausdrücklich: Ihre Symbole stecken in einer zugeklappten Zeile
-	// UND in einem overflow-x-auto-Container — genau dort würde eine normal positionierte
-	// Blase abgeschnitten. Ohne stille Wächter: Findet der Test den Messpunkt nicht,
+	// Die Bestellhistorie ausdrücklich: Ihre Symbole stehen in der Detailansicht hinter
+	// einem Zeilenklick — ein Bildschirm, den kein Direktaufruf erreicht. Ohne stille Wächter: Findet der Test den Messpunkt nicht,
 	// gehört er rot (ein übersprungener Messpunkt sieht aus wie ein bestandener).
 	await page.goto('/bestellungen');
 	await page.getByRole('button', { name: 'Bestellhistorie' }).click();
 	const zeilen = page.locator('tbody tr');
 	await zeilen.first().waitFor();
 	await zeilen.first().click();
-	await page.getByRole('columnheader', { name: 'ISBN' }).waitFor();
-	geprueft += await pruefeBildschirm(page, 'Bestellhistorie (aufgeklappt)', fehler);
+	await page.getByRole('heading', { name: 'Bestellte Titel' }).waitFor();
+	geprueft += await pruefeBildschirm(page, 'Bestellhistorie (Detailansicht)', fehler);
 
 	expect(
 		fehler,

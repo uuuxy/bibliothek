@@ -14,9 +14,9 @@
 // die Bounding-Box an der laufenden Anwendung.
 //
 // Zwei Zustände, die man leicht übersieht und die dieser Test deshalb ausdrücklich
-// herstellt: die AUFGEKLAPPTE Bestellhistorie (die Symbole stecken in einer
-// zugeklappten Zeile) und die EINGEKLAPPTE Navigation (ihr Umschalter ist ein
-// anderer Button als der zum Einklappen — er war beim ersten Messen unsichtbar
+// herstellt: die geöffnete BESTELLUNG (die Symbole stehen in der Detailansicht, die
+// nur ein Zeilenklick erreicht) und die EINGEKLAPPTE Navigation (ihr Umschalter ist
+// ein anderer Button als der zum Einklappen — er war beim ersten Messen unsichtbar
 // und dadurch übersehen).
 import { test, expect } from '@playwright/test';
 import { uiLogin } from './helpers.js';
@@ -121,8 +121,10 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 			const zeilen = page.locator('tbody tr');
 			await zeilen.first().waitFor();
 			await zeilen.first().click();
-			// Die Positionstabelle der aufgeklappten Zeile — erst dann stehen die Symbole.
-			await page.getByRole('columnheader', { name: 'ISBN' }).waitFor();
+			// Seit dem 08.08.2026 fuehrt die Zeile in die Detailansicht, statt aufzuklappen —
+			// die Symbole (Nachdruck, Titelsatz) stehen dort an den Positionen. Gewartet wird
+			// auf deren Ueberschrift: Bleibt sie aus, ist der Messpunkt weg und der Test rot.
+			await page.getByRole('heading', { name: 'Bestellte Titel' }).waitFor();
 			await warteAufStabileButtons(page);
 		}
 

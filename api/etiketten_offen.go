@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // etikettenOffenLimit deckelt die Liste. Wer mehr als 300 Etiketten am Stück nachdruckt,
@@ -22,7 +23,13 @@ const etikettenOffenLimit = 300
 //
 // Ausgesonderte Exemplare stehen nicht mehr im Regal; für sie ein Etikett zu drucken
 // wäre immer falsch.
-const etikettenOffenBedingung = `e.etikett_gedruckt = false AND e.ist_ausgesondert = false`
+//
+// Der Wert steht seit dem 08.08.2026 in repository/ und wird hier nur noch übernommen:
+// Die Bestell-Detailansicht braucht dieselbe Zahl, formuliert ihre Abfrage aber in der
+// Repository-Schicht (schichtung_test.go). Zwei Konstanten mit gleichem Inhalt wären
+// genau die Drift, gegen die dieser Kommentar seit jeher anschreibt. Alle bisherigen
+// Fundstellen — Liste, Zähler und die pg-Tests — lesen unverändert diesen Namen.
+const etikettenOffenBedingung = repository.EtikettOffenBedingung
 
 // ExemplarOhneEtikett ist eine Zeile der Nachdruck-Liste. Die Feldnamen barcode_id/titel/
 // autor sind KEIN Zufall: In genau dieser Form nimmt der Etikettendruck seine Aufträge
