@@ -140,8 +140,18 @@
 			>
 				{book.title}
 			</h2>
+			<!-- Die ISBN ist keine Fußnote, sondern eine Nummer, die man ABLIEST: gegen das
+			     Buch in der Hand, gegen das Lieferantenformular, gegen die Bestellliste.
+			     Sie stand auf text-label-small (11 px) und damit auf derselben Stufe wie
+			     die Fach-Abzeichen und „Zuletzt geprüft" — also so klein wie das
+			     Unwichtigste auf der Karte.
+			     text-sm + font-mono ist keine neue Erfindung: Genau so zeigt
+			     BookAkteMeta.svelte dieselbe ISBN einen Klick tiefer, und genau so trägt
+			     die Profilkarte den Schüler-Barcode. Feste Zeichenbreite trennt die 13
+			     Ziffern, ohne dass man mitzählen muss. Die Farbe bleibt: slate-400 ist seit
+			     dem WCAG-Durchgang #5a5f66 und damit klar über der AA-Grenze. -->
 			<button
-				class="text-label-small text-slate-400 mb-4 tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
+				class="text-sm font-mono text-slate-400 mb-4 tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
 				onclick={(e) => {
 					e.stopPropagation();
 					copyIsbn(book.isbn);
@@ -156,7 +166,9 @@
 				>
 				{#if book.isbn}
 					{#if copied}
-						<span class="text-blue-600 text-label-small font-sans font-bold">Kopiert!</span>
+						<!-- Bleibt eine Stufe unter der Nummer: Die Rückmeldung soll bestätigen,
+						     nicht mit dem konkurrieren, was man gerade abliest. -->
+						<span class="text-blue-600 text-xs font-sans font-bold">Kopiert!</span>
 					{:else}
 						<Copy
 							class="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover/isbn:opacity-100 transition-opacity"
