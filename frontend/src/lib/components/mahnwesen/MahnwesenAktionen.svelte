@@ -97,7 +97,7 @@
 		<Button
 			variant="danger-solid"
 			onclick={() => onMahnlauf()}
-			aria-label="Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden"
+			aria-label="Alle anmahnen"
 			class="shrink-0"
 		>
 			<Mail class="h-4 w-4" aria-hidden="true" />

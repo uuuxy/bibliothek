@@ -199,7 +199,7 @@
 												Hauptlieferant
 											</span>
 										{:else}
-											<span class="text-sm text-slate-300">nur Bestellmail</span>
+											<span class="text-sm text-slate-400">nur Bestellmail</span>
 										{/if}
 									</td>
 									<td class="py-3 text-right whitespace-nowrap sticky right-0 bg-white">

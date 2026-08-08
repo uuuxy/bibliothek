@@ -85,7 +85,7 @@
 	</Button>
 
 	{#if laedt}
-		<div class="animate-pulse py-16 text-center text-base text-slate-400">Lade Bestellung…</div>
+		<div class="animate-pulse py-16 text-center text-base text-slate-500">Lade Bestellung…</div>
 	{:else if fehler}
 		<div class="rounded-xl border border-red-200 bg-red-50 py-8 text-center text-red-650">
 			{fehler}
@@ -94,18 +94,18 @@
 		<div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
 			<div>
 				<h2 class="text-base font-bold text-slate-800">{bestellung.lieferant_name}</h2>
-				<p class="mt-0.5 text-sm text-slate-500">
+				<p class="mt-0.5 text-sm text-slate-600">
 					{langdatum(bestellung.bestelldatum)}
 					{#if bestellung.kundennummer}· Kd.-Nr. {bestellung.kundennummer}{/if}
 				</p>
-				<p class="text-sm text-slate-400">{bestellung.lieferant_email}</p>
+				<p class="text-sm text-slate-500">{bestellung.lieferant_email}</p>
 			</div>
 			<div class="text-right">
 				{#if orderStore.preiseErfassen}
-					<div class="text-xs font-semibold text-slate-400">Bestellwert</div>
+					<div class="text-xs font-semibold text-slate-500">Bestellwert</div>
 					<div class="text-2xl font-black text-slate-800">{euro(bestellung.gesamtbetrag)}</div>
 				{/if}
-				<div class="text-sm text-slate-500 tabular-nums">
+				<div class="text-sm text-slate-600 tabular-nums">
 					{bestellung.anzahl_exemplare} Exemplare bestellt
 				</div>
 			</div>
@@ -131,7 +131,7 @@
 			<h3 class="mb-2 text-sm font-bold text-slate-700">
 				Exemplare aus dieser Bestellung
 				{#if bestellung.exemplare.length > 0}
-					<span class="font-normal text-slate-400">({bestellung.exemplare.length})</span>
+					<span class="font-normal text-slate-500">({bestellung.exemplare.length})</span>
 				{/if}
 			</h3>
 			<BestellDetailExemplare exemplare={bestellung.exemplare} />

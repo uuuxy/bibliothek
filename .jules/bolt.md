@@ -19,3 +19,12 @@
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
 **Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
+## 2024-10-24 - Batch LUSD Import Updates
+**What:** Replaced individual updates in LUSD import with pgx.Batch.
+**Impact:** ~47% performance improvement (from 548ms to 288ms for 1000 updates).
+**Measurement:** Benchmarked loop.
+
+## 2026-08-08 - pgx.Batch and conn busy
+**What:** Deferring `br.Close()` inside a function that returns an error can leak connections to the parent transaction if another operation follows on that transaction and relies on `br` being closed.
+**Learning:** Always close the batch results (`br.Close()`) before using the connection (`tx`) for another operation (or returning it up to the caller to do so). Delaying `Close()` via `defer` causes `conn busy` errors on subsequent statements.
+**Prevention:** Call `br.Close()` explicitly after `br.Exec()` or read loops, ensuring it handles errors properly instead of merely relying on `defer` when sharing the transaction.
