@@ -146,7 +146,9 @@ func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry)
 				migrated++
 			}
 		}
-		_ = br.Close()
+		if cerr := br.Close(); cerr != nil {
+			slog.Error("Fehler beim Schließen des Batches", "error", cerr)
+		}
 	}
 
 	return processed, migrated
