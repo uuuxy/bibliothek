@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-08-06. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-08-08. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -18,7 +18,7 @@
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 
-## Alle registrierten Routen (169)
+## Alle registrierten Routen (167)
 
 - `/`
 - `/api/admin`
@@ -27,7 +27,6 @@
 - `/api/books/`
 - `/api/class-books`
 - `/api/lookup/`
-- `/api/subjects`
 - `/favicon.ico`
 - `/uploads/`
 - `DELETE /api/admin/`
@@ -57,6 +56,7 @@
 - `GET /api/bestellhistorie`
 - `GET /api/bestellhistorie/bericht`
 - `GET /api/bestellhistorie/uebersicht`
+- `GET /api/bestellhistorie/{id}`
 - `GET /api/bestellungen`
 - `GET /api/bestellungen/konfiguration`
 - `GET /api/bestellungen/pdf`
@@ -99,7 +99,6 @@
 - `GET /api/reports/overdue-pdf`
 - `GET /api/reservierungen/klassensatz`
 - `GET /api/reservierungen/klassensatz/anzahl`
-- `GET /api/scan`
 - `GET /api/schadensfaelle/{id}/pdf`
 - `GET /api/schueler`
 - `GET /api/schueler/deleted`
@@ -111,7 +110,6 @@
 - `GET /api/signaturen`
 - `GET /api/signaturen/buecher`
 - `GET /api/statistiken`
-- `GET /api/subjects`
 - `GET /api/systematics`
 - `GET /api/vormerkungen`
 - `GET /events`

@@ -232,14 +232,19 @@ Kiosk **scannen** darf, schreibt sie bewusst nicht fest — siehe Punkt 4 unten.
 3. ~~DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.~~ **ERLEDIGT (in `SECURITY.md` dokumentiert).**
 4. Branch-Protection: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel
    ernst nehmen (PR-Workflow) oder abschaffen.
-5. **`helfer`-Katalogzugriff — Rest der früheren „Rolle funktionsunfähig"-Lücke.**
+5. ~~**`helfer`-Katalogzugriff**~~ **ERLEDIGT (2026-08-08 am Code und an der Datenbank
+   nachgeprüft).**
 
-   **Erledigt (Code, 2026-07-23 verifiziert):** Die Kiosk-Kernfunktion ist bewusst von
-   `view_students` auf ein eigenes `perform_actions`-Recht entkoppelt (`api/routes_misc.go:19`
-   — `POST /api/action`, `GET /api/search`, `GET /api/scan`); `db/seed.go` seedet
-   `HELFER` → `perform_actions = true`. Der frühere Zustand „jeder Scan → 403" ist damit
-   behoben, der Kiosk läuft.
+   Die Kiosk-Kernfunktion ist von `view_students` auf ein eigenes `perform_actions`-Recht
+   entkoppelt (`api/routes_misc.go` — `POST /api/action`, `GET /api/search`). Der frühere
+   Zustand „jeder Scan → 403" ist behoben.
 
-   **Offen (Betreiber, keine Code-Änderung):** Ob ein Helfer den **Katalog** sehen darf —
-   `GET /api/books` verlangt `view_books` (HELFER-Default `false`, öffnet Buchdaten). Ist
-   die Antwort „ja", genügt der Toggle im PermissionManager.
+   Der hier als offen geführte Katalogzugriff ist **entschieden und umgesetzt**: `db/seed.go`
+   seedet `HELFER` → `view_books = true` (Betreiber-Entscheidung 30.07.2026, siehe
+   FACHKONZEPT §12). Der Satz „HELFER-Default `false`" stimmte zuletzt vor dieser
+   Entscheidung und widersprach seither dem Fachkonzept — nachgezählt in der laufenden
+   Datenbank: erteilt sind genau `perform_actions` und `view_books`, sonst nichts.
+
+   `GET /api/scan` stand hier als Beleg und existiert seit dem 08.08.2026 nicht mehr: Der
+   Endpunkt hatte im gesamten Repository keinen Aufrufer — weder Frontend noch E2E noch das
+   gebaute Bundle — und wurde ausgebaut. Der Kiosk scannt über die Omnibox.
