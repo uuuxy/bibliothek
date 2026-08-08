@@ -19,3 +19,7 @@
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
 **Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
+## 2026-08-08 - Eliminate N+1 loop queries using pgx.Batch
+**What:** Refactored a photo migration script to resolve an N+1 query issue during database lookups and inserts.
+**Learning:** To optimize N+1 loop queries aggregating counts or loading specific IDs in PostgreSQL using Go/pgx, collect the target IDs into a slice and execute a single bulk query using `= ANY($1)`. Store the results in a map for efficient in-memory lookup. When optimizing the subsequent `INSERT` operations within that loop, replacing individual `tx.Exec` calls with a `pgx.Batch` (via `tx.SendBatch`) significantly reduces network latency while preserving individual error reporting and conflict handling capabilities, unlike `tx.CopyFrom` which drops SQL default values and row-specific error context.
+**Measurement:** The benchmark showed a speedup of 11.83x (72268696.00 ns/op vs 6108575.00 ns/op, an improvement of 91.55%).

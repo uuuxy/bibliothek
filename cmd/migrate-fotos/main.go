@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"bibliothek/internal/crypto"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -83,12 +82,57 @@ func main() {
 // migriereAlleFotos verschlüsselt alle .jpg-Dateien im Verzeichnis und liefert die Zahl
 // gefundener und erfolgreich migrierter Fotos. Ausgelagert aus main, damit main flach bleibt.
 func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry) (processed, migrated int) {
+	// Barcodes aus Dateinamen extrahieren
+	var barcodes []string
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jpg") {
+			continue
+		}
+		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
+		barcodes = append(barcodes, barcodeID)
+	}
+
+	if len(barcodes) == 0 {
+		return 0, 0
+	}
+
+	// Alle Schueler-IDs auf einmal laden
+	studentMap := make(map[string]string)
+	query := "SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY($1)"
+	rows, err := pool.Query(context.Background(), query, barcodes)
+	if err != nil {
+		slog.Error("Fehler beim Laden der Schueler-IDs", "error", err)
+		return 0, 0
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var barcode, studentID string
+		if err := rows.Scan(&barcode, &studentID); err != nil {
+			slog.Error("Fehler beim Scannen der Schueler-ID", "error", err)
+			continue
+		}
+		studentMap[barcode] = studentID
+	}
+	if rows.Err() != nil {
+		slog.Error("Fehler nach dem Scannen der Schueler-IDs", "error", rows.Err())
+		return 0, 0
+	}
+
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jpg") {
 			continue
 		}
 		processed++
-		if migriereFoto(pool, root, entry.Name()) {
+
+		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
+		studentID, ok := studentMap[barcodeID]
+		if !ok {
+			slog.Warn("Kein Schüler für Barcode gefunden (übersprungen)", "barcode", barcodeID)
+			continue
+		}
+
+		if migriereFoto(pool, root, entry.Name(), barcodeID, studentID) {
 			migrated++
 		}
 	}
@@ -98,9 +142,7 @@ func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry)
 // migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =
 // "<barcode>.jpg") in schueler_fotos. Liefert true bei Erfolg; Fehler und fehlende
 // Schüler werden protokolliert und mit false quittiert.
-func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string) bool {
-	barcodeID := strings.TrimSuffix(name, filepath.Ext(name))
-
+func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string, barcodeID string, studentID string) bool {
 	file, err := root.Open(name)
 	if err != nil {
 		slog.Error("Konnte Bild nicht öffnen", "file", name, "error", err)
@@ -121,17 +163,6 @@ func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string) bool {
 	encryptedData, err := crypto.Encrypt(imgBytes)
 	if err != nil {
 		slog.Error("Konnte Bild nicht verschlüsseln", "file", name, "error", err)
-		return false
-	}
-
-	var studentID string
-	err = pool.QueryRow(context.Background(), "SELECT id FROM schueler WHERE barcode_id = $1", barcodeID).Scan(&studentID)
-	if err != nil {
-		if errorsIs(err, pgx.ErrNoRows) {
-			slog.Warn("Kein Schüler für Barcode gefunden (übersprungen)", "barcode", barcodeID)
-		} else {
-			slog.Error("DB Fehler beim Suchen des Schülers", "barcode", barcodeID, "error", err)
-		}
 		return false
 	}
 
