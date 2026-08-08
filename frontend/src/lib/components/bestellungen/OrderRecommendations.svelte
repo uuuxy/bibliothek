@@ -84,7 +84,7 @@
 						{kritischeAnzahl} von {recommendations.length} Titeln ohne ein einziges Exemplar
 					</p>
 				{:else if recommendations.length}
-					<p class="text-sm text-slate-400 mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
+					<p class="text-sm text-slate-500 mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
 				{/if}
 			</div>
 			<a
@@ -101,7 +101,7 @@
 			<!-- Schnellfilter -->
 			<div class="relative mt-4">
 				<Search
-					class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
+					class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none"
 					aria-hidden="true"
 				/>
 				<input
@@ -116,13 +116,13 @@
 
 	<!-- List -->
 	{#if !recommendations.length}
-		<div class="flex flex-col items-center justify-center text-center py-16 px-6 text-slate-400">
+		<div class="flex flex-col items-center justify-center text-center py-16 px-6 text-slate-500">
 			<CircleCheck class="h-5 w-5" aria-hidden="true" />
 			<p class="text-sm font-semibold text-slate-500">Bestände ausreichend</p>
 			<p class="text-xs mt-1">Kein Titel liegt unter der Bestellbedarf-Schwelle.</p>
 		</div>
 	{:else if !gefiltert.length}
-		<div class="text-center py-14 px-6 text-slate-400">
+		<div class="text-center py-14 px-6 text-slate-500">
 			<p class="text-sm font-medium">Kein Treffer für <em>„{filter}"</em></p>
 		</div>
 	{:else}
@@ -136,7 +136,7 @@
 		     Das ist die übliche Ausrichtung einer Zahlenspalte und kostet den Titeln keine
 		     Breite, was eine feste Spaltenbreite getan hätte. -->
 		<div
-			class="flex items-center gap-3 px-6 py-2 border-b border-slate-100 bg-slate-50/60 text-label-small font-semibold uppercase tracking-wider text-slate-400 select-none"
+			class="flex items-center gap-3 px-6 py-2 border-b border-slate-100 bg-slate-50/60 text-label-small font-semibold uppercase tracking-wider text-slate-500 select-none"
 		>
 			<span class="w-4 shrink-0" aria-hidden="true"></span>
 			<span class="flex-1 min-w-0">Titel</span>
@@ -160,9 +160,9 @@
 					<div class="min-w-0 flex-1">
 						<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
 						<p class="text-xs text-slate-500 truncate">
-							{#if r.isbn}<span class="font-mono text-slate-400">{r.isbn}</span>{/if}
-							{#if r.verlag}<span class="mx-1.5 text-slate-300">·</span>{r.verlag}{/if}
-							{#if r.signatur}<span class="mx-1.5 text-slate-300">·</span>{r.signatur}{/if}
+							{#if r.isbn}<span class="font-mono text-slate-500">{r.isbn}</span>{/if}
+							{#if r.verlag}<span class="mx-1.5 text-slate-500">·</span>{r.verlag}{/if}
+							{#if r.signatur}<span class="mx-1.5 text-slate-500">·</span>{r.signatur}{/if}
 						</p>
 					</div>
 
@@ -178,7 +178,7 @@
 							: 'text-amber-600'}"
 						title="verfügbar / im Bestand"
 					>
-						{r.verfuegbarer_bestand}<span class="text-slate-300 font-medium">/</span
+						{r.verfuegbarer_bestand}<span class="text-slate-500 font-medium">/</span
 						>{r.gesamt_bestand}
 					</div>
 
@@ -186,7 +186,7 @@
 						onclick={() => onAddToCart(r)}
 						aria-label="{r.titel} zur Bestellung hinzufügen"
 						data-tip="Zur Bestellung hinzufügen"
-						class="shrink-0 w-9 h-9 rounded-full border border-slate-200 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 active:scale-90 transition-all cursor-pointer"
+						class="shrink-0 w-9 h-9 rounded-full border border-slate-200 text-slate-500 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 active:scale-90 transition-all cursor-pointer"
 					>
 						<Plus class="w-4 h-4" aria-hidden="true" />
 					</button>
