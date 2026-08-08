@@ -72,20 +72,27 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	}
 
 	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden
-	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
+	batch := &pgx.Batch{}
+	batch.Queue("DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID)
+	batch.Queue("DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1) AND rueckgabe_am IS NOT NULL", titleID)
+	// Alle zugehörigen Exemplare löschen
+	batch.Queue("DELETE FROM buecher_exemplare WHERE titel_id = $1", titleID)
+	// Eigentlichen Titel-Datensatz löschen
+	batch.Queue("DELETE FROM buecher_titel WHERE id = $1", titleID)
+
+	br := tx.SendBatch(ctx, batch)
+	defer br.Close()
+
+	if _, err := br.Exec(); err != nil {
 		return fmt.Errorf("failed to delete damage records for title: %w", err)
 	}
-	if _, err = tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1) AND rueckgabe_am IS NOT NULL", titleID); err != nil {
+	if _, err := br.Exec(); err != nil {
 		return fmt.Errorf("failed to delete past loans for title: %w", err)
 	}
-
-	// Alle zugehörigen Exemplare löschen
-	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE titel_id = $1", titleID); err != nil {
+	if _, err := br.Exec(); err != nil {
 		return fmt.Errorf("failed to delete associated copies: %w", err)
 	}
-
-	// Eigentlichen Titel-Datensatz löschen
-	if _, err = tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID); err != nil {
+	if _, err := br.Exec(); err != nil {
 		return err
 	}
 

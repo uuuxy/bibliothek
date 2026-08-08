@@ -84,13 +84,14 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"})) // keine offenen Ausleihen
-	mock.ExpectExec("DELETE FROM schadensfaelle").WithArgs(titelID).
+	bMock := mock.ExpectBatch()
+	bMock.ExpectExec("DELETE FROM schadensfaelle").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
-	mock.ExpectExec("DELETE FROM ausleihen").WithArgs(titelID).
+	bMock.ExpectExec("DELETE FROM ausleihen").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
-	mock.ExpectExec("DELETE FROM buecher_exemplare").WithArgs(titelID).
+	bMock.ExpectExec("DELETE FROM buecher_exemplare").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 3))
-	mock.ExpectExec("DELETE FROM buecher_titel").WithArgs(titelID).
+	bMock.ExpectExec("DELETE FROM buecher_titel").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	// Der Audit-Eintrag ist revisionssicher gefordert — Tabelle, Aktion und Datensatz
 	// werden deshalb festgenagelt, der Rest (Bearbeiter, Kontext, Details-JSON) nicht.
