@@ -101,7 +101,7 @@
 									{#if !schueler.eltern_email}
 										<!-- Dezentes „keine Eltern-E-Mail"-Icon statt lautem Dauer-Label auf jeder Zeile. -->
 										<span
-											class="text-slate-300 shrink-0 flex items-center"
+											class="text-slate-400 shrink-0 flex items-center"
 											title="Keine Eltern-E-Mail hinterlegt"
 											aria-label="Keine Eltern-E-Mail hinterlegt"
 										>

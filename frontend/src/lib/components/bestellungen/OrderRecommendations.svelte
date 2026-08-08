@@ -161,8 +161,8 @@
 						<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
 						<p class="text-xs text-slate-500 truncate">
 							{#if r.isbn}<span class="font-mono text-slate-400">{r.isbn}</span>{/if}
-							{#if r.verlag}<span class="mx-1.5 text-slate-300">·</span>{r.verlag}{/if}
-							{#if r.signatur}<span class="mx-1.5 text-slate-300">·</span>{r.signatur}{/if}
+							{#if r.verlag}<span class="mx-1.5 text-slate-400">·</span>{r.verlag}{/if}
+							{#if r.signatur}<span class="mx-1.5 text-slate-400">·</span>{r.signatur}{/if}
 						</p>
 					</div>
 
@@ -178,7 +178,7 @@
 							: 'text-amber-600'}"
 						title="verfügbar / im Bestand"
 					>
-						{r.verfuegbarer_bestand}<span class="text-slate-300 font-medium">/</span
+						{r.verfuegbarer_bestand}<span class="text-slate-400 font-medium">/</span
 						>{r.gesamt_bestand}
 					</div>
 

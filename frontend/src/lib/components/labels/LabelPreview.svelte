@@ -45,7 +45,7 @@
 							class="border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center"
 							style="width: 42.3mm; height: 25.4mm;"
 						>
-							<span class="text-[6px] text-slate-300 tracking-wider font-bold">LEER</span>
+							<span class="text-[6px] text-slate-400 tracking-wider font-bold">LEER</span>
 						</div>
 					{:else}
 						<div

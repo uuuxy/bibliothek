@@ -172,7 +172,7 @@
 										aria-label="{e.titel} als gefunden markieren und zurück in Umlauf bringen"
 									/>
 								{:else}
-									<span class="text-xs text-slate-300" title="Bereits endgültig gelöscht">—</span>
+									<span class="text-xs text-slate-400" title="Bereits endgültig gelöscht">—</span>
 								{/if}
 							</td>
 						</tr>

@@ -31,7 +31,7 @@
 				<ChevronLeft class="w-4 h-4" aria-hidden="true" />
 				Zurück zum Katalog
 			</button>
-			<span class="text-slate-300">/</span>
+			<span class="text-slate-400">/</span>
 			<span class="text-slate-500 text-sm truncate max-w-xs">{akte.book?.title ?? 'Lade...'}</span>
 		</div>
 		{#if !akte.isLoading && akte.book}

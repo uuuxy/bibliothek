@@ -140,12 +140,15 @@ test('Feld und Button stehen in derselben Werkzeugleiste auf einer Linie', async
 	await page.goto('/mahnwesen');
 
 	const feld = page.getByPlaceholder('Schüler oder Klasse suchen …');
-	// Zugänglicher Name = aria-label, nicht die Beschriftung „Alle anmahnen".
-	const button = page
-		.getByRole('button', {
-			name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/
-		})
-		.first();
+	// Gemessen wird „Daten neu laden" und NICHT „Alle anmahnen": Letzterer steht in
+	// MahnwesenAktionen hinter {#if countAlle > 0} und erscheint nur, wenn gerade
+	// überfällige Ausleihen in der Datenbank stehen. Diese Zeile lag zuvor auf
+	// „Alle anmahnen" und lief 30 s in einen Timeout, sobald der Lauf mit frischer
+	// Datenbank startete — die Überfälligkeit legt erst mahnwesen.spec.js an, und die
+	// Datei sortiert hinter dieser hier. Der Test war damit von der Reihenfolge der
+	// Testdateien abhängig, ohne es zu sagen. „Daten neu laden" steht unbedingt in
+	// derselben Leiste; für eine Höhenmessung ist der Knopf ohnehin austauschbar.
+	const button = page.getByRole('button', { name: 'Daten neu laden' }).first();
 	await feld.waitFor();
 	await button.waitFor();
 

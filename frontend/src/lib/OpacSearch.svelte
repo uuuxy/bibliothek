@@ -107,7 +107,7 @@
 									class="h-full w-full object-cover"
 								/>
 							{:else}
-								<span class="text-5xl font-extrabold text-slate-300 select-none">
+								<span class="text-5xl font-extrabold text-slate-400 select-none">
 									{book.titel.charAt(0).toUpperCase()}
 								</span>
 							{/if}
@@ -150,12 +150,12 @@
 				<p class="text-sm mt-1">Versuche es mit einem anderen Titel oder Autor.</p>
 			</div>
 		{:else if !searched}
-			<div class="text-center py-20 text-slate-300 select-none">
+			<div class="text-center py-20 text-slate-400 select-none">
 				<!-- mx-auto ist nötig: Tailwinds Preflight setzt svg auf display:block, damit
 				     greift das text-center des Containers nicht — das Symbol klebte links. -->
 				<BookOpen class="h-10 w-10 mx-auto mb-3" aria-hidden="true" />
 				<p class="text-xl font-semibold text-slate-400">Suche nach einem Buch</p>
-				<p class="text-sm text-slate-300 mt-1">Titel, Autor oder ISBN eingeben</p>
+				<p class="text-sm text-slate-400 mt-1">Titel, Autor oder ISBN eingeben</p>
 			</div>
 		{/if}
 	</div>
