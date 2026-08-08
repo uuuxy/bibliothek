@@ -128,7 +128,14 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 		UPDATE schueler SET
 			vorname      = COALESCE(NULLIF($1, ''), vorname),
 			nachname     = COALESCE(NULLIF($2, ''), nachname),
-			klasse       = $3,
+			-- Wie die sieben Felder ringsum: ein LEERER Exportwert darf den Bestand nicht
+			-- loeschen. klasse stand hier als EINZIGES ungeschuetzt da (seit 4219a2e, nie
+			-- bewusst entschieden). Dieselbe Bugklasse hat 96c2f8c im Buch-Importer bereits
+			-- behoben (autor/verlag/jahr). Heute faengt lusd_parser.go:82 eine leere Klasse
+			-- schon beim Parsen ab — aber diese Zeile ist die zweite Tuer zum selben Zustand,
+			-- und die Klasse ist die Angabe, an der Ausleihlimit, Mahnweg und Abgaengerlauf
+			-- haengen. Ein leerer Wert hier ist nie eine gewollte Aussage.
+			klasse       = COALESCE(NULLIF($3, ''), klasse),
 			strasse      = COALESCE(NULLIF($4, ''), strasse),
 			hausnummer   = COALESCE(NULLIF($5, ''), hausnummer),
 			plz          = COALESCE(NULLIF($6, ''), plz),
