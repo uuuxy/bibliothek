@@ -35,7 +35,7 @@
 					{#if quelle}
 						<img src={quelle} alt="" class="h-full w-full object-cover" loading="lazy" />
 					{:else}
-						<div class="flex h-full w-full items-center justify-center text-slate-400">
+						<div class="flex h-full w-full items-center justify-center text-slate-300">
 							<BookOpen class="h-6 w-6" aria-hidden="true" />
 						</div>
 					{/if}

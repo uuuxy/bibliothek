@@ -18,7 +18,7 @@
 
 	{#if !orderStore.cart.length}
 		<div
-			class="py-10 px-4 border border-dashed border-slate-200 rounded-xl text-center text-sm text-slate-500"
+			class="py-10 px-4 border border-dashed border-slate-200 rounded-xl text-center text-sm text-slate-400"
 		>
 			<div class="text-2xl mb-1.5">🛒</div>
 			Noch nichts ausgewählt.<br />
@@ -43,7 +43,7 @@
 							<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">
 								{item.titel}
 							</h4>
-							<p class="text-xs text-slate-500 truncate font-mono">{item.isbn || '—'}</p>
+							<p class="text-xs text-slate-400 truncate font-mono">{item.isbn || '—'}</p>
 							{#if item.generate_barcodes}
 								<div
 									class="text-label-small font-bold text-blue-600 mt-1 flex items-center gap-1 bg-blue-50 w-fit px-1.5 py-0.5 rounded-md"
@@ -56,7 +56,7 @@
 						<button
 							onclick={() => orderStore.removeFromCart(idx)}
 							aria-label="Entfernen"
-							class="shrink-0 w-6 h-6 rounded-full text-slate-500 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center cursor-pointer transition-colors"
+							class="shrink-0 w-6 h-6 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center cursor-pointer transition-colors"
 						>
 							<X class="w-3.5 h-3.5" aria-hidden="true" />
 						</button>
@@ -101,7 +101,7 @@
 									aria-label="Preis"
 									class="w-20 px-2 py-1 border border-slate-200 rounded-lg text-right text-sm font-semibold text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
 								/>
-								<span class="text-sm font-semibold text-slate-500">€</span>
+								<span class="text-sm font-semibold text-slate-400">€</span>
 							</div>
 						{/if}
 					</div>
@@ -138,7 +138,7 @@
 				size="lg"
 				onclick={() => orderStore.submitOrder()}
 				disabled={orderStore.submitting || !orderStore.selectedSupplier}
-				class="w-full disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100"
+				class="w-full disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
 			>
 				{#if orderStore.submitting}
 					<div

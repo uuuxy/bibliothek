@@ -135,7 +135,7 @@
 								</div>{/if}
 							<div class="min-w-0 flex-1">
 								<div class="font-bold text-slate-800 truncate">{b.titel}</div>
-								<div class="text-sm text-slate-500 truncate">{b.autor} · {b.isbn}</div>
+								<div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div>
 							</div>
 							<span
 								class="shrink-0 text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold"
@@ -177,7 +177,7 @@
 								</div>{/if}
 							<div class="min-w-0 flex-1">
 								<div class="font-bold text-slate-800 truncate">{b.titel}</div>
-								<div class="text-sm text-slate-500 truncate">{b.autor} · {b.isbn}</div>
+								<div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div>
 							</div>
 							{#if isDuplicate}
 								<span
