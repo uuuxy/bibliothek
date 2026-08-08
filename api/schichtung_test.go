@@ -91,7 +91,6 @@ var handlerMitSQL = []string{
 	"reorders.go",
 	"reporting_dashboard.go",
 	"reports_pdf.go",
-	"scan_handler.go",
 	"settings.go",
 	"signaturen_handler.go",
 	"stats.go",

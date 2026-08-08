@@ -2,6 +2,7 @@
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
+	import { menuGroups, canSeeItem } from './menu.js';
 
 	import Omnibox from './Omnibox.svelte';
 	import BookAkte from './BookAkte.svelte';
@@ -87,6 +88,38 @@
 		return tabToPath[uiStore.activeTab];
 	}
 
+	// ── Wer darf welchen Bildschirm? EINE Regel, nicht zwei ────────────────────
+	//
+	// Hier stand bis zum 08.08.2026 eine handgepflegte Liste für die Helfer-Rolle
+	// ('kiosk' und 'media_catalog'). Damit gab es ZWEI Definitionen davon, was eine
+	// Rolle erreichen darf — die Navigation entschied nach canSeeItem, der Router nach
+	// dieser Liste. Sie sind auseinandergelaufen: Als der Menüpunkt „Schulklassen" von
+	// manage_users auf view_books wechselte, erschien er dem Helfer im Menü und warf
+	// ihn beim Klick wortlos zurück an die Theke. Ein Menüpunkt, der nichts tut, ist
+	// schlimmer als keiner — er sieht aus wie ein Defekt der Seite dahinter.
+	//
+	// Jetzt fragt der Router dieselbe Funktion wie das Menü. Eine Rechteänderung wirkt
+	// damit an beiden Stellen gleichzeitig oder an keiner.
+	const alleMenuPunkte = menuGroups.flatMap((g) => g.items);
+	const menuIDs = new Set(alleMenuPunkte.map((i) => i.id));
+
+	/** Menü-Tabs, die dieser Benutzer laut Navigation sehen darf. */
+	function erlaubteTabs(user) {
+		return new Set(alleMenuPunkte.filter((i) => canSeeItem(i, user)).map((i) => i.id));
+	}
+
+	/**
+	 * Prüft NUR Tabs, die auch einen Menüpunkt haben.
+	 *
+	 * 'book_detail' und 'stats_detail' sind Unteransichten ohne eigenen Menüeintrag —
+	 * würde die Regel sie mitprüfen, wäre jeder Sprung in eine Buchakte ein Rauswurf.
+	 * @param {string} tab
+	 * @param {Set<string>} erlaubt
+	 */
+	function tabIstGesperrt(tab, erlaubt) {
+		return menuIDs.has(tab) && !erlaubt.has(tab);
+	}
+
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
 		// öffnen (book_detail → BookAkte via bookId, inkl. Deep-Link /medienkatalog/buch/{id}) —
@@ -99,30 +132,25 @@
 	// Routing effects
 	$effect(() => {
 		if (authStore.isLoggedIn && authStore.currentUser) {
-			const role = authStore.currentUser.rolle ? authStore.currentUser.rolle.toLowerCase() : '';
 			const path = window.location.pathname;
-			const isHelfer = role === 'helfer';
+			const erlaubt = erlaubteTabs(authStore.currentUser);
 
-			if (isHelfer) {
-				if (uiStore.activeTab !== 'kiosk' && uiStore.activeTab !== 'media_catalog') {
-					uiStore.activeTab = 'kiosk';
-				}
-				// /medienkatalog: der Helfer darf den internen Katalog sehen (Zeile darüber).
-				// Solange hier '/katalog' stand, wurde er von genau dort auf den Kiosk
-				// zurückgeworfen — der Pfad, den er behalten durfte, war der des OPAC.
-				if (path !== '/' && path !== '/kiosk' && path !== '/medienkatalog') {
-					window.history.replaceState(null, '', '/kiosk');
-				}
-			} else {
-				if (!uiStore.isInitialRouteMatched && path !== '/') {
-					applyPathToState(path);
-				}
-				uiStore.isInitialRouteMatched = true;
+			if (!uiStore.isInitialRouteMatched && path !== '/') {
+				applyPathToState(path);
+			}
+			uiStore.isInitialRouteMatched = true;
 
-				const targetPath = currentTargetPath();
-				if (targetPath && path !== targetPath && uiStore.isInitialRouteMatched) {
-					window.history.pushState(null, '', targetPath);
-				}
+			// Gesperrten Bildschirm auf den ERSTEN erlaubten zurückstellen — für den
+			// Helfer ist das der Kiosk (Gruppe „Kiosk" steht in menu.js oben), für die
+			// Lehrkraft ihr Portal. Kein Rollenname im Router: Wer eine Rolle ergänzt,
+			// pflegt ihre Rechte in menu.js und hier gar nichts.
+			if (tabIstGesperrt(uiStore.activeTab, erlaubt)) {
+				uiStore.activeTab = [...erlaubt][0] ?? 'kiosk';
+			}
+
+			const targetPath = currentTargetPath();
+			if (targetPath && path !== targetPath) {
+				window.history.pushState(null, '', targetPath);
 			}
 		}
 	});

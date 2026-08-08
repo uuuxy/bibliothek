@@ -35,9 +35,9 @@ func TestNewDB(t *testing.T) {
 	})
 
 	t.Run("valid DB", func(t *testing.T) {
-		dbURL := os.Getenv("TEST_DB")
+		dbURL := os.Getenv("TEST_DATABASE_URL")
 		if dbURL == "" {
-			t.Skip("TEST_DB not set. Skipping real DB connection test.")
+			t.Skip("TEST_DATABASE_URL nicht gesetzt — DB-Integrationstest übersprungen")
 		}
 
 		pool, err := NewDB(ctx, dbURL)

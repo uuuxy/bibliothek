@@ -72,7 +72,6 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	handler.mux.Handle("GET /api/books/{id}", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuchLesen)))
 	handler.mux.Handle("GET /api/class-books", config.RequireViewBooks(http.HandlerFunc(handler.handleClassBooks)))
 	handler.mux.Handle("GET /api/lookup/", config.RequireViewBooks(http.HandlerFunc(handler.handleLookup)))
-	handler.mux.Handle("GET /api/subjects", config.RequireViewBooks(http.HandlerFunc(handler.handleGetSubjects)))
 
 	// Schreibend: RBAC-Permission edit_books (injiziert aus api/router.go)
 	adminH := config.RequireEditBooks(http.HandlerFunc(handler.handleAdminBooks))

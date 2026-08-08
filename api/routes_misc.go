@@ -50,7 +50,6 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	mux.Handle("POST /api/buecher/exemplare/verlust-endgueltig-loeschen", s.RequirePermission("manage_inventory")(s.InventurVerlusteLoeschenHandler()))
 
 	// Smart Scanner (Tresen-Weiche) — Teil der Kiosk-Kernfunktion, siehe /api/action.
-	mux.Handle("GET /api/scan", s.RequirePermission("perform_actions")(s.SmartScanHandler()))
 
 	// Hier standen bis zum 04.08.2026 zwei "Demo Dashboards": GET /admin/dashboard und
 	// GET /teacher/dashboard, die nichts taten außer einen englischen Satz auszugeben
