@@ -131,10 +131,7 @@
 	});
 </script>
 
-<PageShell
-	titel="Abgänger"
-	beschreibung="Schülerinnen und Schüler, die die Schule verlassen — mit offenen Büchern."
->
+<PageShell>
 	<AbgaengerKopfzeile
 		bind:klasse={selectedKlasse}
 		klassen={classes}

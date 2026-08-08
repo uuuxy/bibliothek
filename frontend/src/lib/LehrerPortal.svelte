@@ -131,10 +131,7 @@
 	}
 </script>
 
-<PageShell
-	titel="Mein Portal"
-	beschreibung="Im Katalog suchen und Klassensätze für den Unterricht reservieren."
->
+<PageShell>
 	<!-- Search bar -->
 	<div class="relative">
 		<Search

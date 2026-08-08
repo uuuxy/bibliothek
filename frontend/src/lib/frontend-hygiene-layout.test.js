@@ -65,27 +65,26 @@ describe('Seitengeruest', () => {
 		expect(routenKomponenten().length).toBeGreaterThan(10);
 	});
 
-	// Peter hat am 08.08.2026 auf der Signaturen-Seite ZWEI Ueberschriften gesehen: Ich
-	// hatte das Wurzelelement durch PageShell ersetzt und den vorhandenen Kopf darin
-	// stehen lassen. Mein Bildschirmfoto-Durchlauf deckte neun Seiten ab — Signaturen war
-	// nicht dabei. Eine Stichprobe ist kein Beweis; diese Regel ist einer.
-	it('laesst neben dem Geruest-Titel keine zweite Ueberschrift stehen', () => {
-		const gefunden = sammleQuelldateien(srcRoot)
-			.filter((f) => f.endsWith('.svelte'))
-			.filter((f) => {
-				const q = readFileSync(f, 'utf8');
-				// Nur Dateien, die PageShell MIT Titel aufrufen — dort kommt die <h1> schon
-				// aus dem Geruest. Wer PageShell ohne `titel` nutzt (BookAkte zeigt den
-				// Buchtitel), darf selbstverstaendlich eine eigene Ueberschrift setzen.
-				return /<PageShell[^>]*\n?[^>]*titel=/s.test(q) && /<h1\b/.test(q);
-			})
-			.map((f) => f.slice(srcRoot.length + 1));
+	// Seiten tragen KEINEN eigenen Titel. a3e4184 (20.06.2026) hat "redundant page
+	// headers and description subtitles" aus fuenf Arbeitsbereichen entfernt: Die
+	// Seitenleiste sagt bereits, wo man ist, und ein Satz wie "Bedarf erfassen,
+	// bestellen und Zulauf verbuchen" erklaert einem Sekretariat nichts, das die Seite
+	// taeglich benutzt. Ich hatte beides am 07.08. auf allen 14 Seiten wieder eingebaut
+	// — Peter hat es am 08.08. beanstandet. Diese Regel merkt es beim naechsten Mal.
+	it('gibt keiner Route einen eigenen Seitentitel', () => {
+		// Genau eine Ausnahme, und die ist keine: Die Statistik-Detailseite sagt, WELCHE
+		// Liste man sieht (Renner oder Ladenhueter). Das kann die Navigation nicht.
+		const AUSNAHMEN = ['lib/components/stats/StatistikDetailPage.svelte'];
+
+		const gefunden = routenKomponenten()
+			.filter((pfad) => /<h1\b/.test(readFileSync(pfad, 'utf8')))
+			.map((pfad) => pfad.slice(srcRoot.length + 1))
+			.filter((p) => !AUSNAHMEN.includes(p));
 
 		expect(
 			gefunden,
-			'Diese Seite uebergibt PageShell einen `titel` UND rendert eine eigene <h1>.\n' +
-				'Auf dem Bildschirm stehen dann zwei Ueberschriften untereinander — und fuer\n' +
-				'Screenreader hat die Seite zwei Titel:\n  ' +
+			'Diese Route rendert eine eigene <h1>. Der Seitenname steht in der\n' +
+				'Seitenleiste; ein zweites Mal darueber ist redundant (siehe a3e4184):\n  ' +
 				gefunden.join('\n  ')
 		).toEqual([]);
 	});

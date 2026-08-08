@@ -285,7 +285,7 @@
      flex-1/min-h-0 statt min-h-full: Die Deckelung braucht eine DEFINITE Höhe. min-height:100%
      setzt nur eine Untergrenze — die Card unten wäre trotzdem auf Inhaltshöhe gewachsen und
      hätte die Seite wieder scrollen lassen. Die Höhe kommt aus der Flex-Kette des Routers. -->
-<PageShell titel="Statistiken" beschreibung="Bestand, Ausleihen und Verluste im Überblick.">
+<PageShell>
 	<div class="flex-1 min-h-0 flex flex-col gap-4">
 		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
 		<div class="shrink-0 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">

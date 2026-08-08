@@ -99,7 +99,7 @@
 	});
 </script>
 
-<PageShell titel="Einstellungen" beschreibung="Schule, Fristen, Team und Mailserver.">
+<PageShell>
 	<!-- Header -->
 	<div class="space-y-6">
 		<!-- Tabs -->

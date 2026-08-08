@@ -69,11 +69,7 @@
 			</div>
 		</div>
 	{:else}
-		<PageShell
-			titel="Mahnwesen"
-			beschreibung="Überfällige Ausleihen nach Klassen sortiert."
-			aktionen={aktionsleiste}
-		>
+		<PageShell aktionen={aktionsleiste}>
 			<MahnwesenFilters />
 			<MahnwesenTable />
 		</PageShell>

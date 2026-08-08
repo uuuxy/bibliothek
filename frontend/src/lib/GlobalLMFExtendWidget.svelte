@@ -64,10 +64,7 @@
 	}
 </script>
 
-<PageShell
-	titel="LMF-Aktionen"
-	beschreibung="Lernmittelfreiheit: Leihfristen aller ausgegebenen Schulbücher gemeinsam verlängern."
->
+<PageShell>
 	<div class="space-y-5">
 		<div>
 			<h3 class="text-base font-bold text-slate-900">LMF-Massenverlängerung (Klasse)</h3>

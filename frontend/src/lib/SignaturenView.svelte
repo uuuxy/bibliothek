@@ -32,10 +32,12 @@
 	onMount(ladeSignaturen);
 </script>
 
-<PageShell
-	titel="Signaturen"
-	beschreibung="Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“ meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin."
->
+<PageShell>
+	<p class="text-sm text-slate-500">
+		Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“
+		meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin.
+	</p>
+
 	<div class="grid gap-6 lg:grid-cols-[20rem_1fr] items-start">
 		<section class="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
 			<label for="sig-suche" class="block text-sm font-medium text-slate-700">

@@ -170,10 +170,7 @@
 			/>
 		</div>
 	{:else}
-		<PageShell
-			titel="Schülerdatei"
-			beschreibung="Stammdaten, Ausleihen und Ausweise der Schülerinnen und Schüler."
-		>
+		<PageShell>
 			<!-- Reiter liegen auf der Leinwand, nicht in einem eigenen weissen Balken — wie im
 			     Mahnwesen und im Medienkatalog. -->
 			<div class="border-outline-variant shrink-0 border-b">

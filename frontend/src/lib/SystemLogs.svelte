@@ -8,7 +8,7 @@
 	const isAdmin = $derived(authStore.currentUser?.rolle === 'admin');
 </script>
 
-<PageShell titel="System-Logs" beschreibung="Protokoll aller administrativen Aktionen.">
+<PageShell>
 	<!-- Reiter auf der Leinwand, nicht in einem eigenen weissen Balken — wie Mahnwesen,
 	     Medienkatalog und Schuelerdatei. -->
 	<div class="border-outline-variant shrink-0 border-b">
