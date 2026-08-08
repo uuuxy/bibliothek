@@ -145,7 +145,7 @@
 </script>
 
 <div
-	class="snap-start shrink-0 w-40 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between animate-fade-in"
+	class="group flex cursor-pointer flex-col justify-between rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-md"
 	onclick={handleEditClick}
 	role="button"
 	tabindex="0"
