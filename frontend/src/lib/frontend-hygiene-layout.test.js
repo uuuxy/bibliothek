@@ -63,6 +63,31 @@ describe('Seitengeruest', () => {
 		expect(routenKomponenten().length).toBeGreaterThan(10);
 	});
 
+	// Peter hat am 08.08.2026 auf der Signaturen-Seite ZWEI Ueberschriften gesehen: Ich
+	// hatte das Wurzelelement durch PageShell ersetzt und den vorhandenen Kopf darin
+	// stehen lassen. Mein Bildschirmfoto-Durchlauf deckte neun Seiten ab — Signaturen war
+	// nicht dabei. Eine Stichprobe ist kein Beweis; diese Regel ist einer.
+	it('laesst neben dem Geruest-Titel keine zweite Ueberschrift stehen', () => {
+		const gefunden = sammleQuelldateien(srcRoot)
+			.filter((f) => f.endsWith('.svelte'))
+			.filter((f) => {
+				const q = readFileSync(f, 'utf8');
+				// Nur Dateien, die PageShell MIT Titel aufrufen — dort kommt die <h1> schon
+				// aus dem Geruest. Wer PageShell ohne `titel` nutzt (BookAkte zeigt den
+				// Buchtitel), darf selbstverstaendlich eine eigene Ueberschrift setzen.
+				return /<PageShell[^>]*\n?[^>]*titel=/s.test(q) && /<h1\b/.test(q);
+			})
+			.map((f) => f.slice(srcRoot.length + 1));
+
+		expect(
+			gefunden,
+			'Diese Seite uebergibt PageShell einen `titel` UND rendert eine eigene <h1>.\n' +
+				'Auf dem Bildschirm stehen dann zwei Ueberschriften untereinander — und fuer\n' +
+				'Screenreader hat die Seite zwei Titel:\n  ' +
+				gefunden.join('\n  ')
+		).toEqual([]);
+	});
+
 	// Blinder Fleck des Tests darueber: Er prueft die Routen-KOMPONENTEN. Die Huelle, in
 	// die Router.svelte sie stellt, sah er nie — und genau dort stand fuer LMF-Aktionen
 	// ein `p-6 max-w-6xl mx-auto`, also eine vierte Inhaltsbreite an der einzigen Stelle,

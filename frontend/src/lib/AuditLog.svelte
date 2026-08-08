@@ -2,6 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
+	import { RefreshCw, ScrollText } from '@lucide/svelte';
 
 	// State Runes
 	/** @type {any[]} */
@@ -48,7 +49,10 @@
 		{:else}
 			<span></span>
 		{/if}
-		<Button variant="secondary" onclick={fetchLogs}>🔄 Aktualisieren</Button>
+		<Button variant="secondary" onclick={fetchLogs}>
+			<RefreshCw class="h-4 w-4" aria-hidden="true" />
+			Aktualisieren
+		</Button>
 	</div>
 
 	{#if loading}
@@ -65,7 +69,7 @@
 		<div
 			class="p-12 rounded-xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
 		>
-			<span class="text-2xl block mb-2">📜</span>
+			<ScrollText class="mx-auto mb-2 h-8 w-8 text-slate-300" aria-hidden="true" />
 			Keine Audit-Einträge vorhanden.
 		</div>
 	{:else}

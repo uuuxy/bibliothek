@@ -2,6 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
+	import { RefreshCw, ShieldCheck } from '@lucide/svelte';
 
 	/** @type {any[]} */
 	let logs = $state.raw([]);
@@ -35,9 +36,14 @@
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print">
-	<div class="flex items-center justify-between">
-		<h1 class="text-xl font-bold text-slate-800">Administrator Audit-Log</h1>
-		<Button variant="secondary" onclick={fetchLogs}>🔄 Aktualisieren</Button>
+	<!-- Keine eigene Ueberschrift: Der Reiter darueber heisst schon "Admin-Audit-Log",
+	     und der Seitentitel steht im PageShell von SystemLogs. Zwei <h1> auf einer Seite
+	     waeren auch fuer Screenreader falsch. -->
+	<div class="flex items-center justify-end">
+		<Button variant="secondary" onclick={fetchLogs}>
+			<RefreshCw class="h-4 w-4" aria-hidden="true" />
+			Aktualisieren
+		</Button>
 	</div>
 
 	{#if loading}
@@ -52,7 +58,7 @@
 		<div
 			class="p-12 rounded-xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
 		>
-			<span class="text-2xl block mb-2">🛡️</span>
+			<ShieldCheck class="mx-auto mb-2 h-8 w-8 text-slate-300" aria-hidden="true" />
 			Keine administrativen Eingriffe protokolliert.
 		</div>
 	{:else}

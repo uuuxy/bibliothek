@@ -35,16 +35,8 @@
 <PageShell
 	breite="voll"
 	titel="Signaturen"
-	beschreibung="Die Regaladresse auf dem Buchrücken — als Präfix gelesen."
+	beschreibung="Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“ meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin."
 >
-	<div>
-		<h1 class="text-2xl font-bold text-slate-900">Signaturen</h1>
-		<p class="text-sm text-slate-500 mt-1">
-			Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“
-			meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin.
-		</p>
-	</div>
-
 	<div class="grid gap-6 lg:grid-cols-[20rem_1fr] items-start">
 		<section class="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
 			<label for="sig-suche" class="block text-sm font-medium text-slate-700">
