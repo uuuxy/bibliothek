@@ -139,10 +139,13 @@ func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName s
 	return nil
 }
 
-func (repo *BookRepository) DeleteClassGroup(ctx context.Context, className string) error {
-	_, err := repo.db.Exec(ctx, `DELETE FROM class_books WHERE class_name = $1`, className)
+func (repo *BookRepository) DeleteClassGroup(ctx context.Context, classNames []string) error {
+	if len(classNames) == 0 {
+		return nil
+	}
+	_, err := repo.db.Exec(ctx, `DELETE FROM class_books WHERE class_name = ANY($1)`, classNames)
 	if err != nil {
-		return fmt.Errorf("klasse konnte nicht gelöscht werden: %w", err)
+		return fmt.Errorf("klassen konnten nicht gelöscht werden: %w", err)
 	}
 	return nil
 }

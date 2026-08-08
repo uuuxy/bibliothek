@@ -175,27 +175,45 @@ func TestDeleteClassGroup(t *testing.T) {
 	repo := NewBookRepository(mock)
 
 	tests := []struct {
-		name      string
-		className string
-		mockSetup func()
-		wantErr   bool
+		name       string
+		classNames []string
+		mockSetup  func()
+		wantErr    bool
 	}{
 		{
-			name:      "success",
-			className: "5A",
+			name:       "success single",
+			classNames: []string{"5A"},
 			mockSetup: func() {
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
-					WithArgs("5A").
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"5A"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 1))
 			},
 			wantErr: false,
 		},
 		{
-			name:      "db error",
-			className: "10B",
+			name:       "success multiple",
+			classNames: []string{"5A", "5B"},
 			mockSetup: func() {
-				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
-					WithArgs("10B").
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"5A", "5B"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+			},
+			wantErr: false,
+		},
+		{
+			name:       "success empty",
+			classNames: []string{},
+			mockSetup: func() {
+				// No DB call expected
+			},
+			wantErr: false,
+		},
+		{
+			name:       "db error",
+			classNames: []string{"10B"},
+			mockSetup: func() {
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"10B"}).
 					WillReturnError(fmt.Errorf("db error"))
 			},
 			wantErr: true,
@@ -206,7 +224,7 @@ func TestDeleteClassGroup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockSetup()
 
-			err := repo.DeleteClassGroup(context.Background(), tt.className)
+			err := repo.DeleteClassGroup(context.Background(), tt.classNames)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DeleteClassGroup() error = %v, wantErr %v", err, tt.wantErr)
 			}
