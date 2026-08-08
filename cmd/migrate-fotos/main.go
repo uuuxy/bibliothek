@@ -182,7 +182,3 @@ func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string, barcodeID stri
 	slog.Info("Foto erfolgreich migriert", "barcode", barcodeID)
 	return true
 }
-
-func errorsIs(err error, target error) bool {
-	return err.Error() == target.Error()
-}
