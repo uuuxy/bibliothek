@@ -2,7 +2,7 @@
 	import KlassenBuchKachel from '$lib/components/admin/KlassenBuchKachel.svelte';
 	import { sortBooksBySubjectAndTitle } from '$lib/book_sorting.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
-	import { Pencil, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, Pencil, Trash2 } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -10,30 +10,59 @@
 	 *     className: string,
 	 *     books: any[]
 	 *   },
+	 *   offen?: boolean,
 	 *   darfPflegen?: boolean,
+	 *   onToggle: () => void,
 	 *   onEdit: () => void,
 	 *   onDelete: () => void
 	 * }}
 	 */
-	let { group, darfPflegen = false, onEdit, onDelete } = $props();
+	let { group, offen = false, darfPflegen = false, onToggle, onEdit, onDelete } = $props();
 
 	let sortedBooks = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
+	const rasterID = $derived(`klassensatz-${group.className.replace(/\s+/g, '-')}`);
 </script>
 
-<div class="class-group">
-	<div class="flex justify-between items-center mb-4 px-2">
-		<h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2 font-sans">
+<!-- Eine Zeile je Klasse, ausklappbar — nicht alle Saetze gleichzeitig ausgebreitet.
+     Peter am 09.08.2026: "jetzt sind die fotos untereinander! bei 20 klassen wird das
+     unuebersichtlich". Er hat recht, und es war meine Ueberkorrektur: Das Raster hat den
+     Seitwaertsscroll je Klasse beseitigt, dafuer standen bei zwanzig Klassen 320 Kacheln
+     untereinander — die Klassenliste selbst war dann nicht mehr zu ueberblicken.
+
+     Die Seite beantwortet zwei verschiedene Fragen. "Welche Klassen gibt es, und haben
+     sie ueberhaupt einen Satz?" beantwortet die Zeile mit Namen und Anzahl. "Stimmt der
+     Satz von 05F1?" beantwortet das Raster — aber nur fuer die eine Klasse, die man
+     gerade ansieht. In M3 ist das ein ausklappbares Listenelement; die Anzahl steht
+     schon in der eingeklappten Zeile, damit man zum Nachsehen gar nicht erst oeffnen
+     muss. -->
+<div class="class-group border-b border-slate-200 last:border-b-0">
+	<div class="flex items-center justify-between gap-4 py-3">
+		<!-- Die ganze Zeile schaltet um, nicht nur ein kleines Dreieck: Das Ziel ist so
+		     gross wie die Aussage, die es betrifft. -->
+		<button
+			type="button"
+			onclick={onToggle}
+			aria-expanded={offen}
+			aria-controls={rasterID}
+			class="group flex min-w-0 flex-1 items-center gap-3 rounded-lg py-1 text-left"
+		>
+			<ChevronDown
+				class="h-5 w-5 shrink-0 text-slate-500 transition-transform {offen ? '' : '-rotate-90'}"
+				aria-hidden="true"
+			/>
 			<span
-				class="bg-blue-50 border border-blue-105 text-blue-600 px-3 py-1 rounded-lg text-sm font-semibold"
-				>{group.books.length} Bücher</span
+				class="shrink-0 rounded-lg border border-blue-105 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600"
+				>{group.books.length}
+				{group.books.length === 1 ? 'Buch' : 'Bücher'}</span
 			>
-			{group.className}
-		</h2>
+			<span class="truncate font-sans text-2xl font-bold text-slate-800">{group.className}</span>
+		</button>
+
 		<!-- Ohne edit_books bleibt die Karte lesbar und verliert nur die Aktionen. Der
 		     Server entscheidet ohnehin (POST/DELETE hängen an edit_books) — hier geht
 		     es darum, niemandem einen Knopf anzubieten, der im 403 endet. -->
 		{#if darfPflegen}
-			<div class="flex gap-2">
+			<div class="flex shrink-0 gap-2">
 				<Button
 					variant="secondary"
 					onclick={onEdit}
@@ -56,23 +85,16 @@
 		{/if}
 	</div>
 
-	<!-- Umbrechendes Raster statt waagerechtem Karussell.
-	     Gemessen am 08.08.2026: 2.876 px Inhalt auf 1.280 px Fläche — NEUN von sechzehn
-	     Büchern lagen ausserhalb des Bildes. Dazu drei Fehler, die sich gegenseitig
-	     verdeckten: ein 95 % SCHWARZER Verlauf (rgba(9,9,11,.95)) aus der CSS-Datei legte
-	     sich ueber das erste und letzte Buch, im Markup lag ein zweiter Verlauf nach
-	     slate-50 darueber (die Arbeitsflaeche ist seit a4133a2 weiss), und die Pfeile
-	     standen auf opacity:0 + pointer-events:none, sichtbar erst bei :hover — am Tablet
-	     am Pult also nie.
-
-	     Der eigentliche Punkt ist aber nicht die Reparatur: M3 kennt ein Carousel, meint
-	     damit aber das STOEBERN in Bildmaterial (hero / multi-browse / uncontained). Diese
-	     Seite beantwortet eine Verwaltungsfrage — „hat 05F1 alle sechzehn Buecher?". Dafuer
-	     muss man sie sehen, nicht durch sie scrollen. Ein Raster zeigt alle auf einmal und
-	     braucht weder Pfeil noch Verlauf noch Hover. -->
-	<div class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pb-2">
-		{#each sortedBooks as book (book.id)}
-			<KlassenBuchKachel {book} {onEdit} />
-		{/each}
-	</div>
+	{#if offen}
+		<!-- Umbrechendes Raster statt waagerechtem Karussell (08.08.2026): Gemessen lagen
+		     2.876 px Inhalt auf 1.280 px Flaeche, neun von sechzehn Buechern also
+		     ausserhalb des Bildes. Die Pfeile dazu standen auf opacity:0 und erschienen
+		     erst bei :hover — am Tablet am Pult nie. M3 kennt zwar ein Carousel, meint
+		     damit aber das STOEBERN in Bildmaterial, nicht das Pruefen eines Bestands. -->
+		<div id={rasterID} class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pt-1 pb-6">
+			{#each sortedBooks as book (book.id)}
+				<KlassenBuchKachel {book} {onEdit} />
+			{/each}
+		</div>
+	{/if}
 </div>

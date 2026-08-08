@@ -53,6 +53,19 @@
 		classGroups.filter((g) => g.className.toLowerCase().includes(suchbegriff))
 	);
 
+	// Hoechstens EINE Klasse ausgeklappt. Waeren mehrere offen, waere die Liste nach zwei
+	// Klicks wieder so lang wie vorher — und genau das war Peters Einwand.
+	let offeneKlasse = $state(/** @type {string|null} */ (null));
+
+	// Bleibt nach dem Filtern genau eine Klasse uebrig, ist die Frage schon beantwortet:
+	// Wer "5f1" eintippt, will diesen Satz sehen und nicht noch einmal klicken. Bei
+	// mehreren Treffern bleibt alles zu, sonst waere die Uebersicht wieder verdeckt.
+	$effect(() => {
+		if (sichtbareGruppen.length === 1) {
+			offeneKlasse = sichtbareGruppen[0].className;
+		}
+	});
+
 	async function loadGroups() {
 		loading = true;
 		try {
@@ -169,17 +182,22 @@
 			{/if}
 		</div>
 	{:else}
-		{#each sichtbareGruppen as group (group.className)}
-			<KlassenKarte
-				{group}
-				{darfPflegen}
-				onEdit={() => {
-					managingGroup = group;
-					isManaging = true;
-				}}
-				onDelete={() => deleteGroup(group.className)}
-			/>
-		{/each}
+		<div>
+			{#each sichtbareGruppen as group (group.className)}
+				<KlassenKarte
+					{group}
+					{darfPflegen}
+					offen={offeneKlasse === group.className}
+					onToggle={() =>
+						(offeneKlasse = offeneKlasse === group.className ? null : group.className)}
+					onEdit={() => {
+						managingGroup = group;
+						isManaging = true;
+					}}
+					onDelete={() => deleteGroup(group.className)}
+				/>
+			{/each}
+		</div>
 	{/if}
 </div>
 
