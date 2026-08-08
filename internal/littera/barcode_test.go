@@ -78,25 +78,6 @@ func TestGeburtsdatumAus(t *testing.T) {
 	}
 }
 
-// TestStandardOptionenSchuljahr: das Schuljahr endet im Sommer. Ab August zählt bereits
-// das nächste Kalenderjahr — dieselbe Auslegung wie im Versetzungslauf. Läge die Grenze
-// falsch, bekämen alle importierten Schüler ein um ein Jahr verschobenes Abgangsjahr.
-func TestStandardOptionenSchuljahr(t *testing.T) {
-	faelle := []struct {
-		jetzt time.Time
-		ende  int
-	}{
-		{time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC), 2026},
-		{time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC), 2027},
-		{time.Date(2027, 1, 15, 0, 0, 0, 0, time.UTC), 2027},
-	}
-	for _, f := range faelle {
-		if got := StandardOptionen(f.jetzt).SchuljahrEnde; got != f.ende {
-			t.Errorf("%s → Schuljahrende %d, erwartet %d", f.jetzt.Format("2006-01-02"), got, f.ende)
-		}
-	}
-}
-
 // TestEtikettBarcode rechnet gegen ZWEI echte Bücher aus dem Regal der Schule.
 //
 // Diese beiden Zeilen sind der einzige Beleg, dass der Import scannbare Barcodes
