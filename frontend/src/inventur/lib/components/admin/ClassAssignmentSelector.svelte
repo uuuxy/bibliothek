@@ -47,14 +47,14 @@
 <label for="class-input" class="block text-xs text-slate-500 font-medium mb-1">ZIELKLASSEN</label>
 
 <div
-	class="flex flex-wrap items-center gap-2 border border-surface-variant/20 rounded-xl p-2 px-4 w-full sm:w-fit min-w-0 sm:min-w-75 bg-white hover:border-emerald-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-200 transition-all cursor-text shadow-sm mb-4 sm:mb-6"
+	class="flex flex-wrap items-center gap-2 border border-surface-variant/20 rounded-xl p-2 px-4 w-full sm:w-fit min-w-0 sm:min-w-75 bg-white hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all cursor-text shadow-sm mb-4 sm:mb-6"
 >
 	<!-- Group Icon -->
 	<Users class="text-slate-500 mr-1" aria-hidden="true" />
 
 	{#each selectedClasses as selectedClass (selectedClass)}
 		<span
-			class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-sm font-semibold shadow-sm animate-in zoom-in-90 duration-200"
+			class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-sm font-semibold shadow-sm animate-in zoom-in-90 duration-200"
 		>
 			{selectedClass}
 			<button

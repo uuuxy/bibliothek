@@ -9,7 +9,12 @@
 		isSaving = false,
 		isUpdate = false,
 		onToggleBook = () => {},
-		onsave = () => {}
+		onsave = () => {},
+		// Abbrechen gehoert in DIESELBE Aktionszeile wie Speichern (M3-Dialog: rechts
+		// ausgerichtet, Textknopf vor gefuelltem Knopf). Es stand vorher als eigener
+		// Knopf unter der ganzen Seitenspalte — durch die Auswahlliste getrennt und je
+		// nach Fuellstand hunderte Pixel vom Speichern entfernt.
+		oncancel = () => {}
 	} = $props();
 
 	/**
@@ -83,7 +88,7 @@
 </div>
 
 <div
-	class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-emerald-200 [&::-webkit-scrollbar-thumb]:rounded-full p-4 space-y-2"
+	class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full p-4 space-y-2"
 >
 	{#if selectedBooksList.length === 0}
 		<div class="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
@@ -96,7 +101,7 @@
 			{@const fallbackCoverUrl = fallbackCover(book.isbn)}
 			{@const coverUrl = primaryCoverUrl || fallbackCoverUrl}
 			<div
-				class="flex items-center gap-3.5 hover:bg-emerald-50 p-2 rounded-xl transition-colors group"
+				class="flex items-center gap-3.5 hover:bg-surface-container p-2 rounded-xl transition-colors group"
 			>
 				<!-- Nur EIN bg-: Das zusätzliche bg-white war wirkungslos, weil
 				     .bg-surface-container aus altlasten.css im Bundle dahinter landet
@@ -135,13 +140,22 @@
 	{/if}
 </div>
 
-<footer class="p-4 sm:p-6 bg-white border-t border-surface-variant/20 flex flex-col gap-4">
+<!-- Aktionszeile nach M3: rechtsbuendig, Textknopf (verwerfen) vor gefuelltem Knopf
+     (bestaetigen). Der Speichern-Knopf nimmt die Hausfarbe aus Button.svelte statt
+     eines eigenen bg-emerald-600 — Gruen war hier die einzige Stelle im Haus, die
+     nicht das blaue Primaer benutzt. Beschriftung in Satzschreibung: Versalien sind
+     M2-Sprache, M3 setzt Knopftexte normal. -->
+<footer
+	class="flex items-center justify-end gap-2 border-t border-surface-variant/20 bg-white p-4 sm:p-6"
+>
+	<Button variant="ghost" onclick={() => oncancel()}>Abbrechen</Button>
 	<Button
 		disabled={selectedClasses.length === 0 || (!isUpdate && selectedBookIds.size === 0) || isSaving}
 		onclick={(e) => onsave(e)}
-		class="h-auto w-full p-5 bg-emerald-600 hover:bg-emerald-700 text-base tracking-wide shadow-lg"
 	>
-		<Save class="w-5 h-5" aria-hidden="true" />
-		{isSaving ? 'SPEICHERT...' : 'AUSWAHL SPEICHERN'}
+		<Save class="h-4 w-4" aria-hidden="true" />
+		<!-- Kurz halten: In der 340 px schmalen Spalte brach „Auswahl speichern" auf zwei
+		     Zeilen um. Was gespeichert wird, sagt die Ueberschrift des Dialogs. -->
+		<span class="whitespace-nowrap">{isSaving ? 'Speichert …' : 'Speichern'}</span>
 	</Button>
 </footer>

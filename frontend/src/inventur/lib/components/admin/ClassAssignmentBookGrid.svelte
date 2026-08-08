@@ -37,10 +37,10 @@
 	<p class="text-xs text-slate-500 font-medium mb-1">BÜCHER FINDEN</p>
 
 	<div
-		class="bg-emerald-50 border border-surface-variant/10 rounded-full flex items-center px-4 sm:px-6 py-3 sm:py-4 shadow-sm hover:shadow-md transition-shadow group focus-within:ring-2 focus-within:ring-emerald-300"
+		class="bg-surface-container border border-surface-variant/10 rounded-full flex items-center px-4 sm:px-6 py-3 sm:py-4 shadow-sm hover:shadow-md transition-shadow group focus-within:ring-2 focus-within:ring-blue-500/20"
 	>
 		<Search
-			class="text-slate-500 mr-2 sm:mr-4 group-focus-within:text-emerald-600 transition-colors hidden sm:block"
+			class="text-slate-500 mr-2 sm:mr-4 group-focus-within:text-blue-600 transition-colors hidden sm:block"
 			aria-hidden="true"
 		/>
 		<input
@@ -107,18 +107,27 @@
 
 			<!-- Content -->
 			<div class="p-5 flex flex-col grow justify-end space-y-3 w-full">
+				<!-- Beide Marken nur, wenn sie etwas zu sagen haben. Vorher stand auf jeder
+				     Karte ohne Jahrgang „Kl. 0" und daneben eine leere Fachmarke — eine
+				     Klasse 0 gibt es nicht, die Angabe behauptete also etwas Falsches,
+				     statt zu schweigen. -->
 				<div class="flex flex-wrap gap-1.5 items-start">
-					<span class="px-2.5 py-0.5 bg-primary-100 text-primary-900 text-xs font-black rounded-lg"
-						>{book.subject}</span
-					>
-					<span
-						class="px-2.5 py-0.5 bg-surface-container-high text-surface-variant text-xs font-black rounded-lg"
-					>
-						Kl. {book.gradeLevel}
-						{#if book.track}
-							({book.track})
-						{/if}
-					</span>
+					{#if book.subject}
+						<span
+							class="px-2.5 py-0.5 bg-primary-100 text-primary-900 text-xs font-black rounded-lg"
+							>{book.subject}</span
+						>
+					{/if}
+					{#if book.gradeLevel}
+						<span
+							class="px-2.5 py-0.5 bg-surface-container-high text-surface-variant text-xs font-black rounded-lg"
+						>
+							Kl. {book.gradeLevel}
+							{#if book.track}
+								({book.track})
+							{/if}
+						</span>
+					{/if}
 				</div>
 				<div>
 					<h3

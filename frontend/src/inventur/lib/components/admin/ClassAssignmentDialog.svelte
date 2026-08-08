@@ -124,13 +124,6 @@
 		<div
 			class="bg-white rounded-none sm:rounded-3xl shadow-2xl w-full lg:w-300 max-w-[100vw] lg:max-w-[90vw] h-dvh sm:h-[90vh] lg:h-212.5 max-h-dvh lg:max-h-[95vh] p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
 		>
-			<!-- Background Particles -->
-			<div class="absolute inset-0 opacity-40 pointer-events-none">
-				<div class="particle p1"></div>
-				<div class="particle p2"></div>
-				<div class="particle p3"></div>
-			</div>
-
 			<!-- Left Content Area -->
 			<div class="grow flex flex-col gap-4 sm:gap-6 relative z-10 w-full overflow-hidden">
 				<div class="shrink-0">
@@ -143,7 +136,7 @@
 				</div>
 
 				<div
-					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-emerald-200 [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
+					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
 				>
 					<ClassAssignmentSelector bind:selectedClasses />
 					<ClassAssignmentBookGrid {books} bind:selectedBookIds />
@@ -162,14 +155,8 @@
 					isUpdate={!!initialGroup}
 					onToggleBook={toggleBook}
 					onsave={saveAssignments}
+					oncancel={onClose}
 				/>
-
-				<button
-					onclick={onClose}
-					class="mt-auto w-full text-center py-3 text-emerald-800 font-medium text-lg hover:text-emerald-900 transition-colors bg-transparent border-none cursor-pointer"
-				>
-					Abbrechen
-				</button>
 			</aside>
 
 			<!-- Close Button (Absolute Top Right) -->
