@@ -168,9 +168,14 @@ func (s *Server) ladeBestellhistoriePositionen(ctx context.Context, orders []Bes
 	posRows, err := s.DB.Pool.Query(ctx, `
 		SELECT p.bestellung_id, p.titel_name, p.isbn, p.menge, p.einzelpreis,
 		       coalesce(p.titel_id::text, ''),
-		       (SELECT count(*) FROM buecher_exemplare e
-		         WHERE e.titel_id = p.titel_id AND `+etikettenOffenBedingung+`)
+		       coalesce(e_counts.etiketten_offen, 0)
 		FROM bestellungen_positionen p
+		LEFT JOIN (
+			SELECT titel_id, count(*) as etiketten_offen
+			FROM buecher_exemplare e
+			WHERE `+etikettenOffenBedingung+`
+			GROUP BY titel_id
+		) e_counts ON e_counts.titel_id = p.titel_id
 		WHERE p.bestellung_id = ANY($1)
 		ORDER BY p.bestellung_id, p.titel_name
 	`, geladeneIDs(orderIndex))
