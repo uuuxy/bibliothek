@@ -85,7 +85,11 @@
 		</div>
 
 		<!-- Dynamic Filter Area -->
-		<div class="w-full max-w-3xl transition-all duration-300 ease-in-out">
+		<!-- Ohne `ease-in-out`: Das war die letzte Material-2-Kurve im Haus (Tailwind
+		     bildet ease-in-out auf cubic-bezier(0.4, 0, 0.2, 1) ab). Die Kurve kommt
+		     jetzt aus theme-mass.css. duration-300 bleibt — hier wechselt ein ganzer
+		     Bereich, und dafür nennt M3 die mittlere Stufe, nicht die kurze. -->
+		<div class="w-full max-w-3xl transition-all duration-300">
 			{#if viewMode === 'suche'}
 				<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst NICHT auf der
 				     36-px-Control-Skala und bewusst rounded-full — dieses Feld ist kein Datenfeld

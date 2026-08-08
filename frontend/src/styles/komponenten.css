@@ -36,7 +36,10 @@
 		background-color: currentColor;
 		opacity: 0;
 		pointer-events: none;
-		transition: opacity 120ms ease;
+		/* Kürzer als der Rest (M3 „short2"): Der State-Layer beantwortet den Zeiger,
+		   er transportiert nichts. Die Kurve ist dieselbe wie überall — sie kam vorher
+		   als `ease` daher, also weder M2 noch M3, sondern schlicht die CSS-Vorgabe. */
+		transition: opacity 100ms var(--default-transition-timing-function);
 	}
 	button:not(.no-state-layer):hover:not(:disabled)::after,
 	.m3-state:hover:not(:disabled)::after {
@@ -84,7 +87,11 @@
 		border-radius: var(--radius-full);
 		cursor: pointer;
 		transition-property: color, background-color, border-color;
-		transition-duration: 150ms;
+		/* Aus der Skala, nicht fest verdrahtet: Diese Regel ist plain CSS, sie erbt
+		   Tailwinds Vorgabewerte nicht von allein — ohne die beiden var() bliebe der
+		   Icon-Button die letzte Stelle im Haus mit eigener Bewegungssprache. */
+		transition-duration: var(--default-transition-duration);
+		transition-timing-function: var(--default-transition-timing-function);
 	}
 }
 

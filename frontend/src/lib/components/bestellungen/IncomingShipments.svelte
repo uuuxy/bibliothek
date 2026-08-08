@@ -66,6 +66,8 @@
 		}
 	}
 	.animate-green-fade {
-		animation: greenGlow 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+		/* Dieselbe Kurve wie alle Übergänge im Haus (theme-mass.css). Vorher stand
+		   hier die Material-2-Kurve als einzige ihrer Art. */
+		animation: greenGlow 1.5s var(--default-transition-timing-function) forwards;
 	}
 </style>

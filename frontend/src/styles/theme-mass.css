@@ -151,4 +151,23 @@
 	--shadow-lg: 0 2px 6px rgb(15 23 42 / 0.09);
 	--shadow-xl: 0 4px 12px rgb(15 23 42 / 0.11);
 	--shadow-2xl: 0 8px 24px rgb(15 23 42 / 0.14);
+
+	/* ── Bewegung ─────────────────────────────────────────────────────────────
+	   Im Browser gemessen (08.08.2026, elf Bildschirme): 3.849 von 3.967
+	   Übergängen liefen auf 150 ms mit `cubic-bezier(0.4, 0, 0.2, 1)`. Beides
+	   ist Tailwinds Vorgabe — und diese Kurve ist die von Material 2. Das
+	   Projekt hatte also überall die Bewegungssprache der Vorgängergeneration,
+	   ohne dass es je entschieden worden wäre; eine eigene Definition gab es
+	   an keiner Stelle.
+
+	   Material 3 fasst die Kurve am Ende härter an: Sie endet auf (0, 1) statt
+	   auf (0.2, 1), die Bewegung kommt also entschiedener zum Stehen, statt
+	   auszurollen. Zusammen mit 200 ms (M3 „short4", die Stufe für Zustands-
+	   wechsel an einem Bedienelement) ist das der hörbare Unterschied zwischen
+	   „irgendeine Web-App" und dem Google-Gefühl.
+
+	   Wieder die SKALA statt der Aufrufe: Diese zwei Zeilen wirken auf jede
+	   `transition-*`-Utility im Haus. */
+	--default-transition-duration: 200ms;
+	--default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
