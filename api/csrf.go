@@ -95,8 +95,17 @@ func (s *Server) CSRFTokenHandler() http.HandlerFunc {
 // Sitzung eines ANGREIFER-Kontos anmelden. Alles, was es danach am Tresen scannt,
 // landet in dessen Konto. SameSite=Strict verhindert das nicht: Es regelt das SENDEN
 // von Cookies, nicht das Setzen durch die Antwort.
+// /login/ als PRÄFIX, nicht nur der exakte Pfad: Bis zum 08.08.2026 stand hier
+// `path == "/login"`. Damit fiel jeder Unterpfad unterhalb von /login aus der Prüfung —
+// ein künftiges /login/code oder /login/barcode wäre ohne CSRF-Schutz online gegangen,
+// und zwar lautlos, weil an keiner Stelle eine Ausnahme dafür eingetragen werden musste.
+//
+// Dass das keine Theorie ist, belegte der eigene Test: Er führte /login/barcode als
+// eine von „drei Ausnahmen", obwohl istPruefungsAusnahme nur zwei kennt. Der Pfad kam
+// durch, weil er durch dieses Raster fiel — nicht, weil ihn jemand freigegeben hätte.
+// Eine Lücke, die wie eine Entscheidung aussieht, ist die gefährlichste Sorte.
 func istAPIPfad(path string) bool {
-	return strings.HasPrefix(path, "/api/") || path == "/login"
+	return strings.HasPrefix(path, "/api/") || path == "/login" || strings.HasPrefix(path, "/login/")
 }
 
 // istPruefungsAusnahme nennt die mutierenden Pfade, die ohne Token durchmüssen —

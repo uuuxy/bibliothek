@@ -13,7 +13,7 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 - **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
 - **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 500), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen.
 - **Lebensdauer:** 12 Stunden; danach ist eine erneute Anmeldung erforderlich.
-- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Lax`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`).
+- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Hier stand bis zum 08.08.2026 `Lax` — der Code setzt seit jeher `http.SameSiteStrictMode` (`auth/handlers.go`). Die Doku war also laxer als die Anwendung; wer sie als Grundlage für eine Risikoabwägung nimmt, rechnet mit einem Cross-Site-Fenster, das es nicht gibt.
 
 ### Brute-Force-Schutz (Login)
 - **Schlüssel:** `lower(email)|ip` — sperrt ein Konto für eine IP-Adresse (5 Fehlversuche / 15 min).

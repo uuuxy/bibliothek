@@ -176,7 +176,12 @@ func holeUndKonvertiereCover(ctx context.Context, root *os.Root, urlStr, fileNam
 		return err
 	}
 
-	out, err := root.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	// 0600 wie in uploads_pfad.go, nicht 0666: Der Cover-Cache schrieb als einzige Stelle
+	// welt-schreibbar. Im Container federt die umask das meist ab — „meist" ist bei
+	// Dateirechten aber keine Zusage, sondern eine Wette auf die Laufzeitumgebung. Der
+	// Prozess ist der einzige, der diese Dateien je anfassen muss; ausgeliefert werden
+	// sie über den FileServer, nicht über das Dateisystem.
+	out, err := root.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}

@@ -96,15 +96,44 @@ func TestCSRFMiddlewareWeistFremdesTokenAb(t *testing.T) {
 	}
 }
 
-// Die drei Ausnahmen müssen offen bleiben, sonst kommt niemand mehr herein oder heraus:
-// Vor dem Login gibt es kein Cookie, und ein abgelaufenes Token darf sich beim
-// Abmelden bzw. Erneuern nicht am fehlenden CSRF-Cookie festhaken.
+// Die beiden Ausnahmen müssen offen bleiben, sonst kommt niemand mehr heraus: Ein
+// abgelaufenes Token darf sich beim Abmelden bzw. Erneuern nicht am fehlenden
+// CSRF-Cookie festhaken.
+//
+// Hier stand bis zum 08.08.2026 zusätzlich /login/barcode, und der Kommentar sprach von
+// „drei Ausnahmen". istPruefungsAusnahme kennt aber nur zwei — der Pfad kam durch, weil
+// er aus istAPIPfad herausfiel, nicht weil ihn jemand freigegeben hätte. Der Test hat
+// eine LÜCKE als Entscheidung dokumentiert und hätte grün weitergelaufen, wenn jemand
+// die Route tatsächlich angelegt hätte.
 func TestCSRFMiddlewareAusnahmenBleibenOffen(t *testing.T) {
-	for _, pfad := range []string{"/login/barcode", "/api/auth/logout", "/api/auth/refresh"} {
+	for _, pfad := range []string{"/api/auth/logout", "/api/auth/refresh"} {
 		t.Run(pfad, func(t *testing.T) {
 			erreicht, code := durchlaufCSRF(t, http.MethodPost, pfad, false)
 			if !erreicht {
 				t.Fatalf("%s ohne Token wurde blockiert (Status %d)", pfad, code)
+			}
+		})
+	}
+}
+
+// Und die Gegenrichtung, die vorher niemand geprüft hat: Ein Unterpfad von /login ist
+// KEINE Ausnahme. Legt jemand /login/code für den Helfer-Zugang an, greift die
+// CSRF-Prüfung ab der ersten Zeile — ohne dass er daran denken muss.
+//
+// Login-CSRF ist kein Randfall: Eine fremde Seite kann ein Formular mit
+// enctype="text/plain" abschicken, dessen Rumpf als JSON durchgeht, und das Opfer damit
+// in die Sitzung eines ANGREIFER-Kontos anmelden. Alles, was danach am Tresen gescannt
+// wird, landet dort. SameSite=Strict verhindert das nicht — es regelt das SENDEN von
+// Cookies, nicht das Setzen durch die Antwort.
+func TestCSRFMiddlewarePrueftAuchLoginUnterpfade(t *testing.T) {
+	for _, pfad := range []string{"/login", "/login/code", "/login/barcode"} {
+		t.Run(pfad, func(t *testing.T) {
+			erreicht, code := durchlaufCSRF(t, http.MethodPost, pfad, false)
+			if erreicht {
+				t.Fatalf("%s ohne CSRF-Token durchgelassen (Status %d) — Login-CSRF steht offen", pfad, code)
+			}
+			if code != http.StatusForbidden {
+				t.Errorf("%s: Status %d, erwartet 403", pfad, code)
 			}
 		})
 	}
