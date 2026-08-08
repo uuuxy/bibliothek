@@ -187,6 +187,7 @@
 	<ClassAssignmentDialog
 		isOpen={isManaging}
 		initialGroup={managingGroup}
+		vorhandeneGruppen={classGroups}
 		onClose={() => (isManaging = false)}
 		onSaved={() => {
 			isManaging = false;

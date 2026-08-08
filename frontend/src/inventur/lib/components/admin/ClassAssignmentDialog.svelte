@@ -5,17 +5,24 @@
 	import ClassAssignmentSelector from './ClassAssignmentSelector.svelte';
 	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
 	import ClassAssignmentSummary from './ClassAssignmentSummary.svelte';
-	import { X } from '@lucide/svelte';
+	import { TriangleAlert, X } from '@lucide/svelte';
 
 	/**
 	 * @type {{
 	 *   isOpen?: boolean,
 	 *   onClose?: (event?: MouseEvent) => void,
 	 *   onSaved?: (res: { classes: string[], count: number }) => void,
-	 *   initialGroup?: any
+	 *   initialGroup?: any,
+	 *   vorhandeneGruppen?: any[]
 	 * }}
 	 */
-	let { isOpen = true, onClose = () => {}, onSaved = () => {}, initialGroup = null } = $props();
+	let {
+		isOpen = true,
+		onClose = () => {},
+		onSaved = () => {},
+		initialGroup = null,
+		vorhandeneGruppen = []
+	} = $props();
 
 	let selectedClasses = $state(/** @type {string[]} */ ([]));
 	let selectedBookIds = $state(/** @type {Set<number>} */ (new Set()));
@@ -48,6 +55,36 @@
 	const selectedBooksList = $derived(
 		books.filter((/** @type {any} */ b) => selectedBookIds.has(b.id))
 	);
+
+	// Der Speicherpfad ERSETZT: UpdateClassBooks loescht die Zuweisungen ALLER Zielklassen
+	// und schreibt danach die Auswahl hinein (inventur/datenbank_klassen.go). Mehrere
+	// Klassen gleichzeitig zu bearbeiten ist also seit jeher moeglich — nur sagte nichts,
+	// dass die zusaetzlich gewaehlte Klasse dabei ihren bisherigen Satz verliert. Wer zu
+	// 05F1 noch 06A2 dazunimmt, loescht deren neun Buecher, ohne es zu sehen.
+	const ueberschriebeneKlassen = $derived(
+		selectedClasses
+			.filter((/** @type {string} */ name) => name !== initialGroup?.className)
+			.map((/** @type {string} */ name) =>
+				vorhandeneGruppen.find((/** @type {any} */ g) => g.className === name)
+			)
+			.filter((/** @type {any} */ g) => g && g.books?.length > 0)
+	);
+
+	// Aufzaehlung im Skript statt im Markup: Die Variante mit {#each} brauchte fuer das
+	// Komma und das „und" Mustaches mit reinen Zeichenketten — ESLint lehnt die zu Recht
+	// ab (svelte/no-useless-mustaches), und lesbar war sie auch nicht.
+	const ueberschriebenText = $derived.by(() => {
+		const teile = ueberschriebeneKlassen.map(
+			(/** @type {any} */ g) =>
+				`${g.className} (${g.books.length} ${g.books.length === 1 ? 'Buch' : 'Bücher'})`
+		);
+		if (teile.length === 0) return '';
+		const liste =
+			teile.length === 1 ? teile[0] : `${teile.slice(0, -1).join(', ')} und ${teile.at(-1)}`;
+		return teile.length === 1
+			? `${liste} hat bereits einen Klassensatz. Beim Speichern wird er durch die Auswahl hier ersetzt.`
+			: `${liste} haben bereits einen Klassensatz. Beim Speichern werden sie durch die Auswahl hier ersetzt.`;
+	});
 
 	/**
 	 * @param {number} id
@@ -139,6 +176,18 @@
 					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
 				>
 					<ClassAssignmentSelector bind:selectedClasses />
+
+					{#if ueberschriebeneKlassen.length > 0}
+						<!-- Warnung statt Verbot: Genau das WILL man meistens (ein Jahrgang
+						     bekommt denselben Satz). Es darf nur nicht unbemerkt passieren. -->
+						<div
+							class="mb-4 flex items-start gap-2.5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900"
+						>
+							<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+							<p>{ueberschriebenText}</p>
+						</div>
+					{/if}
+
 					<ClassAssignmentBookGrid {books} bind:selectedBookIds />
 				</div>
 			</div>
