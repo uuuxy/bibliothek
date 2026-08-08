@@ -62,11 +62,13 @@ func TestGetExemplarForInventoryScan(t *testing.T) {
 		t.Fatalf("Exemplar ohne Cover anlegen: %v", err)
 	}
 
-	// Fall 3: Ausgesondert
+	// Fall 3: Ausgesondert. chk_aussonderung_grund (Migration 043) verlangt bei
+	// ist_ausgesondert = true zwingend einen Grund — ohne ihn scheitert schon das
+	// Anlegen mit SQLSTATE 23514, und der Scan-Fall waere nie geprueft worden.
 	var ausgesondertExID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausgesondert, ist_ausleihbar)
-		VALUES ($1, $2, true, false) RETURNING id
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausgesondert, aussonderung_grund, ist_ausleihbar)
+		VALUES ($1, $2, true, 'AUSSORTIERT', false) RETURNING id
 	`, titelID, "SCAN-AUSG").Scan(&ausgesondertExID); err != nil {
 		t.Fatalf("Ausgesondertes Exemplar anlegen: %v", err)
 	}
@@ -80,19 +82,21 @@ func TestGetExemplarForInventoryScan(t *testing.T) {
 		t.Fatalf("Verliehenes Exemplar anlegen: %v", err)
 	}
 
-	// Für das verliehene Exemplar eine aktive Ausleihe anlegen
-	// Dafür brauchen wir einen Benutzer (Schüler)
+	// Für das verliehene Exemplar eine aktive Ausleihe anlegen — dafür braucht es
+	// einen Schüler. klasse und abgaenger_jahr sind NOT NULL ohne Vorgabewert.
 	var schuelerID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (vorname, nachname, barcode_id)
-		VALUES ('Max', 'Mustermann', 'S-1234') RETURNING id
+		INSERT INTO schueler (vorname, nachname, barcode_id, klasse, abgaenger_jahr)
+		VALUES ('Max', 'Mustermann', 'S-1234', '5a', 2030) RETURNING id
 	`).Scan(&schuelerID); err != nil {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 
+	// Die Ausleihe haengt an schueler_id (nicht an einer benutzer_id) und braucht
+	// eine Rueckgabefrist; ausgeliehen_am setzt die Tabelle selbst.
 	if _, err := pool.Exec(ctx, `
-		INSERT INTO ausleihen (exemplar_id, benutzer_id, ausleih_datum)
-		VALUES ($1, $2, CURRENT_TIMESTAMP)
+		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+		VALUES ($1, $2, CURRENT_DATE + 14)
 	`, verliehenExID, schuelerID); err != nil {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}

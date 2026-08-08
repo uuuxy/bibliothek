@@ -9,71 +9,78 @@ import (
 	"testing"
 )
 
+// TestNeuteredFileSystem_Open haelt die eigentliche Aufgabe dieses Dateisystems fest:
+// Ein Verzeichnis OHNE index.html darf sich nicht oeffnen lassen. Faellt diese Weiche
+// weg, liefert der Go-Dateiserver an ihrer Stelle ein Verzeichnis-Listing aus und
+// stellt den Inhalt des Frontend-Verzeichnisses offen ins Netz.
 func TestNeuteredFileSystem_Open(t *testing.T) {
-	// Create a temporary directory for testing
-	tempDir, err := os.MkdirTemp("", "neutered_fs_test")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir) // clean up
+	// t.TempDir raeumt selbst auf — kein deferter RemoveAll, dessen Fehler niemand liest.
+	tempDir := t.TempDir()
 
-	// Create a file in the root
 	if err := os.WriteFile(filepath.Join(tempDir, "file.txt"), []byte("test"), 0644); err != nil {
-		t.Fatalf("Failed to create file: %v", err)
+		t.Fatalf("Datei anlegen: %v", err)
 	}
 
-	// Create a subdirectory with an index.html
 	subDirWithIndex := filepath.Join(tempDir, "with_index")
 	if err := os.Mkdir(subDirWithIndex, 0755); err != nil {
-		t.Fatalf("Failed to create dir: %v", err)
+		t.Fatalf("Verzeichnis anlegen: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(subDirWithIndex, "index.html"), []byte("index"), 0644); err != nil {
-		t.Fatalf("Failed to create index.html: %v", err)
+		t.Fatalf("index.html anlegen: %v", err)
 	}
 
-	// Create a subdirectory without an index.html
 	subDirWithoutIndex := filepath.Join(tempDir, "without_index")
 	if err := os.Mkdir(subDirWithoutIndex, 0755); err != nil {
-		t.Fatalf("Failed to create dir: %v", err)
+		t.Fatalf("Verzeichnis anlegen: %v", err)
 	}
 
 	fs := neuteredFileSystem{http.Dir(tempDir)}
 
-	t.Run("Open existing file", func(t *testing.T) {
+	// schliesse macht aus dem Close ein gepruefte Handlung: bliebe hier ein Handle
+	// offen, faende man die Ursache spaeter nur noch als Datei-Limit im Betrieb.
+	schliesse := func(t *testing.T, f http.File) {
+		t.Helper()
+		if f == nil {
+			return
+		}
+		if err := f.Close(); err != nil {
+			t.Errorf("Schliessen fehlgeschlagen: %v", err)
+		}
+	}
+
+	t.Run("vorhandene Datei", func(t *testing.T) {
 		f, err := fs.Open("file.txt")
 		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
+			t.Errorf("kein Fehler erwartet, bekam %v", err)
 		}
-		if f != nil {
-			f.Close()
-		}
+		schliesse(t, f)
 	})
 
-	t.Run("Open non-existing file", func(t *testing.T) {
+	t.Run("nicht vorhandene Datei", func(t *testing.T) {
 		_, err := fs.Open("nonexistent.txt")
 		if err == nil {
-			t.Error("Expected error, got nil")
+			t.Error("Fehler erwartet, bekam nil")
 		}
 	})
 
-	t.Run("Open directory with index.html", func(t *testing.T) {
+	t.Run("Verzeichnis mit index.html", func(t *testing.T) {
 		f, err := fs.Open("with_index")
 		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
+			t.Errorf("kein Fehler erwartet, bekam %v", err)
 		}
-		if f != nil {
-			f.Close()
-		}
+		schliesse(t, f)
 	})
 
 	t.Run("Open directory without index.html", func(t *testing.T) {
-		_, err := fs.Open("without_index")
+		f, err := fs.Open("without_index")
 		if err == nil {
-			t.Error("Expected error, got nil")
-		} else if !errors.Is(err, os.ErrNotExist) && !os.IsNotExist(err) {
-			// In Go 1.20+, http.Dir returns fs.ErrNotExist which Is(os.ErrNotExist).
-			// We check if it is some form of "not exist" error.
-			t.Logf("Expected some 'not exist' error, got %v", err)
+			schliesse(t, f)
+			t.Fatal("das Verzeichnis liess sich oeffnen — der Dateiserver wuerde jetzt ein Listing ausliefern")
+		}
+		// Es muss ein „existiert nicht" sein: nur daraus macht net/http ein 404.
+		// Ein anderer Fehler wuerde als 500 durchschlagen und die SPA-Weiche stoeren.
+		if !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("os.ErrNotExist erwartet, bekam %v", err)
 		}
 	})
 }
