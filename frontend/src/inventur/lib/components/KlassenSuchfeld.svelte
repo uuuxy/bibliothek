@@ -1,9 +1,15 @@
-<!-- @component KlassenSuchfeld — Klassensuche mit Vorschlagsliste für die Startseite.
+<!-- @component KlassenSuchfeld — Klassensuche mit Vorschlagsliste.
 
      Bewusst KEIN Select: Hier wird getippt und gefiltert, nicht aus einer festen
      Liste gewählt — bei über hundert Klassen ist Tippen der kürzere Weg. Der
      150-ms-Verzug beim Verlassen ist Absicht: Ohne ihn schließt die Liste, bevor
-     der Klick auf einen Eintrag ankommt. -->
+     der Klick auf einen Eintrag ankommt.
+
+     Stand in der Werkzeugleiste der Schulklassen-Seite, seit der Klassen-Reiter im
+     Medienkatalog aufgelöst wurde. Feld-Vokabular deshalb wie Select.svelte
+     (rounded-xl, border-outline-variant, Fokus auf primary) — die Zeile trägt
+     Suchfeld, zwei Auswahlfelder und einen Button und soll als EINE Leiste lesen.
+     Die Höhe kommt aus dem base-Layer (36 px), nicht aus den Klassen hier. -->
 <script>
 	import { ChevronDown } from '@lucide/svelte';
 	/**
@@ -11,33 +17,35 @@
 	 *   klasseSearchQuery: string,
 	 *   isKlasseDropdownOpen: boolean,
 	 *   filteredKlassenList: string[],
-	 *   onSelectKlasse?: (klasse: string) => void
+	 *   onSelectKlasse?: (klasse: string) => void,
+	 *   class?: string
 	 * }}
 	 */
 	let {
 		klasseSearchQuery = $bindable(''),
 		isKlasseDropdownOpen = $bindable(false),
 		filteredKlassenList = [],
-		onSelectKlasse
+		onSelectKlasse,
+		class: className = ''
 	} = $props();
 </script>
 
-<div class="flex justify-center" id="filter-schulklassen">
-	<div class="relative w-full max-w-md">
+<div class={className}>
+	<div class="relative w-full">
 		<input
 			type="text"
 			bind:value={klasseSearchQuery}
 			aria-label="Klasse suchen"
 			onfocus={() => (isKlasseDropdownOpen = true)}
 			onblur={() => setTimeout(() => (isKlasseDropdownOpen = false), 150)}
-			placeholder="Klasse suchen (z.B. 5f1)..."
-			class="block w-full bg-white border border-slate-300 text-slate-800 py-3.5 pl-5 pr-12 rounded-xl shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-sm font-medium placeholder-slate-400"
+			placeholder="Klasse suchen (z.B. 5f1) …"
+			class="block w-full rounded-xl border border-outline-variant bg-surface-container-lowest pl-3 pr-10 text-sm text-on-surface transition-colors placeholder:text-on-surface-variant focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 		/>
 		<div
-			class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400"
+			class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-on-surface-variant"
 		>
 			<ChevronDown
-				class="h-5 w-5 transition-transform duration-200 {isKlasseDropdownOpen ? 'rotate-180' : ''}"
+				class="h-4 w-4 transition-transform duration-200 {isKlasseDropdownOpen ? 'rotate-180' : ''}"
 				aria-hidden="true"
 			/>
 		</div>

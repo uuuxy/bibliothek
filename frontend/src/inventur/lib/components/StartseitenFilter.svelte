@@ -1,11 +1,10 @@
 <!--
 	StartseitenFilter.svelte
-	Filtert die Startseite nach Buch-Suche, Jahrgängen oder Schulklassen.
+	Filtert die Startseite nach Buch-Suche oder Jahrgängen.
 	Refactored: Clean SaaS light-mode design with Google-style tabs.
 -->
 <script>
 	import Select from '../../../lib/components/ui/Select.svelte';
-	import KlassenSuchfeld from './KlassenSuchfeld.svelte';
 	import { Search } from '@lucide/svelte';
 
 	/**
@@ -13,22 +12,14 @@
 	 *   viewMode: string,
 	 *   searchQuery: string,
 	 *   selectedZweig: string,
-	 *   selectedJahrgang: string,
-	 *   klasseSearchQuery: string,
-	 *   isKlasseDropdownOpen: boolean,
-	 *   filteredKlassenList: string[],
-	 *   onSelectKlasse: (klasse: string) => void
+	 *   selectedJahrgang: string
 	 * }}
 	 */
 	let {
 		viewMode = $bindable('suche'),
 		searchQuery = $bindable(''),
 		selectedZweig = $bindable(''),
-		selectedJahrgang = $bindable(''),
-		klasseSearchQuery = $bindable(''),
-		isKlasseDropdownOpen = $bindable(false),
-		filteredKlassenList = [],
-		onSelectKlasse
+		selectedJahrgang = $bindable('')
 	} = $props();
 
 	const zweigOptionen = [
@@ -85,26 +76,11 @@
 						<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
 					{/if}
 				</button>
-				<button
-					class="relative pb-2.5 text-sm font-semibold transition-colors cursor-pointer {viewMode ===
-					'schulklassen'
-						? 'text-blue-600'
-						: 'text-slate-500 hover:text-slate-700'}"
-					onclick={() => (viewMode = 'schulklassen')}
-					role="tab"
-					id="tab-schulklassen"
-					aria-selected={viewMode === 'schulklassen'}
-					aria-controls="filter-schulklassen content-schulklassen"
-				>
-					<!-- NICHT "Schulklassen": So heisst der Menuepunkt fuer die STAMMDATEN
-					     (Klassen anlegen, umbenennen). Hier blaettert man die Buecher einer
-					     Klasse — zwei verschiedene Dinge, und derselbe Name fuer beide hat
-					     genau die Verwechslung erzeugt, die Peter gemeldet hat. -->
-					Klassensätze
-					{#if viewMode === 'schulklassen'}
-						<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-					{/if}
-				</button>
+				<!-- Hier stand ein dritter Reiter für die Klassensätze. Er zeigte dieselbe
+				     Liste wie Verwaltung → Schulklassen, aus derselben Quelle, nur ohne
+				     Aktionen — und hiess bis zum 08.08.2026 auch noch genauso. Umbenennen
+				     hätte nur den Namen entschärft, nicht die Dopplung: Der Reiter ist
+				     aufgelöst, die Klassensuche steht jetzt auf der Schulklassen-Seite. -->
 			</nav>
 		</div>
 
@@ -147,13 +123,6 @@
 						aria-label="Jahrgang filtern"
 					/>
 				</div>
-			{:else if viewMode === 'schulklassen'}
-				<KlassenSuchfeld
-					bind:klasseSearchQuery
-					bind:isKlasseDropdownOpen
-					{filteredKlassenList}
-					{onSelectKlasse}
-				/>
 			{/if}
 		</div>
 	</div>

@@ -15,7 +15,6 @@
 	import Button from '../../lib/components/ui/Button.svelte';
 	import {
 		buecherLaden,
-		echteKlassenLaden,
 		buecherNachKlassenGruppieren,
 		bestandsFarbe
 	} from '$lib/startseiten_api.js';
@@ -25,9 +24,6 @@
 	let searchQuery = $state('');
 	let selectedZweig = $state('');
 	let selectedJahrgang = $state('');
-	let klasseSearchQuery = $state('');
-	let selectedKlasse = $state('');
-	let isKlasseDropdownOpen = $state(false);
 	let selectedBook = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
 
 	/** Navigate to the full-page book detail view */
@@ -42,14 +38,11 @@
 
 	/** @type {any[]} */
 	let books = $state.raw([]);
-	/** @type {any[]} */
-	let realClasses = $state.raw([]);
 	// --- Abgeleitete Werte ---
+	// „Jahrgänge" gruppiert aus den Buch-Metadaten (gradeLevel/track). Die ECHTEN
+	// Klassensätze aus /api/class-books standen hier bis zum 08.08.2026 als dritter
+	// Reiter daneben — dieselbe Liste wie unter Verwaltung → Schulklassen. Aufgelöst.
 	let classes = $derived(buecherNachKlassenGruppieren(books));
-	// Set: Das replace() bildet zwei Namen auf denselben Wert ab, sobald „Klasse 5a" und
-	// „5a" nebeneinander existieren. Die Liste wird per Wert als each-Key genutzt —
-	// doppelte Keys reissen die Ansicht ab (each_key_duplicate).
-	let klassenList = $derived([...new Set(realClasses.map((c) => c.name.replace('Klasse ', '')))]);
 
 	// --- WZ-Synonyme für Suchbegriffe auf der Startseite ---
 	const suchSynonyme = new Map([
@@ -121,16 +114,6 @@
 		})
 	);
 
-	let filteredRealClasses = $derived(
-		(Array.isArray(realClasses) ? realClasses : []).filter(
-			(cls) => selectedKlasse === '' || cls.name === selectedKlasse
-		)
-	);
-
-	let filteredKlassenList = $derived(
-		klassenList.filter((k) => k.toLowerCase().includes(klasseSearchQuery.toLowerCase()))
-	);
-
 	let displayLimit = $state(50);
 	let paginatedBooks = $derived(filteredBooks.slice(0, displayLimit));
 
@@ -148,19 +131,11 @@
 	async function ladeDaten() {
 		try {
 			books = await buecherLaden();
-			realClasses = await echteKlassenLaden();
 			appState.guestAuthenticated = true;
 		} catch {
 			appState.guestAuthenticated = false;
 		}
 	}
-
-	// Automatischer Reset der Auswahl, wenn das Suchfeld geleert wird
-	$effect(() => {
-		if (klasseSearchQuery === '' && selectedKlasse !== '') {
-			selectedKlasse = '';
-		}
-	});
 
 	// Synchronize appState.selectedBook with local selectedBook
 	$effect(() => {
@@ -173,41 +148,11 @@
 			appState.selectedBook = null;
 		}
 	});
-
-	// Wenn exakt eine Klasse getippt wurde, die existiert, diese auch selektieren
-	$effect(() => {
-		if (klasseSearchQuery !== '' && selectedKlasse === '') {
-			const exactMatch = realClasses.find(
-				(c) => c.name === klasseSearchQuery || c.name === `Klasse ${klasseSearchQuery}`
-			);
-			if (exactMatch) {
-				selectedKlasse = exactMatch.name;
-			}
-		}
-	});
-
-	/**
-	 * @param {string} klasse
-	 */
-	function selectKlasse(klasse) {
-		selectedKlasse = klasse;
-		klasseSearchQuery = klasse;
-		isKlasseDropdownOpen = false;
-	}
 </script>
 
 <div class="w-full text-slate-800 font-sans">
 	<div class="w-full transition-all duration-300">
-		<StartseitenFilter
-			bind:viewMode
-			bind:searchQuery
-			bind:selectedZweig
-			bind:selectedJahrgang
-			bind:klasseSearchQuery
-			bind:isKlasseDropdownOpen
-			{filteredKlassenList}
-			onSelectKlasse={selectKlasse}
-		/>
+		<StartseitenFilter bind:viewMode bind:searchQuery bind:selectedZweig bind:selectedJahrgang />
 
 		<main class="relative">
 			{#if viewMode === 'suche'}
@@ -238,7 +183,7 @@
 						</div>
 					{/if}
 				</div>
-			{:else if viewMode === 'jahrgaenge'}
+			{:else}
 				<div
 					in:fade={{ duration: 300, delay: 150 }}
 					out:fade={{ duration: 150 }}
@@ -252,23 +197,6 @@
 						getStockColor={bestandsFarbe}
 						onBookClick={(book) => navigateToDetail(book)}
 					/>
-				</div>
-			{:else}
-				<div
-					in:fade={{ duration: 300, delay: 150 }}
-					out:fade={{ duration: 150 }}
-					class="space-y-8"
-					role="tabpanel"
-					id="content-schulklassen"
-					aria-labelledby="tab-schulklassen"
-				>
-					{#key selectedKlasse}
-						<KlassenUebersichtStartseite
-							filteredClasses={filteredRealClasses}
-							getStockColor={bestandsFarbe}
-							onBookClick={(book) => navigateToDetail(book)}
-						/>
-					{/key}
 				</div>
 			{/if}
 		</main>

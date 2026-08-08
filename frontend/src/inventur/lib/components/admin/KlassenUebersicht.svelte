@@ -1,11 +1,26 @@
+<!-- @component KlassenUebersicht — der EINE Ort für Klassensätze.
+
+     Bis zum 08.08.2026 gab es dieselbe Liste zweimal: hier mit Verwaltungsknöpfen
+     und noch einmal als Reiter „Schulklassen"/„Klassensätze" im Medienkatalog, nur
+     zum Blättern. Gleiche Daten (beide Routen landen im selben handleClassBooks),
+     gleiche Darstellung, zwei gepflegte Komponentenpaare — und zwei Namen für eine
+     Sache. Der Reiter ist weg; wer nur lesen darf, sieht diese Seite ohne die
+     Aktionen. Deshalb liest sie über /api/class-books (view_books) statt über
+     /api/admin/class-books (edit_books): Sonst liefe die Seite für genau die
+     Helfer ins 403, denen der Reiter vorher offenstand. -->
 <script>
 	import { BookOpen, Plus } from '@lucide/svelte';
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
+	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
+	import { hatRecht } from '../../../../lib/menu.js';
 	import ClassAssignmentDialog from './ClassAssignmentDialog.svelte';
 	import KlassenKarte from './KlassenKarte.svelte';
+	import KlassenSuchfeld from '../KlassenSuchfeld.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
+
+	const darfPflegen = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	const ZWEIGE = [
 		{ value: '', label: 'Alle anzeigen' },
@@ -25,6 +40,18 @@
 
 	let filterBranch = $state('');
 	let sortOrder = $state('asc');
+	let klasseSearchQuery = $state('');
+	let isKlasseDropdownOpen = $state(false);
+
+	// Der Name filtert direkt, statt einen Eintrag „auszuwählen": „5" zeigt alle
+	// fünften Klassen, „5f1" genau eine. Die Vorschlagsliste setzt nur das Feld.
+	// Set: Doppelte Namen wären doppelte each-Keys und rissen die Liste ab.
+	const suchbegriff = $derived(klasseSearchQuery.trim().toLowerCase());
+	const namen = $derived([...new Set(classGroups.map((g) => g.className.replace('Klasse ', '')))]);
+	const filteredKlassenList = $derived(namen.filter((n) => n.toLowerCase().includes(suchbegriff)));
+	const sichtbareGruppen = $derived(
+		classGroups.filter((g) => g.className.toLowerCase().includes(suchbegriff))
+	);
 
 	async function loadGroups() {
 		loading = true;
@@ -33,7 +60,7 @@
 				branch: filterBranch,
 				sort: sortOrder
 			});
-			const res = await apiFetch(`/api/admin/class-books?${query.toString()}`, {
+			const res = await apiFetch(`/api/class-books?${query.toString()}`, {
 				credentials: 'include'
 			});
 			if (!res.ok) throw new Error('Fehler beim Laden der Klassen-Bücher');
@@ -71,7 +98,18 @@
 </script>
 
 <div class="space-y-10">
-	<div class="flex justify-end items-center px-2">
+	<div class="flex flex-wrap justify-between items-center gap-4 px-2">
+		<KlassenSuchfeld
+			bind:klasseSearchQuery
+			bind:isKlasseDropdownOpen
+			{filteredKlassenList}
+			onSelectKlasse={(klasse) => {
+				klasseSearchQuery = klasse;
+				isKlasseDropdownOpen = false;
+			}}
+			class="w-full sm:w-64"
+		/>
+
 		<div class="flex gap-4 items-center">
 			<Select
 				bind:value={filterBranch}
@@ -89,15 +127,17 @@
 				aria-label="Sortierung"
 			/>
 
-			<Button
-				onclick={() => {
-					managingGroup = null;
-					isManaging = true;
-				}}
-			>
-				<Plus class="w-4 h-4" aria-hidden="true" />
-				Klasse hinzufügen
-			</Button>
+			{#if darfPflegen}
+				<Button
+					onclick={() => {
+						managingGroup = null;
+						isManaging = true;
+					}}
+				>
+					<Plus class="w-4 h-4" aria-hidden="true" />
+					Klasse hinzufügen
+				</Button>
+			{/if}
 		</div>
 	</div>
 
@@ -109,18 +149,30 @@
 		<div class="text-red-650 border border-red-200 bg-red-50 text-center py-8 rounded-xl">
 			{error}
 		</div>
-	{:else if classGroups.length === 0}
+	{:else if sichtbareGruppen.length === 0}
+		<!-- Zwei verschiedene Leermeldungen: „nichts angelegt" schickt sonst jemanden
+		     auf die Suche nach Daten, die es gibt — sein Suchbegriff passt nur nicht. -->
 		<div class="text-center py-16 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
 			<div class="text-4xl mb-4"><BookOpen class="h-5 w-5" aria-hidden="true" /></div>
-			<h3 class="text-lg font-semibold text-slate-800 mb-2">Noch keine Klassen angelegt</h3>
-			<p class="text-slate-400 text-sm max-w-md mx-auto">
-				Weise Bücher zu Klassen zu, um hier eine Übersicht zu sehen.
-			</p>
+			{#if classGroups.length > 0}
+				<h3 class="text-lg font-semibold text-slate-800 mb-2">Keine Klasse gefunden</h3>
+				<p class="text-slate-400 text-sm max-w-md mx-auto">
+					Zu „{klasseSearchQuery}" gibt es keinen Klassensatz. Suchfeld leeren zeigt wieder alle.
+				</p>
+			{:else}
+				<h3 class="text-lg font-semibold text-slate-800 mb-2">Noch keine Klassen angelegt</h3>
+				<p class="text-slate-400 text-sm max-w-md mx-auto">
+					{darfPflegen
+						? 'Weise Bücher zu Klassen zu, um hier eine Übersicht zu sehen.'
+						: 'Sobald Bücher einer Klasse zugewiesen sind, erscheinen die Klassensätze hier.'}
+				</p>
+			{/if}
 		</div>
 	{:else}
-		{#each classGroups as group (group.className)}
+		{#each sichtbareGruppen as group (group.className)}
 			<KlassenKarte
 				{group}
+				{darfPflegen}
 				onEdit={() => {
 					managingGroup = group;
 					isManaging = true;

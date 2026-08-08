@@ -11,11 +11,12 @@
 	 *     className: string,
 	 *     books: any[]
 	 *   },
+	 *   darfPflegen?: boolean,
 	 *   onEdit: () => void,
 	 *   onDelete: () => void
 	 * }}
 	 */
-	let { group, onEdit, onDelete } = $props();
+	let { group, darfPflegen = false, onEdit, onDelete } = $props();
 
 	let sortedBooks = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
 </script>
@@ -29,26 +30,31 @@
 			>
 			{group.className}
 		</h2>
-		<div class="flex gap-2">
-			<Button
-				variant="secondary"
-				onclick={onEdit}
-				class="border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100"
-				title="Klasse bearbeiten"
-				aria-label="Klasse bearbeiten"
-			>
-				<Pencil class="w-4 h-4" aria-hidden="true" />
-				Bücher verwalten
-			</Button>
-			<button
-				onclick={onDelete}
-				class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors cursor-pointer"
-				title="Klasse löschen"
-				aria-label="Klasse löschen"
-			>
-				<Trash2 class="w-5 h-5" aria-hidden="true" />
-			</button>
-		</div>
+		<!-- Ohne edit_books bleibt die Karte lesbar und verliert nur die Aktionen. Der
+		     Server entscheidet ohnehin (POST/DELETE hängen an edit_books) — hier geht
+		     es darum, niemandem einen Knopf anzubieten, der im 403 endet. -->
+		{#if darfPflegen}
+			<div class="flex gap-2">
+				<Button
+					variant="secondary"
+					onclick={onEdit}
+					class="border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100"
+					title="Klasse bearbeiten"
+					aria-label="Klasse bearbeiten"
+				>
+					<Pencil class="w-4 h-4" aria-hidden="true" />
+					Bücher verwalten
+				</Button>
+				<button
+					onclick={onDelete}
+					class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors cursor-pointer"
+					title="Klasse löschen"
+					aria-label="Klasse löschen"
+				>
+					<Trash2 class="w-5 h-5" aria-hidden="true" />
+				</button>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Horizontal Scroll Container (Netflix Style) -->

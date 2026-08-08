@@ -78,10 +78,16 @@ export const menuGroups = [
 		items: [
 			{ id: 'students_dir', label: 'Schülerdatei', icon: 'users', permission: 'view_students' },
 			{
+				// view_books, nicht manage_users: Bis zum 08.08.2026 gab es dieselbe Übersicht
+				// ein zweites Mal als Reiter im Medienkatalog, und der stand jedem mit
+				// view_books offen. Dieser Punkt hat den Reiter abgelöst — mit manage_users
+				// (faktisch Administrator, siehe 940d7d8) hätte die Zusammenlegung den
+				// Bibliotheks-Helfern den Blick auf die Klassensätze genommen. Die
+				// Verwaltungsaktionen darin hängen an edit_books, geprüft in KlassenUebersicht.
 				id: 'schulklassen',
 				label: 'Schulklassen',
 				icon: 'identification',
-				permission: 'manage_users'
+				permission: 'view_books'
 			},
 			{ id: 'graduates', label: 'Abgänger', icon: 'academic-cap', permission: 'view_graduates' },
 			{ id: 'orders', label: 'Bestellungen', icon: 'shopping-bag', permission: 'view_orders' },

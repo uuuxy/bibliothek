@@ -25,22 +25,6 @@ export async function buecherLaden() {
 }
 
 /**
- * Lädt die echten Schulklassen (mit zugewiesenen Büchern) aus der API.
- * @returns {Promise<any[]>} Liste der Klassengruppen
- */
-export async function echteKlassenLaden() {
-	const antwort = await apiFetch('/api/class-books', {
-		credentials: 'include'
-	});
-	if (!antwort.ok) return [];
-	const daten = (await antwort.json()).data ?? [];
-	return daten.map((/** @type {any} */ klasse) => ({
-		name: klasse.className,
-		books: klasse.books
-	}));
-}
-
-/**
  * Gruppiert ein Array von Büchern in Klassengruppen (z.B. "Klasse 5 G").
  * @param {any[]} buecherArray - Alle verfügbaren Bücher
  * @returns {any[]} Sortierte Liste von Klasseobjekten
