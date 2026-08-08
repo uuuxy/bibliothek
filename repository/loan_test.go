@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"testing"
 	"github.com/pashagolub/pgxmock/v4"
+	"testing"
 )
 
 func TestNewLoanRepository(t *testing.T) {

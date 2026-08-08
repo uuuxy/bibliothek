@@ -1,8 +1,8 @@
 package service
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestNewLoanService(t *testing.T) {

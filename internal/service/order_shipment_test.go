@@ -42,39 +42,40 @@ func TestGetIncomingShipments_Success(t *testing.T) {
 		t.Fatalf("expected 4 groups, got %d", len(groups))
 	}
 
-	// Verify groupings and mappings
-	// Sorting is descending by date
-	// First two groups should have date1, last two should have date2
+	// Gruppiert wird nach Datum UND dem aus zustand_notiz abgeleiteten Lieferanten.
+	// Die Erwartung steht als Tabelle da, damit auch eine FEHLENDE Gruppe auffällt —
+	// eine Schleife mit if/else prüft nur die Gruppen, die tatsächlich kamen.
+	type gruppe struct{ datum, lieferant string }
+	erwartet := map[gruppe]struct {
+		posten int // Titel-Positionen in der Gruppe
+		menge  int // Exemplare der ersten Position
+	}{
+		{date1.Format("02.01.2006"), "Lieferant A"}:                 {posten: 1, menge: 2},
+		{date1.Format("02.01.2006"), "Automatische Nachbestellung"}: {posten: 1, menge: 1},
+		{date2.Format("02.01.2006"), "Vorab-Barcode Bestellung"}:    {posten: 1, menge: 1},
+		{date2.Format("02.01.2006"), "Unbekannter Lieferant"}:       {posten: 1, menge: 1},
+	}
+
+	gesehen := make(map[gruppe]bool, len(erwartet))
 	for _, g := range groups {
-		if g.Date == date1.Format("02.01.2006") {
-			if g.SupplierName == "Lieferant A" {
-				if len(g.Items) != 1 {
-					t.Errorf("expected 1 item for Lieferant A group, got %d", len(g.Items))
-				}
-				if g.Items[0].Menge != 2 {
-					t.Errorf("expected Menge 2, got %d", g.Items[0].Menge)
-				}
-			} else if g.SupplierName == "Automatische Nachbestellung" {
-				if len(g.Items) != 1 {
-					t.Errorf("expected 1 item for Automatische Nachbestellung, got %d", len(g.Items))
-				}
-			} else {
-				t.Errorf("unexpected supplier for date1: %s", g.SupplierName)
-			}
-		} else if g.Date == date2.Format("02.01.2006") {
-			if g.SupplierName == "Vorab-Barcode Bestellung" {
-				if len(g.Items) != 1 {
-					t.Errorf("expected 1 item, got %d", len(g.Items))
-				}
-			} else if g.SupplierName == "Unbekannter Lieferant" {
-				if len(g.Items) != 1 {
-					t.Errorf("expected 1 item, got %d", len(g.Items))
-				}
-			} else {
-				t.Errorf("unexpected supplier for date2: %s", g.SupplierName)
-			}
-		} else {
-			t.Errorf("unexpected date: %s", g.Date)
+		schluessel := gruppe{g.Date, g.SupplierName}
+		soll, bekannt := erwartet[schluessel]
+		if !bekannt {
+			t.Errorf("unerwartete Gruppe: %s / %s", g.Date, g.SupplierName)
+			continue
+		}
+		gesehen[schluessel] = true
+		if len(g.Items) != soll.posten {
+			t.Errorf("%s / %s: %d Positionen erwartet, bekam %d", g.Date, g.SupplierName, soll.posten, len(g.Items))
+			continue
+		}
+		if g.Items[0].Menge != soll.menge {
+			t.Errorf("%s / %s: Menge %d erwartet, bekam %d", g.Date, g.SupplierName, soll.menge, g.Items[0].Menge)
+		}
+	}
+	for schluessel := range erwartet {
+		if !gesehen[schluessel] {
+			t.Errorf("Gruppe fehlt vollstaendig: %s / %s", schluessel.datum, schluessel.lieferant)
 		}
 	}
 
