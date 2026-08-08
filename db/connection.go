@@ -22,6 +22,7 @@ type PgxPoolIface interface {
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 	Ping(ctx context.Context) error
 	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 }
 
 // Database kapselt das PgxPoolIface, um Zugriff auf Datenbankoperationen bereitzustellen.

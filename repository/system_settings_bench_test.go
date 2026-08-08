@@ -31,6 +31,9 @@ func (m *mockDB) Ping(ctx context.Context) error {
 func (m *mockDB) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
 	return 0, nil
 }
+func (m *mockDB) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
+	return nil
+}
 
 func BenchmarkSaveSettings(b *testing.B) {
 	repo := NewSystemSettingsRepository(&mockDB{})

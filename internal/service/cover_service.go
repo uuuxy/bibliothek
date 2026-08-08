@@ -10,6 +10,8 @@ import (
 	"bibliothek/db"
 	"bibliothek/inventur"
 	"bibliothek/pkg/safego"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // CoverService handles fetching book covers asynchronously.
@@ -99,7 +101,48 @@ func (s *CoverService) SyncMissingCoversAsync() {
 
 	var found, notFound, failed atomic.Int64
 	jobs := make(chan missingCover)
+	updates := make(chan coverUpdate, 100)
 	var wg sync.WaitGroup
+	var wgUpdates sync.WaitGroup
+
+	// Updater-Goroutine zum Batchen der DB-Updates
+	wgUpdates.Add(1)
+	go func() {
+		defer wgUpdates.Done()
+		defer safego.Guard("cover-sync-updater")
+
+		batch := &pgx.Batch{}
+		batchSize := 0
+
+		executeBatch := func() {
+			if batchSize > 0 {
+				br := s.db.SendBatch(ctx, batch)
+				for i := 0; i < batchSize; i++ {
+					if _, err := br.Exec(); err != nil {
+						log.Printf("Cover Sync: DB-Batch-Update Fehler: %v", err)
+					}
+				}
+				if err := br.Close(); err != nil {
+					log.Printf("Cover Sync: Fehler beim Schließen des Batches: %v", err)
+				}
+				batch = &pgx.Batch{}
+				batchSize = 0
+			}
+		}
+
+		for u := range updates {
+			if u.CoverURL != "" {
+				batch.Queue(`UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2`, u.CoverURL, u.ID)
+			} else {
+				batch.Queue(`UPDATE buecher_titel SET cover_status = $1 WHERE id = $2`, u.Status, u.ID)
+			}
+			batchSize++
+			if batchSize >= 100 {
+				executeBatch()
+			}
+		}
+		executeBatch() // Verbleibende Updates ausführen
+	}()
 
 	// Globale Drossel: jeder Worker wartet vor JEDEM Titel auf den Ticker —
 	// damit ist die Gesamtrate unabhängig von der Worker-Zahl hart begrenzt.
@@ -113,7 +156,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 			defer safego.Guard("cover-sync-worker")
 			for mc := range jobs {
 				<-throttle.C
-				s.processCover(ctx, client, mc, &found, &notFound, &failed)
+				s.processCover(ctx, client, mc, updates, &found, &notFound, &failed)
 			}
 		}()
 	}
@@ -123,14 +166,22 @@ func (s *CoverService) SyncMissingCoversAsync() {
 	}
 	close(jobs)
 	wg.Wait()
+	close(updates)
+	wgUpdates.Wait()
 
 	log.Printf("Cover Sync: Abgeschlossen. Gefunden: %d, Nicht gefunden: %d, Fehlgeschlagen: %d",
 		found.Load(), notFound.Load(), failed.Load())
 }
 
+type coverUpdate struct {
+	ID       string
+	Status   string
+	CoverURL string
+}
+
 // processCover verarbeitet einen einzelnen Titel: Cover suchen (lädt es bei Erfolg als
-// lokales WebP), und den Status in der Datenbank entsprechend setzen.
-func (s *CoverService) processCover(ctx context.Context, client *inventur.MetadatenClient, mc missingCover, found, notFound, failed *atomic.Int64) {
+// lokales WebP), und sendet das Ergebnis an den Updates-Channel.
+func (s *CoverService) processCover(ctx context.Context, client *inventur.MetadatenClient, mc missingCover, updates chan<- coverUpdate, found, notFound, failed *atomic.Int64) {
 	reqCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	res, err := client.SucheNachISBN(reqCtx, mc.ISBN)
 	cancel()
@@ -138,21 +189,12 @@ func (s *CoverService) processCover(ctx context.Context, client *inventur.Metada
 	switch {
 	case err != nil:
 		failed.Add(1)
-		s.setCoverStatus(ctx, mc.ID, "FAILED")
+		updates <- coverUpdate{ID: mc.ID, Status: "FAILED"}
 	case res.CoverURL != "":
 		found.Add(1)
-		if _, derr := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2`, res.CoverURL, mc.ID); derr != nil {
-			log.Printf("Cover Sync: DB-Update für Titel %s fehlgeschlagen: %v", mc.ID, derr)
-		}
+		updates <- coverUpdate{ID: mc.ID, Status: "FOUND", CoverURL: res.CoverURL}
 	default:
 		notFound.Add(1)
-		s.setCoverStatus(ctx, mc.ID, "NOT_FOUND")
-	}
-}
-
-// setCoverStatus aktualisiert den cover_status eines Titels (Best-Effort, geloggt).
-func (s *CoverService) setCoverStatus(ctx context.Context, id, status string) {
-	if _, err := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_status = $1 WHERE id = $2`, status, id); err != nil {
-		log.Printf("Cover Sync: Status %q für Titel %s konnte nicht gesetzt werden: %v", status, id, err)
+		updates <- coverUpdate{ID: mc.ID, Status: "NOT_FOUND"}
 	}
 }
