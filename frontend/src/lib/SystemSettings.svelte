@@ -10,7 +10,6 @@
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
-	import Sheet from './components/layout/Sheet.svelte';
 
 	// --- STATE ---
 	let loading = $state(true);
@@ -100,11 +99,7 @@
 	});
 </script>
 
-<PageShell
-	breite="inhalt"
-	titel="Einstellungen"
-	beschreibung="Schule, Fristen, Team und Mailserver."
->
+<PageShell titel="Einstellungen" beschreibung="Schule, Fristen, Team und Mailserver.">
 	<!-- Header -->
 	<div class="space-y-6">
 		<!-- Tabs -->
@@ -135,7 +130,7 @@
 	{:else}
 		<!-- Tab Content: liegt wie ueberall sonst in einer Karte auf der Leinwand. Vorher
 		     schwebte das Formular direkt auf der Flaeche — als einzige Seite der App. -->
-		<Sheet class="animate-fade-in p-6">
+		<div class="animate-fade-in">
 			<!-- TAB: ALLGEMEIN -->
 			{#if activeTab === 'Allgemein'}
 				<SystemSettingsAllgemein
@@ -184,6 +179,6 @@
 					<MailTemplates />
 				</section>
 			{/if}
-		</Sheet>
+		</div>
 	{/if}
 </PageShell>

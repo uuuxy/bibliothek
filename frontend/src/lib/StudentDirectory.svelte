@@ -171,7 +171,6 @@
 		</div>
 	{:else}
 		<PageShell
-			breite="inhalt"
 			titel="Schülerdatei"
 			beschreibung="Stammdaten, Ausleihen und Ausweise der Schülerinnen und Schüler."
 		>

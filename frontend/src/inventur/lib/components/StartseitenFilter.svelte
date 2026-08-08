@@ -96,7 +96,11 @@
 					aria-selected={viewMode === 'schulklassen'}
 					aria-controls="filter-schulklassen content-schulklassen"
 				>
-					Schulklassen
+					<!-- NICHT "Schulklassen": So heisst der Menuepunkt fuer die STAMMDATEN
+					     (Klassen anlegen, umbenennen). Hier blaettert man die Buecher einer
+					     Klasse — zwei verschiedene Dinge, und derselbe Name fuer beide hat
+					     genau die Verwechslung erzeugt, die Peter gemeldet hat. -->
+					Klassensätze
 					{#if viewMode === 'schulklassen'}
 						<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
 					{/if}

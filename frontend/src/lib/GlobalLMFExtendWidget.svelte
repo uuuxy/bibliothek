@@ -2,7 +2,6 @@
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
-	import Sheet from './components/layout/Sheet.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 
 	/** @type {string} */
@@ -66,11 +65,10 @@
 </script>
 
 <PageShell
-	breite="inhalt"
 	titel="LMF-Aktionen"
 	beschreibung="Lernmittelfreiheit: Leihfristen aller ausgegebenen Schulbücher gemeinsam verlängern."
 >
-	<Sheet class="space-y-5 p-6">
+	<div class="space-y-5">
 		<div>
 			<h3 class="text-base font-bold text-slate-900">LMF-Massenverlängerung (Klasse)</h3>
 			<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">
@@ -119,5 +117,5 @@
 				{isExtending ? 'Wird verarbeitet...' : 'Klassen-LMF global verlängern'}
 			</Button>
 		</div>
-	</Sheet>
+	</div>
 </PageShell>

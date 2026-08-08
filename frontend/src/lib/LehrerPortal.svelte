@@ -132,7 +132,6 @@
 </script>
 
 <PageShell
-	breite="inhalt"
 	titel="Mein Portal"
 	beschreibung="Im Katalog suchen und Klassensätze für den Unterricht reservieren."
 >

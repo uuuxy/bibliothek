@@ -9,7 +9,6 @@
 </script>
 
 <PageShell
-	breite="inhalt"
 	titel="Schulklassen"
 	beschreibung="Klassen anlegen, umbenennen und ihnen Klassensätze zuweisen."
 >

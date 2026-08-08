@@ -14,11 +14,7 @@
 	});
 </script>
 
-<PageShell
-	breite="voll"
-	titel="Medienkatalog"
-	beschreibung="Alle Titel und Exemplare durchsuchen und pflegen."
->
+<PageShell titel="Medienkatalog" beschreibung="Alle Titel und Exemplare durchsuchen und pflegen.">
 	<!-- Google-style underline Tabs -->
 	<div class="border-b border-slate-200">
 		<nav class="flex gap-6" aria-label="Medienkatalog Navigation">

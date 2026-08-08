@@ -4,7 +4,6 @@
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
 	import AbgaengerTabelle from './components/AbgaengerTabelle.svelte';
-	import Sheet from './components/layout/Sheet.svelte';
 	import AbgaengerKopfzeile from './components/AbgaengerKopfzeile.svelte';
 	import * as dienst from './abgaengerDienst.js';
 	import { abonniere } from './liveEvents.js';
@@ -133,7 +132,6 @@
 </script>
 
 <PageShell
-	breite="voll"
 	titel="Abgänger"
 	beschreibung="Schülerinnen und Schüler, die die Schule verlassen — mit offenen Büchern."
 >
@@ -155,13 +153,13 @@
 			></div>
 		</div>
 	{:else}
-		<Sheet>
+		<div class="w-full">
 			<AbgaengerTabelle
 				zeilen={filteredGraduates}
 				leer={graduates.length === 0}
 				onProfil={openProfile}
 			/>
-		</Sheet>
+		</div>
 	{/if}
 </PageShell>
 

@@ -6,7 +6,6 @@
   Sie zeigt ein Profilbild, den Namen, die Klasse, die Anzahl der ausgeliehenen Bücher und den Status an.
 -->
 <script>
-	import Sheet from '../layout/Sheet.svelte';
 	import { BookOpen, ChevronRight } from '@lucide/svelte';
 
 	/**
@@ -74,7 +73,7 @@
 	</div>
 {/snippet}
 
-<Sheet>
+<div class="w-full">
 	{#if loading}
 		<div class="py-16 flex justify-center items-center">
 			<div
@@ -177,4 +176,4 @@
 			</table>
 		</div>
 	{/if}
-</Sheet>
+</div>

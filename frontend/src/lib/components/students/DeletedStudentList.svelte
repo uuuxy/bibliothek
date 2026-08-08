@@ -8,7 +8,6 @@
 <script>
 	import { apiFetch } from '../../apiFetch.js';
 	import { onMount } from 'svelte';
-	import Sheet from '../layout/Sheet.svelte';
 	import { Trash2, Undo2 } from '@lucide/svelte';
 
 	let { onRestoreSuccess = () => {} } = $props();
@@ -48,7 +47,7 @@
 	});
 </script>
 
-<Sheet class="border-l-4 border-l-rose-400">
+<div class="w-full border-l-4 border-l-rose-400">
 	<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
 		<h3 class="text-base font-bold text-rose-800 flex items-center gap-2">
 			<Trash2 class="h-5 w-5" aria-hidden="true" />
@@ -115,4 +114,4 @@
 			</table>
 		</div>
 	{/if}
-</Sheet>
+</div>

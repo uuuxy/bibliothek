@@ -116,7 +116,16 @@
 		{:else}
 			<div class="h-screen flex w-full overflow-hidden">
 				<Sidebar />
-				<div class="flex-1 flex flex-col min-w-0 px-4 md:px-8 py-6 w-full overflow-y-auto">
+				<!-- Arbeitsflaeche WEISS, nicht getoent. Am 07.08. hatte ich sie auf `surface`
+				     gestellt, damit die weissen Karten sich abheben — und genau das war der
+				     Fehler: Die Karten gab es laengst, sie lagen nur unsichtbar auf weissem
+				     Grund. Die Toenung hat sie erst hervorgeholt und die Anwendung wirkte
+				     "in Kacheln gezwaengt". Drei Commits (f2320e1, e81ce75, 95d5d33) hatten
+				     das Floating-Card-Muster vorher ausdruecklich abgeschafft: edge-to-edge,
+				     volle Breite, getrennt nur durch divide-y. -->
+				<div
+					class="bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
+				>
 					<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
 					     nicht in der Navigation. Nur Admins können das Problem beheben. -->
 					{#if authStore.currentUser?.rolle === 'admin'}

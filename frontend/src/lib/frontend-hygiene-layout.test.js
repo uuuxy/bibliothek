@@ -11,9 +11,11 @@ import { srcRoot, sammleQuelldateien } from './hygiene-quellen.js';
 // getoente Arbeitsflaeche, mal weisse; mal 896 px breit, mal 1152, mal randlos.
 //
 // Die Zustaendigkeiten seitdem:
-//   Flaeche  -> App.svelte (`bg-surface`, die getoente Leinwand)
-//   Karte    -> Sheet.svelte (`surface-container-lowest`, das Weiss darauf)
-//   Breite   -> PageShell.svelte (`voll` oder `inhalt`)
+//   Flaeche  -> App.svelte (weiss, edge-to-edge)
+//   Kopf     -> PageShell.svelte (Titel, Unterzeile, Aktionen)
+// KEINE Breitenbegrenzung und KEINE Karten-Wrapper: f2320e1, e81ce75 und 95d5d33
+// haben das Floating-Card-Muster und die max-w-Einengung ausdruecklich abgeschafft.
+// Ich hatte beides am 07.08. wieder eingefuehrt — genau das ist Peter aufgefallen.
 // Eine Route, die davon etwas selbst setzt, bricht genau eine dieser drei.
 
 // Geprueft wird gegen die Routen, die Router.svelte tatsaechlich rendert — nicht gegen
@@ -52,8 +54,8 @@ describe('Seitengeruest', () => {
 		expect(
 			gefunden,
 			'Eine Route setzt auf oberster Ebene eine eigene Flaeche (bg-*) oder Breite (max-w-*).\n' +
-				'Die Flaeche gehoert App.svelte, das Weiss darauf Sheet.svelte, die Breite\n' +
-				'PageShell.svelte (breite="voll" | "inhalt"):\n  ' +
+				'Die Flaeche gehoert App.svelte, der Kopf PageShell.svelte. Inhalt laeuft\n' +
+				'edge-to-edge ueber die volle Breite:\n  ' +
 				gefunden.join('\n  ')
 		).toEqual([]);
 	});

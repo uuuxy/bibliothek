@@ -17,11 +17,7 @@
 	});
 </script>
 
-<PageShell
-	breite="voll"
-	titel="Druck-Center"
-	beschreibung="Etiketten, Ausweise und Listen drucken."
->
+<PageShell titel="Druck-Center" beschreibung="Etiketten, Ausweise und Listen drucken.">
 	<!-- Reiter auf der Leinwand, nicht in einem eigenen weissen Balken — wie Mahnwesen,
 	     Medienkatalog und Schuelerdatei. -->
 	<div class="border-outline-variant shrink-0 border-b">

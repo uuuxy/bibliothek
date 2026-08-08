@@ -77,7 +77,7 @@
 	);
 </script>
 
-<PageShell breite="inhalt" titel={title} beschreibung={hint}>
+<PageShell titel={title} beschreibung={hint}>
 	<!-- Zurück zur Statistik-Übersicht -->
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}

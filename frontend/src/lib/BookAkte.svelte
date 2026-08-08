@@ -20,7 +20,7 @@
 	});
 </script>
 
-<PageShell breite="inhalt">
+<PageShell>
 	<!-- Back Button + Breadcrumb -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-3">

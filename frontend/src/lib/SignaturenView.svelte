@@ -33,7 +33,6 @@
 </script>
 
 <PageShell
-	breite="voll"
 	titel="Signaturen"
 	beschreibung="Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“ meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin."
 >

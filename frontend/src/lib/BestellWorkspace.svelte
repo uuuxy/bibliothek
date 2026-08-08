@@ -126,11 +126,7 @@
 	});
 </script>
 
-<PageShell
-	breite="voll"
-	titel="Bestellungen"
-	beschreibung="Bedarf erfassen, bestellen und Zulauf verbuchen."
->
+<PageShell titel="Bestellungen" beschreibung="Bedarf erfassen, bestellen und Zulauf verbuchen.">
 	<!-- Über den Reitern und nicht in einem von ihnen: Die fehlende Adresse betrifft das
 	     Bestellen (Mail ohne Link) UND die Historie (Bestätigung, die nie kommt). -->
 	<BestelllinkHinweis />

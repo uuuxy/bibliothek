@@ -66,7 +66,6 @@
 </script>
 
 <PageShell
-	breite="inhalt"
 	titel="Inventur"
 	beschreibung="Bestand prüfen, Fehlbestand melden und frühere Läufe nachschlagen."
 >
