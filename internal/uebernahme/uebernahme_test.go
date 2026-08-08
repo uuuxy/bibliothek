@@ -129,3 +129,55 @@ func leseDatei(t *testing.T, pfad string) string {
 	}
 	return string(b)
 }
+
+func TestNeuesProtokoll(t *testing.T) {
+	t.Run("erfolgreich", func(t *testing.T) {
+		pfad := t.TempDir() + "/test.log"
+		p, err := NeuesProtokoll(pfad, "id")
+		if err != nil {
+			t.Fatalf("unerwarteter Fehler: %v", err)
+		}
+		if p == nil {
+			t.Fatal("erwartete Protokoll-Instanz, bekam nil")
+		}
+		p.Schliessen()
+
+		if _, err := os.Stat(pfad); err != nil {
+			t.Errorf("Protokolldatei wurde nicht angelegt: %v", err)
+		}
+	})
+
+	t.Run("verwirft existierende Inhalte", func(t *testing.T) {
+		pfad := t.TempDir() + "/test.log"
+		err := os.WriteFile(pfad, []byte("altes zeug"), 0644)
+		if err != nil {
+			t.Fatalf("konnte Testdatei nicht anlegen: %v", err)
+		}
+
+		p, err := NeuesProtokoll(pfad, "id")
+		if err != nil {
+			t.Fatalf("unerwarteter Fehler: %v", err)
+		}
+		p.Schliessen()
+
+		inhalt, err := os.ReadFile(pfad)
+		if err != nil {
+			t.Fatalf("konnte Datei nicht lesen: %v", err)
+		}
+		if len(inhalt) > 0 {
+			t.Errorf("erwartete leere Datei nach NeuesProtokoll, fand %q", inhalt)
+		}
+	})
+
+	t.Run("Fehler bei ungueltigem Pfad", func(t *testing.T) {
+		pfad := t.TempDir() + "/gibt-es-nicht/test.log"
+		p, err := NeuesProtokoll(pfad, "id")
+		if err == nil {
+			t.Error("erwartete Fehler für ungültigen Pfad, bekam nil")
+			p.Schliessen()
+		}
+		if err != nil && !strings.Contains(err.Error(), "konnte die Protokolldatei") {
+			t.Errorf("Fehlermeldung sollte 'konnte die Protokolldatei' enthalten, war: %v", err)
+		}
+	})
+}
