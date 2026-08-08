@@ -57,11 +57,12 @@
 	);
 </script>
 
-<section
-	class="bg-white rounded-xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden"
->
+<!-- Kein Kartenrahmen: Der Bestellbedarf ist die Arbeitsflaeche der Seite, kein Objekt
+     darauf. Die Kopfzeile trennt sich ueber ihre Linie vom Listenkoerper, die Spalte
+     daneben ueber die senkrechte Linie in BestellWorkspace. -->
+<section class="flex min-w-0 flex-col">
 	<!-- Header -->
-	<header class="px-5 pt-5 pb-4 border-b border-slate-100">
+	<header class="border-b border-slate-200 pb-4">
 		<div class="flex items-start justify-between gap-4">
 			<div class="min-w-0">
 				<h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -135,16 +136,27 @@
 		     derselben Kante, weil auf beide dieselbe Lücke und die 36-px-Knopfspalte folgen.
 		     Das ist die übliche Ausrichtung einer Zahlenspalte und kostet den Titeln keine
 		     Breite, was eine feste Spaltenbreite getan hätte. -->
-		<div
-			class="flex items-center gap-3 px-6 py-2 border-b border-slate-100 bg-slate-50/60 text-label-small font-semibold uppercase tracking-wider text-slate-400 select-none"
-		>
-			<span class="w-4 shrink-0" aria-hidden="true"></span>
-			<span class="flex-1 min-w-0">Titel</span>
-			<span class="text-right">Verfügbar / Bestand</span>
-			<span class="w-9 shrink-0" aria-hidden="true"></span>
+		<!-- Der Kopf UEBERNIMMT die Geometrie einer Zeile (-mx-3, transparenter Rahmen,
+		     px-3, gap-3), statt sie mit eigenen Werten nachzubauen. Vorher war der
+		     Platzhalter links w-4, der Cover-Knopf in der Zeile aber 32 px breit — „Titel"
+		     stand damit 17 px links neben den Titeln. Unter dem Kartenrahmen fiel das nicht
+		     auf, auf der flachen Flaeche sofort. -->
+		<div class="-mx-3 border-b border-slate-100">
+			<div
+				class="flex items-center gap-3 border border-transparent px-3 py-2 text-label-small font-semibold uppercase tracking-wider text-slate-400 select-none"
+			>
+				<span class="w-8 shrink-0" aria-hidden="true"></span>
+				<span class="flex-1 min-w-0">Titel</span>
+				<span class="text-right">Verfügbar / Bestand</span>
+				<span class="w-9 shrink-0" aria-hidden="true"></span>
+			</div>
 		</div>
 
-		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] px-3 py-3 space-y-1.5">
+		<!-- -mx-3 zieht den Zeilencontainer um genau das px-3 der Zeilen nach aussen: Der
+		     Zeilentext steht damit auf derselben Kante wie Ueberschrift und Spaltenkopf,
+		     waehrend die Hover-Flaeche weiterhin ueber den Text hinausreicht. Ohne den
+		     Kartenrahmen faellt eine Fehlausrichtung von 12 px sofort auf. -->
+		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] -mx-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
 				<div
 					class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-slate-50 hover:border-slate-200 transition-colors"

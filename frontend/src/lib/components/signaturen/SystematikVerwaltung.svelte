@@ -108,7 +108,10 @@
 	}
 </script>
 
-<section class="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+<!-- Nachgeordneter Abschnitt: Das Regal nachschlagen macht das Sekretariat taeglich,
+     das Vokabular pflegen dreimal im Jahr. Die Trennung traegt deshalb eine Linie und
+     Abstand — kein Kasten, der beides zu gleichrangigen Objekten machen wuerde. -->
+<section class="space-y-4 border-t border-slate-200 pt-6">
 	<div>
 		<h2 class="font-bold text-slate-900">Sachgruppen</h2>
 		<p class="text-sm text-slate-500 mt-0.5">

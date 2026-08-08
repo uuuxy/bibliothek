@@ -12,8 +12,12 @@
 	let { onCollapse = null } = $props();
 </script>
 
-<div class="bg-white rounded-xl border border-slate-200/80 shadow-sm">
-	<div class="px-5 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between gap-2">
+<!-- Kein Kartenrahmen: Diese Spalte ist der unterstuetzende Bereich zum Bestellbedarf
+     daneben, kein Objekt auf der Flaeche. Abgegrenzt wird sie durch die senkrechte
+     Linie, die BestellWorkspace setzt — die traegt die Trennung fuer die ganze Spalte
+     statt fuer diesen einen Block. -->
+<div>
+	<div class="pb-4 border-b border-slate-200 flex items-center justify-between gap-2">
 		<h2 class="text-lg font-bold text-slate-900 tracking-tight">Deine Bestellung</h2>
 		<div class="flex items-center gap-2 shrink-0">
 			<span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium"
@@ -35,7 +39,7 @@
 			{/if}
 		</div>
 	</div>
-	<div class="p-5 space-y-5">
+	<div class="pt-5 space-y-5">
 		<OrderSearch />
 		<OrderCart />
 	</div>

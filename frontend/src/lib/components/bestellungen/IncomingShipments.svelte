@@ -10,13 +10,16 @@
 </script>
 
 <!-- Slimer Status-Streifen: im Leerzustand nur eine dezente Zeile, mit Zulauf eine
-     kompakte, klickbare Karte — nie mehr die halbe Spalte für „nichts da". -->
+     kompakte, klickbare Flaeche — nie mehr die halbe Spalte für „nichts da".
+
+     Die beiden Zustaende unterscheiden sich ueber den FLAECHENTON, nicht mehr ueber
+     Rahmen und Schatten. In M3 traegt die Tonstufe die Elevation; ein umrandeter,
+     schattierter Kasten war auf der ansonsten flachen Seite das einzige schwebende
+     Objekt — und genau das, was hier abgeschafft wurde. -->
 <div
-	class="rounded-xl border px-4 py-3 flex items-center gap-3 transition-colors {hatZulauf
-		? 'bg-white border-slate-200/80 shadow-sm'
-		: 'bg-slate-50/60 border-slate-200/60 border-dashed'} {showGreenFade
-		? 'animate-green-fade'
-		: ''}"
+	class="rounded-xl px-4 py-3 flex items-center gap-3 transition-colors {hatZulauf
+		? 'bg-blue-50/70'
+		: 'bg-slate-50'} {showGreenFade ? 'animate-green-fade' : ''}"
 >
 	<div
 		class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 {hatZulauf

@@ -45,11 +45,13 @@
 		<p class="text-emerald-700 font-semibold">Keine überfälligen Ausleihen vorhanden.</p>
 	</div>
 {:else}
-	<!-- MD3 Table -->
-	<!-- Eigene Kontur nötig, seit der Arbeitsbereich selbst weiß ist (App.svelte):
-	     Vorher trug allein der Kontrast zum grauen Canvas die Karte, jetzt braucht sie
-	     Rand und Schatten wie jede andere Karte im Haus. -->
-	<div class="bg-white w-full pb-6 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+	<!-- Kein Kartenrahmen. Die Kontur kam mit 160e298 dazu, weil der Arbeitsbereich
+	     damals grau war und die Tabelle sich sonst nicht abgehoben hätte. a4133a2 hat
+	     die getönte Leinwand wieder zurückgenommen — damit ist der Grund entfallen, der
+	     Rahmen aber stehen geblieben. Er war zuletzt die einzige Tabelle im Haus mit
+	     Kasten: Schülerdatei, Abgänger, Medienkatalog und Inventur stehen alle
+	     edge-to-edge. Getrennt wird über die Kopfzeile, nicht über eine Umrandung. -->
+	<div class="w-full pb-6">
 		<div class="overflow-x-auto w-full">
 			<table class="w-full text-left text-sm whitespace-nowrap">
 				<thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">

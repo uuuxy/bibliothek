@@ -35,13 +35,16 @@
 	}
 </script>
 
+<!-- Drei Dringlichkeitsstufen, unterschieden ueber den Flaechenton statt ueber Rahmen
+     und Schatten — siehe IncomingShipments daneben, die beiden Streifen muessen
+     dieselbe Sprache sprechen. -->
 <div
-	class="rounded-xl border px-4 py-3 flex items-center gap-3 transition-colors no-print {stufe ===
+	class="rounded-xl px-4 py-3 flex items-center gap-3 transition-colors no-print {stufe ===
 	'lieferung'
-		? 'bg-amber-50 border-amber-200'
+		? 'bg-amber-50'
 		: stufe === 'offen'
-			? 'bg-white border-slate-200/80 shadow-sm'
-			: 'bg-slate-50/60 border-slate-200/60 border-dashed'}"
+			? 'bg-blue-50/70'
+			: 'bg-slate-50'}"
 >
 	<div
 		class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 {stufe === 'lieferung'

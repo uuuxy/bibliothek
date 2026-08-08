@@ -38,8 +38,12 @@
 		meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin.
 	</p>
 
-	<div class="grid gap-6 lg:grid-cols-[20rem_1fr] items-start">
-		<section class="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+	<!-- Zwei Bereiche, keine zwei Kaesten: links die Liste, rechts das Regal dazu — in
+	     M3 ein „supporting pane". Getrennt wird durch eine Haarlinie, senkrecht sobald
+	     Platz ist, sonst waagerecht. Ein Rahmen mit Radius wuerde daraus zwei schwebende
+	     Objekte machen; es ist aber EIN Arbeitsbereich mit zwei Haelften. -->
+	<div class="grid divide-y divide-slate-200 lg:grid-cols-[20rem_1fr] lg:divide-x lg:divide-y-0">
+		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">
 			<label for="sig-suche" class="block text-sm font-medium text-slate-700">
 				Signatur suchen
 			</label>
@@ -80,7 +84,7 @@
 			{/if}
 		</section>
 
-		<section class="bg-white border border-slate-200 rounded-xl p-5 min-h-48">
+		<section class="min-h-48 pt-6 lg:pt-0 lg:pl-6">
 			<SignaturRegal signatur={gewaehlt} />
 		</section>
 	</div>

@@ -187,13 +187,18 @@
 					<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} {offeneEtiketten} />
 				</div>
 
-				<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+				<!-- Zwei Bereiche statt zwei Karten. Die Trennung traegt eine senkrechte
+				     Haarlinie an der Bestellspalte (unten), nicht ein Rahmen je Block —
+				     dasselbe Muster wie auf der Signaturen-Seite. Waagerechter Abstand
+				     deshalb 0: Der Abstand entsteht aus der Polsterung links und rechts
+				     der Linie, sonst stuenden 24 px Luecke UND 24 px Polsterung. -->
+				<div class="grid grid-cols-1 gap-y-6 lg:grid-cols-12 lg:gap-x-0 items-start">
 					<!-- HERO: der Bestellbedarf ist die tägliche Arbeitsfläche.
 					     Die Spaltenbreiten stehen je Zustand VOLLSTÄNDIG da (lg und xl), statt sich
 					     auf die Reihenfolge im class-Attribut zu verlassen: Bei Utilities gleicher
 					     Spezifität entscheidet die Reihenfolge im Stylesheet, nicht die im Markup. -->
 					<div
-						class="min-w-0 {railOffen
+						class="min-w-0 lg:pr-6 {railOffen
 							? 'lg:col-span-7 xl:col-span-8'
 							: 'lg:col-span-11 xl:col-span-11'}"
 					>
@@ -220,7 +225,7 @@
 						id="bestellspalte"
 						style:--rail-max={railMaxHeight}
 						class="space-y-3 lg:sticky lg:top-2 lg:max-h-(--rail-max) lg:overflow-y-auto {railOffen
-							? 'lg:col-span-5 xl:col-span-4'
+							? 'lg:col-span-5 xl:col-span-4 lg:border-l lg:border-slate-200 lg:pl-6'
 							: 'lg:col-span-1 xl:col-span-1'}"
 					>
 						{#if !railOffen}
