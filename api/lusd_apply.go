@@ -150,30 +150,42 @@ func aktualisiereBestandsschueler(ctx context.Context, tx pgx.Tx, rec parsedStud
 // die Schadens-Rechnung noch nötig). Ohne offene Ausleihen wird DSGVO-konform
 // anonymisiert — dabei werden Adresse und Eltern-E-Mail gelöscht.
 func behandleAbgaenger(ctx context.Context, tx pgx.Tx, graduates []StudentDiff, dbStudents map[string]lusdDbStudent) error {
-	for _, grad := range graduates {
-		dbRec := dbStudents[grad.ID]
-		if err := verarbeiteEinenAbgaenger(ctx, tx, dbRec.ID); err != nil {
-			return err
-		}
+	if len(graduates) == 0 {
+		return nil
 	}
-	return nil
-}
 
-// verarbeiteEinenAbgaenger sperrt oder anonymisiert einen einzelnen Abgänger und räumt
-// dessen offene Vormerkungen ab.
-func verarbeiteEinenAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
-	// Offene Buch-Vormerkungen des Abgängers löschen: Ein Schüler, der die Schule verlässt,
+	gradIDs := make([]string, 0, len(graduates))
+	for _, grad := range graduates {
+		gradIDs = append(gradIDs, dbStudents[grad.ID].ID)
+	}
+
+	// Offene Buch-Vormerkungen der Abgänger löschen: Ein Schüler, der die Schule verlässt,
 	// holt keine reservierten Bücher mehr ab; seine wartenden Vormerkungen würden sonst
 	// begehrte Titel dauerhaft für die verbliebenen Schüler blockieren. (Die alte
 	// BulkSyncLUSD-Pipeline tat dies; beim Rewrite nach lusd_apply.go ging es verloren.)
 	if _, err := tx.Exec(ctx,
-		"DELETE FROM vormerkungen WHERE schueler_id = $1 AND status = 'wartend'", schuelerID,
+		"DELETE FROM vormerkungen WHERE schueler_id = ANY($1) AND status = 'wartend'", gradIDs,
 	); err != nil {
 		return err
 	}
 
-	var pending int
-	if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL", schuelerID).Scan(&pending); err != nil {
+	// Offene Ausleihen pre-loaden
+	pendingCounts := make(map[string]int, len(gradIDs))
+	rows, err := tx.Query(ctx, "SELECT schueler_id, COUNT(*) FROM ausleihen WHERE schueler_id = ANY($1) AND rueckgabe_am IS NULL GROUP BY schueler_id", gradIDs)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var sID string
+		var count int
+		if err := rows.Scan(&sID, &count); err != nil {
+			rows.Close()
+			return err
+		}
+		pendingCounts[sID] = count
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
 		return err
 	}
 
@@ -181,15 +193,40 @@ func verarbeiteEinenAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string)
 	// Anonymisierung — sonst würden Name und Rechnungsadresse gelöscht und die Schule bliebe
 	// auf dem Schaden sitzen, weil sie den Schüler nicht mehr anschreiben kann. storniert_am
 	// setzt ist_bezahlt = true (repository/audit_system.go), daher genügt ist_bezahlt = false.
-	var offeneSchaeden int
-	if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false", schuelerID).Scan(&offeneSchaeden); err != nil {
+	offeneSchaedenCounts := make(map[string]int, len(gradIDs))
+	schaedenRows, err := tx.Query(ctx, "SELECT schueler_id, COUNT(*) FROM schadensfaelle WHERE schueler_id = ANY($1) AND ist_bezahlt = false GROUP BY schueler_id", gradIDs)
+	if err != nil {
+		return err
+	}
+	for schaedenRows.Next() {
+		var sID string
+		var count int
+		if err := schaedenRows.Scan(&sID, &count); err != nil {
+			schaedenRows.Close()
+			return err
+		}
+		offeneSchaedenCounts[sID] = count
+	}
+	schaedenRows.Close()
+	if err := schaedenRows.Err(); err != nil {
 		return err
 	}
 
-	if pending > 0 || offeneSchaeden > 0 {
-		return sperreAbgaenger(ctx, tx, schuelerID)
+	for _, sID := range gradIDs {
+		pending := pendingCounts[sID]
+		offeneSchaeden := offeneSchaedenCounts[sID]
+		if pending > 0 || offeneSchaeden > 0 {
+			if err := sperreAbgaenger(ctx, tx, sID); err != nil {
+				return err
+			}
+		} else {
+			if err := anonymisiereAbgaenger(ctx, tx, sID); err != nil {
+				return err
+			}
+		}
 	}
-	return anonymisiereAbgaenger(ctx, tx, schuelerID)
+
+	return nil
 }
 
 // sperreAbgaenger markiert einen Abgänger mit offenen Vorgängen (nicht zurückgegebene
