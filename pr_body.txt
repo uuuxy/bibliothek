@@ -1,0 +1,10 @@
+🎯 **What:**
+Added comprehensive unit tests for `inventur.APIHandler` and `neuteredFileSystem`, covering standard routing, RBAC middleware injection, and secure filesystem access functionality that previously lacked any test coverage.
+
+📊 **Coverage:**
+- **neuteredFileSystem.Open**: Tested reading existing files, rejecting non-existent files, successfully serving directories containing `index.html`, and preventing directory listings by rejecting access when `index.html` is missing.
+- **NewAPIHandler**: Tested constructor initialization for `APIHandler` asserting the internal mux is created and unassigned dependencies start as nil.
+- **APIHandler.ServeHTTP**: Created tests with dummy middlewares (checking header `X-Middleware`) for view (`/api/books`) and edit (`/api/books`, `/api/admin/`) paths, verifying proper router setup and protection.
+
+✨ **Result:**
+The `inventur` routing logic and specific filesystem protections now have strong, deterministic tests covering critical middlewares and expected behavior, improving the confidence in the system's resilience and simplifying future refactoring.
