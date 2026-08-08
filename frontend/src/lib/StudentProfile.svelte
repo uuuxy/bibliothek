@@ -123,6 +123,9 @@
 				bind:showDeleteConfirm={st.showDeleteConfirm}
 				{onDeselect}
 				{leftActions}
+				onLock={role === 'admin' || role === 'mitarbeiter'
+					? () => (st.showLockModal = true)
+					: undefined}
 			/>
 
 			<!-- Right: Timeline / Loans List / Stammdaten -->
@@ -135,7 +138,6 @@
 						rechnungPdfLoading={st.rechnungPdfLoading}
 						downloadKontoauszugPDF={st.downloadKontoauszugPDF}
 						downloadRechnungPDF={st.downloadRechnungPDF}
-						showLockModal={() => (st.showLockModal = true)}
 						onPrint={printCard}
 						gueltigBis={gueltigBisEffektiv}
 						onGueltigBis={(jahr) => (gueltigBisOverride = jahr)}

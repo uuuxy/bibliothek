@@ -3,8 +3,9 @@
 	import { apiClient } from './apiFetch.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
 	import Button from './components/ui/Button.svelte';
+	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
 
-	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet }} */
+	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void }} */
 	let {
 		profile = $bindable(),
 		role = '',
@@ -12,7 +13,8 @@
 		showWebcam = $bindable(),
 		showDeleteConfirm = $bindable(),
 		onDeselect,
-		leftActions
+		leftActions,
+		onLock
 	} = $props();
 
 	// ── Initialen-Avatar (Passbild-Ersatz) ────────────────────────────────────
@@ -194,18 +196,7 @@
 		<p class="text-sm text-slate-400 font-mono tracking-widest">{profile.barcode_id}</p>
 	</div>
 
-	<!-- Konto-Status (flach, kein Sub-Card) -->
-	<div class="w-full flex items-center justify-between border-t border-b border-slate-200 py-3">
-		<span class="text-base text-slate-600">Konto-Status</span>
-		<!-- Gesperrt ist die Ausnahme und trägt Farbe; „Aktiv" ist der Normalfall und
-		     bleibt still. Ein pulsierender grüner Punkt für „alles in Ordnung" zieht
-		     Aufmerksamkeit auf die einzige Stelle, die keine braucht. -->
-		{#if profile.ist_gesperrt}
-			<span class="text-sm font-medium text-rose-600">Gesperrt</span>
-		{:else}
-			<span class="text-sm text-slate-500">Aktiv</span>
-		{/if}
-	</div>
+	<StudentKontoStatus {profile} {onLock} />
 
 	<!-- Plugin-Erweiterungen -->
 	{#if studentTabExtensions.length > 0}

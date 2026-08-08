@@ -7,8 +7,6 @@
 	import {
 		Printer,
 		FileText,
-		Lock,
-		Unlock,
 		AlertTriangle,
 		IdCard,
 		ShieldCheck,
@@ -24,7 +22,6 @@
 	 * @property {boolean} rechnungPdfLoading
 	 * @property {() => void} downloadKontoauszugPDF
 	 * @property {() => void} downloadRechnungPDF
-	 * @property {() => void} showLockModal
 	 * @property {(side: 'front'|'back'|'both') => void} onPrint
 	 * @property {number|null} gueltigBis        aktuell gewaehltes Ablaufjahr
 	 * @property {(jahr: number|null) => void} onGueltigBis
@@ -37,7 +34,6 @@
 		rechnungPdfLoading,
 		downloadKontoauszugPDF,
 		downloadRechnungPDF,
-		showLockModal,
 		onPrint,
 		gueltigBis,
 		onGueltigBis
@@ -113,11 +109,15 @@
 	}
 </script>
 
-<!-- Aktionen / Dokumente — alle Druck-, Export- & Verwaltungsaktionen an einem Ort. -->
+<!-- Nur noch Dokumente: alles hier erzeugt ein PDF und lässt sich wegwerfen.
+     Der Kasten hiess bis zum 08.08.2026 „Dokumente & Aktionen" und trug als einzige
+     Aktion mit Folgen die Schülersperre — das „&" im Titel war das Eingeständnis,
+     dass zwei Kategorien in einer Kiste lagen. Die Sperre steht jetzt bei dem
+     Zustand, den sie umschaltet (StudentProfileCard, Konto-Status). -->
 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
 	<h4 class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
 		<FileText class="w-3.5 h-3.5" />
-		Dokumente & Aktionen
+		Dokumente
 	</h4>
 	{#snippet spinner()}
 		<div
@@ -204,20 +204,31 @@
 			Kontoauszug
 		</Button>
 
-		<!-- Ersatzforderung: Rechnung an die Eltern über offene Schadensfälle. -->
-		<Button
-			variant="secondary"
-			onclick={downloadRechnungPDF}
-			disabled={rechnungPdfLoading || !profile.has_open_damages}
-			title={!profile.has_open_damages
-				? 'Keine offenen Schadensfälle'
+		<!-- Ersatzforderung: Rechnung an die Eltern über offene Schadensfälle.
+
+		     data-tip am UMSCHLAG, nicht am Knopf: Ein disabled-Element bekommt keine
+		     Zeigerereignisse — weder für den nativen title noch für die Blase dieses
+		     Projekts (tooltip.js hört delegiert auf mouseover). Die Begründung stand
+		     also im Code und erreichte genau in dem Zustand niemanden, in dem man sie
+		     braucht: wenn der Knopf grau ist und man wissen will, warum. Der Umschlag
+		     fängt das Ereignis ab, das der graue Knopf durchlässt. -->
+		<span
+			class="inline-flex"
+			data-tip={!profile.has_open_damages
+				? 'Kein offener Schadensfall — eine Ersatzforderung gibt es erst, wenn ein Schaden erfasst ist'
 				: 'Ersatzforderung über offene Schäden drucken'}
 		>
-			{#if rechnungPdfLoading}{@render spinner()}{:else}<AlertTriangle
-					class="w-4 h-4 text-rose-600"
-				/>{/if}
-			Ersatzforderung
-		</Button>
+			<Button
+				variant="secondary"
+				onclick={downloadRechnungPDF}
+				disabled={rechnungPdfLoading || !profile.has_open_damages}
+			>
+				{#if rechnungPdfLoading}{@render spinner()}{:else}<AlertTriangle
+						class="w-4 h-4 text-rose-600"
+					/>{/if}
+				Ersatzforderung
+			</Button>
+		</span>
 
 		{#if role === 'admin'}
 			<Button
@@ -229,18 +240,5 @@
 				DSGVO-Auskunft
 			</Button>
 		{/if}
-
-		<!-- Sperr-Aktion: optisch getrennt ganz nach rechts -->
-		<Button
-			class="ml-auto"
-			variant={profile.is_manually_blocked ? 'success' : 'danger'}
-			onclick={showLockModal}
-		>
-			{#if profile.is_manually_blocked}
-				<Unlock class="w-4 h-4" /> Sperre aufheben
-			{:else}
-				<Lock class="w-4 h-4" /> Schüler sperren
-			{/if}
-		</Button>
 	</div>
 </div>
