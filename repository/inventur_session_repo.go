@@ -123,15 +123,29 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 	if limit <= 0 || limit > 50 {
 		limit = 10
 	}
+	// Erst kappen, dann zählen. Standen die beiden count-Unterabfragen wie früher in der
+	// SELECT-Liste, HING es am Planer, ob er sie hinter das LIMIT schiebt: gemessen am
+	// 09.08.2026 zog er die Erfassungs-Zählung auf zehn Durchläufe zusammen, die
+	// Verlust-Zählung aber nicht — die lief 400-mal, einmal je abgeschlossener Inventur.
+	// Die CTE macht aus dieser Planer-Laune eine Struktur: gezählt wird nur für die
+	// Zeilen, die auch herauskommen.
 	rows, err := r.db.Query(ctx, `
+		WITH limited_sessions AS (
+			SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
+			       gestartet_von, gestartet_am, abgeschlossen_am
+			FROM inventur_sessions
+			WHERE abgeschlossen_am IS NOT NULL
+			ORDER BY abgeschlossen_am DESC
+			LIMIT $1
+		)
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text, s.abgeschlossen_am::text,
-		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id),
-		       (SELECT count(*) FROM inventur_verluste   WHERE session_id = s.id)
-		FROM inventur_sessions s
-		WHERE s.abgeschlossen_am IS NOT NULL
+		       COALESCE(e.count, 0),
+		       COALESCE(v.count, 0)
+		FROM limited_sessions s
+		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_erfassungen WHERE session_id = s.id) e ON true
+		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_verluste WHERE session_id = s.id) v ON true
 		ORDER BY s.abgeschlossen_am DESC
-		LIMIT $1
 	`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("abgeschlossene sessions laden fehlgeschlagen: %w", err)
@@ -153,6 +167,11 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 // ListOffeneInventurSessions liefert alle laufenden Sessions (für die Anzeige, damit
 // niemand versehentlich in einen fremden, bereits laufenden Scope startet).
 func (r *InventoryRepository) ListOffeneInventurSessions(ctx context.Context) ([]InventurSession, error) {
+	// Hier bewusst OHNE die CTE-/LATERAL-Konstruktion der Schwesterfunktion oben: Die
+	// lohnt sich nur, weil dort ein LIMIT die Zählung auf zehn Zeilen eindampft. Diese
+	// Abfrage hat kein LIMIT — jede offene Session wird ohnehin gezählt, die Umbauten
+	// ergäben denselben Plan und nur mehr SQL. Offene Sessions sind zudem per
+	// idx_inv_session_offen_* auf eine Handvoll begrenzt.
 	rows, err := r.db.Query(ctx, `
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text,
