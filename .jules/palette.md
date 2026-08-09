@@ -13,3 +13,6 @@
 ## 2026-07-27 - Added focus visible styles to UI Button
 **Learning:** Interactive components like Button.svelte were missing explicit focus states for keyboard navigation, reducing accessibility.
 **Action:** Always add 'focus-visible:ring-2 focus-visible:outline-none' to base interactive components so that keyboard users receive visual feedback.
+## 2024-08-09 - Missing ARIA labels on PropertiesPanel icon buttons
+**Learning:** Icon-only buttons in the ID designer's PropertiesPanel (Trash icon, up/down arrows for z-index) lacked `aria-label` attributes, relying only on `title` which is insufficient for screen readers.
+**Action:** Always add explicit `aria-label` attributes to icon-only buttons, especially in complex interactive interfaces like designers where standard context clues might be missing.
