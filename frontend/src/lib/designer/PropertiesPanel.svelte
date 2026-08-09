@@ -71,6 +71,7 @@
 					onclick={handleDelete}
 					class="text-slate-300 hover:text-rose-500 transition-colors p-1"
 					title="Element löschen"
+					aria-label="Element löschen"
 				>
 					<Trash2 class="w-4 h-4" aria-hidden="true" />
 				</button>
@@ -133,12 +134,14 @@
 			<button
 				onclick={() => bringForward(side, el.id)}
 				class="px-2 py-1 text-label-small bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
-				title="Nach vorne">▲</button
+				title="Nach vorne"
+				aria-label="Ebene nach vorne verschieben">▲</button
 			>
 			<button
 				onclick={() => sendBackward(side, el.id)}
 				class="px-2 py-1 text-label-small bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
-				title="Nach hinten">▼</button
+				title="Nach hinten"
+				aria-label="Ebene nach hinten verschieben">▼</button
 			>
 		</div>
 
