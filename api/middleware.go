@@ -244,6 +244,9 @@ var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4
 // UUID. {klasse} ist ein Klassenname und gehört bewusst NICHT dazu.
 var uuidPfadParameter = []string{"id", "schueler_id", "ausleihe_id"}
 
+// ValidateUUIDParamsMiddleware weist Anfragen ab, deren UUID-Pfadparameter keine UUID
+// sind — bevor sie die Datenbank erreichen. Geprüft wird nur, was in
+// uuidPfadParameter steht; die Begründung für diese Liste steht dort.
 func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, name := range uuidPfadParameter {
@@ -306,6 +309,9 @@ func maskiereToken(pfad string) string {
 	return pfad
 }
 
+// LoggingMiddleware protokolliert jede Anfrage mit Status und Dauer. Der Pfad läuft
+// vorher durch die Maskierung darüber: Ein Geheimnis im Pfad (Bestätigungs-Token) darf
+// nicht im Klartext im Log landen.
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		recorder := &statusRecorder{

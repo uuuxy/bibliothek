@@ -139,7 +139,6 @@ func (r *postgresUserRepo) CreateUser(ctx context.Context, barcode *string, vorn
 	return userID, err
 }
 
-// UpdateUser aktualisiert die Daten eines Benutzers.
 // UpdateUserParams bündelt die aktualisierbaren Felder eines Benutzers.
 type UpdateUserParams struct {
 	ID       string

@@ -23,6 +23,8 @@ type OrderItemRequest struct {
 	GenerateBarcodes bool    `json:"generate_barcodes"`
 }
 
+// SubmitOrderRequest ist ein kompletter Warenkorb an EINEN Lieferanten. Die Bestellung
+// entsteht daraus in einer Transaktion — schlägt eine Position fehl, geht keine raus.
 type SubmitOrderRequest struct {
 	SupplierID string             `json:"supplier_id"`
 	Items      []OrderItemRequest `json:"items"`
@@ -153,6 +155,10 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 	}
 }
 
+// OrderSearchItem ist ein Suchtreffer der Bestellsuche. Source unterscheidet die
+// Herkunft: "local" kommt aus dem eigenen Katalog und trägt dann auch CurrentStock,
+// "dnb" ist ein Fremdtreffer ohne Bestand. IsDuplicate warnt, dass der Titel bereits im
+// Haus steht — nachbestellen ist erlaubt, aber es soll niemand versehentlich tun.
 type OrderSearchItem struct {
 	ID           string `json:"id,omitempty"`
 	Titel        string `json:"titel"`
@@ -165,10 +171,14 @@ type OrderSearchItem struct {
 	IsDuplicate  bool   `json:"is_duplicate,omitempty"`
 }
 
+// OrderSearchRequest trägt den Suchbegriff der Bestellsuche — ISBN oder Freitext.
 type OrderSearchRequest struct {
 	Query string `json:"query"`
 }
 
+// SearchOrdersHandler sucht einen Titel zum Bestellen, zuerst im eigenen Katalog und
+// zusätzlich bei der DNB. Der Metadaten-Client wird EINMAL beim Registrieren der Route
+// gebaut, nicht je Anfrage — er hält seinen eigenen HTTP-Client mit Zeitgrenze.
 func (s *Server) SearchOrdersHandler() http.HandlerFunc {
 	metaClient := inventur.NeuerMetadatenClient()
 	return func(w http.ResponseWriter, r *http.Request) {

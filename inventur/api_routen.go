@@ -36,6 +36,9 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	return f, nil
 }
 
+// APIHandlerConfig ist der Bauplan für den APIHandler. Die beiden Middleware-Felder
+// werden von api/router.go hereingereicht: Das Inventur-Modul kennt die RBAC-Prüfung
+// nicht selbst, bekommt sie aber verpflichtend gestellt.
 type APIHandlerConfig struct {
 	Repo             *BookRepository
 	Metadaten        *MetadatenClient
@@ -57,6 +60,7 @@ type APIHandler struct {
 	mux       *http.ServeMux
 }
 
+// NewAPIHandler baut den Endpunkt-Satz des Inventur-Moduls samt eigenem ServeMux.
 func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	handler := &APIHandler{
 		repo:      config.Repo,

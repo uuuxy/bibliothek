@@ -31,6 +31,8 @@ func insertClassBookBindings(ctx context.Context, tx pgx.Tx, newClassNames, book
 	return nil
 }
 
+// GetClassGroups liefert die Klassensätze nach Klasse gruppiert. branch filtert auf den
+// Bildungsgang, sortOrder bestimmt die Reihenfolge der Klassen.
 func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, sortOrder string) ([]ClassGroup, error) {
 	query := `
 		SELECT 
@@ -106,6 +108,9 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 	return result, nil
 }
 
+// UpdateClassBooks schreibt die Buchzuordnung einer Klasse neu. oldClassName wird dabei
+// durch newClassNames ersetzt — so lässt sich derselbe Satz in einem Zug auf mehrere
+// Klassen verteilen, ohne ihn mehrfach anzulegen.
 func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName string, newClassNames []string, bookIDs []string) error {
 	tx, err := repo.db.Begin(ctx)
 	if err != nil {
@@ -139,6 +144,8 @@ func (repo *BookRepository) UpdateClassBooks(ctx context.Context, oldClassName s
 	return nil
 }
 
+// DeleteClassGroup löst die Klassensätze der genannten Klassen auf. Betroffen ist nur
+// die Zuordnung — die Titel selbst bleiben im Katalog.
 func (repo *BookRepository) DeleteClassGroup(ctx context.Context, classNames []string) error {
 	if len(classNames) == 0 {
 		return nil
@@ -150,6 +157,8 @@ func (repo *BookRepository) DeleteClassGroup(ctx context.Context, classNames []s
 	return nil
 }
 
+// NormalizeAllClasses vereinheitlicht die Klassenbezeichnungen im Bestand (etwa „5A"
+// und „5a" zur selben Klasse). Läuft in einer Transaktion: entweder alle oder keine.
 func (repo *BookRepository) NormalizeAllClasses(ctx context.Context) error {
 	tx, err := repo.db.Begin(ctx)
 	if err != nil {
@@ -209,6 +218,8 @@ func (repo *BookRepository) NormalizeAllClasses(ctx context.Context) error {
 	return tx.Commit(ctx)
 }
 
+// AddBooksToClasses ergänzt Titel in mehreren Klassensätzen, ohne die bestehende
+// Zuordnung zu ersetzen — anders als UpdateClassBooks, das sie neu schreibt.
 func (repo *BookRepository) AddBooksToClasses(ctx context.Context, classNames []string, bookIDs []string) error {
 	if len(classNames) == 0 || len(bookIDs) == 0 {
 		return nil

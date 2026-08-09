@@ -29,7 +29,6 @@ type Book struct {
 }
 
 // ClassBookAssignment represents a book assigned to a class.
-
 type ClassBookAssignment struct {
 	ClassName string `json:"className" db:"class_name"`
 	BookID    string `json:"bookId" db:"book_id"`

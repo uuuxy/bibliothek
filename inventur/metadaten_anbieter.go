@@ -261,6 +261,8 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	}, nil
 }
 
+// SucheTextDNB fragt die DNB per Freitext ab — für die Bestellsuche, wenn keine ISBN
+// vorliegt. Liefert mehrere Treffer; die Auswahl trifft die Oberfläche.
 func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
 	trimmed := strings.TrimSpace(query)
 	if trimmed == "" {

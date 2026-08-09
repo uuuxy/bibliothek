@@ -15,6 +15,9 @@ import (
 	"bibliothek/repository"
 )
 
+// MailSettingsResponse ist die Mail-Konfiguration, wie die Oberfläche sie sehen darf.
+// Das Passwort verlässt den Server NIE — stattdessen sagt HasPassword nur, ob eines
+// hinterlegt ist.
 type MailSettingsResponse struct {
 	SMTPHost    string `json:"smtp_host"`
 	SMTPPort    string `json:"smtp_port"`
@@ -23,6 +26,9 @@ type MailSettingsResponse struct {
 	HasPassword bool   `json:"has_password"`
 }
 
+// MailSettingsRequest ist die eingehende Mail-Konfiguration. Ein leeres SMTPPassword
+// bedeutet „unverändert lassen": Sonst würde jedes Speichern der Einstellungsseite das
+// Passwort löschen, weil die Oberfläche es gar nicht kennt (siehe MailSettingsResponse).
 type MailSettingsRequest struct {
 	SMTPHost     string `json:"smtp_host"`
 	SMTPPort     string `json:"smtp_port"`

@@ -71,6 +71,8 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 	}
 }
 
+// UpdateUserRequest ist der Änderungssatz für ein Mitarbeiterkonto. Warum hier bewusst
+// KEIN Passwort steht, erklärt der Kommentar am Ende des Structs.
 type UpdateUserRequest struct {
 	BarcodeID string `json:"barcode_id"`
 	Vorname   string `json:"vorname" validate:"required"`

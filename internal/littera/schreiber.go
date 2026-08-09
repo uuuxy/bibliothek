@@ -67,6 +67,9 @@ type Schreiber struct {
 	opt  Optionen
 }
 
+// NeuerSchreiber baut den Schreiber für einen Übernahmelauf. Eine BatchGroesse von 0
+// bedeutet „Vorgabe nehmen" (200) — der Aufrufer muss die Zahl nicht kennen, und eine
+// versehentliche 0 legt nicht den ganzen Lauf still.
 func NeuerSchreiber(pool *pgxpool.Pool, prot *uebernahme.Protokoll, opt Optionen) *Schreiber {
 	if opt.BatchGroesse <= 0 {
 		opt.BatchGroesse = 200

@@ -10,6 +10,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Validate ist der gemeinsame Struct-Validator für alle Eingangs-Payloads. Bewusst EINE
+// Instanz: validator.New() baut bei jedem Aufruf einen eigenen Regel-Cache auf.
 var Validate = validator.New()
 
 // DecodeAndValidate decodes the JSON request body and validates the struct.

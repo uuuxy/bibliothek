@@ -17,19 +17,19 @@ import (
 type LeserArt int
 
 const (
-	// ArtUnbekannt: Gruppe nicht auflösbar oder unklare Untergruppe (z. B. „IMPORT",
+	// ArtUnbekannt steht für eine nicht auflösbare oder unklare Untergruppe (z. B. „IMPORT",
 	// „U-plus", „Im Ausland"). Diese Zeilen werden NICHT still zu Schülern gemacht —
 	// sie brauchen eine Entscheidung, bevor Personendaten geschrieben werden.
 	ArtUnbekannt LeserArt = iota
 	// ArtSchueler umfasst „Schüler" UND „Sekundarstufe II": Die Oberstufenklassen
 	// (11T1, 12T3, 13T5) sind eine eigene Untergruppe, aber selbstverständlich Schüler.
 	ArtSchueler
-	// ArtLehrkraft: „Lehrer" und „Lehrerin".
+	// ArtLehrkraft umfasst „Lehrer" und „Lehrerin".
 	ArtLehrkraft
-	// ArtAbgegangen: ehemalige Schüler — Untergruppe „Abgegangen". Gehören als
+	// ArtAbgegangen sind ehemalige Schüler — Untergruppe „Abgegangen". Gehören als
 	// Abgänger in die Schülerdatei, nicht als aktive Schüler.
 	ArtAbgegangen
-	// ArtSonstige: Praktikanten, Sekretariat, Fachbereichs-Sammelkonten. Keine Schüler,
+	// ArtSonstige sind Praktikanten, Sekretariat, Fachbereichs-Sammelkonten. Keine Schüler,
 	// aber auch keine Lehrkräfte im Sinne des Portals.
 	ArtSonstige
 )

@@ -7,6 +7,9 @@ import (
 	"bibliothek/apierrors"
 )
 
+// AdminAuditLogEntry ist eine Zeile des Admin-Prüfprotokolls, wie die Oberfläche sie
+// anzeigt. AdminID ist bewusst nullbar: Systemgetriebene Einträge (Cron, Migration)
+// haben keinen Bearbeiter, sollen aber trotzdem im Protokoll stehen.
 type AdminAuditLogEntry struct {
 	ID          string    `json:"id"`
 	AdminID     *string   `json:"admin_id"`

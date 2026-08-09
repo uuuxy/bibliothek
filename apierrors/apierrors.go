@@ -37,7 +37,9 @@ func New(statusCode int, message string, err error) *APIError {
 	}
 }
 
-// Common error constructors
+// NotFound baut einen 404 mit deutscher Vorgabemeldung, wenn der Aufrufer keine eigene
+// mitgibt. Der ursprüngliche Fehler bleibt zum Protokollieren erhalten, geht aber nicht
+// an den Client.
 func NotFound(message string, err error) *APIError {
 	if message == "" {
 		message = "Ressource nicht gefunden"
@@ -45,6 +47,8 @@ func NotFound(message string, err error) *APIError {
 	return New(http.StatusNotFound, message, err)
 }
 
+// BadRequest baut einen 400 mit deutscher Vorgabemeldung — für Bedienfehler, die der
+// Aufrufer selbst beheben kann.
 func BadRequest(message string, err error) *APIError {
 	if message == "" {
 		message = "Ungültige Anfrage"
@@ -52,6 +56,9 @@ func BadRequest(message string, err error) *APIError {
 	return New(http.StatusBadRequest, message, err)
 }
 
+// Internal baut einen 500. Achtung beim Debuggen: Die Meldung wird beim Senden durch
+// eine neutrale ersetzt — eine Diagnose, die den Nutzer erreichen soll, gehört in einen
+// 400er oder 502er, nicht hierhin.
 func Internal(message string, err error) *APIError {
 	if message == "" {
 		message = "Ein interner Serverfehler ist aufgetreten"
@@ -59,6 +66,8 @@ func Internal(message string, err error) *APIError {
 	return New(http.StatusInternalServerError, message, err)
 }
 
+// Unauthorized baut einen 401 — fehlende oder abgelaufene Anmeldung. Für „angemeldet,
+// aber nicht berechtigt" gehört ein 403 hin, den die RBAC-Middleware selbst setzt.
 func Unauthorized(message string, err error) *APIError {
 	if message == "" {
 		message = "Nicht autorisiert"

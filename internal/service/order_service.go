@@ -130,6 +130,9 @@ func addExemplarToGroup(group *ShipmentGroup, titelID, titel, isbn, coverURL, ex
 	})
 }
 
+// OrderSearchItem ist ein Suchtreffer der Bestellsuche auf Dienstebene. Welche Felder
+// gefüllt sind, hängt von der Herkunft ab — die Feldkommentare unten sagen, welche nur
+// bei source="local" existieren.
 type OrderSearchItem struct {
 	ID       string `json:"id,omitempty"`
 	Titel    string `json:"titel"`

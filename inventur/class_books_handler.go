@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// ClassBook ist ein Klassensatz-Titel, wie ihn das Lehrerportal anzeigt.
 type ClassBook struct {
 	ID         string `json:"id"`
 	Title      string `json:"title"`
@@ -19,6 +20,8 @@ type ClassBook struct {
 	Gesamt     int    `json:"gesamt"`
 }
 
+// ClassGroup bündelt die Klassensatz-Titel EINER Klasse — die Gruppierung passiert
+// serverseitig, damit die Oberfläche nicht über alle Zuordnungen iterieren muss.
 type ClassGroup struct {
 	ClassName string      `json:"className"`
 	Books     []ClassBook `json:"books"`

@@ -8,6 +8,9 @@ import (
 	"bibliothek/internal/crypto"
 )
 
+// MailSettings ist die SMTP-Konfiguration, wie sie in der Datenbank steht. Die Datenbank
+// ist die EINZIGE Quelle dafür — die .env dient nur der Erstbefüllung. Beim Debuggen von
+// Mailproblemen also diese Zeile ansehen, nicht die Umgebungsvariablen.
 type MailSettings struct {
 	SMTPHost              string
 	SMTPPort              string
@@ -16,10 +19,12 @@ type MailSettings struct {
 	SenderEmail           string
 }
 
+// MailSettingsRepository liest und schreibt die Mail-Konfiguration.
 type MailSettingsRepository struct {
 	pool db.PgxPoolIface
 }
 
+// NewMailSettingsRepository bindet das Mail-Einstellungs-Repository an einen Pool.
 func NewMailSettingsRepository(pool db.PgxPoolIface) *MailSettingsRepository {
 	return &MailSettingsRepository{pool: pool}
 }

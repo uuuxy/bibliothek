@@ -79,6 +79,9 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 	return pdfBytes, true
 }
 
+// BulkPrintRequest benennt die Ausleihen, für die in einem Zug gemahnt werden soll.
+// Die Auswahl kommt aus der Oberfläche, nicht aus einer serverseitigen Abfrage — wer
+// mahnt, soll vorher sehen, wen es trifft.
 type BulkPrintRequest struct {
 	AusleihIDs []string `json:"ausleih_ids"`
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// TokenGueltigkeit begrenzt, wie lange ein Bestätigungs-Link lebt.
+// TokenGueltigkeitTage begrenzt, wie lange ein Bestätigungs-Link lebt.
 //
 // Ein Link ohne Ablauf bleibt für immer in einem fremden Postfach gültig — auch wenn der
 // Mitarbeiter dort längst gewechselt hat oder die Mail weitergeleitet wurde. Der Link IST

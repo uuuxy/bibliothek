@@ -18,6 +18,9 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// LitteraImportResponse meldet zurück, was ein Littera-Import bewegt hat. Die Zähler
+// tragen omitempty, weil je nach Dateiart nur ein Teil davon gefüllt wird: Das
+// Katalogisat-XML bringt Titel, die Bestands-CSV bringt Exemplare.
 type LitteraImportResponse struct {
 	NewTitles      int    `json:"new_titles_count,omitempty"`
 	ImportedCopies int    `json:"imported_copies_count,omitempty"`
@@ -134,6 +137,9 @@ func (s *Server) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, co
 	})
 }
 
+// LitteraImportHandler nimmt eine Littera-Ausgabedatei entgegen und verzweigt anhand der
+// Dateiendung auf den passenden Leser (CSV, MAB2-XML, XLSX). Die Grenze von 100 MB ist
+// bewusst großzügig: Das Katalogisat der Schule liegt bei rund 14.000 Titeln.
 func (s *Server) LitteraImportHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		content, filename, ok := s.leseUploadInhalt(w, r, 100<<20) // 100 MB limit

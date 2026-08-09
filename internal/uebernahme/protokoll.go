@@ -25,6 +25,8 @@ import (
 // 3.000 kosmetische Abwertungen bedeuten.
 type Schweregrad string
 
+// Die beiden Stufen, in denen ein Übernahmelauf meldet — die Bedeutung steht oben am
+// Typ: WARNUNG heißt „übernommen, aber abgewertet", FEHLER heißt „nicht übernommen".
 const (
 	SchweregradWarnung Schweregrad = "WARNUNG"
 	SchweregradFehler  Schweregrad = "FEHLER"
@@ -79,7 +81,7 @@ func (p *Protokoll) schreibe(sev Schweregrad, quellID, kennung, grund string) {
 // Warnungen zählt die abgewertet übernommenen Datensätze.
 func (p *Protokoll) Warnungen() int { return p.warnungen }
 
-// Fehler zählt die NICHT übernommenen Datensätze.
+// FehlerAnzahl zählt die NICHT übernommenen Datensätze.
 func (p *Protokoll) FehlerAnzahl() int { return p.fehler }
 
 // Leeren schreibt den Puffer heraus, ohne die Datei zu schließen — für Tests und für

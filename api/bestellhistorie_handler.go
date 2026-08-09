@@ -9,6 +9,9 @@ import (
 	"bibliothek/apierrors"
 )
 
+// BestellPositionResponse ist eine Position innerhalb einer Bestellung des Verlaufs.
+// Die Feldkommentare unten tragen die eigentlichen Fallstricke — nullbare TitelID und
+// die Frage, worauf sich EtikettenOffen bezieht.
 type BestellPositionResponse struct {
 	TitelName   string  `json:"titel_name"`
 	ISBN        string  `json:"isbn"`
@@ -37,6 +40,8 @@ type BestellPositionResponse struct {
 	EtikettenOffen int `json:"etiketten_offen"`
 }
 
+// BestellVerlaufResponse ist eine Bestellung im Verlauf, mit ihren Positionen und dem
+// Zustand des Bestätigungs-Wegs.
 type BestellVerlaufResponse struct {
 	ID              string                    `json:"id"`
 	LieferantName   string                    `json:"lieferant_name"`

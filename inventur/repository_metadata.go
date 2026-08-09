@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// GetBookByID liest einen Titel samt Metadaten. Fehlt er, kommt ErrBookNotFound zurück
+// — ein Bedienfehler, kein Serverfehler.
 func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, error) {
 	query := `
 		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp, COALESCE(jahrgang_von, 5) AS jahrgang_von, COALESCE(jahrgang_bis, 10) AS jahrgang_bis, erweiterte_eigenschaften
@@ -36,6 +38,8 @@ func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, 
 	return &book, nil
 }
 
+// UpdateBookMetadata schreibt die bibliografischen Angaben eines Titels — der Weg, über
+// den ein DNB-Treffer im Katalog landet.
 func (repo *BookRepository) UpdateBookMetadata(ctx context.Context, id string, title, author, coverURL string) error {
 	query := `
 		UPDATE buecher_titel
@@ -54,6 +58,9 @@ func (repo *BookRepository) UpdateBookMetadata(ctx context.Context, id string, t
 	return nil
 }
 
+// UpdateBookCategory setzt Fach und Jahrgangsstufe. gradeLevel ist per
+// chk_grade_level_bereich auf 0..13 begrenzt — ein Wert daneben scheitert an der
+// Datenbank, nicht erst in der Auswertung.
 func (repo *BookRepository) UpdateBookCategory(ctx context.Context, id string, subject string, gradeLevel int16) error {
 	query := `
 		UPDATE buecher_titel

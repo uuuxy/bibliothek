@@ -37,6 +37,9 @@ type pgReservationRepository struct {
 	db db.PgxPoolIface
 }
 
+// NewReservationRepository bindet die Vormerkungen an einen Verbindungspool. Gibt die
+// Schnittstelle zurück, nicht den konkreten Typ — die Aufrufer sollen gegen den Vertrag
+// arbeiten, damit Tests ihn ersetzen können.
 func NewReservationRepository(pool db.PgxPoolIface) ReservationRepository {
 	return &pgReservationRepository{db: pool}
 }

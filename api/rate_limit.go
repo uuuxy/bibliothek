@@ -83,6 +83,9 @@ func getIP(r *http.Request) string {
 	return clientip.FromRequest(r)
 }
 
+// RateLimitMiddleware begrenzt Anfragen je Client-IP auf limit pro Zeitfenster.
+// Ausgenommen sind Pfade, bei denen ein einzelner Seitenaufruf dutzende Anfragen
+// erzeugt — die Begründung dafür steht unten an der Ausnahmeliste.
 func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 	limiter := newIPRateLimiter(limit)
 	return func(next http.Handler) http.Handler {
