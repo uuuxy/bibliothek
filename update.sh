@@ -8,6 +8,7 @@
 #   3. docker compose up -d --build (rebuild & restart)
 #   4. Bei Fehler: Abbruch + Rollback-Anleitung
 #   5. Backups älter als 30 Tage werden automatisch gelöscht
+#   6. Docker-Build-Cache älter als 7 Tage wird aufgeräumt
 # ==============================================================================
 set -euo pipefail
 
@@ -15,6 +16,9 @@ set -euo pipefail
 COMPOSE_FILE="$(cd "$(dirname "$0")" && pwd)/docker-compose.yml"
 BACKUP_DIR="$(cd "$(dirname "$0")" && pwd)/backups"
 BACKUP_RETENTION_DAYS=30
+# Build-Cache-Schichten, die seit dieser Zeit niemand mehr angefasst hat, fliegen raus.
+# 168h = 7 Tage — lang genug, dass der Cache des letzten Updates erhalten bleibt.
+BUILD_CACHE_RETENTION_HOURS=168
 
 DB_CONTAINER="bibliothek-db"
 DB_USER="postgres"
@@ -230,6 +234,38 @@ fi
 
 REMAINING=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
 log_info "${REMAINING} Backup/s verbleiben in ${BACKUP_DIR}/"
+
+# ── Schritt 6: Docker-Build-Cache aufräumen ───────────────────────────────────
+log_step "Schritt 6: Docker-Build-Cache aufräumen (älter als ${BUILD_CACHE_RETENTION_HOURS}h)"
+
+# Jedes Update baut ein neues Image, und der BuildKit-Cache wächst dabei unbegrenzt
+# weiter — niemand räumt ihn von allein ab. Am 09.08.2026 stand er bei 14,47 GB und
+# füllte die 38-GB-Platte zu 82 %. Läuft sie voll, steht der ganze Server, samt der
+# fremden Dienste hinter demselben Caddy.
+#
+# Der Zeitfilter ist Absicht: Der Cache des GERADE gebauten Images bleibt liegen, das
+# nächste Update ist also weiterhin schnell. Nur Schichten, die seit einer Woche
+# niemand angefasst hat, fallen weg.
+#
+# Bewusst NICHT `docker system prune` und erst recht kein `docker volume prune`: Auf
+# diesem Server liegen fremde benannte Volumes (school-calendar, inkl. deren Postgres
+# und Backups), die Docker als "unbenutzt" führt. Ein Volume-Prune löschte sie.
+FREI_VORHER="$(df -Pk / | awk 'NR==2 {print $4}')"
+
+# Ein fehlgeschlagenes Aufräumen darf ein geglücktes Update NICHT zum Fehler machen —
+# deshalb hier keine Abbruchbedingung, sondern nur eine Warnung.
+if docker builder prune -af --filter "until=${BUILD_CACHE_RETENTION_HOURS}h" >/dev/null 2>&1; then
+    FREI_NACHHER="$(df -Pk / | awk 'NR==2 {print $4}')"
+    BEFREIT_MB=$(( (FREI_NACHHER - FREI_VORHER) / 1024 ))
+    if [ "${BEFREIT_MB}" -gt 0 ]; then
+        log_ok "Build-Cache aufgeräumt: ${BEFREIT_MB} MB frei geworden."
+    else
+        log_info "Build-Cache aufgeräumt: nichts Altes vorhanden."
+    fi
+else
+    log_warn "Build-Cache konnte nicht aufgeräumt werden — das Update selbst ist davon unberührt."
+fi
+log_info "Speicher auf /: $(df -h / | awk 'NR==2 {print $4}') frei ($(df -h / | awk 'NR==2 {print $5}') belegt)"
 
 # ── Fertig ────────────────────────────────────────────────────────────────────
 echo ""
