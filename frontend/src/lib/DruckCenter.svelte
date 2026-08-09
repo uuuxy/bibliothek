@@ -20,8 +20,14 @@
 <PageShell>
 	<!-- Reiter auf der Leinwand, nicht in einem eigenen weissen Balken — wie Mahnwesen,
 	     Medienkatalog und Schuelerdatei. -->
+	<!-- Ohne max-w-6xl mx-auto: Die Reiterzeile stand dadurch auf einer ANDEREN Kante als
+	     der Inhalt darunter — gemessen bei 1600 px begannen die Reiter bei 352, die
+	     Überschriften bei 320. Der Kommentar an den Reiter-Inhalten ahnte das bereits
+	     („nur zufällig ähnlich weit eingerückt … wäre bei anderer Fensterbreite
+	     auseinandergelaufen"). Die Inhaltsbreite ist mit a4133a2 ohnehin abgeschafft:
+	     „Es gibt keine Inhaltsbreite mehr, nur noch volle." -->
 	<div class="border-outline-variant shrink-0 border-b">
-		<div class="mx-auto flex max-w-6xl gap-6">
+		<div class="flex gap-6">
 			<button
 				onclick={() => (activeTab = 'labels')}
 				class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'labels'
@@ -63,23 +69,26 @@
 	</div>
 
 	<div class="flex-1 overflow-y-auto">
-		<!-- Alle drei Reiter tragen dasselbe px-8 py-6 wie die Tab-Leiste darüber — vorher
+		<!-- Alle drei Reiter tragen dieselbe Kante wie die Tab-Leiste darüber. Das px-8 ist
+		     dabei entfallen: Die äußere Polsterung sitzt laut PageShell in App.svelte und gilt
+		     für alle Routen — ein zusätzliches px-8 hier polsterte doppelt und schob den
+		     Inhalt gegenüber den Reitern um 32 px nach innen. Vorher
 		     bekam nur "Fehlende Etiketten" dieses Padding, die anderen beiden Reiter waren
 		     komplett randlos und nur zufällig ähnlich weit eingerückt wie die Tab-Leiste
 		     (deren max-w-6xl mx-auto bei anderer Fensterbreite auseinandergelaufen wäre). -->
 		{#if activeTab === 'labels'}
-			<div class="animate-fade-in h-full px-8 py-6">
+			<div class="animate-fade-in h-full py-6">
 				<LabelPrinter />
 			</div>
 		{:else if activeTab === 'nachdruck'}
 			<!-- Nach dem Übergeben direkt zum Etikettendruck: Die Auswahl liegt dort schon
 			     bereit, und ein Hinweis "wechseln Sie jetzt nach nebenan" wäre eine Arbeit,
 			     die das Programm selbst erledigen kann. -->
-			<div class="animate-fade-in h-full px-8 py-6">
+			<div class="animate-fade-in h-full py-6">
 				<EtikettenNachdruck onUebergeben={() => (activeTab = 'labels')} />
 			</div>
 		{:else}
-			<div class="animate-fade-in h-full px-8 py-6">
+			<div class="animate-fade-in h-full py-6">
 				<StudentIdDesigner />
 			</div>
 		{/if}

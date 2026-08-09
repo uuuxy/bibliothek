@@ -7,7 +7,7 @@
 	import Select from '../ui/Select.svelte';
 </script>
 
-<div class="lg:col-span-5 space-y-6 text-left">
+<div class="lg:col-span-7 space-y-6 text-left">
 	{#if (printQueue.copies?.length ?? 0) > 0}
 		<div class="p-4 border-l-2 border-blue-300 bg-blue-50/50 space-y-4 text-left animate-fade-in">
 			<div class="flex items-start gap-2.5">
@@ -29,7 +29,7 @@
 	{:else}
 		<!-- Step 1: Selection -->
 		<div class="py-5 space-y-4 border-b border-slate-200">
-			<h3 class="text-xs text-blue-600 font-medium">1. Titel / Klassensatz wählen</h3>
+			<h3 class="text-sm font-semibold text-slate-500">1. Titel / Klassensatz wählen</h3>
 
 			<!-- Tab selector for search vs class set -->
 			<div class="space-y-3">

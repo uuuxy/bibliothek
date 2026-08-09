@@ -18,7 +18,7 @@
 </script>
 
 <div class="py-5 space-y-4 border-b border-slate-200">
-	<h3 class="text-xs text-blue-600 font-medium">3. Layout-Optionen</h3>
+	<h3 class="text-sm font-semibold text-slate-500">3. Layout-Optionen</h3>
 
 	<div class="space-y-3.5">
 		<div class="space-y-1.5">
@@ -58,7 +58,7 @@
 				bind:checked={labelStore.labelBorder}
 				class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white"
 			/>
-			<span>Hilfsrahmen / Begrenzungslinien auf Etikett zeichnen</span>
+			<span>Hilfsrahmen auf dem Etikett zeichnen</span>
 		</label>
 	</div>
 </div>

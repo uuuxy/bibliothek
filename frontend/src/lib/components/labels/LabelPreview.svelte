@@ -3,9 +3,20 @@
 	import { printQueue } from '../../stores/printQueue.svelte.js';
 </script>
 
-<!-- Right Preview Panel (7 cols) -->
+<!-- Vorschau: die kleinere Haelfte (5 von 12), nicht die groessere.
+     Vorher lag es umgekehrt — 7 Spalten fuer die Vorschau, 5 fuer das Formular. Bei
+     1600 px waren das 696 gegen 488 px: Die ARBEIT hatte die kleinere Haelfte, und im
+     Leerzustand stand ein halber Bildschirm auf "Kein Buch ausgewaehlt".
+
+     Auch nicht mehr gestrichelt und nicht mehr rounded-3xl. Gestrichelt heisst in
+     dieser Anwendung "hier gehoert etwas hin" (Ablageflaeche, Leerzustand) — eine
+     Vorschau ist aber kein Platzhalter, sondern die Ausgabe. Und 28 px Radius ist in
+     der Formskala (theme-mass.css) der DIALOG-Wert; hier steht kein Dialog.
+
+     min-h-125 (500 px feste Mindesthoehe) ist weg: Der Kasten war im Leerzustand einen
+     halben Bildschirm hoch, ohne etwas zu zeigen. Er waechst jetzt mit seinem Inhalt. -->
 <div
-	class="lg:col-span-7 flex flex-col items-center justify-start p-6 bg-slate-50 border border-dashed border-slate-200 rounded-3xl min-h-125"
+	class="lg:col-span-5 flex flex-col items-center justify-start rounded-xl bg-surface-container p-6"
 >
 	<span class="text-xs text-slate-400 font-medium mb-4"
 		>A4 Etiketten-Vorschau · {labelStore.formatId === 'standard_52'
