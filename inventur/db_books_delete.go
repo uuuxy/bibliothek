@@ -3,7 +3,6 @@ package inventur
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -95,7 +94,10 @@ func loescheLokaleCoverDateien(localCovers []string) {
 		if name == "" || name == "." || name == "/" {
 			continue
 		}
-		// #nosec G304 - name is sanitized using filepath.Base
-		_ = os.Remove(filepath.Join("uploads", name)) //nolint:errcheck
+		// loescheUploadDatei arbeitet über os.Root (uploads_pfad.go) — die Einhegung auf
+		// das Upload-Verzeichnis macht das Betriebssystem, nicht mehr das filepath.Base
+		// oben. Deshalb steht hier kein #nosec mehr: Es gibt kein os.Remove, das gosec
+		// beanstanden könnte.
+		_ = loescheUploadDatei(name) //nolint:errcheck // Best-Effort-Aufräumen nach dem DB-Löschen
 	}
 }

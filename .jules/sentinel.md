@@ -31,3 +31,7 @@
 **Vulnerability:** Path traversal vulnerability during PDF generation (`api/mahnwesen_pdf.go`) where a user-provided image path was read directly with `os.ReadFile`.
 **Learning:** `os.ReadFile` does not protect against traversing directories. Even if the input is sanitized (as it was partly done in `coverDateiPfad`), it relies on manual validation instead of OS-level scoping.
 **Prevention:** Use the `os.Root` API introduced in Go 1.24 (`os.OpenRoot(".")` and `root.Open(pfad)`) to enforce an OS-level sandbox root directory, which provides stronger guarantees against traversal attacks.
+## 2026-07-20 - Mitigate Path Traversal (G304) using centralized os.OpenRoot wrapper
+**Vulnerability:** A Path Traversal vulnerability was found in `inventur/db_books_delete.go` when cleaning up cover images. It used `os.Remove(filepath.Join("uploads", name))` directly, which bypasses the safer, centralized `os.OpenRoot` wrapper implementation in the package.
+**Learning:** Even when `filepath.Base()` is used for sanitization, calling `os.Remove` on a joined path remains vulnerable to traversal logic bugs and is flagged by security analyzers (e.g. gosec G304). Rely on standard wrapper functions that use the OS-level `os.OpenRoot` sandbox.
+**Prevention:** Rather than directly interacting with the filesystem using `os.Remove` in business logic, use centralized file access abstractions like `loescheUploadDatei` that employ Go 1.24's `os.OpenRoot()` and `root.Remove()` to guarantee safe directory confinement.
