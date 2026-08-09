@@ -124,14 +124,22 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 		limit = 10
 	}
 	rows, err := r.db.Query(ctx, `
+		WITH limited_sessions AS (
+			SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
+			       gestartet_von, gestartet_am, abgeschlossen_am
+			FROM inventur_sessions
+			WHERE abgeschlossen_am IS NOT NULL
+			ORDER BY abgeschlossen_am DESC
+			LIMIT $1
+		)
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text, s.abgeschlossen_am::text,
-		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id),
-		       (SELECT count(*) FROM inventur_verluste   WHERE session_id = s.id)
-		FROM inventur_sessions s
-		WHERE s.abgeschlossen_am IS NOT NULL
+		       COALESCE(e.count, 0),
+		       COALESCE(v.count, 0)
+		FROM limited_sessions s
+		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_erfassungen WHERE session_id = s.id) e ON true
+		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_verluste WHERE session_id = s.id) v ON true
 		ORDER BY s.abgeschlossen_am DESC
-		LIMIT $1
 	`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("abgeschlossene sessions laden fehlgeschlagen: %w", err)
@@ -154,11 +162,18 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 // niemand versehentlich in einen fremden, bereits laufenden Scope startet).
 func (r *InventoryRepository) ListOffeneInventurSessions(ctx context.Context) ([]InventurSession, error) {
 	rows, err := r.db.Query(ctx, `
+		WITH open_sessions AS (
+			SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
+			       gestartet_von, gestartet_am
+			FROM inventur_sessions
+			WHERE abgeschlossen_am IS NULL
+			ORDER BY gestartet_am ASC
+		)
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text,
-		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id)
-		FROM inventur_sessions s
-		WHERE s.abgeschlossen_am IS NULL
+		       COALESCE(e.count, 0)
+		FROM open_sessions s
+		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_erfassungen WHERE session_id = s.id) e ON true
 		ORDER BY s.gestartet_am ASC
 	`)
 	if err != nil {
