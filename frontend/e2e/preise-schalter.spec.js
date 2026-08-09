@@ -39,7 +39,7 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 	setzePreiseErfassen(false);
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('button', { name: 'Bestellhistorie', exact: true }).click();
+	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 
 	// Kopfzeile: keine Ausgaben, sondern Exemplare.
 	await expect(page.getByText('Gesamtausgaben')).toHaveCount(0);
@@ -58,7 +58,7 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 
 	// Berichte: "Lieferantenabrechnung" waere ohne Preise schlicht falsch — abgerechnet
 	// wird nichts.
-	await page.getByRole('button', { name: 'Berichte', exact: true }).click();
+	await page.getByRole('tab', { name: 'Berichte', exact: true }).click();
 	await expect(page.getByText('Lieferantenübersicht')).toBeVisible();
 	await expect(page.getByText('Lieferantenabrechnung')).toHaveCount(0);
 
@@ -66,7 +66,7 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 	setzePreiseErfassen(true);
 	await page.reload();
 	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('button', { name: 'Bestellhistorie', exact: true }).click();
+	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 	await expect(page.getByText('Gesamtausgaben')).toBeVisible();
 	await page.getByRole('button', { name: new RegExp(`E2E-Preis-Lieferant ${s}`) }).click();
 	await expect(page.getByText('21,25 €')).toBeVisible();

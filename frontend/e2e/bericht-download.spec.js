@@ -16,7 +16,7 @@ import { uiLogin } from './helpers.js';
 test('Bericht-Download liefert das PDF, nicht die App', async ({ page, context }) => {
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('button', { name: 'Berichte', exact: true }).click();
+	await page.getByRole('tab', { name: 'Berichte', exact: true }).click();
 
 	const link = page.getByRole('link', { name: /PDF herunterladen/ });
 	await expect(link).toHaveAttribute('href', /\/api\/bestellhistorie\/bericht\?/);

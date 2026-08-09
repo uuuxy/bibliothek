@@ -1,25 +1,36 @@
 <script>
 	import { onMount } from 'svelte';
 	import { ChevronLeft } from '@lucide/svelte';
-	import { apiGet } from './apiFetch.js';
-	import { orderStore } from './stores/orderStore.svelte.js';
 	import { printQueue } from './stores/printQueue.svelte.js';
+	import { orderStore } from './stores/orderStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
+	import { toastStore } from './stores/toastStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 
 	import OrderCreationPanel from './components/bestellungen/OrderCreationPanel.svelte';
-	import IncomingShipments from './components/bestellungen/IncomingShipments.svelte';
 	import WareneingangView from './components/bestellungen/WareneingangView.svelte';
 	import OrderRecommendations from './components/bestellungen/OrderRecommendations.svelte';
 	import SupplierManager from './components/bestellungen/SupplierManager.svelte';
 	import BestellHistorie from './components/bestellungen/BestellHistorie.svelte';
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import BestelllinkHinweis from './components/bestellungen/BestelllinkHinweis.svelte';
-	import PrintSuggestion from './components/bestellungen/PrintSuggestion.svelte';
 	import KlassensatzReservierungen from './components/bestellungen/KlassensatzReservierungen.svelte';
 
 	let activeTab = $state('bestellungen');
-	let showWareneingang = $state(false);
+
+	/**
+	 * Exemplare im Zulauf — speist das Badge am Wareneingang-Reiter. Bis zum 09.08.2026
+	 * stand dieselbe Zahl als Streifen ueber dem Bestellbedarf; M3 kennt dafuer das Badge
+	 * am Ziel, die Banner-Komponente wurde mit M2 gestrichen.
+	 */
+	const zulaufExemplare = $derived(
+		orderStore.incomingShipments.reduce(
+			(/** @type {number} */ summe, /** @type {any} */ lieferung) =>
+				summe +
+				lieferung.items.reduce((/** @type {number} */ s, /** @type {any} */ i) => s + i.menge, 0),
+			0
+		)
+	);
 
 	// Bestellspalte ein-/ausklappbar. Sie belegt ein Drittel der Breite, auch wenn der
 	// Warenkorb leer ist — währenddaneben Titel wie „LMF-Bigalke/Köhler: Mathematik —
@@ -32,22 +43,6 @@
 	// zwei Bildschirmen mit verschiedenen Grössen wäre „meine Breite" die falsche Vorgabe.
 	// Der Zustand gilt deshalb für die Sitzung.
 	let railOffen = $state(true);
-	let showGreenFade = $state(false);
-	/** @type {any[] | null} Exemplare der letzten Einbuchung ohne gedrucktes Etikett */
-	let printSuggestion = $state(null);
-
-	/** Exemplare ohne Barcode-Etikett — speist den stehenden Hinweis in PrintSuggestion. */
-	let offeneEtiketten = $state(0);
-
-	async function ladeOffeneEtiketten() {
-		try {
-			const daten = await apiGet('/api/exemplare/etiketten-offen/anzahl');
-			offeneEtiketten = daten?.anzahl ?? 0;
-		} catch (err) {
-			// Ein fehlender Hinweis darf das Bestellwesen nicht aufhalten.
-			console.error('Offene Etiketten konnten nicht gezählt werden', err);
-		}
-	}
 
 	onMount(() => {
 		orderStore.init();
@@ -56,26 +51,40 @@
 		// stünde sonst vor einem Hinweis, der bereits erledigt ist — und würde ihn beim
 		// nächsten Mal nicht mehr ernst nehmen.
 		orderStore.loadKonfiguration();
-		ladeOffeneEtiketten();
 	});
 
 	/** @param {any[]} receivedItems */
 	async function handleShipmentReceived(receivedItems) {
-		showWareneingang = false;
-		const needsPrinting = receivedItems.filter((item) => !item.etikett_gedruckt);
-		printSuggestion = needsPrinting.length > 0 ? needsPrinting : null;
-		showGreenFade = true;
+		activeTab = 'bestellungen';
 		await orderStore.loadIncomingShipments();
 		orderStore.loadRecommendations();
-		ladeOffeneEtiketten();
-		setTimeout(() => {
-			showGreenFade = false;
-		}, 1500);
-	}
+		// Zaehlt das Badge am Druck-Center neu: Frisch eingebuchte Exemplare tragen noch
+		// kein Etikett, die Arbeit ist also gerade dorthin gewandert.
+		uiStore.fetchOffeneEtiketten();
 
-	function handlePrintSuggestion() {
-		printQueue.copies = printSuggestion;
-		printSuggestion = null;
+		// Der stehende Streifen ist weg, die ÜBERGABE aber nicht: Wer gerade eingebucht hat,
+		// soll genau DIESE Exemplare drucken koennen — nicht sie zwischen tausenden offenen
+		// Etiketten im Druck-Center wiederfinden muessen. Deshalb eine Snackbar mit Aktion
+		// (M3: genau eine Folgehandlung), die printQueue.copies wie zuvor befuellt.
+		//
+		// Der Unterschied zum Streifen ist die Lebensdauer: Der Hinweis beschreibt einen
+		// MOMENT. Der dauerhafte Zustand („es liegen Etiketten an") steht im Badge am
+		// Druck-Center und nicht mehr auf dieser Seite.
+		const ohneEtikett = receivedItems.filter((item) => !item.etikett_gedruckt);
+		if (ohneEtikett.length > 0) {
+			toastStore.addToast(
+				`Eingebucht. ${ohneEtikett.length} ${ohneEtikett.length === 1 ? 'Exemplar braucht' : 'Exemplare brauchen'} noch ein Etikett.`,
+				'success',
+				{
+					label: 'Etiketten drucken',
+					onClick: () => {
+						printQueue.copies = ohneEtikett;
+					}
+				}
+			);
+		} else {
+			toastStore.addToast('Eingebucht.', 'success');
+		}
 	}
 
 	/**
@@ -131,62 +140,48 @@
 	     Bestellen (Mail ohne Link) UND die Historie (Bestätigung, die nie kommt). -->
 	<BestelllinkHinweis />
 
-	<!-- Tab-Bar: reine Navigation, keine Aktionen -->
-	<div class="flex items-end gap-6 border-b border-slate-200 shrink-0">
-		{#snippet tab(id, label)}
+	<!-- Reiterzeile: reine Navigation, keine Aktionen. Genau deshalb steht „Nachdrucken"
+	     NICHT hier — in M3 wechseln Reiter gleichrangige Ansichten EINES Ziels, sie fuehren
+	     keine Aktionen aus und springen nicht zu anderen Zielen. Das Nachdrucken liegt im
+	     Druck-Center und traegt sein Badge dort (Sidebar.svelte).
+
+	     role=tablist/tab und aria-selected: Vorher waren das nackte <button>, ein
+	     Screenreader hoerte fuenf zusammenhanglose Knoepfe statt einer Reitergruppe. -->
+	<div
+		role="tablist"
+		aria-label="Bereiche des Bestellwesens"
+		class="flex items-end gap-6 border-b border-slate-200 shrink-0"
+	>
+		{#snippet tab(id, label, anzahl = 0)}
 			<button
+				role="tab"
+				aria-selected={activeTab === id}
 				onclick={() => (activeTab = id)}
-				class="pb-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer {activeTab ===
+				class="flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer {activeTab ===
 				id
 					? 'border-blue-600 text-blue-700'
-					: 'border-transparent text-slate-500 hover:text-slate-800'}">{label}</button
+					: 'border-transparent text-slate-500 hover:text-slate-800'}"
 			>
+				{label}
+				{#if anzahl > 0}
+					<span
+						class="min-w-5 h-5 flex items-center justify-center rounded-full bg-error text-on-error text-label-small font-bold px-1 tabular-nums"
+						aria-label="{anzahl} offen">{anzahl > 999 ? '999+' : anzahl}</span
+					>
+				{/if}
+			</button>
 		{/snippet}
 		{@render tab('bestellungen', 'Bestellungen')}
+		{@render tab('wareneingang', 'Wareneingang', zulaufExemplare)}
 		{@render tab('lieferanten', 'Lieferanten verwalten')}
 		{@render tab('historie', 'Bestellhistorie')}
 		{@render tab('berichte', 'Berichte')}
-		<button
-			onclick={() => (activeTab = 'klassensaetze')}
-			class="pb-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 {activeTab ===
-			'klassensaetze'
-				? 'border-blue-600 text-blue-700'
-				: 'border-transparent text-slate-500 hover:text-slate-800'}"
-		>
-			Klassensatz-Reservierungen
-			{#if uiStore.pendingReservierungen > 0}
-				<span
-					class="min-w-5 h-5 flex items-center justify-center rounded-full bg-rose-600 text-white text-label-small font-bold px-1"
-					>{uiStore.pendingReservierungen}</span
-				>
-			{/if}
-		</button>
+		{@render tab('klassensaetze', 'Klassensatz-Reservierungen', uiStore.pendingReservierungen)}
 	</div>
 
 	{#if activeTab === 'bestellungen'}
-		{#if showWareneingang}
-			<WareneingangView
-				incomingShipments={orderStore.incomingShipments}
-				onBack={() => (showWareneingang = false)}
-				onReceived={handleShipmentReceived}
-			/>
-		{:else}
+		{#key 'bestellungen'}
 			<div class="flex flex-col gap-5">
-				<!-- OFFENE AUFGABEN: zwei gleichwertige Statusstreifen nebeneinander.
-				     Beide sagen dasselbe — „hier wartet etwas, das nichts mit der Bestellung zu
-				     tun hat, an der du gerade schreibst". Der Etiketten-Hinweis stand vorher als
-				     hohe Karte IN der Bestellspalte und damit über dem Warenkorb, zu dem er nicht
-				     gehört: Der Wareneingang lag oben, die Etiketten rechts — dieselbe Art
-				     Aufgabe an zwei Orten. -->
-				<div class="grid gap-4 sm:grid-cols-2">
-					<IncomingShipments
-						incomingShipments={orderStore.incomingShipments}
-						{showGreenFade}
-						onOpenWareneingang={() => (showWareneingang = true)}
-					/>
-					<PrintSuggestion {printSuggestion} onPrint={handlePrintSuggestion} {offeneEtiketten} />
-				</div>
-
 				<!-- Zwei Bereiche statt zwei Karten. Die Trennung traegt eine senkrechte
 				     Haarlinie an der Bestellspalte (unten), nicht ein Rahmen je Block —
 				     dasselbe Muster wie auf der Signaturen-Seite. Waagerechter Abstand
@@ -264,7 +259,20 @@
 					</div>
 				</div>
 			</div>
-		{/if}
+		{/key}
+	{/if}
+
+	{#if activeTab === 'wareneingang'}
+		<!-- Eigener Reiter statt Unteransicht hinter einem Banner. Vorher fuehrte der einzige
+		     Weg hierher ueber einen Streifen ueber dem Bestellbedarf; wer ihn wegdachte, fand
+		     den Wareneingang nicht mehr. Als Reiter steht er gleichrangig neben den anderen
+		     Ansichten dieser Seite — und die Zahl im Badge sagt dasselbe wie der Streifen,
+		     ohne die halbe Breite zu belegen. -->
+		<WareneingangView
+			incomingShipments={orderStore.incomingShipments}
+			onBack={() => (activeTab = 'bestellungen')}
+			onReceived={handleShipmentReceived}
+		/>
 	{/if}
 
 	{#if activeTab === 'lieferanten'}

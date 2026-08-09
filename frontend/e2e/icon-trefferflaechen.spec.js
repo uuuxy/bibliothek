@@ -117,7 +117,7 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 		// wie ein bestandener. Deshalb hier harte Erwartungen: Findet der Test seinen
 		// Messpunkt nicht, ist er rot und nicht grün.
 		if (pfad === '/bestellungen') {
-			await page.getByRole('button', { name: 'Bestellhistorie' }).click();
+			await page.getByRole('tab', { name: 'Bestellhistorie' }).click();
 			const zeilen = page.locator('tbody tr');
 			await zeilen.first().waitFor();
 			await zeilen.first().click();

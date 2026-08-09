@@ -120,7 +120,7 @@ test('Die Bestellung erscheint im Haus als bestätigt — ohne die Zeile aufzukl
 	// Und die Bibliothek sieht es in der Bestellhistorie, in der eingeklappten Zeile.
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('button', { name: 'Bestellhistorie', exact: true }).click();
+	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 
 	const zeile = page.locator('tbody tr', { hasText: `K-${s}` }).first();
 	await expect(zeile).toContainText('Bestätigt');

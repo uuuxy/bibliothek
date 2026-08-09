@@ -39,6 +39,6 @@ test('Antwortet die Konfiguration nicht, sagt das Bestellwesen das — statt zu 
 	// Moeblierung, die niemand mehr liest.
 	await page.unroute('**/api/bestellungen/konfiguration');
 	await page.reload();
-	await expect(page.getByRole('button', { name: 'Bestellhistorie', exact: true })).toBeVisible();
+	await expect(page.getByRole('tab', { name: 'Bestellhistorie', exact: true })).toBeVisible();
 	await expect(hinweis).toHaveCount(0);
 });

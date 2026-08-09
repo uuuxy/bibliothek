@@ -30,13 +30,26 @@
 			>
 				Buch-Etiketten
 			</button>
+			<!-- Das Badge steht hier UND an „Druck-Center" in der Seitenleiste: Der Zaehler
+			     fuehrt erst zum Ziel, dann zum Reiter darin. Vorher trug den Hinweis ein
+			     Streifen im BESTELLWESEN — eine Seite, die mit dem Drucken nichts zu tun hat
+			     und den Zaehler nur weiterreichte. Die Arbeit liegt hier, also gehoert die
+			     Anzeige hierher. -->
 			<button
 				onclick={() => (activeTab = 'nachdruck')}
-				class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'nachdruck'
+				class="flex items-center gap-2 pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab ===
+				'nachdruck'
 					? 'border-blue-600 text-blue-700'
 					: 'border-transparent text-slate-500 hover:text-slate-800'}"
 			>
 				Fehlende Etiketten
+				{#if uiStore.offeneEtiketten > 0}
+					<span
+						class="bg-error text-on-error text-label-small flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-bold tabular-nums"
+						aria-label="{uiStore.offeneEtiketten} offen"
+						>{uiStore.offeneEtiketten > 999 ? '999+' : uiStore.offeneEtiketten}</span
+					>
+				{/if}
 			</button>
 			<button
 				onclick={() => (activeTab = 'ids')}

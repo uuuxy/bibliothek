@@ -82,15 +82,19 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
 
-	// Zulauf-Streifen → Wareneingang öffnen
-	await page.getByRole('button', { name: 'Einbuchen' }).click();
+	// Wareneingang öffnen. Seit 09.08.2026 ein eigener Reiter statt eines Streifens über
+	// dem Bestellbedarf: Ein Banner ist in M3 kein Bauteil mehr, und der Zulauf ist eine
+	// Ansicht dieser Seite — die Zahl daneben ist das Badge.
+	await page.getByRole('tab', { name: /Wareneingang/ }).click();
 
 	// Alles auswählen und einbuchen
 	await page.getByRole('button', { name: 'Alle auswählen' }).click();
 	await page.getByRole('button', { name: 'Ausgewählte Positionen einbuchen' }).click();
 
-	// Der Druck-Vorschlag erscheint (Etikett war nicht gedruckt) → drucken
-	const printBtn = page.getByRole('button', { name: /Etiketten für diese Lieferung drucken/ });
+	// Die Übergabe an den Etikettendruck liegt jetzt in der Snackbar-Aktion (M3: genau
+	// eine Folgehandlung) statt in einem stehenden Vorschlagsstreifen. Der geprüfte Pfad
+	// ist derselbe: printQueue.copies bekommt GENAU die Exemplare dieser Lieferung.
+	const printBtn = page.getByRole('button', { name: 'Etiketten drucken' });
 	await expect(printBtn).toBeVisible();
 	await printBtn.click();
 

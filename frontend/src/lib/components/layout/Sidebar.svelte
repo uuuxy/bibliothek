@@ -23,6 +23,28 @@
 		uiStore.activeTab = id;
 		uiStore.selectedBook = null;
 	}
+
+	/**
+	 * Wartende Arbeit je Navigationsziel. In M3 ist genau DAS die Aufgabe eines Badges:
+	 * am Ziel anzeigen, dass dort etwas liegt. Die Etiketten standen bis zum 09.08.2026
+	 * stattdessen als Streifen ueber dem Bestellbedarf — auf einer Seite, die damit nichts
+	 * zu tun hat, und in einem Bauteil (Banner), das M3 gar nicht mehr kennt: M2 hatte es,
+	 * M3 hat es ersatzlos gestrichen.
+	 * @param {string} id
+	 */
+	function wartendeArbeit(id) {
+		if (id === 'orders') return uiStore.pendingReservierungen;
+		if (id === 'druck-center') return uiStore.offeneEtiketten;
+		return 0;
+	}
+
+	/**
+	 * M3 kappt die Zahl im Badge bei drei Zeichen und schreibt darueber „999+". Der Grund
+	 * ist nicht der Platz, sondern die Aussage: Ob 30.674 oder 12.000 Etiketten offen sind,
+	 * aendert keine Entscheidung — „mehr als du heute schaffst" ist die ganze Information.
+	 * @param {number} n
+	 */
+	const badgeText = (n) => (n > 999 ? '999+' : String(n));
 </script>
 
 <!-- Ein Navigationsziel. Als Snippet, weil es vorher ZWEIMAL im Markup stand — einmal
@@ -53,13 +75,15 @@
 		<NavIcon name={item.icon} />
 		{#if !zu}
 			<span class="animate-fade-in flex-1 text-left">{item.label}</span>
-			{#if item.id === 'orders' && uiStore.pendingReservierungen > 0}
+			{#if wartendeArbeit(item.id) > 0}
 				<span
 					class="bg-error text-on-error text-label-small ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-bold"
-					>{uiStore.pendingReservierungen}</span
+					aria-label="{wartendeArbeit(item.id)} offen">{badgeText(wartendeArbeit(item.id))}</span
 				>
 			{/if}
-		{:else if item.id === 'orders' && uiStore.pendingReservierungen > 0}
+			<!-- Eingeklappt bleibt nur der Punkt: M3 nennt das „small badge" — er sagt „hier
+			     liegt etwas", ohne dass eine Zahl in eine 40-px-Pille gequetscht wird. -->
+		{:else if wartendeArbeit(item.id) > 0}
 			<span class="bg-error absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white"
 			></span>
 		{/if}

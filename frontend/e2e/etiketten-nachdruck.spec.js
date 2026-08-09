@@ -103,14 +103,18 @@ test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', asyn
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
 
-	// Der Hinweis steht dauerhaft, nicht nur direkt nach einem Wareneingang.
-	const hinweis = page.getByRole('button', { name: 'Im Druck-Center nachdrucken' });
-	await expect(hinweis).toBeVisible();
+	// Der Hinweis steht dauerhaft, nicht nur direkt nach einem Wareneingang — seit dem
+	// 09.08.2026 aber als BADGE am Ziel statt als Streifen im Bestellwesen. Das ist die
+	// M3-Aufgabe eines Badges: am Navigationsziel anzeigen, dass dort Arbeit liegt. Der
+	// Streifen stand auf einer Seite, die mit dem Drucken nichts zu tun hat.
+	const druckCenter = page.getByTitle('Druck-Center');
+	await expect(druckCenter.locator('span').filter({ hasText: /^\d+\+?$|^999\+$/ })).toBeVisible();
 
-	// BEWEIS: Der Verweis landet nicht irgendwo im Druck-Center, sondern in der Liste.
-	await hinweis.click();
+	// BEWEIS: Der Weg endet nicht irgendwo im Druck-Center, sondern in der Liste — der
+	// Reiter dorthin traegt denselben Zaehler.
+	await druckCenter.click();
+	await page.getByRole('button', { name: /Fehlende Etiketten/ }).click();
 	await expect(page.getByLabel('Exemplare filtern')).toBeVisible();
 
 	await page.getByLabel('Exemplare filtern').fill(`E2E-HIN-${s}`);
@@ -184,7 +188,7 @@ test('Bestellhistorie verweist auf Nachdruck und Titelsatz — und nur, wenn es 
 
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('button', { name: 'Bestellhistorie', exact: true }).click();
+	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 
 	// Bestellung aufklappen
 	await page.getByRole('button', { name: new RegExp(`E2E-Lieferant ${s}`) }).click();

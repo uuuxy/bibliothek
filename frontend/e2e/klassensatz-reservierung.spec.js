@@ -18,9 +18,11 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 	// 3. Navigation zu Bestellwesen -> Klassensätze
 	await page.getByTitle('Bestellungen').click();
 
-	// Die Sidebar zeigt einen roten Badge an, wenn es ungelöste Reservierungen gibt,
-	// der Button in der Tab-Leiste enthält auch "Klassensatz-Reservierungen".
-	await page.getByRole('button', { name: /Klassensatz-Reservierungen/i }).click();
+	// Über die Rolle „tab", nicht „button": Seit dem 09.08.2026 trägt die Reiterzeile
+	// role=tablist/tab (vorher nackte <button>, ein Screenreader hörte sechs
+	// zusammenhanglose Knöpfe). Das löst zugleich die Mehrdeutigkeit, die der Kommentar
+	// hier vorher beschrieb — der Badge in der Seitenleiste ist kein Reiter.
+	await page.getByRole('tab', { name: /Klassensatz-Reservierungen/i }).click();
 
 	// 4. Verifikation des Renderns der Reservierung
 	await expect(page.getByText(`E2E Klassensatz Buch ${s}`).first()).toBeVisible();

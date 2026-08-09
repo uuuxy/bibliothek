@@ -5,6 +5,13 @@ class UIStore {
 	selectedBook = $state(/** @type {any} */ (null));
 	isSidebarCollapsed = $state(false);
 	pendingReservierungen = $state(0);
+	/**
+	 * Exemplare ohne gedrucktes Etikett. Liegt hier und nicht im Bestellwesen, weil die
+	 * Zahl die SEITENLEISTE speist: Die Arbeit wartet im Druck-Center, also gehoert der
+	 * Zaehler an dessen Navigationsziel. Vorher stand sie als Banner ueber dem
+	 * Bestellbedarf — einer Seite, die damit nichts zu tun hat.
+	 */
+	offeneEtiketten = $state(0);
 	isInitialRouteMatched = $state(false);
 	/** Welche Statistik-Detailliste die stats_detail-Seite zeigt (deep-linkbar via URL). */
 	statsDetailKind = $state(/** @type {'renner' | 'ladenhueter'} */ ('renner'));
@@ -45,6 +52,18 @@ class UIStore {
 			}
 		} catch {
 			/* ignore */
+		}
+	}
+
+	async fetchOffeneEtiketten() {
+		try {
+			const res = await apiFetch('/api/exemplare/etiketten-offen/anzahl');
+			if (res.ok) {
+				const data = await res.json();
+				this.offeneEtiketten = data.anzahl ?? 0;
+			}
+		} catch {
+			/* Ein fehlender Zaehler darf die Navigation nicht aufhalten. */
 		}
 	}
 }

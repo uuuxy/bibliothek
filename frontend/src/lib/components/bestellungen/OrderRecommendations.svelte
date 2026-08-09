@@ -80,8 +80,13 @@
 					     verschiedene Kennzahlen — und die „0" war eine feste Null im Markup, kein Messwert.
 					     Der Bezug auf die Gesamtzahl sagt stattdessen etwas Neues: wie groß der Notfall
 					     innerhalb der Liste ist. -->
-					<p class="text-sm font-semibold text-rose-600 mt-1 flex items-center gap-1.5">
-						<span class="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true"></span>
+					<!-- Bewusst NICHT in Fehlerrot. Bei einer Lernmittel-Bedarfsliste ist „kein
+					     Exemplar vorhanden" der Normalfall — 243 von 327 Titeln. Eine Zahl, die
+					     fast immer gilt, ist keine Fehlermeldung; sie in der Error-Rolle zu
+					     faerben erzieht das Auge dazu, Rot zu ueberlesen, und dann verschwindet
+					     der eine echte Fehler darin. In M3 traegt die Error-Rolle Zustaende, die
+					     korrigiert werden MUESSEN. Das hier ist eine Kennzahl. -->
+					<p class="text-sm text-slate-500 mt-1">
 						{kritischeAnzahl} von {recommendations.length} Titeln ohne ein einziges Exemplar
 					</p>
 				{:else if recommendations.length}
@@ -180,14 +185,19 @@
 
 					<!-- Durchgehend dieselbe Bestandsspalte statt eines Pills im Null-Fall. Das
 					     „Fehlt komplett"-Pill stand auf 252 von 334 Zeilen — ein Signal, das auf drei
-					     Vierteln der Liste steht, markiert den Normalzustand statt der Ausnahme. Als
-					     Zahlenspalte lässt sich dieselbe Aussage senkrecht scannen, und Rot bleibt
-					     dem Null-Bestand vorbehalten. Die Kopfzeile nennt die Gesamtzahl ohnehin. -->
+					     Vierteln der Liste steht, markiert den Normalzustand statt der Ausnahme.
+
+					     Dieselbe Ueberlegung gilt fuer die FARBE, und dort stand sie noch aus: Rot
+					     fuer gesamt_bestand === 0 traf 243 von 327 Zeilen. In M3 traegt die
+					     Error-Rolle Zustaende, die korrigiert werden muessen — in einer Liste, die
+					     ausschliesslich Bedarf enthaelt, ist Bedarf kein Fehler. Die Zugehoerigkeit
+					     zur Liste IST das Signal; innerhalb der Liste rangiert jetzt die BETONUNG
+					     (on-surface gegen on-surface-variant) statt einer zweiten Alarmfarbe. -->
 					<div
 						class="text-right shrink-0 leading-tight text-sm font-bold tabular-nums {r.gesamt_bestand ===
 						0
-							? 'text-rose-600'
-							: 'text-amber-600'}"
+							? 'text-slate-900'
+							: 'text-slate-500'}"
 						title="verfügbar / im Bestand"
 					>
 						{r.verfuegbarer_bestand}<span class="text-slate-400 font-medium">/</span

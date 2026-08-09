@@ -34,7 +34,7 @@ test('Lieferanten lassen sich bearbeiten, auch bei langem Namen', async ({ page 
 	expect(angelegt.ok()).toBe(true);
 
 	await page.goto('/bestellungen');
-	await page.getByRole('button', { name: 'Lieferanten verwalten' }).click();
+	await page.getByRole('tab', { name: 'Lieferanten verwalten' }).click();
 	await page.getByRole('table').waitFor();
 
 	const sicht = await page.evaluate(() => {

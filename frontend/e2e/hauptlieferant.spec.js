@@ -21,7 +21,7 @@ import { uiLogin, querySQL, uniqueSuffix } from './helpers.js';
 /** @param {import('@playwright/test').Page} page */
 async function zuLieferanten(page) {
 	await page.goto('/bestellungen');
-	await page.getByRole('button', { name: 'Lieferanten verwalten' }).click();
+	await page.getByRole('tab', { name: 'Lieferanten verwalten' }).click();
 	await page.getByRole('heading', { name: 'Neuer Lieferant' }).waitFor();
 }
 

@@ -28,6 +28,20 @@
 		>
 			<Symbol class="h-5 w-5 shrink-0" aria-hidden="true" />
 			<span class="wrap-break-word w-full">{toast.message}</span>
+			{#if toast.aktion}
+				<!-- M3-Snackbar: genau EINE Folgehandlung, textbetont und rechts neben der
+				     Meldung. Sie schliesst den Toast selbst — die Meldung hat ihren Zweck
+				     erfuellt, sobald man ihr gefolgt ist. -->
+				<button
+					onclick={() => {
+						toast.aktion?.onClick();
+						toastStore.removeToast(toast.id);
+					}}
+					class="ml-2 shrink-0 rounded-sm px-1 font-semibold whitespace-nowrap underline underline-offset-2 hover:opacity-80"
+				>
+					{toast.aktion.label}
+				</button>
+			{/if}
 			<button
 				onclick={() => toastStore.removeToast(toast.id)}
 				class="ml-2 shrink-0 text-white/70 hover:text-white transition-colors cursor-pointer"

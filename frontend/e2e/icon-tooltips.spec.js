@@ -91,7 +91,7 @@ test('Jedes Symbol erklärt sich beim Überfahren', async ({ page }) => {
 	// einem Zeilenklick — ein Bildschirm, den kein Direktaufruf erreicht. Ohne stille Wächter: Findet der Test den Messpunkt nicht,
 	// gehört er rot (ein übersprungener Messpunkt sieht aus wie ein bestandener).
 	await page.goto('/bestellungen');
-	await page.getByRole('button', { name: 'Bestellhistorie' }).click();
+	await page.getByRole('tab', { name: 'Bestellhistorie' }).click();
 	const zeilen = page.locator('tbody tr');
 	await zeilen.first().waitFor();
 	await zeilen.first().click();

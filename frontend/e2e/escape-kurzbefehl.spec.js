@@ -12,7 +12,7 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 test('Escape in einem Eingabefeld verlässt die Ansicht nicht', async ({ page }) => {
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('button', { name: 'Berichte', exact: true }).click();
+	await page.getByRole('tab', { name: 'Berichte', exact: true }).click();
 	await expect(page.getByText('Bericht erstellen')).toBeVisible();
 
 	// So bedient man ein Monatsfeld: anklicken, Auswahlfenster mit Escape schließen.
@@ -33,7 +33,7 @@ test('Escape in einem Eingabefeld verlässt die Ansicht nicht', async ({ page })
 test('Escape außerhalb von Eingabefeldern führt weiter zur Ausleihe', async ({ page }) => {
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
-	await expect(page.getByRole('button', { name: 'Berichte', exact: true })).toBeVisible();
+	await expect(page.getByRole('tab', { name: 'Berichte', exact: true })).toBeVisible();
 
 	await page.locator('body').click({ position: { x: 5, y: 5 } });
 	await page.keyboard.press('Escape');

@@ -49,9 +49,16 @@
 		if (authStore.currentUser.rolle !== 'admin' && authStore.currentUser.rolle !== 'mitarbeiter')
 			return;
 		uiStore.fetchPendingReservierungen();
+		// Speist das Badge an „Druck-Center". Seltener als die Reservierungen: Offene
+		// Etiketten aendern sich nur beim Einbuchen und beim Drucken, nicht im Minutentakt.
+		uiStore.fetchOffeneEtiketten();
 		offlineSync.init();
 		const id = setInterval(() => uiStore.fetchPendingReservierungen(), 30_000);
-		return () => clearInterval(id);
+		const idEtiketten = setInterval(() => uiStore.fetchOffeneEtiketten(), 120_000);
+		return () => {
+			clearInterval(id);
+			clearInterval(idEtiketten);
+		};
 	});
 
 	$effect(() => {
