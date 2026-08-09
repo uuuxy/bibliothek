@@ -6,6 +6,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TestGetNextSequence_NumerischNichtLexikografisch sichert den Fix gegen den
@@ -61,5 +63,45 @@ func TestGetNextSequence_LeererBestandFallback(t *testing.T) {
 	}
 	if got != 10001 {
 		t.Errorf("Fallback: erwartet 10001, war %d", got)
+	}
+}
+
+// TestGetNextSequence_UeberlangeNummerBlockiertNicht: Der Ausweis-Barcode darf beim
+// Anlegen eines Schülers frei eingegeben werden. Ein verrutschter Scan legt damit eine
+// Nummer an, die keine bigint mehr ist — und ließ danach JEDE automatische Vergabe mit
+// "value out of range for type bigint" scheitern. Ein einziger krummer Datensatz legte
+// also die Ausweisvergabe für alle lahm. Zu lange Nummern werden übergangen.
+func TestGetNextSequence_UeberlangeNummerBlockiertNicht(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	schueler(t, pool, "S-10005")
+	schueler(t, pool, "S-999999999999999999999") // 21 Ziffern, sprengt bigint
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	seqRepo := repository.NewSequenceRepository(tx)
+	got, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "S-")
+	if err != nil {
+		t.Fatalf("GetNextSequence: %v", err)
+	}
+	if got != 10006 {
+		t.Errorf("nächste Ausweisnummer: erwartet 10006, war %d", got)
+	}
+}
+
+// schueler legt einen aktiven Schüler mit gegebenem Ausweis-Barcode an.
+func schueler(t *testing.T, pool *pgxpool.Pool, barcode string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		 VALUES ($1, 'Test', 'Schueler', '5a', 2030)`, barcode)
+	if err != nil {
+		t.Fatalf("Schüler %q anlegen: %v", barcode, err)
 	}
 }

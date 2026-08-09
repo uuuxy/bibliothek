@@ -65,7 +65,10 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/admin/auditlog", s.RequirePermission("manage_users")(s.GetAdminAuditLogsHandler()))
 
 	// Barcodes & Etiketten
-	mux.Handle("GET /api/barcode/next", s.RequirePermission("view_books")(s.NextBarcodeHandler()))
+	// edit_books statt view_books: Der Endpunkt zeigt keine Nummer mehr an, er VERGIBT
+	// eine aus barcode_seq — die gezogene Nummer ist danach verbraucht. Wer sie nicht
+	// speichern darf (das Barcode-PUT verlangt edit_books), soll sie auch nicht ziehen.
+	mux.Handle("GET /api/barcode/next", s.RequirePermission("edit_books")(s.NextBarcodeHandler()))
 	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.BarcodeHandler()))
 	mux.Handle("GET /api/print/etikett/{id}", s.RequirePermission("view_books")(s.PrintErsatzEtikettHandler()))
 

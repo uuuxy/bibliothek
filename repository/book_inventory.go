@@ -77,23 +77,11 @@ func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) erro
 }
 
 // GenerateBarcodes erzeugt ein Array von count fortlaufenden Barcodes.
+// Die Vergabe selbst steht in barcode_vergabe.go — sie ist die einzige Quelle für
+// B-Nummern und liefert nur Nummern, die im Bestand noch nicht vorkommen.
 func (r *pgBookRepository) GenerateBarcodes(ctx context.Context, count int) ([]string, error) {
-	query := "SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0') FROM generate_series(1, $1)"
-	rows, err := r.db.Query(ctx, query, count)
+	barcodes, err := ZieheFreieExemplarBarcodes(ctx, r.db, count)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var barcodes []string
-	for rows.Next() {
-		var barcodeID string
-		if err := rows.Scan(&barcodeID); err != nil {
-			return nil, err
-		}
-		barcodes = append(barcodes, barcodeID)
-	}
-	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	if len(barcodes) != count {

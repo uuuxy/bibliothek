@@ -800,7 +800,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('064_bestellungen_datum_index.sql'),
 ('065_lieferant_ein_bestelllink.sql'),
 ('066_lieferant_hauptlieferant.sql'),
-('067_bestellbestaetigung_etikettenformat.sql')
+('067_bestellbestaetigung_etikettenformat.sql'),
+('068_barcode_seq_ueber_bestand.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -828,11 +829,19 @@ LEFT JOIN buecher_exemplare be ON bt.id = be.titel_id
 LEFT JOIN ausleihen a ON be.id = a.exemplar_id AND a.rueckgabe_am IS NULL
 GROUP BY bt.id, bt.titel;
 
+-- barcode_seq ist die EINZIGE Quelle für Exemplarnummern (Präfix "B-") — Bestellwesen,
+-- Handvergabe in der Exemplarkarte und Littera-Import ziehen alle hier (siehe
+-- repository/barcode_vergabe.go, Migration 068). Sie zählt streng aufwärts und sieht
+-- den Bestand nie an: Die Nummer eines gelöschten Exemplars wird deshalb NICHT wieder
+-- frei. Das ist Absicht — die Nummer klebt physisch am Buch.
+-- Ziffernlänge begrenzt und bigint statt integer — identisch zu Migration 068 und
+-- repository/barcode_vergabe.go. Zwei abweichende Vorstellungen davon, was eine gültige
+-- B-Nummer ist, waren genau der Ursprung dieses Fehlers.
 CREATE SEQUENCE IF NOT EXISTS barcode_seq START 10000;
 SELECT setval('barcode_seq', (
-    SELECT COALESCE(MAX(CAST(SUBSTRING(barcode_id FROM '^B-([0-9]+)$') AS INTEGER)), 10000)
+    SELECT COALESCE(MAX(CAST(SUBSTRING(barcode_id FROM '^B-([0-9]{1,15})$') AS BIGINT)), 10000)
     FROM buecher_exemplare
-    WHERE barcode_id ~ '^B-[0-9]+$'
+    WHERE barcode_id ~ '^B-[0-9]{1,15}$'
 ));
 
 CREATE TABLE IF NOT EXISTS idempotency_keys (

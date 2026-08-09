@@ -46,6 +46,13 @@ func advisoryLockKey(tableName, colName string) int64 {
 // increments the numeric part by one, and returns it.
 // Default fallback starts at 10001 if no prior entry is found.
 //
+// NUR für die Schülerausweise ("S-"). Die Exemplarnummern der Bücher ("B-") kommen aus
+// der Sequenz barcode_seq (repository/barcode_vergabe.go) — dieser Generator darf sie
+// nicht mehr bedienen. Er leitet die nächste Nummer aus dem BESTAND ab und gibt sie
+// damit nach einem Löschen erneut aus; parallel dazu zählte barcode_seq weiter, sodass
+// beide Stellen dieselbe Nummer vergaben und die nächste Bestellung am
+// UNIQUE-Constraint zerbrach (Migration 068).
+//
 // Note: Since table and column names cannot be parameterized in Postgres,
 // they are securely formatted using Sprintf. We trust the inputs as they are
 // developer-defined constants (never user-provided).
@@ -76,12 +83,18 @@ func (r *SequenceRepository) GetNextSequence(ctx context.Context, tableName, col
 	// Der Advisory-Lock steht auf der IMMER vorhandenen Lock-Zeile (LEFT JOIN von links),
 	// damit er auch bei leerer Tabelle (allererster Barcode) sicher genommen wird — ein
 	// CROSS JOIN mit leerer Tabelle würde die Lock-Zeile nie auswerten.
+	//
+	// Die Ziffernlänge ist begrenzt (15 statt beliebig): Der Ausweis-Barcode darf beim
+	// Anlegen frei eingegeben werden — ein verrutschter Scan wie "S-999999999999999999999"
+	// landete so in der Tabelle und ließ danach JEDE automatische Vergabe am Cast auf
+	// bigint scheitern ("value out of range"). Zu lange Nummern werden hier ignoriert
+	// statt die Vergabe für alle zu blockieren.
 	query := fmt.Sprintf(`
 		SELECT coalesce(max(substr(t.%[1]s, $2)::bigint), 0)
 		FROM (SELECT pg_advisory_xact_lock($3)) AS _lock
 		LEFT JOIN %[2]s t
 		       ON t.%[1]s LIKE $1
-		      AND substr(t.%[1]s, $2) ~ '^[0-9]+$'
+		      AND substr(t.%[1]s, $2) ~ '^[0-9]{1,15}$'
 	`, colName, tableName)
 
 	var lastNum int64
