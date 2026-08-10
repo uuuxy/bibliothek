@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { canSeeItem, menuGroups } from './menu.js';
+import { canSeeItem, erlaubteTabs, menuGroups, tabIstGesperrt } from './menu.js';
 
 /**
  * Liest die geseedeten Rechte einer Rolle aus db/seed.go.
@@ -102,6 +102,26 @@ describe('Menü-Sichtbarkeit', () => {
 		if (!portal) throw new Error('Menüpunkt kollegium_portal fehlt — Test läuft ins Leere');
 		expect(canSeeItem(portal, helfer)).toBe(false);
 		expect(canSeeItem(portal, { rolle: 'mitarbeiter', permissions: ['*'] })).toBe(false);
+	});
+
+	it('sperrt auch die Unteransichten, die keinen Menüpunkt haben', () => {
+		// Buchakte und Statistik-Detail haben keinen eigenen Menüeintrag und waren deshalb
+		// von der Router-Prüfung ausgenommen — per URL-Zeile standen sie jedem angemeldeten
+		// Benutzer offen. Sie erben jetzt die Regel ihrer Elternansicht.
+		const erlaubtKollegium = erlaubteTabs(kollegium);
+		expect(tabIstGesperrt('book_detail', erlaubtKollegium), 'book_detail').toBe(true);
+		expect(tabIstGesperrt('stats_detail', erlaubtKollegium), 'stats_detail').toBe(true);
+
+		// Und bleiben offen, wo die Elternansicht offen ist — sonst wäre jeder Sprung in
+		// eine Buchakte ein Rauswurf.
+		const erlaubtAdmin = erlaubteTabs(admin);
+		expect(tabIstGesperrt('book_detail', erlaubtAdmin), 'book_detail/admin').toBe(false);
+		expect(tabIstGesperrt('stats_detail', erlaubtAdmin), 'stats_detail/admin').toBe(false);
+
+		// Der Helfer darf den Katalog (view_books), aber keine Statistiken.
+		const erlaubtHelfer = erlaubteTabs(helfer);
+		expect(tabIstGesperrt('book_detail', erlaubtHelfer), 'book_detail/helfer').toBe(false);
+		expect(tabIstGesperrt('stats_detail', erlaubtHelfer), 'stats_detail/helfer').toBe(true);
 	});
 
 	it('lässt ohne Anmeldung nichts durch', () => {

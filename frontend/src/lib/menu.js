@@ -73,6 +73,52 @@ export function canSeeItem(item, currentUser) {
 	return hatRecht(currentUser, item.permission);
 }
 
+// Unteransichten ohne eigenen Menüpunkt erben die Regel ihrer Elternansicht.
+//
+// Der Router nahm sie bis zum 10.08.2026 ganz von der Prüfung aus, weil ein Sprung in die
+// Buchakte sonst als Rauswurf geendet hätte. Nur galt die Ausnahme auch für die URL-Zeile:
+// /medienkatalog/buch/{id} und /statistiken/renner öffneten sich JEDEM angemeldeten
+// Benutzer. Daten flossen dabei keine — die Endpunkte dahinter hängen an view_books bzw.
+// view_students und antworten mit 403 —, aber eine Lehrkraft landete auf einer leeren,
+// defekt wirkenden Seite statt in ihrem Portal.
+/** @type {Record<string, string>} */
+const unteransichtBrauchtTab = {
+	book_detail: 'media_catalog',
+	stats_detail: 'stats'
+};
+
+/**
+ * Die Tab-IDs, die dieser Benutzer laut Navigation öffnen darf.
+ *
+ * @param {any} currentUser
+ * @returns {Set<string>}
+ */
+export function erlaubteTabs(currentUser) {
+	return new Set(
+		menuGroups
+			.flatMap((g) => g.items)
+			.filter((i) => canSeeItem(i, currentUser))
+			.map((i) => i.id)
+	);
+}
+
+/**
+ * Darf dieser Bildschirm NICHT geöffnet werden? Beantwortet dieselbe Frage wie canSeeItem,
+ * nur für einen Tab statt für einen Menüpunkt — bewusst hier und nicht im Router, damit es
+ * nicht wieder zwei Definitionen davon gibt, was eine Rolle erreichen darf.
+ *
+ * @param {string} tab
+ * @param {Set<string>} erlaubt Ergebnis von erlaubteTabs
+ * @returns {boolean}
+ */
+export function tabIstGesperrt(tab, erlaubt) {
+	const elternTab = unteransichtBrauchtTab[tab];
+	if (elternTab) return !erlaubt.has(elternTab);
+
+	const menuIDs = new Set(menuGroups.flatMap((g) => g.items).map((i) => i.id));
+	return menuIDs.has(tab) && !erlaubt.has(tab);
+}
+
 export const menuGroups = [
 	{
 		name: 'Kiosk',

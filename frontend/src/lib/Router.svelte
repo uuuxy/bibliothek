@@ -2,7 +2,7 @@
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
-	import { menuGroups, canSeeItem } from './menu.js';
+	import { erlaubteTabs, tabIstGesperrt } from './menu.js';
 
 	import Omnibox from './Omnibox.svelte';
 	import BookAkte from './BookAkte.svelte';
@@ -100,25 +100,8 @@
 	//
 	// Jetzt fragt der Router dieselbe Funktion wie das Menü. Eine Rechteänderung wirkt
 	// damit an beiden Stellen gleichzeitig oder an keiner.
-	const alleMenuPunkte = menuGroups.flatMap((g) => g.items);
-	const menuIDs = new Set(alleMenuPunkte.map((i) => i.id));
-
-	/** Menü-Tabs, die dieser Benutzer laut Navigation sehen darf. */
-	function erlaubteTabs(user) {
-		return new Set(alleMenuPunkte.filter((i) => canSeeItem(i, user)).map((i) => i.id));
-	}
-
-	/**
-	 * Prüft NUR Tabs, die auch einen Menüpunkt haben.
-	 *
-	 * 'book_detail' und 'stats_detail' sind Unteransichten ohne eigenen Menüeintrag —
-	 * würde die Regel sie mitprüfen, wäre jeder Sprung in eine Buchakte ein Rauswurf.
-	 * @param {string} tab
-	 * @param {Set<string>} erlaubt
-	 */
-	function tabIstGesperrt(tab, erlaubt) {
-		return menuIDs.has(tab) && !erlaubt.has(tab);
-	}
+	// erlaubteTabs/tabIstGesperrt liegen bei canSeeItem in menu.js — dort steht die Regel,
+	// wer was erreichen darf, und der Router liest sie nur ab.
 
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
