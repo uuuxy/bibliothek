@@ -102,8 +102,13 @@
 </script>
 
 {#snippet warnIcon(klasse)}
-	<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf -->
-	<TriangleAlert class="w-5 h-5" aria-hidden="true" />
+	<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf.
+	     Die Größe kommt vom Aufrufer und wurde hier bis zum 10.08.2026 still verworfen:
+	     Der einzige Aufruf übergibt "w-6 h-6 shrink-0", gezeichnet wurde ein festes
+	     w-5 h-5. Nicht die zwei fehlenden Pixel waren das Problem, sondern das fehlende
+	     shrink-0 — daneben steht die KPI-Zahl mit truncate, und in einer Flex-Zeile
+	     drückt die das Dreieck zusammen, sobald der Wert lang wird. -->
+	<TriangleAlert class={klasse} aria-hidden="true" />
 {/snippet}
 
 <!-- Segmented Control (Material 3): eine Pillen-Gruppe, aktives Segment als weiße Kapsel.
