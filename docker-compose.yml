@@ -88,6 +88,9 @@ services:
       # Stack gar nicht erst. Der Server verweigert den Start zusätzlich, wenn
       # außerhalb von APP_ENV=local/development/test doch "mock" gesetzt wird.
       - IMAP_HOST=${IMAP_HOST:?IMAP_HOST muss gesetzt sein - der Wert mock akzeptiert JEDES Passwort und ist nur lokal erlaubt}
+      # Leer = Selbstanmeldung aus. Muss hier stehen: Compose reicht ohne env_file
+      # ausschliesslich die aufgefuehrten Variablen durch (siehe Backup-Block unten).
+      - SELBSTANMELDUNG_DOMAIN=${SELBSTANMELDUNG_DOMAIN:-}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}

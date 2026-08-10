@@ -147,6 +147,19 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
+		// Beides ist HTTP 403 und beides bedeutet „Zugangsdaten stimmen, Zugang trotzdem
+		// nicht" — die Unterscheidung ist für den Menschen davor. „Konto deaktiviert" ließe
+		// eine Lehrkraft, die sich gerade zum ersten Mal gemeldet hat, ratlos zurück und
+		// verleitet zum Wiederholen; sie soll wissen, dass sie nur warten muss.
+		//
+		// KEIN recordFailure hier: Das Passwort war richtig. Sonst sperrte sich jemand mit
+		// fünf Versuchen selbst aus, während seine Freischaltung noch aussteht.
+		if user.neuAngelegt {
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
+			apierrors.SendHTTPError(w, http.StatusForbidden,
+				errors.New("Zugang beantragt — die Bibliothek muss ihn noch freischalten"))
+			return
+		}
 		if !user.aktiv {
 			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("user account is deactivated"))
 			return
@@ -195,6 +208,11 @@ type loginUser struct {
 	vorname   string
 	nachname  string
 	aktiv     bool
+	// neuAngelegt: Diese Zeile ist gerade erst durch die Selbstanmeldung entstanden
+	// (siehe selbstanmeldung.go) und ist zwangsläufig inaktiv. Nur für die Antwort an
+	// den Anmeldenden gedacht — er soll „Zugang beantragt" lesen statt „Konto
+	// deaktiviert" und nicht in Endlosschleife weiterprobieren.
+	neuAngelegt bool
 }
 
 // validateLoginCredentials erzwingt das Vorhandensein von E-Mail und Passwort.
@@ -229,7 +247,15 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 		LIMIT 1
 	`
 	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv); err != nil {
-		return loginUser{}, false
+		// Kein lokaler Eintrag. Wenn die Selbstanmeldung für diese Domain freigegeben ist,
+		// entsteht hier eine INAKTIVE Zugangsanfrage — kein Zugang, nur ein Eintrag, den
+		// die Bibliothek freischalten kann. Ist sie nicht freigegeben, bleibt es beim
+		// bisherigen Verhalten (kein Login).
+		neu, anlegeErr := legeZugangsanfrageAn(ctx, dbPool, email)
+		if anlegeErr != nil {
+			return loginUser{}, false
+		}
+		return neu, true
 	}
 	return u, true
 }

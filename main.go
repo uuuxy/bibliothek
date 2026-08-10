@@ -259,6 +259,11 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 		log.Fatalf("FATAL: %v", err)
 	}
 
+	// Ausdrücklich protokolliert, weil eine vergessene Einstellung sonst genauso aussieht
+	// wie eine funktionierende: Die Lehrkraft bekommt in beiden Fällen nur eine
+	// abgelehnte Anmeldung, und niemand käme auf die Idee, in der .env nachzusehen.
+	slog.Info(auth.SelbstanmeldungStatus())
+
 	port = os.Getenv("PORT")
 	if port == "" {
 		log.Fatalf("FATAL: PORT environment variable is required and cannot be empty")
