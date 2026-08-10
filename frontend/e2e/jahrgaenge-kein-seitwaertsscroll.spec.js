@@ -100,10 +100,9 @@ test('Jahrgänge: Bücher stehen im Raster, nicht in einem Streifen außerhalb d
 	for (let i = 0; i < GROSS.buecher; i++) {
 		const box = await kacheln.nth(i).boundingBox();
 		expect(box, `Kachel ${i} hat keine Fläche`).not.toBeNull();
-		expect(
-			box.x + box.width,
-			`Kachel ${i} ragt rechts aus dem Raster heraus`
-		).toBeLessThanOrEqual(rasterBox.x + rasterBox.width + 1);
+		expect(box.x + box.width, `Kachel ${i} ragt rechts aus dem Raster heraus`).toBeLessThanOrEqual(
+			rasterBox.x + rasterBox.width + 1
+		);
 	}
 
 	// Wieder zuklappen: Die Übersicht über die Jahrgänge ist der Zweck der Liste.

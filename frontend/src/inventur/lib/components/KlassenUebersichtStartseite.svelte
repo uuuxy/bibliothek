@@ -81,7 +81,10 @@
 		{/if}
 
 		{#if offen}
-			<div id={rasterID} class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pt-1 pb-6">
+			<div
+				id={rasterID}
+				class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pt-1 pb-6"
+			>
 				{#each sortBooks(cls.books) as book (book.id)}
 					<KlassenBuchKachelStartseite {book} {getStockColor} onclick={() => onBookClick(book)} />
 				{/each}

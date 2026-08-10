@@ -9,7 +9,7 @@
 // Ausdruck (class={inputClass}). Statisch war die Inventur nachweislich falsch —
 // gemessen wird deshalb offsetHeight an der laufenden Anwendung.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, gehZu } from './helpers.js';
 
 const CONTROL_HOEHE = 36; // identisch zu Button size="md" (h-9)
 
@@ -23,7 +23,7 @@ const SCREENS = [
 	['Abgänger', '/abgaenger'],
 	['Statistiken', '/statistiken'],
 	['Mahnwesen', '/mahnwesen'],
-	['Lehrer-Portal', '/lehrer-portal'],
+	['Mein Portal', '/kollegium-portal'],
 	['System-Logs', '/system-logs'],
 	['LMF-Aktionen', '/lmf-aktionen'],
 	['Druck-Center', '/druck-center'],
@@ -36,13 +36,17 @@ const SCREENS = [
  * Bedeutung haben, die die Control-Höhe nicht ausdrücken kann.
  */
 const AUSNAHMEN = [
+	// Seit dem 10.08.2026 tragen alle Suchpillen eine id, und MESSEN bevorzugt die id vor
+	// dem Platzhalter. Die beiden frueheren Eintraege standen auf Platzhaltertexten und
+	// waren damit tot, sobald sich die Beschriftung aenderte — genau das passierte beim
+	// Zusammenlegen auf components/ui/Suchpille.svelte.
 	{
-		kennung: 'Titel, Autor oder ISBN eingeben …',
+		kennung: 'opac-suchfeld',
 		grund: 'Katalog-Hero: das Suchfeld IST der Bildschirm, nicht ein Bedienelement darin'
 	},
 	{
-		kennung: 'Titel, Autor oder ISBN suchen …',
-		grund: 'Lehrer-Portal-Hero, gleiche Rolle wie die Katalog-Suche'
+		kennung: 'portal-suchfeld',
+		grund: 'Kollegiums-Portal-Hero, gleiche Rolle wie die Katalog-Suche'
 	},
 	{
 		kennung: 'omnibox-input',
@@ -116,7 +120,7 @@ test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
 	let geprueft = 0;
 
 	for (const [name, pfad] of SCREENS) {
-		await page.goto(pfad);
+		await gehZu(page, pfad);
 		await warteAufStabileFelder(page);
 
 		for (const feld of await page.evaluate(MESSEN)) {

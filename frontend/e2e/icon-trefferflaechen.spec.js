@@ -19,7 +19,7 @@
 // ein anderer Button als der zum Einklappen — er war beim ersten Messen unsichtbar
 // und dadurch übersehen).
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, gehZu } from './helpers.js';
 
 const MIN_FLAECHE = 32; // px — Material 3 Icon-Button „extra small"
 
@@ -32,7 +32,7 @@ const SCREENS = [
 	['Inventur', '/inventur'],
 	['Abgänger', '/abgaenger'],
 	['Schulklassen', '/schulklassen'],
-	['Lehrer-Portal', '/lehrer-portal'],
+	['Mein Portal', '/kollegium-portal'],
 	['Einstellungen', '/einstellungen']
 ];
 
@@ -105,7 +105,7 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 	let untersucht = 0;
 
 	for (const [name, pfad] of SCREENS) {
-		await page.goto(pfad);
+		await gehZu(page, pfad);
 		await warteAufStabileButtons(page);
 
 		// Die Symbole der Bestellhistorie stecken in einer zugeklappten Zeile.

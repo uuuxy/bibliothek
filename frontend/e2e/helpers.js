@@ -186,3 +186,30 @@ export function seedCoverDatei(name) {
 export function uniqueSuffix() {
 	return `${Date.now().toString(36)}${crypto.randomUUID().slice(0, 8)}`;
 }
+
+/**
+ * Navigiert und stellt sicher, dass die Anwendung wirklich DORT gelandet ist.
+ *
+ * `page.goto()` allein reicht nicht: Auf einen unbekannten Pfad antwortet diese SPA nicht
+ * mit einem Fehler, sondern schiebt still auf /kiosk. Ein Gate, das eine Liste von
+ * Bildschirmen abklappert, misst dann den Kiosk mehrfach und bleibt grün — es hat den
+ * gemeinten Bildschirm nur nie gesehen.
+ *
+ * Genau das war am 10.08.2026 der Fall. Der Rollen-Umbau (15d2806) benannte den Tab von
+ * `lehrer` in `kollegium` um, der Router führt seither `/kollegium-portal`. Die beiden
+ * Gates control-hoehen.spec.js und icon-trefferflaechen.spec.js besuchten weiter
+ * `/lehrer-portal` und maßen ab da den Kiosk statt des Portals — ohne dass irgendetwas
+ * rot wurde.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} pfad
+ */
+export async function gehZu(page, pfad) {
+	const { expect } = await import('@playwright/test');
+	await page.goto(pfad);
+	await expect(
+		page,
+		`„${pfad}" hat nicht gehalten — die Anwendung ist woandershin gesprungen. ` +
+			`Unbekannte Pfade landen still auf /kiosk; vermutlich wurde eine Route umbenannt.`
+	).toHaveURL(new RegExp(`${pfad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+}
