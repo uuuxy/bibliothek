@@ -92,10 +92,19 @@
 		}
 	}}
 >
-	<!-- Quick-Edit Stift-Icon (sichtbar beim Hover) -->
+	<!-- Quick-Edit Stift-Icon.
+	     Stand bis zum 10.08.2026 auf `opacity-0 group-hover:opacity-100` und war damit aus
+	     drei unabhängigen Gründen unerreichbar: Auf einem Tablet gibt es kein :hover, ein
+	     Fingertipp löst stattdessen den Klick der Karte aus; per Tastatur bekam der Knopf
+	     zwar den Fokus, blieb dabei aber unsichtbar (WCAG 2.4.7); und Material 3 versteckt
+	     Aktionen nicht hinter dem Zeiger. Gefunden hat es der Rundgang
+	     (e2e/rundgang-alle-routen.spec.js) — 50 Fundstellen auf einer Seite, dieselbe
+	     Bauart wie die Karussell-Pfeile zwei Commits zuvor.
+	     Die Zurückhaltung trägt jetzt die Farbe, nicht die Sichtbarkeit: ruhiges Grau im
+	     Ruhezustand, Blau beim Zeigen. -->
 	{#if onEditClick}
 		<button
-			class="absolute top-2 right-2 z-10 p-2 rounded-lg bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm cursor-pointer"
+			class="absolute top-2 right-2 z-10 p-2 rounded-lg bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 shadow-sm cursor-pointer"
 			onclick={(e) => {
 				e.stopPropagation();
 				onEditClick();

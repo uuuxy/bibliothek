@@ -197,12 +197,18 @@
 							{:else}
 								<div class="flex items-center gap-2 group">
 									<span>{new Date(book.rueckgabe_frist).toLocaleDateString('de-DE')}</span>
+									<!-- Kein opacity-0 mehr (10.08.2026): Der Knopf war unsichtbar, blieb
+									     dabei aber anklickbar und per Tab erreichbar — man konnte ihn also
+									     treffen, ohne ihn je zu sehen, und der Tastaturfokus lag auf etwas
+									     Unsichtbarem (WCAG 2.4.7). Am Tablet gibt es kein :hover, dort war
+									     er nie zu finden. Zurückhaltung über die Farbe, nicht über die
+									     Sichtbarkeit. -->
 									<button
 										onclick={() => {
 											editingId = book.ausleihe_id || book.id;
 											editingDate = book.rueckgabe_frist.split('T')[0];
 										}}
-										class="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-blue-600 transition-opacity cursor-pointer"
+										class="p-0.5 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
 										title="Datum bearbeiten"
 										aria-label="Rückgabedatum bearbeiten"
 									>

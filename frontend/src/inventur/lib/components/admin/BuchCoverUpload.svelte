@@ -29,10 +29,18 @@
 			<div class="w-full h-full flex items-center justify-center text-slate-400">Kein Bild</div>
 		{/if}
 
-		<!-- Overlay Upload Button -->
+		<!-- Overlay Upload Button
+		     focus-visible ergänzt (10.08.2026): Der Knopf liegt über dem GANZEN Cover und
+		     stand auf opacity-0. Das nimmt ihm nicht die Klickbarkeit — per Tab erreichbar
+		     war er, sichtbar nicht, und der Tastaturfokus lag damit auf etwas Unsichtbarem
+		     (WCAG 2.4.7).
+		     Die Fläche selbst bleibt bewusst hover-gebunden: Ein dauerhaft sichtbares
+		     bg-black/40 würde jedes Cover abdunkeln. Dass ein Fingertipp auf das Cover hier
+		     ohne jeden Hinweis den Dateidialog öffnet, ist ein Entwurfsproblem und keine
+		     CSS-Frage — es gehört mit Peter besprochen, nicht nachts geändert. -->
 		{#if formular.id}
 			<button
-				class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none w-full h-full"
+				class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer border-none w-full h-full"
 				onclick={() => fileInput?.click()}
 				aria-label="Cover hochladen"
 			>
