@@ -1,5 +1,5 @@
 <!-- @component KlassensatzReservierungen — Admin-Arbeitsliste für Klassensatz-Reservierungen.
-     Lehrkräfte legen die Anfrage über LehrerPortal an; hier wird sie geprüft und über
+     Lehrkräfte legen die Anfrage über KollegiumPortal an; hier wird sie geprüft und über
      PUT /api/reservierungen/klassensatz/{id}/erledigen abgeschlossen (gibt den geblockten
      Bestand wieder frei). Flaches Edge-to-Edge-Listen-Design, kein Modal. -->
 <script>

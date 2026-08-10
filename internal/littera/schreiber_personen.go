@@ -66,7 +66,7 @@ const platzhalterDomain = "@littera.invalid"
 
 const sqlBenutzerEinfuegen = `
 	INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv, erstellt_am)
-	VALUES ($1,$2,$3,$4,'lehrer',$5,$6)
+	VALUES ($1,$2,$3,$4,'kollegium',$5,$6)
 	RETURNING id`
 
 // SchreibePersonen überträgt Schüler und Lehrkräfte.
@@ -108,7 +108,7 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 func (s *Schreiber) zaehlePersonen(ctx context.Context) (schueler, lehrkraefte int, err error) {
 	err = s.pool.QueryRow(ctx, `
 		SELECT (SELECT count(*) FROM schueler),
-		       (SELECT count(*) FROM benutzer WHERE rolle = 'lehrer')
+		       (SELECT count(*) FROM benutzer WHERE rolle = 'kollegium')
 	`).Scan(&schueler, &lehrkraefte)
 	if err != nil {
 		return 0, 0, fmt.Errorf("konnte die Personen nicht zählen: %w", err)

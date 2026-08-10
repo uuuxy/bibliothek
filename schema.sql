@@ -30,7 +30,9 @@ $$;
 -- 1. ENUMS AND CUSTOM TYPES
 -- -------------------------------------------------------------
 -- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe auth/jwt.go RoleHelfer, Router.svelte).
-CREATE TYPE benutzer_rolle AS ENUM ('admin', 'lehrer', 'mitarbeiter', 'helfer');
+-- 'kollegium' hiess bis Migration 069 'lehrer'. Umbenannt, weil das Wort doppelt
+-- belegt war: schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER.
+CREATE TYPE benutzer_rolle AS ENUM ('admin', 'kollegium', 'mitarbeiter', 'helfer');
 
 -- -------------------------------------------------------------
 -- 2. REUSABLE TRIGGER FUNCTIONS
@@ -801,7 +803,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('065_lieferant_ein_bestelllink.sql'),
 ('066_lieferant_hauptlieferant.sql'),
 ('067_bestellbestaetigung_etikettenformat.sql'),
-('068_barcode_seq_ueber_bestand.sql')
+('068_barcode_seq_ueber_bestand.sql'),
+('069_rolle_lehrer_zu_kollegium.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

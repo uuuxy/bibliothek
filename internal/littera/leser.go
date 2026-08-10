@@ -10,7 +10,8 @@ import (
 // Littera führt alle Personen in EINER Tabelle `Leser` — Schüler, Lehrkräfte,
 // Praktikanten, das Sekretariat und sogar Sammelkonten der Fachbereiche. Diese
 // Anwendung trennt sie: Schüler nach `schueler`, Lehrkräfte nach `benutzer` mit der
-// Rolle `lehrer`. Ohne diese Einordnung landeten 158 Lehrkräfte in der Schülerdatei.
+// Rolle `kollegium` (hieß bis Migration 069 `lehrer`). Ohne diese Einordnung landeten
+// 158 Lehrkräfte in der Schülerdatei.
 //
 // Die Unterscheidung steht in den Daten selbst und muss nicht geraten werden:
 // `Leser.Lesergruppe` → `Leser_UG.Untergruppe`.

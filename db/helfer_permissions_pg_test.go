@@ -48,7 +48,7 @@ func TestHelferPermissions_KioskJaMahnwesenNein(t *testing.T) {
 
 	// Keine Regression: Die anderen operativen Rollen behalten perform_actions, nachdem
 	// die Kiosk-Routen von view_students auf perform_actions umgestellt wurden.
-	for _, role := range []string{"LEHRER", "MITARBEITER"} {
+	for _, role := range []string{"KOLLEGIUM", "MITARBEITER"} {
 		if a, found := allowed(role, "perform_actions"); !found || !a {
 			t.Errorf("%s muss perform_actions behalten (sonst Ausleihe kaputt), war allowed=%v found=%v", role, a, found)
 		}

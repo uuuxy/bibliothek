@@ -81,9 +81,9 @@ class AuthStore {
 			appState.adminAuthenticated = true;
 			appState.guestAuthenticated = true;
 			if (onRoleCallback) onRoleCallback(user.rolle);
-		} else if (user?.rolle === 'lehrer') {
+		} else if (user?.rolle === 'kollegium') {
 			appState.guestAuthenticated = true;
-			if (onRoleCallback) onRoleCallback('lehrer');
+			if (onRoleCallback) onRoleCallback('kollegium');
 		} else if (onRoleCallback) {
 			onRoleCallback(user?.rolle || '');
 		}

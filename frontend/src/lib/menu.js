@@ -38,20 +38,26 @@ export function canSeeItem(item, currentUser) {
 
 	const r = (currentUser.rolle || '').toLowerCase();
 
-	// Das Lehrer-Portal ist ausschließlich für Lehrer bestimmt.
-	if (item.id === 'lehrer_portal') {
-		return r === 'lehrer';
-	}
-
-	// Admin hat implizit alle Rechte.
+	// Admin hat implizit alle Rechte — und zwar VOR allen Sonderregeln.
+	//
+	// Diese Zeile stand bis zum 09.08.2026 unter der Portal-Ausnahme darunter. Damit galt
+	// die Ausnahme auch für Admins: Sie durften die Reservierungs-Endpunkte aufrufen (das
+	// Backend hat den Admin-Vorrang eingebaut), sahen den Menüpunkt aber nicht — und
+	// fanden die Klassensatz-Reservierung deshalb schlicht nicht. Ein Widerspruch
+	// zwischen Oberfläche und Rechtelage, kein gewollter Schutz.
 	if (r === 'admin') return true;
+
+	// Das Portal ist für das Kollegium bestimmt (Rolle hieß bis Migration 069 'lehrer').
+	if (item.id === 'kollegium_portal') {
+		return r === 'kollegium';
+	}
 
 	// Punkte ohne Permission-Anforderung sind allgemeine Theken-Werkzeuge (z. B. Kiosk).
 	if (!item.permission) {
 		if (item.roles) return item.roles.includes(r);
-		// Lehrer sehen nur ihr Portal + ausdrücklich freigeschaltete Rechte, keine
-		// allgemeinen Werkzeuge ohne Rechtebezug.
-		return r !== 'lehrer';
+		// Das Kollegium sieht nur sein Portal + ausdrücklich freigeschaltete Rechte,
+		// keine allgemeinen Werkzeuge ohne Rechtebezug.
+		return r !== 'kollegium';
 	}
 
 	return hatRecht(currentUser, item.permission);
@@ -123,7 +129,7 @@ export const menuGroups = [
 		]
 	},
 	{
-		name: 'Lehrer',
-		items: [{ id: 'lehrer_portal', label: 'Mein Portal', icon: 'book', roles: ['lehrer'] }]
+		name: 'Kollegium',
+		items: [{ id: 'kollegium_portal', label: 'Mein Portal', icon: 'book', roles: ['kollegium'] }]
 	}
 ];

@@ -13,7 +13,7 @@
 	import StatsDashboard from './StatsDashboard.svelte';
 	import StudentDirectory from './StudentDirectory.svelte';
 	import Schulklassen from './Schulklassen.svelte';
-	import LehrerPortal from './LehrerPortal.svelte';
+	import KollegiumPortal from './KollegiumPortal.svelte';
 	import Mahnwesen from './Mahnwesen.svelte';
 	import StatistikDetailPage from './components/stats/StatistikDetailPage.svelte';
 	import SystemSettings from './SystemSettings.svelte';
@@ -25,8 +25,8 @@
 
 	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
 	// Map dupliziert im Routing-$effect und im popstate-Handler — dadurch wurde ein
-	// neu ergänzter Tab (lehrer_portal) in beiden Kopien vergessen, seine URL nie
-	// gesetzt/wiederhergestellt, und ein Refresh warf den Lehrer aus dem Portal.
+	// neu ergänzter Tab (das Kollegiums-Portal) in beiden Kopien vergessen, seine URL nie
+	// gesetzt/wiederhergestellt, und ein Refresh warf die Lehrkraft aus dem Portal.
 	//
 	// media_catalog liegt auf /medienkatalog und NICHT auf dem Pfad des öffentlichen
 	// OPAC. Solange beide denselben beanspruchten, landete ein angemeldeter Benutzer
@@ -45,7 +45,7 @@
 		graduates: '/abgaenger',
 		stats: '/statistiken',
 		mahnwesen: '/mahnwesen',
-		lehrer_portal: '/lehrer-portal',
+		kollegium_portal: '/kollegium-portal',
 		'system-logs': '/system-logs',
 		lmf_actions: '/lmf-aktionen',
 		'druck-center': '/druck-center',
@@ -58,7 +58,7 @@
 	/**
 	 * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad. BEWUSST die einzige Quelle für
 	 * Initial-Match UND popstate — vorher lag die book_detail-Logik dupliziert in beiden,
-	 * neue Routen wurden leicht in einer Kopie vergessen (siehe lehrer_portal-Bug).
+	 * neue Routen wurden leicht in einer Kopie vergessen (siehe Portal-Bug oben).
 	 * @param {string} path
 	 */
 	function applyPathToState(path) {
@@ -238,8 +238,8 @@
 		<div class="w-full animate-fade-in"><Schulklassen /></div>
 	{:else if uiStore.activeTab === 'mahnwesen'}
 		<div class="w-full animate-fade-in"><Mahnwesen /></div>
-	{:else if uiStore.activeTab === 'lehrer_portal'}
-		<div class="w-full animate-fade-in"><LehrerPortal user={authStore.currentUser} /></div>
+	{:else if uiStore.activeTab === 'kollegium_portal'}
+		<div class="w-full animate-fade-in"><KollegiumPortal user={authStore.currentUser} /></div>
 	{:else if uiStore.activeTab === 'lmf_actions'}
 		<div class="w-full animate-fade-in"><GlobalLMFExtendWidget /></div>
 	{:else if uiStore.activeTab === 'settings'}

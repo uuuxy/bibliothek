@@ -171,7 +171,7 @@ func (s *defaultLoanService) resolveTeacherBorrower(ctx context.Context, teacher
 	err := s.pool.QueryRow(ctx, `
 		SELECT b.id, b.barcode_id, b.vorname, b.nachname, b.rolle::text
 		FROM benutzer b
-		WHERE b.id = $1 AND LOWER(b.rolle::text) = 'lehrer' AND b.aktiv = true LIMIT 1
+		WHERE b.id = $1 AND LOWER(b.rolle::text) = 'kollegium' AND b.aktiv = true LIMIT 1
 	`, teacherID).Scan(&result.teacher.ID, &result.teacher.BarcodeID, &result.teacher.Vorname, &result.teacher.Nachname, &result.teacher.Rolle)
 	if err != nil {
 		return nil, fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", ErrNotFound)

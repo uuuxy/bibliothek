@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import LehrerPortal from './LehrerPortal.svelte';
+import KollegiumPortal from './KollegiumPortal.svelte';
 import { apiFetch } from './apiFetch.js';
 
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
@@ -40,7 +40,7 @@ async function sucheUndOeffneFormular(screen) {
 	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));
 }
 
-describe('LehrerPortal', () => {
+describe('KollegiumPortal', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(apiFetch).mockImplementation(
@@ -54,7 +54,7 @@ describe('LehrerPortal', () => {
 	});
 
 	it('lässt nach einer gesendeten Anfrage sofort die nächste Klasse zu', async () => {
-		const screen = render(LehrerPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { user: { klasse: '' } });
 
 		await sucheUndOeffneFormular(screen);
 
@@ -79,7 +79,7 @@ describe('LehrerPortal', () => {
 	 * eines Elements.
 	 */
 	it('zeigt am Treffer, wie viele Exemplare frei sind und wie viele es gibt', async () => {
-		const screen = render(LehrerPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { user: { klasse: '' } });
 
 		await fireEvent.input(screen.getByPlaceholderText(/Titel, Autor oder ISBN suchen/), {
 			target: { value: 'Seydlitz' }
@@ -98,7 +98,7 @@ describe('LehrerPortal', () => {
 			)
 		);
 
-		const screen = render(LehrerPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { user: { klasse: '' } });
 		await fireEvent.input(screen.getByPlaceholderText(/Titel, Autor oder ISBN suchen/), {
 			target: { value: 'Seydlitz' }
 		});
@@ -117,7 +117,7 @@ describe('LehrerPortal', () => {
 			)
 		);
 
-		const screen = render(LehrerPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { user: { klasse: '' } });
 		await sucheUndOeffneFormular(screen);
 
 		expect(await screen.findByText('Titel ist gesperrt.')).toBeTruthy();

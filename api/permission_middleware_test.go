@@ -104,12 +104,12 @@ func TestRequirePermission_GrantedAllowsAccess(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleLehrer)
+	expectBlacklistPass(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(true))
 
-	req := reqWithToken(t, s, auth.RoleLehrer)
+	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusOK || !reached {
@@ -131,9 +131,9 @@ func TestRequirePermission_DeactivatedUserUnauthorized(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 	mock.ExpectQuery("SELECT aktiv, rolle FROM benutzer").
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"aktiv", "rolle"}).AddRow(false, string(auth.RoleLehrer)))
+		WillReturnRows(pgxmock.NewRows([]string{"aktiv", "rolle"}).AddRow(false, string(auth.RoleKollegium)))
 
-	req := reqWithToken(t, s, auth.RoleLehrer)
+	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusUnauthorized {
@@ -148,12 +148,12 @@ func TestRequirePermission_ExplicitlyDeniedForbidden(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleLehrer)
+	expectBlacklistPass(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(false))
 
-	req := reqWithToken(t, s, auth.RoleLehrer)
+	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "buch.loeschen", req)
 
 	if rr.Code != http.StatusForbidden {
@@ -168,12 +168,12 @@ func TestRequirePermission_NoRowForbidden(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleLehrer)
+	expectBlacklistPass(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
 
-	req := reqWithToken(t, s, auth.RoleLehrer)
+	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "unbekanntes.recht", req)
 
 	if rr.Code != http.StatusForbidden {
@@ -188,12 +188,12 @@ func TestRequirePermission_TransientDBErrorIsServerError(t *testing.T) {
 	s, mock := setupRBAC(t)
 	defer mock.Close()
 
-	expectBlacklistPass(mock, auth.RoleLehrer)
+	expectBlacklistPass(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(errors.New("connection reset"))
 
-	req := reqWithToken(t, s, auth.RoleLehrer)
+	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "buch.ausleihen", req)
 
 	// Transiente DB-Fehler sind 500, nicht 403 — und dürfen NICHT als Negativ-Entscheidung gecacht werden.
@@ -210,16 +210,16 @@ func TestRequirePermission_DenyDecisionIsCached(t *testing.T) {
 	defer mock.Close()
 
 	// Erster Request: Blacklist + role_permissions (false) → 403, Entscheidung wird gecacht.
-	expectBlacklistPass(mock, auth.RoleLehrer)
+	expectBlacklistPass(mock, auth.RoleKollegium)
 	mock.ExpectQuery("role_permissions").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(false))
 
 	// Zweiter Request: NUR Blacklist erwartet — role_permissions kommt aus dem Cache.
-	expectBlacklistPass(mock, auth.RoleLehrer)
+	expectBlacklistPass(mock, auth.RoleKollegium)
 
 	for i := 0; i < 2; i++ {
-		req := reqWithToken(t, s, auth.RoleLehrer)
+		req := reqWithToken(t, s, auth.RoleKollegium)
 		rr, reached := serve(s, "buch.loeschen", req)
 		if rr.Code != http.StatusForbidden || reached {
 			t.Errorf("Request %d: erwartet 403 ohne Handler-Zugriff, bekam %d reached=%v", i+1, rr.Code, reached)
@@ -241,7 +241,7 @@ func TestRequirePermission_BlacklistDBDownFailsClosed(t *testing.T) {
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnError(errors.New("db down"))
 
-	req := reqWithToken(t, s, auth.RoleLehrer)
+	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusUnauthorized {

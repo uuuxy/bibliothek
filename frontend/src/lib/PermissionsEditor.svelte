@@ -80,7 +80,7 @@
 							</div>
 
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}
-							{@render roleToggle(item, 'LEHRER', 'lehrer')}
+							{@render roleToggle(item, 'KOLLEGIUM', 'kollegium')}
 							<!-- HELFER fehlte hier: Das Backend fuehrt und liefert die Rechte dieser
 							     Rolle (seed.go, user_admin_permissions.go), aendern liess sie sich
 							     ueber die Oberflaeche aber nicht — sie war nur ueber die Vorgabe im

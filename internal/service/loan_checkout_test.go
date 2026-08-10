@@ -174,7 +174,7 @@ func TestResolveTeacher_AktiveLehrkraftBekommtJahresfrist(t *testing.T) {
 
 	mock.ExpectQuery(lehrerQuery).WithArgs("l1").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "rolle"}).
-			AddRow("l1", "B-L1", "Anna", "Lehrerin", "lehrer"))
+			AddRow("l1", "B-L1", "Anna", "Lehrerin", "kollegium"))
 
 	chkCtx, err := svc.resolveTeacherBorrower(context.Background(), "l1")
 
@@ -197,7 +197,7 @@ func TestResolveTeacher_AktiveLehrkraftBekommtJahresfrist(t *testing.T) {
 
 func TestResolveTeacher_UnbekannteOderInaktiveLehrkraft(t *testing.T) {
 	// Deckt zugleich Nicht-Lehrer und inaktive Konten ab: die Query filtert
-	// br.rolle='LEHRER' AND b.aktiv=true, liefert also schlicht keine Zeile.
+	// br.rolle='KOLLEGIUM' AND b.aktiv=true, liefert also schlicht keine Zeile.
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
 
@@ -222,10 +222,10 @@ func TestResolveTeacher_FragtNichtBenutzerRollen(t *testing.T) {
 
 	// Erwartet wird exakt EINE Abfrage — ohne benutzer_rollen. Ein Join-Rückfall
 	// würde hier an der nicht erfüllten Erwartung scheitern.
-	mock.ExpectQuery("FROM benutzer b\\s+WHERE b.id = \\$1 AND LOWER\\(b.rolle::text\\) = 'lehrer'").
+	mock.ExpectQuery("FROM benutzer b\\s+WHERE b.id = \\$1 AND LOWER\\(b.rolle::text\\) = 'kollegium'").
 		WithArgs("neu1").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "rolle"}).
-			AddRow("neu1", "B-N1", "Neue", "Lehrkraft", "lehrer"))
+			AddRow("neu1", "B-N1", "Neue", "Lehrkraft", "kollegium"))
 
 	chkCtx, err := svc.resolveTeacherBorrower(context.Background(), "neu1")
 

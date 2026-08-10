@@ -20,8 +20,10 @@ type Role string
 const (
 	// RoleAdmin hat volle Berechtigungen für Konfiguration und Stammdaten-Bearbeitung.
 	RoleAdmin Role = "ADMIN"
-	// RoleLehrer repräsentiert Lehrer, die Bücher ausleihen und Klassenpläne auslösen können.
-	RoleLehrer Role = "LEHRER"
+	// RoleKollegium repräsentiert Lehrkräfte, die Bücher ausleihen und Klassensätze anfragen
+	// können. Hieß bis Migration 069 „lehrer" — umbenannt, weil schueler.klasse = 'lehrer'
+	// dieselbe Person als ENTLEIHER meint und die Doppelung zu Fehlgriffen geführt hat.
+	RoleKollegium Role = "KOLLEGIUM"
 	// RoleMitarbeiter repräsentiert Bibliotheksmitarbeiter, die das tägliche Ausleihgeschäft durchführen.
 	RoleMitarbeiter Role = "MITARBEITER"
 	// RoleHelfer repräsentiert Helfer, die Kiosk-Ausleihen und schnelle Rückgaben durchführen.

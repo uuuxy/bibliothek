@@ -8,7 +8,7 @@
 	const ROLLEN = [
 		{ value: 'helfer', label: 'Helfer' },
 		{ value: 'mitarbeiter', label: 'Mitarbeiter' },
-		{ value: 'lehrer', label: 'Lehrer' },
+		{ value: 'kollegium', label: 'Kollegium (nur Portal)' },
 		{ value: 'admin', label: 'Administrator' }
 	];
 

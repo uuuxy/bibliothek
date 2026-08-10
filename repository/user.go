@@ -56,14 +56,14 @@ func NewUserRepository(pool db.PgxPoolIface) UserRepository {
 
 // GetLehrerByBarcode sucht eine aktive Lehrkraft über ihren Ausweis.
 //
-// rolle ist das ENUM benutzer_rolle ('admin','lehrer','mitarbeiter','helfer') und wird
+// rolle ist das ENUM benutzer_rolle ('admin','kollegium','mitarbeiter','helfer') und wird
 // kleingeschrieben verglichen; rolle::text vermeidet „invalid input value for enum".
 func (r *postgresUserRepo) GetLehrerByBarcode(ctx context.Context, barcode string) (*User, error) {
 	var u User
 	err := r.pool.QueryRow(ctx, `
 		SELECT id, coalesce(barcode_id, ''), vorname, nachname, rolle
 		FROM benutzer
-		WHERE barcode_id = $1 AND lower(rolle::text) = 'lehrer' AND aktiv = true
+		WHERE barcode_id = $1 AND lower(rolle::text) = 'kollegium' AND aktiv = true
 		LIMIT 1
 	`, barcode).Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Rolle)
 	if errors.Is(err, pgx.ErrNoRows) {

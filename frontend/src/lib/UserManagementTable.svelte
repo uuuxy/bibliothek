@@ -42,7 +42,7 @@
 						{@const roleBadge =
 							user.rolle === 'admin'
 								? 'bg-blue-50 text-blue-700 border border-blue-100'
-								: user.rolle === 'lehrer'
+								: user.rolle === 'kollegium'
 									? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
 									: user.rolle === 'helfer'
 										? 'bg-purple-50 text-purple-700 border border-purple-100'

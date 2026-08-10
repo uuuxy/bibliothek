@@ -24,7 +24,7 @@ import (
 func normalisiereBenutzerRolle(rolle string) string {
 	dbEnumRole := strings.ToLower(strings.TrimSpace(rolle))
 	switch dbEnumRole {
-	case "admin", "lehrer", "mitarbeiter", "helfer":
+	case "admin", "kollegium", "mitarbeiter", "helfer":
 		return dbEnumRole
 	default:
 		return "mitarbeiter"

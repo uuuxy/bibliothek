@@ -12,7 +12,7 @@ import (
 // für das Audit-Log sichert.
 func snapshotBenutzerRows() *pgxmock.Rows {
 	return pgxmock.NewRows([]string{"vorname", "nachname", "email", "rolle"}).
-		AddRow("Erika", "Muster", "erika@schule.de", "LEHRER")
+		AddRow("Erika", "Muster", "erika@schule.de", "KOLLEGIUM")
 }
 
 // TestDeleteUser_RejectsWhenActiveLoans sichert Bug 2 (Stranded Handapparat) ab: Hat ein
