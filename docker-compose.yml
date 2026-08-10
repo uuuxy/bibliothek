@@ -1,5 +1,12 @@
 services:
   postgres-db:
+    # Ohne diese Zeile kommen die Container nach einem Neustart des Docker-Daemons NICHT
+    # von allein zurueck. Genau das ist am Prod-Server passiert: unattended-upgrades
+    # startete den Daemon neu, und der Dienst lag zwoelf Stunden still, bis es jemandem
+    # auffiel. Die Policy stand seither direkt auf dem Server in dieser Datei — als
+    # uncommitteter Hotfix, der jedes `git pull` blockierte ("Your local changes to the
+    # following files would be overwritten by merge"). Sie gehoert ins Repo.
+    restart: unless-stopped
     image: postgres:15-alpine
     container_name: bibliothek-db
     environment:
@@ -24,6 +31,8 @@ services:
       retries: 5
 
   backend:
+    # Siehe postgres-db: dieselbe Policy, derselbe Grund.
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
