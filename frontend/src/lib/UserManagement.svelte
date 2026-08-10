@@ -19,6 +19,7 @@
 	import UserManagementDeleteModal from './UserManagementDeleteModal.svelte';
 	import { apiFetch, extractApiError } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
+	import Suchfeld from './components/ui/Suchfeld.svelte';
 
 	/** @type {any[]} */
 	let users = $state.raw([]);
@@ -220,15 +221,12 @@
 
 <!-- Toolbar -->
 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-	<div class="relative w-full sm:max-w-xs">
-		<input
-			type="text"
-			bind:value={userSearchQuery}
-			placeholder="Benutzer suchen..."
-			class="w-full h-9 bg-white border border-slate-200 rounded-xl px-3 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-medium text-slate-800"
-		/>
-		<span class="absolute left-3 top-2 text-slate-400">🔍</span>
-	</div>
+	<Suchfeld
+		bind:wert={userSearchQuery}
+		platzhalter="Name oder E-Mail eingeben …"
+		etikett="Benutzer suchen"
+		klasse="w-full sm:max-w-xs"
+	/>
 	<Button onclick={openNewUserModal} class="w-full sm:w-auto">➕ Benutzer anlegen</Button>
 </div>
 

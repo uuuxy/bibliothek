@@ -15,7 +15,8 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
-	import { Printer, Search, Eraser } from '@lucide/svelte';
+	import { Printer, Eraser } from '@lucide/svelte';
+	import Suchfeld from '../ui/Suchfeld.svelte';
 
 	/** @type {{ onUebergeben?: () => void }} */
 	let { onUebergeben } = $props();
@@ -219,20 +220,13 @@
 
 <div class="w-full space-y-6 no-print animate-fade-in">
 	<div class="flex flex-wrap items-center gap-4 border-b border-slate-200 pb-5">
-		<div class="relative flex-1 min-w-64 max-w-md">
-			<Search
-				class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-				aria-hidden="true"
-			/>
-			<input
-				type="text"
-				aria-label="Exemplare filtern"
-				placeholder="Nach Titel oder Barcode filtern..."
-				bind:value={suche}
-				oninput={sucheAngestossen}
-				class="w-full h-9 pl-10 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-			/>
-		</div>
+		<Suchfeld
+			bind:wert={suche}
+			oninput={sucheAngestossen}
+			platzhalter="Titel oder Barcode eingeben …"
+			etikett="Exemplare filtern"
+			klasse="flex-1 min-w-64 max-w-md"
+		/>
 
 		<!-- Was die Liste zeigt. Vorgabe bleibt „Offen" — die Ansicht heisst „Fehlende
 		     Etiketten" und soll ohne Zutun genau das zeigen. Die beiden anderen Stufen sind

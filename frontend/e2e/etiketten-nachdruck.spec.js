@@ -294,7 +294,7 @@ test('Etiketten von Hand vermerken und wieder öffnen', async ({ page }) => {
 	await page.getByRole('button', { name: /Fehlende Etiketten/ }).click();
 
 	// 1. Von Hand als erledigt vermerken — ohne Druck.
-	await page.getByPlaceholder(/Nach Titel oder Barcode filtern/).fill(titel);
+	await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(titel);
 	const zeile = page.locator('tr', { hasText: titel });
 	await zeile.first().waitFor();
 	await zeile.getByRole('checkbox').check();

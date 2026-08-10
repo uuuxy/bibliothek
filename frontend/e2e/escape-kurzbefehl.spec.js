@@ -55,10 +55,10 @@ test('Escape in einem offenen Menü schliesst nur das Menü', async ({ page }) =
 
 	await uiLogin(page);
 	await page.getByTitle('Schülerdatei').click();
-	await page
-		.getByPlaceholder(/filtern|suchen/i)
-		.first()
-		.fill(`Escmenue${s}`);
+	// Ueber den zugaenglichen Namen statt ueber den Platzhalter: Der Platzhaltertext ist
+	// Beschriftung und aendert sich (am 10.08.2026 beim Zusammenlegen der Suchfelder auf
+	// components/ui/Suchfeld.svelte). Der aria-label sagt, WAS das Feld ist.
+	await page.getByRole('searchbox', { name: 'Schüler suchen' }).fill(`Escmenue${s}`);
 	await page.getByText(`Escmenue${s} Testschueler`).first().click();
 	await expect(page.getByRole('heading', { name: new RegExp(`Escmenue${s}`) })).toBeVisible();
 

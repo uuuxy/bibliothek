@@ -4,7 +4,8 @@
 	import BorrowersListe from './components/BorrowersListe.svelte';
 	import { baueAusleiherDruckHtml } from './utils/ausleiherDruck.js';
 	import { fmtDateDE as fmtDate } from './utils/dates.js';
-	import { Printer, Search, Users } from '@lucide/svelte';
+	import { Printer, Users } from '@lucide/svelte';
+	import Suchfeld from './components/ui/Suchfeld.svelte';
 
 	/** @type {{ borrowers: any[], book: any, onBack: () => void }} */
 	let { borrowers, book, onBack } = $props();
@@ -68,19 +69,12 @@
 			class="w-44"
 			aria-label="Nach Klasse filtern"
 		/>
-		<div class="relative flex-1 max-w-xs">
-			<Search
-				class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-				aria-hidden="true"
-			/>
-			<input
-				type="text"
-				bind:value={filterName}
-				aria-label="Nach Name filtern"
-				placeholder="Name filtern..."
-				class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 placeholder:text-slate-400"
-			/>
-		</div>
+		<Suchfeld
+			bind:wert={filterName}
+			platzhalter="Name eingeben …"
+			etikett="Nach Name filtern"
+			klasse="flex-1 max-w-xs"
+		/>
 		{#if filteredBorrowers.length !== borrowers.length}
 			<span class="text-xs text-slate-400 self-center"
 				>{filteredBorrowers.length} von {borrowers.length}</span

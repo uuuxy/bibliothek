@@ -60,18 +60,29 @@ const MESSEN = (/** @type {string} */ id) => {
 };
 
 /**
- * Misst eine Pille im RUHEZUSTAND.
+ * Misst eine Pille im FOKUSSIERTEN Zustand.
  *
- * Beim ersten Lauf meldete dieser Test einen Unterschied, den es nicht gab: Portal und
- * OPAC ziehen den Fokus beim Betreten, und `focus-within:bg-white` blendet die Fläche
- * dann über 200 ms nach Weiß. Gemessen wurden rgb(247,246,249) und rgb(242,241,245) —
- * zwei Zwischenbilder derselben Überblendung, auf zwei Seiten zufällig verschieden weit.
- * Wer während einer Animation misst, vergleicht Rauschen.
+ * Zwei Anläufe, zwei Lehren:
  *
- * Deshalb: Fokus abgeben und warten, bis zwei Messungen hintereinander gleich sind.
+ * 1. Ohne jede Vorbereitung misst man Animationen. Portal und OPAC ziehen den Fokus beim
+ *    Betreten, `focus-within` blendet die Fläche über 200 ms nach Weiß, und gemessen
+ *    wurden zwei Zwischenbilder derselben Überblendung (rgb(247,246,249) gegen
+ *    rgb(242,241,245)) — ein Unterschied, den es nicht gab.
+ *
+ * 2. Der naheliegende Ausweg „blur() und im Ruhezustand messen" funktioniert hier NICHT.
+ *    Die Kiosk-Omnibox holt sich den Fokus per Effekt zurück, sobald sie ihn verliert —
+ *    absichtlich, sie ist ein Scanner-Terminal. Die Messung fiel dort mal auf den
+ *    ruhenden, mal auf den fokussierten Zustand und war damit von der Tagesform abhängig.
+ *
+ * Deshalb wird der Zustand gemessen, den JEDE Pille zuverlässig einnehmen kann: Feld
+ * fokussieren, warten bis zwei Messungen gleich sind. Höhe, Radius, Rahmen, Schriftgröße
+ * und Textfarbe hängen ohnehin nicht am Fokus — genau die Werte, an denen Portal, OPAC
+ * und Katalog auseinanderliefen. Die ruhende Füllfarbe deckt die Ratsche in
+ * src/lib/frontend-hygiene-suchfelder.test.js ab: Wer sie ändern wollte, müsste das
+ * Bauteil anfassen.
  */
-async function ruhendMessen(/** @type {import('@playwright/test').Page} */ page, id) {
-	await page.evaluate(() => /** @type {HTMLElement} */ (document.activeElement)?.blur());
+async function fokussiertMessen(/** @type {import('@playwright/test').Page} */ page, id) {
+	await page.focus(`#${id}`);
 
 	let vorher = null;
 	for (let i = 0; i < 20; i++) {
@@ -91,7 +102,7 @@ test('Jede Suchpille hat dieselben Maße, Farben und Schriftgröße', async ({ p
 	for (const { name, pfad, id } of PILLEN) {
 		await page.goto(pfad);
 		await page.locator(`#${id}`).waitFor();
-		const werte = await ruhendMessen(page, id);
+		const werte = await fokussiertMessen(page, id);
 		expect(werte, `${name}: Pille nicht messbar`).not.toBeNull();
 		gemessen.push({ name, werte });
 	}
@@ -101,7 +112,7 @@ test('Jede Suchpille hat dieselben Maße, Farben und Schriftgröße', async ({ p
 	await page.context().clearCookies();
 	await page.goto(OPAC.pfad);
 	await page.locator(`#${OPAC.id}`).waitFor();
-	const opacWerte = await ruhendMessen(page, OPAC.id);
+	const opacWerte = await fokussiertMessen(page, OPAC.id);
 	expect(opacWerte, 'OPAC: Pille nicht messbar').not.toBeNull();
 	gemessen.push({ name: OPAC.name, werte: opacWerte });
 

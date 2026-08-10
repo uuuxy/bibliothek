@@ -1,5 +1,6 @@
 <script>
-	import { CircleCheck, Plus, Printer, Search } from '@lucide/svelte';
+	import { CircleCheck, Plus, Printer } from '@lucide/svelte';
+	import Suchfeld from '../ui/Suchfeld.svelte';
 	import CoverPeek from '../ui/CoverPeek.svelte';
 
 	let { recommendations, onAddToCart } = $props();
@@ -105,18 +106,12 @@
 
 		{#if recommendations.length}
 			<!-- Schnellfilter -->
-			<div class="relative mt-4">
-				<Search
-					class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
-					aria-hidden="true"
-				/>
-				<input
-					type="search"
-					bind:value={filter}
-					placeholder="In {recommendations.length} Titeln filtern …"
-					class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white transition-all"
-				/>
-			</div>
+			<Suchfeld
+				bind:wert={filter}
+				platzhalter="In {recommendations.length} Titeln filtern …"
+				etikett="Bestellvorschläge filtern"
+				klasse="mt-4"
+			/>
 		{/if}
 	</header>
 
