@@ -23,6 +23,34 @@ else
     exit 1
 fi
 
+# Wie viele Tests hat dieser Lauf gar nicht ausgeführt?
+#
+# Die DB-Integrationstests (*_pg_test.go) hängen an TEST_DATABASE_URL und überspringen
+# sich ohne sie — STILL, mit grünem "ok" daneben. Am 10.08.2026 stand deshalb acht
+# Stunden lang ein Test auf main, der genau das Gegenteil der geltenden Entscheidung
+# behauptete (KOLLEGIUM muss perform_actions behalten, während der Seed es bewusst
+# entzieht). Gemerkt hat es niemand: Lokal übersprang er sich, und in CI fiel er in
+# einen Lauf, in den keiner mehr geschaut hat.
+#
+# Der Hook fängt das nicht auf — dafür müsste er ein Postgres hochziehen, und das
+# gehört nicht in einen Push. Er sagt aber, was er NICHT geprüft hat. Ein Gate, das
+# seine eigene blinde Stelle verschweigt, ist schlimmer als keins.
+#
+# Gezählt werden die Dateien, nicht die Skips: Ohne -v druckt `go test` keine
+# Skip-Gründe, ein Zähler auf der Ausgabe stünde immer auf 0 — ein Wächter, der sich
+# selbst blind misst.
+PG_DATEIEN=$(find . -name '*_pg_test.go' -not -path './node_modules/*' 2>/dev/null | wc -l | tr -d ' ')
+if [ -z "${TEST_DATABASE_URL:-}" ] && [ "${PG_DATEIEN:-0}" -gt 0 ]; then
+    echo -e "${YELLOW}⚠ ${PG_DATEIEN} Datei(en) mit DB-Integrationstests wurden NICHT ausgeführt — TEST_DATABASE_URL ist nicht gesetzt.${NC}"
+    echo -e "${YELLOW}  Sie prüfen echtes SQL (Rechte-Seed, LUSD-Import, Backup-Restore). CI führt sie aus.${NC}"
+    echo -e "${YELLOW}  Lokal mitlaufen lassen — der Entwicklungs-Stack bringt Postgres schon mit.${NC}"
+    # Einmalig, danach existiert die Datenbank. Bewusst OHNE spitze Klammern: Ein
+    # Platzhalter in einer Copy-Paste-Zeile hat auf diesem Projekt schon einmal die
+    # Produktion umgelegt. Das Passwort holt sich der Befehl selbst aus der .env.
+    echo -e "${YELLOW}    docker exec -i bibliothek-db-local psql -U postgres -c 'CREATE DATABASE bibliothek_test;'${NC}"
+    echo '    TEST_DATABASE_URL="postgres://postgres:$(grep "^POSTGRES_PASSWORD=" .env | cut -d= -f2-)@127.0.0.1:5434/bibliothek_test?sslmode=disable" go test ./...'
+fi
+
 # 2. Typpruefung Frontend (svelte-check)
 # jsconfig.json setzt checkJs, und 200 von 256 Dateien tragen JSDoc-Typen — bis zum
 # 07.08.2026 hat die aber NIEMAND geprueft. Der erste Lauf fand 64 Meldungen, darunter

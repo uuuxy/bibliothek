@@ -46,11 +46,27 @@ func TestHelferPermissions_KioskJaMahnwesenNein(t *testing.T) {
 		t.Errorf("HELFER muss view_books haben (Theken-Auskunft), war allowed=%v found=%v", a, found)
 	}
 
-	// Keine Regression: Die anderen operativen Rollen behalten perform_actions, nachdem
-	// die Kiosk-Routen von view_students auf perform_actions umgestellt wurden.
-	for _, role := range []string{"KOLLEGIUM", "MITARBEITER"} {
-		if a, found := allowed(role, "perform_actions"); !found || !a {
-			t.Errorf("%s muss perform_actions behalten (sonst Ausleihe kaputt), war allowed=%v found=%v", role, a, found)
-		}
+	// Keine Regression: Die operative Rolle behält perform_actions, nachdem die
+	// Kiosk-Routen von view_students auf perform_actions umgestellt wurden.
+	if a, found := allowed("MITARBEITER", "perform_actions"); !found || !a {
+		t.Errorf("MITARBEITER muss perform_actions behalten (sonst Ausleihe kaputt), war allowed=%v found=%v", a, found)
+	}
+
+	// Kollegium: NEIN — und das ist die Umkehrung dessen, was hier bis zum 10.08.2026
+	// stand. Die Rolle (bis Migration 069 „lehrer") galt damals als operativ und musste
+	// perform_actions behalten. Seit 972bf52 ist sie eine reine Portal-Rolle: Eine
+	// Lehrkraft meldet sich an, um einen Klassensatz zu reservieren, und das läuft über
+	// create_reservations. perform_actions öffnet /api/action — Ausleihe und Rückgabe am
+	// Kiosk, im Menü unsichtbar, per URL aber erreichbar.
+	//
+	// Diese Zeile stand acht Stunden lang falsch herum, ohne dass es auffiel: Der Test
+	// hängt an TEST_DATABASE_URL, und der Pre-Push-Hook setzt die Variable nicht — ohne
+	// sie überspringt sich der ganze Block STILL. Ein Gate, das sich selbst abschaltet,
+	// sobald seine Umgebung fehlt, meldet grün und hat nichts geprüft.
+	if a, _ := allowed("KOLLEGIUM", "perform_actions"); a {
+		t.Error("KOLLEGIUM darf KEIN perform_actions haben (gäbe Zugriff auf die Kiosk-Endpunkte /api/action)")
+	}
+	if a, found := allowed("KOLLEGIUM", "create_reservations"); !found || !a {
+		t.Errorf("KOLLEGIUM muss create_reservations haben (der Zweck der Portal-Rolle), war allowed=%v found=%v", a, found)
 	}
 }
