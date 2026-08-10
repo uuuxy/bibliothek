@@ -20,7 +20,7 @@ import { uiLogin, seedSQL } from './helpers.js';
 const ROLLEN = [
 	['helfer', 'e2e-menue-helfer@test.local'],
 	['mitarbeiter', 'e2e-menue-mitarbeiter@test.local'],
-	['lehrer', 'e2e-menue-lehrer@test.local']
+	['kollegium', 'e2e-menue-kollegium@test.local']
 ];
 
 /** @param {string} rolle @param {string} email */

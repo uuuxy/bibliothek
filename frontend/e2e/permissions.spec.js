@@ -13,7 +13,7 @@ function seedUsers() {
 	seedSQL(`
         INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
         VALUES ('E2E', 'Mitarbeiter', '${MITARBEITER_EMAIL}', 'mitarbeiter', true),
-               ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'lehrer', true)
+               ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'kollegium', true)
         ON CONFLICT DO NOTHING;
     `);
 }

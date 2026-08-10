@@ -14,7 +14,7 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 	// die Reservierung käme nie in klassensatz_reservierungen an.
 	seedSQL(`
         INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-        VALUES ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'lehrer', true)
+        VALUES ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'kollegium', true)
         ON CONFLICT (email) DO UPDATE SET aktiv = true;
 
         WITH t AS (
@@ -27,8 +27,10 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
         FROM t, generate_series(1, 25) AS g;
     `);
 
-	// Lehrer-Login, dann über den Menüpunkt "Mein Portal" ins Lehrerportal
-	// (es ist NICHT die Startseite — auch Lehrkräfte landen zuerst im Standard-Tab).
+	// Login als Kollegium. Der Menüpunkt bleibt der Weg ins Portal — seit dem
+	// Rechte-Rückbau (Migration 070) ist er allerdings der EINZIGE Punkt, den die Rolle
+	// hat, und der Router stellt sie ohnehin dorthin. Der Klick schadet nicht und hält
+	// den Test unabhängig davon, welcher Tab beim Start gewinnt.
 	await uiLogin(page, LEHRER_EMAIL);
 	await page.getByTitle('Mein Portal').click();
 	// KEINE Ueberschrift pruefen: Seiten tragen seit a3e4184 bewusst keinen eigenen
