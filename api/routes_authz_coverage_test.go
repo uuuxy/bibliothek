@@ -74,6 +74,11 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 
 			geschuetzt := strings.Contains(zeile, "RequirePermission(") ||
 				strings.Contains(zeile, "RequireRoles(") ||
+				// RequireAuthenticated verlangt eine gültige Sitzung, aber kein Fachrecht —
+				// die richtige Schwelle für Endpunkte, die JEDER angemeldete Client öffnet
+				// (heute nur der SSE-Stream /events). Bewusst hier und nicht auf der
+				// Public-Allowlist: Ohne Sitzung kommt niemand durch.
+				strings.Contains(zeile, "RequireAuthenticated(") ||
 				strings.Contains(zeile, "invHandler")
 			if geschuetzt {
 				continue

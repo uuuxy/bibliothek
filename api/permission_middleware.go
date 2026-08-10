@@ -111,6 +111,30 @@ func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permis
 	return finalAllowed, nil
 }
 
+// RequireAuthenticated verlangt nur eine gültige Sitzung, kein bestimmtes Recht.
+//
+// Für Endpunkte, die JEDER angemeldete Client öffnet, unabhängig von seiner Rolle — heute
+// genau einer: der SSE-Stream /events, den der authStore direkt nach dem Login aufbaut.
+// Ihn an ein Fachrecht zu hängen war eine Zeitbombe: Wer das Recht nicht hat, bekommt
+// keine saubere Absage, sondern eine Reconnect-Schleife plus das Offline-Overlay aus
+// App.svelte, das nach 25 s ohne Herzschlag zuschlägt. Für die Helfer-Rolle war das schon
+// einmal der Grund, den Stream von view_students auf perform_actions umzuhängen (siehe
+// routes_system.go) — mit der Portal-Rolle KOLLEGIUM wäre derselbe Fehler ein zweites Mal
+// aufgetreten. Der Stream trägt nur operative Aktions-Events (Typ, IDs, Buchtitel,
+// Zeitstempel) und keine Schüler-PII, deshalb ist die Sitzung hier die richtige Schwelle.
+func (s *Server) RequireAuthenticated() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, status, err := s.claimsAusRequest(r)
+			if err != nil {
+				apierrors.SendHTTPError(w, status, err)
+				return
+			}
+			erlaubeZugriff(w, r, next, claims)
+		})
+	}
+}
+
 // RequirePermission returns a middleware that validates if the authenticated user
 // has the required permission dynamically defined in the database.
 func (s *Server) RequirePermission(permission string) func(http.Handler) http.Handler {

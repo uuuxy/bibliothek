@@ -54,7 +54,13 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_books")(s.DeleteVormerkungHandler(vormerkungRepo)))
 
 	// Klassensatz Reservierungen
-	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("view_students")(s.CreateKlassensatzReservierungHandler()))
+	//
+	// create_reservations statt view_students (10.08.2026): Der Handler fasst keine
+	// Schülerdaten an — er nimmt Titel-ID, Klasse als Freitext und Anzahl entgegen. Mit
+	// view_students war das trotzdem gekoppelt: Wer im Kollegiums-Portal reservieren
+	// dürfen sollte, brauchte dasselbe Recht, an dem Schülerdatei und Druck-Center
+	// hängen — die einzige Portal-Funktion zog also die komplette Schülerdatei auf.
+	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("create_reservations")(s.CreateKlassensatzReservierungHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz/anzahl", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenAnzahlHandler()))
 	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeKlassensatzReservierungHandler()))

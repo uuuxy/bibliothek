@@ -52,9 +52,19 @@ export function canSeeItem(item, currentUser) {
 		return r === 'kollegium';
 	}
 
+	// Eine roles-Liste schränkt EIN, sie ist keine Alternative zur Rechteprüfung.
+	//
+	// Diese Prüfung stand bis zum 10.08.2026 im Zweig darunter und galt deshalb nur für
+	// Punkte OHNE permission. „Einstellungen" hat beides — roles: ['admin'] und
+	// permission: 'manage_users' —, also sprang die Funktion direkt zu hatRecht() und die
+	// Rollenliste war toter Code. Jede Rolle, der ein Admin manage_users erteilt, sah
+	// damit die Systemeinstellungen; auf dem Schulserver traf das die Rolle 'kollegium'.
+	if (item.roles && !item.roles.includes(r)) return false;
+
 	// Punkte ohne Permission-Anforderung sind allgemeine Theken-Werkzeuge (z. B. Kiosk).
 	if (!item.permission) {
-		if (item.roles) return item.roles.includes(r);
+		// Ausdrücklich für diese Rolle gelistet — die Liste IST hier die Freigabe.
+		if (item.roles) return true;
 		// Das Kollegium sieht nur sein Portal + ausdrücklich freigeschaltete Rechte,
 		// keine allgemeinen Werkzeuge ohne Rechtebezug.
 		return r !== 'kollegium';

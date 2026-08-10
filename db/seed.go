@@ -100,6 +100,7 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 		{"ADMIN", "manage_inventory", true},
 		{"ADMIN", "view_orders", true},
 		{"ADMIN", "create_orders", true},
+		{"ADMIN", "create_reservations", true},
 		{"ADMIN", "view_graduates", true},
 		{"ADMIN", "view_stats", true},
 		{"ADMIN", "audit_logs", true},
@@ -120,20 +121,30 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 		{"MITARBEITER", "manage_inventory", true},
 		{"MITARBEITER", "view_orders", true},
 		{"MITARBEITER", "create_orders", true},
+		{"MITARBEITER", "create_reservations", true},
 		{"MITARBEITER", "view_graduates", true},
 		{"MITARBEITER", "view_stats", true},
 		{"MITARBEITER", "audit_logs", false},
 		{"MITARBEITER", "manage_users", false},
 
-		// Lehrer defaults
-		{"KOLLEGIUM", "perform_actions", true},
-		{"KOLLEGIUM", "view_students", true},
+		// Kollegium defaults — Portal-Rolle: eine Lehrkraft meldet sich an, um im
+		// Kollegiums-Portal einen Klassensatz zu reservieren. Mehr ist der Zweck nicht.
+		//
+		// Bis zum 10.08.2026 standen hier perform_actions, view_students, upload_photos und
+		// view_books auf true. Das Menü ist rechtegesteuert (frontend/src/lib/menu.js), also
+		// öffneten diese vier Vorgaben der Lehrkraft Medienkatalog, Signaturen, Druck-Center,
+		// Schülerdatei und Schulklassen — und perform_actions dazu die Kiosk-Endpunkte
+		// (/api/action: Ausleihe und Rückgabe), die das Menü nur nicht anzeigt.
+		// Reserviert wird über create_reservations, das keine Personendaten öffnet.
+		{"KOLLEGIUM", "create_reservations", true},
+		{"KOLLEGIUM", "perform_actions", false},
+		{"KOLLEGIUM", "view_students", false},
 		{"KOLLEGIUM", "edit_students", false},
 		{"KOLLEGIUM", "create_students", false},
 		{"KOLLEGIUM", "delete_students", false},
 		{"KOLLEGIUM", "import_students", false},
-		{"KOLLEGIUM", "upload_photos", true},
-		{"KOLLEGIUM", "view_books", true},
+		{"KOLLEGIUM", "upload_photos", false},
+		{"KOLLEGIUM", "view_books", false},
 		{"KOLLEGIUM", "edit_books", false},
 		{"KOLLEGIUM", "delete_books", false},
 		{"KOLLEGIUM", "inventory_scan", false},
@@ -166,6 +177,7 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 		{"HELFER", "inventory_scan", false},
 		{"HELFER", "view_orders", false},
 		{"HELFER", "create_orders", false},
+		{"HELFER", "create_reservations", false},
 		{"HELFER", "view_graduates", false},
 		{"HELFER", "view_stats", false},
 		{"HELFER", "audit_logs", false},

@@ -78,6 +78,11 @@ export const permissionsMetadata = [
 				desc: 'Ausleihe, Rückgabe, Scan und Suche am Terminal — die Kernfunktion der Helfer-Rolle (ohne Zugriff auf Schülerlisten oder Mahnwesen)'
 			},
 			{
+				key: 'create_reservations',
+				label: 'Klassensatz reservieren',
+				desc: 'Erlaubt das Absenden einer Klassensatz-Reservierung im Kollegiums-Portal. Öffnet keine Schülerdaten — das Portal sucht über den öffentlichen OPAC.'
+			},
+			{
 				key: 'view_orders',
 				label: 'Bestellungen anzeigen',
 				desc: 'Erlaubt das Einsehen von Buchbestellungen und Lieferanten-Order'

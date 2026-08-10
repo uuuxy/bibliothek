@@ -804,7 +804,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('066_lieferant_hauptlieferant.sql'),
 ('067_bestellbestaetigung_etikettenformat.sql'),
 ('068_barcode_seq_ueber_bestand.sql'),
-('069_rolle_lehrer_zu_kollegium.sql')
+('069_rolle_lehrer_zu_kollegium.sql'),
+('070_kollegium_nur_portal.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

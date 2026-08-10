@@ -78,10 +78,13 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/signaturen", s.RequirePermission("view_books")(s.GetSignaturenHandler()))
 	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.GetSignaturBuecherHandler()))
 
-	// Real-time Events. perform_actions statt view_students: den SSE-Stream öffnet jeder
-	// eingeloggte Client (authStore + Kiosk-Omnibox). Gehörte er weiter zu view_students,
-	// liefe die Helfer-Rolle in eine 403-Reconnect-Schleife. Der Stream trägt nur
-	// operative Aktions-Events (Typ, IDs, Buchtitel, Zeitstempel) — keine Schüler-PII.
+	// Real-time Events. Nur Sitzung, kein Fachrecht: den SSE-Stream öffnet jeder
+	// eingeloggte Client (authStore + Kiosk-Omnibox), und an ihm hängt der Herzschlag für
+	// das Offline-Overlay. Er stand zuerst auf view_students, dann auf perform_actions —
+	// beide Male musste er umgehängt werden, sobald eine Rolle ohne dieses Recht dazukam
+	// (Helfer, dann Kollegium), sonst lief sie in eine 403-Reconnect-Schleife. Der Stream
+	// trägt nur operative Aktions-Events (Typ, IDs, Buchtitel, Zeitstempel) — keine
+	// Schüler-PII. Siehe RequireAuthenticated in permission_middleware.go.
 	sseHandler := s.Broker.Handler()
-	mux.Handle("GET /events", s.RequirePermission("perform_actions")(sseHandler))
+	mux.Handle("GET /events", s.RequireAuthenticated()(sseHandler))
 }
