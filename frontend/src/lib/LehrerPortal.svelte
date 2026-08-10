@@ -28,10 +28,17 @@
 		searchTimeout = setTimeout(async () => {
 			isSearching = true;
 			try {
-				const res = await apiFetch(`/api/search?q=${encodeURIComponent(q)}&type=books`);
+				// Bewusst der OPAC und nicht /api/search: Nur der OPAC rechnet die
+				// Verfügbarkeit aus. /api/search liefert `BookTitle` — dort gibt es KEIN
+				// Bestandsfeld, weshalb das Abzeichen unten still übersprungen wurde und
+				// Lehrkräfte nie erfahren haben, ob ein Klassensatz überhaupt frei ist.
+				//
+				// Der OPAC passt auch fachlich: ausdrücklich nur Titel, Autor und Verfügbarkeit,
+				// keine Ausleih- oder Personendaten — genau das, was eine Lehrkraft sehen darf.
+				const res = await apiFetch(`/api/public/opac/suche?q=${encodeURIComponent(q)}`);
 				if (res.ok) {
 					const data = await res.json();
-					searchResults = data.books ?? data ?? [];
+					searchResults = Array.isArray(data) ? data : (data.books ?? []);
 				}
 			} catch {
 				/* ignore */
@@ -184,17 +191,20 @@
 							{#if book.isbn}
 								<p class="text-label-small text-slate-400 mt-1">ISBN {book.isbn}</p>
 							{/if}
-							{#if book.verfuegbare_exemplare != null}
+							<!-- Für einen Klassensatz zählt beides: wie viele gerade frei sind UND wie
+							     viele es überhaupt gibt. „3 verfügbar" allein sagt einer Lehrkraft
+							     nicht, ob der Titel für 28 Schüler je reichen kann. -->
+							{#if book.verfuegbar != null}
 								<p class="text-xs mt-1.5">
 									<span
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-small font-semibold {book.verfuegbare_exemplare >
+										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-small font-semibold {book.verfuegbar >
 										0
 											? 'bg-emerald-50 text-emerald-700'
 											: 'bg-rose-50 text-rose-600'}"
 									>
-										{book.verfuegbare_exemplare > 0
-											? `${book.verfuegbare_exemplare} verfügbar`
-											: 'nicht verfügbar'}
+										{book.verfuegbar > 0
+											? `${book.verfuegbar} von ${book.gesamt} verfügbar`
+											: `nicht verfügbar (${book.gesamt} im Bestand)`}
 									</span>
 								</p>
 							{/if}

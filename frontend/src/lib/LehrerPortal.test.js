@@ -17,10 +17,15 @@ vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
  */
 const TITEL = 'Seydlitz Geographie';
 
-function suchtreffer() {
+/**
+ * Antwort des OPAC — ein nacktes Array, kein `{books: …}`-Umschlag, und mit den
+ * Bestandszahlen. Beides muss hier stimmen: Das Portal hat lange `/api/search`
+ * befragt, das die Felder `verfuegbar`/`gesamt` gar nicht kennt.
+ */
+function suchtreffer(verfuegbar = 12, gesamt = 30) {
 	return {
 		ok: true,
-		json: async () => ({ books: [{ id: 'titel-1', titel: TITEL, autor: 'Klaus Berger' }] })
+		json: async () => [{ id: 'titel-1', titel: TITEL, autor: 'Klaus Berger', verfuegbar, gesamt }]
 	};
 }
 
@@ -41,7 +46,7 @@ describe('LehrerPortal', () => {
 		vi.mocked(apiFetch).mockImplementation(
 			/** @type {any} */ (
 				async (/** @type {string} */ url) =>
-					url.startsWith('/api/search')
+					url.startsWith('/api/public/opac/suche')
 						? suchtreffer()
 						: { ok: true, text: async () => '', json: async () => ({}) }
 			)
@@ -63,11 +68,50 @@ describe('LehrerPortal', () => {
 		expect(await screen.findByLabelText('Klasse *')).toBeTruthy();
 	});
 
+	/**
+	 * Der Bestand MUSS am Treffer stehen — sonst kann eine Lehrkraft nicht entscheiden,
+	 * ob ein Klassensatz für ihre Gruppe überhaupt reicht.
+	 *
+	 * Das war lange kaputt und völlig unsichtbar: Das Portal fragte `/api/search`, das
+	 * `BookTitle` ohne Bestandsfeld liefert. Das Abzeichen hängt an `{#if book.verfuegbar
+	 * != null}` — ein Wächter, der still übersprang. Kein Fehler, keine Lücke im Layout,
+	 * die Zahl fehlte einfach. Deshalb prüft dieser Test den TEXT, nicht das Vorhandensein
+	 * eines Elements.
+	 */
+	it('zeigt am Treffer, wie viele Exemplare frei sind und wie viele es gibt', async () => {
+		const screen = render(LehrerPortal, { user: { klasse: '' } });
+
+		await fireEvent.input(screen.getByPlaceholderText(/Titel, Autor oder ISBN suchen/), {
+			target: { value: 'Seydlitz' }
+		});
+
+		expect(await screen.findByText('12 von 30 verfügbar')).toBeTruthy();
+	});
+
+	it('nennt bei vergriffenem Titel trotzdem den Gesamtbestand', async () => {
+		vi.mocked(apiFetch).mockImplementation(
+			/** @type {any} */ (
+				async (/** @type {string} */ url) =>
+					url.startsWith('/api/public/opac/suche')
+						? suchtreffer(0, 30)
+						: { ok: true, text: async () => '', json: async () => ({}) }
+			)
+		);
+
+		const screen = render(LehrerPortal, { user: { klasse: '' } });
+		await fireEvent.input(screen.getByPlaceholderText(/Titel, Autor oder ISBN suchen/), {
+			target: { value: 'Seydlitz' }
+		});
+
+		// „nicht verfügbar" allein hieße für die Lehrkraft: gibt es hier gar nicht.
+		expect(await screen.findByText('nicht verfügbar (30 im Bestand)')).toBeTruthy();
+	});
+
 	it('meldet einen abgelehnten Versuch und blockiert den Knopf nicht', async () => {
 		vi.mocked(apiFetch).mockImplementation(
 			/** @type {any} */ (
 				async (/** @type {string} */ url) =>
-					url.startsWith('/api/search')
+					url.startsWith('/api/public/opac/suche')
 						? suchtreffer()
 						: { ok: false, text: async () => 'Titel ist gesperrt.' }
 			)
