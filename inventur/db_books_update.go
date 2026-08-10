@@ -22,6 +22,17 @@ func (repo *BookRepository) UpdateStock(ctx context.Context, id string, stock in
 }
 
 // UpdateBook updates metadata fields of a book.
+//
+// aktualisiert_am wurde bis zum 10.08.2026 als EINZIGE Spalte von buecher_titel beim
+// Aktualisieren nicht gesetzt. Sie steht in der API-Antwort (repository/book_search.go
+// liefert sie mit) und behauptete dort den Zeitpunkt des ANLEGENS. In der Oberfläche liest
+// sie heute niemand — aber ein Feld, das etwas anderes sagt als sein Name, ist eine Falle
+// für den Nächsten, etwa für einen Abgleich, der „was hat sich seit gestern geändert"
+// darüber beantworten will. Gefunden hat es schema_paritaet_test.go.
+//
+// Die Erklärung steht hier und nicht als SQL-Kommentar in der Anweisung: Ein Kommentar im
+// Query-String reist bei jedem Aufruf zum Server mit und lässt jeden Test scheitern, der
+// die Anweisung als Ganzes festhält.
 func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book) error {
 	query := `
 		UPDATE buecher_titel
@@ -42,7 +53,8 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			verlag = $15,
 			erscheinungsjahr = $16,
 			beschreibung = $17,
-			signatur = COALESCE(NULLIF($19, ''), signatur)
+			signatur = COALESCE(NULLIF($19, ''), signatur),
+			aktualisiert_am = NOW()
 		WHERE id = $18`
 
 	medientyp := book.Medientyp

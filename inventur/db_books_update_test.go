@@ -78,7 +78,7 @@ func TestUpdateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	updateQuery := `UPDATE buecher_titel SET isbn = \$1, titel = \$2, autor = \$3, cover_url = \$4, subject = \$5, grade_level = \$6, track = \$7, stock = \$8, last_counted = NULLIF\(\$9::text, ''\)::date, medientyp = \$10, erweiterte_eigenschaften = \$11, jahrgang_von = \$12, jahrgang_bis = \$13, untertitel = \$14, verlag = \$15, erscheinungsjahr = \$16, beschreibung = \$17, signatur = COALESCE\(NULLIF\(\$19, ''\), signatur\) WHERE id = \$18`
+	updateQuery := `UPDATE buecher_titel SET isbn = \$1, titel = \$2, autor = \$3, cover_url = \$4, subject = \$5, grade_level = \$6, track = \$7, stock = \$8, last_counted = NULLIF\(\$9::text, ''\)::date, medientyp = \$10, erweiterte_eigenschaften = \$11, jahrgang_von = \$12, jahrgang_bis = \$13, untertitel = \$14, verlag = \$15, erscheinungsjahr = \$16, beschreibung = \$17, signatur = COALESCE\(NULLIF\(\$19, ''\), signatur\), aktualisiert_am = NOW\(\) WHERE id = \$18`
 	// also note syncBookStock will be called
 
 	t.Run("success", func(t *testing.T) {
