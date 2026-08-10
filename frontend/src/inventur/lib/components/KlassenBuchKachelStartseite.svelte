@@ -139,9 +139,13 @@
 </script>
 
 <!-- Anklickbare Kachel: Rolle, Fokus und Tastaturweg, damit sie nicht nur mit der Maus
-     erreichbar ist. -->
+     erreichbar ist.
+
+     Ohne feste Breite: "snap-start shrink-0 w-40" stammte aus dem Karussell und hielt die
+     Kachel auf 160 px, egal wie viel Platz da war. Im Raster bestimmt jetzt die Spalte die
+     Breite — wie bei der Schwesterkachel unter Verwaltung → Schulklassen. -->
 <div
-	class="snap-start shrink-0 w-40 group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between"
+	class="group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between"
 	role="button"
 	tabindex="0"
 	{onclick}

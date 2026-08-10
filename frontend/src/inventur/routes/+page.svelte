@@ -187,7 +187,6 @@
 				<div
 					in:fade={{ duration: 300, delay: 150 }}
 					out:fade={{ duration: 150 }}
-					class="space-y-8"
 					role="tabpanel"
 					id="content-jahrgaenge"
 					aria-labelledby="tab-jahrgaenge"
