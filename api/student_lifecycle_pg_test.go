@@ -114,8 +114,8 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	defer db.SafeRollback(ctx, tx)
 
 	rec := parsedStudentRow{LusdID: "LUSD-42", Vorname: "Lena", Nachname: "Zurück", Klasse: "EF"}
-	if err := aktualisiereBestandsschueler(ctx, tx, rec, id); err != nil {
-		t.Fatalf("aktualisiereBestandsschueler: %v", err)
+	if err := aktualisiereBestandsschuelerBatch(ctx, tx, []parsedStudentRow{rec}, []string{id}); err != nil {
+		t.Fatalf("aktualisiereBestandsschuelerBatch: %v", err)
 	}
 
 	var vorname, nachname, klasse string

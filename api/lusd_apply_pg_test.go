@@ -54,7 +54,7 @@ func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
 
 // Bug 5 (Permanent Ghost-Block): Ein Abgänger, der wegen offener Vorgänge nur GESPERRT (nicht
 // anonymisiert) wurde, behielt seine "Automatisierte Abgänger-Sperre" beim LUSD-Wiedereintritt
-// dauerhaft. aktualisiereBestandsschueler muss beim Rückkehrer prüfen, ob noch Vorgänge offen
+// dauerhaft. aktualisiereBestandsschuelerBatch muss beim Rückkehrer prüfen, ob noch Vorgänge offen
 // sind, und andernfalls automatisch entsperren. Der Kern ist SQL-CASE-Logik mit Sub-Selects —
 // nur ein echter DB-Test (nicht pgxmock) prüft sie.
 
@@ -97,7 +97,13 @@ func seedOffenerSchaden(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePra
 	}
 }
 
-// runAktualisiere führt aktualisiereBestandsschueler in einer echten Transaktion aus.
+// runAktualisiere führt aktualisiereBestandsschuelerBatch für EINEN Schüler in einer
+// echten Transaktion aus.
+//
+// Bis zum 10.08.2026 stand dafür eine Einzelfassung im Produktivcode, die nur noch an
+// die Batch-Fassung durchreichte und außer von Tests von niemandem gerufen wurde. Das
+// Verpacken in Ein-Element-Slices ist Test-Gerüst und gehört hierher — im Produktivcode
+// war es ein zweiter Einstiegspunkt, an dem obendrein die ganze Erklärung hing.
 func runAktualisiere(t *testing.T, pool *pgxpool.Pool, rec parsedStudentRow, id string) {
 	t.Helper()
 	ctx := context.Background()
@@ -106,8 +112,8 @@ func runAktualisiere(t *testing.T, pool *pgxpool.Pool, rec parsedStudentRow, id 
 		t.Fatalf("Begin: %v", err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // Rollback nach Commit ist no-op
-	if err := aktualisiereBestandsschueler(ctx, tx, rec, id); err != nil {
-		t.Fatalf("aktualisiereBestandsschueler: %v", err)
+	if err := aktualisiereBestandsschuelerBatch(ctx, tx, []parsedStudentRow{rec}, []string{id}); err != nil {
+		t.Fatalf("aktualisiereBestandsschuelerBatch: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatalf("Commit: %v", err)

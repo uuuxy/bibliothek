@@ -28,7 +28,7 @@ func seedGesperrterAbgaenger(t *testing.T, pool *pgxpool.Pool, barcode, lusdID s
 
 // TestLusdImport_ReturningBlockedAbgaenger fährt die ECHTE Import-Pipeline
 // (computeLusdChanges → wendeLusdAenderungenAn) mit einem zurückkehrenden, als Abgänger
-// gesperrten Schüler. Der Unit-Test der Runde 6/7 prüfte nur aktualisiereBestandsschueler
+// gesperrten Schüler. Der Unit-Test der Runde 6/7 prüfte nur die Aktualisierung des Bestandsschuelers
 // isoliert; er blieb aber unerreichbar, weil ladeAktiveSchueler Abgänger ausfiltert und der
 // Rückkehrer so als Neuzugang am partiellen Unique-Index (lusd_id) kollidierte — der GESAMTE
 // Import scheiterte. Dieser Test sichert die korrekte Weiterleitung end-to-end ab.

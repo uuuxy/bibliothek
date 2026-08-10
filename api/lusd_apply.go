@@ -34,7 +34,7 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, records []parsedStud
 		// die lusd_id weiterhin hält. Ein blindes INSERT (legeNeuenSchuelerAn) kollidiert
 		// dann am partiellen Unique-Index uniq_schueler_lusd_id_active und ließe den GESAMTEN
 		// Import scheitern (SQLSTATE 23505). Solche Rückkehrer werden reaktiviert statt neu
-		// angelegt — aktualisiereBestandsschueler setzt ist_abgaenger zurück und hebt die
+		// angelegt — aktualisiereBestandsschuelerBatch setzt ist_abgaenger zurück und hebt die
 		// Abgänger-Sperre auf, sofern keine Vorgänge mehr offen sind (Ghost-Block).
 		// Soft-gelöschte Zeilen (deleted_at IS NOT NULL) blockieren den Index NICHT und
 		// sollen bewusst als frischer Datensatz neu entstehen — daher hier ausgeklammert.
@@ -92,7 +92,8 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 	return err
 }
 
-// aktualisiereBestandsschueler übernimmt Klasse, Name und Kontaktdaten aus dem Export.
+// aktualisiereBestandsschuelerBatch übernimmt Klasse, Name und Kontaktdaten aus dem
+// Export — alle Zeilen als EIN pgx.Batch, nicht als n Einzelanweisungen.
 // COALESCE(NULLIF(...)) sorgt dafür, dass ein LEERER Export-Wert bestehende Daten
 // NICHT überschreibt — ein Export ohne Adressspalten löscht also nichts.
 //
@@ -116,11 +117,6 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 // Eine Sperre aus ANDEREM Grund (manuell / nicht die Abgänger-Automatik) bleibt unangetastet.
 // Die CASE-Ausdrücke lesen die ALTEN Zeilenwerte (Postgres wertet SET-RHS vor der Zuweisung
 // aus), daher greifen die Namens-/Grund-Checks noch auf den Zustand VOR dem Namens-Update.
-func aktualisiereBestandsschueler(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, id string) error {
-	return aktualisiereBestandsschuelerBatch(ctx, tx, []parsedStudentRow{rec}, []string{id})
-}
-
-// aktualisiereBestandsschuelerBatch aktualisiert mehrere Bestandsschüler oder Rückkehrer effizient als Batch.
 func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, ids []string) error {
 	batch := &pgx.Batch{}
 	for i, rec := range records {
