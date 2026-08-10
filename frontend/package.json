@@ -8,7 +8,7 @@
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
-		"lint": "eslint .",
+		"lint": "eslint . --max-warnings 0",
 		"check": "svelte-check --fail-on-warnings",
 		"format": "prettier --write .",
 		"test": "vitest run",

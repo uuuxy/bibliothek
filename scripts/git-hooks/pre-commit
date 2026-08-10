@@ -30,9 +30,20 @@ fi
 echo -e "${GREEN}✓ Formatierung bestanden.${NC}"
 
 # 2. ESLint (Frontend)
+#
+# OHNE --quiet und mit --max-warnings 0. Der Schalter unterdrückte Warnungen komplett,
+# und weil ESLint sonst nirgends automatisch lief (CI fährt im Frontend nur Vitest),
+# war eine Warnung damit unsichtbar — nicht "niedrig priorisiert", sondern nirgends zu
+# sehen. Am 10.08.2026 kam so heraus, dass ein Snippet in StatsDashboard.svelte die
+# übergebene Icon-Größe seit dem 27.07. verwirft: zwei Wochen lang gemeldet, zwei
+# Wochen lang verschluckt.
+#
+# Eine Warnung, die niemand je zu Gesicht bekommt, ist keine Warnung. Entweder sie
+# blockiert, oder die Regel gehört abgeschaltet — beides ist ehrlicher als ein
+# Werkzeug, das im Stillen recht behält.
 echo "[2/3] Führe ESLint (Frontend) aus..."
 cd frontend || exit 1
-if npx eslint . --quiet; then
+if npx eslint . --max-warnings 0; then
     echo -e "${GREEN}✓ ESLint bestanden.${NC}"
 else
     echo -e "${RED}✗ ESLint fehlgeschlagen! Bitte Fehler im Frontend beheben.${NC}"

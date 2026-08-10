@@ -15,6 +15,9 @@ export default defineConfig({
 	fullyParallel: false, // Flows teilen sich eine DB — seriell bleiben
 	workers: 1,
 	retries: 0,
+	// Ein vergessenes test.only lässt die anderen 100 Tests still ausfallen und meldet
+	// trotzdem "passed". Lokal bleibt .only erlaubt (man debuggt damit), in CI nicht.
+	forbidOnly: !!process.env.CI,
 	reporter: [['list']],
 	use: {
 		baseURL: process.env.E2E_BASE_URL || 'http://localhost:8084',

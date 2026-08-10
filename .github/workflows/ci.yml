@@ -87,8 +87,40 @@ jobs:
         pg_dump --version
         psql --version
 
+    # pipefail ist Pflicht: Ohne ihn ist der Status der Pipeline der von `tee`, und ein
+    # fehlgeschlagener Testlauf käme als grüner Schritt durch. GitHubs Vorgabe-Shell für
+    # `run:` ist `bash -e` OHNE pipefail; `shell: bash` schaltet ihn ein.
     - name: Run Unit Tests
-      run: go test -v -race ./...
+      shell: bash
+      run: go test -v -race ./... 2>&1 | tee /tmp/gotest.log
+
+    # Ein übersprungener Prüfpunkt sieht aus wie ein bestandener.
+    #
+    # Alle *_pg_test.go hängen an TEST_DATABASE_URL, die Restore-Probe zusätzlich an
+    # pg_dump/psql. Fehlt eines davon, überspringen sie sich SELBST — und der Job bliebe
+    # grün, obwohl Rechte-Seed, LUSD-Import und der Notfallplan gar nicht geprüft wurden.
+    # Genau so stand am 10.08.2026 ein Rechte-Test acht Stunden falschherum auf main:
+    # lokal übersprang er sich, weil der Pre-Push-Hook die Variable nicht setzt.
+    #
+    # Der Schritt bricht deshalb ab, wenn ein Test wegen fehlender Umgebung ausgefallen
+    # ist, und schreibt die Skip-Bilanz ins Log — damit sichtbar bleibt, wie viel dieser
+    # Lauf wirklich ausgeführt hat.
+    # Was hat dieser Lauf NICHT ausgeführt?
+    #
+    # Ein übersprungener Prüfpunkt sieht aus wie ein bestandener. Ob eine Prüfung laufen
+    # MUSS, entscheiden die Guards im Go-Code (db/pgtest_guard_test.go für die
+    # DB-Invarianten, jobs/restore_drill_guard_test.go für den Notfallplan) — sie stehen
+    # neben dem, was sie bewachen, und werden mit ihm zusammen gelesen.
+    #
+    # Dieser Schritt bricht deshalb nichts ab. Er schreibt die Bilanz ins Log, damit ein
+    # NEUER stiller Skip sichtbar wird, für den noch niemand einen Guard geschrieben hat.
+    # Legitime Skips gibt es: Die Littera-Läufe brauchen den echten Altbestand
+    # (LITTERA_CSV_DIR, leser.csv, verleih.csv …), der nicht im Repo liegt.
+    - name: Skip-Bilanz
+      shell: bash
+      run: |
+        echo "── Diese Tests wurden übersprungen ──"
+        grep -A 1 -E "^\s*--- SKIP" /tmp/gotest.log || echo "(kein Test übersprungen)"
 
   frontend-test:
     runs-on: ubuntu-latest
@@ -103,10 +135,24 @@ jobs:
       with:
         node-version: 24
 
-    - name: Install Frontend Dependencies & Run Vitest
+    - name: Install Frontend Dependencies
       run: |
         cd frontend
         npm ci
+
+    # ESLint lief bis zum 10.08.2026 NUR im pre-commit-Hook und dort mit --quiet, also
+    # ohne Warnungen. In CI lief es gar nicht. Ergebnis: Ein Snippet verwarf seit dem
+    # 27.07. die übergebene Icon-Größe, ESLint meldete das durchgehend, und niemand
+    # konnte es sehen. Ein Hook greift außerdem nur bei dem, der ihn installiert hat —
+    # CI ist die Stelle, die für alle gilt.
+    - name: Run ESLint
+      run: |
+        cd frontend
+        npm run lint
+
+    - name: Run Vitest
+      run: |
+        cd frontend
         npm run test
 
   e2e:
