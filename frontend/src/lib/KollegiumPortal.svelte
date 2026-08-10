@@ -3,6 +3,8 @@
 	import { coverSrc } from './utils/coverSrc.js';
 	import Button from './components/ui/Button.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
+	import Suchpille from './components/ui/Suchpille.svelte';
+	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { BookOpen, Search } from '@lucide/svelte';
 	/** @type {{ user: any }} */
 	let { user } = $props();
@@ -139,24 +141,14 @@
 </script>
 
 <PageShell>
-	<!-- Search bar -->
-	<div class="relative">
-		<Search
-			class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none"
-			aria-hidden="true"
-		/>
-		<input
-			type="search"
-			bind:value={searchQuery}
-			placeholder="Titel, Autor oder ISBN suchen …"
-			class="h-auto w-full pl-12 pr-4 py-3 rounded-xl bg-white border border-slate-200 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-800 placeholder-slate-400 transition-all"
-		/>
-		{#if isSearching}
-			<div
-				class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin"
-			></div>
-		{/if}
-	</div>
+	<Suchpille
+		id="portal-suchfeld"
+		bind:wert={searchQuery}
+		platzhalter="Titel, Autor oder ISBN eingeben …"
+		etikett="Bücher für einen Klassensatz suchen"
+		autofokus
+		{nachlaufend}
+	/>
 
 	<!-- Results -->
 	{#if searchResults.length > 0}
@@ -302,14 +294,28 @@
 			{/each}
 		</div>
 	{:else if searchQuery.trim().length >= 2 && !isSearching}
-		<div class="text-center py-16 text-slate-400">
-			<Search class="h-10 w-10 mx-auto mb-3 text-slate-300" aria-hidden="true" />
-			<p class="text-sm font-medium">Keine Bücher gefunden für <em>„{searchQuery}"</em></p>
-		</div>
+		<SuchZustand
+			symbol={Search}
+			titel="Keine Bücher gefunden"
+			hinweis="Versuche es mit einem anderen Titel oder Autor."
+		/>
 	{:else if searchQuery.trim().length === 0}
-		<div class="text-center py-16 text-slate-400">
-			<BookOpen class="h-10 w-10 mx-auto mb-3 text-slate-300" aria-hidden="true" />
-			<p class="text-sm font-medium">Gib einen Suchbegriff ein, um Bücher zu finden.</p>
-		</div>
+		<SuchZustand
+			symbol={BookOpen}
+			titel="Suche nach einem Buch"
+			hinweis="Titel, Autor oder ISBN eingeben"
+		/>
 	{/if}
 </PageShell>
+
+<!-- Der Ladepunkt sitzt IN der Pille, nicht darüber. Vorher lag er absolut positioniert
+     bei right-4, während das Feld nur pr-4 Innenabstand hatte — ein langer Suchbegriff
+     lief also unter den Punkt. -->
+{#snippet nachlaufend()}
+	{#if isSearching}
+		<div
+			class="shrink-0 w-4 h-4 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin"
+			aria-hidden="true"
+		></div>
+	{/if}
+{/snippet}

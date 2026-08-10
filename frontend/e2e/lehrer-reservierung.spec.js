@@ -35,11 +35,14 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 	await page.getByTitle('Mein Portal').click();
 	// KEINE Ueberschrift pruefen: Seiten tragen seit a3e4184 bewusst keinen eigenen
 	// Titel — die Seitenleiste sagt, wo man ist. Geprueft wird stattdessen das, was die
-	// Seite AUSMACHT: ihr Suchfeld. Das bricht auch nicht beim naechsten Textwechsel.
-	await expect(page.getByPlaceholder('Titel, Autor oder ISBN suchen …')).toBeVisible();
+	// Seite AUSMACHT: ihr Suchfeld — ueber den zugaenglichen Namen, nicht ueber den
+	// Platzhaltertext. Genau der hat sich am 10.08.2026 geaendert, als alle Suchfelder auf
+	// ein gemeinsames Bauteil kamen.
+	const suchfeld = page.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' });
+	await expect(suchfeld).toBeVisible();
 
 	// Buch suchen (debounced Suchfeld)
-	await page.getByPlaceholder('Titel, Autor oder ISBN suchen …').fill(`E2E Lehrerwunsch ${s}`);
+	await suchfeld.fill(`E2E Lehrerwunsch ${s}`);
 	await expect(page.getByText(`E2E Lehrerwunsch ${s}`).first()).toBeVisible();
 
 	// Reservierungs-Formular öffnen und ausfüllen

@@ -1,0 +1,75 @@
+<script>
+	import { Search } from '@lucide/svelte';
+
+	/**
+	 * Die Suchpille — EIN Bauteil für alle Suchfelder, die das Werkzeug einer Seite sind
+	 * (nicht ein Datenfeld in einem Formular).
+	 *
+	 * Die Bauart gab es schon dreifach: in der Kiosk-Omnibox, in der Medienkatalog-Suche
+	 * und, davon abgewichen, im Kollegiums-Portal und im öffentlichen OPAC. Peter am
+	 * 10.08.2026: „die omnibox bei mein portal und katalog ist eine komplett andere".
+	 * Gemessen stimmte das an sieben Stellen gleichzeitig — Höhe, Radius, Fläche,
+	 * Rahmen, Fokusfarbe, Schriftgröße und der Platzhaltertext („… suchen …" gegen
+	 * „… eingeben …"). Drei Kopien driften; ein Bauteil kann das nicht.
+	 *
+	 * Material 3: gefüllte Pille auf surface-container, führendes Symbol, im Fokus weiße
+	 * Fläche mit Umriss. Der Container trägt Rahmen, Fläche und Fokus — das Feld selbst
+	 * trägt nichts und füllt ihn nur (h-full). Deshalb steht die Pille bewusst neben der
+	 * 36-px-Control-Skala aus styles/basis.css.
+	 *
+	 * @type {{
+	 *   id: string,
+	 *   wert: string,
+	 *   platzhalter: string,
+	 *   etikett: string,
+	 *   autofokus?: boolean,
+	 *   oninput?: (e: Event) => void,
+	 *   nachlaufend?: import('svelte').Snippet
+	 * }}
+	 */
+	let {
+		id,
+		wert = $bindable(''),
+		platzhalter,
+		etikett,
+		autofokus = false,
+		oninput,
+		nachlaufend
+	} = $props();
+
+	/** @type {HTMLInputElement | undefined} */
+	let feld = $state();
+
+	// Fokus beim Betreten der Seite.
+	//
+	// Ohne ihn geht der erste Anschlag ins Leere — bei einem Barcode-Scanner heisst das,
+	// dass der Scan verloren geht, ohne dass jemand einen Fehler sieht. Bewusst per
+	// .focus() statt per autofocus-Attribut: Das Attribut wirkt nur beim ersten Laden des
+	// Dokuments, und diese Oberfläche wechselt die Ansicht ohne Seitenwechsel.
+	$effect(() => {
+		if (autofokus) feld?.focus();
+	});
+</script>
+
+<div
+	class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:shadow-md focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
+>
+	<Search
+		class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
+		aria-hidden="true"
+	/>
+	<input
+		{id}
+		type="text"
+		autocomplete="off"
+		bind:this={feld}
+		bind:value={wert}
+		{oninput}
+		aria-label={etikett}
+		placeholder={platzhalter}
+		class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
+	/>
+	{#if nachlaufend}
+		{@render nachlaufend()}
+	{/if}
+</div>

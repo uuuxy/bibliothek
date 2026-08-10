@@ -1,6 +1,8 @@
 <script>
 	import { BookOpen, Search } from '@lucide/svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
+	import Suchpille from './components/ui/Suchpille.svelte';
+	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { coverSrc } from './utils/coverSrc.js';
 
 	let query = $state('');
@@ -61,30 +63,19 @@
 
 	<!-- Search bar -->
 	<div class="w-full max-w-4xl mx-auto px-6 pt-10 pb-6 space-y-4 relative z-10">
-		<div class="relative">
-			<Search
-				class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-				aria-hidden="true"
-			/>
-			<!-- svelte-ignore a11y_autofocus -->
-			<!-- Bewusst behalten: Der OPAC steht als Katalog-Terminal im Raum, und dieses Feld
-			     ist der einzige Zweck der Seite. Ohne Fokus tippt der erste Anschlag ins Leere
-			     — beim Barcode-Scanner heisst das, dass der Scan verloren geht, ohne dass
-			     jemand einen Fehler sieht. -->
-			<input
-				type="search"
-				bind:value={query}
-				oninput={onInput}
-				placeholder="Titel, Autor oder ISBN eingeben …"
-				class="h-auto w-full pl-12 pr-12 py-4 text-lg border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-slate-300 outline-none transition-shadow"
-				autofocus
-			/>
-			{#if loading}
-				<div
-					class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin pointer-events-none"
-				></div>
-			{/if}
-		</div>
+		<!-- Der OPAC steht als Katalog-Terminal im Raum, und dieses Feld ist der einzige
+		     Zweck der Seite — deshalb Fokus beim Betreten. Ohne ihn tippt der erste
+		     Anschlag ins Leere, und beim Barcode-Scanner geht der Scan verloren, ohne dass
+		     jemand einen Fehler sieht. -->
+		<Suchpille
+			id="opac-suchfeld"
+			bind:wert={query}
+			oninput={onInput}
+			platzhalter="Titel, Autor oder ISBN eingeben …"
+			etikett="Im Medienkatalog suchen"
+			autofokus
+			{nachlaufend}
+		/>
 	</div>
 
 	<!-- Results / empty states -->
@@ -144,19 +135,27 @@
 				{/each}
 			</div>
 		{:else if searched && !loading}
-			<div class="text-center py-20 text-slate-400">
-				<span class="text-5xl mb-4 block select-none">📭</span>
-				<p class="text-base font-medium">Keine Treffer für „{query}"</p>
-				<p class="text-sm mt-1">Versuche es mit einem anderen Titel oder Autor.</p>
-			</div>
+			<SuchZustand
+				symbol={Search}
+				titel="Keine Bücher gefunden"
+				hinweis="Versuche es mit einem anderen Titel oder Autor."
+			/>
 		{:else if !searched}
-			<div class="text-center py-20 text-slate-400 select-none">
-				<!-- mx-auto ist nötig: Tailwinds Preflight setzt svg auf display:block, damit
-				     greift das text-center des Containers nicht — das Symbol klebte links. -->
-				<BookOpen class="h-10 w-10 mx-auto mb-3" aria-hidden="true" />
-				<p class="text-xl font-semibold text-slate-400">Suche nach einem Buch</p>
-				<p class="text-sm text-slate-400 mt-1">Titel, Autor oder ISBN eingeben</p>
-			</div>
+			<SuchZustand
+				symbol={BookOpen}
+				titel="Suche nach einem Buch"
+				hinweis="Titel, Autor oder ISBN eingeben"
+			/>
 		{/if}
 	</div>
 </div>
+
+<!-- Der Ladepunkt sitzt IN der Pille — dieselbe Stelle wie im Kollegiums-Portal. -->
+{#snippet nachlaufend()}
+	{#if loading}
+		<div
+			class="shrink-0 w-4 h-4 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin"
+			aria-hidden="true"
+		></div>
+	{/if}
+{/snippet}

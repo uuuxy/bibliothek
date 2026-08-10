@@ -31,9 +31,12 @@ function suchtreffer(verfuegbar = 12, gesamt = 30) {
 
 /** Sucht wie das Portal: debounced, deshalb über findBy* abwarten. */
 async function sucheUndOeffneFormular(screen) {
-	await fireEvent.input(screen.getByPlaceholderText(/Titel, Autor oder ISBN suchen/), {
-		target: { value: 'Seydlitz' }
-	});
+	await fireEvent.input(
+		screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		{
+			target: { value: 'Seydlitz' }
+		}
+	);
 	const knopf = await screen.findByRole('button', { name: 'Klassensatz reservieren' });
 	await fireEvent.click(knopf);
 	await fireEvent.input(await screen.findByLabelText('Klasse *'), { target: { value: '08a' } });
@@ -81,9 +84,12 @@ describe('KollegiumPortal', () => {
 	it('zeigt am Treffer, wie viele Exemplare frei sind und wie viele es gibt', async () => {
 		const screen = render(KollegiumPortal, { user: { klasse: '' } });
 
-		await fireEvent.input(screen.getByPlaceholderText(/Titel, Autor oder ISBN suchen/), {
-			target: { value: 'Seydlitz' }
-		});
+		await fireEvent.input(
+			screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			{
+				target: { value: 'Seydlitz' }
+			}
+		);
 
 		expect(await screen.findByText('12 von 30 verfügbar')).toBeTruthy();
 	});
@@ -99,9 +105,12 @@ describe('KollegiumPortal', () => {
 		);
 
 		const screen = render(KollegiumPortal, { user: { klasse: '' } });
-		await fireEvent.input(screen.getByPlaceholderText(/Titel, Autor oder ISBN suchen/), {
-			target: { value: 'Seydlitz' }
-		});
+		await fireEvent.input(
+			screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			{
+				target: { value: 'Seydlitz' }
+			}
+		);
 
 		// „nicht verfügbar" allein hieße für die Lehrkraft: gibt es hier gar nicht.
 		expect(await screen.findByText('nicht verfügbar (30 im Bestand)')).toBeTruthy();

@@ -5,7 +5,7 @@
 -->
 <script>
 	import Select from '../../../lib/components/ui/Select.svelte';
-	import { Search } from '@lucide/svelte';
+	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 
 	/**
 	 * @type {{
@@ -91,27 +91,12 @@
 		     Bereich, und dafür nennt M3 die mittlere Stufe, nicht die kurze. -->
 		<div class="w-full max-w-3xl transition-all duration-300">
 			{#if viewMode === 'suche'}
-				<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst NICHT auf der
-				     36-px-Control-Skala und bewusst rounded-full — dieses Feld ist kein Datenfeld
-				     im Formular, sondern das globale Werkzeug der Seite und soll sich davon
-				     abheben. Der Container trägt Rahmen, Fläche und Fokus; das Feld selbst nichts. -->
-				<div
-					class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:shadow-md focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
-					id="filter-suche"
-				>
-					<Search
-						class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
-						aria-hidden="true"
-					/>
-					<input
-						id="katalog-suchfeld"
-						type="text"
-						bind:value={searchQuery}
-						aria-label="Suchen nach Titel, Fach, Klasse oder Autor"
-						placeholder="Suchen nach Titel, Fach, Klasse (z.B. 'Mathe 5' oder 'Gymnasium')..."
-						class="h-full flex-1 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
-					/>
-				</div>
+				<Suchpille
+					id="katalog-suchfeld"
+					bind:wert={searchQuery}
+					platzhalter="Titel, Fach oder Klasse eingeben …"
+					etikett="Suchen nach Titel, Fach, Klasse oder Autor"
+				/>
 			{:else if viewMode === 'jahrgaenge'}
 				<div class="flex flex-col sm:flex-row gap-3 justify-center" id="filter-jahrgaenge">
 					<Select
