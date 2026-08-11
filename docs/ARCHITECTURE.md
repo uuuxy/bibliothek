@@ -76,7 +76,21 @@ Bis zu 8 Kiosk-Stationen arbeiten zeitgleich. Das System verhindert Race Conditi
 
 ### 1. Transaktions-Isolation & Row-Level-Locking
 - **READ COMMITTED** (PostgreSQL-Standard): hoher Durchsatz bei parallelen Zugriffen
-- **`SELECT … FOR UPDATE`** auf `buecher_exemplare` und aktive Ausleihe: ein zweiter paralleler Scan wartet, liest den aktuellen Zustand, bricht sauber ab
+- **`SELECT … FOR UPDATE`** — welche Zeile gesperrt wird, hängt vom Pfad ab, und das ist keine Formsache (nachgezählt 11.08.2026, es sind genau fünf Stellen):
+
+  | Pfad | gesperrte Zeile | Fundstelle |
+  |---|---|---|
+  | Scan eines Exemplars | die **aktive Ausleihe** (`ausleihen`) | `GetActiveLoanByCopyIDTx` |
+  | Ausleihe an einen Schüler | die **Schüler**-Zeile | `loan_checkout.go` |
+  | Rückgabe mit Vormerkung | die **Vormerkung** (`FOR UPDATE OF v SKIP LOCKED`) | `loan_return.go` |
+  | Geräte-Ausleihe | die aktive Geräte-Ausleihe | `device_service.go` |
+  | Schaden erfassen | die **Exemplar**-Zeile (`buecher_exemplare`) | `damage.go` |
+
+  Hier stand bis zum 11.08.2026, der Scan sperre `buecher_exemplare`. Das tut nur der
+  Schadens-Pfad. Der Unterschied ist wichtig: Scannen **zwei verschiedene** Stationen
+  dasselbe Exemplar für **verschiedene** Schüler, greift keine gemeinsame Zeilensperre —
+  dann trägt allein der Unique-Index aus Schicht 2. Er ist also nicht Gürtel zum
+  Hosenträger, sondern an dieser Stelle der einzige Schutz.
 
 ### 2. Datenintegrität durch Unique-Partial-Index
 ```sql
@@ -119,7 +133,7 @@ graph TD
 Jeder Scan-Request trägt einen `item.id`-basierten Idempotenz-Key:
 - Doppelter Key → gespeicherte Antwort wird zurückgegeben (kein zweiter DB-Write)
 - 5xx-Fehler werden nicht gecacht (Retry möglich)
-- TTL-Cleanup läuft täglich (24h-Cron)
+- TTL-Cleanup läuft **stündlich** (`17 * * * *`); die **24 h** sind die Aufbewahrung, nicht der Takt. Hier stand bis zum 11.08.2026 „täglich (24h-Cron)" — die beiden Zahlen waren verwechselt
 - **Zusätzliche Absicherung durch DB-Unique-Index** (Migration 033): selbst wenn zwei Requests mit gleichem Key gleichzeitig die Idempotenz-Prüfung passieren, verhindert der Index eine zweite aktive Ausleihe
 
 ---
@@ -174,10 +188,19 @@ if err := rows.Err(); err != nil {
 
 ## 📡 SSE Broker (Real-Time)
 
-- Zentraler Event-Loop, keine Goroutine pro Client
-- `RLock`/`Lock` verhindern Send-on-Closed
-- Non-blocking Broadcast (gepufferter Channel) — ein langsamer Client blockiert andere nicht
-- Heartbeat + Context-Abbruch bei Graceful Shutdown
+- **Kein Event-Loop.** Der Broker führt überhaupt keine eigene Goroutine — weder eine zentrale Schleife noch eine je Client. Der Zustand (`map[chan string]struct{}`) liegt hinter einem `sync.RWMutex`, das Verteilen läuft in der Goroutine des Aufrufers.
+- `RLock`/`Lock` verhindern Send-on-Closed: `unsubscribe` und `shutdown` schließen Kanäle unter der **Schreib**sperre, `Broadcast` sendet unter der **Lese**sperre — beides kann sich damit nie überschneiden. Ein Senden auf einen geschlossenen Kanal würde den Prozess abbrechen.
+- Non-blocking Broadcast (`select`/`default`, Puffer 10 je Client) — ein langsamer Client wird übersprungen und blockiert andere nicht
+- Heartbeat alle 15 s als Dead-Man-Switch; Context-Abbruch beim Graceful Shutdown (Zeitfenster 10 s in `main.go`)
+
+> **Hier stand bis zum 11.08.2026 „Zentraler Event-Loop".** Das beschrieb die
+> **abgeschaffte** Bauweise. Die frühere Fassung hatte register-/unregister-Kanäle, und
+> genau die verhinderten ein sauberes Herunterfahren: Kehrte `Start` durch den
+> abgebrochenen Kontext zurück, las niemand mehr aus den Kanälen, jeder SSE-Handler blieb
+> in seinem `defer b.unregister <- …` stehen, `httpServer.Shutdown` wartete auf eben diese
+> Handler bis zum Timeout — und `main` endete mit `os.Exit(1)`. In einer Schule mit
+> dauerhaft verbundenen Arbeitsplätzen war das **jeder** Deploy. Wer die Doku als Vorlage
+> nimmt und den Event-Loop „wiederherstellt", baut diesen Fehler zurück ein.
 
 ---
 
@@ -188,8 +211,8 @@ if err := rows.Err(); err != nil {
 | GDPR Anonymisierung | Startup + täglich | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen |
 | GDPR Abgänger-Löschung | Startup + täglich | `RunGDPRDeleteAbgaenger` — Hard-Delete nach Karenzzeit |
 | DB-Backup | täglich 02:30 | `pg_dump` → gzip → AES-GCM |
-| Idempotenz-TTL | täglich | Bereinigt abgelaufene Idempotenz-Keys (24h) |
-| Cover-Sync | on-demand + täglich | Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry |
+| Idempotenz-TTL | **stündlich** (`17 * * * *`) | Bereinigt Idempotenz-Keys älter als 24 h |
+| Cover-Sync | on-demand + **alle 6 Stunden** (`0 */6 * * *`) | Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry |
 
 ---
 

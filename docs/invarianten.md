@@ -13,9 +13,17 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept | Ja — reine Hoffnung |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-08-06
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-08-11
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
+
+> **Nachgeprüft am 11.08.2026**, Zeile für Zeile gegen Code und laufende Datenbank: Alle
+> 40 genannten Dateien existieren, alle genannten Migrationen ebenfalls, und die
+> stichprobenartig nachgemessenen Verhaltenszusagen halten — `mahnstufe` wird tatsächlich
+> nur an **einer** Stelle geschrieben (`api/mahnwesen_bulk.go`), die Bestätigung ist über
+> `WHERE bestaetigt_am IS NULL` wirklich atomar, HELFER hat in der laufenden Datenbank
+> exakt die zwei dokumentierten Rechte, und `GET /api/scan` ist wirklich weg. Korrigiert
+> wurde eine Fundstelle (Lieferant, siehe unten) und das Rollen-Vokabular in Abschnitt 9.
 
 > **Fundstellen werden benannt, nicht gezählt.** Die Spalte nennt Constraint-, Index-
 > und Spaltennamen — keine Zeilennummern. Bis zum 06.08.2026 stand dort `schema.sql:NNN`;
@@ -24,6 +32,14 @@ Postgres abgesichert).
 > stimmten — nur der Weg dorthin war falsch, und das fällt beim Lesen nicht auf.
 > `docs/invarianten_fundstellen_test.go` prüft jetzt, dass jeder genannte Name in
 > `schema.sql` wirklich existiert.
+>
+> **Migrationsnummern sind ebenfalls keine haltbare Fundstelle** (11.08.2026). Sie
+> existieren als Datei weiter, auch wenn eine spätere Migration ihr Werk zurücknimmt —
+> eine Existenzprüfung bliebe also grün. Genau so ist es hier passiert: Der Lieferanten-
+> Eintrag nannte `migrations/058`, doch Migration 066 hatte Spalte **und** Index längst
+> ersetzt (`ist_standard` → `ist_hauptlieferant`). Die Invariante galt, ihr Beleg zeigte
+> ins Leere. Deshalb gilt auch hier: **das lebende Objekt beim Namen nennen**, dann trägt
+> das Gate die Prüfung. Migrationsnummern nur als Zusatz zur Herkunft.
 
 ---
 
@@ -130,7 +146,7 @@ selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 | **[G4]** `menge ≥ 1`, `einzelpreis ≥ 0`, `gesamtbetrag ≥ 0`, `anzahl_exemplare ≥ 0` | 🟢 4 CHECKs | `migrations/039` |
 | Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Default `?type=lmf` + Test | `reorders.go`, `reorders_test.go` |
 | Bestätigung einer Bestellung gilt genau einmal | 🟢 `WHERE bestaetigt_am IS NULL` (409 statt Überschreiben) | `api/bestellbestaetigung_handler.go` (`bestaetigeBestellung`) |
-| Höchstens ein Standard-Lieferant | 🟢 Partieller Unique-Index | `migrations/058` |
+| Höchstens ein **Haupt**lieferant | 🟢 Partieller Unique-Index | `idx_lieferanten_ein_hauptlieferant` |
 | Ein Bestätigungs-Token gehört zu genau einer Bestellung, gespeichert nur als Hash | 🟢 Partieller Unique-Index auf `bestaetigungs_token_hash` | `migrations/063` |
 | Die Etikettenseite des Links zeigt nur Exemplare DIESER Bestellung mit Vorab-Barcode | 🟡 SQL-Filter + PG-Test | `api/bestellbestaetigung_etiketten.go`, `bestellbestaetigung_ablauf_pg_test.go` |
 
@@ -159,9 +175,17 @@ löst nichts mehr aus (`api/reorders.go`).
 
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
-| `benutzer.rolle` ∈ Enum (inkl. `helfer` seit Migration 042) | 🟢 ENUM (kleingeschr.) | `benutzer_rolle`, `migrations/042` |
+| `benutzer.rolle` ∈ Enum — heute `admin`, `kollegium`, `mitarbeiter`, `helfer` (kleingeschr.) | 🟢 ENUM | `benutzer_rolle` |
 | **[G5]** **Genau eine** Quelle für die Rolle eines Benutzers: `benutzer.rolle` | 🟢 Legacy-Tabelle entfernt + Test verhindert Rückkehr | `migrations/044`, `rollen_vokabular_pg_test.go` |
 | Welche Rechte eine Rolle hat: `role_permissions` (GROSS; Middleware mappt per `UPPER()`) | 🟡 konfigurierbar (bewusst) | `permission_middleware.go:83` |
+
+> **Zum Rollen-Vokabular (11.08.2026):** `helfer` kam mit Migration 042 dazu, `kollegium`
+> hieß bis Migration 069 `lehrer`. Der alte Name war doppelt belegt und bezeichnet seither
+> nur noch den **Entleihertyp** (`schueler.klasse = 'lehrer'`, Handapparat) — wer nach ihm
+> greppt, findet also weiterhin richtige Treffer. Migration 070 hat den Rechteumfang der
+> Rolle auf `create_reservations` zurückgenommen; das ist aber eine **Vorgabe**, keine
+> Invariante: Die Zeile darüber gilt, ein Administrator darf mehr erteilen. Siehe
+> [FACHKONZEPT §12](FACHKONZEPT.md).
 | Login-Rate-Limit je echter Client-IP (nicht Proxy) | 🟢/🟡 `pkg/clientip` + `TRUSTED_PROXIES` | `middleware_ratelimit.go` |
 
 ---
