@@ -64,7 +64,9 @@ test('Jahrgänge: Bücher stehen im Raster, nicht in einem Streifen außerhalb d
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Jahrgänge' }).click();
 
-	const zeile = page.locator('#content-jahrgaenge').getByRole('button', { name: new RegExp(nameGross) });
+	const zeile = page
+		.locator('#content-jahrgaenge')
+		.getByRole('button', { name: new RegExp(nameGross) });
 	await expect(zeile).toBeVisible();
 
 	// Zugeklappt: Die Kacheln sind nicht bloß ausgeblendet, sie stehen gar nicht im DOM.
