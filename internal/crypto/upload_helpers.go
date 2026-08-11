@@ -1,31 +1,12 @@
 package crypto
 
 import (
-	"bibliothek/pkg/closeutil"
 	"bytes"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 )
-
-// EncryptUpload liest einen hochgeladenen File-Stream komplett in den RAM
-// und verschlüsselt die Daten mit AES-256-GCM. Das Ergebnis kann als BYTEA
-// in einer PostgreSQL-Datenbank abgelegt werden.
-func EncryptUpload(file multipart.File) ([]byte, error) {
-	if file == nil {
-		return nil, fmt.Errorf("leere Datei übergeben")
-	}
-	defer closeutil.LogClose(file, "upload temp file")
-
-	plaintext, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("fehler beim Lesen der Upload-Datei: %w", err)
-	}
-
-	return Encrypt(plaintext)
-}
 
 // DecryptAndServe nimmt verschlüsselte BYTEA-Daten aus der Datenbank,
 // entschlüsselt sie im Arbeitsspeicher und streamt sie mit dem passenden

@@ -369,5 +369,15 @@ func main() {
 		slog.Error("Graceful shutdown failed", "error", err)
 		os.Exit(1)
 	}
+
+	// Die Aufraeumschleife der Token-Sperrliste anhalten (Ticker, alle 15 Minuten).
+	//
+	// Stop() war bis zum 11.08.2026 geschrieben, getestet — und von niemandem aufgerufen;
+	// die Suche nach unerreichbarem Code hat es gefunden. Beim Beenden des Prozesses waere
+	// das folgenlos geblieben, die Goroutine stirbt ohnehin mit. Trotzdem gehoert es hier
+	// hin: Ein geordnetes Herunterfahren, das die Haelfte stehen laesst, ist keins, und die
+	// naechste Hintergrundaufgabe wuerde sich an dieser Stelle orientieren.
+	authenticator.Blacklist.Stop()
+
 	slog.Info("Server stopped successfully.")
 }

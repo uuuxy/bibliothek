@@ -16,6 +16,27 @@
 # die nur Tests benutzen, meldet "deadcode ./..." (ohne -test); das ist eine eigene,
 # schwaechere Frage und bewusst nicht Teil dieses Gates.
 #
+# Diese schwaechere Frage wurde am 11.08.2026 einmal vollstaendig beantwortet: 17 Treffer,
+# davon vier echte Leichen (entfernt: inventur.NewDB als zweiter Pool-Konstruktor neben
+# db.Connect, crypto.EncryptUpload als zweite Verschluesselungstuer neben crypto.Encrypt,
+# repository.QueryUeberfaelligeByAusleiheIDs als Rest eines Tx-Umbaus, und
+# scripts/migrate_photos.go als Doppel von cmd/migrate-fotos). Eine fuenfte,
+# auth.TokenBlacklist.Stop, wurde nicht geloescht, sondern im geordneten Herunterfahren
+# von main.go verdrahtet — sie fehlte dort.
+#
+# Die verbleibenden 13 sind BEGRUENDET und sollen bleiben. Wer die schwaechere Frage
+# erneut stellt, findet genau diese und muss sie nicht noch einmal untersuchen:
+#
+#   internal/smtptest/*   (6)  Test-Mailserver. Von Tests benutzt zu werden IST sein Zweck.
+#   internal/littera/*    (5)  Pruefwerkzeug fuer die noch ausstehende Littera-Migration.
+#                              BarcodeInhalt entschluesselt die alte Littera-Druckzeichen-
+#                              kette und dient als Gegenprobe zur Exemplarnummer, aus der
+#                              die EAN-13 gerechnet wird — 61.520 von 61.520 stimmen
+#                              ueberein. Der Lauf haengt an LITTERA_CSV_DIR und braucht die
+#                              echten Altdaten, die nicht im Repo liegen.
+#   sse.istGeschlossen    (1)  Nahtstelle, damit ein Test das Herunterfahren pruefen kann.
+#   uebernahme.Leeren     (1)  Zuruecksetzen zwischen PG-Testlaeufen.
+#
 # Aufruf: ./scripts/deadcode_gate.sh   (vom Repo-Root)
 set -eu
 

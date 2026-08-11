@@ -283,19 +283,6 @@ func scanUeberfaelligeKlassen(rows pgx.Rows) ([]MahnwesenKlasse, error) {
 	return g.klassen, nil
 }
 
-// QueryUeberfaelligeByAusleiheIDs ermittelt spezifische überfällige Ausleihen für den Bulk-Print.
-func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDs(ctx context.Context, ids []string) ([]MahnwesenKlasse, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	rows, err := repo.db.Query(ctx, sqlUeberfaelligeByAusleiheIDs, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	return scanUeberfaelligeKlassen(rows)
-}
-
 // QueryUeberfaelligeByAusleiheIDsTx liest dieselben Daten INNERHALB einer Transaktion.
 // Der Bulk-Mahnlauf ruft dies NACH dem Mahnstufen-UPDATE in derselben Tx auf, damit das
 // PDF exakt den festgeschriebenen Zustand widerspiegelt (Papier == DB). Läge das Auslesen

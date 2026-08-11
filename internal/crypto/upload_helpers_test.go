@@ -1,70 +1,10 @@
 package crypto
 
 import (
-	"bytes"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
-
-type dummyFile struct {
-	*bytes.Reader
-	readErr  error
-	closeErr error
-}
-
-func (f *dummyFile) Read(p []byte) (n int, err error) {
-	if f.readErr != nil {
-		return 0, f.readErr
-	}
-	return f.Reader.Read(p)
-}
-
-func (f *dummyFile) Close() error {
-	return f.closeErr
-}
-
-func TestEncryptUpload(t *testing.T) {
-	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
-
-	t.Run("nil file", func(t *testing.T) {
-		_, err := EncryptUpload(nil)
-		if err == nil || err.Error() != "leere Datei übergeben" {
-			t.Errorf("expected error 'leere Datei übergeben', got %v", err)
-		}
-	})
-
-	t.Run("read error", func(t *testing.T) {
-		f := &dummyFile{
-			Reader:  bytes.NewReader(nil),
-			readErr: errors.New("read error"),
-		}
-		_, err := EncryptUpload(f)
-		if err == nil {
-			t.Errorf("expected read error, got nil")
-		}
-	})
-
-	t.Run("success", func(t *testing.T) {
-		content := []byte("hello world")
-		f := &dummyFile{
-			Reader: bytes.NewReader(content),
-		}
-		enc, err := EncryptUpload(f)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		dec, err := Decrypt(enc)
-		if err != nil {
-			t.Fatalf("unexpected decryption error: %v", err)
-		}
-		if !bytes.Equal(dec, content) {
-			t.Errorf("expected %q, got %q", content, dec)
-		}
-	})
-}
 
 func TestDecryptAndServe(t *testing.T) {
 	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
