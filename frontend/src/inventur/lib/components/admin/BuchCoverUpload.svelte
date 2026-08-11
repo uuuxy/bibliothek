@@ -29,20 +29,20 @@
 			<div class="w-full h-full flex items-center justify-center text-slate-400">Kein Bild</div>
 		{/if}
 
-		<!-- Overlay Upload Button
-		     focus-visible ergänzt (10.08.2026): Der Knopf liegt über dem GANZEN Cover und
-		     stand auf opacity-0. Das nimmt ihm nicht die Klickbarkeit — per Tab erreichbar
-		     war er, sichtbar nicht, und der Tastaturfokus lag damit auf etwas Unsichtbarem
-		     (WCAG 2.4.7).
-		     Die Fläche selbst bleibt bewusst hover-gebunden: Ein dauerhaft sichtbares
-		     bg-black/40 würde jedes Cover abdunkeln. Dass ein Fingertipp auf das Cover hier
-		     ohne jeden Hinweis den Dateidialog öffnet, ist ein Entwurfsproblem und keine
-		     CSS-Frage — es gehört mit Peter besprochen, nicht nachts geändert. -->
+		<!-- Nur noch ein HINWEIS, kein Bedienelement mehr (11.08.2026).
+		     Hier lag ein <button> mit `absolute inset-0` und `opacity-0` über dem GANZEN
+		     Cover. Das nimmt ihm nicht die Klickbarkeit: Er war per Tab erreichbar (Fokus
+		     auf etwas Unsichtbarem, WCAG 2.4.7), und auf einem Tablet öffnete ein Tipp auf
+		     das Bild ohne jede Ankündigung den Dateidialog.
+		     Gebraucht wurde er nie: Direkt unter dem Cover steht „Cover ändern" — sichtbar,
+		     beschriftet, dieselbe Funktion. Der Overlay war ein Duplikat, das nur die zwei
+		     Fallen beisteuerte. Als Hinweis bleibt er nützlich, deshalb jetzt ein div mit
+		     pointer-events-none und aria-hidden: Beim Zeigen erscheint das Kamerasymbol wie
+		     bisher, anfassen lässt es sich nicht mehr. -->
 		{#if formular.id}
-			<button
-				class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer border-none w-full h-full"
-				onclick={() => fileInput?.click()}
-				aria-label="Cover hochladen"
+			<div
+				class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
+				aria-hidden="true"
 			>
 				<svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path
@@ -58,7 +58,7 @@
 						d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
 					/>
 				</svg>
-			</button>
+			</div>
 		{:else}
 			<div
 				class="absolute inset-0 flex items-center justify-center text-center p-2 text-xs text-slate-500"
