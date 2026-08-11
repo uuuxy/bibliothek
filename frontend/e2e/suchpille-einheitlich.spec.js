@@ -153,22 +153,32 @@ test('Im Ruhezustand sind die Pillen gefüllt und randlos — nicht dauerhaft im
 }) => {
 	await uiLogin(page);
 
-	// Der Kiosk fehlt hier bewusst, und das ist keine Ausnahme aus Bequemlichkeit: Seine
-	// Omnibox holt sich den Fokus per Effekt zurück, sobald sie ihn verliert — sie ist ein
-	// Scanner-Terminal, ein verlorener Fokus wäre ein verlorener Scan. Sie steht deshalb
-	// DAUERHAFT im Fokus-Aussehen (weiß mit blauem Rand), und ein Ruhezustand ist dort
-	// nicht herstellbar. Gemessen am 11.08.2026, nachdem genau dieser Unterschied beim
-	// Nebeneinanderlegen zweier Bildschirme aufgefallen war: Die Klassen sind zeichengleich
-	// mit der Suchpille, nur der Zustand ist ein anderer.
-	const RUHIG = [
-		{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' },
-		{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld' }
-	];
+	// Hier stehen nur Seiten, deren Pille den Fokus NICHT von selbst nimmt — und diese Liste
+	// ist am 11.08.2026 von zwei auf einen Eintrag geschrumpft, weil der zweite eine
+	// Falschaussage war:
+	//
+	// Der Kiosk fehlte schon immer bewusst. Seine Omnibox holt sich den Fokus per Effekt
+	// zurück, sobald sie ihn verliert — sie ist ein Scanner-Terminal, ein verlorener Fokus
+	// wäre ein verlorener Scan. Sie steht deshalb DAUERHAFT im Fokus-Aussehen.
+	//
+	// „Mein Portal" stand hier zu Unrecht. Die Pille dort trägt `autofokus`
+	// (KollegiumPortal.svelte) und nimmt sich den Fokus beim Mounten. Der Test kam trotzdem
+	// durch, weil er sich mit `document.activeElement.blur()` erst den Zustand herstellte,
+	// den er messen wollte — einen, den kein Nutzer je zu Gesicht bekommt. Peter ist der
+	// blaue Rand auf der Produktion aufgefallen, während dieses Gate grün war. Gemessen am
+	// laufenden Stack:
+	//
+	//   Medienkatalog  Fläche rgb(241,240,244)  Rand transparent      Fokus: nein
+	//   Mein Portal    Fläche rgb(255,255,255)  Rand rgb(0,97,164)    Fokus: JA
+	//
+	// Das `blur()` ist deshalb ersatzlos weg: Was gemessen wird, muss der Zustand beim
+	// Laden sein. Für das Portal steht die Zusage jetzt im Test darunter — als das, was sie
+	// ist, nämlich Absicht.
+	const RUHIG = [{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' }];
 
 	for (const { name, pfad, id } of RUHIG) {
 		await gehZu(page, pfad);
 		await page.locator(`#${id}`).waitFor();
-		await page.evaluate(() => /** @type {HTMLElement} */ (document.activeElement)?.blur());
 
 		// Auf einen stabilen Wert warten: focus-within blendet über 200 ms um.
 		let vorher = null;
@@ -185,6 +195,45 @@ test('Im Ruhezustand sind die Pillen gefüllt und randlos — nicht dauerhaft im
 		);
 		expect(werte.randfarbe, `${name}: im Ruhezustand randlos`).toBe('rgba(0, 0, 0, 0)');
 	}
+});
+
+// Die Gegenprobe zum Test darüber — und der Grund, warum „Mein Portal" dort nicht mehr steht.
+//
+// Die Pille im Portal sieht beim Laden anders aus als im Medienkatalog, und das ist kein
+// Designbruch, sondern ein Zustand: Die Seite hat genau eine Funktion (suchen, um einen
+// Klassensatz zu reservieren), deshalb trägt ihre Suchpille `autofokus`. Wer den Fokus
+// bekommt, wird weiß und blau umrandet — dasselbe Bauteil, andere Lage.
+//
+// Dieser Test hält das als ABSICHT fest. Nimmt jemand `autofokus` heraus, wird er rot und
+// erzwingt die Entscheidung, statt sie stillschweigend zu kippen.
+test('Mein Portal nimmt den Fokus beim Laden — und trägt deshalb bewusst das Fokus-Aussehen', async ({
+	page
+}) => {
+	await uiLogin(page);
+	await gehZu(page, '/kollegium-portal');
+	await page.locator('#portal-suchfeld').waitFor();
+
+	// Ohne Zutun — kein Klick, kein focus(). Genau darin liegt der Unterschied zum
+	// Medienkatalog, und genau das hat der alte Test mit seinem blur() zugedeckt.
+	await expect(
+		page.locator('#portal-suchfeld'),
+		'die Portal-Suchpille holt sich den Fokus selbst (autofokus in KollegiumPortal.svelte)'
+	).toBeFocused();
+
+	let vorher = null;
+	let werte = null;
+	for (let i = 0; i < 20; i++) {
+		werte = await page.evaluate(MESSEN, 'portal-suchfeld');
+		if (vorher && JSON.stringify(vorher) === JSON.stringify(werte)) break;
+		vorher = werte;
+		await page.waitForTimeout(50);
+	}
+
+	// Bewusst als Gegensatz zum Ruhezustand formuliert und nicht als Palettenwert: WELCHES
+	// Blau der Fokusrand trägt, prüft der Vergleichstest weiter oben für alle Pillen
+	// gemeinsam. Hier zählt nur, dass diese Pille beim Laden im Fokus-Aussehen steht.
+	expect(werte.flaeche, 'im Fokus weiß, nicht gefüllt').toBe('rgb(255, 255, 255)');
+	expect(werte.randfarbe, 'im Fokus umrandet, nicht randlos').not.toBe('rgba(0, 0, 0, 0)');
 });
 
 for (const { name, pfad, id, anmelden } of MIT_FOKUS) {
