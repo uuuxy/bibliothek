@@ -285,6 +285,20 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
+	// slog.SetDefault haengt seit Go 1.21 AUCH das Standard-log-Paket hier ein. Alle 171
+	// log.Printf-Aufrufe im Haus laufen damit durch diesen JSONHandler.
+	//
+	// Das ist zugleich der Schutz gegen eingeschleuste Protokollzeilen (CodeQL meldet
+	// dafuer 25-mal go/log-injection): Ein Zeilenumbruch in einem Wert aus einer Anfrage
+	// wird beim Serialisieren zu \n INNERHALB des JSON-Strings; er kann keinen zweiten
+	// Eintrag erzeugen. Am laufenden Server nachgemessen (11.08.2026) mit
+	//   GET /api/%0ASYSTEM:%20Alle%20Sperren%20aufgehoben
+	// — r.URL.Path ist bereits dekodiert, der Umbruch kommt also wirklich an, und die
+	// Ausgabe blieb ein einziger JSON-Eintrag.
+	//
+	// Wer diese Zeile entfernt oder log.SetOutput dahinter setzt, hebt beides auf: die
+	// strukturierte Ausgabe UND den Schutz. Genau das hatte ich am 11.08. versucht, bevor
+	// die Messung es zeigte.
 	slog.SetDefault(logger)
 
 	// Initialize Sentry
