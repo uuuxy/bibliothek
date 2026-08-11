@@ -176,6 +176,26 @@ export const menuGroups = [
 				permission: 'manage_inventory'
 			},
 			{
+				// Die Selbstprüfung sagt, was eingerichtet, aber nicht in Betrieb ist.
+				//
+				// Dasselbe Recht wie die Einstellungen, aus zwei Gründen: Wer die Lücken sieht,
+				// soll sie auch schließen können — eine Meldung ohne Handhabe ist nur Verdruss.
+				// Und die Befunde beschreiben die Angriffsfläche der Anlage (Beispiel-Geheimnisse,
+				// mock-Anmeldung, fehlende Auslagerung), nicht die Bibliothek.
+				//
+				// Der Eintrag hier ist nicht nur Bequemlichkeit: tabIstGesperrt() unten kennt nur
+				// Bildschirme, die im Menü stehen. Ohne diese Zeile wäre /betriebsbereitschaft für
+				// JEDEN Angemeldeten per URL zu öffnen — Daten flössen keine (der Endpunkt hängt
+				// an manage_users), aber ein Helfer landete auf einer leeren, defekt wirkenden
+				// Seite. Genau diese Lücke stand schon einmal bei book_detail und stats_detail
+				// offen, siehe unteransichtBrauchtTab.
+				id: 'betriebsbereitschaft',
+				label: 'Betriebsbereitschaft',
+				icon: 'shield',
+				permission: 'manage_users',
+				roles: ['admin']
+			},
+			{
 				id: 'settings',
 				label: 'Einstellungen',
 				icon: 'cog',

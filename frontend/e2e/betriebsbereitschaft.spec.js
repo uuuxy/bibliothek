@@ -10,11 +10,20 @@
 // nachweislich kein Auslagerungsziel für Backups, und genau das muss dastehen. Eine Seite,
 // die eine leere Liste zeigt, bestünde sonst jeden Test.
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import { uiLogin } from './helpers.js';
 
 test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async ({ page }) => {
 	await uiLogin(page);
-	await gehZu(page, '/betriebsbereitschaft');
+
+	// Über das MENÜ, nicht über die URL. Der erste Anlauf navigierte direkt — und war
+	// grün, obwohl der Menüeintrag fehlte: Die Seite war nur für den erreichbar, der den
+	// Pfad kennt. Ein Bildschirm, den niemand findet, ist so gut wie keiner.
+	//
+	// Die Gruppe „System" ist zugeklappt und muss erst geöffnet werden — auch das gehört
+	// zum Weg, den eine Verwaltungskraft geht.
+	await page.getByRole('button', { name: 'System', exact: true }).click();
+	await page.getByTitle('Betriebsbereitschaft').click();
+	await expect(page).toHaveURL(/\/betriebsbereitschaft$/);
 
 	// Der Bereich, von dem wir wissen, dass er hier offen ist.
 	const auslagerung = page.locator('div', { hasText: 'Auslagerung der Backups' }).last();
@@ -46,4 +55,22 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 		antwort.status(),
 		'ohne manage_users darf der Endpunkt keine Auskunft geben'
 	).toBeGreaterThanOrEqual(400);
+
+	// Und der Bildschirm selbst bleibt zu.
+	//
+	// Geprüft wird der EINLEITUNGSSATZ der Seite, nicht ein Befund. Der erste Anlauf sah
+	// nach „Auslagerung der Backups" — und war grün, ohne irgendetwas zu belegen: Die
+	// Befunde bleiben für einen Helfer ohnehin aus, weil der Endpunkt oben sperrt. Der
+	// Einleitungssatz dagegen steht fest im Markup und erscheint, sobald die Seite
+	// überhaupt gerendert wird.
+	//
+	// Dass sie das nicht tut, hängt am Menüeintrag: tabIstGesperrt() kennt nur
+	// Bildschirme, die im Menü stehen. Ohne den Eintrag wäre /betriebsbereitschaft für
+	// jeden Angemeldeten per URL zu öffnen — dieselbe Lücke, die book_detail und
+	// stats_detail schon einmal offen liessen.
+	await page.goto('/betriebsbereitschaft');
+	await expect(
+		page.getByText('Was ist eingerichtet, aber nicht in Betrieb?'),
+		'ein Helfer darf den Bildschirm gar nicht erst zu sehen bekommen'
+	).toHaveCount(0);
 });
