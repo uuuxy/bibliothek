@@ -120,7 +120,7 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 
 		query := `
 			SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
-			       (SELECT COUNT(*) FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) = 0 AS ist_verfuegbar
+			       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar
 			FROM buecher_exemplare e
 			WHERE e.titel_id = $1
 			ORDER BY e.ist_ausgesondert ASC, e.barcode_id
