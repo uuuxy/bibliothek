@@ -17,6 +17,14 @@
 	 * trägt nichts und füllt ihn nur (h-full). Deshalb steht die Pille bewusst neben der
 	 * 36-px-Control-Skala aus styles/basis.css.
 	 *
+	 * KEIN `focus-within:shadow-md` (entfernt 11.08.2026). Es stand hier, weil die
+	 * Medienkatalog-Fassung es mitbrachte — die Kiosk-Omnibox hatte es nie. Damit sahen die
+	 * Pillen im Fokus unterschiedlich aus, und das Gate merkte es nicht: Es verglich die
+	 * BREITE des Randes, nicht Farbe und Schatten. Peter ist es am Bildschirm aufgefallen.
+	 * Sachlich gehört es ohnehin nicht dazu — M3 hebt eine Suchleiste beim Fokussieren
+	 * nicht an, und Erhebung ist dort ohnehin Farbe (tonal), kein Schlagschatten. Das
+	 * Fokus-Signal ist der Umriss.
+	 *
 	 * @type {{
 	 *   id: string,
 	 *   wert: string,
@@ -52,7 +60,7 @@
 </script>
 
 <div
-	class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:shadow-md focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
+	class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
 >
 	<Search
 		class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"

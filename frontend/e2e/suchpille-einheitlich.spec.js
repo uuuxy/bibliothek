@@ -14,7 +14,7 @@
 // einmal ein Scanner-Problem vorbeigelaufen. Hier wird blind getippt — wie ein Scanner es
 // tut — und danach nachgesehen, wo die Zeichen gelandet sind.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, gehZu } from './helpers.js';
 
 /** Die Bildschirme, auf denen eine Suchpille steht. */
 const PILLEN = [
@@ -54,6 +54,16 @@ const MESSEN = (/** @type {string} */ id) => {
 		radius: p.borderRadius,
 		flaeche: p.backgroundColor,
 		rahmenbreite: p.borderTopWidth,
+		// Die FARBE des Randes, nicht nur seine Breite.
+		//
+		// Bis zum 11.08.2026 verglich dieser Test nur borderTopWidth. Eine Pille mit rotem
+		// statt blauem Fokusrand wäre also durchgegangen — und genau daran hat Peter beim
+		// Nebeneinanderlegen zweier Bildschirme gezweifelt („da fehlt die blaue Linie").
+		// Ein Gate, das die auffälligste Eigenschaft nicht misst, beantwortet die Frage
+		// nicht, für die es gebaut wurde.
+		randfarbe: p.borderTopColor,
+		// Der Fokusring liegt als box-shadow an (Tailwinds ring-*), nicht als border.
+		ring: p.boxShadow,
 		schriftgroesse: f.fontSize,
 		textfarbe: f.color
 	};
@@ -136,6 +146,45 @@ test('Jede Suchpille hat dieselben Maße, Farben und Schriftgröße', async ({ p
 	// eines Formularfeldes. Ohne diese Zusage wären auch drei gleich FALSCHE Felder grün.
 	expect(Math.round(parseFloat(erste.werte.radius))).toBeGreaterThanOrEqual(24);
 	expect(erste.werte.hoehe).toBe(48);
+});
+
+test('Im Ruhezustand sind die Pillen gefüllt und randlos — nicht dauerhaft im Fokus-Aussehen', async ({
+	page
+}) => {
+	await uiLogin(page);
+
+	// Der Kiosk fehlt hier bewusst, und das ist keine Ausnahme aus Bequemlichkeit: Seine
+	// Omnibox holt sich den Fokus per Effekt zurück, sobald sie ihn verliert — sie ist ein
+	// Scanner-Terminal, ein verlorener Fokus wäre ein verlorener Scan. Sie steht deshalb
+	// DAUERHAFT im Fokus-Aussehen (weiß mit blauem Rand), und ein Ruhezustand ist dort
+	// nicht herstellbar. Gemessen am 11.08.2026, nachdem genau dieser Unterschied beim
+	// Nebeneinanderlegen zweier Bildschirme aufgefallen war: Die Klassen sind zeichengleich
+	// mit der Suchpille, nur der Zustand ist ein anderer.
+	const RUHIG = [
+		{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' },
+		{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld' }
+	];
+
+	for (const { name, pfad, id } of RUHIG) {
+		await gehZu(page, pfad);
+		await page.locator(`#${id}`).waitFor();
+		await page.evaluate(() => /** @type {HTMLElement} */ (document.activeElement)?.blur());
+
+		// Auf einen stabilen Wert warten: focus-within blendet über 200 ms um.
+		let vorher = null;
+		let werte = null;
+		for (let i = 0; i < 20; i++) {
+			werte = await page.evaluate(MESSEN, id);
+			if (vorher && JSON.stringify(vorher) === JSON.stringify(werte)) break;
+			vorher = werte;
+			await page.waitForTimeout(50);
+		}
+
+		expect(werte.flaeche, `${name}: im Ruhezustand gefüllt, nicht weiß`).not.toBe(
+			'rgb(255, 255, 255)'
+		);
+		expect(werte.randfarbe, `${name}: im Ruhezustand randlos`).toBe('rgba(0, 0, 0, 0)');
+	}
 });
 
 for (const { name, pfad, id, anmelden } of MIT_FOKUS) {
