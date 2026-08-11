@@ -70,6 +70,66 @@ jobs:
           -exclude=G304,G401,G115,G404,G704,G101,G124,G120,G204,G110,G706,G703,G702
           ./...
 
+  # ── CodeQL: semantische Statikanalyse (Go + JavaScript) ──────────────────
+  #
+  # Die Luecke, die die uebrigen vier Pruefungen lassen: govulncheck und npm audit sehen
+  # ABHAENGIGKEITEN, Trivy das Image, gosec einzelne Muster im Go-Code. Keines davon
+  # verfolgt einen Wert quer durch die Anwendung. Genau das tut CodeQL — es baut einen
+  # Datenflussgraphen und fragt, ob etwas von aussen Kontrolliertes irgendwo ungeprueft
+  # ankommt.
+  #
+  # Kostenlos, weil dieses Repository OEFFENTLICH ist. Fuer private Repositories waere
+  # dieselbe Analyse kostenpflichtig (GitHub Code Security, rund 30 $ je aktivem
+  # Committer und Monat) — beim Umstellen auf privat faellt dieser Job also weg und
+  # meldet das nicht von allein.
+  #
+  # Reichweite ehrlich benannt: Der JavaScript-Extraktor liest .js, aber keine
+  # .svelte-Dateien. Gemessen am 11.08.2026 sind das 78 Dateien mit 9.741 Zeilen gegen
+  # 188 Dateien mit 24.604 Zeilen. Das klingt nach einem Drittel, trifft aber die
+  # richtige Haelfte: Anmeldung, apiFetch, Rechte-Logik und die Stores liegen in .js —
+  # in den .svelte-Dateien steht ueberwiegend Markup.
+  codeql:
+    name: CodeQL – ${{ matrix.sprache }}
+    runs-on: ubuntu-latest
+    permissions:
+      # NUR dieser Job darf Sicherheitsbefunde hochladen. Bewusst hier und nicht oben:
+      # Die uebrigen Jobs brauchen das Recht nicht, und ein Workflow, der es global
+      # vergibt, verschenkt es an jeden Schritt darin.
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sprache: go
+            baumodus: autobuild
+          - sprache: javascript-typescript
+            baumodus: none
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Ohne diesen Schritt baut autobuild mit der Go-Version des Runners statt mit der
+      # aus go.mod. go.work ist harmlos (nur `use .`), GOWORK muss nicht abgeschaltet
+      # werden — beide Baumodi wurden am 11.08.2026 geprueft.
+      - name: Set up Go
+        if: matrix.sprache == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.sprache }}
+          build-mode: ${{ matrix.baumodus }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.sprache }}"
+
   # ── npm: audit (Node.js/Svelte frontend dependencies) ────────────────────
   npm-audit:
     name: npm – audit (frontend)
