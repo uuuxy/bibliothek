@@ -36,7 +36,11 @@ const SUCH_INPUT =
 // ── Ratsche ─────────────────────────────────────────────────────────────────
 // Diese Zahl darf NUR sinken. Wer eine Fundstelle auf ein Bauteil umstellt, trägt den
 // neuen Stand hier ein — der Test sagt einem die Zahl.
-const HANDGEBAUT_BESTAND = 1;
+//
+// Seit dem 11.08.2026 steht sie auf NULL: Es gibt im ganzen Projekt kein handgebautes
+// Suchfeld mehr. Ab hier ist die Ratsche keine Schuldenliste mehr, sondern eine Regel —
+// wer eines hinzufügt, sieht sofort Rot.
+const HANDGEBAUT_BESTAND = 0;
 
 /**
  * Bewusste Ausnahmen. Jede braucht einen Grund, den das Bauteil nicht ausdrücken kann —

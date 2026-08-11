@@ -1,5 +1,6 @@
 <script>
-	import { Book, Check, Search } from '@lucide/svelte';
+	import { Book, Check } from '@lucide/svelte';
+	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	let { books = [], selectedBookIds = $bindable(new Set()) } = $props();
 
 	let searchQuery = $state('');
@@ -12,6 +13,19 @@
 				b.author.toLowerCase().includes(searchQuery.toLowerCase())
 		)
 	);
+
+	// Nicht den ganzen Bestand zeichnen.
+	//
+	// Gemessen am 11.08.2026 mit 5.875 Titeln: 5.875 Kacheln, 59.120 DOM-Knoten,
+	// 2,5 Sekunden bis der Dialog stand. Die Produktion fuehrt rund 13.700 Titel — dort
+	// waere das ein Vielfaches davon, auf einem Schulrechner ohne Weiteres eine halbe
+	// Minute. Und es bringt nichts: Durch dreizehntausend Kacheln scrollt niemand, um ein
+	// bestimmtes Buch zu finden. Dafuer ist die Suche da, und die Ueberschrift sagt es auch.
+	//
+	// Die Zahl daneben nennt weiterhin ALLE Treffer, nicht die gezeichneten — sonst
+	// verschwiege die Oberflaeche, dass es mehr gibt.
+	const ANZEIGE_GRENZE = 60;
+	const sichtbareBuecher = $derived(filteredBooks.slice(0, ANZEIGE_GRENZE));
 
 	/**
 	 * @param {string} id
@@ -36,36 +50,34 @@
 <div class="mb-4 px-1">
 	<p class="text-xs text-slate-500 font-medium mb-1">BÜCHER FINDEN</p>
 
-	<div
-		class="bg-surface-container border border-surface-variant/10 rounded-full flex items-center px-4 sm:px-6 py-3 sm:py-4 shadow-sm hover:shadow-md transition-shadow group focus-within:ring-2 focus-within:ring-blue-500/20"
-	>
-		<Search
-			class="text-slate-500 mr-2 sm:mr-4 group-focus-within:text-blue-600 transition-colors hidden sm:block"
-			aria-hidden="true"
-		/>
-		<input
-			id="book-search-field"
-			name="book-search-field-hidden"
-			type="search"
-			autocomplete="off"
-			spellcheck="false"
-			data-lpignore="true"
-			data-form-type="other"
-			placeholder="Suche Titel, Fach, oder ISBN..."
-			bind:value={searchQuery}
-			class="h-full grow text-base sm:text-xl w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-slate-900 placeholder:text-slate-400 font-medium"
-		/>
-		<span
-			class="ml-2 sm:ml-4 text-label-small sm:text-xs font-bold text-slate-500 bg-black/5 px-2 py-1 sm:px-3 sm:py-1 rounded-full whitespace-nowrap"
-			>{filteredBooks.length} Treffer</span
-		>
-	</div>
+	<Suchpille
+		id="book-search-field"
+		bind:wert={searchQuery}
+		platzhalter="Titel, Fach oder ISBN eingeben …"
+		etikett="Bücher durchsuchen"
+		autofokus
+		{nachlaufend}
+	/>
+
+	{#if filteredBooks.length > ANZEIGE_GRENZE}
+		<p class="mt-2 px-1 text-xs text-slate-500">
+			Gezeigt werden die ersten {ANZEIGE_GRENZE} von {filteredBooks.length}. Suchbegriff eingrenzen,
+			um das gesuchte Buch zu sehen.
+		</p>
+	{/if}
 </div>
+
+{#snippet nachlaufend()}
+	<span
+		class="shrink-0 whitespace-nowrap rounded-full bg-black/5 px-3 py-1 text-xs font-bold text-slate-500"
+		>{filteredBooks.length} Treffer</span
+	>
+{/snippet}
 
 <div
 	class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 pb-2 mt-6 sm:mt-8"
 >
-	{#each filteredBooks as book (book.id)}
+	{#each sichtbareBuecher as book (book.id)}
 		<button
 			onclick={() => toggleBook(book.id)}
 			aria-pressed={selectedBookIds.has(book.id)}

@@ -58,10 +58,18 @@
 		class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
 		aria-hidden="true"
 	/>
+	<!-- Die vier Abwehr-Attribute gegen Passwortverwalter: LastPass, Dashlane und 1Password
+	     halten ein Textfeld in einem Dialog sonst für ein Anmeldeformular und füllen es
+	     ungefragt aus. `autocomplete="off"` allein reicht ihnen nicht. Sie standen bisher
+	     nur an EINEM Feld (der Suche im Klassensatz-Dialog); hier gelten sie für alle. -->
 	<input
 		{id}
+		name={id}
 		type="text"
 		autocomplete="off"
+		spellcheck="false"
+		data-lpignore="true"
+		data-form-type="other"
 		bind:this={feld}
 		bind:value={wert}
 		{oninput}
