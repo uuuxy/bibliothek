@@ -239,15 +239,15 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	// mit den bekannten Default-Werten.
 	enforceProdSecrets := strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true"
 	if enforceProdSecrets {
-		knownDefaultSecrets := map[string]bool{
-			"super-secret-default-key-at-least-32-bytes": true, // Default aus docker-compose.yml (JWT)
-			"super-secure-aes-key-32-chars-ok":           true, // Default aus docker-compose.yml (AES)
-			"supergeheim_lokal":                          true,
-		}
-		if knownDefaultSecrets[jwtSecret] {
+		// Die Liste der Beispiel-Geheimnisse steht seit dem 11.08.2026 in
+		// api.IstBekanntesDefaultGeheimnis und wird von der Selbstpruefung
+		// (api/betriebsbereitschaft.go) mitbenutzt. Zwei Listen waeren genau die Fehlerart,
+		// gegen die die Selbstpruefung antritt: Sie meldete "alles gut", waehrend der Server
+		// aus demselben Grund den Start verweigert.
+		if api.IstBekanntesDefaultGeheimnis(jwtSecret) {
 			log.Fatalf("FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
-		if knownDefaultSecrets[aesKey] {
+		if api.IstBekanntesDefaultGeheimnis(aesKey) {
 			log.Fatalf("FATAL: APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze einen eigenen 32-Byte-Schlüssel — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
 	}

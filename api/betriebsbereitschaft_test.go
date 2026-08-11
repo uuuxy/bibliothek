@@ -1,0 +1,198 @@
+package api
+
+import (
+	"strings"
+	"testing"
+)
+
+// Eine Lage, in der ALLES eingerichtet ist. Ausgangspunkt aller Fälle unten: Jeder Test
+// nimmt genau eine Sache weg und prüft, dass genau diese eine gemeldet wird.
+func lageEingerichtet() Lage {
+	return Lage{
+		AppEnv:              "production",
+		S3Endpoint:          "https://s3.example.net",
+		S3AccessKey:         "AK",
+		S3SecretKey:         "SK",
+		S3Bucket:            "bibliothek-backups",
+		EnforceProdSecrets:  true,
+		JWTSecret:           "ein-eigenes-langes-geheimnis-mit-genug-zeichen",
+		AppEncryptionKey:    "eigener-schluessel-32-zeichen-ab",
+		ImapHost:            "srv1.philipp-reis-schule.de",
+		OeffentlicheAdresse: "https://flasch3.herzog-dupont.de",
+		SmtpHost:            "srv1.philipp-reis-schule.de",
+		DemoSchueler:        0,
+	}
+}
+
+func befundZu(t *testing.T, befunde []Befund, bereich string) Befund {
+	t.Helper()
+	for _, b := range befunde {
+		if b.Bereich == bereich {
+			return b
+		}
+	}
+	t.Fatalf("kein Befund für %q — geprüft wurden: %v", bereich, bereiche(befunde))
+	return Befund{}
+}
+
+func bereiche(befunde []Befund) []string {
+	out := make([]string, 0, len(befunde))
+	for _, b := range befunde {
+		out = append(out, b.Bereich)
+	}
+	return out
+}
+
+// Die Gegenprobe zuerst: Ist alles eingerichtet, darf NICHTS gemeldet werden.
+//
+// Ohne sie wäre ein Wächter, der immer meckert, von einem, der richtig meckert, nicht zu
+// unterscheiden — und ein Wächter, der immer rot ist, wird abgeschaltet statt gelesen.
+func TestBetriebsbereitschaft_EingerichteteAnlageIstStill(t *testing.T) {
+	for _, b := range Pruefe(lageEingerichtet()) {
+		if b.Stufe != StufeOK {
+			t.Errorf("%s meldet %q, obwohl alles eingerichtet ist: %s", b.Bereich, b.Stufe, b.Befund)
+		}
+	}
+}
+
+func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
+	faelle := []struct {
+		name    string
+		aendere func(*Lage)
+		bereich string
+		stufe   string
+		// Ein Wort, das im Befund oder in der Abhilfe vorkommen MUSS. Verhindert, dass
+		// eine Meldung zwar die richtige Stufe trägt, aber von etwas anderem spricht.
+		enthaelt string
+	}{
+		{
+			name:     "kein Ziel ausser Haus",
+			aendere:  func(l *Lage) { l.S3Bucket = "" },
+			bereich:  "Auslagerung der Backups",
+			stufe:    StufeKritisch,
+			enthaelt: "S3_BUCKET",
+		},
+		{
+			name:     "Beispiel-Geheimnis im Echtbetrieb",
+			aendere:  func(l *Lage) { l.JWTSecret = "super-secret-default-key-at-least-32-bytes" },
+			bereich:  "Geheimnisse",
+			stufe:    StufeKritisch,
+			enthaelt: "Sitzungen fälschen",
+		},
+		{
+			name:     "eigene Geheimnisse, Absicherung aber nicht scharf",
+			aendere:  func(l *Lage) { l.EnforceProdSecrets = false },
+			bereich:  "Geheimnisse",
+			stufe:    StufeWarnung,
+			enthaelt: "ENFORCE_PROD_SECRETS",
+		},
+		{
+			name:     "mock-Anmeldung im Echtbetrieb",
+			aendere:  func(l *Lage) { l.ImapHost = "mock" },
+			bereich:  "Anmeldung",
+			stufe:    StufeKritisch,
+			enthaelt: "JEDES Passwort",
+		},
+		{
+			name:     "kein IMAP-Host",
+			aendere:  func(l *Lage) { l.ImapHost = "" },
+			bereich:  "Anmeldung",
+			stufe:    StufeKritisch,
+			enthaelt: "anmelden",
+		},
+		{
+			name:     "keine oeffentliche Adresse",
+			aendere:  func(l *Lage) { l.OeffentlicheAdresse = "" },
+			bereich:  "Bestell-Bestätigungslink",
+			stufe:    StufeWarnung,
+			enthaelt: "bestätigen",
+		},
+		{
+			name:     "kein SMTP-Server",
+			aendere:  func(l *Lage) { l.SmtpHost = "" },
+			bereich:  "Mailversand (Mahnwesen)",
+			stufe:    StufeWarnung,
+			enthaelt: "Mahnungen",
+		},
+		{
+			name:     "Demo-Daten im Bestand",
+			aendere:  func(l *Lage) { l.DemoSchueler = 2000 },
+			bereich:  "Demo-Daten",
+			stufe:    StufeWarnung,
+			enthaelt: "2000",
+		},
+	}
+
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			l := lageEingerichtet()
+			f.aendere(&l)
+			befunde := Pruefe(l)
+
+			b := befundZu(t, befunde, f.bereich)
+			if b.Stufe != f.stufe {
+				t.Errorf("Stufe %q statt %q: %s", b.Stufe, f.stufe, b.Befund)
+			}
+			zusammen := b.Befund + " " + b.Folge + " " + b.Abhilfe
+			if !strings.Contains(zusammen, f.enthaelt) {
+				t.Errorf("die Meldung nennt %q nicht: %s", f.enthaelt, zusammen)
+			}
+
+			// Ein Mangel ohne Abhilfe landet auf einem Zettel statt in der .env.
+			if b.Abhilfe == "" {
+				t.Errorf("%s meldet einen Mangel, sagt aber nicht, was zu tun ist", b.Bereich)
+			}
+			if b.Folge == "" {
+				t.Errorf("%s meldet einen Mangel, sagt aber nicht, warum er zählt", b.Bereich)
+			}
+
+			// Und die anderen Bereiche bleiben still: Ein Wächter, bei dem eine fehlende
+			// Einstellung fünf Meldungen auslöst, ist nicht zu gebrauchen.
+			for _, andere := range befunde {
+				if andere.Bereich != f.bereich && andere.Stufe != StufeOK {
+					t.Errorf("Nebenwirkung: %s meldet %q, obwohl nur %q verstellt wurde",
+						andere.Bereich, andere.Stufe, f.bereich)
+				}
+			}
+		})
+	}
+}
+
+// Auf dem Entwicklungsrechner sind mock-Anmeldung und Beispiel-Geheimnisse RICHTIG.
+// Meldete die Prüfung sie dort als Mangel, wäre sie dauerhaft rot — und damit wertlos.
+func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
+	for _, env := range []string{"local", "development", "test"} {
+		l := lageEingerichtet()
+		l.AppEnv = env
+		l.ImapHost = "mock"
+		l.JWTSecret = "super-secret-default-key-at-least-32-bytes"
+		l.AppEncryptionKey = "super-secure-aes-key-32-chars-ok"
+		l.EnforceProdSecrets = false
+
+		for _, bereich := range []string{"Anmeldung", "Geheimnisse"} {
+			if b := befundZu(t, Pruefe(l), bereich); b.Stufe != StufeOK {
+				t.Errorf("APP_ENV=%s: %s meldet %q — auf der Spielwiese ist das richtig so (%s)",
+					env, bereich, b.Stufe, b.Befund)
+			}
+		}
+	}
+}
+
+// Die Liste der Beispiel-Geheimnisse ist mit main.go geteilt. Bricht sie, startet der
+// Server mit einem öffentlich bekannten Schlüssel — deshalb hier festgehalten.
+func TestIstBekanntesDefaultGeheimnis(t *testing.T) {
+	for _, wert := range []string{
+		"super-secret-default-key-at-least-32-bytes",
+		"super-secure-aes-key-32-chars-ok",
+		"supergeheim_lokal",
+	} {
+		if !IstBekanntesDefaultGeheimnis(wert) {
+			t.Errorf("%q wird nicht als Beispiel-Geheimnis erkannt", wert)
+		}
+	}
+	for _, wert := range []string{"", "ein-eigenes-langes-geheimnis-mit-genug-zeichen"} {
+		if IstBekanntesDefaultGeheimnis(wert) {
+			t.Errorf("%q gilt fälschlich als Beispiel-Geheimnis", wert)
+		}
+	}
+}
