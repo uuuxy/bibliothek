@@ -12,6 +12,33 @@
 # ==============================================================================
 set -euo pipefail
 
+# ── Die Klammer um alles ───────────────────────────────────────────────────────
+#
+# Dieses Skript zieht in Schritt 2 per `git pull` neuen Code — und ueberschreibt dabei
+# SICH SELBST, waehrend es laeuft. Bash liest ein Skript nicht auf einmal ein, sondern
+# haeppchenweise und merkt sich dabei eine Position in der DATEI. Wird die Datei
+# unterwegs laenger oder kuerzer, zeigt diese Position anschliessend irgendwohin, und
+# bash fuehrt Bruchstuecke aus oder bricht mit einem Syntaxfehler ab — mitten im Deploy,
+# nach dem Backup, vor dem Health-Check.
+#
+# Am 11.08.2026 nachgestellt: Ein flaches Skript, das sich waehrend des Laufs um drei
+# Zeilen verlaengert, stirbt mit "unexpected EOF while looking for matching quote" und
+# fuehrt seine letzten Schritte nicht mehr aus. Dieselbe Datei in { } gefasst laeuft
+# vollstaendig durch.
+#
+# Der Grund: `{ ... }` ist EIN zusammengesetzter Befehl. Bash parst ihn komplett, bevor
+# es die erste Zeile darin ausfuehrt — ab da ist die Datei auf der Platte gleichgueltig.
+# Das `exit` steht bewusst INNERHALB der Klammer: Stuende es dahinter, kehrte bash nach
+# dem Block zum Lesen der (inzwischen veraenderten) Datei zurueck und straeuchelte
+# genau dort. Auch das nachgestellt.
+#
+# Sichtbar wurde das Problem harmlos: Der Deploy vom 11.08. lief noch mit der ALTEN
+# Fassung dieses Skripts — die neue kam ja erst mit dem pull —, deshalb blieb
+# GIT_COMMIT im Image leer. Ein Deploy-Skript aendert sich immer erst fuer den
+# NAECHSTEN Lauf. Genau dafuer meldet Schritt 4b ein Image ohne Commit als Warnung und
+# nicht als Fehler.
+{
+
 # ── Konfiguration ─────────────────────────────────────────────────────────────
 COMPOSE_FILE="$(cd "$(dirname "$0")" && pwd)/docker-compose.yml"
 BACKUP_DIR="$(cd "$(dirname "$0")" && pwd)/backups"
@@ -316,3 +343,6 @@ log_ok "════════════════════════
 echo ""
 log_info "Anwendung läuft lokal auf Port 8083 und ist erreichbar unter: https://flasch3.herzog-dupont.de"
 echo ""
+
+exit 0
+}
