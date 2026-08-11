@@ -41,7 +41,9 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `SMTP_FROM` | Absender-Adresse | Optional |
 | `SMTP_ALLOW_INSECURE_TLS` | TLS-Zertifikatsprüfung deaktivieren (TLS bleibt) | Nur für Legacy-SMTP-Server |
 | `SMTP_ALLOW_PLAINTEXT` | Versand **ganz ohne** TLS erlauben, wenn der Server kein STARTTLS anbietet | Nur für ein Legacy-Relay. Ohne diese Variable bricht der Versand in dem Fall ab, statt Mahntexte im Klartext zu schicken |
-| `INITIAL_ADMIN_EMAIL` | E-Mail des initialen Admins | Standard: pflasch@philipp-reis-schule.de |
+| `INITIAL_ADMIN_EMAIL` | E-Mail des initialen Admins — **nur** wenn die Tabelle `benutzer` leer ist | Standard aus `docker-compose.yml`: pflasch@philipp-reis-schule.de. Ein Passwort gibt es dazu nicht (Anmeldung per IMAP); die Adresse muss auf dem Schulserver existieren, sonst kommt der so angelegte Admin nicht hinein |
+| `RATE_LIMIT` | Globales Limit in Requests/s/IP | Vorgabe **50** (der Produktionswert). Ein unlesbarer Wert wird protokolliert und ignoriert, es gilt dann die Vorgabe |
+| `SMTP_PASS` | Historischer Zweitname für `SMTP_PASSWORD` | Wird nur gelesen, wenn `SMTP_PASSWORD` leer ist. `docker-compose.yml` setzt beide Namen — beim Suchen nach „warum nimmt er das alte Passwort" ist das die Stelle |
 | `SENTRY_DSN` | Sentry Error Tracking | Optional |
 
 **Nicht als Variable, sondern in der Oberfläche:** Mail-Zugangsdaten und die **Öffentliche
@@ -332,5 +334,35 @@ die Datenbank Anfragen annimmt.
 `./update.sh` fragt beim Deploy **beide Quellen** ab (Docker-Status *und* `/health` im
 Container), weil keine für sich genügt: Der Docker-Status braucht Anlauf, und ein
 Container ohne Healthcheck liefert dort gar nichts.
+
+### Gesund heißt nicht aktuell (Schritt 4b)
+
+Beide Prüfungen oben beantworten die Frage „läuft etwas?" — nicht die Frage „läuft der
+**neue** Stand?". Am 11.08.2026 stand auf dem Server `git pull` durch, `./update.sh`
+aber nicht: Das Arbeitsverzeichnis zeigte den neuen Commit, das laufende Image war zehn
+Stunden alt und lieferte den Stand von vorgestern aus. Die Gesundheitsprüfungen meldeten
+dabei völlig zu Recht „gesund". Aufgefallen ist es nur, weil jemand von Hand den Namen
+der ausgelieferten Bundle-Datei verglichen hat.
+
+Seither legt `update.sh` den Commit als Build-Argument ins Image (`Dockerfile`:
+`ARG`/`ENV GIT_COMMIT`) und gleicht ihn in **Schritt 4b** gegen das Arbeitsverzeichnis
+ab:
+
+```bash
+docker exec bibliothek-backend printenv GIT_COMMIT   # muss git rev-parse HEAD entsprechen
+```
+
+Weicht er ab, bricht der Deploy mit Exit-Code 1 ab und nennt beide Stände; der Ausweg
+steht in der Meldung (`docker compose build --no-cache && docker compose up -d`). Trägt
+das Image gar keinen Commit, gibt es nur eine Warnung — das ist beim ersten Deploy nach
+dieser Neuerung der Normalfall, ab dem zweiten ist der Abgleich scharf. Lokal macht
+`./scripts/stack-neu.sh` dasselbe (siehe [SCRIPTS.md](SCRIPTS.md) §4).
+
+### Neustart nach Host-Neustart
+
+Beide Dienste in `docker-compose.yml` tragen `restart: unless-stopped`. Ohne das bleibt
+die Anwendung nach einem Neustart des Hosts einfach aus — `unattended-upgrades` hat
+genau das auf diesem Server schon einmal ausgelöst, und gemerkt hat es niemand, weil
+kein Fehler auftrat: Es lief nur nichts mehr.
 
 Optional: Sentry-Integration für Error-Tracking via `SENTRY_DSN`.

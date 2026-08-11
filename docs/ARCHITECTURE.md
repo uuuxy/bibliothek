@@ -140,8 +140,14 @@ Haupttabellen haben `erweiterte_eigenschaften JSONB DEFAULT '{}'` für ad-hoc-At
 GIN-Indizes können bei Bedarf auf diese Spalten gelegt werden.
 
 ### Enum-Casing
-`benutzer_rolle` ist ein PostgreSQL-ENUM mit lowercase-Werten: `admin`, `lehrer`, `mitarbeiter`.
-SQL-Vergleiche müssen `LOWER(rolle::text)` verwenden (kein `= 'LEHRER'`).
+`benutzer_rolle` ist ein PostgreSQL-ENUM mit lowercase-Werten: `admin`, `kollegium`,
+`mitarbeiter`, `helfer` (`schema.sql`). SQL-Vergleiche müssen `LOWER(rolle::text)`
+verwenden (kein `= 'KOLLEGIUM'`).
+
+`helfer` kam mit Migration 042 dazu; `kollegium` hieß bis Migration 069 `lehrer` — das
+Wort war doppelt belegt und bezeichnet seither nur noch den **Entleihertyp**
+(`schueler.klasse = 'lehrer'`, Handapparat). Wer nach dem alten Namen greppt, findet
+deshalb weiterhin Treffer, die richtig sind.
 
 ### Migrations-Hygiene
 - Migrationen sind nummeriert (`NNN_beschreibung.sql`) und werden via `schema_migrations`-Tabelle dedupliziert

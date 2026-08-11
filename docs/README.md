@@ -28,7 +28,8 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 - **Druck-Center:** Erstellung von Barcode-Etiketten und Schülerausweisen.
 - **Bestellwesen:** Bedarfsvorschläge aus dem Bestand, Bestellmail an den Händler samt Barcodebogen, Wareneingang — und für Händler, die selbst etikettieren, ein Bestätigungs-Link, über den der Lieferant seine Etiketten druckt und die Bestellung selbst bestätigt.
 - **Inventur:** Session-gebundene Bestandsaufnahme mit Scanner, Fehlbestandsliste und Aufarbeitung.
-- **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Lehrer (konfigurierbare Rechte), Mitarbeiter und Helfer (Kiosk-Betrieb ohne Schülerrechte).
+- **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Kollegium (nur Klassensatz-Reservierung im eigenen Portal), Mitarbeiter (Tresen-Betrieb) und Helfer (Kiosk-Betrieb ohne Schülerrechte). Angemeldet wird gegen den Schul-Mailserver per IMAP — die Anwendung speichert kein Benutzerpasswort.
+- **Selbstprüfung der Betriebsbereitschaft:** Eine Seite unter *System*, die eine einzige Frage beantwortet — was ist eingerichtet, aber nicht in Betrieb? Sie fängt die wiederkehrende Fehlerart ab, bei der eine fertige Funktion still nichts tut, weil eine Einstellung fehlt (Details: [FACHKONZEPT.md §15](FACHKONZEPT.md)).
 
 ---
 
@@ -46,7 +47,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
 | [master_fahrplan.md](master_fahrplan.md) | Status-Dokument: erledigt / offen / Parkdeck |
 | [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
-| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 54 von 169) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
+| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 168 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 | [abnahme_checkliste.md](abnahme_checkliste.md) | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz) |
 | [littera_schema_befund.md](littera_schema_befund.md) | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen |
 | [loadtest_report.md](loadtest_report.md) | Lasttest-Protokoll vom 02.08.2026 (6 h, k6) |

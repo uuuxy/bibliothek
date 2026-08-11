@@ -9,6 +9,16 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 
 ## 🛡️ Authentifizierung & Session-Management
 
+### Woran die Zugangsdaten geprüft werden
+
+Gegen den **Schul-Mailserver per IMAP** (`auth/handlers.go`, `verifyIMAPCredentials`) —
+nicht gegen die eigene Datenbank. Es gibt seit Migration 012 keine Passwortspalte und
+nirgends einen Passwort-Hash: Die Anwendung speichert **kein** Benutzerpasswort. Ein
+Konto ist damit die Verbindung aus einer E-Mail-Adresse, die auf dem Schulserver
+existiert, und einer Zeile in `benutzer`; wer `benutzer.email` schreiben darf, übernimmt
+das Konto. Der Brute-Force-Schutz unten schützt deshalb auch den **Mailserver** vor
+Credential-Stuffing über diesen Weg.
+
 ### JWT (JSON Web Tokens)
 - **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
 - **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 500), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen.
@@ -60,10 +70,16 @@ Administratoren und die normale Kontoverwaltung unverändert funktionieren) und
 
 ### Rollenkonzept
 - `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
-- `lehrer`: Granulare Rechte — jede Berechtigung muss explizit durch einen Admin freigeschaltet werden.
+- `kollegium`: **Genau ein** Recht — `create_reservations` (Klassensatz im Kollegiums-Portal reservieren). Alles Weitere ist seit Migration 070 entzogen; die Suche im Portal läuft über den öffentlichen OPAC und fasst keine Personendaten an. Die Rolle hieß bis Migration 069 `lehrer`.
 - `mitarbeiter`: Grundrechte für den Tresen-Betrieb.
 - `helfer`: Kiosk-/Tresenbetrieb ohne die breiten Schülerrechte (Migration 042) — Scannen, Ausleihe, Rückgabe, Katalogzugriff, aber keine Schülerlisten und kein Mahnwesen.
-- Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `lehrer`, `mitarbeiter`, `helfer`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
+- Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `kollegium`, `mitarbeiter`, `helfer` — `schema.sql`, Typ `benutzer_rolle`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
+
+> **Rechtevorgaben driften auf einer bestehenden Datenbank.** `db.InitPermissions` legt
+> `role_permissions` mit `ON CONFLICT DO NOTHING` an — eine geänderte Vorgabe im Code
+> erreicht damit **nur frische** Datenbanken. Genau so kam der Befund oben zustande. Wer
+> eine Rechtevorgabe ändert, braucht deshalb zusätzlich eine Migration; und die Tabelle
+> steuert nicht nur das Menü, sondern über `RequirePermission` auch die API.
 
 ### Endpunkte ohne Anmeldung
 Ein Test erzwingt die Vollständigkeit dieser Liste: `TestAlleRoutenSindGeschuetzt`
@@ -478,6 +494,68 @@ Gate: `frontend/src/lib/utils/coverHerkunft.test.js` durchsucht den gesamten
 Frontend-Quelltext nach direkt eingebundenen Fremdadressen. Genau dieses Gate hat beim
 Umbau eine Stelle gefunden, die eine Textsuche übersehen hatte
 (`lib/useBookAkte.svelte.js`).
+
+---
+
+## 🔍 Automatische Sicherheitsprüfungen (CI)
+
+`.github/workflows/security-scan.yml` läuft bei jedem Push und Pull Request auf `main`,
+zusätzlich **montags 07:00 UTC** (frisch veröffentlichte CVEs treffen auch Code, der
+sich nicht geändert hat) und auf Knopfdruck. Fünf Prüfungen, jede mit einer eigenen
+Reichweite:
+
+| Prüfung | Sieht | Blinder Fleck |
+|---|---|---|
+| `govulncheck` | Bekannte CVEs in Go-Abhängigkeiten, **aufrufbezogen** (meldet nur, was tatsächlich erreicht wird) | Eigener Code |
+| `gosec` | Muster im Go-Quelltext (SAST), Ausschlussliste im Workflow | Zusammenhänge über Funktionsgrenzen |
+| **CodeQL** (Go + JavaScript) | Datenflüsse quer durch die Anwendung: kommt etwas von außen Kontrolliertes irgendwo ungeprüft an? | `.svelte`-Dateien (siehe unten) |
+| `npm audit` | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`) | Eigener Code |
+| `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik |
+
+**Warum CodeQL dazukam (11.08.2026):** Die übrigen vier prüfen *Abhängigkeiten*
+(govulncheck, npm audit), das *Image* (Trivy) oder *einzelne Muster* (gosec). Keines
+verfolgt einen Wert quer durch die Anwendung. Genau das tut CodeQL — es baut einen
+Datenflussgraphen.
+
+Zwei Dinge dazu ehrlich benannt:
+
+- **Kostenlos, weil dieses Repository öffentlich ist.** Für ein privates Repository wäre
+  dieselbe Analyse kostenpflichtig (GitHub Code Security). Beim Umstellen auf privat
+  fällt der Job weg und meldet das nicht von allein.
+- **Der JavaScript-Extraktor liest `.js`, aber keine `.svelte`-Dateien** — gemessen am
+  11.08.2026: 78 Dateien mit 9.741 Zeilen gegen 188 Dateien mit 24.604 Zeilen. Das klingt
+  nach einem Drittel, trifft aber die richtige Hälfte: Anmeldung, `apiFetch`,
+  Rechte-Logik und die Stores liegen in `.js`; in den `.svelte`-Dateien steht überwiegend
+  Markup.
+
+### Log-Injection: 25 Befunde, alle bereits abgewehrt
+
+CodeQLs erster Lauf meldete 25 Fundstellen `go/log-injection`. Sie sind in **dieser**
+Anwendung Fehlalarme, und zwar nicht aus Nachlässigkeit, sondern weil die Senke schon
+escaped: `slog.SetDefault` hängt seit Go 1.21 auch das Standard-`log`-Paket ein, alle
+`log.Printf` laufen also durch den `JSONHandler`.
+
+Am laufenden Container nachgestellt — `router.go` protokolliert jede Anfrage mit dem
+bereits dekodierten `r.URL.Path`, ein `%0A` kommt dort als echter Umbruch an:
+
+```
+GET /api/%0ASYSTEM:%20Alle%20Sperren%20aufgehoben
+→ {"time":"…","level":"INFO","msg":"Incoming Request: GET /api/\nSYSTEM: …"}
+```
+
+Ein einziger Eintrag, der Umbruch escaped **innerhalb** des Strings. Keine gefälschte
+Zeile. Der Kommentar an `slog.SetDefault` in `main.go` hält das fest: Wer diese Zeile
+entfernt oder ein `log.SetOutput` dahinter setzt, hebt die strukturierte Ausgabe **und**
+diesen Schutz auf.
+
+### Prüfungen vor dem Push (lokal)
+
+- `scripts/git-hooks/pre-push` (installiert per `scripts/install-hooks.sh`): sechs Gates,
+  darunter Go-Tests, `svelte-check` und `npm audit`. Der Hook sagt außerdem an, **was er
+  nicht geprüft hat** — die `*_pg_test.go` überspringen sich ohne `TEST_DATABASE_URL`
+  still, mit grünem „ok" daneben.
+- `../security-scan.sh`, `scripts/pruefe_secrets.sh`, `scripts/sonar_scan.sh` — siehe
+  [SCRIPTS.md](SCRIPTS.md).
 
 ---
 

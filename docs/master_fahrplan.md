@@ -42,6 +42,11 @@ Was fehlt, ist die Quelle:
 
 ### 3. Zielumgebung (wartet auf Pete)
 
+> Seit dem 10.08.2026 muss dieser Abschnitt nicht mehr von Hand geprüft werden: **System →
+> Betriebsbereitschaft** beantwortet für Geheimnisse, Backup-Auslagerung, IMAP, SMTP,
+> Bestelllink und Demo-Daten, was eingerichtet ist und was nur so aussieht
+> ([FACHKONZEPT.md §15](FACHKONZEPT.md)).
+
 - [ ] **Prod-Secrets**: `ENFORCE_PROD_SECRETS=true` plus echte `JWT_SECRET`,
       `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`.
       **Ohne `BACKUP_ENCRYPTION_KEY` läuft kein Backup** — der Job überspringt sich mit

@@ -262,7 +262,13 @@ func (db *Database) InitLieferanten(ctx context.Context) error {
 }
 
 // InitAdmin checks if the users table is empty and bootstraps the first admin
-// using INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD environment variables.
+// using the INITIAL_ADMIN_EMAIL environment variable.
+//
+// Bewusst ohne Passwort: Angemeldet wird per IMAP gegen den Schul-Mailserver, eine
+// Passwortspalte gibt es seit Migration 012 nicht. Bis zum 11.08.2026 nannte dieser
+// Kommentar zusaetzlich INITIAL_ADMIN_PASSWORD — die Variable wurde nie gelesen, stand
+// aber in .env.example und liess das erste Konto so aussehen, als haenge es an einem
+// lokalen Passwort.
 func (db *Database) InitAdmin(ctx context.Context) error {
 	var count int
 	err := db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer").Scan(&count)

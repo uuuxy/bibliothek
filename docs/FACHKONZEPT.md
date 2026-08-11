@@ -43,7 +43,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 - **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres.
 - **Freihand-Bestand (Sonderbestände):** CDs, DVDs, Hörbücher etc. haben eine rollierende Frist (z. B. +14 oder +28 Tage ab Ausleihe), keine starre Jahresfrist.
 - **Ferien-Logik:** Fällt das berechnete Rückgabedatum in die Schulferien, wird die Frist automatisch bis zum ersten Schultag nach den Ferien verlängert.
-- **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr (365 Tage).
+- **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr — `AddDate(1, 0, 0)`, also ein **Kalenderjahr**, nicht 365 Tage (im Schaltjahr sind es 366). Wie jede andere Frist läuft sie durch `tagesEndeInSchulzeitzone`; eine zweite, rohe Berechnung gibt es bewusst nicht.
 - **Verlängerungen:** Ausleihen können verlängert werden, es sei denn, der Schüler ist gesperrt oder hat das Ausleihlimit überschritten.
 
 ### 2.2. Blockaden und Limits
@@ -170,7 +170,8 @@ Für die Schulleitung und Bibliotheks-Administration aggregiert das System Echtz
 Der Zugang zum System ist strikt reglementiert und wird durch ein Role-Based Access Control (RBAC) System gesteuert.
 
 ### 12.1. Login & Sicherheit
-- **Verfahren:** E-Mail und Passwort (Bcrypt-gehasht).
+- **Verfahren:** E-Mail und Passwort **gegen den Schul-Mailserver (IMAP)**, nicht gegen die eigene Datenbank. Eine lokale Passwortspalte gibt es seit Migration 012 nicht, und es wird nirgends ein Passwort gehasht oder gespeichert — wer ein Konto anlegt, legt kein Passwort fest, sondern setzt eine E-Mail-Adresse, die auf dem Schulserver existiert (`auth/handlers.go`, `verifyIMAPCredentials`). Hier stand bis zum 11.08.2026 „E-Mail und Passwort (Bcrypt-gehasht)" — das war nie so, und zwei Absätze weiter unten stand bereits das Gegenteil.
+- **Folge für die Kontoverwaltung:** Die E-Mail **ist** die Identität. Wer die Spalte `benutzer.email` schreiben darf, übernimmt damit ein Konto; ein Rechte-Audit, das nur auf `rolle` schaut, sieht diesen Weg nicht.
 - **Session-Management:** Stateless via JWT (JSON Web Tokens) in HttpOnly-Cookies.
 - **Brute-Force-Schutz:** Strenges Rate-Limiting beim Login (Sperre nach mehreren Fehlversuchen pro IP/E-Mail-Kombination).
 
@@ -179,7 +180,11 @@ Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_s
 
 1. **Admin (`admin`):** Uneingeschränkter Zugriff auf alle Systembereiche, Einstellungen, Audits und Datenschutz-Routinen.
 2. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Schülerverwaltung, darf aber keine Systemeinstellungen ändern.
-3. **Lehrer (`lehrer`):** Eingeschränkter Zugriff. Kann den eigenen Handapparat verwalten, Klassensätze reservieren und den Katalog durchsuchen. Hat keinen Zugriff auf sensible Schüler- oder Mahndaten.
+3. **Kollegium (`kollegium`):** Zugang zum Kollegiums-Portal, und zwar für **genau eine** Funktion: einen Klassensatz reservieren. Erteilt ist ein einziges Recht, `create_reservations` (Migration 070); die Suche darin läuft über den öffentlichen OPAC, das Absenden über `create_reservations`. Beides fasst keine Personendaten an.
+
+   **Die Rolle hieß bis zum 10.08.2026 `lehrer`** (Migration 069). Das Wort war doppelt belegt — als Anmelde-Rolle *und* als Entleihertyp `schueler.klasse = 'lehrer'` (Handapparat, eigene Behandlung im Mahnwesen). `kollegium` benennt jetzt die Personengruppe mit Zugang, `lehrer` bleibt für den Entleiher frei. Die Umbenennung selbst war keine Rechteänderung.
+
+   **Der Rechteumfang war es** (Migration 070): Auf dem Schulserver sah ein Kollegiums-Konto am 10.08.2026 zehn von fünfzehn Menüpunkten, darunter Schülerdatei, Mahnwesen, System-Logs und Einstellungen — `role_permissions` führte `manage_users`, `audit_logs`, `view_stats`, `view_students`, `view_books` und `perform_actions` auf `true`. Das war keine reine Anzeigefrage: Dieselbe Tabelle entscheidet in `RequirePermission`, die API hätte es ebenfalls zugelassen. Alles außer `create_reservations` ist entzogen. Wer einer Lehrkraft gezielt mehr geben will, tut das im PermissionManager — Migrationen laufen nur einmal, eine spätere Vergabe wird nicht zurückgedreht.
 4. **Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (Entscheidung vom 30.07.2026, Migration 055): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zu Personendaten zieht weiterhin `view_students`.
 
    **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver.** Das ist die Frage, die in der Praxis zuerst kommt, und sie hatte bis zum 08.08.2026 keine Antwort in dieser Doku. Die Anmeldung läuft ausschließlich über E-Mail + Passwort gegen IMAP (`auth/handlers.go`); eine lokale Passwortspalte gibt es seit Migration 012 nicht, und einen Code- oder Barcode-Anmeldeweg gibt es nicht — die Felder `barcode_id`/`pin` standen einmal im `LoginRequest`, wurden nie ausgewertet und sind entfernt. Wer eine Hilfskraft aufnehmen will, lässt also zuerst ein Postfach anlegen und trägt dann unter Einstellungen → Benutzerverwaltung die Person mit der Rolle „Helfer" ein. Die E-Mail ist dabei die Identität: Wer die Spalte `benutzer.email` schreibt, übernimmt das Konto.
@@ -207,3 +212,34 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
 - Wenn ein Buch als "Verlust" oder "Beschädigt" ausgebucht wird (z.B. bei der Inventur oder manuell am Kiosk), kann das System automatisch eine Kostenforderung (Schadensfall) gegen den verursachenden Schüler anlegen.
 - Offene Schäden blockieren die DSGVO-Löschung eines Schülers und können per PDF-Rechnung ausgedruckt werden.
 - Ist ein Schaden bezahlt, wird die Rechnung als beglichen markiert und der Schüler ist wieder "frei".
+
+---
+
+## 15. Selbstprüfung der Betriebsbereitschaft
+
+Erreichbar unter **System → Betriebsbereitschaft** (Recht `manage_users`,
+`GET /api/admin/system/betriebsbereitschaft`). Die Seite beantwortet **eine** Frage:
+*Was ist eingerichtet, aber nicht in Betrieb?*
+
+Der Anlass ist eine wiederkehrende Fehlerart, und sie ist immer dieselbe: Eine Funktion
+ist fertig programmiert, getestet und verdrahtet — und tut nichts, weil eine Einstellung
+fehlt. Kein Fehler, kein Statuscode, kein Logeintrag, der jemandem auffiele. Dreimal
+gefunden, jedes Mal von Hand: die Auslagerung der Backups (vier leere Variablen), der
+nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Container an)
+und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
+raus, nur ohne den Link, um dessentwillen es sie gibt).
+
+**Geprüft werden sechs Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
+(IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten.
+
+Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
+**Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet
+die Meldung auf einem Zettel statt in der `.env`. Dazu eine **Stufe**: `ok` (in Betrieb),
+`warnung` (läuft, aber nicht wie gedacht), `kritisch` (vor dem Echtbetrieb zwingend zu
+klären). Bewusst nur drei — eine feinere Skala liest niemand.
+
+Die Seite ist eine **reine Prüffunktion**: Sie ändert nichts, sie schaltet nichts frei.
+Die Urteile sind als reine Funktion über eine eingesammelte Lage gebaut
+(`api/betriebsbereitschaft.go`) und damit vollständig testbar, ohne
+Umgebungsvariablen zu verbiegen oder eine Datenbank zu brauchen; das Zusammentragen der
+Lage steht daneben im Handler.

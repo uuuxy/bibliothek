@@ -64,8 +64,15 @@ DELETE FROM buecher_exemplare WHERE erweiterte_eigenschaften ? 'littera_id';
 DELETE FROM buecher_titel     WHERE erweiterte_eigenschaften ? 'littera_id';
 DELETE FROM ausleihen WHERE schueler_id IN (SELECT id FROM schueler WHERE lusd_id LIKE 'littera:%');
 DELETE FROM schueler  WHERE lusd_id LIKE 'littera:%';
-DELETE FROM benutzer  WHERE rolle = 'lehrer' AND email LIKE '%@littera.invalid';
+DELETE FROM benutzer  WHERE rolle = 'kollegium' AND email LIKE '%@littera.invalid';
 ```
+
+> Hier stand bis zum 11.08.2026 `rolle = 'lehrer'`. Seit Migration 069 gibt es diesen
+> Enum-Wert nicht mehr, und Postgres bricht den **Vergleich** ab, nicht nur den Treffer:
+> `ERROR: invalid input value for enum benutzer_rolle: "lehrer"`. Die fünf Anweisungen
+> davor laufen durch — wer den Block einfügt, räumt also alles auf **außer** den
+> Littera-Lehrkraftkonten und sieht am Ende einen Fehler, der nach „nichts passiert"
+> aussieht.
 
 **Lehrkräfte** werden mit `aktiv = true` angelegt — die Ausweis-Abfrage der Omnibox
 filtert darauf, eine inaktive Lehrkraft wäre am Scanner unauffindbar. Den Login sperrt
@@ -160,6 +167,32 @@ hängt ihn ggf. an). Er macht **kein** Backup und **keine** Gesundheitsprüfung.
 (`/root/caddy/Caddyfile`, alle Dienste des Hosts) und startet Caddy neu. Die Datei
 `Caddyfile` im Repo-Root ist nur eine Vorlage zum Nachschlagen — sie wird nirgends
 ausgeliefert.
+
+### `scripts/stack-neu.sh` — dasselbe lokal, mit Beweis
+
+```bash
+./scripts/stack-neu.sh
+```
+
+Baut den Entwicklungs-Stack (`docker-compose.local.yml`) neu und **belegt**, dass der
+Container danach den aktuellen Stand ausliefert. `docker compose up -d --build` bricht
+bei einem fehlgeschlagenen Build zwar ab, lässt aber den **alten** Container
+weiterlaufen — wer nur die letzte Ausgabezeile liest, sieht „Container Started" und
+misst anschließend eine Fassung, die es im Repo nicht mehr gibt (am 10.08.2026 war die
+e2e-Suite deshalb grün für einen Knopf, den es nicht mehr gab).
+
+Der Beweis läuft über den Bundle-Hash: Vite hängt an jeden Bundle-Namen einen Hash über
+den Inhalt. Stimmt der Name des ausgelieferten Bundles mit dem des lokalen Builds
+überein, liefert der Container exakt diesen Stand. Zeitstempel und Image-IDs
+beantworten die Frage **nicht** — sie ändern sich auch ohne Inhaltsänderung und bleiben
+gleich, wenn ein Cache-Layer den alten Stand konserviert.
+
+Das Skript legt denselben `GIT_COMMIT` ins Image wie `update.sh` auf dem Server, sodass
+auch lokal jederzeit gilt:
+
+```bash
+docker exec bibliothek-backend-local printenv GIT_COMMIT
+```
 
 ---
 
@@ -268,8 +301,11 @@ vor dem `DROP SCHEMA`).
 | Skript | Zweck |
 |---|---|
 | `import_isbns.go` | Nachträglicher ISBN-Import in bestehende Titel. |
-| `migrate_photos.go` | Überträgt Schülerfotos aus Dateien (Dateiname = Barcode plus `.jpg`) in die verschlüsselte Ablage. |
 | `monitor_stats.sh` | Protokolliert Systemkennzahlen über ~6 Stunden (Begleitung von Lasttests). |
+
+> `scripts/migrate_photos.go` stand hier bis zum 11.08.2026. Es war ein Doppel von
+> `cmd/migrate-fotos` (Abschnitt 2) und wurde entfernt — zwei Wege in dieselbe
+> verschlüsselte Ablage, von denen nur einer gepflegt wurde.
 
 ### Testdaten-Generator (`cmd/seed`)
 

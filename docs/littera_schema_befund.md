@@ -71,7 +71,7 @@ Die naheliegende Quelle `LeserSchueler` (705 Zeilen mit `Jahrgang`, `Abgang`,
 | Untergruppe | Art | Ziel |
 |---|---|---|
 | `Schüler`, **`Sekundarstufe II`** | `ArtSchueler` | `schueler` |
-| `Lehrer`, `Lehrerin` | `ArtLehrkraft` | `benutzer` mit Rolle `lehrer` |
+| `Lehrer`, `Lehrerin` | `ArtLehrkraft` | `benutzer` mit Rolle `kollegium` (bis Migration 069: `lehrer`) |
 | `Abgegangen` | `ArtAbgegangen` | `schueler` mit `ist_abgaenger` |
 | `Praktikant`, `Sekretärin`, `Fachbereich …` | `ArtSonstige` | kein Schüler |
 | alles andere (`IMPORT`, `U-plus`, `Im Ausland`, `UNDEF`) | `ArtUnbekannt` | **nicht schreiben** |
