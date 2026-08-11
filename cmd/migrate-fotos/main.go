@@ -81,6 +81,32 @@ func main() {
 
 // migriereAlleFotos verschlüsselt alle .jpg-Dateien im Verzeichnis und liefert die Zahl
 // gefundener und erfolgreich migrierter Fotos. Ausgelagert aus main, damit main flach bleibt.
+//
+// Die Schüler-IDs werden EINMAL für alle Barcodes geladen (ANY($1)) — das war das N+1 und
+// ist seit cdb23e14 erledigt. Die INSERTs laufen bewusst weiter einzeln und NICHT als
+// pgx.Batch. Das ist eine Entscheidung, kein Übersehen:
+//
+// Ein Batch-Umbau (PR #442, abgelehnt am 11.08.2026) kostet die Zuordnung. Am selben
+// Datenbestand gegeneinander gefahren — ein Foto mit gültigem Barcode, eins ohne:
+//
+//	dieser Stand  INFO  "Foto erfolgreich migriert"            barcode=S-abg1-…
+//	              WARN  "Kein Schüler für Barcode gefunden"    barcode=S-GIBTESNICHT-999
+//	mit Batch     WARN  "Kein Schüler gefunden oder DB-Fehler" (ohne Barcode, ohne Erfolgszeile)
+//
+// Das „oder" ist der Punkt: Der Batch liefert pro Ergebnis nur ErrNoRows und kann nicht
+// mehr sagen, WELCHE Datei es traf und OB es überhaupt ein Fehler war. Bei einer einmaligen
+// Übernahme von Schülerfotos ist genau diese Liste das Ergebnis — wer sie nicht hat, weiß
+// hinterher nicht, welche Kinder ohne Bild dastehen.
+//
+// Dazu käme, dass der Vorschlag die Suche wieder pro Zeile in die Anweisung zurückholt
+// (INSERT … SELECT id FROM schueler WHERE barcode_id = $1) und damit die Vorablade-Abfrage
+// oben entwertet, und dass ein Batch alle verschlüsselten Bilder gleichzeitig im Speicher
+// hält statt eines nach dem anderen. Der Gewinn wäre eine Runde statt N — bei einem
+// Werkzeug, das genau einmal läuft.
+//
+// Falls je zehntausende Fotos zu übernehmen sind: dann in Blöcken von ~50 batchen UND eine
+// Liste der Barcodes in Batch-Reihenfolge mitführen, damit jedes Ergebnis wieder einer
+// Datei zuzuordnen ist. Ohne diese Liste nicht.
 func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry) (processed, migrated int) {
 	// Barcodes aus Dateinamen extrahieren
 	var barcodes []string
