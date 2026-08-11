@@ -134,6 +134,26 @@ EXPOSE 8081
 ENV PORT=8081
 ENV DATABASE_URL=""
 
+# Welcher Commit steckt in diesem Image?
+#
+# Am 11.08.2026 stand auf dem Produktivserver `git pull` durch, `./update.sh` aber nicht:
+# Das Arbeitsverzeichnis zeigte den neuen Commit, das laufende Image war zehn Stunden alt
+# und lieferte den Stand von vorgestern aus. Beide Gesundheitsprüfungen — Docker-Healthcheck
+# und /health von aussen — meldeten dabei völlig zu Recht "gesund". Gesund heisst nicht
+# aktuell, und keine der beiden Fragen war die richtige.
+#
+# Mit diesem Wert lässt sich die richtige Frage stellen: Läuft der Container, der aus DEM
+# Commit gebaut wurde, der gerade im Arbeitsverzeichnis liegt? update.sh vergleicht nach
+# dem Deploy `git rev-parse HEAD` damit. Ein Cache-Treffer beim Build ist dabei kein
+# Problem — das Build-Argument ändert sich mit jedem Commit und bricht den Cache genau
+# dieser Schicht.
+#
+# Leer gelassen, wenn niemand es setzt: Ein lokaler `docker build` ohne Argument soll
+# weiterhin funktionieren, und update.sh sagt dann "unbekannt" statt zu behaupten, der
+# Stand sei falsch.
+ARG GIT_COMMIT=""
+ENV GIT_COMMIT=${GIT_COMMIT}
+
 # Zwei Änderungen gegenüber "--interval=30s ... http://localhost":
 #
 #  * 127.0.0.1 statt localhost. Busybox-wget nimmt die erste Adresse, die die Auflösung

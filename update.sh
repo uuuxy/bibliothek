@@ -148,6 +148,12 @@ log_step "Schritt 3: Docker-Container neu bauen und starten"
 
 log_info "Führe docker compose up -d --build aus..."
 
+# Der Commit wandert als Build-Argument ins Image (Dockerfile: ARG/ENV GIT_COMMIT) und
+# wird in Schritt 4b dagegen geprüft. Ohne .git bleibt er leer — dann sagt die Prüfung
+# "unbekannt", statt einen falschen Stand zu behaupten.
+GIT_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo '')"
+export GIT_COMMIT
+
 if docker compose -f "${COMPOSE_FILE}" up -d --build; then
     log_ok "Container erfolgreich neu gestartet."
 else
@@ -220,6 +226,41 @@ while true; do
     fi
     log_info "  ... noch ${WAIT}s gewartet (Docker-Status: ${STATUS})"
 done
+
+# ── Schritt 4b: Läuft auch WIRKLICH der neue Stand? ──────────────────────────
+#
+# Gesund heisst nicht aktuell. Am 11.08.2026 stand auf diesem Server `git pull` durch,
+# `./update.sh` aber nicht: Das Arbeitsverzeichnis zeigte den neuen Commit, das laufende
+# Image war zehn Stunden alt und lieferte den Stand von vorgestern aus. Beide Prüfungen
+# aus Schritt 4 meldeten dabei völlig zu Recht "gesund" — sie beantworten eine andere
+# Frage. Aufgefallen ist es nur, weil jemand von Hand den Namen der ausgelieferten
+# Bundle-Datei verglichen hat.
+#
+# Diese Prüfung stellt die richtige Frage: Läuft der Container, der aus DEM Commit
+# gebaut wurde, der gerade im Arbeitsverzeichnis liegt?
+log_step "Schritt 4b: Läuft der Container aus diesem Commit?"
+
+ERWARTET="$(git rev-parse HEAD 2>/dev/null || echo '')"
+IM_IMAGE="$(docker exec "${APP_CONTAINER}" printenv GIT_COMMIT 2>/dev/null || echo '')"
+
+if [ -z "${ERWARTET}" ]; then
+    log_warn "Kein git-Arbeitsverzeichnis — Abgleich nicht möglich."
+elif [ -z "${IM_IMAGE}" ]; then
+    # Beim allerersten Deploy nach dieser Änderung ist das der Normalfall: Das laufende
+    # Image stammt noch aus der Zeit vor dem Build-Argument.
+    log_warn "Das Image trägt keinen Commit — vermutlich noch von vor dieser Neuerung."
+    log_warn "Beim nächsten Update ist der Abgleich scharf."
+elif [ "${IM_IMAGE}" = "${ERWARTET}" ]; then
+    log_ok "Container läuft aus ${ERWARTET:0:7} — Arbeitsverzeichnis und Image stimmen überein."
+else
+    log_error "Der Container läuft NICHT aus dem aktuellen Stand."
+    log_error "  Arbeitsverzeichnis: ${ERWARTET:0:7}"
+    log_error "  laufendes Image:    ${IM_IMAGE:0:7}"
+    log_error "Der Build hat den neuen Stand nicht übernommen. Die Anwendung ist erreichbar"
+    log_error "und gesund — sie zeigt nur etwas anderes, als hier im Verzeichnis liegt."
+    log_error "Erneut versuchen mit:  docker compose -f \"${COMPOSE_FILE}\" build --no-cache && docker compose -f \"${COMPOSE_FILE}\" up -d"
+    exit 1
+fi
 
 # ── Schritt 5: Alte Backups aufräumen ─────────────────────────────────────────
 log_step "Schritt 5: Alte Backups aufräumen (älter als ${BACKUP_RETENTION_DAYS} Tage)"

@@ -24,6 +24,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Wandert als ENV ins Image. update.sh vergleicht den Wert nach dem Deploy mit
+        # `git rev-parse HEAD` und beantwortet damit die Frage, die kein Healthcheck
+        # beantwortet: Laeuft der Container, der aus DIESEM Commit gebaut wurde?
+        # Fehlt die Variable, bleibt der Wert leer — ein Build von Hand geht weiterhin.
+        GIT_COMMIT: ${GIT_COMMIT:-}
     container_name: bibliothek-backend-local
     ports:
       # Nur an localhost — aus demselben Grund wie beim Datenbank-Port oben, hier aber
