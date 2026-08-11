@@ -14,7 +14,7 @@
 // kein einziges Buch, der Dialog ist dann unbenutzbar. Genau deshalb prüft der Test nicht
 // „das Feld ist da", sondern dass es die Kachelmenge tatsächlich eingrenzt.
 import { test, expect } from '@playwright/test';
-import { uiLogin, csrfToken, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, querySQL, uniqueSuffix } from './helpers.js';
 
 const s = uniqueSuffix();
 const KLASSE = `zz${s}`.slice(0, 12);
