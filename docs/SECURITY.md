@@ -499,29 +499,38 @@ Umbau eine Stelle gefunden, die eine Textsuche übersehen hatte
 
 ## 🔍 Automatische Sicherheitsprüfungen (CI)
 
-`.github/workflows/security-scan.yml` läuft bei jedem Push und Pull Request auf `main`,
-zusätzlich **montags 07:00 UTC** (frisch veröffentlichte CVEs treffen auch Code, der
-sich nicht geändert hat) und auf Knopfdruck. Fünf Prüfungen, jede mit einer eigenen
-Reichweite:
+Die Prüfungen kommen aus **zwei** Quellen, und das ist der Punkt, an dem man sich
+verzählt.
+
+**Vier Jobs in `.github/workflows/security-scan.yml`** — bei jedem Push und Pull Request
+auf `main`, zusätzlich **montags 07:00 UTC** (frisch veröffentlichte CVEs treffen auch
+Code, der sich nicht geändert hat) und auf Knopfdruck:
 
 | Prüfung | Sieht | Blinder Fleck |
 |---|---|---|
 | `govulncheck` | Bekannte CVEs in Go-Abhängigkeiten, **aufrufbezogen** (meldet nur, was tatsächlich erreicht wird) | Eigener Code |
 | `gosec` | Muster im Go-Quelltext (SAST), Ausschlussliste im Workflow | Zusammenhänge über Funktionsgrenzen |
-| **CodeQL** (Go + JavaScript) | Datenflüsse quer durch die Anwendung: kommt etwas von außen Kontrolliertes irgendwo ungeprüft an? | `.svelte`-Dateien (siehe unten) |
 | `npm audit` | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`) | Eigener Code |
 | `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik |
 
-**Warum CodeQL dazukam (11.08.2026):** Die übrigen vier prüfen *Abhängigkeiten*
-(govulncheck, npm audit), das *Image* (Trivy) oder *einzelne Muster* (gosec). Keines
-verfolgt einen Wert quer durch die Anwendung. Genau das tut CodeQL — es baut einen
-Datenflussgraphen.
+**CodeQL läuft daneben, ohne Datei im Repository.** Für dieses Repository ist GitHubs
+**Standard-Setup** aktiv (Settings → Code security → Code scanning). Es analysiert `go`,
+`javascript-typescript` und `actions` und erscheint als die drei Checks `Analyze (…)`.
+Das ist die Prüfung, die keine der vier oben leistet: Sie baut einen Datenflussgraphen
+und fragt, ob etwas von außen Kontrolliertes irgendwo ungeprüft ankommt.
+
+> **Kein zweiter CodeQL-Job.** Am 11.08.2026 stand einer in `security-scan.yml`,
+> begründet mit einer Lücke, die es nicht gab — das Standard-Setup lief nachweislich
+> schon vorher (grüne `Analyze (…)`-Checks auf `e4753eb`). Zwei Konfigurationen vertragen
+> sich nicht: Der eigene Job scheiterte reproduzierbar beim Hochladen des Ergebnisses und
+> hinterließ zwei dauerhaft rote Checks ohne einen einzigen zusätzlichen Befund. Wer je
+> eigene Query-Suiten braucht, schaltet **zuerst** das Standard-Setup ab.
 
 Zwei Dinge dazu ehrlich benannt:
 
 - **Kostenlos, weil dieses Repository öffentlich ist.** Für ein privates Repository wäre
   dieselbe Analyse kostenpflichtig (GitHub Code Security). Beim Umstellen auf privat
-  fällt der Job weg und meldet das nicht von allein.
+  fällt sie weg und meldet das nicht von allein.
 - **Der JavaScript-Extraktor liest `.js`, aber keine `.svelte`-Dateien** — gemessen am
   11.08.2026: 78 Dateien mit 9.741 Zeilen gegen 188 Dateien mit 24.604 Zeilen. Das klingt
   nach einem Drittel, trifft aber die richtige Hälfte: Anmeldung, `apiFetch`,
