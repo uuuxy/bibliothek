@@ -32,6 +32,12 @@ SOLL=$(basename "$(ls -t frontend/dist/assets/index-*.js | head -1)")
 echo "     Soll-Bundle: $SOLL"
 
 echo "── 2/4  Container bauen ─────────────────────────────────────────────────────"
+# Denselben Commit ins Image legen wie update.sh auf dem Server (Dockerfile: ARG/ENV
+# GIT_COMMIT). Damit lässt sich auch lokal jederzeit fragen, aus welchem Stand der
+# laufende Container gebaut wurde:  docker exec bibliothek-backend-local printenv GIT_COMMIT
+GIT_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo '')"
+export GIT_COMMIT
+
 # Ohne Umleitung und ohne tail: Wenn hier etwas schiefgeht, soll man es sehen.
 docker compose -f "$COMPOSE" build
 
