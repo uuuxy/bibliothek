@@ -149,7 +149,12 @@
 	onclick={handleEditClick}
 	role="button"
 	tabindex="0"
-	onkeydown={(e) => e.key === 'Enter' && handleEditClick(e)}
+	onkeydown={(e) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			if (e.key === ' ') e.preventDefault();
+			handleEditClick(e);
+		}
+	}}
 >
 	<div
 		class="w-full aspect-2/3 rounded-xl overflow-hidden shadow-sm mb-3 relative bg-slate-50 border border-slate-100 flex items-center justify-center"

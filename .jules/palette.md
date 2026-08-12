@@ -16,3 +16,6 @@
 ## 2024-08-09 - Missing ARIA labels on PropertiesPanel icon buttons
 **Learning:** Icon-only buttons in the ID designer's PropertiesPanel (Trash icon, up/down arrows for z-index) lacked `aria-label` attributes, relying only on `title` which is insufficient for screen readers.
 **Action:** Always add explicit `aria-label` attributes to icon-only buttons, especially in complex interactive interfaces like designers where standard context clues might be missing.
+## 2024-08-12 - Keyboard accessibility for book tiles
+**Learning:** Custom interactive elements with `role="button"` (like the book tiles) must support both `Enter` and `Space` key activation, with `Space` also needing `preventDefault()` to stop unwanted page scrolling.
+**Action:** Always implement comprehensive `onkeydown` handlers for custom buttons to ensure full WCAG keyboard compliance.
