@@ -88,10 +88,23 @@ go run main.go
 **3. Frontend starten**
 ```bash
 cd frontend
-npm install
+npm ci                    # nicht `npm install` — der Lockfile ist verbindlich
 npm run dev
 # → http://localhost:5173
 ```
+
+> **Auf den Port achten.** Der Entwicklungs-Server reicht `/api`, `/login`, `/uploads` und
+> `/events` an `127.0.0.1:8084` durch — das ist der **lokale Docker-Stack**. Startest du
+> das Backend wie oben von Hand, gilt der `PORT` aus deiner `.env` (Vorgabe der
+> Beispieldatei: 8081), und du musst das Ziel mitgeben:
+>
+> ```bash
+> VITE_API_TARGET=http://127.0.0.1:8081 npm run dev
+> ```
+>
+> Bis zum 12.08.2026 war das Ziel fest auf 8083 verdrahtet — den Port des
+> **Produktions**-Stacks. Wer dieser Anleitung folgte, bekam eine Oberfläche, deren
+> API-Aufrufe alle ins Leere liefen, ohne dass irgendetwas auf den Port hinwies.
 
 ---
 

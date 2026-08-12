@@ -5,6 +5,19 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'node:path';
 
+// Wohin der Entwicklungs-Server durchreicht.
+//
+// Bis zum 12.08.2026 stand hier fest `8083`. Das ist der Port des PRODUKTIONS-Stacks
+// (docker-compose.yml); der lokale Stack läuft auf 8084 (docker-compose.local.yml) und
+// `.env.example` setzt für den Start von Hand sogar 8081. Wer der dokumentierten
+// Anleitung folgte, bekam auf http://localhost:5173 also eine Oberfläche, deren
+// API-Aufrufe alle ins Leere liefen — ohne Fehlermeldung, die auf den Port zeigt.
+//
+// Vorgabe ist jetzt der lokale Stack. Wer sein Backend woanders hat, überschreibt:
+//   VITE_API_TARGET=http://127.0.0.1:8081 npm run dev
+const apiZiel = process.env.VITE_API_TARGET || 'http://127.0.0.1:8084';
+const durchreichen = { target: apiZiel, changeOrigin: true, secure: false };
+
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
@@ -66,27 +79,10 @@ export default defineConfig({
 	},
 	server: {
 		proxy: {
-			'/login': {
-				target: 'http://127.0.0.1:8083',
-				changeOrigin: true,
-				secure: false
-			},
-			'/api': {
-				target: 'http://127.0.0.1:8083',
-				changeOrigin: true,
-				secure: false
-			},
-			'/uploads': {
-				target: 'http://127.0.0.1:8083',
-				changeOrigin: true,
-				secure: false
-			},
-			'/events': {
-				target: 'http://127.0.0.1:8083',
-				changeOrigin: true,
-				secure: false,
-				ws: true
-			}
+			'/login': durchreichen,
+			'/api': durchreichen,
+			'/uploads': durchreichen,
+			'/events': { ...durchreichen, ws: true }
 		}
 	}
 });
