@@ -15,6 +15,24 @@ import { uiLogin, apiPost, csrfToken, seedSQL, uniqueSuffix } from './helpers.js
 // kleingeschrieben, und die Meldung wird unverändert zur Toast-Nachricht.
 const EMPFAENGER_FELD = /empfänger/i;
 
+// Diese Spec legt pro Lauf EINEN Benutzer an, und zwar unter eindeutigem Namen
+// (uniqueSuffix), weil sich alle Specs eine Datenbank teilen. Weggeräumt hat ihn nie
+// jemand: Am 12.08.2026 lagen 143 davon in der Entwicklungsdatenbank. Das ist nicht nur
+// unordentlich — genau solche Altlasten haben heute schon einmal einen echten Fehler
+// verdeckt, weil ein Testnutzer aus einem früheren Lauf noch existierte und eine Spec
+// dadurch grün war, die in CI fiel (siehe betriebsbereitschaft.spec.js).
+//
+// Das Muster ist bewusst so eng gefasst, dass es nichts anderes treffen KANN: Präfix
+// dieser Spec plus die Domain test.local. Ein zu weites Aufräumen ist hier schon einmal
+// teuer gewesen — ein früherer Teardown nahm den Hauptlieferanten mit.
+//
+// afterAll statt afterEach, weil workers: 1 und fullyParallel: false gelten (siehe
+// playwright.config.js): Es läuft nie ein zweiter Lauf daneben, dem wir die Zeile unter
+// den Füßen wegziehen könnten. Der Lauf räumt damit auch die Altlasten mit auf.
+test.afterAll(() => {
+	seedSQL(`DELETE FROM benutzer WHERE email LIKE 'e2e-mailtest-%@test.local';`);
+});
+
 test('Test-Mail: unbrauchbarer Empfänger wird abgewiesen, ohne SMTP zu bemühen', async ({
 	page
 }) => {

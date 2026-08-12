@@ -295,6 +295,21 @@ vor dem `DROP SCHEMA`).
 | `repair_titel_dubletten.sql` | Räumt Titel-Dubletten aus dem Import auf. | Vorher Backup, Ergebnis prüfen. |
 | `repair_titel_ortssuffix.sql` | Entfernt Ortssuffixe aus Titelfeldern (Import-Artefakt). | Vorher Backup. |
 | `signatur_report.sql` | Report zur Signatur-Harmonisierung nach Littera-Import (Migration 038). | Nur lesend. |
+| `e2e_altlasten.sql` | Entfernt den Bestands-Bodensatz der E2E-Suite (Titel mit Präfix `E2E `, deren Exemplare und Ausleihen). | **Löscht Daten.** Vorher Backup; Probelauf mit `ROLLBACK` statt `COMMIT` möglich. |
+
+**Warum der Bestand von Hand aufgeräumt wird, Lieferanten aber automatisch:** Der globale
+Teardown der E2E-Suite (`frontend/e2e/global-teardown.js`) räumt nach jedem Lauf
+Lieferanten, Testbestellungen und Klassensatz-Reservierungen ab — dort kann ein zu weites
+Muster wenig anrichten. Bestand und Ausleihen sind eine andere Klasse:
+`ausleihen.exemplar_id` und `schadensfaelle.exemplar_id` stehen auf **RESTRICT**, ein
+Löschen bräuchte also eine Kette über vier Tabellen, darunter die Ausleihhistorie. Eine
+solche Kette automatisch nach jedem Lauf feuern zu lassen, ist das Aufgeräumtsein nicht
+wert — ein Fehler im Zuschnitt löscht dort echte Daten. Gemessen am 12.08.2026: Ein
+vollständiger Lauf hinterlässt rund 42 Titel, 75 Exemplare und 22 Ausleihen.
+
+Benutzerkonten der Suite räumt seit dem 12.08.2026 die erzeugende Spec selbst weg
+(`admin-mail-config.spec.js`, `afterAll`) — dort ist das Muster eindeutig und die
+Fremdschlüssel stehen auf `SET NULL`.
 
 ### Einmal-Werkzeuge (`//go:build ignore`, per `go run` gestartet)
 
