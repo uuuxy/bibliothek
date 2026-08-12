@@ -86,6 +86,29 @@ export function seedSQL(sql) {
 }
 
 /**
+ * Legt einen Anmelde-Benutzer an — idempotent, für Specs, die eine bestimmte Rolle brauchen.
+ *
+ * Warum als gemeinsamer Helfer (12.08.2026): `betriebsbereitschaft.spec.js` meldete sich
+ * als `e2e-helfer@test.local` an, ohne ihn anzulegen — erzeugt wurde er von
+ * `helfer-kiosk.spec.js`. Alphabetisch läuft „betriebsbereitschaft" aber ZUERST. Auf einer
+ * gebrauchten Entwicklungsdatenbank fiel das nie auf, weil der Benutzer von früheren
+ * Läufen herumlag; in CI ist die Datenbank frisch, dort scheiterte die Anmeldung, und der
+ * Test lief 30 s in den Timeout. Die e2e-Stufe war deshalb dauerhaft rot.
+ *
+ * Eine Spec, die einen Zustand braucht, stellt ihn selbst her.
+ *
+ * @param {string} email  Anmeldeadresse (Mock-IMAP nimmt jedes Passwort)
+ * @param {string} rolle  benutzer_rolle: admin | kollegium | mitarbeiter | helfer
+ */
+export function seedBenutzer(email, rolle) {
+	seedSQL(`
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('E2E', '${rolle}', '${email}', '${rolle}', true)
+		ON CONFLICT DO NOTHING;
+	`);
+}
+
+/**
  * Liest einen Wert aus der Test-DB (für Zustands-Asserts nach UI-Aktionen).
  * @param {string} sql  SELECT-Statement
  * @returns {string} getrimmte Ausgabe (tuples-only)

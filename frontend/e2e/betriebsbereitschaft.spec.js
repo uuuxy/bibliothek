@@ -10,7 +10,15 @@
 // nachweislich kein Auslagerungsziel für Backups, und genau das muss dastehen. Eine Seite,
 // die eine leere Liste zeigt, bestünde sonst jeden Test.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedBenutzer } from './helpers.js';
+
+// Eigene Anmeldeadresse, nicht die von helfer-kiosk.spec.js.
+//
+// Bis zum 12.08.2026 stand hier `e2e-helfer@test.local` — angelegt wird der aber von
+// helfer-kiosk.spec.js, und diese Datei läuft alphabetisch davor. Lokal war das
+// unsichtbar (der Benutzer lag von früheren Läufen in der Datenbank), in CI mit frischer
+// Datenbank scheiterte die Anmeldung und der Test lief in den 30-Sekunden-Timeout.
+const HELFER = 'e2e-bb-helfer@test.local';
 
 test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async ({ page }) => {
 	await uiLogin(page);
@@ -48,7 +56,8 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 	// Ein Helfer an der Theke darf sie nicht sehen. Die Meldungen nennen Zustände der
 	// Anlage — Beispiel-Geheimnisse, mock-Anmeldung, fehlende Auslagerung —, und das ist
 	// eine Auskunft über die Angriffsfläche, nicht über die Bibliothek.
-	await uiLogin(page, 'e2e-helfer@test.local');
+	seedBenutzer(HELFER, 'helfer');
+	await uiLogin(page, HELFER);
 
 	const antwort = await page.request.get('/api/admin/system/betriebsbereitschaft');
 	expect(

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL } from './helpers.js';
+import { uiLogin, apiPost, seedBenutzer } from './helpers.js';
 
 // Die Rolle "helfer" war lange unerreichbar: Router und Rechtesystem kannten sie,
 // das benutzer_rolle-ENUM aber nicht — sie liess sich niemand zuweisen (behoben mit
@@ -17,11 +17,7 @@ import { uiLogin, apiPost, seedSQL } from './helpers.js';
 const HELFER_EMAIL = 'e2e-helfer@test.local';
 
 function seedHelfer() {
-	seedSQL(`
-        INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-        VALUES ('E2E', 'Helfer', '${HELFER_EMAIL}', 'helfer', true)
-        ON CONFLICT DO NOTHING;
-    `);
+	seedBenutzer(HELFER_EMAIL, 'helfer');
 }
 
 test('Helfer: Rolle ist vergebbar und landet im Kiosk', async ({ page }) => {

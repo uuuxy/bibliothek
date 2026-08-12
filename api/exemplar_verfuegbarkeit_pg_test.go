@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"bibliothek/db"
 )
@@ -82,18 +81,30 @@ func TestExemplarliste_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 	verliehen := exemplar(t, pool, titel, "BC-VERLIEHEN", true, "")
 	zurueck := exemplar(t, pool, titel, "BC-ZURUECK", true, "")
 
-	// Offene Ausleihe: rueckgabe_am bleibt NULL.
+	// ALLE Zeitstempel entstehen in SQL, keiner in Go.
+	//
+	// Der erste Anlauf setzte `rueckgabe_am` auf ein Go-seitiges time.Now(), während
+	// `ausgeliehen_am` aus der DEFAULT-Klausel der Spalte kommt (CURRENT_TIMESTAMP, also
+	// die Uhr der Datenbank). Ob `check_return_date` (rueckgabe_am >= ausgeliehen_am) dann
+	// hält, entscheidet die Differenz zweier Uhren: Lokal lief der Test grün, in CI fiel er
+	// zuverlässig — dort laufen Go und Postgres auf derselben Uhr, und der in Go gebildete
+	// Wert ist um die Laufzeit der Anweisung ÄLTER als der beim Einfügen erzeugte.
+	//
+	// Ein Test, dessen Ergebnis an einer Uhrendifferenz hängt, prüft nicht die Sache,
+	// für die er geschrieben wurde.
 	if _, err := pool.Exec(ctx,
-		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist) VALUES ($1, $2, $3)`,
-		verliehen, schueler, time.Now().Add(14*24*time.Hour)); err != nil {
+		`INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
+		 VALUES ($1, $2, NOW() - INTERVAL '3 days', NOW() + INTERVAL '11 days')`,
+		verliehen, schueler); err != nil {
 		t.Fatalf("offene Ausleihe anlegen: %v", err)
 	}
 
 	// Abgeschlossene Ausleihe: dasselbe Exemplar war verliehen und ist zurück.
+	// Die Reihenfolge ausgeliehen → zurück ist hier per Konstruktion wahr.
 	if _, err := pool.Exec(ctx,
-		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, rueckgabe_am)
-		 VALUES ($1, $2, $3, $4)`,
-		zurueck, schueler, time.Now().Add(-24*time.Hour), time.Now()); err != nil {
+		`INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
+		 VALUES ($1, $2, NOW() - INTERVAL '30 days', NOW() - INTERVAL '16 days', NOW() - INTERVAL '2 days')`,
+		zurueck, schueler); err != nil {
 		t.Fatalf("zurückgegebene Ausleihe anlegen: %v", err)
 	}
 
