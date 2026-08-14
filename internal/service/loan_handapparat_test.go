@@ -93,7 +93,7 @@ func TestHandleLehrerHandapparat_Erfolg_Und_Konflikt(t *testing.T) {
 
 		c1 := "c1"
 		staff1 := "staff1"
-		var ptrStaff1 *string = &staff1
+		ptrStaff1 := &staff1
 		var ptrNil *string
 
 		mock.ExpectQuery(`INSERT INTO ausleihen`).WithArgs(
