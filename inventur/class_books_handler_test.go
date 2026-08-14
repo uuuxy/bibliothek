@@ -1,6 +1,13 @@
 package inventur
 
-import "testing"
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/pashagolub/pgxmock/v4"
+)
 
 func TestFormatClassName(t *testing.T) {
 	tests := []struct {
@@ -88,4 +95,53 @@ func TestFormatClassName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHandleDeleteClassGroup(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("failed to create pgxmock: %v", err)
+	}
+	defer mock.Close()
+
+	repo := NewBookRepository(mock)
+	handler := &APIHandler{repo: repo}
+
+	t.Run("No class name provided", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodDelete, "/api/class-books", nil)
+		rec := httptest.NewRecorder()
+		handler.handleDeleteClassGroup(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("Database Error", func(t *testing.T) {
+		mock.ExpectExec("DELETE FROM class_books").
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnError(fmt.Errorf("db error"))
+
+		req := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
+		rec := httptest.NewRecorder()
+		handler.handleDeleteClassGroup(rec, req)
+
+		if rec.Code != http.StatusInternalServerError {
+			t.Errorf("got status %d, want %d", rec.Code, http.StatusInternalServerError)
+		}
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		mock.ExpectExec("DELETE FROM class_books").
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+
+		req := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
+		rec := httptest.NewRecorder()
+		handler.handleDeleteClassGroup(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("got status %d, want %d", rec.Code, http.StatusOK)
+		}
+	})
 }
