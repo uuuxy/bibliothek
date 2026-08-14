@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestQueryReorders_GesamtNichtVerfuegbar sichert den Meldebestand-Fix ab: Der
+// TestQueryReorders_GesamtNichtVerfuegbar sichert die Meldebestand-Logik ab: Der
 // Bestellbedarf richtet sich nach dem BESITZ (gesamt, nicht ausgesondert), nicht nach
 // dem gerade verfügbaren Bestand. Sonst würde jeder verliehene Lernmittel-Klassensatz
 // (im Schuljahr der Normalfall) als "kritisch nachbestellen" gemeldet — die Liste war
@@ -103,7 +103,7 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 	}
 }
 
-// TestQueryReorders_LMFNurInSignatur sichert den Signatur-Fix ab (05.08.2026): Der
+// TestQueryReorders_LMFNurInSignatur sichert die Signatur-Pruefung ab (05.08.2026): Der
 // Regelfall bei manueller Neuanlage über die Admin-Oberfläche ist ein Klartext-Titel
 // ("Mathematik Neue Wege 9") mit dem LMF-Kennzeichen NUR in der Signatur
 // ("LMF Ma" — Auto-Vorschlag). Vor dieser Änderung prüfte queryReorders ausschliesslich
