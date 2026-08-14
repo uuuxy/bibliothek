@@ -134,8 +134,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	bearbeiter := adminFuerAudit(t, pool)
 	frist := ausleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
 
-	loc, _ := time.LoadLocation("Europe/Berlin")
-	if loc == nil {
+	loc, err := time.LoadLocation("Europe/Berlin")
+	if err != nil || loc == nil {
 		loc = time.UTC
 	}
 	erwartet := time.Now().In(loc).AddDate(0, 0, 13)
