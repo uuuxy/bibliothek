@@ -78,19 +78,37 @@ func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
 
 	repo := NewLoanRepository(pool)
 
-	erste, err := repo.CreateLoan(ctx, ex[0], schueler, bearbeiter, frist)
+	tx1, err := repo.BeginTx(ctx)
+	if err != nil {
+		t.Fatalf("BeginTx 1: %v", err)
+	}
+	erste, err := repo.CreateLoanTx(ctx, tx1, ex[0], schueler, bearbeiter, frist)
 	if err != nil || erste == nil {
+		db.SafeRollback(ctx, tx1)
 		t.Fatalf("erste Ausleihe: %v", err)
 	}
-	if err := repo.ReturnLoan(ctx, erste.ID, bearbeiter, false); err != nil {
+	if err := repo.ReturnLoanTx(ctx, tx1, erste.ID, bearbeiter, false); err != nil {
+		db.SafeRollback(ctx, tx1)
 		t.Fatalf("Rückgabe: %v", err)
 	}
+	if err := tx1.Commit(ctx); err != nil {
+		t.Fatalf("Commit 1: %v", err)
+	}
 
-	zweite, err := repo.CreateLoan(ctx, ex[0], schueler, bearbeiter, frist)
+	tx2, err := repo.BeginTx(ctx)
+	if err != nil {
+		t.Fatalf("BeginTx 2: %v", err)
+	}
+	defer db.SafeRollback(ctx, tx2)
+
+	zweite, err := repo.CreateLoanTx(ctx, tx2, ex[0], schueler, bearbeiter, frist)
 	if err != nil {
 		t.Fatalf("Ausleihe nach Rückgabe schlug fehl: %v", err)
 	}
 	if zweite == nil {
 		t.Fatal("Ausleihe nach Rückgabe lieferte keine Zeile")
+	}
+	if err := tx2.Commit(ctx); err != nil {
+		t.Fatalf("Commit 2: %v", err)
 	}
 }
