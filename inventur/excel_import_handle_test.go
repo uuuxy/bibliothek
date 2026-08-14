@@ -27,7 +27,7 @@ func TestHandleImportExcel(t *testing.T) {
 	t.Run("Missing File", func(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		writer.Close()
+		_ = writer.Close()
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -40,7 +40,7 @@ func TestHandleImportExcel(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
 		var resp map[string]interface{}
-		json.NewDecoder(w.Body).Decode(&resp)
+		_ = json.NewDecoder(w.Body).Decode(&resp)
 		assert.Equal(t, "keine datei gefunden", resp["error"])
 	})
 
@@ -48,8 +48,8 @@ func TestHandleImportExcel(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
 		part, _ := writer.CreateFormFile("file", "test.csv")
-		part.Write([]byte("titel,autor\nBuch1,Autor1"))
-		writer.Close()
+		_, _ = part.Write([]byte("titel,autor\nBuch1,Autor1"))
+		_ = writer.Close()
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -61,7 +61,7 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		var resp map[string]interface{}
-		json.NewDecoder(w.Body).Decode(&resp)
+		_ = json.NewDecoder(w.Body).Decode(&resp)
 		assert.Contains(t, resp["error"], "spalte 'isbn' fehlt")
 	})
 
@@ -75,8 +75,8 @@ func TestHandleImportExcel(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
 		part, _ := writer.CreateFormFile("file", "test.csv")
-		part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
-		writer.Close()
+		_, _ = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
+		_ = writer.Close()
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -94,7 +94,7 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp map[string]interface{}
-		json.NewDecoder(w.Body).Decode(&resp)
+		_ = json.NewDecoder(w.Body).Decode(&resp)
 		assert.Equal(t, "1 bücher importiert", resp["message"])
 		assert.Equal(t, float64(1), resp["imported"])
 		assert.Equal(t, float64(0), resp["failed"])
@@ -110,8 +110,8 @@ func TestHandleImportExcel(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
 		part, _ := writer.CreateFormFile("file", "test.csv")
-		part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
-		writer.Close()
+		_, _ = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
+		_ = writer.Close()
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -131,7 +131,7 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		var resp map[string]interface{}
-		json.NewDecoder(w.Body).Decode(&resp)
+		_ = json.NewDecoder(w.Body).Decode(&resp)
 		assert.Contains(t, resp["error"], "keine bücher konnten importiert werden")
 	})
 
@@ -145,8 +145,8 @@ func TestHandleImportExcel(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
 		part, _ := writer.CreateFormFile("file", "test.csv")
-		part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5\n9780987654321,Buch2,Autor2,5"))
-		writer.Close()
+		_, _ = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5\n9780987654321,Buch2,Autor2,5"))
+		_ = writer.Close()
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -167,7 +167,7 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp map[string]interface{}
-		json.NewDecoder(w.Body).Decode(&resp)
+		_ = json.NewDecoder(w.Body).Decode(&resp)
 		assert.Equal(t, "1 bücher importiert, 1 fehlgeschlagen", resp["message"])
 		assert.Equal(t, float64(1), resp["imported"])
 		assert.Equal(t, float64(1), resp["failed"])
