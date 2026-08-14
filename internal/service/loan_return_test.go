@@ -41,7 +41,10 @@ func TestHandleEigenrueckgabeMitarbeiter_ReturnLoanTxError(t *testing.T) {
 	}
 
 	mockPool.ExpectBegin()
-	tx, _ := mockPool.Begin(context.Background())
+	tx, err := mockPool.Begin(context.Background())
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
 
 	copy := &repository.BookCopy{ID: "copy1"}
 	staffID := "staff1"
@@ -73,7 +76,10 @@ func TestHandleEigenrueckgabeMitarbeiter_CommitError(t *testing.T) {
 	}
 
 	mockPool.ExpectBegin()
-	tx, _ := mockPool.Begin(context.Background())
+	tx, err := mockPool.Begin(context.Background())
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
 
 	var nilStr *string
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
@@ -113,7 +119,10 @@ func TestHandleEigenrueckgabeMitarbeiter_Success(t *testing.T) {
 	}
 
 	mockPool.ExpectBegin()
-	tx, _ := mockPool.Begin(context.Background())
+	tx, err := mockPool.Begin(context.Background())
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
 
 	var nilStr *string
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
@@ -156,7 +165,10 @@ func TestHandleEigenrueckgabeMitarbeiter_VormerkungAktiviert(t *testing.T) {
 	}
 
 	mockPool.ExpectBegin()
-	tx, _ := mockPool.Begin(context.Background())
+	tx, err := mockPool.Begin(context.Background())
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
 
 	var nilStr *string
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
