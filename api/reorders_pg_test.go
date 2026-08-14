@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestQueryReorders_GesamtNichtVerfuegbar sichert den Meldebestand-Fix ab: Der
+// TestQueryReorders_GesamtNichtVerfuegbar sichert die Meldebestand-Korrektur ab: Der
 // Bestellbedarf richtet sich nach dem BESITZ (gesamt, nicht ausgesondert), nicht nach
 // dem gerade verfügbaren Bestand. Sonst würde jeder verliehene Lernmittel-Klassensatz
 // (im Schuljahr der Normalfall) als "kritisch nachbestellen" gemeldet — die Liste war
