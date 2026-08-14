@@ -132,7 +132,10 @@ func TestHandleAddClassBooks(t *testing.T) {
 			"classNames": []string{"   ", ""},
 			"bookIds":    []string{"123"},
 		}
-		body, _ := json.Marshal(payload)
+		body, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("failed to marshal payload: %v", err)
+		}
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
@@ -156,7 +159,10 @@ func TestHandleAddClassBooks(t *testing.T) {
 			"classNames": []string{"ThisClassNameIsWayTooLongToBeValidAndShouldBeRejected"},
 			"bookIds":    []string{"123"},
 		}
-		body, _ := json.Marshal(payload)
+		body, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("failed to marshal payload: %v", err)
+		}
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
@@ -181,7 +187,10 @@ func TestHandleAddClassBooks(t *testing.T) {
 			"classNames": []string{"10A"},
 			"bookIds":    []string{"123"},
 		}
-		body, _ := json.Marshal(payload)
+		body, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("failed to marshal payload: %v", err)
+		}
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
@@ -207,7 +216,10 @@ func TestHandleAddClassBooks(t *testing.T) {
 			"classNames": []string{"10A", "10B"},
 			"bookIds":    []string{"123", "456"},
 		}
-		body, _ := json.Marshal(payload)
+		body, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("failed to marshal payload: %v", err)
+		}
 		req := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBuffer(body))
 		rr := httptest.NewRecorder()
 
