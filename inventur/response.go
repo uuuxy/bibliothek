@@ -10,7 +10,7 @@ import (
 
 // writeJSON delegiert an httpresp.Encode statt direkt zu kodieren: Dort sitzt die
 // zentrale nil-Slice-Normalisierung ("eine Liste ist immer [], nie null"). Ein eigener
-// Encoder hier umginge sie — genau so blieb dieses Paket beim Schuelerdatei-Fix
+// Encoder hier umginge sie — genau so blieb dieses Paket bei der Schuelerdatei-Korrektur
 // zunaechst ungeschuetzt.
 func writeJSON(writer http.ResponseWriter, status int, payload any) {
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
