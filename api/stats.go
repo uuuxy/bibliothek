@@ -191,6 +191,8 @@ func (s *Server) queryPopularTitles(ctx context.Context, ausleihenFilter, typeFi
 	return popularTitles
 }
 
+
+
 type shelfWarmerCacheEntry struct {
 	Data []ShelfWarmer
 	TS   time.Time
