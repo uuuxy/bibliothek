@@ -9,9 +9,20 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"bibliothek/pkg/lmf"
+)
+
+type popularTitlesCacheEntry struct {
+	titles    []PopularTitle
+	expiresAt time.Time
+}
+
+var (
+	popularTitlesCache = make(map[string]popularTitlesCacheEntry)
+	popularTitlesMutex sync.RWMutex
 )
 
 // PopularTitle ist ein Eintrag der „Renner"-Liste inkl. Drill-Down-Feldern
@@ -153,6 +164,15 @@ func resolveZeitraumFilter(zeitraum string) string {
 // queryPopularTitles liefert die meistausgeliehenen Titel (best-effort: bei einem
 // Query- oder Iterationsfehler wird eine leere Liste statt eines Fehlers geliefert).
 func (s *Server) queryPopularTitles(ctx context.Context, ausleihenFilter, typeFilter string, limit int) []PopularTitle {
+	cacheKey := fmt.Sprintf("%s|%s|%d", ausleihenFilter, typeFilter, limit)
+
+	popularTitlesMutex.RLock()
+	if entry, found := popularTitlesCache[cacheKey]; found && time.Now().Before(entry.expiresAt) {
+		popularTitlesMutex.RUnlock()
+		return entry.titles
+	}
+	popularTitlesMutex.RUnlock()
+
 	popularTitles := []PopularTitle{}
 	q := fmt.Sprintf(`
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''),
@@ -187,6 +207,14 @@ func (s *Server) queryPopularTitles(ctx context.Context, ausleihenFilter, typeFi
 	if err := rows.Err(); err != nil {
 		return []PopularTitle{}
 	}
+
+	popularTitlesMutex.Lock()
+	popularTitlesCache[cacheKey] = popularTitlesCacheEntry{
+		titles:    popularTitles,
+		expiresAt: time.Now().Add(15 * time.Minute),
+	}
+	popularTitlesMutex.Unlock()
+
 	return popularTitles
 }
 
