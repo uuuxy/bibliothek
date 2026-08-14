@@ -91,7 +91,7 @@ func TestHandleClassBooks(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/api/class-books", nil)
+			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/api/class-books", nil) //nolint:errcheck
 			if tt.branch != "" || tt.sort != "" {
 				q := req.URL.Query()
 				if tt.branch != "" {
