@@ -30,3 +30,6 @@
 ## 2026-08-11 - [Optimize Existence Checks]
 **Learning:** Found an instance in GetTitleCopiesHandler (api/copy_admin.go) where SELECT COUNT(*) was used inside a scalar subquery to check for the absence of active loans (COUNT(*) = 0). This forces the database to count all matches rather than short-circuiting.
 **Action:** In PostgreSQL, always prefer NOT EXISTS(SELECT 1 ...) over SELECT COUNT(*) = 0 for simple existence checks. EXISTS can short-circuit evaluation upon finding the first match, avoiding unnecessary full-scan overhead.
+## 2026-08-14 - Stats Cache for Shelf Warmers
+**Learning:** For frequently accessed dashboard data (like shelf warmers in `api/stats.go`), a heavy query with multiple JOINs and aggregations (e.g. `GROUP BY`, `HAVING MAX(a.ausgeliehen_am) < NOW() - INTERVAL '2 years'`) causes significant DB overhead. Since this data changes relatively slowly, applying an in-memory cache with a TTL (e.g., 1 hour) provides huge performance improvements (e.g. from 217µs to 267ns per operation).
+**Action:** Always evaluate whether dashboard aggregation queries can be safely cached in-memory with a `sync.RWMutex` if they don't require real-time accuracy. Ensure the cache key incorporates all relevant filter parameters.
