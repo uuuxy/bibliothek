@@ -379,7 +379,7 @@ func TestHandleUploadCover(t *testing.T) {
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
 					WithArgs("123").
-					WillReturnError(pgx.ErrNoRows) // Not found for old cover delete
+					WillReturnError(pgx.ErrNoRows) // Not found for old cover delete, handled silently
 
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
 					WithArgs("", "", pgxmock.AnyArg(), "123").
@@ -406,16 +406,16 @@ func TestHandleUploadCover(t *testing.T) {
 			if tt.contentType == "multipart/form-data" && len(tt.bodyData) > 0 {
 				var b bytes.Buffer
 				w := multipart.NewWriter(&b)
-				fw, _ := w.CreateFormFile("cover", tt.fileName)
-				_, _ = fw.Write(tt.bodyData)
-				_ = w.Close()
+				fw, _ := w.CreateFormFile("cover", tt.fileName) //nolint:errcheck
+				_, _ = fw.Write(tt.bodyData) //nolint:errcheck
+				_ = w.Close() //nolint:errcheck
 
 				req = httptest.NewRequest(tt.method, tt.path, &b)
 				req.Header.Set("Content-Type", w.FormDataContentType())
 			} else if tt.contentType == "multipart/form-data" && len(tt.bodyData) == 0 {
 				var b bytes.Buffer
 				w := multipart.NewWriter(&b)
-				_ = w.Close()
+				_ = w.Close() //nolint:errcheck
 				req = httptest.NewRequest(tt.method, tt.path, &b)
 				req.Header.Set("Content-Type", w.FormDataContentType())
 			} else {
@@ -437,8 +437,8 @@ func TestHandleUploadCover(t *testing.T) {
 	}
 
 	// Clean up created upload files during tests
-	filepaths, _ := filepath.Glob("uploads/cover_123_*.jpg")
+	filepaths, _ := filepath.Glob("uploads/cover_123_*.jpg") //nolint:errcheck
 	for _, f := range filepaths {
-		_ = os.Remove(f)
+		_ = os.Remove(f) //nolint:errcheck
 	}
 }
