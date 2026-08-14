@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"bibliothek/pkg/lmf"
@@ -248,12 +249,29 @@ type MonatsTrendPunkt struct {
 	Ruckgaben int    `json:"rueckgaben"`
 }
 
+type monatsTrendCacheEntry struct {
+	data      []MonatsTrendPunkt
+	timestamp time.Time
+}
+
+var (
+	monatsTrendCache map[string]monatsTrendCacheEntry = make(map[string]monatsTrendCacheEntry)
+	monatsTrendMutex sync.RWMutex
+)
+
 // queryMonatsTrend liefert die letzten 12 Monate Ausleih-/Rückgabe-Aktivität als
 // lückenlose (zero-gefüllte) Zeitreihe. Ausleihen zählen nach ausgeliehen_am, Rückgaben
 // nach rueckgabe_am — dieselbe Ausleihe kann also in unterschiedlichen Monaten in beide
 // Serien fallen. Best-effort mit leerer Liste bei Fehlern (wie die übrigen Sektionen);
 // der typeFilter (LMF/Freihand) bindet an t.titel. Bewusst anonym: keine Schülerdaten.
 func (s *Server) queryMonatsTrend(ctx context.Context, typeFilter string) []MonatsTrendPunkt {
+	monatsTrendMutex.RLock()
+	if entry, ok := monatsTrendCache[typeFilter]; ok && time.Since(entry.timestamp) < 15*time.Minute {
+		monatsTrendMutex.RUnlock()
+		return entry.data
+	}
+	monatsTrendMutex.RUnlock()
+
 	trend := []MonatsTrendPunkt{}
 	q := fmt.Sprintf(`
 		WITH monate AS (
@@ -305,6 +323,14 @@ func (s *Server) queryMonatsTrend(ctx context.Context, typeFilter string) []Mona
 	if err := rows.Err(); err != nil {
 		return []MonatsTrendPunkt{}
 	}
+
+	monatsTrendMutex.Lock()
+	monatsTrendCache[typeFilter] = monatsTrendCacheEntry{
+		data:      trend,
+		timestamp: time.Now(),
+	}
+	monatsTrendMutex.Unlock()
+
 	return trend
 }
 

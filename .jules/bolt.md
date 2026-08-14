@@ -30,3 +30,6 @@
 ## 2026-08-11 - [Optimize Existence Checks]
 **Learning:** Found an instance in GetTitleCopiesHandler (api/copy_admin.go) where SELECT COUNT(*) was used inside a scalar subquery to check for the absence of active loans (COUNT(*) = 0). This forces the database to count all matches rather than short-circuiting.
 **Action:** In PostgreSQL, always prefer NOT EXISTS(SELECT 1 ...) over SELECT COUNT(*) = 0 for simple existence checks. EXISTS can short-circuit evaluation upon finding the first match, avoiding unnecessary full-scan overhead.
+## 2026-08-14 - Cache Monthly Trend Statistics
+**Learning:** Returning a slice directly from a shared cache (via mutexes) means the backing array is shared between the cache and caller. While generally fine for read-only serialization, it could lead to unexpected behavior if a caller mutates the slice.
+**Action:** Be mindful when returning slices or reference types from caches; consider returning a copy if mutation by callers is a possibility.
