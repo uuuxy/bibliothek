@@ -27,7 +27,8 @@ func TestHandleImportExcel(t *testing.T) {
 	t.Run("Missing File", func(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		_ = writer.Close()
+		err := writer.Close()
+		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -40,16 +41,20 @@ func TestHandleImportExcel(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
 		var resp map[string]interface{}
-		_ = json.NewDecoder(w.Body).Decode(&resp)
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
 		assert.Equal(t, "keine datei gefunden", resp["error"])
 	})
 
 	t.Run("Missing ISBN column", func(t *testing.T) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		part, _ := writer.CreateFormFile("file", "test.csv")
-		_, _ = part.Write([]byte("titel,autor\nBuch1,Autor1"))
-		_ = writer.Close()
+		part, err := writer.CreateFormFile("file", "test.csv")
+		require.NoError(t, err)
+		_, err = part.Write([]byte("titel,autor\nBuch1,Autor1"))
+		require.NoError(t, err)
+		err = writer.Close()
+		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -61,7 +66,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		var resp map[string]interface{}
-		_ = json.NewDecoder(w.Body).Decode(&resp)
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
 		assert.Contains(t, resp["error"], "spalte 'isbn' fehlt")
 	})
 
@@ -74,9 +80,12 @@ func TestHandleImportExcel(t *testing.T) {
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		part, _ := writer.CreateFormFile("file", "test.csv")
-		_, _ = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
-		_ = writer.Close()
+		part, err := writer.CreateFormFile("file", "test.csv")
+		require.NoError(t, err)
+		_, err = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
+		require.NoError(t, err)
+		err = writer.Close()
+		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -94,7 +103,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp map[string]interface{}
-		_ = json.NewDecoder(w.Body).Decode(&resp)
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
 		assert.Equal(t, "1 bücher importiert", resp["message"])
 		assert.Equal(t, float64(1), resp["imported"])
 		assert.Equal(t, float64(0), resp["failed"])
@@ -109,9 +119,12 @@ func TestHandleImportExcel(t *testing.T) {
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		part, _ := writer.CreateFormFile("file", "test.csv")
-		_, _ = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
-		_ = writer.Close()
+		part, err := writer.CreateFormFile("file", "test.csv")
+		require.NoError(t, err)
+		_, err = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5"))
+		require.NoError(t, err)
+		err = writer.Close()
+		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -131,7 +144,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		var resp map[string]interface{}
-		_ = json.NewDecoder(w.Body).Decode(&resp)
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
 		assert.Contains(t, resp["error"], "keine bücher konnten importiert werden")
 	})
 
@@ -144,9 +158,12 @@ func TestHandleImportExcel(t *testing.T) {
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		part, _ := writer.CreateFormFile("file", "test.csv")
-		_, _ = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5\n9780987654321,Buch2,Autor2,5"))
-		_ = writer.Close()
+		part, err := writer.CreateFormFile("file", "test.csv")
+		require.NoError(t, err)
+		_, err = part.Write([]byte("isbn,titel,autor,bestand\n9781234567890,Buch1,Autor1,5\n9780987654321,Buch2,Autor2,5"))
+		require.NoError(t, err)
+		err = writer.Close()
+		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/import", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -167,7 +184,8 @@ func TestHandleImportExcel(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp map[string]interface{}
-		_ = json.NewDecoder(w.Body).Decode(&resp)
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
 		assert.Equal(t, "1 bücher importiert, 1 fehlgeschlagen", resp["message"])
 		assert.Equal(t, float64(1), resp["imported"])
 		assert.Equal(t, float64(1), resp["failed"])
