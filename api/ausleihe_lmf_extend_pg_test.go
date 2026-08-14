@@ -33,6 +33,9 @@ func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 	bindestrich := seedAusleihe(t, pool, sid, "LMF-Mathe 5", alteFrist)
 	leerBindestrich := seedAusleihe(t, pool, sid, "LMF - Deutsch 5", alteFrist)
 	leer := seedAusleihe(t, pool, sid, "LMF Bio 5", alteFrist)
+
+	// Ein Titel, der sein LMF-Kennzeichen NUR in der Signatur hat (manuelle Anlage)
+	nurSignatur := seedAusleiheMitSignatur(t, pool, sid, "Mathematik Neue Wege 9", "LMF Ma", alteFrist)
 	freihand := seedAusleihe(t, pool, sid, "Der Hobbit", alteFrist)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
@@ -54,6 +57,7 @@ func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 		{"LMF-Mathe 5 (Bindestrich)", bindestrich, true},
 		{"LMF - Deutsch 5 (Leer-Bindestrich)", leerBindestrich, true},
 		{"LMF Bio 5 (Leerzeichen)", leer, true},
+		{"Nur in der Signatur", nurSignatur, true},
 		{"Der Hobbit (Freihand)", freihand, false},
 	} {
 		frist := fristVon(t, pool, tc.id)
@@ -77,6 +81,22 @@ func seedSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse str
 		t.Fatalf("Schüler %q anlegen: %v", vorname, err)
 	}
 	return id
+}
+
+// seedAusleiheMitSignatur legt Titel + Exemplar + offene Ausleihe an und liefert die Ausleih-ID.
+func seedAusleiheMitSignatur(t *testing.T, pool *pgxpool.Pool, schuelerID, titel, signatur string, frist time.Time) string {
+	t.Helper()
+	ctx := context.Background()
+	tid := titelMitSignatur(t, pool, titel, signatur, 1)
+	eid := exemplar(t, pool, tid, "BC-"+titel, true, "")
+	var aid string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+		 VALUES ($1, $2, $3) RETURNING id`,
+		eid, schuelerID, frist).Scan(&aid); err != nil {
+		t.Fatalf("Ausleihe für %q anlegen: %v", titel, err)
+	}
+	return aid
 }
 
 // seedAusleihe legt Titel + Exemplar + offene Ausleihe an und liefert die Ausleih-ID.
