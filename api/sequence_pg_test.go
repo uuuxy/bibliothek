@@ -95,6 +95,35 @@ func TestGetNextSequence_UeberlangeNummerBlockiertNicht(t *testing.T) {
 	}
 }
 
+// TestGetNextSequence_MultibytePrefix: Wenn das Präfix Multibyte-Zeichen enthält
+// (wie "Schüler-", wo 'ü' 2 Bytes belegt), darf len(prefix)+1 nicht als Offset
+// für die substr-Funktion in PostgreSQL verwendet werden, da diese 1-basiert über
+// Characters (Runes) iteriert und nicht über Bytes. Dieser Test sichert ab, dass
+// utf8.RuneCountInString genutzt wird.
+func TestGetNextSequence_MultibytePrefix(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	// "Schüler-" hat 9 Bytes, aber 8 Zeichen.
+	schueler(t, pool, "Schüler-123")
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	seqRepo := repository.NewSequenceRepository(tx)
+	got, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "Schüler-")
+	if err != nil {
+		t.Fatalf("GetNextSequence: %v", err)
+	}
+	if got != 124 {
+		t.Errorf("nächste Ausweisnummer für Multibyte-Präfix: erwartet 124, war %d", got)
+	}
+}
+
 // schueler legt einen aktiven Schüler mit gegebenem Ausweis-Barcode an.
 func schueler(t *testing.T, pool *pgxpool.Pool, barcode string) {
 	t.Helper()
