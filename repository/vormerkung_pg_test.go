@@ -36,22 +36,28 @@ func TestVormerkungCreate_BlocksSelfBorrowedTitle_PG(t *testing.T) {
 
 	repo := NewVormerkungRepository(pool)
 
+	ex2 := seedSignaturMitExemplaren(t, pool, "Vorm2", 1)
+	titel2 := titelIDVonExemplar(t, pool, ex2[0])
+	frisch := seedSchueler(t, pool, "V-3", "Zoe", "7a")
+
 	// (1) Solange die Eigen-Ausleihe offen ist, darf keine Vormerkung auf denselben Titel entstehen.
 	if _, err := repo.Create(ctx, titelID, "", schueler); !errors.Is(err, ErrTitelBereitsAusgeliehen) {
 		t.Fatalf("aktive Eigen-Ausleihe: erwartet ErrTitelBereitsAusgeliehen, bekam %v", err)
 	}
 
-	// (2) Nach der Rückgabe ist die Vormerkung wieder erlaubt.
+	// (2) Derselbe Schüler darf aber einen ANDEREN Titel vormerken (Prüft den titel_id Filter).
+	if _, err := repo.Create(ctx, titel2, "", schueler); err != nil {
+		t.Fatalf("Eigen-Ausleihe auf Titel 1 darf Vormerkung auf Titel 2 nicht blockieren: %v", err)
+	}
+
+	// (3) Ein ANDERER Schüler darf denselben Titel vormerken (Prüft den schueler_id Filter).
+	if _, err := repo.Create(ctx, titelID, "", frisch); err != nil {
+		t.Fatalf("Eigen-Ausleihe von Schüler A darf Vormerkung von Schüler B nicht blockieren: %v", err)
+	}
+
+	// (4) Nach der Rückgabe ist die Vormerkung auf den eigenen Titel wieder erlaubt.
 	returnLoan(t, pool, loan)
 	if _, err := repo.Create(ctx, titelID, "", schueler); err != nil {
 		t.Fatalf("nach Rückgabe muss Vormerkung möglich sein, bekam: %v", err)
-	}
-
-	// (3) Ein Schüler, der den Titel NICHT ausgeliehen hat, darf ihn vormerken.
-	ex2 := seedSignaturMitExemplaren(t, pool, "Vorm2", 1)
-	titel2 := titelIDVonExemplar(t, pool, ex2[0])
-	frisch := seedSchueler(t, pool, "V-3", "Zoe", "7a")
-	if _, err := repo.Create(ctx, titel2, "", frisch); err != nil {
-		t.Fatalf("Schüler ohne Ausleihe muss vormerken dürfen: %v", err)
 	}
 }
