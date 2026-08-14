@@ -133,9 +133,9 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
 	bearbeiter := adminFuerAudit(t, pool)
 	frist := ausleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
-	erwartet := time.Now().AddDate(0, 0, 13)
+	erwartet := time.Now().AddDate(0, 0, 14)
 	if frist.Year() != erwartet.Year() || frist.YearDay() != erwartet.YearDay() {
-		t.Fatalf("Rückgabefrist = %s, erwartet den %s (13 Tage aus der Einstellung)",
+		t.Fatalf("Rückgabefrist = %s, erwartet den %s (14 Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"))
 	}
 	ausleiheUeberDenDienst(t, pool, "B-MAHN-2", ben, bearbeiter)
