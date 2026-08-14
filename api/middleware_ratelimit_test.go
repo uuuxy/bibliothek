@@ -81,7 +81,7 @@ func TestRateLimit_BarcodeBurstIsExempt(t *testing.T) {
 
 // Der eigentliche DoS-Regressionstest: Hinter einem vertrauenswürdigen Proxy
 // müssen zwei verschiedene echte Clients unabhängige Fehlversuchszähler haben.
-// Vor dem Fix wurde auf r.RemoteAddr (= Proxy) gekeyt, sodass fünf Fehlversuche
+// Zuvor wurde auf r.RemoteAddr (= Proxy) gekeyt, sodass die Fehlversuche
 // IRGENDEINES Nutzers alle aussperrten.
 func TestAuthRateLimit_ProxyClientsAreCountedIndependently(t *testing.T) {
 	clientip.Configure([]string{"172.16.0.0/12"})
