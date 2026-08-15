@@ -30,3 +30,6 @@
 ## 2026-08-11 - [Optimize Existence Checks]
 **Learning:** Found an instance in GetTitleCopiesHandler (api/copy_admin.go) where SELECT COUNT(*) was used inside a scalar subquery to check for the absence of active loans (COUNT(*) = 0). This forces the database to count all matches rather than short-circuiting.
 **Action:** In PostgreSQL, always prefer NOT EXISTS(SELECT 1 ...) over SELECT COUNT(*) = 0 for simple existence checks. EXISTS can short-circuit evaluation upon finding the first match, avoiding unnecessary full-scan overhead.
+## 2026-08-15 - Unnecessary Map Deduplication in Batch Upserts
+**Learning:** Go maps cause unnecessary heap allocations when dealing with small, known-size deduplication tasks (like DB batch upserts). In `SaveSettings`, since `buildSettingsPairs` guarantees unique keys, using a `map[string]bool` to deduplicate before saving creates redundant heap allocations without any benefit.
+**Action:** Avoid map deduplication when upstream functions already ensure uniqueness.
