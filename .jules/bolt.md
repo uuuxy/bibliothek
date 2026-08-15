@@ -41,3 +41,7 @@
 ## 2026-08-14 - Test logic for Excel import
 **Learning:** `golangci-lint` fails with `errcheck` errors in the test code.
 **Action:** Handled the `errcheck` failures using `require.NoError(t, err)`. The code is clean.
+
+## 2026-08-14 - Fix errcheck in tests
+**Learning:** `golangci-lint` enforces handling `err` returns from simple I/O and standard functions (like `json.NewDecoder(w.Body).Decode(&resp)`, `writer.Close()`, `part.Write()`).
+**Action:** In tests, do not use `_ = writer.Close()`. Use `err := writer.Close(); require.NoError(t, err)`.
