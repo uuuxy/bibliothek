@@ -24,27 +24,27 @@ func (s *Server) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, e
 		return http.StatusNotFound, errors.New("schüler nicht gefunden")
 	}
 
-	var activeLoansCount int
+	var hasActiveLoans bool
 	if err := s.DB.Pool.QueryRow(ctx, `
-		SELECT COUNT(*)
-		FROM ausleihen
-		WHERE schueler_id = $1 AND rueckgabe_am IS NULL
-	`, id).Scan(&activeLoansCount); err != nil {
+		SELECT EXISTS(
+			SELECT 1
+			FROM ausleihen
+			WHERE schueler_id = $1 AND rueckgabe_am IS NULL
+		)
+	`, id).Scan(&hasActiveLoans); err != nil {
 		return http.StatusInternalServerError, err
 	}
-	if activeLoansCount > 0 {
+	if hasActiveLoans {
 		return http.StatusBadRequest, errors.New("löschen nicht möglich: Schüler hat noch entliehene Bücher")
 	}
 
-	var unpaidDamagesCount int
+	var hasUnpaidDamages bool
 	if err := s.DB.Pool.QueryRow(ctx, `
-		SELECT COUNT(*)
-		FROM schadensfaelle
-		WHERE schueler_id = $1 AND ist_bezahlt = false
-	`, id).Scan(&unpaidDamagesCount); err != nil {
+		SELECT EXISTS(SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
+	`, id).Scan(&hasUnpaidDamages); err != nil {
 		return http.StatusInternalServerError, err
 	}
-	if unpaidDamagesCount > 0 {
+	if hasUnpaidDamages {
 		return http.StatusBadRequest, errors.New("löschen nicht möglich: Schüler hat noch unbezahlte Schadensfälle/Gebühren")
 	}
 
