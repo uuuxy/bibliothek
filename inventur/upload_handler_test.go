@@ -13,6 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/pashagolub/pgxmock/v4"
 )
 
 // createDummyImage returns the bytes of a generic dummy image in the specified format
@@ -301,4 +304,141 @@ func TestSaveCoverFile(t *testing.T) {
 			defer func() { _ = os.Remove(filePath) }() //nolint:errcheck
 		}
 	})
+}
+
+func TestHandleUploadCover(t *testing.T) {
+	tests := []struct {
+		name           string
+		method         string
+		path           string
+		bodyData       []byte
+		fileName       string
+		contentType    string
+		setupMock      func(pgxmock.PgxPoolIface)
+		expectedStatus int
+	}{
+		{
+			name:           "Invalid Route Structure",
+			method:         http.MethodPost,
+			path:           "/api/books/123/wrong",
+			bodyData:       nil,
+			fileName:       "",
+			contentType:    "",
+			setupMock:      func(m pgxmock.PgxPoolIface) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Empty ID",
+			method:         http.MethodPost,
+			path:           "/api/books//cover-upload",
+			bodyData:       nil,
+			fileName:       "",
+			contentType:    "",
+			setupMock:      func(m pgxmock.PgxPoolIface) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Missing File Data",
+			method:         http.MethodPost,
+			path:           "/api/books/123/cover-upload",
+			bodyData:       nil,
+			fileName:       "",
+			contentType:    "multipart/form-data",
+			setupMock:      func(m pgxmock.PgxPoolIface) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:        "Success Upload",
+			method:      http.MethodPost,
+			path:        "/api/books/123/cover-upload",
+			bodyData:    createDummyImage("jpeg", 100, 100),
+			fileName:    "test.jpg",
+			contentType: "multipart/form-data",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
+					WithArgs("123").
+					WillReturnRows(pgxmock.NewRows([]string{
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
+					}).AddRow(
+						"123", "9781234567890", "Test Title", "Test Author", "", "/uploads/old_cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
+					))
+
+				m.ExpectExec("(?s)UPDATE buecher_titel.*").
+					WithArgs("", "", pgxmock.AnyArg(), "123").
+					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:        "Database Update Error",
+			method:      http.MethodPost,
+			path:        "/api/books/123/cover-upload",
+			bodyData:    createDummyImage("jpeg", 100, 100),
+			fileName:    "test.jpg",
+			contentType: "multipart/form-data",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
+					WithArgs("123").
+					WillReturnError(pgx.ErrNoRows) // Not found for old cover delete, handled silently
+
+				m.ExpectExec("(?s)UPDATE buecher_titel.*").
+					WithArgs("", "", pgxmock.AnyArg(), "123").
+					WillReturnError(ErrBookNotFound)
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			}
+			defer mock.Close()
+
+			repo := NewBookRepository(mock)
+			handler := &APIHandler{repo: repo}
+
+			tt.setupMock(mock)
+
+			var req *http.Request
+			if tt.contentType == "multipart/form-data" && len(tt.bodyData) > 0 {
+				var b bytes.Buffer
+				w := multipart.NewWriter(&b)
+				fw, _ := w.CreateFormFile("cover", tt.fileName) //nolint:errcheck
+				_, _ = fw.Write(tt.bodyData)                    //nolint:errcheck
+				_ = w.Close()                                   //nolint:errcheck
+
+				req = httptest.NewRequest(tt.method, tt.path, &b)
+				req.Header.Set("Content-Type", w.FormDataContentType())
+			} else if tt.contentType == "multipart/form-data" && len(tt.bodyData) == 0 {
+				var b bytes.Buffer
+				w := multipart.NewWriter(&b)
+				_ = w.Close() //nolint:errcheck
+				req = httptest.NewRequest(tt.method, tt.path, &b)
+				req.Header.Set("Content-Type", w.FormDataContentType())
+			} else {
+				req = httptest.NewRequest(tt.method, tt.path, nil)
+			}
+
+			w := httptest.NewRecorder()
+
+			handler.handleUploadCover(w, req)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d. Body: %s", tt.expectedStatus, w.Code, w.Body.String())
+			}
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
+			}
+		})
+	}
+
+	// Clean up created upload files during tests
+	filepaths, _ := filepath.Glob("uploads/cover_123_*.jpg") //nolint:errcheck
+	for _, f := range filepaths {
+		_ = os.Remove(f) //nolint:errcheck
+	}
 }
