@@ -49,7 +49,7 @@ func naechsteInterneNummer(t *testing.T, srv *Server) string {
 // Exemplare damit anlegen (ProcessOrder, api/order_service.go). Schlägt der Insert
 // fehl, kippt in der Anwendung die komplette Bestellung — deshalb ist der Insert hier
 // Teil der Prüfung und nicht nur der gezogene Barcode.
-func bestelleExemplare(t *testing.T, repo repository.BookRepository, titelID string, menge int) []string {
+func bestelleExemplare(t *testing.T, pool *pgxpool.Pool, repo repository.BookRepository, titelID string, menge int) []string {
 	t.Helper()
 	ctx := context.Background()
 
@@ -61,8 +61,16 @@ func bestelleExemplare(t *testing.T, repo repository.BookRepository, titelID str
 	for i, bc := range barcodes {
 		kopien[i] = repository.BookCopyInsert{TitelID: titelID, BarcodeID: bc}
 	}
-	if err := repo.BulkInsertCopies(ctx, kopien); err != nil {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Tx starten: %v", err)
+	}
+	if err := repo.BulkInsertCopiesTx(ctx, tx, kopien); err != nil {
+		db.SafeRollback(ctx, tx)
 		t.Fatalf("Bestellung über %d Exemplare anlegen (Barcodes %v): %v", menge, barcodes, err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("Tx abschließen: %v", err)
 	}
 	return barcodes
 }
@@ -106,7 +114,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	titel := titelMitMeldebestand(t, pool, "Barcode-Vergabe", 0)
 
 	// 1. Eine Bestellung mit Vorab-Barcodes bringt den Bestand auf Stand.
-	bestelleExemplare(t, bookRepo, titel, 2)
+	bestelleExemplare(t, pool, bookRepo, titel, 2)
 
 	// 2. Ein Altbestands-Exemplar bekommt über den Knopf eine interne Nummer.
 	platzhalter := exemplar(t, pool, titel, "SYS-1", true, "")
@@ -116,7 +124,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	}
 
 	// 3. Die nächste Bestellung darf diese Nummer nicht erneut ziehen.
-	neue := bestelleExemplare(t, bookRepo, titel, 1)
+	neue := bestelleExemplare(t, pool, bookRepo, titel, 1)
 	if neue[0] == handNummer {
 		t.Errorf("Bestellung zog erneut %s — dieselbe Nummer klebt dann an zwei Büchern", handNummer)
 	}
@@ -170,7 +178,7 @@ func TestBarcodeVergabe_UeberspringtVonHandVergebeneNummern(t *testing.T) {
 	}
 
 	belegt := barcodeBestand(t, pool)
-	neue := bestelleExemplare(t, bookRepo, titel, 3)
+	neue := bestelleExemplare(t, pool, bookRepo, titel, 3)
 	for _, bc := range neue {
 		if belegt[bc] {
 			t.Errorf("Generator gab die bereits vergebene Nummer %s aus", bc)

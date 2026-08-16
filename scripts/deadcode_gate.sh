@@ -1,62 +1,45 @@
-#!/bin/sh
-# Gate gegen unerreichbaren Go-Code.
+#!/usr/bin/env bash
+# Gate gegen unerreichbaren Go-Code (freie Funktionen und Methoden).
 #
-# Nutzt golang.org/x/tools/cmd/deadcode: Das Werkzeug rechnet Erreichbarkeit ab main()
-# ueber den echten Aufrufgraphen und nimmt dabei ALLE main-Pakete als Wurzeln, auch die
-# unter cmd/. Ein grep kann das nicht — es zaehlt Textvorkommen und haelt schon die
-# Erwaehnung eines Namens im eigenen Doc-Kommentar fuer eine Verwendung.
+# Anlass (16.08.2026): UpsertBookTitle stand fünf Wochen tot im Repository und
+# driftete dabei vom Live-Pfad weg. `deadcode` (x/tools, Erreichbarkeit ab main)
+# findet solche Leichen — AUSSER sie hängen an einem Interface: Sobald ein Typ in
+# ein Interface gewandelt wird, gilt seine ganze Methodentabelle als erreichbar.
+# Für DIESE Klasse gibt es das Schwester-Gate tote_tueren_test.go (läuft in go test).
 #
-# Warum es dieses Gate gibt (04.08.2026): An einem Tag wurde zweimal ein Einstiegspunkt
-# entfernt und der Rumpf stehen gelassen. Die verwaisten Funktionen wurden danach nur
-# noch von ihren eigenen Tests am Leben gehalten — gruene Tests fuer Code, den die
-# Anwendung nie erreicht. Beide Faelle hat erst dieses Werkzeug aufgedeckt.
+# Baseline: scripts/deadcode_baseline.txt hält die BEGRÜNDETEN Ausnahmen
+# (Testinfrastruktur, episodische Littera-Werkzeuge). Jede neue Zeile im
+# deadcode-Output, die nicht in der Baseline steht, macht das Gate rot.
 #
-# -test zaehlt Testbinaries als Einstiegspunkt mit. Gemeldet wird deshalb nur, was WEDER
-# von der Anwendung NOCH von einem Test erreicht wird — die echten Leichen. Funktionen,
-# die nur Tests benutzen, meldet "deadcode ./..." (ohne -test); das ist eine eigene,
-# schwaechere Frage und bewusst nicht Teil dieses Gates.
-#
-# Diese schwaechere Frage wurde am 11.08.2026 einmal vollstaendig beantwortet: 17 Treffer,
-# davon vier echte Leichen (entfernt: inventur.NewDB als zweiter Pool-Konstruktor neben
-# db.Connect, crypto.EncryptUpload als zweite Verschluesselungstuer neben crypto.Encrypt,
-# repository.QueryUeberfaelligeByAusleiheIDs als Rest eines Tx-Umbaus, und
-# scripts/migrate_photos.go als Doppel von cmd/migrate-fotos). Eine fuenfte,
-# auth.TokenBlacklist.Stop, wurde nicht geloescht, sondern im geordneten Herunterfahren
-# von main.go verdrahtet — sie fehlte dort.
-#
-# Die verbleibenden 13 sind BEGRUENDET und sollen bleiben. Wer die schwaechere Frage
-# erneut stellt, findet genau diese und muss sie nicht noch einmal untersuchen:
-#
-#   internal/smtptest/*   (6)  Test-Mailserver. Von Tests benutzt zu werden IST sein Zweck.
-#   internal/littera/*    (5)  Pruefwerkzeug fuer die noch ausstehende Littera-Migration.
-#                              BarcodeInhalt entschluesselt die alte Littera-Druckzeichen-
-#                              kette und dient als Gegenprobe zur Exemplarnummer, aus der
-#                              die EAN-13 gerechnet wird — 61.520 von 61.520 stimmen
-#                              ueberein. Der Lauf haengt an LITTERA_CSV_DIR und braucht die
-#                              echten Altdaten, die nicht im Repo liegen.
-#   sse.istGeschlossen    (1)  Nahtstelle, damit ein Test das Herunterfahren pruefen kann.
-#   uebernahme.Leeren     (1)  Zuruecksetzen zwischen PG-Testlaeufen.
-#
-# Aufruf: ./scripts/deadcode_gate.sh   (vom Repo-Root)
-set -eu
+# Reparatur bei Rot: Code zurückbauen (Regelfall) oder die Zeile mit Begründung
+# (Kommentar darüber) in die Baseline aufnehmen. Zeilennummern sind absichtlich
+# normalisiert — die Baseline nennt Datei und Funktion, nicht die Zeile.
+set -euo pipefail
+cd "$(dirname "$0")/.."
 
-if ! command -v deadcode >/dev/null 2>&1; then
-	# Bewusst KEIN stilles Ueberspringen: Ein Waechter, der sich abschaltet, sobald sein
-	# Werkzeug fehlt, meldet jahrelang gruen und hat nie etwas geprueft.
-	echo "deadcode ist nicht installiert — das Gate kann nicht laufen." >&2
-	echo "  go install golang.org/x/tools/cmd/deadcode@latest" >&2
-	exit 1
+IST="$(mktemp)"
+SOLL="$(mktemp)"
+trap 'rm -f "$IST" "$SOLL"' EXIT
+
+# node_modules ausklammern: das npm-Paket `flatted` liefert eine Go-Datei mit,
+# die ohne eigenes go.mod in unser Modul fiele.
+go run golang.org/x/tools/cmd/deadcode@v0.48.0 \
+  $(go list ./... | grep -v node_modules) \
+  | sed -E 's/:[0-9]+:[0-9]+:/:/' | sort > "$IST"
+grep -v '^#' scripts/deadcode_baseline.txt | grep -v '^$' | sort > "$SOLL"
+
+NEU="$(comm -23 "$IST" "$SOLL")"
+WEG="$(comm -13 "$IST" "$SOLL")"
+
+if [ -n "$NEU" ]; then
+  echo "✗ Neuer toter Code (nicht in der Baseline):"
+  echo "$NEU"
+  echo "→ Zurückbauen oder mit Begründung in scripts/deadcode_baseline.txt aufnehmen."
+  exit 1
 fi
-
-# node_modules enthaelt eine fremde Go-Datei in einem npm-Paket (flatted) und gehoert
-# nicht zu diesem Projekt.
-LEICHEN=$(deadcode -test ./... 2>/dev/null | grep -v node_modules || true)
-
-if [ -z "$LEICHEN" ]; then
-	echo "deadcode: kein unerreichbarer Code."
-	exit 0
+if [ -n "$WEG" ]; then
+  echo "✗ Baseline-Einträge, die es nicht mehr gibt (Baseline aufräumen):"
+  echo "$WEG"
+  exit 1
 fi
-
-echo "deadcode: unerreichbarer Code gefunden — entfernen oder verdrahten:" >&2
-echo "$LEICHEN" >&2
-exit 1
+echo "✓ deadcode: keine neuen Leichen, Baseline deckungsgleich."

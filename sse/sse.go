@@ -93,13 +93,6 @@ func (b *Broker) unsubscribe(clientChan chan string) {
 	log.Println("SSE: Client disconnected")
 }
 
-// istGeschlossen meldet, ob der Broker heruntergefahren ist.
-func (b *Broker) istGeschlossen() bool {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-	return b.geschlosen
-}
-
 // Broadcast sends a message to all currently connected SSE clients.
 //
 // Die RLock deckt zugleich das Senden ab: unsubscribe und shutdown schließen Kanäle unter

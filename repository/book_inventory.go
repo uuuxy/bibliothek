@@ -90,28 +90,6 @@ func (r *pgBookRepository) GenerateBarcodes(ctx context.Context, count int) ([]s
 	return barcodes, nil
 }
 
-// BulkInsertCopies fügt Exemplare im Bulk in die Datenbank ein.
-func (r *pgBookRepository) BulkInsertCopies(ctx context.Context, copies []BookCopyInsert) error {
-	if len(copies) == 0 {
-		return nil
-	}
-
-	var copyRows [][]any
-	for _, c := range copies {
-		copyRows = append(copyRows, []any{
-			c.TitelID, c.BarcodeID, c.ZustandNotiz, c.IstAusleihbar, c.EtikettGedruckt, c.Einkaufspreis,
-		})
-	}
-
-	_, err := r.db.CopyFrom(
-		ctx,
-		pgx.Identifier{"buecher_exemplare"},
-		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis"},
-		pgx.CopyFromRows(copyRows),
-	)
-	return err
-}
-
 // BulkInsertCopiesTx fügt Exemplare im Bulk innerhalb einer Transaktion ein.
 func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, copies []BookCopyInsert) error {
 	if len(copies) == 0 {

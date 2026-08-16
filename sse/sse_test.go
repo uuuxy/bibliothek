@@ -344,3 +344,11 @@ func wartAufClientZahl(t *testing.T, b *Broker, n int) {
 	}
 	t.Fatalf("es waren nicht %d Clients angemeldet", n)
 }
+
+// istGeschlossen meldet, ob der Broker heruntergefahren ist — reine
+// Test-Beobachtung, deshalb lebt sie hier und nicht in der Produktionsdatei.
+func (b *Broker) istGeschlossen() bool {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.geschlosen
+}

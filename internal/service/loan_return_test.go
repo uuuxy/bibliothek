@@ -22,20 +22,11 @@ func (m *mockLoanRepoReturn) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx
 	return nil, nil
 }
 func (m *mockLoanRepoReturn) BeginTx(ctx context.Context) (pgx.Tx, error) { return nil, nil }
-func (m *mockLoanRepoReturn) CreateLoan(ctx context.Context, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*repository.Loan, error) {
-	return nil, nil
-}
 func (m *mockLoanRepoReturn) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*repository.Loan, error) {
-	return nil, nil
-}
-func (m *mockLoanRepoReturn) CreateUserLoan(ctx context.Context, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*repository.Loan, error) {
 	return nil, nil
 }
 func (m *mockLoanRepoReturn) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*repository.Loan, error) {
 	return nil, nil
-}
-func (m *mockLoanRepoReturn) ReturnLoan(ctx context.Context, loanID, bearbeiterID string, istVerlust bool) error {
-	return m.returnErr
 }
 func (m *mockLoanRepoReturn) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, istVerlust bool) error {
 	return m.returnErr

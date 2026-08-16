@@ -73,7 +73,13 @@ jobs:
       with:
         version: v2.12.2
         args: --timeout=5m
-      
+
+    # Erreichbarkeitsanalyse gegen toten Code (Anlass: UpsertBookTitle, 16.08.2026).
+    # Das Schwester-Gate für tote INTERFACE-Türen — die deadcode nicht sehen kann —
+    # ist tote_tueren_test.go und läuft im normalen Testschritt mit.
+    - name: Deadcode-Gate
+      run: ./scripts/deadcode_gate.sh
+
     # pg_dump/psql werden von der Restore-Probe (jobs/backup_drill_pg_test.go)
     # gebraucht: Sie erzeugt ein echtes verschlüsseltes Backup und spielt es in eine
     # frische Datenbank zurück. Fehlen die Werkzeuge, überspringt sich der Test selbst
