@@ -43,3 +43,30 @@ func (r *BetriebszustandRepository) ZaehleDemoSchueler(ctx context.Context) (int
 		`SELECT count(*) FROM schueler WHERE barcode_id LIKE $1`, demoBarcodePraefix).Scan(&anzahl)
 	return anzahl, err
 }
+
+// LadeRollenRechte liefert die Live-Rechte (role_permissions) als Rolle→Recht→erlaubt.
+// Für den Vorgabe-Abgleich der Selbstprüfung; gleiche Zeitlimit-Begründung wie oben.
+func (r *BetriebszustandRepository) LadeRollenRechte(ctx context.Context) (map[string]map[string]bool, error) {
+	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
+	defer abbrechen()
+
+	rows, err := r.pool.Query(ctx, `SELECT role, permission, allowed FROM role_permissions`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	live := map[string]map[string]bool{}
+	for rows.Next() {
+		var rolle, recht string
+		var erlaubt bool
+		if err := rows.Scan(&rolle, &recht, &erlaubt); err != nil {
+			return nil, err
+		}
+		if live[rolle] == nil {
+			live[rolle] = map[string]bool{}
+		}
+		live[rolle][recht] = erlaubt
+	}
+	return live, rows.Err()
+}

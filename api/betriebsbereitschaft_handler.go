@@ -76,6 +76,12 @@ func (s *Server) BetriebsbereitschaftHandler(
 			lage.DemoSchueler = anzahl
 		}
 
+		// Bei einem Fehler bleibt RechteLive nil — die Prüfung meldet dann „nicht
+		// lesbar" statt fälschlich jede Vorgabe-Zeile als fehlend zu deklarieren.
+		if rechte, err := zustandRepo.LadeRollenRechte(r.Context()); err == nil {
+			lage.RechteLive = rechte
+		}
+
 		befunde := Pruefe(lage)
 		RespondJSON(w, http.StatusOK, BetriebsbereitschaftResponse{
 			Gesamt:  schaerfste(befunde),

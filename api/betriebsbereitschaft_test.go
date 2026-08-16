@@ -3,6 +3,8 @@ package api
 import (
 	"strings"
 	"testing"
+
+	"bibliothek/db"
 )
 
 // Eine Lage, in der ALLES eingerichtet ist. Ausgangspunkt aller Fälle unten: Jeder Test
@@ -21,7 +23,22 @@ func lageEingerichtet() Lage {
 		OeffentlicheAdresse: "https://flasch3.herzog-dupont.de",
 		SmtpHost:            "srv1.philipp-reis-schule.de",
 		DemoSchueler:        0,
+		RechteLive:          rechteWieVorgabe(),
 	}
+}
+
+// rechteWieVorgabe baut die Live-Rechte deckungsgleich zur Code-Vorgabe — der
+// Ausgangspunkt „keine Drift". Jeder Rechte-Testfall verstellt davon ausgehend
+// genau eine Zeile.
+func rechteWieVorgabe() map[string]map[string]bool {
+	live := map[string]map[string]bool{}
+	for _, v := range db.RechteVorgabe {
+		if live[v.Role] == nil {
+			live[v.Role] = map[string]bool{}
+		}
+		live[v.Role][v.Permission] = v.Allowed
+	}
+	return live
 }
 
 func befundZu(t *testing.T, befunde []Befund, bereich string) Befund {
@@ -121,6 +138,38 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			stufe:    StufeWarnung,
 			enthaelt: "2000",
 		},
+		{
+			// Die Kollegium-Wunde: Der Seed fasst bestehende Zeilen nie an — ein im
+			// Code geänderter Wert erreicht die Anlage nicht, die Live-Zeile bleibt.
+			name:     "Rechte-Wert weicht von der Vorgabe ab",
+			aendere:  func(l *Lage) { l.RechteLive["HELFER"]["view_students"] = true },
+			bereich:  "Rechte-Vorgabe",
+			stufe:    StufeWarnung,
+			enthaelt: "HELFER/view_students live an, Vorgabe aus",
+		},
+		{
+			name:     "Rechte-Zeile fehlt live",
+			aendere:  func(l *Lage) { delete(l.RechteLive["ADMIN"], "manage_users") },
+			bereich:  "Rechte-Vorgabe",
+			stufe:    StufeWarnung,
+			enthaelt: "ADMIN/manage_users fehlt live",
+		},
+		{
+			// Reste alter Vokabulare — etwa eine umbenannte Rolle, deren Zeilen die
+			// Migration nicht mitnahm.
+			name:     "verwaiste Live-Zeile",
+			aendere:  func(l *Lage) { l.RechteLive["LEHRER"] = map[string]bool{"view_books": true} },
+			bereich:  "Rechte-Vorgabe",
+			stufe:    StufeWarnung,
+			enthaelt: "LEHRER/view_books live an, in der Vorgabe unbekannt",
+		},
+		{
+			name:     "Live-Rechte nicht lesbar",
+			aendere:  func(l *Lage) { l.RechteLive = nil },
+			bereich:  "Rechte-Vorgabe",
+			stufe:    StufeWarnung,
+			enthaelt: "nicht gelesen",
+		},
 	}
 
 	for _, f := range faelle {
@@ -194,5 +243,24 @@ func TestIstBekanntesDefaultGeheimnis(t *testing.T) {
 		if IstBekanntesDefaultGeheimnis(wert) {
 			t.Errorf("%q gilt fälschlich als Beispiel-Geheimnis", wert)
 		}
+	}
+}
+
+// Viele Abweichungen dürfen die Auskunft nicht fluten: gezeigt werden sechs,
+// der Rest wird gezählt. (Der Extremfall — leere, aber lesbare Tabelle — meldet
+// JEDE Vorgabe-Zeile als fehlend.)
+func TestBetriebsbereitschaft_RechteAbweichungenWerdenGekappt(t *testing.T) {
+	l := lageEingerichtet()
+	l.RechteLive = map[string]map[string]bool{}
+
+	b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
+	if b.Stufe != StufeWarnung {
+		t.Fatalf("Stufe %q statt Warnung: %s", b.Stufe, b.Befund)
+	}
+	if !strings.Contains(b.Befund, "weitere") {
+		t.Errorf("die Kappung fehlt — der Befund listet alles: %s", b.Befund)
+	}
+	if strings.Count(b.Befund, ";") > 6 {
+		t.Errorf("mehr als sechs Einträge gezeigt: %s", b.Befund)
 	}
 }

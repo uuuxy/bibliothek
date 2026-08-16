@@ -75,116 +75,126 @@ func (db *Database) InitPermissions(ctx context.Context) error {
 	return db.seedRolePermissions(ctx)
 }
 
-// seedRolePermissions seeds the role_permissions table with default values.
+// RechteEintrag ist eine Zeile der Rechte-Vorgabe.
+type RechteEintrag struct {
+	Role       string
+	Permission string
+	Allowed    bool
+}
+
+// RechteVorgabe ist die EINE Quelle der Soll-Rechte: Der Seed schreibt sie (nur
+// fehlende Zeilen — ON CONFLICT DO NOTHING fasst Bestehendes nie an), und die
+// Selbstprüfung (api/betriebsbereitschaft.go) liest sie zum Abgleich gegen die
+// Live-Tabelle. Genau dieses DO NOTHING ist der Grund für den Abgleich: Ändert
+// sich die Vorgabe hier im Code, erreicht sie eine bestehende Anlage NIE von
+// selbst — so sah das Kollegium wochenlang nur einen Teil seiner Menüpunkte.
+//
+// Die Rolle eines Benutzers steht in benutzer.rolle (ENUM, kleingeschrieben); die
+// Middleware verbindet beide Vokabulare per UPPER() (permission_middleware.go).
+// role_permissions bildet also nur ab, was eine ROLLE darf — nicht, wer sie hat.
+var RechteVorgabe = []RechteEintrag{
+	// Admin defaults
+	{"ADMIN", "perform_actions", true},
+	{"ADMIN", "view_students", true},
+	{"ADMIN", "edit_students", true},
+	{"ADMIN", "create_students", true},
+	{"ADMIN", "delete_students", true},
+	{"ADMIN", "import_students", true},
+	{"ADMIN", "upload_photos", true},
+	{"ADMIN", "view_books", true},
+	{"ADMIN", "edit_books", true},
+	{"ADMIN", "delete_books", true},
+	{"ADMIN", "inventory_scan", true},
+	{"ADMIN", "manage_inventory", true},
+	{"ADMIN", "view_orders", true},
+	{"ADMIN", "create_orders", true},
+	{"ADMIN", "create_reservations", true},
+	{"ADMIN", "view_graduates", true},
+	{"ADMIN", "view_stats", true},
+	{"ADMIN", "audit_logs", true},
+	{"ADMIN", "manage_users", true},
+
+	// Mitarbeiter defaults
+	{"MITARBEITER", "perform_actions", true},
+	{"MITARBEITER", "view_students", true},
+	{"MITARBEITER", "edit_students", true},
+	{"MITARBEITER", "create_students", true},
+	{"MITARBEITER", "delete_students", true},
+	{"MITARBEITER", "import_students", true},
+	{"MITARBEITER", "upload_photos", true},
+	{"MITARBEITER", "view_books", true},
+	{"MITARBEITER", "edit_books", true},
+	{"MITARBEITER", "delete_books", true},
+	{"MITARBEITER", "inventory_scan", true},
+	{"MITARBEITER", "manage_inventory", true},
+	{"MITARBEITER", "view_orders", true},
+	{"MITARBEITER", "create_orders", true},
+	{"MITARBEITER", "create_reservations", true},
+	{"MITARBEITER", "view_graduates", true},
+	{"MITARBEITER", "view_stats", true},
+	{"MITARBEITER", "audit_logs", false},
+	{"MITARBEITER", "manage_users", false},
+
+	// Kollegium defaults — Portal-Rolle: eine Lehrkraft meldet sich an, um im
+	// Kollegiums-Portal einen Klassensatz zu reservieren. Mehr ist der Zweck nicht.
+	//
+	// Bis zum 10.08.2026 standen hier perform_actions, view_students, upload_photos und
+	// view_books auf true. Das Menü ist rechtegesteuert (frontend/src/lib/menu.js), also
+	// öffneten diese vier Vorgaben der Lehrkraft Medienkatalog, Signaturen, Druck-Center,
+	// Schülerdatei und Schulklassen — und perform_actions dazu die Kiosk-Endpunkte
+	// (/api/action: Ausleihe und Rückgabe), die das Menü nur nicht anzeigt.
+	// Reserviert wird über create_reservations, das keine Personendaten öffnet.
+	{"KOLLEGIUM", "create_reservations", true},
+	{"KOLLEGIUM", "perform_actions", false},
+	{"KOLLEGIUM", "view_students", false},
+	{"KOLLEGIUM", "edit_students", false},
+	{"KOLLEGIUM", "create_students", false},
+	{"KOLLEGIUM", "delete_students", false},
+	{"KOLLEGIUM", "import_students", false},
+	{"KOLLEGIUM", "upload_photos", false},
+	{"KOLLEGIUM", "view_books", false},
+	{"KOLLEGIUM", "edit_books", false},
+	{"KOLLEGIUM", "delete_books", false},
+	{"KOLLEGIUM", "inventory_scan", false},
+	{"KOLLEGIUM", "view_orders", false},
+	{"KOLLEGIUM", "create_orders", false},
+	{"KOLLEGIUM", "view_graduates", false},
+	{"KOLLEGIUM", "view_stats", false},
+	{"KOLLEGIUM", "audit_logs", false},
+	{"KOLLEGIUM", "manage_users", false},
+
+	// Helfer defaults — Kiosk-Rolle: darf NUR am Terminal ausleihen/zurücknehmen
+	// (perform_actions: /api/action, /scan, /search, /events). Bewusst KEIN
+	// view_students: das gäbe Zugriff auf Schülerlisten, Profile, Mahnwesen und den
+	// Bulk-Mahndruck (= Mahnstufen-Eskalation) — alles jenseits des Kiosk-Zwecks.
+	{"HELFER", "perform_actions", true},
+	{"HELFER", "view_students", false},
+	{"HELFER", "edit_students", false},
+	{"HELFER", "create_students", false},
+	{"HELFER", "delete_students", false},
+	{"HELFER", "import_students", false},
+	{"HELFER", "upload_photos", false},
+	// Katalog JA (Betreiber-Entscheidung 30.07.2026): Ein Helfer an der Theke ist
+	// die erste Anlaufstelle für "Habt ihr Band 3 von Gregs Tagebuch noch da?".
+	// Ohne Katalogzugriff müsste er dafür jedes Mal an die Leitung abgeben. Das
+	// Recht ist rein lesend und öffnet keine Personendaten — die stecken hinter
+	// view_students, das für den Helfer weiterhin verschlossen bleibt.
+	{"HELFER", "view_books", true},
+	{"HELFER", "edit_books", false},
+	{"HELFER", "delete_books", false},
+	{"HELFER", "inventory_scan", false},
+	{"HELFER", "view_orders", false},
+	{"HELFER", "create_orders", false},
+	{"HELFER", "create_reservations", false},
+	{"HELFER", "view_graduates", false},
+	{"HELFER", "view_stats", false},
+	{"HELFER", "audit_logs", false},
+	{"HELFER", "manage_users", false},
+}
+
+// seedRolePermissions schreibt die Rechte-Vorgabe in die Datenbank (nur fehlende Zeilen).
 func (db *Database) seedRolePermissions(ctx context.Context) error {
-	// Die Rolle eines Benutzers steht in benutzer.rolle (ENUM, kleingeschrieben); die
-	// Middleware verbindet beide Vokabulare per UPPER() (permission_middleware.go).
-	// role_permissions bildet also nur ab, was eine ROLLE darf — nicht, wer sie hat.
-	defaults := []struct {
-		Role       string
-		Permission string
-		Allowed    bool
-	}{
-		// Admin defaults
-		{"ADMIN", "perform_actions", true},
-		{"ADMIN", "view_students", true},
-		{"ADMIN", "edit_students", true},
-		{"ADMIN", "create_students", true},
-		{"ADMIN", "delete_students", true},
-		{"ADMIN", "import_students", true},
-		{"ADMIN", "upload_photos", true},
-		{"ADMIN", "view_books", true},
-		{"ADMIN", "edit_books", true},
-		{"ADMIN", "delete_books", true},
-		{"ADMIN", "inventory_scan", true},
-		{"ADMIN", "manage_inventory", true},
-		{"ADMIN", "view_orders", true},
-		{"ADMIN", "create_orders", true},
-		{"ADMIN", "create_reservations", true},
-		{"ADMIN", "view_graduates", true},
-		{"ADMIN", "view_stats", true},
-		{"ADMIN", "audit_logs", true},
-		{"ADMIN", "manage_users", true},
-
-		// Mitarbeiter defaults
-		{"MITARBEITER", "perform_actions", true},
-		{"MITARBEITER", "view_students", true},
-		{"MITARBEITER", "edit_students", true},
-		{"MITARBEITER", "create_students", true},
-		{"MITARBEITER", "delete_students", true},
-		{"MITARBEITER", "import_students", true},
-		{"MITARBEITER", "upload_photos", true},
-		{"MITARBEITER", "view_books", true},
-		{"MITARBEITER", "edit_books", true},
-		{"MITARBEITER", "delete_books", true},
-		{"MITARBEITER", "inventory_scan", true},
-		{"MITARBEITER", "manage_inventory", true},
-		{"MITARBEITER", "view_orders", true},
-		{"MITARBEITER", "create_orders", true},
-		{"MITARBEITER", "create_reservations", true},
-		{"MITARBEITER", "view_graduates", true},
-		{"MITARBEITER", "view_stats", true},
-		{"MITARBEITER", "audit_logs", false},
-		{"MITARBEITER", "manage_users", false},
-
-		// Kollegium defaults — Portal-Rolle: eine Lehrkraft meldet sich an, um im
-		// Kollegiums-Portal einen Klassensatz zu reservieren. Mehr ist der Zweck nicht.
-		//
-		// Bis zum 10.08.2026 standen hier perform_actions, view_students, upload_photos und
-		// view_books auf true. Das Menü ist rechtegesteuert (frontend/src/lib/menu.js), also
-		// öffneten diese vier Vorgaben der Lehrkraft Medienkatalog, Signaturen, Druck-Center,
-		// Schülerdatei und Schulklassen — und perform_actions dazu die Kiosk-Endpunkte
-		// (/api/action: Ausleihe und Rückgabe), die das Menü nur nicht anzeigt.
-		// Reserviert wird über create_reservations, das keine Personendaten öffnet.
-		{"KOLLEGIUM", "create_reservations", true},
-		{"KOLLEGIUM", "perform_actions", false},
-		{"KOLLEGIUM", "view_students", false},
-		{"KOLLEGIUM", "edit_students", false},
-		{"KOLLEGIUM", "create_students", false},
-		{"KOLLEGIUM", "delete_students", false},
-		{"KOLLEGIUM", "import_students", false},
-		{"KOLLEGIUM", "upload_photos", false},
-		{"KOLLEGIUM", "view_books", false},
-		{"KOLLEGIUM", "edit_books", false},
-		{"KOLLEGIUM", "delete_books", false},
-		{"KOLLEGIUM", "inventory_scan", false},
-		{"KOLLEGIUM", "view_orders", false},
-		{"KOLLEGIUM", "create_orders", false},
-		{"KOLLEGIUM", "view_graduates", false},
-		{"KOLLEGIUM", "view_stats", false},
-		{"KOLLEGIUM", "audit_logs", false},
-		{"KOLLEGIUM", "manage_users", false},
-
-		// Helfer defaults — Kiosk-Rolle: darf NUR am Terminal ausleihen/zurücknehmen
-		// (perform_actions: /api/action, /scan, /search, /events). Bewusst KEIN
-		// view_students: das gäbe Zugriff auf Schülerlisten, Profile, Mahnwesen und den
-		// Bulk-Mahndruck (= Mahnstufen-Eskalation) — alles jenseits des Kiosk-Zwecks.
-		{"HELFER", "perform_actions", true},
-		{"HELFER", "view_students", false},
-		{"HELFER", "edit_students", false},
-		{"HELFER", "create_students", false},
-		{"HELFER", "delete_students", false},
-		{"HELFER", "import_students", false},
-		{"HELFER", "upload_photos", false},
-		// Katalog JA (Betreiber-Entscheidung 30.07.2026): Ein Helfer an der Theke ist
-		// die erste Anlaufstelle für "Habt ihr Band 3 von Gregs Tagebuch noch da?".
-		// Ohne Katalogzugriff müsste er dafür jedes Mal an die Leitung abgeben. Das
-		// Recht ist rein lesend und öffnet keine Personendaten — die stecken hinter
-		// view_students, das für den Helfer weiterhin verschlossen bleibt.
-		{"HELFER", "view_books", true},
-		{"HELFER", "edit_books", false},
-		{"HELFER", "delete_books", false},
-		{"HELFER", "inventory_scan", false},
-		{"HELFER", "view_orders", false},
-		{"HELFER", "create_orders", false},
-		{"HELFER", "create_reservations", false},
-		{"HELFER", "view_graduates", false},
-		{"HELFER", "view_stats", false},
-		{"HELFER", "audit_logs", false},
-		{"HELFER", "manage_users", false},
-	}
-
-	for _, d := range defaults {
+	for _, d := range RechteVorgabe {
 		_, err := db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
 		if err != nil {
 			return fmt.Errorf("failed to seed permission default (%s, %s): %w", d.Role, d.Permission, err)

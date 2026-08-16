@@ -229,8 +229,11 @@ nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Contai
 und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
 raus, nur ohne den Link, um dessentwillen es sie gibt).
 
-**Geprüft werden sechs Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
-(IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten.
+**Geprüft werden sieben Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
+(IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten, Rechte-Vorgabe
+(Abgleich der Live-Tabelle `role_permissions` gegen die Code-Vorgabe — der Seed fasst
+bestehende Zeilen nie an, eine geänderte Vorgabe erreicht Alt-Anlagen sonst nie; eine
+Abweichung ist bewusst nur eine Warnung, denn sie kann eine Admin-Entscheidung sein).
 
 Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
 **Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet
