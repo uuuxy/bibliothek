@@ -145,29 +145,6 @@ func bestellungIDOderNull(id string) any {
 	return id
 }
 
-// UpsertBookTitle speichert oder aktualisiert ein Buchtitel-Objekt.
-// signatur: COALESCE-Schutz — die Signatur klebt physisch auf dem Buchrücken.
-// Ein Re-Import mit leerer Signatur-Spalte darf einen befüllten Wert NIE
-// überschreiben (sonst droht Re-Labeling des Bestands); eine nicht-leere
-// Littera-Signatur gewinnt weiterhin 1:1.
-func (r *pgBookRepository) UpsertBookTitle(ctx context.Context, t BookTitle) error {
-	query := `
-		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur, ziel_jahrgang, aktualisiert_am)
-		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''), $7, CURRENT_TIMESTAMP)
-		ON CONFLICT (isbn) DO UPDATE SET
-		    titel = EXCLUDED.titel,
-		    autor = COALESCE(NULLIF(EXCLUDED.autor, ''), buecher_titel.autor),
-		    verlag = COALESCE(NULLIF(EXCLUDED.verlag, ''), buecher_titel.verlag),
-		    erscheinungsjahr = COALESCE(NULLIF(EXCLUDED.erscheinungsjahr, 0), buecher_titel.erscheinungsjahr),
-		    signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
-		    ziel_jahrgang = EXCLUDED.ziel_jahrgang,
-		    aktualisiert_am = CURRENT_TIMESTAMP
-	`
-
-	_, err := r.db.Exec(ctx, query, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur, t.ZielJahrgang)
-	return err
-}
-
 // BulkUpsertBookTitles speichert viele Titel in EINEM gepipelineten Batch statt
 // je Titel eine eigene Datenbank-Rundreise (der frühere N+1 ließ den MAB2-Import
 // mit ~15.000 Titeln gegen eine nicht-lokale DB in Client-Timeouts laufen).
