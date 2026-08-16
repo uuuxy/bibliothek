@@ -111,3 +111,80 @@ func erfasstFuer(t *testing.T, pool *pgxpool.Pool, sessionID, exemplarID string)
 	}
 	return n
 }
+
+// TestInventurScan_Fehlerfaelle sichert diverse Edge Cases und Fehlerabbrüche ab,
+// wie eine fehlende/unbekannte Session, unbekannte oder ausgesonderte Exemplare
+// sowie Warnungen bei ausgeliehenen Büchern.
+func TestInventurScan_Fehlerfaelle(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
+		t.Fatalf("Sessions leeren: %v", err)
+	}
+	resetBestandsdaten(t, pool)
+
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	sigDeutsch := "INV-Deutsch-" + suffix
+	barcodeDeutsch := "B-D-" + suffix
+	seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeDeutsch)
+
+	// Ausgesondertes Exemplar (durch Setzen des zustand_notiz und eines Triggers / manuelles Update)
+	barcodeAusgesondert := "B-A-" + suffix
+	exAusgesondert := seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeAusgesondert)
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, exAusgesondert); err != nil {
+		t.Fatalf("Exemplar aussondern: %v", err)
+	}
+
+	// Ausgeliehenes Exemplar
+	barcodeLent := "B-L-" + suffix
+	exLent := seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeLent)
+	var userID string
+	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES ('Test', 'User', 'test@example.com', 'admin', true) RETURNING id`).Scan(&userID); err != nil {
+		t.Fatalf("User anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist) VALUES ($1, $2, NOW(), NOW() + interval '14 days')`, exLent, userID); err != nil {
+		t.Fatalf("Ausleihe anlegen: %v", err)
+	}
+
+	invRepo := repository.NewInventoryRepository(pool)
+	session, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigDeutsch}, "Deutsch", "")
+	if err != nil {
+		t.Fatalf("Deutsch-Session anlegen: %v", err)
+	}
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	tests := []struct {
+		name       string
+		sessionID  string
+		barcode    string
+		wantCode   int
+		wantStatus string
+	}{
+		{"Fehlende Session ID", "", barcodeDeutsch, http.StatusBadRequest, ""},
+		{"Unbekannte Session ID", "00000000-0000-0000-0000-000000000000", barcodeDeutsch, http.StatusNotFound, ""},
+		{"Unbekannter Barcode", session.ID, "UNKNOWN", http.StatusNotFound, ""},
+		{"Ausgesondertes Exemplar", session.ID, barcodeAusgesondert, http.StatusConflict, ""},
+		{"Ausgeliehenes Exemplar (Warnung aber OK)", session.ID, barcodeLent, http.StatusOK, "erfasst"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := inventurScan(t, srv, tt.sessionID, tt.barcode)
+			if rec.Code != tt.wantCode {
+				t.Errorf("erwartet %d, war %d: %s", tt.wantCode, rec.Code, rec.Body.String())
+			}
+			if tt.wantStatus != "" {
+				var payload InventurScanResponse
+				if err := json.Unmarshal(rec.Body.Bytes(), &payload); err == nil {
+					if payload.Status != tt.wantStatus {
+						t.Errorf("Status: erwartet %q, war %q", tt.wantStatus, payload.Status)
+					}
+					if tt.name == "Ausgeliehenes Exemplar (Warnung aber OK)" && len(payload.Warnungen) == 0 {
+						t.Errorf("Erwartet Warnung für ausgeliehenes Buch, bekam keine")
+					}
+				}
+			}
+		})
+	}
+}
