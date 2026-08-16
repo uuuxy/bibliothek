@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-08-11. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-08-16. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -18,7 +18,7 @@
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 
-## Alle registrierten Routen (168)
+## Alle registrierten Routen (171)
 
 - `/`
 - `/api/admin`
@@ -107,6 +107,7 @@
 - `GET /api/schueler/{id}`
 - `GET /api/schueler/{id}/dsgvo-auskunft`
 - `GET /api/schueler/{id}/dsgvo-auskunft/pdf`
+- `GET /api/schueler/{id}/schadensfaelle`
 - `GET /api/search`
 - `GET /api/signaturen`
 - `GET /api/signaturen/buecher`
@@ -164,6 +165,8 @@
 - `POST /api/print/labels`
 - `POST /api/public/bestellung/{token}/bestaetigen`
 - `POST /api/reservierungen/klassensatz`
+- `POST /api/schadensfaelle/{id}/bezahlt`
+- `POST /api/schadensfaelle/{id}/storno`
 - `POST /api/schueler`
 - `POST /api/schueler/{id}/photo`
 - `POST /api/schueler/{id}/restore`

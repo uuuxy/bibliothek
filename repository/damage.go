@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"bibliothek/db"
 
@@ -13,6 +14,24 @@ import (
 type DamageRepository interface {
 	MarkCopyDefekt(ctx context.Context, copyID string, loanID, schuelerID *string, benutzerID string, betrag float64, beschreibung string) (string, error)
 	ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, betrag float64) (string, error)
+	// ListSchadensfaelleVonSchueler liefert alle Schadensfälle eines Schülers,
+	// neueste zuerst — die Gebühren-Sektion der Schülerakte.
+	ListSchadensfaelleVonSchueler(ctx context.Context, schuelerID string) ([]Schadensfall, error)
+}
+
+// Schadensfall ist eine Zeile der Gebühren-/Schadensliste eines Schülers.
+// Titel/Barcode sind Zeiger: exemplar_id ist nullbar (Geräteschäden, anonymisierte
+// Fälle) — ein nicht-nullbarer String würde beim Scan mit 500 abstürzen.
+type Schadensfall struct {
+	ID                string     `json:"id"`
+	Beschreibung      string     `json:"beschreibung"`
+	Betrag            float64    `json:"betrag"`
+	IstBezahlt        bool       `json:"ist_bezahlt"`
+	ErstelltAm        time.Time  `json:"erstellt_am"`
+	StorniertAm       *time.Time `json:"storniert_am"`
+	Stornierungsgrund *string    `json:"stornierungsgrund"`
+	Titel             *string    `json:"titel"`
+	BarcodeID         *string    `json:"barcode_id"`
 }
 
 type pgDamageRepository struct {
@@ -22,6 +41,35 @@ type pgDamageRepository struct {
 // NewDamageRepository returns a new PostgreSQL implementation of DamageRepository.
 func NewDamageRepository(db db.PgxPoolIface) DamageRepository {
 	return &pgDamageRepository{db: db}
+}
+
+// ListSchadensfaelleVonSchueler liefert alle Schadensfälle eines Schülers, neueste zuerst.
+// LEFT JOIN: exemplar_id kann NULL sein (Geräteschäden), dann bleiben Titel/Barcode leer.
+func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, schuelerID string) ([]Schadensfall, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT sf.id, sf.beschreibung, sf.betrag, sf.ist_bezahlt, sf.erstellt_am,
+		       sf.storniert_am, sf.stornierungsgrund, t.titel, e.barcode_id
+		FROM schadensfaelle sf
+		LEFT JOIN buecher_exemplare e ON sf.exemplar_id = e.id
+		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		WHERE sf.schueler_id = $1
+		ORDER BY sf.erstellt_am DESC
+	`, schuelerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	faelle := []Schadensfall{}
+	for rows.Next() {
+		var f Schadensfall
+		if err := rows.Scan(&f.ID, &f.Beschreibung, &f.Betrag, &f.IstBezahlt, &f.ErstelltAm,
+			&f.StorniertAm, &f.Stornierungsgrund, &f.Titel, &f.BarcodeID); err != nil {
+			return nil, err
+		}
+		faelle = append(faelle, f)
+	}
+	return faelle, rows.Err()
 }
 
 // MarkCopyDefekt marks a book copy as defective and records a damage entry.

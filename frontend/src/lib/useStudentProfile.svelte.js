@@ -6,6 +6,8 @@ export function useStudentProfile() {
 	let profile = $state(null);
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
+	/** @type {any[]} */
+	let gebuehren = $state([]);
 	let loading = $state(true);
 	let showWebcam = $state(false);
 	let timestamp = $state(Date.now());
@@ -24,12 +26,15 @@ export function useStudentProfile() {
 		if (!studentId) return;
 		loading = true;
 		try {
-			const [resProfile, resVormerkungen] = await Promise.all([
+			const [resProfile, resVormerkungen, resGebuehren] = await Promise.all([
 				apiFetch(`/api/schueler/${studentId}`),
-				apiFetch(`/api/vormerkungen?schueler_id=${studentId}`)
+				apiFetch(`/api/vormerkungen?schueler_id=${studentId}`),
+				apiFetch(`/api/schueler/${studentId}/schadensfaelle`)
 			]);
 			if (resProfile.ok) profile = await resProfile.json();
 			if (resVormerkungen.ok) vormerkungen = await resVormerkungen.json();
+			// 403 (z. B. Kiosk-Rolle ohne view_students) heisst schlicht: keine Liste zeigen.
+			if (resGebuehren.ok) gebuehren = (await resGebuehren.json()).data || [];
 		} catch (err) {
 			console.error('Fehler beim Laden des Schüler-Profils:', err);
 		} finally {
@@ -160,6 +165,9 @@ export function useStudentProfile() {
 		},
 		set vormerkungen(v) {
 			vormerkungen = v;
+		},
+		get gebuehren() {
+			return gebuehren;
 		},
 		get loading() {
 			return loading;

@@ -29,15 +29,8 @@ import (
 // Reparatur bei Rot: Entweder die Tür samt Implementierung und Test zurückbauen
 // (Regelfall — Parallel-Türen driften), oder sie hier mit Begründung eintragen.
 var bewussteTueren = map[string]string{
-	// KEIN toter Code, sondern eine offene Feature-Lücke (16.08.2026): Diese Methode
-	// ist der EINZIGE Schreiber von schadensfaelle.storniert_am im ganzen System —
-	// sie setzt den Storno UND schreibt das Audit-Protokoll. Gelesen wird die Spalte
-	// überall (offene-Gebühren-Filter, DSGVO-PDF, LUSD-Abgleich), aber es gibt noch
-	// keinen Endpunkt und keine Oberfläche, die stornieren kann. Ohne diese Tür
-	// blockiert eine zu erlassende Gebühr Schülerlöschung und LUSD-Abgleich dauerhaft
-	// (der einzige Ausweg wäre, sie wahrheitswidrig auf "bezahlt" zu setzen).
-	// Rückbau wäre falsch — die Tür muss GEBAUT werden (Endpunkt + Rechte + UI).
-	"StornierungGebuehr": "Feature-Lücke: einziger storniert_am-Schreiber, Endpunkt/UI fehlen noch",
+	// (derzeit leer — StornierungGebuehr hat seit 16.08.2026 seine Tür:
+	// POST /api/schadensfaelle/{id}/storno, siehe api/damage_resolve.go)
 }
 
 func TestInterfaceOhneProduktivenAufrufer(t *testing.T) {

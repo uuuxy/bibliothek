@@ -76,6 +76,12 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	damageRepo := repository.NewDamageRepository(s.DB.Pool)
 	mux.Handle("POST /api/damage/report", s.RequirePermission("edit_students")(s.ReportDamageHandler(damageRepo)))
 	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(s.GenerateDamagePDFHandler()))
+	// Gebühren-Erledigung: Lesen wie die Akte (view_students), Erledigen wie das
+	// Anlegen (edit_students) — Begründung im Kopf von damage_resolve.go.
+	auditRepoGebuehren := repository.NewAuditRepository(s.DB.Pool)
+	mux.Handle("GET /api/schueler/{id}/schadensfaelle", s.RequirePermission("view_students")(s.ListStudentSchadensfaelleHandler(damageRepo)))
+	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.RequirePermission("edit_students")(s.BezahltGebuehrHandler(auditRepoGebuehren)))
+	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.RequirePermission("edit_students")(s.StornoGebuehrHandler(auditRepoGebuehren)))
 
 	// Mahnwesen
 	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler(mahnRepo)))

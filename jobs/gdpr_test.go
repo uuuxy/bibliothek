@@ -46,7 +46,11 @@ func (m *MockAuditRepo) LogAdminAktion(ctx context.Context, adminID string, akti
 	return nil
 }
 
-func (m *MockAuditRepo) StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, betrag float64, grund string) error {
+func (m *MockAuditRepo) StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
+	return nil
+}
+
+func (m *MockAuditRepo) BezahltGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string) error {
 	return nil
 }
 

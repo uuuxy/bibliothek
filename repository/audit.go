@@ -35,8 +35,13 @@ type AuditRepository interface {
 	// Vorgänge blockieren ebenfalls.
 	PurgeAbgaenger(ctx context.Context, studentID string, bearbeiterID string) error
 
-	// StornierungGebuehr protokolliert den Erlass oder die Stornierung einer ausstehenden Gebühr mit Begründung.
-	StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, betrag float64, grund string) error
+	// StornierungGebuehr storniert eine ausstehende Gebühr mit zwingender Begründung
+	// und protokolliert den Vorgang. Der Betrag wird transaktionssicher aus der
+	// Datenbank gelesen, nie vom Aufrufer übergeben.
+	StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error
+
+	// BezahltGebuehr verbucht die Zahlung einer ausstehenden Gebühr und protokolliert den Vorgang.
+	BezahltGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string) error
 
 	// LogAusleihe protokolliert die erfolgreiche Ausleihe eines Exemplars an einen Schüler oder Lehrer.
 	LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error

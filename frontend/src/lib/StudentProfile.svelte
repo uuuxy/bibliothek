@@ -10,6 +10,7 @@
 	import StudentDangerZone from './StudentDangerZone.svelte';
 	import StudentProfileStammdaten from './StudentProfileStammdaten.svelte';
 	import StudentVormerkungenCard from './StudentVormerkungenCard.svelte';
+	import StudentGebuehrenCard from './StudentGebuehrenCard.svelte';
 	import StudentProfileActions from './StudentProfileActions.svelte';
 	import StudentPrintReceipt from './StudentPrintReceipt.svelte';
 	import { useStudentProfile } from './useStudentProfile.svelte.js';
@@ -181,6 +182,12 @@
 							{#if st.vormerkungen.length > 0}
 								<StudentVormerkungenCard bind:vormerkungen={st.vormerkungen} />
 							{/if}
+
+							<StudentGebuehrenCard
+								gebuehren={st.gebuehren}
+								canEdit={role === 'admin' || role === 'mitarbeiter'}
+								onChanged={() => st.fetchProfile(st.profile.id)}
+							/>
 						</div>
 					{:else if st.activeTab === 'stammdaten'}
 						<StudentProfileStammdaten
