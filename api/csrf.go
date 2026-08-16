@@ -10,8 +10,10 @@ package api
 //   3. If they don't match or are missing, the request is rejected with 403.
 //
 // This complements SameSite=Strict cookies as a defense-in-depth measure.
-// Ausgenommen sind nur die drei Pfade in istPruefungsAusnahme; jede weitere Ausnahme
-// nimmt genau diese zweite Schranke wieder heraus.
+// Ausgenommen sind nur die zwei Pfade in istPruefungsAusnahme (logout, refresh); jede
+// weitere Ausnahme nimmt genau diese zweite Schranke wieder heraus. (Bis 16.08.2026
+// stand hier „drei" — ein Rest aus der Zeit vor der Bereinigung der Ausnahmeliste;
+// die Funktion selbst und der Kommentar an istAPIPfad sagten längst zwei.)
 
 import (
 	"crypto/rand"
