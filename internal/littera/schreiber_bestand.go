@@ -36,11 +36,13 @@ const sqlTitelEinfuegen = `
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 	RETURNING id`
 
+// etikett_gedruckt = true: Altbestand traegt seine Littera-Etiketten physisch —
+// siehe gleiche Begruendung am Sammelimport (import_dynamic.go).
 const sqlExemplarEinfuegen = `
 	INSERT INTO buecher_exemplare
 		(titel_id, barcode_id, erworben_am, ist_ausleihbar, einkaufspreis,
-		 erweiterte_eigenschaften, erstellt_am)
-	VALUES ($1,$2,$3,true,$4,$5,$6)
+		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt)
+	VALUES ($1,$2,$3,true,$4,$5,$6,true)
 	RETURNING id`
 
 // SchreibeBestand überträgt Titel und Exemplare.

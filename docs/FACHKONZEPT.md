@@ -176,6 +176,13 @@ Um Nachvollziehbarkeit bei sensiblen Schuldaten zu garantieren, gibt es ein stre
 - Jede administrative Aktion (Benutzer gelöscht, Schadensfall storniert, Schüler manuell gesperrt) wird in der Tabelle `audit_logs` mit `Akteur`, `Zeitstempel`, `IP` und Vorher-/Nachher-Details protokolliert.
 - Das Audit-Log ist **append-only** (nur anhängend). Weder Admins noch Lehrer können Einträge über die UI verändern oder löschen.
 - Die Daten dienen der Fehlerbehebung und DSGVO-Rechenschaftspflicht.
+- **Aufbewahrungsfrist** (seit 16.08.2026): Auch Protokolle brauchen ein „wie lange“ —
+  IP-Adressen und Bearbeiter-Bezüge sind personenbezogen (Speicherbegrenzung, Art. 5).
+  Ein nächtlicher Job (03:00, nach dem Backup) löscht Einträge beider Tabellen jenseits
+  der Frist aus `audit_aufbewahrung_monate` (Vorgabe 24 Monate, Untergrenze 6 gegen
+  Fehlkonfiguration) und hinterlässt die Löschung selbst als eine Meta-Zeile mit den
+  Zahlen — sonst sähe eine spätere Prüfung nur ein Protokoll mit unerklärlicher
+  Vorderkante.
 
 ---
 
@@ -272,6 +279,12 @@ Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was is
 die Meldung auf einem Zettel statt in der `.env`. Dazu eine **Stufe**: `ok` (in Betrieb),
 `warnung` (läuft, aber nicht wie gedacht), `kritisch` (vor dem Echtbetrieb zwingend zu
 klären). Bewusst nur drei — eine feinere Skala liest niemand.
+
+**Der Wächter meldet sich selbst** (seit 16.08.2026): Kritische Befunde gehen täglich
+per Mail an alle aktiven Admins — täglich, solange sie bestehen, mit Befund, Folge und
+Abhilfe je Punkt. Warnungen lösen bewusst keine Mail aus (Dauerrauschen stumpft ab);
+ihre Zahl steht als Fußnote. Auf Spielwiesen (`APP_ENV=local/development/test`)
+schweigt der Alarm — die lokale `.env` zeigt auf den echten Schul-SMTP.
 
 Die Seite ist eine **reine Prüffunktion**: Sie ändert nichts, sie schaltet nichts frei.
 Die Urteile sind als reine Funktion über eine eingesammelte Lage gebaut

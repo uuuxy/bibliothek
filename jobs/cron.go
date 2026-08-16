@@ -41,6 +41,12 @@ func (s *Scheduler) Start() {
 		return
 	}
 
+	// Nächtliche Audit-Aufbewahrung um 03:00 UTC — nach dem Backup (02:30), damit die
+	// Sicherung des Tages die Einträge noch VOR ihrer Löschung enthält.
+	if _, err := s.cron.AddFunc("0 3 * * *", s.RunAuditAufbewahrung); err != nil {
+		log.Printf("Scheduler: Failed to register audit retention job: %v", err)
+	}
+
 	// Tägliches verschlüsseltes Datenbank-Backup um 02:30 UTC (Zeitraum mit wenig Traffic)
 	backup := &BackupJob{}
 

@@ -310,6 +310,15 @@ wegsichern — Pflicht ist es nicht.
 
 ## 7. Health Check & Monitoring
 
+### 7.0 Externes Uptime-Signal (offen — 5-Minuten-Handgriff)
+
+Alle Wächter unten laufen AUF dem Server: Fällt er ganz aus (Strom, Netz, Hetzner),
+meldet es niemand — die Nutzer merken es zuerst. Abhilfe ist kein Code, sondern ein
+externer Monitor (z. B. UptimeRobot, kostenloser Plan), der alle 5 Minuten
+`https://flasch3.herzog-dupont.de/health` abruft und bei Ausfall eine Mail schickt.
+Der Endpunkt ist öffentlich und gibt keine Interna preis (`{"status":"healthy"}`).
+
+
 Es gibt **zwei** Health Checks, und sie prüfen Verschiedenes. Hier stand bis zum
 06.08.2026 nur der Datenbank-Check, ausgegeben als wäre es der des Anwendungscontainers.
 

@@ -88,6 +88,34 @@ func startServer(port string, server *api.Server) *http.Server {
 	return httpServer
 }
 
+// startBereitschaftsWaechter meldet kritische Befunde der Selbstprüfung täglich per
+// Mail an die Admins — der Wächter, der sich meldet, statt gelesen werden zu müssen
+// (api/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst).
+// Erster Lauf 3 Minuten nach dem Start: ein Deploy mit kaputter Umgebung meldet sich
+// so noch am selben Vormittag, nicht erst am nächsten Tag.
+func startBereitschaftsWaechter(ctx context.Context, server *api.Server) {
+	go func() {
+		select {
+		case <-time.After(3 * time.Minute):
+			server.BereitschaftsAlarm(ctx)
+		case <-ctx.Done():
+			return
+		}
+
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				server.BereitschaftsAlarm(ctx)
+			case <-ctx.Done():
+				slog.Info("Background Worker: Bereitschafts-Wächter gracefully stopped.")
+				return
+			}
+		}
+	}()
+}
+
 func startGDPRWorker(ctx context.Context, scheduler *jobs.Scheduler) {
 	go func() {
 		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
@@ -352,6 +380,7 @@ func main() {
 
 	// 6. Initialize API Server and routing
 	server := api.NewServer(database, authenticator, broker, cookieSecure)
+	startBereitschaftsWaechter(ctx, server)
 	httpServer := startServer(port, server)
 
 	// 7. Autostart: Resume downloading missing covers

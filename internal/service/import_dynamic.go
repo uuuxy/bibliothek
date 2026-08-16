@@ -327,9 +327,15 @@ func fuegeExemplareEin(ctx context.Context, tx pgx.Tx, copiesToInsert []importCo
 	}
 
 	batchCopies := &pgx.Batch{}
+	// etikett_gedruckt = true: Der Sammelimport uebernimmt BESTAND — Buecher, die
+	// physisch laengst ein Littera-Etikett tragen. Mit dem Default false zaehlte
+	// das Druck-Center nach dem Prod-Import 30.658 "offene Etiketten" und stand
+	// dauerhaft auf 999+ (ein Waechter, der immer schreit, wird abgeschaltet).
+	// Neuzugaenge aus dem Bestellwesen behalten false — dort entsteht das Etikett
+	// wirklich erst im Haus.
 	qInsertExemplar := `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz)
-		VALUES ($1, $2, CURRENT_DATE, $3, NULLIF($4, ''))
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz, etikett_gedruckt)
+		VALUES ($1, $2, CURRENT_DATE, $3, NULLIF($4, ''), true)
 		ON CONFLICT (barcode_id) DO NOTHING
 	`
 	for _, c := range copiesToInsert {

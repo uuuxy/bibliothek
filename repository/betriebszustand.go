@@ -44,6 +44,31 @@ func (r *BetriebszustandRepository) ZaehleDemoSchueler(ctx context.Context) (int
 	return anzahl, err
 }
 
+// AktiveAdminMails liefert die E-Mail-Adressen aller aktiven Admins — die
+// Empfänger des Bereitschafts-Alarms. Bewusst nur Admins: Die Befunde beschreiben
+// die Angriffsfläche der Anlage (Geheimnisse, Backups), nicht die Bibliothek.
+func (r *BetriebszustandRepository) AktiveAdminMails(ctx context.Context) ([]string, error) {
+	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
+	defer abbrechen()
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT email FROM benutzer WHERE rolle = 'admin' AND aktiv = true AND email <> ''`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	mails := []string{}
+	for rows.Next() {
+		var mail string
+		if err := rows.Scan(&mail); err != nil {
+			return nil, err
+		}
+		mails = append(mails, mail)
+	}
+	return mails, rows.Err()
+}
+
 // LadeRollenRechte liefert die Live-Rechte (role_permissions) als Rolle→Recht→erlaubt.
 // Für den Vorgabe-Abgleich der Selbstprüfung; gleiche Zeitlimit-Begründung wie oben.
 func (r *BetriebszustandRepository) LadeRollenRechte(ctx context.Context) (map[string]map[string]bool, error) {
