@@ -1,13 +1,121 @@
 package inventur
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v4"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestHandleClassBooks(t *testing.T) {
+	tests := []struct {
+		name           string
+		branch         string
+		sort           string
+		setupMock      func(pgxmock.PgxPoolIface)
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:   "Success - Default (No query params)",
+			branch: "",
+			sort:   "",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT.*").
+					WithArgs("").
+					WillReturnRows(pgxmock.NewRows([]string{
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+					}).AddRow(
+						"5A", "b1", "Book 1", "Math", "G", "url", "123", 5, 10,
+					))
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","stock":10,"verfuegbar":5,"gesamt":10}]}]}`,
+		},
+		{
+			name:   "Success - Empty results fallback",
+			branch: "",
+			sort:   "",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT.*").
+					WithArgs("").
+					WillReturnRows(pgxmock.NewRows([]string{
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+					}))
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"data":[]}`,
+		},
+		{
+			name:   "Success - With Query Params",
+			branch: "F",
+			sort:   "desc",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT.*").
+					WithArgs("F").
+					WillReturnRows(pgxmock.NewRows([]string{
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+					}))
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"data":[]}`,
+		},
+		{
+			name:   "Database Error",
+			branch: "",
+			sort:   "",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT.*").
+					WithArgs("").
+					WillReturnError(errors.New("db error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   `{"error":"Ein interner Datenbankfehler ist aufgetreten."}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			}
+			defer mock.Close()
+
+			repo := NewBookRepository(mock)
+			handler := &APIHandler{repo: repo}
+
+			tt.setupMock(mock)
+
+			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/api/class-books", nil) //nolint:errcheck
+			if tt.branch != "" || tt.sort != "" {
+				q := req.URL.Query()
+				if tt.branch != "" {
+					q.Add("branch", tt.branch)
+				}
+				if tt.sort != "" {
+					q.Add("sort", tt.sort)
+				}
+				req.URL.RawQuery = q.Encode()
+			}
+
+			w := httptest.NewRecorder()
+			handler.handleClassBooks(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			assert.JSONEq(t, tt.expectedBody, w.Body.String())
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
+			}
+		})
+	}
+}
 
 func TestFormatClassName(t *testing.T) {
 	tests := []struct {
