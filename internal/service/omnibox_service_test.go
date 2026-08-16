@@ -9,6 +9,80 @@ import (
 	"bibliothek/repository"
 )
 
+type mockUserRepoForOmnibox struct {
+	repository.UserRepository
+	lehrer *repository.User
+	err    error
+}
+
+func (m *mockUserRepoForOmnibox) GetLehrerByBarcode(ctx context.Context, barcode string) (*repository.User, error) {
+	return m.lehrer, m.err
+}
+
+func TestHandleTeacherAction(t *testing.T) {
+	tests := []struct {
+		name        string
+		lehrer      *repository.User
+		err         error
+		expectError bool
+		expectType  string
+	}{
+		{
+			name:        "Happy Path",
+			lehrer:      &repository.User{ID: "teacher-123"},
+			err:         nil,
+			expectError: false,
+			expectType:  "teacher",
+		},
+		{
+			name:        "Not Found",
+			lehrer:      nil,
+			err:         nil,
+			expectError: true,
+			expectType:  "",
+		},
+		{
+			name:        "Database Error",
+			lehrer:      nil,
+			err:         errors.New("db connection failed"),
+			expectError: true,
+			expectType:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepo := &mockUserRepoForOmnibox{
+				lehrer: tt.lehrer,
+				err:    tt.err,
+			}
+
+			svc := &defaultOmniboxService{
+				userRepo: mockRepo,
+			}
+
+			resp := &OmniboxResult{}
+			err := svc.handleTeacherAction(context.Background(), "L-123", resp)
+
+			if tt.expectError && err == nil {
+				t.Fatalf("expected an error but got none")
+			}
+
+			if !tt.expectError && err != nil {
+				t.Fatalf("did not expect an error, but got: %v", err)
+			}
+
+			if !tt.expectError && resp.Type != tt.expectType {
+				t.Errorf("expected resp.Type to be %q, got %q", tt.expectType, resp.Type)
+			}
+
+			if !tt.expectError && resp.Teacher != tt.lehrer {
+				t.Errorf("expected resp.Teacher to be %v, got %v", tt.lehrer, resp.Teacher)
+			}
+		})
+	}
+}
+
 func TestNewOmniboxService(t *testing.T) {
 	// Setup zero-value dependencies (we just need to verify they get injected correctly)
 	var pool db.PgxPoolIface
