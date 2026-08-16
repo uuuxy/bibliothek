@@ -5,7 +5,6 @@
 	import { erlaubteTabs, tabIstGesperrt } from './menu.js';
 
 	import Berechtigungen from './Berechtigungen.svelte';
-	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
 	import Omnibox from './Omnibox.svelte';
 	import BookAkte from './BookAkte.svelte';
 	import BestellWorkspace from './BestellWorkspace.svelte';
@@ -50,7 +49,6 @@
 		kollegium_portal: '/kollegium-portal',
 		'system-logs': '/system-logs',
 		lmf_actions: '/lmf-aktionen',
-		betriebsbereitschaft: '/betriebsbereitschaft',
 		berechtigungen: '/berechtigungen',
 		'druck-center': '/druck-center',
 		kiosk: '/kiosk'
@@ -229,8 +227,6 @@
 		<div class="w-full animate-fade-in"><KollegiumPortal user={authStore.currentUser} /></div>
 	{:else if uiStore.activeTab === 'lmf_actions'}
 		<div class="w-full animate-fade-in"><GlobalLMFExtendWidget /></div>
-	{:else if uiStore.activeTab === 'betriebsbereitschaft'}
-		<div class="w-full animate-fade-in"><Betriebsbereitschaft /></div>
 	{:else if uiStore.activeTab === 'berechtigungen'}
 		<div class="w-full animate-fade-in"><Berechtigungen /></div>
 	{:else if uiStore.activeTab === 'settings'}

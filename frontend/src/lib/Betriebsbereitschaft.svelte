@@ -1,7 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch } from './apiFetch.js';
-	import PageShell from './components/layout/PageShell.svelte';
 	import { CircleCheck, TriangleAlert, OctagonAlert, RefreshCw } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 
@@ -47,11 +46,12 @@
 	onMount(laden);
 </script>
 
-<PageShell>
-	<!-- KEINE Ueberschrift: Seiten tragen seit a3e4184 bewusst keinen eigenen Titel, die
-	     Seitenleiste sagt, wo man ist. Der Satz daneben erklaert stattdessen, was diese
-	     Seite NICHT ist — keine Fehlerliste. Sie zeigt, was eingerichtet, aber nicht in
-	     Betrieb ist; solche Luecken melden sich nie von selbst. -->
+<!-- Seit 16.08.2026 ein Tab der Einstellungen (Betreiber-Entscheidung: schlankeres
+     Menue), kein eigener Bildschirm mehr — deshalb KEIN PageShell; die Huelle stellt
+     SystemSettings. Der Einleitungssatz erklaert, was diese Ansicht NICHT ist — keine
+     Fehlerliste. Sie zeigt, was eingerichtet, aber nicht in Betrieb ist; solche
+     Luecken melden sich nie von selbst. -->
+<div class="space-y-6">
 	<div class="flex items-start justify-between gap-4">
 		<p class="max-w-2xl text-sm text-on-surface-variant">
 			Was ist eingerichtet, aber nicht in Betrieb? Funktionen, die fertig sind und nichts tun, weil
@@ -97,4 +97,4 @@
 			{/each}
 		</div>
 	{/if}
-</PageShell>
+</div>

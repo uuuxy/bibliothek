@@ -27,11 +27,13 @@ test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async (
 	// grün, obwohl der Menüeintrag fehlte: Die Seite war nur für den erreichbar, der den
 	// Pfad kennt. Ein Bildschirm, den niemand findet, ist so gut wie keiner.
 	//
-	// Die Gruppe „System" ist zugeklappt und muss erst geöffnet werden — auch das gehört
-	// zum Weg, den eine Verwaltungskraft geht.
+	// Seit 16.08.2026 ist die Selbstprüfung ein TAB der Einstellungen (Betreiber-
+	// Entscheidung: schlankeres Menü) — der Weg der Verwaltungskraft führt über die
+	// zugeklappte System-Gruppe, die Einstellungen und den Tab.
 	await page.getByRole('button', { name: 'System', exact: true }).click();
-	await page.getByTitle('Betriebsbereitschaft').click();
-	await expect(page).toHaveURL(/\/betriebsbereitschaft$/);
+	await page.getByTitle('Einstellungen').click();
+	await expect(page).toHaveURL(/\/einstellungen$/);
+	await page.getByRole('button', { name: 'Betriebsbereitschaft' }).click();
 
 	// Der Bereich, von dem wir wissen, dass er hier offen ist.
 	const auslagerung = page.locator('div', { hasText: 'Auslagerung der Backups' }).last();
@@ -67,17 +69,17 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 
 	// Und der Bildschirm selbst bleibt zu.
 	//
-	// Geprüft wird der EINLEITUNGSSATZ der Seite, nicht ein Befund. Der erste Anlauf sah
+	// Geprüft wird der EINLEITUNGSSATZ der Ansicht, nicht ein Befund. Der erste Anlauf sah
 	// nach „Auslagerung der Backups" — und war grün, ohne irgendetwas zu belegen: Die
 	// Befunde bleiben für einen Helfer ohnehin aus, weil der Endpunkt oben sperrt. Der
-	// Einleitungssatz dagegen steht fest im Markup und erscheint, sobald die Seite
+	// Einleitungssatz dagegen steht fest im Markup und erscheint, sobald die Ansicht
 	// überhaupt gerendert wird.
 	//
-	// Dass sie das nicht tut, hängt am Menüeintrag: tabIstGesperrt() kennt nur
-	// Bildschirme, die im Menü stehen. Ohne den Eintrag wäre /betriebsbereitschaft für
-	// jeden Angemeldeten per URL zu öffnen — dieselbe Lücke, die book_detail und
-	// stats_detail schon einmal offen liessen.
-	await page.goto('/betriebsbereitschaft');
+	// Die Selbstprüfung ist ein Tab der EINSTELLUNGEN; deren Menüeintrag speist
+	// tabIstGesperrt(). Eine eigene /betriebsbereitschaft-Route existiert nicht mehr —
+	// der frühere URL-Schleichweg ist damit strukturell weg, geprüft wird der Weg über
+	// die Einstellungs-URL.
+	await page.goto('/einstellungen');
 	await expect(
 		page.getByText('Was ist eingerichtet, aber nicht in Betrieb?'),
 		'ein Helfer darf den Bildschirm gar nicht erst zu sehen bekommen'

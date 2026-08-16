@@ -217,7 +217,7 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
 
 ## 15. Selbstprüfung der Betriebsbereitschaft
 
-Erreichbar unter **System → Betriebsbereitschaft** (Recht `manage_users`,
+Erreichbar unter **System → Einstellungen → Tab „Betriebsbereitschaft“** (Recht `manage_users`,
 `GET /api/admin/system/betriebsbereitschaft`). Die Seite beantwortet **eine** Frage:
 *Was ist eingerichtet, aber nicht in Betrieb?*
 

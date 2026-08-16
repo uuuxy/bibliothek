@@ -4,6 +4,7 @@
 	import MailTemplates from './MailTemplates.svelte';
 	import DataManagement from './components/admin/DataManagement.svelte';
 	import MailConfig from './components/admin/MailConfig.svelte';
+	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
 	import SystemSettingsAllgemein from './SystemSettingsAllgemein.svelte';
 	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
@@ -18,7 +19,14 @@
 	// Tabs
 	const tabs = $derived(
 		isAdmin
-			? ['Allgemein', 'Mahnwesen-Routing', 'Datenverwaltung', 'Mail-Server', 'System']
+			? [
+					'Allgemein',
+					'Mahnwesen-Routing',
+					'Datenverwaltung',
+					'Mail-Server',
+					'System',
+					'Betriebsbereitschaft'
+				]
 			: ['Allgemein', 'Mahnwesen-Routing', 'System']
 	);
 	let activeTab = $state('Allgemein');
@@ -148,6 +156,10 @@
 				<!-- TAB: MAHNWESEN-ROUTING -->
 			{:else if activeTab === 'Mahnwesen-Routing'}
 				<SystemSettingsRouting />
+
+				<!-- TAB: BETRIEBSBEREITSCHAFT — reine Pruefung, siehe FACHKONZEPT §15 -->
+			{:else if activeTab === 'Betriebsbereitschaft' && isAdmin}
+				<Betriebsbereitschaft />
 
 				<!-- TAB: DATENVERWALTUNG -->
 			{:else if activeTab === 'Datenverwaltung' && isAdmin}
