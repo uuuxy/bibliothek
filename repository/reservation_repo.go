@@ -2,9 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // KlassensatzReservierung represents a pending class-set reservation.
@@ -48,7 +51,10 @@ type ReservationRepository interface {
 	// Warteschlangen-Reihenfolge (älteste zuerst) — die Sicht für das Portal.
 	OffeneKlassensatzReservierungen(ctx context.Context) ([]KlassensatzOffen, error)
 	GetKlassensatzReservierungenAnzahl(ctx context.Context) (int, error)
-	ErledigeKlassensatzReservierung(ctx context.Context, id string) (int64, error)
+	// ErledigeKlassensatzReservierung schliesst eine offene Reservierung ab und
+	// liefert die Angaben fuer die Bereit-Mail an die anfragende Lehrkraft.
+	// nil ohne Fehler: war nicht (mehr) offen.
+	ErledigeKlassensatzReservierung(ctx context.Context, id string) (*KlassensatzErledigt, error)
 }
 
 type pgReservationRepository struct {
@@ -171,10 +177,36 @@ func (r *pgReservationRepository) GetKlassensatzReservierungenAnzahl(ctx context
 	return count, err
 }
 
-func (r *pgReservationRepository) ErledigeKlassensatzReservierung(ctx context.Context, id string) (int64, error) {
-	tag, err := r.db.Exec(ctx, `UPDATE klassensatz_reservierungen SET erledigt = true WHERE id = $1`, id)
-	if err != nil {
-		return 0, err
+// KlassensatzErledigt sind die Angaben fuer die Bereit-Mail nach dem Abschliessen.
+type KlassensatzErledigt struct {
+	TitelName      string
+	Klasse         string
+	Anzahl         int
+	AnfragendeMail *string // nil: ohne Konto angefragt oder Konto geloescht
+}
+
+func (r *pgReservationRepository) ErledigeKlassensatzReservierung(ctx context.Context, id string) (*KlassensatzErledigt, error) {
+	// erledigt = false in der WHERE-Klausel: Der zweite Klick (zweiter Admin) darf
+	// weder doppelt abschliessen noch eine zweite Bereit-Mail ausloesen.
+	row := r.db.QueryRow(ctx, `
+		WITH abgeschlossen AS (
+			UPDATE klassensatz_reservierungen
+			SET erledigt = true
+			WHERE id = $1 AND erledigt = false
+			RETURNING titel_id, klasse, anzahl, angefordert_von
+		)
+		SELECT t.titel, a.klasse, a.anzahl, b.email
+		FROM abgeschlossen a
+		JOIN buecher_titel t ON t.id = a.titel_id
+		LEFT JOIN benutzer b ON b.id = a.angefordert_von
+	`, id)
+
+	var e KlassensatzErledigt
+	if err := row.Scan(&e.TitelName, &e.Klasse, &e.Anzahl, &e.AnfragendeMail); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
 	}
-	return tag.RowsAffected(), nil
+	return &e, nil
 }

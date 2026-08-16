@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"bibliothek/apierrors"
@@ -137,15 +138,33 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 		}
 
 		repo := repository.NewReservationRepository(s.DB.Pool)
-		rowsAffected, err := repo.ErledigeKlassensatzReservierung(r.Context(), id)
+		erledigt, err := repo.ErledigeKlassensatzReservierung(r.Context(), id)
 
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if rowsAffected == 0 {
+		if erledigt == nil {
 			apierrors.SendHTTPError(w, http.StatusNotFound, pgx.ErrNoRows)
 			return
+		}
+
+		// Bereit-Mail an die anfragende Lehrkraft — Betreiber-Entscheidung 16.08.2026:
+		// KEIN neuer Menuepunkt, das aktive Signal genuegt. Best effort: Die Buecher
+		// liegen physisch bereit; ein kaputter Mailversand darf das Abschliessen nicht
+		// rueckgaengig erscheinen lassen (nur Logzeile). Ohne Konto-Adresse (per SQL
+		// angelegt, Konto geloescht) gibt es schlicht keine Mail.
+		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
+			if err := SendEmail(MailRequest{
+				To:      *erledigt.AnfragendeMail,
+				Subject: fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
+				Body: fmt.Sprintf("Ihre Klassensatz-Reservierung ist fertig zusammengestellt und liegt in der Bibliothek zur Abholung bereit.\n\n"+
+					"  Titel:  %s\n  Klasse: %s\n  Anzahl: %d Exemplare\n\n"+
+					"Diese Mail wurde automatisch beim Abschliessen der Reservierung verschickt.",
+					erledigt.TitelName, erledigt.Klasse, erledigt.Anzahl),
+			}); err != nil {
+				log.Printf("Klassensatz-Bereit-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
+			}
 		}
 
 		w.WriteHeader(http.StatusNoContent)

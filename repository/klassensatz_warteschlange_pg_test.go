@@ -91,9 +91,20 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	}
 
 	// (4) 8a wird erledigt → die 9b rückt in der offenen Liste nach vorn, die
-	// erledigte 8a bleibt als Historie dahinter.
-	if _, err := repo.ErledigeKlassensatzReservierung(ctx, ersteID); err != nil {
+	// erledigte 8a bleibt als Historie dahinter. Das Abschliessen liefert die
+	// Angaben für die Bereit-Mail — inklusive der Konto-Adresse der Lehrkraft.
+	erledigt, err := repo.ErledigeKlassensatzReservierung(ctx, ersteID)
+	if err != nil {
 		t.Fatalf("Erledigen: %v", err)
+	}
+	if erledigt == nil || erledigt.Klasse != "8a" || erledigt.Anzahl != 3 ||
+		erledigt.AnfragendeMail == nil || *erledigt.AnfragendeMail != "KSQ-B@example.org" {
+		t.Fatalf("Bereit-Mail-Angaben falsch: %+v", erledigt)
+	}
+	// Der zweite Klick (zweiter Admin) schliesst nichts erneut ab — und löst damit
+	// auch keine zweite Bereit-Mail aus.
+	if nochmal, err := repo.ErledigeKlassensatzReservierung(ctx, ersteID); err != nil || nochmal != nil {
+		t.Fatalf("Doppel-Erledigen: erwartet nil ohne Fehler, bekam %+v / %v", nochmal, err)
 	}
 	liste, err = repo.GetKlassensatzReservierungen(ctx)
 	if err != nil {
