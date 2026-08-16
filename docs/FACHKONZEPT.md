@@ -74,18 +74,43 @@ Das System verwaltet den Mangel an verfügbaren Büchern durch zwei Konzepte:
 - *Schutz:* Es ist technisch unmöglich, dass ein Schüler ein Buch vormerkt, das er aktuell selbst ausleiht (Vermeidung von Monopolisierung).
 
 ### 4.2. Klassensatz-Reservierungen
-- Lehrkräfte können `N` Exemplare eines Titels für einen Zeitraum blockieren (Klassensatz).
-- **Erfüllung:** Solange die Reservierung läuft, werden zurückgegebene Bücher dieses Titels im System zurückgehalten, bis die benötigte Anzahl für den Klassensatz erreicht ist.
+
+**Reservieren heißt Anstellen, nicht Sperren** (Betreiber-Entscheidung 16.08.2026 — bis
+dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
+
+- Eine Lehrkraft reserviert im Kollegiums-Portal Titel + Klasse + Anzahl. Die einzige
+  harte Grenze: nicht mehr, als die Bibliothek physisch besitzt.
+- Die Reservierung **blockiert nichts** — weder Exemplare noch Rückgaben. Sie ist ein
+  Arbeitsauftrag an die Bibliothek und reiht sich in eine **sichtbare Warteschlange**
+  ein (älteste zuerst).
+- Das Portal zeigt bestehende Reservierungen **vor** dem Klick am Treffer
+  („28 reserviert für 8a“); wer trotzdem reserviert, erfährt in der Bestätigung, hinter
+  wem sein Satz an der Reihe ist.
+- Die Bibliothek arbeitet die Schlange unter Bestellungen → Klassensatz-Reservierungen
+  ab: je Zeile Anfragende(r) mit Namen und der aktuelle Regal-Bestand („N verfügbar“).
+  „Abschließen“ beendet den Vorgang nach der physischen Übergabe — die Ausleihe selbst
+  läuft über die normalen Wege (Kiosk je Schüler oder Lehrer-Handapparat).
 
 ---
 
-## 5. Geräteausleihe (Hardware)
+## 5. Geräteausleihe (Hardware) — angelegt, nicht in Betrieb
 
-Die Ausleihe von teurer Hardware (Laptops, Tablets, Beamer) folgt strikteren Regeln als Bücher:
+> **Ehrlicher Stand (16.08.2026):** Dieser Abschnitt beschrieb die Geräteausleihe als
+> fertiges Feature — das ist sie nicht. Was existiert: das Datenbank-Schema
+> (`geraete`, Ausleihe-/Schadensfall-Verknüpfung) und ein vollständiger
+> Backend-Dienst (`internal/service/device_service.go`) mit Ausleihe, Rückgabe und
+> Checklisten-Anforderung. Was fehlt: **eine Oberfläche zum Anlegen und Verwalten
+> von Geräten** (keine Routen, keine Ansicht) und **der Checklisten-Dialog am
+> Kiosk** — die Omnibox sendet fest `confirmed_checklist: false` und kann eine
+> angeforderte Checkliste nie bestätigen. Bevor hier weitergebaut wird, steht die
+> Produktentscheidung: Geräteausleihe zu Ende bauen oder den Backend-Torso
+> zurückbauen.
 
-- **Checklisten-Zwang:** Bei jeder Ausleihe und Rückgabe eines Geräts muss das Personal eine Checkliste bestätigen (z. B. "Ist das Ladekabel vorhanden?", "Ist der Stift da?", "Bildschirm intakt?").
-- **Schadens-Zuweisung:** Fehlt ein Zubehörteil bei der Rückgabe, kann direkt in der Rückgabe-Transaktion ein kostenpflichtiger Schadensfall für den Schüler generiert werden.
-- **Zustands-Sperre:** Geräte mit Status "Defekt" können vom System technisch nicht ausgeliehen werden.
+Ursprünglich angedachte Regeln (im Dienst bereits angelegt):
+
+- **Checklisten-Zwang:** Bei Ausleihe und Rückgabe bestätigt das Personal eine Checkliste (Ladekabel, Stift, Bildschirm intakt).
+- **Schadens-Zuweisung:** Fehlendes Zubehör erzeugt direkt in der Rückgabe einen Schadensfall.
+- **Zustands-Sperre:** Defekte Geräte sind nicht ausleihbar.
 
 ---
 
@@ -211,7 +236,14 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
 
 - Wenn ein Buch als "Verlust" oder "Beschädigt" ausgebucht wird (z.B. bei der Inventur oder manuell am Kiosk), kann das System automatisch eine Kostenforderung (Schadensfall) gegen den verursachenden Schüler anlegen.
 - Offene Schäden blockieren die DSGVO-Löschung eines Schülers und können per PDF-Rechnung ausgedruckt werden.
-- Ist ein Schaden bezahlt, wird die Rechnung als beglichen markiert und der Schüler ist wieder "frei".
+- **Erledigt wird eine Gebühr in der Schülerakte** (seit 16.08.2026) auf genau zwei Wegen:
+  **„Bezahlt“** (Barzahlung am Tresen) oder **„Stornieren“** mit Pflicht-Begründung
+  (Erlass, Buch wiedergefunden, Kulanz). Beides verlangt das Recht `edit_students` —
+  bewusst nicht die Kiosk-/Helfer-Rolle. Der Betrag im revisionssicheren Audit-Eintrag
+  stammt immer aus der Datenbank, nie aus der Anfrage; eine bereits erledigte Gebühr
+  meldet dem zweiten Bearbeiter einen Konflikt (409) statt einer Doppelbuchung.
+  Stornierte wie bezahlte Gebühren geben Schülerlöschung, LUSD-Abgleich und Ausleihe
+  wieder frei; die DSGVO-Auskunft weist Stornierungszeitpunkt und -grund transparent aus.
 
 ---
 

@@ -67,12 +67,17 @@ Vorschau und Ausführung rechnen identisches SQL.
 
 **Vorbereitung:** Eine echte Klassensatz-Anfrage einer Lehrkraft (oder testweise selbst eine anlegen).
 
-**Ablauf** (Bestellungen → Klassensatz-Reservierungen):
+**Ablauf** (Bestellungen → Klassensatz-Reservierungen; Warteschlangen-Modell — reservieren
+sperrt keinen Bestand):
 
-1. [ ] Offene Reservierung erscheint in der Liste (Titel, Klasse, Anzahl, Anforderer).
-2. [ ] Bücher physisch bereitstellen, dann **„Erledigen"**.
-3. [ ] Reservierung verschwindet aus der offenen Liste; der geblockte Bestand ist wieder frei.
-4. [ ] Gegenprobe: der Titel ist im Katalog wieder in voller Stückzahl ausleihbar.
+1. [ ] Offene Reservierung erscheint in der Liste (Titel, Klasse, Anzahl, Anforderer **mit Namen**, „N verfügbar“).
+2. [ ] Gegenprobe Warteschlange: eine zweite Reservierung desselben Titels anlegen — sie
+       reiht sich **hinter** der ersten ein, und das Portal zeigt der zweiten Lehrkraft
+       den Chip „… reserviert für …“ schon am Suchtreffer.
+3. [ ] Bücher physisch bereitstellen und übergeben, dann **„Abschließen“**.
+4. [ ] Reservierung verschwindet aus der offenen Liste; die zweite rückt nach vorn.
+5. [ ] Gegenprobe: die Ausleihe der Exemplare war die ganze Zeit möglich — es gab nie
+       einen geblockten Bestand.
 
 **Bestanden, wenn:** Ablauf für das Sekretariat ohne Rückfragen verständlich ist und der
 Bestand nach dem Erledigen stimmt.

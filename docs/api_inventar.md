@@ -18,7 +18,7 @@
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 
-## Alle registrierten Routen (171)
+## Alle registrierten Routen (172)
 
 - `/`
 - `/api/admin`
@@ -100,6 +100,7 @@
 - `GET /api/reports/overdue-pdf`
 - `GET /api/reservierungen/klassensatz`
 - `GET /api/reservierungen/klassensatz/anzahl`
+- `GET /api/reservierungen/klassensatz/offen`
 - `GET /api/schadensfaelle/{id}/pdf`
 - `GET /api/schueler`
 - `GET /api/schueler/deleted`
