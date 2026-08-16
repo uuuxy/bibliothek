@@ -55,6 +55,12 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	if meine[0].Verfuegbar != 3 {
 		t.Errorf("verfügbar = %d, erwartet 3 (alle im Regal)", meine[0].Verfuegbar)
 	}
+	// Der Anfragende steht MIT NAMEN in der Liste — das Feld existierte von Anfang
+	// an in Struct und UI, wurde aber nie befüllt (Feld ohne Nachfüller): Die
+	// Bibliothek wusste nicht, welche Lehrkraft sie anrufen soll.
+	if meine[0].AngefordertVon == nil || *meine[0].AngefordertVon != "Klassensatz Kraft" {
+		t.Errorf("angefordert_von = %v, erwartet den Klarnamen der Lehrkraft", meine[0].AngefordertVon)
+	}
 
 	// (2) Ein Exemplar wird verliehen → verfügbar sinkt auf 2. Genau dieser Blick
 	// erspart der Bibliothek das Zählen am Regal.

@@ -100,6 +100,8 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 	rows, err := r.db.Query(ctx, `
 		SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
 		       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
+		       CASE WHEN b.id IS NULL THEN NULL
+		            ELSE btrim(b.vorname || ' ' || b.nachname) END AS angefordert_von,
 		       (SELECT COUNT(*) FROM buecher_exemplare e
 		        WHERE e.titel_id = r.titel_id
 		          AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
@@ -108,6 +110,7 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 		       ) AS verfuegbar
 		FROM klassensatz_reservierungen r
 		JOIN buecher_titel t ON r.titel_id = t.id
+		LEFT JOIN benutzer b ON r.angefordert_von = b.id
 		ORDER BY r.erledigt ASC,
 		         CASE WHEN r.erledigt THEN r.erstellt_am END DESC,
 		         CASE WHEN NOT r.erledigt THEN r.erstellt_am END ASC
@@ -123,7 +126,7 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 		var t time.Time
 		if err := rows.Scan(
 			&res.ID, &res.TitelID, &res.TitelName, &res.CoverURL,
-			&res.Klasse, &res.Anzahl, &res.Notiz, &res.Erledigt, &t, &res.Verfuegbar,
+			&res.Klasse, &res.Anzahl, &res.Notiz, &res.Erledigt, &t, &res.AngefordertVon, &res.Verfuegbar,
 		); err != nil {
 			continue
 		}
