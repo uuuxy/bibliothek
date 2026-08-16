@@ -244,7 +244,7 @@ ausführliche Kommentar steht jeweils im Dateikopf.
 | Skript | Zweck |
 |---|---|
 | `api_inventar.sh` | Erzeugt `docs/api_inventar.md`: alle registrierten Go-Routen, alle `/api/`-Aufrufer im Frontend und den Abgleich in beide Richtungen (tote Handler / Geister-Aufrufe). |
-| `deadcode_gate.sh` | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen. |
+| `deadcode_gate.sh` | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen; nur von Tests erreichter Code zählt mit, begründete Ausnahmen stehen in `deadcode_baseline.txt`. Tote **Interface**-Methoden sieht das Werkzeug nicht — dafür läuft `tote_tueren_test.go` in jedem `go test`. |
 | `sonar_scan.sh` | SonarQube-Analyse **inklusive** Coverage. Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund 13 Punkte zu niedrig. |
 | `install-hooks.sh` | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`. |
 | `../security-scan.sh` | Sammel-Scan im **Repo-Root**: `gosec` (SAST), `trivy fs` (Abhängigkeiten/Konfiguration), OWASP-ZAP-API-Scan gegen `/swagger/doc.json`. Der ZAP-Teil braucht einen laufenden Server, Docker und `ADMIN_TOKEN` — er ist kein stiller Durchläufer, sondern eine bewusste Sitzung. |

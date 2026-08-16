@@ -11,11 +11,13 @@ internal/smtptest/server.go: unreachable func: bediene
 internal/smtptest/server.go: unreachable func: leseNachricht
 internal/smtptest/server.go: unreachable func: adresseAus
 
-# Episodischer Littera-Werkzeugkasten: Der Altbestand-Import läuft selten
-# (nächster Lauf nach frischem Littera-Backup); die Verifikationstests prüfen
-# damit echte Exportdaten. Der Alt-Decoder ist bewusst erhaltenes Formatwissen
-# (Rolle in 1a3733d0 dokumentiert). Kein Drift-Risiko: es existiert kein
-# paralleler Live-Pfad zu diesen Funktionen.
+# Episodischer Littera-Werkzeugkasten: Prüfwerkzeug für die noch ausstehende
+# Littera-Migration (nächster Lauf nach frischem Littera-Backup). BarcodeInhalt
+# entschlüsselt die alte Littera-Druckzeichenkette und dient als Gegenprobe zur
+# Exemplarnummer, aus der die EAN-13 gerechnet wird — 61.520 von 61.520 stimmen
+# überein. Der Lauf hängt an LITTERA_CSV_DIR und braucht die echten Altdaten,
+# die nicht im Repo liegen (Rolle des Alt-Decoders in 1a3733d0 dokumentiert).
+# Kein Drift-Risiko: es existiert kein paralleler Live-Pfad zu diesen Funktionen.
 internal/littera/abgang.go: unreachable func: IstAbschlussklasse
 internal/littera/barcode.go: unreachable func: BarcodeInhalt
 internal/littera/barcode.go: unreachable func: entschluessele
