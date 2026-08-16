@@ -55,16 +55,19 @@ describe('StudentGebuehrenCard', () => {
 	});
 
 	it('Storno geht nur mit Grund raus — und der Grund bleibt nicht im Modal stehen', async () => {
-		apiClient.post.mockResolvedValue({ ok: true, json: async () => ({}) });
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({}) })
+		);
 		const onChanged = vi.fn();
 		const screen = render(StudentGebuehrenCard, {
 			props: { gebuehren: [OFFEN], canEdit: true, onChanged }
 		});
 
 		await fireEvent.click(screen.getByRole('button', { name: /^Stornieren$/ }));
-		const bestaetigen = screen
-			.getAllByRole('button', { name: /Stornieren/ })
-			.find((b) => b.closest('.fixed'));
+		const bestaetigen = /** @type {HTMLButtonElement | undefined} */ (
+			screen.getAllByRole('button', { name: /Stornieren/ }).find((b) => b.closest('.fixed'))
+		);
+		if (!bestaetigen) throw new Error('Bestätigen-Knopf im Modal nicht gefunden');
 		// Ohne Grund ist der Bestätigen-Knopf gesperrt — kein Request.
 		expect(bestaetigen.disabled).toBe(true);
 
@@ -83,7 +86,9 @@ describe('StudentGebuehrenCard', () => {
 	});
 
 	it('Bezahlt schickt keinen Body-Betrag — der kommt aus der Datenbank', async () => {
-		apiClient.post.mockResolvedValue({ ok: true, json: async () => ({}) });
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({}) })
+		);
 		const screen = render(StudentGebuehrenCard, {
 			props: { gebuehren: [OFFEN], canEdit: true, onChanged: () => {} }
 		});
@@ -92,10 +97,12 @@ describe('StudentGebuehrenCard', () => {
 	});
 
 	it('zeigt die Fehlermeldung des Servers (409-Konflikt), nicht nur "fehlgeschlagen"', async () => {
-		apiClient.post.mockResolvedValue({
-			ok: false,
-			json: async () => ({ error: 'Schadensfall wurde bereits bezahlt oder storniert' })
-		});
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: false,
+				json: async () => ({ error: 'Schadensfall wurde bereits bezahlt oder storniert' })
+			})
+		);
 		const onChanged = vi.fn();
 		const screen = render(StudentGebuehrenCard, {
 			props: { gebuehren: [OFFEN], canEdit: true, onChanged }
