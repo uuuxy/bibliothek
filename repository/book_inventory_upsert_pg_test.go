@@ -9,7 +9,7 @@ import (
 // verify_katalogisat_test.go in internal/service): 4.747 von 13.708 Titeln haben
 // dort ein leeres Autor-Feld, 779 ein Jahr von 0. Ein erneuter Import über einen
 // bereits vorhandenen Bestand darf solche fehlenden Felder NICHT nachträglich
-// leeren — genau das tat BulkUpsertBookTitles vor diesem Fix: qUpdate schrieb
+// leeren — genau das tat BulkUpsertBookTitles vor dieser Korrektur: qUpdate schrieb
 // autor/verlag/erscheinungsjahr ungeschützt, während signatur/isbn längst per
 // COALESCE(NULLIF(...)) geschützt waren. Ein Reimport mit einer schlechteren
 // Datenquelle hätte den bestehenden, besseren Bestand stillschweigend verarmt.

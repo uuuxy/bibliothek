@@ -156,9 +156,9 @@ func (r *pgBookRepository) UpsertBookTitle(ctx context.Context, t BookTitle) err
 		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''), $7, CURRENT_TIMESTAMP)
 		ON CONFLICT (isbn) DO UPDATE SET
 		    titel = EXCLUDED.titel,
-		    autor = EXCLUDED.autor,
-		    verlag = EXCLUDED.verlag,
-		    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
+		    autor = COALESCE(NULLIF(EXCLUDED.autor, ''), buecher_titel.autor),
+		    verlag = COALESCE(NULLIF(EXCLUDED.verlag, ''), buecher_titel.verlag),
+		    erscheinungsjahr = COALESCE(NULLIF(EXCLUDED.erscheinungsjahr, 0), buecher_titel.erscheinungsjahr),
 		    signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
 		    ziel_jahrgang = EXCLUDED.ziel_jahrgang,
 		    aktualisiert_am = CURRENT_TIMESTAMP
