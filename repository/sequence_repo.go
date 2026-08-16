@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -78,7 +79,7 @@ func advisoryLockKey(tableName, colName string) int64 {
 //     dort wird nichts eingefügt, also ist keine Serialisierung nötig.
 func (r *SequenceRepository) GetNextSequence(ctx context.Context, tableName, colName, prefix string) (int, error) {
 	// Das Zahlensuffix beginnt direkt hinter dem Präfix (1-indizierte Startposition).
-	suffixStart := len(prefix) + 1
+	suffixStart := utf8.RuneCountInString(prefix) + 1
 
 	// Der Advisory-Lock steht auf der IMMER vorhandenen Lock-Zeile (LEFT JOIN von links),
 	// damit er auch bei leerer Tabelle (allererster Barcode) sicher genommen wird — ein
