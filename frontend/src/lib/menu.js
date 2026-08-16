@@ -196,6 +196,17 @@ export const menuGroups = [
 				roles: ['admin']
 			},
 			{
+				// Aus den Einstellungen herausgezogen (Betreiber-Entscheidung 16.08.2026):
+				// Die Rechte-Verwaltung ist der Ort, auf den die Drift-Warnung der
+				// Betriebsbereitschaft zeigt — als Tab in einer sechsteiligen
+				// Einstellungsseite war sie dafür zu tief vergraben.
+				id: 'berechtigungen',
+				label: 'Berechtigungen',
+				icon: 'key',
+				permission: 'manage_users',
+				roles: ['admin']
+			},
+			{
 				id: 'settings',
 				label: 'Einstellungen',
 				icon: 'cog',

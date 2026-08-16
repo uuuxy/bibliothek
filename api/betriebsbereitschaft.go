@@ -199,8 +199,7 @@ func pruefeRechteVorgabe(l Lage) Befund {
 		"Nach einer Code-Änderung bleibt die alte Einstellung bestehen — eine Rolle sieht " +
 		"dann mehr oder weniger, als die aktuelle Vorgabe vorsieht, ohne dass es auffällt."
 	b.Abhilfe = "Jede Zeile prüfen: bewusste Admin-Entscheidung → so lassen (die Warnung " +
-		"dokumentiert sie), Drift nach Code-Änderung → System → Einstellungen → " +
-		"Berechtigungen angleichen."
+		"dokumentiert sie), Drift nach Code-Änderung → System → Berechtigungen angleichen."
 	return b
 }
 

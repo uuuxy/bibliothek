@@ -4,7 +4,6 @@
 	import MailTemplates from './MailTemplates.svelte';
 	import DataManagement from './components/admin/DataManagement.svelte';
 	import MailConfig from './components/admin/MailConfig.svelte';
-	import PermissionManager from './PermissionManager.svelte';
 	import SystemSettingsAllgemein from './SystemSettingsAllgemein.svelte';
 	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
@@ -19,15 +18,8 @@
 	// Tabs
 	const tabs = $derived(
 		isAdmin
-			? [
-					'Allgemein',
-					'Team & Rechte',
-					'Mahnwesen-Routing',
-					'Datenverwaltung',
-					'Mail-Server',
-					'System'
-				]
-			: ['Allgemein', 'Team & Rechte', 'Mahnwesen-Routing', 'System']
+			? ['Allgemein', 'Mahnwesen-Routing', 'Datenverwaltung', 'Mail-Server', 'System']
+			: ['Allgemein', 'Mahnwesen-Routing', 'System']
 	);
 	let activeTab = $state('Allgemein');
 
@@ -152,13 +144,6 @@
 					bind:etikettEigentumsvermerk
 					bind:oeffentlicheAdresse
 				/>
-
-				<!-- TAB: TEAM & RECHTE -->
-			{:else if activeTab === 'Team & Rechte'}
-				<section class="w-full">
-					<h3 class="text-lg font-bold text-slate-900 mb-6">Account- und Rollenverwaltung</h3>
-					<PermissionManager />
-				</section>
 
 				<!-- TAB: MAHNWESEN-ROUTING -->
 			{:else if activeTab === 'Mahnwesen-Routing'}

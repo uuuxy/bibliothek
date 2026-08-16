@@ -26,6 +26,7 @@
 		Clock,
 		ChartColumn,
 		ShieldCheck,
+		KeyRound,
 		Settings
 	} from '@lucide/svelte';
 
@@ -49,6 +50,7 @@
 		clock: Clock,
 		'chart-bar': ChartColumn,
 		shield: ShieldCheck,
+		key: KeyRound,
 		cog: Settings
 	};
 
