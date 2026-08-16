@@ -74,12 +74,38 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	expect(elternbrief.status(), 'Elternbrief-PDF').toBe(200);
 	expect(elternbrief.headers()['content-type']).toContain('application/pdf');
 
-	// Die Ausleihe ist beendet — das Buch verschwindet aus der Liste
-	await expect(page.getByText(`E2E-Schadenbuch-${suffix}`)).not.toBeVisible();
+	// Die Ausleihe ist beendet — das Buch verschwindet aus der AUSLEIH-Liste.
+	// Bewusst auf die Karte gescopet (Kartenwurzel = div, dessen Kopfzeilen-div das h3
+	// trägt): Seit der Gebühren-Sektion (16.08.2026) taucht derselbe Titel rechtmäßig
+	// in der Forderungsliste wieder auf — ein seitenweites not.toBeVisible würde die
+	// neue Wahrheit als Fehler melden.
+	const ausleihKarte = page.locator('div:has(> div > h3:text-matches("Entliehene Bücher"))');
+	// Wache gegen leer-grünes Scoping: Erst belegen, dass der Karten-Locator überhaupt
+	// etwas findet — sonst wäre das not.toBeVisible darunter vakuum-grün.
+	await expect(ausleihKarte).toBeVisible();
+	await expect(ausleihKarte.getByText(`E2E-Schadenbuch-${suffix}`)).not.toBeVisible();
+
+	// ... und steht als offene Forderung in der Gebühren-Sektion.
+	const gebuehrenKarte = page.locator('div:has(> div > h3:text-matches("Gebühren & Schäden"))');
+	await expect(gebuehrenKarte.getByText(`E2E-Schadenbuch-${suffix}`)).toBeVisible();
+	await expect(gebuehrenKarte.getByText('offen', { exact: true })).toBeVisible();
 
 	// Offene Forderung: Rechnung-PDF-Smoke über den ungezahlten Betrag
 	const pdf = await page.request.get(`/api/print/rechnung/${studentId}`);
 	expect(pdf.status(), 'Rechnung-PDF Status').toBe(200);
 	expect(pdf.headers()['content-type']).toContain('application/pdf');
 	expect((await pdf.body()).length).toBeGreaterThan(1000);
+
+	// Storno-Weg: ohne Grund gesperrt, mit Grund wird die Forderung erlassen.
+	await gebuehrenKarte.getByRole('button', { name: 'Stornieren' }).click();
+	const stornoModal = page.locator('div:has(> h3:text-is("Gebühr wirklich stornieren?"))');
+	await expect(stornoModal.getByRole('button', { name: 'Stornieren' })).toBeDisabled();
+	await stornoModal.locator('#storno-grund').fill('E2E: Buch wiedergefunden');
+	await stornoModal.getByRole('button', { name: 'Stornieren' }).click();
+
+	// Nach dem Neuladen des Profils trägt der Fall das Storno-Kennzeichen samt Grund,
+	// und die Aktionsknöpfe sind weg — der Fall ist erledigt.
+	await expect(gebuehrenKarte.getByText('storniert', { exact: true })).toBeVisible();
+	await expect(gebuehrenKarte.getByText('Grund: E2E: Buch wiedergefunden')).toBeVisible();
+	await expect(gebuehrenKarte.getByRole('button', { name: 'Bezahlt' })).not.toBeVisible();
 });
