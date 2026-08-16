@@ -1,6 +1,7 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, registriereSitzungAbgelaufenHandler } from '../apiFetch.js';
 import { abonniere, trenne, verbinde } from '../liveEvents.js';
+import { toastStore } from './toastStore.svelte.js';
 
 class AuthStore {
 	isLoggedIn = $state(false);
@@ -161,6 +162,15 @@ class AuthStore {
 		}
 	}
 
+	// sitzungAbgelaufen: der zentrale 401-Haken aus apiFetch. Nur beim ERSTEN
+	// Treffer abmelden — die parallel laufenden Poller liefern denselben 401
+	// mehrfach, und mehrfache Toasts/Abmeldungen wären nur Lärm.
+	sitzungAbgelaufen() {
+		if (!this.isLoggedIn) return;
+		this.handleLogout();
+		toastStore.addToast('Sitzung abgelaufen — bitte neu anmelden.', 'warning');
+	}
+
 	handleLogout(onLogoutCallback) {
 		// Serverseitig invalidieren (Token-Blacklist + Cookie löschen) — sonst würde
 		// der Boot-Restore die Session beim nächsten Reload wiederbeleben.
@@ -186,3 +196,7 @@ class AuthStore {
 }
 
 export const authStore = new AuthStore();
+
+// Der Haken wird EINMAL beim Modul-Laden registriert — ab dann führt jeder
+// unerwartete 401 einer API-Antwort zur sauberen Abmeldung statt zu Dauer-Lärm.
+registriereSitzungAbgelaufenHandler(() => authStore.sitzungAbgelaufen());

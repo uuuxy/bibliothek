@@ -112,6 +112,7 @@ export async function apiFetch(url, options = {}) {
 	try {
 		const response = await fetch(url, options);
 		clearTimeout(id);
+		meldeSitzungsverlust(url, response.status);
 		return response;
 	} catch (error) {
 		clearTimeout(id);
@@ -247,4 +248,35 @@ export async function apiPut(url, data, options = {}) {
 export async function apiDelete(url, options = {}) {
 	const res = await apiFetch(url, { ...options, method: 'DELETE' });
 	return handleSmartResponse(res);
+}
+
+// ── Zentraler Sitzungsverlust-Haken ─────────────────────────────────────────
+//
+// Ohne ihn scheiterte nach Ablauf der 12h-Sitzung jeder Baustein einzeln: Das
+// Reservierungs-Badge pollte im 30-Sekunden-Takt in ein 401, die Konsole lief
+// voll, und die Seite wirkte kaputt statt abgemeldet (Betreiber-Befund
+// 16.08.2026 abends). Der Haken ist eine REGISTRIERUNG, kein Import: authStore
+// importiert apiFetch — die Gegenrichtung wäre ein Zyklus.
+//
+// Ausgenommen sind die Pfade, deren 401 KEIN Sitzungsverlust ist: die
+// Auth-Endpunkte selbst (dort ist 401 die reguläre Antwort auf "nicht/nicht
+// mehr angemeldet") und alles Öffentliche.
+
+/** @type {(() => void) | null} */
+let sitzungAbgelaufenHandler = null;
+
+/** @param {() => void} handler */
+export function registriereSitzungAbgelaufenHandler(handler) {
+	sitzungAbgelaufenHandler = handler;
+}
+
+const SITZUNG_AUSNAHMEN = ['/api/auth/', '/api/csrf-token', '/api/public/'];
+
+/** @param {string | URL} url @param {number} status */
+function meldeSitzungsverlust(url, status) {
+	if (status !== 401 || !sitzungAbgelaufenHandler) return;
+	const pfad = String(url);
+	if (!pfad.startsWith('/api/')) return;
+	if (SITZUNG_AUSNAHMEN.some((a) => pfad.startsWith(a))) return;
+	sitzungAbgelaufenHandler();
 }

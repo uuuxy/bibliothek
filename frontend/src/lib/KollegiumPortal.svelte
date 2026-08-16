@@ -165,8 +165,16 @@
 				f.open = false;
 				ladeOffeneReservierungen();
 			} else {
+				// Die Antwort ist apierrors-JSON ({"error": "nur 2 Exemplare im Bestand …"}) —
+				// roh angezeigt las die Lehrkraft Klammern statt der Meldung.
 				const txt = await res.text();
-				f.error = txt || 'Fehler beim Senden.';
+				let meldung = txt;
+				try {
+					meldung = JSON.parse(txt).error || txt;
+				} catch {
+					/* Rohtext behalten */
+				}
+				f.error = meldung || 'Fehler beim Senden.';
 			}
 		} catch (e) {
 			f.error = String(e);

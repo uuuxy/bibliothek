@@ -4,7 +4,10 @@ import KlassenUebersicht from './KlassenUebersicht.svelte';
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 
-vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../../../lib/apiFetch.js', () => ({
+	apiFetch: vi.fn(),
+	registriereSitzungAbgelaufenHandler: vi.fn()
+}));
 
 // Diese Seite hat am 08.08.2026 den Klassen-Reiter aus dem Medienkatalog abgelöst.
 // Der Reiter stand jedem mit view_books offen, diese Seite verlangte manage_users —

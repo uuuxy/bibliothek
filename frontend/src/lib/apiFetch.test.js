@@ -122,3 +122,29 @@ describe('apiFetch error handling', () => {
 		);
 	});
 });
+
+describe('Sitzungsverlust-Haken', () => {
+	/**
+	 * Nach Ablauf der 12h-Sitzung pollte das Badge im 30-Sekunden-Takt in ein 401
+	 * und die Seite wirkte kaputt statt abgemeldet. Der Haken meldet den ERSTEN
+	 * unerwarteten 401 — aber nie für die Auth-Endpunkte selbst (dort ist 401 die
+	 * reguläre Antwort) und nie für Öffentliches.
+	 */
+	it('feuert bei 401 einer API-Antwort, aber nicht für Auth- und öffentliche Pfade', async () => {
+		const { apiFetch, registriereSitzungAbgelaufenHandler } = await import('./apiFetch.js');
+		const handler = vi.fn();
+		registriereSitzungAbgelaufenHandler(handler);
+		globalThis.fetch = vi.fn(async () => new Response('', { status: 401 }));
+
+		await apiFetch('/api/reservierungen/klassensatz/anzahl');
+		expect(handler).toHaveBeenCalledTimes(1);
+
+		await apiFetch('/api/auth/refresh', { method: 'POST' });
+		await apiFetch('/api/public/opac/suche?q=x');
+		expect(handler).toHaveBeenCalledTimes(1);
+
+		globalThis.fetch = vi.fn(async () => new Response('', { status: 200 }));
+		await apiFetch('/api/books');
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+});
