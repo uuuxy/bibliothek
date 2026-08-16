@@ -3,8 +3,9 @@
 	import InventurAdmin from '../inventur/routes/admin/+page.svelte';
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
+	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
 
-	let activeView = $state('catalog'); // "catalog" | "admin"
+	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete"
 
 	$effect(() => {
 		if (appState.requestAdminView) {
@@ -46,6 +47,22 @@
 					<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
 				{/if}
 			</button>
+			<!-- Neues Markup nutzt die M3-Rollen (Paletten-Ratsche) — die Nachbar-Tabs sind
+			     Bestand und werden bei ihrer eigenen Umstellung nachgezogen. -->
+			<button
+				onclick={() => (activeView = 'geraete')}
+				class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {activeView ===
+				'geraete'
+					? 'text-primary'
+					: 'text-on-surface-variant hover:text-on-surface'}"
+				role="tab"
+				aria-selected={activeView === 'geraete'}
+			>
+				Geräte
+				{#if activeView === 'geraete'}
+					<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></span>
+				{/if}
+			</button>
 		</nav>
 	</div>
 
@@ -55,6 +72,8 @@
 			<InventurCatalog />
 		{:else if activeView === 'admin'}
 			<InventurAdmin />
+		{:else if activeView === 'geraete'}
+			<GeraeteVerwaltung />
 		{/if}
 	</div>
 </PageShell>

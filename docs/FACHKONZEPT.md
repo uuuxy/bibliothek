@@ -93,24 +93,25 @@ dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
 
 ---
 
-## 5. Geräteausleihe (Hardware) — angelegt, nicht in Betrieb
+## 5. Geräteausleihe (Hardware)
 
-> **Ehrlicher Stand (16.08.2026):** Dieser Abschnitt beschrieb die Geräteausleihe als
-> fertiges Feature — das ist sie nicht. Was existiert: das Datenbank-Schema
-> (`geraete`, Ausleihe-/Schadensfall-Verknüpfung) und ein vollständiger
-> Backend-Dienst (`internal/service/device_service.go`) mit Ausleihe, Rückgabe und
-> Checklisten-Anforderung. Was fehlt: **eine Oberfläche zum Anlegen und Verwalten
-> von Geräten** (keine Routen, keine Ansicht) und **der Checklisten-Dialog am
-> Kiosk** — die Omnibox sendet fest `confirmed_checklist: false` und kann eine
-> angeforderte Checkliste nie bestätigen. Bevor hier weitergebaut wird, steht die
-> Produktentscheidung: Geräteausleihe zu Ende bauen oder den Backend-Torso
-> zurückbauen.
+Seit 16.08.2026 vollständig in Betrieb (vorher Backend-Torso ohne Oberfläche —
+dieser Abschnitt beschrieb die Absicht als Realität):
 
-Ursprünglich angedachte Regeln (im Dienst bereits angelegt):
-
-- **Checklisten-Zwang:** Bei Ausleihe und Rückgabe bestätigt das Personal eine Checkliste (Ladekabel, Stift, Bildschirm intakt).
-- **Schadens-Zuweisung:** Fehlendes Zubehör erzeugt direkt in der Rückgabe einen Schadensfall.
-- **Zustands-Sperre:** Defekte Geräte sind nicht ausleihbar.
+- **Verwaltung** im Medienkatalog, Bereich „Geräte“ (kein eigener Menüpunkt —
+  ausgebucht wird ohnehin am Kiosk): anlegen (Barcode zwingend mit `G-`-Präfix,
+  sonst findet der Kiosk-Scan das Gerät nicht), Liste mit aktuellem Ausleiher,
+  Zubehör- und Stammdaten-Pflege, Defekt-Schalter (`ist_ausleihbar`).
+- **Checklisten-Zwang am Kiosk:** Trägt ein Gerät Zubehör (kommaseparierte Liste),
+  unterbricht der Scan mit einem Bestätigungs-Dialog, der jedes Teil nennt —
+  bei Ausleihe UND Rückgabe. Erst „Alles vollständig“ schickt den Scan mit
+  Bestätigung erneut; Abbrechen bucht nichts.
+- **Fristen:** 14 Tage, auf das Tagesende in der Schul-Zeitzone normalisiert wie
+  Buch-Fristen; Lehrkräfte leihen Geräte als Handapparat (Dauerleihe).
+- **Zustands-Sperre:** Defekte (`ist_ausleihbar = false`) und ausgesonderte Geräte
+  verweigern die Ausleihe am Kiosk.
+- Fehlendes Zubehör bei der Rückgabe: Das Personal bricht im Dialog ab und meldet
+  den Schaden über den bestehenden Schadensfall-Weg am Profil.
 
 ---
 

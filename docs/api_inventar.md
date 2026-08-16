@@ -18,7 +18,7 @@
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
 
-## Alle registrierten Routen (172)
+## Alle registrierten Routen (175)
 
 - `/`
 - `/api/admin`
@@ -76,6 +76,7 @@
 - `GET /api/exemplare/etiketten-offen`
 - `GET /api/exemplare/etiketten-offen/anzahl`
 - `GET /api/faecher`
+- `GET /api/geraete`
 - `GET /api/images/cover`
 - `GET /api/inventur/abgeschlossen`
 - `GET /api/inventur/fehlbestand`
@@ -152,6 +153,7 @@
 - `POST /api/exemplare/etiketten-altbestand`
 - `POST /api/exemplare/etiketten-gedruckt`
 - `POST /api/exemplare/etiketten-zuruecksetzen`
+- `POST /api/geraete`
 - `POST /api/import/littera`
 - `POST /api/inventur/abort`
 - `POST /api/inventur/finish`
@@ -188,6 +190,7 @@
 - `PUT /api/buecher/exemplare/{id}/status`
 - `PUT /api/buecher/titel/{id}/signatur`
 - `PUT /api/einstellungen`
+- `PUT /api/geraete/{id}`
 - `PUT /api/lieferanten/{id}`
 - `PUT /api/mail-templates/{id}`
 - `PUT /api/reservierungen/klassensatz/{id}/erledigen`

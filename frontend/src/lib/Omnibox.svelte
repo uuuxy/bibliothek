@@ -8,6 +8,7 @@
 	import OmniboxTeacherCard from './OmniboxTeacherCard.svelte';
 	import OmniboxVormerkungAlert from './components/OmniboxVormerkungAlert.svelte';
 	import OmniboxBlockAlert from './components/OmniboxBlockAlert.svelte';
+	import OmniboxChecklistDialog from './components/OmniboxChecklistDialog.svelte';
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
@@ -266,6 +267,7 @@
 <OmniboxVormerkungAlert />
 
 <OmniboxBlockAlert onReload={() => studentProfileComponent?.reloadProfile()} />
+<OmniboxChecklistDialog onReload={() => studentProfileComponent?.reloadProfile()} />
 
 <style>
 	/* ── Shake animation ───────────────────────────────────────

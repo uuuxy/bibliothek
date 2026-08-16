@@ -46,6 +46,13 @@ export function createOmniboxStore() {
 	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
 	let errorMessageTimer = null;
 	let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
+	/**
+	 * Geräte-Scan mit Zubehör: Der Server unterbricht mit type=geraet_check und
+	 * wartet auf die Bestätigung der Checkliste. Hier liegt die Anfrage, bis der
+	 * Dialog bestätigt (erneuter Versand mit confirmed_checklist) oder abbricht.
+	 * @type {{query: string, geraet: any} | null}
+	 */
+	let checklistAnfrage = $state(null);
 	let blockAlert = $state(/** @type {{message: string, query: string} | null} */ (null));
 	// isOffline is now handled globally via offlineSync
 	let offlineQueueCount = $state(0);
@@ -204,7 +211,7 @@ export function createOmniboxStore() {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
-			showToast(`„${data.book.titel}" erfolgreich zurückgegeben.`);
+			showToast(`„${data.book?.titel ?? data.geraet?.modellname}" erfolgreich zurückgegeben.`);
 		}
 		if (data.has_vormerkung) {
 			vormerkungAlert = {
@@ -222,7 +229,7 @@ export function createOmniboxStore() {
 	}
 
 	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type.
-	function verarbeiteAktionsErgebnis(data, reloadProfileCb) {
+	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '') {
 		if (data.type === 'student') {
 			activeStudent = data.student;
 			activeTeacher = null;
@@ -238,12 +245,15 @@ export function createOmniboxStore() {
 			showToast(
 				`Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`
 			);
+		} else if (data.type === 'geraet_check') {
+			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
+			checklistAnfrage = { query: q, geraet: data.geraet };
 		} else if (data.type === 'ausleihe') {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
 			showToast(
-				`„${data.book.titel}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
+				`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
 			);
 			// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
 			// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
@@ -303,7 +313,12 @@ export function createOmniboxStore() {
 	}
 
 	// Haupt-Scan-Aktion
-	async function submitAction(e, reloadProfileCb, overrideBlock = false) {
+	async function submitAction(
+		e,
+		reloadProfileCb,
+		overrideBlock = false,
+		confirmedChecklist = false
+	) {
 		if (e) e.preventDefault();
 		if (isDropdownOpen && selectedDropdownIndex >= 0) {
 			selectDropdownItem(selectedDropdownIndex, null);
@@ -351,7 +366,7 @@ export function createOmniboxStore() {
 				query: q,
 				active_student_id: activeStudent?.id,
 				active_teacher_id: activeTeacher?.id,
-				confirmed_checklist: false,
+				confirmed_checklist: confirmedChecklist,
 				override_block: overrideBlock,
 				idempotency_key: idempotencyKey
 			});
@@ -360,7 +375,7 @@ export function createOmniboxStore() {
 				await handleActionHttpError(res, q); // wirft immer
 			}
 			const data = await res.json();
-			verarbeiteAktionsErgebnis(data, reloadProfileCb);
+			verarbeiteAktionsErgebnis(data, reloadProfileCb, q);
 		} catch (e) {
 			// Rot gehört in den Fehlerfall, nicht ins finally: Dort feuerte es bei JEDEM
 			// Scan und überschrieb das Grün, das der Erfolgspfad Millisekunden vorher
@@ -392,7 +407,7 @@ export function createOmniboxStore() {
 	 * Bedienung stören und den Dialog wegtippbar machen.
 	 */
 	function scanfeldWiederScharfstellen() {
-		if (showCamera || blockAlert || vormerkungAlert) return;
+		if (showCamera || blockAlert || vormerkungAlert || checklistAnfrage) return;
 		// Nach der Aktion rendert Svelte das Profil neu; erst danach steht das Feld wieder.
 		setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
 	}
@@ -457,6 +472,12 @@ export function createOmniboxStore() {
 		},
 		set vormerkungAlert(v) {
 			vormerkungAlert = v;
+		},
+		get checklistAnfrage() {
+			return checklistAnfrage;
+		},
+		set checklistAnfrage(v) {
+			checklistAnfrage = v;
 		},
 		get blockAlert() {
 			return blockAlert;
