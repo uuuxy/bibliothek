@@ -20,6 +20,37 @@
 
 	let searchTimeout = /** @type {any} */ (null);
 
+	/**
+	 * Offene Reservierungen aller Lehrkräfte (Titel, Klasse, Menge — ohne Personen):
+	 * die Warteschlange. Reservieren sperrt nichts; wer denselben Titel reserviert,
+	 * stellt sich an. Diese Liste macht das VOR dem Klick sichtbar.
+	 * @type {{ titel_id: string, klasse: string, anzahl: number, erstellt_am: string }[]}
+	 */
+	let offeneReservierungen = $state([]);
+
+	async function ladeOffeneReservierungen() {
+		try {
+			const res = await apiFetch('/api/reservierungen/klassensatz/offen');
+			if (res.ok) {
+				const data = await res.json();
+				// Nur Arrays übernehmen — eine unerwartete Antwort darf die Anzeige
+				// nicht mit einem .filter-Absturz aus dem Rendern werfen.
+				if (Array.isArray(data)) offeneReservierungen = data;
+			}
+		} catch {
+			/* Anzeige ist Zusatzinfo — ohne sie bleibt das Portal benutzbar */
+		}
+	}
+
+	$effect(() => {
+		ladeOffeneReservierungen();
+	});
+
+	/** @param {string} titelId */
+	function warteschlangeFuer(titelId) {
+		return offeneReservierungen.filter((o) => o.titel_id === titelId);
+	}
+
 	$effect(() => {
 		const q = searchQuery;
 		clearTimeout(searchTimeout);
@@ -126,8 +157,13 @@
 				})
 			});
 			if (res.ok) {
-				f.success = 'Reservierungsanfrage wurde gesendet!';
+				const vorher = warteschlangeFuer(titelId);
+				f.success =
+					vorher.length > 0
+						? `Reservierungsanfrage gesendet — dein Satz ist nach ${vorher.map((o) => o.klasse).join(', ')} an der Reihe.`
+						: 'Reservierungsanfrage wurde gesendet!';
 				f.open = false;
+				ladeOffeneReservierungen();
 			} else {
 				const txt = await res.text();
 				f.error = txt || 'Fehler beim Senden.';
@@ -200,6 +236,18 @@
 									</span>
 								</p>
 							{/if}
+							<!-- Die Warteschlange VOR dem Klick: Reservieren sperrt nichts — wer
+							     denselben Titel will, stellt sich an. Ohne diese Zeile erführe die
+							     Lehrkraft erst aus der Bestätigung, dass die 8a vor ihr dran ist. -->
+							{#each warteschlangeFuer(book.id ?? book.titel_id) as o, _i (_i)}
+								<p class="text-xs mt-1">
+									<span
+										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-small font-semibold bg-secondary-container text-on-secondary-container"
+									>
+										{o.anzahl} reserviert für {o.klasse} (seit {o.erstellt_am})
+									</span>
+								</p>
+							{/each}
 						</div>
 
 						<!-- Action -->

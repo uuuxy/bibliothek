@@ -136,3 +136,46 @@ describe('KollegiumPortal', () => {
 		);
 	});
 });
+
+/**
+ * Das Warteschlangen-Modell (16.08.2026): Reservieren sperrt nichts — wer denselben
+ * Titel reserviert, stellt sich an. Das Portal muss beides leisten: die bestehende
+ * Reservierung VOR dem Klick zeigen und nach dem Absenden sagen, hinter wem man steht.
+ */
+it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vordermann', async () => {
+	vi.mocked(apiFetch).mockImplementation(
+		/** @type {any} */ (
+			async (/** @type {string} */ url, /** @type {any} */ opts) => {
+				if (url.startsWith('/api/public/opac/suche')) return suchtreffer();
+				if (url.startsWith('/api/reservierungen/klassensatz/offen')) {
+					return {
+						ok: true,
+						json: async () => [
+							{ titel_id: 'titel-1', klasse: '8a', anzahl: 28, erstellt_am: '10.08.2026' }
+						]
+					};
+				}
+				if (url === '/api/reservierungen/klassensatz' && opts?.method === 'POST') {
+					return { ok: true, text: async () => '', json: async () => ({ id: 'neu' }) };
+				}
+				return { ok: true, text: async () => '', json: async () => ({}) };
+			}
+		)
+	);
+	const screen = render(KollegiumPortal, { user: { klasse: '' } });
+
+	await fireEvent.input(
+		screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		{ target: { value: 'Seydlitz' } }
+	);
+
+	// Die Warteschlange steht am Treffer, BEVOR reserviert wird.
+	expect(await screen.findByText('28 reserviert für 8a (seit 10.08.2026)')).toBeTruthy();
+
+	await fireEvent.click(screen.getByRole('button', { name: 'Klassensatz reservieren' }));
+	await fireEvent.input(await screen.findByLabelText('Klasse *'), { target: { value: '9b' } });
+	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));
+
+	// Die Bestätigung sagt, hinter wem der eigene Satz an der Reihe ist.
+	expect(await screen.findByTitle(/dein Satz ist nach 8a an der Reihe/)).toBeTruthy();
+});

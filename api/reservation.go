@@ -108,6 +108,24 @@ func (s *Server) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 	}
 }
 
+// OffeneKlassensatzReservierungenHandler liefert die Warteschlange für das
+// Kollegiums-Portal: wer vor der eigenen Reservierung steht (Titel, Klasse, Menge) —
+// bewusst ohne Personendaten des Anfordernden. Eigener Endpunkt, weil die volle
+// Liste (GET /api/reservierungen/klassensatz) hinter view_orders liegt und dem
+// Kollegium verschlossen bleibt.
+// GET /api/reservierungen/klassensatz/offen
+func (s *Server) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		repo := repository.NewReservationRepository(s.DB.Pool)
+		offene, err := repo.OffeneKlassensatzReservierungen(r.Context())
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		RespondJSON(w, http.StatusOK, offene)
+	}
+}
+
 // ErledigeKlassensatzReservierungHandler marks a class-set reservation as done.
 // PUT /api/reservierungen/klassensatz/{id}/erledigen
 func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {

@@ -63,5 +63,8 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("POST /api/reservierungen/klassensatz", s.RequirePermission("create_reservations")(s.CreateKlassensatzReservierungHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz/anzahl", s.RequirePermission("view_orders")(s.GetKlassensatzReservierungenAnzahlHandler()))
+	// Warteschlangen-Sicht fürs Kollegium: dasselbe Recht wie das Anlegen — wer
+	// reservieren darf, darf sehen, wer vor ihm dran ist.
+	mux.Handle("GET /api/reservierungen/klassensatz/offen", s.RequirePermission("create_reservations")(s.OffeneKlassensatzReservierungenHandler()))
 	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeKlassensatzReservierungHandler()))
 }

@@ -1,7 +1,9 @@
 <!-- @component KlassensatzReservierungen — Admin-Arbeitsliste für Klassensatz-Reservierungen.
      Lehrkräfte legen die Anfrage über KollegiumPortal an; hier wird sie geprüft und über
-     PUT /api/reservierungen/klassensatz/{id}/erledigen abgeschlossen (gibt den geblockten
-     Bestand wieder frei). Flaches Edge-to-Edge-Listen-Design, kein Modal. -->
+     PUT /api/reservierungen/klassensatz/{id}/erledigen abgeschlossen. Reservieren SPERRT
+     keinen Bestand (Warteschlangen-Modell, 16.08.2026): Die Liste ist die Reihenfolge,
+     „verfügbar" zeigt je Zeile, ob der Satz aktuell vollständig aus dem Regal zu holen
+     ist. Flaches Edge-to-Edge-Listen-Design, kein Modal. -->
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';
@@ -10,7 +12,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Check } from '@lucide/svelte';
 
-	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erstellt_am: string }} KlassensatzReservierung */
+	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, verfuegbar: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erstellt_am: string }} KlassensatzReservierung */
 
 	/** @type {KlassensatzReservierung[]} */
 	let reservierungen = $state([]);
@@ -68,7 +70,7 @@
 			// Kein Reload: die erledigte Reservierung wird direkt aus dem reaktiven Array gefiltert.
 			reservierungen = reservierungen.filter((r) => r.id !== id);
 			confirmingId = null;
-			toastStore.addToast('Reservierung abgeschlossen — Bestand wieder freigegeben.', 'success');
+			toastStore.addToast('Reservierung abgeschlossen.', 'success');
 			uiStore.fetchPendingReservierungen();
 		} catch (err) {
 			toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
@@ -85,6 +87,14 @@
 			<p class="text-xs text-slate-500 mt-0.5">
 				Klasse <span class="font-semibold text-slate-600">{r.klasse}</span> · {r.anzahl} Exemplare
 				{#if r.angefordert_von}· angefragt von {r.angefordert_von}{/if}
+				{#if r.verfuegbar != null}
+					·
+					<!-- Regal-Blick vor dem Gang ans Regal: reicht der Bestand gerade nicht
+					     (verliehen/ausgesondert), steht es hier statt beim Zählen im Raum. -->
+					<span class={r.verfuegbar >= r.anzahl ? 'font-semibold' : 'font-semibold text-error'}>
+						{r.verfuegbar} verfügbar
+					</span>
+				{/if}
 			</p>
 			{#if r.notiz}
 				<p class="text-xs text-slate-400 italic mt-1 truncate">„{r.notiz}"</p>
@@ -134,8 +144,8 @@
 	<div>
 		<h2 class="text-base font-bold text-slate-800">Klassensatz-Reservierungen</h2>
 		<p class="text-sm text-slate-500 mt-0.5">
-			Von Lehrkräften angefragte Klassensätze — „Abschließen" gibt die geblockten Bestände wieder
-			frei.
+			Von Lehrkräften angefragte Klassensätze in Warteschlangen-Reihenfolge (älteste zuerst).
+			Reservieren sperrt keinen Bestand — „Abschließen" schließt den Vorgang nach der Übergabe ab.
 		</p>
 	</div>
 
