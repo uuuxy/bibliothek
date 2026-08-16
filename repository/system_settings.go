@@ -194,16 +194,12 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 	`
 
 	pairs := buildSettingsPairs(req)
-	seen := make(map[string]bool, len(pairs))
-	schluessels := make([]string, 0, len(pairs))
-	werts := make([]string, 0, len(pairs))
+	schluessels := make([]string, len(pairs))
+	werts := make([]string, len(pairs))
 
-	for _, p := range pairs {
-		if !seen[p[0]] {
-			seen[p[0]] = true
-			schluessels = append(schluessels, p[0])
-			werts = append(werts, p[1])
-		}
+	for i, p := range pairs {
+		schluessels[i] = p[0]
+		werts[i] = p[1]
 	}
 
 	if _, err := repo.db.Exec(ctx, upsert, schluessels, werts); err != nil {
