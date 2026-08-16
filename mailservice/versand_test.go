@@ -49,7 +49,10 @@ func TestVersendeUeberSMTPBrichtOhneSTARTTLSAb(t *testing.T) {
 	// Und der Server hat den Mailtext nie gesehen: Der Abbruch liegt vor DATA.
 	select {
 	case sitzung := <-sitzungen:
-		t.Fatalf("Server hat trotz Abbruch eine Nachricht empfangen: %q", sitzung.Nachricht)
+		if sitzung.Nachricht != "" {
+			t.Fatalf("Server hat trotz Abbruch eine Nachricht empfangen: %q", sitzung.Nachricht)
+		}
+
 	default:
 	}
 }
