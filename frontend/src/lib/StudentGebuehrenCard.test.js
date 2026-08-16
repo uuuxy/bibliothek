@@ -96,13 +96,26 @@ describe('StudentGebuehrenCard', () => {
 		expect(apiClient.post).toHaveBeenCalledWith('/api/schadensfaelle/sf-1/bezahlt', {});
 	});
 
-	it('zeigt die Fehlermeldung des Servers (409-Konflikt), nicht nur "fehlgeschlagen"', async () => {
+	it('lädt nach einem 409-Konflikt neu — die Akte zeigt den echten Zustand', async () => {
+		// Mehrplatz-Realität: "eine Kollegin war schneller". Der Toast nennt den
+		// Konflikt, und onChanged synchronisiert die Liste, damit der veraltete
+		// Aktionsknopf verschwindet. Nur bei Netzwerkfehlern wird NICHT neu geladen.
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
 				ok: false,
 				json: async () => ({ error: 'Schadensfall wurde bereits bezahlt oder storniert' })
 			})
 		);
+		const onChanged = vi.fn();
+		const screen = render(StudentGebuehrenCard, {
+			props: { gebuehren: [OFFEN], canEdit: true, onChanged }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
+		expect(onChanged).toHaveBeenCalled();
+	});
+
+	it('lädt bei Netzwerkfehler NICHT neu — es gibt keinen neuen Zustand zu holen', async () => {
+		vi.mocked(apiClient.post).mockRejectedValue(new Error('offline'));
 		const onChanged = vi.fn();
 		const screen = render(StudentGebuehrenCard, {
 			props: { gebuehren: [OFFEN], canEdit: true, onChanged }

@@ -32,12 +32,15 @@
 			const res = await apiClient.post(url, stornoFall ? { grund: stornoGrund.trim() } : {});
 			if (res.ok) {
 				toastStore.addToast(erfolgsMeldung, 'success');
-				schliesseStornoModal();
-				onChanged?.();
 			} else {
 				const err = await res.json().catch(() => ({}));
 				toastStore.addToast(err.error || 'Aktion fehlgeschlagen.', 'error');
 			}
+			// Auch nach einem Fehler-STATUS neu laden (nur bei Netzwerkfehler nicht):
+			// 409 heisst am Mehrplatz-System "eine Kollegin war schneller" — die Akte
+			// muss danach den echten Zustand zeigen, nicht den veralteten Knopf.
+			schliesseStornoModal();
+			onChanged?.();
 		} catch {
 			toastStore.addToast('Netzwerkfehler.', 'error');
 		} finally {
