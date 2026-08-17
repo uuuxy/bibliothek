@@ -108,9 +108,9 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 
 		// Expected database operations for DeleteBooks
-		mock.ExpectQuery(`SELECT COUNT\(\*\)`).
+		mock.ExpectQuery(`SELECT EXISTS`).
 			WithArgs(pgxmock.AnyArg()).
-			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 
 		mock.ExpectQuery("SELECT cover_url").
 			WithArgs(pgxmock.AnyArg()).
