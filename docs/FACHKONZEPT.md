@@ -285,8 +285,11 @@ die Meldung auf einem Zettel statt in der `.env`. Dazu eine **Stufe**: `ok` (in 
 klären). Bewusst nur drei — eine feinere Skala liest niemand.
 
 **Der Wächter meldet sich selbst** (seit 16.08.2026): Kritische Befunde gehen täglich
-per Mail an alle aktiven Admins — täglich, solange sie bestehen, mit Befund, Folge und
-Abhilfe je Punkt. Warnungen lösen bewusst keine Mail aus (Dauerrauschen stumpft ab);
+per Mail — solange sie bestehen, mit Befund, Folge und Abhilfe je Punkt. Der
+Empfängerkreis ist seit 17.08.2026 einstellbar (Einstellungen → Allgemein,
+`alarm_empfaenger`, mehrere Adressen mit Komma); ist er leer, gehen die Mails als
+sicherer Rückfall an alle aktiven Admin-Konten — ein Alarm, der niemanden erreicht,
+ist keiner. Die Mail nennt im Fußtext, an wen sie ging und in welchem Modus. Warnungen lösen bewusst keine Mail aus (Dauerrauschen stumpft ab);
 ihre Zahl steht als Fußnote. Auf Spielwiesen (`APP_ENV=local/development/test`)
 schweigt der Alarm — die lokale `.env` zeigt auf den echten Schul-SMTP.
 

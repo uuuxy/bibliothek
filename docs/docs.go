@@ -2781,6 +2781,10 @@ const docTemplate = `{
                 "abgaenger_jahr": {
                     "type": "integer"
                 },
+                "ausweis_gueltig_bis": {
+                    "description": "AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem\nBildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.\nDer profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt\ndie Karte \"Gültig bis: 31.07.–\", obwohl das Repository den Wert kennt.",
+                    "type": "integer"
+                },
                 "barcode_id": {
                     "type": "string"
                 },
@@ -3047,6 +3051,10 @@ const docTemplate = `{
                 "ausgeliehen_count": {
                     "type": "integer"
                 },
+                "ausweis_gueltig_bis": {
+                    "description": "AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem\nBildungsgang der Klasse gerechnet, NICHT aus AbgaengerJahr (siehe\ninternal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,\ndann fragt der Druckdialog nach.",
+                    "type": "integer"
+                },
                 "barcode_id": {
                     "type": "string"
                 },
@@ -3076,6 +3084,10 @@ const docTemplate = `{
         "repository.SystemEinstellungen": {
             "type": "object",
             "properties": {
+                "alarm_empfaenger": {
+                    "description": "AlarmEmpfaenger: kommaseparierte Adressen fuer die Kritisch-Alarme der\nSelbstpruefung. Leer = alle aktiven Admin-Konten (sicherer Rueckfall — ein\nAlarm, der niemanden erreicht, ist keiner). Betreiber-Wunsch 17.08.2026.",
+                    "type": "string"
+                },
                 "bestellbedarf_schwelle": {
                     "type": "integer"
                 },
