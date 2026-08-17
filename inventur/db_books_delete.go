@@ -45,16 +45,18 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 // pruefeKeineAktivenAusleihen bricht ab, wenn zu einem der Titel noch ein Exemplar
 // aktuell verliehen ist.
 func (repo *BookRepository) pruefeKeineAktivenAusleihen(ctx context.Context, ids []string) error {
-	var activeLoans int
+	var hasActiveLoans bool
 	err := repo.db.QueryRow(ctx, `
-		SELECT COUNT(*)
-		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		WHERE e.titel_id = ANY($1::uuid[]) AND a.rueckgabe_am IS NULL`, ids).Scan(&activeLoans)
+		SELECT EXISTS (
+			SELECT 1
+			FROM ausleihen a
+			JOIN buecher_exemplare e ON a.exemplar_id = e.id
+			WHERE e.titel_id = ANY($1::uuid[]) AND a.rueckgabe_am IS NULL
+		)`, ids).Scan(&hasActiveLoans)
 	if err != nil {
 		return fmt.Errorf("fehler bei der prüfung auf aktive ausleihen: %w", err)
 	}
-	if activeLoans > 0 {
+	if hasActiveLoans {
 		return fmt.Errorf("löschen abgebrochen: Mindestens ein Exemplar dieser Titel ist aktuell verliehen")
 	}
 	return nil
