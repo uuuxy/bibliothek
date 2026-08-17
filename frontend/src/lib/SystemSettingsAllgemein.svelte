@@ -23,6 +23,7 @@
 	 * @property {string} schuleOrt
 	 * @property {string} etikettEigentumsvermerk
 	 * @property {string} oeffentlicheAdresse
+	 * @property {string} alarmEmpfaenger
 	 */
 
 	/** @type {Props} */
@@ -43,7 +44,8 @@
 		schulePLZ = $bindable(),
 		schuleOrt = $bindable(),
 		etikettEigentumsvermerk = $bindable(),
-		oeffentlicheAdresse = $bindable()
+		oeffentlicheAdresse = $bindable(),
+		alarmEmpfaenger = $bindable()
 	} = $props();
 
 	let saving = $state(false);
@@ -70,7 +72,8 @@
 				etikett_eigentumsvermerk: etikettEigentumsvermerk,
 				// Immer mitgeschickt, auch leer: Für dieses Feld heisst leer ausdrücklich
 				// "abschalten" (dann verschickt das System keine Bestätigungs-Links mehr).
-				oeffentliche_adresse: oeffentlicheAdresse
+				oeffentliche_adresse: oeffentlicheAdresse,
+				alarm_empfaenger: alarmEmpfaenger
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
 		} catch {
@@ -147,6 +150,19 @@
 				maxlength={200}
 				placeholder="https://bibliothek.schule.de"
 				hint="Adresse, unter der Lieferanten das System von außen erreichen. Grundlage des Bestätigungs-Links in der Bestellmail; leer = keine Links verschicken."
+			/>
+			<!-- Betreiber-Wunsch 17.08.2026 nach dem Alarm-Mail-Vorfall: Der Kritisch-
+			     Alarm der Selbstprüfung ging an ALLE aktiven Admin-Konten — auch an
+			     eines, das niemand kannte. Hier lässt sich der Empfängerkreis festlegen;
+			     leer bleibt der sichere Rückfall (alle aktiven Admins), denn ein Alarm,
+			     der niemanden erreicht, ist keiner. -->
+			<SettingField
+				bind:value={alarmEmpfaenger}
+				label="Alarm-Empfänger (Betriebsbereitschaft)"
+				type="text"
+				maxlength={300}
+				placeholder="pflasch@philipp-reis-schule.de, it@schule.de"
+				hint="Kritisch-Alarme der Selbstprüfung gehen nur an diese Adressen (mehrere mit Komma). Leer = alle aktiven Admin-Konten."
 			/>
 			<div class="grid grid-cols-3 gap-4">
 				<SettingField

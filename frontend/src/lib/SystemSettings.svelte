@@ -65,6 +65,7 @@
 	// an den Lieferanten. Der Server kennt sie nicht selbst (hinter dem Reverse-Proxy
 	// sieht er nur seinen internen Namen).
 	let oeffentlicheAdresse = $state('');
+	let alarmEmpfaenger = $state('');
 
 	// --- LOGIC ---
 
@@ -88,6 +89,7 @@
 			schuleOrt = data.schule_ort ?? '';
 			etikettEigentumsvermerk = data.etikett_eigentumsvermerk ?? '';
 			oeffentlicheAdresse = data.oeffentliche_adresse ?? '';
+			alarmEmpfaenger = data.alarm_empfaenger ?? '';
 		} catch {
 			/* use defaults */
 		}
@@ -151,6 +153,7 @@
 					bind:schuleOrt
 					bind:etikettEigentumsvermerk
 					bind:oeffentlicheAdresse
+					bind:alarmEmpfaenger
 				/>
 
 				<!-- TAB: MAHNWESEN-ROUTING -->

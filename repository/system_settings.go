@@ -52,6 +52,10 @@ type SystemEinstellungen struct {
 	// (nil, Wert bleibt) und "geleert" ("") erhalten bleibt — sonst löscht jedes
 	// Speichern einer anderen Einstellungs-Sektion still den Link-Versand.
 	OeffentlicheAdresse *string `json:"oeffentliche_adresse"`
+	// AlarmEmpfaenger: kommaseparierte Adressen fuer die Kritisch-Alarme der
+	// Selbstpruefung. Leer = alle aktiven Admin-Konten (sicherer Rueckfall — ein
+	// Alarm, der niemanden erreicht, ist keiner). Betreiber-Wunsch 17.08.2026.
+	AlarmEmpfaenger *string `json:"alarm_empfaenger"`
 }
 
 // StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.
@@ -155,6 +159,11 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeStringRoh(val, &settings.SchuleOrt)
 	case "etikett_eigentumsvermerk":
 		setzeStringRoh(val, &settings.EtikettEigentumsvermerk)
+	case "alarm_empfaenger":
+		if val != nil {
+			v := *val
+			settings.AlarmEmpfaenger = &v
+		}
 	case "oeffentliche_adresse":
 		if val != nil {
 			v := *val
@@ -272,6 +281,9 @@ func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
 	// nil heißt "diese Sektion kennt das Feld nicht" und lässt den gespeicherten Wert in
 	// Ruhe; "" heißt ausdrücklich "leeren" und schaltet den Link-Versand ab. Ein reiner
 	// String könnte beides nicht unterscheiden.
+	if req.AlarmEmpfaenger != nil {
+		pairs = append(pairs, [2]string{"alarm_empfaenger", *req.AlarmEmpfaenger})
+	}
 	if req.OeffentlicheAdresse != nil {
 		pairs = append(pairs, [2]string{"oeffentliche_adresse", *req.OeffentlicheAdresse})
 	}

@@ -82,6 +82,10 @@ type Lage struct {
 
 	// Aktive Admin-Konten ("Name (mail)"). nil: nicht lesbar.
 	AdminKonten []string
+
+	// Konfigurierte Alarm-Empfaenger (Einstellung alarm_empfaenger, kommasepariert).
+	// Leer = die Kritisch-Alarme gehen an alle aktiven Admin-Konten.
+	AlarmEmpfaenger string
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -153,8 +157,12 @@ func pruefeAdminKonten(l Lage) Befund {
 		b.Abhilfe = "Über die Datenbank bzw. INITIAL_ADMIN_EMAIL ein Admin-Konto herstellen."
 	default:
 		b.Stufe = StufeOK
-		b.Befund = fmt.Sprintf("%d Admin-Konto/-Konten mit Vollzugriff — sie erhalten die Kritisch-Alarme: %s.",
-			len(l.AdminKonten), strings.Join(l.AdminKonten, "; "))
+		ziel := "Die Kritisch-Alarme gehen an alle diese Konten."
+		if strings.TrimSpace(l.AlarmEmpfaenger) != "" {
+			ziel = "Die Kritisch-Alarme gehen an die konfigurierten Empfänger: " + l.AlarmEmpfaenger + "."
+		}
+		b.Befund = fmt.Sprintf("%d Admin-Konto/-Konten mit Vollzugriff: %s. %s",
+			len(l.AdminKonten), strings.Join(l.AdminKonten, "; "), ziel)
 	}
 	return b
 }

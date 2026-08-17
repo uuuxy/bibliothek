@@ -43,29 +43,29 @@ func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 	}
 
 	admins, err := zustandRepo.AktiveAdmins(ctx)
-	if err != nil || len(admins) == 0 {
-		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber keine Admin-Adressen ermittelbar (%v)", kritische, err)
+	if err != nil {
+		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber Admin-Konten nicht lesbar (%v)", kritische, err)
+		return
+	}
+	empfaenger, beschreibung := waehleAlarmEmpfaenger(lage.AlarmEmpfaenger, admins)
+	if len(empfaenger) == 0 {
+		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber keine Empfänger (weder konfiguriert noch aktive Admins)", kritische)
 		return
 	}
 
-	// Jede Mail nennt ALLE Empfänger: Wer sie liest, sieht sofort, welche Konten
-	// Vollzugriff haben — ein unbekannter Name in dieser Zeile ist selbst ein Befund
-	// (genau so fiel am 16.08.2026 ein nie autorisiertes Admin-Konto auf).
-	namen := make([]string, 0, len(admins))
-	for _, a := range admins {
-		namen = append(namen, a.Name+" ("+a.Email+")")
-	}
-	textkoerper += "\nDiese Mail ging an alle aktiven Admin-Konten: " + strings.Join(namen, "; ") + "\n"
+	// Jede Mail nennt ALLE Empfänger: Wer sie liest, sieht sofort, wohin die Alarme
+	// gehen — ein unbekannter Name in dieser Zeile ist selbst ein Befund (genau so
+	// fiel am 16.08.2026 ein nie autorisiertes Admin-Konto auf).
+	textkoerper += "\nDiese Mail ging an " + beschreibung + "\n"
 
-	for _, a := range admins {
-		an := a.Email
+	for _, an := range empfaenger {
 		if err := SendEmail(MailRequest{To: an, Subject: betreff, Body: textkoerper}); err != nil {
 			// Kaputter Mailversand ist selbst ein Befund der Seite — hier bleibt nur
 			// das Log; eine Mail über den kaputten Mailversand gibt es nicht.
 			log.Printf("Bereitschafts-Alarm an %s fehlgeschlagen: %v", an, err)
 		}
 	}
-	log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e) an %d Admin(s) gemeldet", kritische, len(admins))
+	log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e) an %d Empfänger gemeldet", kritische, len(empfaenger))
 }
 
 // formatiereAlarmMail baut Betreff und Text aus den Befunden. Reine Funktion —
@@ -105,4 +105,29 @@ func formatiereAlarmMail(befunde []Befund) (betreff, textkoerper string, kritisc
 		fmt.Fprintf(&sb, "Daneben stehen %d Warnung(en) — Details unter System → Einstellungen → Betriebsbereitschaft.\n", warnungen)
 	}
 	return betreff, sb.String(), len(kritischeBefunde)
+}
+
+// waehleAlarmEmpfaenger bestimmt, wohin die Kritisch-Alarme gehen (Betreiber-Wunsch
+// 17.08.2026): Ist in den Einstellungen alarm_empfaenger gesetzt (kommaseparierte
+// Adressen), gehen sie GENAU dorthin — sonst an alle aktiven Admin-Konten. Der
+// Rückfall ist Absicht: Ein Alarm, der niemanden erreicht, ist keiner. Einträge ohne
+// "@" werden verworfen (Tippfehler sollen den Verteiler nicht stumm leeren, solange
+// noch gültige Adressen übrig sind — ganz ohne gültige greift der Rückfall).
+func waehleAlarmEmpfaenger(konfiguriert string, admins []repository.AdminKonto) (an []string, beschreibung string) {
+	for _, teil := range strings.Split(konfiguriert, ",") {
+		adresse := strings.TrimSpace(teil)
+		if strings.Contains(adresse, "@") {
+			an = append(an, adresse)
+		}
+	}
+	if len(an) > 0 {
+		return an, "die konfigurierten Alarm-Empfänger: " + strings.Join(an, "; ")
+	}
+
+	namen := make([]string, 0, len(admins))
+	for _, a := range admins {
+		an = append(an, a.Email)
+		namen = append(namen, a.Name+" ("+a.Email+")")
+	}
+	return an, "alle aktiven Admin-Konten: " + strings.Join(namen, "; ")
 }

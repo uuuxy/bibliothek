@@ -3,6 +3,8 @@ package api
 import (
 	"strings"
 	"testing"
+
+	"bibliothek/repository"
 )
 
 // Der Alarm-Formatter als reine Funktion: Kritisches kommt mit allen vier Angaben
@@ -39,6 +41,44 @@ func TestFormatiereAlarmMail(t *testing.T) {
 			if !strings.Contains(text, muss) {
 				t.Errorf("Mail-Text ohne %q:\n%s", muss, text)
 			}
+		}
+	})
+}
+
+// Die Empfängerwahl (Betreiber-Wunsch 17.08.2026): konfiguriert schlägt Verteiler,
+// Müll ohne @ fällt raus, und ganz ohne Konfiguration greift der Admin-Rückfall —
+// ein Alarm, der niemanden erreicht, ist keiner.
+func TestWaehleAlarmEmpfaenger(t *testing.T) {
+	admins := []repository.AdminKonto{
+		{Name: "Peter Flasch", Email: "pflasch@philipp-reis-schule.de"},
+		{Name: "Andrea Trumpfheller", Email: "atrumpfheller@philipp-reis-schule.de"},
+	}
+
+	t.Run("konfigurierte Adressen gewinnen", func(t *testing.T) {
+		an, beschreibung := waehleAlarmEmpfaenger(" pflasch@philipp-reis-schule.de , it@schule.de ", admins)
+		if len(an) != 2 || an[0] != "pflasch@philipp-reis-schule.de" || an[1] != "it@schule.de" {
+			t.Fatalf("Empfänger: %v", an)
+		}
+		if !strings.Contains(beschreibung, "konfigurierten") {
+			t.Errorf("Beschreibung nennt den Modus nicht: %q", beschreibung)
+		}
+	})
+
+	t.Run("leer -> alle aktiven Admins", func(t *testing.T) {
+		an, beschreibung := waehleAlarmEmpfaenger("", admins)
+		if len(an) != 2 || an[1] != "atrumpfheller@philipp-reis-schule.de" {
+			t.Fatalf("Rückfall-Empfänger: %v", an)
+		}
+		if !strings.Contains(beschreibung, "alle aktiven Admin-Konten") ||
+			!strings.Contains(beschreibung, "Andrea Trumpfheller") {
+			t.Errorf("Beschreibung unvollständig: %q", beschreibung)
+		}
+	})
+
+	t.Run("nur Müll ohne At -> Rückfall statt stummem Verteiler", func(t *testing.T) {
+		an, _ := waehleAlarmEmpfaenger("kaputt, nochkaputter", admins)
+		if len(an) != 2 || an[0] != "pflasch@philipp-reis-schule.de" {
+			t.Fatalf("Rückfall griff nicht: %v", an)
 		}
 	})
 }

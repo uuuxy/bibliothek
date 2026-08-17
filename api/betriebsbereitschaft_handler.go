@@ -68,6 +68,9 @@ func (s *Server) sammleLage(
 		if settings.OeffentlicheAdresse != nil {
 			lage.OeffentlicheAdresse = strings.TrimSpace(*settings.OeffentlicheAdresse)
 		}
+		if settings.AlarmEmpfaenger != nil {
+			lage.AlarmEmpfaenger = strings.TrimSpace(*settings.AlarmEmpfaenger)
+		}
 	}
 	if mail, err := mailRepo.GetConfig(ctx); err == nil && mail != nil {
 		lage.SmtpHost = strings.TrimSpace(mail.SMTPHost)
