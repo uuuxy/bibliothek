@@ -27,18 +27,18 @@ func TestAktiveAdminMails_NurAktiveAdmins(t *testing.T) {
 		}
 	}
 
-	mails, err := NewBetriebszustandRepository(pool).AktiveAdminMails(ctx)
+	admins, err := NewBetriebszustandRepository(pool).AktiveAdmins(ctx)
 	if err != nil {
-		t.Fatalf("AktiveAdminMails: %v", err)
+		t.Fatalf("AktiveAdmins: %v", err)
 	}
 	gefunden := map[string]bool{}
-	for _, m := range mails {
-		gefunden[m] = true
+	for _, a := range admins {
+		gefunden[a.Email] = true
 	}
 	if !gefunden["admin-aktiv@example.org"] {
 		t.Error("aktiver Admin fehlt in der Empfängerliste")
 	}
 	if gefunden["admin-weg@example.org"] || gefunden["mitarbeiter@example.org"] {
-		t.Errorf("Empfängerliste enthält Unbefugte: %v", mails)
+		t.Errorf("Empfängerliste enthält Unbefugte: %v", admins)
 	}
 }

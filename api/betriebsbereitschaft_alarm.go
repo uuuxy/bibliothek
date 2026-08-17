@@ -42,20 +42,30 @@ func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 		return
 	}
 
-	empfaenger, err := zustandRepo.AktiveAdminMails(ctx)
-	if err != nil || len(empfaenger) == 0 {
+	admins, err := zustandRepo.AktiveAdmins(ctx)
+	if err != nil || len(admins) == 0 {
 		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber keine Admin-Adressen ermittelbar (%v)", kritische, err)
 		return
 	}
 
-	for _, an := range empfaenger {
+	// Jede Mail nennt ALLE Empfänger: Wer sie liest, sieht sofort, welche Konten
+	// Vollzugriff haben — ein unbekannter Name in dieser Zeile ist selbst ein Befund
+	// (genau so fiel am 16.08.2026 ein nie autorisiertes Admin-Konto auf).
+	namen := make([]string, 0, len(admins))
+	for _, a := range admins {
+		namen = append(namen, a.Name+" ("+a.Email+")")
+	}
+	textkoerper += "\nDiese Mail ging an alle aktiven Admin-Konten: " + strings.Join(namen, "; ") + "\n"
+
+	for _, a := range admins {
+		an := a.Email
 		if err := SendEmail(MailRequest{To: an, Subject: betreff, Body: textkoerper}); err != nil {
 			// Kaputter Mailversand ist selbst ein Befund der Seite — hier bleibt nur
 			// das Log; eine Mail über den kaputten Mailversand gibt es nicht.
 			log.Printf("Bereitschafts-Alarm an %s fehlgeschlagen: %v", an, err)
 		}
 	}
-	log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e) an %d Admin(s) gemeldet", kritische, len(empfaenger))
+	log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e) an %d Admin(s) gemeldet", kritische, len(admins))
 }
 
 // formatiereAlarmMail baut Betreff und Text aus den Befunden. Reine Funktion —

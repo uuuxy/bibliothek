@@ -44,29 +44,39 @@ func (r *BetriebszustandRepository) ZaehleDemoSchueler(ctx context.Context) (int
 	return anzahl, err
 }
 
-// AktiveAdminMails liefert die E-Mail-Adressen aller aktiven Admins — die
-// Empfänger des Bereitschafts-Alarms. Bewusst nur Admins: Die Befunde beschreiben
-// die Angriffsfläche der Anlage (Geheimnisse, Backups), nicht die Bibliothek.
-func (r *BetriebszustandRepository) AktiveAdminMails(ctx context.Context) ([]string, error) {
+// AdminKonto ist ein aktives Konto mit Vollzugriff — Empfänger der Alarm-Mails
+// und Gegenstand des Sichtbarkeits-Befunds der Selbstprüfung.
+type AdminKonto struct {
+	Name  string
+	Email string
+}
+
+// AktiveAdmins liefert alle aktiven Admin-Konten (Name + Adresse) — EINE Quelle
+// für den Alarm-Versand UND den Betriebsbereitschafts-Befund. Der Vorfall vom
+// 16.08.2026 (Alarm-Mail an ein dem Betreiber unbekanntes Admin-Konto) hat
+// gezeigt: Die Admin-Liste muss sichtbar sein, nicht nur benutzt werden.
+func (r *BetriebszustandRepository) AktiveAdmins(ctx context.Context) ([]AdminKonto, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
-	rows, err := r.pool.Query(ctx,
-		`SELECT email FROM benutzer WHERE rolle = 'admin' AND aktiv = true AND email <> ''`)
+	rows, err := r.pool.Query(ctx, `
+		SELECT btrim(vorname || ' ' || nachname), email
+		FROM benutzer WHERE rolle = 'admin' AND aktiv = true AND email <> ''
+		ORDER BY erstellt_am`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	mails := []string{}
+	konten := []AdminKonto{}
 	for rows.Next() {
-		var mail string
-		if err := rows.Scan(&mail); err != nil {
+		var k AdminKonto
+		if err := rows.Scan(&k.Name, &k.Email); err != nil {
 			return nil, err
 		}
-		mails = append(mails, mail)
+		konten = append(konten, k)
 	}
-	return mails, rows.Err()
+	return konten, rows.Err()
 }
 
 // LadeRollenRechte liefert die Live-Rechte (role_permissions) als Rolle→Recht→erlaubt.

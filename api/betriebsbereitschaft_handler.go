@@ -85,6 +85,13 @@ func (s *Server) sammleLage(
 		lage.RechteLive = rechte
 	}
 
+	if admins, err := zustandRepo.AktiveAdmins(ctx); err == nil {
+		lage.AdminKonten = make([]string, 0, len(admins))
+		for _, a := range admins {
+			lage.AdminKonten = append(lage.AdminKonten, a.Name+" ("+a.Email+")")
+		}
+	}
+
 	return lage
 }
 

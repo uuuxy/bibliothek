@@ -24,6 +24,7 @@ func lageEingerichtet() Lage {
 		SmtpHost:            "srv1.philipp-reis-schule.de",
 		DemoSchueler:        0,
 		RechteLive:          rechteWieVorgabe(),
+		AdminKonten:         []string{"Peter Flasch (pflasch@philipp-reis-schule.de)"},
 	}
 }
 
@@ -162,6 +163,22 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Rechte-Vorgabe",
 			stufe:    StufeWarnung,
 			enthaelt: "LEHRER/view_books live an, in der Vorgabe unbekannt",
+		},
+		{
+			name:     "Admin-Konten nicht lesbar",
+			aendere:  func(l *Lage) { l.AdminKonten = nil },
+			bereich:  "Admin-Konten",
+			stufe:    StufeWarnung,
+			enthaelt: "nicht gelesen",
+		},
+		{
+			// Ohne aktiven Admin erreichen die Kritisch-Alarme niemanden — und
+			// niemand kann das System verwalten.
+			name:     "kein aktives Admin-Konto",
+			aendere:  func(l *Lage) { l.AdminKonten = []string{} },
+			bereich:  "Admin-Konten",
+			stufe:    StufeKritisch,
+			enthaelt: "Kein aktives Admin-Konto",
 		},
 		{
 			name:     "Live-Rechte nicht lesbar",

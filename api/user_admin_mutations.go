@@ -2,12 +2,35 @@ package api
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
+
+// auditiereBenutzerMutation protokolliert Anlage/Änderung eines Kontos revisionssicher.
+//
+// Bis zum 16.08.2026 hinterließen Konten-Anlage und Rollenvergabe KEINE Spur — als auf
+// Prod vier aktive Admin-Konten auftauchten, war nicht mehr feststellbar, wer sie wann
+// angelegt hatte (der Alarm-Mail-Vorfall). Best effort: Ein Audit-Fehler bricht die
+// Mutation nicht ab, aber er steht im Log.
+func (s *Server) auditiereBenutzerMutation(r *http.Request, aktion string, details map[string]any) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		return
+	}
+	// Server ohne Datenbank (nackte Testkonstruktion &Server{}): nichts zu schreiben.
+	if s.DB == nil || s.DB.Pool == nil {
+		return
+	}
+	if err := repository.NewAuditRepository(s.DB.Pool).
+		LogAdminAktion(r.Context(), claims.UserID, aktion, "", details); err != nil {
+		log.Printf("Benutzer-Audit (%s) fehlgeschlagen: %v", aktion, err)
+	}
+}
 
 // CreateUserRequest holds payload data for user creation.
 type CreateUserRequest struct {
@@ -65,6 +88,10 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
+
+		s.auditiereBenutzerMutation(r, "USER_CREATE", map[string]any{
+			"email": req.Email, "rolle": dbEnumRole, "vorname": req.Vorname, "nachname": req.Nachname,
+		})
 
 		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Write(w, []byte(`{"status":"success"}`))
@@ -150,6 +177,10 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
+
+		s.auditiereBenutzerMutation(r, "USER_UPDATE", map[string]any{
+			"ziel_id": id, "email": req.Email, "rolle": dbEnumRole, "aktiv": req.Aktiv,
+		})
 
 		InvalidatePermissionCache()
 

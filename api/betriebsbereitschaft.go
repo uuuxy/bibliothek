@@ -79,6 +79,9 @@ type Lage struct {
 	// lesbar — bewusst unterschieden von der leeren Map, denn „leer" würde jede
 	// Vorgabe-Zeile als fehlend melden und die Auskunft in Lärm ertränken.
 	RechteLive map[string]map[string]bool
+
+	// Aktive Admin-Konten ("Name (mail)"). nil: nicht lesbar.
+	AdminKonten []string
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -122,8 +125,38 @@ func Pruefe(l Lage) []Befund {
 		pruefeMailversand(l),
 		pruefeDemodaten(l),
 		pruefeRechteVorgabe(l),
+		pruefeAdminKonten(l),
 	}
 	return befunde
+}
+
+// pruefeAdminKonten macht sichtbar, WER Vollzugriff hat und die Alarm-Mails erhält.
+//
+// Anlass (16.08.2026 abends): Die erste Kritisch-Mail ging an ein Admin-Konto, von
+// dem der Betreiber nichts wusste — auf Prod lagen VIER aktive Admins, drei davon
+// ohne bekannte Herkunft (die Konten-Anlage war bis dahin unauditiert). Eine Liste
+// auf dieser Seite hätte das Wochen früher gezeigt. Bewusst Stufe OK, solange
+// überhaupt Admins existieren: Mehrere Admins können völlig richtig sein — die
+// Seite URTEILT nicht, sie zeigt. Wer hier einen unbekannten Namen liest, handelt.
+func pruefeAdminKonten(l Lage) Befund {
+	b := Befund{Bereich: "Admin-Konten"}
+	switch {
+	case l.AdminKonten == nil:
+		b.Stufe = StufeWarnung
+		b.Befund = "Die Admin-Konten konnten nicht gelesen werden."
+		b.Folge = "Unbekannt, wer Vollzugriff hat und die Alarm-Mails erhält."
+		b.Abhilfe = "Datenbankverbindung prüfen und die Seite neu laden."
+	case len(l.AdminKonten) == 0:
+		b.Stufe = StufeKritisch
+		b.Befund = "Kein aktives Admin-Konto vorhanden."
+		b.Folge = "Niemand kann das System verwalten, und die Kritisch-Alarme erreichen niemanden."
+		b.Abhilfe = "Über die Datenbank bzw. INITIAL_ADMIN_EMAIL ein Admin-Konto herstellen."
+	default:
+		b.Stufe = StufeOK
+		b.Befund = fmt.Sprintf("%d Admin-Konto/-Konten mit Vollzugriff — sie erhalten die Kritisch-Alarme: %s.",
+			len(l.AdminKonten), strings.Join(l.AdminKonten, "; "))
+	}
+	return b
 }
 
 // pruefeRechteVorgabe vergleicht die Live-Rechte mit der Code-Vorgabe (db.RechteVorgabe).
