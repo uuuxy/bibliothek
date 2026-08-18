@@ -83,6 +83,11 @@ export const permissionsMetadata = [
 				desc: 'Erlaubt das Absenden einer Klassensatz-Reservierung im Kollegiums-Portal. Öffnet keine Schülerdaten — das Portal sucht über den öffentlichen OPAC.'
 			},
 			{
+				key: 'manage_vormerkungen',
+				label: 'Vormerkungen verwalten (Warteliste)',
+				desc: 'Warteliste eines Titels einsehen, Schüler vormerken und Vormerkungen löschen. Zeigt nur Name und Klasse — als enges Theken-Recht für Helfer zuschaltbar, ohne die Schülerdatei zu öffnen.'
+			},
+			{
 				key: 'view_orders',
 				label: 'Bestellungen anzeigen',
 				desc: 'Erlaubt das Einsehen von Buchbestellungen und Lieferanten-Order'

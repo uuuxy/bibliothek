@@ -109,6 +109,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "view_orders", true},
 	{"ADMIN", "create_orders", true},
 	{"ADMIN", "create_reservations", true},
+	{"ADMIN", "manage_vormerkungen", true},
 	{"ADMIN", "view_graduates", true},
 	{"ADMIN", "view_stats", true},
 	{"ADMIN", "audit_logs", true},
@@ -130,6 +131,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"MITARBEITER", "view_orders", true},
 	{"MITARBEITER", "create_orders", true},
 	{"MITARBEITER", "create_reservations", true},
+	{"MITARBEITER", "manage_vormerkungen", true},
 	{"MITARBEITER", "view_graduates", true},
 	{"MITARBEITER", "view_stats", true},
 	{"MITARBEITER", "audit_logs", false},
@@ -158,6 +160,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"KOLLEGIUM", "inventory_scan", false},
 	{"KOLLEGIUM", "view_orders", false},
 	{"KOLLEGIUM", "create_orders", false},
+	{"KOLLEGIUM", "manage_vormerkungen", false},
 	{"KOLLEGIUM", "view_graduates", false},
 	{"KOLLEGIUM", "view_stats", false},
 	{"KOLLEGIUM", "audit_logs", false},
@@ -186,10 +189,28 @@ var RechteVorgabe = []RechteEintrag{
 	{"HELFER", "view_orders", false},
 	{"HELFER", "create_orders", false},
 	{"HELFER", "create_reservations", false},
+	// Vormerkungen sind ein OPTIONALES Theken-Recht (Betreiber-Entscheidung
+	// 18.08.2026, Weg 2 aus bewertung/sicherheitsbefund-vormerkungen.md): Die
+	// Warteliste nennt Name und Klasse des Vormerkenden — Kiosk-Niveau, dieselben
+	// Felder, die der Helfer beim Ausweisscan ohnehin sieht, aber verknüpft mit
+	// dem Leseinteresse. Standard daher AUS; ob eine Anlage ihren Helfern die
+	// Warteliste öffnet, entscheidet der Admin in der Rechte-Matrix (das Paar
+	// steht in RechteOptional, die Selbstprüfung meldet den Haken nicht als Drift).
+	{"HELFER", "manage_vormerkungen", false},
 	{"HELFER", "view_graduates", false},
 	{"HELFER", "view_stats", false},
 	{"HELFER", "audit_logs", false},
 	{"HELFER", "manage_users", false},
+}
+
+// RechteOptional nennt die Rolle/Recht-Paare, deren Live-WERT eine bewusste
+// Admin-Entscheidung ist: Der Seed legt nur den Startwert fest, der Haken in der
+// Rechte-Matrix ist der vorgesehene Gebrauch. Die Selbstprüfung (pruefeRechte-
+// Vorgabe) verlangt weiterhin, dass die Zeile EXISTIERT, vergleicht aber ihren
+// Wert nicht — sonst stünde jede Anlage, die das Recht nutzt, dauerhaft mit
+// einer Warnung da, und Dauerwarnungen erziehen zum Wegsehen.
+var RechteOptional = map[string]bool{
+	"HELFER/manage_vormerkungen": true,
 }
 
 // seedRolePermissions schreibt die Rechte-Vorgabe in die Datenbank (nur fehlende Zeilen).

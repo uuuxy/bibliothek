@@ -8,12 +8,24 @@
 	import { useBookAkte } from './useBookAkte.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
+	import { authStore } from './stores/authStore.svelte.js';
+	import { hatRecht } from './menu.js';
 	import { ChevronLeft, Frown, SquarePen, Trash2 } from '@lucide/svelte';
 
 	/** @type {{ bookId: string | null, onBack: () => void }} */
 	let { bookId, onBack } = $props();
 
 	const akte = useBookAkte();
+
+	// Enges Theken-Recht (db/seed.go): Ohne manage_vormerkungen antwortet die API
+	// mit 403 — dann den Reiter gar nicht erst anbieten statt leer scheitern lassen.
+	const darfVormerken = $derived(hatRecht(authStore.currentUser, 'manage_vormerkungen'));
+	const tabs = $derived([
+		['ausleiher', `Ausleiher (${akte.borrowers.length})`],
+		['exemplare', `Exemplare (${akte.exemplare.length})`],
+		...(darfVormerken ? [['vormerkungen', `Vormerkungen (${akte.vormerkungen.length})`]] : []),
+		['historie', 'Historie']
+	]);
 
 	$effect(() => {
 		if (bookId) akte.loadAll(bookId);
@@ -73,7 +85,7 @@
 		<!-- Tabs -->
 		<div class="border-b border-slate-200">
 			<nav class="flex gap-6 overflow-x-auto no-scrollbar" aria-label="Buch-Akte Tabs">
-				{#each [['ausleiher', `Ausleiher (${akte.borrowers.length})`], ['exemplare', `Exemplare (${akte.exemplare.length})`], ['vormerkungen', `Vormerkungen (${akte.vormerkungen.length})`], ['historie', 'Historie']] as [id, label] (id)}
+				{#each tabs as [id, label] (id)}
 					<button
 						onclick={() => (akte.activeTab = id)}
 						class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {akte.activeTab ===

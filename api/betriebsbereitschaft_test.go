@@ -228,6 +228,30 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 	}
 }
 
+// Optionale Rechte (db.RechteOptional) sind zum Umschalten GEBAUT: Schaltet ein
+// Admin dem Helfer die Vormerkungen zu, ist das der vorgesehene Gebrauch — keine
+// Drift. Ohne diese Ausnahme stünde jede nutzende Anlage dauerhaft gelb, und
+// Dauerwarnungen erziehen zum Wegsehen. Die Existenz-Prüfung bleibt scharf:
+// Verschwindet die Zeile ganz, fehlt die Tür in der Rechte-Matrix — Warnung.
+func TestBetriebsbereitschaft_OptionalesRechtIstKeineDrift(t *testing.T) {
+	t.Run("eingeschaltet ist kein Befund", func(t *testing.T) {
+		l := lageEingerichtet()
+		l.RechteLive["HELFER"]["manage_vormerkungen"] = true
+		b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
+		if b.Stufe != StufeOK {
+			t.Errorf("optionales Recht eingeschaltet → %q statt OK: %s", b.Stufe, b.Befund)
+		}
+	})
+	t.Run("fehlende Zeile warnt weiterhin", func(t *testing.T) {
+		l := lageEingerichtet()
+		delete(l.RechteLive["HELFER"], "manage_vormerkungen")
+		b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
+		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund+b.Folge, "HELFER/manage_vormerkungen fehlt live") {
+			t.Errorf("fehlende optionale Zeile muss warnen, got %q: %s", b.Stufe, b.Befund)
+		}
+	})
+}
+
 // Auf dem Entwicklungsrechner sind mock-Anmeldung und Beispiel-Geheimnisse RICHTIG.
 // Meldete die Prüfung sie dort als Mangel, wäre sie dauerhaft rot — und damit wertlos.
 func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {

@@ -212,6 +212,9 @@ func pruefeRechteVorgabe(l Lage) Befund {
 		case !vorhanden:
 			abweichungen = append(abweichungen,
 				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Role, v.Permission, anAus(v.Allowed)))
+		// Optionale Paare (db.RechteOptional): Der Haken in der Rechte-Matrix ist
+		// dort der vorgesehene Gebrauch, kein Drift — nur die Existenz zählt.
+		case db.RechteOptional[v.Role+"/"+v.Permission]:
 		case liveWert != v.Allowed:
 			abweichungen = append(abweichungen,
 				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Role, v.Permission, anAus(liveWert), anAus(v.Allowed)))

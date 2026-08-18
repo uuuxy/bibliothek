@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/auth"
+	"bibliothek/db"
 	"bibliothek/repository"
 )
 
@@ -20,20 +21,26 @@ import (
 // sind, hängen an view_students; die Geräteliste blendet den Ausleihernamen aus.
 
 // TestPersonendatenRoutenHinterViewStudents liest die Routen-Registrierung als
-// Quelle (dieselbe Technik wie routes_authz_coverage_test.go): Diese vier
-// Antworten verknüpfen Schülernamen mit Titeln und dürfen nie schwächer als
-// view_students geschützt sein.
+// Quelle (dieselbe Technik wie routes_authz_coverage_test.go): Diese Antworten
+// verknüpfen Schülernamen mit Titeln und dürfen nie hinter ein Recht rutschen,
+// das die Helfer-Rolle ab Werk besitzt (view_books, perform_actions).
+//
+// Zwei Schutzstufen: Ausleiher/Historie zeigen das volle Ausleihgeschehen und
+// bleiben hinter view_students. Die Vormerkungen hängen am ENGEN Theken-Recht
+// manage_vormerkungen (Kiosk-Felder: Name+Klasse; Betreiber-Entscheidung
+// 18.08.2026: für Helfer optional per Rechte-Matrix zuschaltbar, Standard AUS —
+// db/seed.go RechteVorgabe + RechteOptional).
 func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
 	quelle, err := os.ReadFile("routes_books.go")
 	if err != nil {
 		t.Fatalf("routes_books.go lesen: %v", err)
 	}
-	for _, route := range []string{
-		"GET /api/vormerkungen",
-		"POST /api/vormerkungen",
-		"DELETE /api/vormerkungen/{id}",
-		"GET /api/buecher/titel/{id}/ausleiher",
-		"GET /api/buecher/titel/{id}/historie",
+	for route, recht := range map[string]string{
+		"GET /api/vormerkungen":                 "manage_vormerkungen",
+		"POST /api/vormerkungen":                "manage_vormerkungen",
+		"DELETE /api/vormerkungen/{id}":         "manage_vormerkungen",
+		"GET /api/buecher/titel/{id}/ausleiher": "view_students",
+		"GET /api/buecher/titel/{id}/historie":  "view_students",
 	} {
 		zeile := ""
 		for _, l := range strings.Split(string(quelle), "\n") {
@@ -46,9 +53,32 @@ func TestPersonendatenRoutenHinterViewStudents(t *testing.T) {
 			t.Errorf("Route %q nicht in routes_books.go gefunden — bei Umzug diesen Test mitnehmen", route)
 			continue
 		}
-		if !strings.Contains(zeile, `RequirePermission("view_students")`) {
-			t.Errorf("Route %q gibt Schülernamen heraus und muss hinter view_students liegen, gefunden: %s", route, strings.TrimSpace(zeile))
+		if !strings.Contains(zeile, `RequirePermission("`+recht+`")`) {
+			t.Errorf("Route %q gibt Schülernamen heraus und muss hinter %s liegen, gefunden: %s", route, recht, strings.TrimSpace(zeile))
 		}
+	}
+}
+
+// TestVormerkungsRechtIstFuerHelferOptional hält die Entscheidung als Code fest:
+// Das Paar HELFER/manage_vormerkungen existiert in der Vorgabe, startet AUS und
+// ist als optional markiert — nur dann schweigt die Selbstprüfung, wenn ein
+// Admin es einschaltet. Fällt eine der drei Bedingungen, ist entweder das Recht
+// verschwunden, plötzlich Standard-AN oder jede nutzende Anlage dauerhaft gelb.
+func TestVormerkungsRechtIstFuerHelferOptional(t *testing.T) {
+	if !db.RechteOptional["HELFER/manage_vormerkungen"] {
+		t.Error("HELFER/manage_vormerkungen fehlt in db.RechteOptional — die Selbstprüfung würde jeden gesetzten Haken als Drift melden")
+	}
+	gefunden := false
+	for _, v := range db.RechteVorgabe {
+		if v.Role == "HELFER" && v.Permission == "manage_vormerkungen" {
+			gefunden = true
+			if v.Allowed {
+				t.Error("HELFER/manage_vormerkungen muss ab Werk AUS sein (optionales Recht, Betreiber-Entscheidung)")
+			}
+		}
+	}
+	if !gefunden {
+		t.Error("HELFER/manage_vormerkungen fehlt in db.RechteVorgabe")
 	}
 }
 

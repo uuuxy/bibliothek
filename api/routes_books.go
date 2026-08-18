@@ -54,15 +54,18 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 
 	// Vormerkungen
 	vormerkungRepo := repository.NewVormerkungRepository(s.DB.Pool)
-	// Vormerkungen hinter view_students, nicht view_books: Die Liste verknüpft
-	// Schülernamen mit Leseinteresse und erlaubt Anlegen/Löschen für beliebige
-	// schueler_id — view_books wurde der Helfer-Rolle ausdrücklich als "öffnet
-	// keine Personendaten" gegeben (bewertung/sicherheitsbefund-vormerkungen.md).
+	// Eigenes enges Recht manage_vormerkungen, NICHT view_books (bewertung/
+	// sicherheitsbefund-vormerkungen.md, Weg 2 — Betreiber-Entscheidung 18.08.2026):
+	// Die Liste verknüpft Schülernamen mit Leseinteresse und erlaubt Anlegen/Löschen
+	// für beliebige schueler_id. Sie zeigt aber nur Kiosk-Felder (Name, Klasse) —
+	// dafür das volle view_students zu verlangen (Profile, Adressen, Mahnwesen) war
+	// zu grob: Helfer verloren die Warteliste komplett. Jetzt: MITARBEITER hat das
+	// Recht ab Werk, HELFER optional per Rechte-Matrix (Standard AUS, db/seed.go).
 	// Der Einzelfall am Rückgabe-Scan ("reserviert für X") bleibt bewusst: den
 	// Namen braucht die Theke, um das Buch für die richtige Person beiseitezulegen.
-	mux.Handle("GET /api/vormerkungen", s.RequirePermission("view_students")(s.ListVormerkungHandler(vormerkungRepo)))
-	mux.Handle("POST /api/vormerkungen", s.RequirePermission("view_students")(s.CreateVormerkungHandler(vormerkungRepo)))
-	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_students")(s.DeleteVormerkungHandler(vormerkungRepo)))
+	mux.Handle("GET /api/vormerkungen", s.RequirePermission("manage_vormerkungen")(s.ListVormerkungHandler(vormerkungRepo)))
+	mux.Handle("POST /api/vormerkungen", s.RequirePermission("manage_vormerkungen")(s.CreateVormerkungHandler(vormerkungRepo)))
+	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("manage_vormerkungen")(s.DeleteVormerkungHandler(vormerkungRepo)))
 
 	// Klassensatz Reservierungen
 	//
