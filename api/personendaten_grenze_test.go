@@ -119,6 +119,52 @@ func TestSperrgrundBleibtOhneViewStudentsGeheim(t *testing.T) {
 	}
 }
 
+// overrideSpyOmnibox merkt sich, mit welchem OverrideBlock der Ausleih-Kern
+// aufgerufen wurde — genau der Wert, der über eine Sperre entscheidet.
+type overrideSpyOmnibox struct {
+	gesehenerOverride bool
+}
+
+func (o *overrideSpyOmnibox) ProcessQuery(_ context.Context, q service.OmniboxQuery) (*service.OmniboxResult, error) {
+	o.gesehenerOverride = q.OverrideBlock
+	return &service.OmniboxResult{Type: "info", Message: "ok"}, nil
+}
+
+func actionSiehtOverride(rolle string) bool {
+	spy := &overrideSpyOmnibox{}
+	s := &Server{}
+	body := `{"query":"B-123","active_student_id":"s1","override_block":true}`
+	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle), UserID: "u1"}))
+	w := httptest.NewRecorder()
+	s.ActionHandler(spy)(w, req)
+	return spy.gesehenerOverride
+}
+
+// TestOverrideBlockNurMitEditStudents: Eine Sperre aufheben ist ein Verwaltungs-
+// akt. override_block darf nur wirken, wenn der Aufrufer edit_students besitzt —
+// dasselbe Recht, das auch das Sperren/Entsperren erlaubt. Am 18.08.2026 live mit
+// Helfer-Konto belegt: perform_actions allein reichte, die Sperre fiel per
+// Request-Feld, obwohl die UI den Schalter nie anbot (Schutz nur als Konvention).
+func TestOverrideBlockNurMitEditStudents(t *testing.T) {
+	InvalidatePermissionCache()
+	t.Cleanup(InvalidatePermissionCache)
+	permCacheMu.Lock()
+	permCache["helfer:edit_students"] = cacheEntry{Allowed: false, ExpiresAt: time.Now().Add(time.Minute)}
+	permCache["mitarbeiter:edit_students"] = cacheEntry{Allowed: true, ExpiresAt: time.Now().Add(time.Minute)}
+	permCacheMu.Unlock()
+
+	if actionSiehtOverride("helfer") {
+		t.Error("Helfer (ohne edit_students) konnte override_block durchsetzen — die Sperre ist aushebelbar")
+	}
+	if !actionSiehtOverride("mitarbeiter") {
+		t.Error("Mitarbeiter mit edit_students muss override_block nutzen können — sonst ist keine berechtigte Sperr-Aufhebung mehr möglich")
+	}
+	if !actionSiehtOverride("admin") {
+		t.Error("Admin muss override_block nutzen können")
+	}
+}
+
 type geraeteListenStub struct {
 	repository.GeraeteRepository
 	zeilen []repository.GeraetMitStatus

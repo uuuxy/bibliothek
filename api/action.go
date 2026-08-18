@@ -156,6 +156,13 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			return
 		}
 
+		// Eine Sperre aufheben ist ein Verwaltungsakt, kein Theken-Vorgang:
+		// override_block wirkt nur mit edit_students — demselben Recht, das auch
+		// das Sperren/Entsperren erlaubt. Ohne es bleibt die Sperre bestehen; wer
+		// das Feld trotzdem setzt, wird behandelt, als hätte er es nicht gesetzt.
+		// Am 18.08.2026 live gefunden: perform_actions allein reichte, ein Helfer
+		// konnte jede Sperre per Request-Feld aushebeln — die UI bot den Schalter
+		// nie an, der Schutz war also nur Konvention (bewertung-Muster F1/F4).
 		res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
 			Query:              req.Query,
 			ActiveStudentID:    req.ActiveStudentID,
@@ -163,7 +170,7 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			ConfirmedChecklist: req.ConfirmedChecklist,
 			StaffID:            claims.UserID,
 			StaffRole:          string(claims.Rolle),
-			OverrideBlock:      req.OverrideBlock,
+			OverrideBlock:      req.OverrideBlock && s.BesitztRecht(r, "edit_students"),
 		})
 
 		if err != nil {
@@ -231,15 +238,16 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 		var batchResp ActionBatchResponse
 
 		darfGrundSehen := s.BesitztRecht(r, "view_students")
+		darfOverride := s.BesitztRecht(r, "edit_students")
 		for i, req := range batchReq {
-			batchResp.Results = append(batchResp.Results, s.processSingleBatchItem(ctx, omniboxSvc, req, i, claims.UserID, string(claims.Rolle), darfGrundSehen))
+			batchResp.Results = append(batchResp.Results, s.processSingleBatchItem(ctx, omniboxSvc, req, i, claims.UserID, string(claims.Rolle), darfGrundSehen, darfOverride))
 		}
 
 		RespondJSON(w, http.StatusOK, batchResp)
 	}
 }
 
-func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.OmniboxService, req ActionRequest, index int, userID string, rolle string, darfGrundSehen bool) ActionBatchResponseItem {
+func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.OmniboxService, req ActionRequest, index int, userID string, rolle string, darfGrundSehen, darfOverride bool) ActionBatchResponseItem {
 	req.Query = strings.TrimSpace(req.Query)
 	if req.Query == "" {
 		return ActionBatchResponseItem{
@@ -261,7 +269,7 @@ func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.
 		ConfirmedChecklist: req.ConfirmedChecklist,
 		StaffID:            userID,
 		StaffRole:          rolle,
-		OverrideBlock:      req.OverrideBlock,
+		OverrideBlock:      req.OverrideBlock && darfOverride,
 	})
 
 	err = ohneSperrgrund(err, darfGrundSehen)
