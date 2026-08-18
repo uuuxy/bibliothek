@@ -117,3 +117,34 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 		t.Errorf("PATCH-Ablehnung muss 400 sein, got %d", w2.Code)
 	}
 }
+
+// TestZwillingeAusDerLusd (Befund F8): Zwei ECHTE Schüler mit gleichem Namen
+// und Geburtstag existieren nebeneinander, wenn beide aus der LUSD kommen —
+// während die Handeingabe eines Namens-Datums-Doppels hart abgewiesen bleibt.
+func TestZwillingeAusDerLusd(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	resetBestandsdaten(t, pool)
+
+	for i, lusd := range []string{"LUSD-F8-1", "LUSD-F8-2"} {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, geburtsdatum, lusd_id)
+			VALUES ($1, 'Kim', 'Zwilling', '5a', 2033, '2014-03-03', $2)`,
+			"F8-K-"+lusd, lusd); err != nil {
+			t.Fatalf("LUSD-Zwilling %d: %v", i+1, err)
+		}
+	}
+
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, geburtsdatum)
+		VALUES ('F8-HAND-1', 'Mira', 'Handeingabe', '6b', 2032, '2013-07-07')`); err != nil {
+		t.Fatalf("Handeingabe 1: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, geburtsdatum)
+		VALUES ('F8-HAND-2', 'Mira', 'Handeingabe', '6b', 2032, '2013-07-07')`); err == nil {
+		t.Fatal("Handeingabe-Doppel wurde angenommen — der Schutz für manuelle Anlagen ist weg")
+	} else if !strings.Contains(err.Error(), "unique_schueler_name_gebdatum") {
+		t.Fatalf("falscher Fehler: %v", err)
+	}
+}

@@ -198,7 +198,7 @@ CREATE INDEX idx_schueler_barcode_lower_trgm ON schueler USING gin (lower(barcod
 -- nur unter aktiven Schülern (soft-gelöschte dürfen bei Wiederanmeldung neu entstehen,
 -- analog uniq_schueler_lusd_id_active). Siehe Migration 048.
 CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (vorname, nachname, geburtsdatum)
-    WHERE geburtsdatum IS NOT NULL AND deleted_at IS NULL;
+    WHERE geburtsdatum IS NOT NULL AND deleted_at IS NULL AND lusd_id IS NULL;
 -- lusd_id ist nur unter AKTIVEN Schülern eindeutig; eine soft-gelöschte lusd_id
 -- darf bei Wiederanmeldung neu vergeben werden (siehe Migration 035).
 CREATE UNIQUE INDEX uniq_schueler_lusd_id_active ON schueler (lusd_id) WHERE deleted_at IS NULL AND lusd_id IS NOT NULL;
@@ -826,7 +826,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('070_kollegium_nur_portal.sql'),
 ('071_bestellstatus_spalte.sql'),
 ('072_schein_schueler_zu_benutzer.sql'),
-('073_stock_spalte_entfernt.sql')
+('073_stock_spalte_entfernt.sql'),
+('074_zwillinge_aus_der_lusd.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
