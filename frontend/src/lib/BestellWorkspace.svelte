@@ -15,6 +15,7 @@
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import BestelllinkHinweis from './components/bestellungen/BestelllinkHinweis.svelte';
 	import KlassensatzReservierungen from './components/bestellungen/KlassensatzReservierungen.svelte';
+	import AnliegenListe from './components/bestellungen/AnliegenListe.svelte';
 
 	let activeTab = $state('bestellungen');
 
@@ -177,6 +178,7 @@
 		{@render tab('historie', 'Bestellhistorie')}
 		{@render tab('berichte', 'Berichte')}
 		{@render tab('klassensaetze', 'Klassensatz-Reservierungen', uiStore.pendingReservierungen)}
+		{@render tab('anliegen', 'Wünsche & Meldungen')}
 	</div>
 
 	{#if activeTab === 'bestellungen'}
@@ -296,5 +298,9 @@
 
 	{#if activeTab === 'klassensaetze'}
 		<KlassensatzReservierungen />
+	{/if}
+
+	{#if activeTab === 'anliegen'}
+		<AnliegenListe />
 	{/if}
 </PageShell>

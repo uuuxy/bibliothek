@@ -449,6 +449,25 @@ CREATE TABLE class_books (
 );
 
 
+-- Table: lehrer_anliegen (Wünsche und Meldungen der Lehrkräfte, Migration 075 —
+-- Wunsch "Markl 2 für die 8G3" und Meldung "falsche Bücher" als EIN Mechanismus;
+-- erledigt_am IS NULL = offen, beim Abhaken geht eine Mail an angefordert_von)
+CREATE TABLE lehrer_anliegen (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    art TEXT NOT NULL CONSTRAINT chk_anliegen_art CHECK (art IN ('wunsch', 'meldung')),
+    titel_text TEXT NOT NULL,
+    titel_id UUID REFERENCES buecher_titel(id) ON DELETE SET NULL,
+    isbn TEXT NOT NULL DEFAULT '',
+    klasse TEXT NOT NULL DEFAULT '',
+    kommentar TEXT NOT NULL DEFAULT '',
+    angefordert_von UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    erledigt_am TIMESTAMP WITH TIME ZONE,
+    erledigt_notiz TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX idx_anliegen_offen ON lehrer_anliegen (erstellt_am) WHERE erledigt_am IS NULL;
+
+
 -- Table: geraete (Hardware devices like iPads, Laptops)
 CREATE TABLE geraete (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -827,7 +846,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('071_bestellstatus_spalte.sql'),
 ('072_schein_schueler_zu_benutzer.sql'),
 ('073_stock_spalte_entfernt.sql'),
-('074_zwillinge_aus_der_lusd.sql')
+('074_zwillinge_aus_der_lusd.sql'),
+('075_lehrer_anliegen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

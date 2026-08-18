@@ -91,6 +91,23 @@ dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
   „Abschließen“ beendet den Vorgang nach der physischen Übergabe — die Ausleihe selbst
   läuft über die normalen Wege (Kiosk je Schüler oder Lehrer-Handapparat).
 
+### 4.3. Wünsche & Meldungen der Lehrkräfte
+
+Seit 18.08.2026 (Betreiber-Entscheidung: bewusst schlank, kein Ticketsystem):
+
+- **Ein Mechanismus für zwei Fälle:** „Ich möchte in der 8G3 den Markl 2" (Wunsch)
+  und „die 8G3 hat die falschen Bücher bekommen" (Meldung). Die Lehrkraft trägt es
+  im Kollegiums-Portal ein — Art, Freitext, Klasse/Kurs, optionale Anmerkung.
+- **Wünschen geht immer** — keine Wunschphase, kein Stichtag.
+- Die Bibliothek arbeitet die Liste unter Bestellungen → „Wünsche & Meldungen" in
+  Ruhe ab (älteste zuerst). **Abhaken** schließt das Anliegen und schickt der
+  Lehrkraft automatisch eine Mail — mit der optionalen Notiz („bestellt, kommt
+  Anfang September"). Ein Doppelklick von zwei Arbeitsplätzen löst keine zweite
+  Mail aus (gleiches Muster wie die Klassensatz-Bereit-Mail).
+- Die Lehrkraft sieht ihre Anliegen samt Status und Erledigungs-Notiz im Portal.
+- Bewusst NICHT gebaut: Prioritäten, Kommentar-Threads, Genehmigungsketten,
+  Deckungsprüfung, Packlisten — erst nachrüsten, wenn der Alltag sie vermisst.
+
 ---
 
 ## 5. Geräteausleihe (Hardware)

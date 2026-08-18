@@ -84,4 +84,14 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("POST /api/geraete", s.RequirePermission("edit_books")(s.CreateGeraetHandler(geraeteRepo)))
 	mux.Handle("PUT /api/geraete/{id}", s.RequirePermission("edit_books")(s.UpdateGeraetHandler(geraeteRepo)))
 	mux.Handle("PUT /api/reservierungen/klassensatz/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeKlassensatzReservierungHandler()))
+
+	// Anliegen der Lehrkräfte (Wunsch/Meldung, Migration 075): Anlegen und die
+	// eigene Statusliste laufen wie die Klassensatz-Reservierung über
+	// create_reservations (das Portal-Recht des Kollegiums — bewusst NICHT
+	// view_students, siehe Kommentar an der Klassensatz-Route). Die Arbeitsliste
+	// und das Abhaken gehören der LMF: view_orders lesend, create_orders schreibend.
+	mux.Handle("POST /api/anliegen", s.RequirePermission("create_reservations")(s.CreateAnliegenHandler()))
+	mux.Handle("GET /api/anliegen/eigene", s.RequirePermission("create_reservations")(s.ListEigeneAnliegenHandler()))
+	mux.Handle("GET /api/anliegen/offen", s.RequirePermission("view_orders")(s.ListOffeneAnliegenHandler()))
+	mux.Handle("PUT /api/anliegen/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeAnliegenHandler()))
 }

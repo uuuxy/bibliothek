@@ -6,6 +6,7 @@
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { BookOpen, Search } from '@lucide/svelte';
+	import AnliegenWidget from './components/portal/AnliegenWidget.svelte';
 	/** @type {{ user: any }} */
 	let { user } = $props();
 
@@ -362,6 +363,8 @@
 			hinweis="Titel, Autor oder ISBN eingeben"
 		/>
 	{/if}
+
+	<AnliegenWidget />
 </PageShell>
 
 <!-- Der Ladepunkt sitzt IN der Pille, nicht darüber. Vorher lag er absolut positioniert
