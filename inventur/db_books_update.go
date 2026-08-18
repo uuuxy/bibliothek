@@ -6,21 +6,6 @@ import (
 	"log"
 )
 
-// UpdateStock modifies the stock level of a book.
-func (repo *BookRepository) UpdateStock(ctx context.Context, id string, stock int) error {
-	query := `UPDATE buecher_titel SET stock = $1 WHERE id = $2`
-	result, err := repo.db.Exec(ctx, query, stock, id)
-	if err != nil {
-		return fmt.Errorf("bestand konnte nicht aktualisiert werden: %w", err)
-	}
-
-	if result.RowsAffected() == 0 {
-		return ErrBookNotFound
-	}
-
-	return nil
-}
-
 // UpdateBook updates metadata fields of a book.
 //
 // aktualisiert_am wurde bis zum 10.08.2026 als EINZIGE Spalte von buecher_titel beim
@@ -43,19 +28,18 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			subject = $5,
 			grade_level = $6,
 			track = $7,
-			stock = $8,
-			last_counted = NULLIF($9::text, '')::date,
-			medientyp = $10,
-			erweiterte_eigenschaften = $11,
-			jahrgang_von = $12,
-			jahrgang_bis = $13,
-			untertitel = $14,
-			verlag = $15,
-			erscheinungsjahr = $16,
-			beschreibung = $17,
-			signatur = COALESCE(NULLIF($19, ''), signatur),
+			last_counted = NULLIF($8::text, '')::date,
+			medientyp = $9,
+			erweiterte_eigenschaften = $10,
+			jahrgang_von = $11,
+			jahrgang_bis = $12,
+			untertitel = $13,
+			verlag = $14,
+			erscheinungsjahr = $15,
+			beschreibung = $16,
+			signatur = COALESCE(NULLIF($18, ''), signatur),
 			aktualisiert_am = NOW()
-		WHERE id = $18`
+		WHERE id = $17`
 
 	medientyp := book.Medientyp
 	if medientyp == "" {
@@ -77,7 +61,6 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Subject,
 		book.GradeLevel,
 		book.Track,
-		book.Stock,
 		book.LastCounted,
 		medientyp,
 		properties,

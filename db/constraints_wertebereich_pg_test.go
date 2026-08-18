@@ -12,14 +12,8 @@ import (
 func TestWertebereichConstraints(t *testing.T) {
 	pool := pgTestPool(t)
 
-	t.Run("stock darf nicht negativ sein", func(t *testing.T) {
-		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteConstraintVerletzung(t, tx, "chk_stock_nonneg",
-				`INSERT INTO buecher_titel (titel, stock) VALUES ('X', -1)`)
-			erwarteErfolg(t, tx, "stock = 0",
-				`INSERT INTO buecher_titel (titel, stock) VALUES ('X', 0)`)
-		})
-	})
+	// "stock darf nicht negativ sein" ist mit der Spalte gefallen (Migration 073,
+	// Befund F5) — die eine Wahrheit ist die Live-Zählung über buecher_exemplare.
 
 	t.Run("meldebestand darf nicht negativ sein", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {

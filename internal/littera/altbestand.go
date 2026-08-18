@@ -190,7 +190,7 @@ func mitDatei[T any](verzeichnis, name string, lies func(io.Reader) (T, error)) 
 // ExemplareJeTitel gruppiert die Exemplare nach ihrem Titel.
 //
 // Der Schreibpfad braucht diese Sicht, weil der TITEL die atomare Einheit ist: Er trägt
-// buecher_titel.stock, und ein Titel mit stock=5, dem nur drei Exemplare folgen, wäre ein
+// Exemplar-Zeilen, und ein Titel mit 5 Stück, dem nur drei Exemplare folgen, wäre ein
 // stiller Bestandsfehler.
 func ExemplareJeTitel(exemplare []Exemplar) map[string][]Exemplar {
 	jeTitel := make(map[string][]Exemplar)

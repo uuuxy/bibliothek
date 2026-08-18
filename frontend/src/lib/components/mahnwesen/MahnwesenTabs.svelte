@@ -14,9 +14,6 @@
 				m.tage_ueberfaellig > max ? m.tage_ueberfaellig : max,
 			0
 		);
-	/** @param {any} s */
-	const istLehrer = (s) => Boolean(s.klasse && s.klasse.toLowerCase() === 'lehrer');
-
 	/** @param {(s: any) => boolean} passt */
 	const zaehle = (passt) =>
 		mahnwesenStore.klassen.reduce(
@@ -31,15 +28,17 @@
 		{
 			filter: '1. Erinnerung',
 			titel: 'Akut fällig',
-			anzahl: zaehle((s) => maxTage(s) <= 14 && !istLehrer(s))
+			anzahl: zaehle((s) => maxTage(s) <= 14)
 		},
 		{
 			filter: 'Mahnung',
 			titel: 'Eskaliert',
-			anzahl: zaehle((s) => maxTage(s) > 14 && !istLehrer(s))
-		},
-		{ filter: 'Lehrerkollegium', titel: 'Kollegium', anzahl: zaehle(istLehrer) }
+			anzahl: zaehle((s) => maxTage(s) > 14)
+		}
 	]);
+	// Das Register „Kollegium" (klasse='lehrer') ist mit Migration 072 gefallen:
+	// Lehrkräfte sind Personal-Konten, ihre Handapparat-Ausleihen laufen bewusst
+	// ohne Mahn-Eskalation (1 Jahr Frist) — siehe Befund F4, bewertung/.
 </script>
 
 <div class="flex space-x-1 border-b border-slate-200 mt-6 print:hidden">

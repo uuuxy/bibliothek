@@ -9,7 +9,9 @@ import (
 // — ein Bedienfehler, kein Serverfehler.
 func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, error) {
 	query := `
-		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track, stock, TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp, COALESCE(jahrgang_von, 5) AS jahrgang_von, COALESCE(jahrgang_bis, 10) AS jahrgang_bis, erweiterte_eigenschaften
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track,
+		       (SELECT COUNT(*)::int FROM buecher_exemplare e WHERE e.titel_id = buecher_titel.id AND e.ist_ausgesondert = false) AS stock,
+		       TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp, COALESCE(jahrgang_von, 5) AS jahrgang_von, COALESCE(jahrgang_bis, 10) AS jahrgang_bis, erweiterte_eigenschaften
 		FROM buecher_titel
 		WHERE id = $1::uuid`
 

@@ -120,9 +120,9 @@ func TestTitelKommtGanzOderGarNicht(t *testing.T) {
 	}
 }
 
-// TestStockEntsprichtDenExemplaren: die Zahl in buecher_titel.stock ist der Bestand, den
-// die Oberfläche anzeigt. Weicht sie von den tatsächlich geschriebenen Exemplaren ab, sucht
-// später jemand Bücher, die es nie gab.
+// TestStockEntsprichtDenExemplaren: Die Stückzahl der Quelle muss vollständig als
+// Exemplar-Zeilen ankommen — die frühere stock-Spalte ist gefallen (Migration 073,
+// Befund F5), die Live-Zählung über buecher_exemplare ist die eine Wahrheit.
 func TestStockEntsprichtDenExemplaren(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
@@ -138,15 +138,15 @@ func TestStockEntsprichtDenExemplaren(t *testing.T) {
 	if _, err := s.SchreibeBestand(context.Background(), ab); err != nil {
 		t.Fatalf("SchreibeBestand: %v", err)
 	}
-	var stock, exemplare int
+	var exemplare int
 	err := pool.QueryRow(context.Background(), `
-		SELECT bt.stock, (SELECT count(*) FROM buecher_exemplare WHERE titel_id = bt.id)
-		FROM buecher_titel bt`).Scan(&stock, &exemplare)
+		SELECT (SELECT count(*) FROM buecher_exemplare WHERE titel_id = bt.id)
+		FROM buecher_titel bt`).Scan(&exemplare)
 	if err != nil {
 		t.Fatalf("Abfrage: %v", err)
 	}
-	if stock != 5 || exemplare != 5 {
-		t.Errorf("stock=5 und 5 Exemplare erwartet, gefunden: stock=%d, %d Exemplare", stock, exemplare)
+	if exemplare != 5 {
+		t.Errorf("5 Exemplare erwartet, gefunden: %d", exemplare)
 	}
 }
 

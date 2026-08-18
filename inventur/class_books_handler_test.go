@@ -38,7 +38,7 @@ func TestHandleClassBooks(t *testing.T) {
 					))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","stock":10,"verfuegbar":5,"gesamt":10}]}]}`,
+			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","verfuegbar":5,"gesamt":10}]}]}`,
 		},
 		{
 			name:   "Success - Empty results fallback",

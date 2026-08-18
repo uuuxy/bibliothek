@@ -15,7 +15,6 @@ type ClassBook struct {
 	Track      string `json:"track"`
 	CoverURL   string `json:"coverUrl"`
 	ISBN       string `json:"isbn"`
-	Stock      int    `json:"stock"`
 	Verfuegbar int    `json:"verfuegbar"`
 	Gesamt     int    `json:"gesamt"`
 }

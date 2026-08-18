@@ -355,7 +355,6 @@ CREATE TABLE buecher_titel (
     subject VARCHAR(100),                             -- Integrated from books table
     grade_level SMALLINT,                             -- Integrated from books table
     track VARCHAR(100),                               -- Integrated from books table
-    stock INTEGER NOT NULL DEFAULT 0,                 -- Integrated from books table
     last_counted DATE,                                -- Integrated from books table
     sort_order SERIAL,                                -- Integrated from books table
     medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
@@ -567,6 +566,18 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
 
 -- Table: audit_log (Audit trail for immutable security logs)
+--
+-- ⚠ VERWECHSLUNGSGEFAHR (Befund F6, bewertung/datenbank-pruefbericht.md): Es gibt
+-- ZWEI Protokoll-Tabellen, einen Buchstaben auseinander. Merkregel:
+--   audit_log  (ohne s) = FACHLICHE Datensatz-Historie: wer hat welchen Datensatz
+--                         in welcher Tabelle angefasst (tabelle/aktion/datensatz_id,
+--                         Schreiber: repository insertAuditLog/LogSystemAktion).
+--   audit_logs (mit s)  = ADMIN-Eingriffe mit IP-Adresse (admin_id/aktion/details,
+--                         Schreiber: LogAdminAktion, z. B. UPDATE_SETTINGS, USER_CREATE).
+-- Entschieden 18.08.2026: KEINE Umbenennung — beide Namen stehen in zu vielen
+-- Abfragen, Tests und der Aufbewahrungs-Routine (jobs/cron_audit_retention.go
+-- löscht BEIDE). Wer hier eine dritte Protokoll-Tabelle anlegt, wählt bitte
+-- einen unverwechselbaren Namen.
 CREATE TABLE audit_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tabelle VARCHAR(50) NOT NULL,
@@ -584,7 +595,8 @@ CREATE TABLE audit_log (
 -- unbegrenzt wächst. Siehe Migration 057.
 CREATE INDEX idx_audit_log_timestamp_desc ON audit_log (timestamp DESC);
 
--- Table: audit_logs (Admin-spezifische Eingriffe)
+-- Table: audit_logs (Admin-spezifische Eingriffe MIT IP — nicht verwechseln mit
+-- audit_log (ohne s) = fachliche Datensatz-Historie; Merkregel siehe dort)
 CREATE TABLE audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     admin_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
@@ -812,7 +824,9 @@ INSERT INTO schema_migrations (version) VALUES
 ('068_barcode_seq_ueber_bestand.sql'),
 ('069_rolle_lehrer_zu_kollegium.sql'),
 ('070_kollegium_nur_portal.sql'),
-('071_bestellstatus_spalte.sql')
+('071_bestellstatus_spalte.sql'),
+('072_schein_schueler_zu_benutzer.sql'),
+('073_stock_spalte_entfernt.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -954,9 +968,6 @@ INSERT INTO mail_settings_config (id) VALUES (1) ON CONFLICT DO NOTHING;
 -- Migration 039). Hier für Neuinstallationen; idempotent per DO-Guard.
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_stock_nonneg') THEN
-        ALTER TABLE buecher_titel ADD CONSTRAINT chk_stock_nonneg CHECK (stock >= 0);
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_meldebestand_nonneg') THEN
         ALTER TABLE buecher_titel ADD CONSTRAINT chk_meldebestand_nonneg CHECK (meldebestand >= 0);
     END IF;

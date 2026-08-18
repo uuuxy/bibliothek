@@ -20,15 +20,13 @@ function maxTageUeberfaellig(medien) {
 }
 
 /**
- * Mahnstufe eines Schülers: Lehrer → Lehrerkollegium, sonst nach Überfälligkeit.
- * @param {any} schueler
+ * Mahnstufe eines Schülers nach Überfälligkeit. (Die frühere Sonderstufe
+ * 'Lehrerkollegium' für klasse='lehrer' ist mit Migration 072 gefallen —
+ * Lehrkräfte sind keine Schülerzeilen mehr.)
  * @param {number} maxTage
  * @returns {string}
  */
-function berechneMahnstufe(schueler, maxTage) {
-	if (schueler.klasse?.toLowerCase() === 'lehrer') {
-		return 'Lehrerkollegium';
-	}
+function berechneMahnstufe(maxTage) {
 	// Diese Liste enthält ausschließlich überfällige Ausleihen (rueckgabe_frist < now).
 	// tage_ueberfaellig kann bei <24 h Überfälligkeit rechnerisch 0 sein — das ist dann
 	// „gerade fällig", NICHT „erledigt". Daher gibt es hier bewusst kein 'Erledigt'.
@@ -56,7 +54,7 @@ export function createMahnwesenStore() {
 	let searchQuery = $state(''); // Freitextsuche über Name/Klasse
 
 	// MD3 Filter & Bulk Actions
-	let activeFilter = $state('Alle'); // "Alle", "1. Erinnerung", "Mahnung", "Lehrerkollegium"
+	let activeFilter = $state('Alle'); // "Alle", "1. Erinnerung", "Mahnung"
 	let selectedIds = /** @type {Set<string>} */ (new SvelteSet());
 
 	const pdfStore = useMahnwesenPdf();
@@ -82,7 +80,7 @@ export function createMahnwesenStore() {
 		for (const k of klassen) {
 			for (const s of k.schueler) {
 				const maxTage = maxTageUeberfaellig(s.medien);
-				const mahnstufe = berechneMahnstufe(s, maxTage);
+				const mahnstufe = berechneMahnstufe(maxTage);
 				list.push({ ...s, maxTage, mahnstufe, lehrer_email: k.lehrer_email });
 			}
 		}

@@ -10,45 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdateStock(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
-	defer mock.Close()
-
-	repo := NewBookRepository(mock)
-	ctx := context.Background()
-
-	t.Run("success", func(t *testing.T) {
-		mock.ExpectExec("UPDATE buecher_titel SET stock = \\$1 WHERE id = \\$2").
-			WithArgs(5, "book-123").
-			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-
-		err := repo.UpdateStock(ctx, "book-123", 5)
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("not found", func(t *testing.T) {
-		mock.ExpectExec("UPDATE buecher_titel SET stock = \\$1 WHERE id = \\$2").
-			WithArgs(5, "book-123").
-			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
-
-		err := repo.UpdateStock(ctx, "book-123", 5)
-		assert.ErrorIs(t, err, ErrBookNotFound)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("db error", func(t *testing.T) {
-		mock.ExpectExec("UPDATE buecher_titel SET stock = \\$1 WHERE id = \\$2").
-			WithArgs(5, "book-123").
-			WillReturnError(fmt.Errorf("db connection failed"))
-
-		err := repo.UpdateStock(ctx, "book-123", 5)
-		assert.ErrorContains(t, err, "bestand konnte nicht aktualisiert werden")
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-}
-
 func TestUpdateBook(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
@@ -78,13 +39,13 @@ func TestUpdateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	updateQuery := `UPDATE buecher_titel SET isbn = \$1, titel = \$2, autor = \$3, cover_url = \$4, subject = \$5, grade_level = \$6, track = \$7, stock = \$8, last_counted = NULLIF\(\$9::text, ''\)::date, medientyp = \$10, erweiterte_eigenschaften = \$11, jahrgang_von = \$12, jahrgang_bis = \$13, untertitel = \$14, verlag = \$15, erscheinungsjahr = \$16, beschreibung = \$17, signatur = COALESCE\(NULLIF\(\$19, ''\), signatur\), aktualisiert_am = NOW\(\) WHERE id = \$18`
+	updateQuery := `UPDATE buecher_titel SET isbn = \$1, titel = \$2, autor = \$3, cover_url = \$4, subject = \$5, grade_level = \$6, track = \$7, last_counted = NULLIF\(\$8::text, ''\)::date, medientyp = \$9, erweiterte_eigenschaften = \$10, jahrgang_von = \$11, jahrgang_bis = \$12, untertitel = \$13, verlag = \$14, erscheinungsjahr = \$15, beschreibung = \$16, signatur = COALESCE\(NULLIF\(\$18, ''\), signatur\), aktualisiert_am = NOW\(\) WHERE id = \$17`
 	// also note syncBookStock will be called
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.Stock, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
@@ -101,7 +62,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.Stock, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
@@ -113,7 +74,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("db error", func(t *testing.T) {
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.Stock, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 

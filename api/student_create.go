@@ -104,6 +104,11 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		req.Klasse = strings.TrimSpace(req.Klasse)
 		req.BarcodeID = strings.TrimSpace(req.BarcodeID)
 
+		if err := pruefeKlassenname(req.Klasse); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
 		ctx := r.Context()
 
 		parsedGebdatum, ok := parseCreateGeburtsdatum(w, req.Geburtsdatum)

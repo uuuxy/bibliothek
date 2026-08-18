@@ -218,6 +218,14 @@ type patchStudentRequest struct {
 // Klassen→Abgängerjahr-Ableitung und Geburtsdatum-Parsing). ok=false: die Fehlerantwort
 // (ungültiges Datum bzw. leerer PATCH) wurde bereits geschrieben.
 func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updateBuilder, bool) {
+	// Die Sperre des Spezialwerts 'lehrer' gilt auch für die zweite Tür (PATCH) —
+	// siehe pruefeKlassenname und Migration 072.
+	if req.Klasse != nil {
+		if err := pruefeKlassenname(*req.Klasse); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return nil, false
+		}
+	}
 	// Bei Klassenänderung ohne explizites Abgängerjahr dieses automatisch ableiten.
 	if req.Klasse != nil && req.AbgaengerJahr == nil {
 		newJahr := calculateAbgaengerJahr(*req.Klasse)

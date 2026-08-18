@@ -86,7 +86,6 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
 		}
-		book.Stock = book.Gesamt
 
 		if _, exists := groupsMap[className]; !exists {
 			classNames = append(classNames, className)

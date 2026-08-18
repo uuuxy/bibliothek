@@ -10,8 +10,8 @@ import (
 // CreateBook inserts a new book record.
 func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12, $13, $14, $15, $16, $17, NULLIF($18, ''))
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -35,7 +35,6 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		book.Subject,
 		book.GradeLevel,
 		book.Track,
-		book.Stock,
 		book.LastCounted,
 		medientyp,
 		properties,
@@ -143,10 +142,10 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, data bo
 	// signatur: NULLIF beim Insert + COALESCE beim Konflikt — Import-Läufe
 	// dürfen eine physisch verklebte Signatur nie mit Leerwerten überschreiben.
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, t.stock, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, '')
-		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::int[], $9::text[], $10::text[], $11::int[], $12::int[], $13::text[], $14::text[], $15::int[], $16::text[], $17::jsonb[], $18::text[])
-		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, '')
+		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::text[], $9::text[], $10::int[], $11::int[], $12::text[], $13::text[], $14::int[], $15::text[], $16::jsonb[], $17::text[])
+		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -154,7 +153,6 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, data bo
 			subject = EXCLUDED.subject,
 			grade_level = EXCLUDED.grade_level,
 			track = EXCLUDED.track,
-			stock = buecher_titel.stock + EXCLUDED.stock,
 			last_counted = EXCLUDED.last_counted,
 			medientyp = EXCLUDED.medientyp,
 			jahrgang_von = EXCLUDED.jahrgang_von,
@@ -177,7 +175,6 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, data bo
 		data.subjects,
 		data.grades,
 		data.tracks,
-		data.stocks,
 		data.lastCounteds,
 		data.medientypen,
 		data.jahrgaengeVon,
@@ -203,14 +200,40 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	}
 
 	data := prepareUpsertBatchData(books)
-	return repo.executeUpsertBatchQuery(ctx, data)
+	betroffen, err := repo.executeUpsertBatchQuery(ctx, data)
+	if err != nil {
+		return 0, err
+	}
+	// Stückzahlen werden zu ECHTEN Exemplaren (Befund F5): Bis Migration 072
+	// summierte der Import nur die ungelesene stock-Spalte auf — die Zahl war
+	// danach nirgends mehr sichtbar, es entstanden Titel ohne Exemplare.
+	// Additiv wie das alte stock += : jede Import-Zeile legt ihre Stückzahl an.
+	if err := repo.legeImportExemplareAn(ctx, data.isbns, data.stocks); err != nil {
+		return betroffen, fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
+	}
+	return betroffen, nil
+}
+
+// legeImportExemplareAn erzeugt je Import-Zeile stück-viele Exemplare mit
+// SYS-Barcode (gleiche Mechanik wie syncBookStock, aber additiv je Zeile).
+func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, isbns []string, stueck []int32) error {
+	_, _ = repo.db.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`) //nolint:errcheck
+	_, err := repo.db.Exec(ctx, `
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
+		SELECT t.id, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert (Sammelimport)'
+		FROM UNNEST($1::text[], $2::int[]) AS u(isbn, stueck)
+		JOIN buecher_titel t ON t.isbn = u.isbn
+		CROSS JOIN generate_series(1, u.stueck)
+		WHERE u.stueck > 0 AND u.isbn <> ''
+	`, isbns, stueck)
+	return err
 }
 
 // UpsertBook inserts or updates a book record.
 func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, error) {
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, stock, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9::text, '')::date, $10, $11, $12, $13, $14, $15, $16, $17, NULLIF($18, ''))
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -218,7 +241,6 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 			subject = EXCLUDED.subject,
 			grade_level = EXCLUDED.grade_level,
 			track = EXCLUDED.track,
-			stock = buecher_titel.stock + EXCLUDED.stock,
 			last_counted = EXCLUDED.last_counted,
 			medientyp = EXCLUDED.medientyp,
 			jahrgang_von = EXCLUDED.jahrgang_von,
@@ -252,7 +274,6 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		book.Subject,
 		book.GradeLevel,
 		book.Track,
-		book.Stock,
 		book.LastCounted,
 		medientyp,
 		book.JahrgangVon,
@@ -266,6 +287,13 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
+	}
+
+	// Additiv wie der Batch-Weg: die Stückzahl der Import-Zeile wird zu Exemplaren.
+	if book.Stock > 0 {
+		if err := repo.legeImportExemplareAn(ctx, []string{book.ISBN}, []int32{int32(book.Stock)}); err != nil { // #nosec G115 -- parseBestand begrenzt Stock
+			return id, fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
+		}
 	}
 
 	return id, nil

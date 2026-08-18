@@ -206,7 +206,6 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				"Math",              // subject
 				int16(5),            // grade_level
 				"",                  // track
-				0,                   // stock
 				pgxmock.AnyArg(),    // last_counted
 				"Buch",              // medientyp
 				pgxmock.AnyArg(),    // erweiterte_eigenschaften

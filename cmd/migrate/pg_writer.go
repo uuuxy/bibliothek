@@ -139,10 +139,11 @@ func insertBatch(
 
 // insertMediumAtomar schreibt einen Titel samt allen seinen Exemplaren in einem SAVEPOINT.
 //
-// Die atomare Einheit ist bewusst der TITEL, nicht das einzelne Exemplar: buecher_titel.stock
-// speichert die Stückzahl aus der Quelle. Ein Titel mit stock=5, dem nur 3 Exemplare folgen,
-// wäre ein stiller Bestandsfehler, den niemand je bemerkt. Entweder der Titel kommt
-// vollständig an — oder gar nicht, und dann steht er als FEHLER im Protokoll.
+// Die atomare Einheit ist bewusst der TITEL, nicht das einzelne Exemplar: Die Stückzahl
+// der Quelle wird vollständig zu Exemplar-Zeilen. Ein Titel mit 5 Stück, dem nur 3
+// Exemplare folgen, wäre ein stiller Bestandsfehler, den niemand je bemerkt. Entweder
+// der Titel kommt vollständig an — oder gar nicht, und dann steht er als FEHLER im
+// Protokoll. (Die frühere stock-Spalte ist mit Migration 073 gefallen, Befund F5.)
 func insertMediumAtomar(
 	ctx context.Context,
 	tx pgx.Tx,
@@ -178,8 +179,8 @@ const sqlInsertTitel = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
 		 beschreibung, medientyp, erweiterte_eigenschaften,
-		 stock, erstellt_am)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+		 erstellt_am)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 	RETURNING id`
 
 // insertMedium schreibt Titel und Exemplare innerhalb des übergebenen Savepoints.
@@ -220,7 +221,6 @@ func insertMedium(
 		nullableString(m.Beschreibung),
 		felder.Medientyp,
 		jsonbProps,
-		m.Anzahl,
 		erstelltAm,
 	).Scan(&titelID)
 	if err != nil {

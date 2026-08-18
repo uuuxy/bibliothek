@@ -1,10 +1,12 @@
 package service
 
 import (
+	"bibliothek/auth"
 	"context"
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"bibliothek/db"
@@ -93,8 +95,13 @@ func (s *defaultLoanService) HandleSimpleReturn(
 
 	// Falls das Buch aktuell nicht ausgeliehen ist:
 	if activeLoan == nil {
-		// Spezialfall: Scan durch eine Lehrkraft -> Direktes Ausleihen als Handapparat (Dauerleihe, 1 Jahr Frist)
-		if staffRole == "LEHRER" {
+		// Spezialfall: Scan durch eine Lehrkraft -> Direktes Ausleihen als Handapparat (Dauerleihe, 1 Jahr Frist).
+		// Vergleich case-insensitiv gegen die KONSTANTE: Hier stand wortwörtlich
+		// "LEHRER" — Migration 069 benannte die Rolle in KOLLEGIUM um, und der
+		// Zweig war seither tot (gefunden bei der F4-Vermessung, 18.08.2026).
+		// Eine Lehrkraft bekam beim Scan eines freien Buchs die Fehlermeldung
+		// "nicht ausgeliehen" statt ihrer Handapparat-Ausleihe.
+		if strings.EqualFold(staffRole, string(auth.RoleKollegium)) {
 			return s.handleLehrerHandapparat(ctx, tx, copy, staffID, resp)
 		}
 		// Für normale Mitarbeiter/Schüler ist dies ein Fehler (Buch ist bereits im Bestand)

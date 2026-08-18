@@ -32,8 +32,8 @@ type BestandBericht struct {
 const sqlTitelEinfuegen = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr, beschreibung,
-		 medientyp, signatur, erweiterte_eigenschaften, stock, erstellt_am)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+		 medientyp, signatur, erweiterte_eigenschaften, erstellt_am)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 	RETURNING id`
 
 // etikett_gedruckt = true: Altbestand traegt seine Littera-Etiketten physisch —
@@ -47,8 +47,8 @@ const sqlExemplarEinfuegen = `
 
 // SchreibeBestand überträgt Titel und Exemplare.
 //
-// Die atomare Einheit ist der TITEL, nicht das Exemplar: buecher_titel.stock trägt die
-// Stückzahl. Ein Titel mit stock=5, dem nur drei Exemplare folgen, wäre ein stiller
+// Die atomare Einheit ist der TITEL, nicht das Exemplar: Die Stückzahl der Quelle wird
+// vollständig zu Exemplar-Zeilen. Ein Titel mit 5 Stück, dem nur drei folgen, wäre ein stiller
 // Bestandsfehler, den niemand je bemerkt. Entweder ein Titel kommt vollständig an — oder
 // gar nicht, und dann steht er als FEHLER im Protokoll.
 func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (BestandBericht, error) {
@@ -203,7 +203,7 @@ func (l *bestandslauf) schreibeTitel(
 	err = tx.QueryRow(ctx, sqlTitelEinfuegen,
 		f.titel, f.untertitel, f.autor, uebernahme.Nullbar(reservierteISBN), f.verlag,
 		jahrOderNil(t.Erscheinungsjahr), uebernahme.Nullbar(t.Beschreibung),
-		f.medientyp, f.signatur, eigenschaften, len(exemplare), l.s.opt.Jetzt,
+		f.medientyp, f.signatur, eigenschaften, l.s.opt.Jetzt,
 	).Scan(&titelID)
 	if err != nil {
 		return "", nil, reservierteISBN, fmt.Errorf("beim Titel %q: %w", f.titel, err)
