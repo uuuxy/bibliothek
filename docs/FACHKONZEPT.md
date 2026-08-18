@@ -269,14 +269,17 @@ nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Contai
 und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
 raus, nur ohne den Link, um dessentwillen es sie gibt).
 
-**Geprüft werden acht Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
+**Geprüft werden neun Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
 (IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten, Admin-Konten
 (wer hat Vollzugriff und erhält die Kritisch-Alarme — der Alarm-Mail-Vorfall vom
 16.08.2026 zeigte vier aktive Admins, drei davon dem Betreiber unbekannt; Konten-Anlage
 und -Änderung werden seither auditiert), Rechte-Vorgabe
 (Abgleich der Live-Tabelle `role_permissions` gegen die Code-Vorgabe — der Seed fasst
 bestehende Zeilen nie an, eine geänderte Vorgabe erreicht Alt-Anlagen sonst nie; eine
-Abweichung ist bewusst nur eine Warnung, denn sie kann eine Admin-Entscheidung sein).
+Abweichung ist bewusst nur eine Warnung, denn sie kann eine Admin-Entscheidung sein)
+und die Klassen-Zuordnung (seit 18.08.2026, Befund F3: Klassennamen verbinden Schüler,
+Klassenlehrer-Zuordnung und Bücherlisten nur als übereinstimmender Text — die Prüfung
+benennt Klassen ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten ohne Klasse).
 
 Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
 **Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet

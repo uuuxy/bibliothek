@@ -52,6 +52,10 @@ func TestPromoteStudents_DryRunRollsBackAndSkipsGuardAndAudit(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`WITH parsed AS`).
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(120, 25))
+	// Seit F3 wandert die Klassenlehrer-Zuordnung mit — auch die Vorschau
+	// rechnet sie durch (und rollt sie zurück).
+	mock.ExpectQuery(`FROM klassen_lehrer_mapping`).
+		WillReturnRows(pgxmock.NewRows([]string{"klasse", "neue_klasse", "abschluss"}))
 	mock.ExpectRollback()
 
 	rec := doPromote(t, s, `{"dry_run": true}`)
@@ -93,6 +97,8 @@ func TestPromoteStudents_CommitPathWritesAuditLog(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`WITH parsed AS`).
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(300, 42))
+	mock.ExpectQuery(`FROM klassen_lehrer_mapping`).
+		WillReturnRows(pgxmock.NewRows([]string{"klasse", "neue_klasse", "abschluss"}))
 	mock.ExpectExec(`INSERT INTO audit_logs`).
 		WithArgs("admin-1", `{"versetzt": 300, "abgaenger": 42}`, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

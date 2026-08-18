@@ -22,6 +22,16 @@ type PromoteStudentsResponse struct {
 	PromotedCount int  `json:"promoted_count"`
 	ArchivedCount int  `json:"archived_count"`
 	DryRun        bool `json:"dry_run"`
+	// Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt
+	// wurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel
+	// auf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an
+	// niemanden, ohne Fehlermeldung).
+	MappingVersetzt int `json:"mapping_versetzt"`
+	MappingEntfernt int `json:"mapping_entfernt"`
+	// Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen
+	// beide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,
+	// statt den ganzen Lauf scheitern zu lassen.
+	MappingKonflikte []string `json:"mapping_konflikte,omitempty"`
 }
 
 // promoteStudentsRequest verlangt eine explizite Bestätigung im Body. Das ist eine
@@ -121,16 +131,12 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			return
 		}
 
-		promoted, archived, ok := s.fuehreSchuljahreswechselAus(ctx, w, r, req, claims.UserID)
+		resp, ok := s.fuehreSchuljahreswechselAus(ctx, w, r, req, claims.UserID)
 		if !ok {
 			return
 		}
-
-		RespondJSON(w, http.StatusOK, PromoteStudentsResponse{
-			PromotedCount: promoted,
-			ArchivedCount: archived,
-			DryRun:        req.DryRun,
-		})
+		resp.DryRun = req.DryRun
+		RespondJSON(w, http.StatusOK, resp)
 	}
 }
 
@@ -139,31 +145,108 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 // Fehler — keiner (db.SafeRollback greift auf jedem Fehler- UND Panic-Pfad). Im
 // Dry-Run-Modus wird bewusst NICHT committet (dieselbe Berechnung, null Seiteneffekte).
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
-func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.ResponseWriter, r *http.Request, req promoteStudentsRequest, userID string) (promoted, archived int, ok bool) {
+func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.ResponseWriter, r *http.Request, req promoteStudentsRequest, userID string) (resp PromoteStudentsResponse, ok bool) {
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return 0, 0, false
+		return resp, false
 	}
 	defer db.SafeRollback(ctx, tx)
 
 	if !req.DryRun {
 		if !pruefeDoppellaufSchutz(ctx, tx, w) {
-			return 0, 0, false
+			return resp, false
 		}
 	}
 
-	if err := tx.QueryRow(ctx, promoteStudentsQuery).Scan(&promoted, &archived); err != nil {
+	if err := tx.QueryRow(ctx, promoteStudentsQuery).Scan(&resp.PromotedCount, &resp.ArchivedCount); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return 0, 0, false
+		return resp, false
+	}
+
+	// Die Klassenlehrer-Zuordnung wandert MIT der Kohorte (dieselbe Transaktion,
+	// dieselbe Rechenregel). Die Klassen-Bücherlisten (class_books) bleiben
+	// BEWUSST unangetastet: Sie hängen am Stufen-Namen ("die 8a liest Markl 2"
+	// gilt für jede künftige 8a), nicht an den Menschen — zwei Bedeutungen von
+	// "Klasse", die der Jahreswechsel nicht verwechseln darf (Befund F3).
+	if err := versetzeKlassenlehrerZuordnung(ctx, tx, &resp); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return resp, false
 	}
 
 	if !req.DryRun {
-		if !s.finalisiereSchuljahreswechsel(ctx, tx, w, r, userID, promoted, archived) {
-			return 0, 0, false
+		if !s.finalisiereSchuljahreswechsel(ctx, tx, w, r, userID, resp.PromotedCount, resp.ArchivedCount) {
+			return resp, false
 		}
 	}
-	return promoted, archived, true
+	return resp, true
+}
+
+// versetzeKlassenlehrerZuordnung zählt die Klassennamen der Lehrer-Zuordnung mit
+// derselben Regel hoch wie promoteStudentsQuery die Schüler. Absteigend nach
+// Stufe, damit '09a' erst nach dem Wegzug von '10a' auf den freien Namen rücken
+// kann; Abschlussklassen-Zeilen werden entfernt (die Kohorte verlässt die
+// Schule). Kollidiert ein Zielname trotzdem (z. B. '9a' UND '09a' laufen beide
+// auf '10a'), bleibt die Zeile stehen und wird im Ergebnis genannt — ein
+// Namenskonflikt darf den Schuljahreswechsel nicht scheitern lassen.
+func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *PromoteStudentsResponse) error {
+	rows, err := tx.Query(ctx, `
+		SELECT klasse,
+		       lpad((substring(klasse from '^\d+')::int + 1)::text,
+		            greatest(length(substring(klasse from '^\d+')), length((substring(klasse from '^\d+')::int + 1)::text)), '0')
+		         || substring(klasse from '^\d+(.*)$') AS neue_klasse,
+		       CASE
+		         WHEN (substring(klasse from '^\d+')::int + 1) = 10 AND substring(klasse from '^\d+(.*)$') ILIKE '%h%' THEN true
+		         WHEN (substring(klasse from '^\d+')::int + 1) = 11 AND substring(klasse from '^\d+(.*)$') ILIKE '%r%' THEN true
+		         WHEN (substring(klasse from '^\d+')::int + 1) >= 14 THEN true
+		         ELSE false
+		       END AS abschluss
+		FROM klassen_lehrer_mapping
+		WHERE klasse ~ '^\d+'
+		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
+	if err != nil {
+		return err
+	}
+	type zeile struct {
+		alt, neu  string
+		abschluss bool
+	}
+	var zeilen []zeile
+	for rows.Next() {
+		var z zeile
+		if err := rows.Scan(&z.alt, &z.neu, &z.abschluss); err != nil {
+			rows.Close()
+			return err
+		}
+		zeilen = append(zeilen, z)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, z := range zeilen {
+		if z.abschluss {
+			if _, err := tx.Exec(ctx, `DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, z.alt); err != nil {
+				return err
+			}
+			resp.MappingEntfernt++
+			continue
+		}
+		var belegt bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM klassen_lehrer_mapping WHERE klasse = $1)`, z.neu).Scan(&belegt); err != nil {
+			return err
+		}
+		if belegt {
+			resp.MappingKonflikte = append(resp.MappingKonflikte, z.alt+" -> "+z.neu)
+			continue
+		}
+		if _, err := tx.Exec(ctx, `UPDATE klassen_lehrer_mapping SET klasse = $1 WHERE klasse = $2`, z.neu, z.alt); err != nil {
+			return err
+		}
+		resp.MappingVersetzt++
+	}
+	return nil
 }
 
 // parsePromoteRequest dekodiert den Request-Body und erzwingt die explizite Bestätigung

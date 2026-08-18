@@ -2710,6 +2710,20 @@ const docTemplate = `{
                 "dry_run": {
                     "type": "boolean"
                 },
+                "mapping_entfernt": {
+                    "type": "integer"
+                },
+                "mapping_konflikte": {
+                    "description": "Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen\nbeide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,\nstatt den ganzen Lauf scheitern zu lassen.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mapping_versetzt": {
+                    "description": "Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt\nwurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel\nauf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an\nniemanden, ohne Fehlermeldung).",
+                    "type": "integer"
+                },
                 "promoted_count": {
                     "type": "integer"
                 }

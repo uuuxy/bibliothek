@@ -105,3 +105,44 @@ func (r *BetriebszustandRepository) LadeRollenRechte(ctx context.Context) (map[s
 	}
 	return live, rows.Err()
 }
+
+// KlassenBestand liefert die drei Mengen von Klassennamen, die nur über
+// Text-Gleichheit zusammenhängen (Befund F3): die Klassen der aktiven Schüler
+// (nur echte Stufen-Namen, keine Sonderwerte wie 'ABG'), die Zeilen der
+// Klassenlehrer-Zuordnung und die Klassen der LMF-Bücherlisten. Die
+// Selbstprüfung rechnet daraus den Drift — hier wird nur erhoben.
+func (r *BetriebszustandRepository) KlassenBestand(ctx context.Context) (schueler, zuordnungen, buecherlisten []string, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	lies := func(query string) ([]string, error) {
+		rows, err := r.pool.Query(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		werte := []string{}
+		for rows.Next() {
+			var w string
+			if err := rows.Scan(&w); err != nil {
+				return nil, err
+			}
+			werte = append(werte, w)
+		}
+		return werte, rows.Err()
+	}
+
+	if schueler, err = lies(`
+		SELECT DISTINCT klasse FROM schueler
+		WHERE deleted_at IS NULL AND ist_abgaenger = false AND klasse ~ '^\d'
+		ORDER BY klasse`); err != nil {
+		return nil, nil, nil, err
+	}
+	if zuordnungen, err = lies(`SELECT klasse FROM klassen_lehrer_mapping ORDER BY klasse`); err != nil {
+		return nil, nil, nil, err
+	}
+	if buecherlisten, err = lies(`SELECT DISTINCT class_name FROM class_books ORDER BY class_name`); err != nil {
+		return nil, nil, nil, err
+	}
+	return schueler, zuordnungen, buecherlisten, nil
+}

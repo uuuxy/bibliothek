@@ -25,6 +25,10 @@ func lageEingerichtet() Lage {
 		DemoSchueler:        0,
 		RechteLive:          rechteWieVorgabe(),
 		AdminKonten:         []string{"Peter Flasch (pflasch@philipp-reis-schule.de)"},
+		// Klassen-Drift (F3): erhoben und leer = alles verbunden.
+		KlassenOhneLehrkraft:  []string{},
+		VerwaisteZuordnungen:  []string{},
+		VerwaisteBuecherliste: []string{},
 	}
 }
 
@@ -280,4 +284,35 @@ func TestBetriebsbereitschaft_RechteAbweichungenWerdenGekappt(t *testing.T) {
 	if strings.Count(b.Befund, ";") > 6 {
 		t.Errorf("mehr als sechs Einträge gezeigt: %s", b.Befund)
 	}
+}
+
+// Die Klassen-Drift-Prüfung (F3): nicht erhoben ≠ alles verbunden, und jede
+// gerissene Text-Verbindung wird benannt statt still geschluckt.
+func TestKlassenDrift(t *testing.T) {
+	t.Run("nicht erhoben ist eine Warnung, kein OK", func(t *testing.T) {
+		l := lageEingerichtet()
+		l.KlassenOhneLehrkraft = nil
+		b := pruefeKlassenDrift(l)
+		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "nicht geprüft") {
+			t.Errorf("nil muss als 'nicht geprüft' warnen, got %+v", b)
+		}
+	})
+	t.Run("Klasse ohne Lehrkraft wird benannt", func(t *testing.T) {
+		l := lageEingerichtet()
+		l.KlassenOhneLehrkraft = []string{"06a"}
+		b := pruefeKlassenDrift(l)
+		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "06a") {
+			t.Errorf("06a muss in der Warnung stehen, got %+v", b)
+		}
+		if b.Abhilfe == "" || b.Folge == "" {
+			t.Error("Warnung ohne Folge/Abhilfe landet auf einem Zettel statt in der Zuordnung")
+		}
+	})
+	t.Run("verwaiste Buecherliste wird benannt", func(t *testing.T) {
+		l := lageEingerichtet()
+		l.VerwaisteBuecherliste = []string{"7x"}
+		if b := pruefeKlassenDrift(l); b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "7x") {
+			t.Errorf("7x muss in der Warnung stehen, got %+v", b)
+		}
+	})
 }

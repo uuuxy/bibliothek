@@ -6,7 +6,7 @@
 	import { apiFetch } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 
-	/** @typedef {{ promoted_count: number, archived_count: number, dry_run: boolean }} PromoteStudentsResponse */
+	/** @typedef {{ promoted_count: number, archived_count: number, dry_run: boolean, mapping_versetzt: number, mapping_entfernt: number, mapping_konflikte?: string[] }} PromoteStudentsResponse */
 
 	let awaitingConfirmation = $state(false);
 	let loading = $state(false);
@@ -34,6 +34,17 @@
 						hint: 'Abschlussklassen werden archiviert',
 						value: r.archived_count,
 						valueClass: 'text-rose-600'
+					},
+					{
+						key: 'mapping',
+						label: 'Klassenlehrer-Zuordnungen',
+						hint:
+							'wandern mit der Klasse mit; Abschlussklassen werden entfernt' +
+							(r.mapping_konflikte?.length
+								? ' — Namenskonflikte: ' + r.mapping_konflikte.join(', ')
+								: ''),
+						value: r.mapping_versetzt + r.mapping_entfernt,
+						valueClass: 'text-on-surface-variant'
 					}
 				]
 			: [];

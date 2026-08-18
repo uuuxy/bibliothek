@@ -86,6 +86,14 @@ type Lage struct {
 	// Konfigurierte Alarm-Empfaenger (Einstellung alarm_empfaenger, kommasepariert).
 	// Leer = die Kritisch-Alarme gehen an alle aktiven Admin-Konten.
 	AlarmEmpfaenger string
+
+	// Klassen-Drift (Befund F3): Die Klassennamen verbinden Schüler,
+	// Klassenlehrer-Zuordnung und Bücherlisten nur als übereinstimmender Text —
+	// reißt der Text, meldet nichts einen Fehler, Mahnlisten laufen still leer.
+	// nil heißt jeweils: nicht erhoben (Warnung), leere Liste: alles verbunden.
+	KlassenOhneLehrkraft  []string // aktive Schüler-Klassen ohne Zuordnungs-Zeile
+	VerwaisteZuordnungen  []string // Zuordnungs-Zeilen ohne aktive Schüler
+	VerwaisteBuecherliste []string // class_books-Klassen ohne aktive Schüler
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -130,6 +138,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeDemodaten(l),
 		pruefeRechteVorgabe(l),
 		pruefeAdminKonten(l),
+		pruefeKlassenDrift(l),
 	}
 	return befunde
 }
@@ -359,5 +368,45 @@ func pruefeDemodaten(l Lage) Befund {
 	b.Folge = "Statistik, Mahnwesen und Bestellbedarf mischen echte Zahlen mit Fiktion. " +
 		"Demo-Eltern-Adressen enden auf example.invalid, ein Mahnlauf erreicht sie nie."
 	b.Abhilfe = "Vor dem Echtstart den DEMO-Block aus scripts/seed_demo.sql (Abschnitt 1) ausführen."
+	return b
+}
+
+// pruefeKlassenDrift macht die Text-Verbindungen des Klassennamens sichtbar
+// (Befund F3, bewertung/datenbank-pruefbericht.md): Schüler, Klassenlehrer-
+// Zuordnung und Bücherlisten hängen nur an übereinstimmenden Namen. Der
+// Jahreswechsel versetzt die Zuordnung seit 18.08.2026 mit (student_promotion.go),
+// aber Umbenennungen von Hand oder LUSD-Umschichtungen können weiter driften —
+// und ohne diese Prüfung merkt es niemand, bis eine Mahnliste leer läuft.
+// Bewusst nur Warnung: Eine Klasse ohne Lehrkraft-Zuordnung kann gewollt sein
+// (die Mahnmail geht dann eben an niemanden — genau das soll man hier sehen).
+func pruefeKlassenDrift(l Lage) Befund {
+	b := Befund{Bereich: "Klassen-Zuordnung"}
+	if l.KlassenOhneLehrkraft == nil || l.VerwaisteZuordnungen == nil || l.VerwaisteBuecherliste == nil {
+		b.Stufe = StufeWarnung
+		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden (Datenbank nicht erreichbar)."
+		b.Folge = "Ob Mahnwesen und Bücherlisten ihre Klassen finden, ist unbekannt."
+		b.Abhilfe = "Datenbankverbindung prüfen und die Seite neu laden."
+		return b
+	}
+
+	var probleme []string
+	if len(l.KlassenOhneLehrkraft) > 0 {
+		probleme = append(probleme, "Klassen ohne Lehrkraft-Zuordnung: "+strings.Join(l.KlassenOhneLehrkraft, ", "))
+	}
+	if len(l.VerwaisteZuordnungen) > 0 {
+		probleme = append(probleme, "Zuordnungen ohne aktive Schüler: "+strings.Join(l.VerwaisteZuordnungen, ", "))
+	}
+	if len(l.VerwaisteBuecherliste) > 0 {
+		probleme = append(probleme, "Bücherlisten für unbekannte Klassen: "+strings.Join(l.VerwaisteBuecherliste, ", "))
+	}
+	if len(probleme) == 0 {
+		b.Stufe = StufeOK
+		b.Befund = "Alle Klassennamen sind zwischen Schülern, Lehrkraft-Zuordnung und Bücherlisten verbunden."
+		return b
+	}
+	b.Stufe = StufeWarnung
+	b.Befund = strings.Join(probleme, " — ")
+	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere — ohne Fehlermeldung."
+	b.Abhilfe = "Unter Mahnwesen → Klassenlehrer die Zuordnung nachziehen oder verwaiste Einträge entfernen."
 	return b
 }

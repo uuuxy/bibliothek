@@ -88,6 +88,14 @@ func (s *Server) sammleLage(
 		lage.RechteLive = rechte
 	}
 
+	// Klassen-Drift (F3): Bei einem Fehler bleiben die Listen nil — die Prüfung
+	// meldet dann „nicht erhoben" statt fälschlich „alles verbunden".
+	if schueler, zuordnungen, listen, err := zustandRepo.KlassenBestand(ctx); err == nil {
+		lage.KlassenOhneLehrkraft = fehlendeEintraege(schueler, zuordnungen)
+		lage.VerwaisteZuordnungen = fehlendeEintraege(zuordnungen, schueler)
+		lage.VerwaisteBuecherliste = fehlendeEintraege(listen, schueler)
+	}
+
 	if admins, err := zustandRepo.AktiveAdmins(ctx); err == nil {
 		lage.AdminKonten = make([]string, 0, len(admins))
 		for _, a := range admins {
@@ -112,4 +120,20 @@ func (s *Server) BetriebsbereitschaftHandler(
 			Befunde: befunde,
 		})
 	}
+}
+
+// fehlendeEintraege liefert alle Werte aus `menge`, die in `referenz` fehlen —
+// nie nil, damit „geprüft und leer" von „nicht erhoben" (nil) unterscheidbar bleibt.
+func fehlendeEintraege(menge, referenz []string) []string {
+	bekannt := make(map[string]bool, len(referenz))
+	for _, r := range referenz {
+		bekannt[r] = true
+	}
+	fehlt := []string{}
+	for _, m := range menge {
+		if !bekannt[m] {
+			fehlt = append(fehlt, m)
+		}
+	}
+	return fehlt
 }
