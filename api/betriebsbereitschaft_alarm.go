@@ -91,13 +91,13 @@ func formatiereAlarmMail(befunde []Befund) (betreff, textkoerper string, kritisc
 	sb.WriteString("Die tägliche Selbstprüfung meldet Zustände, die vor dem Echtbetrieb zwingend zu klären sind.\n" +
 		"Diese Mail kommt täglich, solange sie bestehen.\n\n")
 	for _, b := range kritischeBefunde {
-		sb.WriteString("‼ " + b.Bereich + "\n")
-		sb.WriteString("   Befund:  " + b.Befund + "\n")
+		fmt.Fprintf(&sb, "‼ %s\n", b.Bereich)
+		fmt.Fprintf(&sb, "   Befund:  %s\n", b.Befund)
 		if b.Folge != "" {
-			sb.WriteString("   Folge:   " + b.Folge + "\n")
+			fmt.Fprintf(&sb, "   Folge:   %s\n", b.Folge)
 		}
 		if b.Abhilfe != "" {
-			sb.WriteString("   Abhilfe: " + b.Abhilfe + "\n")
+			fmt.Fprintf(&sb, "   Abhilfe: %s\n", b.Abhilfe)
 		}
 		sb.WriteString("\n")
 	}
