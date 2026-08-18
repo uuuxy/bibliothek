@@ -14,8 +14,13 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 
 	// Exemplare (Copies)
 	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
-	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_books")(s.GetTitleBorrowersHandler()))
-	mux.Handle("GET /api/buecher/titel/{id}/historie", s.RequirePermission("view_books")(s.GetTitleHistoryHandler()))
+	// Ausleiher und Historie hinter view_students, nicht view_books: Beide
+	// verknüpfen Schülernamen mit Titeln (die Historie über Jahre) — dieselbe
+	// Befundklasse wie die Vormerkungen (bewertung/sicherheitsbefund-*.md),
+	// dort aber von der Prüfung übersehen. Die Buchakte fängt den 403 als
+	// leere Liste ab (jsonOrEmpty); Exemplare/Verfügbarkeit bleiben view_books.
+	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_students")(s.GetTitleBorrowersHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/historie", s.RequirePermission("view_students")(s.GetTitleHistoryHandler()))
 	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.LabelsHandler()))
 	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.PrintLabelsHandler()))
 
@@ -49,9 +54,15 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 
 	// Vormerkungen
 	vormerkungRepo := repository.NewVormerkungRepository(s.DB.Pool)
-	mux.Handle("GET /api/vormerkungen", s.RequirePermission("view_books")(s.ListVormerkungHandler(vormerkungRepo)))
-	mux.Handle("POST /api/vormerkungen", s.RequirePermission("view_books")(s.CreateVormerkungHandler(vormerkungRepo)))
-	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_books")(s.DeleteVormerkungHandler(vormerkungRepo)))
+	// Vormerkungen hinter view_students, nicht view_books: Die Liste verknüpft
+	// Schülernamen mit Leseinteresse und erlaubt Anlegen/Löschen für beliebige
+	// schueler_id — view_books wurde der Helfer-Rolle ausdrücklich als "öffnet
+	// keine Personendaten" gegeben (bewertung/sicherheitsbefund-vormerkungen.md).
+	// Der Einzelfall am Rückgabe-Scan ("reserviert für X") bleibt bewusst: den
+	// Namen braucht die Theke, um das Buch für die richtige Person beiseitezulegen.
+	mux.Handle("GET /api/vormerkungen", s.RequirePermission("view_students")(s.ListVormerkungHandler(vormerkungRepo)))
+	mux.Handle("POST /api/vormerkungen", s.RequirePermission("view_students")(s.CreateVormerkungHandler(vormerkungRepo)))
+	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("view_students")(s.DeleteVormerkungHandler(vormerkungRepo)))
 
 	// Klassensatz Reservierungen
 	//

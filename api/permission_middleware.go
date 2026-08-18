@@ -193,3 +193,28 @@ func (s *Server) pruefeBerechtigung(w http.ResponseWriter, r *http.Request, next
 
 	erlaubeZugriff(w, r, next, claims)
 }
+
+// BesitztRecht prüft ein Zusatzrecht INNERHALB eines Handlers, dessen Route
+// bereits hinter einem schwächeren Recht liegt — für Antworten, die je nach
+// Aufrufer mehr oder weniger zeigen (z. B. Geräteliste: Verfügbarkeit für alle
+// mit view_books, der Name des Ausleihers nur mit view_students; siehe
+// bewertung/sicherheitsbefund-kiosk-suche.md). Fehler werten als "nein":
+// Im Zweifel wird weniger gezeigt, nie mehr.
+func (s *Server) BesitztRecht(r *http.Request, permission string) bool {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		return false
+	}
+	if strings.EqualFold(string(claims.Rolle), string(auth.RoleAdmin)) {
+		return true
+	}
+	cacheKey := string(claims.Rolle) + ":" + permission
+	if allowed, found := leseBerechtigungCache(cacheKey); found {
+		return allowed
+	}
+	allowed, err := s.ermittleUndCacheBerechtigung(r.Context(), string(claims.Rolle), permission, cacheKey)
+	if err != nil {
+		return false
+	}
+	return allowed
+}

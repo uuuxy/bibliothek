@@ -36,6 +36,18 @@ func (s *Server) ListGeraeteHandler(repo repository.GeraeteRepository) http.Hand
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Geräte", err)
 		}
+		// Die Route hängt an view_books (Katalog-Auskunft: "sind noch Geräte
+		// da?"). Der NAME des Ausleihers ist aber eine Personenangabe und
+		// bleibt Aufrufern ohne view_students verborgen — verliehen ja/nein
+		// sieht man weiterhin (ausgeliehen_an wird zu "", nicht nil).
+		if !s.BesitztRecht(r, "view_students") {
+			leer := ""
+			for i := range geraete {
+				if geraete[i].AusgeliehenAn != nil {
+					geraete[i].AusgeliehenAn = &leer
+				}
+			}
+		}
 		RespondJSON(w, http.StatusOK, map[string]any{"data": geraete})
 		return nil
 	})

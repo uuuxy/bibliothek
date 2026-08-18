@@ -13,7 +13,7 @@ import (
 // StudentsTotal/BooksTotal nennen die Gesamttrefferzahl vor dem Limit, damit die
 // Omnibox eine gekürzte Liste als gekürzt ausweisen kann.
 type UnifiedSearchResult struct {
-	Students      []repository.Student   `json:"students"`
+	Students      []SchuelerKiosk        `json:"students"`
 	Books         []repository.BookTitle `json:"books"`
 	StudentsTotal int                    `json:"students_total"`
 	BooksTotal    int                    `json:"books_total"`
@@ -46,16 +46,16 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 			return
 		}
 
-		// Ensure we don't return nil slices in JSON
-		if students == nil {
-			students = []repository.Student{}
-		}
 		if books == nil {
 			books = []repository.BookTitle{}
 		}
 
+		// Reduktion auf die Theken-Sicht: /api/search hängt an perform_actions
+		// (auch Helfer-Rolle) — Adresse, Eltern-Mail und Geburtsdatum gehören
+		// nicht in diese Antwort (bewertung/sicherheitsbefund-kiosk-suche.md).
+		// zuKioskSchuelern liefert nie nil, damit das JSON ein leeres Array trägt.
 		result := UnifiedSearchResult{
-			Students:      students,
+			Students:      zuKioskSchuelern(students),
 			Books:         books,
 			StudentsTotal: studentsTotal,
 			BooksTotal:    booksTotal,
