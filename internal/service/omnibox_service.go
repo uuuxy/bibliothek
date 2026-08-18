@@ -155,6 +155,21 @@ func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, q Omnibo
 		return s.handleBookAction(ctx, q, resp)
 	}
 
+	// Littera-Buchetikett: Der Strichcode liefert eine EAN-13, im System steht die
+	// kurze Mediennummer (siehe dekodiereLitteraEtikett). Erst rückrechnen, dann
+	// erneut nachschlagen — nur ein existierendes Exemplar löst eine Aktion aus,
+	// alles andere fällt unverändert zur Ausweis-/Volltextstufe durch.
+	if nummer, istEtikett := dekodiereLitteraEtikett(q.Query); istEtikett {
+		dekodiert, dekodiertErr := s.bookRepo.GetCopyByBarcode(ctx, nummer)
+		if dekodiertErr != nil {
+			return fmt.Errorf("datenbankfehler bei Etikett-Auflösung: %w", dekodiertErr)
+		}
+		if dekodiert != nil {
+			q.Query = nummer
+			return s.handleBookAction(ctx, q, resp)
+		}
+	}
+
 	student, studentErr := s.studentRepo.GetByBarcode(ctx, q.Query)
 	if studentErr != nil {
 		return fmt.Errorf("datenbankfehler bei Ausweis-Auflösung: %w", studentErr)
