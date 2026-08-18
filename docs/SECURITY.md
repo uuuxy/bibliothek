@@ -42,6 +42,7 @@ Credential-Stuffing über diesen Weg.
 - Alle schützenswerten Endpunkte sind über `RequirePermission` bzw. `RequireRoles` abgesichert.
 - **Keine transiente 403-Cacheung:** Ist die Datenbank bei der Berechtigungsprüfung nicht erreichbar (Netzwerkfehler, Timeout), wird HTTP 500 zurückgegeben und **nicht** in den Permission-Cache geschrieben. Ein vorübergehender DB-Ausfall führt also nicht dazu, dass legitime Benutzer für 60 Sekunden ausgesperrt bleiben.
 - **Stabile Verweigerung:** Nur `pgx.ErrNoRows` (Berechtigung definitiv nicht vorhanden) wird gecacht und als 403 gewertet.
+- **PII-Matrix (seit 18.08.2026):** [`docs/PII_MATRIX.de.md`](PII_MATRIX.de.md) stuft jede Route nach Schülerdaten ein (Stufe 0–3) und nennt das Recht davor; `api/pii_matrix_test.go` hält Tabelle und Registrierung deckungsgleich — eine neue Route ohne Einstufung wird rot. Der Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und wird ohne `view_students` überall ausgeblendet (`ohneSperrgrund`).
 
 ### `manage_users` ist nicht Administrator (seit 06.08.2026)
 

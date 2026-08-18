@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -14,6 +15,20 @@ import (
 )
 
 const insertIdempotencyQuery = "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
+
+// ohneSperrgrund nimmt einem Sperr-Fehler den Freitext (block_reason), wenn der
+// Aufrufer ihn nicht sehen darf. Die Theke erfährt weiterhin DASS gesperrt ist
+// (403, generische Meldung) — aber nicht das WARUM: Der Grund kann Zahlungs-
+// rückstände oder Familieninterna nennen (PII-Matrix Stufe 2, Fund vom
+// 18.08.2026 am Live-Pfad mit Helfer-Konto). Dieselbe Grenze wie die
+// Geräteliste: view_students entscheidet, nicht die Route.
+func ohneSperrgrund(err error, darfGrundSehen bool) error {
+	var sg *service.SperrGrundFehler
+	if err == nil || darfGrundSehen || !errors.As(err, &sg) {
+		return err
+	}
+	return fmt.Errorf("%w — bitte an die Bibliotheksleitung wenden", sg.Kern)
+}
 
 func mapServiceErrorToStatus(err error) int {
 	switch {
@@ -152,6 +167,8 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 		})
 
 		if err != nil {
+			// VOR dem Cachen kürzen — sonst läge der Freitext im Idempotenz-Cache.
+			err = ohneSperrgrund(err, s.BesitztRecht(r, "view_students"))
 			status := mapServiceErrorToStatus(err)
 			s.saveToCache(ctx, req.IdempotencyKey, map[string]string{"error": err.Error()}, status)
 			apierrors.SendHTTPError(w, status, err)
@@ -213,15 +230,16 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 		ctx := r.Context()
 		var batchResp ActionBatchResponse
 
+		darfGrundSehen := s.BesitztRecht(r, "view_students")
 		for i, req := range batchReq {
-			batchResp.Results = append(batchResp.Results, s.processSingleBatchItem(ctx, omniboxSvc, req, i, claims.UserID, string(claims.Rolle)))
+			batchResp.Results = append(batchResp.Results, s.processSingleBatchItem(ctx, omniboxSvc, req, i, claims.UserID, string(claims.Rolle), darfGrundSehen))
 		}
 
 		RespondJSON(w, http.StatusOK, batchResp)
 	}
 }
 
-func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.OmniboxService, req ActionRequest, index int, userID string, rolle string) ActionBatchResponseItem {
+func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.OmniboxService, req ActionRequest, index int, userID string, rolle string, darfGrundSehen bool) ActionBatchResponseItem {
 	req.Query = strings.TrimSpace(req.Query)
 	if req.Query == "" {
 		return ActionBatchResponseItem{
@@ -246,6 +264,7 @@ func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.
 		OverrideBlock:      req.OverrideBlock,
 	})
 
+	err = ohneSperrgrund(err, darfGrundSehen)
 	status := http.StatusOK
 	if err != nil {
 		status = mapServiceErrorToStatus(err)

@@ -20,6 +20,22 @@ var (
 	ErrInvalidState = errors.New("ungültiger Transaktionszustand")
 )
 
+// SperrGrundFehler trennt den Sperr-Freitext (schueler.block_reason) vom
+// generischen Teil der Meldung. Der Freitext ist Verwaltungsinformation —
+// er kann Zahlungsrückstände oder Familieninterna nennen (PII-Matrix Stufe 2)
+// und darf Aufrufer ohne view_students nicht erreichen. Die HTTP-Schicht
+// entscheidet anhand dieses Typs (errors.As), ob sie den Grund mitschickt;
+// Error() liefert weiterhin die volle Meldung für berechtigte Aufrufer & Logs.
+type SperrGrundFehler struct {
+	Kern  error  // ErrBlocked-Kette mit generischem Text ("…: Manuelle Sperre")
+	Grund string // Freitext aus schueler.block_reason
+}
+
+func (e *SperrGrundFehler) Error() string { return e.Kern.Error() + ": " + e.Grund }
+
+// Unwrap hält errors.Is(err, ErrBlocked) am Leben — der HTTP-Status bleibt 403.
+func (e *SperrGrundFehler) Unwrap() error { return e.Kern }
+
 // LoanResult beschreibt das Ergebnis einer Ausleih- oder Rückgabeoperation eines Buches.
 type LoanResult struct {
 	// Type spezifiziert die Art des Ergebnisses (z. B. "ausleihe", "rueckgabe", "info").

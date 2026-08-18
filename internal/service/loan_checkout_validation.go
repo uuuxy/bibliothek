@@ -59,7 +59,7 @@ func (s *defaultLoanService) pruefeGesperrt(ctx context.Context, sObj *repositor
 		reason = *sObj.BlockReason
 	}
 	if !overrideBlock {
-		return fmt.Errorf("%w: Ausleihe gesperrt: %s", ErrBlocked, reason)
+		return &SperrGrundFehler{Kern: fmt.Errorf("%w: Ausleihe gesperrt", ErrBlocked), Grund: reason}
 	}
 	s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (gesperrt: "+reason+")")
 	return nil
@@ -75,7 +75,7 @@ func (s *defaultLoanService) pruefeManuellGesperrt(ctx context.Context, sObj *re
 		reason = *sObj.BlockReason
 	}
 	if !overrideBlock {
-		return fmt.Errorf("%w: Manuelle Sperre: %s", ErrBlocked, reason)
+		return &SperrGrundFehler{Kern: fmt.Errorf("%w: Manuelle Sperre", ErrBlocked), Grund: reason}
 	}
 	s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (Manuelle Sperre: "+reason+")")
 	return nil

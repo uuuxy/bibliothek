@@ -67,7 +67,9 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	}
 	if gesperrt {
 		msg := "Verlängerung nicht möglich: Ausleihe gesperrt"
-		if blockReason != "" {
+		// Der Sperr-Freitext ist Verwaltungsinformation (PII-Matrix Stufe 2) —
+		// dieselbe view_students-Grenze wie bei /api/action (ohneSperrgrund).
+		if blockReason != "" && s.BesitztRecht(r, "view_students") {
 			msg += " (" + blockReason + ")"
 		}
 		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New(msg))
