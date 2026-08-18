@@ -65,6 +65,11 @@ type BookCopyInsert struct {
 	EtikettGedruckt bool
 	// Einkaufspreis speichert den Netto-Anschaffungspreis des Exemplars.
 	Einkaufspreis float64
+	// Bestellstatus setzt neue Exemplare aus dem Bestellwesen in die Pipeline
+	// ('bestellt' oder 'im_zulauf'); leer = kein Bestellvorgang (NULL).
+	// Seit Migration 071 entscheidet NUR diese Spalte über die Sichtbarkeit
+	// im OPAC — die zustand_notiz ist reiner Menschentext.
+	Bestellstatus string
 	// BestellungID verweist auf die Bestellung, aus der das Exemplar entstanden ist.
 	// Leer bei Handanlage und Import — dann wird NULL geschrieben. Der Verweis trägt die
 	// Etikettenseite des Lieferanten-Links: Sie muss genau die Exemplare DIESER Lieferung

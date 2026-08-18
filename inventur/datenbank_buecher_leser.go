@@ -17,7 +17,7 @@ const buchListenSelect = `
 		COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject,
 		COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track,
 		COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
-		COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt,
+		COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
 		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
 		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,

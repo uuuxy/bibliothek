@@ -40,7 +40,7 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 			COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url, 
 			COALESCE(b.isbn, '') AS isbn,
 			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
-			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND coalesce(e.zustand_notiz, '') NOT LIKE 'Im Zulauf%' AND coalesce(e.zustand_notiz, '') != 'bestellt' AND coalesce(e.zustand_notiz, '') NOT LIKE 'Bestellt%') AS gesamt
+			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt
 		FROM class_books cb
 		JOIN buecher_titel b ON cb.book_id = b.id
 		LEFT JOIN buecher_exemplare e ON e.titel_id = b.id

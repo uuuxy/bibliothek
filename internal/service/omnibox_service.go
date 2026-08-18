@@ -308,7 +308,7 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 	if activeLoan == nil && (!isReserved || reservedForThisStudent) {
 		// Wieder aufgetaucht: zurück in den Umlauf — der Aussonderungs-Grund muss
 		// mit zurückgesetzt werden (CHECK: im Umlauf = kein Grund).
-		if _, err := s.pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL, zustand_notiz = '' WHERE id = $1", copy.ID); err != nil {
+		if _, err := s.pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL, zustand_notiz = '', bestellstatus = NULL WHERE id = $1", copy.ID); err != nil {
 			return false, err
 		}
 		copy.IstAusleihbar = true

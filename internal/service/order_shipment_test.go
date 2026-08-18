@@ -29,7 +29,7 @@ func TestGetIncomingShipments_Success(t *testing.T) {
 		AddRow("ex4", "t3", date2, "Bestellt (Lieferanten-Vorab-Barcode)", "Titel 3", "", ""). // different group (date and supplier)
 		AddRow("ex5", "t4", date2, "andere notiz", "Titel 4", "", "")                          // fallback supplier
 
-	query := `SELECT e\.id, e\.titel_id, e\.erstellt_am, e\.zustand_notiz, t\.titel, COALESCE\(t\.isbn, ''\), \s*COALESCE\(NULLIF\(t\.cover_url, ''\), CASE WHEN t\.isbn IS NOT NULL AND t\.isbn != '' THEN 'https://portal\.dnb\.de/opac/mvb/cover\?isbn=' \|\| replace\(t\.isbn, '-', ''\) ELSE '' END\)\s*FROM buecher_exemplare e\s*JOIN buecher_titel t ON e\.titel_id = t\.id\s*WHERE e\.ist_ausleihbar = false \s*AND \(e\.zustand_notiz LIKE 'Im Zulauf%' OR e\.zustand_notiz = 'bestellt' OR e\.zustand_notiz LIKE 'Bestellt%'\)\s*ORDER BY e\.erstellt_am DESC`
+	query := `SELECT e\.id, e\.titel_id, e\.erstellt_am, e\.zustand_notiz, t\.titel, COALESCE\(t\.isbn, ''\), \s*COALESCE\(NULLIF\(t\.cover_url, ''\), CASE WHEN t\.isbn IS NOT NULL AND t\.isbn != '' THEN 'https://portal\.dnb\.de/opac/mvb/cover\?isbn=' \|\| replace\(t\.isbn, '-', ''\) ELSE '' END\)\s*FROM buecher_exemplare e\s*JOIN buecher_titel t ON e\.titel_id = t\.id\s*WHERE e\.ist_ausleihbar = false\s*AND e\.bestellstatus IS NOT NULL\s*ORDER BY e\.erstellt_am DESC`
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
 
@@ -91,7 +91,7 @@ func TestGetIncomingShipments_QueryError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	query := `SELECT e\.id, e\.titel_id, e\.erstellt_am, e\.zustand_notiz, t\.titel, COALESCE\(t\.isbn, ''\), \s*COALESCE\(NULLIF\(t\.cover_url, ''\), CASE WHEN t\.isbn IS NOT NULL AND t\.isbn != '' THEN 'https://portal\.dnb\.de/opac/mvb/cover\?isbn=' \|\| replace\(t\.isbn, '-', ''\) ELSE '' END\)\s*FROM buecher_exemplare e\s*JOIN buecher_titel t ON e\.titel_id = t\.id\s*WHERE e\.ist_ausleihbar = false \s*AND \(e\.zustand_notiz LIKE 'Im Zulauf%' OR e\.zustand_notiz = 'bestellt' OR e\.zustand_notiz LIKE 'Bestellt%'\)\s*ORDER BY e\.erstellt_am DESC`
+	query := `SELECT e\.id, e\.titel_id, e\.erstellt_am, e\.zustand_notiz, t\.titel, COALESCE\(t\.isbn, ''\), \s*COALESCE\(NULLIF\(t\.cover_url, ''\), CASE WHEN t\.isbn IS NOT NULL AND t\.isbn != '' THEN 'https://portal\.dnb\.de/opac/mvb/cover\?isbn=' \|\| replace\(t\.isbn, '-', ''\) ELSE '' END\)\s*FROM buecher_exemplare e\s*JOIN buecher_titel t ON e\.titel_id = t\.id\s*WHERE e\.ist_ausleihbar = false\s*AND e\.bestellstatus IS NOT NULL\s*ORDER BY e\.erstellt_am DESC`
 
 	expectedErr := errors.New("db error")
 	mock.ExpectQuery(query).WillReturnError(expectedErr)

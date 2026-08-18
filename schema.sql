@@ -424,9 +424,15 @@ CREATE TABLE buecher_exemplare (
     -- Fremdschlüssel steht weiter unten: bestellungen_verlauf entsteht erst nach
     -- dieser Tabelle. NULL bei Altbestand und Handanlage.
     bestellung_id UUID,
+    -- Zustand der Bestell-Pipeline (Migration 071): NULL = kein laufender
+    -- Bestellvorgang. Ersetzt die früheren Magie-Texte "Im Zulauf…"/"Bestellt…"
+    -- in zustand_notiz — die Notiz ist seither reiner Menschentext und steuert
+    -- nichts mehr (Befund F1, bewertung/datenbank-pruefbericht.md).
+    bestellstatus TEXT DEFAULT NULL CONSTRAINT chk_exemplar_bestellstatus CHECK (bestellstatus IN ('bestellt', 'im_zulauf')),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_exemplare_bestellstatus ON buecher_exemplare (bestellstatus) WHERE bestellstatus IS NOT NULL;
 
 CREATE INDEX idx_buecher_exemplare_barcode ON buecher_exemplare (barcode_id);
 CREATE INDEX idx_buecher_exemplare_titel ON buecher_exemplare (titel_id);
@@ -805,7 +811,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('067_bestellbestaetigung_etikettenformat.sql'),
 ('068_barcode_seq_ueber_bestand.sql'),
 ('069_rolle_lehrer_zu_kollegium.sql'),
-('070_kollegium_nur_portal.sql')
+('070_kollegium_nur_portal.sql'),
+('071_bestellstatus_spalte.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

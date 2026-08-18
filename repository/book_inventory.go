@@ -100,17 +100,26 @@ func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, co
 	for _, c := range copies {
 		copyRows = append(copyRows, []any{
 			c.TitelID, c.BarcodeID, c.ZustandNotiz, c.IstAusleihbar, c.EtikettGedruckt, c.Einkaufspreis,
-			bestellungIDOderNull(c.BestellungID),
+			bestellungIDOderNull(c.BestellungID), leererStringAlsNull(c.Bestellstatus),
 		})
 	}
 
 	_, err := tx.CopyFrom(
 		ctx,
 		pgx.Identifier{"buecher_exemplare"},
-		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis", "bestellung_id"},
+		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis", "bestellung_id", "bestellstatus"},
 		pgx.CopyFromRows(copyRows),
 	)
 	return err
+}
+
+// leererStringAlsNull übersetzt "kein Bestellstatus" in SQL-NULL — die CHECK-
+// Constraint chk_exemplar_bestellstatus lehnt den leeren String ab.
+func leererStringAlsNull(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
 }
 
 // bestellungIDOderNull übersetzt den leeren String in ein SQL-NULL. Der leere String

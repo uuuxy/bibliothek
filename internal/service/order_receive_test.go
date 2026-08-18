@@ -9,7 +9,7 @@ import (
 )
 
 // Der UPDATE…RETURNING-Kern von BulkReceiveOrder (Regex für pgxmock).
-const bulkReceiveQuery = `UPDATE buecher_exemplare e\s+SET ist_ausleihbar = true, zustand_notiz = ''\s+FROM buecher_titel t\s+WHERE e\.titel_id = t\.id\s+AND e\.ist_ausleihbar = false\s+AND e\.id = ANY\(\$1\)\s+RETURNING e\.barcode_id, t\.titel, coalesce\(t\.autor, ''\) AS autor, e\.etikett_gedruckt`
+const bulkReceiveQuery = `UPDATE buecher_exemplare e\s+SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL\s+FROM buecher_titel t\s+WHERE e\.titel_id = t\.id\s+AND e\.ist_ausleihbar = false\s+AND e\.id = ANY\(\$1\)\s+RETURNING e\.barcode_id, t\.titel, coalesce\(t\.autor, ''\) AS autor, e\.etikett_gedruckt`
 
 func TestBulkReceiveOrder_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
 	mock, err := pgxmock.NewPool()

@@ -43,7 +43,7 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.ist_ausleihbar = false 
-		  AND (e.zustand_notiz LIKE 'Im Zulauf%' OR e.zustand_notiz = 'bestellt' OR e.zustand_notiz LIKE 'Bestellt%')
+		  AND e.bestellstatus IS NOT NULL
 		ORDER BY e.erstellt_am DESC
 	`
 
@@ -301,7 +301,7 @@ type ReceivedItem struct {
 func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, exemplarIDs []string, adminID, ipAddr string) ([]ReceivedItem, error) {
 	query := `
 		UPDATE buecher_exemplare e
-		SET ist_ausleihbar = true, zustand_notiz = ''
+		SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL
 		FROM buecher_titel t
 		WHERE e.titel_id = t.id
 		  AND e.ist_ausleihbar = false

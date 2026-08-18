@@ -40,7 +40,7 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 	if _, err := r.db.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = false, ist_ausleihbar = true, aussonderung_grund = NULL,
-		    zustand_notiz = '', aktualisiert_am = CURRENT_TIMESTAMP
+		    zustand_notiz = '', bestellstatus = NULL, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`, exemplarID); err != nil {
 		return false, fmt.Errorf("exemplar wiederherstellen fehlgeschlagen: %w", err)

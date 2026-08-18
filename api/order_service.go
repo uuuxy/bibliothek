@@ -199,9 +199,13 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 		return nil, fmt.Errorf("sequence error: %w", err)
 	}
 
+	// Menschentext (Anzeige) und Maschinenstatus getrennt (Migration 071/F1):
+	// Die Notiz nennt den Lieferanten, die Spalte steuert die Pipeline.
 	statusText := fmt.Sprintf("Im Zulauf - %s", supplierName)
+	bestellstatus := "im_zulauf"
 	if !item.GenerateBarcodes {
 		statusText = fmt.Sprintf("Bestellt (ohne Vorab-Barcode) - %s", supplierName)
+		bestellstatus = "bestellt"
 	}
 
 	// Beklebt der Händler selbst, gilt das Exemplar sofort als etikettiert — sonst stünde
@@ -219,6 +223,7 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 			TitelID:         item.TitelID,
 			BarcodeID:       barcodeID,
 			ZustandNotiz:    statusText,
+			Bestellstatus:   bestellstatus,
 			IstAusleihbar:   false,
 			EtikettGedruckt: beklebtGeliefert,
 			Einkaufspreis:   item.Preis,
