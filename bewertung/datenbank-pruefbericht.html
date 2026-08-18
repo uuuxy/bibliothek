@@ -1,0 +1,658 @@
+<title>Schulbibliothek — Prüfbericht Datenbankstruktur</title>
+<style>
+  :root {
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --surface2: #EDF0F4;
+    --ink: #1B2430;
+    --muted: #5A6675;
+    --line: #D7DDE5;
+    --accent: #33628F;
+    --accent-soft: #E3ECF5;
+    --good: #2A7A57;
+    --good-soft: #E2F0E9;
+    --warn: #96660F;
+    --warn-soft: #F5EBD6;
+    --crit: #A63A3E;
+    --crit-soft: #F6E3E3;
+    --code-bg: #EDF0F4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161C;
+      --surface: #1A2029;
+      --surface2: #212936;
+      --ink: #E3E8EF;
+      --muted: #98A4B3;
+      --line: #2C3542;
+      --accent: #7FA8D0;
+      --accent-soft: #22334A;
+      --good: #5FBF95;
+      --good-soft: #1C3229;
+      --warn: #D8A84E;
+      --warn-soft: #382D14;
+      --crit: #E08084;
+      --crit-soft: #3D2122;
+      --code-bg: #232B37;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161C;
+    --surface: #1A2029;
+    --surface2: #212936;
+    --ink: #E3E8EF;
+    --muted: #98A4B3;
+    --line: #2C3542;
+    --accent: #7FA8D0;
+    --accent-soft: #22334A;
+    --good: #5FBF95;
+    --good-soft: #1C3229;
+    --warn: #D8A84E;
+    --warn-soft: #382D14;
+    --crit: #E08084;
+    --crit-soft: #3D2122;
+    --code-bg: #232B37;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 20px 80px;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  .prose { max-width: 74ch; }
+
+  h1, h2, h3, h4 {
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 { font-size: 2.1rem; font-weight: 700; letter-spacing: -0.015em; }
+  h2 { font-size: 1.45rem; font-weight: 700; margin-top: 0; }
+  h3 { font-size: 1.08rem; font-weight: 600; }
+
+  .eyebrow {
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  header.masthead {
+    padding: 56px 0 28px;
+    border-bottom: 3px double var(--line);
+    margin-bottom: 40px;
+  }
+  .masthead .sub { color: var(--muted); margin-top: 10px; max-width: 70ch; }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 8px 24px;
+    margin-top: 18px;
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+    font-size: 0.82rem; color: var(--muted);
+  }
+  .meta-row b { color: var(--ink); font-weight: 600; }
+
+  section { margin: 0 0 56px; }
+  section > h2 { padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .secnum { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 8px; }
+
+  p { margin: 0 0 1em; }
+  ul, ol { margin: 0 0 1em; padding-left: 1.4em; }
+  li { margin-bottom: 0.45em; }
+  a { color: var(--accent); }
+
+  code, .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  pre {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; }
+
+  /* stat band */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 24px 0 8px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .stat .n {
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+    font-size: 1.7rem; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+  .stat .l { font-size: 0.78rem; color: var(--muted); margin-top: 4px;
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif; }
+
+  /* tables */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  th {
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+    font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted);
+    background: var(--surface2);
+  }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+  /* chips */
+  .chip {
+    display: inline-block;
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    border-radius: 999px;
+    padding: 2px 10px;
+    white-space: nowrap;
+  }
+  .chip.high   { background: var(--crit-soft); color: var(--crit); }
+  .chip.medium { background: var(--warn-soft); color: var(--warn); }
+  .chip.low    { background: var(--surface2); color: var(--muted); }
+  .chip.strong { background: var(--good-soft); color: var(--good); }
+
+  /* findings */
+  .finding {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--muted);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 22px;
+  }
+  .finding.high   { border-left-color: var(--crit); }
+  .finding.medium { border-left-color: var(--warn); }
+  .finding.low    { border-left-color: var(--line); }
+  .finding .fhead {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .finding .fid {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.85rem; font-weight: 700; color: var(--muted);
+  }
+  .finding h3 { flex: 1 1 auto; min-width: 200px; }
+  .finding .evidence {
+    font-size: 0.82rem; color: var(--muted);
+    border-top: 1px dashed var(--line);
+    margin-top: 14px; padding-top: 10px;
+  }
+  .finding .evidence code { font-size: 0.92em; }
+
+  /* strengths */
+  .strength-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .strength {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-size: 0.92rem;
+  }
+  .strength h3 { margin-bottom: 8px; color: var(--good); font-size: 0.98rem; }
+  .strength p { margin: 0; color: var(--ink); }
+
+  figure { margin: 28px 0; }
+  figure svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  figcaption {
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+    font-size: 0.8rem; color: var(--muted);
+    text-align: center; margin-top: 10px;
+    max-width: 78ch; margin-left: auto; margin-right: auto;
+  }
+  .figbox {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+
+  .verdict {
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 22px 26px;
+  }
+  .verdict p:last-child { margin-bottom: 0; }
+
+  .callout {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 18px;
+    font-size: 0.92rem;
+    margin: 0 0 1em;
+  }
+
+  /* glossary */
+  .glossary {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
+  .glossary dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 18px; }
+  .glossary dt {
+    font-family: "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+    font-weight: 600; font-size: 0.9rem;
+  }
+  .glossary dd { margin: 0; font-size: 0.9rem; }
+  @media (max-width: 600px) {
+    .glossary dl { grid-template-columns: 1fr; gap: 2px; }
+    .glossary dd { margin-bottom: 10px; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">Datenbank-Prüfung · PostgreSQL · nur lesend, keine Änderungen</div>
+  <h1 style="margin-top:8px;">Schulbibliothek — Prüfbericht zur Datenbankstruktur</h1>
+  <p class="sub">Dieser Bericht untersucht die Datenbank hinter dem selbst gebauten Bibliothekssystem. Die Datenbank ist der Ort, an dem das System alle Informationen speichert: Bücher, Schüler, Ausleihen, Bestellungen. Wir haben ihren Aufbau mit bewährten Regeln des Datenbank-Designs verglichen. Jede Aussage in diesem Bericht wurde gegen die echten Systemdateien geprüft, nicht nur gegen die Diagramme.</p>
+  <div class="meta-row">
+    <span>Erstellt für <b>Daniel</b></span>
+    <span>Datum <b>13.08.2026</b></span>
+    <span>Grundlage <b>Datenbank-Diagramm + alle 74 Änderungsskripte + Programmcode</b></span>
+    <span>Modus <b>nur lesend, nichts verändert</b></span>
+    <span>Version <b>5 — deutsche Fassung; Einstufungen F2/F3/F4 nach Review-Diskussion angepasst</b></span>
+  </div>
+</header>
+
+<!-- ================================================================ -->
+<section>
+  <h2><span class="secnum">1</span>Wie man diesen Bericht liest</h2>
+  <div class="prose">
+    <p>Eine Datenbank speichert Informationen in <b>Tabellen</b>. Eine Tabelle sieht aus wie eine Excel-Tabelle. Jede <b>Zeile</b> ist ein Datensatz, zum Beispiel ein Schüler. Jede <b>Spalte</b> ist eine Eigenschaft, zum Beispiel die Klasse des Schülers. Der Bericht benutzt wenige Fachbegriffe. Hier ist ihre Bedeutung:</p>
+  </div>
+  <div class="glossary" style="margin-top:8px;">
+    <dl>
+      <dt>Verknüpfungsregel</dt>
+      <dd>Eine Regel, die zwei Tabellen verbindet (Fachwort: Foreign Key / Fremdschlüssel). Beispiel: Jede Ausleihe muss auf ein echtes Buch zeigen. Die Datenbank lehnt dann Datensätze ab, die ins Leere zeigen. Ohne diese Regel existiert die Verbindung nur in den Köpfen der Programmierer.</dd>
+      <dt>Prüfregel</dt>
+      <dd>Eine Regel, die die Datenbank bei jedem Datensatz durchsetzt (Fachwort: Constraint). Beispiel: „Ein Bestand darf nicht negativ sein." Die Datenbank lehnt jeden Datensatz ab, der die Regel verletzt.</dd>
+      <dt>Änderungsskript</dt>
+      <dd>Eine kleine Datei, die den Aufbau der Datenbank verändert (Fachwort: Migration). Das System hat 74 davon. Zusammen erzählen sie die gesamte Entstehungsgeschichte der Datenbank.</dd>
+      <dt>Gespeicherte Abfrage</dt>
+      <dd>Eine hinterlegte Berechnung, die immer frische Ergebnisse zeigt (Fachwort: View). Beispiel: „Wie viele Exemplare dieses Titels sind gerade verfügbar?"</dd>
+      <dt>Spezialwert</dt>
+      <dd>Ein normal aussehender Textwert, der heimlich das Verhalten des Programms ändert. Nur der Programmierer weiß, dass er besonders ist. Dieser Bericht findet mehrere davon.</dd>
+    </dl>
+  </div>
+  <div class="prose" style="margin-top:16px;">
+    <p>Jeder Befund hat eine Einstufung: <span class="chip high">Hoch</span> <span class="chip medium">Mittel</span> <span class="chip low">Niedrig</span>. „Hoch" bedeutet: vor dem Echtbetrieb beheben. Jeder Befund endet mit einer grauen Zeile „Technischer Nachweis". Diese Zeile kann man überspringen; sie erlaubt einem Entwickler, den Befund nachzuprüfen.</p>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <h2><span class="secnum">2</span>Was die Datenbank enthält</h2>
+  <div class="prose">
+    <p>Die Datenbank hat <b>31 Tabellen und 1 gespeicherte Abfrage</b>. Sie bilden sechs Gruppen: den Katalog, die Personen, die Ausleihe, das Bestellwesen, die Inventur und die Selbstverwaltung des Systems. Der Aufbau folgt durchgehend modernen, sicheren Standards.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">31 + 1</div><div class="l">Tabellen + gespeicherte Abfrage</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">fachliche Gruppen</div></div>
+    <div class="stat"><div class="n">~39</div><div class="l">durchgesetzte Verknüpfungsregeln</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">Verbindungen ohne Regel</div></div>
+    <div class="stat"><div class="n">74</div><div class="l">Änderungsskripte</div></div>
+    <div class="stat"><div class="n">4</div><div class="l">Sperren gegen Doppelbuchung</div></div>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 980 460" role="img" aria-label="Die sechs Gruppen der Datenbank und ihre Verbindungen: Ausleihe und Vormerkung liegen in der Mitte und verbinden sich mit dem Katalog und den Personen; Bestellwesen und Inventur verbinden sich mit dem Katalog; die Verwaltungstabellen stehen weitgehend allein.">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g fill="none" stroke="currentColor" stroke-width="1.4">
+          <rect x="40"  y="60"  width="230" height="120" rx="8"/>
+          <rect x="380" y="40"  width="230" height="120" rx="8"/>
+          <rect x="380" y="250" width="230" height="130" rx="8"/>
+          <rect x="720" y="40"  width="220" height="110" rx="8"/>
+          <rect x="720" y="210" width="220" height="110" rx="8"/>
+          <rect x="40"  y="290"  width="230" height="120" rx="8"/>
+        </g>
+        <g stroke="currentColor" stroke-width="1.4" fill="none">
+          <path d="M 495 160 L 495 250" marker-end="url(#arr)"/>
+          <path d="M 380 300 L 270 160 " marker-end="url(#arr)"/>
+          <path d="M 720 100 L 610 100" marker-end="url(#arr)"/>
+          <path d="M 720 265 L 610 265" marker-end="url(#arr)"/>
+          <path d="M 270 350 L 380 335" marker-end="url(#arr)"/>
+        </g>
+        <g font-family="Avenir Next, Helvetica Neue, sans-serif" font-size="12" fill="currentColor">
+          <text x="495" y="66" text-anchor="middle" font-weight="700" font-size="14">Katalog &amp; Bestand</text>
+          <text x="495" y="88"  text-anchor="middle" opacity="0.75">Titel · Exemplare · Geräte</text>
+          <text x="495" y="106" text-anchor="middle" opacity="0.75">Fächer · Systematik</text>
+          <text x="495" y="124" text-anchor="middle" opacity="0.75">Klassenlisten · Verfügbarkeit</text>
+          <text x="495" y="146" text-anchor="middle" opacity="0.55">7 Tabellen + 1 gespeicherte Abfrage</text>
+          <text x="155" y="86" text-anchor="middle" font-weight="700" font-size="14">Personen &amp; Zugriff</text>
+          <text x="155" y="108" text-anchor="middle" opacity="0.75">Schüler · Fotos · Personal-Konten</text>
+          <text x="155" y="126" text-anchor="middle" opacity="0.75">Rechte · Klassenlehrkräfte</text>
+          <text x="155" y="148" text-anchor="middle" opacity="0.55">5 Tabellen</text>
+          <text x="495" y="276" text-anchor="middle" font-weight="700" font-size="14">Ausleihe &amp; Vormerkung</text>
+          <text x="495" y="298" text-anchor="middle" opacity="0.75">Ausleihen · Vormerkungen</text>
+          <text x="495" y="316" text-anchor="middle" opacity="0.75">Klassensatz-Reservierungen</text>
+          <text x="495" y="334" text-anchor="middle" opacity="0.75">Schadensfälle</text>
+          <text x="495" y="356" text-anchor="middle" opacity="0.55">4 Tabellen — das Tagesgeschäft</text>
+          <text x="830" y="66" text-anchor="middle" font-weight="700" font-size="14">Bestellwesen</text>
+          <text x="830" y="88" text-anchor="middle" opacity="0.75">Lieferanten · Bestellverlauf</text>
+          <text x="830" y="106" text-anchor="middle" opacity="0.75">Bestellpositionen</text>
+          <text x="830" y="128" text-anchor="middle" opacity="0.55">3 Tabellen</text>
+          <text x="830" y="236" text-anchor="middle" font-weight="700" font-size="14">Inventur</text>
+          <text x="830" y="258" text-anchor="middle" opacity="0.75">Zählungen · Erfassungen</text>
+          <text x="830" y="276" text-anchor="middle" opacity="0.75">gemeldete Verluste</text>
+          <text x="830" y="298" text-anchor="middle" opacity="0.55">3 Tabellen</text>
+          <text x="155" y="316" text-anchor="middle" font-weight="700" font-size="14">Betrieb &amp; Protokoll</text>
+          <text x="155" y="338" text-anchor="middle" opacity="0.75">Aktivitätsprotokolle · Einstellungen</text>
+          <text x="155" y="356" text-anchor="middle" opacity="0.75">Ferien · Mail · Anmelde-Sicherheit</text>
+          <text x="155" y="378" text-anchor="middle" opacity="0.55">9 Tabellen</text>
+          <text x="505" y="215" opacity="0.7" font-size="11">eine Ausleihe zeigt auf Exemplar oder Gerät</text>
+          <text x="262" y="230" opacity="0.7" font-size="11">eine Ausleihe zeigt auf die Person</text>
+          <text x="618" y="90" opacity="0.7" font-size="11">eine Bestellung erzeugt Exemplare</text>
+          <text x="618" y="255" opacity="0.7" font-size="11">die Zählung prüft Exemplare</text>
+          <text x="282" y="358" opacity="0.7" font-size="11">Protokolle: wer hat was getan</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Die sechs Gruppen und ihre Verbindungen. Die Ausleihe-Tabellen liegen in der Mitte. Sie zeigen auf den Katalog auf der einen Seite und auf die Personen auf der anderen Seite.</figcaption>
+  </figure>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <h2><span class="secnum">3</span>Was wirklich gut gelöst ist</h2>
+  <div class="prose">
+    <p>Zuerst die gute Nachricht. Diese Datenbank ist <b>deutlich besser</b>, als man es bei einem Erstlingsprojekt erwarten würde. Mehrere Teile folgen genau dem Muster, das ein erfahrener Datenbank-Designer wählen würde. Einige Teile lösen Probleme, die viele kommerzielle Systeme falsch machen.</p>
+  </div>
+
+  <div class="strength-grid">
+    <div class="strength">
+      <h3>Kein Buch kann doppelt verliehen werden</h3>
+      <p>Die Datenbank selbst lehnt eine zweite offene Ausleihe für dasselbe Exemplar ab. Das ist wichtig, weil 8 Scanner-Stationen gleichzeitig arbeiten. Scannen zwei Stationen dasselbe Buch in derselben Sekunde, nimmt die Datenbank eine Ausleihe an und weist die andere ab. Das Programm kann diese Regel nicht brechen, auch nicht durch einen Fehler. Siehe Bild unten.</p>
+    </div>
+    <div class="strength">
+      <h3>Eine Ausleihe zeigt immer auf etwas Echtes</h3>
+      <p>Eine Ausleihe betrifft ein Buch <em>oder</em> ein Gerät und geht an einen Schüler <em>oder</em> eine Lehrkraft mit Konto. Die Datenbank erzwingt „genau eines von beiden". Beide Verbindungen sind echte Verknüpfungsregeln. Viele Systeme lösen das mit losen Textfeldern; dieses macht es richtig.</p>
+    </div>
+    <div class="strength">
+      <h3>Löschen ist durchdacht</h3>
+      <p>Ein Exemplar mit Ausleih-Geschichte kann man nicht löschen. Löscht man einen Titel, verschwinden seine Exemplare mit. Wird ein Personal-Konto gelöscht, funktionieren die Protokolle weiter. Diese drei Löschverhalten sind über alle ~39 Verknüpfungsregeln einheitlich angewendet.</p>
+    </div>
+    <div class="strength">
+      <h3>Abgegangene Schüler blockieren keine zurückkehrenden</h3>
+      <p>Schüler werden zunächst nie wirklich gelöscht, sondern als gelöscht markiert. Die Eindeutigkeitsregeln gelten nur für aktive Schüler. Ein Schüler, der geht und wiederkommt, verursacht deshalb keinen Konflikt. Ein Änderungsskript (048) zeigt, dass der Autor genau hier einen versteckten Fehler fand und behob — mit vorbildlicher schriftlicher Begründung.</p>
+    </div>
+    <div class="strength">
+      <h3>Die Datenbank prüft ihre eigenen Daten</h3>
+      <p>Bestände können nicht negativ werden. Statusfelder akzeptieren nur gültige Werte. Ein ausgesondertes Exemplar braucht einen Aussonderungsgrund. Für jede dieser Regeln gibt es einen automatischen Test, der beweist, dass die Regel schlechte Daten wirklich abweist.</p>
+    </div>
+    <div class="strength">
+      <h3>Verfügbarkeit wird immer frisch berechnet</h3>
+      <p>„Wie viele Exemplare sind frei?" wird live aus den echten Ausleihen berechnet — nicht als gespeicherte Zahl geführt, die veralten kann. Das ist das sicherere Design. (Eine Ausnahme gibt es — siehe Befund F5.)</p>
+    </div>
+    <div class="strength">
+      <h3>Sorgfalt bei Schülerdaten</h3>
+      <p>Schülerfotos liegen verschlüsselt in einer eigenen, getrennten Tabelle. Adressen wurden bewusst <em>nicht</em> aus dem alten Littera-System übernommen. Das Aktivitätsprotokoll kann nachträglich nicht verändert werden.</p>
+    </div>
+    <div class="strength">
+      <h3>Die Geschichte bleibt wahr</h3>
+      <p>Eine Bestellung merkt sich den Lieferantennamen zum Bestellzeitpunkt. Ein Verlust-Eintrag merkt sich den Buchtitel. Wird der Lieferant oder das Buch später umbenannt oder gelöscht, zeigt die Geschichte trotzdem, was wirklich war. Das ist absichtlich so und korrekt.</p>
+    </div>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 860 230" role="img" aria-label="Zwei Scanner-Stationen scannen fast gleichzeitig dasselbe Buch. Beide senden eine Ausleihe-Anfrage. Die Datenbank nimmt die erste an und weist die zweite ab. Eine Doppel-Ausleihe ist unmöglich.">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g fill="none" stroke="currentColor" stroke-width="1.4">
+          <rect x="30" y="40" width="170" height="54" rx="8"/>
+          <rect x="30" y="140" width="170" height="54" rx="8"/>
+          <rect x="470" y="75" width="360" height="90" rx="8"/>
+          <path d="M 200 67 L 470 100" marker-end="url(#arr2)"/>
+          <path d="M 200 167 L 470 140" marker-end="url(#arr2)" stroke-dasharray="5 4"/>
+        </g>
+        <g font-family="Avenir Next, Helvetica Neue, sans-serif" font-size="12" fill="currentColor">
+          <text x="115" y="62" text-anchor="middle" font-weight="600">Station 1</text>
+          <text x="115" y="80" text-anchor="middle" opacity="0.7">scannt Exemplar X · 10:04:31,20</text>
+          <text x="115" y="162" text-anchor="middle" font-weight="600">Station 2</text>
+          <text x="115" y="180" text-anchor="middle" opacity="0.7">scannt Exemplar X · 10:04:31,45</text>
+          <text x="300" y="65" text-anchor="middle" opacity="0.8" font-size="11">Ausleihe-Anfrage → angenommen</text>
+          <text x="300" y="185" text-anchor="middle" opacity="0.8" font-size="11">Ausleihe-Anfrage → abgewiesen</text>
+          <text x="650" y="108" text-anchor="middle" font-weight="600">Datenbank</text>
+          <text x="650" y="132" text-anchor="middle" font-size="11.5">Regel: nur eine offene Ausleihe</text>
+          <text x="650" y="148" text-anchor="middle" font-size="11.5">pro Exemplar — ohne Ausnahme</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Die Sperre gegen Doppel-Scans. Scannen zwei Stationen dasselbe Buch, bekommt die langsamere eine verständliche Fehlermeldung. Die Regel lebt in der Datenbank selbst; kein Programmfehler kann sie aushebeln. Dieselbe Sperre schützt Geräte.</figcaption>
+  </figure>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <h2><span class="secnum">4</span>Befunde</h2>
+  <div class="prose">
+    <p>Die Befunde sind nach Schwere geordnet. Ein Muster verbindet fast alle: <b>Wo die Datenbank durchgesetzte Regeln benutzt, ist das Design ausgezeichnet. Wo sie auf ungeschriebene Konventionen setzt, schützt nichts die Daten.</b> Eine Konvention ist eine Vereinbarung, die nur im Kopf des Programmierers lebt — oder in einem Kommentar.</p>
+  </div>
+
+  <!-- F1 -->
+  <div class="finding high">
+    <div class="fhead"><span class="fid">F1</span><h3>Ein Notizfeld steuert heimlich das Bestellwesen</h3><span class="chip high">Hoch</span></div>
+    <div class="prose">
+      <p>Jedes Exemplar hat ein Notizfeld namens <code>zustand_notiz</code> („Zustandsnotiz"). Das Personal nutzt es für freien Text, zum Beispiel „Einband beschädigt". Dasselbe Feld hat aber einen versteckten zweiten Job: <b>Das Bestellwesen schreibt seinen Status hinein.</b> Wird ein Buch bestellt, steht im Feld „Bestellt…" oder „Im Zulauf…". Das Programm liest das Feld später zurück und sucht nach diesen Wörtern, um bestellte Exemplare zu finden.</p>
+      <p>Das erzeugt ein echtes Problem. Angenommen, jemand vom Personal tippt eine ganz normale Notiz: „Bestellt am 3.9. neu, alter Band verloren". Das Programm hält dieses Exemplar jetzt für eine laufende Bestellung. Das Exemplar <b>verschwindet stillschweigend aus dem öffentlichen Katalog</b> und taucht auf der Wareneingangs-Liste auf. Niemand bekommt eine Fehlermeldung. Auch umgekehrt: Formuliert jemand eine Bestell-Notiz um, bricht die Bestellverfolgung.</p>
+      <p>Freier Text, den Menschen bearbeiten sollen, darf niemals das System steuern. Die Korrektur ist klein: Der Bestellstatus bekommt ein eigenes Feld mit einer Prüfregel. Für andere Status macht das System das bereits richtig.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: <code>internal/service/order_service.go:46</code> und <code>api/opac.go:96,102</code> lesen das Notizfeld per Textmuster (<code>LIKE 'Im Zulauf%'</code> u. a.); eine Statusspalte für die Bestell-Pipeline existiert nicht.</div>
+  </div>
+
+  <!-- F3 -->
+  <div class="finding high">
+    <div class="fhead"><span class="fid">F3</span><h3>Wichtige Verbindungen existieren nur als übereinstimmender Text</h3><span class="chip high">Hoch</span></div>
+    <div class="prose">
+      <p>Die Datenbank hat rund 39 echte Verknüpfungsregeln. Aber sechs wichtige Verbindungen haben <b>gar keine Regel</b>. Sie funktionieren nur, weil derselbe Text an zwei Stellen steht. Das wichtigste Beispiel: Die Schüler-Tabelle speichert die Klasse als bloßen Text („7a"). Die Klassenlehrer-Tabelle speichert die Klasse ebenfalls als bloßen Text. Nichts verbindet die beiden. Das Mahnwesen führt sie zusammen, indem es die Texte vergleicht.</p>
+    </div>
+    <div class="tablewrap" style="margin-bottom:14px;">
+      <table>
+        <thead><tr><th>Verbindung</th><th>Wie sie heute funktioniert</th><th>Was schiefgehen kann</th></tr></thead>
+        <tbody>
+          <tr><td>Schüler ↔ Klassenlehrkraft</td><td>Klassenname als Text in beiden Tabellen</td><td>Klasse umbenannt → Mahnlisten für diese Klasse bleiben stumm</td></tr>
+          <tr><td>Schüler ↔ Klassen-Bücherliste</td><td>Klassenname als Text in beiden Tabellen</td><td>Klasse umbenannt → die Liste ist leer, ohne Fehlermeldung</td></tr>
+          <tr><td>Klassenlehrkraft ↔ Personal-Konto</td><td>E-Mail-Adresse als Text in beiden Tabellen</td><td>E-Mail der Lehrkraft ändert sich → ihre Klassen lösen sich still ab</td></tr>
+          <tr><td>Titel ↔ Fach</td><td>Fachname als Text in beiden Tabellen</td><td>Fach umbenannt → Titel behalten den alten Namen, Filter finden nichts</td></tr>
+          <tr><td>Titel ↔ Systematik</td><td>Kürzel als Text-Anfang der Signatur</td><td>Kategorie umbenannt → Regal-Stöbern verliert diese Titel</td></tr>
+          <tr><td>Personal-Konto ↔ Rechte</td><td>Rollenname als Text in beiden Tabellen</td><td>eine vertippte Rolle wird angenommen und greift einfach nie</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure style="margin-top:20px;">
+      <div class="figbox">
+        <svg viewBox="0 0 900 330" role="img" aria-label="Vergleich der zwei Arten von Verbindungen in der Datenbank. Links: eine durchgesetzte Verknüpfungsregel zwischen Exemplaren und Titeln, von der Datenbank geschützt. Rechts: reine Text-Verbindungen rund um den Klassennamen, die nichts schützt.">
+          <defs>
+            <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g font-family="Avenir Next, Helvetica Neue, sans-serif" font-size="13" fill="currentColor" font-weight="700">
+            <text x="215" y="34" text-anchor="middle">Von der Datenbank geschützt</text>
+            <text x="655" y="34" text-anchor="middle">Nur übereinstimmender Text</text>
+          </g>
+          <g fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="80"  y="60"  width="270" height="46" rx="8"/>
+            <rect x="80"  y="170" width="270" height="46" rx="8"/>
+            <path d="M 215 170 L 215 106" marker-end="url(#arr3)"/>
+            <line x1="450" y1="45" x2="450" y2="315" stroke-dasharray="2 5" opacity="0.5"/>
+            <rect x="520" y="60"  width="270" height="46" rx="8"/>
+            <rect x="520" y="150" width="270" height="46" rx="8"/>
+            <rect x="520" y="240" width="270" height="46" rx="8"/>
+            <path d="M 655 150 L 655 106" stroke-dasharray="5 4" marker-end="url(#arr3)"/>
+            <path d="M 655 240 L 655 196" stroke-dasharray="5 4" marker-end="url(#arr3)"/>
+          </g>
+          <g font-family="Avenir Next, Helvetica Neue, sans-serif" font-size="12" fill="currentColor">
+            <text x="215" y="88" text-anchor="middle">Titel-Datensatz</text>
+            <text x="215" y="198" text-anchor="middle">Exemplar — zeigt auf seinen Titel</text>
+            <text x="655" y="88" text-anchor="middle">Schüler — Klasse: „7a"</text>
+            <text x="655" y="178" text-anchor="middle">Bücherliste — Klasse: „7a"</text>
+            <text x="655" y="268" text-anchor="middle">Klassenlehrkraft — Klasse: „7a"</text>
+          </g>
+          <g font-family="Avenir Next, Helvetica Neue, sans-serif" font-size="11" fill="currentColor" opacity="0.75">
+            <text x="230" y="145">Verknüpfungsregel:</text>
+            <text x="230" y="160">die Datenbank lehnt Waisen ab</text>
+            <text x="670" y="130">verbunden nur durch gleichen Text</text>
+            <text x="670" y="223">Klasse umbenennen — und beide</text>
+            <text x="670" y="238">Verbindungen reißen, lautlos</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Durchgezogener Pfeil: Die Datenbank erzwingt die Verbindung. Gestrichelte Linien: Die Verbindung hält nur, solange der Text zufällig übereinstimmt. Das gestrichelte Netz hängt am Klassennamen.</figcaption>
+    </figure>
+    <div class="prose">
+      <p>Warum das für eine Schule zählt: <b>Jeden August bekommt jede Klasse einen neuen Namen</b> (aus 7a wird 8a), und die ganze Schülerschaft rückt auf. Die schwächsten Verbindungen dieser Datenbank liegen genau auf dem einen Vorgang, den die Schule jedes Jahr garantiert durchführt. Driften die Texte auseinander, meldet nichts einen Fehler. Mahn-Mails bleiben einfach aus. Bücherlisten kommen einfach leer zurück. Die Symptome zeigen sich Wochen später, weit weg von der Ursache — in einem System, dessen einziger Betreuer dann vielleicht nicht greifbar ist.</p>
+      <p class="callout"><b>Einstufung nach Review-Diskussion von Mittel auf Hoch erhöht</b> — genau aus diesem Grund: Der Schaden ist lautlos, er wächst mit der Zeit, und er zeigt sich weit entfernt von seiner Ursache.</p>
+      <p style="margin-top:1em;"><b>Der jährliche Klassenwechsel — hier zeigt sich der Fehler in echt.</b> Das System hat für den Schuljahreswechsel einen eigenen, gut gebauten Ablauf: Ein Knopf im Verwaltungsbereich zählt bei allen aktiven Schülern die Stufe um eins hoch (aus „05a" wird „06a"), markiert die Abschlussklassen als Abgänger und schützt sich mit einer Vorschau, einer Pflicht-Bestätigung und einer Sperre gegen einen zweiten Lauf am selben Tag. Dieser Teil ist vorbildlich.</p>
+      <p>Der Haken: Der Ablauf ändert <b>nur die Klasse am Schüler</b>. Die Tabelle, die jede Klasse ihrer Klassenlehrkraft zuordnet, und die Klassen-Bücherlisten rührt er <b>nicht</b> an — beide werden allein von Hand gepflegt. Am Morgen nach dem Wechsel tragen die Schüler ihre neuen Klassennamen, aber die Lehrer-Zuordnung zeigt noch auf die alten. Weil zwischen beiden keine Verknüpfungsregel besteht, meldet nichts einen Fehler. Die Mahnliste einer Klasse geht dann an die Lehrkraft des Vorjahres — oder an niemanden.</p>
+      <p><b>Wiederholer und zusammengelegte oder geteilte Klassen</b> fängt das System auf der Schülerseite sauber ab: Der maßgebliche Abgleich kommt aus dem Landessystem LUSD und ordnet jeden Schüler über eine feste, personengebundene Nummer neu ein — nicht über Klassen-Rechnerei. Ein Sitzenbleiber wird beim Hochzählen zunächst mit-versetzt und beim nächsten LUSD-Abgleich wieder in seine Klasse zurückgesetzt; aus „2A/2B/2C" werden „3A/3B", indem jeder Schüler einzeln der neuen Klasse zugeordnet wird. Aber auch dieser Weg fasst die Lehrer-Zuordnung und die Bücherlisten nicht an: Eine weggefallene Klasse hinterlässt dort einen verwaisten Eintrag, und die neuen Klassen haben keine Zuordnung, bis jemand sie von Hand anlegt — wieder ohne Fehlermeldung.</p>
+      <p><b>Lösungsweg:</b> Die Klassenlehrer-Tabelle ist fast schon eine richtige „Klassen"-Tabelle — jede Klasse kommt darin genau einmal vor. Drei Schritte machen das offiziell: Eine Klasse darf auch ohne zugeordnete Lehrkraft existieren, die Tabelle wird mit allen aktuellen Klassen befüllt, dann bekommen die drei Tabellen mit Klassennamen Verknüpfungsregeln. Die Regeln lassen sich so einrichten, dass eine Umbenennung überall zugleich wirkt — der August-Wechsel wird ein einziger sicherer Vorgang. Das schließt drei der sechs Text-Verbindungen. Die übrigen drei (Fach, Systematik, Rolle) sind eigene, kleinere Korrekturen.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: <code>schema.sql:157</code> (<code>schueler.klasse VARCHAR(20)</code>) gegenüber <code>schema.sql:227–231</code> (<code>klassen_lehrer_mapping.klasse VARCHAR(50) PRIMARY KEY</code>) — zwei unabhängige Textspalten unterschiedlicher Länge; zwischen keinem der sechs Paare existiert ein Fremdschlüssel. Der Versetzungslauf <code>api/student_promotion.go</code> schreibt nur <code>schueler.klasse</code>; die Klassenlehrer-Zuordnung wird ausschließlich von Hand über <code>api/klassen_mapping.go</code> (Upsert je Klasse) gepflegt. Der LUSD-Abgleich <code>api/lusd.go</code> ordnet Schüler über die feste <code>lusd_id</code> zu und korrigiert so Wiederholer und Umschichtungen auf der Schülerseite — nicht die Klassen-Zuordnungstabellen.</div>
+  </div>
+
+  <!-- F4 -->
+  <div class="finding high">
+    <div class="fhead"><span class="fid">F4</span><h3>Eine Lehrkraft, die ein Buch ausleiht, wird als Schüler gespeichert</h3><span class="chip high">Hoch</span></div>
+    <div class="prose">
+      <p>Leiht eine Lehrkraft auf normalem Weg ein Buch aus, speichert das System sie <b>als Zeile in der Schüler-Tabelle</b> — mit dem Spezialwert „lehrer" im Klassenfeld. Das ist keine Vermutung: Die Datenbankdatei selbst sagt es in einem Kommentar, und das Mahnwesen verlässt sich darauf. Wer als „Klasse" den Wert „lehrer" trägt, landet auf einer eigenen Mahnschiene für das Kollegium statt auf der normalen.</p>
+      <p>Das Verwirrende daran: <b>Die Datenbank hat für genau diesen Fall bereits den richtigen Mechanismus.</b> Eine Ausleihe kann offiziell auf ein Personal-Konto zeigen statt auf einen Schüler — der „Handapparat"-Ablauf nutzt das (eine Lehrkraft scannt ein freies Buch und bekommt eine Ein-Jahres-Ausleihe auf ihr Konto). Auch die Datenübernahme aus dem alten Littera-System legt alle Lehrkräfte als Personal-Konten an, nie als Schüler. Der Schein-Schüler-Weg entsteht also nur, wenn jemand eine Lehrkraft von Hand über die Schüler-Maske einträgt. Eine Person kann so <b>zwei Ausleiher-Identitäten</b> bekommen: ein Personal-Konto und einen Schein-Schüler — mit unterschiedlichen Regeln, je nachdem, welcher Weg benutzt wurde.</p>
+      <p>Diese Doppelbedeutung des Wortes „lehrer" hat bereits einen echten Vorfall verursacht. Der Autor musste die Anmelde-Rolle „lehrer" in „kollegium" umbenennen, weil die zwei Bedeutungen kollidierten — das Änderungsskript schreibt wörtlich, die Verwechslung habe „real zu einer falschen Auskunft geführt". Die Umbenennung reparierte die <em>andere</em> Bedeutung und ließ den Spezialwert stehen.</p>
+      <p class="callout"><b>Einstufung nach Review-Diskussion von Mittel auf Hoch erhöht.</b> Die verbleibenden Fallen: Jede Liste und jede Statistik nach Klassen muss an die Schein-Klasse denken. Die Datenschutz-Routine, die Abgänger löscht, darf diese Zeilen nie erfassen — obwohl sie ein erfundenes Abgangsjahr tragen, denn das Feld ist Pflicht. Und die Korrektur von F3 kollidiert damit: Eine richtige Klassenliste bräuchte eine Schein-Klasse namens „lehrer".</p>
+      <p><b>Lösungsweg:</b> Zu Ende bauen, was die Datenbank begonnen hat. Die Schein-Schüler auf echte Personal-Konten umziehen, dem Mahnwesen den Umgang mit Personal-Ausleihen beibringen, und „lehrer" als Klassennamen bei der Eingabe sperren. Das gehört <em>vor</em> die F3-Korrektur, damit die Klassenliste die Schein-Klasse nie braucht.</p>
+      <p>Eine zweite, ähnliche Konvention: <b>Ob ein Buch ein Lernmittel ist, entscheidet sein Name.</b> Ein Buch gilt als Schulbuch, wenn Titel oder Signatur mit „lmf" beginnt. Das bestimmt Ausleihlimit und Rückgabefrist (31. Juli). Wird ein Buch umbenannt oder ohne das Kürzel erfasst, ändern sich seine Ausleihregeln stillschweigend. Kein Feld, keine Regel, kein Hinweis am Bildschirm, dass die ersten Buchstaben eines Titels Gesetz sind.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: <code>schema.sql:34</code> („schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER"), <code>frontend/.../mahnwesen.svelte.js:29</code> und <code>MahnwesenTabs.svelte:18</code> (Sonderbehandlung), <code>migrations/069_rolle_lehrer_zu_kollegium.sql</code> (Vorfallsbeschreibung), <code>internal/service/loan_return.go:96–116</code> (Personal-Ausleihe/Handapparat), <code>internal/littera/schreiber_personen.go:219–284</code> (Import legt Lehrkräfte als Konten an), <code>pkg/lmf</code> (Lernmittel-Kürzelregel).</div>
+  </div>
+
+  <!-- F2 -->
+  <div class="finding medium">
+    <div class="fhead"><span class="fid">F2</span><h3>Jeder Programmteil sieht den vollständigen Schülerdatensatz</h3><span class="chip medium">Mittel</span></div>
+    <div class="prose">
+      <p>Die Schüler-Tabelle speichert alles über einen Schüler in einer Zeile: Name, Klasse, Ausweisnummer — und ebenso Wohnadresse, Eltern-E-Mail und Geburtsdatum. Das Programm reicht diese <b>komplette Zeile</b> überall herum. Jede Maske, die einen Schüler anzeigt, bekommt auch die sensiblen Felder — außer der Programmierer entfernt sie aktiv.</p>
+      <p>Genau so sind die zwei bekannten Datenschutz-Probleme entstanden (separat dokumentiert): Die Suche an der Scanner-Station und die Vormerkungs-Liste haben die Adressdaten nicht absichtlich <em>hinzugefügt</em>. Sie haben nur vergessen, sie aus dem Alles-drin-Datensatz zu <em>entfernen</em>. Der sichere Weg ist der Mehrarbeits-Weg — das ist verkehrt herum.</p>
+      <p class="callout"><b>Einstufung nach Review-Diskussion von Hoch auf Mittel gesenkt.</b> Der Tabellenaufbau selbst ist vertretbar; das Leck entsteht an der Programmgrenze und wird in den zwei eigenen Sicherheitsbefunden geführt. Hier bleibt: Das Design macht solche Lecks leicht.</p>
+      <p><b>Lösungsweg:</b> Gespeicherte Abfragen je Zielgruppe. Eine gespeicherte Abfrage für die Theke, die nur Name, Klasse, Ausweisnummer und Sperrstatus enthält — und alle Theken-Masken müssen sie benutzen. Dann ist „Adresse vergessen zu entfernen" nicht mehr lautlos möglich, sondern unmöglich. Das System nutzt diese Technik bereits für die Buch-Verfügbarkeit; sie passt also zum Stil des Hauses.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: Struct <code>repository/models.go:68–77</code>, Routen <code>api/routes_misc.go:30,35</code>; siehe <code>SECURITY-FINDING-kiosk-pii-leak.md</code> und <code>SECURITY-FINDING-vormerkungen-pii-leak.md</code>.</div>
+  </div>
+
+  <!-- F5 -->
+  <div class="finding medium">
+    <div class="fhead"><span class="fid">F5</span><h3>Zwei verschiedene Antworten auf „Wie viele Exemplare besitzen wir?"</h3><span class="chip medium">Mittel</span></div>
+    <div class="prose">
+      <p>Das Hauptprogramm beantwortet diese Frage auf dem sicheren Weg: Es zählt die echten Exemplar-Datensätze, live. Die Titel-Tabelle hat aber <em>zusätzlich</em> eine gespeicherte Zahl namens <code>stock</code> („Bestand"). Ein separates Nebenmodul (der Inventur-Import) schreibt in diese Spalte. Kein Teil des Hauptprogramms liest sie.</p>
+      <p>Heute ist das vor allem toter Ballast. Das Risiko liegt in der Zukunft: Es gibt jetzt zwei plausibel aussehende Stellen für „wie viele?", und sie stimmen nur zufällig überein. Die nächste Funktion — oder der nächste KI-Assistent — die zur bequemen gespeicherten Zahl greift, zeigt Werte an, die von der Wirklichkeit wegdriften. Entweder die Spalte löschen oder sie zur einen gepflegten Wahrheit machen. Der Zwischenzustand ist die Falle.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: Schreiber in <code>inventur/db_books_create.go:157,221</code> und <code>inventur/db_books_update.go:10</code>; die Live-Zählung in <code>migrations/013_view_buecher_bestand.sql</code>, <code>api/opac.go</code>, <code>internal/service/order_service.go:185–188</code>. Kein Leser von <code>titel.stock</code> im Hauptprogramm gefunden.</div>
+  </div>
+
+  <!-- F6 -->
+  <div class="finding low">
+    <div class="fhead"><span class="fid">F6</span><h3>Zwei Protokoll-Tabellen, einen Buchstaben auseinander</h3><span class="chip low">Niedrig</span></div>
+    <div class="prose">
+      <p>Die Datenbank mischt deutsche und englische Namen frei: <code>buecher_titel</code> neben <code>class_books</code>, <code>schueler</code> neben <code>subjects</code>. Das ist kosmetisch. Weniger kosmetisch: Es gibt zwei verschiedene Protokoll-Tabellen namens <code>audit_log</code> und <code>audit_logs</code> — einen Buchstaben auseinander, mit unterschiedlichem Inhalt und Zweck. Jeder künftige Betreuer wird irgendwann in die falsche schauen. In einem Projekt, das an einer Person hängt, summiert sich solche kleine Reibung.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: beide Tabellen existieren mit unterschiedlichen Spalten (<code>tabelle/aktion/akteur</code> gegenüber <code>admin_id/aktion/ip_adresse</code>).</div>
+  </div>
+
+  <!-- F7 -->
+  <div class="finding low">
+    <div class="fhead"><span class="fid">F7</span><h3>Kleine Ordnungsmängel bei den Änderungsskripten</h3><span class="chip low">Niedrig</span></div>
+    <div class="prose">
+      <p>Vier Skript-Nummern existieren doppelt (003, 008, 021, 022 — je zwei verschiedene Dateien). Das System merkt sich Skripte am vollen Dateinamen, deshalb geht heute nichts kaputt. Aber die Nummerierung verspricht eine Ordnung, die sie nicht hält, und ein künftiger Aufräumversuch („Nummern begradigen") wäre gefährlich.</p>
+      <p>Außerdem: Eine ganz neue Datenbank wird aus einer großen Basisdatei aufgebaut statt durch Abspielen aller 74 Skripte. Zwei Wege zum selben Ergebnis können auseinanderlaufen, und nichts prüft automatisch, ob sie noch übereinstimmen. Der Skript-Läufer selbst ist solide: Jedes Skript läuft ganz oder gar nicht.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: <code>db/migrations.go</code> — Erfassung nach Dateiname, eine Transaktion pro Datei, Basisaufbau über <code>schema.sql</code> in <code>ensureBaselineSchema</code>.</div>
+  </div>
+
+  <!-- F8 -->
+  <div class="finding low">
+    <div class="fhead"><span class="fid">F8</span><h3>Zwei Schüler mit gleichem Namen und Geburtstag können nicht beide existieren</h3><span class="chip low">Niedrig</span></div>
+    <div class="prose">
+      <p>Die Datenbank lehnt einen zweiten aktiven Schüler mit gleichem Vornamen, Nachnamen und Geburtsdatum ab. Das Ziel ist gut: versehentliche Doppel-Einträge verhindern. Die schlimmste Variante dieser Regel hat der Autor bereits behoben (Skript 048, mit vorbildlicher Begründung). Was bleibt: Teilen zwei echte Schüler tatsächlich Name und Geburtstag — selten bei ~1.000 Schülern, aber möglich —, lässt sich der zweite gar nicht anlegen. Eine Warnung statt einer harten Ablehnung würde dem Ziel dienen, ohne die Mauer.</p>
+    </div>
+    <div class="evidence">Technischer Nachweis: <code>migrations/048_schueler_gebdatum_dup.sql</code> — Eindeutigkeitsregel auf (vorname, nachname, geburtsdatum) unter aktiven Schülern mit bekanntem Geburtsdatum.</div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <h2><span class="secnum">5</span>Bewertung im Überblick</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Bereich</th><th>Bewertung</th><th>In einem Satz</th></tr></thead>
+      <tbody>
+        <tr><td>Schutz vor Doppelbuchungen</td><td><span class="chip strong">Stark</span></td><td>Die Datenbank selbst macht eine Doppel-Ausleihe unmöglich, auch bei 8 gleichzeitigen Stationen.</td></tr>
+        <tr><td>Selbstprüfende Datenregeln</td><td><span class="chip strong">Stark</span></td><td>Viele Prüfregeln, jede belegt durch einen automatischen Test, der die Regel schlechte Daten abweisen sah.</td></tr>
+        <tr><td>Löschen und Geschichte</td><td><span class="chip strong">Stark</span></td><td>Einheitliches Löschverhalten; historische Einträge behalten ihren Inhalt, auch wenn Stammdaten sich ändern.</td></tr>
+        <tr><td>Berechnete Zahlen</td><td><span class="chip strong">Stark</span></td><td>Verfügbarkeit wird immer frisch aus echten Datensätzen berechnet; ein gespeichertes Alt-Feld bleibt übrig (F5).</td></tr>
+        <tr><td>Eine Bedeutung pro Feld</td><td><span class="chip high">Schwach</span></td><td>Ein Notizfeld dient zugleich als Bestellstatus (F1); ein Schein-Klassenwert bedeutet „ist Lehrkraft" (F4).</td></tr>
+        <tr><td>Durchgesetzte Verbindungen</td><td><span class="chip high">Schwach</span></td><td>Sechs wichtige Verbindungen existieren nur als übereinstimmender Text und reißen lautlos (F3).</td></tr>
+        <tr><td>Schutz der Schülerdaten</td><td><span class="chip medium" style="background:var(--warn-soft);color:var(--warn);">Gemischt</span></td><td>Fotos vorbildlich; der volle Schülerdatensatz wandert standardmäßig überallhin und braucht Abfragen je Zielgruppe (F2).</td></tr>
+        <tr><td>Benennung</td><td><span class="chip low">Schwach</span></td><td>Deutsch und Englisch gemischt; zwei Protokoll-Tabellen einen Buchstaben auseinander (F6).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section>
+  <h2><span class="secnum">6</span>Fazit</h2>
+  <div class="verdict prose" style="max-width:100%;">
+    <p><b>Als Datenbank-Design ist das gute Arbeit — klar besser als der Durchschnitt kommerzieller Systeme, und bemerkenswert für eine Person, die es in zehn Wochen mit KI-Unterstützung gebaut hat.</b> Die wirklich schweren Probleme (gleichzeitige Scanner-Stationen, Ausleihen an verschiedene Arten von Zielen, Schüler, die gehen und wiederkommen, Geschichte, die sich nicht umschreiben darf) sind mit den richtigen Mechanismen gelöst, und automatische Tests belegen, dass sie funktionieren.</p>
+    <p>Die Schwächen sind keine zufällige Schlamperei. Sie folgen alle einem Muster: <b>Wo eine Regel als Konvention aufgeschrieben statt als Datenbankregel eingebaut wurde, kann die Datenbank sie nicht verteidigen.</b> Bestellstatus versteckt im Notizfeld (F1). Klassen-Verbindungen, die nur an gleichem Text hängen (F3). „Ist Lehrkraft" versteckt in einem Schein-Klassennamen und „ist Lernmittel" versteckt in einem Namenskürzel (F4). Jede dieser Stellen ist mit vertretbarem Aufwand zu beheben. F1, F3 und F4 gehören vor den Echtbetrieb. F4 gehört vor F3. F3 muss in jedem Fall vor den ersten Schuljahreswechsel, wenn alle Klassen auf einmal umbenannt werden. F2 löst man am besten mit gespeicherten Abfragen je Zielgruppe, zusammen mit den zwei separaten Sicherheitsbefunden.</p>
+    <p>Für die größere Frage schneidet das in beide Richtungen. Es stärkt die Antwort auf <em>„Ist das gute Software?"</em> — die Datenbank ist nicht das Risiko. Und es schärft die Antwort auf <em>„Sollte eine Schule das als kritische Infrastruktur betreiben?"</em> — denn Konventionen-statt-Regeln ist genau die Fehlerart, die den ursprünglichen Autor in Reichweite braucht. Die Datenbank hält die Daten von allein konsistent. Aber ein Teil dessen, was die Daten <em>bedeuten</em>, lebt derzeit im Gedächtnis einer Person: welche Texte besonders sind.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="secnum">7</span>Methode &amp; Grenzen</h2>
+  <div class="prose">
+    <p>Grundlage: das vollständige Datenbank-Diagramm (<code>bibliothek-erd.svg</code>), alle 74 Änderungsskripte, der Skript-Läufer und gezieltes Lesen des in den Befunden genannten Programmcodes. Jede als „Technischer Nachweis" markierte Aussage wurde gegen die echten Dateien geprüft, nicht aus der Dokumentation übernommen. Grenzen: Es wurde keine laufende Datenbank untersucht (echte Datensatzzahlen und Antwortzeiten liegen außerhalb dieses Berichts), und das Diagramm kürzt die breitesten Tabellen — die Titel-Tabelle hat einige zusätzliche Spalten, die nicht abgebildet sind; keine davon ändert die Befunde.</p>
+  </div>
+</section>
+
+</div>
