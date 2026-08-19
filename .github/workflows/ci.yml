@@ -225,13 +225,18 @@ jobs:
     # Drei Schichten gegen die Störungsklasse vom 19.08.2026 (Installationen hingen
     # mehrfach >9 min an apt-Spiegel/Registry/CDN, normal: Sekunden bis 3 min):
     #   1. Cache (oben): npm-Tarballs + Browser-Binaries — das Netz ist im Normalfall
-    #      gar nicht mehr beteiligt. --with-deps ruft intern apt auf; bei Browser-
-    #      Cache-Treffer wird nur noch install-deps gebraucht (wenige kleine Pakete).
+    #      kaum noch beteiligt. `install --with-deps` überspringt den Browser-Download bei
+    #      Cache-Treffer und installiert nur die System-Abhängigkeiten via apt.
     #   2. wiederhole: jeder Versuch hart auf 4 min begrenzt (timeout), bis zu drei
     #      Versuche mit Backoff — ein hängender Spiegel kostet einen Versuch, nicht
     #      den Lauf.
     #   3. timeout-minutes als Reißleine, falls doch alles klemmt: roter Schritt zum
     #      Neustarten statt eines endlosen gelben.
+    #
+    # NICHT nach cache-hit in `install-deps` aufspalten: `install-deps` ruft `apt-get`
+    # OHNE sudo auf und scheitert auf dem Runner an "Unable to lock /var/lib/apt/lists/".
+    # Nur `--with-deps` regelt die apt-Rechte selbst. Der Cache greift trotzdem — der
+    # Browser-Download entfällt bei Treffer, die apt-Deps sind ohnehin nicht gecacht.
     - name: Install Playwright
       timeout-minutes: 15
       run: |
@@ -245,11 +250,7 @@ jobs:
         }
         cd frontend
         wiederhole npm ci
-        if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
-          wiederhole npx playwright install-deps chromium
-        else
-          wiederhole npx playwright install --with-deps chromium
-        fi
+        wiederhole npx playwright install --with-deps chromium
 
     - name: Run E2E tests
       run: |
