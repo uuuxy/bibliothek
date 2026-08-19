@@ -234,9 +234,15 @@ jobs:
     #      Neustarten statt eines endlosen gelben.
     #
     # NICHT nach cache-hit in `install-deps` aufspalten: `install-deps` ruft `apt-get`
-    # OHNE sudo auf und scheitert auf dem Runner an "Unable to lock /var/lib/apt/lists/".
-    # Nur `--with-deps` regelt die apt-Rechte selbst. Der Cache greift trotzdem — der
+    # OHNE sudo auf und scheitert an "Unable to lock /var/lib/apt/lists/". Nur
+    # `--with-deps` regelt die apt-Rechte selbst. Der Cache greift trotzdem — der
     # Browser-Download entfällt bei Treffer, die apt-Deps sind ohnehin nicht gecacht.
+    #
+    # ECHTE Wurzel der "Install hängt/scheitert"-Serie vom 19.08.2026: NICHT CDN-
+    # Flakiness, sondern apt-LOCK-KONKURRENZ. Beim Job-Start hält der runnereigene
+    # unattended-upgrades-Dienst die apt-Sperre; playwrights `--with-deps` wartet darauf,
+    # bis das Step-Timeout es killt (das war auch das ursprüngliche "Hängen"). Deshalb
+    # zuerst unattended-upgrades stoppen und aktiv auf die Freigabe der Sperre warten.
     - name: Install Playwright
       timeout-minutes: 15
       run: |
@@ -248,6 +254,15 @@ jobs:
           done
           return 1
         }
+        # Den Störer abschalten und warten, bis niemand mehr die apt-Sperren hält.
+        sudo systemctl stop unattended-upgrades 2>/dev/null || true
+        sudo systemctl stop apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+        for i in $(seq 1 60); do
+          if ! sudo fuser /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1; then
+            break
+          fi
+          echo "warte auf apt-Sperre ($i)…"; sleep 5
+        done
         cd frontend
         wiederhole npm ci
         wiederhole npx playwright install --with-deps chromium
