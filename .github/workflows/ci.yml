@@ -147,12 +147,19 @@ jobs:
     - name: Check out repository code
       uses: actions/checkout@v4
 
+    # cache: npm — npm ci zieht die Tarballs aus dem Runner-Cache statt aus der
+    # Registry; das Netz wird nur noch gebraucht, wenn sich der Lockfile ändert.
+    # Hintergrund 19.08.2026: Installationsschritte hingen mehrfach an gestörten
+    # Spiegeln/Registries — die Abhängigkeit gehört weggecacht, nicht nur befristet.
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 24
+        cache: npm
+        cache-dependency-path: frontend/package-lock.json
 
     - name: Install Frontend Dependencies
+      timeout-minutes: 10
       run: |
         cd frontend
         npm ci
@@ -180,10 +187,24 @@ jobs:
     - name: Check out repository code
       uses: actions/checkout@v4
 
+    # cache: npm — siehe frontend-test: die Registry wird nur noch bei
+    # Lockfile-Änderungen gebraucht.
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 24
+        cache: npm
+        cache-dependency-path: frontend/package-lock.json
+
+    # Browser-Binaries (~130 MB CDN-Download) am Lockfile-Stand cachen: Bei
+    # unverändertem Playwright ist `playwright install` damit ein No-op und der
+    # CDN fällt als Ausfallquelle weg.
+    - name: Cache Playwright-Browser
+      id: pw-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
 
     # docker-compose.local.yml referenziert das externe Caddy-Netz des
     # Produktiv-Hosts — auf dem Runner muss es nur existieren.
@@ -201,15 +222,34 @@ jobs:
         done
         curl -sf http://localhost:8084/health
 
+    # Drei Schichten gegen die Störungsklasse vom 19.08.2026 (Installationen hingen
+    # mehrfach >9 min an apt-Spiegel/Registry/CDN, normal: Sekunden bis 3 min):
+    #   1. Cache (oben): npm-Tarballs + Browser-Binaries — das Netz ist im Normalfall
+    #      gar nicht mehr beteiligt. --with-deps ruft intern apt auf; bei Browser-
+    #      Cache-Treffer wird nur noch install-deps gebraucht (wenige kleine Pakete).
+    #   2. wiederhole: jeder Versuch hart auf 4 min begrenzt (timeout), bis zu drei
+    #      Versuche mit Backoff — ein hängender Spiegel kostet einen Versuch, nicht
+    #      den Lauf.
+    #   3. timeout-minutes als Reißleine, falls doch alles klemmt: roter Schritt zum
+    #      Neustarten statt eines endlosen gelben.
     - name: Install Playwright
-      # Reißleine wie beim PostgreSQL-Client-Schritt: Am 19.08.2026 hing dieser
-      # Schritt zweimal >9 min an Registry/CDN (normal: 1–3 min). Ohne Limit wartet
-      # der Job bis zum 6-Stunden-Abbruch und sieht dabei aus wie "läuft noch".
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
+        wiederhole() {
+          for versuch in 1 2 3; do
+            timeout 240 "$@" && return 0
+            echo "::warning::Versuch $versuch fehlgeschlagen: $* — neuer Versuch"
+            sleep $((versuch * 10))
+          done
+          return 1
+        }
         cd frontend
-        npm ci
-        npx playwright install --with-deps chromium
+        wiederhole npm ci
+        if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+          wiederhole npx playwright install-deps chromium
+        else
+          wiederhole npx playwright install --with-deps chromium
+        fi
 
     - name: Run E2E tests
       run: |
