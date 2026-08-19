@@ -38,6 +38,12 @@ func lusdStudentRows(n int) *pgxmock.Rows {
 	return rows
 }
 
+// waisenRowsLeer liefert die (leere) Ergebnismenge für ladeWaisenNachNameGebdatum —
+// in diesen Mock-Tests gibt es keine ID-losen Schüler zum Adoptieren.
+func waisenRowsLeer() *pgxmock.Rows {
+	return pgxmock.NewRows([]string{"id", "klasse", "vorname", "nachname", "geburtsdatum"})
+}
+
 func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -50,6 +56,8 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT id, lusd_id, klasse, vorname, nachname FROM schueler`).
 		WillReturnRows(lusdStudentRows(10))
+	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, geburtsdatum`).
+		WillReturnRows(waisenRowsLeer())
 	// KEINE Exec-Erwartungen: Die Bremse muss vor dem ersten destruktiven
 	// Statement greifen. Unerwartete Execs ließen den Mock fehlschlagen.
 	mock.ExpectRollback()
@@ -83,6 +91,8 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT id, lusd_id, klasse, vorname, nachname FROM schueler`).
 		WillReturnRows(lusdStudentRows(10))
+	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, geburtsdatum`).
+		WillReturnRows(waisenRowsLeer())
 	mock.ExpectRollback()
 
 	records := []parsedStudentRow{

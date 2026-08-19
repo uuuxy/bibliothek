@@ -76,6 +76,29 @@ func findeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID strin
 	return id, err
 }
 
+// adoptiereWaisen heftet die LUSD-ID an bestehende ID-lose Schüler (Adoption per
+// Name+Geburtsdatum). Danach behandelt wendeLusdAenderungenAn sie wie Bestandsschüler.
+//
+// Der WHERE-Zusatz ist ein doppelter Schutz: `lusd_id IS NULL` sichert gegen einen
+// Wettlauf (der Schüler bekam zwischen Klassifizierung und Apply schon eine ID), und
+// `NOT EXISTS(... lusd_id = $1 ...)` verhindert die Kollision mit dem partiellen
+// Unique-Index (uniq_schueler_lusd_id_active), falls die ID inzwischen ein anderer
+// aktiver Datensatz (z. B. ein Rückkehrer-Abgänger) hält. Greift der Schutz, bleibt die
+// Zeile unverändert (RowsAffected 0) und der CSV-Datensatz läuft im nächsten Schritt
+// über den regulären Rückkehrer-/Neuzugangs-Pfad — kein Abriss des Imports.
+func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) error {
+	for _, a := range adoptionen {
+		if _, err := tx.Exec(ctx, `
+			UPDATE schueler SET lusd_id = $1, aktualisiert_am = NOW()
+			WHERE id = $2 AND lusd_id IS NULL
+			  AND NOT EXISTS (SELECT 1 FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL)`,
+			a.LusdID, a.SchuelerID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // legeNeuenSchuelerAn legt einen per LUSD neu hinzugekommenen Schüler an.
 // Leere Adress-/Kontaktwerte werden als NULL gespeichert.
 func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, barcodeCounter int) error {

@@ -8,7 +8,8 @@
 	import Button from '../ui/Button.svelte';
 
 	/** @typedef {{ id: string, vorname: string, nachname: string, alte_klasse?: string, neue_klasse?: string }} StudentDiff */
-	/** @typedef {{ new_students: StudentDiff[], class_changes: StudentDiff[], graduates: StudentDiff[], total_csv_records: number, active_db_students: number, skipped_no_id: number }} LusdPreviewResult */
+	/** @typedef {{ schueler_id: string, lusd_id: string, vorname: string, nachname: string, geburtsdatum: string, alte_klasse?: string, neue_klasse?: string }} AdoptionDiff */
+	/** @typedef {{ new_students: StudentDiff[], class_changes: StudentDiff[], adoptions: AdoptionDiff[], graduates: StudentDiff[], total_csv_records: number, active_db_students: number, skipped_no_id: number }} LusdPreviewResult */
 
 	/** @type {{ onImported?: (result: LusdPreviewResult) => void }} */
 	let { onImported = () => {} } = $props();
@@ -31,6 +32,13 @@
 						hint: 'Werden neu angelegt',
 						items: activeResult.new_students,
 						valueClass: 'text-emerald-600'
+					},
+					{
+						key: 'adoptions',
+						label: 'Zusammengeführt',
+						hint: 'Bestehende Schüler ohne LUSD-ID — per Name + Geburtsdatum verknüpft (kein Duplikat)',
+						items: (activeResult.adoptions || []).map((a) => ({ ...a, id: a.schueler_id })),
+						valueClass: 'text-violet-600'
 					},
 					{
 						key: 'changes',

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -26,17 +27,33 @@ type StudentDiff struct {
 	NeueKlasse string `json:"neue_klasse,omitempty"`
 }
 
+// AdoptionDiff beschreibt eine geplante ADOPTION: Eine CSV-Zeile, deren LUSD-ID im
+// Bestand fehlt, trifft über Name+Geburtsdatum auf einen bestehenden Schüler OHNE
+// LUSD-ID (Handanlage/Littera-Import). Statt ihn zu duplizieren, wird die LUSD-ID
+// nachgetragen — der Schüler wird in den Landesabgleich eingemeindet. SchuelerID ist
+// der bestehende Datensatz, LusdID die anzuheftende Kennung.
+type AdoptionDiff struct {
+	SchuelerID   string `json:"schueler_id"`
+	LusdID       string `json:"lusd_id"`
+	Vorname      string `json:"vorname"`
+	Nachname     string `json:"nachname"`
+	Geburtsdatum string `json:"geburtsdatum"`
+	AlteKlasse   string `json:"alte_klasse,omitempty"`
+	NeueKlasse   string `json:"neue_klasse,omitempty"`
+}
+
 // LusdPreviewResult contains the detailed diff lists for the frontend preview,
 // so the Sekretariat can visually verify names and class changes before committing.
 // ActiveDbStudents ist die Bezugsgröße für die Abgänger-Quote (aktive Schüler mit
 // LUSD-ID in der DB) — NICHT die CSV-Zeilenzahl.
 type LusdPreviewResult struct {
-	NewStudents      []StudentDiff `json:"new_students"`
-	ClassChanges     []StudentDiff `json:"class_changes"`
-	Graduates        []StudentDiff `json:"graduates"` // Abgänger (missing in CSV but in DB)
-	TotalCsvRecords  int           `json:"total_csv_records"`
-	ActiveDbStudents int           `json:"active_db_students"`
-	SkippedNoID      int           `json:"skipped_no_id"` // CSV-Zeilen ohne LUSD-ID — werden nie importiert
+	NewStudents      []StudentDiff  `json:"new_students"`
+	ClassChanges     []StudentDiff  `json:"class_changes"`
+	Adoptions        []AdoptionDiff `json:"adoptions"` // ID-lose Bestandsschüler, die per Name+Geburtsdatum ihre LUSD-ID bekommen
+	Graduates        []StudentDiff  `json:"graduates"` // Abgänger (missing in CSV but in DB)
+	TotalCsvRecords  int            `json:"total_csv_records"`
+	ActiveDbStudents int            `json:"active_db_students"`
+	SkippedNoID      int            `json:"skipped_no_id"` // CSV-Zeilen ohne LUSD-ID — werden nie importiert
 }
 
 // massGraduationThresholdPct: Ab diesem Anteil an Abgängern (bezogen auf die
@@ -128,9 +145,66 @@ func ladeAktiveSchueler(ctx context.Context, tx pgx.Tx) (map[string]lusdDbStuden
 	return dbStudents, nil
 }
 
+// lusdWaise ist ein Bestandsschüler OHNE LUSD-ID, adressiert über Name+Geburtsdatum.
+type lusdWaise struct {
+	ID     string
+	Klasse string
+}
+
+// waisenSchluessel normalisiert Vorname, Nachname und Geburtsdatum zu einem
+// vergleichbaren Schlüssel (kleingeschrieben, Datum als YYYY-MM-DD). Leerer String,
+// wenn kein Geburtsdatum vorliegt — ohne Datum ist kein sicherer Abgleich möglich.
+func waisenSchluessel(vorname, nachname string, geb *time.Time) string {
+	if geb == nil {
+		return ""
+	}
+	return strings.ToLower(strings.TrimSpace(vorname)) + "\x1f" +
+		strings.ToLower(strings.TrimSpace(nachname)) + "\x1f" +
+		geb.Format("2006-01-02")
+}
+
+// ladeWaisenNachNameGebdatum lädt die ID-losen aktiven Schüler, adressiert über
+// Name+Geburtsdatum. Kollidieren zwei auf demselben Schlüssel (gleicher Name+Datum,
+// aber unterschiedliche Groß-/Kleinschreibung — der case-sensitive Unique-Index lässt
+// das zu), wird der Schlüssel als MEHRDEUTIG (nil) markiert und NICHT adoptiert: Lieber
+// als Neuzugang anlegen als die falsche Person zusammenführen.
+func ladeWaisenNachNameGebdatum(ctx context.Context, tx pgx.Tx) (map[string]*lusdWaise, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT id, klasse, vorname, nachname, geburtsdatum
+		FROM schueler
+		WHERE lusd_id IS NULL AND geburtsdatum IS NOT NULL
+		  AND deleted_at IS NULL AND ist_abgaenger = false`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	waisen := make(map[string]*lusdWaise)
+	for rows.Next() {
+		var id, klasse, vorname, nachname string
+		var geb time.Time
+		if err := rows.Scan(&id, &klasse, &vorname, &nachname, &geb); err != nil {
+			return nil, err
+		}
+		key := waisenSchluessel(vorname, nachname, &geb)
+		if key == "" {
+			continue
+		}
+		if _, belegt := waisen[key]; belegt {
+			waisen[key] = nil // mehrdeutig — nicht adoptieren
+			continue
+		}
+		w := lusdWaise{ID: id, Klasse: klasse}
+		waisen[key] = &w
+	}
+	return waisen, rows.Err()
+}
+
 // klassifiziereLusdRecords ordnet die CSV-Zeilen (rein klassifizierend, ohne
-// Schreibzugriff) in Neuzugänge, Klassenwechsel und Abgänger ein.
-func klassifiziereLusdRecords(records []parsedStudentRow, dbStudents map[string]lusdDbStudent, res *LusdPreviewResult) {
+// Schreibzugriff) in Neuzugänge, Adoptionen, Klassenwechsel und Abgänger ein. waisen
+// wird beim Adoptieren konsumiert (delete), damit zwei CSV-Zeilen nie denselben
+// Waisen beanspruchen.
+func klassifiziereLusdRecords(records []parsedStudentRow, dbStudents map[string]lusdDbStudent, waisen map[string]*lusdWaise, res *LusdPreviewResult) {
 	csvLusdIDs := make(map[string]bool)
 	for _, rec := range records {
 		if rec.LusdID == "" {
@@ -141,6 +215,22 @@ func klassifiziereLusdRecords(records []parsedStudentRow, dbStudents map[string]
 		csvLusdIDs[rec.LusdID] = true
 		dbRec, exists := dbStudents[rec.LusdID]
 		if !exists {
+			// LUSD-ID fehlt im Bestand: erst gegen ID-lose Schüler per Name+Geburtsdatum
+			// prüfen (Adoption) — sonst Neuzugang.
+			key := waisenSchluessel(rec.Vorname, rec.Nachname, rec.GebDatum)
+			if w := waisen[key]; key != "" && w != nil {
+				res.Adoptions = append(res.Adoptions, AdoptionDiff{
+					SchuelerID:   w.ID,
+					LusdID:       rec.LusdID,
+					Vorname:      rec.Vorname,
+					Nachname:     rec.Nachname,
+					Geburtsdatum: rec.GebDatum.Format("2006-01-02"),
+					AlteKlasse:   w.Klasse,
+					NeueKlasse:   rec.Klasse,
+				})
+				delete(waisen, key) // konsumiert — kein zweiter Zugriff
+				continue
+			}
 			res.NewStudents = append(res.NewStudents, StudentDiff{
 				ID:         rec.LusdID,
 				Vorname:    rec.Vorname,
@@ -185,10 +275,15 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 	if err != nil {
 		return nil, err
 	}
+	waisen, err := ladeWaisenNachNameGebdatum(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
 
 	res := &LusdPreviewResult{
 		NewStudents:      make([]StudentDiff, 0),
 		ClassChanges:     make([]StudentDiff, 0),
+		Adoptions:        make([]AdoptionDiff, 0),
 		Graduates:        make([]StudentDiff, 0),
 		TotalCsvRecords:  len(records),
 		ActiveDbStudents: len(dbStudents),
@@ -196,7 +291,7 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 
 	// Erster Durchlauf: nur klassifizieren — der Schwellen-Check muss VOR dem
 	// ersten destruktiven Statement entscheiden.
-	klassifiziereLusdRecords(records, dbStudents, res)
+	klassifiziereLusdRecords(records, dbStudents, waisen, res)
 
 	if !apply {
 		return res, nil
@@ -208,6 +303,13 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 		res.ActiveDbStudents >= minStudentsForThreshold &&
 		len(res.Graduates)*100 >= res.ActiveDbStudents*massGraduationThresholdPct {
 		return nil, &errMassGraduation{Graduates: len(res.Graduates), Active: res.ActiveDbStudents}
+	}
+
+	// Adoptionen ZUERST: Die LUSD-ID an den bestehenden ID-losen Schüler heften. Danach
+	// findet ihn wendeLusdAenderungenAn über findeAktivenSchuelerNachLusdID und übernimmt
+	// Klasse + Kontaktdaten wie bei jedem Bestandsschüler — statt ein Duplikat anzulegen.
+	if err := adoptiereWaisen(ctx, tx, res.Adoptions); err != nil {
+		return nil, err
 	}
 
 	if err := wendeLusdAenderungenAn(ctx, tx, records, dbStudents); err != nil {
