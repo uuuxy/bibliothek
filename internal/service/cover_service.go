@@ -55,6 +55,12 @@ func (s *CoverService) SyncMissingCoversAsync() {
 		return
 	}
 	defer coverSyncRunning.Store(false)
+	// Panik-Netz für die ÄUSSERE Goroutine (nicht nur die Worker unten): Diese Funktion
+	// läuft als `go SyncMissingCoversAsync()` ohne HTTP-Recovery. Ein Panik hier — etwa
+	// beim Lesen der DB-Zeilen oder im Dispatch — risse sonst den gesamten Prozess mit.
+	// Steht NACH dem Store(false)-Defer, damit auf einem Panik BEIDES läuft: recovern UND
+	// das Running-Flag zurücksetzen (sonst überspringt jeder künftige Lauf für immer).
+	defer safego.Guard("cover-sync")
 
 	ctx := context.Background()
 
@@ -98,7 +104,11 @@ func (s *CoverService) SyncMissingCoversAsync() {
 	client := inventur.NeuerMetadatenClient()
 
 	var found, notFound, failed atomic.Int64
-	jobs := make(chan missingCover)
+	// Gepuffert auf die Zahl der Aufgaben: Der Dispatcher blockiert damit NIE beim Senden.
+	// Stirbt ein Worker (Panik, von seinem eigenen Guard gefangen) und liest nicht mehr,
+	// hinge ein ungepufferter Kanal beim `jobs <- mc` für immer — und coverSyncRunning
+	// bliebe true, sodass jeder weitere Lauf still übersprungen würde.
+	jobs := make(chan missingCover, len(missing))
 	var wg sync.WaitGroup
 
 	// Globale Drossel: jeder Worker wartet vor JEDEM Titel auf den Ticker —
