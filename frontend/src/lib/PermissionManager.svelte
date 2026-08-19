@@ -36,10 +36,11 @@
 			const data = await res.json();
 
 			/** @type {Record<string, Record<string, boolean>>} */
-			// helfer gehoert dazu: Das Backend liefert die Rechte dieser Rolle mit, ohne
-			// den Eintrag hier blieb ihre Spalte in der Oberflaeche leer und wirkte, als
-			// haette der Helfer gar keine Rechte.
-			const newState = { admin: {}, mitarbeiter: {}, lehrer: {}, helfer: {} };
+			// Alle vier aktiven Rollen vorbelegen, damit ihre Spalte auch ohne Server-Zeile
+			// erscheint. 'kollegium' statt des seit Migration 069 toten 'lehrer' — der alte
+			// Key wurde von keinem Consumer gelesen (PermissionsEditor liest 'kollegium'),
+			// kollegium selbst entstand bisher nur zufällig über die Rückfallzeile unten.
+			const newState = { admin: {}, mitarbeiter: {}, kollegium: {}, helfer: {} };
 			data.forEach((/** @type {any} */ item) => {
 				if (!newState[item.role]) newState[item.role] = {};
 				newState[item.role][item.permission] = item.allowed;

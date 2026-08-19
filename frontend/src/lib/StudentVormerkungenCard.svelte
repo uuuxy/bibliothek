@@ -42,9 +42,16 @@
 					<div class="flex flex-col gap-1">
 						<h4 class="font-bold text-slate-800">{v.titel_name || 'Unbekannter Titel'}</h4>
 						<div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
-							<span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700"
-								>Wartet seit: {new Date(v.erstellt_am).toLocaleDateString('de-DE')}</span
-							>
+							<!-- Ein Span, Text je Status: 'abholbereit' zeigt die Abholfrist,
+							     alles andere ('wartend' und Unbekanntes) die Wartezeit. Bewusst
+							     dasselbe Farb-Token wie zuvor — neue Paletten-Farben verbietet die
+							     Farb-Ratsche. Das Status-Konsistenz-Gate erzwingt, dass jeder von
+							     der DB erlaubte Nicht-Default-Status hier vorkommt. -->
+							<span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700">
+								{v.status === 'abholbereit'
+									? `Abholbereit${v.bereitgestellt_bis ? ' bis: ' + new Date(v.bereitgestellt_bis).toLocaleDateString('de-DE') : ''}`
+									: `Wartet seit: ${new Date(v.erstellt_am).toLocaleDateString('de-DE')}`}
+							</span>
 						</div>
 						{#if v.notiz}
 							<p class="text-sm text-slate-600 mt-1 italic">Notiz: {v.notiz}</p>

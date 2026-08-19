@@ -26,6 +26,12 @@ type Vormerkung struct {
 	ErstelltAm   time.Time `json:"erstellt_am"`
 	SchuelerID   string    `json:"schueler_id,omitempty"`
 	SchuelerName string    `json:"schueler_name,omitempty"`
+	// Status ist 'wartend' oder 'abholbereit' (chk_vormerkung_status). Ohne dieses Feld
+	// zeigte die Oberfläche jede Reservierung als "Wartet seit …" — auch eine, die
+	// längst zur Abholung bereitliegt und deren Frist bald verfällt.
+	Status string `json:"status"`
+	// BereitgestelltBis ist nur bei 'abholbereit' gesetzt: die 3-Tage-Abholfrist.
+	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
 // VormerkungRepository defines operations for managing individual book reservations.
@@ -146,7 +152,8 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 	if titelID != "" {
 		rows, err = r.db.Query(ctx, `
 			SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-			       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
+			       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, ''),
+			       v.status, v.bereitgestellt_bis
 			FROM vormerkungen v
 			JOIN buecher_titel bt ON bt.id = v.titel_id
 			LEFT JOIN schueler s ON s.id = v.schueler_id
@@ -156,7 +163,8 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 	} else if schuelerID != "" {
 		rows, err = r.db.Query(ctx, `
 			SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-			       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
+			       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, ''),
+			       v.status, v.bereitgestellt_bis
 			FROM vormerkungen v
 			JOIN buecher_titel bt ON bt.id = v.titel_id
 			LEFT JOIN schueler s ON s.id = v.schueler_id
@@ -175,7 +183,8 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 	var result []Vormerkung
 	for rows.Next() {
 		var v Vormerkung
-		if err := rows.Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName); err != nil {
+		if err := rows.Scan(&v.ID, &v.TitelID, &v.TitelName, &v.Notiz, &v.ErstelltAm, &v.SchuelerID, &v.SchuelerName,
+			&v.Status, &v.BereitgestelltBis); err != nil {
 			return nil, err
 		}
 		result = append(result, v)
