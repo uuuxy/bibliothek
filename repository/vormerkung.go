@@ -33,6 +33,89 @@ type VormerkungRepository interface {
 	List(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error)
 	Create(ctx context.Context, titelID, notiz, schuelerID string) (string, error)
 	Delete(ctx context.Context, id string) error
+	// VerfalleAbgelaufeneVormerkungen räumt No-Show-Reservierungen ab.
+	VerfalleAbgelaufeneVormerkungen(ctx context.Context) (verfallen, neuBereitgestellt int, err error)
+}
+
+// VerfalleAbgelaufeneVormerkungen behandelt „abholbereit"-Reservierungen, deren
+// 3-Tage-Abholfrist abgelaufen ist (No-Show). Betreiber-Entscheidung 19.08.2026:
+// „Verfall + nächsten bedienen". Ohne diesen Lauf blieb eine solche Vormerkung für
+// immer 'abholbereit' — der Schüler fiel still aus der Warteschlange, ohne bedient zu
+// werden, und das Exemplar wurde nie wieder zugeteilt.
+//
+//  1. Die abgelaufene Reservierung wird GELÖSCHT (der No-Show verliert seinen Platz,
+//     wie in Bibliotheken üblich) — RETURNING liefert Exemplar und Titel.
+//  2. Ist das freigewordene Exemplar noch verfügbar (nicht zwischenzeitlich ausgeliehen
+//     oder ausgesondert), wird es dem NÄCHSTEN wartenden, abholberechtigten Schüler
+//     zugeteilt (Status 'abholbereit', neue 3-Tage-Frist). Ist es weg, geschieht nichts
+//     Weiteres — der reguläre Rückgabe-Pfad bedient die Warteschlange dann später.
+//
+// Alles in EINER Transaktion; FOR UPDATE SKIP LOCKED verhindert Deadlocks/Doppelzuteilung
+// gegen gleichzeitige Rückgaben.
+func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Context) (int, int, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	rows, err := tx.Query(ctx, `
+		DELETE FROM vormerkungen
+		WHERE status = 'abholbereit' AND bereitgestellt_bis < CURRENT_TIMESTAMP
+		RETURNING bereitgestellt_exemplar_id, titel_id`)
+	if err != nil {
+		return 0, 0, err
+	}
+	type freigabe struct{ exemplarID, titelID *string }
+	var freigaben []freigabe
+	for rows.Next() {
+		var f freigabe
+		if err := rows.Scan(&f.exemplarID, &f.titelID); err != nil {
+			rows.Close()
+			return 0, 0, err
+		}
+		freigaben = append(freigaben, f)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, 0, err
+	}
+
+	neuBereit := 0
+	for _, f := range freigaben {
+		if f.exemplarID == nil || f.titelID == nil {
+			continue
+		}
+		// Nächsten Wartenden nur dann bedienen, wenn das Exemplar wirklich noch frei ist.
+		tag, err := tx.Exec(ctx, `
+			UPDATE vormerkungen
+			SET status = 'abholbereit', bereitgestellt_exemplar_id = $1,
+			    bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days'
+			WHERE id = (
+				SELECT v.id FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
+				WHERE v.titel_id = $2 AND v.status = 'wartend'
+				  AND s.deleted_at IS NULL AND s.ist_gesperrt = false
+				  AND COALESCE(s.is_manually_blocked, false) = false
+				ORDER BY v.erstellt_am ASC LIMIT 1
+				FOR UPDATE SKIP LOCKED
+			)
+			AND EXISTS (
+				SELECT 1 FROM buecher_exemplare e
+				WHERE e.id = $1 AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
+				  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $1 AND a.rueckgabe_am IS NULL)
+			)`, *f.exemplarID, *f.titelID)
+		if err != nil {
+			return 0, 0, err
+		}
+		if tag.RowsAffected() > 0 {
+			neuBereit++
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, 0, err
+	}
+	return len(freigaben), neuBereit, nil
 }
 
 type pgVormerkungRepository struct {

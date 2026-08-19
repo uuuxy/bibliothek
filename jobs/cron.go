@@ -91,6 +91,14 @@ func (s *Scheduler) Start() {
 		log.Printf("Scheduler: Failed to register cover resync job: %v", err)
 	}
 
+	// Stündlich abgelaufene „abholbereit"-Reservierungen abräumen (No-Show verliert den
+	// Platz) und das Exemplar dem nächsten Wartenden zuteilen. Ohne diesen Lauf blieb eine
+	// nicht abgeholte Reservierung für immer 'abholbereit' — der Schüler fiel still aus der
+	// Warteschlange (Betreiber-Entscheidung 19.08.2026).
+	if _, err := s.cron.AddFunc("23 * * * *", s.RunVormerkungVerfall); err != nil {
+		log.Printf("Scheduler: Failed to register vormerkung expiry job: %v", err)
+	}
+
 	s.cron.Start()
 	log.Println("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
 }
@@ -114,5 +122,21 @@ func (s *Scheduler) RunIdempotencyCleanup() {
 	}
 	if n := tag.RowsAffected(); n > 0 {
 		log.Printf("Scheduler Idempotency Cleanup: %d abgelaufene Idempotenz-Schlüssel entfernt.", n)
+	}
+}
+
+// RunVormerkungVerfall räumt abgelaufene „abholbereit"-Reservierungen ab und teilt das
+// Exemplar dem nächsten Wartenden zu (siehe VerfalleAbgelaufeneVormerkungen).
+func (s *Scheduler) RunVormerkungVerfall() {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	verfallen, neuBereit, err := repository.NewVormerkungRepository(s.db).VerfalleAbgelaufeneVormerkungen(ctx)
+	if err != nil {
+		log.Printf("Scheduler Vormerkung-Verfall: Fehler: %v", err)
+		return
+	}
+	if verfallen > 0 {
+		log.Printf("Scheduler Vormerkung-Verfall: %d abgelaufene Abhol-Reservierung(en) verfallen, %d Exemplar(e) an den nächsten Wartenden zugeteilt.", verfallen, neuBereit)
 	}
 }
