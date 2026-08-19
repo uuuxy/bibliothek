@@ -87,9 +87,20 @@ jobs:
     # eine bestandene Probe aussieht. Deshalb hier ausdrücklich installieren und die
     # Version prüfen: pg_dump verweigert die Arbeit an einem NEUEREN Server.
     - name: Install PostgreSQL client (Restore-Probe)
+      # timeout-minutes, weil dieser Schritt am 19.08.2026 ZWEIMAL an einem stillen
+      # Paketspiegel hing (>20 min statt Sekunden) — ohne Limit wartet der Job bis
+      # zum 6-Stunden-Abbruch und sieht dabei aus wie "läuft noch".
+      timeout-minutes: 5
       run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y -qq postgresql-client
+        # Das Runner-Image bringt den Client in aller Regel schon mit; Client >= Server
+        # genügt (pg_dump verweigert nur einen NEUEREN Server, Service ist Postgres 15).
+        # apt ist nur die Rückfallebene für einen Image-Wechsel — und dann mit harten
+        # Netz-Timeouts statt der apt-Vorgabe, die an einem hängenden Spiegel klebt.
+        if ! command -v pg_dump >/dev/null 2>&1; then
+          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
+          sudo apt-get $APT_OPTS update -qq
+          sudo apt-get $APT_OPTS install -y -qq postgresql-client
+        fi
         pg_dump --version
         psql --version
 
