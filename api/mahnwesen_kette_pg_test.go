@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -123,12 +124,19 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 
 	// Schreibweise absichtlich verschieden: Schülerdaten "5A", Mapping "5a " mit
 	// Leerzeichen — genau die Kombination, die aus dem LUSD-Import und einem Formular
-	// entsteht. Ohne Normalisierung fände der Lauf keine Adresse und übersprünge die
-	// Klasse stillschweigend.
+	// entsteht. Seit Migration 079 kanonisiert das Klassen-Vokabular beide beim
+	// Schreiben auf DIESELBE registrierte Schreibweise; die Mail muss trotzdem (bzw.
+	// gerade deshalb) ankommen. Welche Schreibweise gewinnt, entscheidet der
+	// Erstschreiber — der Test liest sie unten aus der DB, wie es auch die UI tut.
 	anna := schuelerAnlegen(t, pool, "Anna", "5A", "S-MAHN-1")
 	ben := schuelerAnlegen(t, pool, "Ben", "6B", "S-MAHN-2")
 	klassenleitung(t, pool, "5a ", "leitung5a@schule.invalid")
 	klassenleitung(t, pool, "6B", "leitung6b@schule.invalid")
+
+	var annaKlasse string
+	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE id = $1::uuid`, anna).Scan(&annaKlasse); err != nil {
+		t.Fatalf("kanonisierte Klasse lesen: %v", err)
+	}
 
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
 	bearbeiter := adminFuerAudit(t, pool)
@@ -159,12 +167,13 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 		}
 	}
 
-	// 4. Der Lauf selbst: NUR Klasse 5A auswählen.
+	// 4. Der Lauf selbst: NUR Annas Klasse auswählen (in der Schreibweise, die die
+	// Kanonisierung gespeichert hat — die UI bietet exakt diese Liste an).
 	sitzungen := mailAbfangen(t)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue",
-		strings.NewReader(`{"klassen":["5A"]}`))
+		strings.NewReader(fmt.Sprintf(`{"klassen":[%q]}`, annaKlasse)))
 	req.Header.Set("Content-Type", "application/json")
 	// Ohne Claims schreibt der Handler kein Audit — und dieser Lauf MUSS auditiert werden.
 	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,

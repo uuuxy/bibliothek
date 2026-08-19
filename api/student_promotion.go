@@ -200,11 +200,13 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 
 // versetzeKlassenlehrerZuordnung zählt die Klassennamen der Lehrer-Zuordnung mit
 // derselben Regel hoch wie promoteStudentsQuery die Schüler. Absteigend nach
-// Stufe, damit '09a' erst nach dem Wegzug von '10a' auf den freien Namen rücken
+// Stufe, damit '9a' erst nach dem Wegzug von '10a' auf den freien Namen rücken
 // kann; Abschlussklassen-Zeilen werden entfernt (die Kohorte verlässt die
-// Schule). Kollidiert ein Zielname trotzdem (z. B. '9a' UND '09a' laufen beide
-// auf '10a'), bleibt die Zeile stehen und wird im Ergebnis genannt — ein
-// Namenskonflikt darf den Schuljahreswechsel nicht scheitern lassen.
+// Schule). Der Konflikt-Zweig (Zielname belegt → Zeile bleibt stehen und wird
+// gemeldet) ist seit dem Klassen-Vokabular (Migration 079) Rückfallebene: Die
+// klassische Ursache — '9a' UND '09a' nebeneinander, beide → '10a' — kann durch
+// die Kanonisierung nicht mehr entstehen. Er bleibt, damit ein Namenskonflikt
+// den Schuljahreswechsel auch künftig nie scheitern lässt.
 func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *PromoteStudentsResponse) error {
 	rows, err := tx.Query(ctx, `
 		SELECT klasse,

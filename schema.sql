@@ -154,7 +154,7 @@ CREATE TABLE schueler (
     barcode_id VARCHAR(100) NOT NULL,                 -- Barcode ID on student ID card (Eindeutigkeit: partieller Index uniq_schueler_barcode_active, nur aktive Zeilen — siehe Migration 049)
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
-    klasse VARCHAR(20) NOT NULL,                      -- e.g., '5a', '10b', 'Q2'
+    klasse VARCHAR(50) NOT NULL,                      -- e.g., '5a', '10b', 'Q2'; FK auf klassen(name), siehe Klassen-Vokabular (Migration 079)
     geburtsdatum DATE DEFAULT NULL,                   -- LUSD-Feld; NULL für Altdatensätze
     abgaenger_jahr INTEGER NOT NULL,                  -- Graduation/leaving year (useful for batch archiving)
     ist_gesperrt BOOLEAN NOT NULL DEFAULT false,      -- Flag to suspend borrowing privileges
@@ -777,6 +777,112 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_ksr_idempotenz
     WHERE idempotenz_schluessel IS NOT NULL;
 
 -- -------------------------------------------------------------
+-- Klassen-Vokabular (Migration 079): EINE klassen-Tabelle, an der schueler,
+-- klassen_lehrer_mapping, class_books und klassensatz_reservierungen per FK hängen.
+-- BEFORE-Trigger kanonisieren jeden geschriebenen Wert auf die registrierte
+-- Schreibweise (Normal-Schlüssel: klein, ohne Leerzeichen, ohne führende Nullen)
+-- und registrieren Unbekanntes selbst — jede Schreib-Tür (LUSD, Versetzung,
+-- Formulare, Littera, Seeds, Hand-SQL) läuft durch dieselbe Kanonisierung.
+-- lehrer_anliegen.klasse bleibt BEWUSST Freitext (Oberstufenkurse, Migration 075).
+-- Sonderwerte ('ABG', '' nach DSGVO-Anonymisierung, Lesergruppen-Kürzel) sind
+-- gewöhnliche Vokabeln. Die Versetzung benennt NICHT um, sie hängt Schüler an
+-- andere Namen — Bücherlisten kleben damit weiter am Curriculum.
+-- -------------------------------------------------------------
+CREATE FUNCTION klassen_normkey(text) RETURNS text
+LANGUAGE sql IMMUTABLE AS $$
+    SELECT regexp_replace(lower(replace(btrim($1), ' ', '')), '^0+(\d)', '\1')
+$$;
+
+CREATE TABLE klassen (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL UNIQUE,          -- die angezeigte, kanonische Schreibweise
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER trg_klassen_aktualisiert_am
+BEFORE UPDATE ON klassen
+FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+
+CREATE UNIQUE INDEX uniq_klassen_normkey ON klassen (klassen_normkey(name));
+
+CREATE FUNCTION klasse_kanonisieren() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE kanonisch text;
+BEGIN
+    IF NEW.klasse IS NULL THEN RETURN NEW; END IF;
+    NEW.klasse := btrim(NEW.klasse);
+    SELECT name INTO kanonisch FROM klassen
+    WHERE klassen_normkey(name) = klassen_normkey(NEW.klasse);
+    IF kanonisch IS NULL THEN
+        INSERT INTO klassen (name) VALUES (NEW.klasse) ON CONFLICT DO NOTHING;
+        SELECT name INTO kanonisch FROM klassen
+        WHERE klassen_normkey(name) = klassen_normkey(NEW.klasse);
+    END IF;
+    IF kanonisch IS NOT NULL THEN
+        NEW.klasse := kanonisch;
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE FUNCTION class_name_kanonisieren() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE kanonisch text;
+BEGIN
+    IF NEW.class_name IS NULL THEN RETURN NEW; END IF;
+    NEW.class_name := btrim(NEW.class_name);
+    SELECT name INTO kanonisch FROM klassen
+    WHERE klassen_normkey(name) = klassen_normkey(NEW.class_name);
+    IF kanonisch IS NULL THEN
+        INSERT INTO klassen (name) VALUES (NEW.class_name) ON CONFLICT DO NOTHING;
+        SELECT name INTO kanonisch FROM klassen
+        WHERE klassen_normkey(name) = klassen_normkey(NEW.class_name);
+    END IF;
+    IF kanonisch IS NOT NULL THEN
+        NEW.class_name := kanonisch;
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_schueler_klasse_vokabular
+BEFORE INSERT OR UPDATE OF klasse ON schueler
+FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
+
+CREATE TRIGGER trg_klm_klasse_vokabular
+BEFORE INSERT OR UPDATE OF klasse ON klassen_lehrer_mapping
+FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
+
+CREATE TRIGGER trg_class_books_vokabular
+BEFORE INSERT OR UPDATE OF class_name ON class_books
+FOR EACH ROW EXECUTE FUNCTION class_name_kanonisieren();
+
+CREATE TRIGGER trg_ksr_klasse_vokabular
+BEFORE INSERT OR UPDATE OF klasse ON klassensatz_reservierungen
+FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
+
+ALTER TABLE schueler
+    ADD CONSTRAINT fk_schueler_klasse_vokabular
+    FOREIGN KEY (klasse) REFERENCES klassen (name)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+ALTER TABLE klassen_lehrer_mapping
+    ADD CONSTRAINT fk_klm_klasse_vokabular
+    FOREIGN KEY (klasse) REFERENCES klassen (name)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+ALTER TABLE class_books
+    ADD CONSTRAINT fk_class_books_klasse_vokabular
+    FOREIGN KEY (class_name) REFERENCES klassen (name)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+ALTER TABLE klassensatz_reservierungen
+    ADD CONSTRAINT fk_ksr_klasse_vokabular
+    FOREIGN KEY (klasse) REFERENCES klassen (name)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+CREATE INDEX idx_klassensatz_klasse ON klassensatz_reservierungen (klasse);
+
+-- -------------------------------------------------------------
 -- 4. MARK MIGRATIONS AS APPLIED
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -872,7 +978,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('075_lehrer_anliegen.sql'),
 ('076_klassensatz_idempotenz.sql'),
 ('077_bestellung_idempotenz.sql'),
-('078_fach_fk_systematik.sql')
+('078_fach_fk_systematik.sql'),
+('079_klassen_vokabular.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
