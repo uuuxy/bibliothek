@@ -118,7 +118,10 @@ func queryMahnungSchueler(ctx context.Context, dbPool db.PgxPoolIface, klasse st
 		WHERE LOWER(s.klasse) = LOWER($1)
 		  AND s.deleted_at IS NULL
 		  AND a.rueckgabe_am IS NULL
-		  AND a.rueckgabe_frist < CURRENT_DATE
+		  -- Eine Definition von "überfällig" wie überall sonst (Mahnliste, Dashboard,
+		  -- Sperr-Automatik): Instant-Vergleich, nicht Kalendertag. CURRENT_DATE zählte
+		  -- ein am selben Tag fälliges Buch bis zur UTC-Mitternacht als noch nicht fällig.
+		  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
 		ORDER BY s.nachname, s.vorname, a.ausgeliehen_am
 	`
 	rows, err := dbPool.Query(ctx, query, klasse)

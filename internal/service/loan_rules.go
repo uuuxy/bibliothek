@@ -35,14 +35,16 @@ func schoolLocation() *time.Location {
 	return schoolLoc
 }
 
-// tagesEndeInSchulzeitzone normalisiert einen Zeitpunkt auf das Ende seines Kalendertags
+// TagesEndeInSchulzeitzone normalisiert einen Zeitpunkt auf das Ende seines Kalendertags
 // (23:59:59) in der Schul-Zeitzone (Europe/Berlin). Dies ist die EINZIGE Definition von
 // "Ende des Tages" im System: JEDE Rückgabefrist (reguläre Bücher, Medien, LMF-Stichtag,
-// Geräte, Handapparat/Lehrer-Dauerleihe) läuft hierüber. Damit fällt die Fälligkeit immer
+// Geräte, Handapparat/Lehrer-Dauerleihe) läuft hierüber — seit 19.08.2026 auch die
+// manuelle Frist-Überschreibung und die LMF-Massenverlängerung im api-Paket, die zuvor
+// roh 23:59:59 UTC setzten und damit fristabhängig 1–2 h daneben lagen. Damit fällt die Fälligkeit immer
 // deterministisch auf den Kalendertag — unabhängig von der Server-Zeitzone (Docker = UTC) —
 // und es gibt keine zweite, rohe Berechnungsmethode mehr, die bei künftigen Änderungen
 // (z. B. kürzere Handapparat-Frist) auf die Füße fällt.
-func tagesEndeInSchulzeitzone(t time.Time) time.Time {
+func TagesEndeInSchulzeitzone(t time.Time) time.Time {
 	loc := schoolLocation()
 	d := t.In(loc)
 	return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, loc)
@@ -188,7 +190,7 @@ func calculateDueDate(titel, signatur, medientyp, lmfStichtag string, fristBuchT
 			}
 		}
 		// Rückgabezeitpunkt auf das Ende des Stichtags (23:59:59 Uhr) setzen.
-		return tagesEndeInSchulzeitzone(time.Date(year, month, day, 12, 0, 0, 0, now.Location()))
+		return TagesEndeInSchulzeitzone(time.Date(year, month, day, 12, 0, 0, 0, now.Location()))
 	}
 
 	// 2. Fall: Audiovisuelle/Digitale Medien
@@ -196,12 +198,12 @@ func calculateDueDate(titel, signatur, medientyp, lmfStichtag string, fristBuchT
 	// eine verkürzte Ausleihfrist (fristMedienTage).
 	lower := strings.ToLower(medientyp)
 	if strings.Contains(lower, "cd") || strings.Contains(lower, "dvd") || strings.Contains(lower, "audio") {
-		return tagesEndeInSchulzeitzone(now.AddDate(0, 0, fristMedienTage))
+		return TagesEndeInSchulzeitzone(now.AddDate(0, 0, fristMedienTage))
 	}
 
 	// 3. Fall: Reguläre Bücher
 	// Standardleihfrist für normale Buchbestände (fristBuchTage).
-	return tagesEndeInSchulzeitzone(now.AddDate(0, 0, fristBuchTage))
+	return TagesEndeInSchulzeitzone(now.AddDate(0, 0, fristBuchTage))
 }
 
 // parseGrade extrahiert den Jahrgang aus dem Klassen-String.

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/internal/service"
 	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 
@@ -157,7 +158,10 @@ func (s *Server) OverrideDueDateHandler(auditRepo repository.AuditRepository) ht
 				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)"))
 				return
 			}
-			newDate = time.Date(newDate.Year(), newDate.Month(), newDate.Day(), 23, 59, 59, 0, newDate.Location())
+			// Tagesende in der Schulzeitzone (Berlin), nicht roh in UTC: sonst wäre die
+			// überschriebene Frist 1–2 h später fällig als eine regulär berechnete zum
+			// selben Datum (dieselbe EINZIGE Definition wie service.CalculateDueDate).
+			newDate = service.TagesEndeInSchulzeitzone(newDate)
 		}
 
 		ctx := r.Context()
@@ -255,8 +259,9 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet YYYY-MM-DD)"))
 			return
 		}
-		// Set to the end of the day
-		newDate = time.Date(newDate.Year(), newDate.Month(), newDate.Day(), 23, 59, 59, 0, newDate.Location())
+		// Tagesende in der Schulzeitzone (Berlin) — dieselbe Definition wie jede andere
+		// Frist (service.TagesEndeInSchulzeitzone), nicht roh 23:59:59 UTC.
+		newDate = service.TagesEndeInSchulzeitzone(newDate)
 
 		ctx := r.Context()
 		tx, err := s.DB.Pool.Begin(ctx)

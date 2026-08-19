@@ -12,7 +12,7 @@ func TestTagesEndeInSchulzeitzone(t *testing.T) {
 	loc := schoolLocation()
 	// 2026-06-10 22:30 UTC entspricht 2026-06-11 00:30 MESZ → Berliner Kalendertag ist der 11.
 	in := time.Date(2026, time.June, 10, 22, 30, 0, 0, time.UTC)
-	got := tagesEndeInSchulzeitzone(in)
+	got := TagesEndeInSchulzeitzone(in)
 	want := time.Date(2026, time.June, 11, 23, 59, 59, 0, loc)
 	if !got.Equal(want) {
 		t.Errorf("got %s, want %s", got.In(loc), want)

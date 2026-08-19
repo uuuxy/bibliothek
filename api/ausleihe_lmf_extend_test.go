@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,7 +32,9 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE ausleihen a").
 					WithArgs(
-						time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+						// Berliner Tagesende zum Datum — dieselbe Normalisierung, die der
+						// Handler seit dem Zeit-Sweep anwendet (nicht mehr roh 23:59:59 UTC).
+						service.TagesEndeInSchulzeitzone(time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC)),
 						"10A",
 					).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 5))

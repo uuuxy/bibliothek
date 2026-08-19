@@ -166,8 +166,8 @@ func (s *defaultLoanService) resolveTeacherBorrower(ctx context.Context, teacher
 		return nil, fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", ErrNotFound)
 	}
 	// Lehrer-Ausleihe = Handapparat/Dauerleihe (1 Jahr), Tagesende Schul-Zeitzone —
-	// dieselbe Normalisierung wie alle anderen Fristen (siehe tagesEndeInSchulzeitzone).
-	result.dueTime = tagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
+	// dieselbe Normalisierung wie alle anderen Fristen (siehe TagesEndeInSchulzeitzone).
+	result.dueTime = TagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
 	return result, nil
 }
 

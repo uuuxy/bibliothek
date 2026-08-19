@@ -139,7 +139,7 @@ func (s *defaultLoanService) handleLehrerHandapparat(ctx context.Context, tx pgx
 
 	// 1 Jahr Dauerleihe, auf das Tagesende in der Schul-Zeitzone normalisiert — einheitlich
 	// mit allen anderen Fristen (kein rohes AddDate mehr).
-	dueTime := tagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
+	dueTime := TagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
 	loan, err := s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, staffID, staffID, dueTime, true)
 	if err != nil {
 		// Der Konflikt darf nicht als 500 durchrutschen: Er bedeutet, dass das

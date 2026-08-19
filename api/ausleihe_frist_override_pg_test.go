@@ -106,3 +106,51 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 		}
 	})
 }
+
+// TestOverrideDueDate_TagesendeInSchulzeitzone belegt die eine Definition von "Tagesende"
+// (Zeit-Sweep 19.08.2026): Der Frist-Override setzt 23:59:59 in der Schulzeitzone (Berlin),
+// nicht roh in UTC. Sonst wäre eine überschriebene Frist zum selben Datum 1–2 h später
+// fällig als eine regulär berechnete — zwei Antworten auf dieselbe fachliche Frage.
+func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var adminID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('TZ', 'Admin', 'tz-admin@test.invalid', 'admin', true)
+		ON CONFLICT (email) DO UPDATE SET vorname = EXCLUDED.vorname
+		RETURNING id`).Scan(&adminID); err != nil {
+		t.Fatalf("Test-Admin: %v", err)
+	}
+	sid := seedSchueler(t, pool, "S-TZ-1", "Zone", "5a")
+	ausleihe := seedAusleihe(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	auditRepo := repository.NewAuditRepository(pool)
+	mux := http.NewServeMux()
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(auditRepo))
+
+	// Sommerdatum (CEST, +02:00): Berliner Tagesende 23:59:59 = 21:59:59 UTC.
+	req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleihe+"/faelligkeit",
+		strings.NewReader(`{"faellig_am":"2027-07-15"}`))
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
+		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("Override: erwartet 200, war %d: %s", w.Code, w.Body.String())
+	}
+
+	var frist time.Time
+	if err := pool.QueryRow(ctx,
+		`SELECT rueckgabe_frist FROM ausleihen WHERE id = $1`, ausleihe).Scan(&frist); err != nil {
+		t.Fatalf("Frist lesen: %v", err)
+	}
+	fristUTC := frist.UTC()
+	// Muss der 15.07. um 21:59:59 UTC sein (= 23:59:59 Berlin/CEST) — NICHT 23:59:59 UTC.
+	if fristUTC.Hour() != 21 || fristUTC.Day() != 15 || fristUTC.Month() != time.July {
+		t.Errorf("Frist muss Berliner Tagesende sein (21:59:59Z am 15.07.), war %s", fristUTC.Format(time.RFC3339))
+	}
+}
