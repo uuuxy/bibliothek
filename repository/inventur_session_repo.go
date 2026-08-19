@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"bibliothek/db"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -26,71 +24,6 @@ var ErrInventurUeberlappt = errors.New("bereich überschneidet sich mit einer la
 // Überlappungsprüfung race-sicher ist — zwei gleichzeitige, sich überlappende Starts
 // könnten sonst beide die Prüfung passieren. Starts sind selten; Serialisieren ist billig.
 const inventurStartLockKey int64 = 749_2026
-
-// inventurScopesUeberlappen entscheidet, ob zwei Inventur-Scopes gemeinsame Exemplare
-// treffen könnten. Bewusst konservativ, um legitime parallele Inventuren (Signatur "Deu"
-// neben "Mat", Klasse 5 neben 6) NICHT zu blockieren.
-func inventurScopesUeberlappen(aType string, a InventurScope, bType string, b InventurScope) bool {
-	// Global überdeckt den gesamten Bestand — überlappt mit jedem anderen Scope.
-	if aType == "global" || bType == "global" {
-		return true
-	}
-	// Zwei Signatur-Scopes: Überlappung, wenn eine Signatur Präfix der anderen ist
-	// (case-insensitiv, genau wie das Scannen). "BIB" enthält "BIB Deu".
-	if aType == "signature" && bType == "signature" {
-		as := strings.ToLower(strings.TrimSpace(zeigerStr(a.Signatur)))
-		bs := strings.ToLower(strings.TrimSpace(zeigerStr(b.Signatur)))
-		return as != "" && bs != "" && (strings.HasPrefix(as, bs) || strings.HasPrefix(bs, as))
-	}
-	// Zwei Filter-Scopes: Überlappung, wenn Fach UND Klasse kompatibel sind (nil =
-	// Platzhalter „alle"). Fach "Deutsch" (alle Klassen) überlappt "Deutsch/Kl. 5".
-	if aType == "filter" && bType == "filter" {
-		return dimensionKompatibel(a.Subject, b.Subject) && gradeKompatibel(a.Grade, b.Grade)
-	}
-	// Signatur vs. Filter: Ob sie sich treffen, hängt am konkreten Bestand (ein Buch hat
-	// Signatur UND Fach/Klasse) und ist hier nicht sicher bestimmbar. Bewusst NICHT
-	// geblockt — sonst würden disjunkte Bereiche fälschlich abgewiesen. Residualrisiko,
-	// selten; die Oberfläche listet offene Sessions zur Sicht.
-	return false
-}
-
-func zeigerStr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func dimensionKompatibel(a, b *string) bool {
-	if a == nil || b == nil {
-		return true // eine Seite meint „alle Fächer"
-	}
-	return strings.EqualFold(strings.TrimSpace(*a), strings.TrimSpace(*b))
-}
-
-func gradeKompatibel(a, b *int) bool {
-	return a == nil || b == nil || *a == *b
-}
-
-// inventurScopesIdentisch spiegelt die Semantik der partiellen Unique-Indizes: EXAKT
-// gleiche Scopes werden vom Index als ErrInventurLaeuftBereits abgefangen. Die
-// Überlappungsprüfung lässt sie deshalb bewusst durch — sonst käme für den simplen
-// „läuft schon"-Fall die (unpassendere) Überlappungs-Meldung.
-func inventurScopesIdentisch(aType string, a InventurScope, bType string, b InventurScope) bool {
-	if aType != bType {
-		return false
-	}
-	switch aType {
-	case "global":
-		return true
-	case "signature":
-		return strings.TrimSpace(zeigerStr(a.Signatur)) == strings.TrimSpace(zeigerStr(b.Signatur))
-	case "filter":
-		gleicheKlasse := (a.Grade == nil && b.Grade == nil) || (a.Grade != nil && b.Grade != nil && *a.Grade == *b.Grade)
-		return zeigerStr(a.Subject) == zeigerStr(b.Subject) && gleicheKlasse
-	}
-	return false
-}
 
 // InventurSession beschreibt eine laufende oder abgeschlossene Inventur.
 type InventurSession struct {
@@ -161,33 +94,6 @@ func (r *InventoryRepository) CreateInventurSession(ctx context.Context, scopeTy
 		return nil, fmt.Errorf("inventur-start committen fehlgeschlagen: %w", err)
 	}
 	return &s, nil
-}
-
-// findeUeberlappendeSession liefert das Label der ersten offenen Session, deren Scope
-// sich mit dem gewünschten überschneidet — leerer String, wenn keine überlappt.
-func (r *InventoryRepository) findeUeberlappendeSession(ctx context.Context, tx pgx.Tx, scopeType string, scope InventurScope) (string, error) {
-	rows, err := tx.Query(ctx, `
-		SELECT scope_type, scope_signatur, scope_subject, scope_grade, scope_label
-		FROM inventur_sessions WHERE abgeschlossen_am IS NULL`)
-	if err != nil {
-		return "", fmt.Errorf("offene sessions lesen fehlgeschlagen: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var offen InventurScope
-		var offenType, offenLabel string
-		if err := rows.Scan(&offenType, &offen.Signatur, &offen.Subject, &offen.Grade, &offenLabel); err != nil {
-			return "", fmt.Errorf("offene session lesen fehlgeschlagen: %w", err)
-		}
-		// Exakt identische Scopes überlässt die Prüfung dem Unique-Index (→ LaeuftBereits);
-		// nur eine ECHTE Überschneidung meldet sie als Ueberlappt.
-		if inventurScopesUeberlappen(scopeType, scope, offenType, offen) &&
-			!inventurScopesIdentisch(scopeType, scope, offenType, offen) {
-			return offenLabel, nil
-		}
-	}
-	return "", rows.Err()
 }
 
 // ZaehleScope liefert die Anzahl physisch erwartbarer Exemplare im Scope.

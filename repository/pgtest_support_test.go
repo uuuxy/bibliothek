@@ -136,6 +136,29 @@ func seedSignaturMitExemplaren(t *testing.T, pool *pgxpool.Pool, signatur string
 	return ids
 }
 
+// seedSignaturFachExemplar legt einen Titel an, der BEIDE Scope-Dimensionen trägt
+// (Signatur UND Fach/Jahrgang) — genau die Konstellation, in der ein Signatur- und ein
+// Filter-Scope dasselbe Exemplar treffen. Liefert die Exemplar-ID.
+func seedSignaturFachExemplar(t *testing.T, pool *pgxpool.Pool, signatur, subject string, jvon, jbis int, barcode string) string {
+	t.Helper()
+	ctx := context.Background()
+
+	var titelID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_titel (titel, signatur, subject, jahrgang_von, jahrgang_bis)
+		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		fmt.Sprintf("%s-%s-%s", signatur, subject, barcode), signatur, subject, jvon, jbis).Scan(&titelID); err != nil {
+		t.Fatalf("Signatur+Fach-Titel anlegen: %v", err)
+	}
+	var exID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
+		titelID, barcode).Scan(&exID); err != nil {
+		t.Fatalf("Signatur+Fach-Exemplar anlegen: %v", err)
+	}
+	return exID
+}
+
 // seedFachExemplar legt einen Titel mit Fach (subject) + Jahrgangsbereich und genau
 // einem ausleihbaren Exemplar an; liefert die Exemplar-ID. Für Filter-Scope-Tests.
 func seedFachExemplar(t *testing.T, pool *pgxpool.Pool, subject string, jvon, jbis int, barcode string) string {
