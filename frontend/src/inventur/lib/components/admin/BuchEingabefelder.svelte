@@ -7,9 +7,21 @@
 	import SignaturFeld from './SignaturFeld.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 
-	const MEDIENTYPEN = ['Buch', 'CD', 'DVD'].map((m) => ({ value: m, label: m }));
+	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];
 
 	let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
+
+	// Die medientyp-Spalte ist offen (Littera-Import bringt z. B. "Zeitschrift", "Spiel").
+	// Ohne diesen Zusatz zeigte das Dropdown für einen solchen Wert "Bitte wählen" — er
+	// sah aus wie nicht gesetzt, und wer ihn "korrigierte", überschrieb den echten Typ mit
+	// Buch/CD/DVD. Der aktuelle Wert wird deshalb immer als Option geführt, wenn er nicht
+	// ohnehin zur Basisliste gehört.
+	const medientypOptionen = $derived(
+		(formular.medientyp && !MEDIENTYP_BASIS.includes(formular.medientyp)
+			? [...MEDIENTYP_BASIS, formular.medientyp]
+			: MEDIENTYP_BASIS
+		).map((m) => ({ value: m, label: m }))
+	);
 
 	/** @type {any[]} */
 	let systematikListe = $state([]);
@@ -90,7 +102,7 @@
 		<label for="buch-medientyp" class="block text-sm font-medium text-slate-700 mb-1"
 			>Medientyp</label
 		>
-		<Select id="buch-medientyp" bind:value={formular.medientyp} options={MEDIENTYPEN} />
+		<Select id="buch-medientyp" bind:value={formular.medientyp} options={medientypOptionen} />
 	</div>
 
 	<div>
