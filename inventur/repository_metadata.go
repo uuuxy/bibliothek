@@ -64,13 +64,20 @@ func (repo *BookRepository) UpdateBookMetadata(ctx context.Context, id string, t
 // chk_grade_level_bereich auf 0..13 begrenzt — ein Wert daneben scheitert an der
 // Datenbank, nicht erst in der Auswertung.
 func (repo *BookRepository) UpdateBookCategory(ctx context.Context, id string, subject string, gradeLevel int16) error {
+	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
+	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
+	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{subject})
+	if err != nil {
+		return err
+	}
+
 	query := `
 		UPDATE buecher_titel
-		SET subject = $1,
+		SET subject = NULLIF($1, ''),
 		    grade_level = $2
 		WHERE id = $3::uuid`
 
-	result, err := repo.db.Exec(ctx, query, subject, gradeLevel, id)
+	result, err := repo.db.Exec(ctx, query, kanonisch[subject], gradeLevel, id)
 	if err != nil {
 		return fmt.Errorf("kategorie konnte nicht aktualisiert werden: %w", err)
 	}

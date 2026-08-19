@@ -71,8 +71,15 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 	jahrInt := parseErscheinungsjahr(meta.Jahr)
 	signatur := signaturVorschlagAusMetadaten(meta)
 
+	// subject ist FK auf die Systematik (Migration 078): das Fach aus der
+	// Titel-Heuristik erst registrieren, die kanonische Schreibweise schreiben.
+	kanonisch, err := inventur.StelleFaecherSicher(ctx, s.DB.Pool, []string{meta.Fach})
+	if err != nil {
+		return ISBNLookupResponse{}, err
+	}
+
 	resp := ISBNLookupResponse{ISBN: isbn}
-	err := s.DB.Pool.QueryRow(ctx, `
+	err = s.DB.Pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, signatur, subject)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8, ''))
 		ON CONFLICT (isbn) DO UPDATE
@@ -83,7 +90,7 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 			    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
 			    aktualisiert_am = CURRENT_TIMESTAMP
 		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,'')
-	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, signatur, meta.Fach).
+	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, signatur, kanonisch[meta.Fach]).
 		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur)
 	if err != nil {
 		return ISBNLookupResponse{}, err

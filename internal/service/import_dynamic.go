@@ -2,6 +2,7 @@ package service
 
 import (
 	"bibliothek/db"
+	"bibliothek/inventur"
 	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
 	"context"
@@ -188,15 +189,27 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 		return 0, nil
 	}
 
+	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer VOR dem
+	// SendBatch in derselben Transaktion registrieren (danach ist die Verbindung bis
+	// br.Close() belegt) und jede Zeile auf die kanonische Schreibweise ziehen.
+	kategorien := make([]string, 0, len(newTitlesOrder))
+	for _, key := range newTitlesOrder {
+		kategorien = append(kategorien, newTitlesMap[key].Kategorie)
+	}
+	kanonisch, err := inventur.StelleFaecherSicher(ctx, tx, kategorien)
+	if err != nil {
+		return 0, err
+	}
+
 	batch := &pgx.Batch{}
 	qInsertTitel := `
 		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject, signatur)
-		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), $6, NULLIF($7, ''))
+		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), NULLIF($6, ''), NULLIF($7, ''))
 		RETURNING id
 	`
 	for _, key := range newTitlesOrder {
 		t := newTitlesMap[key]
-		batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, t.Kategorie, t.Signatur)
+		batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, kanonisch[t.Kategorie], t.Signatur)
 	}
 
 	br := tx.SendBatch(ctx, batch)

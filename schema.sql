@@ -237,8 +237,14 @@ CREATE TABLE systematik_kategorien (
     kuerzel VARCHAR(50) UNIQUE NOT NULL,
     bezeichnung VARCHAR(255) NOT NULL,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Migration 078: Zielspalte des Fach-FK (buecher_titel.subject) — exakt eindeutig
+    -- für den Fremdschlüssel, case-insensitiv (Index unten) als Anlage-Hygiene.
+    CONSTRAINT uniq_systematik_bezeichnung UNIQUE (bezeichnung)
 );
+
+CREATE UNIQUE INDEX uniq_systematik_bezeichnung_ci
+    ON systematik_kategorien (lower(bezeichnung));
 
 CREATE TRIGGER trg_systematik_kategorien_aktualisiert_am
 BEFORE UPDATE ON systematik_kategorien
@@ -352,7 +358,11 @@ CREATE TABLE buecher_titel (
     cover_url VARCHAR(512),                           -- Integrated cover URL
     cover_status VARCHAR(50) DEFAULT 'PENDING',       -- Added for async cover fetching
     signatur VARCHAR(255),                            -- Signature (e.g. from MAB 700)
-    subject VARCHAR(100),                             -- Integrated from books table
+    -- Migration 078: Fach ist FK auf die Systematik — Umbenennen zieht Titel mit
+    -- (CASCADE), Löschen ist gesperrt, solange Titel dranhängen (RESTRICT).
+    subject VARCHAR(255) CONSTRAINT fk_titel_subject_systematik
+        REFERENCES systematik_kategorien (bezeichnung)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
     grade_level SMALLINT,                             -- Integrated from books table
     track VARCHAR(100),                               -- Integrated from books table
     last_counted DATE,                                -- Integrated from books table
@@ -861,7 +871,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('074_zwillinge_aus_der_lusd.sql'),
 ('075_lehrer_anliegen.sql'),
 ('076_klassensatz_idempotenz.sql'),
-('077_bestellung_idempotenz.sql')
+('077_bestellung_idempotenz.sql'),
+('078_fach_fk_systematik.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -873,6 +884,7 @@ CREATE INDEX IF NOT EXISTS idx_vormerkungen_schueler ON vormerkungen(schueler_id
 CREATE INDEX IF NOT EXISTS idx_klassensatz_titel ON klassensatz_reservierungen(titel_id);
 CREATE INDEX IF NOT EXISTS idx_class_books_klasse ON class_books(class_name);
 CREATE INDEX IF NOT EXISTS idx_schueler_klasse ON schueler(klasse);
+CREATE INDEX IF NOT EXISTS idx_titel_subject ON buecher_titel (subject) WHERE subject IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_vormerkungen_status ON vormerkungen(status);
 
 -- -------------------------------------------------------------

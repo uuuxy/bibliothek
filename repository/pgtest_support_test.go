@@ -136,12 +136,28 @@ func seedSignaturMitExemplaren(t *testing.T, pool *pgxpool.Pool, signatur string
 	return ids
 }
 
+// sichereTestSystematik registriert das Fach in systematik_kategorien —
+// buecher_titel.subject ist seit Migration 078 ein FK auf die Bezeichnung, direkte
+// Titel-INSERTs mit Fach scheitern sonst. (Die produktiven Schreibpfade registrieren
+// selbst, via inventur.StelleFaecherSicher; Test-Seeds schreiben daran vorbei.)
+func sichereTestSystematik(t *testing.T, pool *pgxpool.Pool, subject string) {
+	t.Helper()
+	if _, err := pool.Exec(context.Background(), `
+		INSERT INTO systematik_kategorien (kuerzel, bezeichnung)
+		VALUES (replace($1, ' ', ''), $1)
+		ON CONFLICT (lower(bezeichnung)) DO NOTHING
+	`, subject); err != nil {
+		t.Fatalf("Test-Systematik %q anlegen: %v", subject, err)
+	}
+}
+
 // seedSignaturFachExemplar legt einen Titel an, der BEIDE Scope-Dimensionen trägt
 // (Signatur UND Fach/Jahrgang) — genau die Konstellation, in der ein Signatur- und ein
 // Filter-Scope dasselbe Exemplar treffen. Liefert die Exemplar-ID.
 func seedSignaturFachExemplar(t *testing.T, pool *pgxpool.Pool, signatur, subject string, jvon, jbis int, barcode string) string {
 	t.Helper()
 	ctx := context.Background()
+	sichereTestSystematik(t, pool, subject)
 
 	var titelID string
 	if err := pool.QueryRow(ctx,
@@ -164,6 +180,7 @@ func seedSignaturFachExemplar(t *testing.T, pool *pgxpool.Pool, signatur, subjec
 func seedFachExemplar(t *testing.T, pool *pgxpool.Pool, subject string, jvon, jbis int, barcode string) string {
 	t.Helper()
 	ctx := context.Background()
+	sichereTestSystematik(t, pool, subject)
 
 	var titelID string
 	if err := pool.QueryRow(ctx,

@@ -9,9 +9,16 @@ import (
 
 // CreateBook inserts a new book record.
 func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
+	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
+	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
+	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+	if err != nil {
+		return "", err
+	}
+
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -25,14 +32,14 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	}
 
 	var id string
-	err := repo.db.QueryRow(
+	err = repo.db.QueryRow(
 		ctx,
 		query,
 		book.ISBN,
 		book.Title,
 		book.Author,
 		book.CoverURL,
-		book.Subject,
+		kanonisch[book.Subject],
 		book.GradeLevel,
 		book.Track,
 		book.LastCounted,
@@ -143,7 +150,7 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, data bo
 	// dürfen eine physisch verklebte Signatur nie mit Leerwerten überschreiben.
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, t.subject, t.grade_level, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, '')
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), t.grade_level, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, '')
 		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::text[], $9::text[], $10::int[], $11::int[], $12::text[], $13::text[], $14::int[], $15::text[], $16::jsonb[], $17::text[])
 		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
 		ON CONFLICT (isbn) DO UPDATE SET
@@ -200,6 +207,15 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	}
 
 	data := prepareUpsertBatchData(books)
+	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer der
+	// Import-Zeilen registrieren und jede auf die kanonische Schreibweise ziehen.
+	kanonisch, err := StelleFaecherSicher(ctx, repo.db, data.subjects)
+	if err != nil {
+		return 0, err
+	}
+	for i, s := range data.subjects {
+		data.subjects[i] = kanonisch[s]
+	}
 	betroffen, err := repo.executeUpsertBatchQuery(ctx, data)
 	if err != nil {
 		return 0, err
@@ -231,9 +247,15 @@ func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, isbns []s
 
 // UpsertBook inserts or updates a book record.
 func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, error) {
+	// subject ist FK auf die Systematik (Migration 078), siehe CreateBook.
+	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+	if err != nil {
+		return "", err
+	}
+
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -264,14 +286,14 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	}
 
 	var id string
-	err := repo.db.QueryRow(
+	err = repo.db.QueryRow(
 		ctx,
 		query,
 		book.ISBN,
 		book.Title,
 		book.Author,
 		book.CoverURL,
-		book.Subject,
+		kanonisch[book.Subject],
 		book.GradeLevel,
 		book.Track,
 		book.LastCounted,

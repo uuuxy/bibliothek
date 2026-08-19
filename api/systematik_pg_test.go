@@ -50,12 +50,16 @@ func TestSystematikAnlegen(t *testing.T) {
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	kuerzel := fmt.Sprintf("Deu%d", time.Now().UnixNano()%100000)
+	// Bezeichnung mit Suffix: Sie ist seit Migration 078 (case-insensitiv) eindeutig,
+	// und andere Testpakete registrieren im selben Test-Postgres bereits "Deutsch".
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
+	kuerzel := "Deu" + suffix
+	bezeichnung := "Deutsch" + suffix
 	t.Cleanup(func() {
 		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Deu%'`)
 	})
 
-	rec, id := systematikAnlegen(t, srv, "  "+kuerzel+"  ", "  Deutsch  ")
+	rec, id := systematikAnlegen(t, srv, "  "+kuerzel+"  ", "  "+bezeichnung+"  ")
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Anlegen: Status %d, Koerper %s", rec.Code, rec.Body.String())
 	}
@@ -88,11 +92,11 @@ func TestSystematikAnlegen(t *testing.T) {
 	}
 }
 
-// TestSystematikLoeschenGeschuetzt sichert den Waechter ab, den die Datenbank NICHT
-// stellt: buecher_titel.subject haelt die Bezeichnung als blossen Text, ohne
-// Fremdschluessel. Ein Loeschen bliebe deshalb unbemerkt und liesse die betroffenen
-// Titel auf ein Fach zeigen, das es nicht mehr gibt — sie verschwaenden aus der
-// Fach-Auswahl, ohne dass irgendwo etwas fehlschlaegt.
+// TestSystematikLoeschenGeschuetzt sichert den Waechter des Handlers ab: 409 mit
+// verstaendlicher Meldung, solange Titel auf dem Fach stehen. Seit Migration 078
+// haelt zusaetzlich die Datenbank dagegen (fk_titel_subject_systematik, ON DELETE
+// RESTRICT) — der Handler bleibt fuer die fachliche Meldung zustaendig, der FK ist
+// die Rueckfallebene fuer jeden Weg am Handler vorbei.
 func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -167,8 +171,17 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 		aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject IN ($1,$2)`, alt, neu)
 	})
 
-	// Zwei Titel auf dem alten Fach, einer auf einem Fremdfach (darf NICHT mitgezogen werden).
+	// Zwei Titel auf dem alten Fach, einer auf einem Fremdfach (darf NICHT mitgezogen
+	// werden). Das Fremdfach muss seit Migration 078 registriert sein (subject ist FK).
 	fremd := "Fremdfach" + suffix
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ($1, $2)`,
+		"Frd"+suffix, fremd); err != nil {
+		t.Fatalf("Fremdfach registrieren: %v", err)
+	}
+	t.Cleanup(func() {
+		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fremd)
+	})
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_titel (titel, subject, signatur) VALUES
 		($1,$2,'BIB Bio 1'), ($3,$2,'BIB Bio 2'), ($4,$5,'BIB X')`,

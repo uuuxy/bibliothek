@@ -41,10 +41,22 @@ func (req systematikRequest) pruefe() error {
 	return nil
 }
 
-// istUniqueVerletzung erkennt das doppelte Kürzel (systematik_kategorien.kuerzel UNIQUE).
+// istUniqueVerletzung erkennt die doppelte Sachgruppe (Kürzel oder — seit Migration
+// 078 — Bezeichnung, auch case-insensitiv).
 func istUniqueVerletzung(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+// uniqueMeldung benennt, WELCHES Feld kollidiert ist — "Kürzel existiert bereits" bei
+// einer doppelten Bezeichnung schickte den Benutzer auf die falsche Fährte.
+func uniqueMeldung(err error) string {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) &&
+		(pgErr.ConstraintName == "uniq_systematik_bezeichnung" || pgErr.ConstraintName == "uniq_systematik_bezeichnung_ci") {
+		return "eine Sachgruppe mit dieser Bezeichnung existiert bereits"
+	}
+	return "eine Sachgruppe mit diesem Kürzel existiert bereits"
 }
 
 // CreateSystematikHandler legt eine Sachgruppe an.
@@ -81,7 +93,7 @@ func (s *Server) CreateSystematikHandler() http.HandlerFunc {
 		`, req.Kuerzel, req.Bezeichnung).Scan(&id)
 		if err != nil {
 			if istUniqueVerletzung(err) {
-				return apierrors.Conflict("eine Sachgruppe mit diesem Kürzel existiert bereits", err)
+				return apierrors.Conflict(uniqueMeldung(err), err)
 			}
 			return apierrors.Internal("Sachgruppe konnte nicht angelegt werden", err)
 		}
@@ -129,17 +141,12 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 	}
 
 	ctx := r.Context()
-	// Sachgruppe umbenennen und die Titel MITZIEHEN — atomar in einer Transaktion.
-	//
-	// buecher_titel.subject hält die Bezeichnung als Text (ohne Fremdschlüssel). Bis
-	// zum 19.08.2026 änderte dieser Handler nur die Sachgruppe und zählte die Titel,
-	// die nun auf dem ALTEN Namen zurückblieben — genau der lautlose Drift aus dem
-	// Prüfbericht (F3): "Fach umbenannt → Titel behalten den alten Namen, Filter finden
-	// nichts". Jetzt wird die Umbenennung auf die Titel propagiert, sodass die
-	// Fach-Auswahl (buecher_titel.subject) mit der Sachgruppe deckungsgleich bleibt.
-	// Das KÜRZEL wird bewusst NICHT in die Signaturen zurückgeschrieben: Signaturen
-	// stehen als physische Etiketten auf den Büchern; sie folgen einem Umlabeln, nicht
-	// einem DB-Update.
+	// Sachgruppe umbenennen — die Titel zieht seit Migration 078 der Fremdschlüssel
+	// mit (buecher_titel.subject → systematik_kategorien.bezeichnung, ON UPDATE
+	// CASCADE). Der Handler zählt die betroffenen Titel nur noch VOR dem Update, für
+	// die Antwort (titel_mitgezogen). Das KÜRZEL wird bewusst NICHT in die Signaturen
+	// zurückgeschrieben: Signaturen stehen als physische Etiketten auf den Büchern;
+	// sie folgen einem Umlabeln, nicht einem DB-Update.
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
 		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
@@ -147,7 +154,7 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 	defer db.SafeRollback(ctx, tx)
 
 	// Die alte Bezeichnung VOR dem Update lesen: Nur sie verbindet die Sachgruppe
-	// mit den Büchern.
+	// mit den offenen Inventur-Sessions (und die Zählung mit den Büchern).
 	var alteBezeichnung string
 	if err := tx.QueryRow(ctx,
 		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&alteBezeichnung); err != nil {
@@ -157,26 +164,36 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 		return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
 	}
 
+	var mitgezogen int64
+	if alteBezeichnung != req.Bezeichnung {
+		if err := tx.QueryRow(ctx,
+			`SELECT count(*) FROM buecher_titel WHERE subject = $1`, alteBezeichnung).Scan(&mitgezogen); err != nil {
+			return apierrors.Internal("Verwendung der Sachgruppe konnte nicht geprüft werden", err)
+		}
+	}
+
 	if _, err := tx.Exec(ctx, `
 		UPDATE systematik_kategorien
 		SET kuerzel = $2, bezeichnung = $3
 		WHERE id = $1::uuid
 	`, id, req.Kuerzel, req.Bezeichnung); err != nil {
 		if istUniqueVerletzung(err) {
-			return apierrors.Conflict("eine Sachgruppe mit diesem Kürzel existiert bereits", err)
+			return apierrors.Conflict(uniqueMeldung(err), err)
 		}
 		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
 	}
 
-	var mitgezogen int64
-	if !strings.EqualFold(strings.TrimSpace(alteBezeichnung), strings.TrimSpace(req.Bezeichnung)) {
-		tag, err := tx.Exec(ctx,
-			`UPDATE buecher_titel SET subject = $2 WHERE btrim(COALESCE(subject, '')) = btrim($1)`,
-			alteBezeichnung, req.Bezeichnung)
-		if err != nil {
-			return apierrors.Internal("Titel konnten nicht auf das neue Fach umgestellt werden", err)
+	// Offene Inventur-Sessions mit Filter auf dieses Fach folgen der Umbenennung —
+	// ihr Scope (scope_subject) ist Text, kein FK: Bliebe er auf dem alten Namen,
+	// zählte die Session ab sofort null Exemplare und jeder Scan liefe auf 409
+	// "außer Scope". Abgeschlossene Sessions sind Historie und bleiben unangetastet.
+	if alteBezeichnung != req.Bezeichnung {
+		if _, err := tx.Exec(ctx, `
+			UPDATE inventur_sessions SET scope_subject = $2
+			WHERE abgeschlossen_am IS NULL AND scope_subject = $1
+		`, alteBezeichnung, req.Bezeichnung); err != nil {
+			return apierrors.Internal("laufende Inventuren konnten nicht auf das neue Fach umgestellt werden", err)
 		}
-		mitgezogen = tag.RowsAffected()
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -233,6 +250,14 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 
 		if _, err := s.DB.Pool.Exec(r.Context(),
 			`DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id); err != nil {
+			// Rückfallebene zur Zählung oben: Hängt sich ZWISCHEN Prüfung und Löschen
+			// ein Titel an das Fach, schlägt der FK (ON DELETE RESTRICT) zu — das ist
+			// derselbe fachliche Konflikt, kein interner Fehler.
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+				return apierrors.Conflict(
+					"Diese Sachgruppe hängt noch an Büchern und kann nicht gelöscht werden", err)
+			}
 			return apierrors.Internal("Sachgruppe konnte nicht gelöscht werden", err)
 		}
 

@@ -197,6 +197,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 			"coverUrl": "test.jpg"
 		}`
 
+		erwarteFachBekannt(mock, "Math")
 		mock.ExpectQuery(`INSERT INTO buecher_titel`).
 			WithArgs(
 				"978-3-16-148410-0", // isbn

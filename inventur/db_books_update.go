@@ -19,13 +19,20 @@ import (
 // Query-String reist bei jedem Aufruf zum Server mit und lässt jeden Test scheitern, der
 // die Anweisung als Ganzes festhält.
 func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book) error {
+	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
+	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
+	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+	if err != nil {
+		return err
+	}
+
 	query := `
 		UPDATE buecher_titel
 		SET isbn = $1,
 			titel = $2,
 			autor = $3,
 			cover_url = $4,
-			subject = $5,
+			subject = NULLIF($5, ''),
 			grade_level = $6,
 			track = $7,
 			last_counted = NULLIF($8::text, '')::date,
@@ -58,7 +65,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Title,
 		book.Author,
 		book.CoverURL,
-		book.Subject,
+		kanonisch[book.Subject],
 		book.GradeLevel,
 		book.Track,
 		book.LastCounted,

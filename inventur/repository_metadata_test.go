@@ -108,6 +108,7 @@ func TestUpdateBookCategory(t *testing.T) {
 	queryRegex := `UPDATE buecher_titel`
 
 	t.Run("success", func(t *testing.T) {
+		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
 			WithArgs("Science", int16(6), "valid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -117,6 +118,7 @@ func TestUpdateBookCategory(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
+		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
 			WithArgs("Science", int16(6), "invalid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
@@ -127,6 +129,7 @@ func TestUpdateBookCategory(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		mockErr := errors.New("db error")
+		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
 			WithArgs("Science", int16(6), "error-id").
 			WillReturnError(mockErr)
