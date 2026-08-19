@@ -40,6 +40,6 @@
            disabled:cursor-not-allowed disabled:opacity-60 {extraClasses}"
 	/>
 	{#if hint}
-		<p class="text-xs text-slate-400 mt-1">{hint}</p>
+		<p class="text-xs text-on-surface-variant mt-1">{hint}</p>
 	{/if}
 </div>

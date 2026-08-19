@@ -38,7 +38,7 @@
 						label: 'Zusammengeführt',
 						hint: 'Bestehende Schüler ohne LUSD-ID — per Name + Geburtsdatum verknüpft (kein Duplikat)',
 						items: (activeResult.adoptions || []).map((a) => ({ ...a, id: a.schueler_id })),
-						valueClass: 'text-violet-600'
+						valueClass: 'text-primary'
 					},
 					{
 						key: 'changes',
