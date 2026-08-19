@@ -35,11 +35,11 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	bearbeiter := seedEigenerBearbeiter(t, pool, "KSQ-B")
 
 	// Zwei Reservierungen nacheinander: 8a zuerst, 9b stellt sich an.
-	ersteID, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 3, nil, bearbeiter)
+	ersteID, _, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 3, nil, bearbeiter, nil)
 	if err != nil {
 		t.Fatalf("Reservierung 8a: %v", err)
 	}
-	if _, err := repo.CreateKlassensatzReservierung(ctx, titel, "9b", 2, nil, bearbeiter); err != nil {
+	if _, _, err := repo.CreateKlassensatzReservierung(ctx, titel, "9b", 2, nil, bearbeiter, nil); err != nil {
 		t.Fatalf("Reservierung 9b: %v", err)
 	}
 
@@ -140,4 +140,50 @@ func seedEigenerBearbeiter(t *testing.T, pool *pgxpool.Pool, barcode string) str
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 	return id
+}
+
+// TestKlassensatzIdempotenz belegt den Doppelklick-Schutz (Migration 076): Zwei
+// Anfragen mit DEMSELBEN Idempotenz-Schlüssel erzeugen nur EINE Reservierung (die
+// zweite gibt dieselbe ID zurück, neu=false). Ein anderer Schlüssel legt regulär an.
+func TestKlassensatzIdempotenz(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewReservationRepository(pool)
+
+	ex := seedSignaturMitExemplaren(t, pool, "KsIdem", 3)
+	titel := titelIDVonExemplar(t, pool, ex[0])
+	bearbeiter := seedBearbeiter(t, pool)
+	key := "11111111-1111-1111-1111-111111111111"
+
+	id1, neu1, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 2, nil, bearbeiter, &key)
+	if err != nil || !neu1 {
+		t.Fatalf("erste Reservierung: id=%q neu=%v err=%v", id1, neu1, err)
+	}
+	// Doppelklick: gleicher Schlüssel → dieselbe ID, neu=false, KEINE zweite Zeile.
+	id2, neu2, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 2, nil, bearbeiter, &key)
+	if err != nil {
+		t.Fatalf("zweiter Klick: %v", err)
+	}
+	if neu2 {
+		t.Error("zweiter Klick mit gleichem Schlüssel muss No-op sein (neu=false)")
+	}
+	if id2 != id1 {
+		t.Errorf("zweiter Klick muss dieselbe ID liefern: %q vs %q", id2, id1)
+	}
+
+	var anzahl int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM klassensatz_reservierungen WHERE idempotenz_schluessel = $1`, key).Scan(&anzahl); err != nil {
+		t.Fatal(err)
+	}
+	if anzahl != 1 {
+		t.Fatalf("genau 1 Reservierung erwartet, waren %d", anzahl)
+	}
+
+	// Anderer Schlüssel (bewusste zweite Reservierung) → legt regulär an.
+	key2 := "22222222-2222-2222-2222-222222222222"
+	if _, neu3, err := repo.CreateKlassensatzReservierung(ctx, titel, "8a", 1, nil, bearbeiter, &key2); err != nil || !neu3 {
+		t.Fatalf("bewusste zweite Reservierung muss durchgehen: neu=%v err=%v", neu3, err)
+	}
 }

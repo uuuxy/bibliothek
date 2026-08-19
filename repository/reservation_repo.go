@@ -45,7 +45,7 @@ type ReservationRepository interface {
 	// CountTitleStock liefert die Zahl physisch vorhandener (nicht ausgesonderter)
 	// Exemplare eines Titels — die Obergrenze für eine Klassensatz-Reservierung.
 	CountTitleStock(ctx context.Context, titelID string) (int, error)
-	CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string) (string, error)
+	CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (id string, neu bool, err error)
 	GetKlassensatzReservierungen(ctx context.Context) ([]KlassensatzReservierung, error)
 	// OffeneKlassensatzReservierungen liefert die offenen Reservierungen in
 	// Warteschlangen-Reihenfolge (älteste zuerst) — die Sicht für das Portal.
@@ -87,15 +87,30 @@ func (r *pgReservationRepository) CountTitleStock(ctx context.Context, titelID s
 	return count, err
 }
 
-func (r *pgReservationRepository) CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string) (string, error) {
+func (r *pgReservationRepository) CreateKlassensatzReservierung(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (string, bool, error) {
+	// Doppelklick-Schutz (Migration 076): Mit demselben idempotenz_schluessel läuft der
+	// zweite INSERT am partiellen Unique-Index auf und DO NOTHING liefert keine Zeile —
+	// dann geben wir die bereits angelegte Reservierung zurück (No-op, keine zweite Mail).
+	// Ohne Schlüssel (NULL) kollidiert nichts, jede Anfrage legt regulär an.
 	var newID string
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO klassensatz_reservierungen
-			(titel_id, klasse, anzahl, notiz, angefordert_von)
-		VALUES ($1, $2, $3, $4, $5)
+			(titel_id, klasse, anzahl, notiz, angefordert_von, idempotenz_schluessel)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (idempotenz_schluessel) WHERE idempotenz_schluessel IS NOT NULL DO NOTHING
 		RETURNING id
-	`, titelID, klasse, anzahl, notiz, angefordertVon).Scan(&newID)
-	return newID, err
+	`, titelID, klasse, anzahl, notiz, angefordertVon, idempotenzSchluessel).Scan(&newID)
+	if err == nil {
+		return newID, true, nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) && idempotenzSchluessel != nil {
+		// Konflikt: dieselbe Anfrage lief schon durch — bestehende ID zurückgeben.
+		errBestehend := r.db.QueryRow(ctx,
+			`SELECT id FROM klassensatz_reservierungen WHERE idempotenz_schluessel = $1`,
+			*idempotenzSchluessel).Scan(&newID)
+		return newID, false, errBestehend
+	}
+	return "", false, err
 }
 
 func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Context) ([]KlassensatzReservierung, error) {

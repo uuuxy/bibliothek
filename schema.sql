@@ -751,8 +751,14 @@ CREATE TABLE klassensatz_reservierungen (
     notiz            TEXT,
     angefordert_von  UUID REFERENCES benutzer(id) ON DELETE SET NULL,
     erledigt         BOOLEAN NOT NULL DEFAULT false,
-    erstellt_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    erstellt_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    idempotenz_schluessel UUID                             -- Doppelklick-Schutz (Migration 076)
 );
+
+-- Doppelklick-Schutz: zweite Anfrage mit demselben Schlüssel läuft hier auf (No-op).
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_ksr_idempotenz
+    ON klassensatz_reservierungen (idempotenz_schluessel)
+    WHERE idempotenz_schluessel IS NOT NULL;
 
 -- -------------------------------------------------------------
 -- 4. MARK MIGRATIONS AS APPLIED
@@ -847,7 +853,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('072_schein_schueler_zu_benutzer.sql'),
 ('073_stock_spalte_entfernt.sql'),
 ('074_zwillinge_aus_der_lusd.sql'),
-('075_lehrer_anliegen.sql')
+('075_lehrer_anliegen.sql'),
+('076_klassensatz_idempotenz.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

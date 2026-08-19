@@ -16,7 +16,7 @@
 
 	// Per-book form state
 	let reservierungForms = $state(
-		/** @type {Record<string, { open: boolean, klasse: string, anzahl: number, notiz: string, loading: boolean, success: string|null, error: string|null }>} */ ({})
+		/** @type {Record<string, { open: boolean, klasse: string, anzahl: number, notiz: string, loading: boolean, success: string|null, error: string|null, idempotencyKey: string|null }>} */ ({})
 	);
 
 	let searchTimeout = /** @type {any} */ (null);
@@ -100,7 +100,8 @@
 				notiz: '',
 				loading: false,
 				success: null,
-				error: null
+				error: null,
+				idempotencyKey: /** @type {string | null} */ (null)
 			};
 		}
 		return reservierungForms[titelId];
@@ -119,7 +120,8 @@
 				notiz: '',
 				loading: false,
 				success: null,
-				error: null
+				error: null,
+				idempotencyKey: /** @type {string | null} */ (null)
 			}
 		);
 	}
@@ -139,6 +141,7 @@
 	 */
 	async function submitReservierung(titelId) {
 		const f = ensureForm(titelId);
+		if (f.loading) return; // Doppelklick abfangen, bevor die Anfrage überhaupt rausgeht
 		if (!f.klasse.trim()) {
 			f.error = 'Bitte Klasse angeben.';
 			return;
@@ -146,6 +149,10 @@
 		f.loading = true;
 		f.error = null;
 		f.success = null;
+		// Idempotenz-Schlüssel pro Absende-Vorgang: Überholt ein Doppelklick den loading-
+		// Guard (oder klemmt das Netz und der Client wiederholt), geht DERSELBE Schlüssel
+		// raus — der Server macht daraus ein No-op statt einer zweiten Reservierung/Mail.
+		if (!f.idempotencyKey) f.idempotencyKey = crypto.randomUUID();
 		try {
 			const res = await apiFetch('/api/reservierungen/klassensatz', {
 				method: 'POST',
@@ -154,10 +161,12 @@
 					titel_id: titelId,
 					klasse: f.klasse,
 					anzahl: f.anzahl,
-					notiz: f.notiz
+					notiz: f.notiz,
+					idempotency_key: f.idempotencyKey
 				})
 			});
 			if (res.ok) {
+				f.idempotencyKey = null; // erfolgreich → der nächste Vorgang bekommt einen neuen
 				const vorher = warteschlangeFuer(titelId);
 				f.success =
 					vorher.length > 0

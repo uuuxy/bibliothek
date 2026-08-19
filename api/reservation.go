@@ -19,6 +19,10 @@ type KlassensatzReservierungRequest struct {
 	Klasse  string `json:"klasse"`
 	Anzahl  int    `json:"anzahl"`
 	Notiz   string `json:"notiz,omitempty"`
+	// IdempotencyKey: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
+	// denselben Schlüssel und wird serverseitig zum No-op (keine zweite Reservierung,
+	// keine zweite Mail). Optional — ohne Schlüssel läuft alles wie bisher.
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
 }
 
 // CreateKlassensatzReservierungHandler lets a LEHRER submit a class-set reservation.
@@ -64,13 +68,19 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 			return
 		}
 
-		newID, err := repo.CreateKlassensatzReservierung(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID)
+		newID, neu, err := repo.CreateKlassensatzReservierung(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID, nullableString(req.IdempotencyKey))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		RespondJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": "erstellt"})
+		// neu=false: derselbe Idempotenz-Schlüssel lief schon durch (Doppelklick) — die
+		// bestehende Reservierung zurückgeben, kein zweiter Eintrag, keine zweite Mail.
+		status := "erstellt"
+		if !neu {
+			status = "bereits_vorhanden"
+		}
+		RespondJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": status})
 	}
 }
 
