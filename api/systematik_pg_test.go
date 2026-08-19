@@ -145,3 +145,85 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 		t.Errorf("Loeschen einer freien Sachgruppe: erwartet 204, war %d", code)
 	}
 }
+
+// TestSystematikRenameZiehtTitelMit belegt den F3-Fix: Wird eine Sachgruppe
+// umbenannt, wandert die neue Bezeichnung auf die Titel (buecher_titel.subject) —
+// sonst blieben sie lautlos auf dem alten Fachnamen und fielen aus der Fach-Auswahl.
+// Die Signatur (Kürzel am Buchrücken) bleibt bewusst unberührt.
+func TestSystematikRenameZiehtTitelMit(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
+	alt := "Biologie" + suffix
+	neu := "Naturwissenschaften" + suffix
+	_, id := systematikAnlegen(t, srv, "Bio"+suffix, alt)
+	if id == "" {
+		t.Fatal("Sachgruppe konnte nicht angelegt werden")
+	}
+	t.Cleanup(func() {
+		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
+		aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject IN ($1,$2)`, alt, neu)
+	})
+
+	// Zwei Titel auf dem alten Fach, einer auf einem Fremdfach (darf NICHT mitgezogen werden).
+	fremd := "Fremdfach" + suffix
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO buecher_titel (titel, subject, signatur) VALUES
+		($1,$2,'BIB Bio 1'), ($3,$2,'BIB Bio 2'), ($4,$5,'BIB X')`,
+		"Biobuch-A-"+suffix, alt, "Biobuch-B-"+suffix, "Fremd-"+suffix, fremd); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+
+	// Umbenennen (Kürzel unverändert, nur Bezeichnung).
+	koerper, err := json.Marshal(map[string]string{"kuerzel": "Bio" + suffix, "bezeichnung": neu})
+	if err != nil {
+		t.Fatalf("Anfrage kodieren: %v", err)
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/systematics/"+id, bytes.NewReader(koerper))
+	req.SetPathValue("id", id)
+	srv.UpdateSystematikHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Umbenennen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+	}
+	var antwort map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort unlesbar: %v", err)
+	}
+	mit, ok := antwort["titel_mitgezogen"].(float64)
+	if !ok || mit != 2 {
+		t.Errorf("erwartet 2 mitgezogene Titel, waren %v", antwort["titel_mitgezogen"])
+	}
+
+	// Die zwei Titel tragen jetzt das neue Fach, der Fremdtitel nicht.
+	var aufNeu, aufAlt, fremdCount int
+	if err := pool.QueryRow(ctx, `SELECT
+		count(*) FILTER (WHERE subject=$1),
+		count(*) FILTER (WHERE subject=$2),
+		count(*) FILTER (WHERE subject=$3)
+		FROM buecher_titel WHERE titel LIKE $4`,
+		neu, alt, fremd, "%"+suffix).Scan(&aufNeu, &aufAlt, &fremdCount); err != nil {
+		t.Fatalf("Bestand prüfen: %v", err)
+	}
+	if aufNeu != 2 {
+		t.Errorf("erwartet 2 Titel auf dem neuen Fach, waren %d", aufNeu)
+	}
+	if aufAlt != 0 {
+		t.Errorf("kein Titel darf auf dem alten Fach zurückbleiben, waren %d", aufAlt)
+	}
+	if fremdCount != 1 {
+		t.Errorf("Fremdfach-Titel darf nicht mitgezogen werden, war %d statt 1", fremdCount)
+	}
+
+	// Signatur bleibt unberührt (physisches Etikett).
+	var sig string
+	if err := pool.QueryRow(ctx,
+		`SELECT signatur FROM buecher_titel WHERE titel = $1`, "Biobuch-A-"+suffix).Scan(&sig); err != nil {
+		t.Fatalf("Signatur lesen: %v", err)
+	}
+	if sig != "BIB Bio 1" {
+		t.Errorf("Signatur darf sich nicht ändern, war %q", sig)
+	}
+}

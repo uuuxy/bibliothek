@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -96,10 +97,10 @@ func (s *Server) CreateSystematikHandler() http.HandlerFunc {
 
 // UpdateSystematikHandler ändert Kürzel oder Bezeichnung einer Sachgruppe.
 //
-// Achtung, bewusst NICHT mitgeändert: die bereits an Büchern hängenden Werte.
-// buecher_titel.subject speichert die Bezeichnung als Text und die Signatur klebt
-// physisch am Buch — beides nachzuziehen wäre eine stille Massenänderung am Bestand.
-// Die Antwort meldet daher, wie viele Titel auf die alte Bezeichnung zeigen.
+// Die BEZEICHNUNG wird auf die Titel mitgezogen (buecher_titel.subject), damit die
+// Fach-Auswahl nicht lautlos auseinanderdriftet (Prüfbericht F3). Die Signatur (mit dem
+// KÜRZEL) bleibt unangetastet: Sie klebt als physisches Etikett am Buch. Die Antwort
+// meldet, wie viele Titel mitgezogen wurden (titel_mitgezogen).
 //
 // @Summary      Update a systematic category
 // @Tags         books
@@ -127,19 +128,36 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 		return apierrors.BadRequest(err.Error(), err)
 	}
 
-	// Die alte Bezeichnung VOR dem Update lesen: Nur sie verbindet die Sachgruppe
-	// mit den Büchern (buecher_titel.subject hält sie als Text, ohne Fremdschlüssel).
-	var alteBezeichnung string
-	err := s.DB.Pool.QueryRow(r.Context(),
-		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&alteBezeichnung)
+	ctx := r.Context()
+	// Sachgruppe umbenennen und die Titel MITZIEHEN — atomar in einer Transaktion.
+	//
+	// buecher_titel.subject hält die Bezeichnung als Text (ohne Fremdschlüssel). Bis
+	// zum 19.08.2026 änderte dieser Handler nur die Sachgruppe und zählte die Titel,
+	// die nun auf dem ALTEN Namen zurückblieben — genau der lautlose Drift aus dem
+	// Prüfbericht (F3): "Fach umbenannt → Titel behalten den alten Namen, Filter finden
+	// nichts". Jetzt wird die Umbenennung auf die Titel propagiert, sodass die
+	// Fach-Auswahl (buecher_titel.subject) mit der Sachgruppe deckungsgleich bleibt.
+	// Das KÜRZEL wird bewusst NICHT in die Signaturen zurückgeschrieben: Signaturen
+	// stehen als physische Etiketten auf den Büchern; sie folgen einem Umlabeln, nicht
+	// einem DB-Update.
+	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
+		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	// Die alte Bezeichnung VOR dem Update lesen: Nur sie verbindet die Sachgruppe
+	// mit den Büchern.
+	var alteBezeichnung string
+	if err := tx.QueryRow(ctx,
+		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&alteBezeichnung); err != nil {
 		if strings.Contains(err.Error(), "no rows") {
 			return apierrors.NotFound("Sachgruppe nicht gefunden", err)
 		}
 		return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
 	}
 
-	if _, err := s.DB.Pool.Exec(r.Context(), `
+	if _, err := tx.Exec(ctx, `
 		UPDATE systematik_kategorien
 		SET kuerzel = $2, bezeichnung = $3
 		WHERE id = $1::uuid
@@ -150,16 +168,26 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
 	}
 
-	betroffen, err := s.zaehleTitelMitFach(r.Context(), alteBezeichnung)
-	if err != nil {
-		return err
+	var mitgezogen int64
+	if !strings.EqualFold(strings.TrimSpace(alteBezeichnung), strings.TrimSpace(req.Bezeichnung)) {
+		tag, err := tx.Exec(ctx,
+			`UPDATE buecher_titel SET subject = $2 WHERE btrim(COALESCE(subject, '')) = btrim($1)`,
+			alteBezeichnung, req.Bezeichnung)
+		if err != nil {
+			return apierrors.Internal("Titel konnten nicht auf das neue Fach umgestellt werden", err)
+		}
+		mitgezogen = tag.RowsAffected()
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
 	}
 
 	RespondJSON(w, http.StatusOK, map[string]any{
-		"id":                id,
-		"kuerzel":           req.Kuerzel,
-		"bezeichnung":       req.Bezeichnung,
-		"titel_mit_altfach": betroffen,
+		"id":               id,
+		"kuerzel":          req.Kuerzel,
+		"bezeichnung":      req.Bezeichnung,
+		"titel_mitgezogen": mitgezogen,
 	})
 	return nil
 }

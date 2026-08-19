@@ -81,12 +81,13 @@
 		brichBearbeitenAb();
 		await laden();
 		onChanged?.();
-		// Ehrlich benennen, was NICHT mitgeändert wurde: Die Bücher tragen das Fach als
-		// Text und die Signatur klebt am Buchrücken — beides zieht eine Umbenennung nicht nach.
-		if (daten?.titel_mit_altfach > 0) {
+		// Die Bezeichnung wird jetzt auf die Bücher mitgezogen (buecher_titel.subject).
+		// Nur die Signatur am Buchrücken bleibt — die klebt physisch und folgt einem
+		// Umlabeln, nicht einem Klick.
+		if (daten?.titel_mitgezogen > 0) {
 			toastStore.addToast(
-				`Geändert. ${daten.titel_mit_altfach} Bücher tragen noch das alte Fach — die müssen von Hand umgestellt werden.`,
-				'info'
+				`Geändert. ${daten.titel_mitgezogen} Bücher auf das neue Fach umgestellt (Signatur am Buchrücken bleibt).`,
+				'success'
 			);
 		} else {
 			toastStore.addToast('Sachgruppe geändert.', 'success');
