@@ -136,3 +136,83 @@ func TestVersetzungMeldetNamenskonflikte(t *testing.T) {
 		t.Errorf("'09a' muss als Konflikt stehen bleiben, got %q", mail)
 	}
 }
+
+// TestVersetzungDoppellaufSerialisiert belegt den Advisory-Lock (Nebenläufigkeits-
+// Audit 19.08.2026): Zwei GLEICHZEITIGE Versetzungsläufe dürfen die Schule nicht +2
+// befördern. Der reine COUNT-Check auf audit_logs ist TOCTOU; der pg_advisory_xact_lock
+// serialisiert hart — genau einer gewinnt (200), der andere sieht danach den
+// Audit-Eintrag und bekommt 409. Netto: jede Klasse steigt um GENAU eine Stufe.
+func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	resetBestandsdaten(t, pool)
+
+	var adminID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('DL', 'Admin', 'dl-admin@test.invalid', 'admin', true)
+		ON CONFLICT (email) DO UPDATE SET vorname = EXCLUDED.vorname
+		RETURNING id`).Scan(&adminID); err != nil {
+		t.Fatalf("Test-Admin: %v", err)
+	}
+	// Ein Schüler in 05a — die Kohorte, die genau einmal auf 06a steigen darf.
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum)
+		VALUES ('Doppel','Lauf','05a','S-DL-1',2032,'2015-01-01')`); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM schueler WHERE barcode_id='S-DL-1'`); err != nil {
+			t.Logf("Aufräumen Schüler: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM audit_logs WHERE aktion='SCHULJAHRESWECHSEL' AND admin_id=$1`, adminID); err != nil {
+			t.Logf("Aufräumen Audit: %v", err)
+		}
+	})
+
+	lauf := func() int {
+		srv := &Server{DB: &db.Database{Pool: pool}}
+		req := httptest.NewRequest("POST", "/api/students/promote", strings.NewReader(`{"confirm": true}`))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
+			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		w := httptest.NewRecorder()
+		srv.PromoteStudentsHandler()(w, req)
+		return w.Code
+	}
+
+	codes := make(chan int, 2)
+	start := make(chan struct{})
+	for i := 0; i < 2; i++ {
+		go func() {
+			<-start
+			codes <- lauf()
+		}()
+	}
+	close(start)
+	c1, c2 := <-codes, <-codes
+
+	// Genau ein 200 und ein 409 (Reihenfolge egal).
+	ok, konflikt := 0, 0
+	for _, c := range []int{c1, c2} {
+		switch c {
+		case 200:
+			ok++
+		case 409:
+			konflikt++
+		default:
+			t.Fatalf("unerwarteter Status %d", c)
+		}
+	}
+	if ok != 1 || konflikt != 1 {
+		t.Fatalf("erwartet genau 1×200 + 1×409, war %d×200 / %d×409", ok, konflikt)
+	}
+
+	// Der Schüler steht in 06a — NICHT 07a.
+	var klasse string
+	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE barcode_id='S-DL-1'`).Scan(&klasse); err != nil {
+		t.Fatalf("Klasse lesen: %v", err)
+	}
+	if klasse != "06a" {
+		t.Errorf("Schule wurde doppelt versetzt: Klasse %q statt 06a", klasse)
+	}
+}

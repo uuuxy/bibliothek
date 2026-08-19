@@ -76,6 +76,7 @@ func TestPromoteStudents_SecondRunWithinWindowReturns409(t *testing.T) {
 
 	// Ein Lauf innerhalb des Schutzfensters (12 h) existiert → 409, ohne dass das UPDATE läuft.
 	mock.ExpectBegin()
+	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
 	mock.ExpectRollback()
@@ -93,6 +94,7 @@ func TestPromoteStudents_CommitPathWritesAuditLog(t *testing.T) {
 	s, mock := promotionTestServer(t)
 
 	mock.ExpectBegin()
+	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`WITH parsed AS`).

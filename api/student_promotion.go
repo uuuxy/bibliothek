@@ -15,6 +15,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// schuljahreswechselLockKey ist der feste Advisory-Lock-Schlüssel, der gleichzeitige
+// Versetzungsläufe hart serialisiert (siehe fuehreSchuljahreswechselAus). Ein beliebiger,
+// aber im Projekt eindeutiger Wert — er teilt keinen Namensraum mit den tabellenbasierten
+// Sequenz-Locks (advisoryLockKey in repository/sequence_repo.go).
+const schuljahreswechselLockKey int64 = 748_2026
+
 // PromoteStudentsResponse liefert die Statistik des Schuljahreswechsels zurück.
 // Bei DryRun=true wurde nichts geschrieben — die Zahlen sind die exakte Vorschau
 // (identisches SQL, Transaktion wird zurückgerollt).
@@ -154,6 +160,16 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 	defer db.SafeRollback(ctx, tx)
 
 	if !req.DryRun {
+		// HARTE Serialisierung gegen den Doppellauf. Der COUNT-Check unten allein ist
+		// TOCTOU: Zwei gleichzeitige Klicks (oder zwei Admins) lesen beide 0, bevor einer
+		// committet — und versetzen die GANZE Schule ein zweites Mal (+2 Stufen,
+		// irreversibel). Der Advisory-Lock (transaktionsgebunden, gibt beim Commit/
+		// Rollback automatisch frei) zwingt den zweiten Lauf zu warten, bis der erste
+		// fertig ist; danach sieht dessen COUNT den Audit-Eintrag und antwortet 409.
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, schuljahreswechselLockKey); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return resp, false
+		}
 		if !pruefeDoppellaufSchutz(ctx, tx, w) {
 			return resp, false
 		}
