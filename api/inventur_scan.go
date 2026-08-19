@@ -135,6 +135,13 @@ func (s *Server) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := invRepo.RecordInventurScan(ctx, req.SessionID, res.CopyID); err != nil {
+		// Die Session wurde inzwischen abgeschlossen (Multi-Scanner-Wettlauf) — der Scan
+		// ist gegenstandslos, aber kein Serverfehler. 409 mit klarer Meldung.
+		if errors.Is(err, repository.ErrInventurAbgeschlossen) {
+			apierrors.SendHTTPError(w, http.StatusConflict,
+				errors.New("die Inventur wurde soeben abgeschlossen — dieser Scan wurde nicht mehr erfasst"))
+			return
+		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}

@@ -65,9 +65,11 @@ func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 
 	invRepo := repository.NewInventoryRepository(tx)
 
-	// Session in derselben Transaktion sperren/prüfen: verhindert doppelten
-	// Abschluss und liefert den gespeicherten Scope für das Verlust-Update.
-	session, err := invRepo.LadeInventurSession(ctx, req.SessionID)
+	// Session in derselben Transaktion EXKLUSIV sperren (FOR UPDATE): verhindert den
+	// doppelten Abschluss UND koordiniert gegen gleichzeitige Scans (die die Zeile
+	// FOR SHARE halten) — der Verlust-Snapshot wird erst gezogen, wenn kein Scan mehr
+	// offen ist. Liefert zugleich den gespeicherten Scope für das Verlust-Update.
+	session, err := invRepo.SperreInventurSessionFuerAbschluss(ctx, req.SessionID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))

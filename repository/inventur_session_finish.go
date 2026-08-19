@@ -2,21 +2,76 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
 )
+
+// ErrInventurAbgeschlossen meldet, dass der Scan ankam, als die Session bereits
+// abgeschlossen war. Der Handler übersetzt das in eine 409 — der Scan ist
+// gegenstandslos, aber kein Fehler.
+var ErrInventurAbgeschlossen = errors.New("inventur bereits abgeschlossen")
 
 // RecordInventurScan verbucht ein Exemplar als in dieser Session erfasst. Ein erneuter
 // Scan desselben Exemplars in derselben Session ist ein No-op (Primärschlüssel).
+//
+// Nebenläufigkeit (Multi-Scanner-Betrieb): Der Scan koordiniert über die Session-Zeile
+// gegen einen gleichzeitigen Abschluss. Er hält sie mit FOR SHARE, solange er die
+// Erfassung schreibt; FinishInventurSession nimmt sie mit FOR UPDATE (siehe dort) und
+// kann daher nicht committen, bevor dieser Scan fertig ist — der Verlust-Snapshot des
+// Abschlusses sieht die Erfassung also garantiert. Ist die Session bereits abgeschlossen,
+// findet der FOR-SHARE-Read keine offene Zeile und der Scan wird abgewiesen
+// (ErrInventurAbgeschlossen), statt ins Leere zu laufen und ein physisch vorliegendes
+// Buch als Verlust zurückzulassen.
 func (r *InventoryRepository) RecordInventurScan(ctx context.Context, sessionID, exemplarID string) error {
-	_, err := r.db.Exec(ctx, `
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("scan-transaktion konnte nicht gestartet werden: %w", err)
+	}
+	defer db.SafeRollback(ctx, tx) // No-op nach Commit
+
+	var id string
+	if err := tx.QueryRow(ctx,
+		`SELECT id FROM inventur_sessions WHERE id = $1 AND abgeschlossen_am IS NULL FOR SHARE`,
+		sessionID).Scan(&id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrInventurAbgeschlossen
+		}
+		return fmt.Errorf("session für scan sperren fehlgeschlagen: %w", err)
+	}
+
+	if _, err := tx.Exec(ctx, `
 		INSERT INTO inventur_erfassungen (session_id, exemplar_id)
 		VALUES ($1, $2)
 		ON CONFLICT (session_id, exemplar_id) DO NOTHING
-	`, sessionID, exemplarID)
-	if err != nil {
+	`, sessionID, exemplarID); err != nil {
 		return fmt.Errorf("scan verbuchen fehlgeschlagen: %w", err)
 	}
-	return nil
+	return tx.Commit(ctx)
+}
+
+// SperreInventurSessionFuerAbschluss lädt die offene Session und sperrt ihre Zeile
+// EXKLUSIV (FOR UPDATE) — die Gegenseite zum FOR SHARE des Scans. Der Abschluss wartet
+// damit auf alle noch schreibenden Scans und zieht seinen Verlust-Snapshot erst danach.
+// Muss innerhalb der Abschluss-Transaktion laufen (der Handler übergibt die Tx als db).
+func (r *InventoryRepository) SperreInventurSessionFuerAbschluss(ctx context.Context, id string) (*InventurSession, error) {
+	var s InventurSession
+	err := r.db.QueryRow(ctx, `
+		SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
+		       gestartet_von::text, gestartet_am::text,
+		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = $1)
+		FROM inventur_sessions
+		WHERE id = $1 AND abgeschlossen_am IS NULL
+		FOR UPDATE
+	`, id).Scan(&s.ID, &s.ScopeType, &s.Signatur, &s.Subject, &s.Grade, &s.ScopeLabel,
+		&s.GestartetVon, &s.GestartetAm, &s.Erfasst)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
 // ExemplarImScope prüft, ob ein Exemplar zu den Scope-Dimensionen einer Session gehört

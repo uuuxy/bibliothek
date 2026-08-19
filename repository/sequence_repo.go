@@ -16,6 +16,11 @@ type DBQueryer interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	// Begin wird für Repository-Methoden gebraucht, die ihre eigene kurze Transaktion
+	// aufmachen (z. B. der Inventur-Scan koordiniert per Zeilensperre gegen den
+	// Abschluss). Sowohl *pgxpool.Pool als auch pgx.Tx erfüllen das (bei einer Tx ein
+	// Savepoint) — die Repos werden ausschließlich mit einem von beidem erzeugt.
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 // SequenceRepository provides methods to calculate sequential strings,
