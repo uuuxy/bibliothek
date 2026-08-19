@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -229,6 +231,50 @@ func TestRequirePermission_DenyDecisionIsCached(t *testing.T) {
 	// Schlägt fehl, falls der zweite Request doch eine role_permissions-Abfrage ausgelöst hätte.
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Cache hat zweite DB-Abfrage nicht verhindert: %v", err)
+	}
+}
+
+// invalidiereWaehrendQuery stellt das Rennen deterministisch nach: WÄHREND eine
+// Berechtigungs-Entscheidung aus der DB unterwegs ist (nach dem Lesen, vor dem
+// Cache-Schreiben), schlägt die Invalidierung zu — z. B. weil ein Admin genau jetzt
+// die Rechte-Matrix geändert hat.
+type invalidiereWaehrendQuery struct {
+	pgxmock.PgxPoolIface
+	imFlug func()
+}
+
+func (p *invalidiereWaehrendQuery) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
+	row := p.PgxPoolIface.QueryRow(ctx, sql, args...)
+	if strings.Contains(sql, "role_permissions") {
+		p.imFlug()
+	}
+	return row
+}
+
+// TestBerechtigungsCache_UeberholterLeserCachtNicht schließt das 60-Sekunden-Fenster
+// aus dem Nebenläufigkeits-Audit (19.08.): Die Invalidierung nach einer Rechteänderung
+// leert zwar den Cache — aber ein Request, der den ALTEN Stand kurz vorher aus der DB
+// gelesen hatte, schrieb ihn DANACH wieder hinein. Das entzogene Recht wirkte dann bis
+// zu 60 s weiter. Eine überholte Entscheidung darf den Cache nicht mehr erreichen.
+func TestBerechtigungsCache_UeberholterLeserCachtNicht(t *testing.T) {
+	s, mock := setupRBAC(t)
+	defer mock.Close()
+
+	// Die DB liefert den alten Stand: Recht (noch) gewährt.
+	mock.ExpectQuery("role_permissions").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"allowed"}).AddRow(true))
+	s.DB.Pool = &invalidiereWaehrendQuery{PgxPoolIface: mock, imFlug: InvalidatePermissionCache}
+
+	const cacheKey = "KOLLEGIUM:buch.ausleihen"
+	if _, err := s.ermittleUndCacheBerechtigung(t.Context(), "KOLLEGIUM", "buch.ausleihen", cacheKey); err != nil {
+		t.Fatalf("Berechtigung ermitteln: %v", err)
+	}
+
+	// Der laufende Request durfte mit dem gelesenen Stand antworten — aber der Cache
+	// darf die überholte Entscheidung nicht halten: Der nächste Request muss frisch lesen.
+	if _, found := leseBerechtigungCache(cacheKey); found {
+		t.Fatal("überholte Entscheidung wurde NACH der Invalidierung gecacht — das entzogene Recht wirkt bis zu 60 s weiter")
 	}
 }
 

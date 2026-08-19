@@ -18,6 +18,12 @@ import (
 var (
 	permCache   = make(map[string]cacheEntry)
 	permCacheMu sync.RWMutex
+	// permCacheEpoche zählt die Invalidierungen. Eine DB-Entscheidung darf nur dann in
+	// den Cache, wenn seit ihrem START keine Invalidierung dazwischenkam: Sonst liest
+	// ein Request den ALTEN Stand kurz vor der Rechteänderung, die Invalidierung leert
+	// den Cache — und der überholte Leser schreibt den alten Stand danach wieder
+	// hinein, wo er bis zu 60 s weiterwirkt (Nebenläufigkeits-Audit 19.08.2026).
+	permCacheEpoche uint64
 )
 
 type cacheEntry struct {
@@ -31,7 +37,16 @@ type cacheEntry struct {
 func InvalidatePermissionCache() {
 	permCacheMu.Lock()
 	permCache = make(map[string]cacheEntry)
+	permCacheEpoche++
 	permCacheMu.Unlock()
+}
+
+// leseCacheEpoche liefert den aktuellen Invalidierungs-Stand — VOR dem DB-Lesen
+// abfragen, damit der Cache-Schreiber erkennt, ob seine Entscheidung überholt wurde.
+func leseCacheEpoche() uint64 {
+	permCacheMu.RLock()
+	defer permCacheMu.RUnlock()
+	return permCacheEpoche
 }
 
 // claimsAusRequest liest das Session-Cookie und verifiziert das Token. Bei Fehler
@@ -80,6 +95,12 @@ func leseBerechtigungCache(cacheKey string) (allowed bool, found bool) {
 // sind ein Server- (500), kein Berechtigungsproblem. pgx.ErrNoRows dagegen heißt
 // "Recht nicht gewährt" und ist stabil cachebar.
 func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permission, cacheKey string) (bool, error) {
+	// Epoche VOR dem DB-Lesen festhalten: Nur wenn bis zum Cache-Schreiben keine
+	// Invalidierung dazwischenkam, ist die Entscheidung noch aktuell. Kam eine, sah
+	// dieses Lesen womöglich den Stand VOR der Rechteänderung — der Request selbst
+	// darf damit noch antworten, aber der Cache darf ihn nicht festhalten.
+	epocheBeimStart := leseCacheEpoche()
+
 	var allowed bool
 	query := `
 		SELECT allowed
@@ -93,18 +114,20 @@ func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permis
 	finalAllowed := err == nil && allowed
 
 	permCacheMu.Lock()
-	// Abgelaufene Einträge beim Miss-Write opportunistisch entfernen, damit der Cache
-	// nicht unbegrenzt wächst. Der Keyspace (Rolle × Permission) ist klein, daher ist
-	// ein vollständiger Sweep hier günstig und kommt ohne Hintergrund-Goroutine aus.
-	now := time.Now()
-	for k, v := range permCache {
-		if now.After(v.ExpiresAt) {
-			delete(permCache, k)
+	if permCacheEpoche == epocheBeimStart {
+		// Abgelaufene Einträge beim Miss-Write opportunistisch entfernen, damit der Cache
+		// nicht unbegrenzt wächst. Der Keyspace (Rolle × Permission) ist klein, daher ist
+		// ein vollständiger Sweep hier günstig und kommt ohne Hintergrund-Goroutine aus.
+		now := time.Now()
+		for k, v := range permCache {
+			if now.After(v.ExpiresAt) {
+				delete(permCache, k)
+			}
 		}
-	}
-	permCache[cacheKey] = cacheEntry{
-		Allowed:   finalAllowed,
-		ExpiresAt: now.Add(60 * time.Second),
+		permCache[cacheKey] = cacheEntry{
+			Allowed:   finalAllowed,
+			ExpiresAt: now.Add(60 * time.Second),
+		}
 	}
 	permCacheMu.Unlock()
 
