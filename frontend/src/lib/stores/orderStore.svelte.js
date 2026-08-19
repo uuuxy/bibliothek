@@ -20,6 +20,8 @@ class OrderStore {
 	total = $derived(this.cart.reduce((sum, i) => sum + i.menge * (Number(i.preis) || 0), 0));
 	totalQty = $derived(this.cart.reduce((sum, i) => sum + i.menge, 0));
 	submitting = $state(false);
+	/** Idempotenz-Schlüssel des laufenden Absende-Vorgangs (Doppelklick-Schutz). */
+	pendingIdempotencyKey = /** @type {string | null} */ (null);
 	/** Globaler Schalter „Barcodes mitschicken" */
 	attachBarcodes = $state(true);
 	/**
@@ -363,10 +365,16 @@ class OrderStore {
 	async submitOrder() {
 		const supplier = this.selectedSupplier;
 		if (!this.cart.length || !supplier) return;
+		if (this.submitting) return; // Doppelklick abfangen, bevor die Anfrage rausgeht
 		this.submitting = true;
+		// Idempotenz-Schlüssel pro Absende-Vorgang: Überholt ein Doppelklick den Guard
+		// (oder klemmt das Netz und der Client wiederholt), geht DERSELBE Schlüssel raus —
+		// der Server macht daraus ein No-op statt einer zweiten Bestellung + Mail.
+		if (!this.pendingIdempotencyKey) this.pendingIdempotencyKey = crypto.randomUUID();
 		try {
 			const data = await apiPost('/api/bestellungen', {
 				supplier_id: supplier.id,
+				idempotency_key: this.pendingIdempotencyKey,
 				items: this.cart.map((item) => ({
 					titel_id: item.id,
 					menge: item.menge,
@@ -378,6 +386,7 @@ class OrderStore {
 				}))
 			});
 			this.cart = [];
+			this.pendingIdempotencyKey = null; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
 			const toastType = data?.status === 'warning' ? 'error' : 'success';
 			const barcodeInfo =
 				data?.ordered_qty != null ? ` (${data.ordered_qty} Barcodes reserviert.)` : '';

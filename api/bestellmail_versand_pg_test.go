@@ -178,3 +178,68 @@ func kopf(nachricht string) string {
 	}
 	return nachricht
 }
+
+// bestelleMitSchluessel löst eine Bestellung über den echten Handler MIT Idempotenz-
+// Schlüssel aus.
+func bestelleMitSchluessel(t *testing.T, srv *Server, lieferantID, titelID, key string) *httptest.ResponseRecorder {
+	t.Helper()
+	rumpf := fmt.Sprintf(
+		`{"supplier_id":%q,"idempotency_key":%q,"items":[{"titel_id":%q,"menge":2,"preis":9.5,"generate_barcodes":true}]}`,
+		lieferantID, key, titelID)
+	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler := srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)), NewPDFService())
+	handler(rec, req)
+	return rec
+}
+
+// TestBestellungIdempotenz belegt den Doppelklick-Schutz (Migration 077): Zwei
+// Bestellungen mit DEMSELBEN Idempotenz-Schlüssel erzeugen nur EINE Bestellung und
+// GENAU EINE Lieferanten-Mail; die zweite meldet „bereits erfasst".
+func TestBestellungIdempotenz(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	setzeOeffentlicheAdresse(t, pool, "")
+	sitzungen := mailAbfangen(t)
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	lieferant := haendler(t, pool, "IdemLieferant", false)
+	titel := titelMitMeldebestand(t, pool, "LMF-Idem", 0)
+	key := "33333333-3333-3333-3333-333333333333"
+
+	rec1 := bestelleMitSchluessel(t, srv, lieferant, titel, key)
+	if rec1.Code != http.StatusOK {
+		t.Fatalf("erste Bestellung Status %d: %s", rec1.Code, rec1.Body.String())
+	}
+	// Erste Bestellung löst genau eine Mail aus.
+	_ = warteAufMail(t, sitzungen)
+
+	// Doppelklick: gleicher Schlüssel → keine zweite Bestellung, keine zweite Mail.
+	rec2 := bestelleMitSchluessel(t, srv, lieferant, titel, key)
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("zweite Bestellung Status %d: %s", rec2.Code, rec2.Body.String())
+	}
+	if !strings.Contains(rec2.Body.String(), "bereits erfasst") {
+		t.Errorf("zweiter Klick muss „bereits erfasst\" melden: %s", rec2.Body.String())
+	}
+
+	// Genau eine Bestellung in der DB.
+	var anzahl int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM bestellungen_verlauf WHERE idempotenz_schluessel = $1`, key).Scan(&anzahl); err != nil {
+		t.Fatal(err)
+	}
+	if anzahl != 1 {
+		t.Fatalf("genau 1 Bestellung erwartet, waren %d", anzahl)
+	}
+
+	// KEINE zweite Mail: Der Kanal darf jetzt leer sein.
+	select {
+	case s := <-sitzungen:
+		t.Fatalf("es ging eine ZWEITE Mail raus (Doppelklick nicht abgefangen): %s", kopf(s.Nachricht))
+	case <-time.After(1 * time.Second):
+		// gut — keine zweite Mail
+	}
+}

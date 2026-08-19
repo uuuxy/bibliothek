@@ -28,6 +28,10 @@ type OrderItemRequest struct {
 type SubmitOrderRequest struct {
 	SupplierID string             `json:"supplier_id"`
 	Items      []OrderItemRequest `json:"items"`
+	// IdempotencyKey: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
+	// denselben Schlüssel; die zweite Anfrage wird zum No-op (keine zweite Bestellung,
+	// keine zweite Lieferanten-Mail). Optional — ohne Schlüssel läuft alles wie bisher.
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
 }
 
 // SubmitOrderHandler processes a full cart order via the OrderService and dispatches PDFs via PDFService.
@@ -52,6 +56,17 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		res, err := orderSvc.ProcessOrder(ctx, req)
 		if err != nil {
 			apierrors.SendHTTPError(w, mapProcessOrderError(err), err)
+			return
+		}
+
+		// Doppelklick: dieselbe Bestellung lief schon durch — KEINE zweite Mail, keine
+		// zweite Bestellung. Die erste Anfrage hat Mail und Etiketten bereits erledigt.
+		if res.BereitsVorhanden {
+			RespondJSON(w, http.StatusOK, map[string]any{
+				"status":      "success",
+				"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.SupplierName),
+				"ordered_qty": res.TotalAllocated,
+			})
 			return
 		}
 

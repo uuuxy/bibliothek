@@ -46,6 +46,10 @@ type OrderResult struct {
 	// Datenbank liegt nur sein Hash; wer ihn hier nicht mitnimmt, kann ihn nie wieder
 	// erfahren. Leer, wenn der Lieferant keinen Bestätigungsschritt hat.
 	BestaetigungsToken string
+	// BereitsVorhanden: true, wenn derselbe Idempotenz-Schlüssel schon eine Bestellung
+	// erzeugt hat (Doppelklick). Der Handler überspringt dann den Mailversand — es gibt
+	// keine zweite Bestellung und keine zweite Lieferanten-Mail.
+	BereitsVorhanden bool
 }
 
 type bestellungPosition struct {
@@ -125,6 +129,12 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	// sind oben in der Schleife bereits reserviert, und der Kopf zählt nur die dort
 	// errechneten Summen.
 	bestellungID, err := s.insertBestellverlauf(ctx, tx, req, supplier, gesamtbetrag, totalAllocated, tokenHash)
+	if errors.Is(err, ErrBestellungDuplikat) {
+		// Doppelklick: dieselbe Bestellung lief schon durch. Die Transaktion wird
+		// zurückgerollt (die hier reservierten Exemplare verschwinden wieder), und wir
+		// melden die BESTEHENDE Bestellung — der Handler verschickt dann KEINE zweite Mail.
+		return s.ladeBestehendeBestellung(ctx, req.IdempotencyKey)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -256,20 +266,50 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 // ohne Link als Dublette ablehnt.
 func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, gesamtbetrag float64, totalAllocated int, tokenHash string) (string, error) {
 	var bestellungID string
+	// ON CONFLICT (idempotenz_schluessel) DO NOTHING: Ein Doppelklick mit demselben
+	// Schlüssel läuft am partiellen Unique-Index auf, liefert keine Zeile — das signalisiert
+	// ProcessOrder als ErrBestellungDuplikat (keine zweite Bestellung, keine zweite Mail).
 	err := tx.QueryRow(ctx, `
 		INSERT INTO bestellungen_verlauf
 			(lieferant_id, lieferant_name, lieferant_email, kundennummer, gesamtbetrag, anzahl_exemplare,
-			 bestaetigungs_token_hash, token_gueltig_bis)
+			 bestaetigungs_token_hash, token_gueltig_bis, idempotenz_schluessel)
 		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''),
-		        CASE WHEN $7 = '' THEN NULL ELSE now() + make_interval(days => $8) END)
+		        CASE WHEN $7 = '' THEN NULL ELSE now() + make_interval(days => $8) END,
+		        $9)
+		ON CONFLICT (idempotenz_schluessel) WHERE idempotenz_schluessel IS NOT NULL DO NOTHING
 		RETURNING id`,
 		req.SupplierID, supplier.Name, supplier.Email, supplier.Kundennummer,
 		gesamtbetrag, totalAllocated, tokenHash, TokenGueltigkeitTage,
+		nullableString(req.IdempotencyKey),
 	).Scan(&bestellungID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrBestellungDuplikat
+	}
 	if err != nil {
 		return "", fmt.Errorf("bestellverlauf insert: %w", err)
 	}
 	return bestellungID, nil
+}
+
+// ErrBestellungDuplikat signalisiert, dass für diesen Idempotenz-Schlüssel bereits eine
+// Bestellung existiert (Doppelklick). ProcessOrder liefert dann die bestehende Bestellung
+// mit BereitsVorhanden=true zurück, der Handler verschickt keine zweite Mail.
+var ErrBestellungDuplikat = errors.New("bestellung mit diesem idempotenz-schlüssel existiert bereits")
+
+// ladeBestehendeBestellung liest die per Idempotenz-Schlüssel bereits angelegte Bestellung
+// (auf dem Pool, außerhalb der zurückgerollten Tx) und liefert ein OrderResult, das nur
+// die Meldung trägt — Labels/Mail entfallen, die gab es beim ersten, erfolgreichen Lauf.
+func (s *OrderService) ladeBestehendeBestellung(ctx context.Context, idempotenzSchluessel string) (*OrderResult, error) {
+	var res OrderResult
+	res.BereitsVorhanden = true
+	err := s.db.Pool.QueryRow(ctx, `
+		SELECT id, lieferant_name, anzahl_exemplare
+		FROM bestellungen_verlauf WHERE idempotenz_schluessel = $1`,
+		idempotenzSchluessel).Scan(&res.BestellungID, &res.SupplierName, &res.TotalAllocated)
+	if err != nil {
+		return nil, fmt.Errorf("bestehende bestellung laden: %w", err)
+	}
+	return &res, nil
 }
 
 // insertBestellpositionen schreibt alle Positionen des Bestellkopfs.

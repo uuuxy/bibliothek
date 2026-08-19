@@ -677,8 +677,14 @@ CREATE TABLE bestellungen_verlauf (
     -- 'lieferant' = über den Link bestätigt, 'bibliothek' = manuell nachgetragen.
     bestaetigt_durch   TEXT
         CONSTRAINT bestellungen_verlauf_bestaetigt_durch_check
-        CHECK (bestaetigt_durch IS NULL OR bestaetigt_durch IN ('lieferant', 'bibliothek'))
+        CHECK (bestaetigt_durch IS NULL OR bestaetigt_durch IN ('lieferant', 'bibliothek')),
+    idempotenz_schluessel UUID                            -- Doppelklick-Schutz (Migration 077)
 );
+
+-- Doppelklick-Schutz Bestellung: zweite Anfrage mit demselben Schlüssel läuft hier auf.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_bestellung_idempotenz
+    ON bestellungen_verlauf (idempotenz_schluessel)
+    WHERE idempotenz_schluessel IS NOT NULL;
 
 -- Neueste Bestellungen (Historie mit LIMIT) und Zeitraumfilter (Bestellbericht).
 -- Ohne ihn liest Postgres für die 200 neuesten Zeilen die ganze Tabelle (Migration 064).
@@ -854,7 +860,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('073_stock_spalte_entfernt.sql'),
 ('074_zwillinge_aus_der_lusd.sql'),
 ('075_lehrer_anliegen.sql'),
-('076_klassensatz_idempotenz.sql')
+('076_klassensatz_idempotenz.sql'),
+('077_bestellung_idempotenz.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

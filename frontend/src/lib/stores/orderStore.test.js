@@ -206,10 +206,17 @@ describe('orderStore.submitOrder', () => {
 
 		await orderStore.submitOrder();
 
-		expect(apiPost).toHaveBeenCalledWith('/api/bestellungen', {
-			supplier_id: 's1',
-			items: [{ titel_id: 't1', menge: 2, preis: 9.9, generate_barcodes: true }]
-		});
+		expect(apiPost).toHaveBeenCalledWith(
+			'/api/bestellungen',
+			expect.objectContaining({
+				supplier_id: 's1',
+				items: [{ titel_id: 't1', menge: 2, preis: 9.9, generate_barcodes: true }]
+			})
+		);
+		// Doppelklick-Schutz: ein Idempotenz-Schlüssel geht mit.
+		const payload = bestellPayload(apiPostMock);
+		expect(typeof payload.idempotency_key).toBe('string');
+		expect(payload.idempotency_key.length).toBeGreaterThan(0);
 		expect(orderStore.cart).toEqual([]);
 		expect(apiGet).toHaveBeenCalledWith('/api/bestellungen/zulauf');
 	});
