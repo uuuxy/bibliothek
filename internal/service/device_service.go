@@ -11,6 +11,7 @@ import (
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // DeviceResult beschreibt das Ergebnis einer Geräte-Aktion wie Ausleihe, Rückgabe oder Checklisten-Anforderung.
@@ -176,6 +177,15 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 		resp.Teacher = teacher
 	}
 	if err != nil {
+		// Zwei gleichzeitige Scans desselben Geräts: Der Verlierer verletzt
+		// uniq_ausleihen_aktiv_geraet (23505). Die Daten sind sicher (nur EINE aktive
+		// Ausleihe entsteht), aber ohne dieses Mapping käme ein 500 "interner
+		// Datenbankfehler" statt einer klaren 409-Meldung — analog zum Buch-Pfad
+		// (loan.go: ON CONFLICT → ErrAusleiheKonflikt).
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, fmt.Errorf("%w: Gerät ist bereits ausgeliehen (woanders verbucht)", ErrConflict)
+		}
 		return nil, err
 	}
 
