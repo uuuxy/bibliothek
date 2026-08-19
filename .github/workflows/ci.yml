@@ -202,6 +202,10 @@ jobs:
         curl -sf http://localhost:8084/health
 
     - name: Install Playwright
+      # Reißleine wie beim PostgreSQL-Client-Schritt: Am 19.08.2026 hing dieser
+      # Schritt zweimal >9 min an Registry/CDN (normal: 1–3 min). Ohne Limit wartet
+      # der Job bis zum 6-Stunden-Abbruch und sieht dabei aus wie "läuft noch".
+      timeout-minutes: 10
       run: |
         cd frontend
         npm ci
