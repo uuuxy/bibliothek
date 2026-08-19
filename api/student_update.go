@@ -4,13 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // pruefeSchuelerLoeschbar prüft, ob ein Schüler gelöscht werden darf. Rückgabe
@@ -153,8 +157,14 @@ func parseGeburtsdatum(raw string) (*time.Time, error) {
 
 // PatchStudentHandler aktualisiert editierbare Felder eines Schülers (klasse, abgaenger_jahr).
 // Wird nun auch für das Bearbeiten aller Stammdaten in der UI genutzt.
-func (s *Server) PatchStudentHandler() http.HandlerFunc {
+func (s *Server) PatchStudentHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := auth.GetClaims(r.Context())
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
@@ -172,8 +182,30 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		// lusd_id kontrolliert nachtragen (nur wenn leer, eindeutig) und ggf. in denselben
+		// Builder einhängen. nachgetragen != "" heißt: hinterher auditieren.
+		nachgetragen, ok := s.pruefeUndSetzeLusdID(ctx, w, id, req.LusdID, b)
+		if !ok {
+			return
+		}
+		// Ein zweiter Empty-Check: Wenn AUSSER lusd_id nichts drin war und lusd_id ein
+		// No-op ist (gleicher Wert), darf kein leerer UPDATE laufen.
+		if len(b.sets) == 0 {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
+			return
+		}
+
 		if !s.fuehreSchuelerUpdateAus(ctx, w, id, b) {
 			return
+		}
+
+		if nachgetragen != "" {
+			if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", getIP(r), map[string]any{
+				"schueler_id": id,
+				"lusd_id":     nachgetragen,
+			}); logErr != nil {
+				log.Printf("Audit für LUSD-ID-Nachtrag fehlgeschlagen: %v", logErr)
+			}
 		}
 
 		w.Header().Set(headerContentType, contentTypeJSON)
@@ -183,6 +215,62 @@ func (s *Server) PatchStudentHandler() http.HandlerFunc {
 		}
 		httpresp.Encode(w, response)
 	}
+}
+
+// pruefeUndSetzeLusdID trägt die LUSD-ID kontrolliert nach. Die LUSD-ID ist der
+// einzige Zuordnungsschlüssel des Landesabgleichs (kein Adress-/Geburtsdatum-Fallback
+// im Import); wer sie roh überschreibt, kann still die falsche Identität verknüpfen.
+// Regeln: nur NACHTRAGBAR, wenn bisher leer (Waise adoptieren) — ein bestehender Wert
+// wird nicht überschrieben und nicht geleert; der neue Wert muss eindeutig sein. Der
+// automatische Gegenpart ist das Import-Auto-Matching (Name+Geburtsdatum).
+//
+// Rückgabe: (nachgetragenerWert, ok). nachgetragenerWert != "" heißt: bitte auditieren.
+// Ist req nil oder ein No-op (gleicher Wert), wird ("", true) zurückgegeben.
+func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter, id string, reqLusd *string, b *updateBuilder) (string, bool) {
+	if reqLusd == nil {
+		return "", true
+	}
+	neu := strings.TrimSpace(*reqLusd)
+
+	var aktuell string
+	if err := s.DB.Pool.QueryRow(ctx, "SELECT COALESCE(lusd_id, '') FROM schueler WHERE id = $1", id).Scan(&aktuell); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+			return "", false
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return "", false
+	}
+
+	if neu == aktuell {
+		return "", true // No-op: Formular schickt den unveränderten Wert mit.
+	}
+	if aktuell != "" {
+		// Bestehende Verknüpfung: weder überschreiben noch leeren.
+		apierrors.SendHTTPError(w, http.StatusForbidden,
+			errors.New("die LUSD-ID dieses Schülers ist bereits gesetzt und kann über das Formular nicht geändert oder geleert werden"))
+		return "", false
+	}
+	if neu == "" {
+		return "", true // war leer, bleibt leer.
+	}
+
+	// Eindeutigkeit VOR dem Schreiben prüfen, damit statt eines 500 am partiellen
+	// Unique-Index (uniq_schueler_lusd_id_active) eine klare 409 zurückkommt.
+	var belegt bool
+	if err := s.DB.Pool.QueryRow(ctx,
+		"SELECT EXISTS(SELECT 1 FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL AND id <> $2)", neu, id).Scan(&belegt); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return "", false
+	}
+	if belegt {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			errors.New("diese LUSD-ID ist bereits einem anderen aktiven Schüler zugeordnet"))
+		return "", false
+	}
+
+	b.addStr("lusd_id", &neu)
+	return neu, true
 }
 
 // patchStudentRequest bündelt die optional aktualisierbaren Stammdatenfelder (nil = unverändert).
@@ -235,7 +323,10 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	b := &updateBuilder{}
 	b.addStr("vorname", req.Vorname)
 	b.addStr("nachname", req.Nachname)
-	b.addStr("lusd_id", req.LusdID)
+	// lusd_id NICHT hier — sie hat einen eigenen kontrollierten Pfad (nur nachtragbar
+	// wenn leer, mit Eindeutigkeits-Prüfung und Audit), siehe pruefeUndSetzeLusdID im
+	// Handler. Ein roher Wert im generischen Feld-Beutel verknüpfte den Datensatz sonst
+	// ungeprüft mit einer fremden LUSD-Identität (Betreiber-Entscheidung 18.08.2026).
 	b.addStr("barcode_id", req.BarcodeID)
 	b.addStr("klasse", req.Klasse)
 	b.addInt("abgaenger_jahr", req.AbgaengerJahr)
@@ -256,12 +347,9 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	b.addStr("ort", req.Ort)
 	b.addStr("eltern_email", req.ElternEmail)
 
-	// Empty PATCH (kein aktualisierbares Feld): als 400 ablehnen, statt einen
-	// No-op-UPDATE zu fahren, dessen RowsAffected==0 fälschlich als 404 gälte.
-	if len(b.sets) == 0 {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
-		return nil, false
-	}
+	// Der Empty-PATCH-Check steht bewusst NICHT hier, sondern im Handler NACH
+	// pruefeUndSetzeLusdID: Eine reine lusd_id-Nachtragung ist ein gültiger PATCH,
+	// dessen einziges Feld erst der kontrollierte lusd_id-Pfad hinzufügt.
 	return b, true
 }
 

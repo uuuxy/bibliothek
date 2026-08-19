@@ -16,7 +16,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Rechte-Oberfläche aber gar nicht sichtbar (Audit-Befund 01.08.2026).
 	// Ungefährlich: Beide Rechte sind für alle Rollen identisch geseedet
 	// (ADMIN/MITARBEITER ja, LEHRER/HELFER nein) — niemand gewinnt oder verliert Zugriff.
-	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("edit_students")(s.PatchStudentHandler()))
+	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("edit_students")(s.PatchStudentHandler(auditRepo)))
 	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("edit_students")(s.LockStudentHandler()))
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
 

@@ -120,11 +120,18 @@
 					type="date"
 					bind:value={formData.geburtsdatum}
 				/>
+				<!-- LUSD-ID ist kontrolliert nachtragbar: nur setzbar, solange sie leer ist
+				     (Waise adoptieren). Ist sie bereits gesetzt, bleibt sie schreibgeschützt —
+				     der Server lehnt eine Änderung/Leerung ohnehin ab (kontrollierter Pfad). -->
 				<InputField
 					id="lusd_id"
 					label="LUSD-ID"
 					bind:value={formData.lusd_id}
 					extraClasses="font-mono"
+					disabled={!!student.lusd_id}
+					hint={student.lusd_id
+						? 'Bereits mit der LUSD verknüpft — Änderung nur über den Import.'
+						: 'Nachtragbar: verknüpft diesen Schüler mit der LUSD.'}
 				/>
 			</div>
 		</section>

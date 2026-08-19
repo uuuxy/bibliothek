@@ -7,7 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/repository"
 )
 
 // Sperren hat GENAU EINE Tür.
@@ -40,10 +42,13 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	fahre := func(body string, h http.HandlerFunc) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPatch, "/x", strings.NewReader(body))
 		req.SetPathValue("id", id)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
+			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
 		h(rec, req)
 		return rec
 	}
+	auditRepo := repository.NewAuditRepository(pool)
 
 	gesperrt := func() bool {
 		t.Helper()
@@ -57,7 +62,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 
 	// 1. Der allgemeine PATCH kann NICHT mehr sperren. Das Feld ist keins mehr, also
 	//    bleibt vom Rumpf nichts Änderbares übrig — 400 statt eines 500ers aus der Tiefe.
-	rec := fahre(`{"is_manually_blocked":true}`, srv.PatchStudentHandler())
+	rec := fahre(`{"is_manually_blocked":true}`, srv.PatchStudentHandler(auditRepo))
 	if rec.Code == http.StatusInternalServerError {
 		t.Errorf("PATCH mit Sperrfeld gibt %d — der alte 500er aus chk_schueler_block_reason ist zurück.\n"+
 			"→ Sperren gehört ausschliesslich in LockStudentHandler; dort gibt es einen Grund und eine Meldung.",

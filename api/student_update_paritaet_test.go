@@ -25,7 +25,14 @@ import (
 
 // Felder des Request-Typs, die absichtlich in KEINE SET-Zuweisung münden. Jedes braucht
 // einen Grund, der über „steht sonst rot" hinausgeht.
-var nichtInsUpdate = map[string]string{}
+var nichtInsUpdate = map[string]string{
+	// lusd_id hat einen eigenen kontrollierten Pfad (pruefeUndSetzeLusdID im Handler):
+	// nur nachtragbar wenn leer, eindeutig, auditiert. Ein rohes b.add* im generischen
+	// Builder verknüpfte den Datensatz sonst ungeprüft mit einer fremden LUSD-Identität
+	// (Betreiber-Entscheidung 18.08.2026). Das FELD wird also sehr wohl geschrieben —
+	// nur nicht hier, sondern nach eigener Prüfung. Test: TestLusdIDKontrolliertNachtragbar.
+	"lusd_id": "kontrollierter Pfad pruefeUndSetzeLusdID (nur nachtragbar wenn leer, eindeutig, auditiert)",
+}
 
 // beispielwert liefert einen Wert, den JEDES Feld dieses Typs verträgt.
 //
