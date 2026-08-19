@@ -2,6 +2,7 @@ package api
 
 import (
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/db"
 	"errors"
 
@@ -129,8 +130,14 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 }
 
 // OverrideDueDateHandler manually overrides the due date of an active loan.
-func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
+func (s *Server) OverrideDueDateHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := auth.GetClaims(r.Context())
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+			return
+		}
+
 		ausleiheID := r.PathValue("id")
 		if ausleiheID == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Ausleihe-ID"))
@@ -154,6 +161,38 @@ func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+
+		// Sanktions-Konsistenz mit ExtendLoanHandler und GlobalExtendLMFHandler: Ist das
+		// Buch an einen gesperrten Schüler verliehen, darf die Frist nicht in die ZUKUNFT
+		// verschoben werden — das machte die Ausleihe wieder "nicht überfällig", setzte
+		// die Mahn-Eskalation zurück und hebelte so die Auto-Sperre aus (die aus überfälligen
+		// Ausleihen berechnet wird). Genau diese Umgehung war bis 18.08.2026 über diesen
+		// Endpunkt möglich, während die beiden Verlängerungs-Endpunkte sie ausdrücklich
+		// verbieten. Ein VORGEZOGENES Datum (Rückruf) bleibt auch bei Sperre erlaubt:
+		// Es hebt die Sanktion nicht auf, im Gegenteil.
+		if newDate.After(time.Now()) {
+			var gesperrt bool
+			if errChk := s.DB.Pool.QueryRow(ctx, `
+				SELECT COALESCE(s.ist_gesperrt, false) OR COALESCE(s.is_manually_blocked, false)
+				FROM ausleihen a
+				LEFT JOIN schueler s ON s.id = a.schueler_id
+				WHERE a.id = $1 AND a.rueckgabe_am IS NULL
+			`, ausleiheID).Scan(&gesperrt); errChk != nil {
+				if errors.Is(errChk, pgx.ErrNoRows) {
+					apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+					return
+				}
+				log.Printf("Fehler bei Sperr-Prüfung (Frist-Überschreibung): %v", errChk)
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+				return
+			}
+			if gesperrt {
+				apierrors.SendHTTPError(w, http.StatusForbidden,
+					errors.New("gesperrte Ausleihe: die Frist kann nicht in die Zukunft verschoben werden — die Sperre soll zur Rückgabe zwingen"))
+				return
+			}
+		}
+
 		// Wie bei der regulären Verlängerung: Eine neue Frist in der Zukunft macht die
 		// Ausleihe wieder "nicht überfällig" und setzt die Mahn-Eskalation zurück. Ein
 		// vorgezogenes Datum (Rückruf) lässt die Mahnstufe unberührt.
@@ -177,6 +216,17 @@ func (s *Server) OverrideDueDateHandler() http.HandlerFunc {
 			log.Printf("Fehler bei manueller Frist-Überschreibung: %v", err)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
+		}
+
+		// Ein manuell überschriebenes Fälligkeitsdatum ist ein Eingriff in eine Sanktion
+		// (Mahnfristen, Auto-Sperre) — er gehört revisionssicher protokolliert, genau wie
+		// der Checkout-Override (OVERRIDE_BLOCK). Best effort: Der Eingriff gilt, auch wenn
+		// das Log klemmt, aber der Fehlversuch steht wenigstens im Server-Log.
+		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
+			"ausleihe_id": id,
+			"neue_frist":  newFrist.Format(time.RFC3339),
+		}); logErr != nil {
+			log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", logErr)
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]interface{}{
