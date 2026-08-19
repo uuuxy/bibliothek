@@ -56,6 +56,10 @@ type LusdPreviewResult struct {
 	SkippedNoID      int            `json:"skipped_no_id"` // CSV-Zeilen ohne LUSD-ID — werden nie importiert
 }
 
+// lusdImportLockKey serialisiert gleichzeitige LUSD-Importe (Advisory-Lock). Eigener
+// Nummernkreis, überschneidet sich nicht mit anderen Advisory-Keys im Projekt.
+const lusdImportLockKey int64 = 750_2026
+
 // massGraduationThresholdPct: Ab diesem Anteil an Abgängern (bezogen auf die
 // aktiven DB-Schüler) verweigert der Import ohne explizite Bestätigung — die
 // Abgänger-Behandlung anonymisiert irreversibel. Schutz gegen versehentliche
@@ -270,6 +274,19 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 		return nil, err
 	}
 	defer db.SafeRollback(ctx, tx)
+
+	// Beim ANWENDEN alle LUSD-Läufe hart serialisieren (Advisory-Lock, transaktions-
+	// gebunden). Zwei gleichzeitige Importe (zwei Admins) arbeiteten sonst auf sich
+	// überholenden Snapshots: kollidierende Import-Barcodes/lusd_ids reißen den zweiten
+	// Import komplett ab (23505 → kompletter Rollback), und im ungünstigsten Fall
+	// anonymisiert der eine einen Abgänger, den der andere gerade wieder aktiviert
+	// (Foto/Adresse unwiederbringlich weg). Der zweite Lauf wartet hier, bis der erste
+	// fertig ist. Die Vorschau (apply=false) nimmt den Lock NICHT — sie liest nur.
+	if apply {
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lusdImportLockKey); err != nil {
+			return nil, fmt.Errorf("lusd-import sperren fehlgeschlagen: %w", err)
+		}
+	}
 
 	dbStudents, err := ladeAktiveSchueler(ctx, tx)
 	if err != nil {

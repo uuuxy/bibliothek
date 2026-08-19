@@ -54,6 +54,8 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 
 	// 10 aktive Schüler in der DB, CSV enthält nur 2 davon → 8 Abgänger (80%).
 	mock.ExpectBegin()
+	// apply=true: der Import-Advisory-Lock wird ZUERST genommen (serialisiert Parallel-Läufe).
+	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
 	mock.ExpectQuery(`SELECT id, lusd_id, klasse, vorname, nachname FROM schueler`).
 		WillReturnRows(lusdStudentRows(10))
 	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, geburtsdatum`).
