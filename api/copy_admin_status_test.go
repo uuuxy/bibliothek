@@ -20,10 +20,11 @@ import (
 // gegen echtes Postgres abgesichert; hier wird gepinnt, dass der Code-Pfad das
 // Grund-Feld tatsächlich mitschreibt.
 //
-// Das Regex prüft bewusst den CASE-Ausdruck: WHEN $2 (aussondern) muss einen Grund
-// setzen, ohne einen vorhandenen (z. B. VERLUST aus der Inventur) zu überschreiben;
+// Das Regex prüft bewusst den CASE-Ausdruck: WHEN $2 (aussondern) muss den Default-Grund
+// VERLUST setzen ("Verloren" zählt in der Verlustquote), ohne einen vorhandenen,
+// spezifischeren (z. B. BESCHAEDIGUNG aus der Schadensmeldung) zu überschreiben;
 // ELSE (reaktivieren) muss ihn löschen.
-const updateCopyStatusPattern = `UPDATE buecher_exemplare\s+SET ist_ausleihbar = \$1,\s+ist_ausgesondert = \$2,\s+aussonderung_grund = CASE\s+WHEN \$2 THEN COALESCE\(aussonderung_grund, 'AUSSORTIERT'\)\s+ELSE NULL\s+END`
+const updateCopyStatusPattern = `UPDATE buecher_exemplare\s+SET ist_ausleihbar = \$1,\s+ist_ausgesondert = \$2,\s+aussonderung_grund = CASE\s+WHEN \$2 THEN COALESCE\(aussonderung_grund, 'VERLUST'\)\s+ELSE NULL\s+END`
 
 func neuerCopyStatusAufbau(t *testing.T) (pgxmock.PgxPoolIface, http.HandlerFunc) {
 	t.Helper()
