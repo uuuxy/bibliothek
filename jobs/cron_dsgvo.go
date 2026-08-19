@@ -60,13 +60,31 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
+	// ALLE direkt identifizierenden Spalten leeren, nicht nur den Namen: Bis 19.08.2026
+	// referenzierte diese Query eine nicht existente Spalte foto_url und scheiterte
+	// deshalb ZUR LAUFZEIT beim Planen — die Anonymisierung lief NIE, der Fehler wurde nur
+	// geloggt. Zudem hätte barcode_id = NULL an der NOT-NULL-Constraint gescheitert, und
+	// Adresse, Eltern-E-Mail, Geburtsdatum und LUSD-ID blieben in Klarschrift stehen (eine
+	// Namens-Anonymisierung ohne diese ist wirkungslos: Adresse+Geburtsdatum
+	// reidentifizieren). barcode_id wird auf einen anonymen, eindeutigen Wert gesetzt
+	// (NOT NULL); block_reason auf einen festen Text statt NULL — chk_schueler_block_reason
+	// verlangt bei gesperrten Schülern einen nicht-leeren Grund, und ein alter Freitext-
+	// Grund könnte selbst personenbezogen sein. Deckt dieselben identifizierenden Felder ab
+	// wie anonymisiereAbgaenger (LUSD-Pfad).
 	query := `
 		UPDATE schueler
 		SET vorname = left(md5(random()::text), 8),
 		    nachname = 'Anonym',
 		    klasse = '',
-		    barcode_id = NULL,
-		    foto_url = NULL,
+		    barcode_id = 'ANON-' || id::text,
+		    geburtsdatum = NULL,
+		    lusd_id = NULL,
+		    strasse = NULL,
+		    hausnummer = NULL,
+		    plz = NULL,
+		    ort = NULL,
+		    eltern_email = NULL,
+		    block_reason = 'Anonymisiert (DSGVO)',
 		    anonymized_at = NOW(),
 		    aktualisiert_am = NOW()
 		WHERE anonymized_at IS NULL
@@ -86,8 +104,8 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	}
 
 	// Verschlüsselte Passfotos anonymisierter Schüler entfernen. Selbstheilend: räumt auch
-	// Altbestände, deren Anonymisierung vor der Foto-Löschung lief. (Das Foto lebt in
-	// schueler_fotos, nicht in schueler.foto_url — Letzteres wird oben bereits geleert.)
+	// Altbestände, deren Anonymisierung vor der Foto-Löschung lief. Das Foto lebt in
+	// schueler_fotos (BYTEA), es gibt keine schueler.foto_url-Spalte.
 	if _, delErr := s.db.Exec(ctx,
 		"DELETE FROM schueler_fotos WHERE schueler_id IN (SELECT id FROM schueler WHERE anonymized_at IS NOT NULL)",
 	); delErr != nil {

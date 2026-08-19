@@ -331,10 +331,14 @@ func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) er
 	// block_reason wird auf einen festen Text gesetzt (nicht der alte erhalten): Bei der
 	// Anonymisierung wird jeglicher personenbezogene Kontext geleert, ein evtl. alter Grund
 	// könnte solchen enthalten. chk_schueler_block_reason verlangt zudem einen Grund.
+	// geburtsdatum und lusd_id gehören mit geleert: beide sind direkt identifizierend
+	// (Geburtsdatum reidentifiziert zusammen mit Restdaten, lusd_id ist die staatliche
+	// Schüler-ID). Damit ist dieser Pfad deckungsgleich mit RunGDPRAnonymizeOldData.
 	_, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = 'Abgänger', nachname = $1, klasse = 'ABG',
 			strasse = NULL, hausnummer = NULL, plz = NULL, ort = NULL, eltern_email = NULL,
+			geburtsdatum = NULL, lusd_id = NULL,
 			ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Abgänger anonymisiert',
 			abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
 		WHERE id = $2`,

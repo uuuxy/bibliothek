@@ -170,6 +170,10 @@ CREATE TABLE schueler (
     is_manually_blocked BOOLEAN DEFAULT false,
     block_reason TEXT,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    -- Zeitpunkt der DSGVO-Anonymisierung (Migration 022). Fehlte bis 19.08.2026 in
+    -- dieser Baseline, obwohl der Seed 022 als angewendet markiert — der Anonymisierungs-
+    -- Cron (RunGDPRAnonymizeOldData) lief deshalb auf frischen DBs ins Leere.
+    anonymized_at TIMESTAMP DEFAULT NULL,
     -- Ein gesperrter Schüler ohne Grund ist ein toter Zustand ("Zombie-Sperre"): das
     -- Personal sieht nur das rote Flag und muss die Historie durchwühlen. JEDE Sperrquelle
     -- (System ist_gesperrt ODER manuell is_manually_blocked) verlangt daher einen
