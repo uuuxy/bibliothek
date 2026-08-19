@@ -26,6 +26,11 @@ func (s *Server) ListVormerkungHandler(vormerkungRepo repository.VormerkungRepos
 
 		result, err := vormerkungRepo.List(ctx, titelID, schuelerID)
 		if err != nil {
+			// Ohne Titel- oder Schüler-Filter gibt es bewusst keinen Voll-Abzug aller
+			// Namen — das ist ein Bedienfehler (400), kein Serverfehler.
+			if errors.Is(err, repository.ErrVormerkungScopeFehlt) {
+				return apierrors.BadRequest(err.Error(), err)
+			}
 			return apierrors.Internal("Fehler beim Abrufen der Vormerkungen", err)
 		}
 		if result == nil {

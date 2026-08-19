@@ -154,3 +154,38 @@ func returnLoan(t *testing.T, pool *pgxpool.Pool, loanID string) {
 		t.Fatalf("Rückgabe buchen: %v", err)
 	}
 }
+
+// TestReportDamageSchuldnerAusAusleihe belegt die Objektbindung (IDOR-Sweep 19.08.2026):
+// Der Schadensfall wird dem Schuldner der AUSLEIHE zugeschrieben, nicht der vom Client
+// mitgeschickten schueler_id. Eine falsche (vertippte oder manipulierte) ID im Request
+// darf den Gebührenbescheid nicht einem unbeteiligten Schüler anhängen.
+func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewDamageRepository(pool)
+
+	ex := seedSignaturMitExemplaren(t, pool, "BindTest", 1)
+	copyID := ex[0]
+	echterSchuldner := seedSchueler(t, pool, "BIND-A", "Anna", "7a")
+	fremder := seedSchueler(t, pool, "BIND-B", "Ben", "7b")
+	bearbeiter := seedBearbeiter(t, pool)
+
+	loan := seedAusleihe(t, pool, copyID, echterSchuldner, bearbeiter)
+
+	// Der Client behauptet fälschlich, der FREMDE sei schuld.
+	schadensID, err := repo.ReportDamage(ctx, copyID, loan, fremder, bearbeiter, "Riss", 4.0)
+	if err != nil {
+		t.Fatalf("ReportDamage: %v", err)
+	}
+
+	var gebucht string
+	if err := pool.QueryRow(ctx,
+		`SELECT schueler_id::text FROM schadensfaelle WHERE id = $1`, schadensID).Scan(&gebucht); err != nil {
+		t.Fatalf("Schadensfall lesen: %v", err)
+	}
+	if gebucht != echterSchuldner {
+		t.Errorf("Schaden muss dem Ausleiher (%s) angelastet werden, nicht der Client-ID (%s) — war %s",
+			echterSchuldner, fremder, gebucht)
+	}
+}

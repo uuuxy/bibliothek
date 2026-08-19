@@ -177,10 +177,21 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 	// danach den bereits angelegten Schadensfall. Existiert für diese Ausleihe schon ein
 	// (nicht stornierter) Schadensfall, geben wir dessen ID idempotent zurück, statt einen
 	// zweiten anzulegen.
-	var vorhanden bool
+	// Der Schuldner steht an der AUSLEIHE, nicht im Request: Ein beschädigtes Buch
+	// gehört dem, der es geliehen hat. Früher übernahm der INSERT die schueler_id
+	// ungeprüft aus dem Client-Body — eine falsche (vertippte oder manipulierte) ID
+	// hätte den Gebührenbescheid einem unbeteiligten Schüler zugeschrieben. Wir lesen
+	// sie stattdessen aus der ohnehin gesperrten Ausleihe-Zeile; das Client-Feld ist
+	// nur noch Anzeige. FOR UPDATE bleibt dieselbe Sperre wie zuvor.
+	//
+	// *string, weil schueler_id nullable ist (eine Handapparat-Ausleihe hängt an
+	// ausleiher_benutzer_id, nicht am Schüler) — ein Scan in einen nackten string
+	// stürbe an "cannot scan NULL". Ist die Ausleihe schülerlos, wird schueler_id im
+	// Schadensfall NULL (die CHECK erlaubt „kein Verantwortlicher").
+	var loanSchuelerID *string
 	if err := tx.QueryRow(ctx,
-		`SELECT true FROM ausleihen WHERE id = $1 FOR UPDATE`, loanID,
-	).Scan(&vorhanden); err != nil {
+		`SELECT schueler_id FROM ausleihen WHERE id = $1 FOR UPDATE`, loanID,
+	).Scan(&loanSchuelerID); err != nil {
 		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
 	}
 
@@ -240,7 +251,7 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
-	`, copyID, loanID, schuelerID, beschreibung, betrag).Scan(&schadensID)
+	`, copyID, loanID, loanSchuelerID, beschreibung, betrag).Scan(&schadensID)
 	if err != nil {
 		return "", err
 	}

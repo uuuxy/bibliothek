@@ -56,6 +56,17 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 			return
 		}
 
+		// Rechenschaftspflicht (Art. 5 (2) DSGVO) wie beim Massenversand: Der
+		// Einzelversand geht immer an eine von Hand eingetippte Adresse — genau das,
+		// was ein Betroffener später wissen können muss (wer schickte die Mahnliste
+		// dieser Klasse an WEN). Die Adresse steht deshalb im Klartext im Audit.
+		s.logKlassenVersandAudit(r, "EINZEL_MAHN_MAIL", klassenVersandAudit{
+			Phase:         "ende",
+			Klassen:       []string{req.Klasse},
+			OverrideEmail: req.Email,
+			Sent:          1,
+		})
+
 		RespondJSON(w, http.StatusOK, map[string]string{
 			"status":  "sent",
 			"message": fmt.Sprintf("Mahnliste für Klasse %s an %s gesendet.", req.Klasse, req.Email),

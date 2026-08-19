@@ -127,7 +127,18 @@ func NewVormerkungRepository(db db.PgxPoolIface) VormerkungRepository {
 	return &pgVormerkungRepository{db: db}
 }
 
-// List retrieves reservations filtered by either title or student.
+// ErrVormerkungScopeFehlt signalisiert einen List-Aufruf ohne Titel- UND ohne Schüler-
+// Filter. Ein solcher Aufruf lieferte früher den GESAMTEN Vormerkungsbestand mit allen
+// Schülernamen und Klassen — ein Voll-Abzug, den die Oberfläche nie anfordert (sie fragt
+// stets nach Titel oder nach Schüler) und der genau dann zum PII-Dump wird, wenn das
+// optionale Recht manage_vormerkungen an eine Helfer-Rolle vergeben ist. Der Scope ist
+// deshalb Pflicht.
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
+var ErrVormerkungScopeFehlt = errors.New("Vormerkungen brauchen einen Titel- oder Schüler-Filter")
+
+// List retrieves reservations filtered by either title or student. Ohne einen der beiden
+// Filter wird ErrVormerkungScopeFehlt zurückgegeben — es gibt bewusst keinen Voll-Abzug.
 func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error) {
 	var rows pgx.Rows
 	var err error
@@ -153,14 +164,7 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 			ORDER BY v.erstellt_am ASC
 		`, schuelerID)
 	} else {
-		rows, err = r.db.Query(ctx, `
-			SELECT v.id, v.titel_id, bt.titel, COALESCE(v.notiz, ''), v.erstellt_am,
-			       COALESCE(s.id::text, ''), COALESCE(s.vorname || ' ' || s.nachname || ', ' || s.klasse, '')
-			FROM vormerkungen v
-			JOIN buecher_titel bt ON bt.id = v.titel_id
-			LEFT JOIN schueler s ON s.id = v.schueler_id
-			ORDER BY v.erstellt_am ASC
-		`)
+		return nil, ErrVormerkungScopeFehlt
 	}
 
 	if err != nil {

@@ -93,3 +93,26 @@ func TestVormerkungCreate_AnonymousSkipsBorrowCheck(t *testing.T) {
 		t.Errorf("offene/unerwartete Mock-Erwartungen: %v", err)
 	}
 }
+
+// TestVormerkungList_VerlangtScope belegt die Datenminimierung (IDOR-Sweep 19.08.2026):
+// Ein List-Aufruf ohne Titel- UND ohne Schüler-Filter lieferte früher den GESAMTEN
+// Vormerkungsbestand mit allen Schülernamen — ein Voll-Abzug, den die Oberfläche nie
+// anfordert und der im Helfer-Opt-in-Fall (manage_vormerkungen) zum PII-Dump würde.
+// Ohne Scope muss List ErrVormerkungScopeFehlt liefern und KEINE Query absetzen.
+func TestVormerkungList_VerlangtScope(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	defer mock.Close()
+	repo := NewVormerkungRepository(mock)
+
+	// Keine ExpectQuery: Es darf gar keine Datenbankabfrage stattfinden.
+	_, err = repo.List(context.Background(), "", "")
+	if !errors.Is(err, ErrVormerkungScopeFehlt) {
+		t.Fatalf("erwartet ErrVormerkungScopeFehlt ohne Filter, war: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("es darf keine Query abgesetzt werden: %v", err)
+	}
+}
