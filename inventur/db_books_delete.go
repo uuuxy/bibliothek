@@ -5,9 +5,17 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"bibliothek/db"
 )
 
 // DeleteBooks deletes multiple book records.
+//
+// Die drei abhängigen DELETEs (Schadensfälle, Ausleihhistorie, Titel — der Titel-Delete
+// räumt die Exemplare per ON DELETE CASCADE mit) laufen in EINER Transaktion. Ohne sie
+// hinterließ ein Crash zwischen Schritt 2 und 3 einen bösartigen Halbzustand: Gebühren-
+// und Ausleihhistorie der Titel gelöscht, Buch und Exemplare aber erhalten — eine offene
+// Gebühr verschwände unwiederbringlich, während das Buch weiter im Bestand steht.
 func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
@@ -22,15 +30,22 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return err
 	}
 
-	// Clean up related records for ALL copies of these titles to prevent ON DELETE RESTRICT errors
-	if _, err := repo.db.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
+	tx, err := repo.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("löschen konnte nicht begonnen werden: %w", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	// Zugehörige Datensätze ALLER Exemplare dieser Titel entfernen, sonst greift der
+	// ON DELETE RESTRICT der FKs. Reihenfolge erzwingen die RESTRICT-FKs, Atomarität die Tx.
+	if _, err := tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
 		return fmt.Errorf("failed to delete damage records for titles: %w", err)
 	}
-	if _, err := repo.db.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[])) AND rueckgabe_am IS NOT NULL", ids); err != nil {
+	if _, err := tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[])) AND rueckgabe_am IS NOT NULL", ids); err != nil {
 		return fmt.Errorf("failed to delete past loans for titles: %w", err)
 	}
 
-	result, err := repo.db.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
+	result, err := tx.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
 	if err != nil {
 		return fmt.Errorf("bücher konnten nicht gelöscht werden: %w", err)
 	}
@@ -38,6 +53,12 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return ErrBookNotFound
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("löschen konnte nicht abgeschlossen werden: %w", err)
+	}
+
+	// Erst nach dem Commit: die lokalen Cover-Dateien sind unwiederbringlich, das darf
+	// NICHT geschehen, solange das DB-Löschen noch scheitern (zurückrollen) könnte.
 	loescheLokaleCoverDateien(localCovers)
 	return nil
 }

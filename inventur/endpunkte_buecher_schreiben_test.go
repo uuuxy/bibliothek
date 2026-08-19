@@ -116,6 +116,10 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover.jpg"))
 
+		// Die drei abhängigen DELETEs laufen jetzt in EINER Transaktion (Atomarität —
+		// sonst Halbzustand: Historie/Gebühren gelöscht, Buch bleibt).
+		mock.ExpectBegin()
+
 		mock.ExpectExec("DELETE FROM schadensfaelle").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
@@ -127,6 +131,8 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 		mock.ExpectExec("DELETE FROM buecher_titel").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+
+		mock.ExpectCommit()
 
 		body := `{"ids": ["11111111-1111-1111-1111-111111111111"]}`
 		req := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(body))
