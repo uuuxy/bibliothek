@@ -105,6 +105,14 @@ func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeStudentID, 
 		if student != nil && (student.IstGesperrt || student.IsManuallyBlocked) {
 			return nil, nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
 		}
+		// Dieselben AUTOMATIK-Sperren wie der Buch-Pfad (Betreiber-Entscheidung
+		// 19.08.2026): unbezahlte Schäden und die Überfällig-Automatik gelten auch für
+		// Geräte. Wer kein Buch bekäme, bekommt auch kein iPad. Geräte kennen kein Override.
+		if student != nil {
+			if err := pruefeGeraetAutomatikSperren(ctx, s.pool, *activeStudentID); err != nil {
+				return nil, nil, err
+			}
+		}
 		return student, nil, nil
 	}
 	if activeTeacherID != nil && *activeTeacherID != "" {
@@ -324,4 +332,31 @@ func (s *defaultDeviceService) HandleDeviceAction(
 		return s.leiheGeraetAus(ctx, tx, &g, student, teacher, staffID)
 	}
 	return s.gibGeraetZurueck(ctx, tx, &g, &activeLoan, student, teacher, staffID)
+}
+
+// pruefeGeraetAutomatikSperren wendet die AUTOMATIK-Sperren des Buch-Pfads auch auf die
+// Geräte-Ausleihe an: unbezahlte Schäden und die Überfällig-Automatik. Die expliziten
+// Sperr-Flags prüft bereits ladeAkteur; Geräte kennen bewusst kein override_block.
+// Nutzt dieselben Zähl-/Settings-Quellen wie der Buch-Pfad (loan_checkout_validation.go).
+func pruefeGeraetAutomatikSperren(ctx context.Context, pool db.PgxPoolIface, schuelerID string) error {
+	offeneSchaeden, err := zaehleOffeneSchaeden(ctx, pool, schuelerID)
+	if err != nil {
+		return err
+	}
+	if offeneSchaeden > 0 {
+		return fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offeneSchaeden)
+	}
+
+	settings, err := ladeSystemEinstellungen(ctx, pool)
+	if err != nil {
+		return err
+	}
+	overdue, err := zaehleUeberfaelligeMedien(ctx, pool, schuelerID, settings.MaxOverdueDays)
+	if err != nil {
+		return err
+	}
+	if overdue >= settings.MaxOverdueItems {
+		return fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdue)
+	}
+	return nil
 }

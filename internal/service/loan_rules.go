@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"bibliothek/db"
 	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 )
@@ -71,10 +72,17 @@ type SystemEinstellungen struct {
 // querySettings liest die aktuellen Einstellungen aus der Datenbank aus und liefert
 // bei Fehlern oder fehlenden Werten vordefinierte, sichere Standardwerte zurück.
 func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstellungen, error) {
+	return ladeSystemEinstellungen(ctx, s.pool)
+}
+
+// ladeSystemEinstellungen liest die Systemeinstellungen aus einem beliebigen Pool —
+// geteilt zwischen Buch- (querySettings) und Geräte-Pfad (pruefeGeraetAutomatikSperren),
+// damit Fristen und Sperr-Schwellen aus EINER Quelle kommen.
+func ladeSystemEinstellungen(ctx context.Context, pool db.PgxPoolIface) (*SystemEinstellungen, error) {
 	// coalesce: eine einzige NULL-wert-Zeile (z. B. nie gesetztes
 	// ferien_leseclub_zieldatum) ließe sonst den Scan in string scheitern —
 	// pgx bricht dann die Iteration ab und rows.Err() macht JEDEN Checkout zum 500.
-	rows, err := s.pool.Query(ctx, "SELECT schluessel, coalesce(wert, '') FROM system_einstellungen")
+	rows, err := pool.Query(ctx, "SELECT schluessel, coalesce(wert, '') FROM system_einstellungen")
 	if err != nil {
 		return nil, err
 	}

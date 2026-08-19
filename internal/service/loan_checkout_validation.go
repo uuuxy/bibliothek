@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"bibliothek/db"
 	"bibliothek/repository"
 )
 
@@ -87,11 +88,8 @@ func (s *defaultLoanService) pruefeManuellGesperrt(ctx context.Context, sObj *re
 // neu eindecken. storniert_am setzt ist_bezahlt = true (repository/audit_system.go), daher
 // genügt ist_bezahlt = false. overrideBlock möglich, wird dann revisionssicher protokolliert.
 func (s *defaultLoanService) pruefeOffeneSchaeden(ctx context.Context, borrowerID, staffID string, overrideBlock bool) error {
-	var offeneSchaeden int
-	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
-		borrowerID,
-	).Scan(&offeneSchaeden); err != nil {
+	offeneSchaeden, err := zaehleOffeneSchaeden(ctx, s.pool, borrowerID)
+	if err != nil {
 		return err
 	}
 	if offeneSchaeden > 0 {
@@ -111,16 +109,7 @@ func (s *defaultLoanService) pruefeUeberfaellig(ctx context.Context, borrowerID,
 		return err
 	}
 
-	var overdueCount int
-	errOverdue := s.pool.QueryRow(ctx, `
-		SELECT COUNT(*)
-		FROM ausleihen
-		WHERE schueler_id = $1
-		  AND rueckgabe_am IS NULL
-		  AND rueckgabe_frist < CURRENT_TIMESTAMP - (INTERVAL '1 day' * $2)
-		  AND ist_handapparat = false
-		  AND geraet_id IS NULL
-	`, borrowerID, settings.MaxOverdueDays).Scan(&overdueCount)
+	overdueCount, errOverdue := zaehleUeberfaelligeMedien(ctx, s.pool, borrowerID, settings.MaxOverdueDays)
 	if errOverdue != nil {
 		return errOverdue
 	}
@@ -198,4 +187,33 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 		return s.resolveTeacherBorrower(ctx, *activeTeacherID)
 	}
 	return nil, fmt.Errorf("%w: Weder Schüler noch Lehrer aktiv", ErrInvalidState)
+}
+
+// zaehleOffeneSchaeden zählt die unbezahlten, nicht stornierten Schadensfälle eines
+// Schülers. Geteilte Quelle für Buch- (pruefeOffeneSchaeden) und Geräte-Pfad
+// (pruefeGeraetAutomatikSperren) — storniert_am setzt ist_bezahlt=true, daher genügt
+// die Flag-Prüfung.
+func zaehleOffeneSchaeden(ctx context.Context, pool db.PgxPoolIface, schuelerID string) (int, error) {
+	var n int
+	err := pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
+		schuelerID).Scan(&n)
+	return n, err
+}
+
+// zaehleUeberfaelligeMedien zählt die überfälligen (älter als maxOverdueDays), noch nicht
+// zurückgegebenen BUCH-Medien eines Schülers (Handapparate und Geräte ausgenommen).
+// Geteilte Quelle für die Überfällig-Sperr-Automatik in Buch- und Geräte-Pfad.
+func zaehleUeberfaelligeMedien(ctx context.Context, pool db.PgxPoolIface, schuelerID string, maxOverdueDays int) (int, error) {
+	var n int
+	err := pool.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM ausleihen
+		WHERE schueler_id = $1
+		  AND rueckgabe_am IS NULL
+		  AND rueckgabe_frist < CURRENT_TIMESTAMP - (INTERVAL '1 day' * $2)
+		  AND ist_handapparat = false
+		  AND geraet_id IS NULL
+	`, schuelerID, maxOverdueDays).Scan(&n)
+	return n, err
 }
