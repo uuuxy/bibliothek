@@ -96,7 +96,12 @@ func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeStudentID, 
 		if err != nil {
 			return nil, nil, err
 		}
-		if student != nil && student.IstGesperrt {
+		// BEIDE Sperr-Flags prüfen — wie der Buch-Pfad (pruefeGesperrt +
+		// pruefeManuellGesperrt). Zuvor blockierte nur die System-Sperre (ist_gesperrt);
+		// ein von der Bibliothek MANUELL gesperrter Schüler (is_manually_blocked, etwa
+		// wegen unbezahlter Schäden) konnte trotzdem ein Gerät ausleihen — und Geräte
+		// sind wertvoller als Bücher. Geräte kennen bewusst KEIN override_block.
+		if student != nil && (student.IstGesperrt || student.IsManuallyBlocked) {
 			return nil, nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
 		}
 		return student, nil, nil
