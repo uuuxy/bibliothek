@@ -144,7 +144,9 @@ func (s *Server) InventurStartHandler() http.HandlerFunc {
 
 		session, err := invRepo.CreateInventurSession(ctx, req.Type, req.scope(), scopeLabelFuer(req), benutzerID)
 		if err != nil {
-			if errors.Is(err, repository.ErrInventurLaeuftBereits) {
+			// Identischer Scope läuft schon ODER der gewünschte überschneidet sich mit
+			// einer offenen Inventur — beides ist ein bewusster 409, kein Serverfehler.
+			if errors.Is(err, repository.ErrInventurLaeuftBereits) || errors.Is(err, repository.ErrInventurUeberlappt) {
 				apierrors.SendHTTPError(w, http.StatusConflict, err)
 				return
 			}
