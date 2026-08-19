@@ -203,7 +203,10 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 			"coverUrl": "test.jpg"
 		}`
 
-		erwarteFachBekannt(mock, "Math")
+		erwarteFachBekannt(mock, "Math") // auf dem Pool, vor der Tx
+		// CreateBook ist atomar (Tx): Begin, INSERT, Commit — kein Stock im Body, also
+		// wird syncBookStock nicht aufgerufen.
+		mock.ExpectBegin()
 		mock.ExpectQuery(`INSERT INTO buecher_titel`).
 			WithArgs(
 				"978-3-16-148410-0", // isbn
@@ -225,6 +228,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				"",                  // signatur
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("11111111-1111-1111-1111-111111111111"))
+		mock.ExpectCommit()
 
 		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
 		// Add context value if necessary (like auth), but it doesn't seem strictly required for these endpoints based on their code.

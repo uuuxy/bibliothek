@@ -102,7 +102,11 @@ func sqlVonUpdateBook(t *testing.T) string {
 	var erfasst string
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(
 		pgxmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
-			erfasst = actualSQL
+			// Nur die Titel-Anweisung interessiert; seit UpdateBook in einer Tx läuft,
+			// kommt zusätzlich die COUNT-Query von syncBookStock durch den Matcher.
+			if strings.Contains(actualSQL, "UPDATE buecher_titel") {
+				erfasst = actualSQL
+			}
 			return nil
 		}),
 	))
@@ -119,7 +123,13 @@ func sqlVonUpdateBook(t *testing.T) string {
 	for i := range beliebig {
 		beliebig[i] = pgxmock.AnyArg()
 	}
+	// UpdateBook ist atomar (Tx): Begin, UPDATE, syncBookStock-COUNT (Stock=0 → keine
+	// weiteren Schreibvorgänge), Commit.
+	mock.ExpectBegin()
 	mock.ExpectExec("").WithArgs(beliebig...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectQuery("").WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectCommit()
 
 	repo := NewBookRepository(mock)
 	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{}); err != nil {

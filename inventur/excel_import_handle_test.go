@@ -115,11 +115,14 @@ func TestHandleImportExcel(t *testing.T) {
 			metadaten: offlineMetadatenClient(),
 		}
 
-		// Der Import registriert das Default-Fach "Unbekannt" vor dem Batch-Upsert.
+		// Der Import registriert das Default-Fach "Unbekannt" (auf dem Pool) vor dem
+		// Batch-Upsert; der Batch selbst (Upsert + Exemplare) läuft atomar in einer Tx.
 		erwarteFachBekannt(mock, "Unbekannt")
+		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		mock.ExpectExec("CREATE SEQUENCE").WillReturnResult(pgxmock.NewResult("CREATE", 0))
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 0))
+		mock.ExpectCommit()
 
 		handler.handleImportExcel(w, req)
 
@@ -159,8 +162,10 @@ func TestHandleImportExcel(t *testing.T) {
 		}
 
 		erwarteFachBekannt(mock, "Unbekannt")
+		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
-		// Let Fallback single Insert fail
+		mock.ExpectRollback()
+		// Fallback: der Einzel-Upsert scheitert schon beim Fach-Nachschlag (vor der Tx).
 		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
 
 		handler.handleImportExcel(w, req)
@@ -199,15 +204,21 @@ func TestHandleImportExcel(t *testing.T) {
 		}
 
 		erwarteFachBekannt(mock, "Unbekannt")
+		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
-		// Fallback single Insert: first one fails, second one succeeds — jeder
-		// Einzel-Upsert schlägt zuvor sein Fach nach (Registrierung, Migration 078).
+		mock.ExpectRollback()
+		// Fallback Einzel-Upsert je Zeile (Fach-Nachschlag auf dem Pool, dann Tx): erste
+		// Zeile scheitert im Upsert (Begin→Rollback), zweite gelingt (Begin→…→Commit).
 		erwarteFachBekannt(mock, "Unbekannt")
+		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
+		mock.ExpectRollback()
 		erwarteFachBekannt(mock, "Unbekannt")
+		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("test-id"))
 		mock.ExpectExec("CREATE SEQUENCE").WillReturnResult(pgxmock.NewResult("CREATE", 0))
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 5))
+		mock.ExpectCommit()
 
 		handler.handleImportExcel(w, req)
 

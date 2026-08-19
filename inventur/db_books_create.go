@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+
+	"bibliothek/db"
 )
 
 // CreateBook inserts a new book record.
@@ -31,8 +32,18 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		properties = make(map[string]any)
 	}
 
+	// Titel-Insert und Bestands-Synchronisierung atomar: Schlägt das Anlegen der
+	// Exemplare fehl, darf kein Titel mit 0 Exemplaren zurückbleiben, den der Handler
+	// als "erstellt" meldet (Transaktionsgrenzen-Sweep A2). Der Sync-Fehler wird deshalb
+	// ZURÜCKGEGEBEN, nicht nur geloggt.
+	tx, err := repo.db.Begin(ctx)
+	if err != nil {
+		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
 	var id string
-	err = repo.db.QueryRow(
+	err = tx.QueryRow(
 		ctx,
 		query,
 		book.ISBN,
@@ -57,14 +68,15 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
 	}
 
-	// Bestand synchronisieren
 	if book.Stock > 0 {
-		if syncErr := repo.syncBookStock(ctx, id, book.Stock); syncErr != nil {
-			// Log error, but don't fail the creation
-			log.Printf("Warnung: Konnte Exemplare nach Erstellung nicht synchronisieren: %v\n", syncErr)
+		if err := repo.syncBookStock(ctx, tx, id, book.Stock); err != nil {
+			return "", fmt.Errorf("exemplare konnten nicht angelegt werden: %w", err)
 		}
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", err)
+	}
 	return id, nil
 }
 
@@ -145,7 +157,7 @@ func prepareUpsertBatchData(books []Book) bookBatchData {
 	return data
 }
 
-func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, data bookBatchData) (int64, error) {
+func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSchreiber, data bookBatchData) (int64, error) {
 	// signatur: NULLIF beim Insert + COALESCE beim Konflikt — Import-Läufe
 	// dürfen eine physisch verklebte Signatur nie mit Leerwerten überschreiben.
 	query := `
@@ -172,7 +184,7 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, data bo
 			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur)
 	`
 
-	cmdTag, err := repo.db.Exec(
+	cmdTag, err := q.Exec(
 		ctx,
 		query,
 		data.isbns,
@@ -216,7 +228,19 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	for i, s := range data.subjects {
 		data.subjects[i] = kanonisch[s]
 	}
-	betroffen, err := repo.executeUpsertBatchQuery(ctx, data)
+
+	// Titel-Upsert und Exemplar-Erzeugung atomar: legeImportExemplareAn ist ADDITIV und
+	// nicht idempotent (jede Zeile legt ihre Stückzahl an). Ohne gemeinsame Tx hinterließe
+	// ein Fehler danach Titel ohne Exemplare — und ein Wiederholungslauf des Imports legte
+	// die Exemplare der bereits erfolgreichen Titel ein ZWEITES Mal an (aufgeblähter
+	// Bestand). Mit Tx rollt ein Fehlschlag den ganzen Batch zurück (Sweep A4).
+	tx, err := repo.db.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("import konnte nicht begonnen werden: %w", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	betroffen, err := repo.executeUpsertBatchQuery(ctx, tx, data)
 	if err != nil {
 		return 0, err
 	}
@@ -224,17 +248,20 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	// summierte der Import nur die ungelesene stock-Spalte auf — die Zahl war
 	// danach nirgends mehr sichtbar, es entstanden Titel ohne Exemplare.
 	// Additiv wie das alte stock += : jede Import-Zeile legt ihre Stückzahl an.
-	if err := repo.legeImportExemplareAn(ctx, data.isbns, data.stocks); err != nil {
-		return betroffen, fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
+	if err := repo.legeImportExemplareAn(ctx, tx, data.isbns, data.stocks); err != nil {
+		return 0, fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("import konnte nicht abgeschlossen werden: %w", err)
 	}
 	return betroffen, nil
 }
 
 // legeImportExemplareAn erzeugt je Import-Zeile stück-viele Exemplare mit
 // SYS-Barcode (gleiche Mechanik wie syncBookStock, aber additiv je Zeile).
-func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, isbns []string, stueck []int32) error {
-	_, _ = repo.db.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`) //nolint:errcheck
-	_, err := repo.db.Exec(ctx, `
+func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q dbSchreiber, isbns []string, stueck []int32) error {
+	_, _ = q.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`) //nolint:errcheck
+	_, err := q.Exec(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
 		SELECT t.id, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert (Sammelimport)'
 		FROM UNNEST($1::text[], $2::int[]) AS u(isbn, stueck)
@@ -285,8 +312,16 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		properties = make(map[string]any)
 	}
 
+	// Titel-Upsert und (additive) Exemplar-Erzeugung atomar — wie der Batch-Weg, gegen
+	// Titel-ohne-Exemplare und Doppel-Bestand beim Import-Retry (Sweep A4).
+	tx, err := repo.db.Begin(ctx)
+	if err != nil {
+		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
 	var id string
-	err = repo.db.QueryRow(
+	err = tx.QueryRow(
 		ctx,
 		query,
 		book.ISBN,
@@ -313,10 +348,13 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 
 	// Additiv wie der Batch-Weg: die Stückzahl der Import-Zeile wird zu Exemplaren.
 	if book.Stock > 0 {
-		if err := repo.legeImportExemplareAn(ctx, []string{book.ISBN}, []int32{int32(book.Stock)}); err != nil { // #nosec G115 -- parseBestand begrenzt Stock
-			return id, fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
+		if err := repo.legeImportExemplareAn(ctx, tx, []string{book.ISBN}, []int32{int32(book.Stock)}); err != nil { // #nosec G115 -- parseBestand begrenzt Stock
+			return "", fmt.Errorf("exemplare zum import konnten nicht angelegt werden: %w", err)
 		}
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
+	}
 	return id, nil
 }

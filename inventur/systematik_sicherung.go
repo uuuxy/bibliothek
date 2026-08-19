@@ -11,10 +11,10 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// fachDB ist der minimale Datenbankzugriff der Fach-Registrierung. Pool
+// dbSchreiber ist der minimale Datenbankzugriff der Fach-Registrierung. Pool
 // (db.PgxPoolIface) und pgx.Tx erfüllen ihn beide — der Sammelimport registriert
 // innerhalb seiner Transaktion.
-type fachDB interface {
+type dbSchreiber interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
@@ -29,7 +29,7 @@ type fachDB interface {
 // gewinnt case-insensitiv. Der Aufrufer schreibt den GELIEFERTEN Wert, nicht seinen
 // rohen — "deutsch" neben "Deutsch" scheiterte sonst am FK. Leere Eingaben fehlen in
 // der Karte und liefern beim Zugriff "", das die Schreibpfade per NULLIF zu NULL machen.
-func StelleFaecherSicher(ctx context.Context, db fachDB, faecher []string) (map[string]string, error) {
+func StelleFaecherSicher(ctx context.Context, db dbSchreiber, faecher []string) (map[string]string, error) {
 	kanonisch := make(map[string]string, len(faecher))
 	for _, roh := range faecher {
 		if _, erledigt := kanonisch[roh]; erledigt {
@@ -51,7 +51,7 @@ func StelleFaecherSicher(ctx context.Context, db fachDB, faecher []string) (map[
 // sichereEinFach liest die kanonische Bezeichnung oder legt sie an. Zwei Durchläufe:
 // Verliert die Registrierung ein Rennen gegen einen parallelen Import (ON CONFLICT
 // DO NOTHING), findet der zweite Lauf die Zeile des Gewinners.
-func sichereEinFach(ctx context.Context, db fachDB, fach string) (string, error) {
+func sichereEinFach(ctx context.Context, db dbSchreiber, fach string) (string, error) {
 	for versuch := 0; versuch < 2; versuch++ {
 		var bez string
 		err := db.QueryRow(ctx,
@@ -75,7 +75,7 @@ func sichereEinFach(ctx context.Context, db fachDB, fach string) (string, error)
 // systematikRequest.pruefe im api-Paket); kollidiert er mit einem bestehenden Kürzel,
 // entscheidet ein Hash-Suffix. Der Konflikt auf lower(bezeichnung) ist dagegen das
 // benigne Rennen zweier Importe — DO NOTHING, der Aufrufer liest danach den Gewinner.
-func registriereFach(ctx context.Context, db fachDB, fach string) error {
+func registriereFach(ctx context.Context, db dbSchreiber, fach string) error {
 	const einfuegen = `
 		INSERT INTO systematik_kategorien (kuerzel, bezeichnung)
 		VALUES ($1, $2)

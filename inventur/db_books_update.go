@@ -3,7 +3,8 @@ package inventur
 import (
 	"context"
 	"fmt"
-	"log"
+
+	"bibliothek/db"
 )
 
 // UpdateBook updates metadata fields of a book.
@@ -58,7 +59,17 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		properties = make(map[string]any)
 	}
 
-	result, err := repo.db.Exec(
+	// Titel-Update und Bestands-Synchronisierung atomar: Schlägt der Sync fehl (z. B. die
+	// zweistufige Aussonderung), bleibt sonst ein Titel mit falschem Bestand zurück, den
+	// der Handler als erfolgreich meldet (Transaktionsgrenzen-Sweep A3). Der Sync-Fehler
+	// wird deshalb ZURÜCKGEGEBEN, nicht nur geloggt.
+	tx, err := repo.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	result, err := tx.Exec(
 		ctx,
 		query,
 		book.ISBN,
@@ -88,19 +99,20 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		return ErrBookNotFound
 	}
 
-	// Bestand synchronisieren
-	if syncErr := repo.syncBookStock(ctx, id, book.Stock); syncErr != nil {
-		// Log error, but don't fail the update entirely
-		log.Printf("Warnung: Konnte Exemplare nach Aktualisierung nicht synchronisieren: %v\n", syncErr)
+	if err := repo.syncBookStock(ctx, tx, id, book.Stock); err != nil {
+		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
+	}
 	return nil
 }
 
 // syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
-func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, expectedStock int) error {
+func (repo *BookRepository) syncBookStock(ctx context.Context, q dbSchreiber, titelID string, expectedStock int) error {
 	var currentStock int
-	err := repo.db.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare WHERE titel_id = $1 AND ist_ausgesondert = false`, titelID).Scan(&currentStock)
+	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare WHERE titel_id = $1 AND ist_ausgesondert = false`, titelID).Scan(&currentStock)
 	if err != nil {
 		return fmt.Errorf("fehler beim ermitteln des aktuellen bestands: %w", err)
 	}
@@ -108,8 +120,8 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 	if expectedStock > currentStock {
 		numToCreate := expectedStock - currentStock
 		if numToCreate > 0 {
-			_, _ = repo.db.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`) //nolint:errcheck
-			_, err := repo.db.Exec(ctx, `
+			_, _ = q.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`) //nolint:errcheck
+			_, err := q.Exec(ctx, `
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
 				SELECT $1, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert'
 				FROM generate_series(1, $2)
@@ -134,7 +146,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 				LIMIT $2
 			)
 		`
-		result, err := repo.db.Exec(ctx, query, titelID, numToRetire)
+		result, err := q.Exec(ctx, query, titelID, numToRetire)
 		if err != nil {
 			return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
 		}
@@ -154,7 +166,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, titelID string, e
 					LIMIT $2
 				)
 			`
-			_, err = repo.db.Exec(ctx, fallbackQuery, titelID, remainingToRetire)
+			_, err = q.Exec(ctx, fallbackQuery, titelID, remainingToRetire)
 			if err != nil {
 				return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
 			}
