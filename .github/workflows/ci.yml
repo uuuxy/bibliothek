@@ -239,30 +239,28 @@ jobs:
     # Browser-Download entfällt bei Treffer, die apt-Deps sind ohnehin nicht gecacht.
     #
     # ECHTE Wurzel der "Install hängt/scheitert"-Serie vom 19.08.2026: NICHT CDN-
-    # Flakiness, sondern apt-LOCK-KONKURRENZ. Beim Job-Start hält der runnereigene
-    # unattended-upgrades-Dienst die apt-Sperre; playwrights `--with-deps` wartet darauf,
-    # bis das Step-Timeout es killt (das war auch das ursprüngliche "Hängen"). Deshalb
-    # zuerst unattended-upgrades stoppen und aktiv auf die Freigabe der Sperre warten.
+    # Flakiness, sondern apt-LOCK-KONKURRENZ. Der runnereigene apt-daily/unattended-
+    # upgrades-Prozess hält beim Job-Start die apt-Sperre; playwrights `--with-deps`
+    # (das intern apt aufruft) scheitert daran. Ein Vorab-Warten auf die Sperre ist
+    # gegen eine RACE machtlos — der Störer greift die Sperre WÄHREND playwrights
+    # mehrminütigem apt-Lauf erneut (im letzten Lauf belegt: Lock von Prozess 8136).
+    #
+    # Definitiv gelöst durch die apt-Option DPkg::Lock::Timeout: apt WARTET dann auf die
+    # Sperre, statt sofort zu scheitern. Global gesetzt wirkt es auch auf playwrights
+    # interne apt-Aufrufe — kein Race, keine Warteschleife, kein Prozess-Kill.
     - name: Install Playwright
       timeout-minutes: 15
       run: |
         wiederhole() {
           for versuch in 1 2 3; do
-            timeout 240 "$@" && return 0
+            timeout 600 "$@" && return 0
             echo "::warning::Versuch $versuch fehlgeschlagen: $* — neuer Versuch"
             sleep $((versuch * 10))
           done
           return 1
         }
-        # Den Störer abschalten und warten, bis niemand mehr die apt-Sperren hält.
-        sudo systemctl stop unattended-upgrades 2>/dev/null || true
-        sudo systemctl stop apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
-        for i in $(seq 1 60); do
-          if ! sudo fuser /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1; then
-            break
-          fi
-          echo "warte auf apt-Sperre ($i)…"; sleep 5
-        done
+        # apt wartet bis zu 300 s auf die Sperre, statt an ihr zu scheitern.
+        echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
         cd frontend
         wiederhole npm ci
         wiederhole npx playwright install --with-deps chromium
