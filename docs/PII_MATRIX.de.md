@@ -122,7 +122,7 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `GET /api/public/bestellung/{token}` | Token | 0 | Bestellansicht des Lieferanten |
 | `GET /api/public/bestellung/{token}/etiketten/{groesse}` | Token | 0 | Etiketten-PDF der Bestellung |
 | `POST /api/public/bestellung/{token}/bestaetigen` | Token | 0 | nur Status |
-| `POST /api/action` | perform_actions | 1 | SchuelerKiosk-DTO; Sperrgrund-Freitext nur mit view_students (ohneSperrgrund) |
+| `POST /api/action` | perform_actions | 1 | SchuelerKiosk-DTO; Sperrgrund-Freitext nur mit view_students (ohneSperrgrund). BEWUSST ohne Objektbindung: active_student_id/active_teacher_id sind frei wählbar — das IST die Theke (jedes Buch auf jeden Ausweis buchen); nachvollziehbar über StaffID, override_block zusätzlich edit_students-gated (IDOR-Sweep 19.08.2026, kein Fund) |
 | `POST /api/action/batch` | perform_actions | 1 | wie /api/action, je Batch-Item |
 | `GET /api/search` | perform_actions | 1 | Students als SchuelerKiosk-DTO |
 | `GET /api/inventur/sessions` | inventory_scan | 0 | Session-Zähler |

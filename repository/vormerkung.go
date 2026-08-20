@@ -229,6 +229,12 @@ func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, sch
 }
 
 // Delete removes a reservation.
+//
+// BEWUSST ohne Objektbindung an einen Aufrufer (IDOR-Sweep 19.08.2026, geprüft):
+// manage_vormerkungen ist das eigens geschaffene enge Verwaltungsrecht der Theke
+// (sicherheitsbefund-vormerkungen, Weg 2) — fremde Vormerkungen auf Zuruf zu löschen
+// IST der Zweck dieses Rechts, kein Bypass. Die Datenminimierungs-Lücke war der
+// parameterlose List-Vollabzug, nicht das Löschen; siehe ErrVormerkungScopeFehlt.
 func (r *pgVormerkungRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM vormerkungen WHERE id = $1`, id)
 	return err
