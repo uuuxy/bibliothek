@@ -30,12 +30,3 @@ func SanitizeRow(row []string) []string {
 	}
 	return out
 }
-
-// SanitizeRows wendet SanitizeRow auf jede Zeile an (neuer Slice).
-func SanitizeRows(rows [][]string) [][]string {
-	out := make([][]string, len(rows))
-	for i, r := range rows {
-		out[i] = SanitizeRow(r)
-	}
-	return out
-}

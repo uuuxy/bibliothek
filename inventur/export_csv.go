@@ -11,15 +11,14 @@ import (
 	"bibliothek/pkg/csvutil"
 )
 
-// handleExportCSV handles the GET /api/admin/books/export route
+// handleExportCSV handles the GET /api/admin/books/export route.
+//
+// Streamt zeilenweise direkt in die HTTP-Antwort: Der Bestand (eine Zeile JE EXEMPLAR,
+// die größte Zeilenmenge im System) wird NICHT mehr vollständig als [][]string im
+// Speicher materialisiert und dann noch einmal kopiert-sanitisiert. Bei einem großen
+// Katalog war das ein Speicher-Risiko; jetzt liegt immer nur eine Zeile im Speicher.
 func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
-	rows, err := handler.repo.FetchAllBooksForCSVExport(ctx)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "fehler beim datenbank-export")
-		return
-	}
 
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, time.Now().Format("2006-01-02")))
@@ -30,25 +29,35 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 	writer := csv.NewWriter(w)
 	writer.Comma = ';' // German Excel standard
 
+	if err := writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand"}); err != nil {
+		return // Header bereits gesendet — kein Fehler-Response mehr möglich
+	}
+
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
-	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen.
-	err = writer.WriteAll(csvutil.SanitizeRows(rows))
+	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen (je Zeile).
+	err := handler.repo.StreamBooksForCSVExport(ctx, func(row []string) error {
+		return writer.Write(csvutil.SanitizeRow(row))
+	})
+	writer.Flush()
 	if err != nil {
-		// Cannot write error response since headers are already sent
+		// Header ist längst raus; ein sauberer HTTP-Fehler geht nicht mehr. Die
+		// abgebrochene Zeile signalisiert dem Client eine unvollständige Datei.
 		return
 	}
 }
 
-// FetchAllBooksForCSVExport queries all books and their copies
-func (repo *BookRepository) FetchAllBooksForCSVExport(ctx context.Context) ([][]string, error) {
+// StreamBooksForCSVExport liest alle Titel×Exemplare und ruft schreibe je Zeile auf —
+// ohne die Gesamtmenge im Speicher zu halten. Bricht schreibe ab (z. B. Verbindung weg),
+// endet der Stream mit diesem Fehler.
+func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, schreibe func(row []string) error) error {
 	query := `
-		SELECT 
-			bt.titel, 
-			coalesce(bt.autor, ''), 
-			coalesce(bt.verlag, ''), 
-			coalesce(bt.isbn, ''), 
-			coalesce(bt.erscheinungsjahr, 0), 
-			coalesce(bt.subject, ''), 
+		SELECT
+			bt.titel,
+			coalesce(bt.autor, ''),
+			coalesce(bt.verlag, ''),
+			coalesce(bt.isbn, ''),
+			coalesce(bt.erscheinungsjahr, 0),
+			coalesce(bt.subject, ''),
 			coalesce(be.barcode_id, ''),
 			coalesce(be.zustand_notiz, '')
 		FROM buecher_titel bt
@@ -58,19 +67,16 @@ func (repo *BookRepository) FetchAllBooksForCSVExport(ctx context.Context) ([][]
 
 	pgRows, err := repo.db.Query(ctx, query)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer pgRows.Close()
-
-	var csvData [][]string
-	csvData = append(csvData, []string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand"})
 
 	for pgRows.Next() {
 		var titel, autor, verlag, isbn, subject, barcode, zustand string
 		var jahr int
 
 		if err := pgRows.Scan(&titel, &autor, &verlag, &isbn, &jahr, &subject, &barcode, &zustand); err != nil {
-			return nil, err
+			return err
 		}
 
 		jahrStr := ""
@@ -83,10 +89,10 @@ func (repo *BookRepository) FetchAllBooksForCSVExport(ctx context.Context) ([][]
 			isbn = "'" + isbn
 		}
 
-		csvData = append(csvData, []string{
-			titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand,
-		})
+		if err := schreibe([]string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand}); err != nil {
+			return err
+		}
 	}
 
-	return csvData, pgRows.Err()
+	return pgRows.Err()
 }

@@ -15,13 +15,19 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		// LIMIT gegen unbegrenztes Wachstum: soft-gelöschte Schüler sammeln sich an
+		// (die 180-Tage-Anonymisierung leert die Zeile, entfernt sie aber nicht). Der
+		// Papierkorb ist zum Wiederherstellen der JÜNGSTEN Löschungen da; 1000 ist weit
+		// über dem realistischen Bestand einer manuell befüllten Papierkorb-Ansicht.
+		const papierkorbLimit = 1000
 		rows, err := s.DB.Pool.Query(ctx, `
 			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
 			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at
 			FROM schueler
 			WHERE deleted_at IS NOT NULL
 			ORDER BY deleted_at DESC
-		`)
+			LIMIT $1
+		`, papierkorbLimit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
