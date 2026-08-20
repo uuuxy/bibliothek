@@ -19,6 +19,28 @@ export async function holeBuecherListe() {
 	return json.data || [];
 }
 
+/**
+ * Lädt EIN Buch vollständig (inkl. beschreibung/erweiterteEigenschaften).
+ * Die Katalogliste ist bewusst schlank und liefert diese Felder LEER — jedes
+ * Formular, das per PUT das ganze Objekt zurückschickt, MUSS hierüber befüllt
+ * werden, sonst leert Speichern die Felder still (Upsert-Blanking-Bugklasse).
+ * @param {string} id
+ * @returns {Promise<any>} das vollständige Buch (Antwort ist das nackte Objekt)
+ */
+export async function holeBuchDetail(id) {
+	const res = await apiFetch(`/api/books/${encodeURIComponent(id)}`, {
+		credentials: 'include'
+	});
+	if (!res.ok) {
+		if (res.status === 401) {
+			appState.adminAuthenticated = false;
+			throw new Error('UNAUTHORIZED');
+		}
+		throw new Error('Buch konnte nicht geladen werden');
+	}
+	return await res.json();
+}
+
 /** @param {File} datei */
 export async function importiereListe(datei) {
 	const formData = new FormData();

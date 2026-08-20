@@ -5,7 +5,7 @@
 -->
 <script>
 	import { onMount } from 'svelte';
-	import { appState } from '$lib/store.svelte.js';
+	import { appState, showToast } from '$lib/store.svelte.js';
 	import BookTable from '$lib/components/admin/BookTable.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
 	import StrichcodeScanner from '$lib/components/StrichcodeScanner.svelte';
@@ -13,6 +13,7 @@
 	import ClassAssignPicker from '$lib/components/admin/ClassAssignPicker.svelte';
 	import {
 		holeBuecherListe,
+		holeBuchDetail,
 		loescheBuecher,
 		holeExterneCover,
 		retryExterneCover
@@ -100,8 +101,24 @@
 	}
 
 	/** @param {any} buch */
-	function oeffneDetails(buch) {
-		formular = { ...buch };
+	async function oeffneDetails(buch) {
+		// Immer das VOLLE Buch vom Einzel-Read laden: Die Katalogliste ist bewusst
+		// schlank (beschreibung/erweiterteEigenschaften leer), und saveChanges schickt
+		// das ganze Formular per PUT zurück — aus dem Listen-Objekt gespreadet würde
+		// Speichern genau diese Felder still leeren (Upsert-Blanking-Bugklasse).
+		// Nebeneffekt: Bearbeiten arbeitet auf frischen Daten statt einer evtl.
+		// veralteten Listenzeile. Bei Ladefehler wird NICHT mit dem schlanken Objekt
+		// geöffnet — das wäre derselbe stille Datenverlust durch die Hintertür.
+		let voll = buch;
+		if (buch?.id) {
+			try {
+				voll = await holeBuchDetail(buch.id);
+			} catch {
+				showToast('Buch konnte nicht vollständig geladen werden — Bearbeiten abgebrochen', 'error');
+				return;
+			}
+		}
+		formular = { ...voll };
 		if (!formular.medientyp) {
 			formular.medientyp = 'Buch';
 		}

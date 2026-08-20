@@ -9,7 +9,7 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
         VALUES (gen_random_uuid(), '978-${s}', 'E2E Klassensatz Buch ${s}', 'Test Autor');
 
         INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, notiz, angefordert_von)
-        VALUES ((SELECT id FROM buecher_titel WHERE isbn = '978-${s}'), '08b', 25, 'E2E Test Notiz', NULL);
+        VALUES ((SELECT id FROM buecher_titel WHERE isbn = '978-${s}'), 'k8b${s}', 25, 'E2E Test Notiz', NULL);
     `);
 
 	// 2. Login
@@ -26,7 +26,7 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 
 	// 4. Verifikation des Renderns der Reservierung
 	await expect(page.getByText(`E2E Klassensatz Buch ${s}`).first()).toBeVisible();
-	await expect(page.getByText('08b').first()).toBeVisible();
+	await expect(page.getByText(`k8b${s}`).first()).toBeVisible();
 	await expect(page.getByText('25').first()).toBeVisible();
 
 	// 5. Reservierung abschließen
@@ -60,7 +60,7 @@ test('Klassensatz-Warteschlange: Chip vor dem Klick, Vordermann nach dem Absende
         FROM buecher_titel, generate_series(1, 3) AS n WHERE isbn = '979-${s}';
 
         INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erstellt_am)
-        VALUES ((SELECT id FROM buecher_titel WHERE isbn = '979-${s}'), '08a', 3, now() - interval '1 hour');
+        VALUES ((SELECT id FROM buecher_titel WHERE isbn = '979-${s}'), 'k8a${s}', 3, now() - interval '1 hour');
     `);
 
 	const LEHRKRAFT = `e2e-ksq-${s}@test.local`;
@@ -73,16 +73,18 @@ test('Klassensatz-Warteschlange: Chip vor dem Klick, Vordermann nach dem Absende
 		.fill(`E2E KSQ Buch ${s}`);
 
 	// Der Chip steht am Treffer, BEVOR irgendetwas angeklickt wird.
-	await expect(page.getByText(/3 reserviert für 08a/)).toBeVisible();
+	await expect(page.getByText(`3 reserviert für k8a${s}`)).toBeVisible();
 
 	// Trotzdem reservieren: erlaubt — und die Bestätigung nennt den Vordermann.
 	await page.getByRole('button', { name: 'Klassensatz reservieren' }).click();
-	await page.getByLabel('Klasse *').fill('09b');
+	await page.getByLabel('Klasse *').fill(`k9b${s}`);
 	await page.getByRole('button', { name: /Anfrage senden/ }).click();
-	await expect(page.getByTitle(/dein Satz ist nach 08a an der Reihe/)).toBeVisible();
+	await expect(
+		page.getByTitle(new RegExp(`dein Satz ist nach k8a${s} an der Reihe`))
+	).toBeVisible();
 
 	// Und die eigene Reservierung erscheint sofort als zweiter Chip in der Schlange.
-	await expect(page.getByText(/reserviert für 09b/)).toBeVisible();
+	await expect(page.getByText(`reserviert für k9b${s}`)).toBeVisible();
 });
 
 // Die Bibliotheksseite derselben Schlange: älteste zuerst, und je Zeile der
@@ -100,7 +102,7 @@ test('Klassensatz-Warteschlange: Reihenfolge und Regal-Blick im Erledigen-Tab', 
         FROM buecher_titel, generate_series(1, 3) AS n WHERE isbn = '977-${s}';
 
         INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-        VALUES ('E2E', 'KSQ-Leser', '08a', 'S-KSQ-${s}', EXTRACT(YEAR FROM NOW())::int + 2);
+        VALUES ('E2E', 'KSQ-Leser', 'k8a${s}', 'S-KSQ-${s}', EXTRACT(YEAR FROM NOW())::int + 2);
 
         INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, ausgeliehen_am, rueckgabe_frist)
         SELECT e.id, (SELECT id FROM schueler WHERE barcode_id = 'S-KSQ-${s}'),
@@ -109,8 +111,8 @@ test('Klassensatz-Warteschlange: Reihenfolge und Regal-Blick im Erledigen-Tab', 
         WHERE t.isbn = '977-${s}' LIMIT 1;
 
         INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erstellt_am)
-        VALUES ((SELECT id FROM buecher_titel WHERE isbn = '977-${s}'), '08a', 3, now() - interval '2 hours'),
-               ((SELECT id FROM buecher_titel WHERE isbn = '977-${s}'), '09b', 2, now() - interval '1 hour');
+        VALUES ((SELECT id FROM buecher_titel WHERE isbn = '977-${s}'), 'k8a${s}', 3, now() - interval '2 hours'),
+               ((SELECT id FROM buecher_titel WHERE isbn = '977-${s}'), 'k9b${s}', 2, now() - interval '1 hour');
     `);
 
 	await uiLogin(page);
@@ -118,9 +120,11 @@ test('Klassensatz-Warteschlange: Reihenfolge und Regal-Blick im Erledigen-Tab', 
 	await page.getByRole('tab', { name: /Klassensatz-Reservierungen/i }).click();
 
 	const zeilen = page.locator('li').filter({ hasText: `E2E KSQ Tab ${s}` });
-	// Warteschlange: die ältere 08a steht VOR der jüngeren 09b.
-	await expect(zeilen.nth(0)).toContainText('08a');
-	await expect(zeilen.nth(1)).toContainText('09b');
+	// Warteschlange: die ältere Klasse steht VOR der jüngeren. Klassennamen sind
+	// suffix-eindeutig: Das Klassen-Vokabular (Migration 079) kanonisiert bekannte
+	// Schreibweisen — feste Namen wie '08a' würden je nach DB-Altbestand zu '8A'.
+	await expect(zeilen.nth(0)).toContainText(`k8a${s}`);
+	await expect(zeilen.nth(1)).toContainText(`k9b${s}`);
 	// Regal-Blick: ein Exemplar ist verliehen, zwei stehen im Regal.
 	await expect(zeilen.nth(0)).toContainText('2 verfügbar');
 });

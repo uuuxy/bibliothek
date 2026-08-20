@@ -47,7 +47,7 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 
 	// Reservierungs-Formular öffnen und ausfüllen
 	await page.getByRole('button', { name: 'Klassensatz reservieren' }).first().click();
-	await page.getByLabel('Klasse *').fill('08b');
+	await page.getByLabel('Klasse *').fill(`k8b${s}`);
 	await page.getByLabel('Anzahl').fill('25');
 	await page.getByPlaceholder(/Benötigt ab/i).fill('E2E Notiz — bitte ignorieren');
 	await page.getByRole('button', { name: 'Anfrage senden' }).click();
@@ -62,5 +62,5 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
         JOIN buecher_titel t ON t.id = r.titel_id
         WHERE t.isbn = '978-${s}'
     `);
-	expect(row).toBe('08b|25');
+	expect(row).toBe(`k8b${s}|25`);
 });

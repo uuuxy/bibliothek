@@ -74,3 +74,71 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
         `);
 	}
 });
+
+// Regressions-Gate zur schlanken Katalogliste: GET /api/books liefert beschreibung/
+// erweiterteEigenschaften bewusst LEER (Payload), und das Bearbeiten-Formular schickt
+// per PUT das GANZE Objekt zurück. Würde das Formular aus der Listenzeile befüllt,
+// leerte "Bearbeiten → Speichern" beide Felder still (Upsert-Blanking-Bugklasse —
+// exakt so am 20.08.2026 als Regression gebaut und in der Nachprüfung gefunden).
+// Das Formular muss deshalb vom Einzel-Read (/api/books/{id}) befüllt werden. Dieser
+// Test beweist es über den echten Klickpfad: öffnen, NICHTS ändern, speichern —
+// beide Felder unversehrt. Die toHaveValue-Prüfung schlägt zusätzlich schon beim
+// Öffnen fehl, wenn das Formular aus der schlanken Liste käme (leere Textarea).
+test('Bücher: Bearbeiten ohne Änderung erhält Beschreibung und erweiterte Eigenschaften', async ({
+	page
+}) => {
+	await uiLogin(page);
+	const suffix = uniqueSuffix();
+	const isbn = `9782${String(Date.now()).slice(-9)}`;
+	const titel = `E2E-Blank-Buch-${suffix}`;
+	const beschreibung = `Wertvolle Beschreibung ${suffix}`;
+
+	try {
+		const created = await apiPost(page, '/api/books', {
+			isbn,
+			title: titel,
+			author: 'E2E Autor',
+			signatur: 'E2E SIG',
+			coverUrl: '/covers/e2e-dummy.jpg',
+			subject: '',
+			gradeLevel: 7,
+			track: '',
+			stock: 1,
+			beschreibung,
+			erweiterteEigenschaften: { regal: `R-${suffix}` }
+		});
+		expect(created.ok(), `Buch anlegen: ${created.status()}`).toBeTruthy();
+
+		await page.getByTitle('Medienkatalog').click();
+		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
+		await expect(suche).toBeVisible({ timeout: 15000 });
+		await suche.fill(titel);
+		await page.getByText(titel).first().click();
+
+		// Beweis der Quelle: Das Formular zeigt die Beschreibung — die schlanke
+		// Listenzeile hätte hier eine leere Textarea.
+		const feld = page.locator('#buch-beschreibung');
+		await expect(feld).toBeVisible({ timeout: 15000 });
+		await expect(feld).toHaveValue(beschreibung);
+
+		await page.getByRole('button', { name: 'Speichern' }).click();
+		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible({
+			timeout: 15000
+		});
+
+		expect(querySQL(`SELECT beschreibung FROM buecher_titel WHERE isbn = '${isbn}'`)).toBe(
+			beschreibung
+		);
+		expect(
+			querySQL(
+				`SELECT erweiterte_eigenschaften->>'regal' FROM buecher_titel WHERE isbn = '${isbn}'`
+			)
+		).toBe(`R-${suffix}`);
+	} finally {
+		seedSQL(`
+            DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn = '${isbn}');
+            DELETE FROM buecher_titel WHERE isbn = '${isbn}';
+        `);
+	}
+});

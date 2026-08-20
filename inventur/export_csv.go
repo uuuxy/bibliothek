@@ -20,26 +20,34 @@ import (
 func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, time.Now().Format("2006-01-02")))
-
-	// Write UTF-8 BOM so Excel opens it correctly with UTF-8
-	_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
-
 	writer := csv.NewWriter(w)
 	writer.Comma = ';' // German Excel standard
 
-	if err := writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand"}); err != nil {
-		return // Header bereits gesendet — kein Fehler-Response mehr möglich
+	// HTTP-Header und CSV-Kopf erst, NACHDEM die Query erfolgreich gestartet ist
+	// (kopf-Callback): Scheitert die Datenbank, ist noch nichts gesendet und der
+	// Client bekommt einen echten 500 — statt einer leeren 200er-CSV, die wie ein
+	// gelungener (aber leerer) Export aussähe.
+	kopfGesendet := false
+	kopf := func() error {
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, time.Now().Format("2006-01-02")))
+		// Write UTF-8 BOM so Excel opens it correctly with UTF-8
+		_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
+		kopfGesendet = true
+		return writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand"})
 	}
 
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
 	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen (je Zeile).
-	err := handler.repo.StreamBooksForCSVExport(ctx, func(row []string) error {
+	err := handler.repo.StreamBooksForCSVExport(ctx, kopf, func(row []string) error {
 		return writer.Write(csvutil.SanitizeRow(row))
 	})
 	writer.Flush()
 	if err != nil {
+		if !kopfGesendet {
+			writeError(w, http.StatusInternalServerError, "fehler beim datenbank-export")
+			return
+		}
 		// Header ist längst raus; ein sauberer HTTP-Fehler geht nicht mehr. Die
 		// abgebrochene Zeile signalisiert dem Client eine unvollständige Datei.
 		return
@@ -47,9 +55,10 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 }
 
 // StreamBooksForCSVExport liest alle Titel×Exemplare und ruft schreibe je Zeile auf —
-// ohne die Gesamtmenge im Speicher zu halten. Bricht schreibe ab (z. B. Verbindung weg),
-// endet der Stream mit diesem Fehler.
-func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, schreibe func(row []string) error) error {
+// ohne die Gesamtmenge im Speicher zu halten. kopf wird genau einmal NACH erfolgreichem
+// Query-Start aufgerufen (der Aufrufer sendet dort seine Header). Bricht schreibe ab
+// (z. B. Verbindung weg), endet der Stream mit diesem Fehler.
+func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf func() error, schreibe func(row []string) error) error {
 	query := `
 		SELECT
 			bt.titel,
@@ -70,6 +79,10 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, schreib
 		return err
 	}
 	defer pgRows.Close()
+
+	if err := kopf(); err != nil {
+		return err
+	}
 
 	for pgRows.Next() {
 		var titel, autor, verlag, isbn, subject, barcode, zustand string
