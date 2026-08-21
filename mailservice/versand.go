@@ -11,10 +11,28 @@ import (
 	"crypto/tls"
 	"errors"
 	"log"
+	"net"
 	"net/smtp"
 	"os"
+	"time"
 
 	"bibliothek/pkg/closeutil"
+)
+
+// Fristen des SMTP-Transports. Ohne sie war smtp.Dial der klassische Ewig-Hänger
+// (Ausfallmatrix 20.08.2026): Ein Server, der die TCP-Verbindung annimmt und dann
+// schweigt (Firewall-Blackhole, überlasteter Relay), blockierte die Goroutine
+// unbegrenzt — die Context-Deadline der TimeoutMiddleware bricht kein blockierendes
+// Read auf einem Socket ab. Am schwersten traf das den Kritisch-Alarm-Wächter selbst:
+// Hängt SendEmail dort, steht seine Ticker-Schleife für immer, und der Mechanismus,
+// der stille Ausfälle melden soll, ist selbst still ausgefallen.
+// Variablen (keine Konstanten), damit Tests sie verkürzen können.
+var (
+	smtpVerbindungsTimeout = 10 * time.Second
+	// Gesamtfrist für die komplette SMTP-Sitzung (Begrüßung bis Zustellung). Als
+	// Deadline auf der Verbindung gesetzt, wirkt sie auf jedes Read/Write — auch
+	// hinter STARTTLS, dessen TLS-Schicht die Deadline der Rohverbindung erbt.
+	smtpSitzungsFrist = 60 * time.Second
 )
 
 // VersendeUeberSMTP überträgt eine fertige Nachricht an den konfigurierten Server.
@@ -35,8 +53,18 @@ func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, 
 	}
 
 	adresse := konfig.Adresse()
-	c, err := smtp.Dial(adresse)
+	conn, err := net.DialTimeout("tcp", adresse, smtpVerbindungsTimeout)
 	if err != nil {
+		return BeschreibeSMTPFehler(adresse, err)
+	}
+	if err := conn.SetDeadline(time.Now().Add(smtpSitzungsFrist)); err != nil {
+		_ = conn.Close() //nolint:errcheck
+		return BeschreibeSMTPFehler(adresse, err)
+	}
+	// smtp.NewClient liest bereits die Server-Begrüßung — auch das unter der Deadline.
+	c, err := smtp.NewClient(conn, konfig.Host)
+	if err != nil {
+		_ = conn.Close() //nolint:errcheck
 		return BeschreibeSMTPFehler(adresse, err)
 	}
 	defer closeutil.LogClose(c, "smtp client")

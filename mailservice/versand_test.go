@@ -2,8 +2,10 @@ package mailservice
 
 import (
 	"errors"
+	"net"
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/internal/smtptest"
 )
@@ -229,5 +231,56 @@ func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
 	}
 	if !strings.Contains(rumpf, "Bcc: mitleser@example.com") {
 		t.Errorf("der Text kam nicht als Rumpf an: %q", rumpf)
+	}
+}
+
+// TestVersendeUeberSMTP_SchweigenderServerHaengtNicht schließt den Ewig-Hänger aus der
+// Ausfallmatrix (20.08.2026): Ein Server, der die TCP-Verbindung annimmt und dann
+// SCHWEIGT (Firewall-Blackhole, überlasteter Relay), blockierte VersendeUeberSMTP
+// unbegrenzt — smtp.Dial hatte weder Verbindungs-Timeout noch Sitzungs-Deadline, und
+// eine Context-Deadline bricht kein blockierendes Socket-Read ab. Am schwersten traf
+// das den Kritisch-Alarm-Wächter: hängt dessen SendEmail, steht seine Ticker-Schleife
+// für immer. Jetzt muss der Versand binnen der Sitzungsfrist mit Fehler zurückkehren.
+func TestVersendeUeberSMTP_SchweigenderServerHaengtNicht(t *testing.T) {
+	// Schweige-Server: akzeptiert Verbindungen, sendet NIE die 220-Begrüßung.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Listener: %v", err)
+	}
+	t.Cleanup(func() { _ = listener.Close() }) //nolint:errcheck
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			// Verbindung halten, nichts senden.
+			defer conn.Close() //nolint:errcheck
+		}
+	}()
+
+	// Fristen für den Test verkürzen (Produktionswerte: 10s/60s).
+	alteVerbindung, alteSitzung := smtpVerbindungsTimeout, smtpSitzungsFrist
+	smtpVerbindungsTimeout, smtpSitzungsFrist = 2*time.Second, 2*time.Second
+	t.Cleanup(func() { smtpVerbindungsTimeout, smtpSitzungsFrist = alteVerbindung, alteSitzung })
+
+	host, port, err := net.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		t.Fatalf("SplitHostPort: %v", err)
+	}
+	konfig := SMTPKonfig{Host: host, Port: port, Absender: "test@schule.invalid"}
+
+	fertig := make(chan error, 1)
+	go func() {
+		fertig <- VersendeUeberSMTP(konfig, "test@schule.invalid", []string{"ziel@schule.invalid"}, []byte("Subject: t\r\n\r\nx"))
+	}()
+
+	select {
+	case err := <-fertig:
+		if err == nil {
+			t.Fatal("Versand an einen schweigenden Server darf nicht als Erfolg enden")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("VersendeUeberSMTP hängt an einem schweigenden Server — die Sitzungsfrist greift nicht")
 	}
 }
