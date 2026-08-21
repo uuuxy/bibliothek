@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/db"
 	"bibliothek/internal/crypto"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -107,7 +108,7 @@ func main() {
 // Falls je zehntausende Fotos zu übernehmen sind: dann in Blöcken von ~50 batchen UND eine
 // Liste der Barcodes in Batch-Reihenfolge mitführen, damit jedes Ergebnis wieder einer
 // Datei zuzuordnen ist. Ohne diese Liste nicht.
-func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry) (processed, migrated int) {
+func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntry) (processed, migrated int) {
 	// Barcodes aus Dateinamen extrahieren
 	var barcodes []string
 	for _, entry := range entries {
@@ -168,7 +169,7 @@ func migriereAlleFotos(pool *pgxpool.Pool, root *os.Root, entries []os.DirEntry)
 // migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =
 // "<barcode>.jpg") in schueler_fotos. Liefert true bei Erfolg; Fehler und fehlende
 // Schüler werden protokolliert und mit false quittiert.
-func migriereFoto(pool *pgxpool.Pool, root *os.Root, name string, barcodeID string, studentID string) bool {
+func migriereFoto(pool db.PgxPoolIface, root *os.Root, name string, barcodeID string, studentID string) bool {
 	file, err := root.Open(name)
 	if err != nil {
 		slog.Error("Konnte Bild nicht öffnen", "file", name, "error", err)
