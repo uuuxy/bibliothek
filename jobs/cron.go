@@ -106,6 +106,14 @@ func (s *Scheduler) Start() {
 		log.Printf("Scheduler: Failed to register vormerkung expiry job: %v", err)
 	}
 
+	// Wöchentliche Restore-Probe, Sonntag 03:30 UTC — nach dem Backup (02:30) und der
+	// Audit-Aufbewahrung (03:00), damit sie die jüngste Datei prüft und keinem Job in
+	// die Quere kommt. Beweist, dass die ECHTEN Dateien auf der Platte wiederherstellbar
+	// sind — die CI-Drill beweist nur den Mechanismus (jobs/restore_probe.go).
+	if _, err := s.cron.AddFunc("30 3 * * 0", s.RunRestoreProbe); err != nil {
+		log.Printf("Scheduler: Failed to register restore probe job: %v", err)
+	}
+
 	s.cron.Start()
 	log.Println("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
 }

@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/jobs"
 )
 
 // Stufen eines Befundes. Bewusst nur drei — eine feinere Skala liest niemand.
@@ -105,6 +106,12 @@ type Lage struct {
 	BackupKeyWeak bool
 	LetztesBackup *time.Time
 	Jetzt         time.Time
+
+	// Restore-Probe (Schema-Erweiterung 21.08.2026): Ob das jüngste Backup
+	// WIEDERHERSTELLBAR ist, beweist wöchentlich jobs.RunRestoreProbe — ein Backup,
+	// das sich nicht einspielen lässt, ist exakt so viel wert wie keins. nil: noch
+	// nie gelaufen (oder Ergebnis nicht lesbar).
+	RestoreProbe *jobs.RestoreProbeErgebnis
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -151,8 +158,44 @@ func Pruefe(l Lage) []Befund {
 		pruefeAdminKonten(l),
 		pruefeKlassenDrift(l),
 		pruefeBackupAlter(l, echt),
+		pruefeRestoreProbe(l, echt),
 	}
 	return befunde
+}
+
+// pruefeRestoreProbe beurteilt das Ergebnis der wöchentlichen Wiederherstellungs-Probe
+// (jobs/restore_probe.go). Ein Backup, das sich nicht einspielen lässt, ist so viel
+// wert wie keins — und man erfährt es sonst im schlechtesten Moment.
+func pruefeRestoreProbe(l Lage, echt bool) Befund {
+	b := Befund{Bereich: "Restore-Probe"}
+	switch {
+	case !echt:
+		b.Stufe = StufeOK
+		b.Befund = "Keine Restore-Probe — in " + l.AppEnv + " ist das richtig so."
+	case l.RestoreProbe == nil:
+		b.Stufe = StufeWarnung
+		b.Befund = "Noch kein Probelauf verzeichnet."
+		b.Folge = "Ob die nächtlichen Backups wiederherstellbar sind, ist unbewiesen."
+		b.Abhilfe = "Die Probe läuft sonntags 03:30 — nach dem ersten Lauf verschwindet diese Meldung. " +
+			"Bleibt sie über eine Woche stehen, Container-Logs nach 'Restore-Probe' durchsuchen."
+	case !l.RestoreProbe.Erfolg:
+		b.Stufe = StufeKritisch
+		b.Befund = "Die letzte Wiederherstellungs-Probe ist FEHLGESCHLAGEN: " + l.RestoreProbe.Fehler
+		b.Folge = "Im Ernstfall ließe sich die Datenbank aus dem jüngsten Backup nicht wiederherstellen."
+		b.Abhilfe = "Ursache im Befundtext beheben (Schlüssel? Datei? psql?), dann per Neustart oder " +
+			"nächsten Sonntag erneut proben."
+	case l.Jetzt.Sub(l.RestoreProbe.Zeitpunkt) > 9*24*time.Hour:
+		b.Stufe = StufeKritisch
+		b.Befund = fmt.Sprintf("Die letzte erfolgreiche Probe ist %d Tage her — der Wochenlauf steht still.",
+			int(l.Jetzt.Sub(l.RestoreProbe.Zeitpunkt).Hours()/24))
+		b.Folge = "Ob die aktuellen Backups wiederherstellbar sind, ist wieder unbewiesen."
+		b.Abhilfe = "Container-Logs nach 'Restore-Probe' durchsuchen; läuft der Scheduler?"
+	default:
+		b.Stufe = StufeOK
+		b.Befund = fmt.Sprintf("Backup %s erfolgreich wiederhergestellt (%d Tabellen, Probe vom %s).",
+			l.RestoreProbe.BackupDatei, l.RestoreProbe.Tabellen, l.RestoreProbe.Zeitpunkt.Format("02.01.2006"))
+	}
+	return b
 }
 
 // pruefeBackupAlter hebt den Backup-Wächter des Dashboard-Badges in die Befunde —

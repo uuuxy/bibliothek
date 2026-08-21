@@ -81,10 +81,17 @@ WORKDIR /app
 # und der Wächter in api/backup_status.go stand dauerhaft auf "critical", ohne dass
 # das Setzen des Schlüssels daran etwas geändert hätte.
 #
-# Alpine 3.21 liefert hier pg_dump 17. Das ist Absicht: Der Prod-Stack fährt
-# postgres:15, der lokale postgres:16 — ein pg_dump darf jeden ÄLTEREN Server
-# dumpen, aber keinen neueren. Der neueste Client bedient also beide.
-RUN apk --no-cache add ca-certificates tzdata postgresql-client
+# VERSIONIERT auf 16, nicht "neuester Client bedient beide" (so stand es hier bis zum
+# 21.08.2026 — und das war nur die halbe Wahrheit): pg_dump 17 DUMPT einen älteren
+# Server zwar, schreibt aber `SET transaction_timeout` (GUC ab PG 17) in den Dump —
+# und der ließ sich damit unter ON_ERROR_STOP nicht mehr in den eigenen postgres:15
+# einspielen. Die Backups der Produktion waren monatelang mit dem dokumentierten
+# Restore-Weg NICHT wiederherstellbar; gefunden hat es die Restore-Probe
+# (jobs/restore_probe.go) an ihrem ersten Testlauf. Client 16 dumpt Server 15 UND 16,
+# und seine Dumps spielen nachweislich sauber in 15 ein (CI-Drill, Client 16→Server 15).
+# Beim nächsten Server-Upgrade über 16 hinaus diese Zeile mitziehen — die Probe
+# schlägt sonst am ersten Sonntag Alarm.
+RUN apk --no-cache add ca-certificates tzdata postgresql16-client
 
 # Copy database schema file (for reference / first-run init)
 COPY schema.sql ./

@@ -8,6 +8,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -115,6 +116,18 @@ func (s *Server) sammleLage(
 	}
 	lage.LetztesBackup = newestBackupTime(backupDir)
 	lage.Jetzt = time.Now()
+
+	// Ergebnis der wöchentlichen Restore-Probe. Unlesbar oder nie gelaufen → nil,
+	// die Prüfung meldet dann „noch kein Probelauf" statt eines falschen Urteils.
+	var probeJSON string
+	if err := s.DB.Pool.QueryRow(ctx,
+		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`,
+		jobs.RestoreProbeSchluessel).Scan(&probeJSON); err == nil {
+		var probe jobs.RestoreProbeErgebnis
+		if json.Unmarshal([]byte(probeJSON), &probe) == nil {
+			lage.RestoreProbe = &probe
+		}
+	}
 
 	return lage
 }

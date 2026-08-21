@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/jobs"
 )
 
 // Eine Lage, in der ALLES eingerichtet ist. Ausgangspunkt aller Fälle unten: Jeder Test
@@ -45,6 +46,11 @@ func lageEingerichtet() Lage {
 		BackupKeyWeak: false,
 		LetztesBackup: vorStunden(10),
 		Jetzt:         testJetzt,
+		// Restore-Probe: letzter Wochenlauf erfolgreich.
+		RestoreProbe: &jobs.RestoreProbeErgebnis{
+			Zeitpunkt: *vorStunden(3 * 24), Erfolg: true,
+			BackupDatei: "backup_2026-08-17T023000Z.sql.gz.enc", Tabellen: 31,
+		},
 	}
 }
 
@@ -244,6 +250,39 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Nächtliches Backup",
 			stufe:    StufeWarnung,
 			enthaelt: "zu kurz",
+		},
+		// Restore-Probe (Schema-Erweiterung 21.08.2026): Ein Backup, das sich nicht
+		// einspielen lässt, ist so viel wert wie keins — und ohne diese Befunde
+		// erführe das niemand vor dem Ernstfall.
+		{
+			name:     "Restore-Probe nie gelaufen",
+			aendere:  func(l *Lage) { l.RestoreProbe = nil },
+			bereich:  "Restore-Probe",
+			stufe:    StufeWarnung,
+			enthaelt: "kein Probelauf",
+		},
+		{
+			name: "Restore-Probe fehlgeschlagen",
+			aendere: func(l *Lage) {
+				l.RestoreProbe = &jobs.RestoreProbeErgebnis{
+					Zeitpunkt: *vorStunden(24), Erfolg: false,
+					Fehler: "entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte Datei)",
+				}
+			},
+			bereich:  "Restore-Probe",
+			stufe:    StufeKritisch,
+			enthaelt: "FEHLGESCHLAGEN",
+		},
+		{
+			name: "Restore-Probe steht still",
+			aendere: func(l *Lage) {
+				l.RestoreProbe = &jobs.RestoreProbeErgebnis{
+					Zeitpunkt: *vorStunden(12 * 24), Erfolg: true, Tabellen: 31,
+				}
+			},
+			bereich:  "Restore-Probe",
+			stufe:    StufeKritisch,
+			enthaelt: "steht still",
 		},
 	}
 

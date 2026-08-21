@@ -85,6 +85,13 @@ BACKUP_ENCRYPTION_KEY="$KEY" ./restore-backup "$ENC" "$DUMP"
 ls -lh "$DUMP"
 head -5 "$DUMP"
 grep -c "CREATE TABLE" "$DUMP"     # muss deutlich > 0 sein
+
+# 4b. NUR für Backups von VOR dem 22.08.2026: Sie wurden mit pg_dump 17 erzeugt und
+# enthalten `SET transaction_timeout`, das ein PostgreSQL-15-Server nicht kennt —
+# der Restore bricht damit unter ON_ERROR_STOP ab. Die Zeile ist gefahrlos zu
+# entfernen (reiner Sitzungsparameter). Neuere Backups (Client 16, siehe Dockerfile)
+# brauchen das nicht; die wöchentliche Restore-Probe prüft genau diesen Weg.
+grep -q "transaction_timeout" "$DUMP" && sed -i.bak "/^SET transaction_timeout/d" "$DUMP"
 ```
 
 Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:
