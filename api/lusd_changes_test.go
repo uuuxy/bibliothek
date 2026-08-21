@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/db"
 
@@ -29,19 +30,13 @@ func TestGenerateImportBarcode_UniqueWithinImport(t *testing.T) {
 }
 
 func lusdStudentRows(n int) *pgxmock.Rows {
-	rows := pgxmock.NewRows([]string{"id", "lusd_id", "klasse", "vorname", "nachname"})
+	rows := pgxmock.NewRows([]string{"id", "klasse", "vorname", "nachname", "lusd_id", "geburtsdatum", "ist_abgaenger", "bestaetigt"})
 	for i := 0; i < n; i++ {
 		id := string(rune('a' + i))
 		lusdID := "L-" + id // Pointer: die Spalte wird als *string gescannt (nullable)
-		rows.AddRow("uuid-"+id, &lusdID, "7A", "Vor"+id, "Nach"+id)
+		rows.AddRow("uuid-"+id, "7A", "Vor"+id, "Nach"+id, &lusdID, (*time.Time)(nil), false, true)
 	}
 	return rows
-}
-
-// waisenRowsLeer liefert die (leere) Ergebnismenge für ladeWaisenNachNameGebdatum —
-// in diesen Mock-Tests gibt es keine ID-losen Schüler zum Adoptieren.
-func waisenRowsLeer() *pgxmock.Rows {
-	return pgxmock.NewRows([]string{"id", "klasse", "vorname", "nachname", "geburtsdatum"})
 }
 
 func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
@@ -56,10 +51,8 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 	mock.ExpectBegin()
 	// apply=true: der Import-Advisory-Lock wird ZUERST genommen (serialisiert Parallel-Läufe).
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
-	mock.ExpectQuery(`SELECT id, lusd_id, klasse, vorname, nachname FROM schueler`).
+	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger`).
 		WillReturnRows(lusdStudentRows(10))
-	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, geburtsdatum`).
-		WillReturnRows(waisenRowsLeer())
 	// KEINE Exec-Erwartungen: Die Bremse muss vor dem ersten destruktiven
 	// Statement greifen. Unerwartete Execs ließen den Mock fehlschlagen.
 	mock.ExpectRollback()
@@ -91,10 +84,8 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 	s := &Server{DB: &db.Database{Pool: mock}}
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT id, lusd_id, klasse, vorname, nachname FROM schueler`).
+	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger`).
 		WillReturnRows(lusdStudentRows(10))
-	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, geburtsdatum`).
-		WillReturnRows(waisenRowsLeer())
 	mock.ExpectRollback()
 
 	records := []parsedStudentRow{

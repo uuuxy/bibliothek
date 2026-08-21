@@ -27,6 +27,7 @@ test('Mitarbeiter: manage_users-Endpoints liefern 403, Admin-UI bleibt verborgen
 	// Mitarbeiter dürfen Schüler anlegen (create_students) — als Testobjekt
 	const suffix = uniqueSuffix();
 	const created = await apiPost(page, '/api/schueler', {
+		geburtsdatum: '2012-06-15', // Pflicht seit 21.08.2026: Schlüssel für den LUSD-Abgleich
 		vorname: 'E2E',
 		nachname: `Rbac-${suffix}`,
 		klasse: '6A',

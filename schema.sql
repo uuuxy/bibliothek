@@ -159,6 +159,7 @@ CREATE TABLE schueler (
     abgaenger_jahr INTEGER NOT NULL,                  -- Graduation/leaving year (useful for batch archiving)
     ist_gesperrt BOOLEAN NOT NULL DEFAULT false,      -- Flag to suspend borrowing privileges
     lusd_id VARCHAR(64),                              -- Integrated LUSD ID (Eindeutigkeit: partieller Index uniq_schueler_lusd_id_active, nur aktive Zeilen)
+    lusd_bestaetigt_am TIMESTAMP WITH TIME ZONE,      -- zuletzt in einem LUSD-Export wiedergefunden/angelegt; NULL = nie (Handanlage/Littera). Migration 084, Namensmodus-Abgänger hängen daran
     ist_abgaenger BOOLEAN NOT NULL DEFAULT false,     -- Integrated ist_abgaenger
     strasse VARCHAR(255),
     hausnummer VARCHAR(50),
@@ -987,7 +988,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('080_schueler_anonymized_at_nachziehen.sql'),
 ('081_vormerkungen_benachrichtigt_am_entfernen.sql'),
 ('082_index_und_unique_paritaet.sql'),
-('083_audit_log_append_only_aufloesen.sql')
+('083_audit_log_append_only_aufloesen.sql'),
+('084_schueler_lusd_bestaetigt_am.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

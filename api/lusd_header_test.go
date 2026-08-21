@@ -37,12 +37,13 @@ func TestLusdHeaderMap_PraefixExportStyle(t *testing.T) {
 	}
 }
 
-func TestLusdHeaderMap_MissingLusdIDStillErrors(t *testing.T) {
-	// Ohne stabile LUSD-ID lässt sich kein Abgleich fahren → Pflichtspalte.
+func TestLusdHeaderMap_OhneLusdIDIstErlaubt(t *testing.T) {
+	// Der Export der Schule hat keine Schüler-ID (LANIS-Klassenliste: Nachname;Vorname;
+	// Klasse) — die Kopfzeile ist gültig, den Modus bestimmt der Parser (Nur-Name).
 	headers := []string{"vorname", "nachname", "klasse", "strasse"}
 
-	if _, err := lusdHeaderMap(headers); err == nil {
-		t.Fatal("fehlende LUSD-ID soll einen Fehler liefern")
+	if _, err := lusdHeaderMap(headers); err != nil {
+		t.Fatalf("Kopfzeile ohne LUSD-ID muss gültig sein, war: %v", err)
 	}
 }
 

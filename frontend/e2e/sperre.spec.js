@@ -13,6 +13,7 @@ async function openBlockedStudent(page, suffix) {
 
 	// Schüler anlegen und manuell sperren (gleicher Endpoint wie StudentLockModal)
 	const created = await apiPost(page, '/api/schueler', {
+		geburtsdatum: '2012-06-15', // Pflicht seit 21.08.2026: Schlüssel für den LUSD-Abgleich
 		vorname: 'E2E',
 		nachname: `Gesperrt-${suffix}`,
 		klasse: '7B',

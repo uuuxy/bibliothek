@@ -73,12 +73,18 @@ func calculateAbgaengerJahr(klasse string) int {
 
 // CreateStudentRequest defines the payload for creating a new student.
 type CreateStudentRequest struct {
-	Vorname      string  `json:"vorname" validate:"required"`
-	Nachname     string  `json:"nachname" validate:"required"`
-	Klasse       string  `json:"klasse" validate:"required"`
-	BarcodeID    string  `json:"barcode_id"`
-	Geburtsdatum *string `json:"geburtsdatum"` // Format: YYYY-MM-DD
+	Vorname   string `json:"vorname" validate:"required"`
+	Nachname  string `json:"nachname" validate:"required"`
+	Klasse    string `json:"klasse" validate:"required"`
+	BarcodeID string `json:"barcode_id"`
+	// Geburtsdatum (YYYY-MM-DD) ist Pflicht — geprüft im Handler mit eigener Meldung,
+	// weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe errGeburtsdatumPflicht.
+	Geburtsdatum *string `json:"geburtsdatum"`
 }
+
+// errGeburtsdatumPflicht erklärt dem Sekretariat, WARUM das Datum nicht fehlen darf —
+// eine nackte Validierungsmeldung würde als Schikane gelesen und umgangen.
+var errGeburtsdatumPflicht = errors.New("Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt — ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt.") //nolint:staticcheck // ST1005: nutzer-sichtbarer Text im Anlege-Dialog
 
 // CreateStudentHandler inserts a new student record into the database.
 // @Summary      Create student
@@ -111,6 +117,14 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
+		// Geburtsdatum ist Pflicht — nicht als Stammdatum, sondern als SCHLÜSSEL: Der
+		// LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt einen von Hand
+		// angelegten Schüler ausschließlich über Name + Geburtsdatum wieder (Adoption bzw.
+		// Namensmodus). Ohne Datum entsteht beim nächsten Import zwangsläufig ein Duplikat.
+		if req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errGeburtsdatumPflicht)
+			return
+		}
 		parsedGebdatum, ok := parseCreateGeburtsdatum(w, req.Geburtsdatum)
 		if !ok {
 			return
@@ -176,8 +190,9 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	return studentID, barcodeID, true
 }
 
-// parseCreateGeburtsdatum parst das optionale Geburtsdatum (YYYY-MM-DD) aus dem
-// Anlage-Request. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
+// parseCreateGeburtsdatum parst das Geburtsdatum (YYYY-MM-DD) aus dem Anlage-Request.
+// Der nil-/Leer-Zweig ist seit der Pflicht (errGeburtsdatumPflicht) nur noch Absicherung.
+// ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
 func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bool) {
 	if raw == nil || *raw == "" {
 		return nil, true

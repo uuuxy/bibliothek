@@ -28,6 +28,7 @@ test('Geräteausleihe: anlegen, Checkliste bestätigen, ausleihen, zurückgeben'
 
 	// 2. Schüler für die Ausleihe anlegen (API, wie die übrigen Kiosk-Specs).
 	const created = await apiPost(page, '/api/schueler', {
+		geburtsdatum: '2012-06-15', // Pflicht seit 21.08.2026: Schlüssel für den LUSD-Abgleich
 		vorname: 'E2E',
 		nachname: `Geraet-${s}`,
 		klasse: '7b',

@@ -9,21 +9,51 @@ import (
 	"bibliothek/db"
 )
 
-// TestCreateStudent_NamensvetternOhneGeburtsdatum sichert #5 (Zwillings-Blockade) ab:
-// Zwei namensgleiche Schüler OHNE Geburtsdatum müssen beide anlegbar sein — ein fehlendes
-// Geburtsdatum ist kein Duplikat-Kriterium. Vorher stülpte coalesce(...,'1900-01-01')
-// beiden Seiten dasselbe Ersatzdatum über und machte den zweiten "Leon Müller"
-// fälschlich zum Duplikat (409), sodass er gar nicht angelegt werden konnte.
-func TestCreateStudent_NamensvetternOhneGeburtsdatum(t *testing.T) {
+// TestCreateStudent_OhneGeburtsdatumAbgewiesen: Das Geburtsdatum ist bei der Handanlage
+// Pflicht — es ist der einzige Schlüssel, über den der LUSD-Import (ohne Schüler-ID im
+// Export der Schule) einen von Hand angelegten Schüler wiedererkennt. Ohne Datum
+// entstünde beim nächsten Import ein Duplikat. Die Meldung muss den Grund nennen,
+// sonst wird die Pflicht als Schikane gelesen.
+func TestCreateStudent_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	if code, body := createStudent(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5a"}`); code != http.StatusCreated {
+	for _, body := range []string{
+		`{"vorname":"Leon","nachname":"Müller","klasse":"5a"}`,
+		`{"vorname":"Leon","nachname":"Müller","klasse":"5a","geburtsdatum":""}`,
+		`{"vorname":"Leon","nachname":"Müller","klasse":"5a","geburtsdatum":"   "}`,
+	} {
+		code, resp := createStudent(t, srv, body)
+		if code != http.StatusBadRequest {
+			t.Fatalf("ohne Geburtsdatum: erwartet 400, war %d: %s (Body %s)", code, resp, body)
+		}
+		if !strings.Contains(resp, "LUSD-Import") {
+			t.Errorf("Meldung muss den Grund (LUSD-Import) nennen: %s", resp)
+		}
+	}
+	var anzahl int
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM schueler WHERE nachname='Müller'`).Scan(&anzahl); err != nil {
+		t.Fatal(err)
+	}
+	if anzahl != 0 {
+		t.Fatalf("trotz 400 wurden %d Zeilen angelegt", anzahl)
+	}
+}
+
+// TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum sichert die Zwillings-
+// Regel (#5): Namensgleiche Schüler mit VERSCHIEDENEM Geburtsdatum sind verschiedene
+// Personen und müssen beide anlegbar sein.
+func TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	if code, body := createStudent(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5a","geburtsdatum":"2012-01-02"}`); code != http.StatusCreated {
 		t.Fatalf("erster Leon Müller: erwartet 201, war %d: %s", code, body)
 	}
-	if code, body := createStudent(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5b"}`); code != http.StatusCreated {
-		t.Fatalf("zweiter Leon Müller (ohne Geburtsdatum) blockiert: erwartet 201, war %d: %s", code, body)
+	if code, body := createStudent(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5b","geburtsdatum":"2013-03-04"}`); code != http.StatusCreated {
+		t.Fatalf("zweiter Leon Müller (anderes Geburtsdatum) blockiert: erwartet 201, war %d: %s", code, body)
 	}
 }
 

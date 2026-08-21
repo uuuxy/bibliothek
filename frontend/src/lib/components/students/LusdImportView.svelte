@@ -1,6 +1,10 @@
 <!-- @component LusdImportView — Preview-to-Commit Flow für den LUSD-Schuljahreswechsel-Import.
      Go-Handler sind zustandslos (keine Preview-Session), daher wird dieselbe Datei bei
-     „Import finalisieren“ erneut an /api/lusd/import gesendet. -->
+     „Import finalisieren“ erneut an /api/lusd/import gesendet.
+
+     Drei Zuordnungsstufen, die Datei entscheidet (Backend: api/lusd_parser.go):
+     LUSD-ID → Name + Geburtsdatum → nur Name. Der Export der Schule hat keine Schüler-ID;
+     die Vorschau sagt, welche Stufe gilt, und was unangetastet bleibt. -->
 <script>
 	import { AlertTriangle, ChevronRight, CircleCheck } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
@@ -9,7 +13,7 @@
 
 	/** @typedef {{ id: string, vorname: string, nachname: string, alte_klasse?: string, neue_klasse?: string }} StudentDiff */
 	/** @typedef {{ schueler_id: string, lusd_id: string, vorname: string, nachname: string, geburtsdatum: string, alte_klasse?: string, neue_klasse?: string }} AdoptionDiff */
-	/** @typedef {{ new_students: StudentDiff[], class_changes: StudentDiff[], adoptions: AdoptionDiff[], graduates: StudentDiff[], total_csv_records: number, active_db_students: number, skipped_no_id: number }} LusdPreviewResult */
+	/** @typedef {{ modus: 'lusd_id' | 'name_geburtsdatum' | 'name', new_students: StudentDiff[], class_changes: StudentDiff[], adoptions: AdoptionDiff[], rueckkehrer: StudentDiff[], graduates: StudentDiff[], nicht_im_export: StudentDiff[], nicht_abgleichbar: StudentDiff[], mehrdeutig: StudentDiff[], total_csv_records: number, active_db_students: number, skipped_no_id: number, dubletten_in_datei: number }} LusdPreviewResult */
 
 	/** @type {{ onImported?: (result: LusdPreviewResult) => void }} */
 	let { onImported = () => {} } = $props();
@@ -23,6 +27,25 @@
 	let errorMessage = $state(/** @type {string | null} */ (null));
 
 	const activeResult = $derived(stage === 'done' ? importResult : previewResult);
+
+	/** Text und Ton je Zuordnungsstufe — die unsicherste Stufe wird als Warnung gezeigt. */
+	const modusInfo = $derived.by(() => {
+		switch (activeResult?.modus) {
+			case 'name_geburtsdatum':
+				return {
+					warn: false,
+					text: 'Zuordnung über Name + Geburtsdatum (die Datei enthält keine Schüler-ID).'
+				};
+			case 'name':
+				return {
+					warn: true,
+					text: 'Zuordnung nur über Vor- und Nachname — die Datei enthält weder Schüler-ID noch Geburtsdatum. Namensgleiche Schüler werden nicht zugeordnet, sondern unten als „mehrdeutig“ gemeldet. Sicherer: das Geburtsdatum mit exportieren.'
+				};
+			default:
+				return { warn: false, text: 'Zuordnung über die LUSD-ID.' };
+		}
+	});
+
 	const summaryRows = $derived(
 		activeResult
 			? [
@@ -30,13 +53,13 @@
 						key: 'new',
 						label: 'Neue Schüler',
 						hint: 'Werden neu angelegt',
-						items: activeResult.new_students,
+						items: activeResult.new_students || [],
 						valueClass: 'text-emerald-600'
 					},
 					{
 						key: 'adoptions',
 						label: 'Zusammengeführt',
-						hint: 'Bestehende Schüler ohne LUSD-ID — per Name + Geburtsdatum verknüpft (kein Duplikat)',
+						hint: 'Bestehende Schüler ohne LUSD-ID (Handanlage oder Littera-Übernahme) — per Name + Geburtsdatum verknüpft (kein Duplikat)',
 						items: (activeResult.adoptions || []).map((a) => ({ ...a, id: a.schueler_id })),
 						valueClass: 'text-primary'
 					},
@@ -44,15 +67,43 @@
 						key: 'changes',
 						label: 'Klassenwechsel',
 						hint: 'Bestehende Schüler mit geänderter Klasse',
-						items: activeResult.class_changes,
+						items: activeResult.class_changes || [],
 						valueClass: 'text-blue-600'
+					},
+					{
+						key: 'returners',
+						label: 'Rückkehrer',
+						hint: 'Abgänger, die wieder im Export stehen — werden reaktiviert',
+						items: activeResult.rueckkehrer || [],
+						valueClass: 'text-primary'
 					},
 					{
 						key: 'graduates',
 						label: 'Abgänger',
 						hint: 'Fehlen in der Datei — werden als Abgänger markiert',
-						items: activeResult.graduates,
+						items: activeResult.graduates || [],
 						valueClass: 'text-rose-600'
+					},
+					{
+						key: 'notInExport',
+						label: 'Nicht im Export',
+						hint: 'Standen noch nie in einem LUSD-Export (Handanlagen, Gastschüler) — bleiben unverändert',
+						items: activeResult.nicht_im_export || [],
+						valueClass: 'text-on-surface-variant'
+					},
+					{
+						key: 'unmatchable',
+						label: 'Nicht abgleichbar',
+						hint: 'Ohne Geburtsdatum im Bestand — bleiben unverändert; Geburtsdatum im Profil nachtragen',
+						items: activeResult.nicht_abgleichbar || [],
+						valueClass: 'text-on-surface-variant'
+					},
+					{
+						key: 'ambiguous',
+						label: 'Mehrdeutig',
+						hint: 'Gleicher Name mehrfach (in der Datei oder im Bestand) — wird nicht angefasst, bitte von Hand klären',
+						items: activeResult.mehrdeutig || [],
+						valueClass: 'text-error'
 					}
 				]
 			: []
@@ -178,6 +229,18 @@
 	</details>
 {/snippet}
 
+{#snippet modusBanner()}
+	{#if activeResult}
+		<p
+			class="text-xs font-semibold rounded-xl p-3 {modusInfo.warn
+				? 'bg-error-container text-on-error-container'
+				: 'text-on-surface-variant'}"
+		>
+			{modusInfo.text}
+		</p>
+	{/if}
+{/snippet}
+
 <div class="w-full max-w-2xl space-y-8">
 	<div>
 		<h2 class="text-base font-bold text-slate-900">LUSD-Import</h2>
@@ -204,6 +267,7 @@
 				>Import abgeschlossen — der Bestand ist aktuell.</span
 			>
 		</div>
+		{@render modusBanner()}
 		<div class="divide-y divide-slate-100">
 			{#each summaryRows as section (section.key)}
 				{@render diffSection(section)}
@@ -221,7 +285,7 @@
 		>
 			<input
 				type="file"
-				accept=".csv"
+				accept=".csv,.xlsx"
 				class="sr-only"
 				onchange={handleFileChange}
 				disabled={previewLoading || importLoading}
@@ -234,12 +298,14 @@
 				</div>
 			{:else}
 				<div class="space-y-1">
-					<p class="text-xs font-bold text-slate-600">LUSD-CSV auswählen oder reinziehen</p>
+					<p class="text-xs font-bold text-slate-600">
+						LUSD-CSV oder -Excel auswählen oder reinziehen
+					</p>
 					<p class="text-label-small text-slate-400 font-medium">
-						Unterstützt Komma- &amp; Semikolon-Trennung · erwartete Spalten: <code
-							>lusd_id, vorname, nachname, klasse</code
+						CSV (Komma/Semikolon) oder .xlsx · Pflichtspalten: <code>vorname, nachname, klasse</code
 						>
-						(optional <code>geburtsdatum</code>)
+						· Zuordnung über <code>lusd_id</code>, sonst <code>geburtsdatum</code> (empfohlen), sonst
+						nur der Name
 					</p>
 				</div>
 			{/if}
@@ -261,12 +327,18 @@
 
 		{#if stage === 'preview' && previewResult}
 			<div class="space-y-4">
+				{@render modusBanner()}
 				<p class="text-xs text-slate-500">
 					{previewResult.total_csv_records} Datensätze in der Datei · {previewResult.active_db_students}
 					aktive Schüler im Bestand
 					{#if previewResult.skipped_no_id > 0}
 						· <span class="text-amber-700 font-semibold"
 							>{previewResult.skipped_no_id} Zeilen ohne LUSD-ID werden übersprungen</span
+						>
+					{/if}
+					{#if previewResult.dubletten_in_datei > 0}
+						· <span class="text-on-surface-variant font-semibold"
+							>{previewResult.dubletten_in_datei} doppelte Zeilen zusammengelegt (letzte gewinnt)</span
 						>
 					{/if}
 				</p>

@@ -38,9 +38,10 @@ var lusdFieldAliases = map[string][]string{
 	lusdColElternEmail:  {"eltern_email", "email", "ansprechpartner_email", "erziehungsberechtigte_email", "erziehungsberechtigter_email"},
 }
 
-// lusdPflichtspalten müssen im Export vorhanden sein. Die LUSD-ID ist der stabile
-// Schlüssel für Klassenwechsel-/Abgänger-Abgleich über Importe hinweg.
-var lusdPflichtspalten = []string{lusdColID, lusdColVorname, lusdColNachname, lusdColKlasse}
+// lusdPflichtspalten müssen in jedem Export stehen. Den ZUORDNUNGSSCHLÜSSEL bestimmt
+// die Datei selbst (lusd_parser.go): LUSD-ID, sonst Name + Geburtsdatum, sonst nur der
+// Name — der LANIS-Klassenlisten-Export der Schule hat genau diese drei Spalten.
+var lusdPflichtspalten = []string{lusdColVorname, lusdColNachname, lusdColKlasse}
 
 // lusdOptionaleSpalten sind die Adress-/Kontaktspalten (dürfen fehlen).
 var lusdOptionaleSpalten = []string{lusdColStrasse, lusdColHausnummer, lusdColPLZ, lusdColOrt, lusdColElternEmail}
@@ -59,7 +60,8 @@ func buildLusdHeaderLookup() map[string]string {
 }
 
 // lusdHeaderMap ordnet die erkannten logischen Spalten ihren Zeilen-Indizes zu und
-// prüft, ob alle Pflichtspalten vorhanden sind. Unbekannte Spalten werden ignoriert.
+// prüft die Pflichtspalten. Unbekannte Spalten werden ignoriert. Die Meldungen landen 1:1 im Import-Dialog des Sekretariats, daher
+// deutsche Großschreibung statt kleingeschriebener Go-Fehler.
 func lusdHeaderMap(headers []string) (map[string]int, error) {
 	headerMap := make(map[string]int)
 	for idx, h := range headers {
@@ -75,10 +77,6 @@ func lusdHeaderMap(headers []string) (map[string]int, error) {
 
 	for _, col := range lusdPflichtspalten {
 		if _, exists := headerMap[col]; !exists {
-			// Nutzer-sichtbare Meldung (landet 1:1 im Import-Dialog), daher deutsche
-			// Großschreibung statt der sonst üblichen kleingeschriebenen Go-Fehler.
-			// Diese Meldung landet 1:1 im Import-Dialog des Sekretariats, daher
-			// korrekte deutsche Großschreibung statt kleingeschriebenem Go-Fehler.
 			return nil, fmt.Errorf("Pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", col) //nolint:staticcheck // ST1005: nutzer-sichtbarer Text, siehe oben
 		}
 	}

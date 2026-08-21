@@ -12,40 +12,40 @@ import (
 )
 
 // wendeLusdAenderungenAn führt den zweiten Durchlauf aus: bestehende Schüler
-// aktualisieren (Klasse + Kontaktdaten) und Neuzugänge anlegen.
-func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, dbStudents map[string]lusdDbStudent) error {
+// aktualisieren (Klasse + Kontaktdaten) und Neuzugänge anlegen — entlang der
+// Zuordnung aus der Klassifizierung, Zeile für Zeile in Dateireihenfolge.
+func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z lusdZuordnung) error {
 	barcodeCounter := 0
 
 	var batchRecords []parsedStudentRow
 	var batchIDs []string
 
-	for _, rec := range records {
-		if rec.LusdID == "" {
+	for i, rec := range datei.Zeilen {
+		if z.ueberspringen[i] {
 			continue
 		}
-		if dbRec, exists := dbStudents[rec.LusdID]; exists {
+		if id, ok := z.zielID[i]; ok {
 			batchRecords = append(batchRecords, rec)
-			batchIDs = append(batchIDs, dbRec.ID)
+			batchIDs = append(batchIDs, id)
 			continue
 		}
 
-		// Nicht in der Aktiven-Liste (ladeAktiveSchueler filtert ist_abgaenger = false):
-		// Es kann aber ein zurückkehrender Abgänger sein, dessen NICHT soft-gelöschte Zeile
-		// die lusd_id weiterhin hält. Ein blindes INSERT (legeNeuenSchuelerAn) kollidiert
-		// dann am partiellen Unique-Index uniq_schueler_lusd_id_active und ließe den GESAMTEN
-		// Import scheitern (SQLSTATE 23505). Solche Rückkehrer werden reaktiviert statt neu
-		// angelegt — aktualisiereBestandsschuelerBatch setzt ist_abgaenger zurück und hebt die
-		// Abgänger-Sperre auf, sofern keine Vorgänge mehr offen sind (Ghost-Block).
-		// Soft-gelöschte Zeilen (deleted_at IS NOT NULL) blockieren den Index NICHT und
-		// sollen bewusst als frischer Datensatz neu entstehen — daher hier ausgeklammert.
-		rueckkehrerID, err := findeAktivenSchuelerNachLusdID(ctx, tx, rec.LusdID)
-		if err != nil {
-			return err
-		}
-		if rueckkehrerID != "" {
-			batchRecords = append(batchRecords, rec)
-			batchIDs = append(batchIDs, rueckkehrerID)
-			continue
+		if datei.Modus == lusdModusID {
+			// Nicht in der Zuordnung, aber die lusd_id kann inzwischen eine nicht soft-
+			// gelöschte Zeile halten: den eben ADOPTIERTEN Waisen (adoptiereWaisen lief vor
+			// diesem Durchlauf) — oder, defensiv, einen Rückkehrer. Ein blindes INSERT
+			// kollidierte am partiellen Unique-Index uniq_schueler_lusd_id_active und ließe
+			// den GESAMTEN Import scheitern (SQLSTATE 23505). Soft-gelöschte Zeilen blockieren
+			// den Index NICHT und sollen bewusst als frischer Datensatz neu entstehen.
+			bestandID, err := findeAktivenSchuelerNachLusdID(ctx, tx, rec.LusdID)
+			if err != nil {
+				return err
+			}
+			if bestandID != "" {
+				batchRecords = append(batchRecords, rec)
+				batchIDs = append(batchIDs, bestandID)
+				continue
+			}
 		}
 
 		barcodeCounter++
@@ -79,8 +79,9 @@ func findeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID strin
 // adoptiereWaisen heftet die LUSD-ID an bestehende ID-lose Schüler (Adoption per
 // Name+Geburtsdatum). Danach behandelt wendeLusdAenderungenAn sie wie Bestandsschüler.
 //
-// Der WHERE-Zusatz ist ein doppelter Schutz: `lusd_id IS NULL` sichert gegen einen
-// Wettlauf (der Schüler bekam zwischen Klassifizierung und Apply schon eine ID), und
+// Der WHERE-Zusatz ist ein doppelter Schutz: `lusd_id IS NULL OR lusd_id LIKE 'littera:%'`
+// sichert gegen einen Wettlauf (der Schüler bekam zwischen Klassifizierung und Apply schon
+// eine echte ID; die Littera-Herkunftsmarke darf dagegen überschrieben werden), und
 // `NOT EXISTS(... lusd_id = $1 ...)` verhindert die Kollision mit dem partiellen
 // Unique-Index (uniq_schueler_lusd_id_active), falls die ID inzwischen ein anderer
 // aktiver Datensatz (z. B. ein Rückkehrer-Abgänger) hält. Greift der Schutz, bleibt die
@@ -90,9 +91,9 @@ func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) 
 	for _, a := range adoptionen {
 		if _, err := tx.Exec(ctx, `
 			UPDATE schueler SET lusd_id = $1, aktualisiert_am = NOW()
-			WHERE id = $2 AND lusd_id IS NULL
+			WHERE id = $2 AND (lusd_id IS NULL OR lusd_id LIKE $3)
 			  AND NOT EXISTS (SELECT 1 FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL)`,
-			a.LusdID, a.SchuelerID); err != nil {
+			a.LusdID, a.SchuelerID, litteraHerkunftPraefix+"%"); err != nil {
 			return err
 		}
 	}
@@ -100,16 +101,19 @@ func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) 
 }
 
 // legeNeuenSchuelerAn legt einen per LUSD neu hinzugekommenen Schüler an.
-// Leere Adress-/Kontaktwerte werden als NULL gespeichert.
+// Leere Adress-/Kontaktwerte werden als NULL gespeichert — auch die LUSD-ID: Im
+// Namensmodus gibt es keine, und ein Leerstring würde den partiellen Unique-Index
+// uniq_schueler_lusd_id_active belegen (zwei Neuzugänge → 23505). lusd_bestaetigt_am
+// wird gesetzt: Der Schüler kommt aus dem Export, er ist LUSD-verwaltet.
 func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, barcodeCounter int) error {
 	year := time.Now().Year() + 5 // Default-Abgangsjahr
 	_, err := tx.Exec(ctx, `
 		INSERT INTO schueler
 			(barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum,
-			 strasse, hausnummer, plz, ort, eltern_email)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+			 strasse, hausnummer, plz, ort, eltern_email, lusd_bestaetigt_am)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`,
 		generateImportBarcode(barcodeCounter), rec.Vorname, rec.Nachname, rec.Klasse, year,
-		rec.LusdID, rec.GebDatum,
+		nullableString(rec.LusdID), rec.GebDatum,
 		nullableString(rec.Strasse), nullableString(rec.Hausnummer), nullableString(rec.PLZ),
 		nullableString(rec.Ort), nullableString(rec.ElternEmail))
 	return err
@@ -160,6 +164,8 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 			plz          = COALESCE(NULLIF($6, ''), plz),
 			ort          = COALESCE(NULLIF($7, ''), ort),
 			eltern_email = COALESCE(NULLIF($8, ''), eltern_email),
+			-- Im Export wiedergefunden: das Gedächtnis für den Namensmodus (Migration 084).
+			lusd_bestaetigt_am = NOW(),
 			ist_abgaenger = false,
 			ist_gesperrt = CASE
 				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN false
@@ -211,14 +217,9 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 // Mit offenen Ausleihen bleiben Name UND Kontaktdaten erhalten (fürs Mahnwesen und
 // die Schadens-Rechnung noch nötig). Ohne offene Ausleihen wird DSGVO-konform
 // anonymisiert — dabei werden Adresse und Eltern-E-Mail gelöscht.
-func behandleAbgaenger(ctx context.Context, tx pgx.Tx, graduates []StudentDiff, dbStudents map[string]lusdDbStudent) error {
-	if len(graduates) == 0 {
+func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string) error {
+	if len(gradIDs) == 0 {
 		return nil
-	}
-
-	gradIDs := make([]string, 0, len(graduates))
-	for _, grad := range graduates {
-		gradIDs = append(gradIDs, dbStudents[grad.ID].ID)
 	}
 
 	// Offene Buch-Vormerkungen der Abgänger löschen: Ein Schüler, der die Schule verlässt,

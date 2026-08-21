@@ -22,6 +22,7 @@ test('Handscanner: Buchscans landen ohne Klick ins Feld', async ({ page }) => {
 
 	const suffix = uniqueSuffix();
 	const created = await apiPost(page, '/api/schueler', {
+		geburtsdatum: '2012-06-15', // Pflicht seit 21.08.2026: Schlüssel für den LUSD-Abgleich
 		vorname: 'E2E',
 		nachname: `Fokus-${suffix}`,
 		klasse: '7A',

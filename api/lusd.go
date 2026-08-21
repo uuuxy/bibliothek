@@ -6,19 +6,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/pkg/closeutil"
-
-	"github.com/jackc/pgx/v5"
 )
 
-// StudentDiff represents a single student-level change for the qualitative LUSD
-// preview. ID holds the LUSD-ID (from the export file), not the internal DB-UUID —
-// it is a stable key for the frontend list and avoids leaking internal identifiers.
+// StudentDiff ist ein Schüler-Eintrag der Vorschau. ID ist der Listenschlüssel fürs
+// Frontend — die LUSD-ID (ID-Modus) oder die schueler-UUID, bei Neuzugängen im
+// Namensmodus die Zeilennummer. Nie eine interne Kennung, die es nicht ohnehin gibt.
 type StudentDiff struct {
 	ID         string `json:"id"`
 	Vorname    string `json:"vorname"`
@@ -27,11 +24,10 @@ type StudentDiff struct {
 	NeueKlasse string `json:"neue_klasse,omitempty"`
 }
 
-// AdoptionDiff beschreibt eine geplante ADOPTION: Eine CSV-Zeile, deren LUSD-ID im
-// Bestand fehlt, trifft über Name+Geburtsdatum auf einen bestehenden Schüler OHNE
-// LUSD-ID (Handanlage/Littera-Import). Statt ihn zu duplizieren, wird die LUSD-ID
-// nachgetragen — der Schüler wird in den Landesabgleich eingemeindet. SchuelerID ist
-// der bestehende Datensatz, LusdID die anzuheftende Kennung.
+// AdoptionDiff beschreibt eine geplante ADOPTION (nur ID-Modus): Eine CSV-Zeile, deren
+// LUSD-ID im Bestand fehlt, trifft über Name+Geburtsdatum auf einen bestehenden Schüler
+// OHNE LUSD-ID (Handanlage/Littera-Import). Statt ihn zu duplizieren, wird die LUSD-ID
+// nachgetragen. SchuelerID ist der bestehende Datensatz, LusdID die anzuheftende Kennung.
 type AdoptionDiff struct {
 	SchuelerID   string `json:"schueler_id"`
 	LusdID       string `json:"lusd_id"`
@@ -42,18 +38,23 @@ type AdoptionDiff struct {
 	NeueKlasse   string `json:"neue_klasse,omitempty"`
 }
 
-// LusdPreviewResult contains the detailed diff lists for the frontend preview,
-// so the Sekretariat can visually verify names and class changes before committing.
-// ActiveDbStudents ist die Bezugsgröße für die Abgänger-Quote (aktive Schüler mit
-// LUSD-ID in der DB) — NICHT die CSV-Zeilenzahl.
+// LusdPreviewResult ist die Vorschau, anhand derer das Sekretariat Namen und
+// Klassenwechsel prüft, bevor es bestätigt. ActiveDbStudents ist die Bezugsgröße der
+// Abgänger-Quote (abgleichbare aktive Schüler) — NICHT die CSV-Zeilenzahl.
 type LusdPreviewResult struct {
+	Modus            string         `json:"modus"` // "lusd_id" oder "name_geburtsdatum" (lusdModus.String)
 	NewStudents      []StudentDiff  `json:"new_students"`
 	ClassChanges     []StudentDiff  `json:"class_changes"`
-	Adoptions        []AdoptionDiff `json:"adoptions"` // ID-lose Bestandsschüler, die per Name+Geburtsdatum ihre LUSD-ID bekommen
-	Graduates        []StudentDiff  `json:"graduates"` // Abgänger (missing in CSV but in DB)
+	Adoptions        []AdoptionDiff `json:"adoptions"`         // ID-Modus: ID-lose Bestandsschüler bekommen ihre LUSD-ID
+	Rueckkehrer      []StudentDiff  `json:"rueckkehrer"`       // Abgänger, die wieder im Export stehen — werden reaktiviert
+	Graduates        []StudentDiff  `json:"graduates"`         // Abgänger (im Bestand, fehlen in der Datei)
+	NichtImExport    []StudentDiff  `json:"nicht_im_export"`   // Namensmodus: nie bestätigte Handanlagen — bleiben unverändert
+	NichtAbgleichbar []StudentDiff  `json:"nicht_abgleichbar"` // Namensmodus: ohne Geburtsdatum — bleiben unverändert
+	Mehrdeutig       []StudentDiff  `json:"mehrdeutig"`        // gleicher Schlüssel mehrfach — wird nicht angefasst
 	TotalCsvRecords  int            `json:"total_csv_records"`
 	ActiveDbStudents int            `json:"active_db_students"`
-	SkippedNoID      int            `json:"skipped_no_id"` // CSV-Zeilen ohne LUSD-ID — werden nie importiert
+	SkippedNoID      int            `json:"skipped_no_id"`      // ID-Modus: CSV-Zeilen ohne LUSD-ID — werden nie importiert
+	DublettenInDatei int            `json:"dubletten_in_datei"` // Zeilen mit demselben Schlüssel, letzte gewann
 }
 
 // lusdImportLockKey serialisiert gleichzeitige LUSD-Importe (Advisory-Lock). Eigener
@@ -61,8 +62,8 @@ type LusdPreviewResult struct {
 const lusdImportLockKey int64 = 750_2026
 
 // massGraduationThresholdPct: Ab diesem Anteil an Abgängern (bezogen auf die
-// aktiven DB-Schüler) verweigert der Import ohne explizite Bestätigung — die
-// Abgänger-Behandlung anonymisiert irreversibel. Schutz gegen versehentliche
+// abgleichbaren aktiven DB-Schüler) verweigert der Import ohne explizite Bestätigung —
+// die Abgänger-Behandlung anonymisiert irreversibel. Schutz gegen versehentliche
 // Teilexporte (z. B. nur eine Jahrgangsstufe in der Datei).
 const massGraduationThresholdPct = 30
 
@@ -83,26 +84,20 @@ func (e *errMassGraduation) Error() string {
 }
 
 // readLusdUpload liest die hochgeladene CSV und parst sie mit dem getesteten
-// LUSD-Parser (lusd_parser.go): exakte Spaltennamen, Dedupe per LUSD-ID
-// (letzte Zeile gewinnt), echte Datums-Validierung, harte Fehler statt
-// stillem Überspringen.
-func readLusdUpload(r *http.Request) ([]parsedStudentRow, error) {
+// LUSD-Parser (lusd_parser.go): Modus-Erkennung, Dedupe, echte Datums-Validierung,
+// harte Fehler statt stillem Überspringen.
+func readLusdUpload(r *http.Request) (lusdDatei, error) {
 	file, _, err := r.FormFile("csvFile")
 	if err != nil {
-		return nil, fmt.Errorf("CSV-Datei fehlt: %w", err)
+		return lusdDatei{}, fmt.Errorf("CSV-Datei fehlt: %w", err)
 	}
 	defer closeutil.LogClose(file, "lusd upload")
 
 	content, err := io.ReadAll(file)
 	if err != nil {
-		return nil, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err)
+		return lusdDatei{}, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err)
 	}
-
-	rows, _, err := parseLUSDCSV(content)
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
+	return parseLusdDatei(content)
 }
 
 // generateImportBarcode liefert einen eindeutigen vorläufigen Barcode für im
@@ -114,160 +109,9 @@ func generateImportBarcode(counter int) string {
 	return fmt.Sprintf("S-%06d%04d", time.Now().Unix()%1000000, counter)
 }
 
-// lusdDbStudent ist ein aktiver Schüler-Datensatz, indexiert über die LUSD-ID.
-type lusdDbStudent struct {
-	ID       string
-	Klasse   string
-	Vorname  string
-	Nachname string
-}
-
-// ladeAktiveSchueler liest alle aktiven (nicht-abgegangenen, nicht soft-gelöschten)
-// Schüler mit LUSD-ID. deleted_at IS NULL ist zwingend, sonst würde eine soft-
-// gelöschte Zeile matchen und der aktive Schüler nie neu angelegt.
-func ladeAktiveSchueler(ctx context.Context, tx pgx.Tx) (map[string]lusdDbStudent, error) {
-	rows, err := tx.Query(ctx, "SELECT id, lusd_id, klasse, vorname, nachname FROM schueler WHERE ist_abgaenger = false AND deleted_at IS NULL")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	dbStudents := make(map[string]lusdDbStudent)
-	for rows.Next() {
-		var id, klasse, vorname, nachname string
-		var lusdID *string
-		if err := rows.Scan(&id, &lusdID, &klasse, &vorname, &nachname); err != nil {
-			return nil, err
-		}
-		if lusdID != nil && *lusdID != "" {
-			dbStudents[*lusdID] = lusdDbStudent{ID: id, Klasse: klasse, Vorname: vorname, Nachname: nachname}
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return dbStudents, nil
-}
-
-// lusdWaise ist ein Bestandsschüler OHNE LUSD-ID, adressiert über Name+Geburtsdatum.
-type lusdWaise struct {
-	ID     string
-	Klasse string
-}
-
-// waisenSchluessel normalisiert Vorname, Nachname und Geburtsdatum zu einem
-// vergleichbaren Schlüssel (kleingeschrieben, Datum als YYYY-MM-DD). Leerer String,
-// wenn kein Geburtsdatum vorliegt — ohne Datum ist kein sicherer Abgleich möglich.
-func waisenSchluessel(vorname, nachname string, geb *time.Time) string {
-	if geb == nil {
-		return ""
-	}
-	return strings.ToLower(strings.TrimSpace(vorname)) + "\x1f" +
-		strings.ToLower(strings.TrimSpace(nachname)) + "\x1f" +
-		geb.Format("2006-01-02")
-}
-
-// ladeWaisenNachNameGebdatum lädt die ID-losen aktiven Schüler, adressiert über
-// Name+Geburtsdatum. Kollidieren zwei auf demselben Schlüssel (gleicher Name+Datum,
-// aber unterschiedliche Groß-/Kleinschreibung — der case-sensitive Unique-Index lässt
-// das zu), wird der Schlüssel als MEHRDEUTIG (nil) markiert und NICHT adoptiert: Lieber
-// als Neuzugang anlegen als die falsche Person zusammenführen.
-func ladeWaisenNachNameGebdatum(ctx context.Context, tx pgx.Tx) (map[string]*lusdWaise, error) {
-	rows, err := tx.Query(ctx, `
-		SELECT id, klasse, vorname, nachname, geburtsdatum
-		FROM schueler
-		WHERE lusd_id IS NULL AND geburtsdatum IS NOT NULL
-		  AND deleted_at IS NULL AND ist_abgaenger = false`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	waisen := make(map[string]*lusdWaise)
-	for rows.Next() {
-		var id, klasse, vorname, nachname string
-		var geb time.Time
-		if err := rows.Scan(&id, &klasse, &vorname, &nachname, &geb); err != nil {
-			return nil, err
-		}
-		key := waisenSchluessel(vorname, nachname, &geb)
-		if key == "" {
-			continue
-		}
-		if _, belegt := waisen[key]; belegt {
-			waisen[key] = nil // mehrdeutig — nicht adoptieren
-			continue
-		}
-		w := lusdWaise{ID: id, Klasse: klasse}
-		waisen[key] = &w
-	}
-	return waisen, rows.Err()
-}
-
-// klassifiziereLusdRecords ordnet die CSV-Zeilen (rein klassifizierend, ohne
-// Schreibzugriff) in Neuzugänge, Adoptionen, Klassenwechsel und Abgänger ein. waisen
-// wird beim Adoptieren konsumiert (delete), damit zwei CSV-Zeilen nie denselben
-// Waisen beanspruchen.
-func klassifiziereLusdRecords(records []parsedStudentRow, dbStudents map[string]lusdDbStudent, waisen map[string]*lusdWaise, res *LusdPreviewResult) {
-	csvLusdIDs := make(map[string]bool)
-	for _, rec := range records {
-		if rec.LusdID == "" {
-			// Ohne LUSD-ID gibt es keinen stabilen Schlüssel — sichtbar zählen.
-			res.SkippedNoID++
-			continue
-		}
-		csvLusdIDs[rec.LusdID] = true
-		dbRec, exists := dbStudents[rec.LusdID]
-		if !exists {
-			// LUSD-ID fehlt im Bestand: erst gegen ID-lose Schüler per Name+Geburtsdatum
-			// prüfen (Adoption) — sonst Neuzugang.
-			key := waisenSchluessel(rec.Vorname, rec.Nachname, rec.GebDatum)
-			if w := waisen[key]; key != "" && w != nil {
-				res.Adoptions = append(res.Adoptions, AdoptionDiff{
-					SchuelerID:   w.ID,
-					LusdID:       rec.LusdID,
-					Vorname:      rec.Vorname,
-					Nachname:     rec.Nachname,
-					Geburtsdatum: rec.GebDatum.Format("2006-01-02"),
-					AlteKlasse:   w.Klasse,
-					NeueKlasse:   rec.Klasse,
-				})
-				delete(waisen, key) // konsumiert — kein zweiter Zugriff
-				continue
-			}
-			res.NewStudents = append(res.NewStudents, StudentDiff{
-				ID:         rec.LusdID,
-				Vorname:    rec.Vorname,
-				Nachname:   rec.Nachname,
-				NeueKlasse: rec.Klasse,
-			})
-			continue
-		}
-		if dbRec.Klasse != rec.Klasse {
-			res.ClassChanges = append(res.ClassChanges, StudentDiff{
-				ID:         rec.LusdID,
-				Vorname:    rec.Vorname,
-				Nachname:   rec.Nachname,
-				AlteKlasse: dbRec.Klasse,
-				NeueKlasse: rec.Klasse,
-			})
-		}
-	}
-	for lusdID, dbRec := range dbStudents {
-		if !csvLusdIDs[lusdID] {
-			res.Graduates = append(res.Graduates, StudentDiff{
-				ID:         lusdID,
-				Vorname:    dbRec.Vorname,
-				Nachname:   dbRec.Nachname,
-				AlteKlasse: dbRec.Klasse,
-			})
-		}
-	}
-}
-
-// computeLusdChanges compares the CSV records with the database inside a transaction
-// and either returns the preview stats or actually applies the changes.
-func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudentRow, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
+// computeLusd vergleicht die Datei mit dem Bestand in einer Transaktion und liefert
+// entweder die Vorschau oder wendet die Änderungen an.
+func (s *Server) computeLusd(ctx context.Context, datei lusdDatei, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
 	// Alles in einer TX für Atomarität. Bei Panic/frühem Return wird zurückgerollt.
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
@@ -276,39 +120,42 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 	defer db.SafeRollback(ctx, tx)
 
 	// Beim ANWENDEN alle LUSD-Läufe hart serialisieren (Advisory-Lock, transaktions-
-	// gebunden). Zwei gleichzeitige Importe (zwei Admins) arbeiteten sonst auf sich
-	// überholenden Snapshots: kollidierende Import-Barcodes/lusd_ids reißen den zweiten
-	// Import komplett ab (23505 → kompletter Rollback), und im ungünstigsten Fall
-	// anonymisiert der eine einen Abgänger, den der andere gerade wieder aktiviert
-	// (Foto/Adresse unwiederbringlich weg). Der zweite Lauf wartet hier, bis der erste
-	// fertig ist. Die Vorschau (apply=false) nimmt den Lock NICHT — sie liest nur.
+	// gebunden). Zwei gleichzeitige Importe arbeiteten sonst auf sich überholenden
+	// Snapshots: kollidierende Import-Barcodes/lusd_ids reißen den zweiten Import
+	// komplett ab (23505 → Rollback), und im ungünstigsten Fall anonymisiert der eine
+	// einen Abgänger, den der andere gerade wieder aktiviert. Die Vorschau (apply=false)
+	// nimmt den Lock NICHT — sie liest nur.
 	if apply {
 		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lusdImportLockKey); err != nil {
 			return nil, fmt.Errorf("lusd-import sperren fehlgeschlagen: %w", err)
 		}
 	}
 
-	dbStudents, err := ladeAktiveSchueler(ctx, tx)
+	bestand, err := ladeLusdBestand(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
-	waisen, err := ladeWaisenNachNameGebdatum(ctx, tx)
-	if err != nil {
-		return nil, err
-	}
+	idx := baueLusdIndex(bestand, datei.Modus)
 
 	res := &LusdPreviewResult{
-		NewStudents:      make([]StudentDiff, 0),
-		ClassChanges:     make([]StudentDiff, 0),
-		Adoptions:        make([]AdoptionDiff, 0),
-		Graduates:        make([]StudentDiff, 0),
-		TotalCsvRecords:  len(records),
-		ActiveDbStudents: len(dbStudents),
+		Modus:            datei.Modus.String(),
+		NewStudents:      []StudentDiff{},
+		ClassChanges:     []StudentDiff{},
+		Adoptions:        []AdoptionDiff{},
+		Rueckkehrer:      []StudentDiff{},
+		Graduates:        []StudentDiff{},
+		NichtImExport:    []StudentDiff{},
+		NichtAbgleichbar: []StudentDiff{},
+		Mehrdeutig:       []StudentDiff{},
+		TotalCsvRecords:  len(datei.Zeilen),
+		ActiveDbStudents: len(idx.aktiv),
+		DublettenInDatei: datei.DublettenInDatei,
 	}
 
 	// Erster Durchlauf: nur klassifizieren — der Schwellen-Check muss VOR dem
 	// ersten destruktiven Statement entscheiden.
-	klassifiziereLusdRecords(records, dbStudents, waisen, res)
+	zuordnung := klassifiziereLusd(datei, idx, res)
+	res.Adoptions = append(res.Adoptions, zuordnung.adoptionen...)
 
 	if !apply {
 		return res, nil
@@ -322,67 +169,40 @@ func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudent
 		return nil, &errMassGraduation{Graduates: len(res.Graduates), Active: res.ActiveDbStudents}
 	}
 
-	// Adoptionen ZUERST: Die LUSD-ID an den bestehenden ID-losen Schüler heften. Danach
+	// Adoptionen ZUERST: die LUSD-ID an den bestehenden ID-losen Schüler heften. Danach
 	// findet ihn wendeLusdAenderungenAn über findeAktivenSchuelerNachLusdID und übernimmt
 	// Klasse + Kontaktdaten wie bei jedem Bestandsschüler — statt ein Duplikat anzulegen.
-	if err := adoptiereWaisen(ctx, tx, res.Adoptions); err != nil {
+	if err := adoptiereWaisen(ctx, tx, zuordnung.adoptionen); err != nil {
 		return nil, err
 	}
-
-	if err := wendeLusdAenderungenAn(ctx, tx, records, dbStudents); err != nil {
+	if err := wendeLusdAenderungenAn(ctx, tx, datei, zuordnung); err != nil {
 		return nil, err
 	}
-
-	if err := behandleAbgaenger(ctx, tx, res.Graduates, dbStudents); err != nil {
+	if err := behandleAbgaenger(ctx, tx, zuordnung.abgaengerIDs); err != nil {
 		return nil, err
 	}
-
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-
 	return res, nil
 }
 
-// PostLusdPreviewHandler parses the CSV and returns a preview of changes.
-func (s *Server) PostLusdPreviewHandler() http.HandlerFunc {
+// lusdUploadHandler bündelt, was Vorschau und Import gemeinsam haben: Upload-Grenze,
+// Parsen, Fehlerabbildung. apply unterscheidet die beiden Routen.
+func (s *Server) lusdUploadHandler(apply bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		records, err := readLusdUpload(r)
+		datei, err := readLusdUpload(r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		res, err := s.computeLusdChanges(r.Context(), records, false, false)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		RespondJSON(w, http.StatusOK, res)
-	}
-}
-
-// PostLusdImportHandler parses the CSV and applies the changes transactionally.
-// Ab massGraduationThresholdPct Abgängern verlangt er das Formularfeld
-// confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
-func (s *Server) PostLusdImportHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
-		if err := r.ParseMultipartForm(10 << 20); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-		records, err := readLusdUpload(r)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-		allowMass := r.FormValue("confirm_graduates") == "true"
-		res, err := s.computeLusdChanges(r.Context(), records, true, allowMass)
+		allowMass := apply && r.FormValue("confirm_graduates") == "true"
+		res, err := s.computeLusd(r.Context(), datei, apply, allowMass)
 		if err != nil {
 			var massErr *errMassGraduation
 			if errors.As(err, &massErr) {
@@ -395,3 +215,11 @@ func (s *Server) PostLusdImportHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusOK, res)
 	}
 }
+
+// PostLusdPreviewHandler parst die CSV und liefert die Vorschau der Änderungen.
+func (s *Server) PostLusdPreviewHandler() http.HandlerFunc { return s.lusdUploadHandler(false) }
+
+// PostLusdImportHandler parst die CSV und wendet die Änderungen transaktional an.
+// Ab massGraduationThresholdPct Abgängern verlangt er das Formularfeld
+// confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
+func (s *Server) PostLusdImportHandler() http.HandlerFunc { return s.lusdUploadHandler(true) }

@@ -9,6 +9,7 @@ test('Schüler scannen öffnet das Ausleihkonto', async ({ page }) => {
 	const suffix = uniqueSuffix();
 	const barcode = `S-${suffix}`;
 	const res = await apiPost(page, '/api/schueler', {
+		geburtsdatum: '2012-06-15', // Pflicht seit 21.08.2026: Schlüssel für den LUSD-Abgleich
 		vorname: 'E2E',
 		nachname: `Testschüler-${suffix}`,
 		klasse: '7A',

@@ -38,6 +38,14 @@
 			createError = 'Vorname, Nachname und Klasse sind Pflichtfelder.';
 			return;
 		}
+		// Geburtsdatum ist der einzige Schlüssel, über den der LUSD-Import (ohne Schüler-ID
+		// im Export) diesen Schüler später wiedererkennt — das Backend lehnt es ohne Datum
+		// ebenfalls ab (student_create.go), hier nur die verständliche Meldung vorab.
+		if (!newGeburtsdatum.trim()) {
+			createError =
+				'Geburtsdatum fehlt. Ohne Geburtsdatum kann der LUSD-Import diesen Schüler später nicht wiedererkennen — er würde doppelt angelegt.';
+			return;
+		}
 		isSaving = true;
 		try {
 			const res = await apiClient.post('/api/schueler', {
@@ -45,7 +53,7 @@
 				nachname: newNachname.trim(),
 				klasse: newKlasse.trim(),
 				barcode_id: newBarcode.trim(),
-				geburtsdatum: newGeburtsdatum.trim() || null
+				geburtsdatum: newGeburtsdatum.trim()
 			});
 			if (res.ok) {
 				onsuccess?.();

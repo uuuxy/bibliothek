@@ -3,7 +3,12 @@
      Die Klasse kommt normalerweise aus den Lesergruppen; „Manuell eingeben" schaltet
      auf ein Freitextfeld um, weil es Klassen gibt, die noch nicht als Gruppe
      angelegt sind. Der Weg zurück steht als Knopf IM Feld — sonst säße man in der
-     Freitexteingabe fest. -->
+     Freitexteingabe fest.
+
+     Das Geburtsdatum ist Pflicht — nicht als Stammdatum, sondern als SCHLÜSSEL: Der
+     LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt einen von Hand
+     angelegten Schüler nur über Name + Geburtsdatum wieder. Ohne Datum entstünde beim
+     nächsten Import ein Duplikat. Das Backend lehnt es ebenfalls ab (zwei Türen). -->
 <script>
 	import Select from './ui/Select.svelte';
 
@@ -54,12 +59,17 @@
 </label>
 
 <label class="block text-xs font-medium text-slate-400"
-	>Geburtsdatum
+	>Geburtsdatum *
 	<input
 		type="date"
+		required
 		bind:value={geburtsdatum}
 		class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
 	/>
+	<span class="mt-1 block text-label-small font-normal text-on-surface-variant"
+		>Pflicht: Der LUSD-Import erkennt den Schüler nur über Name + Geburtsdatum wieder — ohne Datum
+		würde er beim nächsten Import doppelt angelegt.</span
+	>
 </label>
 
 <div class="block text-xs font-medium text-slate-400">

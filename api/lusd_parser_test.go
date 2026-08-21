@@ -111,8 +111,28 @@ func TestParseLUSDCSV_DeduplicatesByLusdIDKeepingLast(t *testing.T) {
 	}
 }
 
-func TestParseLUSDCSV_RowsWithoutLusdIDAreKeptButNotDeduped(t *testing.T) {
+func TestParseLUSDCSV_IDSpalteOhneWerteUndOhneGeburtsdatumIstNurName(t *testing.T) {
+	// Eine ID-Spalte, in der keine einzige ID steht, ist keine ID-Spalte (LUSD exportiert
+	// sie mitunter leer). Ohne Geburtsdatum bleibt nur der Name als Schlüssel — dritte,
+	// unsicherste Stufe, die Vorschau macht das sichtbar.
 	csv := "lusd_id,vorname,nachname,klasse\n" +
+		",Max,Mustermann,5a\n" +
+		",Erika,Musterfrau,7b\n"
+
+	datei, err := parseLusdDatei([]byte(csv))
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if datei.Modus != lusdModusNurName || len(datei.Zeilen) != 2 {
+		t.Fatalf("erwartet Nur-Name-Modus mit 2 Zeilen, war %v / %d", datei.Modus, len(datei.Zeilen))
+	}
+}
+
+func TestParseLUSDCSV_RowsWithoutLusdIDAreKeptButNotDeduped(t *testing.T) {
+	// ID-Modus (mindestens eine echte ID): Zeilen ohne ID bleiben erhalten — die
+	// Klassifizierung zählt sie sichtbar als übersprungen — und werden nicht dedupliziert.
+	csv := "lusd_id,vorname,nachname,klasse\n" +
+		"L1,Lea,Lehmann,5a\n" +
 		",Max,Mustermann,5a\n" +
 		",Erika,Musterfrau,7b\n"
 
@@ -120,11 +140,11 @@ func TestParseLUSDCSV_RowsWithoutLusdIDAreKeptButNotDeduped(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if len(rows) != 2 {
+	if len(rows) != 3 {
 		t.Errorf("Zeilen ohne LUSD-ID sollen erhalten bleiben, bekam %d", len(rows))
 	}
-	if len(ids) != 0 {
-		t.Errorf("ohne LUSD-ID sollen keine IDs gesammelt werden, bekam %v", ids)
+	if len(ids) != 1 {
+		t.Errorf("genau eine LUSD-ID erwartet, bekam %v", ids)
 	}
 }
 

@@ -100,7 +100,7 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 	s := &Server{}
 
 	req := httptest.NewRequest("POST", "/api/schueler",
-		strings.NewReader(`{"vorname":"Neu","nachname":"Lehrkraft","klasse":" Lehrer ","barcode_id":"X-1"}`))
+		strings.NewReader(`{"vorname":"Neu","nachname":"Lehrkraft","klasse":" Lehrer ","barcode_id":"X-1","geburtsdatum":"1980-01-01"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	s.CreateStudentHandler()(w, req)

@@ -17,7 +17,7 @@ test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
 
 	// 3. Datei-Upload simulieren via FileChooser
 	const fileChooserPromise = page.waitForEvent('filechooser');
-	await page.getByText('LUSD-CSV auswählen').click();
+	await page.getByText('LUSD-CSV oder -Excel auswählen').click();
 	const fileChooser = await fileChooserPromise;
 	await fileChooser.setFiles({
 		name: 'lusd_test.csv',
@@ -71,7 +71,7 @@ test('LUSD-Import: Schrottdateien werden sauber abgewiesen', async ({ page }) =>
 		// ersten Upload (zeigen den Dateinamen). Das LUSD-Input ist das zweite
 		// (letzte) CSV-File-Input der Datenverwaltung.
 		await page
-			.locator('input[type="file"][accept=".csv"]')
+			.locator('input[type="file"][accept=".csv,.xlsx"]')
 			.last()
 			.setInputFiles({ name, mimeType: 'text/csv', buffer });
 		await page.getByRole('button', { name: 'Vorschau laden' }).click();
@@ -93,4 +93,40 @@ test('LUSD-Import: Schrottdateien werden sauber abgewiesen', async ({ page }) =>
 
 	// Die Seite lebt noch: Vorschau-Kontrolle weiterhin bedienbar
 	await expect(page.getByRole('button', { name: 'Vorschau laden' })).toBeVisible();
+});
+
+// Der echte Export der Schule (LANIS-Klassenliste) hat weder Schüler-ID noch Geburtsdatum:
+// `Nachname;Vorname;Klasse;…`, Semikolon, UTF-8-BOM. Er muss durchgehen — als Nur-Name-
+// Stufe mit sichtbarer Warnung, nicht als Fehler „Pflichtspalte fehlt".
+test('LUSD-Import: LANIS-Klassenliste ohne ID und Geburtsdatum (Nur-Name-Stufe)', async ({
+	page
+}) => {
+	await uiLogin(page);
+	await page.getByRole('button', { name: 'System', exact: true }).click();
+	await page.getByRole('button', { name: 'Einstellungen' }).click();
+	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
+
+	const s = uniqueSuffix();
+	const csvContent = `\uFEFFNachname;Vorname;Klasse;BKU;Spanisch\nLanis_${s};Neu_${s};05G1;x;\n`;
+	await page
+		.locator('input[type="file"][accept=".csv,.xlsx"]')
+		.last()
+		.setInputFiles({
+			name: 'LUSD_LANIS_Klassenliste.csv',
+			mimeType: 'text/csv',
+			buffer: Buffer.from(csvContent)
+		});
+	await page.getByRole('button', { name: 'Vorschau laden' }).click();
+
+	// Stufe wird genannt und als Warnung gezeigt; der Neuzugang steht in der Vorschau.
+	await expect(page.getByText('Zuordnung nur über Vor- und Nachname')).toBeVisible();
+	await page.locator('summary').filter({ hasText: 'Neue Schüler' }).click();
+	await expect(page.getByText(`Neu_${s}`)).toBeVisible();
+
+	await page.getByRole('button', { name: 'Import finalisieren' }).click();
+	const overrideButton = page.getByRole('button', { name: /Massenabgang bestätigen/ });
+	if (await overrideButton.isVisible()) {
+		await overrideButton.click();
+	}
+	await expect(page.getByText('LUSD-Import erfolgreich übernommen.')).toBeVisible();
 });

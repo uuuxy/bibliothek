@@ -167,7 +167,9 @@ Die Software verwaltet Bedarfe und Lieferungen:
 ### 8.1. Der LUSD-Import
 - Die Landesschuldatenbank (LUSD) ist das führende System für Schülerdaten.
 - Der Import überschreibt Namen, Klassen und LUSD-IDs im Bibliothekssystem.
-- **Match-Logik:** Identifikation erfolgt primär über die LUSD-ID. Fallback (falls ID fehlt) ist eine Kombination aus Vorname, Nachname und Geburtsdatum.
+- **Match-Logik (drei Stufen, die Datei entscheidet):** (1) **LUSD-ID**, wenn der Export eine ID-Spalte mit Werten hat; (2) **Vorname + Nachname + Geburtsdatum**, wenn keine ID, aber ein Geburtsdatum da ist — dann ist das Datum in jeder Zeile Pflicht (harter Abbruch statt stillem Überspringen); (3) **nur Vorname + Nachname**, wenn die Datei beides nicht hat (LANIS-Klassenliste `Nachname;Vorname;Klasse;…`) — dort werden Namensgleiche (in Datei oder Bestand) NIE zugeordnet, sondern als „mehrdeutig" gemeldet. Der Export der Schule enthält keine Schüler-ID; Stufe 2 ist der empfohlene Weg, Stufe 3 der Notweg. Die Vorschau nennt die Stufe. **Format:** CSV (Komma/Semikolon, BOM) oder Excel (.xlsx, Titelzeilen über der Kopfzeile, Datumszellen); altes .xls wird mit Anleitung abgewiesen.
+- **Gedächtnis `lusd_bestaetigt_am` (Migration 084):** Jeder Import stempelt jede Zeile, die er im Export wiedergefunden oder angelegt hat. In den Namensmodi gilt als Abgänger nur, wer schon einmal bestätigt wurde und jetzt fehlt — nie bestätigte Handanlagen bleiben unangetastet und werden als „nicht im Export" gemeldet, Schüler ohne Geburtsdatum als „nicht abgleichbar" (Stufe 2). Im ID-Modus werden ID-lose Bestandsschüler (Handanlage **und** Littera-Übernahme `lusd_id='littera:…'`) per Name + Geburtsdatum adoptiert statt dupliziert.
+- **Handanlage:** Das Geburtsdatum ist beim manuellen Anlegen Pflicht (UI + API) — es ist die einzige Brücke zum späteren Import; ohne Datum entstünde zwangsläufig ein Duplikat.
 - **Neue Kontaktdaten:** Es werden Anschriften und Eltern-E-Mails importiert, jedoch *ausschließlich* zum Zweck der Rechnungs- und Mahnungsstellung.
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)

@@ -11,6 +11,7 @@ test('Scan-Dauerfeuer: drei Bücher in schneller Folge werden alle verbucht', as
 	const suffix = uniqueSuffix();
 
 	const created = await apiPost(page, '/api/schueler', {
+		geburtsdatum: '2012-06-15', // Pflicht seit 21.08.2026: Schlüssel für den LUSD-Abgleich
 		vorname: 'E2E',
 		nachname: `Feuer-${suffix}`,
 		klasse: '7A',

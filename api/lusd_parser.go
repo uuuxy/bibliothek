@@ -1,11 +1,13 @@
 package api
 
 import (
-	"encoding/csv"
 	"fmt"
-	"io"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type parsedStudentRow struct {
@@ -22,6 +24,16 @@ type parsedStudentRow struct {
 	LineNum     int
 }
 
+// schluessel ist der Name+Geburtsdatum-Schlüssel der Zeile ("" ohne Datum).
+func (r parsedStudentRow) schluessel() string {
+	return waisenSchluessel(r.Vorname, r.Nachname, r.GebDatum)
+}
+
+// namensschluessel ist der Nur-Name-Schlüssel (Vorname + Nachname, normalisiert).
+func (r parsedStudentRow) namensschluessel() string {
+	return namensSchluessel(r.Vorname, r.Nachname)
+}
+
 const (
 	lusdColID           = "lusd_id"
 	lusdColVorname      = "vorname"
@@ -30,7 +42,7 @@ const (
 	lusdColGeburtsdatum = "geburtsdatum"
 	// Optionale Kontakt-/Adressspalten. Fehlen sie im Export, bleibt der Import
 	// gültig; die Felder sind dann leer. Zweck: Schadens-Rechnung (Anschrift) und
-	// Eltern-Mahnung (E-Mail). Header müssen exakt (case-insensitiv) so heißen.
+	// Elternkontakt (E-Mail). Header müssen exakt (case-insensitiv) so heißen.
 	lusdColStrasse     = "strasse"
 	lusdColHausnummer  = "hausnummer"
 	lusdColPLZ         = "plz"
@@ -38,8 +50,45 @@ const (
 	lusdColElternEmail = "eltern_email"
 )
 
-// Header-Erkennung (Normalisierung, Alias-Tabelle, Pflichtspalten) liegt in
-// lusd_header.go.
+// lusdModus sagt, worüber der Import die Schüler zuordnet — die Datei entscheidet.
+// Der Export der Schule hat keine Schüler-ID und bekommt auch keine; der LANIS-
+// Klassenlisten-Export hat nicht einmal ein Geburtsdatum. Drei Stufen, absteigend
+// sicher; die Vorschau sagt dem Sekretariat, welche gilt und was sie kostet.
+type lusdModus int
+
+const (
+	// lusdModusID: Schlüssel LUSD-ID; Zeilen ohne ID werden übersprungen.
+	lusdModusID lusdModus = iota
+	// lusdModusName: Schlüssel Vorname + Nachname + Geburtsdatum; das Datum ist dann
+	// in JEDER Zeile Pflicht (harter Abbruch, nicht stilles Überspringen).
+	lusdModusName
+	// lusdModusNurName: Schlüssel nur Vorname + Nachname — wenn die Datei weder ID
+	// noch Geburtsdatum trägt. Namensgleiche werden NIE zugeordnet, sondern gemeldet.
+	lusdModusNurName
+)
+
+// String ist der Wert, den die Vorschau dem Frontend meldet.
+func (m lusdModus) String() string {
+	switch m {
+	case lusdModusName:
+		return "name_geburtsdatum"
+	case lusdModusNurName:
+		return "name"
+	default:
+		return "lusd_id"
+	}
+}
+
+// lusdDatei ist das Parse-Ergebnis: die Zeilen plus der Modus, in dem sie zugeordnet
+// werden, plus das, was beim Zusammenlegen doppelter Zeilen verloren ging.
+type lusdDatei struct {
+	Zeilen []parsedStudentRow
+	Modus  lusdModus
+	// DublettenInDatei zählt Zeilen, die auf denselben Schlüssel fielen und von der
+	// späteren überschrieben wurden (ID- und Name+Geburtsdatum-Modus: letzte gewinnt).
+	// Im Nur-Name-Modus wird NICHT zusammengelegt — gleiche Namen sind dort mehrdeutig.
+	DublettenInDatei int
+}
 
 // spaltenWert liest eine optionale Spalte getrimmt aus; fehlt sie oder ist die
 // Zeile zu kurz, wird "" zurückgegeben.
@@ -51,43 +100,50 @@ func spaltenWert(row []string, headerMap map[string]int, col string) string {
 	return strings.TrimSpace(row[idx])
 }
 
-// parseLUSDGebDatum liest das optionale Geburtsdatum und probiert mehrere Layouts.
+var excelSerienzahl = regexp.MustCompile(`^\d{4,6}(\.\d+)?$`)
+
+// parseLUSDGebDatum liest das Geburtsdatum. Excel liefert Datumszellen als Serienzahl
+// (Tage seit 1899-12-30), CSV als Text in mehreren Schreibweisen.
 func parseLUSDGebDatum(row []string, headerMap map[string]int) *time.Time {
-	idx, ok := headerMap[lusdColGeburtsdatum]
-	if !ok || idx >= len(row) {
-		return nil
-	}
-	raw := strings.TrimSpace(row[idx])
+	raw := spaltenWert(row, headerMap, lusdColGeburtsdatum)
 	if raw == "" {
 		return nil
 	}
-	for _, layout := range []string{dateFormatDE, dateFormatISO, "01/02/2006"} {
+	if excelSerienzahl.MatchString(raw) {
+		if serie, err := strconv.ParseFloat(raw, 64); err == nil {
+			if t, err := excelize.ExcelDateToTime(serie, false); err == nil {
+				t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+				return &t
+			}
+		}
+		return nil
+	}
+	for _, layout := range []string{dateFormatDE, "2.1.2006", dateFormatISO, "01/02/2006", "2006-01-02T15:04:05Z07:00", "2006-01-02 15:04:05"} {
 		if t, parseErr := time.ParseInLocation(layout, raw, time.UTC); parseErr == nil {
-			t2 := t
-			return &t2
+			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+			return &t
 		}
 	}
 	return nil
 }
 
-// parseLUSDRow parst eine Datenzeile und validiert die Pflichtfelder.
+// parseLUSDRow parst eine Datenzeile und validiert die Pflichtfelder. Alle Spalten
+// laufen über spaltenWert, weil ID- und Geburtsdatum-Spalte fehlen dürfen.
 func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedStudentRow, error) {
-	lusdID := strings.TrimSpace(row[headerMap[lusdColID]])
-	vorname := strings.TrimSpace(row[headerMap[lusdColVorname]])
-	nachname := strings.TrimSpace(row[headerMap[lusdColNachname]])
-	klasse := strings.TrimSpace(row[headerMap[lusdColKlasse]])
-	geburtsdatum := parseLUSDGebDatum(row, headerMap)
+	vorname := spaltenWert(row, headerMap, lusdColVorname)
+	nachname := spaltenWert(row, headerMap, lusdColNachname)
+	klasse := spaltenWert(row, headerMap, lusdColKlasse)
 
 	if vorname == "" || nachname == "" || klasse == "" {
 		return parsedStudentRow{}, fmt.Errorf("zeile %d enthält ein leeres Pflichtfeld (Vorname/Nachname/Klasse)", lineNum)
 	}
 
 	return parsedStudentRow{
-		LusdID:      lusdID,
+		LusdID:      spaltenWert(row, headerMap, lusdColID),
 		Vorname:     vorname,
 		Nachname:    nachname,
 		Klasse:      klasse,
-		GebDatum:    geburtsdatum,
+		GebDatum:    parseLUSDGebDatum(row, headerMap),
 		Strasse:     spaltenWert(row, headerMap, lusdColStrasse),
 		Hausnummer:  spaltenWert(row, headerMap, lusdColHausnummer),
 		PLZ:         spaltenWert(row, headerMap, lusdColPLZ),
@@ -97,59 +153,82 @@ func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedSt
 	}, nil
 }
 
-// parseLUSDCSV parses the LUSD CSV content and extracts valid student records.
-func parseLUSDCSV(content []byte) ([]parsedStudentRow, []string, error) {
-	delimiter := ','
-	contentStr := string(content)
-	if strings.Count(contentStr, ";") > strings.Count(contentStr, ",") {
-		delimiter = ';'
+// istLeereZeile: Excel-Berichte enden oft mit Leer- oder Summenzeilen; eine Zeile ohne
+// jeden Wert ist kein Schüler und kein Fehler.
+func istLeereZeile(row []string) bool {
+	for _, c := range row {
+		if strings.TrimSpace(c) != "" {
+			return false
+		}
 	}
+	return true
+}
 
-	reader := csv.NewReader(strings.NewReader(contentStr))
-	reader.Comma = delimiter
-	reader.LazyQuotes = true
-
-	headers, err := reader.Read()
+// parseLusdDatei liest die Datei (CSV oder Excel) vollständig, bestimmt den Modus und
+// legt doppelte Zeilen zusammen. Harte Fehler statt stillem Überspringen: Das
+// Sekretariat soll eine kaputte Datei als Meldung sehen, nicht als halb importierten
+// Bestand.
+func parseLusdDatei(content []byte) (lusdDatei, error) {
+	rows, err := leseLusdTabelle(content)
 	if err != nil {
-		return nil, nil, fmt.Errorf("fehler beim lesen der csv-kopfzeile: %w", err)
+		return lusdDatei{}, err
 	}
-
-	headerMap, err := lusdHeaderMap(headers)
+	kopfIdx, headerMap, err := findeKopfzeile(rows)
 	if err != nil {
-		return nil, nil, err
+		return lusdDatei{}, err
 	}
 
-	var parsedRows []parsedStudentRow
-	var lusdIDs []string
-	seenIndex := make(map[string]int)
-	lineNum := 1
-
-	for {
-		row, err := reader.Read()
-		if err == io.EOF {
-			break
+	var zeilen []parsedStudentRow
+	irgendeineID, irgendeinDatum := false, false
+	for i := kopfIdx + 1; i < len(rows); i++ {
+		if istLeereZeile(rows[i].zellen) {
+			continue
 		}
-		lineNum++
+		sRow, err := parseLUSDRow(rows[i].zellen, headerMap, rows[i].nr)
 		if err != nil {
-			return nil, nil, fmt.Errorf("zeile %d der CSV-Datei ist nicht lesbar: %w", lineNum, err)
+			return lusdDatei{}, err
 		}
+		irgendeineID = irgendeineID || sRow.LusdID != ""
+		irgendeinDatum = irgendeinDatum || sRow.GebDatum != nil
+		zeilen = append(zeilen, sRow)
+	}
 
-		sRow, err := parseLUSDRow(row, headerMap, lineNum)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		// Duplikate innerhalb der Datei: späterer Eintrag überschreibt den früheren.
-		if sRow.LusdID != "" {
-			if idx, exists := seenIndex[sRow.LusdID]; exists {
-				parsedRows[idx] = sRow
-				continue
+	// Eine Spalte, in der kein einziger Wert steht, zählt nicht — LUSD exportiert
+	// Spalten mitunter leer. Was die Datei wirklich hergibt, bestimmt den Modus.
+	if _, hatIDSpalte := headerMap[lusdColID]; hatIDSpalte && irgendeineID {
+		return legeDublettenZusammen(zeilen, lusdModusID, func(r parsedStudentRow) string { return r.LusdID }), nil
+	}
+	if irgendeinDatum {
+		for _, z := range zeilen {
+			if z.GebDatum == nil {
+				return lusdDatei{}, fmt.Errorf("zeile %d (%s %s): Geburtsdatum fehlt oder ist unlesbar — ohne LUSD-ID ist Name + Geburtsdatum der Zuordnungsschlüssel, er muss in jeder Zeile stehen", z.LineNum, z.Vorname, z.Nachname)
 			}
-			seenIndex[sRow.LusdID] = len(parsedRows)
-			lusdIDs = append(lusdIDs, sRow.LusdID)
 		}
-		parsedRows = append(parsedRows, sRow)
+		return legeDublettenZusammen(zeilen, lusdModusName, parsedStudentRow.schluessel), nil
 	}
+	return lusdDatei{Zeilen: zeilen, Modus: lusdModusNurName}, nil
+}
 
-	return parsedRows, lusdIDs, nil
+// legeDublettenZusammen lässt von mehreren Zeilen mit demselben Schlüssel die LETZTE
+// gewinnen (an ihrem ersten Platz) und zählt, was dabei überschrieben wurde. Zeilen
+// ohne Schlüssel (ID-Modus: leere ID) bleiben einzeln erhalten — die Klassifizierung
+// meldet sie als übersprungen.
+func legeDublettenZusammen(zeilen []parsedStudentRow, modus lusdModus, schluessel func(parsedStudentRow) string) lusdDatei {
+	datei := lusdDatei{Modus: modus}
+	platz := make(map[string]int)
+	for _, z := range zeilen {
+		key := schluessel(z)
+		if key == "" {
+			datei.Zeilen = append(datei.Zeilen, z)
+			continue
+		}
+		if idx, gesehen := platz[key]; gesehen {
+			datei.Zeilen[idx] = z
+			datei.DublettenInDatei++
+			continue
+		}
+		platz[key] = len(datei.Zeilen)
+		datei.Zeilen = append(datei.Zeilen, z)
+	}
+	return datei
 }
