@@ -1,21 +1,80 @@
+# Dependabot — hält Abhängigkeiten aktuell, indem es neue Versionen erkennt und pro
+# Ökosystem gebündelte Pull Requests öffnet. Jeder PR durchläuft die volle CI (inkl.
+# des Frontend-Builds über den docker build in security-scan.yml) — ein Update, das
+# etwas bricht, wird rot und darf nicht gemergt werden.
+#
+# BEWUSST OHNE Auto-Merge (Stand 21.08.2026): Erst soll sich zeigen, dass die Gates die
+# Update-PRs zuverlässig prüfen — Anlass war ein Patch-Update, das den Build brach und nur
+# `npm run build` fing. Wenn das Vertrauen da ist, lässt sich Auto-Merge für patch/minor
+# über einen kleinen Workflow nachrüsten (siehe dependency-update-Notiz). Major-Updates
+# bleiben in jedem Fall manuell.
+#
+# Dependabot aktualisiert gezielt die DIREKTEN Abhängigkeiten (kein pauschales
+# `npm update`), was den transitiven Bruch von oben vermeidet.
+
 version: 2
 updates:
-  # Go Backend
-  - package-ecosystem: "gomod"
+  # ── Go-Backend ────────────────────────────────────────────────────────────
+  - package-ecosystem: gomod
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
     groups:
-      go-updates:
-        patterns:
-          - "*"
+      go-minor-patch:
+        update-types: [minor, patch]
+    # Major-Updates kommen als einzelne PRs (nicht in der Gruppe), damit sie auffallen.
 
-  # Svelte Frontend
-  - package-ecosystem: "npm"
+  # ── Frontend (npm) ────────────────────────────────────────────────────────
+  - package-ecosystem: npm
     directory: "/frontend"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
     groups:
-      frontend-updates:
-        patterns:
-          - "*"
+      npm-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 ist ein Major-Sprung mit möglichen Breaking Changes — bewusst
+      # zurückgehalten, bis er separat und getestet gezogen wird. Diese Zeile hindert
+      # Dependabot daran, ihn als offenen PR immer wieder vorzuschlagen. Beim bewussten
+      # Umstieg entfernen.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+
+  # ── Docker-Basis-Images (Dockerfile) ──────────────────────────────────────
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ── GitHub-Actions-Workflows ──────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions-all:
+        patterns: ["*"]
