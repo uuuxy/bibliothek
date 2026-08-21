@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 const (
@@ -17,12 +18,6 @@ const (
 			allowed BOOLEAN NOT NULL DEFAULT false,
 			PRIMARY KEY (role, permission)
 		)
-	`
-
-	seedRolePermissionSQL = `
-		INSERT INTO role_permissions (role, permission, allowed)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (role, permission) DO NOTHING
 	`
 
 	createLieferantenTableSQL = `
@@ -215,12 +210,29 @@ var RechteOptional = map[string]bool{
 
 // seedRolePermissions schreibt die Rechte-Vorgabe in die Datenbank (nur fehlende Zeilen).
 func (db *Database) seedRolePermissions(ctx context.Context) error {
-	for _, d := range RechteVorgabe {
-		_, err := db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
-		if err != nil {
-			return fmt.Errorf("failed to seed permission default (%s, %s): %w", d.Role, d.Permission, err)
-		}
+	if len(RechteVorgabe) == 0 {
+		return nil
 	}
+
+	var valueStrings []string
+	var args []any
+
+	for i, d := range RechteVorgabe {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3))
+		args = append(args, d.Role, d.Permission, d.Allowed)
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO role_permissions (role, permission, allowed)
+		VALUES %s
+		ON CONFLICT (role, permission) DO NOTHING
+	`, strings.Join(valueStrings, ","))
+
+	_, err := db.Pool.Exec(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to seed permission defaults: %w", err)
+	}
+
 	return nil
 }
 

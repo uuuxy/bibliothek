@@ -36,3 +36,6 @@
 ## 2026-08-11 - [Optimize Active Loans Existence Check]
 **Learning:** Found an instance in `pruefeKeineAktivenAusleihen` (`inventur/db_books_delete.go`) where `SELECT COUNT(*)` was used to check for the presence of active loans before deleting books. This forces the database to scan and count all matching rows.
 **Action:** In PostgreSQL, always prefer `SELECT EXISTS(SELECT 1 ...)` over `SELECT COUNT(*) > 0` for simple existence checks. `EXISTS` can short-circuit evaluation upon finding the first match, avoiding unnecessary full-scan overhead during bulk delete operations.
+## 2026-08-21 - N+1 Query in seedRolePermissions
+**Learning:** Replacing iterative `INSERT` calls with a dynamically constructed multiple `VALUES` bulk insert significantly reduces database round-trips and execution overhead.
+**Action:** Look for iterative inserts inside seed files and apply string builder bulk inserts instead.
