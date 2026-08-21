@@ -232,7 +232,8 @@ func TestUpsertBooksBatch(t *testing.T) {
 		erwarteFachBekannt(mock, books[0].Subject)
 		mock.ExpectBegin()
 
-		jsonProps, _ := json.Marshal(books[0].ErweiterteEigenschaften)
+		jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
+		require.NoError(t, err)
 		mock.ExpectExec(batchQuery).
             WithArgs(
                 []string{books[0].ISBN},
@@ -294,7 +295,8 @@ func TestUpsertBooksBatch(t *testing.T) {
 		erwarteFachBekannt(mock, books[0].Subject)
 		mock.ExpectBegin()
 
-        jsonProps, _ := json.Marshal(books[0].ErweiterteEigenschaften)
+        jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
+		require.NoError(t, err)
 		mock.ExpectExec(batchQuery).
             WithArgs(
                 []string{books[0].ISBN},
