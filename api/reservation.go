@@ -160,11 +160,16 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 		}
 
 		// Bereit-Mail an die anfragende Lehrkraft — Betreiber-Entscheidung 16.08.2026:
-		// KEIN neuer Menuepunkt, das aktive Signal genuegt. Best effort: Die Buecher
-		// liegen physisch bereit; ein kaputter Mailversand darf das Abschliessen nicht
-		// rueckgaengig erscheinen lassen (nur Logzeile). Ohne Konto-Adresse (per SQL
-		// angelegt, Konto geloescht) gibt es schlicht keine Mail.
+		// KEIN neuer Menuepunkt, das aktive Signal genuegt. Das Abschliessen gilt, auch
+		// wenn der Mailversand klemmt — aber der Ausfall ist seit der Ausfallmatrix
+		// (20.08.2026) nicht mehr SPURLOS: Vorher stand hier 204 + Logzeile, die Theke
+		// sah "abgeschlossen", die Lehrkraft wartete auf eine Mail, die nie kam, und
+		// niemand wusste es. Jetzt traegt die Antwort den Mail-Status und die
+		// Oberflaeche warnt ("bitte selbst benachrichtigen"). Ohne Konto-Adresse
+		// (per SQL angelegt, Konto geloescht) gibt es schlicht keine Mail.
+		mailStatus := mailStatusKeineAdresse
 		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
+			mailStatus = mailStatusVersendet
 			if err := SendEmail(MailRequest{
 				To:      *erledigt.AnfragendeMail,
 				Subject: fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
@@ -174,10 +179,11 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 					erledigt.TitelName, erledigt.Klasse, erledigt.Anzahl),
 			}); err != nil {
 				log.Printf("Klassensatz-Bereit-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
+				mailStatus = mailStatusFehlgeschlagen
 			}
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		RespondJSON(w, http.StatusOK, map[string]string{"mail": mailStatus})
 	}
 }
 

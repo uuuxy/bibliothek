@@ -131,9 +131,13 @@ func (s *Server) ErledigeAnliegenHandler() http.HandlerFunc {
 			return
 		}
 
-		// Best effort wie die Klassensatz-Bereit-Mail: Das Abhaken gilt, auch wenn
-		// der Mailversand klemmt (nur Logzeile). Ohne Konto-Adresse keine Mail.
+		// Best effort wie die Klassensatz-Bereit-Mail: Das Abhaken gilt, auch wenn der
+		// Mailversand klemmt. Aber nicht mehr spurlos (Ausfallmatrix 20.08.2026): Die
+		// Antwort traegt den Mail-Status, damit die Theke weiss, ob die Lehrkraft
+		// wirklich benachrichtigt wurde. Ohne Konto-Adresse keine Mail.
+		mailStatus := mailStatusKeineAdresse
 		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
+			mailStatus = mailStatusVersendet
 			betreff := fmt.Sprintf("Ihr Wunsch ist erledigt: %s", erledigt.TitelText)
 			if erledigt.Art == "meldung" {
 				betreff = fmt.Sprintf("Ihre Meldung ist erledigt: %s", erledigt.TitelText)
@@ -148,8 +152,9 @@ func (s *Server) ErledigeAnliegenHandler() http.HandlerFunc {
 			text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
 			if err := SendEmail(MailRequest{To: *erledigt.AnfragendeMail, Subject: betreff, Body: text}); err != nil {
 				log.Printf("Anliegen-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
+				mailStatus = mailStatusFehlgeschlagen
 			}
 		}
-		w.WriteHeader(http.StatusNoContent)
+		RespondJSON(w, http.StatusOK, map[string]string{"mail": mailStatus})
 	}
 }

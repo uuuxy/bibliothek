@@ -64,7 +64,20 @@
 			}
 			anliegen = anliegen.filter((a) => a.id !== id);
 			confirmingId = null;
-			toastStore.addToast('Erledigt — die Lehrkraft bekommt eine Mail.', 'success');
+			// Der Server meldet, ob die Benachrichtigung wirklich raus ist — ein
+			// Mail-Ausfall war vorher nur eine Server-Logzeile, und hier stand
+			// trotzdem „bekommt eine Mail".
+			const mail = (await res.json().catch(() => null))?.mail;
+			if (mail === 'fehlgeschlagen') {
+				toastStore.addToast(
+					'Erledigt, aber die Mail an die Lehrkraft konnte nicht versendet werden — bitte selbst Bescheid geben.',
+					'warning'
+				);
+			} else if (mail === 'keine_adresse') {
+				toastStore.addToast('Erledigt — zum Konto ist keine Mail-Adresse hinterlegt.', 'warning');
+			} else {
+				toastStore.addToast('Erledigt — die Lehrkraft bekommt eine Mail.', 'success');
+			}
 		} catch (err) {
 			toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
 		} finally {

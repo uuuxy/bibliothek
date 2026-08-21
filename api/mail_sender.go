@@ -36,6 +36,17 @@ type MailRequest struct {
 // SMTP-Fehler die Bestell-Transaktion zurückrollt (keine Ghost-Orders).
 var SendEmail = sendEmailSMTP
 
+// Mail-Status in Erledigt-Antworten (Ausfallmatrix 20.08.2026): Handler, die nach dem
+// Commit best effort eine Benachrichtigung verschicken (Klassensatz bereit, Anliegen
+// erledigt), melden dem Aufrufer, ob die Mail wirklich raus ist — vorher war ein
+// Versand-Ausfall nur eine Server-Logzeile, und die Theke glaubte, die Lehrkraft sei
+// informiert. Die Oberfläche zeigt bei "fehlgeschlagen" eine Warnung.
+const (
+	mailStatusVersendet      = "versendet"
+	mailStatusFehlgeschlagen = "fehlgeschlagen"
+	mailStatusKeineAdresse   = "keine_adresse"
+)
+
 // smtpKonfigLader liefert die Konfiguration für den nächsten Versand.
 //
 // Als Variable, damit NewServer sie an die Datenbank binden kann: Der Versand ist über

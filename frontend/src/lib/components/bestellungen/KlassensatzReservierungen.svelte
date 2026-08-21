@@ -70,7 +70,22 @@
 			// Kein Reload: die erledigte Reservierung wird direkt aus dem reaktiven Array gefiltert.
 			reservierungen = reservierungen.filter((r) => r.id !== id);
 			confirmingId = null;
-			toastStore.addToast('Reservierung abgeschlossen.', 'success');
+			// Der Server meldet, ob die Bereit-Mail wirklich raus ist — ein Mail-Ausfall
+			// war vorher nur eine Server-Logzeile, die Lehrkraft wartete vergeblich.
+			const mail = (await res.json().catch(() => null))?.mail;
+			if (mail === 'fehlgeschlagen') {
+				toastStore.addToast(
+					'Abgeschlossen, aber die Bereit-Mail konnte nicht versendet werden — bitte die Lehrkraft selbst benachrichtigen.',
+					'warning'
+				);
+			} else if (mail === 'keine_adresse') {
+				toastStore.addToast(
+					'Abgeschlossen — zum Konto ist keine Mail-Adresse hinterlegt, bitte die Lehrkraft selbst benachrichtigen.',
+					'warning'
+				);
+			} else {
+				toastStore.addToast('Reservierung abgeschlossen.', 'success');
+			}
 			uiStore.fetchPendingReservierungen();
 		} catch (err) {
 			toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
