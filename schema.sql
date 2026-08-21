@@ -986,7 +986,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('079_klassen_vokabular.sql'),
 ('080_schueler_anonymized_at_nachziehen.sql'),
 ('081_vormerkungen_benachrichtigt_am_entfernen.sql'),
-('082_index_und_unique_paritaet.sql')
+('082_index_und_unique_paritaet.sql'),
+('083_audit_log_append_only_aufloesen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -9,9 +9,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// AuditRepository verwaltet revisionssichere Protokollierungen (Audit-Logs)
-// sowie administrative Löschungen von Systemressourcen unter Einhaltung von Datenschutzvorgaben (DSGVO).
-// Alle Log-Einträge sind schreibgeschützt (Append-Only), um Manipulationen auszuschließen.
+// AuditRepository verwaltet die Protokollierung (Audit-Logs) sowie administrative
+// Löschungen von Systemressourcen unter Einhaltung der Datenschutzvorgaben (DSGVO).
+//
+// Append-Only ist hier eine KONVENTION, keine DB-erzwungene Regel: Kein Codepfad ändert
+// oder löscht Audit-Einträge — mit einer bewussten Ausnahme, der DSGVO-PII-Tilgung
+// (entferneSchuelerPIIUndLoesche, jobs/cron_dsgvo.go). Der frühere Trigger, der jedes
+// UPDATE/DELETE hart blockierte (Migration 003), wurde mit Migration 083 entfernt: Er
+// stand im Widerspruch zur Löschpflicht (Art. 17) und hätte genau diese Tilgung
+// scheitern lassen. Wer echte Manipulationssicherheit braucht, setzt sie über eine
+// privilegierte Löschausnahme um, nicht über ein pauschales Änderungsverbot.
 type AuditRepository interface {
 	// DeleteTitle protokolliert die administrative Löschung eines Buchtitels.
 	DeleteTitle(ctx context.Context, titleID string, bearbeiterID string) error
@@ -66,7 +73,8 @@ func NewAuditRepository(db db.PgxPoolIface) AuditRepository {
 }
 
 // insertAuditLog ist die zentrale Hilfsfunktion, die alle Logeinträge in die Tabelle `audit_log` schreibt.
-// Durch die Kapselung in einer Funktion wird ein konsistentes Datenbankschema und eine Append-Only-Semantik erzwungen.
+// Die Kapselung erzwingt ein konsistentes Schema; sie schreibt nur (kein UPDATE/DELETE) — das ist die
+// Append-Only-Konvention (nicht per Trigger erzwungen, siehe AuditRepository-Doku und Migration 083).
 // auditEntry bündelt die fachlichen Felder eines Audit-Log-Eintrags (ohne die
 // Infrastruktur-Parameter ctx/tx), damit insertAuditLog nicht neun Einzelargumente führt.
 type auditEntry struct {
