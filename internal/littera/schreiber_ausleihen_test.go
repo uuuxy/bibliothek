@@ -1,12 +1,12 @@
 package littera
 
 import (
+	"bibliothek/internal/uebernahme"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
-    "path/filepath"
-    "os"
-    "bibliothek/internal/uebernahme"
 )
 
 func testSchreiberOhneDB(t *testing.T, anpassen func(*Optionen)) (*Schreiber, func() string) {
@@ -45,7 +45,7 @@ func TestFristVorAusgabeWirdGemeldet(t *testing.T) {
 		AusgeliehenAm: start.AddDate(0, 0, 10), Frist: start}
 
 	l := &ausleihlauf{
-		s: s,
+		s:       s,
 		bericht: &AusleihBericht{},
 	}
 	l.meldeFristVorAusgabe(a)
@@ -68,7 +68,7 @@ func TestKeineFristWirdDurchVerleihdatumErsetzt(t *testing.T) {
 	a := Ausleihe{ID: "A1", ExemplarID: "E1", LeserID: "S1", AusgeliehenAm: start}
 
 	l := &ausleihlauf{
-		s: s,
+		s:       s,
 		bericht: &AusleihBericht{},
 	}
 	frist := l.frist(a)
@@ -84,15 +84,15 @@ func TestKeineFristWirdDurchVerleihdatumErsetzt(t *testing.T) {
 }
 
 func TestBuchbarBleibtOffen(t *testing.T) {
-    b1 := buchbar{RueckgabeAm: nil}
-    if !b1.bleibtOffen() {
-        t.Errorf("Erwartet, dass Buchung ohne RueckgabeAm offen bleibt")
-    }
-    jetzt := time.Now()
-    b2 := buchbar{RueckgabeAm: &jetzt}
-    if b2.bleibtOffen() {
-        t.Errorf("Erwartet, dass Buchung mit RueckgabeAm nicht offen bleibt")
-    }
+	b1 := buchbar{RueckgabeAm: nil}
+	if !b1.bleibtOffen() {
+		t.Errorf("Erwartet, dass Buchung ohne RueckgabeAm offen bleibt")
+	}
+	jetzt := time.Now()
+	b2 := buchbar{RueckgabeAm: &jetzt}
+	if b2.bleibtOffen() {
+		t.Errorf("Erwartet, dass Buchung mit RueckgabeAm nicht offen bleibt")
+	}
 }
 
 func TestFristRegulaerBleibtErhalten(t *testing.T) {
@@ -103,7 +103,7 @@ func TestFristRegulaerBleibtErhalten(t *testing.T) {
 	a := Ausleihe{ID: "A1", ExemplarID: "E1", LeserID: "S1", AusgeliehenAm: start, Frist: fristVor}
 
 	l := &ausleihlauf{
-		s: s,
+		s:       s,
 		bericht: &AusleihBericht{},
 	}
 	fristNach := l.frist(a)
@@ -117,8 +117,8 @@ func TestBeideEndenGefunden(t *testing.T) {
 	s, protokoll := testSchreiberOhneDB(t, nil)
 
 	l := &ausleihlauf{
-		s: s,
-		bericht: &AusleihBericht{},
+		s:         s,
+		bericht:   &AusleihBericht{},
 		exemplare: map[string]string{"E1": "UUID1"},
 		entleiher: map[string]Entleiher{"L1": {SchuelerID: "S1"}},
 	}
@@ -157,7 +157,7 @@ func TestBeideEndenGefunden(t *testing.T) {
 func TestRueckgabeAm(t *testing.T) {
 	s, protokoll := testSchreiberOhneDB(t, nil)
 	l := &ausleihlauf{
-		s: s,
+		s:       s,
 		bericht: &AusleihBericht{},
 	}
 

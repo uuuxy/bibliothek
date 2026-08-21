@@ -113,7 +113,7 @@ func TestTrockenlauf(t *testing.T) {
 	log.SetOutput(&buf)
 
 	ab := &littera.Altbestand{
-		Titel: []littera.Titel{{}, {}},
+		Titel:      []littera.Titel{{}, {}},
 		Signaturen: map[string]string{"1": "A", "2": "B"},
 		Leser: []littera.Leser{
 			{Art: littera.ArtSchueler},

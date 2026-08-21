@@ -68,7 +68,7 @@ func TestCreateBook(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-    t.Run("db error", func(t *testing.T) {
+	t.Run("db error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
@@ -90,7 +90,7 @@ func TestCreateBook(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-    t.Run("sync error", func(t *testing.T) {
+	t.Run("sync error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
@@ -235,25 +235,25 @@ func TestUpsertBooksBatch(t *testing.T) {
 		jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
 		require.NoError(t, err)
 		mock.ExpectExec(batchQuery).
-            WithArgs(
-                []string{books[0].ISBN},
-                []string{books[0].Title},
-                []string{books[0].Author},
-                []string{books[0].CoverURL},
-                []string{books[0].Subject},
-                []int16{books[0].GradeLevel},
-                []string{books[0].Track},
-                []*string{books[0].LastCounted},
-                []string{books[0].Medientyp},
-                []int{books[0].JahrgangVon},
-                []int{books[0].JahrgangBis},
-                []string{books[0].Untertitel},
-                []string{books[0].Verlag},
-                []int{books[0].Erscheinungsjahr},
-                []string{books[0].Beschreibung},
-                [][]byte{jsonProps},
-                []string{books[0].Signatur},
-            ).
+			WithArgs(
+				[]string{books[0].ISBN},
+				[]string{books[0].Title},
+				[]string{books[0].Author},
+				[]string{books[0].CoverURL},
+				[]string{books[0].Subject},
+				[]int16{books[0].GradeLevel},
+				[]string{books[0].Track},
+				[]*string{books[0].LastCounted},
+				[]string{books[0].Medientyp},
+				[]int{books[0].JahrgangVon},
+				[]int{books[0].JahrgangBis},
+				[]string{books[0].Untertitel},
+				[]string{books[0].Verlag},
+				[]int{books[0].Erscheinungsjahr},
+				[]string{books[0].Beschreibung},
+				[][]byte{jsonProps},
+				[]string{books[0].Signatur},
+			).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		// Batch Upsert calls legeImportExemplareAn
@@ -271,18 +271,18 @@ func TestUpsertBooksBatch(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-    t.Run("empty books", func(t *testing.T) {
-        mock, err := pgxmock.NewPool()
+	t.Run("empty books", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
 
-        repo := NewBookRepository(mock)
+		repo := NewBookRepository(mock)
 		ctx := context.Background()
 
-        rowsAffected, err := repo.UpsertBooksBatch(ctx, []Book{})
-        assert.NoError(t, err)
-        assert.Equal(t, int64(0), rowsAffected)
-    })
+		rowsAffected, err := repo.UpsertBooksBatch(ctx, []Book{})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), rowsAffected)
+	})
 
 	t.Run("db error on batch upsert", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -295,28 +295,28 @@ func TestUpsertBooksBatch(t *testing.T) {
 		erwarteFachBekannt(mock, books[0].Subject)
 		mock.ExpectBegin()
 
-        jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
+		jsonProps, err := json.Marshal(books[0].ErweiterteEigenschaften)
 		require.NoError(t, err)
 		mock.ExpectExec(batchQuery).
-            WithArgs(
-                []string{books[0].ISBN},
-                []string{books[0].Title},
-                []string{books[0].Author},
-                []string{books[0].CoverURL},
-                []string{books[0].Subject},
-                []int16{books[0].GradeLevel},
-                []string{books[0].Track},
-                []*string{books[0].LastCounted},
-                []string{books[0].Medientyp},
-                []int{books[0].JahrgangVon},
-                []int{books[0].JahrgangBis},
-                []string{books[0].Untertitel},
-                []string{books[0].Verlag},
-                []int{books[0].Erscheinungsjahr},
-                []string{books[0].Beschreibung},
-                [][]byte{jsonProps},
-                []string{books[0].Signatur},
-            ).
+			WithArgs(
+				[]string{books[0].ISBN},
+				[]string{books[0].Title},
+				[]string{books[0].Author},
+				[]string{books[0].CoverURL},
+				[]string{books[0].Subject},
+				[]int16{books[0].GradeLevel},
+				[]string{books[0].Track},
+				[]*string{books[0].LastCounted},
+				[]string{books[0].Medientyp},
+				[]int{books[0].JahrgangVon},
+				[]int{books[0].JahrgangBis},
+				[]string{books[0].Untertitel},
+				[]string{books[0].Verlag},
+				[]int{books[0].Erscheinungsjahr},
+				[]string{books[0].Beschreibung},
+				[][]byte{jsonProps},
+				[]string{books[0].Signatur},
+			).
 			WillReturnError(fmt.Errorf("db batch failed"))
 		mock.ExpectRollback()
 

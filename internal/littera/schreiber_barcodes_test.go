@@ -60,7 +60,7 @@ func TestSchreiber_barcodeWunsch(t *testing.T) {
 		e := Exemplar{ID: "E5", Exemplarnummer: "20798", Bibliotheksnummer: "13"}
 
 		fremd := ""
-		for i := 0; i < uebernahme.MaxBarcode + 1; i++ {
+		for i := 0; i < uebernahme.MaxBarcode+1; i++ {
 			fremd += "A"
 		}
 
