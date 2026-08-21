@@ -36,3 +36,6 @@
 ## 2026-08-11 - [Optimize Active Loans Existence Check]
 **Learning:** Found an instance in `pruefeKeineAktivenAusleihen` (`inventur/db_books_delete.go`) where `SELECT COUNT(*)` was used to check for the presence of active loans before deleting books. This forces the database to scan and count all matching rows.
 **Action:** In PostgreSQL, always prefer `SELECT EXISTS(SELECT 1 ...)` over `SELECT COUNT(*) > 0` for simple existence checks. `EXISTS` can short-circuit evaluation upon finding the first match, avoiding unnecessary full-scan overhead during bulk delete operations.
+## 2026-08-21 - N+1 Query Optimization in Seeding
+**Learning:** Initializing default configurations using looped `INSERT` statements causes N+1 network roundtrips to the database which degrades startup performance. Using `pgx.Batch` eliminates the N+1 issue by queuing all queries and sending them in a single round-trip via `SendBatch`.
+**Action:** When inserting multiple rows synchronously, especially static seed data, use `pgx.Batch` instead of iterative `db.Pool.Exec` calls to optimize DB network I/O.

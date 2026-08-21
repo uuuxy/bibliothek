@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -282,11 +284,14 @@ func (db *Database) InitLieferanten(ctx context.Context) error {
 			{"Westermann", "order@westermann.de", "W-77441"},
 		}
 
+		batch := &pgx.Batch{}
 		for _, d := range defaults {
-			_, err = db.Pool.Exec(ctx, seedLieferantenSQL, d.Name, d.Email, d.Kundennummer)
-			if err != nil {
-				return fmt.Errorf("failed to seed supplier default (%s): %w", d.Name, err)
-			}
+			batch.Queue(seedLieferantenSQL, d.Name, d.Email, d.Kundennummer)
+		}
+		br := db.Pool.SendBatch(ctx, batch)
+		err = br.Close()
+		if err != nil {
+			return fmt.Errorf("failed to seed supplier defaults: %w", err)
 		}
 	}
 	return nil
