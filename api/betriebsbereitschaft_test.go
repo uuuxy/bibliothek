@@ -3,12 +3,23 @@ package api
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/db"
 )
 
 // Eine Lage, in der ALLES eingerichtet ist. Ausgangspunkt aller Fälle unten: Jeder Test
 // nimmt genau eine Sache weg und prüft, dass genau diese eine gemeldet wird.
+// Fester Bezugspunkt statt time.Now(): Die Altersrechnung des Backup-Befundes soll im
+// Test nicht an der Wanduhr hängen.
+var testJetzt = time.Date(2026, 8, 20, 12, 0, 0, 0, time.UTC)
+
+// vorStunden liefert einen Zeitpunkt n Stunden vor testJetzt.
+func vorStunden(n int) *time.Time {
+	ts := testJetzt.Add(-time.Duration(n) * time.Hour)
+	return &ts
+}
+
 func lageEingerichtet() Lage {
 	return Lage{
 		AppEnv:              "production",
@@ -29,6 +40,11 @@ func lageEingerichtet() Lage {
 		KlassenOhneLehrkraft:  []string{},
 		VerwaisteZuordnungen:  []string{},
 		VerwaisteBuecherliste: []string{},
+		// Nächtliches Backup (B3): Key stark, letzter Lauf heute Nacht.
+		BackupKeySet:  true,
+		BackupKeyWeak: false,
+		LetztesBackup: vorStunden(10),
+		Jetzt:         testJetzt,
 	}
 }
 
@@ -191,6 +207,44 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			stufe:    StufeWarnung,
 			enthaelt: "nicht gelesen",
 		},
+		// Nächtliches Backup (Ausfallmatrix 20.08.2026, B3): Erst mit diesen Befunden
+		// erreicht ein stehender Backup-Job die tägliche Kritisch-Alarm-Mail — vorher
+		// sah ihn nur das Dashboard-Badge, und nur, wer die Seite öffnete.
+		{
+			name:     "Backup-Key fehlt",
+			aendere:  func(l *Lage) { l.BackupKeySet = false },
+			bereich:  "Nächtliches Backup",
+			stufe:    StufeKritisch,
+			enthaelt: "BACKUP_ENCRYPTION_KEY",
+		},
+		{
+			name:     "noch nie ein Backup",
+			aendere:  func(l *Lage) { l.LetztesBackup = nil },
+			bereich:  "Nächtliches Backup",
+			stufe:    StufeKritisch,
+			enthaelt: "Noch nie",
+		},
+		{
+			name:     "Backup älter als 48h",
+			aendere:  func(l *Lage) { l.LetztesBackup = vorStunden(50) },
+			bereich:  "Nächtliches Backup",
+			stufe:    StufeKritisch,
+			enthaelt: "vor 50 Stunden",
+		},
+		{
+			name:     "ein Lauf verpasst (26h)",
+			aendere:  func(l *Lage) { l.LetztesBackup = vorStunden(30) },
+			bereich:  "Nächtliches Backup",
+			stufe:    StufeWarnung,
+			enthaelt: "verpasst",
+		},
+		{
+			name:     "schwacher Backup-Key",
+			aendere:  func(l *Lage) { l.BackupKeyWeak = true },
+			bereich:  "Nächtliches Backup",
+			stufe:    StufeWarnung,
+			enthaelt: "zu kurz",
+		},
 	}
 
 	for _, f := range faelle {
@@ -262,8 +316,12 @@ func TestBetriebsbereitschaft_SpielwieseIstKeinMangel(t *testing.T) {
 		l.JWTSecret = "super-secret-default-key-at-least-32-bytes"
 		l.AppEncryptionKey = "super-secure-aes-key-32-chars-ok"
 		l.EnforceProdSecrets = false
+		// Auf dem Entwicklungsrechner gibt es weder Key noch Backup-Dateien —
+		// dauerhaft rot wäre der Wächter wertlos.
+		l.BackupKeySet = false
+		l.LetztesBackup = nil
 
-		for _, bereich := range []string{"Anmeldung", "Geheimnisse"} {
+		for _, bereich := range []string{"Anmeldung", "Geheimnisse", "Nächtliches Backup"} {
 			if b := befundZu(t, Pruefe(l), bereich); b.Stufe != StufeOK {
 				t.Errorf("APP_ENV=%s: %s meldet %q — auf der Spielwiese ist das richtig so (%s)",
 					env, bereich, b.Stufe, b.Befund)

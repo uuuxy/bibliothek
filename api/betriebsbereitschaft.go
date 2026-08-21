@@ -26,6 +26,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"bibliothek/db"
 )
@@ -94,6 +95,16 @@ type Lage struct {
 	KlassenOhneLehrkraft  []string // aktive Schüler-Klassen ohne Zuordnungs-Zeile
 	VerwaisteZuordnungen  []string // Zuordnungs-Zeilen ohne aktive Schüler
 	VerwaisteBuecherliste []string // class_books-Klassen ohne aktive Schüler
+
+	// Nächtliches Backup (Ausfallmatrix 20.08.2026, B3): Der Job überspringt sich
+	// still bei fehlendem Key und steht still, wenn der Cron stirbt. Das sah bisher
+	// nur das Dashboard-Badge (backup_status.go) — die tägliche Kritisch-Alarm-Mail
+	// speist sich aus DIESEN Befunden und blieb stumm. nil LetztesBackup: noch nie
+	// gelaufen. Jetzt ist injiziert, damit die Altersrechnung testbar bleibt.
+	BackupKeySet  bool
+	BackupKeyWeak bool
+	LetztesBackup *time.Time
+	Jetzt         time.Time
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -139,8 +150,57 @@ func Pruefe(l Lage) []Befund {
 		pruefeRechteVorgabe(l),
 		pruefeAdminKonten(l),
 		pruefeKlassenDrift(l),
+		pruefeBackupAlter(l, echt),
 	}
 	return befunde
+}
+
+// pruefeBackupAlter hebt den Backup-Wächter des Dashboard-Badges in die Befunde —
+// und damit in die tägliche Kritisch-Alarm-Mail. Die Schwellen und ihre Anwendung
+// (computeBackupStatus, backup_status.go) bleiben die EINE Quelle; hier wird nur
+// übersetzt, damit Badge und Alarm nie auseinanderlaufen.
+func pruefeBackupAlter(l Lage, echt bool) Befund {
+	b := Befund{Bereich: "Nächtliches Backup"}
+	if !echt {
+		b.Stufe = StufeOK
+		b.Befund = "Kein Backup-Betrieb — in " + l.AppEnv + " ist das richtig so."
+		return b
+	}
+	switch computeBackupStatus(l.BackupKeySet, l.BackupKeyWeak, l.LetztesBackup, l.Jetzt) {
+	case "critical":
+		b.Stufe = StufeKritisch
+		switch {
+		case !l.BackupKeySet:
+			b.Befund = "BACKUP_ENCRYPTION_KEY fehlt — der nächtliche Job überspringt sich still."
+			b.Folge = "Es entsteht KEIN Backup. Ein Datenbankschaden kostet den gesamten Bestand."
+			b.Abhilfe = "BACKUP_ENCRYPTION_KEY in der .env setzen (≥32 Zeichen) und den Schlüssel getrennt verwahren."
+		case l.LetztesBackup == nil:
+			b.Befund = "Noch nie ein Backup geschrieben."
+			b.Folge = "Ein Datenbankschaden kostet den gesamten Bestand."
+			b.Abhilfe = "Backup-Job und BACKUP_DIR prüfen; der Job läuft täglich 02:30."
+		default:
+			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mehr als %d Stunden alt.",
+				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()), int(backupCriticalAge.Hours()))
+			b.Folge = "Der Datenverlust-Puffer ist aufgebraucht; der Job steht offenbar still."
+			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
+		}
+	case "warning":
+		b.Stufe = StufeWarnung
+		if l.LetztesBackup != nil && l.Jetzt.Sub(*l.LetztesBackup) > backupWarnAge {
+			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mindestens ein Lauf wurde verpasst.",
+				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()))
+			b.Folge = "Bleibt es dabei, ist der Datenverlust-Puffer in Kürze aufgebraucht."
+			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
+		} else {
+			b.Befund = "BACKUP_ENCRYPTION_KEY ist zu kurz für die SHA-256-Ableitung."
+			b.Folge = "Die Backups sind schwächer verschlüsselt als vorgesehen."
+			b.Abhilfe = "Einen Schlüssel mit mindestens 32 Zeichen setzen."
+		}
+	default:
+		b.Stufe = StufeOK
+		b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden.", int(l.Jetzt.Sub(*l.LetztesBackup).Hours()))
+	}
+	return b
 }
 
 // pruefeAdminKonten macht sichtbar, WER Vollzugriff hat und die Alarm-Mails erhält.

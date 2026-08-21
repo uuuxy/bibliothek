@@ -11,7 +11,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
+	"bibliothek/jobs"
 	"bibliothek/repository"
 )
 
@@ -102,6 +104,17 @@ func (s *Server) sammleLage(
 			lage.AdminKonten = append(lage.AdminKonten, a.Name+" ("+a.Email+")")
 		}
 	}
+
+	// Backup-Zustand aus derselben Quelle wie das Dashboard-Badge (backup_status.go).
+	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
+	lage.BackupKeySet = encKey != ""
+	lage.BackupKeyWeak = jobs.SchluesselIstSchwach(encKey)
+	backupDir := os.Getenv("BACKUP_DIR")
+	if backupDir == "" {
+		backupDir = "./backups" // identischer Default wie jobs/backup.go
+	}
+	lage.LetztesBackup = newestBackupTime(backupDir)
+	lage.Jetzt = time.Now()
 
 	return lage
 }
