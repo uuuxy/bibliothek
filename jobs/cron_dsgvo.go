@@ -112,6 +112,16 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		log.Printf("Scheduler GDPR Anonymize: Fotos anonymisierter Schüler konnten nicht gelöscht werden: %v", delErr)
 	}
 
+	// PII-Spuren anonymisierter Schüler in den NEBEN-Tabellen tilgen. Bis 21.08.2026
+	// leerte dieser Pfad NUR die schueler-Zeile — der Hard-Delete-Pfad
+	// (entferneSchuelerPIIUndLoesche) räumte die Audit-Details, die Feld-Anonymisierung
+	// aber nicht. Folge: Ein soft-gelöschter Schüler war nach 180 Tagen „anonymisiert",
+	// sein Klarname (audit_log.details) und seine LUSD-ID (audit_logs.details) lebten
+	// jedoch bis zur Audit-Aufbewahrung (24 Monate) weiter — bis zu 1,5 Jahre
+	// Personenbezug nach der Löschung. Selbstheilend über anonymized_at, damit auch
+	// Altbestände nachgezogen werden.
+	s.bereinigeAnonymisierteSchuelerSpuren(ctx)
+
 	count := tag.RowsAffected()
 	if count > 0 {
 		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)
@@ -126,5 +136,52 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		}
 	} else {
 		log.Printf("Scheduler GDPR Anonymize: no old students found to anonymize.")
+	}
+}
+
+// bereinigeAnonymisierteSchuelerSpuren tilgt die PII anonymisierter Schüler aus den
+// Neben-Tabellen, die RunGDPRAnonymizeOldData selbst nicht anfasst. Jede Anweisung ist
+// idempotent und selbstheilend (Kriterium: anonymized_at IS NOT NULL) und wird einzeln
+// protokolliert — schlägt eine fehl (etwa am Append-Only-Trigger auf audit_log, den es
+// nur auf manchen Altbeständen gibt), bricht das die übrigen NICHT ab.
+func (s *Scheduler) bereinigeAnonymisierteSchuelerSpuren(ctx context.Context) {
+	anonymisiert := `SELECT id FROM schueler WHERE anonymized_at IS NOT NULL`
+
+	// 1. audit_log (fachliche Datensatz-Historie): DeleteStudent legt Vor-/Nachname,
+	//    Klasse und Barcode in details ab. Dieselbe Neutralisierung wie im Hard-Delete-
+	//    Pfad (entferneSchuelerPIIUndLoesche). Idempotent über den 'anonymisiert'-Marker.
+	if tag, err := s.db.Exec(ctx, `
+		UPDATE audit_log
+		SET details = jsonb_build_object('anonymisiert', true, 'grund', 'DSGVO-Anonymisierung')
+		WHERE tabelle = 'schueler'
+		  AND datensatz_id IN (`+anonymisiert+`)
+		  AND (details IS NULL OR NOT (details ? 'anonymisiert'))`); err != nil {
+		log.Printf("Scheduler GDPR Anonymize: audit_log-PII konnte nicht getilgt werden: %v", err)
+	} else if n := tag.RowsAffected(); n > 0 {
+		log.Printf("Scheduler GDPR Anonymize: %d audit_log-Einträge anonymisiert.", n)
+	}
+
+	// 2. audit_logs (Admin-Eingriffe): LUSD_ID_NACHGETRAGEN speichert die staatliche
+	//    Schülerkennung im Klartext. Nur den PII-Schlüssel entfernen; Aktion, Zeit und
+	//    schueler_id (jetzt Pseudonym) bleiben für die Rechenschaftspflicht erhalten.
+	if tag, err := s.db.Exec(ctx, `
+		UPDATE audit_logs
+		SET details = details - 'lusd_id'
+		WHERE details ? 'lusd_id'
+		  AND details->>'schueler_id' IN (SELECT id::text FROM schueler WHERE anonymized_at IS NOT NULL)`); err != nil {
+		log.Printf("Scheduler GDPR Anonymize: audit_logs-LUSD-ID konnte nicht getilgt werden: %v", err)
+	} else if n := tag.RowsAffected(); n > 0 {
+		log.Printf("Scheduler GDPR Anonymize: %d audit_logs-Einträge um die LUSD-ID bereinigt.", n)
+	}
+
+	// 3. vormerkungen: Die Freitext-Notiz kann personenbezogen sein, und eine Vormerkung
+	//    eines abgegangenen/gelöschten Schülers ist ohnehin funktionslos. Der Hard-Delete-
+	//    Pfad räumt sie via CASCADE; hier werden sie gezielt gelöscht.
+	if tag, err := s.db.Exec(ctx, `
+		DELETE FROM vormerkungen
+		WHERE schueler_id IN (`+anonymisiert+`)`); err != nil {
+		log.Printf("Scheduler GDPR Anonymize: Vormerkungen anonymisierter Schüler konnten nicht gelöscht werden: %v", err)
+	} else if n := tag.RowsAffected(); n > 0 {
+		log.Printf("Scheduler GDPR Anonymize: %d Vormerkungen anonymisierter Schüler gelöscht.", n)
 	}
 }
