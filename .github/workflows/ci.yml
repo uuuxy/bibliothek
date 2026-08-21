@@ -55,10 +55,10 @@ jobs:
 
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
         go-version-file: 'go.mod'
 
@@ -69,7 +69,7 @@ jobs:
     # goinstall@latest würde über den alten Modulpfad (ohne /v2) v1 installieren,
     # dessen "config verify" das v2-Schema ablehnt. Version = lokaler Stand.
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v8
+      uses: golangci/golangci-lint-action@v9
       with:
         version: v2.12.2
         args: --timeout=5m
@@ -145,14 +145,14 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # cache: npm — npm ci zieht die Tarballs aus dem Runner-Cache statt aus der
     # Registry; das Netz wird nur noch gebraucht, wenn sich der Lockfile ändert.
     # Hintergrund 19.08.2026: Installationsschritte hingen mehrfach an gestörten
     # Spiegeln/Registries — die Abhängigkeit gehört weggecacht, nicht nur befristet.
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: 24
         cache: npm
@@ -185,12 +185,12 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # cache: npm — siehe frontend-test: die Registry wird nur noch bei
     # Lockfile-Änderungen gebraucht.
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: 24
         cache: npm
@@ -201,7 +201,7 @@ jobs:
     # CDN fällt als Ausfallquelle weg.
     - name: Cache Playwright-Browser
       id: pw-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
@@ -272,7 +272,7 @@ jobs:
 
     - name: Upload traces on failure
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: playwright-traces
         path: frontend/test-results/
