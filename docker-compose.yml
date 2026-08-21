@@ -7,6 +7,16 @@ services:
     # uncommitteter Hotfix, der jedes `git pull` blockierte ("Your local changes to the
     # following files would be overwritten by merge"). Sie gehoert ins Repo.
     restart: unless-stopped
+    # Log-Rotation (Wachstums-Sweep 21.08.2026): Der Docker-Default json-file kennt
+    # KEINE Groessengrenze — auf dem Prod-Host ist kein daemon.json konfiguriert,
+    # jede Request-Logzeile bleibt fuer immer liegen. Das faellt nicht in Wochen auf,
+    # sondern in dem Moment, in dem die Platte voll ist (und mit ihr die Datenbank
+    # desselben Hosts). 3 x 10 MB pro Container reichen fuer Tage Diagnose-Rueckblick.
+    logging: &log_rotation
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: postgres:15-alpine
     container_name: bibliothek-db
     environment:
@@ -31,8 +41,9 @@ services:
       retries: 5
 
   backend:
-    # Siehe postgres-db: dieselbe Policy, derselbe Grund.
+    # Siehe postgres-db: dieselbe Policy, derselbe Grund — auch bei der Log-Rotation.
     restart: unless-stopped
+    logging: *log_rotation
     build:
       context: .
       dockerfile: Dockerfile
