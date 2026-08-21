@@ -318,7 +318,7 @@ Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
 ### Datenverschlüsselung
 - Schülerfotos: AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank. Kein Klartext auf dem Dateisystem.
-- DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht mehr per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format, alte SHA-256-Backups bleiben lesbar. 0600 Dateiberechtigungen, Rotation.
+- DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht mehr per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format (`BKDF`-Kennung); der frühere schwache SHA-256-Weg ist ganz entfernt, Dateien ohne die Kennung werden abgelehnt (im Pilotbetrieb keine schützenswerten Altbackups). 0600 Dateiberechtigungen, Rotation.
 
 #### `APP_ENCRYPTION_KEY` wechseln
 

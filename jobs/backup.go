@@ -31,9 +31,8 @@ func escapePgPass(s string) string {
 // pro Datei gesalzen, statt eines einzelnen SHA-256-Durchlaufs. Das nimmt dem
 // Offline-Rateangriff auf eine erbeutete Backup-Datei die Geschwindigkeit. Die
 // Längenprüfung bleibt als zweite Verteidigung: scrypt erschwert das Raten, ersetzt
-// aber keine Passphrase-Entropie — eine kurze bleibt kurz. Der frühere Einwand „ein
-// KDF-Wechsel macht alte Backups unlesbar" ist ausgeräumt: Das Dateiformat ist jetzt
-// versioniert, DecryptBackup öffnet beide Stände (siehe backup_krypto.go).
+// aber keine Passphrase-Entropie — eine kurze bleibt kurz. Der frühere schwache
+// SHA-256-Weg ist ganz entfernt; es gibt nur noch das scrypt-Format (backup_krypto.go).
 const MinBackupSchluesselLaenge = 32
 
 // SchluesselIstSchwach meldet, ob die Backup-Passphrase zu kurz ist. Ein leerer
@@ -73,9 +72,8 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// AES-256-GCM mit scrypt-abgeleitetem Schlüssel (backup_krypto.go). Neue Backups
-	// tragen das starke Format; alte SHA-256-Dateien bleiben über DecryptBackup lesbar.
-	encrypted, err := verschluesseleBackup(encKey, compressedData)
+	// AES-256-GCM mit scrypt-abgeleitetem Schlüssel (backup_krypto.go).
+	encrypted, err := VerschluesseleBackup(encKey, compressedData)
 	if err != nil {
 		// #nosec G706
 		log.Printf("Backup: encryption failed: %v", err)
@@ -115,7 +113,7 @@ func resolveBackupEnv() (encKey, dsn, backupDir string, ok bool) {
 	// im Admin-Dashboard — ein Logeintrag allein liest niemand.
 	if SchluesselIstSchwach(encKey) {
 		log.Printf("Backup: BACKUP_ENCRYPTION_KEY ist nur %d Zeichen lang (empfohlen: >= %d) – "+
-			"die Ableitung per SHA-256 ist schnell, kurze Passphrasen sind offline angreifbar",
+			"scrypt erschwert das Raten, ersetzt aber keine Entropie; kurze Passphrasen bleiben angreifbar",
 			len(encKey), MinBackupSchluesselLaenge)
 	}
 

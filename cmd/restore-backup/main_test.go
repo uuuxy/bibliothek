@@ -3,35 +3,26 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 
+	"bibliothek/jobs"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// createOldFormatBackup erzeugt ein Backup im alten SHA-256 Format.
-func createOldFormatBackup(t *testing.T, passphrase string, cleartext []byte) []byte {
+// createBackup erzeugt ein gültiges Backup im scrypt-Format über die echte
+// Verschlüsselungsfunktion — so testet der Restore genau das Format, das er im Betrieb
+// vorfindet, statt es im Test nachzubauen.
+func createBackup(t *testing.T, passphrase string, cleartext []byte) []byte {
 	t.Helper()
-	keyBytes := sha256.Sum256([]byte(passphrase))
-	block, err := aes.NewCipher(keyBytes[:])
+	enc, err := jobs.VerschluesseleBackup(passphrase, cleartext)
 	require.NoError(t, err)
-
-	gcm, err := cipher.NewGCM(block)
-	require.NoError(t, err)
-
-	nonce := make([]byte, gcm.NonceSize())
-	_, err = rand.Read(nonce)
-	require.NoError(t, err)
-
-	return gcm.Seal(nonce, nonce, cleartext, nil)
+	return enc
 }
 
 func gzipData(t *testing.T, data []byte) []byte {
@@ -94,7 +85,7 @@ func TestRun_GzipFails(t *testing.T) {
 	inFile := filepath.Join(dir, "bad_gzip.enc")
 
 	// Valid encryption, but invalid gzip content
-	encData := createOldFormatBackup(t, "secret", []byte("not a gzip file"))
+	encData := createBackup(t, "secret", []byte("not a gzip file"))
 	err := os.WriteFile(inFile, encData, 0644)
 	require.NoError(t, err)
 
@@ -110,7 +101,7 @@ func TestRun_SuccessStdout(t *testing.T) {
 
 	sqlData := []byte("SELECT * FROM books;")
 	gzipped := gzipData(t, sqlData)
-	encData := createOldFormatBackup(t, "secret", gzipped)
+	encData := createBackup(t, "secret", gzipped)
 
 	err := os.WriteFile(inFile, encData, 0644)
 	require.NoError(t, err)
@@ -144,7 +135,7 @@ func TestRun_SuccessFile(t *testing.T) {
 
 	sqlData := []byte("SELECT * FROM books;")
 	gzipped := gzipData(t, sqlData)
-	encData := createOldFormatBackup(t, "secret", gzipped)
+	encData := createBackup(t, "secret", gzipped)
 
 	err := os.WriteFile(inFile, encData, 0644)
 	require.NoError(t, err)
@@ -171,7 +162,7 @@ func TestRun_FileCreateFails(t *testing.T) {
 
 	sqlData := []byte("SELECT * FROM books;")
 	gzipped := gzipData(t, sqlData)
-	encData := createOldFormatBackup(t, "secret", gzipped)
+	encData := createBackup(t, "secret", gzipped)
 
 	err = os.WriteFile(inFile, encData, 0644)
 	require.NoError(t, err)

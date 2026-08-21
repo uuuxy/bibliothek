@@ -18,20 +18,21 @@ package jobs
 // Vorberechnung wertlos. Für die seltene, legitime Entschlüsselung (Restore, Probe)
 // kostet es einmalig ~100 ms — kein Faktor.
 //
-// Dateiformat, rückwärtskompatibel (der Grund, warum der Wechsel gefahrlos ist —
-// im Gegensatz zu dem, was der alte Kommentar behauptete):
+// Dateiformat (einziges, versioniert für künftige KDF-Wechsel):
 //
-//	NEU:  "BKDF" 0x02 [16B Salt] [12B GCM-Nonce] [Ciphertext+Tag]   → scrypt
-//	ALT:  [12B GCM-Nonce] [Ciphertext+Tag]                          → SHA-256
+//	"BKDF" 0x02 [16B Salt] [12B GCM-Nonce] [Ciphertext+Tag]   → scrypt
 //
-// Der Lesepfad erkennt das Magic und wählt die Ableitung; alte Backups bleiben also
-// öffenbar. Neue werden ausschließlich im starken Format geschrieben.
+// Der frühere SHA-256-Weg (kein Salt, schwach als Passwort-KDF) ist GANZ entfernt, nicht
+// nur für neue Dateien: Im Pilotbetrieb existieren keine schützenswerten Altbackups, und
+// den schwachen Pfad nur zur Rückwärtskompatibilität mitzuschleppen wäre ein dauerhafter
+// Schwachpunkt (CodeQL go/weak-sensitive-data-hashing). Eine Datei ohne die Format-
+// Kennung wird deshalb abgelehnt statt schwach entschlüsselt. Das Magic bleibt, damit ein
+// späterer KDF-Wechsel sauber unterscheidbar ist.
 
 import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 
 	"golang.org/x/crypto/scrypt"
@@ -55,9 +56,11 @@ func leiteScryptAb(passphrase string, salt []byte) ([]byte, error) {
 	return scrypt.Key([]byte(passphrase), salt, scryptN, scryptR, scryptP, 32)
 }
 
-// verschluesseleBackup verschlüsselt den komprimierten Dump im starken Format.
+// VerschluesseleBackup verschlüsselt den komprimierten Dump im scrypt-Format. Exportiert
+// als symmetrisches Gegenstück zu DecryptBackup — Werkzeuge (cmd/restore-backup) und Tests
+// erzeugen damit gültige Backups, ohne das Format selbst nachzubauen.
 // Ausgabe: backupMagic ‖ 0x02 ‖ Salt ‖ Nonce ‖ Ciphertext+Tag.
-func verschluesseleBackup(passphrase string, klartext []byte) ([]byte, error) {
+func VerschluesseleBackup(passphrase string, klartext []byte) ([]byte, error) {
 	salt := make([]byte, backupSaltLaenge)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, fmt.Errorf("salt erzeugen: %w", err)
@@ -82,24 +85,26 @@ func verschluesseleBackup(passphrase string, klartext []byte) ([]byte, error) {
 	return gcm.Seal(kopf, nonce, klartext, nil), nil
 }
 
-// entschluesseleBackupDaten öffnet beide Formate. Trägt die Datei das Magic, wird
-// scrypt mit dem eingebetteten Salt verwendet; sonst der alte SHA-256-Weg.
+// entschluesseleBackupDaten öffnet ausschließlich das scrypt-Format. Eine Datei ohne
+// die Format-Kennung wird abgelehnt, NICHT mehr über den früheren SHA-256-Weg gelesen:
+// Es existieren keine schützenswerten Altbackups (Pilotbetrieb), und ein einzelner
+// SHA-256-Durchlauf als Passwort-KDF ist schwach (CodeQL go/weak-sensitive-data-hashing).
+// Statt den schwachen Pfad für Rückwärtskompatibilität mitzuschleppen, ist er entfernt —
+// die einzige Ableitung ist scrypt.
 func entschluesseleBackupDaten(passphrase string, daten []byte) ([]byte, error) {
-	if istScryptFormat(daten) {
-		rest := daten[len(backupMagic)+1:]
-		if len(rest) < backupSaltLaenge {
-			return nil, fmt.Errorf("backup zu kurz: Salt fehlt")
-		}
-		salt, hinterSalt := rest[:backupSaltLaenge], rest[backupSaltLaenge:]
-		key, err := leiteScryptAb(passphrase, salt)
-		if err != nil {
-			return nil, fmt.Errorf("scrypt-Ableitung: %w", err)
-		}
-		return oeffneGCM(key, hinterSalt)
+	if !istScryptFormat(daten) {
+		return nil, fmt.Errorf("kein gültiges Backup: scrypt-Format-Kennung fehlt (Dateien von vor der scrypt-Umstellung werden nicht unterstützt)")
 	}
-	// Altes Format: Schlüssel = SHA-256(passphrase), Rest = Nonce ‖ Ciphertext.
-	keyBytes := sha256.Sum256([]byte(passphrase))
-	return oeffneGCM(keyBytes[:], daten)
+	rest := daten[len(backupMagic)+1:]
+	if len(rest) < backupSaltLaenge {
+		return nil, fmt.Errorf("backup zu kurz: Salt fehlt")
+	}
+	salt, hinterSalt := rest[:backupSaltLaenge], rest[backupSaltLaenge:]
+	key, err := leiteScryptAb(passphrase, salt)
+	if err != nil {
+		return nil, fmt.Errorf("scrypt-Ableitung: %w", err)
+	}
+	return oeffneGCM(key, hinterSalt)
 }
 
 // istScryptFormat prüft das Magic am Dateianfang. Die Kollision mit einer alten

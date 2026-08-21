@@ -17,9 +17,10 @@ backups/backup_<ZEITSTEMPEL>.sql.gz.enc
 - Schlüssel: `BACKUP_ENCRYPTION_KEY` (≥ 32 Zeichen). Ableitung via **scrypt**
   (N=2¹⁵, r=8, p=1) mit einem 16-Byte-Salt pro Datei — speicherhart, damit eine
   entwendete Backup-Datei nicht mit hoher Rate offline durchprobiert werden kann.
-  Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext); **ältere Backups
-  mit der früheren SHA-256-Ableitung bleiben lesbar** — `restore-backup` erkennt das
-  Format am Kopf (`jobs/backup_krypto.go`).
+  Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext). Der frühere schwache
+  SHA-256-Weg ist **ganz entfernt**: Dateien ohne die `BKDF`-Kennung werden abgelehnt,
+  nicht mehr schwach entschlüsselt (im Pilotbetrieb keine schützenswerten Altbackups;
+  `jobs/backup_krypto.go`).
 - Rotation: die letzten **14** Backups bleiben erhalten.
 - Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind.
 
