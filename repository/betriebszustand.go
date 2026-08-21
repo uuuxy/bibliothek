@@ -146,3 +146,13 @@ func (r *BetriebszustandRepository) KlassenBestand(ctx context.Context) (schuele
 	}
 	return schueler, zuordnungen, buecherlisten, nil
 }
+
+// LadeEinstellungswert liest einen rohen Wert aus system_einstellungen — z. B. das
+// JSON-Ergebnis der wöchentlichen Restore-Probe (jobs.RestoreProbeSchluessel).
+// pgx.ErrNoRows wird durchgereicht; der Aufrufer entscheidet, was „nie geschrieben" heißt.
+func (r *BetriebszustandRepository) LadeEinstellungswert(ctx context.Context, schluessel string) (string, error) {
+	var wert string
+	err := r.pool.QueryRow(ctx,
+		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`, schluessel).Scan(&wert)
+	return wert, err
+}
