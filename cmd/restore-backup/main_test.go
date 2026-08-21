@@ -120,7 +120,8 @@ func TestRun_SuccessStdout(t *testing.T) {
 
 	// Redirect stdout
 	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
 	os.Stdout = w
 	t.Cleanup(func() {
 		os.Stdout = oldStdout
@@ -129,7 +130,7 @@ func TestRun_SuccessStdout(t *testing.T) {
 	err = run()
 	require.NoError(t, err)
 
-	w.Close()
+	require.NoError(t, w.Close())
 
 	outData, err := io.ReadAll(r)
 	require.NoError(t, err)
