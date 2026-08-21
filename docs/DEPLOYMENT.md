@@ -131,7 +131,9 @@ Einstellung in der Oberfläche maßgeblich (`mail_settings_config`).
 > **`BACKUP_ENCRYPTION_KEY` nicht vergessen** — ohne ihn werden **keine** Backups erstellt;
 > der nächtliche Job überspringt sich mit einer Logzeile (`jobs/backup.go`). Das fällt
 > sonst erst auf, wenn man ein Backup braucht. Mindestens 32 Zeichen: Die Ableitung läuft
-> per SHA-256, kurze Passphrasen sind an einer entwendeten Backup-Datei offline angreifbar.
+> per **scrypt** (speicherhart, gesalzen) — das erschwert den Offline-Rateangriff auf eine
+> entwendete Backup-Datei erheblich, ersetzt aber keine Passphrase-Entropie; eine kurze
+> bleibt kurz.
 > Und: Diesen Schlüssel **aufbewahren**, außerhalb des Servers. Ohne ihn ist kein
 > verschlüsseltes Backup wiederherstellbar.
 

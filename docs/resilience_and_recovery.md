@@ -14,7 +14,12 @@ Der eingebaute Scheduler (`jobs.RunDatabaseBackup`) läuft täglich um **02:30 U
 backups/backup_<ZEITSTEMPEL>.sql.gz.enc
 ```
 
-- Schlüssel: `BACKUP_ENCRYPTION_KEY` (≥ 32 Zeichen), Ableitung via SHA-256.
+- Schlüssel: `BACKUP_ENCRYPTION_KEY` (≥ 32 Zeichen). Ableitung via **scrypt**
+  (N=2¹⁵, r=8, p=1) mit einem 16-Byte-Salt pro Datei — speicherhart, damit eine
+  entwendete Backup-Datei nicht mit hoher Rate offline durchprobiert werden kann.
+  Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext); **ältere Backups
+  mit der früheren SHA-256-Ableitung bleiben lesbar** — `restore-backup` erkennt das
+  Format am Kopf (`jobs/backup_krypto.go`).
 - Rotation: die letzten **14** Backups bleiben erhalten.
 - Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind.
 
@@ -154,8 +159,17 @@ shred -u wiederherstellung.sql vor-restore.sql 2>/dev/null \
 
 ### 2e. Restore-Probe vor Go-Live (dringend empfohlen)
 
-Ein Backup, das nie zurückgespielt wurde, ist kein verlässliches Backup. Diese Probe fasst
-die Produktivdatenbank **nicht** an:
+Ein Backup, das nie zurückgespielt wurde, ist kein verlässliches Backup.
+
+> **Automatisch läuft das bereits wöchentlich** (`jobs/restore_probe.go`, So 03:30 UTC):
+> Der Job entschlüsselt das jüngste Backup, spielt es in eine Wegwerf-Datenbank
+> (`bibliothek_restore_probe_wegwerf`) ein, zählt die Tabellen und meldet das Ergebnis
+> als Befund der Betriebsbereitschafts-Seite (fehlgeschlagen oder älter als 9 Tage =
+> kritisch = tägliche Alarm-Mail). Die manuelle Probe unten bleibt trotzdem sinnvoll:
+> Sie prüft zusätzlich den kompletten Weg am **echten Zielsystem** (fremder Server,
+> `restore-backup`-Tool, Cover-Reset) — nicht nur, dass die Datei sich einspielen lässt.
+
+Diese manuelle Probe fasst die Produktivdatenbank **nicht** an:
 
 ```bash
 ENC=$(ls -t backups/backup_*.sql.gz.enc | head -1)
@@ -183,7 +197,7 @@ Die Bibliothek implementiert für zentrale Entitäten wie **Schüler** sogenannt
 
 ## 4. Audit-Logs für kritische Aktionen
 
-Neben der Ausleihen- und Rückgaben-Historie werden kritische administrative Eingriffe im System revisionssicher protokolliert.
+Neben der Ausleihen- und Rückgaben-Historie werden kritische administrative Eingriffe im System protokolliert (append-only als Konvention — kein Bedien- oder Codepfad ändert Einträge, außer der DSGVO-PII-Tilgung; kein Trigger-Zwang, siehe Migration 083 / FACHKONZEPT §10).
 
 - Die Tabelle `audit_logs` speichert dabei unter anderem:
   - Wer (Admin-ID) hat die Aktion durchgeführt?

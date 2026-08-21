@@ -56,9 +56,13 @@ Was fehlt, ist die Quelle:
       Mahnwesen nichts). Für Mail gilt seit 30.07.2026 eine einzige Quelle: die Einstellung
       in der Oberfläche (`mail_settings_config`); die `SMTP_*`-Variablen werden beim ersten
       Start einmalig übernommen und sind danach nur noch Rückfall.
-- [ ] **Restore-Probe** gegen eine Wegwerf-DB in der Zielumgebung. Der automatisierte
-      Round-Trip läuft (`jobs/backup_drill_pg_test.go`); was fehlt, ist der Durchlauf am
-      echten Ziel inklusive Cover-Reset ([DEPLOYMENT.md](DEPLOYMENT.md) §6).
+- [ ] **Restore-Probe** gegen eine Wegwerf-DB in der Zielumgebung. Zwei Ebenen laufen
+      bereits automatisiert: der Round-Trip in CI (`jobs/backup_drill_pg_test.go`) und
+      seit 21.08.2026 ein **wöchentlicher Job** (`jobs/restore_probe.go`, So 03:30 UTC),
+      der das jüngste echte Backup in eine Wegwerf-DB einspielt und das Ergebnis als
+      Befund der Betriebsbereitschaft meldet. Was noch fehlt, ist die **einmalige
+      manuelle Probe am echten Ziel** inklusive Cover-Reset ([DEPLOYMENT.md](DEPLOYMENT.md) §6) —
+      sie prüft zusätzlich den Weg über einen fremden Server.
 - [ ] **Branch-Protection**: Entscheidung vom 30.07.2026 ist, die PR-Pflicht abzuschaffen
       (Solo-Entwicklung). „Block force pushes" und „Restrict deletions" sollten an bleiben —
       sie kosten nichts und sind der einzige Schutz gegen ein Überschreiben der Historie.

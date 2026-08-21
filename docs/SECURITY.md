@@ -314,10 +314,11 @@ Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
 - **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** Entfernt `bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden.
 - **Abgänger-Löschung (`RunGDPRDeleteAbgaenger`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) nach Karenzzeit (30 Tage im neuen Schuljahr), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
+- **Anonymisierung alter Datensätze (`RunGDPRAnonymizeOldData`):** Leert nach Frist (Soft-Delete > 180 Tage, Abgänger > 360 Tage) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, LUSD-ID, Eltern-E-Mail), löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung.
 
 ### Datenverschlüsselung
 - Schülerfotos: AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank. Kein Klartext auf dem Dateisystem.
-- DB-Backups: `pg_dump → gzip → AES-GCM` (Zufalls-Nonce), 0600 Dateiberechtigungen, Rotation.
+- DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht mehr per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format, alte SHA-256-Backups bleiben lesbar. 0600 Dateiberechtigungen, Rotation.
 
 #### `APP_ENCRYPTION_KEY` wechseln
 
@@ -571,5 +572,5 @@ diesen Schutz auf.
 
 ## 📋 Audit-Trail
 
-- Alle administrativen Aktionen und Buchbewegungen werden in `audit_logs` protokolliert (Append-Only).
+- Alle administrativen Aktionen und Buchbewegungen werden in `audit_logs` protokolliert (append-only als Konvention — kein UPDATE/DELETE außer der DSGVO-PII-Tilgung; kein DB-Trigger-Zwang, siehe Migration 083).
 - Auditierung erfolgt **nach** dem Transaktions-Commit (kein Rollback-Risiko).

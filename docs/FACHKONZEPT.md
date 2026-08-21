@@ -172,7 +172,7 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
 - Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" (`ist_abgaenger = true`).
-- Das System anonymisiert Abgänger nach einer gesetzlichen Karenzzeit (Cronjob).
+- Das System anonymisiert Abgänger nach einer gesetzlichen Karenzzeit (Cronjob). Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, LUSD-ID, Foto), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Admin-Audit-Log und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
 - **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund: "Automatisierte Abgänger-Sperre"). Falls die offenen Vorgänge geklärt werden und der Abgänger im Folgejahr in der LUSD wieder als aktiver Schüler auftaucht, hebt das System die Sperre automatisch wieder auf.
 - **Papierkorb:** Manuelles Löschen von Schülern durch den Admin verschiebt diese in einen Papierkorb (Soft-Delete). Ausleihhistorie und Name bleiben vorerst für einen etwaigen Restore erhalten. Erst der `Purge`-Prozess löscht sie endgültig und anonymisiert historische Ausleihen (`schueler_id = NULL`).
 
@@ -189,10 +189,10 @@ Das System bietet einen zentralen Druck-Manager für physische Objekte:
 
 ## 10. System-Audit & Protokollierung
 
-Um Nachvollziehbarkeit bei sensiblen Schuldaten zu garantieren, gibt es ein strenges, unveränderliches Audit-Log:
+Um Nachvollziehbarkeit bei sensiblen Schuldaten zu garantieren, gibt es ein Audit-Log:
 
 - Jede administrative Aktion (Benutzer gelöscht, Schadensfall storniert, Schüler manuell gesperrt) wird in der Tabelle `audit_logs` mit `Akteur`, `Zeitstempel`, `IP` und Vorher-/Nachher-Details protokolliert.
-- Das Audit-Log ist **append-only** (nur anhängend). Weder Admins noch Lehrer können Einträge über die UI verändern oder löschen.
+- Das Audit-Log ist **append-only als Konvention**: Kein Bedien- oder Codepfad verändert oder löscht Einträge — mit einer bewussten Ausnahme, der DSGVO-Tilgung (siehe unten). Ein früherer Datenbank-Trigger, der jede Änderung hart sperrte (Migration 003), wurde mit Migration 083 aufgelöst: Er stand im direkten Widerspruch zur Löschpflicht (Art. 17), die das Audit-Log gerade ändern muss, um Personenbezug zu entfernen. Wer echte Manipulationssicherheit braucht, setzt sie über eine eng begrenzte Löschausnahme um, nicht über ein pauschales Änderungsverbot.
 - Die Daten dienen der Fehlerbehebung und DSGVO-Rechenschaftspflicht.
 - **Aufbewahrungsfrist** (seit 16.08.2026): Auch Protokolle brauchen ein „wie lange“ —
   IP-Adressen und Bearbeiter-Bezüge sind personenbezogen (Speicherbegrenzung, Art. 5).

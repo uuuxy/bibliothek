@@ -208,10 +208,13 @@ if err := rows.Err(); err != nil {
 
 | Job | Zeitplan | Funktion |
 |---|---|---|
-| GDPR Anonymisierung | Startup + täglich | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen |
+| GDPR Anonymisierung | Startup + täglich | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen; `RunGDPRAnonymizeOldData` tilgt fällige Schüler-PII inkl. Audit-Spuren |
 | GDPR Abgänger-Löschung | Startup + täglich | `RunGDPRDeleteAbgaenger` — Hard-Delete nach Karenzzeit |
-| DB-Backup | täglich 02:30 | `pg_dump` → gzip → AES-GCM |
+| DB-Backup | täglich 02:30 | `pg_dump` → gzip → AES-256-GCM (scrypt-Schlüssel, `jobs/backup_krypto.go`) |
+| Restore-Probe | **wöchentlich So 03:30** (`30 3 * * 0`) | `RunRestoreProbe` — jüngstes Backup in eine Wegwerf-DB einspielen, Ergebnis als Befund der Betriebsbereitschaft (`jobs/restore_probe.go`) |
+| Audit-Aufbewahrung | täglich 03:00 | Löscht Audit-Einträge jenseits der Frist (Vorgabe 24 Monate) |
 | Idempotenz-TTL | **stündlich** (`17 * * * *`) | Bereinigt Idempotenz-Keys älter als 24 h |
+| Vormerkung-Verfall | **stündlich** (`23 * * * *`) | Räumt abgelaufene „abholbereit"-Reservierungen ab |
 | Cover-Sync | on-demand + **alle 6 Stunden** (`0 */6 * * *`) | Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry |
 
 ---
