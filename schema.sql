@@ -983,7 +983,10 @@ INSERT INTO schema_migrations (version) VALUES
 ('076_klassensatz_idempotenz.sql'),
 ('077_bestellung_idempotenz.sql'),
 ('078_fach_fk_systematik.sql'),
-('079_klassen_vokabular.sql')
+('079_klassen_vokabular.sql'),
+('080_schueler_anonymized_at_nachziehen.sql'),
+('081_vormerkungen_benachrichtigt_am_entfernen.sql'),
+('082_index_und_unique_paritaet.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -997,6 +1000,12 @@ CREATE INDEX IF NOT EXISTS idx_class_books_klasse ON class_books(class_name);
 CREATE INDEX IF NOT EXISTS idx_schueler_klasse ON schueler(klasse);
 CREATE INDEX IF NOT EXISTS idx_titel_subject ON buecher_titel (subject) WHERE subject IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_vormerkungen_status ON vormerkungen(status);
+-- Aus den Migrationen 011/021 — standen dort, waren aber aus schema.sql verloren
+-- gegangen: Frische Installationen liefen ohne diese Indexe (Schema-Paritätstest).
+CREATE INDEX IF NOT EXISTS idx_ausleihen_ausgeliehen_am ON ausleihen(ausgeliehen_am);
+CREATE INDEX IF NOT EXISTS idx_ausleihen_rueckgabe_am ON ausleihen(rueckgabe_am);
+CREATE INDEX IF NOT EXISTS idx_buecher_titel_erstellt_am ON buecher_titel(erstellt_am);
+CREATE INDEX IF NOT EXISTS idx_schueler_deleted_at ON schueler(deleted_at) WHERE deleted_at IS NULL;
 
 -- -------------------------------------------------------------
 -- 6. VIEWS

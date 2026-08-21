@@ -68,6 +68,9 @@ Thumbs.db
 !schema.sql
 !migrations/
 !migrations/*.sql
+# Eingefrorene historische Baseline für den Schema-Paritätstest — reines DDL
+# (das schema.sql von Commit e5740b95), keine Daten. Bewusst nur diese EINE Datei.
+!db/testdata/schema_baseline_e5740b95.sql
 backups/
 *.sql.gz
 *.sql.gz.enc
