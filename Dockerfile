@@ -69,7 +69,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o rotate-encryption-key 
 # ==============================================================================
 # Stage 3: Runner container
 # ==============================================================================
-FROM alpine:3.21
+FROM alpine:3.24
 WORKDIR /app
 
 # ca-certificates: sichere ausgehende Verbindungen (Cover-/Metadaten-APIs).
