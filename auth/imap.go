@@ -96,6 +96,17 @@ func istLokaleUmgebung() bool {
 	}
 }
 
+// ErrMailserverNichtErreichbar trennt den Transport-Ausfall vom falschen Passwort
+// (Ausfallmatrix 20.08.2026): Vorher wurde JEDER IMAP-Fehler — Server down, Timeout,
+// Firewall — dem Nutzer als „invalid email or password" gemeldet UND als Fehlversuch
+// gezählt. Bei einem Mailserver-Ausfall probierte das Kollegium sein (richtiges)
+// Passwort erneut und sperrte sich nach fünf Versuchen für 15 Minuten selbst aus —
+// ein Serverausfall wurde zur Massen-Selbstsperre. Der Login-Handler antwortet auf
+// diesen Fehler mit 503 und zählt KEINEN Fehlversuch.
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung (503)
+var ErrMailserverNichtErreichbar = errors.New("Mailserver ist nicht erreichbar — Anmeldung derzeit nicht möglich, bitte später erneut versuchen")
+
 // PruefeIMAPKonfiguration validiert IMAP_HOST beim Serverstart, damit eine
 // unbrauchbare oder gefährliche Anmeldekonfiguration sofort auffällt und nicht
 // erst beim ersten Login-Versuch eines Nutzers.
@@ -183,8 +194,10 @@ func AuthenticateIMAP(email, password string) error {
 
 	c, conn, err := connectIMAP(ctx, addr, tlsConfig)
 	if err != nil {
+		// Transport-Ausfall, kein Zugangsdaten-Problem: als solcher markiert, damit der
+		// Login-Handler 503 antwortet statt 401 + Fehlversuch (siehe Sentinel oben).
 		slog.Error("IMAP Connection failed", "addr", addr, "error", err)
-		return fmt.Errorf("verbindung fehlgeschlagen: %v", err)
+		return ErrMailserverNichtErreichbar
 	}
 	defer func() {
 		if c != nil {
@@ -197,6 +210,11 @@ func AuthenticateIMAP(email, password string) error {
 	if err := loginIMAP(ctx, c, conn, email, password); err != nil {
 		slog.Warn("IMAP Login failed", "error", err)
 		closeutil.LogClose(conn, imapConnSource)
+		// Ein falsches Passwort beantwortet der Server SOFORT mit „NO". Läuft stattdessen
+		// die Frist ab, hängt der Server — das ist ein Ausfall, kein Zugangsdaten-Fehler.
+		if ctx.Err() != nil {
+			return ErrMailserverNichtErreichbar
+		}
 		return fmt.Errorf("anmeldung fehlgeschlagen")
 	}
 

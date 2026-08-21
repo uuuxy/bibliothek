@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+	"net"
 	"strings"
 	"testing"
 )
@@ -89,4 +91,29 @@ func TestAuthenticateIMAP_MockNurLokal(t *testing.T) {
 			t.Fatal("leerer IMAP_HOST wurde akzeptiert; want Ablehnung ohne Netzzugriff")
 		}
 	})
+}
+
+// Ein nicht erreichbarer Server muss den Sentinel ErrMailserverNichtErreichbar
+// liefern — daran erkennt der Login-Handler den Transport-Ausfall (503) und
+// unterscheidet ihn vom falschen Passwort (401 + Fehlversuch).
+func TestAuthenticateIMAP_ToterServerLiefertSentinel(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Listener: %v", err)
+	}
+	host, port, err := net.SplitHostPort(l.Addr().String())
+	if err != nil {
+		t.Fatalf("SplitHostPort: %v", err)
+	}
+	if err := l.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	t.Setenv("IMAP_HOST", host)
+	t.Setenv("IMAP_PORT", port)
+
+	authErr := AuthenticateIMAP("wer@schule.de", "egal")
+	if !errors.Is(authErr, ErrMailserverNichtErreichbar) {
+		t.Fatalf("erwartet ErrMailserverNichtErreichbar, bekam: %v", authErr)
+	}
 }

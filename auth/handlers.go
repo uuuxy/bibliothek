@@ -140,8 +140,16 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		user, authSuccess := verifyIMAPCredentials(ctx, dbPool, req.Email, password)
-		if !authSuccess {
+		user, verifyErr := verifyIMAPCredentials(ctx, dbPool, req.Email, password)
+		if verifyErr != nil {
+			// Mailserver-Ausfall ≠ falsches Passwort (Ausfallmatrix 20.08.2026): Vorher
+			// bekam der Nutzer bei Server-Down „invalid email or password" UND einen
+			// gezählten Fehlversuch — wer sein richtiges Passwort dann erneut probierte,
+			// sperrte sich selbst für 15 Minuten. Jetzt 503 ohne recordFailure.
+			if errors.Is(verifyErr, ErrMailserverNichtErreichbar) {
+				apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
+				return
+			}
 			globalLoginLimiter.recordFailure(bruteForceKey)
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 			return
@@ -230,12 +238,13 @@ func validateLoginCredentials(w http.ResponseWriter, req LoginRequest) (password
 }
 
 // verifyIMAPCredentials prüft die Zugangsdaten per IMAP (Roundcube-SSO) und lädt bei
-// Erfolg den lokal registrierten Benutzer. ok=false bedeutet: kein gültiger Login
-// (IMAP fehlgeschlagen oder Benutzer nicht in der lokalen DB).
-func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, password string) (loginUser, bool) {
+// Erfolg den lokal registrierten Benutzer. Ein Fehler bedeutet: kein gültiger Login.
+// ErrMailserverNichtErreichbar wird UNVERÄNDERT durchgereicht, damit der Handler den
+// Transport-Ausfall vom falschen Passwort unterscheiden kann (503 statt 401+Sperre).
+func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, password string) (loginUser, error) {
 	// ONLY perform IMAP verification (Roundcube SSO)
 	if imapErr := AuthenticateIMAP(email, password); imapErr != nil {
-		return loginUser{}, false
+		return loginUser{}, imapErr
 	}
 
 	// IMAP succeeded, check if the user is registered in our local DB
@@ -253,11 +262,11 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 		// bisherigen Verhalten (kein Login).
 		neu, anlegeErr := legeZugangsanfrageAn(ctx, dbPool, email)
 		if anlegeErr != nil {
-			return loginUser{}, false
+			return loginUser{}, anlegeErr
 		}
-		return neu, true
+		return neu, nil
 	}
-	return u, true
+	return u, nil
 }
 
 // loadPermissionsForRole lädt die effektiven Rechte aus der konfigurierbaren

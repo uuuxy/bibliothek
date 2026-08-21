@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -207,5 +208,64 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 	}
 	if claims.BarcodeID != "BC-ECHT" {
 		t.Errorf("Barcode im Token = %q, erwartet den aus der Datenbank (BC-ECHT)", claims.BarcodeID)
+	}
+}
+
+// totePortAdresse reserviert einen freien TCP-Port und gibt ihn sofort wieder frei —
+// Verbindungen dorthin scheitern mit „connection refused", ohne echtes Netz.
+func totePortAdresse(t *testing.T) (host, port string) {
+	t.Helper()
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Listener: %v", err)
+	}
+	host, port, err = net.SplitHostPort(l.Addr().String())
+	if err != nil {
+		t.Fatalf("SplitHostPort: %v", err)
+	}
+	if err := l.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	return host, port
+}
+
+// TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort schließt die
+// Massen-Selbstsperre aus der Ausfallmatrix (20.08.2026): Ein toter Mailserver
+// wurde vorher als „invalid email or password" (401) gemeldet UND als Fehlversuch
+// gezählt — wer sein richtiges Passwort daraufhin erneut probierte, sperrte sich
+// nach fünf Versuchen für 15 Minuten selbst aus. Jetzt: 503 mit ehrlicher Meldung,
+// KEIN Fehlversuch — nach Rückkehr des Servers klappt der Login sofort.
+func TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+	host, port := totePortAdresse(t)
+	t.Setenv("IMAP_HOST", host)
+	t.Setenv("IMAP_PORT", port)
+
+	a, mock := newTestAuthenticator(t, 12*time.Hour)
+	email := fmt.Sprintf("ausfall-%d@schule.de", time.Now().UnixNano())
+	body := fmt.Sprintf(`{"email":%q,"password":"richtig"}`, email)
+
+	// 6 Versuche gegen den toten Server: jedes Mal 503, nie 429 — die DB wird nie gefragt.
+	for i := 1; i <= 6; i++ {
+		rec := doLogin(t, a, mock, body)
+		if rec.Code != http.StatusServiceUnavailable {
+			t.Fatalf("Versuch %d: erwartet 503 bei totem Mailserver, bekam %d: %s", i, rec.Code, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), "Mailserver") {
+			t.Fatalf("Versuch %d: Meldung muss den Mailserver nennen, nicht das Passwort: %s", i, rec.Body.String())
+		}
+	}
+
+	// Server „kommt zurück" (Mock): Der Login muss SOFORT gelingen — kein 429,
+	// weil die Ausfall-Versuche keinen Fehlversuch gezählt haben dürfen.
+	aktiviereMockIMAP(t)
+	mock.ExpectQuery(benutzerSelect).
+		WithArgs(email).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
+			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true))
+
+	rec := doLogin(t, a, mock, body)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("nach Server-Rückkehr: erwartet 200, bekam %d — die Ausfall-Versuche haben den Nutzer gesperrt: %s", rec.Code, rec.Body.String())
 	}
 }
