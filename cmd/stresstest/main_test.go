@@ -108,32 +108,15 @@ func TestStresstestRunner_NetworkError(t *testing.T) {
 }
 
 func TestLoadConfig_Success(t *testing.T) {
-	// Back up existing .env if it exists
-	var existingEnv []byte
-	hasExistingEnv := true
-	if data, err := os.ReadFile(".env"); err == nil {
-		existingEnv = data
-	} else {
-		hasExistingEnv = false
-	}
-
-	// Setup a temporary .env file in the current working directory
-	envContent := []byte("PORT=9090\nJWT_SECRET=supersecret\n")
-	err := os.WriteFile(".env", envContent, 0644)
-	require.NoError(t, err)
-	defer func() {
-		if hasExistingEnv {
-			restoreErr := os.WriteFile(".env", existingEnv, 0644)
-			if restoreErr != nil {
-				t.Logf("failed to restore .env: %v", restoreErr)
-			}
-		} else {
-			err := os.Remove(".env")
-			if err != nil {
-				t.Logf("failed to remove .env: %v", err)
-			}
-		}
-	}()
+	// Hermetisch in einem leeren Temp-Verzeichnis: loadConfig liest ZUERST ../../.env
+	// (die echte Projekt-Root-.env mit PORT=8081) und nur ersatzweise die .env im cwd.
+	// Der frühere Test schrieb die cwd-.env und manipulierte die echte Datei, seine
+	// Erwartung (9090) griff aber nur, wenn ../../.env fehlt — lokal war sie da, in CI
+	// nicht (gitignored) → grün aus Umgebungsgunst. Ein t.TempDir als cwd hat weder eine
+	// ../../.env noch eine störende echte .env; die hier geschriebene wird garantiert
+	// gelesen, und die echte Datei bleibt unangetastet.
+	t.Chdir(t.TempDir())
+	require.NoError(t, os.WriteFile(".env", []byte("PORT=9090\nJWT_SECRET=supersecret\n"), 0o644))
 
 	cfg := loadConfig()
 	assert.Equal(t, "9090", cfg.Port)
