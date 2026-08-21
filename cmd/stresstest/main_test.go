@@ -123,7 +123,10 @@ func TestLoadConfig_Success(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		if hasExistingEnv {
-			_ = os.WriteFile(".env", existingEnv, 0644)
+			restoreErr := os.WriteFile(".env", existingEnv, 0644)
+			if restoreErr != nil {
+				t.Logf("failed to restore .env: %v", restoreErr)
+			}
 		} else {
 			err := os.Remove(".env")
 			if err != nil {
