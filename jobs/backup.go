@@ -4,10 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
@@ -31,22 +27,18 @@ func escapePgPass(s string) string {
 
 // MinBackupSchluesselLaenge ist die Mindestlänge der Backup-Passphrase.
 //
-// Der AES-Schlüssel wird per SHA-256 aus der Passphrase abgeleitet — einer schnellen
-// Hashfunktion, keiner rechenintensiven KDF (argon2id/scrypt). Wer eine Backup-Datei
-// in die Hände bekommt, kann Kandidaten also mit sehr hoher Rate durchprobieren. Bei
-// einer langen, zufälligen Passphrase ist das trotzdem aussichtslos; bei einem
-// gemerkten Wort ist es eine Frage von Minuten.
-//
-// Die KDF selbst bleibt bewusst unverändert: Sie ist das Dateiformat. Ein Wechsel
-// würde jedes bereits erstellte Backup unwiederbringlich unlesbar machen
-// (cmd/restore-backup leitet identisch ab), und ein Sicherungssystem, dessen alte
-// Stände man nicht mehr öffnen kann, ist schlimmer als eine schwächere Ableitung.
-// Stattdessen wird die Passphrase-Länge geprüft und im Admin-Dashboard gemeldet.
+// Seit 21.08.2026 leitet scrypt den Schlüssel ab (backup_krypto.go) — speicherhart und
+// pro Datei gesalzen, statt eines einzelnen SHA-256-Durchlaufs. Das nimmt dem
+// Offline-Rateangriff auf eine erbeutete Backup-Datei die Geschwindigkeit. Die
+// Längenprüfung bleibt als zweite Verteidigung: scrypt erschwert das Raten, ersetzt
+// aber keine Passphrase-Entropie — eine kurze bleibt kurz. Der frühere Einwand „ein
+// KDF-Wechsel macht alte Backups unlesbar" ist ausgeräumt: Das Dateiformat ist jetzt
+// versioniert, DecryptBackup öffnet beide Stände (siehe backup_krypto.go).
 const MinBackupSchluesselLaenge = 32
 
-// SchluesselIstSchwach meldet, ob die Backup-Passphrase zu kurz ist, um die schnelle
-// SHA-256-Ableitung auszugleichen. Ein leerer Schlüssel gilt hier NICHT als schwach —
-// das ist der separate, schwerwiegendere Fall "gar kein Backup".
+// SchluesselIstSchwach meldet, ob die Backup-Passphrase zu kurz ist. Ein leerer
+// Schlüssel gilt hier NICHT als schwach — das ist der separate, schwerwiegendere Fall
+// "gar kein Backup".
 func SchluesselIstSchwach(schluessel string) bool {
 	return schluessel != "" && len(schluessel) < MinBackupSchluesselLaenge
 }
@@ -68,10 +60,6 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// Leitet einen stabilen 32-Byte AES-Schlüssel via SHA-256 aus der Passphrase ab.
-	// In der Produktion durch eine saubere KDF (argon2id/scrypt) ersetzen, falls Schlüsselrotation nötig ist.
-	keyBytes := sha256.Sum256([]byte(encKey))
-
 	timestamp := time.Now().UTC().Format("2006-01-02T150405Z")
 	outFilename := filepath.Join(backupDir, fmt.Sprintf("backup_%s.sql.gz.enc", timestamp))
 
@@ -85,8 +73,9 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// AES-256-GCM Verschlüsselung des komprimierten Dumps
-	encrypted, err := encryptAESGCM(keyBytes[:], compressedData)
+	// AES-256-GCM mit scrypt-abgeleitetem Schlüssel (backup_krypto.go). Neue Backups
+	// tragen das starke Format; alte SHA-256-Dateien bleiben über DecryptBackup lesbar.
+	encrypted, err := verschluesseleBackup(encKey, compressedData)
 	if err != nil {
 		// #nosec G706
 		log.Printf("Backup: encryption failed: %v", err)
@@ -307,43 +296,11 @@ func uploadBackupToS3(ctx context.Context, outFilename string, encrypted []byte)
 	log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
 }
 
-// encryptAESGCM verschlüsselt Klartext mit AES-256-GCM.
-// Ausgabeformat: [12-Byte Nonce][Ciphertext+Tag].
-func encryptAESGCM(key, plaintext []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, fmt.Errorf("AES cipher init: %w", err)
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, fmt.Errorf("GCM init: %w", err)
-	}
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := rand.Read(nonce); err != nil {
-		return nil, fmt.Errorf("nonce generation: %w", err)
-	}
-	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
-	return ciphertext, nil
-}
-
-// DecryptBackup ist eine Hilfsfunktion für Disaster-Recovery-Wiederherstellungen.
-// Verwendung: .enc Datei lesen, DecryptBackup(key, data) aufrufen, gunzip, Wiederherstellung über psql.
+// DecryptBackup ist die Wiederherstellungs-Entschlüsselung für cmd/restore-backup,
+// die Restore-Probe und die Drill-Tests. Sie erkennt am Dateikopf das Format:
+// scrypt (neu, backup_krypto.go) oder SHA-256 (alt) — alte Backups bleiben so lesbar.
 func DecryptBackup(encKey string, ciphertext []byte) ([]byte, error) {
-	keyBytes := sha256.Sum256([]byte(encKey))
-	block, err := aes.NewCipher(keyBytes[:])
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	nonceSize := gcm.NonceSize()
-	if len(ciphertext) < nonceSize {
-		return nil, fmt.Errorf("ciphertext too short")
-	}
-	nonce, ct := ciphertext[:nonceSize], ciphertext[nonceSize:]
-	return gcm.Open(nil, nonce, ct, nil)
+	return entschluesseleBackupDaten(encKey, ciphertext)
 }
 
 // rotateBackups löscht die ältesten Backup-Dateien, wenn es mehr als maxKeep gibt.
