@@ -1,5 +1,6 @@
 <script>
 	import { apiPut } from './apiFetch.js';
+	import { zahlOderUnveraendert } from './settingsWerte.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import SettingField from './components/settings/SettingField.svelte';
 	import Switch from './components/ui/Switch.svelte';
@@ -28,6 +29,7 @@
 	 * @property {number} lesehistorieLernmittelTage
 	 * @property {number} thekeLeerenMinuten
 	 * @property {number} sperreMinuten
+	 * @property {() => void | Promise<void>} [onSaved] Nach dem Speichern neu laden (leer gelassene Zahlenfelder zeigen sonst nicht den gespeicherten Wert)
 	 */
 
 	/** @type {Props} */
@@ -53,7 +55,8 @@
 		lesehistorieTage = $bindable(),
 		lesehistorieLernmittelTage = $bindable(),
 		thekeLeerenMinuten = $bindable(),
-		sperreMinuten = $bindable()
+		sperreMinuten = $bindable(),
+		onSaved = undefined
 	} = $props();
 
 	let saving = $state(false);
@@ -82,13 +85,16 @@
 				// "abschalten" (dann verschickt das System keine Bestätigungs-Links mehr).
 				oeffentliche_adresse: oeffentlicheAdresse,
 				alarm_empfaenger: alarmEmpfaenger,
-				// Immer mitgeschickt: 0 heisst hier ausdrücklich "aus" und ist ein Wert.
-				lesehistorie_tage: Number(lesehistorieTage) || 0,
-				lesehistorie_lernmittel_tage: Number(lesehistorieLernmittelTage) || 0,
-				theke_leeren_minuten: Number(thekeLeerenMinuten) || 0,
-				sperre_minuten: Number(sperreMinuten) || 0
+				// 0 heisst hier ausdrücklich "aus" und ist ein Wert — aber nur die GETIPPTE 0.
+				// Ein geleertes Feld geht als null raus (= unverändert lassen); vorher machte
+				// `Number(null) || 0` daraus still ein "aus" (Prüfung 22.08.2026, A4).
+				lesehistorie_tage: zahlOderUnveraendert(lesehistorieTage),
+				lesehistorie_lernmittel_tage: zahlOderUnveraendert(lesehistorieLernmittelTage),
+				theke_leeren_minuten: zahlOderUnveraendert(thekeLeerenMinuten),
+				sperre_minuten: zahlOderUnveraendert(sperreMinuten)
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
+			if (onSaved) await onSaved();
 		} catch {
 			// Toast already shown by apiPut
 		}
@@ -311,7 +317,7 @@
 	<section class="border-b border-outline-variant pb-8">
 		{@render sectionHeader(
 			'Datenschutz & Sitzung',
-			'Lesehistorie: Tage nach der Rückgabe, nach denen eine Ausleihe nicht mehr dem Schüler zugeordnet ist (sie zählt weiter in der Statistik, nur ohne Namen). Offene Schadensfälle halten die Zuordnung. Sitzung: Minuten ohne Bedienung, bis die Theke den geladenen Schüler fallen lässt bzw. der Sperrbildschirm kommt. 0 = aus.'
+			'Lesehistorie: Tage nach der Rückgabe, nach denen eine Ausleihe nicht mehr dem Schüler zugeordnet ist (sie zählt weiter in der Statistik, nur ohne Namen). Offene Schadensfälle halten die Zuordnung. Sitzung: Minuten ohne Bedienung, bis die Theke den geladenen Schüler fallen lässt bzw. der Sperrbildschirm kommt. Eine getippte 0 = aus; ein leer gelassenes Feld bleibt beim Speichern unverändert.'
 		)}
 		<div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-10">
 			<SettingField

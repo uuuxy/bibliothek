@@ -168,6 +168,7 @@
 					bind:lesehistorieLernmittelTage
 					bind:thekeLeerenMinuten
 					bind:sperreMinuten
+					onSaved={loadSettings}
 				/>
 
 				<!-- TAB: MAHNWESEN-ROUTING -->
