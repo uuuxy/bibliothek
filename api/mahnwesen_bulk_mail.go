@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,9 +10,11 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/mailservice"
 	"bibliothek/repository"
 )
 
@@ -34,9 +37,14 @@ type klassenVersandRequest struct {
 }
 
 // bulkOverdueResponse ist die Antwort von POST /api/mail/send-bulk-overdue.
+// failed_count zählt Klassen, deren Versand FEHLSCHLUG — getrennt von skipped (keine
+// Adresse / keine Fälle). Bis 22.08.2026 landeten SMTP-Ausfälle bei „übersprungen (keine
+// E-Mail hinterlegt oder keine Fälle)" — ein Ausfall sah aus wie Absicht (Prüfung A8).
 type bulkOverdueResponse struct {
 	SentCount    int    `json:"sent_count"`
 	SkippedCount int    `json:"skipped_count"`
+	FailedCount  int    `json:"failed_count"`
+	Abgebrochen  bool   `json:"abgebrochen"`
 	Message      string `json:"message"`
 }
 
@@ -122,7 +130,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 		// 7. Je Klasse eine eigene Mahnliste versenden.
 		//    generateMahnPDF/SendEmail werden injiziert, damit die Skip- und
 		//    Adressierungslogik ohne echten PDF-/Mailversand testbar bleibt.
-		sent, skipped := versendeKlassenMahnungen(gewaehlt, generateMahnPDF, SendEmail)
+		erg := versendeKlassenMahnungen(gewaehlt, generateMahnPDF, SendEmail)
 
 		// 8. Ergebnis protokollieren.
 		s.logKlassenVersandAudit(r, "BULK_OVERDUE_MAIL", klassenVersandAudit{
@@ -131,14 +139,18 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 			AlleKlassen:   req.Klassen == nil,
 			OverrideEmail: req.OverrideEmail,
 			Unbekannt:     unbekannt,
-			Sent:          sent,
-			Skipped:       skipped,
+			Sent:          erg.Sent,
+			Skipped:       erg.Skipped,
+			Failed:        erg.Failed,
+			Abgebrochen:   erg.Abgebrochen,
 		})
 
 		RespondJSON(w, http.StatusOK, bulkOverdueResponse{
-			SentCount:    sent,
-			SkippedCount: skipped,
-			Message:      bulkOverdueMeldung(sent, skipped, req.OverrideEmail),
+			SentCount:    erg.Sent,
+			SkippedCount: erg.Skipped,
+			FailedCount:  erg.Failed,
+			Abgebrochen:  erg.Abgebrochen,
+			Message:      bulkOverdueMeldung(erg, req.OverrideEmail),
 		})
 	}
 }
@@ -277,21 +289,40 @@ func klassennamen(klassen []repository.MahnwesenKlasse) []string {
 // bulkOverdueMeldung formuliert die Rückmeldung so, dass der Empfänger darin
 // vorkommt. „12 versendet" allein verrät nicht, ob sie an die Klassenleitungen
 // oder an die von Hand eingetippte Adresse gingen.
-func bulkOverdueMeldung(sent, skipped int, override string) string {
-	if sent == 0 && skipped == 0 {
+func bulkOverdueMeldung(erg versandErgebnis, override string) string {
+	if erg.Sent == 0 && erg.Skipped == 0 && erg.Failed == 0 {
 		return "Keine der gewählten Klassen hat noch überfällige Fälle – nichts versendet."
 	}
 	ziel := "an die Klassenleitungen"
 	if override != "" {
 		ziel = "an " + override
 	}
-	return fmt.Sprintf("%d Klassen-Mahnliste(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine Fälle).", sent, ziel, skipped)
+	text := fmt.Sprintf("%d Klassen-Mahnliste(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine Fälle).", erg.Sent, ziel, erg.Skipped)
+	if erg.Failed > 0 {
+		text += fmt.Sprintf(" %d FEHLGESCHLAGEN — nicht zugestellt.", erg.Failed)
+	}
+	if erg.Abgebrochen {
+		text += " Lauf nach Mailserver-Fehler abgebrochen; bitte Mail-Server prüfen und erneut senden (eine Klasse wird nie doppelt gemahnt — der Mailversand erhöht die Mahnstufe nicht)."
+	}
+	return text
+}
+
+// versandErgebnis trennt drei Ausgänge, die vorher ein Zähler waren: gesendet,
+// übersprungen (keine Adresse / keine Fälle — Absicht) und fehlgeschlagen (PDF- oder
+// Versandfehler — ein Problem). Abgebrochen: nach einem Mailserver-Fehler
+// (ErrSMTPVersand) wurden die restlichen Klassen nicht mehr versucht — sonst hinge
+// jeder weitere Versuch bis zu 70 s am toten Relay; sie zählen als fehlgeschlagen.
+type versandErgebnis struct {
+	Sent, Skipped, Failed int
+	Abgebrochen           bool
 }
 
 // versendeKlassenMahnungen erzeugt je Klasse das Mahn-PDF und mailt es an die
 // hinterlegte Klassenleitung. Klassen ohne E-Mail oder ohne überfällige Schüler
-// werden übersprungen. Ein Fehler bei einer einzelnen Klasse bricht den Lauf NICHT
-// ab (Best-Effort), wird aber protokolliert und als "skipped" gezählt.
+// werden übersprungen. Ein Fehler bei einer einzelnen Klasse (PDF, abgelehnte Adresse)
+// bricht den Lauf NICHT ab, zählt aber als FEHLGESCHLAGEN — nicht als übersprungen. Ein
+// Mailserver-Fehler (ErrSMTPVersand) bricht ab: Das Relay ist weg, jede weitere Klasse
+// hinge nur bis zur Frist; die Restlichen zählen als fehlgeschlagen.
 //
 // generatePDF und sendMail sind injiziert (Produktion: generateMahnPDF/SendEmail),
 // damit die Skip- und Adressierungslogik ohne echten PDF-/Mailversand testbar ist.
@@ -299,10 +330,15 @@ func versendeKlassenMahnungen(
 	klassen []repository.MahnwesenKlasse,
 	generatePDF func([]repository.MahnwesenKlasse) ([]byte, error),
 	sendMail func(MailRequest) error,
-) (sent, skipped int) {
+) versandErgebnis {
+	var erg versandErgebnis
 	for _, kl := range klassen {
 		if kl.LehrerEmail == "" || len(kl.Schueler) == 0 {
-			skipped++
+			erg.Skipped++
+			continue
+		}
+		if erg.Abgebrochen {
+			erg.Failed++
 			continue
 		}
 
@@ -311,7 +347,7 @@ func versendeKlassenMahnungen(
 		pdfBytes, err := generatePDF(einzelKlasse)
 		if err != nil {
 			log.Printf("bulk-overdue: PDF für Klasse %s fehlgeschlagen: %v", kl.Klasse, err)
-			skipped++
+			erg.Failed++
 			continue
 		}
 
@@ -323,12 +359,15 @@ func versendeKlassenMahnungen(
 
 		if err := sendMail(mailReq); err != nil {
 			log.Printf("bulk-overdue: Versand an Klasse %s (%s) fehlgeschlagen: %v", kl.Klasse, kl.LehrerEmail, err)
-			skipped++
+			erg.Failed++
+			if errors.Is(err, mailservice.ErrSMTPVersand) {
+				erg.Abgebrochen = true
+			}
 			continue
 		}
-		sent++
+		erg.Sent++
 	}
-	return sent, skipped
+	return erg
 }
 
 // klassenVersandAudit ist der details-Payload jedes klassenweisen Massenversands
@@ -348,6 +387,8 @@ type klassenVersandAudit struct {
 	Unbekannt     []string `json:"unbekannt,omitempty"`
 	Sent          int      `json:"sent"`
 	Skipped       int      `json:"skipped"`
+	Failed        int      `json:"failed,omitempty"`
+	Abgebrochen   bool     `json:"abgebrochen,omitempty"`
 }
 
 // logKlassenVersandAudit protokolliert einen Massenversand im audit_logs — analog
@@ -368,5 +409,11 @@ func (s *Server) logKlassenVersandAudit(r *http.Request, aktion string, details 
 		log.Printf("%s: Audit-Details nicht serialisierbar: %v", aktion, err)
 		return
 	}
-	logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, aktion, string(payload), getIP(r)))
+	// Vom Request-Kontext abgekoppelt: Der Ende-Eintrag kommt NACH dem Versand, und ein
+	// Lauf über viele Klassen überlebt die 15-s-TimeoutMiddleware — mit r.Context() wäre
+	// der INSERT still gescheitert, und genau der Eintrag mit den Zahlen fehlte
+	// (Prüfung 22.08.2026, A8). Claims bleiben erhalten (WithoutCancel behält Werte).
+	ctx, abbruch := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
+	defer abbruch()
+	logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, aktion, string(payload), getIP(r)))
 }

@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bibliothek/mailservice"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -110,19 +112,21 @@ func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 		},
 	}
 
-	sent, skipped := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
+	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
 
-	if sent != 1 || skipped != 2 {
-		t.Fatalf("sent=%d skipped=%d, want sent=1 skipped=2", sent, skipped)
+	if erg.Sent != 1 || erg.Skipped != 2 || erg.Failed != 0 {
+		t.Fatalf("sent=%d skipped=%d failed=%d, want sent=1 skipped=2 failed=0", erg.Sent, erg.Skipped, erg.Failed)
 	}
 	if len(empfaenger) != 1 || empfaenger[0] != "lehrer5a@schule.de" {
 		t.Fatalf("Empfänger = %v, want genau [lehrer5a@schule.de] — keine Mail an Klassen ohne Adresse!", empfaenger)
 	}
 }
 
-// Schlägt der Versand einer Klasse fehl, läuft der Rest weiter (Best-Effort) und
-// die betroffene Klasse zählt als übersprungen.
-func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsSkip(t *testing.T) {
+// Schlägt der Versand einer Klasse fehl (abgelehnte Adresse o. ä.), läuft der Rest
+// weiter (Best-Effort) — aber die Klasse zählt als FEHLGESCHLAGEN, nicht als
+// übersprungen: „übersprungen (keine E-Mail hinterlegt)" ist Absicht, ein Ausfall nicht
+// (Prüfung 22.08.2026, A8).
+func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) {
 		return []byte("%PDF-fake"), nil
 	}
@@ -141,9 +145,45 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsSkip(t *testing.T) {
 		{Klasse: "err", LehrerEmail: "kaputt@schule.de", Schueler: schueler},
 	}
 
-	sent, skipped := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
-	if sent != 1 || skipped != 1 {
-		t.Fatalf("sent=%d skipped=%d, want sent=1 skipped=1 (Versandfehler = skip, Lauf bricht nicht ab)", sent, skipped)
+	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
+	if erg.Sent != 1 || erg.Skipped != 0 || erg.Failed != 1 || erg.Abgebrochen {
+		t.Fatalf("%+v, want sent=1 skipped=0 failed=1 nicht abgebrochen (Einzelfehler = fehlgeschlagen, Lauf läuft weiter)", erg)
+	}
+}
+
+// Mailserver-Fehler (ErrSMTPVersand) bricht den Lauf ab: Das Relay ist weg, jede weitere
+// Klasse hinge nur bis zur Frist. Die Restlichen zählen als fehlgeschlagen, die Meldung
+// sagt es — vorher standen sie unter „übersprungen (keine E-Mail hinterlegt oder keine
+// Fälle)", und der Ausfall sah aus wie Absicht.
+func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T) {
+	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil }
+	var versuche []string
+	fakeSend := func(m MailRequest) error {
+		versuche = append(versuche, m.To)
+		if m.To == "zweite@schule.de" {
+			return fmt.Errorf("%w (Server relay:587): connection refused", mailservice.ErrSMTPVersand)
+		}
+		return nil
+	}
+	schueler := []repository.UeberfaelligerSchueler{
+		{SchuelerID: "s1", Name: "Max", Klasse: "x", Medien: []repository.UeberfaelligesMedium{{Titel: "Buch"}}},
+	}
+	klassen := []repository.MahnwesenKlasse{
+		{Klasse: "5a", LehrerEmail: "erste@schule.de", Schueler: schueler},
+		{Klasse: "5b", LehrerEmail: "zweite@schule.de", Schueler: schueler},
+		{Klasse: "5c", LehrerEmail: "dritte@schule.de", Schueler: schueler},
+		{Klasse: "5d", LehrerEmail: "", Schueler: schueler},
+	}
+	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
+	if erg.Sent != 1 || erg.Failed != 2 || erg.Skipped != 1 || !erg.Abgebrochen {
+		t.Fatalf("%+v, want sent=1 failed=2 (5b + nicht versuchte 5c) skipped=1 abgebrochen", erg)
+	}
+	if len(versuche) != 2 {
+		t.Fatalf("nach dem Mailserver-Fehler darf keine weitere Klasse versucht werden: %v", versuche)
+	}
+	msg := bulkOverdueMeldung(erg, "")
+	if !strings.Contains(msg, "2 FEHLGESCHLAGEN") || !strings.Contains(msg, "abgebrochen") {
+		t.Fatalf("Meldung nennt den Ausfall nicht: %q", msg)
 	}
 }
 
@@ -288,14 +328,14 @@ func TestZieleAufOverride_LenktAlleKlassenUm(t *testing.T) {
 	umgelenkt := zieleAufOverride(original, "sekretariat@schule.de")
 
 	var empfaenger []string
-	sent, skipped := versendeKlassenMahnungen(
+	erg := versendeKlassenMahnungen(
 		umgelenkt,
 		func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil },
 		func(m MailRequest) error { empfaenger = append(empfaenger, m.To); return nil },
 	)
 
-	if sent != 2 || skipped != 1 {
-		t.Fatalf("sent=%d skipped=%d, want sent=2 skipped=1 (7c hat keine Fälle)", sent, skipped)
+	if erg.Sent != 2 || erg.Skipped != 1 {
+		t.Fatalf("sent=%d skipped=%d, want sent=2 skipped=1 (7c hat keine Fälle)", erg.Sent, erg.Skipped)
 	}
 	for _, e := range empfaenger {
 		if e != "sekretariat@schule.de" {

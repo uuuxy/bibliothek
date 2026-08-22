@@ -35,9 +35,11 @@ async function sendBulkOverdueMails(auswahl) {
 		});
 		const json = await res.json();
 		if (res.ok) {
+			// failed_count > 0: Teil des Laufs ist NICHT zugestellt — als Warnung, nicht
+			// als Erfolg (vorher hieß jeder 200er „versendet"; Prüfung 22.08.2026, A8).
 			showToast(
 				json.message ?? `${json.sent_count ?? 0} Klassen-Mahnliste(n) versendet.`,
-				'success'
+				(json.failed_count ?? 0) > 0 ? 'warning' : 'success'
 			);
 		} else {
 			showToast(json.error ?? json.message ?? 'Versand fehlgeschlagen.', 'error');
