@@ -43,6 +43,55 @@ Zwei Regeln dazu:
 
 ---
 
+## Offen — Prüfung 22.08.2026 (Daniel-Raster über alle Commits seit 21.08.)
+
+Sechs unabhängige, nur lesende Durchgänge nach dem abstrahierten Raster des externen
+DB-Prüfberichts (Konvention statt Regel · Spezialwert/Doppeljob · zwei Wahrheitsquellen ·
+wer sieht was · stille Fehler · Zeit/Reihenfolge · Gate-Ehrlichkeit · Lebenszyklus) über
+die ~70 Commits vom 21./22.08. Jeder Fund unten ist **am Code verifiziert** (Datei:Zeile),
+die HOCH-Funde zusätzlich am Live-Pfad bzw. per Probe gegen echtes Postgres.
+
+### Kategorie A — kann still jemandem schaden
+
+| Fund | Nachweis | Fix-Idee |
+|---|---|---|
+| **LUSD Nur-Name: bestätigter Bestandsschüler, dessen Name ZWEIMAL in der Datei steht, wird Abgänger und anonymisiert.** Der „Mehrdeutig“-Zweig setzt `gesehen` nicht; `sammleAbgaenger` hält ihn für „nicht im Export“. Vorschau zeigt ihn unter „Mehrdeutig (wird nicht angefasst)“ UND unter „Abgänger“. | `api/lusd_klassifizierung.go:59-63` + `:155-163`; Probe gegen PG: 1/13 → Schwelle greift nicht, Apply ohne Bestätigung, danach `ist_abgaenger=true, vorname='Abgänger'` | im Default-Zweig `gesehen[rec.namensschluessel()] = true` vor `continue`; Regressionstest mit Bestandstreffer + zwei Dateizeilen |
+| **LUSD Nur-Name: gesperrter Abgänger wird von Namensvetter „reaktiviert“** — Fünftklässler landet auf dem Datensatz (Schulden, Sperre, Lesehistorie) eines anderen Kindes. | `api/lusd_klassifizierung.go:136-143` (`idx.abgaenger[key]` nur über Name) | im Nur-Name-Modus Abgänger-Treffer als „Rückkehrer-Kandidat“ melden statt zuordnen |
+| **LUSD-Abgänger-Anonymisierung setzt kein `anonymized_at`; Purge läuft VOR der Cron-Tilgung und tilgt `audit_logs` nie** → LUSD-ID (LUSD_ID_NACHGETRAGEN) überlebt 24 Monate in `audit_logs.details`; Vormerkungen bleiben bis zum Purge. | `api/lusd_apply.go:319-349` (kein `anonymized_at`), `repository/audit_users.go:168-203` (nur `audit_log`), `jobs/cron.go:43-45` (Reihenfolge), Purge-Cutoff 30.01. vs. 360 d | `anonymisiereAbgaenger` setzt `anonymized_at` + `ANON-`-Barcode; Purge tilgt `audit_logs` vor dem DELETE; PG-Test für den Purge-Pfad |
+| **Leeres Zahlenfeld in „Datenschutz & Sitzung“ schaltet Befristung/Sperre still auf 0 = aus.** `bind:value` liefert `null`, `Number(null) \|\| 0` → 0; Backend nimmt 0. | `frontend/src/lib/SystemSettingsAllgemein.svelte:86-89`, `SettingField.svelte:42`, `repository/system_settings_datenschutz.go:49-57` | „Aus“ als eigener Schalter + Zahl ≥ 1; leer ⇒ Vorgabe; Selbstprüfung meldet „Befristung aus“ |
+| **Lesehistorie lebt im `audit_log` weiter** (CHECKOUT/RETURN mit `details.schueler_id`, 24 Monate) — Art.-13/VVT sagen „Zuordnung automatisch entfernt“; Art.-15-Auskunft liest diese Einträge nicht einmal. | `repository/audit_books.go` (`details["schueler_id"]`), `jobs/cron_dsgvo_lesehistorie.go` fasst nur `ausleihen` an, `api/dsgvo_auskunft.go:255` nur `tabelle='schueler'` | Job tilgt `details - 'schueler_id'` für `tabelle='ausleihen'` nach derselben Frist; Auskunft um Ausleih-Einträge ergänzen |
+| **Sperrbildschirm: Druckvorschau (Strg+P) zeigt die Seite dahinter** (`no-print` am Overlay), **kein Fokus-Fang/`inert`** (Tab verlässt die Sperre, Screenreader liest dahinter), **Kamera-Scanner bucht weiter**. | `Sperrbildschirm.svelte:33`, `styles/druck-grundlagen.css:38-42`, `App.svelte` rendert App unter dem Overlay, `idleLock.svelte.js` fasst `showCamera` nicht an | App-Fläche bei Sperre nicht rendern (löst Druck + Fokus + SR zusammen); `thekeLeeren()` stoppt Kamera |
+| **Login-Handler-Kontext 10 s < IMAP-Frist 15 s** → korrektes, langsames Login scheitert am DB-Lookup, zählt als Fehlversuch (401 + Sperre). Umgekehrt: ≥ 15 s-Tarpit des Mailservers macht jedes falsche Passwort zum 503 ohne Zählung. | `auth/handlers.go:127`, `auth/imap.go:192,215-216`, `:264`, `selbstanmeldung.go:118-123` | Handler-ctx an `AuthenticateIMAP` durchreichen, EINE Frist; Klassifikation aus der IMAP-Antwort (NO = Passwort), nicht aus der Zeit; Test mit Mini-IMAP-Listener (sofort NO / verzögert NO) |
+| **Bulk-Mahnmail: SMTP-Hänger je Klasse bis 70 s, Ausfälle zählen als „übersprungen (keine E-Mail hinterlegt)“**, End-Audit mit totem `r.Context()` schweigt. | `api/mail_sender.go:84` (kein ctx), `api/mahnwesen_bulk_mail.go:288,324-327,128,374` | „fehlgeschlagen“ getrennt zählen; Audit mit `context.Background()`+Frist; nach erstem Versandfehler abbrechen |
+
+### Kategorie B — laut oder ohne Außenwirkung, gebündelt erledigen
+
+| Fund | Nachweis |
+|---|---|
+| `restore-backup` liegt **nicht** im Image, Doku sagt „liegt im Image“ — im Ernstfall auf dem Schulserver ohne Go nicht baubar | `Dockerfile:67,103-107`, `docs/resilience_and_recovery.md:76` |
+| Selbstprüfung rät „S3_* in der .env setzen“ — Compose reicht `S3_*` nicht durch (gleiche Klasse wie BACKUP_ENCRYPTION_KEY) | `api/betriebsbereitschaft.go:380`, `docker-compose.yml` ohne `S3_`, `.env.example:122-126` |
+| Altbackups (SHA-256) seit 5265698c **unlesbar**, bis 02:30 des Folgetags gibt es kein lesbares Backup; Doku widerspricht sich (sed-Reparatur für Dateien, die nicht mehr entschlüsselbar sind), `backup.go:297-299` behauptet „alte Backups bleiben lesbar“ | `jobs/backup_krypto.go:94-97`, `docs/resilience_and_recovery.md:20-23` vs. `:95-100` |
+| IMAP `Logout()` ohne Frist (go-imap `Timeout=0`) — schweigender Server hängt den Login-Handler | `auth/imap.go:202-208` |
+| Restore-Probe: „per Neustart erneut proben“ stimmt nicht (nur So 03:30) → bis 7 Tage „kritisch“ nach Behebung; psql-Stderr mit Datenkontext (`COPY schueler, line …`) landet in DB/Seite/Alarm-Mail | `api/betriebsbereitschaft.go:185-186`, `jobs/cron.go:116`, `restore_probe_hilfen.go:87` |
+| Veraltete SHA-256-Texte nach scrypt-Umstellung | `betriebsbereitschaft.go:238`, `backup_status.go:30`, `cron.go:75-77`, `backup.go:297-299` |
+| Art.-15-Auskunft nennt pauschal lit. e, Speicherdauer ohne 90/730 Tage, keine Einwilligung für die Schülerbücherei — zwei Wahrheitsquellen zu SECURITY.md/VVT | `api/dsgvo_auskunft.go:121-129` |
+| VVT sagt „Protokoll ohne IP-Adresse“ — `audit_logs.ip_adresse` wird geschrieben | `repository/audit.go:132`, `api/littera_import.go`, `api/mahnwesen_bulk_mail.go:371` |
+| Lernmittel-/Schülerbücherei-Frist hängt an der `LMF-`-Namenskonvention; keine Gegenprobe „Lernmittel-Fach ohne Kennung“ | `jobs/cron_dsgvo_lesehistorie.go:71-75`, `pkg/lmf/lmf.go:43-45` |
+| DSGVO-Jobs (Anonymisierung, Lesehistorie) scheitern still (nur Log) — exakt die Klasse, die zweimal monatelang ins Leere lief; Selbstprüfung hat keinen DSGVO-Bereich | `jobs/cron_dsgvo.go:102,112,159,172,183`, `api/betriebsbereitschaft.go` |
+| Paritäts-Ratsche sieht nur die älteste Baseline: DBs aus schema.sql vom 14.06.–21.08. fehlen `idx_ausleihen_ausgeliehen_am/rueckgabe_am`, `idx_buecher_titel_erstellt_am`, `idx_schueler_deleted_at` (082 heilt bewusst nur die Gegenrichtung); Test vergleicht keine Constraint-NAMEN (Kommentar behauptet es), keine COMMENTs (084-Kommentar fehlt in schema.sql), keine Seeds | `migrations/082:14-15`, `db/migrations_schema_paritaet_pg_test.go:33-41`; Prod prüfen: `SELECT indexname FROM pg_indexes WHERE indexname IN ('idx_schueler_deleted_at','idx_ausleihen_rueckgabe_am')` |
+| Papierkorb-Restore stellt anonymisierte Zeilen wieder her (gesperrt, Name „Anonym“); 082-Dedupe der Vormerkungen löscht den NEUEREN Eintrag auch wenn er `abholbereit` ist | `api/student_deleted.go:86-90`, `migrations/082` |
+| Append-only auf `audit_log(s)` ist seit 083 reine Konvention ohne Ratsche (App läuft als `postgres`) | `docker-compose.yml:101`, Schreibtüren `audit_users.go:176`, `cron_dsgvo.go:154/168`, `cron_audit_retention.go:37/43` |
+| LUSD: Modus-Wechsel Nur-Name → Name+Geburtsdatum dupliziert den Bestand (Bestand ohne Datum nur in `ohneSchluessel`; Datum wird nie nachgetragen); ID-Modus mit gemischter Datei macht ID-lose Zeile zum Abgänger; kein Audit-Eintrag für den Import; PATCH blankt das Pflicht-Geburtsdatum; Parser loggt Namen bei 400 | `api/lusd_bestand.go:75-76`, `lusd_apply.go:155-166`, `lusd_klassifizierung.go:87-90`, `student_update.go:145-150`, `lusd_parser.go:204` |
+| Mahnketten-TZ-Fix ist Test-Reparatur, aber am DST-Ende (24.10., 22–23 UTC) wieder rot: `time.Now().AddDate` in Runner-TZ statt Schulzeitzone | `api/mahnwesen_kette_pg_test.go:153` vs. `internal/service/loan_rules.go:162` |
+| Release: v-Tag ist ungeschützter Kanal (jeder Push-Collaborator; kein main-/CI-Check), `latest` hat zwei Schreiber (Doku behauptet einen), Release-Notes versprechen ein Image, das ein zweiter Workflow erst baut; ghcr-Image ist öffentlich (Kommentar sagt privat); kein actionlint; `trivy-action@master`; Go-Version 1.26.5 in docs vs. 1.26.6; Node 22 (Image) vs. 24 (CI) | `.github/workflows/release.yml:16-18,49,54`, `docker-publish.yml:13,17-25`, `security-scan.yml:169`, `docs/README.md:11,67`, `ci.yml:157,195` |
+| update.sh 4b: leerer GIT_COMMIT = nur Warnung | `update.sh:275-279` |
+| Jules-Batches: `TestMigriereFoto_VerschluesselungFehlgeschlagen` belegt seine Behauptung nicht; Dubletten (`TestKuerze`, `TestSammleSignaturUpdatesDynamic`, DeleteBooks-Mock); 7 Testdateien > 200 Zeilen; Nil-Deref im Fehlerzweig (`schreiber_bestand_test.go:113-124`); DeleteBooks-Test schreibt `inventur/uploads/` ins Repo | `cmd/migrate-fotos/main_test.go:174-193` u. a.; Cruft: keiner, `go test -race -count=3` + `TZ=Pacific/Midway` grün |
+
+### Geprüft, kein Befund (Auszug)
+SMTP-Frist deckt alle Phasen (Hänger-Test echt, am Rückbau rot); keine Geheimnisse in argv/Log (PGPASSFILE); scrypt 32 MB ohne mem_limit; Backup-Alter eine Quelle; Cron-Zeiten UTC ohne Überlappung; Restore-Probe gegen echtes pg_dump/psql; Dockerfile-Pin 16 ≥ Prod 15; 080–084 idempotent, Migrationslauf aus sechs Baselines bricht nirgends; `ANON-<uuid>` kollisionsfrei; LUSD-Apply atomar mit Advisory-Lock, Upsert-Blanking gepaart, Handanlagen nie Abgänger; Dependabot-PRs laufen durch ci+security-scan; 3b80f7f1 `npm ci` konsistent; Jules-Merges ohne Cruft, nur zwei bewusste Produktions-Nähte.
+
+---
+
 ## Erledigt (2026-08-06) — Etiketten nach Rückmeldung Naacher
 
 Zwei Wünsche aus einem Telefonat, beide am fertigen PDF abgesichert:
