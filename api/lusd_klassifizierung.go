@@ -11,8 +11,11 @@ import (
 type lusdZuordnung struct {
 	zielID        map[int]string // Zeilenindex → schueler.id: Bestand aktualisieren
 	ueberspringen map[int]bool   // Zeilenindex → nicht anfassen (ohne ID, mehrdeutig)
-	adoptionen    []AdoptionDiff // nur ID-Modus
+	adoptionen    []AdoptionDiff // ID-Modus: LUSD-ID anheften; Name+Geb-Modus: Geburtsdatum nachtragen
 	abgaengerIDs  []string
+	// datumNachgetragen: Bestandsschüler ohne Geburtsdatum, die im Name+Geb-Modus über
+	// den Namen zugeordnet wurden — sie gehören nicht mehr in „nicht abgleichbar".
+	datumNachgetragen map[string]bool
 }
 
 var fuehrendeNullen = regexp.MustCompile(`^0+(\d)`)
@@ -44,7 +47,7 @@ func diffBestand(s *lusdBestandsSchueler, id string) StudentDiff {
 // klassifiziereLusd ordnet die CSV-Zeilen (rein klassifizierend, ohne Schreibzugriff)
 // ein und füllt Vorschau und Zuordnung in einem Durchgang.
 func klassifiziereLusd(datei lusdDatei, idx lusdIndex, res *LusdPreviewResult) lusdZuordnung {
-	z := lusdZuordnung{zielID: map[int]string{}, ueberspringen: map[int]bool{}}
+	z := lusdZuordnung{zielID: map[int]string{}, ueberspringen: map[int]bool{}, datumNachgetragen: map[string]bool{}}
 	gesehen := map[string]bool{}
 	namenInDatei := zaehleNamenInDatei(datei)
 	for i, rec := range datei.Zeilen {
@@ -156,6 +159,28 @@ func klassifiziereZeileName(i int, rec parsedStudentRow, key string, idx lusdInd
 		res.Rueckkehrer = append(res.Rueckkehrer, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
 		return
 	}
+	// Rückfallstufe (nur Name+Geb-Modus): Bestandsschüler OHNE Geburtsdatum über den
+	// Namen — eindeutig → zuordnen und das Datum aus dem Export nachtragen; mehrdeutig
+	// → melden, nichts anlegen. Ohne diese Stufe wurde beim Modus-Wechsel (erst LANIS-
+	// Liste, später Export mit Datum) jeder Bestandsschüler als „neu" dupliziert.
+	if !nurName && rec.GebDatum != nil {
+		nameKey := rec.namensschluessel()
+		if w, ok := idx.ohneDatumNachName[nameKey]; ok {
+			if w == nil {
+				res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
+				z.ueberspringen[i] = true
+				return
+			}
+			z.zielID[i] = w.ID
+			z.datumNachgetragen[w.ID] = true
+			z.adoptionen = append(z.adoptionen, AdoptionDiff{
+				SchuelerID: w.ID, Vorname: rec.Vorname, Nachname: rec.Nachname,
+				Geburtsdatum: rec.GebDatum.Format("2006-01-02"), AlteKlasse: w.Klasse, NeueKlasse: rec.Klasse,
+			})
+			delete(idx.ohneDatumNachName, nameKey) // konsumiert — zwei Zeilen beanspruchen nie denselben
+			return
+		}
+	}
 	res.NewStudents = append(res.NewStudents, diffZeile(zeilenID, rec, "", rec.Klasse))
 }
 
@@ -180,6 +205,9 @@ func sammleAbgaenger(modus lusdModus, idx lusdIndex, gesehen map[string]bool, re
 		z.abgaengerIDs = append(z.abgaengerIDs, s.ID)
 	}
 	for i := range idx.ohneSchluessel {
+		if z.datumNachgetragen[idx.ohneSchluessel[i].ID] {
+			continue // über den Namen zugeordnet, Datum wird nachgetragen
+		}
 		res.NichtAbgleichbar = append(res.NichtAbgleichbar, diffBestand(&idx.ohneSchluessel[i], idx.ohneSchluessel[i].ID))
 	}
 	for i := range idx.mehrdeutigAktiv {

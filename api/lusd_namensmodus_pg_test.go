@@ -241,3 +241,54 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 		t.Error("mehrdeutige Schüler wurden verändert")
 	}
 }
+
+// Prüfung 22.08.2026: Modus-Wechsel. Eine Schule importiert erst mit der LANIS-Liste
+// (nur Name, Bestand bleibt ohne Geburtsdatum) und bekommt später einen Export MIT
+// Geburtsdatum. Vorher lag der Bestand nur in ohneSchluessel, jede Zeile wurde „neu" —
+// 1.000 Schüler → 1.000 Duplikate, ein Klick. Jetzt: eindeutiger Namenstreffer wird
+// zugeordnet, das Datum nachgetragen, die Klasse übernommen; mehrdeutig → gemeldet.
+func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	s := &Server{DB: &db.Database{Pool: pool}}
+
+	lisa := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Lisa", nachname: "Lanis", klasse: "5a", barcode: "NM-L1", bestaetigt: true})
+	// Zwei „Paul Doppel" ohne Datum → mehrdeutig, keiner bekommt das Datum, keine Neuanlage.
+	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Paul", nachname: "Doppel", klasse: "6a", barcode: "NM-P1", bestaetigt: true})
+	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Paul", nachname: "Doppel", klasse: "6b", barcode: "NM-P2", bestaetigt: true})
+
+	datei := nmDatei(
+		nmZeile(2, "Lisa", "Lanis", "6a", datum(2013, 3, 3)),
+		nmZeile(3, "Paul", "Doppel", "7a", datum(2012, 4, 4)),
+	)
+	prev, err := s.computeLusd(ctx, datei, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(prev.NewStudents) != 0 || len(prev.Adoptions) != 1 || len(prev.Mehrdeutig) != 1 {
+		t.Fatalf("erwartet 0 neu, 1 Adoption (Datum nachgetragen), 1 mehrdeutig: neu=%d adopt=%d mehrdeutig=%d",
+			len(prev.NewStudents), len(prev.Adoptions), len(prev.Mehrdeutig))
+	}
+	if len(prev.NichtAbgleichbar) != 2 {
+		t.Fatalf("nur die beiden Pauls bleiben nicht abgleichbar, waren %d", len(prev.NichtAbgleichbar))
+	}
+	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if n := zaehle(t, pool, "nachname IN ('Lanis','Doppel')"); n != 3 {
+		t.Fatalf("erwartet 3 Zeilen (kein Duplikat), waren %d", n)
+	}
+	var geb *time.Time
+	var klasse string
+	var bestaetigt bool
+	if err := pool.QueryRow(ctx, `SELECT geburtsdatum, klasse, lusd_bestaetigt_am IS NOT NULL FROM schueler WHERE id=$1`, lisa).Scan(&geb, &klasse, &bestaetigt); err != nil {
+		t.Fatal(err)
+	}
+	if geb == nil || geb.Format("2006-01-02") != "2013-03-03" || !klassenGleich(klasse, "6a") || !bestaetigt {
+		t.Errorf("Lisa: geb=%v klasse=%q bestaetigt=%v — Datum nachgetragen, Klasse übernommen, bestätigt erwartet", geb, klasse, bestaetigt)
+	}
+	if n := zaehle(t, pool, "nachname='Doppel' AND geburtsdatum IS NOT NULL"); n != 0 {
+		t.Errorf("mehrdeutige Pauls dürfen kein Datum bekommen (n=%d)", n)
+	}
+}

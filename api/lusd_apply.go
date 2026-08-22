@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
@@ -88,13 +87,26 @@ func findeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID strin
 // aktiver Datensatz (z. B. ein Rückkehrer-Abgänger) hält. Greift der Schutz, bleibt die
 // Zeile unverändert (RowsAffected 0) und der CSV-Datensatz läuft im nächsten Schritt
 // über den regulären Rückkehrer-/Neuzugangs-Pfad — kein Abriss des Imports.
+//
+// Name+Geb-Modus (LusdID leer): Hier ist die Adoption die Rückfallstufe „Bestandsschüler
+// ohne Geburtsdatum, eindeutiger Namenstreffer" — es wird KEINE ID gesetzt, nur das
+// Geburtsdatum aus dem Export nachgetragen (COALESCE: ein vorhandenes bleibt). Klasse und
+// Bestätigung übernimmt danach der Bestands-Batch über zielID.
 func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) error {
 	for _, a := range adoptionen {
+		var geb *string
+		if a.Geburtsdatum != "" {
+			g := a.Geburtsdatum
+			geb = &g
+		}
 		if _, err := tx.Exec(ctx, `
-			UPDATE schueler SET lusd_id = $1, aktualisiert_am = NOW()
-			WHERE id = $2 AND (lusd_id IS NULL OR lusd_id LIKE $3)
-			  AND NOT EXISTS (SELECT 1 FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL)`,
-			a.LusdID, a.SchuelerID, litteraHerkunftPraefix+"%"); err != nil {
+			UPDATE schueler SET
+				lusd_id = COALESCE(NULLIF($1, ''), lusd_id),
+				geburtsdatum = COALESCE(geburtsdatum, $4::date),
+				aktualisiert_am = NOW()
+			WHERE id = $2 AND ($1 = '' OR lusd_id IS NULL OR lusd_id LIKE $3)
+			  AND NOT EXISTS (SELECT 1 FROM schueler WHERE $1 <> '' AND lusd_id = $1 AND deleted_at IS NULL)`,
+			a.LusdID, a.SchuelerID, litteraHerkunftPraefix+"%", geb); err != nil {
 			return err
 		}
 	}
@@ -107,7 +119,9 @@ func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) 
 // uniq_schueler_lusd_id_active belegen (zwei Neuzugänge → 23505). lusd_bestaetigt_am
 // wird gesetzt: Der Schüler kommt aus dem Export, er ist LUSD-verwaltet.
 func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, barcodeCounter int) error {
-	year := time.Now().Year() + 5 // Default-Abgangsjahr
+	// Abgangsjahr aus der Klasse wie bei der Handanlage (calculateAbgaengerJahr) — nicht
+	// pauschal Jahr+5: Zwei Antworten auf dieselbe Frage (Prüfung 22.08.2026).
+	year := calculateAbgaengerJahr(rec.Klasse)
 	_, err := tx.Exec(ctx, `
 		INSERT INTO schueler
 			(barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum,

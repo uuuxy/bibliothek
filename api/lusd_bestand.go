@@ -53,9 +53,15 @@ type lusdIndex struct {
 	// fehlt, adoptiert ihn statt ein Duplikat anzulegen.
 	waisen map[string]*lusdBestandsSchueler
 	// ohneSchluessel gibt es nur im Name+Geburtsdatum-Modus: aktive Schüler ohne
-	// Geburtsdatum. Sie sind nicht abgleichbar und bleiben unangetastet — die Vorschau
-	// meldet sie. (Im Nur-Name-Modus hat jeder Schüler einen Schlüssel.)
+	// Geburtsdatum. Sie sind nicht über den Schlüssel abgleichbar — die Vorschau meldet
+	// sie. (Im Nur-Name-Modus hat jeder Schüler einen Schlüssel.)
 	ohneSchluessel []lusdBestandsSchueler
+	// ohneDatumNachName: dieselben Schüler, nach NAME nachschlagbar (nil = mehrdeutig).
+	// Rückfallstufe für den Modus-Wechsel: Eine Schule, die erst mit der LANIS-Liste
+	// (nur Name) importierte und später einen Export MIT Geburtsdatum bekommt, hätte sonst
+	// jeden Bestandsschüler als „neu" doppelt angelegt (Prüfung 22.08.2026). Ein
+	// eindeutiger Namenstreffer wird zugeordnet und bekommt das Datum nachgetragen.
+	ohneDatumNachName map[string]*lusdBestandsSchueler
 	// mehrdeutigAktiv sind die aktiven Zeilen hinter nil-Einträgen in aktiv — damit
 	// die Vorschau die Paare nennen kann, auch wenn keine CSV-Zeile sie trifft.
 	mehrdeutigAktiv []lusdBestandsSchueler
@@ -64,9 +70,10 @@ type lusdIndex struct {
 // baueLusdIndex sortiert den Bestand in die Karten des Modus ein.
 func baueLusdIndex(bestand []lusdBestandsSchueler, modus lusdModus) lusdIndex {
 	idx := lusdIndex{
-		aktiv:     make(map[string]*lusdBestandsSchueler),
-		abgaenger: make(map[string]*lusdBestandsSchueler),
-		waisen:    make(map[string]*lusdBestandsSchueler),
+		aktiv:             make(map[string]*lusdBestandsSchueler),
+		abgaenger:         make(map[string]*lusdBestandsSchueler),
+		waisen:            make(map[string]*lusdBestandsSchueler),
+		ohneDatumNachName: make(map[string]*lusdBestandsSchueler),
 	}
 	for i := range bestand {
 		s := &bestand[i]
@@ -74,6 +81,7 @@ func baueLusdIndex(bestand []lusdBestandsSchueler, modus lusdModus) lusdIndex {
 		switch {
 		case key == "" && modus == lusdModusName && !s.IstAbgaenger:
 			idx.ohneSchluessel = append(idx.ohneSchluessel, *s)
+			trageEin(idx.ohneDatumNachName, s.Namensschluessel, s)
 		case key == "":
 			// ID-Modus ohne echte ID: Adoptions-Kandidat, sofern ein Geburtsdatum da ist.
 			if !s.IstAbgaenger && s.Schluessel != "" {
