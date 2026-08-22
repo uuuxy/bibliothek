@@ -141,8 +141,17 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
 	bearbeiter := adminFuerAudit(t, pool)
 	frist := ausleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
-	erwartet := time.Now().AddDate(0, 0, 13)
-	if frist.Year() != erwartet.Year() || frist.YearDay() != erwartet.YearDay() {
+	// Beide Seiten durch DIESELBE Produktionsdefinition schicken (TagesEndeInSchulzeitzone),
+	// statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
+	// in der Schul-Zeitzone (Europe/Berlin), der Test lief mit time.Now() in der Zeitzone des
+	// Runners. Auf dem UTC-CI sind das ab 22:00 UTC zwei verschiedene Kalendertage — genau
+	// daran war dieser Test in der Nacht auf den 22.08.2026 rot (erwartet 03.09., war 04.09.),
+	// und nur in diesem Zwei-Stunden-Fenster. Die Schwestern in
+	// internal/service/loan_rules_test.go (sameDay) wurden beim Zeit-Sweep am 19.08.2026 schon
+	// so normalisiert; dieser Test hier wurde damals übersehen.
+	// Nachstellbar ohne Warten auf Mitternacht: TZ=Pacific/Midway go test ./api/ -run TestMahnkette
+	erwartet := service.TagesEndeInSchulzeitzone(time.Now().AddDate(0, 0, 13))
+	if !service.TagesEndeInSchulzeitzone(frist).Equal(erwartet) {
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (13 Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"))
 	}
