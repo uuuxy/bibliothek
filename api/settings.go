@@ -68,3 +68,26 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 		return nil
 	})
 }
+
+// SitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients (A4 in
+// docs/datenschutz_offene_punkte.md): Minuten bis die Theken-Ansicht den geladenen
+// Schüler fallen lässt, Minuten bis zum Sperrbildschirm. 0 = aus.
+type SitzungsEinstellungen struct {
+	ThekeLeerenMinuten int `json:"theke_leeren_minuten"`
+	SperreMinuten      int `json:"sperre_minuten"`
+}
+
+// GetSitzungsEinstellungenHandler liefert die Sitzungs-Fristen an jeden angemeldeten Client.
+func (s *Server) GetSitzungsEinstellungenHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		settings, err := settingsRepo.GetSettings(r.Context())
+		if err != nil {
+			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
+		}
+		RespondJSON(w, http.StatusOK, SitzungsEinstellungen{
+			ThekeLeerenMinuten: repository.TageOderStandard(settings.ThekeLeerenMinuten, repository.StandardThekeLeerenMinuten),
+			SperreMinuten:      repository.TageOderStandard(settings.SperreMinuten, repository.StandardSperreMinuten),
+		})
+		return nil
+	})
+}

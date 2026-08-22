@@ -24,6 +24,10 @@
 	 * @property {string} etikettEigentumsvermerk
 	 * @property {string} oeffentlicheAdresse
 	 * @property {string} alarmEmpfaenger
+	 * @property {number} lesehistorieTage
+	 * @property {number} lesehistorieLernmittelTage
+	 * @property {number} thekeLeerenMinuten
+	 * @property {number} sperreMinuten
 	 */
 
 	/** @type {Props} */
@@ -45,7 +49,11 @@
 		schuleOrt = $bindable(),
 		etikettEigentumsvermerk = $bindable(),
 		oeffentlicheAdresse = $bindable(),
-		alarmEmpfaenger = $bindable()
+		alarmEmpfaenger = $bindable(),
+		lesehistorieTage = $bindable(),
+		lesehistorieLernmittelTage = $bindable(),
+		thekeLeerenMinuten = $bindable(),
+		sperreMinuten = $bindable()
 	} = $props();
 
 	let saving = $state(false);
@@ -73,7 +81,12 @@
 				// Immer mitgeschickt, auch leer: Für dieses Feld heisst leer ausdrücklich
 				// "abschalten" (dann verschickt das System keine Bestätigungs-Links mehr).
 				oeffentliche_adresse: oeffentlicheAdresse,
-				alarm_empfaenger: alarmEmpfaenger
+				alarm_empfaenger: alarmEmpfaenger,
+				// Immer mitgeschickt: 0 heisst hier ausdrücklich "aus" und ist ein Wert.
+				lesehistorie_tage: Number(lesehistorieTage) || 0,
+				lesehistorie_lernmittel_tage: Number(lesehistorieLernmittelTage) || 0,
+				theke_leeren_minuten: Number(thekeLeerenMinuten) || 0,
+				sperre_minuten: Number(sperreMinuten) || 0
 			});
 			toastStore.addToast('Einstellungen gespeichert.', 'success');
 		} catch {
@@ -288,6 +301,48 @@
 				/>
 			</div>
 		{/if}
+	</section>
+
+	<!-- Datenschutz & Sitzung (docs/datenschutz_offene_punkte.md A1/A4). Zwei Fristen,
+	     weil zwei Verarbeitungstätigkeiten: Schülerbücherei kurz (HBDI-Muster: löschen,
+	     sobald nicht mehr notwendig), Lernmittel lang (Bestandskartei weist Ausleihe UND
+	     Rücklauf nach, Schadensersatz läuft über die Schulaufsicht). Der nächtliche Job
+	     trennt die Ausleihe vom Schüler; der Vorgang selbst bleibt für die Statistik. -->
+	<section class="border-b border-outline-variant pb-8">
+		{@render sectionHeader(
+			'Datenschutz & Sitzung',
+			'Lesehistorie: Tage nach der Rückgabe, nach denen eine Ausleihe nicht mehr dem Schüler zugeordnet ist (sie zählt weiter in der Statistik, nur ohne Namen). Offene Schadensfälle halten die Zuordnung. Sitzung: Minuten ohne Bedienung, bis die Theke den geladenen Schüler fallen lässt bzw. der Sperrbildschirm kommt. 0 = aus.'
+		)}
+		<div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-10">
+			<SettingField
+				bind:value={lesehistorieTage}
+				label="Lesehistorie Schülerbücherei (Tage)"
+				min={0}
+				max={3650}
+				hint="Vorgabe 90."
+			/>
+			<SettingField
+				bind:value={lesehistorieLernmittelTage}
+				label="Lesehistorie Lernmittel (Tage)"
+				min={0}
+				max={3650}
+				hint="Vorgabe 730 (zwei Schuljahre)."
+			/>
+			<SettingField
+				bind:value={thekeLeerenMinuten}
+				label="Theke leeren nach (Min.)"
+				min={0}
+				max={1440}
+				hint="Vorgabe 5."
+			/>
+			<SettingField
+				bind:value={sperreMinuten}
+				label="Sperrbildschirm nach (Min.)"
+				min={0}
+				max={1440}
+				hint="Vorgabe 15. Entsperren mit dem eigenen Passwort."
+			/>
+		</div>
 	</section>
 
 	<!-- Preiserfassung: entscheidet, ob das Bestellwesen ueberhaupt mit Geld arbeitet. -->

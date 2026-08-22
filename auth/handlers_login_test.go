@@ -58,7 +58,7 @@ func TestLoginHandler_UnknownUserReturns401(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("unbekannt@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}))
 
 	rec := doLogin(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
@@ -75,8 +75,8 @@ func TestLoginHandler_DeactivatedUserReturns403(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("inaktiv@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
-			AddRow("u-1", "BC-TEST", "mitarbeiter", "Ex", "Kollege", false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
+			AddRow("u-1", "BC-TEST", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org"))
 
 	rec := doLogin(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusForbidden {
@@ -90,8 +90,8 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("pflasch@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
-			AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
+			AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true, "peter@example.org"))
 
 	rec := doLogin(t, a, mock, `{"email":"pflasch@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusOK {
@@ -110,7 +110,9 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort kein LoginResponse-JSON: %v", err)
 	}
-	if resp.UserID != "u-admin" || resp.Rolle != RoleAdmin || resp.Vorname != "Peter" {
+	// Email gehört seit 22.08.2026 in die Antwort: Der Sperrbildschirm meldet damit nach
+	// einem Session-Restore wieder an — ohne sie bliebe er für immer zu.
+	if resp.UserID != "u-admin" || resp.Rolle != RoleAdmin || resp.Vorname != "Peter" || resp.Email != "peter@example.org" {
 		t.Errorf("LoginResponse falsch: %+v", resp)
 	}
 	if len(resp.Permissions) != 1 || resp.Permissions[0] != "*" {
@@ -141,7 +143,7 @@ func TestLoginHandler_BruteForceLimiterBlocksSixthAttempt(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		mock.ExpectQuery(benutzerSelect).
 			WithArgs(email).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}))
 		if rec := doLogin(t, a, mock, body); rec.Code != http.StatusUnauthorized {
 			t.Fatalf("Versuch %d: erwartet 401, bekam %d", i, rec.Code)
 		}
@@ -172,8 +174,8 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("pflasch@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
-			AddRow("u-admin", "BC-ECHT", "admin", "Peter", "Flasch", true))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
+			AddRow("u-admin", "BC-ECHT", "admin", "Peter", "Flasch", true, "peter@example.org"))
 
 	rec := doLogin(t, a, mock,
 		`{"email":"pflasch@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
@@ -261,8 +263,8 @@ func TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 	aktiviereMockIMAP(t)
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs(email).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv"}).
-			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
+			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org"))
 
 	rec := doLogin(t, a, mock, body)
 	if rec.Code != http.StatusOK {

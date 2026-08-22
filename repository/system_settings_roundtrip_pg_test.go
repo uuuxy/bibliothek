@@ -52,3 +52,47 @@ func TestSettingsRoundtrip_AlarmEmpfaenger(t *testing.T) {
 		t.Fatalf("leerer Verteiler überschreibt nicht: %q", *geladen.AlarmEmpfaenger)
 	}
 }
+
+// Die vier Datenschutz-/Sitzungsfelder: nil lässt den gespeicherten Wert stehen, ein
+// gesetzter Zeiger schreibt — auch die 0, denn 0 heißt hier „aus" und ist ein Wert.
+// Ohne diese Unterscheidung hätte das Speichern einer anderen Sektion die Befristung
+// der Lesehistorie still abgeschaltet (Upsert-Blanking).
+func TestSettingsRoundtrip_DatenschutzZeigerSemantik(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	repo := NewSystemSettingsRepository(pool)
+
+	geladen, err := repo.GetSettings(ctx)
+	if err != nil {
+		t.Fatalf("GetSettings: %v", err)
+	}
+	if TageOderStandard(geladen.LesehistorieTage, -1) != StandardLesehistorieTage ||
+		TageOderStandard(geladen.LesehistorieLernmittelTage, -1) != StandardLesehistorieLernmittelTage ||
+		TageOderStandard(geladen.SperreMinuten, -1) != StandardSperreMinuten {
+		t.Fatalf("Vorgaben fehlen: %+v", geladen)
+	}
+
+	null, dreissig := 0, 30
+	if err := repo.SaveSettings(ctx, &SystemEinstellungen{LmfStichtag: "07-31", LesehistorieTage: &null, SperreMinuten: &dreissig}); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+	if geladen, err = repo.GetSettings(ctx); err != nil {
+		t.Fatalf("GetSettings: %v", err)
+	}
+	if TageOderStandard(geladen.LesehistorieTage, -1) != 0 {
+		t.Fatalf("0 (= aus) muss gespeichert werden, kam %v", geladen.LesehistorieTage)
+	}
+	if TageOderStandard(geladen.SperreMinuten, -1) != 30 {
+		t.Fatalf("sperre_minuten kam nicht zurück: %v", geladen.SperreMinuten)
+	}
+	// Andere Sektion speichert ohne die Felder → nil → die 0 bleibt stehen.
+	if err := repo.SaveSettings(ctx, &SystemEinstellungen{LmfStichtag: "07-31"}); err != nil {
+		t.Fatalf("SaveSettings (andere Sektion): %v", err)
+	}
+	if geladen, err = repo.GetSettings(ctx); err != nil {
+		t.Fatalf("GetSettings (andere Sektion): %v", err)
+	}
+	if TageOderStandard(geladen.LesehistorieTage, -1) != 0 || TageOderStandard(geladen.SperreMinuten, -1) != 30 {
+		t.Fatalf("Speichern ohne die Felder hat sie überschrieben: %v / %v", geladen.LesehistorieTage, geladen.SperreMinuten)
+	}
+}

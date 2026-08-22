@@ -1,4 +1,4 @@
-# Datenschutz — offene Punkte (Stand 21.08.2026)
+# Datenschutz — offene Punkte (Stand 22.08.2026)
 
 Ergebnis der datenschutzrechtlichen Bewertung gegen den **hessischen** Rahmen. Dieses
 Dokument hält fest, was **noch zu tun** ist — nicht, was schon gebaut ist (das steht in
@@ -32,10 +32,10 @@ Links: [SchDSV Volltext](https://www.glb-hessen.de/wp-content/uploads/2024/01/DL
 
 | # | Punkt | Beleg | Status |
 |---|---|---|---|
-| A1 | **Lesehistorie befristen.** Zurückgegebene Ausleihen behalten `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigt bis zu 200 Entleiher mit Namen. Vorschlag: Schülerbücherei-Ausleihen N Tage nach Rückgabe vom Schüler trennen; Lernmittel nach Schuljahresende + Frist (Schadensersatz, Bestandskartei). Mit rot gesehenem PG-Gate. | `jobs/cron.go` (kein Job trennt), `api/copy_admin.go:246`, einziges `schueler_id = NULL` in `repository/audit_users.go:169` | offen |
-| A2 | **Rechtsgrundlage in SECURITY.md korrigieren.** Dort steht Art. 6 (1) lit. c + lit. b. Richtig: Lernmittel → Art. 6 (1) e i. V. m. § 83/§ 153 HSchG + DVO-LMF (öffentlich-rechtliches Nutzungsverhältnis); Schülerbücherei → Einwilligung (HBDI-Muster). Zwei Verarbeitungstätigkeiten. | `docs/SECURITY.md:428` | offen |
-| A3 | **Eltern-E-Mail-Aussage an den Code anpassen.** SECURITY.md sagt „E-Mail für Mahnungen"; tatsächlich: `mailto:`-Link im Profil, Hinweis-Icon im Mahnwesen, Vorlage `MAHNUNG_ELTERN` nur für den **gedruckten** Elternbrief. Mahn-Mails gehen an Klassenleitungen. Entscheiden: Eltern-Mahnmail bauen oder Doku angleichen. | `api/reports_pdf.go:40`, `api/mahnwesen_bulk_mail.go:320`, `StudentProfileStammdaten.svelte:65` | offen |
-| A4 | **Theken-Ansicht nach Inaktivität leeren + Sperrbildschirm.** Kein Auto-Leeren vorhanden; JWT 12 h ohne Idle-Lock. Der nächste Schüler an der Theke sieht sonst den vorigen. | `main.go:361`, Omnibox/StudentProfileCard | offen |
+| A1 | **Lesehistorie befristen.** Zurückgegebene Ausleihen behielten `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigte bis zu 200 Entleiher mit Namen. | `jobs/cron_dsgvo_lesehistorie.go` (nächtlich: Schülerbücherei 90 Tage, Lernmittel 730 Tage nach Rückgabe, offener Schadensfall hält, Lehrer unberührt), Einstellungen „Datenschutz & Sitzung" (0 = aus), PG-Gate `cron_dsgvo_lesehistorie_pg_test.go` 2× rot gesehen | **erledigt 22.08.** |
+| A2 | **Rechtsgrundlage in SECURITY.md korrigieren.** Lernmittel → Art. 6 (1) e i. V. m. § 83/§ 153 HSchG; Schülerbücherei → Einwilligung (HBDI-Muster). Zwei Verarbeitungstätigkeiten. | `docs/SECURITY.md` Abschnitt „Adressdaten, Eltern-E-Mail und Rechtsgrundlage" | **erledigt 22.08.** |
+| A3 | **Eltern-E-Mail-Aussage an den Code anpassen.** Entscheidung: Doku angeglichen, **keine** Eltern-Mahnmail gebaut (§ 15 SchDSV; gedruckter Brief + Klassenleitung decken das Mahnwesen). Wer sie einführt, ergänzt VVT + Hinweis vorher. | `docs/SECURITY.md`, derselbe Abschnitt | **erledigt 22.08.** |
+| A4 | **Theken-Ansicht nach Inaktivität leeren + Sperrbildschirm.** | `frontend/src/lib/stores/idleLock.svelte.js` (Theke 5 min, Sperre 15 min, einstellbar, 0 = aus), `Sperrbildschirm.svelte` (Entsperren = Wiederanmeldung gegen `/login`), `GET /api/einstellungen/sitzung`; Gates: `idleLock.test.js` (rot gesehen) + `e2e/sperrbildschirm.spec.js` (Live-Pfad) | **erledigt 22.08.** |
 | A5 | **Unverschlüsselte Dumps** von `update.sh` (30 Tage) und `scripts/backup.sh` (7 Tage) verschlüsseln oder Frist kürzen. | `docs/DEPLOYMENT.md:281` | offen |
 | A6 | `SENTRY_DSN` in Produktion **leer lassen** (sonst Fehlerreports in die USA) oder EU-Instanz; S3-Offsite nur EU/Schulträger. | `.env.example:138`, `jobs/backup.go:255` | Betriebsregel |
 
@@ -43,8 +43,8 @@ Links: [SchDSV Volltext](https://www.glb-hessen.de/wp-content/uploads/2024/01/DL
 
 | # | Punkt |
 |---|---|
-| B1 | **VVT** nach HBDI-Muster — zwei Tätigkeiten: (1) Lernmittelausleihe, (2) Schülerbücherei. TOM-Seite aus SECURITY.md/PII_MATRIX füllen. |
-| B2 | **Datenschutzhinweis** (Art. 13) — Muster sieht „bei Anmeldung zur Nutzung der Bibliothek" vor; für Lernmittel gehört er in die Schulaufnahme-Information (§ 5 (2) SchDSV). |
+| B1 | **VVT** nach HBDI-Muster — **Entwurf liegt vor:** [datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md) (drei Tätigkeiten: Lernmittel, Schülerbücherei, Personal/Protokolle; TOM-Anhang). Schule füllt Klammern, DSB prüft, Schulleitung beschließt. |
+| B2 | **Datenschutzhinweis** (Art. 13) — **Entwurf liegt vor:** [datenschutz/datenschutzhinweis_art13.md](datenschutz/datenschutzhinweis_art13.md), Fassung A (Lernmittel, Schulaufnahme-Information § 5 (2) SchDSV) und B (Schülerbücherei, mit Einwilligungsfeld). |
 | B3 | **Foto auf dem Schülerausweis**: Anlage 1 kennt kein Foto. Entweder deckt es der Schülerausweis-Erlass (prüfen) oder es braucht eine Einwilligung (§ 3). Vor dem ersten Ausweisdruck klären. |
 | B4 | **Schulischer DSB** beteiligen; Schwellwertanalyse DSFA dokumentieren (Minderjährige, Fotos — Ergebnis vermutlich „nicht erforderlich", aber schriftlich). |
 | B5 | **IT-Sicherheitskonzept im Benehmen mit dem Schulträger** (§ 6 (3)); **Netzplatzierung** klären: Schülerdaten ins Verwaltungsnetz, Theke/Kiosk und Lehrer-Browser sitzen meist im pädagogischen Netz. |

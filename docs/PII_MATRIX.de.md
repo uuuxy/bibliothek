@@ -15,7 +15,7 @@ zusätzliches `view_students` freischaltet, steht als Anmerkung):
 |---|---|---|
 | 0 | keine Schülerdaten | Katalog, Bestellwesen, System |
 | 1 | Kiosk-Niveau: Name, Klasse, Barcode-ID, Sperrstatus | Scanner-Suche, Vormerkungen |
-| 2 | Verwaltung: + Geburtsdatum, Abgängerjahr, Sperrgrund, LUSD-ID, Ausleihhistorie | Schülerdatei, Mahnwesen |
+| 2 | Verwaltung: + Geburtsdatum, Abgängerjahr, Sperrgrund, LUSD-ID, Ausleihhistorie (befristet: nächtlicher Job trennt abgeschlossene Ausleihen nach Einstellungs-Frist vom Schüler, `jobs/cron_dsgvo_lesehistorie.go`) | Schülerdatei, Mahnwesen |
 | 3 | sensibel: Wohnadresse, Eltern-E-Mail, Foto, Gebühren-/Schadensdaten mit Namen | DSGVO-Auskunft, Rechnungen |
 
 **Rechte-Spalte:** ein Rechtename aus `db/seed.go` (geprüft gegen
@@ -167,6 +167,7 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `DELETE /api/benutzer/{id}` | manage_users | 0 | Personal-Konto |
 | `GET /api/einstellungen` | manage_users | 0 | Systemeinstellungen |
 | `PUT /api/einstellungen` | manage_users | 0 | nur Status |
+| `GET /api/einstellungen/sitzung` | Sitzung | 0 | zwei Zahlen: Minuten bis Theke leeren / Sperrbildschirm |
 | `GET /api/ausweis-layout` | view_students | 0 | Design-JSON ohne Daten |
 | `PUT /api/ausweis-layout` | manage_users | 0 | nur Status |
 | `GET /api/admin/settings/mail` | manage_users | 0 | SMTP-Konfiguration |

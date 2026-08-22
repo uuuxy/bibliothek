@@ -56,6 +56,14 @@ type SystemEinstellungen struct {
 	// Selbstpruefung. Leer = alle aktiven Admin-Konten (sicherer Rueckfall — ein
 	// Alarm, der niemanden erreicht, ist keiner). Betreiber-Wunsch 17.08.2026.
 	AlarmEmpfaenger *string `json:"alarm_empfaenger"`
+	// Datenschutz (A1): Tage nach der Rückgabe, nach denen die Ausleihe vom Schüler getrennt
+	// wird (schueler_id = NULL) — getrennt für Schülerbücherei und Lernmittel. 0 = nie.
+	// Sitzung (A4): Minuten Inaktivität bis Theke leeren bzw. Sperrbildschirm. 0 = aus.
+	// Zeiger, Vorgaben und Begründung: system_settings_datenschutz.go.
+	LesehistorieTage           *int `json:"lesehistorie_tage"`
+	LesehistorieLernmittelTage *int `json:"lesehistorie_lernmittel_tage"`
+	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten"`
+	SperreMinuten              *int `json:"sperre_minuten"`
 }
 
 // StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.
@@ -80,7 +88,7 @@ func NewSystemSettingsRepository(db db.PgxPoolIface) SystemSettingsRepository {
 // standardEinstellungen liefert die Default-Konfiguration (Fallback, wenn ein
 // Wert nicht in der DB steht).
 func standardEinstellungen() *SystemEinstellungen {
-	return &SystemEinstellungen{
+	s := &SystemEinstellungen{
 		LmfStichtag:          "07-31",
 		MaxAusleihenSchueler: 5,
 		FristBuchTage:        21,
@@ -95,6 +103,8 @@ func standardEinstellungen() *SystemEinstellungen {
 		// soll sie nach einem Update nicht ploetzlich vermissen.
 		PreiseErfassen: true,
 	}
+	datenschutzStandards(s)
+	return s
 }
 
 func setzeIntEinstellung(val *string, ziel *int) {
@@ -121,6 +131,9 @@ func setzeStringRoh(val *string, ziel *string) {
 // applyEinstellung überträgt einen einzelnen Key/Value-Eintrag aus der DB auf
 // die Settings-Struktur.
 func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
+	if anwendenDatenschutzEinstellung(settings, key, val) {
+		return
+	}
 	switch key {
 	case "ferien_leseclub_aktiv":
 		settings.FerienLeseclubAktiv = val != nil && *val == "true"
@@ -287,6 +300,7 @@ func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
 	if req.OeffentlicheAdresse != nil {
 		pairs = append(pairs, [2]string{"oeffentliche_adresse", *req.OeffentlicheAdresse})
 	}
+	pairs = append(pairs, datenschutzPairs(req)...)
 
 	// Schul-Identität (PDF-Briefkopf) getrennt behandeln: Diese Felder haben
 	// KEINE eigene UI und werden von der Allgemein-Sektion NICHT mitgesendet.

@@ -101,7 +101,11 @@ type LoginRequest struct {
 
 // LoginResponse represents the response containing user information upon successful authentication.
 type LoginResponse struct {
-	UserID      string   `json:"user_id"`
+	UserID string `json:"user_id"`
+	// Email: die eigene Anmelde-Identität des Benutzers (er hat sie gerade selbst
+	// eingetippt bzw. besitzt die Sitzung). Der Sperrbildschirm braucht sie für die
+	// Wiederanmeldung nach dem Session-Restore, wo der Client sie sonst nicht kennt.
+	Email       string   `json:"email"`
 	Rolle       Role     `json:"rolle"`
 	Vorname     string   `json:"vorname"`
 	Nachname    string   `json:"nachname"`
@@ -199,6 +203,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Encode(w, LoginResponse{
 			UserID:      user.id,
+			Email:       user.email,
 			Rolle:       role,
 			Vorname:     user.vorname,
 			Nachname:    user.nachname,
@@ -209,7 +214,8 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 
 // loginUser bündelt die aus der benutzer-Tabelle geladenen Login-Felder.
 type loginUser struct {
-	id string
+	id    string
+	email string
 	// barcodeID kommt aus der benutzer-Tabelle, NICHT aus der Anfrage — siehe LoginRequest.
 	barcodeID string
 	roleStr   string
@@ -250,12 +256,12 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 	// IMAP succeeded, check if the user is registered in our local DB
 	var u loginUser
 	query := `
-		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv
+		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv, email
 		FROM benutzer
 		WHERE LOWER(email) = LOWER($1)
 		LIMIT 1
 	`
-	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv); err != nil {
+	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.email); err != nil {
 		// Kein lokaler Eintrag. Wenn die Selbstanmeldung für diese Domain freigegeben ist,
 		// entsteht hier eine INAKTIVE Zugangsanfrage — kein Zugang, nur ein Eintrag, den
 		// die Bibliothek freischalten kann. Ist sie nicht freigegeben, bleibt es beim
@@ -322,14 +328,14 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 
 		// Rolle und Stammdaten aus der DB — nicht aus den Claims: Rolle oder
 		// Aktiv-Status können sich seit Token-Ausstellung geändert haben.
-		var roleStr, vorname, nachname string
+		var roleStr, vorname, nachname, email string
 		var aktiv bool
 		err = dbPool.QueryRow(ctx, `
-			SELECT rolle, vorname, nachname, aktiv
+			SELECT rolle, vorname, nachname, aktiv, email
 			FROM benutzer
 			WHERE id = $1
 			LIMIT 1
-		`, claims.UserID).Scan(&roleStr, &vorname, &nachname, &aktiv)
+		`, claims.UserID).Scan(&roleStr, &vorname, &nachname, &aktiv, &email)
 		if err != nil || !aktiv {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
 			return
@@ -344,6 +350,7 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Encode(w, LoginResponse{
 			UserID:      claims.UserID,
+			Email:       email,
 			Rolle:       Role(roleStr),
 			Vorname:     vorname,
 			Nachname:    nachname,

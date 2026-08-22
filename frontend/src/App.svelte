@@ -8,8 +8,10 @@
 	import { offlineSync } from './lib/stores/offlineSync.svelte.js';
 	import { appState } from './inventur/lib/store.svelte.js';
 	import { printQueue } from './lib/stores/printQueue.svelte.js';
+	import { idleLock } from './lib/stores/idleLock.svelte.js';
 
 	import Login from './lib/components/auth/Login.svelte';
+	import Sperrbildschirm from './lib/components/auth/Sperrbildschirm.svelte';
 	import Sidebar from './lib/components/layout/Sidebar.svelte';
 	import BackupAlert from './lib/components/system/BackupAlert.svelte';
 	import Router from './lib/Router.svelte';
@@ -61,6 +63,19 @@
 		};
 	});
 
+	// Inaktivitäts-Wächter (Theke leeren, Sperrbildschirm): gilt für JEDE angemeldete
+	// Sitzung, nicht nur den Kiosk — auch Schülerverwaltung und Mahnwesen zeigen PII.
+	// Fristen kommen aus den Einstellungen (/api/einstellungen/sitzung), 0 = aus.
+	$effect(() => {
+		if (!authStore.isLoggedIn) {
+			idleLock.stop();
+			return;
+		}
+		idleLock.start();
+		idleLock.ladeFristen();
+		return () => idleLock.stop();
+	});
+
 	$effect(() => {
 		if (printQueue.copies) {
 			// 'druck-center' ist der App-Route-Name (Router.svelte); 'labels' ist nur der
@@ -99,6 +114,9 @@
 		     Lieferant hat kein Konto und darf keinen Anmeldebildschirm sehen. -->
 		<BestellBestaetigung />
 	{:else}
+		{#if authStore.isLoggedIn && idleLock.gesperrt}
+			<Sperrbildschirm />
+		{/if}
 		{#if authStore.isLoggedIn && !authStore.heartbeatOk}
 			<div
 				class="fixed inset-0 bg-white/45 backdrop-blur-lg z-50 flex flex-col items-center justify-center space-y-4"

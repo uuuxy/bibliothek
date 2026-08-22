@@ -43,6 +43,9 @@ func (s *Scheduler) Start() {
 		s.RunGDPRAnonymizeLoans()
 		s.RunGDPRDeleteAbgaenger()
 		s.RunGDPRAnonymizeOldData()
+		// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene
+		// Ausleihen nach Frist vom Schüler. Fristen stehen in den Einstellungen.
+		s.RunLesehistorieBefristung()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return

@@ -17,6 +17,10 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	settingsRepo := repository.NewSystemSettingsRepository(dbPool)
 	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_users")(s.GetSettingsHandler(settingsRepo)))
 	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_users")(s.UpdateSettingsHandler(settingsRepo)))
+	// Sitzungs-Fristen (Theke leeren, Sperrbildschirm) braucht JEDER angemeldete Client —
+	// auch Helfer und Kollegium, die /api/einstellungen nicht lesen dürfen. Nur die zwei
+	// Zahlen, keine Schul- oder Betriebsdaten.
+	mux.Handle("GET /api/einstellungen/sitzung", s.RequireAuthenticated()(s.GetSitzungsEinstellungenHandler(settingsRepo)))
 
 	// Ausweis-Design (zentral, für alle vernetzten Arbeitsplätze). Lesen breit (jeder,
 	// der Ausweise druckt), Speichern nur administrativ.

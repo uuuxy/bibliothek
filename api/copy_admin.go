@@ -230,7 +230,11 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 	return s.handleGetTitleHistory
 }
 
-// handleGetTitleHistory liefert die letzten 200 Ausleih-Vorgänge eines Titels. Als
+// handleGetTitleHistory liefert die letzten 200 Ausleih-Vorgänge eines Titels. Seit der
+// Lesehistorie-Befristung (jobs/cron_dsgvo_lesehistorie.go) trägt ein Großteil davon keine
+// schueler_id mehr: Name → "Anonym", Klasse leer. "Lehrer" gilt nur, wenn wirklich ein
+// Benutzer-Konto ausgeliehen hat — vorher machte COALESCE(s.klasse, 'Lehrer') aus jeder
+// getrennten Schüler-Ausleihe eine Lehrer-Ausleihe. Als
 // Top-Level-Methode ausgelagert (nicht Inline-Closure), damit die Scan-Schleife nicht
 // zusätzlich als Verschachtelung zählt (S3776).
 func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
@@ -246,7 +250,7 @@ func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 			SELECT 
 			  COALESCE(s.vorname, b.vorname) AS vorname,
 			  COALESCE(s.nachname, b.nachname) AS nachname,
-			  COALESCE(s.klasse, 'Lehrer') AS klasse,
+			  CASE WHEN a.ausleiher_benutzer_id IS NOT NULL THEN 'Lehrer' ELSE s.klasse END AS klasse,
 			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id

@@ -23,6 +23,7 @@ Credential-Stuffing über diesen Weg.
 - **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
 - **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 500), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen.
 - **Lebensdauer:** 12 Stunden; danach ist eine erneute Anmeldung erforderlich.
+- **Inaktivität (seit 22.08.2026):** Zwei Fristen im Client, beide in den Einstellungen („Datenschutz & Sitzung", 0 = aus): Nach **5 Minuten** ohne Bedienung lässt die Theken-Ansicht den geladenen Schüler/Lehrer fallen (der nächste an der Theke sieht nicht den vorigen), nach **15 Minuten** kommt der **Sperrbildschirm** — verdeckt die ganze Anwendung, weiter nur mit dem eigenen Passwort (echte Wiederanmeldung gegen `/login`, also gegen den Mailserver) oder per Abmelden. Die Sitzung selbst läuft weiter (Kiosk-Tabs überleben die Nacht), sie ist nur nicht mehr einsehbar. Als Bedienung zählen Zeiger, Tastatur (= Scanner), Berührung, Rad — nicht SSE-Pings oder Poller. Die Fristen holt jeder angemeldete Client von `GET /api/einstellungen/sitzung` (`RequireAuthenticated`, nur zwei Zahlen). Gate: `frontend/src/lib/stores/idleLock.test.js` (gestellte Uhr; am Rückbau rot gesehen), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js`.
 - **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Hier stand bis zum 08.08.2026 `Lax` — der Code setzt seit jeher `http.SameSiteStrictMode` (`auth/handlers.go`). Die Doku war also laxer als die Anwendung; wer sie als Grundlage für eine Risikoabwägung nimmt, rechnet mit einem Cross-Site-Fenster, das es nicht gibt.
 
 ### Brute-Force-Schutz (Login)
@@ -314,6 +315,7 @@ Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
 - **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** Entfernt `bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden.
 - **Abgänger-Löschung (`RunGDPRDeleteAbgaenger`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) nach Karenzzeit (30 Tage im neuen Schuljahr), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
+- **Lesehistorie befristen (`RunLesehistorieBefristung`, seit 22.08.2026):** Trennt abgeschlossene Ausleihen nach Frist vom Schüler (`schueler_id = NULL`); der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Zwei Fristen, weil zwei Verarbeitungstätigkeiten (Einstellungen → „Datenschutz & Sitzung", 0 = aus): **Schülerbücherei 90 Tage** (HBDI-Muster-VVT: löschen, „sobald nicht mehr notwendig"), **Lernmittel 730 Tage** (Bestandskartei weist Ausleihe **und** Rücklauf nach, HKM-Leitfaden LMF 11.3; Schadensersatz läuft über die Schulaufsicht, 12.3–12.7). Ausleihen mit **offenem Schadensfall** bleiben zugeordnet, Lehrer-Ausleihen (dienstlich) unberührt. Gate: `jobs/cron_dsgvo_lesehistorie_pg_test.go` (Paarung Frist × Medienklasse, Schadensfall-Wächter, Aus-Schalter — am Rückbau rot gesehen). Vorher behielt jede Ausleihe ihre `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigte bis zu 200 Entleiher mit Namen.
 - **Anonymisierung alter Datensätze (`RunGDPRAnonymizeOldData`):** Leert nach Frist (Soft-Delete > 180 Tage, Abgänger > 360 Tage) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, LUSD-ID, Eltern-E-Mail), löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung.
 
 ### Datenverschlüsselung
@@ -421,13 +423,47 @@ neue Schlüssel hinein (er steht im Scrollback des Rotationslaufs, den das Komma
 ausdrücklich ausgibt). Im Notfall führt der Weg über `vor-rotation.sql` und
 `cmd/restore-backup`.
 
-### Adressdaten (DSGVO vs. Mahnwesen)
-Adressspalten (`strasse`, `plz`, `ort`) und `eltern_email` werden für das Mahnwesen (Briefversand für Schadens-Rechnungen und E-Mail für Mahnungen) benötigt und sind **bewusst vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der Adressspalten blockiert hätte — dieser wurde entfernt, da die Daten fachlich essenziell sind.
+### Adressdaten, Eltern-E-Mail und Rechtsgrundlage (VVT-Grundlage)
 
-**Dokumentation für das Verzeichnis von Verarbeitungstätigkeiten (VVT):**
-- **Rechtsgrundlage:** Art. 6 Abs. 1 lit. c DSGVO (Erfüllung einer rechtlichen Verpflichtung, z.B. Schulgesetz/Lernmittelfreiheit) in Verbindung mit Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung bzgl. Ausleihe) und Art. 5 Abs. 1 lit. c DSGVO (Zweckbindung & Datensparsamkeit).
-- **Zweck:** Ausschließlich für den Versand von Schadens-Rechnungen (Anschrift) und Eltern-Mahnungen (E-Mail).
-- **Aufbewahrungsfrist/Löschung:** Beim Abgang eines Schülers (ohne offene Vorgänge wie Ausleihen oder unbezahlte Rechnungen) werden diese Felder durch die Anonymisierungsroutine (`anonymisiereAbgaenger`) umgehend geleert.
+Adressspalten (`strasse`, `hausnummer`, `plz`, `ort`) und `eltern_email` sind **bewusst
+vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der
+Adressspalten blockiert hätte — er wurde entfernt, weil die Daten fachlich nötig sind.
+Beides steht in Anlage 1 der SchDSV (1.4 Anschrift, 1.14 E-Mail der Eltern).
+
+**Was das System mit der Eltern-E-Mail tatsächlich tut (Stand 22.08.2026, am Code
+geprüft):** Sie wird im Schülerprofil als `mailto:`-Link angezeigt
+(`StudentProfileStammdaten.svelte`), im Mahnwesen als Hinweis-Symbol „Eltern-Mail
+vorhanden" geführt, und die Vorlage `MAHNUNG_ELTERN` füllt den **gedruckten**
+Elternbrief (`api/reports_pdf.go`). **Es geht keine automatische E-Mail an Eltern** —
+Mahn-Mails des Bulk-Laufs gehen an die **Klassenleitungen**
+(`api/mahnwesen_bulk_mail.go`). Bis zum 22.08.2026 behauptete dieser Abschnitt „E-Mail
+für Eltern-Mahnungen"; das war Absicht, nicht Zustand. Entscheidung: **Doku an den Code
+angeglichen, keine Eltern-Mahnmail gebaut** — § 15 SchDSV erlaubt die Eltern-E-Mail nur
+für erforderliche Schulkommunikation, und der gedruckte Brief plus Klassenleitung deckt
+das Mahnwesen ab. Wer eine Eltern-Mahnmail einführt, ergänzt das VVT und den
+Datenschutzhinweis **vorher**.
+
+**Für das Verzeichnis von Verarbeitungstätigkeiten (VVT) — zwei Tätigkeiten, zwei
+Rechtsgrundlagen** (Entwurf nach HBDI-Muster in
+[datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md)):
+
+| | (1) Lernmittelausleihe | (2) Schülerbücherei |
+|---|---|---|
+| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG (Datenverarbeitung durch Schulen) und § 153 HSchG / Verordnung zur Lernmittelfreiheit — öffentlich-rechtliches Nutzungsverhältnis, kein Vertrag | Einwilligung Art. 6 Abs. 1 lit. a DSGVO (freiwillige Nutzung; so das HBDI-Muster-VVT „Schulbibliothek"); für Minderjährige durch die Erziehungsberechtigten |
+| **Zweck** | Nachweis von Ausleihe und Rücklauf (Bestandskartei, HKM-Leitfaden 11.3), Mahnung, Schadensersatz (12.3–12.7, Leistungsbescheid über die Schulaufsicht) | Ausleihverwaltung, Rückgabeerinnerung, Vormerkung |
+| **Anschrift** | gedruckte Rechnung / Elternbrief | gedruckter Elternbrief bei Mahnung |
+| **Eltern-E-Mail** | `mailto:`-Link für manuelle Kontaktaufnahme; kein Versand durch das System | dito |
+| **Löschung** | Abgänger-Routine (unten) + Lesehistorie-Trennung nach 730 Tagen | Abgänger-Routine + Lesehistorie-Trennung nach 90 Tagen |
+
+Bis zum 22.08.2026 stand hier „Art. 6 Abs. 1 lit. c i. V. m. lit. b" — lit. b
+(Vertrag) passt auf keine der beiden Tätigkeiten, lit. c (rechtliche Verpflichtung)
+trifft allenfalls die Lernmittel mittelbar. Die Einordnung oben folgt dem hessischen
+Rahmen (SchDSV, § 83a HSchG, HBDI-Muster); bestätigen muss sie der schulische
+Datenschutzbeauftragte.
+
+**Aufbewahrung/Löschung:** Beim Abgang eines Schülers (ohne offene Vorgänge) leert die
+Anonymisierungsroutine (`anonymisiereAbgaenger`) diese Felder umgehend; Lesehistorie
+nach Frist (oben). Offene Punkte der Schule: [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md).
 
 ---
 

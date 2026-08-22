@@ -66,6 +66,12 @@
 	// sieht er nur seinen internen Namen).
 	let oeffentlicheAdresse = $state('');
 	let alarmEmpfaenger = $state('');
+	// Datenschutz & Sitzung (docs/datenschutz_offene_punkte.md A1/A4). Vorgaben wie im
+	// Backend (repository/system_settings_datenschutz.go); 0 = aus.
+	let lesehistorieTage = $state(90);
+	let lesehistorieLernmittelTage = $state(730);
+	let thekeLeerenMinuten = $state(5);
+	let sperreMinuten = $state(15);
 
 	// --- LOGIC ---
 
@@ -90,6 +96,10 @@
 			etikettEigentumsvermerk = data.etikett_eigentumsvermerk ?? '';
 			oeffentlicheAdresse = data.oeffentliche_adresse ?? '';
 			alarmEmpfaenger = data.alarm_empfaenger ?? '';
+			lesehistorieTage = data.lesehistorie_tage ?? 90;
+			lesehistorieLernmittelTage = data.lesehistorie_lernmittel_tage ?? 730;
+			thekeLeerenMinuten = data.theke_leeren_minuten ?? 5;
+			sperreMinuten = data.sperre_minuten ?? 15;
 		} catch {
 			/* use defaults */
 		}
@@ -154,6 +164,10 @@
 					bind:etikettEigentumsvermerk
 					bind:oeffentlicheAdresse
 					bind:alarmEmpfaenger
+					bind:lesehistorieTage
+					bind:lesehistorieLernmittelTage
+					bind:thekeLeerenMinuten
+					bind:sperreMinuten
 				/>
 
 				<!-- TAB: MAHNWESEN-ROUTING -->

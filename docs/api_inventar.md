@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-08-16. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-08-22. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -17,8 +17,11 @@
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
+- `/api/`
+- `/api/auth/`
+- `/api/public/`
 
-## Alle registrierten Routen (175)
+## Alle registrierten Routen (180)
 
 - `/`
 - `/api/admin`
@@ -48,6 +51,8 @@
 - `GET /api/admin/settings/mail`
 - `GET /api/admin/system/backup-status`
 - `GET /api/admin/system/betriebsbereitschaft`
+- `GET /api/anliegen/eigene`
+- `GET /api/anliegen/offen`
 - `GET /api/audit`
 - `GET /api/ausweis-layout`
 - `GET /api/auth/me`
@@ -73,6 +78,7 @@
 - `GET /api/dashboard/summary`
 - `GET /api/dinge/{id}`
 - `GET /api/einstellungen`
+- `GET /api/einstellungen/sitzung`
 - `GET /api/exemplare/etiketten-offen`
 - `GET /api/exemplare/etiketten-offen/anzahl`
 - `GET /api/faecher`
@@ -132,6 +138,7 @@
 - `POST /api/admin/mahnungen/bulk-print`
 - `POST /api/admin/settings/mail/test`
 - `POST /api/admin/sync-covers`
+- `POST /api/anliegen`
 - `POST /api/ausleihen/global-extend-lmf`
 - `POST /api/ausleihen/{ausleihe_id}/verlaengern`
 - `POST /api/auth/logout`
@@ -181,6 +188,7 @@
 - `PUT /api/admin/`
 - `PUT /api/admin/permissions`
 - `PUT /api/admin/settings/mail`
+- `PUT /api/anliegen/{id}/erledigen`
 - `PUT /api/ausweis-layout`
 - `PUT /api/benutzer/{id}`
 - `PUT /api/bestellungen/{id}/bestaetigen`

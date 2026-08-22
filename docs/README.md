@@ -48,6 +48,9 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [master_fahrplan.md](master_fahrplan.md) | Status-Dokument: erledigt / offen / Parkdeck |
 | [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
 | `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 168 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
+| [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md) | Datenschutz-Arbeitsliste gegen den hessischen Rahmen (SchDSV, HBDI-Muster, HKM-LMF): Code-Punkte, Schul-/DSB-Punkte, bewusste Nicht-Befunde |
+| [datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md) | Entwurf Verzeichnis von Verarbeitungstätigkeiten (HBDI-Muster) — zwei Tätigkeiten: Lernmittelausleihe, Schülerbücherei; TOM-Anhang aus SECURITY.md |
+| [datenschutz/datenschutzhinweis_art13.md](datenschutz/datenschutzhinweis_art13.md) | Entwurf Datenschutzhinweis nach Art. 13 DSGVO für Schüler/Eltern — zwei Fassungen (Lernmittel, Schülerbücherei) |
 | [abnahme_checkliste.md](abnahme_checkliste.md) | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz) |
 | [littera_schema_befund.md](littera_schema_befund.md) | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen |
 | [loadtest_report.md](loadtest_report.md) | Lasttest-Protokoll vom 02.08.2026 (6 h, k6) |
