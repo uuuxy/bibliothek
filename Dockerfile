@@ -65,6 +65,10 @@ RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main main.go
 # die im Container ohnehin gesetzt ist. Wer eine Shell im Container hat, hat den
 # Schlüssel bereits.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o rotate-encryption-key ./cmd/rotate-encryption-key
+# Wiederherstellungswerkzeug: entschlüsselt die .sql.gz.enc-Backups. Gehört INS Image —
+# im Ernstfall hat der Schulserver kein Go, und docs/resilience_and_recovery.md
+# behauptete bis 22.08.2026, es läge dort bereits (Prüfung 22.08., B).
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/restore-backup
 
 # ==============================================================================
 # Stage 3: Runner container
@@ -105,6 +109,9 @@ COPY --from=backend-builder /app/main .
 # Wartungswerkzeug: Schlüsselwechsel ohne Datenverlust (docs/SECURITY.md).
 #   docker compose exec backend ./rotate-encryption-key -neu <neu> -pruefen
 COPY --from=backend-builder /app/rotate-encryption-key .
+# Wiederherstellung (docs/resilience_and_recovery.md 2a):
+#   docker compose exec backend ./restore-backup -in backups/<datei>.sql.gz.enc -out /tmp/dump.sql.gz
+COPY --from=backend-builder /app/restore-backup .
 
 # Copy built Svelte static files
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist

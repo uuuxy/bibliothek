@@ -182,8 +182,8 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 		b.Stufe = StufeKritisch
 		b.Befund = "Die letzte Wiederherstellungs-Probe ist FEHLGESCHLAGEN: " + l.RestoreProbe.Fehler
 		b.Folge = "Im Ernstfall ließe sich die Datenbank aus dem jüngsten Backup nicht wiederherstellen."
-		b.Abhilfe = "Ursache im Befundtext beheben (Schlüssel? Datei? psql?), dann per Neustart oder " +
-			"nächsten Sonntag erneut proben."
+		b.Abhilfe = "Ursache im Befundtext beheben (Schlüssel? Datei? psql?). Nach einem Fehlschlag " +
+			"probt der Stack beim nächsten Neustart von selbst erneut, sonst am Sonntag 03:30 UTC."
 	case l.Jetzt.Sub(l.RestoreProbe.Zeitpunkt) > 9*24*time.Hour:
 		b.Stufe = StufeKritisch
 		b.Befund = fmt.Sprintf("Die letzte erfolgreiche Probe ist %d Tage her — der Wochenlauf steht still.",
@@ -235,8 +235,8 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 			b.Folge = "Bleibt es dabei, ist der Datenverlust-Puffer in Kürze aufgebraucht."
 			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
 		} else {
-			b.Befund = "BACKUP_ENCRYPTION_KEY ist zu kurz für die SHA-256-Ableitung."
-			b.Folge = "Die Backups sind schwächer verschlüsselt als vorgesehen."
+			b.Befund = "BACKUP_ENCRYPTION_KEY ist zu kurz (unter 32 Zeichen)."
+			b.Folge = "Auch die scrypt-Ableitung rettet eine kurze Passphrase nicht — eine entwendete Backup-Datei wäre offline durchprobierbar."
 			b.Abhilfe = "Einen Schlüssel mit mindestens 32 Zeichen setzen."
 		}
 	default:
@@ -377,7 +377,8 @@ func pruefeAuslagerung(l Lage) Befund {
 	b.Befund = "Kein Ziel außer Haus eingerichtet — der Job überspringt sich still."
 	b.Folge = "Alle Backups liegen auf derselben Platte wie die Datenbank. " +
 		"Ein Plattenausfall kostet den gesamten Bestand samt aller Sicherungen."
-	b.Abhilfe = "S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY und S3_BUCKET in der .env setzen."
+	b.Abhilfe = "S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY und S3_BUCKET in der .env setzen und den Stack " +
+		"neu starten (docker compose reicht sie seit 22.08.2026 durch; davor kamen sie nie im Container an)."
 	return b
 }
 

@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -142,11 +143,46 @@ func (s *Scheduler) speichereRestoreProbe(e RestoreProbeErgebnis) {
 	}
 }
 
-// kuerzeFehlertext begrenzt psql-Stderr auf eine handhabbare Länge fürs Ergebnis.
+// probeBeimStartNachFehlschlag wiederholt die Restore-Probe beim Start, wenn der
+// letzte gespeicherte Lauf fehlgeschlagen ist (siehe cron.go).
+func (s *Scheduler) probeBeimStartNachFehlschlag() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var wert string
+	if err := s.db.QueryRow(ctx, `SELECT COALESCE(wert, '') FROM system_einstellungen WHERE schluessel = $1`,
+		RestoreProbeSchluessel).Scan(&wert); err != nil || wert == "" {
+		return // noch nie geprobt oder nicht lesbar — der Sonntagslauf übernimmt
+	}
+	var letzte RestoreProbeErgebnis
+	if err := json.Unmarshal([]byte(wert), &letzte); err != nil || letzte.Erfolg {
+		return
+	}
+	log.Printf("Restore-Probe: letzter Lauf war fehlgeschlagen (%s) — probe beim Start erneut", letzte.Fehler)
+	s.RunRestoreProbe()
+}
+
+// kuerzeFehlertext macht psql-Stderr ergebnis-tauglich: Zeilen mit Datenkontext
+// (CONTEXT: COPY schueler, line 12, column vorname: "…", DETAIL:, HINT:) fliegen raus —
+// dieser Text landet in der Datenbank, auf der Betriebsbereitschafts-Seite und in der
+// Alarm-Mail an frei konfigurierbare Empfänger (Prüfung 22.08.2026). Danach auf 500
+// Zeichen begrenzt.
 func kuerzeFehlertext(s string) string {
 	const max = 500
-	if len(s) > max {
-		return s[:max] + "…"
+	var behalten []string
+	for _, zeile := range strings.Split(s, "\n") {
+		z := strings.TrimSpace(zeile)
+		if z == "" {
+			continue
+		}
+		if strings.HasPrefix(z, "CONTEXT:") || strings.HasPrefix(z, "DETAIL:") ||
+			strings.HasPrefix(z, "HINT:") || strings.HasPrefix(z, "COPY ") {
+			continue
+		}
+		behalten = append(behalten, z)
 	}
-	return s
+	out := strings.Join(behalten, " | ")
+	if len(out) > max {
+		return out[:max] + "…"
+	}
+	return out
 }

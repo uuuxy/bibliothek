@@ -27,7 +27,7 @@ const (
 type BackupStatusResponse struct {
 	LastBackupAt      *time.Time `json:"last_backup_at"` // RFC3339; null = noch nie
 	EncryptionKeySet  bool       `json:"encryption_key_set"`
-	EncryptionKeyWeak bool       `json:"encryption_key_weak"` // gesetzt, aber zu kurz für die SHA-256-Ableitung
+	EncryptionKeyWeak bool       `json:"encryption_key_weak"` // gesetzt, aber zu kurz (unter MinBackupSchluesselLaenge)
 	Status            string     `json:"status"`              // "ok" | "warning" | "critical"
 }
 

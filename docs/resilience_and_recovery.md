@@ -19,8 +19,14 @@ backups/backup_<ZEITSTEMPEL>.sql.gz.enc
   entwendete Backup-Datei nicht mit hoher Rate offline durchprobiert werden kann.
   Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext). Der frühere schwache
   SHA-256-Weg ist **ganz entfernt**: Dateien ohne die `BKDF`-Kennung werden abgelehnt,
-  nicht mehr schwach entschlüsselt (im Pilotbetrieb keine schützenswerten Altbackups;
-  `jobs/backup_krypto.go`).
+  nicht mehr schwach entschlüsselt (`jobs/backup_krypto.go`).
+  **Folge für den Betrieb:** Backups von **vor dem 21.08.2026** (Deploy von 5265698c) sind
+  **nicht mehr entschlüsselbar** — lokal wie auf S3. Nach diesem Deploy gibt es bis zum
+  nächsten 02:30-UTC-Lauf **kein lesbares Backup**; deshalb direkt nach dem Deploy einen
+  manuellen Lauf anstoßen (`docker compose exec backend ./main` kennt keinen Schalter —
+  kürzester Weg: `docker compose exec bibliothek-db pg_dump -U postgres bibliothek | gzip >
+  backups/manuell_$(date +%F).sql.gz` und die Datei nach Eingang des ersten scrypt-Backups
+  löschen, sie ist unverschlüsselt). Alte `.enc`-Dateien und S3-Kopien entsorgen.
 - Rotation: die letzten **14** Backups bleiben erhalten.
 - Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind.
 
@@ -73,7 +79,8 @@ Allgemeine Schritte: (1) Anwendung stoppen, (2) Backup auswählen, (3) Datenbank
 Alles in **derselben** Shell-Sitzung, damit `$KEY` und `$DUMP` erhalten bleiben.
 
 ```bash
-# 0. Restore-Tool bauen (einmalig; im Container liegt es bereits im Image)
+# 0. Restore-Tool: liegt seit 22.08.2026 im Image (`docker compose exec backend ./restore-backup …`).
+#    Außerhalb des Containers (Entwicklungsrechner mit Go) einmalig bauen:
 go build -o restore-backup ./cmd/restore-backup
 
 # 1. Backup auswählen — neuestes verschlüsseltes Backup
@@ -92,12 +99,9 @@ ls -lh "$DUMP"
 head -5 "$DUMP"
 grep -c "CREATE TABLE" "$DUMP"     # muss deutlich > 0 sein
 
-# 4b. NUR für Backups von VOR dem 22.08.2026: Sie wurden mit pg_dump 17 erzeugt und
-# enthalten `SET transaction_timeout`, das ein PostgreSQL-15-Server nicht kennt —
-# der Restore bricht damit unter ON_ERROR_STOP ab. Die Zeile ist gefahrlos zu
-# entfernen (reiner Sitzungsparameter). Neuere Backups (Client 16, siehe Dockerfile)
-# brauchen das nicht; die wöchentliche Restore-Probe prüft genau diesen Weg.
-grep -q "transaction_timeout" "$DUMP" && sed -i.bak "/^SET transaction_timeout/d" "$DUMP"
+# (Ein früherer Schritt 4b entfernte `SET transaction_timeout` aus pg_dump-17-Dumps von
+# vor dem 22.08.2026 — diese Dateien sind seit dem scrypt-Umstieg ohnehin nicht mehr
+# entschlüsselbar, der Schritt ist gegenstandslos. Neue Backups kommen von Client 16.)
 ```
 
 Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:

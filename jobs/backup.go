@@ -295,8 +295,9 @@ func uploadBackupToS3(ctx context.Context, outFilename string, encrypted []byte)
 }
 
 // DecryptBackup ist die Wiederherstellungs-Entschlüsselung für cmd/restore-backup,
-// die Restore-Probe und die Drill-Tests. Sie erkennt am Dateikopf das Format:
-// scrypt (neu, backup_krypto.go) oder SHA-256 (alt) — alte Backups bleiben so lesbar.
+// die Restore-Probe und die Drill-Tests. Sie verlangt das scrypt-Format (BKDF-Kennung,
+// backup_krypto.go); der frühere SHA-256-Weg ist seit 5265698c (21.08.2026) ENTFERNT —
+// Backups von davor sind damit nicht mehr lesbar (docs/resilience_and_recovery.md).
 func DecryptBackup(encKey string, ciphertext []byte) ([]byte, error) {
 	return entschluesseleBackupDaten(encKey, ciphertext)
 }

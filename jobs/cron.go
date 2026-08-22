@@ -72,9 +72,9 @@ func (s *Scheduler) Start() {
 			"Datenbank-Backups erstellt. Der nächtliche Job überspringt sich. Variable in " +
 			"der .env setzen und den Stack neu starten.")
 	} else if SchluesselIstSchwach(os.Getenv("BACKUP_ENCRYPTION_KEY")) {
-		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist kürzer als %d Zeichen. Die Ableitung "+
-			"per SHA-256 ist schnell — eine kurze Passphrase ist an einer entwendeten "+
-			"Backup-Datei offline angreifbar.", MinBackupSchluesselLaenge)
+		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist kürzer als %d Zeichen. Auch scrypt "+
+			"rettet eine kurze Passphrase nicht — sie ist an einer entwendeten "+
+			"Backup-Datei offline durchprobierbar.", MinBackupSchluesselLaenge)
 	}
 
 	if _, err := s.cron.AddFunc("30 2 * * *", func() {
@@ -116,6 +116,11 @@ func (s *Scheduler) Start() {
 	if _, err := s.cron.AddFunc("30 3 * * 0", s.RunRestoreProbe); err != nil {
 		log.Printf("Scheduler: Failed to register restore probe job: %v", err)
 	}
+	// Nach einem FEHLGESCHLAGENEN Lauf probt der Start erneut — sonst stünde die
+	// Betriebsbereitschaft nach der Behebung bis zu sieben Tage auf „kritisch" und die
+	// Alarm-Mail käme jeden Tag (Prüfung 22.08.2026). Nur nach Fehlschlag: Ein gesunder
+	// Stack soll beim Neustart nicht jedes Mal eine Datenbank anlegen und einspielen.
+	go s.probeBeimStartNachFehlschlag()
 
 	s.cron.Start()
 	log.Println("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
