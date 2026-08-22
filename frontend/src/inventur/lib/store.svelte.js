@@ -20,7 +20,7 @@ export const appState = $state({
  * App.svelte). Das frühere Single-Slot-toastState hatte keinen gemounteten
  * Renderer und konnte nur eine Meldung gleichzeitig halten.
  * @param {string} message
- * @param {'success' | 'error' | 'info'} [type='success']
+ * @param {import('../../lib/stores/toastStore.svelte.js').ToastTyp} [type='success']
  */
 export function showToast(message, type = 'success') {
 	toastStore.addToast(message, type);
