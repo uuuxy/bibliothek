@@ -36,6 +36,11 @@ test('Theke leert sich nach 5 Minuten, Sperrbildschirm nach 15, Passwort entsper
 	expect(await fristen.json()).toEqual({ theke_leeren_minuten: 5, sperre_minuten: 15 });
 
 	await expect(page.getByPlaceholder(/scannen/i).first()).toBeVisible();
+	// Erst tippen, wenn das Scanfeld WIRKLICH den Fokus hat — der Kiosk fokussiert es beim
+	// Laden selbst, aber nach dem Rendern; ein sofortiges Tippen lief im Suite-Lauf ins Leere.
+	await expect
+		.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
+		.toBe('omnibox-input');
 	await page.keyboard.type(`S-${suffix}`, { delay: 5 });
 	await page.keyboard.press('Enter');
 	await expect(page.getByText(`Sperre-${suffix}`).first()).toBeVisible();
