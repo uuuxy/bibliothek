@@ -232,3 +232,71 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		}
 	})
 }
+
+// Prüfung 22.08.2026, Fund A3: Der LUSD-Pfad anonymisierte den Schülerdatensatz, setzte
+// aber kein anonymized_at — die nächtliche Tilgung der Neben-Tabellen (Kriterium
+// anonymized_at IS NOT NULL) sah ihn nie, und der Purge am 30. Januar kam ihr zuvor und
+// räumte audit_logs nicht. Folge: Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN) überlebte
+// 24 Monate im Audit. Jetzt: Marker gesetzt, Barcode anonym, Spuren in derselben Tx weg.
+func TestAnonymisiereAbgaenger_SetztMarkerUndTilgtSpuren(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var id, titelID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id)
+		 VALUES ('F-2', 'Lena', 'Spur', '9a', 2025, 'L-SPUR-42') RETURNING id`).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Spur-Titel') RETURNING id`).Scan(&titelID); err != nil {
+		t.Fatal(err)
+	}
+	seed := func(sql string, args ...any) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+			t.Fatalf("%s: %v", sql, err)
+		}
+	}
+	seed(`INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', 'L-SPUR-42'))`, id)
+	seed(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details) VALUES ('schueler', 'UPDATE', $1, 'USER', jsonb_build_object('vorname', 'Lena', 'nachname', 'Spur'))`, id)
+	seed(`INSERT INTO vormerkungen (titel_id, schueler_id, notiz) VALUES ($1, $2, 'Lena bitte anrufen')`, titelID, id)
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	if err := anonymisiereAbgaenger(ctx, tx, id); err != nil {
+		t.Fatalf("anonymisiereAbgaenger: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	var anonymisiert bool
+	var barcode string
+	if err := pool.QueryRow(ctx, `SELECT anonymized_at IS NOT NULL, barcode_id FROM schueler WHERE id=$1`, id).Scan(&anonymisiert, &barcode); err != nil {
+		t.Fatal(err)
+	}
+	if !anonymisiert || barcode != "ANON-"+id {
+		t.Errorf("Marker/Barcode fehlen: anonymized=%v barcode=%q", anonymisiert, barcode)
+	}
+	zaehleSQL := func(sql string, args ...any) int {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, sql, args...).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if n := zaehleSQL(`SELECT count(*) FROM audit_logs WHERE details ? 'lusd_id' AND details->>'schueler_id' = $1`, id); n != 0 {
+		t.Errorf("LUSD-ID lebt in audit_logs weiter (%d Zeilen)", n)
+	}
+	if n := zaehleSQL(`SELECT count(*) FROM audit_log WHERE tabelle='schueler' AND datensatz_id=$1 AND details::text LIKE '%Lena%'`, id); n != 0 {
+		t.Errorf("Klarname lebt in audit_log weiter (%d Zeilen)", n)
+	}
+	if n := zaehleSQL(`SELECT count(*) FROM vormerkungen WHERE schueler_id=$1`, id); n != 0 {
+		t.Errorf("Vormerkung mit Notiz lebt weiter (%d)", n)
+	}
+}

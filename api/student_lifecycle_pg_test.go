@@ -172,9 +172,22 @@ func TestPurgeStudent_AnonymisiertUndLoescht(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Prüfung 22.08.2026, A3: Der Purge räumte audit_log, aber nie audit_logs — die
+	// LUSD-ID aus LUSD_ID_NACHGETRAGEN überlebte die Löschung um bis zu 24 Monate.
+	if _, err := pool.Exec(ctx, `INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', 'L-PURGE-7'))`, sid); err != nil {
+		t.Fatal(err)
+	}
+
 	auditRepo := repository.NewAuditRepository(pool)
 	if err := auditRepo.PurgeStudent(ctx, sid, ""); err != nil {
 		t.Fatalf("PurgeStudent: %v", err)
+	}
+	var lusdSpuren int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE details ? 'lusd_id' AND details->>'schueler_id' = $1`, sid).Scan(&lusdSpuren); err != nil {
+		t.Fatal(err)
+	}
+	if lusdSpuren != 0 {
+		t.Errorf("LUSD-ID überlebt den Purge in audit_logs (%d Zeilen)", lusdSpuren)
 	}
 
 	// Schüler-Datensatz weg.

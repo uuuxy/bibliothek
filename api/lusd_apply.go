@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/closeutil"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -335,14 +336,23 @@ func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) er
 	// geburtsdatum und lusd_id gehören mit geleert: beide sind direkt identifizierend
 	// (Geburtsdatum reidentifiziert zusammen mit Restdaten, lusd_id ist die staatliche
 	// Schüler-ID). Damit ist dieser Pfad deckungsgleich mit RunGDPRAnonymizeOldData.
-	_, err := tx.Exec(ctx, `
+	// anonymized_at + anonymer Barcode wie im Cron-Pfad (RunGDPRAnonymizeOldData): Der
+	// Marker ist das Kriterium der nächtlichen Selbstheilung und der Papierkorb-Sperre;
+	// ohne ihn sah die Tilgung der Neben-Tabellen diesen Schüler nie, und der Purge am
+	// 30. Januar kam ihr zuvor (Prüfung 22.08.2026, A3). Der Ausweis-Barcode gehört mit
+	// weg — ein anonymisierter Datensatz darf an der Theke nicht mehr per Scan aufgehen.
+	if _, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = 'Abgänger', nachname = $1, klasse = 'ABG',
 			strasse = NULL, hausnummer = NULL, plz = NULL, ort = NULL, eltern_email = NULL,
 			geburtsdatum = NULL, lusd_id = NULL,
+			barcode_id = 'ANON-' || id::text, anonymized_at = NOW(),
 			ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Abgänger anonymisiert',
 			abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
 		WHERE id = $2`,
-		anonymisiertName, schuelerID)
-	return err
+		anonymisiertName, schuelerID); err != nil {
+		return err
+	}
+	// Spuren in den Neben-Tabellen in derselben Transaktion — nicht erst in der Nacht.
+	return repository.TilgeSchuelerSpuren(ctx, tx, schuelerID, "DSGVO-Anonymisierung (LUSD-Abgang)")
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -172,11 +173,8 @@ func (r *pgAuditRepository) entferneSchuelerPIIUndLoesche(ctx context.Context, t
 	if _, err := tx.Exec(ctx, `DELETE FROM schadensfaelle WHERE schueler_id = $1`, studentID); err != nil {
 		return fmt.Errorf("deleting damages: %w", err)
 	}
-	if _, err := tx.Exec(ctx, `
-		UPDATE audit_log
-		SET details = jsonb_build_object('anonymisiert', true, 'grund', 'DSGVO-Löschung')
-		WHERE tabelle = 'schueler' AND datensatz_id = $1`, studentID); err != nil {
-		return fmt.Errorf("anonymizing audit logs: %w", err)
+	if err := TilgeSchuelerSpuren(ctx, tx, studentID, "DSGVO-Löschung"); err != nil {
+		return err
 	}
 	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, studentID)
 	if err != nil {
@@ -253,4 +251,38 @@ func (r *pgAuditRepository) PurgeAbgaenger(ctx context.Context, studentID string
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+// SpurenExecutor ist der kleinste gemeinsame Nenner von pgx.Tx und dem Pool.
+type SpurenExecutor interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+// TilgeSchuelerSpuren entfernt die Personendaten EINES Schülers aus den Neben-Tabellen:
+// Klarname/Barcode aus audit_log (fachliche Historie), die staatliche LUSD-ID aus
+// audit_logs (LUSD_ID_NACHGETRAGEN), und seine Vormerkungen (Freitext-Notiz). Gemeinsamer
+// Schritt von LUSD-Abgänger-Anonymisierung (api/lusd_apply.go) und Purge — bis zum
+// 22.08.2026 hatte nur der Cron-Pfad (jobs/cron_dsgvo.go, set-basiert über anonymized_at)
+// alle drei, der LUSD-Pfad keinen, der Purge nur audit_log. Folge: Die LUSD-ID eines
+// abgegangenen Schülers überlebte bis zu 24 Monate in audit_logs (Prüfung 22.08., A3).
+// Idempotent; muss VOR dem DELETE des Schülers laufen (audit_logs hängt nur per
+// details->>'schueler_id' am Schüler, nicht per FK).
+func TilgeSchuelerSpuren(ctx context.Context, ex SpurenExecutor, schuelerID, grund string) error {
+	if _, err := ex.Exec(ctx, `
+		UPDATE audit_log
+		SET details = jsonb_build_object('anonymisiert', true, 'grund', $2::text)
+		WHERE tabelle = 'schueler' AND datensatz_id = $1
+		  AND (details IS NULL OR NOT (details ? 'anonymisiert'))`, schuelerID, grund); err != nil {
+		return fmt.Errorf("anonymizing audit_log: %w", err)
+	}
+	if _, err := ex.Exec(ctx, `
+		UPDATE audit_logs
+		SET details = details - 'lusd_id'
+		WHERE details ? 'lusd_id' AND details->>'schueler_id' = $1`, schuelerID); err != nil {
+		return fmt.Errorf("removing lusd_id from audit_logs: %w", err)
+	}
+	if _, err := ex.Exec(ctx, `DELETE FROM vormerkungen WHERE schueler_id = $1`, schuelerID); err != nil {
+		return fmt.Errorf("deleting vormerkungen: %w", err)
+	}
+	return nil
 }
