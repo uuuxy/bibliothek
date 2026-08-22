@@ -68,7 +68,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o rotate-encryption-key 
 # Wiederherstellungswerkzeug: entschlüsselt die .sql.gz.enc-Backups. Gehört INS Image —
 # im Ernstfall hat der Schulserver kein Go, und docs/resilience_and_recovery.md
 # behauptete bis 22.08.2026, es läge dort bereits (Prüfung 22.08., B).
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/restore-backup
+# CGO_ENABLED=1 wie beim Hauptbinary: cmd/restore-backup zieht über jobs die WebP-Bibliothek
+# (cgo) mit; ohne cgo bricht der Build — der lokale Stack-Build hat es gezeigt.
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/restore-backup
 
 # ==============================================================================
 # Stage 3: Runner container
