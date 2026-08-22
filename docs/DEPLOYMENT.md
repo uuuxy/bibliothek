@@ -377,3 +377,30 @@ genau das auf diesem Server schon einmal ausgelöst, und gemerkt hat es niemand,
 kein Fehler auftrat: Es lief nur nichts mehr.
 
 Optional: Sentry-Integration für Error-Tracking via `SENTRY_DSN`.
+
+---
+
+## 8. Release & Image (ghcr.io)
+
+Zwei Dinge laufen automatisch, ein drittes bewusst nicht:
+
+| Ereignis | Was passiert | Workflow |
+|---|---|---|
+| Push auf `main` | Image `ghcr.io/uuuxy/bibliothek:latest` + `main-<kurz-sha>` | `docker-publish.yml` |
+| Git-Tag `v1.2.3` | Image `1.2.3`, `1.2`, `latest` **und** GitHub-Release mit generierten Notes | `docker-publish.yml` + `release.yml` |
+| Deploy auf dem Server | **nicht** automatisch — `./update.sh` (git pull + lokaler Build), siehe §2 | — |
+
+**Release machen** (auf grünem `main`, vom Repo-Root):
+
+```bash
+TAG=v1.2.3
+git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
+```
+
+Nur das Muster `v<major>.<minor>.<patch>` (mit führendem „v") löst beides aus — derselbe
+Filter in beiden Workflows, damit Release und Image nie auseinanderlaufen. Das alte
+Release „1.0" (ohne „v", von Hand angelegt am 21.08.2026) zeigt fest auf `dd8a31c6`
+und hat kein versioniertes Image; es bleibt als Historie stehen.
+
+`latest` heißt „neuester main", nicht „neuestes Release". Wer einen festen Stand will,
+nimmt den Versions-Tag.

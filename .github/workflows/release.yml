@@ -1,0 +1,49 @@
+name: Release anlegen (bei v-Tag)
+
+# Tag setzen = Release. Ein Git-Tag `v1.2.3` erzeugt hier automatisch das GitHub-Release
+# mit generierten Notes (alle Commits seit dem vorigen Tag); parallel baut
+# docker-publish.yml zum selben Tag das versionierte Image ghcr.io/uuuxy/bibliothek:1.2.3
+# (plus 1.2 und latest). Ohne diesen Workflow wurde das Release von Hand angelegt und
+# wanderte nicht mit: „1.0" zeigte dauerhaft auf einen alten Commit, und weil der Tag
+# kein führendes „v" hatte, gab es dazu nicht einmal ein Image.
+#
+# Ablauf für ein Release (vom Repo-Root, auf grünem main):
+#   git tag -a v1.2.3 -m "v1.2.3" && git push origin v1.2.3
+#
+# Nur Tags im Muster v<major>.<minor>.<patch> — derselbe Filter wie im Docker-Workflow,
+# damit Release und Image nie auseinanderlaufen.
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth 0: Die generierten Notes brauchen die Historie bis zum vorigen Tag.
+      - name: Quellcode auschecken
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # --verify-tag: Kein Release zu einem Tag, der (noch) nicht auf dem Server liegt.
+      # Existiert das Release schon (z. B. manueller Vorgriff), wird es NICHT überschrieben —
+      # der Schritt meldet das und endet grün, damit ein Wiederholungslauf nichts zerstört.
+      - name: GitHub-Release mit generierten Notes anlegen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG existiert bereits — nichts zu tun."
+            exit 0
+          fi
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes \
+            --verify-tag \
+            --notes "Docker-Image: \`ghcr.io/uuuxy/bibliothek:${TAG#v}\` (Build läuft in „Docker Image veröffentlichen (ghcr.io)“ zum selben Tag)."
