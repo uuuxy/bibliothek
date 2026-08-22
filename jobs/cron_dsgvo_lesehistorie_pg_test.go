@@ -113,8 +113,40 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	}
 	ids["G-ALT"] = geraetAusleihe
 
+	// Prüfung 22.08.2026, A5: Das Ausleih-Protokoll (audit_log CHECKOUT/RETURN, Details
+	// mit schueler_id) trug die Lesehistorie weiter, nachdem die Ausleihe längst getrennt
+	// war — bis zur Audit-Aufbewahrung (24 Monate). Dieselbe Frist gilt jetzt auch dort.
+	exemplarVon := func(ausleiheID string) string {
+		t.Helper()
+		var e string
+		if err := pool.QueryRow(ctx, `SELECT exemplar_id FROM ausleihen WHERE id = $1`, ausleiheID).Scan(&e); err != nil {
+			t.Fatalf("Exemplar lesen: %v", err)
+		}
+		return e
+	}
+	for name, tage := range map[string]int{"F-ALT": 100, "F-JUNG": 10, "L-MITTEL": 100, "L-ALT": 800} {
+		must(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
+		      VALUES ('ausleihen', 'RETURN', $1::uuid, 'USER',
+		              jsonb_build_object('exemplar_id', $1::text, 'schueler_id', $2::text),
+		              NOW() - make_interval(days => $3))`, exemplarVon(ids[name]), schuelerID, tage)
+	}
+
 	s := NewScheduler(pool, repository.NewAuditRepository(pool))
 	s.RunLesehistorieBefristung()
+
+	auditTraegtSchueler := func(name string) bool {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log WHERE tabelle='ausleihen' AND datensatz_id = $1 AND details ? 'schueler_id'`, exemplarVon(ids[name])).Scan(&n); err != nil {
+			t.Fatalf("audit_log lesen: %v", err)
+		}
+		return n > 0
+	}
+	for name, bleibt := range map[string]bool{"F-ALT": false, "F-JUNG": true, "L-MITTEL": true, "L-ALT": false} {
+		if got := auditTraegtSchueler(name); got != bleibt {
+			t.Errorf("audit_log %s: schueler_id vorhanden = %v, erwartet %v", name, got, bleibt)
+		}
+	}
 
 	hatSchueler := func(id string) bool {
 		t.Helper()

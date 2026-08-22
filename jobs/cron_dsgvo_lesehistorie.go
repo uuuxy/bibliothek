@@ -42,10 +42,12 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 
 	getrenntFreihand := s.trenneAusleihen(ctx, freihandTage, false)
 	getrenntLernmittel := s.trenneAusleihen(ctx, lernmittelTage, true)
+	protokollFreihand := s.tilgeAusleihProtokoll(ctx, freihandTage, false)
+	protokollLernmittel := s.tilgeAusleihProtokoll(ctx, lernmittelTage, true)
 
-	gesamt := getrenntFreihand + getrenntLernmittel
-	log.Printf("Scheduler Lesehistorie: %d Ausleihen vom Schüler getrennt (Schülerbücherei %d nach %d Tagen, Lernmittel %d nach %d Tagen)",
-		gesamt, getrenntFreihand, freihandTage, getrenntLernmittel, lernmittelTage)
+	gesamt := getrenntFreihand + getrenntLernmittel + protokollFreihand + protokollLernmittel
+	log.Printf("Scheduler Lesehistorie: %d Ausleihen vom Schüler getrennt (Schülerbücherei %d nach %d Tagen, Lernmittel %d nach %d Tagen), %d Protokolleinträge bereinigt",
+		getrenntFreihand+getrenntLernmittel, getrenntFreihand, freihandTage, getrenntLernmittel, lernmittelTage, protokollFreihand+protokollLernmittel)
 	if gesamt == 0 {
 		return
 	}
@@ -56,6 +58,7 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 			"schuelerbuecherei_tage":     freihandTage,
 			"lernmittel_getrennt":        getrenntLernmittel,
 			"lernmittel_tage":            lernmittelTage,
+			"protokoll_bereinigt":        protokollFreihand + protokollLernmittel,
 			"ausgefuehrt_am":             time.Now().UTC().Format(time.RFC3339),
 		},
 	); err != nil {
@@ -94,6 +97,51 @@ func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bo
 	tag, err := s.db.Exec(ctx, query, tage)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Trennung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
+		return 0
+	}
+	return tag.RowsAffected()
+}
+
+// tilgeAusleihProtokoll nimmt dem Ausleih-Protokoll (audit_log CHECKOUT/RETURN, Details
+// mit schueler_id) die Schüler-Zuordnung nach derselben Frist wie den Ausleihen selbst.
+// Ohne das trug das Protokoll die Lesehistorie bis zur Audit-Aufbewahrung (24 Monate)
+// weiter — die Trennung der Ausleihe wäre nur Kosmetik gewesen (Prüfung 22.08.2026, A5).
+// datensatz_id ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über
+// den Titel. Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat
+// oder ein offener Schadensfall daran hängt — dort ist der Zweck nicht erreicht.
+func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmittel bool) int64 {
+	if tage <= 0 {
+		return 0
+	}
+	istLernmittel := `EXISTS (
+		SELECT 1 FROM buecher_exemplare e
+		JOIN buecher_titel t ON t.id = e.titel_id
+		WHERE e.id = al.datensatz_id AND ` + lmf.SQLBedingung("t.titel", "t.signatur") + `)`
+	klasse := "NOT " + istLernmittel
+	if lernmittel {
+		klasse = istLernmittel
+	}
+	query := `
+		UPDATE audit_log al
+		SET details = al.details - 'schueler_id'
+		WHERE al.tabelle = 'ausleihen'
+		  AND al.details ? 'schueler_id'
+		  AND al.timestamp < NOW() - make_interval(days => $1)
+		  AND NOT EXISTS (
+		        SELECT 1 FROM ausleihen a
+		        WHERE a.exemplar_id = al.datensatz_id
+		          AND a.schueler_id::text = al.details->>'schueler_id'
+		          AND a.rueckgabe_am IS NULL)
+		  AND NOT EXISTS (
+		        SELECT 1 FROM schadensfaelle sf
+		        WHERE sf.exemplar_id = al.datensatz_id
+		          AND sf.schueler_id::text = al.details->>'schueler_id'
+		          AND sf.ist_bezahlt = false
+		          AND sf.storniert_am IS NULL)
+		  AND ` + klasse
+	tag, err := s.db.Exec(ctx, query, tage)
+	if err != nil {
+		log.Printf("Scheduler Lesehistorie: Protokoll-Bereinigung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
 	}
 	return tag.RowsAffected()

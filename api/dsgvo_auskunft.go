@@ -249,10 +249,14 @@ func (s *Server) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]Dsgvo
 }
 
 func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]DsgvoAuditEintrag, error) {
+	// Auch die Ausleih-Protokolle (CHECKOUT/RETURN) gehören zur Auskunft: Dort steht der
+	// Schüler in details.schueler_id, datensatz_id ist das Exemplar. Ohne diesen Zweig
+	// fehlte die Lesehistorie im Audit-Teil der Art.-15-Auskunft (Prüfung 22.08.2026, A5).
 	const q = `
 		SELECT aktion, akteur, timestamp, kontext, COALESCE(details, 'null'::jsonb)
 		FROM audit_log
-		WHERE tabelle = 'schueler' AND datensatz_id = $1::uuid
+		WHERE (tabelle = 'schueler' AND datensatz_id = $1::uuid)
+		   OR (tabelle = 'ausleihen' AND details->>'schueler_id' = $1::text)
 		ORDER BY timestamp DESC`
 	rows, err := s.DB.Pool.Query(ctx, q, id)
 	if err != nil {
