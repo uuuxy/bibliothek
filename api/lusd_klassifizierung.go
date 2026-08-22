@@ -52,16 +52,20 @@ func klassifiziereLusd(datei lusdDatei, idx lusdIndex, res *LusdPreviewResult) l
 		case lusdModusID:
 			klassifiziereZeileID(i, rec, idx, res, &z, gesehen)
 		case lusdModusName:
-			klassifiziereZeileName(i, rec, rec.schluessel(), idx, res, &z, gesehen)
+			klassifiziereZeileName(i, rec, rec.schluessel(), idx, res, &z, gesehen, false)
 		default:
 			// Nur-Name: Derselbe Name zweimal in der Datei sind zwei Menschen, die sich
 			// nicht auseinanderhalten lassen — beide melden, keinen anfassen.
 			if namenInDatei[rec.namensschluessel()] > 1 {
 				res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(fmt.Sprintf("zeile-%d", rec.LineNum), rec, "", rec.Klasse))
 				z.ueberspringen[i] = true
+				// Der Name STEHT im Export — ein bestätigter Bestandsschüler dieses Namens
+				// ist also nicht „nicht im Export". Ohne diese Zeile machte sammleAbgaenger
+				// ihn zum Abgänger und Apply anonymisierte ihn (Prüfung 22.08.2026, A1).
+				gesehen[rec.namensschluessel()] = true
 				continue
 			}
-			klassifiziereZeileName(i, rec, rec.namensschluessel(), idx, res, &z, gesehen)
+			klassifiziereZeileName(i, rec, rec.namensschluessel(), idx, res, &z, gesehen, true)
 		}
 	}
 	sammleAbgaenger(datei.Modus, idx, gesehen, res, &z)
@@ -118,7 +122,12 @@ func klassifiziereZeileID(i int, rec parsedStudentRow, idx lusdIndex, res *LusdP
 // Aufrufer, vom Parser garantiert nicht leer). Mehrdeutige Treffer werden übersprungen
 // und gemeldet — ein Neuzugang an ihrer Stelle liefe ohnehin am Unique-Index
 // unique_schueler_name_gebdatum auf oder wäre im Nur-Name-Modus ein Ratespiel.
-func klassifiziereZeileName(i int, rec parsedStudentRow, key string, idx lusdIndex, res *LusdPreviewResult, z *lusdZuordnung, gesehen map[string]bool) {
+//
+// nurName: Im Nur-Name-Modus ist ein Abgänger mit demselben Namen KEIN sicherer
+// Rückkehrer — ebenso gut ein neuer Fünftklässler, der sonst auf dem Datensatz (Sperre,
+// Schulden, Lesehistorie) des Abgegangenen landete (Prüfung 22.08.2026, A2). Er wird als
+// mehrdeutig gemeldet und nicht angefasst; das Sekretariat entscheidet von Hand.
+func klassifiziereZeileName(i int, rec parsedStudentRow, key string, idx lusdIndex, res *LusdPreviewResult, z *lusdZuordnung, gesehen map[string]bool, nurName bool) {
 	zeilenID := fmt.Sprintf("zeile-%d", rec.LineNum)
 	if s, ok := idx.aktiv[key]; ok {
 		if s == nil {
@@ -134,8 +143,12 @@ func klassifiziereZeileName(i int, rec parsedStudentRow, key string, idx lusdInd
 		return
 	}
 	if s, ok := idx.abgaenger[key]; ok {
-		if s == nil {
-			res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
+		if s == nil || nurName {
+			alteKlasse := ""
+			if s != nil {
+				alteKlasse = s.Klasse
+			}
+			res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(zeilenID, rec, alteKlasse, rec.Klasse))
 			z.ueberspringen[i] = true
 			return
 		}

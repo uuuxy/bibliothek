@@ -100,3 +100,85 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 		t.Errorf("mehrdeutige Bestandsschüler dürfen nicht als Abgänger gelten (err=%v, abg=%v)", err, abg)
 	}
 }
+
+// Prüfung 22.08.2026, Fund A1: Steht ein Name ZWEIMAL in der Datei, sind beide Zeilen
+// mehrdeutig — aber ein bestätigter Bestandsschüler dieses Namens ist deshalb nicht „nicht
+// im Export". Vorher setzte der Mehrdeutig-Zweig `gesehen` nicht, und sammleAbgaenger
+// machte ihn zum Abgänger: Vorschau zeigte ihn unter „wird nicht angefasst" UND unter
+// „Abgänger", Apply anonymisierte ihn.
+func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	s := &Server{DB: &db.Database{Pool: pool}}
+
+	tom := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Doppelt", klasse: "5a", barcode: "NN-6", geb: datum(2014, 1, 1), bestaetigt: true})
+	// Genug unbeteiligte Bestätigte, damit die Massenabgangs-Bremse nicht greift.
+	for i := 0; i < 12; i++ {
+		legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ruhig", nachname: "Kind" + string(rune('A'+i)), klasse: "7a", barcode: "NN-R" + string(rune('A'+i)), geb: datum(2012, 1, 1+i), bestaetigt: true})
+	}
+	zeilen := []parsedStudentRow{nmZeile(2, "Tom", "Doppelt", "6a", nil), nmZeile(3, "Tom", "Doppelt", "6b", nil)}
+	for i := 0; i < 12; i++ {
+		zeilen = append(zeilen, nmZeile(4+i, "Ruhig", "Kind"+string(rune('A'+i)), "8a", nil))
+	}
+	datei := nnDatei(zeilen...)
+	prev, err := s.computeLusd(ctx, datei, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(prev.Graduates) != 0 {
+		t.Fatalf("Bestandsschüler mit Doppelname in der Datei darf KEIN Abgänger sein: %+v", prev.Graduates)
+	}
+	if len(prev.Mehrdeutig) != 2 {
+		t.Fatalf("erwartet 2 Mehrdeutig-Zeilen, waren %d", len(prev.Mehrdeutig))
+	}
+	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	var abg bool
+	var vorname string
+	if err := pool.QueryRow(ctx, `SELECT ist_abgaenger, vorname FROM schueler WHERE id=$1`, tom).Scan(&abg, &vorname); err != nil {
+		t.Fatal(err)
+	}
+	if abg || vorname != "Tom" {
+		t.Errorf("Tom wurde angefasst: abgaenger=%v vorname=%q", abg, vorname)
+	}
+}
+
+// Prüfung 22.08.2026, Fund A2: Im Nur-Name-Modus ist ein Abgänger mit demselben Namen
+// KEIN sicherer Rückkehrer — ein neuer Fünftklässler „Max Alt" landete sonst auf dem
+// Datensatz (Sperre, Schulden, Lesehistorie) des abgegangenen Zehntklässlers. Jetzt:
+// gemeldet als mehrdeutig, nichts angefasst, kein Neuzugang.
+func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	s := &Server{DB: &db.Database{Pool: pool}}
+
+	alt := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Alt", klasse: "10a", barcode: "NN-7", geb: datum(2008, 3, 3), abgaenger: true, bestaetigt: true})
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id=$1`, alt); err != nil {
+		t.Fatal(err)
+	}
+	datei := nnDatei(nmZeile(2, "Max", "Alt", "5a", nil))
+	prev, err := s.computeLusd(ctx, datei, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(prev.Rueckkehrer) != 0 || len(prev.Mehrdeutig) != 1 || len(prev.NewStudents) != 0 {
+		t.Fatalf("Nur-Name: Abgänger-Namensvetter muss mehrdeutig sein, nicht Rückkehrer/neu: %+v", prev)
+	}
+	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	var abg, gesperrt bool
+	var klasse string
+	if err := pool.QueryRow(ctx, `SELECT ist_abgaenger, ist_gesperrt, klasse FROM schueler WHERE id=$1`, alt).Scan(&abg, &gesperrt, &klasse); err != nil {
+		t.Fatal(err)
+	}
+	if !abg || !gesperrt || klasse != "10a" {
+		t.Errorf("Abgänger wurde angefasst: abgaenger=%v gesperrt=%v klasse=%q", abg, gesperrt, klasse)
+	}
+	if n := zaehle(t, pool, "nachname='Alt'"); n != 1 {
+		t.Errorf("erwartet 1 Zeile 'Alt', waren %d", n)
+	}
+}
