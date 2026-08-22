@@ -273,10 +273,13 @@ IM_IMAGE="$(docker exec "${APP_CONTAINER}" printenv GIT_COMMIT 2>/dev/null || ec
 if [ -z "${ERWARTET}" ]; then
     log_warn "Kein git-Arbeitsverzeichnis — Abgleich nicht möglich."
 elif [ -z "${IM_IMAGE}" ]; then
-    # Beim allerersten Deploy nach dieser Änderung ist das der Normalfall: Das laufende
-    # Image stammt noch aus der Zeit vor dem Build-Argument.
-    log_warn "Das Image trägt keinen Commit — vermutlich noch von vor dieser Neuerung."
-    log_warn "Beim nächsten Update ist der Abgleich scharf."
+    # Seit dem Deploy vom 11.08.2026 trägt jedes regulär gebaute Image seinen Commit.
+    # Ein leerer Wert heißt: von Hand ohne GIT_COMMIT gebaut (oder ein Stand von vor
+    # dem 11.08.) — genau der stille „alter Container"-Fall, den dieser Schritt fangen
+    # soll (Prüfung 22.08.2026). Früher nur eine Warnung, die das Skript grün beendete.
+    log_error "Das Image trägt keinen Commit (GIT_COMMIT leer) — es wurde nicht über update.sh gebaut."
+    log_error "Erneut bauen mit:  GIT_COMMIT=\$(git rev-parse HEAD) docker compose -f \"${COMPOSE_FILE}\" build --no-cache && docker compose -f \"${COMPOSE_FILE}\" up -d"
+    exit 1
 elif [ "${IM_IMAGE}" = "${ERWARTET}" ]; then
     log_ok "Container läuft aus ${ERWARTET:0:7} — Arbeitsverzeichnis und Image stimmen überein."
 else

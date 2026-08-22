@@ -332,6 +332,15 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	b.addInt("abgaenger_jahr", req.AbgaengerJahr)
 
 	if req.Geburtsdatum != nil {
+		// Pflichtfeld seit 21.08.2026 (Schlüssel des LUSD-Abgleichs): POST verlangt es,
+		// PATCH durfte es bis 22.08. mit "" still auf NULL setzen — zweite Tür, gleiche
+		// Regel (Prüfung 22.08., B). Leer = 400, nicht blanken.
+		if strings.TrimSpace(*req.Geburtsdatum) == "" {
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
+			apierrors.SendHTTPError(w, http.StatusBadRequest,
+				errors.New("Geburtsdatum kann nicht geleert werden — es ist der Schlüssel für den LUSD-Abgleich"))
+			return nil, false
+		}
 		parsedDate, err := parseGeburtsdatum(*req.Geburtsdatum)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)

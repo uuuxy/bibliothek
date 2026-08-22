@@ -62,7 +62,7 @@ jobs:
       - name: Install gosec
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Run gosec
         # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
@@ -166,7 +166,9 @@ jobs:
           docker volume rm -f biblio-ci-backups biblio-ci-uploads
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        # Gepinnt statt @master: ein Branch ist kein Release, Dependabot kann ihn nicht
+        # pflegen (Prüfung 22.08.2026).
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: bibliothek:scan
           format: table

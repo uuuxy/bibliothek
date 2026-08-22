@@ -30,6 +30,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Ein Tag ist ein Veröffentlichungskanal — bis 22.08.2026 ein ungeschützter: Jeder Push
+      # auf irgendeinen Commit (Feature-Branch, roter Stand) erzeugte sofort ein öffentliches
+      # Release (Prüfung 22.08.). Drei Wächter: striktes Muster (der Glob oben lässt
+      # v1.2.3.4 und vfoo.bar.baz durch), Commit MUSS auf main liegen, CI MUSS dort grün sein.
+      - name: Voraussetzungen prüfen (Muster, auf main, CI grün)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' passt nicht auf v<major>.<minor>.<patch> — kein Release."; exit 1
+          fi
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Commit $GITHUB_SHA liegt nicht auf main — Releases kommen nur von main."; exit 1
+          fi
+          # Check-Runs des getaggten Commits: alles, was 'CI' heißt, muss success sein.
+          STATUS=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
+            --jq '[.check_runs[] | select(.name=="build-and-test" or .name=="docker-scan")] | if length==0 then "none" elif all(.conclusion=="success") then "success" else "other" end')
+          if [ "$STATUS" != "success" ]; then
+            echo "::error::CI für $GITHUB_SHA ist nicht grün (Status: $STATUS). Erst CI abwarten/grün machen, dann diesen Workflow erneut starten (Re-run)."; exit 1
+          fi
+
       # --verify-tag: Kein Release zu einem Tag, der (noch) nicht auf dem Server liegt.
       # Existiert das Release schon (z. B. manueller Vorgriff), wird es NICHT überschrieben —
       # der Schritt meldet das und endet grün, damit ein Wiederholungslauf nichts zerstört.
@@ -51,10 +75,11 @@ jobs:
           # dann auf die letzten 100 Commits begrenzen, statt 2.000 Zeilen Notes zu erzeugen.
           if [ -n "$VORHER" ]; then BEREICH="${VORHER}..${TAG}"; DECKEL=""; else BEREICH="$TAG"; DECKEL="--max-count=100"; fi
           {
-            echo "Docker-Image: \`ghcr.io/uuuxy/bibliothek:${TAG#v}\` (Build in „Docker Image veröffentlichen (ghcr.io)“ zum selben Tag)."
+            echo "Docker-Image: \`ghcr.io/uuuxy/bibliothek:${TAG#v}\` (Build im Workflow 'Docker Image veröffentlichen (ghcr.io)' zum selben Tag)."
             echo
             echo "## Commits${VORHER:+ seit $VORHER}"
-            # shellcheck disable=SC2086 — DECKEL ist leer oder genau ein Argument
+            # DECKEL ist leer oder genau ein Argument (--max-count=100)
+            # shellcheck disable=SC2086
             git log --no-merges --format='* %s (%h)' $DECKEL "$BEREICH"
             echo
           } > /tmp/notes.md

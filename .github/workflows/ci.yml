@@ -20,6 +20,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Workflow-Syntax wird geprüft, BEVOR ein Tippfehler erst beim nächsten v-Tag auffällt
+  # (release.yml/docker-publish.yml laufen nur dort; Prüfung 22.08.2026).
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
   build-and-test:
     runs-on: ubuntu-latest
     env:
@@ -97,9 +108,9 @@ jobs:
         # apt ist nur die Rückfallebene für einen Image-Wechsel — und dann mit harten
         # Netz-Timeouts statt der apt-Vorgabe, die an einem hängenden Spiegel klebt.
         if ! command -v pg_dump >/dev/null 2>&1; then
-          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
-          sudo apt-get $APT_OPTS update -qq
-          sudo apt-get $APT_OPTS install -y -qq postgresql-client
+          APT_OPTS=(-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15)
+          sudo apt-get "${APT_OPTS[@]}" update -qq
+          sudo apt-get "${APT_OPTS[@]}" install -y -qq postgresql-client
         fi
         pg_dump --version
         psql --version
@@ -216,7 +227,7 @@ jobs:
       run: |
         docker network create caddy_global_net
         docker compose -f docker-compose.local.yml up -d --build
-        for i in $(seq 1 60); do
+        for _ in $(seq 1 60); do
           curl -sf http://localhost:8084/health >/dev/null && break
           sleep 2
         done

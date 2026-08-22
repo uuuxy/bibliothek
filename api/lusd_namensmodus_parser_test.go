@@ -83,15 +83,16 @@ func TestParseLusdDatei_NurNameLegtGleicheNamenNichtZusammen(t *testing.T) {
 func TestParseLusdDatei_NamensmodusLeeresGeburtsdatumBrichtHartAb(t *testing.T) {
 	// Eine Zeile ohne lesbares Datum hat im Namensmodus keinen Schlüssel. Still
 	// überspringen hieße: dieser Schüler würde jedes Jahr neu angelegt oder nie
-	// gefunden. Deshalb harter Abbruch mit Zeile und Name.
+	// gefunden. Deshalb harter Abbruch mit Zeile — OHNE Namen: Die Meldung landet über
+	// SendHTTPError im Server-Log (Prüfung 22.08.2026); die Zeilennummer reicht zum Finden.
 	for _, wert := range []string{"", "Unsinn", "31.02.2012"} {
 		csv := "vorname,nachname,klasse,geburtsdatum\nMax,Mustermann,5a,01.02.2012\nErika,Musterfrau,6b," + wert + "\n"
 		_, err := parseLusdDatei([]byte(csv))
 		if err == nil {
 			t.Fatalf("Geburtsdatum %q: erwartet Abbruch", wert)
 		}
-		if !strings.Contains(err.Error(), "zeile 3") || !strings.Contains(err.Error(), "Musterfrau") {
-			t.Errorf("Geburtsdatum %q: Meldung muss Zeile und Namen nennen, war: %v", wert, err)
+		if !strings.Contains(err.Error(), "zeile 3") || strings.Contains(err.Error(), "Musterfrau") {
+			t.Errorf("Geburtsdatum %q: Meldung muss die Zeile nennen und den Namen NICHT (Log), war: %v", wert, err)
 		}
 	}
 }

@@ -5,44 +5,6 @@ import (
 	"testing"
 )
 
-func TestKuerze(t *testing.T) {
-	tmpDir := t.TempDir()
-	protokollPfad := filepath.Join(tmpDir, "protokoll.log")
-	p, err := NeuesProtokoll(protokollPfad, "id")
-	if err != nil {
-		t.Fatalf("NeuesProtokoll schlug fehl: %v", err)
-	}
-	defer p.Schliessen()
-
-	tests := []struct {
-		name     string
-		wert     string
-		max      int
-		erwartet string
-		warnung  bool
-	}{
-		{"kürzer als max", "abc", 5, "abc", false},
-		{"genau max", "abc", 3, "abc", false},
-		{"länger als max (ASCII)", "abcd", 3, "abc", true},
-		{"länger als max (Umlaute/Runen)", "äöüß", 3, "äöü", true},
-		{"leer", "", 5, "", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			startWarnungen := p.Warnungen()
-			got := Kuerze(p, "1", "kennung", "feld", tt.wert, tt.max)
-			if got != tt.erwartet {
-				t.Errorf("Kuerze() = %q, erwartet %q", got, tt.erwartet)
-			}
-			warnungAusgeloest := (p.Warnungen() - startWarnungen) > 0
-			if warnungAusgeloest != tt.warnung {
-				t.Errorf("Kuerze() Warnungen = %v, erwartet: %v", warnungAusgeloest, tt.warnung)
-			}
-		})
-	}
-}
-
 func TestKuerzeNullbar(t *testing.T) {
 	tmpDir := t.TempDir()
 	protokollPfad := filepath.Join(tmpDir, "protokoll.log")

@@ -61,7 +61,7 @@ Trennung von (1) ist nötig, weil Lernmittel weder freiwillig noch per Einwillig
 | **Bezeichnung** | Konten für Lehrkräfte, Bibliothekspersonal und Helfer; Protokollierung administrativer und fachlicher Aktionen (Audit-Trail). |
 | **Zweck** | Zugriffskontrolle (4 Rollen: Admin, Mitarbeiter, Kollegium, Helfer), Nachvollziehbarkeit von Änderungen an Schülerdaten und Einstellungen (Art. 5 Abs. 2 Rechenschaft), Klassensatz-Reservierungen und Wünsche der Lehrkräfte. |
 | **Rechtsgrundlage** | Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG; für Beschäftigte § 23 HDSIG (Datenverarbeitung im Beschäftigungsverhältnis). |
-| **Datenkategorien** | Name, dienstliche E-Mail (Anmeldung gegen den Schul-Mailserver per IMAP — **kein Passwort im System**), Rolle, Ausweis-Barcode, Aktiv-Status; Protokolleinträge (wer hat wann welche Aktion ausgelöst, ohne IP-Adresse). Handapparat-Ausleihen der Lehrkraft bleiben dauerhaft zugeordnet (dienstlich); Lehrkräfte werden nicht gemahnt. |
+| **Datenkategorien** | Name, dienstliche E-Mail (Anmeldung gegen den Schul-Mailserver per IMAP — **kein Passwort im System**), Rolle, Ausweis-Barcode, Aktiv-Status; Protokolleinträge (wer hat wann welche Aktion ausgelöst; administrative Eingriffe im `audit_logs` **mit** IP-Adresse des Arbeitsplatzes — Rechenschaft nach Art. 5 Abs. 2, 24 Monate). Handapparat-Ausleihen der Lehrkraft bleiben dauerhaft zugeordnet (dienstlich); Lehrkräfte werden nicht gemahnt. |
 | **Empfänger** | Schulleitung/Admin; keine externen. |
 | **Löschfristen** | Protokolle 24 Monate (nächtlicher Job). Bearbeiter-ID an Ausleihen nach 14 Tagen entfernt. Konto bei Ausscheiden deaktivieren/löschen (manuell; Pflicht der Schule). |
 
@@ -78,7 +78,7 @@ Belegt in [SECURITY.md](../SECURITY.md); Kurzfassung für das VVT:
 | Zugriff | Rollen mit Rechte-Matrix (Admin, Mitarbeiter, Kollegium, Helfer); Helfer sehen nur Kiosk-Niveau (Name, Klasse, Sperrstatus), keine Adressen, keine Geburtsdaten, keine Fotos; jede Route ist in der PII-Matrix eingestuft und per Test an das Recht gebunden. |
 | Trennung | Statistik und Dashboard ohne Personenbezug (serverseitig aggregiert). |
 | Verschlüsselung | Fotos AES-256-GCM in der Datenbank; Backups `pg_dump → gzip → AES-256-GCM` mit scrypt-Schlüsselableitung, 0600, 14 Tage Rotation; Transport TLS. |
-| Integrität | Audit-Trail (fachlich + administrativ), append-only per Konvention; DSGVO-Tilgung ist die dokumentierte Ausnahme. Keine IP-Adressen im Protokoll. |
+| Integrität | Audit-Trail (fachlich + administrativ), append-only per Konvention mit Quelltext-Ratsche; DSGVO-Tilgung und 24-Monats-Aufbewahrung sind die einzigen Schreibtüren. Administrative Einträge tragen die IP-Adresse des Arbeitsplatzes (Schulnetz), fachliche nicht. |
 | Verfügbarkeit | Tägliches verschlüsseltes Backup, wöchentliche Restore-Probe, Selbstprüfung der Betriebsbereitschaft mit Kritisch-Alarm per Mail. |
 | Datenminimierung/Löschung | Automatische Jobs: Bearbeiter-ID 14 Tage, Lesehistorie 90/730 Tage, Abgänger-Löschung, Anonymisierung 180/360 Tage, Audit 24 Monate. Betroffenenauskunft (Art. 15) als JSON/PDF für Admins. |
 | Eingabekontrolle | Jede Änderung an Schülerdaten mit Bearbeiter und Zeit protokolliert; privilegierte Felder (Sperren, Überschreiben) nur mit eigenem Recht. |

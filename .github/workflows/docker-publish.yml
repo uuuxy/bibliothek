@@ -7,11 +7,14 @@ name: Docker Image veröffentlichen (ghcr.io)
 #
 # Bildname: ghcr.io/uuuxy/bibliothek
 #   - Push auf main        → Tag `latest` und `main-<kurz-sha>`
-#   - Git-Tag `v1.2.3`     → Tags `1.2.3`, `1.2`, `latest`
+#   - Git-Tag `v1.2.3`     → Tags `1.2.3` und `1.2` — NICHT latest (latest = neuester main;
+#                            bis 22.08.2026 schrieb auch der Tag latest, ein Hotfix-Tag auf
+#                            altem Stand setzte latest zurück — Prüfung 22.08.)
 #   - manuell (Actions-UI) → Tag `latest`
 #
-# Das Package ist beim ersten Push PRIVAT. Sichtbarkeit ggf. in
-# GitHub → Packages → bibliothek → Package settings umstellen.
+# Das Package ist ÖFFENTLICH (anonym per `docker pull` ziehbar — praktisch für den
+# Schulserver; das Repo ist ohnehin public, das Image enthält nur Repo-Inhalte, keine .env).
+# Wer je Schul-Spezifisches ins Image legt, stellt die Sichtbarkeit vorher um.
 
 on:
   push:
@@ -34,6 +37,23 @@ jobs:
     steps:
       - name: Quellcode auschecken
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Versioniertes Image nur für ein striktes v-Tag auf main (siehe release.yml).
+      - name: Tag prüfen (Muster, auf main)
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' passt nicht auf v<major>.<minor>.<patch> — kein Image."; exit 1
+          fi
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Commit $GITHUB_SHA liegt nicht auf main — versionierte Images kommen nur von main."; exit 1
+          fi
 
       - name: An der GitHub Container Registry anmelden
         uses: docker/login-action@v4
@@ -47,6 +67,9 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/uuuxy/bibliothek
+          # latest=false: Sonst hängt metadata-action bei semver-Tags automatisch latest an.
+          flavor: |
+            latest=false
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=main-,enable={{is_default_branch}}

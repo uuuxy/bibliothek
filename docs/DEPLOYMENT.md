@@ -402,5 +402,12 @@ Filter in beiden Workflows, damit Release und Image nie auseinanderlaufen. Das a
 Release „1.0" (ohne „v", von Hand angelegt am 21.08.2026) zeigt fest auf `dd8a31c6`
 und hat kein versioniertes Image; es bleibt als Historie stehen.
 
-`latest` heißt „neuester main", nicht „neuestes Release". Wer einen festen Stand will,
-nimmt den Versions-Tag.
+`latest` heißt „neuester main", nicht „neuestes Release" — seit 22.08.2026 auch technisch:
+der Tag-Lauf setzt `latest` nicht mehr (`flavor: latest=false`). Wer einen festen Stand
+will, nimmt den Versions-Tag. Beide Tag-Workflows prüfen vorher: striktes Muster
+`v<major>.<minor>.<patch>`, Commit liegt auf `main`, CI des Commits ist grün — ein Tag auf
+einem Feature-Branch oder rotem Stand erzeugt weder Release noch Image.
+
+**Deploy-Weg bleibt `git pull` + lokaler Build** (`update.sh`); die ghcr-Images sind
+Nachweis und Artefakt, kein zweiter Deploy-Pfad. Rollback = Backup zurückspielen
+(Abschnitt 6); Migrationen laufen nur vorwärts.

@@ -111,16 +111,16 @@ func TestFelder(t *testing.T) {
 		t.Errorf("titel = %v, want Mein Buch", f.titel)
 	}
 	if f.untertitel == nil || *f.untertitel != "Band 1" {
-		t.Errorf("untertitel = %v, want Band 1", *f.untertitel)
+		t.Errorf("untertitel = %v, want Band 1", f.untertitel)
 	}
 	if f.autor == nil || *f.autor != "Autor A" {
-		t.Errorf("autor = %v, want Autor A", *f.autor)
+		t.Errorf("autor = %v, want Autor A", f.autor)
 	}
 	if f.verlag == nil || *f.verlag != "Ein Verlag" {
-		t.Errorf("verlag = %v, want Ein Verlag", *f.verlag)
+		t.Errorf("verlag = %v, want Ein Verlag", f.verlag)
 	}
 	if f.signatur == nil || *f.signatur != "Sig 123" {
-		t.Errorf("signatur = %v, want Sig 123", *f.signatur)
+		t.Errorf("signatur = %v, want Sig 123", f.signatur)
 	}
 	if f.medientyp != "Zeitschrift" {
 		t.Errorf("medientyp = %v, want Zeitschrift", f.medientyp)

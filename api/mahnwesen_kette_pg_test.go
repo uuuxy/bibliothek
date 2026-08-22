@@ -150,7 +150,10 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// internal/service/loan_rules_test.go (sameDay) wurden beim Zeit-Sweep am 19.08.2026 schon
 	// so normalisiert; dieser Test hier wurde damals übersehen.
 	// Nachstellbar ohne Warten auf Mitternacht: TZ=Pacific/Midway go test ./api/ -run TestMahnkette
-	erwartet := service.TagesEndeInSchulzeitzone(time.Now().AddDate(0, 0, 13))
+	// AddDate NACH der Normalisierung in die Schulzeitzone — sonst rechnet der Test im
+	// Runner-Kalender und weicht am DST-Ende (24.10., 22–23 UTC) um einen Tag ab
+	// (Prüfung 22.08.2026). Die Produktion rechnet in loan_rules.go genauso.
+	erwartet := service.TagesEndeInSchulzeitzone(service.TagesEndeInSchulzeitzone(time.Now()).AddDate(0, 0, 13))
 	if !service.TagesEndeInSchulzeitzone(frist).Equal(erwartet) {
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (13 Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"))

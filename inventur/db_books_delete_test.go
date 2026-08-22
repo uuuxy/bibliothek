@@ -43,6 +43,7 @@ func TestDeleteBooks(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
+		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
@@ -74,6 +75,7 @@ func TestDeleteBooks(t *testing.T) {
 	})
 
 	t.Run("book not found", func(t *testing.T) {
+		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
@@ -160,6 +162,7 @@ func TestSammleLokaleCoverPfade(t *testing.T) {
 	ids := []string{"id-1"}
 
 	t.Run("success", func(t *testing.T) {
+		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()

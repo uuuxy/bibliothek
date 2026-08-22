@@ -187,9 +187,14 @@ func TestMigriereFoto_VerschluesselungFehlgeschlagen(t *testing.T) {
 	require.NoError(t, err)
 	defer root.Close() //nolint:errcheck
 
-	// No encryption key set, so it should fail
+	// Schlüssel AKTIV leeren — sonst hinge der Test an der Umgebung: Mit gesetztem
+	// APP_ENCRYPTION_KEY verschlüsselte er erfolgreich, der Mock lehnte das unerwartete
+	// Exec ab, und das false war nur ein Mock-Artefakt (Prüfung 22.08.2026). Würde die
+	// Verschlüsselung trotzdem gelingen, liefe der INSERT durch und der Test würde rot.
+	t.Setenv("APP_ENCRYPTION_KEY", "")
+	mock.ExpectExec("INSERT INTO schueler_fotos").WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	ok := migriereFoto(mock, root, "123.jpg", "123", "uuid")
-	assert.False(t, ok)
+	assert.False(t, ok, "ohne Schlüssel darf keine Verschlüsselung gelingen")
 }
 
 func TestMigriereFoto_DBFehler(t *testing.T) {

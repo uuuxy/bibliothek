@@ -1,10 +1,13 @@
 package api
 
 import (
+	"bibliothek/auth"
+	"bibliothek/repository"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -203,6 +206,12 @@ func (s *Server) lusdUploadHandler(apply bool) http.HandlerFunc {
 		}
 		allowMass := apply && r.FormValue("confirm_graduates") == "true"
 		res, err := s.computeLusd(r.Context(), datei, apply, allowMass)
+		if err == nil && apply {
+			// Der einzige Pfad, der Schülernamen irreversibel anonymisiert, hinterließ bis
+			// 22.08.2026 keinen Audit-Eintrag — weder Akteur noch Zahlen (Prüfung 22.08., B).
+			// Zähler und Modus, keine Namen (Rechenschaft ohne neue PII).
+			s.protokolliereLusdImport(r, res, allowMass)
+		}
 		if err != nil {
 			var massErr *errMassGraduation
 			if errors.As(err, &massErr) {
@@ -223,3 +232,29 @@ func (s *Server) PostLusdPreviewHandler() http.HandlerFunc { return s.lusdUpload
 // Ab massGraduationThresholdPct Abgängern verlangt er das Formularfeld
 // confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
 func (s *Server) PostLusdImportHandler() http.HandlerFunc { return s.lusdUploadHandler(true) }
+
+// protokolliereLusdImport schreibt den Apply-Lauf ins Admin-Audit: Modus, Zähler je
+// Kategorie und ob der Massenabgang bestätigt wurde. Ohne Namen.
+func (s *Server) protokolliereLusdImport(r *http.Request, res *LusdPreviewResult, massenabgangBestaetigt bool) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok || s.DB == nil || s.DB.Pool == nil || res == nil {
+		return
+	}
+	details := map[string]any{
+		"modus":                   res.Modus,
+		"zeilen":                  res.TotalCsvRecords,
+		"neu":                     len(res.NewStudents),
+		"klassenwechsel":          len(res.ClassChanges),
+		"adoptionen":              len(res.Adoptions),
+		"rueckkehrer":             len(res.Rueckkehrer),
+		"abgaenger":               len(res.Graduates),
+		"nicht_im_export":         len(res.NichtImExport),
+		"nicht_abgleichbar":       len(res.NichtAbgleichbar),
+		"mehrdeutig":              len(res.Mehrdeutig),
+		"massenabgang_bestaetigt": massenabgangBestaetigt,
+	}
+	if err := repository.NewAuditRepository(s.DB.Pool).
+		LogAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", getIP(r), details); err != nil {
+		log.Printf("LUSD-Import: Audit-Eintrag fehlgeschlagen: %v", err)
+	}
+}

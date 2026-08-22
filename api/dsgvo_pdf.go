@@ -83,7 +83,7 @@ func generateDsgvoAuskunftPDF(daten *dsgvoDaten, schule pdf.SchuleInfo) ([]byte,
 	dsgvoSchadensAbschnitt(p, tr, daten.schaeden)
 	dsgvoVormerkAbschnitt(p, tr, daten.vormerkungen)
 	dsgvoAuditAbschnitt(p, tr, daten.auditEintraege)
-	dsgvoVerarbeitungAbschnitt(p, tr)
+	dsgvoVerarbeitungAbschnitt(p, tr, daten.verarbeitung)
 
 	var buf bytes.Buffer
 	if err := p.Output(&buf); err != nil {
@@ -218,8 +218,7 @@ func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAu
 	}
 }
 
-func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string) {
-	va := dsgvoVerarbeitungsangaben()
+func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va DsgvoVerarbeitungsangaben) {
 	dsgvoAbschnitt(p, tr, "7. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
 	dsgvoAbsatz(p, tr, "Verarbeitungszwecke", strings.Join(va.Zwecke, "; "))
 	dsgvoAbsatz(p, tr, "Rechtsgrundlage", va.Rechtsgrundlage)

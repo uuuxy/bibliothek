@@ -3,9 +3,11 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/repository"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -110,19 +112,43 @@ type DsgvoAuskunftResponse struct {
 	Verarbeitungsangaben DsgvoVerarbeitungsangaben `json:"verarbeitungsangaben"`
 }
 
-func dsgvoVerarbeitungsangaben() DsgvoVerarbeitungsangaben {
+// dsgvoVerarbeitungsangaben formuliert die Pflichtangaben nach Art. 15 Abs. 1 DSGVO —
+// aus DENSELBEN Fristen, mit denen das System arbeitet (Einstellungen „Datenschutz &
+// Sitzung"). Bis 22.08.2026 stand hier pauschal lit. e ohne Fristen, während SECURITY.md,
+// VVT- und Art.-13-Entwurf längst zwei Tätigkeiten mit zwei Grundlagen und 90/730 Tagen
+// beschrieben — eine Betroffenenauskunft mit falscher Pflichtangabe (Prüfung 22.08., B).
+func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage int) DsgvoVerarbeitungsangaben {
+	frist := func(tage int) string {
+		if tage <= 0 {
+			return "bis zur Löschung des Schülerdatensatzes (Befristung in dieser Installation abgeschaltet)"
+		}
+		return fmt.Sprintf("%d Tage nach Rückgabe", tage)
+	}
 	return DsgvoVerarbeitungsangaben{
 		Zwecke: []string{
-			"Verwaltung der Lehrmittelausleihe im Rahmen der Lernmittelfreiheit",
-			"Betrieb der Schulbibliothek (Ausleihe, Vormerkung, Mahnwesen)",
+			"Verwaltung der Lernmittelausleihe im Rahmen der Lernmittelfreiheit (Nachweis von Ausleihe und Rücklauf, Mahnung, Schadensersatz)",
+			"Betrieb der Schülerbücherei (Ausleihe, Vormerkung, Rückgabeerinnerung)",
 			"Abwicklung von Schadens- und Verlustfällen",
 		},
-		Rechtsgrundlage:   "Art. 6 Abs. 1 lit. e DSGVO i. V. m. dem Hessischen Schulgesetz (Lernmittelfreiheit, schulische Verwaltungsaufgaben)",
-		Empfaenger:        "Keine Übermittlung an Dritte; Verarbeitung ausschließlich durch das Bibliotheks- und Verwaltungspersonal der Schule",
-		Speicherdauer:     "Bis zum Verlassen der Schule und Abschluss aller offenen Vorgänge; danach Löschung über die Papierkorb-/Löschfunktion",
-		Herkunft:          "Stammdaten aus der Landesschülerdatenbank LUSD (Import) bzw. manuelle Erfassung durch das Bibliotheksteam",
-		Betroffenenrechte: "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)",
+		Rechtsgrundlage: "Lernmittelausleihe: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 und § 153 HSchG (Lernmittelfreiheit) und SchDSV — öffentlich-rechtliches Nutzungsverhältnis. " +
+			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO / § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
+		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
+		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
+			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz: nach dem Abgang (ab 30. Januar des Folgejahres) gelöscht, sofern keine offene Ausleihe und kein unbezahlter Schadensfall; Altfälle nach 360 Tagen, Papierkorb nach 180 Tagen anonymisiert. Protokolle 24 Monate. Verschlüsselte Backups 14 Tage.",
+		Herkunft:          "Stammdaten aus der Landesschülerdatenbank LUSD (Export/Import) bzw. manuelle Erfassung durch das Bibliotheksteam",
+		Betroffenenrechte: "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)",
 	}
+}
+
+// dsgvoLesehistorieFristen liest die Befristung aus den Einstellungen; bei Fehlern gelten
+// die Vorgaben (so arbeitet auch der Job).
+func (s *Server) dsgvoLesehistorieFristen(ctx context.Context) (int, int) {
+	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil || einst == nil {
+		return repository.StandardLesehistorieTage, repository.StandardLesehistorieLernmittelTage
+	}
+	return repository.TageOderStandard(einst.LesehistorieTage, repository.StandardLesehistorieTage),
+		repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage)
 }
 
 func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {
@@ -283,6 +309,7 @@ type dsgvoDaten struct {
 	schaeden       []DsgvoSchadensfall
 	vormerkungen   []DsgvoVormerkung
 	auditEintraege []DsgvoAuditEintrag
+	verarbeitung   DsgvoVerarbeitungsangaben
 }
 
 // sammleDsgvoDaten lädt alle personenbezogenen Daten eines Schülers für die
@@ -316,8 +343,10 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Protokolleinträge", err)
 	}
+	verarbeitung := dsgvoVerarbeitungsangaben(s.dsgvoLesehistorieFristen(ctx))
 
 	return &dsgvoDaten{
+		verarbeitung:   verarbeitung,
 		stammdaten:     stammdaten,
 		foto:           foto,
 		ausleihen:      ausleihen,
@@ -384,7 +413,7 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 			Schadensfaelle:       daten.schaeden,
 			Vormerkungen:         daten.vormerkungen,
 			AuditEintraege:       daten.auditEintraege,
-			Verarbeitungsangaben: dsgvoVerarbeitungsangaben(),
+			Verarbeitungsangaben: daten.verarbeitung,
 		})
 		return nil
 	})

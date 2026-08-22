@@ -201,7 +201,9 @@ func parseLusdDatei(content []byte) (lusdDatei, error) {
 	if irgendeinDatum {
 		for _, z := range zeilen {
 			if z.GebDatum == nil {
-				return lusdDatei{}, fmt.Errorf("zeile %d (%s %s): Geburtsdatum fehlt oder ist unlesbar — ohne LUSD-ID ist Name + Geburtsdatum der Zuordnungsschlüssel, er muss in jeder Zeile stehen", z.LineNum, z.Vorname, z.Nachname)
+				// Nur die Zeilennummer, kein Name: Die Meldung landet über SendHTTPError im
+				// Server-Log (Prüfung 22.08.2026). Die Zeile findet das Sekretariat in der Datei.
+				return lusdDatei{}, fmt.Errorf("zeile %d: Geburtsdatum fehlt oder ist unlesbar — ohne LUSD-ID ist Name + Geburtsdatum der Zuordnungsschlüssel, er muss in jeder Zeile stehen", z.LineNum)
 			}
 		}
 		return legeDublettenZusammen(zeilen, lusdModusName, parsedStudentRow.schluessel), nil
