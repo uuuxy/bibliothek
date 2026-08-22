@@ -47,12 +47,15 @@ jobs:
           # Commit-Betreffzeilen seit dem vorigen v-Tag (ohne Merge-Commits); den
           # PR-Teil hängt GitHub darunter an.
           VORHER=$(git describe --tags --abbrev=0 --match 'v*.*.*' "${TAG}^" 2>/dev/null || true)
-          if [ -n "$VORHER" ]; then BEREICH="${VORHER}..${TAG}"; else BEREICH="$TAG"; fi
+          # Ohne vorigen v-Tag (allererstes Release) wäre BEREICH die ganze Historie —
+          # dann auf die letzten 100 Commits begrenzen, statt 2.000 Zeilen Notes zu erzeugen.
+          if [ -n "$VORHER" ]; then BEREICH="${VORHER}..${TAG}"; DECKEL=""; else BEREICH="$TAG"; DECKEL="--max-count=100"; fi
           {
             echo "Docker-Image: \`ghcr.io/uuuxy/bibliothek:${TAG#v}\` (Build in „Docker Image veröffentlichen (ghcr.io)“ zum selben Tag)."
             echo
             echo "## Commits${VORHER:+ seit $VORHER}"
-            git log --no-merges --format='* %s (%h)' "$BEREICH"
+            # shellcheck disable=SC2086 — DECKEL ist leer oder genau ein Argument
+            git log --no-merges --format='* %s (%h)' $DECKEL "$BEREICH"
             echo
           } > /tmp/notes.md
           gh release create "$TAG" \
