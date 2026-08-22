@@ -112,6 +112,13 @@ type Lage struct {
 	// das sich nicht einspielen lässt, ist exakt so viel wert wie keins. nil: noch
 	// nie gelaufen (oder Ergebnis nicht lesbar).
 	RestoreProbe *jobs.RestoreProbeErgebnis
+
+	// DSGVO-Löschroutinen (Prüfung 22.08.2026): Die nächtliche Anonymisierung lief zweimal
+	// monatelang ins Leere, und nur eine Logzeile wusste es. DsgvoFaellig = Schüler, die
+	// seit ≥ 1 Tag anonymisiert sein müssten und es nicht sind (nil: nicht erhoben).
+	// LesehistorieAus: die Befristung der Lesehistorie ist in den Einstellungen auf 0.
+	DsgvoFaellig    *int
+	LesehistorieAus bool
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -159,8 +166,41 @@ func Pruefe(l Lage) []Befund {
 		pruefeKlassenDrift(l),
 		pruefeBackupAlter(l, echt),
 		pruefeRestoreProbe(l, echt),
+		pruefeDsgvoRoutinen(l),
 	}
 	return befunde
+}
+
+// pruefeDsgvoRoutinen: Tut die nächtliche Anonymisierung, was sie soll? Das Kriterium ist
+// der ZUSTAND (fällige, nicht anonymisierte Schüler), nicht ein Log — ein Job, der still
+// scheitert, hinterlässt genau diesen Zustand. Dazu der Hinweis, wenn die Lesehistorie-
+// Befristung abgeschaltet ist: erlaubt, aber die Schule muss es wissen (VVT).
+func pruefeDsgvoRoutinen(l Lage) Befund {
+	b := Befund{Bereich: "DSGVO-Löschroutinen"}
+	switch {
+	case l.DsgvoFaellig == nil:
+		b.Stufe = StufeWarnung
+		b.Befund = "Der Zustand der Anonymisierung konnte nicht erhoben werden."
+		b.Folge = "Unklar, ob die nächtliche Löschroutine läuft."
+		b.Abhilfe = "Datenbankverbindung prüfen; Container-Logs nach 'GDPR Anonymize' durchsuchen."
+		return b
+	case *l.DsgvoFaellig > 0:
+		b.Stufe = StufeKritisch
+		b.Befund = fmt.Sprintf("%d Schüler müssten seit mindestens einem Tag anonymisiert sein und sind es nicht.", *l.DsgvoFaellig)
+		b.Folge = "Die nächtliche DSGVO-Anonymisierung läuft nicht oder scheitert still — Personendaten bleiben über die Frist hinaus stehen (Art. 5 (1) e DSGVO)."
+		b.Abhilfe = "Container-Logs nach 'Scheduler GDPR Anonymize' durchsuchen (Fehlertext steht dort); der Job wiederholt sich jede Nacht um 00:00 UTC und heilt den Rückstand selbst, sobald die Ursache weg ist."
+		return b
+	}
+	if l.LesehistorieAus {
+		b.Stufe = StufeWarnung
+		b.Befund = "Die Befristung der Lesehistorie (Schülerbücherei) steht auf 0 = aus."
+		b.Folge = "Zurückgegebene Ausleihen bleiben dem Schüler bis zur Löschung zugeordnet — das VVT und der Datenschutzhinweis müssen das so ausweisen."
+		b.Abhilfe = "Einstellungen → Datenschutz & Sitzung: Frist in Tagen setzen (Vorgabe 90), oder die Entscheidung im VVT festhalten."
+		return b
+	}
+	b.Stufe = StufeOK
+	b.Befund = "Keine überfälligen Anonymisierungen; Lesehistorie-Befristung aktiv."
+	return b
 }
 
 // pruefeRestoreProbe beurteilt das Ergebnis der wöchentlichen Wiederherstellungs-Probe

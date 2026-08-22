@@ -51,6 +51,8 @@ func lageEingerichtet() Lage {
 			Zeitpunkt: *vorStunden(3 * 24), Erfolg: true,
 			BackupDatei: "backup_2026-08-17T023000Z.sql.gz.enc", Tabellen: 31,
 		},
+		// DSGVO-Löschroutinen: erhoben, nichts überfällig, Befristung aktiv.
+		DsgvoFaellig: new(int),
 	}
 }
 
@@ -436,4 +438,22 @@ func TestKlassenDrift(t *testing.T) {
 			t.Errorf("7x muss in der Warnung stehen, got %+v", b)
 		}
 	})
+}
+
+// Prüfung 22.08.2026: Die DSGVO-Anonymisierung lief zweimal monatelang ins Leere; nur eine
+// Logzeile wusste es. Jetzt urteilt die Selbstprüfung über den ZUSTAND.
+func TestPruefeDsgvoRoutinen(t *testing.T) {
+	null, drei := 0, 3
+	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: &drei}); b.Stufe != StufeKritisch || !strings.Contains(b.Befund, "3 Schüler") {
+		t.Fatalf("fällige Anonymisierungen müssen kritisch sein: %+v", b)
+	}
+	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: nil}); b.Stufe != StufeWarnung {
+		t.Fatalf("nicht erhoben = Warnung, nicht OK: %+v", b)
+	}
+	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: &null, LesehistorieAus: true}); b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "Lesehistorie") {
+		t.Fatalf("Befristung aus = Warnung: %+v", b)
+	}
+	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: &null}); b.Stufe != StufeOK {
+		t.Fatalf("sauber = ok: %+v", b)
+	}
 }

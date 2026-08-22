@@ -37,7 +37,9 @@ var paritaetsAspekte = []struct{ name, query string }{
 		coalesce('(' || character_maximum_length || ')', '') || ' null=' || is_nullable ||
 		' default=' || coalesce(column_default, '-')
 		FROM information_schema.columns WHERE table_schema = 'public'`},
-	{"Constraint", `SELECT conrelid::regclass::text || ' ' || contype::text || ' ' || pg_get_constraintdef(oid)
+	// conname steht MIT im Vergleich — bis 22.08.2026 fehlte es, obwohl der Kommentar oben
+	// es behauptete; ein FK aus 063 hieß gewachsen anders als frisch (Migration 085 heilt).
+	{"Constraint", `SELECT conrelid::regclass::text || ' ' || conname || ' ' || contype::text || ' ' || pg_get_constraintdef(oid)
 		FROM pg_constraint WHERE connamespace = 'public'::regnamespace AND contype <> 't'`},
 	{"Index", `SELECT tablename || ' ' || indexdef FROM pg_indexes WHERE schemaname = 'public'`},
 	{"Trigger", `SELECT DISTINCT event_object_table || ' ' || trigger_name || ' ' || action_timing

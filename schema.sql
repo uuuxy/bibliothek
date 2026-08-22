@@ -989,7 +989,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('081_vormerkungen_benachrichtigt_am_entfernen.sql'),
 ('082_index_und_unique_paritaet.sql'),
 ('083_audit_log_append_only_aufloesen.sql'),
-('084_schueler_lusd_bestaetigt_am.sql')
+('084_schueler_lusd_bestaetigt_am.sql'),
+('085_paritaet_indizes_fk_name_passwort_hash.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -156,3 +156,24 @@ func (r *BetriebszustandRepository) LadeEinstellungswert(ctx context.Context, sc
 		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`, schluessel).Scan(&wert)
 	return wert, err
 }
+
+// ZaehleFaelligeAnonymisierungen zählt Schüler, die nach den Regeln von
+// jobs.RunGDPRAnonymizeOldData seit mindestens einem Tag anonymisiert sein MÜSSTEN, es
+// aber nicht sind. 0 = die nächtliche Routine tut, was sie soll. Genau diese Routine lief
+// zweimal monatelang ins Leere (foto_url, goose-022) und niemand sah es — weil nur eine
+// Logzeile es sagte (Prüfung 22.08.2026). Das Prädikat spiegelt den Job bewusst mit
+// einem Tag Luft (181/361 statt 180/360), damit der Lauf der letzten Nacht Zeit hatte.
+func (r *BetriebszustandRepository) ZaehleFaelligeAnonymisierungen(ctx context.Context) (int, error) {
+	var n int
+	err := r.pool.QueryRow(ctx, `
+		SELECT count(*) FROM schueler
+		WHERE anonymized_at IS NULL
+		  AND (
+		      (deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '181 days')
+		      OR
+		      (ist_abgaenger = true AND aktualisiert_am < NOW() - INTERVAL '361 days')
+		  )
+		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
+		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`).Scan(&n)
+	return n, err
+}

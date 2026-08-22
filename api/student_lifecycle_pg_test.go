@@ -208,6 +208,36 @@ func TestPurgeStudent_AnonymisiertUndLoescht(t *testing.T) {
 	}
 }
 
+// Prüfung 22.08.2026: Eine anonymisierte Papierkorb-Zeile (Name weg, ANON-Barcode) war
+// wiederherstellbar und landete als gesperrter „Anonym" in der aktiven Liste. Jetzt 409.
+func TestRestoreStudent_AnonymisierteZeileBleibtImPapierkorb(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var id string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at, anonymized_at, ist_gesperrt, block_reason)
+		 VALUES ('ANON-R', 'a1b2', 'Anonym', '', 2030, now() - interval '200 days', now(), true, 'Anonymisiert (DSGVO)') RETURNING id`).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	req := httptest.NewRequest(http.MethodPost, "/api/schueler/deleted/"+id+"/restore", nil)
+	req.SetPathValue("id", id)
+	rec := httptest.NewRecorder()
+	srv.RestoreStudentHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("erwartet 409 für anonymisierte Zeile, war %d: %s", rec.Code, rec.Body.String())
+	}
+	var nochImPapierkorb bool
+	if err := pool.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM schueler WHERE id=$1`, id).Scan(&nochImPapierkorb); err != nil {
+		t.Fatal(err)
+	}
+	if !nochImPapierkorb {
+		t.Error("anonymisierte Zeile wurde wiederhergestellt")
+	}
+}
+
 // TestPurgeStudent_OffeneAusleiheBlockiert: Ein Schüler mit offener Ausleihe darf nicht
 // endgültig gelöscht werden (das Buch ist noch draußen).
 func TestPurgeStudent_OffeneAusleiheBlockiert(t *testing.T) {

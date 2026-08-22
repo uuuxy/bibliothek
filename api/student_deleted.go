@@ -78,6 +78,18 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
+		// Anonymisierte Papierkorb-Zeilen (anonymized_at gesetzt) sind kein Schüler mehr,
+		// sondern ein Pseudonym ohne Namen — „wiederherstellen" ergäbe einen gesperrten
+		// „Anonym"-Datensatz in der aktiven Liste (Prüfung 22.08.2026). 409 statt Restore.
+		var anonymisiert bool
+		if err := s.DB.Pool.QueryRow(ctx,
+			`SELECT anonymized_at IS NOT NULL FROM schueler WHERE id = $1 AND deleted_at IS NOT NULL`, id,
+		).Scan(&anonymisiert); err == nil && anonymisiert {
+			apierrors.SendHTTPError(w, http.StatusConflict,
+				errors.New("dieser Datensatz ist bereits anonymisiert (DSGVO) und kann nicht wiederhergestellt werden"))
+			return
+		}
+
 		// Restore: deleted_at zurücknehmen UND die Lösch-Sperre aufheben. DeleteStudent
 		// setzt ist_gesperrt=true mit block_reason='Systematisch gelöscht'; ohne das
 		// Aufheben bliebe der wiederhergestellte Schüler dauerhaft gesperrt (Zombie-Sperre)
