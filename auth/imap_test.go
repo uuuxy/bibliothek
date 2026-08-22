@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"net"
 	"strings"
@@ -68,7 +69,7 @@ func TestAuthenticateIMAP_MockNurLokal(t *testing.T) {
 	t.Run("lokal akzeptiert", func(t *testing.T) {
 		t.Setenv("APP_ENV", "local")
 		t.Setenv("IMAP_HOST", "mock")
-		if err := AuthenticateIMAP("wer@example.test", "beliebig"); err != nil {
+		if err := AuthenticateIMAP(context.Background(), "wer@example.test", "beliebig"); err != nil {
 			t.Fatalf("lokaler Mock: unerwarteter Fehler %v", err)
 		}
 	})
@@ -76,7 +77,7 @@ func TestAuthenticateIMAP_MockNurLokal(t *testing.T) {
 	t.Run("Produktion lehnt ab", func(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "mock")
-		if err := AuthenticateIMAP("wer@example.test", "beliebig"); err == nil {
+		if err := AuthenticateIMAP(context.Background(), "wer@example.test", "beliebig"); err == nil {
 			t.Fatal("Mock in Produktion hat die Anmeldung akzeptiert; want Ablehnung")
 		}
 	})
@@ -87,7 +88,7 @@ func TestAuthenticateIMAP_MockNurLokal(t *testing.T) {
 	t.Run("ohne Host keine Verbindung zur Schule", func(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "")
-		if err := AuthenticateIMAP("wer@example.test", "beliebig"); err == nil {
+		if err := AuthenticateIMAP(context.Background(), "wer@example.test", "beliebig"); err == nil {
 			t.Fatal("leerer IMAP_HOST wurde akzeptiert; want Ablehnung ohne Netzzugriff")
 		}
 	})
@@ -112,7 +113,7 @@ func TestAuthenticateIMAP_ToterServerLiefertSentinel(t *testing.T) {
 	t.Setenv("IMAP_HOST", host)
 	t.Setenv("IMAP_PORT", port)
 
-	authErr := AuthenticateIMAP("wer@schule.de", "egal")
+	authErr := AuthenticateIMAP(context.Background(), "wer@schule.de", "egal")
 	if !errors.Is(authErr, ErrMailserverNichtErreichbar) {
 		t.Fatalf("erwartet ErrMailserverNichtErreichbar, bekam: %v", authErr)
 	}

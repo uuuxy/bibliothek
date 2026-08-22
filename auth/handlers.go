@@ -112,6 +112,12 @@ type LoginResponse struct {
 	Permissions []string `json:"permissions"`
 }
 
+// loginHandlerFrist umfasst IMAP (imapFrist) UND die DB-Schritte danach. Sie MUSS über
+// imapFrist liegen — sonst stirbt der Kontext zwischen „Passwort richtig" und dem
+// Benutzer-Lookup, und ein korrektes, langsames Login wird als Fehlversuch gezählt
+// (so bis 22.08.2026: 10 s gegen 15 s). Gate: TestLoginHandlerFrist_LaesstIMAPLuft.
+const loginHandlerFrist = imapFrist + 10*time.Second
+
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
 // Anmeldung ausschliesslich per E-Mail/Passwort gegen den Schul-Mailserver (IMAP).
 func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
@@ -124,7 +130,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), loginHandlerFrist)
 		defer cancel()
 
 		// 1. Check if it's an email-based login
@@ -249,7 +255,7 @@ func validateLoginCredentials(w http.ResponseWriter, req LoginRequest) (password
 // Transport-Ausfall vom falschen Passwort unterscheiden kann (503 statt 401+Sperre).
 func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, password string) (loginUser, error) {
 	// ONLY perform IMAP verification (Roundcube SSO)
-	if imapErr := AuthenticateIMAP(email, password); imapErr != nil {
+	if imapErr := AuthenticateIMAP(ctx, email, password); imapErr != nil {
 		return loginUser{}, imapErr
 	}
 
