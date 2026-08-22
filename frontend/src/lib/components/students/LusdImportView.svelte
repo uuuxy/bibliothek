@@ -59,7 +59,7 @@
 					{
 						key: 'adoptions',
 						label: 'Zusammengeführt',
-						hint: 'Bestehende Schüler ohne LUSD-ID (Handanlage oder Littera-Übernahme) — per Name + Geburtsdatum verknüpft (kein Duplikat)',
+						hint: 'Bestehende Schüler, die der Export eindeutig trifft: ohne LUSD-ID (Handanlage/Littera) bekommen sie die ID, ohne Geburtsdatum das Datum aus dem Export nachgetragen — kein Duplikat',
 						items: (activeResult.adoptions || []).map((a) => ({ ...a, id: a.schueler_id })),
 						valueClass: 'text-primary'
 					},
@@ -94,7 +94,7 @@
 					{
 						key: 'unmatchable',
 						label: 'Nicht abgleichbar',
-						hint: 'Ohne Geburtsdatum im Bestand — bleiben unverändert; Geburtsdatum im Profil nachtragen',
+						hint: 'Ohne Geburtsdatum im Bestand und nicht eindeutig über den Namen zuzuordnen — bleiben unverändert; Geburtsdatum im Profil nachtragen',
 						items: activeResult.nicht_abgleichbar || [],
 						valueClass: 'text-on-surface-variant'
 					},

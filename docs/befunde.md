@@ -43,7 +43,7 @@ Zwei Regeln dazu:
 
 ---
 
-## Offen — Prüfung 22.08.2026 (Daniel-Raster über alle Commits seit 21.08.)
+## Prüfung 22.08.2026 (Daniel-Raster über alle Commits seit 21.08.) — Stand nach der Abarbeitung
 
 Sechs unabhängige, nur lesende Durchgänge nach dem abstrahierten Raster des externen
 DB-Prüfberichts (Konvention statt Regel · Spezialwert/Doppeljob · zwei Wahrheitsquellen ·
@@ -51,7 +51,32 @@ wer sieht was · stille Fehler · Zeit/Reihenfolge · Gate-Ehrlichkeit · Lebens
 die ~70 Commits vom 21./22.08. Jeder Fund unten ist **am Code verifiziert** (Datei:Zeile),
 die HOCH-Funde zusätzlich am Live-Pfad bzw. per Probe gegen echtes Postgres.
 
-### Kategorie A — kann still jemandem schaden
+**Abarbeitung 22.08. abends (je Fund ein Commit, Gate am alten Code rot gesehen):**
+A1/A2 `bdb48ca7` · A3 `6d01f27a` · A4 `b5b50a2e` · A5 `4cf559cc` · A6 `729a7271` · A7 `f7e39361` ·
+A8 `9fa3eae4` · B-Betrieb `5a55147f` (restore-backup im Image, S3-Durchreichung, Probe-Startlauf,
+Stderr-Scrub, scrypt-Texte, Doku) · B-DB `8c9c8042` (Migration 085, conname-Parität,
+Selbstprüfung „DSGVO-Löschroutinen", Restore-409, Append-only-Ratsche) · B-Rest `63d09011`
+(Art.-15-Angaben aus den Fristen, LUSD-Import-Audit, PATCH-Geburtsdatum, Release-Wächter +
+Tag-Ruleset, actionlint, trivy-Pin, Jules-Nacharbeit, Doku) · LUSD-Modus-Wechsel `968ee01a`.
+
+**Bewusst offen (gelistet, entschieden „nicht jetzt"):**
+- Paritätstest vergleicht weiterhin keine COMMENTs/Seeds (nur Kosmetik; 085 deckt die
+  strukturellen Lücken) — Prod-Check der vier Indexe nach dem Deploy: `SELECT indexname FROM
+  pg_indexes WHERE indexname IN ('idx_schueler_deleted_at','idx_ausleihen_rueckgabe_am')`.
+- 082-Dedupe der Vormerkungen (neuerer `abholbereit` verloren) — auf Prod bereits gelaufen,
+  nicht rückholbar; nur relevant, falls eine weitere gewachsene DB hinzukommt.
+- Lernmittel-/Schülerbücherei-Frist hängt an der `LMF-`-Namenskonvention; kein
+  `ist_lernmittel`-Flag (Produktentscheidung, siehe LMF-Memory).
+- LUSD: Namensschlüssel nur `lower+trim` (Umlaut-/Bindestrich-Varianten gelten als
+  verschiedene Menschen → „mehrdeutig"/neu) — sicher, aber nicht klug; ID-Modus mit gemischter
+  Datei behandelt ID-lose Zeilen weiterhin nur als Zähler.
+- Jules: sieben Testdateien > 200 Zeilen; Export-CSV-„breaks stream"-Test bleibt schwach.
+- Release: Go/Node-Versionen sind jetzt dokumentiert, aber Dependabot kann `golang:`/`node:`
+  im Dockerfile weiter unabhängig heben (kein `ignore`).
+- Altbackups vor 21.08. sind unlesbar; Re-Encrypt-Tool bewusst nicht gebaut (Pilot, keine
+  schützenswerten Altbestände) — dafür Betreiber-Hinweis in resilience_and_recovery.md.
+
+### Kategorie A — kann still jemandem schaden (ALLE ERLEDIGT 22.08.)
 
 | Fund | Nachweis | Fix-Idee |
 |---|---|---|
@@ -64,7 +89,7 @@ die HOCH-Funde zusätzlich am Live-Pfad bzw. per Probe gegen echtes Postgres.
 | **Login-Handler-Kontext 10 s < IMAP-Frist 15 s** → korrektes, langsames Login scheitert am DB-Lookup, zählt als Fehlversuch (401 + Sperre). Umgekehrt: ≥ 15 s-Tarpit des Mailservers macht jedes falsche Passwort zum 503 ohne Zählung. | `auth/handlers.go:127`, `auth/imap.go:192,215-216`, `:264`, `selbstanmeldung.go:118-123` | Handler-ctx an `AuthenticateIMAP` durchreichen, EINE Frist; Klassifikation aus der IMAP-Antwort (NO = Passwort), nicht aus der Zeit; Test mit Mini-IMAP-Listener (sofort NO / verzögert NO) |
 | **Bulk-Mahnmail: SMTP-Hänger je Klasse bis 70 s, Ausfälle zählen als „übersprungen (keine E-Mail hinterlegt)“**, End-Audit mit totem `r.Context()` schweigt. | `api/mail_sender.go:84` (kein ctx), `api/mahnwesen_bulk_mail.go:288,324-327,128,374` | „fehlgeschlagen“ getrennt zählen; Audit mit `context.Background()`+Frist; nach erstem Versandfehler abbrechen |
 
-### Kategorie B — laut oder ohne Außenwirkung, gebündelt erledigen
+### Kategorie B — laut oder ohne Außenwirkung (erledigt bis auf die oben gelisteten Punkte)
 
 | Fund | Nachweis |
 |---|---|
