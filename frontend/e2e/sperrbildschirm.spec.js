@@ -49,9 +49,12 @@ test('Theke leert sich nach 5 Minuten, Sperrbildschirm nach 15, Passwort entsper
 	await expect(page.getByText(`Sperre-${suffix}`)).toHaveCount(0);
 	await expect(page.getByTestId('sperrbildschirm')).toHaveCount(0);
 
-	// Lange Frist vorbei: Sperrbildschirm.
+	// Lange Frist vorbei: Sperrbildschirm — und die App ist NICHT mehr im DOM (sonst zeigte
+	// Strg+P die Seite dahinter, Tab verließe die Sperre; Prüfung 22.08.2026, A6).
 	await page.clock.fastForward('10:00');
 	await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Abmelden', exact: true })).toHaveCount(0);
+	await expect(page.getByPlaceholder(/scannen/i)).toHaveCount(0);
 
 	// Bedienung im gesperrten Zustand entsperrt NICHT.
 	await page.mouse.move(200, 200);

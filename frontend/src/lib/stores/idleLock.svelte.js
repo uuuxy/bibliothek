@@ -85,8 +85,22 @@ export class IdleLock {
 		this.#planeTimer();
 	}
 
-	/** Theken-Ansicht leeren: kein geladener Schüler/Lehrer, keine Suchreste. */
+	/** Theken-Ansicht leeren: kein geladener Schüler/Lehrer, keine Suchreste, keine Kamera. */
 	thekeLeeren() {
+		// Kamera-Scanner dekodiert den Stream unabhängig von der Sichtbarkeit — lief er
+		// weiter, buchte ein vor die Kamera gehaltener Barcode hinter der Sperre
+		// (Prüfung 22.08.2026, A6). Stop ist fire-and-forget; der Store-Zeiger wird sofort
+		// genullt, damit kein Decode-Callback mehr in submitAction läuft.
+		const scanner = omniboxStore.cameraScanner;
+		omniboxStore.cameraScanner = null;
+		omniboxStore.showCamera = false;
+		if (scanner) {
+			try {
+				Promise.resolve(scanner.stop()).catch(() => {});
+			} catch {
+				/* Scanner war schon aus */
+			}
+		}
 		omniboxStore.activeStudent = null;
 		omniboxStore.activeTeacher = null;
 		omniboxStore.queryVal = '';

@@ -102,6 +102,17 @@ describe('idleLock', () => {
 		expect(lock.gesperrt).toBe(true);
 	});
 
+	it('Theke leeren stoppt den Kamera-Scanner — er würde sonst hinter der Sperre weiterbuchen', () => {
+		const stop = vi.fn(() => Promise.resolve());
+		omniboxStore.cameraScanner = /** @type {any} */ ({ stop });
+		omniboxStore.showCamera = true;
+		lock.start();
+		vi.advanceTimersByTime(60_000 + 10);
+		expect(stop).toHaveBeenCalledTimes(1);
+		expect(omniboxStore.cameraScanner).toBeNull();
+		expect(omniboxStore.showCamera).toBe(false);
+	});
+
 	it('stop hebt Sperre und Uhren auf (Logout)', () => {
 		lock.start();
 		vi.advanceTimersByTime(3 * 60_000 + 10);

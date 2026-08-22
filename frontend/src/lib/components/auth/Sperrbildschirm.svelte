@@ -5,10 +5,12 @@
 	import Button from '../ui/Button.svelte';
 
 	// Sperrbildschirm nach Inaktivität (A4 in docs/datenschutz_offene_punkte.md).
-	// Verdeckt die ganze Anwendung; weiter geht es nur mit dem Passwort der angemeldeten
-	// Person (echte Wiederanmeldung gegen den Mailserver) oder per Abmelden. Der Inhalt
-	// dahinter bleibt im DOM — die Sperre ist eine Sichtschutz-, keine Sicherheitsgrenze
-	// gegen jemanden mit Entwicklerwerkzeugen; dafür ist die Abmeldung da.
+	// Ersetzt die ganze Anwendung (App.svelte rendert Sidebar und Inhalt im gesperrten
+	// Zustand NICHT — vorher lag dieser Bildschirm nur darüber, und Strg+P zeigte in der
+	// Druckvorschau die Seite dahinter, Tab verließ die Sperre, Screenreader lasen weiter;
+	// Prüfung 22.08.2026, A6). Weiter geht es nur mit dem Passwort der angemeldeten Person
+	// (echte Wiederanmeldung gegen den Mailserver) oder per Abmelden. Die Sitzung selbst
+	// läuft weiter; gegen jemanden mit Entwicklerwerkzeugen hilft nur die Abmeldung.
 
 	let passwort = $state('');
 
@@ -32,7 +34,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-[60] flex items-center justify-center bg-surface p-6 no-print"
+	class="fixed inset-0 z-[60] flex items-center justify-center bg-surface p-6"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="sperre-titel"

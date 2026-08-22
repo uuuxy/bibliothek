@@ -114,9 +114,6 @@
 		     Lieferant hat kein Konto und darf keinen Anmeldebildschirm sehen. -->
 		<BestellBestaetigung />
 	{:else}
-		{#if authStore.isLoggedIn && idleLock.gesperrt}
-			<Sperrbildschirm />
-		{/if}
 		{#if authStore.isLoggedIn && !authStore.heartbeatOk}
 			<div
 				class="fixed inset-0 bg-white/45 backdrop-blur-lg z-50 flex flex-col items-center justify-center space-y-4"
@@ -138,6 +135,11 @@
 			</div>
 		{:else if !authStore.isLoggedIn}
 			<Login />
+		{:else if idleLock.gesperrt}
+			<!-- Gesperrt: die App wird NICHT gerendert, nicht nur verdeckt. Sonst zeigte die
+			     Druckvorschau (Strg+P) die Seite dahinter, Tab verließ die Sperre, und
+			     Screenreader lasen Schülerdaten vor (Prüfung 22.08.2026, A6). -->
+			<Sperrbildschirm />
 		{:else}
 			<div class="h-screen flex w-full overflow-hidden">
 				<Sidebar />
