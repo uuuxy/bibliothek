@@ -46,6 +46,9 @@ func (s *Scheduler) Start() {
 		// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene
 		// Ausleihen nach Frist vom Schüler. Fristen stehen in den Einstellungen.
 		s.RunLesehistorieBefristung()
+		// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen
+		// aus dem Kollegiums-Portal tragen Freitext, Klasse und den Namen der Lehrkraft.
+		s.RunAnliegenBefristung()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return

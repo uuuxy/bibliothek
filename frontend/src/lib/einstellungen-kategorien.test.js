@@ -41,6 +41,7 @@ const ALLE_SCHLUESSEL = [
 	'preise_erfassen',
 	'lesehistorie_tage',
 	'lesehistorie_lernmittel_tage',
+	'anliegen_tage',
 	'theke_leeren_minuten',
 	'sperre_minuten',
 	'oeffentliche_adresse',

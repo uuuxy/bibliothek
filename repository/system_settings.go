@@ -62,6 +62,7 @@ type SystemEinstellungen struct {
 	// Zeiger, Vorgaben und Begründung: system_settings_datenschutz.go.
 	LesehistorieTage           *int `json:"lesehistorie_tage"`
 	LesehistorieLernmittelTage *int `json:"lesehistorie_lernmittel_tage"`
+	AnliegenTage               *int `json:"anliegen_tage"`
 	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten"`
 	SperreMinuten              *int `json:"sperre_minuten"`
 }

@@ -4,7 +4,7 @@ import "strconv"
 
 // Datenschutz- und Sitzungs-Einstellungen (A1/A4 aus docs/datenschutz_offene_punkte.md).
 //
-// Alle vier Werte sind Zeiger mit der Semantik von OeffentlicheAdresse: nil heißt „diese
+// Alle fünf Werte sind Zeiger mit der Semantik von OeffentlicheAdresse: nil heißt „diese
 // Sektion kennt das Feld nicht" (gespeicherter Wert bleibt), ein gesetzter Zeiger heißt
 // „so speichern" — auch 0. Denn 0 ist hier ein echter Wert (= aus), kein fehlender: Ein
 // int ohne Zeiger könnte „nicht mitgeschickt" und „abgeschaltet" nicht unterscheiden, und
@@ -22,6 +22,13 @@ const (
 	// Schadensersatz öffentlich-rechtlich über die Schulaufsicht läuft (12.3–12.7) —
 	// das zieht sich über das Folgeschuljahr. Zwei Jahre nach Rückgabe.
 	StandardLesehistorieLernmittelTage = 730
+	// StandardAnliegenTage sind die Tage nach der ERLEDIGUNG, nach denen ein Wunsch bzw.
+	// eine Meldung aus dem Kollegiums-Portal gelöscht wird. Die Zeile trägt den Freitext
+	// der Lehrkraft, ihre Klasse und (über den Fremdschlüssel) ihren Namen; erledigt ist
+	// ihr Zweck erreicht. Ein Jahr deckt den Blick zurück über ein Schuljahr — „war der
+	// Titel schon mal gewünscht?" — und ist damit dieselbe Abwägung wie bei den anderen
+	// Fristen: so lange wie nötig, nicht so lange wie möglich. 0 schaltet ab.
+	StandardAnliegenTage = 365
 	// StandardThekeLeerenMinuten ist die Inaktivität, nach der die Theken-Ansicht den geladenen
 	// Schüler fallen lässt — damit der nächste an der Theke nicht den vorigen sieht.
 	StandardThekeLeerenMinuten = 5
@@ -35,6 +42,7 @@ func zeiger(n int) *int { return &n }
 func datenschutzStandards(s *SystemEinstellungen) {
 	s.LesehistorieTage = zeiger(StandardLesehistorieTage)
 	s.LesehistorieLernmittelTage = zeiger(StandardLesehistorieLernmittelTage)
+	s.AnliegenTage = zeiger(StandardAnliegenTage)
 	s.ThekeLeerenMinuten = zeiger(StandardThekeLeerenMinuten)
 	s.SperreMinuten = zeiger(StandardSperreMinuten)
 }
@@ -62,6 +70,8 @@ func anwendenDatenschutzEinstellung(s *SystemEinstellungen, key string, val *str
 		setzeIntZeiger(val, &s.LesehistorieTage)
 	case "lesehistorie_lernmittel_tage":
 		setzeIntZeiger(val, &s.LesehistorieLernmittelTage)
+	case "anliegen_tage":
+		setzeIntZeiger(val, &s.AnliegenTage)
 	case "theke_leeren_minuten":
 		setzeIntZeiger(val, &s.ThekeLeerenMinuten)
 	case "sperre_minuten":

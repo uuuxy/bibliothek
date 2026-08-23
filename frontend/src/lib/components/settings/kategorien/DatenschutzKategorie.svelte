@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * @component DatenschutzKategorie
-	 * Zwei Löschfristen und zwei Sitzungsfristen (docs/datenschutz_offene_punkte.md
+	 * Drei Löschfristen und zwei Sitzungsfristen (docs/datenschutz_offene_punkte.md
 	 * A1/A4).
 	 *
 	 * Zwei Lesehistorie-Fristen, weil es zwei Verarbeitungstätigkeiten sind:
@@ -30,6 +30,7 @@
 
 	let lesehistorie = $state(start.lesehistorie_tage ?? 90);
 	let lesehistorieLmf = $state(start.lesehistorie_lernmittel_tage ?? 730);
+	let anliegen = $state(start.anliegen_tage ?? 365);
 	let thekeLeeren = $state(start.theke_leeren_minuten ?? 5);
 	let sperre = $state(start.sperre_minuten ?? 15);
 
@@ -46,6 +47,12 @@
 					schluessel: 'lesehistorie_lernmittel_tage',
 					label: 'Lesehistorie Lernmittel',
 					wert: lesehistorieLmf,
+					min: 0
+				},
+				{
+					schluessel: 'anliegen_tage',
+					label: 'Erledigte Anliegen aufbewahren',
+					wert: anliegen,
 					min: 0
 				},
 				{
@@ -72,6 +79,10 @@
 			die Zuordnung.
 		</p>
 		<p>
+			Anliegen: Tage nach der Erledigung, nach denen ein Wunsch bzw. eine Meldung aus dem
+			Kollegiums-Portal gelöscht wird. Offene Anliegen haben keine Frist.
+		</p>
+		<p>
 			Sitzung: Minuten ohne Bedienung, bis die Theke den geladenen Schüler fallen lässt bzw. der
 			Sperrbildschirm kommt. Entsperrt wird mit dem eigenen Passwort.
 		</p>
@@ -92,6 +103,13 @@
 			min={0}
 			max={3650}
 			hint="Vorgabe 730 (zwei Schuljahre)."
+		/>
+		<SettingField
+			bind:value={anliegen}
+			label="Erledigte Anliegen aufbewahren (Tage)"
+			min={0}
+			max={3650}
+			hint="Vorgabe 365."
 		/>
 		<SettingField
 			bind:value={thekeLeeren}

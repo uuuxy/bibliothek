@@ -49,6 +49,7 @@ type EinstellungenPatch struct {
 
 	LesehistorieTage           *int `json:"lesehistorie_tage,omitempty"`
 	LesehistorieLernmittelTage *int `json:"lesehistorie_lernmittel_tage,omitempty"`
+	AnliegenTage               *int `json:"anliegen_tage,omitempty"`
 	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten,omitempty"`
 	SperreMinuten              *int `json:"sperre_minuten,omitempty"`
 }
@@ -134,6 +135,7 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	// 0 ist hier „aus" und damit ein Wert; negativ gibt es nicht.
 	s.zahl("lesehistorie_tage", p.LesehistorieTage, 0, 0)
 	s.zahl("lesehistorie_lernmittel_tage", p.LesehistorieLernmittelTage, 0, 0)
+	s.zahl("anliegen_tage", p.AnliegenTage, 0, 0)
 	s.zahl("theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 0)
 	s.zahl("sperre_minuten", p.SperreMinuten, 0, 0)
 
