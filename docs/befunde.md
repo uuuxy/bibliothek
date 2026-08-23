@@ -42,6 +42,33 @@ Zwei Regeln dazu:
 
 ---
 
+## Verrutschtes Feld auf flasch3 (23.08.2026)
+
+Peters Bildschirmfoto nach dem Deploy: In „Datenschutz & Sitzung" stand das Feld
+„Lesehistorie Schülerbücherei (Tage)" **eine Zeilenhöhe tiefer** als die drei daneben.
+
+Ursache war nicht die lange Beschriftung, sondern dass jedes Feld ein eigener
+Flex-Block war und sich nur an sich selbst ausrichtete: Bricht eine Beschriftung auf
+zwei Zeilen um, rutscht ihr Eingabefeld mit. Behoben mit `grid-rows-subgrid` in
+`SettingField` — alle Felder einer Reihe teilen sich jetzt dieselben drei Zeilen
+(Beschriftung, Feld, Hinweis), gleich wie lang eine Beschriftung ist. Steht ein Feld
+allein, läuft subgrid ins Leere und `display:grid` stapelt wie vorher; der Aufrufer
+muss nichts dazutun.
+
+**Nicht** durch Kürzen der Beschriftung: Das hätte denselben Fehler beim nächsten
+schmaleren Fenster oder der nächsten längeren Beschriftung wieder erzeugt.
+
+**Gate:** `e2e/einstellungen-kategorien.spec.js` misst im BROWSER über fünf Kategorien.
+Regel: Zwei Eingabefelder stehen entweder auf derselben Höhe (eine Reihe) oder deutlich
+auseinander (verschiedene Reihen, gemessen 104 px). Ein Abstand von einer einzelnen
+Zeilenhöhe dazwischen IST der Fehler. Am alten Stand rot gesehen — mit genau Peters
+Symptom: „(y=274) und (y=254) stehen 20 px auseinander".
+
+Dabei mitgefunden: Der e2e-Helfer `einstellungsKategorie()` ankerte auf `^Titel` — damit
+traf „Mahnwesen" auch „Mahnwesen-Routing". Jetzt `^Titel ` mit Leerzeichen.
+
+---
+
 ## Raster-Durchgang über den Einstellungs-Umbau (23.08.2026) — vier Funde, drei davon jetzt Gates
 
 Peters Frage: „sollten wir Daniels Schema auf die heutigen Dinge nochmal anwenden — und

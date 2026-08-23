@@ -89,9 +89,10 @@
 			maxlength={120}
 			placeholder="z. B. Musterstraße 12"
 		/>
-		<div class="grid grid-cols-3 gap-4">
+		<!-- Reicht die drei Zeilen des Aussenrasters durch (siehe SettingField). -->
+		<div class="row-span-3 grid grid-cols-3 grid-rows-subgrid gap-x-4">
 			<SettingField bind:value={plz} label="PLZ" type="text" maxlength={10} placeholder="12345" />
-			<div class="col-span-2">
+			<div class="col-span-2 row-span-3 grid grid-rows-subgrid">
 				<SettingField
 					bind:value={ort}
 					label="Ort"

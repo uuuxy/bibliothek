@@ -250,6 +250,10 @@ export async function gehZu(page, pfad) {
  */
 export function einstellungsKategorie(page, titel) {
 	return page.getByRole('navigation', { name: 'Einstellungs-Kategorien' }).getByRole('button', {
-		name: new RegExp(`^${titel.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}`)
+		// Anker auf Titel PLUS Leerzeichen: Der zugängliche Name eines Eintrags ist
+		// „<Titel> <Beitext>". Ohne das Leerzeichen trifft „Mahnwesen" auch
+		// „Mahnwesen-Routing" — Playwright bricht dann mit strict mode ab, oder klickt
+		// in einer künftigen Liste stillschweigend die falsche Kategorie.
+		name: new RegExp(`^${titel.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)} `)
 	});
 }

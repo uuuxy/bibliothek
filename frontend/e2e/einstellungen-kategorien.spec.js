@@ -134,3 +134,65 @@ test('Ein PUT ohne Felder wird abgelehnt, statt Erfolg zu melden', async ({ page
 		'ein abgelehnter Aufruf darf keine Änderung protokollieren'
 	).toBe(vorher);
 });
+
+// „Ein Feld ist verrutscht" (Peter, 23.08.2026, Bildschirmfoto von flasch3): In
+// „Datenschutz & Sitzung" bricht die Beschriftung „Lesehistorie Schülerbücherei (Tage)"
+// auf zwei Zeilen um — und ihr Eingabefeld stand dadurch eine Zeilenhöhe tiefer als die
+// drei Nachbarn daneben. Ursache war nicht die lange Beschriftung, sondern dass jedes
+// Feld sich nur an sich selbst ausrichtete; behoben mit subgrid in SettingField.
+//
+// Gemessen wird im BROWSER, nicht an Klassennamen: Eine Klassen-Inventur hat in diesem
+// Projekt schon einmal 29 Fundstellen gemeldet, wo real fünf waren.
+//
+// Die Regel: Zwei Eingabefelder stehen entweder auf DERSELBEN Höhe (eine Reihe) oder
+// deutlich auseinander (verschiedene Reihen, gemessen 104 px). Ein Abstand dazwischen —
+// eine einzelne Zeilenhöhe — ist genau der Fehler und nichts sonst.
+const MIT_MEHREREN_FELDERN = [
+	'Schule',
+	'Ausleihe & Fristen',
+	'Mahnwesen',
+	'Datenschutz & Sitzung',
+	'Erreichbarkeit & Alarme'
+];
+
+test('Kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await uiLogin(page);
+	await gehZu(page, '/einstellungen');
+
+	for (const kategorie of MIT_MEHREREN_FELDERN) {
+		await einstellungsKategorie(page, kategorie).click();
+		const felder = page.locator('main input, form input, input');
+		await felder.first().waitFor();
+
+		/** @type {{ label: string, y: number }[]} */
+		const gemessen = [];
+		for (let i = 0; i < (await felder.count()); i++) {
+			const box = await felder.nth(i).boundingBox();
+			if (!box) continue;
+			gemessen.push({
+				label: await felder
+					.nth(i)
+					.evaluate((el) => document.querySelector(`label[for="${el.id}"]`)?.textContent ?? '?'),
+				y: Math.round(box.y)
+			});
+		}
+		expect(
+			gemessen.length,
+			`${kategorie}: keine Felder gefunden — der Test misst nichts`
+		).toBeGreaterThan(1);
+
+		for (const a of gemessen) {
+			for (const b of gemessen) {
+				const abstand = Math.abs(a.y - b.y);
+				expect(
+					abstand === 0 || abstand > 40,
+					`${kategorie}: „${a.label}" (y=${a.y}) und „${b.label}" (y=${b.y}) stehen ` +
+						`${abstand} px auseinander — zu wenig für zwei Reihen, zu viel für eine. ` +
+						`Ein Feld ist um eine Zeilenhöhe verrutscht, vermutlich wegen einer ` +
+						`umbrechenden Beschriftung.`
+				).toBe(true);
+			}
+		}
+	}
+});

@@ -35,6 +35,17 @@
 	 * Adresse Leer = keine Bestätigungs-Links verschicken" — Name und Erläuterung in
 	 * einem Atemzug. Ein Name benennt, eine Beschreibung erklärt.
 	 *
+	 * Die drei Zeilen (Beschriftung, Feld, Hinweis) liegen als SUBGRID im Raster des
+	 * Aufrufers. Ohne das steht jedes Feld in seiner eigenen Spalte und richtet sich
+	 * nur an sich selbst aus: „Lesehistorie Schülerbücherei (Tage)" bricht auf zwei
+	 * Zeilen um, und sein Eingabefeld rutscht eine Zeile tiefer als die drei Nachbarn
+	 * daneben (auf flasch3 am 23.08.2026 zu sehen). Mit subgrid teilen sich alle
+	 * Felder einer Reihe dieselben drei Zeilen, egal wie lang eine Beschriftung ist.
+	 *
+	 * Steht das Feld ALLEIN (nicht in einem Raster), laufen `grid-rows-subgrid` und
+	 * `row-span-3` ins Leere und `display:grid` stapelt die drei Zeilen wie vorher das
+	 * Flex-Layout — deshalb braucht der Aufrufer nichts dazuzutun.
+	 *
 	 * @prop {string|number} value - Gebundener Wert (bindable).
 	 * @prop {string} label - Feldbeschriftung.
 	 * @prop {'number'|'text'|'email'|'date'} [type='number'] - Eingabetyp.
@@ -70,7 +81,7 @@
 		'focus:border-primary focus:outline-none';
 </script>
 
-<div class="flex flex-col gap-1.5">
+<div class="grid grid-rows-subgrid row-span-3 gap-y-1.5">
 	<label for={feldId} class="text-sm font-medium text-on-surface-variant">{label}</label>
 	{#if type === 'number'}
 		<input
