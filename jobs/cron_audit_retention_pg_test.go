@@ -85,12 +85,32 @@ func TestAuditAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 	}
 
 	// Untergrenze: Eine versehentliche 0 in der Einstellung darf nicht alles wegräumen.
+	// Geprüft wird über den WEG, den der Job nimmt (Einstellungen lesen, dann die
+	// Untergrenze anwenden) — nicht über eine eigene Abfrage daneben.
 	if _, err := pool.Exec(ctx, `INSERT INTO system_einstellungen (schluessel, wert)
-		VALUES ('audit_aufbewahrung_monate', '0')`); err != nil {
+		VALUES ('audit_aufbewahrung_monate', '0')
+		ON CONFLICT (schluessel) DO UPDATE SET wert = excluded.wert`); err != nil {
 		t.Fatalf("Einstellung setzen: %v", err)
 	}
-	if m := repository.NewBetriebszustandRepository(pool).AuditAufbewahrungMonate(ctx); m != repository.StandardAuditAufbewahrungMonate {
+	einst, err := repository.NewSystemSettingsRepository(pool).GetSettings(ctx)
+	if err != nil {
+		t.Fatalf("Einstellungen lesen: %v", err)
+	}
+	if m := repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate); m != repository.StandardAuditAufbewahrungMonate {
 		t.Errorf("Frist bei Fehlkonfiguration 0 = %d, erwartet Vorgabe %d", m, repository.StandardAuditAufbewahrungMonate)
+	}
+	// Und ein GÜLTIGER Wert muss auch wirklich ankommen — sonst bewiese der Test nur,
+	// dass immer die Vorgabe herauskommt, und die neue Einstellung wäre wirkungslos.
+	if _, err := pool.Exec(ctx, `INSERT INTO system_einstellungen (schluessel, wert)
+		VALUES ('audit_aufbewahrung_monate', '9')
+		ON CONFLICT (schluessel) DO UPDATE SET wert = excluded.wert`); err != nil {
+		t.Fatalf("Einstellung setzen: %v", err)
+	}
+	if einst, err = repository.NewSystemSettingsRepository(pool).GetSettings(ctx); err != nil {
+		t.Fatalf("Einstellungen lesen: %v", err)
+	}
+	if m := repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate); m != 9 {
+		t.Errorf("eingestellte Frist 9 kam als %d an — die Einstellung wirkt nicht", m)
 	}
 }
 

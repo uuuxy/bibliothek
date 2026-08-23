@@ -63,6 +63,7 @@ type SystemEinstellungen struct {
 	LesehistorieTage           *int `json:"lesehistorie_tage"`
 	LesehistorieLernmittelTage *int `json:"lesehistorie_lernmittel_tage"`
 	AnliegenTage               *int `json:"anliegen_tage"`
+	AuditAufbewahrungMonate    *int `json:"audit_aufbewahrung_monate"`
 	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten"`
 	SperreMinuten              *int `json:"sperre_minuten"`
 }

@@ -14,7 +14,6 @@ package repository
 import (
 	"context"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -54,7 +53,7 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	freihandTage := TageOderStandard(einst.LesehistorieTage, StandardLesehistorieTage)
 	lernmittelTage := TageOderStandard(einst.LesehistorieLernmittelTage, StandardLesehistorieLernmittelTage)
 	anliegenTage := TageOderStandard(einst.AnliegenTage, StandardAnliegenTage)
-	auditMonate := r.AuditAufbewahrungMonate(ctx)
+	auditMonate := AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
 
 	stand := []LoeschRueckstand{}
 	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
@@ -123,28 +122,18 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	return stand, nil
 }
 
-// AuditAufbewahrungMonate liest die Aufbewahrungsfrist der Protokolltabellen — die
-// EINE Quelle für den Job (jobs.RunAuditAufbewahrung) und den Wächter. Unlesbar,
-// unparsbar oder unter der Untergrenze: die Vorgabe.
-func (r *BetriebszustandRepository) AuditAufbewahrungMonate(ctx context.Context) int {
-	var wert string
-	if err := r.pool.QueryRow(ctx,
-		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`,
-		AuditAufbewahrungSchluessel).Scan(&wert); err != nil {
+// AufbewahrungMonateOderStandard liest die Aufbewahrungsfrist aus den Einstellungen und
+// setzt die Untergrenze durch — die EINE Quelle für den Job (jobs.RunAuditAufbewahrung)
+// und den Wächter.
+//
+// Vorher las eine eigene Methode die Zeile per rohem SQL an den Einstellungen vorbei.
+// Das war eine zweite Wahrheitsquelle für denselben Wert; seit die Frist über die
+// Oberfläche einstellbar ist, wäre sie auch eine falsche geworden.
+func AufbewahrungMonateOderStandard(v *int) int {
+	if v == nil || *v < MindestAuditAufbewahrungMonate {
 		return StandardAuditAufbewahrungMonate
 	}
-	return AufbewahrungAusText(wert)
-}
-
-// AufbewahrungAusText liest den Einstellungswert der Audit-Aufbewahrung. Unparsbar oder
-// unter der Untergrenze: die Vorgabe. Job und Wächter lesen die Zeile über denselben
-// Weg — sonst könnte der Wächter mit 24 Monaten rechnen, während der Job mit 6 löscht.
-func AufbewahrungAusText(wert string) int {
-	monate, err := strconv.Atoi(strings.TrimSpace(wert))
-	if err != nil || monate < MindestAuditAufbewahrungMonate {
-		return StandardAuditAufbewahrungMonate
-	}
-	return monate
+	return *v
 }
 
 // tageText und monateText formulieren eine Frist für den Befundtext. 0 heißt „aus" —

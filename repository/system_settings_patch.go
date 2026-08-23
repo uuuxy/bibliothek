@@ -50,6 +50,7 @@ type EinstellungenPatch struct {
 	LesehistorieTage           *int `json:"lesehistorie_tage,omitempty"`
 	LesehistorieLernmittelTage *int `json:"lesehistorie_lernmittel_tage,omitempty"`
 	AnliegenTage               *int `json:"anliegen_tage,omitempty"`
+	AuditAufbewahrungMonate    *int `json:"audit_aufbewahrung_monate,omitempty"`
 	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten,omitempty"`
 	SperreMinuten              *int `json:"sperre_minuten,omitempty"`
 }
@@ -136,6 +137,11 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.zahl("lesehistorie_tage", p.LesehistorieTage, 0, 0)
 	s.zahl("lesehistorie_lernmittel_tage", p.LesehistorieLernmittelTage, 0, 0)
 	s.zahl("anliegen_tage", p.AnliegenTage, 0, 0)
+	// Untergrenze 6, Ersatz 24 — anders als bei den drei Fristen darüber ist 0 hier
+	// KEIN gültiger Wert: Ein abgeschaltetes Prüfprotokoll nähme dem System die
+	// Revisionsfähigkeit (wer hat die Gebühr storniert?). Die Oberfläche meldet Werte
+	// unterhalb der Grenze, statt sie still ersetzen zu lassen (einstellungenSpeichern.js).
+	s.zahl(AuditAufbewahrungSchluessel, p.AuditAufbewahrungMonate, MindestAuditAufbewahrungMonate, StandardAuditAufbewahrungMonate)
 	s.zahl("theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 0)
 	s.zahl("sperre_minuten", p.SperreMinuten, 0, 0)
 

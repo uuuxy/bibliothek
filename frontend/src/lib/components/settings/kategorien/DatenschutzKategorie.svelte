@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * @component DatenschutzKategorie
-	 * Drei Löschfristen und zwei Sitzungsfristen (docs/datenschutz_offene_punkte.md
+	 * Vier Löschfristen und zwei Sitzungsfristen (docs/datenschutz_offene_punkte.md
 	 * A1/A4).
 	 *
 	 * Zwei Lesehistorie-Fristen, weil es zwei Verarbeitungstätigkeiten sind:
@@ -31,6 +31,7 @@
 	let lesehistorie = $state(start.lesehistorie_tage ?? 90);
 	let lesehistorieLmf = $state(start.lesehistorie_lernmittel_tage ?? 730);
 	let anliegen = $state(start.anliegen_tage ?? 365);
+	let auditMonate = $state(start.audit_aufbewahrung_monate ?? 24);
 	let thekeLeeren = $state(start.theke_leeren_minuten ?? 5);
 	let sperre = $state(start.sperre_minuten ?? 15);
 
@@ -54,6 +55,15 @@
 					label: 'Erledigte Anliegen aufbewahren',
 					wert: anliegen,
 					min: 0
+				},
+				{
+					// Untergrenze 6, nicht 0: Ein abgeschaltetes Prüfprotokoll nimmt dem
+					// System die Revisionsfähigkeit. Die Meldung kommt aus
+					// einstellungenSpeichern.js, bevor etwas rausgeht.
+					schluessel: 'audit_aufbewahrung_monate',
+					label: 'Prüfprotokoll aufbewahren',
+					wert: auditMonate,
+					min: 6
 				},
 				{
 					schluessel: 'theke_leeren_minuten',
@@ -110,6 +120,13 @@
 			min={0}
 			max={3650}
 			hint="Vorgabe 365."
+		/>
+		<SettingField
+			bind:value={auditMonate}
+			label="Prüfprotokoll aufbewahren (Monate)"
+			min={6}
+			max={120}
+			hint="Vorgabe 24. Mindestens 6 — darunter ist nicht mehr nachvollziehbar, wer eine Gebühr storniert oder einen Bestand geändert hat."
 		/>
 		<SettingField
 			bind:value={thekeLeeren}

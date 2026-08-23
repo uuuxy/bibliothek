@@ -43,6 +43,7 @@ func datenschutzStandards(s *SystemEinstellungen) {
 	s.LesehistorieTage = zeiger(StandardLesehistorieTage)
 	s.LesehistorieLernmittelTage = zeiger(StandardLesehistorieLernmittelTage)
 	s.AnliegenTage = zeiger(StandardAnliegenTage)
+	s.AuditAufbewahrungMonate = zeiger(StandardAuditAufbewahrungMonate)
 	s.ThekeLeerenMinuten = zeiger(StandardThekeLeerenMinuten)
 	s.SperreMinuten = zeiger(StandardSperreMinuten)
 }
@@ -72,6 +73,8 @@ func anwendenDatenschutzEinstellung(s *SystemEinstellungen, key string, val *str
 		setzeIntZeiger(val, &s.LesehistorieLernmittelTage)
 	case "anliegen_tage":
 		setzeIntZeiger(val, &s.AnliegenTage)
+	case AuditAufbewahrungSchluessel:
+		setzeIntZeiger(val, &s.AuditAufbewahrungMonate)
 	case "theke_leeren_minuten":
 		setzeIntZeiger(val, &s.ThekeLeerenMinuten)
 	case "sperre_minuten":
