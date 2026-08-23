@@ -101,8 +101,11 @@ test('Der Knopf im Hinweis führt zum Feld, und die eingetragene Adresse kommt i
 		const feld = page.getByLabel('Öffentliche Adresse');
 		await feld.waitFor();
 		await feld.fill(adresse);
-		await page.getByRole('button', { name: 'Globale Einstellungen speichern' }).click();
-		await expect(page.getByText('Einstellungen gespeichert.')).toBeVisible();
+		// Seit dem 23.08.2026 speichert JEDE Kategorie für sich — der Knopf trägt ihren
+		// Namen, und der Rumpf enthält nur ihre Felder. Genau das ist die Zusicherung:
+		// Wer hier speichert, fasst Fristen und Löschregeln nicht an.
+		await page.getByRole('button', { name: 'Erreichbarkeit & Alarme speichern' }).click();
+		await expect(page.getByText('Gespeichert.')).toBeVisible();
 
 		const gespeichert = querySQL(
 			`SELECT wert FROM system_einstellungen WHERE schluessel = 'oeffentliche_adresse'`

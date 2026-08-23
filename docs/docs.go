@@ -963,7 +963,7 @@ const docTemplate = `{
         },
         "/einstellungen/speichern": {
             "post": {
-                "description": "Saves global configuration values. Requires admin privileges.",
+                "description": "Saves global configuration values. Nur mitgeschickte Felder werden geschrieben; fehlende bleiben unveraendert. Requires admin privileges.",
                 "consumes": [
                     "application/json"
                 ],
@@ -976,12 +976,12 @@ const docTemplate = `{
                 "summary": "Update system settings",
                 "parameters": [
                     {
-                        "description": "Updated settings",
+                        "description": "Nur die Felder der gespeicherten Kategorie",
                         "name": "settings",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/repository.SystemEinstellungen"
+                            "$ref": "#/definitions/repository.EinstellungenPatch"
                         }
                     }
                 ],
@@ -2227,7 +2227,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "geburtsdatum": {
-                    "description": "Format: YYYY-MM-DD",
+                    "description": "Geburtsdatum (YYYY-MM-DD) ist Pflicht — geprüft im Handler mit eigener Meldung,\nweil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe errGeburtsdatumPflicht.",
                     "type": "string"
                 },
                 "klasse": {
@@ -3028,6 +3028,78 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.EinstellungenPatch": {
+            "type": "object",
+            "properties": {
+                "alarm_empfaenger": {
+                    "type": "string"
+                },
+                "bestellbedarf_schwelle": {
+                    "type": "integer"
+                },
+                "bestellbedarf_warnung_aktiv": {
+                    "type": "boolean"
+                },
+                "etikett_eigentumsvermerk": {
+                    "type": "string"
+                },
+                "ferien_leseclub_aktiv": {
+                    "type": "boolean"
+                },
+                "ferien_leseclub_zieldatum": {
+                    "type": "string"
+                },
+                "frist_buch_tage": {
+                    "type": "integer"
+                },
+                "frist_medien_tage": {
+                    "type": "integer"
+                },
+                "lesehistorie_lernmittel_tage": {
+                    "type": "integer"
+                },
+                "lesehistorie_tage": {
+                    "type": "integer"
+                },
+                "lmf_stichtag": {
+                    "type": "string"
+                },
+                "max_ausleihen_schueler": {
+                    "type": "integer"
+                },
+                "max_overdue_days": {
+                    "type": "integer"
+                },
+                "max_overdue_items": {
+                    "type": "integer"
+                },
+                "oeffentliche_adresse": {
+                    "type": "string"
+                },
+                "preise_erfassen": {
+                    "type": "boolean"
+                },
+                "schule_name": {
+                    "description": "Schul-Identität. Bis zum 23.08.2026 hieß ein leeres Feld hier „nicht anfassen\" —\neine Notbremse gegen das Blanking oben, die aber zugleich das Löschen unmöglich\nmachte (ein falscher Eigentumsvermerk ließ sich nicht mehr entfernen). Mit dem\nSpeichern je Kategorie schickt nur noch die Kategorie „Schule\" diese Felder,\nund dann heißt leer wieder schlicht leer.",
+                    "type": "string"
+                },
+                "schule_ort": {
+                    "type": "string"
+                },
+                "schule_plz": {
+                    "type": "string"
+                },
+                "schule_strasse": {
+                    "type": "string"
+                },
+                "sperre_minuten": {
+                    "type": "integer"
+                },
+                "theke_leeren_minuten": {
+                    "type": "integer"
+                }
+            }
+        },
         "repository.InventurVerlust": {
             "type": "object",
             "properties": {
@@ -3126,6 +3198,13 @@ const docTemplate = `{
                 "frist_medien_tage": {
                     "type": "integer"
                 },
+                "lesehistorie_lernmittel_tage": {
+                    "type": "integer"
+                },
+                "lesehistorie_tage": {
+                    "description": "Datenschutz (A1): Tage nach der Rückgabe, nach denen die Ausleihe vom Schüler getrennt\nwird (schueler_id = NULL) — getrennt für Schülerbücherei und Lernmittel. 0 = nie.\nSitzung (A4): Minuten Inaktivität bis Theke leeren bzw. Sperrbildschirm. 0 = aus.\nZeiger, Vorgaben und Begründung: system_settings_datenschutz.go.",
+                    "type": "integer"
+                },
                 "lmf_stichtag": {
                     "description": "\"MM-DD\" format, e.g. \"07-31\"",
                     "type": "string"
@@ -3159,6 +3238,12 @@ const docTemplate = `{
                 },
                 "schule_strasse": {
                     "type": "string"
+                },
+                "sperre_minuten": {
+                    "type": "integer"
+                },
+                "theke_leeren_minuten": {
+                    "type": "integer"
                 }
             }
         }

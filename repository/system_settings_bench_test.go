@@ -35,18 +35,18 @@ func (m *mockDB) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnN
 func BenchmarkSaveSettings(b *testing.B) {
 	repo := NewSystemSettingsRepository(&mockDB{})
 	ctx := context.Background()
-	settings := &SystemEinstellungen{
-		FerienLeseclubAktiv:  true,
-		LmfStichtag:          "08-01",
-		MaxAusleihenSchueler: 10,
-		FristBuchTage:        30,
-		FristMedienTage:      14,
-		MaxOverdueDays:       20,
-		MaxOverdueItems:      5,
-		SchuleName:           "Test School",
-		SchuleStrasse:        "Test Street 1",
-		SchulePLZ:            "12345",
-		SchuleOrt:            "Test City",
+	settings := &EinstellungenPatch{
+		FerienLeseclubAktiv:  ptr(true),
+		LmfStichtag:          ptr("08-01"),
+		MaxAusleihenSchueler: ptr(10),
+		FristBuchTage:        ptr(30),
+		FristMedienTage:      ptr(14),
+		MaxOverdueDays:       ptr(20),
+		MaxOverdueItems:      ptr(5),
+		SchuleName:           ptr("Test School"),
+		SchuleStrasse:        ptr("Test Street 1"),
+		SchulePLZ:            ptr("12345"),
+		SchuleOrt:            ptr("Test City"),
 	}
 
 	for b.Loop() {

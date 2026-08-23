@@ -33,18 +33,22 @@ func (s *Server) GetSettingsHandler(settingsRepo repository.SystemSettingsReposi
 
 // UpdateSettingsHandler persists system settings.
 // @Summary      Update system settings
-// @Description  Saves global configuration values. Requires admin privileges.
+// @Description  Saves global configuration values. Nur mitgeschickte Felder werden geschrieben; fehlende bleiben unveraendert. Requires admin privileges.
 // @Tags         system
 // @Accept       json
 // @Produce      json
-// @Param        settings  body      repository.SystemEinstellungen  true  "Updated settings"
+// @Param        settings  body      repository.EinstellungenPatch  true  "Nur die Felder der gespeicherten Kategorie"
 // @Success      200       {object}  map[string]string
 // @Failure      400       {object}  map[string]string
 // @Failure      500       {object}  map[string]string
 // @Router       /einstellungen/speichern [post]
 func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req repository.SystemEinstellungen
+		// Patch statt vollem Objekt: Der Rumpf traegt nur die Felder EINER Kategorie
+		// (system_settings_patch.go). Ein volles Objekt wuerde hier zu lauter
+		// Nullwerten dekodieren und beim Speichern die uebrigen Kategorien
+		// zuruecksetzen.
+		var req repository.EinstellungenPatch
 		if !DecodeAndValidate(w, r, &req) {
 			return nil // Error is already sent by DecodeAndValidate
 		}

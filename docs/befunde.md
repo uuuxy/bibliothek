@@ -42,6 +42,71 @@ Zwei Regeln dazu:
 
 ---
 
+## Einstellungen als M3-Kategorienliste (23.08.2026) — und der Befund darunter
+
+Peters Design-Prüfung der Einstellungsseite: „strukturell nein, optisch halb". Vier
+Punkte, alle vier umgesetzt — der wichtigste war aber keiner von den vieren.
+
+**Der Befund unter dem Design.** Der eine Speichern-Knopf am Seitenende war nicht nur
+unordentlich, er war die URSACHE der drei Leer-Regeln, über die Peter gestolpert ist
+(Schule: leer = unverändert · Öffentliche Adresse: leer = abschalten · Datenschutz:
+0 = aus, leer = unverändert). Weil immer das ganze Formular auf einmal ging, brauchte
+jede Sektion eine eigene Notbremse gegen das Überschreiben der anderen.
+
+Und die Bremse war unvollständig. `SaveSettings` schrieb **elf Schlüssel bei jedem
+Aufruf**, gebildet aus einem `SystemEinstellungen`-Struct, in dem ein nicht
+mitgeschicktes Feld als `false`/`0`/`""` ankommt. Solange die Oberfläche immer alles
+schickte, fiel das nicht auf. Ein Speichern je Kategorie hätte mit einem Klick in
+„Datenschutz & Sitzung" den Ferien-Leseclub und die Bestellbedarf-Warnung
+ausgeschaltet, die Preiserfassung abgeschaltet und fünf Fristen auf die Vorgabe
+zurückgesetzt — **mit grüner Erfolgsmeldung**. Dieselbe Bugklasse wie das
+Upsert-Blanking beim Import: Ein Schreibpfad, der „nicht mitgeschickt" nicht von
+„leer" unterscheiden kann.
+
+Deshalb ging der Umbau vom Backend aus: `repository.EinstellungenPatch` (alle Felder
+Zeiger, nil = unangetastet) ist jetzt der Rumpf von `PUT /api/einstellungen`; die
+Oberfläche schickt ausschließlich die Felder der Kategorie, die gerade gespeichert
+wird. Damit fällt die Notbremse weg, und mit ihr die drei Regeln: **Was im Feld steht,
+wird gespeichert** — ein geleertes Schulfeld wird auch geleert (vorher ließ sich ein
+falscher Eigentumsvermerk nie wieder entfernen), ein leer geräumtes ZAHLENfeld ist
+keine 0 und kein „lass es wie es war", sondern eine gemeldete Lücke.
+
+| Peters Punkt | Umgesetzt als |
+|---|---|
+| „Allgemein" ist ein Sammelbecken; Reiter sind für 3–5 gleichgewichtige Bereiche | Kategorienliste (Symbol, Titel, eine Zeile Beitext) + Detailfläche, ab `lg` zweispaltig, darunter list-detail mit Zurück-Pfeil. Zehn Kategorien statt sechs Reitern. |
+| Ein globaler Knopf für sieben fremde Sektionen | Ein Speichern je Kategorie, beschriftet mit ihrem Namen. Schalter, die eine Liste steuern (Mahnwesen-Routing), speichern weiterhin je Zeile — deshalb hat diese Kategorie gar keinen Knopf. |
+| Unterstrich-Felder sind Material 2 | `SettingField` ist outlined (Rahmen `outline-variant`, im Fokus `primary`, Radius 4 px, Fläche weiß). Höhe bleibt 36 px wie jedes andere Bedienelement. Nebenbei: Der Hilfetext hing IM `<label>` — ein Screenreader las „Öffentliche Adresse Leer = keine Bestätigungs-Links verschicken" als NAMEN des Feldes; jetzt `aria-describedby`. |
+| Zu viel Prosa | Ein Satz Supporting Text je Kategorie, Details in einem nativen `<details>`-Aufklapper. |
+
+**Zwei Abweichungen von der Vorschlagsliste, bewusst:**
+- **Berechtigungen bleiben draußen.** Sie standen in der Frage-Runde als Kategorie —
+  sie sind aber seit `66a58b06` (16.08.) ein eigener Menüpunkt, und die Drift-Warnung
+  der Betriebsbereitschaft zeigt dorthin. Zurück in die Einstellungen wäre die
+  Rücknahme einer Entscheidung von vor einer Woche und eine zweite Tür zum selben
+  Bildschirm.
+- **„Datenverwaltung" ist dazugekommen** (in der Liste vergessen) und
+  **„Erreichbarkeit & Alarme" ist neu**: Öffentliche Adresse und Alarm-Empfänger
+  tragen beide die Regel „leer = aus" und dürfen deshalb nicht bei den Schul-Stammdaten
+  stehen, wo leer schlicht leer heißt. Eine Kategorie, eine Regel.
+
+**Gates (alle am Rückbau rot gesehen):**
+- `TestSettingsRoundtrip_KategorieSpeichernLaesstDenRestInRuhe` (echtes Postgres):
+  voller Ausgangsstand → eine Kategorie speichern → die anderen sechs stehen noch.
+  Gegen das alte Verhalten rot mit „Preise=false, frist_buch_tage 21 statt 28".
+- `e2e/einstellungen-kategorien.spec.js`: dieselbe Aussage am DRAHT. Der Go-Test
+  beginnt beim Patch-Objekt; ob die OBERFLÄCHE nur ihre eigenen Felder hineinlegt,
+  sieht er nicht — und genau dort saß der Fehler. Rot gesehen mit einer Kategorie, die
+  wie früher das ganze Formular schickt.
+- Zweiter e2e: leer geräumtes Zahlenfeld speichert gar nichts und nennt die
+  BESCHRIFTUNG des fehlenden Feldes, nicht den API-Schlüssel.
+
+**Nebenbefund, kein Design:** Als Schulname steht auf dem Testserver
+„Philipp-Reis-Schule.de" (lokal „Philipp-Reis-Schule, Friedrichsdorf"). Das ist ein
+DATENwert, kein Code — er landet so auf jedem Buchetikett und als Kopfzeile des
+Schülerausweises. Zu korrigieren in Einstellungen → Schule.
+
+---
+
 ## SonarQube-Lauf 23.08.2026 — was der Scan sagt und was er nicht sagt
 
 Erster Lauf auf dem neuen Server (26.7). Endstand nach der Abarbeitung: **0 Bugs,

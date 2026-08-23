@@ -10,7 +10,7 @@
 // nachweislich kein Auslagerungsziel für Backups, und genau das muss dastehen. Eine Seite,
 // die eine leere Liste zeigt, bestünde sonst jeden Test.
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedBenutzer } from './helpers.js';
+import { uiLogin, seedBenutzer, einstellungsKategorie } from './helpers.js';
 
 // Eigene Anmeldeadresse, nicht die von helfer-kiosk.spec.js.
 //
@@ -27,13 +27,14 @@ test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async (
 	// grün, obwohl der Menüeintrag fehlte: Die Seite war nur für den erreichbar, der den
 	// Pfad kennt. Ein Bildschirm, den niemand findet, ist so gut wie keiner.
 	//
-	// Seit 16.08.2026 ist die Selbstprüfung ein TAB der Einstellungen (Betreiber-
-	// Entscheidung: schlankeres Menü) — der Weg der Verwaltungskraft führt über die
-	// zugeklappte System-Gruppe, die Einstellungen und den Tab.
+	// Seit 16.08.2026 ist die Selbstprüfung Teil der Einstellungen (Betreiber-
+	// Entscheidung: schlankeres Menü), seit 23.08.2026 als Eintrag der Kategorienliste
+	// — der Weg der Verwaltungskraft führt über die zugeklappte System-Gruppe, die
+	// Einstellungen und die Kategorie.
 	await page.getByRole('button', { name: 'System', exact: true }).click();
 	await page.getByTitle('Einstellungen').click();
 	await expect(page).toHaveURL(/\/einstellungen$/);
-	await page.getByRole('button', { name: 'Betriebsbereitschaft' }).click();
+	await einstellungsKategorie(page, 'Betriebsbereitschaft').click();
 
 	// Der Bereich, von dem wir wissen, dass er hier offen ist.
 	const auslagerung = page.locator('div', { hasText: 'Auslagerung der Backups' }).last();
@@ -75,7 +76,7 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 	// Einleitungssatz dagegen steht fest im Markup und erscheint, sobald die Ansicht
 	// überhaupt gerendert wird.
 	//
-	// Die Selbstprüfung ist ein Tab der EINSTELLUNGEN; deren Menüeintrag speist
+	// Die Selbstprüfung ist eine Kategorie der EINSTELLUNGEN; deren Menüeintrag speist
 	// tabIstGesperrt(). Eine eigene /betriebsbereitschaft-Route existiert nicht mehr —
 	// der frühere URL-Schleichweg ist damit strukturell weg, geprüft wird der Weg über
 	// die Einstellungs-URL.

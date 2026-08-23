@@ -495,7 +495,7 @@ func pruefeBestelllink(l Lage) Befund {
 	b.Befund = "Keine öffentliche Adresse hinterlegt."
 	b.Folge = "Bestellmails gehen raus, aber ohne den Bestätigungslink, " +
 		"um dessentwillen es sie gibt. Der Lieferant kann nicht bestätigen."
-	b.Abhilfe = "Einstellungen → öffentliche Adresse der Anwendung eintragen."
+	b.Abhilfe = "Einstellungen → Erreichbarkeit & Alarme: öffentliche Adresse der Anwendung eintragen."
 	return b
 }
 
@@ -509,7 +509,7 @@ func pruefeMailversand(l Lage) Befund {
 	b.Stufe = StufeWarnung
 	b.Befund = "Kein SMTP-Server in den Einstellungen."
 	b.Folge = "Mahnungen und Bestellmails können nicht zugestellt werden."
-	b.Abhilfe = "Einstellungen → Mail-Konfiguration ausfüllen und mit dem Testversand prüfen."
+	b.Abhilfe = "Einstellungen → Mail: Postausgang ausfüllen und mit dem Testversand prüfen."
 	return b
 }
 

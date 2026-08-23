@@ -73,7 +73,7 @@ const StandardEigentumsvermerk = "Eigentum des Landes Hessen"
 // SystemSettingsRepository defines operations for managing global system settings.
 type SystemSettingsRepository interface {
 	GetSettings(ctx context.Context) (*SystemEinstellungen, error)
-	SaveSettings(ctx context.Context, settings *SystemEinstellungen) error
+	SaveSettings(ctx context.Context, patch *EinstellungenPatch) error
 }
 
 type pgSystemSettingsRepository struct {
@@ -206,8 +206,15 @@ func (repo *pgSystemSettingsRepository) GetSettings(ctx context.Context) (*Syste
 	return settings, rows.Err()
 }
 
-// SaveSettings persists system settings.
-func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *SystemEinstellungen) error {
+// SaveSettings schreibt die Felder EINES Patches — und nur die. Was der Aufrufer
+// nicht mitgeschickt hat, bleibt in der Datenbank unangetastet (siehe
+// system_settings_patch.go).
+func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, patch *EinstellungenPatch) error {
+	pairs := pairsAusPatch(patch)
+	if len(pairs) == 0 {
+		return nil
+	}
+
 	upsert := `
 		INSERT INTO system_einstellungen (schluessel, wert)
 		SELECT * FROM UNNEST($1::varchar[], $2::text[])
@@ -215,110 +222,13 @@ func (repo *pgSystemSettingsRepository) SaveSettings(ctx context.Context, req *S
 		  SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP
 	`
 
-	pairs := buildSettingsPairs(req)
 	schluessels := make([]string, len(pairs))
 	werts := make([]string, len(pairs))
-
 	for i, p := range pairs {
 		schluessels[i] = p[0]
 		werts[i] = p[1]
 	}
 
-	if _, err := repo.db.Exec(ctx, upsert, schluessels, werts); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func buildSettingsPairs(req *SystemEinstellungen) [][2]string {
-	aktiv := "false"
-	if req.FerienLeseclubAktiv {
-		aktiv = "true"
-	}
-	stichtag := req.LmfStichtag
-	if stichtag == "" {
-		stichtag = "07-31"
-	}
-	zieldatum := ""
-	if req.FerienLeseclubZieldatum != nil {
-		zieldatum = *req.FerienLeseclubZieldatum
-	}
-	maxAusleihen := "5"
-	if req.MaxAusleihenSchueler > 0 {
-		maxAusleihen = strconv.Itoa(req.MaxAusleihenSchueler)
-	}
-	fristBuch := "21"
-	if req.FristBuchTage > 0 {
-		fristBuch = strconv.Itoa(req.FristBuchTage)
-	}
-	fristMedien := "7"
-	if req.FristMedienTage > 0 {
-		fristMedien = strconv.Itoa(req.FristMedienTage)
-	}
-	maxOverdueDays := "14"
-	if req.MaxOverdueDays >= 0 {
-		maxOverdueDays = strconv.Itoa(req.MaxOverdueDays)
-	}
-	maxOverdueItems := "1"
-	if req.MaxOverdueItems > 0 {
-		maxOverdueItems = strconv.Itoa(req.MaxOverdueItems)
-	}
-	bestellSchwelle := "3"
-	if req.BestellbedarfSchwelle > 0 {
-		bestellSchwelle = strconv.Itoa(req.BestellbedarfSchwelle)
-	}
-	bestellAktiv := "false"
-	if req.BestellbedarfWarnungAktiv {
-		bestellAktiv = "true"
-	}
-	preiseErfassen := "false"
-	if req.PreiseErfassen {
-		preiseErfassen = "true"
-	}
-
-	pairs := [][2]string{
-		{"ferien_leseclub_aktiv", aktiv},
-		{"lmf_stichtag", stichtag},
-		{"ferien_leseclub_zieldatum", zieldatum},
-		{"max_ausleihen_schueler", maxAusleihen},
-		{"frist_buch_tage", fristBuch},
-		{"frist_medien_tage", fristMedien},
-		{"max_overdue_days", maxOverdueDays},
-		{"max_overdue_items", maxOverdueItems},
-		{"bestellbedarf_warnung_aktiv", bestellAktiv},
-		{"bestellbedarf_schwelle", bestellSchwelle},
-		{"preise_erfassen", preiseErfassen},
-	}
-
-	// nil heißt "diese Sektion kennt das Feld nicht" und lässt den gespeicherten Wert in
-	// Ruhe; "" heißt ausdrücklich "leeren" und schaltet den Link-Versand ab. Ein reiner
-	// String könnte beides nicht unterscheiden.
-	if req.AlarmEmpfaenger != nil {
-		pairs = append(pairs, [2]string{"alarm_empfaenger", *req.AlarmEmpfaenger})
-	}
-	if req.OeffentlicheAdresse != nil {
-		pairs = append(pairs, [2]string{"oeffentliche_adresse", *req.OeffentlicheAdresse})
-	}
-	pairs = append(pairs, datenschutzPairs(req)...)
-
-	// Schul-Identität (PDF-Briefkopf) getrennt behandeln: Diese Felder haben
-	// KEINE eigene UI und werden von der Allgemein-Sektion NICHT mitgesendet.
-	// Ein leerer Wert bedeutet hier "nicht angefasst", nicht "leeren". Ohne diese
-	// Guard würde jedes Speichern der Allgemein-Einstellungen die Schuladresse
-	// löschen, die in fünf PDF-Generatoren (Mahnung, Bestellbericht, Reports,
-	// Print, Orders) als Briefkopf genutzt wird.
-	for _, f := range [][2]string{
-		{"schule_name", req.SchuleName},
-		{"schule_strasse", req.SchuleStrasse},
-		{"schule_plz", req.SchulePLZ},
-		{"schule_ort", req.SchuleOrt},
-		{"etikett_eigentumsvermerk", req.EtikettEigentumsvermerk},
-	} {
-		if f[1] != "" {
-			pairs = append(pairs, f)
-		}
-	}
-
-	return pairs
+	_, err := repo.db.Exec(ctx, upsert, schluessels, werts)
+	return err
 }

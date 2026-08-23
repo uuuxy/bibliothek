@@ -241,7 +241,7 @@ Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_s
    **Der Rechteumfang war es** (Migration 070): Auf dem Schulserver sah ein Kollegiums-Konto am 10.08.2026 zehn von fünfzehn Menüpunkten, darunter Schülerdatei, Mahnwesen, System-Logs und Einstellungen — `role_permissions` führte `manage_users`, `audit_logs`, `view_stats`, `view_students`, `view_books` und `perform_actions` auf `true`. Das war keine reine Anzeigefrage: Dieselbe Tabelle entscheidet in `RequirePermission`, die API hätte es ebenfalls zugelassen. Alles außer `create_reservations` ist entzogen. Wer einer Lehrkraft gezielt mehr geben will, tut das im PermissionManager — Migrationen laufen nur einmal, eine spätere Vergabe wird nicht zurückgedreht.
 4. **Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (Entscheidung vom 30.07.2026, Migration 055): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zu Personendaten zieht weiterhin `view_students`.
 
-   **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver.** Das ist die Frage, die in der Praxis zuerst kommt, und sie hatte bis zum 08.08.2026 keine Antwort in dieser Doku. Die Anmeldung läuft ausschließlich über E-Mail + Passwort gegen IMAP (`auth/handlers.go`); eine lokale Passwortspalte gibt es seit Migration 012 nicht, und einen Code- oder Barcode-Anmeldeweg gibt es nicht — die Felder `barcode_id`/`pin` standen einmal im `LoginRequest`, wurden nie ausgewertet und sind entfernt. Wer eine Hilfskraft aufnehmen will, lässt also zuerst ein Postfach anlegen und trägt dann unter Einstellungen → Benutzerverwaltung die Person mit der Rolle „Helfer" ein. Die E-Mail ist dabei die Identität: Wer die Spalte `benutzer.email` schreibt, übernimmt das Konto.
+   **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver.** Das ist die Frage, die in der Praxis zuerst kommt, und sie hatte bis zum 08.08.2026 keine Antwort in dieser Doku. Die Anmeldung läuft ausschließlich über E-Mail + Passwort gegen IMAP (`auth/handlers.go`); eine lokale Passwortspalte gibt es seit Migration 012 nicht, und einen Code- oder Barcode-Anmeldeweg gibt es nicht — die Felder `barcode_id`/`pin` standen einmal im `LoginRequest`, wurden nie ausgewertet und sind entfernt. Wer eine Hilfskraft aufnehmen will, lässt also zuerst ein Postfach anlegen und trägt dann unter System → Berechtigungen die Person mit der Rolle „Helfer" ein (die Benutzerverwaltung sitzt seit 16.08.2026 dort, nicht mehr in den Einstellungen). Die E-Mail ist dabei die Identität: Wer die Spalte `benutzer.email` schreibt, übernimmt das Konto.
 
    Erteilt sind genau zwei Rechte (`db/seed.go`): `perform_actions` (Scannen, Ausleihe, Rückgabe) und `view_books` (Katalog). Erreichbar sind damit Ausleihe, Medienkatalog, Signaturen und Schulklassen — Letztere seit dem 08.08.2026, weil der Klassensatz-Reiter im Katalog aufgelöst wurde und der Blick darauf sonst verloren gegangen wäre. Die Pflege-Aktionen auf diesen Seiten hängen an `edit_books` und bleiben dem Helfer verborgen.
 
@@ -278,7 +278,7 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
 
 ## 15. Selbstprüfung der Betriebsbereitschaft
 
-Erreichbar unter **System → Einstellungen → Tab „Betriebsbereitschaft“** (Recht `manage_users`,
+Erreichbar unter **System → Einstellungen → Kategorie „Betriebsbereitschaft“** (Recht `manage_users`,
 `GET /api/admin/system/betriebsbereitschaft`). Die Seite beantwortet **eine** Frage:
 *Was ist eingerichtet, aber nicht in Betrieb?*
 
@@ -310,7 +310,7 @@ klären). Bewusst nur drei — eine feinere Skala liest niemand.
 
 **Der Wächter meldet sich selbst** (seit 16.08.2026): Kritische Befunde gehen täglich
 per Mail — solange sie bestehen, mit Befund, Folge und Abhilfe je Punkt. Der
-Empfängerkreis ist seit 17.08.2026 einstellbar (Einstellungen → Allgemein,
+Empfängerkreis ist seit 17.08.2026 einstellbar (Einstellungen → Erreichbarkeit & Alarme,
 `alarm_empfaenger`, mehrere Adressen mit Komma); ist er leer, gehen die Mails als
 sicherer Rückfall an alle aktiven Admin-Konten — ein Alarm, der niemanden erreicht,
 ist keiner. Die Mail nennt im Fußtext, an wen sie ging und in welchem Modus. Warnungen lösen bewusst keine Mail aus (Dauerrauschen stumpft ab);

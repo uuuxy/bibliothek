@@ -32,7 +32,7 @@
 	let weggeklickt = $state(false);
 
 	function openDatenverwaltung() {
-		uiStore.requestedSettingsTab = 'Datenverwaltung';
+		uiStore.requestedSettingsTab = 'daten';
 		uiStore.activeTab = 'settings';
 	}
 </script>

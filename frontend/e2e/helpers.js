@@ -236,3 +236,20 @@ export async function gehZu(page, pfad) {
 			`Unbekannte Pfade landen still auf /kiosk; vermutlich wurde eine Route umbenannt.`
 	).toHaveURL(new RegExp(`${pfad.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}$`));
 }
+
+/**
+ * Der Eintrag einer Einstellungs-Kategorie in der Liste links.
+ *
+ * Auf die Liste eingegrenzt, nicht auf die Seite: Der Speichern-Knopf der geöffneten
+ * Kategorie heißt „<Name> speichern" und passt auf dieselbe Namenssuche. Wer nur
+ * `getByRole('button', { name: /^Datenschutz/ })` schreibt, trifft je nachdem, welche
+ * Kategorie gerade offen ist — mal den Listeneintrag, mal den Knopf.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} titel Titel der Kategorie, z. B. 'Datenverwaltung'.
+ */
+export function einstellungsKategorie(page, titel) {
+	return page.getByRole('navigation', { name: 'Einstellungs-Kategorien' }).getByRole('button', {
+		name: new RegExp(`^${titel.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}`)
+	});
+}

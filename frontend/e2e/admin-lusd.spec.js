@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, uniqueSuffix } from './helpers.js';
+import { uiLogin, uniqueSuffix, einstellungsKategorie } from './helpers.js';
 
 test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
 	await uiLogin(page);
@@ -9,7 +9,9 @@ test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
 	await page.getByRole('button', { name: 'Einstellungen' }).click();
 	// exact: true — seit dem Backup-Alert gibt es zusätzlich einen Knopf
 	// „Datenverwaltung öffnen", auf den die Teilstring-Suche sonst ebenfalls passt.
-	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
+	// Seit dem 23.08.2026 ist es ein Eintrag der Kategorienliste; sein zugänglicher
+	// Name trägt die Beitextzeile mit, deshalb ein Anker auf den Anfang statt exact.
+	await einstellungsKategorie(page, 'Datenverwaltung').click();
 
 	// 2. CSV generieren (1 neuer Schüler)
 	const s = uniqueSuffix();
@@ -64,7 +66,9 @@ test('LUSD-Import: Schrottdateien werden sauber abgewiesen', async ({ page }) =>
 	await page.getByRole('button', { name: 'Einstellungen' }).click();
 	// exact: true — seit dem Backup-Alert gibt es zusätzlich einen Knopf
 	// „Datenverwaltung öffnen", auf den die Teilstring-Suche sonst ebenfalls passt.
-	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
+	// Seit dem 23.08.2026 ist es ein Eintrag der Kategorienliste; sein zugänglicher
+	// Name trägt die Beitextzeile mit, deshalb ein Anker auf den Anfang statt exact.
+	await einstellungsKategorie(page, 'Datenverwaltung').click();
 
 	const uploadAndPreview = async (name, buffer) => {
 		// Direkt aufs versteckte File-Input — Label-Texte ändern sich nach dem
@@ -104,7 +108,7 @@ test('LUSD-Import: LANIS-Klassenliste ohne ID und Geburtsdatum (Nur-Name-Stufe)'
 	await uiLogin(page);
 	await page.getByRole('button', { name: 'System', exact: true }).click();
 	await page.getByRole('button', { name: 'Einstellungen' }).click();
-	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
+	await einstellungsKategorie(page, 'Datenverwaltung').click();
 
 	const s = uniqueSuffix();
 	const csvContent = `\uFEFFNachname;Vorname;Klasse;BKU;Spanisch\nLanis_${s};Neu_${s};05G1;x;\n`;

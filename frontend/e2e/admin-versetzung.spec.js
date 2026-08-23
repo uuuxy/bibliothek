@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, einstellungsKategorie } from './helpers.js';
 
 test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	// 1. Seed two students (one in 05a, one in 10a)
@@ -21,7 +21,7 @@ test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	await page.getByRole('button', { name: 'Einstellungen' }).click();
 	// exact: true — seit dem Backup-Alert gibt es zusätzlich einen Knopf
 	// „Datenverwaltung öffnen", auf den die Teilstring-Suche sonst ebenfalls passt.
-	await page.getByRole('button', { name: 'Datenverwaltung', exact: true }).click();
+	await einstellungsKategorie(page, 'Datenverwaltung').click();
 
 	// 4. Vorschau berechnen
 	await page.getByRole('button', { name: 'Vorschau berechnen' }).click();

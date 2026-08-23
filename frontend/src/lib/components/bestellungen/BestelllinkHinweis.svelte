@@ -36,7 +36,7 @@
 	const ungeprueft = $derived(!orderStore.konfigurationGeladen);
 
 	function einstellungenOeffnen() {
-		uiStore.requestedSettingsTab = 'Allgemein';
+		uiStore.requestedSettingsTab = 'erreichbarkeit';
 		uiStore.activeTab = 'settings';
 	}
 </script>

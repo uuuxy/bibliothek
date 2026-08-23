@@ -46,8 +46,8 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `SMTP_PASS` | Historischer Zweitname für `SMTP_PASSWORD` | Wird nur gelesen, wenn `SMTP_PASSWORD` leer ist. `docker-compose.yml` setzt beide Namen — beim Suchen nach „warum nimmt er das alte Passwort" ist das die Stelle |
 | `SENTRY_DSN` | Sentry Error Tracking | Optional |
 
-**Nicht als Variable, sondern in der Oberfläche:** Mail-Zugangsdaten und die **Öffentliche
-Adresse** (Einstellungen → Allgemein) leben in der Datenbank. Die `SMTP_*`-Variablen werden
+**Nicht als Variable, sondern in der Oberfläche:** Mail-Zugangsdaten (Einstellungen → Mail)
+und die **Öffentliche Adresse** (Einstellungen → Erreichbarkeit & Alarme) leben in der Datenbank. Die `SMTP_*`-Variablen werden
 beim ersten Start einmalig übernommen und sind danach nur noch Rückfall — beim Debuggen
 also die DB-Zeile ansehen, nicht die `.env`. Die Öffentliche Adresse (z. B.
 `https://bibliothek.schule.de`) ist die Grundlage des Bestätigungs-Links an Lieferanten;

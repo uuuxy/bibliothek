@@ -1,108 +1,84 @@
 <script>
+	/**
+	 * Die Einstellungen als Material-3-Liste mit Detailfläche (Betreiber-Entscheidung
+	 * 23.08.2026).
+	 *
+	 * Vorher: sechs Reiter. Einer davon, „Allgemein", trug SIEBEN fremde Themen in
+	 * einer Scroll-Seite (Schule, Ferien-Leseclub, Fristen, Sperr-Automatik,
+	 * Bestellbedarf, Datenschutz, Preise) und darunter EINEN Speichern-Knopf für
+	 * alles; ein anderer, „System", hatte genau einen Inhalt. Reiter sind für drei bis
+	 * fünf gleichgewichtige Bereiche gedacht, nicht für „einer voll, einer leer".
+	 *
+	 * Der Knopf war nicht nur unordentlich, er war die Ursache der drei Leer-Regeln:
+	 * Weil immer alles auf einmal ging, brauchte jede Sektion eine eigene Notbremse
+	 * gegen das Überschreiben der anderen. Mit dem Speichern je Kategorie schickt jede
+	 * nur ihre eigenen Felder (repository/system_settings_patch.go), und es gilt
+	 * überall dieselbe Regel.
+	 *
+	 * Die Betriebsbereitschaft bleibt hier drin und bekommt bewusst KEINE eigene
+	 * Route: 45951c62 hat den früheren URL-Schleichweg abgeschafft, weil
+	 * /betriebsbereitschaft ohne Menüeintrag für jeden Angemeldeten offen gewesen
+	 * wäre. Die Berechtigungen bleiben umgekehrt draußen — sie sind seit 66a58b06 ein
+	 * eigener Menüpunkt, auf den die Drift-Warnung der Selbstprüfung zeigt.
+	 */
 	import { apiGet } from './apiFetch.js';
 	import { onMount } from 'svelte';
-	import MailTemplates from './MailTemplates.svelte';
+	import { ArrowLeft } from '@lucide/svelte';
 	import DataManagement from './components/admin/DataManagement.svelte';
-	import MailConfig from './components/admin/MailConfig.svelte';
 	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
-	import SystemSettingsAllgemein from './SystemSettingsAllgemein.svelte';
 	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
+	import KategorieListe from './components/settings/KategorieListe.svelte';
+	import KategorieRahmen from './components/settings/KategorieRahmen.svelte';
+	import SchuleKategorie from './components/settings/kategorien/SchuleKategorie.svelte';
+	import AusleiheKategorie from './components/settings/kategorien/AusleiheKategorie.svelte';
+	import MahnwesenKategorie from './components/settings/kategorien/MahnwesenKategorie.svelte';
+	import BestellwesenKategorie from './components/settings/kategorien/BestellwesenKategorie.svelte';
+	import DatenschutzKategorie from './components/settings/kategorien/DatenschutzKategorie.svelte';
+	import ErreichbarkeitKategorie from './components/settings/kategorien/ErreichbarkeitKategorie.svelte';
+	import MailKategorie from './components/settings/kategorien/MailKategorie.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
+	import { sichtbareKategorien } from './components/settings/kategorien.js';
 
-	// --- STATE ---
 	let loading = $state(true);
+	/** @type {Record<string, any>} */
+	let daten = $state({});
 
 	const isAdmin = $derived(authStore.currentUser?.rolle === 'admin');
 
-	// Tabs
-	const tabs = $derived(
-		isAdmin
-			? [
-					'Allgemein',
-					'Mahnwesen-Routing',
-					'Datenverwaltung',
-					'Mail-Server',
-					'System',
-					'Betriebsbereitschaft'
-				]
-			: ['Allgemein', 'Mahnwesen-Routing', 'System']
-	);
-	let activeTab = $state('Allgemein');
+	const kategorien = $derived(sichtbareKategorien(isAdmin));
 
-	// Deep-Link aus einem System-Alert: der Alert nennt den Reiter, hier wird er
+	let aktiv = $state('schule');
+	// Auf schmalen Bildschirmen zeigt die Seite entweder die Liste ODER das Detail
+	// (M3 list-detail). Ab lg stehen beide nebeneinander, und dieser Schalter ist
+	// bedeutungslos.
+	let detailOffen = $state(false);
+
+	// Deep-Link aus einem System-Alert: der Alert nennt die Kategorie, hier wird sie
 	// aufgegriffen und zurückgesetzt (gleiche Mechanik wie requestedStudentId).
 	$effect(() => {
 		const wanted = uiStore.requestedSettingsTab;
 		if (!wanted) return;
-		if (tabs.includes(wanted)) activeTab = wanted;
+		if (kategorien.some((k) => k.id === wanted)) {
+			aktiv = wanted;
+			detailOffen = true;
+		}
 		uiStore.requestedSettingsTab = null;
 	});
 
-	// Global Settings (Allgemein)
-	let ferienLeseclubAktiv = $state(false);
-	let ferienLeseclubZieldatum = $state('');
-	let lmfStichtag = $state('07-31');
-	let maxAusleihenSchueler = $state(5);
-	let fristBuchTage = $state(21);
-	let fristMedienTage = $state(7);
-	let maxOverdueDays = $state(14);
-	let maxOverdueItems = $state(1);
-	let bestellbedarfWarnungAktiv = $state(true);
-	let bestellbedarfSchwelle = $state(3);
-	// Vorgabe AN — wie im Backend: Ein fehlender Wert darf die Preise nicht abschalten.
-	let preiseErfassen = $state(true);
-	// Schul-Stammdaten. Sie lagen bis zum 04.08.2026 nur in der Datenbank und wurden von
-	// fünf PDF-Generatoren als Briefkopf gelesen — einstellen konnte man sie nirgends.
-	// Auf dem Buchetikett stand ersatzweise fest "Schulbibliothek" im Code.
-	let schuleName = $state('');
-	let schuleStrasse = $state('');
-	let schulePLZ = $state('');
-	let schuleOrt = $state('');
-	let etikettEigentumsvermerk = $state('');
-	// Adresse, unter der DRITTE das System erreichen — Grundlage des Bestätigungs-Links
-	// an den Lieferanten. Der Server kennt sie nicht selbst (hinter dem Reverse-Proxy
-	// sieht er nur seinen internen Namen).
-	let oeffentlicheAdresse = $state('');
-	let alarmEmpfaenger = $state('');
-	// Datenschutz & Sitzung (docs/datenschutz_offene_punkte.md A1/A4). Vorgaben wie im
-	// Backend (repository/system_settings_datenschutz.go); 0 = aus.
-	let lesehistorieTage = $state(90);
-	let lesehistorieLernmittelTage = $state(730);
-	let thekeLeerenMinuten = $state(5);
-	let sperreMinuten = $state(15);
-
-	// --- LOGIC ---
-
 	async function loadSettings() {
 		try {
-			const data = await apiGet('/api/einstellungen');
-			ferienLeseclubAktiv = data.ferien_leseclub_aktiv ?? false;
-			ferienLeseclubZieldatum = data.ferien_leseclub_zieldatum ?? '';
-			lmfStichtag = data.lmf_stichtag ?? '07-31';
-			maxAusleihenSchueler = data.max_ausleihen_schueler ?? 5;
-			fristBuchTage = data.frist_buch_tage ?? 21;
-			fristMedienTage = data.frist_medien_tage ?? 7;
-			maxOverdueDays = data.max_overdue_days ?? 14;
-			maxOverdueItems = data.max_overdue_items ?? 1;
-			bestellbedarfWarnungAktiv = data.bestellbedarf_warnung_aktiv ?? true;
-			bestellbedarfSchwelle = data.bestellbedarf_schwelle ?? 3;
-			preiseErfassen = data.preise_erfassen ?? true;
-			schuleName = data.schule_name ?? '';
-			schuleStrasse = data.schule_strasse ?? '';
-			schulePLZ = data.schule_plz ?? '';
-			schuleOrt = data.schule_ort ?? '';
-			etikettEigentumsvermerk = data.etikett_eigentumsvermerk ?? '';
-			oeffentlicheAdresse = data.oeffentliche_adresse ?? '';
-			alarmEmpfaenger = data.alarm_empfaenger ?? '';
-			lesehistorieTage = data.lesehistorie_tage ?? 90;
-			lesehistorieLernmittelTage = data.lesehistorie_lernmittel_tage ?? 730;
-			thekeLeerenMinuten = data.theke_leeren_minuten ?? 5;
-			sperreMinuten = data.sperre_minuten ?? 15;
+			daten = (await apiGet('/api/einstellungen')) ?? {};
 		} catch {
-			/* use defaults */
+			daten = {};
 		}
+	}
+
+	/** @param {string} id */
+	function waehle(id) {
+		aktiv = id;
+		detailOffen = true;
 	}
 
 	onMount(async () => {
@@ -112,88 +88,70 @@
 </script>
 
 <PageShell>
-	<!-- Header -->
-	<div class="space-y-6">
-		<!-- Tabs -->
-		<div class="flex gap-4 border-b border-slate-200">
-			{#each tabs as tab, _i (_i)}
-				<button
-					onclick={() => (activeTab = tab)}
-					class="relative px-2 py-3 text-sm font-semibold transition-colors focus:outline-none {activeTab ===
-					tab
-						? 'text-blue-600'
-						: 'text-slate-500 hover:text-slate-800'}"
-				>
-					{tab}
-					{#if activeTab === tab}
-						<div class="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></div>
-					{/if}
-				</button>
-			{/each}
-		</div>
-	</div>
-
 	{#if loading}
-		<div class="py-20 flex justify-center items-center">
+		<div class="flex items-center justify-center py-20">
 			<div
-				class="w-10 h-10 border-4 border-slate-800 border-t-transparent rounded-full animate-spin"
+				class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"
 			></div>
 		</div>
 	{:else}
-		<!-- Tab Content: liegt wie ueberall sonst in einer Karte auf der Leinwand. Vorher
-		     schwebte das Formular direkt auf der Flaeche — als einzige Seite der App. -->
-		<div class="animate-fade-in">
-			<!-- TAB: ALLGEMEIN -->
-			{#if activeTab === 'Allgemein'}
-				<SystemSettingsAllgemein
-					bind:ferienLeseclubAktiv
-					bind:ferienLeseclubZieldatum
-					bind:lmfStichtag
-					bind:maxAusleihenSchueler
-					bind:fristBuchTage
-					bind:fristMedienTage
-					bind:maxOverdueDays
-					bind:maxOverdueItems
-					bind:bestellbedarfWarnungAktiv
-					bind:bestellbedarfSchwelle
-					bind:preiseErfassen
-					bind:schuleName
-					bind:schuleStrasse
-					bind:schulePLZ
-					bind:schuleOrt
-					bind:etikettEigentumsvermerk
-					bind:oeffentlicheAdresse
-					bind:alarmEmpfaenger
-					bind:lesehistorieTage
-					bind:lesehistorieLernmittelTage
-					bind:thekeLeerenMinuten
-					bind:sperreMinuten
-					onSaved={loadSettings}
-				/>
+		<div class="flex w-full flex-col gap-8 lg:flex-row lg:gap-12">
+			<div class={detailOffen ? 'hidden lg:block' : 'block'}>
+				<KategorieListe {kategorien} {aktiv} onwahl={waehle} />
+			</div>
 
-				<!-- TAB: MAHNWESEN-ROUTING -->
-			{:else if activeTab === 'Mahnwesen-Routing'}
-				<SystemSettingsRouting />
+			<div class="min-w-0 flex-1 {detailOffen ? 'block' : 'hidden lg:block'}">
+				<button
+					type="button"
+					onclick={() => (detailOffen = false)}
+					class="mb-6 flex cursor-pointer items-center gap-2 text-sm font-medium text-primary lg:hidden"
+				>
+					<ArrowLeft size={18} /> Alle Einstellungen
+				</button>
 
-				<!-- TAB: BETRIEBSBEREITSCHAFT — reine Pruefung, siehe FACHKONZEPT §15 -->
-			{:else if activeTab === 'Betriebsbereitschaft' && isAdmin}
-				<Betriebsbereitschaft />
-
-				<!-- TAB: DATENVERWALTUNG -->
-			{:else if activeTab === 'Datenverwaltung' && isAdmin}
-				<DataManagement />
-
-				<!-- TAB: MAIL-SERVER -->
-			{:else if activeTab === 'Mail-Server' && isAdmin}
-				<MailConfig />
-
-				<!-- TAB: SYSTEM -->
-			{:else if activeTab === 'System'}
-				<section class="w-full">
-					<h3 class="text-lg font-bold text-slate-900 mb-6">Mail-Templates</h3>
-					<MailTemplates />
-				</section>
-			{/if}
+				<!-- Neu laden nach dem Speichern erzeugt ein frisches `daten`; der Schlüssel
+				     baut die Kategorie damit aus den GESPEICHERTEN Werten neu auf. Ohne ihn
+				     stünde im Feld weiter die Eingabe, auch wenn der Server sie normalisiert
+				     hat (0 in einem Frist-Feld wird zur Vorgabe). -->
+				{#key daten}
+					{#if aktiv === 'schule'}
+						<SchuleKategorie {daten} onSaved={loadSettings} />
+					{:else if aktiv === 'ausleihe'}
+						<AusleiheKategorie {daten} onSaved={loadSettings} />
+					{:else if aktiv === 'mahnwesen'}
+						<MahnwesenKategorie {daten} onSaved={loadSettings} />
+					{:else if aktiv === 'routing'}
+						<KategorieRahmen
+							titel="Mahnwesen-Routing"
+							kurz="Welche Lehrkraft die Mahnliste einer Klasse bekommt."
+						>
+							<SystemSettingsRouting />
+						</KategorieRahmen>
+					{:else if aktiv === 'bestellwesen'}
+						<BestellwesenKategorie {daten} onSaved={loadSettings} />
+					{:else if aktiv === 'datenschutz'}
+						<DatenschutzKategorie {daten} onSaved={loadSettings} />
+					{:else if aktiv === 'erreichbarkeit'}
+						<ErreichbarkeitKategorie {daten} onSaved={loadSettings} />
+					{:else if aktiv === 'mail'}
+						<MailKategorie istAdmin={isAdmin} />
+					{:else if aktiv === 'daten' && isAdmin}
+						<KategorieRahmen
+							titel="Datenverwaltung"
+							kurz="Importe, Exporte und der Stand der nächtlichen Sicherung."
+						>
+							<DataManagement />
+						</KategorieRahmen>
+					{:else if aktiv === 'betrieb' && isAdmin}
+						<KategorieRahmen
+							titel="Betriebsbereitschaft"
+							kurz="Was ist eingerichtet, aber nicht in Betrieb? Diese Seite prüft nur — geändert wird in den Kategorien daneben."
+						>
+							<Betriebsbereitschaft />
+						</KategorieRahmen>
+					{/if}
+				{/key}
+			</div>
 		</div>
 	{/if}
 </PageShell>

@@ -1,29 +1,54 @@
 import { describe, it, expect } from 'vitest';
-import { zahlOderUnveraendert } from './settingsWerte.js';
+import { zahlOderLeer, sammleZahlen } from './settingsWerte.js';
 
 /**
- * Leer ist nicht null-Komma-nichts: Ein geleertes Zahlenfeld darf eine Befristung nicht
- * still abschalten. Nur die getippte 0 heißt „aus"; alles Leere/Unlesbare bleibt, wie es
- * gespeichert ist.
+ * Die getippte 0 ist ein Wert („aus"), ein LEERES Feld ist keiner. Der Unterschied ist
+ * der Kern zweier Regressionen: Erst machte `Number(null) || 0` aus dem leeren Feld
+ * still eine 0 und schaltete damit die Lesehistorie-Befristung ab (Prüfung 22.08.2026,
+ * A4); danach hieß leer „nicht mitschicken", was beim Speichern je Kategorie
+ * (23.08.2026) niemand mehr erraten soll — leer wird jetzt gemeldet.
  */
-describe('zahlOderUnveraendert', () => {
-	it('getippte 0 ist ein Wert (aus), nicht "unverändert"', () => {
-		expect(zahlOderUnveraendert(0)).toBe(0);
-		expect(zahlOderUnveraendert('0')).toBe(0);
+describe('zahlOderLeer', () => {
+	it('getippte 0 ist ein Wert (aus), kein leeres Feld', () => {
+		expect(zahlOderLeer(0)).toBe(0);
+		expect(zahlOderLeer('0')).toBe(0);
 	});
-	it('leeres Feld (null/""/undefined) heißt unverändert', () => {
-		expect(zahlOderUnveraendert(null)).toBeNull();
-		expect(zahlOderUnveraendert('')).toBeNull();
-		expect(zahlOderUnveraendert(undefined)).toBeNull();
+	it('leeres Feld (null/""/undefined) ist keine Angabe', () => {
+		expect(zahlOderLeer(null)).toBeNull();
+		expect(zahlOderLeer('')).toBeNull();
+		expect(zahlOderLeer(undefined)).toBeNull();
 	});
 	it('Unlesbares und Negatives wird nicht zur 0', () => {
-		expect(zahlOderUnveraendert('abc')).toBeNull();
-		expect(zahlOderUnveraendert(-5)).toBeNull();
-		expect(zahlOderUnveraendert(NaN)).toBeNull();
+		expect(zahlOderLeer('abc')).toBeNull();
+		expect(zahlOderLeer(-5)).toBeNull();
+		expect(zahlOderLeer(NaN)).toBeNull();
 	});
 	it('normale Zahlen kommen ganzzahlig durch', () => {
-		expect(zahlOderUnveraendert(90)).toBe(90);
-		expect(zahlOderUnveraendert('730')).toBe(730);
-		expect(zahlOderUnveraendert(15.7)).toBe(15);
+		expect(zahlOderLeer(90)).toBe(90);
+		expect(zahlOderLeer('730')).toBe(730);
+		expect(zahlOderLeer(15.7)).toBe(15);
+	});
+});
+
+describe('sammleZahlen', () => {
+	it('baut den Patch aus den ausgefüllten Feldern', () => {
+		const { werte, fehlend } = sammleZahlen([
+			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: 28 },
+			{ schluessel: 'lesehistorie_tage', label: 'Lesehistorie', wert: '0' }
+		]);
+		expect(werte).toEqual({ frist_buch_tage: 28, lesehistorie_tage: 0 });
+		expect(fehlend).toEqual([]);
+	});
+
+	it('meldet leere Felder mit ihrer Beschriftung und lässt sie aus dem Patch', () => {
+		const { werte, fehlend } = sammleZahlen([
+			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: '' },
+			{ schluessel: 'frist_medien_tage', label: 'Tage / Medien', wert: 7 },
+			{ schluessel: 'max_ausleihen_schueler', label: 'Max. Ausleihen', wert: null }
+		]);
+		// Der Patch trägt NUR die gültigen Felder — der Aufrufer schickt ihn bei
+		// fehlenden Angaben ohnehin nicht ab, aber ein halber Patch darf nie entstehen.
+		expect(werte).toEqual({ frist_medien_tage: 7 });
+		expect(fehlend).toEqual(['Tage / Buch', 'Max. Ausleihen']);
 	});
 });

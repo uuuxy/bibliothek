@@ -23,10 +23,11 @@ class UIStore {
 	 */
 	requestedStudentId = $state(/** @type {string | null} */ (null));
 	/**
-	 * Aus einem System-Alert angeforderter Reiter der Einstellungen. Gleiche Mechanik
-	 * wie requestedStudentId: SystemSettings greift den Wert auf und setzt ihn zurück.
-	 * Damit kann ein Alert direkt dorthin verweisen, wo sich das Problem beheben lässt,
-	 * statt den Nutzer auf „Allgemein" abzusetzen.
+	 * Aus einem System-Alert angeforderte KATEGORIE der Einstellungen (ihre id, z. B.
+	 * 'erreichbarkeit'). Gleiche Mechanik wie requestedStudentId: SystemSettings greift
+	 * den Wert auf und setzt ihn zurück. Damit verweist ein Alert direkt dorthin, wo
+	 * sich das Problem beheben lässt, statt den Nutzer auf der ersten Kategorie
+	 * abzusetzen. Bis zum 23.08.2026 stand hier ein Reiter-NAME ("Allgemein").
 	 */
 	requestedSettingsTab = $state(/** @type {string | null} */ (null));
 	/**

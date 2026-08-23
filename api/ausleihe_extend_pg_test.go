@@ -22,7 +22,7 @@ func (m *mockSystemSettingsRepo) GetSettings(ctx context.Context) (*repository.S
 	return m.settings, m.err
 }
 
-func (m *mockSystemSettingsRepo) SaveSettings(ctx context.Context, req *repository.SystemEinstellungen) error {
+func (m *mockSystemSettingsRepo) SaveSettings(ctx context.Context, req *repository.EinstellungenPatch) error {
 	return nil
 }
 

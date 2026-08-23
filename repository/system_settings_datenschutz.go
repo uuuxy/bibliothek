@@ -72,26 +72,6 @@ func anwendenDatenschutzEinstellung(s *SystemEinstellungen, key string, val *str
 	return true
 }
 
-// datenschutzPairs liefert nur die mitgeschickten (nicht-nil) Felder als Upsert-Paare.
-func datenschutzPairs(req *SystemEinstellungen) [][2]string {
-	var pairs [][2]string
-	add := func(key string, v *int) {
-		if v == nil {
-			return
-		}
-		n := *v
-		if n < 0 {
-			n = 0
-		}
-		pairs = append(pairs, [2]string{key, strconv.Itoa(n)})
-	}
-	add("lesehistorie_tage", req.LesehistorieTage)
-	add("lesehistorie_lernmittel_tage", req.LesehistorieLernmittelTage)
-	add("theke_leeren_minuten", req.ThekeLeerenMinuten)
-	add("sperre_minuten", req.SperreMinuten)
-	return pairs
-}
-
 // TageOderStandard liefert den Wert eines Zeigerfelds oder die Vorgabe, wenn es nil ist.
 func TageOderStandard(v *int, standard int) int {
 	if v == nil {

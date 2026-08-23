@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
-// Der Schalter "Preise im Bestellwesen" (Einstellungen → Allgemein).
+// Der Schalter "Preise im Bestellwesen" (Einstellungen → Bestellwesen).
 //
 // Anlass: Preise wurden nie gepflegt — 2360 Exemplare im Bestand, kein einziges mit einem
 // Einkaufspreis über 0. Bestellhistorie und alle drei Berichte summierten also Nullen und

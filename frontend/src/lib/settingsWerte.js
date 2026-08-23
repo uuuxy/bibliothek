@@ -1,17 +1,24 @@
-// Zahlenfelder der Einstellungen, bei denen 0 ein ECHTER Wert ist (= aus).
+// Zahlenfelder der Einstellungen.
 //
-// Ein geleertes <input type="number"> liefert über bind:value null, und `Number(null) || 0`
-// machte daraus still die 0 — wer die 90 der Lesehistorie-Befristung „löschen" wollte, um
-// sie neu zu tippen, und zwischendurch speicherte, hatte die Befristung abgeschaltet, ohne
-// es zu merken (Prüfung 22.08.2026, A4). Leer heißt deshalb: nicht mitschicken — das
-// Backend lässt den gespeicherten Wert stehen (Zeigerfeld, nil = unverändert). Nur eine
-// ausdrücklich getippte 0 ist „aus".
+// Ein geleertes <input type="number"> liefert über bind:value null oder '' — und die
+// Frage, was das bedeuten soll, hat dieses Formular zweimal falsch beantwortet:
+//
+//  * `Number(null) || 0` machte daraus still eine 0. Wer die 90 der Lesehistorie-
+//    Befristung löschen wollte, um sie neu zu tippen, und zwischendurch speicherte,
+//    hatte die Befristung abgeschaltet, ohne es zu merken (Prüfung 22.08.2026, A4).
+//  * Danach hieß leer „nicht mitschicken" — richtig, solange EIN Knopf alles auf
+//    einmal speicherte, aber es war die dritte Leer-Regel des Formulars.
+//
+// Seit dem Speichern je Kategorie (23.08.2026) gibt es nur noch eine Regel: Was im
+// Feld steht, wird gespeichert. Ein leeres Zahlenfeld ist damit kein stiller
+// Sonderfall mehr, sondern schlicht unvollständig — und wird gemeldet, statt geraten.
 
 /**
+ * Liest ein Zahlenfeld aus. `null` heißt LEER oder unbrauchbar.
  * @param {unknown} v Eingabewert aus dem Feld (Zahl, String, null, undefined)
- * @returns {number | null} ganze Zahl ≥ 0, oder null = unverändert lassen
+ * @returns {number | null} ganze Zahl ≥ 0, oder null
  */
-export function zahlOderUnveraendert(v) {
+export function zahlOderLeer(v) {
 	// Nur die zwei Typen, die ein <input type="number"> über bind:value liefern kann: eine
 	// Zahl, oder eine Zeichenkette (leer bei geleertem Feld). Bewusst KEIN String(v) über
 	// alles: Ein Objekt würde dort still zu '[object Object]' und über NaN zu null — das
@@ -29,4 +36,25 @@ export function zahlOderUnveraendert(v) {
 	}
 	if (!Number.isFinite(n) || n < 0) return null;
 	return Math.trunc(n);
+}
+
+/**
+ * Sammelt die Zahlenfelder einer Kategorie für den Patch und meldet, welche leer
+ * geblieben sind — mit ihrer Beschriftung, damit die Meldung auf das Feld zeigt und
+ * nicht auf einen API-Schlüssel.
+ *
+ * @param {{ schluessel: string, label: string, wert: unknown }[]} felder
+ * @returns {{ werte: Record<string, number>, fehlend: string[] }}
+ */
+export function sammleZahlen(felder) {
+	/** @type {Record<string, number>} */
+	const werte = {};
+	/** @type {string[]} */
+	const fehlend = [];
+	for (const f of felder) {
+		const n = zahlOderLeer(f.wert);
+		if (n === null) fehlend.push(f.label);
+		else werte[f.schluessel] = n;
+	}
+	return { werte, fehlend };
 }
