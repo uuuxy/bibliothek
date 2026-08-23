@@ -39,11 +39,18 @@ export function zahlOderLeer(v) {
 }
 
 /**
- * Sammelt die Zahlenfelder einer Kategorie für den Patch und meldet, welche leer
- * geblieben sind — mit ihrer Beschriftung, damit die Meldung auf das Feld zeigt und
- * nicht auf einen API-Schlüssel.
+ * Sammelt die Zahlenfelder einer Kategorie für den Patch und meldet, welche unbrauchbar
+ * sind — mit ihrer Beschriftung, damit die Meldung auf das Feld zeigt und nicht auf
+ * einen API-Schlüssel.
  *
- * @param {{ schluessel: string, label: string, wert: unknown }[]} felder
+ * `min` ist nicht nur Kosmetik: Das Backend ersetzt einen Wert unterhalb der Grenze
+ * durch die Vorgabe (0 in „Tage / Buch" wird zu 21). Ohne diese Prüfung tippte man 0,
+ * bekämte eine Erfolgsmeldung und fände danach 21 im Feld — die Regel „was im Feld
+ * steht, wird gespeichert" gälte an genau dieser Stelle nicht. Bei den Feldern, in
+ * denen die 0 „aus" BEDEUTET (Lesehistorie, Sperrbildschirm, Tage bis Sperre), steht
+ * `min: 0`, und dann ist sie ein Wert wie jeder andere.
+ *
+ * @param {{ schluessel: string, label: string, wert: unknown, min?: number }[]} felder
  * @returns {{ werte: Record<string, number>, fehlend: string[] }}
  */
 export function sammleZahlen(felder) {
@@ -53,7 +60,9 @@ export function sammleZahlen(felder) {
 	const fehlend = [];
 	for (const f of felder) {
 		const n = zahlOderLeer(f.wert);
+		const min = f.min ?? 0;
 		if (n === null) fehlend.push(f.label);
+		else if (n < min) fehlend.push(`${f.label} (mindestens ${min})`);
 		else werte[f.schluessel] = n;
 	}
 	return { werte, fehlend };

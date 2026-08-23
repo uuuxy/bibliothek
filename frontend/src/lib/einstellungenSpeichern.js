@@ -7,8 +7,9 @@
 // ganze Formular schickte.
 //
 // Zahlenfelder gehen NICHT ungeprüft raus: Ein leer geräumtes Feld ist keine 0 und
-// auch kein „lass es wie es war", sondern ein unvollständiges Formular. Es wird
-// gemeldet, und zwar mit der Beschriftung des Feldes.
+// auch kein „lass es wie es war", sondern ein unvollständiges Formular. Dasselbe gilt
+// für einen Wert unterhalb der Feldgrenze — das Backend ersetzt ihn sonst still durch
+// die Vorgabe. Gemeldet wird mit der Beschriftung des Feldes.
 import { apiPut } from './apiFetch.js';
 import { toastStore } from './stores/toastStore.svelte.js';
 import { sammleZahlen } from './settingsWerte.js';
@@ -16,7 +17,7 @@ import { sammleZahlen } from './settingsWerte.js';
 /**
  * @param {object} eingabe
  * @param {Record<string, string|boolean|null>} [eingabe.felder] Text- und Schalterfelder.
- * @param {{ schluessel: string, label: string, wert: unknown }[]} [eingabe.zahlen] Zahlenfelder.
+ * @param {{ schluessel: string, label: string, wert: unknown, min?: number }[]} [eingabe.zahlen] Zahlenfelder mit ihrer Untergrenze.
  * @param {() => void | Promise<void>} [eingabe.onSaved] Neu laden nach dem Speichern.
  * @returns {Promise<boolean>} true, wenn gespeichert wurde.
  */
@@ -24,7 +25,7 @@ export async function speichereKategorie({ felder = {}, zahlen = [], onSaved } =
 	const { werte, fehlend } = sammleZahlen(zahlen);
 	if (fehlend.length > 0) {
 		toastStore.addToast(
-			`Bitte eine Zahl eintragen bei: ${fehlend.join(', ')}. Nichts wurde gespeichert.`,
+			`Bitte eine gültige Zahl eintragen bei: ${fehlend.join(', ')}. Nichts wurde gespeichert.`,
 			'warning'
 		);
 		return false;

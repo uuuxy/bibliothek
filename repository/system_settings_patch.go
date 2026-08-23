@@ -90,6 +90,16 @@ func (s *paarSammler) zahl(key string, v *int, min int, ersatz int) {
 	s.paare = append(s.paare, [2]string{key, strconv.Itoa(n)})
 }
 
+// IstLeer meldet, dass der Patch kein einziges Feld trägt.
+//
+// Das ist ein Aufruferfehler und keine leere Speicherung: Der Handler antwortet
+// darauf mit 400 statt mit „ok". Ein 200 auf einen Rumpf ohne Felder hätte einen
+// Audit-Eintrag „UPDATE_SETTINGS" hinterlassen, der eine Änderung behauptet, die nie
+// stattgefunden hat — und einer kaputten Oberfläche bescheinigt, sie habe gespeichert.
+func (p *EinstellungenPatch) IstLeer() bool {
+	return len(pairsAusPatch(p)) == 0
+}
+
 // pairsAusPatch übersetzt den Patch in Upsert-Paare — ausschließlich für Felder, die
 // der Aufrufer tatsächlich mitgeschickt hat.
 func pairsAusPatch(p *EinstellungenPatch) [][2]string {

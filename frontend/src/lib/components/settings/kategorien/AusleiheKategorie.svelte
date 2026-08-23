@@ -37,9 +37,14 @@
 				ferien_leseclub_zieldatum: leseclubZieldatum
 			},
 			zahlen: [
-				{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: fristBuch },
-				{ schluessel: 'frist_medien_tage', label: 'Tage / Medien', wert: fristMedien },
-				{ schluessel: 'max_ausleihen_schueler', label: 'Max. Ausleihen', wert: maxAusleihen }
+				{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: fristBuch, min: 1 },
+				{ schluessel: 'frist_medien_tage', label: 'Tage / Medien', wert: fristMedien, min: 1 },
+				{
+					schluessel: 'max_ausleihen_schueler',
+					label: 'Max. Ausleihen',
+					wert: maxAusleihen,
+					min: 1
+				}
 			],
 			onSaved
 		});

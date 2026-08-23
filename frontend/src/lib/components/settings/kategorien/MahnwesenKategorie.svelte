@@ -28,8 +28,9 @@
 	const speichern = () =>
 		speichereKategorie({
 			zahlen: [
-				{ schluessel: 'max_overdue_days', label: 'Tage bis Sperre', wert: tageBisSperre },
-				{ schluessel: 'max_overdue_items', label: 'Ab x Medien sperren', wert: abMedien }
+				// min: 0 — „sofort sperren" ist hier ein Wert, kein leeres Feld.
+				{ schluessel: 'max_overdue_days', label: 'Tage bis Sperre', wert: tageBisSperre, min: 0 },
+				{ schluessel: 'max_overdue_items', label: 'Ab x Medien sperren', wert: abMedien, min: 1 }
 			],
 			onSaved
 		});

@@ -39,15 +39,22 @@
 				{
 					schluessel: 'lesehistorie_tage',
 					label: 'Lesehistorie Schülerbücherei',
-					wert: lesehistorie
+					wert: lesehistorie,
+					min: 0
 				},
 				{
 					schluessel: 'lesehistorie_lernmittel_tage',
 					label: 'Lesehistorie Lernmittel',
-					wert: lesehistorieLmf
+					wert: lesehistorieLmf,
+					min: 0
 				},
-				{ schluessel: 'theke_leeren_minuten', label: 'Theke leeren nach', wert: thekeLeeren },
-				{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: sperre }
+				{
+					schluessel: 'theke_leeren_minuten',
+					label: 'Theke leeren nach',
+					wert: thekeLeeren,
+					min: 0
+				},
+				{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: sperre, min: 0 }
 			],
 			onSaved
 		});

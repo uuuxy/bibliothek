@@ -35,7 +35,8 @@
 						{
 							schluessel: 'bestellbedarf_schwelle',
 							label: 'Warnen unter x Exemplaren',
-							wert: schwelle
+							wert: schwelle,
+							min: 1
 						}
 					]
 				: [],

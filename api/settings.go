@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -51,6 +52,11 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 		var req repository.EinstellungenPatch
 		if !DecodeAndValidate(w, r, &req) {
 			return nil // Error is already sent by DecodeAndValidate
+		}
+
+		if req.IstLeer() {
+			return apierrors.BadRequest("Es wurde keine einzige Einstellung mitgeschickt.",
+				errors.New("leerer Einstellungs-Patch"))
 		}
 
 		ctx := r.Context()

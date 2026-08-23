@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, gehZu, einstellungsKategorie } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, gehZu, einstellungsKategorie, csrfToken } from './helpers.js';
 
 // Die Zusicherung der neuen Einstellungsseite (23.08.2026), am Draht geprüft:
 // Wer EINE Kategorie speichert, ändert nichts in den anderen.
@@ -107,7 +107,30 @@ test('Ein leer geräumtes Zahlenfeld speichert gar nichts und sagt, welches Feld
 
 	// Die Meldung nennt die BESCHRIFTUNG des Feldes, nicht seinen API-Schlüssel —
 	// „frist_buch_tage fehlt" hilft am Bildschirm niemandem.
-	await expect(page.getByText('Bitte eine Zahl eintragen bei: Tage / Buch')).toBeVisible();
+	await expect(page.getByText('Bitte eine gültige Zahl eintragen bei: Tage / Buch')).toBeVisible();
 	expect(wert('frist_buch_tage'), 'das leere Feld darf keine 0 werden').toBe('28');
 	expect(wert('frist_medien_tage'), 'auch das ausgefüllte Feld bleibt ungespeichert').toBe('11');
+});
+
+// Ein PUT ohne ein einziges Feld ist ein Aufruferfehler, keine leere Speicherung.
+//
+// Vorher antwortete der Server darauf mit „ok" und schrieb einen Audit-Eintrag
+// UPDATE_SETTINGS mit leerem Rumpf — eine protokollierte Änderung, die nie
+// stattgefunden hat, und einer kaputten Oberfläche die Bescheinigung, sie habe
+// gespeichert. Genau die Klasse „stiller Erfolg", die dieses Projekt schon zweimal
+// Monate gekostet hat.
+test('Ein PUT ohne Felder wird abgelehnt, statt Erfolg zu melden', async ({ page }) => {
+	await uiLogin(page);
+
+	const vorher = querySQL(`SELECT count(*) FROM audit_logs WHERE aktion = 'UPDATE_SETTINGS'`);
+	const antwort = await page.request.put('/api/einstellungen', {
+		headers: { 'X-CSRF-Token': await csrfToken(page) },
+		data: {}
+	});
+
+	expect(antwort.status(), 'leerer Rumpf muss 400 sein, nicht 200').toBe(400);
+	expect(
+		querySQL(`SELECT count(*) FROM audit_logs WHERE aktion = 'UPDATE_SETTINGS'`),
+		'ein abgelehnter Aufruf darf keine Änderung protokollieren'
+	).toBe(vorher);
 });

@@ -42,6 +42,44 @@ Zwei Regeln dazu:
 
 ---
 
+## Raster-Durchgang über den Einstellungs-Umbau (23.08.2026) — vier Funde, drei davon jetzt Gates
+
+Peters Frage: „sollten wir Daniels Schema auf die heutigen Dinge nochmal anwenden — und
+kann man das nicht bei der Programmierung direkt berücksichtigen?" Beides ja, mit einer
+Einschränkung, die sich an diesem Durchgang gut zeigen lässt.
+
+**Wann das Raster lohnt:** wenn sich die FORM eines Schreibpfads ändert — neuer Endpunkt,
+neuer Rumpf, andere Speicher-Granularität. Genau das war heute der Fall. Bei Kosmetik
+(die Sonar-Restliste vom selben Tag) ist es Leerlauf: Dort war nichts zu holen, und der
+Durchgang hätte nur Zeit gekostet.
+
+**Die Funde:**
+
+| Rasterfrage | Fund | Erledigt als |
+|---|---|---|
+| Stille Fehler | `PUT /api/einstellungen` mit leerem Rumpf antwortete **200 „ok"** und schrieb einen Audit-Eintrag `UPDATE_SETTINGS` — eine protokollierte Änderung, die nie stattfand, und einer kaputten Oberfläche die Bescheinigung, sie habe gespeichert. | 400 + kein Audit-Eintrag; e2e am Draht, am alten Verhalten rot gesehen (200 statt 400). |
+| Spezialwert / Doppeljob | Eine getippte **0** in „Tage / Buch" wurde serverseitig still zur Vorgabe 21. Vor heute egal, seit heute ein Wortbruch: Die Seite verspricht „was im Feld steht, wird gespeichert". | `sammleZahlen` kennt je Feld ein `min` und meldet „Tage / Buch (mindestens 1)". Wo die 0 „aus" BEDEUTET (Lesehistorie, Sperrbildschirm, Tage bis Sperre), steht `min: 0`. |
+| Konvention statt Regel | Die ganze Zusicherung „eine Kategorie ändert nichts in den anderen" beruht darauf, dass jede der sieben Kategorien nur ihre eigenen Felder in den Patch legt — eine Verabredung zwischen sieben Dateien, die nichts erzwang. Der e2e prüft **ein** Paar. | `einstellungen-kategorien.test.js`: kein Feld in zwei Kategorien, kein Feld ohne Kategorie. |
+| Zwei Wahrheitsquellen | Jeder Kategorietitel steht zweimal (Liste links, Überschrift der Detailfläche — und aus ihr entsteht die Knopfbeschriftung „<Name> speichern"). | Dritter Fall im selben Test. |
+| Blinde Hälfte (Feld ohne Nachfüller) | Kein Fund — Schreib- und Lesepfad sind deckungsgleich (22 Schlüssel). Aber nichts hielt das fest; so verschwand am 17.08. `alarm_empfaenger`. | `system_settings_paritaet_test.go`: jeder schreibbare Schlüssel muss von `applyEinstellung` zurückgelesen werden, keiner doppelt. Ohne Datenbank, Millisekunden. Beide Fehlerarten rot gesehen. |
+
+**Und die eigentliche Antwort auf „kann man das direkt berücksichtigen":** Von den acht
+Rasterfragen sind drei **mechanisch prüfbar**, sobald man die Struktur kennt — Schreibpfad
+gegen Lesepfad, Feld gegen Kategorie, Name gegen Name. Die sind ab heute Gates und stellen
+sich von selbst. Die anderen fünf (Spezialwert, wer sieht was, stille Fehler,
+Zeit/Reihenfolge, Lebenszyklus) sind **Urteilsfragen**: Ein Gate kann dort immer nur den
+EINEN Fall festhalten, den jemand vorher gefunden hat. Genau so ist die Ratschen-Liste
+dieses Projekts gewachsen — jede Ratsche ist ein Rasterfund von gestern.
+
+**Ein Nebenergebnis über Detektoren:** Der erste Entwurf des Kategorien-Gates durchsuchte
+die ganze Datei nach Schlüsselnamen. Die Gegenprobe („Schreibweg entfernen, Lesezugriff
+stehen lassen") blieb **grün** — der Detektor konnte Lesen nicht von Schreiben
+unterscheiden und behauptete damit mehr, als er prüfte. Jetzt liest er nur den
+`speichereKategorie(…)`-Aufruf. Ein Gate ist erst fertig, wenn auch der DETEKTOR eine
+Gegenprobe hinter sich hat, nicht nur der Code.
+
+---
+
 ## Einstellungen als M3-Kategorienliste (23.08.2026) — und der Befund darunter
 
 Peters Design-Prüfung der Einstellungsseite: „strukturell nein, optisch halb". Vier
