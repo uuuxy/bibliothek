@@ -41,7 +41,7 @@ func (handler *APIHandler) handleReorderBooks(writer http.ResponseWriter, reques
 		sortOrders[i] = i + 1
 	}
 
-	_, err = tx.Exec(ctx, `
+	ergebnis, err := tx.Exec(ctx, `
 		UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge
 		FROM (SELECT unnest($1::uuid[]) AS buch_id, unnest($2::int[]) AS neue_reihenfolge) AS daten
 		WHERE buecher_titel.id = daten.buch_id
@@ -51,12 +51,30 @@ func (handler *APIHandler) handleReorderBooks(writer http.ResponseWriter, reques
 		return
 	}
 
+	// Gezaehlt wird, was die Datenbank GEAENDERT hat, nicht was der Client geschickt hat.
+	// Die Meldung nannte bis zum 23.08.2026 len(input.BookIDs) — bei IDs, die es nicht
+	// (mehr) gibt, aendert das UPDATE nichts, und die Oberflaeche bekam trotzdem
+	// "Sortierung gespeichert". Eine Liste, die nach dem Neuladen wieder in der alten
+	// Reihenfolge steht, ist danach ein Raetsel statt einer Fehlermeldung.
+	geaendert := ergebnis.RowsAffected()
+	if geaendert == 0 {
+		writeError(writer, http.StatusNotFound, "keines der uebergebenen Buecher existiert — Sortierung nicht gespeichert")
+		return
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		writeError(writer, http.StatusInternalServerError, "transaktion konnte nicht abgeschlossen werden")
 		return
 	}
 
-	writeJSON(writer, http.StatusOK, map[string]string{
-		"message": fmt.Sprintf("erfolgreich %d bücher sortiert", len(input.BookIDs)),
-	})
+	antwort := map[string]any{
+		"message":    fmt.Sprintf("erfolgreich %d bücher sortiert", geaendert),
+		"sortiert":   geaendert,
+		"uebergeben": len(input.BookIDs),
+	}
+	if geaendert < int64(len(input.BookIDs)) {
+		antwort["message"] = fmt.Sprintf("%d von %d büchern sortiert — %d IDs waren unbekannt",
+			geaendert, len(input.BookIDs), int64(len(input.BookIDs))-geaendert)
+	}
+	writeJSON(writer, http.StatusOK, antwort)
 }

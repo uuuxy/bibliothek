@@ -104,6 +104,41 @@ func TestHandleReorderBooks(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedBody:   `{"message":"erfolgreich 3 bücher sortiert"}`,
 		},
+		// Die beiden folgenden Fälle sind das Gate zum Befund vom 23.08.2026: Die Meldung
+		// nannte len(input.BookIDs) statt RowsAffected und behauptete damit eine
+		// Sortierung, die nicht stattgefunden hat. Sichtbar wird der Unterschied erst nach
+		// dem Neuladen — dann steht die Liste wieder in der alten Reihenfolge, ohne dass
+		// je eine Fehlermeldung kam.
+		{
+			name: "Teilweise unbekannte IDs werden ehrlich gezählt",
+			payload: ReorderRequest{
+				BookIDs: []string{"id1", "id2", "id3"},
+			},
+			setupMock: func() {
+				mock.ExpectBegin()
+				mock.ExpectExec("UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge").
+					WithArgs([]string{"id1", "id2", "id3"}, []int{1, 2, 3}).
+					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+				mock.ExpectCommit()
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"message":"1 von 3 büchern sortiert — 2 IDs waren unbekannt"}`,
+		},
+		{
+			name: "Keine einzige ID existiert",
+			payload: ReorderRequest{
+				BookIDs: []string{"weg1", "weg2"},
+			},
+			setupMock: func() {
+				mock.ExpectBegin()
+				mock.ExpectExec("UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge").
+					WithArgs([]string{"weg1", "weg2"}, []int{1, 2}).
+					WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+				mock.ExpectRollback()
+			},
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "keines der uebergebenen Buecher existiert — Sortierung nicht gespeichert",
+		},
 	}
 
 	for _, tt := range tests {

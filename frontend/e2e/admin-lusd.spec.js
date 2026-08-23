@@ -43,17 +43,28 @@ test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
 	// 5. Finalisieren
 	await page.getByRole('button', { name: 'Import finalisieren' }).click();
 
-	// 6. Bestätigen (falls die Massenabgang-Bremse greift, weil die DB mehr als 10 Schüler hat und diese nicht im CSV sind)
-	// Wir fangen das ab, indem wir prüfen, ob der Override-Button erscheint.
+	// 6. Bestätigen (falls die Massenabgang-Bremse greift, weil die DB mehr als 10 Schüler
+	// hat und diese nicht im CSV sind).
+	//
+	// ERST warten, DANN verzweigen. `if (await x.isVisible())` allein fragt den Zustand
+	// in dem Moment ab, in dem die Antwort des Servers vielleicht noch unterwegs ist:
+	// Die Bremse ist dann "nicht sichtbar", der Zweig wird übersprungen, und die Prüfung
+	// darunter läuft in einen Timeout mit einer Meldung, die vom falschen Ort erzählt.
+	// Schlimmer noch andersherum — griffe die Bremse eines Tages NICHT mehr, liefe der
+	// Test genauso durch und behauptete, alles sei in Ordnung.
+	const erfolgsmeldung = page.getByText('LUSD-Import erfolgreich übernommen.');
 	const overrideButton = page.getByRole('button', {
 		name: 'Ja, Import trotz hoher Abgängerquote erzwingen'
 	});
+	// Eines von beidem MUSS erscheinen — hier wird der Wächter ehrlich: Kommt keins,
+	// ist der Test an dieser Zeile rot, nicht drei Zeilen später aus einem anderen Grund.
+	await expect(erfolgsmeldung.or(overrideButton)).toBeVisible();
 	if (await overrideButton.isVisible()) {
 		await overrideButton.click();
 	}
 
 	// 7. Erfolg verifizieren
-	await expect(page.getByText('LUSD-Import erfolgreich übernommen.')).toBeVisible();
+	await expect(erfolgsmeldung).toBeVisible();
 });
 
 // Schrottdatei-Pfad: falsche Header und Binärmüll dürfen keinen 500er
@@ -128,9 +139,12 @@ test('LUSD-Import: LANIS-Klassenliste ohne ID und Geburtsdatum (Nur-Name-Stufe)'
 	await expect(page.getByText(`Neu_${s}`)).toBeVisible();
 
 	await page.getByRole('button', { name: 'Import finalisieren' }).click();
-	const overrideButton = page.getByRole('button', { name: /Massenabgang bestätigen/ });
-	if (await overrideButton.isVisible()) {
-		await overrideButton.click();
+	// Erst auf eines von beidem warten, dann verzweigen — siehe oben.
+	const erfolg = page.getByText('LUSD-Import erfolgreich übernommen.');
+	const bremse = page.getByRole('button', { name: /Massenabgang bestätigen/ });
+	await expect(erfolg.or(bremse)).toBeVisible();
+	if (await bremse.isVisible()) {
+		await bremse.click();
 	}
-	await expect(page.getByText('LUSD-Import erfolgreich übernommen.')).toBeVisible();
+	await expect(erfolg).toBeVisible();
 });
