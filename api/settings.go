@@ -49,8 +49,12 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 		// (system_settings_patch.go). Ein volles Objekt wuerde hier zu lauter
 		// Nullwerten dekodieren und beim Speichern die uebrigen Kategorien
 		// zuruecksetzen.
+		// Streng dekodiert (DecodeStrictAndValidate): Der Rumpf entsteht aus einer
+		// geschlossenen Liste benannter Schlüssel, ein unbekanntes Feld ist hier also
+		// immer ein Fehler — und zwar der teuerste, weil er sonst still verschwindet
+		// und die Oberfläche trotzdem "gespeichert" meldet.
 		var req repository.EinstellungenPatch
-		if !DecodeAndValidate(w, r, &req) {
+		if !DecodeStrictAndValidate(w, r, &req) {
 			return nil // Error is already sent by DecodeAndValidate
 		}
 
