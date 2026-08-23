@@ -20,12 +20,14 @@ import (
 
 // GeraetRequest ist die Eingabe für Anlegen und Pflegen.
 type GeraetRequest struct {
-	Modellname    string `json:"modellname"`
-	Seriennummer  string `json:"seriennummer,omitempty"`
-	BarcodeID     string `json:"barcode_id,omitempty"` // nur beim Anlegen; Barcodes kleben, sie wandern nicht
-	Zubehoer      string `json:"zubehoer"`
-	ZustandNotiz  string `json:"zustand_notiz,omitempty"`
-	IstAusleihbar *bool  `json:"ist_ausleihbar,omitempty"`
+	Modellname string `json:"modellname"`
+	// Zeiger: Der Defekt-Knopf schickt die Seriennummer nicht mit, das Bearbeiten-
+	// Formular schon. nil heisst "nicht angefasst", "" heisst "geloescht".
+	Seriennummer  *string `json:"seriennummer,omitempty"`
+	BarcodeID     string  `json:"barcode_id,omitempty"` // nur beim Anlegen; Barcodes kleben, sie wandern nicht
+	Zubehoer      string  `json:"zubehoer"`
+	ZustandNotiz  string  `json:"zustand_notiz,omitempty"`
+	IstAusleihbar *bool   `json:"ist_ausleihbar,omitempty"`
 }
 
 // ListGeraeteHandler liefert die Geräteliste samt aktuellem Ausleiher.
@@ -70,8 +72,12 @@ func (s *Server) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 				"nur so findet der Kiosk-Scan das Gerät", nil)
 		}
 
+		var seriennummer *string
+		if getrimmt := getrimmterZeiger(req.Seriennummer); getrimmt != nil && *getrimmt != "" {
+			seriennummer = getrimmt
+		}
 		id, err := repo.CreateGeraet(r.Context(), req.Modellname,
-			nullableString(strings.TrimSpace(req.Seriennummer)), req.BarcodeID, strings.TrimSpace(req.Zubehoer))
+			seriennummer, req.BarcodeID, strings.TrimSpace(req.Zubehoer))
 		if err != nil {
 			if errors.Is(err, repository.ErrGeraetBarcodeVergeben) {
 				return apierrors.Conflict(err.Error(), err)
@@ -95,13 +101,14 @@ func (s *Server) UpdateGeraetHandler(repo repository.GeraeteRepository) http.Han
 		if req.Modellname == "" {
 			return apierrors.BadRequest("Ein Modellname ist erforderlich", nil)
 		}
-		istAusleihbar := true
-		if req.IstAusleihbar != nil {
-			istAusleihbar = *req.IstAusleihbar
-		}
-
+		// req.IstAusleihbar wird DURCHGEREICHT, nicht auf true vorbelegt: Ein fehlendes
+		// Feld ist "unveraendert" und kein Wert. Vorher stand hier `istAusleihbar := true`,
+		// und weil der Bearbeiten-Dialog das Kennzeichen nicht kennt (es liegt auf einem
+		// eigenen Knopf), hob jede Stammdaten-Aenderung die Defekt-Markierung auf —
+		// mit der Meldung "Geraet gespeichert" daneben.
 		err := repo.UpdateGeraet(r.Context(), r.PathValue("id"), req.Modellname,
-			strings.TrimSpace(req.Zubehoer), nullableString(strings.TrimSpace(req.ZustandNotiz)), istAusleihbar)
+			strings.TrimSpace(req.Zubehoer), nullableString(strings.TrimSpace(req.ZustandNotiz)),
+			getrimmterZeiger(req.Seriennummer), req.IstAusleihbar)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Gerät nicht gefunden", err)
@@ -111,4 +118,14 @@ func (s *Server) UpdateGeraetHandler(repo repository.GeraeteRepository) http.Han
 		RespondSuccess(w)
 		return nil
 	})
+}
+
+// getrimmterZeiger reicht einen optionalen Textwert getrimmt weiter: nil bleibt nil
+// ("nicht mitgeschickt"), ein leerer Wert wird zu einem Zeiger auf "" ("geloescht").
+func getrimmterZeiger(wert *string) *string {
+	if wert == nil {
+		return nil
+	}
+	getrimmt := strings.TrimSpace(*wert)
+	return &getrimmt
 }

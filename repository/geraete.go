@@ -35,7 +35,7 @@ type GeraeteRepository interface {
 	ListGeraete(ctx context.Context) ([]GeraetMitStatus, error)
 	CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer string) (string, error)
 	// UpdateGeraet pflegt Stammdaten und Ausleihstatus (ist_ausleihbar=false = defekt/gesperrt).
-	UpdateGeraet(ctx context.Context, id, modellname, zubehoer string, zustandNotiz *string, istAusleihbar bool) error
+	UpdateGeraet(ctx context.Context, id, modellname, zubehoer string, zustandNotiz, seriennummer *string, istAusleihbar *bool) error
 }
 
 type pgGeraeteRepository struct {
@@ -103,13 +103,22 @@ func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname strin
 	return id, nil
 }
 
-func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id, modellname, zubehoer string, zustandNotiz *string, istAusleihbar bool) error {
+// UpdateGeraet schreibt die Stammdaten. seriennummer und istAusleihbar sind Zeiger:
+// nil heisst "nicht mitgeschickt" und laesst die Spalte in Ruhe.
+//
+// Beim Ausleihbar-Kennzeichen war das vorher ein einfaches bool, und der Handler setzte
+// es auf true, wenn das Feld fehlte. Der Bearbeiten-Dialog schickt es nie — er hat das
+// Defekt-Kennzeichen gar nicht, das liegt auf einem eigenen Knopf. Wer also bei einem
+// defekten Geraet das Zubehoer korrigierte, gab es damit still wieder zur Ausleihe frei.
+func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id, modellname, zubehoer string, zustandNotiz, seriennummer *string, istAusleihbar *bool) error {
 	tag, err := r.db.Exec(ctx, `
 		UPDATE geraete
 		SET modellname = $1, zubehoer = $2, zustand_notiz = $3,
-		    ist_ausleihbar = $4, aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $5 AND ist_ausgesondert = false
-	`, modellname, zubehoer, zustandNotiz, istAusleihbar, id)
+		    seriennummer = COALESCE($4, seriennummer),
+		    ist_ausleihbar = COALESCE($5, ist_ausleihbar),
+		    aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $6 AND ist_ausgesondert = false
+	`, modellname, zubehoer, zustandNotiz, seriennummer, istAusleihbar, id)
 	if err != nil {
 		return err
 	}
