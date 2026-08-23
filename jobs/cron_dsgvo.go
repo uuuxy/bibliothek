@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"time"
+
+	"bibliothek/repository"
 )
 
 // Die DSGVO-Löschroutinen des Schedulers. Getrennt von cron.go, weil dort nur noch steht,
@@ -87,17 +89,15 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		    block_reason = 'Anonymisiert (DSGVO)',
 		    anonymized_at = NOW(),
 		    aktualisiert_am = NOW()
-		WHERE anonymized_at IS NULL
-		  AND (
-		      (deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '180 days')
-		      OR
-		      (ist_abgaenger = true AND aktualisiert_am < NOW() - INTERVAL '360 days')
-		  )
-		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
-		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)
-	`
+		WHERE ` + repository.PredikatAnonymisierung()
 
-	tag, err := s.db.Exec(ctx, query)
+	// Die Bedingung kommt aus repository/loeschfristen.go — DERSELBE String, den die
+	// Selbstprüfung als count(*) stellt. Vorher stand sie hier und dort getrennt: Der
+	// Wächter hätte weiter „alles gut" gemeldet, wenn diese Abfrage sich ändert.
+	tag, err := s.db.Exec(ctx, query,
+		repository.StandardAnonymisierungSoftDeleteTage,
+		repository.StandardAnonymisierungAbgaengerTage,
+		repository.KulanzJob)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: Error anonymizing old students: %v", err)
 		return

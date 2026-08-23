@@ -30,6 +30,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/jobs"
+	"bibliothek/repository"
 )
 
 // Stufen eines Befundes. Bewusst nur drei — eine feinere Skala liest niemand.
@@ -123,12 +124,18 @@ type Lage struct {
 	// nie gelaufen (oder Ergebnis nicht lesbar).
 	RestoreProbe *jobs.RestoreProbeErgebnis
 
-	// DSGVO-Löschroutinen (Prüfung 22.08.2026): Die nächtliche Anonymisierung lief zweimal
-	// monatelang ins Leere, und nur eine Logzeile wusste es. DsgvoFaellig = Schüler, die
-	// seit ≥ 1 Tag anonymisiert sein müssten und es nicht sind (nil: nicht erhoben).
-	// LesehistorieAus: die Befristung der Lesehistorie ist in den Einstellungen auf 0.
-	DsgvoFaellig    *int
-	LesehistorieAus bool
+	// DSGVO-Löschroutinen: je eine Zeile pro Routine mit der Anzahl überfälliger, nicht
+	// gelöschter Datensätze. nil heißt „nicht erhoben" (Warnung) — bewusst unterschieden
+	// von der leeren Liste, die „geprüft, nichts überfällig" bedeutet.
+	//
+	// Bis zum 23.08.2026 stand hier ein einzelner Zähler für die Anonymisierung: EINE
+	// Routine. Die endgültige Abgänger-Löschung, die Befristung der Lesehistorie, die der
+	// Anliegen und die Aufbewahrung des Protokolls liefen jede Nacht unbeobachtet — und keine von ihnen
+	// hatte zu diesem Zeitpunkt jemals auch nur eine Zeile gelöscht (das Projekt war 86
+	// Tage alt, die kürzeste Frist 90 Tage). Der erste echte Löschvorgang stand noch
+	// bevor; ein stiller Fehlschlag wäre erst aufgefallen, wenn jemand fragt, warum
+	// Daten von vor zwei Jahren noch da sind.
+	LoeschRueckstand []repository.LoeschRueckstand
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -181,35 +188,54 @@ func Pruefe(l Lage) []Befund {
 	return befunde
 }
 
-// pruefeDsgvoRoutinen: Tut die nächtliche Anonymisierung, was sie soll? Das Kriterium ist
-// der ZUSTAND (fällige, nicht anonymisierte Schüler), nicht ein Log — ein Job, der still
-// scheitert, hinterlässt genau diesen Zustand. Dazu der Hinweis, wenn die Lesehistorie-
-// Befristung abgeschaltet ist: erlaubt, aber die Schule muss es wissen (VVT).
+// pruefeDsgvoRoutinen: Tun die nächtlichen Löschroutinen, was sie sollen? Das Kriterium
+// ist der ZUSTAND — wie viele Zeilen müssten seit mindestens einem Tag weg sein und sind
+// es nicht —, nicht ein Log: Ein Job, der still scheitert, schreibt keine Zeile, die
+// jemand liest, aber er hinterlässt genau diesen Rückstand.
+//
+// Die Zahlen kommen aus repository.ZaehleLoeschRueckstand, und die stellt bewusst
+// DIESELBEN Fragen wie die Jobs — Wort für Wort denselben SQL-Ausdruck aus
+// repository/loeschfristen.go, nur als count(*) und mit einem Tag Kulanz. Zwei getrennt
+// gepflegte Bedingungen wären der schlimmste denkbare Zustand: ein Wächter, der
+// beruhigt, während der Job schläft.
 func pruefeDsgvoRoutinen(l Lage) Befund {
 	b := Befund{Bereich: "DSGVO-Löschroutinen"}
-	switch {
-	case l.DsgvoFaellig == nil:
+	if l.LoeschRueckstand == nil {
 		b.Stufe = StufeWarnung
-		b.Befund = "Der Zustand der Anonymisierung konnte nicht erhoben werden."
-		b.Folge = "Unklar, ob die nächtliche Löschroutine läuft."
-		b.Abhilfe = "Datenbankverbindung prüfen; Container-Logs nach 'GDPR Anonymize' durchsuchen."
+		b.Befund = "Der Zustand der Löschroutinen konnte nicht erhoben werden."
+		b.Folge = "Unklar, ob die nächtlichen Löschroutinen laufen."
+		b.Abhilfe = "Datenbankverbindung prüfen; Container-Logs nach 'Scheduler GDPR', 'Scheduler Lesehistorie', 'Scheduler Anliegen' und 'Audit-Aufbewahrung' durchsuchen."
 		return b
-	case *l.DsgvoFaellig > 0:
+	}
+
+	var ueberfaellig, abgeschaltet []string
+	for _, r := range l.LoeschRueckstand {
+		switch {
+		case r.Aus:
+			abgeschaltet = append(abgeschaltet, r.Routine)
+		case r.Zeilen > 0:
+			ueberfaellig = append(ueberfaellig, fmt.Sprintf("%s: %d (Frist %s)", r.Routine, r.Zeilen, r.Frist))
+		}
+	}
+
+	if len(ueberfaellig) > 0 {
 		b.Stufe = StufeKritisch
-		b.Befund = fmt.Sprintf("%d Schüler müssten seit mindestens einem Tag anonymisiert sein und sind es nicht.", *l.DsgvoFaellig)
-		b.Folge = "Die nächtliche DSGVO-Anonymisierung läuft nicht oder scheitert still — Personendaten bleiben über die Frist hinaus stehen (Art. 5 (1) e DSGVO)."
-		b.Abhilfe = "Container-Logs nach 'Scheduler GDPR Anonymize' durchsuchen (Fehlertext steht dort); der Job wiederholt sich jede Nacht um 00:00 UTC und heilt den Rückstand selbst, sobald die Ursache weg ist."
+		b.Befund = "Überfällig und nicht gelöscht — " + strings.Join(ueberfaellig, "; ") + "."
+		b.Folge = "Mindestens eine nächtliche Löschroutine läuft nicht oder scheitert still — Personendaten bleiben über die Frist hinaus stehen (Art. 5 (1) e DSGVO)."
+		b.Abhilfe = "Container-Logs der letzten Nacht nach der genannten Routine durchsuchen (der Fehlertext steht dort); die Jobs wiederholen sich jede Nacht und heilen den Rückstand selbst, sobald die Ursache weg ist."
 		return b
 	}
-	if l.LesehistorieAus {
+
+	if len(abgeschaltet) > 0 {
 		b.Stufe = StufeWarnung
-		b.Befund = "Die Befristung der Lesehistorie (Schülerbücherei) steht auf 0 = aus."
-		b.Folge = "Zurückgegebene Ausleihen bleiben dem Schüler bis zur Löschung zugeordnet — das VVT und der Datenschutzhinweis müssen das so ausweisen."
-		b.Abhilfe = "Einstellungen → Datenschutz & Sitzung: Frist in Tagen setzen (Vorgabe 90), oder die Entscheidung im VVT festhalten."
+		b.Befund = "Frist steht auf 0 = aus: " + strings.Join(abgeschaltet, ", ") + "."
+		b.Folge = "Diese Daten werden nicht befristet — das Verzeichnis der Verarbeitungstätigkeiten und der Datenschutzhinweis müssen das so ausweisen."
+		b.Abhilfe = "Einstellungen → Datenschutz & Sitzung: Frist in Tagen setzen, oder die Entscheidung im VVT festhalten."
 		return b
 	}
+
 	b.Stufe = StufeOK
-	b.Befund = "Keine überfälligen Anonymisierungen; Lesehistorie-Befristung aktiv."
+	b.Befund = fmt.Sprintf("%d Löschroutinen geprüft, kein überfälliger Datensatz.", len(l.LoeschRueckstand))
 	return b
 }
 

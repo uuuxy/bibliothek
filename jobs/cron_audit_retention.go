@@ -16,14 +16,9 @@ package jobs
 import (
 	"context"
 	"log"
-	"strconv"
 	"time"
-)
 
-const (
-	auditAufbewahrungSchluessel = "audit_aufbewahrung_monate"
-	auditAufbewahrungVorgabe    = 24
-	auditAufbewahrungMinimum    = 6
+	"bibliothek/repository"
 )
 
 // RunAuditAufbewahrung löscht Audit-Einträge jenseits der Aufbewahrungsfrist.
@@ -31,16 +26,18 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 	ctx, abbrechen := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer abbrechen()
 
-	monate := s.ladeAufbewahrungsMonate(ctx)
+	// Frist und Bedingung kommen aus repository/ — dieselbe Zeile, dieselbe Untergrenze,
+	// die auch der Wächter der Selbstprüfung liest.
+	monate := repository.NewBetriebszustandRepository(s.db).AuditAufbewahrungMonate(ctx)
 
 	geloeschtDatensatz, err := s.loescheAeltereAls(ctx,
-		`DELETE FROM audit_log WHERE timestamp < now() - make_interval(months => $1)`, monate)
+		`DELETE FROM audit_log WHERE `+repository.PredikatAuditLog(), monate)
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_log: %v", err)
 		return
 	}
 	geloeschtAdmin, err := s.loescheAeltereAls(ctx,
-		`DELETE FROM audit_logs WHERE zeitstempel < now() - make_interval(months => $1)`, monate)
+		`DELETE FROM audit_logs WHERE `+repository.PredikatAuditLogs(), monate)
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_logs: %v", err)
 		return
@@ -64,25 +61,8 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 		geloeschtDatensatz, geloeschtAdmin, monate)
 }
 
-// ladeAufbewahrungsMonate liest die Frist aus den Einstellungen (Vorgabe 24,
-// Untergrenze 6 — Begründung im Dateikopf).
-func (s *Scheduler) ladeAufbewahrungsMonate(ctx context.Context) int {
-	var wert string
-	err := s.db.QueryRow(ctx,
-		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`,
-		auditAufbewahrungSchluessel).Scan(&wert)
-	if err != nil {
-		return auditAufbewahrungVorgabe
-	}
-	monate, err := strconv.Atoi(wert)
-	if err != nil || monate < auditAufbewahrungMinimum {
-		return auditAufbewahrungVorgabe
-	}
-	return monate
-}
-
 func (s *Scheduler) loescheAeltereAls(ctx context.Context, query string, monate int) (int64, error) {
-	tag, err := s.db.Exec(ctx, query, monate)
+	tag, err := s.db.Exec(ctx, query, monate, repository.KulanzJob)
 	if err != nil {
 		return 0, err
 	}

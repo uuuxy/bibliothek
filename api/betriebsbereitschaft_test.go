@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/jobs"
+	"bibliothek/repository"
 )
 
 // Eine Lage, in der ALLES eingerichtet ist. Ausgangspunkt aller Fälle unten: Jeder Test
@@ -51,8 +52,8 @@ func lageEingerichtet() Lage {
 			Zeitpunkt: *vorStunden(3 * 24), Erfolg: true,
 			BackupDatei: "backup_2026-08-17T023000Z.sql.gz.enc", Tabellen: 31,
 		},
-		// DSGVO-Löschroutinen: erhoben, nichts überfällig, Befristung aktiv.
-		DsgvoFaellig: new(int),
+		// DSGVO-Löschroutinen: alle erhoben, nichts überfällig, keine Frist auf 0.
+		LoeschRueckstand: rueckstandSauber(),
 	}
 }
 
@@ -440,20 +441,72 @@ func TestKlassenDrift(t *testing.T) {
 	})
 }
 
+// rueckstandSauber: alle Routinen erhoben, keine überfällige Zeile, keine Frist auf 0 —
+// der Ausgangspunkt „die Nacht hat getan, was sie soll".
+func rueckstandSauber() []repository.LoeschRueckstand {
+	return []repository.LoeschRueckstand{
+		{Routine: "Schüler-Anonymisierung", Frist: "180 Tage (gelöscht) / 360 Tage (Abgänger)"},
+		{Routine: "Abgänger endgültig löschen", Frist: "30 Tage nach Schuljahresende"},
+		{Routine: "Lesehistorie Schülerbücherei", Frist: "90 Tage"},
+		{Routine: "Lesehistorie Lernmittel", Frist: "730 Tage"},
+		{Routine: "Erledigte Anliegen", Frist: "365 Tage"},
+		{Routine: "Audit-Aufbewahrung", Frist: "24 Monate"},
+	}
+}
+
 // Prüfung 22.08.2026: Die DSGVO-Anonymisierung lief zweimal monatelang ins Leere; nur eine
-// Logzeile wusste es. Jetzt urteilt die Selbstprüfung über den ZUSTAND.
+// Logzeile wusste es. Jetzt urteilt die Selbstprüfung über den ZUSTAND — seit dem
+// 23.08.2026 über den ALLER Löschroutinen, nicht nur der Anonymisierung.
 func TestPruefeDsgvoRoutinen(t *testing.T) {
-	null, drei := 0, 3
-	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: &drei}); b.Stufe != StufeKritisch || !strings.Contains(b.Befund, "3 Schüler") {
-		t.Fatalf("fällige Anonymisierungen müssen kritisch sein: %+v", b)
+	t.Run("nicht erhoben ist eine Warnung, kein OK", func(t *testing.T) {
+		if b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: nil}); b.Stufe != StufeWarnung {
+			t.Fatalf("nicht erhoben = Warnung: %+v", b)
+		}
+	})
+
+	t.Run("sauber ist ok", func(t *testing.T) {
+		b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: rueckstandSauber()})
+		if b.Stufe != StufeOK || !strings.Contains(b.Befund, "6 Löschroutinen") {
+			t.Fatalf("sauber = ok über alle Routinen: %+v", b)
+		}
+	})
+
+	// Der eigentliche Zugewinn: JEDE Routine muss den Alarm allein auslösen können.
+	// Vorher konnte das nur die Anonymisierung — die anderen liefen unbeobachtet.
+	for i, r := range rueckstandSauber() {
+		t.Run("überfällig: "+r.Routine, func(t *testing.T) {
+			stand := rueckstandSauber()
+			stand[i].Zeilen = 3
+			b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: stand})
+			if b.Stufe != StufeKritisch {
+				t.Fatalf("%s überfällig muss kritisch sein: %+v", r.Routine, b)
+			}
+			if !strings.Contains(b.Befund, r.Routine) || !strings.Contains(b.Befund, "3") {
+				t.Errorf("Befund nennt Routine und Anzahl nicht: %s", b.Befund)
+			}
+			if !strings.Contains(b.Befund, r.Frist) {
+				t.Errorf("Befund nennt die geltende Frist nicht: %s", b.Befund)
+			}
+		})
 	}
-	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: nil}); b.Stufe != StufeWarnung {
-		t.Fatalf("nicht erhoben = Warnung, nicht OK: %+v", b)
-	}
-	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: &null, LesehistorieAus: true}); b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "Lesehistorie") {
-		t.Fatalf("Befristung aus = Warnung: %+v", b)
-	}
-	if b := pruefeDsgvoRoutinen(Lage{DsgvoFaellig: &null}); b.Stufe != StufeOK {
-		t.Fatalf("sauber = ok: %+v", b)
-	}
+
+	t.Run("abgeschaltete Frist ist eine Warnung, kein Fehler", func(t *testing.T) {
+		stand := rueckstandSauber()
+		stand[2].Aus = true
+		b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: stand})
+		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "Lesehistorie Schülerbücherei") {
+			t.Fatalf("Frist auf 0 = Warnung mit Namen der Routine: %+v", b)
+		}
+	})
+
+	// Rangfolge: Ein echter Rückstand darf nicht von einer abgeschalteten Frist
+	// verdeckt werden — sonst meldete die Seite „Warnung", während Daten stehen bleiben.
+	t.Run("Rückstand schlägt abgeschaltete Frist", func(t *testing.T) {
+		stand := rueckstandSauber()
+		stand[2].Aus = true
+		stand[5].Zeilen = 1
+		if b := pruefeDsgvoRoutinen(Lage{LoeschRueckstand: stand}); b.Stufe != StufeKritisch {
+			t.Fatalf("Rückstand muss die Warnung überstimmen: %+v", b)
+		}
+	})
 }

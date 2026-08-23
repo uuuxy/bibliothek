@@ -89,8 +89,8 @@ func TestAuditAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 		VALUES ('audit_aufbewahrung_monate', '0')`); err != nil {
 		t.Fatalf("Einstellung setzen: %v", err)
 	}
-	if m := s.ladeAufbewahrungsMonate(ctx); m != auditAufbewahrungVorgabe {
-		t.Errorf("Frist bei Fehlkonfiguration 0 = %d, erwartet Vorgabe %d", m, auditAufbewahrungVorgabe)
+	if m := repository.NewBetriebszustandRepository(pool).AuditAufbewahrungMonate(ctx); m != repository.StandardAuditAufbewahrungMonate {
+		t.Errorf("Frist bei Fehlkonfiguration 0 = %d, erwartet Vorgabe %d", m, repository.StandardAuditAufbewahrungMonate)
 	}
 }
 

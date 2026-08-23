@@ -74,13 +74,13 @@ func (s *Server) sammleLage(
 		if settings.AlarmEmpfaenger != nil {
 			lage.AlarmEmpfaenger = strings.TrimSpace(*settings.AlarmEmpfaenger)
 		}
-		lage.LesehistorieAus = repository.TageOderStandard(settings.LesehistorieTage, repository.StandardLesehistorieTage) <= 0
 	}
 
-	// DSGVO-Löschroutinen: Zustand statt Log. Bei Fehler bleibt DsgvoFaellig nil → Warnung
-	// „nicht erhoben" statt eines falschen „alles gut".
-	if n, err := zustandRepo.ZaehleFaelligeAnonymisierungen(ctx); err == nil {
-		lage.DsgvoFaellig = &n
+	// DSGVO-Löschroutinen: Zustand statt Log, und zwar für ALLE, nicht nur die
+	// Anonymisierung. Bei Fehler bleibt die Liste nil → Warnung „nicht erhoben" statt
+	// eines falschen „alles gut".
+	if rueckstand, err := zustandRepo.ZaehleLoeschRueckstand(ctx); err == nil {
+		lage.LoeschRueckstand = rueckstand
 	}
 	if mail, err := mailRepo.GetConfig(ctx); err == nil && mail != nil {
 		lage.SmtpHost = strings.TrimSpace(mail.SMTPHost)

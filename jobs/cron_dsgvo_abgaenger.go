@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/logger"
+	"bibliothek/repository"
 )
 
 // Die endgültige Löschung von Abgängern — der einzige Weg, auf dem dieses System
@@ -27,14 +28,10 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	// 30-tägige Karenzzeit: nur löschen, wenn es mindestens der 30. Januar des Jahres nach dem Abgang ist
-	now := time.Now()
-	cutoffYear := now.Year()
-	cutoffDate := time.Date(cutoffYear, time.January, 30, 0, 0, 0, 0, time.UTC)
-	if now.Before(cutoffDate) {
-		// Vor dem 30. Januar: vorheriges Jahr als Stichtag verwenden (Abgänger des letzten Jahres noch in Karenzzeit)
-		cutoffYear--
-	}
+	// 30-tägige Karenzzeit als Stichjahr. Die Rechnung steht in repository/, weil die
+	// Selbstprüfung mit demselben Jahr zählen muss — zwei Jahresrechnungen wären zwei
+	// Fristen, von denen eine still danebenläge.
+	cutoffYear := repository.AbgaengerStichjahr(time.Now())
 
 	// Berechtigte Abgänger laden. Der Helfer schließt die Rows per defer — die
 	// Connection ist damit zurück im Pool, bevor die eigentliche Löschphase beginnt.
@@ -107,20 +104,10 @@ type deletionEligibleStudent struct {
 // werden per defer geschlossen — robust gegen künftige Early-Returns und die
 // Connection kehrt vor der Löschphase in den Pool zurück.
 func (s *Scheduler) fetchDeletionEligibleStudents(ctx context.Context, cutoffYear int) ([]deletionEligibleStudent, error) {
-	const query = `
+	query := `
 		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
 		FROM schueler
-		WHERE ist_abgaenger = true
-		  AND deleted_at IS NULL
-		  AND abgaenger_jahr < $1
-		  AND NOT EXISTS (
-		      SELECT 1 FROM ausleihen
-		      WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL
-		  )
-		  AND NOT EXISTS (
-		      SELECT 1 FROM schadensfaelle
-		      WHERE schueler_id = schueler.id AND ist_bezahlt = false
-		  )`
+		WHERE ` + repository.PredikatAbgaengerLoeschung()
 	rows, err := s.db.Query(ctx, query, cutoffYear)
 	if err != nil {
 		return nil, err

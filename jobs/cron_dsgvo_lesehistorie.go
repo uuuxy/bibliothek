@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 )
 
@@ -67,34 +66,17 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 }
 
 // trenneAusleihen setzt schueler_id = NULL für abgeschlossene Ausleihen, deren Rückgabe
-// länger als `tage` zurückliegt. lernmittel wählt die Klasse: true = nur Lernmittel
-// (LMF-Titel), false = alles andere (Freihand, Medien und Geräte — Geräte haben kein
-// Exemplar und fallen damit automatisch in die kurze Frist). tage <= 0 = aus.
+// länger als `tage` zurückliegt. tage <= 0 = aus. Die Bedingung selbst steht in
+// repository/loeschfristen.go — dieselbe, die die Selbstprüfung als count(*) stellt.
 func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bool) int64 {
 	if tage <= 0 {
 		return 0
 	}
-	istLernmittel := `EXISTS (
-		SELECT 1 FROM buecher_exemplare e
-		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE e.id = a.exemplar_id AND ` + lmf.SQLBedingung("t.titel", "t.signatur") + `)`
-	klasse := "NOT " + istLernmittel
-	if lernmittel {
-		klasse = istLernmittel
-	}
 	query := `
 		UPDATE ausleihen a
 		SET schueler_id = NULL
-		WHERE a.schueler_id IS NOT NULL
-		  AND a.rueckgabe_am IS NOT NULL
-		  AND a.rueckgabe_am < NOW() - make_interval(days => $1)
-		  AND NOT EXISTS (
-		        SELECT 1 FROM schadensfaelle sf
-		        WHERE sf.ausleihe_id = a.id
-		          AND sf.ist_bezahlt = false
-		          AND sf.storniert_am IS NULL)
-		  AND ` + klasse
-	tag, err := s.db.Exec(ctx, query, tage)
+		WHERE ` + repository.PredikatLesehistorieAusleihen(lernmittel)
+	tag, err := s.db.Exec(ctx, query, tage, repository.KulanzJob)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Trennung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
@@ -113,33 +95,11 @@ func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmit
 	if tage <= 0 {
 		return 0
 	}
-	istLernmittel := `EXISTS (
-		SELECT 1 FROM buecher_exemplare e
-		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE e.id = al.datensatz_id AND ` + lmf.SQLBedingung("t.titel", "t.signatur") + `)`
-	klasse := "NOT " + istLernmittel
-	if lernmittel {
-		klasse = istLernmittel
-	}
 	query := `
 		UPDATE audit_log al
 		SET details = al.details - 'schueler_id'
-		WHERE al.tabelle = 'ausleihen'
-		  AND al.details ? 'schueler_id'
-		  AND al.timestamp < NOW() - make_interval(days => $1)
-		  AND NOT EXISTS (
-		        SELECT 1 FROM ausleihen a
-		        WHERE a.exemplar_id = al.datensatz_id
-		          AND a.schueler_id::text = al.details->>'schueler_id'
-		          AND a.rueckgabe_am IS NULL)
-		  AND NOT EXISTS (
-		        SELECT 1 FROM schadensfaelle sf
-		        WHERE sf.exemplar_id = al.datensatz_id
-		          AND sf.schueler_id::text = al.details->>'schueler_id'
-		          AND sf.ist_bezahlt = false
-		          AND sf.storniert_am IS NULL)
-		  AND ` + klasse
-	tag, err := s.db.Exec(ctx, query, tage)
+		WHERE ` + repository.PredikatLesehistorieProtokoll(lernmittel)
+	tag, err := s.db.Exec(ctx, query, tage, repository.KulanzJob)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Protokoll-Bereinigung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
