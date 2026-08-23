@@ -3,6 +3,12 @@
 **Datum:** 02.08.2026
 **Dauer:** 06:00:07
 **Testumgebung:** Docker (Local), PostgreSQL 16, k6 (Multi-Szenario)
+
+> **Historisches Protokoll, kein laufender Nachweis.** Die Zahlen sind eine Momentaufnahme
+> vom 02.08.2026. Zwei Einschränkungen, die man beim Lesen kennen sollte: Gemessen wurde
+> gegen PostgreSQL **16**, im Betrieb läuft **15** (`docker-compose.yml`), und der Lauf
+> fand lokal statt, nicht auf der Zielmaschine. Für eine belastbare Aussage über den
+> Schulserver müsste er dort wiederholt werden.
 **Testskript:** `loadtest_advanced.js`
 
 ## Metriken

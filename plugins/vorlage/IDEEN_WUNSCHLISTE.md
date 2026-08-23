@@ -2,6 +2,11 @@
 
 Dieses Dokument dient als Brainstorming-Plattform und Wunschliste für zukünftige optionale Erweiterungen und Plugins der Schulbibliothek, die über die Plugin-Schnittstellen (Frontend-Registry und Go-Events) realisiert werden können.
 
+> **Vorher lesen:** Die Plugin-Schnittstelle ist seit dem 23.08.2026 geparkt und ihre
+> Zukunft nach dem Pilotbetrieb zu entscheiden — siehe den Kasten in
+> [README.md](README.md). Die Ideen hier sind davon unberührt; sie lassen sich auch
+> direkt im Kerncode umsetzen, was für die meisten davon der kürzere Weg wäre.
+
 ---
 
 ## 🔮 Zukünftige Plugin-Ideen (Noch nicht umgesetzt)

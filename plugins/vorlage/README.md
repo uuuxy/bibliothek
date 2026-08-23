@@ -2,6 +2,27 @@
 
 Dieser Ordner dient als Startpunkt für optionale Systemerweiterungen. Entwickler können hier neue Funktionalitäten hinzufügen, ohne den Kerncode der Schulbibliothek zu verändern.
 
+> ### ⚠️ Stand 23.08.2026: geparkt, und das Anschließen hat eine Nebenwirkung
+>
+> Dieses Beispiel-Plugin **läuft nicht mehr mit**. Registriert schrieb es bei jeder
+> Rückgabe am Tresen zwei Zeilen ins Produktions-Log; der Aufruf `vorlage.Init()` ist
+> deshalb aus `main.go` entfernt (Begründung steht dort).
+>
+> **Wer ein echtes Plugin baut, muss zwei Dinge wissen:**
+>
+> 1. Ein `Init()` allein bewirkt nichts — es muss aus `main.go` aufgerufen werden.
+> 2. Sobald das geschieht, wird `scripts/deadcode_gate.sh` **rot** mit der Meldung
+>    „Baseline-Einträge, die es nicht mehr gibt". Das ist kein Fehler, sondern Absicht:
+>    `RegisterHook` und `vorlage.Init` stehen als begründete Ausnahmen in
+>    `scripts/deadcode_baseline.txt`, weil sie zurzeit keinen Aufrufer haben. Wer einen
+>    schafft, trägt die beiden Zeilen dort aus. Ohne diesen Hinweis stünde man vor einem
+>    roten Lauf ohne erkennbaren Grund.
+>
+> Ob der Erweiterungspunkt überhaupt bleibt, ist **nach dem Pilotbetrieb** zu entscheiden.
+> Stand heute spricht viel fürs Löschen: genau ein Ereignistyp, in 15 Monaten kein echtes
+> Plugin, und der Frontend-Teil (`Extension.svelte`) war nie angeschlossen. Die Begründung
+> in voller Länge steht in [`docs/befunde.md`](../../docs/befunde.md).
+
 ## Backend-Hooks (Go)
 
 Plugins können sich an Backend-Events anmelden, indem sie Callbacks registrieren.

@@ -39,15 +39,24 @@ Die fachliche Spezifikation steht vollständig in [docs/FACHKONZEPT.md](docs/FAC
 | | |
 |---|---|
 | Backend | Go 1.26, `net/http` mit Methoden-Routing, pgx |
-| Datenbank | PostgreSQL, 74 nummerierte Migrationen |
+| Datenbank | PostgreSQL, 89 nummerierte Migrationen |
 | Frontend | Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript |
 | Anmeldung | IMAP gegen den Schul-Mailserver; es wird **kein** Benutzerpasswort gespeichert |
 | Betrieb | Docker Compose hinter Caddy |
 | Lizenz | [EUPL-1.2](LICENSE) |
 
-Umfang, gemessen: rund 43.900 Zeilen Go im Produktivcode, dazu 32.300 Zeilen in 246
-Testdateien; etwa 30.800 Zeilen Svelte/JavaScript; 66 e2e-Dateien, die im Lauf 112
-Szenarien ergeben.
+Umfang, gemessen am 23.08.2026: rund 50.000 Zeilen Go im Produktivcode, dazu 47.000
+Zeilen in 337 Testdateien; etwa 33.000 Zeilen Svelte/JavaScript und 70 e2e-Dateien.
+
+Diese Zahlen altern. Die vorige Fassung stand auf dem Stand vom Juli und lag bei den
+Testzeilen um 47 % daneben — deshalb steht hier das Messdatum und darunter der Befehl,
+mit dem man sie in zehn Sekunden neu erhebt, statt einer gepflegten Behauptung:
+
+```bash
+ls migrations/*.sql | wc -l
+find . -name '*.go' -not -name '*_test.go' -not -path './node_modules/*' | xargs cat | wc -l
+find . -name '*_test.go' -not -path './node_modules/*' | wc -l
+```
 
 ---
 
