@@ -48,7 +48,7 @@
 	 *
 	 * @prop {string|number} value - Gebundener Wert (bindable).
 	 * @prop {string} label - Feldbeschriftung.
-	 * @prop {'number'|'text'|'email'|'date'} [type='number'] - Eingabetyp.
+	 * @prop {'number'|'text'|'email'|'date'|'password'} [type='number'] - Eingabetyp.
 	 * @prop {string} [hint=''] - Optionaler Hilfetext unter dem Feld.
 	 * @prop {number} [min] - Minimalwert (number).
 	 * @prop {number} [max] - Maximalwert (number).
@@ -57,7 +57,7 @@
 	 * @prop {number} [maxlength] - Maximale Zeichenanzahl (text).
 	 */
 
-	/** @type {{ value: string|number, label: string, type?: 'number'|'text'|'email'|'date', hint?: string, min?: number, max?: number, placeholder?: string, pattern?: string, maxlength?: number }} */
+	/** @type {{ value: string|number, label: string, type?: 'number'|'text'|'email'|'date'|'password', hint?: string, min?: number, max?: number, placeholder?: string, pattern?: string, maxlength?: number }} */
 	let {
 		value = $bindable(),
 		label,

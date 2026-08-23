@@ -42,6 +42,34 @@ Zwei Regeln dazu:
 
 ---
 
+## Selbstprüfung nach dem Deploy: die Mail-Kategorie war nur umhüllt (23.08.2026)
+
+Auf Peters Bitte, die eigene Arbeit zu prüfen, habe ich alle Kategorien im Browser
+angesehen statt sie für fertig zu halten. Befund gegen mich selbst:
+
+**Q3 („outlined statt Unterstrich") war nur zur Hälfte umgesetzt.** Die drei
+eingebetteten Altbauteile — `MailConfig`, `MailTemplates`, `DataManagement` — habe ich
+in `KategorieRahmen` gehüllt, aber nicht angefasst. In der Kategorie „Mail" standen
+deshalb **Unterstrich-Felder (Material 2) direkt neben den neuen outlined-Feldern**,
+dazu ein schwarzer Speichern-Knopf neben blauen, eine Zwischenüberschrift GRÖSSER als
+der Kategorietitel darüber, und zwei Zeilen Erklärtext, wo Peters Punkt 4 einen Satz
+verlangt. Ein halber Umbau sieht schlechter aus als gar keiner: Vorher war die Seite
+einheitlich M2, danach war sie gemischt.
+
+`MailConfig` ist jetzt umgestellt (SettingField, Button, M3-Rollen, ein Satz je
+Abschnitt, Zwischenüberschriften kleiner als der Kategorietitel). Palette-Ratsche
+2823 → 2781.
+
+**Offen und bewusst nicht in diesem Zug:** `MailTemplates` und `DataManagement` tragen
+weiter eigene Bauteile. Sie sind größer und stehen jeweils allein in ihrer Kategorie,
+mischen sich also nicht sichtbar mit neuen Feldern — anders als MailConfig, das mit den
+Vorlagen dieselbe Kategorie teilt.
+
+**Merksatz:** Wer eine Seite neu strukturiert und Altbauteile nur einhüllt, hat die
+Inkonsistenz nicht geerbt, sondern erzeugt.
+
+---
+
 ## Verrutschtes Feld auf flasch3 (23.08.2026)
 
 Peters Bildschirmfoto nach dem Deploy: In „Datenschutz & Sitzung" stand das Feld

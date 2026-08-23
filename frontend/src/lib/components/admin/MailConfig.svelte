@@ -3,6 +3,7 @@
 	import { apiGet, apiPut, apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import SettingField from '../settings/SettingField.svelte';
 
 	let loading = $state(true);
 	let saving = $state(false);
@@ -88,146 +89,89 @@
 </script>
 
 {#if loading}
-	<div class="py-20 flex justify-center items-center">
+	<div class="flex items-center justify-center py-20">
 		<div
-			class="w-10 h-10 border-4 border-slate-800 border-t-transparent rounded-full animate-spin"
+			class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"
 		></div>
 	</div>
 {:else}
-	<div class="space-y-10 animate-fade-in w-full max-w-3xl py-4">
-		<div>
-			<h3 class="text-xl font-bold text-slate-900 mb-2">SMTP Server Konfiguration</h3>
-			<p class="text-sm text-slate-500 mb-8">
-				Hinterlege die Zugangsdaten für den E-Mail-Versand. Diese Einstellungen gelten für
-				<strong class="font-medium text-slate-700"
-					>alle E-Mails der Bibliothek — Mahnungen, Abgänger-Kontoauszüge und Bestellungen</strong
-				>
-				und wirken sofort, ohne Neustart.
-			</p>
+	<div class="animate-fade-in flex w-full max-w-3xl flex-col gap-10">
+		<div class="flex flex-col gap-6">
+			<div class="flex flex-col gap-1">
+				<h3 class="text-base font-medium text-on-surface">Postausgang (SMTP)</h3>
+				<p class="text-sm text-on-surface-variant">
+					Gilt für alle E-Mails der Bibliothek und wirkt sofort, ohne Neustart.
+				</p>
+			</div>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-				<!-- Host -->
-				<div class="flex flex-col">
-					<label for="smtp_host" class="text-xs font-medium text-slate-500 mb-2">SMTP Host</label>
-					<input
-						id="smtp_host"
-						type="text"
-						bind:value={host}
-						placeholder="smtp.example.com"
-						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full"
-					/>
-				</div>
-
-				<!-- Port -->
-				<div class="flex flex-col">
-					<label for="smtp_port" class="text-xs font-medium text-slate-500 mb-2">SMTP Port</label>
-					<input
-						id="smtp_port"
-						type="text"
-						bind:value={port}
-						placeholder="587"
-						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full"
-					/>
-				</div>
-
-				<!-- User -->
-				<div class="flex flex-col">
-					<label for="smtp_user" class="text-xs font-medium text-slate-500 mb-2">Benutzername</label
-					>
-					<input
-						id="smtp_user"
-						type="text"
-						bind:value={user}
-						placeholder="Benutzername oder E-Mail"
-						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full"
-					/>
-				</div>
-
-				<!-- Sender -->
-				<div class="flex flex-col">
-					<label for="smtp_sender" class="text-xs font-medium text-slate-500 mb-2"
-						>Absender-E-Mail</label
-					>
-					<input
-						id="smtp_sender"
-						type="email"
-						bind:value={sender}
-						placeholder="noreply@bibliothek-schule.de"
-						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full"
-					/>
-				</div>
-
-				<!-- Password -->
-				<div class="flex flex-col md:col-span-2">
-					<label for="smtp_password" class="text-xs font-medium text-slate-500 mb-2">Passwort</label
-					>
-					<input
-						id="smtp_password"
-						type="password"
+			<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+				<SettingField
+					bind:value={host}
+					label="SMTP Host"
+					type="text"
+					placeholder="smtp.example.com"
+				/>
+				<SettingField bind:value={port} label="SMTP Port" type="text" placeholder="587" />
+				<SettingField
+					bind:value={user}
+					label="Benutzername"
+					type="text"
+					placeholder="Benutzername oder E-Mail"
+				/>
+				<SettingField
+					bind:value={sender}
+					label="Absender-E-Mail"
+					type="email"
+					placeholder="noreply@bibliothek-schule.de"
+				/>
+				<div class="md:col-span-2">
+					<SettingField
 						bind:value={password}
-						placeholder={hasPassword ? '•••••••• (Passwort ist hinterlegt)' : 'Passwort eingeben'}
-						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors placeholder:text-slate-400 w-full"
+						label="Passwort"
+						type="password"
+						placeholder={hasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
+						hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
 					/>
-					<p class="text-label-small text-slate-500 mt-2">
-						Aus Sicherheitsgründen wird das gespeicherte Passwort hier nicht angezeigt. Leer lassen,
-						um es nicht zu ändern.
-					</p>
 				</div>
 			</div>
 
-			<div class="mt-10 flex gap-4">
-				<button
-					onclick={saveConfig}
-					disabled={saving}
-					class="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-full transition-colors cursor-pointer disabled:opacity-60 shadow-sm"
-				>
-					{saving ? 'Wird gespeichert...' : 'Speichern'}
-				</button>
+			<div class="flex justify-end">
+				<Button onclick={saveConfig} disabled={saving}>
+					{saving ? 'Wird gespeichert …' : 'Postausgang speichern'}
+				</Button>
 			</div>
 		</div>
 
-		<!-- Test Mail Section -->
-		<div class="pt-10 border-t border-slate-200">
-			<h3 class="text-lg font-bold text-slate-900 mb-2">Verbindung testen</h3>
-			<p class="text-sm text-slate-500 mb-6">
-				Sende eine Test-E-Mail an eine beliebige Adresse, um die aktuelle Konfiguration zu
-				überprüfen.
-				<br /><span class="text-amber-600 text-xs font-semibold"
-					>Hinweis: Es werden die zuletzt gespeicherten Daten für den Versuch verwendet.</span
-				>
-			</p>
+		<div class="flex flex-col gap-6 border-t border-outline-variant pt-10">
+			<div class="flex flex-col gap-1">
+				<h3 class="text-base font-medium text-on-surface">Verbindung testen</h3>
+				<p class="text-sm text-on-surface-variant">
+					Verschickt eine Test-E-Mail mit den zuletzt <em>gespeicherten</em> Zugangsdaten — nicht mit
+					dem, was gerade in den Feldern steht.
+				</p>
+			</div>
 
-			<div class="flex flex-col sm:flex-row gap-4 items-end">
-				<div class="flex flex-col w-full sm:w-72">
-					<label for="test_email_target" class="text-xs font-medium text-slate-500 mb-2"
-						>Test-Empfänger</label
-					>
-					<input
-						id="test_email_target"
-						type="email"
+			<div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+				<div class="w-full sm:w-72">
+					<SettingField
 						bind:value={testEmail}
+						label="Test-Empfänger"
+						type="email"
 						placeholder="empfaenger@schule.de"
-						class="bg-transparent border-b border-slate-200 py-2 text-slate-800 focus:border-blue-600 focus:outline-none transition-colors w-full"
 					/>
 				</div>
-				<Button
-					variant="secondary"
-					size="lg"
-					onclick={testConfig}
-					disabled={testing || !testEmail}
-					class="px-6"
-				>
-					{testing ? 'Wird gesendet...' : 'Test-E-Mail senden'}
+				<Button variant="secondary" onclick={testConfig} disabled={testing || !testEmail}>
+					{testing ? 'Wird gesendet …' : 'Test-E-Mail senden'}
 				</Button>
 			</div>
 
 			{#if testResult}
 				<div
-					class="mt-6 rounded-xl border px-4 py-3 text-sm {testResult.ok
-						? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-						: 'bg-rose-50 border-rose-100 text-rose-700'}"
+					class="rounded-xl border px-4 py-3 text-sm {testResult.ok
+						? 'border-outline-variant bg-secondary-container text-on-secondary-container'
+						: 'border-error bg-error-container text-on-error-container'}"
 				>
-					<p class="font-semibold">
+					<p class="font-medium">
 						{testResult.ok ? 'Test-E-Mail versendet' : 'Testversand fehlgeschlagen'}
 					</p>
 					{#if !testResult.ok}
