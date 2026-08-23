@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -44,6 +45,17 @@ func main() {
 	}
 	defer pool.Close()
 
+	// Standardmaessig raeumt das Werkzeug hinter sich auf. Bis zum 23.08.2026 tat es das
+	// NICHT — es sagte nur "Du kannst das Verzeichnis jetzt sicher löschen", und ob das
+	// jemand tat, wusste niemand. Die Dateien sind unverschluesselte Schuelerfotos, ihre
+	// Namen sind die Barcode-IDs vom Ausweis (also vollstaendig aufzaehlbar), und
+	// /uploads/ ist bewusst ohne Anmeldung lesbar. Ein Hinweis auf der Konsole ist fuer
+	// diesen Zustand die falsche Sicherung.
+	behalten := os.Getenv("FOTOS_BEHALTEN") == "1"
+	if behalten {
+		slog.Warn("FOTOS_BEHALTEN=1 — die unverschluesselten Quelldateien bleiben liegen")
+	}
+
 	uploadDir := filepath.Join("uploads", "fotos")
 	root, err := os.OpenRoot(uploadDir)
 	if err != nil {
@@ -74,10 +86,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	processed, migrated := migriereAlleFotos(pool, root, entries)
+	processed, migrated, geloescht := migriereAlleFotos(pool, root, entries, behalten)
 
 	fmt.Printf("Migration abgeschlossen. %d Fotos gefunden, %d erfolgreich migriert und verschlüsselt.\n", processed, migrated)
-	fmt.Println("Du kannst das Verzeichnis 'uploads/fotos' jetzt sicher löschen.")
+	fmt.Printf("%d Quelldateien nach bestandener Gegenprobe gelöscht.\n", geloescht)
+
+	// Ehrlich melden, was liegen bleibt: Jede verbliebene Datei ist ein unverschlüsseltes
+	// Schülerfoto unter einem öffentlich lesbaren Pfad.
+	if uebrig := processed - geloescht; uebrig > 0 {
+		fmt.Printf("ACHTUNG: %d unverschlüsselte Fotos liegen weiterhin in 'uploads/fotos'.\n", uebrig)
+		fmt.Println("         Sie sind über /uploads/ ohne Anmeldung erreichbar, und ihre Dateinamen")
+		fmt.Println("         sind die Barcode-IDs vom Schülerausweis — also aufzählbar.")
+		fmt.Println("         Nach Prüfung entfernen:  shred -u uploads/fotos/*.jpg")
+	} else if processed > 0 {
+		fmt.Println("Das Verzeichnis 'uploads/fotos' enthält keine Fotos mehr.")
+	}
 }
 
 // migriereAlleFotos verschlüsselt alle .jpg-Dateien im Verzeichnis und liefert die Zahl
@@ -108,7 +131,7 @@ func main() {
 // Falls je zehntausende Fotos zu übernehmen sind: dann in Blöcken von ~50 batchen UND eine
 // Liste der Barcodes in Batch-Reihenfolge mitführen, damit jedes Ergebnis wieder einer
 // Datei zuzuordnen ist. Ohne diese Liste nicht.
-func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntry) (processed, migrated int) {
+func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntry, behalten bool) (processed, migrated, geloescht int) {
 	// Barcodes aus Dateinamen extrahieren
 	var barcodes []string
 	for _, entry := range entries {
@@ -120,7 +143,7 @@ func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntr
 	}
 
 	if len(barcodes) == 0 {
-		return 0, 0
+		return 0, 0, 0
 	}
 
 	// Alle Schueler-IDs auf einmal laden
@@ -129,7 +152,7 @@ func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntr
 	rows, err := pool.Query(context.Background(), query, barcodes)
 	if err != nil {
 		slog.Error("Fehler beim Laden der Schueler-IDs", "error", err)
-		return 0, 0
+		return 0, 0, 0
 	}
 	defer rows.Close()
 
@@ -143,7 +166,7 @@ func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntr
 	}
 	if rows.Err() != nil {
 		slog.Error("Fehler nach dem Scannen der Schueler-IDs", "error", rows.Err())
-		return 0, 0
+		return 0, 0, 0
 	}
 
 	for _, entry := range entries {
@@ -159,11 +182,21 @@ func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntr
 			continue
 		}
 
-		if migriereFoto(pool, root, entry.Name(), barcodeID, studentID) {
-			migrated++
+		if !migriereFoto(pool, root, entry.Name(), barcodeID, studentID) {
+			continue
 		}
+		migrated++
+		if behalten {
+			continue
+		}
+		if err := root.Remove(entry.Name()); err != nil {
+			slog.Error("Quelldatei konnte nicht gelöscht werden — sie bleibt unverschlüsselt liegen",
+				"file", entry.Name(), "error", err)
+			continue
+		}
+		geloescht++
 	}
-	return processed, migrated
+	return processed, migrated, geloescht
 }
 
 // migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =
@@ -206,6 +239,36 @@ func migriereFoto(pool db.PgxPoolIface, root *os.Root, name string, barcodeID st
 		return false
 	}
 
-	slog.Info("Foto erfolgreich migriert", "barcode", barcodeID)
+	// Gegenprobe VOR dem Löschen: Die Datei ist bis hierhin die einzige Kopie des Bildes.
+	// Ein "INSERT ohne Fehler" heißt noch nicht, dass sich das Foto je wieder anzeigen
+	// lässt — ein falsch abgeleiteter Schlüssel etwa fällt erst beim Entschlüsseln auf,
+	// und dann ist die Quelle längst weg. Deshalb wird zurückgelesen, entschlüsselt und
+	// verglichen; erst danach meldet diese Funktion Erfolg.
+	if !zurueckgelesenUndGleich(pool, studentID, imgBytes) {
+		slog.Error("Gegenprobe fehlgeschlagen — das gespeicherte Foto ließ sich nicht "+
+			"wieder herstellen; die Quelldatei bleibt liegen", "barcode", barcodeID)
+		return false
+	}
+
+	slog.Info("Foto erfolgreich migriert und zurückgelesen", "barcode", barcodeID)
 	return true
+}
+
+// zurueckgelesenUndGleich holt das eben geschriebene Foto zurück, entschlüsselt es und
+// vergleicht es mit dem Original.
+func zurueckgelesenUndGleich(pool db.PgxPoolIface, studentID string, original []byte) bool {
+	var gespeichert []byte
+	err := pool.QueryRow(context.Background(),
+		`SELECT foto_encrypted FROM schueler_fotos WHERE schueler_id = $1`, studentID).Scan(&gespeichert)
+	if err != nil {
+		slog.Error("Foto konnte nicht zurückgelesen werden", "student_id", studentID, "error", err)
+		return false
+	}
+
+	klar, err := crypto.Decrypt(gespeichert)
+	if err != nil {
+		slog.Error("Zurückgelesenes Foto ließ sich nicht entschlüsseln", "student_id", studentID, "error", err)
+		return false
+	}
+	return bytes.Equal(klar, original)
 }

@@ -117,8 +117,31 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
 
 Migriert unverschlüsselte Bilddateien vom Dateisystem in die Datenbank.
 
-- **Funktionsweise:** Iteriert über ein Verzeichnis mit Schülerfotos, validiert und verschlüsselt diese (AES-256-GCM), speichert sie als `BYTEA` in `schueler_fotos`.
+- **Funktionsweise:** Iteriert über ein Verzeichnis mit Schülerfotos, validiert und verschlüsselt diese (AES-256-GCM), speichert sie als `BYTEA` in `schueler_fotos`, **liest sie zur Gegenprobe zurück** und **löscht die Quelldatei erst danach**.
 - **Zweck:** Konsolidierung der Infrastruktur (kein separates Foto-Verzeichnis) + Datensicherheit.
+
+**Warum es selbst aufräumt (seit 23.08.2026).** Bis dahin sagte das Werkzeug nur „Du
+kannst das Verzeichnis `uploads/fotos` jetzt sicher löschen" — ob das jemand tat, wusste
+niemand. Was liegen blieb, sind unverschlüsselte Schülerfotos unter `/uploads/`, einem
+Pfad, der bewusst ohne Anmeldung lesbar ist (Cover für Katalog und Monitor), und ihre
+Dateinamen sind die Barcode-IDs vom Schülerausweis — also vollständig aufzählbar. Ein
+Hinweis auf der Konsole ist für diesen Zustand die falsche Sicherung.
+
+Gelöscht wird **erst nach bestandener Gegenprobe**: Das eben geschriebene Foto wird
+zurückgelesen, entschlüsselt und mit dem Original verglichen. Bis dahin ist die Datei die
+einzige Kopie; ein „INSERT ohne Fehler" heißt noch nicht, dass sich das Bild je wieder
+anzeigen lässt. Scheitert die Probe, bleibt die Datei liegen und der Lauf meldet es.
+
+Am Ende sagt das Werkzeug, wie viele Dateien es entfernt hat — und wenn welche übrig
+sind, warum das zählt und wie man sie los wird (`shred -u uploads/fotos/*.jpg`).
+
+```bash
+# Aufräumen ausdrücklich abschalten (die Quelldateien bleiben dann unverschlüsselt liegen):
+FOTOS_BEHALTEN=1 docker compose exec backend ./migrate-fotos
+```
+
+> **Auf dem Schulserver prüfen:** Der Lauf von vor dem 23.08.2026 hat nichts gelöscht.
+> `docker compose exec backend ls -la uploads/fotos` sagt, ob dort noch Altbestand liegt.
 
 ---
 
