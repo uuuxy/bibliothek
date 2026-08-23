@@ -42,6 +42,58 @@ Zwei Regeln dazu:
 
 ---
 
+## Die offenen Punkte nachgeprüft (23.08.2026) — und meine Kritik am Register zurückgenommen
+
+Ich hatte behauptet, dieses Register führe Erledigtes als offen weiter und trenne
+„gefunden" nicht von „noch offen". **Das stimmt nicht.** Jeder Abschnitt nennt im Kopf
+die Commits der Abarbeitung und darunter eine eigene Liste „bewusst offen". Was mich
+getäuscht hat: Die Fundtabellen selbst tragen keine Status-Spalte, gelesen ohne den Kopf
+darüber sehen sie aus wie offene Punkte. Das ist ein Lesbarkeits-, kein Pflegeproblem.
+
+Die drei Stellen, an denen ich „veraltet" gerufen hatte, stehen im Abarbeitungs-Kopf
+namentlich: `restore-backup` im Image (`5a55147f`), Go-/Node-Versionen und
+PATCH-Geburtsdatum (`63d09011`). Ich hatte den Kopf nicht gelesen.
+
+### Was tatsächlich offen ist — Punkt für Punkt am Code geprüft
+
+| Punkt | Nachgemessen am 23.08.2026 | Gilt noch |
+|---|---|---|
+| `GO-2026-5932` in `golang.org/x/crypto` | `govulncheck -show verbose`: `Found in v0.55.0`, `Fixed in: N/A`, kein Aufrufer im eigenen Code | ✅ ja |
+| `pgtest_support_test.go` in fünf Paketen | `find` zählt 5 (`api`, `repository`, `db`, `cmd/migrate`, `internal/littera`) | ✅ ja |
+| Etikettenraster an mehreren Stellen | Maßgeblich `api/label_formats.go`; Kopien in `stores/labels.svelte.js` und `LabelLayoutOptionen.svelte` | ✅ ja |
+| Zwei Vorgaben für dasselbe Raster | `api/labels.go:19` → `avery_3475`, `api/pdf_service.go:131` → `zweckform_l4760` | ✅ ja |
+| Paritätstest ohne COMMENTs/Seeds | `conname` steht inzwischen drin (Zeile 40–43), `obj_description`/`col_description` kommen nirgends vor | ✅ ja |
+| LMF hängt an der Namenskonvention | `pkg/lmf`: `~ '^lmf[ -]'` auf Titel und Signatur; kein `ist_lernmittel` im Schema | ✅ ja |
+| LUSD-Namensschlüssel nur `lower+trim` | `repository/lusd_bestand.go:40` — genau das, nichts weiter | ✅ ja |
+| Dependabot kann `golang:`/`node:` unabhängig heben | `.github/dependabot.yml`: der `docker`-Block hat kein `ignore` | ✅ ja |
+| Altbackups vor 21.08. unlesbar | Betreiber-Hinweis steht in `resilience_and_recovery.md:23` | ✅ ja |
+| `sonar.projectVersion` nicht gesetzt | kommt weder in `sonar-project.properties` noch in `sonar_scan.sh` vor | ✅ ja |
+
+**Ergebnis: kein einziger Eintrag war überholt.** Das Register ist genauer als meine
+Kritik daran — und der Beleg dafür hat eine Stunde gekostet, was die richtige
+Reihenfolge gewesen wäre, bevor ich es behauptet habe.
+
+### Ein Fund, der NICHT im Register stand
+
+`docs/ARCHITECTURE.md` führt unter „Komponenten-Regeln" ohne jede Einschränkung:
+**„≤ 200 Zeilen pro `.svelte`-Datei"**. Gemessen: **43 von 206 Dateien brechen sie**, die
+größte mit 412 Zeilen (`EtikettenNachdruck.svelte`), gefolgt von `LusdImportView` (394)
+und `StatsDashboard` (391). Geprüft hatte das nie jemand — deshalb stand es auch nicht
+hier.
+
+Eine Regel, die ein Fünftel des Baums verletzt und nichts davon merkt, ist keine Regel,
+sondern eine Absichtserklärung. Sie ist jetzt eine Ratsche
+(`frontend-hygiene-dateigroesse.test.js`): Der Bestand von 43 ist eingefroren, eine neue
+Datei über 200 Zeilen ist rot, und eine geduldete Datei, die WEITER wächst, ebenfalls —
+sonst wäre die Ausnahme ein Freibrief. Wer eine Datei unter 200 bringt, muss sie
+austragen; die Liste ist eine Arbeitsliste, keine Duldung.
+
+Beide Zweige am Rückbau rot gesehen. Beim ersten Lauf meldete das Gate den ganzen
+Bestand als gewachsen — `split('\n')` zählt eine Zeile mehr als `wc -l`. Auch ein
+Detektor, der zu viel meldet, ist kaputt: Er wird abgeschaltet.
+
+---
+
 ## Nachtrag: die erste Erklärung war falsch (23.08.2026)
 
 Ein neuer Test war allein grün und in der vollen Suite rot — eine Klasse stand danach
