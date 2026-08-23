@@ -5,17 +5,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"bibliothek/db"
 	"bibliothek/pkg/lmf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
-)
-
-var (
-	schoolLoc     *time.Location
-	schoolLocOnce sync.Once
 )
 
 // schoolLocation liefert die feste Zeitzone der Schule (Europe/Berlin).
@@ -24,15 +19,12 @@ var (
 // sonst hängt das tatsächliche Ablaufdatum davon ab, in welcher Zeitzone der
 // Server/Container läuft (im Docker-Image standardmäßig UTC). Fällt das Laden
 // fehl (fehlende tzdata), wird sicher auf UTC zurückgegriffen.
+// Seit 23.08.2026 liegt die Zeitzone selbst in pkg/schulzeit — einem Blatt-Paket ohne
+// Abhängigkeiten. Grund: Die gedruckten Dokumente (pdf/) brauchen dieselbe Zeitzone,
+// können aber unmöglich das ganze service-Paket samt pgx und repository importieren.
+// Diese Funktion bleibt als Name stehen, weil sie hier vierfach gerufen wird.
 func schoolLocation() *time.Location {
-	schoolLocOnce.Do(func() {
-		loc, err := time.LoadLocation("Europe/Berlin")
-		if err != nil {
-			loc = time.UTC
-		}
-		schoolLoc = loc
-	})
-	return schoolLoc
+	return schulzeit.Zone()
 }
 
 // TagesEndeInSchulzeitzone normalisiert einen Zeitpunkt auf das Ende seines Kalendertags
@@ -45,9 +37,7 @@ func schoolLocation() *time.Location {
 // und es gibt keine zweite, rohe Berechnungsmethode mehr, die bei künftigen Änderungen
 // (z. B. kürzere Handapparat-Frist) auf die Füße fällt.
 func TagesEndeInSchulzeitzone(t time.Time) time.Time {
-	loc := schoolLocation()
-	d := t.In(loc)
-	return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, loc)
+	return schulzeit.TagesEnde(t)
 }
 
 // SystemEinstellungen repräsentiert die Konfigurationsparameter des Ausleihsystems,

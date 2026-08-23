@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // SchadensfallInfo contains all required data for the damage PDF generation.
@@ -57,7 +59,7 @@ func addSchadensfallHeader(pdf *gofpdf.Fpdf, schule SchuleInfo, tr func(string) 
 	// Date line (Right-aligned)
 	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
-	pdf.CellFormat(0, 6, schule.OrtDatum(time.Now().Format(dateFormatDE)), "", 0, "R", false, 0, "")
+	pdf.CellFormat(0, 6, schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE)), "", 0, "R", false, 0, "")
 }
 
 func addSchadensfallAddress(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(string) string) {
@@ -100,7 +102,10 @@ func addSchadensfallBody(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(string
 
 	// Resolution guidelines and payment request
 	pdf.SetFont("Arial", "", 10)
-	dueTime := time.Now().AddDate(0, 0, 14).Format(dateFormatDE)
+	// Schulzeitzone, nicht Container-Zeit: Das Schreiben ist ein Verwaltungsakt mit einer
+	// Zahlungsfrist. Zwischen 22 und 24 Uhr UTC ist in Berlin bereits der Folgetag — der
+	// Bescheid trüge dann das Datum von gestern und die Frist einen Tag zu wenig.
+	dueTime := schulzeit.Jetzt().AddDate(0, 0, 14).Format(dateFormatDE)
 	instructions := fmt.Sprintf("Gemäß der Schulbibliotheksordnung bitten wir Sie, für den entstandenen Schaden "+
 		"einen Ersatzbetrag von %.2f EUR bis spätestens zum %s zu begleichen.\n\n"+
 		"Bitte bezahlen Sie den Betrag bar in der Bibliothek zu den Öffnungszeiten.\n\n"+

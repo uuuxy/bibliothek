@@ -15,6 +15,8 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // Schueler represents a student on an invoice.
@@ -99,7 +101,7 @@ func buildHeaderBlock(m core.Maroto) {
 	// Date aligned right
 	m.AddRow(10,
 		col.New(12).Add(
-			text.New(fmt.Sprintf("Datum: %s", time.Now().Format("02.01.2006")), props.Text{
+			text.New(fmt.Sprintf("Datum: %s", schulzeit.Jetzt().Format("02.01.2006")), props.Text{
 				Size:  10,
 				Align: align.Right,
 			}),

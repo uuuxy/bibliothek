@@ -14,6 +14,8 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // KontoauszugSchueler represents a student in the account statement.
@@ -81,7 +83,7 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, m
 		),
 		row.New(10).Add(
 			col.New(12).Add(text.New(
-				fmt.Sprintf("Stand: %s", time.Now().Format(dateFormatDE)),
+				fmt.Sprintf("Stand: %s", schulzeit.Jetzt().Format(dateFormatDE)),
 				props.Text{Size: 10, Align: align.Right},
 			)),
 		),
