@@ -86,6 +86,10 @@ func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bo
 
 // tilgeAusleihProtokoll nimmt dem Ausleih-Protokoll (audit_log CHECKOUT/RETURN, Details
 // mit schueler_id) die Schüler-Zuordnung nach derselben Frist wie den Ausleihen selbst.
+// Getilgt werden BEIDE Formen des Personenbezugs: die ID und — seit dem 23.08.2026 — der
+// Klarname `entleiher`, den die Spur einer mit dem Titel gelöschten Ausleihe mitträgt
+// (inventur/db_books_delete_spur.go). Eine Kopie, die den Namen behält, nachdem die ID
+// weg ist, wäre kein halber Schutz, sondern gar keiner.
 // Ohne das trug das Protokoll die Lesehistorie bis zur Audit-Aufbewahrung (24 Monate)
 // weiter — die Trennung der Ausleihe wäre nur Kosmetik gewesen (Prüfung 22.08.2026, A5).
 // datensatz_id ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über
@@ -97,7 +101,7 @@ func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmit
 	}
 	query := `
 		UPDATE audit_log al
-		SET details = al.details - 'schueler_id'
+		SET details = al.details - 'schueler_id' - 'entleiher'
 		WHERE ` + repository.PredikatLesehistorieProtokoll(lernmittel)
 	tag, err := s.db.Exec(ctx, query, tage, repository.KulanzJob)
 	if err != nil {

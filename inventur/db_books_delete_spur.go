@@ -31,6 +31,7 @@ type offeneAusleihe struct {
 	Barcode    string
 	Titel      string
 	Entleiher  string
+	SchuelerID *string // nil bei Kollegiums-Ausleihen (Handapparat)
 	Seit       string
 }
 
@@ -47,7 +48,7 @@ func (repo *BookRepository) leseOffeneAusleihen(ctx context.Context, ids []strin
 		       coalesce(nullif(trim(coalesce(s.vorname,'') || ' ' || coalesce(s.nachname,'')), ''),
 		                nullif(trim(coalesce(b.vorname,'') || ' ' || coalesce(b.nachname,'')), ''),
 		                '(unbekannt)'),
-		       to_char(a.ausgeliehen_am, 'YYYY-MM-DD')
+		       a.schueler_id, to_char(a.ausgeliehen_am, 'YYYY-MM-DD')
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t     ON e.titel_id = t.id
@@ -63,7 +64,7 @@ func (repo *BookRepository) leseOffeneAusleihen(ctx context.Context, ids []strin
 	var offene []offeneAusleihe
 	for rows.Next() {
 		var o offeneAusleihe
-		if err := rows.Scan(&o.AusleiheID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Entleiher, &o.Seit); err != nil {
+		if err := rows.Scan(&o.AusleiheID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Entleiher, &o.SchuelerID, &o.Seit); err != nil {
 			return nil, fmt.Errorf("laufende ausleihen konnten nicht gelesen werden: %w", err)
 		}
 		offene = append(offene, o)
@@ -83,14 +84,23 @@ func (repo *BookRepository) leseOffeneAusleihen(ctx context.Context, ids []strin
 // Endpunkts, WAS dabei verschwand, steht hier.
 func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offeneAusleihe) error {
 	for _, o := range offene {
-		details, err := json.Marshal(map[string]any{
+		inhalt := map[string]any{
 			"barcode_id":     o.Barcode,
 			"titel":          o.Titel,
 			"entleiher":      o.Entleiher,
 			"ausgeliehen_am": o.Seit,
 			"ausleihe_id":    o.AusleiheID,
 			"action":         "titel_geloescht_mit_offener_ausleihe",
-		})
+		}
+		// schueler_id ist NICHT nur Information, sondern der Schlüssel, an dem die
+		// Lesehistorie-Befristung diese Zeile überhaupt findet: Ihr Prädikat verlangt
+		// `details ? 'schueler_id'` (repository/loeschfristen.go). Ohne ihn stünde der
+		// Klarname 24 Monate hier (bis zur Audit-Aufbewahrung) statt 90 Tage wie jede
+		// andere Ausleihspur — eine PII-Kopie, die länger lebt als das, was sie ersetzt.
+		if o.SchuelerID != nil {
+			inhalt["schueler_id"] = *o.SchuelerID
+		}
+		details, err := json.Marshal(inhalt)
 		if err != nil {
 			return fmt.Errorf("protokoll der laufenden ausleihe: %w", err)
 		}

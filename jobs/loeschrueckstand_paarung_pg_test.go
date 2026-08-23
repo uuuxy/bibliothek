@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -195,4 +196,97 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 	must("altes audit_logs", `
 		INSERT INTO audit_logs (aktion, details, zeitstempel)
 		VALUES ('EINSTELLUNG_GEAENDERT', '{}'::jsonb, NOW() - interval '800 days')`)
+}
+
+// TestLesehistorie_ErreichtDieSpurGeloeschterTitel: Wird ein Titel gelöscht, während ein
+// Exemplar verliehen ist, hinterlässt der Lauf eine Protokollzeile mit dem Namen des
+// Entleihers (inventur/db_books_delete_spur.go). Diese Zeile ist eine PII-Kopie wie jede
+// andere Ausleihspur — und muss derselben Frist unterliegen.
+//
+// Der erste Anlauf tat das NICHT: Die Zeile trug den Klarnamen, aber keine schueler_id,
+// und das Prädikat der Befristung verlangt genau `details ? 'schueler_id'`. Der Name
+// hätte 24 Monate gestanden (bis zur Audit-Aufbewahrung) statt 90 Tage. Der Wächter der
+// Selbstprüfung ist dafür blind, weil er per Konstruktion dieselbe Frage stellt wie der
+// Job — eine geteilte Wahrheitsquelle schützt vor Auseinanderlaufen, nicht vor einer
+// Lücke, die BEIDE haben.
+func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
+	adminDSN := os.Getenv(drillEnvVar)
+	if adminDSN == "" {
+		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+	}
+	_, dsn := legeProbeDatenbankAn(t, adminDSN, "spurfrist")
+	befuelleQuelle(t, dsn)
+
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("Pool: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	var schuelerID string
+	if err := pool.QueryRow(ctx, `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`).Scan(&schuelerID); err != nil {
+		t.Fatalf("Probeschüler: %v", err)
+	}
+
+	// spur legt die Protokollzeile an, wie db_books_delete_spur.go sie schreibt. Exemplar
+	// und Titel sind zu diesem Zeitpunkt bereits gelöscht, deshalb eine freie UUID als
+	// datensatz_id — genau die Lage, in der die Frist greifen muss.
+	spur := func(barcode string, mitSchuelerID bool) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, timestamp, details)
+			VALUES ('ausleihen', 'DELETE', gen_random_uuid(), 'SYSTEM',
+			        NOW() - make_interval(days => $1 + 40),
+			        jsonb_build_object('barcode_id',$3::text,'titel','Der Zauberberg',
+			                           'entleiher','Hans Castorp','schueler_id',$2::text,
+			                           'action','titel_geloescht_mit_offener_ausleihe'))`,
+			repository.StandardLesehistorieTage, schuelerID, barcode); err != nil {
+			t.Fatalf("Spur %s: %v", barcode, err)
+		}
+		if !mitSchuelerID {
+			if _, err := pool.Exec(ctx,
+				`UPDATE audit_log SET details = details - 'schueler_id' WHERE details->>'barcode_id' = $1`,
+				barcode); err != nil {
+				t.Fatalf("Spur %s ohne ID: %v", barcode, err)
+			}
+		}
+	}
+
+	spur("B-MIT-ID", true)
+	// Die Gegenprobe am Detektor: DIESELBE Zeile ohne schueler_id — so sah meine erste
+	// Fassung aus. Sie muss den Namen behalten, sonst bewiese der Test nichts über den
+	// Schlüssel, an dem die Frist hängt.
+	spur("B-OHNE-ID", false)
+
+	NewScheduler(pool, repository.NewAuditRepository(pool)).RunLesehistorieBefristung()
+
+	lies := func(barcode string) string {
+		t.Helper()
+		var details string
+		if err := pool.QueryRow(ctx,
+			`SELECT details::text FROM audit_log WHERE details->>'barcode_id' = $1`, barcode).Scan(&details); err != nil {
+			t.Fatalf("Spur %s nach dem Lauf: %v", barcode, err)
+		}
+		return details
+	}
+
+	mitID := lies("B-MIT-ID")
+	for _, darfNicht := range []string{"schueler_id", "entleiher", "Hans Castorp"} {
+		if strings.Contains(mitID, darfNicht) {
+			t.Errorf("Personenbezug %q überlebte die Frist: %s", darfNicht, mitID)
+		}
+	}
+	// Der sachliche Teil muss bleiben, sonst wäre die Spur wertlos — sie existiert, damit
+	// ein zurückgebrachtes Buch zuzuordnen ist.
+	for _, muss := range []string{"B-MIT-ID", "Zauberberg"} {
+		if !strings.Contains(mitID, muss) {
+			t.Errorf("die Befristung hat auch den Sachbezug %q getilgt: %s", muss, mitID)
+		}
+	}
+
+	if ohneID := lies("B-OHNE-ID"); !strings.Contains(ohneID, "Hans Castorp") {
+		t.Errorf("Gegenprobe am Detektor gescheitert: auch ohne schueler_id wurde getilgt — "+
+			"der Test würde einen Rückbau nicht bemerken: %s", ohneID)
+	}
 }

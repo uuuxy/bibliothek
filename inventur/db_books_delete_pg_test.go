@@ -109,6 +109,13 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 			t.Errorf("Protokollzeile ohne %q — nicht nachschlagbar: %s", muss, details)
 		}
 	}
+	// schueler_id ist kein Beiwerk, sondern der Schlüssel, an dem die
+	// Lesehistorie-Befristung diese Zeile findet (`details ? 'schueler_id'`). Fehlt er,
+	// steht der Klarname 24 Monate statt 90 Tage — und der Wächter der Selbstprüfung
+	// sieht das nicht, weil er dieselbe Frage stellt wie der Job.
+	if !strings.Contains(details, `"schueler_id"`) {
+		t.Errorf("Protokollzeile ohne schueler_id — die Befristung erreicht den Klarnamen nie: %s", details)
+	}
 
 	// 3. Kein Rauschen: Das Exemplar aus dem Regal war nicht verliehen und darf keine
 	//    solche Zeile haben — sonst stünde bei jedem Aufräumen eine Warnung ohne Anlass.
