@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/lmf"
+	"bibliothek/pkg/schulzeit"
 )
 
 // ── Schüler-Anonymisierung ──────────────────────────────────────────────────
@@ -68,9 +69,19 @@ func PredikatAbgaengerLoeschung(jetzt time.Time) Loeschbedingung {
 // ende als Näherung. Vor dem 30. Januar gilt das Vorjahr als Stichjahr, die Abgänger des
 // letzten Jahres sind dann noch in der Karenz. Job UND Wächter rechnen hiermit; eine
 // zweite Jahresrechnung wäre eine zweite Frist.
+//
+// Gerechnet wird in der ZEITZONE DER SCHULE, nicht in der des Containers. Vorher nahm
+// die Funktion das Jahr aus der lokalen Zeit und verglich es mit einem fest in UTC
+// gebauten 30. Januar — zwei Zeitzonen in einer Rechnung, die nur zufällig übereinstimmen,
+// solange der Container auf UTC läuft. Am 30.01. um 00:30 Berliner Zeit lieferte das
+// noch das Vorjahr, obwohl der Stichtag lokal längst erreicht war. Die Richtung war
+// harmlos (es wurde später gelöscht, nicht früher), aber das Ergebnis hing an einer
+// Umgebungsvariablen statt am Schulkalender. Dieselbe Regel wie bei den PDF-Datumsangaben
+// (pkg/schulzeit).
 func AbgaengerStichjahr(jetzt time.Time) int {
-	jahr := jetzt.Year()
-	if jetzt.Before(time.Date(jahr, time.January, 30, 0, 0, 0, 0, time.UTC)) {
+	inSchulzeit := jetzt.In(schulzeit.Zone())
+	jahr := inSchulzeit.Year()
+	if inSchulzeit.Before(time.Date(jahr, time.January, 30, 0, 0, 0, 0, schulzeit.Zone())) {
 		jahr--
 	}
 	return jahr
