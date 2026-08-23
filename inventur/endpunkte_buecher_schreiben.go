@@ -122,7 +122,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Subject:                 strings.TrimSpace(eingabe.Fach),
 		GradeLevel:              eingabe.KlassenStufe,
 		Track:                   strings.TrimSpace(eingabe.Schulzweig),
-		Stock:                   eingabe.Bestand,
+		Stock:                   bestandOderNull(eingabe.Bestand),
 		LastCounted:             eingabe.ZaehlDatum,
 		Medientyp:               strings.TrimSpace(eingabe.Medientyp),
 		JahrgangVon:             eingabe.JahrgangVon,
@@ -145,4 +145,15 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	}
 
 	writeJSON(antwort, http.StatusCreated, map[string]any{"message": "buch erstellt", "data": buch})
+}
+
+// bestandOderNull löst den Zeiger für den ANLEGEN-Weg auf: Wer beim Anlegen keinen
+// Bestand nennt, legt einen Titel ohne Exemplare an. Beim ÄNDERN ist dieselbe Angabe
+// etwas anderes — dort heißt "nicht mitgeschickt" ausdrücklich "nicht anfassen"
+// (endpunkte_buecher_aktualisieren.go).
+func bestandOderNull(bestand *int) int {
+	if bestand == nil {
+		return 0
+	}
+	return *bestand
 }

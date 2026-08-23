@@ -31,7 +31,15 @@
 				body: JSON.stringify({
 					...formular,
 					gradeLevel: Number(formular.gradeLevel),
-					stock: Number(formular.stock),
+					// Keine Zahl im Feld heisst "nicht anfassen", nicht "null Exemplare".
+					// `Number(undefined)` ist NaN und wird in JSON zu null; der Server las das
+					// bis zum 23.08.2026 als 0 und sonderte den ganzen Bestand aus — an der
+					// Warnung oben vorbei, weil `NaN < 5` falsch ist. Der Server unterscheidet
+					// beides inzwischen selbst; hier wird die Absicht trotzdem klar geschrieben,
+					// statt sich auf eine Umrechnung zu verlassen.
+					...(Number.isFinite(Number(formular.stock))
+						? { stock: Number(formular.stock) }
+						: { stock: undefined }),
 					lastCounted: formular.lastCounted || null
 				})
 			});

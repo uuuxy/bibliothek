@@ -19,7 +19,14 @@ import (
 // Die Erklärung steht hier und nicht als SQL-Kommentar in der Anweisung: Ein Kommentar im
 // Query-String reist bei jedem Aufruf zum Server mit und lässt jeden Test scheitern, der
 // die Anweisung als Ganzes festhält.
-func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book) error {
+// bestand ist bewusst ein Zeiger: nil heißt "der Aufrufer hat zum Bestand nichts
+// gesagt" und lässt die physischen Exemplare unangetastet. Bis zum 23.08.2026 war es
+// ein int, und eine fehlende Angabe kam als 0 an — syncBookStock sonderte daraufhin
+// JEDES Exemplar des Titels aus, im Rückfallzweig auch die gerade ausgeliehenen. Der
+// Weg dorthin war kurz: `Number(undefined)` im Formular ist NaN, in JSON null, in Go 0,
+// und die Warnung im Formular ("du verringerst den Bestand") greift bei NaN nicht, weil
+// `NaN < 5` falsch ist.
+func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book, bestand *int) error {
 	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
 	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
 	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
@@ -99,8 +106,10 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		return ErrBookNotFound
 	}
 
-	if err := repo.syncBookStock(ctx, tx, id, book.Stock); err != nil {
-		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
+	if bestand != nil {
+		if err := repo.syncBookStock(ctx, tx, id, *bestand); err != nil {
+			return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

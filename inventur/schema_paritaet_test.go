@@ -132,7 +132,8 @@ func sqlVonUpdateBook(t *testing.T) string {
 	mock.ExpectCommit()
 
 	repo := NewBookRepository(mock)
-	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{}); err != nil {
+	null := 0
+	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{}, &null); err != nil {
 		t.Fatalf("UpdateBook: %v", err)
 	}
 	if erfasst == "" {

@@ -40,11 +40,16 @@ type ClassBookAssignment struct {
 
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
 type BuchEingabe struct {
-	ISBN                    string         `json:"isbn"`
-	Fach                    string         `json:"subject"`
-	KlassenStufe            int16          `json:"gradeLevel"`
-	Schulzweig              string         `json:"track"`
-	Bestand                 int            `json:"stock"`
+	ISBN         string `json:"isbn"`
+	Fach         string `json:"subject"`
+	KlassenStufe int16  `json:"gradeLevel"`
+	Schulzweig   string `json:"track"`
+	// Zeiger, nicht int: "nicht mitgeschickt" muss sich von "null" unterscheiden lassen.
+	// Beim Aktualisieren gleicht syncBookStock die physischen Exemplare an diese Zahl an
+	// — eine fehlende 0 sonderte bis zum 23.08.2026 den GESAMTEN Bestand aus, im
+	// Rückfallzweig auch ausgeliehene Exemplare. `Number(undefined)` im Formular wird zu
+	// NaN und in JSON zu null; genau das ist der Weg dorthin.
+	Bestand                 *int           `json:"stock"`
 	Titel                   string         `json:"title"`
 	Autor                   string         `json:"author"`
 	CoverURL                string         `json:"coverUrl"`
