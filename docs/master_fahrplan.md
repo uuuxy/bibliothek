@@ -1,6 +1,6 @@
 # Master-Fahrplan: Offene Punkte bis Go-Live
 
-> Stand **2026-08-05**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
+> Stand **2026-08-21**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
 > als jede gepflegte Liste. Radar-Referenz: [`api_inventar.md`](api_inventar.md)
 > (neu erzeugen mit `./scripts/api_inventar.sh`).
 

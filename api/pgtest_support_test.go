@@ -96,10 +96,26 @@ func baueAPITestDB(dsn string) (*pgxpool.Pool, error) {
 }
 
 // resetBestandsdaten leert Bestands-, Bestell- und Personendaten zwischen Tests.
+// klassen gehört mit in den Reset, obwohl dort keine Testdaten im üblichen Sinn stehen:
+// Die Tabelle ist das Vokabular, das der Trigger trg_schueler_klasse_vokabular
+// (Migration 079) beim Schreiben nachschlägt. Steht dort schon "7a", wird ein später
+// eingefügtes "07a" stillschweigend als "7a" gespeichert — steht sie leer, bleibt "07a"
+// stehen und wird selbst zur kanonischen Form.
+//
+// Damit hing die SCHREIBWEISE einer Klasse davon ab, welcher Test vorher gelaufen war.
+// Am 23.08.2026 machte das einen neuen Test allein grün und in der vollen Suite rot; die
+// erste Erklärung dafür ("ein anderer Test schreibt alle Schülerzeilen") war falsch — das
+// Paket kennt kein t.Parallel(), und schueler wird ohnehin geleert. Die Kopplung lief über
+// diese eine nicht zurückgesetzte Tabelle. Die gefährliche Richtung ist die umgekehrte:
+// ein Test, den fremdes Vokabular still grün hält.
+//
+// Truncate mit CASCADE räumt die vier referenzierenden Tabellen mit (schueler,
+// klassen_lehrer_mapping, class_books, klassensatz_reservierungen) — alles Testdaten.
+// Befüllt wird klassen von keiner Migration, sie entsteht allein durch den Trigger.
 func resetBestandsdaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
-		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, schueler, benutzer
+		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, schueler, benutzer, klassen
 		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {

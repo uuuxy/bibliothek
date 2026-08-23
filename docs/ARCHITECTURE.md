@@ -1,6 +1,6 @@
 # Systemarchitektur & technische Konzepte
 
-> Zuletzt aktualisiert: 2026-08-06
+> Zuletzt aktualisiert: 2026-08-11
 
 ---
 

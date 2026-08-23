@@ -124,12 +124,7 @@ func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
 	if v != "Echt" || n != "Name" || b != "PFLICHT-1" {
 		t.Errorf("Stammdaten wurden trotz Ablehnung verändert: %q %q %q", v, n, b)
 	}
-	// Die Klasse wird nur auf "nicht leer" geprüft, nicht auf "07a": Der Versetzungslauf
-	// (POST /api/students/promote) schreibt in seinem eigenen Test JEDE Schülerzeile und
-	// zieht diese hier mit. Der Anspruch des Tests ist ohnehin "das Pflichtfeld wurde
-	// nicht geräumt" — welchen Jahrgang die Zeile zwischenzeitlich trägt, gehört nicht
-	// dazu. Als exakter Vergleich war der Test allein grün und in der vollen Suite rot.
-	if k == "" {
-		t.Error("die Klasse wurde trotz Ablehnung geleert")
+	if k != "07a" {
+		t.Errorf("die Klasse steht auf %q statt auf 07a — trotz Ablehnung verändert", k)
 	}
 }

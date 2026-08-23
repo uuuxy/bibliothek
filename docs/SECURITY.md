@@ -2,7 +2,8 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-08-06 (Audit-Nachlese: Cover-Proxy, SMTP-STARTTLS,
+> Zuletzt aktualisiert: 2026-08-23 (Löschbarkeit einzelner Felder). Davor 2026-08-06
+> (Audit-Nachlese: Cover-Proxy, SMTP-STARTTLS,
 > Lesefristen, Panic-Log, Secret-Guard-Klarstellung)
 
 ---

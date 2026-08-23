@@ -38,8 +38,41 @@ Zwei Regeln dazu:
 | `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`) | Kein Fix verfügbar (`Fixed in: N/A`), transitive Abhängigkeit, **kein** Aufrufer im eigenen Code (`govulncheck`: „your code doesn't appear to call these"). Beobachten, nicht jagen. |
 | `pgtest_support_test.go` liegt echt dupliziert in fünf Paketen | Sauber wäre ein `internal/pgtest`-Paket; fasst die Test-Infrastruktur von fünf Paketen auf einmal an und ist nur gegen echtes PostgreSQL beweisbar. Steht als Befund in `sonar-project.properties`. |
 | Etikettenraster stehen an vier Stellen | Maßgeblich ist `api/label_formats.go`; das Druck-Center führt eigene Kopien (`LabelLayoutOptionen.svelte`, `stores/labels.svelte.js`). Der Umbau auf die Server-Liste — wie bei der Lieferantenseite gemacht — wäre eine Verhaltensänderung an einem täglich benutzten Bildschirm. Bis dahin hält `etikettformate-konsistenz.test.js` die Kopien deckungsgleich. |
-| Ein Test schreibt **jede** Schülerzeile | Der Versetzungslauf (`POST /api/students/promote`) fasst in seinem Test alle Zeilen an und zieht fremde Testdaten mit. Am 23.08.2026 war ein neues Gate allein grün und in der vollen Suite rot — die Behauptung wurde daraufhin eingeengt, die Ursache steht. Gefährlich wird das, wenn die Kreuzwirkung einmal in die andere Richtung zeigt und ein Gate still grün hält. |
 | Zwei verschiedene Vorgaben für dasselbe Raster | Druck-Center `avery_3475`, Lieferanten-Weg `zweckform_l4760`. Fällt praktisch nie auf, weil beide Oberflächen immer ein Format mitschicken — die Vorgabe greift nur bei einem Aufruf ohne `?format=`. Zu entscheiden ist, welche gelten soll. |
+
+---
+
+## Nachtrag: die erste Erklärung war falsch (23.08.2026)
+
+Ein neuer Test war allein grün und in der vollen Suite rot — eine Klasse stand danach
+als `7a` da, angelegt worden war `07a`. Meine Erklärung dafür lautete: „Der
+Versetzungslauf schreibt in seinem Test jede Schülerzeile und zieht meine mit." Sie
+klang plausibel, passte zum Symptom, und ich habe sie so ins Register geschrieben,
+**ohne sie zu messen**.
+
+Sie war falsch. Zwei Messungen genügten:
+
+- Das `api`-Paket kennt **kein** `t.Parallel()` — Tests laufen nacheinander.
+- `resetBestandsdaten` macht ein `TRUNCATE … schueler` — fremde Zeilen sind ohnehin weg.
+
+Die echte Ursache ist eine Tabelle, die niemand zurücksetzt: `klassen`. Der Trigger
+`trg_schueler_klasse_vokabular` (Migration 079) schlägt dort die kanonische Schreibweise
+nach. Steht `7a` schon drin, wird ein später eingefügtes `07a` still als `7a`
+gespeichert; ist die Tabelle leer, bleibt `07a` stehen und wird selbst zur kanonischen
+Form. **Die Schreibweise einer Klasse hing also davon ab, welcher Test vorher lief.**
+
+Behoben, indem `klassen` in beiden `resetBestandsdaten`-Helfern (`api`, `repository`)
+mit geleert wird. Befüllt wird die Tabelle von keiner Migration — sie entsteht allein
+durch den Trigger, ist also reines Ableitungsprodukt und gehört in den Reset. Der
+strenge Vergleich auf `07a` steht wieder im Test und hält die Aussage: Wer `klassen`
+aus dem Reset nimmt, macht die Suite rot.
+
+**Was daran zählt:** In diesem Fall zeigte die Kopplung in die harmlose Richtung — ein
+Test wurde grundlos rot. Die gefährliche Richtung ist die andere: ein Gate, das fremdes
+Vokabular still **grün** hält. Genau dafür gibt es die Regel, Befunde am Live-Pfad zu
+messen; sie gilt für die eigenen Erklärungen genauso wie für fremde Fehlerberichte.
+Eine Notiz in diesem Register ist eine Zusicherung wie jede andere — und diese hier hat
+keine 24 Stunden gehalten.
 
 ---
 
@@ -318,7 +351,7 @@ Schlüsselmenge.
 | **Objektbindung (IDOR)** | Kein neuer Fund. Die zwei schwächsten Rollen erreichen zusammen drei schreibende Routen; die Theke ist in der PII-Matrix ausdrücklich als „bewusst ohne Objektbindung" vermerkt (jedes Buch auf jeden Ausweis — das IST die Theke), `ListEigeneAnliegen` bindet an `claims.UserID`, die öffentlichen Bestell-Links an den gehashten Token. |
 | **`mailservice/`** | **Ein Fund, gefixt (`5499d68e`).** Über `baueMailNachricht` stand „req.To und req.Subject müssen bereits sanitiert sein" — neun Aufrufer, keiner tat es. Geprüft war nur der SMTP-Umschlag; die Kopfzeilen der Nachricht nicht. Die Regel steht jetzt an einer Stelle und gilt für beide Wege. |
 | **`sse/`** | Kein Fund. Begrenzter Puffer, nicht-blockierendes Senden, Abmeldung per `defer`, RLock deckt das Senden mit ab; der Strom trägt nur IDs und Buchtitel (Matrix-Zeile Stufe 0). |
-| **`plugins/`** | `RegisterHook` wird **nirgends** aufgerufen: fünf Dispatch-Stellen, null Zuhörer. Tote Erweiterungsstelle, kein Schaden — Kategorie C, nicht vor dem Pilotstart. |
+| **`plugins/`** | ~~`RegisterHook` wird nirgends aufgerufen: null Zuhörer, tote Erweiterungsstelle.~~ **Falsch — am 23.08.2026 am Startpfad widerlegt.** `main.go:35` importiert `plugins/vorlage`, `main.go:347` ruft `vorlage.Init()`, und das registriert einen Zuhörer auf `EventBookReturned`. Der Erweiterungspunkt ist also aktiv, und das BEISPIEL-Plugin läuft in Produktion mit: Jede Rückgabe am Tresen schreibt zwei Zeilen ins Log (`Plugins: Dispatching event …` aus `DispatchEvent` plus `Vorlage Plugin: Event OnBookReturned received! …` mit Titel, Barcode und Bearbeiter-UUID). Kein Datenschutzproblem (kein Schülername), aber Demo-Code im Betrieb und Log-Volumen bei jeder Rückgabe. **Zu entscheiden:** abklemmen (kostet zwei Einträge in `scripts/deadcode_baseline.txt`, gemessen) oder als Feature behalten. |
 | **Frontend (206 Dateien)** | Kein offener Fund über fünf Detektoren: `catch`-Blöcke (36 begründet, 7 stumm, alle um `scanner.stop()`), schreibende Aufrufe ohne Auswertung der Antwort (2, beide mit begründendem Kommentar), Rollen-Literale, Rechte-Schlüssel, gesendete Nutzlast-Schlüssel. Die zwei Paritäts-Gates von heute (Rechte, Rollen) prüfen den Frontend-Baum jetzt bei jedem Lauf mit. |
 
 ### Kategorie B — die Fundliste im Original

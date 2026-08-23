@@ -1,6 +1,6 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
-> Stand: 2026-07-31. Für die Abnahme mit dem Sekretariat, sobald LUSD-Zugriff besteht.
+> Stand: 2026-08-23. Für die Abnahme mit dem Sekretariat.
 > Alle vier Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
@@ -19,18 +19,40 @@
 
 ## 1. LUSD-Import (Schuljahreswechsel-Datenabgleich)
 
-**Vorbereitung:** Aktuellen LUSD-Export als CSV-Datei aus LUSD herunterladen
-(Pflichtspalten: Vorname, Nachname, Klasse).
+**Vorbereitung:** Klassenliste als **CSV oder XLSX** bereitlegen (Pflichtspalten:
+Vorname, Nachname, Klasse). Der Export der Schule ist eine LANIS-Klassenliste und
+enthält **weder Schüler-ID noch Geburtsdatum** — das ist bekannt und vorgesehen.
+
+**Zuordnungsstufe zuerst lesen.** Der Import erkennt aus der Datei selbst, worüber er
+zuordnen kann, und sagt es im Banner über der Vorschau:
+
+| Stufe | Wann | Was das bedeutet |
+|---|---|---|
+| LUSD-ID | Datei hat eine Schüler-ID | sicherste Zuordnung |
+| Name + Geburtsdatum | keine ID, aber ein Datum | sicher genug |
+| **nur Name** | weder ID noch Datum | Namensgleiche werden **nicht** zugeordnet, sondern als „mehrdeutig" gemeldet — Banner erscheint als Warnung |
 
 **Ablauf** (Verwaltung → Datenverwaltung → Schuljahreswechsel):
 
-1. [ ] CSV-Datei auswählen → **„Vorschau laden"**. Es wird noch nichts geändert.
-2. [ ] Vorschau prüfen — drei Gruppen werden angezeigt:
-   - **Neue Schüler** (in der Datei, aber nicht im System) → Stichprobe: sind das echte Neuzugänge?
+1. [ ] Datei auswählen → **„Vorschau laden"**. Es wird noch nichts geändert.
+2. [ ] **Banner lesen:** Welche Zuordnungsstufe gilt? Bei „nur Name" ist mit
+       Mehrdeutigkeiten zu rechnen — das ist kein Fehler, sondern die Schutzmaßnahme.
+3. [ ] Vorschau prüfen. Angezeigt werden bis zu **sieben** Gruppen — die letzten vier
+       sind die, bei denen das System bewusst NICHTS tut:
+   - **Neue Schüler** → Stichprobe: echte Neuzugänge?
    - **Klassenwechsel** → Stichprobe: stimmen alte und neue Klasse?
-   - **Abgänger** (im System, aber nicht mehr in der Datei) → Stichprobe: sind die wirklich weg?
-3. [ ] **„Import finalisieren"** → Erfolgsmeldung „Import abgeschlossen".
-4. [ ] Gegenprobe: 2–3 Schüler aus jeder Gruppe in der Schülerverwaltung suchen und prüfen.
+   - **Zusammengeführt** (Bestandsschüler, den der Export eindeutig trifft) → bekommt
+     fehlende LUSD-ID bzw. fehlendes Geburtsdatum nachgetragen, **kein** Duplikat
+   - **Abgänger** → Stichprobe: sind die wirklich weg?
+   - **Rückkehrer** → früherer Abgänger steht wieder in der Datei; prüfen, ob das
+     dieselbe Person ist
+   - **Mehrdeutig** → Name kommt mehrfach vor; bleibt unverändert
+   - **Nicht abgleichbar** → im Bestand fehlt das Geburtsdatum; bleibt unverändert.
+     Abhilfe: Geburtsdatum im Profil nachtragen, dann beim nächsten Import erneut prüfen
+4. [ ] **„Import finalisieren"** → Erfolgsmeldung „Import abgeschlossen".
+5. [ ] Gegenprobe: 2–3 Schüler aus jeder Gruppe in der Schülerverwaltung suchen und prüfen.
+6. [ ] Bei „Mehrdeutig" oder „Nicht abgleichbar": stichprobenartig einen Fall im Profil
+       nachpflegen und den Import wiederholen — die Gruppe muss kleiner werden.
 
 **Eingebaute Bremsen:**
 - Falsche Datei (fehlende Pflichtspalten, Binärmüll) → verständliche deutsche Fehlermeldung, kein Import.

@@ -102,7 +102,7 @@ func resetInventurDaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
 		TRUNCATE inventur_erfassungen, inventur_sessions, schadensfaelle, ausleihen,
-		         buecher_exemplare, buecher_titel, schueler, benutzer
+		         buecher_exemplare, buecher_titel, schueler, benutzer, klassen
 		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {
