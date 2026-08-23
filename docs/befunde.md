@@ -161,6 +161,80 @@ traf „Mahnwesen" auch „Mahnwesen-Routing". Jetzt `^Titel ` mit Leerzeichen.
 
 ---
 
+## Raster-Durchgang über das GANZE Programm (23.08.2026) — und zwei Fragen mehr
+
+Peters Auftrag: „wende Daniels Schema nochmal komplett auf das ganze Programm an —
+erweitere es ggf." Die bisherigen Durchgänge liefen über *Commits* (21./22.08.) oder über
+*einen Umbau* (Einstellungen). Dieser lief über den Baum: 45.000 Zeilen Go, 206
+Svelte-Dateien, 89 Migrationen, 32 Tabellen.
+
+### Die zwei neuen Fragen
+
+Beide stammen aus echten Vorfällen dieses Projekts, und beide hätten den A5-Befund
+**vorher** gefunden statt in einer externen Bewertung:
+
+**9. Ausleitung — wo verlässt eine Kopie der Daten die Anwendung?**
+Datei, Mail, Export, Protokoll, Log, Fremdsystem. Für jede Stelle: Wer darf sie lesen, wie
+lange lebt sie, ist sie verschlüsselt? Die acht alten Fragen sehen alle *nach innen* — auf
+Schreibpfade, Zustände, Sichtbarkeiten. A5 (unverschlüsselte Dumps, 30 Tage) und der
+A-Fund unten liegen beide außerhalb davon.
+
+**10. Rückweg — ist der Weg zurück begehbar, und ist er am Ergebnis bewiesen?**
+Liegt das Werkzeug dort, wo man es im Ernstfall braucht? Wurde der Rückweg an der fertigen
+Datei geprüft oder nur am Vorgang? Aus drei Vorfällen: `restore-backup` fehlte im Image,
+der `pg_dump`-17-Pin machte Prod-Backups monatelang nicht einspielbar, `/app/backups`
+fehlte im Image und kein Backup entstand.
+
+### Kategorie A — beide erledigt, je ein Commit, Gate am Rückbau rot gesehen
+
+| Frage | Fund | Erledigt als |
+|---|---|---|
+| **9 Ausleitung** | `littera_import.log` bekam bei jeder Kollision den echten Datenwert. Postgres schreibt in `DETAIL` den Inhalt der Zeile (`Key (email)=(erika.mustermann@…) already exists.`), `uebernahme.BeschreibeFehler` hängte ihn wörtlich an; zusätzlich schrieb `personenlauf.mailadresse` die kollidierende Adresse selbst als Kennung. Ziel ist eine unverschlüsselte Datei im Arbeitsverzeichnis, ohne Frist. Trifft genau den Littera-Lauf, der als Nächstes ansteht. Am laufenden Postgres nachgestellt. | `428e4a06` — Wertteil geschwärzt, Form und Diagnosewert (SQLSTATE/Constraint/Spalte) bleiben; Lesernummer statt Adresse. Zwei Gates. |
+| **3 zwei Wahrheitsquellen** | Die Rechte-Oberfläche zeigt „Statistiken anzeigen" (`view_stats`), das Menü blendet danach ein — `GET /api/statistiken` verlangte `view_students`. In der Vorgabe stimmen beide je Rolle **zufällig** überein, deshalb fiel es nie auf. Getrennt gewinnt still der Server: `view_stats` AUS entzog nichts (die Route antwortet weiter, nur der Menüpunkt verschwindet), `view_stats` AN ohne `view_students` zeigte einen Punkt, der jedes Mal 403 lieferte. `view_stats` war das EINZIGE Recht im System ohne Route. | `96d936ea` — Route verlangt `view_stats` (fachlich richtig: Antwort ist PII-Stufe 0), Matrix mitgezogen, `api/rechte_paritaet_test.go` hält beide Listen zusammen. Drei Rückbauten rot gesehen, zwei davon am Detektor. |
+
+### Kategorie B — notiert, nichts davon dringend
+
+| Frage | Fund | Beleg |
+|---|---|---|
+| 1 Konvention | `DisallowUnknownFields` kommt im ganzen Projekt **nicht** vor. „Das Frontend schickt genau die Felder, die der Server kennt" ist damit reine Verabredung — die Klasse, die am 23.08. früh die Mail-Kategorie traf (`488f51d9`). Ein Abgleich aller gesendeten Schlüssel gegen alle `json`-Tags fand keinen offenen Fall, hat aber eine blinde Hälfte: ein Schlüssel, den ein ANDERES Struct kennt, fällt nicht auf. | `api/http_utils.go:19`, `inventur/endpunkte_buecher_aktualisieren.go:27` |
+| 1 Konvention | `syncBookStock` setzt beim Aussondern `ist_ausgesondert = true` **ohne** `ist_ausleihbar = false` — die drei anderen Aussonderungswege setzen beides. Alle heutigen Leser prüfen beide Spalten; ein neuer, der nur `ist_ausleihbar` prüft, verleiht ein ausgesondertes Exemplar. | `inventur/db_books_update.go:134-140` vs. `repository/audit_books.go:139`, `damage.go:228`, `book_inventory.go:73` |
+| 2 Spezialwert | `PUT /api/books/{id}` ist ein Voll-Objekt-Schreibpfad ohne Untergrenze: fehlendes `stock` wird 0, und `syncBookStock` sondert dann den GESAMTEN Bestand aus — im Rückfallzweig auch **ausgeliehene** Exemplare. Die Warnung im Formular greift bei `NaN` nicht (`NaN < 5` ist `false`). Der eine echte Aufrufer lädt vorher das volle Objekt und bricht bei Ladefehler ab — abgesichert, aber nur durch einen Kommentar. | `inventur/endpunkte_buecher_aktualisieren.go:100`, `db_books_update.go:132-170`, `AdminBuchAktionen.svelte:15` |
+| 2 Spezialwert | Beim Aktualisieren wird ein geleerter Titel still zu „Unbekannter Titel", ein geleerter Autor zu „Unbekannter Autor" — und ein geleertes Cover löst eine Fremdabfrage aus, die es neu füllt. Beim Anlegen ist das richtig; beim Ändern heißt „leer" etwas anderes. | `inventur/endpunkte_buecher_aktualisieren.go:105,126-131` |
+| 3 zwei Wahrheitsquellen | Das Rollen-Vokabular steht in **drei** Schreibweisen: DB-Enum klein (`'admin'`), Go-Konstanten groß (`RoleAdmin = "ADMIN"`), Frontend vergleicht exakt klein (`rolle === 'admin'`, ~10 Stellen). Zusammengehalten wird das nur von `EqualFold`/`UPPER()` im Go-Code. Wer die Antwort je auf die Go-Konstante normalisiert, lässt zehn Admin-Bedienelemente lautlos verschwinden — dieselbe Klasse wie der tote `"LEHRER"`-Zweig (Migration 069). | `schema.sql:35`, `auth/jwt.go:22-30`, `App.svelte:158` u. a. |
+| 5 stille Fehler | `handleReorderBooks` meldet „erfolgreich N Bücher sortiert" mit `len(input.BookIDs)` statt `RowsAffected` — bei unbekannten IDs ändert sich nichts, und die Meldung behauptet das Gegenteil. | `inventur/reorder_handler.go:58` |
+| 6 Zeit | Die Datumsangaben in den PDFs nehmen `time.Now()` in Container-Zeit (UTC) statt der Schulzeitzone — inklusive der **14-Tage-Zahlungsfrist** auf dem Schadensbescheid. Zwischen 22 und 24 Uhr UTC trägt das Schreiben den Vortag. Dieselbe Klasse wie der Mahnketten-TZ-Befund, nur im gedruckten Dokument statt im Test. | `pdf/schadensfall.go:60,103`, `pdf/rechnung.go:102`, `pdf/kontoauszug.go:84` vs. `service.TagesEndeInSchulzeitzone` |
+| 7 Gate-Ehrlichkeit | Zwei `if (await …isVisible())`-Wächter — genau das Muster, das ein Gate still überspringen lässt. | `frontend/e2e/admin-lusd.spec.js:51,132` |
+| 8 Lebenszyklus | Drei Tabellen haben **keinen** Löschpfad und keine Frist: `lehrer_anliegen` (Freitext + Klasse, Bezug auf die Lehrkraft), `inventur_sessions`, `bestellungen_verlauf` (Lieferantenname/-adresse). Wachstum ist unkritisch; die Frage ist die Aufbewahrung. | `schema.sql`, kein `DELETE FROM` im Baum |
+| 9 Ausleitung | `cmd/migrate-fotos` **sagt** „Du kannst das Verzeichnis `uploads/fotos` jetzt sicher löschen" — löscht es aber nicht. `/uploads/` ist bewusst ohne Anmeldung lesbar, und die Dateinamen waren die Barcode-IDs vom Schülerausweis, also vollständig aufzählbar. Der Code legt das Verzeichnis seit dem 08.08. nicht mehr an; ob auf dem Schulserver noch Altbestand liegt, sagt nur ein Blick ins Volume. | `cmd/migrate-fotos/main.go:80`, `inventur/api_routen.go:72`, `api/router.go:110` |
+
+### Geprüft, kein Befund
+
+Routen-Schutz (Gate greift, Allowlist begründet) · PII-Matrix (beidseitig, Recht gegen
+Registrierung) · ignorierte Schreibfehler (`errcheck` mit `check-blank` schließt die Klasse
+im ganzen Go-Baum) · „unbegrenzte Listen" (53 Kandidaten, alle durch reale Mengen begrenzt
+oder mit `LIMIT`) · zerstörende Migrationen (20 Dateien, jede Spalte nachweislich tot) ·
+`/uploads/` (Fotos liegen verschlüsselt in der DB, Verzeichnis bewusst nicht mehr angelegt)
+· Frontend-`catch` (36 mit begründendem Kommentar, 7 stumm — alle um `scanner.stop()`
+herum, ohne Wirkung) · übersprungene Tests (alle bedingt und begründet) · Rechte-Strings
+(jetzt gegatet) · Etiketten-POST-Weg (Server füllt Signatur und Jahr selbst nach).
+
+### Was der Durchgang über Gates gezeigt hat
+
+Beide A-Funde waren **Paare, die nur zufällig einig waren** — nicht Fehler, die jemand
+gemacht hat, sondern Übereinstimmungen, die niemand hielt. Das ist die Bauform, die sich
+lohnt zu suchen: zwei Listen, zwei Schreibweisen, zwei Wege zu demselben Zustand. Von den
+inzwischen sechs mechanischen Gates dieses Projekts (Routen-Schutz, PII-Matrix,
+Einstellungs-Parität, Kategorien, Schema-Parität, Rechte-Parität) entstand jedes aus genau
+so einem Paar.
+
+**Nicht abgedeckt** und ehrlich benannt: Objektbindung (IDOR) wurde beim Sweep vom 19.08.
+geprüft, hier nicht erneut. Die 206 Svelte-Dateien sind nur über Detektoren gelaufen
+(`catch`, Rechte, Rollen, gesendete Schlüssel), nicht gelesen. `mailservice/`, `sse/` und
+`plugins/` blieben bei der Durchsicht ohne Fund, sind aber klein genug, dass ein
+Detektor dort wenig zu holen hat.
+
+---
+
 ## Raster-Durchgang über den Einstellungs-Umbau (23.08.2026) — vier Funde, drei davon jetzt Gates
 
 Peters Frage: „sollten wir Daniels Schema auf die heutigen Dinge nochmal anwenden — und
