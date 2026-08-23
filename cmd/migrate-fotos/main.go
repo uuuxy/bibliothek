@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -132,6 +133,14 @@ func main() {
 // Liste der Barcodes in Batch-Reihenfolge mitführen, damit jedes Ergebnis wieder einer
 // Datei zuzuordnen ist. Ohne diese Liste nicht.
 func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntry, behalten bool) (processed, migrated, geloescht int) {
+	// Verzeichnisreihenfolge ist keine Reihenfolge: `dir.ReadDir` liefert sie so, wie das
+	// Dateisystem sie hergibt (die Paketfunktion os.ReadDir sortiert, diese Methode
+	// nicht) — auf APFS alphabetisch, auf ext4 beliebig. Für ein Protokoll, das jemand
+	// hinterher liest, ist das unnötig verwirrend; und sortiert wird HIER statt beim
+	// Aufrufer, damit auch jeder Test dieselbe Reihenfolge sieht. Genau daran ist der
+	// erste Anlauf dieses Werkzeugs in CI gescheitert, während er lokal grün war.
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
+
 	// Barcodes aus Dateinamen extrahieren
 	var barcodes []string
 	for _, entry := range entries {

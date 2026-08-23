@@ -14,12 +14,16 @@ import (
 // erwarteGegenprobe spielt das Zurücklesen nach: Das Werkzeug löscht die Quelldatei
 // erst, wenn das gespeicherte Foto wieder entschlüsselt und mit dem Original verglichen
 // werden konnte. Der Mock liefert deshalb echten Chiffretext desselben Inhalts.
-func erwarteGegenprobe(t *testing.T, mock pgxmock.PgxPoolIface, inhalt string) {
+// Die Erwartung haengt am SCHUELER, nicht an der Aufrufreihenfolge: `dir.ReadDir`
+// liefert die Dateien so, wie das Dateisystem sie hergibt (os.ReadDir sortiert, diese
+// Methode nicht). Ein Test, der die Reihenfolge voraussetzt, ist lokal gruen und in CI
+// rot — genau so passiert am 23.08.2026.
+func erwarteGegenprobe(t *testing.T, mock pgxmock.PgxPoolIface, schuelerID, inhalt string) {
 	t.Helper()
 	chiffre, err := crypto.Encrypt([]byte(inhalt))
 	require.NoError(t, err)
 	mock.ExpectQuery("SELECT foto_encrypted FROM schueler_fotos").
-		WithArgs(pgxmock.AnyArg()).
+		WithArgs(schuelerID).
 		WillReturnRows(pgxmock.NewRows([]string{"foto_encrypted"}).AddRow(chiffre))
 }
 
@@ -78,6 +82,12 @@ func TestMigriereAlleFotos_MitDateien(t *testing.T) {
 	require.NoError(t, dir.Close())
 
 	// Mock student IDs loading
+	// Ungeordnet prüfen: Die Erwartungen unterscheiden sich am Schüler, nicht an ihrer
+	// Position. Sonst ist dieser Test nur deshalb grün, weil das Werkzeug gerade
+	// alphabetisch sortiert — und ein Test, der von einer Eigenschaft des Prüflings
+	// abhängt, misst sie nicht mehr.
+	mock.MatchExpectationsInOrder(false)
+
 	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "id"}).
@@ -87,12 +97,12 @@ func TestMigriereAlleFotos_MitDateien(t *testing.T) {
 	mock.ExpectExec("INSERT INTO schueler_fotos").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	erwarteGegenprobe(t, mock, "fake image data")
+	erwarteGegenprobe(t, mock, "uuid-12345", "fake image data")
 
 	mock.ExpectExec("INSERT INTO schueler_fotos").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	erwarteGegenprobe(t, mock, "fake image data 2")
+	erwarteGegenprobe(t, mock, "uuid-67890", "fake image data 2")
 
 	processed, migrated, _ := migriereAlleFotos(mock, root, entries, true)
 	assert.Equal(t, 2, processed)
@@ -275,7 +285,7 @@ func TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe(t *testing.T) {
 	mock.ExpectExec("INSERT INTO schueler_fotos").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	erwarteGegenprobe(t, mock, "fake image data")
+	erwarteGegenprobe(t, mock, "uuid-12345", "fake image data")
 
 	_, migriert, geloescht := migriereAlleFotos(mock, root, entries, false)
 
@@ -317,7 +327,7 @@ func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	// Zurückgelesen wird ein ANDERES Bild — die Gegenprobe muss scheitern.
-	erwarteGegenprobe(t, mock, "ein anderes bild")
+	erwarteGegenprobe(t, mock, "uuid-12345", "ein anderes bild")
 
 	_, migriert, geloescht := migriereAlleFotos(mock, root, entries, false)
 
