@@ -130,6 +130,8 @@ personen*.csv
 
 # Coverage-Report für den SonarQube-Scan (scripts/sonar_scan.sh)
 coverage.out
+# Frontend-Coverage (lcov fuer SonarQube, erzeugt von scripts/sonar_scan.sh)
+frontend/coverage/
 
 # Swagger: nur docs.go wird ausgeliefert (der Server bettet es ein). swagger.json/yaml
 # sind Nebenprodukte derselben Generierung und würden bei jedem Lauf Diff-Rauschen erzeugen.

@@ -12,6 +12,7 @@
 		"check": "svelte-check --fail-on-warnings",
 		"format": "prettier --write .",
 		"test": "vitest run",
+		"test:coverage": "vitest run --coverage",
 		"test:e2e": "playwright test"
 	},
 	"devDependencies": {
@@ -19,6 +20,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@testing-library/svelte": "^5.4.2",
 		"@types/node": "^26.2.0",
+		"@vitest/coverage-v8": "4.1.11",
 		"eslint": "^10.9.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.23.0",

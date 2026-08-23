@@ -40,6 +40,10 @@ export default defineConfig(
 			'node_modules/',
 			'test-results/',
 			'playwright-report/',
+			// Erzeugter Coverage-Bericht (vitest --coverage, Eingabe fuer SonarQube).
+			// Der HTML-Teil bringt fremde Skripte mit, die sonst als Warnung auflaufen und
+			// wegen --max-warnings 0 den pre-commit-Hook anhalten.
+			'coverage/',
 			'playwright.config.js'
 		]
 	}

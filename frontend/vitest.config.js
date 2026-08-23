@@ -17,6 +17,22 @@ export default defineConfig({
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		environment: 'jsdom',
-		globals: true
+		globals: true,
+		// Coverage als lcov für SonarQube. Ohne diesen Bericht zählt dort JEDE Frontend-Zeile
+		// als ungedeckt — SonarQube wertet fehlende Coverage als 0 %, nicht als „unbekannt“
+		// (dieselbe Falle wie 2026-08-04 auf der Go-Seite). Seit die erste Analyse eine
+		// Vergleichsbasis liefert, ist das Quality Gate scharf und riss genau daran.
+		//
+		// Gemessen wird nur ausgelieferter Code. Ausgenommen sind Testdateien selbst, der
+		// Einstiegspunkt und die Hygiene-Ratschen (die lesen den Quelltext, statt Verhalten
+		// zu haben). .svelte steht bewusst NICHT im include: SonarQube kann Svelte ohnehin
+		// nicht parsen, ein lcov-Eintrag dafür wäre eine Zahl ohne Gegenstück im Bericht.
+		coverage: {
+			provider: 'v8',
+			reporter: ['text-summary', 'lcov'],
+			reportsDirectory: './coverage',
+			include: ['src/**/*.js'],
+			exclude: ['src/**/*.test.js', 'src/main.js', 'src/**/hygiene-quellen.js']
+		}
 	}
 });

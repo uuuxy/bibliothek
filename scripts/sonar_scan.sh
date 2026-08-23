@@ -50,9 +50,9 @@ fi
 #     Quote. sonar-project.properties schliesst sie vom SCAN aus, aber nicht aus dem
 #     COVERAGE-Report, den derselbe Scan hochlaedt.
 if [ -n "${TEST_DATABASE_URL:-}" ]; then
-	echo "[1/2] Erzeuge Go-Coverage — MIT PostgreSQL-Integrationstests."
+	echo "[1/3] Erzeuge Go-Coverage — MIT PostgreSQL-Integrationstests."
 else
-	echo "[1/2] Erzeuge Go-Coverage — OHNE PostgreSQL-Integrationstests." >&2
+	echo "[1/3] Erzeuge Go-Coverage — OHNE PostgreSQL-Integrationstests." >&2
 	echo "      TEST_DATABASE_URL ist nicht gesetzt; 58 *_pg_test.go-Dateien ueberspringen" >&2
 	echo "      sich und zaehlen als ungedeckt (rund 13 Prozentpunkte weniger)." >&2
 	echo "      Echte Zahlen (siehe docs/SCRIPTS.md):" >&2
@@ -66,9 +66,20 @@ PAKETE="$(go list ./... | grep -v '/node_modules/')"
 # shellcheck disable=SC2086 # Paketliste soll in Woerter zerfallen
 go test $PAKETE -coverprofile=coverage.out
 
-# Schritt 2: Analyse. sonar-project.properties liefert projectKey, Ausschluesse und den
-# Pfad zum Coverage-Report — deshalb stehen hier nur Host und Quellen.
-echo "[2/2] Fuehre Analyse aus (${HOST_URL})..."
+# Schritt 1b: Frontend-Coverage. Aus demselben Grund an den Scan gebunden wie die
+# Go-Abdeckung: Ohne lcov-Bericht zaehlt SonarQube JEDE Frontend-Zeile als ungedeckt (0 %,
+# nicht „unbekannt"). Der Bericht deckt die reinen .js-Dateien ab; .svelte kann SonarQube
+# nicht parsen und steht deshalb weder im Bericht noch in der Analyse.
+echo "[2/3] Erzeuge Frontend-Coverage (vitest)."
+( cd frontend && npm run test:coverage >/dev/null ) || {
+	echo "Frontend-Tests sind rot — Abbruch, sonst laedt der Scan eine Abdeckung hoch," >&2
+	echo "die zu einem kaputten Stand gehoert. Erst 'cd frontend && npm test' klaeren." >&2
+	exit 1
+}
+
+# Schritt 3: Analyse. sonar-project.properties liefert projectKey, Ausschluesse und die
+# Pfade zu beiden Coverage-Berichten — deshalb stehen hier nur Host und Quellen.
+echo "[3/3] Fuehre Analyse aus (${HOST_URL})..."
 SONAR_TOKEN="$SONAR_TOKEN" sonar-scanner \
 	-Dsonar.sources=. \
 	-Dsonar.host.url="$HOST_URL"

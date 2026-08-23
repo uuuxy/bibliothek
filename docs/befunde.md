@@ -37,9 +37,53 @@ Zwei Regeln dazu:
 |---|---|
 | `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`) | Kein Fix verfügbar (`Fixed in: N/A`), transitive Abhängigkeit, **kein** Aufrufer im eigenen Code (`govulncheck`: „your code doesn't appear to call these"). Beobachten, nicht jagen. |
 | `pgtest_support_test.go` liegt echt dupliziert in fünf Paketen | Sauber wäre ein `internal/pgtest`-Paket; fasst die Test-Infrastruktur von fünf Paketen auf einmal an und ist nur gegen echtes PostgreSQL beweisbar. Steht als Befund in `sonar-project.properties`. |
-| Frontend liefert keine Coverage an SonarQube | `@vitest/coverage-v8` ist nicht installiert. |
 | Etikettenraster stehen an vier Stellen | Maßgeblich ist `api/label_formats.go`; das Druck-Center führt eigene Kopien (`LabelLayoutOptionen.svelte`, `stores/labels.svelte.js`). Der Umbau auf die Server-Liste — wie bei der Lieferantenseite gemacht — wäre eine Verhaltensänderung an einem täglich benutzten Bildschirm. Bis dahin hält `etikettformate-konsistenz.test.js` die Kopien deckungsgleich. |
 | Zwei verschiedene Vorgaben für dasselbe Raster | Druck-Center `avery_3475`, Lieferanten-Weg `zweckform_l4760`. Fällt praktisch nie auf, weil beide Oberflächen immer ein Format mitschicken — die Vorgabe greift nur bei einem Aufruf ohne `?format=`. Zu entscheiden ist, welche gelten soll. |
+
+---
+
+## SonarQube-Lauf 23.08.2026 — was der Scan sagt und was er nicht sagt
+
+Erster Lauf auf dem neuen Server (26.7). Endstand nach der Abarbeitung: **0 Bugs,
+0 Vulnerabilities, Ratings A/A/A, Coverage 58,3 %, Duplikate 0,5 %, 32 offene Smells,
+Quality Gate OK** (`http://localhost:9000/dashboard?id=bibliothek`).
+
+**Drei Messfehler, die wichtiger waren als die Funde:**
+
+1. **Das Gate war eine Attrappe.** „Sonar way" prüft ausschließlich *neuen* Code; die
+   New-Code-Periode ist `PREVIOUS_VERSION`, und es gab keine vorherige Analyse. Ergebnis:
+   null Bedingungen, Status OK — eine Aussage über nichts. Ab der zweiten Analyse greift es
+   (und meldete sofort zwei echte Punkte).
+2. **Security-Rating E hing an einer Kommentarzeile.** Zwei BLOCKER `secrets:S6698` in
+   `scripts/pruefe_secrets.sh`: Das „Passwort" ist das Platzhalterwort `PASSWORT` in einem
+   Erklärtext — ausgerechnet in dem Skript, das falsch konfigurierte Geheimnisse *findet*.
+   Begründet ausgeschlossen (e4). **Falle dabei:** Die erste Fassung der Begründung zitierte
+   die beanstandete Zeile wörtlich — der Detektor meldete daraufhin die Begründung. Wer
+   einen Secrets-Fehlalarm dokumentiert, darf das Muster nicht abschreiben.
+3. **Svelte ist im Scan gar nicht enthalten.** Sprachverteilung: `go=70.117`, `js=5.148`,
+   `web=619`, `css=874`. Im Repo liegen **195 `.svelte`-Dateien mit rund 26.000 Zeilen** —
+   SonarQube hat keinen Svelte-Parser. Was dieser Server über das Frontend aussagt, gilt für
+   die 49 produktiven `.js`-Dateien, **nicht für die Komponenten**. Steht so auch in
+   `sonar-project.properties`, damit die Zahl niemanden in Sicherheit wiegt.
+
+**Behoben:** `klassifiziereZeileName` 8 → 7 Parameter (der achte stammte vom A2-Fix desselben
+Tages; jetzt Modus statt Schlüssel+Flag, symmetrisch zu `bestandsSchluessel`) ·
+`settingsWerte.js` `String(unknown)` → Typ-Zweige · `menue-fuehrt-irgendwohin.spec.js`:
+Kommentar versprach „auf den Navigationszustand warten", darunter stand `waitForTimeout(600)`
+— eine feste Frist, nach der ein langsam rendernder Bildschirm einen gesunden Menüpunkt als
+tot gemeldet hätte (am Rückbau rot gesehen) · Frontend-Coverage (`@vitest/coverage-v8`, lcov,
+an `sonar_scan.sh` gebunden mit Abbruch bei roten Tests) — schließt den offenen Punkt oben.
+
+**Bewusst offen:**
+
+| Fund | Warum offen |
+|---|---|
+| 20× `go:S3776` (Cognitive Complexity > 15) | Alle im Go-Backend, **null im Frontend** — die Ratsche vom 13.07. hält. Mehrere Handler stehen seit Mai/Juni über der Schwelle; Grund ist die Zählweise (ein `http.HandlerFunc`-Closure ist eine zusätzliche Verschachtelungsebene, siehe Projektgedächtnis). Ein Aufsplitten nur für die Zahl macht die Handler nicht lesbarer. Lohnend sind allenfalls die drei größten: `OverrideDueDateHandler` (30), `behandleAbgaenger` (23), `ErledigeAnliegenHandler`/`PatchStudentHandler` (21). |
+| 1× `javascript:S2925` (`kontrast.spec.js:44`) | 700 ms Setzzeit vor der Kontrastmessung. Eine beobachtbare Bedingung gäbe es nur je Bildschirm (Selektor-Tabelle) — ehrlicher wäre eine Stabilitäts-Schleife wie in den Schwester-Specs. Eigene kleine Runde. |
+| 1× `javascript:S6551` (`escapeHtml.js`) | `String(wert)` ist dort genau die Absicht: Der Helfer soll jeden Wert sicher machen, auch einen versehentlich übergebenen. |
+| 1× `javascript:S8783` (`schuelerprofil-sperre.spec.js:75`) | `hover({force:true})` auf einem **absichtlich deaktivierten** Knopf — ohne `force` wartet Playwright ewig auf Aktionierbarkeit. Genau der Testzweck (Tooltip am gesperrten Knopf). |
+| 3× `go:S1192`, 2× `go:S107`, Rest JS-Stil | Kleinkram, gebündelt bei Gelegenheit. |
+| `sonar.projectVersion` nicht gesetzt | Die New-Code-Periode `PREVIOUS_VERSION` hat damit keinen Bezugspunkt; „neuer Code" heißt derzeit „seit dem letzten Scan". Mit `--define sonar.projectVersion=$(git describe --tags)` hieße es „seit dem letzten Release" — passt zum Release-Workflow, aber ändert die Gate-Semantik. Entscheidung offen. |
 
 ---
 
