@@ -107,10 +107,11 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 
-		// Expected database operations for DeleteBooks
-		mock.ExpectQuery(`SELECT EXISTS`).
+		// Expected database operations for DeleteBooks. Erste Abfrage: die laufenden
+		// Ausleihen, die der Lauf mit abräumt und vorher protokolliert (hier: keine).
+		mock.ExpectQuery(`FROM ausleihen a`).
 			WithArgs(pgxmock.AnyArg()).
-			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
 
 		mock.ExpectQuery("SELECT cover_url").
 			WithArgs(pgxmock.AnyArg()).

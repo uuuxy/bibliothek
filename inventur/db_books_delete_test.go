@@ -27,18 +27,21 @@ func TestDeleteBooks(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	t.Run("active loans exist", func(t *testing.T) {
+	// Ein Fehler beim Lesen der laufenden Ausleihen muss den Lauf STOPPEN, bevor
+	// irgendetwas gelöscht ist: Ohne diese Liste gäbe es keine Protokollspur, und ein
+	// verliehenes Buch verschwände lautlos. Kein Begin, kein DELETE.
+	t.Run("laufende Ausleihen nicht lesbar", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
 		repo := NewBookRepository(mock)
 
-		mock.ExpectQuery(`SELECT EXISTS \( SELECT 1 FROM ausleihen a JOIN buecher_exemplare e ON a.exemplar_id = e.id WHERE e.titel_id = ANY\(\$1::uuid\[\]\) AND a.rueckgabe_am IS NULL \)`).
+		mock.ExpectQuery(`FROM ausleihen a`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+			WillReturnError(fmt.Errorf("db error"))
 
 		err = repo.DeleteBooks(ctx, ids)
-		assert.ErrorContains(t, err, "löschen abgebrochen")
+		assert.ErrorContains(t, err, "laufende ausleihen konnten nicht gelesen werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -49,9 +52,9 @@ func TestDeleteBooks(t *testing.T) {
 		defer mock.Close()
 		repo := NewBookRepository(mock)
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`FROM ausleihen a`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
 
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\) AND cover_url LIKE '/uploads/%'`).
 			WithArgs(ids).
@@ -61,7 +64,7 @@ func TestDeleteBooks(t *testing.T) {
 		mock.ExpectExec(`DELETE FROM schadensfaelle WHERE exemplar_id IN \(SELECT id FROM buecher_exemplare WHERE titel_id = ANY\(\$1::uuid\[\]\)\)`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
-		mock.ExpectExec(`DELETE FROM ausleihen WHERE exemplar_id IN \(SELECT id FROM buecher_exemplare WHERE titel_id = ANY\(\$1::uuid\[\]\)\) AND rueckgabe_am IS NOT NULL`).
+		mock.ExpectExec(`DELETE FROM ausleihen WHERE exemplar_id IN \(SELECT id FROM buecher_exemplare WHERE titel_id = ANY\(\$1::uuid\[\]\)\)`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
 		mock.ExpectExec(`DELETE FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\)`).
@@ -81,9 +84,9 @@ func TestDeleteBooks(t *testing.T) {
 		defer mock.Close()
 		repo := NewBookRepository(mock)
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`FROM ausleihen a`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
 
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
 			WithArgs(ids).
@@ -103,56 +106,6 @@ func TestDeleteBooks(t *testing.T) {
 
 		err = repo.DeleteBooks(ctx, ids)
 		assert.ErrorIs(t, err, ErrBookNotFound)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-}
-
-func TestPruefeKeineAktivenAusleihen(t *testing.T) {
-	ctx := context.Background()
-	ids := []string{"id-1"}
-
-	t.Run("has active loans", func(t *testing.T) {
-		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
-		defer mock.Close()
-		repo := NewBookRepository(mock)
-
-		mock.ExpectQuery(`SELECT EXISTS`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-
-		err = repo.pruefeKeineAktivenAusleihen(ctx, ids)
-		assert.ErrorContains(t, err, "Mindestens ein Exemplar")
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("no active loans", func(t *testing.T) {
-		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
-		defer mock.Close()
-		repo := NewBookRepository(mock)
-
-		mock.ExpectQuery(`SELECT EXISTS`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
-
-		err = repo.pruefeKeineAktivenAusleihen(ctx, ids)
-		assert.NoError(t, err)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("db error", func(t *testing.T) {
-		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
-		defer mock.Close()
-		repo := NewBookRepository(mock)
-
-		mock.ExpectQuery(`SELECT EXISTS`).
-			WithArgs(ids).
-			WillReturnError(fmt.Errorf("db error"))
-
-		err = repo.pruefeKeineAktivenAusleihen(ctx, ids)
-		assert.ErrorContains(t, err, "fehler bei der prüfung auf aktive ausleihen")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

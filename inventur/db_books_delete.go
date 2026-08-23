@@ -9,19 +9,34 @@ import (
 	"bibliothek/db"
 )
 
-// DeleteBooks deletes multiple book records.
+// DeleteBooks löscht Titel samt allem, was an ihnen hängt.
 //
-// Die drei abhängigen DELETEs (Schadensfälle, Ausleihhistorie, Titel — der Titel-Delete
-// räumt die Exemplare per ON DELETE CASCADE mit) laufen in EINER Transaktion. Ohne sie
-// hinterließ ein Crash zwischen Schritt 2 und 3 einen bösartigen Halbzustand: Gebühren-
-// und Ausleihhistorie der Titel gelöscht, Buch und Exemplare aber erhalten — eine offene
-// Gebühr verschwände unwiederbringlich, während das Buch weiter im Bestand steht.
+// Die abhängigen DELETEs (Schadensfälle, Ausleihen, Titel — der Titel-Delete räumt die
+// Exemplare per ON DELETE CASCADE mit) laufen in EINER Transaktion. Ohne sie hinterließ
+// ein Crash zwischen zwei Schritten einen bösartigen Halbzustand: Gebühren- und
+// Ausleihhistorie gelöscht, Buch und Exemplare aber erhalten.
+//
+// „Alles" heißt seit dem 23.08.2026 wirklich alles — auch AKTUELL VERLIEHENE Exemplare.
+// Vorher brach der Lauf ab, sobald ein einziges Exemplar unterwegs war; ein versehentlich
+// importierter Titel liess sich dann nicht mehr aufräumen, bis das letzte Buch zurück
+// war. Das ist eine bewusste Entscheidung des Betreibers.
+//
+// Sie hat einen Preis, und der ist der Grund für protokolliereOffeneAusleihen weiter
+// unten: Das Buch liegt physisch bei jemandem zu Hause, und das System vergisst es. Wer
+// es zurückbringt, findet beim Scannen nichts mehr vor. Deshalb wird JEDE dabei
+// abgeräumte offene Ausleihe einzeln im Audit-Log festgehalten — mit Barcode, Titel und
+// Entleiher —, damit die Rückgabe später wenigstens nachschlagbar bleibt. Ohne das wäre
+// die Löschung spurlos, und ein spurlos verschwundenes Buch ist ein verlorenes Buch.
+//
+// Der Barcode wird dabei frei; neu vergeben wird er nicht (barcode_seq zählt nur
+// vorwärts), das zurückkommende Buch kann also nicht mit einem anderen verwechselt werden.
 func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
 
-	if err := repo.pruefeKeineAktivenAusleihen(ctx, ids); err != nil {
+	offene, err := repo.leseOffeneAusleihen(ctx, ids)
+	if err != nil {
 		return err
 	}
 
@@ -41,8 +56,11 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	if _, err := tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
 		return fmt.Errorf("failed to delete damage records for titles: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[])) AND rueckgabe_am IS NOT NULL", ids); err != nil {
-		return fmt.Errorf("failed to delete past loans for titles: %w", err)
+	// Ohne Einschränkung auf rueckgabe_am: Auch die laufenden Ausleihen gehen mit, sonst
+	// hielte ihr ON DELETE RESTRICT das Exemplar fest und der ganze Lauf scheiterte an
+	// einer FK-Verletzung. Was hier verschwindet, steht vorher im Audit-Log.
+	if _, err := tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
+		return fmt.Errorf("failed to delete loans for titles: %w", err)
 	}
 
 	result, err := tx.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
@@ -53,6 +71,11 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return ErrBookNotFound
 	}
 
+	// In derselben Transaktion: Entweder die Löschung UND ihre Spur, oder keins von beidem.
+	if err := protokolliereOffeneAusleihen(ctx, tx, offene); err != nil {
+		return err
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("löschen konnte nicht abgeschlossen werden: %w", err)
 	}
@@ -60,26 +83,6 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	// Erst nach dem Commit: die lokalen Cover-Dateien sind unwiederbringlich, das darf
 	// NICHT geschehen, solange das DB-Löschen noch scheitern (zurückrollen) könnte.
 	loescheLokaleCoverDateien(localCovers)
-	return nil
-}
-
-// pruefeKeineAktivenAusleihen bricht ab, wenn zu einem der Titel noch ein Exemplar
-// aktuell verliehen ist.
-func (repo *BookRepository) pruefeKeineAktivenAusleihen(ctx context.Context, ids []string) error {
-	var hasActiveLoans bool
-	err := repo.db.QueryRow(ctx, `
-		SELECT EXISTS (
-			SELECT 1
-			FROM ausleihen a
-			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			WHERE e.titel_id = ANY($1::uuid[]) AND a.rueckgabe_am IS NULL
-		)`, ids).Scan(&hasActiveLoans)
-	if err != nil {
-		return fmt.Errorf("fehler bei der prüfung auf aktive ausleihen: %w", err)
-	}
-	if hasActiveLoans {
-		return fmt.Errorf("löschen abgebrochen: Mindestens ein Exemplar dieser Titel ist aktuell verliehen")
-	}
 	return nil
 }
 

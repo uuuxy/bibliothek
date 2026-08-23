@@ -6,20 +6,16 @@ import (
 	"testing"
 )
 
-// „Titel löschen" gegen ein echtes Postgres — an der einen Zusage, die dabei zählt:
-// Ein Titel, von dem noch ein Exemplar bei jemandem zu Hause liegt, wird NICHT gelöscht.
+// „Titel löschen" gegen ein echtes Postgres — an der Regel, die der Betreiber am
+// 23.08.2026 gesetzt hat: Es geht ALLES, auch ein Exemplar, das gerade bei einem Kind
+// zu Hause liegt. Vorher brach der Lauf dann ab; ein versehentlich importierter Titel
+// liess sich nicht aufräumen, bis das letzte Buch zurück war.
 //
-// Warum das hier nochmal steht, obwohl TestPruefeKeineAktivenAusleihen existiert: Jener
-// Test ruft den Wächter DIREKT auf und beantwortet ihm die Frage per Mock. Er kann
-// deshalb zwei Dinge nicht sehen — ob DeleteBooks den Wächter überhaupt aufruft, und ob
-// die Abfrage am echten Schema das trifft, was sie treffen soll. Genau diese Lücke
-// (isoliert grün, im Live-Pfad unerreichbar) hat dieses Projekt schon einmal getäuscht.
-//
-// Der Schaden wäre still und gross: Der Titel-Delete räumt per CASCADE alle Exemplare
-// und löscht vorher Schadensfälle und vergangene Ausleihen. Griffe er auch bei einem
-// verliehenen Exemplar durch, verschwände das Buch aus dem Bestand, WÄHREND es unterwegs
-// ist — niemand könnte es mehr zurückbuchen, und keine Mahnliste wüsste davon.
-func TestDeleteBooks_VerliehenesExemplarBlockiert(t *testing.T) {
+// Der Test prüft deshalb zwei Dinge zusammen, denn nur zusammen sind sie vertretbar:
+// dass wirklich alles verschwindet — UND dass das verliehene Buch eine Spur hinterlässt.
+// Ein spurlos verschwundenes Buch ist ein verlorenes Buch: Wer es zurückbringt, findet
+// beim Scannen nichts mehr vor, und ohne Protokollzeile weiss niemand mehr, wer es hatte.
+func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	pool := ladeSchemaPool(t)
 	ctx := context.Background()
 	repo := NewBookRepository(pool)
@@ -34,9 +30,6 @@ func TestDeleteBooks_VerliehenesExemplarBlockiert(t *testing.T) {
 	}
 
 	titelID := eins("Titel", `INSERT INTO buecher_titel (titel) VALUES ('Der Zauberberg') RETURNING id`)
-	// Zwei Exemplare: eines liegt im Regal, eines ist draussen. Es genügt EINES,
-	// um den ganzen Titel zu halten — sonst risse das Löschen dem Kind das Buch
-	// unter den Händen weg.
 	imRegal := eins("Exemplar im Regal",
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'ZB-REGAL') RETURNING id`, titelID)
 	verliehen := eins("Exemplar verliehen",
@@ -45,71 +38,88 @@ func TestDeleteBooks_VerliehenesExemplarBlockiert(t *testing.T) {
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('ZB-S1', 'Hans', 'Castorp', '9a', 2030) RETURNING id`)
 
-	// rueckgabe_am IS NULL — das Buch ist bei ihm zu Hause.
+	// Eine LAUFENDE Ausleihe (rueckgabe_am IS NULL) — das Buch ist bei ihm zu Hause.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
 		VALUES ($1, $2, now() - interval '5 days', now() + interval '9 days')`,
 		verliehen, schuelerID); err != nil {
-		t.Fatalf("Ausleihe: %v", err)
+		t.Fatalf("laufende Ausleihe: %v", err)
+	}
+	// Dazu eine abgeschlossene mit unbezahlter Gebühr am anderen Exemplar: Beim
+	// Titel-Löschen geht auch die mit — bewusste Entscheidung des Betreibers
+	// („ist das Buch wohl so alt, dass es egal ist").
+	altAusleihe := eins("alte Ausleihe", `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
+		VALUES ($1, $2, now() - interval '60 days', now() - interval '46 days', now() - interval '40 days')
+		RETURNING id`, imRegal, schuelerID)
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
+		VALUES ($1, $2, $3, 'Fleck', 3.00, false)`, imRegal, altAusleihe, schuelerID); err != nil {
+		t.Fatalf("Gebühr: %v", err)
 	}
 
-	err := repo.DeleteBooks(ctx, []string{titelID})
-	if err == nil {
-		t.Fatal("Titel mit verliehenem Exemplar wurde gelöscht — das Buch wäre spurlos aus dem Bestand")
-	}
-	// Die Meldung muss den Grund nennen. Ein blosser FK-Fehler käme als 500 zurück und
-	// würde zu „interner Datenbankfehler" sanitisiert.
-	if !strings.Contains(err.Error(), "verliehen") {
-		t.Errorf("Meldung nennt den Grund nicht: %v", err)
+	if err := repo.DeleteBooks(ctx, []string{titelID}); err != nil {
+		t.Fatalf("Titel mit verliehenem Exemplar muss löschbar sein: %v", err)
 	}
 
-	// Nichts darf angefasst worden sein — auch nicht das Exemplar im Regal, und
-	// vor allem nicht die Ausleihe selbst.
-	for _, fall := range []struct{ sql, name string }{
-		{`SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE id = $1)`, "Titel"},
-		{`SELECT EXISTS(SELECT 1 FROM buecher_exemplare WHERE id = $1)`, "Exemplar"},
+	// 1. Wirklich alles weg — Titel, BEIDE Exemplare, alle Ausleihen, die Gebühr.
+	for _, fall := range []struct {
+		name, sql string
+	}{
+		{"Titel", `SELECT count(*) FROM buecher_titel WHERE id = $1`},
+		{"Exemplare", `SELECT count(*) FROM buecher_exemplare WHERE titel_id = $1`},
 	} {
-		for _, id := range []string{titelID, imRegal, verliehen} {
-			if fall.name == "Titel" && id != titelID {
-				continue
-			}
-			if fall.name == "Exemplar" && id == titelID {
-				continue
-			}
-			var da bool
-			if e := pool.QueryRow(ctx, fall.sql, id).Scan(&da); e != nil {
-				t.Fatal(e)
-			}
-			if !da {
-				t.Errorf("%s %s wurde trotz Blockade entfernt", fall.name, id)
-			}
+		var n int
+		if err := pool.QueryRow(ctx, fall.sql, titelID).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		if n != 0 {
+			t.Errorf("%s: %d Zeilen überlebten", fall.name, n)
 		}
 	}
-	var offen bool
-	if e := pool.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL)`,
-		verliehen).Scan(&offen); e != nil {
-		t.Fatal(e)
-	}
-	if !offen {
-		t.Error("die offene Ausleihe wurde entfernt — das Buch wäre nicht mehr zurückbuchbar")
+	for _, fall := range []struct {
+		name, sql string
+	}{
+		{"Ausleihen", `SELECT count(*) FROM ausleihen WHERE exemplar_id = ANY($1)`},
+		{"Schadensfälle", `SELECT count(*) FROM schadensfaelle WHERE exemplar_id = ANY($1)`},
+	} {
+		var n int
+		if err := pool.QueryRow(ctx, fall.sql, []string{imRegal, verliehen}).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		if n != 0 {
+			t.Errorf("%s: %d Zeilen überlebten", fall.name, n)
+		}
 	}
 
-	// Gegenprobe am selben Titel: Nach der Rückgabe geht es. Ohne sie bewiese der Test
-	// nur, dass DeleteBooks irgendetwas ablehnt — nicht, dass es die RICHTIGE Frage stellt.
-	if _, err := pool.Exec(ctx,
-		`UPDATE ausleihen SET rueckgabe_am = now() WHERE exemplar_id = $1`, verliehen); err != nil {
-		t.Fatalf("Rückgabe: %v", err)
+	// 2. Die Spur des verliehenen Buchs. Ohne sie wäre die Löschung lautlos, und ein
+	//    zurückgebrachtes Buch hätte niemanden mehr, dem es zuzuordnen wäre.
+	var kontext, details string
+	if err := pool.QueryRow(ctx, `
+		SELECT kontext, details::text FROM audit_log
+		WHERE tabelle = 'ausleihen' AND aktion = 'DELETE' AND datensatz_id = $1`,
+		verliehen).Scan(&kontext, &details); err != nil {
+		t.Fatalf("keine Protokollzeile für das verliehene Buch: %v", err)
 	}
-	if err := repo.DeleteBooks(ctx, []string{titelID}); err != nil {
-		t.Fatalf("nach der Rückgabe muss der Titel löschbar sein: %v", err)
+	if !strings.Contains(kontext, "verliehen") {
+		t.Errorf("Kontext sagt nicht, was los war: %q", kontext)
 	}
-	var rest int
-	if e := pool.QueryRow(ctx,
-		`SELECT count(*) FROM buecher_exemplare WHERE titel_id = $1`, titelID).Scan(&rest); e != nil {
-		t.Fatal(e)
+	for _, muss := range []string{"ZB-DRAUSSEN", "Zauberberg", "Hans Castorp"} {
+		if !strings.Contains(details, muss) {
+			t.Errorf("Protokollzeile ohne %q — nicht nachschlagbar: %s", muss, details)
+		}
 	}
-	if rest != 0 {
-		t.Errorf("%d Exemplare überlebten den Titel-Delete (CASCADE griff nicht)", rest)
+
+	// 3. Kein Rauschen: Das Exemplar aus dem Regal war nicht verliehen und darf keine
+	//    solche Zeile haben — sonst stünde bei jedem Aufräumen eine Warnung ohne Anlass.
+	var rauschen int
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM audit_log
+		WHERE tabelle = 'ausleihen' AND aktion = 'DELETE' AND datensatz_id = $1`,
+		imRegal).Scan(&rauschen); err != nil {
+		t.Fatal(err)
+	}
+	if rauschen != 0 {
+		t.Errorf("%d Protokollzeilen für ein Exemplar, das gar nicht verliehen war", rauschen)
 	}
 }
