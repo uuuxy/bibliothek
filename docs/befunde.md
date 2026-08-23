@@ -38,7 +38,103 @@ Zwei Regeln dazu:
 | `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`) | Kein Fix verfügbar (`Fixed in: N/A`), transitive Abhängigkeit, **kein** Aufrufer im eigenen Code (`govulncheck`: „your code doesn't appear to call these"). Beobachten, nicht jagen. |
 | `pgtest_support_test.go` liegt echt dupliziert in fünf Paketen | Sauber wäre ein `internal/pgtest`-Paket; fasst die Test-Infrastruktur von fünf Paketen auf einmal an und ist nur gegen echtes PostgreSQL beweisbar. Steht als Befund in `sonar-project.properties`. |
 | Etikettenraster stehen an vier Stellen | Maßgeblich ist `api/label_formats.go`; das Druck-Center führt eigene Kopien (`LabelLayoutOptionen.svelte`, `stores/labels.svelte.js`). Der Umbau auf die Server-Liste — wie bei der Lieferantenseite gemacht — wäre eine Verhaltensänderung an einem täglich benutzten Bildschirm. Bis dahin hält `etikettformate-konsistenz.test.js` die Kopien deckungsgleich. |
+| Ein Test schreibt **jede** Schülerzeile | Der Versetzungslauf (`POST /api/students/promote`) fasst in seinem Test alle Zeilen an und zieht fremde Testdaten mit. Am 23.08.2026 war ein neues Gate allein grün und in der vollen Suite rot — die Behauptung wurde daraufhin eingeengt, die Ursache steht. Gefährlich wird das, wenn die Kreuzwirkung einmal in die andere Richtung zeigt und ein Gate still grün hält. |
 | Zwei verschiedene Vorgaben für dasselbe Raster | Druck-Center `avery_3475`, Lieferanten-Weg `zweckform_l4760`. Fällt praktisch nie auf, weil beide Oberflächen immer ein Format mitschicken — die Vorgabe greift nur bei einem Aufruf ohne `?format=`. Zu entscheiden ist, welche gelten soll. |
+
+---
+
+## Die 73 Schreibstellen des Frontends gelesen (23.08.2026) — zwei A-Funde
+
+Anlass war eine Frage, keine Meldung: Die 206 Svelte-Dateien waren bis dahin nur über
+Detektoren gelaufen, nie gelesen. Statt alle zu lesen, wurde die Fläche eingegrenzt auf
+die Stellen, an denen etwas **geschrieben** wird — dort saßen alle bisherigen Funde.
+
+**Die Eingrenzung war beim ersten Versuch falsch.** `grep "method: 'PUT'"` fand 23
+Dateien. Die Komfort-Hülle (`apiClient.put(…)`, `apiPut(…)`) trägt aber kein `method:` —
+real sind es **73 Schreibstellen in rund 40 Dateien**. Beide Funde unten sitzen in der
+Hälfte, die die erste Sonde nicht sah. Dieselbe Lehre wie bei der
+[statischen Inventur](../CLAUDE.md): Die Sonde muss man messen, bevor man ihr glaubt.
+
+### Fund 1 (A): Stammdaten des Schülers ließen sich nicht löschen
+
+| | |
+|---|---|
+| **Was behauptet wurde** | „Änderungen gespeichert" |
+| **Was stimmte** | Die geleerte Adresse und die Eltern-Mail kamen nie an. Beim nächsten Öffnen der Akte stand der alte Wert wieder da. |
+| **Warum** | `useStudentEditForm.svelte.js` baute `strasse: formData.strasse ǀǀ null`. Im Backend sind die Felder `*string`; JSON-null wird nil, und nil heißt dort „nicht mitgeschickt, Spalte in Ruhe lassen". |
+| **Wen es trifft** | Genau die Angaben, deren Entfernung jemand verlangen kann — Postanschrift und Elternkontakt. |
+
+**Die Gegenprobe am laufenden Handler zeigte die zweite Hälfte:** Ein LEERER String kam
+mit 200 durch und räumte Vorname, Nachname, Ausweisnummer und Klasse weg; aus der
+geleerten Klasse leitete `calculateAbgaengerJahr` noch ein Abgängerjahr ab. Beim
+Anlegen sind dieselben Felder `validate:"required"` — beim Ändern war die Regel nie
+nachgezogen worden.
+
+Dass daraus nie ein Schaden entstand, war **Zufall und keine Regel**: Das Formular
+schickte null statt "". Hätte man nur die eine Hälfte repariert, wäre die andere scharf
+geworden. Deshalb beide: leer = löschen (NULL) bei den optionalen Feldern, 400 mit
+Begründung bei den Pflichtfeldern. `geburtsdatum` bleibt bewusst bei `ǀǀ null` — sonst
+wäre jeder Altdatensatz ohne Geburtsdatum nicht mehr speicherbar.
+
+Commit `77ee14b9`. Gates: `api/schueler_feld_leeren_pg_test.go` (beide Richtungen, gegen
+echtes PostgreSQL) und `frontend/src/lib/useStudentEditForm.test.js` (hält die Nutzlast
+fest, weil der Rückfall auf dieser Seite passiert). Beide am Rückbau rot gesehen.
+
+### Fund 2 (A): Das Geräte-Formular hob still die Defekt-Markierung auf
+
+| | |
+|---|---|
+| **Was behauptet wurde** | „Gerät gespeichert" |
+| **Was stimmte** | Das defekte Gerät war danach wieder ausleihbar. |
+| **Warum** | Im Handler stand `istAusleihbar := true`, wenn das Feld fehlt. Der Bearbeiten-Dialog kennt die Defekt-Markierung gar nicht — sie liegt auf einem eigenen Knopf in der Liste. Ein fehlendes Feld war damit kein „unverändert", sondern ein Wert. |
+| **Wen es trifft** | Das nächste Kind bekommt ein kaputtes Tablet. |
+
+Gegenrichtung derselben Stelle: Die **Seriennummer** schickt das Formular mit, der
+Handler reichte sie nicht ans Repository weiter — eine Korrektur war folgenlos, wieder
+mit Erfolgsmeldung. Beide Felder sind jetzt Zeiger: nil heißt „nicht angefasst",
+"" heißt „gelöscht".
+
+Commit `5c08a47e`. Gates: `api/geraet_bearbeiten_pg_test.go` — das Formular darf die
+Markierung nicht aufheben, der Defekt-Knopf darf die Stammdaten nicht anfassen.
+
+### Die Bugklasse dahinter
+
+Beide Funde sind **dasselbe Missverständnis über Schweigen**: Ein nicht mitgeschicktes
+Feld heißt im einen Handler „unverändert" und im anderen „nimm den Vorgabewert". Sender
+und Empfänger waren sich jeweils nur zufällig einig.
+
+Daraus folgt für jeden PUT/PATCH **eine zweite Frage**, die der Payload↔Struct-Vergleich
+nicht stellt:
+
+1. Welches Feld schickt das Formular, das der Handler nicht schreibt?
+2. Welches Feld schickt es **nicht** — und was macht der Handler mit dem Schweigen?
+
+Frage 2 ist die blinde Hälfte (vgl. Abschnitt „Audit-Raster").
+
+### Gate-Härtung nebenbei
+
+Das Einstellungs-Gate (`einstellungen-kategorien.test.js`) hielt eine **handgepflegte
+Kopie** der 23 Schlüssel aus `repository/system_settings_patch.go`. Deckungsgleich —
+aber ein neuer Schlüssel im Go-Struct hätte es nie erreicht, und seit dem strengen
+Decoder hieße das 400 beim ersten Speicherversuch. Liest jetzt die Go-Datei, mit
+Gegenprobe am Detektor selbst: Beim ersten Versuch kam eine leere Liste heraus (die
+Tags tragen `,omitempty`), und ein Gate über eine leere Liste ist grün, ohne zu prüfen.
+Der Wächter meldete es sofort. Commit `b9c54936`.
+
+### Was sauber war
+
+Buch-Rundlauf (der Listen-SELECT liefert alle Felder; `GetBookByID` ist nicht der
+Live-Pfad und bedient nur Cover-Wege mit COALESCE-Schreiber), Mail-Passwort (zwei
+getrennte Anweisungen, nicht nur ein Kommentar), Hauptlieferant, Sperr-Endpunkt,
+CSRF-Ausnahmen für die zwei rohen `fetch`, Systematik, Mail-Vorlagen, Exemplar-Status,
+Rechte-Matrix, Klassenzuordnung, Bestellungen, Etiketten, Vormerkungen.
+
+### Was NICHT behauptet wird
+
+Die restlichen 183 Svelte-Dateien sind weiterhin **nicht gelesen**, sondern über
+Detektoren gelaufen. Das ist eine Entscheidung, keine Lücke: Beide Funde saßen auf
+Schreibpfaden, und dort ist jetzt jede Stelle einzeln angesehen. Anzeigecode dieselbe
+Aufmerksamkeit zu geben hieße, sie an der Stelle mit dem geringsten Ertrag auszugeben.
 
 ---
 

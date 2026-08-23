@@ -79,6 +79,7 @@ Risiko nur, falls je ein *zweiter* Checkout-Pfad entsteht, der die Validierung n
 | **Gesperrt ⇒ Sperrgrund vorhanden** (kein grundloser „Zombie-Sperre"-Zustand; Personal sieht immer das *warum*). Automatische Sperr-Pfade setzen den Grund mit; `is_manually_blocked` läuft separat | 🟢 `chk_schueler_block_reason` | `schema.sql`, Migration 047, `lusd_apply.go`, `student_promotion.go` |
 | **[G1] Adress-/Kontaktdaten** aus LUSD importiert, Zweck Rechnung/Mahnung, bei Anonymisierung gelöscht | 🟢 **entschieden (B)** — Import + Löschung umgesetzt | `lusd_apply.go`, `schueler.strasse`/`plz`/`ort`/`eltern_email` |
 | **DSGVO-Retention-Kette schliesst:** Abgänger mit offenen Vorgängen → gesperrt (Name bleibt); nach Rückgabe/Bezahlung → nach Karenzzeit endgültig gelöscht | 🟡 `abgaenger_jahr` aufs Abgangsjahr + Cronjob `PurgeAbgaenger` (echte Löschung, nicht Soft-Delete) | `lusd_apply.go`, `jobs/cron.go`, `repository/audit_users.go` |
+| **Leer heißt löschen — aber nur, wo Löschen erlaubt ist.** Optionale Stammdaten (Anschrift, Eltern-Mail) werden mit leerem Wert auf NULL gesetzt; Pflichtfelder (Vor-/Nachname, Klasse, Ausweisnummer) lehnen den leeren Wert mit 400 ab. Ein **fehlendes** Feld heißt weiterhin „unverändert“ | 🟢 `addStrLeerbar` + Pflichtfeld-Wächter, PG-Test über den laufenden Handler | `api/student_update.go`, `api/schueler_feld_leeren_pg_test.go`, `frontend/src/lib/useStudentEditForm.test.js` |
 | Manuelles Löschen: Soft-Delete (Papierkorb, `DeleteStudent`) vs. endgültig (`PurgeStudent`, Recht `manage_users`) sind getrennt | 🟡 Restore hebt Lösch-Sperre auf; Purge blockiert bei offenen Vorgängen | `api/student_deleted.go`, `repository/audit_users.go` |
 
 **Hinweis (Retention):** Der frühere Zustand hatte eine tote Kette — `sperreAbgaenger`
@@ -86,6 +87,13 @@ setzte `abgaenger_jahr` nicht (blieb auf Anlege-Default Jahr+5), also erfasste d
 Cronjob den Abgänger nie; und der Job rief `DeleteStudent` (Soft-Delete), sodass die PII
 selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
 `TestAbgaengerRetentionKette`, `TestRunGDPRDeleteAbgaenger_Deleted`).
+
+**Hinweis (Löschen von Feldern):** Bis zum 23.08.2026 kam eine geleerte Anschrift gar
+nicht erst an — das Formular schickte JSON-null, was im `*string` als nil ankommt und
+„nicht mitgeschickt“ bedeutet. Die Oberfläche meldete trotzdem „gespeichert“. Die
+Gegenprobe zeigte die andere Hälfte: Ein leerer String räumte damals Vorname, Nachname,
+Ausweisnummer und Klasse mit 200 weg. Beide Richtungen sind jetzt geregelt und gegatet;
+`geburtsdatum` bleibt bewusst unlöschbar (Schlüssel des LUSD-Abgleichs).
 
 ---
 
@@ -166,6 +174,7 @@ löst nichts mehr aus (`api/reorders.go`).
 | Invariante | Durchsetzung | Fundstelle |
 |---|---|---|
 | Gesperrtes/ausgesondertes Gerät leiht nicht | 🟡 | `internal/service/device_service.go` (`ladeGeraet`) |
+| **Ein fehlendes `ist_ausleihbar` heißt „unverändert“, nicht „ausleihbar“.** Der Bearbeiten-Dialog kennt die Defekt-Markierung nicht (eigener Knopf); ohne diese Regel gab jede Stammdaten-Korrektur ein defektes Gerät wieder frei | 🟢 Zeiger + `COALESCE` im UPDATE, PG-Test in beide Richtungen | `api/geraete.go`, `repository/geraete.go`, `api/geraet_bearbeiten_pg_test.go` |
 | Inventur-Fortschritt ist **session-gebunden** (nicht global): parallele Inventuren überschreiben sich nicht | 🟢 `inventur_sessions` + `inventur_erfassungen`, partieller Unique-Index je Scope | `migrations/045`, `repository/inventur_session_repo_test.go` |
 | Ein aktuell **verliehenes** Buch gilt bei der Inventur nie als Verlust | 🟡 Scope-Bedingung (`NOT EXISTS` aktive Ausleihe) | `repository/inventur_session_finish.go` |
 
