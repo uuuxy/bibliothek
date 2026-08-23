@@ -134,9 +134,16 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q dbSchreiber, ti
 		numToRetire := currentStock - expectedStock
 
 		// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
+		//
+		// ist_ausleihbar = false gehört DAZU. Hier stand bis zum 23.08.2026 nur
+		// ist_ausgesondert = true — anders als in allen drei anderen Aussonderungswegen
+		// (repository/audit_books.go, damage.go, book_inventory.go), die beide Spalten
+		// setzen. Ein ausgesondertes Exemplar, das sich weiterhin "ausleihbar" nennt, ist
+		// ein Widerspruch, der nur deshalb keinen Schaden anrichtet, weil jeder heutige
+		// Leser BEIDE Spalten prüft. Der erste, der nur ist_ausleihbar liest, verleiht es.
 		query := `
 			UPDATE buecher_exemplare
-			SET ist_ausgesondert = true, aussonderung_grund = 'BESTANDSKORREKTUR',
+			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR',
 			    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert'
 			WHERE id IN (
 				SELECT e.id
@@ -157,7 +164,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q dbSchreiber, ti
 			remainingToRetire := int64(numToRetire) - retired
 			fallbackQuery := `
 				UPDATE buecher_exemplare
-				SET ist_ausgesondert = true, aussonderung_grund = 'BESTANDSKORREKTUR',
+				SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR',
 				    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
 				WHERE id IN (
 					SELECT e.id
