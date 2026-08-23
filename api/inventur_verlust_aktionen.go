@@ -85,6 +85,13 @@ func (s *Server) InventurVerlusteLoeschenHandler() http.HandlerFunc {
 		invRepo := repository.NewInventoryRepository(tx)
 		anzahl, err := invRepo.EndgueltigLoescheVerlustExemplare(ctx, req.ExemplarIDs, claims.UserID)
 		if err != nil {
+			// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
+			// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"
+			// (apierrors.SendHTTPError) — die Bedienung erführe nie, WELCHES Exemplar
+			// warum im Weg steht. Wrap gibt die Message eines APIError unverändert aus.
+			if errors.Is(err, repository.ErrVerlustNochGebunden) {
+				return apierrors.Conflict(err.Error(), err)
+			}
 			return apierrors.Internal("Endgültiges Löschen fehlgeschlagen", err)
 		}
 		if err := tx.Commit(ctx); err != nil {

@@ -110,8 +110,39 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	}
 
 	ids := make([]string, len(treffer))
+	barcodeVon := make(map[string]string, len(treffer))
 	for i, s := range treffer {
 		ids[i] = s.id
+		barcodeVon[s.id] = s.barcode
+	}
+
+	if err := r.pruefeVerlusteLoeschbar(ctx, ids, barcodeVon); err != nil {
+		return 0, err
+	}
+
+	// Die abhängigen Zeilen zuerst — `ausleihen.exemplar_id` und
+	// `schadensfaelle.exemplar_id` stehen auf ON DELETE RESTRICT, die Datenbank hält
+	// sonst dagegen. Bis zum 23.08.2026 fehlten diese beiden Schritte hier, während das
+	// Geschwister-Verfahren (inventur/db_books_delete.go, „Titel löschen") sie längst
+	// hatte: Das endgültige Löschen scheiterte an JEDEM Exemplar, das je ausgeliehen war
+	// — in einer Schulbibliothek also an fast jedem. Der Fehler kam als 500 zurück und
+	// wurde zu „interner Datenbankfehler" sanitisiert; niemand konnte sehen, woran es lag.
+	//
+	// Reihenfolge wie beim Titel-Löschen: Schadensfälle, dann Ausleihen, dann das
+	// Exemplar. Was hier verschwindet, ist erledigte Geschichte — offene Vorgänge hat
+	// pruefeVerlusteLoeschbar bereits abgewiesen. Der Fehlbestandsbericht überlebt es
+	// (inventur_verluste hält eine Abschrift, ON DELETE SET NULL), und der Barcode wird
+	// wieder frei: `buecher_exemplare.barcode_id` ist UNIQUE ohne Teilindex, eine
+	// stehengebliebene Zeile blockierte den Aufkleber für immer.
+	if _, err := r.db.Exec(ctx,
+		`DELETE FROM schadensfaelle WHERE exemplar_id = ANY($1)`, ids,
+	); err != nil {
+		return 0, fmt.Errorf("erledigte schadensfälle der verlust-exemplare löschen fehlgeschlagen: %w", err)
+	}
+	if _, err := r.db.Exec(ctx,
+		`DELETE FROM ausleihen WHERE exemplar_id = ANY($1) AND rueckgabe_am IS NOT NULL`, ids,
+	); err != nil {
+		return 0, fmt.Errorf("ausleihhistorie der verlust-exemplare löschen fehlgeschlagen: %w", err)
 	}
 	if _, err := r.db.Exec(ctx,
 		`DELETE FROM buecher_exemplare WHERE id = ANY($1)`, ids,
