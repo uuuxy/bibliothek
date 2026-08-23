@@ -42,6 +42,50 @@ Zwei Regeln dazu:
 
 ---
 
+## Beispiel-Plugin abgeklemmt — und warum NICHT mehr (23.08.2026)
+
+Beim Doku-Durchgang fiel auf, dass `plugins/vorlage` in Produktion mitläuft: zwei
+Log-Zeilen bei jeder Rückgabe am Tresen, eine aus `DispatchEvent`, eine aus dem
+Beispiel selbst. Demo-Code im Betrieb, an der meistbenutzten Stelle des Systems.
+
+**Mein erster Entschluss war, das ganze System zu löschen.** Die Zahlen schienen
+eindeutig: 128 Zeilen, genau EIN Ereignistyp, fünf Aufrufstellen die alle dasselbe
+Ereignis feuern, ein Zuhörer der nur loggt, ein Frontend-Teil (`Extension.svelte`) der
+nie angeschlossen wurde, und in 15 Monaten kein einziges echtes Plugin. Ich hatte die
+Dispatch-Aufrufe bereits entfernt, als Peter sagte: „überlege wirklich gründlich".
+
+**Zwei Dinge hatte ich übersprungen.**
+
+Erstens tragen die fünf Aufrufstellen eine Entscheidung: Alle sitzen unmittelbar NACH
+`tx.Commit`, direkt neben dem Audit-Eintrag — „nur melden, was wirklich und dauerhaft
+passiert ist". (Das relativiert sich: Dieselben fünf Punkte findet man über
+`LogRueckgabe` wieder. Das Wissen ginge nicht verloren, nur die Arbeit wäre erneut zu
+tun.)
+
+Zweitens — und das ist entscheidend — steht `plugins/` in diesem Register selbst als
+**Kategorie C**, und die eigene Regel dazu lautet „nicht vor dem Pilotstart". Der Pilot
+läuft seit heute Mittag. Ich war dabei, Rückgabe-, Ausleih- und Gerätepfade chirurgisch
+anzufassen, um 128 Zeilen loszuwerden, die zur Laufzeit nichts kosten — gegen die
+ausdrückliche Regel dieses Projekts, mitten im Pilotbetrieb.
+
+**Gemacht wurde deshalb nur das, was ein Fehler ist:** `vorlage.Init()` aus `main.go`
+entfernt. Ohne Zuhörer kehrt `DispatchEvent` still zurück, beide Log-Zeilen sind weg.
+Eine Zeile statt einer Operation.
+
+**Was das kostet:** zwei Einträge in `scripts/deadcode_baseline.txt` (`RegisterHook`,
+`Init`), mit befristeter Begründung und Ablaufdatum „nach dem Pilot".
+
+**Und wer hält die Entscheidung?** Nicht der Kommentar in `main.go` — der wäre genau
+die Bauform, an der dieses Projekt heute schon dreimal hängengeblieben ist. Das
+deadcode-Gate wirkt in beide Richtungen: Schließt jemand `vorlage.Init()` wieder an,
+werden die Baseline-Einträge erreichbar und der Lauf meldet „Baseline-Einträge, die es
+nicht mehr gibt". Am Rückbau geprüft.
+
+**Nach dem Pilot zu entscheiden.** Stand heute spricht weiterhin alles fürs Löschen —
+aber das ist dann eine Entscheidung mit Zeit, nicht eine nebenbei.
+
+---
+
 ## Die offenen Punkte nachgeprüft (23.08.2026) — und meine Kritik am Register zurückgenommen
 
 Ich hatte behauptet, dieses Register führe Erledigtes als offen weiter und trenne
@@ -403,7 +447,7 @@ Schlüsselmenge.
 | **Objektbindung (IDOR)** | Kein neuer Fund. Die zwei schwächsten Rollen erreichen zusammen drei schreibende Routen; die Theke ist in der PII-Matrix ausdrücklich als „bewusst ohne Objektbindung" vermerkt (jedes Buch auf jeden Ausweis — das IST die Theke), `ListEigeneAnliegen` bindet an `claims.UserID`, die öffentlichen Bestell-Links an den gehashten Token. |
 | **`mailservice/`** | **Ein Fund, gefixt (`5499d68e`).** Über `baueMailNachricht` stand „req.To und req.Subject müssen bereits sanitiert sein" — neun Aufrufer, keiner tat es. Geprüft war nur der SMTP-Umschlag; die Kopfzeilen der Nachricht nicht. Die Regel steht jetzt an einer Stelle und gilt für beide Wege. |
 | **`sse/`** | Kein Fund. Begrenzter Puffer, nicht-blockierendes Senden, Abmeldung per `defer`, RLock deckt das Senden mit ab; der Strom trägt nur IDs und Buchtitel (Matrix-Zeile Stufe 0). |
-| **`plugins/`** | ~~`RegisterHook` wird nirgends aufgerufen: null Zuhörer, tote Erweiterungsstelle.~~ **Falsch — am 23.08.2026 am Startpfad widerlegt.** `main.go:35` importiert `plugins/vorlage`, `main.go:347` ruft `vorlage.Init()`, und das registriert einen Zuhörer auf `EventBookReturned`. Der Erweiterungspunkt ist also aktiv, und das BEISPIEL-Plugin läuft in Produktion mit: Jede Rückgabe am Tresen schreibt zwei Zeilen ins Log (`Plugins: Dispatching event …` aus `DispatchEvent` plus `Vorlage Plugin: Event OnBookReturned received! …` mit Titel, Barcode und Bearbeiter-UUID). Kein Datenschutzproblem (kein Schülername), aber Demo-Code im Betrieb und Log-Volumen bei jeder Rückgabe. **Zu entscheiden:** abklemmen (kostet zwei Einträge in `scripts/deadcode_baseline.txt`, gemessen) oder als Feature behalten. |
+| **`plugins/`** | ~~`RegisterHook` wird nirgends aufgerufen: null Zuhörer, tote Erweiterungsstelle.~~ **Falsch — am Startpfad widerlegt** (`main.go` rief `vorlage.Init()`). Das BEISPIEL-Plugin lief in Produktion mit und schrieb bei jeder Rückgabe zwei Zeilen ins Log (Titel, Barcode, Bearbeiter-UUID). **Erledigt 23.08.2026:** Der Init-Aufruf ist raus, der Erweiterungspunkt bleibt. Begründung siehe unten. |
 | **Frontend (206 Dateien)** | Kein offener Fund über fünf Detektoren: `catch`-Blöcke (36 begründet, 7 stumm, alle um `scanner.stop()`), schreibende Aufrufe ohne Auswertung der Antwort (2, beide mit begründendem Kommentar), Rollen-Literale, Rechte-Schlüssel, gesendete Nutzlast-Schlüssel. Die zwei Paritäts-Gates von heute (Rechte, Rollen) prüfen den Frontend-Baum jetzt bei jedem Lauf mit. |
 
 ### Kategorie B — die Fundliste im Original
