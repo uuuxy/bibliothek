@@ -1,8 +1,19 @@
 # Master-Fahrplan: Offene Punkte bis Go-Live
 
-> Stand **2026-08-21**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
+> Stand **2026-08-23**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
 > als jede gepflegte Liste. Radar-Referenz: [`api_inventar.md`](api_inventar.md)
 > (neu erzeugen mit `./scripts/api_inventar.sh`).
+
+**Wer muss was?** Diese Liste ist nach Zuständigkeit sortiert, nicht nach Thema:
+
+| | Wer | Was | Wo |
+|---|---|---|---|
+| 1 | **Peter** | Littera-Backup, Prod-Secrets, IMAP/SMTP, Restore-Probe, Branch-Protection | Abschnitte 1 und 3 hier |
+| 2 | **Schule / DSB** | Verarbeitungsverzeichnis, Datenschutzhinweis, Foto-Frage, IT-Sicherheitskonzept | [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md) B1–B7 |
+| 3 | **Sekretariat** | drei Abnahmen à ~10 Minuten | Abschnitt 2 hier, Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md) |
+| 4 | **Code** | vier Aufräumpunkte ohne Eile | [befunde.md](befunde.md), Abschnitt „Offen" |
+
+Nichts davon blockiert den laufenden Betrieb.
 
 ## 🎯 Aktuell offen
 
@@ -31,9 +42,15 @@ Was fehlt, ist die Quelle:
 
 ### 2. Ausstehende Verifikationen (Admin-Flows)
 
-> Blockiert: kein LUSD-Zugriff. Vorbereitung ist fertig —
-> [`abnahme_checkliste.md`](abnahme_checkliste.md) macht jede Abnahme zu einem
-> ~10-Minuten-Durchlauf, sobald eine echte Exportdatei vorliegt.
+> **Nicht mehr blockiert.** Bis zum 21.08.2026 stand hier „Blockiert: kein LUSD-Zugriff".
+> Das ist überholt: Die Datei der Schule ist eine LANIS-Klassenliste ohne Schüler-ID und
+> ohne Geburtsdatum, und genau dafür hat der Import seit dem 22.08.2026 drei
+> Zuordnungsstufen (ID → Name + Geburtsdatum → nur Name), die er aus der Datei selbst
+> erkennt; CSV und XLSX werden gelesen (Migration 084, `api/lusd_*.go`).
+>
+> Offen ist also nicht mehr die Technik, sondern der **Durchlauf mit einem Menschen**.
+> [`abnahme_checkliste.md`](abnahme_checkliste.md) führt ihn Schritt für Schritt — inklusive
+> der Stufen-Anzeige und der vier Gruppen, bei denen das System bewusst nichts tut.
 
 - [ ] **LUSD-Import**: Abnahme mit einer echten Exportdatei durch das Sekretariat.
 - [ ] **Schuljahres-Versetzung**: Abnahme mit einem echten Klassensatz vor dem Wechsel
@@ -63,6 +80,9 @@ Was fehlt, ist die Quelle:
       Befund der Betriebsbereitschaft meldet. Was noch fehlt, ist die **einmalige
       manuelle Probe am echten Ziel** inklusive Cover-Reset ([DEPLOYMENT.md](DEPLOYMENT.md) §6) —
       sie prüft zusätzlich den Weg über einen fremden Server.
+- [ ] **`SENTRY_DSN` leer lassen** (`grep SENTRY_DSN .env`). Steht dort ein Wert, gehen
+      Fehlerberichte an einen Dienst in den USA; ist er leer, überspringt das Programm den
+      Teil. Punkt A6 aus [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md).
 - [ ] **Branch-Protection**: Entscheidung vom 30.07.2026 ist, die PR-Pflicht abzuschaffen
       (Solo-Entwicklung). „Block force pushes" und „Restrict deletions" sollten an bleiben —
       sie kosten nichts und sind der einzige Schutz gegen ein Überschreiben der Historie.

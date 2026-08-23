@@ -141,7 +141,12 @@ Altbestand belegt: **10.732 Titel, 61.520 Exemplare, 0 verwaiste Exemplare** —
 Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
 `LITTERA_CSV_DIR` (wie die PG-Tests an `TEST_DATABASE_URL`).
 
-### Noch offen für den vollständigen Import
+### Spalten-Zuordnung für den vollständigen Import — alle geklärt
+
+Diese Liste hieß bis zum 23.08.2026 „Noch offen", obwohl darunter ausschließlich
+Erledigtes steht. Offen ist am Littera-Import nur noch EINES, und es steht nicht hier,
+sondern im [Fahrplan](master_fahrplan.md): ein **frisches Backup aus dem laufenden
+Littera**. Die vorliegende Datei ist ein Stand von 2010.
 
 * **Autoren — erledigt.** `Titel.Verfasserangabe` ist nur bei 2.519 von 10.732 Titeln
   brauchbar gefüllt (23 %). Die gepflegte Quelle sind `Personen` + `Personen_Zuordnung`,
