@@ -1,14 +1,37 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
-	import { coverSrc } from './utils/coverSrc.js';
-	import Button from './components/ui/Button.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
-	import { BookOpen, Search } from '@lucide/svelte';
+	import { Search } from '@lucide/svelte';
 	import AnliegenWidget from './components/portal/AnliegenWidget.svelte';
+	import PortalTrefferkarte from './components/portal/PortalTrefferkarte.svelte';
+	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
+	import Reiter from './components/ui/Reiter.svelte';
 	/** @type {{ user: any }} */
 	let { user } = $props();
+
+	let reiter = $state('buecher');
+
+	/**
+	 * Die eigenen Anliegen liegen HIER und nicht in den zwei Bauteilen, die sie zeigen:
+	 * Der Zähler am Reiter, die Startfläche und der Anliegen-Reiter sprechen sonst über
+	 * denselben Zustand mit drei Abrufen — und nach dem Absenden zeigte der Zähler noch
+	 * den alten Stand.
+	 * @type {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, erstellt_am: string, erledigt_am?: string, erledigt_notiz?: string }[]}
+	 */
+	let eigeneAnliegen = $state([]);
+	const offeneAnliegen = $derived(eigeneAnliegen.filter((a) => !a.erledigt_am).length);
+
+	async function ladeAnliegen() {
+		try {
+			const res = await apiFetch('/api/anliegen/eigene');
+			const daten = res.ok ? await res.json() : [];
+			if (Array.isArray(daten)) eigeneAnliegen = daten;
+		} catch {
+			/* Zusatzinfo — ohne sie bleibt das Portal benutzbar */
+		}
+	}
 
 	let searchQuery = $state('');
 	let searchResults = $state.raw(/** @type {any[]} */ ([]));
@@ -25,7 +48,7 @@
 	 * Offene Reservierungen aller Lehrkräfte (Titel, Klasse, Menge — ohne Personen):
 	 * die Warteschlange. Reservieren sperrt nichts; wer denselben Titel reserviert,
 	 * stellt sich an. Diese Liste macht das VOR dem Klick sichtbar.
-	 * @type {{ titel_id: string, klasse: string, anzahl: number, erstellt_am: string }[]}
+	 * @type {{ titel_id: string, titel: string, klasse: string, anzahl: number, erstellt_am: string }[]}
 	 */
 	let offeneReservierungen = $state([]);
 
@@ -45,6 +68,7 @@
 
 	$effect(() => {
 		ladeOffeneReservierungen();
+		ladeAnliegen();
 	});
 
 	/** @param {string} titelId */
@@ -195,185 +219,60 @@
 </script>
 
 <PageShell>
-	<Suchpille
-		id="portal-suchfeld"
-		bind:wert={searchQuery}
-		platzhalter="Titel, Autor oder ISBN eingeben …"
-		etikett="Bücher für einen Klassensatz suchen"
-		autofokus
-		{nachlaufend}
+	<!-- Zwei Reiter statt zweier Aufgaben auf einer Fläche (Betreiber-Entscheidung
+	     23.08.2026). Vorher stand oben ein namenloses Suchfeld, darunter ein 340-px-
+	     Poster und ganz unten das Anliegen-Formular — dessen Felder dieselbe Pillenform
+	     trugen wie die Suche, sodass „Welches Buch?" wie ein zweites Suchfeld aussah.
+	     M3 kennt Reiter für genau diesen Fall: zwei gleichrangige Bereiche. -->
+	<Reiter
+		etikett="Portal-Bereiche"
+		reiter={[
+			{ id: 'buecher', label: 'Bücher & Klassensätze' },
+			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: offeneAnliegen }
+		]}
+		aktiv={reiter}
+		onwahl={(id) => (reiter = id)}
 	/>
 
-	<!-- Results -->
-	{#if searchResults.length > 0}
-		<div class="space-y-4">
-			{#each searchResults as book (book.id ?? book.titel_id)}
-				{@const titelId = book.id ?? book.titel_id}
-				{@const form = getForm(titelId)}
-				<div class="w-full">
-					<div class="flex gap-4 p-4">
-						<!-- Cover -->
-						<div
-							class="w-16 h-20 rounded-xl bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center"
-						>
-							{#if coverSrc(book.cover_url, book.isbn)}
-								<img
-									src={coverSrc(book.cover_url, book.isbn)}
-									alt="Cover"
-									class="w-full h-full object-cover"
-									loading="lazy"
-								/>
-							{:else}
-								<BookOpen class="h-7 w-7 text-slate-300" aria-hidden="true" />
-							{/if}
-						</div>
-
-						<!-- Info -->
-						<div class="flex-1 min-w-0">
-							<h3 class="font-semibold text-slate-800 text-sm leading-tight truncate">
-								{book.titel ?? book.title ?? 'Unbekannter Titel'}
-							</h3>
-							<p class="text-xs text-slate-500 mt-0.5">{book.autor ?? book.author ?? ''}</p>
-							{#if book.isbn}
-								<p class="text-label-small text-slate-400 mt-1">ISBN {book.isbn}</p>
-							{/if}
-							<!-- Für einen Klassensatz zählt beides: wie viele gerade frei sind UND wie
-							     viele es überhaupt gibt. „3 verfügbar" allein sagt einer Lehrkraft
-							     nicht, ob der Titel für 28 Schüler je reichen kann. -->
-							{#if book.verfuegbar != null}
-								<p class="text-xs mt-1.5">
-									<span
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-small font-semibold {book.verfuegbar >
-										0
-											? 'bg-emerald-50 text-emerald-700'
-											: 'bg-rose-50 text-rose-600'}"
-									>
-										{book.verfuegbar > 0
-											? `${book.verfuegbar} von ${book.gesamt} verfügbar`
-											: `nicht verfügbar (${book.gesamt} im Bestand)`}
-									</span>
-								</p>
-							{/if}
-							<!-- Die Warteschlange VOR dem Klick: Reservieren sperrt nichts — wer
-							     denselben Titel will, stellt sich an. Ohne diese Zeile erführe die
-							     Lehrkraft erst aus der Bestätigung, dass die 8a vor ihr dran ist. -->
-							{#each warteschlangeFuer(book.id ?? book.titel_id) as o, _i (_i)}
-								<p class="text-xs mt-1">
-									<span
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-small font-semibold bg-secondary-container text-on-secondary-container"
-									>
-										{o.anzahl} reserviert für {o.klasse} (seit {o.erstellt_am})
-									</span>
-								</p>
-							{/each}
-						</div>
-
-						<!-- Action -->
-						<!-- Die Bestätigung ERSETZT den Knopf nicht: Eine Lehrkraft, die denselben
-						     Titel für 8a bestellt hat, braucht ihn direkt danach für 8b. Vorher blieb
-						     „✓ Gesendet" für immer stehen und der einzige Weg zurück war ein Reload —
-						     ausgerechnet toggleForm, das den Zustand aufräumt, war nicht mehr
-						     erreichbar. -->
-						<div class="shrink-0 flex flex-col items-end justify-between gap-2">
-							{#if form.success}
-								<span class="text-xs text-emerald-600 font-semibold" title={form.success}
-									>✓ Gesendet</span
-								>
-							{/if}
-							<Button
-								variant={form.open || form.success ? 'secondary' : 'primary'}
-								size="sm"
-								onclick={() => toggleForm(titelId)}
-							>
-								{#if form.open}
-									Abbrechen
-								{:else if form.success}
-									Weitere Klasse reservieren
-								{:else}
-									Klassensatz reservieren
-								{/if}
-							</Button>
-						</div>
-					</div>
-
-					<!-- Inline reservation form -->
-					{#if form.open}
-						<div class="border-t border-slate-100 bg-slate-50 px-4 py-4">
-							<p class="text-xs font-semibold text-slate-600 mb-3">Klassensatz-Reservierung</p>
-							<div class="grid grid-cols-2 gap-3">
-								<div>
-									<label
-										for="klasse-{titelId}"
-										class="block text-xs font-medium text-slate-500 mb-1">Klasse *</label
-									>
-									<input
-										id="klasse-{titelId}"
-										type="text"
-										bind:value={form.klasse}
-										placeholder="z. B. 8b"
-										class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-									/>
-								</div>
-								<div>
-									<label
-										for="anzahl-{titelId}"
-										class="block text-xs font-medium text-slate-500 mb-1">Anzahl</label
-									>
-									<input
-										id="anzahl-{titelId}"
-										type="number"
-										bind:value={form.anzahl}
-										min="1"
-										max="200"
-										class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-									/>
-								</div>
-							</div>
-							<div class="mt-3">
-								<label for="notiz-{titelId}" class="block text-xs font-medium text-slate-500 mb-1"
-									>Notiz (optional)</label
-								>
-								<textarea
-									id="notiz-{titelId}"
-									bind:value={form.notiz}
-									rows="2"
-									placeholder="z. B. Benötigt ab 15. September …"
-									class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none"
-								></textarea>
-							</div>
-							{#if form.error}
-								<p class="text-xs text-rose-500 mt-2">{form.error}</p>
-							{/if}
-							<div class="mt-3 flex justify-end">
-								<Button onclick={() => submitReservierung(titelId)} disabled={form.loading}>
-									{#if form.loading}
-										<div
-											class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"
-										></div>
-									{/if}
-									Anfrage senden
-								</Button>
-							</div>
-						</div>
-					{/if}
-				</div>
-			{/each}
-		</div>
-	{:else if searchQuery.trim().length >= 2 && !isSearching}
-		<SuchZustand
-			symbol={Search}
-			titel="Keine Bücher gefunden"
-			hinweis="Versuche es mit einem anderen Titel oder Autor."
+	{#if reiter === 'buecher'}
+		<Suchpille
+			id="portal-suchfeld"
+			bind:wert={searchQuery}
+			platzhalter="Titel, Autor oder ISBN eingeben …"
+			etikett="Bücher für einen Klassensatz suchen"
+			autofokus
+			{nachlaufend}
 		/>
-	{:else if searchQuery.trim().length === 0}
-		<SuchZustand
-			symbol={BookOpen}
-			titel="Suche nach einem Buch"
-			hinweis="Titel, Autor oder ISBN eingeben"
-		/>
+
+		{#if searchResults.length > 0}
+			<div class="space-y-4">
+				{#each searchResults as book (book.id ?? book.titel_id)}
+					{@const titelId = book.id ?? book.titel_id}
+					<PortalTrefferkarte
+						{book}
+						form={getForm(titelId)}
+						warteschlange={warteschlangeFuer(titelId)}
+						ontoggle={() => toggleForm(titelId)}
+						onsenden={() => submitReservierung(titelId)}
+					/>
+				{/each}
+			</div>
+		{:else if searchQuery.trim().length >= 2 && !isSearching}
+			<SuchZustand
+				symbol={Search}
+				titel="Keine Bücher gefunden"
+				hinweis="Versuche es mit einem anderen Titel oder Autor."
+			/>
+		{:else if searchQuery.trim().length === 0}
+			<PortalUeberblick
+				reservierungen={offeneReservierungen}
+				anliegen={eigeneAnliegen}
+				onanliegen={() => (reiter = 'anliegen')}
+			/>
+		{/if}
+	{:else}
+		<AnliegenWidget anliegen={eigeneAnliegen} onaktualisiert={ladeAnliegen} />
 	{/if}
-
-	<AnliegenWidget />
 </PageShell>
 
 <!-- Der Ladepunkt sitzt IN der Pille, nicht darüber. Vorher lag er absolut positioniert

@@ -32,8 +32,14 @@ type KlassensatzReservierung struct {
 // KlassensatzOffen ist die schmale Sicht für das Kollegiums-Portal: Wer vor der
 // eigenen Reservierung steht (Titel, Klasse, Menge) — bewusst OHNE Personendaten
 // des Anfordernden.
+//
+// Der TITEL fehlte bis zum 23.08.2026, obwohl der Kommentar darüber ihn nannte. Neben
+// einem Suchtreffer fiel das nicht auf (das Buch steht ja daneben); auf der Startfläche
+// des Portals stand dann „Klasse 8B · 28 Stück" ohne jeden Hinweis, worum es geht. Der
+// Titel ist keine Person und steht ohnehin im öffentlichen Katalog.
 type KlassensatzOffen struct {
 	TitelID    string `json:"titel_id"`
+	Titel      string `json:"titel"`
 	Klasse     string `json:"klasse"`
 	Anzahl     int    `json:"anzahl"`
 	ErstelltAm string `json:"erstellt_am"`
@@ -162,11 +168,14 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 
 // OffeneKlassensatzReservierungen — die Warteschlange aus Sicht der Lehrkräfte.
 func (r *pgReservationRepository) OffeneKlassensatzReservierungen(ctx context.Context) ([]KlassensatzOffen, error) {
+	// LEFT JOIN, nicht INNER: Ein gelöschter Titel darf die Warteschlange der anderen
+	// nicht verschwinden lassen — dann steht dort eben ein leerer Name.
 	rows, err := r.db.Query(ctx, `
-		SELECT titel_id, klasse, anzahl, erstellt_am
-		FROM klassensatz_reservierungen
-		WHERE erledigt = false
-		ORDER BY erstellt_am ASC
+		SELECT k.titel_id, COALESCE(t.titel, ''), k.klasse, k.anzahl, k.erstellt_am
+		FROM klassensatz_reservierungen k
+		LEFT JOIN buecher_titel t ON t.id = k.titel_id
+		WHERE k.erledigt = false
+		ORDER BY k.erstellt_am ASC
 	`)
 	if err != nil {
 		return nil, err
@@ -177,7 +186,7 @@ func (r *pgReservationRepository) OffeneKlassensatzReservierungen(ctx context.Co
 	for rows.Next() {
 		var o KlassensatzOffen
 		var t time.Time
-		if err := rows.Scan(&o.TitelID, &o.Klasse, &o.Anzahl, &t); err != nil {
+		if err := rows.Scan(&o.TitelID, &o.Titel, &o.Klasse, &o.Anzahl, &t); err != nil {
 			return nil, err
 		}
 		o.ErstelltAm = t.Format("02.01.2006")

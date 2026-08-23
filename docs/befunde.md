@@ -42,6 +42,70 @@ Zwei Regeln dazu:
 
 ---
 
+## Kollegiums-Portal: zwei Aufgaben, eine Fläche (23.08.2026)
+
+Peters Frage zum Bildschirmfoto: „entspricht das Material 3 oder ist das nicht etwas
+unübersichtlich? unten diese Suche und oben der OPAC?" — Ja, unübersichtlich, und aus
+drei benennbaren Gründen. Verletzt waren nicht die Bauteile, sondern die
+Informationsarchitektur.
+
+1. **Zwei ungleiche Aufgaben auf einer Fläche ohne Gliederung.** Oben ein NAMENLOSES
+   Suchfeld (täglich), unten ein benannter Abschnitt „Wünsche & Meldungen" (selten).
+2. **Ein 340-px-Poster in der Mitte**, das wörtlich wiederholte, was einen Zentimeter
+   darüber schon im Platzhalter stand („Titel, Autor oder ISBN eingeben").
+3. **Die Formularfelder trugen die Pillenform der Suche.** „Welches Buch?" sah aus wie
+   ein zweites Suchfeld; die Segmented Buttons darüber standen so dicht am Suchfeld,
+   dass sie wie dessen Filterchips wirkten.
+
+**Umgesetzt nach der Frage-Runde (alle drei Empfehlungen angenommen):** zwei M3-Reiter
+(„Bücher & Klassensätze" / „Meine Anliegen" mit Zähler offener Anliegen) · statt des
+Posters steht dort jetzt, **was gerade läuft** — die Warteschlange der Klassensätze und
+die eigenen Anliegen · Formularfelder auf `SettingField`. Die Regel im Haus heißt damit:
+**Pille = suchen, Rahmen = eingeben.**
+
+**Vier Dinge kamen beim Bauen dazu:**
+
+- **Reiter waren viermal von Hand gebaut** (Medienkatalog, Bestellwesen, Buch-Akte,
+  Inventur-Startseite) und liefen auseinander — dieselbe Geschichte wie die zehn
+  Suchfeld-Kopien. Erst `components/ui/Reiter.svelte`, dann der fünfte Reiter; die vier
+  Bestandsfälle stehen als Ratsche eingefroren (`frontend-hygiene-reiter.test.js`).
+- **Die Warteschlange kannte den Titel nicht.** Der Kommentar am Struct nannte „Titel,
+  Klasse, Menge", geliefert wurde nur die `titel_id`. Neben einem Suchtreffer fiel das
+  nicht auf (das Buch steht daneben); auf der Startfläche stand „Klasse 8B · 28 Stück"
+  ohne jeden Hinweis, worum es geht. LEFT JOIN ergänzt, PG-Test am Rückbau rot gesehen.
+- **Drei Abrufe für einen Zustand.** Zähler am Reiter, Startfläche und Anliegen-Reiter
+  hätten dieselbe Liste dreimal geholt — nach dem Absenden hätte der Zähler den alten
+  Stand gezeigt. Jetzt hält das Portal die Liste, die zwei Bauteile bekommen sie.
+- **`KollegiumPortal.svelte` hatte 389 Zeilen** (Vorgabe: 200). Die Trefferkarte ist
+  jetzt ein eigenes Bauteil; die Datei steht bei 288.
+
+### Und derselbe Layoutfehler ein zweites Mal — eine Stunde später
+
+Im neuen Anliegen-Formular hing „Klasse / Kurs" wieder eine Zeile tiefer als
+„Anmerkung". Diesmal nicht wegen einer umbrechenden Beschriftung, sondern wegen einer
+`<div class="sm:col-span-2">`-**Hülle** um ein Feld: Die Hülle ist selbst das
+Rasterelement und spannt EINE Zeile, während ihre Nachbarn drei spannen.
+
+Das ist der eigentliche Befund des Tages: **Mein frisch gebautes Gate hat es nicht
+gefangen.** Die Schwelle stand bei 40 px, der Abstand betrug 46. Eine geratene Schwelle,
+die zufällig für den ersten Fall passte.
+
+Behoben in zwei Richtungen:
+- Die Spaltenbreite gehört ans FELD (`<SettingField class="sm:col-span-2" />`), nicht an
+  eine Hülle. `feld-huellen.test.js` schließt die Ursache aus — auch dort, wo kein
+  e2e-Test hinsieht.
+- Die Messung im Browser ist jetzt **kalibriert statt geraten**: echte Reihenabstände
+  104 px (Einstellungen) und 124 px (Portal), aufgetretene Fehler 20 px und 46 px →
+  Schwelle 60. Beide Fehlerarten am Rückbau rot gesehen, die Prüfung deckt jetzt auch
+  Mail und das Portal ab.
+
+Nebenbei: Der Nulllauf-Wächter von `control-hoehen.spec.js` schlug an (13 Felder statt
+>15) — die Einstellungen zeigen seit dem Umbau EINE Kategorie statt sieben Abschnitten.
+Die Schwelle zu senken hätte die Aussage verkleinert; der Test läuft jetzt drei
+Kategorien ab und misst wieder mehr als vorher.
+
+---
+
 ## Selbstprüfung nach dem Deploy: die Mail-Kategorie war nur umhüllt (23.08.2026)
 
 Auf Peters Bitte, die eigene Arbeit zu prüfen, habe ich alle Kategorien im Browser

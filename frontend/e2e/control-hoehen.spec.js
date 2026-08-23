@@ -9,7 +9,7 @@
 // Ausdruck (class={inputClass}). Statisch war die Inventur nachweislich falsch —
 // gemessen wird deshalb offsetHeight an der laufenden Anwendung.
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import { uiLogin, gehZu, einstellungsKategorie } from './helpers.js';
 
 const CONTROL_HOEHE = 36; // identisch zu Button size="md" (h-9)
 
@@ -119,15 +119,31 @@ test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
 	const abweichler = [];
 	let geprueft = 0;
 
-	for (const [name, pfad] of SCREENS) {
-		await gehZu(page, pfad);
+	/** Misst alles, was gerade sichtbar ist, und schreibt Abweichler mit. */
+	async function messen(/** @type {string} */ name) {
 		await warteAufStabileFelder(page);
-
 		for (const feld of await page.evaluate(MESSEN)) {
 			if (AUSNAHMEN.some((a) => a.kennung === feld.kennung)) continue;
 			geprueft++;
 			if (feld.hoehe !== CONTROL_HOEHE) {
 				abweichler.push(`${name}: <${feld.tag}> „${feld.kennung}" = ${feld.hoehe} px`);
+			}
+		}
+	}
+
+	for (const [name, pfad] of SCREENS) {
+		await gehZu(page, pfad);
+		await messen(name);
+
+		// Die Einstellungen zeigen seit dem 23.08.2026 EINE Kategorie statt sieben
+		// Abschnitten untereinander. Ein einziger Aufruf misst dort seither fünf Felder
+		// statt zwanzig — die Zahl unten fiel prompt unter den Nulllauf-Wächter. Statt
+		// die Schwelle zu senken (das hätte die Aussage verkleinert, nicht das Problem
+		// gelöst) läuft der Test die Kategorien ab.
+		if (pfad === '/einstellungen') {
+			for (const k of ['Ausleihe & Fristen', 'Datenschutz & Sitzung', 'Mail']) {
+				await einstellungsKategorie(page, k).click();
+				await messen(`Einstellungen → ${k}`);
 			}
 		}
 	}

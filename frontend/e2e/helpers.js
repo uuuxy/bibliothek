@@ -257,3 +257,55 @@ export function einstellungsKategorie(page, titel) {
 		name: new RegExp(`^${titel.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)} `)
 	});
 }
+
+/**
+ * Prüft, dass kein Eingabefeld eine Zeile tiefer hängt als seine Nachbarn.
+ *
+ * Zwei Felder stehen entweder auf DERSELBEN Höhe (eine Reihe) oder deutlich
+ * auseinander (verschiedene Reihen). Ein Abstand dazwischen ist genau der Fehler: Eine
+ * umbrechende Beschriftung oder eine <div>-Hülle um ein Feld schiebt es aus der Reihe.
+ *
+ * Die Schwelle ist GEMESSEN, nicht geraten. Echte Reihenabstände in dieser Anwendung:
+ * 104 px (Einstellungen) und 124 px (Portal-Formular). Die beiden aufgetretenen Fehler
+ * lagen bei 20 px (umbrechende Beschriftung) und 46 px (<div>-Hülle) — der zweite lief
+ * bei einer ersten Schwelle von 40 px noch durch. Sie steht deshalb bei 60, und beide
+ * Fehler sind am Rückbau rot gesehen.
+ *
+ * Gemessen im BROWSER, nicht an Klassennamen: Eine Klassen-Inventur hat in diesem
+ * Projekt schon einmal 29 Fundstellen gemeldet, wo real fünf waren.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} kontext Name für die Fehlermeldung, z. B. 'Portal → Meine Anliegen'.
+ */
+export async function pruefeFeldreihen(page, kontext) {
+	const { expect } = await import('@playwright/test');
+	const felder = page.locator('input:visible');
+	const anzahl = await felder.count();
+	expect(anzahl, `${kontext}: keine Felder gefunden — die Prüfung misst nichts`).toBeGreaterThan(1);
+
+	/** @type {{ label: string, y: number }[]} */
+	const gemessen = [];
+	for (let i = 0; i < anzahl; i++) {
+		const box = await felder.nth(i).boundingBox();
+		if (!box) continue;
+		gemessen.push({
+			label: await felder
+				.nth(i)
+				.evaluate((el) => document.querySelector(`label[for="${el.id}"]`)?.textContent ?? '?'),
+			y: Math.round(box.y)
+		});
+	}
+
+	for (const a of gemessen) {
+		for (const b of gemessen) {
+			const abstand = Math.abs(a.y - b.y);
+			expect(
+				abstand === 0 || abstand > 60,
+				`${kontext}: „${a.label}" (y=${a.y}) und „${b.label}" (y=${b.y}) stehen ` +
+					`${abstand} px auseinander — zu wenig für zwei Reihen, zu viel für eine. ` +
+					`Ein Feld ist um eine Zeilenhöhe verrutscht (umbrechende Beschriftung, ` +
+					`oder eine <div>-Hülle statt class="col-span-*" am Feld selbst).`
+			).toBe(true);
+		}
+	}
+}

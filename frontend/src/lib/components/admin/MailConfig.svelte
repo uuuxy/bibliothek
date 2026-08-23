@@ -124,15 +124,14 @@
 					type="email"
 					placeholder="noreply@bibliothek-schule.de"
 				/>
-				<div class="md:col-span-2">
-					<SettingField
-						bind:value={password}
-						label="Passwort"
-						type="password"
-						placeholder={hasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
-						hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
-					/>
-				</div>
+				<SettingField
+					bind:value={password}
+					label="Passwort"
+					type="password"
+					placeholder={hasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
+					hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
+					class="md:col-span-2"
+				/>
 			</div>
 
 			<div class="flex justify-end">

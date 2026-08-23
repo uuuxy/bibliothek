@@ -1,12 +1,21 @@
 <!-- @component AnliegenWidget — Wünsche und Meldungen der Lehrkraft im
      Kollegiums-Portal (Betreiber-Entscheidung 18.08.2026): Wünschen geht
      IMMER, ohne Stichtag. Formular oben, eigene Anliegen mit Status darunter —
-     „die LMF hakt ab, und du siehst es hier oder bekommst eine Mail". -->
+     „die LMF hakt ab, und du siehst es hier oder bekommst eine Mail".
+
+     Seit dem 23.08.2026 ein eigener REITER des Portals statt eines Anhängsels
+     unter der Buchsuche. Vorher standen zwei ungleiche Aufgaben auf einer Fläche:
+     oben ein namenloses Suchfeld, darunter ein 340-px-Poster, darunter dieses
+     Formular — und weil die Felder dieselbe Pillenform trugen wie die Suche,
+     las sich „Welches Buch?" wie ein zweites Suchfeld.
+
+     Die Felder sind deshalb jetzt SettingField (Beschriftung über dem Feld,
+     Rahmen statt Füllung). Die Regel im Haus: Pille = suchen, Rahmen = eingeben. -->
 <script>
-	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import SettingField from '../settings/SettingField.svelte';
 
 	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, erstellt_am: string, erledigt_am?: string, erledigt_notiz?: string }} Anliegen */
 
@@ -16,19 +25,12 @@
 	let kommentar = $state('');
 	let sending = $state(false);
 
-	/** @type {Anliegen[]} */
-	let eigene = $state([]);
-
-	async function ladeEigene() {
-		try {
-			const res = await apiFetch('/api/anliegen/eigene');
-			eigene = res.ok ? await res.json() : [];
-		} catch {
-			eigene = [];
-		}
-	}
-
-	onMount(ladeEigene);
+	// Die Liste gehört dem Portal: Es braucht sie ohnehin für den Zähler am Reiter und
+	// für die Startfläche. Zwei eigene Abrufe hätten zwei Wahrheiten über denselben
+	// Zustand ergeben — nach dem Absenden hätte der Zähler noch den alten Stand gezeigt.
+	/** @type {{ anliegen: Anliegen[], onaktualisiert: () => void | Promise<void> }} */
+	let { anliegen, onaktualisiert } = $props();
+	const eigene = $derived(anliegen);
 
 	async function absenden() {
 		if (!titelText.trim() || sending) return;
@@ -55,7 +57,7 @@
 			titelText = '';
 			klasse = '';
 			kommentar = '';
-			await ladeEigene();
+			await onaktualisiert();
 		} catch (err) {
 			toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
 		} finally {
@@ -64,14 +66,13 @@
 	}
 </script>
 
-<section class="w-full mt-10">
-	<h2 class="text-base font-bold text-on-surface">Wünsche & Meldungen</h2>
-	<p class="text-sm text-on-surface-variant mt-0.5 mb-4">
+<section class="flex w-full max-w-3xl flex-col gap-6">
+	<p class="text-sm text-on-surface-variant">
 		Buchwunsch für deine Klasse oder etwas stimmt nicht? Die Bibliothek arbeitet die Liste ab — beim
 		Erledigen bekommst du eine Mail.
 	</p>
 
-	<div class="space-y-3">
+	<div class="flex flex-col gap-4">
 		<!-- Zwei Arten, ein Formular: der Unterschied ist nur das Etikett. -->
 		<div class="flex gap-2" role="radiogroup" aria-label="Art des Anliegens">
 			{#each [['wunsch', 'Buchwunsch'], ['meldung', 'Etwas stimmt nicht']] as [wert, label] (wert)}
@@ -89,66 +90,67 @@
 			{/each}
 		</div>
 
-		<input
-			type="text"
+		<SettingField
 			bind:value={titelText}
-			maxlength="300"
+			label={art === 'wunsch' ? 'Welches Buch?' : 'Worum geht es?'}
+			type="text"
+			maxlength={300}
 			placeholder={art === 'wunsch'
-				? 'Welches Buch? (z. B. „Markl Biologie 2, ISBN falls bekannt“)'
-				: 'Worum geht es? (z. B. „8G3 hat die falschen Bücher bekommen“)'}
-			class="w-full text-sm border border-outline-variant rounded-full px-4 bg-surface"
+				? 'z. B. Markl Biologie 2, ISBN falls bekannt'
+				: 'z. B. 8G3 hat die falschen Bücher bekommen'}
 		/>
-		<div class="flex gap-3">
-			<input
-				type="text"
+		<div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
+			<SettingField
 				bind:value={klasse}
-				maxlength="50"
-				placeholder="Klasse / Kurs (z. B. 8G3)"
-				class="w-40 text-sm border border-outline-variant rounded-full px-4 bg-surface"
-			/>
-			<input
+				label="Klasse / Kurs"
 				type="text"
-				bind:value={kommentar}
-				maxlength="1000"
-				placeholder="Anmerkung (optional)"
-				class="flex-1 text-sm border border-outline-variant rounded-full px-4 bg-surface"
+				maxlength={50}
+				placeholder="z. B. 8G3"
 			/>
-			<Button
-				variant="primary"
-				size="sm"
-				onclick={absenden}
-				disabled={sending || !titelText.trim()}
-			>
-				{sending ? 'Sende…' : 'Absenden'}
+			<SettingField
+				bind:value={kommentar}
+				label="Anmerkung (optional)"
+				type="text"
+				maxlength={1000}
+				placeholder="Was die Bibliothek sonst noch wissen sollte"
+				class="sm:col-span-2"
+			/>
+		</div>
+		<div class="flex justify-end">
+			<Button onclick={absenden} disabled={sending || !titelText.trim()}>
+				{sending ? 'Wird gesendet …' : 'Absenden'}
 			</Button>
 		</div>
 	</div>
 
 	{#if eigene.length > 0}
-		<ul class="divide-y divide-outline-variant mt-6">
-			{#each eigene as a (a.id)}
-				<li class="py-3 flex items-start justify-between gap-4">
-					<div class="min-w-0 flex-1">
-						<p class="text-sm text-on-surface truncate">
-							<span class="font-semibold">{a.art === 'wunsch' ? 'Wunsch' : 'Meldung'}:</span>
-							{a.titel_text}
-							{#if a.klasse}<span class="text-on-surface-variant">· {a.klasse}</span>{/if}
-						</p>
-						{#if a.erledigt_am && a.erledigt_notiz}
-							<p class="text-xs text-on-surface-variant italic mt-0.5">
-								Bibliothek: „{a.erledigt_notiz}"
+		<div class="flex flex-col gap-2 border-t border-outline-variant pt-6">
+			<h3 class="text-base font-medium text-on-surface">Deine Anliegen</h3>
+			<ul class="divide-y divide-outline-variant">
+				{#each eigene as a (a.id)}
+					<li class="py-3 flex items-start justify-between gap-4">
+						<div class="min-w-0 flex-1">
+							<p class="text-sm text-on-surface truncate">
+								<span class="font-semibold">{a.art === 'wunsch' ? 'Wunsch' : 'Meldung'}:</span>
+								{a.titel_text}
+								{#if a.klasse}<span class="text-on-surface-variant">· {a.klasse}</span>{/if}
 							</p>
-						{/if}
-					</div>
-					<span
-						class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-label-small font-semibold {a.erledigt_am
-							? 'bg-secondary-container text-on-secondary-container'
-							: 'bg-surface border border-outline-variant text-on-surface-variant'}"
-					>
-						{a.erledigt_am ? 'Erledigt' : 'Offen'}
-					</span>
-				</li>
-			{/each}
-		</ul>
+							{#if a.erledigt_am && a.erledigt_notiz}
+								<p class="text-xs text-on-surface-variant italic mt-0.5">
+									Bibliothek: „{a.erledigt_notiz}"
+								</p>
+							{/if}
+						</div>
+						<span
+							class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-label-small font-semibold {a.erledigt_am
+								? 'bg-secondary-container text-on-secondary-container'
+								: 'bg-surface border border-outline-variant text-on-surface-variant'}"
+						>
+							{a.erledigt_am ? 'Erledigt' : 'Offen'}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</div>
 	{/if}
 </section>

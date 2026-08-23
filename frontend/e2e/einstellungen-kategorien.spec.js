@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, gehZu, einstellungsKategorie, csrfToken } from './helpers.js';
+import {
+	uiLogin,
+	seedSQL,
+	querySQL,
+	gehZu,
+	einstellungsKategorie,
+	csrfToken,
+	pruefeFeldreihen
+} from './helpers.js';
 
 // Die Zusicherung der neuen Einstellungsseite (23.08.2026), am Draht geprüft:
 // Wer EINE Kategorie speichert, ändert nichts in den anderen.
@@ -152,7 +160,8 @@ const MIT_MEHREREN_FELDERN = [
 	'Ausleihe & Fristen',
 	'Mahnwesen',
 	'Datenschutz & Sitzung',
-	'Erreichbarkeit & Alarme'
+	'Erreichbarkeit & Alarme',
+	'Mail'
 ];
 
 test('Kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', async ({ page }) => {
@@ -162,37 +171,20 @@ test('Kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', async ({ pa
 
 	for (const kategorie of MIT_MEHREREN_FELDERN) {
 		await einstellungsKategorie(page, kategorie).click();
-		const felder = page.locator('main input, form input, input');
-		await felder.first().waitFor();
-
-		/** @type {{ label: string, y: number }[]} */
-		const gemessen = [];
-		for (let i = 0; i < (await felder.count()); i++) {
-			const box = await felder.nth(i).boundingBox();
-			if (!box) continue;
-			gemessen.push({
-				label: await felder
-					.nth(i)
-					.evaluate((el) => document.querySelector(`label[for="${el.id}"]`)?.textContent ?? '?'),
-				y: Math.round(box.y)
-			});
-		}
-		expect(
-			gemessen.length,
-			`${kategorie}: keine Felder gefunden — der Test misst nichts`
-		).toBeGreaterThan(1);
-
-		for (const a of gemessen) {
-			for (const b of gemessen) {
-				const abstand = Math.abs(a.y - b.y);
-				expect(
-					abstand === 0 || abstand > 40,
-					`${kategorie}: „${a.label}" (y=${a.y}) und „${b.label}" (y=${b.y}) stehen ` +
-						`${abstand} px auseinander — zu wenig für zwei Reihen, zu viel für eine. ` +
-						`Ein Feld ist um eine Zeilenhöhe verrutscht, vermutlich wegen einer ` +
-						`umbrechenden Beschriftung.`
-				).toBe(true);
-			}
-		}
+		await page.locator('input:visible').first().waitFor();
+		await pruefeFeldreihen(page, `Einstellungen → ${kategorie}`);
 	}
+});
+
+// Dieselbe Prüfung im Kollegiums-Portal: Dort ist der Fehler eine Stunde nach seiner
+// Behebung ein zweites Mal entstanden — nicht durch eine umbrechende Beschriftung,
+// sondern durch eine <div class="sm:col-span-2">-Hülle um ein Feld. Die Hülle ist
+// selbst das Rasterelement und spannt eine Zeile, während ihre Nachbarn drei spannen.
+test('Portal: kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await uiLogin(page);
+	await gehZu(page, '/kollegium-portal');
+	await page.getByRole('tab', { name: /Meine Anliegen/ }).click();
+	await page.locator('input:visible').first().waitFor();
+	await pruefeFeldreihen(page, 'Portal → Meine Anliegen');
 });

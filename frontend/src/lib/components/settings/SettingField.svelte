@@ -46,6 +46,12 @@
 	 * `row-span-3` ins Leere und `display:grid` stapelt die drei Zeilen wie vorher das
 	 * Flex-Layout — deshalb braucht der Aufrufer nichts dazuzutun.
 	 *
+	 * Wer ein Feld über mehrere Spalten ziehen will, gibt `class="sm:col-span-2"` HIER
+	 * mit und packt es NICHT in ein <div>. Eine Hülle ist selbst das Rasterelement und
+	 * spannt dann nur EINE Zeile, während ihre Nachbarn drei spannen — das Feld darin
+	 * rutscht weg. Genau so ist der Fehler, den diese Komponente behebt, im
+	 * Anliegen-Formular des Portals eine Stunde später wieder entstanden.
+	 *
 	 * @prop {string|number} value - Gebundener Wert (bindable).
 	 * @prop {string} label - Feldbeschriftung.
 	 * @prop {'number'|'text'|'email'|'date'|'password'} [type='number'] - Eingabetyp.
@@ -55,10 +61,12 @@
 	 * @prop {string} [placeholder=''] - Platzhaltertext.
 	 * @prop {string} [pattern] - Validierungs-Pattern (text).
 	 * @prop {number} [maxlength] - Maximale Zeichenanzahl (text).
+	 * @prop {string} [class] - Rasterangaben des Aufrufers, z. B. "sm:col-span-2".
 	 */
 
-	/** @type {{ value: string|number, label: string, type?: 'number'|'text'|'email'|'date'|'password', hint?: string, min?: number, max?: number, placeholder?: string, pattern?: string, maxlength?: number }} */
+	/** @type {{ value: string|number, label: string, type?: 'number'|'text'|'email'|'date'|'password', hint?: string, min?: number, max?: number, placeholder?: string, pattern?: string, maxlength?: number, class?: string }} */
 	let {
+		class: className = '',
 		value = $bindable(),
 		label,
 		type = 'number',
@@ -81,7 +89,7 @@
 		'focus:border-primary focus:outline-none';
 </script>
 
-<div class="grid grid-rows-subgrid row-span-3 gap-y-1.5">
+<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5 {className}">
 	<label for={feldId} class="text-sm font-medium text-on-surface-variant">{label}</label>
 	{#if type === 'number'}
 		<input

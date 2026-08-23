@@ -89,6 +89,13 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	if len(offeneMeine) != 2 || offeneMeine[0].Klasse != "8a" || offeneMeine[1].Klasse != "9b" {
 		t.Fatalf("Portal-Warteschlange: erwartet [8a, 9b], bekam %+v", offeneMeine)
 	}
+	// Der TITEL muss mitkommen: Auf der Startfläche des Portals steht die Warteschlange
+	// ohne ein Buch daneben, und "Klasse 8a · 3 Stück" allein sagt niemandem, worum es
+	// geht (bis zum 23.08.2026 lieferte die Abfrage nur die titel_id — der Kommentar am
+	// Struct nannte den Titel trotzdem).
+	if offeneMeine[0].Titel == "" || offeneMeine[1].Titel == "" {
+		t.Errorf("Titel fehlt in der Portal-Warteschlange: %+v", offeneMeine)
+	}
 
 	// (4) 8a wird erledigt → die 9b rückt in der offenen Liste nach vorn, die
 	// erledigte 8a bleibt als Historie dahinter. Das Abschliessen liefert die
