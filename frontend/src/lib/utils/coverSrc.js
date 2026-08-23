@@ -63,9 +63,9 @@ export function coverKandidaten(coverUrl, isbn) {
 			coverSrc(
 				`https://books.google.com/books/content?id=&vid=ISBN:${sauber}&printsec=frontcover&img=1&zoom=1`,
 				sauber
-			)
+			),
+			coverSrc(`https://covers.openlibrary.org/b/isbn/${sauber}-L.jpg`, sauber)
 		);
-		kandidaten.push(coverSrc(`https://covers.openlibrary.org/b/isbn/${sauber}-L.jpg`, sauber));
 	}
 	return kandidaten.filter(Boolean);
 }

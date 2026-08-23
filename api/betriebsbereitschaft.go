@@ -39,6 +39,16 @@ const (
 	StufeKritisch = "kritisch" // vor dem Echtbetrieb zwingend zu klären
 )
 
+// Zwei Formulierungen sagen mehrere Prüfungen wörtlich gleich. Sie stehen hier an
+// einer Stelle, damit die Selbstprüfung nicht in vier Tonfällen spricht (go:S1192).
+const abhilfeDbNeuLaden = "Datenbankverbindung prüfen und die Seite neu laden."
+
+// befundNichtImEchtbetrieb formuliert den Befund für einen Bereich, den es außerhalb
+// des echten Betriebs bewusst nicht gibt — kein Mangel, sondern die Umgebung.
+func befundNichtImEchtbetrieb(was, appEnv string) string {
+	return was + " — in " + appEnv + " ist das richtig so."
+}
+
 // Befund ist eine Zeile der Selbstprüfung.
 //
 // Vier Felder, weil drei nicht reichen: „Was ist" (Befund) beantwortet nicht, „warum das
@@ -211,7 +221,7 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 	switch {
 	case !echt:
 		b.Stufe = StufeOK
-		b.Befund = "Keine Restore-Probe — in " + l.AppEnv + " ist das richtig so."
+		b.Befund = befundNichtImEchtbetrieb("Keine Restore-Probe", l.AppEnv)
 	case l.RestoreProbe == nil:
 		b.Stufe = StufeWarnung
 		b.Befund = "Noch kein Probelauf verzeichnet."
@@ -246,7 +256,7 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 	b := Befund{Bereich: "Nächtliches Backup"}
 	if !echt {
 		b.Stufe = StufeOK
-		b.Befund = "Kein Backup-Betrieb — in " + l.AppEnv + " ist das richtig so."
+		b.Befund = befundNichtImEchtbetrieb("Kein Backup-Betrieb", l.AppEnv)
 		return b
 	}
 	switch computeBackupStatus(l.BackupKeySet, l.BackupKeyWeak, l.LetztesBackup, l.Jetzt) {
@@ -301,7 +311,7 @@ func pruefeAdminKonten(l Lage) Befund {
 		b.Stufe = StufeWarnung
 		b.Befund = "Die Admin-Konten konnten nicht gelesen werden."
 		b.Folge = "Unbekannt, wer Vollzugriff hat und die Alarm-Mails erhält."
-		b.Abhilfe = "Datenbankverbindung prüfen und die Seite neu laden."
+		b.Abhilfe = abhilfeDbNeuLaden
 	case len(l.AdminKonten) == 0:
 		b.Stufe = StufeKritisch
 		b.Befund = "Kein aktives Admin-Konto vorhanden."
@@ -335,7 +345,7 @@ func pruefeRechteVorgabe(l Lage) Befund {
 		b.Stufe = StufeWarnung
 		b.Befund = "Die Live-Rechte (role_permissions) konnten nicht gelesen werden."
 		b.Folge = "Ob Menü und API der aktuellen Vorgabe folgen, ist unbekannt."
-		b.Abhilfe = "Datenbankverbindung prüfen und die Seite neu laden."
+		b.Abhilfe = abhilfeDbNeuLaden
 		return b
 	}
 
@@ -446,7 +456,7 @@ func pruefeGeheimnisse(l Lage, echt bool) Befund {
 			"danach ENFORCE_PROD_SECRETS=true."
 	default:
 		b.Stufe = StufeOK
-		b.Befund = "Beispiel-Geheimnisse — in " + l.AppEnv + " ist das richtig so."
+		b.Befund = befundNichtImEchtbetrieb("Beispiel-Geheimnisse", l.AppEnv)
 	}
 	return b
 }
@@ -461,7 +471,7 @@ func pruefeAnmeldung(l Lage, echt bool) Befund {
 		b.Abhilfe = "Den echten IMAP-Host der Schule eintragen."
 	case l.ImapHost == "mock":
 		b.Stufe = StufeOK
-		b.Befund = "Mock-Anmeldung — in " + l.AppEnv + " ist das richtig so."
+		b.Befund = befundNichtImEchtbetrieb("Mock-Anmeldung", l.AppEnv)
 	case l.ImapHost == "":
 		b.Stufe = StufeKritisch
 		b.Befund = "IMAP_HOST ist leer."
@@ -532,7 +542,7 @@ func pruefeKlassenDrift(l Lage) Befund {
 		b.Stufe = StufeWarnung
 		b.Befund = "Die Klassen-Verbindungen konnten nicht geprüft werden (Datenbank nicht erreichbar)."
 		b.Folge = "Ob Mahnwesen und Bücherlisten ihre Klassen finden, ist unbekannt."
-		b.Abhilfe = "Datenbankverbindung prüfen und die Seite neu laden."
+		b.Abhilfe = abhilfeDbNeuLaden
 		return b
 	}
 

@@ -237,17 +237,34 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 		ctx := r.Context()
 		var batchResp ActionBatchResponse
 
-		darfGrundSehen := s.BesitztRecht(r, "view_students")
-		darfOverride := s.BesitztRecht(r, "edit_students")
+		stapel := batchKontext{
+			omnibox:        omniboxSvc,
+			userID:         claims.UserID,
+			rolle:          string(claims.Rolle),
+			darfGrundSehen: s.BesitztRecht(r, "view_students"),
+			darfOverride:   s.BesitztRecht(r, "edit_students"),
+		}
 		for i, req := range batchReq {
-			batchResp.Results = append(batchResp.Results, s.processSingleBatchItem(ctx, omniboxSvc, req, i, claims.UserID, string(claims.Rolle), darfGrundSehen, darfOverride))
+			batchResp.Results = append(batchResp.Results, s.processSingleBatchItem(ctx, stapel, req, i))
 		}
 
 		RespondJSON(w, http.StatusOK, batchResp)
 	}
 }
 
-func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.OmniboxService, req ActionRequest, index int, userID string, rolle string, darfGrundSehen, darfOverride bool) ActionBatchResponseItem {
+// batchKontext bündelt, was für ALLE Einträge eines Stapels gleich ist: der Dienst,
+// das anfragende Konto und dessen Rechte. Ohne das Bündel reicht der Handler acht
+// Einzelwerte durch die Schleife (go:S107) — und die beiden Rechte-Flags stehen als
+// zwei gleichartige bool nebeneinander, wo ein Dreher niemandem auffiele.
+type batchKontext struct {
+	omnibox        service.OmniboxService
+	userID         string
+	rolle          string
+	darfGrundSehen bool // Sperrgrund im Klartext statt nur "gesperrt"
+	darfOverride   bool // darf eine Sperre bewusst übergehen
+}
+
+func (s *Server) processSingleBatchItem(ctx context.Context, k batchKontext, req ActionRequest, index int) ActionBatchResponseItem {
 	req.Query = strings.TrimSpace(req.Query)
 	if req.Query == "" {
 		return ActionBatchResponseItem{
@@ -262,17 +279,17 @@ func (s *Server) processSingleBatchItem(ctx context.Context, omniboxSvc service.
 		return item
 	}
 
-	res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
+	res, err := k.omnibox.ProcessQuery(ctx, service.OmniboxQuery{
 		Query:              req.Query,
 		ActiveStudentID:    req.ActiveStudentID,
 		ActiveTeacherID:    req.ActiveTeacherID,
 		ConfirmedChecklist: req.ConfirmedChecklist,
-		StaffID:            userID,
-		StaffRole:          rolle,
-		OverrideBlock:      req.OverrideBlock && darfOverride,
+		StaffID:            k.userID,
+		StaffRole:          k.rolle,
+		OverrideBlock:      req.OverrideBlock && k.darfOverride,
 	})
 
-	err = ohneSperrgrund(err, darfGrundSehen)
+	err = ohneSperrgrund(err, k.darfGrundSehen)
 	status := http.StatusOK
 	if err != nil {
 		status = mapServiceErrorToStatus(err)

@@ -30,7 +30,7 @@ export function sammleQuelldateien(p) {
 
 /** Pfad relativ zu `frontend/`, mit Schrägstrichen — so stehen sie in den Listen.
  * @param {string} f */
-export const relPfad = (f) => relative(repoFrontend, f).split('\\').join('/');
+export const relPfad = (f) => relative(repoFrontend, f).replaceAll('\\', '/');
 
 /**
  * Ratschen-Vergleich: Was ist neu dazugekommen, was ist inzwischen sauber?

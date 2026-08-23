@@ -234,5 +234,5 @@ export async function gehZu(page, pfad) {
 		page,
 		`„${pfad}" hat nicht gehalten — die Anwendung ist woandershin gesprungen. ` +
 			`Unbekannte Pfade landen still auf /kiosk; vermutlich wurde eine Route umbenannt.`
-	).toHaveURL(new RegExp(`${pfad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+	).toHaveURL(new RegExp(`${pfad.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}$`));
 }

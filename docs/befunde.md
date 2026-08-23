@@ -74,6 +74,25 @@ Kommentar versprach „auf den Navigationszustand warten", darunter stand `waitF
 tot gemeldet hätte (am Rückbau rot gesehen) · Frontend-Coverage (`@vitest/coverage-v8`, lcov,
 an `sonar_scan.sh` gebunden mit Abbruch bei roten Tests) — schließt den offenen Punkt oben.
 
+**Restliste abgearbeitet (23.08. abends, 9 Funde — reine Lesbarkeit, kein Verhalten):**
+`go:S1192` 3× — die Selbstprüfung sagte vier Bereichen wörtlich „in <env> ist das richtig
+so." und dreien „Datenbankverbindung prüfen und die Seite neu laden."; jetzt
+`befundNichtImEchtbetrieb()` + `abhilfeDbNeuLaden`, damit die Seite in EINEM Tonfall spricht.
+Dritter: `apierrors.Internal("Sachgruppe konnte nicht geändert werden")` an Begin/Update/Commit
+→ `fehlerSachgruppeAendern` (für den Benutzer ist es derselbe Vorgang, der nicht stattfand). ·
+`go:S107` 2× — `processSingleBatchItem` reichte acht Werte durch die Stapelschleife, darunter
+**zwei gleichartige `bool`** (`darfGrundSehen`/`darfOverride`), bei denen ein Dreher stumm
+den Sperrgrund preisgäbe → `batchKontext`; `AnliegenRepository.Create` nahm **sieben Strings
+in Reihe** (Klasse und ISBN vertauschbar ohne Compilerwort) → `NeuesAnliegen`; der
+PG-Test las die beiden Felder bisher gar nicht zurück und hätte den Dreher nicht gesehen —
+jetzt nagelt er die Spaltenzuordnung fest (am Rückbau rot gesehen: ISBN landete als
+Klasse). · JS-Stil 4× —
+`toHaveLength` statt `.length).toBe` (mit Meldung), ein `push()` statt zwei, `String.raw`
+statt `'\\$&'` (Äquivalenz am Regex-Source geprüft), `replaceAll` statt `split().join()`.
+Gates: `go build`/`go test ./...`, `golangci-lint` 0, eslint --max-warnings 0, svelte-check
+0/0, vitest 213, `npm run build`. Damit stehen noch 23 Smells offen — die 20 `go:S3776`
+und die drei begründeten JS-Ausnahmen unten.
+
 **Bewusst offen:**
 
 | Fund | Warum offen |
@@ -82,7 +101,6 @@ an `sonar_scan.sh` gebunden mit Abbruch bei roten Tests) — schließt den offen
 | 1× `javascript:S2925` (`kontrast.spec.js:44`) | 700 ms Setzzeit vor der Kontrastmessung. Eine beobachtbare Bedingung gäbe es nur je Bildschirm (Selektor-Tabelle) — ehrlicher wäre eine Stabilitäts-Schleife wie in den Schwester-Specs. Eigene kleine Runde. |
 | 1× `javascript:S6551` (`escapeHtml.js`) | `String(wert)` ist dort genau die Absicht: Der Helfer soll jeden Wert sicher machen, auch einen versehentlich übergebenen. |
 | 1× `javascript:S8783` (`schuelerprofil-sperre.spec.js:75`) | `hover({force:true})` auf einem **absichtlich deaktivierten** Knopf — ohne `force` wartet Playwright ewig auf Aktionierbarkeit. Genau der Testzweck (Tooltip am gesperrten Knopf). |
-| 3× `go:S1192`, 2× `go:S107`, Rest JS-Stil | Kleinkram, gebündelt bei Gelegenheit. |
 | `sonar.projectVersion` nicht gesetzt | Die New-Code-Periode `PREVIOUS_VERSION` hat damit keinen Bezugspunkt; „neuer Code" heißt derzeit „seit dem letzten Scan". Mit `--define sonar.projectVersion=$(git describe --tags)` hieße es „seit dem letzten Release" — passt zum Release-Workflow, aber ändert die Gate-Semantik. Entscheidung offen. |
 
 ---

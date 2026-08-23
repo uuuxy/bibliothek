@@ -50,14 +50,28 @@ func NewAnliegenRepository(pool db.PgxPoolIface) *AnliegenRepository {
 	return &AnliegenRepository{pool: pool}
 }
 
-// Create legt ein Anliegen an. angefordertVon ist die Benutzer-ID der Lehrkraft.
-func (r *AnliegenRepository) Create(ctx context.Context, art, titelText, titelID, isbn, klasse, kommentar, angefordertVon string) (string, error) {
+// NeuesAnliegen sind die Felder eines neu angelegten Anliegens. Bewusst ein Struct
+// statt sieben Strings in Reihe (go:S107): Wer bei sieben gleichartigen Parametern
+// Klasse und ISBN vertauscht, bekommt kein Compilerwort — nur eine falsch
+// einsortierte Meldung in der LMF-Liste.
+type NeuesAnliegen struct {
+	Art            string
+	TitelText      string
+	TitelID        string
+	ISBN           string
+	Klasse         string
+	Kommentar      string
+	AngefordertVon string // Benutzer-ID der Lehrkraft
+}
+
+// Create legt ein Anliegen an und liefert dessen ID.
+func (r *AnliegenRepository) Create(ctx context.Context, a NeuesAnliegen) (string, error) {
 	var id string
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO lehrer_anliegen (art, titel_text, titel_id, isbn, klasse, kommentar, angefordert_von)
 		VALUES ($1, $2, NULLIF($3, '')::uuid, $4, $5, $6, $7)
 		RETURNING id`,
-		art, titelText, titelID, isbn, klasse, kommentar, angefordertVon).Scan(&id)
+		a.Art, a.TitelText, a.TitelID, a.ISBN, a.Klasse, a.Kommentar, a.AngefordertVon).Scan(&id)
 	return id, err
 }
 

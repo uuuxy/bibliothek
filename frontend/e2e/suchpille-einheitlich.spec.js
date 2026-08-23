@@ -128,7 +128,10 @@ test('Jede Suchpille hat dieselben Maße, Farben und Schriftgröße', async ({ p
 
 	// Gegenprobe gegen einen stillen Nulllauf: Ohne sie wäre der Test auch grün, wenn
 	// die Schleife nie etwas gefunden hätte.
-	expect(gemessen.length).toBe(PILLEN.length + 1);
+	expect(
+		gemessen,
+		'Nicht jede Pille wurde gemessen — die Schleife lief teilweise leer'
+	).toHaveLength(PILLEN.length + 1);
 
 	const [erste, ...weitere] = gemessen;
 	for (const p of weitere) {

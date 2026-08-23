@@ -12,6 +12,11 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// fehlerSachgruppeAendern ist die Meldung, die der Benutzer bei jedem Abbruch der
+// Umbenennung sieht — Begin, Update und Commit sprechen bewusst mit einer Stimme:
+// Für den Benutzer ist es derselbe Vorgang, der nicht stattgefunden hat (go:S1192).
+const fehlerSachgruppeAendern = "Sachgruppe konnte nicht geändert werden"
+
 // systematikRequest ist die Eingabe für Anlegen und Ändern einer Sachgruppe.
 type systematikRequest struct {
 	Kuerzel     string `json:"kuerzel"`
@@ -149,7 +154,7 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 	// sie folgen einem Umlabeln, nicht einem DB-Update.
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
-		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
+		return apierrors.Internal(fehlerSachgruppeAendern, err)
 	}
 	defer db.SafeRollback(ctx, tx)
 
@@ -180,7 +185,7 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 		if istUniqueVerletzung(err) {
 			return apierrors.Conflict(uniqueMeldung(err), err)
 		}
-		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
+		return apierrors.Internal(fehlerSachgruppeAendern, err)
 	}
 
 	// Offene Inventur-Sessions mit Filter auf dieses Fach folgen der Umbenennung —
@@ -197,7 +202,7 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return apierrors.Internal("Sachgruppe konnte nicht geändert werden", err)
+		return apierrors.Internal(fehlerSachgruppeAendern, err)
 	}
 
 	RespondJSON(w, http.StatusOK, map[string]any{

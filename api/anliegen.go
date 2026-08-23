@@ -58,8 +58,15 @@ func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
 		req.ISBN = kuerze(strings.TrimSpace(req.ISBN), 20)
 
 		repo := repository.NewAnliegenRepository(s.DB.Pool)
-		id, err := repo.Create(r.Context(), req.Art, req.TitelText, strings.TrimSpace(req.TitelID),
-			req.ISBN, req.Klasse, req.Kommentar, claims.UserID)
+		id, err := repo.Create(r.Context(), repository.NeuesAnliegen{
+			Art:            req.Art,
+			TitelText:      req.TitelText,
+			TitelID:        strings.TrimSpace(req.TitelID),
+			ISBN:           req.ISBN,
+			Klasse:         req.Klasse,
+			Kommentar:      req.Kommentar,
+			AngefordertVon: claims.UserID,
+		})
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
