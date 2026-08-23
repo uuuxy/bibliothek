@@ -122,6 +122,23 @@ func (b *updateBuilder) addStr(spalte string, wert *string) {
 	}
 }
 
+// addStrLeerbar ist addStr für Felder, die man LÖSCHEN können muss: Ein leerer Wert
+// wird zu NULL, nicht zum leeren String. Das ist dieselbe Schreibweise, die der
+// DSGVO-Cron und die LUSD-Ausleitung verwenden (jobs/cron_dsgvo.go, api/lusd_apply.go)
+// — sonst stünde für „gelöscht" je nach Weg mal NULL und mal ” in der Spalte.
+//
+// nil heißt weiterhin „nicht mitgeschickt" und lässt die Spalte in Ruhe.
+func (b *updateBuilder) addStrLeerbar(spalte string, wert *string) {
+	if wert == nil {
+		return
+	}
+	if strings.TrimSpace(*wert) == "" {
+		b.add(spalte, nil)
+		return
+	}
+	b.add(spalte, *wert)
+}
+
 func (b *updateBuilder) addInt(spalte string, wert *int) {
 	if wert != nil {
 		b.add(spalte, *wert)
@@ -320,6 +337,39 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 		req.AbgaengerJahr = &newJahr
 	}
 
+	// Pflichtfelder lassen sich nicht über den PATCH wegräumen.
+	//
+	// Beim ANLEGEN sind vorname/nachname/klasse `validate:"required"` (student_create.go);
+	// hier waren sie es nicht, und ein leerer String kam mit 200 durch — der Schüler
+	// verlor Namen, Klasse und Ausweisnummer, die Oberfläche meldete "Änderungen
+	// gespeichert". Bei der Klasse kam ein zweiter Schaden dazu: Aus dem leeren Namen
+	// leitete calculateAbgaengerJahr noch ein Abgängerjahr ab.
+	//
+	// Dass das bis zum 23.08.2026 nie passierte, war Zufall und keine Regel: Das
+	// Formular schickte geräumte Felder als JSON-null, und null landet im *string als
+	// nil ("nicht mitgeschickt"). Dieselbe Zufälligkeit hielt die Löschung der
+	// Postanschrift auf — sie kam ebenfalls nie an.
+	//
+	// Der Barcode steht bewusst mit in der Liste: Beim Anlegen darf er fehlen, dann
+	// vergibt ihn das System. Nachträglich entfernen hieße, den Schüler an der Theke
+	// unauffindbar zu machen — dafür gibt es keinen Vorgang.
+	for _, feld := range []struct {
+		bezeichnung string
+		wert        *string
+	}{
+		{"Vorname", req.Vorname},
+		{"Nachname", req.Nachname},
+		{"Klasse", req.Klasse},
+		{"Ausweisnummer", req.BarcodeID},
+	} {
+		if feld.wert != nil && strings.TrimSpace(*feld.wert) == "" {
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
+			apierrors.SendHTTPError(w, http.StatusBadRequest,
+				errors.New(feld.bezeichnung+" darf nicht leer sein."))
+			return nil, false
+		}
+	}
+
 	b := &updateBuilder{}
 	b.addStr("vorname", req.Vorname)
 	b.addStr("nachname", req.Nachname)
@@ -349,12 +399,15 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 		b.add("geburtsdatum", parsedDate)
 	}
 
-	// Postanschrift & Elternkontakt (Stammdaten): nur bei vorhandenem Feld ändern.
-	b.addStr("strasse", req.Strasse)
-	b.addStr("hausnummer", req.Hausnummer)
-	b.addStr("plz", req.Plz)
-	b.addStr("ort", req.Ort)
-	b.addStr("eltern_email", req.ElternEmail)
+	// Postanschrift & Elternkontakt: nur bei vorhandenem Feld ändern — und ein
+	// mitgeschicktes LEERES Feld heißt hier wirklich löschen (NULL). Das sind genau die
+	// Angaben, deren Entfernung jemand verlangen kann; ein Weg, der Erfolg meldet und
+	// nichts tut, ist dafür der schlechteste Zustand.
+	b.addStrLeerbar("strasse", req.Strasse)
+	b.addStrLeerbar("hausnummer", req.Hausnummer)
+	b.addStrLeerbar("plz", req.Plz)
+	b.addStrLeerbar("ort", req.Ort)
+	b.addStrLeerbar("eltern_email", req.ElternEmail)
 
 	// Der Empty-PATCH-Check steht bewusst NICHT hier, sondern im Handler NACH
 	// pruefeUndSetzeLusdID: Eine reine lusd_id-Nachtragung ist ein gültiger PATCH,
