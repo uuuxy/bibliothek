@@ -168,7 +168,16 @@ jobs:
       - name: Run Trivy vulnerability scanner
         # Gepinnt statt @master: ein Branch ist kein Release, Dependabot kann ihn nicht
         # pflegen (Prüfung 22.08.2026).
-        uses: aquasecurity/trivy-action@0.36.0
+        #
+        # Das `v` gehört dazu. Hier stand vom 22.08. bis zum 23.08.2026 `@0.36.0` ohne
+        # Präfix — aquasecurity hat bis 0.35.0 BEIDE Tags veröffentlicht (`0.35.0` und
+        # `v0.35.0`) und ab 0.36.0 nur noch den mit `v`. Die Zahl stimmte also, den Tag
+        # gab es nie. Der Job starb daraufhin nach einer Sekunde in "Set up job"
+        # ("Unable to resolve action"), und mit ihm ALLES, was in ihm steckt: der
+        # Trivy-Scan des fertigen Images UND der `docker build` samt seinen Proben
+        # (pg_dump vorhanden, Volume-Ziele für appuser beschreibbar) — der einzige Ort,
+        # an dem der Frontend-Build in CI überhaupt läuft. Acht Pushes lang.
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: bibliothek:scan
           format: table
