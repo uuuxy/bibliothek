@@ -22,6 +22,13 @@ import (
 // einen datierten Abschnitt und vergisst den Kopf) und erzeugt keine Fehlalarme durch
 // Formatierungs-Commits, die den git-Zeitstempel verschieben, ohne etwas zu sagen.
 //
+// GRENZE, die das Gate nicht überwinden kann: Ein Datum OHNE Jahr ("erledigt 23.08.")
+// ist für keinen Vergleich brauchbar — 23.08. welchen Jahres? Genau daran hing
+// docs/datenschutz_offene_punkte.md: Kopf 22.08.2026, im Text zwei Punkte "erledigt
+// 23.08.". Statt den Detektor raten zu lassen, sind dort die Jahre ausgeschrieben. Wer
+// ein Datum in ein Dokument schreibt, schreibt bitte das Jahr dazu — sonst ist es für
+// dieses Gate unsichtbar.
+//
 // Dokumente OHNE Kopfzeile prüft das Gate nicht — nicht jedes braucht eine (FACHKONZEPT
 // und resilience_and_recovery führen bewusst keine). Wer keine Zusicherung gibt, kann
 // auch keine brechen.
@@ -29,7 +36,12 @@ import (
 // Reparatur bei Rot: Das Datum im Kopf auf den jüngsten im Text genannten Stand ziehen —
 // oder die Kopfzeile entfernen, wenn sie ohnehin niemand pflegt.
 func TestStandAngabenNichtVeraltet(t *testing.T) {
-	kopfMuster := regexp.MustCompile(`(?i)(Zuletzt aktualisiert|Stand):?\s*\**\s*(\d{4}-\d{2}-\d{2})`)
+	// BEIDE Schreibweisen im Kopf erkennen. Das Muster akzeptierte zunächst nur
+	// 2026-08-23; docs/datenschutz_offene_punkte.md schreibt "(Stand 22.08.2026)" und
+	// fiel deshalb still durch — ausgerechnet die Datei, deren eigene Tabelle Punkte
+	// vom 23.08. als erledigt führt. Ein Detektor, der die Hälfte der Schreibweisen
+	// nicht kennt, meldet nichts und sieht dabei aus wie ein bestandener Test.
+	kopfMuster := regexp.MustCompile(`(?i)(Zuletzt aktualisiert|Stand):?\s*\**\s*(?:(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4}))`)
 	// Beide Schreibweisen, die im Projekt vorkommen: 2026-08-23 und 23.08.2026.
 	datumMuster := regexp.MustCompile(`(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4})`)
 
@@ -70,7 +82,10 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 			continue // Kein Stand behauptet, also nichts zu brechen.
 		}
 		geprueft++
-		behauptet := kopf[2]
+		behauptet := kopf[2] + "-" + kopf[3] + "-" + kopf[4]
+		if kopf[2] == "" {
+			behauptet = kopf[7] + "-" + kopf[6] + "-" + kopf[5]
+		}
 
 		var daten []string
 		for _, treffer := range datumMuster.FindAllStringSubmatch(inhalt, -1) {
@@ -90,8 +105,8 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 		}
 	}
 
-	if geprueft < 3 {
+	if geprueft < 5 {
 		t.Errorf("nur %d Dokumente mit Stand-Angabe erkannt — das Kopfmuster greift vermutlich nicht mehr "+
-			"(erwartet werden mindestens ARCHITECTURE, DEPLOYMENT, SECURITY)", geprueft)
+			"(erwartet werden mindestens ARCHITECTURE, DEPLOYMENT, SECURITY, master_fahrplan, datenschutz_offene_punkte)", geprueft)
 	}
 }

@@ -5,7 +5,7 @@ Jede HTTP-Route des Systems ist hier nach Schülerdaten eingestuft. Das Gate
 `api/pii_matrix_test.go` hält die Tabelle mit dem Code deckungsgleich — eine neue
 Route ohne Zeile hier wird rot, eine Zeile ohne Route ebenso, und das dokumentierte
 Recht wird gegen die Registrierung geprüft. **Die Stufe selbst prüft kein Parser:**
-Wer eine Zeile anlegt, hat den Handler gelesen. Stand: 18.08.2026 (alle 6 Abschnitte
+Wer eine Zeile anlegt, hat den Handler gelesen. Stand: 19.08.2026 (alle 6 Abschnitte
 Handler für Handler erhoben und stichprobenartig am laufenden System belegt).
 
 **Stufen** (bemessen an dem, was das Recht der Zeile ALLEIN öffnet — was erst ein
