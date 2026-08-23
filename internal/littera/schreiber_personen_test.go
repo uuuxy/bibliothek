@@ -1,6 +1,8 @@
 package littera
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"bibliothek/internal/uebernahme"
@@ -162,5 +164,45 @@ func TestPersonenlaufKuerze(t *testing.T) {
 	expected2 := "VeryLongSt"
 	if got := p.kuerze(l, "feld", val2, 10); got != expected2 {
 		t.Errorf("expected %q, got %q", expected2, got)
+	}
+}
+
+// TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse ist das Gegenstück zum
+// Datenschutz-Gate in internal/uebernahme: Dort geht es um den Wert, den Postgres
+// meldet, hier um den, den wir selbst hineinschreiben. Bis zum 23.08.2026 stand die
+// kollidierende Adresse als Kennung in `littera_import.log` — unverschlüsselt, ohne
+// Frist. Die Lesernummer reicht, um die Zeile in der Quelldatei wiederzufinden.
+func TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse(t *testing.T) {
+	pfad := t.TempDir() + "/prot.log"
+	prot, err := uebernahme.NeuesProtokoll(pfad, "littera_id")
+	if err != nil {
+		t.Fatalf("NeuesProtokoll: %v", err)
+	}
+
+	p := &personenlauf{s: &Schreiber{prot: prot}, belegteMails: make(map[string]bool)}
+
+	adresse := "erika.mustermann@philipp-reis-schule.de"
+	// Erste Person belegt die Adresse, die zweite kollidiert damit.
+	p.mailadresse(Leser{ID: "1", Lesernummer: "L-4711", EMail: adresse})
+	p.mailadresse(Leser{ID: "2", Lesernummer: "L-4712", EMail: adresse})
+	prot.Schliessen()
+
+	roh, err := os.ReadFile(pfad)
+	if err != nil {
+		t.Fatalf("Protokoll lesen: %v", err)
+	}
+	inhalt := string(roh)
+
+	if strings.Contains(inhalt, adresse) {
+		t.Errorf("die echte Adresse steht im Protokoll:\n%s", inhalt)
+	}
+	if strings.Contains(inhalt, "mustermann") {
+		t.Errorf("ein Bestandteil der Adresse steht im Protokoll:\n%s", inhalt)
+	}
+	// Die Zeile muss reparierbar bleiben: Quell-ID und Lesernummer gehören hinein.
+	for _, erwartet := range []string{"littera_id=2", "L-4712", "bereits vergeben"} {
+		if !strings.Contains(inhalt, erwartet) {
+			t.Errorf("Protokollzeile nennt %q nicht: %s", erwartet, inhalt)
+		}
 	}
 }

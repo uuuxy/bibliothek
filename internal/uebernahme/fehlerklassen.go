@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -46,10 +47,33 @@ func IstZeilenfehler(err error) bool {
 	}
 }
 
+// werteMuster trifft den Wertteil einer Postgres-DETAIL-Angabe: alles zwischen ")=(" und
+// der schließenden Klammer. Bewusst gierig bis zur LETZTEN Klammer: Ein Wert, der selbst
+// Klammern enthält, wird damit vollständig ersetzt statt halb stehen zu lassen — im
+// Zweifel lieber eine Angabe zu viel geschwärzt als ein Datenwert zu wenig.
+var werteMuster = regexp.MustCompile(`\)=\(.*\)`)
+
+// ohneDatenwerte schwärzt den Wert in einer DETAIL-Angabe und behält ihre Form:
+// "Key (email)=(x@y.de) already exists." → "Key (email)=(…) already exists."
+func ohneDatenwerte(detail string) string {
+	return werteMuster.ReplaceAllString(detail, `)=(…)`)
+}
+
 // BeschreibeFehler übersetzt einen Postgres-Fehler in eine Zeile, mit der jemand die
 // Quelldatei reparieren kann: SQLSTATE, Constraint und betroffene Spalte statt nur der
 // nackten Meldung. Bei einer Übernahme von 60.000 Zeilen ist genau das die Arbeit —
 // nicht die Laufzeit.
+//
+// Der WERT aus der DETAIL-Angabe bleibt dabei draußen (ohneDatenwerte). Bis zum
+// 23.08.2026 stand er wörtlich drin, und Postgres schreibt dort den Inhalt der Zeile:
+//
+//	DETAIL: Key (email)=(erika.mustermann@philipp-reis-schule.de) already exists.
+//
+// Das Ziel dieser Zeile ist `littera_import.log` — eine unverschlüsselte Datei im
+// Arbeitsverzeichnis, ohne Frist, ohne Löschregel. Bei der Leser-Übernahme kollidieren
+// E-Mail-Adressen und Ausweisnummern regelmäßig; jede Kollision hätte eine echte Adresse
+// dort abgelegt. Spalte und Constraint bleiben — sie sagen, WO es klemmt; welcher Wert es
+// war, steht in der Quelldatei neben der mitprotokollierten ID.
 func BeschreibeFehler(err error) string {
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) {
@@ -63,7 +87,7 @@ func BeschreibeFehler(err error) string {
 		teile = append(teile, "Spalte "+pgErr.ColumnName)
 	}
 	if pgErr.Detail != "" {
-		teile = append(teile, pgErr.Detail)
+		teile = append(teile, ohneDatenwerte(pgErr.Detail))
 	}
 	// Der umschließende Kontext (z. B. der Barcode) geht sonst verloren, weil errors.As
 	// bis zum PgError durchgreift.

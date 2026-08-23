@@ -303,6 +303,13 @@ func (p *personenlauf) ausweis(l Leser) string {
 }
 
 // mailadresse liefert die echte Adresse oder einen unzustellbaren Platzhalter.
+//
+// Die kollidierende Adresse steht bewusst NICHT im Protokoll — dort stand sie bis zum
+// 23.08.2026 als Kennung. `littera_import.log` ist eine unverschlüsselte Datei im
+// Arbeitsverzeichnis ohne Frist und ohne Löschregel; bei einer Leser-Übernahme
+// kollidieren Adressen reihenweise (Familien mit einer gemeinsamen Adresse, Sammelkonten),
+// und jede Kollision hätte eine echte Adresse dort abgelegt. Wer sie braucht, findet sie
+// in der Quelldatei neben der Lesernummer — die Zeile bleibt damit reparierbar.
 func (p *personenlauf) mailadresse(l Leser) string {
 	echt := lowerTrim(l.EMail)
 	if echt != "" && !p.belegteMails[echt] {
@@ -311,7 +318,7 @@ func (p *personenlauf) mailadresse(l Leser) string {
 	}
 	ersatz := "littera-" + l.ID + platzhalterDomain
 	if echt != "" {
-		p.s.prot.Warnung(l.ID, echt, "E-Mail-Adresse bereits vergeben – Platzhalter "+ersatz+" eingesetzt")
+		p.s.prot.Warnung(l.ID, l.Lesernummer, "E-Mail-Adresse bereits vergeben – Platzhalter "+ersatz+" eingesetzt")
 	} else {
 		p.s.prot.Warnung(l.ID, "", "keine E-Mail im Altbestand – Platzhalter "+ersatz+
 			" eingesetzt (benutzer.email ist NOT NULL); vor dem ersten Mailversand nachtragen")
