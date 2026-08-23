@@ -186,7 +186,7 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `POST /api/admin/mahnungen/bulk-print` | view_students | 2 | Mahn-PDF, erhöht Mahnstufe |
 | `GET /api/print/kontoauszug/{schueler_id}` | view_students | 2 | Kontoauszug mit Namen |
 | `GET /api/dashboard/summary` | view_students | 0 | anonyme Aggregate |
-| `GET /api/statistiken` | view_students | 0 | Rankings/Kennzahlen ohne Personenbezug |
+| `GET /api/statistiken` | view_stats | 0 | Rankings/Kennzahlen ohne Personenbezug |
 | `GET /api/systematics` | view_books | 0 | Sachgruppen |
 | `POST /api/systematics` | edit_books | 0 | Sachgruppen |
 | `PUT /api/systematics/{id}` | edit_books | 0 | Sachgruppen |

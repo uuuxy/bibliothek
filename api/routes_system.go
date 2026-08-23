@@ -61,7 +61,15 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// Dashboard & Stats
 	mux.Handle("GET /api/dashboard/summary", s.RequirePermission("view_students")(s.GetDashboardSummaryHandler()))
-	mux.Handle("GET /api/statistiken", s.RequirePermission("view_students")(s.GetStatisticsHandler()))
+	// view_stats, nicht view_students: Der Schalter, den ein Admin in der Rechte-Oberfläche
+	// umlegt, heißt "Statistiken anzeigen" — und das Menü blendet den Punkt genau danach ein
+	// (frontend/src/lib/menu.js). Die Route verlangte bis zum 23.08.2026 view_students. Beide
+	// Werte stimmten in der Vorgabe zufällig überein; sobald ein Admin sie trennt, gewinnt
+	// still der Server: view_stats AUS ließ die Statistik weiter antworten (der Admin glaubt,
+	// er habe sie entzogen), view_stats AN ohne view_students zeigte einen Menüpunkt, der
+	// jedes Mal 403 lieferte. Die Antwort trägt keine Personendaten (PII-Matrix Stufe 0),
+	// view_students war also auch fachlich die falsche Schranke.
+	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
 
 	// Lookups
 	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
