@@ -65,12 +65,21 @@ RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main main.go
 # die im Container ohnehin gesetzt ist. Wer eine Shell im Container hat, hat den
 # Schlüssel bereits.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o rotate-encryption-key ./cmd/rotate-encryption-key
-# Wiederherstellungswerkzeug: entschlüsselt die .sql.gz.enc-Backups. Gehört INS Image —
-# im Ernstfall hat der Schulserver kein Go, und docs/resilience_and_recovery.md
-# behauptete bis 22.08.2026, es läge dort bereits (Prüfung 22.08., B).
-# CGO_ENABLED=1 wie beim Hauptbinary: cmd/restore-backup zieht über jobs die WebP-Bibliothek
-# (cgo) mit; ohne cgo bricht der Build — der lokale Stack-Build hat es gezeigt.
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/restore-backup
+# Die beiden Backup-Werkzeuge. Beide gehören INS Image — im Ernstfall hat der Schulserver
+# kein Go, und docs/resilience_and_recovery.md behauptete bis 22.08.2026, restore-backup
+# läge dort bereits (Prüfung 22.08., B).
+#
+# CGO_ENABLED=0, seit die Krypto in internal/backupkrypto liegt (23.08.2026). Vorher stand
+# hier CGO_ENABLED=1: cmd/restore-backup importierte jobs, und jobs zieht über seine
+# übrigen Dateien die WebP-Bibliothek (cgo) mit — ohne cgo brach der Build. Die Krypto
+# selbst hängt nur an der Standardbibliothek und scrypt; ein zweiter cgo-Durchlauf je
+# Deploy war der Preis für eine Abhängigkeit, die das Werkzeug nie brauchte.
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/restore-backup
+# Gegenstück: verschlüsselt einen komprimierten Dump von stdin nach stdout. Die beiden
+# Shell-Wege (update.sh, scripts/backup.sh) dumpen am nächtlichen Job vorbei und legten
+# den Klartext offen ab (Befund A5); mit diesem Werkzeug im Container verschlüsseln sie
+# über dieselbe Ableitung wie der Job — ohne den Schlüssel je an den Host zu reichen.
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o encrypt-backup ./cmd/encrypt-backup
 
 # ==============================================================================
 # Stage 3: Runner container
@@ -111,9 +120,13 @@ COPY --from=backend-builder /app/main .
 # Wartungswerkzeug: Schlüsselwechsel ohne Datenverlust (docs/SECURITY.md).
 #   docker compose exec backend ./rotate-encryption-key -neu <neu> -pruefen
 COPY --from=backend-builder /app/rotate-encryption-key .
-# Wiederherstellung (docs/resilience_and_recovery.md 2a):
-#   docker compose exec backend ./restore-backup -in backups/<datei>.sql.gz.enc -out /tmp/dump.sql.gz
+# Wiederherstellung (docs/resilience_and_recovery.md 2a) — die Argumente sind POSITIONAL,
+# hier stand bis zum 23.08.2026 eine -in/-out-Form, die das Werkzeug nie kannte:
+#   docker compose exec backend ./restore-backup backups/<datei>.sql.gz.enc /tmp/dump.sql
 COPY --from=backend-builder /app/restore-backup .
+# Verschlüsselung für die Shell-Wege (docs/resilience_and_recovery.md 1b):
+#   … | docker exec -i bibliothek-backend ./encrypt-backup > <datei>.sql.gz.enc
+COPY --from=backend-builder /app/encrypt-backup .
 
 # Copy built Svelte static files
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist

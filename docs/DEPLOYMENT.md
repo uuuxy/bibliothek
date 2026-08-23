@@ -278,12 +278,18 @@ Manuelles Backup:
 ./scripts/backup.sh
 ```
 
-**Achtung — zwei Wege legen UNVERSCHLÜSSELTE Dumps ab:** `scripts/backup.sh` (7 Tage
-Rotation) und `./update.sh` vor jedem Deploy (30 Tage, `backups/backup_<Zeitstempel>.sql.gz`).
-Beide enthalten jeden Schülernamen, jede Adresse und jede Ausleihe im Klartext und werden
-seit dem 06.08.2026 mit `0600` angelegt. Das Verzeichnis `backups/` gehört damit zum
-schutzbedürftigen Bestand — es ist **kein** Ersatz für das verschlüsselte Backup und
-darf nicht mit ausgeliefert oder weitergereicht werden. Details:
+Auch die beiden **Shell-Wege** verschlüsseln seit dem 23.08.2026 (Befund A5):
+`scripts/backup.sh` schreibt `.sql.gz.enc` direkt aus der Pipe — der Klartext berührt die
+Platte nie —, und `./update.sh` verschlüsselt seine Vorab-Sicherung in Schritt 5, sobald
+der neue Container gesund und aus dem richtigen Commit gebaut ist. Beide nutzen
+`cmd/encrypt-backup` im Backend-Container; der Schlüssel verlässt den Container nicht.
+
+**Klartext gibt es nur noch als Ausnahme** — bei fehlgeschlagenem Deploy (dann ist die
+Datei der Rollback-Weg) oder wenn die Verschlüsselung nicht möglich war (Container aus,
+`BACKUP_ENCRYPTION_KEY` nicht gesetzt). Solche Dateien werden nach **2 Tagen** gelöscht,
+und beide Skripte melden bei jedem Lauf, wie viele davon noch liegen. Solange eine da ist,
+gehört `backups/` zum schutzbedürftigen Bestand — sie enthält jeden Schülernamen, jede
+Adresse und jede Ausleihe im Klartext. Details:
 [resilience_and_recovery.md](resilience_and_recovery.md).
 
 ### Backup-Umfang: nur die Datenbank (bewusste Entscheidung, 11.07.2026)

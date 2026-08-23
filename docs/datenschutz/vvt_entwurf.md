@@ -84,4 +84,4 @@ Belegt in [SECURITY.md](../SECURITY.md); Kurzfassung für das VVT:
 | Eingabekontrolle | Jede Änderung an Schülerdaten mit Bearbeiter und Zeit protokolliert; privilegierte Felder (Sperren, Überschreiben) nur mit eigenem Recht. |
 | Organisation | Schulischer DSB beteiligt (B4); Rolle des Wartenden geregelt (B6); Datenschutzhinweis Art. 13 ausgegeben (B2); Löschkonzept gegenüber Littera (B7). |
 
-**Offen (Stand 22.08.2026):** `update.sh`/`scripts/backup.sh` legen unverschlüsselte Dumps ab (A5) — Frist kürzen oder verschlüsseln; Foto-Rechtsgrundlage (B3).
+**Offen (Stand 23.08.2026):** Foto-Rechtsgrundlage (B3). Erledigt: A5 — `update.sh` und `scripts/backup.sh` verschlüsseln seit dem 23.08.2026 über dieselbe Ableitung wie der nächtliche Job; Klartext entsteht nur noch als benannter Ausnahmefall und verfällt nach 2 Tagen.

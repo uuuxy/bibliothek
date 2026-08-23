@@ -1,4 +1,4 @@
-package jobs
+package backupkrypto
 
 import (
 	"bytes"
@@ -34,8 +34,9 @@ func gunzipBytes(t *testing.T, data []byte) []byte {
 	return out
 }
 
-// TestBackupRestoreRoundTrip beweist, dass Verschlüsselung (RunDatabaseBackup, jetzt
-// scrypt) und Entschlüsselung (DecryptBackup) ein zusammenpassendes Paar sind. Schlägt
+// TestBackupRestoreRoundTrip beweist, dass Verschlüsselung (jobs.RunDatabaseBackup und
+// cmd/encrypt-backup, jetzt scrypt) und Entschlüsselung (cmd/restore-backup) ein
+// zusammenpassendes Paar sind. Schlägt
 // er fehl, sind die automatischen .sql.gz.enc-Backups NICHT wiederherstellbar.
 func TestBackupRestoreRoundTrip(t *testing.T) {
 	passphrase := "produktions-passphrase-mind-32-zeichen-xx"
@@ -48,11 +49,11 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	}
 
 	// Das neue Format MUSS das Magic tragen — sonst würde es als Altformat gelesen.
-	if !istScryptFormat(encrypted) {
+	if !IstScryptFormat(encrypted) {
 		t.Fatal("neues Backup trägt nicht das scrypt-Magic")
 	}
 
-	decrypted, err := DecryptBackup(passphrase, encrypted)
+	decrypted, err := EntschluesseleBackup(passphrase, encrypted)
 	if err != nil {
 		t.Fatalf("DecryptBackup: %v", err)
 	}
@@ -69,10 +70,10 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 func TestBackupRestore_AltformatWirdAbgelehnt(t *testing.T) {
 	// Beliebige Bytes ohne "BKDF"-Magic stehen für ein Backup im alten Format.
 	altbackup := bytes.Repeat([]byte{0x01}, 64)
-	if istScryptFormat(altbackup) {
+	if IstScryptFormat(altbackup) {
 		t.Fatal("Testdaten dürfen das scrypt-Magic nicht tragen")
 	}
-	if _, err := DecryptBackup("egal-passphrase-mind-32-zeichen-xxxxxxxx", altbackup); err == nil {
+	if _, err := EntschluesseleBackup("egal-passphrase-mind-32-zeichen-xxxxxxxx", altbackup); err == nil {
 		t.Fatal("ein Backup ohne scrypt-Format-Kennung muss abgelehnt werden (kein schwacher SHA-256-Fallback)")
 	}
 }
@@ -83,13 +84,13 @@ func TestBackupRestore_WrongKeyFails(t *testing.T) {
 		t.Fatalf("VerschluesseleBackup: %v", err)
 	}
 	// Falscher Schlüssel muss an der GCM-Authentifizierung scheitern (kein stiller Müll).
-	if _, err := DecryptBackup("FALSCHE-passphrase-mind-32-zeichen-xxxx", encrypted); err == nil {
+	if _, err := EntschluesseleBackup("FALSCHE-passphrase-mind-32-zeichen-xxxx", encrypted); err == nil {
 		t.Error("Entschlüsselung mit falschem Schlüssel soll fehlschlagen, war aber erfolgreich")
 	}
 }
 
 func TestBackupRestore_TruncatedCiphertextFails(t *testing.T) {
-	if _, err := DecryptBackup("egal-passphrase-mind-32-zeichen-xxxxxxxx", []byte{0x01, 0x02}); err == nil {
+	if _, err := EntschluesseleBackup("egal-passphrase-mind-32-zeichen-xxxxxxxx", []byte{0x01, 0x02}); err == nil {
 		t.Error("zu kurzer Ciphertext (< Nonce) soll Fehler liefern")
 	}
 }
@@ -101,7 +102,7 @@ func TestBackupRestore_TamperedCiphertextFails(t *testing.T) {
 	}
 	// Letztes Byte (im GCM-Tag-Bereich) kippen → Manipulation muss erkannt werden.
 	encrypted[len(encrypted)-1] ^= 0xFF
-	if _, err := DecryptBackup("passphrase-mind-32-zeichen-xxxxxxxxxxxx", encrypted); err == nil {
+	if _, err := EntschluesseleBackup("passphrase-mind-32-zeichen-xxxxxxxxxxxx", encrypted); err == nil {
 		t.Error("manipulierter Ciphertext soll an der GCM-Integritätsprüfung scheitern")
 	}
 }

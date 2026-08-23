@@ -59,7 +59,8 @@ Thumbs.db
 #
 # Auf der Produktion lagen am 06.08.2026 **82 Dateien mit 174 MB** in backups/ —
 # unverschlüsselte pg_dumps, angelegt von update.sh vor jedem Deploy und von
-# scripts/backup.sh. Jede enthält die komplette schueler-Tabelle: Klarnamen, Adressen
+# scripts/backup.sh. (Beide verschlüsseln seit dem 23.08.2026; im Ausnahmefall entsteht
+# weiterhin Klartext, und die .enc-Dateien gehören ebenso wenig ins Repository.) Jede enthält die komplette schueler-Tabelle: Klarnamen, Adressen
 # und Ausleihhistorie von Minderjährigen (siehe die Warnung in
 # docs/resilience_and_recovery.md, Abschnitt 1b). `git status` führte backups/ als
 # untracked auf — ein `git add .` hätte diese Daten in ein öffentliches Repository

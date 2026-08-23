@@ -320,7 +320,7 @@ Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
 ### Datenverschlüsselung
 - Schülerfotos: AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank. Kein Klartext auf dem Dateisystem.
-- DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht mehr per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format (`BKDF`-Kennung); der frühere schwache SHA-256-Weg ist ganz entfernt, Dateien ohne die Kennung werden abgelehnt (im Pilotbetrieb keine schützenswerten Altbackups). 0600 Dateiberechtigungen, Rotation.
+- DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht mehr per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format (`BKDF`-Kennung); der frühere schwache SHA-256-Weg ist ganz entfernt, Dateien ohne die Kennung werden abgelehnt (im Pilotbetrieb keine schützenswerten Altbackups). 0600 Dateiberechtigungen, Rotation. Seit dem 23.08.2026 gilt das für **alle drei** Backup-Wege: Auch `scripts/backup.sh` und die Vorab-Sicherung von `./update.sh` verschlüsseln über dieselbe Ableitung (`internal/backupkrypto`, Werkzeug `cmd/encrypt-backup` im Container — der Schlüssel verlässt ihn nicht). Klartext-Dumps entstehen nur noch als benannter Ausnahmefall (fehlgeschlagener Deploy = Rollback-Weg, Verschlüsselung nicht möglich) und werden nach 2 statt 30 Tagen gelöscht.
 
 #### `APP_ENCRYPTION_KEY` wechseln
 

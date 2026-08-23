@@ -23,7 +23,7 @@ import (
 	"io"
 	"os"
 
-	"bibliothek/jobs"
+	"bibliothek/internal/backupkrypto"
 )
 
 func main() {
@@ -51,7 +51,7 @@ func run() error {
 	}
 
 	// 1. AES-256-GCM entschlüsseln (identische Schlüsselableitung wie beim Backup).
-	compressed, err := jobs.DecryptBackup(encKey, ciphertext)
+	compressed, err := backupkrypto.EntschluesseleBackup(encKey, ciphertext)
 	if err != nil {
 		return fmt.Errorf("entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte/manipulierte Datei?): %w", err)
 	}

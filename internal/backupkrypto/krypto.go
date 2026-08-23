@@ -1,6 +1,12 @@
-package jobs
-
-// backup_krypto.go — Schlüsselableitung und Dateiformat der verschlüsselten Backups.
+// Package backupkrypto trägt Schlüsselableitung und Dateiformat der verschlüsselten
+// Backups — und NUR das.
+//
+// Es lag bis zum 23.08.2026 in `jobs`. Dieses Paket zieht über seine übrigen Dateien die
+// WebP-Bibliothek mit, und die braucht cgo: Jedes Werkzeug, das nur entschlüsseln wollte,
+// musste deshalb mit CGO_ENABLED=1 gebaut werden (Dockerfile-Kommentar zu
+// cmd/restore-backup). Als mit cmd/encrypt-backup ein zweites solches Werkzeug dazukam,
+// war das der Punkt, die 100 Zeilen Krypto aus der Abhängigkeit zu lösen: Hier hängt
+// nichts außer der Standardbibliothek und golang.org/x/crypto/scrypt daran.
 //
 // Angreifermodell: Eine Backup-Datei enthält den GESAMTEN Bestand — Klarnamen,
 // Adressen, Geburtsdaten und Ausleihhistorie Minderjähriger — und liegt zusätzlich
@@ -28,6 +34,7 @@ package jobs
 // Schwachpunkt (CodeQL go/weak-sensitive-data-hashing). Eine Datei ohne die Format-
 // Kennung wird deshalb abgelehnt statt schwach entschlüsselt. Das Magic bleibt, damit ein
 // späterer KDF-Wechsel sauber unterscheidbar ist.
+package backupkrypto
 
 import (
 	"crypto/aes"
@@ -57,7 +64,8 @@ func leiteScryptAb(passphrase string, salt []byte) ([]byte, error) {
 }
 
 // VerschluesseleBackup verschlüsselt den komprimierten Dump im scrypt-Format. Exportiert
-// als symmetrisches Gegenstück zu DecryptBackup — Werkzeuge (cmd/restore-backup) und Tests
+// als symmetrisches Gegenstück zu EntschluesseleBackup — Werkzeuge (cmd/encrypt-backup,
+// cmd/restore-backup) und Tests
 // erzeugen damit gültige Backups, ohne das Format selbst nachzubauen.
 // Ausgabe: backupMagic ‖ 0x02 ‖ Salt ‖ Nonce ‖ Ciphertext+Tag.
 func VerschluesseleBackup(passphrase string, klartext []byte) ([]byte, error) {
@@ -85,14 +93,14 @@ func VerschluesseleBackup(passphrase string, klartext []byte) ([]byte, error) {
 	return gcm.Seal(kopf, nonce, klartext, nil), nil
 }
 
-// entschluesseleBackupDaten öffnet ausschließlich das scrypt-Format. Eine Datei ohne
+// EntschluesseleBackup öffnet ausschließlich das scrypt-Format. Eine Datei ohne
 // die Format-Kennung wird abgelehnt, NICHT mehr über den früheren SHA-256-Weg gelesen:
 // Es existieren keine schützenswerten Altbackups (Pilotbetrieb), und ein einzelner
 // SHA-256-Durchlauf als Passwort-KDF ist schwach (CodeQL go/weak-sensitive-data-hashing).
 // Statt den schwachen Pfad für Rückwärtskompatibilität mitzuschleppen, ist er entfernt —
 // die einzige Ableitung ist scrypt.
-func entschluesseleBackupDaten(passphrase string, daten []byte) ([]byte, error) {
-	if !istScryptFormat(daten) {
+func EntschluesseleBackup(passphrase string, daten []byte) ([]byte, error) {
+	if !IstScryptFormat(daten) {
 		return nil, fmt.Errorf("kein gültiges Backup: scrypt-Format-Kennung fehlt (Dateien von vor der scrypt-Umstellung werden nicht unterstützt)")
 	}
 	rest := daten[len(backupMagic)+1:]
@@ -107,10 +115,10 @@ func entschluesseleBackupDaten(passphrase string, daten []byte) ([]byte, error) 
 	return oeffneGCM(key, hinterSalt)
 }
 
-// istScryptFormat prüft das Magic am Dateianfang. Die Kollision mit einer alten
+// IstScryptFormat prüft das Magic am Dateianfang. Die Kollision mit einer alten
 // Datei, deren zufällige Nonce genau mit "BKDF"+0x02 beginnt, liegt bei 2^-40 pro
 // Datei — praktisch ausgeschlossen.
-func istScryptFormat(daten []byte) bool {
+func IstScryptFormat(daten []byte) bool {
 	if len(daten) < len(backupMagic)+1 {
 		return false
 	}

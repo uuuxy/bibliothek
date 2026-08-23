@@ -15,12 +15,14 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+
+	"bibliothek/internal/backupkrypto"
 )
 
 // Die echte Restore-Probe: pg_dump → gzip → AES-256-GCM → entschlüsseln → psql →
 // Datenabgleich, gegen zwei echte Datenbanken.
 //
-// Warum das nötig war: backup_roundtrip_test.go prüft die Verschlüsselung gegen einen
+// Warum das nötig war: internal/backupkrypto/krypto_test.go prüft die Verschlüsselung gegen einen
 // ERFUNDENEN SQL-String ("-- pg_dump\nCREATE TABLE schueler …"). Damit ist bewiesen, dass
 // AES-GCM funktioniert — nicht, dass sich aus einem echten Backup jemals wieder eine
 // Datenbank herstellen lässt. Zwischen beidem liegt alles, was im Ernstfall schiefgeht:
@@ -298,11 +300,11 @@ func vergleicheBestand(t *testing.T, erwartet, tatsaechlich map[string]int) {
 }
 
 // entschluesseleUndPacke bildet exakt den Weg von cmd/restore-backup nach:
-// DecryptBackup, dann gunzip.
+// backupkrypto.EntschluesseleBackup, dann gunzip.
 func entschluesseleUndPacke(t *testing.T, key string, roh []byte) string {
 	t.Helper()
 
-	komprimiert, err := DecryptBackup(key, roh)
+	komprimiert, err := backupkrypto.EntschluesseleBackup(key, roh)
 	if err != nil {
 		t.Fatalf("Entschlüsselung fehlgeschlagen: %v", err)
 	}

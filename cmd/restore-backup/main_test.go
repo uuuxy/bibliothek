@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"bibliothek/jobs"
+	"bibliothek/internal/backupkrypto"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ import (
 // vorfindet, statt es im Test nachzubauen.
 func createBackup(t *testing.T, passphrase string, cleartext []byte) []byte {
 	t.Helper()
-	enc, err := jobs.VerschluesseleBackup(passphrase, cleartext)
+	enc, err := backupkrypto.VerschluesseleBackup(passphrase, cleartext)
 	require.NoError(t, err)
 	return enc
 }

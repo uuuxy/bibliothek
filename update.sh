@@ -7,8 +7,9 @@
 #   2. git pull (neuesten Code holen)
 #   3. docker compose up -d --build (rebuild & restart)
 #   4. Bei Fehler: Abbruch + Rollback-Anleitung
-#   5. Backups älter als 30 Tage werden automatisch gelöscht
-#   6. Docker-Build-Cache älter als 7 Tage wird aufgeräumt
+#   5. Nach erfolgreichem Deploy: Vorab-Sicherung verschlüsseln, Klartext löschen
+#   6. Backups älter als 30 Tage werden automatisch gelöscht
+#   7. Docker-Build-Cache älter als 7 Tage wird aufgeräumt
 # ==============================================================================
 set -euo pipefail
 
@@ -43,6 +44,12 @@ set -euo pipefail
 COMPOSE_FILE="$(cd "$(dirname "$0")" && pwd)/docker-compose.yml"
 BACKUP_DIR="$(cd "$(dirname "$0")" && pwd)/backups"
 BACKUP_RETENTION_DAYS=30
+# Klartext-Dumps bekommen die kurze Lunte (Befund A5): Nach einem erfolgreichen Deploy
+# wird die Vorab-Sicherung in Schritt 5 ohnehin verschlüsselt. Was hier länger als zwei
+# Tage liegen bleibt, stammt aus einem FEHLGESCHLAGENEN Deploy — dann ist die Datei
+# gebraucht worden oder war nie nötig, aber in keinem Fall soll sie einen Monat lang
+# jeden Schülernamen im Klartext auf der Platte halten.
+KLARTEXT_RETENTION_DAYS=2
 # Build-Cache-Schichten, die seit dieser Zeit niemand mehr angefasst hat, fliegen raus.
 # 168h = 7 Tage — lang genug, dass der Cache des letzten Updates erhalten bleibt.
 BUILD_CACHE_RETENTION_HOURS=168
@@ -50,6 +57,26 @@ BUILD_CACHE_RETENTION_HOURS=168
 DB_CONTAINER="bibliothek-db"
 DB_USER="postgres"
 DB_NAME="bibliothek"
+# EIN Name für den Backend-Container. Er stand hier bis zum 23.08.2026 erst in Schritt 4
+# (APP_CONTAINER) — als Schritt 5 dazukam, hätte ein zweiter Platz für denselben Wert
+# schlicht darauf gewartet, auseinanderzulaufen. scripts/backup_krypto.sh liest ihn als
+# BACKEND_CONTAINER, deshalb wird er hier gesetzt, BEVOR der Helfer eingebunden wird.
+APP_CONTAINER="bibliothek-backend"
+BACKEND_CONTAINER="${APP_CONTAINER}"
+
+# Verschlüsselungs-Helfer (scripts/backup_krypto.sh, docs/resilience_and_recovery.md 1b).
+#
+# Bewusst NICHT hart eingebunden: Mit `set -e` bräche ein `source` auf eine fehlende
+# Datei den ganzen Deploy ab — wegen eines Helfers, der nur das Aufräumen betrifft.
+# Fehlt er, sagt krypto_moeglich das in Schritt 5, und die Sicherung bleibt im Klartext
+# liegen (mit der kurzen Frist unten).
+KRYPTO_HELFER="$(cd "$(dirname "$0")" && pwd)/scripts/backup_krypto.sh"
+if [ -f "${KRYPTO_HELFER}" ]; then
+    # shellcheck source=scripts/backup_krypto.sh
+    source "${KRYPTO_HELFER}"
+else
+    krypto_moeglich() { KRYPTO_GRUND="scripts/backup_krypto.sh fehlt"; return 1; }
+fi
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 BACKUP_FILE="${BACKUP_DIR}/backup_${TIMESTAMP}.sql.gz"
@@ -97,8 +124,17 @@ print_rollback_instructions() {
     echo -e "  ${BOLD}4. App wieder starten:${NC}"
     echo "     docker compose up -d --build"
     echo ""
+    echo -e "  ${BOLD}5. Danach: die Vorab-Sicherung entsorgen${NC}"
+    echo "     # Sie ist UNVERSCHLÜSSELT und enthält jeden Schülernamen, jede Adresse,"
+    echo "     # jede Ausleihe im Klartext. Nach geglücktem Rollback löschen:"
+    echo "     shred -u \"${BACKUP_FILE}\"   # oder: rm -f"
+    echo "     # Andernfalls wird sie nach ${KLARTEXT_RETENTION_DAYS} Tagen automatisch gelöscht."
+    echo ""
     echo -e "${YELLOW}Alle verfügbaren Backups:${NC}"
-    ls -lh "${BACKUP_DIR}"/*.sql.gz 2>/dev/null || echo "  (keine Backups gefunden)"
+    ls -lh "${BACKUP_DIR}"/*.sql.gz "${BACKUP_DIR}"/*.sql.gz.enc 2>/dev/null || echo "  (keine Backups gefunden)"
+    echo ""
+    echo -e "${YELLOW}Verschlüsselte Sicherungen (.enc) zuerst öffnen:${NC}"
+    echo "     docker compose exec backend ./restore-backup <datei>.sql.gz.enc /tmp/dump.sql"
     echo ""
 }
 
@@ -133,14 +169,24 @@ if [ "${SKIP_BACKUP}" = "true" ]; then
 else
     log_info "Erstelle Backup → ${BACKUP_FILE}"
 
-    # umask im Subshell, NICHT chmod danach: Dieses Backup ist ein unverschlüsselter
-    # Volldump — jeder Schülername, jede Adresse, jede Ausleihe im Klartext. Mit einem
-    # nachgereichten chmod läge die Datei zwischen Anlegen und Rechtesetzen für alle
-    # lesbar auf der Platte, und genau in dieser Zeit wird sie beschrieben.
-    # Verschlüsseln wäre der stärkere Schritt, würde aber den dokumentierten
-    # Rollback-Weg brechen (gunzip | psql, siehe print_rollback_instructions und
-    # docs/resilience_and_recovery.md 2b) — das verschlüsselte Backup liefert der
-    # nächtliche Job, siehe jobs/backup.go.
+    # Diese eine Datei entsteht bewusst im KLARTEXT — und wird in Schritt 5 wieder
+    # verschlüsselt.
+    #
+    # Sie ist der Rückweg für genau das Zeitfenster, in dem alles schiefgehen kann:
+    # zwischen `docker compose up` und einem gesunden Container. Verschlüsselte man sie
+    # schon hier, hinge der Rollback an einem Werkzeug, das im selben Container liegt,
+    # der gerade nicht startet — und an einer Passphrase, deren Verlust man erst im
+    # Ernstfall bemerkt. Der dokumentierte Weg `gunzip | psql`
+    # (print_rollback_instructions, docs/resilience_and_recovery.md 2b) bleibt damit
+    # unangetastet.
+    #
+    # Ist der Deploy gesund, verliert sie ihren Zweck: Schritt 5 verschlüsselt sie über
+    # denselben Weg wie der nächtliche Job und löscht den Klartext. Offen liegt sie damit
+    # nur noch für die Dauer eines Deploys statt 30 Tage (Befund A5).
+    #
+    # umask im Subshell, NICHT chmod danach: Mit einem nachgereichten chmod läge die
+    # Datei zwischen Anlegen und Rechtesetzen für alle lesbar auf der Platte, und genau
+    # in dieser Zeit wird sie beschrieben.
     if (umask 077; docker exec "${DB_CONTAINER}" pg_dump -U "${DB_USER}" -d "${DB_NAME}" --no-password \
         | gzip > "${BACKUP_FILE}"); then
 
@@ -192,7 +238,6 @@ fi
 # ── Schritt 4: Health-Check ───────────────────────────────────────────────────
 log_step "Schritt 4: Warte auf Gesundheitsprüfung"
 
-APP_CONTAINER="bibliothek-backend"
 HEALTH_TIMEOUT=120
 
 # Zwei Quellen, weil keine für sich allein genügt:
@@ -292,22 +337,62 @@ else
     exit 1
 fi
 
-# ── Schritt 5: Alte Backups aufräumen ─────────────────────────────────────────
-log_step "Schritt 5: Alte Backups aufräumen (älter als ${BACKUP_RETENTION_DAYS} Tage)"
+# ── Schritt 5: Vorab-Sicherung verschlüsseln ──────────────────────────────────
+#
+# Erst HIER, nicht in Schritt 1: Ab dieser Zeile ist bewiesen, dass der neue Container
+# läuft, gesund ist und aus diesem Commit stammt (Schritt 4/4b). Damit ist der Rollback
+# vom Tisch, die Klartext-Datei hat ihren Zweck erfüllt — und der Container, der das
+# Verschlüsselungswerkzeug trägt, ist nachweislich da.
+#
+# Die Reihenfolge in verschluessele_datei ist der Kern: verschlüsseln, Ergebnis prüfen,
+# ERST DANN den Klartext löschen. Andersherum stünde am Ende eines halb geglückten
+# Laufs gar keine Sicherung mehr.
+log_step "Schritt 5: Vorab-Sicherung verschlüsseln"
 
-DELETED=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz" -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+if [ "${SKIP_BACKUP}" = "true" ]; then
+    log_info "Keine Vorab-Sicherung vorhanden (Schritt 1 übersprungen)."
+elif [ ! -f "${BACKUP_FILE}" ]; then
+    log_warn "Vorab-Sicherung ${BACKUP_FILE} nicht mehr gefunden — übersprungen."
+elif krypto_moeglich; then
+    log_info "Verschlüssele ${BACKUP_FILE} …"
+    if verschluessele_datei "${BACKUP_FILE}"; then
+        log_ok "Verschlüsselt: ${KRYPTO_ZIEL} (Klartext gelöscht)."
+        log_info "Öffnen mit: docker compose exec backend ./restore-backup <datei> /tmp/dump.sql"
+    else
+        log_warn "Verschlüsselung fehlgeschlagen — die Sicherung bleibt im KLARTEXT liegen:"
+        log_warn "  ${BACKUP_FILE}"
+        log_warn "  Sie enthält jeden Schülernamen und jede Adresse im Klartext und wird"
+        log_warn "  in ${KLARTEXT_RETENTION_DAYS} Tagen automatisch gelöscht."
+    fi
+else
+    log_warn "Verschlüsselung nicht möglich (${KRYPTO_GRUND})."
+    log_warn "Die Vorab-Sicherung bleibt im KLARTEXT liegen: ${BACKUP_FILE}"
+    log_warn "Sie wird in ${KLARTEXT_RETENTION_DAYS} Tagen automatisch gelöscht."
+fi
 
-if [ "${DELETED}" -gt 0 ]; then
-    log_ok "${DELETED} altes Backup/s gelöscht."
+# ── Schritt 6: Alte Backups aufräumen ─────────────────────────────────────────
+log_step "Schritt 6: Alte Backups aufräumen (verschlüsselt: ${BACKUP_RETENTION_DAYS} Tage, Klartext: ${KLARTEXT_RETENTION_DAYS} Tage)"
+
+# Zwei Fristen, zwei Muster. `backup_*.sql.gz` trifft NICHT die `.enc`-Dateien — deren
+# Name endet auf `.enc`, und `find -name` vergleicht den ganzen Namen.
+DELETED=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz.enc" -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+DELETED_KLAR=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz" -mtime "+${KLARTEXT_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+
+if [ "${DELETED}" -gt 0 ] || [ "${DELETED_KLAR}" -gt 0 ]; then
+    log_ok "${DELETED} verschlüsselte/s und ${DELETED_KLAR} unverschlüsselte/s Backup/s gelöscht."
 else
     log_info "Keine alten Backups zum Löschen gefunden."
 fi
 
-REMAINING=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
-log_info "${REMAINING} Backup/s verbleiben in ${BACKUP_DIR}/"
+REMAINING=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz.enc" 2>/dev/null | wc -l | tr -d ' ')
+REMAINING_KLAR=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
+log_info "${REMAINING} verschlüsselte/s Backup/s verbleiben in ${BACKUP_DIR}/"
+if [ "${REMAINING_KLAR}" -gt 0 ]; then
+    log_warn "${REMAINING_KLAR} UNVERSCHLÜSSELTE/S Backup/s liegt/liegen dort ebenfalls (Klarnamen im Klartext)."
+fi
 
-# ── Schritt 6: Docker-Build-Cache aufräumen ───────────────────────────────────
-log_step "Schritt 6: Docker-Build-Cache aufräumen (älter als ${BUILD_CACHE_RETENTION_HOURS}h)"
+# ── Schritt 7: Docker-Build-Cache aufräumen ───────────────────────────────────
+log_step "Schritt 7: Docker-Build-Cache aufräumen (älter als ${BUILD_CACHE_RETENTION_HOURS}h)"
 
 # Jedes Update baut ein neues Image, und der BuildKit-Cache wächst dabei unbegrenzt
 # weiter — niemand räumt ihn von allein ab. Am 09.08.2026 stand er bei 14,47 GB und

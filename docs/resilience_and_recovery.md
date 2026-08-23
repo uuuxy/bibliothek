@@ -19,7 +19,7 @@ backups/backup_<ZEITSTEMPEL>.sql.gz.enc
   entwendete Backup-Datei nicht mit hoher Rate offline durchprobiert werden kann.
   Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext). Der frühere schwache
   SHA-256-Weg ist **ganz entfernt**: Dateien ohne die `BKDF`-Kennung werden abgelehnt,
-  nicht mehr schwach entschlüsselt (`jobs/backup_krypto.go`).
+  nicht mehr schwach entschlüsselt (`internal/backupkrypto`).
   **Folge für den Betrieb:** Backups von **vor dem 21.08.2026** (Deploy von 5265698c) sind
   **nicht mehr entschlüsselbar** — lokal wie auf S3. Nach diesem Deploy gibt es bis zum
   nächsten 02:30-UTC-Lauf **kein lesbares Backup**; deshalb direkt nach dem Deploy einen
@@ -34,22 +34,48 @@ backups/backup_<ZEITSTEMPEL>.sql.gz.enc
 > direkt — sie müssen zuerst mit dem `restore-backup`-Tool entschlüsselt werden (siehe Abschnitt 2a).
 > Ohne den originalen `BACKUP_ENCRYPTION_KEY` ist ein verschlüsseltes Backup **nicht** wiederherstellbar.
 
-### 1b. Unverschlüsselte Dumps — zwei Wege, nicht einer
+### 1b. Die beiden Shell-Wege — seit 23.08.2026 ebenfalls verschlüsselt
 
-> ⚠️ Beide Dateien enthalten **jeden Schülernamen, jede Adresse und jede Ausleihe im
-> Klartext**. Sie werden seit dem 06.08.2026 mit `0600` angelegt (`umask` im Subshell,
-> nicht `chmod` danach — sonst läge die Datei genau während des Schreibens für alle
-> lesbar da). Das Verzeichnis `backups/` gehört damit zum schutzbedürftigen Bestand.
+Bis zum 23.08.2026 legten beide Skripte **unverschlüsselte** Dumps ab (7 bzw. 30 Tage) —
+jeder Schülername, jede Adresse, jede Ausleihe im Klartext, geschützt allein durch `0600`.
+Wer den Datenträger, ein Datei-Backup des Servers oder das Verzeichnis in die Hand bekam,
+las alles ohne Passphrase. Das war Befund **A5** der Datenschutz-Bewertung
+(`docs/datenschutz_offene_punkte.md`).
 
-**`scripts/backup.sh`** — Ad-hoc-Sicherung, `backups/bibliothek_backup_<DATUM>.sql.gz`,
-7-Tage-Rotation, `pg_dump` per `docker exec` im DB-Container.
-Seit dem 06.08.2026 mit `pipefail`: Ohne ihn lieferte die Pipe den Status von `gzip`, und
-`gzip` gelingt auch dann, wenn `pg_dump` abgebrochen ist — das Skript meldete „Backup
-erfolgreich" und legte eine gzip-Datei mit einer Fehlermeldung darin ab.
+Beide verschlüsseln jetzt über **dieselbe Ableitung wie der nächtliche Job** — Werkzeug
+`cmd/encrypt-backup` im Backend-Container, Helfer `scripts/backup_krypto.sh`. Der
+Schlüssel bleibt dabei im Container: `docker exec` reicht ihn nicht durch, das Werkzeug
+liest ihn aus der eigenen Umgebung. Auf dem Host taucht er weder in der Prozessliste noch
+in einer Variablen auf.
 
-**`./update.sh`** — legt vor **jedem** Deploy automatisch `backups/backup_<ZEITSTEMPEL>.sql.gz`
-an (30-Tage-Rotation) und nennt diese Datei in seiner Rollback-Anleitung. Dieser Weg war
-hier bis zum 06.08.2026 gar nicht dokumentiert, obwohl er der häufigste ist.
+**`scripts/backup.sh`** — Ad-hoc-Sicherung, `backups/bibliothek_backup_<DATUM>.sql.gz.enc`,
+7-Tage-Rotation, `pg_dump` per `docker exec` im DB-Container. Die Verschlüsselung sitzt
+IN der Pipe (`pg_dump | gzip | encrypt-backup`), der Klartext berührt die Platte nie.
+Seit dem 06.08.2026 mit `pipefail`: Ohne ihn lieferte die Pipe den Status des letzten
+Glieds, und `gzip` gelingt auch dann, wenn `pg_dump` abgebrochen ist — das Skript meldete
+„Backup erfolgreich" und legte eine gzip-Datei mit einer Fehlermeldung darin ab.
+
+**`./update.sh`** — legt vor **jedem** Deploy `backups/backup_<ZEITSTEMPEL>.sql.gz` an und
+nennt diese Datei in seiner Rollback-Anleitung. Diese eine Datei entsteht **bewusst im
+Klartext**: Sie ist der Rückweg für genau das Zeitfenster, in dem der neue Container nicht
+hochkommt — und in dem damit auch das Verschlüsselungswerkzeug nicht erreichbar wäre.
+Ist der Deploy gesund (Schritt 4/4b bestanden), verschlüsselt **Schritt 5** sie und löscht
+den Klartext. Offen liegt sie damit für die Dauer eines Deploys statt 30 Tage.
+
+**Der Rückweg wird bewiesen.** Beide Wege schicken die fertige `.enc`-Datei durch das
+`restore-backup` im Container, bevor sie Erfolg melden oder einen Klartext-Dump löschen
+(`pruefe_enc_rundweg`). Eine Formprüfung allein reichte nicht: Eine beim Schreiben
+abgeschnittene Datei trägt ihre `BKDF`-Kennung und sieht vollständig aus.
+
+**Fristen und Ausnahmefall.** `.enc` rotiert wie gehabt (7 bzw. 30 Tage). Was als Klartext
+liegen bleibt — weil ein Deploy fehlschlug oder die Verschlüsselung nicht möglich war —
+wird nach **2 Tagen** gelöscht, und beide Skripte sagen bei jedem Lauf, wie viele solcher
+Dateien noch da sind. Ist die Verschlüsselung nicht möglich (Container aus, Schlüssel
+nicht gesetzt, altes Image), bricht `scripts/backup.sh` **nicht** ab: Ein lesbares Backup
+ist besser als keines. Es benennt den Zustand und setzt die kurze Frist.
+
+> ⚠️ Ein Klartext-Dump bleibt der gesamte Bestand in lesbarer Form. Solange einer in
+> `backups/` liegt, gehört das Verzeichnis zum schutzbedürftigen Bestand.
 
 Beispiel-Crontab für den Ad-hoc-Weg:
 
@@ -117,10 +143,17 @@ createdb -U postgres bibliothek
 psql -U postgres -d bibliothek -f "$DUMP"
 ```
 
-### 2b. Unverschlüsseltes `.sql.gz`-Backup (Abschnitt 1b)
+### 2b. Backups aus den Shell-Wegen (Abschnitt 1b)
+
+**Der Regelfall — `.enc`:** identisch zu Abschnitt 2a, nur der Dateiname unterscheidet
+sich (`bibliothek_backup_<DATUM>.sql.gz.enc` bzw. `backup_<ZEITSTEMPEL>.sql.gz.enc`).
+
+**Der Klartext-Fall — `.sql.gz`:** Solche Dateien entstehen nur noch im Ausnahmefall
+(fehlgeschlagener Deploy, Verschlüsselung nicht möglich). Sie lassen sich weiterhin direkt
+einspielen — das ist ihr Zweck:
 
 ```bash
-GZ=$(ls -t backups/bibliothek_backup_*.sql.gz | head -1)
+GZ=$(ls -t backups/*.sql.gz | head -1)
 echo "Verwende: $GZ"
 zcat "$GZ" | head -5                 # Gegenprobe: echter SQL-Text, keine Fehlermeldung
 
@@ -133,6 +166,9 @@ zcat "$GZ" | psql -U postgres -d bibliothek
 > Die Gegenprobe mit `head` ist hier nicht Zierde: `scripts/backup.sh` legte vor dem
 > 06.08.2026 ohne `pipefail` auch dann eine gzip-Datei an, wenn `pg_dump` abgebrochen war —
 > darin steht dann eine Fehlermeldung statt eines Dumps (Abschnitt 1b).
+
+> Nach getaner Arbeit **löschen** (`shred -u`). Die Skripte tun das nach 2 Tagen von
+> selbst, aber bis dahin liegt der ganze Bestand lesbar da.
 
 ### 2c. Der Rückweg
 

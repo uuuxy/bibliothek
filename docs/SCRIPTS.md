@@ -124,22 +124,38 @@ Migriert unverschlüsselte Bilddateien vom Dateisystem in die Datenbank.
 
 ## 3. Datenbank-Backup (`jobs/backup.go` / `scripts/backup.sh`)
 
-Es gibt **zwei Pipelines**, und nur eine verschlüsselt. Hier stand bis zum 06.08.2026
-eine gemeinsame Zeile für beide — sie beschrieb den automatischen Weg und ließ den
-manuellen sicherer aussehen, als er ist.
+Es gibt **drei Wege**, und seit dem 23.08.2026 verschlüsseln alle drei über dieselbe
+Ableitung (`internal/backupkrypto`, scrypt + AES-256-GCM). Hier stand bis zum 06.08.2026
+eine gemeinsame Zeile für alle — sie beschrieb den automatischen Weg und ließ die
+Shell-Wege sicherer aussehen, als sie waren.
 
 | | Automatisch (`jobs/backup.go`) | Manuell (`scripts/backup.sh`) | Vor jedem Deploy (`./update.sh`) |
 |---|---|---|---|
 | Auslöser | Täglich 02:30 via `jobs/cron.go` | `./scripts/backup.sh` | Schritt 1 von `./update.sh` |
-| Pipeline | `pg_dump → gzip → AES-GCM` | `pg_dump → gzip` | `pg_dump → gzip` |
-| Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`) | **nein** | **nein** |
+| Pipeline | `pg_dump → gzip → AES-GCM` | `pg_dump → gzip → AES-GCM` (in EINER Pipe) | `pg_dump → gzip`, AES-GCM in Schritt 5 |
+| Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`) | **ja** (seit 23.08.2026) | **ja, nach gesundem Deploy** (seit 23.08.2026) |
 | Dateirechte | 0600 | 0600 (seit 06.08.2026) | 0600 (seit 06.08.2026) |
-| Rotation | letzte 14 | 7 Tage | 30 Tage |
-| Dateiname | `backup_<Zeitstempel>.sql.gz.enc` | `bibliothek_backup_<Datum>.sql.gz` | `backup_<Zeitstempel>.sql.gz` |
+| Rotation | letzte 14 | 7 Tage (`.enc`) / 2 Tage (Klartext) | 30 Tage (`.enc`) / 2 Tage (Klartext) |
+| Dateiname | `backup_<Zeitstempel>.sql.gz.enc` | `bibliothek_backup_<Datum>.sql.gz.enc` | `backup_<Zeitstempel>.sql.gz.enc` |
 
-Die beiden unverschlüsselten Wege bleiben unverschlüsselt, damit `zcat … | psql` im
-Notfall ohne Schlüssel funktioniert — ihr Preis ist, dass `backups/` schutzbedürftig
-ist. Wiederherstellung und Restore-Probe: [resilience_and_recovery.md](resilience_and_recovery.md).
+**Warum `update.sh` erst in Schritt 5 verschlüsselt.** Seine Vorab-Sicherung ist der
+Rückweg für genau das Zeitfenster, in dem der neue Container nicht hochkommt — und in dem
+damit auch das Verschlüsselungswerkzeug nicht erreichbar wäre. Sie bleibt deshalb im
+Klartext, bis Gesundheits- und Commit-Prüfung bestanden sind (Schritt 4/4b); erst dann
+verschlüsselt Schritt 5 sie und löscht den Klartext. Der dokumentierte Rollback-Weg
+`gunzip … | psql` bleibt für dieses Fenster unangetastet.
+
+**Der Rückweg wird bewiesen, nicht angenommen.** Bevor ein Klartext-Dump gelöscht wird
+(und bevor `backup.sh` „erfolgreich" meldet), geht die fertige `.enc`-Datei durch das
+`restore-backup` im Container. Die bloße Formprüfung genügt nicht: Läuft die Platte
+während des Schreibens voll, trägt die abgeschnittene Datei ihre `BKDF`-Kennung und hat
+plausible Größe — auffallen würde der Verlust erst beim Wiederherstellen.
+
+**Klartext als Ausnahme.** Beide Skripte fallen darauf zurück, wenn die Verschlüsselung
+nicht möglich ist (Backend-Container aus, `BACKUP_ENCRYPTION_KEY` nicht gesetzt, Image
+älter als 23.08.2026) — kein Abbruch, denn ein lesbares Backup ist besser als keines. Sie
+sagen es dann laut, und die Datei verfällt nach 2 Tagen. Wiederherstellung und
+Restore-Probe: [resilience_and_recovery.md](resilience_and_recovery.md).
 
 ---
 
@@ -247,6 +263,7 @@ ausführliche Kommentar steht jeweils im Dateikopf.
 | `deadcode_gate.sh` | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen; nur von Tests erreichter Code zählt mit, begründete Ausnahmen stehen in `deadcode_baseline.txt`. Tote **Interface**-Methoden sieht das Werkzeug nicht — dafür läuft `tote_tueren_test.go` in jedem `go test`. |
 | `sonar_scan.sh` | SonarQube-Analyse **inklusive beider** Coverage-Berichte (Go + Frontend-lcov; seit 23.08.2026 erzeugt Schritt 2 `npm run test:coverage` und bricht bei roten Frontend-Tests ab). Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund 13 Punkte zu niedrig. |
 | `install-hooks.sh` | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`. |
+| `backup_krypto.sh` | Kein eigenständiges Skript, sondern der gemeinsame Verschlüsselungs-Helfer von `backup.sh` und `update.sh` (`source`). Prüft, ob verschlüsselt werden kann, reicht Daten durch `cmd/encrypt-backup` im Backend-Container und beweist am fertigen `.enc` den Rückweg über `restore-backup`, **bevor** ein Klartext-Dump gelöscht wird. |
 | `../security-scan.sh` | Sammel-Scan im **Repo-Root**: `gosec` (SAST), `trivy fs` (Abhängigkeiten/Konfiguration), OWASP-ZAP-API-Scan gegen `/swagger/doc.json`. Der ZAP-Teil braucht einen laufenden Server, Docker und `ADMIN_TOKEN` — er ist kein stiller Durchläufer, sondern eine bewusste Sitzung. |
 
 #### Warum die Coverage niedriger aussieht, als sie ist

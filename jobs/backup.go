@@ -17,6 +17,8 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"bibliothek/internal/backupkrypto"
 )
 
 // escapePgPass escapes backslashes and colons as required by PostgreSQL .pgpass format.
@@ -27,12 +29,12 @@ func escapePgPass(s string) string {
 
 // MinBackupSchluesselLaenge ist die Mindestlänge der Backup-Passphrase.
 //
-// Seit 21.08.2026 leitet scrypt den Schlüssel ab (backup_krypto.go) — speicherhart und
+// Seit 21.08.2026 leitet scrypt den Schlüssel ab (internal/backupkrypto) — speicherhart und
 // pro Datei gesalzen, statt eines einzelnen SHA-256-Durchlaufs. Das nimmt dem
 // Offline-Rateangriff auf eine erbeutete Backup-Datei die Geschwindigkeit. Die
 // Längenprüfung bleibt als zweite Verteidigung: scrypt erschwert das Raten, ersetzt
 // aber keine Passphrase-Entropie — eine kurze bleibt kurz. Der frühere schwache
-// SHA-256-Weg ist ganz entfernt; es gibt nur noch das scrypt-Format (backup_krypto.go).
+// SHA-256-Weg ist ganz entfernt; es gibt nur noch das scrypt-Format (internal/backupkrypto).
 const MinBackupSchluesselLaenge = 32
 
 // SchluesselIstSchwach meldet, ob die Backup-Passphrase zu kurz ist. Ein leerer
@@ -72,8 +74,8 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	// AES-256-GCM mit scrypt-abgeleitetem Schlüssel (backup_krypto.go).
-	encrypted, err := VerschluesseleBackup(encKey, compressedData)
+	// AES-256-GCM mit scrypt-abgeleitetem Schlüssel (internal/backupkrypto).
+	encrypted, err := backupkrypto.VerschluesseleBackup(encKey, compressedData)
 	if err != nil {
 		// #nosec G706
 		log.Printf("Backup: encryption failed: %v", err)
@@ -292,14 +294,6 @@ func uploadBackupToS3(ctx context.Context, outFilename string, encrypted []byte)
 		return
 	}
 	log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
-}
-
-// DecryptBackup ist die Wiederherstellungs-Entschlüsselung für cmd/restore-backup,
-// die Restore-Probe und die Drill-Tests. Sie verlangt das scrypt-Format (BKDF-Kennung,
-// backup_krypto.go); der frühere SHA-256-Weg ist seit 5265698c (21.08.2026) ENTFERNT —
-// Backups von davor sind damit nicht mehr lesbar (docs/resilience_and_recovery.md).
-func DecryptBackup(encKey string, ciphertext []byte) ([]byte, error) {
-	return entschluesseleBackupDaten(encKey, ciphertext)
 }
 
 // rotateBackups löscht die ältesten Backup-Dateien, wenn es mehr als maxKeep gibt.

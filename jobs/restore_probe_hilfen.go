@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"bibliothek/internal/backupkrypto"
 )
 
 // juengsteBackupDatei liefert die neueste backup_*.sql.gz.enc im Verzeichnis.
@@ -39,7 +41,7 @@ func juengsteBackupDatei(dir string) (string, error) {
 
 // entschluesseleBackup entschlüsselt (AES-256-GCM) und entpackt (gzip) ein Backup.
 func entschluesseleBackup(encKey string, roh []byte) ([]byte, error) {
-	klar, err := DecryptBackup(encKey, roh)
+	klar, err := backupkrypto.EntschluesseleBackup(encKey, roh)
 	if err != nil {
 		return nil, fmt.Errorf("entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte Datei): %w", err)
 	}
