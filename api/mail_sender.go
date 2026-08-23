@@ -134,16 +134,29 @@ func mailFehlerStatus(err error) int {
 }
 
 // baueMailNachricht erstellt die vollständige MIME-Multipart-Nachricht (Header, Textteil,
-// Anhänge). req.To und req.Subject müssen bereits sanitiert sein.
+// Anhänge).
+//
+// Hier stand bis zum 23.08.2026 "req.To und req.Subject müssen bereits sanitiert sein" —
+// ein Kommentar, der eine Absicherung behauptete, die es nicht gab. Neun Stellen bauen
+// eine MailRequest (Mahnungen, Bestellungen, Abgänger, Anliegen, Alarme, Testmail),
+// keine davon prüfte. Geprüft war nur der SMTP-Umschlag (MAIL FROM / RCPT TO in
+// mailservice/versand.go); ein Zeilenumbruch im Betreff einer Vorlage konnte damit
+// beliebige weitere Kopfzeilen anhängen. Jetzt entscheidet dieselbe Funktion wie für die
+// Testmail — an EINER Stelle, hier, wo die Zeilen tatsächlich entstehen.
 func baueMailNachricht(req MailRequest, from string) ([]byte, error) {
+	from, an, betreff, err := mailservice.PruefeKopfzeilen(from, req.To, req.Subject)
+	if err != nil {
+		return nil, err
+	}
+
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 	boundary := writer.Boundary()
 
 	// Write SMTP Headers
 	fmt.Fprintf(&buf, "From: %s\r\n", from)
-	fmt.Fprintf(&buf, "To: %s\r\n", req.To)
-	fmt.Fprintf(&buf, "Subject: %s\r\n", req.Subject)
+	fmt.Fprintf(&buf, "To: %s\r\n", an)
+	fmt.Fprintf(&buf, "Subject: %s\r\n", betreff)
 	fmt.Fprintf(&buf, "MIME-Version: 1.0\r\n")
 	fmt.Fprintf(&buf, "Content-Type: multipart/mixed; boundary=%s\r\n\r\n", boundary)
 

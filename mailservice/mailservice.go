@@ -36,14 +36,23 @@ func HeaderWert(feld, wert string) (string, error) {
 	return wert, nil
 }
 
-// baueTextNachricht setzt eine einfache Textmail zusammen und prüft dabei jede
-// Kopfzeile. Eine Stelle statt zwei: Vorher stand derselbe Sprintf zweimal im
-// Paket, und eine Absicherung an nur einer der beiden Stellen wäre keine.
-func baueTextNachricht(sender, to, betreff, body string) ([]byte, error) {
-	// Ein Betreff kann aus einer Vorlage in der Datenbank stammen, wo beim Bearbeiten
-	// leicht ein Umbruch stehen bleibt. Den weisen wir nicht ab, sondern glätten ihn
-	// zu einem Leerzeichen — er ist ein Tippfehler, kein Angriff. Danach greift für
-	// alle drei Felder dieselbe Hürde.
+// PruefeKopfzeilen prüft die drei Kopfzeilen JEDER ausgehenden Mail — der einfachen
+// Textmail hier wie der MIME-Mail mit Anhängen in api/mail_sender.go.
+//
+// Dass es diese Funktion gibt, ist der zweite Anlauf. Die Prüfung stand bis zum
+// 23.08.2026 nur in baueTextNachricht (Testmail), während der Weg, über den JEDE echte
+// Mail geht — Mahnungen, Bestellungen, Abgänger-Laufzettel, Alarme —, seine Kopfzeilen
+// selbst zusammensetzte, mit einem Kommentar darüber: "req.To und req.Subject müssen
+// bereits sanitiert sein". Neun Aufrufer, keiner tat es. Der SMTP-Umschlag (MAIL FROM /
+// RCPT TO in versand.go) war geprüft, die Kopfzeilen der Nachricht nicht — ein
+// Zeilenumbruch im Betreff einer Vorlage konnte damit beliebige weitere Kopfzeilen
+// anhängen (Reply-To, ein zweites From, ein vorzeitiges Ende des Kopfteils).
+//
+// Zwei Regeln, wie gehabt: Ein Betreff kann aus einer Vorlage in der Datenbank stammen,
+// wo beim Bearbeiten leicht ein Umbruch stehen bleibt — der wird geglättet, er ist ein
+// Tippfehler. Eine Adresse mit Umbruch wird abgewiesen: Sie ist keine Adresse, die man
+// reparieren möchte.
+func PruefeKopfzeilen(sender, to, betreff string) (string, string, string, error) {
 	betreff = strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(betreff)
 
 	felder := []struct {
@@ -54,9 +63,20 @@ func baueTextNachricht(sender, to, betreff, body string) ([]byte, error) {
 	for _, f := range felder {
 		geprueft, err := HeaderWert(f.name, *f.wert)
 		if err != nil {
-			return nil, err
+			return "", "", "", err
 		}
 		*f.wert = geprueft
+	}
+	return sender, to, betreff, nil
+}
+
+// baueTextNachricht setzt eine einfache Textmail zusammen und prüft dabei jede
+// Kopfzeile. Eine Stelle statt zwei: Vorher stand derselbe Sprintf zweimal im
+// Paket, und eine Absicherung an nur einer der beiden Stellen wäre keine.
+func baueTextNachricht(sender, to, betreff, body string) ([]byte, error) {
+	sender, to, betreff, err := PruefeKopfzeilen(sender, to, betreff)
+	if err != nil {
+		return nil, err
 	}
 
 	return []byte(fmt.Sprintf("From: %s\r\n"+
