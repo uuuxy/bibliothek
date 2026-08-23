@@ -128,3 +128,102 @@ func sortiert(m map[string]bool) []string {
 	sort.Strings(aus)
 	return aus
 }
+
+// TestRollenVokabularIstUeberallDasselbe hält die dritte Liste zusammen, die niemand
+// hält: die Rollen.
+//
+// Denselben Begriff gibt es in drei Schreibweisen — DB-Enum klein (`'admin'`),
+// Go-Konstanten groß (`RoleAdmin Role = "ADMIN"`), und das Frontend vergleicht exakt
+// klein (`rolle === 'admin'`, rund zwei Dutzend Stellen). Zusammengehalten wird das nur
+// von `EqualFold` und `UPPER()` im Go-Code — im Frontend von gar nichts.
+//
+// Was passiert, wenn eine Liste allein wandert, ist belegt: Migration 069 benannte
+// LEHRER in KOLLEGIUM um, und der Vergleich in loan_return.go stand wochenlang auf dem
+// wörtlichen "LEHRER". Der Zweig war tot; eine Lehrkraft bekam beim Scan eines freien
+// Buchs "nicht ausgeliehen" statt ihrer Handapparat-Ausleihe. Gefunden hat das erst eine
+// Vermessung, kein Test.
+//
+// Geprüft wird gegen schema.sql — dort steht das Enum, und die Datenbank ist die
+// Instanz, die am Ende entscheidet.
+func TestRollenVokabularIstUeberallDasselbe(t *testing.T) {
+	ausSchema := rollenAusSchema(t)
+
+	// 1. Go-Konstanten (auth/jwt.go) — Großschreibung ist erlaubt, ein anderer Name nicht.
+	roh, err := os.ReadFile(filepath.Join("..", "auth", "jwt.go"))
+	if err != nil {
+		t.Fatalf("auth/jwt.go lesen: %v", err)
+	}
+	konstante := regexp.MustCompile(`Role[A-Za-z]+\s+Role\s*=\s*"([A-Za-z]+)"`)
+	treffer := konstante.FindAllStringSubmatch(string(roh), -1)
+	if len(treffer) == 0 {
+		t.Fatal("keine Rollen-Konstanten in auth/jwt.go gefunden — der Detektor greift ins Leere")
+	}
+	for _, m := range treffer {
+		if !ausSchema[strings.ToLower(m[1])] {
+			t.Errorf("auth/jwt.go kennt die Rolle %q, das Enum benutzer_rolle in schema.sql nicht", m[1])
+		}
+	}
+
+	// 2. Frontend-Vergleiche — hier gilt Groß-/Kleinschreibung, `===` ist unbarmherzig.
+	vergleich := regexp.MustCompile(`(?:rolle|role)\s*(?:\?\.\w+\(\))?\s*===\s*'([a-z_]+)'`)
+	gefunden := 0
+	for _, pfad := range svelteUndJs(t) {
+		inhalt, err := os.ReadFile(pfad)
+		if err != nil {
+			t.Fatalf("%s lesen: %v", pfad, err)
+		}
+		for _, m := range vergleich.FindAllStringSubmatch(string(inhalt), -1) {
+			gefunden++
+			if !ausSchema[m[1]] {
+				t.Errorf("%s vergleicht die Rolle gegen %q — das Enum benutzer_rolle kennt "+
+					"diesen Wert nicht, der Zweig ist tot", pfad, m[1])
+			}
+		}
+	}
+	if gefunden == 0 {
+		t.Fatal("kein einziger Rollen-Vergleich im Frontend gefunden — der Detektor greift ins Leere")
+	}
+}
+
+func rollenAusSchema(t *testing.T) map[string]bool {
+	t.Helper()
+	roh, err := os.ReadFile(filepath.Join("..", "schema.sql"))
+	if err != nil {
+		t.Fatalf("schema.sql lesen: %v", err)
+	}
+	zeile := regexp.MustCompile(`CREATE TYPE benutzer_rolle AS ENUM \(([^)]*)\)`)
+	m := zeile.FindStringSubmatch(string(roh))
+	if m == nil {
+		t.Fatal("Enum benutzer_rolle nicht in schema.sql gefunden — der Detektor greift ins Leere")
+	}
+	menge := map[string]bool{}
+	for _, w := range regexp.MustCompile(`'([a-z_]+)'`).FindAllStringSubmatch(m[1], -1) {
+		menge[w[1]] = true
+	}
+	return menge
+}
+
+func svelteUndJs(t *testing.T) []string {
+	t.Helper()
+	var aus []string
+	wurzel := filepath.Join("..", "frontend", "src")
+	err := filepath.Walk(wurzel, func(pfad string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			if info.Name() == "node_modules" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasSuffix(pfad, ".svelte") || (strings.HasSuffix(pfad, ".js") && !strings.HasSuffix(pfad, ".test.js")) {
+			aus = append(aus, pfad)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("frontend/src durchlaufen: %v", err)
+	}
+	return aus
+}
