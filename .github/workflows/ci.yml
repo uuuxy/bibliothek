@@ -15,9 +15,21 @@ env:
 
 # Push-Serien: nur der jeweils neueste Lauf pro Branch zählt —
 # veraltete Läufe werden abgebrochen und verbrennen keine Minuten.
+# Laufende Läufe abbrechen — aber NICHT auf main.
+#
+# Auf einem Zweig ist das richtig: Wer dreimal hintereinander nachschiebt, will das
+# Ergebnis des letzten Standes, nicht drei halbe Läufe. Auf main kehrt sich das um.
+# Am 23.08.2026 arbeiteten mehrere Sitzungen gleichzeitig im selben Repo und pushten
+# etwa alle fünf Minuten; ein CI-Lauf braucht sechs. Jeder Lauf wurde vom nächsten Push
+# abgebrochen — drei hintereinander (e0ec7bca, 77ee14b9, …), und main war in dieser Zeit
+# faktisch ungeprüft. Aufgefallen ist es nur, weil davor drei Läufe ROT waren und der
+# Fix danach nie zu Ende lief.
+#
+# Ein Gate, das nie fertig wird, ist kein Gate — und "cancelled" liest sich in der Liste
+# wie "war halt nichts", nicht wie "wir wissen es nicht".
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   # Workflow-Syntax wird geprüft, BEVOR ein Tippfehler erst beim nächsten v-Tag auffällt
