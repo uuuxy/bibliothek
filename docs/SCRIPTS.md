@@ -334,6 +334,7 @@ vor dem `DROP SCHEMA`).
 | `tabula_rasa.sql` | Bereinigt die Datenbank für den Echtbetrieb (Bewegungsdaten raus). | **Löscht Daten.** Vorher Backup. |
 | `repair_titel_dubletten.sql` | Räumt Titel-Dubletten aus dem Import auf. | Vorher Backup, Ergebnis prüfen. |
 | `repair_titel_ortssuffix.sql` | Entfernt Ortssuffixe aus Titelfeldern (Import-Artefakt). | Vorher Backup. |
+| `repair_altbestand_etiketten.sql` | Einmalige Prod-Reparatur (16.08.2026): setzt `etikett_gedruckt` für importierten Altbestand, der physisch längst beklebt ist. Ohne sie zählte das Druck-Center-Badge den ganzen Altbestand als „Etikett offen“. | **Ändert Daten.** Vorher Backup; nur für Bestände, die aus Littera kamen und bereits Etiketten tragen. |
 | `signatur_report.sql` | Report zur Signatur-Harmonisierung nach Littera-Import (Migration 038). | Nur lesend. |
 | `e2e_altlasten.sql` | Entfernt den Bestands-Bodensatz der E2E-Suite (Titel mit Präfix `E2E `, deren Exemplare und Ausleihen). | **Löscht Daten.** Vorher Backup; Probelauf mit `ROLLBACK` statt `COMMIT` möglich. |
 
