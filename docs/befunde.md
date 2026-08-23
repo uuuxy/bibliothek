@@ -192,7 +192,40 @@ fehlte im Image und kein Backup entstand.
 | **9 Ausleitung** | `littera_import.log` bekam bei jeder Kollision den echten Datenwert. Postgres schreibt in `DETAIL` den Inhalt der Zeile (`Key (email)=(erika.mustermann@…) already exists.`), `uebernahme.BeschreibeFehler` hängte ihn wörtlich an; zusätzlich schrieb `personenlauf.mailadresse` die kollidierende Adresse selbst als Kennung. Ziel ist eine unverschlüsselte Datei im Arbeitsverzeichnis, ohne Frist. Trifft genau den Littera-Lauf, der als Nächstes ansteht. Am laufenden Postgres nachgestellt. | `428e4a06` — Wertteil geschwärzt, Form und Diagnosewert (SQLSTATE/Constraint/Spalte) bleiben; Lesernummer statt Adresse. Zwei Gates. |
 | **3 zwei Wahrheitsquellen** | Die Rechte-Oberfläche zeigt „Statistiken anzeigen" (`view_stats`), das Menü blendet danach ein — `GET /api/statistiken` verlangte `view_students`. In der Vorgabe stimmen beide je Rolle **zufällig** überein, deshalb fiel es nie auf. Getrennt gewinnt still der Server: `view_stats` AUS entzog nichts (die Route antwortet weiter, nur der Menüpunkt verschwindet), `view_stats` AN ohne `view_students` zeigte einen Punkt, der jedes Mal 403 lieferte. `view_stats` war das EINZIGE Recht im System ohne Route. | `96d936ea` — Route verlangt `view_stats` (fachlich richtig: Antwort ist PII-Stufe 0), Matrix mitgezogen, `api/rechte_paritaet_test.go` hält beide Listen zusammen. Drei Rückbauten rot gesehen, zwei davon am Detektor. |
 
-### Kategorie B — notiert, nichts davon dringend
+### Kategorie B — alle zehn abgearbeitet (23.08.2026)
+
+Peters Ansage: „arbeite bitte alles ab … und Dinge, die du noch nicht abgedeckt hast,
+bitte auch." Je Fund ein Commit, jedes Gate am Rückbau rot gesehen:
+
+| Fund | Erledigt als |
+|---|---|
+| Aussonderung ohne `ist_ausleihbar = false` | `a78327ec` — beide Zweige, dazu ein Gate über den ganzen Baum (jede aussondernde Anweisung muss beide Spalten setzen, die Gegenrichtung ebenso) |
+| Sortier-Meldung zählte die Eingabe statt der Wirkung · zwei stille e2e-Wächter | `c9c903ac` — `RowsAffected` + 404 bei null Treffern; `expect(a.or(b))` vor der Verzweigung, dazu eine Ratsche gegen das Muster |
+| PDF-Datumsangaben in Container-Zeit (samt 14-Tage-Zahlungsfrist) | `b28d7a7e` — Zeitzone in `pkg/schulzeit` gehoben (eine Quelle, kein Nachbau), Gate unter TZ=Pacific/Midway + Ratsche gegen rohes `time.Now()` in `pdf/` |
+| „leer" hieß beim Ändern dasselbe wie beim Anlegen (Bestand, Titel, Autor) | `7c2d3d2f` — `stock` ist ein Zeiger (nil = nicht anfassen), leerer Titel/Autor wird 400 statt Platzhalter |
+| `migrate-fotos` sagte nur, man könne aufräumen | `0805d958` — löscht selbst, aber erst nach Gegenprobe (zurückgelesen, entschlüsselt, verglichen); `FOTOS_BEHALTEN=1` schaltet ab |
+| Rollen-Vokabular in drei Schreibweisen | `caf439be` — Gate gegen das Enum in `schema.sql`, beide Richtungen rot gesehen (u. a. der historische LEHRER-Fall) |
+| Drei Tabellen ohne Lebenszyklus | `d07a56e7` — `lehrer_anliegen` bekommt eine Frist (365 Tage nach Erledigung, einstellbar, 0 = aus); die anderen zwei bleiben **bewusst** unbefristet (Bestandskartei-Nachweis, Belegwesen) |
+| `DisallowUnknownFields` nirgends | `1a293dee` — streng dort, wo die Nutzlast aus einer geschlossenen Liste entsteht (Einstellungen); dazu ein Paritäts-Gate Kategorien ↔ Patch-Struct |
+
+**Warum nicht global streng?** Mehrere Endpunkte nehmen bewusst das ganze Objekt
+entgegen, das sie vorher ausgeliefert haben — samt der Felder, die nur der Server füllt
+(`id`, `verfuegbar`, `gesamt`, `sortOrder` beim Buch). Dort wäre Strenge kein Gewinn,
+sondern ein 400 auf einem Bildschirm, der heute funktioniert. Die Grenze verläuft nicht
+zwischen „wichtig" und „unwichtig", sondern zwischen geschlossener und offener
+Schlüsselmenge.
+
+### Nachgezogen: die Flächen, die der Durchgang offen gelassen hatte
+
+| Fläche | Ergebnis |
+|---|---|
+| **Objektbindung (IDOR)** | Kein neuer Fund. Die zwei schwächsten Rollen erreichen zusammen drei schreibende Routen; die Theke ist in der PII-Matrix ausdrücklich als „bewusst ohne Objektbindung" vermerkt (jedes Buch auf jeden Ausweis — das IST die Theke), `ListEigeneAnliegen` bindet an `claims.UserID`, die öffentlichen Bestell-Links an den gehashten Token. |
+| **`mailservice/`** | **Ein Fund, gefixt (`5499d68e`).** Über `baueMailNachricht` stand „req.To und req.Subject müssen bereits sanitiert sein" — neun Aufrufer, keiner tat es. Geprüft war nur der SMTP-Umschlag; die Kopfzeilen der Nachricht nicht. Die Regel steht jetzt an einer Stelle und gilt für beide Wege. |
+| **`sse/`** | Kein Fund. Begrenzter Puffer, nicht-blockierendes Senden, Abmeldung per `defer`, RLock deckt das Senden mit ab; der Strom trägt nur IDs und Buchtitel (Matrix-Zeile Stufe 0). |
+| **`plugins/`** | `RegisterHook` wird **nirgends** aufgerufen: fünf Dispatch-Stellen, null Zuhörer. Tote Erweiterungsstelle, kein Schaden — Kategorie C, nicht vor dem Pilotstart. |
+| **Frontend (206 Dateien)** | Kein offener Fund über fünf Detektoren: `catch`-Blöcke (36 begründet, 7 stumm, alle um `scanner.stop()`), schreibende Aufrufe ohne Auswertung der Antwort (2, beide mit begründendem Kommentar), Rollen-Literale, Rechte-Schlüssel, gesendete Nutzlast-Schlüssel. Die zwei Paritäts-Gates von heute (Rechte, Rollen) prüfen den Frontend-Baum jetzt bei jedem Lauf mit. |
+
+### Kategorie B — die Fundliste im Original
 
 | Frage | Fund | Beleg |
 |---|---|---|
@@ -227,11 +260,11 @@ inzwischen sechs mechanischen Gates dieses Projekts (Routen-Schutz, PII-Matrix,
 Einstellungs-Parität, Kategorien, Schema-Parität, Rechte-Parität) entstand jedes aus genau
 so einem Paar.
 
-**Nicht abgedeckt** und ehrlich benannt: Objektbindung (IDOR) wurde beim Sweep vom 19.08.
-geprüft, hier nicht erneut. Die 206 Svelte-Dateien sind nur über Detektoren gelaufen
-(`catch`, Rechte, Rollen, gesendete Schlüssel), nicht gelesen. `mailservice/`, `sse/` und
-`plugins/` blieben bei der Durchsicht ohne Fund, sind aber klein genug, dass ein
-Detektor dort wenig zu holen hat.
+**Nachgezogen am selben Tag** (Abschnitt „Nachgezogen" oben): Objektbindung, die drei
+kleinen Pakete und die Svelte-Fläche. Ein weiterer Fund kam dabei heraus — die
+Mail-Kopfzeilen. Die 206 Svelte-Dateien sind weiterhin nicht Zeile für Zeile gelesen,
+sondern über fünf Detektoren gelaufen; das ist die ehrliche Auskunft über die Tiefe
+dieser Fläche.
 
 ---
 
