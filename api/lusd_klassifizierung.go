@@ -55,7 +55,7 @@ func klassifiziereLusd(datei lusdDatei, idx lusdIndex, res *LusdPreviewResult) l
 		case lusdModusID:
 			klassifiziereZeileID(i, rec, idx, res, &z, gesehen)
 		case lusdModusName:
-			klassifiziereZeileName(i, rec, rec.schluessel(), idx, res, &z, gesehen, false)
+			klassifiziereZeileName(i, rec, datei.Modus, idx, res, &z, gesehen)
 		default:
 			// Nur-Name: Derselbe Name zweimal in der Datei sind zwei Menschen, die sich
 			// nicht auseinanderhalten lassen — beide melden, keinen anfassen.
@@ -68,7 +68,7 @@ func klassifiziereLusd(datei lusdDatei, idx lusdIndex, res *LusdPreviewResult) l
 				gesehen[rec.namensschluessel()] = true
 				continue
 			}
-			klassifiziereZeileName(i, rec, rec.namensschluessel(), idx, res, &z, gesehen, true)
+			klassifiziereZeileName(i, rec, datei.Modus, idx, res, &z, gesehen)
 		}
 	}
 	sammleAbgaenger(datei.Modus, idx, gesehen, res, &z)
@@ -130,7 +130,14 @@ func klassifiziereZeileID(i int, rec parsedStudentRow, idx lusdIndex, res *LusdP
 // Rückkehrer — ebenso gut ein neuer Fünftklässler, der sonst auf dem Datensatz (Sperre,
 // Schulden, Lesehistorie) des Abgegangenen landete (Prüfung 22.08.2026, A2). Er wird als
 // mehrdeutig gemeldet und nicht angefasst; das Sekretariat entscheidet von Hand.
-func klassifiziereZeileName(i int, rec parsedStudentRow, key string, idx lusdIndex, res *LusdPreviewResult, z *lusdZuordnung, gesehen map[string]bool, nurName bool) {
+func klassifiziereZeileName(i int, rec parsedStudentRow, modus lusdModus, idx lusdIndex, res *LusdPreviewResult, z *lusdZuordnung, gesehen map[string]bool) {
+	// Schlüssel AUS dem Modus ableiten (rec.schluesselFuer), nicht vom Aufrufer entgegennehmen:
+	// Die Gegenseite (bestandsSchluessel in lusd_bestand.go) tut dasselbe. Kämen beide aus
+	// verschiedenen Händen, könnte ein Aufrufer den Namensschlüssel gegen den Name+Datum-Index
+	// schlagen — das matcht dann still niemanden. Nebenbei fällt der achte Parameter weg und
+	// aus dem nichtssagenden `…, gesehen, true)` am Aufrufer wird der benannte Modus.
+	nurName := modus == lusdModusNurName
+	key := rec.schluesselFuer(modus)
 	zeilenID := fmt.Sprintf("zeile-%d", rec.LineNum)
 	if s, ok := idx.aktiv[key]; ok {
 		if s == nil {

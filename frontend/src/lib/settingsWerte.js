@@ -12,8 +12,21 @@
  * @returns {number | null} ganze Zahl ≥ 0, oder null = unverändert lassen
  */
 export function zahlOderUnveraendert(v) {
-	if (v === null || v === undefined || v === '') return null;
-	const n = typeof v === 'number' ? v : Number(String(v).trim());
+	// Nur die zwei Typen, die ein <input type="number"> über bind:value liefern kann: eine
+	// Zahl, oder eine Zeichenkette (leer bei geleertem Feld). Bewusst KEIN String(v) über
+	// alles: Ein Objekt würde dort still zu '[object Object]' und über NaN zu null — das
+	// richtige Ergebnis aus dem falschen Grund. Der Typ-Zweig sagt stattdessen aus, was hier
+	// überhaupt ankommen darf (SonarQube javascript:S6551, 22.08.2026).
+	let n;
+	if (typeof v === 'number') {
+		n = v;
+	} else if (typeof v === 'string') {
+		const roh = v.trim();
+		if (roh === '') return null;
+		n = Number(roh);
+	} else {
+		return null;
+	}
 	if (!Number.isFinite(n) || n < 0) return null;
 	return Math.trunc(n);
 }

@@ -34,6 +34,17 @@ func (r parsedStudentRow) namensschluessel() string {
 	return namensSchluessel(r.Vorname, r.Nachname)
 }
 
+// schluesselFuer liefert den Nachschlage-Schlüssel dieser Zeile für den gegebenen Modus —
+// das Gegenstück zu bestandsSchluessel (lusd_bestand.go), das dasselbe für die Bestandszeile
+// tut. Zwei Seiten, EINE Regel: Solange beide über den Modus gehen, kann niemand versehentlich
+// den Namensschlüssel gegen den Name+Datum-Index schlagen (das matchte still niemanden).
+func (r parsedStudentRow) schluesselFuer(modus lusdModus) string {
+	if modus == lusdModusNurName {
+		return r.namensschluessel()
+	}
+	return r.schluessel()
+}
+
 const (
 	lusdColID           = "lusd_id"
 	lusdColVorname      = "vorname"

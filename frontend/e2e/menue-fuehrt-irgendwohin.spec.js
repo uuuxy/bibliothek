@@ -55,7 +55,15 @@ for (const [rolle, email] of ROLLEN) {
 			await punkt.click();
 			// Auf den Navigationszustand warten statt auf eine Zeitspanne: aria-current
 			// setzt die Sidebar erst, wenn der Tab wirklich gewechselt hat.
-			await page.waitForTimeout(600);
+			//
+			// Genau das behauptete dieser Kommentar schon, während darunter `waitForTimeout(600)`
+			// stand (SonarQube S2925, 22.08.2026): eine feste Frist, nach der ein langsam
+			// rendernder Bildschirm einen gesunden Menüpunkt als tot gemeldet hätte — ein
+			// Fehlalarm in einem Detektor. Der Fehlschlag wird bewusst geschluckt: Ein Punkt,
+			// der NIE aria-current bekommt, IST der Befund, den die Schleife sammeln soll.
+			await expect(punkt)
+				.toHaveAttribute('aria-current', 'page', { timeout: 3000 })
+				.catch(() => {});
 
 			const aktiv = await punkt.getAttribute('aria-current');
 			if (aktiv !== 'page') {
