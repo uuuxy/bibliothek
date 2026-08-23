@@ -34,6 +34,24 @@
 	onMount(() => {
 		fetchLogs();
 	});
+
+	/**
+	 * Macht aus dem gespeicherten JSON eine lesbare Zeile. Fällt auf den Rohtext
+	 * zurück, wenn es kein Objekt ist — eine unlesbare Angabe ist immer noch besser
+	 * als eine leere Zelle, die aussieht, als sei nichts passiert.
+	 * @param {string} roh
+	 */
+	function lesbareDetails(roh) {
+		try {
+			const o = JSON.parse(roh);
+			if (!o || typeof o !== 'object') return roh;
+			return Object.entries(o)
+				.map(([k, v]) => `${k}: ${v}`)
+				.join(' · ');
+		} catch {
+			return roh;
+		}
+	}
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print">
@@ -83,6 +101,7 @@
 							<th class="p-4.5">Tabelle</th>
 							<th class="p-4.5">Datensatz-ID</th>
 							<th class="p-4.5">Bearbeiter (Operator)</th>
+							<th class="p-4.5">Details</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-100 text-base text-slate-600">
@@ -116,6 +135,18 @@
 											>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
 										>
 										<span class="block text-label-small text-slate-400">{log.bearbeiter_id}</span>
+									{/if}
+								</td>
+								<td class="p-4.5 text-xs text-slate-500">
+									<!-- Bei Systemaktionen ist das oft das EINZIGE, was den Vorgang
+									     erklärt: welcher Barcode, welcher Titel, welcher Entleiher.
+									     Ohne diese Spalte stand hier "DELETE auf ausleihen" mit der ID
+									     eines Exemplars, das es nicht mehr gibt — unbenutzbar für den,
+									     der das zurückgebrachte Buch in der Hand hält. -->
+									{#if log.details}
+										<span class="block max-w-md break-words">{lesbareDetails(log.details)}</span>
+									{:else}
+										<span class="text-slate-300">—</span>
 									{/if}
 								</td>
 							</tr>

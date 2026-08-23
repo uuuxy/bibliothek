@@ -25,6 +25,13 @@ type AuditLogEntry struct {
 	// Systemaktion in der Anzeige als Eintrag ganz ohne Urheber da — nicht
 	// unterscheidbar von einem Datenfehler.
 	Akteur string `json:"akteur"`
+	// Details ist die Sachangabe des Eintrags — bei Systemaktionen oft das EINZIGE,
+	// was den Vorgang erklärt: welcher Barcode, welcher Titel, welcher Entleiher.
+	// Bis zum 23.08.2026 wurde die Spalte gar nicht ausgeliefert. Ein Protokoll, das
+	// sagt "DELETE auf ausleihen, Datensatz <UUID eines Exemplars, das es nicht mehr
+	// gibt>", ist unbenutzbar: Wer das zurückgebrachte Buch auf dem Tresen liegen hat,
+	// findet damit niemanden. Leerer String, wenn die Zeile keine Details trägt.
+	Details string `json:"details"`
 }
 
 // auditLogMaxZeilen begrenzt das Logbuch auf die jüngsten Einträge.
@@ -65,7 +72,7 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp,
 			       COALESCE(l.bearbeiter_id::text, ''),
 			       COALESCE(b.vorname, ''), COALESCE(b.nachname, ''),
-			       l.akteur
+			       l.akteur, COALESCE(l.details::text, '')
 			FROM audit_log l
 			LEFT JOIN benutzer b ON l.bearbeiter_id = b.id
 			ORDER BY l.timestamp DESC
@@ -81,7 +88,7 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 		for rows.Next() {
 			var l AuditLogEntry
 			err := rows.Scan(&l.ID, &l.Tabelle, &l.Aktion, &l.DatensatzID, &l.Timestamp,
-				&l.BearbeiterID, &l.BearbeiterVorname, &l.BearbeiterNachname, &l.Akteur)
+				&l.BearbeiterID, &l.BearbeiterVorname, &l.BearbeiterNachname, &l.Akteur, &l.Details)
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
