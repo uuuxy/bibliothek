@@ -19,34 +19,29 @@ import { KATEGORIEN } from './components/settings/kategorien.js';
 const KATEGORIE_DIR = join(srcRoot, 'lib/components/settings/kategorien');
 const SHELL = join(srcRoot, 'lib/SystemSettings.svelte');
 
-// Das Vokabular der Einstellungs-Schlüssel (Rumpf von PUT /api/einstellungen,
-// repository/system_settings_patch.go). Ein neuer Schlüssel zwingt hier zu einer
-// Entscheidung, in welche Kategorie er gehört — statt irgendwo zu landen.
+// Das Vokabular der Einstellungs-Schlüssel — GELESEN aus repository/system_settings_patch.go,
+// nicht danebengeschrieben.
+//
+// Bis zum 23.08.2026 stand hier eine handgepflegte Kopie der 23 Schlüssel. Sie war
+// deckungsgleich, aber das war Zustand und keine Zusicherung: Ein neuer Schlüssel im Go-Struct
+// hätte dieses Gate nicht erreicht — es prüft nur, ob jeder Schlüssel SEINER Liste genau einer
+// Kategorie zugeordnet ist. Ein Feld, das keine Kategorie schickt, wäre also unsichtbar
+// entstanden, und der Server hätte es (seit dem strengen Decoder) beim ersten Versuch mit 400
+// abgelehnt. Genau die Bauform, gegen die dieses Gate antritt: zwei Wahrheitsquellen.
+const PATCH_GO = join(srcRoot, '../../repository/system_settings_patch.go');
 const ALLE_SCHLUESSEL = [
-	'schule_name',
-	'schule_strasse',
-	'schule_plz',
-	'schule_ort',
-	'etikett_eigentumsvermerk',
-	'frist_buch_tage',
-	'frist_medien_tage',
-	'max_ausleihen_schueler',
-	'lmf_stichtag',
-	'ferien_leseclub_aktiv',
-	'ferien_leseclub_zieldatum',
-	'max_overdue_days',
-	'max_overdue_items',
-	'bestellbedarf_warnung_aktiv',
-	'bestellbedarf_schwelle',
-	'preise_erfassen',
-	'lesehistorie_tage',
-	'lesehistorie_lernmittel_tage',
-	'anliegen_tage',
-	'theke_leeren_minuten',
-	'sperre_minuten',
-	'oeffentliche_adresse',
-	'alarm_empfaenger'
-];
+	...readFileSync(PATCH_GO, 'utf8').matchAll(/json:"([a-z_0-9]+)(?:,[^"]*)?"/g)
+].map((m) => m[1]);
+
+// Gegenprobe am Detektor selbst: Liest die Datei nicht (verschoben, umbenannt, Tags
+// umgeschrieben), käme eine leere Liste heraus — und ein Gate über eine leere Liste ist
+// grün, ohne etwas zu prüfen.
+if (ALLE_SCHLUESSEL.length < 20) {
+	throw new Error(
+		`Das Einstellungs-Vokabular kam mit ${ALLE_SCHLUESSEL.length} Schlüsseln aus ${PATCH_GO} — ` +
+			'erwartet sind mindestens 20. Wurde die Datei verschoben oder die json-Tags umgeschrieben?'
+	);
+}
 
 /**
  * Der Aufruf `speichereKategorie({ … })` einer Kategorie — und nur er.
