@@ -73,6 +73,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	// verlangt bei gesperrten Schülern einen nicht-leeren Grund, und ein alter Freitext-
 	// Grund könnte selbst personenbezogen sein. Deckt dieselben identifizierenden Felder ab
 	// wie anonymisiereAbgaenger (LUSD-Pfad).
+	bedingung := repository.PredikatAnonymisierung(repository.KulanzJob)
 	query := `
 		UPDATE schueler
 		SET vorname = left(md5(random()::text), 8),
@@ -89,15 +90,13 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		    block_reason = 'Anonymisiert (DSGVO)',
 		    anonymized_at = NOW(),
 		    aktualisiert_am = NOW()
-		WHERE ` + repository.PredikatAnonymisierung()
+		WHERE ` + bedingung.Where
 
-	// Die Bedingung kommt aus repository/loeschfristen.go — DERSELBE String, den die
-	// Selbstprüfung als count(*) stellt. Vorher stand sie hier und dort getrennt: Der
-	// Wächter hätte weiter „alles gut" gemeldet, wenn diese Abfrage sich ändert.
-	tag, err := s.db.Exec(ctx, query,
-		repository.StandardAnonymisierungSoftDeleteTage,
-		repository.StandardAnonymisierungAbgaengerTage,
-		repository.KulanzJob)
+	// Die Bedingung kommt aus repository/loeschfristen.go — DIESELBE, die die
+	// Selbstprüfung als count(*) stellt, samt ihrer Zahlen. Vorher stand sie hier und
+	// dort getrennt: Der Wächter hätte weiter „alles gut" gemeldet, wenn diese Abfrage
+	// sich ändert.
+	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: Error anonymizing old students: %v", err)
 		return

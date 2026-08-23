@@ -31,11 +31,12 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	// 30-tägige Karenzzeit als Stichjahr. Die Rechnung steht in repository/, weil die
 	// Selbstprüfung mit demselben Jahr zählen muss — zwei Jahresrechnungen wären zwei
 	// Fristen, von denen eine still danebenläge.
+	bedingung := repository.PredikatAbgaengerLoeschung(time.Now())
 	cutoffYear := repository.AbgaengerStichjahr(time.Now())
 
 	// Berechtigte Abgänger laden. Der Helfer schließt die Rows per defer — die
 	// Connection ist damit zurück im Pool, bevor die eigentliche Löschphase beginnt.
-	students, err := s.fetchDeletionEligibleStudents(ctx, cutoffYear)
+	students, err := s.fetchDeletionEligibleStudents(ctx, bedingung)
 	if err != nil {
 		log.Printf("Scheduler GDPR Delete: Failed to fetch eligible students: %v", err)
 		return
@@ -100,15 +101,15 @@ type deletionEligibleStudent struct {
 }
 
 // fetchDeletionEligibleStudents lädt alle löschberechtigten Abgänger (Abgangsjahr <
-// cutoffYear, ohne offene Ausleihen und ohne unbezahlte Schadensgebühren). Die Rows
+// Stichjahr, ohne offene Ausleihen und ohne unbezahlte Schadensgebühren). Die Rows
 // werden per defer geschlossen — robust gegen künftige Early-Returns und die
 // Connection kehrt vor der Löschphase in den Pool zurück.
-func (s *Scheduler) fetchDeletionEligibleStudents(ctx context.Context, cutoffYear int) ([]deletionEligibleStudent, error) {
+func (s *Scheduler) fetchDeletionEligibleStudents(ctx context.Context, bedingung repository.Loeschbedingung) ([]deletionEligibleStudent, error) {
 	query := `
 		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
 		FROM schueler
-		WHERE ` + repository.PredikatAbgaengerLoeschung()
-	rows, err := s.db.Query(ctx, query, cutoffYear)
+		WHERE ` + bedingung.Where
+	rows, err := s.db.Query(ctx, query, bedingung.Args...)
 	if err != nil {
 		return nil, err
 	}

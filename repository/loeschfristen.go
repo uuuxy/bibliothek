@@ -27,47 +27,21 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
-const (
-	// KulanzJob ist die Kulanz des Löschers selbst: keine. Er ist die Instanz, die die
-	// Frist definiert.
-	KulanzJob = 0
-	// KulanzWaechter ist der eine Tag Luft, den die Selbstprüfung dem letzten
-	// nächtlichen Lauf zugesteht.
-	KulanzWaechter = 1
+// ── Schüler-Anonymisierung ──────────────────────────────────────────────────
 
-	// StandardAnonymisierungSoftDeleteTage sind die Tage nach dem Soft-Delete
-	// (Papierkorb), nach denen ein Schüler-Datensatz anonymisiert wird.
-	StandardAnonymisierungSoftDeleteTage = 180
-	// StandardAnonymisierungAbgaengerTage sind die Tage nach der letzten Änderung, nach
-	// denen ein als Abgänger markierter Schüler anonymisiert wird.
-	StandardAnonymisierungAbgaengerTage = 360
-
-	// StandardAuditAufbewahrungMonate ist die Vorgabe-Aufbewahrung der beiden
-	// Protokolltabellen.
-	StandardAuditAufbewahrungMonate = 24
-	// MindestAuditAufbewahrungMonate ist die Untergrenze: Eine versehentliche 0 in den
-	// Einstellungen darf nicht das komplette Protokoll wegräumen — Revisionsfähigkeit
-	// (wer hat die Gebühr storniert?) ist der Zweck der Tabellen.
-	MindestAuditAufbewahrungMonate = 6
-	// AuditAufbewahrungSchluessel ist die Zeile in system_einstellungen, aus der Job
-	// UND Wächter die Frist lesen.
-	AuditAufbewahrungSchluessel = "audit_aufbewahrung_monate"
-)
-
-// ── Schüler-Anonymisierung ($1 Soft-Delete-Tage, $2 Abgänger-Tage, $3 Kulanz) ──
-
-// PredikatAnonymisierung liefert die WHERE-Bedingung von RunGDPRAnonymizeOldData.
+// PredikatAnonymisierung liefert die Bedingung von RunGDPRAnonymizeOldData.
 // Ein Schüler mit offener Ausleihe oder unbezahltem Schaden bleibt stehen — dort ist
-// der Zweck der Speicherung noch nicht erreicht.
-func PredikatAnonymisierung() string {
-	return `anonymized_at IS NULL
+// der Zweck der Speicherung noch nicht erreicht. Die beiden Fristen sind Konstanten und
+// werden hier gebunden; von außen kommt nur die Kulanz.
+func PredikatAnonymisierung(kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, StandardAnonymisierungAbgaengerTage, kulanz}, Where: `anonymized_at IS NULL
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
 		      OR
 		      (ist_abgaenger = true AND aktualisiert_am < NOW() - make_interval(days => $2::int + $3::int))
 		  )
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
-		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`
+		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`}
 }
 
 // ── Abgänger endgültig löschen ($1 Stichjahr) ─────────────────────────────────
@@ -75,8 +49,8 @@ func PredikatAnonymisierung() string {
 // PredikatAbgaengerLoeschung liefert die WHERE-Bedingung, mit der
 // RunGDPRDeleteAbgaenger die endgültig löschbaren Abgänger auswählt. Die Frist steckt
 // hier nicht in einem Intervall, sondern im Stichjahr — siehe AbgaengerStichjahr.
-func PredikatAbgaengerLoeschung() string {
-	return `ist_abgaenger = true
+func PredikatAbgaengerLoeschung(jetzt time.Time) Loeschbedingung {
+	return Loeschbedingung{Args: []any{AbgaengerStichjahr(jetzt)}, Where: `ist_abgaenger = true
 		  AND deleted_at IS NULL
 		  AND abgaenger_jahr < $1
 		  AND NOT EXISTS (
@@ -86,7 +60,7 @@ func PredikatAbgaengerLoeschung() string {
 		  AND NOT EXISTS (
 		      SELECT 1 FROM schadensfaelle
 		      WHERE schueler_id = schueler.id AND ist_bezahlt = false
-		  )`
+		  )`}
 }
 
 // AbgaengerStichjahr liefert das Jahr, unter dem ein Abgangsjahr liegen muss, damit der
@@ -126,8 +100,8 @@ func klasse(spalte string, lernmittel bool) string {
 // Schüler getrennt wird (Alias `a`). Ausleihen mit OFFENEM Schadensfall bleiben
 // zugeordnet — dort ist der Zweck (Forderung) noch nicht erreicht. Lehrer-Ausleihen
 // haben keine schueler_id und sind ohnehin nicht betroffen.
-func PredikatLesehistorieAusleihen(lernmittel bool) string {
-	return `a.schueler_id IS NOT NULL
+func PredikatLesehistorieAusleihen(lernmittel bool, tage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `a.schueler_id IS NOT NULL
 		  AND a.rueckgabe_am IS NOT NULL
 		  AND a.rueckgabe_am < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
@@ -135,7 +109,7 @@ func PredikatLesehistorieAusleihen(lernmittel bool) string {
 		        WHERE sf.ausleihe_id = a.id
 		          AND sf.ist_bezahlt = false
 		          AND sf.storniert_am IS NULL)
-		  AND ` + klasse("a.exemplar_id", lernmittel)
+		  AND ` + klasse("a.exemplar_id", lernmittel)}
 }
 
 // PredikatLesehistorieProtokoll liefert die WHERE-Bedingung, mit der dem Ausleih-
@@ -143,8 +117,8 @@ func PredikatLesehistorieAusleihen(lernmittel bool) string {
 // ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über den Titel.
 // Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat oder ein
 // offener Schadensfall daran hängt.
-func PredikatLesehistorieProtokoll(lernmittel bool) string {
-	return `al.tabelle = 'ausleihen'
+func PredikatLesehistorieProtokoll(lernmittel bool, tage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'ausleihen'
 		  AND al.details ? 'schueler_id'
 		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
@@ -158,7 +132,7 @@ func PredikatLesehistorieProtokoll(lernmittel bool) string {
 		          AND sf.schueler_id::text = al.details->>'schueler_id'
 		          AND sf.ist_bezahlt = false
 		          AND sf.storniert_am IS NULL)
-		  AND ` + klasse("al.datensatz_id", lernmittel)
+		  AND ` + klasse("al.datensatz_id", lernmittel)}
 }
 
 // ── Erledigte Anliegen ($1 Tage, $2 Kulanz) ───────────────────────────────────
@@ -166,9 +140,9 @@ func PredikatLesehistorieProtokoll(lernmittel bool) string {
 // PredikatAnliegen liefert die WHERE-Bedingung der Anliegen-Befristung. Die Rechnung
 // läuft über den Erledigungszeitpunkt, nicht über das Anlegen: Ein offenes Anliegen ist
 // eine laufende Sache und hat keine Frist.
-func PredikatAnliegen() string {
-	return `erledigt_am IS NOT NULL
-		  AND erledigt_am < NOW() - make_interval(days => $1::int + $2::int)`
+func PredikatAnliegen(tage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `erledigt_am IS NOT NULL
+		  AND erledigt_am < NOW() - make_interval(days => $1::int + $2::int)`}
 }
 
 // ── Audit-Aufbewahrung ($1 Monate, $2 Kulanz-Tage) ────────────────────────────
@@ -177,12 +151,14 @@ func PredikatAnliegen() string {
 // Monat — sonst gäbe der Wächter dem Job einen ganzen Monat Blindheit.
 
 // PredikatAuditLog ist die Bedingung für audit_log (fachliche Datensatz-Historie).
-func PredikatAuditLog() string {
-	return `timestamp < NOW() - make_interval(months => $1::int, days => $2::int)`
+func PredikatAuditLog(monate, kulanzTage int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{monate, kulanzTage},
+		Where: `timestamp < NOW() - make_interval(months => $1::int, days => $2::int)`}
 }
 
 // PredikatAuditLogs ist die Bedingung für audit_logs (Admin-Aktionen inkl. IP-Adressen).
 // Andere Tabelle, andere Zeitspalte, dieselbe Frist.
-func PredikatAuditLogs() string {
-	return `zeitstempel < NOW() - make_interval(months => $1::int, days => $2::int)`
+func PredikatAuditLogs(monate, kulanzTage int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{monate, kulanzTage},
+		Where: `zeitstempel < NOW() - make_interval(months => $1::int, days => $2::int)`}
 }

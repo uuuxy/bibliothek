@@ -72,11 +72,12 @@ func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bo
 	if tage <= 0 {
 		return 0
 	}
+	bedingung := repository.PredikatLesehistorieAusleihen(lernmittel, tage, repository.KulanzJob)
 	query := `
 		UPDATE ausleihen a
 		SET schueler_id = NULL
-		WHERE ` + repository.PredikatLesehistorieAusleihen(lernmittel)
-	tag, err := s.db.Exec(ctx, query, tage, repository.KulanzJob)
+		WHERE ` + bedingung.Where
+	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Trennung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
@@ -99,11 +100,12 @@ func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmit
 	if tage <= 0 {
 		return 0
 	}
+	bedingung := repository.PredikatLesehistorieProtokoll(lernmittel, tage, repository.KulanzJob)
 	query := `
 		UPDATE audit_log al
 		SET details = al.details - 'schueler_id' - 'entleiher'
-		WHERE ` + repository.PredikatLesehistorieProtokoll(lernmittel)
-	tag, err := s.db.Exec(ctx, query, tage, repository.KulanzJob)
+		WHERE ` + bedingung.Where
+	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Protokoll-Bereinigung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0

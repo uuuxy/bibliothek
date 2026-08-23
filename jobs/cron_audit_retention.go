@@ -30,14 +30,14 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 	// die auch der Wächter der Selbstprüfung liest.
 	monate := repository.NewBetriebszustandRepository(s.db).AuditAufbewahrungMonate(ctx)
 
-	geloeschtDatensatz, err := s.loescheAeltereAls(ctx,
-		`DELETE FROM audit_log WHERE `+repository.PredikatAuditLog(), monate)
+	geloeschtDatensatz, err := s.loescheAeltereAls(ctx, "audit_log",
+		repository.PredikatAuditLog(monate, repository.KulanzJob))
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_log: %v", err)
 		return
 	}
-	geloeschtAdmin, err := s.loescheAeltereAls(ctx,
-		`DELETE FROM audit_logs WHERE `+repository.PredikatAuditLogs(), monate)
+	geloeschtAdmin, err := s.loescheAeltereAls(ctx, "audit_logs",
+		repository.PredikatAuditLogs(monate, repository.KulanzJob))
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_logs: %v", err)
 		return
@@ -61,8 +61,8 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 		geloeschtDatensatz, geloeschtAdmin, monate)
 }
 
-func (s *Scheduler) loescheAeltereAls(ctx context.Context, query string, monate int) (int64, error) {
-	tag, err := s.db.Exec(ctx, query, monate, repository.KulanzJob)
+func (s *Scheduler) loescheAeltereAls(ctx context.Context, tabelle string, b repository.Loeschbedingung) (int64, error) {
+	tag, err := s.db.Exec(ctx, `DELETE FROM `+tabelle+` WHERE `+b.Where, b.Args...)
 	if err != nil {
 		return 0, err
 	}

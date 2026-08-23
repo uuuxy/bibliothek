@@ -26,14 +26,15 @@ type LoeschRueckstand struct {
 	Aus     bool   `json:"aus"`     // Frist steht auf 0 = abgeschaltet (kein Fehler)
 }
 
-// zaehle beantwortet eine Predikat-Frage als Anzahl.
-func (r *BetriebszustandRepository) zaehle(ctx context.Context, tabelle, alias, predikat string, args ...any) (int, error) {
+// zaehle beantwortet eine Löschbedingung als Anzahl. Sie nimmt die Bedingung als
+// GANZES entgegen — Text und Zahlen sind daran nicht mehr getrennt einsetzbar.
+func (r *BetriebszustandRepository) zaehle(ctx context.Context, tabelle, alias string, b Loeschbedingung) (int, error) {
 	von := tabelle
 	if alias != "" {
 		von += " " + alias
 	}
 	var n int
-	err := r.pool.QueryRow(ctx, `SELECT count(*) FROM `+von+` WHERE `+predikat, args...).Scan(&n)
+	err := r.pool.QueryRow(ctx, `SELECT count(*) FROM `+von+` WHERE `+b.Where, b.Args...).Scan(&n)
 	return n, err
 }
 
@@ -59,8 +60,7 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
 
 	// 1. Schüler-Anonymisierung (180 Tage nach Soft-Delete / 360 Tage Abgänger).
-	n, err := r.zaehle(ctx, "schueler", "", PredikatAnonymisierung(),
-		StandardAnonymisierungSoftDeleteTage, StandardAnonymisierungAbgaengerTage, KulanzWaechter)
+	n, err := r.zaehle(ctx, "schueler", "", PredikatAnonymisierung(KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
@@ -68,7 +68,7 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 
 	// 2. Abgänger endgültig löschen. Die Kulanz steckt in AbgaengerStichjahr (30 Tage
 	//    nach Jahreswechsel) — ein zusätzlicher Tag wäre hier ohne Bedeutung.
-	n, err = r.zaehle(ctx, "schueler", "", PredikatAbgaengerLoeschung(), AbgaengerStichjahr(time.Now()))
+	n, err = r.zaehle(ctx, "schueler", "", PredikatAbgaengerLoeschung(time.Now()))
 	if err != nil {
 		return fehler(err)
 	}
@@ -87,11 +87,11 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	} {
 		zeile := LoeschRueckstand{Routine: k.routine, Frist: tageText(k.tage), Aus: k.tage <= 0}
 		if !zeile.Aus {
-			ausleihen, err := r.zaehle(ctx, "ausleihen", "a", PredikatLesehistorieAusleihen(k.lernmittel), k.tage, KulanzWaechter)
+			ausleihen, err := r.zaehle(ctx, "ausleihen", "a", PredikatLesehistorieAusleihen(k.lernmittel, k.tage, KulanzWaechter))
 			if err != nil {
 				return fehler(err)
 			}
-			protokoll, err := r.zaehle(ctx, "audit_log", "al", PredikatLesehistorieProtokoll(k.lernmittel), k.tage, KulanzWaechter)
+			protokoll, err := r.zaehle(ctx, "audit_log", "al", PredikatLesehistorieProtokoll(k.lernmittel, k.tage, KulanzWaechter))
 			if err != nil {
 				return fehler(err)
 			}
@@ -103,18 +103,18 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	// 5. Erledigte Anliegen.
 	anliegen := LoeschRueckstand{Routine: "Erledigte Anliegen", Frist: tageText(anliegenTage), Aus: anliegenTage <= 0}
 	if !anliegen.Aus {
-		if anliegen.Zeilen, err = r.zaehle(ctx, "lehrer_anliegen", "", PredikatAnliegen(), anliegenTage, KulanzWaechter); err != nil {
+		if anliegen.Zeilen, err = r.zaehle(ctx, "lehrer_anliegen", "", PredikatAnliegen(anliegenTage, KulanzWaechter)); err != nil {
 			return fehler(err)
 		}
 	}
 	stand = append(stand, anliegen)
 
 	// 6. Audit-Aufbewahrung, beide Protokolltabellen.
-	datensatz, err := r.zaehle(ctx, "audit_log", "", PredikatAuditLog(), auditMonate, KulanzWaechter)
+	datensatz, err := r.zaehle(ctx, "audit_log", "", PredikatAuditLog(auditMonate, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
-	admin, err := r.zaehle(ctx, "audit_logs", "", PredikatAuditLogs(), auditMonate, KulanzWaechter)
+	admin, err := r.zaehle(ctx, "audit_logs", "", PredikatAuditLogs(auditMonate, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
