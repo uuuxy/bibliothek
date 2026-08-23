@@ -36,12 +36,12 @@ func TestEndgueltigLoescheVerlust_MitAusleihhistorie(t *testing.T) {
 		t.Fatalf("bezahlte Gebühr: %v", err)
 	}
 
-	anzahl, err := repo.EndgueltigLoescheVerlustExemplare(ctx, []string{exemplarID}, bearbeiter)
+	geloescht, err := repo.EndgueltigLoescheVerlustExemplare(ctx, []string{exemplarID}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Exemplar mit Ausleihhistorie ließ sich nicht löschen: %v", err)
 	}
-	if anzahl != 1 {
-		t.Fatalf("%d gelöscht, erwartet 1", anzahl)
+	if len(geloescht) != 1 || geloescht[0] != exemplarID {
+		t.Fatalf("zurückgemeldet %v, erwartet genau %s", geloescht, exemplarID)
 	}
 
 	// Der Barcode muss wieder frei sein — buecher_exemplare.barcode_id ist UNIQUE ohne

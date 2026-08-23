@@ -83,7 +83,7 @@ func (s *Server) InventurVerlusteLoeschenHandler() http.HandlerFunc {
 		defer db.SafeRollback(ctx, tx)
 
 		invRepo := repository.NewInventoryRepository(tx)
-		anzahl, err := invRepo.EndgueltigLoescheVerlustExemplare(ctx, req.ExemplarIDs, claims.UserID)
+		geloeschteIDs, err := invRepo.EndgueltigLoescheVerlustExemplare(ctx, req.ExemplarIDs, claims.UserID)
 		if err != nil {
 			// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
 			// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"
@@ -97,7 +97,16 @@ func (s *Server) InventurVerlusteLoeschenHandler() http.HandlerFunc {
 		if err := tx.Commit(ctx); err != nil {
 			return apierrors.Internal("Transaktion konnte nicht abgeschlossen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, map[string]int{"geloescht": anzahl})
+		// Beide Angaben: die Zahl für die Meldung, die IDs, damit die Oberfläche genau
+		// die Zeilen entfernt, die wirklich weg sind — und nicht die, die sie angefragt
+		// hatte. Nie nil, damit der Client [] statt null bekommt.
+		if geloeschteIDs == nil {
+			geloeschteIDs = []string{}
+		}
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"geloescht":      len(geloeschteIDs),
+			"geloeschte_ids": geloeschteIDs,
+		})
 		return nil
 	})
 }

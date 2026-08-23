@@ -139,13 +139,21 @@ func TestEndgueltigLoescheVerlustExemplare(t *testing.T) {
 		t.Fatalf("normales Exemplar anlegen: %v", err)
 	}
 
-	anzahl, err := repo.EndgueltigLoescheVerlustExemplare(ctx,
+	geloescht, err := repo.EndgueltigLoescheVerlustExemplare(ctx,
 		[]string{verloren1, verloren2, normalID, "00000000-0000-0000-0000-000000000000"}, bearbeiterID)
 	if err != nil {
 		t.Fatalf("EndgueltigLoescheVerlustExemplare: %v", err)
 	}
-	if anzahl != 2 {
-		t.Fatalf("%d gelöscht, erwartet 2 (nur die beiden Verlust-Exemplare)", anzahl)
+	if len(geloescht) != 2 {
+		t.Fatalf("%d gelöscht, erwartet 2 (nur die beiden Verlust-Exemplare)", len(geloescht))
+	}
+	// Es genügt nicht, dass die ANZAHL stimmt: Die Oberfläche entfernt genau die
+	// zurückgemeldeten Zeilen aus ihrer Liste. Kämen hier die angefragten IDs statt der
+	// gelöschten, verschwänden das normale Exemplar und die Fantasie-UUID nur auf dem
+	// Bildschirm — genau der stille Fehler, gegen den die Rückgabe umgestellt wurde.
+	zurueck := map[string]bool{geloescht[0]: true, geloescht[1]: true}
+	if !zurueck[verloren1] || !zurueck[verloren2] {
+		t.Fatalf("zurückgemeldet %v, erwartet genau die beiden Verlust-Exemplare", geloescht)
 	}
 
 	var uebrig int

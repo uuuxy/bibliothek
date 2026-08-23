@@ -64,10 +64,33 @@ export function useFehlbestand() {
 			toastStore.addToast(r.error || 'Löschen fehlgeschlagen.', 'error');
 			return;
 		}
+		// Entfernt wird, was der Server WIRKLICH gelöscht hat — nicht, was angefragt
+		// wurde. Vorher filterte diese Zeile über `exemplarIds`: Wer fünf auswählte, von
+		// denen zwei inzwischen als „gefunden" markiert oder gar nicht als Verlust
+		// gebucht waren, sah alle fünf verschwinden. Zwei davon nur auf seinem
+		// Bildschirm; nach dem nächsten Laden waren sie wieder da.
 		// Plain Array statt Set: die Liste bleibt zweistellig, ein .includes() ist hier
 		// klarer als eine weitere Set-Instanz im reaktiven Zustand zu rechtfertigen.
-		fehlbestand = fehlbestand.filter((e) => !exemplarIds.includes(e.exemplar_id));
-		toastStore.addToast(`${r.data.geloescht} Exemplare endgültig gelöscht.`, 'success');
+		const geloeschteIds = r.data.geloeschte_ids ?? [];
+		fehlbestand = fehlbestand.filter((e) => !geloeschteIds.includes(e.exemplar_id));
+
+		// Und die Meldung sagt, was geschah — nicht, was verlangt wurde. „0 Exemplare
+		// endgültig gelöscht" als grüne Erfolgsmeldung war die Bauform, an der dieses
+		// Projekt schon einmal eine falsche Sortier-Bilanz hatte.
+		const uebersprungen = exemplarIds.length - geloeschteIds.length;
+		if (geloeschteIds.length === 0) {
+			toastStore.addToast(
+				'Nichts gelöscht — keines der ausgewählten Exemplare ist (noch) als Verlust gebucht.',
+				'warning'
+			);
+		} else if (uebersprungen > 0) {
+			toastStore.addToast(
+				`${geloeschteIds.length} endgültig gelöscht, ${uebersprungen} übersprungen (nicht mehr als Verlust gebucht).`,
+				'warning'
+			);
+		} else {
+			toastStore.addToast(`${geloeschteIds.length} Exemplare endgültig gelöscht.`, 'success');
+		}
 	}
 
 	async function loadAbgeschlosseneInventuren() {

@@ -77,9 +77,9 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 // sie darf nur aufräumen, was der Fehlbestandsbericht selbst schon als verloren
 // gebucht hat. Liefert die Zahl der tatsächlich gelöschten Exemplare (IDs, die schon
 // vorher weg waren oder nicht VERLUST sind, werden still übersprungen).
-func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Context, exemplarIDs []string, bearbeiterID string) (int, error) {
+func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Context, exemplarIDs []string, bearbeiterID string) ([]string, error) {
 	if len(exemplarIDs) == 0 {
-		return 0, nil
+		return nil, nil
 	}
 
 	rows, err := r.db.Query(ctx, `
@@ -89,7 +89,7 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 		WHERE e.id = ANY($1) AND e.ist_ausgesondert = true AND e.aussonderung_grund = 'VERLUST'
 	`, exemplarIDs)
 	if err != nil {
-		return 0, fmt.Errorf("zu löschende Verlust-Exemplare lesen fehlgeschlagen: %w", err)
+		return nil, fmt.Errorf("zu löschende Verlust-Exemplare lesen fehlgeschlagen: %w", err)
 	}
 	type snapshot struct{ id, barcode, titel string }
 	var treffer []snapshot
@@ -97,16 +97,16 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 		var s snapshot
 		if err := rows.Scan(&s.id, &s.barcode, &s.titel); err != nil {
 			rows.Close()
-			return 0, fmt.Errorf("verlust-exemplar lesen fehlgeschlagen: %w", err)
+			return nil, fmt.Errorf("verlust-exemplar lesen fehlgeschlagen: %w", err)
 		}
 		treffer = append(treffer, s)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return 0, err
+		return nil, err
 	}
 	if len(treffer) == 0 {
-		return 0, nil
+		return nil, nil
 	}
 
 	ids := make([]string, len(treffer))
@@ -117,7 +117,7 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	}
 
 	if err := r.pruefeVerlusteLoeschbar(ctx, ids, barcodeVon); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	// Die abhängigen Zeilen zuerst — `ausleihen.exemplar_id` und
@@ -137,17 +137,17 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	if _, err := r.db.Exec(ctx,
 		`DELETE FROM schadensfaelle WHERE exemplar_id = ANY($1)`, ids,
 	); err != nil {
-		return 0, fmt.Errorf("erledigte schadensfälle der verlust-exemplare löschen fehlgeschlagen: %w", err)
+		return nil, fmt.Errorf("erledigte schadensfälle der verlust-exemplare löschen fehlgeschlagen: %w", err)
 	}
 	if _, err := r.db.Exec(ctx,
 		`DELETE FROM ausleihen WHERE exemplar_id = ANY($1) AND rueckgabe_am IS NOT NULL`, ids,
 	); err != nil {
-		return 0, fmt.Errorf("ausleihhistorie der verlust-exemplare löschen fehlgeschlagen: %w", err)
+		return nil, fmt.Errorf("ausleihhistorie der verlust-exemplare löschen fehlgeschlagen: %w", err)
 	}
 	if _, err := r.db.Exec(ctx,
 		`DELETE FROM buecher_exemplare WHERE id = ANY($1)`, ids,
 	); err != nil {
-		return 0, fmt.Errorf("verlust-exemplare endgültig löschen fehlgeschlagen: %w", err)
+		return nil, fmt.Errorf("verlust-exemplare endgültig löschen fehlgeschlagen: %w", err)
 	}
 
 	for _, s := range treffer {
@@ -157,10 +157,14 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 			Kontext: strPtr("Als Verlust gebuchtes Exemplar endgültig gelöscht"),
 			Details: map[string]any{"barcode_id": s.barcode, "titel": s.titel, "action": "verlust_endgueltig_geloescht"},
 		}); err != nil {
-			return 0, err
+			return nil, err
 		}
 	}
-	return len(treffer), nil
+	// Die IDs, nicht nur ihre Anzahl: Die Oberfläche entfernte bisher ALLE angefragten
+	// Zeilen aus ihrer Liste, gleich wie viele der Server wirklich gelöscht hat. Wer fünf
+	// auswählte, von denen zwei inzwischen als „gefunden" markiert waren, sah alle fünf
+	// verschwinden — zwei davon nur auf seinem Bildschirm.
+	return ids, nil
 }
 
 func strPtr(s string) *string { return &s }
