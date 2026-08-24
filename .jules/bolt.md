@@ -36,6 +36,6 @@
 ## 2026-08-11 - [Optimize Active Loans Existence Check]
 **Learning:** Found an instance in `pruefeKeineAktivenAusleihen` (`inventur/db_books_delete.go`) where `SELECT COUNT(*)` was used to check for the presence of active loans before deleting books. This forces the database to scan and count all matching rows.
 **Action:** In PostgreSQL, always prefer `SELECT EXISTS(SELECT 1 ...)` over `SELECT COUNT(*) > 0` for simple existence checks. `EXISTS` can short-circuit evaluation upon finding the first match, avoiding unnecessary full-scan overhead during bulk delete operations.
-## 2024-05-30 - Optimize queryBestandKennzahlen performance
+## 2026-08-24 - Optimize queryBestandKennzahlen performance
 **Learning:** Found a suboptimal `LEFT JOIN` subquery in `queryBestandKennzahlen` (`api/stats.go`) that counted active loans. When the dataset scales, executing this nested loop left join directly inside the FROM clause leads to an inefficient query plan in PostgreSQL, resulting in high CPU usage and slow response times. Simply removing `DISTINCT` to attempt an optimization is extremely dangerous as it duplicates rows and breaks the aggregations entirely.
 **Action:** Extract the subquery into a Common Table Expression (CTE) `WITH aktive_ausleihen AS (SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL)`. This prevents the planner from executing a suboptimal nested loop left join and allows a highly efficient parallel hash join while safely preserving the logic.
