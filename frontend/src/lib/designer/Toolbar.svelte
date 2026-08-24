@@ -1,5 +1,4 @@
 <script>
-	import { Printer } from '@lucide/svelte';
 	/**
 	 * @file Toolbar.svelte
 	 * Top control bar for the canvas ID-card designer.
@@ -15,6 +14,7 @@
 	import { idStore, addTextElement, addImageElements } from './idDesignerStore.svelte.js';
 	import Button from '../components/ui/Button.svelte';
 	import ToolbarAuswahl from './ToolbarAuswahl.svelte';
+	import ToolbarDruck from './ToolbarDruck.svelte';
 
 	/** @type {HTMLInputElement | undefined} */
 	let bildUploadEl = $state();
@@ -23,7 +23,7 @@
 	 * @type {{
 	 *   zoom: number, onZoom: (v: number) => void,
 	 *   side: 'front'|'back', onSide: (s: 'front'|'back') => void,
-	 *   printMode: 'card'|'a4', onPrintMode: (m: 'card'|'a4') => void,
+	 *   printMode: 'card'|'etikett', onPrintMode: (m: 'card'|'etikett') => void,
 	 *   onPrint: () => void,
 	 *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
 	 *   previewStudent: any,
@@ -93,21 +93,7 @@
 </script>
 
 <div class="w-full space-y-4 no-print">
-	<!-- Row 1: Print controls -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-		{@render toggleGroup(
-			[
-				{ value: 'card', label: 'Kartendrucker' },
-				{ value: 'a4', label: 'A4-Bogen' }
-			],
-			printMode,
-			(v) => onPrintMode(/** @type {'card'|'a4'} */ (v))
-		)}
-		<Button onclick={onPrint} class="px-5">
-			<Printer class="h-4 w-4" aria-hidden="true" />
-			{side === 'back' ? 'Testdruck Rückseite' : 'Testdruck Vorderseite'}
-		</Button>
-	</div>
+	<ToolbarDruck {printMode} {onPrintMode} {side} {onPrint} />
 
 	<ToolbarAuswahl
 		{barcodeType}

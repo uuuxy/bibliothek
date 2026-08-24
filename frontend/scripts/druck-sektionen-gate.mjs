@@ -1,18 +1,22 @@
 /**
  * Gate: Welche Druck-Sektion des Ausweis-Designers ist bei welcher Betriebsart sichtbar?
  *
- * PrintPreview.svelte legt VIER versteckte Sektionen ins Dokument — Kartendrucker und
- * A4-Bogen, je Vorder- und Rückseite. Welche davon auf dem Papier landet, entscheidet
- * keine Bedingung im Markup, sondern allein die CSS-Kaskade aus drei Quellen:
+ * PrintPreview.svelte legt versteckte Sektionen ins Dokument — je eine für Vorder- und
+ * Rückseite der Ausweiskarte. Welche davon auf dem Papier landet, entscheidet keine
+ * Bedingung im Markup, sondern allein die CSS-Kaskade aus drei Quellen:
  * Tailwinds `hidden`/`print:block`, druck-grundlagen.css und druck-ausweise.css. Das
  * ist am gebauten Bundle prüfbar und sonst nirgends — jsdom kennt keine Kaskade, und
  * `@media print` sieht man am Bildschirm ohnehin nicht.
  *
- * Anlass (24.08.2026): Der Rückseiten-Testdruck gab BEIDE Formen zugleich aus. Die
- * Auswahl nach Betriebsart gab es nur für die Vorderseiten-Sektionen; die Rückseiten
- * wurden allein nach Seite gefiltert, und `.print-rendered-output { display: block
- * !important }` holte die übrig gebliebene aktiv hervor. Der Vorderseitendruck war nie
- * betroffen — deshalb ist es monatelang niemandem aufgefallen.
+ * Anlass (24.08.2026): Damals gab es zusätzlich zwei A4-Sektionen (acht Kartenabbilder
+ * auf einem Blatt), und der Rückseiten-Testdruck gab BEIDE Formen zugleich aus — die
+ * Auswahl nach Betriebsart fehlte den Rückseiten, und `.print-rendered-output
+ * { display: block !important }` holte die übrig gebliebene aktiv hervor. Der
+ * Vorderseitendruck war nie betroffen, deshalb fiel es monatelang niemandem auf.
+ *
+ * Der A4-Bogen ist seitdem abgeschafft (an seiner Stelle steht der Etikettenbogen, der
+ * serverseitig als PDF entsteht). Das Gate bleibt: Sobald wieder eine zweite Sektion
+ * dazukommt, ist die Frage „welche druckt eigentlich?" sofort wieder da.
  *
  * Der Prüfaufbau baut das Markup NICHT nach, sondern liest die vier Klassenlisten aus
  * PrintPreview.svelte und die Svelte-Scope-Klasse aus dem gebauten CSS. Eine umbenannte
@@ -47,12 +51,7 @@ for (const [, liste] of markup.matchAll(/class="(print-rendered-output[^"]*)"/g)
 	const name = liste.match(/print-section-[a-z0-9-]+/)?.[0];
 	if (name) klassen[name] = liste;
 }
-const ERWARTET = [
-	'print-section-card',
-	'print-section-a4',
-	'print-section-back-card',
-	'print-section-back-a4'
-];
+const ERWARTET = ['print-section-card', 'print-section-back-card'];
 for (const name of ERWARTET) {
 	if (!klassen[name])
 		abbruch(`PrintPreview.svelte führt keine Sektion "${name}" mehr — Gate veraltet.`);
@@ -100,12 +99,16 @@ const server = http.createServer((anfrage, antwort) => {
 });
 await new Promise((fertig) => server.listen(0, fertig));
 
-// Genau EINE Sektion je Betriebsart — nicht "mindestens die richtige".
+// Genau EINE Sektion je Fall — nicht "mindestens die richtige".
+//
+// 'a4' steht bewusst weiter drin, obwohl kein Bildschirm ihn mehr setzt: Ein zentral
+// gespeichertes Design kann den alten Wert noch tragen, und dann darf NICHTS gedruckt
+// werden statt irgendetwas. applyDesign() liest ihn zwar auf 'card' um — aber genau
+// solche Umleitungen fallen bei Umbauten als Erstes weg.
+// Genau EINE Sektion je Fall — nicht "mindestens die richtige".
 const MATRIX = [
 	['card', 'front', 'print-section-card'],
-	['card', 'back', 'print-section-back-card'],
-	['a4', 'front', 'print-section-a4'],
-	['a4', 'back', 'print-section-back-a4']
+	['card', 'back', 'print-section-back-card']
 ];
 
 const browser = await chromium.launch();
@@ -117,8 +120,11 @@ const fehler = [];
 for (const [modus, seitenwahl, erwartet] of MATRIX) {
 	await seiteImBrowser.evaluate(
 		([m, s]) => {
-			document.body.setAttribute('data-print-mode', m);
-			document.body.setAttribute('data-print-side', s);
+			// null = Attribut gar nicht gesetzt (blankes window.print(), z. B. Quittung).
+			if (m === null) document.body.removeAttribute('data-print-mode');
+			else document.body.setAttribute('data-print-mode', m);
+			if (s === null) document.body.removeAttribute('data-print-side');
+			else document.body.setAttribute('data-print-side', s);
 		},
 		[modus, seitenwahl]
 	);
@@ -127,9 +133,10 @@ for (const [modus, seitenwahl, erwartet] of MATRIX) {
 		(ids) => ids.filter((id) => getComputedStyle(document.getElementById(id)).display !== 'none'),
 		ERWARTET
 	);
-	if (sichtbar.length !== 1 || sichtbar[0] !== erwartet) {
+	const sollen = erwartet ? [erwartet] : [];
+	if (sichtbar.join(',') !== sollen.join(',')) {
 		fehler.push(
-			`  ${modus}/${seitenwahl}: erwartet [${erwartet}], gedruckt würde [${sichtbar.join(', ') || 'nichts'}]`
+			`  ${modus ?? 'ohne Modus'}/${seitenwahl ?? '–'}: erwartet [${sollen.join(', ') || 'nichts'}], gedruckt würde [${sichtbar.join(', ') || 'nichts'}]`
 		);
 	}
 }

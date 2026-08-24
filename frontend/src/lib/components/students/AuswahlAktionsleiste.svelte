@@ -11,11 +11,22 @@
 	 * @typedef {Object} Props
 	 * @property {number} anzahl
 	 * @property {number} ohneDatum   markierte Schüler ohne ableitbares Ablaufjahr
+	 * @property {boolean} [etikettModus] Klebebogen statt Ausweiskarten (idStore.printMode)
+	 * @property {number} [maxPosition]   Felder auf dem gewählten Bogen
+	 * @property {number} [startPosition] erstes zu bedruckendes Feld (bindable)
 	 * @property {() => void} onDrucken
 	 * @property {() => void} onLeeren
 	 */
 	/** @type {Props} */
-	let { anzahl, ohneDatum, onDrucken, onLeeren } = $props();
+	let {
+		anzahl,
+		ohneDatum,
+		etikettModus = false,
+		maxPosition = 21,
+		startPosition = $bindable(1),
+		onDrucken,
+		onLeeren
+	} = $props();
 </script>
 
 {#if anzahl > 0}
@@ -32,19 +43,36 @@
 				{anzahl === 1 ? 'Schüler' : 'Schüler'} markiert
 			</span>
 
-			{#if ohneDatum > 0}
-				<!-- Kein Abbruchgrund, aber ein Hinweis vor dem Druck: Diese Karten tragen
-				     "Gültig bis: 31.07.–". Wer das erst am fertigen Stapel merkt, hat die
-				     Rohlinge schon verbraucht. -->
+			<!-- Der Hinweis gilt der AUSWEISKARTE: Sie trägt sonst "Gültig bis: 31.07.–",
+			     und wer das erst am fertigen Stapel merkt, hat die Rohlinge verbraucht.
+			     Auf dem Etikett steht kein Ablaufdatum — dort wäre die Warnung nur Lärm. -->
+			{#if ohneDatum > 0 && !etikettModus}
 				<span class="rounded-lg bg-amber-500/15 px-2.5 py-1 text-xs leading-snug text-amber-200">
 					{ohneDatum} davon ohne Ablaufjahr — Klasse lässt keine Ableitung zu. Einzeln im Profil eintragen.
 				</span>
 			{/if}
 
+			{#if etikettModus}
+				<!-- Angebrochener Bogen: Auf welchem Feld soll der Druck anfangen? Dieselbe
+				     Angabe wie bei den Buch-Etiketten, hier direkt am Druckknopf, weil es
+				     die einzige Entscheidung dieses Vorgangs ist. -->
+				<label class="flex shrink-0 items-center gap-2 text-xs whitespace-nowrap text-white/75">
+					Ab Feld
+					<input
+						type="number"
+						min="1"
+						max={maxPosition}
+						bind:value={startPosition}
+						class="w-16 rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-sm text-white"
+					/>
+					<span class="text-white/55">von {maxPosition}</span>
+				</label>
+			{/if}
+
 			<div class="ml-auto flex items-center gap-2">
 				<Button variant="primary" onclick={onDrucken}>
 					<IdCard class="h-4 w-4" />
-					Ausweise drucken
+					{etikettModus ? 'Etiketten drucken' : 'Ausweise drucken'}
 				</Button>
 				<button
 					type="button"

@@ -1,3 +1,5 @@
+import { ETIKETT_FORMATE } from '../etikettformate.js';
+
 /**
  * @file idDesignerStore.svelte.js
  * Shared Svelte 5 module-level reactive store for the canvas-based ID card designer.
@@ -237,8 +239,25 @@ export const BACK_THEME_DEFAULT = 'bg-slate-100 text-slate-900 border-slate-300'
 export const idStore = $state({
 	/** @type {"code39" | "qr"} */
 	barcodeType: 'code39',
-	/** @type {"card" | "a4"} */
+	/**
+	 * Womit gedruckt wird — die Einstellung, der auch der Stapeldruck der Schülerdatei
+	 * folgt (StudentDirectory.svelte). Der Designer legt fest WIE, die Schülerdatei WER.
+	 *
+	 * 'a4' gab es bis zum 24.08.2026: acht Kartenabbilder auf einem A4-Blatt zum
+	 * Ausschneiden. Als Notbehelf gedacht, im Alltag nutzlos — an seine Stelle ist der
+	 * Etikettenbogen getreten (Name, Klasse, Barcode auf Klebeetiketten).
+	 *
+	 * @type {"card" | "etikett"}
+	 */
 	printMode: 'card',
+	/**
+	 * Bogenformat für printMode === 'etikett'. Steht im zentral gespeicherten Design,
+	 * weil es zum „wie gedruckt wird" gehört und nicht zum einzelnen Druckvorgang —
+	 * die Schule hat EINE Sorte Klebebögen im Schrank.
+	 *
+	 * @type {string}
+	 */
+	etikettFormat: 'zweckform_l4760',
 
 	front: {
 		elements: defaultFrontElements(),
@@ -417,8 +436,17 @@ export function applyDesign(data) {
 	if (data.barcodeType === 'qr' || data.barcodeType === 'code39') {
 		idStore.barcodeType = data.barcodeType;
 	}
-	if (data.printMode === 'card' || data.printMode === 'a4') {
+	if (data.printMode === 'card' || data.printMode === 'etikett') {
 		idStore.printMode = data.printMode;
+	} else if (data.printMode === 'a4') {
+		// Ein zentral gespeichertes Design kann den abgeschafften A4-Bogen noch tragen.
+		// Es wird auf den Kartendrucker gelesen statt übergangen: Sonst bliebe der Store
+		// stumm auf seinem Vorgabewert und beim nächsten Speichern stünde 'a4' weiter in
+		// der Datenbank — ein Wert, den kein Bildschirm mehr anzeigen kann.
+		idStore.printMode = 'card';
+	}
+	if (ETIKETT_FORMATE.some((f) => f.value === data.etikettFormat)) {
+		idStore.etikettFormat = data.etikettFormat;
 	}
 	applySeite(idStore.front, data.front);
 	applySeite(idStore.back, data.back);

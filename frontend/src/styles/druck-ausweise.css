@@ -2,33 +2,16 @@
    Mehrkartenbogen, Rückseiten, Einzelkarte aus dem Schülerprofil, Quittung. */
 
 @media print {
-	body[data-print-mode='a4'] .print-section-card {
-		display: none !important;
-	}
-	body[data-print-mode='card'] .print-section-a4,
-	body:not([data-print-mode]) .print-section-a4 {
-		display: none !important;
-	}
+	/* Rückseite nur, wenn sie ausdrücklich gedruckt wird.
+	   Nötig, weil '.print-rendered-output { display: block !important }' aus
+	   druck-grundlagen.css Tailwinds 'hidden' auf diesen Elementen überschreibt — die
+	   Sektion muss also aktiv versteckt werden, es genügt nicht, sie nicht zu zeigen.
 
-	/* Always hide back-side sections when not explicitly printing the back side.
-     Required because the global 'main div { display: block !important }' reset
-     above overrides Tailwind's 'hidden' class on these elements. */
-	body:not([data-print-side='back']) .print-section-back-card,
-	body:not([data-print-side='back']) .print-section-back-a4 {
-		display: none !important;
-	}
-
-	/* Und dieselbe Auswahl nach BETRIEBSART, die es fuer die Vorderseiten oben schon gibt.
-	   Ohne diese vier Zeilen fiel die Rueckseite durch beide Netze: Die Regel darueber
-	   fragt nur nach der SEITE, die Regeln ganz oben nur nach den VORDERSEITEN-Sektionen.
-	   Beim Rueckseiten-Druck blieben deshalb Kartenbogen UND A4-Bogen sichtbar — und
-	   '.print-rendered-output { display: block !important }' aus druck-grundlagen.css
-	   holte beide aktiv hervor, statt sie nur nicht zu verstecken. Gemessen am gebauten
-	   Bundle unter @media print: 'Karte/hinten' gab Karte + A4-Bogen aus, 'A4/hinten'
-	   ebenso. Der Vorderseitendruck war nie betroffen, deshalb fiel es nie auf. */
-	body[data-print-mode='a4'] .print-section-back-card,
-	body[data-print-mode='card'] .print-section-back-a4,
-	body:not([data-print-mode]) .print-section-back-a4 {
+	   Hier standen bis zum 24.08.2026 dieselben Regeln noch einmal für zwei
+	   A4-Sektionen, und die Auswahl nach Betriebsart fehlte den Rückseiten: Beim
+	   Rückseitendruck blieben Kartenbogen UND A4-Bogen sichtbar. Mit dem A4-Bogen ist
+	   die ganze zweite Achse weg — es gibt nur noch Vorder- und Rückseite. */
+	body:not([data-print-side='back']) .print-section-back-card {
 		display: none !important;
 	}
 
@@ -108,25 +91,9 @@
 		display: none !important;
 	}
 
-	.print-rendered-output.a4_sheet .print-cards-grid {
-		display: grid !important;
-		grid-template-columns: 85.6mm 85.6mm !important;
-		column-gap: 9mm !important;
-		row-gap: 5mm !important;
-		padding: 15mm 15mm !important;
-		box-sizing: border-box !important;
-	}
-
-	.print-rendered-output.a4_sheet .print-card-box {
-		width: 85.6mm !important;
-		height: 53.98mm !important;
-		page-break-inside: avoid !important;
-		break-inside: avoid !important;
-		border: 0.4pt dashed #999 !important;
-		box-sizing: border-box !important;
-		-webkit-print-color-adjust: exact !important;
-		print-color-adjust: exact !important;
-	}
+	/* Hier stand das 2×4-Raster des A4-Kartenbogens (a4_sheet). Es ist mit dem Bogen
+	   selbst entfallen (24.08.2026) — Schülerausweise gehen auf den Kartendrucker,
+	   Klebeetiketten kommen als PDF vom Server. */
 
 	/* ── Laufzettel A4 pages (one per graduate) ── */
 	.laufzettel-page {

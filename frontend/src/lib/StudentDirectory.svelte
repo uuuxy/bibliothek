@@ -11,7 +11,7 @@
 	import PageShell from './components/layout/PageShell.svelte';
 	import AuswahlAktionsleiste from './components/students/AuswahlAktionsleiste.svelte';
 	import StudentBatchPrint from './components/students/StudentBatchPrint.svelte';
-	import { idStore } from './designer/idDesignerStore.svelte.js';
+	import { erzeugeAusweisdruck } from './components/students/ausweisdruck.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	// Props (Svelte 5)
@@ -75,22 +75,9 @@
 		}
 	}
 
-	// Druckt den markierten Stapel. Karten- oder A4-Modus kommt aus dem gespeicherten
-	// Ausweis-Design (idStore.printMode) — der Designer legt fest WIE, diese Ansicht WER.
-	function druckeAuswahl() {
-		const a4 = idStore.printMode === 'a4';
-		const style = document.createElement('style');
-		style.textContent = a4
-			? '@media print { @page { size: A4; margin: 0; } }'
-			: '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
-		document.head.appendChild(style);
-		document.body.setAttribute('data-print-mode', a4 ? 'a4' : 'card');
-		document.body.setAttribute('data-print-side', 'front');
-		window.print();
-		document.head.removeChild(style);
-		document.body.removeAttribute('data-print-mode');
-		document.body.removeAttribute('data-print-side');
-	}
+	// Ausweiskarten oder Klebeetiketten — die Entscheidung steht im zentral
+	// gespeicherten Design, die Wege dahinter sind grundverschieden (ausweisdruck.svelte.js).
+	const druck = erzeugeAusweisdruck();
 
 	async function loadStudents() {
 		loading = true;
@@ -210,7 +197,10 @@
 					<AuswahlAktionsleiste
 						anzahl={markierte.length}
 						{ohneDatum}
-						onDrucken={druckeAuswahl}
+						etikettModus={druck.etikettModus}
+						maxPosition={druck.maxPosition}
+						bind:startPosition={druck.startPosition}
+						onDrucken={() => druck.drucke(markierte)}
 						onLeeren={() => auswahl.clear()}
 					/>
 
@@ -258,7 +248,9 @@
      Druck-CSS sie mit dem Rest der Ansicht aus und der Ausdruck bliebe leer (dieselbe
      Anordnung wie StudentPrintCard im Profil).
      Nur rendern, wenn wirklich markiert ist: Sonst hinge an jeder Schülerdatei ein
-     unsichtbarer Kartensatz im DOM. -->
-{#if markierte.length > 0}
+     unsichtbarer Kartensatz im DOM. Im Etikettenmodus gar nicht: Der Bogen kommt als
+     PDF vom Server, und jede Karte hier zöge ein Barcode-Bild über die Leitung, das
+     niemand zu sehen bekommt. -->
+{#if markierte.length > 0 && !druck.etikettModus}
 	<StudentBatchPrint students={markierte} />
 {/if}

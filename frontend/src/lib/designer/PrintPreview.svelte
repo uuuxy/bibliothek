@@ -35,17 +35,6 @@
 	{/each}
 </div>
 
-<!-- A4-Bogen: Vorderseite -->
-<div class="print-rendered-output print-section-a4 a4_sheet hidden print:block">
-	<div class="print-cards-grid">
-		{#each students as student (student.id)}
-			<div class="print-card-box {idStore.front.theme}">
-				<CardFace side="front" {student} {barcodeType} {timestamp} {platzhalter} />
-			</div>
-		{/each}
-	</div>
-</div>
-
 <!-- Kartendrucker: Rückseite (statische Elemente; kein personenbezogener Inhalt) -->
 <div class="print-rendered-output print-section-back-card hidden">
 	{#each students as _student (_student.id)}
@@ -53,17 +42,6 @@
 			<CardFace side="back" student={null} {barcodeType} {timestamp} {platzhalter} />
 		</div>
 	{/each}
-</div>
-
-<!-- A4-Bogen: Rückseite -->
-<div class="print-rendered-output print-section-back-a4 a4_sheet hidden">
-	<div class="print-cards-grid">
-		{#each students as _student (_student.id)}
-			<div class="print-card-box {idStore.back.theme}">
-				<CardFace side="back" student={null} {barcodeType} {timestamp} {platzhalter} />
-			</div>
-		{/each}
-	</div>
 </div>
 
 <style>
@@ -91,13 +69,7 @@
 		:global(body[data-print-mode='card'][data-print-side='back']) .print-section-card {
 			display: none !important;
 		}
-		:global(body[data-print-mode='a4'][data-print-side='back']) .print-section-a4 {
-			display: none !important;
-		}
 		:global(body[data-print-mode='card'][data-print-side='back']) .print-section-back-card {
-			display: block !important;
-		}
-		:global(body[data-print-mode='a4'][data-print-side='back']) .print-section-back-a4 {
 			display: block !important;
 		}
 	}
