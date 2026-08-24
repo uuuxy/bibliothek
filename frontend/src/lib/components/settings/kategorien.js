@@ -81,11 +81,12 @@ export const KATEGORIEN = [
 	{
 		id: 'daten',
 		titel: 'Datenverwaltung',
-		kurz: 'Import, Export, Schuljahreswechsel',
+		kurz: 'Import, Export, Offline-Sicherungen',
 		icon: Database,
-		// Littera-/Bestandsimport, Cover-Abgleich → manage_inventory;
-		// LUSD-Abgleich → import_students; Versetzung → manage_students_admin.
-		rechte: ['manage_inventory', 'import_students', 'manage_students_admin']
+		// Littera-/Bestandsimport, Cover-Abgleich → manage_inventory; Export → edit_books.
+		// LUSD-Abgleich und Versetzung wohnen seit 24.08.2026 in der Schülerdatei
+		// (Reiter „Schuljahreswechsel“) — dort sucht man sie.
+		rechte: ['manage_inventory', 'edit_books']
 	},
 	{
 		id: 'betrieb',

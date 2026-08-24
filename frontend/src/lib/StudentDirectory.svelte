@@ -14,10 +14,14 @@
 	import { erzeugeAusweisdruck } from './components/students/ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './components/students/schuelerSuche.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
+	import Reiter from './components/ui/Reiter.svelte';
+	import SchuljahreswechselBereich from './components/admin/SchuljahreswechselBereich.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte } from './schuelerRechte.js';
+	import { schuelerdateiReiter } from './schuelerdateiReiter.js';
 
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
+	const reiterListe = $derived(schuelerdateiReiter(rechte));
 
 	// State Runes (Svelte 5)
 	let activeTab = $state('active');
@@ -124,28 +128,12 @@
 		</div>
 	{:else}
 		<PageShell>
-			<!-- Reiter liegen auf der Leinwand, nicht in einem eigenen weissen Balken — wie im
-			     Mahnwesen und im Medienkatalog. -->
-			<div class="border-outline-variant shrink-0 border-b">
-				<div class="flex gap-6">
-					{#snippet tabButton(id, label, activeColorClass)}
-						<button
-							onclick={() => (activeTab = id)}
-							class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === id
-								? activeColorClass
-								: 'border-transparent text-slate-500 hover:text-slate-800'}"
-						>
-							{label}
-						</button>
-					{/snippet}
-
-					{@render tabButton('active', 'Aktive Schüler', 'border-blue-600 text-blue-700')}
-					{@render tabButton('graduates', 'Abgänger / Archiv', 'border-blue-600 text-blue-700')}
-					{#if rechte.loeschen}
-						{@render tabButton('deleted', 'Papierkorb', 'border-rose-600 text-rose-700')}
-					{/if}
-				</div>
-			</div>
+			<Reiter
+				etikett="Schülerdatei"
+				reiter={reiterListe}
+				aktiv={activeTab}
+				onwahl={(id) => (activeTab = id)}
+			/>
 
 			<!-- Tab Content -->
 			{#if activeTab === 'active'}
@@ -188,6 +176,10 @@
 			{:else if activeTab === 'graduates'}
 				<div class="w-full animate-fade-in">
 					<Graduates />
+				</div>
+			{:else if activeTab === 'schuljahr'}
+				<div class="w-full animate-fade-in">
+					<SchuljahreswechselBereich />
 				</div>
 			{:else if activeTab === 'deleted'}
 				<div class="w-full animate-fade-in space-y-6">

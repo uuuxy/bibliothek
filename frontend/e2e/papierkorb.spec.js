@@ -36,7 +36,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 
 	// Papierkorb zeigt den Gelöschten, Wiederherstellen bringt ihn zurück
 	await page.getByTitle('Schülerdatei').click();
-	await page.getByRole('button', { name: 'Papierkorb' }).click();
+	await page.getByRole('tab', { name: 'Papierkorb' }).click();
 	const zeile = page.getByRole('row', { name: new RegExp(`Korb-${suffix}`) });
 	await expect(zeile).toBeVisible();
 	await zeile.getByTitle('Wiederherstellen').click();

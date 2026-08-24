@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix, einstellungsKategorie } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
 test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	// 1. Seed two students (one in 05a, one in 10a)
@@ -16,12 +16,10 @@ test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	// 2. Login
 	await uiLogin(page);
 
-	// 3. Navigation zu Einstellungen -> Datenverwaltung
-	await page.getByRole('button', { name: 'System', exact: true }).click();
-	await page.getByRole('button', { name: 'Einstellungen' }).click();
-	// exact: true — seit dem Backup-Alert gibt es zusätzlich einen Knopf
-	// „Datenverwaltung öffnen", auf den die Teilstring-Suche sonst ebenfalls passt.
-	await einstellungsKategorie(page, 'Datenverwaltung').click();
+	// 3. Navigation zur Schülerdatei -> Schuljahreswechsel
+	// Seit 24.08.2026 ein Reiter der Schülerdatei (vorher Einstellungen → Datenverwaltung).
+	await page.goto('/schuelerdatei');
+	await page.getByRole('tab', { name: 'Schuljahreswechsel' }).click();
 
 	// 4. Vorschau berechnen
 	await page.getByRole('button', { name: 'Vorschau berechnen' }).click();

@@ -14,17 +14,12 @@
 </script>
 
 {#if darfLusd || darfVersetzen}
-	<!-- Schuljahreswechsel: Schüler-Stammdaten (LUSD) + Versetzungs-Batch. Bewusst
-	     AUßERHALB der Schatten-Kacheln der Datenverwaltung, damit das eigene
-	     Edge-to-Edge-Listen-Design beider Komponenten nicht in einer Kachel-in-Kachel
-	     verschachtelt wird. -->
-	<div class="pt-8 border-t border-slate-200 space-y-10">
-		<div>
-			<h2 class="text-xl font-bold text-slate-950">Schuljahreswechsel & Import</h2>
-			<p class="text-xs text-slate-500 mt-1">
-				LUSD-Datenabgleich und automatische Klassen-Versetzung für das Ende des Schuljahres.
-			</p>
-		</div>
+	<!-- Reiter der Schülerdatei (seit 24.08.2026; vorher Einstellungen → Datenverwaltung).
+	     Kein eigener Kopf: Der Reiter IST die Überschrift. -->
+	<div class="space-y-10 pt-6">
+		<p class="text-body-medium text-on-surface-variant">
+			LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres.
+		</p>
 
 		{#if darfLusd}
 			<LusdImportView />
