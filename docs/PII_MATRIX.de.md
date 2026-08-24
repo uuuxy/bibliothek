@@ -40,6 +40,7 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `GET /api/schueler` | view_students | 2 | Liste: Name, Klasse, Barcode, Sperr-/Überfällig-Status |
 | `GET /api/schueler/{id}` | view_students | 3 | Profil: Adresse, Eltern-Mail, Geburtsdatum, Foto-URL, Ausleihen |
 | `POST /api/schueler` | create_students | 1 | Antwort nur id + barcode_id |
+| `POST /api/print/schueler-etiketten` | view_students | 1 | Klebebogen als PDF: Name, Klasse, Barcode-ID. Eingabe sind nur IDs, die Angaben holt der Server — kein Weg, fremde Namen auf echte Barcodes zu drucken |
 | `PATCH /api/schueler/{id}` | edit_students | 0 | Antwort nur Status-Echo |
 | `PATCH /api/admin/students/{id}/lock` | edit_students | 1 | Name, Klasse, Sperrflag |
 | `DELETE /api/schueler/{id}` | delete_students | 0 | nur Erfolgsmeldung |

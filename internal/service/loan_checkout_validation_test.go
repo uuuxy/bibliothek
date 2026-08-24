@@ -35,6 +35,9 @@ func (m *mockStudentRepo) GetActiveBorrowedBooks(ctx context.Context, id string)
 	return nil, nil
 }
 func (m *mockStudentRepo) GetDistinctClasses(ctx context.Context) ([]string, error) { return nil, nil }
+func (m *mockStudentRepo) EtikettenZeilen(ctx context.Context, ids []string) ([]repository.SchuelerEtikettZeile, error) {
+	return nil, nil
+}
 func (m *mockStudentRepo) ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]repository.StudentListStat, error) {
 	return nil, nil
 }

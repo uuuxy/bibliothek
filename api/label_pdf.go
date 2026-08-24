@@ -160,39 +160,48 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Ba
 
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
-	// Adjust start position (1-based to 0-based offset)
-	offset := startPosition - 1
-	if offset < 0 {
-		offset = 0
-	}
-
-	labelsPerPage := format.Cols * format.Rows
-
-	for i, item := range items {
-		currentPos := offset + i
-
-		// Page break logic
-		if currentPos > 0 && currentPos%labelsPerPage == 0 {
-			pdf.AddPage()
-		}
-
-		posInPage := currentPos % labelsPerPage
-		colIdx := posInPage % format.Cols
-		rowIdx := posInPage / format.Cols
-
-		x := format.MarginLeft + float64(colIdx)*(format.LabelWidth+format.GapX)
-		y := format.MarginTop + float64(rowIdx)*(format.LabelHeight+format.GapY)
-
+	zeichneRaster(pdf, format, startPosition, len(items), func(i int, pos labelPos) {
+		item := items[i]
 		// Titel und Autor auf die Etikettenbreite bringen (zeichen-, nicht byteweise).
 		titel := kuerzeAufZeichen(item.Titel, 40)
 		autor := kuerzeAufZeichen(item.Autor, 30)
 
 		if isQR {
-			zeichneQRLabel(pdf, tr, format, item, titel, autor, labelPos{X: x, Y: y})
+			zeichneQRLabel(pdf, tr, format, item, titel, autor, pos)
 		} else {
-			zeichneBarcodeLabel(pdf, tr, format, item, titel, kopf, labelPos{X: x, Y: y})
+			zeichneBarcodeLabel(pdf, tr, format, item, titel, kopf, pos)
 		}
-	}
+	})
 
 	return pdf, nil
+}
+
+// zeichneRaster legt `anzahl` Etiketten in das Raster des Bogens und ruft je Etikett
+// `zeichne` mit seiner linken oberen Ecke auf. Startposition (angebrochener Bogen),
+// Spalten-/Zeilenrechnung und Seitenumbruch stehen damit an EINER Stelle.
+//
+// Es gibt die Funktion, seit die Schüler-Etiketten dazugekommen sind: Sie brauchen
+// dasselbe Raster mit anderem Inhalt. Eine zweite Kopie der Rechnung wäre der Anfang
+// zweier Bögen, die sich irgendwann um eine halbe Zeile unterscheiden — und das merkt
+// niemand am Bildschirm, sondern erst an einem verdruckten Bogen Klebeetiketten.
+func zeichneRaster(pdf *gofpdf.Fpdf, format LabelFormat, startPosition, anzahl int, zeichne func(i int, pos labelPos)) {
+	// 1-basierte Startposition auf einen 0-basierten Versatz bringen.
+	versatz := startPosition - 1
+	if versatz < 0 {
+		versatz = 0
+	}
+	proSeite := format.Cols * format.Rows
+
+	for i := 0; i < anzahl; i++ {
+		stelle := versatz + i
+		if stelle > 0 && stelle%proSeite == 0 {
+			pdf.AddPage()
+		}
+
+		aufSeite := stelle % proSeite
+		x := format.MarginLeft + float64(aufSeite%format.Cols)*(format.LabelWidth+format.GapX)
+		y := format.MarginTop + float64(aufSeite/format.Cols)*(format.LabelHeight+format.GapY)
+
+		zeichne(i, labelPos{X: x, Y: y})
+	}
 }

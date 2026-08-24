@@ -86,6 +86,10 @@ type StudentRepository interface {
 	// GetDistinctClasses returns a list of all active classes.
 	GetDistinctClasses(ctx context.Context) ([]string, error)
 
+	// EtikettenZeilen liefert Barcode, Name und Klasse zu den angegebenen IDs — die vier
+	// Angaben, die auf einem Klebeetikett stehen. Sortiert nach Nachname, Vorname.
+	EtikettenZeilen(ctx context.Context, ids []string) ([]SchuelerEtikettZeile, error)
+
 	// ListStudentsWithStats liefert Schüler samt Ausleihzahlen, optional nach Klasse
 	// und/oder Suchbegriff eingegrenzt. Die Suche läuft über dieselben SQL-Bausteine
 	// wie SearchStudentsFuzzy und kennt keine 500er-Grenze.
