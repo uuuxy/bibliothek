@@ -5,6 +5,7 @@
 	import EtikettenNachdruck from './components/labels/EtikettenNachdruck.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
+	import Reiter from './components/ui/Reiter.svelte';
 
 	let activeTab = $state('labels');
 
@@ -27,47 +28,22 @@
 	     („nur zufällig ähnlich weit eingerückt … wäre bei anderer Fensterbreite
 	     auseinandergelaufen"). Die Inhaltsbreite ist mit a4133a2 ohnehin abgeschafft:
 	     „Es gibt keine Inhaltsbreite mehr, nur noch volle." -->
-	<div class="border-outline-variant shrink-0 border-b">
-		<div class="flex gap-6">
-			<button
-				onclick={() => (activeTab = 'labels')}
-				class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'labels'
-					? 'border-blue-600 text-blue-700'
-					: 'border-transparent text-slate-500 hover:text-slate-800'}"
-			>
-				Buch-Etiketten
-			</button>
-			<!-- Das Badge steht hier UND an „Druck-Center" in der Seitenleiste: Der Zaehler
-			     fuehrt erst zum Ziel, dann zum Reiter darin. Vorher trug den Hinweis ein
-			     Streifen im BESTELLWESEN — eine Seite, die mit dem Drucken nichts zu tun hat
-			     und den Zaehler nur weiterreichte. Die Arbeit liegt hier, also gehoert die
-			     Anzeige hierher. -->
-			<button
-				onclick={() => (activeTab = 'nachdruck')}
-				class="flex items-center gap-2 pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab ===
-				'nachdruck'
-					? 'border-blue-600 text-blue-700'
-					: 'border-transparent text-slate-500 hover:text-slate-800'}"
-			>
-				Fehlende Etiketten
-				{#if uiStore.offeneEtiketten > 0}
-					<span
-						class="bg-error text-on-error text-label-small flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-bold tabular-nums"
-						aria-label="{uiStore.offeneEtiketten} offen"
-						>{uiStore.offeneEtiketten > 999 ? '999+' : uiStore.offeneEtiketten}</span
-					>
-				{/if}
-			</button>
-			<button
-				onclick={() => (activeTab = 'ids')}
-				class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'ids'
-					? 'border-blue-600 text-blue-700'
-					: 'border-transparent text-slate-500 hover:text-slate-800'}"
-			>
-				Schülerausweise
-			</button>
-		</div>
-	</div>
+	<Reiter
+		etikett="Druck-Center"
+		aktiv={activeTab}
+		onwahl={(id) => (activeTab = id)}
+		reiter={[
+			{ id: 'labels', label: 'Buch-Etiketten' },
+			// Das Badge steht hier UND an „Druck-Center" in der Seitenleiste: Der Zähler
+			// führt erst zum Ziel, dann zum Reiter darin.
+			{ id: 'nachdruck', label: 'Fehlende Etiketten', anzahl: uiStore.offeneEtiketten },
+			{ id: 'ids', label: 'Schülerausweise' },
+			// Eigener Reiter (Peters Entscheidung 24.08.2026): Als Block über dem Designer
+			// wirkte der Einstieg „hingeklatscht" — er ist eine eigene Aufgabe, kein Teil
+			// des Ausweis-Designs.
+			{ id: 'klassen', label: 'Klassenweise drucken' }
+		]}
+	/>
 
 	<div class="flex-1 overflow-y-auto">
 		<!-- Alle drei Reiter tragen dieselbe Kante wie die Tab-Leiste darüber. Das px-8 ist
@@ -88,11 +64,12 @@
 			<div class="animate-fade-in h-full py-6">
 				<EtikettenNachdruck onUebergeben={() => (activeTab = 'labels')} />
 			</div>
-		{:else}
-			<!-- Der Klassen-Einstieg steht VOR dem Designer: Wer hierher kommt, will meist
-			     drucken, nicht gestalten — der Designer ist das seltenere Anliegen. -->
-			<div class="animate-fade-in h-full space-y-8 py-6">
+		{:else if activeTab === 'klassen'}
+			<div class="animate-fade-in h-full py-6">
 				<KlassenDruckEinstieg />
+			</div>
+		{:else}
+			<div class="animate-fade-in h-full py-6">
 				<StudentIdDesigner />
 			</div>
 		{/if}

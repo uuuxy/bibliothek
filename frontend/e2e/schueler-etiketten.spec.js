@@ -41,7 +41,7 @@ test.describe('Schüler-Etiketten', () => {
 
 		// ── Ausweis-Designer: der Schalter, wo früher „A4-Bogen" stand ──
 		await page.getByTitle('Druck-Center').click();
-		await page.getByRole('button', { name: 'Schülerausweise' }).click();
+		await page.getByRole('tab', { name: 'Schülerausweise' }).click();
 
 		const kartendrucker = page.getByRole('button', { name: 'Kartendrucker', exact: true });
 		const etikettenbogen = page.getByRole('button', { name: 'Etikettenbogen', exact: true });
@@ -128,7 +128,7 @@ test.describe('Schüler-Etiketten', () => {
 	}) => {
 		await uiLogin(page);
 		await page.getByTitle('Druck-Center').click();
-		await page.getByRole('button', { name: 'Schülerausweise' }).click();
+		await page.getByRole('tab', { name: 'Klassenweise drucken' }).click();
 
 		await page.getByRole('combobox', { name: 'Klasse' }).click();
 		await page.getByRole('option', { name: '8G2', exact: true }).click();

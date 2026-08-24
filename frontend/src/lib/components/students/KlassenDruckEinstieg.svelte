@@ -40,14 +40,12 @@
 	}
 </script>
 
-<div class="flex flex-col gap-4 border-b border-outline-variant pb-8">
-	<div>
-		<h3 class="text-base font-bold text-on-surface">Klassenweise drucken</h3>
-		<p class="mt-1 max-w-2xl text-xs leading-relaxed text-on-surface-variant">
-			Öffnet die Schülerdatei mit fertig markierter Klasse — dort startet der Druck über die
-			Aktionsleiste (Ausweiskarten oder Etikettenbogen, je nach Betriebsart im Designer unten).
-		</p>
-	</div>
+<div class="flex flex-col gap-4">
+	<p class="max-w-2xl text-body-medium text-on-surface-variant">
+		Öffnet die Schülerdatei mit fertig markierter Klasse — dort startet der Druck über die
+		Aktionsleiste (Ausweiskarten oder Etikettenbogen, je nach Betriebsart im Reiter
+		„Schülerausweise“).
+	</p>
 	<div class="flex flex-wrap items-end gap-4">
 		<Select
 			bind:value={klasse}
