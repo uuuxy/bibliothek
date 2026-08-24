@@ -19,7 +19,7 @@ RUN npm run build
 # CVE-Fixes vom 16.08.2026 stecken in der Stdlib — ein Build mit einem aelteren
 # 1.26-Tag kompiliert die verwundbaren Pakete ins Binary (GOTOOLCHAIN=local laedt
 # nichts nach). Beim naechsten go.mod-Go-Bump diese Zeile mitziehen.
-FROM golang:1.26.6-alpine AS backend-builder
+FROM golang:1.27.0-alpine AS backend-builder
 WORKDIR /app
 
 # Disable Go workspace mode to build using root go.mod directly
