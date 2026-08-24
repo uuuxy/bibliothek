@@ -18,7 +18,6 @@ import { srcRoot, sammleQuelldateien, relPfad, vergleicheMitBestand } from './hy
 const HANDGEBAUT = /role=(["'])tab\1/;
 
 const BESTAND = [
-	'src/inventur/lib/components/StartseitenFilter.svelte',
 	'src/lib/BestellWorkspace.svelte',
 	'src/lib/BookAkte.svelte',
 	'src/lib/MediaCatalog.svelte'

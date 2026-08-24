@@ -15,25 +15,45 @@
 	 *
 	 * `anzahl` ist der Zähler am Reiter — er sagt VOR dem Klick, ob dort etwas wartet.
 	 *
-	 * @prop {{ id: string, label: string, anzahl?: number }[]} reiter
+	 * Zwei Ränge, wie M3 sie kennt: `primaer` (Bereiche einer Seite, Indikator in
+	 * Primärfarbe) und `sekundaer` (Unteransichten DESSELBEN Inhalts, unter einer
+	 * Primärleiste). Bis 24.08.2026 trug der Medienkatalog zwei Leisten im selben
+	 * Stil übereinander — die Rangfolge war unsichtbar. Sekundär: gewählter Text in
+	 * on-surface statt primary, Indikator ohne Rundung.
+	 *
+	 * @prop {{ id: string, label: string, anzahl?: number, steuert?: string }[]} reiter
+	 *   `steuert` = aria-controls (ids der Inhaltsflächen); der Reiter selbst heißt tab-<id>.
 	 * @prop {string} aktiv
 	 * @prop {(id: string) => void} onwahl
 	 * @prop {string} etikett - Name der Leiste für Screenreader.
+	 * @prop {'primaer'|'sekundaer'} [variante]
+	 * @prop {string} [klasse] - zusätzliche Klassen der Leiste (z. B. justify-center).
 	 */
-	/** @type {{ reiter: { id: string, label: string, anzahl?: number }[], aktiv: string, onwahl: (id: string) => void, etikett: string }} */
-	let { reiter, aktiv, onwahl, etikett } = $props();
+	/** @type {{ reiter: { id: string, label: string, anzahl?: number, steuert?: string }[], aktiv: string, onwahl: (id: string) => void, etikett: string, variante?: 'primaer'|'sekundaer', klasse?: string }} */
+	let { reiter, aktiv, onwahl, etikett, variante = 'primaer', klasse = '' } = $props();
+	const sekundaer = $derived(variante === 'sekundaer');
 </script>
 
-<div role="tablist" aria-label={etikett} class="flex gap-6 border-b border-outline-variant">
+<div
+	role="tablist"
+	aria-label={etikett}
+	class="flex gap-6 border-b border-outline-variant {klasse}"
+>
 	{#each reiter as r (r.id)}
 		{@const gewaehlt = r.id === aktiv}
 		<button
 			type="button"
 			role="tab"
+			id="tab-{r.id}"
 			aria-selected={gewaehlt}
+			aria-controls={r.steuert}
 			onclick={() => onwahl(r.id)}
-			class="relative cursor-pointer pb-3 text-sm font-medium transition-colors {gewaehlt
-				? 'text-primary'
+			class="relative cursor-pointer text-sm font-medium transition-colors {sekundaer
+				? 'pb-2.5'
+				: 'pb-3'} {gewaehlt
+				? sekundaer
+					? 'text-on-surface'
+					: 'text-primary'
 				: 'text-on-surface-variant hover:text-on-surface'}"
 		>
 			{r.label}
@@ -47,7 +67,8 @@
 				</span>
 			{/if}
 			{#if gewaehlt}
-				<span class="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary"></span>
+				<span class="absolute inset-x-0 bottom-0 h-0.5 bg-primary {sekundaer ? '' : 'rounded-full'}"
+				></span>
 			{/if}
 		</button>
 	{/each}

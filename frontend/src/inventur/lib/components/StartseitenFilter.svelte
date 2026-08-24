@@ -1,11 +1,11 @@
 <!--
 	StartseitenFilter.svelte
 	Filtert die Startseite nach Buch-Suche oder Jahrgängen.
-	Refactored: Clean SaaS light-mode design with Google-style tabs.
 -->
 <script>
 	import Select from '../../../lib/components/ui/Select.svelte';
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
+	import Reiter from '../../../lib/components/ui/Reiter.svelte';
 
 	/**
 	 * Die Optionslisten kommen als Props aus den geladenen Büchern
@@ -33,51 +33,22 @@
 
 <header class="pt-6 pb-6 px-4 sm:px-6 lg:px-8">
 	<div class="max-w-5xl mx-auto flex flex-col items-center space-y-6">
-		<!-- Google-style underline Tabs -->
-		<div
-			class="border-b border-slate-200 w-full max-w-md"
-			role="tablist"
-			aria-label="Ansichtsmodus"
-		>
-			<nav class="flex gap-6 justify-center">
-				<button
-					class="relative pb-2.5 text-sm font-semibold transition-colors cursor-pointer {viewMode ===
-					'suche'
-						? 'text-blue-600'
-						: 'text-slate-500 hover:text-slate-700'}"
-					onclick={() => (viewMode = 'suche')}
-					role="tab"
-					id="tab-suche"
-					aria-selected={viewMode === 'suche'}
-					aria-controls="filter-suche content-suche"
-				>
-					Buch-Suche
-					{#if viewMode === 'suche'}
-						<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-					{/if}
-				</button>
-				<button
-					class="relative pb-2.5 text-sm font-semibold transition-colors cursor-pointer {viewMode ===
-					'jahrgaenge'
-						? 'text-blue-600'
-						: 'text-slate-500 hover:text-slate-700'}"
-					onclick={() => (viewMode = 'jahrgaenge')}
-					role="tab"
-					id="tab-jahrgaenge"
-					aria-selected={viewMode === 'jahrgaenge'}
-					aria-controls="filter-jahrgaenge content-jahrgaenge"
-				>
-					Jahrgänge
-					{#if viewMode === 'jahrgaenge'}
-						<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-					{/if}
-				</button>
-				<!-- Hier stand ein dritter Reiter für die Klassensätze. Er zeigte dieselbe
-				     Liste wie Verwaltung → Schulklassen, aus derselben Quelle, nur ohne
-				     Aktionen — und hiess bis zum 08.08.2026 auch noch genauso. Umbenennen
-				     hätte nur den Namen entschärft, nicht die Dopplung: Der Reiter ist
-				     aufgelöst, die Klassensuche steht jetzt auf der Schulklassen-Seite. -->
-			</nav>
+		<!-- Sekundäre Reiter (M3 secondary tabs): zwei Sichten auf denselben Katalog,
+		     unter der Primärleiste des Medienkatalogs. Der dritte Reiter „Klassensätze"
+		     ist seit 08.08.2026 aufgelöst — dieselbe Liste stand schon unter
+		     Bibliothek → Klassensätze. -->
+		<div class="w-full max-w-md">
+			<Reiter
+				variante="sekundaer"
+				klasse="justify-center"
+				etikett="Ansichtsmodus"
+				aktiv={viewMode}
+				onwahl={(id) => (viewMode = id)}
+				reiter={[
+					{ id: 'suche', label: 'Buch-Suche', steuert: 'filter-suche content-suche' },
+					{ id: 'jahrgaenge', label: 'Jahrgänge', steuert: 'filter-jahrgaenge content-jahrgaenge' }
+				]}
+			/>
 		</div>
 
 		<!-- Dynamic Filter Area -->
