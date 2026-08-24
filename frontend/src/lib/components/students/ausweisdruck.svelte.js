@@ -1,6 +1,8 @@
-import { idStore } from '../../designer/idDesignerStore.svelte.js';
+import { apiFetch } from '../../apiFetch.js';
+import { applyDesign, designWurdeGeladen, idStore } from '../../designer/idDesignerStore.svelte.js';
 import { felderProBogen } from '../../etikettformate.js';
 import { oeffneEtikettenbogen } from '../../schuelerEtiketten.js';
+import { toastStore } from '../../stores/toastStore.svelte.js';
 
 /**
  * Der Stapeldruck der Schülerdatei: Ausweiskarten oder Klebeetiketten.
@@ -16,6 +18,16 @@ import { oeffneEtikettenbogen } from '../../schuelerEtiketten.js';
  * das eine Stück darin ist, das nichts mit dem Führen der Liste zu tun hat.
  */
 export function erzeugeAusweisdruck() {
+	// Lädt das zentrale Design SELBST — Raster-Fund 24.08.2026 („wer lädt den
+	// geteilten Zustand?"): Diese Datei ENTSCHEIDET am printMode, was aus dem Drucker
+	// kommt, aber geladen wurde er auf diesem Pfad nur von StudentBatchPrint — der
+	// Komponente, die das Ergebnis des eigenen Ladens abräumt ({#if !etikettModus}).
+	// Das ging zufällig gut: Sie hing kurz genug im Baum, dass ihr onMount durchlief.
+	// Wer im Fetch-Fenster druckte oder dessen Fehler erwischte, bekam Karten auf
+	// Kartenrohlinge, obwohl die Schule Etiketten eingestellt hat. Eine Tür, die
+	// geteilten Zustand liest, sorgt selbst dafür, dass er geladen ist.
+	if (!designWurdeGeladen()) ladeZentralesDesign();
+
 	const etikettModus = $derived(idStore.printMode === 'etikett');
 
 	// Angebrochener Klebebogen: Auf welchem Feld soll der Druck anfangen? Bewusst NICHT
@@ -59,4 +71,20 @@ export function erzeugeAusweisdruck() {
 			document.body.removeAttribute('data-print-side');
 		}
 	};
+}
+
+// Ein fehlgeschlagenes Laden fällt still auf 'card' zurück — das wäre genau der
+// falsche Ausdruck, deshalb sagt es die Theke laut. Kein throw: Die Schülerdatei
+// selbst funktioniert auch ohne die Druckeinstellung.
+async function ladeZentralesDesign() {
+	try {
+		const res = await apiFetch('/api/ausweis-layout');
+		if (!res.ok) throw new Error(String(res.status));
+		applyDesign(await res.json());
+	} catch {
+		toastStore.addToast(
+			'Druckeinstellung (Karte/Etikett) konnte nicht geladen werden — es gilt Kartendrucker.',
+			'error'
+		);
+	}
 }

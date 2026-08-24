@@ -426,6 +426,28 @@ export function serializeDesign() {
 	return $state.snapshot(idStore);
 }
 
+// Sitzungs-Merker: Wurde das zentrale Design in DIESER Sitzung schon geladen?
+//
+// Er steuert, ob ein Bildschirm beim Öffnen nachlädt. Ohne ihn holte jeder Mount
+// (Schülerdatei, Stapeldruck, Profil-Einzeldruck) den Serverstand erneut — und
+// überschrieb damit frische, noch nicht fertig gespeicherte Änderungen aus dem
+// Designer: Wer dort auf Etikettenbogen stellte und binnen der Auto-Save-Entprellung
+// zur Schülerdatei wechselte, dessen GET konnte den ALTEN Stand zurückbringen,
+// während der PUT noch unterwegs war. Innerhalb einer Sitzung ist der Store nach dem
+// ersten Laden die Wahrheit; einen fremden Arbeitsplatz-Stand holt erst ein neues
+// Öffnen der Anwendung. Bewusst NICHT im idStore: Der wird serialisiert.
+let designGeladen = false;
+
+/** Muss ein Bildschirm das zentrale Design noch laden? */
+export function designWurdeGeladen() {
+	return designGeladen;
+}
+
+/** Nur für Tests: setzt den Sitzungs-Merker zurück. */
+export function vergissDesignLadezustand() {
+	designGeladen = false;
+}
+
 /**
  * Übernimmt ein vom Server geladenes Design in den Store. Defensiv: fehlende oder
  * ungültige Felder bleiben auf ihren Defaults (leeres {} = Erststart → Defaults).
@@ -433,6 +455,7 @@ export function serializeDesign() {
  */
 export function applyDesign(data) {
 	if (!data || typeof data !== 'object') return;
+	designGeladen = true;
 	if (data.barcodeType === 'qr' || data.barcodeType === 'code39') {
 		idStore.barcodeType = data.barcodeType;
 	}

@@ -24,7 +24,11 @@
      Speicherung — er gilt also an allen Arbeitsplätzen wie der Rest des Designs. -->
 <script>
 	import { onMount } from 'svelte';
-	import { idStore, applyDesign } from '../../designer/idDesignerStore.svelte.js';
+	import {
+		idStore,
+		applyDesign,
+		designWurdeGeladen
+	} from '../../designer/idDesignerStore.svelte.js';
 	import { apiFetch } from '../../apiFetch.js';
 	import PrintPreview from '../../designer/PrintPreview.svelte';
 
@@ -36,9 +40,14 @@
 	let timestamp = $state(Date.now());
 
 	onMount(async () => {
+		// Nur beim ERSTEN Bedarf der Sitzung laden (designWurdeGeladen): Ein erneuter
+		// GET bei jedem Mount überschrieb frische, noch nicht fertig gespeicherte
+		// Designer-Änderungen mit dem alten Serverstand — siehe idDesignerStore.
 		try {
-			const res = await apiFetch('/api/ausweis-layout');
-			if (res.ok) applyDesign(await res.json());
+			if (!designWurdeGeladen()) {
+				const res = await apiFetch('/api/ausweis-layout');
+				if (res.ok) applyDesign(await res.json());
+			}
 		} catch (e) {
 			console.error('Ausweis-Design konnte nicht geladen werden:', e);
 		}
