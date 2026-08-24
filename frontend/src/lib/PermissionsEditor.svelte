@@ -53,7 +53,7 @@
 	{#each metadata as cat, _i (_i)}
 		<div>
 			<div class="pb-3 mb-1 border-b border-slate-200 flex items-center gap-3">
-				<span class="text-xl">{cat.icon}</span>
+				<cat.icon class="text-on-surface-variant h-5 w-5" aria-hidden="true" />
 				<h3 class="font-bold text-slate-800 text-lg tracking-tight">{cat.category}</h3>
 			</div>
 

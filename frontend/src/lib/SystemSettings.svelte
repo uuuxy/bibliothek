@@ -145,7 +145,7 @@
 					{:else if aktiv === 'daten' && sichtbar.has('daten')}
 						<KategorieRahmen
 							titel="Datenverwaltung"
-							kurz="Importe, Exporte und der Stand der nächtlichen Sicherung."
+							kurz="Importe und Exporte des Bestands, Offline-Sicherungen einspielen."
 						>
 							<DataManagement />
 						</KategorieRahmen>

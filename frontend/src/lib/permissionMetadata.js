@@ -8,10 +8,12 @@
 // Systematik. Wer ein Recht anhand seines Textes erteilt, muss dem Text trauen können.
 // Die NAMEN hält api/rechte_paritaet_test.go deckungsgleich mit den Routen; die Texte
 // bleiben Handarbeit — wer eine Route umhängt, zieht die Zeile hier nach.
+import { BookOpen, Settings, ShoppingCart, Users } from '@lucide/svelte';
+
 export const permissionsMetadata = [
 	{
 		category: 'Schülerverwaltung',
-		icon: '👤',
+		icon: Users,
 		items: [
 			{
 				key: 'view_students',
@@ -47,7 +49,7 @@ export const permissionsMetadata = [
 	},
 	{
 		category: 'Medien & Inventar',
-		icon: '📚',
+		icon: BookOpen,
 		items: [
 			{
 				key: 'view_books',
@@ -78,7 +80,7 @@ export const permissionsMetadata = [
 	},
 	{
 		category: 'Bestellungen & Kiosk',
-		icon: '🛒',
+		icon: ShoppingCart,
 		items: [
 			{
 				key: 'perform_actions',
@@ -114,7 +116,7 @@ export const permissionsMetadata = [
 	},
 	{
 		category: 'Administration & System',
-		icon: '⚙️',
+		icon: Settings,
 		items: [
 			{
 				key: 'view_stats',

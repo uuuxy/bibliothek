@@ -6,7 +6,6 @@
 <script lang="ts">
 	import LitteraImportWidget from '../../LitteraImportWidget.svelte';
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
-	import SchuljahreswechselBereich from './SchuljahreswechselBereich.svelte';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
 	import Button from '../ui/Button.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
@@ -107,9 +106,11 @@
      types with this name exist") — die Typisierung erzeugte zwei neue Fehler statt Sicherheit. -->
 <!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
 {#snippet adminCard(title: string, description: string, iconPath: string, contentSnippet: any)}
-	<div class="bg-white rounded-xl p-8 shadow-sm border border-slate-200/70 space-y-6">
+	<!-- Flach, edge-to-edge (Entscheidung f2320e1/e81ce75/95d5d33): keine Schatten-Kachel,
+	     nur ein Trennstrich zwischen den Abschnitten — wie jede andere Einstellungs-Kategorie. -->
+	<div class="border-outline-variant space-y-6 border-b pb-8">
 		<div class="flex items-start gap-4">
-			<div class="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+			<div class="bg-primary-container text-on-primary-container rounded-full p-3">
 				<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={iconPath} />
 				</svg>
@@ -119,7 +120,7 @@
 				<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">{description}</p>
 			</div>
 		</div>
-		<div class="pt-4 border-t border-slate-50">
+		<div class="pt-2">
 			{@render contentSnippet()}
 		</div>
 	</div>
@@ -249,14 +250,9 @@
 	</div>
 {/snippet}
 
+<!-- Titel und Beitext kommen vom KategorieRahmen (SystemSettings.svelte) — bis zum
+     24.08.2026 stand „Datenverwaltung“ hier ein zweites Mal direkt darunter. -->
 <div class="space-y-8">
-	<div>
-		<h2 class="text-xl font-bold text-slate-950">Datenverwaltung</h2>
-		<p class="text-xs text-slate-500 mt-1">
-			Hier können Sie den gesamten Medienbestand exportieren oder neue Daten importieren.
-		</p>
-	</div>
-
 	<div class="grid grid-cols-1 gap-8">
 		{#if darfImport}
 			{@render adminCard(
@@ -276,9 +272,5 @@
 		{/if}
 	</div>
 
-	<div class="pt-8 border-t border-slate-200">
-		<OfflineSicherungenEinspielen />
-	</div>
-
-	<SchuljahreswechselBereich />
+	<OfflineSicherungenEinspielen />
 </div>

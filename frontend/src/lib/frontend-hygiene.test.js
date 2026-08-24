@@ -76,8 +76,7 @@ const EMOJI_BESTAND = [
 	'src/lib/components/stats/StatsTrendChart.svelte',
 	'src/lib/components/students/LusdImportView.svelte',
 	'src/lib/components/students/PromoteStudentsView.svelte',
-	'src/lib/designer/Toolbar.svelte',
-	'src/lib/permissionMetadata.js'
+	'src/lib/designer/Toolbar.svelte'
 ];
 
 describe('Oberflächen-Hygiene', () => {
