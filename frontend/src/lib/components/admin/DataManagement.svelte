@@ -9,6 +9,17 @@
 	import SchuljahreswechselBereich from './SchuljahreswechselBereich.svelte';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
 	import Button from '../ui/Button.svelte';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { hatRecht } from '../../menu.js';
+
+	const darfImport = $derived(hatRecht(authStore.currentUser, 'manage_inventory'));
+	const darfExport = $derived(hatRecht(authStore.currentUser, 'edit_books'));
+
+	const csrfToken = () =>
+		document.cookie
+			.split('; ')
+			.find((row) => row.startsWith('csrf_token='))
+			?.split('=')[1] ?? '';
 
 	let isExporting = $state(false);
 	let exportError = $state<string | null>(null);
@@ -36,13 +47,7 @@
 		isSyncingCovers = true;
 		syncCoversResult = null;
 		try {
-			const token =
-				typeof document !== 'undefined'
-					? document.cookie
-							.split('; ')
-							.find((row) => row.startsWith('csrf_token='))
-							?.split('=')[1]
-					: '';
+			const token = csrfToken();
 			const res = await fetch('/api/admin/sync-covers', {
 				method: 'POST',
 				credentials: 'include',
@@ -71,13 +76,7 @@
 
 		try {
 			// Using native fetch to preserve automatic multipart/form-data with boundaries
-			const token =
-				typeof document !== 'undefined'
-					? document.cookie
-							.split('; ')
-							.find((row) => row.startsWith('csrf_token='))
-							?.split('=')[1]
-					: '';
+			const token = csrfToken();
 			const res = await fetch('/api/admin/import-bestand', {
 				method: 'POST',
 				body: formData,
@@ -259,21 +258,22 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-8">
-		<!-- Import Card -->
-		{@render adminCard(
-			'Daten importieren',
-			'Aktualisieren Sie den Bestand via MAB2-XML oder legen Sie neue Titel und Exemplare via Excel/CSV an.',
-			'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12',
-			importContent
-		)}
-
-		<!-- Export Card -->
-		{@render adminCard(
-			'Daten exportieren',
-			'Exportieren Sie den aktuellen Medien- und Buchbestand vollständig als CSV-Datei zur weiteren Bearbeitung oder Archivierung.',
-			'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
-			exportContent
-		)}
+		{#if darfImport}
+			{@render adminCard(
+				'Daten importieren',
+				'Aktualisieren Sie den Bestand via MAB2-XML oder legen Sie neue Titel und Exemplare via Excel/CSV an.',
+				'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12',
+				importContent
+			)}
+		{/if}
+		{#if darfExport}
+			{@render adminCard(
+				'Daten exportieren',
+				'Exportieren Sie den aktuellen Medien- und Buchbestand vollständig als CSV-Datei zur weiteren Bearbeitung oder Archivierung.',
+				'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
+				exportContent
+			)}
+		{/if}
 	</div>
 
 	<div class="pt-8 border-t border-slate-200">

@@ -31,7 +31,7 @@ export const permissionsMetadata = [
 			{
 				key: 'delete_students',
 				label: 'Schüler löschen',
-				desc: 'Schüler in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen (endgültiges Löschen: „Schülerverwaltung: Sonderrechte")'
+				desc: 'Schüler in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen'
 			},
 			{
 				key: 'import_students',
@@ -134,7 +134,7 @@ export const permissionsMetadata = [
 			{
 				key: 'manage_students_admin',
 				label: 'Schülerverwaltung: Sonderrechte',
-				desc: 'Versetzung (Schuljahreswechsel), DSGVO-Auskunft (Art. 15) über alle Daten eines Kindes und endgültiges Löschen aus dem Papierkorb'
+				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Kindes; außerdem das sofortige endgültige Löschen aus dem Papierkorb per API — die Oberfläche hat dafür keinen Knopf, der nächtliche Löschjob räumt nach Frist'
 			},
 			{
 				key: 'manage_users',

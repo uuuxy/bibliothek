@@ -50,5 +50,5 @@ async function erwarteAlert(page, meldung) {
 	await expect(alert).toBeVisible();
 	await expect(alert).toContainText(meldung);
 	// Ein Alert ohne Weg zur Behebung ist eine Sackgasse (siehe BackupAlert.svelte).
-	await expect(alert.getByRole('button', { name: 'Datenverwaltung öffnen' })).toBeVisible();
+	await expect(alert.getByRole('button', { name: 'Betriebsbereitschaft öffnen' })).toBeVisible();
 }

@@ -2,7 +2,7 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-08-23 (Löschbarkeit einzelner Felder). Davor 2026-08-06
+> Zuletzt aktualisiert: 2026-08-24 (Löschbarkeit einzelner Felder). Davor 2026-08-06
 > (Audit-Nachlese: Cover-Proxy, SMTP-STARTTLS,
 > Lesefristen, Panic-Log, Secret-Guard-Klarstellung)
 
@@ -48,7 +48,7 @@ Credential-Stuffing über diesen Weg.
 
 ### `manage_users` ist nicht Administrator (seit 06.08.2026)
 
-`manage_users` ist ein **delegierbares** Recht — der PermissionManager bietet es auch für
+`manage_users` ist ein **delegierbares** Recht (seit 24.08.2026 nur noch Konten, Rechte-Matrix und Admin-Audit-Log; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — der PermissionManager bietet es auch für
 MITARBEITER, LEHRER und HELFER an. Bis zum 06.08.2026 war es damit gleichbedeutend mit
 Administrator; drei Wege führten dahin, alle jetzt geschlossen (`api/user_admin_eskalation.go`):
 

@@ -1,4 +1,5 @@
 <script>
+	import { authStore } from './stores/authStore.svelte.js';
 	import { AlertTriangle, Check } from '@lucide/svelte';
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
@@ -30,7 +31,7 @@
 			const res = await apiFetch('/api/admin/permissions');
 			if (!res.ok) {
 				if (res.status === 403)
-					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
+					throw new Error('Zugriff verweigert: Das Recht „Benutzer & Rechte verwalten" fehlt.');
 				throw new Error((await res.text()) || 'Fehler beim Laden der Berechtigungen');
 			}
 			const data = await res.json();
@@ -170,6 +171,7 @@
 			</div>
 		{:else}
 			<PermissionsEditor
+				schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
 				metadata={permissionsMetadata}
 				{permissionsState}
 				{updatingKeys}

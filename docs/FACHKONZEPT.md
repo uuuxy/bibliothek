@@ -230,7 +230,7 @@ Der Zugang zum System ist strikt reglementiert und wird durch ein Role-Based Acc
 - **Brute-Force-Schutz:** Strenges Rate-Limiting beim Login (Sperre nach mehreren Fehlversuchen pro IP/E-Mail-Kombination).
 
 ### 12.2. Das 4-Rollen-Konzept
-Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_students`, `manage_users`, `checkout_books`) vom Admin in der Datenbank konfiguriert werden können:
+Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_students`, `manage_settings`, `perform_actions`) vom Admin in der Datenbank konfiguriert werden können:
 
 1. **Admin (`admin`):** Uneingeschränkter Zugriff auf alle Systembereiche, Einstellungen, Audits und Datenschutz-Routinen.
 2. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Schülerverwaltung, darf aber keine Systemeinstellungen ändern.

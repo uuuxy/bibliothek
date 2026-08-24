@@ -4,11 +4,12 @@
 	import { studentTabExtensions } from './plugins.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
+	import { initialen, avatarVerlauf } from './avatarKachel.js';
 
-	/** @type {{ profile: any, darfBearbeiten?: boolean, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void }} */
+	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void }} */
 	let {
 		profile = $bindable(),
-		darfBearbeiten = false,
+		rechte = { bearbeiten: false, foto: false },
 		timestamp,
 		showWebcam = $bindable(),
 		showDeleteConfirm = $bindable(),
@@ -17,30 +18,8 @@
 		onLock
 	} = $props();
 
-	// ── Initialen-Avatar (Passbild-Ersatz) ────────────────────────────────────
-	// Eine leere graue Box liest sich wie „kaputt". Fehlt das Foto, zeigen wir –
-	// wie Apple Kontakte / Google – eine Initialen-Kachel auf farbigem Verlauf.
-	// Die Farbe wird deterministisch aus dem Namen abgeleitet, damit derselbe
-	// Schüler immer dieselbe Kachel bekommt (wirkt gewollt statt zufällig).
-	const AVATAR_GRADIENTS = [
-		'from-blue-500 to-indigo-600',
-		'from-emerald-500 to-teal-600',
-		'from-fuchsia-500 to-purple-600',
-		'from-amber-500 to-orange-600',
-		'from-rose-500 to-pink-600',
-		'from-sky-500 to-cyan-600',
-		'from-violet-500 to-purple-600',
-		'from-lime-500 to-emerald-600'
-	];
-	const initials = $derived(
-		((profile.vorname?.[0] ?? '') + (profile.nachname?.[0] ?? '')).toUpperCase() || '?'
-	);
-	const avatarGradient = $derived.by(() => {
-		const key = `${profile.vorname ?? ''} ${profile.nachname ?? ''}`;
-		let h = 0;
-		for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-		return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length];
-	});
+	const initials = $derived(initialen(profile));
+	const avatarGradient = $derived(avatarVerlauf(profile));
 
 	// ── Abgangsjahr inline editing ────────────────────────────────────────────
 	let editingAbgang = $state(false);
@@ -129,6 +108,7 @@
 			</div>
 		{/if}
 		<button
+			hidden={!rechte.foto}
 			onclick={() => (showWebcam = true)}
 			aria-label="Passbild mit Webcam aufnehmen"
 			class="absolute bottom-1 right-1 p-2 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white backdrop-blur-md transition-all cursor-pointer border border-white/20"
@@ -155,7 +135,7 @@
 		</h3>
 		<p class="text-lg font-bold text-slate-700">Klasse {profile.klasse}</p>
 
-		{#if darfBearbeiten}
+		{#if rechte.bearbeiten}
 			{#if editingAbgang}
 				<div class="flex items-center gap-2 flex-wrap">
 					<input

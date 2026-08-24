@@ -179,7 +179,13 @@ function createOfflineSyncStore() {
 		}
 	}
 
+	// Einmalig je Seite: Jede Anmeldung ruft init() (hintergrundAbrufe.svelte.js); ohne
+	// Sperre stapelten Logout→Login Listener und 30-s-Intervalle, und startSync() lief
+	// mehrfach parallel gegen dieselbe Warteschlange.
+	let initialisiert = false;
 	function init() {
+		if (initialisiert) return;
+		initialisiert = true;
 		if (typeof window !== 'undefined') {
 			isOffline = !navigator.onLine;
 			updateCount();

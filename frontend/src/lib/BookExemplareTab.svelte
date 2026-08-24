@@ -1,5 +1,7 @@
 <script>
-	import { appState, showToast } from '../inventur/lib/store.svelte.js';
+	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { authStore } from './stores/authStore.svelte.js';
+	import { hatRecht } from './menu.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
 	import BookExemplarCard from './components/BookExemplarCard.svelte';
@@ -10,6 +12,8 @@
 	let { exemplare = $bindable([]), book, loadAll } = $props();
 
 	const selectedExemplare = new SvelteSet();
+	// Auswahl/Löschen/Barcode/Status hängen an edit_books — nicht an der Rolle.
+	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	/** @param {string} id */
 	function toggleSelect(id) {
@@ -92,7 +96,7 @@
 		<p class="font-semibold text-sm">Keine physischen Exemplare mit Barcodes angelegt.</p>
 	</div>
 {:else}
-	{#if selectedExemplare.size > 0 && appState.adminAuthenticated}
+	{#if selectedExemplare.size > 0 && darfBearbeiten}
 		<div
 			class="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center justify-between animate-fade-in"
 		>
@@ -107,6 +111,7 @@
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 		{#each exemplare as ex (ex.id)}
 			<BookExemplarCard
+				{darfBearbeiten}
 				{ex}
 				selected={selectedExemplare.has(ex.id)}
 				onToggleSelect={() => toggleSelect(ex.id)}

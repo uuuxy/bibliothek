@@ -50,10 +50,10 @@ export function backupMessage(s) {
 export function backupHint(s) {
 	if (!s) return '';
 	if (!s.encryption_key_set)
-		return 'Ohne Schlüssel überspringt der nächtliche Job jedes Backup. Schlüssel in den Einstellungen unter Datenverwaltung hinterlegen.';
+		return 'Ohne Schlüssel überspringt der nächtliche Job jedes Backup. Schlüssel in den Einstellungen unter Betriebsbereitschaft hinterlegen.';
 	if (!s.last_backup_at)
-		return 'Es liegt noch kein Sicherungsstand vor. Backup in den Einstellungen unter Datenverwaltung anstoßen.';
+		return 'Es liegt noch kein Sicherungsstand vor. Backup in den Einstellungen unter Betriebsbereitschaft anstoßen.';
 	if (s.encryption_key_weak && s.status === 'warning')
 		return 'Die Sicherungen laufen, sind aber mit einer kurzen Passphrase verschlüsselt und dadurch leichter zu knacken. Längeren Schlüssel (mindestens 32 Zeichen) hinterlegen; bereits erstellte Backups bleiben mit dem alten Schlüssel lesbar.';
-	return 'Der nächtliche Job läuft nicht wie erwartet. Stand und Konfiguration in den Einstellungen unter Datenverwaltung prüfen.';
+	return 'Der nächtliche Job läuft nicht wie erwartet. Stand und Konfiguration in den Einstellungen unter Betriebsbereitschaft prüfen.';
 }

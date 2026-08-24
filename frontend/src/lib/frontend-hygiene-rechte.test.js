@@ -23,8 +23,16 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
  * 069). Beides zusammen, weil jedes allein danebengreift: Nur das Literal fängt
  * `activeTab === 'admin'` (ein Reiter-Name), nur der Variablenname übersieht `r ===`.
  */
-const ROLLEN_VERGLEICH =
-	/(?:\b(?:rolle|role|r)|toLowerCase\(\))\s*[!=]==?\s*'(?:admin|mitarbeiter|helfer|kollegium|lehrer)'/g;
+const ROLLE = `(?:admin|mitarbeiter|helfer|kollegium|lehrer)`;
+const ROLLEN_VERGLEICH = new RegExp(
+	// rolle === 'admin' · r !== "kollegium" · rolle.toLowerCase() === 'admin'
+	`(?:\\b(?:rolle|role|r)|toLowerCase\\(\\))\\s*[!=]==?\\s*['"]${ROLLE}['"]` +
+		// rolle?.toUpperCase() === 'ADMIN'
+		`|toUpperCase\\(\\)\\s*[!=]==?\\s*['"](?:ADMIN|MITARBEITER|HELFER|KOLLEGIUM|LEHRER)['"]` +
+		// ['admin', 'mitarbeiter'].includes(rolle)
+		`|\\[[^\\]]*['"]${ROLLE}['"][^\\]]*\\]\\.includes\\(`,
+	'g'
+);
 
 // ── Bewusste Ausnahmen ──────────────────────────────────────────────────────
 // Jede braucht einen Grund, der NICHT „dieses Recht hat nur der Admin" lautet — dafür ist

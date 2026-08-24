@@ -9,10 +9,12 @@
 	 * @property {Record<string, Record<string, boolean>>} permissionsState
 	 * @property {Record<string, boolean>} updatingKeys
 	 * @property {(role: string, key: string, currentVal: boolean) => void} onToggle
+	 * @property {boolean} [schreibgeschuetzt] - PUT /api/admin/permissions ist Admin-only; mit
+	 *   manage_users sieht man die Matrix, kann sie aber nicht ändern.
 	 */
 
 	/** @type {Props} */
-	let { metadata, permissionsState, updatingKeys, onToggle } = $props();
+	let { metadata, permissionsState, updatingKeys, onToggle, schreibgeschuetzt = false } = $props();
 </script>
 
 <!-- DRY: ein Toggle-Block für Mitarbeiter & Lehrer -->
@@ -22,9 +24,10 @@
 		<span class="text-xs font-bold text-slate-500 tracking-wider w-16 text-right">{roleLabel}</span>
 		<button
 			onclick={() => onToggle(roleKey, item.key, permissionsState[roleKey]?.[item.key] ?? false)}
-			disabled={isUpdating}
-			class="relative inline-flex items-center cursor-pointer group focus:outline-none"
+			disabled={isUpdating || schreibgeschuetzt}
+			class="relative inline-flex items-center cursor-pointer group focus:outline-none disabled:cursor-not-allowed"
 			aria-label="{roleLabel} Rechte umschalten"
+			title={schreibgeschuetzt ? 'Die Rechte-Matrix kann nur ein Administrator ändern' : undefined}
 		>
 			<input
 				type="checkbox"

@@ -120,7 +120,7 @@
 			<!-- Left Column Profile Card -->
 			<StudentProfileCard
 				bind:profile={st.profile}
-				darfBearbeiten={rechte.bearbeiten}
+				{rechte}
 				timestamp={st.timestamp}
 				bind:showWebcam={st.showWebcam}
 				bind:showDeleteConfirm={st.showDeleteConfirm}

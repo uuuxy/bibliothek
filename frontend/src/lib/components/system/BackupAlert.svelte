@@ -31,8 +31,12 @@
 	// könnte.
 	let weggeklickt = $state(false);
 
-	function openDatenverwaltung() {
-		uiStore.requestedSettingsTab = 'daten';
+	// Ziel ist die Betriebsbereitschaft: Dort steht der Backup-Befund samt Anleitung, und
+	// sie verlangt dasselbe Recht wie dieser Alert (manage_settings). „Datenverwaltung"
+	// (bis 24.08.2026) zeigte gar keinen Backup-Stand und braucht ein anderes Recht —
+	// der Sprung wurde dann still verworfen.
+	function openBetriebsbereitschaft() {
+		uiStore.requestedSettingsTab = 'betrieb';
 		uiStore.activeTab = 'settings';
 	}
 </script>
@@ -51,8 +55,13 @@
 			<p class="text-sm font-semibold text-slate-800">{backupStatus.message}</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-slate-500">{backupStatus.hint}</p>
 		</div>
-		<Button variant="secondary" size="sm" onclick={openDatenverwaltung} class="mt-0.5 shrink-0">
-			Datenverwaltung öffnen
+		<Button
+			variant="secondary"
+			size="sm"
+			onclick={openBetriebsbereitschaft}
+			class="mt-0.5 shrink-0"
+		>
+			Betriebsbereitschaft öffnen
 			<ArrowRight class="h-3.5 w-3.5" />
 		</Button>
 		<Button

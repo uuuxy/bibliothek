@@ -1,5 +1,4 @@
 <script>
-	import { appState } from '../../inventur/lib/store.svelte.js';
 	import { apiFetch, apiClient } from '../apiFetch.js';
 	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
 	import Button from './ui/Button.svelte';
@@ -8,9 +7,9 @@
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
 	 * (Barcode/Status) lokal; Auswahl & Löschen laufen über Callbacks zum Eltern-Tab.
-	 * @type {{ ex: any, selected: boolean, onToggleSelect: () => void, onDelete: () => void }}
+	 * @type {{ ex: any, selected: boolean, darfBearbeiten?: boolean, onToggleSelect: () => void, onDelete: () => void }}
 	 */
-	let { ex, selected, onToggleSelect, onDelete } = $props();
+	let { ex, selected, darfBearbeiten = false, onToggleSelect, onDelete } = $props();
 
 	let editingBarcode = $state(false);
 	let editBarcodeValue = $state('');
@@ -68,13 +67,13 @@
 	tabindex="0"
 	aria-pressed={selected}
 	onclick={() => {
-		if (appState.adminAuthenticated) onToggleSelect();
+		if (darfBearbeiten) onToggleSelect();
 	}}
 	onkeydown={(e) => {
 		if (e.target !== e.currentTarget) return;
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
-			if (appState.adminAuthenticated) onToggleSelect();
+			if (darfBearbeiten) onToggleSelect();
 		}
 	}}
 >
@@ -122,7 +121,7 @@
 			</div>
 		{:else}
 			<div class="flex items-center gap-3">
-				{#if appState.adminAuthenticated}
+				{#if darfBearbeiten}
 					<input
 						type="checkbox"
 						checked={selected}
@@ -138,7 +137,7 @@
 					>
 						{ex.barcode_id}
 					</span>
-					{#if appState.adminAuthenticated}
+					{#if darfBearbeiten}
 						{#if ex.barcode_id.startsWith('B-')}
 							<a
 								href={`/api/print/etikett/${ex.id}`}
