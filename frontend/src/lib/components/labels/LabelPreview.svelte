@@ -1,4 +1,5 @@
 <script>
+	import { formatKurzname } from '../../etikettformate.js';
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
 </script>
@@ -19,11 +20,7 @@
 	class="lg:col-span-5 flex flex-col items-center justify-start rounded-xl bg-surface-container p-6"
 >
 	<span class="text-xs text-slate-400 font-medium mb-4"
-		>A4 Etiketten-Vorschau · {labelStore.formatId === 'standard_52'
-			? 'Standard 52'
-			: labelStore.formatId === 'avery_3475'
-				? 'Avery 3475'
-				: 'Zweckform L4760'}</span
+		>A4 Etiketten-Vorschau · {formatKurzname(labelStore.formatId)}</span
 	>
 
 	{#if !labelStore.selectedTitle && (printQueue.copies?.length ?? 0) === 0}

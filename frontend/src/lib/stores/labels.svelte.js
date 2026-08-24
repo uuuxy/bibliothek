@@ -2,6 +2,7 @@
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
 import { apiFetch, apiClient } from '../apiFetch.js';
+import { felderProBogen } from '../etikettformate.js';
 import { printQueue, clearPrintQueue } from './printQueue.svelte.js';
 import { toastStore } from './toastStore.svelte.js';
 
@@ -49,11 +50,9 @@ export function createLabelStore() {
 	let startPosition = $state(1); // 1 to 21
 
 	let formatId = $state('avery_3475'); // Default format
-	let maxPositions = $derived.by(() => {
-		if (formatId === 'standard_52') return 52;
-		if (formatId === 'avery_3475') return 24;
-		return 21;
-	});
+	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette: Die drei
+	// Zahlen standen hier als dritte Kopie derselben Raster (24.08.2026).
+	let maxPositions = $derived(felderProBogen(formatId));
 	let generationMode = $state('existing');
 	let existingCopies = $state.raw(/** @type {any[]} */ ([]));
 	let loadingCopies = $state(false);

@@ -2,14 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { ETIKETT_FORMATE, felderProBogen } from './etikettformate.js';
+import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 
 // Die Etikettenraster stehen an mehreren Stellen — und das ist genau die Bauform, die in
 // diesem Projekt schon zweimal auseinandergelaufen ist (zuletzt die dreifach kopierte
 // Cover-Host-Allowlist, die eine Kopie kannte books.google nicht).
 //
-// Maßgeblich ist api/label_formats.go. Die Oberfläche des Druck-Centers führt ihre eigene
-// Liste (LabelLayoutOptionen.svelte) und ihre eigenen Stückzahlen (stores/labels.svelte.js).
-// Beide werden hier gegen die Go-Datei gehalten.
+// Maßgeblich ist api/label_formats.go. Das Frontend führt seit dem 24.08.2026 GENAU EINE
+// eigene Kopie davon: src/lib/etikettformate.js. Vorher waren es zwei (Liste in
+// LabelLayoutOptionen.svelte, Stückzahlen in stores/labels.svelte.js), und mit den
+// Schüler-Etiketten wäre die Ausweis-Werkzeugleiste die dritte geworden.
 //
 // Bewusst KEIN Umbau des Druck-Centers auf die Server-Liste: Die Bestätigungsseite des
 // Lieferanten holt die Formate seit dem 06.08.2026 vom Server (etiketten_formate), im
@@ -21,11 +24,6 @@ const libDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(libDir, '..', '..', '..');
 
 const goQuelle = readFileSync(join(repoRoot, 'api', 'label_formats.go'), 'utf8');
-const optionenQuelle = readFileSync(
-	join(libDir, 'components', 'labels', 'LabelLayoutOptionen.svelte'),
-	'utf8'
-);
-const storeQuelle = readFileSync(join(libDir, 'stores', 'labels.svelte.js'), 'utf8');
 
 /**
  * Liest die Formate aus api/label_formats.go: ID, Cols, Rows.
@@ -54,40 +52,57 @@ describe('Etikettenformate: Go-Liste und Oberfläche', () => {
 		expect(goFormate.length).toBeGreaterThanOrEqual(3);
 	});
 
-	it('jedes Format aus dem Backend steht in der Auswahl des Druck-Centers', () => {
+	it('jedes Format aus dem Backend steht in der Frontend-Liste', () => {
 		for (const f of goFormate) {
 			expect(
-				optionenQuelle.includes(`'${f.id}'`),
-				`Format ${f.id} fehlt in LabelLayoutOptionen.svelte`
+				ETIKETT_FORMATE.some((e) => e.value === f.id),
+				`Format ${f.id} fehlt in etikettformate.js`
 			).toBe(true);
 		}
 	});
 
-	it('die Auswahl bietet kein Format an, das es im Backend nicht gibt', () => {
+	it('die Frontend-Liste bietet kein Format an, das es im Backend nicht gibt', () => {
 		const ids = goFormate.map((f) => f.id);
-		const angeboten = [...optionenQuelle.matchAll(/value:\s*'([a-z0-9_]+)'/g)].map((m) => m[1]);
-		for (const id of angeboten) {
-			// BARCODE_AUSGABE steht in derselben Datei; deren Werte sind keine Raster.
-			if (id === 'code39' || id === 'qr') continue;
-			expect(
-				ids,
-				`LabelLayoutOptionen.svelte bietet ${id} an, das Backend kennt es nicht`
-			).toContain(id);
+		for (const e of ETIKETT_FORMATE) {
+			expect(ids, `etikettformate.js bietet ${e.value} an, das Backend kennt es nicht`).toContain(
+				e.value
+			);
 		}
 	});
 
-	it('die Stückzahlen im Store stimmen mit Spalten × Zeilen überein', () => {
-		// labels.svelte.js rechnet die Etiketten je Bogen selbst aus (für die Vorschau).
-		// Eine Zahl, die hier abweicht, zeigt einen Bogen mit der falschen Kachelzahl.
+	it('Spalten und Zeilen stimmen Feld für Feld mit dem Backend überein', () => {
+		// Nicht nur die Gesamtzahl: 3×8 und 4×6 sind beide 24 und trotzdem zwei
+		// verschiedene Bögen. Wer nur das Produkt prüft, lässt den Bogen durch, auf dem
+		// jedes Etikett um eine Spalte verrutscht klebt.
 		for (const f of goFormate) {
-			const treffer = storeQuelle.match(
-				new RegExp(`formatId === '${f.id}'\\)\\s*return\\s+(\\d+)`)
-			);
-			if (!treffer) continue; // nicht jedes Format muss im Store gesondert stehen
-			expect(
-				Number(treffer[1]),
-				`labels.svelte.js sagt ${treffer[1]} Etiketten für ${f.id}, das Raster ist ${f.cols}×${f.rows}`
-			).toBe(f.cols * f.rows);
+			const e = ETIKETT_FORMATE.find((x) => x.value === f.id);
+			if (!e) {
+				throw new Error(`Format ${f.id} fehlt in etikettformate.js`);
+			}
+			expect([e.spalten, e.zeilen], `Raster von ${f.id}`).toEqual([f.cols, f.rows]);
 		}
+	});
+
+	it('felderProBogen liefert Spalten × Zeilen — auch für Unbekanntes eine bedienbare Zahl', () => {
+		// Die Zahl ist das max des Startpositionsfeldes. Eine 0 machte es unbedienbar.
+		for (const f of goFormate) {
+			expect(felderProBogen(f.id), `felderProBogen('${f.id}')`).toBe(f.cols * f.rows);
+		}
+		expect(felderProBogen('gibt-es-nicht')).toBeGreaterThan(0);
+	});
+
+	it('keine zweite Formatliste im Frontend', () => {
+		// Der eigentliche Zweck dieser Datei: Die Kopie soll EINE bleiben. Wer die IDs
+		// woanders erneut hinschreibt, baut die Dopplung wieder auf, die es hier schon
+		// zweimal gab.
+		const treffer = sammleQuelldateien(srcRoot)
+			.filter((pfad) => !pfad.endsWith('etikettformate.js') && !pfad.endsWith('.test.js'))
+			.filter((pfad) => {
+				const inhalt = readFileSync(pfad, 'utf8');
+				return goFormate.filter((f) => inhalt.includes(`'${f.id}'`)).length >= 2;
+			})
+			.map((pfad) => relPfad(pfad));
+
+		expect(treffer, 'diese Dateien führen eine eigene Formatliste').toEqual([]);
 	});
 });

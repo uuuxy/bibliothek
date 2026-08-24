@@ -5,12 +5,7 @@
 <script>
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import Select from '../ui/Select.svelte';
-
-	const FORMATE = [
-		{ value: 'zweckform_l4760', label: 'Zweckform L4760 (3x7, 21 Etiketten)' },
-		{ value: 'avery_3475', label: 'Avery 3475 (3x8, 24 Etiketten)' },
-		{ value: 'standard_52', label: 'Kleine Barcodes (4x13, 52 Etiketten)' }
-	];
+	import { ETIKETT_FORMATE } from '../../etikettformate.js';
 	const BARCODE_AUSGABE = [
 		{ value: 'code39', label: 'Code39 (1D Standard)' },
 		{ value: 'qr', label: 'QR-Code (2D)' }
@@ -23,7 +18,11 @@
 	<div class="space-y-3.5">
 		<div class="space-y-1.5">
 			<span class="text-xs font-medium text-slate-500 block">Etikettenformat</span>
-			<Select bind:value={labelStore.formatId} options={FORMATE} aria-label="Etikettenformat" />
+			<Select
+				bind:value={labelStore.formatId}
+				options={ETIKETT_FORMATE}
+				aria-label="Etikettenformat"
+			/>
 		</div>
 
 		<div class="space-y-1.5">
