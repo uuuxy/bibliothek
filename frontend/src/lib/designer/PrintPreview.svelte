@@ -1,14 +1,17 @@
 <script>
 	/**
 	 * @file PrintPreview.svelte
-	 * Versteckte Druck-Ausgabe-Sektionen (Batch, DruckCenter), die von der Druck-Engine
-	 * gerendert werden. triggerPrint() setzt data-print-mode/-side am <body>; die CSS
-	 * unten (plus app.css) zeigt selektiv die passende Sektion.
+	 * Versteckte Druck-Ausgabe-Sektionen (Ausweis-Designer, Stapeldruck der Schülerdatei),
+	 * die von der Druck-Engine gerendert werden. Der Auslöser setzt data-print-mode/-side
+	 * am <body>; die CSS unten und styles/druck-ausweise.css zeigen die passende Sektion.
 	 *
 	 *   print-section-card      → Kartendrucker, Vorderseite
-	 *   print-section-a4        → A4-Bogen,      Vorderseite
 	 *   print-section-back-card → Kartendrucker, Rückseite
-	 *   print-section-back-a4   → A4-Bogen,      Rückseite
+	 *
+	 * Bis zum 24.08.2026 gab es zwei weitere Sektionen für einen A4-Bogen mit acht
+	 * Kartenabbildern zum Ausschneiden. Er ist abgeschafft; an seiner Stelle steht der
+	 * Etikettenbogen, und der entsteht serverseitig als PDF (schuelerEtiketten.js) und
+	 * nicht über die Druck-CSS des Browsers. Deshalb bleiben hier nur die zwei Karten.
 	 *
 	 * Jede Sektion rendert pro Schüler eine Karte über CardFace — dieselbe Render-Quelle
 	 * wie der profilseitige Einzeldruck (StudentPrintCard).
