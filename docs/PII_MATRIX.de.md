@@ -112,6 +112,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/anliegen` | create_reservations | 0 | Freitext-Anliegen, Antwort id |
 | `GET /api/anliegen/eigene` | create_reservations | 0 | eigene Anliegen; „von" ist Lehrkraft |
 | `GET /api/anliegen/offen` | view_orders | 0 | Anliegen; „von" ist Lehrkraft |
+| `GET /api/anliegen/anzahl` | view_orders | 0 | nur Zähler |
 | `PUT /api/anliegen/{id}/erledigen` | create_orders | 0 | Mail an Lehrkraft, 204 |
 
 ## routes_misc.go

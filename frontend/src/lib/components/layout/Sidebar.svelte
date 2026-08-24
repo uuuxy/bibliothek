@@ -33,7 +33,7 @@
 	 * @param {string} id
 	 */
 	function wartendeArbeit(id) {
-		if (id === 'orders') return uiStore.pendingReservierungen;
+		if (id === 'orders') return uiStore.pendingReservierungen + uiStore.offeneAnliegen; // + Anliegen
 		if (id === 'druck-center') return uiStore.offeneEtiketten;
 		return 0;
 	}

@@ -49,7 +49,9 @@ export function createLabelStore() {
 	let labelBorder = $state(true);
 	let startPosition = $state(1); // 1 to 21
 
-	let formatId = $state('avery_3475'); // Default format
+	// Vorgabe = die des Servers (api/label_formats.go StandardLabelFormat): das Papier des
+	// Lieferantenwegs. Bis 24.08.2026 stand hier avery_3475 — zwei Vorgaben für ein Raster.
+	let formatId = $state('zweckform_l4760');
 	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette: Die drei
 	// Zahlen standen hier als dritte Kopie derselben Raster (24.08.2026).
 	let maxPositions = $derived(felderProBogen(formatId));

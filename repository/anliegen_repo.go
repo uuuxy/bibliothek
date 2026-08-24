@@ -88,6 +88,13 @@ func (r *AnliegenRepository) ListOffene(ctx context.Context) ([]Anliegen, error)
 		ORDER BY a.erstellt_am ASC`)
 }
 
+// CountOffene zählt die offenen Anliegen — speist das Badge an „Bestellungen“.
+func (r *AnliegenRepository) CountOffene(ctx context.Context) (int, error) {
+	var n int
+	err := r.pool.QueryRow(ctx, `SELECT count(*) FROM lehrer_anliegen WHERE erledigt_am IS NULL`).Scan(&n)
+	return n, err
+}
+
 // ListEigene liefert die Anliegen EINER Lehrkraft (Portal-Status), neueste
 // zuerst und auf die letzten 50 begrenzt — das Portal ist kein Archiv.
 func (r *AnliegenRepository) ListEigene(ctx context.Context, benutzerID string) ([]Anliegen, error) {

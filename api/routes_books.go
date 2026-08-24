@@ -96,5 +96,6 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("POST /api/anliegen", s.RequirePermission("create_reservations")(s.CreateAnliegenHandler()))
 	mux.Handle("GET /api/anliegen/eigene", s.RequirePermission("create_reservations")(s.ListEigeneAnliegenHandler()))
 	mux.Handle("GET /api/anliegen/offen", s.RequirePermission("view_orders")(s.ListOffeneAnliegenHandler()))
+	mux.Handle("GET /api/anliegen/anzahl", s.RequirePermission("view_orders")(s.CountOffeneAnliegenHandler()))
 	mux.Handle("PUT /api/anliegen/{id}/erledigen", s.RequirePermission("create_orders")(s.ErledigeAnliegenHandler()))
 }

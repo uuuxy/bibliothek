@@ -17,9 +17,14 @@ export function starteHintergrundAbrufe(user) {
 	const timer = [];
 	if (hatRecht(user, 'perform_actions')) offlineSync.init(); // POST /api/action/batch
 	if (hatRecht(user, 'view_orders')) {
-		// GET /api/reservierungen/klassensatz/anzahl
-		uiStore.fetchPendingReservierungen();
-		timer.push(setInterval(() => uiStore.fetchPendingReservierungen(), 30_000));
+		// GET /api/reservierungen/klassensatz/anzahl + /api/anliegen/anzahl — beide view_orders,
+		// beide speisen das Badge an „Bestellungen".
+		const bestellArbeit = () => {
+			uiStore.fetchPendingReservierungen();
+			uiStore.fetchOffeneAnliegen();
+		};
+		bestellArbeit();
+		timer.push(setInterval(bestellArbeit, 30_000));
 	}
 	if (hatRecht(user, 'edit_books')) {
 		// GET /api/exemplare/etiketten-offen/anzahl — speist das Badge an „Druck-Center".

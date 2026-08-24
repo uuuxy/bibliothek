@@ -7,6 +7,7 @@
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import { Check } from '@lucide/svelte';
 
@@ -55,6 +56,7 @@
 				// Bereits von einem anderen Arbeitsplatz abgehakt — keine zweite Mail.
 				anliegen = anliegen.filter((a) => a.id !== id);
 				confirmingId = null;
+				uiStore.fetchOffeneAnliegen();
 				toastStore.addToast('Anliegen war bereits erledigt.', 'success');
 				return;
 			}
@@ -64,6 +66,7 @@
 			}
 			anliegen = anliegen.filter((a) => a.id !== id);
 			confirmingId = null;
+			uiStore.fetchOffeneAnliegen();
 			// Der Server meldet, ob die Benachrichtigung wirklich raus ist — ein
 			// Mail-Ausfall war vorher nur eine Server-Logzeile, und hier stand
 			// trotzdem „bekommt eine Mail".

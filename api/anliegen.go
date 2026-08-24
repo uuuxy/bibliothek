@@ -114,6 +114,20 @@ func (s *Server) ListOffeneAnliegenHandler() http.HandlerFunc {
 	}
 }
 
+// CountOffeneAnliegenHandler speist das Badge an „Bestellungen“ — bis 24.08.2026 zählte
+// niemand offene Anliegen, und wer nicht ohnehin bestellen wollte, sah sie nie.
+// GET /api/anliegen/anzahl → { "anzahl": 3 }
+func (s *Server) CountOffeneAnliegenHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		n, err := repository.NewAnliegenRepository(s.DB.Pool).CountOffene(r.Context())
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		RespondJSON(w, http.StatusOK, map[string]int{"anzahl": n})
+	}
+}
+
 // ErledigeAnliegenHandler hakt ab und benachrichtigt die Lehrkraft.
 // PUT /api/anliegen/{id}/erledigen  { "notiz": "bestellt, kommt Anfang September" }
 func (s *Server) ErledigeAnliegenHandler() http.HandlerFunc {
