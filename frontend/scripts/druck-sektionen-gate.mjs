@@ -78,8 +78,13 @@ const sektionen = ERWARTET.map(
 	(name) =>
 		`<div id="${name}" class="${klassen[name]} ${scope}"><div class="print-card-box">x</div></div>`
 ).join('\n');
-const seite = `<!doctype html><html><head><meta charset="utf-8">
-<link rel="stylesheet" href="/${cssDatei}"></head><body>
+// Die Prüfseite geht NICHT über HTTP, sondern per page.setContent direkt in den
+// Browser (CodeQL #24/#26, stored-xss): Klassenlisten aus einer Datei, die als
+// HTTP-Antwort ausgeliefert werden, sind für CodeQL ein XSS-Sink — Loopback hin oder
+// her. Ohne HTTP-Antwort gibt es den Sink nicht. Der Server liefert nur noch das CSS.
+/** @param {number} port */
+const pruefseite = (port) => `<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="http://127.0.0.1:${port}/${cssDatei}"></head><body>
 <main class="min-h-screen bg-surface"><div class="h-screen flex w-full overflow-hidden">
 <aside class="no-print h-screen w-64">Navigation</aside>
 <div class="flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6">
@@ -91,16 +96,14 @@ ${sektionen}
 // --- 4. Unter @media print messen ---------------------------------------------------
 const server = http.createServer((anfrage, antwort) => {
 	const pfad = decodeURIComponent(anfrage.url.split('?')[0]);
-	if (pfad === '/pruefseite.html') {
-		antwort.setHeader('Content-Type', 'text/html; charset=utf-8');
-		return antwort.end(seite);
-	}
 	// Allowlist statt Pfadprüfung (CodeQL #23, #25): Der Server kennt genau EINE
-	// weitere Datei — das gebaute CSS, dessen Name oben aus dist/assets gelesen wurde.
+	// Datei — das gebaute CSS, dessen Name oben aus dist/assets gelesen wurde.
 	// Die frühere Variante löste den angefragten Pfad auf und prüfte, ob er in dist/
 	// liegt; das war korrekt, aber ein Muster, das CodeQL nicht als Sanitizer erkennt.
 	// Mit dem Vergleich gegen den festen Namen fließt der Anfragepfad in keinen
-	// Dateizugriff mehr.
+	// Dateizugriff mehr. Ein Wegwerf-Server für eine einzige Datei — aber `<link>`
+	// aus file:// heraus lädt Chromium nicht ohne Sonderflags, und die Kaskade
+	// braucht das echte gebaute Stylesheet.
 	if (pfad === '/' + cssDatei) {
 		antwort.setHeader('Content-Type', 'text/css');
 		return antwort.end(css);
@@ -134,7 +137,7 @@ const MATRIX = [
 
 const browser = await chromium.launch();
 const seiteImBrowser = await browser.newPage();
-await seiteImBrowser.goto(`http://127.0.0.1:${server.address().port}/pruefseite.html`);
+await seiteImBrowser.setContent(pruefseite(server.address().port), { waitUntil: 'load' });
 await seiteImBrowser.emulateMedia({ media: 'print' });
 
 const fehler = [];
