@@ -220,4 +220,9 @@
      Kartendrucker prüfen lässt, bevor ein Stapel echter Ausweise durchläuft.
      Echte Schüler druckt dieser Bildschirm nicht mehr — das tut die Schülerdatei
      (markieren → „Ausweise drucken"). -->
-<PrintPreview students={[previewStudent]} barcodeType={idStore.barcodeType} {timestamp} />
+<PrintPreview
+	students={[previewStudent]}
+	barcodeType={idStore.barcodeType}
+	{timestamp}
+	platzhalter
+/>

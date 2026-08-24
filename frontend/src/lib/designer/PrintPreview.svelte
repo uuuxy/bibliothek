@@ -16,15 +16,21 @@
 	import { idStore } from './idDesignerStore.svelte.js';
 	import CardFace from './CardFace.svelte';
 
-	/** @type {{ students: any[], barcodeType: 'code39'|'qr', timestamp: number }} */
-	const { students, barcodeType, timestamp } = $props();
+	/**
+	 * `platzhalter` reicht der Ausweis-Designer durch: Sein Testdruck soll leere Bild- und
+	 * Passbildfelder als Rahmen zeigen, der echte Stapeldruck aus der Schuelerdatei
+	 * niemals (siehe CardFace.svelte).
+	 *
+	 * @type {{ students: any[], barcodeType: 'code39'|'qr', timestamp: number, platzhalter?: boolean }}
+	 */
+	const { students, barcodeType, timestamp, platzhalter = false } = $props();
 </script>
 
 <!-- Kartendrucker: Vorderseite -->
 <div class="print-rendered-output print-section-card hidden print:block">
 	{#each students as student (student.id)}
 		<div class="print-card-box {idStore.front.theme}">
-			<CardFace side="front" {student} {barcodeType} {timestamp} />
+			<CardFace side="front" {student} {barcodeType} {timestamp} {platzhalter} />
 		</div>
 	{/each}
 </div>
@@ -34,7 +40,7 @@
 	<div class="print-cards-grid">
 		{#each students as student (student.id)}
 			<div class="print-card-box {idStore.front.theme}">
-				<CardFace side="front" {student} {barcodeType} {timestamp} />
+				<CardFace side="front" {student} {barcodeType} {timestamp} {platzhalter} />
 			</div>
 		{/each}
 	</div>
@@ -44,7 +50,7 @@
 <div class="print-rendered-output print-section-back-card hidden">
 	{#each students as _student (_student.id)}
 		<div class="print-card-box {idStore.back.theme}">
-			<CardFace side="back" student={null} {barcodeType} {timestamp} />
+			<CardFace side="back" student={null} {barcodeType} {timestamp} {platzhalter} />
 		</div>
 	{/each}
 </div>
@@ -54,7 +60,7 @@
 	<div class="print-cards-grid">
 		{#each students as _student (_student.id)}
 			<div class="print-card-box {idStore.back.theme}">
-				<CardFace side="back" student={null} {barcodeType} {timestamp} />
+				<CardFace side="back" student={null} {barcodeType} {timestamp} {platzhalter} />
 			</div>
 		{/each}
 	</div>

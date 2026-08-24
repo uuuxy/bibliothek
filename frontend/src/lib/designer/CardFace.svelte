@@ -12,8 +12,23 @@
 	 */
 	import { idStore } from './idDesignerStore.svelte.js';
 
-	/** @type {{ side: 'front'|'back', student: any, barcodeType: 'code39'|'qr', timestamp?: number }} */
-	const { side, student, barcodeType, timestamp = 0 } = $props();
+	/**
+	 * `platzhalter` zeichnet leere Bild-, Logo- und Passbildfelder als gestrichelten
+	 * Rahmen statt sie wegzulassen. NUR fuer den Testdruck des Ausweis-Designers.
+	 *
+	 * Der Testdruck ist da, um das Layout auf dem echten Kartendrucker zu pruefen — und
+	 * liess bis zum 24.08.2026 ausgerechnet die zwei flaechenkritischen Felder weg: Der
+	 * Platzhalter-Schueler hat kein Foto, und solange kein Logo hochgeladen ist, hat auch
+	 * das Logofeld keinen Inhalt. Auf der Leinwand standen dort gestrichelte Rahmen, auf
+	 * dem Papier nichts. Beim echten Schueler stimmte es, weil der ein Foto hat — genau
+	 * der gemeldete Unterschied "Testdruck falsch, Schuelerprofil tadellos".
+	 *
+	 * Vorgabe false: Ein ECHTER Ausweis darf niemals einen Rahmen mit der Aufschrift
+	 * "PASSBILD" tragen, nur weil beim Schueler kein Foto hinterlegt ist.
+	 *
+	 * @type {{ side: 'front'|'back', student: any, barcodeType: 'code39'|'qr', timestamp?: number, platzhalter?: boolean }}
+	 */
+	const { side, student, barcodeType, timestamp = 0, platzhalter = false } = $props();
 
 	/** Sichtbare Elemente der Seite, aufsteigend nach zIndex (höhere Ebenen zuletzt). */
 	const elements = $derived(
@@ -58,12 +73,16 @@
 				{el.content}
 			{/if}
 		</div>
-	{:else if isImage && el.content}
+	{:else if isImage && (el.content || platzhalter)}
 		<div
 			class="absolute overflow-hidden flex items-center justify-center"
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
 		>
-			<img src={el.content} class="w-full h-full object-contain" alt="Bild" />
+			{#if el.content}
+				<img src={el.content} class="w-full h-full object-contain" alt="Bild" />
+			{:else}
+				{@render leerstelle(el.type === 'logo' ? 'LOGO' : 'BILD')}
+			{/if}
 		</div>
 	{:else if isPhoto && student}
 		<div
@@ -79,6 +98,8 @@
 					class="w-full h-full object-cover"
 					alt="Passbild"
 				/>
+			{:else if platzhalter}
+				{@render leerstelle('PASSBILD')}
 			{/if}
 		</div>
 	{:else if isBarcode && student}
@@ -97,4 +118,12 @@
 			>
 		</div>
 	{/if}
+{/snippet}
+
+{#snippet leerstelle(/** @type {string} */ beschriftung)}
+	<span
+		class="border-outline text-on-surface-variant flex h-full w-full items-center justify-center rounded-xs border border-dashed text-[5px] font-bold tracking-wider"
+	>
+		{beschriftung}
+	</span>
 {/snippet}
