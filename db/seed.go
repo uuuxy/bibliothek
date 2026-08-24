@@ -219,10 +219,34 @@ var RechteVorgabe = []RechteEintrag{
 // einer Warnung da, und Dauerwarnungen erziehen zum Wegsehen.
 var RechteOptional = map[string]bool{
 	"HELFER/manage_vormerkungen": true,
+	// Seit der Aufteilung von manage_users (24.08.2026) sind diese beiden Rechte
+	// GENAU dafür da, an eine Sekretariats-/Mitarbeiter-Rolle delegiert zu werden.
+	// Stünden sie nicht hier, wäre jede Delegation eine Dauerwarnung.
+	"MITARBEITER/manage_settings":       true,
+	"MITARBEITER/manage_students_admin": true,
 }
+
+// vererbeAufgeteilteRechteSQL: Bis zum 24.08.2026 war manage_users das EINE Recht für
+// Einstellungen, Versetzung, DSGVO-Auskunft und Papierkorb-Purge. Eine Anlage, die es
+// einer Rolle erteilt hatte, hätte mit dem bloßen Seed (DO NOTHING, Vorgabe false)
+// nach dem Update still all das verloren — und die Rolle hätte stattdessen neu die
+// Benutzerverwaltung im Menü gesehen. Deshalb erbt jede Rolle ihren alten manage_users-
+// Wert für die beiden neuen Rechte, BEVOR die Vorgabe fehlende Zeilen auffüllt. Läuft
+// die Zeile schon (frische Anlage oder zweiter Start), passiert nichts.
+const vererbeAufgeteilteRechteSQL = `
+	INSERT INTO role_permissions (role, permission, allowed)
+	SELECT rp.role, neu.permission, rp.allowed
+	FROM role_permissions rp
+	CROSS JOIN (VALUES ('manage_settings'), ('manage_students_admin')) AS neu(permission)
+	WHERE rp.permission = 'manage_users'
+	ON CONFLICT (role, permission) DO NOTHING
+`
 
 // seedRolePermissions schreibt die Rechte-Vorgabe in die Datenbank (nur fehlende Zeilen).
 func (db *Database) seedRolePermissions(ctx context.Context) error {
+	if _, err := db.Pool.Exec(ctx, vererbeAufgeteilteRechteSQL); err != nil {
+		return fmt.Errorf("vererbung manage_users → manage_settings/manage_students_admin: %w", err)
+	}
 	for _, d := range RechteVorgabe {
 		_, err := db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
 		if err != nil {
