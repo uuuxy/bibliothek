@@ -23,7 +23,7 @@ test('Fehlende Etiketten: Exemplare finden, auswählen und an den Druck übergeb
 
 	await uiLogin(page);
 	await page.getByTitle('Druck-Center').click();
-	await page.getByRole('button', { name: 'Fehlende Etiketten' }).click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	// Auf den eigenen Bestand eingrenzen — die Liste zeigt alles, was noch kein Etikett hat.
 	const filter = page.getByLabel('Exemplare filtern');
@@ -60,7 +60,7 @@ test('Nach dem Druck sind die Exemplare als gedruckt vermerkt', async ({ page, c
 
 	await uiLogin(page);
 	await page.getByTitle('Druck-Center').click();
-	await page.getByRole('button', { name: 'Fehlende Etiketten' }).click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	const filter = page.getByLabel('Exemplare filtern');
 	await filter.click();
@@ -81,7 +81,7 @@ test('Nach dem Druck sind die Exemplare als gedruckt vermerkt', async ({ page, c
 		.toBe('t');
 
 	// Und damit ist das Exemplar aus der Liste verschwunden.
-	await page.getByRole('button', { name: 'Fehlende Etiketten' }).click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 	await page.getByLabel('Exemplare filtern').fill(`E2E-VER-${s}`);
 	await expect(page.getByText(`Kein Exemplar ohne Etikett passt zu „E2E-VER-${s}"`)).toBeVisible();
 });
@@ -114,7 +114,7 @@ test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', asyn
 	// BEWEIS: Der Weg endet nicht irgendwo im Druck-Center, sondern in der Liste — der
 	// Reiter dorthin traegt denselben Zaehler.
 	await druckCenter.click();
-	await page.getByRole('button', { name: /Fehlende Etiketten/ }).click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 	await expect(page.getByLabel('Exemplare filtern')).toBeVisible();
 
 	await page.getByLabel('Exemplare filtern').fill(`E2E-HIN-${s}`);
@@ -241,7 +241,7 @@ test('Altbestand aufräumen vermerkt nur Exemplare bis zum Stichtag', async ({ p
 
 	await uiLogin(page);
 	await page.getByTitle('Druck-Center').click();
-	await page.getByRole('button', { name: 'Fehlende Etiketten' }).click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	await page.getByRole('group').filter({ hasText: 'Altbestand aufräumen' }).click();
 	// Stichtag: gestern — trifft das alte Exemplar, nicht das heutige.
@@ -291,7 +291,7 @@ test('Etiketten von Hand vermerken und wieder öffnen', async ({ page }) => {
 
 	await uiLogin(page);
 	await page.getByTitle('Druck-Center').click();
-	await page.getByRole('button', { name: /Fehlende Etiketten/ }).click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	// 1. Von Hand als erledigt vermerken — ohne Druck.
 	await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(titel);
