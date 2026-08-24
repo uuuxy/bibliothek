@@ -288,6 +288,18 @@ jobs:
         wiederhole npm ci
         wiederhole npx playwright install --with-deps chromium
 
+    # Kaskaden-Gate fuer die Druck-Sektionen: Welche der vier versteckten Sektionen des
+    # Ausweis-Designers auf dem Papier landet, entscheidet allein die CSS-Kaskade — das
+    # ist nur am GEBAUTEN CSS in einem echten Browser unter @media print pruefbar.
+    # Beides steht in diesem Job ohnehin bereit (Chromium ist installiert, der Build
+    # dauert Sekunden), deshalb haengt das Gate hier und nicht an einem eigenen Job.
+    # Begruendung und Vorgeschichte stehen im Skript selbst.
+    - name: Druck-Sektionen-Gate
+      run: |
+        cd frontend
+        npm run build
+        node scripts/druck-sektionen-gate.mjs
+
     - name: Run E2E tests
       run: |
         cd frontend

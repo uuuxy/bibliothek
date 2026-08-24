@@ -13,7 +13,8 @@
 		"format": "prettier --write .",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"test:druck": "vite build && node scripts/druck-sektionen-gate.mjs"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.62.1",
