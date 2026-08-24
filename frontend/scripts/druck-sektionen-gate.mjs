@@ -95,17 +95,18 @@ const server = http.createServer((anfrage, antwort) => {
 		antwort.setHeader('Content-Type', 'text/html; charset=utf-8');
 		return antwort.end(seite);
 	}
-	try {
-		// In dist/ einsperren (CodeQL #23): Der Server lebt zwar nur Sekunden und nur
-		// auf Loopback, aber ein "/../"-Pfad las sonst beliebige Dateien des Rechners.
-		const ziel = path.resolve(dist, '.' + pfad);
-		if (ziel !== dist && !ziel.startsWith(dist + path.sep)) throw new Error('ausserhalb von dist');
+	// Allowlist statt Pfadprüfung (CodeQL #23, #25): Der Server kennt genau EINE
+	// weitere Datei — das gebaute CSS, dessen Name oben aus dist/assets gelesen wurde.
+	// Die frühere Variante löste den angefragten Pfad auf und prüfte, ob er in dist/
+	// liegt; das war korrekt, aber ein Muster, das CodeQL nicht als Sanitizer erkennt.
+	// Mit dem Vergleich gegen den festen Namen fließt der Anfragepfad in keinen
+	// Dateizugriff mehr.
+	if (pfad === '/' + cssDatei) {
 		antwort.setHeader('Content-Type', 'text/css');
-		antwort.end(fs.readFileSync(ziel));
-	} catch {
-		antwort.statusCode = 404;
-		antwort.end('');
+		return antwort.end(css);
 	}
+	antwort.statusCode = 404;
+	antwort.end('');
 });
 // Loopback statt 0.0.0.0: Die Prüfseite geht nur den eigenen Headless-Browser an,
 // nicht das Netzwerk, in dem der Rechner gerade hängt.
