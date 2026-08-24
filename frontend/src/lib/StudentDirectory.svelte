@@ -15,7 +15,6 @@
 	import { erzeugeSchuelerSuche } from './components/students/schuelerSuche.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Reiter from './components/ui/Reiter.svelte';
-	import SchuljahreswechselBereich from './components/admin/SchuljahreswechselBereich.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte } from './schuelerRechte.js';
 	import { schuelerdateiReiter } from './schuelerdateiReiter.js';
@@ -176,10 +175,6 @@
 			{:else if activeTab === 'graduates'}
 				<div class="w-full animate-fade-in">
 					<Graduates />
-				</div>
-			{:else if activeTab === 'schuljahr'}
-				<div class="w-full animate-fade-in">
-					<SchuljahreswechselBereich />
 				</div>
 			{:else if activeTab === 'deleted'}
 				<div class="w-full animate-fade-in space-y-6">

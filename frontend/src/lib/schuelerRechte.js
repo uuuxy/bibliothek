@@ -9,7 +9,7 @@ import { hatRecht } from './menu.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, auskunft: boolean, foto: boolean, schuljahreswechsel: boolean }}
+ * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, auskunft: boolean, foto: boolean }}
  */
 export function schuelerRechte(user) {
 	return {
@@ -24,8 +24,6 @@ export function schuelerRechte(user) {
 		// GET /api/schueler/{id}/dsgvo-auskunft
 		auskunft: hatRecht(user, 'manage_students_admin'),
 		// POST /api/schueler/{id}/photo
-		foto: hatRecht(user, 'upload_photos'),
-		// Reiter „Schuljahreswechsel“: LUSD (import_students) oder Versetzung (manage_students_admin)
-		schuljahreswechsel: hatRecht(user, 'import_students') || hatRecht(user, 'manage_students_admin')
+		foto: hatRecht(user, 'upload_photos')
 	};
 }

@@ -17,6 +17,7 @@ import {
 	Clock,
 	Database,
 	Globe,
+	GraduationCap,
 	Mail,
 	Route,
 	School,
@@ -84,9 +85,18 @@ export const KATEGORIEN = [
 		kurz: 'Import, Export, Offline-Sicherungen',
 		icon: Database,
 		// Littera-/Bestandsimport, Cover-Abgleich → manage_inventory; Export → edit_books.
-		// LUSD-Abgleich und Versetzung wohnen seit 24.08.2026 in der Schülerdatei
-		// (Reiter „Schuljahreswechsel“) — dort sucht man sie.
 		rechte: ['manage_inventory', 'edit_books']
+	},
+	{
+		// Eigene Kategorie (Peters Entscheidung 24.08.2026): gehört ins System-Menü unter
+		// Einstellungen — aber nicht in der Datenverwaltung zwischen Littera-Import und
+		// Cover-Abgleich vergraben, wo es bis heute stand.
+		id: 'schuljahr',
+		titel: 'Schuljahreswechsel',
+		kurz: 'LUSD-Abgleich, Versetzung',
+		icon: GraduationCap,
+		// LUSD → import_students, Versetzung → manage_students_admin; eines genügt.
+		rechte: ['import_students', 'manage_students_admin']
 	},
 	{
 		id: 'betrieb',

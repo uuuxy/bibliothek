@@ -8,19 +8,15 @@
 	//   LUSD-Abgleich  POST /api/lusd/preview|import  → import_students
 	//   Versetzung     POST /api/students/promote     → manage_students_admin
 	// Wer nur eines davon hat, sieht nur dieses; die Kategorie „Datenverwaltung"
-	// selbst öffnet sich mit einem der Rechte (kategorien.js).
+	// selbst öffnet sich mit einem der Rechte (kategorien.js, Kategorie „Schuljahreswechsel").
 	const darfLusd = $derived(hatRecht(authStore.currentUser, 'import_students'));
 	const darfVersetzen = $derived(hatRecht(authStore.currentUser, 'manage_students_admin'));
 </script>
 
 {#if darfLusd || darfVersetzen}
-	<!-- Reiter der Schülerdatei (seit 24.08.2026; vorher Einstellungen → Datenverwaltung).
-	     Kein eigener Kopf: Der Reiter IST die Überschrift. -->
-	<div class="space-y-10 pt-6">
-		<p class="text-body-medium text-on-surface-variant">
-			LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres.
-		</p>
-
+	<!-- Inhalt der Einstellungs-Kategorie „Schuljahreswechsel"; Titel und Beitext kommen
+	     vom KategorieRahmen. -->
+	<div class="space-y-10">
 		{#if darfLusd}
 			<LusdImportView />
 		{/if}
