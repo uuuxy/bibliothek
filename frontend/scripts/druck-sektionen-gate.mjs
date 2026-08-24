@@ -105,10 +105,18 @@ await new Promise((fertig) => server.listen(0, fertig));
 // gespeichertes Design kann den alten Wert noch tragen, und dann darf NICHTS gedruckt
 // werden statt irgendetwas. applyDesign() liest ihn zwar auf 'card' um — aber genau
 // solche Umleitungen fallen bei Umbauten als Erstes weg.
-// Genau EINE Sektion je Fall — nicht "mindestens die richtige".
+// Die letzten drei Zeilen sind der eigentliche Wert: Der Kartenstapel des Designers
+// darf NUR in seiner eigenen Betriebsart aufs Papier. Die Schülerdatei kann gleichzeitig
+// einen markierten Stapel und ein geöffnetes Profil im DOM haben — ohne diese Zusicherung
+// nimmt „Quittung drucken" (gar keine Betriebsart) oder „Ausweis drucken" im Profil
+// ('card-single') den ganzen Stapel mit. 'a4' ist der abgeschaffte A4-Bogen: Ein zentral
+// gespeichertes Design kann ihn noch tragen, und dann darf NICHTS gedruckt werden.
 const MATRIX = [
 	['card', 'front', 'print-section-card'],
-	['card', 'back', 'print-section-back-card']
+	['card', 'back', 'print-section-back-card'],
+	['card-single', 'front', null],
+	['a4', 'front', null],
+	[null, null, null]
 ];
 
 const browser = await chromium.launch();

@@ -2,15 +2,26 @@
    Mehrkartenbogen, Rückseiten, Einzelkarte aus dem Schülerprofil, Quittung. */
 
 @media print {
-	/* Rückseite nur, wenn sie ausdrücklich gedruckt wird.
-	   Nötig, weil '.print-rendered-output { display: block !important }' aus
-	   druck-grundlagen.css Tailwinds 'hidden' auf diesen Elementen überschreibt — die
-	   Sektion muss also aktiv versteckt werden, es genügt nicht, sie nicht zu zeigen.
+	/* Der Stapel des Ausweis-Designers druckt NUR in seiner eigenen Betriebsart.
+	   Beide Regeln müssen aktiv verstecken: '.print-rendered-output { display: block
+	   !important }' aus druck-grundlagen.css überschreibt Tailwinds 'hidden' auf diesen
+	   Elementen — sie nicht zu zeigen genügt nicht.
 
-	   Hier standen bis zum 24.08.2026 dieselben Regeln noch einmal für zwei
-	   A4-Sektionen, und die Auswahl nach Betriebsart fehlte den Rückseiten: Beim
-	   Rückseitendruck blieben Kartenbogen UND A4-Bogen sichtbar. Mit dem A4-Bogen ist
-	   die ganze zweite Achse weg — es gibt nur noch Vorder- und Rückseite. */
+	   Die erste Regel fragt nach der BETRIEBSART und ist seit dem 24.08.2026 so
+	   allgemein. Vorher hieß sie „nicht im A4-Modus", und damit war der Stapel überall
+	   dort sichtbar, wo gar keine Betriebsart gesetzt ist: Die Ausleih-Quittung druckt
+	   mit blankem window.print(), der Einzelausweis aus dem Profil mit 'card-single' —
+	   und beide Bildschirme können gleichzeitig einen markierten Kartenstapel im DOM
+	   haben (Schülerdatei: markieren, dann ein Profil öffnen). Ein Klick auf „Quittung
+	   drucken" hätte den ganzen Stapel mitgenommen. Dieselbe Bugklasse wie am
+	   22.07.2026, als der Druck-Reset die Profil-Seitenleiste in jeden Ausdruck zwang.
+
+	   Die zweite Regel fragt nach der SEITE. Beide zusammen ergeben: Vorderseite nur im
+	   Kartenmodus, Rückseite nur im Kartenmodus UND bei ausdrücklicher Rückseitenwahl. */
+	body:not([data-print-mode='card']) .print-section-card,
+	body:not([data-print-mode='card']) .print-section-back-card {
+		display: none !important;
+	}
 	body:not([data-print-side='back']) .print-section-back-card {
 		display: none !important;
 	}
