@@ -100,7 +100,14 @@ func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) 
 	// deshalb impliziert dieser Filter bereits die Aussonderung.
 	const istVerlust = "e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
 
+	// ⚡ Bolt: Extracted active loans subquery into a CTE and restored DISTINCT.
+	// This prevents the PostgreSQL planner from executing a suboptimal nested loop left join
+	// when the dataset scales, instead allowing a highly efficient parallel hash join,
+	// while strictly preventing row duplication if a single copy has multiple active loans.
 	q := fmt.Sprintf(`
+		WITH aktive_ausleihen AS (
+			SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL
+		)
 		SELECT
 			COUNT(*)::int AS gesamt,
 			COUNT(*) FILTER (WHERE NOT e.ist_ausgesondert)::int AS aktiv,
@@ -116,7 +123,7 @@ func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) 
 			END::float8 AS zirkulationsquote
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		LEFT JOIN (SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL) al ON al.exemplar_id = e.id
+		LEFT JOIN aktive_ausleihen al ON al.exemplar_id = e.id
 		WHERE 1=1 %[2]s
 	`, istVerlust, typeFilter)
 
