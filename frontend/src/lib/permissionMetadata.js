@@ -1,5 +1,13 @@
 // Kategorien und ihre zugeordneten Berechtigungen für den PermissionManager.
 // Aus der Komponente ausgelagert (Daten statt Markup) — hält PermissionManager schlank.
+//
+// Jede Beschreibung nennt, was der Server unter diesem Recht tatsächlich freigibt —
+// abgelesen an den RequirePermission-Aufrufen in api/routes_*.go, nicht aus der
+// Erinnerung. Bis zum 24.08.2026 beschrieb z. B. edit_books nur „Schadensnotizen",
+// öffnete aber auch Barcode, Status, Aussonderung, Verlängerung, Geräte und
+// Systematik. Wer ein Recht anhand seines Textes erteilt, muss dem Text trauen können.
+// Die NAMEN hält api/rechte_paritaet_test.go deckungsgleich mit den Routen; die Texte
+// bleiben Handarbeit — wer eine Route umhängt, zieht die Zeile hier nach.
 export const permissionsMetadata = [
 	{
 		category: 'Schülerverwaltung',
@@ -8,7 +16,7 @@ export const permissionsMetadata = [
 			{
 				key: 'view_students',
 				label: 'Schülerdatei anzeigen',
-				desc: 'Erlaubt das Suchen und Einsehen von Schülerdaten und Klassen'
+				desc: 'Schülerdatei und Klassen einsehen, Ausleihhistorie eines Titels; Mahnwesen, Kontoauszug, Ersatzforderung, Schüler-Etiketten und Ausweise drucken; Druck-Center'
 			},
 			{
 				key: 'create_students',
@@ -18,17 +26,17 @@ export const permissionsMetadata = [
 			{
 				key: 'edit_students',
 				label: 'Schülerdaten ändern',
-				desc: 'Erlaubt das Bearbeiten der Stammdaten, das Sperren/Entsperren und das Melden von Buchschäden'
+				desc: 'Stammdaten und Abgangsjahr ändern, Ausleihsperre setzen/aufheben, Buchschäden melden sowie Schadensfälle als bezahlt buchen oder stornieren'
 			},
 			{
 				key: 'delete_students',
 				label: 'Schüler löschen',
-				desc: 'Erlaubt das Entfernen von Schülern aus der Datenbank'
+				desc: 'Schüler in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen (endgültiges Löschen: „Benutzer & Rechte verwalten")'
 			},
 			{
 				key: 'import_students',
 				label: 'LUSD / CSV Import',
-				desc: 'Ermöglicht den Import von Schülerdaten per CSV-Datei'
+				desc: 'LUSD-Export (CSV/XLSX) als Vorschau prüfen und einspielen'
 			},
 			{
 				key: 'upload_photos',
@@ -44,27 +52,27 @@ export const permissionsMetadata = [
 			{
 				key: 'view_books',
 				label: 'Medienkatalog anzeigen',
-				desc: 'Erlaubt das Suchen und Anzeigen von Buchtiteln und Exemplaren'
+				desc: 'Titel, Exemplare, Signaturen, Systematik, Fächer und Geräte einsehen; Buch-Etiketten drucken; Schulklassen-Übersicht'
 			},
 			{
 				key: 'edit_books',
-				label: 'Bücher / Notizen bearbeiten',
-				desc: 'Ermöglicht das Hinzufügen von Schadensnotizen an Exemplaren'
+				label: 'Bücher bearbeiten',
+				desc: 'Titel und Exemplare anlegen und ändern: Barcode, Status, Schadensnotiz, Defekt, Aussonderung; Ausleihen verlängern und Fälligkeit setzen; Etiketten-Druckstatus, Geräte und Systematik pflegen'
 			},
 			{
 				key: 'delete_books',
 				label: 'Bücher & Exemplare löschen',
-				desc: 'Erlaubt das Löschen von Exemplaren und Buchtiteln'
+				desc: 'Exemplare und ganze Titel endgültig löschen'
 			},
 			{
 				key: 'inventory_scan',
 				label: 'Inventur durchführen',
-				desc: 'Ermöglicht das Einscannen von Büchern während einer aktiven Inventur'
+				desc: 'Laufende Inventur einsehen und Exemplare einscannen — öffnet den Menüpunkt „Inventur"'
 			},
 			{
 				key: 'manage_inventory',
 				label: 'Bestand verwalten (Import, Inventur-Abschluss)',
-				desc: 'Startet und schließt Inventuren ab, führt Littera- und Bestandsimporte aus und gleicht Cover ab.'
+				desc: 'Inventuren starten, abbrechen und abschließen; Fehlbestand bearbeiten (gefunden / endgültig löschen); Littera- und Bestandsimport; Cover-Abgleich'
 			}
 		]
 	},
@@ -90,17 +98,17 @@ export const permissionsMetadata = [
 			{
 				key: 'view_orders',
 				label: 'Bestellungen anzeigen',
-				desc: 'Erlaubt das Einsehen von Buchbestellungen und Lieferanten-Order'
+				desc: 'Bestellungen, Zulauf, Bestellhistorie und Lieferanten einsehen; offene Klassensatz-Reservierungen und Lehrer-Anliegen sehen; Bestell-PDF'
 			},
 			{
 				key: 'create_orders',
 				label: 'Bestellungen verwalten',
-				desc: 'Ermöglicht das Bestellen neuer Bücher und Freigeben von Lieferungen'
+				desc: 'Bestellungen anlegen, bestätigen und Lieferungen einbuchen; Titel per ISBN anlegen und Signatur setzen; Lieferanten pflegen; Mahn- und Abgänger-Mails versenden; Reservierungen und Anliegen erledigen'
 			},
 			{
 				key: 'view_graduates',
 				label: 'Abgängerliste einsehen',
-				desc: 'Erlaubt das Einsehen von Schulabgängern mit ausstehenden Büchern'
+				desc: 'Abgängerliste mit ausstehenden Büchern einsehen und als PDF ausgeben'
 			}
 		]
 	},
@@ -111,17 +119,17 @@ export const permissionsMetadata = [
 			{
 				key: 'view_stats',
 				label: 'Statistiken anzeigen',
-				desc: 'Zeigt Systemstatistiken und Ausleih-Auswertungen'
+				desc: 'Ausleih-Statistiken und Auswertungen einsehen (ohne Schüler-Klarnamen)'
 			},
 			{
 				key: 'audit_logs',
 				label: 'Sicherheits-Logbuch einsehen',
-				desc: 'Ermöglicht den Zugriff auf das Enterprise Audit-Logbuch'
+				desc: 'Allgemeines Logbuch der Systemereignisse einsehen (das Admin-Audit-Log zusätzlich: „Benutzer & Rechte verwalten")'
 			},
 			{
 				key: 'manage_users',
 				label: 'Benutzer & Rechte verwalten',
-				desc: 'Ermöglicht die Verwaltung von Benutzern und Berechtigungen'
+				desc: 'Benutzer und Rechte, alle Systemeinstellungen, Mail-Konfiguration und -Vorlagen, Ausweislayout, Backup-Status, Betriebsbereitschaft, Klassen-Zuordnung, Versetzung, Admin-Audit-Log, DSGVO-Auskunft und endgültiges Löschen aus dem Papierkorb'
 			}
 		]
 	}

@@ -5,10 +5,10 @@
 	import Button from './components/ui/Button.svelte';
 	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
 
-	/** @type {{ profile: any, role: string, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void }} */
+	/** @type {{ profile: any, darfBearbeiten?: boolean, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void }} */
 	let {
 		profile = $bindable(),
-		role = '',
+		darfBearbeiten = false,
 		timestamp,
 		showWebcam = $bindable(),
 		showDeleteConfirm = $bindable(),
@@ -155,7 +155,7 @@
 		</h3>
 		<p class="text-lg font-bold text-slate-700">Klasse {profile.klasse}</p>
 
-		{#if role === 'admin'}
+		{#if darfBearbeiten}
 			{#if editingAbgang}
 				<div class="flex items-center gap-2 flex-wrap">
 					<input

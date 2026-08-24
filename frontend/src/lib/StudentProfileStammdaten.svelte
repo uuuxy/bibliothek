@@ -1,5 +1,5 @@
 <script>
-	let { profile, role, onEdit } = $props();
+	let { profile, darfBearbeiten = false, onEdit } = $props();
 
 	import Button from './components/ui/Button.svelte';
 	import { Folder, SquarePen } from '@lucide/svelte';
@@ -22,7 +22,7 @@
 			Stammdaten & Adresse
 		</h3>
 		<div class="flex items-center gap-2">
-			{#if role === 'admin'}
+			{#if darfBearbeiten}
 				<Button
 					variant="secondary"
 					size="lg"

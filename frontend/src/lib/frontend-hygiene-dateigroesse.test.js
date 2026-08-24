@@ -22,7 +22,6 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 // Bewusst NICHT: ein Limit für .js/.go. Die Regel in ARCHITECTURE.md gilt den
 // Svelte-Komponenten, und nur dafür steht hier ein Gate.
 const BESTAND = {
-	'src/App.svelte': 208,
 	'src/inventur/lib/components/BuchKarte.svelte': 240,
 	'src/inventur/lib/components/KlassenBuchKachelStartseite.svelte': 225,
 	'src/inventur/lib/components/admin/BookTable.svelte': 241,
@@ -36,12 +35,12 @@ const BESTAND = {
 	'src/lib/BorrowedBooksList.svelte': 291,
 	'src/lib/MailTemplates.svelte': 205,
 	'src/lib/Monitor.svelte': 222,
-	'src/lib/Omnibox.svelte': 298,
+	'src/lib/Omnibox.svelte': 297,
 	'src/lib/Router.svelte': 248,
 	'src/lib/StatsDashboard.svelte': 391,
 	'src/lib/StudentDirectory.svelte': 222,
 	'src/lib/StudentEditSheet.svelte': 226,
-	'src/lib/StudentProfile.svelte': 258,
+	'src/lib/StudentProfile.svelte': 256,
 	'src/lib/StudentProfileActions.svelte': 244,
 	'src/lib/StudentProfileCard.svelte': 222,
 	'src/lib/UnifiedInventory.svelte': 325,

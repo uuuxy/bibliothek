@@ -15,7 +15,7 @@
 	import { abonniere } from './liveEvents.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 
-	let { onSelectBook, role = '' } = $props();
+	let { onSelectBook } = $props();
 
 	let studentProfileComponent = $state(/** @type {any} */ (null));
 
@@ -237,7 +237,6 @@
 			<StudentProfile
 				bind:this={studentProfileComponent}
 				student={omniboxStore.activeStudent}
-				{role}
 				defaultTab="ausleihen"
 				onDeselect={() => {
 					omniboxStore.activeStudent = null;

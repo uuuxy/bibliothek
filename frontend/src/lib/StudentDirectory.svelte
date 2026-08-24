@@ -14,9 +14,10 @@
 	import { erzeugeAusweisdruck } from './components/students/ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './components/students/schuelerSuche.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { authStore } from './stores/authStore.svelte.js';
+	import { schuelerRechte } from './schuelerRechte.js';
 
-	// Props (Svelte 5)
-	let { role = '' } = $props();
+	const rechte = $derived(schuelerRechte(authStore.currentUser));
 
 	// State Runes (Svelte 5)
 	let activeTab = $state('active');
@@ -113,7 +114,6 @@
 		<div class="animate-fade-in flex-1 overflow-y-auto">
 			<StudentProfile
 				student={activeStudent}
-				{role}
 				defaultTab={profilReiter}
 				onDeselect={() => {
 					activeStudent = null;
@@ -141,7 +141,7 @@
 
 					{@render tabButton('active', 'Aktive Schüler', 'border-blue-600 text-blue-700')}
 					{@render tabButton('graduates', 'Abgänger / Archiv', 'border-blue-600 text-blue-700')}
-					{#if role === 'admin'}
+					{#if rechte.loeschen}
 						{@render tabButton('deleted', 'Papierkorb', 'border-rose-600 text-rose-700')}
 					{/if}
 				</div>
@@ -152,7 +152,7 @@
 				<div class="w-full no-print animate-fade-in">
 					<StudentDirectoryToolbar
 						bind:searchQuery={suche.query}
-						{role}
+						darfAnlegen={rechte.anlegen}
 						trefferzahl={suche.students.length}
 						suchend={suche.suchend}
 						gekuerzt={suche.gekuerzt}

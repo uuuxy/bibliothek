@@ -15,12 +15,13 @@
 	import StudentPrintReceipt from './StudentPrintReceipt.svelte';
 	import { useStudentProfile } from './useStudentProfile.svelte.js';
 	import { Info } from '@lucide/svelte';
+	import { authStore } from './stores/authStore.svelte.js';
+	import { schuelerRechte } from './schuelerRechte.js';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} student - The selected student object
 	 * @property {() => void} onDeselect - Callback when profile is closed
-	 * @property {string} [role] - Active user role (admin, mitarbeiter, etc)
 	 * @property {(barcode: string) => void} [onReturnClick] - Callback for returning a book
 	 * @property {import('svelte').Snippet} [leftActions] - Optional slot for left card actions
 	 * @property {import('svelte').Snippet} [rightTop] - Optional slot for right content top
@@ -31,7 +32,6 @@
 	let {
 		student,
 		onDeselect,
-		role = '',
 		onReturnClick = undefined,
 		leftActions,
 		rightTop,
@@ -39,6 +39,8 @@
 	} = $props();
 
 	const st = useStudentProfile();
+	// Aktionen folgen dem Recht ihrer Route, nicht der Rolle — Zuordnung in schuelerRechte.js.
+	const rechte = $derived(schuelerRechte(authStore.currentUser));
 
 	// Der Reiter folgt der Absicht, mit der das Profil geöffnet wurde — nicht der
 	// Route: Am Kiosk und aus Mahnwesen/Abgängern heraus geht es um Ausleihen, in der
@@ -118,23 +120,21 @@
 			<!-- Left Column Profile Card -->
 			<StudentProfileCard
 				bind:profile={st.profile}
-				{role}
+				darfBearbeiten={rechte.bearbeiten}
 				timestamp={st.timestamp}
 				bind:showWebcam={st.showWebcam}
 				bind:showDeleteConfirm={st.showDeleteConfirm}
 				{onDeselect}
 				{leftActions}
-				onLock={role === 'admin' || role === 'mitarbeiter'
-					? () => (st.showLockModal = true)
-					: undefined}
+				onLock={rechte.bearbeiten ? () => (st.showLockModal = true) : undefined}
 			/>
 
 			<!-- Right: Timeline / Loans List / Stammdaten -->
 			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pt-6 pb-4">
-				{#if role === 'admin' || role === 'mitarbeiter'}
+				{#if rechte.einsehen}
 					<StudentProfileActions
 						profile={st.profile}
-						{role}
+						darfAuskunft={rechte.auskunft}
 						kontoauszugPdfLoading={st.kontoauszugPdfLoading}
 						rechnungPdfLoading={st.rechnungPdfLoading}
 						downloadKontoauszugPDF={st.downloadKontoauszugPDF}
@@ -174,9 +174,7 @@
 							<BorrowedBooksCard
 								books={st.profile.entliehene_buecher || []}
 								{onReturnClick}
-								onDamageClick={role === 'admin' || role === 'mitarbeiter'
-									? st.openDamageModal
-									: undefined}
+								onDamageClick={rechte.bearbeiten ? st.openDamageModal : undefined}
 							/>
 
 							{#if st.vormerkungen.length > 0}
@@ -185,19 +183,19 @@
 
 							<StudentGebuehrenCard
 								gebuehren={st.gebuehren}
-								canEdit={role === 'admin' || role === 'mitarbeiter'}
+								canEdit={rechte.bearbeiten}
 								onChanged={() => st.fetchProfile(st.profile.id)}
 							/>
 						</div>
 					{:else if st.activeTab === 'stammdaten'}
 						<StudentProfileStammdaten
 							profile={st.profile}
-							{role}
+							darfBearbeiten={rechte.bearbeiten}
 							onEdit={() => (st.showEditModal = true)}
 						/>
 
-						<!-- Gefahrenzone: ausschließlich am unteren Ende des Stammdaten-Reiters, nur für Admins -->
-						{#if role === 'admin'}
+						<!-- Gefahrenzone: ausschließlich am unteren Ende des Stammdaten-Reiters -->
+						{#if rechte.loeschen}
 							<StudentDangerZone onDelete={() => (st.showDeleteConfirm = true)} />
 						{/if}
 					{/if}

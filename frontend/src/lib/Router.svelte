@@ -186,7 +186,7 @@
 <main class="flex-1 overflow-y-auto flex flex-col w-full">
 	{#if uiStore.activeTab === 'kiosk'}
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
-			<Omnibox onSelectBook={handleSelectBook} role={authStore.currentUser?.rolle} />
+			<Omnibox onSelectBook={handleSelectBook} />
 		</div>
 		<!-- Der Zweig activeTab === 'books' ist entfallen: Ihn hat nie jemand gesetzt (kein
      tabToPath-Eintrag, kein Menüpunkt, keine Zuweisung im Code). Er war seit Langem
@@ -217,7 +217,7 @@
 		<div class="w-full animate-fade-in"><UnifiedInventory /></div>
 	{:else if uiStore.activeTab === 'students_dir'}
 		<div class="w-full animate-fade-in">
-			<StudentDirectory role={authStore.currentUser?.rolle} />
+			<StudentDirectory />
 		</div>
 	{:else if uiStore.activeTab === 'graduates'}
 		<div class="w-full animate-fade-in"><Graduates /></div>

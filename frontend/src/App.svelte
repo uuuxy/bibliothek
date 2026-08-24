@@ -4,8 +4,9 @@
 	import BestellBestaetigung from './lib/BestellBestaetigung.svelte';
 
 	import { authStore } from './lib/stores/authStore.svelte.js';
+	import { hatRecht } from './lib/menu.js';
 	import { uiStore } from './lib/stores/uiStore.svelte.js';
-	import { offlineSync } from './lib/stores/offlineSync.svelte.js';
+	import { starteHintergrundAbrufe } from './lib/stores/hintergrundAbrufe.svelte.js';
 	import { appState } from './inventur/lib/store.svelte.js';
 	import { printQueue } from './lib/stores/printQueue.svelte.js';
 	import { idleLock } from './lib/stores/idleLock.svelte.js';
@@ -48,19 +49,7 @@
 			uiStore.pendingReservierungen = 0;
 			return;
 		}
-		if (authStore.currentUser.rolle !== 'admin' && authStore.currentUser.rolle !== 'mitarbeiter')
-			return;
-		uiStore.fetchPendingReservierungen();
-		// Speist das Badge an „Druck-Center". Seltener als die Reservierungen: Offene
-		// Etiketten aendern sich nur beim Einbuchen und beim Drucken, nicht im Minutentakt.
-		uiStore.fetchOffeneEtiketten();
-		offlineSync.init();
-		const id = setInterval(() => uiStore.fetchPendingReservierungen(), 30_000);
-		const idEtiketten = setInterval(() => uiStore.fetchOffeneEtiketten(), 120_000);
-		return () => {
-			clearInterval(id);
-			clearInterval(idEtiketten);
-		};
+		return starteHintergrundAbrufe(authStore.currentUser);
 	});
 
 	// Inaktivitäts-Wächter (Theke leeren, Sperrbildschirm): gilt für JEDE angemeldete
@@ -154,8 +143,9 @@
 					class="bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
 				>
 					<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
-					     nicht in der Navigation. Nur Admins können das Problem beheben. -->
-					{#if authStore.currentUser?.rolle === 'admin'}
+					     nicht in der Navigation. Sichtbar für alle, die den Backup-Status lesen
+					     dürfen (GET /api/admin/system/backup-status verlangt manage_users). -->
+					{#if hatRecht(authStore.currentUser, 'manage_users')}
 						<BackupAlert />
 					{/if}
 					<Router />

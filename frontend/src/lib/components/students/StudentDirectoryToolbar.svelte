@@ -3,10 +3,10 @@
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Button from '../ui/Button.svelte';
 
-	/** @type {{ searchQuery?: string, role?: string, trefferzahl?: number, suchend?: boolean, gekuerzt?: boolean, onsearch?: () => void, oncreate?: () => void }} */
+	/** @type {{ searchQuery?: string, darfAnlegen?: boolean, trefferzahl?: number, suchend?: boolean, gekuerzt?: boolean, onsearch?: () => void, oncreate?: () => void }} */
 	let {
 		searchQuery = $bindable(''),
-		role = '',
+		darfAnlegen = false,
 		trefferzahl = 0,
 		suchend = false,
 		gekuerzt = false,
@@ -25,7 +25,7 @@
 		klasse="flex-1 max-w-2xl"
 	/>
 
-	{#if role === 'admin' || role === 'mitarbeiter'}
+	{#if darfAnlegen}
 		<Button variant="primary" onclick={oncreate} aria-label="Neuen Schüler anlegen">
 			<Plus class="w-4 h-4" />
 			Neuer Schüler

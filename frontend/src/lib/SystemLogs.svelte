@@ -3,9 +3,12 @@
 	import AdminAuditLog from './AdminAuditLog.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
+	import { hatRecht } from './menu.js';
 
 	let activeTab = $state('system');
-	const isAdmin = $derived(authStore.currentUser?.rolle === 'admin');
+	// Das Admin-Audit-Log liest GET /api/admin/auditlog, und die Route verlangt
+	// manage_users — der Reiter folgt demselben Recht, nicht der Rolle.
+	const darfAdminLog = $derived(hatRecht(authStore.currentUser, 'manage_users'));
 </script>
 
 <PageShell>
@@ -21,7 +24,7 @@
 			>
 				Allgemeines Logbuch
 			</button>
-			{#if isAdmin}
+			{#if darfAdminLog}
 				<button
 					onclick={() => (activeTab = 'admin')}
 					class="pb-3 text-sm font-semibold transition-colors border-b-2 {activeTab === 'admin'
@@ -39,7 +42,7 @@
 			<div class="animate-fade-in h-full">
 				<AuditLog />
 			</div>
-		{:else if activeTab === 'admin' && isAdmin}
+		{:else if activeTab === 'admin' && darfAdminLog}
 			<div class="animate-fade-in h-full">
 				<AdminAuditLog />
 			</div>

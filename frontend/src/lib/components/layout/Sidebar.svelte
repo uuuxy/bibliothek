@@ -1,7 +1,7 @@
 <script>
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
-	import { menuGroups, canSeeItem } from '../../menu.js';
+	import { menuGroups, canSeeItem, hatRecht } from '../../menu.js';
 	import { sidebarExtensions } from '../../plugins.svelte.js';
 	import BackupStatusBadge from '../system/BackupStatusBadge.svelte';
 	import { ChevronsLeft, ChevronDown } from '@lucide/svelte';
@@ -195,8 +195,8 @@
 		</div>
 
 		<div class="border-outline-variant/60 mt-auto border-t">
-			<!-- Backup-Wächter: nur Admins können das Problem beheben -->
-			{#if authStore.currentUser?.rolle === 'admin'}
+			<!-- Backup-Wächter: dasselbe Recht wie seine Route (manage_users) -->
+			{#if hatRecht(authStore.currentUser, 'manage_users')}
 				<BackupStatusBadge collapsed={zu} />
 			{/if}
 

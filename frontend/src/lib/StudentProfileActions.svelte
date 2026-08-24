@@ -17,7 +17,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} profile
-	 * @property {string} role
+	 * @property {boolean} [darfAuskunft]  manage_users — DSGVO-Auskunft (Art. 15)
 	 * @property {boolean} kontoauszugPdfLoading
 	 * @property {boolean} rechnungPdfLoading
 	 * @property {() => void} downloadKontoauszugPDF
@@ -29,7 +29,7 @@
 	/** @type {Props} */
 	let {
 		profile,
-		role = '',
+		darfAuskunft = false,
 		kontoauszugPdfLoading,
 		rechnungPdfLoading,
 		downloadKontoauszugPDF,
@@ -230,7 +230,7 @@
 			</Button>
 		</span>
 
-		{#if role === 'admin'}
+		{#if darfAuskunft}
 			<Button
 				variant="secondary"
 				onclick={downloadDsgvoAuskunft}

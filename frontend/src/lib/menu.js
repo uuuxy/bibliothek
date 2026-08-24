@@ -124,7 +124,17 @@ export const menuGroups = [
 		name: 'Kiosk',
 		items: [
 			{ id: 'kiosk', label: 'Ausleihe', icon: 'kiosk' },
-			{ id: 'mahnwesen', label: 'Mahnwesen', icon: 'bell', permission: 'manage_users' }
+			{
+				// view_students, nicht manage_users: Alle Mahnwesen-Routen (/api/mahnwesen*,
+				// /api/print/mahnung/…) verlangen view_students. Bis zum 24.08.2026 forderte
+				// der Menüpunkt manage_users — wer mahnen durfte, sah den Punkt nicht, und wer
+				// ihn sah, brauchte das Recht dafür gar nicht. Dieselbe Klasse wie view_stats
+				// (23.08.), geprüft in api/rechte_paritaet_test.go.
+				id: 'mahnwesen',
+				label: 'Mahnwesen',
+				icon: 'bell',
+				permission: 'view_students'
+			}
 		]
 	},
 	{
