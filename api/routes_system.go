@@ -15,8 +15,8 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// ── EINSTELLUNGEN (Settings) ──
 	settingsRepo := repository.NewSystemSettingsRepository(dbPool)
-	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_users")(s.GetSettingsHandler(settingsRepo)))
-	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_users")(s.UpdateSettingsHandler(settingsRepo)))
+	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_settings")(s.GetSettingsHandler(settingsRepo)))
+	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_settings")(s.UpdateSettingsHandler(settingsRepo)))
 	// Sitzungs-Fristen (Theke leeren, Sperrbildschirm) braucht JEDER angemeldete Client —
 	// auch Helfer und Kollegium, die /api/einstellungen nicht lesen dürfen. Nur die zwei
 	// Zahlen, keine Schul- oder Betriebsdaten.
@@ -25,16 +25,16 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// Ausweis-Design (zentral, für alle vernetzten Arbeitsplätze). Lesen breit (jeder,
 	// der Ausweise druckt), Speichern nur administrativ.
 	mux.Handle("GET /api/ausweis-layout", s.RequirePermission("view_students")(s.GetAusweisLayoutHandler()))
-	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_users")(s.SaveAusweisLayoutHandler()))
+	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_settings")(s.SaveAusweisLayoutHandler()))
 
 	mailRepo := repository.NewMailSettingsRepository(dbPool)
-	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_users")(s.GetMailSettingsHandler(mailRepo)))
-	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_users")(s.UpdateMailSettingsHandler(mailRepo)))
-	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_users")(s.PostTestMailSettingsHandler()))
+	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.GetMailSettingsHandler(mailRepo)))
+	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.UpdateMailSettingsHandler(mailRepo)))
+	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_settings")(s.PostTestMailSettingsHandler()))
 
 	// Permissions
 	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))
-	mux.Handle("GET /api/admin/system/backup-status", s.RequirePermission("manage_users")(s.BackupStatusHandler()))
+	mux.Handle("GET /api/admin/system/backup-status", s.RequirePermission("manage_settings")(s.BackupStatusHandler()))
 	// Die Verallgemeinerung des Backup-Waechters: Was ist eingerichtet, aber nicht in
 	// Betrieb? Siehe api/betriebsbereitschaft.go.
 	//
@@ -42,15 +42,15 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// und sah bei einem Umbruch keinen Schutz-Wrapper — es meldete die Route als ungeschuetzt,
 	// obwohl RequirePermission dranhing. Lieber eine lange Zeile als ein Gate, das man
 	// entschaerfen muss.
-	mux.Handle("GET /api/admin/system/betriebsbereitschaft", s.RequirePermission("manage_users")(s.BetriebsbereitschaftHandler(settingsRepo, mailRepo, repository.NewBetriebszustandRepository(dbPool))))
+	mux.Handle("GET /api/admin/system/betriebsbereitschaft", s.RequirePermission("manage_settings")(s.BetriebsbereitschaftHandler(settingsRepo, mailRepo, repository.NewBetriebszustandRepository(dbPool))))
 	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.UpdatePermissionsHandler()))
 
 	// Audit & Transactions
 	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
 
 	// Mail Templates
-	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_users")(s.GetMailTemplatesHandler()))
-	mux.Handle("PUT /api/mail-templates/{id}", s.RequirePermission("manage_users")(s.UpdateMailTemplateHandler()))
+	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_settings")(s.GetMailTemplatesHandler()))
+	mux.Handle("PUT /api/mail-templates/{id}", s.RequirePermission("manage_settings")(s.UpdateMailTemplateHandler()))
 
 	// Print / Reports
 	mux.Handle("GET /api/reports/overdue-pdf", s.RequirePermission("view_students")(s.GetOverdueReportsPDFHandler()))

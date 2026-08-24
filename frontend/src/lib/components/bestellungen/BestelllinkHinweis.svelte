@@ -13,6 +13,7 @@
 	import { AlertTriangle, ArrowRight } from '@lucide/svelte';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
+	import { hatRecht } from '../../menu.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 
@@ -20,7 +21,8 @@
 	// wird zur Möblierung. Dieser hier steht nur im Bestellwesen — also genau dort, wo die
 	// fehlende Einstellung gleich Schaden anrichtet, und nur so lange, bis sie da ist.
 	const sichtbar = $derived(orderStore.bestelllinkOhneAdresse);
-	const istAdmin = $derived(authStore.currentUser?.rolle === 'admin');
+	// Kann der Leser die Einstellungen selbst öffnen? Dasselbe Recht wie der Menüpunkt.
+	const istAdmin = $derived(hatRecht(authStore.currentUser, 'manage_settings'));
 
 	// Dritter Zustand neben „alles gut" und „Adresse fehlt": Die Frage liess sich gar
 	// nicht beantworten. Bis zum 08.08.2026 gab es ihn nicht — loadKonfiguration fing den

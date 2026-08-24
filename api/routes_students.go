@@ -25,16 +25,16 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("edit_students")(s.LockStudentHandler()))
 	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
 
-	// DSGVO-Betroffenenauskunft (Art. 15) — bewusst nur für Admins (manage_users):
+	// DSGVO-Betroffenenauskunft (Art. 15) — manage_students_admin (seit 24.08.2026, vorher manage_users):
 	// Der Export bündelt sämtliche personenbezogenen Daten eines Schülers.
-	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft", s.RequirePermission("manage_users")(s.DsgvoAuskunftHandler()))
-	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft/pdf", s.RequirePermission("manage_users")(s.DsgvoAuskunftPDFHandler()))
+	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft", s.RequirePermission("manage_students_admin")(s.DsgvoAuskunftHandler()))
+	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft/pdf", s.RequirePermission("manage_students_admin")(s.DsgvoAuskunftPDFHandler()))
 
 	// Papierkorb
 	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.GetDeletedStudentsHandler()))
 	mux.Handle("POST /api/schueler/{id}/restore", s.RequirePermission("delete_students")(s.RestoreStudentHandler()))
 	// Endgültig löschen (DSGVO-Purge): getrennte, stärkere Berechtigung als Soft-Delete.
-	mux.Handle("DELETE /api/schueler/deleted/{id}", s.RequirePermission("manage_users")(s.PurgeStudentHandler(auditRepo)))
+	mux.Handle("DELETE /api/schueler/deleted/{id}", s.RequirePermission("manage_students_admin")(s.PurgeStudentHandler(auditRepo)))
 
 	// Photos — die beiden Richtungen sprechen bewusst UNTERSCHIEDLICHE Kennungen an:
 	// hochgeladen wird über die Schüler-UUID (der Aufrufer kennt den Datensatz),
@@ -53,9 +53,9 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 
 	// Klassen
 	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler(studentRepo)))
-	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_users")(s.GetKlassenMappingHandler()))
-	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_users")(s.UpsertKlassenMappingHandler()))
-	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_users")(s.DeleteKlassenMappingHandler()))
+	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_settings")(s.GetKlassenMappingHandler()))
+	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_settings")(s.UpsertKlassenMappingHandler()))
+	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_settings")(s.DeleteKlassenMappingHandler()))
 
 	// LUSD Import
 	// import_students statt manage_users: Das Recht war geseedet und in der
@@ -68,7 +68,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("POST /api/lusd/import", s.RequirePermission("import_students")(s.PostLusdImportHandler()))
 
 	// Promotion
-	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_users")(s.PromoteStudentsHandler()))
+	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_students_admin")(s.PromoteStudentsHandler()))
 
 	// Abgänger (Graduates)
 	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))

@@ -22,7 +22,7 @@ export function erzeugeDesignAblage() {
 	// Store-Vorgabewerte den geladenen Stand.
 	let geladen = $state(false);
 
-	// /api/einstellungen verlangt manage_users — wer den Ausweis-Designer nur zum Drucken
+	// /api/einstellungen verlangt manage_settings — wer den Ausweis-Designer nur zum Drucken
 	// öffnet (view_students reicht dafür), bekäme sonst ein sichtbares Berechtigungs-Toast
 	// für eine reine Komfortfunktion. Deshalb roh über apiFetch und bei jedem Fehler
 	// (auch 403) still nichts tun.

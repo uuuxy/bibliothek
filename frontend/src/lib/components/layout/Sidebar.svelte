@@ -195,8 +195,8 @@
 		</div>
 
 		<div class="border-outline-variant/60 mt-auto border-t">
-			<!-- Backup-Wächter: dasselbe Recht wie seine Route (manage_users) -->
-			{#if hatRecht(authStore.currentUser, 'manage_users')}
+			<!-- Backup-Wächter: dasselbe Recht wie seine Route (manage_settings) -->
+			{#if hatRecht(authStore.currentUser, 'manage_settings')}
 				<BackupStatusBadge collapsed={zu} />
 			{/if}
 

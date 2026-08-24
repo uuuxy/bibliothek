@@ -31,7 +31,7 @@ export const permissionsMetadata = [
 			{
 				key: 'delete_students',
 				label: 'Schüler löschen',
-				desc: 'Schüler in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen (endgültiges Löschen: „Benutzer & Rechte verwalten")'
+				desc: 'Schüler in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen (endgültiges Löschen: „Schülerverwaltung: Sonderrechte")'
 			},
 			{
 				key: 'import_students',
@@ -127,9 +127,19 @@ export const permissionsMetadata = [
 				desc: 'Allgemeines Logbuch der Systemereignisse einsehen (das Admin-Audit-Log zusätzlich: „Benutzer & Rechte verwalten")'
 			},
 			{
+				key: 'manage_settings',
+				label: 'Einstellungen verwalten',
+				desc: 'Alle Systemeinstellungen (Schule, Fristen, Mahnwesen, Bestellwesen, Datenschutz, Erreichbarkeit), Mail-Konfiguration und -Vorlagen, Ausweislayout, Klassen→Lehrkraft-Zuordnung, Backup-Status und Betriebsbereitschaft — öffnet den Menüpunkt „Einstellungen"'
+			},
+			{
+				key: 'manage_students_admin',
+				label: 'Schülerverwaltung: Sonderrechte',
+				desc: 'Versetzung (Schuljahreswechsel), DSGVO-Auskunft (Art. 15) über alle Daten eines Kindes und endgültiges Löschen aus dem Papierkorb'
+			},
+			{
 				key: 'manage_users',
 				label: 'Benutzer & Rechte verwalten',
-				desc: 'Benutzer und Rechte, alle Systemeinstellungen, Mail-Konfiguration und -Vorlagen, Ausweislayout, Backup-Status, Betriebsbereitschaft, Klassen-Zuordnung, Versetzung, Admin-Audit-Log, DSGVO-Auskunft und endgültiges Löschen aus dem Papierkorb'
+				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Admin-Audit-Log einsehen — öffnet den Menüpunkt „Berechtigungen"'
 			}
 		]
 	}

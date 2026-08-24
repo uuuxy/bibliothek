@@ -46,9 +46,8 @@
 	/** @type {Record<string, any>} */
 	let daten = $state({});
 
-	const isAdmin = $derived(authStore.currentUser?.rolle === 'admin');
-
-	const kategorien = $derived(sichtbareKategorien(isAdmin));
+	const kategorien = $derived(sichtbareKategorien(authStore.currentUser));
+	const sichtbar = $derived(new Set(kategorien.map((k) => k.id)));
 
 	let aktiv = $state('schule');
 	// Auf schmalen Bildschirmen zeigt die Seite entweder die Liste ODER das Detail
@@ -135,7 +134,7 @@
 					{:else if aktiv === 'erreichbarkeit'}
 						<ErreichbarkeitKategorie {daten} onSaved={loadSettings} />
 					{:else if aktiv === 'mail'}
-						<MailKategorie istAdmin={isAdmin} />
+						<MailKategorie />
 					{:else if aktiv === 'lmf'}
 						<KategorieRahmen
 							titel="LMF-Aktionen"
@@ -143,14 +142,14 @@
 						>
 							<GlobalLMFExtendWidget />
 						</KategorieRahmen>
-					{:else if aktiv === 'daten' && isAdmin}
+					{:else if aktiv === 'daten' && sichtbar.has('daten')}
 						<KategorieRahmen
 							titel="Datenverwaltung"
 							kurz="Importe, Exporte und der Stand der nächtlichen Sicherung."
 						>
 							<DataManagement />
 						</KategorieRahmen>
-					{:else if aktiv === 'betrieb' && isAdmin}
+					{:else if aktiv === 'betrieb'}
 						<KategorieRahmen
 							titel="Betriebsbereitschaft"
 							kurz="Was ist eingerichtet, aber nicht in Betrieb? Diese Seite prüft nur — geändert wird in den Kategorien daneben."

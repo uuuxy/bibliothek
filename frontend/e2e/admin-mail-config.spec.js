@@ -60,7 +60,7 @@ test('Test-Mail: unbrauchbarer Empfänger wird abgewiesen, ohne SMTP zu bemühen
 // Der Testversand verschickt Mail über den Schul-SMTP — er gehört keinem Konto in
 // die Hand, das keine Benutzer verwalten darf. Die Berechtigung hängt am Router, ein
 // Handler-Test in Go kann sie nicht belegen.
-test('Test-Mail: ohne manage_users bleibt der Versandknopf verschlossen', async ({ page }) => {
+test('Test-Mail: ohne manage_settings bleibt der Versandknopf verschlossen', async ({ page }) => {
 	const mitarbeiter = `e2e-mailtest-${uniqueSuffix()}@test.local`;
 	seedSQL(`
         INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)

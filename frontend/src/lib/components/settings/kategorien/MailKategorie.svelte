@@ -13,9 +13,6 @@
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import MailConfig from '../../admin/MailConfig.svelte';
 	import MailTemplates from '../../../MailTemplates.svelte';
-
-	/** @type {{ istAdmin?: boolean }} */
-	let { istAdmin = false } = $props();
 </script>
 
 <KategorieRahmen titel="Mail" kurz="Der Postausgang der Schule und die Texte, die er verschickt.">
@@ -27,9 +24,7 @@
 	{/snippet}
 
 	<div class="flex flex-col gap-10">
-		{#if istAdmin}
-			<MailConfig />
-		{/if}
+		<MailConfig />
 		<div class="flex flex-col gap-4">
 			<h3 class="text-base font-medium text-on-surface">Mail-Vorlagen</h3>
 			<MailTemplates />

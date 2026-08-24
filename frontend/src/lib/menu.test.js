@@ -82,15 +82,18 @@ describe('Menü-Sichtbarkeit', () => {
 		).toEqual(['kollegium_portal']);
 	});
 
-	it('macht aus manage_users keinen Zugang zu den Einstellungen', () => {
-		// „Einstellungen" trägt roles: ['admin'] UND permission: 'manage_users'. Die
-		// Rollenliste war wirkungslos, weil canSeeItem bei gesetzter permission direkt zur
-		// Rechteprüfung sprang — jede Rolle mit manage_users sah die Systemeinstellungen.
+	it('öffnet die Einstellungen nur mit manage_settings — manage_users reicht nicht', () => {
+		// Bis 24.08.2026 hing „Einstellungen" an manage_users PLUS roles: ['admin']. Der
+		// Rollen-Pin war der Notnagel für ein zu grobes Recht (Kollegium mit manage_users
+		// sah die Systemeinstellungen). Seit der Aufteilung entscheidet das Recht allein:
+		// Wer manage_settings hat, sieht den Punkt — egal welche Rolle; wer nur
+		// manage_users hat, nicht.
 		const settings = allePunkte.find((i) => i.id === 'settings');
 		if (!settings) throw new Error('Menüpunkt settings fehlt — Test läuft ins Leere');
 
 		for (const rolle of ['kollegium', 'mitarbeiter', 'helfer']) {
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_users'] }), rolle).toBe(false);
+			expect(canSeeItem(settings, { rolle, permissions: ['manage_settings'] }), rolle).toBe(true);
 		}
 		expect(canSeeItem(settings, admin)).toBe(true);
 	});

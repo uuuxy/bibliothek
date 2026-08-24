@@ -31,7 +31,7 @@ Stufe ≥2 dürfen NIE allein dahinter liegen. Stufe 1 hinter Helfer-Rechten ist
 bewusste Theken-Ausnahme (SchuelerKiosk-Sicht, `api/schueler_kiosk.go`). Der
 Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und hängt überall an
 `view_students` (`ohneSperrgrund` in `api/action.go`). Stufe 3 gehört
-ausschließlich hinter `view_students`/`manage_users`.
+ausschließlich hinter `view_students`/`manage_students_admin`.
 
 ## routes_students.go
 
@@ -44,20 +44,20 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `PATCH /api/schueler/{id}` | edit_students | 0 | Antwort nur Status-Echo |
 | `PATCH /api/admin/students/{id}/lock` | edit_students | 1 | Name, Klasse, Sperrflag |
 | `DELETE /api/schueler/{id}` | delete_students | 0 | nur Erfolgsmeldung |
-| `GET /api/schueler/{id}/dsgvo-auskunft` | manage_users | 3 | Vollauskunft (Zweck: DSGVO Art. 15) |
-| `GET /api/schueler/{id}/dsgvo-auskunft/pdf` | manage_users | 3 | dieselbe Vollauskunft als PDF |
+| `GET /api/schueler/{id}/dsgvo-auskunft` | manage_students_admin | 3 | Vollauskunft (Zweck: DSGVO Art. 15) |
+| `GET /api/schueler/{id}/dsgvo-auskunft/pdf` | manage_students_admin | 3 | dieselbe Vollauskunft als PDF |
 | `GET /api/schueler/deleted` | delete_students | 2 | Papierkorb: Name, Klasse, deleted_at |
 | `POST /api/schueler/{id}/restore` | delete_students | 0 | nur Statusmeldung |
-| `DELETE /api/schueler/deleted/{id}` | manage_users | 0 | nur Statusmeldung |
+| `DELETE /api/schueler/deleted/{id}` | manage_students_admin | 0 | nur Statusmeldung |
 | `POST /api/schueler/{id}/photo` | upload_photos | 1 | Antwort-URL enthält Barcode-ID |
 | `GET /api/schueler/{barcode_id}/photo` | view_students | 3 | entschlüsseltes Passfoto |
 | `GET /api/klassen` | view_students | 0 | nur Klassenbezeichnungen |
-| `GET /api/klassen-mapping` | manage_users | 0 | Klasse + Lehrkraft-Mail (Personal) |
-| `POST /api/klassen-mapping` | manage_users | 0 | nur Status |
-| `DELETE /api/klassen-mapping/{klasse}` | manage_users | 0 | 204 ohne Body |
+| `GET /api/klassen-mapping` | manage_settings | 0 | Klasse + Lehrkraft-Mail (Personal) |
+| `POST /api/klassen-mapping` | manage_settings | 0 | nur Status |
+| `DELETE /api/klassen-mapping/{klasse}` | manage_settings | 0 | 204 ohne Body |
 | `POST /api/lusd/preview` | import_students | 2 | Diff: LUSD-ID, Name, Klassenwechsel |
 | `POST /api/lusd/import` | import_students | 2 | dasselbe Diff nach Ausführung |
-| `POST /api/students/promote` | manage_users | 0 | nur Zähler + Konflikt-Klassennamen |
+| `POST /api/students/promote` | manage_students_admin | 0 | nur Zähler + Konflikt-Klassennamen |
 | `GET /api/abgaenger` | view_graduates | 2 | Name, Klasse, offene Ausleihen |
 | `GET /api/abgaenger/pdf` | view_graduates | 2 | Kontoauszug-PDF je Abgänger |
 | `POST /api/abgaenger/mail` | create_orders | 2 | versendet Konto-PDFs an Klassenleitungen; Antwort nur Zähler |
@@ -166,21 +166,21 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `POST /api/benutzer` | manage_users | 0 | Personal-Konto |
 | `PUT /api/benutzer/{id}` | manage_users | 0 | Personal-Konto |
 | `DELETE /api/benutzer/{id}` | manage_users | 0 | Personal-Konto |
-| `GET /api/einstellungen` | manage_users | 0 | Systemeinstellungen |
-| `PUT /api/einstellungen` | manage_users | 0 | nur Status |
+| `GET /api/einstellungen` | manage_settings | 0 | Systemeinstellungen |
+| `PUT /api/einstellungen` | manage_settings | 0 | nur Status |
 | `GET /api/einstellungen/sitzung` | Sitzung | 0 | zwei Zahlen: Minuten bis Theke leeren / Sperrbildschirm |
 | `GET /api/ausweis-layout` | view_students | 0 | Design-JSON ohne Daten |
-| `PUT /api/ausweis-layout` | manage_users | 0 | nur Status |
-| `GET /api/admin/settings/mail` | manage_users | 0 | SMTP-Konfiguration |
-| `PUT /api/admin/settings/mail` | manage_users | 0 | SMTP-Konfiguration |
-| `POST /api/admin/settings/mail/test` | manage_users | 0 | Testmail-Status |
+| `PUT /api/ausweis-layout` | manage_settings | 0 | nur Status |
+| `GET /api/admin/settings/mail` | manage_settings | 0 | SMTP-Konfiguration |
+| `PUT /api/admin/settings/mail` | manage_settings | 0 | SMTP-Konfiguration |
+| `POST /api/admin/settings/mail/test` | manage_settings | 0 | Testmail-Status |
 | `GET /api/admin/permissions` | manage_users | 0 | Rechte-Matrix |
 | `PUT /api/admin/permissions` | manage_users | 0 | Rechte-Matrix (Ändern nur Admin) |
-| `GET /api/admin/system/backup-status` | manage_users | 0 | Backup-Status |
-| `GET /api/admin/system/betriebsbereitschaft` | manage_users | 0 | Befunde: Klassennamen, Zähler |
+| `GET /api/admin/system/backup-status` | manage_settings | 0 | Backup-Status |
+| `GET /api/admin/system/betriebsbereitschaft` | manage_settings | 0 | Befunde: Klassennamen, Zähler |
 | `GET /api/audit` | audit_logs | 0 | Audit ohne details; IDs statt Namen |
-| `GET /api/mail-templates` | manage_users | 0 | Vorlagentexte |
-| `PUT /api/mail-templates/{id}` | manage_users | 0 | Vorlagentexte |
+| `GET /api/mail-templates` | manage_settings | 0 | Vorlagentexte |
+| `PUT /api/mail-templates/{id}` | manage_settings | 0 | Vorlagentexte |
 | `GET /api/reports/overdue-pdf` | view_students | 2 | Elternbriefe: Name + Überfälliges |
 | `GET /api/print/rechnung/{schueler_id}` | view_students | 3 | Rechnung: Name + Schadensbeträge |
 | `GET /api/print/mahnung/klasse/{klasse}` | view_students | 2 | Klassen-Mahn-PDF |

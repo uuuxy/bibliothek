@@ -24,7 +24,15 @@ import {
 	ShoppingCart
 } from '@lucide/svelte';
 
-/** @typedef {{ id: string, titel: string, kurz: string, icon: unknown, nurAdmin?: boolean }} Kategorie */
+import { hatRecht } from '../../menu.js';
+
+/**
+ * `rechte`: Eine Kategorie ohne Eintrag sieht jeder, der die Seite öffnen darf
+ * (manage_settings am Menüpunkt). Mit Eintrag genügt EINES der genannten Rechte —
+ * das der Routen, die die Kategorie tatsächlich aufruft. Bis 24.08.2026 stand hier
+ * `nurAdmin`, ein Rollenvergleich, den die Berechtigungsseite nicht erreichte.
+ * @typedef {{ id: string, titel: string, kurz: string, icon: unknown, rechte?: string[] }} Kategorie
+ */
 
 /** @type {Kategorie[]} */
 export const KATEGORIEN = [
@@ -69,23 +77,24 @@ export const KATEGORIEN = [
 	{
 		id: 'daten',
 		titel: 'Datenverwaltung',
-		kurz: 'Import, Export, Backup',
+		kurz: 'Import, Export, Schuljahreswechsel',
 		icon: Database,
-		nurAdmin: true
+		// Littera-/Bestandsimport, Cover-Abgleich → manage_inventory;
+		// LUSD-Abgleich → import_students; Versetzung → manage_students_admin.
+		rechte: ['manage_inventory', 'import_students', 'manage_students_admin']
 	},
 	{
 		id: 'betrieb',
 		titel: 'Betriebsbereitschaft',
 		kurz: 'Eingerichtet, aber nicht in Betrieb?',
-		icon: Activity,
-		nurAdmin: true
+		icon: Activity
 	}
 ];
 
 /**
- * @param {boolean} istAdmin
- * @returns {Kategorie[]} die für diese Rolle sichtbaren Kategorien.
+ * @param {any} user  authStore.currentUser
+ * @returns {Kategorie[]} die Kategorien, deren Routen dieser Benutzer aufrufen darf.
  */
-export function sichtbareKategorien(istAdmin) {
-	return KATEGORIEN.filter((k) => istAdmin || !k.nurAdmin);
+export function sichtbareKategorien(user) {
+	return KATEGORIEN.filter((k) => !k.rechte || k.rechte.some((r) => hatRecht(user, r)));
 }

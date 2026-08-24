@@ -52,19 +52,6 @@ const AUSNAHMEN = [
 		grund:
 			'Die Zeile der Rolle admin ist unveränderlich (Admin darf immer alles). Hier wird über ' +
 			'Rollen ITERIERT, nicht eine Aktion nach Rolle versteckt.'
-	},
-	{
-		datei: 'src/lib/SystemSettings.svelte',
-		grund:
-			'Der Menüpunkt „Einstellungen" trägt roles: [admin] UND manage_users (menu.js). Bis ' +
-			'manage_users aufgeteilt ist, bleibt die Seite rollengebunden; die Kategorien-Sperre ' +
-			'folgt derselben Regel. Offen unter „manage_users aufteilen".'
-	},
-	{
-		datei: 'src/lib/components/bestellungen/BestelllinkHinweis.svelte',
-		grund:
-			'Fragt, ob der Leser die Einstellungen ÖFFNEN kann (roles: [admin] am Menüpunkt), um ' +
-			'entweder den Sprung dorthin oder den Hinweis „Admin ansprechen" zu zeigen.'
 	}
 ];
 

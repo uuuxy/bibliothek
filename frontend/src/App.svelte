@@ -144,8 +144,8 @@
 				>
 					<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
 					     nicht in der Navigation. Sichtbar für alle, die den Backup-Status lesen
-					     dürfen (GET /api/admin/system/backup-status verlangt manage_users). -->
-					{#if hatRecht(authStore.currentUser, 'manage_users')}
+					     dürfen (GET /api/admin/system/backup-status verlangt manage_settings). -->
+					{#if hatRecht(authStore.currentUser, 'manage_settings')}
 						<BackupAlert />
 					{/if}
 					<Router />

@@ -22,6 +22,6 @@ export function schuelerRechte(user) {
 		// Papierkorb: DELETE /api/schueler/{id}, GET …/deleted, POST …/restore
 		loeschen: hatRecht(user, 'delete_students'),
 		// GET /api/schueler/{id}/dsgvo-auskunft
-		auskunft: hatRecht(user, 'manage_users')
+		auskunft: hatRecht(user, 'manage_students_admin')
 	};
 }

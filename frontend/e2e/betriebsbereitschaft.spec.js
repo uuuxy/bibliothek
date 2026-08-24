@@ -65,7 +65,7 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 	const antwort = await page.request.get('/api/admin/system/betriebsbereitschaft');
 	expect(
 		antwort.status(),
-		'ohne manage_users darf der Endpunkt keine Auskunft geben'
+		'ohne manage_settings darf der Endpunkt keine Auskunft geben'
 	).toBeGreaterThanOrEqual(400);
 
 	// Und der Bildschirm selbst bleibt zu.

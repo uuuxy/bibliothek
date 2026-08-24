@@ -18,7 +18,7 @@ function seedUsers() {
     `);
 }
 
-test('Mitarbeiter: manage_users-Endpoints liefern 403, Admin-UI bleibt verborgen', async ({
+test('Mitarbeiter: Admin-Endpoints (manage_settings/manage_students_admin) liefern 403, Admin-UI bleibt verborgen', async ({
 	page
 }) => {
 	seedUsers();
@@ -36,12 +36,12 @@ test('Mitarbeiter: manage_users-Endpoints liefern 403, Admin-UI bleibt verborgen
 	expect(created.ok(), `Schüler-Seeding als Mitarbeiter: ${created.status()}`).toBeTruthy();
 	const { id: studentId } = await created.json();
 
-	// DSGVO-Auskunft bündelt ALLE Daten eines Kindes → nur manage_users
+	// DSGVO-Auskunft bündelt ALLE Daten eines Kindes → nur manage_students_admin
 	const auskunft = await page.request.get(`/api/schueler/${studentId}/dsgvo-auskunft`);
 	expect(auskunft.status(), 'DSGVO-Auskunft für Mitarbeiter').toBe(403);
 	expect(await auskunft.text()).not.toContain(`Rbac-${suffix}`);
 
-	// Backup-Status ist Admin-Territorium
+	// Backup-Status verlangt manage_settings — Mitarbeiter haben es ab Werk nicht
 	const backup = await page.request.get('/api/admin/system/backup-status');
 	expect(backup.status(), 'Backup-Status für Mitarbeiter').toBe(403);
 

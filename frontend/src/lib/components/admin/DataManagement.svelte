@@ -6,8 +6,7 @@
 <script lang="ts">
 	import LitteraImportWidget from '../../LitteraImportWidget.svelte';
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
-	import LusdImportView from '../students/LusdImportView.svelte';
-	import PromoteStudentsView from '../students/PromoteStudentsView.svelte';
+	import SchuljahreswechselBereich from './SchuljahreswechselBereich.svelte';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
 	import Button from '../ui/Button.svelte';
 
@@ -281,21 +280,5 @@
 		<OfflineSicherungenEinspielen />
 	</div>
 
-	<!-- Schuljahreswechsel: Schüler-Stammdaten (LUSD) + Versetzungs-Batch. Bewusst
-		     AUßERHALB der Schatten-Kacheln oben, damit das eigene Edge-to-Edge-Listen-
-		     Design beider Komponenten nicht in einer Kachel-in-Kachel verschachtelt wird. -->
-	<div class="pt-8 border-t border-slate-200 space-y-10">
-		<div>
-			<h2 class="text-xl font-bold text-slate-950">Schuljahreswechsel & Import</h2>
-			<p class="text-xs text-slate-500 mt-1">
-				LUSD-Datenabgleich und automatische Klassen-Versetzung für das Ende des Schuljahres.
-			</p>
-		</div>
-
-		<LusdImportView />
-
-		<div class="pt-8 border-t border-slate-100">
-			<PromoteStudentsView />
-		</div>
-	</div>
+	<SchuljahreswechselBereich />
 </div>

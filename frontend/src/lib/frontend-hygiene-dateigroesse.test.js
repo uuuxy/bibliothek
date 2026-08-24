@@ -47,7 +47,7 @@ const BESTAND = {
 	'src/lib/UserManagement.svelte': 258,
 	'src/lib/components/BookExemplarCard.svelte': 229,
 	'src/lib/components/GeraeteVerwaltung.svelte': 227,
-	'src/lib/components/admin/DataManagement.svelte': 301,
+	'src/lib/components/admin/DataManagement.svelte': 284,
 	'src/lib/components/bestellungen/OrderRecommendations.svelte': 223,
 	'src/lib/components/bestellungen/OrderSearch.svelte': 287,
 	'src/lib/components/bestellungen/SupplierManager.svelte': 225,

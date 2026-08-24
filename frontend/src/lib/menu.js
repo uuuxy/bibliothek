@@ -180,18 +180,21 @@ export const menuGroups = [
 				// Die Rechte-Verwaltung ist der Ort, auf den die Drift-Warnung der
 				// Betriebsbereitschaft zeigt — als Tab in einer sechsteiligen
 				// Einstellungsseite war sie dafür zu tief vergraben.
+				// Kein roles: ['admin'] mehr (seit 24.08.2026): Ein Rollen-Pin neben dem Recht
+				// machte das Recht zum Schalter ohne Wirkung — wer manage_users bekam, sah den
+				// Punkt trotzdem nicht. Die Sorge dahinter (10.08.: Kollegium sah die
+				// Einstellungen) war ein zu grobes Recht; das ist seit der Aufteilung in
+				// manage_users / manage_settings / manage_students_admin gelöst.
 				id: 'berechtigungen',
 				label: 'Berechtigungen',
 				icon: 'key',
-				permission: 'manage_users',
-				roles: ['admin']
+				permission: 'manage_users'
 			},
 			{
 				id: 'settings',
 				label: 'Einstellungen',
 				icon: 'cog',
-				permission: 'manage_users',
-				roles: ['admin']
+				permission: 'manage_settings'
 			}
 		]
 	},

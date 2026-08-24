@@ -114,6 +114,8 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "view_stats", true},
 	{"ADMIN", "audit_logs", true},
 	{"ADMIN", "manage_users", true},
+	{"ADMIN", "manage_settings", true},
+	{"ADMIN", "manage_students_admin", true},
 
 	// Mitarbeiter defaults
 	{"MITARBEITER", "perform_actions", true},
@@ -136,6 +138,8 @@ var RechteVorgabe = []RechteEintrag{
 	{"MITARBEITER", "view_stats", true},
 	{"MITARBEITER", "audit_logs", false},
 	{"MITARBEITER", "manage_users", false},
+	{"MITARBEITER", "manage_settings", false},
+	{"MITARBEITER", "manage_students_admin", false},
 
 	// Kollegium defaults — Portal-Rolle: eine Lehrkraft meldet sich an, um im
 	// Kollegiums-Portal einen Klassensatz zu reservieren. Mehr ist der Zweck nicht.
@@ -165,6 +169,8 @@ var RechteVorgabe = []RechteEintrag{
 	{"KOLLEGIUM", "view_stats", false},
 	{"KOLLEGIUM", "audit_logs", false},
 	{"KOLLEGIUM", "manage_users", false},
+	{"KOLLEGIUM", "manage_settings", false},
+	{"KOLLEGIUM", "manage_students_admin", false},
 
 	// Helfer defaults — Kiosk-Rolle: darf NUR am Terminal ausleihen/zurücknehmen
 	// (perform_actions: /api/action, /scan, /search, /events). Bewusst KEIN
@@ -201,6 +207,8 @@ var RechteVorgabe = []RechteEintrag{
 	{"HELFER", "view_stats", false},
 	{"HELFER", "audit_logs", false},
 	{"HELFER", "manage_users", false},
+	{"HELFER", "manage_settings", false},
+	{"HELFER", "manage_students_admin", false},
 }
 
 // RechteOptional nennt die Rolle/Recht-Paare, deren Live-WERT eine bewusste

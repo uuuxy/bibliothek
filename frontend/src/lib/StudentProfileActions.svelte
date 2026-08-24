@@ -17,7 +17,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} profile
-	 * @property {boolean} [darfAuskunft]  manage_users — DSGVO-Auskunft (Art. 15)
+	 * @property {boolean} [darfAuskunft]  manage_students_admin — DSGVO-Auskunft (Art. 15)
 	 * @property {boolean} kontoauszugPdfLoading
 	 * @property {boolean} rechnungPdfLoading
 	 * @property {() => void} downloadKontoauszugPDF
