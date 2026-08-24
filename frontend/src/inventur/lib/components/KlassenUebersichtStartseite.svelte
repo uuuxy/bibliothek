@@ -2,6 +2,7 @@
 	import KlassenBuchKachelStartseite from '$lib/components/KlassenBuchKachelStartseite.svelte';
 	import { sortBooksBySubjectAndTitle } from '$lib/book_sorting.js';
 	import { ChevronDown } from '@lucide/svelte';
+	import Button from '../../../lib/components/ui/Button.svelte';
 
 	/**
 	 * @type {{
@@ -16,6 +17,13 @@
 	// ueberlebt einen Filterwechsel absichtlich: Wer den Filter wieder leert, findet
 	// die Stelle offen vor, an der er war.
 	let offenerJahrgang = $state('');
+
+	// Seit die Gruppen aus der Jahrgangsspanne entstehen, hält die Sammelgruppe „Ohne
+	// genaue Zuordnung" leicht tausende Titel — alle auf einmal zu rendern legte die
+	// Seite lahm. Aufgeklappt erscheint deshalb portionsweise, wie in der Buch-Suche
+	// nebenan (displayLimit in +page.svelte).
+	const ANZEIGE_SCHRITT = 96;
+	let anzeigeLimit = $state(ANZEIGE_SCHRITT);
 
 	/**
 	 * @param {any[]} books
@@ -62,7 +70,10 @@
 			     wie die Aussage, die es betrifft. -->
 			<button
 				type="button"
-				onclick={() => (offenerJahrgang = offen ? '' : cls.name)}
+				onclick={() => {
+					offenerJahrgang = offen ? '' : cls.name;
+					anzeigeLimit = ANZEIGE_SCHRITT;
+				}}
 				aria-expanded={offen}
 				aria-controls={rasterID}
 				class="flex w-full min-w-0 items-center gap-3 rounded-lg py-3 text-left"
@@ -85,10 +96,21 @@
 				id={rasterID}
 				class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pt-1 pb-6"
 			>
-				{#each sortBooks(cls.books) as book (book.id)}
+				{#each sortBooks(cls.books).slice(0, anzeigeLimit) as book (book.id)}
 					<KlassenBuchKachelStartseite {book} {getStockColor} onclick={() => onBookClick(book)} />
 				{/each}
 			</div>
+			{#if cls.books.length > anzeigeLimit}
+				<div class="flex justify-center pb-6">
+					<Button
+						variant="secondary"
+						onclick={() => (anzeigeLimit += ANZEIGE_SCHRITT)}
+						class="px-6"
+					>
+						Mehr laden ({cls.books.length - anzeigeLimit} weitere)
+					</Button>
+				</div>
+			{/if}
 		{/if}
 	</section>
 {/each}

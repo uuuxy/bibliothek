@@ -8,31 +8,27 @@
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 
 	/**
+	 * Die Optionslisten kommen als Props aus den geladenen Büchern
+	 * (startseiten_api.js). Bis zum 24.08.2026 standen hier zwei handgepflegte
+	 * Kopien: drei Zweige (das Bearbeiten-Formular kennt sechs — die Förderstufe war
+	 * so nie wählbar) und Jahrgänge fix 5–13, auch wenn kein Buch sie trug.
 	 * @type {{
 	 *   viewMode: string,
 	 *   searchQuery: string,
 	 *   selectedZweig: string,
-	 *   selectedJahrgang: string
+	 *   selectedJahrgang: string,
+	 *   zweigOptionen: { value: string, label: string }[],
+	 *   jahrgangOptionen: { value: string, label: string }[]
 	 * }}
 	 */
 	let {
 		viewMode = $bindable('suche'),
 		searchQuery = $bindable(''),
 		selectedZweig = $bindable(''),
-		selectedJahrgang = $bindable('')
+		selectedJahrgang = $bindable(''),
+		zweigOptionen = [],
+		jahrgangOptionen = []
 	} = $props();
-
-	const zweigOptionen = [
-		{ value: '', label: 'Alle Zweige' },
-		...['Gymnasium', 'Realschule', 'Hauptschule'].map((z) => ({ value: z, label: z }))
-	];
-	const jahrgangOptionen = [
-		{ value: '', label: 'Alle Jahrgänge' },
-		...['5', '6', '7', '8', '9', '10', '11', '12', '13'].map((j) => ({
-			value: j,
-			label: `Klasse ${j}`
-		}))
-	];
 </script>
 
 <header class="pt-6 pb-6 px-4 sm:px-6 lg:px-8">

@@ -32,12 +32,15 @@ const rasterGross = `#jahrgang-${nameGross.replace(/\s+/g, '-')}`;
 // nur zwischen Inhalt und leerer Seite umlegt, sagt nichts). Mit einem einzigen Jahrgang
 // prüfte dieser Test also den Sonderfall statt den Normalfall.
 function seed() {
+	// Seit dem 24.08.2026 entstehen die Jahrgangsgruppen aus der SPANNE
+	// (jahrgang_von/bis), nicht mehr aus grade_level — der Seed setzt deshalb die
+	// Spanne. von = bis ergibt weiterhin den Gruppennamen "Klasse <stufe> <zweig>".
 	for (const { stufe, buecher } of [GROSS, KLEIN]) {
 		seedSQL(`
-			UPDATE buecher_titel SET grade_level = ${stufe}, track = '${ZWEIG}'
+			UPDATE buecher_titel SET jahrgang_von = ${stufe}, jahrgang_bis = ${stufe}, track = '${ZWEIG}'
 			WHERE id IN (
 				SELECT id FROM buecher_titel
-				WHERE grade_level IS NULL AND track IS NULL
+				WHERE jahrgang_von = 5 AND jahrgang_bis = 10 AND (track IS NULL OR track = '')
 				ORDER BY id LIMIT ${buecher}
 			);
 		`);
@@ -45,10 +48,13 @@ function seed() {
 }
 
 // Nur die Titel zurücksetzen, die dieser Test angefasst hat — erkennbar am Zweig-Marker,
-// und ausgewählt wurden ohnehin nur Titel, die vorher auf NULL standen. Ein Teardown hat
-// in diesem Projekt schon einmal echte Konfiguration mitgenommen.
+// und ausgewählt wurden ohnehin nur Titel, die vorher auf dem Import-Default standen
+// (jahrgang 5–10, kein Zweig). Ein Teardown hat in diesem Projekt schon einmal echte
+// Konfiguration mitgenommen.
 function aufraeumen() {
-	seedSQL(`UPDATE buecher_titel SET grade_level = NULL, track = NULL WHERE track = '${ZWEIG}';`);
+	seedSQL(
+		`UPDATE buecher_titel SET jahrgang_von = 5, jahrgang_bis = 10, track = NULL WHERE track = '${ZWEIG}';`
+	);
 }
 
 test.beforeAll(() => {

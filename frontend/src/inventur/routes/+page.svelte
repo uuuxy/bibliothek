@@ -15,7 +15,11 @@
 	import Button from '../../lib/components/ui/Button.svelte';
 	import {
 		buecherLaden,
+		buecherSuchen,
 		buecherNachKlassenGruppieren,
+		klassenFiltern,
+		zweigOptionenAus,
+		jahrgangOptionenAus,
 		bestandsFarbe
 	} from '$lib/startseiten_api.js';
 
@@ -39,80 +43,15 @@
 	/** @type {any[]} */
 	let books = $state.raw([]);
 	// --- Abgeleitete Werte ---
-	// „Jahrgänge" gruppiert aus den Buch-Metadaten (gradeLevel/track). Die ECHTEN
-	// Klassensätze aus /api/class-books standen hier bis zum 08.08.2026 als dritter
-	// Reiter daneben — dieselbe Liste wie unter Verwaltung → Schulklassen. Aufgelöst.
+	// „Jahrgänge" gruppiert aus der Jahrgangsspanne der Bücher (Begründung in
+	// startseiten_api.js). Die ECHTEN Klassensätze aus /api/class-books standen hier
+	// bis zum 08.08.2026 als dritter Reiter daneben — dieselbe Liste wie unter
+	// Verwaltung → Schulklassen. Aufgelöst.
 	let classes = $derived(buecherNachKlassenGruppieren(books));
 
-	// --- WZ-Synonyme für Suchbegriffe auf der Startseite ---
-	const suchSynonyme = new Map([
-		['powi', 'politik'],
-		['mathe', 'mathematik'],
-		['eng', 'englisch'],
-		['deu', 'deutsch'],
-		['franz', 'französisch'],
-		['bio', 'biologie'],
-		['che', 'chemie'],
-		['phy', 'physik'],
-		['geo', 'geographie'],
-		['info', 'informatik'],
-		['lat', 'latein'],
-		['span', 'spanisch'],
-		['rel', 'religion'],
-		['reli', 'religion']
-	]);
+	let filteredBooks = $derived(buecherSuchen(books, searchQuery));
 
-	let filteredBooks = $derived(
-		(Array.isArray(books) ? books : []).filter((/** @type {any} */ b) => {
-			let q = searchQuery.toLowerCase().trim();
-			if (q === '') return true;
-
-			// Split search into terms and resolve synonyms
-			let terms = q.split(/\s+/).map((term) => suchSynonyme.get(term) || term);
-
-			// If query has a number, ignore words like "klasse", "kl" to prevent filtering out books
-			// that don't have the word "klasse" in their title/metadata but do match the grade.
-			const hasNumber = terms.some((t) => !isNaN(parseInt(t, 10)));
-			if (hasNumber) {
-				terms = terms.filter((t) => !['klasse', 'kl', 'kl.', 'jahrgang', 'jg', 'jg.'].includes(t));
-			}
-
-			// EVERY term must match AT LEAST ONE field in the book
-			return terms.every((term) => {
-				if (b.title && b.title.toLowerCase().includes(term)) return true;
-				if (b.isbn && b.isbn.toLowerCase().includes(term)) return true;
-				if (b.author && b.author.toLowerCase().includes(term)) return true;
-				if (b.subject && b.subject.toLowerCase().includes(term)) return true;
-				if (b.track && b.track.toLowerCase().includes(term)) return true;
-
-				// Grade Level Matching (e.g. term "5" matches gradeLevel 5)
-				if (b.gradeLevel && b.gradeLevel.toString() === term) return true;
-
-				// Grade Range Matching (e.g. term "6" matches range 5-10)
-				const num = parseInt(term, 10);
-				if (
-					!isNaN(num) &&
-					b.jahrgangVon &&
-					b.jahrgangBis &&
-					num >= b.jahrgangVon &&
-					num <= b.jahrgangBis
-				) {
-					return true;
-				}
-
-				return false;
-			});
-		})
-	);
-
-	let filteredClasses = $derived(
-		(Array.isArray(classes) ? classes : []).filter((cls) => {
-			const zw =
-				selectedZweig === '' || cls.books.some((/** @type {any} */ b) => b.track === selectedZweig);
-			const jg = selectedJahrgang === '' || cls.name.includes(`Klasse ${selectedJahrgang}`);
-			return zw && jg;
-		})
-	);
+	let filteredClasses = $derived(klassenFiltern(classes, selectedZweig, selectedJahrgang));
 
 	let displayLimit = $state(50);
 	let paginatedBooks = $derived(filteredBooks.slice(0, displayLimit));
@@ -152,7 +91,14 @@
 
 <div class="w-full text-slate-800 font-sans">
 	<div class="w-full transition-all duration-300">
-		<StartseitenFilter bind:viewMode bind:searchQuery bind:selectedZweig bind:selectedJahrgang />
+		<StartseitenFilter
+			bind:viewMode
+			bind:searchQuery
+			bind:selectedZweig
+			bind:selectedJahrgang
+			zweigOptionen={zweigOptionenAus(books)}
+			jahrgangOptionen={jahrgangOptionenAus(classes)}
+		/>
 
 		<main class="relative">
 			{#if viewMode === 'suche'}
