@@ -53,7 +53,7 @@
 		klasse: '9R1',
 		ausweis_gueltig_bis: new Date().getFullYear() + 1
 	};
-	const previewStudent = $derived({ ...PLATZHALTER_STUDENT });
+	const muster = $derived({ ...PLATZHALTER_STUDENT });
 
 	onMount(() => {
 		loadDesign();
@@ -197,7 +197,7 @@
 		onBarcodeType={(t) => {
 			idStore.barcodeType = t;
 		}}
-		{previewStudent}
+		previewStudent={muster}
 	/>
 
 	<div class="w-full flex flex-col lg:flex-row gap-5">
@@ -207,7 +207,7 @@
 			onSelect={(id) => {
 				selectedId = id;
 			}}
-			student={previewStudent}
+			student={muster}
 			{zoom}
 			barcodeType={idStore.barcodeType}
 		/>
@@ -220,9 +220,4 @@
      Kartendrucker prüfen lässt, bevor ein Stapel echter Ausweise durchläuft.
      Echte Schüler druckt dieser Bildschirm nicht mehr — das tut die Schülerdatei
      (markieren → „Ausweise drucken"). -->
-<PrintPreview
-	students={[previewStudent]}
-	barcodeType={idStore.barcodeType}
-	{timestamp}
-	platzhalter
-/>
+<PrintPreview students={[muster]} barcodeType={idStore.barcodeType} {timestamp} platzhalter />
