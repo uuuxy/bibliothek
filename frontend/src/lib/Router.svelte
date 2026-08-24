@@ -18,7 +18,6 @@
 	import Mahnwesen from './Mahnwesen.svelte';
 	import StatistikDetailPage from './components/stats/StatistikDetailPage.svelte';
 	import SystemSettings from './SystemSettings.svelte';
-	import GlobalLMFExtendWidget from './GlobalLMFExtendWidget.svelte';
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
 	import Graduates from './Graduates.svelte';
@@ -48,14 +47,10 @@
 		mahnwesen: '/mahnwesen',
 		kollegium_portal: '/kollegium-portal',
 		'system-logs': '/system-logs',
-		lmf_actions: '/lmf-aktionen',
 		berechtigungen: '/berechtigungen',
 		'druck-center': '/druck-center',
 		kiosk: '/kiosk'
 	};
-
-	// Parametrisierte Sonderrouten (Tab braucht einen Zusatzparameter, passt nicht in tabToPath).
-	const STATS_DETAIL_KINDS = ['renner', 'ladenhueter'];
 
 	/**
 	 * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad. BEWUSST die einzige Quelle für
@@ -64,13 +59,20 @@
 	 * @param {string} path
 	 */
 	function applyPathToState(path) {
+		if (path === '/lmf-aktionen') {
+			// Alte Adresse (Menüpunkt bis 24.08.2026): jetzt Einstellungs-Kategorie.
+			uiStore.activeTab = 'settings';
+			uiStore.requestedSettingsTab = 'lmf';
+			return;
+		}
 		if (path.startsWith('/medienkatalog/buch/')) {
 			uiStore.activeTab = 'book_detail';
 			appState.activeBookId = path.replace('/medienkatalog/buch/', '');
 			return;
 		}
+		// Parametrisierte Sonderroute: der Tab braucht einen Zusatzparameter, passt nicht in tabToPath.
 		const statsKind = path.startsWith('/statistiken/') && path.replace('/statistiken/', '');
-		if (statsKind && STATS_DETAIL_KINDS.includes(statsKind)) {
+		if (statsKind && ['renner', 'ladenhueter'].includes(statsKind)) {
 			uiStore.activeTab = 'stats_detail';
 			uiStore.statsDetailKind = /** @type {'renner'|'ladenhueter'} */ (statsKind);
 			return;
@@ -225,8 +227,6 @@
 		<div class="w-full animate-fade-in"><Mahnwesen /></div>
 	{:else if uiStore.activeTab === 'kollegium_portal'}
 		<div class="w-full animate-fade-in"><KollegiumPortal user={authStore.currentUser} /></div>
-	{:else if uiStore.activeTab === 'lmf_actions'}
-		<div class="w-full animate-fade-in"><GlobalLMFExtendWidget /></div>
 	{:else if uiStore.activeTab === 'berechtigungen'}
 		<div class="w-full animate-fade-in"><Berechtigungen /></div>
 	{:else if uiStore.activeTab === 'settings'}

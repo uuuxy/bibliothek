@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, einstellungsKategorie } from './helpers.js';
 
-// LMF-Massenverlängerung (/lmf-aktionen): kritisches Massen-Update — verlängert
-// alle offenen LMF-Ausleihen einer Klasse auf ein fixes Datum. Der Handler matcht
-// per Projekt-Konvention über das Titel-Präfix "LMF-" (mit Bindestrich!).
+// LMF-Massenverlängerung (Einstellungen → LMF-Aktionen, bis 24.08.2026 eigener
+// Menüpunkt /lmf-aktionen): kritisches Massen-Update — verlängert alle offenen
+// LMF-Ausleihen einer Klasse auf ein fixes Datum. Der Handler matcht per
+// Projekt-Konvention über das Titel-Präfix "LMF-" (mit Bindestrich!).
 test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausleihen', async ({
 	page
 }) => {
@@ -35,7 +36,8 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
     `);
 
 	await uiLogin(page);
-	await page.goto('/lmf-aktionen');
+	await page.goto('/einstellungen');
+	await einstellungsKategorie(page, 'LMF-Aktionen').click();
 
 	await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
 
@@ -67,4 +69,15 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
           AND a.rueckgabe_frist::date = '${dateStr}'
     `);
 	expect(fristen).toBe('2');
+});
+
+// Der Menüpunkt ist weg, Lesezeichen auf die alte Adresse gibt es trotzdem — der
+// Router leitet sie in die Einstellungen und öffnet die Kategorie direkt.
+test('LMF-Massenverlängerung: die alte Adresse /lmf-aktionen führt in die Einstellungen', async ({
+	page
+}) => {
+	await uiLogin(page);
+	await page.goto('/lmf-aktionen');
+
+	await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
 });

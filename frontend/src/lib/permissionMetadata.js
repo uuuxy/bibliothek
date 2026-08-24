@@ -64,7 +64,7 @@ export const permissionsMetadata = [
 			{
 				key: 'manage_inventory',
 				label: 'Bestand verwalten (Import, Inventur-Abschluss)',
-				desc: 'Startet und schließt Inventuren ab, führt Littera- und Bestandsimporte aus und gleicht Cover ab. Steuert außerdem die LMF-Aktionen im Menü.'
+				desc: 'Startet und schließt Inventuren ab, führt Littera- und Bestandsimporte aus und gleicht Cover ab.'
 			}
 		]
 	},

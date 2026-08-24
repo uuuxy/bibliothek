@@ -25,7 +25,6 @@ const SCREENS = [
 	['Mahnwesen', '/mahnwesen'],
 	['Mein Portal', '/kollegium-portal'],
 	['System-Logs', '/system-logs'],
-	['LMF-Aktionen', '/lmf-aktionen'],
 	['Druck-Center', '/druck-center'],
 	['Kiosk', '/kiosk']
 ];
@@ -141,7 +140,9 @@ test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
 		// die Schwelle zu senken (das hätte die Aussage verkleinert, nicht das Problem
 		// gelöst) läuft der Test die Kategorien ab.
 		if (pfad === '/einstellungen') {
-			for (const k of ['Ausleihe & Fristen', 'Datenschutz & Sitzung', 'Mail']) {
+			// „LMF-Aktionen" steht hier, weil die Route /lmf-aktionen (bis 24.08.2026 in
+			// SCREENS) zur Einstellungs-Kategorie wurde — ihre Felder bleiben so vermessen.
+			for (const k of ['Ausleihe & Fristen', 'Datenschutz & Sitzung', 'Mail', 'LMF-Aktionen']) {
 				await einstellungsKategorie(page, k).click();
 				await messen(`Einstellungen → ${k}`);
 			}

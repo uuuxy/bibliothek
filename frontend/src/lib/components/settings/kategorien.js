@@ -14,6 +14,7 @@ import {
 	Activity,
 	BellRing,
 	CalendarClock,
+	Clock,
 	Database,
 	Globe,
 	Mail,
@@ -55,6 +56,16 @@ export const KATEGORIEN = [
 		icon: Globe
 	},
 	{ id: 'mail', titel: 'Mail', kurz: 'Postausgang und Vorlagen', icon: Mail },
+	{
+		// Bis 24.08.2026 ein eigener Menüpunkt unter „System" (davor „Verwaltung") —
+		// zweimal verschoben, weil das Werkzeug "fast nie" gebraucht wird. Jetzt wohnt
+		// es bei den anderen seltenen Eingriffen; die alte Adresse /lmf-aktionen
+		// leitet hierher (Router.svelte).
+		id: 'lmf',
+		titel: 'LMF-Aktionen',
+		kurz: 'Massenverlängerung je Klasse',
+		icon: Clock
+	},
 	{
 		id: 'daten',
 		titel: 'Datenverwaltung',

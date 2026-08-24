@@ -36,6 +36,7 @@
 	import DatenschutzKategorie from './components/settings/kategorien/DatenschutzKategorie.svelte';
 	import ErreichbarkeitKategorie from './components/settings/kategorien/ErreichbarkeitKategorie.svelte';
 	import MailKategorie from './components/settings/kategorien/MailKategorie.svelte';
+	import GlobalLMFExtendWidget from './GlobalLMFExtendWidget.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
@@ -135,6 +136,13 @@
 						<ErreichbarkeitKategorie {daten} onSaved={loadSettings} />
 					{:else if aktiv === 'mail'}
 						<MailKategorie istAdmin={isAdmin} />
+					{:else if aktiv === 'lmf'}
+						<KategorieRahmen
+							titel="LMF-Aktionen"
+							kurz="Massenwerkzeuge für Lernmittel — sie verändern viele Ausleihen zugleich."
+						>
+							<GlobalLMFExtendWidget />
+						</KategorieRahmen>
 					{:else if aktiv === 'daten' && isAdmin}
 						<KategorieRahmen
 							titel="Datenverwaltung"

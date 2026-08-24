@@ -161,20 +161,10 @@ export const menuGroups = [
 		items: [
 			{ id: 'stats', label: 'Statistiken', icon: 'chart-bar', permission: 'view_stats' },
 			{ id: 'system-logs', label: 'System-Logs', icon: 'shield', permission: 'audit_logs' },
-			{
-				// Aus „Verwaltung" hierher verschoben (09.08.2026, auf Peters Ansage): Die
-				// Massenverlaengerung wird "fast nie" gebraucht, weil der LUSD-Import
-				// massgebend ist — er setzt Klasse und Abgaengerstatus, und daran haengen
-				// Fristen und Ausleihlimits ohnehin. In „Verwaltung" stand das Werkzeug
-				// zwischen den taeglichen Punkten (Schuelerdatei, Bestellungen, Inventur)
-				// und war dort praesenter als sein Nutzen. Das Recht bleibt unveraendert
-				// manage_inventory — die Gruppe entscheidet nur ueber die Einordnung im
-				// Menue, nicht darueber, wer den Punkt sieht (siehe canSeeItem oben).
-				id: 'lmf_actions',
-				label: 'LMF-Aktionen',
-				icon: 'clock',
-				permission: 'manage_inventory'
-			},
+			// „LMF-Aktionen" stand hier bis zum 24.08.2026 als eigener Punkt (zuvor in
+			// „Verwaltung"). Auf Peters Ansage in die Einstellungen gewandert — die
+			// Massenverlaengerung wird "fast nie" gebraucht, weil der LUSD-Import
+			// massgebend ist. Damit sieht sie nur noch, wer die Einstellungen sieht.
 			{
 				// Aus den Einstellungen herausgezogen (Betreiber-Entscheidung 16.08.2026):
 				// Die Rechte-Verwaltung ist der Ort, auf den die Drift-Warnung der
