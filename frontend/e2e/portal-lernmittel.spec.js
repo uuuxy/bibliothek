@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Lehrerportal → Reiter „Lernmittel" (Betreiber-Entscheidung 24.08.2026): Das
 // Kollegium sieht Bestand und Mengen je Jahrgang sowie die Klassensatz-Zuordnung —
@@ -13,11 +13,14 @@ const LEHRER_EMAIL = 'e2e-lehrer@test.local';
 test.describe('Lehrerportal: Lernmittel', () => {
 	const s = uniqueSuffix().slice(0, 6);
 	const TITEL = `LM Mathe ${s}`;
-	// '7B' ist die KANONISCHE Form (der Vokabular-Trigger aus Migration 079 schreibt
-	// den Buchstaben groß — ein '7b' im Seed käme als '7B' wieder heraus, und die
-	// Anzeige hieße anders als die Erwartung). Die class_books-FK verlangt den
-	// Eintrag in `klassen`.
-	const KLASSE = '7B';
+	// Der Vokabular-Trigger (Migration 079) kanonisiert jeden geschriebenen Klassennamen
+	// auf die ZUERST registrierte Schreibweise: Lokal stand '7B' schon aus einem anderen
+	// Seed in `klassen`, in der frischen CI-Datenbank gewann das '7b' von hier — die
+	// Anzeige hieß je nach Umgebung anders, und ein festes „Klasse 7B" war Grün aus
+	// Umgebungsgunst. Deshalb wird der gespeicherte Name nach dem Seed zurückgelesen.
+	const KLASSE_WUNSCH = '7b';
+	/** @type {string} */
+	let klasse;
 
 	test.beforeAll(() => {
 		seedSQL(`
@@ -25,7 +28,7 @@ test.describe('Lehrerportal: Lernmittel', () => {
 			VALUES ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'kollegium', true)
 			ON CONFLICT (email) DO UPDATE SET aktiv = true;
 
-			INSERT INTO klassen (name) VALUES ('${KLASSE}') ON CONFLICT DO NOTHING;
+			INSERT INTO klassen (name) VALUES ('${KLASSE_WUNSCH}') ON CONFLICT DO NOTHING;
 
 			WITH t AS (
 				-- kein subject: die Spalte trägt eine FK auf systematik_kategorien (Migration 078)
@@ -36,8 +39,12 @@ test.describe('Lehrerportal: Lernmittel', () => {
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
 				SELECT t.id, 'LM-${s}-' || g, true FROM t, generate_series(1, 3) AS g
 			)
-			INSERT INTO class_books (class_name, book_id) SELECT '${KLASSE}', t.id FROM t;
+			INSERT INTO class_books (class_name, book_id) SELECT '${KLASSE_WUNSCH}', t.id FROM t;
 		`);
+		klasse = querySQL(
+			`SELECT class_name FROM class_books WHERE book_id = (SELECT id FROM buecher_titel WHERE isbn = '978lm${s}')`
+		);
+		if (!klasse) throw new Error('Seed: class_books-Zeile fehlt — der Test liefe ins Leere');
 	});
 
 	test.afterAll(() => {
@@ -56,7 +63,7 @@ test.describe('Lehrerportal: Lernmittel', () => {
 		await page.getByRole('tab', { name: 'Lernmittel' }).click();
 
 		// Klassensätze: die Klasse aufklappen, der Titel steht mit Menge darin.
-		await page.getByText(`Klasse ${KLASSE}`, { exact: true }).click();
+		await page.getByText(`Klasse ${klasse}`, { exact: true }).click();
 		const zeile = page.locator('li').filter({ hasText: TITEL });
 		await expect(zeile).toBeVisible();
 		await expect(zeile).toContainText('3/3 verfügbar');
