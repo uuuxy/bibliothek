@@ -122,9 +122,38 @@ export function tabIstGesperrt(tab, erlaubt) {
 export const menuGroups = [
 	{
 		name: 'Kiosk',
+		items: [{ id: 'kiosk', label: 'Ausleihe', icon: 'kiosk' }]
+	},
+	{
+		name: 'Bibliothek',
 		items: [
-			{ id: 'kiosk', label: 'Ausleihe', icon: 'kiosk' },
+			{ id: 'media_catalog', label: 'Medienkatalog', icon: 'catalog', permission: 'view_books' },
+			{ id: 'signaturen', label: 'Signaturen', icon: 'book', permission: 'view_books' },
+			{ id: 'druck-center', label: 'Druck-Center', icon: 'printer', permission: 'view_students' },
 			{
+				// view_books, nicht manage_users: Bis zum 08.08.2026 gab es dieselbe Übersicht
+				// ein zweites Mal als Reiter im Medienkatalog, und der stand jedem mit
+				// view_books offen. Dieser Punkt hat den Reiter abgelöst — mit manage_users
+				// (faktisch Administrator, siehe 940d7d8) hätte die Zusammenlegung den
+				// Bibliotheks-Helfern den Blick auf die Klassensätze genommen. Die
+				// Verwaltungsaktionen darin hängen an edit_books, geprüft in KlassenUebersicht.
+				id: 'schulklassen',
+				// „Klassensätze“ statt „Schulklassen“ (24.08.2026): Die Seite zeigt Bücher je
+				// Klasse, keine Klassen — und „Klasse 5“ stand damit zweimal in der Oberfläche
+				// (Medienkatalog → Jahrgänge). Route und id bleiben.
+				label: 'Klassensätze',
+				icon: 'identification',
+				permission: 'view_books'
+			}
+		]
+	},
+	{
+		name: 'Verwaltung',
+		items: [
+			{ id: 'students_dir', label: 'Schülerdatei', icon: 'users', permission: 'view_students' },
+			{
+				// Seit 24.08.2026 unter Verwaltung (vorher Kiosk): Mahnen ist Schülerarbeit,
+				// keine Thekenarbeit.
 				// view_students, nicht manage_users: Alle Mahnwesen-Routen (/api/mahnwesen*,
 				// /api/print/mahnung/…) verlangen view_students. Bis zum 24.08.2026 forderte
 				// der Menüpunkt manage_users — wer mahnen durfte, sah den Punkt nicht, und wer
@@ -134,32 +163,6 @@ export const menuGroups = [
 				label: 'Mahnwesen',
 				icon: 'bell',
 				permission: 'view_students'
-			}
-		]
-	},
-	{
-		name: 'Bibliothek',
-		items: [
-			{ id: 'media_catalog', label: 'Medienkatalog', icon: 'catalog', permission: 'view_books' },
-			{ id: 'signaturen', label: 'Signaturen', icon: 'book', permission: 'view_books' },
-			{ id: 'druck-center', label: 'Druck-Center', icon: 'printer', permission: 'view_students' }
-		]
-	},
-	{
-		name: 'Verwaltung',
-		items: [
-			{ id: 'students_dir', label: 'Schülerdatei', icon: 'users', permission: 'view_students' },
-			{
-				// view_books, nicht manage_users: Bis zum 08.08.2026 gab es dieselbe Übersicht
-				// ein zweites Mal als Reiter im Medienkatalog, und der stand jedem mit
-				// view_books offen. Dieser Punkt hat den Reiter abgelöst — mit manage_users
-				// (faktisch Administrator, siehe 940d7d8) hätte die Zusammenlegung den
-				// Bibliotheks-Helfern den Blick auf die Klassensätze genommen. Die
-				// Verwaltungsaktionen darin hängen an edit_books, geprüft in KlassenUebersicht.
-				id: 'schulklassen',
-				label: 'Schulklassen',
-				icon: 'identification',
-				permission: 'view_books'
 			},
 			{ id: 'graduates', label: 'Abgänger', icon: 'academic-cap', permission: 'view_graduates' },
 			{ id: 'orders', label: 'Bestellungen', icon: 'shopping-bag', permission: 'view_orders' },

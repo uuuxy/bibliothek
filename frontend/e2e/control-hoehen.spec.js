@@ -17,7 +17,7 @@ const SCREENS = [
 	['Einstellungen', '/einstellungen'],
 	['Inventur', '/inventur'],
 	['Schülerdatei', '/schuelerdatei'],
-	['Schulklassen', '/schulklassen'],
+	['Klassensätze', '/schulklassen'],
 	['Bestellungen', '/bestellungen'],
 	['Katalog', '/medienkatalog'],
 	['Abgänger', '/abgaenger'],
