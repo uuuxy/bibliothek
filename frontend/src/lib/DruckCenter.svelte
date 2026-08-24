@@ -1,5 +1,6 @@
 <script>
 	import StudentIdDesigner from './StudentIdDesigner.svelte';
+	import KlassenDruckEinstieg from './components/students/KlassenDruckEinstieg.svelte';
 	import LabelPrinter from './LabelPrinter.svelte';
 	import EtikettenNachdruck from './components/labels/EtikettenNachdruck.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
@@ -88,7 +89,10 @@
 				<EtikettenNachdruck onUebergeben={() => (activeTab = 'labels')} />
 			</div>
 		{:else}
-			<div class="animate-fade-in h-full py-6">
+			<!-- Der Klassen-Einstieg steht VOR dem Designer: Wer hierher kommt, will meist
+			     drucken, nicht gestalten — der Designer ist das seltenere Anliegen. -->
+			<div class="animate-fade-in h-full space-y-8 py-6">
+				<KlassenDruckEinstieg />
 				<StudentIdDesigner />
 			</div>
 		{/if}

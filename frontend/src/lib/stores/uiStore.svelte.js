@@ -43,6 +43,13 @@ class UIStore {
 	 * noch einmal von Hand durchsuchen zu lassen, obwohl das Programm den Titel kennt.
 	 */
 	requestedEtikettenFilter = $state(/** @type {string | null} */ (null));
+	/**
+	 * Aus dem Druck-Center angeforderter Klassen-Stapeldruck: Die Schülerdatei greift
+	 * den Klassennamen auf, sucht ihn und markiert alle Treffer — der Druck selbst
+	 * bleibt dort (EIN Druckpfad; Warnung bei fehlendem Ablaufdatum und die
+	 * Etiketten-Startposition stehen davor, nicht dahinter).
+	 */
+	requestedKlassenDruck = $state(/** @type {string | null} */ (null));
 
 	async fetchPendingReservierungen() {
 		try {

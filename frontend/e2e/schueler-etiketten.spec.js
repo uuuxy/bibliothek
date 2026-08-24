@@ -119,6 +119,34 @@ test.describe('Schüler-Etiketten', () => {
 		expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
 	});
 
+	// Der sichtbare Einstieg (24.08.2026, auf Peters Ansage): Der Weg über Suche +
+	// Kopf-Kästchen funktioniert, ist aber für neue Benutzer unauffindbar. Der Block
+	// im Druck-Center druckt bewusst nicht selbst — er landet VOR der Aktionsleiste,
+	// damit deren Warnungen auch auf diesem Weg vor dem Stapel stehen.
+	test('Druck-Center: „Klassenweise drucken" springt mit fertig markierter Klasse in die Schülerdatei', async ({
+		page
+	}) => {
+		await uiLogin(page);
+		await page.getByTitle('Druck-Center').click();
+		await page.getByRole('button', { name: 'Schülerausweise' }).click();
+
+		await page.getByRole('combobox', { name: 'Klasse' }).click();
+		await page.getByRole('option', { name: '8G2', exact: true }).click();
+		await page.getByRole('button', { name: 'Klasse zum Druck markieren' }).click();
+
+		// Gelandet in der Schülerdatei: Suche vorbefüllt, die Aktionsleiste steht ohne
+		// weiteres Zutun da, und JEDE angezeigte Zeile trägt den Haken.
+		await expect(page.getByLabel('Schüler suchen')).toHaveValue('8G2');
+		await expect(page.getByRole('region', { name: /Aktionen für die markierten/ })).toBeVisible();
+
+		const zeilen = page.locator('tbody tr');
+		await expect(zeilen.filter({ hasText: `Etikett${s}` })).toHaveCount(2);
+		const kaestchen = zeilen.getByRole('checkbox');
+		for (const box of await kaestchen.all()) {
+			await expect(box).toBeChecked();
+		}
+	});
+
 	test('Kartenmodus bleibt der Kartenmodus — der Stapel liegt weiter im DOM', async ({ page }) => {
 		// Gegenprobe zum Test darüber. Ohne sie belegte er nur, dass IRGENDETWAS anders
 		// wird, sobald man den Schalter umlegt — nicht, dass der Kartenweg heil ist.

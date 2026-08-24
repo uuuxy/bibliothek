@@ -12,6 +12,7 @@
 	import AuswahlAktionsleiste from './components/students/AuswahlAktionsleiste.svelte';
 	import StudentBatchPrint from './components/students/StudentBatchPrint.svelte';
 	import { erzeugeAusweisdruck } from './components/students/ausweisdruck.svelte.js';
+	import { erzeugeSchuelerSuche } from './components/students/schuelerSuche.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	// Props (Svelte 5)
@@ -20,31 +21,12 @@
 	// State Runes (Svelte 5)
 	let activeTab = $state('active');
 
-	/** @type {any[]} */
-	let students = $state.raw([]);
-	let loading = $state(false);
-	let searchQuery = $state('');
 	/** @type {any} */
 	let activeStudent = $state(null);
 
 	/** @type {any[]} */
 	let readerGroups = $state.raw([]);
 	let showCreateModal = $state(false);
-
-	// Gesucht wird auf dem SERVER. Vorher filterte diese Ansicht im Browser über die
-	// gelieferte Liste — und die ist bei 500 Zeilen gekappt. Bei 875 Schülern waren 375
-	// über die Suche schlicht nicht erreichbar, welche genau hing an der alphabetischen
-	// Reihenfolge der Klassennamen. Für den Benutzer sah das nach Zufall aus.
-	//
-	// Nebeneffekt, der den Ausschlag gab: Die Serversuche ist dieselbe wie an der Theke
-	// (suchnorm) — "Muller" findet Müller, "Hoffmann Lena" dasselbe wie "Lena Hoffmann".
-	// Der Browser-Filter konnte beides nicht.
-	let sucheLaeuft = $state(false);
-	/** @type {ReturnType<typeof setTimeout> | undefined} */
-	let sucheTimer;
-	/** Muss zu ListStudentsWithStatsLimit im Backend passen: Erreicht die ungefilterte
-	 *  Liste diese Länge, ist sie gekappt und die Ansicht sagt das auch. */
-	const LISTEN_GRENZE = 500;
 
 	// Markierte Schüler für den Ausweis-Stapeldruck. Set statt Array: Das Ankreuzen
 	// fragt bei jeder Zeile "ist die dabei?" — das ist der Zugriff, den ein Set kann.
@@ -53,7 +35,18 @@
 	// .add()/.delete() lösten kein Neuzeichnen aus, und die Haken blieben beim Klicken
 	// stehen. SvelteSet macht die Mitgliedschaft selbst reaktiv.
 	const auswahl = new SvelteSet();
-	const markierte = $derived(students.filter((/** @type {any} */ s) => auswahl.has(s.id)));
+
+	// Serversuche & Laden der Liste liegen in schuelerSuche.svelte.js (Größen-Ratsche);
+	// die erste Ladung stößt das Modul selbst an. Der Rückruf läuft nach dem Sprung aus
+	// dem Druck-Center („Klassenweise drucken"): Die Klasse ist dann gesucht und
+	// geladen, hier werden die Treffer markiert.
+	const suche = erzeugeSchuelerSuche(() => {
+		activeTab = 'active';
+		auswahl.clear();
+		for (const s of suche.students) auswahl.add(s.id);
+	});
+
+	const markierte = $derived(suche.students.filter((/** @type {any} */ s) => auswahl.has(s.id)));
 	// Karten ohne ableitbares Ablaufjahr würden "31.07.–" tragen. Der Balken sagt das
 	// VOR dem Druck, nicht der fertige Stapel hinterher.
 	const ohneDatum = $derived(
@@ -68,40 +61,16 @@
 	function toggleAlle() {
 		// Bezugsgröße ist die ANGEZEIGTE Liste, nicht der Gesamtbestand: Wer nach "7H"
 		// sucht und "alle" ankreuzt, meint die Treffer vor sich — nicht 875 Schüler.
-		const alle = markierte.length === students.length;
+		const alle = markierte.length === suche.students.length;
 		auswahl.clear();
 		if (!alle) {
-			for (const s of students) auswahl.add(s.id);
+			for (const s of suche.students) auswahl.add(s.id);
 		}
 	}
 
 	// Ausweiskarten oder Klebeetiketten — die Entscheidung steht im zentral
 	// gespeicherten Design, die Wege dahinter sind grundverschieden (ausweisdruck.svelte.js).
 	const druck = erzeugeAusweisdruck();
-
-	async function loadStudents() {
-		loading = true;
-		try {
-			const q = searchQuery.trim();
-			const res = await apiFetch(`/api/schueler${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-			if (res.ok) {
-				students = (await res.json()) || [];
-			}
-		} catch (err) {
-			console.error('Fehler beim Laden des Schülerverzeichnisses:', err);
-		} finally {
-			loading = false;
-			sucheLaeuft = false;
-		}
-	}
-
-	// Tippen wird entprellt, damit nicht jeder Tastendruck eine Abfrage auslöst. 300 ms
-	// wie in der Omnibox — dieselbe Eingabegeschwindigkeit, dieselbe Wartezeit.
-	function sucheAngestossen() {
-		sucheLaeuft = true;
-		clearTimeout(sucheTimer);
-		sucheTimer = setTimeout(loadStudents, 300);
-	}
 
 	async function loadClasses() {
 		try {
@@ -116,14 +85,11 @@
 
 	function handleStudentCreated() {
 		showCreateModal = false;
-		loadStudents();
+		suche.lade();
 		loadClasses(); // Klassenliste aktualisieren
 	}
 
-	onMount(() => {
-		loadStudents();
-		loadClasses();
-	});
+	onMount(loadClasses);
 
 	// Reiter nach Absicht (siehe StudentProfile): Wer hier selbst gesucht hat, will
 	// Stammdaten — Elternkontakt, Adressabgleich, Abgangsjahr. Wer aus Mahnwesen oder
@@ -151,7 +117,7 @@
 				defaultTab={profilReiter}
 				onDeselect={() => {
 					activeStudent = null;
-					loadStudents();
+					suche.lade();
 					profilReiter = 'stammdaten';
 				}}
 			/>
@@ -185,12 +151,12 @@
 			{#if activeTab === 'active'}
 				<div class="w-full no-print animate-fade-in">
 					<StudentDirectoryToolbar
-						bind:searchQuery
+						bind:searchQuery={suche.query}
 						{role}
-						trefferzahl={students.length}
-						suchend={searchQuery.trim().length > 0}
-						gekuerzt={!searchQuery.trim() && students.length >= LISTEN_GRENZE}
-						onsearch={sucheAngestossen}
+						trefferzahl={suche.students.length}
+						suchend={suche.suchend}
+						gekuerzt={suche.gekuerzt}
+						onsearch={() => suche.angestossen()}
 						oncreate={() => (showCreateModal = true)}
 					/>
 
@@ -206,8 +172,8 @@
 
 					<div class="mt-6">
 						<ActiveStudentList
-							filteredStudents={students}
-							loading={loading || sucheLaeuft}
+							filteredStudents={suche.students}
+							loading={suche.beschaeftigt}
 							{auswahl}
 							onToggle={toggle}
 							onToggleAlle={toggleAlle}
@@ -227,7 +193,7 @@
 				<div class="w-full animate-fade-in space-y-6">
 					<DeletedStudentList
 						onRestoreSuccess={() => {
-							loadStudents();
+							suche.lade();
 							loadClasses();
 						}}
 					/>
