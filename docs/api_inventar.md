@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-08-23. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-08-24. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -19,9 +19,10 @@
 
 - `/api/`
 - `/api/auth/`
+- `/api/etiketten/formate`
 - `/api/public/`
 
-## Alle registrierten Routen (180)
+## Alle registrierten Routen (181)
 
 - `/`
 - `/api/admin`
@@ -173,6 +174,7 @@
 - `POST /api/mahnwesen/senden`
 - `POST /api/mail/send-bulk-overdue`
 - `POST /api/print/labels`
+- `POST /api/print/schueler-etiketten`
 - `POST /api/public/bestellung/{token}/bestaetigen`
 - `POST /api/reservierungen/klassensatz`
 - `POST /api/schadensfaelle/{id}/bezahlt`

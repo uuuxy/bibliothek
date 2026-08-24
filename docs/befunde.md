@@ -667,6 +667,57 @@ und die drei begründeten JS-Ausnahmen unten.
 
 ---
 
+## Raster-Durchgang über die Etiketten-Commits (24.08.2026) — zwei Funde, eine neue Frage
+
+Auf Peters Ansage über die 15 Commits des Tages (Ausweisdruck-Fixes, Klebebogen statt
+A4, Rückbau). Der Anlass erfüllt die Regel „nur bei Formwechsel eines Schreibpfads":
+Das zentral gespeicherte Design hat ein neues Vokabular (`printMode: card|etikett`,
+`etikettFormat`) und mit dem Etiketten-PDF eine neue Ausleitung.
+
+### Die Funde (beide sofort, je ein Commit, je rot gesehen)
+
+**1. Wer lädt den geteilten Zustand? (`3fd1a5a5`)** Der Schülerdatei-Druckpfad
+ENTSCHEIDET am zentralen `printMode`, geladen hat ihn dort aber nur
+`StudentBatchPrint` — die Komponente, die das Ergebnis des eigenen Ladens abräumt
+(`{#if !etikettModus}`). Ging nur zufällig gut; die E2E-Spec sah nichts, weil sie den
+Designer zuerst besucht (Grün aus Umgebungsgunst). Beim Fixen die Kehrseite gleich
+mitgefunden: Nachladen bei jedem Mount überschreibt frische, noch nicht fertig
+gespeicherte Designer-Änderungen mit dem alten Serverstand → Sitzungs-Merker, geladen
+wird beim ersten Bedarf.
+
+**2. Der Auto-Save verwarf die letzte Änderung beim Verlassen (`37abcbe0`).** Der
+Effekt-Abbau löscht den Entprell-Timer — beim Tippen ist das die Entprellung, beim
+Verlassen des Designers ging die letzte Änderung verloren („Speichert…" stand noch
+da). Vorbestand seit Bau des Designers; seit dem Umschalter verliert derselbe Abriss
+die Betriebsart des Stapeldrucks. `onDestroy` schickt Ausstehendes jetzt sofort ab.
+Restlücke benannt: Browser-Schließen binnen 800 ms verliert weiterhin (sendBeacon
+nicht gebaut, Randlage).
+
+### Geprüft, kein Befund
+
+Payload↔Struct beidseitig (Request und Design-Blob gepaart) · Spezialwerte
+(Startposition 0→1, leere Klasse lässt Zeile weg, `'a4'`-Altwert wird beim Lesen
+migriert und beim nächsten Speichern getilgt) · privilegiertes Feld (`muster`
+harmlos, IDs statt Namen ist gerade die Absicherung) · stille Fehler (Servertext
+erreicht die Theke, Popup-Block gemeldet, Barcode-Ausfall je Etikett verkraftet) ·
+Zeit (keine Datumsangaben auf dem Etikett) · Lebenszyklus (PDF wird gestreamt, nie
+serverseitig abgelegt; Gelöschte ausgeschlossen, PG-getestet) · Ausleitung (Stufe 1,
+Matrix-Zeile, Grenze 600, keine PII in URL/Dateinamen) · Rückweg (Design-Blob
+round-trip-stabil). Kleinigkeit notiert, nicht angefasst: die `LabelHeight >= 30`-
+Schwelle steht jetzt 6× in zwei Dateien (Bauform der Datei, C-Klasse).
+
+### Die neue Frage — Vorschlag als Nr. 11
+
+**Geteilter Zustand: Wer lädt ihn — und überlebt der Lader das Ergebnis?** Für jeden
+Bildschirm, der zentralen Zustand LIEST: Welcher Code lädt ihn auf diesem Pfad, was
+passiert im Fenster davor, was bei Fehlschlag — und hängt der Lader an einer
+Bedingung, die sein eigenes Ergebnis umlegt? Die zehn bisherigen Fragen sehen auf
+Schreibpfade und Ausgänge; diese sieht auf die Ankunft. Beide heutigen Funde und die
+Ausweis-Design-Persistenz-Historie (localStorage-Sackgasse, Musterstadt-Kopf) sind
+dieselbe Stelle. Wie 9 und 10 ein Urteil, kein Gate.
+
+Stand: 2026-08-24
+
 ## Raster-Durchgang über die Löschwege (23./24.08.2026) — fünf Funde, einer zurückgenommen
 
 Peters Auftrag: „prüfe doch alles am Code … mach es gleich richtig!" Fläche: die neun
