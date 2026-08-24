@@ -120,6 +120,41 @@ func TestSchuelerEtikettOhneKlasseLaesstDieZeileWeg(t *testing.T) {
 	}
 }
 
+func TestSchuelerEtikettKuerztNachBreiteUndVerschontDieKlasse(t *testing.T) {
+	// Gekürzt wird nach gemessener Breite, nicht nach Zeichenzahl. Belegt an zwei
+	// Fällen, die eine Zeichengrenze beide falsch behandelt:
+	//
+	//  1. Ein kurzer Name muss VOLLSTÄNDIG dastehen — auch auf dem kleinen Format,
+	//     wo vorher stur bei 16 Zeichen abgeschnitten wurde.
+	//  2. Die Klasse überlebt die Kürzung. Sie stand auf dem kleinen Format als
+	//     "LIT-A…" da, obwohl rechts Platz frei war; eine halbe Klasse ist wertlos.
+	for _, format := range []string{"zweckform_l4760", "standard_52"} {
+		t.Run(format, func(t *testing.T) {
+			text := erzeugeBogen(t, format, 1, []SchuelerEtikett{
+				{BarcodeID: "S-000300", Vorname: "Amal", Nachname: "Abardouch", Klasse: "LIT-ALT"},
+			})
+			if !strings.Contains(text, "Abardouch, Amal") {
+				t.Error("der kurze Name steht nicht vollständig auf dem Etikett")
+			}
+			if !strings.Contains(text, "LIT-ALT") {
+				t.Error("die Klasse wurde gekürzt, obwohl sie hinpasst")
+			}
+		})
+	}
+
+	// Gegenprobe: Ein Name, der NICHT passt, muss gekürzt werden — sonst liefe er
+	// über den Rand des Klebefelds, und die Breitenmessung waere wirkungslos.
+	lang := erzeugeBogen(t, "standard_52", 1, []SchuelerEtikett{
+		{BarcodeID: "S-000301", Vorname: "Maximiliane-Charlotte", Nachname: "Schneider-Weisshaupt", Klasse: "10R1"},
+	})
+	if strings.Contains(lang, "Schneider-Weisshaupt, Maximiliane-Charlotte") {
+		t.Error("der ueberlange Name wurde nicht gekuerzt")
+	}
+	if !strings.Contains(lang, "10R1") {
+		t.Error("die Klasse fiel der Kuerzung zum Opfer")
+	}
+}
+
 func TestSchuelerEtikettenBogenBrichtNachEinerSeiteUm(t *testing.T) {
 	// zweckform_l4760 fasst 21 Etiketten. Mit Startposition 20 passen genau zwei auf
 	// die erste Seite, der Rest gehört auf die zweite. Die Rechnung dazu steht in

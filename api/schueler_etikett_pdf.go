@@ -92,6 +92,32 @@ func GenerateSchuelerEtikettenPDF(formatID string, startPosition int, etiketten 
 	return pdf, nil
 }
 
+// kuerzeAufBreite kürzt `text`, bis er in `breite` Millimeter passt — gemessen in der
+// GERADE GESETZTEN Schrift, nicht nach Zeichenzahl.
+//
+// Eine Zeichengrenze ist geraten: "Öztürk, Ali" und "MMMMMMMMMMM" sind beide elf Zeichen
+// und über 50 % verschieden breit. Zu klein geschätzt verschenkt man den halben
+// Aufkleber (auf dem kleinen Format stand "LIT-A…", obwohl rechts Platz frei war), zu
+// groß geschätzt läuft der Name über den Rand des Klebefelds — und beides sieht man erst
+// auf dem fertigen Bogen. gofpdf kennt die Zeichenbreiten der gesetzten Schrift.
+//
+// `messbar` bringt den Text in die Form, die auch gedruckt wird (Zeichenersetzung +
+// cp1252): Gemessen werden muss dasselbe, was hinterher auf dem Papier steht.
+func kuerzeAufBreite(pdf *gofpdf.Fpdf, messbar func(string) string, text string, breite float64) string {
+	if pdf.GetStringWidth(messbar(text)) <= breite {
+		return text
+	}
+	runen := []rune(text)
+	for len(runen) > 1 {
+		runen = runen[:len(runen)-1]
+		gekuerzt := strings.TrimRight(string(runen), " ") + "…"
+		if pdf.GetStringWidth(messbar(gekuerzt)) <= breite {
+			return gekuerzt
+		}
+	}
+	return "…"
+}
+
 // zeichneSchuelerEtikett setzt EIN Etikett: Name, Klasse, Barcode, Nummer.
 //
 // Name und Klasse stehen links am Rand, der Barcode mittig darunter — so, wie der
@@ -106,6 +132,9 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 	// EIN Ort für die Zeichenersetzung: Jede Zeichenkette, die auf das Papier geht,
 	// läuft hier durch. Ein zweiter Aufrufpfad, der sie vergisst, druckt wieder Punkte.
 	druck := func(text string) string { return tr(cp1252Ersatz.Replace(text)) }
+	kuerze := func(text string, breite float64) string {
+		return kuerzeAufBreite(pdf, druck, text, breite)
+	}
 
 	klasse := strings.TrimSpace(e.Klasse)
 	y := pos.Y + 3.0
@@ -113,7 +142,7 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 	if gross {
 		pdf.SetFont("Arial", "B", 10)
 		pdf.SetXY(linkerRand, y)
-		pdf.CellFormat(textbreite, 4.5, druck(kuerzeAufZeichen(e.name(), 26)), "", 0, "L", false, 0, "")
+		pdf.CellFormat(textbreite, 4.5, druck(kuerze(e.name(), textbreite)), "", 0, "L", false, 0, "")
 		y += 5.0
 
 		// Leere Klasse lässt die Zeile weg, statt "Klasse " ins Nichts zu schreiben.
@@ -121,17 +150,20 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 		if klasse != "" {
 			pdf.SetFont("Arial", "", 8)
 			pdf.SetXY(linkerRand, y)
-			pdf.CellFormat(textbreite, 3.5, druck("Klasse "+kuerzeAufZeichen(klasse, 14)), "", 0, "L", false, 0, "")
+			pdf.CellFormat(textbreite, 3.5, druck(kuerze("Klasse "+klasse, textbreite)), "", 0, "L", false, 0, "")
 		}
 		y += 4.5
 	} else {
-		zeile := kuerzeAufZeichen(e.name(), 22)
-		if klasse != "" {
-			zeile = kuerzeAufZeichen(e.name(), 16) + "  " + kuerzeAufZeichen(klasse, 6)
-		}
+		// Kleines Format: keine eigene Klassenzeile, die Klasse rückt hinter den Namen.
+		// Gekürzt wird der NAME — die Klasse ist kurz, und eine halbe Klasse ist wertlos.
 		pdf.SetFont("Arial", "B", 8)
+		zeile := e.name()
+		if klasse != "" {
+			anhang := "  " + klasse
+			zeile = kuerze(e.name(), textbreite-pdf.GetStringWidth(druck(anhang))) + anhang
+		}
 		pdf.SetXY(linkerRand, y)
-		pdf.CellFormat(textbreite, 3.5, druck(zeile), "", 0, "L", false, 0, "")
+		pdf.CellFormat(textbreite, 3.5, druck(kuerze(zeile, textbreite)), "", 0, "L", false, 0, "")
 		y += 4.0
 	}
 
