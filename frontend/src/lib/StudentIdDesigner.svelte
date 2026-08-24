@@ -4,7 +4,7 @@
 	 * Canvas-based ID-card designer — top-level coordinator component.
 	 * Laden/Speichern des Designs steckt in designer/idDesignPersistenz.svelte.js.
 	 */
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { idStore, serializeDesign } from './designer/idDesignerStore.svelte.js';
 	import { erzeugeDesignAblage } from './designer/idDesignPersistenz.svelte.js';
 	import { oeffneEtikettenbogen } from './schuelerEtiketten.js';
@@ -53,13 +53,28 @@
 
 	// Auto-Save (entprellt): jede Design-Änderung wird zentral gespeichert, damit der
 	// Druck-Arbeitsplatz beim nächsten Öffnen exakt denselben Stand lädt.
+	// `ausstehend` hält den letzten noch nicht gespeicherten Stand. Nötig, weil der
+	// Effekt-Abbau den Timer LÖSCHT — beim Tippen ist genau das die Entprellung, beim
+	// Verlassen des Bildschirms verwarf es aber die letzte Änderung: Wer etwas umstellte
+	// und innerhalb der 800 ms weiterklickte, sah noch „Speichert…" — gespeichert wurde
+	// nie, und der nächste Ladevorgang holte den alten Stand zurück (Raster-Fund
+	// 24.08.2026). onDestroy schickt den ausstehenden Stand deshalb sofort ab.
+	/** @type {string | null} */
+	let ausstehend = null;
 	$effect(() => {
 		const body = JSON.stringify(serializeDesign()); // liest reaktiven State → Dependency
 		if (!ablage.geladen) return;
 		clearTimeout(saveTimer);
 		ablage.beginneSpeichern();
-		saveTimer = setTimeout(() => ablage.speichern(body), 800);
+		ausstehend = body;
+		saveTimer = setTimeout(() => {
+			ausstehend = null;
+			ablage.speichern(body);
+		}, 800);
 		return () => clearTimeout(saveTimer);
+	});
+	onDestroy(() => {
+		if (ausstehend !== null) ablage.speichern(ausstehend);
 	});
 
 	async function zuruecksetzen() {
