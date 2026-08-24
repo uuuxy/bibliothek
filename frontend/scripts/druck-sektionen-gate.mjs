@@ -48,6 +48,12 @@ const markup = fs.readFileSync(quelle, 'utf8');
 /** @type {Record<string,string>} */
 const klassen = {};
 for (const [, liste] of markup.matchAll(/class="(print-rendered-output[^"]*)"/g)) {
+	// Nur Zeichen, die in Tailwind-Klassenlisten vorkommen: Die Liste landet unten
+	// wörtlich in der Prüfseite — alles andere wäre Markup-Injektion in das Gate
+	// (CodeQL #22) und ohnehin ein Zeichen, dass der Regex daneben gegriffen hat.
+	if (!/^[-\w :./![\]%]+$/.test(liste)) {
+		abbruch(`Klassenliste mit unerwarteten Zeichen in PrintPreview.svelte: "${liste}"`);
+	}
 	const name = liste.match(/print-section-[a-z0-9-]+/)?.[0];
 	if (name) klassen[name] = liste;
 }
@@ -90,14 +96,20 @@ const server = http.createServer((anfrage, antwort) => {
 		return antwort.end(seite);
 	}
 	try {
+		// In dist/ einsperren (CodeQL #23): Der Server lebt zwar nur Sekunden und nur
+		// auf Loopback, aber ein "/../"-Pfad las sonst beliebige Dateien des Rechners.
+		const ziel = path.resolve(dist, '.' + pfad);
+		if (ziel !== dist && !ziel.startsWith(dist + path.sep)) throw new Error('ausserhalb von dist');
 		antwort.setHeader('Content-Type', 'text/css');
-		antwort.end(fs.readFileSync(path.join(dist, pfad)));
+		antwort.end(fs.readFileSync(ziel));
 	} catch {
 		antwort.statusCode = 404;
 		antwort.end('');
 	}
 });
-await new Promise((fertig) => server.listen(0, fertig));
+// Loopback statt 0.0.0.0: Die Prüfseite geht nur den eigenen Headless-Browser an,
+// nicht das Netzwerk, in dem der Rechner gerade hängt.
+await new Promise((fertig) => server.listen(0, '127.0.0.1', fertig));
 
 // Genau EINE Sektion je Fall — nicht "mindestens die richtige".
 //
