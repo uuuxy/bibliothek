@@ -11,11 +11,58 @@ import (
 //  1. `id = ANY($1)` mit einem []string gegen eine uuid-Spalte. Ob pgx daraus ein
 //     uuid[] macht oder Postgres mit „operator does not exist: uuid = text" abbricht,
 //     entscheidet der Treiber im Zusammenspiel mit dem echten Spaltentyp.
-//  2. Die Sortierung nach Nachname, Vorname. Der Mock liefert zurück, was man ihm
-//     vorlegt — die Reihenfolge wäre damit eine Behauptung über sich selbst.
+//  2. Die Sortierung nach Klasse, Nachname, Vorname. Der Mock liefert zurück, was man
+//     ihm vorlegt — die Reihenfolge wäre damit eine Behauptung über sich selbst.
 //
 // Beides trägt direkt auf einen gedruckten Klebebogen: Die falsche Reihenfolge merkt
 // man erst beim Verteilen, und der Typfehler legt den Druck ganz still lahm (500).
+func TestEtikettenZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
+	// Der eigentliche Grund für die Sortierung. Wer "7" in die Schülerdatei tippt und
+	// alle Treffer markiert, bekommt zwei Klassen auf einen Bogen. Sortiert allein nach
+	// Nachname laufen sie ineinander (gemessen an echten Daten: 7A, 7A, 7A, 7B, 7B, 7B,
+	// 7B, 7B, 7A, …) — und wer klassenweise austeilt, klaubt jedes Etikett einzeln
+	// heraus. Die Klasse gehört deshalb an die erste Stelle der Sortierung.
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	var ids []string
+	for _, f := range []struct{ barcode, vorname, nachname, klasse string }{
+		{"SORT-1", "Anna", "Aal", "7B"},
+		{"SORT-2", "Bert", "Bock", "7A"},
+		{"SORT-3", "Cara", "Cent", "7B"},
+		{"SORT-4", "Dora", "Dill", "7A"},
+	} {
+		var id string
+		if err := pool.QueryRow(ctx,
+			`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+			 VALUES ($1, $2, $3, $4, 2031) RETURNING id`, f.barcode, f.vorname, f.nachname, f.klasse).Scan(&id); err != nil {
+			t.Fatalf("Schüler %s anlegen: %v", f.barcode, err)
+		}
+		ids = append(ids, id)
+	}
+
+	zeilen, err := NewStudentRepository(pool).EtikettenZeilen(ctx, ids)
+	if err != nil {
+		t.Fatalf("EtikettenZeilen: %v", err)
+	}
+
+	var folge []string
+	for _, z := range zeilen {
+		folge = append(folge, z.Klasse+"/"+z.Nachname)
+	}
+	// Erst die ganze 7A, dann die ganze 7B — innerhalb der Klasse nach Nachname.
+	erwartet := []string{"7A/Bock", "7A/Dill", "7B/Aal", "7B/Cent"}
+	if len(folge) != len(erwartet) {
+		t.Fatalf("erwartet %v, bekommen %v", erwartet, folge)
+	}
+	for i := range erwartet {
+		if folge[i] != erwartet[i] {
+			t.Fatalf("Reihenfolge falsch: erwartet %v, bekommen %v", erwartet, folge)
+		}
+	}
+}
+
 func TestEtikettenZeilen_SortiertUndNurLebende(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
