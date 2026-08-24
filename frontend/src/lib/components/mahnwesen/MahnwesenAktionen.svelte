@@ -92,10 +92,12 @@
 
 	<MahnwesenDruckMenue />
 
-	<!-- „Alle anmahnen" ist die EINZIGE echte E-Mail-Aktion → nur hier das Umschlag-Icon. -->
+	<!-- „Alle anmahnen" ist die EINZIGE echte E-Mail-Aktion → nur hier das Umschlag-Icon.
+	     Getönt statt gefüllt (M3: EIN gefüllter Knopf je Bereich — das ist „Mahnbriefe");
+	     bis 24.08.2026 standen zwei gefüllte nebeneinander, blau und rot. -->
 	{#if countAlle > 0}
 		<Button
-			variant="danger-solid"
+			variant="danger"
 			onclick={() => onMahnlauf()}
 			aria-label="Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden"
 			class="shrink-0"
