@@ -43,7 +43,6 @@ const BESTAND = {
 	'src/lib/StatsDashboard.svelte': 391,
 	'src/lib/StudentDirectory.svelte': 264,
 	'src/lib/StudentEditSheet.svelte': 226,
-	'src/lib/StudentIdDesigner.svelte': 223,
 	'src/lib/StudentProfile.svelte': 258,
 	'src/lib/StudentProfileActions.svelte': 244,
 	'src/lib/StudentProfileCard.svelte': 222,
