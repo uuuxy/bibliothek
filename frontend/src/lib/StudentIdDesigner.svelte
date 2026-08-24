@@ -19,7 +19,6 @@
 
 	let selectedId = $state(/** @type {string|null} */ (null));
 	let side = $state(/** @type {"front"|"back"} */ ('front'));
-	let printMode = $state(/** @type {"card"|"a4"} */ ('card'));
 	let zoom = $state(150);
 	// Cache-Buster für die Barcode-Bilder des Testdrucks.
 	let timestamp = $state(Date.now());
@@ -144,7 +143,7 @@
 
 	function triggerPrint() {
 		const style = document.createElement('style');
-		if (printMode === 'a4') {
+		if (idStore.printMode === 'a4') {
 			style.textContent = '@media print { @page { size: A4; margin: 0; } }';
 			document.body.setAttribute('data-print-mode', 'a4');
 		} else {
@@ -178,6 +177,7 @@
 		</button>
 	</div>
 
+	<!-- printMode zentral aus idStore, nicht lokal — Begruendung in StudentBatchPrint.svelte -->
 	<Toolbar
 		{zoom}
 		onZoom={(v) => {
@@ -188,9 +188,9 @@
 			side = s;
 			selectedId = null;
 		}}
-		{printMode}
+		printMode={idStore.printMode}
 		onPrintMode={(m) => {
-			printMode = m;
+			idStore.printMode = m;
 		}}
 		onPrint={triggerPrint}
 		barcodeType={idStore.barcodeType}
