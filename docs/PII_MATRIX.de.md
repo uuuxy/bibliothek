@@ -209,6 +209,7 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `/api/books` | inventur-Mux | 0 | Delegation, Schutz im Inventur-Mux |
 | `/api/books/` | inventur-Mux | 0 | Delegation |
 | `/api/class-books` | inventur-Mux | 0 | Delegation |
+| `/api/portal/` | inventur-Mux | 0 | Delegation (Lehrerportal-Lesesichten, Schutz im Inventur-Mux) |
 | `/api/lookup/` | inventur-Mux | 0 | Delegation |
 | `/api/admin` | inventur-Mux | 0 | Redirect in den Inventur-Mux |
 | `/api/admin/` | inventur-Mux | 0 | Delegation (Spezialrouten oben gewinnen) |
@@ -237,6 +238,8 @@ ausschließlich hinter `view_students`/`manage_users`.
 | `GET /api/books/{id}` | inventur:view_books | 0 | Einzelbuch |
 | `GET /api/class-books` | inventur:view_books | 0 | Klassen-Buchlisten (Klassenname als Etikett) |
 | `GET /api/lookup/` | inventur:view_books | 0 | externe ISBN-Metadaten |
+| `GET /api/portal/lernmittel` | Sitzung | 0 | Buchliste mit Verfügbar-Zähler fürs Lehrerportal — dieselbe Antwort wie `GET /api/books`, kein Ausleiher, keine Schülerdaten |
+| `GET /api/portal/klassensaetze` | Sitzung | 0 | Klassen-Buchlisten fürs Lehrerportal (Klassenname als Etikett, keine Schüler) |
 | `GET /api/admin/` | inventur:edit_books | 0 | Export/Cover/Listen ohne Ausleiher |
 | `POST /api/admin/` | inventur:edit_books | 0 | Buch-/Listen-Anlage |
 | `PUT /api/admin/` | inventur:edit_books | 0 | Buch-/Listen-Update |

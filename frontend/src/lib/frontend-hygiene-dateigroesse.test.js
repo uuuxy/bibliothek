@@ -34,7 +34,6 @@ const BESTAND = {
 	'src/lib/BestellBestaetigung.svelte': 254,
 	'src/lib/BestellWorkspace.svelte': 306,
 	'src/lib/BorrowedBooksList.svelte': 291,
-	'src/lib/KollegiumPortal.svelte': 288,
 	'src/lib/MailTemplates.svelte': 205,
 	'src/lib/Monitor.svelte': 222,
 	'src/lib/Omnibox.svelte': 298,

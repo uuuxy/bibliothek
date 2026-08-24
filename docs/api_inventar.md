@@ -22,7 +22,7 @@
 - `/api/etiketten/formate`
 - `/api/public/`
 
-## Alle registrierten Routen (181)
+## Alle registrierten Routen (184)
 
 - `/`
 - `/api/admin`
@@ -31,6 +31,7 @@
 - `/api/books/`
 - `/api/class-books`
 - `/api/lookup/`
+- `/api/portal/`
 - `/favicon.ico`
 - `/uploads/`
 - `DELETE /api/admin/`
@@ -97,6 +98,8 @@
 - `GET /api/mahnwesen/ueberfaellig_jahrgang`
 - `GET /api/mail-templates`
 - `GET /api/monitor/slides`
+- `GET /api/portal/klassensaetze`
+- `GET /api/portal/lernmittel`
 - `GET /api/print/etikett/{id}`
 - `GET /api/print/kontoauszug/{schueler_id}`
 - `GET /api/print/mahnung/klasse/{klasse}`

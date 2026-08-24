@@ -120,16 +120,18 @@ func (s *Server) registerInventurSubmoduleRoutes(mux *http.ServeMux) {
 	invMeta := inventur.NeuerMetadatenClient()
 
 	invHandler := inventur.NewAPIHandler(inventur.APIHandlerConfig{
-		Repo:             invRepo,
-		Metadaten:        invMeta,
-		RequireViewBooks: s.RequirePermission("view_books"),
-		RequireEditBooks: s.RequirePermission("edit_books"),
+		Repo:                 invRepo,
+		Metadaten:            invMeta,
+		RequireViewBooks:     s.RequirePermission("view_books"),
+		RequireEditBooks:     s.RequirePermission("edit_books"),
+		RequireAuthenticated: s.RequireAuthenticated(),
 	})
 
 	// Mount Inventur routes
 	mux.Handle("/api/books", invHandler)
 	mux.Handle("/api/books/", invHandler)
 	mux.Handle("/api/class-books", invHandler)
+	mux.Handle("/api/portal/", invHandler)
 	mux.Handle("/api/lookup/", invHandler)
 	mux.Handle("/api/admin", invHandler)
 	mux.Handle("/api/admin/", invHandler)

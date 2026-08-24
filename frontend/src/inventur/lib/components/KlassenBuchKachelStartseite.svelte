@@ -138,16 +138,16 @@
 	}
 </script>
 
-<!-- Anklickbare Kachel: Rolle, Fokus und Tastaturweg, damit sie nicht nur mit der Maus
-     erreichbar ist.
-
-     Ohne feste Breite: "snap-start shrink-0 w-40" stammte aus dem Karussell und hielt die
-     Kachel auf 160 px, egal wie viel Platz da war. Im Raster bestimmt jetzt die Spalte die
-     Breite — wie bei der Schwesterkachel unter Verwaltung → Schulklassen. -->
+<!-- Anklickbare Kachel — ohne onclick (Nur-Lese im Lehrerportal) bewusst ohne Rolle,
+     Fokus und Zeiger (tote Tür); das ignore: Rolle und tabindex hängen GEMEINSAM an
+     onclick, statisch sieht der Compiler das nicht. w-40 stammte aus dem Karussell. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-	class="group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-white rounded-xl p-2.5 border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md flex flex-col justify-between"
-	role="button"
-	tabindex="0"
+	class="group transition-all duration-300 bg-white rounded-xl p-2.5 border border-slate-200 shadow-sm flex flex-col justify-between {onclick
+		? 'cursor-pointer hover:scale-[1.02] hover:-translate-y-1 hover:border-blue-300 hover:shadow-md'
+		: ''}"
+	role={onclick ? 'button' : undefined}
+	tabindex={onclick ? 0 : undefined}
 	{onclick}
 	onkeydown={(e) => {
 		if (e.target !== e.currentTarget) return;

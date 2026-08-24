@@ -20,10 +20,11 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 	metadatenClient := &MetadatenClient{httpClient: &http.Client{}}
 
 	handler := NewAPIHandler(APIHandlerConfig{
-		Repo:             repo,
-		Metadaten:        metadatenClient,
-		RequireViewBooks: func(h http.Handler) http.Handler { return h },
-		RequireEditBooks: func(h http.Handler) http.Handler { return h },
+		Repo:                 repo,
+		Metadaten:            metadatenClient,
+		RequireViewBooks:     func(h http.Handler) http.Handler { return h },
+		RequireEditBooks:     func(h http.Handler) http.Handler { return h },
+		RequireAuthenticated: func(h http.Handler) http.Handler { return h },
 	})
 
 	tests := []struct {

@@ -44,6 +44,9 @@ type APIHandlerConfig struct {
 	Metadaten        *MetadatenClient
 	RequireViewBooks func(http.Handler) http.Handler
 	RequireEditBooks func(http.Handler) http.Handler
+	// RequireAuthenticated verlangt eine gültige Sitzung, aber kein Fachrecht —
+	// für die Nur-Lese-Sichten des Lehrerportals (siehe Portal-Routen unten).
+	RequireAuthenticated func(http.Handler) http.Handler
 }
 
 // APIHandler bündelt die Endpunkte des Inventur-Moduls.
@@ -76,6 +79,15 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	handler.mux.Handle("GET /api/books/{id}", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuchLesen)))
 	handler.mux.Handle("GET /api/class-books", config.RequireViewBooks(http.HandlerFunc(handler.handleClassBooks)))
 	handler.mux.Handle("GET /api/lookup/", config.RequireViewBooks(http.HandlerFunc(handler.handleLookup)))
+
+	// Lehrerportal (Betreiber-Entscheidung 24.08.2026): Das Kollegium sieht Bestand
+	// und Mengen der Lernmittel sowie die Klassensatz-Zuordnung — hinter der
+	// Anmeldung, aber OHNE view_books: Das Recht würde der Rolle auch den ganzen
+	// Medienkatalog im Menü öffnen. Beide Antworten enthalten ausschließlich
+	// Buch- und Zähldaten, keine Ausleih- oder Personendaten (dieselben Handler
+	// wie /api/books und /api/class-books, nur eine andere Tür).
+	handler.mux.Handle("GET /api/portal/lernmittel", config.RequireAuthenticated(http.HandlerFunc(handler.BearbeiteBuecherListe)))
+	handler.mux.Handle("GET /api/portal/klassensaetze", config.RequireAuthenticated(http.HandlerFunc(handler.handleClassBooks)))
 
 	// Schreibend: RBAC-Permission edit_books (injiziert aus api/router.go)
 	adminH := config.RequireEditBooks(http.HandlerFunc(handler.handleAdminBooks))

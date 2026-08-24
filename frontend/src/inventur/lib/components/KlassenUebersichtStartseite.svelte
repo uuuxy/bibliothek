@@ -5,13 +5,15 @@
 	import Button from '../../../lib/components/ui/Button.svelte';
 
 	/**
+	 * onBookClick ist optional: Das Lehrerportal zeigt dieselben Gruppen als reine
+	 * Lese-Sicht — ohne Klickziel bleiben die Kacheln dort auch keins.
 	 * @type {{
 	 *   filteredClasses: any[],
 	 *   getStockColor: (stock: number) => string,
-	 *   onBookClick: (book: any) => void
+	 *   onBookClick?: (book: any) => void
 	 * }}
 	 */
-	let { filteredClasses, getStockColor, onBookClick } = $props();
+	let { filteredClasses, getStockColor, onBookClick = undefined } = $props();
 
 	// Immer nur ein Jahrgang offen — wie unter Verwaltung → Schulklassen. Die Wahl
 	// ueberlebt einen Filterwechsel absichtlich: Wer den Filter wieder leert, findet
@@ -97,7 +99,11 @@
 				class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pt-1 pb-6"
 			>
 				{#each sortBooks(cls.books).slice(0, anzeigeLimit) as book (book.id)}
-					<KlassenBuchKachelStartseite {book} {getStockColor} onclick={() => onBookClick(book)} />
+					<KlassenBuchKachelStartseite
+						{book}
+						{getStockColor}
+						onclick={onBookClick ? () => onBookClick(book) : undefined}
+					/>
 				{/each}
 			</div>
 			{#if cls.books.length > anzeigeLimit}

@@ -104,6 +104,13 @@ func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			})
 		},
+		RequireAuthenticated: func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("X-Middleware", "Authenticated")
+				// We don't call next.ServeHTTP because repo is nil and the underlying handler would panic
+				w.WriteHeader(http.StatusOK)
+			})
+		},
 	}
 
 	handler := NewAPIHandler(config)

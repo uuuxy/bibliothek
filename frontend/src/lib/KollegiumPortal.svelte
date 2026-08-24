@@ -7,7 +7,9 @@
 	import AnliegenWidget from './components/portal/AnliegenWidget.svelte';
 	import PortalTrefferkarte from './components/portal/PortalTrefferkarte.svelte';
 	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
+	import PortalLernmittel from './components/portal/PortalLernmittel.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
+	import { erzeugeKlassensatzReservierung } from './components/portal/klassensatzReservierung.svelte.js';
 	/** @type {{ user: any }} */
 	let { user } = $props();
 
@@ -36,11 +38,6 @@
 	let searchQuery = $state('');
 	let searchResults = $state.raw(/** @type {any[]} */ ([]));
 	let isSearching = $state(false);
-
-	// Per-book form state
-	let reservierungForms = $state(
-		/** @type {Record<string, { open: boolean, klasse: string, anzahl: number, notiz: string, loading: boolean, success: string|null, error: string|null, idempotencyKey: string|null }>} */ ({})
-	);
 
 	let searchTimeout = /** @type {any} */ (null);
 
@@ -76,6 +73,13 @@
 		return offeneReservierungen.filter((o) => o.titel_id === titelId);
 	}
 
+	// Formular-Zustand und Absenden je Titel — ausgelagert, Begründung dort.
+	const reservierung = erzeugeKlassensatzReservierung(
+		() => user,
+		warteschlangeFuer,
+		ladeOffeneReservierungen
+	);
+
 	$effect(() => {
 		const q = searchQuery;
 		clearTimeout(searchTimeout);
@@ -106,116 +110,6 @@
 		}, 300);
 		return () => clearTimeout(searchTimeout);
 	});
-
-	/**
-	 * Legt das Formular-Objekt für einen Titel an, falls es fehlt.
-	 * Darf NUR aus Event-Handlern/asynchronem Code aufgerufen werden —
-	 * eine Zuweisung an $state während des Template-Renderns wirft in
-	 * Svelte 5 `state_unsafe_mutation` und bricht das Rendern der
-	 * Suchtreffer komplett ab (so konnten Lehrkräfte real nicht suchen).
-	 * @param {string} titelId
-	 */
-	function ensureForm(titelId) {
-		if (!reservierungForms[titelId]) {
-			reservierungForms[titelId] = {
-				open: false,
-				klasse: user?.klasse ?? '',
-				anzahl: 1,
-				notiz: '',
-				loading: false,
-				success: null,
-				error: null,
-				idempotencyKey: /** @type {string | null} */ (null)
-			};
-		}
-		return reservierungForms[titelId];
-	}
-
-	/**
-	 * Reine Lese-Sicht fürs Template — mutiert nie.
-	 * @param {string} titelId
-	 */
-	function getForm(titelId) {
-		return (
-			reservierungForms[titelId] ?? {
-				open: false,
-				klasse: user?.klasse ?? '',
-				anzahl: 1,
-				notiz: '',
-				loading: false,
-				success: null,
-				error: null,
-				idempotencyKey: /** @type {string | null} */ (null)
-			}
-		);
-	}
-
-	/**
-	 * @param {string} titelId
-	 */
-	function toggleForm(titelId) {
-		const f = ensureForm(titelId);
-		f.open = !f.open;
-		f.success = null;
-		f.error = null;
-	}
-
-	/**
-	 * @param {string} titelId
-	 */
-	async function submitReservierung(titelId) {
-		const f = ensureForm(titelId);
-		if (f.loading) return; // Doppelklick abfangen, bevor die Anfrage überhaupt rausgeht
-		if (!f.klasse.trim()) {
-			f.error = 'Bitte Klasse angeben.';
-			return;
-		}
-		f.loading = true;
-		f.error = null;
-		f.success = null;
-		// Idempotenz-Schlüssel pro Absende-Vorgang: Überholt ein Doppelklick den loading-
-		// Guard (oder klemmt das Netz und der Client wiederholt), geht DERSELBE Schlüssel
-		// raus — der Server macht daraus ein No-op statt einer zweiten Reservierung/Mail.
-		if (!f.idempotencyKey) f.idempotencyKey = crypto.randomUUID();
-		try {
-			const res = await apiFetch('/api/reservierungen/klassensatz', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					titel_id: titelId,
-					klasse: f.klasse,
-					anzahl: f.anzahl,
-					notiz: f.notiz,
-					idempotency_key: f.idempotencyKey
-				})
-			});
-			if (res.ok) {
-				f.idempotencyKey = null; // erfolgreich → der nächste Vorgang bekommt einen neuen
-				const vorher = warteschlangeFuer(titelId);
-				f.success =
-					vorher.length > 0
-						? `Reservierungsanfrage gesendet — dein Satz ist nach ${vorher.map((o) => o.klasse).join(', ')} an der Reihe.`
-						: 'Reservierungsanfrage wurde gesendet!';
-				f.open = false;
-				ladeOffeneReservierungen();
-			} else {
-				// Die Antwort ist apierrors-JSON ({"error": "nur 2 Exemplare im Bestand …"}) —
-				// roh angezeigt las die Lehrkraft Klammern statt der Meldung.
-				const txt = await res.text();
-				let meldung = txt;
-				try {
-					meldung = JSON.parse(txt).error || txt;
-				} catch {
-					/* Rohtext behalten */
-				}
-				f.error = meldung || 'Fehler beim Senden.';
-			}
-		} catch (e) {
-			f.error = String(e);
-		} finally {
-			f.loading = false;
-		}
-	}
 </script>
 
 <PageShell>
@@ -228,6 +122,7 @@
 		etikett="Portal-Bereiche"
 		reiter={[
 			{ id: 'buecher', label: 'Bücher & Klassensätze' },
+			{ id: 'lernmittel', label: 'Lernmittel' },
 			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: offeneAnliegen }
 		]}
 		aktiv={reiter}
@@ -250,10 +145,10 @@
 					{@const titelId = book.id ?? book.titel_id}
 					<PortalTrefferkarte
 						{book}
-						form={getForm(titelId)}
+						form={reservierung.form(titelId)}
 						warteschlange={warteschlangeFuer(titelId)}
-						ontoggle={() => toggleForm(titelId)}
-						onsenden={() => submitReservierung(titelId)}
+						ontoggle={() => reservierung.toggle(titelId)}
+						onsenden={() => reservierung.senden(titelId)}
 					/>
 				{/each}
 			</div>
@@ -270,6 +165,8 @@
 				onanliegen={() => (reiter = 'anliegen')}
 			/>
 		{/if}
+	{:else if reiter === 'lernmittel'}
+		<PortalLernmittel />
 	{:else}
 		<AnliegenWidget anliegen={eigeneAnliegen} onaktualisiert={ladeAnliegen} />
 	{/if}
