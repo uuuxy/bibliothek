@@ -911,6 +911,15 @@ pg_indexes WHERE indexname IN ('idx_schueler_deleted_at','idx_ausleihen_rueckgab
 | **Login-Handler-Kontext 10 s < IMAP-Frist 15 s** → korrektes, langsames Login scheitert am DB-Lookup, zählt als Fehlversuch (401 + Sperre). Umgekehrt: ≥ 15 s-Tarpit des Mailservers macht jedes falsche Passwort zum 503 ohne Zählung.                                                                    | `auth/handlers.go:127`, `auth/imap.go:192,215-216`, `:264`, `selbstanmeldung.go:118-123`                                                                                     | Handler-ctx an `AuthenticateIMAP` durchreichen, EINE Frist; Klassifikation aus der IMAP-Antwort (NO = Passwort), nicht aus der Zeit; Test mit Mini-IMAP-Listener (sofort NO / verzögert NO) |
 | **Bulk-Mahnmail: SMTP-Hänger je Klasse bis 70 s, Ausfälle zählen als „übersprungen (keine E-Mail hinterlegt)“**, End-Audit mit totem `r.Context()` schweigt.                                                                                                                                               | `api/mail_sender.go:84` (kein ctx), `api/mahnwesen_bulk_mail.go:288,324-327,128,374`                                                                                         | „fehlgeschlagen“ getrennt zählen; Audit mit `context.Background()`+Frist; nach erstem Versandfehler abbrechen                                                                               |
 
+### Kategorie B — Typografie unter der M3-Skala (25.08.2026, gemessen)
+
+Im Browser gemessen über 31 Ansichten: Tabellen-Nebentext (Klasse, Barcode, Datum, Status)
+liegt in 8 Tabellen auf 12 px statt M3 body-medium 14 (~10.000 Zellen); Kennungen auf 11 px;
+`Button size="sm"` = 12 px (M3 kennt keinen); StatusChip 11 px; 25 Stellen mit Gewicht 800/900;
+Reiter in drei Höhen. Vollständiger Bericht mit Reihenfolge und Gate-Vorschlag:
+[`m3_typografie_audit_2026-08-25.md`](m3_typografie_audit_2026-08-25.md).
+Bewusst NICHT Befund: 36-px-Controls, dichte Tabellen.
+
 ### Kategorie B — laut oder ohne Außenwirkung (erledigt bis auf die oben gelisteten Punkte)
 
 | Fund                                                                                                                                                                                                                                                                                                                                                                             | Nachweis                                                                                                                                                                                              |
