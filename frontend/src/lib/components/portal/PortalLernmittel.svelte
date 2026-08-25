@@ -14,18 +14,22 @@
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';
 
-	/** @type {{ bereich: 'klassensaetze' | 'jahrgang' }} */
-	let { bereich } = $props();
 	import KlassenUebersichtStartseite from '../../../inventur/lib/components/KlassenUebersichtStartseite.svelte';
+	import KlassenKarte from '../../../inventur/lib/components/admin/KlassenKarte.svelte';
 	import {
 		buecherNachKlassenGruppieren,
 		bestandsFarbe
 	} from '../../../inventur/lib/startseiten_api.js';
 
+	/** @type {{ bereich: 'klassensaetze' | 'jahrgang' }} */
+	let { bereich } = $props();
+
 	/** @type {any[]} */
 	let buecher = $state.raw([]);
 	/** @type {{ className: string, books: any[] }[]} */
 	let klassensaetze = $state.raw([]);
+	/** Immer nur eine Klasse offen — wie unter Bibliothek → Klassensätze. @type {string|null} */
+	let offeneKlasse = $state(null);
 	let laedt = $state(true);
 
 	const gruppen = $derived(buecherNachKlassenGruppieren(buecher));
@@ -60,35 +64,19 @@
 			{#if klassensaetze.length === 0}
 				<p class="py-4 text-sm text-on-surface-variant">Noch keine Klassensätze zugeordnet.</p>
 			{:else}
-				<div class="mt-2 divide-y divide-outline-variant">
+				<!-- Dieselbe Karte wie unter Bibliothek → Klassensätze, nur lesend (Peter,
+				     25.08.2026: „warum zeigen wir hier nicht einfach die Übersicht der
+				     Klassensätze?"). /api/portal/klassensaetze ist derselbe Handler wie
+				     /api/class-books — die Daten waren schon gleich, nur die Darstellung nicht. -->
+				<div>
 					{#each klassensaetze as gruppe (gruppe.className)}
-						<details class="group py-2">
-							<summary
-								class="flex cursor-pointer list-none items-center gap-3 rounded-lg py-2 text-left"
-							>
-								<span
-									class="bg-secondary-container text-on-secondary-container flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full px-2 text-xs font-bold tabular-nums"
-									>{gruppe.books.length}</span
-								>
-								<span class="text-sm font-semibold text-on-surface">Klasse {gruppe.className}</span>
-							</summary>
-							<ul class="divide-y divide-outline-variant pl-9">
-								{#each gruppe.books as buch (buch.id)}
-									<li class="flex items-baseline justify-between gap-4 py-2">
-										<span class="min-w-0">
-											<span class="text-sm text-on-surface">{buch.title}</span>
-											{#if buch.subject}
-												<span class="text-xs text-on-surface-variant"> · {buch.subject}</span>
-											{/if}
-										</span>
-										<span
-											class="shrink-0 text-xs font-semibold tabular-nums text-on-surface-variant"
-											>{buch.verfuegbar}/{buch.gesamt} verfügbar</span
-										>
-									</li>
-								{/each}
-							</ul>
-						</details>
+						<KlassenKarte
+							group={gruppe}
+							kompakt
+							offen={offeneKlasse === gruppe.className}
+							onToggle={() =>
+								(offeneKlasse = offeneKlasse === gruppe.className ? null : gruppe.className)}
+						/>
 					{/each}
 				</div>
 			{/if}

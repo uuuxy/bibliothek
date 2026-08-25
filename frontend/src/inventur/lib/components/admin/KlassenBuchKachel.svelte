@@ -1,5 +1,6 @@
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
+	import { getSubjectGradient, getSpineGradient } from '../../bookHelpers.js';
 	import { Pencil } from '@lucide/svelte';
 
 	/**
@@ -15,10 +16,13 @@
 	 *     stock: number,
 	 *     coverUrl: string
 	 *   },
-	 *   onEdit: (book: any) => void
+	 *   onEdit?: (book: any) => void,
+	 *   bearbeitbar?: boolean
 	 * }}
+	 * bearbeitbar=false: reine Ansicht (Kollegiums-Portal, 25.08.2026). Ohne den Schalter
+	 * wäre jede Kachel dort ein Knopf „Bearbeiten", hinter dem für die Rolle ein 403 liegt.
 	 */
-	let { book, onEdit } = $props();
+	let { book, onEdit = undefined, bearbeitbar = true } = $props();
 
 	/**
 	 * @param {Event} event
@@ -59,104 +63,12 @@
 			onCoverError();
 		}
 	}
-
-	/**
-	 * @param {string} subject
-	 * @returns {string}
-	 */
-	function getSubjectGradient(subject) {
-		const clean = (subject || '').trim().toLowerCase();
-		if (clean.includes('math')) {
-			return 'bg-linear-to-br from-blue-600 via-indigo-600 to-blue-700 border-blue-400/30';
-		}
-		if (clean.includes('deu')) {
-			return 'bg-linear-to-br from-red-600 via-rose-600 to-red-700 border-red-400/30';
-		}
-		if (
-			clean.includes('eng') ||
-			clean.includes('fra') ||
-			clean.includes('spa') ||
-			clean.includes('lat') ||
-			clean.includes('spr')
-		) {
-			return 'bg-linear-to-br from-violet-600 via-purple-600 to-violet-700 border-purple-400/30';
-		}
-		if (
-			clean.includes('bio') ||
-			clean.includes('che') ||
-			clean.includes('phy') ||
-			clean.includes('nat')
-		) {
-			return 'bg-linear-to-br from-teal-600 via-emerald-600 to-teal-700 border-teal-400/30';
-		}
-		if (
-			clean.includes('ges') ||
-			clean.includes('pol') ||
-			clean.includes('geo') ||
-			clean.includes('erd') ||
-			clean.includes('soz')
-		) {
-			return 'bg-linear-to-br from-amber-600 via-orange-600 to-amber-700 border-amber-400/30';
-		}
-		if (clean.includes('mus') || clean.includes('kun')) {
-			return 'bg-linear-to-br from-pink-600 via-fuchsia-600 to-pink-700 border-pink-400/30';
-		}
-		if (clean.includes('inf')) {
-			return 'bg-linear-to-br from-slate-600 via-slate-700 to-slate-800 border-emerald-400/30';
-		}
-		return 'bg-linear-to-br from-slate-500 via-slate-600 to-slate-700 border-slate-400/30';
-	}
-
-	/**
-	 * @param {string} subject
-	 * @returns {string}
-	 */
-	function getSpineGradient(subject) {
-		const clean = (subject || '').trim().toLowerCase();
-		if (clean.includes('math')) return 'from-blue-300 to-indigo-400';
-		if (clean.includes('deu')) return 'from-red-300 to-rose-400';
-		if (
-			clean.includes('eng') ||
-			clean.includes('fra') ||
-			clean.includes('spa') ||
-			clean.includes('lat') ||
-			clean.includes('spr')
-		)
-			return 'from-violet-300 to-fuchsia-400';
-		if (
-			clean.includes('bio') ||
-			clean.includes('che') ||
-			clean.includes('phy') ||
-			clean.includes('nat')
-		)
-			return 'from-teal-300 to-emerald-400';
-		if (
-			clean.includes('ges') ||
-			clean.includes('pol') ||
-			clean.includes('geo') ||
-			clean.includes('erd') ||
-			clean.includes('soz')
-		)
-			return 'from-amber-300 to-orange-400';
-		if (clean.includes('mus') || clean.includes('kun')) return 'from-pink-300 to-fuchsia-400';
-		if (clean.includes('inf')) return 'from-emerald-300 to-teal-400';
-		return 'from-slate-400 to-slate-500';
-	}
 </script>
 
-<div
-	class="group flex cursor-pointer flex-col justify-between rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-md"
-	onclick={handleEditClick}
-	role="button"
-	tabindex="0"
-	onkeydown={(e) => {
-		if (e.target !== e.currentTarget) return;
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			handleEditClick(e);
-		}
-	}}
->
+<!-- Zwei Hüllen, ein Inhalt: Die Rolle „button" muss für svelte-check STATISCH am Element
+     stehen (a11y_no_noninteractive_tabindex) — ein Ausdruck role={…} sähe für den Prüfer
+     wie ein Div mit tabindex aus. Der Inhalt selbst liegt einmal im Snippet. -->
+{#snippet inhalt()}
 	<div
 		class="w-full aspect-2/3 rounded-xl overflow-hidden shadow-sm mb-3 relative bg-slate-50 border border-slate-100 flex items-center justify-center"
 	>
@@ -198,16 +110,18 @@
 		{/if}
 
 		<!-- Hover Overlay -->
-		<div
-			class="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 flex items-center justify-center backdrop-blur-[1px]"
-		>
+		{#if bearbeitbar}
 			<div
-				class="bg-blue-600 text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
+				class="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 flex items-center justify-center backdrop-blur-[1px]"
 			>
-				<Pencil class="w-4 h-4" aria-hidden="true" />
-				<span>Bearbeiten</span>
+				<div
+					class="bg-blue-600 text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
+				>
+					<Pencil class="w-4 h-4" aria-hidden="true" />
+					<span>Bearbeiten</span>
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<div class="absolute bottom-2 right-2 flex flex-col gap-1 items-end z-10">
 			{#if book.track}
@@ -221,8 +135,34 @@
 	</div>
 
 	<h3
-		class="text-xs font-bold text-slate-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors px-1"
+		class="text-xs font-bold text-slate-800 line-clamp-2 leading-tight {bearbeitbar
+			? 'group-hover:text-blue-600'
+			: ''} transition-colors px-1"
 	>
 		{book.title}
 	</h3>
-</div>
+{/snippet}
+
+{#if bearbeitbar}
+	<div
+		class="group flex cursor-pointer flex-col justify-between rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-md"
+		onclick={handleEditClick}
+		role="button"
+		tabindex="0"
+		onkeydown={(e) => {
+			if (e.target !== e.currentTarget) return;
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				handleEditClick(e);
+			}
+		}}
+	>
+		{@render inhalt()}
+	</div>
+{:else}
+	<div
+		class="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm"
+	>
+		{@render inhalt()}
+	</div>
+{/if}

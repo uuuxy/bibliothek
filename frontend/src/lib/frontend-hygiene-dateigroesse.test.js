@@ -23,11 +23,9 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 // Svelte-Komponenten, und nur dafür steht hier ein Gate.
 const BESTAND = {
 	'src/inventur/lib/components/BuchKarte.svelte': 240,
-	'src/inventur/lib/components/KlassenBuchKachelStartseite.svelte': 225,
 	'src/inventur/lib/components/admin/BookTable.svelte': 241,
 	'src/inventur/lib/components/admin/BookTableZeile.svelte': 203,
 	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 221,
-	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte': 228,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 215,
 	'src/inventur/routes/admin/+page.svelte': 211,
 	'src/lib/BestellBestaetigung.svelte': 254,

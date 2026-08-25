@@ -13,11 +13,34 @@
 	 *   offen?: boolean,
 	 *   darfPflegen?: boolean,
 	 *   onToggle: () => void,
-	 *   onEdit: () => void,
-	 *   onDelete: () => void
+	 *   onEdit?: () => void,
+	 *   onDelete?: () => void,
+	 *   kompakt?: boolean
 	 * }}
+	 * kompakt: Listenzeile statt Seitenüberschrift — dieselbe Stufe wie der Nachbar-Reiter
+	 * „Bestand nach Jahrgang" im Kollegiums-Portal (KlassenUebersichtStartseite, 25.08.2026).
+	 * Ohne darfPflegen (Kollegiums-Portal) braucht es keine Aktionen — die Karte ist dann
+	 * dieselbe Ansicht wie unter Bibliothek → Klassensätze, nur lesend.
 	 */
-	let { group, offen = false, darfPflegen = false, onToggle, onEdit, onDelete } = $props();
+	let {
+		group,
+		offen = false,
+		darfPflegen = false,
+		onToggle,
+		onEdit = undefined,
+		onDelete = undefined,
+		kompakt = false
+	} = $props();
+	const zeilenTitel = $derived(
+		kompakt
+			? 'truncate text-base font-medium text-on-surface'
+			: 'truncate font-sans text-2xl font-bold text-slate-800'
+	);
+	const zaehlerChip = $derived(
+		kompakt
+			? 'bg-secondary-container text-on-secondary-container shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums'
+			: 'shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600'
+	);
 
 	let sortedBooks = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
 	const rasterID = $derived(`klassensatz-${group.className.replace(/\s+/g, '-')}`);
@@ -47,15 +70,16 @@
 			class="group flex min-w-0 flex-1 items-center gap-3 rounded-lg py-1 text-left"
 		>
 			<ChevronDown
-				class="h-5 w-5 shrink-0 text-slate-500 transition-transform {offen ? '' : '-rotate-90'}"
+				class="h-5 w-5 shrink-0 text-on-surface-variant transition-transform {offen
+					? ''
+					: '-rotate-90'}"
 				aria-hidden="true"
 			/>
-			<span
-				class="shrink-0 rounded-lg border border-blue-105 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600"
+			<span class={zaehlerChip}
 				>{group.books.length}
 				{group.books.length === 1 ? 'Buch' : 'Bücher'}</span
 			>
-			<span class="truncate font-sans text-2xl font-bold text-slate-800">{group.className}</span>
+			<span class={zeilenTitel}>{group.className}</span>
 		</button>
 
 		<!-- Ohne edit_books bleibt die Karte lesbar und verliert nur die Aktionen. Der
@@ -93,7 +117,7 @@
 		     damit aber das STOEBERN in Bildmaterial, nicht das Pruefen eines Bestands. -->
 		<div id={rasterID} class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pt-1 pb-6">
 			{#each sortedBooks as book (book.id)}
-				<KlassenBuchKachel {book} {onEdit} />
+				<KlassenBuchKachel {book} {onEdit} bearbeitbar={darfPflegen} />
 			{/each}
 		</div>
 	{/if}

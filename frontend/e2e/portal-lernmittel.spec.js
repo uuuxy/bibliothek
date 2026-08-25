@@ -63,23 +63,27 @@ test.describe('Lehrerportal: Lernmittel', () => {
 		// Seit 25.08.2026 zwei Reiter statt eines gestapelten Lernmittel-Reiters.
 		await page.getByRole('tab', { name: 'Klassensätze' }).click();
 
-		// Klassensätze: die Klasse aufklappen, der Titel steht mit Menge darin.
-		await page.getByText(`Klasse ${klasse}`, { exact: true }).click();
-		const zeile = page.locator('li').filter({ hasText: TITEL });
-		await expect(zeile).toBeVisible();
-		await expect(zeile).toContainText('3/3 verfügbar');
+		// Klassensätze: dieselbe Karte wie unter Bibliothek → Klassensätze (25.08.2026),
+		// nur lesend — die Klasse aufklappen, der Titel steht als Cover-Kachel darin,
+		// und KEINE Kachel ist ein Knopf (für die Rolle läge dahinter ein 403).
+		// Ein Titel mit drei Exemplaren ist „1 Buch" — die Zeile zählt Titel, nicht Exemplare.
+		await page.getByRole('button', { name: new RegExp(`(Buch|Bücher)\\s+${klasse}$`) }).click();
+		const kachel = page.locator('h3').filter({ hasText: TITEL });
+		await expect(kachel).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(0);
+		await expect(page.locator('[role="button"]').filter({ has: kachel })).toHaveCount(0);
 
 		// Bestand nach Jahrgang: die Spanne 7–7 wird zur Gruppe „Klasse 7 Gymnasium".
 		await page.getByRole('tab', { name: 'Bestand nach Jahrgang' }).click();
 		const gruppe = page.getByRole('button', { name: /Klasse 7 Gymnasium/ });
 		await expect(gruppe).toBeVisible();
 		await gruppe.click();
-		const kachel = page.locator('h3').filter({ hasText: TITEL });
-		await expect(kachel).toBeVisible();
+		const jahrgangsKachel = page.locator('h3').filter({ hasText: TITEL });
+		await expect(jahrgangsKachel).toBeVisible();
 
 		// Die Mengenangabe der Kachel — nicht nur „irgendwo steht 3/3".
 		await expect(
-			page.locator('div').filter({ has: kachel }).getByText('3/3 Stück').first()
+			page.locator('div').filter({ has: jahrgangsKachel }).getByText('3/3 Stück').first()
 		).toBeVisible();
 	});
 
