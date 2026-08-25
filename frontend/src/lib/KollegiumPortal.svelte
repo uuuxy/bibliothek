@@ -164,11 +164,7 @@
 				hinweis="Versuche es mit einem anderen Titel oder Autor."
 			/>
 		{:else if searchQuery.trim().length === 0}
-			<PortalUeberblick
-				reservierungen={offeneReservierungen}
-				anliegen={eigeneAnliegen}
-				onanliegen={() => (reiter = 'anliegen')}
-			/>
+			<PortalUeberblick reservierungen={offeneReservierungen} />
 		{/if}
 	{:else if reiter === 'klassensaetze' || reiter === 'jahrgang'}
 		<PortalLernmittel bereich={reiter} />

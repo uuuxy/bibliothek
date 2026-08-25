@@ -349,6 +349,13 @@ Posters steht dort jetzt, **was gerade läuft** — die Warteschlange der Klasse
 die eigenen Anliegen · Formularfelder auf `SettingField`. Die Regel im Haus heißt damit:
 **Pille = suchen, Rahmen = eingeben.**
 
+**Nachtrag 25.08.2026 (abends) — Startfläche nur noch Reservierungen.** Mit vier Reitern
+war der Auszug „Deine Anliegen" auf Reiter 1 der Inhalt eines Geschwister-Reiters (M3:
+„each tab contains distinct content"), und „Offene Klassensätze" hieß wie der Reiter
+„Klassensätze", der etwas anderes meint (Zuordnung Klasse → Bücher). Jetzt: ein Wort,
+eine Bedeutung — „Deine Reservierungen"; Überschrift nur bei Einträgen, ein Leerzustand,
+keine Trennlinie. Peters Frage: „sollte unter den oberen Reitern … liegen?"
+
 **Nachtrag 25.08.2026 — vier Reiter statt zwei.** Der dritte Reiter „Lernmittel" (Klassensätze
 und Bestand nach Jahrgang gestapelt, mit eigenen Überschriften) sah am Live-Bildschirm
 „hingeklatscht" aus, und „Bücher & Klassensätze" hieß fast so wie der Abschnitt darin.
