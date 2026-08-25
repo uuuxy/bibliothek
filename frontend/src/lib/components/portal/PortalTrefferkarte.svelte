@@ -7,7 +7,7 @@
 	 * Aus KollegiumPortal.svelte herausgelöst (23.08.2026): Die Datei trug 389 Zeilen,
 	 * davon 150 diese eine Karte. Die stehende Vorgabe im Haus sind 200 Zeilen je Datei.
 	 *
-	 * Die Formularfelder sind SettingField wie überall sonst — Rahmen statt Füllung,
+	 * Die Formularfelder sind Feld wie überall sonst — Rahmen statt Füllung,
 	 * Beschriftung über dem Feld. Vorher waren es drei handgebaute Felder mit eigener
 	 * Rundung und eigenem Fokusring.
 	 *
@@ -19,7 +19,7 @@
 	 */
 	import { BookOpen } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
-	import SettingField from '../settings/SettingField.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 
 	/** @type {{ book: any, form: any, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void }} */
@@ -110,13 +110,8 @@
 		>
 			<p class="text-sm font-medium text-on-surface">Klassensatz-Reservierung</p>
 			<div class="grid grid-cols-2 gap-4">
-				<SettingField
-					bind:value={form.klasse}
-					label="Klasse *"
-					type="text"
-					placeholder="z. B. 8b"
-				/>
-				<SettingField bind:value={form.anzahl} label="Anzahl" min={1} max={200} />
+				<Feld bind:value={form.klasse} label="Klasse *" type="text" placeholder="z. B. 8b" />
+				<Feld bind:value={form.anzahl} label="Anzahl" min={1} max={200} />
 			</div>
 			<label class="grid gap-y-1.5">
 				<span class="text-sm font-medium text-on-surface-variant">Notiz (optional)</span>

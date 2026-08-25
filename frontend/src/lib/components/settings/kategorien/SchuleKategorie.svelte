@@ -16,7 +16,7 @@
 	 * einer fremden Sektion den Briefkopf löscht. Diese Gefahr besteht nicht mehr,
 	 * und ein falscher Eigentumsvermerk ließ sich damit nie wieder entfernen.
 	 */
-	import SettingField from '../SettingField.svelte';
+	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
 	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
@@ -67,14 +67,14 @@
 	{/snippet}
 
 	<div class="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
-		<SettingField
+		<Feld
 			bind:value={name}
 			label="Name der Schule"
 			type="text"
 			maxlength={120}
 			placeholder="z. B. Städtisches Gymnasium Musterstadt"
 		/>
-		<SettingField
+		<Feld
 			bind:value={eigentumsvermerk}
 			label="Eigentumsvermerk"
 			type="text"
@@ -82,17 +82,17 @@
 			placeholder="z. B. Eigentum des Landes Hessen"
 			hint="Letzte Zeile auf dem Buchetikett. Leer = Vorgabe."
 		/>
-		<SettingField
+		<Feld
 			bind:value={strasse}
 			label="Straße und Hausnummer"
 			type="text"
 			maxlength={120}
 			placeholder="z. B. Musterstraße 12"
 		/>
-		<!-- Reicht die drei Zeilen des Aussenrasters durch (siehe SettingField). -->
+		<!-- Reicht die drei Zeilen des Aussenrasters durch (siehe Feld). -->
 		<div class="row-span-3 grid grid-cols-3 grid-rows-subgrid gap-x-4">
-			<SettingField bind:value={plz} label="PLZ" type="text" maxlength={10} placeholder="12345" />
-			<SettingField
+			<Feld bind:value={plz} label="PLZ" type="text" maxlength={10} placeholder="12345" />
+			<Feld
 				bind:value={ort}
 				label="Ort"
 				type="text"

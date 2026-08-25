@@ -2,7 +2,7 @@
 	import { apiGet, apiPost, apiDelete } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
-	import SettingField from './components/settings/SettingField.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import { Trash2 } from '@lucide/svelte';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
@@ -108,15 +108,10 @@
 	<!-- Neuen Eintrag hinzufügen: flacher Eingabeblock ohne Box -->
 	<div class="flex flex-col md:flex-row items-end gap-4">
 		<div class="w-full md:w-32">
-			<SettingField
-				bind:value={newMappingKlasse}
-				label="Klasse"
-				type="text"
-				placeholder="z.B. 7a"
-			/>
+			<Feld bind:value={newMappingKlasse} label="Klasse" type="text" placeholder="z.B. 7a" />
 		</div>
 		<div class="flex-1 w-full">
-			<SettingField
+			<Feld
 				bind:value={newMappingEmail}
 				label="E-Mail"
 				type="email"

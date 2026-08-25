@@ -3,7 +3,7 @@
 	import { apiGet, apiPut, apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
-	import SettingField from '../settings/SettingField.svelte';
+	import Feld from '../ui/Feld.svelte';
 
 	let loading = $state(true);
 	let saving = $state(false);
@@ -105,26 +105,21 @@
 			</div>
 
 			<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-				<SettingField
-					bind:value={host}
-					label="SMTP Host"
-					type="text"
-					placeholder="smtp.example.com"
-				/>
-				<SettingField bind:value={port} label="SMTP Port" type="text" placeholder="587" />
-				<SettingField
+				<Feld bind:value={host} label="SMTP Host" type="text" placeholder="smtp.example.com" />
+				<Feld bind:value={port} label="SMTP Port" type="text" placeholder="587" />
+				<Feld
 					bind:value={user}
 					label="Benutzername"
 					type="text"
 					placeholder="Benutzername oder E-Mail"
 				/>
-				<SettingField
+				<Feld
 					bind:value={sender}
 					label="Absender-E-Mail"
 					type="email"
 					placeholder="noreply@bibliothek-schule.de"
 				/>
-				<SettingField
+				<Feld
 					bind:value={password}
 					label="Passwort"
 					type="password"
@@ -152,7 +147,7 @@
 
 			<div class="flex flex-col gap-4 sm:flex-row sm:items-end">
 				<div class="w-full sm:w-72">
-					<SettingField
+					<Feld
 						bind:value={testEmail}
 						label="Test-Empfänger"
 						type="email"

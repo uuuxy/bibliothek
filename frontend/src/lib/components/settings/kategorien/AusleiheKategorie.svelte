@@ -6,7 +6,7 @@
 	 * und nicht in einer eigenen Kategorie: Er ist eine Ausnahme von den Fristen
 	 * darüber, keine Sache für sich.
 	 */
-	import SettingField from '../SettingField.svelte';
+	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import Switch from '../../ui/Switch.svelte';
 	import { untrack } from 'svelte';
@@ -67,10 +67,10 @@
 	{/snippet}
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
-		<SettingField bind:value={fristBuch} label="Tage / Buch" min={1} max={365} />
-		<SettingField bind:value={fristMedien} label="Tage / Medien" min={1} max={365} />
-		<SettingField bind:value={maxAusleihen} label="Max. Ausleihen" min={1} max={50} />
-		<SettingField
+		<Feld bind:value={fristBuch} label="Tage / Buch" min={1} max={365} />
+		<Feld bind:value={fristMedien} label="Tage / Medien" min={1} max={365} />
+		<Feld bind:value={maxAusleihen} label="Max. Ausleihen" min={1} max={50} />
+		<Feld
 			bind:value={lmfStichtag}
 			label="LMF-Stichtag (MM-TT)"
 			type="text"
@@ -92,7 +92,7 @@
 		</div>
 		{#if leseclubAktiv}
 			<div class="max-w-xs">
-				<SettingField bind:value={leseclubZieldatum} label="Ferienende" type="date" />
+				<Feld bind:value={leseclubZieldatum} label="Ferienende" type="date" />
 			</div>
 		{/if}
 	</div>

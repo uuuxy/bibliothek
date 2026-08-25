@@ -1,5 +1,5 @@
 <script>
-	import InputField from './components/ui/InputField.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import Snackbar from './components/ui/Snackbar.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { useStudentEditForm } from './useStudentEditForm.svelte.js';
@@ -102,19 +102,9 @@
 			</h3>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-				<InputField
-					id="vorname"
-					label="Vorname"
-					bind:value={formData.vorname}
-					extraClasses="font-semibold"
-				/>
-				<InputField
-					id="nachname"
-					label="Nachname"
-					bind:value={formData.nachname}
-					extraClasses="font-semibold"
-				/>
-				<InputField
+				<Feld id="vorname" label="Vorname" bind:value={formData.vorname} feld="font-semibold" />
+				<Feld id="nachname" label="Nachname" bind:value={formData.nachname} feld="font-semibold" />
+				<Feld
 					id="geburtsdatum"
 					label="Geburtsdatum"
 					type="date"
@@ -123,11 +113,11 @@
 				<!-- LUSD-ID ist kontrolliert nachtragbar: nur setzbar, solange sie leer ist
 				     (Waise adoptieren). Ist sie bereits gesetzt, bleibt sie schreibgeschützt —
 				     der Server lehnt eine Änderung/Leerung ohnehin ab (kontrollierter Pfad). -->
-				<InputField
+				<Feld
 					id="lusd_id"
 					label="LUSD-ID"
 					bind:value={formData.lusd_id}
-					extraClasses="font-mono"
+					feld="font-mono"
 					disabled={!!student.lusd_id}
 					hint={student.lusd_id
 						? 'Bereits mit der LUSD verknüpft — Änderung nur über den Import.'
@@ -144,24 +134,19 @@
 			</h3>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-				<InputField
-					id="klasse"
-					label="Klasse"
-					bind:value={formData.klasse}
-					extraClasses="font-semibold"
-				/>
-				<InputField
+				<Feld id="klasse" label="Klasse" bind:value={formData.klasse} feld="font-semibold" />
+				<Feld
 					id="barcode"
 					label="Schüler-ID / Barcode"
 					bind:value={formData.barcode_id}
-					extraClasses="font-mono"
+					feld="font-mono"
 				/>
-				<InputField
+				<Feld
 					id="abgangsjahr"
 					label="Abgangsjahr"
 					type="number"
 					bind:value={formData.abgaenger_jahr}
-					extraClasses="font-semibold"
+					feld="font-semibold"
 				/>
 
 				<!-- Kein Status-Dropdown: „status" ist ein abgeleiteter Lesewert
@@ -178,45 +163,41 @@
 				Kontaktdaten
 			</h3>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-				<div class="lg:col-span-2 grid grid-cols-4 gap-4">
-					<div class="col-span-3">
-						<InputField
-							id="strasse"
-							label="Straße"
-							bind:value={formData.strasse}
-							placeholder="Musterstraße"
-						/>
-					</div>
-					<div class="col-span-1">
-						<InputField
-							id="hausnummer"
-							label="Nr."
-							bind:value={formData.hausnummer}
-							placeholder="12a"
-						/>
-					</div>
-				</div>
-
-				<InputField
+			<!-- EIN flaches Raster, keine Hülle: Eine <div>-Hülle spannt eine Rasterzeile, das
+			     Feld braucht drei (Subgrid) — es rutscht aus der Reihe (feld-huellen.test.js). -->
+			<div class="grid grid-cols-4 gap-4 md:grid-cols-8">
+				<Feld
+					id="strasse"
+					label="Straße"
+					class="col-span-3"
+					bind:value={formData.strasse}
+					placeholder="Musterstraße"
+				/>
+				<Feld id="hausnummer" label="Nr." bind:value={formData.hausnummer} placeholder="12a" />
+				<Feld
 					id="plz"
 					label="PLZ"
+					class="col-span-2"
 					bind:value={formData.plz}
 					placeholder="12345"
 					maxlength={5}
-					extraClasses="font-mono"
+					feld="font-mono"
 				/>
-				<InputField id="ort" label="Ort" bind:value={formData.ort} placeholder="Musterstadt" />
-
-				<div class="lg:col-span-2">
-					<InputField
-						id="email"
-						label="Eltern E-Mail"
-						type="email"
-						bind:value={formData.eltern_email}
-						placeholder="eltern@schule.de"
-					/>
-				</div>
+				<Feld
+					id="ort"
+					label="Ort"
+					class="col-span-2"
+					bind:value={formData.ort}
+					placeholder="Musterstadt"
+				/>
+				<Feld
+					id="email"
+					label="Eltern E-Mail"
+					class="col-span-4"
+					type="email"
+					bind:value={formData.eltern_email}
+					placeholder="eltern@schule.de"
+				/>
 			</div>
 		</section>
 

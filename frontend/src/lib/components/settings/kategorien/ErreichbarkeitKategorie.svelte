@@ -15,7 +15,7 @@
 	 * „localhost" wäre beim Lieferanten wertlos (Fund vom 17.08.2026: Die Mails gingen
 	 * monatelang ohne den Link raus, um dessentwillen es sie gibt).
 	 */
-	import SettingField from '../SettingField.svelte';
+	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
 	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
@@ -58,7 +58,7 @@
 	{/snippet}
 
 	<div class="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
-		<SettingField
+		<Feld
 			bind:value={adresse}
 			label="Öffentliche Adresse"
 			type="text"
@@ -66,7 +66,7 @@
 			placeholder="https://bibliothek.schule.de"
 			hint="Leer = keine Bestätigungs-Links verschicken."
 		/>
-		<SettingField
+		<Feld
 			bind:value={alarmEmpfaenger}
 			label="Alarm-Empfänger"
 			type="text"

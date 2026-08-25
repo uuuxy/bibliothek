@@ -4,7 +4,7 @@
 	 * Zwei Schalter, die entscheiden, womit das Bestellwesen überhaupt arbeitet: ob
 	 * es Bedarf meldet und ob es mit Geld rechnet.
 	 */
-	import SettingField from '../SettingField.svelte';
+	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import Switch from '../../ui/Switch.svelte';
 	import { untrack } from 'svelte';
@@ -73,7 +73,7 @@
 		</div>
 		{#if warnungAktiv}
 			<div class="max-w-xs">
-				<SettingField
+				<Feld
 					bind:value={schwelle}
 					label="Warnen unter x Exemplaren"
 					min={1}

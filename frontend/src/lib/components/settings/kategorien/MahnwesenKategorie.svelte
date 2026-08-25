@@ -7,7 +7,7 @@
 	 * Deshalb steht sie mit min={0} da, während die Stückzahl bei 1 anfängt — eine
 	 * Sperre ab null Medien wäre eine Sperre für alle.
 	 */
-	import SettingField from '../SettingField.svelte';
+	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
 	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
@@ -50,7 +50,7 @@
 	{/snippet}
 
 	<div class="grid max-w-xl grid-cols-2 gap-x-8 gap-y-6">
-		<SettingField bind:value={tageBisSperre} label="Tage bis Sperre" min={0} max={365} />
-		<SettingField bind:value={abMedien} label="Ab x Medien sperren" min={1} max={50} />
+		<Feld bind:value={tageBisSperre} label="Tage bis Sperre" min={0} max={365} />
+		<Feld bind:value={abMedien} label="Ab x Medien sperren" min={1} max={50} />
 	</div>
 </KategorieRahmen>

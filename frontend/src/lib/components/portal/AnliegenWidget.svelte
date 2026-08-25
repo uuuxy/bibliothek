@@ -9,13 +9,13 @@
      Formular — und weil die Felder dieselbe Pillenform trugen wie die Suche,
      las sich „Welches Buch?" wie ein zweites Suchfeld.
 
-     Die Felder sind deshalb jetzt SettingField (Beschriftung über dem Feld,
+     Die Felder sind deshalb jetzt Feld (Beschriftung über dem Feld,
      Rahmen statt Füllung). Die Regel im Haus: Pille = suchen, Rahmen = eingeben. -->
 <script>
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
-	import SettingField from '../settings/SettingField.svelte';
+	import Feld from '../ui/Feld.svelte';
 
 	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, erstellt_am: string, erledigt_am?: string, erledigt_notiz?: string }} Anliegen */
 
@@ -90,7 +90,7 @@
 			{/each}
 		</div>
 
-		<SettingField
+		<Feld
 			bind:value={titelText}
 			label={art === 'wunsch' ? 'Welches Buch?' : 'Worum geht es?'}
 			type="text"
@@ -100,14 +100,14 @@
 				: 'z. B. 8G3 hat die falschen Bücher bekommen'}
 		/>
 		<div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
-			<SettingField
+			<Feld
 				bind:value={klasse}
 				label="Klasse / Kurs"
 				type="text"
 				maxlength={50}
 				placeholder="z. B. 8G3"
 			/>
-			<SettingField
+			<Feld
 				bind:value={kommentar}
 				label="Anmerkung (optional)"
 				type="text"

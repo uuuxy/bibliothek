@@ -13,7 +13,7 @@
 	 * dagegen keine Angabe und wird gemeldet, statt still als 0 durchzugehen — genau
 	 * dieser stille Weg schaltete am 22.08.2026 die Befristung ab (Prüfung A4).
 	 */
-	import SettingField from '../SettingField.svelte';
+	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
 	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
@@ -100,42 +100,42 @@
 	{/snippet}
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
-		<SettingField
+		<Feld
 			bind:value={lesehistorie}
 			label="Lesehistorie Schülerbücherei (Tage)"
 			min={0}
 			max={3650}
 			hint="Vorgabe 90."
 		/>
-		<SettingField
+		<Feld
 			bind:value={lesehistorieLmf}
 			label="Lesehistorie Lernmittel (Tage)"
 			min={0}
 			max={3650}
 			hint="Vorgabe 730 (zwei Schuljahre)."
 		/>
-		<SettingField
+		<Feld
 			bind:value={anliegen}
 			label="Erledigte Anliegen aufbewahren (Tage)"
 			min={0}
 			max={3650}
 			hint="Vorgabe 365."
 		/>
-		<SettingField
+		<Feld
 			bind:value={auditMonate}
 			label="Prüfprotokoll aufbewahren (Monate)"
 			min={6}
 			max={120}
 			hint="Vorgabe 24. Mindestens 6 — darunter ist nicht mehr nachvollziehbar, wer eine Gebühr storniert oder einen Bestand geändert hat."
 		/>
-		<SettingField
+		<Feld
 			bind:value={thekeLeeren}
 			label="Theke leeren nach (Min.)"
 			min={0}
 			max={1440}
 			hint="Vorgabe 5."
 		/>
-		<SettingField
+		<Feld
 			bind:value={sperre}
 			label="Sperrbildschirm nach (Min.)"
 			min={0}
