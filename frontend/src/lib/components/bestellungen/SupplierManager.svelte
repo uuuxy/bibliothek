@@ -49,12 +49,16 @@
 	}
 </script>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start overflow-y-auto">
-	<div class="space-y-4">
+<!-- Formular und Tabelle UNTEREINANDER: Seit dem Umzug in die Einstellungen (25.08.2026)
+     steht die Maske in der Detail-Spalte neben der Kategorienliste, max-w-4xl. Drei
+     Spalten nebeneinander quetschten dort die Tabelle: Spaltenköpfe stießen zusammen,
+     „Hauptlieferant" wurde abgeschnitten, ein Scrollbalken erschien. -->
+<div class="flex flex-col gap-10">
+	<div class="space-y-4 max-w-md">
 		<h2 class="text-base font-bold text-slate-800 border-b border-slate-200 pb-3">
 			Neuer Lieferant
 		</h2>
-		<form onsubmit={handleSubmit} class="space-y-4 text-base">
+		<form onsubmit={handleSubmit} class="space-y-4 text-sm">
 			<Feld id="n" label="Name" bind:value={newName} required />
 			<Feld id="e" label="E-Mail" type="email" bind:value={newEmail} required />
 			<Feld id="c" label="Kundennummer" bind:value={newCustNum} required />
@@ -92,47 +96,45 @@
 	     schrumpfen nicht unter ihren Inhalt). Gemessen bei 1700 px Fensterbreite: Tabelle
 	     1072 px in einer 909-px-Zelle, "Bearbeiten" landete bei 1760 px — ausserhalb des
 	     Fensters und damit unerreichbar. Die Spalte war da, nur nicht anklickbar. -->
-	<div class="md:col-span-2 space-y-4 min-w-0">
+	<div class="space-y-4 min-w-0">
 		<h2 class="text-base font-bold text-slate-800 border-b border-slate-200 pb-3">
 			Aktive Lieferanten
 		</h2>
 		{#if !suppliers.length}
 			<div class="py-12 text-center text-slate-400 text-base">Keine Lieferanten angelegt.</div>
 		{:else}
+			<!-- Drei Spalten mit je zwei Zeilen (M3-Listenzeile: Headline + Supporting) statt
+			     fünf einzeiligen: Seit dem Umzug in die Einstellungen (25.08.2026) hat die Tabelle
+			     bei 1280 px nur 592 px — fünf Spalten brauchten gemessen 924. Zuerst klebte die
+			     Aktionsspalte und legte sich über „Rolle", dann half auch Kürzen nicht. Zwei
+			     Zeilen je Zelle passen ohne Scrollbalken und lesen sich wie die Kategorienliste
+			     daneben. Name/E-Mail werden gekürzt (Block in der Zelle — max-width auf <td>
+			     ignoriert das Auto-Layout), der volle Text steht im title. -->
 			<div class="overflow-x-auto">
-				<table class="w-full text-left border-collapse text-base">
+				<table class="w-full text-left border-collapse text-sm">
 					<thead>
-						<tr class="border-b border-slate-200 text-sm font-semibold text-slate-500">
-							<th class="py-2.5">Name</th>
-							<th class="py-2.5">E-Mail</th>
-							<th class="py-2.5">Kundennummer</th>
-							<th class="py-2.5">Rolle</th>
-							<!-- Klebt am rechten Rand des Scrollbereichs: Die Tabelle kann breiter werden
-							     als der Platz, den sie bekommt (lange Lieferantennamen). Ohne sticky steht
-							     "Bearbeiten" hinter dem sichtbaren Rand — der Knopf ist dann zwar im DOM,
-							     aber niemand findet ihn (gemessen: rechte Kante 1620 px bei 1280 px
-							     Fenster). -->
-							<th class="py-2.5 text-right sticky right-0 bg-white">Aktionen</th>
+						<tr class="border-b border-slate-200 text-xs font-medium text-slate-500">
+							<th class="py-2.5 pr-4">Lieferant</th>
+							<th class="py-2.5 pr-4">Kontakt</th>
+							<th class="py-2.5 text-right">Aktionen</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-100">
 						{#each suppliers as s (s.id)}
 							{#if editingId === s.id}
-								<tr class="bg-blue-50/60">
-									<td class="py-2 pr-2"><Feld aria-label="Name" bind:value={editName} /></td>
-									<td class="py-2 pr-2"
-										><Feld aria-label="E-Mail" type="email" bind:value={editEmail} /></td
-									>
-									<td class="py-2 pr-2"
-										><Feld aria-label="Kundennummer" bind:value={editCustNum} /></td
-									>
-									<td class="py-2 pr-2">
+								<tr class="bg-blue-50/60 align-top">
+									<td class="py-2 pr-4 space-y-2">
+										<Feld aria-label="Name" bind:value={editName} />
 										<Switch
 											bind:checked={editIstHaupt}
 											label="Hauptlieferant der Schule ({s.name})"
 										/>
 									</td>
-									<td class="py-2 text-right whitespace-nowrap sticky right-0 bg-blue-50">
+									<td class="py-2 pr-4 space-y-2">
+										<Feld aria-label="E-Mail" type="email" bind:value={editEmail} />
+										<Feld aria-label="Kundennummer" bind:value={editCustNum} />
+									</td>
+									<td class="py-2 text-right whitespace-nowrap">
 										<button
 											onclick={saveEdit}
 											class="text-blue-600 hover:text-blue-800 font-bold cursor-pointer text-sm mr-3"
@@ -147,25 +149,29 @@
 								</tr>
 							{:else}
 								<tr class="hover:bg-slate-50/40">
-									<td class="py-3 font-bold text-slate-800">{s.name}</td>
-									<td class="py-3 text-slate-600">{s.email}</td>
-									<td class="py-3 text-slate-600">{s.customerNumber}</td>
-									<!-- Nur die Abweichung wird benannt. „Bestellmail" in jeder Zeile wäre
-								     Rauschen: Es ließe das Auge jede Zeile lesen, um nichts zu erfahren.
-								     Auffallen soll die eine Zeile, die anders ist. -->
-									<td class="py-3">
+									<td class="py-3 pr-4">
+										<span class="block max-w-52 truncate font-bold text-slate-800" title={s.name}
+											>{s.name}</span
+										>
+										<!-- Nur die Abweichung wird benannt: „Bestellmail" in jeder Zeile wäre
+										     Rauschen. Auffallen soll die eine Zeile, die anders ist. -->
 										{#if s.ist_hauptlieferant}
 											<span
-												class="text-sm font-semibold text-slate-700"
+												class="block text-xs font-semibold text-slate-700"
 												data-tip="Vorausgewählt beim Bestellen, bekommt den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst"
+												>Hauptlieferant</span
 											>
-												Hauptlieferant
-											</span>
 										{:else}
-											<span class="text-sm text-slate-400">nur Bestellmail</span>
+											<span class="block text-xs text-slate-400">nur Bestellmail</span>
 										{/if}
 									</td>
-									<td class="py-3 text-right whitespace-nowrap sticky right-0 bg-white">
+									<td class="py-3 pr-4 text-slate-600">
+										<span class="block max-w-60 truncate" title={s.email}>{s.email}</span>
+										<span class="block text-xs text-slate-400 whitespace-nowrap"
+											>Kd.-Nr. {s.customerNumber || '–'}</span
+										>
+									</td>
+									<td class="py-3 text-right whitespace-nowrap">
 										<button
 											onclick={() => startEdit(s)}
 											class="text-slate-500 hover:text-blue-600 cursor-pointer text-sm mr-3"
