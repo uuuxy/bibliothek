@@ -302,6 +302,14 @@ Posters steht dort jetzt, **was gerade läuft** — die Warteschlange der Klasse
 die eigenen Anliegen · Formularfelder auf `SettingField`. Die Regel im Haus heißt damit:
 **Pille = suchen, Rahmen = eingeben.**
 
+**Nachtrag 25.08.2026 — vier Reiter statt zwei.** Der dritte Reiter „Lernmittel" (Klassensätze
+und Bestand nach Jahrgang gestapelt, mit eigenen Überschriften) sah am Live-Bildschirm
+„hingeklatscht" aus, und „Bücher & Klassensätze" hieß fast so wie der Abschnitt darin.
+Jetzt vier gleichrangige Aufgaben: **Suchen & Reservieren · Klassensätze · Bestand nach
+Jahrgang · Meine Anliegen**; der Reiter ist die Überschrift, Beitexte entfallen
+(`a6c99ed3`). Am Rechteumfang ändert das nichts — weiterhin nur `create_reservations`,
+die Lese-Sichten brauchen nur die Anmeldung (`FACHKONZEPT.md`, `4b46f1bd`).
+
 **Vier Dinge kamen beim Bauen dazu:**
 
 - **Reiter waren viermal von Hand gebaut** (Medienkatalog, Bestellwesen, Buch-Akte,

@@ -138,3 +138,6 @@ frontend/coverage/
 # sind Nebenprodukte derselben Generierung und würden bei jedem Lauf Diff-Rauschen erzeugen.
 docs/swagger.json
 docs/swagger.yaml
+
+# Playwright-Ausgabe, wenn aus dem Repo-Root gestartet (frontend/.gitignore greift dort nicht)
+test-results/
