@@ -28,10 +28,11 @@ import {
 import { hatRecht } from '../../menu.js';
 
 /**
- * `rechte`: Eine Kategorie ohne Eintrag sieht jeder, der die Seite öffnen darf
- * (manage_settings am Menüpunkt). Mit Eintrag genügt EINES der genannten Rechte —
- * das der Routen, die die Kategorie tatsächlich aufruft. Bis 24.08.2026 stand hier
- * `nurAdmin`, ein Rollenvergleich, den die Berechtigungsseite nicht erreichte.
+ * `rechte`: EINES der genannten Rechte genügt — das der Routen, die die Kategorie
+ * tatsächlich aufruft. Ohne Eintrag gilt manage_settings (GET/PUT /api/einstellungen).
+ * Bis 24.08.2026 stand hier `nurAdmin`, ein Rollenvergleich, den die Berechtigungsseite
+ * nicht erreichte. Der Menüpunkt „Einstellungen" (menu.js) öffnet sich mit der
+ * Vereinigung aller Rechte hier — sonst gäbe es Rechte ohne Tür.
  * @typedef {{ id: string, titel: string, kurz: string, icon: unknown, rechte?: string[] }} Kategorie
  */
 
@@ -111,5 +112,11 @@ export const KATEGORIEN = [
  * @returns {Kategorie[]} die Kategorien, deren Routen dieser Benutzer aufrufen darf.
  */
 export function sichtbareKategorien(user) {
-	return KATEGORIEN.filter((k) => !k.rechte || k.rechte.some((r) => hatRecht(user, r)));
+	return KATEGORIEN.filter((k) => rechteVon(k).some((r) => hatRecht(user, r)));
 }
+
+/** @param {Kategorie} k */
+export const rechteVon = (k) => k.rechte ?? ['manage_settings'];
+
+/** Alle Rechte, die irgendeine Kategorie öffnen — die Türliste des Menüpunkts. */
+export const ALLE_KATEGORIE_RECHTE = [...new Set(KATEGORIEN.flatMap(rechteVon))];

@@ -62,6 +62,12 @@ func TestMenuepunkteVerlangenBekannteRechte(t *testing.T) {
 	}
 	muster := regexp.MustCompile(`permission:\s*'([a-z_]+)'`)
 	treffer := muster.FindAllStringSubmatch(string(roh), -1)
+	// Sammelpunkte tragen `permissions: [ 'a', 'b', … ]` (seit 24.08.2026, „Einstellungen").
+	sammel := regexp.MustCompile(`(?s)permissions:\s*\[(.*?)\]`)
+	einzel := regexp.MustCompile(`'([a-z_]+)'`)
+	for _, block := range sammel.FindAllStringSubmatch(string(roh), -1) {
+		treffer = append(treffer, einzel.FindAllStringSubmatch(block[1], -1)...)
+	}
 	if len(treffer) == 0 {
 		t.Fatal("kein einziger Menüpunkt mit permission gefunden — der Detektor greift ins Leere")
 	}

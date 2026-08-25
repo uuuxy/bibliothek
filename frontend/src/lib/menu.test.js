@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ALLE_KATEGORIE_RECHTE } from './components/settings/kategorien.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { canSeeItem, erlaubteTabs, menuGroups, tabIstGesperrt } from './menu.js';
@@ -82,22 +83,31 @@ describe('Menü-Sichtbarkeit', () => {
 		).toEqual(['kollegium_portal']);
 	});
 
-	it('öffnet die Einstellungen nur mit manage_settings — manage_users reicht nicht', () => {
-		// Bis 24.08.2026 hing „Einstellungen" an manage_users PLUS roles: ['admin']. Der
-		// Rollen-Pin war der Notnagel für ein zu grobes Recht (Kollegium mit manage_users
-		// sah die Systemeinstellungen). Seit der Aufteilung entscheidet das Recht allein:
-		// Wer manage_settings hat, sieht den Punkt — egal welche Rolle; wer nur
-		// manage_users hat, nicht.
+	it('öffnet die Einstellungen mit jedem Recht, das eine Kategorie darin öffnet', () => {
+		// Bis 24.08.2026 hing „Einstellungen" an manage_users PLUS roles: ['admin'], dann
+		// kurz an manage_settings allein. Beides ließ Rechte ohne Tür zurück: Ein
+		// Mitarbeiter hat ab Werk import_students, sah aber nie den LUSD-Import, weil der
+		// Menüpunkt ein anderes Recht verlangte als die Kategorie dahinter.
 		const settings = allePunkte.find((i) => i.id === 'settings');
 		if (!settings) throw new Error('Menüpunkt settings fehlt — Test läuft ins Leere');
 
 		for (const rolle of ['kollegium', 'mitarbeiter', 'helfer']) {
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_users'] }), rolle).toBe(false);
+			expect(canSeeItem(settings, { rolle, permissions: ['view_students'] }), rolle).toBe(false);
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_settings'] }), rolle).toBe(true);
+			expect(canSeeItem(settings, { rolle, permissions: ['import_students'] }), rolle).toBe(true);
 		}
 		expect(canSeeItem(settings, admin)).toBe(true);
 	});
 
+	it('nennt am Menüpunkt „Einstellungen" genau die Rechte der Kategorien', () => {
+		// Zwei Listen, die dasselbe meinen: die Türliste am Menüpunkt und die Rechte in
+		// kategorien.js. Laufen sie auseinander, gibt es entweder ein Recht ohne Tür
+		// (Kategorie sichtbar, Menüpunkt nicht) oder eine Tür ins Leere.
+		const settings = allePunkte.find((i) => i.id === 'settings');
+		if (!settings) throw new Error('Menüpunkt settings fehlt — Test läuft ins Leere');
+		expect([...(settings.permissions ?? [])].sort()).toEqual([...ALLE_KATEGORIE_RECHTE].sort());
+	});
 	it('hält das Portal von allen anderen Rollen fern', () => {
 		const portal = allePunkte.find((i) => i.id === 'kollegium_portal');
 		// Kein expect(...).toBeTruthy(): Das verengt den Typ nicht, und ohne den Punkt

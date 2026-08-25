@@ -32,7 +32,7 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
 | Name + Geburtsdatum | keine ID, aber ein Datum | sicher genug |
 | **nur Name** | weder ID noch Datum | Namensgleiche werden **nicht** zugeordnet, sondern als „mehrdeutig" gemeldet — Banner erscheint als Warnung |
 
-**Ablauf** (Verwaltung → Datenverwaltung → Schuljahreswechsel):
+**Ablauf** (System → Einstellungen → Schuljahreswechsel):
 
 1. [ ] Datei auswählen → **„Vorschau laden"**. Es wird noch nichts geändert.
 2. [ ] **Banner lesen:** Welche Zuordnungsstufe gilt? Bei „nur Name" ist mit
@@ -69,7 +69,7 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
 ⏰ **Deadline: vor dem Schuljahreswechsel.** Reihenfolge: erst LUSD-Import abnehmen, dann Versetzung —
 oder nur die Versetzung nutzen, wenn kein frischer LUSD-Export vorliegt.
 
-**Ablauf** (Verwaltung → Datenverwaltung → Schuljahreswechsel):
+**Ablauf** (System → Einstellungen → Schuljahreswechsel):
 
 1. [ ] **„Vorschau berechnen"** — der Server rechnet die komplette Versetzung durch und
    verwirft sie wieder (echter Dry-Run). Es wird nichts geändert.

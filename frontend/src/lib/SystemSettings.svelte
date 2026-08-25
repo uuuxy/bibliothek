@@ -42,6 +42,7 @@
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import { sichtbareKategorien } from './components/settings/kategorien.js';
+	import { hatRecht } from './menu.js';
 
 	let loading = $state(true);
 	/** @type {Record<string, any>} */
@@ -50,7 +51,12 @@
 	const kategorien = $derived(sichtbareKategorien(authStore.currentUser));
 	const sichtbar = $derived(new Set(kategorien.map((k) => k.id)));
 
+	// Die erste SICHTBARE Kategorie, nicht fest „schule": Wer nur import_students hat,
+	// sieht Schule/Fristen/Mail gar nicht und stünde sonst vor einer leeren Fläche.
 	let aktiv = $state('schule');
+	$effect(() => {
+		if (!sichtbar.has(aktiv) && kategorien.length > 0) aktiv = kategorien[0].id;
+	});
 	// Auf schmalen Bildschirmen zeigt die Seite entweder die Liste ODER das Detail
 	// (M3 list-detail). Ab lg stehen beide nebeneinander, und dieser Schalter ist
 	// bedeutungslos.
@@ -69,6 +75,10 @@
 	});
 
 	async function loadSettings() {
+		// /api/einstellungen verlangt manage_settings. Ohne das Recht gibt es hier
+		// nichts zu laden — und keinen 403-Toast für eine Seite, die nur LUSD-Import
+		// oder LMF-Aktionen zeigt.
+		if (!hatRecht(authStore.currentUser, 'manage_settings')) return;
 		try {
 			daten = (await apiGet('/api/einstellungen')) ?? {};
 		} catch {

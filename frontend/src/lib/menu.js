@@ -4,6 +4,7 @@
  * @property {string} label
  * @property {string} icon
  * @property {string} [permission]
+ * @property {string[]} [permissions] - EINES davon genügt (Sammelpunkt wie „Einstellungen").
  * @property {string[]} [roles]
  */
 
@@ -60,6 +61,9 @@ export function canSeeItem(item, currentUser) {
 	// Rollenliste war toter Code. Jede Rolle, der ein Admin manage_users erteilt, sah
 	// damit die Systemeinstellungen; auf dem Schulserver traf das die Rolle 'kollegium'.
 	if (item.roles && !item.roles.includes(r)) return false;
+
+	// Sammelpunkt: sichtbar, sobald EINE der genannten Türen dahinter offen ist.
+	if (item.permissions) return item.permissions.some((p) => hatRecht(currentUser, p));
 
 	// Punkte ohne Permission-Anforderung sind allgemeine Theken-Werkzeuge (z. B. Kiosk).
 	if (!item.permission) {
@@ -194,10 +198,24 @@ export const menuGroups = [
 				permission: 'manage_users'
 			},
 			{
+				// Ein Sammelpunkt: Die Kategorien dahinter hängen an verschiedenen Rechten
+				// (kategorien.js) — Schule/Fristen/Mail an manage_settings, LMF-Aktionen an
+				// edit_books, Datenverwaltung an manage_inventory, Schuljahreswechsel an
+				// import_students/manage_students_admin. Bis 24.08.2026 abends öffnete nur
+				// manage_settings die Tür: Ein Mitarbeiter hatte ab Werk import_students und
+				// manage_inventory, kam aber nie an LUSD-Import oder Littera-Import heran —
+				// Rechte ohne Tür. Die Liste hier MUSS die Rechte aus kategorien.js spiegeln
+				// (Gate: menu.test.js).
 				id: 'settings',
 				label: 'Einstellungen',
 				icon: 'cog',
-				permission: 'manage_settings'
+				permissions: [
+					'manage_settings',
+					'edit_books',
+					'manage_inventory',
+					'import_students',
+					'manage_students_admin'
+				]
 			}
 		]
 	},
