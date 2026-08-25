@@ -16,12 +16,12 @@
 // Oberfläche anbietet, das Backend aber still verwirft — Antwort 200, Einstellung weg,
 // niemand merkt es. Belegt wird deshalb an der DATENBANK.
 import { test, expect } from '@playwright/test';
-import { uiLogin, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, querySQL, uniqueSuffix, einstellungsKategorie } from './helpers.js';
 
 /** @param {import('@playwright/test').Page} page */
 async function zuLieferanten(page) {
-	await page.goto('/bestellungen');
-	await page.getByRole('tab', { name: 'Lieferanten verwalten' }).click();
+	await page.goto('/einstellungen');
+	await einstellungsKategorie(page, 'Lieferanten').click();
 	await page.getByRole('heading', { name: 'Neuer Lieferant' }).waitFor();
 }
 

@@ -1,16 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, uniqueSuffix } from './helpers.js';
+import { uiLogin, uniqueSuffix, einstellungsKategorie } from './helpers.js';
 
 // Smoke-Flow Bestellwesen: Lieferant über die UI anlegen → erscheint in der
 // Verwaltung → Berichte-Tab validiert Datumsbereiche (Zeitzonen-Fix-Umfeld).
 test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
 	await uiLogin(page);
 
-	// In den Bestellungen-Workspace
-	await page.getByTitle('Bestellungen').click();
-
-	// Sub-Tab „Lieferanten verwalten"
-	await page.getByRole('tab', { name: 'Lieferanten verwalten' }).click();
+	// Lieferanten sind seit 25.08.2026 eine Einstellungs-Kategorie, kein Reiter mehr.
+	await page.goto('/einstellungen');
+	await einstellungsKategorie(page, 'Lieferanten').click();
 
 	const name = `E2E-Buchhandlung-${uniqueSuffix()}`;
 	await page.locator('#n').fill(name);
@@ -21,7 +19,9 @@ test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
 	// Der neue Lieferant erscheint in der Verwaltung
 	await expect(page.getByText(name)).toBeVisible();
 
-	// Berichte-Tab: Lieferantenabrechnung wählen
+	// Berichte-Tab: Lieferantenabrechnung wählen — zurück in den Workspace, die
+	// Lieferanten wohnen seit dem Umzug in den Einstellungen.
+	await page.goto('/bestellungen');
 	await page.getByRole('tab', { name: 'Berichte' }).click();
 	await page.getByRole('radio').nth(2).check();
 

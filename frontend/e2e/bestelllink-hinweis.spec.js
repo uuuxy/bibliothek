@@ -68,7 +68,7 @@ test('Fehlende öffentliche Adresse: das Bestellwesen sagt es vorher — und sch
 			ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;
 		`);
 		await page.goto('/bestellungen');
-		await page.getByRole('tab', { name: 'Lieferanten verwalten' }).waitFor();
+		await page.getByRole('tab', { name: 'Bestellhistorie' }).waitFor();
 		await expect(hinweis).toHaveCount(0);
 	} finally {
 		adresseZurueck();

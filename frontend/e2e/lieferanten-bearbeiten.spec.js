@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, einstellungsKategorie } from './helpers.js';
 
 // Der "Bearbeiten"-Knopf war da — nur nicht zu sehen.
 //
@@ -33,8 +33,8 @@ test('Lieferanten lassen sich bearbeiten, auch bei langem Namen', async ({ page 
 	});
 	expect(angelegt.ok()).toBe(true);
 
-	await page.goto('/bestellungen');
-	await page.getByRole('tab', { name: 'Lieferanten verwalten' }).click();
+	await page.goto('/einstellungen');
+	await einstellungsKategorie(page, 'Lieferanten').click();
 	await page.getByRole('table').waitFor();
 
 	const sicht = await page.evaluate(() => {

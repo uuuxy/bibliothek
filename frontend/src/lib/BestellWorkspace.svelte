@@ -10,7 +10,6 @@
 	import OrderCreationPanel from './components/bestellungen/OrderCreationPanel.svelte';
 	import WareneingangView from './components/bestellungen/WareneingangView.svelte';
 	import OrderRecommendations from './components/bestellungen/OrderRecommendations.svelte';
-	import SupplierManager from './components/bestellungen/SupplierManager.svelte';
 	import BestellHistorie from './components/bestellungen/BestellHistorie.svelte';
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import BestelllinkHinweis from './components/bestellungen/BestelllinkHinweis.svelte';
@@ -174,7 +173,6 @@
 		{/snippet}
 		{@render tab('bestellungen', 'Bestellungen')}
 		{@render tab('wareneingang', 'Wareneingang', zulaufExemplare)}
-		{@render tab('lieferanten', 'Lieferanten verwalten')}
 		{@render tab('historie', 'Bestellhistorie')}
 		{@render tab('berichte', 'Berichte')}
 		{@render tab('klassensaetze', 'Klassensatz-Reservierungen', uiStore.pendingReservierungen)}
@@ -274,17 +272,6 @@
 			incomingShipments={orderStore.incomingShipments}
 			onBack={() => (activeTab = 'bestellungen')}
 			onReceived={handleShipmentReceived}
-		/>
-	{/if}
-
-	{#if activeTab === 'lieferanten'}
-		<SupplierManager
-			suppliers={orderStore.suppliers}
-			onAddSupplier={(name, email, customerNumber, istHauptlieferant) =>
-				orderStore.addSupplier(name, email, customerNumber, istHauptlieferant)}
-			onEditSupplier={(id, name, email, customerNumber, istHauptlieferant) =>
-				orderStore.editSupplier(id, name, email, customerNumber, istHauptlieferant)}
-			onRemoveSupplier={(id) => orderStore.removeSupplier(id)}
 		/>
 	{/if}
 

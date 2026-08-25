@@ -22,7 +22,8 @@ import {
 	Route,
 	School,
 	ShieldCheck,
-	ShoppingCart
+	ShoppingCart,
+	Truck
 } from '@lucide/svelte';
 
 import { hatRecht } from '../../menu.js';
@@ -52,6 +53,16 @@ export const KATEGORIEN = [
 		titel: 'Bestellwesen',
 		kurz: 'Bedarfswarnung und Preise',
 		icon: ShoppingCart
+	},
+	{
+		// Bis 25.08.2026 ein Reiter im Bestellungs-Workspace (Peters Entscheidung: das
+		// ist Konfiguration, keine Tagesarbeit). Rechte wie die Lieferanten-Routen in
+		// routes_orders.go: Schreiben verlangt create_orders.
+		id: 'lieferanten',
+		titel: 'Lieferanten',
+		kurz: 'Händler, Kundennummern, Hauptlieferant',
+		icon: Truck,
+		rechte: ['create_orders']
 	},
 	{
 		id: 'datenschutz',
