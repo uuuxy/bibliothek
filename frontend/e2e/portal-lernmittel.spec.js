@@ -60,7 +60,8 @@ test.describe('Lehrerportal: Lernmittel', () => {
 	}) => {
 		await uiLogin(page, LEHRER_EMAIL);
 		await page.getByTitle('Mein Portal').click();
-		await page.getByRole('tab', { name: 'Lernmittel' }).click();
+		// Seit 25.08.2026 zwei Reiter statt eines gestapelten Lernmittel-Reiters.
+		await page.getByRole('tab', { name: 'Klassensätze' }).click();
 
 		// Klassensätze: die Klasse aufklappen, der Titel steht mit Menge darin.
 		await page.getByText(`Klasse ${klasse}`, { exact: true }).click();
@@ -69,6 +70,7 @@ test.describe('Lehrerportal: Lernmittel', () => {
 		await expect(zeile).toContainText('3/3 verfügbar');
 
 		// Bestand nach Jahrgang: die Spanne 7–7 wird zur Gruppe „Klasse 7 Gymnasium".
+		await page.getByRole('tab', { name: 'Bestand nach Jahrgang' }).click();
 		const gruppe = page.getByRole('button', { name: /Klasse 7 Gymnasium/ });
 		await expect(gruppe).toBeVisible();
 		await gruppe.click();

@@ -13,6 +13,9 @@
 	 */
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';
+
+	/** @type {{ bereich: 'klassensaetze' | 'jahrgang' }} */
+	let { bereich } = $props();
 	import KlassenUebersichtStartseite from '../../../inventur/lib/components/KlassenUebersichtStartseite.svelte';
 	import {
 		buecherNachKlassenGruppieren,
@@ -50,12 +53,10 @@
 		></div>
 	</div>
 {:else}
-	<div class="space-y-12">
-		<section>
-			<h3 class="text-base font-bold text-on-surface">Klassensätze</h3>
-			<p class="mt-1 max-w-2xl text-xs leading-relaxed text-on-surface-variant">
-				Welche Klasse hat welche Bücher — die Zuordnung pflegt die Bibliothek.
-			</p>
+	<!-- Ein Reiter = eine Liste. Der Reiter ist die Überschrift; Beitexte standen hier bis
+	     25.08.2026 als dritte Ebene unter Reiter und Abschnitt. -->
+	<div class="pt-2">
+		{#if bereich === 'klassensaetze'}
 			{#if klassensaetze.length === 0}
 				<p class="py-4 text-sm text-on-surface-variant">Noch keine Klassensätze zugeordnet.</p>
 			{:else}
@@ -91,21 +92,16 @@
 					{/each}
 				</div>
 			{/if}
-		</section>
-
-		<section>
-			<h3 class="text-base font-bold text-on-surface">Bestand nach Jahrgang</h3>
-			<p class="mt-1 max-w-2xl text-xs leading-relaxed text-on-surface-variant">
-				Jede Kachel zeigt verfügbar/gesamt. Titel ohne genaue Jahrgangs-Zuordnung sammeln sich in
-				der letzten Gruppe.
-			</p>
-			{#if gruppen.length === 0}
-				<p class="py-4 text-sm text-on-surface-variant">Noch keine Bücher im Bestand.</p>
-			{:else}
-				<div class="mt-2">
-					<KlassenUebersichtStartseite filteredClasses={gruppen} getStockColor={bestandsFarbe} />
-				</div>
-			{/if}
-		</section>
+		{:else if gruppen.length === 0}
+			<p class="py-4 text-sm text-on-surface-variant">Noch keine Bücher im Bestand.</p>
+		{:else}
+			<!-- Dieselbe Aufklapp-Liste wie im Medienkatalog, aber kompakt: Dort ist der
+			     Jahrgang eine Seitenüberschrift (24 px), hier eine Listenzeile unter dem Reiter. -->
+			<KlassenUebersichtStartseite
+				filteredClasses={gruppen}
+				getStockColor={bestandsFarbe}
+				kompakt
+			/>
+		{/if}
 	</div>
 {/if}

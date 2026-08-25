@@ -10,10 +10,23 @@
 	 * @type {{
 	 *   filteredClasses: any[],
 	 *   getStockColor: (stock: number) => string,
-	 *   onBookClick?: (book: any) => void
+	 *   onBookClick?: (book: any) => void,
+	 *   kompakt?: boolean
 	 * }}
+	 * kompakt: Listenzeile statt Seitenüberschrift (Kollegiums-Portal, wo der Jahrgang
+	 * unter einem Reiter steht und keine 24 px trägt).
 	 */
-	let { filteredClasses, getStockColor, onBookClick = undefined } = $props();
+	let { filteredClasses, getStockColor, onBookClick = undefined, kompakt = false } = $props();
+	const zeilenTitel = $derived(
+		kompakt
+			? 'truncate text-base font-medium text-on-surface'
+			: 'truncate font-sans text-2xl font-bold text-slate-800'
+	);
+	const zaehlerChip = $derived(
+		kompakt
+			? 'bg-secondary-container text-on-secondary-container shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums'
+			: 'shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600'
+	);
 
 	// Immer nur ein Jahrgang offen — wie unter Verwaltung → Schulklassen. Die Wahl
 	// ueberlebt einen Filterwechsel absichtlich: Wer den Filter wieder leert, findet
@@ -60,12 +73,11 @@
 			     Ueberschrift. Ein Schalter, der nur zwischen "Inhalt" und "leere Seite"
 			     umlegt, waere ein Bedienelement ohne Aussage — also gibt es hier keinen. -->
 			<h2 class="flex items-center gap-3 py-3">
-				<span
-					class="shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600"
+				<span class={zaehlerChip}
 					>{cls.books.length}
 					{cls.books.length === 1 ? 'Buch' : 'Bücher'}</span
 				>
-				<span class="truncate font-sans text-2xl font-bold text-slate-800">{cls.name}</span>
+				<span class={zeilenTitel}>{cls.name}</span>
 			</h2>
 		{:else}
 			<!-- Die ganze Zeile schaltet um, nicht nur das Dreieck: Das Ziel ist so gross
@@ -84,12 +96,11 @@
 					class="h-5 w-5 shrink-0 text-slate-500 transition-transform {offen ? '' : '-rotate-90'}"
 					aria-hidden="true"
 				/>
-				<span
-					class="shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600"
+				<span class={zaehlerChip}
 					>{cls.books.length}
 					{cls.books.length === 1 ? 'Buch' : 'Bücher'}</span
 				>
-				<span class="truncate font-sans text-2xl font-bold text-slate-800">{cls.name}</span>
+				<span class={zeilenTitel}>{cls.name}</span>
 			</button>
 		{/if}
 

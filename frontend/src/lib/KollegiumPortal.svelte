@@ -121,8 +121,13 @@
 	<Reiter
 		etikett="Portal-Bereiche"
 		reiter={[
-			{ id: 'buecher', label: 'Bücher & Klassensätze' },
-			{ id: 'lernmittel', label: 'Lernmittel' },
+			// Vier gleichrangige Aufgaben (25.08.2026, Peters Ansage): „Lernmittel" stapelte
+			// vorher zwei Listen mit eigenen Überschriften übereinander; und „Bücher &
+			// Klassensätze" hieß fast so wie der Abschnitt „Klassensätze" darin — dreimal
+			// dasselbe Wort für Suchen, Ansehen und den Menüpunkt.
+			{ id: 'buecher', label: 'Suchen & Reservieren' },
+			{ id: 'klassensaetze', label: 'Klassensätze' },
+			{ id: 'jahrgang', label: 'Bestand nach Jahrgang' },
 			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: offeneAnliegen }
 		]}
 		aktiv={reiter}
@@ -165,8 +170,8 @@
 				onanliegen={() => (reiter = 'anliegen')}
 			/>
 		{/if}
-	{:else if reiter === 'lernmittel'}
-		<PortalLernmittel />
+	{:else if reiter === 'klassensaetze' || reiter === 'jahrgang'}
+		<PortalLernmittel bereich={reiter} />
 	{:else}
 		<AnliegenWidget anliegen={eigeneAnliegen} onaktualisiert={ladeAnliegen} />
 	{/if}
