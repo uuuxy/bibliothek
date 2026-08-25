@@ -67,10 +67,11 @@ nur in der Höhe.
   [Jahr]"), `ClassAssignmentSelector` (unsichtbares Tipp-Feld im Chip-Kasten).
 - Farb-Ratsche 2611 → 2285, Dateigrößen-Bestand um 7 Dateien kürzer.
 
-**Sichtbare Nebenwirkungen, bewusst:** Das Scan-Feld der Inventur (`UnifiedInventory`)
-verliert seine Sondergröße (62 px, blauer Doppelrahmen) und steht auf 36 px — es lag als
-einziges Feld der Seite außerhalb der Control-Skala. Einstellungsfelder schreiben jetzt
-14 statt 16 px, wie Select daneben. Wer das anders will, sagt es am Live-Bildschirm.
+**Sichtbare Nebenwirkung, bewusst:** Einstellungsfelder schreiben jetzt 14 statt 16 px,
+wie Select daneben. **Korrigiert nach Peters Blick:** Das Scan-Feld der Inventur war mit
+der Migration auf 36 px gerutscht („deutlich kleiner als in Ausleihe") — falsch
+eingeordnet, es ist das Werkzeug der Seite wie die Omnibox. Jetzt die 48-px-Suchpille
+(`9c484c67`).
 
 **Ein A-Fund beim Beweisen:** `SettingField` hatte `type="number"` als STANDARD, `Feld`
 hat `"text"`. Nach der Umstellung liefen zwölf Einstellungsfelder und die Anzahl der
