@@ -30,7 +30,8 @@ den Bereich direkt an:
 - **`G-[Barcode]` (Gerät):** Führt eine Aktion mit Hardware (z. B. Laptops, iPads) aus.
 
 **Ablauflogik:**
-1. Wird ein Buch gescannt, *ohne* dass ein Schüler/Lehrer aufgerufen ist, wird das Buch **zurückgegeben**.
+
+1. Wird ein Buch gescannt, _ohne_ dass ein Schüler/Lehrer aufgerufen ist, wird das Buch **zurückgegeben**.
 2. Wird ein Schüler/Lehrer gescannt und danach Bücher gescannt, werden diese an die Person **ausgeliehen**.
 
 ---
@@ -40,6 +41,7 @@ den Bereich direkt an:
 Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 ### 2.1. Fristenberechnung
+
 - **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres.
 - **Freihand-Bestand (Sonderbestände):** CDs, DVDs, Hörbücher etc. haben eine rollierende Frist (z. B. +14 oder +28 Tage ab Ausleihe), keine starre Jahresfrist.
 - **Ferien-Logik:** Fällt das berechnete Rückgabedatum in die Schulferien, wird die Frist automatisch bis zum ersten Schultag nach den Ferien verlängert.
@@ -47,6 +49,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 - **Verlängerungen:** Ausleihen können verlängert werden, es sei denn, der Schüler ist gesperrt oder hat das Ausleihlimit überschritten.
 
 ### 2.2. Blockaden und Limits
+
 - **Ausleihlimit:** Es gibt ein konfigurierbares Maximum an gleichzeitigen Ausleihen pro Schüler (LMF-Bücher ausgenommen).
 - **Sperre bei Überfälligkeit:** Hat ein Schüler mehr als `MaxOverdueItems` überfällige Medien, wird das Konto automatisch für neue Ausleihen gesperrt.
 - **Manuelle Sperre:** Administratoren können Schüler manuell sperren (z. B. bei massivem Fehlverhalten). Ein verpflichtender Begründungstext (`block_reason`) wird stets verlangt und den Helfern angezeigt.
@@ -58,7 +61,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 Das Mahnsystem durchläuft einen 3-stufigen, rechtlich bindenden Eskalationsprozess.
 
 - **Stufe 1 (Erinnerung):** Kann als kostenlose E-Mail ("Friendly Reminder") oder als PDF-Ausdruck versendet werden.
-- **Stufe 2 & 3 (Kostenpflichtig):** Erzeugen Mahngebühren. Diese **Mahnstufe erhöht sich ausschließlich beim physischen PDF-Druck**, da dies den rechtlichen Verwaltungsakt darstellt. Der reine E-Mail-Versand einer Erinnerung führt *nicht* zur Erhöhung der Mahnstufe oder zu neuen Gebühren.
+- **Stufe 2 & 3 (Kostenpflichtig):** Erzeugen Mahngebühren. Diese **Mahnstufe erhöht sich ausschließlich beim physischen PDF-Druck**, da dies den rechtlichen Verwaltungsakt darstellt. Der reine E-Mail-Versand einer Erinnerung führt _nicht_ zur Erhöhung der Mahnstufe oder zu neuen Gebühren.
 - **Sperr-Folge:** Bei Erreichen von Stufe 3 (oder Nichtzahlung) kann der Schüler gesperrt werden.
 
 ---
@@ -68,10 +71,11 @@ Das Mahnsystem durchläuft einen 3-stufigen, rechtlich bindenden Eskalationsproz
 Das System verwaltet den Mangel an verfügbaren Büchern durch zwei Konzepte:
 
 ### 4.1. Einzel-Vormerkungen
+
 - Ein Schüler kann ein Buch vormerken, wenn kein Exemplar mehr frei ist.
 - **Rückgabe-Match:** Wird ein Exemplar dieses Titels zurückgegeben, prüft das System, ob eine Vormerkung vorliegt.
 - **Abholbereitschaft:** Das Buch wird nicht freigegeben, sondern direkt dem wartenden Schüler zugeteilt (Status `abholbereit`). Es landet physisch im Bereitstellungsregal.
-- *Schutz:* Es ist technisch unmöglich, dass ein Schüler ein Buch vormerkt, das er aktuell selbst ausleiht (Vermeidung von Monopolisierung).
+- _Schutz:_ Es ist technisch unmöglich, dass ein Schüler ein Buch vormerkt, das er aktuell selbst ausleiht (Vermeidung von Monopolisierung).
 
 ### 4.2. Klassensatz-Reservierungen
 
@@ -138,7 +142,7 @@ Die Inventur findet im laufenden Betrieb statt, ohne dass die Bibliothek zwingen
 
 - **Session-basiert:** Jede Inventur erhält einen Scope (z. B. "Raum 2, Regal A") und läuft in einer eigenen Session (`inventur_sessions`). Mehrere Mitarbeiter können mit Handscannern parallel inventarisieren, ohne sich gegenseitig zu überschreiben.
 - **Fehlmengen-Ausbuchung:** Wird die Session beendet (`Finish`), vergleicht das System alle gescannten Exemplare mit dem theoretischen Bestand in diesem Scope.
-- **Schutz aktiver Ausleihen:** Bücher, die laut Datenbank aktuell *verliehen* sind, werden vom System bei der Fehlmengenberechnung ignoriert – sie können nicht versehentlich als Verlust ausgebucht werden, nur weil sie nicht im Regal standen.
+- **Schutz aktiver Ausleihen:** Bücher, die laut Datenbank aktuell _verliehen_ sind, werden vom System bei der Fehlmengenberechnung ignoriert – sie können nicht versehentlich als Verlust ausgebucht werden, nur weil sie nicht im Regal standen.
 - Fehlende, nicht verliehene Exemplare erhalten automatisch den Status `VERLUST`.
 
 ---
@@ -151,12 +155,12 @@ Die Software verwaltet Bedarfe und Lieferungen:
 - **Fokus auf Lernmittelfreiheit (LMF):** Die Bedarfsvorschläge sind standardmäßig auf LMF-Medien (Schulbücher) gefiltert. Freihand-Exemplare (Lese-Einzelstücke) werden in der Regel nicht nachbestellt.
 - **Exemplare entstehen beim BESTELLEN, nicht beim Eintreffen:** Mit dem Absenden legt das System die Exemplare samt Barcode-Nummern an und markiert sie als „Im Zulauf". Nur so kann der Barcodebogen mit der Bestellung mitgehen. Der Wareneingang bucht diese Exemplare später frei — er erzeugt sie nicht.
 - **Lieferanten-Eigenschaften** (Lieferantenverwaltung, je Händler schaltbar):
-  - *Händler beklebt die Bücher:* Der Barcodebogen geht mit; die Exemplare gelten sofort als etikettiert und erscheinen nicht auf der Nachdruck-Liste.
-  - *Voreingestellt beim Bestellen:* Vorauswahl im Bestellformular, höchstens ein Händler (DB-seitig erzwungen).
-  - *Lieferant bestätigt Bestellung selbst:* siehe nächster Punkt.
+  - _Händler beklebt die Bücher:_ Der Barcodebogen geht mit; die Exemplare gelten sofort als etikettiert und erscheinen nicht auf der Nachdruck-Liste.
+  - _Voreingestellt beim Bestellen:_ Vorauswahl im Bestellformular, höchstens ein Händler (DB-seitig erzwungen).
+  - _Lieferant bestätigt Bestellung selbst:_ siehe nächster Punkt.
 - **Bestätigungs-Link an den Lieferanten:** Händler, die selbst etikettieren (z. B. Naacher), bekommen mit der Bestellmail einen von Bibliosys erzeugten Link. Dahinter liegt eine Seite ohne Login, auf der der Lieferant die Etiketten dieser Bestellung in klein oder groß druckt (identisch zum Mailanhang) und die Bestellung **einmalig** bestätigt.
-  - *Klein:* Bogen für vorgestanztes Etikettenmaterial. Der Lieferant **wählt das Bogenraster selbst** (Zweckform L4760 3×7, Avery 3475 3×8, Kleine Barcodes 4×13) — er druckt auf sein eigenes Material, und davon gibt es verschiedene. Bis zum 06.08.2026 kam der Bogen immer im Zweckform-Raster; wer andere Bögen im Drucker hatte, bekam einen Ausdruck, der danebenliegt. Das gewählte Raster steht anschließend in der Bestellhistorie der Schule.
-  - *Groß:* Lernmittel-Etikett mit Ausleihtabelle, **vier Stück auf einem A4-Blatt** (2×2, mit Schnittlinien) — wird ausgeschnitten, nicht auf vorgestanztes Material gedruckt. Vorher war jedes Etikett eine eigene A6-Seite: Auf einem A4-Drucker kam damit ein Etikett je Blatt heraus, außer man stellte im Druckdialog von Hand „4 Seiten pro Blatt" ein (telefonische Rückmeldung Naacher, 06.08.2026). Die Bestätigung erscheint automatisch in der Bestellhistorie und ist dort von einem manuellen Nachtrag aus der Bibliothek unterscheidbar. Voraussetzung ist die **Öffentliche Adresse** in den Einstellungen — fehlt sie, geht die Bestellung ohne Link raus. Sicherheitszuschnitt: 256-Bit-Token, in der Datenbank nur als Hash, 180 Tage gültig, jederzeit durch einen neuen ersetzbar (der alte stirbt dabei). Details in [SECURITY.md](SECURITY.md).
+  - _Klein:_ Bogen für vorgestanztes Etikettenmaterial. Der Lieferant **wählt das Bogenraster selbst** (Zweckform L4760 3×7, Avery 3475 3×8, Kleine Barcodes 4×13) — er druckt auf sein eigenes Material, und davon gibt es verschiedene. Bis zum 06.08.2026 kam der Bogen immer im Zweckform-Raster; wer andere Bögen im Drucker hatte, bekam einen Ausdruck, der danebenliegt. Das gewählte Raster steht anschließend in der Bestellhistorie der Schule.
+  - _Groß:_ Lernmittel-Etikett mit Ausleihtabelle, **vier Stück auf einem A4-Blatt** (2×2, mit Schnittlinien) — wird ausgeschnitten, nicht auf vorgestanztes Material gedruckt. Vorher war jedes Etikett eine eigene A6-Seite: Auf einem A4-Drucker kam damit ein Etikett je Blatt heraus, außer man stellte im Druckdialog von Hand „4 Seiten pro Blatt" ein (telefonische Rückmeldung Naacher, 06.08.2026). Die Bestätigung erscheint automatisch in der Bestellhistorie und ist dort von einem manuellen Nachtrag aus der Bibliothek unterscheidbar. Voraussetzung ist die **Öffentliche Adresse** in den Einstellungen — fehlt sie, geht die Bestellung ohne Link raus. Sicherheitszuschnitt: 256-Bit-Token, in der Datenbank nur als Hash, 180 Tage gültig, jederzeit durch einen neuen ersetzbar (der alte stirbt dabei). Details in [SECURITY.md](SECURITY.md).
 - **Historie zeigt die neuesten 200 Bestellungen** (Grenze serverseitig, max. 500). Die Kennzahlen im Kopf — Gesamtausgaben, Exemplare, wartende Bestätigungen — zählen dagegen **alle** Bestellungen (`/api/bestellhistorie/uebersicht`), damit aus einer Teilsumme keine vermeintliche Gesamtsumme wird. Ohne die Grenze lieferte die Historie auf einer gewachsenen Datenbank 2,45 MB in 3,9 Sekunden, mit ihr 0,10 MB in 0,17 Sekunden.
 - **Preise sind optional:** Ist „Preise erfassen" aus, arbeitet das ganze Bestellwesen ohne Geldbeträge — kein Preisfeld, keine Betragsspalten, Berichte zählen Exemplare statt Euro zu summieren.
 
@@ -165,14 +169,16 @@ Die Software verwaltet Bedarfe und Lieferungen:
 ## 8. LUSD-Synchronisation & Datenschutz (DSGVO)
 
 ### 8.1. Der LUSD-Import
+
 - Die Landesschuldatenbank (LUSD) ist das führende System für Schülerdaten.
 - Der Import überschreibt Namen, Klassen und LUSD-IDs im Bibliothekssystem.
 - **Match-Logik (drei Stufen, die Datei entscheidet):** (1) **LUSD-ID**, wenn der Export eine ID-Spalte mit Werten hat; (2) **Vorname + Nachname + Geburtsdatum**, wenn keine ID, aber ein Geburtsdatum da ist — dann ist das Datum in jeder Zeile Pflicht (harter Abbruch statt stillem Überspringen); (3) **nur Vorname + Nachname**, wenn die Datei beides nicht hat (LANIS-Klassenliste `Nachname;Vorname;Klasse;…`) — dort werden Namensgleiche (in Datei oder Bestand) NIE zugeordnet, sondern als „mehrdeutig" gemeldet. Der Export der Schule enthält keine Schüler-ID; Stufe 2 ist der empfohlene Weg, Stufe 3 der Notweg. Die Vorschau nennt die Stufe. **Format:** CSV (Komma/Semikolon, BOM) oder Excel (.xlsx, Titelzeilen über der Kopfzeile, Datumszellen); altes .xls wird mit Anleitung abgewiesen.
 - **Gedächtnis `lusd_bestaetigt_am` (Migration 084):** Jeder Import stempelt jede Zeile, die er im Export wiedergefunden oder angelegt hat. In den Namensmodi gilt als Abgänger nur, wer schon einmal bestätigt wurde und jetzt fehlt — nie bestätigte Handanlagen bleiben unangetastet und werden als „nicht im Export" gemeldet, Schüler ohne Geburtsdatum als „nicht abgleichbar" (Stufe 2). Im ID-Modus werden ID-lose Bestandsschüler (Handanlage **und** Littera-Übernahme `lusd_id='littera:…'`) per Name + Geburtsdatum adoptiert statt dupliziert.
 - **Handanlage:** Das Geburtsdatum ist beim manuellen Anlegen Pflicht (UI + API) — es ist die einzige Brücke zum späteren Import; ohne Datum entstünde zwangsläufig ein Duplikat.
-- **Neue Kontaktdaten:** Es werden Anschriften und Eltern-E-Mails importiert, jedoch *ausschließlich* zum Zweck der Rechnungs- und Mahnungsstellung.
+- **Neue Kontaktdaten:** Es werden Anschriften und Eltern-E-Mails importiert, jedoch _ausschließlich_ zum Zweck der Rechnungs- und Mahnungsstellung.
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
+
 - Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" (`ist_abgaenger = true`).
 - Das System anonymisiert Abgänger nach einer gesetzlichen Karenzzeit (Cronjob). Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, LUSD-ID, Foto), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Admin-Audit-Log und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
 - **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund: "Automatisierte Abgänger-Sperre"). Falls die offenen Vorgänge geklärt werden und der Abgänger im Folgejahr in der LUSD wieder als aktiver Schüler auftaucht, hebt das System die Sperre automatisch wieder auf.
@@ -223,6 +229,7 @@ Für die Schulleitung und Bibliotheks-Administration aggregiert das System Echtz
 Der Zugang zum System ist strikt reglementiert und wird durch ein Role-Based Access Control (RBAC) System gesteuert.
 
 ### 12.1. Login & Sicherheit
+
 - **Verfahren:** E-Mail und Passwort **gegen den Schul-Mailserver (IMAP)**, nicht gegen die eigene Datenbank. Eine lokale Passwortspalte gibt es seit Migration 012 nicht, und es wird nirgends ein Passwort gehasht oder gespeichert — wer ein Konto anlegt, legt kein Passwort fest, sondern setzt eine E-Mail-Adresse, die auf dem Schulserver existiert (`auth/handlers.go`, `verifyIMAPCredentials`). Hier stand bis zum 11.08.2026 „E-Mail und Passwort (Bcrypt-gehasht)" — das war nie so, und zwei Absätze weiter unten stand bereits das Gegenteil.
 - **Folge für die Kontoverwaltung:** Die E-Mail **ist** die Identität. Wer die Spalte `benutzer.email` schreiben darf, übernimmt damit ein Konto; ein Rechte-Audit, das nur auf `rolle` schaut, sieht diesen Weg nicht.
 - **Session-Management:** Stateless via JWT (JSON Web Tokens) in HttpOnly-Cookies.
@@ -230,15 +237,17 @@ Der Zugang zum System ist strikt reglementiert und wird durch ein Role-Based Acc
 - **Brute-Force-Schutz:** Strenges Rate-Limiting beim Login (Sperre nach mehreren Fehlversuchen pro IP/E-Mail-Kombination).
 
 ### 12.2. Das 4-Rollen-Konzept
+
 Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_students`, `manage_settings`, `perform_actions`) vom Admin in der Datenbank konfiguriert werden können:
 
 1. **Admin (`admin`):** Uneingeschränkter Zugriff auf alle Systembereiche, Einstellungen, Audits und Datenschutz-Routinen.
 2. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Schülerverwaltung, darf aber keine Systemeinstellungen ändern.
-3. **Kollegium (`kollegium`):** Zugang zum Kollegiums-Portal, und zwar für **genau eine** Funktion: einen Klassensatz reservieren. Erteilt ist ein einziges Recht, `create_reservations` (Migration 070); die Suche darin läuft über den öffentlichen OPAC, das Absenden über `create_reservations`. Beides fasst keine Personendaten an.
+3. **Kollegium (`kollegium`):** Zugang zum Kollegiums-Portal mit vier Reitern (Stand 25.08.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher), _Bestand nach Jahrgang_ und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Die Suche läuft über den öffentlichen OPAC, Reservierung und Anliegen über `create_reservations`; die beiden Lese-Sichten hängen an eigenen Portal-Routen (`/api/portal/lernmittel`, `/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
 
-   **Die Rolle hieß bis zum 10.08.2026 `lehrer`** (Migration 069). Das Wort war doppelt belegt — als Anmelde-Rolle *und* als Entleihertyp `schueler.klasse = 'lehrer'` (Handapparat, eigene Behandlung im Mahnwesen). `kollegium` benennt jetzt die Personengruppe mit Zugang, `lehrer` bleibt für den Entleiher frei. Die Umbenennung selbst war keine Rechteänderung.
+   **Die Rolle hieß bis zum 10.08.2026 `lehrer`** (Migration 069). Das Wort war doppelt belegt — als Anmelde-Rolle _und_ als Entleihertyp `schueler.klasse = 'lehrer'` (Handapparat, eigene Behandlung im Mahnwesen). `kollegium` benennt jetzt die Personengruppe mit Zugang, `lehrer` bleibt für den Entleiher frei. Die Umbenennung selbst war keine Rechteänderung.
 
    **Der Rechteumfang war es** (Migration 070): Auf dem Schulserver sah ein Kollegiums-Konto am 10.08.2026 zehn von fünfzehn Menüpunkten, darunter Schülerdatei, Mahnwesen, System-Logs und Einstellungen — `role_permissions` führte `manage_users`, `audit_logs`, `view_stats`, `view_students`, `view_books` und `perform_actions` auf `true`. Das war keine reine Anzeigefrage: Dieselbe Tabelle entscheidet in `RequirePermission`, die API hätte es ebenfalls zugelassen. Alles außer `create_reservations` ist entzogen. Wer einer Lehrkraft gezielt mehr geben will, tut das im PermissionManager — Migrationen laufen nur einmal, eine spätere Vergabe wird nicht zurückgedreht.
+
 4. **Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (Entscheidung vom 30.07.2026, Migration 055): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zu Personendaten zieht weiterhin `view_students`.
 
    **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver.** Das ist die Frage, die in der Praxis zuerst kommt, und sie hatte bis zum 08.08.2026 keine Antwort in dieser Doku. Die Anmeldung läuft ausschließlich über E-Mail + Passwort gegen IMAP (`auth/handlers.go`); eine lokale Passwortspalte gibt es seit Migration 012 nicht, und einen Code- oder Barcode-Anmeldeweg gibt es nicht — die Felder `barcode_id`/`pin` standen einmal im `LoginRequest`, wurden nie ausgewertet und sind entfernt. Wer eine Hilfskraft aufnehmen will, lässt also zuerst ein Postfach anlegen und trägt dann unter System → Berechtigungen die Person mit der Rolle „Helfer" ein (die Benutzerverwaltung sitzt seit 16.08.2026 dort, nicht mehr in den Einstellungen). Die E-Mail ist dabei die Identität: Wer die Spalte `benutzer.email` schreibt, übernimmt das Konto.
@@ -255,7 +264,7 @@ Das System bietet umfassende Werkzeuge zur Pflege des Buchkatalogs:
 
 - **Systematiken & Signaturen:** Bücher können hierarchisch nach Systematiken (Kategorien/Themen) und spezifischen Signaturen (Regal-/Standort-Kennung) klassifiziert werden.
 - **Automatische Cover-Synchronisation:** Ein Hintergrund-Worker (`Cover-Sync`) sucht über ISBNs automatisch in externen Buch-APIs (z.B. Google Books) nach Buchcovern, lädt diese herunter und speichert sie datensparsam im WebP-Format.
-- **Legacy-Import-Engine:** Für die initiale Einrichtung oder Datenübernahme bietet das System eine dynamische Import-Schnittstelle (`/api/import/littera`), um Altbestände aus Legacy-Programmen (wie z. B. *Littera*) per CSV einzulesen und zu mappen.
+- **Legacy-Import-Engine:** Für die initiale Einrichtung oder Datenübernahme bietet das System eine dynamische Import-Schnittstelle (`/api/import/littera`), um Altbestände aus Legacy-Programmen (wie z. B. _Littera_) per CSV einzulesen und zu mappen.
 
 ---
 
@@ -280,7 +289,7 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
 
 Erreichbar unter **System → Einstellungen → Kategorie „Betriebsbereitschaft“** (Recht `manage_settings`,
 `GET /api/admin/system/betriebsbereitschaft`). Die Seite beantwortet **eine** Frage:
-*Was ist eingerichtet, aber nicht in Betrieb?*
+_Was ist eingerichtet, aber nicht in Betrieb?_
 
 Der Anlass ist eine wiederkehrende Fehlerart, und sie ist immer dieselbe: Eine Funktion
 ist fertig programmiert, getestet und verdrahtet — und tut nichts, weil eine Einstellung
