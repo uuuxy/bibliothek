@@ -48,6 +48,10 @@ const AUSNAHMEN = [
 		grund: 'Kollegiums-Portal-Hero, gleiche Rolle wie die Katalog-Suche'
 	},
 	{
+		kennung: 'inventur-scan',
+		grund: 'Inventur-Scanpille: dieselbe 48-px-Suchpille wie die Omnibox (h-full im Container)'
+	},
+	{
 		kennung: 'omnibox-input',
 		grund: 'füllt die 48-px-Scan-Pille (h-full); die Pille ist das Bedienelement, nicht das Feld'
 	},

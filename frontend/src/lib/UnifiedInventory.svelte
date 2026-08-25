@@ -5,7 +5,7 @@
 	import InventoryStartModal from './components/InventoryStartModal.svelte';
 	import InventoryFinishModal from './components/InventoryFinishModal.svelte';
 	import Button from './components/ui/Button.svelte';
-	import Feld from './components/ui/Feld.svelte';
+	import Suchpille from './components/ui/Suchpille.svelte';
 	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import { Check, ClipboardCheck, Plus, ScanBarcode, TriangleAlert, X } from '@lucide/svelte';
@@ -197,33 +197,33 @@
 				</div>
 			</div>
 
-			<!-- Scanner Input -->
+			<!-- Dieselbe 48-px-Suchpille wie die Ausleihe-Omnibox: Werkzeug der Seite, kein
+			     Datenfeld in einer Leiste (Peter, 25.08.: „deutlich kleiner als in Ausleihe"). -->
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();
 					inventoryState.handleScan(inventoryState.barcodeInput, focusInput);
 				}}
-				class="relative"
 			>
-				<ScanBarcode
-					class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
-					aria-hidden="true"
-				/>
-				<Feld
+				<Suchpille
+					id="inventur-scan"
 					bind:element={barcodeInputEl}
-					bind:value={inventoryState.barcodeInput}
-					aria-label="Barcode scannen"
-					placeholder="Barcode scannen..."
-					feld="pl-10 font-medium"
+					bind:wert={inventoryState.barcodeInput}
+					etikett="Barcode scannen"
+					platzhalter="Barcode scannen..."
 					disabled={inventoryState.isScanning}
-				/>
-				{#if inventoryState.isScanning}
-					<div
-						class="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"
-					></div>
-				{/if}
+				>
+					{#snippet nachlaufend()}
+						{#if inventoryState.isScanning}
+							<div
+								class="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"
+							></div>
+						{:else}
+							<ScanBarcode class="h-5 w-5 shrink-0 text-slate-500" aria-hidden="true" />
+						{/if}
+					{/snippet}
+				</Suchpille>
 			</form>
-
 			<!-- Feedback Area -->
 			{#if inventoryState.lastScan}
 				<div

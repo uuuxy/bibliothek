@@ -31,9 +31,13 @@
 	 *   platzhalter: string,
 	 *   etikett: string,
 	 *   autofokus?: boolean,
+	 *   disabled?: boolean,
+	 *   element?: HTMLInputElement,
 	 *   oninput?: (e: Event) => void,
 	 *   nachlaufend?: import('svelte').Snippet
 	 * }}
+	 * element: bind:this-Ersatz für Aufrufer, die den Fokus selbst setzen (Inventur-Scan
+	 * nach jedem Treffer). disabled: während ein Scan verarbeitet wird.
 	 */
 	let {
 		id,
@@ -41,12 +45,17 @@
 		platzhalter,
 		etikett,
 		autofokus = false,
+		disabled = false,
+		element = $bindable(),
 		oninput,
 		nachlaufend
 	} = $props();
 
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
+	$effect(() => {
+		element = feld;
+	});
 
 	// Fokus beim Betreten der Seite.
 	//
@@ -80,6 +89,7 @@
 		data-form-type="other"
 		bind:this={feld}
 		bind:value={wert}
+		{disabled}
 		{oninput}
 		aria-label={etikett}
 		placeholder={platzhalter}
