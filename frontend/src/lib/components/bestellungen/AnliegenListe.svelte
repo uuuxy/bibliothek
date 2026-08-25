@@ -90,11 +90,15 @@
 	}
 </script>
 
+<!-- Zeilentypografie nach der M3-Listenzeile: Headline body-large (text-base, 16 px),
+     Supporting body-medium (text-sm, 14 px). Vorher lag alles eine Stufe tiefer
+     (14/12 px) — die Klasse, die man ABLIEST, stand auf 12 px neben dem Datum.
+     Nur der Art-Chip bleibt label-small, das ist seine Rolle. -->
 {#snippet anliegenRow(a)}
 	<li class="py-4">
 		<div class="flex items-start justify-between gap-4">
 			<div class="min-w-0 flex-1">
-				<p class="text-sm font-bold text-on-surface truncate">
+				<p class="text-base font-bold text-on-surface truncate">
 					<span
 						class="inline-flex items-center px-2 py-0.5 mr-2 rounded-full text-label-small font-semibold {a.art ===
 						'wunsch'
@@ -105,27 +109,24 @@
 					</span>
 					{a.titel_text}
 				</p>
-				<p class="text-xs text-on-surface-variant mt-1">
+				<p class="text-sm text-on-surface-variant mt-1">
 					{#if a.klasse}Klasse <span class="font-semibold text-on-surface">{a.klasse}</span>{/if}
 					{#if a.von}· von {a.von}{/if}
 					{#if a.isbn}· ISBN {a.isbn}{/if}
 				</p>
 				{#if a.kommentar}
-					<p class="text-xs text-on-surface-variant italic mt-1">„{a.kommentar}"</p>
+					<p class="text-sm text-on-surface-variant italic mt-1">„{a.kommentar}"</p>
 				{/if}
 			</div>
-			<div class="text-xs text-on-surface-variant shrink-0 w-20 text-right">
+			<div class="text-sm text-on-surface-variant shrink-0 w-24 text-right">
 				{new Date(a.erstellt_am).toLocaleDateString('de-DE')}
 			</div>
 			<div class="shrink-0">
 				{#if confirmingId !== a.id}
-					<button
-						onclick={() => requestConfirm(a.id)}
-						class="px-3 py-2 rounded-full bg-primary hover:opacity-90 text-on-primary text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
-					>
-						<Check class="w-3.5 h-3.5" aria-hidden="true" />
+					<Button variant="primary" onclick={() => requestConfirm(a.id)}>
+						<Check class="w-4 h-4" aria-hidden="true" />
 						Abhaken
-					</button>
+					</Button>
 				{/if}
 			</div>
 		</div>

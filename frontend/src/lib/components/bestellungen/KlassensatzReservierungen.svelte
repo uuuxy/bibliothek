@@ -95,11 +95,13 @@
 	}
 </script>
 
+<!-- Zeilentypografie wie AnliegenListe (M3-Listenzeile: 16/14 px), damit die beiden
+     Reiter nebeneinander dieselbe Zeile zeigen. -->
 {#snippet reservierungRow(r)}
 	<li class="flex items-center justify-between gap-4 py-4">
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-bold text-slate-800 truncate">{r.titel_name}</p>
-			<p class="text-xs text-slate-500 mt-0.5">
+			<p class="text-base font-bold text-slate-800 truncate">{r.titel_name}</p>
+			<p class="text-sm text-slate-500 mt-0.5">
 				Klasse <span class="font-semibold text-slate-600">{r.klasse}</span> · {r.anzahl} Exemplare
 				{#if r.angefordert_von}· angefragt von {r.angefordert_von}{/if}
 				{#if r.verfuegbar != null}
@@ -112,10 +114,10 @@
 				{/if}
 			</p>
 			{#if r.notiz}
-				<p class="text-xs text-slate-400 italic mt-1 truncate">„{r.notiz}"</p>
+				<p class="text-sm text-slate-400 italic mt-1 truncate">„{r.notiz}"</p>
 			{/if}
 		</div>
-		<div class="text-xs text-slate-400 shrink-0 w-20 text-right">{r.erstellt_am}</div>
+		<div class="text-sm text-slate-400 shrink-0 w-24 text-right">{r.erstellt_am}</div>
 		<div class="shrink-0">
 			{#if confirmingId === r.id}
 				<div class="flex items-center gap-2">
@@ -143,13 +145,10 @@
 					</Button>
 				</div>
 			{:else}
-				<button
-					onclick={() => requestConfirm(r.id)}
-					class="px-3 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
-				>
-					<Check class="w-3.5 h-3.5" aria-hidden="true" />
+				<Button variant="primary" onclick={() => requestConfirm(r.id)}>
+					<Check class="w-4 h-4" aria-hidden="true" />
 					Abschließen
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</li>
