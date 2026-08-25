@@ -58,9 +58,17 @@
 	 * @prop {string} [class] - Rasterangaben des Aufrufers, z. B. "sm:col-span-2" (nur mit label).
 	 * @prop {string} [feld] - Zusatzklassen NUR fürs <input>, z. B. "w-20 text-center".
 	 * @prop {HTMLInputElement} [element] - bind:this-Ersatz (bindable).
+	 * @prop {Snippet} [vorlaufend] - Inhalt links IM Feld (Symbol, Präfix-Text wie „Gültig bis 31.07.").
+	 * @prop {Snippet} [nachlaufend] - Inhalt rechts IM Feld (Einheit „Stück", Knöpfe, Spinner).
+	 *
+	 * vor-/nachlaufend liegen als Überlagerung über dem Feld (wie in Suchfeld.svelte), das
+	 * Feld selbst bleibt das gerahmte 36-px-Element — so misst e2e/control-hoehen.spec.js
+	 * weiterhin das Feld und nicht eine Hülle. Das Feld bekommt dafür pl-10 bzw. pr-10;
+	 * wer breiteren Inhalt legt, gibt die Innenabstände selbst über `feld` mit
+	 * (z. B. feld="pl-36" für einen Präfix-Text) — dann setzt das Bauteil keine eigenen.
 	 */
 
-	/** @type {{ value?: any, label?: string, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
+	/** @type {{ value?: any, label?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
 		value = $bindable(),
 		label = undefined,
@@ -71,6 +79,8 @@
 		feld = '',
 		element = $bindable(),
 		id = undefined,
+		vorlaufend = undefined,
+		nachlaufend = undefined,
 		...rest
 	} = $props();
 
@@ -81,18 +91,24 @@
 	const hinweisId = $derived(`${feldId}-hinweis`);
 
 	const inputClass = $derived(
-		'h-9 w-full rounded-xl border bg-surface-container-lowest px-3 text-sm text-on-surface ' +
+		// Breite NUR setzen, wenn `feld` keine mitbringt: w-full und w-64 sind gleich
+		// spezifisch, dann entschiede die Stylesheet-Reihenfolge statt des Aufrufs
+		// (Tailwind-Kaskaden-Falle, am Ausweis-Feld gesehen: w-64 verlor gegen w-full).
+		(/\bw-/.test(feld) ? 'h-9 ' : 'h-9 w-full ') +
+			'rounded-xl border bg-surface-container-lowest px-3 text-sm text-on-surface ' +
 			'transition-colors placeholder:text-outline focus:outline-none focus:ring-1 ' +
 			'disabled:cursor-not-allowed disabled:opacity-40 read-only:text-on-surface-variant ' +
 			(ungueltig
 				? 'border-error focus:border-error focus:ring-error '
 				: 'border-outline-variant focus:border-primary focus:ring-primary ') +
+			(vorlaufend && !/\bpl-/.test(feld) ? 'pl-10 ' : '') +
+			(nachlaufend && !/\bpr-/.test(feld) ? 'pr-10 ' : '') +
 			feld
 	);
 	const beschreibung = $derived(hint ? hinweisId : undefined);
 </script>
 
-{#snippet eingabe()}
+{#snippet roh()}
 	{#if type === 'number'}
 		<input
 			bind:this={element}
@@ -115,6 +131,30 @@
 			class={inputClass}
 			{...rest}
 		/>
+	{/if}
+{/snippet}
+
+{#snippet eingabe()}
+	{#if vorlaufend || nachlaufend}
+		<div class="relative">
+			{#if vorlaufend}
+				<div
+					class="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 items-center gap-2 text-sm whitespace-nowrap text-on-surface-variant"
+				>
+					{@render vorlaufend()}
+				</div>
+			{/if}
+			{@render roh()}
+			{#if nachlaufend}
+				<div
+					class="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1 text-sm text-on-surface-variant"
+				>
+					{@render nachlaufend()}
+				</div>
+			{/if}
+		</div>
+	{:else}
+		{@render roh()}
 	{/if}
 {/snippet}
 

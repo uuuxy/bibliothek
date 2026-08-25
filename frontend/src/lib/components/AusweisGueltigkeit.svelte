@@ -14,6 +14,7 @@
      gespeichert und ist nach dem Verlassen des Profils wieder weg. -->
 <script>
 	import { RotateCcw, CalendarClock, AlertTriangle } from '@lucide/svelte';
+	import Feld from './ui/Feld.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -43,35 +44,39 @@
 </script>
 
 <div class="flex flex-col gap-1.5">
-	<div
-		class="inline-flex h-9 items-center gap-2 rounded-lg border bg-white px-3
-			{fehlt ? 'border-amber-400' : 'border-slate-200'}"
+	<!-- Ein Feld mit Präfix „Gültig bis 31.07." und Zurücksetzen-Knopf im Feld — seit
+	     25.08.2026 über die vor-/nachlaufend-Snippets von ui/Feld statt als eigene Pille.
+	     Fehlendes Jahr = ungueltig: Eine Karte ohne Ablaufdatum wird an der Ausleihe
+	     abgewiesen, das ist ein Fehler, keine Warnung. -->
+	<Feld
+		type="number"
+		inputmode="numeric"
+		min={2000}
+		max={2099}
+		value={wert ?? ''}
+		oninput={uebernehmen}
+		aria-label="Ablaufjahr des Ausweises"
+		ungueltig={fehlt}
+		feld="w-64 pl-36 font-semibold"
 	>
-		<CalendarClock class="h-4 w-4 shrink-0 {fehlt ? 'text-amber-600' : 'text-slate-400'}" />
-		<span class="text-sm whitespace-nowrap text-slate-500">Gültig bis 31.07.</span>
-		<input
-			type="number"
-			inputmode="numeric"
-			min="2000"
-			max="2099"
-			value={wert ?? ''}
-			oninput={uebernehmen}
-			aria-label="Ablaufjahr des Ausweises"
-			class="w-16 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800
-				focus:outline-none focus:ring-0"
-		/>
-		{#if abweichend}
-			<button
-				type="button"
-				onclick={() => onWert(vorschlag)}
-				aria-label="Auf den vorgeschlagenen Wert {vorschlag} zurücksetzen"
-				data-tip="Zurück auf {vorschlag} (aus der Klasse gerechnet)"
-				class="-mr-1 rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-			>
-				<RotateCcw class="h-3.5 w-3.5" />
-			</button>
-		{/if}
-	</div>
+		{#snippet vorlaufend()}
+			<CalendarClock class="h-4 w-4 shrink-0 {fehlt ? 'text-error' : ''}" aria-hidden="true" />
+			<span>Gültig bis 31.07.</span>
+		{/snippet}
+		{#snippet nachlaufend()}
+			{#if abweichend}
+				<button
+					type="button"
+					onclick={() => onWert(vorschlag)}
+					aria-label="Auf den vorgeschlagenen Wert {vorschlag} zurücksetzen"
+					data-tip="Zurück auf {vorschlag} (aus der Klasse gerechnet)"
+					class="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+				>
+					<RotateCcw class="h-3.5 w-3.5" />
+				</button>
+			{/if}
+		{/snippet}
+	</Feld>
 
 	{#if vorschlag === null}
 		<p class="flex items-start gap-1.5 text-xs leading-relaxed text-amber-700">

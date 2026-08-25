@@ -38,13 +38,6 @@ const AUSNAHMEN = [
 			'Bedienelement, nicht das Feld. Gate: e2e/suchpille-einheitlich.spec.js.'
 	},
 	{
-		datei: 'src/lib/components/AusweisGueltigkeit.svelte',
-		grund:
-			'Zusammengesetzte Pille „[Symbol] Gültig bis 31.07. [Jahr] [Zurücksetzen]" mit EINEM ' +
-			'Rahmen um alles und amber-Zustand bei fehlendem Wert. Das Jahr allein im Feld-Rahmen ' +
-			'zeigte Datum und Jahr als zwei Elemente. Auflösbar mit einer prefix-Prop am Feld.'
-	},
-	{
 		datei: 'src/inventur/lib/components/admin/ClassAssignmentSelector.svelte',
 		grund:
 			'Unsichtbares Tipp-Feld IM Chip-Kasten (bg-transparent, border-none): Der Kasten ist ' +

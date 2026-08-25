@@ -79,11 +79,15 @@ of type int". Die Unit-Tests und 26 E2E-Specs blieben grün; gefunden hat es
 `lehrer-reservierung.spec.js` im vollen Lauf. Fix: `type="number"` an allen 13 Stellen,
 plus Wächter in `frontend-hygiene-felder.test.js` (min/max/step ohne type="number" ist rot).
 
-**Offen (C):** `prefix`/`nachlaufend`-Snippet am Feld würde die drei handgebauten
-Subgrid-Hüllen (Einheit „Stück", ISBN-Knöpfe, Ausweis-Jahr) und die Ausnahme
-`AusweisGueltigkeit` auflösen. Tabellen-Inline-Felder (Rückgabedatum, Exemplar-Barcode)
-sind mit 36 px höher als ihre Zeile — eine `size="sm"`-Variante wie beim Button wäre
-konsequent, ist aber ohne Bedienbefund nicht gebaut.
+**Nachgezogen (Peter: „wäre gut oder?"):** `vorlaufend`/`nachlaufend`-Snippets am Feld
+(Inhalt links/rechts IM Feld, als Überlagerung wie bei Suchfeld — das Feld bleibt das
+gerahmte 36-px-Element, das die Höhen-Ratsche misst). Damit sind die drei handgebauten
+Subgrid-Hüllen (Einheit „Stück", ISBN-Knöpfe) und die Ausnahme `AusweisGueltigkeit`
+aufgelöst; es bleiben zwei Ausnahmen (Omnibox-Pille, Chip-Kasten).
+
+**Offen (C):** Tabellen-Inline-Felder (Rückgabedatum, Exemplar-Barcode) sind mit 36 px
+höher als ihre Zeile — eine `size="sm"`-Variante wie beim Button wäre konsequent, ist
+aber ohne Bedienbefund nicht gebaut.
 
 ## Orte — Entscheidungsrunde 24.08.2026 (Peter: „mach mal")
 

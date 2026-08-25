@@ -71,40 +71,39 @@
 	}
 </script>
 
-<!-- Eigene Subgrid-Hülle statt `label=` am Feld: Die zwei Knöpfe liegen IM Feld und
-     brauchen dafür einen relative-Kasten um die Feldzeile. Drei Zeilen wie beim Feld
-     mit label, damit der Autor daneben auf gleicher Höhe steht. -->
-<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
-	<label for="buch-isbn" class="text-sm font-medium text-on-surface-variant">
-		{formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
-	</label>
-	<div class="relative">
-		<Feld id="buch-isbn" bind:value={formular.isbn} onblur={beiVerlassen} feld="pr-20" />
+<Feld
+	id="buch-isbn"
+	label={formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
+	bind:value={formular.isbn}
+	onblur={beiVerlassen}
+	feld="pr-20"
+>
+	{#snippet nachlaufend()}
 		<button
 			type="button"
 			onclick={aktualisiereMetadaten}
 			disabled={isLookupActive}
-			class="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors disabled:opacity-50"
+			class="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-emerald-600 disabled:opacity-50"
 			title="Daten aus dem Internet aktualisieren"
 			aria-label="Daten aus dem Internet aktualisieren"
 		>
 			{#if isLookupActive}
 				<div
-					class="w-5 h-5 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin"
+					class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600"
 				></div>
 			{:else}
-				<RefreshCw class="w-5 h-5" aria-hidden="true" />
+				<RefreshCw class="h-5 w-5" aria-hidden="true" />
 			{/if}
 		</button>
 		<button
 			type="button"
 			onclick={() => (wirdGescannt = true)}
 			aria-pressed={wirdGescannt}
-			class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+			class="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-emerald-600"
 			title="Scan ISBN"
 			aria-label="Scan ISBN"
 		>
-			<Camera class="w-5 h-5" aria-hidden="true" />
+			<Camera class="h-5 w-5" aria-hidden="true" />
 		</button>
-	</div>
-</div>
+	{/snippet}
+</Feld>
