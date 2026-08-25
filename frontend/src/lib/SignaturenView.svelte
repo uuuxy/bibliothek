@@ -6,6 +6,7 @@
 	import SignaturRegal from './components/signaturen/SignaturRegal.svelte';
 	import SystematikVerwaltung from './components/signaturen/SystematikVerwaltung.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
+	import Feld from './components/ui/Feld.svelte';
 
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
@@ -44,15 +45,7 @@
 	     Objekte machen; es ist aber EIN Arbeitsbereich mit zwei Haelften. -->
 	<div class="grid divide-y divide-slate-200 lg:grid-cols-[20rem_1fr] lg:divide-x lg:divide-y-0">
 		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">
-			<label for="sig-suche" class="block text-sm font-medium text-slate-700">
-				Signatur suchen
-			</label>
-			<input
-				id="sig-suche"
-				bind:value={suche}
-				placeholder="z. B. BIB"
-				class="h-9 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-			/>
+			<Feld id="sig-suche" label="Signatur suchen" bind:value={suche} placeholder="z. B. BIB" />
 
 			{#if laedt}
 				<p class="text-sm text-slate-500">Wird geladen …</p>

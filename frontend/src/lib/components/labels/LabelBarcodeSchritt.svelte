@@ -6,6 +6,7 @@
      1 auf 3 und sähe aus wie ein übersprungener Schritt. -->
 <script>
 	import { labelStore } from '../../stores/labels.svelte.js';
+	import Feld from '../ui/Feld.svelte';
 </script>
 
 {#if labelStore.selectedTitle}
@@ -70,25 +71,8 @@
 		{:else}
 			<!-- Generating new sequential labels -->
 			<div class="grid grid-cols-2 gap-3">
-				<div class="space-y-1.5">
-					<span class="text-xs font-medium text-slate-500 block">Menge</span>
-					<input
-						type="number"
-						min="1"
-						max="100"
-						bind:value={labelStore.newQuantity}
-						class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-					/>
-				</div>
-				<div class="space-y-1.5">
-					<span class="text-xs font-medium text-slate-500 block">Start-Ziffer (B-)</span>
-					<input
-						type="number"
-						min="1"
-						bind:value={labelStore.newStartNum}
-						class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-					/>
-				</div>
+				<Feld label="Menge" type="number" min="1" max="100" bind:value={labelStore.newQuantity} />
+				<Feld label="Start-Ziffer (B-)" type="number" min="1" bind:value={labelStore.newStartNum} />
 			</div>
 		{/if}
 	</div>

@@ -7,6 +7,7 @@
 	import { apiGet, apiPost, apiPut, apiDelete } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 
 	/** @type {{ onChanged?: () => void }} */
 	let { onChanged } = $props();
@@ -128,24 +129,14 @@
 			anlegen();
 		}}
 	>
-		<div class="flex flex-col gap-1">
-			<label for="sys-kuerzel" class="text-xs font-medium text-slate-600">Kürzel</label>
-			<input
-				id="sys-kuerzel"
-				bind:value={kuerzel}
-				placeholder="Deu"
-				class="h-9 w-28 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-			/>
-		</div>
-		<div class="flex flex-col gap-1 grow min-w-48">
-			<label for="sys-bezeichnung" class="text-xs font-medium text-slate-600">Bezeichnung</label>
-			<input
-				id="sys-bezeichnung"
-				bind:value={bezeichnung}
-				placeholder="Deutsch"
-				class="h-9 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-			/>
-		</div>
+		<Feld id="sys-kuerzel" label="Kürzel" bind:value={kuerzel} placeholder="Deu" class="w-28" />
+		<Feld
+			id="sys-bezeichnung"
+			label="Bezeichnung"
+			bind:value={bezeichnung}
+			placeholder="Deutsch"
+			class="grow min-w-48"
+		/>
 		<Button type="submit" disabled={speichert || !kuerzel.trim() || !bezeichnung.trim()}>
 			Anlegen
 		</Button>
@@ -173,18 +164,10 @@
 						<tr class="border-t border-slate-100">
 							{#if bearbeiteId === eintrag.id}
 								<td class="py-2 pr-3">
-									<input
-										bind:value={bearbeiteKuerzel}
-										aria-label="Kürzel bearbeiten"
-										class="h-9 w-24 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-emerald-500"
-									/>
+									<Feld bind:value={bearbeiteKuerzel} aria-label="Kürzel bearbeiten" feld="w-24" />
 								</td>
 								<td class="py-2 pr-3">
-									<input
-										bind:value={bearbeiteBezeichnung}
-										aria-label="Bezeichnung bearbeiten"
-										class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-emerald-500"
-									/>
+									<Feld bind:value={bearbeiteBezeichnung} aria-label="Bezeichnung bearbeiten" />
 								</td>
 								<td class="py-2 text-right whitespace-nowrap">
 									<Button size="sm" onclick={speichereBearbeitung}>Sichern</Button>

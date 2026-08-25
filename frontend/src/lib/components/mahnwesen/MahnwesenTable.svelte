@@ -2,6 +2,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { Mail, X } from '@lucide/svelte';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
@@ -197,24 +198,16 @@
 					<span class="block text-xs font-medium text-slate-500 mb-1">Klasse</span>
 					<p class="text-sm font-semibold text-slate-800">{mahnwesenStore.modalKlasse}</p>
 				</div>
-				<div>
-					<label for="modal-email" class="block text-xs font-medium text-slate-500 mb-1"
-						>E-Mail-Adresse des Klassenlehrers</label
-					>
-					<input
-						id="modal-email"
-						type="email"
-						bind:value={mahnwesenStore.modalEmail}
-						placeholder="lehrer@schule.de"
-						class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-					/>
-					{#if !mahnwesenStore.modalEmail.trim()}
-						<p class="text-label-small text-slate-400 mt-1">
-							Die Adresse wird aus dem Klassenlehrer-Mapping vorausgefüllt, kann aber geändert
-							werden.
-						</p>
-					{/if}
-				</div>
+				<Feld
+					id="modal-email"
+					label="E-Mail-Adresse des Klassenlehrers"
+					type="email"
+					bind:value={mahnwesenStore.modalEmail}
+					placeholder="lehrer@schule.de"
+					hint={mahnwesenStore.modalEmail.trim()
+						? ''
+						: 'Die Adresse wird aus dem Klassenlehrer-Mapping vorausgefüllt, kann aber geändert werden.'}
+				/>
 			</div>
 
 			{#if mahnwesenStore.modalMsg}

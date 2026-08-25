@@ -67,9 +67,9 @@
 	{/snippet}
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
-		<Feld bind:value={fristBuch} label="Tage / Buch" min={1} max={365} />
-		<Feld bind:value={fristMedien} label="Tage / Medien" min={1} max={365} />
-		<Feld bind:value={maxAusleihen} label="Max. Ausleihen" min={1} max={50} />
+		<Feld type="number" bind:value={fristBuch} label="Tage / Buch" min={1} max={365} />
+		<Feld type="number" bind:value={fristMedien} label="Tage / Medien" min={1} max={365} />
+		<Feld type="number" bind:value={maxAusleihen} label="Max. Ausleihen" min={1} max={50} />
 		<Feld
 			bind:value={lmfStichtag}
 			label="LMF-Stichtag (MM-TT)"

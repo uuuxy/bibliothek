@@ -5,6 +5,7 @@
 <script>
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import Select from '../ui/Select.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { ETIKETT_FORMATE } from '../../etikettformate.js';
 	const BARCODE_AUSGABE = [
 		{ value: 'code39', label: 'Code39 (1D Standard)' },
@@ -28,12 +29,13 @@
 		<div class="space-y-1.5">
 			<span class="text-xs font-medium text-slate-500 block">Startposition auf dem A4-Bogen</span>
 			<div class="flex items-center gap-2">
-				<input
+				<Feld
 					type="number"
 					min="1"
 					max={labelStore.maxPositions}
 					bind:value={labelStore.startPosition}
-					class="w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+					aria-label="Startposition auf dem A4-Bogen"
+					feld="w-24"
 				/>
 				<span class="text-label-small text-slate-400">max. {labelStore.maxPositions}</span>
 			</div>

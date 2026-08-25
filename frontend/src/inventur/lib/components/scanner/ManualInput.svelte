@@ -1,5 +1,6 @@
 <script>
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	/**
 	 * @type {{
 	 *   onSubmit: (isbn: string) => void,
@@ -22,20 +23,19 @@
 </script>
 
 <div class="mt-4">
-	<label for="manual-isbn" class="block text-xs font-semibold text-slate-400"
+	<!-- Beschriftung bleibt eigenes <label>: Der Knopf steht in der Feldzeile, nicht
+	     unter der Beschriftung — mit `label=` am Feld säße er neben beiden Zeilen. -->
+	<label for="manual-isbn" class="text-sm font-medium text-on-surface-variant"
 		>Handscanner / ISBN-Eingabe</label
 	>
-	<div class="mt-2 flex gap-2">
-		<input
+	<div class="mt-1.5 flex gap-2">
+		<Feld
 			id="manual-isbn"
-			type="text"
 			bind:value={manualISBN}
 			onkeydown={handleKeydown}
 			placeholder="ISBN scannen oder eintippen"
-			class="w-full h-10 rounded-xl border border-slate-300 bg-white px-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800 placeholder-slate-400 shadow-sm"
 		/>
 		<Button
-			size="lg"
 			onclick={() => {
 				onSubmit(manualISBN);
 				manualISBN = '';

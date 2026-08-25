@@ -6,6 +6,7 @@
 <script>
 	import { IdCard, X } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -58,13 +59,7 @@
 				     die einzige Entscheidung dieses Vorgangs ist. -->
 				<label class="flex shrink-0 items-center gap-2 text-xs whitespace-nowrap text-white/75">
 					Ab Feld
-					<input
-						type="number"
-						min="1"
-						max={maxPosition}
-						bind:value={startPosition}
-						class="w-16 rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-sm text-white"
-					/>
+					<Feld type="number" min="1" max={maxPosition} bind:value={startPosition} feld="w-16" />
 					<span class="text-white/55">von {maxPosition}</span>
 				</label>
 			{/if}

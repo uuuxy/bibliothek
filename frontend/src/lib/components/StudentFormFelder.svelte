@@ -11,6 +11,7 @@
      nächsten Import ein Duplikat. Das Backend lehnt es ebenfalls ab (zwei Türen). -->
 <script>
 	import Select from './ui/Select.svelte';
+	import Feld from './ui/Feld.svelte';
 
 	/**
 	 * @type {{
@@ -38,39 +39,17 @@
 	]);
 </script>
 
-<label class="block text-xs font-medium text-slate-400"
-	>Vorname *
-	<input
-		type="text"
-		bind:value={vorname}
-		placeholder="z.B. Max"
-		class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-	/>
-</label>
+<Feld label="Vorname *" bind:value={vorname} placeholder="z.B. Max" />
 
-<label class="block text-xs font-medium text-slate-400"
-	>Nachname *
-	<input
-		type="text"
-		bind:value={nachname}
-		placeholder="z.B. Mustermann"
-		class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-	/>
-</label>
+<Feld label="Nachname *" bind:value={nachname} placeholder="z.B. Mustermann" />
 
-<label class="block text-xs font-medium text-slate-400"
-	>Geburtsdatum *
-	<input
-		type="date"
-		required
-		bind:value={geburtsdatum}
-		class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-	/>
-	<span class="mt-1 block text-label-small font-normal text-on-surface-variant"
-		>Pflicht: Der LUSD-Import erkennt den Schüler nur über Name + Geburtsdatum wieder — ohne Datum
-		würde er beim nächsten Import doppelt angelegt.</span
-	>
-</label>
+<Feld
+	label="Geburtsdatum *"
+	type="date"
+	required
+	bind:value={geburtsdatum}
+	hint="Pflicht: Der LUSD-Import erkennt den Schüler nur über Name + Geburtsdatum wieder — ohne Datum würde er beim nächsten Import doppelt angelegt."
+/>
 
 <div class="block text-xs font-medium text-slate-400">
 	<label for="schueler-klasse">Klasse *</label>
@@ -90,12 +69,7 @@
 			/>
 		{:else}
 			<div class="relative w-full">
-				<input
-					type="text"
-					bind:value={klasse}
-					placeholder="z.B. 10b"
-					class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
-				/>
+				<Feld id="schueler-klasse" bind:value={klasse} placeholder="z.B. 10b" feld="pr-20" />
 				<button
 					type="button"
 					onclick={() => {
@@ -110,12 +84,8 @@
 	</div>
 </div>
 
-<label class="block text-xs font-medium text-slate-400"
-	>Barcode-ID (optional)
-	<input
-		type="text"
-		bind:value={barcode}
-		placeholder="Wird automatisch generiert, wenn leer"
-		class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-	/>
-</label>
+<Feld
+	label="Barcode-ID (optional)"
+	bind:value={barcode}
+	placeholder="Wird automatisch generiert, wenn leer"
+/>

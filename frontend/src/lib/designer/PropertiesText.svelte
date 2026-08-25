@@ -6,6 +6,7 @@
      deshalb fehlt dort das Inhaltsfeld. -->
 <script>
 	import Select from '../components/ui/Select.svelte';
+	import Feld from '../components/ui/Feld.svelte';
 	import ZahlenFeld from './ZahlenFeld.svelte';
 
 	/**
@@ -28,14 +29,7 @@
 	<span class="text-xs font-medium text-slate-500 block">Textformatierung</span>
 
 	{#if !istDynamisch}
-		<div class="space-y-1">
-			<span class="text-xs text-slate-400 font-medium block">Inhalt</span>
-			<input
-				type="text"
-				bind:value={el.content}
-				class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-			/>
-		</div>
+		<Feld label="Inhalt" bind:value={el.content} />
 	{/if}
 
 	<div class="space-y-1">

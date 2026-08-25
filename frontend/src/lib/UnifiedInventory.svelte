@@ -5,6 +5,7 @@
 	import InventoryStartModal from './components/InventoryStartModal.svelte';
 	import InventoryFinishModal from './components/InventoryFinishModal.svelte';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import { Check, ClipboardCheck, Plus, ScanBarcode, TriangleAlert, X } from '@lucide/svelte';
@@ -204,23 +205,22 @@
 				}}
 				class="relative"
 			>
-				<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-					<ScanBarcode class="w-6 h-6 text-slate-400" aria-hidden="true" />
-				</div>
-				<input
-					bind:this={barcodeInputEl}
+				<ScanBarcode
+					class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+					aria-hidden="true"
+				/>
+				<Feld
+					bind:element={barcodeInputEl}
 					bind:value={inventoryState.barcodeInput}
-					type="text"
+					aria-label="Barcode scannen"
 					placeholder="Barcode scannen..."
-					class="h-auto w-full pl-12 pr-4 py-4 bg-white border-2 border-blue-100 rounded-xl shadow-sm text-lg font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+					feld="pl-10 font-medium"
 					disabled={inventoryState.isScanning}
 				/>
 				{#if inventoryState.isScanning}
-					<div class="absolute inset-y-0 right-0 pr-4 flex items-center">
-						<div
-							class="w-5 h-5 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin"
-						></div>
-					</div>
+					<div
+						class="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"
+					></div>
 				{/if}
 			</form>
 

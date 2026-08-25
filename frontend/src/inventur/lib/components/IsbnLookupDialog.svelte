@@ -1,6 +1,7 @@
 <script>
 	import Button from '../../../lib/components/ui/Button.svelte';
 	import Select from '../../../lib/components/ui/Select.svelte';
+	import Feld from '../../../lib/components/ui/Feld.svelte';
 	// Alias: coverSrc ist in dieser Komponente bereits der Name des Anzeige-Zustands.
 	import { coverSrc as proxyCover } from '../../../lib/utils/coverSrc.js';
 
@@ -118,16 +119,11 @@
 			</div>
 
 			<div class="mt-5 grid gap-3 sm:grid-cols-2">
-				<label class="block text-xs font-semibold text-slate-400"
-					>Fach
-					<input
-						type="text"
-						bind:value={subject}
-						class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-					/>
-				</label>
-				<div>
-					<label for="isbn-klassenstufe" class="block text-xs font-semibold text-slate-400"
+				<Feld id="isbn-fach" label="Fach" bind:value={subject} />
+				<!-- Gleiche drei Subgrid-Zeilen wie das Feld daneben, sonst sitzt das
+				     Auswahlfeld eine Zeile tiefer als das Fach. -->
+				<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+					<label for="isbn-klassenstufe" class="text-sm font-medium text-on-surface-variant"
 						>Klassenstufe</label
 					>
 					<Select
@@ -135,19 +131,10 @@
 						bind:value={grade}
 						options={klassenstufen}
 						placeholder="Klasse wählen"
-						class="mt-1.5 w-full"
 					/>
 				</div>
+				<Feld id="isbn-bestand" label="Bestand" type="number" min="0" bind:value={stock} />
 			</div>
-			<label class="mt-4 block text-xs font-semibold text-slate-400"
-				>Bestand
-				<input
-					type="number"
-					min="0"
-					bind:value={stock}
-					class="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-				/>
-			</label>
 
 			<div class="mt-6 flex justify-end gap-3">
 				<Button variant="secondary" size="lg" onclick={onCancel} disabled={busy} class="px-5">

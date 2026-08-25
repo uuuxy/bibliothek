@@ -74,6 +74,7 @@
 		{#if warnungAktiv}
 			<div class="max-w-xs">
 				<Feld
+					type="number"
 					bind:value={schwelle}
 					label="Warnen unter x Exemplaren"
 					min={1}

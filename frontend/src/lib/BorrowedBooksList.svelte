@@ -4,6 +4,7 @@
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { AlertTriangle, CalendarPlus, Check, Loader2, Pencil, Undo2, X } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import CoverPeek from './components/ui/CoverPeek.svelte';
 	import { coverSrc } from './utils/coverSrc.js';
 
@@ -24,7 +25,6 @@
 	async function handleSaveDate(book) {
 		const id = book.ausleihe_id || book.id;
 		if (!id || !editingDate) return;
-
 		isSavingDate = true;
 		try {
 			const response = await apiFetch(`/api/admin/ausleihen/${id}/faelligkeit`, {
@@ -54,7 +54,6 @@
 	async function handleExtend(book) {
 		const id = book.ausleihe_id || book.id;
 		if (!id || extendingIds.has(id)) return;
-
 		extendingIds.add(id);
 
 		try {
@@ -169,11 +168,12 @@
 						<td class="py-3 px-4 text-sm font-semibold text-slate-700 whitespace-nowrap">
 							{#if editingId === (book.ausleihe_id || book.id)}
 								<div class="flex items-center gap-1.5">
-									<input
+									<Feld
 										type="date"
 										bind:value={editingDate}
-										class="border border-slate-300 rounded px-1.5 py-0.5 text-xs bg-white text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow disabled:opacity-50"
+										aria-label="Rückgabedatum"
 										disabled={isSavingDate}
+										feld="w-40"
 									/>
 									<button
 										onclick={() => handleSaveDate(book)}

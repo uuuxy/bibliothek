@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -75,36 +76,27 @@
 	</div>
 
 	<div class="flex items-end gap-4 flex-wrap">
-		<div>
-			<label for="extendKlasse" class="text-xs font-semibold text-slate-600 block mb-1"
-				>Klasse (z.B. 10b)</label
-			>
-			<input
-				id="extendKlasse"
-				type="text"
-				list="lmf-klassen-vorschlaege"
-				bind:value={klasse}
-				placeholder="10b"
-				class="w-32 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
-			/>
-			<datalist id="lmf-klassen-vorschlaege">
-				{#each klassenVorschlaege as k (k)}
-					<option value={k}></option>
-				{/each}
-			</datalist>
-		</div>
+		<Feld
+			id="extendKlasse"
+			label="Klasse (z.B. 10b)"
+			list="lmf-klassen-vorschlaege"
+			bind:value={klasse}
+			placeholder="10b"
+			class="w-32"
+		/>
+		<datalist id="lmf-klassen-vorschlaege">
+			{#each klassenVorschlaege as k (k)}
+				<option value={k}></option>
+			{/each}
+		</datalist>
 
-		<div>
-			<label for="extendDatum" class="text-xs font-semibold text-slate-600 block mb-1"
-				>Neues Rückgabedatum</label
-			>
-			<input
-				id="extendDatum"
-				type="date"
-				bind:value={neuesDatum}
-				class="w-48 h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none text-slate-800"
-			/>
-		</div>
+		<Feld
+			id="extendDatum"
+			label="Neues Rückgabedatum"
+			type="date"
+			bind:value={neuesDatum}
+			class="w-48"
+		/>
 
 		<Button
 			onclick={handleGlobalExtend}

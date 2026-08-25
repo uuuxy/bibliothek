@@ -9,6 +9,7 @@
 	import { apiPut } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { CheckCircle2, Clock, Copy, Check } from '@lucide/svelte';
 
 	let { b, onAktualisieren } = $props();
@@ -120,12 +121,7 @@
 					Nur jetzt sichtbar — gespeichert wird der Link nicht. Ein früherer ist ab sofort ungültig.
 				</p>
 				<div class="mt-1.5 flex items-center gap-2">
-					<input
-						readonly
-						value={neuerLink}
-						aria-label="Bestätigungs-Link"
-						class="w-full rounded-lg border border-blue-200 bg-white px-2 py-1.5 font-mono text-xs text-slate-700"
-					/>
+					<Feld readonly value={neuerLink} aria-label="Bestätigungs-Link" feld="font-mono" />
 					<Button variant="secondary" size="sm" onclick={kopieren}>
 						{#if kopiert}<Check size={14} aria-hidden="true" />{:else}<Copy
 								size={14}

@@ -3,6 +3,7 @@
 	import { Mail } from '@lucide/svelte';
 	import Modal from '../../Modal.svelte';
 	import Button from './Button.svelte';
+	import Feld from './Feld.svelte';
 
 	/**
 	 * KlassenVersandDialog — Türsteher vor jedem klassenweisen Massenversand.
@@ -164,30 +165,16 @@
 			</p>
 		</div>
 
-		<div>
-			<label class="text-sm font-medium text-slate-700" for="versand-override-email">
-				Alternative Empfänger-E-Mail (optional)
-			</label>
-			<input
-				id="versand-override-email"
-				type="text"
-				inputmode="email"
-				autocomplete="off"
-				bind:value={overrideEmail}
-				placeholder="z. B. mueller"
-				aria-invalid={!emailOk}
-				class="w-full h-9 px-3 mt-1 bg-white border rounded-xl text-sm outline-none focus:ring-1 {emailOk
-					? 'border-slate-300 focus:border-blue-600 focus:ring-blue-600'
-					: 'border-rose-400 focus:border-rose-500 focus:ring-rose-500'}"
-			/>
-			{#if emailOk}
-				<p class="text-xs text-slate-500 mt-1">{hinweis}</p>
-			{:else}
-				<p class="text-xs text-rose-600 mt-1">
-					Keine gültige Adresse — Name oder vollständige E-Mail.
-				</p>
-			{/if}
-		</div>
+		<Feld
+			id="versand-override-email"
+			label="Alternative Empfänger-E-Mail (optional)"
+			inputmode="email"
+			autocomplete="off"
+			bind:value={overrideEmail}
+			placeholder="z. B. mueller"
+			ungueltig={!emailOk}
+			hint={emailOk ? hinweis : 'Keine gültige Adresse — Name oder vollständige E-Mail.'}
+		/>
 	</div>
 
 	<div class="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50/50">

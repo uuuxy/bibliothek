@@ -6,6 +6,7 @@
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
 	import SignaturFeld from './SignaturFeld.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
+	import Feld from '../../../../lib/components/ui/Feld.svelte';
 
 	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];
 
@@ -105,40 +106,16 @@
 		<Select id="buch-medientyp" bind:value={formular.medientyp} options={medientypOptionen} />
 	</div>
 
-	<div>
-		<label for="buch-titel" class="block text-sm font-medium text-slate-700 mb-1">Titel</label>
-		<input
-			id="buch-titel"
-			type="text"
-			bind:value={formular.title}
-			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-		/>
-	</div>
+	<Feld id="buch-titel" label="Titel" bind:value={formular.title} />
 
-	<div>
-		<label for="buch-untertitel" class="block text-sm font-medium text-slate-700 mb-1"
-			>Untertitel</label
-		>
-		<input
-			id="buch-untertitel"
-			type="text"
-			bind:value={formular.untertitel}
-			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-		/>
-	</div>
+	<Feld id="buch-untertitel" label="Untertitel" bind:value={formular.untertitel} />
 
 	<div class="grid grid-cols-2 gap-4">
-		<div>
-			<label for="buch-autor" class="block text-sm font-medium text-slate-700 mb-1"
-				>{formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}</label
-			>
-			<input
-				id="buch-autor"
-				type="text"
-				bind:value={formular.author}
-				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-			/>
-		</div>
+		<Feld
+			id="buch-autor"
+			label={formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}
+			bind:value={formular.author}
+		/>
 
 		<!-- Extrahierte ISBN-Feld-Komponente -->
 		<IsbnFeld bind:formular bind:wirdGescannt />
@@ -147,26 +124,13 @@
 	<SignaturFeld bind:formular {signaturFehlt} {autorKuerzel} />
 
 	<div class="grid grid-cols-2 gap-4">
-		<div>
-			<label for="buch-verlag" class="block text-sm font-medium text-slate-700 mb-1">Verlag</label>
-			<input
-				id="buch-verlag"
-				type="text"
-				bind:value={formular.verlag}
-				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-			/>
-		</div>
-		<div>
-			<label for="buch-jahr" class="block text-sm font-medium text-slate-700 mb-1"
-				>Erscheinungsjahr</label
-			>
-			<input
-				id="buch-jahr"
-				type="number"
-				bind:value={formular.erscheinungsjahr}
-				class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-			/>
-		</div>
+		<Feld id="buch-verlag" label="Verlag" bind:value={formular.verlag} />
+		<Feld
+			id="buch-jahr"
+			label="Erscheinungsjahr"
+			type="number"
+			bind:value={formular.erscheinungsjahr}
+		/>
 	</div>
 
 	<BuchEingabefelderKategorisierung bind:formular {systematikListe} />

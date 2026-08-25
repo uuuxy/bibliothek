@@ -3,6 +3,7 @@
 	import { apiClient } from './apiFetch.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
 	import { initialen, avatarVerlauf } from './avatarKachel.js';
 
@@ -41,10 +42,7 @@
 		if (!m) return new Date().getFullYear() + 5;
 		const grade = parseInt(m[1], 10);
 		const suffix = m[2] || '';
-		let maxGrade;
-		if (suffix.startsWith('h')) maxGrade = 9;
-		else if (grade >= 11) maxGrade = 13;
-		else maxGrade = 10;
+		const maxGrade = suffix.startsWith('h') ? 9 : grade >= 11 ? 13 : 10;
 		const yearsLeft = Math.max(0, maxGrade - grade);
 		const now = new Date();
 		const base = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
@@ -138,12 +136,13 @@
 		{#if rechte.bearbeiten}
 			{#if editingAbgang}
 				<div class="flex items-center gap-2 flex-wrap">
-					<input
+					<Feld
 						type="number"
 						min="2000"
 						max="2100"
 						bind:value={abgangInput}
-						class="w-24 h-7 px-2 text-sm border border-blue-400 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-200"
+						aria-label="Abgangsjahr"
+						feld="w-24 text-center font-bold"
 					/>
 					<Button
 						variant="secondary"

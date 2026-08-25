@@ -1,4 +1,5 @@
 <script>
+	import Suchfeld from '../ui/Suchfeld.svelte';
 	import { Printer } from '@lucide/svelte';
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
@@ -36,22 +37,21 @@
 				<!-- Autocomplete search -->
 				<div class="space-y-1.5">
 					<span class="text-xs font-medium text-slate-500 block">Buchtitel im Katalog suchen</span>
-					<div class="relative">
-						<input
-							type="text"
-							bind:value={labelStore.searchVal}
-							oninput={labelStore.handleSearchInput}
-							placeholder="Titel, Autor oder ISBN eingeben..."
-							class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-						/>
-						{#if labelStore.isSearching}
-							<div class="absolute right-3 top-1/2 -translate-y-1/2">
+					<!-- Suchfeld-Rolle (Autocomplete), Spinner im nachlaufend-Snippet. -->
+					<Suchfeld
+						bind:wert={labelStore.searchVal}
+						oninput={labelStore.handleSearchInput}
+						platzhalter="Titel, Autor oder ISBN eingeben..."
+						etikett="Buchtitel im Katalog suchen"
+					>
+						{#snippet nachlaufend()}
+							{#if labelStore.isSearching}
 								<div
-									class="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
+									class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent"
 								></div>
-							</div>
-						{/if}
-					</div>
+							{/if}
+						{/snippet}
+					</Suchfeld>
 
 					{#if labelStore.searchResults.length > 0}
 						<div class="relative">

@@ -24,7 +24,7 @@ const ROH_INPUT =
 // ── Ratsche ─────────────────────────────────────────────────────────────────
 // Diese Zahl darf NUR sinken. Wer eine Fundstelle auf das Bauteil umstellt, trägt den
 // neuen Stand hier ein — der Test sagt einem die Zahl.
-const HANDGEBAUT_BESTAND = 79;
+const HANDGEBAUT_BESTAND = 0;
 
 /**
  * Bewusste Ausnahmen. Jede braucht einen Grund, den das Bauteil nicht ausdrücken kann —
@@ -36,6 +36,20 @@ const AUSNAHMEN = [
 		grund:
 			'Füllt die 48-px-Scan-Pille (h-full, ohne eigenen Rahmen) — die Pille ist das ' +
 			'Bedienelement, nicht das Feld. Gate: e2e/suchpille-einheitlich.spec.js.'
+	},
+	{
+		datei: 'src/lib/components/AusweisGueltigkeit.svelte',
+		grund:
+			'Zusammengesetzte Pille „[Symbol] Gültig bis 31.07. [Jahr] [Zurücksetzen]" mit EINEM ' +
+			'Rahmen um alles und amber-Zustand bei fehlendem Wert. Das Jahr allein im Feld-Rahmen ' +
+			'zeigte Datum und Jahr als zwei Elemente. Auflösbar mit einer prefix-Prop am Feld.'
+	},
+	{
+		datei: 'src/inventur/lib/components/admin/ClassAssignmentSelector.svelte',
+		grund:
+			'Unsichtbares Tipp-Feld IM Chip-Kasten (bg-transparent, border-none): Der Kasten ist ' +
+			'das Feld, die Chips sind sein Wert. Ein zweiter Rahmen darin wäre falsch. ' +
+			'e2e/klassensatz-dialog.spec.js hängt an #class-input.'
 	}
 ];
 
@@ -89,6 +103,24 @@ describe('Feld-Hygiene', () => {
 				`${a.datei}: Ausnahme ohne Fundstelle`
 			).toBeGreaterThan(0);
 		}
+	});
+
+	it('gibt keinem Zahlenfeld den Text-Standard (min/max/step verlangen type="number")', () => {
+		// Am 25.08.2026 gefunden von e2e/lehrer-reservierung.spec.js: SettingField hatte
+		// type="number" als STANDARD, Feld hat "text". Zwölf Einstellungsfelder und die
+		// Anzahl der Klassensatz-Reservierung liefen nach der Umstellung als String ans
+		// Backend — „cannot unmarshal string into … anzahl of type int". Ein Standardwert,
+		// der beim Bauteilwechsel kippt, ist ein stiller Fehler; deshalb steht die
+		// Absicht jetzt an jeder Fundstelle.
+		const fehlend = [];
+		for (const f of sammleQuelldateien(srcRoot)) {
+			if (!f.endsWith('.svelte')) continue;
+			for (const t of readFileSync(f, 'utf8').match(/<Feld\b[^]*?\/>/g) ?? []) {
+				if (/\b(min|max|step)=/.test(t) && !/\btype="number"/.test(t))
+					fehlend.push(`${relPfad(f)}: ${t.split(/\s+/).slice(0, 4).join(' ')} …`);
+			}
+		}
+		expect(fehlend, 'Feld mit min/max/step, aber ohne type="number"').toEqual([]);
 	});
 
 	it('erkennt ein Textfeld und verwechselt es nicht mit Schaltern', () => {

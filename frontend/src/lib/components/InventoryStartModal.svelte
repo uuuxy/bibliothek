@@ -1,6 +1,7 @@
 <script>
 	import { slide } from 'svelte/transition';
 	import Select from './ui/Select.svelte';
+	import Feld from './ui/Feld.svelte';
 
 	const KLASSEN = [
 		{ value: '', label: 'Alle Klassen' },
@@ -99,28 +100,23 @@
 			</div>
 
 			{#if state.scopeType === 'signature'}
-				<div transition:slide class="space-y-2">
-					<label for="inv-signatur" class="block text-sm font-medium text-slate-700"
-						>Signatur auswählen</label
-					>
+				<div transition:slide>
 					<!-- Freie Eingabe MIT Vorschlagsliste: Die Signatur wird als Präfix gelesen,
 					     "BIB Deu" erfasst also auch "BIB Deu 5 KRÜ". Eine reine Auswahlliste
 					     könnte nur exakt vorhandene Werte anbieten und damit kein ganzes Regal. -->
-					<input
+					<Feld
 						id="inv-signatur"
+						label="Signatur auswählen"
 						list="inv-signatur-vorschlaege"
 						bind:value={state.selectedSignatur}
 						placeholder="z. B. BIB Deu"
-						class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+						hint="Erfasst alles, was mit dieser Signatur beginnt — „BIB Deu“ also auch „BIB Deu 5 KRÜ“."
 					/>
 					<datalist id="inv-signatur-vorschlaege">
 						{#each state.signaturen as sig (sig.signatur)}
 							<option value={sig.signatur}>{sig.signatur} — {sig.exemplare} Exemplare</option>
 						{/each}
 					</datalist>
-					<p class="text-xs text-slate-500">
-						Erfasst alles, was mit dieser Signatur beginnt — „BIB Deu“ also auch „BIB Deu 5 KRÜ“.
-					</p>
 				</div>
 			{/if}
 

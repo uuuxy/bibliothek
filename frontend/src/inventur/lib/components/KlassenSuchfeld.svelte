@@ -6,12 +6,12 @@
      der Klick auf einen Eintrag ankommt.
 
      Stand in der Werkzeugleiste der Schulklassen-Seite, seit der Klassen-Reiter im
-     Medienkatalog aufgelöst wurde. Feld-Vokabular deshalb wie Select.svelte
-     (rounded-xl, border-outline-variant, Fokus auf primary) — die Zeile trägt
-     Suchfeld, zwei Auswahlfelder und einen Button und soll als EINE Leiste lesen.
-     Die Höhe kommt aus dem base-Layer (36 px), nicht aus den Klassen hier. -->
+     Medienkatalog aufgelöst wurde. Das Feld selbst ist seit dem 25.08.2026 das
+     Suchfeld-Bauteil (36 px, Werkzeugleiste); der Pfeil sitzt als nachlaufendes
+     Symbol darin und die Vorschlagsliste hängt an der Hülle. -->
 <script>
 	import { ChevronDown } from '@lucide/svelte';
+	import Suchfeld from '../../../lib/components/ui/Suchfeld.svelte';
 	/**
 	 * @type {{
 	 *   klasseSearchQuery: string,
@@ -32,23 +32,22 @@
 
 <div class={className}>
 	<div class="relative w-full">
-		<input
-			type="text"
-			bind:value={klasseSearchQuery}
-			aria-label="Klasse suchen"
+		<Suchfeld
+			bind:wert={klasseSearchQuery}
+			etikett="Klasse suchen"
+			platzhalter="Klasse suchen (z.B. 5f1) …"
 			onfocus={() => (isKlasseDropdownOpen = true)}
 			onblur={() => setTimeout(() => (isKlasseDropdownOpen = false), 150)}
-			placeholder="Klasse suchen (z.B. 5f1) …"
-			class="block w-full rounded-xl border border-outline-variant bg-surface-container-lowest pl-3 pr-10 text-sm text-on-surface transition-colors placeholder:text-on-surface-variant focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-		/>
-		<div
-			class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-on-surface-variant"
 		>
-			<ChevronDown
-				class="h-4 w-4 transition-transform duration-200 {isKlasseDropdownOpen ? 'rotate-180' : ''}"
-				aria-hidden="true"
-			/>
-		</div>
+			{#snippet nachlaufend()}
+				<ChevronDown
+					class="pointer-events-none h-4 w-4 text-on-surface-variant transition-transform duration-200 {isKlasseDropdownOpen
+						? 'rotate-180'
+						: ''}"
+					aria-hidden="true"
+				/>
+			{/snippet}
+		</Suchfeld>
 		{#if isKlasseDropdownOpen && filteredKlassenList.length > 0}
 			<ul
 				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl max-h-60 overflow-y-auto py-1"

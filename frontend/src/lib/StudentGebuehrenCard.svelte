@@ -3,6 +3,7 @@
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import { Receipt, CheckCircle2, Ban } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 
 	/**
 	 * Gebühren/Schäden eines Schülers mit den beiden Erledigungs-Wegen:
@@ -131,15 +132,11 @@
 				mit Begründung im Protokoll festgehalten.
 			</p>
 
-			<label for="storno-grund" class="block text-sm font-semibold text-on-surface mb-1"
-				>Stornierungsgrund</label
-			>
-			<input
+			<Feld
 				id="storno-grund"
-				type="text"
+				label="Stornierungsgrund"
 				bind:value={stornoGrund}
 				placeholder="z.B. Buch wiedergefunden, Kulanzentscheidung..."
-				class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 text-on-surface focus:border-error focus:ring-2 focus:ring-error/20 outline-none transition-all"
 			/>
 
 			<div class="flex justify-end gap-2 mt-6">

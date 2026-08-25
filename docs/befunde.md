@@ -43,6 +43,48 @@ Zwei Regeln dazu:
 
 ---
 
+## Textfelder waren die letzte M3-Lücke — ein Bauteil, eine Ratsche (25.08.2026)
+
+Ausgangsfrage war klein: neun native Datumsfelder auf M3 ziehen. Beim Öffnen der ersten
+Datei stand das Geburtsdatum zwischen Vorname und Nachname im **selben alten Slate-Stil**
+— ein Datumsfeld allein im M3-Rahmen hätte das Formular uneinheitlicher gemacht.
+Gemessen: **81 handgebaute `<input>` in 47 Dateien**, sieben Radien, vier Fokusfarben,
+drei Flächen; dazu zwei Bauteile für dieselbe Sache (`SettingField` M3/rounded-sm,
+`InputField` Slate). Buttons, Select und Suchfelder waren längst normiert, Textfelder
+nur in der Höhe.
+
+**Umgesetzt (Peters Entscheidung: „Formularfelder komplett auf M3"):**
+
+- `components/ui/Feld.svelte` — 36 px, `rounded-xl` (Radius-Regel 55a1d4b0: Karten +
+  Felder 12 px), `text-sm`, Rahmen/Fläche/Fokus exakt das Rezept von `Select.svelte`.
+  `label` → 3-Zeilen-Subgrid; ohne `label` nur das Feld mit Pflicht-`aria-label`.
+  `ungueltig`, `hint`, `feld` (Input-Klassen), `element` (bind:this), Rest per Spread.
+- `SettingField` und `InputField` gelöscht; 78 Fundstellen in 46 Dateien umgestellt,
+  vier davon als `ui/Suchfeld` (Autocomplete-Rolle), das Suchfeld selbst auf die
+  M3-Rollen (stand als letztes Feld noch auf slate/blue).
+- Ratsche `frontend-hygiene-felder.test.js` auf **0** mit drei begründeten Ausnahmen:
+  Omnibox (Scan-Pille), `AusweisGueltigkeit` (zusammengesetzte Pille „Gültig bis 31.07.
+  [Jahr]"), `ClassAssignmentSelector` (unsichtbares Tipp-Feld im Chip-Kasten).
+- Farb-Ratsche 2611 → 2285, Dateigrößen-Bestand um 7 Dateien kürzer.
+
+**Sichtbare Nebenwirkungen, bewusst:** Das Scan-Feld der Inventur (`UnifiedInventory`)
+verliert seine Sondergröße (62 px, blauer Doppelrahmen) und steht auf 36 px — es lag als
+einziges Feld der Seite außerhalb der Control-Skala. Einstellungsfelder schreiben jetzt
+14 statt 16 px, wie Select daneben. Wer das anders will, sagt es am Live-Bildschirm.
+
+**Ein A-Fund beim Beweisen:** `SettingField` hatte `type="number"` als STANDARD, `Feld`
+hat `"text"`. Nach der Umstellung liefen zwölf Einstellungsfelder und die Anzahl der
+Klassensatz-Reservierung als String ans Backend — „cannot unmarshal string into … anzahl
+of type int". Die Unit-Tests und 26 E2E-Specs blieben grün; gefunden hat es
+`lehrer-reservierung.spec.js` im vollen Lauf. Fix: `type="number"` an allen 13 Stellen,
+plus Wächter in `frontend-hygiene-felder.test.js` (min/max/step ohne type="number" ist rot).
+
+**Offen (C):** `prefix`/`nachlaufend`-Snippet am Feld würde die drei handgebauten
+Subgrid-Hüllen (Einheit „Stück", ISBN-Knöpfe, Ausweis-Jahr) und die Ausnahme
+`AusweisGueltigkeit` auflösen. Tabellen-Inline-Felder (Rückgabedatum, Exemplar-Barcode)
+sind mit 36 px höher als ihre Zeile — eine `size="sm"`-Variante wie beim Button wäre
+konsequent, ist aber ohne Bedienbefund nicht gebaut.
+
 ## Orte — Entscheidungsrunde 24.08.2026 (Peter: „mach mal")
 
 Sechs Ort-Fragen aus diesem Register, in einem Durchgang entschieden und umgesetzt:

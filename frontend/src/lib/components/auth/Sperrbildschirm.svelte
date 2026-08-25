@@ -3,6 +3,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { idleLock } from '../../stores/idleLock.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 
 	// Sperrbildschirm nach Inaktivität (A4 in docs/datenschutz_offene_punkte.md).
 	// Ersetzt die ganze Anwendung (App.svelte rendert Sidebar und Inhalt im gesperrten
@@ -57,14 +58,13 @@
 				>
 			</p>
 		</div>
-		<input
+		<Feld
 			id="sperre-passwort"
 			type="password"
 			autocomplete="current-password"
 			aria-label="Passwort"
 			bind:value={passwort}
 			disabled={idleLock.entsperreLaeuft}
-			class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 text-on-surface focus:outline-none focus:border-primary transition-colors"
 			placeholder="Passwort"
 		/>
 		<Button type="submit" size="lg" disabled={idleLock.entsperreLaeuft} class="w-full">

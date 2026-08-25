@@ -7,6 +7,7 @@
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { showToast } from '$lib/store.svelte.js';
 	import { Camera, RefreshCw } from '@lucide/svelte';
+	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
 
 	let isLookupActive = $state(false);
@@ -70,23 +71,20 @@
 	}
 </script>
 
-<div>
-	<label for="buch-isbn" class="block text-sm font-medium text-slate-700 mb-1">
+<!-- Eigene Subgrid-Hülle statt `label=` am Feld: Die zwei Knöpfe liegen IM Feld und
+     brauchen dafür einen relative-Kasten um die Feldzeile. Drei Zeilen wie beim Feld
+     mit label, damit der Autor daneben auf gleicher Höhe steht. -->
+<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+	<label for="buch-isbn" class="text-sm font-medium text-on-surface-variant">
 		{formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
 	</label>
 	<div class="relative">
-		<input
-			id="buch-isbn"
-			type="text"
-			bind:value={formular.isbn}
-			onblur={beiVerlassen}
-			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 pr-20 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-		/>
+		<Feld id="buch-isbn" bind:value={formular.isbn} onblur={beiVerlassen} feld="pr-20" />
 		<button
 			type="button"
 			onclick={aktualisiereMetadaten}
 			disabled={isLookupActive}
-			class="absolute right-10 top-2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors disabled:opacity-50"
+			class="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors disabled:opacity-50"
 			title="Daten aus dem Internet aktualisieren"
 			aria-label="Daten aus dem Internet aktualisieren"
 		>
@@ -102,7 +100,7 @@
 			type="button"
 			onclick={() => (wirdGescannt = true)}
 			aria-pressed={wirdGescannt}
-			class="absolute right-2 top-2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+			class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
 			title="Scan ISBN"
 			aria-label="Scan ISBN"
 		>

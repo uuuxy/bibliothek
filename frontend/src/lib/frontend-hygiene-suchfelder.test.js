@@ -49,16 +49,8 @@ const HANDGEBAUT_BESTAND = 0;
 // Die Kiosk-Omnibox taucht hier gar nicht auf: Ihr Platzhalter ist ein Ausdruck
 // (`placeholder={isActive ? … : …}`), kein Literal. Sie ist trotzdem kein blinder Fleck —
 // e2e/suchpille-einheitlich.spec.js misst sie im Browser gegen die Pille.
-const AUSNAHMEN = [
-	{
-		datei: 'src/inventur/lib/components/KlassenSuchfeld.svelte',
-		grund:
-			'Steht in einer Zeile mit zwei Select-Feldern und einem Button und trägt deshalb ' +
-			'bewusst deren M3-Rollen-Vokabular (border-outline-variant statt border-slate-200), ' +
-			'damit die Leiste als EINE liest. Auflösbar erst mit der Paletten-Migration, siehe ' +
-			'frontend-hygiene-farben.test.js.'
-	}
-];
+/** @type {{ datei: string, grund: string }[]} */
+const AUSNAHMEN = [];
 
 /** Zählt handgebaute Suchfelder je Datei. */
 function zaehleProDatei() {

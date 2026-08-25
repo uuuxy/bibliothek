@@ -1,9 +1,11 @@
 <script>
+	import Suchfeld from '../ui/Suchfeld.svelte';
 	import { apiPost, apiPut } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 
 	/** @type {any} */
@@ -100,13 +102,12 @@
 		<label for="book" class="block text-xs font-medium text-slate-500"
 			>Titel suchen &amp; hinzufügen</label
 		>
-		<input
+		<Suchfeld
 			id="book"
-			type="text"
-			bind:value={orderStore.searchQuery}
+			bind:wert={orderStore.searchQuery}
 			oninput={() => orderStore.handleSearchInput()}
-			placeholder="Titel, Autor oder ISBN …"
-			class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+			platzhalter="Titel, Autor oder ISBN …"
+			etikett="Titel suchen & hinzufügen"
 		/>
 		{#if orderStore.showDropdown && (localResults.length > 0 || dnbResults.length > 0)}
 			<div
@@ -249,24 +250,23 @@
 					<span class="text-amber-600 font-normal">(Vorschlag, bitte prüfen)</span>
 				{/if}
 			</label>
-			<input
+			<Feld
 				id="stagedSignaturInput"
-				type="text"
 				bind:value={stagedBook.signatur}
 				placeholder="z. B. BIB Jugendbuch"
-				class="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+				feld="font-medium"
 			/>
 		</div>
 
 		<div class="flex items-center justify-between gap-3">
 			<div class="flex items-center gap-2">
 				<label for="stagedMengeInput" class="text-xs font-medium text-slate-500">Menge</label>
-				<input
+				<Feld
 					id="stagedMengeInput"
 					type="number"
 					min="1"
 					bind:value={stagedMenge}
-					class="w-16 px-2 py-1.5 border border-slate-200 bg-white rounded-xl text-center font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+					feld="w-16 text-center font-bold"
 				/>
 			</div>
 			<label class="flex items-center gap-2 cursor-pointer select-none">

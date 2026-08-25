@@ -3,6 +3,7 @@
 	import { apiFetch, apiClient } from '../apiFetch.js';
 	import { toastStore } from '../stores/toastStore.svelte.js';
 	import Button from './ui/Button.svelte';
+	import Feld from './ui/Feld.svelte';
 	import { Plus, Wrench, MonitorSmartphone } from '@lucide/svelte';
 
 	/**
@@ -124,45 +125,15 @@
 	{#if formOffen}
 		<div class="rounded-2xl border border-outline-variant bg-surface-container-low p-4">
 			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="text-sm font-semibold text-on-surface"
-					>Modellname *
-					<input
-						bind:value={form.modellname}
-						placeholder="z. B. iPad 9. Gen"
-						class="mt-1 w-full rounded-xl border border-outline-variant bg-white p-2.5 font-normal text-on-surface"
-					/></label
-				>
-				<label class="text-sm font-semibold text-on-surface"
-					>Barcode (G-…) *
-					<input
-						bind:value={form.barcode_id}
-						disabled={bearbeiteId != null}
-						class="mt-1 w-full rounded-xl border border-outline-variant bg-white p-2.5 font-normal text-on-surface disabled:bg-surface-container disabled:text-on-surface-variant"
-					/></label
-				>
-				<label class="text-sm font-semibold text-on-surface"
-					>Seriennummer
-					<input
-						bind:value={form.seriennummer}
-						disabled={bearbeiteId != null}
-						class="mt-1 w-full rounded-xl border border-outline-variant bg-white p-2.5 font-normal text-on-surface disabled:bg-surface-container disabled:text-on-surface-variant"
-					/></label
-				>
-				<label class="text-sm font-semibold text-on-surface"
-					>Zubehör (Checkliste, mit Komma getrennt)
-					<input
-						bind:value={form.zubehoer}
-						placeholder="Ladekabel, Stift, Hülle"
-						class="mt-1 w-full rounded-xl border border-outline-variant bg-white p-2.5 font-normal text-on-surface"
-					/></label
-				>
-				<label class="text-sm font-semibold text-on-surface sm:col-span-2"
-					>Zustandsnotiz
-					<input
-						bind:value={form.zustand_notiz}
-						class="mt-1 w-full rounded-xl border border-outline-variant bg-white p-2.5 font-normal text-on-surface"
-					/></label
-				>
+				<Feld label="Modellname *" bind:value={form.modellname} placeholder="z. B. iPad 9. Gen" />
+				<Feld label="Barcode (G-…) *" bind:value={form.barcode_id} disabled={bearbeiteId != null} />
+				<Feld label="Seriennummer" bind:value={form.seriennummer} disabled={bearbeiteId != null} />
+				<Feld
+					label="Zubehör (Checkliste, mit Komma getrennt)"
+					bind:value={form.zubehoer}
+					placeholder="Ladekabel, Stift, Hülle"
+				/>
+				<Feld label="Zustandsnotiz" bind:value={form.zustand_notiz} class="sm:col-span-2" />
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
 				<Button variant="secondary" onclick={schliesseForm} disabled={speichert}>Abbrechen</Button>

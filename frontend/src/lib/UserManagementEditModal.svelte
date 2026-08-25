@@ -4,6 +4,7 @@
 	import Button from './components/ui/Button.svelte';
 	import Switch from './components/ui/Switch.svelte';
 	import Select from './components/ui/Select.svelte';
+	import Feld from './components/ui/Feld.svelte';
 
 	const ROLLEN = [
 		{ value: 'helfer', label: 'Helfer' },
@@ -50,40 +51,16 @@
 			</div>
 		{/if}
 		<div class="grid grid-cols-2 gap-4">
-			{@render inputField(
-				'vorname',
-				'Vorname',
-				'text',
-				userForm.vorname,
-				(/** @type {any} */ v) => (userForm.vorname = v),
-				true
-			)}
-			{@render inputField(
-				'nachname',
-				'Nachname',
-				'text',
-				userForm.nachname,
-				(/** @type {any} */ v) => (userForm.nachname = v),
-				true
-			)}
+			<Feld id="vorname" label="Vorname" bind:value={userForm.vorname} required />
+			<Feld id="nachname" label="Nachname" bind:value={userForm.nachname} required />
 		</div>
-		{@render inputField(
-			'email',
-			'E-Mail Adresse',
-			'email',
-			userForm.email,
-			(/** @type {any} */ v) => (userForm.email = v),
-			true
-		)}
-		{@render inputField(
-			'barcode_id',
-			'Barcode (Anmelde-ID)',
-			'text',
-			userForm.barcode_id,
-			(/** @type {any} */ v) => (userForm.barcode_id = v),
-			false,
-			'Z. B. L-001, MA-04 (optional)'
-		)}
+		<Feld id="email" label="E-Mail Adresse" type="email" bind:value={userForm.email} required />
+		<Feld
+			id="barcode_id"
+			label="Barcode (Anmelde-ID)"
+			bind:value={userForm.barcode_id}
+			placeholder="Z. B. L-001, MA-04 (optional)"
+		/>
 		<div class="space-y-1.5">
 			<label for="rolle" class="block text-xs font-medium text-slate-400">Benutzer-Rolle</label>
 			<Select id="rolle" bind:value={userForm.rolle} options={ROLLEN} />
@@ -109,18 +86,3 @@
 		</div>
 	</form>
 </Modal>
-
-{#snippet inputField(id, label, type, value, onInput, required, placeholder)}
-	<div class="space-y-1.5">
-		<label for={id} class="block text-xs font-medium text-slate-400">{label}</label>
-		<input
-			{id}
-			{type}
-			{value}
-			oninput={(e) => onInput(e.currentTarget.value)}
-			{required}
-			placeholder={placeholder ?? ''}
-			class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-300 transition-all font-medium text-slate-800"
-		/>
-	</div>
-{/snippet}

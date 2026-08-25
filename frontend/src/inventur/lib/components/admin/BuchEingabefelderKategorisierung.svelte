@@ -1,11 +1,11 @@
 <script>
 	import { klassenStufen, schulZweige } from '$lib/components/admin/buch_form_optionen.js';
 	import Select from '../../../../lib/components/ui/Select.svelte';
+	import Feld from '../../../../lib/components/ui/Feld.svelte';
 
 	let { formular = $bindable(), systematikListe = [] } = $props();
 
 	const nurBibliothek = $derived(formular.track === 'Bibliothek');
-	const gesperrt = $derived(nurBibliothek ? 'opacity-50 cursor-not-allowed' : '');
 
 	const faecher = $derived([
 		{ value: '', label: 'Kein Fach' },
@@ -40,34 +40,24 @@
 </div>
 
 <div class="grid grid-cols-2 gap-4">
-	<div>
-		<label for="buch-jahrgang-von" class="block text-sm font-medium text-slate-700 mb-1"
-			>Verwendbar von Klasse</label
-		>
-		<input
-			id="buch-jahrgang-von"
-			type="number"
-			min="1"
-			max="13"
-			bind:value={formular.jahrgangVon}
-			disabled={nurBibliothek}
-			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition {gesperrt}"
-		/>
-	</div>
-	<div>
-		<label for="buch-jahrgang-bis" class="block text-sm font-medium text-slate-700 mb-1"
-			>bis Klasse</label
-		>
-		<input
-			id="buch-jahrgang-bis"
-			type="number"
-			min="1"
-			max="13"
-			bind:value={formular.jahrgangBis}
-			disabled={nurBibliothek}
-			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition {gesperrt}"
-		/>
-	</div>
+	<Feld
+		id="buch-jahrgang-von"
+		label="Verwendbar von Klasse"
+		type="number"
+		min="1"
+		max="13"
+		bind:value={formular.jahrgangVon}
+		disabled={nurBibliothek}
+	/>
+	<Feld
+		id="buch-jahrgang-bis"
+		label="bis Klasse"
+		type="number"
+		min="1"
+		max="13"
+		bind:value={formular.jahrgangBis}
+		disabled={nurBibliothek}
+	/>
 </div>
 
 <div>

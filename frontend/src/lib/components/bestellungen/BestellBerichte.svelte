@@ -3,6 +3,7 @@
 	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Select from '../ui/Select.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { Printer } from '@lucide/svelte';
 
 	/** @type {{ suppliers?: { id: string, name: string }[] }} */
@@ -74,15 +75,7 @@
 		<p class="text-sm font-medium text-slate-700">Parameter</p>
 
 		{#if typ === 'monat'}
-			<div class="space-y-1.5">
-				<label class="block text-sm font-medium text-slate-700" for="monat">Monat</label>
-				<input
-					id="monat"
-					type="month"
-					bind:value={monatJahr}
-					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
-				/>
-			</div>
+			<Feld id="monat" label="Monat" type="month" bind:value={monatJahr} />
 		{:else if typ === 'jahr'}
 			<div class="space-y-1.5">
 				<label class="block text-sm font-medium text-slate-700" for="jahr">Jahr</label>
@@ -106,28 +99,8 @@
 				{/if}
 			</div>
 			<div class="grid grid-cols-2 gap-4">
-				<div class="space-y-1.5">
-					<label class="block text-sm font-medium text-slate-700" for="von">Von</label>
-					<input
-						id="von"
-						type="date"
-						bind:value={vonDatum}
-						class="w-full px-3 py-2.5 rounded-lg border bg-white text-base {rangeInvalid
-							? 'border-rose-400'
-							: 'border-slate-200'}"
-					/>
-				</div>
-				<div class="space-y-1.5">
-					<label class="block text-sm font-medium text-slate-700" for="bis">Bis</label>
-					<input
-						id="bis"
-						type="date"
-						bind:value={bisDatum}
-						class="w-full px-3 py-2.5 rounded-lg border bg-white text-base {rangeInvalid
-							? 'border-rose-400'
-							: 'border-slate-200'}"
-					/>
-				</div>
+				<Feld id="von" label="Von" type="date" bind:value={vonDatum} ungueltig={rangeInvalid} />
+				<Feld id="bis" label="Bis" type="date" bind:value={bisDatum} ungueltig={rangeInvalid} />
 			</div>
 			{#if rangeInvalid}
 				<p class="text-sm text-rose-600 font-medium">Das Von-Datum liegt nach dem Bis-Datum.</p>

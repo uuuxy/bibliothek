@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient } from '../apiFetch.js';
 	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
 	import Button from './ui/Button.svelte';
+	import Feld from './ui/Feld.svelte';
 	import { Pencil, Plus, Printer, Trash2 } from '@lucide/svelte';
 
 	/**
@@ -80,17 +81,15 @@
 	<div class="flex items-start justify-between mb-3">
 		{#if editingBarcode}
 			<div class="flex-1 mr-2 relative">
-				<!-- svelte-ignore a11y_autofocus -->
-				<!-- Bewusst behalten: Das Feld erscheint erst auf Klick und ersetzt an dieser
+				<!-- autofocus bewusst: Das Feld erscheint erst auf Klick und ersetzt an dieser
 				     Stelle den Barcode. Wer es oeffnet, will sofort tippen oder scannen. -->
-				<input
-					type="text"
+				<Feld
 					bind:value={editBarcodeValue}
+					aria-label="Barcode des Exemplars"
 					autofocus
 					onfocus={(e) => e.currentTarget.select()}
-					class="w-full px-2 py-1 text-xs font-mono border {barcodeError
-						? 'border-rose-500 bg-rose-50 text-rose-700'
-						: 'border-blue-300'} rounded focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+					ungueltig={!!barcodeError}
+					feld="font-mono"
 					onkeydown={(e) => {
 						if (e.key === 'Enter') saveBarcode();
 						if (e.key === 'Escape') {

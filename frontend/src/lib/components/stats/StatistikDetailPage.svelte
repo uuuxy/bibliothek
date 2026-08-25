@@ -7,6 +7,7 @@
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
+	import Suchfeld from '../ui/Suchfeld.svelte';
 	import PageShell from '../layout/PageShell.svelte';
 	import { ChevronLeft } from '@lucide/svelte';
 
@@ -95,11 +96,11 @@
 
 		<!-- Lokale Filterzeile -->
 		<div class="flex flex-wrap items-center gap-3">
-			<input
-				type="search"
-				bind:value={suchbegriff}
-				placeholder="Titel oder Autor…"
-				class="flex-1 min-w-40 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+			<Suchfeld
+				bind:wert={suchbegriff}
+				platzhalter="Titel oder Autor…"
+				etikett="Titel oder Autor suchen"
+				klasse="flex-1 min-w-40"
 			/>
 			<Select
 				bind:value={filterFach}

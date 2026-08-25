@@ -6,6 +6,7 @@
 	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import Feld from '../../../../lib/components/ui/Feld.svelte';
 
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();
@@ -87,22 +88,19 @@
 			{bookIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.
 		</p>
 
-		<div class="space-y-1">
-			<label for="klasse-name" class="text-sm font-medium text-slate-700">Klasse</label>
-			<input
-				id="klasse-name"
-				list="klassen-vorschlaege"
-				bind:value={className}
-				placeholder="z. B. 5a"
-				maxlength="20"
-				class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-			/>
-			<datalist id="klassen-vorschlaege">
-				{#each existing as name (name)}
-					<option value={name}></option>
-				{/each}
-			</datalist>
-		</div>
+		<Feld
+			id="klasse-name"
+			label="Klasse"
+			list="klassen-vorschlaege"
+			bind:value={className}
+			placeholder="z. B. 5a"
+			maxlength={20}
+		/>
+		<datalist id="klassen-vorschlaege">
+			{#each existing as name (name)}
+				<option value={name}></option>
+			{/each}
+		</datalist>
 
 		{#if error}
 			<div class="text-sm text-rose-600">{error}</div>

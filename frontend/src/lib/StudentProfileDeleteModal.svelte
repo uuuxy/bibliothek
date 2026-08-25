@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
 
 	let { open = false, profile, onclose, onsuccess } = $props();
@@ -90,13 +91,11 @@
 							>{expectedConfirmText}</span
 						>
 					</label>
-					<input
+					<Feld
 						id="confirm-name"
-						type="text"
 						bind:value={confirmText}
 						placeholder={expectedConfirmText}
 						autocomplete="off"
-						class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 focus:outline-none transition-all"
 					/>
 				</div>
 

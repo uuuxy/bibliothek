@@ -101,6 +101,7 @@
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
 		<Feld
+			type="number"
 			bind:value={lesehistorie}
 			label="Lesehistorie Schülerbücherei (Tage)"
 			min={0}
@@ -108,6 +109,7 @@
 			hint="Vorgabe 90."
 		/>
 		<Feld
+			type="number"
 			bind:value={lesehistorieLmf}
 			label="Lesehistorie Lernmittel (Tage)"
 			min={0}
@@ -115,6 +117,7 @@
 			hint="Vorgabe 730 (zwei Schuljahre)."
 		/>
 		<Feld
+			type="number"
 			bind:value={anliegen}
 			label="Erledigte Anliegen aufbewahren (Tage)"
 			min={0}
@@ -122,6 +125,7 @@
 			hint="Vorgabe 365."
 		/>
 		<Feld
+			type="number"
 			bind:value={auditMonate}
 			label="Prüfprotokoll aufbewahren (Monate)"
 			min={6}
@@ -129,6 +133,7 @@
 			hint="Vorgabe 24. Mindestens 6 — darunter ist nicht mehr nachvollziehbar, wer eine Gebühr storniert oder einen Bestand geändert hat."
 		/>
 		<Feld
+			type="number"
 			bind:value={thekeLeeren}
 			label="Theke leeren nach (Min.)"
 			min={0}
@@ -136,6 +141,7 @@
 			hint="Vorgabe 5."
 		/>
 		<Feld
+			type="number"
 			bind:value={sperre}
 			label="Sperrbildschirm nach (Min.)"
 			min={0}

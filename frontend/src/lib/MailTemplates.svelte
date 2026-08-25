@@ -1,6 +1,7 @@
 <script>
 	import { apiClient } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import { CircleCheck } from '@lucide/svelte';
 
 	/** @type {any[]} */
@@ -141,18 +142,12 @@
 		<div class="lg:w-2/3">
 			{#if selectedTemplate}
 				<div class="flex flex-col h-full gap-6">
-					<div>
-						<label for="betreff" class="block text-sm font-medium text-slate-600 mb-2"
-							>Betreff</label
-						>
-						<input
-							id="betreff"
-							type="text"
-							value={selectedTemplate.betreff}
-							oninput={updateBetreff}
-							class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white text-slate-800 text-lg font-medium"
-						/>
-					</div>
+					<Feld
+						id="betreff"
+						label="Betreff"
+						value={selectedTemplate.betreff}
+						oninput={updateBetreff}
+					/>
 
 					<div class="grow flex flex-col">
 						<label for="text_body" class="block text-sm font-medium text-slate-600 mb-2"

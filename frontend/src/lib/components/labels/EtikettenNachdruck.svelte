@@ -17,6 +17,7 @@
 	import Button from '../ui/Button.svelte';
 	import { Printer, Eraser } from '@lucide/svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
+	import Feld from '../ui/Feld.svelte';
 
 	/** @type {{ onUebergeben?: () => void }} */
 	let { onUebergeben } = $props();
@@ -384,13 +385,12 @@
 				>
 			</p>
 			<div class="flex flex-wrap items-center gap-3">
-				<label class="text-xs font-medium text-slate-600" for="stichtag">Beklebt bis</label>
-				<input
+				<Feld
 					id="stichtag"
+					label="Beklebt bis"
 					type="date"
 					bind:value={stichtag}
 					onchange={zaehleAltbestand}
-					class="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
 				/>
 				<Button
 					variant="secondary"

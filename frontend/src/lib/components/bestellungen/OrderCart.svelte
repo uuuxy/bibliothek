@@ -1,6 +1,7 @@
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { X } from '@lucide/svelte';
 </script>
@@ -94,12 +95,12 @@
 										DNB
 									</span>
 								{/if}
-								<input
+								<Feld
 									type="number"
 									step="0.01"
 									bind:value={item.preis}
 									aria-label="Preis"
-									class="w-20 px-2 py-1 border border-slate-200 rounded-lg text-right text-sm font-semibold text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+									feld="w-20 text-right font-semibold"
 								/>
 								<span class="text-sm font-semibold text-slate-400">€</span>
 							</div>

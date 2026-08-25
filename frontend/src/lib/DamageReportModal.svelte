@@ -1,5 +1,6 @@
 <script>
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	let { book, onCancel, onSubmit, isSubmitting } = $props();
 
 	let damageReason = $state('Verloren');
@@ -23,31 +24,20 @@
 			</p>
 
 			<div class="space-y-4">
-				<div>
-					<label for="damage-reason" class="block text-sm font-semibold text-slate-700 mb-1"
-						>Grund</label
-					>
-					<input
-						id="damage-reason"
-						type="text"
-						bind:value={damageReason}
-						placeholder="z.B. Wasserschaden, Verloren..."
-						class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none transition-all"
-					/>
-				</div>
-				<div>
-					<label for="damage-amount" class="block text-sm font-semibold text-slate-700 mb-1"
-						>Ersatzbetrag (€)</label
-					>
-					<input
-						id="damage-amount"
-						type="number"
-						step="0.01"
-						min="0"
-						bind:value={damageAmount}
-						class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none transition-all"
-					/>
-				</div>
+				<Feld
+					id="damage-reason"
+					label="Grund"
+					bind:value={damageReason}
+					placeholder="z.B. Wasserschaden, Verloren..."
+				/>
+				<Feld
+					id="damage-amount"
+					label="Ersatzbetrag (€)"
+					type="number"
+					step="0.01"
+					min="0"
+					bind:value={damageAmount}
+				/>
 				<div class="flex gap-3 justify-end pt-4">
 					<Button variant="ghost" onclick={onCancel} disabled={isSubmitting}>Abbrechen</Button>
 					<Button

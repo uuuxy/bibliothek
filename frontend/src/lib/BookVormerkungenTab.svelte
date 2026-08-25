@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import Button from './components/ui/Button.svelte';
+	import Feld from './components/ui/Feld.svelte';
 	import { Clock, Trash2 } from '@lucide/svelte';
 
 	/** @type {{ vormerkungen: any[], book: any }} */
@@ -88,37 +89,29 @@
 
 	{#if isAdding}
 		<div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 animate-fade-in">
-			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				<div>
-					<label for="student-search-input" class="block text-sm font-medium text-slate-600 mb-2"
-						>Schüler suchen (Name oder Barcode)</label
-					>
-					<div class="flex gap-2">
-						<input
-							id="student-search-input"
-							type="text"
-							bind:value={searchVal}
-							onkeydown={(e) => e.key === 'Enter' && searchStudent()}
-							placeholder="z.B. Max Mustermann"
-							class="flex-1 h-9 bg-white border border-slate-200 rounded-xl px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-						/>
-						<Button variant="secondary" onclick={searchStudent} disabled={isSearching}>
-							{isSearching ? '...' : 'Suchen'}
-						</Button>
-					</div>
-				</div>
-				<div>
-					<label for="notiz-input" class="block text-sm font-medium text-slate-600 mb-2"
-						>Interne Notiz (optional)</label
-					>
-					<input
-						id="notiz-input"
-						type="text"
-						bind:value={notiz}
-						placeholder="z.B. Braucht es dringend für Referat"
-						class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+			<!-- Flex statt Raster: Die Suche trägt neben sich einen Knopf, die Notiz nicht —
+			     im Raster säßen beide Felder auf verschiedenen Zeilen. -->
+			<div class="flex flex-col sm:flex-row items-end gap-4">
+				<div class="flex flex-1 w-full items-end gap-2">
+					<Feld
+						id="student-search-input"
+						label="Schüler suchen (Name oder Barcode)"
+						bind:value={searchVal}
+						onkeydown={(e) => e.key === 'Enter' && searchStudent()}
+						placeholder="z.B. Max Mustermann"
+						class="flex-1"
 					/>
+					<Button variant="secondary" onclick={searchStudent} disabled={isSearching}>
+						{isSearching ? '...' : 'Suchen'}
+					</Button>
 				</div>
+				<Feld
+					id="notiz-input"
+					label="Interne Notiz (optional)"
+					bind:value={notiz}
+					placeholder="z.B. Braucht es dringend für Referat"
+					class="flex-1 w-full"
+				/>
 			</div>
 
 			{#if searchResults.length > 0}

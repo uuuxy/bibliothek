@@ -7,6 +7,7 @@
      Signatur ist Speichern gesperrt, das muss man sehen, bevor man klickt. -->
 <script>
 	import { Tag } from '@lucide/svelte';
+	import Feld from '../../../../lib/components/ui/Feld.svelte';
 
 	/** @type {{ formular: any, signaturFehlt: boolean, autorKuerzel: string }} */
 	let { formular = $bindable(), signaturFehlt, autorKuerzel } = $props();
@@ -26,28 +27,17 @@
 					: 'bg-emerald-100 text-emerald-700'}">Pflicht</span
 			>{/if}
 	</label>
-	<input
+	<!-- Beschriftung bleibt eigenes <label>: Symbol und „Pflicht"-Marke passen nicht in
+	     die Text-Prop des Feldes. Fehlerzustand und Hinweis kommen aus dem Bauteil. -->
+	<Feld
 		id="buch-signatur"
-		type="text"
 		bind:value={formular.signatur}
 		placeholder={autorKuerzel
 			? `z. B. "${autorKuerzel}" (Belletristik) oder "LMF M"`
 			: 'z. B. LMF M, BIB ROM, Row …'}
-		aria-invalid={signaturFehlt}
-		class="w-full rounded-lg px-4 py-2.5 text-slate-900 outline-none transition border bg-white
-                   {signaturFehlt
-			? 'border-rose-400 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'
-			: 'border-emerald-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'}"
+		ungueltig={signaturFehlt}
+		hint={signaturFehlt
+			? 'Ohne Signatur kein Etikett — bitte Systematik-Kürzel eintragen (Speichern ist bis dahin gesperrt).'
+			: 'Wird 1:1 auf das Rücken-Etikett gedruckt. Bestehende Littera-Signaturen werden von Importen nie überschrieben.'}
 	/>
-	{#if signaturFehlt}
-		<p class="mt-1.5 text-xs font-semibold text-rose-600">
-			Ohne Signatur kein Etikett — bitte Systematik-Kürzel eintragen (Speichern ist bis dahin
-			gesperrt).
-		</p>
-	{:else}
-		<p class="mt-1.5 text-xs text-slate-500">
-			Wird 1:1 auf das Rücken-Etikett gedruckt. Bestehende Littera-Signaturen werden von Importen
-			nie überschrieben.
-		</p>
-	{/if}
 </div>

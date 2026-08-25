@@ -2,6 +2,7 @@
 	import { showToast } from '../../inventur/lib/store.svelte.js';
 	import { apiClient } from '../apiFetch.js';
 	import Select from './ui/Select.svelte';
+	import Feld from './ui/Feld.svelte';
 
 	const STATUS = ['Verfügbar', 'Gesperrt (Defekt/Reserviert)', 'Verloren'].map((s) => ({
 		value: s,
@@ -64,18 +65,16 @@
 		<Select bind:value={editStatusType} options={STATUS} aria-label="Status des Exemplars" />
 	</div>
 	{#if editStatusType !== 'Verfügbar'}
-		<div class="mb-2">
-			<input
-				type="text"
-				bind:value={editStatusNote}
-				placeholder="Notiz (optional)"
-				class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-				onkeydown={(e) => {
-					if (e.key === 'Enter') saveStatus();
-					if (e.key === 'Escape') onDone();
-				}}
-			/>
-		</div>
+		<Feld
+			bind:value={editStatusNote}
+			placeholder="Notiz (optional)"
+			aria-label="Notiz zum Status"
+			feld="mb-2"
+			onkeydown={(e) => {
+				if (e.key === 'Enter') saveStatus();
+				if (e.key === 'Escape') onDone();
+			}}
+		/>
 	{/if}
 	<div class="flex items-center justify-between">
 		<button

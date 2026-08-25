@@ -9,6 +9,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import { Check } from '@lucide/svelte';
 
 	/** @typedef {{ id: string, art: string, titel_text: string, isbn?: string, klasse: string, kommentar?: string, von?: string, erstellt_am: string }} Anliegen */
@@ -132,12 +133,12 @@
 			<!-- Die Notiz landet in der Mail an die Lehrkraft — ein Einzeiler wie
 			     „bestellt, kommt Anfang September" erspart die Rückfrage im Flur. -->
 			<div class="flex items-center gap-2 mt-3">
-				<input
-					type="text"
+				<Feld
 					bind:value={notiz}
-					maxlength="500"
+					maxlength={500}
 					placeholder="Notiz für die Mail an die Lehrkraft (optional)"
-					class="flex-1 text-sm border border-outline-variant rounded-full px-4 bg-surface"
+					aria-label="Notiz für die Mail an die Lehrkraft"
+					feld="flex-1"
 				/>
 				<Button
 					variant="secondary"

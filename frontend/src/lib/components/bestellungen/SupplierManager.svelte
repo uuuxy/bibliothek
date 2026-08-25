@@ -1,6 +1,7 @@
 <script>
 	import Button from '../ui/Button.svelte';
 	import Switch from '../ui/Switch.svelte';
+	import Feld from '../ui/Feld.svelte';
 
 	let { suppliers, onAddSupplier, onEditSupplier, onRemoveSupplier } = $props();
 
@@ -54,33 +55,9 @@
 			Neuer Lieferant
 		</h2>
 		<form onsubmit={handleSubmit} class="space-y-4 text-base">
-			<div class="space-y-1.5">
-				<label for="n" class="block font-medium text-slate-600 text-sm">Name</label><input
-					id="n"
-					type="text"
-					bind:value={newName}
-					required
-					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
-				/>
-			</div>
-			<div class="space-y-1.5">
-				<label for="e" class="block font-medium text-slate-600 text-sm">E-Mail</label><input
-					id="e"
-					type="email"
-					bind:value={newEmail}
-					required
-					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
-				/>
-			</div>
-			<div class="space-y-1.5">
-				<label for="c" class="block font-medium text-slate-600 text-sm">Kundennummer</label><input
-					id="c"
-					type="text"
-					bind:value={newCustNum}
-					required
-					class="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-base"
-				/>
-			</div>
+			<Feld id="n" label="Name" bind:value={newName} required />
+			<Feld id="e" label="E-Mail" type="email" bind:value={newEmail} required />
+			<Feld id="c" label="Kundennummer" bind:value={newCustNum} required />
 			<!-- EIN Schalter statt drei. Vorher standen hier „beklebt die Bücher",
 			     „voreingestellt beim Bestellen" und „bekommt den Bestelllink" einzeln — drei
 			     Haken für eine einzige Tatsache aus dem Schulalltag, und eine Kombination davon
@@ -142,26 +119,12 @@
 						{#each suppliers as s (s.id)}
 							{#if editingId === s.id}
 								<tr class="bg-blue-50/60">
+									<td class="py-2 pr-2"><Feld aria-label="Name" bind:value={editName} /></td>
 									<td class="py-2 pr-2"
-										><input
-											type="text"
-											bind:value={editName}
-											class="w-full px-2 py-1.5 rounded border border-blue-300 text-sm"
-										/></td
+										><Feld aria-label="E-Mail" type="email" bind:value={editEmail} /></td
 									>
 									<td class="py-2 pr-2"
-										><input
-											type="email"
-											bind:value={editEmail}
-											class="w-full px-2 py-1.5 rounded border border-blue-300 text-sm"
-										/></td
-									>
-									<td class="py-2 pr-2"
-										><input
-											type="text"
-											bind:value={editCustNum}
-											class="w-full px-2 py-1.5 rounded border border-blue-300 text-sm"
-										/></td
+										><Feld aria-label="Kundennummer" bind:value={editCustNum} /></td
 									>
 									<td class="py-2 pr-2">
 										<Switch
