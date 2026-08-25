@@ -20,7 +20,9 @@
 
 <div class="grid grid-cols-2 gap-4">
 	<div>
-		<label for="buch-fach" class="block text-sm font-medium text-slate-700 mb-1">Fach</label>
+		<label for="buch-fach" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
+			>Fach</label
+		>
 		<Select
 			id="buch-fach"
 			bind:value={formular.subject}
@@ -29,7 +31,9 @@
 		/>
 	</div>
 	<div>
-		<label for="buch-klasse" class="block text-sm font-medium text-slate-700 mb-1">Klasse</label>
+		<label for="buch-klasse" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
+			>Klasse</label
+		>
 		<Select
 			id="buch-klasse"
 			bind:value={formular.gradeLevel}
@@ -61,7 +65,7 @@
 </div>
 
 <div>
-	<label for="buch-schulzweig" class="block text-sm font-medium text-slate-700 mb-1"
+	<label for="buch-schulzweig" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
 		>Schulzweig</label
 	>
 	<Select id="buch-schulzweig" bind:value={formular.track} options={zweige} />

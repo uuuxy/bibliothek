@@ -25,7 +25,9 @@
 					}
 				}}
 			/>
-		{:else}
+		{:else if formular.id}
+			<!-- Vor dem ersten Speichern steht unten schon „Erst speichern, dann Bild
+			     hochladen" — zwei Texte übereinander (Peter, 25.08.2026 am Live-Bildschirm). -->
 			<div class="w-full h-full flex items-center justify-center text-slate-400">Kein Bild</div>
 		{/if}
 

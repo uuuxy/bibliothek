@@ -100,7 +100,7 @@
 
 <div class="space-y-5">
 	<div>
-		<label for="buch-medientyp" class="block text-sm font-medium text-slate-700 mb-1"
+		<label for="buch-medientyp" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
 			>Medientyp</label
 		>
 		<Select id="buch-medientyp" bind:value={formular.medientyp} options={medientypOptionen} />
@@ -138,7 +138,7 @@
 	<BuchEingabefelderInventar bind:formular />
 
 	<div>
-		<label for="buch-beschreibung" class="block text-sm font-medium text-slate-700 mb-1"
+		<label for="buch-beschreibung" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
 			>Beschreibung / Klappentext</label
 		>
 		<textarea
