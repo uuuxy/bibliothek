@@ -80,6 +80,16 @@ of type int". Die Unit-Tests und 26 E2E-Specs blieben grün; gefunden hat es
 `lehrer-reservierung.spec.js` im vollen Lauf. Fix: `type="number"` an allen 13 Stellen,
 plus Wächter in `frontend-hygiene-felder.test.js` (min/max/step ohne type="number" ist rot).
 
+**Raster-Gegenprobe (Peter: „sollten wir Daniels Raster nochmal drüber laufen lassen?"):**
+Zwei Prüfungen, die kein Unit-Test leistet. (1) Attribut-Parität: jedes alte `<input>`
+gegen sein neues `<Feld>`/`<Suchfeld>` gepaart — 80 Felder, 62 Dateien, keine verlorenen
+Handler, Bindungen, `required`, `maxlength`, Datalists. (2) `e2e/feld-roundtrip.spec.js`:
+sieben Schreibpfade ohne bisherigen E2E-Beweis bis in die Datenbank — Buch anlegen mit
+Bestand/Zähldatum/Standort, Abgangsjahr, Rückgabedatum, Exemplar-Barcode, Anliegen anlegen
+und erledigen mit Notiz, Einstellungs-Zahlenfeld. Alle grün; der einzige 400 unterwegs war
+meine erfundene ISBN. Nebenbefund (B): Die sieben Bestell-Reiter brechen bei 1280 px in
+zwei Zeilen um — M3 sieht dafür scrollbare Tabs vor.
+
 **Nachgezogen (Peter: „wäre gut oder?"):** `vorlaufend`/`nachlaufend`-Snippets am Feld
 (Inhalt links/rechts IM Feld, als Überlagerung wie bei Suchfeld — das Feld bleibt das
 gerahmte 36-px-Element, das die Höhen-Ratsche misst). Damit sind die drei handgebauten
