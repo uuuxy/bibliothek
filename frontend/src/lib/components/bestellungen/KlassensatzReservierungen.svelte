@@ -9,6 +9,7 @@
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import ArbeitsZeile from './ArbeitsZeile.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Check } from '@lucide/svelte';
 
@@ -95,30 +96,24 @@
 	}
 </script>
 
-<!-- Zeilentypografie wie AnliegenListe (M3-Listenzeile: 16/14 px), damit die beiden
-     Reiter nebeneinander dieselbe Zeile zeigen. -->
 {#snippet reservierungRow(r)}
-	<li class="flex items-center justify-between gap-4 py-4">
-		<div class="min-w-0 flex-1">
-			<p class="text-base font-bold text-slate-800 truncate">{r.titel_name}</p>
-			<p class="text-sm text-slate-500 mt-0.5">
-				Klasse <span class="font-semibold text-slate-600">{r.klasse}</span> · {r.anzahl} Exemplare
-				{#if r.angefordert_von}· angefragt von {r.angefordert_von}{/if}
-				{#if r.verfuegbar != null}
-					·
-					<!-- Regal-Blick vor dem Gang ans Regal: reicht der Bestand gerade nicht
-					     (verliehen/ausgesondert), steht es hier statt beim Zählen im Raum. -->
-					<span class={r.verfuegbar >= r.anzahl ? 'font-semibold' : 'font-semibold text-error'}>
-						{r.verfuegbar} verfügbar
-					</span>
-				{/if}
-			</p>
-			{#if r.notiz}
-				<p class="text-sm text-slate-400 italic mt-1 truncate">„{r.notiz}"</p>
-			{/if}
-		</div>
-		<div class="text-sm text-slate-400 shrink-0 w-24 text-right">{r.erstellt_am}</div>
-		<div class="shrink-0">
+	<ArbeitsZeile
+		klasse={r.klasse}
+		titel={r.titel_name}
+		neben={[r.angefordert_von, r.erstellt_am].filter(Boolean).join(' · ')}
+		anzahl={r.anzahl}
+		notiz={r.notiz ?? ''}
+		chip={r.verfuegbar == null
+			? undefined
+			: r.verfuegbar >= r.anzahl
+				? { text: `${r.verfuegbar} verfügbar`, ton: 'erfolg' }
+				: {
+						text: `nur ${r.verfuegbar} verfügbar`,
+						ton: 'fehler',
+						tip: 'Regal-Blick: verliehene oder ausgesonderte Exemplare fehlen gerade'
+					}}
+	>
+		{#snippet aktion()}
 			{#if confirmingId === r.id}
 				<div class="flex items-center gap-2">
 					<Button
@@ -150,8 +145,8 @@
 					Abschließen
 				</Button>
 			{/if}
-		</div>
-	</li>
+		{/snippet}
+	</ArbeitsZeile>
 {/snippet}
 
 <div class="space-y-6">

@@ -9,14 +9,17 @@
 	//
 	// Farben kommen aus der Token-Schicht (theme-farben.css): emerald ist dort die
 	// M3-Success-Familie, amber die Warning-Familie. Nichts wird hier frei gewählt.
-	let { ton = 'neutral', text, detail = '', tip = '', icon } = $props();
+	let { ton = 'neutral', text, detail = '', tip = '', icon = undefined } = $props();
 
 	const toene = {
 		// Getönte Container: Fläche -100, Schrift -700. Das ist das M3-Paar
 		// container/on-container und hält den Kontrast auch bei kleinem Text.
 		erfolg: 'bg-emerald-100 text-emerald-700',
 		warten: 'bg-amber-100 text-amber-700',
-		neutral: 'bg-slate-100 text-slate-600'
+		neutral: 'bg-slate-100 text-slate-600',
+		// Etwas stimmt nicht (Meldung, Bestand reicht nicht): das M3-Paar
+		// error-container / on-error-container aus der Rollenschicht.
+		fehler: 'bg-error-container text-on-error-container'
 	};
 </script>
 
