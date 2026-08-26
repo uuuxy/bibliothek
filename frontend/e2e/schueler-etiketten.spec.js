@@ -77,6 +77,11 @@ test.describe('Schüler-Etiketten', () => {
 		// ── Schülerdatei: derselbe Zustand, anderer Bildschirm ──
 		await page.getByTitle('Schülerdatei').click();
 		await page.getByLabel('Schüler suchen').fill(`Etikett${s}`);
+		// GESAMTzahl der Zeilen, nicht nur die passenden: Mit 10.000 Schülern in der DB
+		// standen die zwei gesuchten schon in der ungefilterten ersten Seite (500), die
+		// hasText-Zählung bestand, das Häkchen markierte 500 — und die gefilterte Antwort
+		// kam erst nach dem Klick auf „Drucken" (Netzwerk-Log 26.08.2026).
+		await expect(page.locator('tbody tr')).toHaveCount(2);
 		await expect(page.locator('tbody tr').filter({ hasText: `Etikett${s}` })).toHaveCount(2);
 		await page.getByRole('checkbox', { name: /Alle angezeigten Schüler/ }).check();
 
@@ -131,12 +136,12 @@ test.describe('Schüler-Etiketten', () => {
 		await page.getByRole('tab', { name: 'Klassenweise drucken' }).click();
 
 		await page.getByRole('combobox', { name: 'Klasse' }).click();
-		await page.getByRole('option', { name: '8G2', exact: true }).click();
+		await page.getByRole('option', { name: '08G2', exact: true }).click();
 		await page.getByRole('button', { name: 'Klasse zum Druck markieren' }).click();
 
 		// Gelandet in der Schülerdatei: Suche vorbefüllt, die Aktionsleiste steht ohne
 		// weiteres Zutun da, und JEDE angezeigte Zeile trägt den Haken.
-		await expect(page.getByLabel('Schüler suchen')).toHaveValue('8G2');
+		await expect(page.getByLabel('Schüler suchen')).toHaveValue('08G2');
 		await expect(page.getByRole('region', { name: /Aktionen für die markierten/ })).toBeVisible();
 
 		const zeilen = page.locator('tbody tr');
