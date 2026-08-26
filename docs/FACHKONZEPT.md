@@ -88,8 +88,12 @@ dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
   Arbeitsauftrag an die Bibliothek und reiht sich in eine **sichtbare Warteschlange**
   ein (älteste zuerst).
 - Das Portal zeigt bestehende Reservierungen **vor** dem Klick am Treffer
-  („28 reserviert für 8a“); wer trotzdem reserviert, erfährt in der Bestätigung, hinter
-  wem sein Satz an der Reihe ist.
+  („28 reserviert für 8a“) und verrechnet sie mit dem Regal (seit 26.08.2026:
+  „28 vorgemerkt · 2 rechnerisch frei“ — das OPAC-Abzeichen „N von M verfügbar“ sinkt
+  durch eine Reservierung nicht, weil sie nichts bucht). Übersteigt die Wunschanzahl
+  die rechnerisch freie Zahl, warnt das Formular vor dem Absenden („Reicht aktuell
+  nicht — du stellst dich hinter 8a an“); wer trotzdem reserviert, erfährt in der
+  Bestätigung, hinter wem sein Satz an der Reihe ist.
 - Die Bibliothek arbeitet die Schlange unter Bestellungen → Klassensatz-Reservierungen
   ab: je Zeile Anfragende(r) mit Namen und der aktuelle Regal-Bestand („N verfügbar“).
   „Abschließen“ beendet den Vorgang nach der physischen Übergabe — die Ausleihe selbst

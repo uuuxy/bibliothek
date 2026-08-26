@@ -95,7 +95,9 @@ sperrt keinen Bestand):
 1. [ ] Offene Reservierung erscheint in der Liste (Titel, Klasse, Anzahl, Anforderer **mit Namen**, „N verfügbar“).
 2. [ ] Gegenprobe Warteschlange: eine zweite Reservierung desselben Titels anlegen — sie
        reiht sich **hinter** der ersten ein, und das Portal zeigt der zweiten Lehrkraft
-       den Chip „… reserviert für …“ schon am Suchtreffer.
+       schon am Suchtreffer den Chip „… reserviert für …“ sowie „… vorgemerkt ·
+       … rechnerisch frei“; reicht die Wunschanzahl nicht, steht die Warnung
+       „Reicht aktuell nicht …“ im Formular **vor** dem Absenden.
 3. [ ] Bücher physisch bereitstellen und übergeben, dann **„Abschließen“**.
 4. [ ] Reservierung verschwindet aus der offenen Liste; die zweite rückt nach vorn.
 5. [ ] Gegenprobe: die Ausleihe der Exemplare war die ganze Zeit möglich — es gab nie
