@@ -925,11 +925,12 @@ Duplikate: Go `dupl -t 100` 8 Klonpaare (print.go, lookups.go, mahnwesen.go — 
 Handler-Varianten), Frontend `jscpd` 15 Klone = 0,41 % (Kachel-Trio in inventur/,
 Testvorspann). Kategorie C — nichts davon vor dem Pilotstart.
 
-**Befund (B, Entscheidung Peter):** Das Projekt hat **keine LICENSE-Datei**
-(`package.json` sagt UNLICENSED, `go.mod` nichts). Solange nur die eigene Schule es
-betreibt, unerheblich; bei Weitergabe an eine andere Schule oder Veröffentlichung muss
-eine Lizenz gewählt sein (Vorschlag: MIT oder EUPL-1.2 — die EUPL ist die europäische,
-deutschsprachig verfügbare Wahl für Verwaltungssoftware).
+**Korrektur (26.08., eine Stunde später):** Der oben zunächst notierte Befund „keine
+LICENSE-Datei" war **falsch** — `LICENSE` liegt im Root, EUPL 1.2 seit `7b258e1f`
+(PR #282), im README genannt. Mein Prüfbefehl (`ls LICENSE* COPYING*`) brach in der
+zsh am zweiten, leeren Glob ab, bevor er das erste Ergebnis zeigte; ich habe die
+Fehlermeldung als „keine Datei" gelesen. Einziger Rest: `package.json` trägt
+`"license": "UNLICENSED"` statt `"EUPL-1.2"` (Kategorie C, kosmetisch).
 
 ### Kategorie B — Typografie unter der M3-Skala (25.08.2026, gemessen)
 
