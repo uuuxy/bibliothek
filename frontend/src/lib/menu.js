@@ -193,7 +193,7 @@ export const menuGroups = [
 				// Einstellungen) war ein zu grobes Recht; das ist seit der Aufteilung in
 				// manage_users / manage_settings / manage_students_admin gelöst.
 				id: 'berechtigungen',
-				label: 'Berechtigungen',
+				label: 'Benutzer & Rechte',
 				icon: 'key',
 				permission: 'manage_users'
 			},

@@ -5,10 +5,11 @@
 	import { onMount } from 'svelte';
 	import UserManagement from './UserManagement.svelte';
 	import PermissionsEditor from './PermissionsEditor.svelte';
+	import Reiter from './components/ui/Reiter.svelte';
 	import { permissionsMetadata } from './permissionMetadata.js';
 
 	// State Runes (Svelte 5)
-	let activeSubTab = $state('permissions'); // "permissions" | "users"
+	let activeSubTab = $state('users'); // "users" | "permissions"
 
 	// Permissions State
 	/** @type {Record<string, Record<string, boolean>>} */
@@ -113,32 +114,20 @@
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print pb-12">
-	<!-- Header & Tab Navigation -->
-	<div class="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
-		<!-- Sub-tabs pills -->
-		<div
-			class="inline-flex p-1 bg-slate-100/70 border border-slate-200/50 rounded-xl self-start shrink-0"
-		>
-			<button
-				onclick={() => (activeSubTab = 'permissions')}
-				class="px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 cursor-pointer {activeSubTab ===
-				'permissions'
-					? 'bg-white text-slate-800 shadow-xs'
-					: 'text-slate-500 hover:text-slate-800'}"
-			>
-				🛡️ Rechte
-			</button>
-			<button
-				onclick={() => (activeSubTab = 'users')}
-				class="px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 cursor-pointer {activeSubTab ===
-				'users'
-					? 'bg-white text-slate-800 shadow-xs'
-					: 'text-slate-500 hover:text-slate-800'}"
-			>
-				👥 Benutzer
-			</button>
-		</div>
-	</div>
+	<!-- Zwei gleichrangige Aufgaben, zwei M3-Primary-Tabs links oben (Peters Entscheidung
+	     26.08.2026): Benutzer zuerst, weil das die häufige Aufgabe ist (Kollegin anlegen,
+	     Rolle zuweisen); Rollen & Rechte dahinter, weil selten und folgenschwer. Vorher: ein
+	     Segmented-Button mit Emoji rechts in der Ecke, 12 px, unter einem Menüpunkt, der
+	     nur „Berechtigungen" hieß — wer ein Konto suchte, klickte in die Einstellungen. -->
+	<Reiter
+		etikett="Benutzer & Rechte"
+		aktiv={activeSubTab}
+		onwahl={(id) => (activeSubTab = id)}
+		reiter={[
+			{ id: 'users', label: 'Benutzer', steuert: 'panel-users' },
+			{ id: 'permissions', label: 'Rollen & Rechte', steuert: 'panel-permissions' }
+		]}
+	/>
 
 	<!-- Error Alerts -->
 	{#if error}
@@ -163,25 +152,25 @@
 		</div>
 	{/if}
 
-	<!-- Tab 1: Permissions Editor -->
 	{#if activeSubTab === 'permissions'}
-		{#if loadingPermissions}
-			<div class="p-12 text-center text-slate-400 font-medium animate-pulse">
-				Lade Rechtekonfiguration...
-			</div>
-		{:else}
-			<PermissionsEditor
-				schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
-				metadata={permissionsMetadata}
-				{permissionsState}
-				{updatingKeys}
-				onToggle={togglePermission}
-			/>
-		{/if}
+		<div id="panel-permissions" role="tabpanel" aria-labelledby="tab-permissions">
+			{#if loadingPermissions}
+				<div class="p-12 text-center text-slate-400 font-medium animate-pulse">
+					Lade Rechtekonfiguration...
+				</div>
+			{:else}
+				<PermissionsEditor
+					schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
+					metadata={permissionsMetadata}
+					{permissionsState}
+					{updatingKeys}
+					onToggle={togglePermission}
+				/>
+			{/if}
+		</div>
 	{/if}
 
-	<!-- Tab 2: User Management -->
 	{#if activeSubTab === 'users'}
-		<UserManagement />
+		<div id="panel-users" role="tabpanel" aria-labelledby="tab-users"><UserManagement /></div>
 	{/if}
 </div>

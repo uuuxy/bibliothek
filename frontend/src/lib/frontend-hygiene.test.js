@@ -62,7 +62,6 @@ const EMOJI_BESTAND = [
 	'src/lib/BookAkteMeta.svelte',
 	'src/lib/Monitor.svelte',
 	'src/lib/OpacSearch.svelte',
-	'src/lib/PermissionManager.svelte',
 	'src/lib/StatsDashboard.svelte',
 	'src/lib/StudentPrintReceipt.svelte',
 	'src/lib/UserManagement.svelte',
