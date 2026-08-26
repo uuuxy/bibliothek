@@ -106,7 +106,10 @@ WORKDIR /app
 # und seine Dumps spielen nachweislich sauber in 15 ein (CI-Drill, Client 16→Server 15).
 # Beim nächsten Server-Upgrade über 16 hinaus diese Zeile mitziehen — die Probe
 # schlägt sonst am ersten Sonntag Alarm.
-RUN apk --no-cache add ca-certificates tzdata postgresql16-client
+# apk upgrade zuerst: Das Basisimage trägt die Paketstände seines Release-Tags; Sicherheits-
+# Fixes (z. B. openssl 3.5.8, CVE-2026-14456) kommen nur über das Upgrade herein. Ohne diese
+# Zeile war der Trivy-Scan auf main rot, obwohl kein eigener Code betroffen war (26.08.2026).
+RUN apk --no-cache upgrade && apk --no-cache add ca-certificates tzdata postgresql16-client
 
 # Copy database schema file (for reference / first-run init)
 COPY schema.sql ./
