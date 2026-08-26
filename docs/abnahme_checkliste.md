@@ -150,6 +150,32 @@ tatsächlich noch ein Etikett gedruckt werden muss.
 
 ---
 
+## 5. Selbstanmeldung einer Lehrkraft
+
+**Vorbereitung:** `SELBSTANMELDUNG_DOMAIN` ist auf dem Server gesetzt
+([DEPLOYMENT.md §2.5](DEPLOYMENT.md)); die Betriebsbereitschaft zeigt „Selbstanmeldung
+Kollegium“ grün. Eine Lehrkraft mit Schulpostfach, die **kein** Konto hat.
+
+**Ablauf:**
+
+1. [ ] Die Lehrkraft meldet sich mit Schul-E-Mail und Mailpasswort an. Sie kommt **nicht**
+       hinein, liest „Zugang beantragt — die Bibliothek muss ihn noch freischalten“, und die
+       Meldung bleibt stehen (verschwindet nicht nach Sekunden).
+2. [ ] System → Benutzer & Rechte: Über der Tabelle steht „1 Zugangsanfrage aus der
+       Selbstanmeldung wartet auf Freischaltung: <Name>“; die Zeile trägt „Zugang beantragt“
+       (nicht „Inaktiv“), Rolle Kollegium, Name aus der Adresse geraten.
+3. [ ] Person prüfen (ist das wirklich eine Lehrkraft?), „Bearbeiten“ → „Benutzerkonto ist
+       aktiv“ → Speichern. Die Zeile über der Tabelle verschwindet.
+4. [ ] Die Lehrkraft meldet sich erneut an — jetzt kommt sie hinein und sieht **genau einen**
+       Menüpunkt: „Mein Portal“. Kein Kiosk, keine Schülerdatei.
+5. [ ] Gegenprobe: Ein Postfach einer **fremden** Domain landet nicht in der Benutzerliste
+       (normale „Anmeldung fehlgeschlagen“).
+
+**Bestanden, wenn:** Die Lehrkraft ohne Zutun der Bibliothek einen Antrag erzeugt, die
+Bibliothek ihn ohne Suchen findet, und nach der Freischaltung nur das Portal sichtbar ist.
+
+---
+
 ## Nach der Abnahme
 
 - [ ] Ergebnis (bestanden / Auffälligkeiten) im [master_fahrplan.md](master_fahrplan.md) eintragen.

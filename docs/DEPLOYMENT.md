@@ -203,6 +203,40 @@ eine Rollback-Anleitung samt Pfad zum eben erzeugten Backup aus.
 `scripts/deploy.sh` ist der ältere, schlankere Weg (`git pull` →
 `docker compose up -d --build` → Caddy-Block prüfen/ergänzen) — **ohne** Backup und
 **ohne** Gesundheitsprüfung. Details zu beiden: [SCRIPTS.md](SCRIPTS.md).
+### 2.5 Selbstanmeldung des Kollegiums einschalten
+
+Ohne `SELBSTANMELDUNG_DOMAIN` muss jedes Kollegiums-Konto von Hand angelegt werden — und
+eine Lehrkraft ohne Konto liest trotz richtigem Passwort „Anmeldung fehlgeschlagen“. Die
+Selbstprüfung (System → Einstellungen → Betriebsbereitschaft) meldet den Zustand als
+Warnung „Selbstanmeldung Kollegium“. Fachlich: [FACHKONZEPT.md §12.1](FACHKONZEPT.md).
+
+Die Variable steht in der `.env` neben der `docker-compose.yml` (nicht im Repo);
+Compose reicht sie an den Backend-Container durch.
+
+```bash
+cd /opt/bibliothek
+
+# Zeile anhängen — nur, wenn sie noch nicht da ist
+grep -q '^SELBSTANMELDUNG_DOMAIN=' .env || echo 'SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de' >> .env
+grep '^SELBSTANMELDUNG_DOMAIN=' .env
+
+# Stack neu starten (liest die .env neu ein)
+git pull && ./update.sh
+```
+
+**Kontrolle** (eines von beiden genügt):
+- `docker compose logs backend --since 2m | grep -i selbstanmeldung` → „Selbstanmeldung
+  aktiv für @philipp-reis-schule.de …“
+- Betriebsbereitschaft: Bereich „Selbstanmeldung Kollegium“ grün. Steht dort noch die
+  Warnung, ist die Variable nicht angekommen.
+
+**Was danach passiert:** Jedes Postfach der Domain (auch Schülerpostfächer, falls sie
+dieselbe Domain tragen) kommt beim ersten Login als **inaktiver** Antrag herein und
+erscheint unter System → Benutzer & Rechte als „Zugangsanfrage“. Freigeschaltet wird
+ausschließlich dort; die Person sieht danach nur „Mein Portal“.
+
+**Rückweg:** Zeile in der `.env` leeren oder löschen, `./update.sh`. Bereits angelegte
+Anträge bleiben in der Benutzerverwaltung sichtbar.
 
 ---
 
