@@ -26,6 +26,18 @@
 	let { book, form, warteschlange, ontoggle, onsenden } = $props();
 
 	const bild = $derived(coverSrc(book.cover_url, book.isbn));
+
+	// Reservieren bucht nichts — das OPAC-Abzeichen sinkt erst, wenn die Bibliothek den
+	// Satz tatsächlich ausleiht. „60 von 60 verfügbar" und darunter „40 reserviert für
+	// 8a" standen deshalb nebeneinander, und die Lehrkraft musste selbst rechnen. Die
+	// Vormerkungen werden hier abgezogen: eine Zahl, die sagt, ob es JETZT reicht.
+	const vorgemerkt = $derived(warteschlange.reduce((sum, o) => sum + (o.anzahl ?? 0), 0));
+	const rechnerischFrei = $derived(
+		book.verfuegbar == null ? null : Math.max(0, book.verfuegbar - vorgemerkt)
+	);
+	const reichtNicht = $derived(
+		rechnerischFrei != null && vorgemerkt > 0 && Number(form.anzahl) > rechnerischFrei
+	);
 </script>
 
 <div class="w-full">
@@ -64,6 +76,16 @@
 							? `${book.verfuegbar} von ${book.gesamt} verfügbar`
 							: `nicht verfügbar (${book.gesamt} im Bestand)`}
 					</span>
+					{#if vorgemerkt > 0 && rechnerischFrei != null}
+						<span
+							class="ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small font-medium {rechnerischFrei >
+							0
+								? 'bg-surface-container-high text-on-surface-variant'
+								: 'bg-error-container text-on-error-container'}"
+						>
+							{vorgemerkt} vorgemerkt · {rechnerischFrei} rechnerisch frei
+						</span>
+					{/if}
 				</p>
 			{/if}
 
@@ -122,6 +144,14 @@
 					class="w-full resize-none rounded-sm border border-outline-variant bg-surface-container-lowest px-3 py-2 text-base text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none"
 				></textarea>
 			</label>
+			<!-- Anstellen bleibt erlaubt — aber die Lehrkraft soll es VOR dem Absenden wissen,
+			     nicht erst aus der Bestätigung. -->
+			{#if reichtNicht}
+				<p class="text-xs text-on-surface-variant" role="status">
+					Reicht aktuell nicht: {rechnerischFrei} rechnerisch frei — du stellst dich hinter
+					{warteschlange.map((o) => o.klasse).join(', ')} an.
+				</p>
+			{/if}
 			{#if form.error}
 				<p class="text-xs text-error">{form.error}</p>
 			{/if}

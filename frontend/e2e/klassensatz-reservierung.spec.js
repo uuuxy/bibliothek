@@ -74,9 +74,13 @@ test('Klassensatz-Warteschlange: Chip vor dem Klick, Vordermann nach dem Absende
 
 	// Der Chip steht am Treffer, BEVOR irgendetwas angeklickt wird.
 	await expect(page.getByText(`3 reserviert für k8a${s}`)).toBeVisible();
+	// Verrechnet mit dem Regal: 3 vorhanden, 3 vorgemerkt → rechnerisch nichts frei.
+	await expect(page.getByText('3 vorgemerkt · 0 rechnerisch frei')).toBeVisible();
 
-	// Trotzdem reservieren: erlaubt — und die Bestätigung nennt den Vordermann.
+	// Trotzdem reservieren: erlaubt — die Warnung steht im Formular VOR dem Absenden,
+	// und die Bestätigung nennt den Vordermann.
 	await page.getByRole('button', { name: 'Klassensatz reservieren' }).click();
+	await expect(page.getByRole('status')).toContainText(`du stellst dich hinter k8a${s} an`);
 	await page.getByLabel('Klasse *').fill(`k9b${s}`);
 	await page.getByRole('button', { name: /Anfrage senden/ }).click();
 	await expect(

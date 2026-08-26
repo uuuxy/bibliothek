@@ -171,8 +171,14 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 
 	// Die Warteschlange steht am Treffer, BEVOR reserviert wird.
 	expect(await screen.findByText('28 reserviert für 8a (seit 10.08.2026)')).toBeTruthy();
+	// Und verrechnet: 12 im Regal minus 28 vorgemerkt — die Lehrkraft muss nicht rechnen.
+	expect(screen.getByText('28 vorgemerkt · 0 rechnerisch frei')).toBeTruthy();
 
 	await fireEvent.click(screen.getByRole('button', { name: 'Klassensatz reservieren' }));
+	// Die Warnung steht im Formular, bevor irgendetwas gesendet wird.
+	expect((await screen.findByRole('status')).textContent?.replace(/\s+/g, ' ').trim()).toBe(
+		'Reicht aktuell nicht: 0 rechnerisch frei — du stellst dich hinter 8a an.'
+	);
 	await fireEvent.input(await screen.findByLabelText('Klasse *'), { target: { value: '9b' } });
 	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));
 
