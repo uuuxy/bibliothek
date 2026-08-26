@@ -139,7 +139,10 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 	// Spur — sonst steht später eine Zeile in benutzer, von der niemand sagen kann, wer
 	// sie wann angelegt hat (der Vorfall mit den vier Admin-Konten). admin_id ist das
 	// neue Konto selbst: Es hat sich angemeldet. Best effort wie auditiereBenutzerMutation.
-	details, _ := json.Marshal(map[string]any{"email": strings.ToLower(email), "rolle": "kollegium", "aktiv": false})
+	details, err := json.Marshal(map[string]any{"email": strings.ToLower(email), "rolle": "kollegium", "aktiv": false})
+	if err != nil {
+		details = []byte("{}")
+	}
 	if _, err := dbPool.Exec(ctx, `
 		INSERT INTO audit_logs (admin_id, aktion, details, zeitstempel)
 		VALUES ($1, 'SELBSTANMELDUNG', $2::jsonb, CURRENT_TIMESTAMP)
