@@ -911,6 +911,26 @@ pg_indexes WHERE indexname IN ('idx_schueler_deleted_at','idx_ausleihen_rueckgab
 | **Login-Handler-Kontext 10 s < IMAP-Frist 15 s** → korrektes, langsames Login scheitert am DB-Lookup, zählt als Fehlversuch (401 + Sperre). Umgekehrt: ≥ 15 s-Tarpit des Mailservers macht jedes falsche Passwort zum 503 ohne Zählung.                                                                    | `auth/handlers.go:127`, `auth/imap.go:192,215-216`, `:264`, `selbstanmeldung.go:118-123`                                                                                     | Handler-ctx an `AuthenticateIMAP` durchreichen, EINE Frist; Klassifikation aus der IMAP-Antwort (NO = Passwort), nicht aus der Zeit; Test mit Mini-IMAP-Listener (sofort NO / verzögert NO) |
 | **Bulk-Mahnmail: SMTP-Hänger je Klasse bis 70 s, Ausfälle zählen als „übersprungen (keine E-Mail hinterlegt)“**, End-Audit mit totem `r.Context()` schweigt.                                                                                                                                               | `api/mail_sender.go:84` (kein ctx), `api/mahnwesen_bulk_mail.go:288,324-327,128,374`                                                                                         | „fehlgeschlagen“ getrennt zählen; Audit mit `context.Background()`+Frist; nach erstem Versandfehler abbrechen                                                                               |
 
+### Herkunft & Lizenzen geprüft (26.08.2026) — ein Befund, sonst sauber
+
+Anlass: Peters Frage nach MOSS. MOSS/JPlag vergleichen Abgaben untereinander und
+kennen kein Go/Svelte — falsches Werkzeug, und der Quelltext ginge nach außen. Stattdessen
+lokal: Lizenzinventar beider Abhängigkeitsbäume (Go-Modulcache 107 Module: 59 MIT, 31 BSD,
+14 Apache-2.0, 2 ISC, 1 MPL-2.0 = `go-sql-driver/mysql`, nur im Littera-Werkzeug;
+npm prod 69 Pakete: 52 MIT, 4 ISC, 4 Apache, 4 MPL-2.0 = `lightningcss` (Build-Werkzeug),
+1 OFL = Roboto-Schrift). **Kein GPL/AGPL/LGPL, nichts Unbekanntes.** MPL und OFL sind
+dateibezogen bzw. schriftbezogen und binden das Projekt nicht.
+
+Duplikate: Go `dupl -t 100` 8 Klonpaare (print.go, lookups.go, mahnwesen.go — je zwei
+Handler-Varianten), Frontend `jscpd` 15 Klone = 0,41 % (Kachel-Trio in inventur/,
+Testvorspann). Kategorie C — nichts davon vor dem Pilotstart.
+
+**Befund (B, Entscheidung Peter):** Das Projekt hat **keine LICENSE-Datei**
+(`package.json` sagt UNLICENSED, `go.mod` nichts). Solange nur die eigene Schule es
+betreibt, unerheblich; bei Weitergabe an eine andere Schule oder Veröffentlichung muss
+eine Lizenz gewählt sein (Vorschlag: MIT oder EUPL-1.2 — die EUPL ist die europäische,
+deutschsprachig verfügbare Wahl für Verwaltungssoftware).
+
 ### Kategorie B — Typografie unter der M3-Skala (25.08.2026, gemessen)
 
 Im Browser gemessen über 31 Ansichten: Tabellen-Nebentext (Klasse, Barcode, Datum, Status)
