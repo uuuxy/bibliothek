@@ -75,6 +75,14 @@
 									<span class="inline-flex items-center gap-1.5 text-xs text-emerald-600">
 										<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktiv
 									</span>
+								{:else if user.zugang_beantragt_am}
+									<!-- Selbstanmeldung (Migration 086): wartet auf Freischaltung — NICHT
+									     dasselbe wie ein bewusst deaktiviertes Konto. -->
+									<span
+										class="inline-flex items-center gap-1.5 rounded-full bg-secondary-container px-2 py-0.5 text-xs font-medium text-on-secondary-container"
+									>
+										<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Zugang beantragt
+									</span>
 								{:else}
 									<span class="inline-flex items-center gap-1.5 text-xs text-slate-400">
 										<span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Inaktiv

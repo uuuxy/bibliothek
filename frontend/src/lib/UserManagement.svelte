@@ -6,15 +6,12 @@
 	 * Responsibilities: listing, creating, editing, and deleting system users
 	 * (benutzer/benutzer_rollen tables). Isolated from role-permission management.
 	 *
-	 * State:
-	 *   $state users         — loaded from /api/benutzer
-	 *   $state userForm      — controlled form for create/edit modal
-	 *   $state showUserModal — controls the create/edit dialog
-	 *   $state showDeleteConfirm — controls the delete confirmation dialog
-	 *   $derived filteredUsers — search-filtered view of users
+	 * State: users (/api/benutzer), userForm (create/edit modal), showUserModal,
+	 * showDeleteConfirm; $derived filteredUsers (search-filtered view).
 	 */
 	import { onMount } from 'svelte';
 	import UserManagementTable from './UserManagementTable.svelte';
+	import UserManagementZugangsanfragen from './UserManagementZugangsanfragen.svelte';
 	import UserManagementEditModal from './UserManagementEditModal.svelte';
 	import UserManagementDeleteModal from './UserManagementDeleteModal.svelte';
 	import { apiFetch, extractApiError } from './apiFetch.js';
@@ -218,6 +215,8 @@
 		<span>{successMessage}</span>
 	</div>
 {/if}
+
+<UserManagementZugangsanfragen {users} />
 
 <!-- Toolbar -->
 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">

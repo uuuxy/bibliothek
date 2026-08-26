@@ -116,8 +116,8 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 	// aktiv = false ist der Kern dieser Funktion: Der Login lehnt inaktive Konten ab.
 	// Die Zeile entsteht, der Zugang nicht.
 	if _, err := dbPool.Exec(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, $2, LOWER($3), 'kollegium', false)
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, zugang_beantragt_am)
+		VALUES ($1, $2, LOWER($3), 'kollegium', false, CURRENT_TIMESTAMP)
 		ON CONFLICT (email) DO NOTHING
 	`, vorname, nachname, email); err != nil {
 		return loginUser{}, fmt.Errorf("zugangsanfrage konnte nicht angelegt werden: %w", err)

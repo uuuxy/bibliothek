@@ -17,15 +17,18 @@ import (
 
 // UserResponse holds public user data sent to administrative screens.
 type UserResponse struct {
-	ID          string    `json:"id"`
-	BarcodeID   string    `json:"barcode_id"`
-	Vorname     string    `json:"vorname"`
-	Nachname    string    `json:"nachname"`
-	Email       string    `json:"email"`
-	Rolle       string    `json:"rolle"`
-	Aktiv       bool      `json:"aktiv"`
-	ErstelltAm  time.Time `json:"erstellt_am"`
-	Permissions []string  `json:"permissions"`
+	ID         string    `json:"id"`
+	BarcodeID  string    `json:"barcode_id"`
+	Vorname    string    `json:"vorname"`
+	Nachname   string    `json:"nachname"`
+	Email      string    `json:"email"`
+	Rolle      string    `json:"rolle"`
+	Aktiv      bool      `json:"aktiv"`
+	ErstelltAm time.Time `json:"erstellt_am"`
+	// ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);
+	// null = keiner. Die Oberfläche unterscheidet daran „wartet" von „deaktiviert".
+	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
+	Permissions       []string   `json:"permissions"`
 }
 
 // ListUsersHandler returns a list of all system users.
@@ -66,6 +69,8 @@ func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.Handl
 				Rolle:      strings.ToLower(u.Rolle),
 				Aktiv:      u.Aktiv,
 				ErstelltAm: u.ErstelltAm,
+
+				ZugangBeantragtAm: u.ZugangBeantragtAm,
 			}
 
 			// Die echten Rechte aus role_permissions, nicht mehr eine feste Liste.

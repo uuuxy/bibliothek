@@ -78,7 +78,8 @@ func (r *postgresUserRepo) GetLehrerByBarcode(ctx context.Context, barcode strin
 // GetUsers fragt alle registrierten Benutzer ab.
 func (r *postgresUserRepo) GetUsers(ctx context.Context) ([]User, error) {
 	query := `
-		SELECT id, coalesce(barcode_id, ''), vorname, nachname, email, rolle, aktiv, erstellt_am
+		SELECT id, coalesce(barcode_id, ''), vorname, nachname, email, rolle, aktiv, erstellt_am,
+		       zugang_beantragt_am
 		FROM benutzer
 		ORDER BY nachname, vorname
 	`
@@ -91,7 +92,8 @@ func (r *postgresUserRepo) GetUsers(ctx context.Context) ([]User, error) {
 	users := []User{}
 	for rows.Next() {
 		var u User
-		err := rows.Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Email, &u.Rolle, &u.Aktiv, &u.ErstelltAm)
+		err := rows.Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Email, &u.Rolle, &u.Aktiv, &u.ErstelltAm,
+			&u.ZugangBeantragtAm)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +155,11 @@ type UpdateUserParams struct {
 func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) error {
 	query := `
 		UPDATE benutzer
-		SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6, aktualisiert_am = CURRENT_TIMESTAMP
+		SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6,
+		    -- Freischalten erledigt den Antrag; ein späteres Deaktivieren soll nicht
+		    -- wieder wie ein Antrag aussehen (Migration 086).
+		    zugang_beantragt_am = CASE WHEN $6 THEN NULL ELSE zugang_beantragt_am END,
+		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $7
 	`
 	_, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID)

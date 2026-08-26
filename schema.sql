@@ -122,6 +122,9 @@ CREATE TABLE benutzer (
     -- Passwörter wurden mit Migration 012 entfernt (Barcode-basierte Anmeldung).
     rolle benutzer_rolle NOT NULL,
     aktiv BOOLEAN NOT NULL DEFAULT true,
+    -- Gesetzt von der Selbstanmeldung (Migration 086): wartet auf Freischaltung.
+    -- Die Freischaltung setzt es zurück.
+    zugang_beantragt_am TIMESTAMP WITH TIME ZONE,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -990,7 +993,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('082_index_und_unique_paritaet.sql'),
 ('083_audit_log_append_only_aufloesen.sql'),
 ('084_schueler_lusd_bestaetigt_am.sql'),
-('085_paritaet_indizes_fk_name_passwort_hash.sql')
+('085_paritaet_indizes_fk_name_passwort_hash.sql'),
+('086_benutzer_zugang_beantragt_am.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

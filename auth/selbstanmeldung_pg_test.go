@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bibliothek/repository"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -190,6 +191,17 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if vorname != "Erika" || nachname != "Musterfrau" {
 		t.Errorf("Name aus der Adresse = %q %q, erwartet Erika Musterfrau", vorname, nachname)
 	}
+	// Der Antrag ist als solcher markiert (Migration 086) — sonst wäre er in der
+	// Benutzerverwaltung von einem bewusst deaktivierten Konto nicht zu unterscheiden.
+	var beantragt bool
+	if err := pool.QueryRow(ctx, `
+		SELECT zugang_beantragt_am IS NOT NULL FROM benutzer WHERE LOWER(email) = $1
+	`, email).Scan(&beantragt); err != nil {
+		t.Fatalf("zugang_beantragt_am lesen: %v", err)
+	}
+	if !beantragt {
+		t.Error("zugang_beantragt_am ist NULL — die Selbstanmeldung muss den Antrag markieren")
+	}
 
 	// 3. Zweiter Versuch, immer noch nicht freigeschaltet: weiterhin kein Zugang, und
 	//    es entsteht KEIN zweiter Eintrag.
@@ -205,13 +217,27 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 		t.Errorf("nach zwei Versuchen stehen %d Einträge in der Tabelle, erwartet genau 1", anzahl)
 	}
 
-	// 4. Freischalten — genau das, was die Benutzerverwaltung tut.
-	if _, err := pool.Exec(ctx,
-		`UPDATE benutzer SET aktiv = true WHERE LOWER(email) = $1`, email); err != nil {
+	// 4. Freischalten — über DENSELBEN Repository-Pfad wie die Benutzerverwaltung,
+	//    nicht über ein rohes UPDATE: Der Pfad muss den Antrag auch erledigen.
+	var id string
+	if err := pool.QueryRow(ctx, `SELECT id FROM benutzer WHERE LOWER(email) = $1`, email).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	if err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
+		ID: id, Vorname: vorname, Nachname: nachname, Email: email, Rolle: rolle, Aktiv: true,
+	}); err != nil {
 		t.Fatalf("freischalten: %v", err)
 	}
 	if code, meldung := anmelden(t, pool, email); code != http.StatusOK {
 		t.Errorf("nach der Freischaltung: Status %d (%s), erwartet 200", code, meldung)
+	}
+	if err := pool.QueryRow(ctx, `
+		SELECT zugang_beantragt_am IS NOT NULL FROM benutzer WHERE LOWER(email) = $1
+	`, email).Scan(&beantragt); err != nil {
+		t.Fatal(err)
+	}
+	if beantragt {
+		t.Error("nach der Freischaltung steht zugang_beantragt_am noch — ein späteres Deaktivieren sähe wieder wie ein Antrag aus")
 	}
 }
 

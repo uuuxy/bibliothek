@@ -25,6 +25,9 @@ type User struct {
 	ErstelltAm time.Time `json:"erstellt_am"`
 	// Permissions enthält eine Liste spezifischer Berechtigungsschlüssel des Benutzers.
 	Permissions []string `json:"permissions"`
+	// ZugangBeantragtAm: von der Selbstanmeldung gesetzt, von der Freischaltung gelöscht
+	// (Migration 086). nil = kein offener Antrag.
+	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
 }
 
 // Student repräsentiert einen Schüler in der Datenbank (Tabelle `schueler`).
