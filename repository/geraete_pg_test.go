@@ -41,7 +41,7 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 		t.Fatalf("Ausleihe seeden: %v", err)
 	}
 	g = geraetAusListe(t, repo, id)
-	if g.AusgeliehenAn == nil || *g.AusgeliehenAn != "Nio Test (6c)" {
+	if g.AusgeliehenAn == nil || *g.AusgeliehenAn != "Nio Test (06C)" {
 		t.Fatalf("Ausleiher fehlt/falsch: %+v", g.AusgeliehenAn)
 	}
 

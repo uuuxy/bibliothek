@@ -124,7 +124,7 @@ func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
 	if v != "Echt" || n != "Name" || b != "PFLICHT-1" {
 		t.Errorf("Stammdaten wurden trotz Ablehnung verändert: %q %q %q", v, n, b)
 	}
-	if k != "07a" {
-		t.Errorf("die Klasse steht auf %q statt auf 07a — trotz Ablehnung verändert", k)
+	if k != "07A" {
+		t.Errorf("die Klasse steht auf %q statt auf 07A — trotz Ablehnung verändert", k)
 	}
 }

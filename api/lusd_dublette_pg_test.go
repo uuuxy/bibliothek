@@ -45,7 +45,7 @@ func TestLusdImport_DubletteInDerselbenDatei(t *testing.T) {
 		`SELECT klasse FROM schueler WHERE lusd_id = 'L-DUP' AND deleted_at IS NULL`).Scan(&klasse); err != nil {
 		t.Fatal(err)
 	}
-	if klasse != "5b" {
-		t.Errorf("Klasse = %q, erwartet 5b (zweite Zeile überschreibt die erste)", klasse)
+	if klasse != "05B" {
+		t.Errorf("Klasse = %q, erwartet 05B (zweite Zeile überschreibt die erste)", klasse)
 	}
 }

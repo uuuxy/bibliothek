@@ -38,7 +38,7 @@ func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend",
-		strings.NewReader(`{"klasse":"5a","neues_rueckgabe_datum":"2026-07-31"}`))
+		strings.NewReader(`{"klasse":"05A","neues_rueckgabe_datum":"2026-07-31"}`))
 	rec := httptest.NewRecorder()
 	srv.GlobalExtendLMFHandler()(rec, req)
 

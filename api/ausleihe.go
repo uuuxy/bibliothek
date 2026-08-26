@@ -290,7 +290,9 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			  -- Rückgabe zwingen, nicht durch eine Fristverlängerung ausgehebelt werden.
 			  AND s.ist_gesperrt = false
 			  AND COALESCE(s.is_manually_blocked, false) = false
-			  AND s.klasse = $2
+			  -- Über den Normal-Schlüssel (Migration 079/087): „5a" aus einem Formular und
+			  -- „05A" als registrierte Anzeigeform meinen dieselbe Klasse.
+			  AND klassen_normkey(s.klasse) = klassen_normkey($2)
 			  AND ` + lmf.SQLBedingung("t.titel", "t.signatur") + `
 		`
 		tag, err := tx.Exec(ctx, q, newDate, req.Klasse)

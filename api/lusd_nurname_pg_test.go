@@ -89,7 +89,7 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	if _, err := s.computeLusd(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
-	if n := zaehle(t, pool, "nachname='Mustermann' AND klasse IN ('5a','9c')"); n != 2 {
+	if n := zaehle(t, pool, "nachname='Mustermann' AND klasse IN ('05A','09C')"); n != 2 {
 		t.Errorf("die beiden Max Mustermann wurden angefasst oder dupliziert (n=%d)", n)
 	}
 	if n := zaehle(t, pool, "nachname='Doppelt'"); n != 0 {
@@ -175,7 +175,7 @@ func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT ist_abgaenger, ist_gesperrt, klasse FROM schueler WHERE id=$1`, alt).Scan(&abg, &gesperrt, &klasse); err != nil {
 		t.Fatal(err)
 	}
-	if !abg || !gesperrt || klasse != "10a" {
+	if !abg || !gesperrt || klasse != "10A" {
 		t.Errorf("Abgänger wurde angefasst: abgaenger=%v gesperrt=%v klasse=%q", abg, gesperrt, klasse)
 	}
 	if n := zaehle(t, pool, "nachname='Alt'"); n != 1 {

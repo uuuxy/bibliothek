@@ -61,13 +61,13 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 	// Ein Schüler, damit der Lauf etwas zu versetzen hat.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('F3-S-1', 'Vera', 'Versetzt', '5a', 2033)`); err != nil {
+		VALUES ('F3-S-1', 'Vera', 'Versetzt', '05A', 2033)`); err != nil {
 		t.Fatalf("Schüler: %v", err)
 	}
 	// Kette 7a→8a→9a beweist die absteigende Reihenfolge; 9h ist Abschluss.
 	for klasse, mail := range map[string]string{
-		"5a": "a@schule.example", "7a": "b@schule.example",
-		"8a": "c@schule.example", "9h": "d@schule.example",
+		"05A": "a@schule.example", "07A": "b@schule.example",
+		"08A": "c@schule.example", "09H": "d@schule.example",
 	} {
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ($1, $2)`, klasse, mail); err != nil {
@@ -81,7 +81,7 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 		t.Fatalf("Vorschau falsch: %+v", vorschau)
 	}
 	var n int
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM klassen_lehrer_mapping WHERE klasse = '5a'`).Scan(&n); err != nil || n != 1 {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM klassen_lehrer_mapping WHERE klasse = '05A'`).Scan(&n); err != nil || n != 1 {
 		t.Fatalf("Dry-Run hat geschrieben (5a weg, n=%d)", n)
 	}
 
@@ -91,7 +91,7 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 	}
 
 	erwartet := map[string]string{
-		"6a": "a@schule.example", "8a": "b@schule.example", "9a": "c@schule.example",
+		"06A": "a@schule.example", "08A": "b@schule.example", "09A": "c@schule.example",
 	}
 	for klasse, mail := range erwartet {
 		var got string
@@ -104,15 +104,15 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 	}
 	// Und der Schüler trägt den Namen, auf den die Zuordnung jetzt zeigt.
 	var klasse string
-	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE barcode_id = 'F3-S-1'`).Scan(&klasse); err != nil || klasse != "6a" {
+	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE barcode_id = 'F3-S-1'`).Scan(&klasse); err != nil || klasse != "06A" {
 		t.Errorf("Schüler-Klasse: erwartet 6a, got %q", klasse)
 	}
 }
 
 // TestVersetzungNamenskonflikteStrukturellEliminiert: Der klassische Konfliktfall —
-// '9a' UND '09a' existieren nebeneinander und laufen beide auf '10a' — ist seit dem
-// Klassen-Vokabular (Migration 079) UNMÖGLICH: Der Kanonisierungs-Trigger zieht '09a'
-// beim Schreiben auf die registrierte Form '9a', und der Primärschlüssel weist die
+// '09A' UND '09A' existieren nebeneinander und laufen beide auf '10A' — ist seit dem
+// Klassen-Vokabular (Migration 079) UNMÖGLICH: Der Kanonisierungs-Trigger zieht '09A'
+// beim Schreiben auf die registrierte Form '09A', und der Primärschlüssel weist die
 // Dublette ab. Der Konflikt-Zweig in versetzeKlassenlehrerZuordnung bleibt als
 // Rückfallebene bestehen; der Lauf selbst ist konfliktfrei.
 func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
@@ -124,14 +124,14 @@ func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 	}
 
 	if _, err := pool.Exec(ctx, `
-		INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ('9a', 'g@schule.example')`); err != nil {
+		INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ('09A', 'g@schule.example')`); err != nil {
 		t.Fatalf("Mapping 9a: %v", err)
 	}
 	// Die Schreibvariante wird kanonisiert und prallt am Primärschlüssel ab — genau
 	// die Vorbedingung des alten Konfliktfalls kann nicht mehr entstehen.
 	if _, err := pool.Exec(ctx, `
-		INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ('09a', 'h@schule.example')`); err == nil {
-		t.Fatal("'09a' neben '9a' darf nicht mehr existieren (Kanonisierung + PK), wurde aber angelegt")
+		INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ('9a', 'h@schule.example')`); err == nil {
+		t.Fatal("'9a' neben '09A' darf nicht mehr existieren (Kanonisierung + PK), wurde aber angelegt")
 	}
 
 	resp := versetzungAusfuehren(t, pool, false)
@@ -139,8 +139,8 @@ func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 		t.Fatalf("Lauf falsch: %+v", resp)
 	}
 	var mail string
-	if err := pool.QueryRow(ctx, `SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = '10a'`).Scan(&mail); err != nil || mail != "g@schule.example" {
-		t.Errorf("'9a' muss zu '10a' geworden sein, got %q", mail)
+	if err := pool.QueryRow(ctx, `SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = '10A'`).Scan(&mail); err != nil || mail != "g@schule.example" {
+		t.Errorf("'09A' muss zu '10A' geworden sein, got %q", mail)
 	}
 }
 
@@ -165,7 +165,7 @@ func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 	// Ein Schüler in 5a — die Kohorte, die genau einmal auf 6a steigen darf.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum)
-		VALUES ('Doppel','Lauf','5a','S-DL-1',2032,'2015-01-01')`); err != nil {
+		VALUES ('Doppel','Lauf','05A','S-DL-1',2032,'2015-01-01')`); err != nil {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 	t.Cleanup(func() {
@@ -219,7 +219,7 @@ func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE barcode_id='S-DL-1'`).Scan(&klasse); err != nil {
 		t.Fatalf("Klasse lesen: %v", err)
 	}
-	if klasse != "6a" {
+	if klasse != "06A" {
 		t.Errorf("Schule wurde doppelt versetzt: Klasse %q statt 6a", klasse)
 	}
 }

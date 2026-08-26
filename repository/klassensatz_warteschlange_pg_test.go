@@ -49,8 +49,8 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 		t.Fatalf("Liste: %v", err)
 	}
 	meine := nurTitel(liste, titel)
-	if len(meine) != 2 || meine[0].Klasse != "8a" || meine[1].Klasse != "9b" {
-		t.Fatalf("Warteschlange: erwartet [8a, 9b], bekam %+v", meine)
+	if len(meine) != 2 || meine[0].Klasse != "08A" || meine[1].Klasse != "09B" {
+		t.Fatalf("Warteschlange: erwartet [08A, 09B], bekam %+v", meine)
 	}
 	if meine[0].Verfuegbar != 3 {
 		t.Errorf("verfügbar = %d, erwartet 3 (alle im Regal)", meine[0].Verfuegbar)
@@ -86,8 +86,8 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 			offeneMeine = append(offeneMeine, o)
 		}
 	}
-	if len(offeneMeine) != 2 || offeneMeine[0].Klasse != "8a" || offeneMeine[1].Klasse != "9b" {
-		t.Fatalf("Portal-Warteschlange: erwartet [8a, 9b], bekam %+v", offeneMeine)
+	if len(offeneMeine) != 2 || offeneMeine[0].Klasse != "08A" || offeneMeine[1].Klasse != "09B" {
+		t.Fatalf("Portal-Warteschlange: erwartet [08A, 09B], bekam %+v", offeneMeine)
 	}
 	// Der TITEL muss mitkommen: Auf der Startfläche des Portals steht die Warteschlange
 	// ohne ein Buch daneben, und "Klasse 8a · 3 Stück" allein sagt niemandem, worum es
@@ -104,7 +104,7 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 	if err != nil {
 		t.Fatalf("Erledigen: %v", err)
 	}
-	if erledigt == nil || erledigt.Klasse != "8a" || erledigt.Anzahl != 3 ||
+	if erledigt == nil || erledigt.Klasse != "08A" || erledigt.Anzahl != 3 ||
 		erledigt.AnfragendeMail == nil || *erledigt.AnfragendeMail != "KSQ-B@example.org" {
 		t.Fatalf("Bereit-Mail-Angaben falsch: %+v", erledigt)
 	}
@@ -118,7 +118,7 @@ func TestKlassensatzReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) 
 		t.Fatalf("Liste nach Erledigen: %v", err)
 	}
 	meine = nurTitel(liste, titel)
-	if len(meine) != 2 || meine[0].Klasse != "9b" || meine[0].Erledigt || !meine[1].Erledigt {
+	if len(meine) != 2 || meine[0].Klasse != "09B" || meine[0].Erledigt || !meine[1].Erledigt {
 		t.Fatalf("nach Erledigen: erwartet [9b offen, 8a erledigt], bekam %+v", meine)
 	}
 }

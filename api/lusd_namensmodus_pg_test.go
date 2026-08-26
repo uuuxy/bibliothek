@@ -204,7 +204,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT ist_abgaenger, ist_gesperrt, klasse FROM schueler WHERE id=$1`, id).Scan(&abg, &gesperrt, &klasse); err != nil {
 		t.Fatal(err)
 	}
-	if abg || gesperrt || klasse != "10a" {
+	if abg || gesperrt || klasse != "10A" {
 		t.Errorf("Rückkehrer nicht reaktiviert: abgaenger=%v gesperrt=%v klasse=%q", abg, gesperrt, klasse)
 	}
 }
@@ -237,7 +237,7 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 	if n := zaehle(t, pool, "lower(nachname)='müller'"); n != 2 {
 		t.Fatalf("erwartet weiterhin 2 Zeilen, waren %d", n)
 	}
-	if n := zaehle(t, pool, "lower(nachname)='müller' AND klasse IN ('7a','7b')"); n != 2 {
+	if n := zaehle(t, pool, "lower(nachname)='müller' AND klasse IN ('07A','07B')"); n != 2 {
 		t.Error("mehrdeutige Schüler wurden verändert")
 	}
 }

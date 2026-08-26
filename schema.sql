@@ -868,6 +868,30 @@ CREATE TRIGGER trg_ksr_klasse_vokabular
 BEFORE INSERT OR UPDATE OF klasse ON klassensatz_reservierungen
 FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
 
+-- Anzeigeform (Migration 087): Jahrgang zweistellig, Rest groß — „09G4", „10G1".
+-- Nur für klassenartige Namen; 'lehrer', 'ABG', Kursnamen bleiben.
+CREATE FUNCTION klassen_anzeigeform(text) RETURNS text
+LANGUAGE sql IMMUTABLE AS $$
+    -- Innere Leerzeichen („5 f 1") fallen wie in klassen_normkey weg.
+    SELECT CASE
+        WHEN replace(btrim($1), ' ', '') ~ '^[0-9]{1,2}[A-Za-z]+[0-9]*$'
+            THEN lpad(substring(replace(btrim($1), ' ', '') from '^[0-9]+'), 2, '0')
+                 || upper(substring(replace(btrim($1), ' ', '') from '^[0-9]+(.*)$'))
+        ELSE btrim($1)
+    END
+$$;
+
+CREATE FUNCTION klassen_anzeigeform_trigger() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.name := klassen_anzeigeform(NEW.name);
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_klassen_anzeigeform
+BEFORE INSERT OR UPDATE OF name ON klassen
+FOR EACH ROW EXECUTE FUNCTION klassen_anzeigeform_trigger();
+
 ALTER TABLE schueler
     ADD CONSTRAINT fk_schueler_klasse_vokabular
     FOREIGN KEY (klasse) REFERENCES klassen (name)
@@ -994,7 +1018,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('083_audit_log_append_only_aufloesen.sql'),
 ('084_schueler_lusd_bestaetigt_am.sql'),
 ('085_paritaet_indizes_fk_name_passwort_hash.sql'),
-('086_benutzer_zugang_beantragt_am.sql')
+('086_benutzer_zugang_beantragt_am.sql'),
+('087_klassen_anzeigeform.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

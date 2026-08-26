@@ -64,7 +64,7 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
 	const fristen = querySQL(`
         SELECT count(*) FROM ausleihen a
         JOIN schueler st ON st.id = a.schueler_id
-        WHERE st.klasse = '${klasse}'
+        WHERE klassen_normkey(st.klasse) = klassen_normkey('${klasse}') -- Anzeigeform (087): '1e42' steht als '01E42'
           AND a.rueckgabe_am IS NULL
           AND a.rueckgabe_frist::date = '${dateStr}'
     `);

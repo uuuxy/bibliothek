@@ -73,7 +73,7 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	if lusd != "LUSD-ADOPT-1" {
 		t.Errorf("LUSD-ID nicht nachgetragen: %q", lusd)
 	}
-	if klasse != "8a" {
+	if klasse != "08A" {
 		t.Errorf("Klasse nicht übernommen: %q", klasse)
 	}
 }

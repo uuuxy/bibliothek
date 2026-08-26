@@ -63,7 +63,7 @@ func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 	if lusd != "LUSD-9001" {
 		t.Errorf("LUSD-ID nicht nachgetragen (noch %q)", lusd)
 	}
-	if klasse != "7b" {
+	if klasse != "07B" {
 		t.Errorf("Klasse nicht übernommen: %q", klasse)
 	}
 }

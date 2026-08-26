@@ -13,8 +13,8 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken } from './helpers.js';
 
-const KLASSE_A = '09z1';
-const KLASSE_B = '09z2';
+const KLASSE_A = '09Z1'; // Anzeigeform (Migration 087): Jahrgang zweistellig, groß
+const KLASSE_B = '09Z2';
 
 test('Klassensätze stehen an genau EINEM Ort', async ({ page }) => {
 	await uiLogin(page);

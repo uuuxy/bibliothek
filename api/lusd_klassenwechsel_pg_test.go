@@ -75,7 +75,7 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 		if vorname != f.vorname {
 			t.Errorf("%s: Vorname %q, erwartet %q — die Zeilen sind vertauscht", f.lusdID, vorname, f.vorname)
 		}
-		if klasse != f.neueKlasse {
+		if !klassenGleich(klasse, f.neueKlasse) {
 			t.Errorf("%s (%s %s): Klasse %q, erwartet %q — die Zuordnung im Batch stimmt nicht",
 				f.lusdID, f.vorname, f.nachname, klasse, f.neueKlasse)
 		}
@@ -121,8 +121,8 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 		`SELECT klasse FROM schueler WHERE lusd_id = 'L-LEER' AND deleted_at IS NULL`).Scan(&klasse); err != nil {
 		t.Fatal(err)
 	}
-	if klasse != "7b" {
-		t.Errorf("Klasse = %q, erwartet 7b — eine leere Exportspalte darf die Zuordnung nicht loeschen", klasse)
+	if klasse != "07B" {
+		t.Errorf("Klasse = %q, erwartet 07B — eine leere Exportspalte darf die Zuordnung nicht loeschen", klasse)
 	}
 }
 

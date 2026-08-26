@@ -69,7 +69,7 @@ func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
 	if len(got) != 3 {
 		t.Fatalf("erwartet 3 Einträge, bekam %d: %+v", len(got), got)
 	}
-	if got[0].Vorname != "Mia" || got[0].Klasse != "7a" {
+	if got[0].Vorname != "Mia" || got[0].Klasse != "07A" {
 		t.Errorf("zugeordnete Ausleihe: %+v", got[0])
 	}
 	if got[1].Vorname != "Anonym" || got[1].Nachname != "" || got[1].Klasse != "" {

@@ -43,6 +43,25 @@ Zwei Regeln dazu:
 
 ---
 
+## Klassennamen: „9G4" neben „09G1" — die zuerst geschriebene Form gewann (26.08.2026)
+
+Anlass: Peters Screenshot der Klassensatz-Liste auf dem Hetzner: „09G1, 09G2, 09G3, 09G5,
+9G4", „10G2 … 10g1", „07R2, 07R3, 07r1". Sortierung stimmte (zahlenbewusst), die Namen
+nicht. Ursache: Das Vokabular (079) registriert als Anzeigeform die ERSTE Schreibweise,
+die je geschrieben wurde — der Klassensatz-Import vom Morgen kam vor den Schülern.
+
+| Kat. | Raster | Fund | Commit |
+| ---- | ------ | ---- | ------ |
+| A | 1 Konvention statt Regel | Keine Zielform, nur „erste gewinnt". Auf dem Schulserver trifft es jede Klasse, die nur in Bücherlisten steht (noch keine LUSD-Schüler). Entscheidung Peter: **05F1** (Jahrgang zweistellig, Rest groß, wie LUSD). Migration 087: `klassen_anzeigeform()` als BEFORE-Trigger auf `klassen` + Bestand nachgezogen (FK-CASCADE). Sonderwerte `lehrer`/`ABG`/Kurse unberührt. | 087-Commit |
+| B | 3 zwei Wahrheitsquellen | `/api/ausleihen/lmf/global-extend` verglich die Request-Klasse exakt mit `schueler.klasse` — „5a" aus einem Formular traf „05A" nicht. Jetzt `klassen_normkey()` beidseitig. | 087-Commit |
+| B | 7 Gate-Ehrlichkeit | ~20 PG-Tests und 2 E2E-Specs verglichen Klassen als exakte Zeichenkette in Kleinform („5a", „7b") — **Blast Radius einer Formänderung**: alle auf Anzeigeform bzw. `klassenGleich()` gezogen. Ohne Migration 087 waren sie grün, mit ihr rot: das Gate stimmt. | 087-Commit |
+| B | 8 Lebenszyklus | Trivy rot auf main (openssl 3.5.7 im Alpine-Basisimage, CVE-2026-14456, Fix 3.5.8-r0) — kein eigener Code. `apk upgrade` im Runtime-Stage des Dockerfiles. | 087-Commit |
+
+| B | 7 Gate-Ehrlichkeit | `schueler-etiketten.spec.js` zählte nur die PASSENDEN Zeilen (`hasText`) — mit 10.000 Schülern in der lokalen DB standen die zwei gesuchten schon in der ungefilterten ersten Seite (500), das Häkchen markierte 500, die gefilterte Antwort kam nach dem Druck-Klick (per Netzwerk-Log belegt). Kein Produktfehler (Leiste sagte „500 markiert"); Assertion auf Gesamtzahl. Grün aus Umgebungsgunst in CI (kleine DB). | E2E-Commit |
+
+**Nebenbei (Chip-Fix `5e16b319`):** Der Bücher-Zähler war so breit wie sein Text; ab
+zweistelligen Zahlen rutschte der Klassenname. Mindestbreite + Tabellenziffern.
+
 ## Selbstanmeldung des Kollegiums: gebaut, getestet, nicht in Betrieb (26.08.2026)
 
 Anlass: Peters Frage „Wie kommen Kollegen, die nicht als Benutzer angelegt sind, in mein

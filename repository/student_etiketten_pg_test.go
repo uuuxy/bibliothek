@@ -52,7 +52,7 @@ func TestEtikettenZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
 		folge = append(folge, z.Klasse+"/"+z.Nachname)
 	}
 	// Erst die ganze 7A, dann die ganze 7B — innerhalb der Klasse nach Nachname.
-	erwartet := []string{"7A/Bock", "7A/Dill", "7B/Aal", "7B/Cent"}
+	erwartet := []string{"07A/Bock", "07A/Dill", "07B/Aal", "07B/Cent"}
 	if len(folge) != len(erwartet) {
 		t.Fatalf("erwartet %v, bekommen %v", erwartet, folge)
 	}
