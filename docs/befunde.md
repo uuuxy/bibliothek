@@ -43,6 +43,37 @@ Zwei Regeln dazu:
 
 ---
 
+## Selbstanmeldung des Kollegiums: gebaut, getestet, nicht in Betrieb (26.08.2026)
+
+Anlass: Peters Frage „Wie kommen Kollegen, die nicht als Benutzer angelegt sind, in mein
+Portal — funktioniert das wirklich?" Antwort nach dem Raster: Der Mechanismus
+(`auth/selbstanmeldung.go`) existiert seit dem 10.08. und hat drei PG-Tests — aber er war
+mit hoher Wahrscheinlichkeit auf keinem Server eingeschaltet, und seine zweite Hälfte
+(die Bibliothek erfährt davon) fehlte. Was hält: Server zu 100 % rechtebasiert,
+`KOLLEGIUM` = nur `create_reservations` (Seed + Migration 070), Menü zeigt nur „Mein
+Portal", Deaktivieren wirkt je Request, Rolle bei Selbstanmeldung fest `kollegium`.
+
+| Kat. | Raster | Fund | Commit |
+| ---- | ------ | ---- | ------ |
+| A | 8 Lebenszyklus / 5 stille Fehler | `SELBSTANMELDUNG_DOMAIN` stand in keiner Deploy-Doku, nicht in der Selbstprüfung, nicht in der lokalen Compose-Env. Leer = Lehrkraft mit **richtigem** Passwort liest „invalid email or password" und sperrt sich nach 5 Versuchen — tote Tür, sieht aus wie Tippfehler. | 1426730b |
+| A | 2 Spezialwert / 4 wer sieht was | `aktiv=false` trug zwei Bedeutungen: „Antrag wartet" und „bewusst deaktiviert" — grauer Punkt zwischen 160 Zeilen, kein Zähler, keine Mail. Niemand schaltet frei, was niemand sieht. Spalte `zugang_beantragt_am` (086), Freischalten löscht sie; Zeile über der Tabelle + Abzeichen. | 2465410e |
+| B | 5 stille Fehler | Login-Meldung verschwand nach 4 s — auch „Zugang beantragt". 403 bleibt jetzt stehen. | 5332b4e1 |
+| B | 9 Ausleitung / 4 | Konto ohne Urheber hatte keine Audit-Zeile (USER_CREATE gibt es nur über die Verwaltung). Aktion `SELBSTANMELDUNG`. | da8e1f00 |
+| B | 7 Gate-Ehrlichkeit | Jedes Glied getestet, die Kette nie. E2E über den ganzen Weg, braucht `SELBSTANMELDUNG_DOMAIN=test.local` im lokalen Stack. | 1c4bcb28 |
+
+**Bewusst offen (Entscheidung Peter):** Der Menüpunkt „Mein Portal" hängt an der
+_Rolle_ `kollegium` (`menu.js`, begründete Ausnahme der Rechte-Ratsche), nicht am Recht
+`create_reservations`, das auch `MITARBEITER` hat. Eine Lehrkraft, die zugleich in
+Bibliothek/LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, erreicht das Portal
+in der Oberfläche nicht (die API ließe es zu). Zwei-Wahrheitsquellen-Paar, das derzeit
+zufällig einig ist. Empfehlung: Portal sichtbar für jede Rolle mit
+`create_reservations` — aber das ist eine Produktentscheidung.
+
+**Auf dem Schulserver zu tun:** `SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de` in die
+`.env`, Neustart; die Selbstprüfung zeigt danach „Postfächer @… melden sich selbst an".
+Achtung: Schülerpostfächer derselben Domain kämen ebenfalls als Antrag herein — die
+Freischaltung bleibt deshalb bei der Bibliothek.
+
 ## Textfelder waren die letzte M3-Lücke — ein Bauteil, eine Ratsche (25.08.2026)
 
 Ausgangsfrage war klein: neun native Datumsfelder auf M3 ziehen. Beim Öffnen der ersten
