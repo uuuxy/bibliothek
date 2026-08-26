@@ -214,7 +214,9 @@ export const menuGroups = [
 					'edit_books',
 					'manage_inventory',
 					'import_students',
-					'manage_students_admin'
+					'manage_students_admin',
+					// Lieferanten-Kategorie (25.08.2026) — Schreiben verlangt create_orders.
+					'create_orders'
 				]
 			}
 		]

@@ -65,6 +65,20 @@ else
 fi
 cd ..
 
+# 2b. Vitest — die Frontend-Unit-Tests. Bis 26.08.2026 liefen sie NUR in der CI:
+# Ein Push, der menu.test.js rot machte (Türliste am Menüpunkt „Einstellungen" hinkte
+# kategorien.js hinterher), kam durch alle lokalen Gates und stand zwei Läufe lang als
+# rotes main da. 14 Sekunden hier sparen den roten Haken dort.
+echo "[2b/6] Führe Vitest (Frontend-Unit-Tests) aus..."
+cd frontend || exit 1
+if npx vitest run --silent >/dev/null 2>&1; then
+    echo -e "${GREEN}✓ Vitest bestanden.${NC}"
+else
+    echo -e "${RED}✗ Vitest fehlgeschlagen! Push abgebrochen. (npx vitest run im Ordner frontend zeigt die Stelle.)${NC}"
+    exit 1
+fi
+cd ..
+
 # 3. npm audit (Frontend Dependency Security)
 echo "[3/6] Führe npm audit (Frontend) aus..."
 cd frontend || exit 1
