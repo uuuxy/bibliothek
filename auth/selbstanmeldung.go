@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -132,6 +134,18 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 		return loginUser{}, fmt.Errorf("zugangsanfrage konnte nicht gelesen werden: %w", err)
 	}
 	u.neuAngelegt = true
+
+	// Audit: Ein Konto, das ohne Administrator entstanden ist, braucht erst recht eine
+	// Spur — sonst steht später eine Zeile in benutzer, von der niemand sagen kann, wer
+	// sie wann angelegt hat (der Vorfall mit den vier Admin-Konten). admin_id ist das
+	// neue Konto selbst: Es hat sich angemeldet. Best effort wie auditiereBenutzerMutation.
+	details, _ := json.Marshal(map[string]any{"email": strings.ToLower(email), "rolle": "kollegium", "aktiv": false})
+	if _, err := dbPool.Exec(ctx, `
+		INSERT INTO audit_logs (admin_id, aktion, details, zeitstempel)
+		VALUES ($1, 'SELBSTANMELDUNG', $2::jsonb, CURRENT_TIMESTAMP)
+	`, u.id, string(details)); err != nil {
+		slog.Warn("Selbstanmeldung: Audit-Zeile konnte nicht geschrieben werden", "fehler", err)
+	}
 	return u, nil
 }
 

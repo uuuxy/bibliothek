@@ -192,3 +192,45 @@ describe('authStore Session-Refresh', () => {
 		expect(authStore.isLoggedIn).toBe(true);
 	});
 });
+
+// Die Login-Meldung verschwand nach vier Sekunden — auch „Zugang beantragt — die
+// Bibliothek muss ihn noch freischalten" (403). Wer sie nicht zu Ende gelesen hat,
+// tippt das Passwort noch einmal. Ein 403 heißt: Zugangsdaten richtig, Wiederholen
+// bringt nichts — die Meldung bleibt, bis der nächste Versuch sie ersetzt.
+describe('authStore Login-Meldung', () => {
+	beforeEach(() => {
+		authStore.handleLogout();
+		vi.clearAllMocks();
+		vi.useFakeTimers();
+	});
+	afterEach(() => vi.useRealTimers());
+
+	/** @param {number} status @param {string} error */
+	async function loginMit(status, error) {
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({
+			ok: false,
+			status,
+			json: async () => ({ error }),
+			text: async () => ''
+		}));
+		authStore.loginEmail = 'lehrkraft@schule.de';
+		authStore.loginPassword = 'pw';
+		await authStore.handleLogin(null);
+	}
+
+	it('401 (falsches Passwort): Meldung räumt sich nach vier Sekunden weg', async () => {
+		await loginMit(401, 'invalid email or password');
+		expect(authStore.loginError).toBe('invalid email or password');
+		await vi.advanceTimersByTimeAsync(4000);
+		expect(authStore.loginError).toBeNull();
+	});
+
+	it('403 (Zugang beantragt): Meldung bleibt stehen', async () => {
+		await loginMit(403, 'Zugang beantragt — die Bibliothek muss ihn noch freischalten');
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(authStore.loginError).toBe(
+			'Zugang beantragt — die Bibliothek muss ihn noch freischalten'
+		);
+	});
+});

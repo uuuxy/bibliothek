@@ -202,6 +202,18 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if !beantragt {
 		t.Error("zugang_beantragt_am ist NULL — die Selbstanmeldung muss den Antrag markieren")
 	}
+	// Und eine Audit-Spur: Wer hat dieses Konto wann angelegt? Niemand — es hat sich
+	// selbst angemeldet, und genau das muss nachlesbar sein.
+	var auditZeilen int
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM audit_logs a JOIN benutzer b ON b.id = a.admin_id
+		WHERE a.aktion = 'SELBSTANMELDUNG' AND LOWER(b.email) = $1
+	`, email).Scan(&auditZeilen); err != nil {
+		t.Fatalf("Audit lesen: %v", err)
+	}
+	if auditZeilen != 1 {
+		t.Errorf("%d Audit-Zeilen SELBSTANMELDUNG für das Konto, erwartet genau 1", auditZeilen)
+	}
 
 	// 3. Zweiter Versuch, immer noch nicht freigeschaltet: weiterhin kein Zugang, und
 	//    es entsteht KEIN zweiter Eintrag.

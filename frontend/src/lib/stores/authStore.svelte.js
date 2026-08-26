@@ -144,7 +144,13 @@ class AuthStore {
 						msg = (await res.text()) || msg;
 					} catch {}
 				}
-				throw new Error(msg);
+				const fehler = new Error(msg);
+				// 403 = Zugangsdaten richtig, Zugang trotzdem nicht („Zugang beantragt",
+				// „Konto deaktiviert"). Diese Meldung muss STEHEN bleiben: Sie sagt der
+				// Lehrkraft, dass Wiederholen nichts bringt — nach vier Sekunden weg, liest
+				// sie sie nicht zu Ende und tippt das Passwort noch einmal.
+				/** @type {any} */ (fehler).bleibtStehen = res.status === 403;
+				throw fehler;
 			}
 			const user = await res.json();
 			this.loginEmail = '';
@@ -154,9 +160,11 @@ class AuthStore {
 			const errorMessage = /** @type {any} */ (err).message || String(err);
 			this.loginError = errorMessage;
 			this.loginPassword = '';
-			setTimeout(() => {
-				this.loginError = null;
-			}, 4000);
+			if (!(/** @type {any} */ (err)?.bleibtStehen)) {
+				setTimeout(() => {
+					this.loginError = null;
+				}, 4000);
+			}
 		} finally {
 			this.isLoggingIn = false;
 		}
