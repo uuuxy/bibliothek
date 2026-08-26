@@ -29,6 +29,7 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `PORT` | HTTP-Port des Backends | Pflicht |
 | `IMAP_HOST` | IMAP-Server der Schule — die Anmeldung prüft Zugangsdaten dagegen | **Pflicht.** Ohne diese Variable bricht der Start ab (`FATAL: IMAP_HOST ist nicht gesetzt`); lokal `IMAP_HOST=mock` zusammen mit `APP_ENV=local` |
 | `IMAP_PORT` | IMAP-Port | Standard: 993 |
+| `SELBSTANMELDUNG_DOMAIN` | Maildomain, deren Postfächer sich selbst anmelden dürfen (z. B. `philipp-reis-schule.de`). Eine Lehrkraft ohne Konto bekommt beim ersten Login einen **inaktiven** Eintrag (Rolle Kollegium) und wird unter Benutzer & Rechte freigeschaltet | **Empfohlen** — leer = aus, dann muss jedes Kollegiums-Konto von Hand angelegt werden; die Selbstprüfung meldet den Zustand als Warnung |
 | `ALLOWED_ORIGIN` | Erlaubte Herkunft für CORS (die Frontend-Adresse der Schule) | Empfohlen in Produktion |
 | `TRUSTED_PROXIES` | CIDRs/IPs, deren `X-Forwarded-For` geglaubt wird (Rate-Limit, Login-Brute-Force, Audit-Log) | Ohne sie gilt **nur Loopback** als vertrauenswürdig — hinter Caddy auf einem anderen Host also nötig |
 | `BACKUP_DIR` | Zielverzeichnis der automatischen Backups | Standard siehe [resilience_and_recovery.md](resilience_and_recovery.md) |

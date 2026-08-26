@@ -33,6 +33,7 @@ func lageEingerichtet() Lage {
 		JWTSecret:           "ein-eigenes-langes-geheimnis-mit-genug-zeichen",
 		AppEncryptionKey:    "eigener-schluessel-32-zeichen-ab",
 		ImapHost:            "srv1.philipp-reis-schule.de",
+		SelbstanmeldeDomain: "philipp-reis-schule.de",
 		OeffentlicheAdresse: "https://flasch3.herzog-dupont.de",
 		SmtpHost:            "srv1.philipp-reis-schule.de",
 		DemoSchueler:        0,
@@ -146,6 +147,13 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Anmeldung",
 			stufe:    StufeKritisch,
 			enthaelt: "anmelden",
+		},
+		{
+			name:     "Selbstanmeldung nicht eingerichtet",
+			aendere:  func(l *Lage) { l.SelbstanmeldeDomain = "" },
+			bereich:  "Selbstanmeldung Kollegium",
+			stufe:    StufeWarnung,
+			enthaelt: "SELBSTANMELDUNG_DOMAIN",
 		},
 		{
 			name:     "keine oeffentliche Adresse",

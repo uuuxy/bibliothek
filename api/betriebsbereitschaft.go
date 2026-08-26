@@ -80,6 +80,9 @@ type Lage struct {
 
 	// Anmeldung
 	ImapHost string
+	// SelbstanmeldeDomain: SELBSTANMELDUNG_DOMAIN — leer heißt, Kollegium muss von Hand
+	// angelegt werden (auth/selbstanmeldung.go).
+	SelbstanmeldeDomain string
 
 	// Aus den Einstellungen (Datenbank, nicht .env — siehe api/mail_settings.go)
 	OeffentlicheAdresse string
@@ -175,6 +178,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeAuslagerung(l),
 		pruefeGeheimnisse(l, echt),
 		pruefeAnmeldung(l, echt),
+		pruefeSelbstanmeldung(l),
 		pruefeBestelllink(l),
 		pruefeMailversand(l),
 		pruefeDemodaten(l),
@@ -507,6 +511,26 @@ func pruefeAnmeldung(l Lage, echt bool) Befund {
 		b.Stufe = StufeOK
 		b.Befund = "Anmeldung läuft über " + l.ImapHost + "."
 	}
+	return b
+}
+
+// pruefeSelbstanmeldung: Ohne SELBSTANMELDUNG_DOMAIN bekommt eine Lehrkraft mit
+// RICHTIGEM Passwort „invalid email or password“ und nach fünf Versuchen eine Sperre —
+// eine tote Tür, die wie ein Tippfehler aussieht. Der Serverstart protokolliert den
+// Zustand zwar (auth.SelbstanmeldungStatus), aber ein Log liest niemand, der gerade
+// eine Lehrkraft am Telefon hat. Warnung, nicht kritisch: Die Schule KANN alle 160
+// Konten von Hand anlegen — sie soll nur wissen, dass sie das gerade tut.
+func pruefeSelbstanmeldung(l Lage) Befund {
+	b := Befund{Bereich: "Selbstanmeldung Kollegium"}
+	if l.SelbstanmeldeDomain == "" {
+		b.Stufe = StufeWarnung
+		b.Befund = "SELBSTANMELDUNG_DOMAIN ist leer — Lehrkräfte können sich nicht selbst anmelden."
+		b.Folge = "Eine Lehrkraft ohne Konto bekommt trotz richtigem Passwort „Anmeldung fehlgeschlagen“; jedes Kollegiums-Konto muss unter Benutzer & Rechte von Hand angelegt werden."
+		b.Abhilfe = "Die Schul-Maildomain eintragen (z. B. SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de). Neue Konten entstehen dann inaktiv und werden unter Benutzer & Rechte freigeschaltet."
+		return b
+	}
+	b.Stufe = StufeOK
+	b.Befund = "Postfächer @" + l.SelbstanmeldeDomain + " melden sich selbst an; neue Konten warten inaktiv auf die Freischaltung."
 	return b
 }
 

@@ -58,6 +58,8 @@ services:
       - COOKIE_SECURE=false
       - INITIAL_ADMIN_EMAIL=pflasch@philipp-reis-schule.de
       - IMAP_HOST=mock
+      # E2E: e2e/selbstanmeldung.spec.js meldet ein @test.local-Postfach ohne Konto an.
+      - SELBSTANMELDUNG_DOMAIN=test.local
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER}

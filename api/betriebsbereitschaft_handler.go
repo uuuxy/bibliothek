@@ -7,6 +7,7 @@ package api
 // Aussenwelt befragt, steht hier.
 
 import (
+	"bibliothek/auth"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -51,15 +52,16 @@ func (s *Server) sammleLage(
 	zustandRepo *repository.BetriebszustandRepository,
 ) Lage {
 	lage := Lage{
-		AppEnv:             strings.ToLower(os.Getenv("APP_ENV")),
-		S3Endpoint:         os.Getenv("S3_ENDPOINT"),
-		S3AccessKey:        os.Getenv("S3_ACCESS_KEY"),
-		S3SecretKey:        os.Getenv("S3_SECRET_KEY"),
-		S3Bucket:           os.Getenv("S3_BUCKET"),
-		EnforceProdSecrets: strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true",
-		JWTSecret:          os.Getenv("JWT_SECRET"),
-		AppEncryptionKey:   os.Getenv("APP_ENCRYPTION_KEY"),
-		ImapHost:           os.Getenv("IMAP_HOST"),
+		AppEnv:              strings.ToLower(os.Getenv("APP_ENV")),
+		S3Endpoint:          os.Getenv("S3_ENDPOINT"),
+		S3AccessKey:         os.Getenv("S3_ACCESS_KEY"),
+		S3SecretKey:         os.Getenv("S3_SECRET_KEY"),
+		S3Bucket:            os.Getenv("S3_BUCKET"),
+		EnforceProdSecrets:  strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true",
+		JWTSecret:           os.Getenv("JWT_SECRET"),
+		AppEncryptionKey:    os.Getenv("APP_ENCRYPTION_KEY"),
+		ImapHost:            os.Getenv("IMAP_HOST"),
+		SelbstanmeldeDomain: auth.SelbstanmeldeDomain(),
 	}
 
 	// Öffentliche Adresse und SMTP-Host kommen aus der DATENBANK, nicht aus der .env:
