@@ -48,11 +48,6 @@ export function canSeeItem(item, currentUser) {
 	// zwischen Oberfläche und Rechtelage, kein gewollter Schutz.
 	if (r === 'admin') return true;
 
-	// Das Portal ist für das Kollegium bestimmt (Rolle hieß bis Migration 069 'lehrer').
-	if (item.id === 'kollegium_portal') {
-		return r === 'kollegium';
-	}
-
 	// Eine roles-Liste schränkt EIN, sie ist keine Alternative zur Rechteprüfung.
 	//
 	// Diese Prüfung stand bis zum 10.08.2026 im Zweig darunter und galt deshalb nur für
@@ -223,6 +218,18 @@ export const menuGroups = [
 	},
 	{
 		name: 'Kollegium',
-		items: [{ id: 'kollegium_portal', label: 'Mein Portal', icon: 'book', roles: ['kollegium'] }]
+		// Am RECHT, nicht an der Rolle (Peter, 26.08.2026): Bis dahin stand hier
+		// roles: ['kollegium'] — eine Lehrkraft, die in Bibliothek/LMF mitarbeitet und
+		// deshalb als Mitarbeiter angelegt ist, fand das Portal nicht, obwohl der Server
+		// sie (create_reservations) überall hineinließ. Zwei Wahrheitsquellen, die nur
+		// zufällig einig waren. Wer reservieren darf, sieht die Tür.
+		items: [
+			{
+				id: 'kollegium_portal',
+				label: 'Mein Portal',
+				icon: 'book',
+				permission: 'create_reservations'
+			}
+		]
 	}
 ];

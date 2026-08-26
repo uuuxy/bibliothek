@@ -108,13 +108,23 @@ describe('Menü-Sichtbarkeit', () => {
 		if (!settings) throw new Error('Menüpunkt settings fehlt — Test läuft ins Leere');
 		expect([...(settings.permissions ?? [])].sort()).toEqual([...ALLE_KATEGORIE_RECHTE].sort());
 	});
-	it('hält das Portal von allen anderen Rollen fern', () => {
+	it('öffnet das Portal für jede Rolle mit create_reservations — und nur für die', () => {
+		// Bis 26.08.2026 hing „Mein Portal" an der Rolle kollegium. Eine Lehrkraft, die
+		// in Bibliothek/LMF mitarbeitet und deshalb Mitarbeiter ist, fand das Portal nicht,
+		// obwohl der Server sie mit create_reservations überall hineinließ (Peter: am
+		// Recht aufhängen). Der Helfer hat das Recht ab Werk nicht und bleibt draußen.
 		const portal = allePunkte.find((i) => i.id === 'kollegium_portal');
 		// Kein expect(...).toBeTruthy(): Das verengt den Typ nicht, und ohne den Punkt
 		// prüfte der Test unten stillschweigend gegen undefined.
 		if (!portal) throw new Error('Menüpunkt kollegium_portal fehlt — Test läuft ins Leere');
 		expect(canSeeItem(portal, helfer)).toBe(false);
-		expect(canSeeItem(portal, { rolle: 'mitarbeiter', permissions: ['*'] })).toBe(false);
+		expect(
+			canSeeItem(portal, { rolle: 'mitarbeiter', permissions: geseedeteRechte('MITARBEITER') })
+		).toBe(true);
+		expect(canSeeItem(portal, { rolle: 'mitarbeiter', permissions: ['view_books'] })).toBe(false);
+		expect(canSeeItem(portal, { rolle: 'helfer', permissions: ['create_reservations'] })).toBe(
+			true
+		);
 	});
 
 	it('sperrt auch die Unteransichten, die keinen Menüpunkt haben', () => {

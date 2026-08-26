@@ -61,13 +61,13 @@ Portal", Deaktivieren wirkt je Request, Rolle bei Selbstanmeldung fest `kollegiu
 | B | 9 Ausleitung / 4 | Konto ohne Urheber hatte keine Audit-Zeile (USER_CREATE gibt es nur über die Verwaltung). Aktion `SELBSTANMELDUNG`. | da8e1f00 |
 | B | 7 Gate-Ehrlichkeit | Jedes Glied getestet, die Kette nie. E2E über den ganzen Weg, braucht `SELBSTANMELDUNG_DOMAIN=test.local` im lokalen Stack. | 1c4bcb28 |
 
-**Bewusst offen (Entscheidung Peter):** Der Menüpunkt „Mein Portal" hängt an der
-_Rolle_ `kollegium` (`menu.js`, begründete Ausnahme der Rechte-Ratsche), nicht am Recht
-`create_reservations`, das auch `MITARBEITER` hat. Eine Lehrkraft, die zugleich in
-Bibliothek/LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, erreicht das Portal
-in der Oberfläche nicht (die API ließe es zu). Zwei-Wahrheitsquellen-Paar, das derzeit
-zufällig einig ist. Empfehlung: Portal sichtbar für jede Rolle mit
-`create_reservations` — aber das ist eine Produktentscheidung.
+**Nachtrag (Peter: „am Recht aufhängen"):** Der Menüpunkt „Mein Portal" hing an der
+_Rolle_ `kollegium` (`menu.js`), nicht am Recht `create_reservations`, das auch
+`MITARBEITER` hat. Eine Lehrkraft, die zugleich in Bibliothek/LMF mitarbeitet und deshalb
+als Mitarbeiter angelegt ist, erreichte das Portal in der Oberfläche nicht (die API ließ
+es zu). Zwei-Wahrheitsquellen-Paar, das nur zufällig einig war — jetzt `permission:
+'create_reservations'`; Helfer (ohne das Recht) bleibt draußen. menu.test.js am alten
+Code rot gesehen.
 
 **Auf dem Schulserver zu tun:** `SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de` in die
 `.env`, Neustart; die Selbstprüfung zeigt danach „Postfächer @… melden sich selbst an".
