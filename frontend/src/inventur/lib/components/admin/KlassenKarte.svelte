@@ -36,10 +36,12 @@
 			? 'truncate text-base font-medium text-on-surface'
 			: 'truncate font-sans text-2xl font-bold text-slate-800'
 	);
+	// Feste Mindestbreite + Tabellenziffern: Bei „28 Bücher" war der Chip breiter als bei
+	// „5 Bücher", und der Klassenname rutschte je Zeile nach rechts (Peter, 26.08.2026).
 	const zaehlerChip = $derived(
 		kompakt
-			? 'bg-secondary-container text-on-secondary-container shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums'
-			: 'shrink-0 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600'
+			? 'bg-secondary-container text-on-secondary-container inline-flex min-w-[6.5rem] shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums'
+			: 'inline-flex min-w-[7rem] shrink-0 justify-center rounded-lg border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-semibold tabular-nums text-blue-600'
 	);
 
 	let sortedBooks = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
