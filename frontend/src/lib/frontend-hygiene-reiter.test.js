@@ -20,6 +20,7 @@ const HANDGEBAUT = /role=(["'])tab\1/;
 const BESTAND = [
 	'src/lib/BestellWorkspace.svelte',
 	'src/lib/BookAkte.svelte',
+	'src/lib/components/mahnwesen/MahnwesenTabs.svelte',
 	'src/lib/MediaCatalog.svelte'
 ];
 

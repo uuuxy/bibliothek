@@ -41,10 +41,16 @@
 	// ohne Mahn-Eskalation (1 Jahr Frist) — siehe Befund F4, bewertung/.
 </script>
 
-<div class="flex space-x-1 border-b border-slate-200 mt-6 print:hidden">
+<div
+	role="tablist"
+	aria-label="Filter für Mahnstufen"
+	class="flex space-x-1 border-b border-slate-200 mt-6 print:hidden"
+>
 	{#each register as tab (tab.filter)}
 		{@const aktiv = mahnwesenStore.activeFilter === tab.filter}
 		<button
+			role="tab"
+			aria-selected={aktiv}
 			class="flex items-center px-4 py-2 text-sm font-medium transition-colors {aktiv
 				? 'border-b-2 border-blue-600 text-blue-600'
 				: 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}"

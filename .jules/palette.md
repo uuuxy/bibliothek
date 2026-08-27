@@ -19,3 +19,6 @@
 ## 2024-08-13 - [WCAG compliance for custom button role elements]
 **Learning:** When using `role="button"` for custom interactive elements, we must handle both Enter and Space keys for full keyboard accessibility, ensuring `preventDefault` is called for Space to avoid unintended scrolling.
 **Action:** Always implement `onkeydown` correctly catching both 'Enter' and ' ' and calling preventDefault for interactive elements functioning as buttons.
+## 2024-05-19 - Semantic Roles for Custom Tabs
+**Learning:** Custom tab implementations (like those in `MahnwesenTabs.svelte`) often overlook proper semantic roles (`role="tablist"`, `role="tab"`, and `aria-selected`), making them indistinguishable from regular buttons for screen readers. Proper semantics are crucial for keyboard navigation context.
+**Action:** When creating or modifying custom tab structures, ensure `role="tablist"` is on the container and `role="tab"` with `aria-selected` is bound to the active state on the individual tab buttons.
