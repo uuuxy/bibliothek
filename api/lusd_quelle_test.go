@@ -124,3 +124,42 @@ func TestParseLusdDatei_BinaermuellBleibtVerstaendlich(t *testing.T) {
 		t.Fatal("Binärmüll muss eine Meldung liefern, keinen Erfolg")
 	}
 }
+
+// Die echte Datei der Schule (26.08.2026): je Klasse ein Blatt, gleiche Kopfzeile im
+// SLR_/KLA_-Kürzelstil, kein Geburtsdatum. Alle Blätter müssen ankommen — vorher nur
+// das erste, und im Nur-Name-Modus hätten die übrigen Klassen als Abgänger gegolten.
+func TestParseLusdDatei_XlsxLiestAlleBlaetterMitKopfzeile(t *testing.T) {
+	kopf := []any{"SLR_Nachname", "SLR_Vorname", "SLR_Strasse", "SLR_PLZ", "SLR_ORT", "KLA_Klassennamen", "KLA_KlassenlehrerKuerzel"}
+	xlsx := baueXlsx(t, map[string][][]any{
+		"6F1": {kopf, {"Adler", "Ava", "Weg 1", "61381", "Ort", "06F1", "FLA"}, {"Beck", "Ben", "Weg 2", "61381", "Ort", "06F1", "FLA"}},
+		"6F2": {kopf, {"Cato", "Cem", "Weg 3", "61381", "Ort", "06F2", "XY"}},
+		// Deckblatt ohne Tabelle bleibt unsichtbar.
+		"Hinweise": {{"Stand März 2026"}, {"Nur für den Dienstgebrauch"}},
+		// Ein Blatt mit ANDERER Spaltenreihenfolge muss trotzdem richtig landen.
+		"6F3": {{"KLA_Klassennamen", "SLR_Vorname", "SLR_Nachname"}, {"06F3", "Dana", "Dorn"}},
+	})
+	datei, err := parseLusdDatei(xlsx)
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if datei.Modus != lusdModusNurName {
+		t.Errorf("ohne ID und Geburtsdatum muss der Nur-Name-Modus gelten, war %v", datei.Modus)
+	}
+	if len(datei.Zeilen) != 4 {
+		t.Fatalf("erwartet 4 Schüler aus drei Blättern, bekam %d: %+v", len(datei.Zeilen), datei.Zeilen)
+	}
+	klassen := map[string]string{}
+	for _, z := range datei.Zeilen {
+		klassen[z.Nachname] = z.Klasse
+	}
+	for name, klasse := range map[string]string{"Adler": "06F1", "Beck": "06F1", "Cato": "06F2", "Dorn": "06F3"} {
+		if klassen[name] != klasse {
+			t.Errorf("%s: Klasse %q erwartet, %q bekommen — Blatt verschluckt oder Spalten vertauscht", name, klasse, klassen[name])
+		}
+	}
+	for _, z := range datei.Zeilen {
+		if z.Nachname == "Dorn" && z.Vorname != "Dana" {
+			t.Errorf("umsortiertes Blatt: Vorname %q statt Dana", z.Vorname)
+		}
+	}
+}

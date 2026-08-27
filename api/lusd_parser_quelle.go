@@ -82,11 +82,19 @@ func leseCsvZeilen(content []byte) ([]tabellenZeile, error) {
 	return rows, nil
 }
 
-// leseXlsxZeilen liefert die Zeilen des ERSTEN Blatts, das eine Kopfzeile trägt — ein
-// Bericht kann mehrere Blätter haben (z. B. je Schulzweig), und das aktive ist nicht
-// zwingend das richtige. Rohwerte (RawCellValue): Datumszellen kommen als Excel-Serien-
-// zahl und werden in parseLUSDGebDatum zurückgerechnet — die formatierte Ansicht hinge
-// sonst an der Zellenformatierung des Exportierenden.
+// leseXlsxZeilen liefert die Zeilen ALLER Blätter, die eine Kopfzeile tragen, als eine
+// Tabelle — und zwar im Spaltenbild des ersten Blatts mit Kopfzeile.
+//
+// Bis 26.08.2026 zählte nur das ERSTE Blatt mit Kopfzeile. Die echte Datei der Schule
+// („Klassenliste_Eignung 6F…xlsx") hat je Klasse ein Blatt: 6F1, 6F2, 6F3, 6F4 — 91
+// Schüler, von denen 23 angekommen wären. Im Nur-Name-Modus wäre das keine Lücke,
+// sondern ein Schaden: Wer bestätigt war und im Export „fehlt", gilt als Abgänger.
+//
+// Blätter ohne Kopfzeile (Deckblatt) werden weiter übersprungen. Spätere Blätter dürfen
+// die Spalten in anderer Reihenfolge tragen: Ihre Zellen werden über die Kopfzeile auf
+// das Spaltenbild des ersten Blatts umsortiert, damit der Index-Zugriff des Parsers
+// stimmt. Rohwerte (RawCellValue): Datumszellen kommen als Excel-Serienzahl und werden
+// in parseLUSDGebDatum zurückgerechnet.
 func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 	f, err := excelize.OpenReader(bytes.NewReader(content))
 	if err != nil {
@@ -94,7 +102,9 @@ func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 	}
 	defer closeutil.LogClose(f, "lusd xlsx")
 
-	var ersteZeilen []tabellenZeile
+	var ersteZeilen, gesamt []tabellenZeile
+	var ersterKopf map[string]int
+	ersteBreite := 0
 	for _, blatt := range f.GetSheetList() {
 		raw, err := f.GetRows(blatt, excelize.Options{RawCellValue: true})
 		if err != nil {
@@ -110,14 +120,38 @@ func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 		if ersteZeilen == nil {
 			ersteZeilen = rows
 		}
-		if idx, _, err := findeKopfzeile(rows); err == nil && idx >= 0 {
-			return rows, nil
+		idx, kopf, err := findeKopfzeile(rows)
+		if err != nil || idx < 0 {
+			continue
 		}
+		if gesamt == nil {
+			gesamt, ersterKopf, ersteBreite = rows, kopf, len(rows[idx].zellen)
+			continue
+		}
+		for _, z := range rows[idx+1:] {
+			gesamt = append(gesamt, tabellenZeile{nr: z.nr, zellen: umsortiert(z.zellen, kopf, ersterKopf, ersteBreite)})
+		}
+	}
+	if gesamt != nil {
+		return gesamt, nil
 	}
 	if ersteZeilen == nil {
 		return nil, fmt.Errorf("fehler beim lesen der csv-kopfzeile: die Excel-Datei enthält kein Blatt mit Daten")
 	}
 	return ersteZeilen, nil // die Kopfzeilen-Meldung formuliert findeKopfzeile am ersten Blatt
+}
+
+// umsortiert legt die Zellen eines späteren Blatts in das Spaltenbild des ersten:
+// Für jede erkannte Spalte des ersten Blatts steht der Wert an dessen Index. Spalten,
+// die der Parser nicht kennt, fallen weg — er liest ohnehin nur über die Kopfzeile.
+func umsortiert(zellen []string, kopf, ersterKopf map[string]int, breite int) []string {
+	out := make([]string, breite)
+	for col, zielIdx := range ersterKopf {
+		if quellIdx, ok := kopf[col]; ok && quellIdx < len(zellen) && zielIdx < breite {
+			out[zielIdx] = zellen[quellIdx]
+		}
+	}
+	return out
 }
 
 // findeKopfzeile sucht in den ersten Zeilen die Kopfzeile: die erste, die Vor- UND
