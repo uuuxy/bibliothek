@@ -26,11 +26,10 @@ func normalizeHeader(h string) string {
 // (Individueller Bericht, z. B. "Schueler_Vorname") und ohne (Standardexport,
 // z. B. "Vorname"). Erweiterbar ohne Datenbank-/Migrationsaufwand.
 //
-// Dritter Stil (26.08.2026, echte Datei der Schule „Klassenliste_Eignung 6F…xlsx"):
-// Tabellenkürzel statt Tabellenname — SLR_ (Schüler), KLA_ (Klasse): SLR_Nachname,
-// SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT, KLA_Klassennamen. Ohne diese Aliase brach
-// der Import mit „Pflichtspalte 'vorname' fehlt" ab — an genau der Datei, die das
-// Sekretariat aus der LUSD bekommt.
+// Dritter Stil (26.08.2026, eine Klassenliste mit LUSD-Feldkürzeln auf Peters Rechner —
+// kein LUSD-Export, aber dieselben Kürzel): SLR_ (Schüler), KLA_ (Klasse): SLR_Nachname,
+// SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT, KLA_Klassennamen. Ohne diese Aliase bricht
+// der Import an solchen Köpfen mit „Pflichtspalte 'vorname' fehlt" ab.
 var lusdFieldAliases = map[string][]string{
 	lusdColID:           {"lusd_id", "schueler_id", "lusdid", "slr_id", "slr_schuelerid"},
 	lusdColVorname:      {"vorname", "schueler_vorname", "slr_vorname"},

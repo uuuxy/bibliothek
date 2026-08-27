@@ -85,9 +85,9 @@ func leseCsvZeilen(content []byte) ([]tabellenZeile, error) {
 // leseXlsxZeilen liefert die Zeilen ALLER Blätter, die eine Kopfzeile tragen, als eine
 // Tabelle — und zwar im Spaltenbild des ersten Blatts mit Kopfzeile.
 //
-// Bis 26.08.2026 zählte nur das ERSTE Blatt mit Kopfzeile. Die echte Datei der Schule
-// („Klassenliste_Eignung 6F…xlsx") hat je Klasse ein Blatt: 6F1, 6F2, 6F3, 6F4 — 91
-// Schüler, von denen 23 angekommen wären. Im Nur-Name-Modus wäre das keine Lücke,
+// Bis 26.08.2026 zählte nur das ERSTE Blatt mit Kopfzeile. Eine Klassenliste auf Peters
+// Rechner (kein LUSD-Export, aber eine Form, die jeder Excel-Export annehmen kann) hat je
+// Klasse ein Blatt: 6F1, 6F2, 6F3, 6F4 — 91 Schüler, von denen 23 angekommen wären. Im Nur-Name-Modus wäre das keine Lücke,
 // sondern ein Schaden: Wer bestätigt war und im Export „fehlt", gilt als Abgänger.
 //
 // Blätter ohne Kopfzeile (Deckblatt) werden weiter übersprungen. Spätere Blätter dürfen

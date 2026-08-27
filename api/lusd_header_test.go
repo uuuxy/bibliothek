@@ -63,8 +63,8 @@ func TestParseLUSDCSV_PraefixHeadersWithAddress(t *testing.T) {
 	}
 }
 
-// Der dritte Export-Stil (26.08.2026): die echte Datei der Schule trägt Tabellen-
-// KÜRZEL — SLR_ für Schüler, KLA_ für Klasse. Genau diese Kopfzeile, Wort für Wort;
+// Der dritte Export-Stil (26.08.2026): eine Klassenliste mit LUSD-Feldkürzeln (kein
+// LUSD-Export) trägt Tabellen-KÜRZEL — SLR_ für Schüler, KLA_ für Klasse. Genau diese Kopfzeile, Wort für Wort;
 // die Zeilen darunter sind erfunden.
 func TestLusdHeaderMap_KuerzelExportStyleDerSchule(t *testing.T) {
 	headers := []string{
@@ -74,7 +74,7 @@ func TestLusdHeaderMap_KuerzelExportStyleDerSchule(t *testing.T) {
 	}
 	m, err := lusdHeaderMap(headers)
 	if err != nil {
-		t.Fatalf("die echte LUSD-Kopfzeile der Schule wird abgewiesen: %v", err)
+		t.Fatalf("die Kopfzeile im SLR_/KLA_-Kürzelstil wird abgewiesen: %v", err)
 	}
 	erwartet := map[string]int{
 		lusdColNachname: 0, lusdColVorname: 1, lusdColStrasse: 2, lusdColPLZ: 3, lusdColOrt: 4, lusdColKlasse: 5,

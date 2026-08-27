@@ -125,7 +125,7 @@ func TestParseLusdDatei_BinaermuellBleibtVerstaendlich(t *testing.T) {
 	}
 }
 
-// Die echte Datei der Schule (26.08.2026): je Klasse ein Blatt, gleiche Kopfzeile im
+// Eine Klassenliste mit LUSD-Feldkürzeln (26.08.2026, kein LUSD-Export): je Klasse ein Blatt, gleiche Kopfzeile im
 // SLR_/KLA_-Kürzelstil, kein Geburtsdatum. Alle Blätter müssen ankommen — vorher nur
 // das erste, und im Nur-Name-Modus hätten die übrigen Klassen als Abgänger gegolten.
 func TestParseLusdDatei_XlsxLiestAlleBlaetterMitKopfzeile(t *testing.T) {

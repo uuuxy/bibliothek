@@ -43,17 +43,20 @@ Zwei Regeln dazu:
 
 ---
 
-## LUSD-Import an der echten Datei der Schule: 23 von 91 Schülern (26.08.2026)
+## LUSD-Import an einer Klassenliste mit LUSD-Feldkürzeln: 23 von 91 Schülern (26.08.2026)
 
 Anlass: Peters Frage, in welchem Format der LUSD-Export kommt. Auf seinem Rechner lag
-eine echte Datei („Klassenliste_Eignung 6F_25_26_Stand März2026.xlsx", vier Blätter
-6F1–6F4, Kopf `SLR_Nachname, SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT,
-KLA_Klassennamen, …`, kein Geburtsdatum, keine ID). Am Parser durchgespielt — ohne
-Schülernamen im Repo, die Kopfzeile wortgleich als Test.
+eine Klassenliste („Klassenliste_Eignung 6F…xlsx", vier Blätter 6F1–6F4, Kopf
+`SLR_Nachname, SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT, KLA_Klassennamen, …`, kein
+Geburtsdatum, keine ID). **Korrektur (Peter):** Das ist KEIN LUSD-Export, sondern eine
+anderweitig erstellte Liste — sie trägt aber die LUSD-Feldkürzel SLR_/KLA_, und „ein
+Blatt je Klasse" ist eine Form, die jeder Excel-Export annehmen kann. Beide Fixes bleiben
+richtig; die Behauptung „so kommt die Datei des Sekretariats" war falsch. Am Parser
+durchgespielt — ohne Schülernamen im Repo, die Kopfzeile wortgleich als Test.
 
 | Kat. | Raster | Fund | Commit |
 | ---- | ------ | ---- | ------ |
-| A | 3 zwei Wahrheitsquellen | Alias-Tabelle kannte `Schueler_Vorname` und `Vorname`, nicht `SLR_Vorname`/`KLA_Klassennamen` — die Datei des Sekretariats wäre mit „Pflichtspalte 'vorname' fehlt“ abgewiesen worden. Dritter Kürzel-Stil aufgenommen. | 6d41a9c4 |
+| A | 3 zwei Wahrheitsquellen | Alias-Tabelle kannte `Schueler_Vorname` und `Vorname`, nicht `SLR_Vorname`/`KLA_Klassennamen` — eine Liste mit diesen Köpfen wäre mit „Pflichtspalte 'vorname' fehlt“ abgewiesen worden. Dritter Kürzel-Stil aufgenommen. | 6d41a9c4 |
 | A | 5 stille Fehler | `leseXlsxZeilen` nahm nur das ERSTE Blatt mit Kopfzeile: 23 von 91 Schülern. Im Nur-Name-Modus wären die übrigen 68 (wenn zuvor bestätigt) beim nächsten Import Abgänger geworden — und Abgänger werden anonymisiert. Jetzt alle Blätter mit Kopfzeile, Spalten je Blatt über die Kopfzeile umsortiert, Deckblätter übersprungen. Tests rot gesehen; Probe an der echten Datei: 91 Zeilen, 4 Klassen. | 4890ae68 |
 
 **Belegt (Web, HMKB):** Standardberichte PDF/CSV/Excel, Individuelle Berichte immer
