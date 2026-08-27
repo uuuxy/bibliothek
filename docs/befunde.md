@@ -43,6 +43,24 @@ Zwei Regeln dazu:
 
 ---
 
+## LUSD-Import an der echten Datei der Schule: 23 von 91 Schülern (26.08.2026)
+
+Anlass: Peters Frage, in welchem Format der LUSD-Export kommt. Auf seinem Rechner lag
+eine echte Datei („Klassenliste_Eignung 6F_25_26_Stand März2026.xlsx", vier Blätter
+6F1–6F4, Kopf `SLR_Nachname, SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT,
+KLA_Klassennamen, …`, kein Geburtsdatum, keine ID). Am Parser durchgespielt — ohne
+Schülernamen im Repo, die Kopfzeile wortgleich als Test.
+
+| Kat. | Raster | Fund | Commit |
+| ---- | ------ | ---- | ------ |
+| A | 3 zwei Wahrheitsquellen | Alias-Tabelle kannte `Schueler_Vorname` und `Vorname`, nicht `SLR_Vorname`/`KLA_Klassennamen` — die Datei des Sekretariats wäre mit „Pflichtspalte 'vorname' fehlt“ abgewiesen worden. Dritter Kürzel-Stil aufgenommen. | 6d41a9c4 |
+| A | 5 stille Fehler | `leseXlsxZeilen` nahm nur das ERSTE Blatt mit Kopfzeile: 23 von 91 Schülern. Im Nur-Name-Modus wären die übrigen 68 (wenn zuvor bestätigt) beim nächsten Import Abgänger geworden — und Abgänger werden anonymisiert. Jetzt alle Blätter mit Kopfzeile, Spalten je Blatt über die Kopfzeile umsortiert, Deckblätter übersprungen. Tests rot gesehen; Probe an der echten Datei: 91 Zeilen, 4 Klassen. | 4890ae68 |
+
+**Belegt (Web, HMKB):** Standardberichte PDF/CSV/Excel, Individuelle Berichte immer
+XLSX; keine Schüler-ID in der offiziellen Feldliste (471 Felder). Littera nutzt statt
+dessen die verschlüsselte LUSD-XML (DALUSD.exe) — ein anderer Kanal, für uns nicht
+nötig: Name + Vorname (+ Geburtsdatum, wenn die Schule es mitexportiert) genügt.
+
 ## Klassennamen: „9G4" neben „09G1" — die zuerst geschriebene Form gewann (26.08.2026)
 
 Anlass: Peters Screenshot der Klassensatz-Liste auf dem Hetzner: „09G1, 09G2, 09G3, 09G5,
