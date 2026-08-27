@@ -62,3 +62,32 @@ func TestParseLUSDCSV_PraefixHeadersWithAddress(t *testing.T) {
 		t.Errorf("Präfix-Export mit Adresse falsch geparst: %+v", got)
 	}
 }
+
+// Der dritte Export-Stil (26.08.2026): die echte Datei der Schule trägt Tabellen-
+// KÜRZEL — SLR_ für Schüler, KLA_ für Klasse. Genau diese Kopfzeile, Wort für Wort;
+// die Zeilen darunter sind erfunden.
+func TestLusdHeaderMap_KuerzelExportStyleDerSchule(t *testing.T) {
+	headers := []string{
+		"SLR_Nachname", "SLR_Vorname", "SLR_Strasse", "SLR_PLZ", "SLR_ORT",
+		"KLA_Klassennamen", "KLA_KlassenlehrerKuerzel", "KLA_KlassenlehrerName",
+		"SLR_Schulzweig", "Widerspruch zur Empf. ZK 1.HJ", "SLR_Begründungstext",
+	}
+	m, err := lusdHeaderMap(headers)
+	if err != nil {
+		t.Fatalf("die echte LUSD-Kopfzeile der Schule wird abgewiesen: %v", err)
+	}
+	erwartet := map[string]int{
+		lusdColNachname: 0, lusdColVorname: 1, lusdColStrasse: 2, lusdColPLZ: 3, lusdColOrt: 4, lusdColKlasse: 5,
+	}
+	for col, idx := range erwartet {
+		if m[col] != idx {
+			t.Errorf("%s: Spalte %d erwartet, %d bekommen", col, idx, m[col])
+		}
+	}
+	if _, ok := m[lusdColID]; ok {
+		t.Error("eine LUSD-ID gibt es in diesem Export nicht — darf nicht erraten werden")
+	}
+	if _, ok := m[lusdColGeburtsdatum]; ok {
+		t.Error("kein Geburtsdatum in dieser Datei — der Import muss in den Nur-Name-Modus")
+	}
+}

@@ -25,17 +25,23 @@ func normalizeHeader(h string) string {
 // Schreibweisen ab. Deckt beide LUSD-Export-Stile ab: mit Tabellen-Präfix
 // (Individueller Bericht, z. B. "Schueler_Vorname") und ohne (Standardexport,
 // z. B. "Vorname"). Erweiterbar ohne Datenbank-/Migrationsaufwand.
+//
+// Dritter Stil (26.08.2026, echte Datei der Schule „Klassenliste_Eignung 6F…xlsx"):
+// Tabellenkürzel statt Tabellenname — SLR_ (Schüler), KLA_ (Klasse): SLR_Nachname,
+// SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT, KLA_Klassennamen. Ohne diese Aliase brach
+// der Import mit „Pflichtspalte 'vorname' fehlt" ab — an genau der Datei, die das
+// Sekretariat aus der LUSD bekommt.
 var lusdFieldAliases = map[string][]string{
-	lusdColID:           {"lusd_id", "schueler_id", "lusdid"},
-	lusdColVorname:      {"vorname", "schueler_vorname"},
-	lusdColNachname:     {"nachname", "schueler_nachname"},
-	lusdColKlasse:       {"klasse", "klassenbezeichnung", "klassen_klassenbezeichnung"},
-	lusdColGeburtsdatum: {"geburtsdatum", "schueler_geburtsdatum"},
-	lusdColStrasse:      {"strasse", "schueler_strasse", "anschrift_strasse"},
-	lusdColHausnummer:   {"hausnummer", "schueler_hausnummer", "anschrift_hausnummer"},
-	lusdColPLZ:          {"plz", "postleitzahl", "schueler_plz", "anschrift_plz"},
-	lusdColOrt:          {"ort", "wohnort", "schueler_ort", "anschrift_ort"},
-	lusdColElternEmail:  {"eltern_email", "email", "ansprechpartner_email", "erziehungsberechtigte_email", "erziehungsberechtigter_email"},
+	lusdColID:           {"lusd_id", "schueler_id", "lusdid", "slr_id", "slr_schuelerid"},
+	lusdColVorname:      {"vorname", "schueler_vorname", "slr_vorname"},
+	lusdColNachname:     {"nachname", "schueler_nachname", "slr_nachname"},
+	lusdColKlasse:       {"klasse", "klassenbezeichnung", "klassen_klassenbezeichnung", "kla_klassennamen", "kla_klassenname", "kla_klassenbezeichnung", "schueler_klasse"},
+	lusdColGeburtsdatum: {"geburtsdatum", "schueler_geburtsdatum", "slr_geburtsdatum"},
+	lusdColStrasse:      {"strasse", "schueler_strasse", "anschrift_strasse", "slr_strasse"},
+	lusdColHausnummer:   {"hausnummer", "schueler_hausnummer", "anschrift_hausnummer", "slr_hausnummer"},
+	lusdColPLZ:          {"plz", "postleitzahl", "schueler_plz", "anschrift_plz", "slr_plz"},
+	lusdColOrt:          {"ort", "wohnort", "schueler_ort", "anschrift_ort", "slr_ort"},
+	lusdColElternEmail:  {"eltern_email", "email", "ansprechpartner_email", "erziehungsberechtigte_email", "erziehungsberechtigter_email", "slr_email"},
 }
 
 // lusdPflichtspalten müssen in jedem Export stehen. Den ZUORDNUNGSSCHLÜSSEL bestimmt
