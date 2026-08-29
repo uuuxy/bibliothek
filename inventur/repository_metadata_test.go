@@ -12,16 +12,17 @@ import (
 )
 
 func TestGetBookByID(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
-	defer mock.Close()
-
-	repo := NewBookRepository(mock)
 	ctx := context.Background()
 
 	queryRegex := `SELECT id, COALESCE\(isbn, ''\) AS isbn`
 
 	t.Run("success", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		repo := NewBookRepository(mock)
+
 		lastCounted := "2023-01-01"
 		mock.ExpectQuery(queryRegex).
 			WithArgs("valid-id").
@@ -46,11 +47,35 @@ func TestGetBookByID(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		repo := NewBookRepository(mock)
+
 		mock.ExpectQuery(queryRegex).
 			WithArgs("invalid-id").
 			WillReturnError(pgx.ErrNoRows)
 
 		book, err := repo.GetBookByID(ctx, "invalid-id")
+		assert.Error(t, err)
+		assert.Nil(t, book)
+		assert.Equal(t, "buch nicht gefunden", err.Error())
+	})
+
+	t.Run("error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		repo := NewBookRepository(mock)
+
+		mockErr := errors.New("db error")
+		mock.ExpectQuery(queryRegex).
+			WithArgs("error-id").
+			WillReturnError(mockErr)
+
+		book, err := repo.GetBookByID(ctx, "error-id")
 		assert.Error(t, err)
 		assert.Nil(t, book)
 		assert.Equal(t, "buch nicht gefunden", err.Error())
