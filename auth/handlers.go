@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -274,6 +275,13 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 		// bisherigen Verhalten (kein Login).
 		neu, anlegeErr := legeZugangsanfrageAn(ctx, dbPool, email)
 		if anlegeErr != nil {
+			// „Nicht erlaubt" ist der Normalfall (Domain nicht freigegeben) und braucht
+			// keine Logzeile. Alles andere ist ein DB-Fehler, der vorher als nacktes 401
+			// „invalid email or password" endete — in der CI (29.08.2026) war so nicht
+			// zu sehen, WARUM die Zugangsanfrage nicht entstand.
+			if !errors.Is(anlegeErr, errSelbstanmeldungNichtErlaubt) {
+				slog.Error("Selbstanmeldung: Zugangsanfrage konnte nicht angelegt werden", "fehler", anlegeErr)
+			}
 			return loginUser{}, anlegeErr
 		}
 		return neu, nil
