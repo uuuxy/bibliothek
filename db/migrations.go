@@ -39,7 +39,7 @@ func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) erro
 	// 3. Apply each file that hasn't been recorded yet
 	applied := 0
 	for _, path := range files {
-		didApply, err := d.applyMigration(ctx, path)
+		didApply, err := d.applyMigration(ctx, migrationsDir, path)
 		if err != nil {
 			return err
 		}
@@ -123,7 +123,7 @@ func collectMigrationFiles(migrationsDir string) (files []string, skip bool, err
 // applyMigration wendet eine einzelne Migrationsdatei an, sofern ihre Version noch
 // nicht in schema_migrations vermerkt ist. didApply=false heißt: bereits angewendet.
 // Jede Migration läuft in einer eigenen Transaktion (Atomarität pro Datei).
-func (d *Database) applyMigration(ctx context.Context, path string) (didApply bool, err error) {
+func (d *Database) applyMigration(ctx context.Context, migrationsDir, path string) (didApply bool, err error) {
 	version := filepath.Base(path)
 
 	var exists bool
@@ -136,9 +136,16 @@ func (d *Database) applyMigration(ctx context.Context, path string) (didApply bo
 		return false, nil // already applied
 	}
 
+	cleanBase := filepath.Clean(migrationsDir)
+	cleanPath := filepath.Clean(path)
+
+	rel, err := filepath.Rel(cleanBase, cleanPath)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return false, fmt.Errorf("migrations: path %q escapes base directory %q", path, migrationsDir)
+	}
+
 	// Read SQL content
-	// #nosec G304 - path comes from filepath.WalkDir of a trusted directory
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return false, fmt.Errorf("migrations: failed to read %q: %w", version, err)
 	}
