@@ -47,9 +47,15 @@ func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 		ctx := r.Context()
 		repo := repository.NewReservationRepository(s.DB.Pool)
 
-		// Verify the title exists.
+		// Verify the title exists. Ein DB-Fehler ist KEIN „nicht gefunden" (Fehler-Kollaps,
+		// Sweep 29.08.2026): Vorher endete ein Verbindungsabbruch als 404, und die
+		// Lehrkraft las „Buchtitel nicht gefunden" für einen Titel, der da war.
 		exists, err := repo.CheckTitleExists(ctx, req.TitelID)
-		if err != nil || !exists {
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if !exists {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
 			return
 		}

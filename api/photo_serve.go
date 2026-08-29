@@ -1,7 +1,9 @@
 package api
 
 import (
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
 
@@ -33,9 +35,13 @@ func (s *Server) ServeStudentPhotoHandler() http.HandlerFunc {
 
 		var ciphertext []byte
 		err := s.DB.Pool.QueryRow(ctx, query, barcodeID).Scan(&ciphertext)
-		if err != nil {
-			// Falls kein Foto existiert (NoRows), 404 zurückgeben
+		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("kein foto gefunden"))
+			return
+		}
+		if err != nil {
+			// Fehler-Kollaps (Sweep 29.08.2026): Ein DB-Fehler war vorher „kein foto".
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 

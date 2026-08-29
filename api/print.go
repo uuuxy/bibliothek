@@ -7,7 +7,9 @@ import (
 	"bibliothek/repository"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"time"
 
@@ -67,8 +69,12 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		s.Hausnummer = ""
 		s.PLZ = ""
 		s.Ort = ""
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+			return
+		}
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -256,8 +262,12 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			SELECT vorname, nachname, klasse
 			FROM schueler WHERE id = $1 AND deleted_at IS NULL
 		`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Klasse)
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+			return
+		}
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 

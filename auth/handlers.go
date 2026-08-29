@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -350,6 +351,13 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 			WHERE id = $1
 			LIMIT 1
 		`, claims.UserID).Scan(&roleStr, &vorname, &nachname, &aktiv, &email)
+		// Fehler-Kollaps (Sweep 29.08.2026): Ein DB-Fehler ist keine „abgelaufene Sitzung" —
+		// vorher warf ein Verbindungsabbruch jeden Nutzer mit 401 aus der Anwendung, und
+		// der Client löschte daraufhin die Sitzung.
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 		if err != nil || !aktiv {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
 			return
