@@ -102,7 +102,7 @@ func TestPatchSchuelerVerwirftKeinFeld(t *testing.T) {
 		setTeil = query[:i]
 	}
 	geschrieben := func(spalte string) bool {
-		return strings.Contains(setTeil, ", "+spalte+" = $")
+		return strings.Contains(setTeil, ", \""+spalte+"\" = $")
 	}
 
 	// Drei Gegenproben gegen den stillen Nulllauf. Ohne sie wäre der Test auch dann grün,
