@@ -106,8 +106,7 @@ var ErrSMTPKlartext = errors.New("SMTP-Server bietet kein STARTTLS an — Versan
 // Das Zertifikat wird gegen den konfigurierten Host VERIFIZIERT — ohne Verifikation
 // könnte ein MITM beim Upgrade ein beliebiges Zertifikat vorlegen und sowohl die
 // SMTP-AUTH-Zugangsdaten als auch den Mailinhalt (Schülernamen, Mahndaten,
-// Elternadressen) mitlesen. Escape-Hatch für Legacy-Server mit Self-Signed-Zertifikat:
-// SMTP_ALLOW_INSECURE_TLS.
+// Elternadressen) mitlesen.
 //
 // Bietet der Server gar kein STARTTLS an, galt hier bisher "dann eben ohne" — die
 // Funktion hieß starttlsWennMoeglich und gab in diesem Fall nil zurück. Damit hing die
@@ -130,9 +129,8 @@ func sichereVerbindung(c *smtp.Client, host string) error {
 		return ErrSMTPKlartext
 	}
 	config := &tls.Config{
-		ServerName:         host,
-		MinVersion:         tls.VersionTLS12,
-		InsecureSkipVerify: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true", // #nosec G402 - bewusst per Env, Default sicher
+		ServerName: host,
+		MinVersion: tls.VersionTLS12,
 	}
 	return c.StartTLS(config)
 }

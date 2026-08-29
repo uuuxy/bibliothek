@@ -40,7 +40,6 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `SMTP_USER` | SMTP-Benutzername | Optional |
 | `SMTP_PASSWORD` | SMTP-Passwort | Optional |
 | `SMTP_FROM` | Absender-Adresse | Optional |
-| `SMTP_ALLOW_INSECURE_TLS` | TLS-Zertifikatsprüfung deaktivieren (TLS bleibt) | Nur für Legacy-SMTP-Server |
 | `SMTP_ALLOW_PLAINTEXT` | Versand **ganz ohne** TLS erlauben, wenn der Server kein STARTTLS anbietet | Nur für ein Legacy-Relay. Ohne diese Variable bricht der Versand in dem Fall ab, statt Mahntexte im Klartext zu schicken |
 | `INITIAL_ADMIN_EMAIL` | E-Mail des initialen Admins — **nur** wenn die Tabelle `benutzer` leer ist | Standard aus `docker-compose.yml`: pflasch@philipp-reis-schule.de. Ein Passwort gibt es dazu nicht (Anmeldung per IMAP); die Adresse muss auf dem Schulserver existieren, sonst kommt der so angelegte Admin nicht hinein |
 | `RATE_LIMIT` | Globales Limit in Requests/s/IP | Vorgabe **50** (der Produktionswert). Ein unlesbarer Wert wird protokolliert und ignoriert, es gilt dann die Vorgabe |

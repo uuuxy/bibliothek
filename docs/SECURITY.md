@@ -236,10 +236,9 @@ auf der Leitung, aber keines für den Speicher.
   587 an (EHLO-Probe ohne Anmeldung, 06.08.2026). Belegt durch
   `TestVersendeUeberSMTPBrichtOhneSTARTTLSAb` und seine Gegenprobe.
 - **Zertifikatsprüfung aktiv:** `ServerName` wird gesetzt, `MinVersion: TLS 1.2` erzwungen. `InsecureSkipVerify` war zuvor auf `true` gesetzt — ein MITM-Angreifer konnte dadurch SMTP-Credentials und den gesamten E-Mail-Inhalt (inkl. Personendaten für Mahnwesen) mitlesen. **Behoben.**
-- **Zwei getrennte Opt-outs**, weil es zwei verschiedene Zugeständnisse sind:
-  `SMTP_ALLOW_INSECURE_TLS=true` schaltet die Zertifikatsprüfung ab (TLS bleibt),
-  `SMTP_ALLOW_PLAINTEXT=true` erlaubt den Versand ganz ohne TLS. Beide protokollieren eine
-  Warnung. Nur für ein Legacy-Relay, das anders nicht erreichbar ist.
+- **Ein Opt-out**: `SMTP_ALLOW_PLAINTEXT=true` erlaubt den Versand ganz ohne TLS, falls STARTTLS
+  nicht vom Server angeboten wird. Es wird eine Warnung protokolliert. Nur für ein Legacy-Relay,
+  das anders nicht erreichbar ist.
 - **Header-Injection:** Attachment-Dateinamen werden gegen CRLF-Injection bereinigt.
 
 ### IMAP
