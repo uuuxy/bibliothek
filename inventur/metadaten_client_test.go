@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 type mockTransport struct {
@@ -15,6 +16,23 @@ type mockTransport struct {
 
 func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return m.roundTripFunc(req)
+}
+
+func TestNeuerMetadatenClient(t *testing.T) {
+	client := NeuerMetadatenClient()
+
+	if client == nil {
+		t.Fatal("Expected MetadatenClient to be non-nil")
+	}
+
+	if client.httpClient == nil {
+		t.Fatal("Expected inner httpClient to be non-nil")
+	}
+
+	expectedTimeout := 8 * time.Second
+	if client.httpClient.Timeout != expectedTimeout {
+		t.Errorf("Expected httpClient Timeout to be %v, got %v", expectedTimeout, client.httpClient.Timeout)
+	}
 }
 
 func TestSucheNachISBN(t *testing.T) {
