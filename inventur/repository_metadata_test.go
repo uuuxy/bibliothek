@@ -98,44 +98,69 @@ func TestUpdateBookMetadata(t *testing.T) {
 }
 
 func TestUpdateBookCategory(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	require.NoError(t, err)
-	defer mock.Close()
-
-	repo := NewBookRepository(mock)
 	ctx := context.Background()
-
 	queryRegex := `UPDATE buecher_titel`
 
 	t.Run("success", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
 		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
 			WithArgs("Science", int16(6), "valid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err := repo.UpdateBookCategory(ctx, "valid-id", "Science", int16(6))
+		err = repo.UpdateBookCategory(ctx, "valid-id", "Science", int16(6))
 		assert.NoError(t, err)
 	})
 
 	t.Run("not found", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
 		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
 			WithArgs("Science", int16(6), "invalid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
-		err := repo.UpdateBookCategory(ctx, "invalid-id", "Science", int16(6))
+		err = repo.UpdateBookCategory(ctx, "invalid-id", "Science", int16(6))
 		assert.ErrorIs(t, err, ErrBookNotFound)
 	})
 
 	t.Run("error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
 		mockErr := errors.New("db error")
 		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
 			WithArgs("Science", int16(6), "error-id").
 			WillReturnError(mockErr)
 
-		err := repo.UpdateBookCategory(ctx, "error-id", "Science", int16(6))
+		err = repo.UpdateBookCategory(ctx, "error-id", "Science", int16(6))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "kategorie konnte nicht aktualisiert werden: db error")
+	})
+
+	t.Run("StelleFaecherSicher error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mockErr := errors.New("db error during fach registration")
+		mock.ExpectQuery(`SELECT bezeichnung FROM systematik_kategorien WHERE lower\(bezeichnung\) = lower\(\$1\)`).
+			WithArgs("Science").
+			WillReturnError(mockErr)
+
+		err = repo.UpdateBookCategory(ctx, "error-id", "Science", int16(6))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "nachschlagen fehlgeschlagen: db error during fach registration")
 	})
 }
