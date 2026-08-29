@@ -307,8 +307,7 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	return
 }
 
-func main() {
-	// 0. Setup strukturiertes JSON-Logging
+func setupLogging() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
@@ -327,20 +326,34 @@ func main() {
 	// strukturierte Ausgabe UND den Schutz. Genau das hatte ich am 11.08. versucht, bevor
 	// die Messung es zeigte.
 	slog.SetDefault(logger)
+}
+
+func setupSentry() func() {
+	sentryDsn := os.Getenv("SENTRY_DSN")
+	if sentryDsn == "" {
+		return func() {}
+	}
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: sentryDsn,
+	})
+	if err != nil {
+		slog.Error("sentry.Init failed", "error", err)
+		return func() {}
+	}
+
+	slog.Info("Sentry initialized successfully.")
+	return func() {
+		sentry.Flush(2 * time.Second)
+	}
+}
+
+func main() {
+	// 0. Setup strukturiertes JSON-Logging
+	setupLogging()
 
 	// Initialize Sentry
-	sentryDsn := os.Getenv("SENTRY_DSN")
-	if sentryDsn != "" {
-		err := sentry.Init(sentry.ClientOptions{
-			Dsn: sentryDsn,
-		})
-		if err != nil {
-			slog.Error("sentry.Init failed", "error", err)
-		} else {
-			defer sentry.Flush(2 * time.Second)
-			slog.Info("Sentry initialized successfully.")
-		}
-	}
+	defer setupSentry()()
 
 	// vorlage.Init() ABSICHTLICH nicht aufgerufen.
 	//
