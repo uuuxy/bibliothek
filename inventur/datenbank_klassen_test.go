@@ -165,6 +165,187 @@ func TestNormalizeAllClasses_Step2UpdateError(t *testing.T) {
 	}
 }
 
+func TestUpdateClassBooks(t *testing.T) {
+	tests := []struct {
+		name          string
+		oldClassName  string
+		newClassNames []string
+		bookIDs       []string
+		mockSetup     func(mock pgxmock.PgxPoolIface)
+		wantErr       bool
+		errMsg        string
+	}{
+		{
+			name:          "success with both old and new class names",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A", "6B"},
+			bookIDs:       []string{"b1", "b2"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A", "6B"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A", "6A", "6B", "6B"}, []string{"b1", "b2", "b1", "b2"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 4))
+				mock.ExpectCommit()
+			},
+			wantErr: false,
+		},
+		{
+			name:          "success with empty old class name",
+			oldClassName:  "",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A"}, []string{"b1"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 1))
+				mock.ExpectCommit()
+			},
+			wantErr: false,
+		},
+		{
+			name:          "success with empty new class names",
+			oldClassName:  "5A",
+			newClassNames: []string{},
+			bookIDs:       []string{},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectCommit()
+			},
+			wantErr: false,
+		},
+		{
+			name:          "error starting transaction",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin().WillReturnError(errTest)
+			},
+			wantErr: true,
+			errMsg:  "transaktion konnte nicht gestartet werden: test error",
+		},
+		{
+			name:          "error deleting old bindings",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "alte zuweisungen konnten nicht gelöscht werden: test error",
+		},
+		{
+			name:          "error deleting existing new bindings",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "vorhandene zuweisungen des neuen namens konnten nicht gelöscht werden: test error",
+		},
+		{
+			name:          "error inserting new bindings",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A"}, []string{"b1"}).
+					WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "neue zuweisung konnte nicht gespeichert werden: test error",
+		},
+		{
+			name:          "error committing transaction",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A"}, []string{"b1"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 1))
+				mock.ExpectCommit().WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "transaktion konnte nicht abgeschlossen werden: test error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("failed to create pgxmock: %v", err)
+			}
+			defer mock.Close()
+
+			repo := NewBookRepository(mock)
+			tt.mockSetup(mock)
+
+			err = repo.UpdateClassBooks(context.Background(), tt.oldClassName, tt.newClassNames, tt.bookIDs)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				} else if err.Error() != tt.errMsg {
+					t.Errorf("expected error message %q, got %q", tt.errMsg, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unmet mock expectations: %v", err)
+			}
+		})
+	}
+}
+
 func TestDeleteClassGroup(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -227,6 +408,222 @@ func TestDeleteClassGroup(t *testing.T) {
 			err := repo.DeleteClassGroup(context.Background(), tt.classNames)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DeleteClassGroup() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unmet mock expectations: %v", err)
+			}
+		})
+	}
+}
+
+func TestGetClassGroups(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("failed to create pgxmock: %v", err)
+	}
+	defer mock.Close()
+
+	repo := NewBookRepository(mock)
+	ctx := context.Background()
+
+	tests := []struct {
+		name       string
+		branch     string
+		sortOrder  string
+		mockSetup  func()
+		wantErr    bool
+		wantGroups int
+	}{
+		{
+			name:      "success default (asc, empty branch)",
+			branch:    "",
+			sortOrder: "",
+			mockSetup: func() {
+				rows := pgxmock.NewRows([]string{
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+				}).
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10).
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440001", "Buch 2", "Deutsch", "G", "url2", "456", 2, 5).
+					AddRow("6B", "550e8400-e29b-41d4-a716-446655440002", "Buch 1", "Mathe", "R", "url1", "123", 4, 8)
+
+				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM class_books cb.*ORDER BY.*CASE.*ASC, b\.titel ASC`).
+					WithArgs("").
+					WillReturnRows(rows)
+			},
+			wantErr:    false,
+			wantGroups: 2, // 5A and 6B
+		},
+		{
+			name:      "success branch and desc",
+			branch:    "F",
+			sortOrder: "desc",
+			mockSetup: func() {
+				rows := pgxmock.NewRows([]string{
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+				}).
+					AddRow("10F", "550e8400-e29b-41d4-a716-446655440003", "Buch 3", "Englisch", "F", "url3", "789", 1, 1)
+
+				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM class_books cb.*ORDER BY.*CAST.*DESC, cb\.class_name DESC, b\.titel ASC`).
+					WithArgs("F").
+					WillReturnRows(rows)
+			},
+			wantErr:    false,
+			wantGroups: 1, // 10F
+		},
+		{
+			name:      "query error",
+			branch:    "",
+			sortOrder: "",
+			mockSetup: func() {
+				mock.ExpectQuery(`(?s)SELECT.*`).
+					WithArgs("").
+					WillReturnError(fmt.Errorf("db error"))
+			},
+			wantErr:    true,
+			wantGroups: 0,
+		},
+		{
+			name:      "scan error",
+			branch:    "",
+			sortOrder: "",
+			mockSetup: func() {
+				// Invalid type for gesamt (string instead of int) to force scan error
+				rows := pgxmock.NewRows([]string{
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+				}).
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, "invalid")
+
+				mock.ExpectQuery(`(?s)SELECT.*`).
+					WithArgs("").
+					WillReturnRows(rows)
+			},
+			wantErr:    true,
+			wantGroups: 0,
+		},
+		{
+			name:      "rows error",
+			branch:    "",
+			sortOrder: "",
+			mockSetup: func() {
+				rows := pgxmock.NewRows([]string{
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+				}).
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10).
+					RowError(0, fmt.Errorf("row error"))
+
+				mock.ExpectQuery(`(?s)SELECT.*`).
+					WithArgs("").
+					WillReturnRows(rows)
+			},
+			wantErr:    true,
+			wantGroups: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.mockSetup()
+
+			groups, err := repo.GetClassGroups(ctx, tt.branch, tt.sortOrder)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetClassGroups() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if len(groups) != tt.wantGroups {
+				t.Errorf("GetClassGroups() got %d groups, want %d", len(groups), tt.wantGroups)
+			}
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unmet mock expectations: %v", err)
+			}
+		})
+	}
+}
+
+func TestAddBooksToClasses(t *testing.T) {
+	tests := []struct {
+		name       string
+		classNames []string
+		bookIDs    []string
+		mockSetup  func(mock pgxmock.PgxPoolIface)
+		wantErr    bool
+	}{
+		{
+			name:       "success single",
+			classNames: []string{"5A"},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectExec(`^[\s\S]*INSERT INTO class_books[\s\S]*ON CONFLICT[\s\S]*DO NOTHING[\s\S]*$`).
+					WithArgs([]string{"5A"}, []string{"123e4567-e89b-12d3-a456-426614174000"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 1))
+			},
+			wantErr: false,
+		},
+		{
+			name:       "success multiple",
+			classNames: []string{"5A", "5B"},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000", "98765432-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				// The combinations of 5A and 5B with the two books means 4 rows total
+				mock.ExpectExec(`^[\s\S]*INSERT INTO class_books[\s\S]*ON CONFLICT[\s\S]*DO NOTHING[\s\S]*$`).
+					WithArgs(
+						[]string{"5A", "5A", "5B", "5B"},
+						[]string{
+							"123e4567-e89b-12d3-a456-426614174000",
+							"98765432-e89b-12d3-a456-426614174000",
+							"123e4567-e89b-12d3-a456-426614174000",
+							"98765432-e89b-12d3-a456-426614174000",
+						},
+					).
+					WillReturnResult(pgxmock.NewResult("INSERT", 4))
+			},
+			wantErr: false,
+		},
+		{
+			name:       "empty classNames",
+			classNames: []string{},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				// No DB call expected
+			},
+			wantErr: false,
+		},
+		{
+			name:       "empty bookIDs",
+			classNames: []string{"5A"},
+			bookIDs:    []string{},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				// No DB call expected
+			},
+			wantErr: false,
+		},
+		{
+			name:       "db error",
+			classNames: []string{"5A"},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectExec(`^[\s\S]*INSERT INTO class_books[\s\S]*ON CONFLICT[\s\S]*DO NOTHING[\s\S]*$`).
+					WithArgs([]string{"5A"}, []string{"123e4567-e89b-12d3-a456-426614174000"}).
+					WillReturnError(fmt.Errorf("db error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("failed to create pgxmock: %v", err)
+			}
+			defer mock.Close()
+
+			repo := NewBookRepository(mock)
+			tt.mockSetup(mock)
+
+			err = repo.AddBooksToClasses(context.Background(), tt.classNames, tt.bookIDs)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddBooksToClasses() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {

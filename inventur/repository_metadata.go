@@ -2,11 +2,18 @@ package inventur
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // GetBookByID liest einen Titel samt Metadaten. Fehlt er, kommt ErrBookNotFound zurück
-// — ein Bedienfehler, kein Serverfehler.
+// — ein Bedienfehler, kein Serverfehler. Jeder ANDERE Fehler (Verbindung, Scan einer
+// NULL-Spalte in einen String) wird weitergereicht: Bis 29.08.2026 hieß auch der
+// „buch nicht gefunden", und ein Schema-Drift wäre als 404 verkleidet gewesen
+// (NULL-Scan-Bugklasse). Aufgefallen, als PR #529 genau dieses Verhalten per Test
+// festschreiben wollte.
 func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, error) {
 	query := `
 		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track,
@@ -34,8 +41,11 @@ func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, 
 		&book.JahrgangBis,
 		&book.ErweiterteEigenschaften,
 	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrBookNotFound
+	}
 	if err != nil {
-		return nil, fmt.Errorf("buch nicht gefunden")
+		return nil, fmt.Errorf("buch laden: %w", err)
 	}
 	return &book, nil
 }

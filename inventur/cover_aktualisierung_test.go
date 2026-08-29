@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/jackc/pgx/v5"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -105,7 +106,7 @@ func TestHandleRefreshCover_BookNotFound(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
-		WillReturnError(errTest)
+		WillReturnError(pgx.ErrNoRows)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
 	w := httptest.NewRecorder()
@@ -116,6 +117,34 @@ func TestHandleRefreshCover_BookNotFound(t *testing.T) {
 		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
 	}
 
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
+// Gegenprobe: Ein DB-Fehler ist kein „nicht gefunden" — bis 29.08.2026 wurde jeder
+// Fehler aus GetBookByID als 404 verkleidet (Schema-Drift wäre unsichtbar geblieben).
+func TestHandleRefreshCover_DBFehlerIst500(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("failed to create pgxmock: %v", err)
+	}
+	defer mock.Close()
+
+	handler := &APIHandler{repo: NewBookRepository(mock)}
+
+	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
+		WithArgs("00000000-0000-0000-0000-000000000000").
+		WillReturnError(errTest)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
+	w := httptest.NewRecorder()
+
+	handler.handleRefreshCover(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
+	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %s", err)
 	}

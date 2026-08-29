@@ -1,9 +1,12 @@
 package inventur
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strings"
+
+	"bibliothek/pkg/logger"
 )
 
 func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, request *http.Request) {
@@ -20,9 +23,13 @@ func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, reques
 	}
 
 	book, err := handler.repo.GetBookByID(request.Context(), id)
-	if err != nil {
-		log.Printf("cover-refresh: buch %s nicht gefunden: %v", id, err)
+	if errors.Is(err, ErrBookNotFound) {
 		writeError(writer, http.StatusNotFound, "buch nicht gefunden")
+		return
+	}
+	if err != nil {
+		log.Printf("cover-refresh: buch %s laden: %v", logger.SanitizeLog(id), err)
+		writeError(writer, http.StatusInternalServerError, "buch konnte nicht geladen werden")
 		return
 	}
 
