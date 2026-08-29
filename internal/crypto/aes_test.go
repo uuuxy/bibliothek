@@ -163,3 +163,71 @@ func TestEncryptDecryptNoKey(t *testing.T) {
 		t.Error("Decrypt() expected error without key")
 	}
 }
+
+func TestEncryptMitDecryptMit(t *testing.T) {
+	key := []byte("12345678901234567890123456789012")
+	plaintext := []byte("secret message for explicit key")
+
+	// Test EncryptMit
+	ciphertext, err := EncryptMit(key, plaintext)
+	if err != nil {
+		t.Fatalf("EncryptMit() error = %v", err)
+	}
+	if len(ciphertext) == 0 {
+		t.Fatal("EncryptMit() returned empty ciphertext")
+	}
+
+	// Test DecryptMit
+	decrypted, err := DecryptMit(key, ciphertext)
+	if err != nil {
+		t.Fatalf("DecryptMit() error = %v", err)
+	}
+
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("DecryptMit() = %v, want %v", string(decrypted), string(plaintext))
+	}
+}
+
+func TestEncryptMitDecryptMitErrors(t *testing.T) {
+	validKey := []byte("12345678901234567890123456789012")
+	invalidKey := []byte("short")
+	plaintext := []byte("secret")
+
+	t.Run("Invalid Key EncryptMit", func(t *testing.T) {
+		_, err := EncryptMit(invalidKey, plaintext)
+		if err == nil {
+			t.Error("EncryptMit() expected error with invalid key")
+		}
+	})
+
+	t.Run("Invalid Key DecryptMit", func(t *testing.T) {
+		_, err := DecryptMit(invalidKey, []byte("some-ciphertext-long-enough-for-nonce"))
+		if err == nil {
+			t.Error("DecryptMit() expected error with invalid key")
+		}
+	})
+
+	t.Run("Short ciphertext DecryptMit", func(t *testing.T) {
+		shortCiphertext := []byte("short")
+		_, err := DecryptMit(validKey, shortCiphertext)
+		if err == nil || !strings.Contains(err.Error(), "ciphertext ist zu kurz") {
+			t.Errorf("DecryptMit(short) error = %v, want 'ciphertext ist zu kurz'", err)
+		}
+	})
+
+	t.Run("Tampered data DecryptMit", func(t *testing.T) {
+		ciphertext, err := EncryptMit(validKey, plaintext)
+		if err != nil {
+			t.Fatalf("EncryptMit() error = %v", err)
+		}
+
+		// Tamper with the ciphertext (flip a bit in the actual ciphertext, after the nonce)
+		// Nonce size is 12 for GCM
+		ciphertext[15] ^= 1
+
+		_, err = DecryptMit(validKey, ciphertext)
+		if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
+			t.Errorf("DecryptMit(tampered) error = %v, want 'entschlüsselung fehlgeschlagen'", err)
+		}
+	})
+}
