@@ -7,14 +7,30 @@ import (
 )
 
 func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository, userRepo repository.UserRepository, dbPool db.PgxPoolIface) {
+	s.registerUserRoutes(mux, auditRepo, userRepo)
+
+	settingsRepo := repository.NewSystemSettingsRepository(dbPool)
+	mailRepo := repository.NewMailSettingsRepository(dbPool)
+	s.registerSettingsRoutes(mux, settingsRepo, mailRepo, dbPool)
+
+	s.registerReportRoutes(mux)
+	s.registerDashboardRoutes(mux)
+	s.registerLookupRoutes(mux)
+	s.registerAuditLogRoutes(mux)
+	s.registerBarcodeRoutes(mux)
+	s.registerEventRoutes(mux)
+}
+
+func (s *Server) registerUserRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository, userRepo repository.UserRepository) {
 	// ── BENUTZER (Users) ──
 	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.ListUsersHandler(userRepo)))
 	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.CreateUserHandler(userRepo)))
 	mux.Handle("PUT /api/benutzer/{id}", s.RequirePermission("manage_users")(s.UpdateUserHandler(userRepo)))
 	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.DeleteUserHandler(auditRepo, userRepo)))
+}
 
+func (s *Server) registerSettingsRoutes(mux *http.ServeMux, settingsRepo repository.SystemSettingsRepository, mailRepo *repository.MailSettingsRepository, dbPool db.PgxPoolIface) {
 	// ── EINSTELLUNGEN (Settings) ──
-	settingsRepo := repository.NewSystemSettingsRepository(dbPool)
 	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_settings")(s.GetSettingsHandler(settingsRepo)))
 	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_settings")(s.UpdateSettingsHandler(settingsRepo)))
 	// Sitzungs-Fristen (Theke leeren, Sperrbildschirm) braucht JEDER angemeldete Client —
@@ -27,7 +43,6 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/ausweis-layout", s.RequirePermission("view_students")(s.GetAusweisLayoutHandler()))
 	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_settings")(s.SaveAusweisLayoutHandler()))
 
-	mailRepo := repository.NewMailSettingsRepository(dbPool)
 	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.GetMailSettingsHandler(mailRepo)))
 	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.UpdateMailSettingsHandler(mailRepo)))
 	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_settings")(s.PostTestMailSettingsHandler()))
@@ -51,14 +66,18 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// Mail Templates
 	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_settings")(s.GetMailTemplatesHandler()))
 	mux.Handle("PUT /api/mail-templates/{id}", s.RequirePermission("manage_settings")(s.UpdateMailTemplateHandler()))
+}
 
+func (s *Server) registerReportRoutes(mux *http.ServeMux) {
 	// Print / Reports
 	mux.Handle("GET /api/reports/overdue-pdf", s.RequirePermission("view_students")(s.GetOverdueReportsPDFHandler()))
 	mux.Handle("GET /api/print/rechnung/{schueler_id}", s.RequirePermission("view_students")(PrintRechnungHandler(s.DB.Pool)))
 	mux.Handle("GET /api/print/mahnung/klasse/{klasse}", s.RequirePermission("view_students")(PrintMahnungHandler(s.DB.Pool)))
 	mux.Handle("POST /api/admin/mahnungen/bulk-print", s.RequirePermission("view_students")(s.BulkPrintMahnungenHandler()))
 	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.RequirePermission("view_students")(PrintKontoauszugHandler(s.DB.Pool)))
+}
 
+func (s *Server) registerDashboardRoutes(mux *http.ServeMux) {
 	// Dashboard & Stats
 	mux.Handle("GET /api/dashboard/summary", s.RequirePermission("view_students")(s.GetDashboardSummaryHandler()))
 	// view_stats, nicht view_students: Der Schalter, den ein Admin in der Rechte-Oberfläche
@@ -70,7 +89,9 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// jedes Mal 403 lieferte. Die Antwort trägt keine Personendaten (PII-Matrix Stufe 0),
 	// view_students war also auch fachlich die falsche Schranke.
 	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.GetStatisticsHandler()))
+}
 
+func (s *Server) registerLookupRoutes(mux *http.ServeMux) {
 	// Lookups
 	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
 	// Das Vokabular, aus dem das Buchformular die Signatur vorschlägt. War bisher nur
@@ -80,10 +101,14 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("DELETE /api/systematics/{id}", s.RequirePermission("edit_books")(s.DeleteSystematikHandler()))
 	mux.Handle("GET /api/faecher", s.RequirePermission("view_books")(s.GetFaecherHandler()))
 	mux.Handle("GET /api/readergroups", s.RequirePermission("view_students")(s.GetReaderGroupsHandler()))
+}
 
+func (s *Server) registerAuditLogRoutes(mux *http.ServeMux) {
 	// Audit Logs
 	mux.Handle("GET /api/admin/auditlog", s.RequirePermission("manage_users")(s.GetAdminAuditLogsHandler()))
+}
 
+func (s *Server) registerBarcodeRoutes(mux *http.ServeMux) {
 	// Barcodes & Etiketten
 	// edit_books statt view_books: Der Endpunkt zeigt keine Nummer mehr an, er VERGIBT
 	// eine aus barcode_seq — die gezogene Nummer ist danach verbraucht. Wer sie nicht
@@ -97,7 +122,9 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// Migration 060 entfallen: Sie kannte Namen, die an keinem Buch hingen.
 	mux.Handle("GET /api/signaturen", s.RequirePermission("view_books")(s.GetSignaturenHandler()))
 	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.GetSignaturBuecherHandler()))
+}
 
+func (s *Server) registerEventRoutes(mux *http.ServeMux) {
 	// Real-time Events. Nur Sitzung, kein Fachrecht: den SSE-Stream öffnet jeder
 	// eingeloggte Client (authStore + Kiosk-Omnibox), und an ihm hängt der Herzschlag für
 	// das Offline-Overlay. Er stand zuerst auf view_students, dann auf perform_actions —
