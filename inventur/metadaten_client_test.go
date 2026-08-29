@@ -17,6 +17,23 @@ func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return m.roundTripFunc(req)
 }
 
+func TestSetzeHTTPClientFuerTest(t *testing.T) {
+	client := &MetadatenClient{}
+	if client.httpClient != nil {
+		t.Fatalf("Expected nil httpClient initially")
+	}
+
+	dummyClient := &http.Client{
+		Transport: &mockTransport{},
+	}
+
+	client.SetzeHTTPClientFuerTest(dummyClient)
+
+	if client.httpClient != dummyClient {
+		t.Errorf("Expected httpClient to be %v, got %v", dummyClient, client.httpClient)
+	}
+}
+
 func TestSucheNachISBN(t *testing.T) {
 	// Jeder Subtest steckt in einer eigenen Top-Level-Funktion, um die doppelte
 	// Closure-Verschachtelung (t.Run → roundTripFunc) und damit die kognitive
