@@ -15,10 +15,12 @@ package jobs
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	"bibliothek/repository"
+	"github.com/jackc/pgx/v5"
 )
 
 // RunAuditAufbewahrung löscht Audit-Einträge jenseits der Aufbewahrungsfrist.
@@ -69,7 +71,7 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 }
 
 func (s *Scheduler) loescheAeltereAls(ctx context.Context, tabelle string, b repository.Loeschbedingung) (int64, error) {
-	tag, err := s.db.Exec(ctx, `DELETE FROM `+tabelle+` WHERE `+b.Where, b.Args...)
+	tag, err := s.db.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s`, pgx.Identifier{tabelle}.Sanitize(), b.Where), b.Args...)
 	if err != nil {
 		return 0, err
 	}

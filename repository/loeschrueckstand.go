@@ -13,8 +13,11 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // LoeschRueckstand ist eine überfällige Menge einer Routine.
@@ -28,12 +31,12 @@ type LoeschRueckstand struct {
 // zaehle beantwortet eine Löschbedingung als Anzahl. Sie nimmt die Bedingung als
 // GANZES entgegen — Text und Zahlen sind daran nicht mehr getrennt einsetzbar.
 func (r *BetriebszustandRepository) zaehle(ctx context.Context, tabelle, alias string, b Loeschbedingung) (int, error) {
-	von := tabelle
+	von := pgx.Identifier{tabelle}.Sanitize()
 	if alias != "" {
-		von += " " + alias
+		von += " " + pgx.Identifier{alias}.Sanitize()
 	}
 	var n int
-	err := r.pool.QueryRow(ctx, `SELECT count(*) FROM `+von+` WHERE `+b.Where, b.Args...).Scan(&n)
+	err := r.pool.QueryRow(ctx, fmt.Sprintf(`SELECT count(*) FROM %s WHERE %s`, von, b.Where), b.Args...).Scan(&n)
 	return n, err
 }
 
