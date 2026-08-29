@@ -123,8 +123,8 @@ func klasseImAnker(mitKlasse bool) string {
 // wiegt schwerer als eines im Vornamen, beides zusammen schlägt alles. Sonst stünde bei
 // "max hoffmann" der gesuchte Schüler irgendwo alphabetisch in der Liste.
 const SchuelerSuchRang = `
-		  (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.nachname, '')) LIKE tokens.norm || '%') * 2
-		+ (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.vorname, ''))  LIKE tokens.norm || '%') DESC`
+		  (SELECT count(*) FROM tokens WHERE starts_with(suchnorm(coalesce(s.nachname, '')), tokens.norm)) * 2
+		+ (SELECT count(*) FROM tokens WHERE starts_with(suchnorm(coalesce(s.vorname, '')), tokens.norm)) DESC`
 
 // SearchStudentsFuzzy durchsucht die Schülerschaft nach Namen oder Barcodes und
 // liefert zusätzlich die Gesamtzahl der Treffer (nicht nur die des Limits).
