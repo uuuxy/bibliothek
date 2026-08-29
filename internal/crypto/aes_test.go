@@ -163,3 +163,57 @@ func TestEncryptDecryptNoKey(t *testing.T) {
 		t.Error("Decrypt() expected error without key")
 	}
 }
+
+func TestDecryptMit(t *testing.T) {
+	key := []byte("12345678901234567890123456789012")
+	plaintext := []byte("secret message")
+
+	ciphertext, err := EncryptMit(key, plaintext)
+	if err != nil {
+		t.Fatalf("EncryptMit() error = %v", err)
+	}
+
+	decrypted, err := DecryptMit(key, ciphertext)
+	if err != nil {
+		t.Fatalf("DecryptMit() error = %v", err)
+	}
+
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("DecryptMit() = %v, want %v", string(decrypted), string(plaintext))
+	}
+}
+
+func TestDecryptMitErrors(t *testing.T) {
+	validKey := []byte("12345678901234567890123456789012")
+	invalidKey := []byte("short")
+
+	t.Run("Invalid key length", func(t *testing.T) {
+		_, err := DecryptMit(invalidKey, []byte("some-ciphertext"))
+		if err == nil || !strings.Contains(err.Error(), "fehler beim Initialisieren des AES-Ciphers") {
+			t.Errorf("DecryptMit(invalidKey) error = %v, want 'fehler beim Initialisieren des AES-Ciphers'", err)
+		}
+	})
+
+	t.Run("Short ciphertext", func(t *testing.T) {
+		shortCiphertext := []byte("short")
+		_, err := DecryptMit(validKey, shortCiphertext)
+		if err == nil || !strings.Contains(err.Error(), "ciphertext ist zu kurz, Nonce fehlt") {
+			t.Errorf("DecryptMit(shortCiphertext) error = %v, want 'ciphertext ist zu kurz, Nonce fehlt'", err)
+		}
+	})
+
+	t.Run("Tampered data", func(t *testing.T) {
+		plaintext := []byte("secret message")
+		ciphertext, err := EncryptMit(validKey, plaintext)
+		if err != nil {
+			t.Fatalf("EncryptMit() error = %v", err)
+		}
+
+		ciphertext[15] ^= 1
+
+		_, err = DecryptMit(validKey, ciphertext)
+		if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
+			t.Errorf("DecryptMit(tampered) error = %v, want 'entschlüsselung fehlgeschlagen'", err)
+		}
+	})
+}
