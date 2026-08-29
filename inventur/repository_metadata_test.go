@@ -138,4 +138,15 @@ func TestUpdateBookCategory(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "kategorie konnte nicht aktualisiert werden: db error")
 	})
+
+	t.Run("fach sicherstellen error", func(t *testing.T) {
+		mockErr := errors.New("db error")
+		mock.ExpectQuery(`SELECT bezeichnung FROM systematik_kategorien WHERE lower\(bezeichnung\) = lower\(\$1\)`).
+			WithArgs("Science").
+			WillReturnError(mockErr)
+
+		err := repo.UpdateBookCategory(ctx, "valid-id", "Science", int16(6))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "nachschlagen fehlgeschlagen: db error")
+	})
 }
