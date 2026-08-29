@@ -165,6 +165,187 @@ func TestNormalizeAllClasses_Step2UpdateError(t *testing.T) {
 	}
 }
 
+func TestUpdateClassBooks(t *testing.T) {
+	tests := []struct {
+		name          string
+		oldClassName  string
+		newClassNames []string
+		bookIDs       []string
+		mockSetup     func(mock pgxmock.PgxPoolIface)
+		wantErr       bool
+		errMsg        string
+	}{
+		{
+			name:          "success with both old and new class names",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A", "6B"},
+			bookIDs:       []string{"b1", "b2"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A", "6B"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A", "6A", "6B", "6B"}, []string{"b1", "b2", "b1", "b2"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 4))
+				mock.ExpectCommit()
+			},
+			wantErr: false,
+		},
+		{
+			name:          "success with empty old class name",
+			oldClassName:  "",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A"}, []string{"b1"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 1))
+				mock.ExpectCommit()
+			},
+			wantErr: false,
+		},
+		{
+			name:          "success with empty new class names",
+			oldClassName:  "5A",
+			newClassNames: []string{},
+			bookIDs:       []string{},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectCommit()
+			},
+			wantErr: false,
+		},
+		{
+			name:          "error starting transaction",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin().WillReturnError(errTest)
+			},
+			wantErr: true,
+			errMsg:  "transaktion konnte nicht gestartet werden: test error",
+		},
+		{
+			name:          "error deleting old bindings",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "alte zuweisungen konnten nicht gelöscht werden: test error",
+		},
+		{
+			name:          "error deleting existing new bindings",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "vorhandene zuweisungen des neuen namens konnten nicht gelöscht werden: test error",
+		},
+		{
+			name:          "error inserting new bindings",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A"}, []string{"b1"}).
+					WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "neue zuweisung konnte nicht gespeichert werden: test error",
+		},
+		{
+			name:          "error committing transaction",
+			oldClassName:  "5A",
+			newClassNames: []string{"6A"},
+			bookIDs:       []string{"b1"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectBegin()
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = \$1$`).
+					WithArgs("5A").
+					WillReturnResult(pgxmock.NewResult("DELETE", 2))
+				mock.ExpectExec(`^DELETE FROM class_books WHERE class_name = ANY\(\$1\)$`).
+					WithArgs([]string{"6A"}).
+					WillReturnResult(pgxmock.NewResult("DELETE", 0))
+				mock.ExpectExec(`INSERT INTO class_books`).
+					WithArgs([]string{"6A"}, []string{"b1"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 1))
+				mock.ExpectCommit().WillReturnError(errTest)
+				mock.ExpectRollback()
+			},
+			wantErr: true,
+			errMsg:  "transaktion konnte nicht abgeschlossen werden: test error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("failed to create pgxmock: %v", err)
+			}
+			defer mock.Close()
+
+			repo := NewBookRepository(mock)
+			tt.mockSetup(mock)
+
+			err = repo.UpdateClassBooks(context.Background(), tt.oldClassName, tt.newClassNames, tt.bookIDs)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				} else if err.Error() != tt.errMsg {
+					t.Errorf("expected error message %q, got %q", tt.errMsg, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unmet mock expectations: %v", err)
+			}
+		})
+	}
+}
+
 func TestDeleteClassGroup(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
