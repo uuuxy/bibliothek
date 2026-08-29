@@ -235,3 +235,96 @@ func TestDeleteClassGroup(t *testing.T) {
 		})
 	}
 }
+
+func TestAddBooksToClasses(t *testing.T) {
+	tests := []struct {
+		name       string
+		classNames []string
+		bookIDs    []string
+		mockSetup  func(mock pgxmock.PgxPoolIface)
+		wantErr    bool
+	}{
+		{
+			name:       "success single",
+			classNames: []string{"5A"},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectExec(`^[\s\S]*INSERT INTO class_books[\s\S]*ON CONFLICT[\s\S]*DO NOTHING[\s\S]*$`).
+					WithArgs([]string{"5A"}, []string{"123e4567-e89b-12d3-a456-426614174000"}).
+					WillReturnResult(pgxmock.NewResult("INSERT", 1))
+			},
+			wantErr: false,
+		},
+		{
+			name:       "success multiple",
+			classNames: []string{"5A", "5B"},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000", "98765432-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				// The combinations of 5A and 5B with the two books means 4 rows total
+				mock.ExpectExec(`^[\s\S]*INSERT INTO class_books[\s\S]*ON CONFLICT[\s\S]*DO NOTHING[\s\S]*$`).
+					WithArgs(
+						[]string{"5A", "5A", "5B", "5B"},
+						[]string{
+							"123e4567-e89b-12d3-a456-426614174000",
+							"98765432-e89b-12d3-a456-426614174000",
+							"123e4567-e89b-12d3-a456-426614174000",
+							"98765432-e89b-12d3-a456-426614174000",
+						},
+					).
+					WillReturnResult(pgxmock.NewResult("INSERT", 4))
+			},
+			wantErr: false,
+		},
+		{
+			name:       "empty classNames",
+			classNames: []string{},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				// No DB call expected
+			},
+			wantErr: false,
+		},
+		{
+			name:       "empty bookIDs",
+			classNames: []string{"5A"},
+			bookIDs:    []string{},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				// No DB call expected
+			},
+			wantErr: false,
+		},
+		{
+			name:       "db error",
+			classNames: []string{"5A"},
+			bookIDs:    []string{"123e4567-e89b-12d3-a456-426614174000"},
+			mockSetup: func(mock pgxmock.PgxPoolIface) {
+				mock.ExpectExec(`^[\s\S]*INSERT INTO class_books[\s\S]*ON CONFLICT[\s\S]*DO NOTHING[\s\S]*$`).
+					WithArgs([]string{"5A"}, []string{"123e4567-e89b-12d3-a456-426614174000"}).
+					WillReturnError(fmt.Errorf("db error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("failed to create pgxmock: %v", err)
+			}
+			defer mock.Close()
+
+			repo := NewBookRepository(mock)
+			tt.mockSetup(mock)
+
+			err = repo.AddBooksToClasses(context.Background(), tt.classNames, tt.bookIDs)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddBooksToClasses() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unmet mock expectations: %v", err)
+			}
+		})
+	}
+}
