@@ -59,8 +59,9 @@ type ReservationRepository interface {
 	GetKlassensatzReservierungenAnzahl(ctx context.Context) (int, error)
 	// ErledigeKlassensatzReservierung schliesst eine offene Reservierung ab und
 	// liefert die Angaben fuer die Bereit-Mail an die anfragende Lehrkraft.
+	// notiz ist die Antwort der Bibliothek (landet in der Mail, Migration 088).
 	// nil ohne Fehler: war nicht (mehr) offen.
-	ErledigeKlassensatzReservierung(ctx context.Context, id string) (*KlassensatzErledigt, error)
+	ErledigeKlassensatzReservierung(ctx context.Context, id, notiz string) (*KlassensatzErledigt, error)
 }
 
 type pgReservationRepository struct {
@@ -206,27 +207,29 @@ type KlassensatzErledigt struct {
 	TitelName      string
 	Klasse         string
 	Anzahl         int
+	Notiz          string  // was die Lehrkraft beim Reservieren schrieb ('' wenn nichts)
+	ErledigtNotiz  string  // Antwort der Bibliothek beim Abschliessen ('' wenn nichts)
 	AnfragendeMail *string // nil: ohne Konto angefragt oder Konto geloescht
 }
 
-func (r *pgReservationRepository) ErledigeKlassensatzReservierung(ctx context.Context, id string) (*KlassensatzErledigt, error) {
+func (r *pgReservationRepository) ErledigeKlassensatzReservierung(ctx context.Context, id, notiz string) (*KlassensatzErledigt, error) {
 	// erledigt = false in der WHERE-Klausel: Der zweite Klick (zweiter Admin) darf
 	// weder doppelt abschliessen noch eine zweite Bereit-Mail ausloesen.
 	row := r.db.QueryRow(ctx, `
 		WITH abgeschlossen AS (
 			UPDATE klassensatz_reservierungen
-			SET erledigt = true
+			SET erledigt = true, erledigt_notiz = $2
 			WHERE id = $1 AND erledigt = false
-			RETURNING titel_id, klasse, anzahl, angefordert_von
+			RETURNING titel_id, klasse, anzahl, notiz, erledigt_notiz, angefordert_von
 		)
-		SELECT t.titel, a.klasse, a.anzahl, b.email
+		SELECT t.titel, a.klasse, a.anzahl, COALESCE(a.notiz, ''), a.erledigt_notiz, b.email
 		FROM abgeschlossen a
 		JOIN buecher_titel t ON t.id = a.titel_id
 		LEFT JOIN benutzer b ON b.id = a.angefordert_von
-	`, id)
+	`, id, notiz)
 
 	var e KlassensatzErledigt
-	if err := row.Scan(&e.TitelName, &e.Klasse, &e.Anzahl, &e.AnfragendeMail); err != nil {
+	if err := row.Scan(&e.TitelName, &e.Klasse, &e.Anzahl, &e.Notiz, &e.ErledigtNotiz, &e.AnfragendeMail); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}

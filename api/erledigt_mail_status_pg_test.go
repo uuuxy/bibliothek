@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -126,18 +127,27 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	erledige := func(t *testing.T) *httptest.ResponseRecorder {
+	// body nil = Altclient ohne Body (vor Migration 088) — muss weiter abschliessen.
+	erledigeMit := func(t *testing.T, body *string) (*httptest.ResponseRecorder, string) {
 		t.Helper()
 		var resID string
 		if err := pool.QueryRow(ctx, `
-			INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, angefordert_von)
-			VALUES ($1, '9c', 25, $2) RETURNING id`, titelID, lehrerID).Scan(&resID); err != nil {
+			INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, notiz, angefordert_von)
+			VALUES ($1, '9c', 25, 'ab 15. September', $2) RETURNING id`, titelID, lehrerID).Scan(&resID); err != nil {
 			t.Fatalf("Reservierung anlegen: %v", err)
 		}
-		req := httptest.NewRequest(http.MethodPut, "/api/reservierungen/klassensatz/"+resID+"/erledigen", nil)
+		var r io.Reader
+		if body != nil {
+			r = strings.NewReader(*body)
+		}
+		req := httptest.NewRequest(http.MethodPut, "/api/reservierungen/klassensatz/"+resID+"/erledigen", r)
 		req.SetPathValue("id", resID)
 		rec := httptest.NewRecorder()
 		srv.ErledigeKlassensatzReservierungHandler()(rec, req)
+		return rec, resID
+	}
+	erledige := func(t *testing.T) *httptest.ResponseRecorder {
+		rec, _ := erledigeMit(t, nil)
 		return rec
 	}
 
@@ -152,6 +162,43 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 		stubSendEmail(t, nil)
 		if got := mailStatusAusAntwort(t, erledige(t)); got != "versendet" {
 			t.Fatalf("mail=%q, erwartet versendet", got)
+		}
+	})
+
+	// Migration 088: Die Antwort der Bibliothek landet in der Mail UND in der Zeile;
+	// die Notiz der Lehrkraft steht in der Mail, damit die Antwort einen Bezug hat.
+	// Ohne Body (Altclient) geht die Mail ohne Bibliotheks-Notiz, aber sie geht.
+	t.Run("Notiz der Bibliothek steht in Mail und Zeile", func(t *testing.T) {
+		var gesendet MailRequest
+		alt := SendEmail
+		SendEmail = func(m MailRequest) error { gesendet = m; return nil }
+		t.Cleanup(func() { SendEmail = alt })
+
+		body := `{"notiz":"24 von 30, der Rest ist bei der 8a"}`
+		rec, resID := erledigeMit(t, &body)
+		if got := mailStatusAusAntwort(t, rec); got != "versendet" {
+			t.Fatalf("mail=%q, erwartet versendet", got)
+		}
+		for _, muss := range []string{"24 von 30, der Rest ist bei der 8a", "Ihre Notiz: ab 15. September", "Der Besuch der alten Dame"} {
+			if !strings.Contains(gesendet.Body, muss) {
+				t.Errorf("Mail ohne %q:\n%s", muss, gesendet.Body)
+			}
+		}
+		var gespeichert string
+		if err := pool.QueryRow(ctx, `SELECT erledigt_notiz FROM klassensatz_reservierungen WHERE id = $1`, resID).Scan(&gespeichert); err != nil {
+			t.Fatalf("erledigt_notiz lesen: %v", err)
+		}
+		if gespeichert != "24 von 30, der Rest ist bei der 8a" {
+			t.Fatalf("erledigt_notiz=%q", gespeichert)
+		}
+
+		gesendet = MailRequest{}
+		rec, _ = erledigeMit(t, nil)
+		if got := mailStatusAusAntwort(t, rec); got != "versendet" {
+			t.Fatalf("ohne Body: mail=%q, erwartet versendet", got)
+		}
+		if strings.Contains(gesendet.Body, "Notiz der Bibliothek") {
+			t.Errorf("ohne Body darf keine Bibliotheks-Notiz in der Mail stehen:\n%s", gesendet.Body)
 		}
 	})
 }

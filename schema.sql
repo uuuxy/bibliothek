@@ -776,7 +776,8 @@ CREATE TABLE klassensatz_reservierungen (
     angefordert_von  UUID REFERENCES benutzer(id) ON DELETE SET NULL,
     erledigt         BOOLEAN NOT NULL DEFAULT false,
     erstellt_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    idempotenz_schluessel UUID                             -- Doppelklick-Schutz (Migration 076)
+    idempotenz_schluessel UUID,                            -- Doppelklick-Schutz (Migration 076)
+    erledigt_notiz   TEXT NOT NULL DEFAULT ''              -- Notiz der Bibliothek in der Bereit-Mail (Migration 088)
 );
 
 -- Doppelklick-Schutz: zweite Anfrage mit demselben Schlüssel läuft hier auf (No-op).
@@ -1019,7 +1020,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('084_schueler_lusd_bestaetigt_am.sql'),
 ('085_paritaet_indizes_fk_name_passwort_hash.sql'),
 ('086_benutzer_zugang_beantragt_am.sql'),
-('087_klassen_anzeigeform.sql')
+('087_klassen_anzeigeform.sql'),
+('088_klassensatz_erledigt_notiz.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, seedBenutzer, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, seedBenutzer, uniqueSuffix } from './helpers.js';
 
 test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 	// 1. Seed a book title and a reservation
@@ -36,11 +36,19 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 		.first();
 	await reservierungZeile.getByRole('button', { name: 'Abschließen' }).click();
 
-	// Bestätigung klicken
-	await reservierungZeile.getByRole('button', { name: 'Wirklich abschließen?' }).click();
+	// Notizzeile (Migration 088): steht als eigenes <li> unter der Zeile, daher über die
+	// Seite gesucht, nicht in reservierungZeile.
+	const notizFeld = page.getByLabel('Notiz für die Bereit-Mail an die Lehrkraft');
+	await notizFeld.fill('24 von 25, eines fehlt noch');
+	await page.getByRole('button', { name: 'Abschließen & Mail senden' }).click();
 
-	// 6. Verifikation: Die Reservierung verschwindet aus der UI
+	// 6. Verifikation: Die Reservierung verschwindet aus der UI, die Notiz steht in der DB
 	await expect(reservierungZeile).not.toBeVisible();
+	await expect
+		.poll(() =>
+			querySQL(`SELECT erledigt_notiz FROM klassensatz_reservierungen WHERE klasse = 'k8b${s}'`)
+		)
+		.toContain('24 von 25, eines fehlt noch');
 });
 
 // Das Warteschlangen-Modell (16.08.2026) am ganzen Weg: Reservieren sperrt nichts —

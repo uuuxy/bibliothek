@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -137,8 +138,11 @@ func (s *Server) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
 	}
 }
 
-// ErledigeKlassensatzReservierungHandler marks a class-set reservation as done.
-// PUT /api/reservierungen/klassensatz/{id}/erledigen
+// ErledigeKlassensatzReservierungHandler schliesst eine Klassensatz-Reservierung ab.
+// PUT /api/reservierungen/klassensatz/{id}/erledigen  { "notiz": "24 von 30, Rest bei der 8a" }
+//
+// Der Body ist optional (leer = ohne Notiz): Der Weg bestand vor Migration 088 ohne
+// Body, und ein Client mit altem Bundle soll weiter abschliessen koennen.
 func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -146,9 +150,13 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("id fehlt"))
 			return
 		}
+		notiz, ok := leseErledigtNotiz(w, r)
+		if !ok {
+			return
+		}
 
 		repo := repository.NewReservationRepository(s.DB.Pool)
-		erledigt, err := repo.ErledigeKlassensatzReservierung(r.Context(), id)
+		erledigt, err := repo.ErledigeKlassensatzReservierung(r.Context(), id, notiz)
 
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -173,10 +181,7 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 			if err := SendEmail(MailRequest{
 				To:      *erledigt.AnfragendeMail,
 				Subject: fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
-				Body: fmt.Sprintf("Ihre Klassensatz-Reservierung ist fertig zusammengestellt und liegt in der Bibliothek zur Abholung bereit.\n\n"+
-					"  Titel:  %s\n  Klasse: %s\n  Anzahl: %d Exemplare\n\n"+
-					"Diese Mail wurde automatisch beim Abschliessen der Reservierung verschickt.",
-					erledigt.TitelName, erledigt.Klasse, erledigt.Anzahl),
+				Body:    klassensatzBereitText(erledigt),
 			}); err != nil {
 				log.Printf("Klassensatz-Bereit-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
 				mailStatus = mailStatusFehlgeschlagen
@@ -185,6 +190,38 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 
 		RespondJSON(w, http.StatusOK, map[string]string{"mail": mailStatus})
 	}
+}
+
+// leseErledigtNotiz liest die optionale Notiz aus dem Body. Kein Body → "" (Altclient,
+// Erledigen ohne Antwort); ein vorhandener, aber kaputter Body ist ein 400.
+func leseErledigtNotiz(w http.ResponseWriter, r *http.Request) (string, bool) {
+	if r.Body == nil || r.ContentLength == 0 {
+		return "", true
+	}
+	var body struct {
+		Notiz string `json:"notiz"`
+	}
+	if !DecodeAndValidate(w, r, &body) {
+		return "", false
+	}
+	return kuerze(strings.TrimSpace(body.Notiz), 500), true
+}
+
+// klassensatzBereitText ist die Bereit-Mail. Seit Migration 088 traegt sie die Notiz
+// der Lehrkraft (damit die Antwort einen Bezug hat) und die Antwort der Bibliothek —
+// dasselbe Muster wie die Anliegen-Mail. Vorher war der Text fest und liess sich
+// weder ergaenzen (Teilmenge, Abholort) noch korrigieren.
+func klassensatzBereitText(e *repository.KlassensatzErledigt) string {
+	text := fmt.Sprintf("Ihre Klassensatz-Reservierung ist fertig zusammengestellt und liegt in der Bibliothek zur Abholung bereit.\n\n"+
+		"  Titel:  %s\n  Klasse: %s\n  Anzahl: %d Exemplare\n",
+		e.TitelName, e.Klasse, e.Anzahl)
+	if e.Notiz != "" {
+		text += fmt.Sprintf("  Ihre Notiz: %s\n", e.Notiz)
+	}
+	if e.ErledigtNotiz != "" {
+		text += fmt.Sprintf("\nNotiz der Bibliothek:\n  %s\n", e.ErledigtNotiz)
+	}
+	return text + "\nDiese Mail wurde automatisch beim Abschliessen der Reservierung verschickt."
 }
 
 // validateKlassensatzRequest prüft die Pflichtfelder und normalisiert die Anzahl

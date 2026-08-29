@@ -3,12 +3,17 @@
      PUT /api/reservierungen/klassensatz/{id}/erledigen abgeschlossen. Reservieren SPERRT
      keinen Bestand (Warteschlangen-Modell, 16.08.2026): Die Liste ist die Reihenfolge,
      „verfügbar" zeigt je Zeile, ob der Satz aktuell vollständig aus dem Regal zu holen
-     ist. Flaches Edge-to-Edge-Listen-Design, kein Modal. -->
+     ist. Flaches Edge-to-Edge-Listen-Design, kein Modal.
+
+     Seit 27.08.2026 kann die Theke beim Abschließen eine Notiz für die Bereit-Mail
+     schreiben — dasselbe Muster wie AnliegenListe. Vorher war die Mail ein fester Text,
+     und „24 von 30, Rest bei der 8a" ging nur mündlich im Flur. -->
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import Feld from '../ui/Feld.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Check } from '@lucide/svelte';
@@ -22,6 +27,7 @@
 	let confirmingId = $state(null);
 	/** @type {string | null} */
 	let completingId = $state(null);
+	let notiz = $state('');
 
 	// GET liefert die gesamte Historie (erledigt + offen); hier interessieren nur die offenen.
 	const offeneReservierungen = $derived(reservierungen.filter((r) => !r.erledigt));
@@ -43,6 +49,7 @@
 	/** @param {string} id */
 	function requestConfirm(id) {
 		confirmingId = id;
+		notiz = '';
 	}
 
 	function cancelConfirm() {
@@ -55,7 +62,9 @@
 		completingId = id;
 		try {
 			const res = await apiFetch(`/api/reservierungen/klassensatz/${id}/erledigen`, {
-				method: 'PUT'
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ notiz })
 			});
 			if (res.status === 404) {
 				// Bereits anderweitig erledigt (z. B. zweiter Admin) — lokal genauso entfernen
@@ -114,32 +123,7 @@
 					}}
 	>
 		{#snippet aktion()}
-			{#if confirmingId === r.id}
-				<div class="flex items-center gap-2">
-					<Button
-						variant="secondary"
-						size="sm"
-						onclick={cancelConfirm}
-						disabled={completingId === r.id}
-					>
-						Abbrechen
-					</Button>
-					<Button
-						variant="danger-solid"
-						size="sm"
-						onclick={() => completeReservierung(r.id)}
-						disabled={completingId === r.id}
-					>
-						{#if completingId === r.id}
-							<span
-								class="w-3 h-3 border-2 border-white/60 border-t-white rounded-full animate-spin"
-							></span>
-						{:else}
-							Wirklich abschließen?
-						{/if}
-					</Button>
-				</div>
-			{:else}
+			{#if confirmingId !== r.id}
 				<Button variant="primary" onclick={() => requestConfirm(r.id)}>
 					<Check class="w-4 h-4" aria-hidden="true" />
 					Abschließen
@@ -147,6 +131,40 @@
 			{/if}
 		{/snippet}
 	</ArbeitsZeile>
+	{#if confirmingId === r.id}
+		<!-- Die Notiz landet in der Bereit-Mail — „24 von 30, Rest bei der 8a" oder
+		     „steht hinter der Theke, bitte bis Freitag" erspart die Rückfrage im Flur. -->
+		<li class="flex items-center gap-2 pb-3 pl-16">
+			<Feld
+				bind:value={notiz}
+				maxlength={500}
+				placeholder="Notiz für die Bereit-Mail an die Lehrkraft (optional)"
+				aria-label="Notiz für die Bereit-Mail an die Lehrkraft"
+				feld="flex-1"
+			/>
+			<Button
+				variant="secondary"
+				size="sm"
+				onclick={cancelConfirm}
+				disabled={completingId === r.id}
+			>
+				Abbrechen
+			</Button>
+			<Button
+				variant="primary"
+				size="sm"
+				onclick={() => completeReservierung(r.id)}
+				disabled={completingId === r.id}
+			>
+				{#if completingId === r.id}
+					<span class="w-3 h-3 border-2 border-white/60 border-t-white rounded-full animate-spin"
+					></span>
+				{:else}
+					Abschließen & Mail senden
+				{/if}
+			</Button>
+		</li>
+	{/if}
 {/snippet}
 
 <div class="space-y-6">
@@ -154,7 +172,8 @@
 		<h2 class="text-base font-bold text-slate-800">Klassensatz-Reservierungen</h2>
 		<p class="text-sm text-slate-500 mt-0.5">
 			Von Lehrkräften angefragte Klassensätze in Warteschlangen-Reihenfolge (älteste zuerst).
-			Reservieren sperrt keinen Bestand — „Abschließen" schließt den Vorgang nach der Übergabe ab.
+			Reservieren sperrt keinen Bestand — „Abschließen" schließt den Vorgang nach der Übergabe ab
+			und schickt der Lehrkraft die Bereit-Mail — mit deiner Notiz, wenn du eine schreibst.
 		</p>
 	</div>
 
