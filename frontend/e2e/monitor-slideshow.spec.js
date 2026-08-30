@@ -67,3 +67,38 @@ test('Monitor: ohne Login, holt sich nach gescheitertem Start die Daten und läd
 	await page.clock.fastForward('00:15');
 	await expect(page.getByText('Zweiter Stand').first()).toBeVisible();
 });
+
+// Rotiert der Monitor überhaupt von selbst? Der frühere Smoke-Test konnte auch das
+// nicht sehen — und im Produktvideo stand 9 s lang dieselbe Folie, weil der erste
+// Wechsel erst nach 15 s kommt. Hier mit gestellter Uhr, am echten Bundle: Wechsel,
+// Überspringen einer leeren Folie (Ferien), Sprung über die Punkte.
+test('Monitor: Folien wechseln alle 15 Sekunden von selbst, leere werden übersprungen, die Punkte springen', async ({
+	page
+}) => {
+	await page.clock.install({ time: new Date('2026-09-01T10:00:00') });
+	await page.route('**/api/monitor/slides', (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ ...folien('Stand'), beliebt: [] })
+		})
+	);
+
+	await page.goto('/monitor');
+	const folie = page.getByTestId('monitor-folie');
+	await expect(folie).toHaveText('Buch des Monats');
+	await expect(page.getByText('Stand Monatsbuch')).toBeVisible();
+
+	await page.clock.fastForward('00:15');
+	await expect(folie).toHaveText('Neu eingetroffen');
+	await expect(page.getByText('Stand Neuzugang')).toBeVisible();
+
+	// „Beliebt" ist leer (Ferien) — der Takt überspringt sie und fängt vorne an.
+	await page.clock.fastForward('00:15');
+	await expect(folie).toHaveText('Buch des Monats');
+
+	// Von Hand ist auch die leere Folie erreichbar — wer klickt, will sie sehen.
+	await page.getByRole('button', { name: 'Beliebt diese Woche anzeigen' }).click();
+	await expect(folie).toHaveText('Beliebt diese Woche');
+	await expect(page.getByText('Keine Daten verfügbar')).toBeVisible();
+});

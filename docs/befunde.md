@@ -43,6 +43,67 @@ Zwei Regeln dazu:
 
 ---
 
+## Flur-Monitor: Raster-Durchgang (30.08.2026) — acht Funde, sechs Commits
+
+Anlass war eine Frage zum Produktvideo („rotiert das automatisch?"). Die Antwort war ja —
+aber das Drehbuch blieb 9 s auf der Seite, der erste Wechsel kommt nach 15 s. Beim
+Nachsehen fiel der Rest: eine Seite ohne Anmeldung, die wochenlang ohne Tastatur läuft,
+war nie unter dem Raster gewesen. Frage-Runde vorab (Sichtbarkeit = Katalogregel, Leser
+statt Exemplare, leere Folien überspringen, 5 Minuten, Neustart 03:00, Doku an Code).
+
+### Kategorie A — alle erledigt, je ein Commit, Gate am alten Stand rot gesehen
+
+**1+2. Geschwister-Asymmetrie Katalog↔Monitor (`6f2bf9ce`).** Der Katalog filterte
+Lernmittel und zeigte nur Titel mit Exemplar im Haus; der Monitor kannte beides nicht —
+auf einem Schulbestand wäre das Mathebuch der 7 „Buch des Monats" gewesen, ein
+bestellter Titel „Neu eingetroffen", ein ausgesonderter „Beliebt". Das Demo-Seed musste
+darum herumtricksen („sonst gewinnen Lernmittel"). Jetzt EIN Prädikat
+(`repository.OeffentlichSichtbar`) für beide Seiten; die Monitor-Abfragen wanderten aus
+dem Handler in `repository/oeffentlich.go` (api/monitor.go aus der Schichtungs-Liste
+ausgetragen). Gate: `api/monitor_pg_test.go` fragt BEIDE echten Handler — das erste
+Paar-Gate der Sweep-Klasse.
+
+**5. Ein Abruf, für immer (`ef2b26d1`).** `fetchSlides()` lief einmal beim Mount. Nach
+einem Stromausfall bootet der Monitor-PC vor dem Server: „Lade Daten …" bis zum
+nächsten Stecker. Und wer durchkam, zeigte wochenlang den Einschalttag. Jetzt Takt als
+Modul mit gestellter Uhr (`monitor/monitorTakt.svelte.js`): Nachladen 5 min,
+Neuversuch 30 s, neuer Stand erst am Folienwechsel, alter Stand bleibt bei Fehler.
+Gate: E2E mit `page.clock` und 503 beim ersten Abruf — am alten Bundle rot.
+
+### Kategorie B — alle erledigt
+
+**3. Leser statt Exemplare (`8b00e82e`).** Lehrer-Ausleihen sind je Exemplar eine Zeile;
+ein Klassensatz ×30 beherrschte beide Folien. Jetzt Schüler-Ausleihen, je Schüler
+einmal (PG-Test: Klassensatz, Doppel-Leser, anonymisierte Zeile).
+**4. Leere Folien (`7b8d930b`).** Sommerferien = ein Drittel der Zeit „Keine Daten
+verfügbar". Übersprungen; von Hand weiter erreichbar.
+**6. Neue Versionen erreichen den Bildschirm nie (`df19b5af`).** Service Worker prüft
+nur beim Laden, SSE verlangt Anmeldung. Neustart um 03:00 Ortszeit — nur der Monitor,
+nie die Theke.
+**7. Gate-Ehrlichkeit (dieser Commit).** Der Smoke-Test „kein Not Found" konnte keinen
+der Funde 1–6 sehen. Jetzt E2E mit gestellter Uhr: Fehlstart, Nachladen, Wechsel,
+Überspringen, Punkte — und das Drehbuch des Videos klickt durch die Folien statt zu
+warten.
+**8. Doku ≠ Code (`6f2bf9ce`).** HANDBUCH behauptete „nur Titel mit Cover"; „Beliebt"
+filtert nicht. Doku an Code (Platzhalter-Kachel), Fachkonzept §16.2 neu geschrieben.
+
+### Geprüft, kein Befund
+
+PII (Stufe 0, nur aggregierte Zähler; DISTINCT über Schüler-IDs verlässt den Server nicht)
+· Listen-Limits (1/10/5) · Rate-Limit (5-Minuten-Polling gegen 50/s-Bucket) · Fehler-
+Kollaps (500 mit Log, nicht 404) · Zeit (Fenster in DB-Zeit, Neustart in Ortszeit) ·
+Lebenszyklus (stop() räumt jede Uhr, auch im Ladezustand).
+
+### Was der Durchgang gezeigt hat
+
+Die Bauform von Fund 1 ist die bekannte: ein Paar, das nur zufällig einig war. Neu ist,
+dass die Sweep-Zeile „Geschwister-Asymmetrie" damit ihr erstes Gate hat — ein Test, der
+beide Geschwister fragt, statt einen nachzubauen. Und ein Unit-Test mit gestellter Uhr
+hatte zweimal recht gegen mich: 15 000 ist ein Vielfaches von 2 500, 20 Wechsel enden auf
+Folie 2 — beide Male war die Arithmetik des Tests falsch, nicht der Takt.
+
+Stand: 2026-08-30
+
 ## LUSD-Import an einer Klassenliste mit LUSD-Feldkürzeln: 23 von 91 Schülern (26.08.2026)
 
 Anlass: Peters Frage, in welchem Format der LUSD-Export kommt. Auf seinem Rechner lag

@@ -55,7 +55,7 @@
 	<div
 		class="bg-slate-800 px-6 py-3 flex items-center justify-between text-xs text-slate-300 font-semibold tracking-wide"
 	>
-		<span>{FOLIEN[takt.folie]}</span>
+		<span data-testid="monitor-folie">{FOLIEN[takt.folie]}</span>
 		<span class="text-slate-600">Schulbibliothek</span>
 	</div>
 
