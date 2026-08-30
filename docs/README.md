@@ -29,6 +29,8 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 - **Bestellwesen:** Bedarfsvorschläge aus dem Bestand, Bestellmail an den Händler samt Barcodebogen, Wareneingang — und für Händler, die selbst etikettieren, ein Bestätigungs-Link, über den der Lieferant seine Etiketten druckt und die Bestellung selbst bestätigt.
 - **Inventur:** Session-gebundene Bestandsaufnahme mit Scanner, Fehlbestandsliste und Aufarbeitung.
 - **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Kollegium (nur Klassensatz-Reservierung im eigenen Portal), Mitarbeiter (Tresen-Betrieb) und Helfer (Kiosk-Betrieb ohne Schülerrechte). Angemeldet wird gegen den Schul-Mailserver per IMAP — die Anwendung speichert kein Benutzerpasswort.
+- **Öffentliche Seiten:** Katalog `/katalog` (Suche mit Cover und Verfügbarkeit) und Bibliotheks-Monitor `/monitor` (Slideshow für den Flur) — beide ohne Anmeldung, beide ohne Personendaten ([FACHKONZEPT.md §16](FACHKONZEPT.md)).
+- **Kollegiums-Portal & Selbstanmeldung:** Lehrkräfte melden sich mit dem Schul-Postfach an, reservieren Klassensätze und geben Wünsche/Meldungen ab; die Bibliothek schaltet Zugangsanfragen frei.
 - **Selbstprüfung der Betriebsbereitschaft:** Eine Seite unter *System*, die eine einzige Frage beantwortet — was ist eingerichtet, aber nicht in Betrieb? Sie fängt die wiederkehrende Fehlerart ab, bei der eine fertige Funktion still nichts tut, weil eine Einstellung fehlt (Details: [FACHKONZEPT.md §15](FACHKONZEPT.md)).
 
 ---
@@ -37,6 +39,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 | Dokument | Inhalt |
 |---|---|
+| [HANDBUCH.md](HANDBUCH.md) | Benutzerhandbuch — jeder Bereich aus Sicht der Bibliothek, mit den öffentlichen Seiten und den 13 Einstellungs-Kategorien |
 | [FACHKONZEPT.md](FACHKONZEPT.md) | Vollständige fachliche Feature-Spezifikation (Ausleihregeln, Mahnwesen, Vormerkungen, DSGVO, RBAC, Katalog …) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Schichtenarchitektur, Concurrency-Modell, Datenbankdesign, Frontend |
 | [SECURITY.md](SECURITY.md) | Sicherheitskonzept, DSGVO, Schutzmaßnahmen |

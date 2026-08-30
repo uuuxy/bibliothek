@@ -29,8 +29,17 @@ konkreten Betrieb gebaut, und die Entscheidungen darin sind entsprechend konkret
 - **Druck-Center** für Etiketten und Schülerausweise.
 - **Geräteausleihe** (Laptops/Tablets) mit Zubehör-Checklisten.
 - **Datenschutz** — Löschroutinen für Abgänger, verschlüsselte Schülerfotos, Audit-Trail.
+- **Öffentliche Seiten ohne Anmeldung** — Katalog (`/katalog`) für Schüler und Eltern mit
+  Cover und Verfügbarkeit, Bibliotheks-Monitor (`/monitor`) als Endlos-Slideshow für den
+  Bildschirm im Flur (Buch des Monats, Neuzugänge, Beliebt diese Woche). Beide liefern nur
+  Titeldaten, nie Ausleiher.
+- **Kollegium** — eigenes Portal, Selbstanmeldung mit dem Schul-Postfach, Klassensatz-
+  Reservierungen, Buchwünsche und Meldungen an die Bibliothek.
+- **Statistiken ohne Klarnamen** — Zirkulation, Wiederbeschaffungswert, Renner und Ladenhüter.
+- **Selbstprüfung der Betriebsbereitschaft** — was ist eingerichtet, aber nicht in Betrieb?
 
-Die fachliche Spezifikation steht vollständig in [docs/FACHKONZEPT.md](docs/FACHKONZEPT.md).
+Die fachliche Spezifikation steht vollständig in [docs/FACHKONZEPT.md](docs/FACHKONZEPT.md);
+für Bibliothekspersonal gibt es das [Benutzerhandbuch](docs/HANDBUCH.md).
 
 ---
 
@@ -112,7 +121,8 @@ haben.** Ein Gate, das seine Aussage nicht verlieren kann, prüft nichts.
 
 ## Dokumentation
 
-Alles Weitere liegt in [`docs/`](docs/README.md) — Architektur, Sicherheits- und
+Alles Weitere liegt in [`docs/`](docs/README.md) — [Benutzerhandbuch](docs/HANDBUCH.md)
+(Bereich für Bereich, aus Sicht der Bibliothek), Architektur, Sicherheits- und
 DSGVO-Konzept, Deployment, Invarianten-Katalog, CLI-Werkzeuge und ein generiertes
 Verzeichnis aller API-Routen.
 

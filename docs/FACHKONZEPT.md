@@ -192,6 +192,15 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 ---
 
+### 8.x Abgänger-Kontoauszug (Ergänzung 30.08.2026)
+
+Die Abgänger-Ansicht (`/abgaenger`) zeigt **nur** Abgänger mit noch offenen Ausleihen — wer nichts
+mehr schuldet, verschwindet aus der Liste. Je Klasse lässt sich ein **Kontoauszug** drucken
+(PDF aller offenen Medien je Schüler, `queryAbgaengerKontoauszug`) oder per Mail an die
+Klassenleitung schicken (`POST /api/abgaenger/mail`); die Empfängeradresse kommt aus dem
+Mahnwesen-Routing (Klasse → Lehrkraft, §17.4). Klassen ohne Zuordnung werden im Versand-Dialog
+als „keine E-Mail" markiert, statt still übersprungen zu werden.
+
 ## 9. Druck-Center und Ausweise
 
 Das System bietet einen zentralen Druck-Manager für physische Objekte:
@@ -228,6 +237,15 @@ Für die Schulleitung und Bibliotheks-Administration aggregiert das System Echtz
 - Export-Funktionen (CSV/PDF) für die Jahresberichte an die Schulleitung.
 
 ---
+
+### 11.x Renner und Ladenhüter (Ergänzung 30.08.2026)
+
+Zwei Listen mit Detailseite (`/statistiken/renner`, `/statistiken/ladenhueter`, `api/stats.go`):
+**Renner** sind die meistausgeliehenen Titel des gewählten Zeitraums; **Ladenhüter** sind Titel,
+die seit mehr als zwei Jahren nicht mehr ausgeliehen wurden — oder nie. Beide Listen lassen sich
+nach Fachbereich und Systematik filtern und clientseitig nach Titel/Autor durchsuchen; das
+`?limit=`-Argument ist serverseitig gedeckelt. Beide Listen enthalten keine Schülerdaten —
+sie zählen Ausleihen, nicht Ausleiher (siehe PII_MATRIX).
 
 ## 12. Authentifizierung & Rollenmodell (RBAC)
 
@@ -339,3 +357,106 @@ Die Urteile sind als reine Funktion über eine eingesammelte Lage gebaut
 (`api/betriebsbereitschaft.go`) und damit vollständig testbar, ohne
 Umgebungsvariablen zu verbiegen oder eine Datenbank zu brauchen; das Zusammentragen der
 Lage steht daneben im Handler.
+
+---
+
+## 16. Öffentliche Seiten (ohne Anmeldung)
+
+Drei Adressen sind bewusst **vor** dem Login-Zweig eingehängt (`App.svelte`): Sie rendern, ohne
+dass jemand angemeldet ist, und sie liefern ausschließlich Titeldaten — nie Ausleiher, nie
+Namen, nie Klassen (Nachweis: `docs/PII_MATRIX.de.md`, Zeilen zu `/api/opac/*`,
+`/api/monitor/slides`, `/api/bestellung/*`). Keine der drei Seiten hat einen Menüpunkt; ihre
+Adressen stehen seit 30.08.2026 unter *Einstellungen → Erreichbarkeit & Alarme* zum Kopieren.
+
+### 16.1 Katalog (OPAC) — `/katalog`
+
+Für Schülerinnen, Schüler, Eltern und Kollegium: Suche nach Titel, Autor oder ISBN
+(Volltext über `search_vector` **oder** Teilstring, `api/opac.go`), Trefferkarte mit Cover und
+„N von M verfügbar". Gezählt werden nur ausleihbare, nicht ausgesonderte Exemplare ohne offene
+Ausleihe; Titel ohne einziges Exemplar erscheinen nicht (`HAVING … > 0`). Maximal 50 Treffer.
+Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Das Kollegiums-Portal benutzt für
+seine Suche denselben Endpunkt (§12, Rolle Kollegium).
+
+### 16.2 Bibliotheks-Monitor — `/monitor`
+
+Für einen Bildschirm im Flur oder in der Bibliothek: eine Endlos-Slideshow aus drei Folien
+(`api/monitor.go`, `Monitor.svelte`):
+
+| Folie | Regel |
+|---|---|
+| **Buch des Monats** | der in den letzten **30 Tagen** meistausgeliehene Titel **mit Cover**; gibt es keinen, der zuletzt angelegte Titel mit Cover |
+| **Neu eingetroffen** | die zehn zuletzt angelegten Titel mit Cover |
+| **Beliebt diese Woche** | die fünf meistausgeliehenen Titel der letzten **7 Tage** |
+
+Titel ohne Cover kommen bewusst nicht vor — eine Folie ohne Bild ist auf einem Flurbildschirm
+wertlos. Die Seite braucht keine Bedienung und keine Anmeldung; sie hat nur einen einzigen
+Lese-Endpunkt (`GET /api/monitor/slides`, öffentlich, siehe SECURITY.md).
+
+### 16.3 Bestellbestätigung durch den Händler — `/bestellung/<token>`
+
+Der Link aus der Bestellmail (§7). Der Händler sieht die Positionen, druckt bei Bedarf die
+Etiketten und bestätigt; der Token steht im Pfad und wird deshalb nie protokolliert (Fund
+„Geheimnis im Pfad landet im Log"). Sicherheitszuschnitt in SECURITY.md.
+
+---
+
+## 17. Einstellungen — die 13 Kategorien
+
+Erreichbar unter *System → Einstellungen* (`/einstellungen`, `components/settings/kategorien.js`).
+Jede Kategorie wird **einzeln** gespeichert (PATCH nur der Felder dieser Kategorie; ein nicht
+gesendetes Feld bleibt unangetastet — Prinzip „nil = unverändert"). `/lmf-aktionen` leitet auf
+die Kategorie *LMF-Aktionen* um.
+
+| # | Kategorie | Inhalt | Recht |
+|---|---|---|---|
+| 1 | **Schule** | Name, Anschrift, Eigentumsvermerk für Etiketten | `manage_settings` |
+| 2 | **Ausleihe & Fristen** | Tage je Buch / je Medium, Ausleihlimit je Schüler, LMF-Stichtag (`MM-TT`, Vorgabe 07-31), Ferien-Leseclub | `manage_settings` |
+| 3 | **Mahnwesen** | automatische Ausleihsperre: ab wie vielen überfälligen Medien und nach wie vielen Toleranztagen (`max_overdue_items`, `max_overdue_days`) | `manage_settings` |
+| 4 | **Mahnwesen-Routing** | Klasse → E-Mail der Klassenleitung (`klassen_lehrer_mapping`); Empfänger für Sammel-Mahnlauf und Abgänger-Kontoauszüge; wird beim Schuljahreswechsel mit versetzt | `manage_settings` |
+| 5 | **Bestellwesen** | Bedarfswarnung an/aus, Bedarfsschwelle (Titel mit weniger nicht ausgesonderten Exemplaren gelten als Bedarf), Preise erfassen | `manage_settings` |
+| 6 | **Lieferanten** | Händler mit E-Mail und Kundennummer; genau **einer** ist Hauptlieferant (Migration 066) und wird im Bestellformular vorausgewählt | `create_orders` |
+| 7 | **Datenschutz & Sitzung** | Löschfristen (Lesehistorie 90 Tage, Lernmittel-Historie 730 Tage, Anliegen 365 Tage, Audit 24 Monate), Theke leeren nach *n* Minuten (Vorgabe 5), Sperrbildschirm nach *n* Minuten (Vorgabe 15) | `manage_settings` |
+| 8 | **Erreichbarkeit & Alarme** | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog- und Monitor-Adresse; leer = keine Links), Alarm-Empfänger (leer = alle aktiven Admins) | `manage_settings` |
+| 9 | **Mail** | SMTP-Postausgang mit Verbindungstest, Test-Mail; **Mail-Vorlagen** `MAHNUNG_ELTERN`, `BESTELLUNG_EINGETROFFEN`, `BESTELLUNG_HAENDLER` mit Platzhaltern `{{.Vorname}} {{.Nachname}} {{.Frist}} {{.Datum}} {{.BuchListe}} {{.AnzahlTitel}} {{.AnzahlExemplare}} {{.Kundennummer}}` (Migrationen 023, 052). Die SMTP-Daten aus der `.env` werden nur beim ersten Start übernommen; danach gilt die Datenbank | `manage_settings` |
+| 10 | **LMF-Aktionen** | Massenverlängerung: alle offenen Lernmittel-Ausleihen **einer Klasse** auf ein neues Rückgabedatum (`POST /api/ausleihen/global-extend-lmf`), mit Rückfrage vor dem Ausführen | `edit_books` |
+| 11 | **Datenverwaltung** | Katalog-Import (Littera, CSV/XLSX), Finaler Bestands-Import (Kombi-CSV), Cover-Synchronisation für fehlende Cover, Daten exportieren (Katalog als CSV), **Offline-Sicherungen einspielen** (siehe §18.4) | `manage_inventory` / `edit_books` |
+| 12 | **Schuljahreswechsel** | LUSD-Abgleich (§8) und Versetzung: Klassen um einen Jahrgang hochsetzen, Abschlussklassen als Abgänger markieren, Klassenlehrer-Zuordnung mit versetzen; Vorschau per Dry-Run (identisches SQL, Transaktion wird zurückgerollt), Läufe sind per Advisory-Lock serialisiert | `import_students` / `manage_students_admin` |
+| 13 | **Betriebsbereitschaft** | Selbstprüfung (§15) | `manage_settings` |
+
+**Ferien-Leseclub (Kategorie 2):** Ist er aktiv und ein Zieldatum gesetzt, bekommen alle
+Ausleihen bis dahin dieses feste Rückgabedatum (`FerienLeseclubZieldatum`, `loan_rules.go`)
+statt der rollierenden Frist — der Schalter für „Bücher über die Sommerferien mitnehmen".
+
+---
+
+## 18. Theke: Ergänzungen zur Omnibox (§1)
+
+### 18.1 Kamera als Barcode-Scanner
+Der Handscanner ist der Normalfall. Zusätzlich kann die Kamera des Geräts scannen
+(`CameraScanner.svelte`, Bibliothek `html5-qrcode`, wird erst beim Einschalten geladen) —
+gedacht für Laptops oder Tablets ohne Scanner. Ein-/Ausschalter neben dem Omnibox-Feld.
+
+### 18.2 Passbild per Webcam
+In der Theke lässt sich ein Passbild aufnehmen (`WebcamCapture.svelte`,
+`POST /api/schueler/{id}/photo`). Das Bild wird **verschlüsselt** gespeichert
+(`schueler_fotos.foto_encrypted`, AES) und nur angemeldeten Benutzern ausgeliefert.
+
+### 18.3 Theke leeren und Sperrbildschirm
+Nach `theke_leeren_minuten` ohne Eingabe (Vorgabe 5) schließt sich die offene Schülerakte,
+nach `sperre_minuten` (Vorgabe 15) erscheint der Sperrbildschirm — die Anwendung ist dann nicht
+mehr im DOM; entsperrt wird mit dem Passwort, nicht mit Maus oder Tastatur. Beides ist
+Datenschutz an einem Tresen, an dem Schüler mitlesen können (Kategorie 7).
+
+### 18.4 Offline-Warteschlange
+Fällt das Netz aus, sammelt die Theke Scans in einer lokalen IndexedDB-Warteschlange
+(`offlineQueue.js`, Store `offline_actions`) und spielt sie ein, sobald der Server wieder
+erreichbar ist (`offlineSync`). Ein Offline-Hinweis zeigt den Zustand. Bleibt ein Arbeitsplatz
+dauerhaft offline, lässt sich seine Warteschlange als Datei sichern und unter *Datenverwaltung →
+Offline-Sicherungen einspielen* nachbuchen.
+
+### 18.5 Selbstanmeldung fürs Kollegium
+Wer sich mit einem Postfach der Schuldomäne (`SELBSTANMELDUNG_DOMAIN`) anmeldet und noch kein
+Konto hat, bekommt einen **inaktiven** Eintrag; anmelden kann er sich damit nicht. Die
+Anfrage erscheint unter *Benutzer & Rechte → Zugangsanfragen* und wird dort freigeschaltet
+(`auth/selbstanmeldung.go`). Ohne diesen Weg müssten ~160 Lehrkräfte vorab von Hand angelegt
+werden — was niemand tut.
