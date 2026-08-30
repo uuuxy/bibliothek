@@ -410,9 +410,12 @@ siehe SECURITY.md). Katalog und Monitor urteilen über denselben Titel gleich �
 Folienwechsel alle 15 s, Cover-Lauf alle 2,5 s auf „Neu eingetroffen". Die Daten werden **alle
 5 Minuten nachgeladen**; solange noch nichts da ist (Server nach einem Stromausfall noch nicht
 oben), wird alle 30 s neu versucht. Ein neuer Stand erscheint erst mit dem nächsten Folienwechsel,
-nicht unter den Augen des Betrachters; scheitert ein Abruf, bleibt der alte Stand stehen. Bis zum
-30.08.2026 lud die Seite genau einmal beim Start — ein Monitor, der vor dem Server bootete, zeigte
-„Lade Daten …" bis zum nächsten Neustart.
+nicht unter den Augen des Betrachters; scheitert ein Abruf, bleibt der alte Stand stehen. **Leere
+Folien werden übersprungen** — in sechs Wochen Sommerferien hat „Beliebt diese Woche" keine
+Ausleihe, und ein Bildschirm, der ein Drittel der Zeit „Keine Daten verfügbar" zeigt, wird
+abgeschaltet; sind alle drei leer, bleibt die aktuelle stehen. Bis zum 30.08.2026 lud die Seite
+genau einmal beim Start — ein Monitor, der vor dem Server bootete, zeigte „Lade Daten …" bis zum
+nächsten Neustart.
 
 ### 16.3 Bestellbestätigung durch den Händler — `/bestellung/<token>`
 

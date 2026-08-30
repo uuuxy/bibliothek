@@ -13,6 +13,8 @@
 //   * Ein neuer Stand wird erst am nächsten Folienwechsel eingeblendet — nicht unter den
 //     Augen des Betrachters. Nur der allererste Stand erscheint sofort.
 //   * Scheitert ein Abruf, bleibt der alte Stand stehen.
+//   * Leere Folien werden übersprungen (Ferien: „Beliebt diese Woche" ohne eine einzige
+//     Ausleihe). Sind alle leer, bleibt die aktuelle stehen.
 
 export const FOLIE_MS = 15_000;
 export const COVER_MS = 2_500;
@@ -83,6 +85,7 @@ export class MonitorTakt {
 		}
 		if (!this.slides) {
 			this.slides = neu;
+			if (this.istLeer(this.folie)) this.weiter(); // erste Folie mit Inhalt
 			return;
 		}
 		this.#wartend = neu;
@@ -96,20 +99,54 @@ export class MonitorTakt {
 		}, NEUVERSUCH_MS);
 	}
 
-	/** Nächste Folie im Kreis. */
+	/**
+	 * Hat die Folie i im aktuellen Stand nichts zu zeigen? In sechs Wochen Sommerferien
+	 * hat „Beliebt diese Woche" keine einzige Ausleihe — ein Bildschirm, der ein Drittel
+	 * der Zeit „Keine Daten verfügbar" zeigt, wird abgeschaltet.
+	 * @param {number} i
+	 */
+	istLeer(i) {
+		const s = this.slides;
+		if (!s) return false;
+		if (i === 0) return !s.buch_des_monats;
+		if (i === 1) return !s.neu_eingetroffen?.length;
+		return !s.beliebt?.length;
+	}
+
+	/** Nächste Folie mit Inhalt im Kreis; sind alle leer, bleibt die aktuelle stehen. */
 	weiter() {
-		this.springeZu((this.folie + 1) % FOLIEN.length);
+		this.#uebernimmWartend();
+		for (let schritt = 1; schritt <= FOLIEN.length; schritt++) {
+			const i = (this.folie + schritt) % FOLIEN.length;
+			if (!this.istLeer(i)) {
+				this.#zeige(i);
+				return;
+			}
+		}
+		this.#zeige(this.folie);
+	}
+
+	/**
+	 * Von Hand gewählte Folie — auch eine leere: Wer klickt, will sie sehen.
+	 * @param {number} i
+	 */
+	springeZu(i) {
+		this.#uebernimmWartend();
+		this.#zeige(i);
 	}
 
 	/** @param {number} i */
-	springeZu(i) {
+	#zeige(i) {
+		this.folie = i;
+		this.coverIndex = 0;
+		this.lauf++;
+	}
+
+	#uebernimmWartend() {
 		if (this.#wartend) {
 			this.slides = this.#wartend;
 			this.#wartend = null;
 		}
-		this.folie = i;
-		this.coverIndex = 0;
-		this.lauf++;
 	}
 
 	/** Hervorhebung auf „Neu eingetroffen" eins weiter. */

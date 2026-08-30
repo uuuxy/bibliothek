@@ -19,7 +19,7 @@ Video (8 min) zeigt jeden Bereich in Aktion.
 | Adresse | Für wen | Zeigt |
 |---|---|---|
 | `https://<schule>/katalog` | Schüler, Eltern, Kollegium — vom Handy, aus dem Klassenraum | Suche nach Titel, Autor, ISBN; Cover; „N von M verfügbar". Keine Ausleihdaten, keine Namen. |
-| `https://<schule>/monitor` | der Bildschirm vor der Bibliothek | Endlos-Slideshow: Buch des Monats (die meisten Schüler-Leser in 30 Tagen), Neu eingetroffen, Beliebt diese Woche (7 Tage). Gezählt werden Leser, nicht Exemplare — Klassensätze an Lehrkräfte zählen nicht. Keine Schulbücher (Lernmittel), nur Titel mit einem Exemplar im Haus — dieselbe Regel wie im Katalog. Buch des Monats und Neu eingetroffen nur mit Cover. Aktualisiert sich alle 5 Minuten von selbst; ist der Server beim Einschalten noch nicht da, versucht die Seite es alle 30 s erneut. |
+| `https://<schule>/monitor` | der Bildschirm vor der Bibliothek | Endlos-Slideshow: Buch des Monats (die meisten Schüler-Leser in 30 Tagen), Neu eingetroffen, Beliebt diese Woche (7 Tage). Gezählt werden Leser, nicht Exemplare — Klassensätze an Lehrkräfte zählen nicht. Keine Schulbücher (Lernmittel), nur Titel mit einem Exemplar im Haus — dieselbe Regel wie im Katalog. Buch des Monats und Neu eingetroffen nur mit Cover. Aktualisiert sich alle 5 Minuten von selbst; ist der Server beim Einschalten noch nicht da, versucht die Seite es alle 30 s erneut. Folien ohne Inhalt (Ferien) werden übersprungen. |
 
 Beide Seiten haben keinen Menüpunkt. Die fertigen Adressen stehen unter
 *Einstellungen → Erreichbarkeit & Alarme* zum Kopieren. (§16)

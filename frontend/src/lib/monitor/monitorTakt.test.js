@@ -118,6 +118,58 @@ describe('MonitorTakt', () => {
 		expect(takt.folie).toBe(0);
 	});
 
+	// In sechs Wochen Sommerferien hat „Beliebt diese Woche" keine einzige Ausleihe. Ein
+	// Flurbildschirm, der ein Drittel der Zeit „Keine Daten verfügbar" zeigt, wird
+	// abgeschaltet — und dann fehlt er auch im September.
+	it('überspringt leere Folien im Kreis', async () => {
+		const ohneRenner = { ...stand('A'), beliebt: [] };
+		takt = new MonitorTakt(vi.fn().mockResolvedValue(ohneRenner));
+		await takt.start();
+		expect(takt.folie).toBe(0);
+
+		await vi.advanceTimersByTimeAsync(FOLIE_MS);
+		expect(takt.folie).toBe(1);
+		await vi.advanceTimersByTimeAsync(FOLIE_MS);
+		expect(takt.folie, 'Folie 2 ist leer und wird übersprungen').toBe(0);
+	});
+
+	it('startet auf der ersten Folie mit Inhalt, wenn „Buch des Monats" leer ist', async () => {
+		const nurRenner = { ...stand('A'), buch_des_monats: null, neu_eingetroffen: [] };
+		takt = new MonitorTakt(vi.fn().mockResolvedValue(nurRenner));
+		await takt.start();
+		expect(takt.folie).toBe(2);
+
+		await vi.advanceTimersByTimeAsync(FOLIE_MS);
+		expect(takt.folie, 'die einzige gefüllte Folie bleibt stehen').toBe(2);
+	});
+
+	it('springt beim Übernehmen eines neuen Stands nicht auf eine Folie, die darin leer ist', async () => {
+		const lader = vi
+			.fn()
+			.mockResolvedValueOnce(stand('A'))
+			.mockResolvedValue({ ...stand('B'), buch_des_monats: null });
+		takt = new MonitorTakt(lader);
+		await takt.start();
+
+		// Nachladen bei 5:00 — nach 20 Wechseln steht der Takt auf Folie 2 (20 mod 3). Der
+		// Wechsel bei 5:15 übernimmt B, und darin ist die nächste Folie (0) leer.
+		await vi.advanceTimersByTimeAsync(NACHLADEN_MS);
+		expect(takt.folie).toBe(2);
+		await vi.advanceTimersByTimeAsync(FOLIE_MS);
+		expect(takt.slides?.beliebt?.[0]?.titel).toBe('B Renner');
+		expect(takt.folie, 'Folie 0 ist im neuen Stand leer').toBe(1);
+	});
+
+	it('bleibt stehen, wenn alle Folien leer sind — der Balken läuft trotzdem weiter', async () => {
+		const leer = { buch_des_monats: null, neu_eingetroffen: [], beliebt: [] };
+		takt = new MonitorTakt(vi.fn().mockResolvedValue(leer));
+		await takt.start();
+		const lauf = takt.lauf;
+		await vi.advanceTimersByTimeAsync(FOLIE_MS);
+		expect(takt.folie).toBe(0);
+		expect(takt.lauf).toBe(lauf + 1);
+	});
+
 	it('springeZu() wechselt die Folie von Hand und startet den Fortschrittsbalken neu', async () => {
 		takt = new MonitorTakt(vi.fn().mockResolvedValue(stand('A')));
 		await takt.start();
