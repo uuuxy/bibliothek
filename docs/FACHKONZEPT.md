@@ -373,24 +373,34 @@ Adressen stehen seit 30.08.2026 unter *Einstellungen → Erreichbarkeit & Alarme
 Für Schülerinnen, Schüler, Eltern und Kollegium: Suche nach Titel, Autor oder ISBN
 (Volltext über `search_vector` **oder** Teilstring, `api/opac.go`), Trefferkarte mit Cover und
 „N von M verfügbar". Gezählt werden nur ausleihbare, nicht ausgesonderte Exemplare ohne offene
-Ausleihe; Titel ohne einziges Exemplar erscheinen nicht (`HAVING … > 0`). Maximal 50 Treffer.
+Ausleihe. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarkeitsregel der
+öffentlichen Seiten** (`repository.OeffentlichSichtbar`, seit 30.08.2026 für Katalog und Monitor
+dieselbe): kein Lernmittel (LMF-Kennzeichen in Titel oder Signatur, `pkg/lmf`) und mindestens ein
+Exemplar im Haus (nicht ausgesondert, nicht nur bestellt). Maximal 50 Treffer.
 Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Das Kollegiums-Portal benutzt für
 seine Suche denselben Endpunkt (§12, Rolle Kollegium).
 
 ### 16.2 Bibliotheks-Monitor — `/monitor`
 
 Für einen Bildschirm im Flur oder in der Bibliothek: eine Endlos-Slideshow aus drei Folien
-(`api/monitor.go`, `Monitor.svelte`):
+(`repository/oeffentlich.go` baut die Folien, `api/monitor.go` liefert sie aus, `Monitor.svelte`
+zeigt sie). Auf jede Folie kommt nur, was die gemeinsame Sichtbarkeitsregel der öffentlichen
+Seiten (§16.1) zulässt — **kein Lernmittel, mindestens ein Exemplar im Haus**. Bis zum
+30.08.2026 fehlte diese Regel auf dem Monitor: Auf einem Bestand, der zum größten Teil aus
+Schulbüchern besteht, wäre das Mathebuch der 7 „Buch des Monats" gewesen.
 
 | Folie | Regel |
 |---|---|
 | **Buch des Monats** | der in den letzten **30 Tagen** meistausgeliehene Titel **mit Cover**; gibt es keinen, der zuletzt angelegte Titel mit Cover |
 | **Neu eingetroffen** | die zehn zuletzt angelegten Titel mit Cover |
-| **Beliebt diese Woche** | die fünf meistausgeliehenen Titel der letzten **7 Tage** |
+| **Beliebt diese Woche** | die fünf meistausgeliehenen Titel der letzten **7 Tage** — auch ohne Cover (Platzhalter-Kachel) |
 
-Titel ohne Cover kommen bewusst nicht vor — eine Folie ohne Bild ist auf einem Flurbildschirm
-wertlos. Die Seite braucht keine Bedienung und keine Anmeldung; sie hat nur einen einzigen
-Lese-Endpunkt (`GET /api/monitor/slides`, öffentlich, siehe SECURITY.md).
+Auf „Buch des Monats" und „Neu eingetroffen" kommen Titel ohne Cover bewusst nicht vor — eine
+Folie ohne Bild ist auf einem Flurbildschirm wertlos. „Beliebt" zeigt sie mit Platzhalter, sonst
+wäre die Liste kürzer, ohne dass jemand etwas gewinnt. Die Seite braucht keine Bedienung und
+keine Anmeldung; sie hat nur einen einzigen Lese-Endpunkt (`GET /api/monitor/slides`, öffentlich,
+siehe SECURITY.md). Katalog und Monitor urteilen über denselben Titel gleich — das hält
+`api/monitor_pg_test.go` fest.
 
 ### 16.3 Bestellbestätigung durch den Händler — `/bestellung/<token>`
 

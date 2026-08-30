@@ -81,7 +81,6 @@ var handlerMitSQL = []string{
 	"mahnwesen_bulk_mail.go",
 	"mail_routes.go",
 	"mail_settings.go",
-	"monitor.go",
 	"opac.go",
 	"order_service.go",
 	"pdf.go",

@@ -8,7 +8,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
-	"bibliothek/pkg/lmf"
+	"bibliothek/repository"
 )
 
 // queryOpacTitel führt die (parametrisierte) OPAC-Suche aus und mappt die Zeilen.
@@ -66,15 +66,12 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		// only to determine availability — no ausleihe column values are returned.
 		args := []any{}
 
-		// Schulbücher der Lernmittelfreiheit gehören nicht in den öffentlichen Katalog:
-		// Sie werden klassensatzweise zugeteilt, niemand recherchiert freiwillig nach
-		// dem Biologiebuch der 8. Klasse. Im Katalog stehend würden sie die Treffer der
-		// eigentlichen Freihand-Bibliothek (Romane, Sachbücher) zuschütten — bei einem
-		// LMF-Bestand in Klassensatzstärke sind das hunderte Titel.
-		//
-		// Nur diese eine öffentliche Suche filtert. Verwaltung, Inventur, Bestellwesen
-		// und die Klassensatz-Reservierung müssen die Bücher weiter finden.
-		var searchConditions = []string{"NOT (" + lmf.SQLBedingung("bt.titel", "bt.signatur") + ")"}
+		// Was ohne Anmeldung sichtbar ist (kein Lernmittel, mindestens ein Exemplar im
+		// Haus), steht genau einmal in repository.OeffentlichSichtbar — dieselbe Regel
+		// wie im Flur-Monitor. Nur die öffentlichen Seiten filtern so: Verwaltung,
+		// Inventur, Bestellwesen und die Klassensatz-Reservierung müssen die Bücher
+		// weiter finden.
+		var searchConditions = []string{repository.OeffentlichSichtbar("bt")}
 
 		if q != "" {
 			args = append(args, q)
@@ -99,7 +96,6 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 			%s
 			GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url
-			HAVING COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) > 0
 			ORDER BY bt.titel
 			LIMIT 50
 		`, whereClause)

@@ -1,158 +1,31 @@
 package api
 
 import (
-	"context"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 
 	"bibliothek/apierrors"
-
-	"github.com/jackc/pgx/v5"
+	"bibliothek/repository"
 )
 
-// MonitorTitel is a slim book model for the public info monitor.
-type MonitorTitel struct {
-	ID       string `json:"id"`
-	Titel    string `json:"titel"`
-	Autor    string `json:"autor"`
-	CoverURL string `json:"cover_url"`
-	// ISBN dient allein als Cache-Schlüssel des Cover-Proxys (/api/images/cover).
-	// Ohne sie müsste der Monitor eine externe Cover-URL direkt einbinden — genau
-	// das Hotlinking, das die Content-Security-Policy seit dem 06.08.2026 nicht
-	// mehr zulässt (img-src ohne https:).
-	ISBN string `json:"isbn"`
-}
-
-// MonitorSlides is the full response for the public info monitor.
-type MonitorSlides struct {
-	BuchDesMonats   *MonitorTitel  `json:"buch_des_monats"`
-	NeuEingetroffen []MonitorTitel `json:"neu_eingetroffen"`
-	Beliebt         []MonitorTitel `json:"beliebt"`
-}
-
-// queryBuchDesMonats liefert das „Buch des Monats" (meistausgeliehener Titel mit Cover
-// der letzten 30 Tage); fehlt eines, wird der zuletzt hinzugefügte Titel mit Cover als
-// Fallback genutzt. ok=false: die Fehlerantwort wurde bereits geschrieben.
-func (s *Server) queryBuchDesMonats(ctx context.Context, w http.ResponseWriter) (*MonitorTitel, bool) {
-	// Buch des Monats: most borrowed title in the last 30 days that has a cover.
-	var bm MonitorTitel
-	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,''), COALESCE(bt.isbn,'')
-		FROM ausleihen a
-		JOIN buecher_exemplare e ON e.id = a.exemplar_id
-		JOIN buecher_titel bt ON bt.id = e.titel_id
-		WHERE a.ausgeliehen_am >= NOW() - INTERVAL '30 days'
-		  AND bt.cover_url IS NOT NULL AND bt.cover_url <> ''
-		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn
-		ORDER BY COUNT(*) DESC
-		LIMIT 1
-	`).Scan(&bm.ID, &bm.Titel, &bm.Autor, &bm.CoverURL, &bm.ISBN)
-
-	if err == nil {
-		return &bm, true
-	}
-	if err != pgx.ErrNoRows {
-		log.Printf("DB Error in Monitor (Buch des Monats): %v", err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-		return nil, false
-	}
-
-	// Fallback: the most recently added title with a cover.
-	var fb MonitorTitel
-	err = s.DB.Pool.QueryRow(ctx, `
-		SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,''), COALESCE(isbn,'')
-		FROM buecher_titel
-		WHERE cover_url IS NOT NULL AND cover_url <> ''
-		ORDER BY erstellt_am DESC LIMIT 1
-	`).Scan(&fb.ID, &fb.Titel, &fb.Autor, &fb.CoverURL, &fb.ISBN)
-
-	if err == nil {
-		return &fb, true
-	}
-	if err != pgx.ErrNoRows {
-		log.Printf("DB Error in Monitor (Fallback Buch des Monats): %v", err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-		return nil, false
-	}
-	return nil, true // kein Buch des Monats vorhanden, aber kein Fehler
-}
-
-// queryMonitorListe führt eine Titel-Listen-Query aus und mappt sie auf MonitorTitel.
-// sektion dient als Label für die (unveränderten) Fehlermeldungen. ok=false: die
-// Fehlerantwort wurde bereits geschrieben.
-func (s *Server) queryMonitorListe(ctx context.Context, w http.ResponseWriter, query, sektion string) ([]MonitorTitel, bool) {
-	rows, err := s.DB.Pool.Query(ctx, query)
-	if err != nil {
-		log.Printf("DB Error in Monitor (%s): %v", sektion, err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-		return nil, false
-	}
-	defer rows.Close()
-
-	liste := []MonitorTitel{}
-	for rows.Next() {
-		var t MonitorTitel
-		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.CoverURL, &t.ISBN); err != nil {
-			log.Printf("DB Error in Monitor (Scan %s): %v", sektion, err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-			return nil, false
-		}
-		liste = append(liste, t)
-	}
-	if err := rows.Err(); err != nil {
-		log.Printf("DB Error in Monitor (Iteration %s): %v", sektion, err)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
-		return nil, false
-	}
-	return liste, true
-}
-
-// GetMonitorSlidesHandler handles GET /api/monitor/slides (public, no auth).
+// GetMonitorSlidesHandler bedient GET /api/monitor/slides — den einzigen Endpunkt des
+// Flur-Monitors: öffentlich, nur Titeldaten (docs/PII_MATRIX.de.md, Stufe 0).
+//
+// Was der Monitor zeigen darf, entscheidet repository.OeffentlichSichtbar — dieselbe
+// Regel wie im Katalog (api/opac.go). Die Folien selbst baut repository.MonitorRepository;
+// die Abfragen standen bis zum 30.08.2026 hier im Handler, ohne diese Regel.
 func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
+	repo := repository.NewMonitorRepository(s.DB.Pool)
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		slides := MonitorSlides{
-			NeuEingetroffen: []MonitorTitel{},
-			Beliebt:         []MonitorTitel{},
-		}
-
-		bdm, ok := s.queryBuchDesMonats(ctx, w)
-		if !ok {
+		slides, err := repo.LadeSlides(r.Context())
+		if err != nil {
+			// Echter Grund ins Log, nach außen nur die Gattung: Der Endpunkt ist ohne
+			// Anmeldung erreichbar, ein Postgres-Fehlertext gehört nicht auf den Flur.
+			log.Printf("DB Error in Monitor: %v", err)
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("internal server error"))
 			return
 		}
-		slides.BuchDesMonats = bdm
-
-		// Neu eingetroffen: last 10 titles added with a cover.
-		neu, ok := s.queryMonitorListe(ctx, w, `
-			SELECT id, titel, COALESCE(autor,''), COALESCE(cover_url,''), COALESCE(isbn,'')
-			FROM buecher_titel
-			WHERE cover_url IS NOT NULL AND cover_url <> ''
-			ORDER BY erstellt_am DESC
-			LIMIT 10
-		`, "Neu eingetroffen")
-		if !ok {
-			return
-		}
-		slides.NeuEingetroffen = neu
-
-		// Beliebt: top 5 titles by loan count in the last 7 days.
-		beliebt, ok := s.queryMonitorListe(ctx, w, `
-			SELECT bt.id, bt.titel, COALESCE(bt.autor,''), COALESCE(bt.cover_url,''), COALESCE(bt.isbn,'')
-			FROM ausleihen a
-			JOIN buecher_exemplare e ON e.id = a.exemplar_id
-			JOIN buecher_titel bt ON bt.id = e.titel_id
-			WHERE a.ausgeliehen_am >= NOW() - INTERVAL '7 days'
-			GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn
-			ORDER BY COUNT(*) DESC
-			LIMIT 5
-		`, "Beliebt")
-		if !ok {
-			return
-		}
-		slides.Beliebt = beliebt
-
 		RespondJSON(w, http.StatusOK, slides)
 	}
 }
