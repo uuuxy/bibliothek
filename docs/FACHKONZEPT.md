@@ -406,6 +406,14 @@ keine Anmeldung; sie hat nur einen einzigen Lese-Endpunkt (`GET /api/monitor/sli
 siehe SECURITY.md). Katalog und Monitor urteilen über denselben Titel gleich — das hält
 `api/monitor_pg_test.go` fest.
 
+**Kiosk-Verhalten** (`frontend/src/lib/monitor/monitorTakt.svelte.js`, mit gestellter Uhr geprüft):
+Folienwechsel alle 15 s, Cover-Lauf alle 2,5 s auf „Neu eingetroffen". Die Daten werden **alle
+5 Minuten nachgeladen**; solange noch nichts da ist (Server nach einem Stromausfall noch nicht
+oben), wird alle 30 s neu versucht. Ein neuer Stand erscheint erst mit dem nächsten Folienwechsel,
+nicht unter den Augen des Betrachters; scheitert ein Abruf, bleibt der alte Stand stehen. Bis zum
+30.08.2026 lud die Seite genau einmal beim Start — ein Monitor, der vor dem Server bootete, zeigte
+„Lade Daten …" bis zum nächsten Neustart.
+
 ### 16.3 Bestellbestätigung durch den Händler — `/bestellung/<token>`
 
 Der Link aus der Bestellmail (§7). Der Händler sieht die Positionen, druckt bei Bedarf die

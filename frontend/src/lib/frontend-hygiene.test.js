@@ -60,7 +60,6 @@ const ZEICHNUNGEN = [
 // neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 const EMOJI_BESTAND = [
 	'src/lib/BookAkteMeta.svelte',
-	'src/lib/Monitor.svelte',
 	'src/lib/OpacSearch.svelte',
 	'src/lib/StatsDashboard.svelte',
 	'src/lib/StudentPrintReceipt.svelte',
