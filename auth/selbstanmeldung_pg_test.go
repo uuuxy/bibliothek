@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -74,27 +75,25 @@ func pgPoolFuerSelbstanmeldung(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("Sicherheitsabbruch: Datenbank %q enthält nicht \"test\"", name)
 	}
 
-	// Die eigenen Tabellen anlegen, falls sie fehlen — auth/ spielt kein schema.sql ein,
-	// und sich darauf zu verlassen, dass ein anderes Paket das vorher getan hat, wäre
-	// genau die Reihenfolgen-Abhängigkeit, die der Lock oben verhindern soll.
-	if _, err := pool.Exec(ctx, `
-		DO $$ BEGIN
-			IF to_regtype('benutzer_rolle') IS NULL THEN
-				CREATE TYPE benutzer_rolle AS ENUM ('admin','kollegium','mitarbeiter','helfer');
-			END IF;
-		END $$;
-		CREATE TABLE IF NOT EXISTS benutzer (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			barcode_id VARCHAR(100) UNIQUE,
-			vorname VARCHAR(100) NOT NULL,
-			nachname VARCHAR(100) NOT NULL,
-			email VARCHAR(255) UNIQUE NOT NULL,
-			rolle benutzer_rolle NOT NULL,
-			aktiv BOOLEAN NOT NULL DEFAULT true,
-			erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)`); err != nil {
-		t.Fatalf("benutzer anlegen: %v", err)
+	// Frisches Schema aus schema.sql — der EINEN Quelle, wie in db/, repository/ und api/.
+	//
+	// Bis zum 30.08.2026 legte dieser Harness `benutzer` mit einer abgeschriebenen
+	// Minimal-DDL an (CREATE TABLE IF NOT EXISTS). Lief auth als erstes Paket auf der
+	// leeren CI-Datenbank, fehlte die Spalte zugang_beantragt_am aus Migration 086: Die
+	// Zugangsanfrage scheiterte mit 42703, der Handler antwortete 401, der Test war rot.
+	// Lief vorher ein Paket, das schema.sql eingespielt hatte, blieb die vollständige
+	// Tabelle stehen — und der Test grün. Eine Woche Münzwurf in der CI (29./30.08.),
+	// benannt erst durch die Logzeile aus b8daed0a. Eine zweite Wahrheitsquelle für eine
+	// Tabelle driftet mit der nächsten Migration wieder; deshalb hier keine mehr.
+	if _, err := pool.Exec(ctx, `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`); err != nil {
+		t.Fatalf("Schema leeren: %v", err)
+	}
+	schema, err := os.ReadFile(filepath.Join("..", "schema.sql"))
+	if err != nil {
+		t.Fatalf("schema.sql lesen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, string(schema)); err != nil {
+		t.Fatalf("schema.sql einspielen: %v", err)
 	}
 
 	// role_permissions steht NICHT in schema.sql — die Tabelle legt db.InitPermissions
@@ -115,10 +114,6 @@ func pgPoolFuerSelbstanmeldung(t *testing.T) *pgxpool.Pool {
 		INSERT INTO role_permissions (role, permission, allowed) VALUES ('KOLLEGIUM', 'view_books', true)
 		ON CONFLICT DO NOTHING`); err != nil {
 		t.Fatalf("Rechte seeden: %v", err)
-	}
-
-	if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE email LIKE '%@selbsttest.invalid'`); err != nil {
-		t.Fatalf("aufräumen: %v", err)
 	}
 	return pool
 }

@@ -102,6 +102,24 @@ beide Geschwister fragt, statt einen nachzubauen. Und ein Unit-Test mit gestellt
 hatte zweimal recht gegen mich: 15 000 ist ein Vielfaches von 2 500, 20 Wechsel enden auf
 Folie 2 — beide Male war die Arithmetik des Tests falsch, nicht der Takt.
 
+### Nachtrag: der CI-Münzwurf seit dem 29.08. (B, erledigt)
+
+Auf Peters „sicher?" die CI angesehen: rot auf dem letzten Commit, grün auf dem davor —
+bei einem Diff aus einer Tailwind-Klasse. Seit dem 29.08. wechselten sich rot und grün ab
+(7:5). Die Logzeile aus `b8daed0a` nannte die verschluckte Ursache erstmals: `column
+"zugang_beantragt_am" of relation "benutzer" does not exist`. Der Auth-Test-Harness legte
+`benutzer` mit einer **abgeschriebenen** Minimal-DDL an (`CREATE TABLE IF NOT EXISTS`) —
+ohne die Spalte aus Migration 086 (26.08.). Lief `auth` als erstes Paket auf der frischen
+CI-Datenbank, fehlte die Spalte → 42703 → 401 → rot; lief vorher ein Paket, das schema.sql
+eingespielt hatte, blieb die vollständige Tabelle stehen → grün. Lokal nie aufgefallen,
+weil `bibliothek_test` das Schema von früheren Läufen trug (Grün aus Umgebungsgunst).
+Zwei Wahrheitsquellen für eine Tabelle (Frage 3) und ein Gate, dessen Farbe an der
+Paketreihenfolge hing (Frage 7). Reproduziert auf leerer Test-DB, rot gesehen; der Harness
+lädt jetzt `schema.sql` wie `db/`, `repository/`, `api/` — die Gegenprobe auf leerer DB
+grün, volle Suite 38 Pakete grün. Der Kommentar im alten Harness behauptete übrigens genau
+das Gegenteil („sich darauf zu verlassen, dass ein anderes Paket das vorher getan hat, wäre
+genau die Reihenfolgen-Abhängigkeit …") — Schutz, den nur ein Kommentar behauptet.
+
 Stand: 2026-08-30
 
 ## LUSD-Import an einer Klassenliste mit LUSD-Feldkürzeln: 23 von 91 Schülern (26.08.2026)
