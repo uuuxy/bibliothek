@@ -413,9 +413,12 @@ oben), wird alle 30 s neu versucht. Ein neuer Stand erscheint erst mit dem näch
 nicht unter den Augen des Betrachters; scheitert ein Abruf, bleibt der alte Stand stehen. **Leere
 Folien werden übersprungen** — in sechs Wochen Sommerferien hat „Beliebt diese Woche" keine
 Ausleihe, und ein Bildschirm, der ein Drittel der Zeit „Keine Daten verfügbar" zeigt, wird
-abgeschaltet; sind alle drei leer, bleibt die aktuelle stehen. Bis zum 30.08.2026 lud die Seite
-genau einmal beim Start — ein Monitor, der vor dem Server bootete, zeigte „Lade Daten …" bis zum
-nächsten Neustart.
+abgeschaltet; sind alle drei leer, bleibt die aktuelle stehen. **Einmal täglich um 03:00 Uhr lädt
+sich die Seite selbst neu** — ein Bildschirm ohne Tastatur navigiert nie, und der Service Worker
+prüft nur beim Laden auf eine neue Version; ohne den Neustart bekäme der Monitor ein Deploy erst
+mit, wenn jemand den Stecker zieht. Die Theke lädt sich NICHT von selbst neu (sie darf sich nie
+mitten in einer Ausleihe erneuern). Bis zum 30.08.2026 lud die Seite genau einmal beim Start — ein
+Monitor, der vor dem Server bootete, zeigte „Lade Daten …" bis zum nächsten Neustart.
 
 ### 16.3 Bestellbestätigung durch den Händler — `/bestellung/<token>`
 

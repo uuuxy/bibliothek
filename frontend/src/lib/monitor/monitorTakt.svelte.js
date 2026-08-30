@@ -15,11 +15,19 @@
 //   * Scheitert ein Abruf, bleibt der alte Stand stehen.
 //   * Leere Folien werden übersprungen (Ferien: „Beliebt diese Woche" ohne eine einzige
 //     Ausleihe). Sind alle leer, bleibt die aktuelle stehen.
+//   * Um NEUSTART_STUNDE Uhr lädt sich die Seite selbst neu. Der Bildschirm navigiert nie,
+//     und der Service Worker prüft nur beim Laden auf eine neue Version (main.js:
+//     registerSW) — ohne Neustart bekäme der Monitor ein Deploy erst mit, wenn jemand den
+//     Stecker zieht. Nur hier, nicht in der Theke: Die darf sich nie mitten in einer
+//     Ausleihe erneuern.
+
+import { NEUSTART_STUNDE, msBisNeustart } from './neustart.js';
 
 export const FOLIE_MS = 15_000;
 export const COVER_MS = 2_500;
 export const NACHLADEN_MS = 5 * 60_000;
 export const NEUVERSUCH_MS = 30_000;
+export { NEUSTART_STUNDE, msBisNeustart };
 
 /** Beschriftungen der drei Folien, in Laufreihenfolge. */
 export const FOLIEN = ['Buch des Monats', 'Neu eingetroffen', 'Beliebt diese Woche'];
@@ -46,28 +54,39 @@ export class MonitorTakt {
 	#laeuft = false;
 	/** @type {() => Promise<Folien | null>} */
 	#lader;
+	/** @type {ReturnType<typeof setTimeout> | null} Wecker für den nächtlichen Neustart. */
+	#wecker = null;
+	/** @type {() => void} */
+	#neustart;
 
-	/** @param {() => Promise<Folien | null>} lader liefert den Stand — oder null, wenn der Abruf scheitert */
-	constructor(lader) {
+	/**
+	 * @param {() => Promise<Folien | null>} lader liefert den Stand — oder null, wenn der Abruf scheitert
+	 * @param {{ neustart?: () => void }} [optionen] neustart: was um NEUSTART_STUNDE Uhr passiert (Vorgabe: Seite neu laden)
+	 */
+	constructor(lader, { neustart = () => globalThis.location?.reload() } = {}) {
 		this.#lader = lader;
+		this.#neustart = neustart;
 	}
 
-	/** Startet die Takte und holt den ersten Stand. */
+	/** Startet die Takte, stellt den Neustart-Wecker und holt den ersten Stand. */
 	start() {
 		this.#laeuft = true;
 		this.#takte.push(setInterval(() => this.weiter(), FOLIE_MS));
 		this.#takte.push(setInterval(() => this.coverWeiter(), COVER_MS));
 		this.#takte.push(setInterval(() => this.nachladen(), NACHLADEN_MS));
+		this.#wecker = setTimeout(() => this.#neustart(), msBisNeustart());
 		return this.nachladen();
 	}
 
-	/** Hält alle Uhren an — auch einen geplanten Neuversuch. */
+	/** Hält alle Uhren an — auch einen geplanten Neuversuch und den Neustart-Wecker. */
 	stop() {
 		this.#laeuft = false;
 		for (const t of this.#takte) clearInterval(t);
 		this.#takte = [];
 		if (this.#neuversuch) clearTimeout(this.#neuversuch);
 		this.#neuversuch = null;
+		if (this.#wecker) clearTimeout(this.#wecker);
+		this.#wecker = null;
 	}
 
 	/** Holt den Stand. Der erste Erfolg wird sofort gezeigt, jeder weitere am Folienwechsel. */

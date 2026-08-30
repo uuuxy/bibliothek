@@ -4,7 +4,9 @@ import {
 	FOLIE_MS,
 	COVER_MS,
 	NACHLADEN_MS,
-	NEUVERSUCH_MS
+	NEUVERSUCH_MS,
+	NEUSTART_STUNDE,
+	msBisNeustart
 } from './monitorTakt.svelte.js';
 
 // Der Takt des Flur-Monitors, mit gestellter Uhr. Der Bildschirm hat keine Tastatur und
@@ -168,6 +170,43 @@ describe('MonitorTakt', () => {
 		await vi.advanceTimersByTimeAsync(FOLIE_MS);
 		expect(takt.folie).toBe(0);
 		expect(takt.lauf).toBe(lauf + 1);
+	});
+
+	// Der Bildschirm hat keine Tastatur und navigiert nie. Der Service Worker prüft nur beim
+	// Laden auf eine neue Version (main.js: registerSW) — ohne eigenen Neustart bekäme der
+	// Monitor ein Deploy erst mit, wenn jemand den Stecker zieht. Nachts um drei stört es
+	// niemanden; und /events (SSE) steht dem Monitor ohne Anmeldung nicht zur Verfügung.
+	describe('nächtlicher Neustart', () => {
+		it('msBisNeustart() rechnet bis zur nächsten vollen NEUSTART_STUNDE in Ortszeit', () => {
+			expect(NEUSTART_STUNDE).toBe(3);
+			const stunde = 60 * 60 * 1000;
+			expect(msBisNeustart(new Date(2026, 8, 1, 10, 0, 0))).toBe(17 * stunde);
+			expect(msBisNeustart(new Date(2026, 8, 1, 2, 30, 0))).toBe(stunde / 2);
+			// Genau um drei ist der nächste Neustart morgen, nicht jetzt.
+			expect(msBisNeustart(new Date(2026, 8, 1, 3, 0, 0))).toBe(24 * stunde);
+		});
+
+		it('startet die Seite um drei Uhr nachts neu — und nicht vorher', async () => {
+			vi.setSystemTime(new Date(2026, 8, 1, 10, 0, 0));
+			const neustart = vi.fn();
+			takt = new MonitorTakt(vi.fn().mockResolvedValue(stand('A')), { neustart });
+			await takt.start();
+
+			await vi.advanceTimersByTimeAsync(17 * 60 * 60 * 1000 - 1000);
+			expect(neustart).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(neustart).toHaveBeenCalledTimes(1);
+		});
+
+		it('stop() nimmt auch den Neustart-Wecker mit', async () => {
+			vi.setSystemTime(new Date(2026, 8, 1, 2, 59, 0));
+			const neustart = vi.fn();
+			takt = new MonitorTakt(vi.fn().mockResolvedValue(stand('A')), { neustart });
+			await takt.start();
+			takt.stop();
+			await vi.advanceTimersByTimeAsync(2 * 60 * 1000);
+			expect(neustart).not.toHaveBeenCalled();
+		});
 	});
 
 	it('springeZu() wechselt die Folie von Hand und startet den Fortschrittsbalken neu', async () => {
