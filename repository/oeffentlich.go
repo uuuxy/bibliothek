@@ -94,13 +94,13 @@ func NewMonitorRepository(pool db.PgxPoolIface) *MonitorRepository {
 	return &MonitorRepository{pool: pool}
 }
 
-// LadeSlides liefert die drei Folien. Fehlt ein „Buch des Monats" (keine Ausleihe im
+// LadeSlides liefert die drei Folien. Fehlt ein „Buch des Monats" (kein Leser im
 // Fenster), springt der zuletzt angelegte Titel mit Cover ein — derselbe, der „Neu
 // eingetroffen" anführt.
 func (r *MonitorRepository) LadeSlides(ctx context.Context) (MonitorSlides, error) {
 	slides := MonitorSlides{NeuEingetroffen: []MonitorTitel{}, Beliebt: []MonitorTitel{}}
 
-	meist, err := r.meistAusgeliehen(ctx, monitorBuchDesMonatsTage, 1, true)
+	meist, err := r.meistgelesen(ctx, monitorBuchDesMonatsTage, 1, true)
 	if err != nil {
 		return slides, fmt.Errorf("folie buch_des_monats: %w", err)
 	}
@@ -108,7 +108,7 @@ func (r *MonitorRepository) LadeSlides(ctx context.Context) (MonitorSlides, erro
 	if err != nil {
 		return slides, fmt.Errorf("folie neu_eingetroffen: %w", err)
 	}
-	beliebt, err := r.meistAusgeliehen(ctx, monitorBeliebtTage, monitorBeliebtAnzahl, false)
+	beliebt, err := r.meistgelesen(ctx, monitorBeliebtTage, monitorBeliebtAnzahl, false)
 	if err != nil {
 		return slides, fmt.Errorf("folie beliebt: %w", err)
 	}
@@ -125,8 +125,16 @@ func (r *MonitorRepository) LadeSlides(ctx context.Context) (MonitorSlides, erro
 	return slides, nil
 }
 
-// meistAusgeliehen liefert die in den letzten tage Tagen meistausgeliehenen Titel.
-func (r *MonitorRepository) meistAusgeliehen(ctx context.Context, tage, anzahl int, nurMitCover bool) ([]MonitorTitel, error) {
+// meistgelesen liefert die Titel, die in den letzten tage Tagen die meisten LESER hatten.
+//
+// Gezählt werden Schüler-Ausleihen, je Schüler einmal — nicht Ausleihzeilen. Der
+// Unterschied ist kein Feinschliff: Lehrer-Ausleihen stehen je Exemplar als eigene Zeile
+// in ausleihen (repository/loan.go); ein Klassensatz „Die Welle" ×30 an eine Lehrkraft
+// hätte mit 30 „Ausleihen" jede Folie beherrscht, obwohl ihn kein Schüler freiwillig
+// gelesen hat. Und wer denselben Titel zweimal leiht, ist ein Leser, nicht zwei.
+// Anonymisierte Ausleihen (kein Ausleiher mehr) zählen nicht — sie liegen ohnehin weit
+// außerhalb der Fenster. Entscheidung 30.08.2026 (Frage-Runde 2c).
+func (r *MonitorRepository) meistgelesen(ctx context.Context, tage, anzahl int, nurMitCover bool) ([]MonitorTitel, error) {
 	cover := "TRUE"
 	if nurMitCover {
 		cover = monitorMitCover
@@ -137,10 +145,11 @@ func (r *MonitorRepository) meistAusgeliehen(ctx context.Context, tage, anzahl i
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
 		JOIN buecher_titel bt ON bt.id = e.titel_id
 		WHERE a.ausgeliehen_am >= NOW() - make_interval(days => $1::int)
+		  AND a.schueler_id IS NOT NULL
 		  AND `+cover+`
 		  AND `+OeffentlichSichtbar("bt")+`
 		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn
-		ORDER BY COUNT(*) DESC, bt.titel ASC
+		ORDER BY COUNT(DISTINCT a.schueler_id) DESC, bt.titel ASC
 		LIMIT $2::int`, tage, anzahl)
 }
 

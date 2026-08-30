@@ -391,9 +391,13 @@ Schulbüchern besteht, wäre das Mathebuch der 7 „Buch des Monats" gewesen.
 
 | Folie | Regel |
 |---|---|
-| **Buch des Monats** | der in den letzten **30 Tagen** meistausgeliehene Titel **mit Cover**; gibt es keinen, der zuletzt angelegte Titel mit Cover |
+| **Buch des Monats** | der Titel **mit Cover**, den in den letzten **30 Tagen** die meisten Schülerinnen und Schüler geliehen haben; gibt es keinen, der zuletzt angelegte Titel mit Cover |
 | **Neu eingetroffen** | die zehn zuletzt angelegten Titel mit Cover |
-| **Beliebt diese Woche** | die fünf meistausgeliehenen Titel der letzten **7 Tage** — auch ohne Cover (Platzhalter-Kachel) |
+| **Beliebt diese Woche** | die fünf Titel mit den meisten Leserinnen und Lesern der letzten **7 Tage** — auch ohne Cover (Platzhalter-Kachel) |
+
+Gezählt werden **Leser, nicht Exemplare**: Schüler-Ausleihen, je Schüler einmal. Lehrer-Ausleihen
+zählen nicht — ein Klassensatz an eine Lehrkraft sind 30 Ausleihzeilen und null freiwillige Leser;
+er hätte sonst beide Folien beherrscht. Wer denselben Titel zweimal leiht, ist ein Leser.
 
 Auf „Buch des Monats" und „Neu eingetroffen" kommen Titel ohne Cover bewusst nicht vor — eine
 Folie ohne Bild ist auf einem Flurbildschirm wertlos. „Beliebt" zeigt sie mit Platzhalter, sonst
