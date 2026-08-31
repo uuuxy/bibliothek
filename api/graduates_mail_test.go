@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bibliothek/mailservice"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -84,11 +86,11 @@ func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Max", "Mustermann", "5a"), eintrag("Erika", "Musterfrau", "5a")},
 	}}
 
-	sent, skipped := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
+	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
 		func(m MailRequest) error { mails = append(mails, m); return nil })
 
-	if sent != 1 || skipped != 0 {
-		t.Fatalf("sent=%d skipped=%d, want 1/0", sent, skipped)
+	if erg.Sent != 1 || erg.Skipped != 0 || erg.Failed != 0 {
+		t.Fatalf("%+v, want sent=1", erg)
 	}
 	if len(mails) != 1 {
 		t.Fatalf("%d Mails, want genau 1 je Klasse", len(mails))
@@ -113,11 +115,11 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 		{Klasse: "7c", Empfaenger: "lehrer7c@schule.de", Eintraege: nil},
 	}
 
-	sent, skipped := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
+	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
 		func(m MailRequest) error { empfaenger = append(empfaenger, m.To); return nil })
 
-	if sent != 1 || skipped != 2 {
-		t.Fatalf("sent=%d skipped=%d, want 1/2", sent, skipped)
+	if erg.Sent != 1 || erg.Skipped != 2 || erg.Failed != 0 {
+		t.Fatalf("sent=%d skipped=%d failed=%d, want 1/2/0", erg.Sent, erg.Skipped, erg.Failed)
 	}
 	if len(empfaenger) != 1 || empfaenger[0] != "lehrer5a@schule.de" {
 		t.Fatalf("Empfänger = %v, want nur lehrer5a@schule.de", empfaenger)
@@ -125,7 +127,8 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 }
 
 // Ein kaputtes Schüler-PDF darf nicht die ganze Klasse kosten: Der Rest geht raus,
-// nur der eine Anhang fehlt. Fällt JEDES PDF aus, gilt die Klasse als übersprungen.
+// nur der eine Anhang fehlt. Fällt JEDES PDF aus, ist die Klasse FEHLGESCHLAGEN —
+// bis zum 31.08.2026 zählte sie als „übersprungen", also als Absicht.
 func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 	kaputt := func(e pdf.KontoauszugEintrag) ([]byte, error) {
 		if e.Schueler.Vorname == "Kaputt" {
@@ -137,28 +140,28 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 	var mails []MailRequest
 	sammeln := func(m MailRequest) error { mails = append(mails, m); return nil }
 
-	sent, skipped := versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
+	erg := versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
 		Klasse:     "5a",
 		Empfaenger: "lehrer5a@schule.de",
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Kaputt", "Fall", "5a"), eintrag("Heile", "Welt", "5a")},
 	}}, kaputt, sammeln)
 
-	if sent != 1 || skipped != 0 {
-		t.Fatalf("sent=%d skipped=%d, want 1/0 — ein kaputtes PDF darf die Klasse nicht blockieren", sent, skipped)
+	if erg.Sent != 1 || erg.Skipped != 0 || erg.Failed != 0 {
+		t.Fatalf("%+v, want sent=1 — ein kaputtes PDF darf die Klasse nicht blockieren", erg)
 	}
 	if len(mails[0].Attachments) != 1 {
 		t.Fatalf("%d Anhänge, want 1 (nur der heile Kontoauszug)", len(mails[0].Attachments))
 	}
 
 	mails = nil
-	sent, skipped = versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
+	erg = versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
 		Klasse:     "6b",
 		Empfaenger: "lehrer6b@schule.de",
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Kaputt", "Fall", "6b")},
 	}}, kaputt, sammeln)
 
-	if sent != 0 || skipped != 1 {
-		t.Fatalf("sent=%d skipped=%d, want 0/1 — ohne Anhang keine leere Mail", sent, skipped)
+	if erg.Sent != 0 || erg.Skipped != 0 || erg.Failed != 1 {
+		t.Fatalf("%+v, want failed=1 — alle PDFs kaputt ist ein Problem, keine Absicht; und ohne Anhang keine leere Mail", erg)
 	}
 	if len(mails) != 0 {
 		t.Fatalf("%d Mails verschickt, want 0 — eine Mail ohne Kontoauszug ist nur Rauschen", len(mails))
@@ -219,5 +222,34 @@ func TestWaehleAbgaengerKlassen_SchreibweiseDesMappingsEgal(t *testing.T) {
 
 	if len(gewaehlt) != 1 || gewaehlt[0].Empfaenger != "pflasch@philipp-reis-schule.de" {
 		t.Fatalf("Empfänger = %q, want pflasch@philipp-reis-schule.de (Schreibweise darf egal sein)", gewaehlt[0].Empfaenger)
+	}
+}
+
+// SMTP-Ausfall ist FEHLGESCHLAGEN (nicht „übersprungen") und bricht den Lauf ab —
+// dieselbe Regel wie beim Mahnlauf. Bis zum 31.08.2026 zählte er als übersprungen,
+// und die Rückmeldung erklärte ihn als „keine E-Mail hinterlegt".
+func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.T) {
+	klassen := []abgaengerKlasse{
+		{Klasse: "10a", Empfaenger: "kl10a@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Max", "M", "10a")}},
+		{Klasse: "10b", Empfaenger: "kl10b@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Mia", "K", "10b")}},
+	}
+
+	// Einzelfehler (abgelehnte Adresse): failed, kein Abbruch.
+	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
+		func(m MailRequest) error {
+			if m.To == "kl10a@schule.de" {
+				return errors.New("550 mailbox unavailable")
+			}
+			return nil
+		})
+	if erg.Sent != 1 || erg.Failed != 1 || erg.Abgebrochen {
+		t.Fatalf("%+v, want sent=1 failed=1 ohne Abbruch", erg)
+	}
+
+	// Totes Relay (ErrSMTPVersand): Abbruch, die restlichen zählen als fehlgeschlagen.
+	erg = versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
+		func(MailRequest) error { return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand) })
+	if !erg.Abgebrochen || erg.Failed != 2 || erg.Sent != 0 {
+		t.Fatalf("%+v, want Abbruch mit failed=2", erg)
 	}
 }

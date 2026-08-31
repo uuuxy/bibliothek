@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/mailservice"
 	"bibliothek/pdf"
 	"bibliothek/repository"
 )
@@ -83,16 +85,18 @@ func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 		audit.Phase = "start"
 		s.logKlassenVersandAudit(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		sent, skipped := versendeAbgaengerKontoauszuege(gewaehlt, generateKontoauszugPDF, SendEmail)
+		erg := versendeAbgaengerKontoauszuege(gewaehlt, generateKontoauszugPDF, SendEmail)
 
 		audit.Phase = "ende"
-		audit.Sent, audit.Skipped = sent, skipped
+		audit.Sent, audit.Skipped, audit.Failed, audit.Abgebrochen = erg.Sent, erg.Skipped, erg.Failed, erg.Abgebrochen
 		s.logKlassenVersandAudit(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
 		RespondJSON(w, http.StatusOK, bulkOverdueResponse{
-			SentCount:    sent,
-			SkippedCount: skipped,
-			Message:      abgaengerVersandMeldung(sent, skipped, req.OverrideEmail),
+			SentCount:    erg.Sent,
+			SkippedCount: erg.Skipped,
+			FailedCount:  erg.Failed,
+			Abgebrochen:  erg.Abgebrochen,
+			Message:      abgaengerVersandMeldung(erg, req.OverrideEmail),
 		})
 	}
 }
@@ -200,31 +204,48 @@ func generateKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
 // einen Anhang, nicht die ganze Klasse — 29 fertige Kontoauszüge wegen eines
 // kaputten zurückzuhalten wäre der teurere Fehler. Erst wenn KEIN Anhang übrig
 // bleibt, zählt die Klasse als übersprungen.
+// Drei Ausgänge statt zwei (31.08.2026): „übersprungen" ist Absicht (keine Adresse,
+// keine Fälle), „fehlgeschlagen" ist ein Problem (alle PDFs kaputt, Versand
+// abgelehnt). Vorher zählte der SMTP-Ausfall als übersprungen, die Rückmeldung
+// erklärte ihn als „keine E-Mail hinterlegt oder keine offenen Ausleihen" — am
+// Zeugnistag mit totem Relay stand da „0 versendet, 12 übersprungen", niemand
+// sendete nach. Ein Mailserver-Fehler (ErrSMTPVersand) bricht ab wie beim
+// Mahnlauf: Jede weitere Klasse hinge sonst bis zu 70 s am toten Relay; die
+// restlichen zählen als fehlgeschlagen. Kontoauszüge doppelt zu senden ist
+// unschädlich — der Lauf darf einfach wiederholt werden.
 func versendeAbgaengerKontoauszuege(
 	klassen []abgaengerKlasse,
 	generatePDF func(pdf.KontoauszugEintrag) ([]byte, error),
 	sendMail func(MailRequest) error,
-) (sent, skipped int) {
-	for _, kl := range klassen {
+) versandErgebnis {
+	var erg versandErgebnis
+	for i, kl := range klassen {
 		if kl.Empfaenger == "" || len(kl.Eintraege) == 0 {
-			skipped++
+			erg.Skipped++
 			continue
 		}
 
 		anhaenge := baueKontoauszugAnhaenge(kl, generatePDF)
 		if len(anhaenge) == 0 {
-			skipped++
+			// Jedes einzelne PDF dieser Klasse ist gescheitert — das ist ein Problem,
+			// keine Absicht.
+			erg.Failed++
 			continue
 		}
 
 		if err := sendMail(baueAbgaengerMailRequest(kl, anhaenge)); err != nil {
 			log.Printf("abgaenger-kontoauszug: Versand an Klasse %s (%s) fehlgeschlagen: %v", kl.Klasse, kl.Empfaenger, err)
-			skipped++
+			erg.Failed++
+			if errors.Is(err, mailservice.ErrSMTPVersand) {
+				erg.Abgebrochen = true
+				erg.Failed += len(klassen) - i - 1
+				break
+			}
 			continue
 		}
-		sent++
+		erg.Sent++
 	}
-	return sent, skipped
+	return erg
 }
 
 func baueKontoauszugAnhaenge(
@@ -277,13 +298,20 @@ func baueAbgaengerMailRequest(kl abgaengerKlasse, anhaenge []MailAttachment) Mai
 // abgaengerVersandMeldung nennt den Empfänger mit: „12 versendet" allein verrät
 // nicht, ob die Auszüge an die Klassenleitungen oder an eine handgetippte Adresse
 // gingen.
-func abgaengerVersandMeldung(sent, skipped int, override string) string {
-	if sent == 0 && skipped == 0 {
+func abgaengerVersandMeldung(erg versandErgebnis, override string) string {
+	if erg.Sent == 0 && erg.Skipped == 0 && erg.Failed == 0 {
 		return "Keine der gewählten Klassen hat noch offene Ausleihen – nichts versendet."
 	}
 	ziel := "an die Klassenleitungen"
 	if override != "" {
 		ziel = "an " + override
 	}
-	return fmt.Sprintf("Kontoauszüge von %d Klasse(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen).", sent, ziel, skipped)
+	text := fmt.Sprintf("Kontoauszüge von %d Klasse(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen).", erg.Sent, ziel, erg.Skipped)
+	if erg.Failed > 0 {
+		text += fmt.Sprintf(" %d FEHLGESCHLAGEN — nicht zugestellt.", erg.Failed)
+	}
+	if erg.Abgebrochen {
+		text += " Lauf nach Mailserver-Fehler abgebrochen; bitte Mail-Server prüfen und erneut senden (doppelte Kontoauszüge sind unschädlich)."
+	}
+	return text
 }
