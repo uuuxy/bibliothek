@@ -1,7 +1,7 @@
 # ==============================================================================
 # Stage 1: Build the Svelte 5 frontend
 # ==============================================================================
-FROM node:22-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Copy dependencies first for Docker caching
@@ -15,11 +15,12 @@ RUN npm run build
 # ==============================================================================
 # Stage 2: Build the Go backend
 # ==============================================================================
-# Patch-genau gepinnt, nicht "1.26": go.mod verlangt exakt diese Toolchain, und die
-# CVE-Fixes vom 16.08.2026 stecken in der Stdlib — ein Build mit einem aelteren
-# 1.26-Tag kompiliert die verwundbaren Pakete ins Binary (GOTOOLCHAIN=local laedt
-# nichts nach). Beim naechsten go.mod-Go-Bump diese Zeile mitziehen.
-FROM golang:1.26.6-alpine AS backend-builder
+# Patch-genau gepinnt, nicht "1.27": go.mod verlangt exakt diese Toolchain, und
+# CVE-Fixes stecken in Stdlib-Patches — ein Build mit einem aelteren Tag kompiliert
+# die verwundbaren Pakete ins Binary (GOTOOLCHAIN=local laedt nichts nach). Beim
+# naechsten Go-Bump go.mod UND diese Zeile ziehen — seit 31.08.2026 erzwingt
+# docs/umgebung_paritaet_test.go die Paarung (Dependabot hebt nur diese Zeile!).
+FROM golang:1.27.0-alpine AS backend-builder
 WORKDIR /app
 
 # Disable Go workspace mode to build using root go.mod directly
