@@ -1,6 +1,7 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
 import { apiFetch, registriereSitzungAbgelaufenHandler } from '../apiFetch.js';
 import { abonniere, trenne, verbinde } from '../liveEvents.js';
+import { thekeLeeren } from './thekeLeeren.js';
 import { toastStore } from './toastStore.svelte.js';
 
 class AuthStore {
@@ -193,6 +194,11 @@ class AuthStore {
 		appState.adminAuthenticated = false;
 		appState.guestAuthenticated = false;
 		this.stopSessionRefresh();
+		// Theke leeren: Die Omnibox-Stores sind Modul-Singletons und überleben das
+		// Abmelden. Ohne diese Zeile sah der NÄCHSTE Bediener nach seiner Anmeldung
+		// weiter das Schülerprofil des vorigen — Ausleihen, Sperren, Mahnstufen
+		// (Fund 31.08.2026). Dieselbe Liste wie beim Inaktivitäts-Wächter.
+		thekeLeeren();
 		// Verbindung UND jeden geplanten Wiederaufbau beenden: Nach der Abmeldung
 		// antwortet /events nur noch mit 401, und ein weiterlaufender Wiederaufbau
 		// klopfte im Hintergrund weiter an.

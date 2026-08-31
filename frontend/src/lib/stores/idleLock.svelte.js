@@ -15,8 +15,7 @@
 
 import { apiFetch } from '../apiFetch.js';
 import { authStore } from './authStore.svelte.js';
-import { omniboxStore } from './omnibox.svelte.js';
-import { uiStore } from './uiStore.svelte.js';
+import { thekeLeeren as thekeLeerenAusfuehren } from './thekeLeeren.js';
 
 const AKTIVITAETS_EREIGNISSE = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
 /** Mehr als einmal pro Sekunde muss die Uhr nicht neu gestellt werden. */
@@ -85,36 +84,13 @@ export class IdleLock {
 		this.#planeTimer();
 	}
 
-	/** Theken-Ansicht leeren: kein geladener Schüler/Lehrer, keine Suchreste, keine Kamera. */
+	/**
+	 * Theken-Ansicht leeren — die Liste lebt in stores/thekeLeeren.js, weil das
+	 * Abmelden dasselbe braucht (bis 31.08.2026 konnte es nur dieser Wächter, und
+	 * der nächste Bediener sah das Profil des vorigen).
+	 */
 	thekeLeeren() {
-		// Kamera-Scanner dekodiert den Stream unabhängig von der Sichtbarkeit — lief er
-		// weiter, buchte ein vor die Kamera gehaltener Barcode hinter der Sperre
-		// (Prüfung 22.08.2026, A6). Stop ist fire-and-forget; der Store-Zeiger wird sofort
-		// genullt, damit kein Decode-Callback mehr in submitAction läuft.
-		const scanner = omniboxStore.cameraScanner;
-		omniboxStore.cameraScanner = null;
-		omniboxStore.showCamera = false;
-		if (scanner) {
-			try {
-				Promise.resolve(scanner.stop()).catch(() => {});
-			} catch {
-				/* Scanner war schon aus */
-			}
-		}
-		omniboxStore.activeStudent = null;
-		omniboxStore.activeTeacher = null;
-		omniboxStore.queryVal = '';
-		omniboxStore.isDropdownOpen = false;
-		omniboxStore.unifiedSearchResults = {
-			students: [],
-			books: [],
-			studentsTotal: 0,
-			booksTotal: 0
-		};
-		omniboxStore.vormerkungAlert = null;
-		omniboxStore.blockAlert = null;
-		omniboxStore.checklistAnfrage = null;
-		uiStore.requestedStudentId = null;
+		thekeLeerenAusfuehren();
 	}
 
 	/** Sperrbildschirm: Theke leeren und alles verdecken. */
