@@ -39,18 +39,15 @@ func (s *Scheduler) RunAnliegenBefristung() {
 		return
 	}
 
-	// erledigt_am IS NOT NULL ist die eigentliche Bedingung: Ein offenes Anliegen hat
-	// keine Frist. Die Rechnung läuft über den Erledigungszeitpunkt, nicht über das
-	// Anlegen — ein Wunsch, der ein Jahr lang offen lag, verschwindet nicht am Tag
-	// seiner Erledigung.
-	// make_interval statt Text-Verkettung: `$1 || ' days'` zwingt Postgres, den
-	// Parameter als text zu lesen — pgx schickt ihn als int4, und der Lauf stirbt an
-	// "cannot find encode plan". Dieselbe Form benutzt die Lesehistorie-Befristung.
-	tag, err := s.db.Exec(ctx, `
-		DELETE FROM lehrer_anliegen
-		WHERE erledigt_am IS NOT NULL
-		  AND erledigt_am < now() - make_interval(days => $1)
-	`, tage)
+	// Das Prädikat kommt aus repository/loeschfristen.go — DERSELBE String, den der
+	// Rückstands-Wächter benutzt (loeschrueckstand.go). Bis zum 31.08.2026 war dieser
+	// Job der einzige der sechs Löschroutinen, der seine Bedingung selbst hinschrieb:
+	// Genau die Bauform, gegen die der Dateikopf dort geschrieben ist („Der Wächter
+	// beruhigt, während der Job schläft"). Beide Fassungen stimmten nur zufällig
+	// überein; eine Ausnahme im Prädikat hätte der Job ignoriert, und der Wächter
+	// hätte dazu weiter „0 Rückstand" gemeldet.
+	bedingung := repository.PredikatAnliegen(tage, repository.KulanzJob)
+	tag, err := s.db.Exec(ctx, `DELETE FROM lehrer_anliegen WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		log.Printf("Scheduler Anliegen: Löschen fehlgeschlagen: %v", err)
 		return
