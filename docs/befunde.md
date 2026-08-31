@@ -40,7 +40,6 @@ Zwei Regeln dazu:
 | # | Fund | Stand / Weg |
 | - | ---- | ----------- |
 | 1 | Etikettenraster stehen an zwei Stellen (maßgeblich `api/label_formats.go`, Frontend-Kopie `src/lib/etikettformate.js`) | Umbau auf die Server-Liste wie bei der Lieferantenseite = Verhaltensänderung am täglich benutzten Druck-Bildschirm (Ladezustand, neuer Ausfallmodus). Bis zur Entscheidung hält `etikettformate-konsistenz.test.js` beide deckungsgleich. Zuletzt prüfen; nur umbauen, wenn der Weg der Lieferantenseite sich 1:1 übertragen lässt. |
-| 2 | Sieben Bestell-Reiter brechen bei 1280 px in zwei Zeilen um | M3 sieht scrollbare Tabs vor; Kandidat `ui/Reiter.svelte` (überlaufendes Scrollen statt Umbruch). Im Browser messen, nicht nur bauen. |
 
 ## Offen — Entscheidung nötig (Peter)
 

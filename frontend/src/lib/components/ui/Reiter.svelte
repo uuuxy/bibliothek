@@ -37,7 +37,7 @@
 <div
 	role="tablist"
 	aria-label={etikett}
-	class="flex gap-6 border-b border-outline-variant {klasse}"
+	class="flex gap-6 border-b border-outline-variant overflow-x-auto {klasse}"
 >
 	{#each reiter as r (r.id)}
 		{@const gewaehlt = r.id === aktiv}
@@ -48,7 +48,7 @@
 			aria-selected={gewaehlt}
 			aria-controls={r.steuert}
 			onclick={() => onwahl(r.id)}
-			class="relative cursor-pointer text-sm font-medium transition-colors {sekundaer
+			class="relative shrink-0 cursor-pointer text-sm font-medium whitespace-nowrap transition-colors {sekundaer
 				? 'pb-2.5'
 				: 'pb-3'} {gewaehlt
 				? sekundaer

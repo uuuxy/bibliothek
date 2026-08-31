@@ -150,14 +150,14 @@
 	<div
 		role="tablist"
 		aria-label="Bereiche des Bestellwesens"
-		class="flex items-end gap-6 border-b border-slate-200 shrink-0"
+		class="flex items-end gap-6 border-b border-slate-200 shrink-0 overflow-x-auto"
 	>
 		{#snippet tab(id, label, anzahl = 0)}
 			<button
 				role="tab"
 				aria-selected={activeTab === id}
 				onclick={() => (activeTab = id)}
-				class="flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer {activeTab ===
+				class="flex shrink-0 items-center gap-2 pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors cursor-pointer {activeTab ===
 				id
 					? 'border-blue-600 text-blue-700'
 					: 'border-transparent text-slate-500 hover:text-slate-800'}"
