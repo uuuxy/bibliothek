@@ -50,7 +50,6 @@ Magie-Text statt `bestellstatus`).
 | `plugins/vorlage` endgültig löschen | `Init()` ist seit 23.08. abgeklemmt (zwei deadcode-Baseline-Einträge mit Ablaufvermerk). Stand der Abwägung: alles spricht fürs Löschen von `plugins/` (128 Zeilen, ein Ereignistyp, nie ein echtes Plugin) — aber als Entscheidung mit Zeit, nicht nebenbei; die fünf Dispatch-Punkte nach `tx.Commit` sind über `LogRueckgabe` rekonstruierbar. |
 | `sonar.projectVersion` nicht gesetzt | New-Code-Periode `PREVIOUS_VERSION` heißt derzeit „seit dem letzten Scan"; mit `git describe --tags` hieße sie „seit dem letzten Release". Ändert die Gate-Semantik des lokalen SonarQube — kleine Änderung an `sonar_scan.sh`, aber Semantik-Entscheidung. |
 | PII-Matrix ist eine Zusage, die nur ein Dokument behauptet | Das PII-Gate prüft Route/Recht/Zeilen-Existenz, nicht den Antwortinhalt. Ein Gate, das Antwortfelder gegen die Matrix hält, wäre der nächste methodische Schritt — eigener Anlauf. |
-| M3-Typografie: 8-Schritte-Fahrplan | Gemessen 25.08. (Nebentext 12 statt 14 px in 8 Tabellen u. a.); Bericht mit Reihenfolge: [`m3_typografie_audit_2026-08-25.md`](m3_typografie_audit_2026-08-25.md). Sichtbare Änderung auf vielen Bildschirmen — eigener Durchgang. |
 
 ## Beobachten (nichts zu tun)
 
@@ -62,6 +61,9 @@ Magie-Text statt `bestellstatus`).
 
 ## Kategorie C — bewusst nicht ohne Anlass
 
+- Reiterleisten: drei Höhen (30/32/34 px) in den handgebauten Bestands-Leisten —
+  vereinheitlichen beim nächsten fachlichen Anfassen (der Umbruch ist seit
+  `c35840d4` gelöst, Typografie-Fahrplan Schritt 6 damit halb offen).
 - Etikettenraster an zwei Stellen (maßgeblich `api/label_formats.go`,
   Frontend-Kopie `src/lib/etikettformate.js`): Am 31.08.2026 geprüft und
   ENTSCHIEDEN geparkt. Ein Server-Umbau bräuchte einen neuen Endpunkt (existiert

@@ -29,6 +29,11 @@
 	--font-weight-medium: 400;
 	--font-weight-semibold: 500;
 	--font-weight-bold: 500;
+	/* extrabold/black entgingen der Abbildung — 25 Stellen rendeten 800/900,
+	   Gewichte, die M3 nicht kennt (Typografie-Audit 25.08., Schritt 5). Gleiche
+	   Stufe wie bold: WER betont, betont mit 500. Gate: typo-rollen.spec.js. */
+	--font-weight-extrabold: 500;
+	--font-weight-black: 500;
 
 	/* ── Typo-Skala (Material 3) ──────────────────────────────────────────────
 	   Gezählt: 978 Schriftgrößen, davon 86 frei gewählte Pixelwerte

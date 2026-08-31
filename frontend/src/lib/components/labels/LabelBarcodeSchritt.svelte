@@ -43,7 +43,7 @@
 						></div>
 					</div>
 				{:else if labelStore.existingCopies.length === 0}
-					<p class="text-label-small text-slate-500">
+					<p class="text-xs text-slate-500">
 						Keine physischen Exemplare in der Datenbank vorhanden.
 					</p>
 				{:else}
@@ -81,6 +81,6 @@
 	     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
 	<div class="py-5 space-y-2 border-b border-slate-200 opacity-60">
 		<h3 class="text-sm font-semibold text-slate-400">2. Barcodes generieren</h3>
-		<p class="text-label-small text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
+		<p class="text-xs text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
 	</div>
 {/if}

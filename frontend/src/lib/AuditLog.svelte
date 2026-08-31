@@ -88,7 +88,7 @@
 					<tbody class="divide-y divide-slate-100 text-base text-slate-600">
 						{#each logs as log, _i (_i)}
 							<tr class="hover:bg-slate-50/50 transition-colors">
-								<td class="p-4.5 text-xs text-slate-500">
+								<td class="p-4.5 text-sm text-slate-500">
 									{new Date(log.timestamp).toLocaleString('de-DE')}
 								</td>
 								<td class="p-4.5">
@@ -98,10 +98,10 @@
 										{log.aktion}
 									</span>
 								</td>
-								<td class="p-4.5 text-xs text-emerald-600">
+								<td class="p-4.5 text-sm text-emerald-600">
 									{log.tabelle}
 								</td>
-								<td class="p-4.5 text-xs text-slate-400">
+								<td class="p-4.5 text-sm text-slate-400">
 									{log.datensatz_id}
 								</td>
 								<td class="p-4.5">
@@ -110,12 +110,12 @@
 									     sie werden deshalb ausdrücklich als „System" benannt. -->
 									{#if log.akteur === 'SYSTEM' || !log.bearbeiter_id}
 										<span class="font-medium text-slate-500 italic">System</span>
-										<span class="block text-label-small text-slate-400">automatischer Vorgang</span>
+										<span class="block text-sm text-slate-400">automatischer Vorgang</span>
 									{:else}
 										<span class="font-medium text-slate-700"
 											>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
 										>
-										<span class="block text-label-small text-slate-400">{log.bearbeiter_id}</span>
+										<span class="block text-sm font-mono text-slate-400">{log.bearbeiter_id}</span>
 									{/if}
 								</td>
 							</tr>

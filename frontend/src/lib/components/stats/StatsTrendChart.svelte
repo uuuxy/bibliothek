@@ -120,7 +120,7 @@
 <div class="w-full h-full flex flex-col">
 	<!-- Kopf: Titel + Legende (Legende immer vorhanden → Identität nie farb-only) -->
 	<div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
-		<h3 class="text-xs font-medium text-slate-500">Aktivität pro Monat</h3>
+		<h3 class="text-base font-medium text-slate-500">Aktivität pro Monat</h3>
 		<div class="flex items-center gap-4 text-xs font-semibold">
 			<span class="flex items-center gap-1.5 text-slate-600">
 				<span class="w-2.5 h-2.5 rounded-sm" style="background:{FARBE_AUSLEIHEN}"></span>Ausleihen

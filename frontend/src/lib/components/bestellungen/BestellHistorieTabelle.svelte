@@ -64,7 +64,7 @@
 					</td>
 					<td class="max-w-0 px-3 py-2">
 						<span class="block truncate font-semibold text-slate-800">{b.lieferant_name}</span>
-						<span class="block truncate text-xs text-slate-400">
+						<span class="block truncate text-sm text-slate-400">
 							{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
 						</span>
 					</td>

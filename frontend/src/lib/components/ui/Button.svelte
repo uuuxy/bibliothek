@@ -30,7 +30,8 @@
 	// Buttons müssen denselben Wert tragen, sonst steht in jeder Werkzeugleiste ein
 	// Feld neben einem Button auf zwei verschiedenen Grundlinien.
 	const sizes = {
-		sm: 'h-7 px-2.5 text-xs',
+		// sm war 28/12 — M3 kennt keinen Knopf unter label-large 14 (Audit Schritt 3).
+		sm: 'h-8 px-2.5 text-sm',
 		md: 'h-9 px-3 text-sm',
 		lg: 'h-10 px-4 text-sm'
 	};

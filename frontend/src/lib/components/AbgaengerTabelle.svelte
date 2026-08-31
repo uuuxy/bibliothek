@@ -60,7 +60,7 @@
 						</td>
 						<td class="py-2 px-4">
 							{#if student.ist_gesperrt}
-								<span class="text-xs font-medium text-rose-600">Sperre aktiv</span>
+								<span class="text-sm font-medium text-rose-600">Sperre aktiv</span>
 							{/if}
 						</td>
 					</tr>

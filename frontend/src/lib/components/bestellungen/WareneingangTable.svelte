@@ -63,7 +63,7 @@
 
 <div class="flex-1 flex flex-col min-h-0">
 	<div class="flex items-center justify-between mb-3">
-		<h3 class="text-xs font-medium text-slate-400">
+		<h3 class="text-base font-medium text-slate-500">
 			Erwartete Positionen ({totalItems} Exemplare)
 		</h3>
 		{#if incomingShipments.length > 0}

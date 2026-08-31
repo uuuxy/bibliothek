@@ -141,7 +141,7 @@
 										aria-expanded={systemOpen}
 									>
 										<span
-											class="text-on-surface-variant/70 group-hover/sys:text-on-surface-variant animate-fade-in text-xs font-medium transition-colors"
+											class="text-on-surface-variant/70 group-hover/sys:text-on-surface-variant animate-fade-in text-sm font-medium transition-colors"
 											>{group.name}</span
 										>
 										<ChevronDown

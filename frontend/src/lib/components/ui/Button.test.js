@@ -72,7 +72,8 @@ describe('Button — Farb-Overrides des Aufrufers', () => {
 	it('behält die gemeinsame Control-Höhe je Größe', () => {
 		/** @type {[('sm'|'md'|'lg'), string][]} */
 		const groessen = [
-			['sm', 'h-7'],
+			// sm = 32/14 seit dem Typografie-Audit (M3 kennt keinen 12-px-Knopf).
+			['sm', 'h-8'],
 			['md', 'h-9'],
 			['lg', 'h-10']
 		];

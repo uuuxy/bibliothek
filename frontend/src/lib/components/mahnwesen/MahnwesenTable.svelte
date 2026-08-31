@@ -146,7 +146,7 @@
 									>
 										{schueler.mahnstufe}
 									</span>
-									<span class="text-xs text-slate-500">
+									<span class="text-sm text-slate-500">
 										{schueler.maxTage === 0
 											? 'heute fällig'
 											: `${schueler.maxTage} ${schueler.maxTage === 1 ? 'Tag' : 'Tage'} überfällig`}

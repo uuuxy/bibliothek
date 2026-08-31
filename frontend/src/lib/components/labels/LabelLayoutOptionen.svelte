@@ -39,7 +39,7 @@
 				/>
 				<span class="text-label-small text-slate-400">max. {labelStore.maxPositions}</span>
 			</div>
-			<p class="text-label-small text-slate-400 mt-1">
+			<p class="text-xs text-slate-400 mt-1">
 				Für angebrochene Bögen: Gibt an, auf welchem Feld der Druck starten soll.
 			</p>
 		</div>

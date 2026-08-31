@@ -49,7 +49,7 @@
 			/>
 		{:else}
 			<div
-				class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-medium text-xs"
+				class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-medium text-sm"
 				aria-hidden="true"
 			>
 				{s.vorname.charAt(0)}{s.nachname.charAt(0)}
@@ -62,13 +62,13 @@
 	<div class="inline-flex items-center justify-end gap-1.5 py-1">
 		{#if s.ueberfaellig_count > 0}
 			<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden="true"></span>
-			<span class="text-xs font-semibold text-rose-600">Überfällig</span>
+			<span class="text-sm font-semibold text-rose-600">Überfällig</span>
 		{:else if s.ist_gesperrt}
 			<span class="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
-			<span class="text-xs font-semibold text-amber-600">Gesperrt</span>
+			<span class="text-sm font-semibold text-amber-600">Gesperrt</span>
 		{:else}
 			<span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
-			<span class="text-xs font-semibold text-emerald-600">Alles ok</span>
+			<span class="text-sm font-semibold text-emerald-600">Alles ok</span>
 		{/if}
 	</div>
 {/snippet}
@@ -146,7 +146,9 @@
 							<td class="px-4 py-2 font-semibold text-slate-800">
 								{s.vorname}
 								{s.nachname}
-								<div class="text-label-small text-slate-400 font-normal mt-0.5">{s.barcode_id}</div>
+								<div class="text-sm font-mono text-slate-400 font-normal mt-0.5">
+									{s.barcode_id}
+								</div>
 							</td>
 							<td class="px-4 py-2 font-medium text-slate-600">
 								Kl. {s.klasse || 'N/A'}

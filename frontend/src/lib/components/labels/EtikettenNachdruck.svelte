@@ -232,7 +232,7 @@
 		<!-- Was die Liste zeigt. Vorgabe bleibt „Offen" — die Ansicht heisst „Fehlende
 		     Etiketten" und soll ohne Zutun genau das zeigen. Die beiden anderen Stufen sind
 		     Werkzeug für den Notfall, nicht für den Alltag. -->
-		<div class="flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-semibold">
+		<div class="flex rounded-lg border border-slate-200 bg-white p-0.5 text-sm font-semibold">
 			{#each [['offen', 'Offen'], ['erledigt', 'Erledigt'], ['alle', 'Alle']] as [wert, text] (wert)}
 				<button
 					type="button"
@@ -346,14 +346,14 @@
 									<!-- Nur in den gemischten Ansichten: In „Offen" wäre der Vermerk an
 									     jeder Zeile derselbe und damit ohne Aussage. -->
 									{#if e.etikett_gedruckt && status !== 'erledigt'}
-										<span class="ml-1.5 text-xs font-medium text-slate-400">· erledigt</span>
+										<span class="ml-1.5 text-sm font-medium text-slate-400">· erledigt</span>
 									{/if}
 								</span>
 								{#if e.autor}
-									<span class="block truncate text-xs text-slate-400">{e.autor}</span>
+									<span class="block truncate text-sm text-slate-400">{e.autor}</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 font-mono text-xs whitespace-nowrap text-slate-600"
+							<td class="px-3 py-2 font-mono text-sm whitespace-nowrap text-slate-600"
 								>{e.barcode_id}</td
 							>
 							<td class="px-3 py-2 text-right whitespace-nowrap text-slate-500 tabular-nums"

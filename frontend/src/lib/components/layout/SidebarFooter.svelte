@@ -66,7 +66,7 @@
 		     rendert je nach Betriebssystem anders, lässt sich nicht einfärben und steht
 		     deshalb auf der Ratsche in frontend-hygiene.test.js. -->
 		<div
-			class="text-on-surface-variant flex items-center justify-center gap-1.5 text-center text-xs"
+			class="text-on-surface-variant flex items-center justify-center gap-1.5 text-center text-sm"
 			title={DSGVO_HINWEIS}
 		>
 			<ShieldCheck class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

@@ -153,15 +153,15 @@
 										: ''}">{e.titel}</span
 								>
 								{#if e.autor}
-									<span class="block truncate text-xs text-slate-400">{e.autor}</span>
+									<span class="block truncate text-sm text-slate-400">{e.autor}</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 font-mono text-xs whitespace-nowrap text-slate-500"
+							<td class="px-3 py-2 font-mono text-sm whitespace-nowrap text-slate-500"
 								>{e.barcode_id}</td
 							>
 							<td class="px-3 py-2 text-center no-print">
 								{#if istGefunden}
-									<span class="text-xs font-medium text-emerald-700">Gefunden</span>
+									<span class="text-sm font-medium text-emerald-700">Gefunden</span>
 								{:else if e.exemplar_id}
 									<input
 										type="checkbox"
@@ -172,7 +172,7 @@
 										aria-label="{e.titel} als gefunden markieren und zurück in Umlauf bringen"
 									/>
 								{:else}
-									<span class="text-xs text-slate-400" title="Bereits endgültig gelöscht">—</span>
+									<span class="text-sm text-slate-400" title="Bereits endgültig gelöscht">—</span>
 								{/if}
 							</td>
 						</tr>

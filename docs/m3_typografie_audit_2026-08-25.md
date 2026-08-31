@@ -140,3 +140,34 @@ Zwei Dinge sind **keine** Verstöße, sondern Entscheidungen, die stehen bleiben
 Control-Höhe (statt M3 40/56) und die dichte Tabellendarstellung an sich — Bibliotheksarbeit
 ist Listenarbeit, M3 „dense" ist legitim. Was nicht legitim ist: Nebentext eine Rolle unter
 dem, was M3 als kleinste Lese-Rolle vorsieht.
+
+---
+
+## Stand 31.08.2026 — umgesetzt (Peters „wie würde es Google lösen?")
+
+Antwort der Umsetzung: wie in Googles eigenen Produkten — Lesetext auf 14, Hierarchie
+über FARBE (on-surface-variant), nicht über kleinere Schrift; Dichte über Polsterung;
+der Hebel sitzt in der Token-/Bauteil-Schicht, nicht in 10.000 Einzelzellen; gehalten
+wird es von einer Messung, nicht von einer Absicht.
+
+| # | Schritt | Stand |
+| - | ------- | ----- |
+| 1 | Tabellen-Nebentext 12 → 14 | ✅ 11 Tabellen-Dateien (inkl. Theke, Bestellhistorie, Papierkorb) |
+| 2 | Kennungen → `text-sm font-mono` | ✅ Schüler-Barcode, UUID/Details der System-Logs, Etiketten-Barcodes |
+| 3 | `Button size="sm"` → 32/14 | ✅ eine Zeile in Button.svelte, 24 Aufrufer auf einmal |
+| 4 | StatusChip 11 → 12 | ✅ ein Bauteil |
+| 5 | Gewichte 800/900 → 500 | ✅ zwei Token-Zeilen in theme-mass.css (wie `bold`) |
+| 6 | Reiter: kein Umbruch / eine Höhe | ✅ Umbruch (`c35840d4`) · Höhen 30/32/34 offen (C, beim fachlichen Anfassen) |
+| 7 | Sätze von label-small auf body-small | ✅ Druck-Center-Hilfstexte |
+| 8 | Überschriften-Rollen | ✅ die zwei gemessenen 12-px-h3 → 16 |
+
+**Gate:** `e2e/typo-rollen.spec.js` — der Messlauf dieses Audits als Test über sechs
+Ansichten (td ≥ 14, th ≥ 12, Knopf ≥ 14, h2/h3 ≥ 16, Gewicht ≤ 700; Pillen an der
+gemessenen Gestalt erkannt: getönte Fläche + Radius, Zähler ≤ 4 Zeichen dürfen 11).
+Am alten Bundle rot mit 91+ Verstößen, am neuen grün; volle E2E-Suite 143/143.
+
+**Zusatzfunde des Gates** (standen nicht im Audit, weil die Messung damals `main`
+anders schnitt): Sidebar-System-Umschalter und Abmelden-Knopf auf 12 → 14.
+
+**Nicht gemessen bleibt** das Viertel aus dem Kopf dieses Dokuments (Dialoge,
+Drilldowns, Portal, Monitor, Login) — das Gate deckt die sechs größten Ansichten.

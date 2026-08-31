@@ -128,7 +128,7 @@
 
 	<td class="px-6 py-3 font-semibold text-slate-900">
 		{book.title}
-		<div class="text-xs text-slate-500 font-normal">{book.author}</div>
+		<div class="text-sm text-slate-500 font-normal">{book.author}</div>
 	</td>
 
 	<td class="px-6 py-3">
@@ -139,12 +139,12 @@
 				{book.subject}
 			</span>
 		{:else}
-			<span class="text-slate-400 text-xs">–</span>
+			<span class="text-slate-400 text-sm">–</span>
 		{/if}
 	</td>
 	<!-- Klasse 0 = nicht zugeordnet: „–" statt einer sinnlosen „Kl. 0". -->
 	<td class="px-6 py-3 text-slate-600 text-sm">
-		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-slate-400 text-xs">–</span
+		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-slate-400 text-sm">–</span
 			>{/if}
 	</td>
 
@@ -156,7 +156,7 @@
 				{book.track}
 			</span>
 		{:else}
-			<span class="text-slate-400 text-xs">-</span>
+			<span class="text-slate-400 text-sm">-</span>
 		{/if}
 	</td>
 
@@ -168,7 +168,7 @@
 				{book.erweiterteEigenschaften.standort}
 			</span>
 		{:else}
-			<span class="text-slate-400 text-xs">-</span>
+			<span class="text-slate-400 text-sm">-</span>
 		{/if}
 	</td>
 
@@ -180,7 +180,7 @@
 				{new Date(book.lastCounted).toLocaleDateString('de-DE')}
 			</span>
 		{:else}
-			<span class="text-slate-400 text-xs">-</span>
+			<span class="text-slate-400 text-sm">-</span>
 		{/if}
 	</td>
 

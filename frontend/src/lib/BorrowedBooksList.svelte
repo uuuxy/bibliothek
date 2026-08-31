@@ -148,13 +148,13 @@
 									</h4>
 									{#if isLMF}
 										<span
-											class="px-1.5 py-0.5 rounded text-label-small font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase"
+											class="px-1.5 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase"
 											>LMF</span
 										>
 									{/if}
 								</div>
 								{#if mode === 'loans'}
-									<div class="text-xs text-slate-600 truncate mt-0.5">{book.autor}</div>
+									<div class="text-sm text-slate-600 truncate mt-0.5">{book.autor}</div>
 								{/if}
 							</div>
 						</div>
@@ -215,7 +215,7 @@
 										<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
 									</button>
 								</div>
-								<div class="text-xs font-normal text-slate-600 mt-0.5">
+								<div class="text-sm font-normal text-slate-600 mt-0.5">
 									Geliehen: {new Date(book.ausgeliehen_am).toLocaleDateString('de-DE')}
 								</div>
 							{/if}
