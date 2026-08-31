@@ -288,6 +288,19 @@ func TilgeSchuelerSpuren(ctx context.Context, ex SpurenExecutor, schuelerID, gru
 		  AND (details IS NULL OR NOT (details ? 'anonymisiert'))`, schuelerID, grund); err != nil {
 		return fmt.Errorf("anonymizing audit_log: %w", err)
 	}
+	// Lesehistorie: dieselben Zeilen, die die Art.-15-Auskunft dem Schüler zurechnet
+	// (api/dsgvo_auskunft.go: tabelle='ausleihen' AND details->>'schueler_id' = id).
+	// Bis zum 31.08.2026 tilgte diese Funktion nur tabelle='schueler' — die vollständige
+	// Lesehistorie überlebte Purge und LUSD-Abgang und war über exakt die Abfrage des
+	// eigenen Auskunftshandlers weiter auffindbar. Die Buchungshistorie selbst BLEIBT
+	// (Nachweis, dass ein Exemplar unterwegs war), nur ihr Personenbezug fällt — dieselben
+	// Schlüssel, die auch die Lesehistorie-Befristung entfernt (jobs/cron_dsgvo_lesehistorie.go).
+	if _, err := ex.Exec(ctx, `
+		UPDATE audit_log
+		SET details = details - 'schueler_id' - 'entleiher'
+		WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`, schuelerID); err != nil {
+		return fmt.Errorf("anonymizing lesehistorie in audit_log: %w", err)
+	}
 	if _, err := ex.Exec(ctx, `
 		UPDATE audit_logs
 		SET details = details - 'lusd_id'
