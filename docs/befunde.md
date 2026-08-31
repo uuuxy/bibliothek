@@ -43,6 +43,71 @@ Zwei Regeln dazu:
 
 ---
 
+## Komplett-Durchgang über das ganze Programm (31.08.2026) — 18 Funde, 18 Commits
+
+Auf Peters Ansage „1 gezielt und abschließend nochmal komplett". Phase 1 gezielt über die
+Formwechsel seit v1.3.1 (Bereit-Mail `e4d0b889`, Reiter-Tausch `346bd91c`) plus die offene
+Lookup-Produktfrage; Phase 2 als Volldurchgang mit **sechs parallelen Lese-Agenten**
+(öffentliche Pfade/PII, Schreibpfade/Tx, Jobs/Mail/Ausleitung, Auth/Session,
+Frontend-Zustand, Schema/Lebenszyklus). **Jeder gemeldete Fund wurde vor dem Fix selbst am
+Code nachgestellt** — die Agenten lagen diesmal durchgehend richtig, aber die Prüfung ist
+Pflicht ([[befund-erst-am-live-pfad-pruefen]]).
+
+### Phase 1 — gezielt (4 Commits)
+
+- **Lookup-Kollaps (`4dcc1bc4`, Produktentscheidung Peters):** Alle drei ISBN-Wege
+  antworteten bei Netzausfall 404 „nicht gefunden" — für die Theke derselbe Bildschirm wie
+  ein unbekanntes Buch; bei WLAN-Störung katalogisiert jemand von Hand, was längst in der
+  DNB steht. Jetzt 502 (`ErrKatalogdiensteNichtErreichbar`), 404 nur wenn mindestens eine
+  Quelle geantwortet hat. Grenze: 4xx zählt als „Quelle war da" — der Bestandstest mit
+  404-Mocks hat diese Unterscheidung erzwungen.
+- **Bereit-Mail-Notiz ohne Rückweg (`2647d04b`, `d6aed95b`):** Die Antwort der Bibliothek
+  existierte nur in der Mail; Theke und Portal lasen sie nie, und der Abschluss ließ den
+  Vorgang aus dem Portal verschwinden. Migration 089 (`erledigt_am`), neuer Endpunkt
+  `/eigene`, „Zuletzt bereitgestellt" an der Theke, „Bereitgestellt" im Portal. Nebenbei:
+  „Deine Reservierungen" zeigte die Warteschlange ALLER Lehrkräfte.
+- Reiter-Tausch geprüft, kein Befund (Bauteil-Wechsel ohne Standardwert-Kippen).
+
+### Phase 2 — A-Funde, je ein Commit mit rot gesehenem Gate
+
+| Fund | Commit | Kern |
+|---|---|---|
+| Textvergleich traf nie + Phantom-Erfolg | `1e474299` | `err.Error() == "Exemplar ist aktuell noch verliehen!"` gegen „exemplar …" — verliehenes Buch endete als 500 mit Sanitizer-Text; unbekannte ID = 200 + Audit-Eintrag über eine Nicht-Löschung |
+| Rückgabe log ein Abholfach herbei | `9c9bf9d3` | UPDATE-Fehler nur geloggt, Antwortfelder trotzdem gesetzt, Aufrufer committete → „ins Abholfach legen", DB blieb `wartend` |
+| Zwei Türen zum Aussondern | `212b0e8f` | `POST /aussondern` und `PUT /status` ohne Ausleih-Prüfung und ohne Audit |
+| DB-Ausfall = falsches Passwort | `ce81912c` | jeder Scan-Fehler lief in den 401-Pfad MIT Fehlversuch → Selbstsperre mit korrektem Passwort; dazu `neuAngelegt` bedingungslos |
+| 403 zählte als Fehlversuch | `59ae7c69` | Selbstanmelde-403 hinter der NAT-Adresse hätten den Login der ganzen Schule gesperrt |
+| Abgänger-Mail: Ausfall = „übersprungen" | `97bc3d4d` | der ungefixte Zwilling des Mahnlaufs; „0 versendet, 12 übersprungen" bei totem Relay |
+| Sperrgrund plattgeschrieben | `1d9c9886` | manuell gesperrter Schüler war nach dem Löschen **unwiederherstellbar** (CHECK-Verletzung → 500) |
+| Lesehistorie überlebte die Löschung | `a3785aff` | Tilgung deckte nur `tabelle='schueler'`, die Auskunft rechnet die Ausleih-Zeilen ausdrücklich dazu |
+| Einstellungs-Formular voller Vorgaben | `94625b8f` | gescheiterter Abruf → `daten = {}` → Speichern überschrieb Schulname, Fristen, Leseclub |
+| Theke bei Bedienerwechsel | `8e002546` | Abmelden räumte nur den authStore; das Schülerprofil des Vorgängers blieb stehen |
+| Omnibox-Wettlauf | `4cf2a5ef` | verspätete Antwort tauschte die Trefferliste — der Klick bucht den falschen Schüler |
+| LMF-Trim-Asymmetrie | `6d79b4b1` | Go trimmt, SQL nicht → Lernmittel mit führendem Leerzeichen im **öffentlichen Katalog und auf dem Monitor** (live belegt) |
+| SMTP-Fehler verschluckt | `0390d53c` | nach Schlüsselrotation „nicht konfiguriert" statt der echten Ursache |
+| Löschjob mit eigenem Prädikat | `4f01672c` | einziger der sechs; jetzt geteilt + Ratsche `jobs/loeschpraedikat_ratsche_test.go` |
+| Postgres 16 lokal ≠ 15 prod | `02ac3912` | E2E-Stack hätte 16er-SQL grün durchgelassen, das den Prod-Start abbricht |
+| backups/ im Build-Kontext | `6b9d3c3f` | 174 MB Sicherungen wandern bei jedem Deploy zum Daemon |
+| Doku ≠ Code (3×) | `039f2d03` | PII-Matrix „IDs statt Namen", DEPLOYMENT verspricht `latest`, update.sh nennt Dienst `db` |
+
+### Was der Durchgang über das Prüfen gezeigt hat
+
+- **Eine still grüne Rot-Probe ist der gefährlichste Ausgang.** Die erste Vormerkungs-Probe
+  lief grün — nicht weil der Code stimmte, sondern weil pgxmock **ohne `WithArgs` NULL
+  Argumente erwartet** und die Erwartung nie traf. Erst `ExpectationsWereMet()` deckte es
+  auf. Seither: jede Mock-Probe mit Erwartungs-Prüfung.
+- **`go test … | tail` verschluckt den Exit-Code** — ein Commit ging so trotz roter Suite
+  durch (sofort korrigiert, `9c9bf9d3` amendiert). Seither Ausgabe in eine Datei und
+  `SUITE-EXIT` ausgeben.
+- **Abgeschriebene Erwartungen sind selbst zweite Wahrheitsquellen:** Drei Tests hielten
+  das LMF-SQL wörtlich fest und wurden durch den Fix rot, ohne dass fachlich etwas falsch
+  war. Sie leiten es jetzt aus `pkg/lmf` ab.
+- **Der Schutztest kann den Zustand prüfen, den es nicht gibt:** `student_lifecycle_pg_test`
+  sät seinen „fremden" Sperrgrund per INSERT — einen Zustand, den `DeleteStudent` gar nicht
+  erzeugen konnte. Er bestätigte eine Einigkeit, die nie existierte.
+
+Stand: 2026-08-31
+
 ## Flur-Monitor: Raster-Durchgang (30.08.2026) — acht Funde, sechs Commits
 
 Anlass war eine Frage zum Produktvideo („rotiert das automatisch?"). Die Antwort war ja —
