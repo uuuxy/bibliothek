@@ -139,48 +139,46 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 }
 
 // bereinigeAnonymisierteSchuelerSpuren tilgt die PII anonymisierter Schüler aus den
-// Neben-Tabellen, die RunGDPRAnonymizeOldData selbst nicht anfasst. Jede Anweisung ist
-// idempotent und selbstheilend (Kriterium: anonymized_at IS NOT NULL) und wird einzeln
-// protokolliert — schlägt eine fehl (etwa am Append-Only-Trigger auf audit_log, den es
-// nur auf manchen Altbeständen gibt), bricht das die übrigen NICHT ab.
+// Neben-Tabellen, die RunGDPRAnonymizeOldData selbst nicht anfasst. Die Statements
+// kommen aus repository.SpurTilgungen — DERSELBEN Liste, die auch Purge und
+// LUSD-Abgang fahren. Bis 31.08.2026 stand hier eine eigene Abschrift mit drei der
+// vier Statements; es fehlte genau die Lesehistorie, und der Klarname
+// (details->>'entleiher') überlebte die Anonymisierung
+// (jobs/dsgvo_spuren_paarung_pg_test.go, am alten Stand rot gesehen).
+//
+// Selbstheilend: Kriterium ist anonymized_at IS NOT NULL, jede Nacht über den ganzen
+// Bestand (idempotent). Jede Anweisung wird einzeln protokolliert — schlägt eine fehl
+// (etwa am Append-Only-Trigger auf audit_log, den es nur auf manchen Altbeständen
+// gibt), bricht das die übrigen NICHT ab; das ist der Unterschied zur Tx des Purge.
 func (s *Scheduler) bereinigeAnonymisierteSchuelerSpuren(ctx context.Context) {
-	anonymisiert := `SELECT id FROM schueler WHERE anonymized_at IS NOT NULL`
-
-	// 1. audit_log (fachliche Datensatz-Historie): DeleteStudent legt Vor-/Nachname,
-	//    Klasse und Barcode in details ab. Dieselbe Neutralisierung wie im Hard-Delete-
-	//    Pfad (entferneSchuelerPIIUndLoesche). Idempotent über den 'anonymisiert'-Marker.
-	if tag, err := s.db.Exec(ctx, `
-		UPDATE audit_log
-		SET details = jsonb_build_object('anonymisiert', true, 'grund', 'DSGVO-Anonymisierung')
-		WHERE tabelle = 'schueler'
-		  AND datensatz_id IN (`+anonymisiert+`)
-		  AND (details IS NULL OR NOT (details ? 'anonymisiert'))`); err != nil {
-		log.Printf("Scheduler GDPR Anonymize: audit_log-PII konnte nicht getilgt werden: %v", err)
-	} else if n := tag.RowsAffected(); n > 0 {
-		log.Printf("Scheduler GDPR Anonymize: %d audit_log-Einträge anonymisiert.", n)
+	rows, err := s.db.Query(ctx, `SELECT id::text FROM schueler WHERE anonymized_at IS NOT NULL`)
+	if err != nil {
+		log.Printf("Scheduler GDPR Anonymize: anonymisierte Schüler konnten nicht gelesen werden: %v", err)
+		return
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			log.Printf("Scheduler GDPR Anonymize: Schüler-ID lesen: %v", err)
+			return
+		}
+		ids = append(ids, id)
+	}
+	if rows.Err() != nil {
+		log.Printf("Scheduler GDPR Anonymize: anonymisierte Schüler konnten nicht gelesen werden: %v", rows.Err())
+		return
+	}
+	if len(ids) == 0 {
+		return
 	}
 
-	// 2. audit_logs (Admin-Eingriffe): LUSD_ID_NACHGETRAGEN speichert die staatliche
-	//    Schülerkennung im Klartext. Nur den PII-Schlüssel entfernen; Aktion, Zeit und
-	//    schueler_id (jetzt Pseudonym) bleiben für die Rechenschaftspflicht erhalten.
-	if tag, err := s.db.Exec(ctx, `
-		UPDATE audit_logs
-		SET details = details - 'lusd_id'
-		WHERE details ? 'lusd_id'
-		  AND details->>'schueler_id' IN (SELECT id::text FROM schueler WHERE anonymized_at IS NOT NULL)`); err != nil {
-		log.Printf("Scheduler GDPR Anonymize: audit_logs-LUSD-ID konnte nicht getilgt werden: %v", err)
-	} else if n := tag.RowsAffected(); n > 0 {
-		log.Printf("Scheduler GDPR Anonymize: %d audit_logs-Einträge um die LUSD-ID bereinigt.", n)
-	}
-
-	// 3. vormerkungen: Die Freitext-Notiz kann personenbezogen sein, und eine Vormerkung
-	//    eines abgegangenen/gelöschten Schülers ist ohnehin funktionslos. Der Hard-Delete-
-	//    Pfad räumt sie via CASCADE; hier werden sie gezielt gelöscht.
-	if tag, err := s.db.Exec(ctx, `
-		DELETE FROM vormerkungen
-		WHERE schueler_id IN (`+anonymisiert+`)`); err != nil {
-		log.Printf("Scheduler GDPR Anonymize: Vormerkungen anonymisierter Schüler konnten nicht gelöscht werden: %v", err)
-	} else if n := tag.RowsAffected(); n > 0 {
-		log.Printf("Scheduler GDPR Anonymize: %d Vormerkungen anonymisierter Schüler gelöscht.", n)
+	for _, st := range repository.SpurTilgungen() {
+		if n, err := st.Exec(ctx, s.db, ids, "DSGVO-Anonymisierung"); err != nil {
+			log.Printf("Scheduler GDPR Anonymize: Spur %s konnte nicht getilgt werden: %v", st.Beschreibung, err)
+		} else if n > 0 {
+			log.Printf("Scheduler GDPR Anonymize: Spur %s — %d Zeilen bereinigt.", st.Beschreibung, n)
+		}
 	}
 }

@@ -15,8 +15,9 @@ import (
 // und begründet sie im Commit.
 func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 	erlaubt := map[string]string{
-		"repository/audit_users.go":       "TilgeSchuelerSpuren (DSGVO: Purge + LUSD-Anonymisierung)",
-		"jobs/cron_dsgvo.go":              "bereinigeAnonymisierteSchuelerSpuren (DSGVO-Cron)",
+		// Seit 31.08.2026 fährt auch der DSGVO-Cron (jobs/cron_dsgvo.go) diese Statements —
+		// über repository.SpurTilgungen, die eine Liste; er hat keine eigene Tür mehr.
+		"repository/audit_users.go":       "SpurTilgungen (DSGVO: Purge + LUSD-Anonymisierung + Cron)",
 		"jobs/cron_dsgvo_lesehistorie.go": "tilgeAusleihProtokoll (Lesehistorie-Frist)",
 		"jobs/cron_audit_retention.go":    "Aufbewahrung 24 Monate",
 	}

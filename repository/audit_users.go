@@ -271,44 +271,91 @@ type SpurenExecutor interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
-// TilgeSchuelerSpuren entfernt die Personendaten EINES Schülers aus den Neben-Tabellen:
-// Klarname/Barcode aus audit_log (fachliche Historie), die staatliche LUSD-ID aus
-// audit_logs (LUSD_ID_NACHGETRAGEN), und seine Vormerkungen (Freitext-Notiz). Gemeinsamer
-// Schritt von LUSD-Abgänger-Anonymisierung (api/lusd_apply.go) und Purge — bis zum
-// 22.08.2026 hatte nur der Cron-Pfad (jobs/cron_dsgvo.go, set-basiert über anonymized_at)
-// alle drei, der LUSD-Pfad keinen, der Purge nur audit_log. Folge: Die LUSD-ID eines
-// abgegangenen Schülers überlebte bis zu 24 Monate in audit_logs (Prüfung 22.08., A3).
+// SpurTilgung ist EINE Anweisung der Spuren-Tilgung, parametrisiert über eine
+// Schüler-MENGE. Die Liste darunter ist die einzige Quelle dafür, welche Spuren eines
+// Schülers in den Neben-Tabellen stehen — Purge/LUSD-Abgang (ein Schüler, in der Tx,
+// Abbruch beim ersten Fehler) und der nächtliche Cron (alle anonymisierten, am Pool,
+// weiter beim Fehler) fahren DIESELBEN Statements und unterscheiden sich nur in
+// Menge und Fehlerpolitik.
+//
+// Anlass (31.08.2026): Cron und Purge pflegten die Liste getrennt; dem Cron fehlte
+// genau die Lesehistorie — der Klarname (details->>'entleiher') überlebte die
+// Anonymisierung (jobs/dsgvo_spuren_paarung_pg_test.go, am alten Stand rot gesehen).
+type SpurTilgung struct {
+	Beschreibung string
+	sql          string // $1 = Schüler-IDs als text[]; $2 = Grund (nur brauchtGrund)
+	brauchtGrund bool
+}
+
+// Exec führt die Anweisung für die gegebene Schüler-Menge aus und meldet die Zahl
+// der betroffenen Zeilen.
+func (st SpurTilgung) Exec(ctx context.Context, ex SpurenExecutor, schuelerIDs []string, grund string) (int64, error) {
+	args := []any{schuelerIDs}
+	if st.brauchtGrund {
+		args = append(args, grund)
+	}
+	tag, err := ex.Exec(ctx, st.sql, args...)
+	return tag.RowsAffected(), err
+}
+
+// SpurTilgungen liefert die Statement-Liste für den set-basierten Cron
+// (jobs/cron_dsgvo.go). Purge und LUSD-Pfad gehen über TilgeSchuelerSpuren.
+func SpurTilgungen() []SpurTilgung { return spurTilgungen }
+
+var spurTilgungen = []SpurTilgung{
+	{
+		// Datensatz-Historie: DeleteStudent legt Vor-/Nachname, Klasse und Barcode in
+		// details ab; das ganze Objekt wird durch den Anonymisierungs-Marker ersetzt.
+		// Idempotent über den Marker.
+		Beschreibung: "audit_log (Datensatz-Historie, tabelle='schueler')",
+		sql: `UPDATE audit_log
+			SET details = jsonb_build_object('anonymisiert', true, 'grund', $2::text)
+			WHERE tabelle = 'schueler' AND datensatz_id = ANY($1::uuid[])
+			  AND (details IS NULL OR NOT (details ? 'anonymisiert'))`,
+		brauchtGrund: true,
+	},
+	{
+		// Lesehistorie: dieselben Zeilen, die die Art.-15-Auskunft dem Schüler zurechnet
+		// (api/dsgvo_auskunft.go: tabelle='ausleihen' AND details->>'schueler_id' = id).
+		// Die Buchungshistorie selbst BLEIBT (Nachweis, dass ein Exemplar unterwegs war),
+		// nur ihr Personenbezug fällt — dieselben Schlüssel, die auch die
+		// Lesehistorie-Befristung entfernt (jobs/cron_dsgvo_lesehistorie.go).
+		Beschreibung: "audit_log (Lesehistorie, tabelle='ausleihen')",
+		sql: `UPDATE audit_log
+			SET details = details - 'schueler_id' - 'entleiher'
+			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = ANY($1::text[])`,
+	},
+	{
+		// Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN). Nur der PII-Schlüssel fällt;
+		// Aktion, Zeit und schueler_id (nach Anonymisierung ein Pseudonym) bleiben für
+		// die Rechenschaftspflicht erhalten.
+		Beschreibung: "audit_logs (LUSD-ID)",
+		sql: `UPDATE audit_logs
+			SET details = details - 'lusd_id'
+			WHERE details ? 'lusd_id' AND details->>'schueler_id' = ANY($1::text[])`,
+	},
+	{
+		// Vormerkungen: die Freitext-Notiz kann personenbezogen sein, und die Vormerkung
+		// eines gelöschten/anonymisierten Schülers ist funktionslos. Beim Purge räumt sie
+		// auch der FK-CASCADE — hier stehen sie trotzdem, damit der Cron-Pfad (Schüler
+		// lebt als anonymisierte Hülle weiter) dieselbe Liste fahren kann.
+		Beschreibung: "vormerkungen",
+		sql:          `DELETE FROM vormerkungen WHERE schueler_id = ANY($1::uuid[])`,
+	},
+}
+
+// TilgeSchuelerSpuren entfernt die Personendaten EINES Schülers aus den Neben-Tabellen —
+// gemeinsamer Schritt von LUSD-Abgänger-Anonymisierung (api/lusd_apply.go) und Purge.
+// Historie der Lücken: Bis 22.08.2026 hatte nur der Cron-Pfad alle damaligen Statements
+// (A3: LUSD-ID überlebte 24 Monate); bis 31.08.2026 fehlte hier die Lesehistorie, danach
+// fehlte sie dem Cron — seither ist spurTilgungen die eine Liste für beide.
 // Idempotent; muss VOR dem DELETE des Schülers laufen (audit_logs hängt nur per
 // details->>'schueler_id' am Schüler, nicht per FK).
 func TilgeSchuelerSpuren(ctx context.Context, ex SpurenExecutor, schuelerID, grund string) error {
-	if _, err := ex.Exec(ctx, `
-		UPDATE audit_log
-		SET details = jsonb_build_object('anonymisiert', true, 'grund', $2::text)
-		WHERE tabelle = 'schueler' AND datensatz_id = $1
-		  AND (details IS NULL OR NOT (details ? 'anonymisiert'))`, schuelerID, grund); err != nil {
-		return fmt.Errorf("anonymizing audit_log: %w", err)
-	}
-	// Lesehistorie: dieselben Zeilen, die die Art.-15-Auskunft dem Schüler zurechnet
-	// (api/dsgvo_auskunft.go: tabelle='ausleihen' AND details->>'schueler_id' = id).
-	// Bis zum 31.08.2026 tilgte diese Funktion nur tabelle='schueler' — die vollständige
-	// Lesehistorie überlebte Purge und LUSD-Abgang und war über exakt die Abfrage des
-	// eigenen Auskunftshandlers weiter auffindbar. Die Buchungshistorie selbst BLEIBT
-	// (Nachweis, dass ein Exemplar unterwegs war), nur ihr Personenbezug fällt — dieselben
-	// Schlüssel, die auch die Lesehistorie-Befristung entfernt (jobs/cron_dsgvo_lesehistorie.go).
-	if _, err := ex.Exec(ctx, `
-		UPDATE audit_log
-		SET details = details - 'schueler_id' - 'entleiher'
-		WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`, schuelerID); err != nil {
-		return fmt.Errorf("anonymizing lesehistorie in audit_log: %w", err)
-	}
-	if _, err := ex.Exec(ctx, `
-		UPDATE audit_logs
-		SET details = details - 'lusd_id'
-		WHERE details ? 'lusd_id' AND details->>'schueler_id' = $1`, schuelerID); err != nil {
-		return fmt.Errorf("removing lusd_id from audit_logs: %w", err)
-	}
-	if _, err := ex.Exec(ctx, `DELETE FROM vormerkungen WHERE schueler_id = $1`, schuelerID); err != nil {
-		return fmt.Errorf("deleting vormerkungen: %w", err)
+	for _, st := range spurTilgungen {
+		if _, err := st.Exec(ctx, ex, []string{schuelerID}, grund); err != nil {
+			return fmt.Errorf("tilgung %s: %w", st.Beschreibung, err)
+		}
 	}
 	return nil
 }
