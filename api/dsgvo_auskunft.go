@@ -89,6 +89,16 @@ type DsgvoAuditEintrag struct {
 	Details json.RawMessage `json:"details" swaggertype:"object"`
 }
 
+// DsgvoVerwaltungsEintrag ist ein Eintrag des Verwaltungsprotokolls (audit_logs):
+// Admin-Eingriffe wie DELETE/RESTORE/PURGE_STUDENT oder LUSD_ID_NACHGETRAGEN, die den
+// Schüler über details->>'schueler_id' referenzieren. admin_id und ip_adresse sind
+// Daten des BEARBEITERS, nicht des Schülers — sie gehören nicht in dessen Auskunft.
+type DsgvoVerwaltungsEintrag struct {
+	Aktion    string          `json:"aktion"`
+	Zeitpunkt time.Time       `json:"zeitpunkt"`
+	Details   json.RawMessage `json:"details" swaggertype:"object"`
+}
+
 // DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 lit. a–d, g DSGVO.
 type DsgvoVerarbeitungsangaben struct {
 	Zwecke            []string `json:"zwecke"`
@@ -109,6 +119,7 @@ type DsgvoAuskunftResponse struct {
 	Schadensfaelle       []DsgvoSchadensfall       `json:"schadensfaelle"`
 	Vormerkungen         []DsgvoVormerkung         `json:"vormerkungen"`
 	AuditEintraege       []DsgvoAuditEintrag       `json:"protokolleintraege"`
+	Verwaltung           []DsgvoVerwaltungsEintrag `json:"verwaltungsprotokolle"`
 	Verarbeitungsangaben DsgvoVerarbeitungsangaben `json:"verarbeitungsangaben"`
 }
 
@@ -301,6 +312,32 @@ func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]Dsg
 	return out, rows.Err()
 }
 
+// dsgvoQueryVerwaltungsEintraege liest die Verwaltungs-Protokolle (audit_logs). Bis zum
+// 31.08.2026 fehlte diese Tabelle in der Auskunft komplett — sie war die eine Quelle mit
+// Schülerbezug, die sammleDsgvoDaten nicht las (Gate: dsgvo_paar_vollstaendigkeit_test.go).
+func (s *Server) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) ([]DsgvoVerwaltungsEintrag, error) {
+	const q = `
+		SELECT aktion, zeitstempel, COALESCE(details, '{}'::jsonb)
+		FROM audit_logs
+		WHERE details->>'schueler_id' = $1
+		ORDER BY zeitstempel DESC`
+	rows, err := s.DB.Pool.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []DsgvoVerwaltungsEintrag{}
+	for rows.Next() {
+		var e DsgvoVerwaltungsEintrag
+		if err := rows.Scan(&e.Aktion, &e.Zeitpunkt, &e.Details); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
 // dsgvoDaten bündelt alle personenbezogenen Daten eines Schülers für die Auskunft.
 type dsgvoDaten struct {
 	stammdaten     *DsgvoStammdaten
@@ -309,6 +346,7 @@ type dsgvoDaten struct {
 	schaeden       []DsgvoSchadensfall
 	vormerkungen   []DsgvoVormerkung
 	auditEintraege []DsgvoAuditEintrag
+	verwaltung     []DsgvoVerwaltungsEintrag
 	verarbeitung   DsgvoVerarbeitungsangaben
 }
 
@@ -343,6 +381,10 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Protokolleinträge", err)
 	}
+	verwaltung, err := s.dsgvoQueryVerwaltungsEintraege(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Verwaltungsprotokolle", err)
+	}
 	verarbeitung := dsgvoVerarbeitungsangaben(s.dsgvoLesehistorieFristen(ctx))
 
 	return &dsgvoDaten{
@@ -353,6 +395,7 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 		schaeden:       schaeden,
 		vormerkungen:   vormerkungen,
 		auditEintraege: auditEintraege,
+		verwaltung:     verwaltung,
 	}, nil
 }
 
@@ -413,6 +456,7 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 			Schadensfaelle:       daten.schaeden,
 			Vormerkungen:         daten.vormerkungen,
 			AuditEintraege:       daten.auditEintraege,
+			Verwaltung:           daten.verwaltung,
 			Verarbeitungsangaben: daten.verarbeitung,
 		})
 		return nil

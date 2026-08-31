@@ -1024,7 +1024,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('087_klassen_anzeigeform.sql'),
 ('088_klassensatz_erledigt_notiz.sql'),
 ('089_klassensatz_erledigt_am.sql'),
-('090_ziel_jahrgang_notnull_constraint_name.sql')
+('090_ziel_jahrgang_notnull_constraint_name.sql'),
+('091_audit_logs_schueler_schluessel.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

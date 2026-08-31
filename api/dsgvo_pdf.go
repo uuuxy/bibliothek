@@ -83,6 +83,7 @@ func generateDsgvoAuskunftPDF(daten *dsgvoDaten, schule pdf.SchuleInfo) ([]byte,
 	dsgvoSchadensAbschnitt(p, tr, daten.schaeden)
 	dsgvoVormerkAbschnitt(p, tr, daten.vormerkungen)
 	dsgvoAuditAbschnitt(p, tr, daten.auditEintraege)
+	dsgvoVerwaltungAbschnitt(p, tr, daten.verwaltung)
 	dsgvoVerarbeitungAbschnitt(p, tr, daten.verarbeitung)
 
 	var buf bytes.Buffer
@@ -218,8 +219,24 @@ func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAu
 	}
 }
 
+// dsgvoVerwaltungAbschnitt listet die Verwaltungsprotokolle (audit_logs) — seit dem
+// 31.08.2026 Teil der Auskunft; vorher war audit_logs die eine Quelle mit Schülerbezug,
+// die die Auskunft nicht las.
+func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []DsgvoVerwaltungsEintrag) {
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
+	if len(eintraege) == 0 {
+		dsgvoLeer(p, tr)
+		return
+	}
+	p.SetFont("Arial", "", 8)
+	for _, e := range eintraege {
+		p.MultiCell(0, 5, tr(fmt.Sprintf("%s — %s",
+			e.Zeitpunkt.Format(dsgvoZeitFormat), e.Aktion)), "", "L", false)
+	}
+}
+
 func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va DsgvoVerarbeitungsangaben) {
-	dsgvoAbschnitt(p, tr, "7. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
+	dsgvoAbschnitt(p, tr, "8. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
 	dsgvoAbsatz(p, tr, "Verarbeitungszwecke", strings.Join(va.Zwecke, "; "))
 	dsgvoAbsatz(p, tr, "Rechtsgrundlage", va.Rechtsgrundlage)
 	dsgvoAbsatz(p, tr, "Empfänger", va.Empfaenger)

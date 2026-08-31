@@ -113,7 +113,7 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 
 		// Optional: Audit-Log für Restore anlegen
 		if claims, ok := auth.GetClaims(ctx); ok {
-			logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "RESTORE_STUDENT", `{"student_id":"`+id+`"}`, getIP(r)))
+			logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "RESTORE_STUDENT", `{"schueler_id":"`+id+`"}`, getIP(r)))
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{
@@ -149,7 +149,7 @@ func (s *Server) PurgeStudentHandler(auditRepo repository.AuditRepository) http.
 		}
 
 		logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)",
-			claims.UserID, "PURGE_STUDENT", `{"student_id":"`+id+`"}`, getIP(r)))
+			claims.UserID, "PURGE_STUDENT", `{"schueler_id":"`+id+`"}`, getIP(r)))
 
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",

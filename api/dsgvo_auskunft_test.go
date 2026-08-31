@@ -72,6 +72,10 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktion", "akteur", "timestamp", "kontext", "details"}).
 			AddRow("update", "USER", time.Now(), (*string)(nil), []byte(`{"feld":"klasse"}`)))
+	mock.ExpectQuery(`FROM audit_logs`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"aktion", "zeitstempel", "details"}).
+			AddRow("RESTORE_STUDENT", time.Now(), []byte(`{"schueler_id":"`+dsgvoTestID+`"}`)))
 	mock.ExpectExec(`INSERT INTO audit_log`).
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -87,7 +91,8 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 	}
 	if resp.Stammdaten.Nachname != "Muster" || !resp.Foto.Vorhanden ||
 		len(resp.Ausleihen) != 1 || len(resp.Schadensfaelle) != 1 ||
-		len(resp.Vormerkungen) != 1 || len(resp.AuditEintraege) != 1 {
+		len(resp.Vormerkungen) != 1 || len(resp.AuditEintraege) != 1 ||
+		len(resp.Verwaltung) != 1 {
 		t.Errorf("Sektionen unvollständig: %+v", resp)
 	}
 	if len(resp.Verarbeitungsangaben.Zwecke) == 0 || resp.Verarbeitungsangaben.Rechtsgrundlage == "" {
@@ -126,7 +131,7 @@ func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 	mock.ExpectQuery(`SELECT aktualisiert_am FROM schueler_fotos`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktualisiert_am"})) // kein Foto
-	for _, frag := range []string{`FROM ausleihen a`, `FROM schadensfaelle`, `FROM vormerkungen v`, `FROM audit_log`} {
+	for _, frag := range []string{`FROM ausleihen a`, `FROM schadensfaelle`, `FROM vormerkungen v`, `FROM audit_log`, `FROM audit_logs`} {
 		mock.ExpectQuery(frag).WithArgs(dsgvoTestID).
 			WillReturnRows(pgxmock.NewRows([]string{"x"}))
 	}
