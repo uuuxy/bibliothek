@@ -80,6 +80,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Warteschlangen-Sicht fürs Kollegium: dasselbe Recht wie das Anlegen — wer
 	// reservieren darf, darf sehen, wer vor ihm dran ist.
 	mux.Handle("GET /api/reservierungen/klassensatz/offen", s.RequirePermission("create_reservations")(s.OffeneKlassensatzReservierungenHandler()))
+	mux.Handle("GET /api/reservierungen/klassensatz/eigene", s.RequirePermission("create_reservations")(s.MeineKlassensatzReservierungenHandler()))
 
 	// Geräte-Verwaltung (Bereich im Medienkatalog): Geräte sind Bestand — Rechte wie Bücher.
 	geraeteRepo := repository.NewGeraeteRepository(s.DB.Pool)

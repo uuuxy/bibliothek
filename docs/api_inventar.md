@@ -113,6 +113,7 @@
 - `GET /api/reports/overdue-pdf`
 - `GET /api/reservierungen/klassensatz`
 - `GET /api/reservierungen/klassensatz/anzahl`
+- `GET /api/reservierungen/klassensatz/eigene`
 - `GET /api/reservierungen/klassensatz/offen`
 - `GET /api/schadensfaelle/{id}/pdf`
 - `GET /api/schueler`

@@ -144,6 +144,27 @@ func (s *Server) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
 	}
 }
 
+// MeineKlassensatzReservierungenHandler liefert die EIGENEN Reservierungen der
+// angemeldeten Lehrkraft fuers Portal — offene und kuerzlich abgeschlossene samt
+// Bibliotheks-Notiz. GET /api/reservierungen/klassensatz/eigene
+// (Muster und Recht wie GET /api/anliegen/eigene.)
+func (s *Server) MeineKlassensatzReservierungenHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := auth.GetClaims(r.Context())
+		if !ok {
+			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine sitzung"))
+			return
+		}
+		repo := repository.NewReservationRepository(s.DB.Pool)
+		meine, err := repo.MeineKlassensatzReservierungen(r.Context(), claims.UserID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		RespondJSON(w, http.StatusOK, meine)
+	}
+}
+
 // ErledigeKlassensatzReservierungHandler schliesst eine Klassensatz-Reservierung ab.
 // PUT /api/reservierungen/klassensatz/{id}/erledigen  { "notiz": "24 von 30, Rest bei der 8a" }
 //

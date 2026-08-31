@@ -105,6 +105,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/reservierungen/klassensatz` | view_orders | 0 | angefordert_von ist Lehrkraft |
 | `GET /api/reservierungen/klassensatz/anzahl` | view_orders | 0 | nur Zähler |
 | `GET /api/reservierungen/klassensatz/offen` | create_reservations | 0 | Titel, Klasse, Anzahl |
+| `GET /api/reservierungen/klassensatz/eigene` | create_reservations | 0 | eigene Reservierungen; Bibliotheks-Notiz |
 | `GET /api/geraete` | view_books | 1 | Ausleihername nur mit view_students, sonst geblendet |
 | `POST /api/geraete` | edit_books | 0 | Gerätestammdaten |
 | `PUT /api/geraete/{id}` | edit_books | 0 | Gerätestammdaten |

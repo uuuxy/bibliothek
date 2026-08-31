@@ -21,7 +21,12 @@ type KlassensatzReservierung struct {
 	Notiz          *string `json:"notiz,omitempty"`
 	AngefordertVon *string `json:"angefordert_von,omitempty"`
 	Erledigt       bool    `json:"erledigt"`
-	ErstelltAm     string  `json:"erstellt_am"`
+	// ErledigtNotiz/ErledigtAm: Antwort der Bibliothek und Abschlusszeitpunkt (088/089).
+	// Bis zum 31.08.2026 existierte die Notiz nur in der Bereit-Mail — scheiterte die,
+	// war sie für immer unsichtbar. ErledigtAm leer = vor Migration 089 abgeschlossen.
+	ErledigtNotiz string `json:"erledigt_notiz,omitempty"`
+	ErledigtAm    string `json:"erledigt_am,omitempty"`
+	ErstelltAm    string `json:"erstellt_am"`
 	// Verfuegbar ist der aktuelle Ausleih-Bestand des Titels (gleiche Definition wie
 	// im OPAC: ausleihbar, nicht ausgesondert, keine offene Ausleihe) — damit sieht
 	// die Bibliothek beim Erledigen, ob der Satz noch vollständig ist, ohne am Regal
@@ -62,6 +67,9 @@ type ReservationRepository interface {
 	// notiz ist die Antwort der Bibliothek (landet in der Mail, Migration 088).
 	// nil ohne Fehler: war nicht (mehr) offen.
 	ErledigeKlassensatzReservierung(ctx context.Context, id, notiz string) (*KlassensatzErledigt, error)
+	// MeineKlassensatzReservierungen liefert die EIGENEN Reservierungen einer Lehrkraft
+	// fuers Portal — offene plus kuerzlich abgeschlossene samt Bibliotheks-Notiz (088/089).
+	MeineKlassensatzReservierungen(ctx context.Context, benutzerID string) ([]KlassensatzMeine, error)
 }
 
 type pgReservationRepository struct {
@@ -135,7 +143,8 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 		          AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
 		          AND NOT EXISTS (SELECT 1 FROM ausleihen a
 		                          WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		       ) AS verfuegbar
+		       ) AS verfuegbar,
+		       r.erledigt_notiz, r.erledigt_am
 		FROM klassensatz_reservierungen r
 		JOIN buecher_titel t ON r.titel_id = t.id
 		LEFT JOIN benutzer b ON r.angefordert_von = b.id
@@ -152,13 +161,18 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 	for rows.Next() {
 		var res KlassensatzReservierung
 		var t time.Time
+		var erledigtAm *time.Time // NULL = vor Migration 089 abgeschlossen
 		if err := rows.Scan(
 			&res.ID, &res.TitelID, &res.TitelName, &res.CoverURL,
 			&res.Klasse, &res.Anzahl, &res.Notiz, &res.Erledigt, &t, &res.AngefordertVon, &res.Verfuegbar,
+			&res.ErledigtNotiz, &erledigtAm,
 		); err != nil {
 			continue
 		}
 		res.ErstelltAm = t.Format("02.01.2006")
+		if erledigtAm != nil {
+			res.ErledigtAm = erledigtAm.Format("02.01.2006")
+		}
 		result = append(result, res)
 	}
 	if err := rows.Err(); err != nil {
@@ -196,6 +210,60 @@ func (r *pgReservationRepository) OffeneKlassensatzReservierungen(ctx context.Co
 	return offene, rows.Err()
 }
 
+// KlassensatzMeine ist die Portal-Sicht einer Lehrkraft auf die EIGENEN Reservierungen —
+// offene und kürzlich abgeschlossene, samt Antwort der Bibliothek. Bis zum 31.08.2026
+// verschwand eine Reservierung mit dem Abschluss aus dem Portal, und die Notiz der
+// Bibliothek existierte nur in der Bereit-Mail; scheiterte die, war sie unsichtbar.
+type KlassensatzMeine struct {
+	ID            string `json:"id"`
+	TitelID       string `json:"titel_id"`
+	Titel         string `json:"titel"`
+	Klasse        string `json:"klasse"`
+	Anzahl        int    `json:"anzahl"`
+	Notiz         string `json:"notiz,omitempty"`
+	Erledigt      bool   `json:"erledigt"`
+	ErledigtNotiz string `json:"erledigt_notiz,omitempty"`
+	ErledigtAm    string `json:"erledigt_am,omitempty"` // leer = vor Migration 089 abgeschlossen
+	ErstelltAm    string `json:"erstellt_am"`
+}
+
+// MeineKlassensatzReservierungen — eigene offene plus die in den letzten 60 Tagen
+// abgeschlossenen (das Portal ist kein Archiv, wie ListEigene beim Anliegen; Altfälle
+// ohne erledigt_am bleiben draußen, ihr Zeitpunkt ist nicht rekonstruierbar).
+// Offene zuerst, dann neueste zuerst, höchstens 50.
+func (r *pgReservationRepository) MeineKlassensatzReservierungen(ctx context.Context, benutzerID string) ([]KlassensatzMeine, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT k.id, k.titel_id, COALESCE(t.titel, ''), k.klasse, k.anzahl,
+		       COALESCE(k.notiz, ''), k.erledigt, k.erledigt_notiz, k.erledigt_am, k.erstellt_am
+		FROM klassensatz_reservierungen k
+		LEFT JOIN buecher_titel t ON t.id = k.titel_id
+		WHERE k.angefordert_von = $1
+		  AND (k.erledigt = false OR k.erledigt_am > NOW() - INTERVAL '60 days')
+		ORDER BY k.erledigt ASC, k.erstellt_am DESC
+		LIMIT 50`, benutzerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	meine := []KlassensatzMeine{}
+	for rows.Next() {
+		var m KlassensatzMeine
+		var erstellt time.Time
+		var erledigtAm *time.Time
+		if err := rows.Scan(&m.ID, &m.TitelID, &m.Titel, &m.Klasse, &m.Anzahl,
+			&m.Notiz, &m.Erledigt, &m.ErledigtNotiz, &erledigtAm, &erstellt); err != nil {
+			return nil, err
+		}
+		m.ErstelltAm = erstellt.Format("02.01.2006")
+		if erledigtAm != nil {
+			m.ErledigtAm = erledigtAm.Format("02.01.2006")
+		}
+		meine = append(meine, m)
+	}
+	return meine, rows.Err()
+}
+
 func (r *pgReservationRepository) GetKlassensatzReservierungenAnzahl(ctx context.Context) (int, error) {
 	var count int
 	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM klassensatz_reservierungen WHERE erledigt = false`).Scan(&count)
@@ -218,7 +286,7 @@ func (r *pgReservationRepository) ErledigeKlassensatzReservierung(ctx context.Co
 	row := r.db.QueryRow(ctx, `
 		WITH abgeschlossen AS (
 			UPDATE klassensatz_reservierungen
-			SET erledigt = true, erledigt_notiz = $2
+			SET erledigt = true, erledigt_notiz = $2, erledigt_am = CURRENT_TIMESTAMP
 			WHERE id = $1 AND erledigt = false
 			RETURNING titel_id, klasse, anzahl, notiz, erledigt_notiz, angefordert_von
 		)
