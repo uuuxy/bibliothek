@@ -69,14 +69,18 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
 
 	// Ein Exemplar „Im Zulauf" ohne gedrucktes Etikett (Amazon-Fall) — genau das löst
 	// nach dem Einbuchen den Druck-Vorschlag aus (etikett_gedruckt = false).
+	// Seit Migration 071 (d8ef561a) trägt die SPALTE bestellstatus den Zustand; die
+	// Notiz ist reiner Freitext. Dieser Seed schrieb nur noch die Notiz — der Test war
+	// seitdem still rot (0 Positionen im Zulauf), weil die Go-Ratsche gegen den
+	// Magie-Text JS-Seeds nicht sieht.
 	seedSQL(`
         WITH t AS (
             INSERT INTO buecher_titel (isbn, titel, autor)
             VALUES ('978z${s}', 'E2E Zulaufbuch ${s}', 'Zulauf Autor')
             RETURNING id
         )
-        INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, etikett_gedruckt, zustand_notiz)
-        SELECT id, 'B-zul-${s}', false, false, 'Im Zulauf (E2E-Lieferant ${s})' FROM t;
+        INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, etikett_gedruckt, zustand_notiz, bestellstatus)
+        SELECT id, 'B-zul-${s}', false, false, 'Im Zulauf (E2E-Lieferant ${s})', 'im_zulauf' FROM t;
     `);
 
 	await uiLogin(page);
