@@ -428,7 +428,7 @@ Zwei Dinge laufen automatisch, ein drittes bewusst nicht:
 | Ereignis | Was passiert | Workflow |
 |---|---|---|
 | Push auf `main` | Image `ghcr.io/uuuxy/bibliothek:latest` + `main-<kurz-sha>` | `docker-publish.yml` |
-| Git-Tag `v1.2.3` | Image `1.2.3`, `1.2`, `latest` **und** GitHub-Release mit generierten Notes | `docker-publish.yml` + `release.yml` |
+| Git-Tag `v1.2.3` | Image `1.2.3` und `1.2` (**kein** `latest`, siehe unten) **und** GitHub-Release mit generierten Notes | `docker-publish.yml` + `release.yml` |
 | Deploy auf dem Server | **nicht** automatisch — `./update.sh` (git pull + lokaler Build), siehe §2 | — |
 
 **Release machen** (auf grünem `main`, vom Repo-Root):

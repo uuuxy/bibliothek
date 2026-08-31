@@ -180,7 +180,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `PUT /api/admin/permissions` | manage_users | 0 | Rechte-Matrix (Ändern nur Admin) |
 | `GET /api/admin/system/backup-status` | manage_settings | 0 | Backup-Status |
 | `GET /api/admin/system/betriebsbereitschaft` | manage_settings | 0 | Befunde: Klassennamen, Zähler |
-| `GET /api/audit` | audit_logs | 0 | Audit ohne details; IDs statt Namen |
+| `GET /api/audit` | audit_logs | 0 | Audit ohne details; Bearbeiter mit Vor-/Nachname (Personal, keine Schülerdaten) |
 | `GET /api/mail-templates` | manage_settings | 0 | Vorlagentexte |
 | `PUT /api/mail-templates/{id}` | manage_settings | 0 | Vorlagentexte |
 | `GET /api/reports/overdue-pdf` | view_students | 2 | Elternbriefe: Name + Überfälliges |
