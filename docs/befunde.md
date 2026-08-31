@@ -43,6 +43,25 @@ Zwei Regeln dazu:
 
 ---
 
+## Methoden-Ausbau nach dem Komplett-Durchgang (31.08.2026 abends) — fünf Erweiterungen, sechs Commits
+
+Peters Frage nach dem Durchgang: „Warum wird es nie null — und sollten wir die Methode
+erweitern?" Antwort: nicht um Fragen (alle 18 Funde fielen unter die elf vorhandenen),
+sondern um **Gates**. Alle fünf beschlossenen Erweiterungen gebaut:
+
+| Erweiterung | Ergebnis | Commit |
+| --- | --- | --- |
+| **C · Zwillings-Pflicht** | sweeps.md Regel 5: Jeder Fix-Commit beantwortet „Wo ist der Zwilling?" | `b3bce897` |
+| **E · Frontend-Lesart des Rasters** | Die elf Fragen stehen jetzt kanonisch in invarianten.md (vorher nur verstreut; sweeps.md zeigte ins Leere) + Übersetzungstabelle Backend↔Frontend | `b3bce897` |
+| **D · Umgebungs-Parität** | `docs/umgebung_paritaet_test.go`: PG-Major über 6 Pins/5 Dateien. Die Zwillings-Frage am Tag ihrer Einführung fand ZWEI weitere halbe Sprünge: CI testete Node 24, das Bundle baut node:22; Dependabot-PR #515 hob golang auf 1.27.0, go.mod/CI blieben 1.26.6 — getestet wurde mit einer anderen Toolchain, als das Prod-Binary baute. Beide angeglichen, drei Gates | `1a37b64c` |
+| **A · Auskunft↔Tilgung als Paar** | Drei A-Funde der Recon, alle behoben: (1) Art.-15-Auskunft las `audit_logs` nicht; (2) drei Schreibstellen nannten den Schlüssel `student_id` statt `schueler_id` — für Auskunft UND Tilgung unsichtbar (Migration 091 schlüsselt Altzeilen um); (3) dem Anonymisierungs-Cron fehlte das Lesehistorie-Statement — der **Klarname überlebte** in `details->>'entleiher'`. Eine Statement-Liste (`repository.SpurTilgungen`) für Cron und Purge; eine Quellenliste (`dsgvoSchuelerQuellen`) treibt Quelltext-Scan, PG-Rundreise (echte Pfade, wertbasierte Sonde) und FK-Wachstums-Ratsche | `78c9434c`, `89425674` |
+| **B · Phantom-Erfolg-Bestand** | Sweep über 163 Exec-Stellen: 10 stille Erfolge gefixt (u. a. UpdateUser/DeleteUser/DeleteTitle mit Audit-Einträgen über Nicht-Änderungen) + AST-Ratsche `phantom_erfolg_test.go` mit 73 begründet eingefrorenen Funktionen | `fe902909` |
+
+Nebenbefund fürs Protokoll: Die lokalen Backup-Proben (`TestBackupRestoreDrill`,
+`TestRunRestoreProbe_…`) scheitern seit dem 18er-Sprung an Peters lokalem pg_dump 16.15
+(Client-Major muss == Server-Major sein — exakt die dokumentierte Regel im Dockerfile).
+CI installiert Client 18; lokal heilt `brew install postgresql@18` — **offen bei Peter**.
+
 ## Komplett-Durchgang über das ganze Programm (31.08.2026) — 18 Funde, 18 Commits
 
 Auf Peters Ansage „1 gezielt und abschließend nochmal komplett". Phase 1 gezielt über die
