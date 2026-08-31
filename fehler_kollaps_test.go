@@ -43,12 +43,9 @@ var kollapsBestand = map[string]string{
 	"api/permission_middleware.go:claimsAusRequest": "Token-Parsefehler = 401; kein DB-Zugriff",
 	"auth/handlers.go:MeHandler":                    "Cookie/Token-Parsefehler = 401 (zwei Stellen); der DB-Kollaps dahinter ist behoben",
 	"auth/handlers.go:RefreshTokenHandler":          "Token-Parsefehler = 401; kein DB-Zugriff",
-	// Externe Lookups (DNB, OpenLibrary): Ein Netzausfall endet als „nicht gefunden".
-	// Prüfvorrat docs/sweeps.md — ob der Betreiber einen Ausfall vom Nicht-Treffer
-	// unterscheiden können muss, ist eine Produktfrage.
-	"api/isbn_handler.go:ISBNZuTitelHandler":              "externer Lookup",
-	"inventur/cover_aktualisierung.go:handleRefreshCover": "externer Lookup",
-	"inventur/isbn_suche.go:handleLookup":                 "externer Lookup (Fehler wird immerhin geloggt)",
+	// Die drei externen Lookups (DNB, Google, OpenLibrary) sind seit dem 31.08.2026
+	// eingeordnet: Netzausfall = 502 (inventur.ErrKatalogdiensteNichtErreichbar),
+	// erreichbar ohne Treffer = 404 (Produktentscheidung; Sweep docs/sweeps.md).
 }
 
 var kollapsAntworten = map[string]bool{"StatusNotFound": true, "StatusUnauthorized": true, "StatusForbidden": true}

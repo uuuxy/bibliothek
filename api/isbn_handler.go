@@ -153,6 +153,12 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		// 2. Not yet in catalog – fetch metadata from DNB / Google / OpenLibrary.
 		meta, err := metaClient.SucheNachISBN(ctx, req.ISBN)
 		if err != nil {
+			if errors.Is(err, inventur.ErrKatalogdiensteNichtErreichbar) {
+				// Netzausfall ist kein Nicht-Treffer: Bei 404 legt die Theke während
+				// einer WLAN-Störung Titel von Hand an, die längst in der DNB stehen.
+				apierrors.SendHTTPError(w, http.StatusBadGateway, errors.New("katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen"))
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine Metadaten für ISBN %s gefunden", req.ISBN))
 			return
 		}

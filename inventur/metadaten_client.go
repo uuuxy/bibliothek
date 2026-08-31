@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -64,6 +65,18 @@ func (c *MetadatenClient) SetzeHTTPClientFuerTest(hc *http.Client) {
 	c.httpClient = hc
 }
 
+// ErrKatalogdiensteNichtErreichbar heißt: KEINE der Quellen (DNB, Google, OpenLibrary)
+// war erreichbar — das ist ein Ausfall (502 beim Aufrufer), kein Nicht-Treffer (404).
+// Bis zum 31.08.2026 sahen beide Fälle gleich aus, und bei einer WLAN-Störung
+// katalogisierte die Theke Bücher von Hand, die längst in der DNB stehen
+// (Sweep „Fehler-Kollaps").
+var ErrKatalogdiensteNichtErreichbar = errors.New("katalogdienste (DNB, Google Books, OpenLibrary) nicht erreichbar")
+
+// errQuelleNichtErreichbar markiert Ausfälle EINER Quelle (holeInhalt): Verbindung
+// gescheitert oder Status ≥ 500. Alles andere — 4xx, leere Antwort, „nicht gefunden",
+// unlesbare Nutzlast — heißt: Die Quelle war da, sie hatte nur nichts.
+var errQuelleNichtErreichbar = errors.New("quelle nicht erreichbar")
+
 // SucheNachISBN iteriert der Reihe nach über verschiedene Buch-APIs (DNB, Google, OpenLibrary),
 // bis für die gesuchte ISBN gültige Titel-/Autorendaten gefunden wurden.
 func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
@@ -80,24 +93,32 @@ func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn strin
 		return nil, fmt.Errorf("ungültiges ISBN format: sicherheitsabbruch")
 	}
 
-	// 1. DNB (Deutsche Nationalbibliothek)
-	ergebnis, fehler = client.sucheDNB(kontext, saubereIsbn)
-	if fehler == nil && ergebnis != nil && (ergebnis.Titel != "" || ergebnis.Autor != "") {
-		return client.beendeSuche(kontext, ergebnis, saubereIsbn), nil
+	// Der Reihe nach: DNB (beste Quelle für deutsche Schulbücher), Google, OpenLibrary.
+	// Nebenbei wird gezählt, ob überhaupt EINE Quelle geantwortet hat: „alle nicht
+	// erreichbar" ist ein Ausfall (Sentinel → 502 beim Aufrufer), kein Nicht-Treffer.
+	quellen := []func(context.Context, string) (*MetadatenErgebnis, error){
+		client.sucheDNB,
+		client.sucheGoogleBooks,
+		client.sucheOpenLibrary,
+	}
+	erreichbar := false
+	var letzterAusfall error
+	for _, quelle := range quellen {
+		ergebnis, fehler = quelle(kontext, saubereIsbn)
+		if fehler == nil && ergebnis != nil && (ergebnis.Titel != "" || ergebnis.Autor != "") {
+			return client.beendeSuche(kontext, ergebnis, saubereIsbn), nil
+		}
+		if errors.Is(fehler, errQuelleNichtErreichbar) {
+			letzterAusfall = fehler
+			continue
+		}
+		// „nicht gefunden", leere Nutzlast oder unlesbare Antwort: Die Quelle war da.
+		erreichbar = true
 	}
 
-	// 2. Google Books
-	ergebnis, fehler = client.sucheGoogleBooks(kontext, saubereIsbn)
-	if fehler == nil && ergebnis != nil && (ergebnis.Titel != "" || ergebnis.Autor != "") {
-		return client.beendeSuche(kontext, ergebnis, saubereIsbn), nil
+	if !erreichbar {
+		return nil, fmt.Errorf("%w (zuletzt: %v)", ErrKatalogdiensteNichtErreichbar, letzterAusfall)
 	}
-
-	// 3. OpenLibrary
-	ergebnis, fehler = client.sucheOpenLibrary(kontext, saubereIsbn)
-	if fehler == nil && ergebnis != nil && (ergebnis.Titel != "" || ergebnis.Autor != "") {
-		return client.beendeSuche(kontext, ergebnis, saubereIsbn), nil
-	}
-
 	return nil, fmt.Errorf("keine metadaten für ISBN gefunden")
 }
 
@@ -172,10 +193,17 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 	anfrage.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 	antwort, fehler := client.httpClient.Do(anfrage)
 	if fehler != nil {
-		return nil, fehler
+		// Transportfehler tragen das Sentinel: Die Quelle war NICHT da — der Unterschied
+		// zwischen „Netz weg" (502) und „Buch unbekannt" (404) entsteht genau hier.
+		return nil, fmt.Errorf("%w: %v", errQuelleNichtErreichbar, fehler)
 	}
 	defer func() { _ = antwort.Body.Close() }() //nolint:errcheck
+	if antwort.StatusCode >= http.StatusInternalServerError {
+		// 5xx: Die Quelle ist kaputt, nicht leer.
+		return nil, fmt.Errorf("%w: status %d", errQuelleNichtErreichbar, antwort.StatusCode)
+	}
 	if antwort.StatusCode != http.StatusOK {
+		// 4xx: Die Quelle hat geantwortet — das zählt als erreichbar ohne Treffer.
 		return nil, fmt.Errorf("status %d", antwort.StatusCode)
 	}
 	return io.ReadAll(io.LimitReader(antwort.Body, 2<<20)) // Max 2 MB

@@ -52,8 +52,10 @@ func TestHandleLookupSucheFehlschlag(t *testing.T) {
 
 	handler.handleLookup(rr, req)
 
-	if rr.Code != http.StatusNotFound {
-		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusNotFound, rr.Code, rr.Body.String())
+	// Seit dem 31.08.2026 ist ein Netzausfall KEIN Nicht-Treffer mehr: keine Quelle
+	// erreichbar → 502 (siehe lookup_ausfall_test.go), nur „erreichbar ohne Treffer" → 404.
+	if rr.Code != http.StatusBadGateway {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusBadGateway, rr.Code, rr.Body.String())
 	}
 }
 

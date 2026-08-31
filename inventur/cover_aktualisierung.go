@@ -35,6 +35,12 @@ func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, reques
 
 	lookup, err := handler.metadaten.SucheNachISBN(request.Context(), book.ISBN)
 	if err != nil || lookup == nil {
+		if errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
+			// Netzausfall ist kein Nicht-Treffer — sonst sieht „Cover neu laden" bei
+			// WLAN-Störung so aus, als gäbe es schlicht kein besseres Cover.
+			writeError(writer, http.StatusBadGateway, "Katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen")
+			return
+		}
 		writeError(writer, http.StatusNotFound, "Keine neuen Metadaten gefunden")
 		return
 	}

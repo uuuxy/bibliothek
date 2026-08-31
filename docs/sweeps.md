@@ -39,10 +39,14 @@ der ganze Bestand, eine Ratsche.
 | Transaktionsgrenzen           | Mehrschritt-Schreibpfad ohne Tx                                                                    | Sweep 19.08.                                             | Memory „Sweep Transaktionsgrenzen"                                                                 |
 | IDOR / Zeit / Vokabular       | 3 Sweeps 19.08., je Gate                                                                           | —                                                        | Memory „Sweep IDOR/Zeit/Vokabular"                                                                 |
 
-## Offene Produktfrage aus dem Kollaps-Sweep
+## Produktfrage aus dem Kollaps-Sweep — entschieden 31.08.2026
 
-Drei externe Lookups (DNB/OpenLibrary: `api/isbn_handler.go`, `inventur/isbn_suche.go`,
-`inventur/cover_aktualisierung.go`) antworten bei Netzausfall „nicht gefunden". Für die
-Theke ist das derselbe Bildschirm wie ein echter Nicht-Treffer. Soll der Betreiber den
-Unterschied sehen (502 „Katalogdienst nicht erreichbar" statt 404)? Bis zur Entscheidung
-im Bestand der Ratsche eingefroren.
+Drei externe Lookups (DNB/Google/OpenLibrary: `api/isbn_handler.go`, `inventur/isbn_suche.go`,
+`inventur/cover_aktualisierung.go`) antworteten bei Netzausfall „nicht gefunden" — derselbe
+Bildschirm wie ein echter Nicht-Treffer; bei einer WLAN-Störung katalogisierte die Theke
+Bücher von Hand, die längst in der DNB stehen. Entscheidung (Peter): **502 „Katalogdienste
+nicht erreichbar"**, 404 nur wenn mindestens eine Quelle geantwortet hat. Umsetzung:
+`inventur.ErrKatalogdiensteNichtErreichbar` (Transportfehler je Quelle als Sentinel in
+`holeInhalt`), `errors.Is` in allen drei Handlern; die drei Ratschen-Ausnahmen sind
+ausgetragen. Gate: `inventur/lookup_ausfall_test.go` (kaputtes Netz → 502, erreichbar ohne
+Treffer → 404) — am alten Stand rot gesehen.
