@@ -342,23 +342,6 @@ func main() {
 		}
 	}
 
-	// vorlage.Init() ABSICHTLICH nicht aufgerufen.
-	//
-	// Das ist das BEISPIEL-Plugin aus plugins/vorlage. Registriert lief es in
-	// Produktion mit und schrieb bei jeder Rückgabe am Tresen zwei Zeilen ins Log —
-	// eine aus DispatchEvent ("Dispatching event … to 1 listener(s)"), eine aus dem
-	// Beispiel selbst, mit Titel, Barcode und Bearbeiter-UUID. Kein Schülername, also
-	// kein Datenschutzproblem, aber Demo-Code im Betrieb und Log-Volumen an der
-	// meistbenutzten Stelle des Systems. Ohne Zuhörer kehrt DispatchEvent still zurück.
-	//
-	// Der Erweiterungspunkt selbst BLEIBT: Die fünf DispatchEvent-Aufrufe stehen
-	// jeweils nach dem Commit, neben dem Audit-Eintrag ("nur melden, was dauerhaft
-	// passiert ist"). Ihn auszubauen ist Kategorie C und laut eigener Regel nichts,
-	// was man mitten im Pilotbetrieb an Rückgabe-, Ausleih- und Gerätepfaden tut.
-	// Nach dem Pilot zu entscheiden — Stand heute spricht alles fürs Löschen: ein
-	// einziger Ereignistyp, kein echtes Plugin in 15 Monaten, Frontend-Teil nie
-	// angeschlossen (docs/befunde.md).
-
 	// 1. Config environment resolution
 	dsn, jwtSecret, port, cookieSecure := loadConfig()
 

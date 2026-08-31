@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"bibliothek/db"
-	"bibliothek/plugins"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -191,15 +190,6 @@ func (s *defaultLoanService) handleEigenrueckgabeMitarbeiter(ctx context.Context
 	}
 	logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 
-	// Event für Plugins triggern (Rückgabe registriert)
-	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-		CopyID:       copy.ID,
-		BarcodeID:    copy.BarcodeID,
-		Titel:        copy.Titel,
-		SchuelerID:   activeLoan.SchuelerID,
-		BearbeiterID: staffID,
-	})
-
 	resp.Type = "rueckgabe"
 	resp.Book = copy
 	resp.LoanID = &activeLoan.ID
@@ -239,15 +229,6 @@ func (s *defaultLoanService) handleSchuelerRueckgabe(ctx context.Context, tx pgx
 	} else if activeLoan.AusleiherBenutzerID != nil {
 		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
 	}
-
-	// Event für Plugins triggern (Rückgabe registriert)
-	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-		CopyID:       copy.ID,
-		BarcodeID:    copy.BarcodeID,
-		Titel:        copy.Titel,
-		SchuelerID:   activeLoan.SchuelerID,
-		BearbeiterID: staffID,
-	})
 
 	resp.Type = "rueckgabe"
 	resp.Book = copy

@@ -1,0 +1,166 @@
+[
+ {
+  "t": 0.039,
+  "text": "Bibliosys. Die Schulbibliothek, die mitdenkt."
+ },
+ {
+  "t": 3.981,
+  "text": "Der öffentliche Katalog. Ohne Anmeldung – vom Klassenraum, vom Handy, von zu Hause."
+ },
+ {
+  "t": 16.512,
+  "text": "Der Bibliotheks-Monitor. Buch des Monats, Neuzugänge, Beliebt diese Woche – läuft auf jedem Bildschirm ohne Anmeldung."
+ },
+ {
+  "t": 30.007,
+  "text": "Ein Konto, ein Passwort. Anmeldung über das Schul-Postfach – keine zweite Benutzerverwaltung."
+ },
+ {
+  "t": 37.612,
+  "text": "Scannen. Fertig. Schülerausweis scannen, Buch scannen – die Theke erledigt den Rest."
+ },
+ {
+  "t": 46.829,
+  "text": "Alles auf einen Blick. Fristen, Status, Verlängern, Rückgabe, Schaden melden – direkt an der Zeile."
+ },
+ {
+  "t": 51.769,
+  "text": "Schaden? Sofort erfasst. Grund, Ersatzbetrag – die Forderung landet in der Akte, der Elternbrief kommt als PDF."
+ },
+ {
+  "t": 62.525,
+  "text": "Vorgemerkt? Die Theke warnt. Kommt ein reservierter Titel zurück, geht er nicht ins Regal – sondern zur nächsten Leserin."
+ },
+ {
+  "t": 76.151,
+  "text": "Rückgabe ohne Umweg. Buch ohne geöffnete Theke scannen – es wird sofort zurückgebucht."
+ },
+ {
+  "t": 80.757,
+  "text": "Oder einfach den Namen tippen. Kein Ausweis dabei? Namenssuche mit Sofortvorschlägen."
+ },
+ {
+  "t": 86.269,
+  "text": "Überfällig? Sieht man sofort. Mahnstufe und Fristen stehen an der Ausleihe, nicht in einer Liste irgendwo."
+ },
+ {
+  "t": 91.829,
+  "text": "Sperren greifen an der Theke. Ein gesperrter Ausweis wird angehalten – mit Grund und bewusstem Override."
+ },
+ {
+  "t": 103.92,
+  "text": "Der ganze Bestand, sofort durchsuchbar. Titel, Autor, Fach oder Klasse – ein Feld für alles, Cover inklusive."
+ },
+ {
+  "t": 111.073,
+  "text": "Nach Jahrgang sortiert. Lernmittel je Jahrgang und Schulzweig – mit Stückzahlen."
+ },
+ {
+  "t": 117.009,
+  "text": "Die Buchakte. Exemplare, Ausleiher, Vormerkungen, Historie – ein Klick auf die Karte."
+ },
+ {
+  "t": 130.489,
+  "text": "Titel pflegen, Geräte verwalten. Auch iPads, Taschenrechner und Beamer laufen über dieselbe Ausleihe."
+ },
+ {
+  "t": 141.369,
+  "text": "Systematik statt Zettelwirtschaft. Sachgruppen und Regale – Präfixsuche über den ganzen Bestand."
+ },
+ {
+  "t": 151.988,
+  "text": "Etiketten und Ausweise – aus einer Hand. Buch-Etiketten, fehlende Etiketten als Warteschlange, Schülerausweise als Designer."
+ },
+ {
+  "t": 169.615,
+  "text": "Welche Klasse hat welche Lektüre? Klassensätze je Klasse – und die Warteschlange der Reservierungen aus dem Kollegium."
+ },
+ {
+  "t": 194.394,
+  "text": "Jeder Schüler, eine Akte. Stammdaten, Ausleihen, Gebühren, Ausweis – Suche läuft serverseitig über den ganzen Bestand."
+ },
+ {
+  "t": 202.122,
+  "text": "Gebühren & Schäden im Blick. Offene Forderungen, Ersatzforderung als PDF, Bezahlt oder Storno mit Begründung."
+ },
+ {
+  "t": 207.721,
+  "text": "Sperren – mit Begründung. Kein Sperren ohne Grund: Der Text steht danach an der Theke und in der Akte."
+ },
+ {
+  "t": 219.202,
+  "text": "Neu anlegen oder importieren. Einzeln per Formular – oder klassenweise aus dem LUSD-Export."
+ },
+ {
+  "t": 232.27,
+  "text": "Wer schuldet was – nach Dringlichkeit. Akut fällig oder eskaliert, gefiltert nach Klasse. Mahnbriefe und Sammel-Mahnlauf per Mail."
+ },
+ {
+  "t": 250.002,
+  "text": "Der Mahnlauf – mit Sicherheitsnetz. Klassen wählen, Empfänger prüfen, dann erst senden. Lehrkräfte werden nie angemahnt."
+ },
+ {
+  "t": 259.761,
+  "text": "Nichts geht verloren. Wer die Schule verlässt und noch Bücher hat, steht hier – Kontoauszüge an die Klassenleitung, per Klick."
+ },
+ {
+  "t": 274.651,
+  "text": "Bedarf erkennen, bevor er fehlt. Lernmittel unter Meldebestand landen automatisch hier – Bestellung mit einem Klick."
+ },
+ {
+  "t": 284.564,
+  "text": "Vom Wareneingang bis zum Etikett. Einbuchen, Historie mit Händler-Bestätigung, Berichte fürs Sekretariat."
+ },
+ {
+  "t": 295.248,
+  "text": "Das Kollegium bestellt mit. Klassensatz-Reservierungen als Warteschlange, Buchwünsche und Meldungen aus dem Portal."
+ },
+ {
+  "t": 304.192,
+  "text": "Bestandsprüfung mit dem Scanner. Nach Signatur, Fach oder Klasse eingrenzen – scannen, Fehlbestand erhalten."
+ },
+ {
+  "t": 327.811,
+  "text": "Zahlen, die Entscheidungen tragen. Zirkulation, Wiederbeschaffungswert, Renner und Ladenhüter – ohne Schülerklarnamen."
+ },
+ {
+  "t": 349.543,
+  "text": "Jede Änderung nachvollziehbar. Logbuch und Admin-Audit – wer hat wann was geändert."
+ },
+ {
+  "t": 359.743,
+  "text": "Rollen statt Passwörter. Admin, Mitarbeit, Helfer, Kollegium – Rechte pro Rolle, Zugangsanfragen aus dem Kollegium."
+ },
+ {
+  "t": 371.975,
+  "text": "Alles an einem Ort. Fristen, Mahnwesen, Lieferanten, Mail, Datenschutz, Schuljahreswechsel – je Kategorie gespeichert."
+ },
+ {
+  "t": 389.541,
+  "text": "Massenaktionen mit Netz und doppeltem Boden. Lernmittel klassenweise verlängern, Littera- und LUSD-Import, Versetzung zum Schuljahreswechsel, Export & Offline-Sicherung."
+ },
+ {
+  "t": 400.213,
+  "text": "Betriebsbereitschaft. Backup, Mail, Erreichbarkeit – das System prüft sich selbst und sagt, was noch fehlt."
+ },
+ {
+  "t": 407.573,
+  "text": "Lehrkräfte helfen sich selbst. Bestand suchen, Klassensatz reservieren, Buchwunsch abgeben – ohne die Bibliothek anzurufen."
+ },
+ {
+  "t": 428.437,
+  "text": "Jede Rolle sieht nur ihren Teil. Eine Lehrkraft meldet sich an – und bekommt genau das Portal, sonst nichts."
+ },
+ {
+  "t": 452.463,
+  "text": "Auf einen Blick Alles, was Bibliosys mitbringt: Ausleihe & Rückgabe per Scanner, Öffentlicher Katalog & Flur-Monitor, Medienkatalog mit Buchakte, Signaturen & Systematik, Druck-Center: Etiketten & Ausweise, Klassensätze & Reservierungen – und vieles mehr."
+ },
+ {
+  "t": 460.118,
+  "text": "Und außerdem … Was in diesem Rundgang nicht vorkam: Kamera-Scanner & Passbild per Webcam, Ausweise, Etiketten & Kontoauszüge als PDF, Gebühren: Bezahlt, Storno mit Begründung, Zubehör-Checkliste beim Geräteverleih, Wareneingang einbuchen → Etiketten, Bestell-Bestätigung durch den Händler per Link – und vieles mehr."
+ },
+ {
+  "t": 467.777,
+  "text": "Bibliosys. Die Schulbibliothek, die mitdenkt."
+ }
+]

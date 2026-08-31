@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bibliothek/db"
-	"bibliothek/plugins"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -278,15 +277,6 @@ func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, 
 	resp.Geraet = g
 	resp.LoanID = &activeLoan.ID
 	resp.Fremdrueckgabe = isFremd
-
-	// Event für Plugins und andere Subsysteme auslösen.
-	plugins.DispatchEvent(ctx, plugins.EventBookReturned, plugins.BookReturnedPayload{
-		CopyID:       g.ID,
-		BarcodeID:    g.BarcodeID,
-		Titel:        g.Modellname,
-		SchuelerID:   activeLoan.SchuelerID,
-		BearbeiterID: staffID,
-	})
 
 	return resp, nil
 }

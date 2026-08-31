@@ -1,0 +1,139 @@
+<title>Bibliosys Funktionsübersicht</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  :root{
+    --ground:#f6f8fc; --paper:#ffffff; --ink:#131c33; --muted:#5a6478; --line:#d8deea;
+    --accent:#1d4ed8; --accent-soft:#e6edff; --ok:#0f766e; --warn:#b45309; --tag:#eef2ff;
+    --display:"Manrope",system-ui,sans-serif; --body:"Source Sans 3","Segoe UI",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --ground:#0f1424; --paper:#161d33; --ink:#e8ecf7; --muted:#a3adc4; --line:#2a3452;
+    --accent:#7ea2ff; --accent-soft:#1c2a52; --ok:#5eead4; --warn:#fbbf24; --tag:#1f2a4a; } }
+  :root[data-theme="dark"]{
+    --ground:#0f1424; --paper:#161d33; --ink:#e8ecf7; --muted:#a3adc4; --line:#2a3452;
+    --accent:#7ea2ff; --accent-soft:#1c2a52; --ok:#5eead4; --warn:#fbbf24; --tag:#1f2a4a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+  a{color:var(--accent)}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 28px 80px}
+  header{display:grid;grid-template-columns:1.4fr 1fr;gap:40px;align-items:end;padding-bottom:28px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--display);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,4.5vw,52px);line-height:1.05;margin:8px 0 12px;text-wrap:balance;letter-spacing:-.02em}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch;margin:0}
+  .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .fact{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .fact b{display:block;font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .fact span{font-size:13px;color:var(--muted)}
+  main{display:grid;grid-template-columns:230px 1fr;gap:40px;margin-top:32px}
+  nav{position:sticky;top:24px;align-self:start}
+  nav ol{list-style:none;margin:0;padding:0;border-left:2px solid var(--line)}
+  nav li a{display:block;padding:5px 0 5px 14px;color:var(--muted);text-decoration:none;font-size:14px;margin-left:-2px;border-left:2px solid transparent}
+  nav li a:hover,nav li a:focus-visible{color:var(--ink);border-left-color:var(--accent);outline:none}
+  nav .grp{font-family:var(--display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:14px 0 4px 14px}
+  section.area{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:16px;scroll-margin-top:20px}
+  section.area h2{font-family:var(--display);font-size:22px;font-weight:800;margin:0 0 4px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .route{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--tag);padding:2px 8px;border-radius:6px;font-weight:500}
+  .who{font-size:13px;color:var(--muted);margin:0 0 14px}
+  section.area ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 22px}
+  section.area li{padding-left:18px;position:relative;font-size:15.5px}
+  section.area li::before{content:"";position:absolute;left:0;top:.62em;width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:.75}
+  li .v{display:inline-block;font-family:var(--display);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ok);border:1px solid currentColor;border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:2px}
+  li .n{color:var(--warn)}
+  .legend{display:flex;gap:18px;font-size:13px;color:var(--muted);margin:0 0 14px;flex-wrap:wrap}
+  .legend .v{margin:0}
+  h3.grp{font-family:var(--display);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:30px 0 10px}
+  h3.grp:first-child{margin-top:0}
+  .aside{border:1px dashed var(--line);border-radius:14px;padding:18px 22px;margin-top:28px;color:var(--muted);font-size:15px}
+  .aside b{color:var(--ink)}
+  @media (max-width:860px){header,main{grid-template-columns:1fr}nav{position:static}}
+  @media (prefers-reduced-motion:no-preference){section.area{transition:border-color .2s}section.area:target{border-color:var(--accent)}}
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">Schulbibliothek · Lernmittel · Kollegium</div>
+    <h1>Was Bibliosys kann – vollständig, Bereich für Bereich</h1>
+    <p class="lede">Begleitdokument zum Produktrundgang. Jede Funktion, die im System steht – markiert, ob sie im Video zu sehen ist.</p>
+  </div>
+  <div class="facts">
+    <div class="fact"><b>16</b><span>Arbeitsbereiche + 2 öffentliche Seiten</span></div>
+    <div class="fact"><b>4</b><span>Rollen: Admin, Mitarbeit, Helfer, Kollegium</span></div>
+    <div class="fact"><b>0</b><span>Passwörter zu verwalten – Login über das Schul-Postfach</span></div>
+    <div class="fact"><b>DSGVO</b><span>Löschfristen, Anonymisierung, Auskunft, Audit</span></div>
+  </div>
+</header>
+
+<main>
+<nav aria-label="Bereiche">
+  <ol>
+    <li class="grp">Öffentlich</li>
+    <li><a href="#opac">Katalog (OPAC)</a></li><li><a href="#monitor">Flur-Monitor</a></li>
+    <li class="grp">Bibliothek</li>
+    <li><a href="#ausleihe">Ausleihe / Theke</a></li><li><a href="#katalog">Medienkatalog</a></li><li><a href="#signaturen">Signaturen</a></li><li><a href="#druck">Druck-Center</a></li><li><a href="#klassensaetze">Klassensätze</a></li>
+    <li class="grp">Verwaltung</li>
+    <li><a href="#schueler">Schülerdatei</a></li><li><a href="#mahnwesen">Mahnwesen</a></li><li><a href="#abgaenger">Abgänger</a></li><li><a href="#bestellungen">Bestellwesen</a></li><li><a href="#inventur">Inventur</a></li>
+    <li class="grp">System</li>
+    <li><a href="#statistik">Statistiken</a></li><li><a href="#logs">System-Logs</a></li><li><a href="#rechte">Benutzer &amp; Rechte</a></li><li><a href="#einstellungen">Einstellungen</a></li>
+    <li class="grp">Kollegium</li>
+    <li><a href="#portal">Mein Portal</a></li>
+    <li class="grp">Querschnitt</li>
+    <li><a href="#betrieb">Betrieb &amp; Sicherheit</a></li>
+  </ol>
+</nav>
+
+<div>
+  <p class="legend"><span class="v">Video</span> im Rundgang zu sehen &nbsp;·&nbsp; <span class="n">▲</span> nur auf der „Und außerdem"-Karte</p>
+
+  <h3 class="grp">Öffentlich – ohne Anmeldung</h3>
+  <section class="area" id="opac"><h2>Katalog (OPAC) <span class="route">/katalog</span></h2><p class="who">Für Schülerinnen und Schüler, Eltern, Kollegium – vom Handy oder Klassenraum.</p>
+    <ul><li>Suche nach Titel, Autor, ISBN mit Cover und Verfügbarkeit <span class="v">Video</span></li><li>Keine Ausleihdaten, keine Namen – nur Bestand</li><li>Barcode-Scanner-tauglich (Enter löst Suche aus)</li></ul></section>
+  <section class="area" id="monitor"><h2>Flur-Monitor <span class="route">/monitor</span></h2><p class="who">Für den Bildschirm vor der Bibliothek.</p>
+    <ul><li>Buch des Monats (meistausgeliehen, 30 Tage) <span class="v">Video</span></li><li>Neu eingetroffen (mit Cover)</li><li>Beliebt diese Woche</li><li>Läuft endlos, ohne Anmeldung, ohne Bedienung</li></ul></section>
+
+  <h3 class="grp">Bibliothek</h3>
+  <section class="area" id="ausleihe"><h2>Ausleihe / Theke <span class="route">/kiosk</span></h2><p class="who">Der Arbeitsplatz am Tresen – ein Eingabefeld für alles.</p>
+    <ul><li>Schülerausweis scannen → Theke mit Profil, Ausleihen, Gebühren <span class="v">Video</span></li><li>Buch scannen → Ausleihe; erneut scannen → Rückgabe <span class="v">Video</span></li><li>Rückgabe ohne geöffnete Theke, auch Fremdrückgabe <span class="v">Video</span></li><li>Namenssuche mit Sofortvorschlägen <span class="v">Video</span></li><li>Verlängern direkt an der Zeile <span class="v">Video</span></li><li>Schaden/Verlust melden → Forderung + Elternbrief-PDF <span class="v">Video</span></li><li>Vormerkungs-Warnung bei Rückgabe reservierter Titel <span class="v">Video</span></li><li>Sperren mit Grund, bewusster Override <span class="v">Video</span></li><li>Geräte ausleihen (iPad, Taschenrechner, Beamer) mit Zubehör-Checkliste <span class="n">▲</span></li><li>Handscanner am Tresen – zusätzlich Kamera als Barcode-Scanner (z. B. am Laptop) <span class="n">▲</span></li><li>Passbild per Webcam <span class="n">▲</span></li><li>Ausweis drucken, Kontoauszug, DSGVO-Auskunft als PDF <span class="n">▲</span></li><li>Handapparat für Lehrkräfte (Ausleihe auf Benutzer statt Schüler)</li><li>Theke leert sich nach Inaktivität; Sperrbildschirm nach längerer Pause <span class="n">▲</span></li><li>Helfer-Modus: eingeschränkte Theke für Schülerhelfer</li></ul></section>
+  <section class="area" id="katalog"><h2>Medienkatalog <span class="route">/medienkatalog</span></h2>
+    <ul><li>Suche über Titel, Autor, Fach, Klasse – Kartenansicht mit Cover <span class="v">Video</span></li><li>Jahrgangs-Ansicht: Lernmittel je Stufe und Schulzweig mit Stückzahlen <span class="v">Video</span></li><li>Buchakte: Exemplare, Ausleiher, Vormerkungen, Historie <span class="v">Video</span></li><li>Titel-Verwaltung: anlegen, bearbeiten, Cover tauschen, Meldebestand <span class="v">Video</span></li><li>Exemplar-Status: ausleihbar, ausgesondert (Verlust, Schaden, Bestandskorrektur)</li><li>Geräteverwaltung mit Seriennummer und Zubehör <span class="v">Video</span></li><li>Cover-Sync per ISBN aus offenen Quellen</li><li>DNB-Lookup für neue Titel mit Signatur-Vorschlag</li></ul></section>
+  <section class="area" id="signaturen"><h2>Signaturen <span class="route">/signaturen</span></h2>
+    <ul><li>Sachgruppen (Kürzel + Bezeichnung) pflegen <span class="v">Video</span></li><li>Regalansicht per Präfixsuche <span class="v">Video</span></li><li>Signaturen als Freitext je Titel, Fach als Pflichtvokabular</li></ul></section>
+  <section class="area" id="druck"><h2>Druck-Center <span class="route">/druck-center</span></h2>
+    <ul><li>Buch-Etiketten: Format, Startposition, Titel- oder Klassenauswahl <span class="v">Video</span></li><li>Fehlende Etiketten als Warteschlange (Badge in der Navigation) <span class="v">Video</span></li><li>Schülerausweis-Designer: Vorder-/Rückseite, Layout gespeichert <span class="v">Video</span></li><li>Klassenweise drucken: Ausweise für eine ganze Klasse <span class="v">Video</span></li><li>Etiketten-Nachdruck einzelner Exemplare <span class="n">▲</span></li><li>Etiketten-Formate für Lernmittel mit Eigentumsvermerk und Anschaffungsjahr</li></ul></section>
+  <section class="area" id="klassensaetze"><h2>Klassensätze <span class="route">/schulklassen</span></h2>
+    <ul><li>Welche Klasse hat welche Lektüre – Zuweisung per Dialog <span class="v">Video</span></li><li>Klassen-Vokabular mit fester Schreibweise (05A … 13)</li><li>Warteschlange der Reservierungen aus dem Kollegium <span class="v">Video</span></li></ul></section>
+
+  <h3 class="grp">Verwaltung</h3>
+  <section class="area" id="schueler"><h2>Schülerdatei <span class="route">/schuelerdatei</span></h2>
+    <ul><li>Serverseitige Suche über den ganzen Bestand <span class="v">Video</span></li><li>Akte: Ausleihen &amp; Historie, Stammdaten &amp; Adresse <span class="v">Video</span></li><li>Gebühren &amp; Schäden: offen/bezahlt, Storno mit Begründung, Ersatzforderung als PDF <span class="v">Video</span></li><li>Sperren mit Pflicht-Grund <span class="v">Video</span></li><li>Neu anlegen per Formular <span class="v">Video</span></li><li>Stapelaktionen: Klasse markieren → Ausweise oder Etiketten <span class="n">▲</span></li><li>Abgänger/Archiv und Papierkorb</li><li>Archivieren, Anonymisieren, Löschen mit Namensbestätigung (DSGVO-Kette) <span class="n">▲</span></li><li>Foto verschlüsselt gespeichert</li></ul></section>
+  <section class="area" id="mahnwesen"><h2>Mahnwesen <span class="route">/mahnwesen</span></h2>
+    <ul><li>Register: Alle · Akut fällig (≤ 14 Tage) · Eskaliert <span class="v">Video</span></li><li>Filter nach Klasse, Mahnstufen je Ausleihe <span class="v">Video</span></li><li>Mahnbriefe an Eltern, ganze Klasse, Export <span class="v">Video</span></li><li>Sammel-Mahnlauf per Mail mit Klassenauswahl und Empfängerprüfung <span class="v">Video</span></li><li>Automatische Ausleihsperre ab Schwelle (Tage/Medien) konfigurierbar</li><li>Lehrkräfte werden nie angemahnt</li><li>Mahnwesen-Routing: Klasse → Klassenleitung</li></ul></section>
+  <section class="area" id="abgaenger"><h2>Abgänger <span class="route">/abgaenger</span></h2>
+    <ul><li>Nur Abgänger mit offenen Medien – nach Klasse gefiltert <span class="v">Video</span></li><li>Kontoauszüge drucken (PDF gesamt)</li><li>Kontoauszüge an Klassenleitungen mailen <span class="v">Video</span></li><li>Automatische Löschung nach Karenz (Löschfristen)</li></ul></section>
+  <section class="area" id="bestellungen"><h2>Bestellwesen <span class="route">/bestellungen</span></h2>
+    <ul><li>Bestellbedarf: Lernmittel unter Schwelle automatisch gelistet <span class="v">Video</span></li><li>Warenkorb, Lieferantenwahl, Bestellung per Mail mit Bestätigungs-Link <span class="v">Video</span></li><li>Händler bestätigt per Link (öffentliche Seite) <span class="n">▲</span></li><li>Wareneingang: Positionen einbuchen → Etiketten <span class="n">▲</span></li><li>Bestellhistorie mit Detail und Status <span class="v">Video</span></li><li>Berichte (Monat, Jahr, Lieferant) als PDF <span class="v">Video</span></li><li>Klassensatz-Reservierungen als Warteschlange, Abschließen mit Bereit-Mail <span class="v">Video</span></li><li>Wünsche &amp; Meldungen aus dem Kollegium, Erledigen mit Mail <span class="v">Video</span></li><li>Hauptlieferant, Kundennummern (in den Einstellungen)</li></ul></section>
+  <section class="area" id="inventur"><h2>Inventur <span class="route">/inventur</span></h2>
+    <ul><li>Scope: komplett, Signatur oder Fach/Klasse <span class="v">Video</span></li><li>Scannen mit Fortschrittsanzeige <span class="v">Video</span></li><li>Fortsetzen/Verwerfen laufender Inventuren</li><li>Abschluss bucht Verluste; Fehlbestandsbericht mit „Gefunden“ <span class="n">▲</span></li><li>Littera-Import des Altbestands (MAB) <span class="n">▲</span></li></ul></section>
+
+  <h3 class="grp">System</h3>
+  <section class="area" id="statistik"><h2>Statistiken <span class="route">/statistiken</span></h2>
+    <ul><li>Kacheln: Bestand, verliehen, Zirkulationsquote, Wiederbeschaffungswert <span class="v">Video</span></li><li>Ausleihen pro Monat, Überfällige nach Alter <span class="v">Video</span></li><li>Renner und Ladenhüter mit Detailseite und Filter <span class="v">Video</span></li><li>Bestandsfilter Gesamt / LMF</li><li>Ohne Schülerklarnamen – Analyse bleibt anonym</li></ul></section>
+  <section class="area" id="logs"><h2>System-Logs <span class="route">/system-logs</span></h2>
+    <ul><li>Allgemeines Logbuch aller Buchungen <span class="v">Video</span></li><li>Admin-Audit-Log (wer hat wann was geändert) <span class="v">Video</span></li><li>Aufbewahrung konfigurierbar (Standard 24 Monate)</li></ul></section>
+  <section class="area" id="rechte"><h2>Benutzer &amp; Rechte <span class="route">/berechtigungen</span></h2>
+    <ul><li>Benutzer anlegen, bearbeiten, deaktivieren <span class="v">Video</span></li><li>Rollen × Rechte-Matrix – wirkt auf Menü und API <span class="v">Video</span></li><li>Zugangsanfragen aus der Selbstanmeldung freigeben <span class="n">▲</span></li><li>Login über IMAP des Schul-Postfachs, keine eigenen Passwörter</li></ul></section>
+  <section class="area" id="einstellungen"><h2>Einstellungen <span class="route">/einstellungen</span></h2><p class="who">13 Kategorien, jede einzeln speicherbar.</p>
+    <ul><li>Schule: Name, Anschrift, Eigentumsvermerk <span class="v">Video</span></li><li>Ausleihe &amp; Fristen: Fristen, Limits, Ferien-Leseclub <span class="v">Video</span></li><li>Mahnwesen und Mahnwesen-Routing <span class="v">Video</span></li><li>Bestellwesen: Bedarfsschwelle, Preise <span class="v">Video</span></li><li>Lieferanten mit Hauptlieferant <span class="v">Video</span></li><li>Datenschutz &amp; Sitzung: Löschfristen, Sperrbildschirm <span class="v">Video</span></li><li>Erreichbarkeit &amp; Alarme: öffentliche Adresse, Alarm-Mails <span class="v">Video</span></li><li>Mail: Postausgang, Verbindungstest, Vorlagen <span class="v">Video</span></li><li>LMF-Aktionen: Massenverlängerung je Klasse <span class="v">Video</span></li><li>Datenverwaltung: Import, Export, Offline-Sicherungen einspielen <span class="v">Video</span></li><li>Schuljahreswechsel: LUSD-Abgleich, Versetzung <span class="v">Video</span></li><li>Betriebsbereitschaft: Selbstprüfung von Backup, Mail, Schlüssel, Erreichbarkeit <span class="v">Video</span></li></ul></section>
+
+  <h3 class="grp">Kollegium</h3>
+  <section class="area" id="portal"><h2>Mein Portal <span class="route">/kollegium-portal</span></h2><p class="who">Lehrkräfte sehen genau diesen Bereich – sonst nichts.</p>
+    <ul><li>Bestand suchen, Verfügbarkeit und Warteschlange je Titel <span class="v">Video</span></li><li>Klassensatz reservieren (Klasse, Anzahl, Datum) <span class="v">Video</span></li><li>Klassensätze der eigenen Klassen, Bestand nach Jahrgang <span class="v">Video</span></li><li>Buchwunsch und „Etwas stimmt nicht“-Meldung <span class="v">Video</span></li><li>Selbstanmeldung: Postfach der Schuldomäne → Zugangsanfrage <span class="n">▲</span></li></ul></section>
+
+  <h3 class="grp">Querschnitt</h3>
+  <section class="area" id="betrieb"><h2>Betrieb &amp; Sicherheit</h2>
+    <ul><li>Läuft als Docker-Stack auf dem Schulserver, Open Source</li><li>Live-Abgleich mehrerer Arbeitsplätze (SSE) <span class="n">▲</span></li><li>Verschlüsselte tägliche Backups, optional Offsite (S3), Restore-Probe <span class="n">▲</span></li><li>Alarm-Mails bei kritischem Zustand</li><li>Rate-Limits, CSRF-Schutz, Audit aller Schreibzugriffe</li><li>DSGVO: Löschfristen, Anonymisierung nach Rückgabe, Auskunfts-PDF, PII-freie Statistik</li><li>Offline-Sicherung der Theke bei Netzausfall einspielbar</li></ul></section>
+
+  <div class="aside"><b>Zum Video:</b> Der Rundgang (8 min) zeigt jeden Bereich in Aktion; alles mit ▲ wird dort nur auf der Abschlusskarte genannt – meist, weil es einen Drucker, eine Kamera, einen zweiten Arbeitsplatz oder eine unumkehrbare Aktion braucht.</div>
+</div>
+</main>
+</div>

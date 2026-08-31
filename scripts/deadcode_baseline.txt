@@ -37,25 +37,3 @@ internal/littera/leser.go: unreachable func: NurArt
 # wird von den pgtest-Support-Dateien mehrerer Pakete benutzt.
 internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leeren
 
-# Erweiterungspunkt ohne Zuhörer — befristet, mit Ablaufdatum "nach dem Pilot".
-#
-# plugins/hooks.go bietet Register/Dispatch; fünf DispatchEvent-Aufrufe stehen live in
-# den Rückgabe-, Ausleih- und Gerätepfaden (jeweils NACH dem Commit, neben dem
-# Audit-Eintrag). Ohne registrierten Zuhörer kehrt DispatchEvent still zurück — die
-# Aufrufe sind also inert, nicht tot.
-#
-# Warum RegisterHook trotzdem keinen Aufrufer hat: Der einzige war vorlage.Init(), das
-# BEISPIEL-Plugin. Es lief bis zum 23.08.2026 in Produktion mit und schrieb bei jeder
-# Rückgabe zwei Zeilen ins Log. Demo-Code gehört nicht in den Betrieb, also ist der
-# Aufruf in main.go entfernt (dort steht die ausführliche Begründung).
-#
-# Warum nicht gleich alles löschen: Das wäre Kategorie C ("Refactoring ohne Anlass"),
-# und die eigene Regel sagt dazu "nicht vor dem Pilotstart". Der Pilot läuft seit dem
-# 23.08.2026. Chirurgie an den meistbenutzten Pfaden des Systems, um 128 Zeilen
-# loszuwerden, die zur Laufzeit nichts kosten, ist der falsche Handel.
-#
-# NACH DEM PILOT ENTSCHEIDEN. Stand 23.08.2026 spricht alles fürs Löschen: genau EIN
-# Ereignistyp, in 15 Monaten kein echtes Plugin, der Frontend-Teil (Extension.svelte)
-# nie angeschlossen. Die fünf Stellen findet man dann über LogRueckgabe wieder.
-plugins/hooks.go: unreachable func: RegisterHook
-plugins/vorlage/vorlage.go: unreachable func: Init
