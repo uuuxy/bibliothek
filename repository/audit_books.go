@@ -23,6 +23,16 @@ import (
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, nutzer-sichtbare Meldung
 var ErrTitelHatAktiveAusleihen = errors.New("Löschen fehlgeschlagen: folgende Exemplare sind noch verliehen")
 
+// ErrExemplarNochVerliehen / ErrExemplarNichtGefunden: dieselbe Sentinel-Bauart für das
+// EINZELNE Exemplar. Der Handler entschied hier bis zum 31.08.2026 per Textvergleich —
+// „Exemplar ist aktuell noch verliehen!" gegen „exemplar ist aktuell noch verliehen"
+// (Großschreibung + Ausrufezeichen): Der Vergleich traf nie, ein verliehenes Buch endete
+// als 500 mit Sanitizer-Text statt als 400 mit Auskunft.
+var (
+	ErrExemplarNochVerliehen = errors.New("exemplar ist aktuell noch verliehen")
+	ErrExemplarNichtGefunden = errors.New("exemplar nicht gefunden oder bereits ausgebucht")
+)
+
 // DeleteTitle entfernt einen Buchtitel vollständig aus dem Katalog und erstellt einen revisionssicheren Audit-Eintrag.
 // Vor dem Löschen wird geprüft, ob noch Exemplare dieses Titels verliehen sind (was das Löschen blockiert).
 // Historische Ausleihen und abgeschlossene Schadensfälle werden bereinigt, um Fremdschlüssel-Fehler zu vermeiden.
@@ -111,7 +121,10 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Snapshot erstellen: Exemplardaten vor dem Aussondern für das Audit-Log sichern
+	// Snapshot erstellen: Exemplardaten vor dem Aussondern für das Audit-Log sichern.
+	// ErrNoRows ist hier KEIN tolerierbarer Fall (bis 31.08.2026 war er es): Eine
+	// unbekannte ID endete sonst als Phantom-Erfolg — 200 samt Audit-Eintrag über eine
+	// Löschung, die nie stattfand.
 	var barcode, zustandNotiz, titel string
 	var titelID string
 	err = tx.QueryRow(ctx,
@@ -121,7 +134,10 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 		 WHERE e.id = $1`,
 		copyID,
 	).Scan(&barcode, &zustandNotiz, &titelID, &titel)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrExemplarNichtGefunden
+	}
+	if err != nil {
 		return fmt.Errorf("failed to snapshot copy for audit: %w", err)
 	}
 
@@ -132,12 +148,19 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 		return fmt.Errorf("failed to check active loans for copy: %w", err)
 	}
 	if activeLoanCount > 0 {
-		return errors.New("exemplar ist aktuell noch verliehen")
+		return ErrExemplarNochVerliehen
 	}
 
-	// Soft-Delete durchführen: Exemplar sperren und Zustand auf "Systematisch gelöscht" setzen
-	if _, err = tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT', zustand_notiz = 'Systematisch gelöscht' WHERE id = $1", copyID); err != nil {
+	// Soft-Delete durchführen: Exemplar sperren und Zustand auf "Systematisch gelöscht"
+	// setzen. Der Guard ist_ausgesondert = false macht den Doppelklick zum 404 statt zum
+	// zweiten „Erfolg" — und verhindert, dass ein Wiederholungsklick die Zustandsnotiz
+	// eines längst ausgebuchten Exemplars erneut überschreibt.
+	tag, err := tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT', zustand_notiz = 'Systematisch gelöscht' WHERE id = $1 AND ist_ausgesondert = false", copyID)
+	if err != nil {
 		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrExemplarNichtGefunden
 	}
 
 	kontext := "Buch ausgebuchen (Soft-Delete)"

@@ -44,11 +44,18 @@ func (s *Server) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 
 		err := auditRepo.DeleteCopy(ctx, id, claims.UserID)
 		if err != nil {
-			if err.Error() == "Exemplar ist aktuell noch verliehen!" {
+			// Sentinels statt Textvergleich: Der frühere Vergleich („Exemplar ist
+			// aktuell noch verliehen!") traf den Repo-Text nie — ein verliehenes Buch
+			// endete als 500, und der Sanitizer verschluckte die Auskunft.
+			if errors.Is(err, repository.ErrExemplarNochVerliehen) {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			} else {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
 			}
+			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
