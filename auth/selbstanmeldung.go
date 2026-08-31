@@ -117,23 +117,34 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 
 	// aktiv = false ist der Kern dieser Funktion: Der Login lehnt inaktive Konten ab.
 	// Die Zeile entsteht, der Zugang nicht.
-	if _, err := dbPool.Exec(ctx, `
+	tag, err := dbPool.Exec(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, zugang_beantragt_am)
 		VALUES ($1, $2, LOWER($3), 'kollegium', false, CURRENT_TIMESTAMP)
 		ON CONFLICT (email) DO NOTHING
-	`, vorname, nachname, email); err != nil {
-		return loginUser{}, fmt.Errorf("zugangsanfrage konnte nicht angelegt werden: %w", err)
+	`, vorname, nachname, email)
+	if err != nil {
+		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht angelegt werden: %v", ErrAnmeldedienstGestoert, err)
 	}
+	// neuAngelegt NUR, wenn der INSERT wirklich eine Zeile geschrieben hat (31.08.2026):
+	// Vorher stand das Flag bedingungslos — landete ein BESTEHENDES Konto durch einen
+	// transienten Fehler der ersten Abfrage hier, bekam eine längst freigeschaltete
+	// Lehrkraft „Zugang beantragt", und der Audit-Trail behauptete eine Selbstanmeldung,
+	// die nie stattfand.
+	neuAngelegt := tag.RowsAffected() == 1
 
 	var u loginUser
-	err := dbPool.QueryRow(ctx, `
+	err = dbPool.QueryRow(ctx, `
 		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv
 		FROM benutzer WHERE LOWER(email) = LOWER($1) LIMIT 1
 	`, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv)
 	if err != nil {
-		return loginUser{}, fmt.Errorf("zugangsanfrage konnte nicht gelesen werden: %w", err)
+		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %v", ErrAnmeldedienstGestoert, err)
 	}
-	u.neuAngelegt = true
+	u.neuAngelegt = neuAngelegt
+	if !neuAngelegt {
+		// Bestehendes Konto (aktiv oder wartend) — kein neuer Vorgang, kein Audit-Eintrag.
+		return u, nil
+	}
 
 	// Audit: Ein Konto, das ohne Administrator entstanden ist, braucht erst recht eine
 	// Spur — sonst steht später eine Zeile in benutzer, von der niemand sagen kann, wer

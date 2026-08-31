@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"net/http"
@@ -162,6 +163,14 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 				apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
 				return
 			}
+			// Dasselbe für die Datenbank (31.08.2026): Ein DB-Aussetzer ist kein
+			// Passwortfehler — 503 ohne recordFailure, sonst Selbstsperre mit
+			// korrektem Passwort. Der echte Grund steht im Log.
+			if errors.Is(verifyErr, ErrAnmeldedienstGestoert) {
+				slog.Error("Login: Anmeldedienst gestört", "fehler", verifyErr)
+				apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
+				return
+			}
 			globalLoginLimiter.recordFailure(bruteForceKey)
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
 			return
@@ -270,6 +279,14 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 		LIMIT 1
 	`
 	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.email); err != nil {
+		// NUR „Zeile nicht vorhanden" ist der Selbstanmelde-Fall. Jeder andere Fehler
+		// (Verbindungsabriss, Pool erschöpft, ctx-Frist) ist ein Ausfall des
+		// Anmeldedienstes — bis zum 31.08.2026 lief er in den 401-Pfad und wurde als
+		// Fehlversuch gezählt: Bei einem DB-Aussetzer sperrte sich eine Lehrkraft mit
+		// korrektem Passwort selbst (dieselbe Klasse wie der Mailserver-Fall, 20.08.).
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return loginUser{}, fmt.Errorf("%w: benutzer lesen: %v", ErrAnmeldedienstGestoert, err)
+		}
 		// Kein lokaler Eintrag. Wenn die Selbstanmeldung für diese Domain freigegeben ist,
 		// entsteht hier eine INAKTIVE Zugangsanfrage — kein Zugang, nur ein Eintrag, den
 		// die Bibliothek freischalten kann. Ist sie nicht freigegeben, bleibt es beim
