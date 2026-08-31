@@ -39,7 +39,6 @@ Zwei Regeln dazu:
 
 | # | Fund | Stand / Weg |
 | - | ---- | ----------- |
-| 1 | Tote Druck-CSS: `druck-grundlagen.css` führt sechs Regelblöcke unter `.a4_grid` / `.card_printer` (`print-cards-grid`, `print-card-box`-Varianten, `print-labels-grid`, `print-label-box`) | Keine der Träger-Klassen `a4_grid`/`card_printer` steht noch in einem Markup (31.08. nachgemessen, auch `print-labels-grid`/`print-label-box` = 0); Buch-Etiketten entstehen serverseitig als PDF. Löschen; der `:not(.print-label-box)`-Wächter in der Normalisierungs-Regel bleibt unangetastet (Spezifikations-Falle, siehe Print-CSS-Kaskaden-Historie). Beweis am gebauten Bundle vorher/nachher, `druck-sektionen-gate` + print-media-Test grün. |
 | 2 | `frontend/package.json` trägt `"license": "UNLICENSED"` | Root-`LICENSE` ist EUPL 1.2 (seit PR #282), README nennt sie. Feld auf `"EUPL-1.2"`. |
 | 3 | `DELETE /api/schueler/deleted/{id}` hat keinen Aufrufer | Entscheidung 31.08.: **Knopf im Papierkorb** (Rückfrage „endgültig und unwiderruflich"), denn `PurgeStudent` ist seit der DSGVO-Rundreise der beweisbar vollständige Art.-17-Löschweg — das Sekretariat braucht bei Verlangen der Eltern einen Weg, der nicht „nächtliche Frist" heißt. Backend fertig (`routes_students.go:37`, Recht `manage_students_admin`); fehlt: Knopf in `DeletedStudentList.svelte` + E2E. |
 | 4 | `kontrast.spec.js:44`: feste 700-ms-Setzzeit vor der Kontrastmessung (`javascript:S2925`) | Stabilitäts-Schleife wie in den Schwester-Specs statt fester Frist; networkidle bleibt wegen SSE tabu. |
