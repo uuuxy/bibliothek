@@ -9,12 +9,17 @@
 	import { apiFetch } from '../../apiFetch.js';
 	import { onMount } from 'svelte';
 	import { Trash2, Undo2 } from '@lucide/svelte';
+	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import PapierkorbLoeschenDialog from './PapierkorbLoeschenDialog.svelte';
 
-	let { onRestoreSuccess = () => {} } = $props();
+	let { onRestoreSuccess = () => {}, darfEndgueltigLoeschen = false } = $props();
 
 	/** @type {any[]} */
 	let deletedStudents = $state.raw([]);
 	let loadingDeleted = $state(false);
+	/** @type {any} Schüler, für den die Endgültig-löschen-Rückfrage offen ist */
+	let loeschKandidat = $state(null);
+	let loeschLaeuft = $state(false);
 
 	export async function loadDeletedStudents() {
 		loadingDeleted = true;
@@ -39,6 +44,38 @@
 			}
 		} catch (err) {
 			console.error('Fehler bei Wiederherstellung:', err);
+		}
+	}
+
+	// Endgültiges Löschen (Art. 17): Server prüft Blockaden (offene Ausleihen,
+	// unbezahlte Schäden) und antwortet darauf mit 409 + Begründung — die zeigen wir,
+	// statt sie zu verschlucken.
+	async function purgeStudent() {
+		if (!loeschKandidat) return;
+		loeschLaeuft = true;
+		try {
+			const res = await apiFetch(`/api/schueler/deleted/${loeschKandidat.id}`, {
+				method: 'DELETE'
+			});
+			if (res.ok) {
+				toastStore.addToast('Schüler endgültig gelöscht.', 'success');
+				loadDeletedStudents();
+			} else {
+				const text = await res.text();
+				let meldung = 'Endgültiges Löschen fehlgeschlagen.';
+				try {
+					meldung = JSON.parse(text).error || meldung;
+				} catch {
+					if (text) meldung = text;
+				}
+				toastStore.addToast(meldung, 'error');
+			}
+		} catch (err) {
+			toastStore.addToast('Netzwerkfehler beim endgültigen Löschen.', 'error');
+			console.error(err);
+		} finally {
+			loeschLaeuft = false;
+			loeschKandidat = null;
 		}
 	}
 
@@ -99,14 +136,26 @@
 								})}
 							</td>
 							<td class="px-4 py-2 text-right">
-								<button
-									onclick={() => restoreStudent(s.id)}
-									title="Wiederherstellen"
-									aria-label="Wiederherstellen"
-									class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors shadow-sm cursor-pointer"
-								>
-									<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
-								</button>
+								<div class="inline-flex items-center gap-2">
+									<button
+										onclick={() => restoreStudent(s.id)}
+										title="Wiederherstellen"
+										aria-label="Wiederherstellen"
+										class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors shadow-sm cursor-pointer"
+									>
+										<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
+									</button>
+									{#if darfEndgueltigLoeschen}
+										<button
+											onclick={() => (loeschKandidat = s)}
+											title="Endgültig löschen"
+											aria-label="Endgültig löschen"
+											class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-error-container text-on-error-container hover:opacity-80 transition-opacity shadow-sm cursor-pointer"
+										>
+											<Trash2 class="h-4.5 w-4.5" aria-hidden="true" />
+										</button>
+									{/if}
+								</div>
 							</td>
 						</tr>
 					{/each}
@@ -115,3 +164,11 @@
 		</div>
 	{/if}
 </div>
+
+<PapierkorbLoeschenDialog
+	open={loeschKandidat !== null}
+	name={loeschKandidat ? `${loeschKandidat.vorname} ${loeschKandidat.nachname}` : ''}
+	laeuft={loeschLaeuft}
+	onConfirm={purgeStudent}
+	onClose={() => (loeschKandidat = null)}
+/>

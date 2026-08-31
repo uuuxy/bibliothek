@@ -9,7 +9,7 @@ import { hatRecht } from './menu.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, auskunft: boolean, foto: boolean }}
+ * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, endgueltigLoeschen: boolean, auskunft: boolean, foto: boolean }}
  */
 export function schuelerRechte(user) {
 	return {
@@ -21,6 +21,9 @@ export function schuelerRechte(user) {
 		bearbeiten: hatRecht(user, 'edit_students'),
 		// Papierkorb: DELETE /api/schueler/{id}, GET …/deleted, POST …/restore
 		loeschen: hatRecht(user, 'delete_students'),
+		// DELETE /api/schueler/deleted/{id} — sofortiges endgültiges Löschen aus dem
+		// Papierkorb (Art.-17-Löschverlangen), nicht dasselbe Recht wie der Soft-Delete
+		endgueltigLoeschen: hatRecht(user, 'manage_students_admin'),
 		// GET /api/schueler/{id}/dsgvo-auskunft
 		auskunft: hatRecht(user, 'manage_students_admin'),
 		// POST /api/schueler/{id}/photo

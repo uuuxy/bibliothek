@@ -22,7 +22,6 @@
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
 	const reiterListe = $derived(schuelerdateiReiter(rechte));
 
-	// State Runes (Svelte 5)
 	let activeTab = $state('active');
 
 	/** @type {any} */
@@ -179,6 +178,7 @@
 			{:else if activeTab === 'deleted'}
 				<div class="w-full animate-fade-in space-y-6">
 					<DeletedStudentList
+						darfEndgueltigLoeschen={rechte.endgueltigLoeschen}
 						onRestoreSuccess={() => {
 							suche.lade();
 							loadClasses();
