@@ -42,7 +42,6 @@ COPY migrations/ ./migrations/
 COPY repository/ ./repository/
 COPY sse/ ./sse/
 COPY docs/ ./docs/
-COPY plugins/ ./plugins/
 COPY mailservice/ ./mailservice/
 COPY pdf/ ./pdf/
 COPY internal/ ./internal/
