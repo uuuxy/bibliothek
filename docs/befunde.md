@@ -37,7 +37,11 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
-Leer. Die Abarbeitung vom 31.08.2026 (7 Posten, je ein Commit) steht in der
+| # | Fund | Stand / Weg |
+| - | ---- | ----------- |
+| 1 | „Aktive Schüler" filtert `ist_abgaenger` nicht | `ListStudentsWithStats` (student_profile_queries.go) hat als einzige Bedingung `deleted_at IS NULL` — ein als Abgänger markierter Schüler steht mit in der Aktiv-Liste (so gefunden: Demo-Schüler DEMO-S-600 auf flasch3, „Gesperrt" trotz Daten-Aufräumens, weil das UPDATE Abgänger zu Recht ausnahm). Erst am Live-Pfad verifizieren (eigener Reiter „Abgänger/Archiv" existiert ja), dann Filter + rot gesehenes Gate. |
+
+Die Abarbeitung vom 31.08.2026 davor: leer. Die Abarbeitung vom 31.08.2026 (7 Posten, je ein Commit) steht in der
 Git-Historie dieser Datei; dabei zusätzlich gefunden und behoben: der
 Etiketten-Druck-E2E war seit Migration 071 still rot (Seed schrieb den alten
 Magie-Text statt `bestellstatus`).
