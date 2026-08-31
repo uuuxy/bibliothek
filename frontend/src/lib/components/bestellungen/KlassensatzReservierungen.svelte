@@ -15,10 +15,11 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
+	import KlassensatzErledigte from './KlassensatzErledigte.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Check } from '@lucide/svelte';
 
-	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, verfuegbar: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erstellt_am: string }} KlassensatzReservierung */
+	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, verfuegbar: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erledigt_notiz?: string, erledigt_am?: string, erstellt_am: string }} KlassensatzReservierung */
 
 	/** @type {KlassensatzReservierung[]} */
 	let reservierungen = $state([]);
@@ -77,8 +78,12 @@
 				const data = await res.json().catch(() => null);
 				throw new Error(data?.error || 'Reservierung konnte nicht abgeschlossen werden.');
 			}
-			// Kein Reload: die erledigte Reservierung wird direkt aus dem reaktiven Array gefiltert.
-			reservierungen = reservierungen.filter((r) => r.id !== id);
+			// Kein Reload: Die Zeile wandert lokal samt Notiz in „Zuletzt bereitgestellt".
+			// Vorher wurde sie entfernt — die Zusage war bis zum nächsten Laden unauffindbar.
+			const heute = new Date().toLocaleDateString('de-DE', { dateStyle: 'medium' });
+			reservierungen = reservierungen.map((r) =>
+				r.id === id ? { ...r, erledigt: true, erledigt_notiz: notiz.trim(), erledigt_am: heute } : r
+			);
 			confirmingId = null;
 			// Der Server meldet, ob die Bereit-Mail wirklich raus ist — ein Mail-Ausfall
 			// war vorher nur eine Server-Logzeile, die Lehrkraft wartete vergeblich.
@@ -190,4 +195,6 @@
 			{/each}
 		</ul>
 	{/if}
+
+	<KlassensatzErledigte erledigte={reservierungen.filter((r) => r.erledigt)} />
 </div>

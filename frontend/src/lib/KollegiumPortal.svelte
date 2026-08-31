@@ -9,7 +9,10 @@
 	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
 	import PortalLernmittel from './components/portal/PortalLernmittel.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
-	import { erzeugeKlassensatzReservierung } from './components/portal/klassensatzReservierung.svelte.js';
+	import {
+		erzeugeKlassensatzReservierung,
+		erzeugeReservierungsListen
+	} from './components/portal/klassensatzReservierung.svelte.js';
 	/** @type {{ user: any }} */
 	let { user } = $props();
 
@@ -41,43 +44,20 @@
 
 	let searchTimeout = /** @type {any} */ (null);
 
-	/**
-	 * Offene Reservierungen aller Lehrkräfte (Titel, Klasse, Menge — ohne Personen):
-	 * die Warteschlange. Reservieren sperrt nichts; wer denselben Titel reserviert,
-	 * stellt sich an. Diese Liste macht das VOR dem Klick sichtbar.
-	 * @type {{ titel_id: string, titel: string, klasse: string, anzahl: number, erstellt_am: string }[]}
-	 */
-	let offeneReservierungen = $state([]);
-
-	async function ladeOffeneReservierungen() {
-		try {
-			const res = await apiFetch('/api/reservierungen/klassensatz/offen');
-			if (res.ok) {
-				const data = await res.json();
-				// Nur Arrays übernehmen — eine unerwartete Antwort darf die Anzeige
-				// nicht mit einem .filter-Absturz aus dem Rendern werfen.
-				if (Array.isArray(data)) offeneReservierungen = data;
-			}
-		} catch {
-			/* Anzeige ist Zusatzinfo — ohne sie bleibt das Portal benutzbar */
-		}
-	}
+	// Warteschlange (alle) + eigene Reservierungen samt Bibliotheks-Notiz —
+	// ausgelagert (Größen-Ratsche), Begründung und Zuschnitt in der Fabrik.
+	const listen = erzeugeReservierungsListen();
 
 	$effect(() => {
-		ladeOffeneReservierungen();
+		listen.lade();
 		ladeAnliegen();
 	});
-
-	/** @param {string} titelId */
-	function warteschlangeFuer(titelId) {
-		return offeneReservierungen.filter((o) => o.titel_id === titelId);
-	}
 
 	// Formular-Zustand und Absenden je Titel — ausgelagert, Begründung dort.
 	const reservierung = erzeugeKlassensatzReservierung(
 		() => user,
-		warteschlangeFuer,
-		ladeOffeneReservierungen
+		listen.warteschlangeFuer,
+		listen.lade
 	);
 
 	$effect(() => {
@@ -151,7 +131,7 @@
 					<PortalTrefferkarte
 						{book}
 						form={reservierung.form(titelId)}
-						warteschlange={warteschlangeFuer(titelId)}
+						warteschlange={listen.warteschlangeFuer(titelId)}
 						ontoggle={() => reservierung.toggle(titelId)}
 						onsenden={() => reservierung.senden(titelId)}
 					/>
@@ -164,7 +144,7 @@
 				hinweis="Versuche es mit einem anderen Titel oder Autor."
 			/>
 		{:else if searchQuery.trim().length === 0}
-			<PortalUeberblick reservierungen={offeneReservierungen} />
+			<PortalUeberblick reservierungen={listen.eigene} />
 		{/if}
 	{:else if reiter === 'klassensaetze' || reiter === 'jahrgang'}
 		<PortalLernmittel bereich={reiter} />

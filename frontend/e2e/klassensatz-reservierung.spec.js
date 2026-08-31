@@ -42,13 +42,61 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 	await notizFeld.fill('24 von 25, eines fehlt noch');
 	await page.getByRole('button', { name: 'Abschließen & Mail senden' }).click();
 
-	// 6. Verifikation: Die Reservierung verschwindet aus der UI, die Notiz steht in der DB
-	await expect(reservierungZeile).not.toBeVisible();
+	// 6. Verifikation: Die Reservierung verlässt die offene Liste — sichtbar bleibt sie
+	//    (in „Zuletzt bereitgestellt", Schritt 7), aber ohne Abschließen-Knopf.
+	await expect(reservierungZeile.getByRole('button', { name: 'Abschließen' })).toHaveCount(0);
 	await expect
 		.poll(() =>
 			querySQL(`SELECT erledigt_notiz FROM klassensatz_reservierungen WHERE klasse = 'k8b${s}'`)
 		)
 		.toContain('24 von 25, eines fehlt noch');
+
+	// 7. Rückweg (31.08.2026): Die Zusage ist an der Theke nachschlagbar — „Zuletzt
+	//    bereitgestellt" zeigt die Zeile samt Notiz, ohne Reload. Vorher existierte die
+	//    Notiz nur in der Bereit-Mail; scheiterte die, war sie für immer unsichtbar.
+	await expect(page.getByText('Zuletzt bereitgestellt')).toBeVisible();
+	await expect(page.getByText('Notiz: „24 von 25, eines fehlt noch"')).toBeVisible();
+
+	// 8. Und der Abschlusszeitpunkt (Migration 089) steht in der Zeile.
+	await expect
+		.poll(() =>
+			querySQL(
+				`SELECT (erledigt_am IS NOT NULL)::text FROM klassensatz_reservierungen WHERE klasse = 'k8b${s}'`
+			)
+		)
+		.toBe('true');
+});
+
+// Der Portal-Rückweg derselben Zusage: Die Lehrkraft sieht ihre bereitgestellte
+// Reservierung samt Bibliotheks-Notiz — der Weg, der auch ohne Mail trägt. Der
+// erledigte Zustand wird geseedet (der Abschluss-Weg ist oben und im PG-Test
+// abgedeckt; der lokale Stack hat echten SMTP, eine Bereit-Mail an ein Testkonto
+// hätte hier nichts verloren).
+test('Klassensatz: Bibliotheks-Notiz und Bereit-Status stehen im Portal der Lehrkraft', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	const LEHRKRAFT = `e2e-notizweg-${s}@test.local`;
+	seedBenutzer(LEHRKRAFT, 'kollegium');
+	seedSQL(`
+        INSERT INTO buecher_titel (id, isbn, titel, autor)
+        VALUES (gen_random_uuid(), '976-${s}', 'E2E Notizweg Buch ${s}', 'Test Autor');
+
+        INSERT INTO klassensatz_reservierungen
+            (titel_id, klasse, anzahl, angefordert_von, erledigt, erledigt_notiz, erledigt_am)
+        VALUES ((SELECT id FROM buecher_titel WHERE isbn = '976-${s}'), 'k7c${s}', 20,
+                (SELECT id FROM benutzer WHERE email = '${LEHRKRAFT}'),
+                true, 'Steht hinter der Theke, bitte bis Freitag', now());
+    `);
+
+	await uiLogin(page, LEHRKRAFT);
+	await page.getByTitle('Mein Portal').click();
+
+	await expect(page.getByText('Bereitgestellt', { exact: true })).toBeVisible();
+	await expect(page.getByText(`E2E Notizweg Buch ${s}`)).toBeVisible();
+	await expect(
+		page.getByText('Bibliothek: „Steht hinter der Theke, bitte bis Freitag"')
+	).toBeVisible();
 });
 
 // Das Warteschlangen-Modell (16.08.2026) am ganzen Weg: Reservieren sperrt nichts —

@@ -1,6 +1,53 @@
 import { apiFetch } from '../../apiFetch.js';
 
 /**
+ * Die beiden Reservierungs-Listen des Portals — Zustand IN der Fabrik, kein
+ * Modul-Singleton: Auf einem geteilten Rechner dürfen die eigenen Reservierungen
+ * des vorigen Bedieners nicht in die nächste Sitzung hinüberstehen.
+ *
+ *  - offene: die Warteschlange ALLER Lehrkräfte (Titel, Klasse, Menge — ohne
+ *    Personen); speist den Chip „hinter wem stehe ich" an den Suchtreffern.
+ *  - eigene: NUR meine — offene plus kürzlich bereitgestellte samt
+ *    Bibliotheks-Notiz. Bis zum 31.08.2026 verschwand ein Vorgang mit dem
+ *    Abschluss aus dem Portal, und die Antwort der Bibliothek existierte nur in
+ *    der Bereit-Mail (Rückweg-Fund, gezielter Raster-Durchgang).
+ */
+export function erzeugeReservierungsListen() {
+	let offene = $state(/** @type {any[]} */ ([]));
+	let eigene = $state(/** @type {any[]} */ ([]));
+
+	/** @param {string} pfad @param {(daten: any[]) => void} setze */
+	async function ladeListe(pfad, setze) {
+		try {
+			const res = await apiFetch(pfad);
+			if (res.ok) {
+				const daten = await res.json();
+				// Nur Arrays übernehmen — eine unerwartete Antwort darf die Anzeige
+				// nicht mit einem .filter-Absturz aus dem Rendern werfen.
+				if (Array.isArray(daten)) setze(daten);
+			}
+		} catch {
+			/* Anzeige ist Zusatzinfo — ohne sie bleibt das Portal benutzbar */
+		}
+	}
+
+	return {
+		get offene() {
+			return offene;
+		},
+		get eigene() {
+			return eigene;
+		},
+		/** @param {string} titelId */
+		warteschlangeFuer: (titelId) => offene.filter((o) => o.titel_id === titelId),
+		lade() {
+			ladeListe('/api/reservierungen/klassensatz/offen', (d) => (offene = d));
+			ladeListe('/api/reservierungen/klassensatz/eigene', (d) => (eigene = d));
+		}
+	};
+}
+
+/**
  * Formular-Zustand und Absenden der Klassensatz-Reservierung — je Titel ein
  * Formular. Eigene Datei (dasselbe Muster wie ausweisdruck.svelte.js und
  * schuelerSuche.svelte.js): KollegiumPortal stand an der Größen-Ratsche, und das

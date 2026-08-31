@@ -98,6 +98,14 @@ dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
   ab: je Zeile Anfragende(r) mit Namen und der aktuelle Regal-Bestand („N verfügbar“).
   „Abschließen“ beendet den Vorgang nach der physischen Übergabe — die Ausleihe selbst
   läuft über die normalen Wege (Kiosk je Schüler oder Lehrer-Handapparat).
+- **Die Abschluss-Notiz hat zwei Rückwege neben der Bereit-Mail** (31.08.2026 — vorher
+  existierte sie nur in der Mail; scheiterte die oder fehlte die Adresse, war die Zusage
+  für immer unsichtbar): Die Theke zeigt „Zuletzt bereitgestellt“ (die jüngsten zehn,
+  mit Notiz und Abschlussdatum, Migration 089), und das Portal zeigt der Lehrkraft unter
+  „Bereitgestellt“ die EIGENEN abgeschlossenen Reservierungen samt „Bibliothek: …“
+  (`GET /api/reservierungen/klassensatz/eigene`, dasselbe Muster wie beim Anliegen).
+  „Deine Reservierungen“ im Portal meint seither wirklich die eigenen — die Warteschlange
+  aller bleibt als Chip an den Suchtreffern sichtbar.
 
 ### 4.3. Wünsche & Meldungen der Lehrkräfte
 
