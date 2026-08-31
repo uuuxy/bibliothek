@@ -98,8 +98,21 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("failed to snapshot student for audit: %w", err)
 	}
 
-	// Soft-Delete durchführen anstatt physisch zu löschen
-	tag, err := tx.Exec(ctx, `UPDATE schueler SET deleted_at = CURRENT_TIMESTAMP, ist_gesperrt = true, block_reason = 'Systematisch gelöscht' WHERE id = $1`, studentID)
+	// Soft-Delete durchführen anstatt physisch zu löschen.
+	//
+	// COALESCE(NULLIF(...)) statt blindem Überschreiben (31.08.2026): Ein BESTEHENDER
+	// Sperrgrund bleibt stehen — dasselbe Muster wie in api/lusd_apply.go und
+	// api/student_promotion.go. Vorher war dieser Schreiber der einzige, der den Grund
+	// plattmachte, und der Restore erkannte die Zeile dann an seinem eigenen Marker als
+	// bloße Lösch-Sperre: Er setzte ist_gesperrt=false und block_reason=NULL, während
+	// is_manually_blocked=true stehen blieb — Verstoß gegen chk_schueler_block_reason
+	// (gesperrt ⇒ Grund nicht leer), also 23514 → 500. Ein manuell gesperrter Schüler
+	// ließ sich nach dem Löschen nie wiederherstellen, und sein echter Grund war weg.
+	tag, err := tx.Exec(ctx, `UPDATE schueler
+		SET deleted_at = CURRENT_TIMESTAMP,
+		    ist_gesperrt = true,
+		    block_reason = COALESCE(NULLIF(btrim(block_reason), ''), 'Systematisch gelöscht')
+		WHERE id = $1`, studentID)
 	if err != nil {
 		return fmt.Errorf("soft-deleting student: %w", err)
 	}
