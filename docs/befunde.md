@@ -89,8 +89,12 @@ Magie-Text statt `bestellstatus`).
 Die gewichtigen offenen Posten sind keine Code-Befunde und leben in den
 Betriebs-Dokumenten bzw. der Selbstprüfung: **S3-Auslagerung der Backups** ·
 **frisches Littera-Backup** (littera_sav.mdb ist ein 2010er-Stand) ·
-**`SELBSTANMELDUNG_DOMAIN`** auf dem Schulserver setzen · **Postgres-18-Umzug Prod** ·
-**lokales `pg_dump` 18** (`brew install postgresql@18`) · Betriebsbereitschafts-Tab
+**`SELBSTANMELDUNG_DOMAIN`** auf dem Schulserver setzen · Betriebsbereitschafts-Tab
 des Schulservers durchsehen · Datenwert Schulname/„Neuer Text" auf Live korrigieren.
+
+Postgres 18 ist KOMPLETT durch (Repo 31.08., Prod laut Peter längst umgezogen).
+Merkposten für lokale PG-Testläufe: `pg_dump` 18.6 liegt in
+`/opt/homebrew/opt/libpq/bin` und muss vor den PATH (`brew`-Standard ist 16.15) —
+sonst scheitern die zwei Backup-Proben-Tests scheinbar, wie am 31.08. passiert.
 
 Stand: 2026-08-31
