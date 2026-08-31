@@ -121,7 +121,10 @@ func scanStudentMitZusatz(row Scanner, zusatz ...any) (*Student, error) {
 		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm, &s.IsManuallyBlocked, &s.BlockReason,
 		&s.Strasse, &s.Hausnummer, &s.Plz, &s.Ort, &s.ElternEmail,
 	}
-	if err := row.Scan(append(ziele, zusatz...)...); err != nil {
+	if len(zusatz) > 0 {
+		ziele = append(ziele, zusatz...)
+	}
+	if err := row.Scan(ziele...); err != nil {
 		return nil, err
 	}
 	s.AusweisGueltigBis = ausweisGueltigBis(s.Klasse)
