@@ -171,3 +171,15 @@ anders schnitt): Sidebar-System-Umschalter und Abmelden-Knopf auf 12 → 14.
 
 **Nicht gemessen bleibt** das Viertel aus dem Kopf dieses Dokuments (Dialoge,
 Drilldowns, Portal, Monitor, Login) — das Gate deckt die sechs größten Ansichten.
+
+**Nachtrag (31.08., Peters „bist du dir sicher?"):** Die finale Fassung des Gates
+(Pillen-Erkennung an der Gestalt) war nach dem Umbau nur grün gesehen worden — die
+91 Verstöße hatte die Marker-Vorfassung gemeldet. Rot-Proben per injiziertem Stil
+nachgeholt, alle drei Regelfamilien feuern: Knopf 12 px (auch Sidebar-Navigation),
+Gewicht 800 in Zellen, Pillen-Boden (Bestand-Pille auf 8 px → „Badge 8px < 11").
+Eine erste Chip-Probe über `span[data-tip]` blieb grün, weil das Ziel in den sechs
+Ansichten gar nicht vorkommt — eine Nullprobe, keine Aussage; die zweite Probe
+traf existierende Pillen. Raster über den einzigen Formwechsel des Tages
+(Papierkorb-Knopf): Türen-Paarung Knopf↔Nachtjob teilt `entferneSchuelerPIIUndLoesche`,
+Recht beidseitig `manage_students_admin`, Blockade-Text erreicht den Bildschirm
+(E2E), Doppelklick durch gesperrten Dialog + 409 gedeckt — kein Befund.
