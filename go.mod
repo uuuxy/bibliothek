@@ -6,7 +6,7 @@ require (
 	github.com/boombuler/barcode v1.1.0
 	github.com/chai2010/webp v1.4.0
 	github.com/emersion/go-imap v1.2.1
-	github.com/getsentry/sentry-go v0.48.0
+	github.com/getsentry/sentry-go v0.49.0
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
