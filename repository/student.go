@@ -36,6 +36,7 @@ type StudentListStat struct {
 	Klasse            string `json:"klasse"`
 	AbgaengerJahr     int    `json:"abgaenger_jahr"`
 	IstGesperrt       bool   `json:"ist_gesperrt"`
+	IsManuallyBlocked bool   `json:"is_manually_blocked"`
 	HasFoto           bool   `json:"-"`
 	FotoURL           string `json:"foto_url"`
 	AusgeliehenCount  int    `json:"ausgeliehen_count"`

@@ -1,6 +1,7 @@
 <script>
 	import { Camera, Lock, RotateCcw, X } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
+	import { ausleiheGesperrt } from './sperrStatus.js';
 	import { studentTabExtensions } from './plugins.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
@@ -22,8 +23,7 @@
 	const initials = $derived(initialen(profile));
 	const avatarGradient = $derived(avatarVerlauf(profile));
 
-	// ── Abgangsjahr inline editing ────────────────────────────────────────────
-	let editingAbgang = $state(false);
+	let editingAbgang = $state(false); // Abgangsjahr inline bearbeiten
 	let abgangInput = $state(0);
 	let abgangSaving = $state(false);
 	let abgangError = $state('');
@@ -118,7 +118,7 @@
 
 	<!-- Name & Metadaten -->
 	<div class="w-full space-y-2">
-		{#if profile.ist_gesperrt}
+		{#if ausleiheGesperrt(profile)}
 			<span
 				class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-rose-100 text-rose-700 border border-rose-200 mb-1"
 			>

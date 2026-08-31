@@ -136,6 +136,7 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 
 	rows, err := repo.db.Query(ctx, praefix+`
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
+			COALESCE(s.is_manually_blocked, false) as is_manually_blocked,
 			COALESCE(l.ausgeliehen_anzahl, 0) as ausgeliehen_anzahl,
 			COALESCE(l.ueberfaellig_anzahl, 0) as ueberfaellig_anzahl,
 			EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = s.id) as has_foto
@@ -158,7 +159,7 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 	var stats []StudentListStat
 	for rows.Next() {
 		var s StudentListStat
-		if err := rows.Scan(&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.AusgeliehenCount, &s.UeberfaelligCount, &s.HasFoto); err != nil {
+		if err := rows.Scan(&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.IsManuallyBlocked, &s.AusgeliehenCount, &s.UeberfaelligCount, &s.HasFoto); err != nil {
 			return nil, err
 		}
 		if s.BarcodeID != "" && s.HasFoto {

@@ -17,6 +17,7 @@
      unumkehrbare Löschen. Eine Sperre ist umkehrbar und gehört deshalb hierher. -->
 <script>
 	import { Lock, Unlock } from '@lucide/svelte';
+	import { ausleiheGesperrt } from '../../sperrStatus.js';
 	import Button from '../ui/Button.svelte';
 
 	/** @type {{ profile: any, onLock?: () => void }} */
@@ -29,7 +30,7 @@
 		<!-- Gesperrt ist die Ausnahme und trägt Farbe; „Aktiv" ist der Normalfall und
 		     bleibt still. Ein pulsierender grüner Punkt für „alles in Ordnung" zieht
 		     Aufmerksamkeit auf die einzige Stelle, die keine braucht. -->
-		{#if profile.ist_gesperrt}
+		{#if ausleiheGesperrt(profile)}
 			<span class="text-sm font-medium text-rose-600">Gesperrt</span>
 		{:else}
 			<span class="text-sm text-slate-500">Aktiv</span>

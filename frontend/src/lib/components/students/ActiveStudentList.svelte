@@ -7,6 +7,7 @@
 -->
 <script>
 	import { BookOpen, ChevronRight } from '@lucide/svelte';
+	import { ausleiheGesperrt } from '../../sperrStatus.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -63,7 +64,7 @@
 		{#if s.ueberfaellig_count > 0}
 			<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden="true"></span>
 			<span class="text-sm font-semibold text-rose-600">Überfällig</span>
-		{:else if s.ist_gesperrt}
+		{:else if ausleiheGesperrt(s)}
 			<span class="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
 			<span class="text-sm font-semibold text-amber-600">Gesperrt</span>
 		{:else}
