@@ -49,7 +49,7 @@ HTTP Request
 └─────────────────┬───────────────────┘
                   │
                   ▼
-           PostgreSQL 15/16
+           PostgreSQL 18
 ```
 
 ### Neben der Anfragekette: die Einmal-Werkzeuge

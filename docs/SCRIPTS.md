@@ -317,7 +317,7 @@ sondern „ist das, was ich gerade geändert habe, abgesichert".
 Echte Zahlen erzeugen:
 ```bash
 docker run -d --name biblio-test-pg -e POSTGRES_PASSWORD=test \
-  -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:16-alpine
+  -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:18-alpine
 export TEST_DATABASE_URL="postgres://postgres:test@localhost:55432/bibliothek_test?sslmode=disable"
 SONAR_TOKEN=sqp_… ./scripts/sonar_scan.sh
 docker rm -f biblio-test-pg

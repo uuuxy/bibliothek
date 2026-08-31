@@ -96,20 +96,21 @@ WORKDIR /app
 # und der Wächter in api/backup_status.go stand dauerhaft auf "critical", ohne dass
 # das Setzen des Schlüssels daran etwas geändert hätte.
 #
-# VERSIONIERT auf 16, nicht "neuester Client bedient beide" (so stand es hier bis zum
-# 21.08.2026 — und das war nur die halbe Wahrheit): pg_dump 17 DUMPT einen älteren
-# Server zwar, schreibt aber `SET transaction_timeout` (GUC ab PG 17) in den Dump —
-# und der ließ sich damit unter ON_ERROR_STOP nicht mehr in den eigenen postgres:15
-# einspielen. Die Backups der Produktion waren monatelang mit dem dokumentierten
-# Restore-Weg NICHT wiederherstellbar; gefunden hat es die Restore-Probe
-# (jobs/restore_probe.go) an ihrem ersten Testlauf. Client 16 dumpt Server 15 UND 16,
-# und seine Dumps spielen nachweislich sauber in 15 ein (CI-Drill, Client 16→Server 15).
-# Beim nächsten Server-Upgrade über 16 hinaus diese Zeile mitziehen — die Probe
-# schlägt sonst am ersten Sonntag Alarm.
+# VERSIONIERT auf die Major-Version des Servers (docker-compose.yml), nicht "neuester
+# Client bedient beide" (so stand es hier bis zum 21.08.2026 — und das war nur die halbe
+# Wahrheit): pg_dump 17 DUMPT einen älteren Server zwar, schreibt aber
+# `SET transaction_timeout` (GUC ab PG 17) in den Dump — und der ließ sich damit unter
+# ON_ERROR_STOP nicht mehr in den damaligen postgres:15 einspielen. Die Backups der
+# Produktion waren monatelang mit dem dokumentierten Restore-Weg NICHT wiederherstellbar;
+# gefunden hat es die Restore-Probe (jobs/restore_probe.go) an ihrem ersten Testlauf.
+# Umgekehrt gilt: ein ÄLTERER Client verweigert einen neueren Server komplett.
+# Client-Major == Server-Major ist die einzige Kombination ohne beide Fallen.
+# Beim nächsten Server-Upgrade diese Zeile mitziehen — die Probe schlägt sonst am
+# ersten Sonntag Alarm. Seit 31.08.2026: Server 18 (docker-compose.yml) → Client 18.
 # apk upgrade zuerst: Das Basisimage trägt die Paketstände seines Release-Tags; Sicherheits-
 # Fixes (z. B. openssl 3.5.8, CVE-2026-14456) kommen nur über das Upgrade herein. Ohne diese
 # Zeile war der Trivy-Scan auf main rot, obwohl kein eigener Code betroffen war (26.08.2026).
-RUN apk --no-cache upgrade && apk --no-cache add ca-certificates tzdata postgresql16-client
+RUN apk --no-cache upgrade && apk --no-cache add ca-certificates tzdata postgresql18-client
 
 # Copy database schema file (for reference / first-run init)
 COPY schema.sql ./

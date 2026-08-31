@@ -228,11 +228,11 @@ löst nichts mehr aus (`api/reorders.go`).
 - ✅ **Phase 1 — G1 entscheiden (Governance).** Entscheidung B umgesetzt (Import + Löschung bei
   Anonymisierung). ~~**Offen beim Betreiber:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis.~~ **ERLEDIGT (in `SECURITY.md` dokumentiert).**
 - ✅ **Phase 2 — Constraints nachrüsten.** Migrationen 039–043: 12 CHECKs + ENUM-Wert, jede gegen
-  echtes PG 15/16 verifiziert (Verletzung provoziert → Fehler erwartet; gültige Werte akzeptiert).
+  echtes Postgres verifiziert (damals 15/16, heute 18) (Verletzung provoziert → Fehler erwartet; gültige Werte akzeptiert).
 - ✅ **Phase 3 — Prozess härten (G6).** `db/migrations_drift_test.go` läuft in CI.
 - ✅ **Phase 4 — In Tests überführen.** Die 🟡-Ausleihregeln als Unit-Tests
   (`loan_checkout_test.go`); die 🟢-Invarianten als Integrationstests gegen echtes
-  Postgres 15 im CI-Service-Container (`db/constraints_*_pg_test.go`): jede Verletzung
+  Postgres 18 im CI-Service-Container (Produktionsversion) (`db/constraints_*_pg_test.go`): jede Verletzung
   wird provoziert und muss am erwarteten Constraint scheitern, jeder gültige Wert muss
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.

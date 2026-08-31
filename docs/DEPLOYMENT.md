@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-08-23
+> Zuletzt aktualisiert: 2026-08-31
 
 ---
 
@@ -8,7 +8,7 @@
 
 Das System besteht aus:
 - **Go-Backend** (Port 8083 Produktion / 8084 lokal)
-- **PostgreSQL 15/16**
+- **PostgreSQL 18**
 - **Caddy** als Reverse-Proxy (TLS-Terminierung)
 - **Docker Compose** als Orchestrierung
 
@@ -294,6 +294,55 @@ Migrationen laufen **automatisch beim Serverstart** (`database.RunMigrations`). 
 ### Neue Migration hinzufügen
 1. Datei `migrations/NNN_beschreibung.sql` anlegen (NNN = nächste Nummer, kein Namenskonflikt)
 2. Hash in `schema.sql` unter `schema_migrations` eintragen (wird beim nächsten Start automatisch geprüft)
+
+### Major-Upgrade der Datenbank (z. B. 15 → 18, durchgeführt 31.08.2026)
+
+Ein Major-Wechsel des Postgres-Images ist **kein** normales `docker compose pull` —
+das Datenverzeichnis einer alten Major-Version startet unter der neuen nicht. Der Weg
+ist Dump → frisches Volume → Restore. Seit dem 18er-Image liegt das Datenverzeichnis
+außerdem unter `/var/lib/postgresql` (vorher `/var/lib/postgresql/data`);
+`docker-compose.yml` mountet bereits den neuen Pfad.
+
+Reihenfolge auf dem Server (Variablen an die eigene `.env` anpassen, kein Platzhalter-
+Copy-Paste — siehe die Lektion in `docs/befunde.md` zu spitzen Klammern):
+
+```bash
+cd /opt/bibliothek
+DB_USER=$(grep '^POSTGRES_USER=' .env | cut -d= -f2); DB_USER=${DB_USER:-postgres}
+DB_NAME=$(grep '^POSTGRES_DB=' .env | cut -d= -f2);  DB_NAME=${DB_NAME:-bibliothek}
+
+# 1. Stack anhalten (Backend zuerst, damit nichts mehr schreibt), Dump mit dem ALTEN Container
+docker compose stop backend
+docker compose exec postgres-db pg_dump -U "$DB_USER" -d "$DB_NAME" > /tmp/upgrade_dump.sql
+
+# 2. Alten Stand behalten, bis der neue nachweislich läuft: Volume NICHT löschen,
+#    sondern umbenennen ist mit Docker-Volumes nicht möglich — deshalb bleibt das alte
+#    Volume einfach stehen (der neue Mountpfad nutzt es nicht mehr) und der Dump ist
+#    zusätzlich das Sicherheitsnetz.
+docker compose down
+
+# 3. Neues Image + neuer Mountpfad kommen aus dem Repo
+git pull
+
+# 4. Nur die Datenbank starten (legt unter dem neuen Pfad ein frisches Cluster an),
+#    Dump einspielen, dann den Rest des Stacks hochziehen
+docker compose up -d postgres-db
+sleep 10
+docker compose exec -T postgres-db psql -U "$DB_USER" -d "$DB_NAME" \
+  -v ON_ERROR_STOP=1 -f /dev/stdin < /tmp/upgrade_dump.sql
+./update.sh
+
+# 5. Beweis statt Hoffnung: Version und Datenbestand ansehen, dann erst aufräumen
+docker compose exec postgres-db psql -U "$DB_USER" -d "$DB_NAME" \
+  -c "SELECT version();" -c "SELECT count(*) FROM buecher_exemplare;"
+rm /tmp/upgrade_dump.sql
+```
+
+Beim **nächsten** Major-Upgrade müssen vier Stellen gemeinsam wandern, sonst schlägt
+die Restore-Probe (`jobs/restore_probe.go`) am ersten Sonntag Alarm:
+`docker-compose.yml` + `docker-compose.local.yml` (Server), `Dockerfile`
+(`postgresqlNN-client`), `.github/workflows/ci.yml` (Service-Image **und** `PG_MAJOR`
+im Client-Installationsschritt).
 
 ---
 

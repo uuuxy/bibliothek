@@ -57,7 +57,7 @@ else
 	echo "      sich und zaehlen als ungedeckt (rund 13 Prozentpunkte weniger)." >&2
 	echo "      Echte Zahlen (siehe docs/SCRIPTS.md):" >&2
 	echo "        docker run -d --name biblio-test-pg -e POSTGRES_PASSWORD=test \\" >&2
-	echo "          -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:16-alpine" >&2
+	echo "          -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:18-alpine" >&2
 	echo "        export TEST_DATABASE_URL=postgres://postgres:test@localhost:55432/bibliothek_test?sslmode=disable" >&2
 fi
 

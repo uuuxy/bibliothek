@@ -54,12 +54,13 @@ jobs:
       # Ohne Passwort — siehe POSTGRES_HOST_AUTH_METHOD unten.
       TEST_DATABASE_URL: postgres://postgres@localhost:5432/bibliothek_test?sslmode=disable
 
-    # Postgres 15 = Produktionsversion. Die Constraint-Tests prüfen echtes
-    # Postgres-Verhalten (z. B. dass ein CHECK nur bei FALSE greift, nicht bei NULL) —
-    # das lässt sich mit pgxmock prinzipiell nicht nachbilden.
+    # Postgres 18 = Produktionsversion (docker-compose.yml; Upgrade 15→18 am
+    # 31.08.2026). Die Constraint-Tests prüfen echtes Postgres-Verhalten (z. B. dass
+    # ein CHECK nur bei FALSE greift, nicht bei NULL) — das lässt sich mit pgxmock
+    # prinzipiell nicht nachbilden.
     services:
       postgres:
-        image: postgres:15-alpine
+        image: postgres:18-alpine
         env:
           # trust statt eines Wegwerf-Passworts: Der Container existiert nur für die
           # Dauer dieses Jobs, ist ausschliesslich über localhost des Runners
@@ -115,15 +116,29 @@ jobs:
       # zum 6-Stunden-Abbruch und sieht dabei aus wie "läuft noch".
       timeout-minutes: 5
       run: |
-        # Das Runner-Image bringt den Client in aller Regel schon mit; Client >= Server
-        # genügt (pg_dump verweigert nur einen NEUEREN Server, Service ist Postgres 15).
-        # apt ist nur die Rückfallebene für einen Image-Wechsel — und dann mit harten
-        # Netz-Timeouts statt der apt-Vorgabe, die an einem hängenden Spiegel klebt.
-        if ! command -v pg_dump >/dev/null 2>&1; then
+        # `command -v` allein reicht seit dem 18er-Service NICHT mehr: Das Runner-Image
+        # (Ubuntu 24.04) bringt pg_dump 16 mit, und ein ÄLTERER Client verweigert den
+        # neueren Server — die Probe fiele dann bei jedem Lauf um, obwohl "pg_dump da"
+        # war. Deshalb Major-Version prüfen und bei Bedarf Client 18 aus dem
+        # PGDG-Repo nachziehen (Ubuntu-Archiv führt nur 16) — mit harten Netz-Timeouts
+        # statt der apt-Vorgabe, die an einem hängenden Spiegel klebt.
+        PG_MAJOR=18   # == Service-Image oben und Produktionsversion (docker-compose.yml)
+        client_major() { pg_dump --version 2>/dev/null | grep -oE '[0-9]+' | head -1; }
+        if ! command -v pg_dump >/dev/null 2>&1 || [ "$(client_major)" -lt "$PG_MAJOR" ]; then
           APT_OPTS=(-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15)
+          sudo install -d -m 0755 /usr/share/postgresql-common/pgdg
+          sudo curl --fail --max-time 30 -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
           sudo apt-get "${APT_OPTS[@]}" update -qq
-          sudo apt-get "${APT_OPTS[@]}" install -y -qq postgresql-client
+          sudo apt-get "${APT_OPTS[@]}" install -y -qq "postgresql-client-${PG_MAJOR}"
+          # Ubuntu legt die Binaries versioniert ab; der Wrapper in /usr/bin zeigt sonst
+          # weiter auf den 16er-Client des Runner-Images.
+          export PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:$PATH"
+          echo "/usr/lib/postgresql/${PG_MAJOR}/bin" >> "$GITHUB_PATH"
         fi
+        [ "$(client_major)" -ge "$PG_MAJOR" ] || { echo "pg_dump zu alt: $(pg_dump --version)"; exit 1; }
         pg_dump --version
         psql --version
 

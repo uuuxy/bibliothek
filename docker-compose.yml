@@ -17,14 +17,25 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    image: postgres:15-alpine
+    # Upgrade 15 → 18 am 31.08.2026, VOR dem ersten Piloten — ein Major-Wechsel ist
+    # jetzt ein Dump/Restore ohne Nutzer, später ein Wartungsfenster mit Risiko.
+    # Lokaler Stack (docker-compose.local.yml) und CI fahren dieselbe Major-Version;
+    # der pg_dump-Client im Backend-Image (Dockerfile) MUSS bei jedem weiteren
+    # Server-Upgrade mitziehen, sonst schlägt die Restore-Probe sonntags Alarm.
+    image: postgres:18-alpine
     container_name: bibliothek-db
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env / .env.example)}
       - POSTGRES_DB=${POSTGRES_DB:-bibliothek}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Seit dem 18er-Image liegt PGDATA unter /var/lib/postgresql/18/docker und das
+      # deklarierte Volume ist /var/lib/postgresql (nicht mehr …/data). Der alte Mount
+      # auf …/data ginge ins Leere: die Daten landeten in einem ANONYMEN Volume und
+      # wären beim nächsten Neuerstellen des Containers weg. Bestandsdaten aus einem
+      # 15er-Volume sind hier NICHT startbar — Umzug nur per Dump/Restore
+      # (docs/DEPLOYMENT.md, Abschnitt Major-Upgrade).
+      - postgres_data:/var/lib/postgresql
     ports:
       # Nur an localhost binden — wie das Backend eine Zeile tiefer. "5434:5432"
       # veröffentlichte den Port auf ALLEN Interfaces: Wer den Host im Netz
