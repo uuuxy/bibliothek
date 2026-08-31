@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -31,7 +30,13 @@ const schuelerAbholberechtigt = `s.deleted_at IS NULL AND s.ist_gesperrt = false
 // Handapparat-Rückgaben). Seine eigene Vormerkung wird bei der Zuteilung übersprungen: Sonst
 // könnte er das Buch beim Zurückgeben sofort wieder für sich selbst abholbereit stellen und die
 // Warteschlange dauerhaft monopolisieren (Vormerkungs-Monopolisierung).
-func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *LoanResult, returningSchuelerID *string) {
+// Fehler kommen seit dem 31.08.2026 ZURÜCK statt nur ins Log: Vorher wurden die
+// Antwortfelder trotz gescheitertem UPDATE gesetzt und der Aufrufer committete — der
+// Arbeitsplatz meldete „ins Abholfach legen", die Vormerkung blieb 'wartend', das Buch
+// lag im Fach UND war frei ausleihbar, und der Verfall-Cron griff mangels
+// bereitgestellt_bis nie. Auch ein Transportfehler des SELECTs galt still als „keine
+// Vormerkung". Der Aufrufer rollt jetzt zurück; die Theke wiederholt den Scan.
+func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *LoanResult, returningSchuelerID *string) error {
 	var vID, sVorname, sNachname, sKlasse string
 	// Die älteste wartende Vormerkung eines abholberechtigten Schülers ermitteln und sperren.
 	// Die Vormerkung des gerade zurückgebenden Schülers wird ausgeschlossen ($2).
@@ -51,22 +56,27 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 		ORDER BY v.erstellt_am ASC LIMIT 1
 		FOR UPDATE OF v SKIP LOCKED
 	`, copy.TitelID, returningSchuelerID).Scan(&vID, &sVorname, &sNachname, &sKlasse)
-
-	if err == nil {
-		schuelerName := sVorname + " " + sNachname
-		if sKlasse != "" {
-			schuelerName += ", " + sKlasse
-		}
-
-		// Status der Vormerkung auf 'abholbereit' setzen. Das Buch wird für 3 Tage für diesen Schüler reserviert.
-		if _, err := tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days' WHERE id = $2", copy.ID, vID); err != nil {
-			log.Printf("rückgabe: Vormerkung %s konnte nicht auf 'abholbereit' gesetzt werden: %v", vID, err)
-		}
-
-		resp.HasVormerkung = true
-		resp.VormerkungTitel = copy.Titel
-		resp.VormerkungUser = schuelerName
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil // niemand wartet — der Normalfall
 	}
+	if err != nil {
+		return fmt.Errorf("wartende Vormerkung ermitteln: %w", err)
+	}
+
+	schuelerName := sVorname + " " + sNachname
+	if sKlasse != "" {
+		schuelerName += ", " + sKlasse
+	}
+
+	// Status der Vormerkung auf 'abholbereit' setzen. Das Buch wird für 3 Tage für diesen Schüler reserviert.
+	if _, err := tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days' WHERE id = $2", copy.ID, vID); err != nil {
+		return fmt.Errorf("vormerkung %s auf 'abholbereit' setzen: %w", vID, err)
+	}
+
+	resp.HasVormerkung = true
+	resp.VormerkungTitel = copy.Titel
+	resp.VormerkungUser = schuelerName
+	return nil
 }
 
 // HandleSimpleReturn wickelt die einfache Rückgabe eines Buchexemplars ab, wenn kein neuer Ausleiher aktiv ist.
@@ -172,7 +182,9 @@ func (s *defaultLoanService) handleEigenrueckgabeMitarbeiter(ctx context.Context
 
 	// Handapparat-Rückgabe: kein Schüler-Ausleiher (activeLoan.SchuelerID == nil) → nichts
 	// auszuschließen; die Zuteilung läuft normal über die Warteschlange.
-	s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID)
+	if err := s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID); err != nil {
+		return nil, err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -213,7 +225,9 @@ func (s *defaultLoanService) handleSchuelerRueckgabe(ctx context.Context, tx pgx
 
 	// Eventuelle Vormerkungen aktivieren — die eigene Vormerkung des zurückgebenden
 	// Schülers wird dabei übersprungen (Monopolisierungs-Schutz).
-	s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID)
+	if err := s.processReturnVormerkungTx(ctx, tx, copy, resp, activeLoan.SchuelerID); err != nil {
+		return nil, err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err

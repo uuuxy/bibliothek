@@ -175,6 +175,12 @@ func TestHandleBookReturn(t *testing.T) {
 		WithArgs(staffID, false, activeLoanID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
+	// Vormerkungs-Zuteilung: niemand wartet. Seit dem 31.08.2026 wird ein Fehler dieser
+	// Abfrage nicht mehr verschluckt — der Mock muss sie daher ausdrücklich kennen.
+	mock.ExpectQuery("SELECT v.id, s.vorname, s.nachname").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnError(pgx.ErrNoRows)
+
 	mock.ExpectCommit()
 
 	// Audit Log (runs in its own transaction inside logLoanEvent)
