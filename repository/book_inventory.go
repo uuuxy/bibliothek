@@ -50,6 +50,12 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 // nicht als AUSSORTIERT verschwinden. Ein bereits gesetzter, spezifischerer Grund — etwa
 // BESCHAEDIGUNG aus der Schadensmeldung — bleibt via COALESCE beim blossen Bearbeiten der
 // Notiz erhalten. Beim Reaktivieren wird der Grund gelöscht, sonst lehnt der CHECK ab.
+// Guard seit 31.08.2026: „Ausgesondert" hatte DREI Türen, aber nur das Ausbuchen
+// (audit_books.DeleteCopy) prüfte die offene Ausleihe. Über die beiden anderen ließ sich
+// ein Buch aussondern, das ein Schüler gerade in der Tasche hatte — es verschwand aus
+// Katalog, Kiosk und Inventur, während der Schüler in der Mahnstrecke blieb (Bugklasse
+// „Zwei Türen zum selben Zustand"). Unbekannte IDs waren zudem stille „Erfolge"
+// (RowsAffected prüfte niemand).
 func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error {
 	query := `
 		UPDATE buecher_exemplare
@@ -61,9 +67,20 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 		    END,
 		    zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $4
+		  AND NOT ($2::boolean AND EXISTS (
+		      SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $4 AND a.rueckgabe_am IS NULL))
 	`
-	_, err := r.db.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id)
-	return err
+	tag, err := r.db.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		if istAusgesondert {
+			return r.deuteAussonderungsHindernis(ctx, id)
+		}
+		return ErrExemplarNichtGefunden
+	}
+	return nil
 }
 
 // DecommissionCopy sortiert ein Buch aus und sperrt es dauerhaft.
@@ -73,9 +90,31 @@ func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) erro
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT',
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1
+		  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $1 AND a.rueckgabe_am IS NULL)
 	`
-	_, err := r.db.Exec(ctx, query, id)
-	return err
+	tag, err := r.db.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return r.deuteAussonderungsHindernis(ctx, id)
+	}
+	return nil
+}
+
+// deuteAussonderungsHindernis unterscheidet, WARUM der Aussonderungs-Guard nichts traf:
+// verliehen (400 mit Auskunft) oder unbekannt (404) — statt eines stillen „Erfolgs".
+func (r *pgBookRepository) deuteAussonderungsHindernis(ctx context.Context, id string) error {
+	var verliehen bool
+	if err := r.db.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL)`,
+		id).Scan(&verliehen); err != nil {
+		return err
+	}
+	if verliehen {
+		return ErrExemplarNochVerliehen
+	}
+	return ErrExemplarNichtGefunden
 }
 
 // GenerateBarcodes erzeugt ein Array von count fortlaufenden Barcodes.

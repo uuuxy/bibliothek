@@ -90,6 +90,14 @@ func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository) htt
 		}
 
 		if err := bookRepo.UpdateCopyStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert, req.ZustandNotiz); err != nil {
+			if errors.Is(err, repository.ErrExemplarNochVerliehen) {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+				return
+			}
+			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -121,6 +129,16 @@ func (s *Server) AussondernCopyHandler(bookRepo repository.BookRepository) http.
 		ctx := r.Context()
 
 		if err := bookRepo.DecommissionCopy(ctx, id); err != nil {
+			// Guard 31.08.2026: verliehen -> 400 mit Auskunft, unbekannt -> 404 --
+			// vorher sonderte diese Tuer auch verliehene Exemplare kommentarlos aus.
+			if errors.Is(err, repository.ErrExemplarNochVerliehen) {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+				return
+			}
+			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
