@@ -24,6 +24,7 @@
 	import { apiGet } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
+	import LadeFehler from './components/settings/LadeFehler.svelte';
 	import DataManagement from './components/admin/DataManagement.svelte';
 	import SchuljahreswechselBereich from './components/admin/SchuljahreswechselBereich.svelte';
 	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
@@ -48,6 +49,9 @@
 	let loading = $state(true);
 	/** @type {Record<string, any>} */
 	let daten = $state({});
+	// Leere Daten heißen „Vorgabewert" — bei einem Fehlschlag wird deshalb nichts
+	// angezeigt, was man speichern könnte (Begründung in LadeFehler.svelte).
+	let ladeFehler = $state(false);
 
 	const kategorien = $derived(sichtbareKategorien(authStore.currentUser));
 	const sichtbar = $derived(new Set(kategorien.map((k) => k.id)));
@@ -82,8 +86,12 @@
 		if (!hatRecht(authStore.currentUser, 'manage_settings')) return;
 		try {
 			daten = (await apiGet('/api/einstellungen')) ?? {};
+			ladeFehler = false;
 		} catch {
-			daten = {};
+			// Den alten Stand NICHT wegwerfen: Nach einem gescheiterten Nachladen
+			// (z. B. direkt nach dem Speichern) bleibt das Angezeigte wenigstens das
+			// zuletzt Gelesene, statt zu Vorgaben zu werden.
+			ladeFehler = true;
 		}
 	}
 
@@ -93,10 +101,13 @@
 		detailOffen = true;
 	}
 
-	onMount(async () => {
+	async function erneutLaden() {
+		loading = true;
 		await loadSettings();
 		loading = false;
-	});
+	}
+
+	onMount(erneutLaden);
 </script>
 
 <PageShell>
@@ -106,6 +117,8 @@
 				class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"
 			></div>
 		</div>
+	{:else if ladeFehler}
+		<LadeFehler onerneut={erneutLaden} />
 	{:else}
 		<div class="flex w-full flex-col gap-8 lg:flex-row lg:gap-12">
 			<div class={detailOffen ? 'hidden lg:block' : 'block'}>
