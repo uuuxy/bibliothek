@@ -152,6 +152,11 @@ type UpdateUserParams struct {
 	Aktiv    bool
 }
 
+// ErrBenutzerNichtGefunden meldet eine unbekannte Benutzer-ID beim Ändern/Löschen — 0 Zeilen sind
+// hier ein Fehler, kein Erfolg (Phantom-Erfolg-Sweep 31.08.2026: der Handler schrieb
+// sonst einen USER_UPDATE-Audit-Eintrag über eine Änderung, die nie stattfand).
+var ErrBenutzerNichtGefunden = errors.New("benutzer nicht gefunden")
+
 func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) error {
 	query := `
 		UPDATE benutzer
@@ -162,8 +167,14 @@ func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) e
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $7
 	`
-	_, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID)
-	return err
+	tag, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrBenutzerNichtGefunden
+	}
+	return nil
 }
 
 // GetRolleByID liest die gespeicherte Rolle eines Benutzers.

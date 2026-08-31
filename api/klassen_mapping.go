@@ -96,10 +96,15 @@ func (s *Server) DeleteKlassenMappingHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		_, err := s.DB.Pool.Exec(ctx,
+		tag, err := s.DB.Pool.Exec(ctx,
 			`DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, klasse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		// 204 für etwas, das nie existierte, wäre ein Phantom-Erfolg (Sweep 31.08.2026).
+		if tag.RowsAffected() == 0 {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)

@@ -143,6 +143,10 @@ func (s *Server) InventurAbortHandler() http.HandlerFunc {
 		ctx := r.Context()
 		invRepo := repository.NewInventoryRepository(s.DB.Pool)
 		if err := invRepo.AbortInventurSession(ctx, req.SessionID); err != nil {
+			if errors.Is(err, repository.ErrInventurSessionNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

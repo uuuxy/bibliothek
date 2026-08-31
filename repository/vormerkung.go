@@ -236,6 +236,17 @@ func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, sch
 // IST der Zweck dieses Rechts, kein Bypass. Die Datenminimierungs-Lücke war der
 // parameterlose List-Vollabzug, nicht das Löschen; siehe ErrVormerkungScopeFehlt.
 func (r *pgVormerkungRepository) Delete(ctx context.Context, id string) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM vormerkungen WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM vormerkungen WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	// 0 Zeilen = unbekannte ID: „gelöscht" wäre gelogen (Phantom-Erfolg-Sweep
+	// 31.08.2026; Fulfill 100 Zeilen weiter oben prüft längst).
+	if tag.RowsAffected() == 0 {
+		return ErrVormerkungNichtGefunden
+	}
+	return nil
 }
+
+// ErrVormerkungNichtGefunden meldet eine unbekannte Vormerkungs-ID beim Löschen.
+var ErrVormerkungNichtGefunden = errors.New("vormerkung nicht gefunden")

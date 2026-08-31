@@ -225,17 +225,36 @@ func (r *InventoryRepository) LadeInventurVerluste(ctx context.Context, sessionI
 	return liste, rows.Err()
 }
 
+// ErrInventurSessionNichtGefunden meldet eine unbekannte Session-ID beim Abbrechen.
+var ErrInventurSessionNichtGefunden = errors.New("inventur-session nicht gefunden")
+
 // AbortInventurSession verwirft eine Session ohne Verlustbuchung — für abgebrochene
 // oder hängengebliebene Inventuren. Die Erfassungen bleiben (CASCADE räumt sie erst
 // beim echten Löschen); der Scope wird dadurch wieder frei für einen Neustart.
+//
+// 0 Zeilen hatte hier ZWEI Bedeutungen und beide wurden als „abgebrochen" quittiert
+// (Phantom-Erfolg-Sweep 31.08.2026): Session existiert nicht (→ Fehler, der Aufrufer
+// redet über die falsche ID) oder war schon abgeschlossen (→ idempotent in Ordnung,
+// das Ziel „Scope frei" ist erreicht).
 func (r *InventoryRepository) AbortInventurSession(ctx context.Context, sessionID string) error {
-	_, err := r.db.Exec(ctx, `
+	tag, err := r.db.Exec(ctx, `
 		UPDATE inventur_sessions
 		SET abgeschlossen_am = now(), verloren_gemeldet = 0
 		WHERE id = $1 AND abgeschlossen_am IS NULL
 	`, sessionID)
 	if err != nil {
 		return fmt.Errorf("session abbrechen fehlgeschlagen: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		var existiert bool
+		if err := r.db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM inventur_sessions WHERE id = $1)`, sessionID,
+		).Scan(&existiert); err != nil {
+			return fmt.Errorf("session abbrechen: existenz prüfen fehlgeschlagen: %w", err)
+		}
+		if !existiert {
+			return ErrInventurSessionNichtGefunden
+		}
 	}
 	return nil
 }

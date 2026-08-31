@@ -18,15 +18,23 @@ func NormalisiereTitelKey(titel string) string {
 	return strings.Join(strings.Fields(strings.ReplaceAll(titel, `"`, "")), " ")
 }
 
-// UpdateCopyDamageNote setzt den Zustandstext eines Exemplars.
+// UpdateCopyDamageNote setzt den Zustandstext eines Exemplars. 0 Zeilen = unbekannte ID
+// (Phantom-Erfolg-Sweep 31.08.2026 — die Schwestern UpdateCopyStatus/DecommissionCopy
+// prüften bereits, diese beiden hier waren übersehen).
 func (r *pgBookRepository) UpdateCopyDamageNote(ctx context.Context, id string, note string) error {
 	query := `
 		UPDATE buecher_exemplare
 		SET zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $2
 	`
-	_, err := r.db.Exec(ctx, query, note, id)
-	return err
+	tag, err := r.db.Exec(ctx, query, note, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrExemplarNichtGefunden
+	}
+	return nil
 }
 
 // UpdateCopyBarcode ändert die Barcode-Zuordnung eines Exemplars.
@@ -36,8 +44,14 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 		SET barcode_id = $1, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $2
 	`
-	_, err := r.db.Exec(ctx, query, barcode, id)
-	return err
+	tag, err := r.db.Exec(ctx, query, barcode, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrExemplarNichtGefunden
+	}
+	return nil
 }
 
 // UpdateCopyStatus ändert den Verleihstatus und Zustand eines Exemplars.

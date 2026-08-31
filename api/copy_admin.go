@@ -94,6 +94,8 @@ func (s *Server) DeleteTitleHandler(auditRepo repository.AuditRepository) http.H
 		if err != nil {
 			if errors.Is(err, repository.ErrTitelHatAktiveAusleihen) {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			} else if errors.Is(err, repository.ErrTitelNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
 			} else {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			}

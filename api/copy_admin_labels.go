@@ -52,6 +52,10 @@ func (s *Server) UpdateCopyBarcodeHandler(bookRepo repository.BookRepository) ht
 				apierrors.SendHTTPError(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
 				return
 			}
+			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

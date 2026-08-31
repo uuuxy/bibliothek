@@ -62,9 +62,15 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		_, err := s.DB.Pool.Exec(ctx, "UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE id = $3", req.Betreff, req.TextBody, id)
+		tag, err := s.DB.Pool.Exec(ctx, "UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE id = $3", req.Betreff, req.TextBody, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
+			return
+		}
+		// Phantom-Erfolg-Sweep 31.08.2026: Unbekannte Vorlagen-ID war ein stilles
+		// „Erfolgreich gespeichert" — 0 Zeilen sind hier ein Fehler, kein Erfolg.
+		if tag.RowsAffected() == 0 {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))
 			return
 		}
 

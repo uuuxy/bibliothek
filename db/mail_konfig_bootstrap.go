@@ -86,7 +86,7 @@ func (db *Database) InitMailKonfig(ctx context.Context) error {
 		absender = strings.TrimSpace(os.Getenv("SMTP_USER"))
 	}
 
-	_, err = db.Pool.Exec(ctx, `
+	tag, err := db.Pool.Exec(ctx, `
 		UPDATE mail_settings_config
 		SET smtp_host = $1, smtp_port = $2, smtp_user = $3,
 		    smtp_password_encrypted = COALESCE($4, smtp_password_encrypted),
@@ -95,6 +95,13 @@ func (db *Database) InitMailKonfig(ctx context.Context) error {
 	`, umgebungHost, umgebungPort, os.Getenv("SMTP_USER"), verschluesselt, absender)
 	if err != nil {
 		return err
+	}
+	// Die Zeile wurde oben gerade gelesen; 0 Zeilen heißt, sie verschwand währenddessen
+	// (Start-Race). Dann darf hier nicht „übernommen" stehen (Phantom-Erfolg-Sweep
+	// 31.08.2026) — der Versand fällt wie beim Lesefehler auf die Umgebung zurück.
+	if tag.RowsAffected() == 0 {
+		log.Printf("mail-konfig: Konfigurationszeile verschwand während der Übernahme — nichts übernommen")
+		return nil
 	}
 
 	log.Printf("mail-konfig: SMTP-Zugangsdaten aus der Umgebung übernommen (%s:%s) — ab jetzt gilt die Einstellung in der Oberfläche", umgebungHost, umgebungPort)

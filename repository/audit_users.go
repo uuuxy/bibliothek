@@ -52,8 +52,16 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 		return fmt.Errorf("%w (%d offen)", ErrUserHasActiveLoans, aktiveAusleihen)
 	}
 
-	if _, err = tx.Exec(ctx, "DELETE FROM benutzer WHERE id = $1", userID); err != nil {
+	// 0 Zeilen = unbekannte ID: Der Snapshot oben toleriert ErrNoRows, der Ausleihen-Zähler
+	// steht auf 0 — eine unbekannte Benutzer-ID lief glatt durch und hinterließ einen
+	// DELETE-Audit-Eintrag über ein Konto, das es nie gab (Phantom-Erfolg-Sweep 31.08.2026;
+	// der Schüler-Purge 140 Zeilen weiter unten prüft längst).
+	tag, err := tx.Exec(ctx, "DELETE FROM benutzer WHERE id = $1", userID)
+	if err != nil {
 		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrBenutzerNichtGefunden
 	}
 
 	if err = r.insertAuditLog(ctx, tx, auditEntry{

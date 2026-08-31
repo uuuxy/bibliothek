@@ -78,6 +78,9 @@ func (s *Server) DeleteVormerkungHandler(vormerkungRepo repository.VormerkungRep
 		ctx := r.Context()
 
 		if err := vormerkungRepo.Delete(ctx, id); err != nil {
+			if errors.Is(err, repository.ErrVormerkungNichtGefunden) {
+				return apierrors.NotFound("Vormerkung nicht gefunden", err)
+			}
 			return apierrors.Internal("Fehler beim Löschen der Vormerkung", err)
 		}
 

@@ -41,6 +41,10 @@ func (s *Server) UpdateDamageNoteHandler(bookRepo repository.BookRepository) htt
 		ctx := r.Context()
 
 		if err := bookRepo.UpdateCopyDamageNote(ctx, id, req.Note); err != nil {
+			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

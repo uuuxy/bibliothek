@@ -174,6 +174,12 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 			ID: id, Barcode: barcode, Vorname: req.Vorname, Nachname: req.Nachname,
 			Email: req.Email, Rolle: dbEnumRole, Aktiv: req.Aktiv,
 		}); err != nil {
+			// Kein Audit-Eintrag und kein Cache-Invalidate für eine Änderung, die nie
+			// stattfand (Phantom-Erfolg-Sweep 31.08.2026).
+			if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

@@ -62,6 +62,10 @@ func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository, userRep
 				apierrors.SendHTTPError(w, http.StatusConflict, err)
 				return
 			}
+			if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

@@ -31,6 +31,8 @@ var ErrTitelHatAktiveAusleihen = errors.New("Löschen fehlgeschlagen: folgende E
 var (
 	ErrExemplarNochVerliehen = errors.New("exemplar ist aktuell noch verliehen")
 	ErrExemplarNichtGefunden = errors.New("exemplar nicht gefunden oder bereits ausgebucht")
+	// ErrTitelNichtGefunden: unbekannte Titel-ID beim Löschen (Phantom-Erfolg-Sweep 31.08.2026).
+	ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
 )
 
 // DeleteTitle entfernt einen Buchtitel vollständig aus dem Katalog und erstellt einen revisionssicheren Audit-Eintrag.
@@ -94,9 +96,16 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("failed to delete associated copies: %w", err)
 	}
 
-	// Eigentlichen Titel-Datensatz löschen
-	if _, err = tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID); err != nil {
+	// Eigentlichen Titel-Datensatz löschen. 0 Zeilen = unbekannte ID: Vorher lief eine
+	// unbekannte Titel-ID glatt durch (Snapshot toleriert ErrNoRows, 0 aktive Ausleihen)
+	// und hinterließ einen DELETE-Audit-Eintrag über einen Titel, den es nie gab
+	// (Phantom-Erfolg-Sweep 31.08.2026; die Exemplar-Schwester unten prüft längst).
+	tag, err := tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID)
+	if err != nil {
 		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrTitelNichtGefunden
 	}
 
 	// Löschung im Audit-Log vermerken
