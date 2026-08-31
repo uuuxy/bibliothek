@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/lmf"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,8 +16,10 @@ func TestResolveBestandsFilter(t *testing.T) {
 	cases := []struct {
 		in, wantFragment, wantName string
 	}{
-		{"lmf", "AND (LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]')", "lmf"},
-		{"freihand", "AND NOT ((LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]'))", "freihand"},
+		// Abgeleitet statt abgeschrieben (31.08.2026) — eine Kopie des Prädikats wäre
+		// eine zweite Wahrheitsquelle neben pkg/lmf.
+		{"lmf", "AND " + lmf.SQLBedingung("t.titel", "t.signatur"), "lmf"},
+		{"freihand", "AND NOT (" + lmf.SQLBedingung("t.titel", "t.signatur") + ")", "freihand"},
 		{"", "", "alle"},
 		{"kaputt", "", "alle"}, // unbekannte Werte fallen sicher auf Gesamtbestand zurück
 	}

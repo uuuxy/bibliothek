@@ -37,8 +37,40 @@ func TestIstSchulbuch(t *testing.T) {
 
 func TestSQLBedingung(t *testing.T) {
 	got := SQLBedingung("t.titel", "t.signatur")
-	want := "(LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]')"
+	// btrim seit dem 31.08.2026 auf BEIDEN Spalten — sonst erkennt Go ein Buch mit
+	// führendem Leerzeichen als Lernmittel und das SQL nicht (siehe Paarungstest unten).
+	want := "(LOWER(btrim(t.titel, E' \\t\\n\\r')) ~ '^lmf[ -]' OR " +
+		"LOWER(btrim(COALESCE(t.signatur, ''), E' \\t\\n\\r')) ~ '^lmf[ -]')"
 	if got != want {
 		t.Errorf("SQLBedingung = %q, want %q", got, want)
+	}
+}
+
+// Go und SQL müssen DASSELBE Buch als Lernmittel erkennen.
+//
+// Fund des Komplett-Durchgangs 31.08.2026: IstSchulbuch trimmt (strings.TrimSpace),
+// SQLBedingung nicht (`LOWER(col) ~ '^lmf[ -]'`). Ein Titel oder eine Signatur mit
+// führendem Leerzeichen — Import, Copy-Paste aus Excel — war damit für Go ein
+// Lernmittel (Ausleihlimit, Schuljahresfrist) und für repository.OeffentlichSichtbar
+// keins: Genau dieses Buch erschien im öffentlichen Katalog und als „Buch des Monats"
+// auf dem Flurbildschirm — der Zustand, den die Vereinheitlichung vom 30.08. beseitigen
+// sollte. Der Bestandstest hält den Go-Fall („  lmf-Mathe" = true) ausdrücklich fest.
+func TestSQLBedingung_ErkenntDasselbeWieIstSchulbuch(t *testing.T) {
+	faelle := []struct {
+		titel, signatur string
+	}{
+		{"  lmf-Mathe", ""},
+		{"", "  LMF Deu 7"},
+		{"\tLMF - Bio", ""},
+		{"LMF-Mathe 5", ""},
+		{"Der Hobbit", "Jug Tol"},
+		{" Der Hobbit", " Jug Tol"},
+		{"LMFP-Roman", ""},
+	}
+	for _, f := range faelle {
+		if got := IstSchulbuch(f.titel, f.signatur); got != sqlErkennt(t, f.titel, f.signatur) {
+			t.Errorf("Titel=%q Signatur=%q: Go sagt %v, SQL sagt %v — dasselbe Buch, zwei Antworten",
+				f.titel, f.signatur, got, !got)
+		}
 	}
 }

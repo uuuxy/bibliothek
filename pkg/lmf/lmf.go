@@ -41,5 +41,13 @@ func IstSchulbuch(titel, signatur string) bool {
 // Spalten sind entwickler-definiert (nie nutzergesteuert), daher ist die Einbettung
 // sicher.
 func SQLBedingung(titelSpalte, signaturSpalte string) string {
-	return "(LOWER(" + titelSpalte + ") ~ '^lmf[ -]' OR LOWER(COALESCE(" + signaturSpalte + ", '')) ~ '^lmf[ -]')"
+	// btrim wie strings.TrimSpace in IstSchulbuch (31.08.2026): Ohne das Trimmen war ein
+	// Titel mit führendem Leerzeichen (Import, Copy-Paste aus Excel) für Go ein
+	// Lernmittel — Ausleihlimit, Schuljahresfrist — und für das SQL keins. Genau dieses
+	// Buch erschien dann im öffentlichen Katalog und als „Buch des Monats" auf dem
+	// Flurbildschirm, obwohl repository.OeffentlichSichtbar es aussortieren soll.
+	// btrim entfernt Leerzeichen, Tabs, Zeilenumbrüche und Wagenrückläufe.
+	const nackt = ", E' \\t\\n\\r'"
+	return "(LOWER(btrim(" + titelSpalte + nackt + ")) ~ '^lmf[ -]' OR LOWER(btrim(COALESCE(" +
+		signaturSpalte + ", '')" + nackt + ")) ~ '^lmf[ -]')"
 }

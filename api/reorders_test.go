@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/lmf"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -67,9 +68,12 @@ func TestReorderFilterDefaultIstLMF(t *testing.T) {
 	faelle := []struct {
 		name, query, wantFragment string
 	}{
-		{"ohne Parameter", "", "AND (LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]')"},
-		{"type=lmf", "?type=lmf", "AND (LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]')"},
-		{"type=freihand", "?type=freihand", "AND NOT ((LOWER(t.titel) ~ '^lmf[ -]' OR LOWER(COALESCE(t.signatur, '')) ~ '^lmf[ -]'))"},
+		// Das erwartete Fragment wird ABGELEITET, nicht abgeschrieben: Eine abgeschriebene
+		// Kopie ist eine zweite Wahrheitsquelle und macht jede Änderung an pkg/lmf zu
+		// einem roten Test ohne fachlichen Grund (31.08.2026: btrim kam dazu).
+		{"ohne Parameter", "", "AND " + lmf.SQLBedingung("t.titel", "t.signatur")},
+		{"type=lmf", "?type=lmf", "AND " + lmf.SQLBedingung("t.titel", "t.signatur")},
+		{"type=freihand", "?type=freihand", "AND NOT (" + lmf.SQLBedingung("t.titel", "t.signatur") + ")"},
 		{"type=alle", "?type=alle", ""},
 		{"unbekannter Wert", "?type=kaputt", ""},
 	}
