@@ -237,6 +237,45 @@ löst nichts mehr aus (`api/reorders.go`).
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.
 
+## Daniels Raster — die elf Fragen, und ihre Frontend-Lesart
+
+**Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
+Speicher-Granularität) — nicht bei Kosmetik. Die Durchgänge samt Funden stehen in
+[befunde.md](befunde.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
+[sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
+und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
+
+1. **Konvention statt Regel** — was hält die Zusicherung: ein Constraint oder eine Verabredung zwischen Dateien?
+2. **Spezialwert** — was bedeutet leer/0/nil/fehlend auf diesem Pfad — und meint der Nachbarpfad dasselbe?
+3. **Zwei Wahrheitsquellen / zwei Türen** — dieselbe Regel, Liste oder Beschriftung zweimal formuliert; Paare, die nur zufällig einig sind.
+4. **Wer sieht was** — Recht an der Route (nicht nur am Menü), Objektbindung an den Angemeldeten.
+5. **Stille Fehler** — meldet der Pfad Erfolg anhand der Wirkung oder anhand der Eingabe?
+6. **Zeit** — Zeitzone, Reihenfolge, das Fenster zwischen zwei Schritten.
+7. **Gate-Ehrlichkeit** — wurde das Gate rot gesehen? Kann es sich still überspringen?
+8. **Lebenszyklus** — wie entsteht, altert und stirbt der Datensatz: Frist, Löschpfad, Papierkorb, Anonymisierung.
+9. **Ausleitung** — wo verlässt eine Kopie die Anwendung (Datei, Mail, Export, Log, Fremdsystem)? Wer liest sie, wie lange lebt sie, ist sie verschlüsselt?
+10. **Rückweg** — ist der Weg zurück begehbar und am Ergebnis bewiesen, nicht am Vorgang?
+11. **Geteilter Zustand** — wer lädt ihn auf diesem Pfad, was gilt vor dem Laden und bei Fehlschlag, überlebt der Lader sein eigenes Ergebnis?
+
+### Frontend-Lesart (ergänzt 31.08.2026)
+
+Anlass: Beim Komplett-Durchgang 31.08. fielen alle drei Frontend-A-Funde unter
+vorhandene Fragen — verfehlt wurden sie trotzdem, weil das Raster backend-gelesen
+wurde („Schreibpfad" = Handler, „Tür" = Endpunkt). Dieselben Fragen, übersetzt:
+
+| Frage | Backend-Begriff | Frontend-Begriff |
+|---|---|---|
+| 3 · zwei Türen | zweiter Endpunkt schreibt denselben Zustand | zweiter Ort für denselben Zustand: Komponenten-State neben dem Store, localStorage neben dem Backend (Multi-PC!) |
+| 5 · stille Fehler | 200 ohne Wirkung | Ladefehler ohne Fehlerzustand — ein catch, das alten Inhalt stehen lässt und nichts anzeigt; Erfolgsmeldung aus der Eingabe statt aus der Antwort |
+| 6 · Zeit | Zeitzone, Tx-Fenster | Antwort-Reihenfolge: überholt die langsame Antwort die schnelle? Sequenznummer wie im orderStore |
+| 8 · Lebenszyklus | Frist, Löschjob | Bediener- und Ansichtswechsel: welcher State muss beim Verlassen zurück auf Anfang — und welcher Code tut das wirklich? |
+| 11 · geteilter Zustand | Wächter/Lader je Pfad | wer lädt den Store auf DIESEM Einstieg — und unmountet das Ergebnis seinen eigenen Lader? |
+
+Die übrigen Fragen (1, 2, 4, 7, 9, 10) gelten wörtlich auch vorn — Frage 4 heißt dort:
+das Recht steuert das Menü UND die Route, nie nur eines von beiden.
+
+---
+
 ## Testebenen — wofür welche
 
 | Ebene | Beantwortet | Beispiel |

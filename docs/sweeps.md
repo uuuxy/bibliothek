@@ -22,6 +22,12 @@ der ganze Bestand, eine Ratsche.
 4. **Grep ist Hypothese, AST ist Befund.** Der erste Grep zum Fehler-Kollaps fand 11
    Stellen, davon 1 echte; der AST-Detektor fand 26, davon 6 echte. Beide Zahlen ohne
    Lesen des Codes wären falsch gewesen.
+5. **Zwillings-Pflicht beim Fix.** Jeder Fix-Commit beantwortet die Frage „Wo ist der
+   Zwilling?" — der Geschwister-Pfad mit derselben Form (Mahnlauf↔Abgänger-Versand,
+   Ausbuchen↔Aussondern, Anliegen↔Klassensatz). Die Antwort steht in der
+   Commit-Botschaft: der geprüfte Zwilling und sein Befund, oder „hat keinen".
+   Beleg für den Wert: Am 31.08.2026 kamen zwei der 18 Funde genau über diese Frage
+   ans Licht, nachträglich gestellt (siehe Geschwister-Asymmetrie im Register).
 
 ## Register
 
