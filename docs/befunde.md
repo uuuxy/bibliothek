@@ -40,7 +40,6 @@ Zwei Regeln dazu:
 | # | Fund | Stand / Weg |
 | - | ---- | ----------- |
 | 2 | `frontend/package.json` trägt `"license": "UNLICENSED"` | Root-`LICENSE` ist EUPL 1.2 (seit PR #282), README nennt sie. Feld auf `"EUPL-1.2"`. |
-| 4 | `kontrast.spec.js:44`: feste 700-ms-Setzzeit vor der Kontrastmessung (`javascript:S2925`) | Stabilitäts-Schleife wie in den Schwester-Specs statt fester Frist; networkidle bleibt wegen SSE tabu. |
 | 5 | `pgtest_support_test.go` liegt echt dupliziert in fünf Paketen (`api`, `repository`, `db`, `cmd/migrate`, `internal/littera`) | Sauber wäre ein `internal/pgtest`-Paket. Nur gegen echtes PostgreSQL beweisbar (Wegwerf-Postgres via Docker, volle PG-Suite vor/nach). Steht als Befund in `sonar-project.properties`. |
 | 6 | Etikettenraster stehen an zwei Stellen (maßgeblich `api/label_formats.go`, Frontend-Kopie `src/lib/etikettformate.js`) | Umbau auf die Server-Liste wie bei der Lieferantenseite = Verhaltensänderung am täglich benutzten Druck-Bildschirm (Ladezustand, neuer Ausfallmodus). Bis zur Entscheidung hält `etikettformate-konsistenz.test.js` beide deckungsgleich. Zuletzt prüfen; nur umbauen, wenn der Weg der Lieferantenseite sich 1:1 übertragen lässt. |
 | 7 | Sieben Bestell-Reiter brechen bei 1280 px in zwei Zeilen um | M3 sieht scrollbare Tabs vor; Kandidat `ui/Reiter.svelte` (überlaufendes Scrollen statt Umbruch). Im Browser messen, nicht nur bauen. |

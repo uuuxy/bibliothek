@@ -22,6 +22,30 @@ import { uiLogin } from './helpers.js';
 // übersprungenen Knoten steht in der Ausgabe, damit die Lücke sichtbar bleibt.
 const SEITEN = ['Mahnwesen', 'Medienkatalog', 'Schülerdatei', 'Bestellungen', 'Signaturen'];
 
+/**
+ * Wartet, bis die nachgeladenen Listen im Baum STEHEN — zwei gleiche Messungen der
+ * Knotenzahl hintereinander — statt einer geratenen Zeitspanne (vorher 700 ms: zu kurz
+ * auf einem langsamen Rechner, zu lang auf einem schnellen; `javascript:S2925`).
+ * Dasselbe Muster wie warteAufStabileFelder in control-hoehen.spec.js. Bewusst KEIN
+ * networkidle: Die Anwendung hält eine dauerhafte SSE-Verbindung offen, der Zustand
+ * tritt also nie ein (siehe sse-livesync.spec.js).
+ * @param {import('@playwright/test').Page} page
+ */
+async function warteAufStabilenBaum(page) {
+	let vorherige = -1;
+	await expect
+		.poll(
+			async () => {
+				const jetzt = await page.evaluate(() => document.querySelectorAll('main *').length);
+				const stabil = jetzt === vorherige;
+				vorherige = jetzt;
+				return stabil;
+			},
+			{ timeout: 10_000, intervals: [100, 150, 200, 300] }
+		)
+		.toBe(true);
+}
+
 test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 	await uiLogin(page);
 
@@ -38,10 +62,7 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 		// wirklich stehen, sonst misst der Test den vorigen Bildschirm.
 		await expect(ziel).toHaveAttribute('aria-current', 'page');
 		await page.locator('main').first().waitFor();
-		// Kurze Setzzeit, damit die nachgeladenen Listen im Baum stehen. Bewusst KEIN
-		// networkidle: Die Anwendung hält eine dauerhafte SSE-Verbindung offen, der
-		// Zustand tritt also nie ein (siehe sse-livesync.spec.js).
-		await page.waitForTimeout(700);
+		await warteAufStabilenBaum(page);
 
 		const ergebnis = await page.evaluate(() => {
 			const leuchtdichte = (/** @type {string} */ rgb) => {
