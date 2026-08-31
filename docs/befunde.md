@@ -35,11 +35,12 @@ Zwei Regeln dazu:
 
 ---
 
-## Offen — abarbeitbar (Reihenfolge = Plan)
+## Offen — abarbeitbar
 
-| # | Fund | Stand / Weg |
-| - | ---- | ----------- |
-| 1 | Etikettenraster stehen an zwei Stellen (maßgeblich `api/label_formats.go`, Frontend-Kopie `src/lib/etikettformate.js`) | Umbau auf die Server-Liste wie bei der Lieferantenseite = Verhaltensänderung am täglich benutzten Druck-Bildschirm (Ladezustand, neuer Ausfallmodus). Bis zur Entscheidung hält `etikettformate-konsistenz.test.js` beide deckungsgleich. Zuletzt prüfen; nur umbauen, wenn der Weg der Lieferantenseite sich 1:1 übertragen lässt. |
+Leer. Die Abarbeitung vom 31.08.2026 (7 Posten, je ein Commit) steht in der
+Git-Historie dieser Datei; dabei zusätzlich gefunden und behoben: der
+Etiketten-Druck-E2E war seit Migration 071 still rot (Seed schrieb den alten
+Magie-Text statt `bestellstatus`).
 
 ## Offen — Entscheidung nötig (Peter)
 
@@ -61,6 +62,14 @@ Zwei Regeln dazu:
 
 ## Kategorie C — bewusst nicht ohne Anlass
 
+- Etikettenraster an zwei Stellen (maßgeblich `api/label_formats.go`,
+  Frontend-Kopie `src/lib/etikettformate.js`): Am 31.08.2026 geprüft und
+  ENTSCHIEDEN geparkt. Ein Server-Umbau bräuchte einen neuen Endpunkt (existiert
+  nicht) plus async-Ladezustand in drei Verbrauchern des täglich benutzten
+  Druck-Bildschirms — neuer Ausfallmodus gegen null Laufzeit-Risiko heute. Die
+  Drift hält `etikettformate-konsistenz.test.js` mechanisch (Spalten und Zeilen
+  einzeln gegen die Go-Datei). Wieder anfassen nur, wenn ein vierter Verbraucher
+  oder ein konfigurierbares Format dazukommt.
 - 20× `go:S3776` (Cognitive Complexity, alle Backend): Zählweise rechnet den
   Handler-Closure als Ebene; Aufsplitten nur für die Zahl macht nichts lesbarer.
   Lohnend allenfalls `OverrideDueDateHandler` (30), `behandleAbgaenger` (23).

@@ -9,9 +9,10 @@
  * `stores/labels.svelte.js`. Eine dritte Kopie in der Ausweis-Werkzeugleiste wäre genau
  * die Bauform, die in diesem Projekt schon mehrfach auseinandergelaufen ist.
  *
- * KEIN Abruf vom Server: Der Druck-Center-Umbau auf `/api/etiketten/formate` steht als
- * eigener Punkt im Befund-Register — er wäre eine Verhaltensänderung an einem täglich
- * benutzten Bildschirm. Bis dahin ist diese Datei die eine Kopie, die der Test prüft.
+ * KEIN Abruf vom Server: Am 31.08.2026 geprüft und ENTSCHIEDEN so gelassen (Register,
+ * Kategorie C) — ein Server-Umbau bräuchte einen neuen Endpunkt plus Ladezustand in
+ * drei Verbrauchern des täglich benutzten Druck-Bildschirms. Diese Datei ist die eine
+ * Kopie, die der Test gegen api/label_formats.go hält.
  */
 
 /**
