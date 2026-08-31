@@ -115,18 +115,32 @@ export function createOmniboxStore() {
 		errorMessage = '';
 	}
 
-	// Such-Logik
+	// Such-Logik. suchLauf zählt jeden gestarteten Abruf — nur die Antwort des zuletzt
+	// gestarteten darf die Trefferliste schreiben.
+	let suchLauf = 0;
+
 	function handleInput() {
 		clearTimeout(debounceTimer);
 		if (!queryVal.trim()) {
+			// Auch hier hochzählen: Ein noch laufender Abruf darf die eben geleerte
+			// Liste nicht wieder füllen.
+			suchLauf++;
 			isDropdownOpen = false;
 			unifiedSearchResults = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
 			return;
 		}
 		debounceTimer = setTimeout(async () => {
 			if (!queryVal.trim()) return;
+			// Sequenznummer wie im orderStore: Der Entprell-Timer verwirft nur NOCH NICHT
+			// gestartete Abrufe — zwei gleichzeitig laufende beantwortet der Server in
+			// beliebiger Reihenfolge. Ohne diese Prüfung tauschte eine verspätete Antwort
+			// die Trefferliste unter dem sichtbaren Suchtext aus, und der nächste Klick
+			// (bzw. Enter) buchte auf den FALSCHEN Schüler — ohne Rückfrage
+			// (Fund 31.08.2026).
+			const seq = ++suchLauf;
 			try {
 				const res = await apiFetch(`/api/search?q=${encodeURIComponent(queryVal.trim())}`);
+				if (seq !== suchLauf) return;
 				if (res.ok) {
 					const results = await res.json();
 					unifiedSearchResults = {
@@ -140,6 +154,7 @@ export function createOmniboxStore() {
 					selectedDropdownIndex = -1;
 				}
 			} catch (err) {
+				if (seq !== suchLauf) return;
 				console.error('Suche fehlgeschlagen:', err);
 			}
 		}, 300);
