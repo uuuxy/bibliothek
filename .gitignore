@@ -141,3 +141,4 @@ docs/swagger.yaml
 
 # Playwright-Ausgabe, wenn aus dem Repo-Root gestartet (frontend/.gitignore greift dort nicht)
 test-results/
+scripts/demo-video/
