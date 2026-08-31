@@ -3,6 +3,8 @@ package db
 import (
 	"os"
 	"testing"
+
+	"bibliothek/internal/pgtest"
 )
 
 // TestDBTestsLaufenInCI verhindert den gefährlichsten Ausfall dieser Testebene: den
@@ -13,8 +15,8 @@ func TestDBTestsLaufenInCI(t *testing.T) {
 	if os.Getenv("CI") == "" {
 		t.Skip("nur in CI relevant")
 	}
-	if os.Getenv(testDBEnvVar) == "" {
+	if os.Getenv(pgtest.EnvVar) == "" {
 		t.Fatalf("%s ist in CI nicht gesetzt — die DB-Invarianten würden ungeprüft "+
-			"durchgewinkt (siehe Service-Container in .github/workflows/ci.yml)", testDBEnvVar)
+			"durchgewinkt (siehe Service-Container in .github/workflows/ci.yml)", pgtest.EnvVar)
 	}
 }

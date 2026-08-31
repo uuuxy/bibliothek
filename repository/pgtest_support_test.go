@@ -3,96 +3,24 @@ package repository
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
+	"bibliothek/internal/pgtest"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// testDBLockKey serialisiert die Test-DB-Nutzung über db/, repository/ und api/ —
-// alle teilen sich EINE Test-DB, und `go test ./...` startet ihre Binaries parallel.
-// Ohne den Lock kollidieren gleichzeitige DROP SCHEMA (Deadlock). Wert identisch in
-// allen drei Paketen halten.
-const testDBLockKey int64 = 0x42DB0001
-
-// lockConn hält den Lock über eine dedizierte Connection bis Prozessende.
-var lockConn *pgx.Conn
-
 // Integrationstests gegen echtes Postgres (gated auf TEST_DATABASE_URL, wie im
-// db-Paket). Lokal ohne die Variable werden sie übersprungen; in CI setzt der
-// Workflow sie auf den Postgres-Service-Container.
+// db-Paket). Warum echtes PG und nicht pgxmock: Die Inventur-Session-Logik lebt fast
+// vollständig im SQL (Scope-Bedingungen, partielle Unique-Indizes, Verlust-UPDATE mit
+// Erfassungs-Join) — pgxmock würde nur nachgespielte Antworten prüfen.
 //
-// Warum echtes PG und nicht pgxmock: Die Inventur-Session-Logik lebt fast vollständig
-// im SQL (Scope-Bedingungen, partielle Unique-Indizes, Verlust-UPDATE mit
-// Erfassungs-Join). pgxmock würde nur nachgespielte Antworten prüfen, nicht die
-// eigentliche Korrektheit — genau die Lücke, um die es hier geht.
-
-const testDBEnvVar = "TEST_DATABASE_URL"
-
-var (
-	pgOnce sync.Once
-	pgPool *pgxpool.Pool
-	pgErr  error
-)
-
+// Pool-Aufbau, Advisory-Lock und Notbremse liegen seit dem 31.08.2026 in
+// internal/pgtest (vorher fünffach kopiert); hier stehen nur noch die Helfer
+// dieses Pakets.
 func pgTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-
-	dsn := os.Getenv(testDBEnvVar)
-	if dsn == "" {
-		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", testDBEnvVar)
-	}
-	pgOnce.Do(func() { pgPool, pgErr = baueRepoTestDB(dsn) })
-	if pgErr != nil {
-		t.Fatalf("Test-DB konnte nicht vorbereitet werden: %v", pgErr)
-	}
-	return pgPool
-}
-
-func baueRepoTestDB(dsn string) (*pgxpool.Pool, error) {
-	ctx := context.Background()
-
-	lc, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := lc.Exec(ctx, "SELECT pg_advisory_lock($1)", testDBLockKey); err != nil {
-		return nil, err
-	}
-	lockConn = lc // offen halten bis Prozessende
-
-	pool, err := pgxpool.New(ctx, dsn)
-	if err != nil {
-		return nil, err
-	}
-	if err := pool.Ping(ctx); err != nil {
-		return nil, err
-	}
-
-	// Notbremse vor DROP SCHEMA: nur auf einer Wegwerf-"test"-Datenbank arbeiten.
-	var name string
-	if err := pool.QueryRow(ctx, `SELECT current_database()`).Scan(&name); err != nil {
-		return nil, err
-	}
-	if !strings.Contains(strings.ToLower(name), "test") {
-		return nil, fmt.Errorf("Sicherheitsabbruch: Datenbank %q enthält nicht \"test\"", name)
-	}
-
-	if _, err := pool.Exec(ctx, `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`); err != nil {
-		return nil, err
-	}
-	sql, err := os.ReadFile(filepath.Join("..", "schema.sql"))
-	if err != nil {
-		return nil, err
-	}
-	if _, err := pool.Exec(ctx, string(sql)); err != nil {
-		return nil, err
-	}
-	return pool, nil
+	return pgtest.Pool(t)
 }
 
 // resetInventurDaten räumt zwischen Tests die Bestands-, Ausleih- und Personendaten

@@ -2,6 +2,15 @@
 # deadcode-Output, aber ohne Zeilen-/Spaltennummern (die driften).
 # Jeder Block braucht eine Begründung. Aufräumen, sobald der Grund entfällt.
 
+# Testinfrastruktur per Paket-Design: der gemeinsame PG-Test-Harness (vorher
+# fünffach kopiert, Befund-Register 31.08.2026). Wird ausschließlich von
+# *_test.go-Dateien importiert (api, repository, db, cmd/migrate,
+# internal/littera) — für deadcode unsichtbar, wie internal/smtptest darunter.
+internal/pgtest/pgtest.go: unreachable func: Pool
+internal/pgtest/pgtest.go: unreachable func: baueTestDB
+internal/pgtest/pgtest.go: unreachable func: pruefeTestDatenbank
+internal/pgtest/pgtest.go: unreachable func: schemaPfad
+
 # Testinfrastruktur per Paket-Design: eigener SMTP-Server für Tests, weil die
 # lokale .env auf den echten Schulserver zeigt (siehe Paketkommentar).
 internal/smtptest/server.go: unreachable func: Starte

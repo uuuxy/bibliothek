@@ -23,6 +23,8 @@ import (
 	"sort"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -51,9 +53,9 @@ var paritaetsAspekte = []struct{ name, query string }{
 }
 
 func TestSchemaParitaet_GewachsenGleichFrisch(t *testing.T) {
-	dsn := os.Getenv(testDBEnvVar)
+	dsn := os.Getenv(pgtest.EnvVar)
 	if dsn == "" {
-		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", testDBEnvVar)
+		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", pgtest.EnvVar)
 	}
 	ctx := context.Background()
 

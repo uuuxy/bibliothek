@@ -14,13 +14,15 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+
 	"github.com/jackc/pgx/v5"
 )
 
 func TestMigration083_AuditLogTilgungGehtDurch(t *testing.T) {
-	dsn := os.Getenv(testDBEnvVar)
+	dsn := os.Getenv(pgtest.EnvVar)
 	if dsn == "" {
-		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", testDBEnvVar)
+		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", pgtest.EnvVar)
 	}
 	ctx := context.Background()
 
