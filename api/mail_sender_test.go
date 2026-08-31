@@ -1,8 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"errors"
+	"log/slog"
 	"net/http"
+	"strings"
 	"testing"
 
 	"bibliothek/mailservice"
@@ -76,5 +79,32 @@ func TestSendEmail_InvalidRecipient(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+// Ein unlesbares SMTP-Passwort muss auffallen.
+//
+// LadeSMTPKonfig erzeugt diesen Fehler ausdrücklich, damit er NICHT still bleibt
+// („Ein unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe
+// ist"). smtpKonfiguriert verschluckte ihn bis zum 31.08.2026 und meldete schlicht
+// „nicht konfiguriert" — nach einer Schlüsselrotation suchte der Admin in den
+// Einstellungen, wo Host, Port und Benutzer korrekt standen.
+func TestSmtpKonfiguriert_LoggtUnlesbareKonfiguration(t *testing.T) {
+	alt := smtpKonfigLader
+	t.Cleanup(func() { smtpKonfigLader = alt })
+
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+
+	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) {
+		return mailservice.SMTPKonfig{}, errors.New("fehler beim Entschlüsseln des SMTP-Passworts")
+	}
+	if smtpKonfiguriert() {
+		t.Error("unlesbare Konfiguration gilt als konfiguriert")
+	}
+	if !strings.Contains(protokoll.String(), "nicht lesbar") {
+		t.Errorf("kein Hinweis im Protokoll — der Grund bleibt unsichtbar: %q", protokoll.String())
 	}
 }

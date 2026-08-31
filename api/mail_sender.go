@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/mail"
@@ -76,7 +77,19 @@ func BindeSMTPKonfigAnDatenbank(pool db.PgxPoolIface) {
 // steht (und umgekehrt).
 func smtpKonfiguriert() bool {
 	konfig, err := smtpKonfigLader()
-	return err == nil && konfig.IstKonfiguriert()
+	if err != nil {
+		// Den Fehler NICHT verschlucken (31.08.2026): LadeSMTPKonfig erzeugt ihn
+		// ausdrücklich, damit er auffällt („Ein unlesbares Passwort heißt, dass der
+		// APP_ENCRYPTION_KEY nicht mehr derselbe ist"). Ohne diese Zeile meldete der
+		// Mahnlauf nach einer Schlüsselrotation „SMTP nicht konfiguriert", während in
+		// der Oberfläche Host, Port und Benutzer korrekt standen — der Admin suchte an
+		// der falschen Stelle, und der Bestellversand übersprang die Händlermail
+		// kommentarlos mit status "success".
+		slog.Error("SMTP-Konfiguration nicht lesbar — Versand wird als „nicht konfiguriert\" behandelt",
+			"fehler", err)
+		return false
+	}
+	return konfig.IstKonfiguriert()
 }
 
 // sendEmailSMTP sends a multipart email (HTML/Text) with attachments using net/smtp.
