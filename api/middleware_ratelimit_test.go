@@ -187,3 +187,30 @@ func TestAuthRateLimit_SuccessResetsCounter(t *testing.T) {
 		t.Fatalf("nach Reset + vollem Kontingent an Fehlversuchen: Status %d; want 429", got)
 	}
 }
+
+// 403 ist kein Fehlversuch: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto
+// deaktiviert" war das Passwort RICHTIG — der Handler zählt deshalb bewusst nicht
+// (auth/handlers.go). Die äußere IP-Schicht zählte 403 bis zum 31.08.2026 trotzdem:
+// Zum Schuljahresbeginn probieren zwanzig Kollegen die Selbstanmeldung mehrfach, alle
+// hinter EINER NAT-Adresse — nach 50 solcher 403 war der Login für die gesamte Schule
+// 15 Minuten dicht, einschließlich der Bibliothekskraft, die die Freischaltungen
+// vornehmen müsste. Zwei Schichten, die nur so lange einig waren, wie 403 nicht vorkam.
+func TestAuthRateLimit_403ZaehltNichtAlsFehlversuch(t *testing.T) {
+	failedLoginsMutex.Lock()
+	failedLogins = make(map[string]*failedAttempt)
+	failedLoginsMutex.Unlock()
+
+	zugangBeantragt := AuthRateLimitMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+
+	for versuch := 1; versuch <= maxLoginFehlversucheProIP+1; versuch++ {
+		req := httptest.NewRequest(http.MethodPost, "/login", nil)
+		req.RemoteAddr = "198.51.100.20:9999"
+		rec := httptest.NewRecorder()
+		zugangBeantragt.ServeHTTP(rec, req)
+		if rec.Code == http.StatusTooManyRequests {
+			t.Fatalf("Versuch %d: 429 — 403 (richtiges Passwort, Zugang nur noch nicht frei) wurde als Fehlversuch gezählt", versuch)
+		}
+	}
+}

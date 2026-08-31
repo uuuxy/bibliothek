@@ -92,10 +92,18 @@ func reserviereLoginVersuch(ip string, now time.Time) (attempt *failedAttempt, b
 }
 
 // verzeichneLoginErgebnis aktualisiert den Fehlversuchszähler anhand des Antwortstatus
-// (401/403 erhöhen, 200 setzt bei Erfolg zurück) — unter Lock.
+// (NUR 401 erhöht, 200 setzt bei Erfolg zurück) — unter Lock.
+//
+// 403 zählt seit dem 31.08.2026 NICHT mehr: Bei „Zugang beantragt" (Selbstanmeldung)
+// und „Konto deaktiviert" war das Passwort richtig — der Handler zählt deshalb bewusst
+// nicht (auth/handlers.go), und diese Schicht darf die Entscheidung nicht einsammeln.
+// Zum Schuljahresbeginn hätten sonst zwanzig Selbstanmelde-403 hinter der EINEN
+// NAT-Adresse der Schule den Login für alle gesperrt — auch für die Bibliothekskraft,
+// die die Freischaltungen vornimmt. Für Credential-Stuffing (der Zweck dieser Bremse)
+// ist 401 das Signal, nicht 403.
 func verzeichneLoginErgebnis(attempt *failedAttempt, status int, now time.Time) {
 	switch status {
-	case http.StatusUnauthorized, http.StatusForbidden:
+	case http.StatusUnauthorized:
 		failedLoginsMutex.Lock()
 		attempt.count++
 		failedLoginsMutex.Unlock()
