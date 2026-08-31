@@ -1,6 +1,11 @@
 services:
   postgres-db:
-    image: postgres:16-alpine
+    # 15, NICHT 16: Die Produktion (docker-compose.yml) läuft auf 15, und dieser Stack
+    # ist der, gegen den CI die Playwright-Suite fährt. Mit 16 wäre SQL, das erst ab 16
+    # existiert, hier und lokal grün und würde beim Prod-Deploy die Migration abbrechen —
+    # der Server startet dann gar nicht (db/migrations.go kehrt beim ersten Fehler um).
+    # Gefunden im Komplett-Durchgang 31.08.2026.
+    image: postgres:15-alpine
     container_name: bibliothek-db-local
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
