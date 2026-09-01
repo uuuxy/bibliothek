@@ -129,11 +129,15 @@ func (s *Server) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, co
 
 	s.logImportAudit(r, "LITTERA_IMPORT", fmt.Sprintf(`{"updated_titles":%d,"type":"xml"}`, importedCount))
 
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
-		"imported_count":       importedCount,
-		"updated_titles_count": importedCount,
-		"type":                 "xml",
-		"message":              "MAB2-XML Katalogisat erfolgreich importiert",
+	// Typisierte Antwort wie CSV/XLSX (Sweep 01.09.2026, Fund A2): Vorher
+	// antwortete NUR dieser Zweig mit einer losen Map — das Struct-Feld
+	// UpdatedTitles wurde nirgends gesetzt, und jede Vereinheitlichung hätte
+	// den Zähler still verschluckt (omitempty auf int 0 entfernt den Schlüssel,
+	// das Widget zeigte "undefined bestehende Titel"). Die Zusatzschlüssel der
+	// Map (imported_count, message) las kein Konsument (gegengeprüft).
+	RespondJSON(w, http.StatusOK, LitteraImportResponse{
+		UpdatedTitles: importedCount,
+		Type:          "xml",
 	})
 }
 
