@@ -44,11 +44,14 @@ type OverdueStudent struct {
 }
 
 // loadMahnungTemplate lädt die Eltern-Mahnvorlage aus der Datenbank; ist keine
-// konfiguriert, wird eine Standardvorlage verwendet.
+// konfiguriert ODER die gespeicherte leer, wird die Standardvorlage verwendet.
+// Der Leer-Fall ist real: Der Vorlagen-Editor lässt ” durch (Spalten NOT NULL,
+// aber ” erlaubt) — bis zum 01.09.2026 erzeugte das Mahnbriefe ohne Betreff
+// und ohne Anschreiben. Dieselbe Prüfung hatte die Bestell-Schwester
+// (loadBestellTemplate) von Anfang an.
 func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody string) {
 	err := s.DB.Pool.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = 'MAHNUNG_ELTERN'").Scan(&betreff, &textBody)
-	if err != nil {
-		// Fallback template if nothing is configured
+	if err != nil || strings.TrimSpace(betreff) == "" || strings.TrimSpace(textBody) == "" {
 		betreff = "Mahnung: Überfällige Bücher"
 		textBody = "Sehr geehrte Eltern von {{.Vorname}} {{.Nachname}},\n\nbitte geben Sie folgende Bücher umgehend in die Bibliothek zurück:\n\n{{.BuchListe}}\n\nVielen Dank."
 	}
