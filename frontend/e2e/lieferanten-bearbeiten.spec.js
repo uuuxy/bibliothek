@@ -67,12 +67,14 @@ test('Lieferanten lassen sich bearbeiten, auch bei langem Namen', async ({ page 
 	await page
 		.getByRole('row')
 		.filter({ hasText: LANGER_NAME })
-		.getByRole('button', { name: 'Bearbeiten' })
+		.getByRole('button', { name: `Lieferant ${LANGER_NAME} bearbeiten` })
 		.click();
 
 	// Im Bearbeitungsmodus wird der Name zum Eingabefeld — die Zeile trägt den Text dann
 	// nicht mehr und ist über den Speichern-Knopf zu greifen (nur eine Zeile zugleich).
-	const speichern = page.getByRole('button', { name: 'Speichern', exact: true });
+	const speichern = page.getByRole('button', {
+		name: `Änderungen für Lieferant ${LANGER_NAME} speichern`
+	});
 	await expect(speichern).toBeVisible();
 	const bearbeitungszeile = page.getByRole('row').filter({ has: speichern });
 	await expect(bearbeitungszeile.getByRole('textbox').first()).toHaveValue(LANGER_NAME);

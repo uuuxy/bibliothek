@@ -137,11 +137,13 @@
 									<td class="py-2 text-right whitespace-nowrap">
 										<button
 											onclick={saveEdit}
+											aria-label="Änderungen für Lieferant {s.name} speichern"
 											class="text-blue-600 hover:text-blue-800 font-bold cursor-pointer text-sm mr-3"
 											>Speichern</button
 										>
 										<button
 											onclick={cancelEdit}
+											aria-label="Änderungen für Lieferant {s.name} abbrechen"
 											class="text-slate-400 hover:text-slate-600 cursor-pointer text-sm"
 											>Abbrechen</button
 										>
@@ -174,11 +176,13 @@
 									<td class="py-3 text-right whitespace-nowrap">
 										<button
 											onclick={() => startEdit(s)}
+											aria-label="Lieferant {s.name} bearbeiten"
 											class="text-slate-500 hover:text-blue-600 cursor-pointer text-sm mr-3"
 											>Bearbeiten</button
 										>
 										<button
 											onclick={() => onRemoveSupplier(s.id)}
+											aria-label="Lieferant {s.name} löschen"
 											class="text-rose-600/80 hover:text-rose-700 cursor-pointer text-sm"
 											>Löschen</button
 										>
