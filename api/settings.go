@@ -78,6 +78,14 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 			}
 		}
 
+		// Die Sitzungsfristen holt jeder Tab nur einmal beim Anmelden (App.svelte).
+		// Das Signal erreicht auch offene Tabs an anderen Arbeitsplätzen; die Werte
+		// holen sich die Clients per GET /api/einstellungen/sitzung — dort sitzt die
+		// Vorgaben-Logik, hier wäre sie dupliziert.
+		if s.Broker != nil && (req.ThekeLeerenMinuten != nil || req.SperreMinuten != nil) {
+			s.Broker.Broadcast("sitzungsfristen", "{}")
+		}
+
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return nil
 	})

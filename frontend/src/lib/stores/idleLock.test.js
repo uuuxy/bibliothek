@@ -4,8 +4,14 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn()
 }));
+vi.mock('../liveEvents.js', () => ({
+	abonniere: vi.fn(() => vi.fn()),
+	verbinde: vi.fn(),
+	trenne: vi.fn()
+}));
 
 import { apiFetch } from '../apiFetch.js';
+import { abonniere } from '../liveEvents.js';
 import { IdleLock } from './idleLock.svelte.js';
 import { authStore } from './authStore.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
@@ -23,6 +29,7 @@ describe('idleLock', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.mocked(apiFetch).mockReset();
+		vi.mocked(abonniere).mockClear();
 		lock = new IdleLock();
 		lock.thekeLeerenMinuten = 1;
 		lock.sperreMinuten = 3;
@@ -111,6 +118,31 @@ describe('idleLock', () => {
 		expect(stop).toHaveBeenCalledTimes(1);
 		expect(omniboxStore.cameraScanner).toBeNull();
 		expect(omniboxStore.showCamera).toBe(false);
+	});
+
+	it('lädt die Fristen neu, wenn der Server sitzungsfristen signalisiert', async () => {
+		lock.start();
+		const abo = vi.mocked(abonniere).mock.calls.find(([name]) => name === 'sitzungsfristen');
+		expect(abo, 'start() muss das SSE-Ereignis sitzungsfristen abonnieren').toBeDefined();
+
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({ theke_leeren_minuten: 7, sperre_minuten: 0 })
+			})
+		);
+		await abo?.[1](/** @type {any} */ ({}));
+		expect(vi.mocked(apiFetch).mock.calls[0]?.[0]).toBe('/api/einstellungen/sitzung');
+		expect(lock.thekeLeerenMinuten).toBe(7);
+		expect(lock.sperreMinuten).toBe(0);
+	});
+
+	it('stop meldet das Fristen-Abo ab — sonst lädt jeder Logout-Login-Zyklus doppelt', () => {
+		lock.start();
+		const stelle = vi.mocked(abonniere).mock.calls.findIndex(([n]) => n === 'sitzungsfristen');
+		const abmelden = vi.mocked(abonniere).mock.results[stelle]?.value;
+		lock.stop();
+		expect(abmelden).toHaveBeenCalledTimes(1);
 	});
 
 	it('stop hebt Sperre und Uhren auf (Logout)', () => {

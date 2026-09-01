@@ -14,6 +14,7 @@
 // inaktiv.
 
 import { apiFetch } from '../apiFetch.js';
+import { abonniere } from '../liveEvents.js';
 import { authStore } from './authStore.svelte.js';
 import { thekeLeeren as thekeLeerenAusfuehren } from './thekeLeeren.js';
 
@@ -37,6 +38,8 @@ export class IdleLock {
 	#letzteAktivitaet = 0;
 	#laeuft = false;
 	#aktivitaetHandler = () => this.aktivitaet();
+	/** @type {(() => void) | null} */
+	#abmeldenFristen = null;
 
 	/** Holt die Fristen vom Server; bei Fehler bleiben die Vorgaben. */
 	async ladeFristen() {
@@ -60,6 +63,10 @@ export class IdleLock {
 			window.addEventListener(ev, this.#aktivitaetHandler, { passive: true });
 		}
 		this.#letzteAktivitaet = 0;
+		// Geänderte Fristen erreichen offene Tabs sofort: Das Speichern der Kategorie
+		// „Datenschutz & Sitzung" sendet `sitzungsfristen` über die SSE-Leitung — sonst
+		// liefe der zweite Arbeitsplatz bis zum nächsten F5 mit den alten Werten.
+		this.#abmeldenFristen = abonniere('sitzungsfristen', () => this.ladeFristen());
 		this.#planeTimer();
 	}
 
@@ -70,6 +77,8 @@ export class IdleLock {
 		for (const ev of AKTIVITAETS_EREIGNISSE) {
 			window.removeEventListener(ev, this.#aktivitaetHandler);
 		}
+		this.#abmeldenFristen?.();
+		this.#abmeldenFristen = null;
 		this.#loescheTimer();
 		this.gesperrt = false;
 		this.entsperrFehler = null;
