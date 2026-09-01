@@ -23,8 +23,10 @@ type User struct {
 	Aktiv bool `json:"aktiv"`
 	// ErstelltAm ist der Zeitstempel der Benutzerregistrierung.
 	ErstelltAm time.Time `json:"erstellt_am"`
-	// Permissions enthält eine Liste spezifischer Berechtigungsschlüssel des Benutzers.
-	Permissions []string `json:"permissions"`
+	// KEIN Permissions-Feld mehr (Sweep 01.09.2026, Fund A4): Es wurde nie
+	// befüllt und stand als "permissions": null in jeder Omnibox-Antwort mit
+	// Lehrkraft (ActionResponse.Teacher). Die echten Rechte tragen
+	// api.UserResponse (Benutzerverwaltung) und auth.LoginResponse (Sitzung).
 	// ZugangBeantragtAm: von der Selbstanmeldung gesetzt, von der Freischaltung gelöscht
 	// (Migration 086). nil = kein offener Antrag.
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
