@@ -3,6 +3,7 @@ package pdf
 import (
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/johnfercher/maroto/v2"
@@ -75,11 +76,19 @@ func buildAddressBlock(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 		),
 	)
 
-	// Address lines
+	// Address lines. Fehlt die Anschrift, steht das AUSDRÜCKLICH im Fensterfeld —
+	// zwei leere Zeilen sähen aus wie ein Druckfehler; so ist sofort sichtbar,
+	// dass diese Rechnung nicht per Post gehen kann (gleiche Regel wie der
+	// Eltern-Mahnbrief, api/reports_pdf.go).
+	zeile2 := strings.TrimSpace(schueler.Strasse + " " + schueler.Hausnummer)
+	zeile3 := strings.TrimSpace(schueler.PLZ + " " + schueler.Ort)
+	if zeile2 == "" && zeile3 == "" {
+		zeile2 = "(keine Adresse hinterlegt)"
+	}
 	addressLines := []string{
 		fmt.Sprintf("%s %s", schueler.Vorname, schueler.Nachname),
-		fmt.Sprintf("%s %s", schueler.Strasse, schueler.Hausnummer),
-		fmt.Sprintf("%s %s", schueler.PLZ, schueler.Ort),
+		zeile2,
+		zeile3,
 	}
 
 	for _, line := range addressLines {

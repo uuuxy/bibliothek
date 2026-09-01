@@ -286,8 +286,10 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// Fensterkuvert-Postbrief (Stufe 3, seit 01.09.2026) — verliert er die
 		// Anschrift wieder, ist er für den Postversand unbrauchbar, und das soll
 		// dieses Gate melden, nicht die Sekretärin am Kuvertiertisch.
-		"GET /api/reports/overdue-pdf":             {URL: "/api/reports/overdue-pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
-		"GET /api/print/rechnung/{schueler_id}":    {URL: "/api/print/rechnung/" + w.schuelerID, Positiv: []string{"Vogelbeere"}},
+		"GET /api/reports/overdue-pdf": {URL: "/api/reports/overdue-pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		// Anschrift auch hier Positiv-Kontrolle (Fensterkuvert-Brief, seit 01.09.2026
+		// verdrahtet — vorher hartkodiert geleert): dieselbe Regel wie overdue-pdf.
+		"GET /api/print/rechnung/{schueler_id}":    {URL: "/api/print/rechnung/" + w.schuelerID, Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
 		"GET /api/print/mahnung/klasse/{klasse}":   {URL: "/api/print/mahnung/klasse/" + url.PathEscape("05A")},
 		"GET /api/print/kontoauszug/{schueler_id}": {URL: "/api/print/kontoauszug/" + w.schuelerID, Positiv: []string{"Vogelbeere"}},
 		"GET /api/dashboard/summary":               {URL: "/api/dashboard/summary"},

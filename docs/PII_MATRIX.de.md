@@ -192,7 +192,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/mail-templates` | manage_settings | 0 | Vorlagentexte |
 | `PUT /api/mail-templates/{id}` | manage_settings | 0 | Vorlagentexte |
 | `GET /api/reports/overdue-pdf` | view_students | 3 | Elternbriefe als DIN-5008-Fensterkuvert-PDF: Name, ANSCHRIFT + Überfälliges (seit 01.09.2026 — Zweck „gedruckter Elternbrief bei Mahnung" laut VVT/SECURITY.md; vorher stand „Adresse unbekannt" im Fensterfeld) |
-| `GET /api/print/rechnung/{schueler_id}` | view_students | 3 | Rechnung: Name + Schadensbeträge |
+| `GET /api/print/rechnung/{schueler_id}` | view_students | 3 | Rechnung (Fensterkuvert): Name, Anschrift + Schadensbeträge (Anschrift seit 01.09.2026 verdrahtet — vorher hartkodiert leer) |
 | `GET /api/print/mahnung/klasse/{klasse}` | view_students | 2 | Klassen-Mahn-PDF |
 | `POST /api/admin/mahnungen/bulk-print` | view_students | 2 | Mahn-PDF, erhöht Mahnstufe |
 | `GET /api/print/kontoauszug/{schueler_id}` | view_students | 2 | Kontoauszug mit Namen |

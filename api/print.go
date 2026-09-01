@@ -60,15 +60,18 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			return
 		}
 
+		// Anschrift mitladen: Die Rechnung ist wie der Eltern-Mahnbrief ein
+		// DIN-Fensterkuvert-Brief (VVT-Zweck „gedruckte Rechnung / Elternbrief").
+		// Bis zum 01.09.2026 wurden die vier Felder hier hartkodiert geleert —
+		// das Fenster zeigte zwei leere Zeilen. COALESCE ist Pflicht: nullbare
+		// Spalten in nicht-nullbare Go-Strings (NULL-Scan-Bugklasse).
 		var s pdf.Schueler
 		err = dbPool.QueryRow(ctx, `
-			SELECT vorname, nachname
+			SELECT vorname, nachname,
+			       COALESCE(strasse, ''), COALESCE(hausnummer, ''),
+			       COALESCE(plz, ''), COALESCE(ort, '')
 			FROM schueler WHERE id = $1 AND deleted_at IS NULL
-		`, schuelerID).Scan(&s.Vorname, &s.Nachname)
-		s.Strasse = ""
-		s.Hausnummer = ""
-		s.PLZ = ""
-		s.Ort = ""
+		`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Strasse, &s.Hausnummer, &s.PLZ, &s.Ort)
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return
