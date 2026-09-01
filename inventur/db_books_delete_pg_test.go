@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // „Titel löschen" gegen ein echtes Postgres — an der Regel, die der Betreiber am
@@ -56,7 +57,8 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 				}
 			}
 			if _, err := pool.Exec(ctx,
-				`DELETE FROM audit_log WHERE tabelle = 'ausleihen' AND datensatz_id = ANY($1)`,
+				`DELETE FROM audit_log
+				 WHERE tabelle IN ('ausleihen', 'buecher_exemplare') AND datensatz_id = ANY($1)`,
 				exemplare); err != nil {
 				t.Errorf("Aufräumen audit_log: %v", err)
 			}
@@ -172,5 +174,34 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	}
 	if rauschen != 0 {
 		t.Errorf("%d Protokollzeilen für ein Exemplar, das gar nicht verliehen war", rauschen)
+	}
+
+	// 4. BEIDE Exemplare bleiben am Tresen auffindbar — nicht nur das verliehene.
+	//    Die Tresen-Auskunft findet gelöschte Exemplare ausschließlich über
+	//    audit_log-Zeilen mit tabelle='buecher_exemplare' und details->>'barcode_id'
+	//    (repository.SucheTresenExemplare); die Ausleihen-Spur aus Schritt 2 sieht sie
+	//    nicht. Bis zum 01.09.2026 fehlte dieser Snapshot hier wie beim
+	//    Geschwister-Pfad DeleteTitle (Befund-Register): Ein per Titel-Löschung
+	//    verschwundenes Buch war beim Scannen „nie gesehen" statt „gelöscht am …".
+	//    Geprüft über den echten Leseweg, nicht über count(*) — eine Zeile im falschen
+	//    Format bestünde die Zählung und bliebe trotzdem unsichtbar.
+	for _, fall := range []struct{ barcode, exemplarID string }{
+		{"ZB-REGAL", imRegal},
+		{"ZB-DRAUSSEN", verliehen},
+	} {
+		zeilen, err := repository.SucheTresenExemplare(ctx, pool, fall.barcode)
+		if err != nil {
+			t.Fatalf("Tresen-Auskunft für %s: %v", fall.barcode, err)
+		}
+		if len(zeilen) != 1 {
+			t.Fatalf("Barcode %s: %d Treffer in der Tresen-Auskunft, erwartet genau 1", fall.barcode, len(zeilen))
+		}
+		if zeilen[0].Status != "geloescht" || zeilen[0].ExemplarID != fall.exemplarID {
+			t.Errorf("Barcode %s: Status %q / Exemplar %s, erwartet geloescht / %s",
+				fall.barcode, zeilen[0].Status, zeilen[0].ExemplarID, fall.exemplarID)
+		}
+		if zeilen[0].Titel != "Der Zauberberg" {
+			t.Errorf("Barcode %s: Auskunft nennt Titel %q, erwartet Der Zauberberg", fall.barcode, zeilen[0].Titel)
+		}
 	}
 }

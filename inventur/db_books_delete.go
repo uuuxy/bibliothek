@@ -51,6 +51,13 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	}
 	defer db.SafeRollback(ctx, tx)
 
+	// Barcode-Snapshots ALLER Exemplare, bevor die Zeilen fallen — die Tresen-Auskunft
+	// findet gelöschte Exemplare nur darüber (Begründung an leseExemplarSnapshots).
+	exemplarSnaps, err := leseExemplarSnapshots(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+
 	// Zugehörige Datensätze ALLER Exemplare dieser Titel entfernen, sonst greift der
 	// ON DELETE RESTRICT der FKs. Reihenfolge erzwingen die RESTRICT-FKs, Atomarität die Tx.
 	if _, err := tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
@@ -73,6 +80,9 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 
 	// In derselben Transaktion: Entweder die Löschung UND ihre Spur, oder keins von beidem.
 	if err := protokolliereOffeneAusleihen(ctx, tx, offene); err != nil {
+		return err
+	}
+	if err := protokolliereGeloeschteExemplare(ctx, tx, exemplarSnaps); err != nil {
 		return err
 	}
 

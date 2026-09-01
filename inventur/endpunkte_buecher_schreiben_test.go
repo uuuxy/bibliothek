@@ -121,6 +121,11 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 		// sonst Halbzustand: Historie/Gebühren gelöscht, Buch bleibt).
 		mock.ExpectBegin()
 
+		// Barcode-Snapshots vor den DELETEs (Tresen-Auskunft; hier: keine Exemplare).
+		mock.ExpectQuery(`FROM buecher_exemplare e`).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}))
+
 		mock.ExpectExec("DELETE FROM schadensfaelle").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))

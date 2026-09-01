@@ -61,6 +61,12 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover1.jpg"))
 
 		mock.ExpectBegin()
+		// Barcode-Snapshots ALLER Exemplare vor den DELETEs — die Tresen-Auskunft
+		// findet gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
+		mock.ExpectQuery(`FROM buecher_exemplare e`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}).
+				AddRow("ex-1", "BC-1", "Titel Eins"))
 		mock.ExpectExec(`DELETE FROM schadensfaelle WHERE exemplar_id IN \(SELECT id FROM buecher_exemplare WHERE titel_id = ANY\(\$1::uuid\[\]\)\)`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
@@ -70,6 +76,9 @@ func TestDeleteBooks(t *testing.T) {
 		mock.ExpectExec(`DELETE FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\)`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 2))
+		mock.ExpectExec(`INSERT INTO audit_log`).
+			WithArgs("ex-1", pgxmock.AnyArg(), pgxmock.AnyArg()).
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		mock.ExpectCommit()
 
 		err = repo.DeleteBooks(ctx, ids)
@@ -93,6 +102,9 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover1.jpg"))
 
 		mock.ExpectBegin()
+		mock.ExpectQuery(`FROM buecher_exemplare e`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}))
 		mock.ExpectExec(`DELETE FROM schadensfaelle`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))

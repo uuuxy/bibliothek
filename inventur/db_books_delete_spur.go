@@ -115,3 +115,71 @@ func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offen
 	}
 	return nil
 }
+
+// exemplarSnapshot ist das, was die Tresen-Auskunft nach dem Löschen noch braucht:
+// die Exemplar-ID als datensatz_id, der Barcode als Suchschlüssel, der Titel als
+// Anzeige der Trefferzeile.
+type exemplarSnapshot struct {
+	ID      string
+	Barcode string
+	Titel   string
+}
+
+// leseExemplarSnapshots sammelt ALLE Exemplare der zu löschenden Titel — in der
+// Transaktion der Löschung, bevor die Zeilen fallen. Nicht nur die verliehenen:
+// Die Tresen-Auskunft (repository.SucheTresenExemplare) findet gelöschte Exemplare
+// ausschließlich über audit_log-Zeilen mit tabelle='buecher_exemplare' und
+// details->>'barcode_id'; die Ausleihen-Spur oben sieht sie nicht. Bis zum
+// 01.09.2026 fehlte dieser Snapshot hier wie beim Geschwister-Pfad DeleteTitle
+// (Befund-Register): Ein per Titel-Löschung verschwundenes Buch war beim Scannen
+// „nie gesehen" statt „gelöscht am …".
+func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT e.id, e.barcode_id, t.titel
+		FROM buecher_exemplare e
+		JOIN buecher_titel t ON e.titel_id = t.id
+		WHERE e.titel_id = ANY($1::uuid[])
+		ORDER BY e.barcode_id`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
+	}
+	defer rows.Close()
+
+	var snaps []exemplarSnapshot
+	for rows.Next() {
+		var s exemplarSnapshot
+		if err := rows.Scan(&s.ID, &s.Barcode, &s.Titel); err != nil {
+			return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
+		}
+		snaps = append(snaps, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
+	}
+	return snaps, nil
+}
+
+// protokolliereGeloeschteExemplare schreibt je Exemplar die Barcode-Spur — dasselbe
+// Format wie DeleteCopy und das Verlust-Löschen (repository), damit die Auskunft
+// alle drei Wege gleich findet. Läuft in der Transaktion der Löschung.
+func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, snaps []exemplarSnapshot) error {
+	for _, s := range snaps {
+		details, err := json.Marshal(map[string]any{
+			"barcode_id": s.Barcode,
+			"titel":      s.Titel,
+			"action":     "titel_geloescht",
+		})
+		if err != nil {
+			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, kontext, details)
+			VALUES ('buecher_exemplare', 'DELETE', $1, 'SYSTEM', $2, $3::jsonb)`,
+			s.ID,
+			"Titel gelöscht — Exemplar mit entfernt",
+			string(details)); err != nil {
+			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)
+		}
+	}
+	return nil
+}

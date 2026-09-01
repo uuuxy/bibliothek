@@ -83,6 +83,35 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("%w: %v", ErrTitelHatAktiveAusleihen, activeLoans)
 	}
 
+	// Exemplar-Snapshots VOR dem Löschen: Die Tresen-Auskunft findet gelöschte
+	// Exemplare ausschließlich über audit_log-Zeilen mit tabelle='buecher_exemplare'
+	// und details->>'barcode_id' (SucheTresenExemplare). DeleteCopy und das
+	// Verlust-Löschen schreiben diese Spur längst — beim Titel-Löschen fehlte sie
+	// (Befund-Register 01.09.2026): Wer so ein Buch später am Tresen scannte, bekam
+	// „nie gesehen" statt „gelöscht am …". Geschrieben wird sie unten, NACH der
+	// RowsAffected-Prüfung — für einen Phantom-Titel entsteht auch kein Phantom-Snapshot.
+	type exemplarSnapshot struct{ id, barcode string }
+	var exemplare []exemplarSnapshot
+	exRows, err := tx.Query(ctx,
+		`SELECT id::text, barcode_id FROM buecher_exemplare WHERE titel_id = $1`, titleID)
+	if err != nil {
+		return fmt.Errorf("failed to snapshot copies for audit: %w", err)
+	}
+	for exRows.Next() {
+		var s exemplarSnapshot
+		if err := exRows.Scan(&s.id, &s.barcode); err != nil {
+			exRows.Close()
+			return fmt.Errorf("failed to scan copy snapshot: %w", err)
+		}
+		exemplare = append(exemplare, s)
+	}
+	exRows.Close()
+	// Bricht die Iteration vorzeitig ab, fehlten Snapshots STILL — genau das Loch,
+	// das dieser Schritt schließt.
+	if err := exRows.Err(); err != nil {
+		return fmt.Errorf("failed to read copy snapshots: %w", err)
+	}
+
 	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden
 	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
 		return fmt.Errorf("failed to delete damage records for title: %w", err)
@@ -115,6 +144,22 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		Details: map[string]any{"titel": titel, "autor": autor, "isbn": isbn},
 	}); err != nil {
 		return err
+	}
+
+	// Je Exemplar der Barcode-Snapshot im Format der Geschwister-Pfade (DeleteCopy,
+	// Verlust-Löschen) — dieselbe Transaktion: entweder Löschung UND Spur, oder keins.
+	kontext := "Titel gelöscht — Exemplar mit entfernt"
+	for _, ex := range exemplare {
+		if err = r.insertAuditLog(ctx, tx, auditEntry{
+			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: ex.id,
+			BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
+			Details: map[string]any{
+				"barcode_id": ex.barcode, "titel": titel, "titel_id": titleID,
+				"action": "titel_geloescht",
+			},
+		}); err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit(ctx)

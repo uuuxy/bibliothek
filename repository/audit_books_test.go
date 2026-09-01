@@ -84,6 +84,12 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"})) // keine offenen Ausleihen
+	// Barcode-Snapshots der Exemplare vor den DELETEs — die Tresen-Auskunft findet
+	// gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
+	mock.ExpectQuery("FROM buecher_exemplare WHERE titel_id").
+		WithArgs(titelID).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id"}).
+			AddRow("ex-1", "B-00001"))
 	mock.ExpectExec("DELETE FROM schadensfaelle").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
 	mock.ExpectExec("DELETE FROM ausleihen").WithArgs(titelID).
@@ -96,6 +102,11 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	// werden deshalb festgenagelt, der Rest (Bearbeiter, Kontext, Details-JSON) nicht.
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("buecher_titel", "DELETE", titelID,
+			pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// Je Exemplar der Barcode-Snapshot im Geschwister-Format (DeleteCopy, Verlust).
+	mock.ExpectExec("INSERT INTO audit_log").
+		WithArgs("buecher_exemplare", "DELETE", "ex-1",
 			pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
