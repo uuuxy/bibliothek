@@ -55,8 +55,6 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [datenschutz/datenschutzhinweis_art13.md](datenschutz/datenschutzhinweis_art13.md) | Entwurf Datenschutzhinweis nach Art. 13 DSGVO für Schüler/Eltern — zwei Fassungen (Lernmittel, Schülerbücherei) |
 | [abnahme_checkliste.md](abnahme_checkliste.md) | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz) |
 | [littera_schema_befund.md](littera_schema_befund.md) | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen |
-| [loadtest_report.md](loadtest_report.md) | Lasttest-Protokoll vom 02.08.2026 (6 h, k6) |
-| [archive/](archive/) | Abgelegte Doku zu Wegen, die nicht beschritten wurden |
 
 > Eine Änderungshistorie gibt es bewusst nicht als Datei — `git log` ist ausführlicher und
 > kann nicht veralten.

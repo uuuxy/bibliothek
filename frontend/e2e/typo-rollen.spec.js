@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin } from './helpers.js';
 
-// Gate aus dem M3-Typografie-Audit (docs/m3_typografie_audit_2026-08-25.md):
+// Gate aus dem M3-Typografie-Audit vom 25.08.2026 (Bericht aufgelöst, Historie in git log):
 // Lesetext liegt auf der Skala, nicht eine Stufe darunter. Gemessen wird im
 // Browser mit getComputedStyle — die statische Inventur hat bei Schriftgrößen
 // zweimal gelogen (Klassen in Variablen, Vererbung).
