@@ -24,8 +24,26 @@ import { srcRoot } from './hygiene-quellen.js';
 //
 // Gefunden am 23.08.2026 beim Raster-Durchgang (Frage 7, Gate-Ehrlichkeit): zwei solche
 // Wächter in admin-lusd.spec.js.
-const VERZWEIGUNG = /if\s*\(\s*await\s+[^)]*\.isVisible\(\)\s*\)/g;
+//
+// Die Regex fasste bis zum 01.09.2026 nur die historische Form `await bremse.isVisible()`:
+// Ihr `[^)]*` kam nicht über die innere Klammer von `page.locator('#x')` hinweg, und die
+// Negation `if (!(await …))` begann nicht mit `await`. Der Rot-Beweis-Sweep belegte vier
+// durchrutschende Formen (verkettet, getByRole, negiert, negiert mit .catch). Jetzt zählt
+// jede if-Bedingung mit einem awaited isVisible() — die Selbstprobe unten hält alle Formen.
+const VERZWEIGUNG = /if\s*\(.*\bawait\b.*\.isVisible\(\)/;
 const WARTEN = /\.or\(/;
+
+// Begründete Ausnahmen — jede ist eine bewusste Entscheidung, kein Freifahrtschein.
+const AUSNAHMEN = [
+	{
+		datei: 'e2e/icon-tooltips.spec.js',
+		muster: /isVisible\(\)\.catch\(\(\) => false\)/,
+		grund:
+			'Scan-Schleife über ALLE Symbol-Kandidaten eines Bildschirms: unsichtbare überspringen ist ' +
+			'dort der Zweck, kein stiller Wächter. Gegen das Ins-Leere-Laufen schützt die Mindestzahl ' +
+			'expect(geprueft).toBeGreaterThan(5) am Testende.'
+	}
+];
 
 /** Alle e2e-Spezifikationen einlesen. */
 function specDateien() {
@@ -41,6 +59,22 @@ describe('e2e-Wächter', () => {
 		expect(dateien.length).toBeGreaterThan(10);
 	});
 
+	it('erkennt alle Formen der Verzweigung (Selbstprobe am Muster)', () => {
+		// Die vier unteren Formen rutschten bis zum 01.09.2026 durch (siehe Kopfkommentar).
+		const verboten = [
+			'if (await bremse.isVisible()) {',
+			"if (await page.locator('#x').isVisible()) {",
+			"if (await page.getByRole('button', { name: 'X' }).isVisible()) {",
+			'if (!(await b.isVisible())) continue;',
+			'if (!(await b.isVisible().catch(() => false))) continue;'
+		];
+		for (const zeile of verboten) expect(VERZWEIGUNG.test(zeile), zeile).toBe(true);
+
+		// Kein Treffer ohne Verzweigung bzw. ohne await — expect(...) wartet ja.
+		const erlaubt = ['await expect(blase).toBeVisible();', 'const sichtbar = b.isVisible();'];
+		for (const zeile of erlaubt) expect(VERZWEIGUNG.test(zeile), zeile).toBe(false);
+	});
+
 	it('verzweigt nie auf isVisible(), ohne vorher auf eines von zwei Ergebnissen zu warten', () => {
 		const verstoesse = [];
 
@@ -51,8 +85,8 @@ describe('e2e-Wächter', () => {
 				// genau dem Muster, das er verbietet, und würde sich sonst selbst treffen.
 				const nackt = zeile.trim();
 				if (nackt.startsWith('//') || nackt.startsWith('*')) return;
-				VERZWEIGUNG.lastIndex = 0;
 				if (!VERZWEIGUNG.test(zeile)) return;
+				if (AUSNAHMEN.some((a) => a.datei === name && a.muster.test(zeile))) return;
 				// Die zehn Zeilen davor müssen ein `.or(`-Warten enthalten.
 				const davor = zeilen.slice(Math.max(0, i - 10), i).join('\n');
 				if (!WARTEN.test(davor)) {

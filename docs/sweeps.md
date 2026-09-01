@@ -28,6 +28,10 @@ der ganze Bestand, eine Ratsche.
    Commit-Botschaft: der geprüfte Zwilling und sein Befund, oder „hat keinen".
    Beleg für den Wert: Am 31.08.2026 kamen zwei der 18 Funde genau über diese Frage
    ans Licht, nachträglich gestellt (siehe Geschwister-Asymmetrie im Register).
+6. **Selbstprobe über alle Formen, nicht nur das historische Beispiel.** Eine Gegenprobe,
+   die nur die Form testet, die damals vorkam, beweist nicht, dass die Ratsche die KLASSE
+   fasst (e2e-Wächter, 01.09.2026: vier von fünf isVisible-Formen rutschten durch).
+   Verbotene Formen als Liste in die Selbstprobe — verkettete, negierte, umklammerte.
 
 ## Register
 
@@ -47,6 +51,38 @@ der ganze Bestand, eine Ratsche.
 | Transaktionsgrenzen           | Mehrschritt-Schreibpfad ohne Tx                                                                    | Sweep 19.08.                                             | Memory „Sweep Transaktionsgrenzen"                                                                 |
 | **Nie verdrahtet**            | Ausgabe-Code mit hartkodiertem Platzhalter, obwohl die Daten existieren („Adresse unbekannt", Unterstrich-Zeilen, nie befülltes Struct-Feld, Vorlagen-Platzhalter ohne Renderer, Schalter den nur ein Pfad liest) | `api/mail_vorlagen_platzhalter_test.go` (Renderer ≡ Editor ≡ Seed, je Seed-Typ Renderer oder begründete Ausnahme); Anschrift der drei Fensterkuvert-Briefe als Positiv-Kontrollen im PII-Antwort-Gate | 01.09.2026, Anlass Mahnbrief-Adresse: 4 Detektoren (Platzhalter-Literale, unbefüllte Struct-Felder, Vorlagen-Parität, Felder/Einstellungen ohne Gegenstelle) über je einen Agenten, jeder Treffer von Hand verifiziert. 14 Funde behoben (3 Fensterkuvert-Adressen, {{.Frist}}=Druckdatum, Renderer-Robustheit, Leer-Vorlagen-Fallback, Editor-Platzhalter je Typ, Eigentumsvermerk Bestellmail, totes status-Feld, Sperrgrund-Anzeige, 3 tote Felder, 4 tote Structs, Littera-XML typisiert); 1 Entscheidung (tote Vorlage BESTELLUNG_EINGETROFFEN) + 4 C-Posten im Befund-Register. Erfreulich: alle 24 Einstellungen haben Schreiber UND Leser. |
 | IDOR / Zeit / Vokabular       | 3 Sweeps 19.08., je Gate                                                                           | —                                                        | Memory „Sweep IDOR/Zeit/Vokabular"                                                                 |
+| **Lügende Ratsche**           | Gate/Ratsche, deren Detektor die reale Form nicht mehr fasst (Regex zu eng, Sammler läuft ins Leere) — meldet ewig „alles gut" | Rot-Beweis-Battery (s. Abschnitt unten) + Selbstprobe am Muster in jeder Ratsche | 01.09.2026: 20 Ratschen per eingeschleustem Verstoß rot bewiesen; 1 Loch gefunden und gefixt (e2e-Wächter fasste 4 von 5 isVisible-Formen nicht; jetzt mit Selbstprobe über alle Formen + begründete Ausnahme icon-tooltips) |
+
+## Rot-Beweis-Battery — Testprüfung 01.09.2026
+
+Frage des Sweeps: **Funktionieren unsere Tests tatsächlich?** Vier Achsen, Methode je Achse:
+
+1. **Erreichbarkeit** — läuft jeder Test in einem Gate? Befund: ja. `go test ./...` mit
+   `TEST_DATABASE_URL` führt **2052 Tests, 0 rot, 3 Skips** aus — alle drei legitim
+   (2× CI-Guard, 1× Littera-Echtdaten). Playwright: 145 Tests in 79 Dateien, kein
+   only/skip/fixme. Vitest-include deckt alle 52 Unit-Dateien. Go: keine Build-Tags,
+   kein `t.Skip` außerhalb der PG-/Littera-Gates. Einzige Ausnahme: 4 Benchmark-Dateien
+   laufen nirgends (kein `-bench`-Aufruf in Hook/CI) — kompiliert, nie gemessen; C-Posten.
+2. **Rot-Beweis** — kann die Ratsche noch rot werden? Je Ratsche ein eingeschleuster
+   Verstoß (Probe-Datei bzw. Temp-Edit, danach revertiert — nie per `git checkout` auf
+   alte Stände): 8 Frontend-Hygiene-Ratschen (Farben, Felder, Suchfelder, Icons, Reiter,
+   Rechte, Dateigröße, Verwaiste), Layout (über echte Router-Route), Fehler-Kollaps,
+   Phantom-Erfolg, Privilegierte Felder, Tote Türen, Authz-Coverage, DSGVO-Auskunft-Quellen,
+   Vorlagen-Parität, deadcode-Gate, e2e-Wächter (nach Fix). **Alle rot gesehen.**
+3. **Attrappen-Audit** — prüft der Test den echten Pfad? `networkidle`-Treffer sind
+   Warnkommentare („kein networkidle wegen SSE"), `if (isVisible)`-Stellen folgen dem
+   `.or()`-Muster oder tragen Selbstschutz (`geprueft > 5`), jede Spec assertet. Sauber.
+4. **Nicht neu bewiesen:** Browser-Gates (druck-sektionen-gate.mjs, typo-rollen, kontrast)
+   — brauchen den gebauten Stack; ihr Rot ist historisch belegt (24.08., 31.08.). PG-seitige
+   Ratschen (Schema-Parität, DSGVO-Rundreise) liefen grün mit; Rot-Beweise stammen aus den
+   Bau-Sitzungen. Bei Umbau: erneut rot sehen.
+
+Das Loch der Battery: die e2e-Wächter-Regex `await\s+[^)]*\.isVisible\(\)` kam nicht über
+die innere Klammer von `page.locator('#x')` und nicht über `!(await …)` — vier von fünf
+Formen rutschten durch (real heute keine Verletzung im Bestand, aber das Gate hätte neue
+nicht gefangen). Lehre als Regel 6: **Jede Ratsche trägt eine Selbstprobe über alle
+verbotenen FORMEN, nicht nur über das historische Beispiel** — die Gegenprobe am Detektor
+(Regel 2) reicht nicht, wenn sie nur die Form testet, die damals vorkam.
 
 ## Produktfrage aus dem Kollaps-Sweep — entschieden 31.08.2026
 
