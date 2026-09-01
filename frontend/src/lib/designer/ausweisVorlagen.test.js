@@ -70,6 +70,57 @@ describe('Design-Vorlagen: Inhalt', () => {
 		}
 	);
 
+	it.each(alleKennungen)(
+		'%s: die Adresse steht unmittelbar unter dem Schulnamen (Briefkopf), nicht am Kartenende',
+		(kennung) => {
+			const front = vorlage(kennung)?.front.elements ?? [];
+			const header = front.find((e) => e.id === 'header');
+			const address = front.find((e) => e.id === 'address');
+			expect(address?.x).toBe(header?.x);
+			expect(address?.y).toBeGreaterThan(header?.y ?? Infinity);
+			expect(address?.y).toBeLessThanOrEqual((header?.y ?? 0) + (header?.height ?? 0) + 1);
+		}
+	);
+
+	it.each(alleKennungen)(
+		'%s: jede Farbfläche trägt eine editierbare Hex-Farbe und einen Radius',
+		(kennung) => {
+			const v = vorlage(kennung);
+			for (const seite of [v?.front, v?.back]) {
+				for (const fl of (seite?.elements ?? []).filter((e) => e.type === 'box')) {
+					expect(fl.style?.color, `${kennung}/${fl.id}`).toMatch(/^#[0-9a-f]{6}$/i);
+					expect(typeof fl.style?.radius, `${kennung}/${fl.id}`).toBe('number');
+				}
+			}
+		}
+	);
+
+	it('Schwarz-Grün: Kopfband und Grünlinie decken die volle Kartenbreite (keine weißen Streifen)', () => {
+		const front = vorlage('schwarz-gruen')?.front.elements ?? [];
+		for (const id of ['kopfband', 'kopflinie']) {
+			const band = front.find((e) => e.id === id);
+			expect(band?.type, id).toBe('box');
+			expect(band?.x, id).toBe(0);
+			expect(band?.width, id).toBe(KARTE_BREITE);
+		}
+	});
+
+	it('Schwarz-Grün: die Adresse steht IM Kopfband unter dem Schulnamen', () => {
+		const front = vorlage('schwarz-gruen')?.front.elements ?? [];
+		const band = front.find((e) => e.id === 'kopfband');
+		const address = front.find((e) => e.id === 'address');
+		expect((address?.y ?? 0) + (address?.height ?? 0)).toBeLessThanOrEqual(
+			(band?.y ?? 0) + (band?.height ?? 0) + 0.01
+		);
+	});
+
+	it('Marine: der Barcode liegt rechts NEBEN dem dunklen Seitenband (Nummer wird dunkel gerendert)', () => {
+		const front = vorlage('marine')?.front.elements ?? [];
+		const band = front.find((e) => e.id === 'seitenband');
+		const barcode = front.find((e) => e.type === 'barcode');
+		expect(barcode?.x).toBeGreaterThanOrEqual((band?.x ?? 0) + (band?.width ?? Infinity));
+	});
+
 	it('Waldgrün: der Barcode liegt auf dem hellen Fußband (Nummer wird dunkel gerendert)', () => {
 		const front = vorlage('waldgruen')?.front.elements ?? [];
 		const band = front.find((e) => e.id === 'fussband');

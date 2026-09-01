@@ -81,6 +81,33 @@ describe('CardFace: leere Bildfelder', () => {
 		expect(queryByText('PASSBILD')).toBeNull();
 	});
 
+	it('rendert Farbflächen (box) als gefüllte Fläche — auch ohne Schüler (statisch)', () => {
+		idStore.front.elements = [
+			{
+				id: 'kopfband',
+				type: 'box',
+				content: '',
+				x: 0,
+				y: 0,
+				width: 85.6,
+				height: 13.4,
+				zIndex: 0,
+				show: true,
+				proportional: false,
+				style: { color: '#101410', radius: 0 }
+			}
+		];
+
+		const { container } = render(CardFace, {
+			props: { side: 'front', student: null, barcodeType: 'code39' }
+		});
+
+		const flaeche = container.querySelector('div[style*="background-color"]');
+		expect(flaeche).toBeTruthy();
+		// jsdom normalisiert Hex zu rgb() — #101410 = rgb(16, 20, 16)
+		expect(flaeche?.getAttribute('style')).toContain('rgb(16, 20, 16)');
+	});
+
 	it('zeigt das echte Logo statt des Rahmens, sobald eines hinterlegt ist', () => {
 		idStore.front.elements[0].content = 'data:image/png;base64,AAAA';
 

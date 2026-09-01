@@ -11,7 +11,12 @@
 	 * Element additions (text, multi-image) are handled directly here via
 	 * `addTextElement` and `addImageElements` from the shared store.
 	 */
-	import { idStore, addTextElement, addImageElements } from './idDesignerStore.svelte.js';
+	import {
+		idStore,
+		addTextElement,
+		addImageElements,
+		addBoxElement
+	} from './idDesignerStore.svelte.js';
 	import { WALDGRUEN_THEME } from './ausweisVorlagen.js';
 	import Button from '../components/ui/Button.svelte';
 	import ToolbarAuswahl from './ToolbarAuswahl.svelte';
@@ -124,6 +129,8 @@
 		)}
 
 		<Button variant="secondary" size="sm" onclick={() => addTextElement(side)}>+ Text</Button>
+
+		<Button variant="secondary" size="sm" onclick={() => addBoxElement(side)}>+ Fläche</Button>
 
 		<!-- Multi-image upload: die eigentliche Auswahl-Fläche ist die geteilte Button-
 		     Komponente (dieselbe Pillenform/Höhe wie "+ Text" daneben, statt eines eigens

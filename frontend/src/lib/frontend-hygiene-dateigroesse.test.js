@@ -51,8 +51,7 @@ const BESTAND = {
 	'src/lib/components/stats/StatsTrendChart.svelte': 243,
 	'src/lib/components/students/LusdImportView.svelte': 394,
 	'src/lib/components/students/PromoteStudentsView.svelte': 212,
-	'src/lib/components/ui/Select.svelte': 207,
-	'src/lib/designer/CanvasArea.svelte': 309
+	'src/lib/components/ui/Select.svelte': 207
 };
 
 describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {

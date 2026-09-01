@@ -27,6 +27,7 @@
 		el && ['header', 'address', 'name', 'validity', 'text'].includes(el.type)
 	);
 	const isImageType = $derived(el && (el.type === 'image' || el.type === 'logo'));
+	const isBoxType = $derived(el && el.type === 'box');
 	const isDynamic = $derived(el && ['name', 'validity'].includes(el.type));
 
 	const fontFamilies = [
@@ -147,6 +148,32 @@
 
 		{#if isTextType && el.style}
 			<PropertiesText {el} istDynamisch={isDynamic} schriften={fontFamilies} />
+		{/if}
+
+		<!-- Farbfläche: Füllfarbe und Eckenradius. M3-Rollen statt der slate-Töne der Nachbarn
+		     (Farb-Ratsche); Farbwähler mit Label/Höhe von Feld.svelte, damit er neben ZahlenFeld fluchtet. -->
+		{#if isBoxType && el.style}
+			<div class="space-y-3 pt-2 border-t border-outline-variant">
+				<span class="text-xs font-medium text-on-surface-variant block">Fläche</span>
+				<div class="grid grid-cols-2 gap-2">
+					<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+						<span class="text-sm font-medium text-on-surface-variant">Farbe</span>
+						<input
+							type="color"
+							bind:value={el.style.color}
+							class="w-full h-9 rounded-xl border border-outline-variant cursor-pointer bg-white px-1"
+						/>
+					</div>
+					<ZahlenFeld
+						label="Ecken (mm)"
+						value={el.style.radius ?? 0}
+						min={0}
+						max={10}
+						step={0.5}
+						onInput={(v) => (el.style.radius = v)}
+					/>
+				</div>
+			</div>
 		{/if}
 
 		<!-- Image panel -->

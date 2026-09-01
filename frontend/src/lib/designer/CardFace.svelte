@@ -44,6 +44,7 @@
 {/each}
 
 {#snippet cardElement(/** @type {any} */ el)}
+	{@const isBox = el.type === 'box'}
 	{@const isBarcode =
 		el.type === 'barcode' || (typeof el.content === 'string' && el.content.includes('{{barcode}}'))}
 	{@const isText =
@@ -51,7 +52,15 @@
 	{@const isImage = !isBarcode && (el.type === 'image' || el.type === 'logo')}
 	{@const isPhoto = !isBarcode && el.type === 'photo'}
 
-	{#if isText}
+	{#if isBox}
+		<!-- Farbfläche (Kopf-/Fußband, Streifen): druckt als Hintergrundfarbe — die
+		     Kartendruck-CSS setzt print-color-adjust: exact, sonst fiele sie im Druck weg. -->
+		<div
+			class="absolute"
+			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex}; background-color: {el
+				.style?.color ?? '#000000'}; border-radius: {el.style?.radius ?? 0}mm;"
+		></div>
+	{:else if isText}
 		<div
 			class="absolute leading-tight whitespace-pre-wrap overflow-hidden"
 			style="

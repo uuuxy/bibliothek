@@ -10,8 +10,10 @@ import { ETIKETT_FORMATE } from '../etikettformate.js';
  * --- Element Schema ---
  * id          string   unique within the side
  * type        string   'text'|'name'|'validity'|'header'|'address'|
- *                      'image'|'logo'|'photo'|'barcode'
- * content     string   static text or base64 data-url (image)
+ *                      'image'|'logo'|'photo'|'barcode'|'box'
+ * content     string   static text or base64 data-url (image); '' for box
+ * style.color string   text color — for 'box' the fill color (editable in the panel)
+ * style.radius number  'box' only: corner radius in mm
  * x, y        number   position in mm from top-left
  * width       number   bounding box width in mm
  * height      number   bounding box height in mm
@@ -371,6 +373,33 @@ export function addTextElement(side) {
 		show: true,
 		proportional: false,
 		style: textStyle(7.5, '#1e293b', 'left', 'normal')
+	};
+	if (side === 'front') {
+		idStore.front.elements = [...idStore.front.elements, neu];
+	} else {
+		idStore.back.elements = [...idStore.back.elements, neu];
+	}
+}
+
+/**
+ * Fügt eine freie Farbfläche hinzu — der Baustein, aus dem die Vorlagen ihre Kopf-,
+ * Fuß- und Seitenbänder bauen. zIndex 0, damit sie hinter Text und Bildern liegt
+ * (eine Fläche ist fast immer Hintergrund); nach vorn holen geht über das Panel.
+ * @param {'front'|'back'} side
+ */
+export function addBoxElement(side) {
+	const neu = {
+		id: nextId(),
+		type: 'box',
+		content: '',
+		x: 10,
+		y: 10,
+		width: 30,
+		height: 12,
+		zIndex: 0,
+		show: true,
+		proportional: false,
+		style: { color: '#dbe3ea', radius: 0 }
 	};
 	if (side === 'front') {
 		idStore.front.elements = [...idStore.front.elements, neu];

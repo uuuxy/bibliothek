@@ -45,7 +45,7 @@ const ZEICHNUNGEN = [
 	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte', // dito
 	'src/lib/WebcamCapture.svelte', // Aufnahme-Overlay über dem Kamerabild
 	'src/lib/components/labels/LabelPreview.svelte', // 42,3-mm-Etikett in Originalgröße
-	'src/lib/designer/CanvasArea.svelte', // Ausweiskarte in mm auf dem Reißbrett
+	'src/lib/designer/CanvasElement.svelte', // Ausweiskarte in mm auf dem Reißbrett
 	'src/lib/designer/CardFace.svelte' // dieselbe Karte im Druck, Größen in echten Punkten
 ];
 

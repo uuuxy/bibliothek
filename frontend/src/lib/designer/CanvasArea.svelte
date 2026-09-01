@@ -1,12 +1,10 @@
 <script>
 	/**
 	 * @file CanvasArea.svelte
-	 * Interactive canvas for the ID card designer.
-	 *
-	 * Runes in use:
-	 *   $props()      — receives `side`, `selectedId`, `onSelect`, `student`, `zoom`
-	 *   $derived      — computes sorted (by zIndex) elements from the store
-	 *   $effect       — not used here; all event cleanup is handled inline via onDestroy
+	 * Interactive canvas for the ID card designer. Die Darstellung der einzelnen
+	 * Elemente (inkl. Auswahl-Ring und Skalier-Griffe) liegt in CanvasElement.svelte;
+	 * hier wohnt die Drag-/Resize-Mechanik, weil Fensterlistener und ihr Aufräumen an
+	 * EINE Stelle gehören.
 	 *
 	 * Drag & Resize:
 	 *   Both operations bind pointermove/pointerup on `window` to allow the pointer
@@ -15,7 +13,7 @@
 	 */
 	import { onDestroy } from 'svelte';
 	import { idStore } from './idDesignerStore.svelte.js';
-	import { User } from '@lucide/svelte';
+	import CanvasElement from './CanvasElement.svelte';
 
 	/** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string }} */
 	const { side, selectedId, onSelect, student, zoom, barcodeType } = $props();
@@ -76,7 +74,6 @@
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
 			activeDragCleanup = null;
-			// removed photo tap
 		}
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
@@ -176,7 +173,14 @@
 		>
 			<div class="w-full h-full relative rounded-lg overflow-hidden {theme}">
 				{#each elements as el (el.id)}
-					{@render canvasElement(el)}
+					<CanvasElement
+						{el}
+						isSelected={selectedId === el.id}
+						{student}
+						{barcodeType}
+						onStartDrag={startDrag}
+						onStartResize={startResize}
+					/>
 				{/each}
 			</div>
 		</div>
@@ -188,122 +192,3 @@
 		{side === 'front' ? 'Vorderseite' : 'Rückseite'} · Drag &amp; Drop zum Verschieben · Ecken zum Skalieren
 	</span>
 </div>
-
-{#snippet canvasElement(el)}
-	{@const isSelected = selectedId === el.id}
-	{@const isBarcode =
-		el.type === 'barcode' || (typeof el.content === 'string' && el.content.includes('{{barcode}}'))}
-	{@const isText =
-		!isBarcode && ['header', 'address', 'name', 'validity', 'text'].includes(el.type)}
-	{@const isImage = !isBarcode && (el.type === 'image' || el.type === 'logo')}
-	{@const isPhoto = !isBarcode && el.type === 'photo'}
-
-	<div
-		role="presentation"
-		onpointerdown={(e) => startDrag(e, el.id)}
-		style="
-      position: absolute;
-      left: {el.x}mm; top: {el.y}mm;
-      width: {el.width}mm; height: {el.height}mm;
-      z-index: {el.zIndex};
-      cursor: move;
-    "
-		class="{isSelected
-			? 'ring-2 ring-blue-500 ring-offset-0'
-			: 'hover:ring-1 hover:ring-slate-400 hover:ring-dashed'} rounded-xs"
-	>
-		{#if isText}
-			<div
-				class="w-full h-full overflow-hidden leading-tight whitespace-pre-wrap"
-				style="
-          font-size: {el.style?.fontSize ?? 7}pt;
-          color: {el.style?.color ?? 'inherit'};
-          font-weight: {el.style?.fontWeight ?? 'normal'};
-          text-align: {el.style?.textAlign ?? 'left'};
-          font-family: {el.style?.fontFamily ?? 'inherit'};
-        "
-			>
-				{#if el.type === 'name'}
-					{student ? `${student.vorname} ${student.nachname}` : 'Max Mustermann'}
-				{:else if el.type === 'validity'}
-					{`Gültig bis: 31.07.${student?.ausweis_gueltig_bis ?? '–'}`}
-				{:else}
-					{el.content}
-				{/if}
-			</div>
-		{:else if isImage}
-			<div
-				class="w-full h-full border border-dashed border-slate-300 bg-slate-50/50 flex items-center justify-center overflow-hidden rounded-xs"
-			>
-				{#if el.content}
-					<img
-						src={el.content}
-						class="w-full h-full object-contain pointer-events-none"
-						alt="Bild"
-					/>
-				{:else}
-					<span class="text-[5px] text-slate-400 font-bold pointer-events-none"
-						>{el.type === 'logo' ? 'LOGO' : 'BILD'}</span
-					>
-				{/if}
-			</div>
-		{:else if isPhoto}
-			<div
-				class="w-full h-full border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center overflow-hidden rounded-sm text-slate-400"
-			>
-				<User
-					class="w-1/2 h-1/2 max-h-12 max-w-12 mb-1 opacity-40 pointer-events-none"
-					aria-hidden="true"
-				/>
-				<span class="text-[5px] font-medium pointer-events-none">PASSBILD</span>
-			</div>
-		{:else if isBarcode}
-			<div class="w-full h-full flex flex-col items-center justify-center">
-				{#if student}
-					<img
-						src="/api/barcode?content={student.barcode_id}&qr={barcodeType ===
-							'qr'}&width={barcodeType === 'qr' ? 80 : 200}&height={barcodeType === 'qr' ? 80 : 50}"
-						class="max-w-full max-h-full object-contain pointer-events-none"
-						alt="Barcode"
-					/>
-					<span class="font-bold text-[6.5pt] tracking-widest text-slate-700 pointer-events-none"
-						>{student.barcode_id}</span
-					>
-				{:else}
-					<div class="text-[5px] text-slate-400 font-bold">BARCODE</div>
-				{/if}
-			</div>
-		{/if}
-
-		{#if isSelected}
-			{@render resizeHandle(
-				el,
-				'nw',
-				'top-0 left-0 cursor-nw-resize -translate-x-1/2 -translate-y-1/2'
-			)}
-			{@render resizeHandle(
-				el,
-				'ne',
-				'top-0 right-0 cursor-ne-resize translate-x-1/2 -translate-y-1/2'
-			)}
-			{@render resizeHandle(
-				el,
-				'sw',
-				'bottom-0 left-0 cursor-sw-resize -translate-x-1/2 translate-y-1/2'
-			)}
-			{@render resizeHandle(
-				el,
-				'se',
-				'bottom-0 right-0 cursor-se-resize translate-x-1/2 translate-y-1/2'
-			)}
-		{/if}
-	</div>
-{/snippet}
-
-{#snippet resizeHandle(el, corner, posClass)}
-	<div
-		role="presentation"
-		onpointerdown={(e) => startResize(e, el.id, corner)}
-		class="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full z-50 {posClass}"
-	></div>
-{/snippet}
