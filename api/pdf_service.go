@@ -40,7 +40,14 @@ type BestellMail struct {
 	// MitBestaetigungsLink: In der Mail steht der Link auf die Bestellseite. Dann liegen
 	// die Etikettenbögen DORT und nicht an der Mail — siehe bestellAnhaenge.
 	MitBestaetigungsLink bool
-	Schule               pdf.SchuleInfo
+	// Eigentumsvermerk: der konfigurierte Etiketten-Aufdruck (Einstellung
+	// etikett_eigentumsvermerk); leer = Werksvorgabe. Bis zum 01.09.2026 nagelte
+	// dieser Mailweg den Vermerk auf die Werksvorgabe fest, während Selbstdruck
+	// und Lieferanten-Link die Einstellung lasen — zwei Wege zum selben Buch,
+	// zwei verschiedene Aufkleber (genau die Divergenz, die der Kommentar in
+	// bestellbestaetigung_etiketten.go ausschließen will).
+	Eigentumsvermerk string
+	Schule           pdf.SchuleInfo
 }
 
 // DispatchOrderEmail erzeugt die PDFs und verschickt die Bestellmail an den Lieferanten.
@@ -112,7 +119,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 		return anhaenge, nil
 	}
 
-	boegen, err := etikettenboegen(m.Etiketten, m.Schule, m.IstHauptlieferant)
+	boegen, err := etikettenboegen(m.Etiketten, m.Schule, m.IstHauptlieferant, m.Eigentumsvermerk)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +129,14 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 // etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für
 // den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett — er
 // wählt die Größe, Bibliosys entscheidet sie nicht vorab.
-func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHauptlieferant bool) ([]MailAttachment, error) {
-	kopf := EtikettKopf{Schulname: schule.Name, Eigentumsvermerk: repository.StandardEigentumsvermerk}
+func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHauptlieferant bool, eigentumsvermerk string) ([]MailAttachment, error) {
+	// Konfigurierter Vermerk vor Werksvorgabe — dieselbe Regel wie s.etikettKopf
+	// (Selbstdruck) und der Lieferanten-Link, damit alle drei Wege zum selben
+	// Buch denselben Aufkleber ergeben.
+	if eigentumsvermerk == "" {
+		eigentumsvermerk = repository.StandardEigentumsvermerk
+	}
+	kopf := EtikettKopf{Schulname: schule.Name, Eigentumsvermerk: eigentumsvermerk}
 
 	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
