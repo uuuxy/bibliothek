@@ -192,7 +192,9 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 		"{{.Frist}}", aeltesteFrist.Format(dateFormatDE),
 	)
 
-	parsedBetreff := replacer.Replace(betreff)
+	// In der Betreffzeile hat die Bücher-Tabelle keinen Platz — ein dort
+	// eingetragenes {{.BuchListe}} fällt weg, statt wörtlich im Brief zu stehen.
+	parsedBetreff := strings.TrimSpace(strings.ReplaceAll(replacer.Replace(betreff), "{{.BuchListe}}", ""))
 	pdf.Cell(0, 5, tr(parsedBetreff))
 
 	// --- Body Text ---
@@ -201,8 +203,14 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 
 	parsedText := replacer.Replace(textBody)
 
-	// Split by the book list placeholder
-	parts := strings.Split(parsedText, "{{.BuchListe}}")
+	// Die Tabelle ersetzt das ERSTE {{.BuchListe}}; alles danach wird gedruckt,
+	// nicht verschluckt. Vorher: strings.Split + parts[0]/parts[1] — stand der
+	// Platzhalter zweimal in der Vorlage, verschwand der Rest samt Grußformel.
+	// Weitere Vorkommen fallen weg (eine zweite Tabelle gibt es nicht).
+	parts := strings.SplitN(parsedText, "{{.BuchListe}}", 2)
+	if len(parts) > 1 {
+		parts[1] = strings.ReplaceAll(parts[1], "{{.BuchListe}}", "")
+	}
 
 	// Print text before book list
 	pdf.MultiCell(170, 6, tr(parts[0]), "", "L", false)

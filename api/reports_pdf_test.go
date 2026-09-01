@@ -91,6 +91,36 @@ func TestElternMahnbriefFristIstDieAeltesteRueckgabefrist(t *testing.T) {
 	}
 }
 
+// Die Vorlage ist Betreiber-Freitext — der Renderer muss auch schiefe Eingaben
+// überleben: {{.BuchListe}} im BETREFF stand wörtlich in der Betreffzeile, und bei
+// ZWEI Vorkommen im Text verschwand alles nach dem zweiten kommentarlos — samt
+// Grußformel (strings.Split druckte nur parts[0] und parts[1]).
+func TestElternMahnbriefUeberlebtSchiefePlatzhalter(t *testing.T) {
+	student := testOverdueStudent()
+	doc := gofpdf.New("P", "mm", "A4", "")
+	tr := doc.UnicodeTranslatorFromDescriptor("")
+	zeichneElternMahnbrief(doc, tr, student,
+		"Mahnung {{.BuchListe}}",
+		"Anfang {{.BuchListe}} Mitte {{.BuchListe}} Grussformel-Ende",
+		"Testschule")
+	var buf bytes.Buffer
+	if err := doc.Output(&buf); err != nil {
+		t.Fatalf("PDF erzeugen: %v", err)
+	}
+	text := pdfText(t, buf.Bytes())
+
+	// Klammern stehen im PDF-Strom escaped — auf den Kern ohne Klammern prüfen.
+	if strings.Contains(text, "{.BuchListe}") {
+		t.Error("{{.BuchListe}} steht wörtlich im Brief (Betreff oder zweites Vorkommen)")
+	}
+	if !strings.Contains(text, "Grussformel-Ende") {
+		t.Error("Text nach dem zweiten {{.BuchListe}} wurde verschluckt — die Grußformel fehlt")
+	}
+	if !strings.Contains(text, "Mitte") {
+		t.Error("Text zwischen den Vorkommen fehlt")
+	}
+}
+
 func TestElternMahnbriefOhneAnschriftSagtEsAusdruecklich(t *testing.T) {
 	text := renderElternMahnbrief(t, testOverdueStudent())
 	// Ohne Klammern gesucht: Im PDF-Inhaltsstrom stehen Klammern escaped
