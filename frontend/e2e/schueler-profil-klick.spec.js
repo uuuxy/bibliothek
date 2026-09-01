@@ -66,6 +66,15 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		SELECT ex.id, sch.id, CURRENT_DATE - 5 FROM ex, sch;
 	`);
+	// Weg 2 braucht einen AKTIVEN Schüler: Seit dem Abgänger-Filter (31.08.2026)
+	// findet die Schülerdatei-Suche Abgänger nicht mehr — die stehen im eigenen
+	// Reiter. Die Aussage dieses Tests (Reiter folgt der Absicht) hängt nicht am
+	// Schülertyp; vorher nutzte Weg 2 nur aus Bequemlichkeit denselben Abgänger.
+	seedSQL(`
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		VALUES ('E2E-REI-AKTIV-${s}', 'Reiteraktiv${s}', 'Testschueler', '10b',
+		        EXTRACT(YEAR FROM CURRENT_DATE)::int + 1);
+	`);
 
 	await uiLogin(page);
 
@@ -86,8 +95,8 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 	// Erst das offene Profil schließen: Die Abgänger-Ansicht landet in DERSELBEN Ansicht,
 	// solange dort ein Profil offen ist, gibt es keine Liste zum Suchen.
 	await page.getByTitle('Schüler schließen (ESC)').click();
-	await page.getByLabel('Schüler suchen').first().fill(`Reiter${s}`);
-	await page.getByText(`Reiter${s} Testschueler`).first().click();
+	await page.getByLabel('Schüler suchen').first().fill(`Reiteraktiv${s}`);
+	await page.getByText(`Reiteraktiv${s} Testschueler`).first().click();
 
 	await expect(page.getByRole('button', { name: 'Stammdaten & Adresse' })).toHaveClass(
 		/border-blue-600/

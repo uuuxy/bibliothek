@@ -106,7 +106,11 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
 	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
 	// Postgres lehnt sonst überzählige Bind-Parameter ab.
-	bedingungen := []string{"s.deleted_at IS NULL"}
+	// Abgänger haben ihren eigenen Reiter samt Endpunkt (/api/abgaenger) — in
+	// „Aktive Schüler" gehören sie nicht (Fund 31.08.2026: sie standen als
+	// „Gesperrt" ohne erkennbaren Grund zwischen den Aktiven; nach einem
+	// Schuljahreswechsel wäre das ein ganzer Jahrgang Karteileichen).
+	bedingungen := []string{"s.deleted_at IS NULL", "COALESCE(s.ist_abgaenger, false) = false"}
 	args := []any{}
 	praefix := ""
 	limit := ""
