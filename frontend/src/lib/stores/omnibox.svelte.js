@@ -46,6 +46,13 @@ export function createOmniboxStore() {
 	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
 	let errorMessageTimer = null;
 	let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
+	// Abholfach-Hinweis zum AKTIVEN Schüler (Betreiber-Entscheidung 01.09.2026):
+	// beim Ausweis-Scan liefert der Server die abholbereiten Vormerkungen mit —
+	// die Mitarbeiterin greift ins Abholfach, solange der Schüler vor ihr steht.
+	// Wird bei JEDEM Setzen von activeStudent mit überschrieben (?? []), damit
+	// kein Hinweis eines vorherigen Schülers stehen bleibt (bekannte Bugklasse
+	// „nie zurückgesetzter UI-State").
+	let abholbereit = $state(/** @type {{titel: string, bereitgestellt_bis?: string}[]} */ ([]));
 	/**
 	 * Geräte-Scan mit Zubehör: Der Server unterbricht mit type=geraet_check und
 	 * wartet auf die Bestätigung der Checkliste. Hier liegt die Anfrage, bis der
@@ -238,6 +245,7 @@ export function createOmniboxStore() {
 
 		if (data.student && !activeStudent && !activeTeacher) {
 			activeStudent = data.student;
+			abholbereit = data.abholbereit ?? [];
 		} else if (data.teacher && !activeStudent && !activeTeacher) {
 			activeTeacher = data.teacher;
 		}
@@ -247,6 +255,7 @@ export function createOmniboxStore() {
 	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '') {
 		if (data.type === 'student') {
 			activeStudent = data.student;
+			abholbereit = data.abholbereit ?? [];
 			activeTeacher = null;
 			triggerScreenFlash('success');
 			playSoundSuccess();
@@ -433,6 +442,9 @@ export function createOmniboxStore() {
 		},
 		set activeStudent(v) {
 			activeStudent = v;
+		},
+		get abholbereit() {
+			return abholbereit;
 		},
 		get activeTeacher() {
 			return activeTeacher;

@@ -1,5 +1,4 @@
 <script>
-	import { AlertTriangle } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import StudentProfile from './StudentProfile.svelte';
 	import CameraScanner from './CameraScanner.svelte';
@@ -7,6 +6,7 @@
 	import OmniboxResults from './components/OmniboxResults.svelte';
 	import OmniboxTeacherCard from './OmniboxTeacherCard.svelte';
 	import OmniboxVormerkungAlert from './components/OmniboxVormerkungAlert.svelte';
+	import OmniboxThekeHinweise from './components/OmniboxThekeHinweise.svelte';
 	import OmniboxBlockAlert from './components/OmniboxBlockAlert.svelte';
 	import OmniboxChecklistDialog from './components/OmniboxChecklistDialog.svelte';
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
@@ -218,22 +218,8 @@
 		{/if}
 
 		{#if omniboxStore.activeStudent}
-			{#if omniboxStore.lastFremdrueckgabe}
-				<!-- Eine Betonung, nicht vier: Der entscheidende Teil ist, auf wen NICHT
-			     gebucht wurde. Wenn jedes zweite Wort fett ist, betont keines mehr. -->
-				<div
-					class="w-full max-w-xl p-3 bg-amber-50 border border-amber-100 text-amber-800 text-xs flex items-center space-x-2 no-print mb-2"
-				>
-					<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
-					<span
-						>Fremdrückgabe: Buch war auf {omniboxStore.lastFremdrueckgabe.vorbesitzerName} verbucht und
-						wurde dort zurückgegeben —
-						<strong class="font-medium"
-							>nicht auf {omniboxStore.activeStudent.vorname} gebucht</strong
-						>. Erneut scannen, um es auszuleihen.</span
-					>
-				</div>
-			{/if}
+			<!-- Fremdrückgabe- und Abholfach-Banner (200-Zeilen-Regel: eigene Datei). -->
+			<OmniboxThekeHinweise />
 			<StudentProfile
 				bind:this={studentProfileComponent}
 				student={omniboxStore.activeStudent}

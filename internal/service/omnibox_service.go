@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -48,6 +49,19 @@ type OmniboxResult struct {
 	// RegalfreigabeBarcode: reserviertes Exemplar, das zurück ins Regal muss (der
 	// Schüler hat ein anderes Exemplar desselben Titels genommen).
 	RegalfreigabeBarcode string
+	// Abholbereit: Vormerkungen des GESCANNTEN Schülers, deren Buch im Abholfach
+	// liegt (Betreiber-Entscheidung 01.09.2026). Schüler scannen nicht selbst —
+	// der Hinweis sagt der Mitarbeiterin am Terminal, dass sie ins Abholfach
+	// greifen soll, solange der Schüler vor ihr steht. Ohne ihn läge das Buch im
+	// Fach, bis die 3-Tage-Frist es still an den Nächsten weiterreicht.
+	Abholbereit []AbholbereiteVormerkung
+}
+
+// AbholbereiteVormerkung ist ein Eintrag des Abholfach-Hinweises: Titel und
+// Abholfrist — bewusst ohne IDs, die Theke braucht nur den Griff ins Fach.
+type AbholbereiteVormerkung struct {
+	Titel             string
+	BereitgestelltBis *time.Time
 }
 
 // OmniboxQuery bündelt die Eingabe und den Sitzungskontext eines Omnibox-Requests,
@@ -217,7 +231,47 @@ func (s *defaultOmniboxService) handleStudentAction(ctx context.Context, query s
 	}
 	resp.Type = "student"
 	resp.Student = student
+	resp.Abholbereit = s.ladeAbholbereiteVormerkungen(ctx, student.ID)
 	return nil
+}
+
+// ladeAbholbereiteVormerkungen holt die abholbereiten Vormerkungen des Schülers
+// für den Abholfach-Hinweis. Ein Fehler hier bricht den Scan NICHT ab — die
+// Theke wäre sonst wegen eines Hinweises arbeitsunfähig — sondern wird geloggt
+// (dieselbe Abwägung wie resolveFotoURL im Profil).
+func (s *defaultOmniboxService) ladeAbholbereiteVormerkungen(ctx context.Context, schuelerID string) []AbholbereiteVormerkung {
+	// Die Unit-Tests der Scan-Weiche bauen den Service ohne Pool (Stub-Repos);
+	// dort gibt es keine Vormerkungen und nichts zu laden.
+	if s.pool == nil {
+		return nil
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT t.titel, v.bereitgestellt_bis
+		FROM vormerkungen v
+		JOIN buecher_titel t ON t.id = v.titel_id
+		WHERE v.schueler_id = $1 AND v.status = 'abholbereit'
+		ORDER BY v.bereitgestellt_bis ASC NULLS LAST
+		LIMIT 5`, schuelerID)
+	if err != nil {
+		log.Printf("omnibox: Abholfach-Hinweis nicht ladbar für Schüler %s: %v", schuelerID, err)
+		return nil
+	}
+	defer rows.Close()
+
+	var out []AbholbereiteVormerkung
+	for rows.Next() {
+		var v AbholbereiteVormerkung
+		if err := rows.Scan(&v.Titel, &v.BereitgestelltBis); err != nil {
+			log.Printf("omnibox: Abholfach-Hinweis unlesbar: %v", err)
+			return nil
+		}
+		out = append(out, v)
+	}
+	if err := rows.Err(); err != nil {
+		log.Printf("omnibox: Abholfach-Hinweis unvollständig: %v", err)
+		return nil
+	}
+	return out
 }
 
 // handleTeacherAction lädt die Lehrerdaten bei Scan eines Lehrer-Barcodes.

@@ -217,7 +217,20 @@ func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionRespons
 		VormerkungTitel:      res.VormerkungTitel,
 		VormerkungUser:       res.VormerkungUser,
 		RegalfreigabeBarcode: res.RegalfreigabeBarcode,
+		Abholbereit:          zuAbholbereitInfos(res.Abholbereit),
 	}
+}
+
+// zuAbholbereitInfos überträgt den Abholfach-Hinweis in die API-Form.
+func zuAbholbereitInfos(vs []service.AbholbereiteVormerkung) []AbholbereitInfo {
+	if len(vs) == 0 {
+		return nil
+	}
+	out := make([]AbholbereitInfo, 0, len(vs))
+	for _, v := range vs {
+		out = append(out, AbholbereitInfo{Titel: v.Titel, BereitgestelltBis: v.BereitgestelltBis})
+	}
+	return out
 }
 
 // ActionBatchHandler processes a batch of Omnibox requests.

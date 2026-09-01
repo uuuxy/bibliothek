@@ -54,6 +54,17 @@ type ActionResponse struct {
 	// RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the
 	// regular shelf because the student took a different copy of the same title.
 	RegalfreigabeBarcode string `json:"regalfreigabe_barcode,omitempty"`
+	// Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung
+	// 01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten
+	// Schüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;
+	// PII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).
+	Abholbereit []AbholbereitInfo `json:"abholbereit,omitempty"`
+}
+
+// AbholbereitInfo ist ein Eintrag des Abholfach-Hinweises.
+type AbholbereitInfo struct {
+	Titel             string     `json:"titel"`
+	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
 // ActionEvent represents the data broadcasted to SSE clients on updates.
