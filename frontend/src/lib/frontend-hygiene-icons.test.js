@@ -20,7 +20,10 @@ const SVG = /<svg[\s>]/;
 // alles andere im Baum ist 24×24 (bzw. 20×20), also eine Symbolfläche.
 // Diese Liste schrumpft NICHT; sie ist die Ausnahme, nicht der Rückstand.
 const ZEICHNUNGEN = [
-	'src/lib/components/stats/StatsTrendChart.svelte' // Verlaufsgraph, viewBox aus den Daten
+	'src/lib/components/stats/StatsTrendChart.svelte', // Verlaufsgraph, viewBox aus den Daten
+	// Kartenhintergründe der Design-Vorlagen (Kopfband, Wellen-Motiv) als data:-URIs —
+	// Bilder auf dem Ausweis, keine Bauteil-Symbole (dasselbe Muster wie BuchCoverUpload).
+	'src/lib/designer/ausweisVorlagen.js'
 ];
 
 // ── Ratsche ─────────────────────────────────────────────────────────────────

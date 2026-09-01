@@ -1,5 +1,6 @@
 import { apiFetch } from '../apiFetch.js';
 import { applyDesign, resetDesign, wendeSchulstammdatenAn } from './idDesignerStore.svelte.js';
+import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
 
 /**
  * Laden, Speichern und Zurücksetzen des zentral abgelegten Ausweis-Designs.
@@ -14,7 +15,7 @@ import { applyDesign, resetDesign, wendeSchulstammdatenAn } from './idDesignerSt
  * Lebenszyklus, der ihn wieder abräumt.
  */
 
-/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean> }} */
+/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
 export function erzeugeDesignAblage() {
 	/** @type {'idle'|'saving'|'saved'|'error'} */
 	let zustand = $state('idle');
@@ -104,6 +105,29 @@ export function erzeugeDesignAblage() {
 			// erneuten Aufruf würfe „Standardwerte wiederherstellen" einen bereits
 			// geheilten echten Schulnamen wieder auf den Platzhalter zurück, ohne dass er
 			// sich von selbst erneut heilt.
+			await heileSchulstammdaten();
+			return true;
+		},
+
+		/**
+		 * Füllt beide Seiten mit einer Design-Vorlage (ausweisVorlagen.js). Gleiche
+		 * Spielregeln wie zuruecksetzen(): Rückfrage ist Pflicht (der Auto-Save trägt das
+		 * Ergebnis auf ALLE Arbeitsplätze), und die Vorlagen-Platzhalter werden sofort
+		 * mit den echten Schul-Stammdaten geheilt.
+		 *
+		 * @param {string} kennung
+		 * @returns {Promise<boolean>} true, wenn angewendet (Aufrufer räumt seine
+		 *   Elementauswahl ab — die bisherigen IDs gibt es danach nicht mehr).
+		 */
+		async vorlageAnwenden(kennung) {
+			const name = AUSWEIS_VORLAGEN.find((v) => v.value === kennung)?.label ?? kennung;
+			const ok = window.confirm(
+				`Design-Vorlage „${name}" anwenden?\n\n` +
+					'Vorder- und Rückseite werden ersetzt; eigene Anpassungen gehen verloren — ' +
+					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.'
+			);
+			if (!ok) return false;
+			if (!wendeVorlageAn(kennung)) return false;
 			await heileSchulstammdaten();
 			return true;
 		}

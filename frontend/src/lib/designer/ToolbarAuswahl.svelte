@@ -9,26 +9,53 @@
      (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler sichtbar ist. -->
 <script>
 	import Select from '../components/ui/Select.svelte';
+	import { AUSWEIS_VORLAGEN } from './ausweisVorlagen.js';
 
 	/**
 	 * @type {{
 	 *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
 	 *   currentTheme: string, themes: Array<{ value: string, name: string }>,
 	 *   setTheme: (v: string) => void,
+	 *   onVorlage: (kennung: string) => void,
 	 *   zoom: number, onZoom: (v: number) => void
 	 * }}
 	 */
-	let { barcodeType, onBarcodeType, currentTheme, themes, setTheme, zoom, onZoom } = $props();
+	let { barcodeType, onBarcodeType, currentTheme, themes, setTheme, onVorlage, zoom, onZoom } =
+		$props();
 
 	const BARCODE_TYPEN = [
 		{ value: 'code39', label: 'Code39 (1D)' },
 		{ value: 'qr', label: 'QR-Code (2D)' }
 	];
+
+	// Das Vorlagen-Dropdown ist eine AKTION, kein Zustand: Nach der Wahl springt es auf
+	// den Platzhalter zurück, statt „aktiv" zu bleiben — die Vorlage ist danach ja nur
+	// noch der Ausgangspunkt für freies Editieren.
+	let vorlageWahl = $state('');
+
+	/** @param {string} kennung */
+	function vorlageGewaehlt(kennung) {
+		onVorlage(kennung);
+		vorlageWahl = '';
+	}
 </script>
 
 <div
-	class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4"
+	class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4"
 >
+	<div class="space-y-1">
+		<!-- text-on-surface-variant statt des slate-500 der Nachbarzellen: Die Farb-Ratsche
+	     lässt keine NEUEN Paletten-Fundstellen zu; Neues gehört auf die M3-Rollen. -->
+		<span class="text-xs font-medium text-on-surface-variant">Design-Vorlage</span>
+		<Select
+			bind:value={vorlageWahl}
+			options={AUSWEIS_VORLAGEN}
+			placeholder="Vorlage wählen …"
+			onchange={vorlageGewaehlt}
+			aria-label="Design-Vorlage"
+		/>
+	</div>
+
 	<div class="space-y-1">
 		<span class="text-xs font-medium text-slate-500">Barcode-Typ</span>
 		<Select

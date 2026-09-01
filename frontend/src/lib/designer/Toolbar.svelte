@@ -12,6 +12,7 @@
 	 * `addTextElement` and `addImageElements` from the shared store.
 	 */
 	import { idStore, addTextElement, addImageElements } from './idDesignerStore.svelte.js';
+	import { WALDGRUEN_THEME } from './ausweisVorlagen.js';
 	import Button from '../components/ui/Button.svelte';
 	import ToolbarAuswahl from './ToolbarAuswahl.svelte';
 	import ToolbarDruck from './ToolbarDruck.svelte';
@@ -26,6 +27,7 @@
 	 *   printMode: 'card'|'etikett', onPrintMode: (m: 'card'|'etikett') => void,
 	 *   onPrint: () => void,
 	 *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
+	 *   onVorlage: (kennung: string) => void,
 	 *   previewStudent: any,
 	 * }}
 	 */
@@ -39,6 +41,7 @@
 		onPrint,
 		barcodeType,
 		onBarcodeType,
+		onVorlage,
 		previewStudent
 	} = $props();
 
@@ -58,7 +61,10 @@
 		{
 			value: 'bg-linear-to-tr from-amber-100 to-orange-100 text-amber-950 border-amber-300',
 			name: 'Bernstein'
-		}
+		},
+		// Dunkler Verlauf der Vorlage „Waldgrün" — steht mit in der Liste, damit das
+		// Hintergrund-Dropdown nach dem Anwenden der Vorlage eine Auswahl anzeigt.
+		{ value: WALDGRUEN_THEME, name: 'Waldgrün' }
 	];
 
 	/** Current theme for the active side. */
@@ -101,6 +107,7 @@
 		{currentTheme}
 		{themes}
 		{setTheme}
+		{onVorlage}
 		{zoom}
 		{onZoom}
 	/>

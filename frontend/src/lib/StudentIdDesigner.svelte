@@ -81,6 +81,11 @@
 		if (await ablage.zuruecksetzen()) selectedId = null;
 	}
 
+	/** @param {string} kennung */
+	async function vorlageAnwenden(kennung) {
+		if (await ablage.vorlageAnwenden(kennung)) selectedId = null;
+	}
+
 	// Etikettenbogen: dasselbe PDF wie der echte Bogen, nur mit einem Muster-Schüler.
 	// Kartendrucker: die Druck-CSS des Browsers, wie bisher.
 	async function triggerPrint() {
@@ -138,6 +143,7 @@
 		onBarcodeType={(t) => {
 			idStore.barcodeType = t;
 		}}
+		onVorlage={vorlageAnwenden}
 		previewStudent={muster}
 	/>
 
