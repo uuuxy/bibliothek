@@ -113,6 +113,12 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "view_graduates", true},
 	{"ADMIN", "view_stats", true},
 	{"ADMIN", "audit_logs", true},
+	// audit_details: die Tresen-Auskunft (api/audit_tresen_auskunft.go) — der eine
+	// zweckgebundene Leseweg in audit_log.details. Bewusst eigenes Recht statt
+	// audit_logs: Das Logbuch ist Stufe 0, die Auskunft nennt Namen (Stufe 2).
+	// Neue Rechte erreichen Bestandsanlagen über den Seed (fehlende Zeile wird
+	// eingefügt — DO NOTHING greift nur bei vorhandenen).
+	{"ADMIN", "audit_details", true},
 	{"ADMIN", "manage_users", true},
 	{"ADMIN", "manage_settings", true},
 	{"ADMIN", "manage_students_admin", true},
@@ -137,6 +143,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"MITARBEITER", "view_graduates", true},
 	{"MITARBEITER", "view_stats", true},
 	{"MITARBEITER", "audit_logs", false},
+	{"MITARBEITER", "audit_details", false},
 	{"MITARBEITER", "manage_users", false},
 	{"MITARBEITER", "manage_settings", false},
 	{"MITARBEITER", "manage_students_admin", false},
@@ -168,6 +175,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"KOLLEGIUM", "view_graduates", false},
 	{"KOLLEGIUM", "view_stats", false},
 	{"KOLLEGIUM", "audit_logs", false},
+	{"KOLLEGIUM", "audit_details", false},
 	{"KOLLEGIUM", "manage_users", false},
 	{"KOLLEGIUM", "manage_settings", false},
 	{"KOLLEGIUM", "manage_students_admin", false},
@@ -206,6 +214,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"HELFER", "view_graduates", false},
 	{"HELFER", "view_stats", false},
 	{"HELFER", "audit_logs", false},
+	{"HELFER", "audit_details", false},
 	{"HELFER", "manage_users", false},
 	{"HELFER", "manage_settings", false},
 	{"HELFER", "manage_students_admin", false},

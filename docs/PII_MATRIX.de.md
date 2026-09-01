@@ -5,8 +5,9 @@ Jede HTTP-Route des Systems ist hier nach Schülerdaten eingestuft. Das Gate
 `api/pii_matrix_test.go` hält die Tabelle mit dem Code deckungsgleich — eine neue
 Route ohne Zeile hier wird rot, eine Zeile ohne Route ebenso, und das dokumentierte
 Recht wird gegen die Registrierung geprüft. **Die Stufe selbst prüft kein Parser:**
-Wer eine Zeile anlegt, hat den Handler gelesen. Stand: 19.08.2026 (alle 6 Abschnitte
-Handler für Handler erhoben und stichprobenartig am laufenden System belegt).
+Wer eine Zeile anlegt, hat den Handler gelesen. Stand: 01.09.2026 (erhoben 19.08.2026,
+alle 6 Abschnitte Handler für Handler und stichprobenartig am laufenden System belegt;
+01.09.: Tresen-Auskunft ergänzt).
 
 **Stufen** (bemessen an dem, was das Recht der Zeile ALLEIN öffnet — was erst ein
 zusätzliches `view_students` freischaltet, steht als Anmerkung):
@@ -181,6 +182,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/admin/system/backup-status` | manage_settings | 0 | Backup-Status |
 | `GET /api/admin/system/betriebsbereitschaft` | manage_settings | 0 | Befunde: Klassennamen, Zähler |
 | `GET /api/audit` | audit_logs | 0 | Audit ohne details; Bearbeiter mit Vor-/Nachname (Personal, keine Schülerdaten) |
+| `GET /api/audit/tresen-auskunft` | audit_details | 2 | Zweckgebundener Leseweg in audit_log.details (Betreiber-Entscheidung 01.09.2026): Barcode → Ausleihhistorie mit Entleiher-Klarname + Klasse. Ab Werk nur ADMIN; jeder Abruf protokolliert sich selbst in audit_logs (TRESEN_AUSKUNFT, mit IP) |
 | `GET /api/mail-templates` | manage_settings | 0 | Vorlagentexte |
 | `PUT /api/mail-templates/{id}` | manage_settings | 0 | Vorlagentexte |
 | `GET /api/reports/overdue-pdf` | view_students | 2 | Elternbriefe: Name + Überfälliges |

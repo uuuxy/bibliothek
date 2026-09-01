@@ -129,6 +129,11 @@ export const permissionsMetadata = [
 				desc: 'Allgemeines Logbuch der Systemereignisse einsehen (das Admin-Audit-Log zusätzlich: „Benutzer & Rechte verwalten")'
 			},
 			{
+				key: 'audit_details',
+				label: 'Tresen-Auskunft (gelöschte Exemplare)',
+				desc: 'Zu einem Buch-Barcode die protokollierte Ausleihhistorie nachschlagen — auch wenn das Exemplar längst gelöscht ist. Nennt Entleiher mit Namen; jeder Abruf wird selbst protokolliert. Der Reiter erscheint unter System-Logs.'
+			},
+			{
 				key: 'manage_settings',
 				label: 'Einstellungen verwalten',
 				desc: 'Alle Systemeinstellungen (Schule, Fristen, Mahnwesen, Bestellwesen, Datenschutz, Erreichbarkeit), Mail-Konfiguration und -Vorlagen, Ausweislayout, Klassen→Lehrkraft-Zuordnung, Backup-Status und Betriebsbereitschaft — öffnet den Menüpunkt „Einstellungen"'

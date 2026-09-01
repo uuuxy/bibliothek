@@ -47,6 +47,9 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 
 	// Audit & Transactions
 	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))
+	// Der EINE zweckgebundene Leseweg in audit_log.details (Tresen-Fall) — eigenes
+	// Recht, jeder Abruf protokolliert sich selbst. Siehe api/audit_tresen_auskunft.go.
+	mux.Handle("GET /api/audit/tresen-auskunft", s.RequirePermission("audit_details")(s.TresenAuskunftHandler(auditRepo)))
 
 	// Mail Templates
 	mux.Handle("GET /api/mail-templates", s.RequirePermission("manage_settings")(s.GetMailTemplatesHandler()))
