@@ -37,12 +37,16 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
-Leer (Stand 01.09. früh; der Abgänger-in-Aktivliste-Fund von der Duc-Bauer-Spur
-ist am Live-Pfad rot nachgestellt und behoben — Gate
-`aktivliste-ohne-abgaenger.spec.js` prüft beide Richtungen). Die Abarbeitung vom 31.08.2026 (7 Posten, je ein Commit) steht in der
-Git-Historie dieser Datei; dabei zusätzlich gefunden und behoben: der
-Etiketten-Druck-E2E war seit Migration 071 still rot (Seed schrieb den alten
-Magie-Text statt `bestellstatus`).
+| Fund | Einordnung |
+| ---- | ---------- |
+| `DeleteTitle` löscht Exemplare ohne Barcode-Snapshot | B (01.09.): Die Tresen-Auskunft findet gelöschte Exemplare über `details->>'barcode_id'` der Lösch-Snapshots — die schreiben nur `DeleteCopy` und das Verlust-Löschen. Wer einen ganzen TITEL löscht, hinterlässt für dessen Exemplare keinen Barcode-Snapshot; solche Barcodes bleiben in der Auskunft unauffindbar. Fix: `DeleteTitle` schreibt je gelöschtem Exemplar denselben Snapshot wie die Geschwister-Pfade. |
+| PII-Antwort-Gate deckt nur GET | B/Prüfvorrat (01.09., steht auch im Gate-Kopf): Lesende POST-Antworten — vor allem `POST /api/action` (Theken-DTO, Stufe 1) und `POST /api/lusd/preview` (Stufe 2) — bleiben Handarbeit. Erweiterung um nebenwirkungsarme POSTs wäre der nächste Schritt derselben Methode. |
+
+Davor: Leer seit 01.09. früh (Abgänger-in-Aktivliste behoben, Gate
+`aktivliste-ohne-abgaenger.spec.js`). Die Abarbeitung vom 31.08.2026 (7 Posten,
+je ein Commit) steht in der Git-Historie dieser Datei; dabei zusätzlich gefunden
+und behoben: der Etiketten-Druck-E2E war seit Migration 071 still rot (Seed
+schrieb den alten Magie-Text statt `bestellstatus`).
 
 ## Offen — Entscheidung nötig (Peter)
 
