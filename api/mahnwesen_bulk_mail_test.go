@@ -19,6 +19,23 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
+// smtpKonfigAusUmgebung pinnt den paketglobalen smtpKonfigLader für die Testdauer
+// auf die Umgebung und stellt ihn danach zurück (Muster wie mail_sender_test.go).
+//
+// Nötig seit dem 01.09.2026: Jeder Test, der NewServer aufruft, bindet den Lader
+// per BindeSMTPKonfigAnDatenbank an SEINEN Pool — und die Bindung überlebt ihn.
+// Die Umgebungs-Tests hier waren nur grün, solange in der Dateisortierung des
+// Binaries KEIN NewServer-Test vor ihnen lief; der erste (action_batch_decode)
+// ließ sie kippen: Der Lader las die Seed-Domäne aus der Test-DB statt SMTP_FROM,
+// und die pgxmock-Fälle bekamen eine nie erwartete Konfigurations-Query
+// (Bugklasse „Grün aus Umgebungsgunst" — Reihenfolge als unsichtbare Annahme).
+func smtpKonfigAusUmgebung(t *testing.T) {
+	t.Helper()
+	alt := smtpKonfigLader
+	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }
+	t.Cleanup(func() { smtpKonfigLader = alt })
+}
+
 // Während einer Ferien-/Schließzeit MUSS der Massenversand mit 403 abbrechen und
 // nichts senden — sonst gingen Mahnungen in den Ferien raus.
 func TestSendBulkOverdueHandler_FerienGesperrt(t *testing.T) {
@@ -50,6 +67,7 @@ func TestSendBulkOverdueHandler_FerienGesperrt(t *testing.T) {
 // Ohne konfigurierten Mailserver (SMTP_HOST leer) → 503, kein Versand. Der Check
 // greift NACH der Ferien-Prüfung und VOR jeder Klassen-Query.
 func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
+	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_HOST", "")
 
 	mock, err := pgxmock.NewPool()
@@ -350,6 +368,7 @@ func TestZieleAufOverride_LenktAlleKlassenUm(t *testing.T) {
 // Eine leere Auswahl darf nicht erst in der DB auffallen: Der Handler weist sie ab,
 // bevor er auch nur eine Query absetzt.
 func TestSendBulkOverdueHandler_LeereAuswahlOhneDBZugriff(t *testing.T) {
+	smtpKonfigAusUmgebung(t)
 	for _, body := range []string{`{"klassen":[]}`, `{"klassen":["5a"],"override_email":"kein-mail"}`} {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
@@ -417,6 +436,7 @@ func TestLogKlassenVersandAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T)
 // mitzutippen ist Fehlerquelle — „mueller" muss reichen. Vollständige Adressen
 // bleiben unangetastet, damit der Versand an externe Stellen möglich bleibt.
 func TestErgaenzeSchulDomain(t *testing.T) {
+	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")
 
 	tests := []struct{ eingabe, want string }{
@@ -435,6 +455,7 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 // Ohne konfigurierten Absender wird NICHT geraten: Die Eingabe läuft unverändert in
 // die Adressprüfung und scheitert dort mit einer klaren Meldung.
 func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
+	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_FROM", "")
 	t.Setenv("SMTP_USER", "")
 
@@ -445,6 +466,7 @@ func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
 
 // Der Weg über den echten Body: „mueller" kommt als vollständige Adresse heraus.
 func TestParseKlassenVersandRequest_ErgaenztDomaene(t *testing.T) {
+	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_FROM", "bibliothek@philipp-reis-schule.de")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail",
