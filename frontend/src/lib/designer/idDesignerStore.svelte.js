@@ -1,4 +1,5 @@
 import { ETIKETT_FORMATE } from '../etikettformate.js';
+import { heileAltBaender } from './idDesignAltbestand.js';
 
 /**
  * @file idDesignerStore.svelte.js
@@ -524,7 +525,11 @@ function applySeite(ziel, quelle) {
 		// Elemente aus der Datenbank lädt. Ohne diese Zeile trüge jede bestehende
 		// Installation die Klassenzeile für immer weiter — derselbe Weg, auf dem schon
 		// der Musterstadt-Kopf hängenblieb.
-		ziel.elements = quelle.elements.filter((/** @type {any} */ el) => el?.type !== 'details');
+		// Und aus demselben Grund werden Bild-Bänder früherer Vorlagen-Fassungen hier in
+		// Farbflächen übersetzt (idDesignAltbestand.js).
+		ziel.elements = heileAltBaender(
+			quelle.elements.filter((/** @type {any} */ el) => el?.type !== 'details')
+		);
 	}
 	if (typeof quelle.theme === 'string' && quelle.theme.trim() !== '') {
 		ziel.theme = quelle.theme;

@@ -9,7 +9,7 @@
      (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler sichtbar ist. -->
 <script>
 	import Select from '../components/ui/Select.svelte';
-	import { AUSWEIS_VORLAGEN } from './ausweisVorlagen.js';
+	import VorlagenGalerie from './VorlagenGalerie.svelte';
 
 	/**
 	 * @type {{
@@ -27,17 +27,6 @@
 		{ value: 'code39', label: 'Code39 (1D)' },
 		{ value: 'qr', label: 'QR-Code (2D)' }
 	];
-
-	// Das Vorlagen-Dropdown ist eine AKTION, kein Zustand: Nach der Wahl springt es auf
-	// den Platzhalter zurück, statt „aktiv" zu bleiben — die Vorlage ist danach ja nur
-	// noch der Ausgangspunkt für freies Editieren.
-	let vorlageWahl = $state('');
-
-	/** @param {string} kennung */
-	function vorlageGewaehlt(kennung) {
-		onVorlage(kennung);
-		vorlageWahl = '';
-	}
 </script>
 
 <div
@@ -47,13 +36,7 @@
 		<!-- text-on-surface-variant statt des slate-500 der Nachbarzellen: Die Farb-Ratsche
 	     lässt keine NEUEN Paletten-Fundstellen zu; Neues gehört auf die M3-Rollen. -->
 		<span class="text-xs font-medium text-on-surface-variant">Design-Vorlage</span>
-		<Select
-			bind:value={vorlageWahl}
-			options={AUSWEIS_VORLAGEN}
-			placeholder="Vorlage wählen …"
-			onchange={vorlageGewaehlt}
-			aria-label="Design-Vorlage"
-		/>
+		<VorlagenGalerie {onVorlage} />
 	</div>
 
 	<div class="space-y-1">
