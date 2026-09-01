@@ -4,10 +4,16 @@ Abschluss von Befund **F2** der unabhängigen Prüfung (`bewertung/datenbank-pru
 Jede HTTP-Route des Systems ist hier nach Schülerdaten eingestuft. Das Gate
 `api/pii_matrix_test.go` hält die Tabelle mit dem Code deckungsgleich — eine neue
 Route ohne Zeile hier wird rot, eine Zeile ohne Route ebenso, und das dokumentierte
-Recht wird gegen die Registrierung geprüft. **Die Stufe selbst prüft kein Parser:**
-Wer eine Zeile anlegt, hat den Handler gelesen. Stand: 01.09.2026 (erhoben 19.08.2026,
-alle 6 Abschnitte Handler für Handler und stichprobenartig am laufenden System belegt;
-01.09.: Tresen-Auskunft ergänzt).
+Recht wird gegen die Registrierung geprüft. **Die Stufe der GET-Routen ist seit dem
+01.09.2026 gemessen, nicht nur behauptet:** `api/pii_antwort_gate_pg_test.go` ruft
+jede GET-Route über den echten Router mit genau dem Recht ihrer Zeile auf und prüft
+die Antwort (inkl. entpackter PDF-Ströme) gegen Kanarienwerte je Stufe — nichts
+oberhalb der dokumentierten Stufe darf erscheinen, Schlüsselrouten tragen
+Positiv-Kontrollen gegen leere Antworten. Für Nicht-GET-Routen (Schreibpfade)
+bleibt die Stufe Handarbeit: Wer eine Zeile anlegt, hat den Handler gelesen.
+Stand: 01.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
+Antwort-Gate eingezogen).
 
 **Stufen** (bemessen an dem, was das Recht der Zeile ALLEIN öffnet — was erst ein
 zusätzliches `view_students` freischaltet, steht als Anmerkung):

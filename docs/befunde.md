@@ -46,9 +46,11 @@ Magie-Text statt `bestellstatus`).
 
 ## Offen — Entscheidung nötig (Peter)
 
-| Fund | Worum es geht |
-| ---- | ------------- |
-| PII-Matrix ist eine Zusage, die nur ein Dokument behauptet | Das PII-Gate prüft Route/Recht/Zeilen-Existenz, nicht den Antwortinhalt. Ein Gate, das Antwortfelder gegen die Matrix hält, wäre der nächste methodische Schritt — eigener Anlauf. |
+Leer (Stand 01.09.). Die drei Posten vom 31.08. sind nach Peters Freigabe alle
+umgesetzt: `sonar.projectVersion` (Scan-Skript), die Tresen-Auskunft
+(zweckgebundener Leseweg in `audit_log.details`, eigenes Recht `audit_details`)
+und das PII-Antwort-Gate (`api/pii_antwort_gate_pg_test.go` — die Stufen der
+GET-Routen sind jetzt gemessen, nicht nur behauptet).
 
 ## Beobachten (nichts zu tun)
 
@@ -98,4 +100,4 @@ Merkposten für lokale PG-Testläufe: `pg_dump` 18.6 liegt in
 `/opt/homebrew/opt/libpq/bin` und muss vor den PATH (`brew`-Standard ist 16.15) —
 sonst scheitern die zwei Backup-Proben-Tests scheinbar, wie am 31.08. passiert.
 
-Stand: 2026-08-31
+Stand: 2026-09-01

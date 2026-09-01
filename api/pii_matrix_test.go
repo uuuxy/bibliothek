@@ -21,9 +21,11 @@ import (
 //     entsprechen — die Matrix kann nicht mehr Schutz behaupten, als da ist.
 //  4. Öffentliche Routen (ohne Sitzung erreichbar) müssen Stufe 0 sein.
 //
-// Die STUFE selbst (was die Antwort wirklich enthält) prüft kein Parser — sie ist
-// beim Anlegen der Zeile von Hand am Handler zu verifizieren. Das Gate erzwingt,
-// DASS diese Verifikation stattfindet, nicht ihr Ergebnis.
+// Die STUFE selbst (was die Antwort wirklich enthält) prüft für GET-Routen seit
+// dem 01.09.2026 das Antwort-Gate (pii_antwort_gate_pg_test.go, Kanarienwerte am
+// echten Router). Für Nicht-GET-Routen bleibt sie beim Anlegen der Zeile von Hand
+// am Handler zu verifizieren — dieses Gate erzwingt, DASS die Einordnung
+// stattfindet, das Antwort-Gate misst ihr Ergebnis auf dem Lesepfad.
 
 type matrixZeile struct {
 	Route  string // "GET /api/vormerkungen"
