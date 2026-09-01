@@ -1,6 +1,6 @@
 # Master-Fahrplan: Offene Punkte bis Go-Live
 
-> Stand **2026-08-23**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
+> Stand **2026-09-01**. Nur was offen ist — die Historie steht in `git log`, ausführlicher
 > als jede gepflegte Liste. Radar-Referenz: [`api_inventar.md`](api_inventar.md)
 > (neu erzeugen mit `./scripts/api_inventar.sh`).
 
@@ -11,7 +11,7 @@
 | 1 | **Peter** | Littera-Backup, Prod-Secrets, IMAP/SMTP, Restore-Probe, Branch-Protection | Abschnitte 1 und 3 hier |
 | 2 | **Schule / DSB** | Verarbeitungsverzeichnis, Datenschutzhinweis, Foto-Frage, IT-Sicherheitskonzept | [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md) B1–B7 |
 | 3 | **Sekretariat** | drei Abnahmen à ~10 Minuten | Abschnitt 2 hier, Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md) |
-| 4 | **Code** | vier Aufräumpunkte ohne Eile | [befunde.md](befunde.md), Abschnitt „Offen" |
+| 4 | **Code** | nichts — das Befund-Register ist leer (Stand 01.09.2026); übrig sind nur C-Posten ohne Anlass | [befunde.md](befunde.md) |
 
 Nichts davon blockiert den laufenden Betrieb.
 

@@ -47,15 +47,15 @@ für Bibliothekspersonal gibt es das [Benutzerhandbuch](docs/HANDBUCH.md).
 
 | | |
 |---|---|
-| Backend | Go 1.26, `net/http` mit Methoden-Routing, pgx |
-| Datenbank | PostgreSQL, 89 nummerierte Migrationen |
+| Backend | Go 1.27, `net/http` mit Methoden-Routing, pgx |
+| Datenbank | PostgreSQL, 96 nummerierte Migrationen |
 | Frontend | Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript |
 | Anmeldung | IMAP gegen den Schul-Mailserver; es wird **kein** Benutzerpasswort gespeichert |
 | Betrieb | Docker Compose hinter Caddy |
 | Lizenz | [EUPL-1.2](LICENSE) |
 
-Umfang, gemessen am 23.08.2026: rund 50.000 Zeilen Go im Produktivcode, dazu 47.000
-Zeilen in 337 Testdateien; etwa 33.000 Zeilen Svelte/JavaScript und 70 e2e-Dateien.
+Umfang, gemessen am 01.09.2026: rund 52.000 Zeilen Go im Produktivcode, dazu 53.500
+Zeilen in 374 Testdateien; etwa 35.000 Zeilen Svelte/JavaScript und 79 e2e-Dateien.
 
 Diese Zahlen altern. Die vorige Fassung stand auf dem Stand vom Juli und lag bei den
 Testzeilen um 47 % daneben — deshalb steht hier das Messdatum und darunter der Befehl,

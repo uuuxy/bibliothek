@@ -225,6 +225,15 @@ Um Nachvollziehbarkeit bei sensiblen Schuldaten zu garantieren, gibt es ein Audi
 - Jede administrative Aktion (Benutzer gelöscht, Schadensfall storniert, Schüler manuell gesperrt) wird in der Tabelle `audit_logs` mit `Akteur`, `Zeitstempel`, `IP` und Vorher-/Nachher-Details protokolliert.
 - Das Audit-Log ist **append-only als Konvention**: Kein Bedien- oder Codepfad verändert oder löscht Einträge — mit einer bewussten Ausnahme, der DSGVO-Tilgung (siehe unten). Ein früherer Datenbank-Trigger, der jede Änderung hart sperrte (Migration 003), wurde mit Migration 083 aufgelöst: Er stand im direkten Widerspruch zur Löschpflicht (Art. 17), die das Audit-Log gerade ändern muss, um Personenbezug zu entfernen. Wer echte Manipulationssicherheit braucht, setzt sie über eine eng begrenzte Löschausnahme um, nicht über ein pauschales Änderungsverbot.
 - Die Daten dienen der Fehlerbehebung und DSGVO-Rechenschaftspflicht.
+- **Tresen-Auskunft** (seit 01.09.2026, `api/audit_tresen_auskunft.go`): der EINE
+  zweckgebundene Leseweg in die Detail-Spalte des fachlichen Audit-Logs. Anlass: Ein
+  zurückgebrachtes Buch, dessen Exemplar (oder ganzer Titel) gelöscht ist, war sonst
+  niemandem mehr zuzuordnen, obwohl das Protokoll es weiß. Zuschnitt bewusst eng:
+  nur Barcode-Suche, eigenes Recht `audit_details` (ab Werk nur Admin), Stufe 2 der
+  PII-Matrix, jeder Abruf wird selbst mit IP protokolliert (`TRESEN_AUSKUNFT`). Alle
+  drei Löschwege (Exemplar ausbuchen, Verlust-Löschen, Titel löschen) hinterlassen
+  dafür je Exemplar einen Barcode-Snapshot; nach DSGVO-Tilgung oder
+  Lesehistorie-Befristung zeigt auch dieser Weg bewusst nichts mehr.
 - **Aufbewahrungsfrist** (seit 16.08.2026): Auch Protokolle brauchen ein „wie lange“ —
   IP-Adressen und Bearbeiter-Bezüge sind personenbezogen (Speicherbegrenzung, Art. 5).
   Ein nächtlicher Job (03:00, nach dem Backup) löscht Einträge beider Tabellen jenseits

@@ -8,7 +8,7 @@ Eine webbasierte Verwaltungssoftware f√ºr Schulbibliotheken. Das System unterst√
 
 | Komponente | Technologie |
 |---|---|
-| Backend | Go 1.26.6 (go.mod = Dockerfile), `net/http`, `pgx/v5` |
+| Backend | Go 1.27.0 (go.mod = Dockerfile), `net/http`, `pgx/v5` |
 | Frontend | Svelte 5 (Runes), Tailwind CSS, Vite |
 | Datenbank | PostgreSQL 18 |
 | Echtzeit | Server-Sent Events (SSE) |
@@ -67,7 +67,7 @@ Eine webbasierte Verwaltungssoftware f√ºr Schulbibliotheken. Das System unterst√
 ## Schnellstart (lokal)
 
 ### Voraussetzungen
-- Go 1.26.6 (wie go.mod/Dockerfile)
+- Go 1.27.0 (wie go.mod/Dockerfile)
 - Node.js (npm)
 - PostgreSQL (lokal oder via Docker)
 

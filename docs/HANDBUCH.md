@@ -147,7 +147,11 @@ Ausleihen, nicht Personen. (§11)
 ## System-Logs
 
 *Allgemeines Logbuch* (jede Buchung) und *Admin-Audit-Log* (wer hat wann was geändert).
-Aufbewahrung 24 Monate, einstellbar. (§10)
+Aufbewahrung 24 Monate, einstellbar. Dritter Reiter **Tresen-Auskunft** (eigenes Recht
+`audit_details`, ab Werk nur Admin): Ein Buch liegt auf dem Tresen, sein Exemplar ist
+längst gelöscht — die Barcode-Suche zeigt, was das Protokoll dazu noch weiß (Titel,
+letzte Ausleihen), auch wenn der Titel komplett gelöscht wurde. Jede Abfrage wird
+selbst protokolliert; nach DSGVO-Tilgung zeigt auch dieser Weg nichts mehr. (§10)
 
 ## Benutzer & Rechte
 
