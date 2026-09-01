@@ -191,7 +191,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/audit/tresen-auskunft` | audit_details | 2 | Zweckgebundener Leseweg in audit_log.details (Betreiber-Entscheidung 01.09.2026): Barcode → Ausleihhistorie mit Entleiher-Klarname + Klasse. Ab Werk nur ADMIN; jeder Abruf protokolliert sich selbst in audit_logs (TRESEN_AUSKUNFT, mit IP) |
 | `GET /api/mail-templates` | manage_settings | 0 | Vorlagentexte |
 | `PUT /api/mail-templates/{id}` | manage_settings | 0 | Vorlagentexte |
-| `GET /api/reports/overdue-pdf` | view_students | 2 | Elternbriefe: Name + Überfälliges |
+| `GET /api/reports/overdue-pdf` | view_students | 3 | Elternbriefe als DIN-5008-Fensterkuvert-PDF: Name, ANSCHRIFT + Überfälliges (seit 01.09.2026 — Zweck „gedruckter Elternbrief bei Mahnung" laut VVT/SECURITY.md; vorher stand „Adresse unbekannt" im Fensterfeld) |
 | `GET /api/print/rechnung/{schueler_id}` | view_students | 3 | Rechnung: Name + Schadensbeträge |
 | `GET /api/print/mahnung/klasse/{klasse}` | view_students | 2 | Klassen-Mahn-PDF |
 | `POST /api/admin/mahnungen/bulk-print` | view_students | 2 | Mahn-PDF, erhöht Mahnstufe |

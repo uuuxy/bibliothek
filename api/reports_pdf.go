@@ -32,7 +32,15 @@ type OverdueStudent struct {
 	Vorname     string
 	Nachname    string
 	ElternEmail string
-	Books       []OverdueBook
+	// Anschrift für das Fensterkuvert (DIN 5008). Zweck laut VVT/SECURITY.md
+	// ausdrücklich „gedruckter Elternbrief bei Mahnung" — bis zum 01.09.2026
+	// stand hier trotzdem hartkodiert „Adresse unbekannt": Das Layout war für
+	// den Postversand gebaut, die Daten wurden nie angeschlossen.
+	Strasse    string
+	Hausnummer string
+	PLZ        string
+	Ort        string
+	Books      []OverdueBook
 }
 
 // loadMahnungTemplate lädt die Eltern-Mahnvorlage aus der Datenbank; ist keine
@@ -50,9 +58,14 @@ func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody str
 // queryOverdueStudents lädt alle überfälligen Ausleihen (ohne Abgänger) und gruppiert
 // sie je Schüler in stabiler Reihenfolge (Nachname, Vorname, Titel).
 func (s *Server) queryOverdueStudents(ctx context.Context) ([]*OverdueStudent, error) {
+	// COALESCE auf den Adressspalten ist Pflicht, nicht Kosmetik: Sie sind
+	// nullbar, die Go-Felder nicht — ohne COALESCE stünde hier "cannot scan NULL"
+	// statt des Mahnlaufs (bekannte NULL-Scan-Bugklasse).
 	query := `
 		SELECT
 			s.id, s.vorname, s.nachname,
+			COALESCE(s.strasse, ''), COALESCE(s.hausnummer, ''),
+			COALESCE(s.plz, ''), COALESCE(s.ort, ''),
 			a.ausgeliehen_am, a.rueckgabe_frist,
 			FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))/86400) AS days_overdue,
 			t.titel, e.barcode_id
@@ -76,11 +89,12 @@ func (s *Server) queryOverdueStudents(ctx context.Context) ([]*OverdueStudent, e
 	var studentOrder []string
 
 	for rows.Next() {
-		var id, vorname, nachname, titel, barcode string
+		var id, vorname, nachname, strasse, hausnummer, plz, ort, titel, barcode string
 		var ausgeliehenAm, frist time.Time
 		var days float64 // EXTRACT returns numeric/float
 
-		if err := rows.Scan(&id, &vorname, &nachname, &ausgeliehenAm, &frist, &days, &titel, &barcode); err != nil {
+		if err := rows.Scan(&id, &vorname, &nachname, &strasse, &hausnummer, &plz, &ort,
+			&ausgeliehenAm, &frist, &days, &titel, &barcode); err != nil {
 			log.Printf("Scan error: %v", err)
 			continue
 		}
@@ -88,6 +102,7 @@ func (s *Server) queryOverdueStudents(ctx context.Context) ([]*OverdueStudent, e
 		if _, exists := studentMap[id]; !exists {
 			studentMap[id] = &OverdueStudent{
 				ID: id, Vorname: vorname, Nachname: nachname,
+				Strasse: strasse, Hausnummer: hausnummer, PLZ: plz, Ort: ort,
 			}
 			studentOrder = append(studentOrder, id)
 		}
@@ -138,8 +153,15 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	pdf.CellFormat(85, 5, tr(fmt.Sprintf("Eltern von %s %s", student.Vorname, student.Nachname)), "", 1, "L", false, 0, "")
 	pdf.SetX(20)
 
-	addrLine1 := "Adresse unbekannt"
-	addrLine2 := ""
+	// Anschrift aus der Schülerdatei (LUSD-Import bzw. Handpflege). Fehlt sie,
+	// steht das AUSDRÜCKLICH im Fensterfeld — eine leere Zeile sähe aus wie ein
+	// Druckfehler, so sieht die Sekretärin sofort, welcher Brief nicht per Post
+	// gehen kann und stattdessen über die Klassenleitung verteilt wird.
+	addrLine1 := strings.TrimSpace(student.Strasse + " " + student.Hausnummer)
+	addrLine2 := strings.TrimSpace(student.PLZ + " " + student.Ort)
+	if addrLine1 == "" && addrLine2 == "" {
+		addrLine1 = "(keine Adresse hinterlegt)"
+	}
 	pdf.CellFormat(85, 5, tr(addrLine1), "", 1, "L", false, 0, "")
 	pdf.SetX(20)
 	pdf.CellFormat(85, 5, tr(addrLine2), "", 1, "L", false, 0, "")
