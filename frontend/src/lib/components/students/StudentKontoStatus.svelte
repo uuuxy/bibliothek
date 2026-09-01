@@ -37,6 +37,19 @@
 		{/if}
 	</div>
 
+	<!-- Der GRUND der Sperre. Er wird beim Sperren erfasst (StudentLockModal, Pflicht
+	     per DB-Constraint) und kam bis zum 01.09.2026 in jeder Profil-Antwort mit,
+	     wurde aber NIRGENDS angezeigt — wer entsperren wollte, musste raten, warum
+	     gesperrt wurde (nur die DSGVO-Auskunft druckte ihn). Sichtbar nur im
+	     gesperrten Zustand; das Profil steht ohnehin hinter view_students
+	     (PII-Matrix: Sperrgrund = Stufe 2 hinter genau diesem Recht). -->
+	{#if ausleiheGesperrt(profile) && profile.block_reason}
+		<p class="text-sm text-on-surface-variant">
+			<span class="font-medium text-on-surface">Grund:</span>
+			{profile.block_reason}
+		</p>
+	{/if}
+
 	{#if onLock}
 		<!-- Beschriftung nach dem MANUELLEN Schloss, nicht nach ist_gesperrt: Ein Schüler
 		     kann wegen Überfälligkeit gesperrt sein, ohne dass ihn jemand von Hand
