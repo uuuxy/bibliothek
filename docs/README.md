@@ -68,6 +68,11 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 - Node.js (npm)
 - PostgreSQL (lokal oder via Docker)
 
+> **PG-Integrationstests auf macOS:** `pg_dump`/`psql` 18 liegen in
+> `/opt/homebrew/opt/libpq/bin` und müssen VOR den PATH (`brew`-Standard ist 16) —
+> ein älterer Client verweigert den neueren Server, und die zwei
+> Backup-Proben-Tests scheitern dann scheinbar grundlos (so passiert am 31.08.2026).
+
 ### Mit Docker
 ```bash
 docker compose -f docker-compose.local.yml up -d

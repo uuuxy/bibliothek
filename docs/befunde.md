@@ -10,7 +10,8 @@ Hier steht, was aufgefallen ist und noch nicht entschieden oder erledigt wurde.
 **Historie:** Die abgearbeiteten Durchgänge (Raster-Durchgänge, Sweeps, Audits
 Juli–August 2026) standen bis zum 31.08.2026 vollständig in dieser Datei; sie sind
 bewusst entfernt und in der Git-Historie dieser Datei erhalten
-(`git log -p docs/befunde.md`, Stand vor der Kürzung: `2e09ec14`).
+(`git log -p docs/befunde.md`; Stände vor den Kürzungen: `2e09ec14` (31.08.),
+`47a09f70` (01.09. — Posten-Abarbeitung, v1.8.1, Fahrplan-Auflösung)).
 
 ---
 
@@ -37,34 +38,12 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
-Leer (Stand 01.09. abends): Die drei Posten vom 01.09. sind abgearbeitet —
-Eigen-Lock-Harnesse auf `internal/pgtest` (6caa3d4b), Barcode-Snapshot beim
-Titel-Löschen an beiden Türen samt Paar-Gates (9889c30c), PII-Antwort-Gate um
-die lesenden POSTs erweitert (`TestPIIAntwortenHaltenIhreStufe_LesendePosts`).
-Der erste Lauf des POST-Gates fand direkt einen A-Fund: `POST /api/action/batch`
-wies durch `Validate.Struct` auf einem Slice JEDEN Offline-Sync als 400 ab —
-sofort gefixt, Rot am Live-Pfad gesehen.
-
-Davor: Leer seit 01.09. früh (Abgänger-in-Aktivliste behoben, Gate
-`aktivliste-ohne-abgaenger.spec.js`). Die Abarbeitung vom 31.08.2026 (7 Posten,
-je ein Commit) steht in der Git-Historie dieser Datei; dabei zusätzlich gefunden
-und behoben: der Etiketten-Druck-E2E war seit Migration 071 still rot (Seed
-schrieb den alten Magie-Text statt `bestellstatus`).
+Leer (Stand 01.09.2026 abends). Abgearbeitetes steht in der Git-Historie dieser
+Datei (`git log -p docs/befunde.md`), nicht hier.
 
 ## Offen — Entscheidung nötig (Peter)
 
-Leer (Stand 01.09. abends). Die tote Vorlage `BESTELLUNG_EINGETROFFEN` ist
-ENTSCHIEDEN (Peter, 01.09.): keine Mail — Klassenleitungen wären überlastet,
-Eltern-Mail wäre der dünnste §-15-SchDSV-Fall, und Schüler merken ohnehin an
-der Theke vor. Stattdessen zeigt das Terminal beim Ausweis-Scan durch die
-Mitarbeiterin den **Abholfach-Hinweis** (OmniboxService, PG-Test rot gesehen);
-die Vorlage ist mit Migration 092 ausgetragen.
-
-Die drei Posten vom 31.08. sind nach Peters Freigabe alle umgesetzt:
-`sonar.projectVersion` (Scan-Skript), die Tresen-Auskunft (zweckgebundener
-Leseweg in `audit_log.details`, eigenes Recht `audit_details`) und das
-PII-Antwort-Gate (`api/pii_antwort_gate_pg_test.go` — die Stufen der GET-Routen
-sind jetzt gemessen, nicht nur behauptet).
+Leer (Stand 01.09.2026 abends).
 
 ## Beobachten (nichts zu tun)
 
@@ -83,11 +62,10 @@ sind jetzt gemessen, nicht nur behauptet).
   ausschließt und kein Listen-Konsument es liest (Profil nutzt es); die
   Geräte-Torso-Reste (`ActionEvent.GeraetID` nie gesetzt, Geräte-Aktionen
   broadcasten gar nicht, Kiosk-Pfad liefert Null-Zeitstempel) warten auf den
-  Geräte-Ausbau. (Der 501-Zweig `/api/admin/books/import` ist am 01.09. mit dem
-  v1.8.1-Aufräumen gelöscht — er zeigte neben dem funktionierenden Import ins Leere.)
+  Geräte-Ausbau.
 - Reiterleisten: drei Höhen (30/32/34 px) in den handgebauten Bestands-Leisten —
   vereinheitlichen beim nächsten fachlichen Anfassen (der Umbruch ist seit
-  `c35840d4` gelöst, Typografie-Fahrplan Schritt 6 damit halb offen).
+  `c35840d4` gelöst).
 - Etikettenraster an zwei Stellen (maßgeblich `api/label_formats.go`,
   Frontend-Kopie `src/lib/etikettformate.js`): Am 31.08.2026 geprüft und
   ENTSCHIEDEN geparkt. Ein Server-Umbau bräuchte einen neuen Endpunkt (existiert
@@ -139,10 +117,5 @@ TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-AP
 `cmd/migrate` (MySQL) löschen — hat keine Datenquelle mehr, aber seine PG-Tests
 sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
 (`/api/v1`) und Mandantenfähigkeit (RLS).
-
-Postgres 18 ist KOMPLETT durch (Repo 31.08., Prod laut Peter längst umgezogen).
-Merkposten für lokale PG-Testläufe: `pg_dump` 18.6 liegt in
-`/opt/homebrew/opt/libpq/bin` und muss vor den PATH (`brew`-Standard ist 16.15) —
-sonst scheitern die zwei Backup-Proben-Tests scheinbar, wie am 31.08. passiert.
 
 Stand: 2026-09-01
